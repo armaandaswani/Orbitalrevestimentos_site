@@ -1,26 +1,139 @@
 @import "tailwindcss";
 
-:root {
-  --background: #ffffff;
-  --foreground: #171717;
+@theme {
+  /* Orbital Design System Colors */
+  --color-primary: #002045;
+  --color-primary-container: #1a365d;
+  --color-on-primary: #ffffff;
+  --color-on-primary-container: #86a0cd;
+  --color-inverse-primary: #adc7f7;
+
+  --color-secondary: #3b6934;
+  --color-secondary-container: #b9eeab;
+  --color-on-secondary: #ffffff;
+  --color-on-secondary-container: #3f6d38;
+
+  --color-tertiary: #1e212a;
+  --color-tertiary-container: #333640;
+  --color-on-tertiary: #ffffff;
+  --color-on-tertiary-container: #9c9faa;
+
+  --color-background: #f9f9f9;
+  --color-on-background: #1a1c1c;
+  --color-surface: #f9f9f9;
+  --color-on-surface: #1a1c1c;
+  --color-on-surface-variant: #43474e;
+  --color-surface-variant: #e2e2e2;
+  --color-surface-container-lowest: #ffffff;
+  --color-surface-container-low: #f3f3f3;
+  --color-surface-container: #eeeeee;
+  --color-surface-container-high: #e8e8e8;
+  --color-surface-container-highest: #e2e2e2;
+  --color-surface-dim: #dadada;
+  --color-surface-bright: #f9f9f9;
+  --color-inverse-surface: #2f3131;
+  --color-inverse-on-surface: #f1f1f1;
+
+  --color-outline: #74777f;
+  --color-outline-variant: #c4c6cf;
+  --color-surface-tint: #455f88;
+
+  --color-error: #ba1a1a;
+  --color-on-error: #ffffff;
+
+  /* Typography */
+  --font-serif: "Noto Serif", Georgia, serif;
+  --font-sans: "Inter", system-ui, sans-serif;
+
+  /* Spacing */
+  --spacing-gutter: 32px;
+  --spacing-margin: 64px;
+  --spacing-section-gap: 120px;
+  --spacing-unit: 8px;
+
+  /* Container */
+  --container-max: 1280px;
 }
 
-@theme inline {
-  --color-background: var(--background);
-  --color-foreground: var(--foreground);
-  --font-sans: var(--font-geist-sans);
-  --font-mono: var(--font-geist-mono);
-}
+@layer base {
+  html {
+    scroll-behavior: smooth;
+  }
 
-@media (prefers-color-scheme: dark) {
-  :root {
-    --background: #0a0a0a;
-    --foreground: #ededed;
+  body {
+    background-color: var(--color-background);
+    color: var(--color-on-background);
+    font-family: var(--font-sans);
+    font-size: 16px;
+    line-height: 1.6;
+    -webkit-font-smoothing: antialiased;
+    -moz-osx-font-smoothing: grayscale;
+  }
+
+  h1, h2, h3, h4, h5, h6 {
+    font-family: var(--font-serif);
   }
 }
 
-body {
-  background: var(--background);
-  color: var(--foreground);
-  font-family: Arial, Helvetica, sans-serif;
+/* ── Animations ─────────────────────────────────────── */
+
+@keyframes fade-up {
+  from { opacity: 0; transform: translateY(22px); }
+  to   { opacity: 1; transform: none; }
+}
+
+@keyframes fade-in {
+  from { opacity: 0; }
+  to   { opacity: 1; }
+}
+
+@keyframes shimmer-slide {
+  0%   { background-position: -200% center; }
+  100% { background-position: 200% center; }
+}
+
+@keyframes pulse-ring {
+  0%   { box-shadow: 0 0 0 0 rgba(59, 105, 52, 0.40); }
+  70%  { box-shadow: 0 0 0 10px rgba(59, 105, 52, 0); }
+  100% { box-shadow: 0 0 0 0 rgba(59, 105, 52, 0); }
+}
+
+@keyframes pulse-ring-blue {
+  0%   { box-shadow: 0 0 0 0 rgba(0, 32, 69, 0.35); }
+  70%  { box-shadow: 0 0 0 10px rgba(0, 32, 69, 0); }
+  100% { box-shadow: 0 0 0 0 rgba(0, 32, 69, 0); }
+}
+
+@keyframes marquee {
+  0%   { transform: translateX(0); }
+  100% { transform: translateX(-50%); }
+}
+
+/* Utility classes */
+.animate-fade-up   { animation: fade-up 0.7s cubic-bezier(0.4,0,0.2,1) forwards; }
+.animate-fade-in   { animation: fade-in 0.7s ease forwards; }
+.cta-pulse-green   { animation: pulse-ring 2.4s ease-out infinite; }
+.cta-pulse-blue    { animation: pulse-ring-blue 2.4s ease-out infinite; }
+.animate-marquee   { animation: marquee 28s linear infinite; }
+
+/* Staggered card reveals */
+.stagger-1 { animation-delay: 0ms; }
+.stagger-2 { animation-delay: 100ms; }
+.stagger-3 { animation-delay: 200ms; }
+.stagger-4 { animation-delay: 300ms; }
+.stagger-5 { animation-delay: 400ms; }
+.stagger-6 { animation-delay: 500ms; }
+
+/* Custom scrollbar */
+::-webkit-scrollbar {
+  width: 4px;
+}
+::-webkit-scrollbar-track {
+  background: var(--color-surface-container-low);
+}
+::-webkit-scrollbar-thumb {
+  background: var(--color-outline-variant);
+}
+::-webkit-scrollbar-thumb:hover {
+  background: var(--color-primary-container);
 }
