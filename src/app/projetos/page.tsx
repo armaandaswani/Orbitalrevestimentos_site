@@ -204,8 +204,8 @@ function ProjectCard({ project }: { project: Project }) {
   const hasBA = !!project.before;
 
   return (
-    <div className="relative overflow-hidden bg-[#111]">
-      {/* Portrait format — preserves the natural vertical orientation of the photos */}
+    <div className="bg-white flex flex-col">
+      {/* Image */}
       <div className="relative w-full aspect-[3/4] overflow-hidden">
         <Image
           src={project.after}
@@ -221,9 +221,6 @@ function ProjectCard({ project }: { project: Project }) {
             className={`object-cover transition-opacity duration-500 ${showBefore ? "opacity-100" : "opacity-0"}`}
           />
         )}
-
-        {/* Subtle bottom gradient — text legibility only */}
-        <div className="absolute inset-x-0 bottom-0 h-[45%] bg-gradient-to-t from-black/70 to-transparent pointer-events-none" />
 
         {/* Antes / Depois toggle */}
         {hasBA && (
@@ -247,20 +244,21 @@ function ProjectCard({ project }: { project: Project }) {
             </button>
           </div>
         )}
+      </div>
 
-        <div className="absolute bottom-0 inset-x-0 p-4 pointer-events-none">
-          <p className="text-[#a1d494] text-[9px] tracking-[0.2em] uppercase font-semibold font-[var(--font-inter)] mb-1.5">
-            {project.code}
+      {/* Caption below image */}
+      <div className="px-3 pt-2.5 pb-3 border-t border-[#efefef]">
+        <p className="text-[#3b6934] text-[8px] tracking-[0.18em] uppercase font-semibold font-[var(--font-inter)] mb-1">
+          {project.code}
+        </p>
+        <h3 className="font-[var(--font-noto-serif)] text-[#002045] text-sm font-normal leading-snug">
+          {project.title}
+        </h3>
+        {project.note && (
+          <p className="text-[#9e9e9e] text-[9px] font-[var(--font-inter)] tracking-[0.04em] uppercase mt-1">
+            {project.note}
           </p>
-          <h3 className="font-[var(--font-noto-serif)] text-white text-lg font-normal leading-tight">
-            {project.title}
-          </h3>
-          {project.note && (
-            <p className="text-white/50 text-[10px] font-[var(--font-inter)] tracking-[0.06em] uppercase mt-1">
-              {project.note}
-            </p>
-          )}
-        </div>
+        )}
       </div>
     </div>
   );
@@ -269,7 +267,8 @@ function ProjectCard({ project }: { project: Project }) {
 // ─── Render card — portrait aspect ────────────────────────────────────────────
 function RenderCard({ render }: { render: Render }) {
   return (
-    <div className="relative overflow-hidden bg-[#0a0f1a] group">
+    <div className="bg-[#111827] flex flex-col group">
+      {/* Image */}
       <div className="relative w-full aspect-[3/4] overflow-hidden">
         <Image
           src={render.img}
@@ -277,23 +276,22 @@ function RenderCard({ render }: { render: Render }) {
           fill
           className="object-cover transition-transform duration-500 group-hover:scale-[1.03]"
         />
-        <div className="absolute inset-x-0 bottom-0 h-[45%] bg-gradient-to-t from-black/72 to-transparent pointer-events-none" />
-
         {/* IA badge — small, unobtrusive */}
         <div className="absolute top-3 left-3 px-2 py-0.5 border border-white/20 bg-black/40 backdrop-blur-sm">
           <span className="text-white/55 text-[7px] tracking-[0.25em] uppercase font-bold font-[var(--font-inter)]">
             IA
           </span>
         </div>
+      </div>
 
-        <div className="absolute bottom-0 inset-x-0 p-4 pointer-events-none">
-          <p className="text-[#a1d494] text-[9px] tracking-[0.18em] uppercase font-semibold font-[var(--font-inter)] mb-1">
-            {render.code}
-          </p>
-          <h3 className="font-[var(--font-noto-serif)] text-white text-base font-normal leading-tight">
-            {render.title}
-          </h3>
-        </div>
+      {/* Caption below image */}
+      <div className="px-3 pt-2.5 pb-3 border-t border-white/8">
+        <p className="text-[#a1d494] text-[8px] tracking-[0.18em] uppercase font-semibold font-[var(--font-inter)] mb-1">
+          {render.code}
+        </p>
+        <h3 className="font-[var(--font-noto-serif)] text-white/85 text-sm font-normal leading-snug">
+          {render.title}
+        </h3>
       </div>
     </div>
   );
