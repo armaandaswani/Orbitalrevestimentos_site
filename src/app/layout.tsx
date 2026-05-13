@@ -31,21 +31,44 @@ export const metadata: Metadata = {
   description:
     "Revestimentos eco-premium para paredes e tetos em Manaus. Placas Flexíveis de Bambu (PFB) com acabamento arquitetônico — impermeável, anti-mofo, instalado em 2–3 horas. 3 linhas, 15 acabamentos.",
   keywords: [
+    "Orbital Revestimentos",
     "revestimento parede Manaus",
     "revestimento teto Manaus",
+    "revestimento de parede",
+    "revestimento de forro",
+    "forro de teto decorativo",
+    "revestimento sem obra",
+    "revestimento sem demolição",
     "placa flexível de bambu",
     "PFB revestimento",
-    "revestimento sem obra",
+    "alternativa ao MDF",
+    "melhor que MDF",
+    "MDF revestimento parede",
+    "papel de parede Manaus",
+    "alternativa papel de parede",
+    "papel de parede impermeável",
     "revestimento impermeável banheiro",
+    "revestimento lavabo",
+    "revestimento cozinha",
+    "revestimento sala",
     "revestimento mármore",
     "revestimento madeira",
+    "painel decorativo parede",
+    "revestimento 3D",
     "acabamento arquitetônico",
+    "arquiteto Manaus",
+    "arquitetos em Manaus",
+    "designer de interiores Manaus",
+    "revestimento para arquiteto",
     "revestimento ecológico",
     "revestimento bambu",
-    "placas para parede",
-    "revestimento lavabo",
-    "revestimento comercial",
-    "Orbital Revestimentos",
+    "revestimento comercial Manaus",
+    "revestimento para restaurante",
+    "revestimento para escritório",
+    "revestimento náutico",
+    "decoração de interiores Manaus",
+    "renovar parede sem obra",
+    "loja de revestimentos Manaus",
   ],
   authors: [{ name: "Orbital Revestimentos", url: BASE_URL }],
   creator: "Orbital Revestimentos",
@@ -85,77 +108,135 @@ export const metadata: Metadata = {
   other: {
     "geo.region": "BR-AM",
     "geo.placename": "Manaus",
+    "geo.position": "-3.1019;-60.025",
+    "ICBM": "-3.1019, -60.025",
   },
 };
 
-const jsonLd = {
-  "@context": "https://schema.org",
-  "@type": "LocalBusiness",
-  name: "Orbital Revestimentos",
-  description:
-    "Importadora especializada em Placas Flexíveis de Bambu (PFB) premium para revestimentos de paredes e tetos com acabamento arquitetônico.",
-  url: BASE_URL,
-  telephone: "+55-92-98815-0149",
-  email: "orbital.revestimentos@gmail.com",
-  address: {
-    "@type": "PostalAddress",
-    addressLocality: "Manaus",
-    addressRegion: "AM",
-    addressCountry: "BR",
-  },
-  geo: {
-    "@type": "GeoCoordinates",
-    latitude: -3.1019,
-    longitude: -60.025,
-  },
-  sameAs: [
-    "https://instagram.com/orbitalrevestimentos",
-    `https://wa.me/5592988150149`,
-  ],
-  priceRange: "R$559–R$649",
-  openingHoursSpecification: {
-    "@type": "OpeningHoursSpecification",
-    dayOfWeek: ["Monday", "Tuesday", "Wednesday", "Thursday", "Friday"],
-    opens: "08:00",
-    closes: "18:00",
-  },
-  hasOfferCatalog: {
-    "@type": "OfferCatalog",
-    name: "Coleção PFB Orbital",
-    itemListElement: [
-      {
-        "@type": "Offer",
-        itemOffered: {
-          "@type": "Product",
-          name: "Linha Classic — Mármore Fosco",
-          description: "Placas Flexíveis de Bambu com acabamento mármore fosco. 3 opções de cor.",
+const jsonLdSchemas = [
+  {
+    "@context": "https://schema.org",
+    "@type": "LocalBusiness",
+    name: "Orbital Revestimentos",
+    description:
+      "Fornecedor exclusivo de Placas Flexíveis de Bambu (PFB) em Manaus. Revestimento de parede e forro de teto — alternativa superior ao MDF, papel de parede e forro PVC.",
+    url: BASE_URL,
+    telephone: "+55-92-98815-0149",
+    email: "orbital.revestimentos@gmail.com",
+    image: `${BASE_URL}/images/catalogue/hero-cover.png`,
+    address: {
+      "@type": "PostalAddress",
+      addressLocality: "Manaus",
+      addressRegion: "AM",
+      addressCountry: "BR",
+    },
+    geo: {
+      "@type": "GeoCoordinates",
+      latitude: -3.1019,
+      longitude: -60.025,
+    },
+    areaServed: {
+      "@type": "State",
+      name: "Amazonas",
+    },
+    sameAs: [
+      "https://instagram.com/orbitalrevestimentos",
+      "https://wa.me/5592988150149",
+    ],
+    priceRange: "R$559–R$649",
+    openingHoursSpecification: {
+      "@type": "OpeningHoursSpecification",
+      dayOfWeek: ["Monday", "Tuesday", "Wednesday", "Thursday", "Friday"],
+      opens: "08:00",
+      closes: "18:00",
+    },
+    hasOfferCatalog: {
+      "@type": "OfferCatalog",
+      name: "Coleção PFB Orbital",
+      itemListElement: [
+        {
+          "@type": "Offer",
+          itemOffered: {
+            "@type": "Product",
+            name: "Linha Classic — Mármore Fosco",
+            description:
+              "Revestimento de parede com acabamento mármore fosco. Impermeável, anti-mofo, instalado em 2h.",
+          },
+          price: "559",
+          priceCurrency: "BRL",
+          availability: "https://schema.org/InStock",
         },
-        price: "559",
-        priceCurrency: "BRL",
-      },
-      {
-        "@type": "Offer",
-        itemOffered: {
-          "@type": "Product",
-          name: "Linha Brilliance — Mármore Polido",
-          description: "Placas Flexíveis de Bambu com acabamento mármore polido. 8 opções de cor.",
+        {
+          "@type": "Offer",
+          itemOffered: {
+            "@type": "Product",
+            name: "Linha Brilliance — Mármore Polido",
+            description:
+              "Revestimento de parede com acabamento mármore polido. 8 acabamentos. Impermeável.",
+          },
+          price: "589",
+          priceCurrency: "BRL",
+          availability: "https://schema.org/InStock",
         },
-        price: "589",
-        priceCurrency: "BRL",
-      },
-      {
-        "@type": "Offer",
-        itemOffered: {
-          "@type": "Product",
-          name: "Linha Elegance — Madeira Texturizada",
-          description: "Placas Flexíveis de Bambu com textura de madeira. 4 opções de cor.",
+        {
+          "@type": "Offer",
+          itemOffered: {
+            "@type": "Product",
+            name: "Linha Elegance — Madeira Texturizada",
+            description:
+              "Revestimento de parede e forro com textura de madeira. 4 acabamentos. Anti-cupim.",
+          },
+          price: "649",
+          priceCurrency: "BRL",
+          availability: "https://schema.org/InStock",
         },
-        price: "649",
-        priceCurrency: "BRL",
-      },
+      ],
+    },
+  },
+  {
+    "@context": "https://schema.org",
+    "@type": "Organization",
+    name: "Orbital Revestimentos",
+    url: BASE_URL,
+    logo: `${BASE_URL}/images/logo.png`,
+    description:
+      "Importadora especializada em revestimentos eco-premium de Placas Flexíveis de Bambu (PFB) para paredes e forros. Manaus, Amazonas.",
+    foundingLocation: "Manaus, AM, Brasil",
+    sameAs: [
+      "https://instagram.com/orbitalrevestimentos",
+      "https://wa.me/5592988150149",
+    ],
+    contactPoint: {
+      "@type": "ContactPoint",
+      telephone: "+55-92-98815-0149",
+      contactType: "sales",
+      availableLanguage: "Portuguese",
+      areaServed: "BR",
+    },
+    knowsAbout: [
+      "revestimento de parede",
+      "revestimento de forro",
+      "Placas Flexíveis de Bambu",
+      "PFB",
+      "alternativa ao MDF",
+      "revestimento impermeável",
+      "decoração de interiores Manaus",
     ],
   },
-};
+  {
+    "@context": "https://schema.org",
+    "@type": "WebSite",
+    name: "Orbital Revestimentos",
+    url: BASE_URL,
+    description:
+      "Revestimento de parede e forro de teto em Manaus — Placas Flexíveis de Bambu (PFB). Alternativa superior ao MDF, papel de parede e forro PVC.",
+    inLanguage: "pt-BR",
+    publisher: {
+      "@type": "Organization",
+      name: "Orbital Revestimentos",
+    },
+  },
+];
 
 export default function RootLayout({
   children,
@@ -165,10 +246,13 @@ export default function RootLayout({
   return (
     <html lang="pt-BR" className={`${inter.variable} ${notoSerif.variable}`}>
       <body className="min-h-screen flex flex-col bg-[#f9f9f9] text-[#1a1c1c] antialiased font-[var(--font-inter)]">
-        <script
-          type="application/ld+json"
-          dangerouslySetInnerHTML={{ __html: JSON.stringify(jsonLd) }}
-        />
+        {jsonLdSchemas.map((schema, i) => (
+          <script
+            key={i}
+            type="application/ld+json"
+            dangerouslySetInnerHTML={{ __html: JSON.stringify(schema) }}
+          />
+        ))}
         <Navbar />
         <div className="flex-1">{children}</div>
         <Footer />

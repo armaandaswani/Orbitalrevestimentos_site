@@ -5,14 +5,18 @@ export default function Footer() {
     <footer className="bg-[#1e212a] text-white">
       <div className="max-w-[1280px] mx-auto px-8 lg:px-16 py-16">
         <div className="grid grid-cols-1 md:grid-cols-12 gap-12">
+
           {/* Brand */}
           <div className="md:col-span-4">
             <div className="text-xl font-bold tracking-[0.22em] font-[var(--font-noto-serif)] mb-4">
               ORBITAL
             </div>
+            <p className="text-[#9c9faa] text-sm leading-relaxed mb-2 font-[var(--font-inter)]">
+              Fornecedor exclusivo de Placas Flexíveis de Bambu (PFB) em Manaus, Amazonas.
+            </p>
             <p className="text-[#9c9faa] text-sm leading-relaxed mb-6 font-[var(--font-inter)]">
-              Revestimentos eco-premium de Placas Flexíveis de Bambu.
-              Instalado em horas. Admirado por anos.
+              Revestimento de parede e forro de teto eco-premium — alternativa superior ao MDF,
+              papel de parede e forro PVC. Instalado em horas. Admirado por anos.
             </p>
             <a
               href="https://wa.me/5592988150149"
@@ -27,7 +31,7 @@ export default function Footer() {
             </a>
           </div>
 
-          {/* Links */}
+          {/* Navigation */}
           <div className="md:col-span-2 md:col-start-6">
             <p className="text-xs tracking-[0.1em] uppercase font-semibold font-[var(--font-inter)] text-[#9c9faa] mb-5">
               Navegação
@@ -36,9 +40,10 @@ export default function Footer() {
               {[
                 { href: "/", label: "Home" },
                 { href: "/produtos", label: "Produtos" },
-                { href: "/tecnologia", label: "Tecnologia" },
+                { href: "/tecnologia", label: "Tecnologia PFB" },
                 { href: "/projetos", label: "Projetos" },
-                { href: "/contato", label: "Contato" },
+                { href: "/parcerias", label: "Parcerias" },
+                { href: "/contato", label: "Simulador de Custo" },
               ].map(({ href, label }) => (
                 <Link
                   key={href}
@@ -51,53 +56,56 @@ export default function Footer() {
             </nav>
           </div>
 
-          {/* Info */}
-          <div className="md:col-span-3">
+          {/* Applications — keyword-rich */}
+          <div className="md:col-span-2">
             <p className="text-xs tracking-[0.1em] uppercase font-semibold font-[var(--font-inter)] text-[#9c9faa] mb-5">
-              Informações
+              Aplicações
             </p>
-            <div className="flex flex-col gap-3 text-sm text-[#9c9faa] font-[var(--font-inter)]">
-              <div>
-                <p className="text-white font-medium mb-1">Showroom</p>
-                <p>Manaus, Amazonas</p>
-              </div>
-              <div>
-                <p className="text-white font-medium mb-1">Instagram</p>
+            <div className="flex flex-col gap-2 text-sm text-[#9c9faa] font-[var(--font-inter)]">
+              <span>Revestimento de Parede</span>
+              <span>Revestimento de Forro</span>
+              <span>Lavabo &amp; Banheiro</span>
+              <span>Cozinha</span>
+              <span>Comercial &amp; Restaurante</span>
+              <span>Escritório</span>
+              <span>Náutico</span>
+            </div>
+          </div>
+
+          {/* Info */}
+          <div className="md:col-span-2">
+            <p className="text-xs tracking-[0.1em] uppercase font-semibold font-[var(--font-inter)] text-[#9c9faa] mb-5">
+              Profissionais
+            </p>
+            <div className="flex flex-col gap-2 text-sm text-[#9c9faa] font-[var(--font-inter)]">
+              <Link href="/parcerias" className="hover:text-white transition-colors">Arquitetos</Link>
+              <Link href="/parcerias" className="hover:text-white transition-colors">Designers de Interiores</Link>
+              <Link href="/parcerias" className="hover:text-white transition-colors">Marceneiros</Link>
+              <Link href="/parcerias" className="hover:text-white transition-colors">Engenheiros</Link>
+              <Link href="/parcerias" className="hover:text-white transition-colors">Revendedores</Link>
+              <div className="mt-3 pt-3 border-t border-[#333640]">
+                <p className="text-white font-medium text-xs mb-1">Instagram</p>
                 <a
-                  href="https://instagram.com/orbital.revestimentos"
+                  href="https://instagram.com/orbitalrevestimentos"
                   target="_blank"
                   rel="noopener noreferrer"
-                  className="hover:text-white transition-colors"
+                  className="hover:text-white transition-colors text-xs"
                 >
-                  @orbital.revestimentos
+                  @orbitalrevestimentos
                 </a>
               </div>
             </div>
           </div>
 
-          {/* Contact */}
-          <div className="md:col-span-3">
-            <p className="text-xs tracking-[0.1em] uppercase font-semibold font-[var(--font-inter)] text-[#9c9faa] mb-5">
-              Produto
-            </p>
-            <div className="flex flex-col gap-2 text-sm text-[#9c9faa] font-[var(--font-inter)]">
-              <p>3 Linhas · 15 Acabamentos</p>
-              <p>5mm · 1,2m × 2,9m</p>
-              <p>Pronta-entrega</p>
-              <p className="mt-2 italic text-xs">
-                Somos fornecedores diretos —<br />não fazemos instalação.
-              </p>
-            </div>
-          </div>
         </div>
 
         {/* Bottom */}
         <div className="border-t border-[#333640] mt-12 pt-8 flex flex-col md:flex-row justify-between gap-4">
           <p className="text-xs text-[#9c9faa] font-[var(--font-inter)]">
-            © 2026 Orbital Revestimentos. Todos os direitos reservados.
+            © 2026 Orbital Revestimentos · Manaus, AM · Todos os direitos reservados.
           </p>
           <p className="text-xs text-[#9c9faa] font-[var(--font-inter)] italic">
-            Orbital · Catálogo Varejo 2026 · Dados sujeitos a alteração sem aviso prévio.
+            Revestimento de parede e forro · PFB · Alternativa ao MDF em Manaus
           </p>
         </div>
       </div>

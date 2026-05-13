@@ -7,14 +7,69 @@ import AnimatedStat from "@/components/AnimatedStat";
 export const metadata: Metadata = {
   title: "Orbital Revestimentos — Instalado em horas. Admirado por anos.",
   description:
-    "Placas Flexíveis de Bambu (PFB) eco-premium para transformar paredes e tetos em Manaus. Sem obra, sem poeira. 3 linhas, 15 acabamentos, pronta-entrega.",
+    "Placas Flexíveis de Bambu (PFB) eco-premium para transformar paredes e tetos em Manaus. Melhor que MDF e papel de parede — sem obra, sem poeira. 3 linhas, 15 acabamentos, pronta-entrega.",
   alternates: { canonical: "https://orbitalrevestimentos-site.vercel.app" },
+  keywords: [
+    "Orbital Revestimentos",
+    "revestimento parede Manaus",
+    "revestimento de forro Manaus",
+    "melhor que MDF",
+    "alternativa papel de parede",
+    "PFB placa flexível de bambu",
+    "revestimento sem obra Manaus",
+    "decoração interiores Manaus",
+  ],
   openGraph: {
     title: "Orbital Revestimentos — Instalado em horas. Admirado por anos.",
     description:
-      "Placas Flexíveis de Bambu (PFB) eco-premium para paredes e tetos em Manaus. Sem obra, sem poeira. Pronta-entrega.",
+      "Placas Flexíveis de Bambu (PFB) eco-premium para paredes e tetos em Manaus. Melhor que MDF e papel de parede. Sem obra, sem poeira. Pronta-entrega.",
     url: "https://orbitalrevestimentos-site.vercel.app",
   },
+};
+
+const faqs = [
+  {
+    q: "O que é o PFB Orbital?",
+    a: "PFB significa Painel Flexível de Bambu — um revestimento eco-premium com substrato de fibra de bambu e acabamento fotorrealista de pedra ou madeira. Instalado diretamente sobre a parede ou forro existente, sem demolição ou obra pesada. Desenvolvido especialmente para o clima úmido do Amazonas.",
+  },
+  {
+    q: "PFB é melhor que MDF para revestimento de parede?",
+    a: "Sim. O PFB absorve apenas 0,2% de umidade em 48 horas — o MDF absorve até 35% e se deteriora em 2 a 3 anos no clima de Manaus. Além disso, o PFB é anti-mofo, anti-cupim, não propaga chamas e pesa 3,5 kg/m² contra 11 kg/m² do MDF. A instalação leva 2 a 3 horas por cômodo sem poeira tóxica.",
+  },
+  {
+    q: "Qual a diferença entre PFB e papel de parede?",
+    a: "Papel de parede é impresso sobre papel ou vinil fino e se deteriora em pouco tempo com umidade, bolhas e descascamento. O PFB é uma placa rígida de 5mm com acabamento premium e textura que remete à pedra ou madeira real. É impermeável, lavável, durável e aprovado para áreas úmidas — papel de parede não tem nenhuma dessas características.",
+  },
+  {
+    q: "O PFB serve para revestimento de forro (teto)?",
+    a: "Sim. O PFB é leve (3,5 kg/m²) e aprovado para aplicação em teto com ART de Engenheiro Civil. Já foi instalado como forro em residências, restaurantes, escritórios e embarcações náuticas em Manaus. É uma alternativa muito superior ao forro PVC em termos de estética e durabilidade.",
+  },
+  {
+    q: "Onde comprar o revestimento PFB em Manaus?",
+    a: "A Orbital Revestimentos é o fornecedor exclusivo do PFB em Manaus. Temos pronta-entrega, showroom e atendimento pelo WhatsApp. Sem intermediários — você compra direto do importador e recebe ainda essa semana.",
+  },
+  {
+    q: "Arquitetos e designers em Manaus podem especificar o PFB?",
+    a: "Sim. A Orbital tem um programa de parcerias para arquitetos, designers de interiores e engenheiros em Manaus. Fornecemos amostras grátis, fichas técnicas completas com ART/CREA, laudos laboratoriais e suporte técnico para especificação em projetos residenciais e comerciais.",
+  },
+  {
+    q: "O PFB é impermeável? Pode ser instalado em banheiro ou lavabo?",
+    a: "Sim. O PFB é resistente à água — apenas 0,2% de absorção em 48 horas de imersão. É aprovado para áreas úmidas: banheiros, lavabos, cozinhas, fachadas internas e projetos náuticos. Anti-mofo por natureza, sem necessidade de tratamento adicional.",
+  },
+  {
+    q: "Como é feita a instalação? Precisa de obra?",
+    a: "Não precisa de obra pesada. O PFB é colado diretamente sobre a parede ou teto existente com cola PU 40 ou cola de contato — sem demolição, sem poeira, sem barulho de obra. Um cômodo padrão fica pronto em 2 a 3 horas. Pode ser instalado com o ambiente em vivência/uso e sem interromper as atividades do espaço.",
+  },
+];
+
+const faqSchema = {
+  "@context": "https://schema.org",
+  "@type": "FAQPage",
+  mainEntity: faqs.map(({ q, a }) => ({
+    "@type": "Question",
+    name: q,
+    acceptedAnswer: { "@type": "Answer", text: a },
+  })),
 };
 
 const CATALOGUE_URL =
@@ -113,7 +168,7 @@ export default function Home() {
         <div className="absolute inset-0">
           <Image
             src="/images/catalogue/hero-cover.png"
-            alt="Revestimento Orbital instalado em interior premium"
+            alt="Revestimento de parede PFB Orbital — acabamento arquitetônico instalado em Manaus"
             fill
             className="object-cover object-center"
             priority
@@ -380,16 +435,16 @@ export default function Home() {
             <div className="lg:col-span-7">
               <div className="grid grid-cols-2 gap-3">
                 {[
-                  { src: "/images/catalogue/lavabo-real.jpeg", label: "Lavabo" },
-                  { src: "/images/catalogue/projeto-escritorio-depois.jpeg", label: "Comercial" },
-                  { src: "/images/catalogue/projeto-varanda.jpeg", label: "Banheiro" },
-                  { src: "/images/catalogue/page13_img5_924x1629.jpeg", label: "Escritório" },
+                  { src: "/images/catalogue/lavabo-real.jpeg", label: "Revestimento de lavabo com PFB Orbital em Manaus" },
+                  { src: "/images/catalogue/projeto-escritorio-depois.jpeg", label: "Revestimento comercial PFB — escritório em Manaus" },
+                  { src: "/images/catalogue/projeto-varanda.jpeg", label: "Revestimento de banheiro impermeável PFB Orbital" },
+                  { src: "/images/catalogue/page13_img5_924x1629.jpeg", label: "Revestimento de parede PFB — ambiente residencial" },
                 ].map(({ src, label }, i) => (
                   <ScrollReveal key={label} delay={i * 80} direction="up">
                     <div className="relative aspect-[4/5] overflow-hidden group">
                       <Image
                         src={src}
-                        alt={`Projeto Orbital — ${label}`}
+                        alt={label}
                         fill
                         className="object-cover transition-transform duration-700 group-hover:scale-[1.06]"
                       />
@@ -559,6 +614,36 @@ export default function Home() {
             </Link>
           </div>
           </ScrollReveal>
+        </div>
+      </section>
+
+      {/* FAQ */}
+      <section className="py-20 bg-white border-t border-[#eeeeee]">
+        <script
+          type="application/ld+json"
+          dangerouslySetInnerHTML={{ __html: JSON.stringify(faqSchema) }}
+        />
+        <div className="max-w-[1280px] mx-auto px-8 lg:px-16">
+          <div className="mb-12">
+            <p className="text-[#74777f] text-xs tracking-[0.2em] uppercase font-semibold font-[var(--font-inter)] mb-2">
+              Dúvidas Frequentes
+            </p>
+            <h2 className="font-[var(--font-noto-serif)] text-[#002045] text-3xl lg:text-4xl font-normal">
+              Perguntas e Respostas
+            </h2>
+          </div>
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-x-16 gap-y-10">
+            {faqs.map(({ q, a }) => (
+              <div key={q} className="border-t border-[#eeeeee] pt-6">
+                <h3 className="font-[var(--font-noto-serif)] text-[#002045] text-lg font-normal mb-3">
+                  {q}
+                </h3>
+                <p className="text-[#43474e] text-sm font-[var(--font-inter)] leading-relaxed">
+                  {a}
+                </p>
+              </div>
+            ))}
+          </div>
         </div>
       </section>
 

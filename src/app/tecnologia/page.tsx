@@ -1,16 +1,30 @@
 import type { Metadata } from "next";
 import Image from "next/image";
 import Link from "next/link";
+import MdfComparison from "@/components/MdfComparison";
 
 export const metadata: Metadata = {
-  title: "Tecnologia PFB — Como funciona a Placa Flexível de Bambu",
+  title: "PFB vs MDF vs Papel de Parede vs Forro PVC — Comparativo Técnico",
   description:
-    "Conheça a tecnologia por trás do PFB Orbital: 5 camadas de engenharia, substrato de bambu ecológico, impermeável, anti-mofo, anti-cupim e aprovado com ART de Eng. Civil.",
+    "Compare o PFB Orbital com MDF, papel de parede e forro PVC: impermeabilidade, durabilidade, instalação e custo. Dados técnicos com ART de Eng. Civil. Melhor revestimento para Manaus.",
+  keywords: [
+    "PFB vs MDF",
+    "melhor que MDF",
+    "alternativa ao MDF revestimento",
+    "PFB vs papel de parede",
+    "alternativa papel de parede impermeável",
+    "revestimento de forro Manaus",
+    "forro decorativo alternativa forro PVC",
+    "revestimento impermeável Manaus",
+    "placa flexível de bambu tecnologia",
+    "revestimento anti-mofo Manaus",
+    "revestimento para clima úmido",
+  ],
   alternates: { canonical: "https://orbitalrevestimentos-site.vercel.app/tecnologia" },
   openGraph: {
-    title: "Tecnologia PFB — Como funciona a Placa Flexível de Bambu",
+    title: "PFB vs MDF vs Papel de Parede vs Forro PVC — Comparativo Técnico",
     description:
-      "5 camadas de engenharia, substrato de bambu ecológico. Impermeável, anti-mofo, aprovado para ambientes úmidos e projetos navais.",
+      "Compare o PFB Orbital com MDF, papel de parede e forro PVC em 11 critérios técnicos. O melhor revestimento para o clima úmido de Manaus.",
     url: "https://orbitalrevestimentos-site.vercel.app/tecnologia",
   },
 };
@@ -33,80 +47,93 @@ const specs = [
 
 const comparison = [
   {
-    attr: "Absorção de água (48h)",
-    pfb: "0,2%",
-    mdf: "Até 35%",
-    pfbGood: true,
+    attr: "Resistência à umidade",
+    pfb: "Impermeável (0,2%)",
+    mdf: "Absorve até 35%",
+    papel: "Descola, bolha e mofa",
+    forro: "Impermeável, mas empena",
+    tinta: "Descasca com umidade e mofa",
     highlight: true,
+  },
+  {
+    attr: "Aspecto visual",
+    pfb: "Fotorrealista & Textura Premium",
+    mdf: "Liso ou revestido",
+    papel: "Impresso em papel/vinil",
+    forro: "Plástico brilhante ou opaco",
+    tinta: "Liso, fosco ou brilhante",
+    highlight: false,
+  },
+  {
+    attr: "Durabilidade em Manaus",
+    pfb: "10+ anos",
+    mdf: "2–3 anos",
+    papel: "1 a 2 anos",
+    forro: "3–5 anos (amarela com UV)",
+    tinta: "2–4 anos",
+    highlight: true,
+  },
+  {
+    attr: "Mofo",
+    pfb: "Resistente por natureza",
+    mdf: "Suscetível à umidade",
+    papel: "Propenso por baixo",
+    forro: "Acumula nas juntas",
+    tinta: "Propenso em áreas úmidas",
+    highlight: false,
+  },
+  {
+    attr: "Uso como forro de teto",
+    pfb: "Aprovado com ART/CREA",
+    mdf: "Estrutura necessária",
+    papel: "Não recomendado",
+    forro: "Sim, mas visual básico",
+    tinta: "Sim (sem textura)",
+    highlight: false,
   },
   {
     attr: "Resistência ao fogo",
     pfb: "Não propaga chamas",
     mdf: "Classe C/D",
-    pfbGood: true,
-    highlight: false,
-  },
-  {
-    attr: "Resistência à flexão",
-    pfb: "72,3 MPa",
-    mdf: "17–22 MPa",
-    pfbGood: true,
-    highlight: true,
-  },
-  {
-    attr: "Flexibilidade / instalação em curvas",
-    pfb: "Possível (curvável)",
-    mdf: "Não recomendado",
-    pfbGood: true,
-    highlight: false,
-  },
-  {
-    attr: "Vida útil (clima úmido)",
-    pfb: "> 5 anos",
-    mdf: "2–3 anos em Manaus",
-    pfbGood: true,
-    highlight: true,
-  },
-  {
-    attr: "Anti-mofo · Anti-cupim",
-    pfb: "Resistente por natureza",
-    mdf: "Suscetível à umidade",
-    pfbGood: true,
-    highlight: false,
-  },
-  {
-    attr: "Poeira / Resíduo na instalação",
-    pfb: "Mínimo",
-    mdf: "Poeira tóxica de MDF",
-    pfbGood: true,
+    papel: "Inflamável",
+    forro: "Inflamável",
+    tinta: "Varia",
     highlight: false,
   },
   {
     attr: "Tempo de instalação",
-    pfb: "2–3 horas por cômodo",
+    pfb: "2–3h por cômodo",
     mdf: "Dias (obra pesada)",
-    pfbGood: true,
+    papel: "4–6h (secagem incluída)",
+    forro: "Obra metálica necessária",
+    tinta: "1–2 dias (secagem)",
     highlight: false,
   },
   {
-    attr: "Custo de mão de obra",
-    pfb: "~ R$ 32/m²",
-    mdf: "R$ 60–90/m²",
-    pfbGood: true,
+    attr: "Adequado para áreas úmidas",
+    pfb: "Sim",
+    mdf: "Não",
+    papel: "Não",
+    forro: "Parcialmente",
+    tinta: "Com tinta especial",
     highlight: true,
   },
   {
-    attr: "Peso",
-    pfb: "3,5 kg/m²",
-    mdf: "11 kg/m²",
-    pfbGood: true,
+    attr: "Mão de obra",
+    pfb: "Barato e Rápido",
+    mdf: "Caro e Demorado",
+    papel: "Barato e Rápido",
+    forro: "Complexo",
+    tinta: "Caro e Demorado",
     highlight: false,
   },
   {
     attr: "Matéria-prima",
     pfb: "Bambu renovável · sem formol",
     mdf: "Madeira + formol",
-    pfbGood: true,
+    papel: "Papel/vinil sintético",
+    forro: "PVC",
+    tinta: "Pigmentos + resinas",
     highlight: false,
   },
 ];
@@ -359,6 +386,7 @@ export default function TecnologiaPage() {
               ))}
             </div>
           </div>
+          <MdfComparison />
         </div>
       </section>
 
@@ -454,37 +482,45 @@ export default function TecnologiaPage() {
         </div>
       </section>
 
-      {/* Comparison Table */}
+      {/* Comparison Table — PFB vs all alternatives */}
       <section className="py-24 bg-[#f9f9f9]">
         <div className="max-w-[1280px] mx-auto px-8 lg:px-16">
           <p className="text-[#74777f] text-xs tracking-[0.2em] uppercase font-semibold font-[var(--font-inter)] mb-4">
             Comparativo técnico completo
           </p>
           <h2 className="font-[var(--font-noto-serif)] text-[#002045] text-3xl lg:text-4xl font-normal mb-3">
-            PFB Orbital vs MDF Convencional
+            PFB Orbital vs MDF vs Papel de Parede vs Forro PVC vs Tinta
           </h2>
           <p className="text-[#43474e] text-sm font-[var(--font-inter)] mb-12 max-w-2xl">
-            11 critérios avaliados com base em dados de ficha técnica
-            e condições reais de uso no clima do Amazonas.
+            10 critérios avaliados com base em dados de ficha técnica e condições reais de uso no clima do Amazonas.
           </p>
 
           <div className="overflow-x-auto">
-            <table className="w-full border-collapse">
+            <table className="w-full border-collapse min-w-[760px]">
               <thead>
                 <tr className="border-b-2 border-[#e2e2e2]">
-                  <th className="text-left py-5 px-4 text-xs tracking-[0.1em] uppercase font-semibold font-[var(--font-inter)] text-[#74777f]">
+                  <th className="text-left py-5 px-4 text-xs tracking-[0.1em] uppercase font-semibold font-[var(--font-inter)] text-[#74777f] w-[18%]">
                     Critério
                   </th>
-                  <th className="text-left py-5 px-4 font-[var(--font-noto-serif)] text-[#002045] text-xl font-normal">
+                  <th className="text-left py-5 px-4 font-[var(--font-noto-serif)] text-[#002045] text-lg font-normal w-[18%]">
                     PFB Orbital
                   </th>
-                  <th className="text-left py-5 px-4 font-[var(--font-noto-serif)] text-[#74777f] text-xl font-normal">
-                    MDF Convencional
+                  <th className="text-left py-5 px-4 font-[var(--font-noto-serif)] text-[#74777f] text-lg font-normal w-[16%]">
+                    MDF
+                  </th>
+                  <th className="text-left py-5 px-4 font-[var(--font-noto-serif)] text-[#74777f] text-lg font-normal w-[16%]">
+                    Papel de Parede
+                  </th>
+                  <th className="text-left py-5 px-4 font-[var(--font-noto-serif)] text-[#74777f] text-lg font-normal w-[16%]">
+                    Forro PVC
+                  </th>
+                  <th className="text-left py-5 px-4 font-[var(--font-noto-serif)] text-[#74777f] text-lg font-normal w-[16%]">
+                    Tinta
                   </th>
                 </tr>
               </thead>
               <tbody>
-                {comparison.map(({ attr, pfb, mdf, pfbGood, highlight }) => (
+                {comparison.map(({ attr, pfb, mdf, papel, forro, tinta, highlight }) => (
                   <tr
                     key={attr}
                     className={`border-b border-[#eeeeee] transition-colors ${
@@ -493,24 +529,14 @@ export default function TecnologiaPage() {
                   >
                     <td className="py-4 px-4 text-sm font-medium font-[var(--font-inter)] text-[#1a1c1c]">
                       {attr}
-                      {highlight && (
-                        <span className="ml-2 text-[9px] tracking-[0.08em] uppercase font-bold text-[#3b6934] font-[var(--font-inter)]">
-                          destaque
-                        </span>
-                      )}
                     </td>
-                    <td className="py-4 px-4">
-                      <span
-                        className={`text-sm font-semibold font-[var(--font-inter)] ${
-                          pfbGood ? "text-[#002045]" : "text-[#74777f]"
-                        }`}
-                      >
-                        {pfb}
-                      </span>
+                    <td className="py-4 px-4 text-sm font-semibold text-[#002045] font-[var(--font-inter)]">
+                      {pfb}
                     </td>
-                    <td className="py-4 px-4 text-sm text-[#74777f] font-[var(--font-inter)]">
-                      {mdf}
-                    </td>
+                    <td className="py-4 px-4 text-sm text-[#74777f] font-[var(--font-inter)]">{mdf}</td>
+                    <td className="py-4 px-4 text-sm text-[#74777f] font-[var(--font-inter)]">{papel}</td>
+                    <td className="py-4 px-4 text-sm text-[#74777f] font-[var(--font-inter)]">{forro}</td>
+                    <td className="py-4 px-4 text-sm text-[#74777f] font-[var(--font-inter)]">{tinta}</td>
                   </tr>
                 ))}
               </tbody>

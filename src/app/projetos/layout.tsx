@@ -1,14 +1,27 @@
 import type { Metadata } from "next";
 
 export const metadata: Metadata = {
-  title: "Projetos — Antes e Depois com Revestimento PFB Orbital",
+  title: "Projetos em Manaus — Antes e Depois com Revestimento PFB",
   description:
-    "Galeria de projetos executados com PFB Orbital em Manaus: lavabos, escritórios, restaurantes, cozinhas e embarcações náuticas. Veja a transformação real antes e depois.",
+    "Galeria de projetos reais executados com PFB Orbital em Manaus: lavabos, escritórios, restaurantes, cozinhas e embarcações náuticas. Transformação antes e depois sem obra.",
+  keywords: [
+    "projetos revestimento Manaus",
+    "antes e depois revestimento",
+    "revestimento lavabo Manaus",
+    "revestimento banheiro antes depois",
+    "revestimento restaurante Manaus",
+    "revestimento escritório Manaus",
+    "revestimento náutico Manaus",
+    "reforma sem obra Manaus",
+    "transformação ambiente revestimento",
+    "revestimento residencial Manaus",
+    "revestimento comercial Manaus",
+  ],
   alternates: { canonical: "https://orbitalrevestimentos-site.vercel.app/projetos" },
   openGraph: {
-    title: "Projetos — Antes e Depois com Revestimento PFB Orbital",
+    title: "Projetos em Manaus — Antes e Depois com Revestimento PFB",
     description:
-      "Galeria real de projetos com PFB Orbital: residencial, comercial e náutico. Veja as transformações antes e depois.",
+      "Galeria real de projetos com PFB Orbital em Manaus: lavabos, restaurantes, escritórios e náutico. Transformações antes e depois sem obra.",
     url: "https://orbitalrevestimentos-site.vercel.app/projetos",
     images: [
       {
