@@ -1,7 +1,21 @@
+import type { Metadata } from "next";
 import Image from "next/image";
 import Link from "next/link";
 import ScrollReveal from "@/components/ScrollReveal";
 import AnimatedStat from "@/components/AnimatedStat";
+
+export const metadata: Metadata = {
+  title: "Orbital Revestimentos — Instalado em horas. Admirado por anos.",
+  description:
+    "Placas Flexíveis de Bambu (PFB) eco-premium para transformar paredes e tetos em Manaus. Sem obra, sem poeira. 3 linhas, 15 acabamentos, pronta-entrega.",
+  alternates: { canonical: "https://orbitalrevestimentos-site.vercel.app" },
+  openGraph: {
+    title: "Orbital Revestimentos — Instalado em horas. Admirado por anos.",
+    description:
+      "Placas Flexíveis de Bambu (PFB) eco-premium para paredes e tetos em Manaus. Sem obra, sem poeira. Pronta-entrega.",
+    url: "https://orbitalrevestimentos-site.vercel.app",
+  },
+};
 
 const CATALOGUE_URL =
   "https://drive.google.com/file/d/1zhm5MgKGSDRThqk8FqqwfX-WijI7K-iD/view?usp=drive_link";

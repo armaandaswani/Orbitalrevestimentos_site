@@ -1,5 +1,19 @@
+import type { Metadata } from "next";
 import Image from "next/image";
 import Link from "next/link";
+
+export const metadata: Metadata = {
+  title: "Tecnologia PFB — Como funciona a Placa Flexível de Bambu",
+  description:
+    "Conheça a tecnologia por trás do PFB Orbital: 5 camadas de engenharia, substrato de bambu ecológico, impermeável, anti-mofo, anti-cupim e aprovado com ART de Eng. Civil.",
+  alternates: { canonical: "https://orbitalrevestimentos-site.vercel.app/tecnologia" },
+  openGraph: {
+    title: "Tecnologia PFB — Como funciona a Placa Flexível de Bambu",
+    description:
+      "5 camadas de engenharia, substrato de bambu ecológico. Impermeável, anti-mofo, aprovado para ambientes úmidos e projetos navais.",
+    url: "https://orbitalrevestimentos-site.vercel.app/tecnologia",
+  },
+};
 
 const layers = [
   { name: "Film Protetora UV", desc: "Proteção contra riscos, radiação UV e impactos superficiais. Mantém a cor e o brilho ao longo dos anos." },
