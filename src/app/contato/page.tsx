@@ -105,11 +105,7 @@ const SPACES: Space[] = [
     msg: "O PFB Orbital é exclusivo para interiores — não certificado para uso externo.",
     hint: "Para o hall de entrada, recepção ou sala de frente, o resultado é excepcional.",
   },
-  {
-    id: "box", label: "Box / Ducha", viability: "no", redirect: "banheiro",
-    msg: "O PFB Orbital não é indicado para fluxo direto e constante de água como o interior de um box.",
-    hint: "As paredes secas do banheiro, lavabo e área da banheira são ideais para o Orbital.",
-  },
+  { id: "box", label: "Box / Ducha", viability: "complex" },
 ];
 
 // ─── FAQ ──────────────────────────────────────────────────────────────────────
@@ -120,7 +116,7 @@ const faqs = [
   },
   {
     q: "Funciona em banheiros e ambientes úmidos?",
-    a: "Sim. O PFB Orbital absorve apenas 0,2% em 48h de imersão (contra 35% do MDF). Indicado para banheiros e lavabos — mas não para o interior do box com fluxo direto de água.",
+    a: "Sim. O PFB Orbital absorve apenas 0,2% em 48h de imersão (contra 35% do MDF). Indicado para banheiros, lavabos e box / ducha.",
   },
   {
     q: "E em tetos?",
