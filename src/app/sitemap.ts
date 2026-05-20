@@ -26,7 +26,13 @@ export default function sitemap(): MetadataRoute.Sitemap {
       url: `${BASE_URL}/tecnologia`,
       lastModified: new Date(),
       changeFrequency: "yearly",
-      priority: 0.7,
+      priority: 0.85,
+    },
+    {
+      url: `${BASE_URL}/guias/mdf-manaus`,
+      lastModified: new Date(),
+      changeFrequency: "yearly",
+      priority: 0.8,
     },
     {
       url: `${BASE_URL}/parcerias`,

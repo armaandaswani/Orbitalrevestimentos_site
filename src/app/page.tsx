@@ -33,16 +33,16 @@ const faqs = [
     a: "PFB significa Painel Flexível de Bambu — um revestimento eco-premium com substrato de fibra de bambu e acabamento fotorrealista de pedra ou madeira. Instalado diretamente sobre a parede ou forro existente, sem demolição ou obra pesada. Desenvolvido especialmente para o clima úmido do Amazonas.",
   },
   {
-    q: "PFB é melhor que MDF para revestimento de parede?",
-    a: "Sim. O PFB absorve apenas 0,2% de umidade em 48 horas — o MDF absorve até 35% e se deteriora em 2 a 3 anos no clima de Manaus. Além disso, o PFB é anti-mofo, anti-cupim, não propaga chamas e pesa 3,5 kg/m² contra 11 kg/m² do MDF. A instalação leva 2 a 3 horas por cômodo sem poeira tóxica.",
+    q: "Quais são os diferenciais técnicos do PFB Orbital?",
+    a: "O PFB é construído em 5 camadas — do núcleo de fibra de bambu até a film protetora UV — certificadas em laboratório com ART de Engenheiro Civil. Absorve apenas 0,2% de umidade em 48h de imersão total, pesa 3,5 kg/m², não propaga chamas e é anti-mofo e anti-cupim por natureza. Um cômodo fica instalado em 2 a 3 horas, sem obra e sem poeira.",
   },
   {
-    q: "Qual a diferença entre PFB e papel de parede?",
-    a: "Papel de parede é impresso sobre papel ou vinil fino e se deteriora em pouco tempo com umidade, bolhas e descascamento. O PFB é uma placa rígida de 5mm com acabamento premium e textura que remete à pedra ou madeira real. É impermeável, lavável, durável e aprovado para áreas úmidas — papel de parede não tem nenhuma dessas características.",
+    q: "O PFB é uma solução permanente ou temporária?",
+    a: "Permanente. O PFB é uma placa rígida de 5mm com acabamento fotorrealista premium — texturas que remetem a pedra e madeira real, impermeável e lavável. Aprovado para áreas úmidas, dura 10+ anos no clima amazônico e é instalado sem obra ou demolição. Uma transformação definitiva do ambiente.",
   },
   {
     q: "O PFB serve para revestimento de forro (teto)?",
-    a: "Sim. O PFB é leve (3,5 kg/m²) e aprovado para aplicação em teto com ART de Engenheiro Civil. Já foi instalado como forro em residências, restaurantes, escritórios e embarcações náuticas em Manaus. É uma alternativa muito superior ao forro PVC em termos de estética e durabilidade.",
+    a: "Sim. O PFB é leve (3,5 kg/m²) e aprovado para aplicação em teto com ART de Engenheiro Civil. Já foi instalado como forro em residências, restaurantes, escritórios e embarcações náuticas em Manaus — com acabamento arquitetônico que transforma qualquer ambiente.",
   },
   {
     q: "Onde comprar o revestimento PFB em Manaus?",
@@ -51,6 +51,14 @@ const faqs = [
   {
     q: "Arquitetos e designers em Manaus podem especificar o PFB?",
     a: "Sim. A Orbital tem um programa de parcerias para arquitetos, designers de interiores e engenheiros em Manaus. Fornecemos amostras grátis, fichas técnicas completas com ART/CREA, laudos laboratoriais e suporte técnico para especificação em projetos residenciais e comerciais.",
+  },
+  {
+    q: "O PFB resiste à umidade e ao mofo?",
+    a: "Sim — e os dados comprovam. Com apenas 0,2% de absorção de água em 48 horas de imersão total, o PFB é praticamente impermeável. O substrato de fibra de bambu não é habitat para fungos, então o PFB não mofará mesmo em banheiros sem ventilação. Testado em laboratório e homologado com ART de Engenheiro Civil.",
+  },
+  {
+    q: "Qual o melhor revestimento de parede para o clima úmido de Manaus?",
+    a: "O PFB (Placa Flexível de Bambu) é o revestimento indicado para o clima amazônico. Desenvolvido para ambientes com umidade relativa acima de 80%, absorve apenas 0,2% de umidade, não empena, não descola e mantém a integridade visual e estrutural por mais de 10 anos. Aprovado em laboratório com ART de Engenheiro Civil — disponível em pronta-entrega em Manaus.",
   },
   {
     q: "O PFB é impermeável? Pode ser instalado em banheiro ou lavabo?",

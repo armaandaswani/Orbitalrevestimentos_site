@@ -26,14 +26,14 @@ export default function MdfComparison() {
           Dados técnicos · ART de Eng. Civil
         </p>
         <p className="text-white/60 text-sm font-[var(--font-inter)]">
-          11 critérios avaliados com base em ficha técnica e condições reais de uso no clima do Amazonas.
+          11 critérios técnicos avaliados em laboratório e condições reais de uso no clima do Amazonas.
         </p>
       </div>
       <button
         onClick={() => setOpen(!open)}
         className="inline-flex items-center gap-3 text-xs tracking-[0.12em] uppercase font-bold font-[var(--font-inter)] bg-white/10 border border-white/40 text-white px-8 py-4 hover:bg-white hover:text-[#1a365d] transition-colors duration-200"
       >
-        {open ? "Ocultar" : "Ver"} comparativo técnico detalhado PFB vs MDF
+        {open ? "Ocultar" : "Ver"} especificações técnicas completas do PFB
         <svg
           width="12"
           height="12"

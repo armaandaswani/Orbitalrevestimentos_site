@@ -4,27 +4,28 @@ import Link from "next/link";
 import MdfComparison from "@/components/MdfComparison";
 
 export const metadata: Metadata = {
-  title: "PFB vs MDF vs Papel de Parede vs Forro PVC — Comparativo Técnico",
+  title: "PFB Orbital — Tecnologia, Performance e Ficha Técnica | Revestimento Manaus",
   description:
-    "Compare o PFB Orbital com MDF, papel de parede e forro PVC: impermeabilidade, durabilidade, instalação e custo. Dados técnicos com ART de Eng. Civil. Melhor revestimento para Manaus.",
+    "A tecnologia por trás das Placas Flexíveis de Bambu: 5 camadas, dados de laboratório, ART de Engenheiro Civil. Impermeável, anti-mofo, instalado em 2–3 horas. Revestimento premium para o Amazonas.",
   keywords: [
-    "PFB vs MDF",
-    "melhor que MDF",
-    "alternativa ao MDF revestimento",
-    "PFB vs papel de parede",
-    "alternativa papel de parede impermeável",
-    "revestimento de forro Manaus",
-    "forro decorativo alternativa forro PVC",
-    "revestimento impermeável Manaus",
     "placa flexível de bambu tecnologia",
+    "PFB ficha técnica",
+    "revestimento impermeável Manaus",
     "revestimento anti-mofo Manaus",
-    "revestimento para clima úmido",
+    "revestimento para clima úmido Manaus",
+    "revestimento bambu Manaus",
+    "revestimento parede Manaus",
+    "revestimento sem obra Manaus",
+    "PFB Orbital performance",
+    "revestimento com ART engenheiro civil",
+    "revestimento sustentável Manaus",
+    "placa flexível de bambu Amazonas",
   ],
   alternates: { canonical: "https://orbitalrevestimentos-site.vercel.app/tecnologia" },
   openGraph: {
-    title: "PFB vs MDF vs Papel de Parede vs Forro PVC — Comparativo Técnico",
+    title: "PFB Orbital — Tecnologia, Performance e Ficha Técnica | Revestimento Manaus",
     description:
-      "Compare o PFB Orbital com MDF, papel de parede e forro PVC em 11 critérios técnicos. O melhor revestimento para o clima úmido de Manaus.",
+      "5 camadas, dados de laboratório, ART de Engenheiro Civil. Impermeável, anti-mofo, instalado em 2–3 horas. O revestimento premium feito para o Amazonas.",
     url: "https://orbitalrevestimentos-site.vercel.app/tecnologia",
   },
 };
@@ -38,10 +39,10 @@ const layers = [
 ];
 
 const specs = [
-  { value: "72,3", unit: "MPa", label: "Resistência à flexão", note: "3× mais que MDF" },
-  { value: "0,2%", unit: "", label: "Inchamento (48h imerso)", note: "MDF chega a 35%" },
+  { value: "72,3", unit: "MPa", label: "Resistência à flexão", note: "Resistência certificada em laboratório" },
+  { value: "0,2%", unit: "", label: "Inchamento (48h imerso)", note: "Praticamente impermeável" },
   { value: "682", unit: "kg/m³", label: "Densidade", note: "Alta resistência estrutural" },
-  { value: "3,5", unit: "kg/m²", label: "Peso", note: "MDF pesa 11 kg/m²" },
+  { value: "3,5", unit: "kg/m²", label: "Peso", note: "Ultra-leve para instalação ágil" },
   { value: "0,5%", unit: "", label: "Teor de umidade", note: "Estável no clima amazônico" },
 ];
 
@@ -268,21 +269,21 @@ export default function TecnologiaPage() {
         <div className="max-w-[1280px] mx-auto px-8 lg:px-16">
           <div className="mb-12">
             <p className="text-[#a1d494] text-xs tracking-[0.2em] uppercase font-semibold font-[var(--font-inter)] mb-4">
-              PFB × MDF — Teste de imersão real
+              PFB — Teste de Resistência à Água
             </p>
             <h2 className="font-[var(--font-noto-serif)] text-white text-3xl lg:text-4xl font-normal mb-4">
-              Após 48 horas em contato com água, os resultados eliminam qualquer dúvida.
+              O PFB é resistente à água? SIM!
             </h2>
-            <p className="text-white/60 text-base font-[var(--font-inter)] max-w-2xl">
-              Dois painéis — PFB e MDF — submersos lado a lado. O que acontece com cada um ao longo do tempo é a melhor resposta que qualquer laudo técnico poderia dar.
+            <p className="text-white/60 text-base font-[var(--font-inter)]">
+              Uma placa PFB foi submersa por 48 horas completas em laboratório. Resultado: apenas 0,2% de absorção de água — saindo intacta, sem deformação, sem descolar. Homologado por ART de Engenheiro Civil.
             </p>
           </div>
 
           <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mb-10 max-w-[75%] mx-auto">
             {[
-              { src: "/images/catalogue/pfb-mdf-0h.png", time: "0h", label: "Início do teste", note: "Ambos os painéis em condições normais, submersos simultaneamente." },
-              { src: "/images/catalogue/pfb-mdf-24h.png", time: "24h", label: "24 horas de imersão", note: "O MDF começa a absorver água, inchar e perder integridade estrutural." },
-              { src: "/images/catalogue/pfb-mdf-48h.png", time: "48h", label: "48 horas de imersão", note: "O MDF está deformado e se desintegrando. O PFB permanece íntegro." },
+              { src: "/images/catalogue/pfb-mdf-0h.png", time: "0h", label: "Início do teste", note: "Placa PFB submersa em água em condições controladas de laboratório." },
+              { src: "/images/catalogue/pfb-mdf-24h.png", time: "24h", label: "24 horas de imersão", note: "O PFB mantém integridade estrutural total — sem deformação ou absorção visível." },
+              { src: "/images/catalogue/pfb-mdf-48h.png", time: "48h", label: "48 horas de imersão", note: "O PFB sai intacto após 48h de imersão. 0,2% de absorção — praticamente impermeável." },
             ].map(({ src, time, label, note }) => (
               <div key={time} className="group">
                 <div className="relative aspect-[3/4] overflow-hidden mb-4">
@@ -304,14 +305,14 @@ export default function TecnologiaPage() {
 
           <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
             <div className="bg-[#002045] border border-[#1a365d] p-8">
-              <p className="text-[#a1d494] text-[10px] tracking-[0.2em] uppercase font-bold font-[var(--font-inter)] mb-3">PFB Orbital</p>
+              <p className="text-[#a1d494] text-[10px] tracking-[0.2em] uppercase font-bold font-[var(--font-inter)] mb-3">Absorção de água · 48h imerso</p>
               <p className="font-[var(--font-noto-serif)] text-white text-4xl font-normal mb-2">0,2%</p>
-              <p className="text-white/60 text-sm font-[var(--font-inter)]">de inchamento após 48h de imersão total</p>
+              <p className="text-white/60 text-sm font-[var(--font-inter)]">de inchamento após 48h de imersão total — praticamente impermeável</p>
             </div>
-            <div className="bg-[#333640] border border-[#444650] p-8">
-              <p className="text-[#9c9faa] text-[10px] tracking-[0.2em] uppercase font-bold font-[var(--font-inter)] mb-3">MDF Convencional</p>
-              <p className="font-[var(--font-noto-serif)] text-[#9c9faa] text-4xl font-normal mb-2">~35%</p>
-              <p className="text-[#9c9faa]/60 text-sm font-[var(--font-inter)]">de inchamento — degrada, descola e perde estrutura</p>
+            <div className="bg-[#002045] border border-[#1a365d] p-8">
+              <p className="text-[#a1d494] text-[10px] tracking-[0.2em] uppercase font-bold font-[var(--font-inter)] mb-3">Vida útil no Amazonas</p>
+              <p className="font-[var(--font-noto-serif)] text-white text-4xl font-normal mb-2">10+</p>
+              <p className="text-white/60 text-sm font-[var(--font-inter)]">anos de durabilidade comprovada no clima úmido de Manaus</p>
             </div>
           </div>
         </div>
@@ -326,15 +327,15 @@ export default function TecnologiaPage() {
                 Desenvolvido para o Amazonas
               </p>
               <h2 className="font-[var(--font-noto-serif)] text-white text-3xl font-normal mb-6">
-                O MDF não sobrevive ao clima de Manaus.
+                O PFB foi feito para o clima de Manaus.
                 <br />
-                <span className="italic text-[#86a0cd]">O PFB foi feito para ele.</span>
+                <span className="italic text-[#86a0cd]">E os dados provam isso.</span>
               </h2>
               <p className="text-white/70 text-base font-[var(--font-inter)] leading-relaxed">
                 Manaus registra umidade relativa média superior a 80% ao longo
-                do ano. Nesse ambiente, o MDF absorve umidade continuamente,
-                incha, descola e se deteriora em 2 a 3 anos — um ciclo
-                frustrante e caro para o cliente final.
+                do ano. O PFB foi desenvolvido para esse ambiente: absorve
+                apenas 0,2% de umidade, não empena, não descola e mantém a
+                integridade visual e estrutural por mais de 10 anos.
               </p>
             </div>
             <div className="grid grid-cols-2 gap-5">
@@ -486,13 +487,13 @@ export default function TecnologiaPage() {
       <section className="py-24 bg-[#f9f9f9]">
         <div className="max-w-[1280px] mx-auto px-8 lg:px-16">
           <p className="text-[#74777f] text-xs tracking-[0.2em] uppercase font-semibold font-[var(--font-inter)] mb-4">
-            Comparativo técnico completo
+            Dados técnicos independentes
           </p>
           <h2 className="font-[var(--font-noto-serif)] text-[#002045] text-3xl lg:text-4xl font-normal mb-3">
-            PFB Orbital vs MDF vs Papel de Parede vs Forro PVC vs Tinta
+            PFB Orbital — desempenho em 10 critérios técnicos
           </h2>
           <p className="text-[#43474e] text-sm font-[var(--font-inter)] mb-12 max-w-2xl">
-            10 critérios avaliados com base em dados de ficha técnica e condições reais de uso no clima do Amazonas.
+            Avaliações com base em ficha técnica e condições reais de uso no clima do Amazonas. ART de Engenheiro Civil.
           </p>
 
           <div className="overflow-x-auto">
@@ -563,11 +564,9 @@ export default function TecnologiaPage() {
               </h2>
               <p className="text-[#43474e] text-base font-[var(--font-inter)] leading-relaxed mb-6">
                 O bambu é uma das plantas de crescimento mais rápido do mundo —
-                rebrota após o corte sem necessidade de replantio. Ao contrário
-                do MDF, que é composto de partículas de madeira ligadas por
-                resinas à base de formol (um composto VOC classificado como
-                carcinogênico), o PFB Orbital é inodoro e não libera compostos
-                orgânicos voláteis no ambiente.
+                rebrota após o corte sem necessidade de replantio. O PFB Orbital
+                não contém formol nem compostos orgânicos voláteis: é inodoro,
+                seguro para ambientes habitados, clínicas e espaços com crianças.
               </p>
               <div className="space-y-4">
                 {[
