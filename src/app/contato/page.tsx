@@ -147,7 +147,7 @@ function WaIcon({ size = 15 }: { size?: number }) {
 
 // ─── Main component ───────────────────────────────────────────────────────────
 export default function ContatoPage() {
-  const [step, setStep] = useState<1 | 2 | 3>(1);
+  const [step, setStep] = useState<1 | 2 | 3 | 4>(1);
   const [selectedSpace, setSelectedSpace] = useState<Space | null>(null);
   const [selectedLine, setSelectedLine] = useState<ProductLine | null>(null);
   const [selectedProduct, setSelectedProduct] = useState<Product | null>(null);
@@ -155,7 +155,9 @@ export default function ContatoPage() {
   const [width, setWidth] = useState("");
   const [height, setHeight] = useState("");
   const [sqmInput, setSqmInput] = useState("");
+  const [architectName, setArchitectName] = useState("");
   const [showResult, setShowResult] = useState(false);
+  const [showSavings, setShowSavings] = useState(false);
 
   const m2 =
     dimMode === "lxa"
@@ -197,10 +199,10 @@ export default function ContatoPage() {
 
   const waMsg =
     selectedProduct && selectedSpace && m2 > 0
-      ? `Olá! Simulei no site da Orbital. Acabamento: ${selectedProduct.name} (${selectedProduct.code} — ${selectedProduct.linha}). Espaço: ${selectedSpace.label}. Área: ${m2.toFixed(1)} m² (${plates} placa${plates !== 1 ? "s" : ""}). Gostaria de receber um orçamento.`
+      ? `Olá! Simulei no site da Orbital. Acabamento: ${selectedProduct.name} (${selectedProduct.code} — ${selectedProduct.linha}). Espaço: ${selectedSpace.label}. Área: ${m2.toFixed(1)} m² (${plates} placa${plates !== 1 ? "s" : ""}).${architectName ? ` Arquiteto/Designer: ${architectName}.` : ""} Gostaria de receber um orçamento.`
       : "Olá! Tenho interesse no PFB Orbital e gostaria de fazer um orçamento.";
 
-  function goToStep(n: 1 | 2 | 3) {
+  function goToStep(n: 1 | 2 | 3 | 4) {
     setStep(n);
     setShowResult(false);
   }
@@ -213,7 +215,9 @@ export default function ContatoPage() {
     setWidth("");
     setHeight("");
     setSqmInput("");
+    setArchitectName("");
     setShowResult(false);
+    setShowSavings(false);
   }
 
   const canAdvance1 = selectedSpace !== null && selectedSpace.viability !== "no";
@@ -292,6 +296,7 @@ export default function ContatoPage() {
               { n: 1 as const, label: "Espaço" },
               { n: 2 as const, label: "Modelo" },
               { n: 3 as const, label: "Dimensões" },
+              { n: 4 as const, label: "Arquiteto" },
             ]).map(({ n, label }, i) => (
               <React.Fragment key={n}>
                 <button
@@ -323,7 +328,7 @@ export default function ContatoPage() {
                     </span>
                   </div>
                 </button>
-                {i < 2 && (
+                {i < 3 && (
                   <div
                     className={`flex-1 h-px mx-3 max-w-[80px] ${
                       n < step ? "bg-[#3b6934]" : "bg-[#d8d8d8]"
@@ -669,13 +674,59 @@ export default function ContatoPage() {
                   Voltar
                 </button>
                 <button
-                  onClick={() => canCalculate && setShowResult(true)}
+                  onClick={() => canCalculate && goToStep(4)}
                   disabled={!canCalculate}
                   className={`inline-flex items-center gap-2 text-xs tracking-[0.12em] uppercase font-bold font-[var(--font-inter)] px-8 py-4 transition-colors ${
                     canCalculate
                       ? "bg-[#002045] text-white hover:bg-[#1a365d]"
                       : "bg-[#e2e2e2] text-[#aaaaaa] cursor-not-allowed"
                   }`}
+                >
+                  Próximo: Arquiteto
+                  <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5">
+                    <path d="M5 12h14M12 5l7 7-7 7" />
+                  </svg>
+                </button>
+              </div>
+            </div>
+          )}
+
+          {/* ── Step 4: Architect ────────────────────────────────────────── */}
+          {step === 4 && (
+            <div className="bg-white border border-[#e2e2e2] p-8 lg:p-10">
+              <h3 className="font-[var(--font-noto-serif)] text-[#002045] text-xl font-normal mb-2">
+                Você está trabalhando com um arquiteto ou designer?
+              </h3>
+              <p className="text-[#74777f] text-sm font-[var(--font-inter)] mb-8">
+                Campo opcional — nos ajuda a personalizar o atendimento.
+              </p>
+
+              <div className="max-w-md mb-8">
+                <label className="block text-[10px] tracking-[0.15em] uppercase font-bold font-[var(--font-inter)] text-[#74777f] mb-2">
+                  Nome do arquiteto ou designer
+                </label>
+                <input
+                  type="text"
+                  value={architectName}
+                  onChange={(e) => setArchitectName(e.target.value)}
+                  placeholder="ex: Ana Lima Arquitetura"
+                  className="w-full border border-[#e2e2e2] px-4 py-3 text-sm font-[var(--font-inter)] text-[#002045] focus:outline-none focus:border-[#002045] transition-colors"
+                />
+              </div>
+
+              <div className="flex items-center justify-between">
+                <button
+                  onClick={() => goToStep(3)}
+                  className="flex items-center gap-1.5 text-xs tracking-[0.1em] uppercase font-semibold font-[var(--font-inter)] text-[#74777f] hover:text-[#002045] transition-colors"
+                >
+                  <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5">
+                    <path d="M19 12H5M12 5l-7 7 7 7" />
+                  </svg>
+                  Voltar
+                </button>
+                <button
+                  onClick={() => setShowResult(true)}
+                  className="inline-flex items-center gap-2 text-xs tracking-[0.12em] uppercase font-bold font-[var(--font-inter)] px-8 py-4 bg-[#002045] text-white hover:bg-[#1a365d] transition-colors"
                 >
                   Ver simulação
                   <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5">
@@ -862,49 +913,45 @@ export default function ContatoPage() {
                   </div>
                 </div>
 
-                {/* Savings callout */}
-                {savings10y > 0 ? (
-                  <div className="bg-[#f0f9eb] border border-[#3b6934]/30 px-6 py-6 flex flex-col sm:flex-row sm:items-center gap-6">
-                    <div className="flex-1">
-                      <p className="text-[#3b6934] text-[10px] tracking-[0.15em] uppercase font-bold font-[var(--font-inter)] mb-2">
-                        Economia estimada em 10 anos com PFB Orbital
-                      </p>
-                      <p className="font-[var(--font-noto-serif)] text-[#002045] text-4xl font-normal mb-2">
-                        {fmt(savings10y)}
-                      </p>
-                      <p className="text-[#43474e] text-xs font-[var(--font-inter)] leading-relaxed">
-                        Sem contar o custo de transtorno, reforma e substituição de material ao longo dos anos.
-                      </p>
-                    </div>
-                    <a
-                      href={`${WA_BASE}${encodeURIComponent(waMsg)}`}
-                      target="_blank"
-                      rel="noopener noreferrer"
-                      className="flex-shrink-0 inline-flex items-center gap-2.5 bg-[#002045] text-white text-xs tracking-[0.12em] uppercase font-bold font-[var(--font-inter)] px-7 py-4 hover:bg-[#1a365d] transition-colors"
+                {/* CTA */}
+                <div className="flex flex-col sm:flex-row sm:items-center gap-4 mb-4">
+                  <a
+                    href={`${WA_BASE}${encodeURIComponent(waMsg)}`}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="inline-flex items-center gap-2.5 bg-[#002045] text-white text-xs tracking-[0.12em] uppercase font-bold font-[var(--font-inter)] px-7 py-4 hover:bg-[#1a365d] transition-colors"
+                  >
+                    <WaIcon />
+                    Solicitar orçamento
+                  </a>
+                  {savings10y > 0 && (
+                    <button
+                      onClick={() => setShowSavings(!showSavings)}
+                      className="inline-flex items-center gap-2 text-xs tracking-[0.1em] uppercase font-semibold font-[var(--font-inter)] text-[#3b6934] hover:text-[#002045] transition-colors"
                     >
-                      <WaIcon />
-                      Solicitar orçamento
-                    </a>
-                  </div>
-                ) : (
-                  <div className="bg-[#eef2f8] border border-[#1a365d]/20 px-6 py-5 flex flex-col sm:flex-row sm:items-center gap-4">
-                    <div className="flex-1">
-                      <p className="text-[#002045] text-xs font-bold font-[var(--font-inter)] mb-1">
-                        O PFB Orbital é um investimento inicial maior — mas é a instalação definitiva.
-                      </p>
-                      <p className="text-[#43474e] text-xs font-[var(--font-inter)]">
-                        Sem reformas recorrentes, sem deterioração, sem custo de substituição.
-                      </p>
-                    </div>
-                    <a
-                      href={`${WA_BASE}${encodeURIComponent(waMsg)}`}
-                      target="_blank"
-                      rel="noopener noreferrer"
-                      className="flex-shrink-0 inline-flex items-center gap-2.5 bg-[#002045] text-white text-xs tracking-[0.12em] uppercase font-bold font-[var(--font-inter)] px-7 py-4 hover:bg-[#1a365d] transition-colors"
-                    >
-                      <WaIcon />
-                      Solicitar orçamento
-                    </a>
+                      <svg
+                        width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"
+                        className={`transition-transform duration-300 ${showSavings ? "rotate-180" : ""}`}
+                      >
+                        <path d="M6 9l6 6 6-6" />
+                      </svg>
+                      {showSavings ? "Ocultar" : "Ver"} economia estimada em 10 anos
+                    </button>
+                  )}
+                </div>
+
+                {/* Savings dropdown */}
+                {savings10y > 0 && showSavings && (
+                  <div className="bg-[#f0f9eb] border border-[#3b6934]/30 px-6 py-6 mb-4 animate-fade-in">
+                    <p className="text-[#3b6934] text-[10px] tracking-[0.15em] uppercase font-bold font-[var(--font-inter)] mb-2">
+                      Economia estimada em 10 anos com PFB Orbital
+                    </p>
+                    <p className="font-[var(--font-noto-serif)] text-[#002045] text-4xl font-normal mb-2">
+                      {fmt(savings10y)}
+                    </p>
+                    <p className="text-[#43474e] text-xs font-[var(--font-inter)] leading-relaxed">
+                      Sem contar o custo de transtorno, reforma e substituição de material ao longo dos anos.
+                    </p>
                   </div>
                 )}
 
