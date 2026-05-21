@@ -199,7 +199,19 @@ export default function ContatoPage() {
 
   const waMsg =
     selectedProduct && selectedSpace && m2 > 0
-      ? `Olá! Simulei no site da Orbital. Acabamento: ${selectedProduct.name} (${selectedProduct.code} — ${selectedProduct.linha}). Espaço: ${selectedSpace.label}. Área: ${m2.toFixed(1)} m² (${plates} placa${plates !== 1 ? "s" : ""}).${architectName ? ` Arquiteto/Designer: ${architectName}.` : ""} Gostaria de receber um orçamento.`
+      ? [
+          "Olá! Gostaria de solicitar um orçamento do PFB Orbital.",
+          "",
+          `*Acabamento:* ${selectedProduct.name} (${selectedProduct.code} — ${selectedProduct.linha})`,
+          `*Espaço:* ${selectedSpace.label}`,
+          dimMode === "lxa" && width && height
+            ? `*Dimensões:* ${width}m × ${height}m`
+            : `*Área informada:* ${m2.toFixed(2)} m²`,
+          `*Área total:* ${m2.toFixed(2)} m²`,
+          `*Quantidade:* ${plates} placa${plates !== 1 ? "s" : ""} (cobre ~${(plates * PLATE_M2).toFixed(2)} m²)`,
+          `*Preço estimado do material:* ${fmt(orbMaterialTotal)}`,
+          architectName ? `*Arquiteto/Designer:* ${architectName}` : null,
+        ].filter(Boolean).join("\n")
       : "Olá! Tenho interesse no PFB Orbital e gostaria de fazer um orçamento.";
 
   function goToStep(n: 1 | 2 | 3 | 4) {
@@ -781,6 +793,61 @@ export default function ContatoPage() {
                   >
                     Refazer
                   </button>
+                </div>
+              </div>
+
+              {/* Input summary */}
+              <div className="bg-white border border-[#e2e2e2] border-t-0 px-8 py-6">
+                <p className="text-[#43474e] text-[10px] tracking-[0.15em] uppercase font-bold font-[var(--font-inter)] mb-4">
+                  Resumo da sua simulação
+                </p>
+                <div className="grid grid-cols-2 sm:grid-cols-3 gap-x-8 gap-y-4">
+                  <div>
+                    <p className="text-[#74777f] text-[10px] tracking-[0.1em] uppercase font-semibold font-[var(--font-inter)] mb-0.5">Espaço</p>
+                    <p className="text-[#002045] text-sm font-semibold font-[var(--font-inter)]">{selectedSpace.label}</p>
+                  </div>
+                  <div>
+                    <p className="text-[#74777f] text-[10px] tracking-[0.1em] uppercase font-semibold font-[var(--font-inter)] mb-0.5">Acabamento</p>
+                    <p className="text-[#002045] text-sm font-semibold font-[var(--font-inter)]">{selectedProduct.name}</p>
+                    <p className="text-[#74777f] text-[10px] font-[var(--font-inter)]">{selectedProduct.code} · {selectedProduct.linha}</p>
+                  </div>
+                  {dimMode === "lxa" && width && height ? (
+                    <>
+                      <div>
+                        <p className="text-[#74777f] text-[10px] tracking-[0.1em] uppercase font-semibold font-[var(--font-inter)] mb-0.5">Largura</p>
+                        <p className="text-[#002045] text-sm font-semibold font-[var(--font-inter)]">{width} m</p>
+                      </div>
+                      <div>
+                        <p className="text-[#74777f] text-[10px] tracking-[0.1em] uppercase font-semibold font-[var(--font-inter)] mb-0.5">Altura</p>
+                        <p className="text-[#002045] text-sm font-semibold font-[var(--font-inter)]">{height} m</p>
+                      </div>
+                    </>
+                  ) : (
+                    <div>
+                      <p className="text-[#74777f] text-[10px] tracking-[0.1em] uppercase font-semibold font-[var(--font-inter)] mb-0.5">Área informada</p>
+                      <p className="text-[#002045] text-sm font-semibold font-[var(--font-inter)]">{sqmInput} m²</p>
+                    </div>
+                  )}
+                  <div>
+                    <p className="text-[#74777f] text-[10px] tracking-[0.1em] uppercase font-semibold font-[var(--font-inter)] mb-0.5">Área total</p>
+                    <p className="text-[#002045] text-sm font-semibold font-[var(--font-inter)]">{m2.toFixed(2)} m²</p>
+                  </div>
+                  <div>
+                    <p className="text-[#74777f] text-[10px] tracking-[0.1em] uppercase font-semibold font-[var(--font-inter)] mb-0.5">Qtd. recomendada</p>
+                    <p className="text-[#002045] text-sm font-semibold font-[var(--font-inter)]">{plates} placa{plates !== 1 ? "s" : ""}</p>
+                    <p className="text-[#74777f] text-[10px] font-[var(--font-inter)]">cobre ~{(plates * PLATE_M2).toFixed(2)} m²</p>
+                  </div>
+                  <div>
+                    <p className="text-[#74777f] text-[10px] tracking-[0.1em] uppercase font-semibold font-[var(--font-inter)] mb-0.5">Preço do material</p>
+                    <p className="text-[#002045] text-sm font-semibold font-[var(--font-inter)]">{fmt(orbMaterialTotal)}</p>
+                    <p className="text-[#74777f] text-[10px] font-[var(--font-inter)]">R$ {pricePerPlate.toLocaleString("pt-BR")}/placa</p>
+                  </div>
+                  {architectName && (
+                    <div>
+                      <p className="text-[#74777f] text-[10px] tracking-[0.1em] uppercase font-semibold font-[var(--font-inter)] mb-0.5">Arquiteto/Designer</p>
+                      <p className="text-[#002045] text-sm font-semibold font-[var(--font-inter)]">{architectName}</p>
+                    </div>
+                  )}
                 </div>
               </div>
 
