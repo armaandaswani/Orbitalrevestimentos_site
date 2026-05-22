@@ -373,6 +373,35 @@ export default function AdminPage() {
     }).sort((a, b) => b.total - a.total);
   }, [uses, activePartners]);
 
+  const [repRankSort, setRepRankSort] = useState<"total" | "count" | "median">("total");
+  const [rankSortPartner, setRankSortPartner] = useState<"total" | "count" | "median">("total");
+  const [rankRepPartner, setRankRepPartner] = useState<string>("all");
+
+  const repRanking = useMemo(() => {
+    const byCode: Record<string, { total: number; count: number; values: number[] }> = {};
+    for (const u of uses) {
+      if (u.sale_status !== "concluido" || !u.sales_rep_referral_code) continue;
+      const code = u.sales_rep_referral_code;
+      if (!byCode[code]) byCode[code] = { total: 0, count: 0, values: [] };
+      const v = u.material_discounted || 0;
+      byCode[code].total += v;
+      byCode[code].count++;
+      if (v > 0) byCode[code].values.push(v);
+    }
+    const rows = Object.entries(byCode).map(([code, s]) => {
+      const r = salesReps.find((r) => r.referral_code === code);
+      const sorted = [...s.values].sort((a, b) => a - b);
+      const mid = Math.floor(sorted.length / 2);
+      const median = sorted.length % 2 ? sorted[mid] : ((sorted[mid - 1] + sorted[mid]) / 2);
+      const partnerCount = partners.filter((p) => p.sales_rep_referral_code === code).length;
+      return { code, name: r?.name || code, total: s.total, count: s.count, median, partnerCount };
+    });
+    if (repRankSort === "count") rows.sort((a, b) => b.count - a.count);
+    else if (repRankSort === "median") rows.sort((a, b) => b.median - a.median);
+    else rows.sort((a, b) => b.total - a.total);
+    return rows;
+  }, [uses, salesReps, partners, repRankSort]);
+
   // Upcoming birthdays this month
   const upcomingBirthdays = useMemo(() => {
     const now = new Date();
@@ -608,10 +637,12 @@ export default function AdminPage() {
                     const day = bday.getUTCDate();
                     const now = new Date();
                     const isToday = bday.getUTCDate() === now.getDate() && bday.getUTCMonth() === now.getMonth();
+                    const age = now.getFullYear() - bday.getUTCFullYear();
                     return (
                       <div key={p.id} className={`px-4 py-3 border text-sm font-[var(--font-inter)] ${isToday ? "border-yellow-300 bg-yellow-50" : "border-[#e2e2e2] bg-white"}`}>
                         <span className="font-bold text-[#002045]">{day < 10 ? `0${day}` : day}</span>
                         <span className="text-[#74777f] text-xs ml-1">— {p.name}</span>
+                        <span className="text-[#74777f] text-xs ml-1">({age} anos)</span>
                         {isToday && <span className="ml-2 text-yellow-700 text-xs font-bold">HOJE!</span>}
                       </div>
                     );
@@ -621,36 +652,66 @@ export default function AdminPage() {
             )}
 
             {/* Partner rankings */}
-            {partnerRanking.length > 0 && (
-              <div className="mb-8">
-                <h3 className="font-[var(--font-inter)] text-[10px] tracking-[0.2em] uppercase font-bold text-[#002045] mb-3">
-                  Ranking de Parceiros — vendas concluídas
-                </h3>
-                <div className="bg-white border border-[#e2e2e2] overflow-x-auto">
-                  <table className="w-full text-sm font-[var(--font-inter)]">
-                    <thead>
-                      <tr className="border-b border-[#e2e2e2]">
-                        {["#", "Parceiro", "Cupom", "Total vendido", "Vendas", "Ticket médio"].map((h) => (
-                          <th key={h} className="text-left px-5 py-3 text-[10px] tracking-[0.15em] uppercase font-bold text-[#74777f]">{h}</th>
-                        ))}
-                      </tr>
-                    </thead>
-                    <tbody>
-                      {partnerRanking.map((r, i) => (
-                        <tr key={r.code} className="border-b border-[#f0f0f0] hover:bg-[#fafafa]">
-                          <td className="px-5 py-3 font-bold text-[#002045]">{i + 1}°</td>
-                          <td className="px-5 py-3 font-semibold text-[#002045]">{r.name}</td>
-                          <td className="px-5 py-3"><span className="bg-[#eef2f8] text-[#002045] px-2 py-0.5 text-xs font-bold tracking-wider">{r.code}</span></td>
-                          <td className="px-5 py-3 font-semibold text-green-700">{fmt(r.total)}</td>
-                          <td className="px-5 py-3 text-[#43474e]">{r.count}</td>
-                          <td className="px-5 py-3 text-[#43474e]">{r.median > 0 ? fmt(r.median) : "—"}</td>
-                        </tr>
+            {(() => {
+              const [pRankSort, setPRankSort] = [rankSortPartner, setRankSortPartner];
+              const [pRankRep, setPRankRep] = [rankRepPartner, setRankRepPartner];
+              const filtered = pRankRep === "all" ? partnerRanking : partnerRanking.filter((r) => {
+                const p = activePartners.find((ap) => ap.coupon_code === r.code);
+                return p?.sales_rep_referral_code === pRankRep;
+              });
+              const sorted = [...filtered].sort((a, b) => pRankSort === "count" ? b.count - a.count : pRankSort === "median" ? b.median - a.median : b.total - a.total);
+              if (partnerRanking.length === 0) return null;
+              return (
+                <div className="mb-8">
+                  <div className="flex flex-wrap items-center justify-between gap-3 mb-3">
+                    <h3 className="font-[var(--font-inter)] text-[10px] tracking-[0.2em] uppercase font-bold text-[#002045]">
+                      Ranking de Parceiros — vendas concluídas
+                    </h3>
+                    <div className="flex flex-wrap items-center gap-2">
+                      {salesReps.length > 0 && (
+                        <select value={pRankRep} onChange={(e) => setPRankRep(e.target.value)} className="border border-[#e2e2e2] px-3 py-1.5 text-xs font-[var(--font-inter)] text-[#002045] focus:outline-none focus:border-[#002045]">
+                          <option value="all">Todos os representantes</option>
+                          {salesReps.map((r) => <option key={r.id} value={r.referral_code}>{r.name}</option>)}
+                        </select>
+                      )}
+                      {(["total", "count", "median"] as const).map((s) => (
+                        <button key={s} onClick={() => setPRankSort(s)} className={`text-[10px] tracking-[0.08em] uppercase font-bold font-[var(--font-inter)] px-3 py-1.5 border transition-colors ${pRankSort === s ? "bg-[#002045] text-white border-[#002045]" : "text-[#74777f] border-[#e2e2e2] hover:border-[#002045] hover:text-[#002045]"}`}>
+                          {s === "total" ? "Valor" : s === "count" ? "Qtd." : "Ticket Médio"}
+                        </button>
                       ))}
-                    </tbody>
-                  </table>
+                    </div>
+                  </div>
+                  <div className="bg-white border border-[#e2e2e2] overflow-x-auto">
+                    <table className="w-full text-sm font-[var(--font-inter)]">
+                      <thead>
+                        <tr className="border-b border-[#e2e2e2]">
+                          {["#", "Parceiro", "Cupom", "Rep.", "Total vendido", "Vendas", "Ticket médio"].map((h) => (
+                            <th key={h} className="text-left px-5 py-3 text-[10px] tracking-[0.15em] uppercase font-bold text-[#74777f] whitespace-nowrap">{h}</th>
+                          ))}
+                        </tr>
+                      </thead>
+                      <tbody>
+                        {sorted.map((r, i) => {
+                          const p = activePartners.find((ap) => ap.coupon_code === r.code);
+                          const rep = p?.sales_rep_referral_code ? salesReps.find((sr) => sr.referral_code === p.sales_rep_referral_code) : null;
+                          return (
+                            <tr key={r.code} className="border-b border-[#f0f0f0] hover:bg-[#fafafa]">
+                              <td className="px-5 py-3 font-bold text-[#002045]">{i + 1}°</td>
+                              <td className="px-5 py-3 font-semibold text-[#002045]">{r.name}</td>
+                              <td className="px-5 py-3"><span className="bg-[#eef2f8] text-[#002045] px-2 py-0.5 text-xs font-bold tracking-wider">{r.code}</span></td>
+                              <td className="px-5 py-3 text-xs text-[#74777f]">{rep ? rep.name : "—"}</td>
+                              <td className="px-5 py-3 font-semibold text-green-700">{fmt(r.total)}</td>
+                              <td className="px-5 py-3 text-[#43474e]">{r.count}</td>
+                              <td className="px-5 py-3 text-[#43474e]">{r.median > 0 ? fmt(r.median) : "—"}</td>
+                            </tr>
+                          );
+                        })}
+                      </tbody>
+                    </table>
+                  </div>
                 </div>
-              </div>
-            )}
+              );
+            })()}
 
             {/* Active partners */}
             <div className="flex items-center justify-between mb-6">

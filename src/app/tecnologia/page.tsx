@@ -50,9 +50,8 @@ export default function TecnologiaPage() {
   return (
     <div className="pt-20">
       {/* Hero */}
-      <section className="relative bg-[#002045] text-white py-14 lg:py-32">
-        <div className="absolute bottom-0 inset-x-0 h-16 lg:h-24 bg-gradient-to-b from-transparent to-white pointer-events-none" />
-        <div className="relative max-w-[1280px] mx-auto px-4 lg:px-16">
+      <section className="bg-[#002045] text-white py-14 lg:py-32">
+        <div className="max-w-[1280px] mx-auto px-4 lg:px-16">
           <p className="text-[#86a0cd] text-xs tracking-[0.2em] uppercase font-semibold font-[var(--font-inter)] mb-4">
             PFB · Placas Flexíveis de Bambu
           </p>
@@ -135,9 +134,8 @@ export default function TecnologiaPage() {
       </section>
 
       {/* Lab Specs */}
-      <section className="relative py-10 lg:py-20 bg-[#002045] text-white overflow-hidden">
-        <div className="absolute top-0 inset-x-0 h-16 lg:h-24 bg-gradient-to-b from-white to-transparent pointer-events-none" />
-        <div className="relative max-w-[1280px] mx-auto px-4 lg:px-16">
+      <section className="py-10 lg:py-20 bg-[#002045] text-white">
+        <div className="max-w-[1280px] mx-auto px-4 lg:px-16">
           <div className="mb-6 lg:mb-10">
             <p className="text-[#86a0cd] text-xs tracking-[0.2em] uppercase font-semibold font-[var(--font-inter)] mb-2">
               Ficha técnica
@@ -173,9 +171,8 @@ export default function TecnologiaPage() {
       </section>
 
       {/* PFB × MDF — Water Test Photos */}
-      <section className="relative py-10 lg:py-28 bg-[#1e212a] text-white overflow-hidden">
-        <div className="absolute top-0 inset-x-0 h-16 lg:h-24 bg-gradient-to-b from-[#002045] to-transparent pointer-events-none" />
-        <div className="relative max-w-[1280px] mx-auto px-4 lg:px-16">
+      <section className="py-10 lg:py-28 bg-[#1e212a] text-white">
+        <div className="max-w-[1280px] mx-auto px-4 lg:px-16">
           <div className="mb-8">
             <p className="text-[#a1d494] text-xs tracking-[0.2em] uppercase font-semibold font-[var(--font-inter)] mb-3">
               PFB — Teste de Resistência à Água
@@ -228,9 +225,8 @@ export default function TecnologiaPage() {
       </section>
 
       {/* Manaus Climate */}
-      <section className="relative py-10 lg:py-24 bg-[#1a365d] text-white overflow-hidden">
-        <div className="absolute top-0 inset-x-0 h-16 lg:h-24 bg-gradient-to-b from-[#1e212a] to-transparent pointer-events-none" />
-        <div className="relative max-w-[1280px] mx-auto px-4 lg:px-16">
+      <section className="py-10 lg:py-24 bg-[#1a365d] text-white">
+        <div className="max-w-[1280px] mx-auto px-4 lg:px-16">
           <div className="grid grid-cols-1 lg:grid-cols-2 gap-12 items-center">
             <div>
               <p className="text-[#a1d494] text-xs tracking-[0.2em] uppercase font-semibold font-[var(--font-inter)] mb-4">
@@ -301,9 +297,8 @@ export default function TecnologiaPage() {
       </section>
 
       {/* Characteristics */}
-      <section className="relative py-10 lg:py-28 bg-[#ffffff] overflow-hidden">
-        <div className="absolute top-0 inset-x-0 h-16 lg:h-24 bg-gradient-to-b from-[#1a365d] to-transparent pointer-events-none" />
-        <div className="relative max-w-[1280px] mx-auto px-4 lg:px-16">
+      <section className="py-10 lg:py-28 bg-[#ffffff]">
+        <div className="max-w-[1280px] mx-auto px-4 lg:px-16">
           <p className="text-[#3b6934] text-xs tracking-[0.2em] uppercase font-semibold font-[var(--font-inter)] mb-4 text-center">
             Atributos-chave
           </p>
@@ -467,9 +462,8 @@ export default function TecnologiaPage() {
       </section>
 
       {/* Installation Notes */}
-      <section className="relative py-12 lg:py-20 bg-[#1e212a] text-white overflow-hidden">
-        <div className="absolute top-0 inset-x-0 h-16 lg:h-24 bg-gradient-to-b from-white to-transparent pointer-events-none" />
-        <div className="relative max-w-[1280px] mx-auto px-4 lg:px-16">
+      <section className="py-12 lg:py-20 bg-[#1e212a] text-white">
+        <div className="max-w-[1280px] mx-auto px-4 lg:px-16">
           <h2 className="font-[var(--font-noto-serif)] text-white text-2xl font-normal mb-8">
             Notas de Instalação
           </h2>

@@ -84,8 +84,9 @@ export async function GET(req: NextRequest) {
 
   const bdayRows = birthdaysThisMonth.map((p: { birthday: string; name: string; email: string | null; phone: string | null }) => {
     const d = new Date(p.birthday);
-    return `<tr><td style="padding:8px;border-bottom:1px solid #eee;font-weight:600;color:#002045">${String(d.getUTCDate()).padStart(2,"0")}/${String(d.getUTCMonth()+1).padStart(2,"0")}</td><td style="padding:8px;border-bottom:1px solid #eee">${p.name}</td><td style="padding:8px;border-bottom:1px solid #eee;color:#555">${p.email || "—"}</td><td style="padding:8px;border-bottom:1px solid #eee;color:#555">${p.phone || "—"}</td></tr>`;
-  }).join("") || '<tr><td colspan="4" style="padding:12px;text-align:center;color:#74777f">Nenhum aniversariante</td></tr>';
+    const age = new Date().getFullYear() - d.getUTCFullYear();
+    return `<tr><td style="padding:8px;border-bottom:1px solid #eee;font-weight:600;color:#002045">${String(d.getUTCDate()).padStart(2,"0")}/${String(d.getUTCMonth()+1).padStart(2,"0")}</td><td style="padding:8px;border-bottom:1px solid #eee">${p.name}</td><td style="padding:8px;border-bottom:1px solid #eee;color:#002045;font-weight:600">${age} anos</td><td style="padding:8px;border-bottom:1px solid #eee;color:#555">${p.email || "—"}</td><td style="padding:8px;border-bottom:1px solid #eee;color:#555">${p.phone || "—"}</td></tr>`;
+  }).join("") || '<tr><td colspan="5" style="padding:12px;text-align:center;color:#74777f">Nenhum aniversariante</td></tr>';
 
   // Send monthly summary
   await resend.emails.send({
@@ -117,7 +118,7 @@ export async function GET(req: NextRequest) {
     html: `<div style="font-family:sans-serif;max-width:560px;margin:0 auto;padding:32px 24px;color:#1a1a1a">
       <h2 style="font-size:22px;margin-bottom:4px;color:#002045">🎂 Aniversariantes de ${thisMonthName}</h2>
       <p style="color:#555;margin-bottom:20px;font-size:14px">${birthdaysThisMonth.length} parceiro${birthdaysThisMonth.length !== 1 ? "s fazem" : " faz"} aniversário este mês.</p>
-      <table style="width:100%;border-collapse:collapse;margin-bottom:24px"><thead><tr style="background:#f5f5f3"><th style="padding:8px;text-align:left;font-size:10px;text-transform:uppercase;color:#74777f">Data</th><th style="padding:8px;text-align:left;font-size:10px;text-transform:uppercase;color:#74777f">Nome</th><th style="padding:8px;text-align:left;font-size:10px;text-transform:uppercase;color:#74777f">Email</th><th style="padding:8px;text-align:left;font-size:10px;text-transform:uppercase;color:#74777f">Telefone</th></tr></thead><tbody>${bdayRows}</tbody></table>
+      <table style="width:100%;border-collapse:collapse;margin-bottom:24px"><thead><tr style="background:#f5f5f3"><th style="padding:8px;text-align:left;font-size:10px;text-transform:uppercase;color:#74777f">Data</th><th style="padding:8px;text-align:left;font-size:10px;text-transform:uppercase;color:#74777f">Nome</th><th style="padding:8px;text-align:left;font-size:10px;text-transform:uppercase;color:#74777f">Idade</th><th style="padding:8px;text-align:left;font-size:10px;text-transform:uppercase;color:#74777f">Email</th><th style="padding:8px;text-align:left;font-size:10px;text-transform:uppercase;color:#74777f">Telefone</th></tr></thead><tbody>${bdayRows}</tbody></table>
       <p style="color:#888;font-size:12px;margin-top:24px">Orbital Revestimentos · Sistema automático</p>
     </div>`,
   });
