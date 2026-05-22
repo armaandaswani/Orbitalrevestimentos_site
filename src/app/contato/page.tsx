@@ -22,7 +22,7 @@ const MDF_ACABAMENTO = 25;
 const MDF_INSTALLS_10Y = 3;
 
 function orbitalMOPerPlate(plates: number, complex: boolean) {
-  return plates > 6 ? (complex ? 150 : 150) : (complex ? 175 : 150);
+  return plates > 10 ? (complex ? 150 : 130) : (complex ? 175 : 150);
 }
 
 function fmt(n: number) {
