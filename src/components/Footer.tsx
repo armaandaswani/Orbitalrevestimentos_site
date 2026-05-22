@@ -3,11 +3,11 @@ import Link from "next/link";
 export default function Footer() {
   return (
     <footer className="bg-[#1e212a] text-white">
-      <div className="max-w-[1280px] mx-auto px-8 lg:px-16 py-16">
-        <div className="grid grid-cols-1 md:grid-cols-12 gap-12">
+      <div className="max-w-[1280px] mx-auto px-4 lg:px-16 py-12 lg:py-16">
+        <div className="grid grid-cols-2 md:grid-cols-12 gap-8 lg:gap-12">
 
           {/* Brand */}
-          <div className="md:col-span-4">
+          <div className="col-span-2 md:col-span-4">
             <div className="text-xl font-bold tracking-[0.22em] font-[var(--font-noto-serif)] mb-4">
               ORBITAL
             </div>
@@ -32,7 +32,7 @@ export default function Footer() {
           </div>
 
           {/* Navigation */}
-          <div className="md:col-span-2 md:col-start-6">
+          <div className="col-span-1 md:col-span-2 md:col-start-6">
             <p className="text-xs tracking-[0.1em] uppercase font-semibold font-[var(--font-inter)] text-[#9c9faa] mb-5">
               Navegação
             </p>
@@ -57,7 +57,7 @@ export default function Footer() {
           </div>
 
           {/* Profissionais */}
-          <div className="md:col-span-2">
+          <div className="col-span-1 md:col-span-2">
             <p className="text-xs tracking-[0.1em] uppercase font-semibold font-[var(--font-inter)] text-[#9c9faa] mb-5">
               Profissionais
             </p>
@@ -76,7 +76,7 @@ export default function Footer() {
           </div>
 
           {/* Applications */}
-          <div className="md:col-span-2">
+          <div className="col-span-2 md:col-span-2">
             <p className="text-xs tracking-[0.1em] uppercase font-semibold font-[var(--font-inter)] text-[#9c9faa] mb-5">
               Aplicações
             </p>
@@ -105,15 +105,15 @@ export default function Footer() {
         </div>
 
         {/* Bottom strip */}
-        <div className="border-t border-[#333640] mt-12 pt-8 flex flex-col md:flex-row justify-between gap-4">
+        <div className="border-t border-[#333640] mt-12 pt-8 flex flex-col gap-3 md:flex-row md:justify-between md:items-center md:gap-4">
           <p className="text-xs text-[#9c9faa] font-[var(--font-inter)]">
             © 2026 Orbital Revestimentos · Manaus, AM · Todos os direitos reservados.
           </p>
-          <div className="flex items-center gap-5">
+          <div className="flex flex-col gap-3 md:flex-row md:items-center md:gap-5">
             <p className="text-xs text-[#9c9faa] font-[var(--font-inter)] italic">
               Revestimento de parede e forro · PFB · Alternativa ao MDF em Manaus
             </p>
-            <div className="flex items-center gap-4 border-l border-[#333640] pl-5">
+            <div className="flex items-center gap-4 md:border-l md:border-[#333640] md:pl-5">
               <Link href="/representante" className="text-[10px] text-[#555860] hover:text-[#9c9faa] transition-colors font-[var(--font-inter)] tracking-[0.08em] uppercase">
                 Representante
               </Link>

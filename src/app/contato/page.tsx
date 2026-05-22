@@ -351,7 +351,7 @@ export default function ContatoPage() {
     <div className="pt-20">
 
       {/* ── Hero ─────────────────────────────────────────────────────────── */}
-      <section className="bg-[#002045] text-white py-20 lg:py-32 relative overflow-hidden">
+      <section className="bg-[#002045] text-white py-10 lg:py-32 relative overflow-hidden">
         <div
           className="absolute inset-0 opacity-[0.04]"
           style={{
@@ -359,12 +359,12 @@ export default function ContatoPage() {
               "repeating-linear-gradient(0deg,transparent,transparent 39px,rgba(255,255,255,.5) 39px,rgba(255,255,255,.5) 40px),repeating-linear-gradient(90deg,transparent,transparent 39px,rgba(255,255,255,.5) 39px,rgba(255,255,255,.5) 40px)",
           }}
         />
-        <div className="relative max-w-[1280px] mx-auto px-6 lg:px-16">
+        <div className="relative max-w-[1280px] mx-auto px-4 lg:px-16">
           <div className="max-w-3xl">
             <p className="text-[#a1d494] text-xs tracking-[0.2em] uppercase font-semibold font-[var(--font-inter)] mb-5">
               Simulador · Orçamento
             </p>
-            <h1 className="font-[var(--font-noto-serif)] text-4xl lg:text-6xl font-normal tracking-[-0.02em] leading-tight mb-6">
+            <h1 className="font-[var(--font-noto-serif)] text-3xl lg:text-6xl font-normal tracking-[-0.02em] leading-tight mb-6">
               Comece o seu projeto.
             </h1>
             <p className="text-white/65 text-base lg:text-lg font-[var(--font-inter)] leading-relaxed max-w-2xl mb-8 lg:mb-10">
@@ -598,7 +598,7 @@ export default function ContatoPage() {
                   <p className="text-[#43474e] text-[10px] tracking-[0.15em] uppercase font-bold font-[var(--font-inter)] mb-4">
                     Acabamentos {selectedLine}
                   </p>
-                  <div className="grid grid-cols-3 sm:grid-cols-4 md:grid-cols-5 gap-2 sm:gap-3">
+                  <div className="grid grid-cols-3 sm:grid-cols-4 md:grid-cols-5 gap-2 sm:gap-3 min-[400px]:grid-cols-4">
                     {PRODUCTS.filter((p) => p.linha === selectedLine).map((product) => {
                       const active = selectedProduct?.code === product.code;
                       return (
@@ -726,38 +726,39 @@ export default function ContatoPage() {
               </div>
 
               {dimMode === "lxa" ? (
-                <div className="flex flex-col sm:flex-row sm:items-end gap-4 mb-6">
-                  <div className="flex-1 sm:flex-none">
+                <div className="grid grid-cols-2 sm:flex sm:flex-row sm:items-end gap-4 mb-6">
+                  <div>
                     <label className="block text-[10px] tracking-[0.15em] uppercase font-bold font-[var(--font-inter)] text-[#74777f] mb-2">
                       Largura (m)
                     </label>
                     <input
                       type="number"
+                      inputMode="decimal"
                       value={width}
                       onChange={(e) => setWidth(e.target.value)}
                       placeholder="ex: 3.5"
                       min="0"
                       step="0.1"
-                      className="w-full sm:w-32 border border-[#e2e2e2] px-4 py-3 text-sm font-[var(--font-inter)] text-[#002045] focus:outline-none focus:border-[#002045] transition-colors"
+                      className="w-full sm:w-32 border border-[#e2e2e2] px-4 py-3 text-base font-[var(--font-inter)] text-[#002045] focus:outline-none focus:border-[#002045] transition-colors"
                     />
                   </div>
-                  <span className="text-[#74777f] font-bold hidden sm:block sm:pb-3">×</span>
-                  <div className="flex-1 sm:flex-none">
+                  <div>
                     <label className="block text-[10px] tracking-[0.15em] uppercase font-bold font-[var(--font-inter)] text-[#74777f] mb-2">
                       Altura (m)
                     </label>
                     <input
                       type="number"
+                      inputMode="decimal"
                       value={height}
                       onChange={(e) => setHeight(e.target.value)}
                       placeholder="ex: 2.8"
                       min="0"
                       step="0.1"
-                      className="w-full sm:w-32 border border-[#e2e2e2] px-4 py-3 text-sm font-[var(--font-inter)] text-[#002045] focus:outline-none focus:border-[#002045] transition-colors"
+                      className="w-full sm:w-32 border border-[#e2e2e2] px-4 py-3 text-base font-[var(--font-inter)] text-[#002045] focus:outline-none focus:border-[#002045] transition-colors"
                     />
                   </div>
                   {m2 > 0 && (
-                    <span className="text-[#43474e] text-sm font-[var(--font-inter)] sm:pb-3">
+                    <span className="col-span-2 sm:col-span-1 text-[#43474e] text-sm font-[var(--font-inter)] sm:pb-3">
                       = <strong className="text-[#002045]">{m2.toFixed(2)} m²</strong>
                     </span>
                   )}
@@ -769,12 +770,13 @@ export default function ContatoPage() {
                   </label>
                   <input
                     type="number"
+                    inputMode="decimal"
                     value={sqmInput}
                     onChange={(e) => setSqmInput(e.target.value)}
                     placeholder="ex: 12"
                     min="0"
                     step="0.1"
-                    className="w-full sm:w-44 border border-[#e2e2e2] px-4 py-3 text-sm font-[var(--font-inter)] text-[#002045] focus:outline-none focus:border-[#002045] transition-colors"
+                    className="w-full sm:w-44 border border-[#e2e2e2] px-4 py-3 text-base font-[var(--font-inter)] text-[#002045] focus:outline-none focus:border-[#002045] transition-colors"
                   />
                 </div>
               )}

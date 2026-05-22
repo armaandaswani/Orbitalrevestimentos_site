@@ -143,12 +143,12 @@ export default function TecnologiaPage() {
   return (
     <div className="pt-20">
       {/* Hero */}
-      <section className="bg-[#002045] text-white py-20 lg:py-24">
-        <div className="max-w-[1280px] mx-auto px-8 lg:px-16">
+      <section className="bg-[#002045] text-white py-10 lg:py-24">
+        <div className="max-w-[1280px] mx-auto px-4 lg:px-16">
           <p className="text-[#86a0cd] text-xs tracking-[0.2em] uppercase font-semibold font-[var(--font-inter)] mb-4">
             PFB · Placas Flexíveis de Bambu
           </p>
-          <h1 className="font-[var(--font-noto-serif)] text-5xl lg:text-6xl font-normal tracking-[-0.02em] leading-tight mb-5 max-w-3xl">
+          <h1 className="font-[var(--font-noto-serif)] text-3xl lg:text-6xl font-normal tracking-[-0.02em] leading-tight mb-5 max-w-3xl">
             Performance &amp; Tecnologia
           </h1>
           <p className="text-white/70 text-lg font-[var(--font-inter)] leading-relaxed max-w-2xl">
@@ -163,7 +163,7 @@ export default function TecnologiaPage() {
       <section className="overflow-hidden bg-white">
         <div className="flex flex-col lg:flex-row">
           {/* Left — anatomy diagram with vignette */}
-          <div className="lg:w-[38%] bg-white relative min-h-[440px] flex items-center justify-center overflow-hidden py-12 px-8 border-r border-[#eeeeee]">
+          <div className="lg:w-[38%] bg-white relative min-h-[220px] lg:min-h-[440px] flex items-center justify-center overflow-hidden py-8 lg:py-12 px-8 border-b lg:border-b-0 lg:border-r border-[#eeeeee]">
             <div
               className="absolute inset-0 pointer-events-none z-10"
               style={{ background: "radial-gradient(ellipse 72% 78% at 50% 50%, transparent 42%, white 100%)" }}
@@ -173,12 +173,12 @@ export default function TecnologiaPage() {
               alt="Anatomia da Placa PFB Orbital — seção transversal 5mm"
               width={732}
               height={1638}
-              className="max-h-[620px] w-auto relative z-[5]"
+              className="max-h-[220px] lg:max-h-[620px] w-auto relative z-[5]"
             />
           </div>
 
           {/* Right — content panel */}
-          <div className="lg:w-[62%] bg-[#f9f9f9] px-8 lg:px-16 xl:px-20 py-16 lg:py-24 flex items-center">
+          <div className="lg:w-[62%] bg-[#f9f9f9] px-4 lg:px-16 xl:px-20 py-10 lg:py-24 flex items-center">
             <div className="w-full max-w-2xl">
               <p className="text-[#3b6934] text-xs tracking-[0.2em] uppercase font-semibold font-[var(--font-inter)] mb-5">
                 Anatomia da Placa
@@ -228,8 +228,8 @@ export default function TecnologiaPage() {
       </section>
 
       {/* Lab Specs */}
-      <section className="py-16 bg-[#002045] text-white">
-        <div className="max-w-[1280px] mx-auto px-8 lg:px-16">
+      <section className="py-10 lg:py-16 bg-[#002045] text-white">
+        <div className="max-w-[1280px] mx-auto px-4 lg:px-16">
           <div className="mb-10">
             <p className="text-[#86a0cd] text-xs tracking-[0.2em] uppercase font-semibold font-[var(--font-inter)] mb-3">
               Ficha técnica
@@ -241,13 +241,13 @@ export default function TecnologiaPage() {
               ART nº AM20260593657 · Eng. Civil Werksson Sousa · CREA 042030134-8-D
             </p>
           </div>
-          <div className="grid grid-cols-2 md:grid-cols-5 gap-6">
+          <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-5 gap-4 lg:gap-6">
             {specs.map(({ value, unit, label, note }) => (
-              <div key={label} className="border-l-2 border-[#1a365d] pl-5">
-                <p className="font-[var(--font-noto-serif)] text-4xl text-white font-normal mb-1">
+              <div key={label} className="border-l-2 border-[#1a365d] pl-3 lg:pl-5">
+                <p className="font-[var(--font-noto-serif)] text-2xl lg:text-4xl text-white font-normal mb-1">
                   {value}
                   {unit && (
-                    <span className="text-xl text-[#86a0cd] ml-1">{unit}</span>
+                    <span className="text-base lg:text-xl text-[#86a0cd] ml-1">{unit}</span>
                   )}
                 </p>
                 <p className="text-[#86a0cd] text-xs tracking-[0.1em] uppercase font-semibold font-[var(--font-inter)] mb-1">
@@ -265,8 +265,8 @@ export default function TecnologiaPage() {
       </section>
 
       {/* PFB × MDF — Water Test Photos */}
-      <section className="py-24 bg-[#1e212a] text-white">
-        <div className="max-w-[1280px] mx-auto px-8 lg:px-16">
+      <section className="py-10 lg:py-24 bg-[#1e212a] text-white">
+        <div className="max-w-[1280px] mx-auto px-4 lg:px-16">
           <div className="mb-12">
             <p className="text-[#a1d494] text-xs tracking-[0.2em] uppercase font-semibold font-[var(--font-inter)] mb-4">
               PFB — Teste de Resistência à Água
@@ -279,14 +279,14 @@ export default function TecnologiaPage() {
             </p>
           </div>
 
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mb-10 max-w-[75%] mx-auto">
+          <div className="flex overflow-x-auto snap-x snap-mandatory gap-3 pb-2 mb-10 -mx-4 px-4 sm:mx-0 sm:px-0 sm:grid sm:grid-cols-3 sm:gap-4 lg:max-w-[75%] lg:mx-auto">
             {[
               { src: "/images/catalogue/pfb-mdf-0h.png", time: "0h", label: "Início do teste", note: "Placa PFB submersa em água em condições controladas de laboratório." },
               { src: "/images/catalogue/pfb-mdf-24h.png", time: "24h", label: "24 horas de imersão", note: "O PFB mantém integridade estrutural total — sem deformação ou absorção visível." },
               { src: "/images/catalogue/pfb-mdf-48h.png", time: "48h", label: "48 horas de imersão", note: "O PFB sai intacto após 48h de imersão. 0,2% de absorção — praticamente impermeável." },
             ].map(({ src, time, label, note }) => (
-              <div key={time} className="group">
-                <div className="relative aspect-[3/4] overflow-hidden mb-4">
+              <div key={time} className="min-w-[72vw] sm:min-w-0 flex-shrink-0 sm:flex-shrink group snap-start">
+                <div className="relative aspect-[4/3] overflow-hidden mb-3">
                   <Image
                     src={src}
                     alt={`PFB vs MDF — ${label}`}
@@ -319,8 +319,8 @@ export default function TecnologiaPage() {
       </section>
 
       {/* Manaus Climate */}
-      <section className="py-20 bg-[#1a365d] text-white">
-        <div className="max-w-[1280px] mx-auto px-8 lg:px-16">
+      <section className="py-10 lg:py-20 bg-[#1a365d] text-white">
+        <div className="max-w-[1280px] mx-auto px-4 lg:px-16">
           <div className="grid grid-cols-1 lg:grid-cols-2 gap-12 items-center">
             <div>
               <p className="text-[#a1d494] text-xs tracking-[0.2em] uppercase font-semibold font-[var(--font-inter)] mb-4">
@@ -392,15 +392,15 @@ export default function TecnologiaPage() {
       </section>
 
       {/* Characteristics */}
-      <section className="py-24 bg-[#ffffff] border-b border-[#eeeeee]">
-        <div className="max-w-[1280px] mx-auto px-8 lg:px-16">
+      <section className="py-10 lg:py-24 bg-[#ffffff] border-b border-[#eeeeee]">
+        <div className="max-w-[1280px] mx-auto px-4 lg:px-16">
           <p className="text-[#3b6934] text-xs tracking-[0.2em] uppercase font-semibold font-[var(--font-inter)] mb-4 text-center">
             Atributos-chave
           </p>
           <h2 className="font-[var(--font-noto-serif)] text-[#002045] text-3xl lg:text-4xl font-normal mb-12 text-center">
             O que torna o PFB único
           </h2>
-          <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-6 gap-6">
+          <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-6 gap-3 lg:gap-6">
             {[
               {
                 label: "Anti-mofo",
@@ -484,8 +484,8 @@ export default function TecnologiaPage() {
       </section>
 
       {/* Comparison Table — PFB vs all alternatives */}
-      <section className="py-24 bg-[#f9f9f9]">
-        <div className="max-w-[1280px] mx-auto px-8 lg:px-16">
+      <section className="py-16 lg:py-24 bg-[#f9f9f9]">
+        <div className="max-w-[1280px] mx-auto px-4 lg:px-16">
           <p className="text-[#74777f] text-xs tracking-[0.2em] uppercase font-semibold font-[var(--font-inter)] mb-4">
             Dados técnicos independentes
           </p>
@@ -551,8 +551,8 @@ export default function TecnologiaPage() {
       </section>
 
       {/* Environmental impact */}
-      <section className="py-20 bg-[#ffffff] border-b border-[#eeeeee]">
-        <div className="max-w-[1280px] mx-auto px-8 lg:px-16">
+      <section className="py-10 lg:py-20 bg-[#ffffff] border-b border-[#eeeeee]">
+        <div className="max-w-[1280px] mx-auto px-4 lg:px-16">
           <div className="grid grid-cols-1 lg:grid-cols-2 gap-16 items-center">
             <div>
               <p className="text-[#3b6934] text-xs tracking-[0.2em] uppercase font-semibold font-[var(--font-inter)] mb-4">
@@ -586,7 +586,7 @@ export default function TecnologiaPage() {
               </div>
             </div>
             <div>
-              <div className="relative aspect-[4/5] overflow-hidden">
+              <div className="relative aspect-[4/3] sm:aspect-[4/5] overflow-hidden">
                 <Image
                   src="/images/catalogue/onde-aplicar-main.jpeg"
                   alt="PFB Orbital — material ecológico de bambu"
@@ -608,8 +608,8 @@ export default function TecnologiaPage() {
       </section>
 
       {/* Installation Notes */}
-      <section className="py-16 bg-[#1e212a] text-white">
-        <div className="max-w-[1280px] mx-auto px-8 lg:px-16">
+      <section className="py-12 lg:py-16 bg-[#1e212a] text-white">
+        <div className="max-w-[1280px] mx-auto px-4 lg:px-16">
           <h2 className="font-[var(--font-noto-serif)] text-white text-2xl font-normal mb-8">
             Notas de Instalação
           </h2>
@@ -649,8 +649,8 @@ export default function TecnologiaPage() {
       </section>
 
       {/* CTA */}
-      <section className="py-16 bg-[#f9f9f9] border-t border-[#eeeeee] text-center">
-        <div className="max-w-[600px] mx-auto px-8">
+      <section className="py-12 lg:py-16 bg-[#f9f9f9] border-t border-[#eeeeee] text-center">
+        <div className="max-w-[600px] mx-auto px-4 lg:px-8">
           <h3 className="font-[var(--font-noto-serif)] text-[#002045] text-2xl font-normal mb-4">
             Pronto para especificar?
           </h3>
@@ -658,18 +658,18 @@ export default function TecnologiaPage() {
             Solicite a ficha técnica completa (ART/CREA)
             e suporte para arquitetos e designers.
           </p>
-          <div className="flex flex-wrap justify-center gap-4">
+          <div className="flex flex-col sm:flex-row flex-wrap justify-center gap-3 lg:gap-4">
             <a
               href="https://wa.me/5592988150149?text=Olá! Gostaria de solicitar a ficha técnica completa do PFB Orbital."
               target="_blank"
               rel="noopener noreferrer"
-              className="bg-[#1a365d] text-white text-xs tracking-[0.12em] uppercase font-bold font-[var(--font-inter)] px-8 py-4 hover:bg-[#002045] transition-colors"
+              className="w-full sm:w-auto text-center bg-[#1a365d] text-white text-xs tracking-[0.12em] uppercase font-bold font-[var(--font-inter)] px-8 py-4 hover:bg-[#002045] transition-colors"
             >
               Falar com Especialista
             </a>
             <Link
               href="/produtos"
-              className="border border-[#002045] text-[#002045] text-xs tracking-[0.12em] uppercase font-bold font-[var(--font-inter)] px-8 py-4 hover:bg-[#002045] hover:text-white transition-colors"
+              className="w-full sm:w-auto text-center border border-[#002045] text-[#002045] text-xs tracking-[0.12em] uppercase font-bold font-[var(--font-inter)] px-8 py-4 hover:bg-[#002045] hover:text-white transition-colors"
             >
               Ver Catálogo
             </Link>

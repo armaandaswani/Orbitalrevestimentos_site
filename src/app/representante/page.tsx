@@ -50,6 +50,14 @@ export default function RepresentantePage() {
   const [uses, setUses] = useState<CouponUse[]>([]);
   const [usesLoading, setUsesLoading] = useState(false);
 
+  const [cpOpen, setCpOpen] = useState(false);
+  const [cpCurrent, setCpCurrent] = useState("");
+  const [cpNew, setCpNew] = useState("");
+  const [cpConfirm, setCpConfirm] = useState("");
+  const [cpError, setCpError] = useState("");
+  const [cpSuccess, setCpSuccess] = useState(false);
+  const [cpLoading, setCpLoading] = useState(false);
+
   async function handleLogin(e: React.FormEvent) {
     e.preventDefault();
     setLoginError("");
@@ -78,6 +86,25 @@ export default function RepresentantePage() {
     const res = await fetch(`/api/coupons/use?sales_rep_code=${encodeURIComponent(code)}`);
     if (res.ok) setUses(await res.json());
     setUsesLoading(false);
+  }
+
+  async function handleChangePassword(e: React.FormEvent) {
+    e.preventDefault();
+    setCpError("");
+    if (cpNew !== cpConfirm) { setCpError("As senhas não coincidem."); return; }
+    if (cpNew.length < 6) { setCpError("A nova senha deve ter pelo menos 6 caracteres."); return; }
+    setCpLoading(true);
+    const res = await fetch("/api/representante/change-password", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ referral_code: salesRep!.referral_code, current_password: cpCurrent, new_password: cpNew }),
+    });
+    const json = await res.json();
+    setCpLoading(false);
+    if (!res.ok) { setCpError(json.error || "Erro ao alterar senha."); return; }
+    setCpSuccess(true);
+    setCpCurrent(""); setCpNew(""); setCpConfirm("");
+    setTimeout(() => setCpOpen(false), 2000);
   }
 
   const uniquePartners = new Set(uses.map((u) => u.coupon_code)).size;
@@ -190,6 +217,52 @@ export default function RepresentantePage() {
               {uses.filter((u) => u.sale_status === "em_orcamento" || u.sale_status === null).length}
             </p>
           </div>
+        </div>
+
+        {/* Change password */}
+        <div className="bg-white border border-[#e2e2e2] mb-6">
+          <button
+            onClick={() => { setCpOpen(!cpOpen); setCpError(""); setCpSuccess(false); }}
+            className="w-full flex items-center justify-between px-6 py-4 text-left"
+          >
+            <span className="text-[10px] tracking-[0.15em] uppercase font-bold font-[var(--font-inter)] text-[#74777f]">
+              Alterar Senha
+            </span>
+            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="#74777f" strokeWidth="2"
+              className={`transition-transform duration-200 ${cpOpen ? "rotate-180" : ""}`}>
+              <path d="M6 9l6 6 6-6" />
+            </svg>
+          </button>
+          {cpOpen && (
+            <div className="border-t border-[#e2e2e2] px-6 py-5">
+              {cpSuccess ? (
+                <p className="text-green-600 text-sm font-[var(--font-inter)]">Senha alterada com sucesso.</p>
+              ) : (
+                <form onSubmit={handleChangePassword} className="space-y-3 max-w-sm">
+                  {["Senha atual", "Nova senha", "Confirmar nova senha"].map((lbl, i) => (
+                    <div key={lbl}>
+                      <label className="block text-[10px] tracking-[0.15em] uppercase font-bold font-[var(--font-inter)] text-[#74777f] mb-1">{lbl}</label>
+                      <input
+                        required
+                        type="password"
+                        value={[cpCurrent, cpNew, cpConfirm][i]}
+                        onChange={(e) => [setCpCurrent, setCpNew, setCpConfirm][i](e.target.value)}
+                        className="w-full border border-[#e2e2e2] px-3 py-2.5 text-sm font-[var(--font-inter)] text-[#002045] focus:outline-none focus:border-[#002045]"
+                      />
+                    </div>
+                  ))}
+                  {cpError && <p className="text-red-600 text-xs font-[var(--font-inter)]">{cpError}</p>}
+                  <button
+                    type="submit"
+                    disabled={cpLoading}
+                    className="bg-[#002045] text-white text-xs tracking-[0.12em] uppercase font-bold font-[var(--font-inter)] px-6 py-2.5 hover:bg-[#1a365d] transition-colors disabled:opacity-50"
+                  >
+                    {cpLoading ? "Salvando..." : "Salvar nova senha"}
+                  </button>
+                </form>
+              )}
+            </div>
+          )}
         </div>
 
         {/* Usage history */}

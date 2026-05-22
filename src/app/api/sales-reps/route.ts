@@ -75,29 +75,23 @@ export async function POST(req: NextRequest) {
         html: `
           <div style="font-family:sans-serif;max-width:520px;margin:0 auto;padding:32px 24px;color:#1a1a1a">
             <h2 style="font-size:22px;margin-bottom:8px">Olá, ${name}!</h2>
-            <p style="color:#555;margin-bottom:24px">Você foi cadastrado como representante da <strong>Orbital Revestimentos</strong>. Aqui estão suas credenciais de acesso ao portal:</p>
-
+            <p style="color:#555;margin-bottom:24px">Você foi cadastrado como representante da <strong>Orbital Revestimentos</strong>.</p>
             <div style="background:#f5f5f3;border:1px solid #e2e2e2;padding:20px 24px;margin-bottom:16px">
-              <p style="margin:0 0 4px 0;font-size:11px;text-transform:uppercase;letter-spacing:0.12em;color:#74777f">Seu código de indicação (login)</p>
+              <p style="margin:0 0 4px 0;font-size:11px;text-transform:uppercase;letter-spacing:0.12em;color:#74777f">Código de indicação (login)</p>
               <p style="margin:0;font-size:26px;font-weight:bold;letter-spacing:0.15em;color:#002045">${(referral_code as string).toUpperCase()}</p>
             </div>
-
             ${portal_password ? `
             <div style="background:#f5f5f3;border:1px solid #e2e2e2;padding:20px 24px;margin-bottom:24px">
               <p style="margin:0 0 4px 0;font-size:11px;text-transform:uppercase;letter-spacing:0.12em;color:#74777f">Senha inicial</p>
               <p style="margin:0;font-size:20px;font-weight:bold;letter-spacing:0.1em;color:#002045">${portal_password}</p>
             </div>
-            ` : ""}
-
-            <p style="color:#555;font-size:14px;margin-bottom:24px">
-              Acesse seu painel em:<br/>
-              <a href="${portalUrl}" style="color:#002045;font-weight:600">${portalUrl}</a>
-            </p>
-
-            <p style="color:#555;font-size:13px;margin-bottom:8px">
-              Recomendamos que você altere sua senha após o primeiro acesso — essa opção está disponível dentro do portal.
-            </p>
-
+            ` : `
+            <div style="background:#fffbf0;border:1px solid #f0d080;padding:16px 24px;margin-bottom:24px">
+              <p style="margin:0;font-size:13px;color:#7a5c00;">&#9888;&#65039; Nenhuma senha foi configurada para sua conta ainda. Aguarde o contato da equipe Orbital com suas credenciais de acesso.</p>
+            </div>
+            `}
+            <p style="color:#555;font-size:14px;margin-bottom:24px">Portal: <a href="${portalUrl}" style="color:#002045;font-weight:600">${portalUrl}</a></p>
+            ${portal_password ? `<p style="color:#555;font-size:13px">Recomendamos alterar sua senha após o primeiro acesso.</p>` : ""}
             <p style="color:#888;font-size:12px;margin-top:32px;border-top:1px solid #eee;padding-top:16px">Orbital Revestimentos · Manaus, AM</p>
           </div>
         `,

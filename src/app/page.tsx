@@ -172,7 +172,7 @@ export default function Home() {
   return (
     <>
       {/* Hero */}
-      <section className="relative h-screen min-h-[620px] max-h-[900px] flex items-end">
+      <section className="relative h-screen min-h-[620px] max-h-[900px] flex items-center lg:items-end">
         <div className="absolute inset-0">
           <Image
             src="/images/catalogue/hero-cover.png"
@@ -181,24 +181,24 @@ export default function Home() {
             className="object-cover object-center"
             priority
           />
-          <div className="absolute inset-0 bg-gradient-to-r from-[#001530]/85 via-[#001530]/50 to-transparent" />
+          <div className="absolute inset-0 bg-gradient-to-t from-[#001530]/90 via-[#001530]/60 to-[#001530]/20 lg:bg-gradient-to-r lg:from-[#001530]/85 lg:via-[#001530]/50 lg:to-transparent" />
         </div>
-        <div className="relative z-10 w-full max-w-[1280px] mx-auto px-8 lg:px-16 pb-20 lg:pb-28">
+        <div className="relative z-10 w-full max-w-[1280px] mx-auto px-4 lg:px-16 py-16 lg:pb-28 lg:pt-0">
           <p className="text-[#86a0cd] text-xs tracking-[0.2em] uppercase font-semibold font-[var(--font-inter)] mb-5">
             Placas Flexíveis de Bambu · PFB 5mm
           </p>
-          <h1 className="font-[var(--font-noto-serif)] text-white text-5xl lg:text-7xl font-normal leading-[1.1] tracking-[-0.02em] mb-6 max-w-3xl">
+          <h1 className="font-[var(--font-noto-serif)] text-white text-3xl lg:text-7xl font-normal leading-[1.1] tracking-[-0.02em] mb-6 max-w-3xl">
             Instalado em horas.<br />
             <em>Admirado por anos.</em>
           </h1>
-          <p className="text-white/80 text-lg font-[var(--font-inter)] font-normal leading-relaxed mb-10 max-w-xl">
+          <p className="text-white/80 text-base lg:text-lg font-[var(--font-inter)] font-normal leading-relaxed mb-8 lg:mb-10 max-w-xl">
             Revestimentos eco-premium que transformam paredes e tetos com
             acabamento arquitetônico — sem obra, sem espera.
           </p>
-          <div className="flex flex-wrap gap-4">
+          <div className="flex flex-col sm:flex-row flex-wrap gap-3 lg:gap-4">
             <Link
               href="/produtos"
-              className="bg-white text-[#002045] text-xs tracking-[0.12em] uppercase font-bold font-[var(--font-inter)] px-8 py-4 hover:bg-[#f3f3f3] transition-colors"
+              className="w-full sm:w-auto text-center bg-white text-[#002045] text-xs tracking-[0.12em] uppercase font-bold font-[var(--font-inter)] px-8 py-4 hover:bg-[#f3f3f3] transition-colors"
             >
               Ver Acabamentos
             </Link>
@@ -206,7 +206,7 @@ export default function Home() {
               href={CATALOGUE_URL}
               target="_blank"
               rel="noopener noreferrer"
-              className="inline-flex items-center gap-2 border border-white/60 text-white text-xs tracking-[0.12em] uppercase font-bold font-[var(--font-inter)] px-8 py-4 hover:bg-white/10 transition-colors"
+              className="w-full sm:w-auto inline-flex items-center justify-center gap-2 border border-white/60 text-white text-xs tracking-[0.12em] uppercase font-bold font-[var(--font-inter)] px-8 py-4 hover:bg-white/10 transition-colors"
             >
               <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
                 <path d="M21 15v4a2 2 0 01-2 2H5a2 2 0 01-2-2v-4M7 10l5 5 5-5M12 15V3" />
@@ -219,7 +219,7 @@ export default function Home() {
 
       {/* Stats Bar */}
       <section className="bg-[#002045] border-b border-[#1a365d]">
-        <div className="max-w-[1280px] mx-auto px-8 lg:px-16 py-6">
+        <div className="max-w-[1280px] mx-auto px-4 lg:px-16 py-6">
           <div className="grid grid-cols-3 md:grid-cols-6 gap-4">
             {stats.map(({ value, label }) => (
               <div key={label} className="flex flex-col items-center text-center py-2">
@@ -240,7 +240,7 @@ export default function Home() {
       <section className="overflow-hidden bg-white">
         <div className="flex flex-col lg:flex-row">
           {/* Left — dark text panel */}
-          <div className="lg:w-[54%] bg-[#002045] px-8 lg:px-20 py-24 lg:py-32 flex items-center">
+          <div className="lg:w-[54%] bg-[#002045] px-4 lg:px-20 py-10 lg:py-32 flex items-center">
             <div className="max-w-[520px]">
               <p className="text-[#86a0cd] text-xs tracking-[0.2em] uppercase font-semibold font-[var(--font-inter)] mb-5">
                 Sobre a Orbital
@@ -272,7 +272,7 @@ export default function Home() {
           </div>
 
           {/* Right — anatomy diagram with vignette */}
-          <div className="lg:w-[46%] bg-white relative min-h-[440px] flex items-center justify-center overflow-hidden py-12 px-8">
+          <div className="lg:w-[46%] bg-white relative min-h-[280px] lg:min-h-[440px] flex items-center justify-center overflow-hidden py-8 lg:py-12 px-8">
             {/* Radial vignette fades edges into white */}
             <div
               className="absolute inset-0 pointer-events-none z-10"
@@ -283,16 +283,16 @@ export default function Home() {
               alt="Anatomia da Placa PFB Orbital — seção transversal 5 camadas"
               width={732}
               height={1638}
-              className="max-h-[580px] w-auto relative z-[5]"
+              className="max-h-[280px] lg:max-h-[580px] w-auto relative z-[5]"
             />
           </div>
         </div>
       </section>
 
       {/* Benefits */}
-      <section className="py-20 bg-[#ffffff] border-y border-[#eeeeee]">
-        <div className="max-w-[1280px] mx-auto px-8 lg:px-16">
-          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-8">
+      <section className="py-10 lg:py-20 bg-[#ffffff] border-y border-[#eeeeee]">
+        <div className="max-w-[1280px] mx-auto px-4 lg:px-16">
+          <div className="grid grid-cols-2 lg:grid-cols-4 gap-6 lg:gap-8">
             {benefits.map(({ icon, title, desc }, i) => (
               <ScrollReveal key={title} delay={i * 100} direction="up">
                 <div className="flex flex-col gap-4 group">
@@ -313,14 +313,14 @@ export default function Home() {
       </section>
 
       {/* Featured Lines */}
-      <section className="py-24 lg:py-32 bg-[#f9f9f9]">
-        <div className="max-w-[1280px] mx-auto px-8 lg:px-16">
-          <div className="flex items-end justify-between mb-14 pb-4 border-b border-[#e2e2e2]">
+      <section className="py-12 lg:py-32 bg-[#f9f9f9]">
+        <div className="max-w-[1280px] mx-auto px-4 lg:px-16">
+          <div className="flex items-end justify-between mb-8 lg:mb-14 pb-4 border-b border-[#e2e2e2]">
             <div>
               <p className="text-[#74777f] text-xs tracking-[0.2em] uppercase font-semibold font-[var(--font-inter)] mb-2">
                 Coleções
               </p>
-              <h2 className="font-[var(--font-noto-serif)] text-[#002045] text-3xl lg:text-4xl font-normal">
+              <h2 className="font-[var(--font-noto-serif)] text-[#002045] text-2xl lg:text-4xl font-normal">
                 Linhas em Destaque
               </h2>
             </div>
@@ -345,7 +345,44 @@ export default function Home() {
             </div>
           </div>
 
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
+          {/* Mobile: horizontal scroll row; md+: 3-column grid */}
+          <div className="flex overflow-x-auto snap-x snap-mandatory gap-3 pb-4 md:hidden -mx-4 px-4">
+            {featuredLines.map(({ name, subtitle, desc, price, img, href, code, waMsg }) => (
+              <div key={name} className="min-w-[50vw] snap-start flex-shrink-0 group">
+                <Link href={href} className="block cursor-pointer">
+                  <div className="relative aspect-[812/988] overflow-hidden bg-[#eeeeee] mb-2">
+                    <Image
+                      src={img}
+                      alt={`${name} — ${subtitle}`}
+                      fill
+                      className="object-cover transition-transform duration-700 ease-out group-hover:scale-[1.05]"
+                    />
+                    <div className="absolute top-4 left-4">
+                      <span className="bg-[#002045] text-white text-[10px] tracking-[0.15em] uppercase font-semibold font-[var(--font-inter)] px-3 py-1.5">
+                        {name}
+                      </span>
+                    </div>
+                  </div>
+                  <div className="space-y-1 mb-3">
+                    <p className="text-[#74777f] text-[10px] tracking-[0.15em] uppercase font-semibold font-[var(--font-inter)]">{code}</p>
+                    <h3 className="font-[var(--font-noto-serif)] text-[#002045] text-base font-medium">{name} — {subtitle}</h3>
+                    <p className="text-[#43474e] text-xs font-[var(--font-inter)] leading-relaxed">{desc}</p>
+                    <p className="text-[#1a365d] text-sm font-semibold font-[var(--font-inter)] pt-0.5">{price}</p>
+                  </div>
+                </Link>
+                <a
+                  href={WA(waMsg)}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="inline-block text-[10px] tracking-[0.12em] uppercase font-bold font-[var(--font-inter)] border border-[#002045] text-[#002045] px-5 py-2 hover:bg-[#002045] hover:text-white transition-colors"
+                >
+                  Tirar dúvidas →
+                </a>
+              </div>
+            ))}
+          </div>
+
+          <div className="hidden md:grid md:grid-cols-3 gap-8">
             {featuredLines.map(({ name, subtitle, desc, price, img, href, code, waMsg }, i) => (
               <ScrollReveal key={name} delay={i * 120} direction="up">
                 <div className="group">
@@ -416,14 +453,14 @@ export default function Home() {
       </section>
 
       {/* Projects Teaser */}
-      <section className="py-24 lg:py-32 bg-[#1e212a] text-white">
-        <div className="max-w-[1280px] mx-auto px-8 lg:px-16">
-          <div className="grid grid-cols-1 lg:grid-cols-12 gap-12 items-center mb-14">
+      <section className="py-10 lg:py-32 bg-[#1e212a] text-white">
+        <div className="max-w-[1280px] mx-auto px-4 lg:px-16">
+          <div className="grid grid-cols-1 lg:grid-cols-12 gap-10 lg:gap-12 items-center mb-10 lg:mb-14">
             <ScrollReveal className="lg:col-span-5" direction="left">
               <p className="text-[#a1d494] text-xs tracking-[0.2em] uppercase font-semibold font-[var(--font-inter)] mb-5">
                 Projetos Concluídos
               </p>
-              <h2 className="font-[var(--font-noto-serif)] text-white text-2xl lg:text-[36px] font-normal leading-[1.25] mb-6 whitespace-nowrap">
+              <h2 className="font-[var(--font-noto-serif)] text-white text-2xl lg:text-[36px] font-normal leading-[1.25] mb-6">
                 Obras que falam por si.
               </h2>
               <p className="text-[#9c9faa] text-base font-[var(--font-inter)] leading-relaxed mb-8">
@@ -449,21 +486,22 @@ export default function Home() {
                   { src: "/images/catalogue/page13_img5_924x1629.jpeg", label: "Revestimento de parede PFB — ambiente residencial" },
                 ].map(({ src, label }, i) => (
                   <ScrollReveal key={label} delay={i * 80} direction="up">
-                    <div className="relative aspect-[4/5] overflow-hidden group">
+                    <div className="relative aspect-square sm:aspect-[4/5] overflow-hidden group">
                       <Image
                         src={src}
                         alt={label}
                         fill
                         className="object-cover transition-transform duration-700 group-hover:scale-[1.06]"
                       />
-                      <div className="absolute inset-0 bg-gradient-to-t from-black/60 via-black/10 to-transparent group-hover:from-black/40 transition-all duration-500" />
-                      <div className="absolute inset-x-0 bottom-0 p-3 translate-y-1 group-hover:translate-y-0 transition-transform duration-400">
+                      <div className="hidden sm:block absolute inset-0 bg-gradient-to-t from-black/60 via-black/10 to-transparent group-hover:from-black/40 transition-all duration-500" />
+                      <div className="hidden sm:block absolute inset-x-0 bottom-0 p-3 translate-y-1 group-hover:translate-y-0 transition-transform duration-400">
                         <p className="text-white text-xs tracking-[0.1em] uppercase font-semibold font-[var(--font-inter)]">
                           {label}
                         </p>
                         <div className="h-px bg-white/50 mt-1.5 scale-x-0 group-hover:scale-x-100 transition-transform duration-500 origin-left" />
                       </div>
                     </div>
+                    <p className="sm:hidden text-white/50 text-[9px] tracking-[0.1em] uppercase font-[var(--font-inter)] mt-1.5 leading-tight">{label}</p>
                   </ScrollReveal>
                 ))}
               </div>
@@ -473,14 +511,14 @@ export default function Home() {
       </section>
 
       {/* Parceiros Teaser */}
-      <section className="py-24 lg:py-32 bg-white border-t border-[#eeeeee]">
-        <div className="max-w-[1280px] mx-auto px-8 lg:px-16">
-          <div className="flex items-end justify-between mb-14 pb-4 border-b border-[#e2e2e2]">
+      <section className="py-10 lg:py-32 bg-white border-t border-[#eeeeee]">
+        <div className="max-w-[1280px] mx-auto px-4 lg:px-16">
+          <div className="flex items-end justify-between mb-10 lg:mb-14 pb-4 border-b border-[#e2e2e2]">
             <div>
               <p className="text-[#74777f] text-xs tracking-[0.2em] uppercase font-semibold font-[var(--font-inter)] mb-2">
                 Para Profissionais
               </p>
-              <h2 className="font-[var(--font-noto-serif)] text-[#002045] text-3xl lg:text-4xl font-normal">
+              <h2 className="font-[var(--font-noto-serif)] text-[#002045] text-2xl lg:text-4xl font-normal">
                 Feito para quem entrega resultados.
               </h2>
             </div>
@@ -492,7 +530,7 @@ export default function Home() {
             </Link>
           </div>
 
-          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6">
+          <div className="grid grid-cols-2 lg:grid-cols-4 gap-4 lg:gap-6">
             {[
               {
                 label: "Arquitetos & Urbanistas",
@@ -544,7 +582,7 @@ export default function Home() {
               },
             ].map(({ label, tagline, icon, waMsg, href }, i) => (
               <ScrollReveal key={label} delay={i * 80} direction="up">
-                <div className="border border-[#e2e2e2] p-7 hover:border-[#002045] transition-colors group h-full flex flex-col">
+                <div className="border border-[#e2e2e2] p-4 lg:p-7 hover:border-[#002045] transition-colors group h-full flex flex-col">
                   <div className="text-[#1a365d] w-10 h-10 flex items-center justify-center border border-[#e2e2e2] group-hover:bg-[#002045] group-hover:text-white group-hover:border-[#002045] transition-colors duration-300 mb-5">
                     {icon}
                   </div>
@@ -578,8 +616,8 @@ export default function Home() {
       </section>
 
       {/* CTA WhatsApp */}
-      <section className="py-20 bg-[#002045]">
-        <div className="max-w-[1280px] mx-auto px-8 lg:px-16 text-center">
+      <section className="py-10 lg:py-20 bg-[#002045]">
+        <div className="max-w-[1280px] mx-auto px-4 lg:px-16 text-center">
           <ScrollReveal direction="none">
           <p className="text-[#86a0cd] text-xs tracking-[0.2em] uppercase font-semibold font-[var(--font-inter)] mb-4">
             Pronto para transformar seu espaço?
@@ -591,12 +629,12 @@ export default function Home() {
             3 linhas exclusivas, 15 acabamentos e entrega imediata em Manaus.
             Baixe o catálogo ou entre em contato diretamente.
           </p>
-          <div className="flex flex-wrap justify-center gap-4">
+          <div className="flex flex-col sm:flex-row flex-wrap justify-center gap-3 lg:gap-4">
             <a
               href={WA("Olá! Vim pela homepage e gostaria de saber mais sobre os revestimentos PFB Orbital.")}
               target="_blank"
               rel="noopener noreferrer"
-              className="inline-flex items-center gap-3 bg-[#3b6934] text-white text-xs tracking-[0.12em] uppercase font-bold font-[var(--font-inter)] px-8 py-4 hover:bg-[#2d5228] transition-colors cta-pulse-green"
+              className="w-full sm:w-auto inline-flex items-center justify-center gap-3 bg-[#3b6934] text-white text-xs tracking-[0.12em] uppercase font-bold font-[var(--font-inter)] px-8 py-4 hover:bg-[#2d5228] transition-colors cta-pulse-green"
             >
               <svg width="18" height="18" viewBox="0 0 24 24" fill="currentColor">
                 <path d="M17.472 14.382c-.297-.149-1.758-.867-2.03-.967-.273-.099-.471-.148-.67.15-.197.297-.767.966-.94 1.164-.173.199-.347.223-.644.075-.297-.15-1.255-.463-2.39-1.475-.883-.788-1.48-1.761-1.653-2.059-.173-.297-.018-.458.13-.606.134-.133.298-.347.446-.52.149-.174.198-.298.298-.497.099-.198.05-.371-.025-.52-.075-.149-.669-1.612-.916-2.207-.242-.579-.487-.5-.669-.51-.173-.008-.371-.01-.57-.01-.198 0-.52.074-.792.372-.272.297-1.04 1.016-1.04 2.479 0 1.462 1.065 2.875 1.213 3.074.149.198 2.096 3.2 5.077 4.487.709.306 1.262.489 1.694.625.712.227 1.36.195 1.871.118.571-.085 1.758-.719 2.006-1.413.248-.694.248-1.289.173-1.413-.074-.124-.272-.198-.57-.347m-5.421 7.403h-.004a9.87 9.87 0 01-5.031-1.378l-.361-.214-3.741.982.998-3.648-.235-.374a9.86 9.86 0 01-1.51-5.26c.001-5.45 4.436-9.884 9.888-9.884 2.64 0 5.122 1.03 6.988 2.898a9.825 9.825 0 012.893 6.994c-.003 5.45-4.437 9.884-9.885 9.884m8.413-18.297A11.815 11.815 0 0012.05 0C5.495 0 .16 5.335.157 11.892c0 2.096.547 4.142 1.588 5.945L.057 24l6.305-1.654a11.882 11.882 0 005.683 1.448h.005c6.554 0 11.89-5.335 11.893-11.893a11.821 11.821 0 00-3.48-8.413z" />
@@ -607,7 +645,7 @@ export default function Home() {
               href={CATALOGUE_URL}
               target="_blank"
               rel="noopener noreferrer"
-              className="inline-flex items-center gap-2 border border-white/40 text-white text-xs tracking-[0.12em] uppercase font-bold font-[var(--font-inter)] px-8 py-4 hover:bg-white/10 transition-colors"
+              className="w-full sm:w-auto inline-flex items-center justify-center gap-2 border border-white/40 text-white text-xs tracking-[0.12em] uppercase font-bold font-[var(--font-inter)] px-8 py-4 hover:bg-white/10 transition-colors"
             >
               <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
                 <path d="M21 15v4a2 2 0 01-2 2H5a2 2 0 01-2-2v-4M7 10l5 5 5-5M12 15V3" />
@@ -616,7 +654,7 @@ export default function Home() {
             </a>
             <Link
               href="/produtos"
-              className="border border-white/40 text-white text-xs tracking-[0.12em] uppercase font-bold font-[var(--font-inter)] px-8 py-4 hover:bg-white/10 transition-colors"
+              className="w-full sm:w-auto text-center border border-white/40 text-white text-xs tracking-[0.12em] uppercase font-bold font-[var(--font-inter)] px-8 py-4 hover:bg-white/10 transition-colors"
             >
               Ver Catálogo Online
             </Link>
@@ -626,24 +664,24 @@ export default function Home() {
       </section>
 
       {/* FAQ */}
-      <section className="py-20 bg-white border-t border-[#eeeeee]">
+      <section className="py-10 lg:py-20 bg-white border-t border-[#eeeeee]">
         <script
           type="application/ld+json"
           dangerouslySetInnerHTML={{ __html: JSON.stringify(faqSchema) }}
         />
-        <div className="max-w-[1280px] mx-auto px-8 lg:px-16">
-          <div className="mb-12">
+        <div className="max-w-[1280px] mx-auto px-4 lg:px-16">
+          <div className="mb-6 lg:mb-12">
             <p className="text-[#74777f] text-xs tracking-[0.2em] uppercase font-semibold font-[var(--font-inter)] mb-2">
               Dúvidas Frequentes
             </p>
-            <h2 className="font-[var(--font-noto-serif)] text-[#002045] text-3xl lg:text-4xl font-normal">
+            <h2 className="font-[var(--font-noto-serif)] text-[#002045] text-2xl lg:text-4xl font-normal">
               Perguntas e Respostas
             </h2>
           </div>
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-x-16 gap-y-10">
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-x-16 gap-y-5 lg:gap-y-10">
             {faqs.map(({ q, a }) => (
-              <div key={q} className="border-t border-[#eeeeee] pt-6">
-                <h3 className="font-[var(--font-noto-serif)] text-[#002045] text-lg font-normal mb-3">
+              <div key={q} className="border-t border-[#eeeeee] pt-4 lg:pt-6">
+                <h3 className="font-[var(--font-noto-serif)] text-[#002045] text-base lg:text-lg font-normal mb-2">
                   {q}
                 </h3>
                 <p className="text-[#43474e] text-sm font-[var(--font-inter)] leading-relaxed">

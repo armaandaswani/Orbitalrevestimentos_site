@@ -124,6 +124,15 @@ export default function AdminPage() {
   const [filterPartner, setFilterPartner] = useState<string>("all");
   const [filterRep, setFilterRep] = useState<string>("all");
 
+  // Change admin password
+  const [cpOpen, setCpOpen] = useState(false);
+  const [cpCurrent, setCpCurrent] = useState("");
+  const [cpNew, setCpNew] = useState("");
+  const [cpConfirm, setCpConfirm] = useState("");
+  const [cpError, setCpError] = useState("");
+  const [cpSuccess, setCpSuccess] = useState(false);
+  const [cpLoading, setCpLoading] = useState(false);
+
   const supabaseConfigured = !!process.env.NEXT_PUBLIC_SUPABASE_URL;
 
   useEffect(() => {
@@ -167,6 +176,25 @@ export default function AdminPage() {
     } else {
       setPwError("Senha incorreta.");
     }
+  }
+
+  async function handleAdminChangePassword(e: React.FormEvent) {
+    e.preventDefault();
+    setCpError("");
+    if (cpNew !== cpConfirm) { setCpError("As senhas não coincidem."); return; }
+    if (cpNew.length < 6) { setCpError("A nova senha deve ter pelo menos 6 caracteres."); return; }
+    setCpLoading(true);
+    const res = await fetch("/api/admin/change-password", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ current_password: cpCurrent, new_password: cpNew }),
+    });
+    const json = await res.json();
+    setCpLoading(false);
+    if (!res.ok) { setCpError(json.error || "Erro ao alterar senha."); return; }
+    setCpSuccess(true);
+    setCpCurrent(""); setCpNew(""); setCpConfirm("");
+    setTimeout(() => { setCpOpen(false); setCpSuccess(false); }, 2000);
   }
 
   // ── Partners ─────────────────────────────
@@ -364,10 +392,60 @@ export default function AdminPage() {
             </span>
           )}
         </div>
-        <button onClick={() => { sessionStorage.removeItem("orbital_admin_auth"); setAuthed(false); }} className="text-white/60 hover:text-white text-xs font-[var(--font-inter)] uppercase tracking-widest transition-colors">
-          Sair
-        </button>
+        <div className="flex items-center gap-4">
+          <button
+            onClick={() => { setCpOpen(!cpOpen); setCpError(""); setCpSuccess(false); }}
+            className="text-white/60 hover:text-white text-xs font-[var(--font-inter)] uppercase tracking-widest transition-colors"
+          >
+            Alterar senha
+          </button>
+          <button onClick={() => { sessionStorage.removeItem("orbital_admin_auth"); setAuthed(false); }} className="text-white/60 hover:text-white text-xs font-[var(--font-inter)] uppercase tracking-widest transition-colors">
+            Sair
+          </button>
+        </div>
       </div>
+
+      {cpOpen && (
+        <div className="bg-[#001530] border-b border-[#1a365d] px-8 py-5">
+          {cpSuccess ? (
+            <p className="text-green-400 text-sm font-[var(--font-inter)]">Senha alterada com sucesso.</p>
+          ) : (
+            <form onSubmit={handleAdminChangePassword} className="flex flex-wrap items-end gap-4">
+              {["Senha atual", "Nova senha", "Confirmar nova senha"].map((lbl, i) => (
+                <div key={lbl}>
+                  <label className="block text-[10px] tracking-[0.15em] uppercase font-bold font-[var(--font-inter)] text-white/50 mb-1">{lbl}</label>
+                  <input
+                    required
+                    type="password"
+                    value={[cpCurrent, cpNew, cpConfirm][i]}
+                    onChange={(e) => [setCpCurrent, setCpNew, setCpConfirm][i](e.target.value)}
+                    className="border border-[#1a365d] bg-[#002045] text-white px-3 py-2 text-sm font-[var(--font-inter)] focus:outline-none focus:border-white/40 w-44"
+                  />
+                </div>
+              ))}
+              <div className="flex flex-col gap-1">
+                {cpError && <p className="text-red-400 text-xs font-[var(--font-inter)]">{cpError}</p>}
+                <div className="flex gap-2">
+                  <button
+                    type="submit"
+                    disabled={cpLoading}
+                    className="bg-white text-[#002045] text-xs tracking-[0.12em] uppercase font-bold font-[var(--font-inter)] px-5 py-2 hover:bg-white/90 transition-colors disabled:opacity-50"
+                  >
+                    {cpLoading ? "Salvando..." : "Salvar"}
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => setCpOpen(false)}
+                    className="text-white/50 text-xs font-[var(--font-inter)] px-4 py-2 border border-white/20 hover:border-white/40 transition-colors"
+                  >
+                    Cancelar
+                  </button>
+                </div>
+              </div>
+            </form>
+          )}
+        </div>
+      )}
 
       {!supabaseConfigured && (
         <div className="max-w-4xl mx-auto px-8 pt-10">

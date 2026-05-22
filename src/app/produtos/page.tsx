@@ -182,24 +182,24 @@ export default function ProdutosPage() {
   return (
     <div className="pt-20">
       {/* Page Header */}
-      <section className="bg-[#002045] text-white py-20 lg:py-24">
-        <div className="max-w-[1280px] mx-auto px-8 lg:px-16">
+      <section className="bg-[#002045] text-white py-10 lg:py-24">
+        <div className="max-w-[1280px] mx-auto px-4 lg:px-16">
           <p className="text-[#86a0cd] text-xs tracking-[0.2em] uppercase font-semibold font-[var(--font-inter)] mb-4">
             Catálogo · 2026
           </p>
-          <h1 className="font-[var(--font-noto-serif)] text-5xl lg:text-6xl font-normal tracking-[-0.02em] leading-tight mb-5">
+          <h1 className="font-[var(--font-noto-serif)] text-3xl lg:text-6xl font-normal tracking-[-0.02em] leading-tight mb-5">
             Catálogo de Acabamentos
           </h1>
-          <p className="text-white/70 text-lg font-[var(--font-inter)] leading-relaxed max-w-2xl mb-8">
+          <p className="text-white/70 text-base lg:text-lg font-[var(--font-inter)] leading-relaxed max-w-2xl mb-8">
             3 linhas exclusivas. 15 acabamentos em estoque. Precisão técnica e
             estética arquitetônica para projetos exigentes.
           </p>
-          <div className="flex flex-wrap gap-4">
+          <div className="flex flex-col sm:flex-row flex-wrap gap-3 lg:gap-4">
             <a
               href={CATALOGUE_URL}
               target="_blank"
               rel="noopener noreferrer"
-              className="inline-flex items-center gap-2 bg-white text-[#002045] text-xs tracking-[0.12em] uppercase font-bold font-[var(--font-inter)] px-7 py-3.5 hover:bg-[#f3f3f3] transition-colors"
+              className="w-full sm:w-auto inline-flex items-center justify-center gap-2 bg-white text-[#002045] text-xs tracking-[0.12em] uppercase font-bold font-[var(--font-inter)] px-7 py-3.5 hover:bg-[#f3f3f3] transition-colors"
             >
               <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
                 <path d="M21 15v4a2 2 0 01-2 2H5a2 2 0 01-2-2v-4M7 10l5 5 5-5M12 15V3" />
@@ -210,7 +210,7 @@ export default function ProdutosPage() {
               href={`https://wa.me/5592988150149?text=${encodeURIComponent("Olá! Estou vendo o catálogo no site e gostaria de tirar algumas dúvidas sobre os revestimentos Orbital.")}`}
               target="_blank"
               rel="noopener noreferrer"
-              className="inline-flex items-center gap-2 border border-white/40 text-white text-xs tracking-[0.12em] uppercase font-bold font-[var(--font-inter)] px-7 py-3.5 hover:bg-white/10 transition-colors"
+              className="w-full sm:w-auto inline-flex items-center justify-center gap-2 border border-white/40 text-white text-xs tracking-[0.12em] uppercase font-bold font-[var(--font-inter)] px-7 py-3.5 hover:bg-white/10 transition-colors"
             >
               Tirar Dúvidas no WhatsApp
             </a>
@@ -220,13 +220,13 @@ export default function ProdutosPage() {
 
       {/* Filters */}
       <div className="sticky top-20 z-40 bg-[#ffffff] border-b border-[#e2e2e2] shadow-[0_1px_0_0_rgba(0,0,0,0.04)]">
-        <div className="max-w-[1280px] mx-auto px-8 lg:px-16">
+        <div className="max-w-[1280px] mx-auto px-4 lg:px-16">
           <div className="flex gap-0 overflow-x-auto">
             {linhas.map(({ key, label, desc }) => (
               <button
                 key={key}
                 onClick={() => setActiveLinha(key)}
-                className={`flex-shrink-0 flex flex-col items-start px-6 py-5 border-b-2 transition-all duration-200 ${
+                className={`flex-shrink-0 flex flex-col items-start px-3 py-3 sm:px-6 sm:py-5 border-b-2 transition-all duration-200 ${
                   activeLinha === key
                     ? "border-[#002045] text-[#002045]"
                     : "border-transparent text-[#74777f] hover:text-[#002045]"
@@ -235,7 +235,7 @@ export default function ProdutosPage() {
                 <span className="text-xs tracking-[0.12em] uppercase font-bold font-[var(--font-inter)]">
                   {label}
                 </span>
-                <span className="text-[10px] font-[var(--font-inter)] mt-0.5 opacity-70">
+                <span className="text-[10px] font-[var(--font-inter)] mt-0.5 opacity-70 hidden sm:block">
                   {desc}
                 </span>
               </button>
@@ -245,8 +245,8 @@ export default function ProdutosPage() {
       </div>
 
       {/* Product Grid */}
-      <section className="py-16 lg:py-20 bg-[#f9f9f9]">
-        <div className="max-w-[1280px] mx-auto px-8 lg:px-16">
+      <section className="py-12 lg:py-20 bg-[#f9f9f9]">
+        <div className="max-w-[1280px] mx-auto px-4 lg:px-16">
           {activeLinha !== "todos" && (
             <div className="mb-10 pb-8 border-b border-[#e2e2e2]">
               <h2 className="font-[var(--font-noto-serif)] text-[#002045] text-3xl font-normal mb-2">
@@ -263,43 +263,43 @@ export default function ProdutosPage() {
             </div>
           )}
 
-          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-x-8 gap-y-14">
+          <div className="grid grid-cols-2 lg:grid-cols-3 gap-x-4 gap-y-8 lg:gap-x-8 lg:gap-y-14">
             {filtered.map(({ code, name, linha, finish, price, priceM2, img, desc }) => (
               <article key={code} className="group cursor-pointer">
-                <div className="relative aspect-[4/5] overflow-hidden bg-[#eeeeee] mb-5 shadow-sm group-hover:shadow-lg transition-shadow duration-500">
+                <div className="relative aspect-[4/5] overflow-hidden bg-[#eeeeee] mb-3 lg:mb-5 shadow-sm group-hover:shadow-lg transition-shadow duration-500">
                   <Image
                     src={img}
                     alt={`${name} — Linha ${linha}`}
                     fill
                     className="object-cover transition-transform duration-700 ease-out group-hover:scale-[1.05]"
                   />
-                  <div className="absolute top-4 right-4">
-                    <span className="bg-white/95 text-[#002045] text-[10px] tracking-[0.1em] uppercase font-semibold font-[var(--font-inter)] px-2.5 py-1.5">
+                  <div className="absolute top-2 right-2 lg:top-4 lg:right-4">
+                    <span className="bg-white/95 text-[#002045] text-[9px] lg:text-[10px] tracking-[0.1em] uppercase font-semibold font-[var(--font-inter)] px-2 py-1 lg:px-2.5 lg:py-1.5">
                       {finish}
                     </span>
                   </div>
                 </div>
-                <div className="space-y-1.5">
+                <div className="space-y-1 lg:space-y-1.5">
                   <div className="flex items-center justify-between">
-                    <span className="text-[#74777f] text-[10px] tracking-[0.15em] uppercase font-semibold font-[var(--font-inter)]">
+                    <span className="text-[#74777f] text-[9px] lg:text-[10px] tracking-[0.15em] uppercase font-semibold font-[var(--font-inter)]">
                       {code} · {linha}
                     </span>
                   </div>
-                  <h3 className="font-[var(--font-noto-serif)] text-[#002045] text-xl font-medium leading-snug">
+                  <h3 className="font-[var(--font-noto-serif)] text-[#002045] text-base lg:text-xl font-medium leading-snug">
                     {name}
                   </h3>
-                  <p className="text-[#43474e] text-sm font-[var(--font-inter)] leading-relaxed">
+                  <p className="text-[#43474e] text-xs lg:text-sm font-[var(--font-inter)] leading-relaxed hidden sm:block">
                     {desc}
                   </p>
-                  <div className="flex items-center justify-between pt-2">
+                  <div className="flex items-center justify-between pt-1 lg:pt-2">
                     <div>
-                      <span className="text-[#1a365d] text-base font-semibold font-[var(--font-inter)]">
+                      <span className="text-[#1a365d] text-sm lg:text-base font-semibold font-[var(--font-inter)]">
                         {price}
                         <span className="text-xs text-[#74777f] font-normal ml-1">
                           /placa
                         </span>
                       </span>
-                      <span className="text-[#74777f] text-xs font-[var(--font-inter)] ml-2">
+                      <span className="text-[#74777f] text-xs font-[var(--font-inter)] ml-1 lg:ml-2 hidden sm:inline">
                         ({priceM2})
                       </span>
                     </div>
@@ -309,7 +309,7 @@ export default function ProdutosPage() {
                       href={`https://wa.me/5592988150149?text=${encodeURIComponent(`Olá! Tenho interesse no acabamento ${name} (${code}). Gostaria de saber mais.`)}`}
                       target="_blank"
                       rel="noopener noreferrer"
-                      className="inline-block text-[10px] tracking-[0.12em] uppercase font-bold font-[var(--font-inter)] border border-[#002045] text-[#002045] px-5 py-2 hover:bg-[#002045] hover:text-white transition-colors"
+                      className="inline-block text-[10px] tracking-[0.12em] uppercase font-bold font-[var(--font-inter)] border border-[#002045] text-[#002045] px-4 py-2 lg:px-5 hover:bg-[#002045] hover:text-white transition-colors"
                     >
                       Saber mais →
                     </a>
@@ -323,7 +323,7 @@ export default function ProdutosPage() {
 
       {/* Specs Bar */}
       <section className="bg-[#002045] py-12">
-        <div className="max-w-[1280px] mx-auto px-8 lg:px-16">
+        <div className="max-w-[1280px] mx-auto px-4 lg:px-16">
           <div className="grid grid-cols-2 md:grid-cols-4 gap-8 text-center">
             {[
               { label: "Dimensão", value: "1,2m × 2,9m" },
