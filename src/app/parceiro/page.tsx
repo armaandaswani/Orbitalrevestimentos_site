@@ -469,23 +469,8 @@ export default function ParceiroPage() {
                 {partner.coupon_code}
               </span>
             </div>
-            <div className="text-sm font-[var(--font-inter)] text-[#43474e] space-y-0.5">
-              <p>
-                Desconto para o cliente:{" "}
-                <strong>
-                  {partner.discount_type === "percentage"
-                    ? `${partner.discount_value}%`
-                    : fmt(partner.discount_value)}
-                </strong>
-              </p>
-              <p>
-                Sua comissão:{" "}
-                <strong>
-                  {partner.commission_type === "percentage"
-                    ? `${partner.commission_value}%`
-                    : fmt(partner.commission_value)}
-                </strong>
-              </p>
+            <div className="text-sm font-[var(--font-inter)] text-[#43474e]">
+              <p>Compartilhe seu cupom com clientes para aplicar o desconto automaticamente.</p>
             </div>
           </div>
         </div>
@@ -577,10 +562,10 @@ export default function ParceiroPage() {
           </div>
           <div className="bg-white border border-[#e2e2e2] px-6 py-5">
             <p className="text-[#74777f] text-[10px] tracking-[0.15em] uppercase font-bold font-[var(--font-inter)] mb-1">
-              Comissões confirmadas
+              Vendas concluídas
             </p>
             <p className="font-[var(--font-noto-serif)] text-[#002045] text-3xl font-normal">
-              {fmt(totalCommission)}
+              {uses.filter((u) => u.sale_status === "concluido").length}
             </p>
           </div>
           <div className="bg-white border border-[#e2e2e2] px-6 py-5">
@@ -588,7 +573,7 @@ export default function ParceiroPage() {
               Em orçamento
             </p>
             <p className="font-[var(--font-noto-serif)] text-yellow-700 text-3xl font-normal">
-              {fmt(pendingCommission)}
+              {uses.filter((u) => u.sale_status === "em_orcamento" || u.sale_status === null).length}
             </p>
           </div>
         </div>
@@ -611,7 +596,7 @@ export default function ParceiroPage() {
             <table className="w-full text-sm font-[var(--font-inter)]">
               <thead>
                 <tr className="border-b border-[#e2e2e2]">
-                  {["Data", "Produto", "Espaço", "Área (m²)", "Desconto aplicado", "Sua comissão", "Status"].map((h) => (
+                  {["Data", "Produto", "Espaço", "Área (m²)", "Status"].map((h) => (
                     <th key={h} className="text-left px-4 py-3 text-[10px] tracking-[0.1em] uppercase font-bold text-[#74777f] whitespace-nowrap">
                       {h}
                     </th>
@@ -633,18 +618,6 @@ export default function ParceiroPage() {
                       </td>
                       <td className="px-4 py-3 text-xs text-[#43474e]">{u.space || "—"}</td>
                       <td className="px-4 py-3 text-xs text-[#43474e]">{u.area_m2 ?? "—"}</td>
-                      <td className="px-4 py-3 text-xs text-green-700 font-semibold">
-                        {u.discount_applied ? fmt(u.discount_applied) : "—"}
-                      </td>
-                      <td className="px-4 py-3 text-xs text-[#002045] font-semibold">
-                        {st === "concluido" && u.commission_owed
-                          ? fmt(u.commission_owed)
-                          : st === "cancelado"
-                          ? <span className="text-[#74777f] font-normal">Cancelado</span>
-                          : u.commission_owed
-                          ? <span className="text-yellow-700">{fmt(u.commission_owed)} (pend.)</span>
-                          : "—"}
-                      </td>
                       <td className="px-4 py-3">
                         <span className={`px-2 py-1 text-[10px] font-bold tracking-wide ${stMeta.cls}`}>
                           {stMeta.label}

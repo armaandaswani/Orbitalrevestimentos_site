@@ -174,18 +174,18 @@ export default function RepresentantePage() {
           </div>
           <div className="bg-white border border-[#e2e2e2] px-6 py-5">
             <p className="text-[#74777f] text-[10px] tracking-[0.15em] uppercase font-bold font-[var(--font-inter)] mb-1">
-              Comissões confirmadas
+              Vendas concluídas
             </p>
             <p className="font-[var(--font-noto-serif)] text-[#002045] text-3xl font-normal">
-              {fmt(confirmedCommission)}
+              {uses.filter((u) => u.sale_status === "concluido").length}
             </p>
           </div>
           <div className="bg-white border border-[#e2e2e2] px-6 py-5">
             <p className="text-[#74777f] text-[10px] tracking-[0.15em] uppercase font-bold font-[var(--font-inter)] mb-1">
-              Em aberto
+              Em orçamento
             </p>
             <p className="font-[var(--font-noto-serif)] text-yellow-700 text-3xl font-normal">
-              {fmt(pendingCommission)}
+              {uses.filter((u) => u.sale_status === "em_orcamento" || u.sale_status === null).length}
             </p>
           </div>
         </div>
@@ -214,9 +214,6 @@ export default function RepresentantePage() {
                     "Produto",
                     "Espaço",
                     "Área (m²)",
-                    "Desconto aplicado",
-                    "Comissão parceiro",
-                    "Sua comissão",
                     "Status",
                   ].map((h) => (
                     <th
@@ -248,21 +245,6 @@ export default function RepresentantePage() {
                       </td>
                       <td className="px-4 py-3 text-xs text-[#43474e]">{u.space || "—"}</td>
                       <td className="px-4 py-3 text-xs text-[#43474e]">{u.area_m2 ?? "—"}</td>
-                      <td className="px-4 py-3 text-xs text-green-700 font-semibold">
-                        {u.discount_applied ? fmt(u.discount_applied) : "—"}
-                      </td>
-                      <td className="px-4 py-3 text-xs text-[#43474e]">
-                        {u.commission_owed ? fmt(u.commission_owed) : "—"}
-                      </td>
-                      <td className="px-4 py-3 text-xs text-[#002045] font-semibold">
-                        {st === "concluido" && u.sales_rep_commission_owed != null
-                          ? fmt(u.sales_rep_commission_owed)
-                          : st === "cancelado"
-                          ? <span className="text-[#74777f] font-normal">Cancelado</span>
-                          : u.sales_rep_commission_owed != null
-                          ? <span className="text-yellow-700">{fmt(u.sales_rep_commission_owed)} (pend.)</span>
-                          : "—"}
-                      </td>
                       <td className="px-4 py-3">
                         <span className={`px-2 py-1 text-[10px] font-bold tracking-wide ${stMeta.cls}`}>
                           {stMeta.label}
