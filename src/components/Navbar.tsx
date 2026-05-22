@@ -48,8 +48,14 @@ export default function Navbar() {
           })}
         </nav>
 
-        {/* CTA */}
+        {/* Right CTAs */}
         <div className="hidden md:flex items-center gap-3">
+          <Link
+            href="/parceiro"
+            className="text-xs tracking-[0.08em] uppercase font-semibold font-[var(--font-inter)] text-[#74777f] hover:text-[#002045] transition-colors border border-[#e2e2e2] hover:border-[#002045] px-4 py-2"
+          >
+            Portal Parceiro
+          </Link>
           <a
             href={CATALOGUE_URL}
             target="_blank"
@@ -96,6 +102,13 @@ export default function Navbar() {
               {label}
             </Link>
           ))}
+          <Link
+            href="/parceiro"
+            onClick={() => setMobileOpen(false)}
+            className="text-xs tracking-[0.08em] uppercase font-semibold font-[var(--font-inter)] text-[#74777f] border border-[#e2e2e2] px-4 py-2.5 self-start"
+          >
+            Portal Parceiro
+          </Link>
           <a
             href={CATALOGUE_URL}
             target="_blank"

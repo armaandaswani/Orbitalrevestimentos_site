@@ -56,7 +56,26 @@ export default function Footer() {
             </nav>
           </div>
 
-          {/* Applications — keyword-rich */}
+          {/* Profissionais */}
+          <div className="md:col-span-2">
+            <p className="text-xs tracking-[0.1em] uppercase font-semibold font-[var(--font-inter)] text-[#9c9faa] mb-5">
+              Profissionais
+            </p>
+            <div className="flex flex-col gap-2 text-sm text-[#9c9faa] font-[var(--font-inter)]">
+              <Link href="/parcerias" className="hover:text-white transition-colors">Arquitetos</Link>
+              <Link href="/parcerias" className="hover:text-white transition-colors">Designers de Interiores</Link>
+              <Link href="/parcerias" className="hover:text-white transition-colors">Marceneiros</Link>
+              <Link href="/parcerias" className="hover:text-white transition-colors">Engenheiros</Link>
+              <Link href="/parcerias" className="hover:text-white transition-colors">Revendedores</Link>
+              <div className="mt-3 pt-3 border-t border-[#333640] flex flex-col gap-2">
+                <Link href="/parceiro" className="hover:text-white transition-colors font-medium text-white/80">
+                  Portal do Parceiro →
+                </Link>
+              </div>
+            </div>
+          </div>
+
+          {/* Applications */}
           <div className="md:col-span-2">
             <p className="text-xs tracking-[0.1em] uppercase font-semibold font-[var(--font-inter)] text-[#9c9faa] mb-5">
               Aplicações
@@ -70,43 +89,39 @@ export default function Footer() {
               <span>Escritório</span>
               <span>Náutico</span>
             </div>
-          </div>
-
-          {/* Info */}
-          <div className="md:col-span-2">
-            <p className="text-xs tracking-[0.1em] uppercase font-semibold font-[var(--font-inter)] text-[#9c9faa] mb-5">
-              Profissionais
-            </p>
-            <div className="flex flex-col gap-2 text-sm text-[#9c9faa] font-[var(--font-inter)]">
-              <Link href="/parcerias" className="hover:text-white transition-colors">Arquitetos</Link>
-              <Link href="/parcerias" className="hover:text-white transition-colors">Designers de Interiores</Link>
-              <Link href="/parcerias" className="hover:text-white transition-colors">Marceneiros</Link>
-              <Link href="/parcerias" className="hover:text-white transition-colors">Engenheiros</Link>
-              <Link href="/parcerias" className="hover:text-white transition-colors">Revendedores</Link>
-              <div className="mt-3 pt-3 border-t border-[#333640]">
-                <p className="text-white font-medium text-xs mb-1">Instagram</p>
-                <a
-                  href="https://instagram.com/orbitalrevestimentos"
-                  target="_blank"
-                  rel="noopener noreferrer"
-                  className="hover:text-white transition-colors text-xs"
-                >
-                  @orbitalrevestimentos
-                </a>
-              </div>
+            <div className="mt-3 pt-3 border-t border-[#333640]">
+              <p className="text-white font-medium text-xs mb-1">Instagram</p>
+              <a
+                href="https://instagram.com/orbitalrevestimentos"
+                target="_blank"
+                rel="noopener noreferrer"
+                className="text-[#9c9faa] hover:text-white transition-colors text-xs font-[var(--font-inter)]"
+              >
+                @orbitalrevestimentos
+              </a>
             </div>
           </div>
 
         </div>
 
-        {/* Bottom */}
+        {/* Bottom strip */}
         <div className="border-t border-[#333640] mt-12 pt-8 flex flex-col md:flex-row justify-between gap-4">
           <p className="text-xs text-[#9c9faa] font-[var(--font-inter)]">
             © 2026 Orbital Revestimentos · Manaus, AM · Todos os direitos reservados.
           </p>
-          <p className="text-xs text-[#9c9faa] font-[var(--font-inter)] italic">
-            Revestimento de parede e forro · PFB · Alternativa ao MDF em Manaus
-          </p>
+          <div className="flex items-center gap-5">
+            <p className="text-xs text-[#9c9faa] font-[var(--font-inter)] italic">
+              Revestimento de parede e forro · PFB · Alternativa ao MDF em Manaus
+            </p>
+            <div className="flex items-center gap-4 border-l border-[#333640] pl-5">
+              <Link href="/representante" className="text-[10px] text-[#555860] hover:text-[#9c9faa] transition-colors font-[var(--font-inter)] tracking-[0.08em] uppercase">
+                Representante
+              </Link>
+              <Link href="/admin" className="text-[10px] text-[#555860] hover:text-[#9c9faa] transition-colors font-[var(--font-inter)] tracking-[0.08em] uppercase">
+                Admin
+              </Link>
+            </div>
+          </div>
         </div>
       </div>
     </footer>
