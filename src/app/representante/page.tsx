@@ -13,10 +13,12 @@ interface SalesRepInfo {
 interface CouponUse {
   id: string;
   coupon_code: string;
+  partner_name: string | null;
   space: string | null;
   product_name: string | null;
   product_code: string | null;
   area_m2: number | null;
+  plates: number | null;
   material_total: number | null;
   material_discounted: number | null;
   discount_applied: number | null;
@@ -210,10 +212,11 @@ export default function RepresentantePage() {
                 <tr className="border-b border-[#e2e2e2]">
                   {[
                     "Data",
-                    "Cupom (parceiro)",
-                    "Produto",
+                    "Cupom",
+                    "Parceiro",
                     "Espaço",
-                    "Área (m²)",
+                    "Placas",
+                    "Sua comissão",
                     "Status",
                   ].map((h) => (
                     <th
@@ -234,17 +237,23 @@ export default function RepresentantePage() {
                       <td className="px-4 py-3 text-xs text-[#43474e] whitespace-nowrap">
                         {new Date(u.created_at).toLocaleDateString("pt-BR")}
                       </td>
-                      <td className="px-4 py-3 text-xs text-[#43474e] font-semibold tracking-wider">
+                      <td className="px-4 py-3 text-xs font-bold tracking-wider text-[#002045]">
                         {u.coupon_code || "—"}
                       </td>
                       <td className="px-4 py-3 text-xs text-[#43474e]">
-                        <p className="font-semibold">{u.product_name || "—"}</p>
-                        {u.product_code && (
-                          <p className="text-[#74777f]">{u.product_code}</p>
-                        )}
+                        {u.partner_name || "—"}
                       </td>
                       <td className="px-4 py-3 text-xs text-[#43474e]">{u.space || "—"}</td>
-                      <td className="px-4 py-3 text-xs text-[#43474e]">{u.area_m2 ?? "—"}</td>
+                      <td className="px-4 py-3 text-xs text-[#43474e]">{u.plates ?? "—"}</td>
+                      <td className="px-4 py-3 text-xs font-semibold">
+                        {st === "cancelado"
+                          ? <span className="text-[#74777f] font-normal">—</span>
+                          : st === "concluido" && u.sales_rep_commission_owed != null
+                          ? <span className="text-[#002045]">{fmt(u.sales_rep_commission_owed)}</span>
+                          : u.sales_rep_commission_owed != null
+                          ? <span className="text-yellow-700">{fmt(u.sales_rep_commission_owed)} (pend.)</span>
+                          : "—"}
+                      </td>
                       <td className="px-4 py-3">
                         <span className={`px-2 py-1 text-[10px] font-bold tracking-wide ${stMeta.cls}`}>
                           {stMeta.label}
