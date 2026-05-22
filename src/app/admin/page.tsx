@@ -672,7 +672,6 @@ export default function AdminPage() {
                 return p?.sales_rep_referral_code === pRankRep;
               });
               const sorted = [...filtered].sort((a, b) => pRankSort === "count" ? b.count - a.count : pRankSort === "median" ? b.median - a.median : b.total - a.total);
-              if (partnerRanking.length === 0) return null;
               return (
                 <div className="mb-8">
                   <div className="flex flex-wrap items-center justify-between gap-3 mb-3">
@@ -703,7 +702,9 @@ export default function AdminPage() {
                         </tr>
                       </thead>
                       <tbody>
-                        {sorted.map((r, i) => {
+                        {sorted.length === 0 ? (
+                          <tr><td colSpan={7} className="px-5 py-8 text-center text-[#74777f] text-sm">Nenhuma venda concluída registrada ainda.</td></tr>
+                        ) : sorted.map((r, i) => {
                           const p = activePartners.find((ap) => ap.coupon_code === r.code);
                           const rep = p?.sales_rep_referral_code ? salesReps.find((sr) => sr.referral_code === p.sales_rep_referral_code) : null;
                           return (
