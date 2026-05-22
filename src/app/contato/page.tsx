@@ -1150,9 +1150,9 @@ export default function ContatoPage() {
                 {/* MDF card — collapsed on mobile, full on desktop */}
                 <div className="bg-[#fafaf8] border border-[#e2e2e2]">
 
-                  {/* Mobile toggle header */}
+                  {/* Toggle header */}
                   <button
-                    className="md:hidden w-full flex items-center justify-between px-6 py-5 text-left"
+                    className="w-full flex items-center justify-between px-6 py-5 text-left"
                     onClick={() => setMdfExpanded(!mdfExpanded)}
                   >
                     <div>
@@ -1169,12 +1169,9 @@ export default function ContatoPage() {
                     </svg>
                   </button>
 
-                  {/* Expandable body on mobile / always visible on desktop */}
-                  <div className={`${mdfExpanded ? "block" : "hidden"} md:block px-6 sm:px-8 pb-8 md:pt-8`}>
-                    <p className="hidden md:block text-[#74777f] text-[9px] tracking-[0.2em] uppercase font-bold font-[var(--font-inter)] mb-5">
-                      MDF — Estimativa por instalação
-                    </p>
-                    <div className="space-y-3 mb-6 mt-2 md:mt-0">
+                  {/* Expandable body */}
+                  <div className={`${mdfExpanded ? "block" : "hidden"} px-6 sm:px-8 pb-8`}>
+                    <div className="space-y-3 mb-6">
                       <div className="flex items-start justify-between text-sm font-[var(--font-inter)] gap-4">
                         <span className="text-[#74777f]">
                           Material ({mdfSheets} chapa{mdfSheets !== 1 ? "s" : ""} × R$ {MDF_SHEET_PRICE})
