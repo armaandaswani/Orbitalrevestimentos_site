@@ -66,6 +66,7 @@ const emptyPartnerForm = {
   commission_value: 0,
   portal_password: "",
   status: "active" as "active" | "inactive" | "pending",
+  sales_rep_referral_code: "",
 };
 
 const emptyRepForm = {
@@ -187,6 +188,7 @@ export default function AdminPage() {
       commission_type: p.commission_type, commission_value: p.commission_value,
       portal_password: p.portal_password || "",
       status: p.status,
+      sales_rep_referral_code: p.sales_rep_referral_code || "",
     });
     setPartnerFormError("");
     setShowPartnerForm(true);
@@ -196,7 +198,7 @@ export default function AdminPage() {
     e.preventDefault();
     setPartnerFormError("");
     setPartnerFormLoading(true);
-    const payload = { ...partnerForm, coupon_code: partnerForm.coupon_code.toUpperCase(), portal_password: partnerForm.portal_password || null };
+    const payload = { ...partnerForm, coupon_code: partnerForm.coupon_code.toUpperCase(), portal_password: partnerForm.portal_password || null, sales_rep_referral_code: partnerForm.sales_rep_referral_code || null };
     let res: Response;
     if (editingPartnerId) {
       res = await fetch(`/api/partners/${editingPartnerId}`, { method: "PUT", headers: { "Content-Type": "application/json" }, body: JSON.stringify(payload) });
@@ -527,6 +529,15 @@ export default function AdminPage() {
                     </div>
                     <div><label className={labelCls}>Valor da Comissão {partnerForm.commission_type === "percentage" ? "(%)" : "(R$)"}</label><input type="number" min="0" step="0.01" value={partnerForm.commission_value} onChange={(e) => setPartnerForm({ ...partnerForm, commission_value: parseFloat(e.target.value) || 0 })} className={inputCls} /></div>
                     <div>
+                      <label className={labelCls}>Representante Comercial</label>
+                      <select value={partnerForm.sales_rep_referral_code} onChange={(e) => setPartnerForm({ ...partnerForm, sales_rep_referral_code: e.target.value })} className={inputCls}>
+                        <option value="">— Nenhum —</option>
+                        {salesReps.filter((r) => r.status === "active").map((r) => (
+                          <option key={r.id} value={r.referral_code}>{r.name} ({r.referral_code})</option>
+                        ))}
+                      </select>
+                    </div>
+                    <div>
                       <label className={labelCls}>Senha do Portal <span className="normal-case font-normal">(acesso parceiro)</span></label>
                       <input value={partnerForm.portal_password} onChange={(e) => setPartnerForm({ ...partnerForm, portal_password: e.target.value })} className={inputCls} placeholder="Deixe em branco para sem acesso" />
                     </div>
@@ -572,7 +583,11 @@ export default function AdminPage() {
                           <td className="px-5 py-4"><span className="bg-[#eef2f8] text-[#002045] px-2 py-1 text-xs font-bold tracking-wider">{p.coupon_code}</span></td>
                           <td className="px-5 py-4 text-[#43474e]">{p.discount_type === "percentage" ? `${p.discount_value}%` : fmt(p.discount_value)}</td>
                           <td className="px-5 py-4 text-[#43474e]">{p.commission_type === "percentage" ? `${p.commission_value}%` : fmt(p.commission_value)}</td>
-                          <td className="px-5 py-4 text-xs text-[#74777f]">{p.sales_rep_referral_code || "—"}</td>
+                          <td className="px-5 py-4 text-xs text-[#74777f]">
+                            {p.sales_rep_referral_code
+                              ? (() => { const r = salesReps.find((r) => r.referral_code === p.sales_rep_referral_code); return r ? <span title={r.referral_code}>{r.name}</span> : p.sales_rep_referral_code; })()
+                              : "—"}
+                          </td>
                           <td className="px-5 py-4 text-xs text-[#74777f]">{p.portal_password ? <span className="font-mono text-[#43474e]">{p.portal_password}</span> : <span className="italic">—</span>}</td>
                           <td className="px-5 py-4">
                             <span className={`px-2 py-1 text-[10px] font-bold tracking-wider ${p.status === "active" ? "bg-green-100 text-green-800" : "bg-gray-100 text-gray-600"}`}>
