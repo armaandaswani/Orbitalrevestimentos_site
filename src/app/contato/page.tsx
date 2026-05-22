@@ -167,6 +167,7 @@ export default function ContatoPage() {
   const [couponError, setCouponError] = useState("");
   const [showResult, setShowResult] = useState(false);
   const [showSavings, setShowSavings] = useState(false);
+  const [lightboxImg, setLightboxImg] = useState<string | null>(null);
 
   const m2 =
     dimMode === "lxa"
@@ -599,36 +600,50 @@ export default function ContatoPage() {
                     {PRODUCTS.filter((p) => p.linha === selectedLine).map((product) => {
                       const active = selectedProduct?.code === product.code;
                       return (
-                        <button
+                        <div
                           key={product.code}
-                          onClick={() => setSelectedProduct(product)}
                           className={`border overflow-hidden text-left transition-all ${
                             active ? "border-[#002045]" : "border-[#e2e2e2] hover:border-[#1a365d]"
                           }`}
                         >
-                          <div className="relative h-20 sm:h-24 w-full overflow-hidden">
-                            <Image
-                              src={product.img}
-                              alt={product.name}
-                              fill
-                              className="object-cover hover:scale-105 transition-transform duration-300"
-                            />
-                            {active && <div className="absolute inset-0 bg-[#002045]/20" />}
+                          <button
+                            onClick={() => setSelectedProduct(product)}
+                            className="relative w-full overflow-hidden bg-[#f7f7f5] block group"
+                          >
+                            <div className="relative w-full" style={{ aspectRatio: "4/3" }}>
+                              <Image
+                                src={product.img}
+                                alt={product.name}
+                                fill
+                                className="object-contain"
+                              />
+                            </div>
+                            {active && <div className="absolute inset-0 bg-[#002045]/10" />}
                             {active && (
-                              <div className="absolute top-2 right-2 w-5 h-5 bg-white flex items-center justify-center">
+                              <div className="absolute top-2 right-2 w-5 h-5 bg-white flex items-center justify-center shadow-sm">
                                 <svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="#002045" strokeWidth="3">
                                   <path d="M20 6L9 17l-5-5" />
                                 </svg>
                               </div>
                             )}
-                          </div>
-                          <div className="p-2">
+                            {/* Expand button */}
+                            <button
+                              onClick={(e) => { e.stopPropagation(); setLightboxImg(product.img); }}
+                              className="absolute bottom-2 right-2 w-6 h-6 bg-white/90 hover:bg-white flex items-center justify-center shadow-sm opacity-0 group-hover:opacity-100 transition-opacity"
+                              title="Ver imagem ampliada"
+                            >
+                              <svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="#002045" strokeWidth="2">
+                                <path d="M15 3h6v6M9 21H3v-6M21 3l-7 7M3 21l7-7" />
+                              </svg>
+                            </button>
+                          </button>
+                          <button onClick={() => setSelectedProduct(product)} className="p-2 w-full text-left">
                             <p className={`text-[10px] font-bold font-[var(--font-inter)] leading-tight ${active ? "text-[#002045]" : "text-[#43474e]"}`}>
                               {product.name}
                             </p>
                             <p className="text-[9px] text-[#9e9e9e] font-[var(--font-inter)] mt-0.5">{product.code}</p>
-                          </div>
-                        </button>
+                          </button>
+                        </div>
                       );
                     })}
                   </div>
@@ -898,7 +913,7 @@ export default function ContatoPage() {
                 Para quem é este projeto?
               </h3>
               <p className="text-[#74777f] text-sm font-[var(--font-inter)] mb-8">
-                Seus dados para envio do orçamento. Opcional — pode pular se preferir.
+                Seus dados para envio do orçamento.
               </p>
 
               <div className="max-w-md space-y-5 mb-8">
@@ -1394,6 +1409,35 @@ export default function ContatoPage() {
           Estimativas de custo para referência; valores sujeitos a alteração.
         </p>
       </div>
+
+      {/* Lightbox */}
+      {lightboxImg && (
+        <div
+          className="fixed inset-0 z-50 bg-black/85 flex items-center justify-center p-4"
+          onClick={() => setLightboxImg(null)}
+        >
+          <div className="relative max-w-4xl max-h-[90vh] w-full flex items-center justify-center" onClick={(e) => e.stopPropagation()}>
+            <button
+              onClick={() => setLightboxImg(null)}
+              className="absolute top-3 right-3 z-10 w-9 h-9 bg-white/10 hover:bg-white/25 flex items-center justify-center rounded-full transition-colors"
+            >
+              <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="white" strokeWidth="2">
+                <path d="M18 6L6 18M6 6l12 12" />
+              </svg>
+            </button>
+            <div className="relative w-full" style={{ maxHeight: "85vh" }}>
+              <Image
+                src={lightboxImg}
+                alt="Acabamento ampliado"
+                width={1200}
+                height={900}
+                className="object-contain w-full h-auto max-h-[85vh]"
+                style={{ maxHeight: "85vh" }}
+              />
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 }
