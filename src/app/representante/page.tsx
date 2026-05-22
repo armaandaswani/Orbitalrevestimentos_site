@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useState } from "react";
+import React, { useState, useMemo } from "react";
 
 interface SalesRepInfo {
   id: string;
@@ -135,6 +135,30 @@ export default function RepresentantePage() {
   const pendingCommission = uses
     .filter((u) => u.sale_status === "em_orcamento" || u.sale_status === null)
     .reduce((a, u) => a + (u.sales_rep_commission_owed || 0), 0);
+
+  const [partnerRankSort, setPartnerRankSort] = useState<"total" | "count" | "median">("total");
+
+  const partnerRanking = useMemo(() => {
+    const byCode: Record<string, { total: number; count: number; values: number[]; name: string }> = {};
+    for (const u of uses) {
+      if (u.sale_status !== "concluido" || !u.coupon_code) continue;
+      if (!byCode[u.coupon_code]) byCode[u.coupon_code] = { total: 0, count: 0, values: [], name: u.partner_name || u.coupon_code };
+      const v = u.material_discounted || 0;
+      byCode[u.coupon_code].total += v;
+      byCode[u.coupon_code].count++;
+      if (v > 0) byCode[u.coupon_code].values.push(v);
+    }
+    const rows = Object.entries(byCode).map(([code, s]) => {
+      const sorted = [...s.values].sort((a, b) => a - b);
+      const mid = Math.floor(sorted.length / 2);
+      const median = sorted.length % 2 ? sorted[mid] : ((sorted[mid - 1] + sorted[mid]) / 2);
+      return { code, name: s.name, total: s.total, count: s.count, median };
+    });
+    if (partnerRankSort === "count") rows.sort((a, b) => b.count - a.count);
+    else if (partnerRankSort === "median") rows.sort((a, b) => b.median - a.median);
+    else rows.sort((a, b) => b.total - a.total);
+    return rows;
+  }, [uses, partnerRankSort]);
 
   // Birthday gate — shown after login if birthday is missing
   if (salesRep && !salesRep.birthday) {
@@ -327,6 +351,51 @@ export default function RepresentantePage() {
             </div>
           )}
         </div>
+
+        {/* Partner ranking */}
+        {partnerRanking.length > 0 && (
+          <div className="mb-8">
+            <div className="flex flex-wrap items-center justify-between gap-3 mb-3">
+              <h2 className="font-[var(--font-noto-serif)] text-[#002045] text-xl font-normal">
+                Ranking de Parceiros
+              </h2>
+              <div className="flex items-center gap-2">
+                {(["total", "count", "median"] as const).map((s) => (
+                  <button
+                    key={s}
+                    onClick={() => setPartnerRankSort(s)}
+                    className={`text-[10px] tracking-[0.08em] uppercase font-bold font-[var(--font-inter)] px-3 py-1.5 border transition-colors ${partnerRankSort === s ? "bg-[#002045] text-white border-[#002045]" : "text-[#74777f] border-[#e2e2e2] hover:border-[#002045] hover:text-[#002045]"}`}
+                  >
+                    {s === "total" ? "Valor" : s === "count" ? "Qtd." : "Ticket Médio"}
+                  </button>
+                ))}
+              </div>
+            </div>
+            <div className="bg-white border border-[#e2e2e2] overflow-x-auto">
+              <table className="w-full text-sm font-[var(--font-inter)]">
+                <thead>
+                  <tr className="border-b border-[#e2e2e2]">
+                    {["#", "Parceiro", "Cupom", "Total gerado", "Vendas", "Ticket médio"].map((h) => (
+                      <th key={h} className="text-left px-5 py-3 text-[10px] tracking-[0.15em] uppercase font-bold text-[#74777f] whitespace-nowrap">{h}</th>
+                    ))}
+                  </tr>
+                </thead>
+                <tbody>
+                  {partnerRanking.map((p, i) => (
+                    <tr key={p.code} className="border-b border-[#f0f0f0] hover:bg-[#fafafa]">
+                      <td className="px-5 py-3 font-bold text-[#002045]">{i + 1}°</td>
+                      <td className="px-5 py-3 font-semibold text-[#002045]">{p.name}</td>
+                      <td className="px-5 py-3"><span className="bg-[#eef2f8] text-[#002045] px-2 py-0.5 text-xs font-bold tracking-wider">{p.code}</span></td>
+                      <td className="px-5 py-3 font-semibold text-green-700">{fmt(p.total)}</td>
+                      <td className="px-5 py-3 text-[#43474e]">{p.count}</td>
+                      <td className="px-5 py-3 text-[#43474e]">{p.median > 0 ? fmt(p.median) : "—"}</td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            </div>
+          </div>
+        )}
 
         {/* Usage history */}
         <h2 className="font-[var(--font-noto-serif)] text-[#002045] text-xl font-normal mb-4">

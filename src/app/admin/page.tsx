@@ -850,6 +850,51 @@ export default function AdminPage() {
         {/* ═══ REPRESENTANTES TAB ═══ */}
         {tab === "representantes" && (
           <div>
+            {repRanking.length > 0 && (
+              <div className="mb-8">
+                <div className="flex flex-wrap items-center justify-between gap-3 mb-3">
+                  <h3 className="font-[var(--font-inter)] text-[10px] tracking-[0.2em] uppercase font-bold text-[#002045]">
+                    Ranking de Representantes — vendas concluídas
+                  </h3>
+                  <div className="flex items-center gap-2">
+                    {(["total", "count", "median"] as const).map((s) => (
+                      <button
+                        key={s}
+                        onClick={() => setRepRankSort(s)}
+                        className={`text-[10px] tracking-[0.08em] uppercase font-bold font-[var(--font-inter)] px-3 py-1.5 border transition-colors ${repRankSort === s ? "bg-[#002045] text-white border-[#002045]" : "text-[#74777f] border-[#e2e2e2] hover:border-[#002045] hover:text-[#002045]"}`}
+                      >
+                        {s === "total" ? "Valor" : s === "count" ? "Qtd." : "Ticket Médio"}
+                      </button>
+                    ))}
+                  </div>
+                </div>
+                <div className="bg-white border border-[#e2e2e2] overflow-x-auto">
+                  <table className="w-full text-sm font-[var(--font-inter)]">
+                    <thead>
+                      <tr className="border-b border-[#e2e2e2]">
+                        {["#", "Representante", "Código", "Parceiros", "Total gerado", "Vendas", "Ticket médio"].map((h) => (
+                          <th key={h} className="text-left px-5 py-3 text-[10px] tracking-[0.15em] uppercase font-bold text-[#74777f] whitespace-nowrap">{h}</th>
+                        ))}
+                      </tr>
+                    </thead>
+                    <tbody>
+                      {repRanking.map((r, i) => (
+                        <tr key={r.code} className="border-b border-[#f0f0f0] hover:bg-[#fafafa]">
+                          <td className="px-5 py-3 font-bold text-[#002045]">{i + 1}°</td>
+                          <td className="px-5 py-3 font-semibold text-[#002045]">{r.name}</td>
+                          <td className="px-5 py-3"><span className="bg-[#eef2f8] text-[#002045] px-2 py-0.5 text-xs font-bold tracking-wider">{r.code}</span></td>
+                          <td className="px-5 py-3 text-[#43474e]">{r.partnerCount}</td>
+                          <td className="px-5 py-3 font-semibold text-green-700">{fmt(r.total)}</td>
+                          <td className="px-5 py-3 text-[#43474e]">{r.count}</td>
+                          <td className="px-5 py-3 text-[#43474e]">{r.median > 0 ? fmt(r.median) : "—"}</td>
+                        </tr>
+                      ))}
+                    </tbody>
+                  </table>
+                </div>
+              </div>
+            )}
+
             <div className="flex items-center justify-between mb-6">
               <h2 className="font-[var(--font-noto-serif)] text-[#002045] text-xl font-normal">Representantes Comerciais</h2>
               <button onClick={startCreateRep} className="bg-[#002045] text-white text-xs tracking-[0.1em] uppercase font-bold font-[var(--font-inter)] px-5 py-2.5 hover:bg-[#1a365d] transition-colors">
