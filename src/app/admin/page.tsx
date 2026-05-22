@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useState, useEffect, useCallback } from "react";
+import React, { useState, useEffect, useCallback, useMemo } from "react";
 
 interface Partner {
   id: string;
@@ -17,6 +17,7 @@ interface Partner {
   is_self_registered: boolean | null;
   sales_rep_referral_code: string | null;
   created_at: string;
+  birthday: string | null;
 }
 
 interface SalesRep {
@@ -67,6 +68,7 @@ const emptyPartnerForm = {
   portal_password: "",
   status: "active" as "active" | "inactive" | "pending",
   sales_rep_referral_code: "",
+  birthday: "",
 };
 
 const emptyRepForm = {
@@ -165,7 +167,7 @@ export default function AdminPage() {
     if (!authed || !supabaseConfigured) return;
     fetchPartners();
     fetchReps();
-    if (tab === "history") fetchUses();
+    fetchUses();
   }, [authed, tab, supabaseConfigured, fetchPartners, fetchReps, fetchUses]);
 
   function handleLogin(e: React.FormEvent) {
@@ -217,6 +219,7 @@ export default function AdminPage() {
       portal_password: p.portal_password || "",
       status: p.status,
       sales_rep_referral_code: p.sales_rep_referral_code || "",
+      birthday: p.birthday ? p.birthday.split("T")[0] : "",
     });
     setPartnerFormError("");
     setShowPartnerForm(true);
@@ -346,6 +349,38 @@ export default function AdminPage() {
 
   const pendingPartners = partners.filter((p) => p.status === "pending");
   const activePartners = partners.filter((p) => p.status !== "pending");
+
+  // Partner rankings (from completed coupon uses)
+  const partnerRanking = useMemo(() => {
+    const byCode: Record<string, { total: number; count: number; values: number[] }> = {};
+    for (const u of uses) {
+      if (u.sale_status !== "concluido" || !u.coupon_code) continue;
+      if (!byCode[u.coupon_code]) byCode[u.coupon_code] = { total: 0, count: 0, values: [] };
+      const v = u.material_discounted || 0;
+      byCode[u.coupon_code].total += v;
+      byCode[u.coupon_code].count++;
+      if (v > 0) byCode[u.coupon_code].values.push(v);
+    }
+    return Object.entries(byCode).map(([code, s]) => {
+      const p = activePartners.find((p) => p.coupon_code === code);
+      const sorted = [...s.values].sort((a, b) => a - b);
+      const mid = Math.floor(sorted.length / 2);
+      const median = sorted.length % 2 ? sorted[mid] : (sorted[mid - 1] + sorted[mid]) / 2;
+      return { code, name: p?.name || code, total: s.total, count: s.count, median };
+    }).sort((a, b) => b.total - a.total);
+  }, [uses, activePartners]);
+
+  // Upcoming birthdays this month
+  const upcomingBirthdays = useMemo(() => {
+    const now = new Date();
+    const thisMonth = now.getMonth() + 1;
+    return activePartners
+      .filter((p) => {
+        if (!p.birthday) return false;
+        return new Date(p.birthday).getUTCMonth() + 1 === thisMonth;
+      })
+      .sort((a, b) => new Date(a.birthday!).getUTCDate() - new Date(b.birthday!).getUTCDate());
+  }, [activePartners]);
 
   const filteredUses = uses.filter((u) => {
     if (filterPartner !== "all" && u.coupon_code !== filterPartner) return false;
@@ -558,6 +593,62 @@ export default function AdminPage() {
               </div>
             )}
 
+            {/* Birthdays this month */}
+            {upcomingBirthdays.length > 0 && (
+              <div className="mb-8">
+                <h3 className="font-[var(--font-inter)] text-[10px] tracking-[0.2em] uppercase font-bold text-[#002045] mb-3 flex items-center gap-2">
+                  🎂 Aniversários em {new Date().toLocaleString("pt-BR", { month: "long" })}
+                </h3>
+                <div className="flex flex-wrap gap-3">
+                  {upcomingBirthdays.map((p) => {
+                    const bday = new Date(p.birthday!);
+                    const day = bday.getUTCDate();
+                    const now = new Date();
+                    const isToday = bday.getUTCDate() === now.getDate() && bday.getUTCMonth() === now.getMonth();
+                    return (
+                      <div key={p.id} className={`px-4 py-3 border text-sm font-[var(--font-inter)] ${isToday ? "border-yellow-300 bg-yellow-50" : "border-[#e2e2e2] bg-white"}`}>
+                        <span className="font-bold text-[#002045]">{day < 10 ? `0${day}` : day}</span>
+                        <span className="text-[#74777f] text-xs ml-1">— {p.name}</span>
+                        {isToday && <span className="ml-2 text-yellow-700 text-xs font-bold">HOJE!</span>}
+                      </div>
+                    );
+                  })}
+                </div>
+              </div>
+            )}
+
+            {/* Partner rankings */}
+            {partnerRanking.length > 0 && (
+              <div className="mb-8">
+                <h3 className="font-[var(--font-inter)] text-[10px] tracking-[0.2em] uppercase font-bold text-[#002045] mb-3">
+                  Ranking de Parceiros — vendas concluídas
+                </h3>
+                <div className="bg-white border border-[#e2e2e2] overflow-x-auto">
+                  <table className="w-full text-sm font-[var(--font-inter)]">
+                    <thead>
+                      <tr className="border-b border-[#e2e2e2]">
+                        {["#", "Parceiro", "Cupom", "Total vendido", "Vendas", "Ticket médio"].map((h) => (
+                          <th key={h} className="text-left px-5 py-3 text-[10px] tracking-[0.15em] uppercase font-bold text-[#74777f]">{h}</th>
+                        ))}
+                      </tr>
+                    </thead>
+                    <tbody>
+                      {partnerRanking.map((r, i) => (
+                        <tr key={r.code} className="border-b border-[#f0f0f0] hover:bg-[#fafafa]">
+                          <td className="px-5 py-3 font-bold text-[#002045]">{i + 1}°</td>
+                          <td className="px-5 py-3 font-semibold text-[#002045]">{r.name}</td>
+                          <td className="px-5 py-3"><span className="bg-[#eef2f8] text-[#002045] px-2 py-0.5 text-xs font-bold tracking-wider">{r.code}</span></td>
+                          <td className="px-5 py-3 font-semibold text-green-700">{fmt(r.total)}</td>
+                          <td className="px-5 py-3 text-[#43474e]">{r.count}</td>
+                          <td className="px-5 py-3 text-[#43474e]">{r.median > 0 ? fmt(r.median) : "—"}</td>
+                        </tr>
+                      ))}
+                    </tbody>
+                  </table>
+                </div>
+              </div>
+            )}
+
             {/* Active partners */}
             <div className="flex items-center justify-between mb-6">
               <h2 className="font-[var(--font-noto-serif)] text-[#002045] text-xl font-normal">Parceiros</h2>
@@ -592,6 +683,7 @@ export default function AdminPage() {
                     <div><label className={labelCls}>Código do Cupom *</label><input required value={partnerForm.coupon_code} onChange={(e) => setPartnerForm({ ...partnerForm, coupon_code: e.target.value.toUpperCase() })} className={inputCls + " uppercase"} placeholder="ex: ARQLIMA10" /></div>
                     <div><label className={labelCls}>Email</label><input value={partnerForm.email} onChange={(e) => setPartnerForm({ ...partnerForm, email: e.target.value })} type="email" className={inputCls} /></div>
                     <div><label className={labelCls}>Telefone</label><input value={partnerForm.phone} onChange={(e) => setPartnerForm({ ...partnerForm, phone: e.target.value })} className={inputCls} /></div>
+                    <div><label className={labelCls}>Data de Nascimento *</label><input required type="date" value={partnerForm.birthday || ""} onChange={(e) => setPartnerForm({ ...partnerForm, birthday: e.target.value })} className={inputCls} /></div>
                     <div>
                       <label className={labelCls}>Tipo de Desconto</label>
                       <select value={partnerForm.discount_type} onChange={(e) => setPartnerForm({ ...partnerForm, discount_type: e.target.value as "percentage" | "fixed" })} className={inputCls}>

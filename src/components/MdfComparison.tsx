@@ -2,98 +2,181 @@
 
 import { useState } from "react";
 
-const mdfRows = [
-  { attr: "Absorção de água (48h)",              pfb: "0,2%",                       mdf: "Até 35%",               highlight: true  },
-  { attr: "Resistência ao fogo",                 pfb: "Não propaga chamas",          mdf: "Classe C/D",            highlight: false },
-  { attr: "Resistência à flexão",                pfb: "72,3 MPa",                    mdf: "17–22 MPa",             highlight: true  },
-  { attr: "Flexibilidade / instalação em curvas",pfb: "Possível (curvável)",          mdf: "Não recomendado",       highlight: false },
-  { attr: "Vida útil (clima úmido)",             pfb: "10+ anos",                    mdf: "2–3 anos em Manaus",    highlight: true  },
-  { attr: "Anti-mofo · Anti-cupim",              pfb: "Resistente por natureza",     mdf: "Suscetível à umidade",  highlight: false },
-  { attr: "Poeira / Resíduo na instalação",      pfb: "Mínimo",                      mdf: "Poeira tóxica de MDF",  highlight: false },
-  { attr: "Tempo de instalação",                 pfb: "2–3 horas por cômodo",        mdf: "Dias (obra pesada)",    highlight: false },
-  { attr: "Custo de mão de obra",                pfb: "~ R$ 32/m²",                  mdf: "R$ 60–90/m²",           highlight: true  },
-  { attr: "Peso",                                pfb: "3,5 kg/m²",                   mdf: "11 kg/m²",              highlight: false },
-  { attr: "Matéria-prima",                       pfb: "Bambu renovável · sem formol",mdf: "Madeira + formol",      highlight: false },
+const options = [
+  { key: "mdf",   label: "MDF" },
+  { key: "papel", label: "Papel de Parede" },
+  { key: "forro", label: "Forro PVC" },
+  { key: "tinta", label: "Tinta" },
+];
+
+type RowKey = "mdf" | "papel" | "forro" | "tinta";
+
+const rows: { attr: string; pfb: string; mdf: string; papel: string; forro: string; tinta: string; highlight: boolean }[] = [
+  {
+    attr: "Resistência à umidade",
+    pfb: "Impermeável (0,2%)",
+    mdf: "Absorve até 35%",
+    papel: "Descola, bolha e mofa",
+    forro: "Impermeável, mas empena",
+    tinta: "Descasca com umidade e mofa",
+    highlight: true,
+  },
+  {
+    attr: "Aspecto visual",
+    pfb: "Fotorrealista & Textura Premium",
+    mdf: "Liso ou revestido",
+    papel: "Impresso em papel/vinil",
+    forro: "Plástico brilhante ou opaco",
+    tinta: "Liso, fosco ou brilhante",
+    highlight: false,
+  },
+  {
+    attr: "Durabilidade em Manaus",
+    pfb: "10+ anos",
+    mdf: "2–3 anos",
+    papel: "1 a 2 anos",
+    forro: "3–5 anos (amarela com UV)",
+    tinta: "2–4 anos",
+    highlight: true,
+  },
+  {
+    attr: "Mofo",
+    pfb: "Resistente por natureza",
+    mdf: "Suscetível à umidade",
+    papel: "Propenso por baixo",
+    forro: "Acumula nas juntas",
+    tinta: "Propenso em áreas úmidas",
+    highlight: false,
+  },
+  {
+    attr: "Uso como forro de teto",
+    pfb: "Aprovado com ART/CREA",
+    mdf: "Estrutura necessária",
+    papel: "Não recomendado",
+    forro: "Sim, mas visual básico",
+    tinta: "Sim (sem textura)",
+    highlight: false,
+  },
+  {
+    attr: "Resistência ao fogo",
+    pfb: "Não propaga chamas",
+    mdf: "Classe C/D",
+    papel: "Inflamável",
+    forro: "Inflamável",
+    tinta: "Varia",
+    highlight: false,
+  },
+  {
+    attr: "Tempo de instalação",
+    pfb: "2–3h por cômodo",
+    mdf: "Dias (obra pesada)",
+    papel: "4–6h (secagem incluída)",
+    forro: "Obra metálica necessária",
+    tinta: "1–2 dias (secagem)",
+    highlight: false,
+  },
+  {
+    attr: "Adequado para áreas úmidas",
+    pfb: "Sim",
+    mdf: "Não",
+    papel: "Não",
+    forro: "Parcialmente",
+    tinta: "Com tinta especial",
+    highlight: true,
+  },
+  {
+    attr: "Mão de obra",
+    pfb: "Barato e Rápido",
+    mdf: "Caro e Demorado",
+    papel: "Barato e Rápido",
+    forro: "Complexo",
+    tinta: "Caro e Demorado",
+    highlight: false,
+  },
+  {
+    attr: "Matéria-prima",
+    pfb: "Bambu renovável · sem formol",
+    mdf: "Madeira + formol",
+    papel: "Papel/vinil sintético",
+    forro: "PVC",
+    tinta: "Pigmentos + resinas",
+    highlight: false,
+  },
 ];
 
 export default function MdfComparison() {
-  const [open, setOpen] = useState(false);
+  const [selected, setSelected] = useState<RowKey>("mdf");
+  const option = options.find((o) => o.key === selected)!;
 
   return (
-    <div className="mt-12 border-t border-white/15 pt-10">
-      <div className="mb-5">
-        <p className="text-[#a1d494] text-[10px] tracking-[0.25em] uppercase font-bold font-[var(--font-inter)] mb-2">
-          Dados técnicos · ART de Eng. Civil
-        </p>
-        <p className="text-white/60 text-sm font-[var(--font-inter)]">
-          11 critérios técnicos avaliados em laboratório e condições reais de uso no clima do Amazonas.
-        </p>
+    <div>
+      {/* Selector */}
+      <div className="flex flex-wrap items-center gap-3 mb-8">
+        <span className="text-[#74777f] text-xs tracking-[0.1em] uppercase font-semibold font-[var(--font-inter)]">
+          Comparar com:
+        </span>
+        <div className="flex flex-wrap gap-2">
+          {options.map((o) => (
+            <button
+              key={o.key}
+              onClick={() => setSelected(o.key as RowKey)}
+              className={`text-[11px] tracking-[0.06em] uppercase font-semibold font-[var(--font-inter)] px-4 py-2 border transition-colors duration-200 ${
+                selected === o.key
+                  ? "bg-[#002045] text-white border-[#002045]"
+                  : "bg-white text-[#74777f] border-[#e2e2e2] hover:border-[#002045] hover:text-[#002045]"
+              }`}
+            >
+              {o.label}
+            </button>
+          ))}
+        </div>
       </div>
-      <button
-        onClick={() => setOpen(!open)}
-        className="inline-flex items-center gap-3 text-xs tracking-[0.12em] uppercase font-bold font-[var(--font-inter)] bg-white/10 border border-white/40 text-white px-8 py-4 hover:bg-white hover:text-[#1a365d] transition-colors duration-200"
-      >
-        {open ? "Ocultar" : "Ver"} especificações técnicas completas do PFB
-        <svg
-          width="12"
-          height="12"
-          viewBox="0 0 24 24"
-          fill="none"
-          stroke="currentColor"
-          strokeWidth="2.5"
-          className={`transition-transform duration-300 ${open ? "rotate-180" : ""}`}
-        >
-          <path d="M6 9l6 6 6-6" />
-        </svg>
-      </button>
 
-      {open && (
-        <div className="mt-8 overflow-x-auto">
-          <table className="w-full border-collapse">
-            <thead>
-              <tr className="border-b-2 border-white/20">
-                <th className="text-left py-5 px-4 text-xs tracking-[0.1em] uppercase font-semibold font-[var(--font-inter)] text-white/40">
-                  Critério
-                </th>
-                <th className="text-left py-5 px-4 font-[var(--font-noto-serif)] text-white text-xl font-normal">
-                  PFB Orbital
-                </th>
-                <th className="text-left py-5 px-4 font-[var(--font-noto-serif)] text-white/50 text-xl font-normal">
-                  MDF Convencional
-                </th>
-              </tr>
-            </thead>
-            <tbody>
-              {mdfRows.map(({ attr, pfb, mdf, highlight }) => (
+      {/* 2-column table — always fits on screen */}
+      <div className="w-full">
+        <table className="w-full border-collapse">
+          <thead>
+            <tr className="border-b-2 border-[#e2e2e2]">
+              <th className="text-left py-4 px-3 text-xs tracking-[0.1em] uppercase font-semibold font-[var(--font-inter)] text-[#74777f] w-[36%]">
+                Critério
+              </th>
+              <th className="text-left py-4 px-3 font-[var(--font-noto-serif)] text-[#002045] text-base lg:text-lg font-normal w-[32%]">
+                PFB Orbital
+              </th>
+              <th className="text-left py-4 px-3 font-[var(--font-noto-serif)] text-[#74777f] text-base lg:text-lg font-normal w-[32%]">
+                {option.label}
+              </th>
+            </tr>
+          </thead>
+          <tbody>
+            {rows.map((row) => {
+              const competitor = row[selected];
+              return (
                 <tr
-                  key={attr}
-                  className={`border-b border-white/10 transition-colors ${
-                    highlight ? "bg-white/8" : "hover:bg-white/5"
+                  key={row.attr}
+                  className={`border-b border-[#eeeeee] transition-colors ${
+                    row.highlight ? "bg-[#f3f9f3]" : "hover:bg-[#f3f3f3]"
                   }`}
                 >
-                  <td className="py-4 px-4 text-sm font-medium font-[var(--font-inter)] text-white/70">
-                    {attr}
-                    {highlight && (
-                      <span className="ml-2 text-[9px] tracking-[0.08em] uppercase font-bold text-[#a1d494] font-[var(--font-inter)]">
-                        destaque
-                      </span>
-                    )}
+                  <td className="py-3 px-3 text-xs sm:text-sm font-medium font-[var(--font-inter)] text-[#1a1c1c]">
+                    {row.attr}
                   </td>
-                  <td className="py-4 px-4 text-sm font-semibold text-white font-[var(--font-inter)]">
-                    {pfb}
+                  <td className="py-3 px-3 text-xs sm:text-sm font-semibold text-[#002045] font-[var(--font-inter)]">
+                    {row.pfb}
                   </td>
-                  <td className="py-4 px-4 text-sm text-white/45 font-[var(--font-inter)]">
-                    {mdf}
+                  <td className="py-3 px-3 text-xs sm:text-sm text-[#74777f] font-[var(--font-inter)]">
+                    {competitor}
                   </td>
                 </tr>
-              ))}
-            </tbody>
-          </table>
-          <p className="text-white/30 text-xs font-[var(--font-inter)] italic mt-6">
-            ART nº AM20260593657 · Eng. Civil Werksson Sousa, CREA 042030134-8-D. Dados sujeitos a alteração sem aviso prévio.
-          </p>
-        </div>
-      )}
+              );
+            })}
+          </tbody>
+        </table>
+      </div>
+
+      <p className="text-[#74777f] text-xs font-[var(--font-inter)] italic mt-5">
+        ART nº AM20260593657 · Eng. Civil Werksson Sousa, CREA 042030134-8-D. Dados sujeitos a alteração sem aviso prévio.
+      </p>
     </div>
   );
 }

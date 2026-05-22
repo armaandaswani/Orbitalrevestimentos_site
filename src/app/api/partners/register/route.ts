@@ -3,9 +3,9 @@ import { supabaseAdmin } from "@/lib/supabase";
 
 export async function POST(req: NextRequest) {
   const body = await req.json();
-  const { name, email, phone, sales_rep_referral_code, portal_password } = body;
+  const { name, email, phone, sales_rep_referral_code, portal_password, birthday } = body;
 
-  if (!name || !email || !phone || !sales_rep_referral_code || !portal_password) {
+  if (!name || !email || !phone || !sales_rep_referral_code || !portal_password || !birthday) {
     return NextResponse.json(
       { error: "Todos os campos são obrigatórios." },
       { status: 400 }
@@ -77,6 +77,7 @@ export async function POST(req: NextRequest) {
       commission_value: 0,
       portal_password,
       sales_rep_referral_code: (sales_rep_referral_code as string).toUpperCase(),
+      birthday: birthday || null,
     })
     .select()
     .single();

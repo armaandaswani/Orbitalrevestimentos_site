@@ -46,99 +46,6 @@ const specs = [
   { value: "0,5%", unit: "", label: "Teor de umidade", note: "Estável no clima amazônico" },
 ];
 
-const comparison = [
-  {
-    attr: "Resistência à umidade",
-    pfb: "Impermeável (0,2%)",
-    mdf: "Absorve até 35%",
-    papel: "Descola, bolha e mofa",
-    forro: "Impermeável, mas empena",
-    tinta: "Descasca com umidade e mofa",
-    highlight: true,
-  },
-  {
-    attr: "Aspecto visual",
-    pfb: "Fotorrealista & Textura Premium",
-    mdf: "Liso ou revestido",
-    papel: "Impresso em papel/vinil",
-    forro: "Plástico brilhante ou opaco",
-    tinta: "Liso, fosco ou brilhante",
-    highlight: false,
-  },
-  {
-    attr: "Durabilidade em Manaus",
-    pfb: "10+ anos",
-    mdf: "2–3 anos",
-    papel: "1 a 2 anos",
-    forro: "3–5 anos (amarela com UV)",
-    tinta: "2–4 anos",
-    highlight: true,
-  },
-  {
-    attr: "Mofo",
-    pfb: "Resistente por natureza",
-    mdf: "Suscetível à umidade",
-    papel: "Propenso por baixo",
-    forro: "Acumula nas juntas",
-    tinta: "Propenso em áreas úmidas",
-    highlight: false,
-  },
-  {
-    attr: "Uso como forro de teto",
-    pfb: "Aprovado com ART/CREA",
-    mdf: "Estrutura necessária",
-    papel: "Não recomendado",
-    forro: "Sim, mas visual básico",
-    tinta: "Sim (sem textura)",
-    highlight: false,
-  },
-  {
-    attr: "Resistência ao fogo",
-    pfb: "Não propaga chamas",
-    mdf: "Classe C/D",
-    papel: "Inflamável",
-    forro: "Inflamável",
-    tinta: "Varia",
-    highlight: false,
-  },
-  {
-    attr: "Tempo de instalação",
-    pfb: "2–3h por cômodo",
-    mdf: "Dias (obra pesada)",
-    papel: "4–6h (secagem incluída)",
-    forro: "Obra metálica necessária",
-    tinta: "1–2 dias (secagem)",
-    highlight: false,
-  },
-  {
-    attr: "Adequado para áreas úmidas",
-    pfb: "Sim",
-    mdf: "Não",
-    papel: "Não",
-    forro: "Parcialmente",
-    tinta: "Com tinta especial",
-    highlight: true,
-  },
-  {
-    attr: "Mão de obra",
-    pfb: "Barato e Rápido",
-    mdf: "Caro e Demorado",
-    papel: "Barato e Rápido",
-    forro: "Complexo",
-    tinta: "Caro e Demorado",
-    highlight: false,
-  },
-  {
-    attr: "Matéria-prima",
-    pfb: "Bambu renovável · sem formol",
-    mdf: "Madeira + formol",
-    papel: "Papel/vinil sintético",
-    forro: "PVC",
-    tinta: "Pigmentos + resinas",
-    highlight: false,
-  },
-];
-
 export default function TecnologiaPage() {
   return (
     <div className="pt-20">
@@ -161,9 +68,9 @@ export default function TecnologiaPage() {
 
       {/* Anatomy */}
       <section className="overflow-hidden bg-white">
-        <div className="flex flex-col lg:flex-row">
+        <div className="flex flex-row">
           {/* Left — anatomy diagram with vignette */}
-          <div className="lg:w-[38%] bg-white relative min-h-[220px] lg:min-h-[440px] flex items-center justify-center overflow-hidden py-8 lg:py-12 px-8 border-b lg:border-b-0 lg:border-r border-[#eeeeee]">
+          <div className="w-[38%] bg-white relative min-h-[200px] lg:min-h-[440px] flex items-center justify-center overflow-hidden py-8 lg:py-12 px-8 border-b lg:border-b-0 lg:border-r border-[#eeeeee]">
             <div
               className="absolute inset-0 pointer-events-none z-10"
               style={{ background: "radial-gradient(ellipse 72% 78% at 50% 50%, transparent 42%, white 100%)" }}
@@ -178,40 +85,40 @@ export default function TecnologiaPage() {
           </div>
 
           {/* Right — content panel */}
-          <div className="lg:w-[62%] bg-[#f9f9f9] px-4 lg:px-16 xl:px-20 py-10 lg:py-24 flex items-center">
+          <div className="w-[62%] bg-[#f9f9f9] px-3 lg:px-16 xl:px-20 py-4 lg:py-24 flex items-center">
             <div className="w-full max-w-2xl">
               <p className="text-[#3b6934] text-xs tracking-[0.2em] uppercase font-semibold font-[var(--font-inter)] mb-5">
                 Anatomia da Placa
               </p>
-              <h2 className="font-[var(--font-noto-serif)] text-[#002045] text-3xl lg:text-4xl font-normal mb-4">
+              <h2 className="font-[var(--font-noto-serif)] text-[#002045] text-lg lg:text-4xl font-normal mb-4">
                 5 camadas. 5mm de espessura total.
               </h2>
-              <p className="text-[#43474e] text-base font-[var(--font-inter)] leading-relaxed mb-8">
+              <p className="hidden lg:block text-[#43474e] text-base font-[var(--font-inter)] leading-relaxed mb-8">
                 O PFB não é um simples laminado. Cada camada tem uma função
                 estrutural específica — da proteção UV superficial ao núcleo
                 de bambu que garante resistência e sustentabilidade.
               </p>
-              <div className="space-y-3 mb-6">
+              <div className="space-y-1.5 lg:space-y-3 mb-6">
                 {layers.map(({ name, desc }, i) => (
                   <div
                     key={name}
-                    className="bg-white border border-[#e2e2e2] p-4 flex gap-4 items-start hover:border-[#1a365d] transition-colors"
+                    className="bg-white border border-[#e2e2e2] p-2 lg:p-4 flex gap-2 lg:gap-4 items-start hover:border-[#1a365d] transition-colors"
                   >
-                    <div className="flex-shrink-0 w-7 h-7 bg-[#002045] text-white flex items-center justify-center text-xs font-bold font-[var(--font-inter)]">
+                    <div className="flex-shrink-0 w-5 h-5 lg:w-7 lg:h-7 bg-[#002045] text-white flex items-center justify-center text-xs font-bold font-[var(--font-inter)]">
                       {i + 1}
                     </div>
                     <div>
-                      <p className="text-[#002045] font-semibold text-sm font-[var(--font-inter)] mb-0.5">
+                      <p className="text-[#002045] font-semibold text-[10px] lg:text-sm font-[var(--font-inter)] mb-0.5">
                         {name}
                       </p>
-                      <p className="text-[#43474e] text-xs font-[var(--font-inter)] leading-relaxed">
+                      <p className="hidden lg:block text-[#43474e] text-xs font-[var(--font-inter)] leading-relaxed">
                         {desc}
                       </p>
                     </div>
                   </div>
                 ))}
               </div>
-              <div className="p-5 bg-[#002045] text-white">
+              <div className="hidden lg:block p-5 bg-[#002045] text-white">
                 <p className="text-[#86a0cd] text-[10px] tracking-[0.15em] uppercase font-bold font-[var(--font-inter)] mb-2">
                   Dimensões
                 </p>
@@ -228,33 +135,33 @@ export default function TecnologiaPage() {
       </section>
 
       {/* Lab Specs */}
-      <section className="py-10 lg:py-16 bg-[#002045] text-white">
+      <section className="py-6 lg:py-16 bg-[#002045] text-white">
         <div className="max-w-[1280px] mx-auto px-4 lg:px-16">
-          <div className="mb-10">
-            <p className="text-[#86a0cd] text-xs tracking-[0.2em] uppercase font-semibold font-[var(--font-inter)] mb-3">
+          <div className="mb-6 lg:mb-10">
+            <p className="text-[#86a0cd] text-xs tracking-[0.2em] uppercase font-semibold font-[var(--font-inter)] mb-2">
               Ficha técnica
             </p>
-            <h2 className="font-[var(--font-noto-serif)] text-white text-3xl font-normal mb-2">
+            <h2 className="font-[var(--font-noto-serif)] text-white text-xl lg:text-3xl font-normal mb-1.5">
               Desempenho comprovado
             </h2>
-            <p className="text-[#86a0cd] text-sm font-[var(--font-inter)]">
+            <p className="text-[#86a0cd] text-xs font-[var(--font-inter)]">
               ART nº AM20260593657 · Eng. Civil Werksson Sousa · CREA 042030134-8-D
             </p>
           </div>
-          <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-5 gap-4 lg:gap-6">
+          <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-5 gap-3 lg:gap-6">
             {specs.map(({ value, unit, label, note }) => (
               <div key={label} className="border-l-2 border-[#1a365d] pl-3 lg:pl-5">
-                <p className="font-[var(--font-noto-serif)] text-2xl lg:text-4xl text-white font-normal mb-1">
+                <p className="font-[var(--font-noto-serif)] text-xl lg:text-4xl text-white font-normal mb-0.5">
                   {value}
                   {unit && (
-                    <span className="text-base lg:text-xl text-[#86a0cd] ml-1">{unit}</span>
+                    <span className="text-sm lg:text-xl text-[#86a0cd] ml-1">{unit}</span>
                   )}
                 </p>
-                <p className="text-[#86a0cd] text-xs tracking-[0.1em] uppercase font-semibold font-[var(--font-inter)] mb-1">
+                <p className="text-[#86a0cd] text-[9px] lg:text-xs tracking-[0.1em] uppercase font-semibold font-[var(--font-inter)] mb-0.5">
                   {label}
                 </p>
                 {note && (
-                  <p className="text-[#a1d494] text-[10px] font-[var(--font-inter)]">
+                  <p className="text-[#a1d494] text-[9px] lg:text-[10px] font-[var(--font-inter)]">
                     {note}
                   </p>
                 )}
@@ -267,52 +174,52 @@ export default function TecnologiaPage() {
       {/* PFB × MDF — Water Test Photos */}
       <section className="py-10 lg:py-24 bg-[#1e212a] text-white">
         <div className="max-w-[1280px] mx-auto px-4 lg:px-16">
-          <div className="mb-12">
-            <p className="text-[#a1d494] text-xs tracking-[0.2em] uppercase font-semibold font-[var(--font-inter)] mb-4">
+          <div className="mb-8">
+            <p className="text-[#a1d494] text-xs tracking-[0.2em] uppercase font-semibold font-[var(--font-inter)] mb-3">
               PFB — Teste de Resistência à Água
             </p>
-            <h2 className="font-[var(--font-noto-serif)] text-white text-3xl lg:text-4xl font-normal mb-4">
+            <h2 className="font-[var(--font-noto-serif)] text-white text-xl lg:text-4xl font-normal mb-3">
               O PFB é resistente à água? SIM!
             </h2>
-            <p className="text-white/60 text-base font-[var(--font-inter)]">
-              Uma placa PFB foi submersa por 48 horas completas em laboratório. Resultado: apenas 0,2% de absorção de água — saindo intacta, sem deformação, sem descolar. Homologado por ART de Engenheiro Civil.
+            <p className="text-white/50 text-sm font-[var(--font-inter)] leading-relaxed max-w-xl">
+              Uma placa PFB foi submersa por 48 horas em laboratório. Resultado: 0,2% de absorção — saindo intacta, sem deformação, sem descolar.
             </p>
           </div>
 
-          <div className="flex overflow-x-auto snap-x snap-mandatory gap-3 pb-2 mb-10 -mx-4 px-4 sm:mx-0 sm:px-0 sm:grid sm:grid-cols-3 sm:gap-4 lg:max-w-[75%] lg:mx-auto">
+          <div className="grid grid-cols-3 gap-2 lg:gap-4 mb-10 lg:max-w-[75%] lg:mx-auto">
             {[
               { src: "/images/catalogue/pfb-mdf-0h.png", time: "0h", label: "Início do teste", note: "Placa PFB submersa em água em condições controladas de laboratório." },
               { src: "/images/catalogue/pfb-mdf-24h.png", time: "24h", label: "24 horas de imersão", note: "O PFB mantém integridade estrutural total — sem deformação ou absorção visível." },
               { src: "/images/catalogue/pfb-mdf-48h.png", time: "48h", label: "48 horas de imersão", note: "O PFB sai intacto após 48h de imersão. 0,2% de absorção — praticamente impermeável." },
             ].map(({ src, time, label, note }) => (
-              <div key={time} className="min-w-[72vw] sm:min-w-0 flex-shrink-0 sm:flex-shrink group snap-start">
-                <div className="relative aspect-[4/3] overflow-hidden mb-3">
+              <div key={time} className="group flex flex-col">
+                <div className="relative aspect-[1536/2752] overflow-hidden mb-3">
                   <Image
                     src={src}
                     alt={`PFB vs MDF — ${label}`}
                     fill
                     className="object-cover object-top transition-transform duration-700 group-hover:scale-[1.02]"
                   />
-                  <div className="absolute top-4 left-4 bg-white text-[#1e212a] text-sm font-bold font-[var(--font-inter)] px-3 py-1.5 tracking-[0.05em]">
+                  <div className="absolute top-3 left-3 bg-white text-[#1e212a] text-sm font-bold font-[var(--font-inter)] px-3 py-1.5 tracking-[0.05em]">
                     {time}
                   </div>
                 </div>
-                <p className="text-white font-semibold text-sm font-[var(--font-inter)] mb-1">{label}</p>
-                <p className="text-white/50 text-sm font-[var(--font-inter)] leading-relaxed">{note}</p>
+                <p className="text-white font-semibold text-xs lg:text-sm font-[var(--font-inter)] mb-1 min-h-[2.5rem] lg:min-h-[1.5rem]">{label}</p>
+                <p className="text-white/50 text-[10px] lg:text-xs font-[var(--font-inter)] leading-relaxed">{note}</p>
               </div>
             ))}
           </div>
 
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-            <div className="bg-[#002045] border border-[#1a365d] p-8">
-              <p className="text-[#a1d494] text-[10px] tracking-[0.2em] uppercase font-bold font-[var(--font-inter)] mb-3">Absorção de água · 48h imerso</p>
-              <p className="font-[var(--font-noto-serif)] text-white text-4xl font-normal mb-2">0,2%</p>
-              <p className="text-white/60 text-sm font-[var(--font-inter)]">de inchamento após 48h de imersão total — praticamente impermeável</p>
+          <div className="grid grid-cols-2 gap-3">
+            <div className="bg-[#002045] border border-[#1a365d] p-4 lg:p-6">
+              <p className="text-[#a1d494] text-[9px] lg:text-[10px] tracking-[0.15em] uppercase font-bold font-[var(--font-inter)] mb-2">Absorção · 48h imerso</p>
+              <p className="font-[var(--font-noto-serif)] text-white text-2xl lg:text-4xl font-normal mb-1">0,2%</p>
+              <p className="text-white/60 text-[11px] lg:text-sm font-[var(--font-inter)] leading-snug">de inchamento — praticamente impermeável</p>
             </div>
-            <div className="bg-[#002045] border border-[#1a365d] p-8">
-              <p className="text-[#a1d494] text-[10px] tracking-[0.2em] uppercase font-bold font-[var(--font-inter)] mb-3">Vida útil no Amazonas</p>
-              <p className="font-[var(--font-noto-serif)] text-white text-4xl font-normal mb-2">10+</p>
-              <p className="text-white/60 text-sm font-[var(--font-inter)]">anos de durabilidade comprovada no clima úmido de Manaus</p>
+            <div className="bg-[#002045] border border-[#1a365d] p-4 lg:p-6">
+              <p className="text-[#a1d494] text-[9px] lg:text-[10px] tracking-[0.15em] uppercase font-bold font-[var(--font-inter)] mb-2">Vida útil no Amazonas</p>
+              <p className="font-[var(--font-noto-serif)] text-white text-2xl lg:text-4xl font-normal mb-1">10+</p>
+              <p className="text-white/60 text-[11px] lg:text-sm font-[var(--font-inter)] leading-snug">anos no clima úmido de Manaus</p>
             </div>
           </div>
         </div>
@@ -338,7 +245,7 @@ export default function TecnologiaPage() {
                 integridade visual e estrutural por mais de 10 anos.
               </p>
             </div>
-            <div className="grid grid-cols-2 gap-5">
+            <div className="grid grid-cols-2 gap-2 lg:gap-5">
               {[
                 {
                   title: "Anti-mofo",
@@ -379,15 +286,14 @@ export default function TecnologiaPage() {
                   ),
                 },
               ].map(({ icon, title, desc }) => (
-                <div key={title} className="bg-[#002045] p-5">
-                  <div className="text-[#86a0cd] mb-3">{icon}</div>
-                  <p className="text-white font-semibold text-sm font-[var(--font-inter)] mb-2">{title}</p>
-                  <p className="text-white/55 text-xs font-[var(--font-inter)] leading-relaxed">{desc}</p>
+                <div key={title} className="bg-[#002045] p-3 lg:p-5">
+                  <div className="text-[#86a0cd] mb-1 lg:mb-3">{icon}</div>
+                  <p className="text-white font-semibold text-xs lg:text-sm font-[var(--font-inter)] mb-2">{title}</p>
+                  <p className="text-white/55 text-[10px] lg:text-xs font-[var(--font-inter)] leading-relaxed">{desc}</p>
                 </div>
               ))}
             </div>
           </div>
-          <MdfComparison />
         </div>
       </section>
 
@@ -464,16 +370,16 @@ export default function TecnologiaPage() {
             ].map(({ label, icon, desc }) => (
               <div
                 key={label}
-                className="flex flex-col items-center text-center gap-4 p-6 border border-[#e2e2e2] hover:border-[#1a365d] transition-colors group"
+                className="flex flex-col items-center text-center gap-2 p-3 lg:p-4 border border-[#e2e2e2] hover:border-[#1a365d] transition-colors group"
               >
-                <div className="w-10 h-10 bg-[#f3f3f3] flex items-center justify-center text-[#1a365d] group-hover:bg-[#002045] group-hover:text-white transition-colors duration-300">
+                <div className="w-8 h-8 bg-[#f3f3f3] flex items-center justify-center text-[#1a365d] group-hover:bg-[#002045] group-hover:text-white transition-colors duration-300 flex-shrink-0">
                   {icon}
                 </div>
                 <div>
-                  <p className="text-[#002045] text-xs tracking-[0.1em] uppercase font-semibold font-[var(--font-inter)] mb-1">
+                  <p className="text-[#002045] text-[10px] tracking-[0.08em] uppercase font-semibold font-[var(--font-inter)] mb-0.5 leading-tight">
                     {label}
                   </p>
-                  <p className="text-[#74777f] text-[10px] font-[var(--font-inter)]">
+                  <p className="text-[#74777f] text-[9px] font-[var(--font-inter)] leading-snug">
                     {desc}
                   </p>
                 </div>
@@ -483,7 +389,7 @@ export default function TecnologiaPage() {
         </div>
       </section>
 
-      {/* Comparison Table — PFB vs all alternatives */}
+      {/* Comparison Table — PFB vs alternatives (dropdown) */}
       <section className="py-16 lg:py-24 bg-[#f9f9f9]">
         <div className="max-w-[1280px] mx-auto px-4 lg:px-16">
           <p className="text-[#74777f] text-xs tracking-[0.2em] uppercase font-semibold font-[var(--font-inter)] mb-4">
@@ -492,61 +398,10 @@ export default function TecnologiaPage() {
           <h2 className="font-[var(--font-noto-serif)] text-[#002045] text-3xl lg:text-4xl font-normal mb-3">
             PFB Orbital — desempenho em 10 critérios técnicos
           </h2>
-          <p className="text-[#43474e] text-sm font-[var(--font-inter)] mb-12 max-w-2xl">
+          <p className="text-[#43474e] text-sm font-[var(--font-inter)] mb-10 max-w-2xl">
             Avaliações com base em ficha técnica e condições reais de uso no clima do Amazonas. ART de Engenheiro Civil.
           </p>
-
-          <div className="overflow-x-auto">
-            <table className="w-full border-collapse min-w-[760px]">
-              <thead>
-                <tr className="border-b-2 border-[#e2e2e2]">
-                  <th className="text-left py-5 px-4 text-xs tracking-[0.1em] uppercase font-semibold font-[var(--font-inter)] text-[#74777f] w-[18%]">
-                    Critério
-                  </th>
-                  <th className="text-left py-5 px-4 font-[var(--font-noto-serif)] text-[#002045] text-lg font-normal w-[18%]">
-                    PFB Orbital
-                  </th>
-                  <th className="text-left py-5 px-4 font-[var(--font-noto-serif)] text-[#74777f] text-lg font-normal w-[16%]">
-                    MDF
-                  </th>
-                  <th className="text-left py-5 px-4 font-[var(--font-noto-serif)] text-[#74777f] text-lg font-normal w-[16%]">
-                    Papel de Parede
-                  </th>
-                  <th className="text-left py-5 px-4 font-[var(--font-noto-serif)] text-[#74777f] text-lg font-normal w-[16%]">
-                    Forro PVC
-                  </th>
-                  <th className="text-left py-5 px-4 font-[var(--font-noto-serif)] text-[#74777f] text-lg font-normal w-[16%]">
-                    Tinta
-                  </th>
-                </tr>
-              </thead>
-              <tbody>
-                {comparison.map(({ attr, pfb, mdf, papel, forro, tinta, highlight }) => (
-                  <tr
-                    key={attr}
-                    className={`border-b border-[#eeeeee] transition-colors ${
-                      highlight ? "bg-[#f3f9f3]" : "hover:bg-[#f3f3f3]"
-                    }`}
-                  >
-                    <td className="py-4 px-4 text-sm font-medium font-[var(--font-inter)] text-[#1a1c1c]">
-                      {attr}
-                    </td>
-                    <td className="py-4 px-4 text-sm font-semibold text-[#002045] font-[var(--font-inter)]">
-                      {pfb}
-                    </td>
-                    <td className="py-4 px-4 text-sm text-[#74777f] font-[var(--font-inter)]">{mdf}</td>
-                    <td className="py-4 px-4 text-sm text-[#74777f] font-[var(--font-inter)]">{papel}</td>
-                    <td className="py-4 px-4 text-sm text-[#74777f] font-[var(--font-inter)]">{forro}</td>
-                    <td className="py-4 px-4 text-sm text-[#74777f] font-[var(--font-inter)]">{tinta}</td>
-                  </tr>
-                ))}
-              </tbody>
-            </table>
-          </div>
-
-          <p className="text-[#74777f] text-xs font-[var(--font-inter)] italic mt-6">
-            ART nº AM20260593657 · Eng. Civil Werksson Sousa, CREA 042030134-8-D. Dados sujeitos a alteração sem aviso prévio.
-          </p>
+          <MdfComparison />
         </div>
       </section>
 
@@ -586,7 +441,7 @@ export default function TecnologiaPage() {
               </div>
             </div>
             <div>
-              <div className="relative aspect-[4/3] sm:aspect-[4/5] overflow-hidden">
+              <div className="relative aspect-[1674/1982] overflow-hidden">
                 <Image
                   src="/images/catalogue/onde-aplicar-main.jpeg"
                   alt="PFB Orbital — material ecológico de bambu"

@@ -345,39 +345,28 @@ export default function Home() {
             </div>
           </div>
 
-          {/* Mobile: horizontal scroll row; md+: 3-column grid */}
-          <div className="flex overflow-x-auto snap-x snap-mandatory gap-3 pb-4 md:hidden -mx-4 px-4">
-            {featuredLines.map(({ name, subtitle, desc, price, img, href, code, waMsg }) => (
-              <div key={name} className="min-w-[50vw] snap-start flex-shrink-0 group">
+          {/* Mobile: compact 3-column grid — all 3 visible simultaneously */}
+          <div className="grid grid-cols-3 gap-2 md:hidden">
+            {featuredLines.map(({ name, subtitle, price, img, href, code }) => (
+              <div key={name} className="group">
                 <Link href={href} className="block cursor-pointer">
-                  <div className="relative aspect-[812/988] overflow-hidden bg-[#eeeeee] mb-2">
+                  <div className="relative aspect-[812/988] overflow-hidden bg-[#eeeeee] mb-1.5">
                     <Image
                       src={img}
                       alt={`${name} — ${subtitle}`}
                       fill
                       className="object-cover transition-transform duration-700 ease-out group-hover:scale-[1.05]"
                     />
-                    <div className="absolute top-4 left-4">
-                      <span className="bg-[#002045] text-white text-[10px] tracking-[0.15em] uppercase font-semibold font-[var(--font-inter)] px-3 py-1.5">
+                    <div className="absolute top-2 left-2">
+                      <span className="bg-[#002045] text-white text-[8px] tracking-[0.08em] uppercase font-semibold font-[var(--font-inter)] px-1.5 py-1 leading-none">
                         {name}
                       </span>
                     </div>
                   </div>
-                  <div className="space-y-1 mb-3">
-                    <p className="text-[#74777f] text-[10px] tracking-[0.15em] uppercase font-semibold font-[var(--font-inter)]">{code}</p>
-                    <h3 className="font-[var(--font-noto-serif)] text-[#002045] text-base font-medium">{name} — {subtitle}</h3>
-                    <p className="text-[#43474e] text-xs font-[var(--font-inter)] leading-relaxed">{desc}</p>
-                    <p className="text-[#1a365d] text-sm font-semibold font-[var(--font-inter)] pt-0.5">{price}</p>
-                  </div>
+                  <p className="text-[#74777f] text-[9px] tracking-[0.08em] uppercase font-semibold font-[var(--font-inter)] leading-tight truncate">{code}</p>
+                  <p className="font-[var(--font-noto-serif)] text-[#002045] text-[11px] font-medium leading-snug">{subtitle}</p>
+                  <p className="text-[#1a365d] text-[10px] font-semibold font-[var(--font-inter)]">{price}</p>
                 </Link>
-                <a
-                  href={WA(waMsg)}
-                  target="_blank"
-                  rel="noopener noreferrer"
-                  className="inline-block text-[10px] tracking-[0.12em] uppercase font-bold font-[var(--font-inter)] border border-[#002045] text-[#002045] px-5 py-2 hover:bg-[#002045] hover:text-white transition-colors"
-                >
-                  Tirar dúvidas →
-                </a>
               </div>
             ))}
           </div>
@@ -480,10 +469,10 @@ export default function Home() {
             <div className="lg:col-span-7">
               <div className="grid grid-cols-2 gap-3">
                 {[
-                  { src: "/images/catalogue/lavabo-real.jpeg", label: "Revestimento de lavabo com PFB Orbital em Manaus" },
-                  { src: "/images/catalogue/projeto-escritorio-depois.jpeg", label: "Revestimento comercial PFB — escritório em Manaus" },
-                  { src: "/images/catalogue/projeto-varanda.jpeg", label: "Revestimento de banheiro impermeável PFB Orbital" },
-                  { src: "/images/catalogue/page13_img5_924x1629.jpeg", label: "Revestimento de parede PFB — ambiente residencial" },
+                  { src: "/images/catalogue/lavabo-real.jpeg", label: "Lavabo" },
+                  { src: "/images/catalogue/projeto-escritorio-depois.jpeg", label: "Escritório" },
+                  { src: "/images/catalogue/projeto-varanda.jpeg", label: "Banheiro" },
+                  { src: "/images/catalogue/page13_img5_924x1629.jpeg", label: "Parede Residencial" },
                 ].map(({ src, label }, i) => (
                   <ScrollReveal key={label} delay={i * 80} direction="up">
                     <div className="relative aspect-square sm:aspect-[4/5] overflow-hidden group">

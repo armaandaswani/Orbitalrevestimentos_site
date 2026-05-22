@@ -264,29 +264,29 @@ export default function ParceriasPage() {
                 <h2 className="font-[var(--font-noto-serif)] text-white text-[32px] lg:text-[40px] font-normal leading-[1.2] mb-6">
                   {seg.headline}
                 </h2>
-                <p className="text-white/60 text-base font-[var(--font-inter)] leading-relaxed mb-10">
+                <p className="hidden lg:block text-white/60 text-base font-[var(--font-inter)] leading-relaxed mb-10">
                   {seg.body}
                 </p>
-                <ul className="space-y-5 mb-10">
+                <ul className="space-y-2 lg:space-y-5 mb-6 lg:mb-10">
                   {seg.benefits.map(({ title, desc }) => (
-                    <li key={title} className="flex gap-4">
+                    <li key={title} className="flex gap-2 lg:gap-4">
                       <span className="flex-shrink-0 mt-1.5 w-1.5 h-1.5 rounded-full bg-[#a1d494]" />
                       <div>
-                        <p className="text-white text-sm font-semibold font-[var(--font-inter)] mb-0.5">{title}</p>
-                        <p className="text-white/50 text-xs font-[var(--font-inter)] leading-relaxed">{desc}</p>
+                        <p className="text-white text-xs lg:text-sm font-semibold font-[var(--font-inter)] mb-0.5">{title}</p>
+                        <p className="hidden lg:block text-white/50 text-xs font-[var(--font-inter)] leading-relaxed">{desc}</p>
                       </div>
                     </li>
                   ))}
                 </ul>
                 {seg.pricingCallout && (
-                  <div className="bg-[#0d2d1a] border border-[#3b6934] px-5 py-4 mb-6 flex gap-3 items-start">
+                  <div className="hidden lg:flex bg-[#0d2d1a] border border-[#3b6934] px-5 py-4 mb-6 gap-3 items-start">
                     <svg className="flex-shrink-0 mt-0.5 text-[#a1d494]" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
                       <path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm1 15h-2v-6h2v6zm0-8h-2V7h2v2z" strokeLinejoin="round" />
                     </svg>
                     <p className="text-[#a1d494] text-xs font-[var(--font-inter)] leading-relaxed">{seg.pricingCallout}</p>
                   </div>
                 )}
-                <div className="border-l-2 border-[#3b6934] pl-4 mb-10">
+                <div className="hidden lg:block border-l-2 border-[#3b6934] pl-4 mb-10">
                   <p className="text-[#a1d494] text-xs font-[var(--font-inter)] italic leading-relaxed">{seg.highlight}</p>
                 </div>
                 <div className="flex flex-wrap gap-3">
@@ -317,7 +317,7 @@ export default function ParceriasPage() {
             </div>
 
             {/* Right — image + floating stat */}
-            <div className="lg:w-[48%] relative min-h-[400px] lg:min-h-[620px]">
+            <div className="lg:w-[48%] relative min-h-[220px] lg:min-h-[620px]">
               <Image src={seg.image} alt={`PFB Orbital — ${seg.label}`} fill className="object-cover" />
               <div className="absolute inset-0 bg-gradient-to-t from-[#001530]/40 to-transparent" />
               <div className="absolute bottom-8 right-8 bg-white/96 px-6 py-5 shadow-xl">
@@ -346,7 +346,7 @@ export default function ParceriasPage() {
       </div>
 
       {/* ── Longevity argument ────────────────── */}
-      <section className="py-16 lg:py-24 bg-[#f9f9f9]">
+      <section className="py-8 lg:py-24 bg-[#f9f9f9]">
         <div className="max-w-[1280px] mx-auto px-4 lg:px-16">
           <ScrollReveal direction="up">
             <div className="mb-12">
@@ -356,9 +356,9 @@ export default function ParceriasPage() {
           </ScrollReveal>
           <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
             <ScrollReveal direction="up" delay={0}>
-              <div className="bg-white border border-[#e2e2e2] p-8 h-full">
+              <div className="bg-white border border-[#e2e2e2] p-4 lg:p-8 h-full">
                 <p className="text-[#74777f] text-xs tracking-[0.1em] uppercase font-semibold font-[var(--font-inter)] mb-4">MDF em clima amazônico</p>
-                <p className="font-[var(--font-noto-serif)] text-[#74777f] text-3xl font-normal mb-3 leading-tight">2–3 anos e já mostra desgaste.</p>
+                <p className="font-[var(--font-noto-serif)] text-[#74777f] text-xl lg:text-3xl font-normal mb-3 leading-tight">2–3 anos e já mostra desgaste.</p>
                 <p className="text-[#74777f] text-sm font-[var(--font-inter)] leading-relaxed mb-5">Com umidade acima de 80% o ano todo, o MDF absorve água continuamente. O resultado aparece cedo.</p>
                 <ul className="space-y-2">
                   {["Incha, empena e descola das paredes","Manchas de umidade e mofo visíveis","Pintura e laminado perdem aderência","O projeto entregue com esmero parece negligenciado","O cliente lembra quem especificou o material"].map((item) => (
@@ -370,10 +370,10 @@ export default function ParceriasPage() {
               </div>
             </ScrollReveal>
             <ScrollReveal direction="up" delay={100}>
-              <div className="bg-[#002045] p-8 relative overflow-hidden h-full">
+              <div className="bg-[#002045] p-4 lg:p-8 relative overflow-hidden h-full">
                 <div className="absolute top-3 right-3 bg-[#3b6934] text-white text-[9px] tracking-[0.1em] uppercase font-bold font-[var(--font-inter)] px-2.5 py-1">PFB Orbital</div>
                 <p className="text-[#86a0cd] text-xs tracking-[0.1em] uppercase font-semibold font-[var(--font-inter)] mb-4">Aparência preservada por anos</p>
-                <p className="font-[var(--font-noto-serif)] text-white text-3xl font-normal mb-3 leading-tight">O visual que saiu da obra, anos depois.</p>
+                <p className="font-[var(--font-noto-serif)] text-white text-xl lg:text-3xl font-normal mb-3 leading-tight">O visual que saiu da obra, anos depois.</p>
                 <p className="text-white/60 text-sm font-[var(--font-inter)] leading-relaxed mb-5">Impermeável, anti-mofo e resistente a ciclos térmicos extremos. O acabamento não deteriora.</p>
                 <ul className="space-y-2">
                   {["Inchamento máximo de 0,2% em 48h de imersão","Veios do mármore permanecem nítidos","Textura da madeira intacta ao longo do tempo","Sem descolar, sem manchar, sem empenar","O cliente mostra o projeto com orgulho a visitas"].map((item) => (
@@ -385,10 +385,10 @@ export default function ParceriasPage() {
               </div>
             </ScrollReveal>
             <ScrollReveal direction="up" delay={200}>
-              <div className="bg-white border border-[#e2e2e2] p-8 flex flex-col justify-between h-full">
+              <div className="bg-white border border-[#e2e2e2] p-4 lg:p-8 flex flex-col justify-between h-full">
                 <div>
                   <p className="text-[#74777f] text-xs tracking-[0.1em] uppercase font-semibold font-[var(--font-inter)] mb-4">O impacto na sua reputação</p>
-                  <p className="font-[var(--font-noto-serif)] text-[#002045] text-2xl font-normal mb-5 leading-snug">"Um ambiente bem executado é o seu melhor portfólio vivo."</p>
+                  <p className="font-[var(--font-noto-serif)] text-[#002045] text-lg lg:text-2xl font-normal mb-5 leading-snug">"Um ambiente bem executado é o seu melhor portfólio vivo."</p>
                   <p className="text-[#43474e] text-sm font-[var(--font-inter)] leading-relaxed mb-4">Cada projeto entregue com PFB Orbital continua impecável anos depois — e continua atraindo novos clientes para você.</p>
                   <p className="text-[#43474e] text-sm font-[var(--font-inter)] leading-relaxed mb-8">Especificar o material certo não é só uma escolha técnica. É uma decisão de proteção da sua imagem profissional.</p>
                 </div>
@@ -456,7 +456,7 @@ export default function ParceriasPage() {
 }
 
 function SelfRegisterSection({ onScrollToSegments }: { onScrollToSegments: () => void }) {
-  const [form, setForm] = useState({ name: "", email: "", phone: "", referral_code: "", portal_password: "" });
+  const [form, setForm] = useState({ name: "", email: "", phone: "", referral_code: "", portal_password: "", birthday: "" });
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState("");
   const [success, setSuccess] = useState<{ coupon_code: string; name: string } | null>(null);
@@ -475,6 +475,7 @@ function SelfRegisterSection({ onScrollToSegments }: { onScrollToSegments: () =>
         phone: form.phone,
         sales_rep_referral_code: form.referral_code,
         portal_password: form.portal_password,
+        birthday: form.birthday,
       }),
     });
     const json = await res.json();
@@ -539,7 +540,7 @@ function SelfRegisterSection({ onScrollToSegments }: { onScrollToSegments: () =>
                 </p>
               </div>
             ) : (
-              <form onSubmit={handleSubmit} className="bg-white border border-[#e2e2e2] p-8">
+              <form onSubmit={handleSubmit} className="bg-white border border-[#e2e2e2] p-5 lg:p-8">
                 <p className="font-[var(--font-noto-serif)] text-[#002045] text-xl font-normal mb-6">Criar conta de parceiro</p>
                 <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 mb-4">
                   <div>
@@ -571,6 +572,16 @@ function SelfRegisterSection({ onScrollToSegments }: { onScrollToSegments: () =>
                       onChange={(e) => setForm({ ...form, phone: e.target.value })}
                       className="w-full border border-[#e2e2e2] px-4 py-3 text-sm font-[var(--font-inter)] text-[#002045] focus:outline-none focus:border-[#002045] placeholder-[#b0b4bc]"
                       placeholder="(92) 9 0000-0000"
+                    />
+                  </div>
+                  <div>
+                    <label className="block text-[10px] tracking-[0.15em] uppercase font-bold font-[var(--font-inter)] text-[#74777f] mb-2">Data de Nascimento *</label>
+                    <input
+                      required
+                      type="date"
+                      value={form.birthday}
+                      onChange={(e) => setForm({ ...form, birthday: e.target.value })}
+                      className="w-full border border-[#e2e2e2] px-4 py-3 text-sm font-[var(--font-inter)] text-[#002045] focus:outline-none focus:border-[#002045]"
                     />
                   </div>
                   <div>

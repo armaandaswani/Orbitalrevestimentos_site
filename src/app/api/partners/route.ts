@@ -19,6 +19,7 @@ export async function POST(req: NextRequest) {
     discount_type, discount_value,
     commission_type, commission_value,
     portal_password,
+    birthday,
   } = body;
 
   if (!coupon_code) {
@@ -50,6 +51,7 @@ export async function POST(req: NextRequest) {
       commission_type,
       commission_value,
       portal_password: portal_password || null,
+      birthday: birthday || null,
     })
     .select()
     .single();
