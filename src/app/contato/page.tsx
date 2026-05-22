@@ -1,28 +1,25 @@
 "use client";
 
-import React, { useState } from "react";
+import React, { useState, useRef } from "react";
 import Image from "next/image";
 import Link from "next/link";
 
-// ─── Constants ────────────────────────────────────────────────────────────────
 const WA_BASE = "https://wa.me/5592988150149?text=";
 const CATALOGUE_URL =
   "https://drive.google.com/file/d/1zhm5MgKGSDRThqk8FqqwfX-WijI7K-iD/view?usp=drive_link";
 const PLATE_M2 = 3.48;
-const PLATE_W = 1.2;  // m — plate width
-const PLATE_H = 2.9;  // m — plate height
+const PLATE_W = 1.2;
+const PLATE_H = 2.9;
 
-// MDF cost breakdown (Manaus, cotado 2025)
-const MDF_SHEET_W = 1.85;          // m — chapa width
-const MDF_SHEET_H = 2.75;          // m — chapa height
-const MDF_SHEET_M2 = MDF_SHEET_W * MDF_SHEET_H; // 5.0875 m²
-const MDF_SHEET_PRICE = 415;       // R$/chapa
-const MDF_MO_SIMPLE = 30;          // R$/m² — ambientes simples
-const MDF_MO_COMPLEX = 50;         // R$/m² — ambientes complexos
-const MDF_ACABAMENTO = 25;         // R$/m² — acabamentos
-const MDF_INSTALLS_10Y = 3;        // trocas em 10 anos (estimativa conservadora)
+const MDF_SHEET_W = 1.85;
+const MDF_SHEET_H = 2.75;
+const MDF_SHEET_M2 = MDF_SHEET_W * MDF_SHEET_H;
+const MDF_SHEET_PRICE = 415;
+const MDF_MO_SIMPLE = 30;
+const MDF_MO_COMPLEX = 50;
+const MDF_ACABAMENTO = 25;
+const MDF_INSTALLS_10Y = 3;
 
-// Returns R$/placa — divide by PLATE_M2 for per-m² rate
 function orbitalMOPerPlate(plates: number, complex: boolean) {
   return plates > 6 ? (complex ? 150 : 130) : (complex ? 175 : 150);
 }
@@ -35,7 +32,6 @@ function fmt(n: number) {
   });
 }
 
-// ─── Types ────────────────────────────────────────────────────────────────────
 type ProductLine = "Classic" | "Brilliance" | "Elegance";
 type SpaceViability = "simple" | "complex" | "no";
 
@@ -55,7 +51,16 @@ interface Space {
   hint?: string;
 }
 
-// ─── Product data ─────────────────────────────────────────────────────────────
+interface CouponData {
+  id: string;
+  partner_name: string;
+  coupon_code: string;
+  discount_type: "percentage" | "fixed";
+  discount_value: number;
+  commission_type: "percentage" | "fixed";
+  commission_value: number;
+}
+
 const LINE_INFO: Record<ProductLine, { finish: string; price: number; cover: string }> = {
   Classic:    { finish: "Mármore Fosco",       price: 559, cover: "/images/catalogue/classic-branco-calacatta-orb006.jpeg" },
   Brilliance: { finish: "Mármore Polido",      price: 589, cover: "/images/catalogue/brilliance-calacatta-oro-orb013.jpeg" },
@@ -80,7 +85,6 @@ const PRODUCTS: Product[] = [
   { code: "ORB-011", name: "Carvalho Branco",           linha: "Elegance",   img: "/images/catalogue/elegance-carvalho-branco-orb011.jpeg" },
 ];
 
-// ─── Space types ──────────────────────────────────────────────────────────────
 const SPACES: Space[] = [
   { id: "parede",     label: "Parede",             viability: "simple" },
   { id: "teto",       label: "Teto",               viability: "simple" },
@@ -108,7 +112,6 @@ const SPACES: Space[] = [
   { id: "box", label: "Box / Ducha", viability: "complex" },
 ];
 
-// ─── FAQ ──────────────────────────────────────────────────────────────────────
 const faqs = [
   {
     q: "Como funciona a instalação?",
@@ -136,7 +139,6 @@ const faqs = [
   },
 ];
 
-// ─── WA icon ──────────────────────────────────────────────────────────────────
 function WaIcon({ size = 15 }: { size?: number }) {
   return (
     <svg width={size} height={size} viewBox="0 0 24 24" fill="currentColor">
@@ -145,9 +147,11 @@ function WaIcon({ size = 15 }: { size?: number }) {
   );
 }
 
-// ─── Main component ───────────────────────────────────────────────────────────
 export default function ContatoPage() {
-  const [step, setStep] = useState<1 | 2 | 3 | 4>(1);
+  const simulatorRef = useRef<HTMLElement>(null);
+  const productsRef = useRef<HTMLDivElement>(null);
+
+  const [step, setStep] = useState<1 | 2 | 3 | 4 | 5>(1);
   const [selectedSpace, setSelectedSpace] = useState<Space | null>(null);
   const [selectedLine, setSelectedLine] = useState<ProductLine | null>(null);
   const [selectedProduct, setSelectedProduct] = useState<Product | null>(null);
@@ -156,6 +160,10 @@ export default function ContatoPage() {
   const [height, setHeight] = useState("");
   const [sqmInput, setSqmInput] = useState("");
   const [architectName, setArchitectName] = useState("");
+  const [couponCode, setCouponCode] = useState("");
+  const [couponData, setCouponData] = useState<CouponData | null>(null);
+  const [couponValidating, setCouponValidating] = useState(false);
+  const [couponError, setCouponError] = useState("");
   const [showResult, setShowResult] = useState(false);
   const [showSavings, setShowSavings] = useState(false);
 
@@ -170,6 +178,7 @@ export default function ContatoPage() {
       : m2 > 0
       ? Math.ceil(m2 / PLATE_M2)
       : 0;
+
   const isComplex = selectedSpace?.viability === "complex";
 
   const pricePerPlate =
@@ -181,7 +190,14 @@ export default function ContatoPage() {
   const orbMaterialTotal = plates * pricePerPlate;
   const moRatePerPlate = plates > 0 ? orbitalMOPerPlate(plates, isComplex) : 0;
   const orbMOTotal = moRatePerPlate * plates;
-  const orbTotal = orbMaterialTotal + orbMOTotal;
+
+  const discountAmount = couponData
+    ? couponData.discount_type === "percentage"
+      ? Math.round(orbMaterialTotal * couponData.discount_value / 100)
+      : Math.min(couponData.discount_value, orbMaterialTotal)
+    : 0;
+  const orbMaterialDiscounted = orbMaterialTotal - discountAmount;
+  const orbTotal = orbMaterialDiscounted + orbMOTotal;
 
   const w = parseFloat(width) || 0;
   const h = parseFloat(height) || 0;
@@ -197,6 +213,12 @@ export default function ContatoPage() {
   const mdfIn10y = mdfOnce * MDF_INSTALLS_10Y;
   const savings10y = mdfIn10y - orbTotal;
 
+  const commissionOwed = couponData
+    ? couponData.commission_type === "percentage"
+      ? Math.round(orbMaterialDiscounted * couponData.commission_value / 100)
+      : couponData.commission_value
+    : 0;
+
   const waMsg =
     selectedProduct && selectedSpace && m2 > 0
       ? [
@@ -210,13 +232,29 @@ export default function ContatoPage() {
           `*Área total:* ${m2.toFixed(2)} m²`,
           `*Quantidade:* ${plates} placa${plates !== 1 ? "s" : ""} (cobre ~${(plates * PLATE_M2).toFixed(2)} m²)`,
           `*Preço estimado do material:* ${fmt(orbMaterialTotal)}`,
+          couponData
+            ? `*Cupom aplicado:* ${couponData.coupon_code} (desconto de ${couponData.discount_type === "percentage" ? couponData.discount_value + "%" : fmt(couponData.discount_value)})`
+            : null,
+          couponData ? `*Preço com desconto:* ${fmt(orbMaterialDiscounted)}` : null,
           architectName ? `*Arquiteto/Designer:* ${architectName}` : null,
         ].filter(Boolean).join("\n")
       : "Olá! Tenho interesse no PFB Orbital e gostaria de fazer um orçamento.";
 
-  function goToStep(n: 1 | 2 | 3 | 4) {
+  function scrollToSimulator() {
+    setTimeout(() => {
+      simulatorRef.current?.scrollIntoView({ behavior: "smooth", block: "start" });
+    }, 50);
+  }
+
+  function goToStep(n: 1 | 2 | 3 | 4 | 5) {
     setStep(n);
     setShowResult(false);
+    scrollToSimulator();
+  }
+
+  function showResults() {
+    setShowResult(true);
+    scrollToSimulator();
   }
 
   function reset() {
@@ -228,19 +266,90 @@ export default function ContatoPage() {
     setHeight("");
     setSqmInput("");
     setArchitectName("");
+    setCouponCode("");
+    setCouponData(null);
+    setCouponError("");
     setShowResult(false);
     setShowSavings(false);
+    scrollToSimulator();
+  }
+
+  async function validateCoupon() {
+    if (!couponCode.trim()) return;
+    setCouponValidating(true);
+    setCouponError("");
+    setCouponData(null);
+    try {
+      const res = await fetch("/api/coupons/validate", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ code: couponCode.trim() }),
+      });
+      const json = await res.json();
+      if (res.ok) {
+        setCouponData(json);
+      } else {
+        setCouponError(json.error || "Cupom inválido.");
+      }
+    } catch {
+      setCouponError("Erro ao validar cupom. Tente novamente.");
+    } finally {
+      setCouponValidating(false);
+    }
+  }
+
+  async function handleCouponAndShow() {
+    if (!couponCode.trim() || couponData) {
+      showResults();
+      return;
+    }
+    await validateCoupon();
+    showResults();
+  }
+
+  function logCouponUse() {
+    if (!couponData || !selectedProduct || !selectedSpace) return;
+    try {
+      fetch("/api/coupons/use", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          partner_id: couponData.id,
+          coupon_code: couponData.coupon_code,
+          space: selectedSpace.label,
+          product_name: selectedProduct.name,
+          product_code: selectedProduct.code,
+          area_m2: m2,
+          plates,
+          material_total: orbMaterialTotal,
+          material_discounted: orbMaterialDiscounted,
+          discount_applied: discountAmount,
+          commission_owed: commissionOwed,
+          architect_name: architectName || null,
+        }),
+      });
+    } catch {
+      // fire and forget
+    }
   }
 
   const canAdvance1 = selectedSpace !== null && selectedSpace.viability !== "no";
   const canAdvance2 = selectedProduct !== null;
   const canCalculate = m2 > 0;
 
+  const STEPS = [
+    { n: 1 as const, label: "Espaço" },
+    { n: 2 as const, label: "Modelo" },
+    { n: 3 as const, label: "Dimensões" },
+    { n: 4 as const, label: "Arquiteto" },
+    { n: 5 as const, label: "Cupom" },
+  ];
+
   return (
     <div className="pt-20">
 
       {/* ── Hero ─────────────────────────────────────────────────────────── */}
-      <section className="bg-[#002045] text-white py-24 lg:py-32 relative overflow-hidden">
+      <section className="bg-[#002045] text-white py-20 lg:py-32 relative overflow-hidden">
         <div
           className="absolute inset-0 opacity-[0.04]"
           style={{
@@ -248,22 +357,22 @@ export default function ContatoPage() {
               "repeating-linear-gradient(0deg,transparent,transparent 39px,rgba(255,255,255,.5) 39px,rgba(255,255,255,.5) 40px),repeating-linear-gradient(90deg,transparent,transparent 39px,rgba(255,255,255,.5) 39px,rgba(255,255,255,.5) 40px)",
           }}
         />
-        <div className="relative max-w-[1280px] mx-auto px-8 lg:px-16">
+        <div className="relative max-w-[1280px] mx-auto px-6 lg:px-16">
           <div className="max-w-3xl">
             <p className="text-[#a1d494] text-xs tracking-[0.2em] uppercase font-semibold font-[var(--font-inter)] mb-5">
               Simulador · Orçamento
             </p>
-            <h1 className="font-[var(--font-noto-serif)] text-5xl lg:text-6xl font-normal tracking-[-0.02em] leading-tight mb-6">
+            <h1 className="font-[var(--font-noto-serif)] text-4xl lg:text-6xl font-normal tracking-[-0.02em] leading-tight mb-6">
               Comece o seu projeto.
             </h1>
-            <p className="text-white/65 text-lg font-[var(--font-inter)] leading-relaxed max-w-2xl mb-10">
+            <p className="text-white/65 text-base lg:text-lg font-[var(--font-inter)] leading-relaxed max-w-2xl mb-8 lg:mb-10">
               Escolha o acabamento, informe a área e veja em segundos quanto você investe —
-              e quanto economiza em relação ao MDF ao longo de 10 anos.
+              e quanto economiza ao longo de 10 anos.
             </p>
-            <div className="flex flex-wrap gap-4">
+            <div className="flex flex-col sm:flex-row gap-3 sm:gap-4">
               <a
                 href="#simulador"
-                className="inline-flex items-center gap-2 bg-white text-[#002045] text-xs tracking-[0.12em] uppercase font-bold font-[var(--font-inter)] px-7 py-4 hover:bg-[#f3f3f3] transition-colors"
+                className="inline-flex items-center justify-center gap-2 bg-white text-[#002045] text-xs tracking-[0.12em] uppercase font-bold font-[var(--font-inter)] px-7 py-4 hover:bg-[#f3f3f3] transition-colors"
               >
                 Iniciar simulação
                 <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
@@ -274,7 +383,7 @@ export default function ContatoPage() {
                 href={`${WA_BASE}${encodeURIComponent("Olá! Tenho interesse no PFB Orbital e gostaria de fazer um orçamento.")}`}
                 target="_blank"
                 rel="noopener noreferrer"
-                className="inline-flex items-center gap-2.5 border border-white/30 text-white text-xs tracking-[0.12em] uppercase font-bold font-[var(--font-inter)] px-7 py-4 hover:border-white transition-colors"
+                className="inline-flex items-center justify-center gap-2.5 border border-white/30 text-white text-xs tracking-[0.12em] uppercase font-bold font-[var(--font-inter)] px-7 py-4 hover:border-white transition-colors"
               >
                 <WaIcon />
                 Falar no WhatsApp
@@ -285,39 +394,34 @@ export default function ContatoPage() {
       </section>
 
       {/* ── Simulator ────────────────────────────────────────────────────── */}
-      <section id="simulador" className="py-20 bg-[#f5f5f3]">
-        <div className="max-w-[1060px] mx-auto px-8 lg:px-16">
+      <section id="simulador" ref={simulatorRef} className="py-12 lg:py-20 bg-[#f5f5f3] scroll-mt-20">
+        <div className="max-w-[1060px] mx-auto px-4 sm:px-8 lg:px-16">
 
           {/* Header */}
-          <div className="mb-12">
+          <div className="mb-8 lg:mb-12">
             <p className="text-[#74777f] text-xs tracking-[0.2em] uppercase font-semibold font-[var(--font-inter)] mb-3">
               Simulador de investimento
             </p>
-            <h2 className="font-[var(--font-noto-serif)] text-[#002045] text-3xl lg:text-4xl font-normal mb-3">
+            <h2 className="font-[var(--font-noto-serif)] text-[#002045] text-2xl lg:text-4xl font-normal mb-3">
               Quanto custa revestir o seu espaço?
             </h2>
             <p className="text-[#43474e] text-sm font-[var(--font-inter)] leading-relaxed max-w-2xl">
               Simule o custo do PFB Orbital e compare com o MDF ao longo de 10 anos.
-              Valores de mão de obra são estimativas de mercado — o valor final depende do acordo direto com o prestador de serviço.
+              Valores de mão de obra são estimativas de mercado.
             </p>
           </div>
 
           {/* Step indicator */}
-          <div className="flex items-center gap-0 mb-8">
-            {([
-              { n: 1 as const, label: "Espaço" },
-              { n: 2 as const, label: "Modelo" },
-              { n: 3 as const, label: "Dimensões" },
-              { n: 4 as const, label: "Arquiteto" },
-            ]).map(({ n, label }, i) => (
+          <div className="flex items-center mb-6 overflow-x-auto pb-1">
+            {STEPS.map(({ n, label }, i) => (
               <React.Fragment key={n}>
                 <button
                   onClick={() => { if (n < step) goToStep(n); }}
-                  className={n < step ? "cursor-pointer" : "cursor-default"}
+                  className={`flex-shrink-0 ${n < step ? "cursor-pointer" : "cursor-default"}`}
                 >
-                  <div className="flex items-center gap-2.5">
+                  <div className="flex items-center gap-2">
                     <div
-                      className={`w-8 h-8 flex items-center justify-center text-xs font-bold font-[var(--font-inter)] transition-colors ${
+                      className={`w-8 h-8 flex-shrink-0 flex items-center justify-center text-xs font-bold font-[var(--font-inter)] transition-colors ${
                         step === n
                           ? "bg-[#002045] text-white"
                           : n < step
@@ -328,21 +432,17 @@ export default function ContatoPage() {
                       {n < step ? "✓" : n}
                     </div>
                     <span
-                      className={`text-xs tracking-[0.1em] uppercase font-semibold font-[var(--font-inter)] hidden sm:block ${
-                        step === n
-                          ? "text-[#002045]"
-                          : n < step
-                          ? "text-[#3b6934]"
-                          : "text-[#74777f]"
+                      className={`text-xs tracking-[0.1em] uppercase font-semibold font-[var(--font-inter)] hidden sm:block whitespace-nowrap ${
+                        step === n ? "text-[#002045]" : n < step ? "text-[#3b6934]" : "text-[#74777f]"
                       }`}
                     >
                       {label}
                     </span>
                   </div>
                 </button>
-                {i < 3 && (
+                {i < 4 && (
                   <div
-                    className={`flex-1 h-px mx-3 max-w-[80px] ${
+                    className={`flex-1 h-px mx-2 min-w-[12px] max-w-[60px] ${
                       n < step ? "bg-[#3b6934]" : "bg-[#d8d8d8]"
                     }`}
                   />
@@ -353,21 +453,20 @@ export default function ContatoPage() {
 
           {/* ── Step 1: Space ─────────────────────────────────────────────── */}
           {step === 1 && (
-            <div className="bg-white border border-[#e2e2e2] p-8 lg:p-10">
+            <div className="bg-white border border-[#e2e2e2] p-6 lg:p-10">
               <h3 className="font-[var(--font-noto-serif)] text-[#002045] text-xl font-normal mb-2">
                 Qual espaço você quer revestir?
               </h3>
-              <p className="text-[#74777f] text-sm font-[var(--font-inter)] mb-8">
+              <p className="text-[#74777f] text-sm font-[var(--font-inter)] mb-6">
                 Selecione o tipo de ambiente.
               </p>
 
-              {/* Viable spaces */}
-              <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 gap-2 mb-8">
+              <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 gap-2 mb-6">
                 {SPACES.filter((s) => s.viability !== "no").map((space) => (
                   <button
                     key={space.id}
                     onClick={() => setSelectedSpace(space)}
-                    className={`text-left px-4 py-3 border text-xs font-semibold font-[var(--font-inter)] transition-all ${
+                    className={`text-left px-3 py-3 min-h-[44px] border text-xs font-semibold font-[var(--font-inter)] transition-all ${
                       selectedSpace?.id === space.id
                         ? "border-[#002045] bg-[#002045] text-white"
                         : "border-[#e2e2e2] text-[#43474e] hover:border-[#1a365d] hover:text-[#002045]"
@@ -378,13 +477,12 @@ export default function ContatoPage() {
                 ))}
               </div>
 
-              {/* Non-viable spaces */}
-              <div className="grid grid-cols-2 sm:grid-cols-3 gap-2 mb-8">
+              <div className="grid grid-cols-2 sm:grid-cols-3 gap-2 mb-6">
                 {SPACES.filter((s) => s.viability === "no").map((space) => (
                   <button
                     key={space.id}
                     onClick={() => setSelectedSpace(space)}
-                    className={`text-left px-4 py-3 border text-xs font-semibold font-[var(--font-inter)] transition-all ${
+                    className={`text-left px-3 py-3 min-h-[44px] border text-xs font-semibold font-[var(--font-inter)] transition-all ${
                       selectedSpace?.id === space.id
                         ? "border-[#c0392b] bg-[#fff5f5] text-[#c0392b]"
                         : "border-[#e2e2e2] text-[#b0b0b0] hover:border-[#e0b0b0]"
@@ -395,9 +493,8 @@ export default function ContatoPage() {
                 ))}
               </div>
 
-              {/* Not-viable redirect message */}
               {selectedSpace?.viability === "no" && (
-                <div className="bg-[#fff8f0] border border-[#f0c060] px-6 py-5 mb-8">
+                <div className="bg-[#fff8f0] border border-[#f0c060] px-5 py-4 mb-6">
                   <p className="text-[#7a4000] text-sm font-semibold font-[var(--font-inter)] mb-1">
                     {selectedSpace.msg}
                   </p>
@@ -423,7 +520,7 @@ export default function ContatoPage() {
                 <button
                   onClick={() => canAdvance1 && goToStep(2)}
                   disabled={!canAdvance1}
-                  className={`inline-flex items-center gap-2 text-xs tracking-[0.12em] uppercase font-bold font-[var(--font-inter)] px-8 py-4 transition-colors ${
+                  className={`w-full sm:w-auto inline-flex items-center justify-center gap-2 text-xs tracking-[0.12em] uppercase font-bold font-[var(--font-inter)] px-8 py-4 transition-colors ${
                     canAdvance1
                       ? "bg-[#002045] text-white hover:bg-[#1a365d]"
                       : "bg-[#e2e2e2] text-[#aaaaaa] cursor-not-allowed"
@@ -440,16 +537,15 @@ export default function ContatoPage() {
 
           {/* ── Step 2: Model ─────────────────────────────────────────────── */}
           {step === 2 && (
-            <div className="bg-white border border-[#e2e2e2] p-8 lg:p-10">
+            <div className="bg-white border border-[#e2e2e2] p-6 lg:p-10">
               <h3 className="font-[var(--font-noto-serif)] text-[#002045] text-xl font-normal mb-2">
                 Qual acabamento você prefere?
               </h3>
-              <p className="text-[#74777f] text-sm font-[var(--font-inter)] mb-8">
+              <p className="text-[#74777f] text-sm font-[var(--font-inter)] mb-6">
                 Escolha a linha e o acabamento específico.
               </p>
 
-              {/* Line cards */}
-              <div className="grid grid-cols-1 sm:grid-cols-3 gap-3 mb-8">
+              <div className="grid grid-cols-1 sm:grid-cols-3 gap-3 mb-6">
                 {(["Classic", "Brilliance", "Elegance"] as ProductLine[]).map((linha) => {
                   const info = LINE_INFO[linha];
                   const active = selectedLine === linha;
@@ -459,12 +555,15 @@ export default function ContatoPage() {
                       onClick={() => {
                         setSelectedLine(linha);
                         setSelectedProduct(null);
+                        setTimeout(() => {
+                          productsRef.current?.scrollIntoView({ behavior: "smooth", block: "start" });
+                        }, 100);
                       }}
                       className={`relative overflow-hidden border text-left transition-all ${
                         active ? "border-[#002045]" : "border-[#e2e2e2] hover:border-[#1a365d]"
                       }`}
                     >
-                      <div className="relative h-36 w-full">
+                      <div className="relative h-32 sm:h-36 w-full">
                         <Image src={info.cover} alt={linha} fill className="object-cover" />
                         {active && <div className="absolute inset-0 bg-[#002045]/25" />}
                         {active && (
@@ -475,7 +574,7 @@ export default function ContatoPage() {
                           </div>
                         )}
                       </div>
-                      <div className="p-4">
+                      <div className="p-3 sm:p-4">
                         <p className="text-[#002045] text-sm font-bold font-[var(--font-inter)] mb-0.5">{linha}</p>
                         <p className="text-[#74777f] text-xs font-[var(--font-inter)]">{info.finish}</p>
                         <p className="text-[#002045] text-xs font-bold font-[var(--font-inter)] mt-2">
@@ -490,13 +589,12 @@ export default function ContatoPage() {
                 })}
               </div>
 
-              {/* Product thumbnails */}
               {selectedLine && (
-                <div className="mb-8">
+                <div ref={productsRef} className="mb-6 scroll-mt-24">
                   <p className="text-[#43474e] text-[10px] tracking-[0.15em] uppercase font-bold font-[var(--font-inter)] mb-4">
                     Acabamentos {selectedLine}
                   </p>
-                  <div className="grid grid-cols-3 sm:grid-cols-4 md:grid-cols-5 gap-3">
+                  <div className="grid grid-cols-3 sm:grid-cols-4 md:grid-cols-5 gap-2 sm:gap-3">
                     {PRODUCTS.filter((p) => p.linha === selectedLine).map((product) => {
                       const active = selectedProduct?.code === product.code;
                       return (
@@ -507,7 +605,7 @@ export default function ContatoPage() {
                             active ? "border-[#002045]" : "border-[#e2e2e2] hover:border-[#1a365d]"
                           }`}
                         >
-                          <div className="relative h-24 w-full overflow-hidden">
+                          <div className="relative h-20 sm:h-24 w-full overflow-hidden">
                             <Image
                               src={product.img}
                               alt={product.name}
@@ -523,7 +621,7 @@ export default function ContatoPage() {
                               </div>
                             )}
                           </div>
-                          <div className="p-2.5">
+                          <div className="p-2">
                             <p className={`text-[10px] font-bold font-[var(--font-inter)] leading-tight ${active ? "text-[#002045]" : "text-[#43474e]"}`}>
                               {product.name}
                             </p>
@@ -536,7 +634,7 @@ export default function ContatoPage() {
                 </div>
               )}
 
-              <div className="flex items-center justify-between">
+              <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3 mt-6">
                 <button
                   onClick={() => goToStep(1)}
                   className="flex items-center gap-1.5 text-xs tracking-[0.1em] uppercase font-semibold font-[var(--font-inter)] text-[#74777f] hover:text-[#002045] transition-colors"
@@ -549,7 +647,7 @@ export default function ContatoPage() {
                 <button
                   onClick={() => canAdvance2 && goToStep(3)}
                   disabled={!canAdvance2}
-                  className={`inline-flex items-center gap-2 text-xs tracking-[0.12em] uppercase font-bold font-[var(--font-inter)] px-8 py-4 transition-colors ${
+                  className={`w-full sm:w-auto inline-flex items-center justify-center gap-2 text-xs tracking-[0.12em] uppercase font-bold font-[var(--font-inter)] px-8 py-4 transition-colors ${
                     canAdvance2
                       ? "bg-[#002045] text-white hover:bg-[#1a365d]"
                       : "bg-[#e2e2e2] text-[#aaaaaa] cursor-not-allowed"
@@ -566,7 +664,7 @@ export default function ContatoPage() {
 
           {/* ── Step 3: Dimensions ────────────────────────────────────────── */}
           {step === 3 && (
-            <div className="bg-white border border-[#e2e2e2] p-8 lg:p-10">
+            <div className="bg-white border border-[#e2e2e2] p-6 lg:p-10">
               <h3 className="font-[var(--font-noto-serif)] text-[#002045] text-xl font-normal mb-2">
                 Qual é a área a revestir?
               </h3>
@@ -574,8 +672,7 @@ export default function ContatoPage() {
                 Informe as dimensões ou o m² total.
               </p>
 
-              {/* Selection summary chips */}
-              <div className="flex flex-wrap gap-2 mb-8">
+              <div className="flex flex-wrap gap-2 mb-6">
                 {selectedSpace && (
                   <span className="bg-[#eef2f8] text-[#1a365d] text-xs font-semibold font-[var(--font-inter)] px-3 py-1.5">
                     {selectedSpace.label}
@@ -591,8 +688,7 @@ export default function ContatoPage() {
                 )}
               </div>
 
-              {/* Mode toggle */}
-              <div className="flex w-fit border border-[#e2e2e2] mb-6">
+              <div className="flex w-full sm:w-fit border border-[#e2e2e2] mb-6">
                 {[
                   { mode: "lxa" as const, label: "Largura × Altura" },
                   { mode: "m2" as const, label: "Informar m²" },
@@ -600,7 +696,7 @@ export default function ContatoPage() {
                   <button
                     key={mode}
                     onClick={() => setDimMode(mode)}
-                    className={`px-6 py-3 text-xs tracking-[0.1em] uppercase font-bold font-[var(--font-inter)] transition-colors ${
+                    className={`flex-1 sm:flex-none px-5 py-3 text-xs tracking-[0.1em] uppercase font-bold font-[var(--font-inter)] transition-colors ${
                       dimMode === mode
                         ? "bg-[#002045] text-white"
                         : "text-[#74777f] hover:text-[#002045]"
@@ -612,8 +708,8 @@ export default function ContatoPage() {
               </div>
 
               {dimMode === "lxa" ? (
-                <div className="flex flex-wrap items-end gap-4 mb-6">
-                  <div>
+                <div className="flex flex-col sm:flex-row sm:items-end gap-4 mb-6">
+                  <div className="flex-1 sm:flex-none">
                     <label className="block text-[10px] tracking-[0.15em] uppercase font-bold font-[var(--font-inter)] text-[#74777f] mb-2">
                       Largura (m)
                     </label>
@@ -624,11 +720,11 @@ export default function ContatoPage() {
                       placeholder="ex: 3.5"
                       min="0"
                       step="0.1"
-                      className="w-32 border border-[#e2e2e2] px-4 py-3 text-sm font-[var(--font-inter)] text-[#002045] focus:outline-none focus:border-[#002045] transition-colors"
+                      className="w-full sm:w-32 border border-[#e2e2e2] px-4 py-3 text-sm font-[var(--font-inter)] text-[#002045] focus:outline-none focus:border-[#002045] transition-colors"
                     />
                   </div>
-                  <span className="text-[#74777f] font-bold pb-3">×</span>
-                  <div>
+                  <span className="text-[#74777f] font-bold hidden sm:block sm:pb-3">×</span>
+                  <div className="flex-1 sm:flex-none">
                     <label className="block text-[10px] tracking-[0.15em] uppercase font-bold font-[var(--font-inter)] text-[#74777f] mb-2">
                       Altura (m)
                     </label>
@@ -639,11 +735,11 @@ export default function ContatoPage() {
                       placeholder="ex: 2.8"
                       min="0"
                       step="0.1"
-                      className="w-32 border border-[#e2e2e2] px-4 py-3 text-sm font-[var(--font-inter)] text-[#002045] focus:outline-none focus:border-[#002045] transition-colors"
+                      className="w-full sm:w-32 border border-[#e2e2e2] px-4 py-3 text-sm font-[var(--font-inter)] text-[#002045] focus:outline-none focus:border-[#002045] transition-colors"
                     />
                   </div>
                   {m2 > 0 && (
-                    <span className="text-[#43474e] text-sm font-[var(--font-inter)] pb-3">
+                    <span className="text-[#43474e] text-sm font-[var(--font-inter)] sm:pb-3">
                       = <strong className="text-[#002045]">{m2.toFixed(2)} m²</strong>
                     </span>
                   )}
@@ -660,13 +756,13 @@ export default function ContatoPage() {
                     placeholder="ex: 12"
                     min="0"
                     step="0.1"
-                    className="w-40 border border-[#e2e2e2] px-4 py-3 text-sm font-[var(--font-inter)] text-[#002045] focus:outline-none focus:border-[#002045] transition-colors"
+                    className="w-full sm:w-44 border border-[#e2e2e2] px-4 py-3 text-sm font-[var(--font-inter)] text-[#002045] focus:outline-none focus:border-[#002045] transition-colors"
                   />
                 </div>
               )}
 
               {m2 > 0 && (
-                <p className="text-[#43474e] text-sm font-[var(--font-inter)] mb-8">
+                <p className="text-[#43474e] text-sm font-[var(--font-inter)] mb-6">
                   Serão necessárias{" "}
                   <strong className="text-[#002045]">
                     {plates} placa{plates !== 1 ? "s" : ""}
@@ -675,7 +771,7 @@ export default function ContatoPage() {
                 </p>
               )}
 
-              <div className="flex items-center justify-between">
+              <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3">
                 <button
                   onClick={() => goToStep(2)}
                   className="flex items-center gap-1.5 text-xs tracking-[0.1em] uppercase font-semibold font-[var(--font-inter)] text-[#74777f] hover:text-[#002045] transition-colors"
@@ -688,7 +784,7 @@ export default function ContatoPage() {
                 <button
                   onClick={() => canCalculate && goToStep(4)}
                   disabled={!canCalculate}
-                  className={`inline-flex items-center gap-2 text-xs tracking-[0.12em] uppercase font-bold font-[var(--font-inter)] px-8 py-4 transition-colors ${
+                  className={`w-full sm:w-auto inline-flex items-center justify-center gap-2 text-xs tracking-[0.12em] uppercase font-bold font-[var(--font-inter)] px-8 py-4 transition-colors ${
                     canCalculate
                       ? "bg-[#002045] text-white hover:bg-[#1a365d]"
                       : "bg-[#e2e2e2] text-[#aaaaaa] cursor-not-allowed"
@@ -705,7 +801,7 @@ export default function ContatoPage() {
 
           {/* ── Step 4: Architect ────────────────────────────────────────── */}
           {step === 4 && (
-            <div className="bg-white border border-[#e2e2e2] p-8 lg:p-10">
+            <div className="bg-white border border-[#e2e2e2] p-6 lg:p-10">
               <h3 className="font-[var(--font-noto-serif)] text-[#002045] text-xl font-normal mb-2">
                 Você está trabalhando com um arquiteto ou designer?
               </h3>
@@ -726,7 +822,7 @@ export default function ContatoPage() {
                 />
               </div>
 
-              <div className="flex items-center justify-between">
+              <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3">
                 <button
                   onClick={() => goToStep(3)}
                   className="flex items-center gap-1.5 text-xs tracking-[0.1em] uppercase font-semibold font-[var(--font-inter)] text-[#74777f] hover:text-[#002045] transition-colors"
@@ -737,10 +833,10 @@ export default function ContatoPage() {
                   Voltar
                 </button>
                 <button
-                  onClick={() => setShowResult(true)}
-                  className="inline-flex items-center gap-2 text-xs tracking-[0.12em] uppercase font-bold font-[var(--font-inter)] px-8 py-4 bg-[#002045] text-white hover:bg-[#1a365d] transition-colors"
+                  onClick={() => goToStep(5)}
+                  className="w-full sm:w-auto inline-flex items-center justify-center gap-2 text-xs tracking-[0.12em] uppercase font-bold font-[var(--font-inter)] px-8 py-4 bg-[#002045] text-white hover:bg-[#1a365d] transition-colors"
                 >
-                  Ver simulação
+                  Próximo: Cupom
                   <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5">
                     <path d="M5 12h14M12 5l7 7-7 7" />
                   </svg>
@@ -749,36 +845,126 @@ export default function ContatoPage() {
             </div>
           )}
 
+          {/* ── Step 5: Coupon ────────────────────────────────────────────── */}
+          {step === 5 && (
+            <div className="bg-white border border-[#e2e2e2] p-6 lg:p-10">
+              <h3 className="font-[var(--font-noto-serif)] text-[#002045] text-xl font-normal mb-2">
+                Tem um código de parceiro?
+              </h3>
+              <p className="text-[#74777f] text-sm font-[var(--font-inter)] mb-8">
+                Opcional — insira o código recebido do seu arquiteto, designer ou indicador.
+              </p>
+
+              <div className="max-w-sm mb-6">
+                <label className="block text-[10px] tracking-[0.15em] uppercase font-bold font-[var(--font-inter)] text-[#74777f] mb-2">
+                  Código do cupom
+                </label>
+                <div className="flex gap-2">
+                  <input
+                    type="text"
+                    value={couponCode}
+                    onChange={(e) => {
+                      setCouponCode(e.target.value.toUpperCase());
+                      setCouponData(null);
+                      setCouponError("");
+                    }}
+                    placeholder="ex: ARQLIMA10"
+                    className="flex-1 border border-[#e2e2e2] px-4 py-3 text-sm font-[var(--font-inter)] text-[#002045] uppercase focus:outline-none focus:border-[#002045] transition-colors tracking-widest"
+                  />
+                  {couponCode && !couponData && (
+                    <button
+                      onClick={validateCoupon}
+                      disabled={couponValidating}
+                      className="px-4 py-3 bg-[#002045] text-white text-xs font-bold font-[var(--font-inter)] hover:bg-[#1a365d] transition-colors disabled:opacity-50 whitespace-nowrap"
+                    >
+                      {couponValidating ? "..." : "Validar"}
+                    </button>
+                  )}
+                </div>
+
+                {couponValidating && (
+                  <p className="text-[#74777f] text-xs font-[var(--font-inter)] mt-2">Validando cupom...</p>
+                )}
+                {couponError && (
+                  <p className="text-red-600 text-xs font-[var(--font-inter)] mt-2">{couponError}</p>
+                )}
+                {couponData && (
+                  <div className="mt-3 bg-[#f0f9eb] border border-[#3b6934]/30 px-4 py-3">
+                    <p className="text-[#3b6934] text-xs font-bold font-[var(--font-inter)]">
+                      ✓ Cupom <span className="tracking-widest">{couponData.coupon_code}</span> aplicado!
+                    </p>
+                    <p className="text-[#3b6934]/80 text-xs font-[var(--font-inter)] mt-0.5">
+                      Desconto de{" "}
+                      {couponData.discount_type === "percentage"
+                        ? `${couponData.discount_value}%`
+                        : fmt(couponData.discount_value)}{" "}
+                      no material.
+                    </p>
+                  </div>
+                )}
+              </div>
+
+              <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3">
+                <button
+                  onClick={() => goToStep(4)}
+                  className="flex items-center gap-1.5 text-xs tracking-[0.1em] uppercase font-semibold font-[var(--font-inter)] text-[#74777f] hover:text-[#002045] transition-colors"
+                >
+                  <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5">
+                    <path d="M19 12H5M12 5l-7 7 7 7" />
+                  </svg>
+                  Voltar
+                </button>
+                <div className="flex flex-col sm:flex-row gap-3 sm:gap-2">
+                  <button
+                    onClick={() => showResults()}
+                    className="w-full sm:w-auto inline-flex items-center justify-center gap-2 text-xs tracking-[0.12em] uppercase font-bold font-[var(--font-inter)] px-6 py-4 border border-[#e2e2e2] text-[#74777f] hover:border-[#74777f] hover:text-[#002045] transition-colors"
+                  >
+                    Pular
+                  </button>
+                  <button
+                    onClick={handleCouponAndShow}
+                    disabled={couponValidating}
+                    className="w-full sm:w-auto inline-flex items-center justify-center gap-2 text-xs tracking-[0.12em] uppercase font-bold font-[var(--font-inter)] px-8 py-4 bg-[#002045] text-white hover:bg-[#1a365d] transition-colors disabled:opacity-50"
+                  >
+                    Ver simulação
+                    <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5">
+                      <path d="M5 12h14M12 5l7 7-7 7" />
+                    </svg>
+                  </button>
+                </div>
+              </div>
+            </div>
+          )}
+
           {/* ── Results panel ─────────────────────────────────────────────── */}
           {showResult && selectedProduct && selectedSpace && m2 > 0 && (
-            <div className="mt-0 animate-fade-in">
+            <div className="mt-0">
 
-              {/* Disclaimer banner */}
               <div className="bg-[#fffbea] border border-[#e6c84a] px-5 py-4 flex gap-3 items-start">
                 <svg className="flex-shrink-0 mt-0.5 text-[#a07a00]" width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
                   <circle cx="12" cy="12" r="10"/><path d="M12 8v4m0 4h.01"/>
                 </svg>
                 <p className="text-[#6b5000] text-xs font-[var(--font-inter)] leading-relaxed">
-                  <strong>Simulação para referência apenas.</strong> Os valores abaixo são estimativas de custo usadas para fins de comparação.
+                  <strong>Simulação para referência apenas.</strong> Os valores abaixo são estimativas de custo.
                   A Orbital vende exclusivamente o material — não realizamos instalação.
-                  O custo de mão de obra é uma estimativa de mercado; o valor real depende do profissional contratado diretamente pelo cliente.
+                  O custo de mão de obra é uma estimativa de mercado.
                 </p>
               </div>
 
               {/* Summary bar */}
-              <div className="bg-[#002045] px-6 py-4 flex flex-wrap items-center gap-4 border border-[#2d4f7f] border-b-0">
-                <div className="flex items-center gap-3">
+              <div className="bg-[#002045] px-5 py-4 flex flex-wrap items-center gap-3 border border-[#2d4f7f] border-b-0">
+                <div className="flex items-center gap-3 min-w-0">
                   <div className="relative w-10 h-10 flex-shrink-0 overflow-hidden">
                     <Image src={selectedProduct.img} alt={selectedProduct.name} fill className="object-cover" />
                   </div>
-                  <div>
-                    <p className="text-white text-xs font-bold font-[var(--font-inter)]">{selectedProduct.name}</p>
-                    <p className="text-[#86a0cd] text-[10px] font-[var(--font-inter)]">
+                  <div className="min-w-0">
+                    <p className="text-white text-xs font-bold font-[var(--font-inter)] truncate">{selectedProduct.name}</p>
+                    <p className="text-[#86a0cd] text-[10px] font-[var(--font-inter)] truncate">
                       {selectedProduct.code} · {selectedProduct.linha} · {selectedSpace.label}
                     </p>
                   </div>
                 </div>
-                <div className="ml-auto flex items-center gap-5">
+                <div className="ml-auto flex items-center gap-4 flex-shrink-0">
                   <div className="text-right">
                     <p className="text-[#86a0cd] text-[9px] tracking-[0.1em] uppercase font-[var(--font-inter)]">Área</p>
                     <p className="text-white text-sm font-bold font-[var(--font-inter)]">{m2.toFixed(2)} m²</p>
@@ -797,11 +983,11 @@ export default function ContatoPage() {
               </div>
 
               {/* Input summary */}
-              <div className="bg-white border border-[#e2e2e2] border-t-0 px-8 py-6">
+              <div className="bg-white border border-[#e2e2e2] border-t-0 px-5 sm:px-8 py-6">
                 <p className="text-[#43474e] text-[10px] tracking-[0.15em] uppercase font-bold font-[var(--font-inter)] mb-4">
                   Resumo da sua simulação
                 </p>
-                <div className="grid grid-cols-2 sm:grid-cols-3 gap-x-8 gap-y-4">
+                <div className="grid grid-cols-2 sm:grid-cols-3 gap-x-6 gap-y-4">
                   <div>
                     <p className="text-[#74777f] text-[10px] tracking-[0.1em] uppercase font-semibold font-[var(--font-inter)] mb-0.5">Espaço</p>
                     <p className="text-[#002045] text-sm font-semibold font-[var(--font-inter)]">{selectedSpace.label}</p>
@@ -839,8 +1025,18 @@ export default function ContatoPage() {
                   </div>
                   <div>
                     <p className="text-[#74777f] text-[10px] tracking-[0.1em] uppercase font-semibold font-[var(--font-inter)] mb-0.5">Preço do material</p>
-                    <p className="text-[#002045] text-sm font-semibold font-[var(--font-inter)]">{fmt(orbMaterialTotal)}</p>
-                    <p className="text-[#74777f] text-[10px] font-[var(--font-inter)]">R$ {pricePerPlate.toLocaleString("pt-BR")}/placa</p>
+                    {discountAmount > 0 ? (
+                      <>
+                        <p className="text-[#74777f] text-sm line-through font-[var(--font-inter)]">{fmt(orbMaterialTotal)}</p>
+                        <p className="text-[#3b6934] text-sm font-bold font-[var(--font-inter)]">{fmt(orbMaterialDiscounted)}</p>
+                        <p className="text-[#3b6934] text-[10px] font-[var(--font-inter)]">cupom {couponData?.coupon_code}</p>
+                      </>
+                    ) : (
+                      <>
+                        <p className="text-[#002045] text-sm font-semibold font-[var(--font-inter)]">{fmt(orbMaterialTotal)}</p>
+                        <p className="text-[#74777f] text-[10px] font-[var(--font-inter)]">R$ {pricePerPlate.toLocaleString("pt-BR")}/placa</p>
+                      </>
+                    )}
                   </div>
                   {architectName && (
                     <div>
@@ -851,10 +1047,9 @@ export default function ContatoPage() {
                 </div>
               </div>
 
-              {/* Cost comparison columns */}
+              {/* Cost comparison */}
               <div className="grid grid-cols-1 md:grid-cols-2">
-                {/* Orbital */}
-                <div className="bg-[#002045] px-8 py-8 border border-[#2d4f7f]">
+                <div className="bg-[#002045] px-6 sm:px-8 py-8 border border-[#2d4f7f]">
                   <p className="text-[#a1d494] text-[9px] tracking-[0.2em] uppercase font-bold font-[var(--font-inter)] mb-5">
                     PFB Orbital — Estimativa de custo
                   </p>
@@ -862,8 +1057,13 @@ export default function ContatoPage() {
                     <div className="flex items-start justify-between text-sm font-[var(--font-inter)] gap-4">
                       <span className="text-white/55">
                         Material ({plates} placa{plates !== 1 ? "s" : ""} × R$ {pricePerPlate.toLocaleString("pt-BR")})
+                        {discountAmount > 0 && (
+                          <span className="block text-[#a1d494] text-[10px] mt-0.5">
+                            - {couponData?.discount_type === "percentage" ? couponData.discount_value + "%" : fmt(couponData?.discount_value ?? 0)} (cupom)
+                          </span>
+                        )}
                       </span>
-                      <span className="text-white font-semibold flex-shrink-0">{fmt(orbMaterialTotal)}</span>
+                      <span className="text-white font-semibold flex-shrink-0">{fmt(orbMaterialDiscounted)}</span>
                     </div>
                     <div className="flex items-start justify-between text-sm font-[var(--font-inter)] gap-4">
                       <span className="text-white/55">
@@ -881,17 +1081,14 @@ export default function ContatoPage() {
                     </div>
                   </div>
                   <div className="bg-[#3b6934]/30 border border-[#3b6934]/50 px-4 py-3">
-                    <p className="text-[#a1d494] text-xs font-semibold font-[var(--font-inter)]">
-                      10+ anos sem trocar.
-                    </p>
+                    <p className="text-[#a1d494] text-xs font-semibold font-[var(--font-inter)]">10+ anos sem trocar.</p>
                     <p className="text-[#a1d494]/70 text-[11px] font-[var(--font-inter)] mt-0.5 leading-relaxed">
                       Instala uma vez. Impermeável, anti-mofo e resistente ao clima de Manaus.
                     </p>
                   </div>
                 </div>
 
-                {/* MDF */}
-                <div className="bg-[#fafaf8] px-8 py-8 border border-[#e2e2e2]">
+                <div className="bg-[#fafaf8] px-6 sm:px-8 py-8 border border-[#e2e2e2]">
                   <p className="text-[#74777f] text-[9px] tracking-[0.2em] uppercase font-bold font-[var(--font-inter)] mb-5">
                     MDF — Estimativa por instalação
                   </p>
@@ -903,15 +1100,11 @@ export default function ContatoPage() {
                       <span className="text-[#43474e] font-semibold flex-shrink-0">{fmt(mdfMaterialTotal)}</span>
                     </div>
                     <div className="flex items-start justify-between text-sm font-[var(--font-inter)] gap-4">
-                      <span className="text-[#74777f]">
-                        MO estimada (R$ {isComplex ? MDF_MO_COMPLEX : MDF_MO_SIMPLE}/m²)*
-                      </span>
+                      <span className="text-[#74777f]">MO estimada (R$ {isComplex ? MDF_MO_COMPLEX : MDF_MO_SIMPLE}/m²)*</span>
                       <span className="text-[#43474e] font-semibold flex-shrink-0">{fmt(mdfMOTotal)}</span>
                     </div>
                     <div className="flex items-start justify-between text-sm font-[var(--font-inter)] gap-4">
-                      <span className="text-[#74777f]">
-                        Acabamentos (R$ {MDF_ACABAMENTO}/m²)
-                      </span>
+                      <span className="text-[#74777f]">Acabamentos (R$ {MDF_ACABAMENTO}/m²)</span>
                       <span className="text-[#43474e] font-semibold flex-shrink-0">{fmt(mdfAcabamentoTotal)}</span>
                     </div>
                     <div className="border-t border-[#e2e2e2] pt-3 flex items-center justify-between">
@@ -920,9 +1113,7 @@ export default function ContatoPage() {
                     </div>
                   </div>
                   <div className="bg-[#fff3f3] border border-[#e8c0c0] px-4 py-3">
-                    <p className="text-[#a03030] text-xs font-semibold font-[var(--font-inter)]">
-                      Repõe a cada 2–3 anos em Manaus.
-                    </p>
+                    <p className="text-[#a03030] text-xs font-semibold font-[var(--font-inter)]">Repõe a cada 2–3 anos em Manaus.</p>
                     <p className="text-[#a03030]/70 text-[11px] font-[var(--font-inter)] mt-0.5 leading-relaxed">
                       A umidade amazônica faz o MDF inchar, empenar e deteriorar continuamente.
                     </p>
@@ -931,62 +1122,47 @@ export default function ContatoPage() {
               </div>
 
               {/* 10-year comparison */}
-              <div className="bg-white border border-[#e2e2e2] border-t-0 px-8 py-8">
+              <div className="bg-white border border-[#e2e2e2] border-t-0 px-6 sm:px-8 py-8">
                 <p className="text-[#43474e] text-[10px] tracking-[0.15em] uppercase font-bold font-[var(--font-inter)] mb-6">
                   Custo acumulado em 10 anos
                 </p>
 
-                {/* Orbital bar */}
                 <div className="mb-4">
                   <div className="flex items-center justify-between mb-2">
-                    <span className="text-xs font-bold font-[var(--font-inter)] text-[#002045]">
-                      PFB Orbital — 1 instalação
-                    </span>
-                    <span className="text-base font-[var(--font-noto-serif)] text-[#002045] font-normal">
-                      {fmt(orbTotal)}
-                    </span>
+                    <span className="text-xs font-bold font-[var(--font-inter)] text-[#002045]">PFB Orbital — 1 instalação</span>
+                    <span className="text-base font-[var(--font-noto-serif)] text-[#002045] font-normal">{fmt(orbTotal)}</span>
                   </div>
                   <div className="h-9 bg-[#e8edf5] overflow-hidden">
                     <div
                       className="h-full bg-[#002045] transition-all duration-700 flex items-center px-3"
                       style={{ width: `${Math.max(Math.min((orbTotal / mdfIn10y) * 100, 100), 8)}%` }}
                     >
-                      <span className="text-white text-[10px] font-bold font-[var(--font-inter)] whitespace-nowrap">
-                        1×
-                      </span>
+                      <span className="text-white text-[10px] font-bold font-[var(--font-inter)] whitespace-nowrap">1×</span>
                     </div>
                   </div>
                 </div>
 
-                {/* MDF bar */}
                 <div className="mb-8">
                   <div className="flex items-center justify-between mb-2">
                     <span className="text-xs font-bold font-[var(--font-inter)] text-[#74777f]">
                       MDF — {MDF_INSTALLS_10Y} instalações em 10 anos
                     </span>
-                    <span className="text-base font-[var(--font-noto-serif)] text-[#a03030] font-normal">
-                      {fmt(mdfIn10y)}
-                    </span>
+                    <span className="text-base font-[var(--font-noto-serif)] text-[#a03030] font-normal">{fmt(mdfIn10y)}</span>
                   </div>
                   <div className="h-9 bg-[#f5e8e8] overflow-hidden">
-                    <div
-                      className="h-full bg-[#c0392b]/55 flex items-center px-3"
-                      style={{ width: "100%" }}
-                    >
-                      <span className="text-[#7a0000] text-[10px] font-bold font-[var(--font-inter)]">
-                        {MDF_INSTALLS_10Y}×
-                      </span>
+                    <div className="h-full bg-[#c0392b]/55 flex items-center px-3" style={{ width: "100%" }}>
+                      <span className="text-[#7a0000] text-[10px] font-bold font-[var(--font-inter)]">{MDF_INSTALLS_10Y}×</span>
                     </div>
                   </div>
                 </div>
 
-                {/* CTA */}
                 <div className="flex flex-col sm:flex-row sm:items-center gap-4 mb-4">
                   <a
                     href={`${WA_BASE}${encodeURIComponent(waMsg)}`}
                     target="_blank"
                     rel="noopener noreferrer"
-                    className="inline-flex items-center gap-2.5 bg-[#002045] text-white text-xs tracking-[0.12em] uppercase font-bold font-[var(--font-inter)] px-7 py-4 hover:bg-[#1a365d] transition-colors"
+                    onClick={logCouponUse}
+                    className="inline-flex items-center justify-center gap-2.5 bg-[#002045] text-white text-xs tracking-[0.12em] uppercase font-bold font-[var(--font-inter)] px-7 py-4 hover:bg-[#1a365d] transition-colors"
                   >
                     <WaIcon />
                     Solicitar orçamento
@@ -1007,9 +1183,8 @@ export default function ContatoPage() {
                   )}
                 </div>
 
-                {/* Savings dropdown */}
                 {savings10y > 0 && showSavings && (
-                  <div className="bg-[#f0f9eb] border border-[#3b6934]/30 px-6 py-6 mb-4 animate-fade-in">
+                  <div className="bg-[#f0f9eb] border border-[#3b6934]/30 px-6 py-6 mb-4">
                     <p className="text-[#3b6934] text-[10px] tracking-[0.15em] uppercase font-bold font-[var(--font-inter)] mb-2">
                       Economia estimada em 10 anos com PFB Orbital
                     </p>
@@ -1025,8 +1200,7 @@ export default function ContatoPage() {
                 <p className="text-[#b0b0b0] text-[10px] font-[var(--font-inter)] mt-4 leading-relaxed">
                   * Todos os valores de mão de obra são estimativas de referência baseadas em preços de mercado em Manaus (2025).
                   A Orbital comercializa exclusivamente o material — não presta nem intermedia serviços de instalação.
-                  O contrato e o preço final da instalação são acordados diretamente entre o cliente e o profissional escolhido.
-                  Preços de material e mão de obra estão sujeitos a alteração.
+                  Preços sujeitos a alteração.
                 </p>
               </div>
             </div>
@@ -1035,9 +1209,9 @@ export default function ContatoPage() {
       </section>
 
       {/* ── Pitch strip ──────────────────────────────────────────────────── */}
-      <section className="py-16 bg-[#1a2a1a]">
-        <div className="max-w-[1280px] mx-auto px-8 lg:px-16">
-          <div className="grid grid-cols-1 lg:grid-cols-3 gap-10">
+      <section className="py-14 lg:py-16 bg-[#1a2a1a]">
+        <div className="max-w-[1280px] mx-auto px-6 lg:px-16">
+          <div className="grid grid-cols-1 lg:grid-cols-3 gap-8 lg:gap-10">
             {[
               {
                 icon: <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5"><circle cx="12" cy="12" r="10"/><path d="M12 6v6l4 2"/></svg>,
@@ -1070,11 +1244,10 @@ export default function ContatoPage() {
       </section>
 
       {/* ── Contact + FAQ ─────────────────────────────────────────────────── */}
-      <section className="py-20 bg-[#f9f9f9]">
-        <div className="max-w-[1280px] mx-auto px-8 lg:px-16">
+      <section className="py-16 lg:py-20 bg-[#f9f9f9]">
+        <div className="max-w-[1280px] mx-auto px-6 lg:px-16">
           <div className="grid grid-cols-1 lg:grid-cols-12 gap-12 items-start">
 
-            {/* Left: channels */}
             <div className="lg:col-span-5">
               <p className="text-[#74777f] text-xs tracking-[0.2em] uppercase font-semibold font-[var(--font-inter)] mb-4">
                 Canais de atendimento
@@ -1087,7 +1260,7 @@ export default function ContatoPage() {
                   href={`${WA_BASE}${encodeURIComponent("Olá! Tenho interesse no PFB Orbital e gostaria de fazer um orçamento.")}`}
                   target="_blank"
                   rel="noopener noreferrer"
-                  className="flex items-start gap-5 p-6 bg-white border border-[#e2e2e2] hover:border-[#1a365d] transition-colors group"
+                  className="flex items-start gap-5 p-5 sm:p-6 bg-white border border-[#e2e2e2] hover:border-[#1a365d] transition-colors group"
                 >
                   <div className="w-12 h-12 bg-[#3b6934] flex items-center justify-center flex-shrink-0">
                     <WaIcon size={22} />
@@ -1107,7 +1280,7 @@ export default function ContatoPage() {
                   href="https://instagram.com/orbitalrevestimentos"
                   target="_blank"
                   rel="noopener noreferrer"
-                  className="flex items-start gap-5 p-6 bg-white border border-[#e2e2e2] hover:border-[#1a365d] transition-colors group"
+                  className="flex items-start gap-5 p-5 sm:p-6 bg-white border border-[#e2e2e2] hover:border-[#1a365d] transition-colors group"
                 >
                   <div className="w-12 h-12 bg-[#1a365d] flex items-center justify-center flex-shrink-0">
                     <svg width="20" height="20" viewBox="0 0 24 24" fill="white">
@@ -1125,7 +1298,7 @@ export default function ContatoPage() {
                   </div>
                 </a>
 
-                <div className="flex items-start gap-5 p-6 bg-white border border-[#e2e2e2]">
+                <div className="flex items-start gap-5 p-5 sm:p-6 bg-white border border-[#e2e2e2]">
                   <div className="w-12 h-12 bg-[#e8e8e8] flex items-center justify-center flex-shrink-0">
                     <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#002045" strokeWidth="1.5">
                       <path d="M12 2C8.13 2 5 5.13 5 9c0 5.25 7 13 7 13s7-7.75 7-13c0-3.87-3.13-7-7-7z" />
@@ -1171,7 +1344,6 @@ export default function ContatoPage() {
               </div>
             </div>
 
-            {/* Right: FAQ */}
             <div className="lg:col-span-7">
               <p className="text-[#74777f] text-xs tracking-[0.2em] uppercase font-semibold font-[var(--font-inter)] mb-4">
                 Dúvidas frequentes
@@ -1182,9 +1354,7 @@ export default function ContatoPage() {
               <div className="divide-y divide-[#eeeeee]">
                 {faqs.map(({ q, a }) => (
                   <div key={q} className="py-5">
-                    <h3 className="text-[#002045] text-sm font-semibold font-[var(--font-inter)] mb-2 leading-snug">
-                      {q}
-                    </h3>
+                    <h3 className="text-[#002045] text-sm font-semibold font-[var(--font-inter)] mb-2 leading-snug">{q}</h3>
                     <p className="text-[#74777f] text-sm font-[var(--font-inter)] leading-relaxed">{a}</p>
                   </div>
                 ))}
@@ -1194,7 +1364,6 @@ export default function ContatoPage() {
         </div>
       </section>
 
-      {/* Bottom note */}
       <div className="bg-[#f9f9f9] border-t border-[#eeeeee] py-5 text-center">
         <p className="text-[#74777f] text-xs font-[var(--font-inter)] italic">
           Orbital · Manaus, AM · Fornecedores diretos — não realizamos instalação.
