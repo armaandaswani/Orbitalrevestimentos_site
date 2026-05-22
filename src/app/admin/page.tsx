@@ -246,7 +246,13 @@ export default function AdminPage() {
     const discountLabel = p.discount_type === "percentage" ? `${p.discount_value}% de desconto` : `R$ ${p.discount_value} de desconto`;
     const lines = [`Olá ${p.name}! 👋`, ``, `Seu cupom Orbital foi aprovado:`, ``, `🎟 Código: *${p.coupon_code}*`, `💰 ${discountLabel} para seus clientes`, ``, `Acesse seu painel em:`, `${siteUrl}/parceiro`];
     if (p.portal_password) lines.push(`🔑 Senha: ${p.portal_password}`);
-    return `https://wa.me/?text=${encodeURIComponent(lines.join("\n"))}`;
+    const text = encodeURIComponent(lines.join("\n"));
+    if (p.phone) {
+      const digits = p.phone.replace(/\D/g, "");
+      const phoneWithCountry = digits.startsWith("55") ? digits : `55${digits}`;
+      return `https://wa.me/${phoneWithCountry}?text=${text}`;
+    }
+    return `https://wa.me/?text=${text}`;
   }
 
   // ── Sales Reps ───────────────────────────
