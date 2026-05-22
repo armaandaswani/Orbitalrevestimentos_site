@@ -561,29 +561,31 @@ export default function ContatoPage() {
                           productsRef.current?.scrollIntoView({ behavior: "smooth", block: "start" });
                         }, 100);
                       }}
-                      className={`relative overflow-hidden border text-left transition-all ${
-                        active ? "border-[#002045]" : "border-[#e2e2e2] hover:border-[#1a365d]"
+                      className={`relative border text-left transition-all p-5 flex flex-col gap-3 ${
+                        active
+                          ? "border-[#002045] bg-[#f5f8ff]"
+                          : "border-[#e2e2e2] hover:border-[#1a365d] bg-white"
                       }`}
                     >
-                      <div className="relative w-full bg-[#f7f7f5]" style={{ aspectRatio: "812/988" }}>
-                        <Image src={info.cover} alt={linha} fill className="object-contain" />
-                        {active && <div className="absolute inset-0 bg-[#002045]/25" />}
-                        {active && (
-                          <div className="absolute top-3 right-3 w-6 h-6 bg-white flex items-center justify-center">
-                            <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="#002045" strokeWidth="3">
-                              <path d="M20 6L9 17l-5-5" />
-                            </svg>
-                          </div>
-                        )}
+                      {active && (
+                        <div className="absolute top-3 right-3 w-5 h-5 bg-[#002045] flex items-center justify-center">
+                          <svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="white" strokeWidth="3">
+                            <path d="M20 6L9 17l-5-5" />
+                          </svg>
+                        </div>
+                      )}
+                      <div>
+                        <p className="text-[#002045] text-base font-bold font-[var(--font-inter)] mb-1">{linha}</p>
+                        <p className="text-[10px] tracking-[0.15em] uppercase font-bold font-[var(--font-inter)] text-[#3b6934]">
+                          {info.finish}
+                        </p>
                       </div>
-                      <div className="p-3 sm:p-4">
-                        <p className="text-[#002045] text-sm font-bold font-[var(--font-inter)] mb-0.5">{linha}</p>
-                        <p className="text-[#74777f] text-xs font-[var(--font-inter)]">{info.finish}</p>
-                        <p className="text-[#002045] text-xs font-bold font-[var(--font-inter)] mt-2">
-                          R$ {info.price.toLocaleString("pt-BR")} / placa (3,48 m²)
+                      <div className="border-t border-[#e8e8e8] pt-3">
+                        <p className="text-[#002045] text-sm font-bold font-[var(--font-inter)]">
+                          R$ {info.price.toLocaleString("pt-BR")} / placa
                         </p>
                         <p className="text-[#9e9e9e] text-[10px] font-[var(--font-inter)] mt-0.5">
-                          2,9m × 1,2m × 5mm
+                          2,9m × 1,2m × 5mm · 3,48 m²
                         </p>
                       </div>
                     </button>
