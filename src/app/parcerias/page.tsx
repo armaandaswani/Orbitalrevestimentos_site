@@ -469,7 +469,13 @@ function SelfRegisterSection({ onScrollToSegments }: { onScrollToSegments: () =>
     const res = await fetch("/api/partners/register", {
       method: "POST",
       headers: { "Content-Type": "application/json" },
-      body: JSON.stringify(form),
+      body: JSON.stringify({
+        name: form.name,
+        email: form.email,
+        phone: form.phone,
+        sales_rep_referral_code: form.referral_code,
+        portal_password: form.portal_password,
+      }),
     });
     const json = await res.json();
     setLoading(false);
