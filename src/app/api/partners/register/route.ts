@@ -14,6 +14,15 @@ export async function POST(req: NextRequest) {
 
   const db = supabaseAdmin();
 
+  // Check email uniqueness across both tables
+  const [{ data: existingPartner }, { data: existingRep }] = await Promise.all([
+    db.from("partners").select("id").eq("email", email).maybeSingle(),
+    db.from("sales_reps").select("id").eq("email", email).maybeSingle(),
+  ]);
+  if (existingPartner || existingRep) {
+    return NextResponse.json({ error: "Este e-mail já está cadastrado no sistema." }, { status: 409 });
+  }
+
   // Validate sales_rep_referral_code exists and is active
   const { data: salesRep, error: repError } = await db
     .from("sales_reps")
