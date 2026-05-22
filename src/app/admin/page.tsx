@@ -12,6 +12,7 @@ interface Partner {
   discount_value: number;
   commission_type: "percentage" | "fixed";
   commission_value: number;
+  portal_password: string | null;
   status: "active" | "inactive";
   created_at: string;
 }
@@ -30,6 +31,7 @@ interface CouponUse {
   discount_applied: number | null;
   commission_owed: number | null;
   architect_name: string | null;
+  sale_status: "em_orcamento" | "concluido" | "cancelado" | null;
   created_at: string;
 }
 
@@ -48,7 +50,14 @@ const emptyForm = {
   discount_value: 0,
   commission_type: "percentage" as "percentage" | "fixed",
   commission_value: 0,
+  portal_password: "",
   status: "active" as "active" | "inactive",
+};
+
+const STATUS_LABELS: Record<string, { label: string; cls: string }> = {
+  em_orcamento: { label: "Em orçamento", cls: "bg-yellow-100 text-yellow-800" },
+  concluido:    { label: "Concluído",    cls: "bg-green-100 text-green-800"  },
+  cancelado:    { label: "Cancelado",    cls: "bg-red-100 text-red-700"      },
 };
 
 export default function AdminPage() {
@@ -64,6 +73,10 @@ export default function AdminPage() {
   const [form, setForm] = useState({ ...emptyForm });
   const [formError, setFormError] = useState("");
   const [formLoading, setFormLoading] = useState(false);
+  // New partner created — show WhatsApp link
+  const [newlyCreated, setNewlyCreated] = useState<Partner | null>(null);
+  // History filter
+  const [filterPartner, setFilterPartner] = useState<string>("all");
 
   const supabaseConfigured = !!process.env.NEXT_PUBLIC_SUPABASE_URL;
 
@@ -104,6 +117,7 @@ export default function AdminPage() {
 
   function startCreate() {
     setEditingId(null);
+    setNewlyCreated(null);
     setForm({ ...emptyForm });
     setFormError("");
     setShowForm(true);
@@ -111,6 +125,7 @@ export default function AdminPage() {
 
   function startEdit(p: Partner) {
     setEditingId(p.id);
+    setNewlyCreated(null);
     setForm({
       name: p.name,
       email: p.email || "",
@@ -120,6 +135,7 @@ export default function AdminPage() {
       discount_value: p.discount_value,
       commission_type: p.commission_type,
       commission_value: p.commission_value,
+      portal_password: p.portal_password || "",
       status: p.status,
     });
     setFormError("");
@@ -134,6 +150,7 @@ export default function AdminPage() {
     const payload = {
       ...form,
       coupon_code: form.coupon_code.toUpperCase(),
+      portal_password: form.portal_password || null,
     };
 
     let res: Response;
@@ -160,6 +177,9 @@ export default function AdminPage() {
     }
 
     setShowForm(false);
+    if (!editingId) {
+      setNewlyCreated(json as Partner);
+    }
     fetchPartners();
   }
 
@@ -175,11 +195,51 @@ export default function AdminPage() {
   async function deletePartner(p: Partner) {
     if (!confirm(`Excluir parceiro ${p.name}? Isso também remove o histórico de usos.`)) return;
     await fetch(`/api/partners/${p.id}`, { method: "DELETE" });
+    setNewlyCreated(null);
     fetchPartners();
   }
 
-  const totalSales = uses.reduce((a, u) => a + (u.material_discounted || 0), 0);
-  const totalCommission = uses.reduce((a, u) => a + (u.commission_owed || 0), 0);
+  async function updateSaleStatus(useId: string, sale_status: string) {
+    await fetch(`/api/coupons/use/${useId}`, {
+      method: "PATCH",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ sale_status }),
+    });
+    setUses((prev) =>
+      prev.map((u) => (u.id === useId ? { ...u, sale_status: sale_status as CouponUse["sale_status"] } : u))
+    );
+  }
+
+  const filteredUses = filterPartner === "all"
+    ? uses
+    : uses.filter((u) => u.coupon_code === filterPartner);
+
+  const concludedUses = filteredUses.filter((u) => u.sale_status === "concluido");
+  const totalSales = concludedUses.reduce((a, u) => a + (u.material_discounted || 0), 0);
+  const totalCommission = concludedUses.reduce((a, u) => a + (u.commission_owed || 0), 0);
+  const pendingCommission = filteredUses
+    .filter((u) => u.sale_status === "em_orcamento" || u.sale_status === null)
+    .reduce((a, u) => a + (u.commission_owed || 0), 0);
+
+  function buildWALink(p: Partner) {
+    const siteUrl = typeof window !== "undefined" ? window.location.origin : "https://orbitalrevestimentos.com.br";
+    const discountLabel = p.discount_type === "percentage"
+      ? `${p.discount_value}% de desconto`
+      : `R$ ${p.discount_value} de desconto`;
+    const lines = [
+      `Olá ${p.name}! 👋`,
+      ``,
+      `Seu cupom Orbital foi criado com sucesso:`,
+      ``,
+      `🎟 Código: *${p.coupon_code}*`,
+      `💰 ${discountLabel} para seus clientes`,
+      ``,
+      `Acesse seu painel de parceiro em:`,
+      `${siteUrl}/parceiro`,
+    ];
+    if (p.portal_password) lines.push(`🔑 Senha: ${p.portal_password}`);
+    return `https://wa.me/?text=${encodeURIComponent(lines.join("\n"))}`;
+  }
 
   if (!authed) {
     return (
@@ -251,6 +311,7 @@ export default function AdminPage() {
           ))}
         </div>
 
+        {/* ─── PARTNERS TAB ─── */}
         {tab === "partners" && (
           <div>
             <div className="flex items-center justify-between mb-6">
@@ -262,6 +323,34 @@ export default function AdminPage() {
                 + Novo Parceiro
               </button>
             </div>
+
+            {/* WhatsApp link after creation */}
+            {newlyCreated && !showForm && (
+              <div className="bg-green-50 border border-green-200 px-6 py-4 mb-6 flex flex-col sm:flex-row sm:items-center gap-3">
+                <div className="flex-1">
+                  <p className="text-green-900 text-sm font-[var(--font-inter)] font-semibold mb-0.5">
+                    Parceiro criado com sucesso!
+                  </p>
+                  <p className="text-green-700 text-xs font-[var(--font-inter)]">
+                    Cupom: <strong>{newlyCreated.coupon_code}</strong>
+                    {newlyCreated.portal_password && (
+                      <> · Senha: <strong>{newlyCreated.portal_password}</strong></>
+                    )}
+                  </p>
+                </div>
+                <a
+                  href={buildWALink(newlyCreated)}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="inline-flex items-center gap-2 bg-[#25d366] text-white text-xs tracking-[0.08em] uppercase font-bold font-[var(--font-inter)] px-4 py-2.5 hover:bg-[#1db954] transition-colors whitespace-nowrap"
+                >
+                  <svg width="14" height="14" viewBox="0 0 24 24" fill="currentColor">
+                    <path d="M17.472 14.382c-.297-.149-1.758-.867-2.03-.967-.273-.099-.471-.148-.67.15-.197.297-.767.966-.94 1.164-.173.199-.347.223-.644.075-.297-.15-1.255-.463-2.39-1.475-.883-.788-1.48-1.761-1.653-2.059-.173-.297-.018-.458.13-.606.134-.133.298-.347.446-.52.149-.174.198-.298.298-.497.099-.198.05-.371-.025-.52-.075-.149-.669-1.612-.916-2.207-.242-.579-.487-.5-.669-.51-.173-.008-.371-.01-.57-.01-.198 0-.52.074-.792.372-.272.297-1.04 1.016-1.04 2.479 0 1.462 1.065 2.875 1.213 3.074.149.198 2.096 3.2 5.077 4.487.709.306 1.262.489 1.694.625.712.227 1.36.195 1.871.118.571-.085 1.758-.719 2.006-1.413.248-.694.248-1.289.173-1.413-.074-.124-.272-.198-.57-.347m-5.421 7.403h-.004a9.87 9.87 0 01-5.031-1.378l-.361-.214-3.741.982.998-3.648-.235-.374a9.86 9.86 0 01-1.51-5.26c.001-5.45 4.436-9.884 9.888-9.884 2.64 0 5.122 1.03 6.988 2.898a9.825 9.825 0 012.893 6.994c-.003 5.45-4.437 9.884-9.885 9.884m8.413-18.297A11.815 11.815 0 0012.05 0C5.495 0 .16 5.335.157 11.892c0 2.096.547 4.142 1.588 5.945L.057 24l6.305-1.654a11.882 11.882 0 005.683 1.448h.005c6.554 0 11.89-5.335 11.893-11.893a11.821 11.821 0 00-3.48-8.413z"/>
+                  </svg>
+                  Enviar via WhatsApp
+                </a>
+              </div>
+            )}
 
             {showForm && (
               <div className="bg-white border border-[#e2e2e2] p-8 mb-6">
@@ -354,6 +443,17 @@ export default function AdminPage() {
                         className="w-full border border-[#e2e2e2] px-4 py-2.5 text-sm font-[var(--font-inter)] text-[#002045] focus:outline-none focus:border-[#002045]"
                       />
                     </div>
+                    <div>
+                      <label className="block text-[10px] tracking-[0.15em] uppercase font-bold font-[var(--font-inter)] text-[#74777f] mb-2">
+                        Senha do Portal <span className="normal-case text-[#74777f] font-normal">(acesso parceiro)</span>
+                      </label>
+                      <input
+                        value={form.portal_password}
+                        onChange={(e) => setForm({ ...form, portal_password: e.target.value })}
+                        className="w-full border border-[#e2e2e2] px-4 py-2.5 text-sm font-[var(--font-inter)] text-[#002045] focus:outline-none focus:border-[#002045]"
+                        placeholder="Deixe em branco para sem acesso"
+                      />
+                    </div>
                     {editingId && (
                       <div>
                         <label className="block text-[10px] tracking-[0.15em] uppercase font-bold font-[var(--font-inter)] text-[#74777f] mb-2">Status</label>
@@ -396,7 +496,7 @@ export default function AdminPage() {
                 <table className="w-full text-sm font-[var(--font-inter)]">
                   <thead>
                     <tr className="border-b border-[#e2e2e2]">
-                      {["Nome", "Cupom", "Desconto", "Comissão", "Status", "Ações"].map((h) => (
+                      {["Nome", "Cupom", "Desconto", "Comissão", "Senha Portal", "Status", "Ações"].map((h) => (
                         <th key={h} className="text-left px-5 py-3 text-[10px] tracking-[0.15em] uppercase font-bold text-[#74777f]">
                           {h}
                         </th>
@@ -406,7 +506,7 @@ export default function AdminPage() {
                   <tbody>
                     {partners.length === 0 ? (
                       <tr>
-                        <td colSpan={6} className="px-5 py-8 text-center text-[#74777f]">
+                        <td colSpan={7} className="px-5 py-8 text-center text-[#74777f]">
                           Nenhum parceiro cadastrado.
                         </td>
                       </tr>
@@ -428,6 +528,13 @@ export default function AdminPage() {
                           <td className="px-5 py-4 text-[#43474e]">
                             {p.commission_type === "percentage" ? `${p.commission_value}%` : fmt(p.commission_value)}
                           </td>
+                          <td className="px-5 py-4 text-xs text-[#74777f]">
+                            {p.portal_password ? (
+                              <span className="font-mono text-[#43474e]">{p.portal_password}</span>
+                            ) : (
+                              <span className="italic">—</span>
+                            )}
+                          </td>
                           <td className="px-5 py-4">
                             <span className={`px-2 py-1 text-[10px] font-bold tracking-wider ${
                               p.status === "active"
@@ -438,7 +545,7 @@ export default function AdminPage() {
                             </span>
                           </td>
                           <td className="px-5 py-4">
-                            <div className="flex gap-2">
+                            <div className="flex gap-2 flex-wrap">
                               <button
                                 onClick={() => startEdit(p)}
                                 className="text-[#1a365d] text-xs font-semibold hover:text-[#002045] transition-colors"
@@ -471,22 +578,46 @@ export default function AdminPage() {
           </div>
         )}
 
+        {/* ─── HISTORY TAB ─── */}
         {tab === "history" && (
           <div>
-            <h2 className="font-[var(--font-noto-serif)] text-[#002045] text-xl font-normal mb-6">Histórico de Usos</h2>
+            <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4 mb-6">
+              <h2 className="font-[var(--font-noto-serif)] text-[#002045] text-xl font-normal">Histórico de Usos</h2>
+              <div className="flex items-center gap-2">
+                <label className="text-[10px] tracking-[0.15em] uppercase font-bold font-[var(--font-inter)] text-[#74777f] whitespace-nowrap">
+                  Filtrar por parceiro:
+                </label>
+                <select
+                  value={filterPartner}
+                  onChange={(e) => setFilterPartner(e.target.value)}
+                  className="border border-[#e2e2e2] px-3 py-2 text-sm font-[var(--font-inter)] text-[#002045] focus:outline-none focus:border-[#002045] min-w-[160px]"
+                >
+                  <option value="all">Todos</option>
+                  {partners.map((p) => (
+                    <option key={p.id} value={p.coupon_code}>
+                      {p.name} ({p.coupon_code})
+                    </option>
+                  ))}
+                </select>
+              </div>
+            </div>
 
-            <div className="grid grid-cols-1 sm:grid-cols-3 gap-4 mb-8">
+            <div className="grid grid-cols-1 sm:grid-cols-4 gap-4 mb-8">
               <div className="bg-white border border-[#e2e2e2] px-6 py-5">
                 <p className="text-[#74777f] text-[10px] tracking-[0.15em] uppercase font-bold font-[var(--font-inter)] mb-1">Total de usos</p>
-                <p className="font-[var(--font-noto-serif)] text-[#002045] text-3xl font-normal">{uses.length}</p>
+                <p className="font-[var(--font-noto-serif)] text-[#002045] text-3xl font-normal">{filteredUses.length}</p>
               </div>
               <div className="bg-white border border-[#e2e2e2] px-6 py-5">
-                <p className="text-[#74777f] text-[10px] tracking-[0.15em] uppercase font-bold font-[var(--font-inter)] mb-1">Total em vendas</p>
+                <p className="text-[#74777f] text-[10px] tracking-[0.15em] uppercase font-bold font-[var(--font-inter)] mb-1">Vendas concluídas</p>
                 <p className="font-[var(--font-noto-serif)] text-[#002045] text-3xl font-normal">{fmt(totalSales)}</p>
               </div>
               <div className="bg-white border border-[#e2e2e2] px-6 py-5">
                 <p className="text-[#74777f] text-[10px] tracking-[0.15em] uppercase font-bold font-[var(--font-inter)] mb-1">Comissões devidas</p>
                 <p className="font-[var(--font-noto-serif)] text-[#002045] text-3xl font-normal">{fmt(totalCommission)}</p>
+              </div>
+              <div className="bg-white border border-[#e2e2e2] px-6 py-5">
+                <p className="text-[#74777f] text-[10px] tracking-[0.15em] uppercase font-bold font-[var(--font-inter)] mb-1">Comissões em aberto</p>
+                <p className="font-[var(--font-noto-serif)] text-yellow-700 text-3xl font-normal">{fmt(pendingCommission)}</p>
               </div>
             </div>
 
@@ -497,7 +628,7 @@ export default function AdminPage() {
                 <table className="w-full text-sm font-[var(--font-inter)]">
                   <thead>
                     <tr className="border-b border-[#e2e2e2]">
-                      {["Data", "Cupom", "Produto", "Espaço", "Área (m²)", "Placas", "Material orig.", "Desconto", "Comissão"].map((h) => (
+                      {["Data", "Cupom", "Produto", "Espaço", "Área (m²)", "Placas", "Material orig.", "Desconto", "Comissão", "Status"].map((h) => (
                         <th key={h} className="text-left px-4 py-3 text-[10px] tracking-[0.1em] uppercase font-bold text-[#74777f] whitespace-nowrap">
                           {h}
                         </th>
@@ -505,39 +636,54 @@ export default function AdminPage() {
                     </tr>
                   </thead>
                   <tbody>
-                    {uses.length === 0 ? (
+                    {filteredUses.length === 0 ? (
                       <tr>
-                        <td colSpan={9} className="px-5 py-8 text-center text-[#74777f]">
+                        <td colSpan={10} className="px-5 py-8 text-center text-[#74777f]">
                           Nenhum uso registrado.
                         </td>
                       </tr>
                     ) : (
-                      uses.map((u) => (
-                        <tr key={u.id} className="border-b border-[#f0f0f0] hover:bg-[#fafafa]">
-                          <td className="px-4 py-3 text-xs text-[#43474e] whitespace-nowrap">
-                            {new Date(u.created_at).toLocaleDateString("pt-BR")}
-                          </td>
-                          <td className="px-4 py-3">
-                            <span className="bg-[#eef2f8] text-[#002045] px-2 py-0.5 text-xs font-bold tracking-wider">
-                              {u.coupon_code}
-                            </span>
-                          </td>
-                          <td className="px-4 py-3 text-xs text-[#43474e]">
-                            <p className="font-semibold">{u.product_name}</p>
-                            <p className="text-[#74777f]">{u.product_code}</p>
-                          </td>
-                          <td className="px-4 py-3 text-xs text-[#43474e]">{u.space || "—"}</td>
-                          <td className="px-4 py-3 text-xs text-[#43474e]">{u.area_m2 ?? "—"}</td>
-                          <td className="px-4 py-3 text-xs text-[#43474e]">{u.plates ?? "—"}</td>
-                          <td className="px-4 py-3 text-xs text-[#43474e]">{u.material_total ? fmt(u.material_total) : "—"}</td>
-                          <td className="px-4 py-3 text-xs text-green-700 font-semibold">
-                            {u.discount_applied ? fmt(u.discount_applied) : "—"}
-                          </td>
-                          <td className="px-4 py-3 text-xs text-[#002045] font-semibold">
-                            {u.commission_owed ? fmt(u.commission_owed) : "—"}
-                          </td>
-                        </tr>
-                      ))
+                      filteredUses.map((u) => {
+                        const st = u.sale_status || "em_orcamento";
+                        const stMeta = STATUS_LABELS[st] || STATUS_LABELS.em_orcamento;
+                        return (
+                          <tr key={u.id} className="border-b border-[#f0f0f0] hover:bg-[#fafafa]">
+                            <td className="px-4 py-3 text-xs text-[#43474e] whitespace-nowrap">
+                              {new Date(u.created_at).toLocaleDateString("pt-BR")}
+                            </td>
+                            <td className="px-4 py-3">
+                              <span className="bg-[#eef2f8] text-[#002045] px-2 py-0.5 text-xs font-bold tracking-wider">
+                                {u.coupon_code}
+                              </span>
+                            </td>
+                            <td className="px-4 py-3 text-xs text-[#43474e]">
+                              <p className="font-semibold">{u.product_name}</p>
+                              <p className="text-[#74777f]">{u.product_code}</p>
+                            </td>
+                            <td className="px-4 py-3 text-xs text-[#43474e]">{u.space || "—"}</td>
+                            <td className="px-4 py-3 text-xs text-[#43474e]">{u.area_m2 ?? "—"}</td>
+                            <td className="px-4 py-3 text-xs text-[#43474e]">{u.plates ?? "—"}</td>
+                            <td className="px-4 py-3 text-xs text-[#43474e]">{u.material_total ? fmt(u.material_total) : "—"}</td>
+                            <td className="px-4 py-3 text-xs text-green-700 font-semibold">
+                              {u.discount_applied ? fmt(u.discount_applied) : "—"}
+                            </td>
+                            <td className="px-4 py-3 text-xs text-[#002045] font-semibold">
+                              {u.commission_owed ? fmt(u.commission_owed) : "—"}
+                            </td>
+                            <td className="px-4 py-3">
+                              <select
+                                value={st}
+                                onChange={(e) => updateSaleStatus(u.id, e.target.value)}
+                                className={`text-[10px] font-bold tracking-wide px-2 py-1 border-0 cursor-pointer focus:outline-none focus:ring-1 focus:ring-[#002045] ${stMeta.cls}`}
+                              >
+                                <option value="em_orcamento">Em orçamento</option>
+                                <option value="concluido">Concluído</option>
+                                <option value="cancelado">Cancelado</option>
+                              </select>
+                            </td>
+                          </tr>
+                        );
+                      })
                     )}
                   </tbody>
                 </table>
