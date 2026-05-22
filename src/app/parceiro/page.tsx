@@ -22,6 +22,7 @@ interface CouponUse {
   material_total: number | null;
   material_discounted: number | null;
   discount_applied: number | null;
+  plates: number | null;
   commission_owed: number | null;
   architect_name: string | null;
   sale_status: "em_orcamento" | "concluido" | "cancelado" | null;
@@ -596,7 +597,7 @@ export default function ParceiroPage() {
             <table className="w-full text-sm font-[var(--font-inter)]">
               <thead>
                 <tr className="border-b border-[#e2e2e2]">
-                  {["Data", "Produto", "Espaço", "Área (m²)", "Status"].map((h) => (
+                  {["Data", "Cliente", "Produto", "Espaço", "Placas", "Comissão", "Status"].map((h) => (
                     <th key={h} className="text-left px-4 py-3 text-[10px] tracking-[0.1em] uppercase font-bold text-[#74777f] whitespace-nowrap">
                       {h}
                     </th>
@@ -612,14 +613,27 @@ export default function ParceiroPage() {
                       <td className="px-4 py-3 text-xs text-[#43474e] whitespace-nowrap">
                         {new Date(u.created_at).toLocaleDateString("pt-BR")}
                       </td>
+                      <td className="px-4 py-3 text-xs text-[#43474e]">{u.architect_name || "—"}</td>
                       <td className="px-4 py-3 text-xs text-[#43474e]">
                         <p className="font-semibold">{u.product_name || "—"}</p>
                         {u.product_code && <p className="text-[#74777f]">{u.product_code}</p>}
                       </td>
                       <td className="px-4 py-3 text-xs text-[#43474e]">{u.space || "—"}</td>
-                      <td className="px-4 py-3 text-xs text-[#43474e]">{u.area_m2 ?? "—"}</td>
+                      <td className="px-4 py-3 text-xs text-[#43474e]">{u.plates ?? "—"}</td>
+                      <td className="px-4 py-3 text-xs font-semibold">
+                        {st === "cancelado"
+                          ? <span className="text-[#74777f] font-normal">—</span>
+                          : st === "concluido" && u.commission_owed != null
+                          ? <span className="text-green-700 font-bold">{fmt(u.commission_owed)}</span>
+                          : u.commission_owed != null
+                          ? <span className="text-yellow-700">{fmt(u.commission_owed)} (pend.)</span>
+                          : "—"}
+                      </td>
                       <td className="px-4 py-3">
-                        <span className={`px-2 py-1 text-[10px] font-bold tracking-wide ${stMeta.cls}`}>
+                        <span className={`inline-flex items-center gap-1.5 px-2.5 py-1 text-[10px] font-bold tracking-wide rounded-full ${stMeta.cls}`}>
+                          <span className={`w-1.5 h-1.5 rounded-full ${
+                            st === "concluido" ? "bg-green-600" : st === "cancelado" ? "bg-red-500" : "bg-yellow-500"
+                          }`} />
                           {stMeta.label}
                         </span>
                       </td>

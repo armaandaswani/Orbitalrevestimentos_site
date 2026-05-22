@@ -255,7 +255,10 @@ export default function RepresentantePage() {
                           : "—"}
                       </td>
                       <td className="px-4 py-3">
-                        <span className={`px-2 py-1 text-[10px] font-bold tracking-wide ${stMeta.cls}`}>
+                        <span className={`inline-flex items-center gap-1.5 px-2.5 py-1 text-[10px] font-bold tracking-wide rounded-full ${stMeta.cls}`}>
+                          <span className={`w-1.5 h-1.5 rounded-full ${
+                            st === "concluido" ? "bg-green-600" : st === "cancelado" ? "bg-red-500" : "bg-yellow-500"
+                          }`} />
                           {stMeta.label}
                         </span>
                       </td>

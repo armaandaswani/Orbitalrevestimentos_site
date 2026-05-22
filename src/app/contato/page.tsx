@@ -159,7 +159,8 @@ export default function ContatoPage() {
   const [width, setWidth] = useState("");
   const [height, setHeight] = useState("");
   const [sqmInput, setSqmInput] = useState("");
-  const [architectName, setArchitectName] = useState("");
+  const [clientName, setClientName] = useState("");
+  const [clientPhone, setClientPhone] = useState("");
   const [couponCode, setCouponCode] = useState("");
   const [couponData, setCouponData] = useState<CouponData | null>(null);
   const [couponValidating, setCouponValidating] = useState(false);
@@ -236,7 +237,8 @@ export default function ContatoPage() {
             ? `*Cupom aplicado:* ${couponData.coupon_code} (desconto de ${couponData.discount_type === "percentage" ? couponData.discount_value + "%" : fmt(couponData.discount_value)})`
             : null,
           couponData ? `*Preço com desconto:* ${fmt(orbMaterialDiscounted)}` : null,
-          architectName ? `*Arquiteto/Designer:* ${architectName}` : null,
+          clientName ? `*Cliente:* ${clientName}` : null,
+          clientPhone ? `*WhatsApp do cliente:* ${clientPhone}` : null,
         ].filter(Boolean).join("\n")
       : "Olá! Tenho interesse no PFB Orbital e gostaria de fazer um orçamento.";
 
@@ -265,7 +267,8 @@ export default function ContatoPage() {
     setWidth("");
     setHeight("");
     setSqmInput("");
-    setArchitectName("");
+    setClientName("");
+    setClientPhone("");
     setCouponCode("");
     setCouponData(null);
     setCouponError("");
@@ -298,13 +301,11 @@ export default function ContatoPage() {
     }
   }
 
-  async function handleCouponAndShow() {
-    if (!couponCode.trim() || couponData) {
-      showResults();
-      return;
+  async function handleCouponAndAdvance() {
+    if (couponCode.trim() && !couponData) {
+      await validateCoupon();
     }
-    await validateCoupon();
-    showResults();
+    goToStep(5);
   }
 
   function logCouponUse() {
@@ -325,7 +326,7 @@ export default function ContatoPage() {
           material_discounted: orbMaterialDiscounted,
           discount_applied: discountAmount,
           commission_owed: commissionOwed,
-          architect_name: architectName || null,
+          architect_name: clientName || null,
         }),
       });
     } catch {
@@ -341,8 +342,8 @@ export default function ContatoPage() {
     { n: 1 as const, label: "Espaço" },
     { n: 2 as const, label: "Modelo" },
     { n: 3 as const, label: "Dimensões" },
-    { n: 4 as const, label: "Arquiteto" },
-    { n: 5 as const, label: "Cupom" },
+    { n: 4 as const, label: "Cupom" },
+    { n: 5 as const, label: "Cliente" },
   ];
 
   return (
@@ -790,52 +791,6 @@ export default function ContatoPage() {
                       : "bg-[#e2e2e2] text-[#aaaaaa] cursor-not-allowed"
                   }`}
                 >
-                  Próximo: Arquiteto
-                  <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5">
-                    <path d="M5 12h14M12 5l7 7-7 7" />
-                  </svg>
-                </button>
-              </div>
-            </div>
-          )}
-
-          {/* ── Step 4: Architect ────────────────────────────────────────── */}
-          {step === 4 && (
-            <div className="bg-white border border-[#e2e2e2] p-6 lg:p-10">
-              <h3 className="font-[var(--font-noto-serif)] text-[#002045] text-xl font-normal mb-2">
-                Você está trabalhando com um arquiteto ou designer?
-              </h3>
-              <p className="text-[#74777f] text-sm font-[var(--font-inter)] mb-8">
-                Campo opcional — nos ajuda a personalizar o atendimento.
-              </p>
-
-              <div className="max-w-md mb-8">
-                <label className="block text-[10px] tracking-[0.15em] uppercase font-bold font-[var(--font-inter)] text-[#74777f] mb-2">
-                  Nome do arquiteto ou designer
-                </label>
-                <input
-                  type="text"
-                  value={architectName}
-                  onChange={(e) => setArchitectName(e.target.value)}
-                  placeholder="ex: Ana Lima Arquitetura"
-                  className="w-full border border-[#e2e2e2] px-4 py-3 text-sm font-[var(--font-inter)] text-[#002045] focus:outline-none focus:border-[#002045] transition-colors"
-                />
-              </div>
-
-              <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3">
-                <button
-                  onClick={() => goToStep(3)}
-                  className="flex items-center gap-1.5 text-xs tracking-[0.1em] uppercase font-semibold font-[var(--font-inter)] text-[#74777f] hover:text-[#002045] transition-colors"
-                >
-                  <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5">
-                    <path d="M19 12H5M12 5l-7 7 7 7" />
-                  </svg>
-                  Voltar
-                </button>
-                <button
-                  onClick={() => goToStep(5)}
-                  className="w-full sm:w-auto inline-flex items-center justify-center gap-2 text-xs tracking-[0.12em] uppercase font-bold font-[var(--font-inter)] px-8 py-4 bg-[#002045] text-white hover:bg-[#1a365d] transition-colors"
-                >
                   Próximo: Cupom
                   <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5">
                     <path d="M5 12h14M12 5l7 7-7 7" />
@@ -845,8 +800,8 @@ export default function ContatoPage() {
             </div>
           )}
 
-          {/* ── Step 5: Coupon ────────────────────────────────────────────── */}
-          {step === 5 && (
+          {/* ── Step 4: Coupon ────────────────────────────────────────────── */}
+          {step === 4 && (
             <div className="bg-white border border-[#e2e2e2] p-6 lg:p-10">
               <h3 className="font-[var(--font-noto-serif)] text-[#002045] text-xl font-normal mb-2">
                 Tem um código de parceiro?
@@ -906,6 +861,76 @@ export default function ContatoPage() {
 
               <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3">
                 <button
+                  onClick={() => goToStep(3)}
+                  className="flex items-center gap-1.5 text-xs tracking-[0.1em] uppercase font-semibold font-[var(--font-inter)] text-[#74777f] hover:text-[#002045] transition-colors"
+                >
+                  <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5">
+                    <path d="M19 12H5M12 5l-7 7 7 7" />
+                  </svg>
+                  Voltar
+                </button>
+                <div className="flex flex-col sm:flex-row gap-3 sm:gap-2">
+                  <button
+                    onClick={() => goToStep(5)}
+                    className="w-full sm:w-auto inline-flex items-center justify-center gap-2 text-xs tracking-[0.12em] uppercase font-bold font-[var(--font-inter)] px-6 py-4 border border-[#e2e2e2] text-[#74777f] hover:border-[#74777f] hover:text-[#002045] transition-colors"
+                  >
+                    Pular
+                  </button>
+                  <button
+                    onClick={handleCouponAndAdvance}
+                    disabled={couponValidating}
+                    className="w-full sm:w-auto inline-flex items-center justify-center gap-2 text-xs tracking-[0.12em] uppercase font-bold font-[var(--font-inter)] px-8 py-4 bg-[#002045] text-white hover:bg-[#1a365d] transition-colors disabled:opacity-50"
+                  >
+                    Próximo: Cliente
+                    <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5">
+                      <path d="M5 12h14M12 5l7 7-7 7" />
+                    </svg>
+                  </button>
+                </div>
+              </div>
+            </div>
+          )}
+
+          {/* ── Step 5: Client ────────────────────────────────────────────────── */}
+          {step === 5 && (
+            <div className="bg-white border border-[#e2e2e2] p-6 lg:p-10">
+              <h3 className="font-[var(--font-noto-serif)] text-[#002045] text-xl font-normal mb-2">
+                Para quem é este projeto?
+              </h3>
+              <p className="text-[#74777f] text-sm font-[var(--font-inter)] mb-8">
+                Seus dados para envio do orçamento. Opcional — pode pular se preferir.
+              </p>
+
+              <div className="max-w-md space-y-5 mb-8">
+                <div>
+                  <label className="block text-[10px] tracking-[0.15em] uppercase font-bold font-[var(--font-inter)] text-[#74777f] mb-2">
+                    Nome completo
+                  </label>
+                  <input
+                    type="text"
+                    value={clientName}
+                    onChange={(e) => setClientName(e.target.value)}
+                    placeholder="ex: João Silva"
+                    className="w-full border border-[#e2e2e2] px-4 py-3 text-sm font-[var(--font-inter)] text-[#002045] focus:outline-none focus:border-[#002045] transition-colors"
+                    autoFocus
+                  />
+                </div>
+                <div>
+                  <label className="block text-[10px] tracking-[0.15em] uppercase font-bold font-[var(--font-inter)] text-[#74777f] mb-2">
+                    WhatsApp
+                  </label>
+                  <input
+                    type="tel"
+                    value={clientPhone}
+                    onChange={(e) => setClientPhone(e.target.value)}
+                    placeholder="ex: (92) 99999-9999"
+                    className="w-full border border-[#e2e2e2] px-4 py-3 text-sm font-[var(--font-inter)] text-[#002045] focus:outline-none focus:border-[#002045] transition-colors"
+                  />
+                </div>
+              </div>
+
+              <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3">
+                <button
                   onClick={() => goToStep(4)}
                   className="flex items-center gap-1.5 text-xs tracking-[0.1em] uppercase font-semibold font-[var(--font-inter)] text-[#74777f] hover:text-[#002045] transition-colors"
                 >
@@ -916,15 +941,14 @@ export default function ContatoPage() {
                 </button>
                 <div className="flex flex-col sm:flex-row gap-3 sm:gap-2">
                   <button
-                    onClick={() => showResults()}
+                    onClick={() => { showResults(); logCouponUse(); }}
                     className="w-full sm:w-auto inline-flex items-center justify-center gap-2 text-xs tracking-[0.12em] uppercase font-bold font-[var(--font-inter)] px-6 py-4 border border-[#e2e2e2] text-[#74777f] hover:border-[#74777f] hover:text-[#002045] transition-colors"
                   >
                     Pular
                   </button>
                   <button
-                    onClick={handleCouponAndShow}
-                    disabled={couponValidating}
-                    className="w-full sm:w-auto inline-flex items-center justify-center gap-2 text-xs tracking-[0.12em] uppercase font-bold font-[var(--font-inter)] px-8 py-4 bg-[#002045] text-white hover:bg-[#1a365d] transition-colors disabled:opacity-50"
+                    onClick={() => { showResults(); logCouponUse(); }}
+                    className="w-full sm:w-auto inline-flex items-center justify-center gap-2 text-xs tracking-[0.12em] uppercase font-bold font-[var(--font-inter)] px-8 py-4 bg-[#002045] text-white hover:bg-[#1a365d] transition-colors"
                   >
                     Ver simulação
                     <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5">
@@ -1038,10 +1062,11 @@ export default function ContatoPage() {
                       </>
                     )}
                   </div>
-                  {architectName && (
+                  {clientName && (
                     <div>
-                      <p className="text-[#74777f] text-[10px] tracking-[0.1em] uppercase font-semibold font-[var(--font-inter)] mb-0.5">Arquiteto/Designer</p>
-                      <p className="text-[#002045] text-sm font-semibold font-[var(--font-inter)]">{architectName}</p>
+                      <p className="text-[#74777f] text-[10px] tracking-[0.1em] uppercase font-semibold font-[var(--font-inter)] mb-0.5">Cliente</p>
+                      <p className="text-[#002045] text-sm font-semibold font-[var(--font-inter)]">{clientName}</p>
+                      {clientPhone && <p className="text-[#74777f] text-[10px] font-[var(--font-inter)]">{clientPhone}</p>}
                     </div>
                   )}
                 </div>
@@ -1161,7 +1186,6 @@ export default function ContatoPage() {
                     href={`${WA_BASE}${encodeURIComponent(waMsg)}`}
                     target="_blank"
                     rel="noopener noreferrer"
-                    onClick={logCouponUse}
                     className="inline-flex items-center justify-center gap-2.5 bg-[#002045] text-white text-xs tracking-[0.12em] uppercase font-bold font-[var(--font-inter)] px-7 py-4 hover:bg-[#1a365d] transition-colors"
                   >
                     <WaIcon />
