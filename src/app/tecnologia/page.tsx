@@ -50,24 +50,24 @@ export default function TecnologiaPage() {
   return (
     <div className="pt-20">
       {/* Hero */}
-      <section className="bg-[#002045] text-white py-10 lg:py-24">
-        <div className="max-w-[1280px] mx-auto px-4 lg:px-16">
+      <section className="relative bg-[#002045] text-white py-14 lg:py-32">
+        <div className="absolute bottom-0 inset-x-0 h-16 lg:h-24 bg-gradient-to-b from-transparent to-white pointer-events-none" />
+        <div className="relative max-w-[1280px] mx-auto px-4 lg:px-16">
           <p className="text-[#86a0cd] text-xs tracking-[0.2em] uppercase font-semibold font-[var(--font-inter)] mb-4">
             PFB · Placas Flexíveis de Bambu
           </p>
-          <h1 className="font-[var(--font-noto-serif)] text-3xl lg:text-6xl font-normal tracking-[-0.02em] leading-tight mb-5 max-w-3xl">
+          <h1 className="font-[var(--font-noto-serif)] text-2xl lg:text-5xl font-normal tracking-[-0.02em] leading-tight mb-5 max-w-3xl">
             Performance &amp; Tecnologia
           </h1>
-          <p className="text-white/70 text-lg font-[var(--font-inter)] leading-relaxed max-w-2xl">
+          <p className="text-white/70 text-base font-[var(--font-inter)] leading-relaxed max-w-2xl">
             A intersecção entre materiais naturais e engenharia avançada.
             Cada dado apresentado aqui é extraído de ficha técnica
             — não de marketing.
           </p>
         </div>
       </section>
-
       {/* Anatomy */}
-      <section className="overflow-hidden bg-white">
+      <section className="overflow-hidden bg-white pt-0">
         <div className="flex flex-row">
           {/* Left — anatomy diagram with vignette */}
           <div className="w-[38%] bg-white relative min-h-[200px] lg:min-h-[440px] flex items-center justify-center overflow-hidden py-8 lg:py-12 px-8 border-b lg:border-b-0 lg:border-r border-[#eeeeee]">
@@ -135,8 +135,9 @@ export default function TecnologiaPage() {
       </section>
 
       {/* Lab Specs */}
-      <section className="py-6 lg:py-16 bg-[#002045] text-white">
-        <div className="max-w-[1280px] mx-auto px-4 lg:px-16">
+      <section className="relative py-10 lg:py-20 bg-[#002045] text-white overflow-hidden">
+        <div className="absolute top-0 inset-x-0 h-16 lg:h-24 bg-gradient-to-b from-white to-transparent pointer-events-none" />
+        <div className="relative max-w-[1280px] mx-auto px-4 lg:px-16">
           <div className="mb-6 lg:mb-10">
             <p className="text-[#86a0cd] text-xs tracking-[0.2em] uppercase font-semibold font-[var(--font-inter)] mb-2">
               Ficha técnica
@@ -172,8 +173,9 @@ export default function TecnologiaPage() {
       </section>
 
       {/* PFB × MDF — Water Test Photos */}
-      <section className="py-10 lg:py-24 bg-[#1e212a] text-white">
-        <div className="max-w-[1280px] mx-auto px-4 lg:px-16">
+      <section className="relative py-10 lg:py-28 bg-[#1e212a] text-white overflow-hidden">
+        <div className="absolute top-0 inset-x-0 h-16 lg:h-24 bg-gradient-to-b from-[#002045] to-transparent pointer-events-none" />
+        <div className="relative max-w-[1280px] mx-auto px-4 lg:px-16">
           <div className="mb-8">
             <p className="text-[#a1d494] text-xs tracking-[0.2em] uppercase font-semibold font-[var(--font-inter)] mb-3">
               PFB — Teste de Resistência à Água
@@ -226,8 +228,9 @@ export default function TecnologiaPage() {
       </section>
 
       {/* Manaus Climate */}
-      <section className="py-10 lg:py-20 bg-[#1a365d] text-white">
-        <div className="max-w-[1280px] mx-auto px-4 lg:px-16">
+      <section className="relative py-10 lg:py-24 bg-[#1a365d] text-white overflow-hidden">
+        <div className="absolute top-0 inset-x-0 h-16 lg:h-24 bg-gradient-to-b from-[#1e212a] to-transparent pointer-events-none" />
+        <div className="relative max-w-[1280px] mx-auto px-4 lg:px-16">
           <div className="grid grid-cols-1 lg:grid-cols-2 gap-12 items-center">
             <div>
               <p className="text-[#a1d494] text-xs tracking-[0.2em] uppercase font-semibold font-[var(--font-inter)] mb-4">
@@ -298,8 +301,9 @@ export default function TecnologiaPage() {
       </section>
 
       {/* Characteristics */}
-      <section className="py-10 lg:py-24 bg-[#ffffff] border-b border-[#eeeeee]">
-        <div className="max-w-[1280px] mx-auto px-4 lg:px-16">
+      <section className="relative py-10 lg:py-28 bg-[#ffffff] overflow-hidden">
+        <div className="absolute top-0 inset-x-0 h-16 lg:h-24 bg-gradient-to-b from-[#1a365d] to-transparent pointer-events-none" />
+        <div className="relative max-w-[1280px] mx-auto px-4 lg:px-16">
           <p className="text-[#3b6934] text-xs tracking-[0.2em] uppercase font-semibold font-[var(--font-inter)] mb-4 text-center">
             Atributos-chave
           </p>
@@ -390,7 +394,7 @@ export default function TecnologiaPage() {
       </section>
 
       {/* Comparison Table — PFB vs alternatives (dropdown) */}
-      <section className="py-16 lg:py-24 bg-[#f9f9f9]">
+      <section className="py-12 lg:py-28 bg-[#f9f9f9]">
         <div className="max-w-[1280px] mx-auto px-4 lg:px-16">
           <p className="text-[#74777f] text-xs tracking-[0.2em] uppercase font-semibold font-[var(--font-inter)] mb-4">
             Dados técnicos independentes
@@ -406,7 +410,7 @@ export default function TecnologiaPage() {
       </section>
 
       {/* Environmental impact */}
-      <section className="py-10 lg:py-20 bg-[#ffffff] border-b border-[#eeeeee]">
+      <section className="py-10 lg:py-28 bg-[#ffffff]">
         <div className="max-w-[1280px] mx-auto px-4 lg:px-16">
           <div className="grid grid-cols-1 lg:grid-cols-2 gap-16 items-center">
             <div>
@@ -463,8 +467,9 @@ export default function TecnologiaPage() {
       </section>
 
       {/* Installation Notes */}
-      <section className="py-12 lg:py-16 bg-[#1e212a] text-white">
-        <div className="max-w-[1280px] mx-auto px-4 lg:px-16">
+      <section className="relative py-12 lg:py-20 bg-[#1e212a] text-white overflow-hidden">
+        <div className="absolute top-0 inset-x-0 h-16 lg:h-24 bg-gradient-to-b from-white to-transparent pointer-events-none" />
+        <div className="relative max-w-[1280px] mx-auto px-4 lg:px-16">
           <h2 className="font-[var(--font-noto-serif)] text-white text-2xl font-normal mb-8">
             Notas de Instalação
           </h2>

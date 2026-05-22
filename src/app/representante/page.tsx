@@ -8,6 +8,7 @@ interface SalesRepInfo {
   referral_code: string;
   commission_type: "percentage" | "fixed";
   commission_value: number;
+  birthday: string | null;
 }
 
 interface CouponUse {
@@ -58,6 +59,11 @@ export default function RepresentantePage() {
   const [cpSuccess, setCpSuccess] = useState(false);
   const [cpLoading, setCpLoading] = useState(false);
 
+  // Birthday gate
+  const [bdayInput, setBdayInput] = useState("");
+  const [bdayError, setBdayError] = useState("");
+  const [bdayLoading, setBdayLoading] = useState(false);
+
   async function handleLogin(e: React.FormEvent) {
     e.preventDefault();
     setLoginError("");
@@ -107,6 +113,21 @@ export default function RepresentantePage() {
     setTimeout(() => setCpOpen(false), 2000);
   }
 
+  async function handleSaveBirthday(e: React.FormEvent) {
+    e.preventDefault();
+    if (!bdayInput) { setBdayError("Informe sua data de nascimento."); return; }
+    setBdayLoading(true);
+    setBdayError("");
+    const res = await fetch(`/api/sales-reps/${salesRep!.id}`, {
+      method: "PUT",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ birthday: bdayInput }),
+    });
+    setBdayLoading(false);
+    if (!res.ok) { setBdayError("Erro ao salvar. Tente novamente."); return; }
+    setSalesRep({ ...salesRep!, birthday: bdayInput });
+  }
+
   const uniquePartners = new Set(uses.map((u) => u.coupon_code)).size;
   const confirmedCommission = uses
     .filter((u) => u.sale_status === "concluido")
@@ -114,6 +135,48 @@ export default function RepresentantePage() {
   const pendingCommission = uses
     .filter((u) => u.sale_status === "em_orcamento" || u.sale_status === null)
     .reduce((a, u) => a + (u.sales_rep_commission_owed || 0), 0);
+
+  // Birthday gate — shown after login if birthday is missing
+  if (salesRep && !salesRep.birthday) {
+    return (
+      <div className="min-h-screen bg-[#f5f5f3] flex items-center justify-center px-4">
+        <div className="bg-white border border-[#e2e2e2] p-10 w-full max-w-sm">
+          <div className="mb-6">
+            <p className="text-[#002045] font-[var(--font-noto-serif)] text-2xl font-normal mb-1">
+              Complete seu cadastro
+            </p>
+            <p className="text-[#74777f] text-sm font-[var(--font-inter)]">
+              Olá, {salesRep.name}. Para continuar, precisamos da sua data de nascimento.
+            </p>
+          </div>
+          <form onSubmit={handleSaveBirthday} className="space-y-4">
+            <div>
+              <label className="block text-[10px] tracking-[0.15em] uppercase font-bold font-[var(--font-inter)] text-[#74777f] mb-2">
+                Data de Nascimento *
+              </label>
+              <input
+                required
+                type="date"
+                value={bdayInput}
+                onChange={(e) => setBdayInput(e.target.value)}
+                className="w-full border border-[#e2e2e2] px-4 py-3 text-sm font-[var(--font-inter)] text-[#002045] focus:outline-none focus:border-[#002045]"
+              />
+            </div>
+            {bdayError && (
+              <p className="text-red-600 text-sm font-[var(--font-inter)]">{bdayError}</p>
+            )}
+            <button
+              type="submit"
+              disabled={bdayLoading}
+              className="w-full bg-[#002045] text-white text-xs tracking-[0.12em] uppercase font-bold font-[var(--font-inter)] px-6 py-3 hover:bg-[#1a365d] transition-colors disabled:opacity-50"
+            >
+              {bdayLoading ? "Salvando..." : "Confirmar e entrar"}
+            </button>
+          </form>
+        </div>
+      </div>
+    );
+  }
 
   if (!salesRep) {
     return (

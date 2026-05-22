@@ -22,6 +22,7 @@ export async function POST(req: NextRequest) {
     commission_type,
     commission_value,
     portal_password,
+    birthday,
   } = body;
 
   if (!name || !referral_code) {
@@ -51,6 +52,7 @@ export async function POST(req: NextRequest) {
       commission_type: commission_type || "percentage",
       commission_value: commission_value ?? 5,
       portal_password: portal_password || null,
+      birthday: birthday || null,
     })
     .select()
     .single();

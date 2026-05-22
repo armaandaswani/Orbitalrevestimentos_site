@@ -14,7 +14,7 @@ export async function POST(req: NextRequest) {
   const db = supabaseAdmin();
   const { data, error } = await db
     .from("sales_reps")
-    .select("id, name, referral_code, commission_type, commission_value, portal_password, status")
+    .select("id, name, referral_code, commission_type, commission_value, portal_password, status, birthday")
     .eq("referral_code", (referral_code as string).toUpperCase())
     .eq("status", "active")
     .single();
@@ -36,5 +36,6 @@ export async function POST(req: NextRequest) {
     referral_code: data.referral_code,
     commission_type: data.commission_type,
     commission_value: data.commission_value,
+    birthday: data.birthday ?? null,
   });
 }

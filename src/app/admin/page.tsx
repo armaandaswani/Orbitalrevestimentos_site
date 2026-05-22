@@ -31,6 +31,7 @@ interface SalesRep {
   portal_password: string | null;
   status: "active" | "inactive";
   created_at: string;
+  birthday: string | null;
 }
 
 interface CouponUse {
@@ -77,6 +78,7 @@ const emptyRepForm = {
   commission_value: 5,
   portal_password: "",
   status: "active" as "active" | "inactive",
+  birthday: "",
 };
 
 const STATUS_LABELS: Record<string, { label: string; cls: string }> = {
@@ -304,6 +306,7 @@ export default function AdminPage() {
       commission_type: r.commission_type, commission_value: r.commission_value,
       portal_password: r.portal_password || "",
       status: r.status,
+      birthday: r.birthday ? r.birthday.split("T")[0] : "",
     });
     setRepFormError("");
     setShowRepForm(true);
@@ -806,6 +809,7 @@ export default function AdminPage() {
                     </div>
                     <div><label className={labelCls}>Email</label><input value={repForm.email} onChange={(e) => setRepForm({ ...repForm, email: e.target.value })} type="email" className={inputCls} /></div>
                     <div><label className={labelCls}>Telefone</label><input value={repForm.phone} onChange={(e) => setRepForm({ ...repForm, phone: e.target.value })} className={inputCls} /></div>
+                    <div><label className={labelCls}>Data de Nascimento *</label><input required type="date" value={repForm.birthday || ""} onChange={(e) => setRepForm({ ...repForm, birthday: e.target.value })} className={inputCls} /></div>
                     <div>
                       <label className={labelCls}>Tipo de Comissão</label>
                       <select value={repForm.commission_type} onChange={(e) => setRepForm({ ...repForm, commission_type: e.target.value as "percentage" | "fixed" })} className={inputCls}>
