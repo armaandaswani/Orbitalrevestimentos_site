@@ -1142,9 +1142,23 @@ export default function ContatoPage() {
 
                 <div className="bg-[#fafaf8] px-6 sm:px-8 py-8 border border-[#e2e2e2]">
                   <p className="text-[#74777f] text-[9px] tracking-[0.2em] uppercase font-bold font-[var(--font-inter)] mb-5">
-                    MDF — Estimativa por instalação
+                    MDF — Comparativo
                   </p>
-                  <div className="space-y-3 mb-6">
+
+                  {/* Mobile: compact summary only */}
+                  <div className="md:hidden mb-6">
+                    <div className="flex items-center justify-between mb-1">
+                      <span className="text-[#74777f] text-sm font-[var(--font-inter)]">Por instalação</span>
+                      <span className="text-[#43474e] text-xl font-[var(--font-noto-serif)]">{fmt(mdfOnce)}</span>
+                    </div>
+                    <div className="flex items-center justify-between">
+                      <span className="text-[#a03030] text-xs font-semibold font-[var(--font-inter)]">Custo em 10 anos ({MDF_INSTALLS_10Y}× trocas)</span>
+                      <span className="text-[#a03030] text-xl font-[var(--font-noto-serif)]">{fmt(mdfIn10y)}</span>
+                    </div>
+                  </div>
+
+                  {/* Desktop: full breakdown */}
+                  <div className="hidden md:block space-y-3 mb-6">
                     <div className="flex items-start justify-between text-sm font-[var(--font-inter)] gap-4">
                       <span className="text-[#74777f]">
                         Material ({mdfSheets} chapa{mdfSheets !== 1 ? "s" : ""} × R$ {MDF_SHEET_PRICE})
@@ -1164,6 +1178,7 @@ export default function ContatoPage() {
                       <span className="text-[#43474e] text-2xl font-[var(--font-noto-serif)]">{fmt(mdfOnce)}</span>
                     </div>
                   </div>
+
                   <div className="bg-[#fff3f3] border border-[#e8c0c0] px-4 py-3">
                     <p className="text-[#a03030] text-xs font-semibold font-[var(--font-inter)]">Repõe a cada 2–3 anos em Manaus.</p>
                     <p className="text-[#a03030]/70 text-[11px] font-[var(--font-inter)] mt-0.5 leading-relaxed">
