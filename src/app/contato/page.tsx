@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useState, useRef } from "react";
+import React, { useState, useRef, useEffect } from "react";
 import Image from "next/image";
 import Link from "next/link";
 
@@ -150,6 +150,7 @@ function WaIcon({ size = 15 }: { size?: number }) {
 export default function ContatoPage() {
   const simulatorRef = useRef<HTMLElement>(null);
   const productsRef = useRef<HTMLDivElement>(null);
+  const resultsRef = useRef<HTMLDivElement>(null);
 
   const [step, setStep] = useState<1 | 2 | 3 | 4 | 5>(1);
   const [selectedSpace, setSelectedSpace] = useState<Space | null>(null);
@@ -257,8 +258,15 @@ export default function ContatoPage() {
 
   function showResults() {
     setShowResult(true);
-    scrollToSimulator();
   }
+
+  useEffect(() => {
+    if (showResult) {
+      setTimeout(() => {
+        resultsRef.current?.scrollIntoView({ behavior: "smooth", block: "start" });
+      }, 50);
+    }
+  }, [showResult]);
 
   function reset() {
     setStep(1);
@@ -981,7 +989,7 @@ export default function ContatoPage() {
 
           {/* ── Results panel ─────────────────────────────────────────────── */}
           {showResult && selectedProduct && selectedSpace && m2 > 0 && (
-            <div className="mt-0">
+            <div className="mt-0" ref={resultsRef}>
 
               <div className="bg-[#fffbea] border border-[#e6c84a] px-5 py-4 flex gap-3 items-start">
                 <svg className="flex-shrink-0 mt-0.5 text-[#a07a00]" width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
