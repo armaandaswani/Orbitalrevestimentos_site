@@ -26,7 +26,7 @@ export async function POST(req: NextRequest) {
   // Validate sales_rep_referral_code exists and is active
   const { data: salesRep, error: repError } = await db
     .from("sales_reps")
-    .select("id, name, referral_code")
+    .select("id, name, referral_code, email")
     .eq("referral_code", (sales_rep_referral_code as string).toUpperCase())
     .eq("status", "active")
     .single();
@@ -165,6 +165,47 @@ export async function POST(req: NextRequest) {
     });
   } catch {
     // email failure is non-fatal
+  }
+
+  // Send notification to the sales rep (non-fatal)
+  if (salesRep.email) {
+    try {
+      const { getResend } = await import("@/lib/resend");
+      const resend = getResend();
+      await resend.emails.send({
+        from: "Orbital Revestimentos <noreply@orbitalrevestimentos.com.br>",
+        to: salesRep.email,
+        subject: `Novo parceiro cadastrado: ${name}`,
+        html: `
+          <div style="font-family:sans-serif;max-width:520px;margin:0 auto;padding:32px 24px;color:#1a1a1a">
+            <h2 style="font-size:22px;margin-bottom:8px;color:#002045">Novo parceiro indicado por você!</h2>
+            <p style="color:#555;margin-bottom:24px">Olá, ${salesRep.name}. Um novo parceiro se cadastrou usando seu código de indicação <strong>${salesRep.referral_code}</strong> e aguarda aprovação.</p>
+            <table style="width:100%;border-collapse:collapse;margin-bottom:24px">
+              <tr>
+                <td style="padding:10px 0;border-bottom:1px solid #eee;color:#555;font-size:14px">Nome</td>
+                <td style="padding:10px 0;border-bottom:1px solid #eee;font-weight:600;font-size:14px;text-align:right">${name}</td>
+              </tr>
+              <tr>
+                <td style="padding:10px 0;border-bottom:1px solid #eee;color:#555;font-size:14px">Email</td>
+                <td style="padding:10px 0;border-bottom:1px solid #eee;font-weight:600;font-size:14px;text-align:right">${email}</td>
+              </tr>
+              <tr>
+                <td style="padding:10px 0;border-bottom:1px solid #eee;color:#555;font-size:14px">Telefone</td>
+                <td style="padding:10px 0;border-bottom:1px solid #eee;font-weight:600;font-size:14px;text-align:right">${phone}</td>
+              </tr>
+              <tr>
+                <td style="padding:10px 0;color:#555;font-size:14px">Cupom gerado</td>
+                <td style="padding:10px 0;font-weight:600;font-size:14px;text-align:right;letter-spacing:0.1em">${couponCode}</td>
+              </tr>
+            </table>
+            <p style="color:#74777f;font-size:13px;margin-bottom:0">Assim que a equipe Orbital aprovar o cadastro, o parceiro já poderá começar a indicar clientes.</p>
+            <p style="color:#888;font-size:12px;margin-top:32px">Orbital Revestimentos · Manaus, AM</p>
+          </div>
+        `,
+      });
+    } catch {
+      // email failure is non-fatal
+    }
   }
 
   return NextResponse.json(partner, { status: 201 });
