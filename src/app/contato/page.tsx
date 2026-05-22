@@ -3,6 +3,7 @@
 import React, { useState, useRef, useEffect } from "react";
 import Image from "next/image";
 import Link from "next/link";
+import MdfComparison from "@/components/MdfComparison";
 
 const WA_BASE = "https://wa.me/5592988150149?text=";
 const CATALOGUE_URL =
@@ -168,6 +169,7 @@ export default function ContatoPage() {
   const [couponError, setCouponError] = useState("");
   const [showResult, setShowResult] = useState(false);
   const [showSavings, setShowSavings] = useState(false);
+  const [mdfExpanded, setMdfExpanded] = useState(false);
   const [lightboxImg, setLightboxImg] = useState<string | null>(null);
 
   const m2 =
@@ -1140,50 +1142,59 @@ export default function ContatoPage() {
                   </div>
                 </div>
 
-                <div className="bg-[#fafaf8] px-6 sm:px-8 py-8 border border-[#e2e2e2]">
-                  <p className="text-[#74777f] text-[9px] tracking-[0.2em] uppercase font-bold font-[var(--font-inter)] mb-5">
-                    MDF — Comparativo
-                  </p>
+                {/* MDF card — collapsed on mobile, full on desktop */}
+                <div className="bg-[#fafaf8] border border-[#e2e2e2]">
 
-                  {/* Mobile: compact summary only */}
-                  <div className="md:hidden mb-6">
-                    <div className="flex items-center justify-between mb-1">
-                      <span className="text-[#74777f] text-sm font-[var(--font-inter)]">Por instalação</span>
-                      <span className="text-[#43474e] text-xl font-[var(--font-noto-serif)]">{fmt(mdfOnce)}</span>
+                  {/* Mobile toggle header */}
+                  <button
+                    className="md:hidden w-full flex items-center justify-between px-6 py-5 text-left"
+                    onClick={() => setMdfExpanded(!mdfExpanded)}
+                  >
+                    <div>
+                      <p className="text-[#74777f] text-[9px] tracking-[0.2em] uppercase font-bold font-[var(--font-inter)]">
+                        MDF — Estimativa por instalação
+                      </p>
+                      <p className="text-[#43474e] text-lg font-[var(--font-noto-serif)] mt-0.5">{fmt(mdfOnce)}</p>
                     </div>
-                    <div className="flex items-center justify-between">
-                      <span className="text-[#a03030] text-xs font-semibold font-[var(--font-inter)]">Custo em 10 anos ({MDF_INSTALLS_10Y}× trocas)</span>
-                      <span className="text-[#a03030] text-xl font-[var(--font-noto-serif)]">{fmt(mdfIn10y)}</span>
-                    </div>
-                  </div>
+                    <svg
+                      width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#74777f" strokeWidth="2"
+                      className={`flex-shrink-0 transition-transform duration-200 ${mdfExpanded ? "rotate-180" : ""}`}
+                    >
+                      <path d="M6 9l6 6 6-6" />
+                    </svg>
+                  </button>
 
-                  {/* Desktop: full breakdown */}
-                  <div className="hidden md:block space-y-3 mb-6">
-                    <div className="flex items-start justify-between text-sm font-[var(--font-inter)] gap-4">
-                      <span className="text-[#74777f]">
-                        Material ({mdfSheets} chapa{mdfSheets !== 1 ? "s" : ""} × R$ {MDF_SHEET_PRICE})
-                      </span>
-                      <span className="text-[#43474e] font-semibold flex-shrink-0">{fmt(mdfMaterialTotal)}</span>
-                    </div>
-                    <div className="flex items-start justify-between text-sm font-[var(--font-inter)] gap-4">
-                      <span className="text-[#74777f]">MO estimada (R$ {isComplex ? MDF_MO_COMPLEX : MDF_MO_SIMPLE}/m²)*</span>
-                      <span className="text-[#43474e] font-semibold flex-shrink-0">{fmt(mdfMOTotal)}</span>
-                    </div>
-                    <div className="flex items-start justify-between text-sm font-[var(--font-inter)] gap-4">
-                      <span className="text-[#74777f]">Acabamentos (R$ {MDF_ACABAMENTO}/m²)</span>
-                      <span className="text-[#43474e] font-semibold flex-shrink-0">{fmt(mdfAcabamentoTotal)}</span>
-                    </div>
-                    <div className="border-t border-[#e2e2e2] pt-3 flex items-center justify-between">
-                      <span className="text-[#43474e] text-sm font-bold font-[var(--font-inter)]">Por instalação</span>
-                      <span className="text-[#43474e] text-2xl font-[var(--font-noto-serif)]">{fmt(mdfOnce)}</span>
-                    </div>
-                  </div>
-
-                  <div className="bg-[#fff3f3] border border-[#e8c0c0] px-4 py-3">
-                    <p className="text-[#a03030] text-xs font-semibold font-[var(--font-inter)]">Repõe a cada 2–3 anos em Manaus.</p>
-                    <p className="text-[#a03030]/70 text-[11px] font-[var(--font-inter)] mt-0.5 leading-relaxed">
-                      A umidade amazônica faz o MDF inchar, empenar e deteriorar continuamente.
+                  {/* Expandable body on mobile / always visible on desktop */}
+                  <div className={`${mdfExpanded ? "block" : "hidden"} md:block px-6 sm:px-8 pb-8 md:pt-8`}>
+                    <p className="hidden md:block text-[#74777f] text-[9px] tracking-[0.2em] uppercase font-bold font-[var(--font-inter)] mb-5">
+                      MDF — Estimativa por instalação
                     </p>
+                    <div className="space-y-3 mb-6 mt-2 md:mt-0">
+                      <div className="flex items-start justify-between text-sm font-[var(--font-inter)] gap-4">
+                        <span className="text-[#74777f]">
+                          Material ({mdfSheets} chapa{mdfSheets !== 1 ? "s" : ""} × R$ {MDF_SHEET_PRICE})
+                        </span>
+                        <span className="text-[#43474e] font-semibold flex-shrink-0">{fmt(mdfMaterialTotal)}</span>
+                      </div>
+                      <div className="flex items-start justify-between text-sm font-[var(--font-inter)] gap-4">
+                        <span className="text-[#74777f]">MO estimada (R$ {isComplex ? MDF_MO_COMPLEX : MDF_MO_SIMPLE}/m²)*</span>
+                        <span className="text-[#43474e] font-semibold flex-shrink-0">{fmt(mdfMOTotal)}</span>
+                      </div>
+                      <div className="flex items-start justify-between text-sm font-[var(--font-inter)] gap-4">
+                        <span className="text-[#74777f]">Acabamentos (R$ {MDF_ACABAMENTO}/m²)</span>
+                        <span className="text-[#43474e] font-semibold flex-shrink-0">{fmt(mdfAcabamentoTotal)}</span>
+                      </div>
+                      <div className="border-t border-[#e2e2e2] pt-3 flex items-center justify-between">
+                        <span className="text-[#43474e] text-sm font-bold font-[var(--font-inter)]">Por instalação</span>
+                        <span className="text-[#43474e] text-2xl font-[var(--font-noto-serif)]">{fmt(mdfOnce)}</span>
+                      </div>
+                    </div>
+                    <div className="bg-[#fff3f3] border border-[#e8c0c0] px-4 py-3">
+                      <p className="text-[#a03030] text-xs font-semibold font-[var(--font-inter)]">Repõe a cada 2–3 anos em Manaus.</p>
+                      <p className="text-[#a03030]/70 text-[11px] font-[var(--font-inter)] mt-0.5 leading-relaxed">
+                        A umidade amazônica faz o MDF inchar, empenar e deteriorar continuamente.
+                      </p>
+                    </div>
                   </div>
                 </div>
               </div>
@@ -1268,6 +1279,17 @@ export default function ContatoPage() {
                   A Orbital comercializa exclusivamente o material — não presta nem intermedia serviços de instalação.
                   Preços sujeitos a alteração.
                 </p>
+              </div>
+
+              {/* Technical comparison */}
+              <div className="bg-white border border-[#e2e2e2] border-t-0 px-6 sm:px-8 py-8">
+                <p className="text-[#43474e] text-[10px] tracking-[0.15em] uppercase font-bold font-[var(--font-inter)] mb-1">
+                  Comparativo técnico
+                </p>
+                <p className="text-[#74777f] text-xs font-[var(--font-inter)] mb-6">
+                  Desempenho em 10 critérios — condições reais do clima de Manaus.
+                </p>
+                <MdfComparison />
               </div>
             </div>
           )}
