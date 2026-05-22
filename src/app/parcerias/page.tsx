@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useState } from "react";
+import React, { useState, useCallback } from "react";
 import Image from "next/image";
 import Link from "next/link";
 import ScrollReveal from "@/components/ScrollReveal";
@@ -514,6 +514,9 @@ export default function ParceriasPage() {
         </div>
       </section>
 
+      {/* ── Self-registration ─────────────────── */}
+      <SelfRegisterSection />
+
       {/* ── Final CTA ─────────────────────────── */}
       <section className="py-24 bg-[#1e212a] text-white">
         <div className="max-w-[760px] mx-auto px-8 text-center">
@@ -569,5 +572,104 @@ export default function ParceriasPage() {
         </p>
       </div>
     </div>
+  );
+}
+
+function SelfRegisterSection() {
+  const [form, setForm] = useState({ name: "", email: "", phone: "", referral_code: "", portal_password: "" });
+  const [loading, setLoading] = useState(false);
+  const [error, setError] = useState("");
+  const [success, setSuccess] = useState<{ coupon_code: string; name: string } | null>(null);
+
+  const handleSubmit = useCallback(async (e: React.FormEvent) => {
+    e.preventDefault();
+    setError("");
+    setLoading(true);
+    const res = await fetch("/api/partners/register", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify(form),
+    });
+    const json = await res.json();
+    setLoading(false);
+    if (!res.ok) { setError(json.error || "Erro ao cadastrar. Tente novamente."); return; }
+    setSuccess({ coupon_code: json.coupon_code, name: json.name });
+  }, [form]);
+
+  const inputCls = "w-full border border-[#e2e2e2] bg-white px-4 py-3 text-sm font-[var(--font-inter)] text-[#002045] focus:outline-none focus:border-[#002045] placeholder-[#b0b4bc]";
+  const labelCls = "block text-[10px] tracking-[0.15em] uppercase font-bold font-[var(--font-inter)] text-[#74777f] mb-2";
+
+  return (
+    <section className="py-24 bg-white border-t border-[#e2e2e2]">
+      <div className="max-w-[1280px] mx-auto px-8 lg:px-16">
+        <div className="max-w-2xl mx-auto">
+          <ScrollReveal direction="up">
+            <p className="text-[#74777f] text-xs tracking-[0.2em] uppercase font-semibold font-[var(--font-inter)] mb-3 text-center">
+              Já tem um código de indicação?
+            </p>
+            <h2 className="font-[var(--font-noto-serif)] text-[#002045] text-3xl lg:text-4xl font-normal text-center mb-3">
+              Cadastre-se como parceiro
+            </h2>
+            <p className="text-[#74777f] text-sm font-[var(--font-inter)] text-center leading-relaxed mb-10">
+              Se você foi indicado por um representante Orbital, preencha o formulário abaixo.
+              Seu cupom personalizado será gerado automaticamente e nossa equipe revisará seu cadastro em até 24h.
+            </p>
+
+            {success ? (
+              <div className="bg-[#f0f8ee] border border-green-200 px-8 py-8 text-center">
+                <div className="w-12 h-12 bg-green-100 rounded-full flex items-center justify-center mx-auto mb-4">
+                  <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="#16a34a" strokeWidth="2.5"><polyline points="20 6 9 17 4 12"/></svg>
+                </div>
+                <p className="font-[var(--font-noto-serif)] text-[#002045] text-2xl font-normal mb-2">
+                  Cadastro recebido, {success.name.split(" ")[0]}!
+                </p>
+                <p className="text-[#43474e] text-sm font-[var(--font-inter)] leading-relaxed mb-4">
+                  Seu cupom reservado é <strong className="text-[#002045] tracking-widest text-base">{success.coupon_code}</strong>.
+                  Nossa equipe analisará seu cadastro e você receberá uma confirmação em breve.
+                </p>
+                <p className="text-[#74777f] text-xs font-[var(--font-inter)]">
+                  Em caso de dúvidas, entre em contato via WhatsApp.
+                </p>
+              </div>
+            ) : (
+              <form onSubmit={handleSubmit} className="space-y-4">
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                  <div>
+                    <label className={labelCls}>Nome completo *</label>
+                    <input required value={form.name} onChange={(e) => setForm({ ...form, name: e.target.value })} className={inputCls} placeholder="Seu nome" />
+                  </div>
+                  <div>
+                    <label className={labelCls}>Email *</label>
+                    <input required type="email" value={form.email} onChange={(e) => setForm({ ...form, email: e.target.value })} className={inputCls} placeholder="seu@email.com" />
+                  </div>
+                  <div>
+                    <label className={labelCls}>WhatsApp *</label>
+                    <input required value={form.phone} onChange={(e) => setForm({ ...form, phone: e.target.value })} className={inputCls} placeholder="(92) 9 0000-0000" />
+                  </div>
+                  <div>
+                    <label className={labelCls}>Código de indicação *</label>
+                    <input required value={form.referral_code} onChange={(e) => setForm({ ...form, referral_code: e.target.value.toUpperCase() })} className={inputCls + " uppercase tracking-widest"} placeholder="EX: REP_JOAO" />
+                    <p className="text-[10px] text-[#74777f] font-[var(--font-inter)] mt-1">Fornecido pelo seu representante Orbital</p>
+                  </div>
+                </div>
+                <div>
+                  <label className={labelCls}>Senha para seu portal de parceiro *</label>
+                  <input required type="password" value={form.portal_password} onChange={(e) => setForm({ ...form, portal_password: e.target.value })} className={inputCls} placeholder="Escolha uma senha de acesso" minLength={6} />
+                  <p className="text-[10px] text-[#74777f] font-[var(--font-inter)] mt-1">Mínimo 6 caracteres. Você usará isso para acessar /parceiro</p>
+                </div>
+                {error && <p className="text-red-600 text-sm font-[var(--font-inter)]">{error}</p>}
+                <button type="submit" disabled={loading}
+                  className="w-full bg-[#002045] text-white text-xs tracking-[0.15em] uppercase font-bold font-[var(--font-inter)] px-8 py-4 hover:bg-[#1a365d] transition-colors disabled:opacity-50">
+                  {loading ? "Enviando..." : "Solicitar cadastro como parceiro"}
+                </button>
+                <p className="text-[#74777f] text-xs font-[var(--font-inter)] text-center">
+                  Seu cupom será criado automaticamente. Aprovações em até 24h úteis.
+                </p>
+              </form>
+            )}
+          </ScrollReveal>
+        </div>
+      </div>
+    </section>
   );
 }

@@ -13,6 +13,21 @@ interface Partner {
   commission_type: "percentage" | "fixed";
   commission_value: number;
   portal_password: string | null;
+  status: "active" | "inactive" | "pending";
+  is_self_registered: boolean | null;
+  sales_rep_referral_code: string | null;
+  created_at: string;
+}
+
+interface SalesRep {
+  id: string;
+  name: string;
+  email: string | null;
+  phone: string | null;
+  referral_code: string;
+  commission_type: "percentage" | "fixed";
+  commission_value: number;
+  portal_password: string | null;
   status: "active" | "inactive";
   created_at: string;
 }
@@ -32,6 +47,8 @@ interface CouponUse {
   commission_owed: number | null;
   architect_name: string | null;
   sale_status: "em_orcamento" | "concluido" | "cancelado" | null;
+  sales_rep_referral_code: string | null;
+  sales_rep_commission_owed: number | null;
   created_at: string;
 }
 
@@ -41,15 +58,20 @@ function fmt(n: number) {
 
 const ADMIN_PW = process.env.NEXT_PUBLIC_ADMIN_PASSWORD || "orbital2025";
 
-const emptyForm = {
-  name: "",
-  email: "",
-  phone: "",
-  coupon_code: "",
+const emptyPartnerForm = {
+  name: "", email: "", phone: "", coupon_code: "",
   discount_type: "percentage" as "percentage" | "fixed",
   discount_value: 0,
   commission_type: "percentage" as "percentage" | "fixed",
   commission_value: 0,
+  portal_password: "",
+  status: "active" as "active" | "inactive" | "pending",
+};
+
+const emptyRepForm = {
+  name: "", email: "", phone: "", referral_code: "",
+  commission_type: "percentage" as "percentage" | "fixed",
+  commission_value: 5,
   portal_password: "",
   status: "active" as "active" | "inactive",
 };
@@ -64,19 +86,42 @@ export default function AdminPage() {
   const [authed, setAuthed] = useState(false);
   const [pw, setPw] = useState("");
   const [pwError, setPwError] = useState("");
-  const [tab, setTab] = useState<"partners" | "history">("partners");
+  const [tab, setTab] = useState<"partners" | "representantes" | "history">("partners");
+
+  // Partners
   const [partners, setPartners] = useState<Partner[]>([]);
+  const [loadingPartners, setLoadingPartners] = useState(false);
+  const [showPartnerForm, setShowPartnerForm] = useState(false);
+  const [editingPartnerId, setEditingPartnerId] = useState<string | null>(null);
+  const [partnerForm, setPartnerForm] = useState({ ...emptyPartnerForm });
+  const [partnerFormError, setPartnerFormError] = useState("");
+  const [partnerFormLoading, setPartnerFormLoading] = useState(false);
+  const [newlyCreatedPartner, setNewlyCreatedPartner] = useState<Partner | null>(null);
+  // Approval form for pending partners
+  const [approvingId, setApprovingId] = useState<string | null>(null);
+  const [approvalForm, setApprovalForm] = useState({
+    discount_type: "percentage" as "percentage" | "fixed",
+    discount_value: 10,
+    commission_type: "percentage" as "percentage" | "fixed",
+    commission_value: 5,
+    portal_password: "",
+  });
+  const [approvalLoading, setApprovalLoading] = useState(false);
+
+  // Sales reps
+  const [salesReps, setSalesReps] = useState<SalesRep[]>([]);
+  const [loadingReps, setLoadingReps] = useState(false);
+  const [showRepForm, setShowRepForm] = useState(false);
+  const [editingRepId, setEditingRepId] = useState<string | null>(null);
+  const [repForm, setRepForm] = useState({ ...emptyRepForm });
+  const [repFormError, setRepFormError] = useState("");
+  const [repFormLoading, setRepFormLoading] = useState(false);
+
+  // History
   const [uses, setUses] = useState<CouponUse[]>([]);
-  const [loading, setLoading] = useState(false);
-  const [showForm, setShowForm] = useState(false);
-  const [editingId, setEditingId] = useState<string | null>(null);
-  const [form, setForm] = useState({ ...emptyForm });
-  const [formError, setFormError] = useState("");
-  const [formLoading, setFormLoading] = useState(false);
-  // New partner created — show WhatsApp link
-  const [newlyCreated, setNewlyCreated] = useState<Partner | null>(null);
-  // History filter
+  const [loadingUses, setLoadingUses] = useState(false);
   const [filterPartner, setFilterPartner] = useState<string>("all");
+  const [filterRep, setFilterRep] = useState<string>("all");
 
   const supabaseConfigured = !!process.env.NEXT_PUBLIC_SUPABASE_URL;
 
@@ -86,24 +131,32 @@ export default function AdminPage() {
   }, []);
 
   const fetchPartners = useCallback(async () => {
-    setLoading(true);
+    setLoadingPartners(true);
     const res = await fetch("/api/partners");
     if (res.ok) setPartners(await res.json());
-    setLoading(false);
+    setLoadingPartners(false);
+  }, []);
+
+  const fetchReps = useCallback(async () => {
+    setLoadingReps(true);
+    const res = await fetch("/api/sales-reps");
+    if (res.ok) setSalesReps(await res.json());
+    setLoadingReps(false);
   }, []);
 
   const fetchUses = useCallback(async () => {
-    setLoading(true);
+    setLoadingUses(true);
     const res = await fetch("/api/coupons/use");
     if (res.ok) setUses(await res.json());
-    setLoading(false);
+    setLoadingUses(false);
   }, []);
 
   useEffect(() => {
     if (!authed || !supabaseConfigured) return;
-    if (tab === "partners") fetchPartners();
-    else fetchUses();
-  }, [authed, tab, supabaseConfigured, fetchPartners, fetchUses]);
+    fetchPartners();
+    fetchReps();
+    if (tab === "history") fetchUses();
+  }, [authed, tab, supabaseConfigured, fetchPartners, fetchReps, fetchUses]);
 
   function handleLogin(e: React.FormEvent) {
     e.preventDefault();
@@ -115,157 +168,175 @@ export default function AdminPage() {
     }
   }
 
-  function startCreate() {
-    setEditingId(null);
-    setNewlyCreated(null);
-    setForm({ ...emptyForm });
-    setFormError("");
-    setShowForm(true);
+  // ── Partners ─────────────────────────────
+  function startCreatePartner() {
+    setEditingPartnerId(null);
+    setNewlyCreatedPartner(null);
+    setPartnerForm({ ...emptyPartnerForm });
+    setPartnerFormError("");
+    setShowPartnerForm(true);
   }
 
-  function startEdit(p: Partner) {
-    setEditingId(p.id);
-    setNewlyCreated(null);
-    setForm({
-      name: p.name,
-      email: p.email || "",
-      phone: p.phone || "",
+  function startEditPartner(p: Partner) {
+    setEditingPartnerId(p.id);
+    setNewlyCreatedPartner(null);
+    setPartnerForm({
+      name: p.name, email: p.email || "", phone: p.phone || "",
       coupon_code: p.coupon_code,
-      discount_type: p.discount_type,
-      discount_value: p.discount_value,
-      commission_type: p.commission_type,
-      commission_value: p.commission_value,
+      discount_type: p.discount_type, discount_value: p.discount_value,
+      commission_type: p.commission_type, commission_value: p.commission_value,
       portal_password: p.portal_password || "",
       status: p.status,
     });
-    setFormError("");
-    setShowForm(true);
+    setPartnerFormError("");
+    setShowPartnerForm(true);
   }
 
-  async function handleSubmit(e: React.FormEvent) {
+  async function handlePartnerSubmit(e: React.FormEvent) {
     e.preventDefault();
-    setFormError("");
-    setFormLoading(true);
-
-    const payload = {
-      ...form,
-      coupon_code: form.coupon_code.toUpperCase(),
-      portal_password: form.portal_password || null,
-    };
-
+    setPartnerFormError("");
+    setPartnerFormLoading(true);
+    const payload = { ...partnerForm, coupon_code: partnerForm.coupon_code.toUpperCase(), portal_password: partnerForm.portal_password || null };
     let res: Response;
-    if (editingId) {
-      res = await fetch(`/api/partners/${editingId}`, {
-        method: "PUT",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify(payload),
-      });
+    if (editingPartnerId) {
+      res = await fetch(`/api/partners/${editingPartnerId}`, { method: "PUT", headers: { "Content-Type": "application/json" }, body: JSON.stringify(payload) });
     } else {
-      res = await fetch("/api/partners", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify(payload),
-      });
+      res = await fetch("/api/partners", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify(payload) });
     }
-
     const json = await res.json();
-    setFormLoading(false);
-
-    if (!res.ok) {
-      setFormError(json.error || "Erro desconhecido.");
-      return;
-    }
-
-    setShowForm(false);
-    if (!editingId) {
-      setNewlyCreated(json as Partner);
-    }
+    setPartnerFormLoading(false);
+    if (!res.ok) { setPartnerFormError(json.error || "Erro desconhecido."); return; }
+    setShowPartnerForm(false);
+    if (!editingPartnerId) setNewlyCreatedPartner(json as Partner);
     fetchPartners();
   }
 
-  async function toggleStatus(p: Partner) {
+  async function approvePartner(p: Partner) {
+    setApprovalLoading(true);
     await fetch(`/api/partners/${p.id}`, {
       method: "PUT",
       headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ status: p.status === "active" ? "inactive" : "active" }),
+      body: JSON.stringify({ ...approvalForm, portal_password: approvalForm.portal_password || null, status: "active" }),
     });
+    setApprovalLoading(false);
+    setApprovingId(null);
+    fetchPartners();
+  }
+
+  async function rejectPartner(p: Partner) {
+    if (!confirm(`Rejeitar cadastro de ${p.name}? O parceiro será removido.`)) return;
+    await fetch(`/api/partners/${p.id}`, { method: "DELETE" });
+    fetchPartners();
+  }
+
+  async function togglePartnerStatus(p: Partner) {
+    await fetch(`/api/partners/${p.id}`, { method: "PUT", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ status: p.status === "active" ? "inactive" : "active" }) });
     fetchPartners();
   }
 
   async function deletePartner(p: Partner) {
     if (!confirm(`Excluir parceiro ${p.name}? Isso também remove o histórico de usos.`)) return;
     await fetch(`/api/partners/${p.id}`, { method: "DELETE" });
-    setNewlyCreated(null);
+    setNewlyCreatedPartner(null);
     fetchPartners();
   }
 
-  async function updateSaleStatus(useId: string, sale_status: string) {
-    await fetch(`/api/coupons/use/${useId}`, {
-      method: "PATCH",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ sale_status }),
-    });
-    setUses((prev) =>
-      prev.map((u) => (u.id === useId ? { ...u, sale_status: sale_status as CouponUse["sale_status"] } : u))
-    );
-  }
-
-  const filteredUses = filterPartner === "all"
-    ? uses
-    : uses.filter((u) => u.coupon_code === filterPartner);
-
-  const concludedUses = filteredUses.filter((u) => u.sale_status === "concluido");
-  const totalSales = concludedUses.reduce((a, u) => a + (u.material_discounted || 0), 0);
-  const totalCommission = concludedUses.reduce((a, u) => a + (u.commission_owed || 0), 0);
-  const pendingCommission = filteredUses
-    .filter((u) => u.sale_status === "em_orcamento" || u.sale_status === null)
-    .reduce((a, u) => a + (u.commission_owed || 0), 0);
-
   function buildWALink(p: Partner) {
     const siteUrl = typeof window !== "undefined" ? window.location.origin : "https://orbitalrevestimentos.com.br";
-    const discountLabel = p.discount_type === "percentage"
-      ? `${p.discount_value}% de desconto`
-      : `R$ ${p.discount_value} de desconto`;
-    const lines = [
-      `Olá ${p.name}! 👋`,
-      ``,
-      `Seu cupom Orbital foi criado com sucesso:`,
-      ``,
-      `🎟 Código: *${p.coupon_code}*`,
-      `💰 ${discountLabel} para seus clientes`,
-      ``,
-      `Acesse seu painel de parceiro em:`,
-      `${siteUrl}/parceiro`,
-    ];
+    const discountLabel = p.discount_type === "percentage" ? `${p.discount_value}% de desconto` : `R$ ${p.discount_value} de desconto`;
+    const lines = [`Olá ${p.name}! 👋`, ``, `Seu cupom Orbital foi aprovado:`, ``, `🎟 Código: *${p.coupon_code}*`, `💰 ${discountLabel} para seus clientes`, ``, `Acesse seu painel em:`, `${siteUrl}/parceiro`];
     if (p.portal_password) lines.push(`🔑 Senha: ${p.portal_password}`);
     return `https://wa.me/?text=${encodeURIComponent(lines.join("\n"))}`;
   }
+
+  // ── Sales Reps ───────────────────────────
+  function startCreateRep() {
+    setEditingRepId(null);
+    setRepForm({ ...emptyRepForm });
+    setRepFormError("");
+    setShowRepForm(true);
+  }
+
+  function startEditRep(r: SalesRep) {
+    setEditingRepId(r.id);
+    setRepForm({
+      name: r.name, email: r.email || "", phone: r.phone || "",
+      referral_code: r.referral_code,
+      commission_type: r.commission_type, commission_value: r.commission_value,
+      portal_password: r.portal_password || "",
+      status: r.status,
+    });
+    setRepFormError("");
+    setShowRepForm(true);
+  }
+
+  async function handleRepSubmit(e: React.FormEvent) {
+    e.preventDefault();
+    setRepFormError("");
+    setRepFormLoading(true);
+    const payload = { ...repForm, referral_code: repForm.referral_code.toUpperCase(), portal_password: repForm.portal_password || null };
+    let res: Response;
+    if (editingRepId) {
+      res = await fetch(`/api/sales-reps/${editingRepId}`, { method: "PUT", headers: { "Content-Type": "application/json" }, body: JSON.stringify(payload) });
+    } else {
+      res = await fetch("/api/sales-reps", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify(payload) });
+    }
+    const json = await res.json();
+    setRepFormLoading(false);
+    if (!res.ok) { setRepFormError(json.error || "Erro desconhecido."); return; }
+    setShowRepForm(false);
+    fetchReps();
+  }
+
+  async function toggleRepStatus(r: SalesRep) {
+    await fetch(`/api/sales-reps/${r.id}`, { method: "PUT", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ status: r.status === "active" ? "inactive" : "active" }) });
+    fetchReps();
+  }
+
+  async function deleteRep(r: SalesRep) {
+    if (!confirm(`Excluir representante ${r.name}?`)) return;
+    await fetch(`/api/sales-reps/${r.id}`, { method: "DELETE" });
+    fetchReps();
+  }
+
+  // ── History ──────────────────────────────
+  async function updateSaleStatus(useId: string, sale_status: string) {
+    const res = await fetch(`/api/coupons/use/${useId}`, { method: "PATCH", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ sale_status }) });
+    if (res.ok) {
+      const updated = await res.json();
+      setUses((prev) => prev.map((u) => (u.id === useId ? { ...u, ...updated } : u)));
+    }
+  }
+
+  const pendingPartners = partners.filter((p) => p.status === "pending");
+  const activePartners = partners.filter((p) => p.status !== "pending");
+
+  const filteredUses = uses.filter((u) => {
+    if (filterPartner !== "all" && u.coupon_code !== filterPartner) return false;
+    if (filterRep !== "all" && u.sales_rep_referral_code !== filterRep) return false;
+    return true;
+  });
+  const concludedUses = filteredUses.filter((u) => u.sale_status === "concluido");
+  const totalSales = concludedUses.reduce((a, u) => a + (u.material_discounted || 0), 0);
+  const totalCommission = concludedUses.reduce((a, u) => a + (u.commission_owed || 0), 0);
+  const totalRepCommission = concludedUses.reduce((a, u) => a + (u.sales_rep_commission_owed || 0), 0);
+  const pendingCommission = filteredUses.filter((u) => !u.sale_status || u.sale_status === "em_orcamento").reduce((a, u) => a + (u.commission_owed || 0), 0);
+
+  const inputCls = "w-full border border-[#e2e2e2] px-4 py-2.5 text-sm font-[var(--font-inter)] text-[#002045] focus:outline-none focus:border-[#002045]";
+  const labelCls = "block text-[10px] tracking-[0.15em] uppercase font-bold font-[var(--font-inter)] text-[#74777f] mb-2";
 
   if (!authed) {
     return (
       <div className="min-h-screen bg-[#f5f5f3] flex items-center justify-center px-4">
         <div className="bg-white border border-[#e2e2e2] p-10 w-full max-w-sm">
-          <p className="text-[#002045] font-[var(--font-noto-serif)] text-2xl font-normal mb-6">
-            Orbital Admin
-          </p>
+          <p className="text-[#002045] font-[var(--font-noto-serif)] text-2xl font-normal mb-6">Orbital Admin</p>
           <form onSubmit={handleLogin} className="space-y-4">
             <div>
-              <label className="block text-[10px] tracking-[0.15em] uppercase font-bold font-[var(--font-inter)] text-[#74777f] mb-2">
-                Senha
-              </label>
-              <input
-                type="password"
-                value={pw}
-                onChange={(e) => setPw(e.target.value)}
-                className="w-full border border-[#e2e2e2] px-4 py-3 text-sm font-[var(--font-inter)] text-[#002045] focus:outline-none focus:border-[#002045]"
-                autoFocus
-              />
+              <label className={labelCls}>Senha</label>
+              <input type="password" value={pw} onChange={(e) => setPw(e.target.value)} className={inputCls} autoFocus />
             </div>
             {pwError && <p className="text-red-600 text-sm font-[var(--font-inter)]">{pwError}</p>}
-            <button
-              type="submit"
-              className="w-full bg-[#002045] text-white text-xs tracking-[0.12em] uppercase font-bold font-[var(--font-inter)] px-6 py-3 hover:bg-[#1a365d] transition-colors"
-            >
+            <button type="submit" className="w-full bg-[#002045] text-white text-xs tracking-[0.12em] uppercase font-bold font-[var(--font-inter)] px-6 py-3 hover:bg-[#1a365d] transition-colors">
               Entrar
             </button>
           </form>
@@ -277,11 +348,15 @@ export default function AdminPage() {
   return (
     <div className="min-h-screen bg-[#f5f5f3]">
       <div className="bg-[#002045] px-8 py-5 flex items-center justify-between">
-        <p className="text-white font-[var(--font-noto-serif)] text-xl">Orbital Admin</p>
-        <button
-          onClick={() => { sessionStorage.removeItem("orbital_admin_auth"); setAuthed(false); }}
-          className="text-white/60 hover:text-white text-xs font-[var(--font-inter)] uppercase tracking-widest transition-colors"
-        >
+        <div className="flex items-center gap-4">
+          <p className="text-white font-[var(--font-noto-serif)] text-xl">Orbital Admin</p>
+          {pendingPartners.length > 0 && (
+            <span className="bg-yellow-400 text-yellow-900 text-[10px] font-bold font-[var(--font-inter)] px-2 py-0.5 tracking-wider">
+              {pendingPartners.length} PENDENTE{pendingPartners.length > 1 ? "S" : ""}
+            </span>
+          )}
+        </div>
+        <button onClick={() => { sessionStorage.removeItem("orbital_admin_auth"); setAuthed(false); }} className="text-white/60 hover:text-white text-xs font-[var(--font-inter)] uppercase tracking-widest transition-colors">
           Sair
         </button>
       </div>
@@ -289,199 +364,181 @@ export default function AdminPage() {
       {!supabaseConfigured && (
         <div className="max-w-4xl mx-auto px-8 pt-10">
           <div className="bg-yellow-50 border border-yellow-300 px-6 py-5 text-yellow-900 text-sm font-[var(--font-inter)]">
-            Configure as variáveis de ambiente do Supabase (<code>NEXT_PUBLIC_SUPABASE_URL</code>, <code>NEXT_PUBLIC_SUPABASE_ANON_KEY</code>, <code>SUPABASE_SERVICE_ROLE_KEY</code>) para usar o painel admin.
+            Configure as variáveis de ambiente do Supabase para usar o painel admin.
           </div>
         </div>
       )}
 
-      <div className="max-w-6xl mx-auto px-8 py-8">
+      <div className="max-w-7xl mx-auto px-8 py-8">
         <div className="flex gap-1 mb-8 border-b border-[#e2e2e2]">
-          {(["partners", "history"] as const).map((t) => (
-            <button
-              key={t}
-              onClick={() => setTab(t)}
-              className={`px-6 py-3 text-xs tracking-[0.1em] uppercase font-bold font-[var(--font-inter)] transition-colors border-b-2 -mb-px ${
-                tab === t
-                  ? "border-[#002045] text-[#002045]"
-                  : "border-transparent text-[#74777f] hover:text-[#002045]"
-              }`}
-            >
-              {t === "partners" ? "Parceiros" : "Histórico"}
+          {(["partners", "representantes", "history"] as const).map((t) => (
+            <button key={t} onClick={() => setTab(t)} className={`px-6 py-3 text-xs tracking-[0.1em] uppercase font-bold font-[var(--font-inter)] transition-colors border-b-2 -mb-px flex items-center gap-2 ${tab === t ? "border-[#002045] text-[#002045]" : "border-transparent text-[#74777f] hover:text-[#002045]"}`}>
+              {t === "partners" ? "Parceiros" : t === "representantes" ? "Representantes" : "Histórico"}
+              {t === "partners" && pendingPartners.length > 0 && (
+                <span className="bg-yellow-400 text-yellow-900 text-[9px] font-bold px-1.5 py-0.5 rounded-full leading-none">
+                  {pendingPartners.length}
+                </span>
+              )}
             </button>
           ))}
         </div>
 
-        {/* ─── PARTNERS TAB ─── */}
+        {/* ═══ PARTNERS TAB ═══ */}
         {tab === "partners" && (
           <div>
+            {/* Pending approvals */}
+            {pendingPartners.length > 0 && (
+              <div className="mb-8">
+                <h3 className="font-[var(--font-inter)] text-[10px] tracking-[0.2em] uppercase font-bold text-yellow-700 mb-3 flex items-center gap-2">
+                  <span className="w-2 h-2 rounded-full bg-yellow-400 animate-pulse inline-block" />
+                  Aguardando aprovação ({pendingPartners.length})
+                </h3>
+                <div className="space-y-3">
+                  {pendingPartners.map((p) => (
+                    <div key={p.id} className="bg-white border border-yellow-200 px-6 py-5">
+                      <div className="flex flex-col sm:flex-row sm:items-start sm:justify-between gap-4">
+                        <div>
+                          <p className="font-semibold text-[#002045] font-[var(--font-inter)]">{p.name}</p>
+                          <div className="flex flex-wrap gap-x-4 gap-y-0.5 mt-1">
+                            {p.email && <p className="text-xs text-[#74777f] font-[var(--font-inter)]">{p.email}</p>}
+                            {p.phone && <p className="text-xs text-[#74777f] font-[var(--font-inter)]">{p.phone}</p>}
+                            {p.sales_rep_referral_code && (
+                              <p className="text-xs text-[#002045] font-[var(--font-inter)]">
+                                Rep: <strong>{p.sales_rep_referral_code}</strong>
+                              </p>
+                            )}
+                          </div>
+                          <p className="text-xs text-[#74777f] font-[var(--font-inter)] mt-0.5">
+                            Cupom gerado: <span className="font-bold text-[#002045] tracking-wider">{p.coupon_code}</span> ·{" "}
+                            {new Date(p.created_at).toLocaleDateString("pt-BR")}
+                          </p>
+                        </div>
+                        <div className="flex gap-2 flex-shrink-0">
+                          <button onClick={() => { setApprovingId(approvingId === p.id ? null : p.id); setApprovalForm({ discount_type: "percentage", discount_value: 10, commission_type: "percentage", commission_value: 5, portal_password: p.portal_password || "" }); }}
+                            className="bg-[#002045] text-white text-xs font-bold font-[var(--font-inter)] tracking-[0.08em] uppercase px-4 py-2 hover:bg-[#1a365d] transition-colors">
+                            Aprovar
+                          </button>
+                          <button onClick={() => rejectPartner(p)} className="border border-red-300 text-red-600 text-xs font-bold font-[var(--font-inter)] tracking-[0.08em] uppercase px-4 py-2 hover:bg-red-50 transition-colors">
+                            Rejeitar
+                          </button>
+                        </div>
+                      </div>
+                      {/* Approval form */}
+                      {approvingId === p.id && (
+                        <div className="mt-4 pt-4 border-t border-yellow-100">
+                          <p className="text-[10px] tracking-[0.15em] uppercase font-bold font-[var(--font-inter)] text-[#74777f] mb-3">Definir condições para aprovação</p>
+                          <div className="grid grid-cols-2 sm:grid-cols-4 gap-3 mb-3">
+                            <div>
+                              <label className={labelCls}>Tipo desconto</label>
+                              <select value={approvalForm.discount_type} onChange={(e) => setApprovalForm({ ...approvalForm, discount_type: e.target.value as "percentage" | "fixed" })} className={inputCls}>
+                                <option value="percentage">% Porcentagem</option>
+                                <option value="fixed">R$ Fixo</option>
+                              </select>
+                            </div>
+                            <div>
+                              <label className={labelCls}>Desconto {approvalForm.discount_type === "percentage" ? "(%)" : "(R$)"}</label>
+                              <input type="number" min="0" step="0.01" value={approvalForm.discount_value} onChange={(e) => setApprovalForm({ ...approvalForm, discount_value: parseFloat(e.target.value) || 0 })} className={inputCls} />
+                            </div>
+                            <div>
+                              <label className={labelCls}>Tipo comissão</label>
+                              <select value={approvalForm.commission_type} onChange={(e) => setApprovalForm({ ...approvalForm, commission_type: e.target.value as "percentage" | "fixed" })} className={inputCls}>
+                                <option value="percentage">% Porcentagem</option>
+                                <option value="fixed">R$ Fixo</option>
+                              </select>
+                            </div>
+                            <div>
+                              <label className={labelCls}>Comissão {approvalForm.commission_type === "percentage" ? "(%)" : "(R$)"}</label>
+                              <input type="number" min="0" step="0.01" value={approvalForm.commission_value} onChange={(e) => setApprovalForm({ ...approvalForm, commission_value: parseFloat(e.target.value) || 0 })} className={inputCls} />
+                            </div>
+                          </div>
+                          <div className="mb-3 max-w-xs">
+                            <label className={labelCls}>Senha do portal</label>
+                            <input value={approvalForm.portal_password} onChange={(e) => setApprovalForm({ ...approvalForm, portal_password: e.target.value })} className={inputCls} placeholder="Opcional" />
+                          </div>
+                          <div className="flex gap-2">
+                            <button onClick={() => approvePartner(p)} disabled={approvalLoading}
+                              className="bg-green-700 text-white text-xs font-bold font-[var(--font-inter)] tracking-[0.08em] uppercase px-5 py-2 hover:bg-green-800 transition-colors disabled:opacity-50">
+                              {approvalLoading ? "Aprovando..." : "Confirmar aprovação"}
+                            </button>
+                            <button onClick={() => setApprovingId(null)} className="text-[#74777f] text-xs font-bold font-[var(--font-inter)] px-4 py-2 border border-[#e2e2e2] hover:border-[#74777f] transition-colors">
+                              Cancelar
+                            </button>
+                          </div>
+                        </div>
+                      )}
+                    </div>
+                  ))}
+                </div>
+              </div>
+            )}
+
+            {/* Active partners */}
             <div className="flex items-center justify-between mb-6">
               <h2 className="font-[var(--font-noto-serif)] text-[#002045] text-xl font-normal">Parceiros</h2>
-              <button
-                onClick={startCreate}
-                className="bg-[#002045] text-white text-xs tracking-[0.1em] uppercase font-bold font-[var(--font-inter)] px-5 py-2.5 hover:bg-[#1a365d] transition-colors"
-              >
+              <button onClick={startCreatePartner} className="bg-[#002045] text-white text-xs tracking-[0.1em] uppercase font-bold font-[var(--font-inter)] px-5 py-2.5 hover:bg-[#1a365d] transition-colors">
                 + Novo Parceiro
               </button>
             </div>
 
-            {/* WhatsApp link after creation */}
-            {newlyCreated && !showForm && (
+            {newlyCreatedPartner && !showPartnerForm && (
               <div className="bg-green-50 border border-green-200 px-6 py-4 mb-6 flex flex-col sm:flex-row sm:items-center gap-3">
                 <div className="flex-1">
-                  <p className="text-green-900 text-sm font-[var(--font-inter)] font-semibold mb-0.5">
-                    Parceiro criado com sucesso!
-                  </p>
+                  <p className="text-green-900 text-sm font-[var(--font-inter)] font-semibold mb-0.5">Parceiro criado!</p>
                   <p className="text-green-700 text-xs font-[var(--font-inter)]">
-                    Cupom: <strong>{newlyCreated.coupon_code}</strong>
-                    {newlyCreated.portal_password && (
-                      <> · Senha: <strong>{newlyCreated.portal_password}</strong></>
-                    )}
+                    Cupom: <strong>{newlyCreatedPartner.coupon_code}</strong>
+                    {newlyCreatedPartner.portal_password && <> · Senha: <strong>{newlyCreatedPartner.portal_password}</strong></>}
                   </p>
                 </div>
-                <a
-                  href={buildWALink(newlyCreated)}
-                  target="_blank"
-                  rel="noopener noreferrer"
-                  className="inline-flex items-center gap-2 bg-[#25d366] text-white text-xs tracking-[0.08em] uppercase font-bold font-[var(--font-inter)] px-4 py-2.5 hover:bg-[#1db954] transition-colors whitespace-nowrap"
-                >
-                  <svg width="14" height="14" viewBox="0 0 24 24" fill="currentColor">
-                    <path d="M17.472 14.382c-.297-.149-1.758-.867-2.03-.967-.273-.099-.471-.148-.67.15-.197.297-.767.966-.94 1.164-.173.199-.347.223-.644.075-.297-.15-1.255-.463-2.39-1.475-.883-.788-1.48-1.761-1.653-2.059-.173-.297-.018-.458.13-.606.134-.133.298-.347.446-.52.149-.174.198-.298.298-.497.099-.198.05-.371-.025-.52-.075-.149-.669-1.612-.916-2.207-.242-.579-.487-.5-.669-.51-.173-.008-.371-.01-.57-.01-.198 0-.52.074-.792.372-.272.297-1.04 1.016-1.04 2.479 0 1.462 1.065 2.875 1.213 3.074.149.198 2.096 3.2 5.077 4.487.709.306 1.262.489 1.694.625.712.227 1.36.195 1.871.118.571-.085 1.758-.719 2.006-1.413.248-.694.248-1.289.173-1.413-.074-.124-.272-.198-.57-.347m-5.421 7.403h-.004a9.87 9.87 0 01-5.031-1.378l-.361-.214-3.741.982.998-3.648-.235-.374a9.86 9.86 0 01-1.51-5.26c.001-5.45 4.436-9.884 9.888-9.884 2.64 0 5.122 1.03 6.988 2.898a9.825 9.825 0 012.893 6.994c-.003 5.45-4.437 9.884-9.885 9.884m8.413-18.297A11.815 11.815 0 0012.05 0C5.495 0 .16 5.335.157 11.892c0 2.096.547 4.142 1.588 5.945L.057 24l6.305-1.654a11.882 11.882 0 005.683 1.448h.005c6.554 0 11.89-5.335 11.893-11.893a11.821 11.821 0 00-3.48-8.413z"/>
-                  </svg>
+                <a href={buildWALink(newlyCreatedPartner)} target="_blank" rel="noopener noreferrer"
+                  className="inline-flex items-center gap-2 bg-[#25d366] text-white text-xs tracking-[0.08em] uppercase font-bold font-[var(--font-inter)] px-4 py-2.5 hover:bg-[#1db954] transition-colors whitespace-nowrap">
+                  <svg width="14" height="14" viewBox="0 0 24 24" fill="currentColor"><path d="M17.472 14.382c-.297-.149-1.758-.867-2.03-.967-.273-.099-.471-.148-.67.15-.197.297-.767.966-.94 1.164-.173.199-.347.223-.644.075-.297-.15-1.255-.463-2.39-1.475-.883-.788-1.48-1.761-1.653-2.059-.173-.297-.018-.458.13-.606.134-.133.298-.347.446-.52.149-.174.198-.298.298-.497.099-.198.05-.371-.025-.52-.075-.149-.669-1.612-.916-2.207-.242-.579-.487-.5-.669-.51-.173-.008-.371-.01-.57-.01-.198 0-.52.074-.792.372-.272.297-1.04 1.016-1.04 2.479 0 1.462 1.065 2.875 1.213 3.074.149.198 2.096 3.2 5.077 4.487.709.306 1.262.489 1.694.625.712.227 1.36.195 1.871.118.571-.085 1.758-.719 2.006-1.413.248-.694.248-1.289.173-1.413-.074-.124-.272-.198-.57-.347m-5.421 7.403h-.004a9.87 9.87 0 01-5.031-1.378l-.361-.214-3.741.982.998-3.648-.235-.374a9.86 9.86 0 01-1.51-5.26c.001-5.45 4.436-9.884 9.888-9.884 2.64 0 5.122 1.03 6.988 2.898a9.825 9.825 0 012.893 6.994c-.003 5.45-4.437 9.884-9.885 9.884m8.413-18.297A11.815 11.815 0 0012.05 0C5.495 0 .16 5.335.157 11.892c0 2.096.547 4.142 1.588 5.945L.057 24l6.305-1.654a11.882 11.882 0 005.683 1.448h.005c6.554 0 11.89-5.335 11.893-11.893a11.821 11.821 0 00-3.48-8.413z"/></svg>
                   Enviar via WhatsApp
                 </a>
               </div>
             )}
 
-            {showForm && (
+            {showPartnerForm && (
               <div className="bg-white border border-[#e2e2e2] p-8 mb-6">
-                <h3 className="font-[var(--font-noto-serif)] text-[#002045] text-lg font-normal mb-6">
-                  {editingId ? "Editar Parceiro" : "Novo Parceiro"}
-                </h3>
-                <form onSubmit={handleSubmit}>
+                <h3 className="font-[var(--font-noto-serif)] text-[#002045] text-lg font-normal mb-6">{editingPartnerId ? "Editar Parceiro" : "Novo Parceiro"}</h3>
+                <form onSubmit={handlePartnerSubmit}>
                   <div className="grid grid-cols-1 sm:grid-cols-2 gap-5 mb-6">
+                    <div><label className={labelCls}>Nome *</label><input required value={partnerForm.name} onChange={(e) => setPartnerForm({ ...partnerForm, name: e.target.value })} className={inputCls} /></div>
+                    <div><label className={labelCls}>Código do Cupom *</label><input required value={partnerForm.coupon_code} onChange={(e) => setPartnerForm({ ...partnerForm, coupon_code: e.target.value.toUpperCase() })} className={inputCls + " uppercase"} placeholder="ex: ARQLIMA10" /></div>
+                    <div><label className={labelCls}>Email</label><input value={partnerForm.email} onChange={(e) => setPartnerForm({ ...partnerForm, email: e.target.value })} type="email" className={inputCls} /></div>
+                    <div><label className={labelCls}>Telefone</label><input value={partnerForm.phone} onChange={(e) => setPartnerForm({ ...partnerForm, phone: e.target.value })} className={inputCls} /></div>
                     <div>
-                      <label className="block text-[10px] tracking-[0.15em] uppercase font-bold font-[var(--font-inter)] text-[#74777f] mb-2">Nome *</label>
-                      <input
-                        required
-                        value={form.name}
-                        onChange={(e) => setForm({ ...form, name: e.target.value })}
-                        className="w-full border border-[#e2e2e2] px-4 py-2.5 text-sm font-[var(--font-inter)] text-[#002045] focus:outline-none focus:border-[#002045]"
-                      />
-                    </div>
-                    <div>
-                      <label className="block text-[10px] tracking-[0.15em] uppercase font-bold font-[var(--font-inter)] text-[#74777f] mb-2">Código do Cupom *</label>
-                      <input
-                        required
-                        value={form.coupon_code}
-                        onChange={(e) => setForm({ ...form, coupon_code: e.target.value.toUpperCase() })}
-                        className="w-full border border-[#e2e2e2] px-4 py-2.5 text-sm font-[var(--font-inter)] text-[#002045] focus:outline-none focus:border-[#002045] uppercase"
-                        placeholder="ex: ARQLIMA10"
-                      />
-                    </div>
-                    <div>
-                      <label className="block text-[10px] tracking-[0.15em] uppercase font-bold font-[var(--font-inter)] text-[#74777f] mb-2">Email</label>
-                      <input
-                        value={form.email}
-                        onChange={(e) => setForm({ ...form, email: e.target.value })}
-                        type="email"
-                        className="w-full border border-[#e2e2e2] px-4 py-2.5 text-sm font-[var(--font-inter)] text-[#002045] focus:outline-none focus:border-[#002045]"
-                      />
-                    </div>
-                    <div>
-                      <label className="block text-[10px] tracking-[0.15em] uppercase font-bold font-[var(--font-inter)] text-[#74777f] mb-2">Telefone</label>
-                      <input
-                        value={form.phone}
-                        onChange={(e) => setForm({ ...form, phone: e.target.value })}
-                        className="w-full border border-[#e2e2e2] px-4 py-2.5 text-sm font-[var(--font-inter)] text-[#002045] focus:outline-none focus:border-[#002045]"
-                      />
-                    </div>
-                    <div>
-                      <label className="block text-[10px] tracking-[0.15em] uppercase font-bold font-[var(--font-inter)] text-[#74777f] mb-2">Tipo de Desconto</label>
-                      <select
-                        value={form.discount_type}
-                        onChange={(e) => setForm({ ...form, discount_type: e.target.value as "percentage" | "fixed" })}
-                        className="w-full border border-[#e2e2e2] px-4 py-2.5 text-sm font-[var(--font-inter)] text-[#002045] focus:outline-none focus:border-[#002045]"
-                      >
-                        <option value="percentage">Porcentagem (%)</option>
-                        <option value="fixed">Valor fixo (R$)</option>
+                      <label className={labelCls}>Tipo de Desconto</label>
+                      <select value={partnerForm.discount_type} onChange={(e) => setPartnerForm({ ...partnerForm, discount_type: e.target.value as "percentage" | "fixed" })} className={inputCls}>
+                        <option value="percentage">Porcentagem (%)</option><option value="fixed">Valor fixo (R$)</option>
                       </select>
                     </div>
+                    <div><label className={labelCls}>Valor do Desconto {partnerForm.discount_type === "percentage" ? "(%)" : "(R$)"}</label><input type="number" min="0" step="0.01" value={partnerForm.discount_value} onChange={(e) => setPartnerForm({ ...partnerForm, discount_value: parseFloat(e.target.value) || 0 })} className={inputCls} /></div>
                     <div>
-                      <label className="block text-[10px] tracking-[0.15em] uppercase font-bold font-[var(--font-inter)] text-[#74777f] mb-2">
-                        Valor do Desconto {form.discount_type === "percentage" ? "(%)" : "(R$)"}
-                      </label>
-                      <input
-                        type="number"
-                        min="0"
-                        step="0.01"
-                        value={form.discount_value}
-                        onChange={(e) => setForm({ ...form, discount_value: parseFloat(e.target.value) || 0 })}
-                        className="w-full border border-[#e2e2e2] px-4 py-2.5 text-sm font-[var(--font-inter)] text-[#002045] focus:outline-none focus:border-[#002045]"
-                      />
-                    </div>
-                    <div>
-                      <label className="block text-[10px] tracking-[0.15em] uppercase font-bold font-[var(--font-inter)] text-[#74777f] mb-2">Tipo de Comissão</label>
-                      <select
-                        value={form.commission_type}
-                        onChange={(e) => setForm({ ...form, commission_type: e.target.value as "percentage" | "fixed" })}
-                        className="w-full border border-[#e2e2e2] px-4 py-2.5 text-sm font-[var(--font-inter)] text-[#002045] focus:outline-none focus:border-[#002045]"
-                      >
-                        <option value="percentage">Porcentagem (%)</option>
-                        <option value="fixed">Valor fixo (R$)</option>
+                      <label className={labelCls}>Tipo de Comissão</label>
+                      <select value={partnerForm.commission_type} onChange={(e) => setPartnerForm({ ...partnerForm, commission_type: e.target.value as "percentage" | "fixed" })} className={inputCls}>
+                        <option value="percentage">Porcentagem (%)</option><option value="fixed">Valor fixo (R$)</option>
                       </select>
                     </div>
+                    <div><label className={labelCls}>Valor da Comissão {partnerForm.commission_type === "percentage" ? "(%)" : "(R$)"}</label><input type="number" min="0" step="0.01" value={partnerForm.commission_value} onChange={(e) => setPartnerForm({ ...partnerForm, commission_value: parseFloat(e.target.value) || 0 })} className={inputCls} /></div>
                     <div>
-                      <label className="block text-[10px] tracking-[0.15em] uppercase font-bold font-[var(--font-inter)] text-[#74777f] mb-2">
-                        Valor da Comissão {form.commission_type === "percentage" ? "(%)" : "(R$)"}
-                      </label>
-                      <input
-                        type="number"
-                        min="0"
-                        step="0.01"
-                        value={form.commission_value}
-                        onChange={(e) => setForm({ ...form, commission_value: parseFloat(e.target.value) || 0 })}
-                        className="w-full border border-[#e2e2e2] px-4 py-2.5 text-sm font-[var(--font-inter)] text-[#002045] focus:outline-none focus:border-[#002045]"
-                      />
+                      <label className={labelCls}>Senha do Portal <span className="normal-case font-normal">(acesso parceiro)</span></label>
+                      <input value={partnerForm.portal_password} onChange={(e) => setPartnerForm({ ...partnerForm, portal_password: e.target.value })} className={inputCls} placeholder="Deixe em branco para sem acesso" />
                     </div>
-                    <div>
-                      <label className="block text-[10px] tracking-[0.15em] uppercase font-bold font-[var(--font-inter)] text-[#74777f] mb-2">
-                        Senha do Portal <span className="normal-case text-[#74777f] font-normal">(acesso parceiro)</span>
-                      </label>
-                      <input
-                        value={form.portal_password}
-                        onChange={(e) => setForm({ ...form, portal_password: e.target.value })}
-                        className="w-full border border-[#e2e2e2] px-4 py-2.5 text-sm font-[var(--font-inter)] text-[#002045] focus:outline-none focus:border-[#002045]"
-                        placeholder="Deixe em branco para sem acesso"
-                      />
-                    </div>
-                    {editingId && (
+                    {editingPartnerId && (
                       <div>
-                        <label className="block text-[10px] tracking-[0.15em] uppercase font-bold font-[var(--font-inter)] text-[#74777f] mb-2">Status</label>
-                        <select
-                          value={form.status}
-                          onChange={(e) => setForm({ ...form, status: e.target.value as "active" | "inactive" })}
-                          className="w-full border border-[#e2e2e2] px-4 py-2.5 text-sm font-[var(--font-inter)] text-[#002045] focus:outline-none focus:border-[#002045]"
-                        >
-                          <option value="active">Ativo</option>
-                          <option value="inactive">Inativo</option>
+                        <label className={labelCls}>Status</label>
+                        <select value={partnerForm.status} onChange={(e) => setPartnerForm({ ...partnerForm, status: e.target.value as "active" | "inactive" | "pending" })} className={inputCls}>
+                          <option value="active">Ativo</option><option value="inactive">Inativo</option><option value="pending">Pendente</option>
                         </select>
                       </div>
                     )}
                   </div>
-                  {formError && <p className="text-red-600 text-sm font-[var(--font-inter)] mb-4">{formError}</p>}
+                  {partnerFormError && <p className="text-red-600 text-sm font-[var(--font-inter)] mb-4">{partnerFormError}</p>}
                   <div className="flex gap-3">
-                    <button
-                      type="submit"
-                      disabled={formLoading}
-                      className="bg-[#002045] text-white text-xs tracking-[0.1em] uppercase font-bold font-[var(--font-inter)] px-6 py-2.5 hover:bg-[#1a365d] transition-colors disabled:opacity-50"
-                    >
-                      {formLoading ? "Salvando..." : "Salvar"}
+                    <button type="submit" disabled={partnerFormLoading} className="bg-[#002045] text-white text-xs tracking-[0.1em] uppercase font-bold font-[var(--font-inter)] px-6 py-2.5 hover:bg-[#1a365d] transition-colors disabled:opacity-50">
+                      {partnerFormLoading ? "Salvando..." : "Salvar"}
                     </button>
-                    <button
-                      type="button"
-                      onClick={() => setShowForm(false)}
-                      className="text-[#74777f] text-xs tracking-[0.1em] uppercase font-bold font-[var(--font-inter)] px-6 py-2.5 border border-[#e2e2e2] hover:border-[#74777f] transition-colors"
-                    >
+                    <button type="button" onClick={() => setShowPartnerForm(false)} className="text-[#74777f] text-xs tracking-[0.1em] uppercase font-bold font-[var(--font-inter)] px-6 py-2.5 border border-[#e2e2e2] hover:border-[#74777f] transition-colors">
                       Cancelar
                     </button>
                   </div>
@@ -489,83 +546,40 @@ export default function AdminPage() {
               </div>
             )}
 
-            {loading ? (
-              <p className="text-[#74777f] text-sm font-[var(--font-inter)]">Carregando...</p>
-            ) : (
+            {loadingPartners ? <p className="text-[#74777f] text-sm font-[var(--font-inter)]">Carregando...</p> : (
               <div className="bg-white border border-[#e2e2e2] overflow-x-auto">
                 <table className="w-full text-sm font-[var(--font-inter)]">
                   <thead>
                     <tr className="border-b border-[#e2e2e2]">
-                      {["Nome", "Cupom", "Desconto", "Comissão", "Senha Portal", "Status", "Ações"].map((h) => (
-                        <th key={h} className="text-left px-5 py-3 text-[10px] tracking-[0.15em] uppercase font-bold text-[#74777f]">
-                          {h}
-                        </th>
+                      {["Nome", "Cupom", "Desconto", "Comissão", "Rep", "Senha Portal", "Status", "Ações"].map((h) => (
+                        <th key={h} className="text-left px-5 py-3 text-[10px] tracking-[0.15em] uppercase font-bold text-[#74777f]">{h}</th>
                       ))}
                     </tr>
                   </thead>
                   <tbody>
-                    {partners.length === 0 ? (
-                      <tr>
-                        <td colSpan={7} className="px-5 py-8 text-center text-[#74777f]">
-                          Nenhum parceiro cadastrado.
-                        </td>
-                      </tr>
+                    {activePartners.length === 0 ? (
+                      <tr><td colSpan={8} className="px-5 py-8 text-center text-[#74777f]">Nenhum parceiro cadastrado.</td></tr>
                     ) : (
-                      partners.map((p) => (
+                      activePartners.map((p) => (
                         <tr key={p.id} className="border-b border-[#f0f0f0] hover:bg-[#fafafa]">
+                          <td className="px-5 py-4"><p className="font-semibold text-[#002045]">{p.name}</p>{p.email && <p className="text-xs text-[#74777f]">{p.email}</p>}</td>
+                          <td className="px-5 py-4"><span className="bg-[#eef2f8] text-[#002045] px-2 py-1 text-xs font-bold tracking-wider">{p.coupon_code}</span></td>
+                          <td className="px-5 py-4 text-[#43474e]">{p.discount_type === "percentage" ? `${p.discount_value}%` : fmt(p.discount_value)}</td>
+                          <td className="px-5 py-4 text-[#43474e]">{p.commission_type === "percentage" ? `${p.commission_value}%` : fmt(p.commission_value)}</td>
+                          <td className="px-5 py-4 text-xs text-[#74777f]">{p.sales_rep_referral_code || "—"}</td>
+                          <td className="px-5 py-4 text-xs text-[#74777f]">{p.portal_password ? <span className="font-mono text-[#43474e]">{p.portal_password}</span> : <span className="italic">—</span>}</td>
                           <td className="px-5 py-4">
-                            <p className="font-semibold text-[#002045]">{p.name}</p>
-                            {p.email && <p className="text-xs text-[#74777f]">{p.email}</p>}
-                          </td>
-                          <td className="px-5 py-4">
-                            <span className="bg-[#eef2f8] text-[#002045] px-2 py-1 text-xs font-bold tracking-wider">
-                              {p.coupon_code}
-                            </span>
-                          </td>
-                          <td className="px-5 py-4 text-[#43474e]">
-                            {p.discount_type === "percentage" ? `${p.discount_value}%` : fmt(p.discount_value)}
-                          </td>
-                          <td className="px-5 py-4 text-[#43474e]">
-                            {p.commission_type === "percentage" ? `${p.commission_value}%` : fmt(p.commission_value)}
-                          </td>
-                          <td className="px-5 py-4 text-xs text-[#74777f]">
-                            {p.portal_password ? (
-                              <span className="font-mono text-[#43474e]">{p.portal_password}</span>
-                            ) : (
-                              <span className="italic">—</span>
-                            )}
-                          </td>
-                          <td className="px-5 py-4">
-                            <span className={`px-2 py-1 text-[10px] font-bold tracking-wider ${
-                              p.status === "active"
-                                ? "bg-green-100 text-green-800"
-                                : "bg-gray-100 text-gray-600"
-                            }`}>
+                            <span className={`px-2 py-1 text-[10px] font-bold tracking-wider ${p.status === "active" ? "bg-green-100 text-green-800" : "bg-gray-100 text-gray-600"}`}>
                               {p.status === "active" ? "Ativo" : "Inativo"}
                             </span>
                           </td>
                           <td className="px-5 py-4">
                             <div className="flex gap-2 flex-wrap">
-                              <button
-                                onClick={() => startEdit(p)}
-                                className="text-[#1a365d] text-xs font-semibold hover:text-[#002045] transition-colors"
-                              >
-                                Editar
-                              </button>
+                              <button onClick={() => startEditPartner(p)} className="text-[#1a365d] text-xs font-semibold hover:text-[#002045]">Editar</button>
                               <span className="text-[#e2e2e2]">|</span>
-                              <button
-                                onClick={() => toggleStatus(p)}
-                                className="text-[#74777f] text-xs font-semibold hover:text-[#002045] transition-colors"
-                              >
-                                {p.status === "active" ? "Desativar" : "Ativar"}
-                              </button>
+                              <button onClick={() => togglePartnerStatus(p)} className="text-[#74777f] text-xs font-semibold hover:text-[#002045]">{p.status === "active" ? "Desativar" : "Ativar"}</button>
                               <span className="text-[#e2e2e2]">|</span>
-                              <button
-                                onClick={() => deletePartner(p)}
-                                className="text-red-500 text-xs font-semibold hover:text-red-700 transition-colors"
-                              >
-                                Excluir
-                              </button>
+                              <button onClick={() => deletePartner(p)} className="text-red-500 text-xs font-semibold hover:text-red-700">Excluir</button>
                             </div>
                           </td>
                         </tr>
@@ -578,31 +592,138 @@ export default function AdminPage() {
           </div>
         )}
 
-        {/* ─── HISTORY TAB ─── */}
+        {/* ═══ REPRESENTANTES TAB ═══ */}
+        {tab === "representantes" && (
+          <div>
+            <div className="flex items-center justify-between mb-6">
+              <h2 className="font-[var(--font-noto-serif)] text-[#002045] text-xl font-normal">Representantes Comerciais</h2>
+              <button onClick={startCreateRep} className="bg-[#002045] text-white text-xs tracking-[0.1em] uppercase font-bold font-[var(--font-inter)] px-5 py-2.5 hover:bg-[#1a365d] transition-colors">
+                + Novo Representante
+              </button>
+            </div>
+
+            {showRepForm && (
+              <div className="bg-white border border-[#e2e2e2] p-8 mb-6">
+                <h3 className="font-[var(--font-noto-serif)] text-[#002045] text-lg font-normal mb-6">{editingRepId ? "Editar Representante" : "Novo Representante"}</h3>
+                <form onSubmit={handleRepSubmit}>
+                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-5 mb-6">
+                    <div><label className={labelCls}>Nome *</label><input required value={repForm.name} onChange={(e) => setRepForm({ ...repForm, name: e.target.value })} className={inputCls} /></div>
+                    <div>
+                      <label className={labelCls}>Código de Referência *</label>
+                      <input required value={repForm.referral_code} onChange={(e) => setRepForm({ ...repForm, referral_code: e.target.value.toUpperCase() })} className={inputCls + " uppercase"} placeholder="ex: REP_JOAO" />
+                      <p className="text-[10px] text-[#74777f] font-[var(--font-inter)] mt-1">Parceiros usam este código ao se cadastrar</p>
+                    </div>
+                    <div><label className={labelCls}>Email</label><input value={repForm.email} onChange={(e) => setRepForm({ ...repForm, email: e.target.value })} type="email" className={inputCls} /></div>
+                    <div><label className={labelCls}>Telefone</label><input value={repForm.phone} onChange={(e) => setRepForm({ ...repForm, phone: e.target.value })} className={inputCls} /></div>
+                    <div>
+                      <label className={labelCls}>Tipo de Comissão</label>
+                      <select value={repForm.commission_type} onChange={(e) => setRepForm({ ...repForm, commission_type: e.target.value as "percentage" | "fixed" })} className={inputCls}>
+                        <option value="percentage">Porcentagem (% da venda)</option><option value="fixed">Valor fixo (R$)</option>
+                      </select>
+                    </div>
+                    <div><label className={labelCls}>Comissão {repForm.commission_type === "percentage" ? "(%)" : "(R$)"}</label><input type="number" min="0" step="0.01" value={repForm.commission_value} onChange={(e) => setRepForm({ ...repForm, commission_value: parseFloat(e.target.value) || 0 })} className={inputCls} /></div>
+                    <div>
+                      <label className={labelCls}>Senha do Portal <span className="normal-case font-normal">(acesso representante)</span></label>
+                      <input value={repForm.portal_password} onChange={(e) => setRepForm({ ...repForm, portal_password: e.target.value })} className={inputCls} placeholder="Deixe em branco para sem acesso" />
+                    </div>
+                    {editingRepId && (
+                      <div>
+                        <label className={labelCls}>Status</label>
+                        <select value={repForm.status} onChange={(e) => setRepForm({ ...repForm, status: e.target.value as "active" | "inactive" })} className={inputCls}>
+                          <option value="active">Ativo</option><option value="inactive">Inativo</option>
+                        </select>
+                      </div>
+                    )}
+                  </div>
+                  {repFormError && <p className="text-red-600 text-sm font-[var(--font-inter)] mb-4">{repFormError}</p>}
+                  <div className="flex gap-3">
+                    <button type="submit" disabled={repFormLoading} className="bg-[#002045] text-white text-xs tracking-[0.1em] uppercase font-bold font-[var(--font-inter)] px-6 py-2.5 hover:bg-[#1a365d] transition-colors disabled:opacity-50">
+                      {repFormLoading ? "Salvando..." : "Salvar"}
+                    </button>
+                    <button type="button" onClick={() => setShowRepForm(false)} className="text-[#74777f] text-xs tracking-[0.1em] uppercase font-bold font-[var(--font-inter)] px-6 py-2.5 border border-[#e2e2e2] hover:border-[#74777f] transition-colors">
+                      Cancelar
+                    </button>
+                  </div>
+                </form>
+              </div>
+            )}
+
+            {loadingReps ? <p className="text-[#74777f] text-sm font-[var(--font-inter)]">Carregando...</p> : (
+              <div className="bg-white border border-[#e2e2e2] overflow-x-auto">
+                <table className="w-full text-sm font-[var(--font-inter)]">
+                  <thead>
+                    <tr className="border-b border-[#e2e2e2]">
+                      {["Nome", "Código Ref.", "Comissão", "Parceiros", "Senha Portal", "Status", "Ações"].map((h) => (
+                        <th key={h} className="text-left px-5 py-3 text-[10px] tracking-[0.15em] uppercase font-bold text-[#74777f]">{h}</th>
+                      ))}
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {salesReps.length === 0 ? (
+                      <tr><td colSpan={7} className="px-5 py-8 text-center text-[#74777f]">Nenhum representante cadastrado.</td></tr>
+                    ) : (
+                      salesReps.map((r) => {
+                        const repPartnerCount = partners.filter((p) => p.sales_rep_referral_code === r.referral_code).length;
+                        return (
+                          <tr key={r.id} className="border-b border-[#f0f0f0] hover:bg-[#fafafa]">
+                            <td className="px-5 py-4"><p className="font-semibold text-[#002045]">{r.name}</p>{r.email && <p className="text-xs text-[#74777f]">{r.email}</p>}</td>
+                            <td className="px-5 py-4"><span className="bg-[#eef2f8] text-[#002045] px-2 py-1 text-xs font-bold tracking-wider">{r.referral_code}</span></td>
+                            <td className="px-5 py-4 text-[#43474e]">{r.commission_type === "percentage" ? `${r.commission_value}%` : fmt(r.commission_value)} <span className="text-xs text-[#74777f]">da venda</span></td>
+                            <td className="px-5 py-4 text-[#43474e] font-semibold">{repPartnerCount}</td>
+                            <td className="px-5 py-4 text-xs text-[#74777f]">{r.portal_password ? <span className="font-mono text-[#43474e]">{r.portal_password}</span> : <span className="italic">—</span>}</td>
+                            <td className="px-5 py-4">
+                              <span className={`px-2 py-1 text-[10px] font-bold tracking-wider ${r.status === "active" ? "bg-green-100 text-green-800" : "bg-gray-100 text-gray-600"}`}>
+                                {r.status === "active" ? "Ativo" : "Inativo"}
+                              </span>
+                            </td>
+                            <td className="px-5 py-4">
+                              <div className="flex gap-2">
+                                <button onClick={() => startEditRep(r)} className="text-[#1a365d] text-xs font-semibold hover:text-[#002045]">Editar</button>
+                                <span className="text-[#e2e2e2]">|</span>
+                                <button onClick={() => toggleRepStatus(r)} className="text-[#74777f] text-xs font-semibold hover:text-[#002045]">{r.status === "active" ? "Desativar" : "Ativar"}</button>
+                                <span className="text-[#e2e2e2]">|</span>
+                                <button onClick={() => deleteRep(r)} className="text-red-500 text-xs font-semibold hover:text-red-700">Excluir</button>
+                              </div>
+                            </td>
+                          </tr>
+                        );
+                      })
+                    )}
+                  </tbody>
+                </table>
+              </div>
+            )}
+          </div>
+        )}
+
+        {/* ═══ HISTORY TAB ═══ */}
         {tab === "history" && (
           <div>
             <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4 mb-6">
               <h2 className="font-[var(--font-noto-serif)] text-[#002045] text-xl font-normal">Histórico de Usos</h2>
-              <div className="flex items-center gap-2">
-                <label className="text-[10px] tracking-[0.15em] uppercase font-bold font-[var(--font-inter)] text-[#74777f] whitespace-nowrap">
-                  Filtrar por parceiro:
-                </label>
-                <select
-                  value={filterPartner}
-                  onChange={(e) => setFilterPartner(e.target.value)}
-                  className="border border-[#e2e2e2] px-3 py-2 text-sm font-[var(--font-inter)] text-[#002045] focus:outline-none focus:border-[#002045] min-w-[160px]"
-                >
-                  <option value="all">Todos</option>
-                  {partners.map((p) => (
-                    <option key={p.id} value={p.coupon_code}>
-                      {p.name} ({p.coupon_code})
-                    </option>
-                  ))}
-                </select>
+              <div className="flex flex-wrap items-center gap-3">
+                <div className="flex items-center gap-2">
+                  <label className="text-[10px] tracking-[0.15em] uppercase font-bold font-[var(--font-inter)] text-[#74777f] whitespace-nowrap">Parceiro:</label>
+                  <select value={filterPartner} onChange={(e) => setFilterPartner(e.target.value)} className="border border-[#e2e2e2] px-3 py-2 text-sm font-[var(--font-inter)] text-[#002045] focus:outline-none focus:border-[#002045] min-w-[140px]">
+                    <option value="all">Todos</option>
+                    {partners.filter((p) => p.status === "active").map((p) => (
+                      <option key={p.id} value={p.coupon_code}>{p.name} ({p.coupon_code})</option>
+                    ))}
+                  </select>
+                </div>
+                <div className="flex items-center gap-2">
+                  <label className="text-[10px] tracking-[0.15em] uppercase font-bold font-[var(--font-inter)] text-[#74777f] whitespace-nowrap">Representante:</label>
+                  <select value={filterRep} onChange={(e) => setFilterRep(e.target.value)} className="border border-[#e2e2e2] px-3 py-2 text-sm font-[var(--font-inter)] text-[#002045] focus:outline-none focus:border-[#002045] min-w-[140px]">
+                    <option value="all">Todos</option>
+                    {salesReps.map((r) => (
+                      <option key={r.id} value={r.referral_code}>{r.name} ({r.referral_code})</option>
+                    ))}
+                  </select>
+                </div>
               </div>
             </div>
 
-            <div className="grid grid-cols-1 sm:grid-cols-4 gap-4 mb-8">
+            <div className="grid grid-cols-2 sm:grid-cols-4 gap-4 mb-8">
               <div className="bg-white border border-[#e2e2e2] px-6 py-5">
                 <p className="text-[#74777f] text-[10px] tracking-[0.15em] uppercase font-bold font-[var(--font-inter)] mb-1">Total de usos</p>
                 <p className="font-[var(--font-noto-serif)] text-[#002045] text-3xl font-normal">{filteredUses.length}</p>
@@ -612,70 +733,46 @@ export default function AdminPage() {
                 <p className="font-[var(--font-noto-serif)] text-[#002045] text-3xl font-normal">{fmt(totalSales)}</p>
               </div>
               <div className="bg-white border border-[#e2e2e2] px-6 py-5">
-                <p className="text-[#74777f] text-[10px] tracking-[0.15em] uppercase font-bold font-[var(--font-inter)] mb-1">Comissões devidas</p>
+                <p className="text-[#74777f] text-[10px] tracking-[0.15em] uppercase font-bold font-[var(--font-inter)] mb-1">Comissão parceiros</p>
                 <p className="font-[var(--font-noto-serif)] text-[#002045] text-3xl font-normal">{fmt(totalCommission)}</p>
               </div>
               <div className="bg-white border border-[#e2e2e2] px-6 py-5">
-                <p className="text-[#74777f] text-[10px] tracking-[0.15em] uppercase font-bold font-[var(--font-inter)] mb-1">Comissões em aberto</p>
-                <p className="font-[var(--font-noto-serif)] text-yellow-700 text-3xl font-normal">{fmt(pendingCommission)}</p>
+                <p className="text-[#74777f] text-[10px] tracking-[0.15em] uppercase font-bold font-[var(--font-inter)] mb-1">Comissão representantes</p>
+                <p className="font-[var(--font-noto-serif)] text-[#002045] text-3xl font-normal">{fmt(totalRepCommission)}</p>
               </div>
             </div>
 
-            {loading ? (
-              <p className="text-[#74777f] text-sm font-[var(--font-inter)]">Carregando...</p>
-            ) : (
+            {loadingUses ? <p className="text-[#74777f] text-sm font-[var(--font-inter)]">Carregando...</p> : (
               <div className="bg-white border border-[#e2e2e2] overflow-x-auto">
                 <table className="w-full text-sm font-[var(--font-inter)]">
                   <thead>
                     <tr className="border-b border-[#e2e2e2]">
-                      {["Data", "Cupom", "Produto", "Espaço", "Área (m²)", "Placas", "Material orig.", "Desconto", "Comissão", "Status"].map((h) => (
-                        <th key={h} className="text-left px-4 py-3 text-[10px] tracking-[0.1em] uppercase font-bold text-[#74777f] whitespace-nowrap">
-                          {h}
-                        </th>
+                      {["Data", "Cupom", "Rep.", "Produto", "Espaço", "Área", "Material", "Desconto", "Com. Parceiro", "Com. Rep.", "Status"].map((h) => (
+                        <th key={h} className="text-left px-4 py-3 text-[10px] tracking-[0.1em] uppercase font-bold text-[#74777f] whitespace-nowrap">{h}</th>
                       ))}
                     </tr>
                   </thead>
                   <tbody>
                     {filteredUses.length === 0 ? (
-                      <tr>
-                        <td colSpan={10} className="px-5 py-8 text-center text-[#74777f]">
-                          Nenhum uso registrado.
-                        </td>
-                      </tr>
+                      <tr><td colSpan={11} className="px-5 py-8 text-center text-[#74777f]">Nenhum uso registrado.</td></tr>
                     ) : (
                       filteredUses.map((u) => {
                         const st = u.sale_status || "em_orcamento";
                         const stMeta = STATUS_LABELS[st] || STATUS_LABELS.em_orcamento;
                         return (
                           <tr key={u.id} className="border-b border-[#f0f0f0] hover:bg-[#fafafa]">
-                            <td className="px-4 py-3 text-xs text-[#43474e] whitespace-nowrap">
-                              {new Date(u.created_at).toLocaleDateString("pt-BR")}
-                            </td>
-                            <td className="px-4 py-3">
-                              <span className="bg-[#eef2f8] text-[#002045] px-2 py-0.5 text-xs font-bold tracking-wider">
-                                {u.coupon_code}
-                              </span>
-                            </td>
-                            <td className="px-4 py-3 text-xs text-[#43474e]">
-                              <p className="font-semibold">{u.product_name}</p>
-                              <p className="text-[#74777f]">{u.product_code}</p>
-                            </td>
+                            <td className="px-4 py-3 text-xs text-[#43474e] whitespace-nowrap">{new Date(u.created_at).toLocaleDateString("pt-BR")}</td>
+                            <td className="px-4 py-3"><span className="bg-[#eef2f8] text-[#002045] px-2 py-0.5 text-xs font-bold tracking-wider">{u.coupon_code}</span></td>
+                            <td className="px-4 py-3 text-xs text-[#74777f]">{u.sales_rep_referral_code || "—"}</td>
+                            <td className="px-4 py-3 text-xs text-[#43474e]"><p className="font-semibold">{u.product_name}</p><p className="text-[#74777f]">{u.product_code}</p></td>
                             <td className="px-4 py-3 text-xs text-[#43474e]">{u.space || "—"}</td>
                             <td className="px-4 py-3 text-xs text-[#43474e]">{u.area_m2 ?? "—"}</td>
-                            <td className="px-4 py-3 text-xs text-[#43474e]">{u.plates ?? "—"}</td>
                             <td className="px-4 py-3 text-xs text-[#43474e]">{u.material_total ? fmt(u.material_total) : "—"}</td>
-                            <td className="px-4 py-3 text-xs text-green-700 font-semibold">
-                              {u.discount_applied ? fmt(u.discount_applied) : "—"}
-                            </td>
-                            <td className="px-4 py-3 text-xs text-[#002045] font-semibold">
-                              {u.commission_owed ? fmt(u.commission_owed) : "—"}
-                            </td>
+                            <td className="px-4 py-3 text-xs text-green-700 font-semibold">{u.discount_applied ? fmt(u.discount_applied) : "—"}</td>
+                            <td className="px-4 py-3 text-xs text-[#002045] font-semibold">{u.commission_owed ? fmt(u.commission_owed) : "—"}</td>
+                            <td className="px-4 py-3 text-xs text-[#1a365d] font-semibold">{u.sales_rep_commission_owed ? fmt(u.sales_rep_commission_owed) : "—"}</td>
                             <td className="px-4 py-3">
-                              <select
-                                value={st}
-                                onChange={(e) => updateSaleStatus(u.id, e.target.value)}
-                                className={`text-[10px] font-bold tracking-wide px-2 py-1 border-0 cursor-pointer focus:outline-none focus:ring-1 focus:ring-[#002045] ${stMeta.cls}`}
-                              >
+                              <select value={st} onChange={(e) => updateSaleStatus(u.id, e.target.value)} className={`text-[10px] font-bold tracking-wide px-2 py-1 border-0 cursor-pointer focus:outline-none focus:ring-1 focus:ring-[#002045] ${stMeta.cls}`}>
                                 <option value="em_orcamento">Em orçamento</option>
                                 <option value="concluido">Concluído</option>
                                 <option value="cancelado">Cancelado</option>
