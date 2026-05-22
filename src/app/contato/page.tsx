@@ -562,6 +562,10 @@ export default function ContatoPage() {
                 {(["Classic", "Brilliance", "Elegance"] as ProductLine[]).map((linha) => {
                   const info = LINE_INFO[linha];
                   const active = selectedLine === linha;
+                  const inactiveBg =
+                    linha === "Classic"    ? "bg-[#f7f6f3]" :
+                    linha === "Brilliance" ? "bg-[#f4f6f9]" :
+                                            "bg-[#f8f4ef]";
                   return (
                     <button
                       key={linha}
@@ -574,8 +578,8 @@ export default function ContatoPage() {
                       }}
                       className={`relative border text-left transition-all p-5 flex flex-col gap-3 ${
                         active
-                          ? "border-[#002045] bg-[#f5f8ff]"
-                          : "border-[#e2e2e2] hover:border-[#1a365d] bg-white"
+                          ? "border-[#002045] bg-[#eef2fb]"
+                          : `border-[#e2e2e2] hover:border-[#1a365d] ${inactiveBg}`
                       }`}
                     >
                       {active && (
