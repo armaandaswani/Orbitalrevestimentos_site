@@ -565,8 +565,8 @@ export default function ContatoPage() {
                         active ? "border-[#002045]" : "border-[#e2e2e2] hover:border-[#1a365d]"
                       }`}
                     >
-                      <div className="relative h-32 sm:h-36 w-full">
-                        <Image src={info.cover} alt={linha} fill className="object-cover" />
+                      <div className="relative w-full bg-[#f7f7f5]" style={{ aspectRatio: "812/988" }}>
+                        <Image src={info.cover} alt={linha} fill className="object-contain" />
                         {active && <div className="absolute inset-0 bg-[#002045]/25" />}
                         {active && (
                           <div className="absolute top-3 right-3 w-6 h-6 bg-white flex items-center justify-center">
@@ -610,7 +610,7 @@ export default function ContatoPage() {
                             onClick={() => setSelectedProduct(product)}
                             className="relative w-full overflow-hidden bg-[#f7f7f5] block group"
                           >
-                            <div className="relative w-full" style={{ aspectRatio: "4/3" }}>
+                            <div className="relative w-full" style={{ aspectRatio: "812/988" }}>
                               <Image
                                 src={product.img}
                                 alt={product.name}
