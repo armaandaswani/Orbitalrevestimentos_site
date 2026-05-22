@@ -170,6 +170,7 @@ export default function ContatoPage() {
   const [showResult, setShowResult] = useState(false);
   const [showSavings, setShowSavings] = useState(false);
   const [mdfExpanded, setMdfExpanded] = useState(false);
+  const [comparisonExpanded, setComparisonExpanded] = useState(false);
   const [lightboxImg, setLightboxImg] = useState<string | null>(null);
 
   const m2 =
@@ -1281,15 +1282,35 @@ export default function ContatoPage() {
                 </p>
               </div>
 
-              {/* Technical comparison */}
-              <div className="bg-white border border-[#e2e2e2] border-t-0 px-6 sm:px-8 py-8">
-                <p className="text-[#43474e] text-[10px] tracking-[0.15em] uppercase font-bold font-[var(--font-inter)] mb-1">
-                  Comparativo técnico
-                </p>
-                <p className="text-[#74777f] text-xs font-[var(--font-inter)] mb-6">
-                  Desempenho em 10 critérios — condições reais do clima de Manaus.
-                </p>
-                <MdfComparison />
+              {/* Technical comparison — collapsible */}
+              <div className="bg-white border border-[#e2e2e2] border-t-0">
+                <button
+                  onClick={() => setComparisonExpanded(!comparisonExpanded)}
+                  className="w-full flex items-center justify-between px-6 sm:px-8 py-6 text-left group"
+                >
+                  <div>
+                    <p className="text-[#43474e] text-[10px] tracking-[0.15em] uppercase font-bold font-[var(--font-inter)] mb-1">
+                      PFB Orbital vs. o mercado
+                    </p>
+                    <p className="text-[#74777f] text-xs font-[var(--font-inter)]">
+                      {comparisonExpanded
+                        ? "Ocultar comparativo"
+                        : "10 critérios técnicos — umidade, durabilidade, mofo e mais"}
+                    </p>
+                  </div>
+                  <svg
+                    width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#74777f" strokeWidth="2"
+                    className={`flex-shrink-0 ml-4 transition-transform duration-300 ${comparisonExpanded ? "rotate-180" : ""}`}
+                  >
+                    <path d="M6 9l6 6 6-6" />
+                  </svg>
+                </button>
+
+                {comparisonExpanded && (
+                  <div className="border-t border-[#e2e2e2] px-6 sm:px-8 py-8">
+                    <MdfComparison />
+                  </div>
+                )}
               </div>
             </div>
           )}
