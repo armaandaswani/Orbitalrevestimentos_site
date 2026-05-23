@@ -424,6 +424,88 @@ export default function ContatoPage() {
             </p>
           </div>
 
+          {/* PFB Differentials strip */}
+          <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-6 gap-2 lg:gap-3 mb-8 lg:mb-10">
+            {[
+              {
+                label: "Anti-mofo",
+                desc: "Resistente a fungos",
+                icon: (
+                  <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5">
+                    <path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z" />
+                    <path d="M9 12l2 2 4-4" />
+                  </svg>
+                ),
+              },
+              {
+                label: "Anti-cupim",
+                desc: "Bambu não atrai pragas",
+                icon: (
+                  <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5">
+                    <circle cx="12" cy="12" r="10" />
+                    <line x1="4.93" y1="4.93" x2="19.07" y2="19.07" />
+                  </svg>
+                ),
+              },
+              {
+                label: "Pronta-entrega",
+                desc: "Estoque em Manaus",
+                icon: (
+                  <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5">
+                    <path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0118 0z" />
+                    <circle cx="12" cy="10" r="3" />
+                  </svg>
+                ),
+              },
+              {
+                label: "Resistente à umidade",
+                desc: "0,2% absorção em 48h",
+                icon: (
+                  <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5">
+                    <path d="M12 2.69l5.66 5.66a8 8 0 11-11.31 0z" />
+                  </svg>
+                ),
+              },
+              {
+                label: "Não propaga chamas",
+                desc: "Sem materiais inflamáveis",
+                icon: (
+                  <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5">
+                    <path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z" />
+                    <path d="M12 9c0 1.5-1 2.5-1.5 3.5.5.5 1 1 1.5 1s1-.5 1.5-1C13 11.5 12 10.5 12 9z" />
+                  </svg>
+                ),
+              },
+              {
+                label: "Instalação rápida",
+                desc: "2–3h por cômodo",
+                icon: (
+                  <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5">
+                    <circle cx="12" cy="12" r="10" />
+                    <polyline points="12 6 12 12 16 14" />
+                  </svg>
+                ),
+              },
+            ].map(({ label, icon, desc }) => (
+              <div
+                key={label}
+                className="flex flex-col items-center text-center gap-2 p-3 bg-white border border-[#e2e2e2]"
+              >
+                <div className="w-7 h-7 bg-[#f0f4f8] flex items-center justify-center text-[#002045] flex-shrink-0">
+                  {icon}
+                </div>
+                <div>
+                  <p className="text-[#002045] text-[9px] tracking-[0.08em] uppercase font-bold font-[var(--font-inter)] mb-0.5 leading-tight">
+                    {label}
+                  </p>
+                  <p className="text-[#74777f] text-[9px] font-[var(--font-inter)] leading-snug">
+                    {desc}
+                  </p>
+                </div>
+              </div>
+            ))}
+          </div>
+
           {/* Step indicator */}
           <div className="flex items-center mb-6 overflow-x-auto pb-1">
             {STEPS.map(({ n, label }, i) => (
@@ -747,13 +829,11 @@ export default function ContatoPage() {
                       Largura (m)
                     </label>
                     <input
-                      type="number"
+                      type="text"
                       inputMode="decimal"
                       value={width}
-                      onChange={(e) => setWidth(e.target.value)}
+                      onChange={(e) => setWidth(e.target.value.replace(/[^0-9.,]/g, "").replace(",", "."))}
                       placeholder="ex: 3.5"
-                      min="0"
-                      step="0.1"
                       className="w-full sm:w-32 border border-[#e2e2e2] px-4 py-3 text-base font-[var(--font-inter)] text-[#002045] focus:outline-none focus:border-[#002045] transition-colors"
                     />
                   </div>
@@ -762,13 +842,11 @@ export default function ContatoPage() {
                       Altura (m)
                     </label>
                     <input
-                      type="number"
+                      type="text"
                       inputMode="decimal"
                       value={height}
-                      onChange={(e) => setHeight(e.target.value)}
+                      onChange={(e) => setHeight(e.target.value.replace(/[^0-9.,]/g, "").replace(",", "."))}
                       placeholder="ex: 2.8"
-                      min="0"
-                      step="0.1"
                       className="w-full sm:w-32 border border-[#e2e2e2] px-4 py-3 text-base font-[var(--font-inter)] text-[#002045] focus:outline-none focus:border-[#002045] transition-colors"
                     />
                   </div>
@@ -784,13 +862,11 @@ export default function ContatoPage() {
                     Área total (m²)
                   </label>
                   <input
-                    type="number"
+                    type="text"
                     inputMode="decimal"
                     value={sqmInput}
-                    onChange={(e) => setSqmInput(e.target.value)}
+                    onChange={(e) => setSqmInput(e.target.value.replace(/[^0-9.,]/g, "").replace(",", "."))}
                     placeholder="ex: 12"
-                    min="0"
-                    step="0.1"
                     className="w-full sm:w-44 border border-[#e2e2e2] px-4 py-3 text-base font-[var(--font-inter)] text-[#002045] focus:outline-none focus:border-[#002045] transition-colors"
                   />
                 </div>
