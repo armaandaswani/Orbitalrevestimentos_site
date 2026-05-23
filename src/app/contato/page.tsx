@@ -153,6 +153,7 @@ export default function ContatoPage() {
   const productsRef = useRef<HTMLDivElement>(null);
   const resultsRef = useRef<HTMLDivElement>(null);
   const stepRef = useRef<HTMLDivElement>(null);
+  const nextBtnRef = useRef<HTMLButtonElement>(null);
 
   const [step, setStep] = useState<1 | 2 | 3 | 4>(1);
   const [selectedSpace, setSelectedSpace] = useState<Space | null>(null);
@@ -271,6 +272,15 @@ export default function ContatoPage() {
       }, 50);
     }
   }, [showResult]);
+
+  useEffect(() => {
+    if (selectedSpace && step === 1) {
+      setTimeout(() => {
+        nextBtnRef.current?.scrollIntoView({ behavior: "smooth", block: "center" });
+      }, 120);
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [selectedSpace]);
 
   function reset() {
     setStep(1);
@@ -417,88 +427,6 @@ export default function ContatoPage() {
             </p>
           </div>
 
-          {/* PFB Differentials strip */}
-          <div className="flex flex-nowrap overflow-x-auto gap-2 lg:grid lg:grid-cols-6 lg:gap-2 mb-6 lg:mb-8 -mx-4 px-4 sm:mx-0 sm:px-0">
-            {[
-              {
-                label: "Anti-mofo",
-                desc: "Resistente a fungos",
-                icon: (
-                  <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5">
-                    <path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z" />
-                    <path d="M9 12l2 2 4-4" />
-                  </svg>
-                ),
-              },
-              {
-                label: "Anti-cupim",
-                desc: "Bambu não atrai pragas",
-                icon: (
-                  <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5">
-                    <circle cx="12" cy="12" r="10" />
-                    <line x1="4.93" y1="4.93" x2="19.07" y2="19.07" />
-                  </svg>
-                ),
-              },
-              {
-                label: "Pronta-entrega",
-                desc: "Estoque em Manaus",
-                icon: (
-                  <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5">
-                    <path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0118 0z" />
-                    <circle cx="12" cy="10" r="3" />
-                  </svg>
-                ),
-              },
-              {
-                label: "Resistente à umidade",
-                desc: "0,2% absorção em 48h",
-                icon: (
-                  <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5">
-                    <path d="M12 2.69l5.66 5.66a8 8 0 11-11.31 0z" />
-                  </svg>
-                ),
-              },
-              {
-                label: "Não propaga chamas",
-                desc: "Sem materiais inflamáveis",
-                icon: (
-                  <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5">
-                    <path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z" />
-                    <path d="M12 9c0 1.5-1 2.5-1.5 3.5.5.5 1 1 1.5 1s1-.5 1.5-1C13 11.5 12 10.5 12 9z" />
-                  </svg>
-                ),
-              },
-              {
-                label: "Instalação rápida",
-                desc: "2–3h por cômodo",
-                icon: (
-                  <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5">
-                    <circle cx="12" cy="12" r="10" />
-                    <polyline points="12 6 12 12 16 14" />
-                  </svg>
-                ),
-              },
-            ].map(({ label, icon, desc }) => (
-              <div
-                key={label}
-                className="flex-shrink-0 flex flex-col items-center text-center gap-1.5 p-2 bg-white border border-[#e2e2e2] w-[88px] lg:w-auto"
-              >
-                <div className="w-6 h-6 bg-[#f0f4f8] flex items-center justify-center text-[#002045] flex-shrink-0">
-                  {icon}
-                </div>
-                <div>
-                  <p className="text-[#002045] text-[8px] tracking-[0.06em] uppercase font-bold font-[var(--font-inter)] mb-0 leading-tight">
-                    {label}
-                  </p>
-                  <p className="text-[#74777f] text-[8px] font-[var(--font-inter)] leading-snug">
-                    {desc}
-                  </p>
-                </div>
-              </div>
-            ))}
-          </div>
-
           {/* Step indicator */}
           <div ref={stepRef} className="flex items-center mb-6 overflow-x-auto pb-1 scroll-mt-6">
             {STEPS.map(({ n, label }, i) => (
@@ -606,6 +534,7 @@ export default function ContatoPage() {
 
               <div className="flex justify-end">
                 <button
+                  ref={nextBtnRef}
                   onClick={() => canAdvance1 && goToStep(2)}
                   disabled={!canAdvance1}
                   className={`w-full sm:w-auto inline-flex items-center justify-center gap-2 text-xs tracking-[0.12em] uppercase font-bold font-[var(--font-inter)] px-8 py-4 transition-colors ${
@@ -1141,6 +1070,139 @@ export default function ContatoPage() {
                 </div>
               </div>
 
+              {/* PFB Attribute strip — 4 cards on mobile (2×2), 6 cards on desktop */}
+              <div className="bg-white border border-[#e2e2e2] border-t-0 px-5 sm:px-8 py-5">
+                {/* Mobile: 4 combined cards in 2×2 grid */}
+                <div className="grid grid-cols-2 gap-2 md:hidden">
+                  {[
+                    {
+                      label: "Resistente à:",
+                      desc: "Água, Umidade & Mofo",
+                      icon: (
+                        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5">
+                          <path d="M12 2.69l5.66 5.66a8 8 0 11-11.31 0z" />
+                        </svg>
+                      ),
+                    },
+                    {
+                      label: "Anti-cupim &",
+                      desc: "Não propaga Chamas",
+                      icon: (
+                        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5">
+                          <path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z" />
+                          <path d="M9 12l2 2 4-4" />
+                        </svg>
+                      ),
+                    },
+                    {
+                      label: "Pronta-entrega",
+                      desc: "em Manaus",
+                      icon: (
+                        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5">
+                          <path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0118 0z" />
+                          <circle cx="12" cy="10" r="3" />
+                        </svg>
+                      ),
+                    },
+                    {
+                      label: "Instalação",
+                      desc: "Rápida & Limpa",
+                      icon: (
+                        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5">
+                          <circle cx="12" cy="12" r="10" />
+                          <polyline points="12 6 12 12 16 14" />
+                        </svg>
+                      ),
+                    },
+                  ].map(({ label, icon, desc }) => (
+                    <div key={label} className="flex flex-col items-center text-center gap-1.5 p-2.5 bg-[#f9f9f9] border border-[#e2e2e2]">
+                      <div className="w-6 h-6 bg-[#f0f4f8] flex items-center justify-center text-[#002045] flex-shrink-0">
+                        {icon}
+                      </div>
+                      <div>
+                        <p className="text-[#002045] text-[8px] tracking-[0.06em] uppercase font-bold font-[var(--font-inter)] leading-tight">{label}</p>
+                        <p className="text-[#74777f] text-[8px] font-[var(--font-inter)] leading-snug">{desc}</p>
+                      </div>
+                    </div>
+                  ))}
+                </div>
+
+                {/* Desktop: 6 cards in a row */}
+                <div className="hidden md:grid md:grid-cols-6 gap-2">
+                  {[
+                    {
+                      label: "Anti-mofo",
+                      desc: "Resistente a fungos",
+                      icon: (
+                        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5">
+                          <path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z" />
+                          <path d="M9 12l2 2 4-4" />
+                        </svg>
+                      ),
+                    },
+                    {
+                      label: "Anti-cupim",
+                      desc: "Bambu não atrai pragas",
+                      icon: (
+                        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5">
+                          <circle cx="12" cy="12" r="10" />
+                          <line x1="4.93" y1="4.93" x2="19.07" y2="19.07" />
+                        </svg>
+                      ),
+                    },
+                    {
+                      label: "Pronta-entrega",
+                      desc: "Estoque em Manaus",
+                      icon: (
+                        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5">
+                          <path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0118 0z" />
+                          <circle cx="12" cy="10" r="3" />
+                        </svg>
+                      ),
+                    },
+                    {
+                      label: "Resistente à umidade",
+                      desc: "0,2% absorção em 48h",
+                      icon: (
+                        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5">
+                          <path d="M12 2.69l5.66 5.66a8 8 0 11-11.31 0z" />
+                        </svg>
+                      ),
+                    },
+                    {
+                      label: "Não propaga chamas",
+                      desc: "Sem materiais inflamáveis",
+                      icon: (
+                        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5">
+                          <path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z" />
+                          <path d="M12 9c0 1.5-1 2.5-1.5 3.5.5.5 1 1 1.5 1s1-.5 1.5-1C13 11.5 12 10.5 12 9z" />
+                        </svg>
+                      ),
+                    },
+                    {
+                      label: "Instalação rápida",
+                      desc: "2–3h por cômodo",
+                      icon: (
+                        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5">
+                          <circle cx="12" cy="12" r="10" />
+                          <polyline points="12 6 12 12 16 14" />
+                        </svg>
+                      ),
+                    },
+                  ].map(({ label, icon, desc }) => (
+                    <div key={label} className="flex flex-col items-center text-center gap-1.5 p-2.5 bg-[#f9f9f9] border border-[#e2e2e2]">
+                      <div className="w-6 h-6 bg-[#f0f4f8] flex items-center justify-center text-[#002045] flex-shrink-0">
+                        {icon}
+                      </div>
+                      <div>
+                        <p className="text-[#002045] text-[8px] tracking-[0.06em] uppercase font-bold font-[var(--font-inter)] leading-tight">{label}</p>
+                        <p className="text-[#74777f] text-[8px] font-[var(--font-inter)] leading-snug">{desc}</p>
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              </div>
+
               {/* Cost comparison */}
               <div className="grid grid-cols-1 md:grid-cols-2">
                 <div className="bg-[#002045] px-6 sm:px-8 py-8 border border-[#2d4f7f]">
@@ -1151,7 +1213,6 @@ export default function ContatoPage() {
                     <div className="flex items-start justify-between text-sm font-[var(--font-inter)] gap-4">
                       <span className="text-white/55">
                         Material ({plates} placa{plates !== 1 ? "s" : ""} × R$ {pricePerPlate.toLocaleString("pt-BR")})
-                        <span className="block text-white/35 text-[10px] mt-0.5">2,9m × 1,2m · {PLATE_M2} m² por placa</span>
                         {discountAmount > 0 && (
                           <span className="block text-[#a1d494] text-[10px] mt-0.5">
                             - {couponData?.discount_type === "percentage" ? couponData.discount_value + "%" : fmt(couponData?.discount_value ?? 0)} (cupom)
