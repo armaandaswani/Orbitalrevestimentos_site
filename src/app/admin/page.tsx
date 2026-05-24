@@ -127,6 +127,12 @@ export default function AdminPage() {
   });
   const [approvalLoading, setApprovalLoading] = useState(false);
 
+  // Multi-rep management for partner edit
+  const [partnerLinkedReps, setPartnerLinkedReps] = useState<Array<{ id: string; sales_rep_id: string; sales_reps: { id: string; name: string; referral_code: string; commission_type: string; commission_value: number } }>>([]);
+  const [partnerRepsLoading, setPartnerRepsLoading] = useState(false);
+  const [addingRepId, setAddingRepId] = useState("");
+  const [repLinkError, setRepLinkError] = useState("");
+
   // Sales reps
   const [salesReps, setSalesReps] = useState<SalesRep[]>([]);
   const [loadingReps, setLoadingReps] = useState(false);
@@ -245,7 +251,11 @@ export default function AdminPage() {
     });
     setPartnerProfOther(PROFESSIONS.includes(p.profession || "") || !p.profession ? "" : p.profession);
     setPartnerFormError("");
+    setPartnerLinkedReps([]);
+    setAddingRepId("");
+    setRepLinkError("");
     setShowPartnerForm(true);
+    loadPartnerReps(p.id);
   }
 
   async function handlePartnerSubmit(e: React.FormEvent) {
@@ -301,6 +311,43 @@ export default function AdminPage() {
     await fetch(`/api/partners/${p.id}`, { method: "DELETE" });
     setNewlyCreatedPartner(null);
     fetchPartners();
+  }
+
+  async function loadPartnerReps(partnerId: string) {
+    setPartnerRepsLoading(true);
+    const res = await fetch(`/api/partners/${partnerId}/reps`);
+    if (res.ok) {
+      const data = await res.json();
+      setPartnerLinkedReps(data);
+    }
+    setPartnerRepsLoading(false);
+  }
+
+  async function addRepToPartner() {
+    if (!addingRepId || !editingPartnerId) return;
+    setRepLinkError("");
+    const res = await fetch(`/api/partners/${editingPartnerId}/reps`, {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ sales_rep_id: addingRepId }),
+    });
+    const json = await res.json();
+    if (!res.ok) {
+      setRepLinkError(json.error || "Erro ao vincular representante.");
+      return;
+    }
+    setAddingRepId("");
+    loadPartnerReps(editingPartnerId);
+  }
+
+  async function removeRepFromPartner(salesRepId: string) {
+    if (!editingPartnerId) return;
+    await fetch(`/api/partners/${editingPartnerId}/reps`, {
+      method: "DELETE",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ sales_rep_id: salesRepId }),
+    });
+    loadPartnerReps(editingPartnerId);
   }
 
   function buildWALink(p: Partner) {
@@ -803,15 +850,6 @@ export default function AdminPage() {
                     </div>
                     <div><label className={labelCls}>Valor da Comissão {partnerForm.commission_type === "percentage" ? "(%)" : "(R$)"}</label><input type="number" min="0" step="0.01" value={partnerForm.commission_value} onChange={(e) => setPartnerForm({ ...partnerForm, commission_value: parseFloat(e.target.value) || 0 })} className={inputCls} /></div>
                     <div>
-                      <label className={labelCls}>Representante Comercial</label>
-                      <select value={partnerForm.sales_rep_referral_code} onChange={(e) => setPartnerForm({ ...partnerForm, sales_rep_referral_code: e.target.value })} className={inputCls}>
-                        <option value="">— Nenhum —</option>
-                        {salesReps.filter((r) => r.status === "active").map((r) => (
-                          <option key={r.id} value={r.referral_code}>{r.name} ({r.referral_code})</option>
-                        ))}
-                      </select>
-                    </div>
-                    <div>
                       <label className={labelCls}>Senha do Portal <span className="normal-case font-normal">(acesso parceiro)</span></label>
                       <input value={partnerForm.portal_password} onChange={(e) => setPartnerForm({ ...partnerForm, portal_password: e.target.value })} className={inputCls} placeholder="Deixe em branco para sem acesso" />
                     </div>
@@ -862,12 +900,71 @@ export default function AdminPage() {
                       Ativa uma aba exclusiva no portal do parceiro com preços e simulador de compra direta.
                     </p>
                   </div>
+                  {editingPartnerId && (
+                    <div className="border border-[#e2e2e2] p-5 mb-5">
+                      <p className={labelCls + " mb-4"}>Representantes Comerciais vinculados</p>
+                      {partnerRepsLoading ? (
+                        <p className="text-[#74777f] text-xs font-[var(--font-inter)]">Carregando...</p>
+                      ) : (
+                        <>
+                          {partnerLinkedReps.length === 0 ? (
+                            <p className="text-[#74777f] text-xs font-[var(--font-inter)] italic mb-3">Nenhum representante vinculado.</p>
+                          ) : (
+                            <div className="space-y-2 mb-3">
+                              {partnerLinkedReps.map((lr) => {
+                                const rep = lr.sales_reps;
+                                return (
+                                  <div key={lr.id} className="flex items-center justify-between bg-[#f9f9f9] border border-[#e2e2e2] px-3 py-2">
+                                    <div>
+                                      <span className="text-sm font-semibold text-[#002045] font-[var(--font-inter)]">{rep.name}</span>
+                                      <span className="text-xs text-[#74777f] font-[var(--font-inter)] ml-2">{rep.referral_code}</span>
+                                      <span className="text-xs text-[#74777f] font-[var(--font-inter)] ml-2">· Comissão: {rep.commission_type === "percentage" ? `${rep.commission_value}%` : `R$ ${rep.commission_value}`}</span>
+                                    </div>
+                                    <button
+                                      type="button"
+                                      onClick={() => removeRepFromPartner(rep.id)}
+                                      className="text-red-500 text-xs font-semibold hover:text-red-700 font-[var(--font-inter)] ml-4 flex-shrink-0"
+                                    >
+                                      Remover
+                                    </button>
+                                  </div>
+                                );
+                              })}
+                            </div>
+                          )}
+                          <div className="flex gap-2 items-start">
+                            <select
+                              value={addingRepId}
+                              onChange={(e) => { setAddingRepId(e.target.value); setRepLinkError(""); }}
+                              className={inputCls + " flex-1"}
+                            >
+                              <option value="">— Adicionar representante —</option>
+                              {salesReps
+                                .filter((r) => r.status === "active" && !partnerLinkedReps.some((lr) => lr.sales_rep_id === r.id))
+                                .map((r) => (
+                                  <option key={r.id} value={r.id}>{r.name} ({r.referral_code})</option>
+                                ))}
+                            </select>
+                            <button
+                              type="button"
+                              onClick={addRepToPartner}
+                              disabled={!addingRepId}
+                              className="bg-[#002045] text-white text-xs tracking-[0.1em] uppercase font-bold font-[var(--font-inter)] px-4 py-2.5 hover:bg-[#1a365d] transition-colors disabled:opacity-40 whitespace-nowrap flex-shrink-0"
+                            >
+                              Vincular
+                            </button>
+                          </div>
+                          {repLinkError && <p className="text-red-600 text-xs font-[var(--font-inter)] mt-1">{repLinkError}</p>}
+                        </>
+                      )}
+                    </div>
+                  )}
                   {partnerFormError && <p className="text-red-600 text-sm font-[var(--font-inter)] mb-4">{partnerFormError}</p>}
                   <div className="flex gap-3">
                     <button type="submit" disabled={partnerFormLoading} className="bg-[#002045] text-white text-xs tracking-[0.1em] uppercase font-bold font-[var(--font-inter)] px-6 py-2.5 hover:bg-[#1a365d] transition-colors disabled:opacity-50">
                       {partnerFormLoading ? "Salvando..." : "Salvar"}
                     </button>
-                    <button type="button" onClick={() => setShowPartnerForm(false)} className="text-[#74777f] text-xs tracking-[0.1em] uppercase font-bold font-[var(--font-inter)] px-6 py-2.5 border border-[#e2e2e2] hover:border-[#74777f] transition-colors">
+                    <button type="button" onClick={() => { setShowPartnerForm(false); setPartnerLinkedReps([]); setAddingRepId(""); setRepLinkError(""); }} className="text-[#74777f] text-xs tracking-[0.1em] uppercase font-bold font-[var(--font-inter)] px-6 py-2.5 border border-[#e2e2e2] hover:border-[#74777f] transition-colors">
                       Cancelar
                     </button>
                   </div>
@@ -898,8 +995,9 @@ export default function AdminPage() {
                           <td className="px-5 py-4 text-[#43474e]">{p.commission_type === "percentage" ? `${p.commission_value}%` : fmt(p.commission_value)}</td>
                           <td className="px-5 py-4 text-xs text-[#74777f]">
                             {p.sales_rep_referral_code
-                              ? (() => { const r = salesReps.find((r) => r.referral_code === p.sales_rep_referral_code); return r ? <span title={r.referral_code}>{r.name}</span> : p.sales_rep_referral_code; })()
+                              ? (() => { const r = salesReps.find((r) => r.referral_code === p.sales_rep_referral_code); return r ? <span title={`Cód. captação: ${r.referral_code}`}>{r.name}</span> : p.sales_rep_referral_code; })()
                               : "—"}
+                            <span className="block text-[9px] text-[#b0b0b0] font-[var(--font-inter)]">cód. captação</span>
                           </td>
                           <td className="px-5 py-4 text-xs text-[#74777f]">{p.portal_password ? <span className="font-mono text-[#43474e]">{p.portal_password}</span> : <span className="italic">—</span>}</td>
                           <td className="px-5 py-4">

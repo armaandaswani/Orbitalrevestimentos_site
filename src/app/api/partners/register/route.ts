@@ -3,7 +3,7 @@ import { supabaseAdmin } from "@/lib/supabase";
 
 export async function POST(req: NextRequest) {
   const body = await req.json();
-  const { name, email, phone, sales_rep_referral_code, portal_password, birthday } = body;
+  const { name, email, phone, sales_rep_referral_code, portal_password, birthday, profession } = body;
 
   if (!name || !email || !phone || !sales_rep_referral_code || !portal_password || !birthday) {
     return NextResponse.json(
@@ -78,6 +78,7 @@ export async function POST(req: NextRequest) {
       portal_password,
       sales_rep_referral_code: (sales_rep_referral_code as string).toUpperCase(),
       birthday: birthday || null,
+      profession: profession || null,
     })
     .select()
     .single();

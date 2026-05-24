@@ -12,7 +12,7 @@ export async function PUT(
   // Fetch current record to detect changes
   const { data: current } = await db
     .from("partners")
-    .select("name, email, portal_password, coupon_code, status")
+    .select("name, email, portal_password, coupon_code, status, profession, has_special_table")
     .eq("id", id)
     .single();
 
