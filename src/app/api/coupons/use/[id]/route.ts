@@ -50,5 +50,50 @@ export async function PATCH(
     .single();
 
   if (error) return NextResponse.json({ error: error.message }, { status: 500 });
+
+  // Send conclusion email to client and close their drip sequence
+  if (body.sale_status === "concluido" || body.sale_status === "cancelado") {
+    try {
+      const db2 = supabaseAdmin();
+      const { data: seq } = await db2
+        .from("client_email_sequences")
+        .select("*")
+        .eq("coupon_use_id", id)
+        .eq("status", "active")
+        .maybeSingle();
+
+      if (seq) {
+        const { getResend } = await import("@/lib/resend");
+        const { generateClientEmail } = await import("@/lib/client-email-content");
+        const resend = getResend();
+        const emailStep = body.sale_status === "concluido" ? 99 : 98;
+        const { subject, html } = generateClientEmail(emailStep, {
+          clientName: seq.client_name as string,
+          space: seq.space as string | null,
+          model: seq.model as string,
+          plates: seq.plates as number,
+          area: seq.area_m2 as number,
+          total: seq.total as number,
+          partnerName: seq.partner_name as string,
+        });
+        await resend.emails.send({
+          from: "Orbital Revestimentos <noreply@orbitalrevestimentos.com.br>",
+          to: seq.client_email as string,
+          subject,
+          html,
+        });
+        await db2
+          .from("client_email_sequences")
+          .update({
+            status: body.sale_status === "concluido" ? "completed" : "cancelled",
+            next_email_at: null,
+          })
+          .eq("id", seq.id as string);
+      }
+    } catch {
+      // email failure is non-fatal
+    }
+  }
+
   return NextResponse.json(data);
 }

@@ -160,6 +160,15 @@ export default function AdminPage() {
   const [cpSuccess, setCpSuccess] = useState(false);
   const [cpLoading, setCpLoading] = useState(false);
 
+  // ── Password visibility state ──────────────────────────────────────────────
+  const [showAdminPw, setShowAdminPw] = useState(false);
+  const [showCpCurrent, setShowCpCurrent] = useState(false);
+  const [showCpNew, setShowCpNew] = useState(false);
+  const [showCpConfirm, setShowCpConfirm] = useState(false);
+  const [showPartnerPw, setShowPartnerPw] = useState(false);
+  const [showRepPw, setShowRepPw] = useState(false);
+  const [showApprovalPw, setShowApprovalPw] = useState(false);
+
   // ── Email Campaigns ─────────────────────
   interface EmailCampaign {
     id: string;
@@ -671,7 +680,22 @@ export default function AdminPage() {
           <form onSubmit={handleLogin} className="space-y-4">
             <div>
               <label className={labelCls}>Senha</label>
-              <input type="password" value={pw} onChange={(e) => setPw(e.target.value)} className={inputCls} autoFocus />
+              <div className="relative">
+                <input type={showAdminPw ? "text" : "password"} value={pw} onChange={(e) => setPw(e.target.value)} className={inputCls + " pr-10"} autoFocus />
+                <button
+                  type="button"
+                  tabIndex={-1}
+                  aria-label={showAdminPw ? "Ocultar senha" : "Mostrar senha"}
+                  onClick={() => setShowAdminPw((v) => !v)}
+                  className="absolute right-3 top-1/2 -translate-y-1/2 text-[#74777f] hover:text-[#002045] transition-colors"
+                >
+                  {showAdminPw ? (
+                    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><path d="M17.94 17.94A10.07 10.07 0 0112 20c-7 0-11-8-11-8a18.45 18.45 0 015.06-5.94M9.9 4.24A9.12 9.12 0 0112 4c7 0 11 8 11 8a18.5 18.5 0 01-2.16 3.19m-6.72-1.07a3 3 0 11-4.24-4.24"/><line x1="1" y1="1" x2="23" y2="23"/></svg>
+                  ) : (
+                    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/><circle cx="12" cy="12" r="3"/></svg>
+                  )}
+                </button>
+              </div>
             </div>
             {pwError && <p className="text-red-600 text-sm font-[var(--font-inter)]">{pwError}</p>}
             <button type="submit" className="w-full bg-[#002045] text-white text-xs tracking-[0.12em] uppercase font-bold font-[var(--font-inter)] px-6 py-3 hover:bg-[#1a365d] transition-colors">
@@ -799,18 +823,81 @@ export default function AdminPage() {
             <p className="text-green-400 text-sm font-[var(--font-inter)]">Senha alterada com sucesso.</p>
           ) : (
             <form onSubmit={handleAdminChangePassword} className="flex flex-wrap items-end gap-4">
-              {["Senha atual", "Nova senha", "Confirmar nova senha"].map((lbl, i) => (
-                <div key={lbl}>
-                  <label className="block text-[10px] tracking-[0.15em] uppercase font-bold font-[var(--font-inter)] text-white/50 mb-1">{lbl}</label>
+              <div>
+                <label className="block text-[10px] tracking-[0.15em] uppercase font-bold font-[var(--font-inter)] text-white/50 mb-1">Senha atual</label>
+                <div className="relative">
                   <input
                     required
-                    type="password"
-                    value={[cpCurrent, cpNew, cpConfirm][i]}
-                    onChange={(e) => [setCpCurrent, setCpNew, setCpConfirm][i](e.target.value)}
-                    className="border border-[#1a365d] bg-[#002045] text-white px-3 py-2 text-sm font-[var(--font-inter)] focus:outline-none focus:border-white/40 w-44"
+                    type={showCpCurrent ? "text" : "password"}
+                    value={cpCurrent}
+                    onChange={(e) => setCpCurrent(e.target.value)}
+                    className="border border-[#1a365d] bg-[#002045] text-white px-3 py-2 pr-9 text-sm font-[var(--font-inter)] focus:outline-none focus:border-white/40 w-44"
                   />
+                  <button
+                    type="button"
+                    tabIndex={-1}
+                    aria-label={showCpCurrent ? "Ocultar senha" : "Mostrar senha"}
+                    onClick={() => setShowCpCurrent((v) => !v)}
+                    className="absolute right-2.5 top-1/2 -translate-y-1/2 text-white/50 hover:text-white transition-colors"
+                  >
+                    {showCpCurrent ? (
+                      <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><path d="M17.94 17.94A10.07 10.07 0 0112 20c-7 0-11-8-11-8a18.45 18.45 0 015.06-5.94M9.9 4.24A9.12 9.12 0 0112 4c7 0 11 8 11 8a18.5 18.5 0 01-2.16 3.19m-6.72-1.07a3 3 0 11-4.24-4.24"/><line x1="1" y1="1" x2="23" y2="23"/></svg>
+                    ) : (
+                      <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/><circle cx="12" cy="12" r="3"/></svg>
+                    )}
+                  </button>
                 </div>
-              ))}
+              </div>
+              <div>
+                <label className="block text-[10px] tracking-[0.15em] uppercase font-bold font-[var(--font-inter)] text-white/50 mb-1">Nova senha</label>
+                <div className="relative">
+                  <input
+                    required
+                    type={showCpNew ? "text" : "password"}
+                    value={cpNew}
+                    onChange={(e) => setCpNew(e.target.value)}
+                    className="border border-[#1a365d] bg-[#002045] text-white px-3 py-2 pr-9 text-sm font-[var(--font-inter)] focus:outline-none focus:border-white/40 w-44"
+                  />
+                  <button
+                    type="button"
+                    tabIndex={-1}
+                    aria-label={showCpNew ? "Ocultar senha" : "Mostrar senha"}
+                    onClick={() => setShowCpNew((v) => !v)}
+                    className="absolute right-2.5 top-1/2 -translate-y-1/2 text-white/50 hover:text-white transition-colors"
+                  >
+                    {showCpNew ? (
+                      <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><path d="M17.94 17.94A10.07 10.07 0 0112 20c-7 0-11-8-11-8a18.45 18.45 0 015.06-5.94M9.9 4.24A9.12 9.12 0 0112 4c7 0 11 8 11 8a18.5 18.5 0 01-2.16 3.19m-6.72-1.07a3 3 0 11-4.24-4.24"/><line x1="1" y1="1" x2="23" y2="23"/></svg>
+                    ) : (
+                      <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/><circle cx="12" cy="12" r="3"/></svg>
+                    )}
+                  </button>
+                </div>
+              </div>
+              <div>
+                <label className="block text-[10px] tracking-[0.15em] uppercase font-bold font-[var(--font-inter)] text-white/50 mb-1">Confirmar nova senha</label>
+                <div className="relative">
+                  <input
+                    required
+                    type={showCpConfirm ? "text" : "password"}
+                    value={cpConfirm}
+                    onChange={(e) => setCpConfirm(e.target.value)}
+                    className="border border-[#1a365d] bg-[#002045] text-white px-3 py-2 pr-9 text-sm font-[var(--font-inter)] focus:outline-none focus:border-white/40 w-44"
+                  />
+                  <button
+                    type="button"
+                    tabIndex={-1}
+                    aria-label={showCpConfirm ? "Ocultar senha" : "Mostrar senha"}
+                    onClick={() => setShowCpConfirm((v) => !v)}
+                    className="absolute right-2.5 top-1/2 -translate-y-1/2 text-white/50 hover:text-white transition-colors"
+                  >
+                    {showCpConfirm ? (
+                      <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><path d="M17.94 17.94A10.07 10.07 0 0112 20c-7 0-11-8-11-8a18.45 18.45 0 015.06-5.94M9.9 4.24A9.12 9.12 0 0112 4c7 0 11 8 11 8a18.5 18.5 0 01-2.16 3.19m-6.72-1.07a3 3 0 11-4.24-4.24"/><line x1="1" y1="1" x2="23" y2="23"/></svg>
+                    ) : (
+                      <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/><circle cx="12" cy="12" r="3"/></svg>
+                    )}
+                  </button>
+                </div>
+              </div>
               <div className="flex flex-col gap-1">
                 {cpError && <p className="text-red-400 text-xs font-[var(--font-inter)]">{cpError}</p>}
                 <div className="flex gap-2">
@@ -927,7 +1014,22 @@ export default function AdminPage() {
                           </div>
                           <div className="mb-3 max-w-xs">
                             <label className={labelCls}>Senha do portal</label>
-                            <input value={approvalForm.portal_password} onChange={(e) => setApprovalForm({ ...approvalForm, portal_password: e.target.value })} className={inputCls} placeholder="Opcional" />
+                            <div className="relative">
+                              <input value={approvalForm.portal_password} onChange={(e) => setApprovalForm({ ...approvalForm, portal_password: e.target.value })} className={inputCls + " pr-10"} type={showApprovalPw ? "text" : "password"} placeholder="Opcional" />
+                              <button
+                                type="button"
+                                tabIndex={-1}
+                                aria-label={showApprovalPw ? "Ocultar senha" : "Mostrar senha"}
+                                onClick={() => setShowApprovalPw((v) => !v)}
+                                className="absolute right-3 top-1/2 -translate-y-1/2 text-[#74777f] hover:text-[#002045] transition-colors"
+                              >
+                                {showApprovalPw ? (
+                                  <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><path d="M17.94 17.94A10.07 10.07 0 0112 20c-7 0-11-8-11-8a18.45 18.45 0 015.06-5.94M9.9 4.24A9.12 9.12 0 0112 4c7 0 11 8 11 8a18.5 18.5 0 01-2.16 3.19m-6.72-1.07a3 3 0 11-4.24-4.24"/><line x1="1" y1="1" x2="23" y2="23"/></svg>
+                                ) : (
+                                  <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/><circle cx="12" cy="12" r="3"/></svg>
+                                )}
+                              </button>
+                            </div>
                           </div>
                           <div className="flex gap-2">
                             <button onClick={() => approvePartner(p)} disabled={approvalLoading}
@@ -1086,7 +1188,22 @@ export default function AdminPage() {
                     <div><label className={labelCls}>Valor da Comissão {partnerForm.commission_type === "percentage" ? "(%)" : "(R$)"}</label><input type="number" min="0" step="0.01" value={partnerForm.commission_value} onChange={(e) => setPartnerForm({ ...partnerForm, commission_value: parseFloat(e.target.value) || 0 })} className={inputCls} /></div>
                     <div>
                       <label className={labelCls}>Senha do Portal <span className="normal-case font-normal">(acesso parceiro)</span></label>
-                      <input value={partnerForm.portal_password} onChange={(e) => setPartnerForm({ ...partnerForm, portal_password: e.target.value })} className={inputCls} placeholder="Deixe em branco para sem acesso" />
+                      <div className="relative">
+                        <input value={partnerForm.portal_password} onChange={(e) => setPartnerForm({ ...partnerForm, portal_password: e.target.value })} className={inputCls + " pr-10"} type={showPartnerPw ? "text" : "password"} placeholder="Deixe em branco para sem acesso" />
+                        <button
+                          type="button"
+                          tabIndex={-1}
+                          aria-label={showPartnerPw ? "Ocultar senha" : "Mostrar senha"}
+                          onClick={() => setShowPartnerPw((v) => !v)}
+                          className="absolute right-3 top-1/2 -translate-y-1/2 text-[#74777f] hover:text-[#002045] transition-colors"
+                        >
+                          {showPartnerPw ? (
+                            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><path d="M17.94 17.94A10.07 10.07 0 0112 20c-7 0-11-8-11-8a18.45 18.45 0 015.06-5.94M9.9 4.24A9.12 9.12 0 0112 4c7 0 11 8 11 8a18.5 18.5 0 01-2.16 3.19m-6.72-1.07a3 3 0 11-4.24-4.24"/><line x1="1" y1="1" x2="23" y2="23"/></svg>
+                          ) : (
+                            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/><circle cx="12" cy="12" r="3"/></svg>
+                          )}
+                        </button>
+                      </div>
                     </div>
                     {editingPartnerId && (
                       <div>
@@ -1373,7 +1490,22 @@ export default function AdminPage() {
                     <div><label className={labelCls}>Comissão {repForm.commission_type === "percentage" ? "(%)" : "(R$)"}</label><input type="number" min="0" step="0.01" value={repForm.commission_value} onChange={(e) => setRepForm({ ...repForm, commission_value: parseFloat(e.target.value) || 0 })} className={inputCls} /></div>
                     <div>
                       <label className={labelCls}>Senha do Portal <span className="normal-case font-normal">(acesso representante)</span></label>
-                      <input value={repForm.portal_password} onChange={(e) => setRepForm({ ...repForm, portal_password: e.target.value })} className={inputCls} placeholder="Deixe em branco para sem acesso" />
+                      <div className="relative">
+                        <input value={repForm.portal_password} onChange={(e) => setRepForm({ ...repForm, portal_password: e.target.value })} className={inputCls + " pr-10"} type={showRepPw ? "text" : "password"} placeholder="Deixe em branco para sem acesso" />
+                        <button
+                          type="button"
+                          tabIndex={-1}
+                          aria-label={showRepPw ? "Ocultar senha" : "Mostrar senha"}
+                          onClick={() => setShowRepPw((v) => !v)}
+                          className="absolute right-3 top-1/2 -translate-y-1/2 text-[#74777f] hover:text-[#002045] transition-colors"
+                        >
+                          {showRepPw ? (
+                            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><path d="M17.94 17.94A10.07 10.07 0 0112 20c-7 0-11-8-11-8a18.45 18.45 0 015.06-5.94M9.9 4.24A9.12 9.12 0 0112 4c7 0 11 8 11 8a18.5 18.5 0 01-2.16 3.19m-6.72-1.07a3 3 0 11-4.24-4.24"/><line x1="1" y1="1" x2="23" y2="23"/></svg>
+                          ) : (
+                            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/><circle cx="12" cy="12" r="3"/></svg>
+                          )}
+                        </button>
+                      </div>
                     </div>
                     {editingRepId && (
                       <div>

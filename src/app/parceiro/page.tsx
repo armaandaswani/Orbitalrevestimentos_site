@@ -111,6 +111,20 @@ export default function ParceiroPage() {
   const [sqM2Input, setSqM2Input] = useState("");
   const [sqQty, setSqQty] = useState("");
   const [sqShowMargin, setSqShowMargin] = useState(false);
+  const [sqClientName, setSqClientName] = useState("");
+  const [sqClientEmail, setSqClientEmail] = useState("");
+  const [sqSpace, setSqSpace] = useState("");
+  const [sqSubmitting, setSqSubmitting] = useState(false);
+  const [sqSubmitted, setSqSubmitted] = useState(false);
+  const [sqSubmitError, setSqSubmitError] = useState("");
+
+  // ── Password visibility state ──────────────────────────────────────────────
+  const [showLoginPw, setShowLoginPw] = useState(false);
+  const [showResetPw, setShowResetPw] = useState(false);
+  const [showResetConfirm, setShowResetConfirm] = useState(false);
+  const [showCpCurrent, setShowCpCurrent] = useState(false);
+  const [showCpNew, setShowCpNew] = useState(false);
+  const [showCpConfirm, setShowCpConfirm] = useState(false);
 
   // ── On mount: check for ?reset=TOKEN ──────────────────────────────────────
   useEffect(() => {
@@ -260,6 +274,57 @@ export default function ParceiroPage() {
     setShowChangePassword(false);
   }
 
+  async function handleSimulatorSubmit() {
+    if (!sqClientName.trim() || !sqClientEmail.trim() || !sqLinha || sqQtyNum <= 0) return;
+    setSqSubmitting(true);
+    setSqSubmitError("");
+    try {
+      const useRes = await fetch("/api/coupons/use", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          partner_id: partner!.id,
+          coupon_code: partner!.coupon_code,
+          architect_name: sqClientName.trim(),
+          space: sqSpace.trim() || null,
+          product_name: `Orbital ${sqLinha}`,
+          product_code: sqLinha,
+          area_m2: parseFloat(sqArea.toFixed(2)),
+          plates: sqQtyNum,
+          material_total: sqQtyNum * sqNormalPrice,
+          material_discounted: sqTotal,
+          discount_applied: sqTotalSavings,
+          commission_owed: partner!.commission_type === "percentage"
+            ? sqTotal * (partner!.commission_value / 100)
+            : partner!.commission_value,
+        }),
+      });
+      if (!useRes.ok) throw new Error("Erro ao registrar orçamento.");
+      const useData = await useRes.json();
+      await fetch("/api/client-email-sequences", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          coupon_use_id: useData.id,
+          client_name: sqClientName.trim(),
+          client_email: sqClientEmail.trim(),
+          space: sqSpace.trim() || null,
+          model: sqLinha,
+          plates: sqQtyNum,
+          area_m2: parseFloat(sqArea.toFixed(2)),
+          total: sqTotal,
+          partner_name: partner!.name,
+          partner_coupon: partner!.coupon_code,
+        }),
+      });
+      fetchUses(partner!.coupon_code);
+      setSqSubmitted(true);
+    } catch (err) {
+      setSqSubmitError(err instanceof Error ? err.message : "Erro ao registrar. Tente novamente.");
+    }
+    setSqSubmitting(false);
+  }
+
   async function handleProfessionSubmit(e: React.FormEvent) {
     e.preventDefault();
     setProfError("");
@@ -345,26 +410,56 @@ export default function ParceiroPage() {
                     <label className="block text-[10px] tracking-[0.15em] uppercase font-bold font-[var(--font-inter)] text-[#74777f] mb-2">
                       Nova Senha
                     </label>
-                    <input
-                      required
-                      type="password"
-                      value={resetNewPassword}
-                      onChange={(e) => setResetNewPassword(e.target.value)}
-                      className="w-full border border-[#e2e2e2] px-4 py-3 text-sm font-[var(--font-inter)] text-[#002045] focus:outline-none focus:border-[#002045]"
-                      autoFocus
-                    />
+                    <div className="relative">
+                      <input
+                        required
+                        type={showResetPw ? "text" : "password"}
+                        value={resetNewPassword}
+                        onChange={(e) => setResetNewPassword(e.target.value)}
+                        className="w-full border border-[#e2e2e2] px-4 py-3 pr-10 text-sm font-[var(--font-inter)] text-[#002045] focus:outline-none focus:border-[#002045]"
+                        autoFocus
+                      />
+                      <button
+                        type="button"
+                        tabIndex={-1}
+                        aria-label={showResetPw ? "Ocultar senha" : "Mostrar senha"}
+                        onClick={() => setShowResetPw((v) => !v)}
+                        className="absolute right-3 top-1/2 -translate-y-1/2 text-[#74777f] hover:text-[#002045] transition-colors"
+                      >
+                        {showResetPw ? (
+                          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><path d="M17.94 17.94A10.07 10.07 0 0112 20c-7 0-11-8-11-8a18.45 18.45 0 015.06-5.94M9.9 4.24A9.12 9.12 0 0112 4c7 0 11 8 11 8a18.5 18.5 0 01-2.16 3.19m-6.72-1.07a3 3 0 11-4.24-4.24"/><line x1="1" y1="1" x2="23" y2="23"/></svg>
+                        ) : (
+                          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/><circle cx="12" cy="12" r="3"/></svg>
+                        )}
+                      </button>
+                    </div>
                   </div>
                   <div>
                     <label className="block text-[10px] tracking-[0.15em] uppercase font-bold font-[var(--font-inter)] text-[#74777f] mb-2">
                       Confirmar Nova Senha
                     </label>
-                    <input
-                      required
-                      type="password"
-                      value={resetConfirmPassword}
-                      onChange={(e) => setResetConfirmPassword(e.target.value)}
-                      className="w-full border border-[#e2e2e2] px-4 py-3 text-sm font-[var(--font-inter)] text-[#002045] focus:outline-none focus:border-[#002045]"
-                    />
+                    <div className="relative">
+                      <input
+                        required
+                        type={showResetConfirm ? "text" : "password"}
+                        value={resetConfirmPassword}
+                        onChange={(e) => setResetConfirmPassword(e.target.value)}
+                        className="w-full border border-[#e2e2e2] px-4 py-3 pr-10 text-sm font-[var(--font-inter)] text-[#002045] focus:outline-none focus:border-[#002045]"
+                      />
+                      <button
+                        type="button"
+                        tabIndex={-1}
+                        aria-label={showResetConfirm ? "Ocultar senha" : "Mostrar senha"}
+                        onClick={() => setShowResetConfirm((v) => !v)}
+                        className="absolute right-3 top-1/2 -translate-y-1/2 text-[#74777f] hover:text-[#002045] transition-colors"
+                      >
+                        {showResetConfirm ? (
+                          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><path d="M17.94 17.94A10.07 10.07 0 0112 20c-7 0-11-8-11-8a18.45 18.45 0 015.06-5.94M9.9 4.24A9.12 9.12 0 0112 4c7 0 11 8 11 8a18.5 18.5 0 01-2.16 3.19m-6.72-1.07a3 3 0 11-4.24-4.24"/><line x1="1" y1="1" x2="23" y2="23"/></svg>
+                        ) : (
+                          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/><circle cx="12" cy="12" r="3"/></svg>
+                        )}
+                      </button>
+                    </div>
                   </div>
                   {resetError && (
                     <p className="text-red-600 text-sm font-[var(--font-inter)]">{resetError}</p>
@@ -479,14 +574,29 @@ export default function ParceiroPage() {
                   <label className="block text-[10px] tracking-[0.15em] uppercase font-bold font-[var(--font-inter)] text-[#74777f] mb-2">
                     Senha
                   </label>
-                  <input
-                    required
-                    type="password"
-                    value={password}
-                    onChange={(e) => setPassword(e.target.value)}
-                    className="w-full border border-[#e2e2e2] px-4 py-3 text-sm font-[var(--font-inter)] text-[#002045] focus:outline-none focus:border-[#002045]"
-                    autoComplete="current-password"
-                  />
+                  <div className="relative">
+                    <input
+                      required
+                      type={showLoginPw ? "text" : "password"}
+                      value={password}
+                      onChange={(e) => setPassword(e.target.value)}
+                      className="w-full border border-[#e2e2e2] px-4 py-3 pr-10 text-sm font-[var(--font-inter)] text-[#002045] focus:outline-none focus:border-[#002045]"
+                      autoComplete="current-password"
+                    />
+                    <button
+                      type="button"
+                      tabIndex={-1}
+                      aria-label={showLoginPw ? "Ocultar senha" : "Mostrar senha"}
+                      onClick={() => setShowLoginPw((v) => !v)}
+                      className="absolute right-3 top-1/2 -translate-y-1/2 text-[#74777f] hover:text-[#002045] transition-colors"
+                    >
+                      {showLoginPw ? (
+                        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><path d="M17.94 17.94A10.07 10.07 0 0112 20c-7 0-11-8-11-8a18.45 18.45 0 015.06-5.94M9.9 4.24A9.12 9.12 0 0112 4c7 0 11 8 11 8a18.5 18.5 0 01-2.16 3.19m-6.72-1.07a3 3 0 11-4.24-4.24"/><line x1="1" y1="1" x2="23" y2="23"/></svg>
+                      ) : (
+                        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/><circle cx="12" cy="12" r="3"/></svg>
+                      )}
+                    </button>
+                  </div>
                 </div>
                 {loginError && (
                   <p className="text-red-600 text-sm font-[var(--font-inter)]">{loginError}</p>
@@ -664,38 +774,83 @@ export default function ParceiroPage() {
                   <label className="block text-[10px] tracking-[0.15em] uppercase font-bold font-[var(--font-inter)] text-[#74777f] mb-1.5">
                     Senha Atual
                   </label>
-                  <input
-                    required
-                    type="password"
-                    value={cpCurrent}
-                    onChange={(e) => setCpCurrent(e.target.value)}
-                    className="w-full border border-[#e2e2e2] px-4 py-2.5 text-sm font-[var(--font-inter)] text-[#002045] focus:outline-none focus:border-[#002045]"
-                    autoFocus
-                  />
+                  <div className="relative">
+                    <input
+                      required
+                      type={showCpCurrent ? "text" : "password"}
+                      value={cpCurrent}
+                      onChange={(e) => setCpCurrent(e.target.value)}
+                      className="w-full border border-[#e2e2e2] px-4 py-2.5 pr-10 text-sm font-[var(--font-inter)] text-[#002045] focus:outline-none focus:border-[#002045]"
+                      autoFocus
+                    />
+                    <button
+                      type="button"
+                      tabIndex={-1}
+                      aria-label={showCpCurrent ? "Ocultar senha" : "Mostrar senha"}
+                      onClick={() => setShowCpCurrent((v) => !v)}
+                      className="absolute right-3 top-1/2 -translate-y-1/2 text-[#74777f] hover:text-[#002045] transition-colors"
+                    >
+                      {showCpCurrent ? (
+                        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><path d="M17.94 17.94A10.07 10.07 0 0112 20c-7 0-11-8-11-8a18.45 18.45 0 015.06-5.94M9.9 4.24A9.12 9.12 0 0112 4c7 0 11 8 11 8a18.5 18.5 0 01-2.16 3.19m-6.72-1.07a3 3 0 11-4.24-4.24"/><line x1="1" y1="1" x2="23" y2="23"/></svg>
+                      ) : (
+                        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/><circle cx="12" cy="12" r="3"/></svg>
+                      )}
+                    </button>
+                  </div>
                 </div>
                 <div>
                   <label className="block text-[10px] tracking-[0.15em] uppercase font-bold font-[var(--font-inter)] text-[#74777f] mb-1.5">
                     Nova Senha
                   </label>
-                  <input
-                    required
-                    type="password"
-                    value={cpNew}
-                    onChange={(e) => setCpNew(e.target.value)}
-                    className="w-full border border-[#e2e2e2] px-4 py-2.5 text-sm font-[var(--font-inter)] text-[#002045] focus:outline-none focus:border-[#002045]"
-                  />
+                  <div className="relative">
+                    <input
+                      required
+                      type={showCpNew ? "text" : "password"}
+                      value={cpNew}
+                      onChange={(e) => setCpNew(e.target.value)}
+                      className="w-full border border-[#e2e2e2] px-4 py-2.5 pr-10 text-sm font-[var(--font-inter)] text-[#002045] focus:outline-none focus:border-[#002045]"
+                    />
+                    <button
+                      type="button"
+                      tabIndex={-1}
+                      aria-label={showCpNew ? "Ocultar senha" : "Mostrar senha"}
+                      onClick={() => setShowCpNew((v) => !v)}
+                      className="absolute right-3 top-1/2 -translate-y-1/2 text-[#74777f] hover:text-[#002045] transition-colors"
+                    >
+                      {showCpNew ? (
+                        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><path d="M17.94 17.94A10.07 10.07 0 0112 20c-7 0-11-8-11-8a18.45 18.45 0 015.06-5.94M9.9 4.24A9.12 9.12 0 0112 4c7 0 11 8 11 8a18.5 18.5 0 01-2.16 3.19m-6.72-1.07a3 3 0 11-4.24-4.24"/><line x1="1" y1="1" x2="23" y2="23"/></svg>
+                      ) : (
+                        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/><circle cx="12" cy="12" r="3"/></svg>
+                      )}
+                    </button>
+                  </div>
                 </div>
                 <div>
                   <label className="block text-[10px] tracking-[0.15em] uppercase font-bold font-[var(--font-inter)] text-[#74777f] mb-1.5">
                     Confirmar Nova Senha
                   </label>
-                  <input
-                    required
-                    type="password"
-                    value={cpConfirm}
-                    onChange={(e) => setCpConfirm(e.target.value)}
-                    className="w-full border border-[#e2e2e2] px-4 py-2.5 text-sm font-[var(--font-inter)] text-[#002045] focus:outline-none focus:border-[#002045]"
-                  />
+                  <div className="relative">
+                    <input
+                      required
+                      type={showCpConfirm ? "text" : "password"}
+                      value={cpConfirm}
+                      onChange={(e) => setCpConfirm(e.target.value)}
+                      className="w-full border border-[#e2e2e2] px-4 py-2.5 pr-10 text-sm font-[var(--font-inter)] text-[#002045] focus:outline-none focus:border-[#002045]"
+                    />
+                    <button
+                      type="button"
+                      tabIndex={-1}
+                      aria-label={showCpConfirm ? "Ocultar senha" : "Mostrar senha"}
+                      onClick={() => setShowCpConfirm((v) => !v)}
+                      className="absolute right-3 top-1/2 -translate-y-1/2 text-[#74777f] hover:text-[#002045] transition-colors"
+                    >
+                      {showCpConfirm ? (
+                        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><path d="M17.94 17.94A10.07 10.07 0 0112 20c-7 0-11-8-11-8a18.45 18.45 0 015.06-5.94M9.9 4.24A9.12 9.12 0 0112 4c7 0 11 8 11 8a18.5 18.5 0 01-2.16 3.19m-6.72-1.07a3 3 0 11-4.24-4.24"/><line x1="1" y1="1" x2="23" y2="23"/></svg>
+                      ) : (
+                        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/><circle cx="12" cy="12" r="3"/></svg>
+                      )}
+                    </button>
+                  </div>
                 </div>
                 {cpError && (
                   <p className="text-red-600 text-sm font-[var(--font-inter)]">{cpError}</p>
@@ -920,6 +1075,46 @@ export default function ParceiroPage() {
               Simulador de Orçamento
             </h2>
 
+            {/* Client info */}
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 mb-6">
+              <div>
+                <label className="block text-[10px] tracking-[0.15em] uppercase font-bold font-[var(--font-inter)] text-[#74777f] mb-2">
+                  Nome do cliente *
+                </label>
+                <input
+                  type="text"
+                  value={sqClientName}
+                  onChange={(e) => setSqClientName(e.target.value)}
+                  placeholder="Ex: João Silva"
+                  className="w-full border border-[#e2e2e2] px-4 py-2.5 text-sm font-[var(--font-inter)] text-[#002045] focus:outline-none focus:border-[#002045]"
+                />
+              </div>
+              <div>
+                <label className="block text-[10px] tracking-[0.15em] uppercase font-bold font-[var(--font-inter)] text-[#74777f] mb-2">
+                  E-mail do cliente *
+                </label>
+                <input
+                  type="email"
+                  value={sqClientEmail}
+                  onChange={(e) => setSqClientEmail(e.target.value)}
+                  placeholder="cliente@email.com"
+                  className="w-full border border-[#e2e2e2] px-4 py-2.5 text-sm font-[var(--font-inter)] text-[#002045] focus:outline-none focus:border-[#002045]"
+                />
+              </div>
+            </div>
+            <div className="mb-6">
+              <label className="block text-[10px] tracking-[0.15em] uppercase font-bold font-[var(--font-inter)] text-[#74777f] mb-2">
+                Espaço / Ambiente
+              </label>
+              <input
+                type="text"
+                value={sqSpace}
+                onChange={(e) => setSqSpace(e.target.value)}
+                placeholder="Ex: Sala de estar, Cozinha, Banheiro..."
+                className="w-full border border-[#e2e2e2] px-4 py-2.5 text-sm font-[var(--font-inter)] text-[#002045] focus:outline-none focus:border-[#002045]"
+              />
+            </div>
+
             {/* Model cards */}
             <div className="mb-6">
               <label className="block text-[10px] tracking-[0.15em] uppercase font-bold font-[var(--font-inter)] text-[#74777f] mb-3">
@@ -1131,6 +1326,44 @@ export default function ParceiroPage() {
                     </p>
                   </div>
                 )}
+
+                {/* Submit */}
+                <div className="border-t border-[#e2e2e2] mt-6 pt-6">
+                  {sqSubmitted ? (
+                    <div className="bg-green-50 border border-green-200 px-5 py-4 text-center">
+                      <p className="text-green-700 font-semibold text-sm font-[var(--font-inter)]">✓ Orçamento registrado com sucesso!</p>
+                      <p className="text-green-600 text-xs font-[var(--font-inter)] mt-1">Um e-mail de confirmação foi enviado para {sqClientEmail}.</p>
+                      <button
+                        type="button"
+                        onClick={() => {
+                          setSqClientName(""); setSqClientEmail(""); setSqSpace("");
+                          setSqLinha(""); setSqWidth(""); setSqHeight("");
+                          setSqM2Input(""); setSqQty(""); setSqSubmitted(false); setSqSubmitError("");
+                        }}
+                        className="mt-3 text-[#002045] text-xs font-[var(--font-inter)] underline underline-offset-2"
+                      >
+                        Novo orçamento
+                      </button>
+                    </div>
+                  ) : (
+                    <>
+                      {sqSubmitError && (
+                        <p className="text-red-600 text-xs font-[var(--font-inter)] mb-3">{sqSubmitError}</p>
+                      )}
+                      <button
+                        type="button"
+                        disabled={sqSubmitting || !sqClientName.trim() || !sqClientEmail.trim() || !sqLinha || sqQtyNum <= 0}
+                        onClick={handleSimulatorSubmit}
+                        className="w-full bg-[#002045] text-white text-xs tracking-[0.12em] uppercase font-bold font-[var(--font-inter)] px-6 py-4 hover:bg-[#1a365d] transition-colors disabled:opacity-50"
+                      >
+                        {sqSubmitting ? "Registrando..." : "Registrar Orçamento"}
+                      </button>
+                      <p className="text-[#74777f] text-[10px] font-[var(--font-inter)] mt-2 text-center">
+                        O cliente receberá um e-mail com todos os detalhes e acompanhamento do projeto.
+                      </p>
+                    </>
+                  )}
+                </div>
               </div>
             )}
           </div>
