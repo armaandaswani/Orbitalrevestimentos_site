@@ -429,7 +429,36 @@ export default function RepresentantePage() {
                 ))}
               </div>
             </div>
-            <div className="bg-white border border-[#e2e2e2] overflow-x-auto">
+            {/* Mobile card list — hidden on sm+ */}
+            <div className="sm:hidden bg-white border border-[#e2e2e2] divide-y divide-[#f0f0f0]">
+              {partnerRanking.map((p, i) => (
+                <div key={p.code} className="px-4 py-4">
+                  <div className="flex items-center justify-between mb-2">
+                    <div className="flex items-center gap-2">
+                      <span className="font-bold text-[#002045] text-base font-[var(--font-noto-serif)]">{i + 1}°</span>
+                      <span className="font-semibold text-[#002045] text-sm font-[var(--font-inter)]">{p.name}</span>
+                    </div>
+                    <span className="bg-[#eef2f8] text-[#002045] px-2 py-0.5 text-xs font-bold tracking-wider">{p.code}</span>
+                  </div>
+                  <div className="grid grid-cols-3 gap-x-4 gap-y-2">
+                    <div>
+                      <p className="text-[#74777f] text-[9px] uppercase tracking-wider font-bold font-[var(--font-inter)]">Total</p>
+                      <p className="text-green-700 text-xs font-semibold font-[var(--font-inter)] mt-0.5">{fmt(p.total)}</p>
+                    </div>
+                    <div>
+                      <p className="text-[#74777f] text-[9px] uppercase tracking-wider font-bold font-[var(--font-inter)]">Vendas</p>
+                      <p className="text-[#43474e] text-xs font-[var(--font-inter)] mt-0.5">{p.count}</p>
+                    </div>
+                    <div>
+                      <p className="text-[#74777f] text-[9px] uppercase tracking-wider font-bold font-[var(--font-inter)]">Ticket Médio</p>
+                      <p className="text-[#43474e] text-xs font-[var(--font-inter)] mt-0.5">{p.median > 0 ? fmt(p.median) : "—"}</p>
+                    </div>
+                  </div>
+                </div>
+              ))}
+            </div>
+            {/* Desktop table — hidden on mobile */}
+            <div className="hidden sm:block bg-white border border-[#e2e2e2] overflow-x-auto">
               <table className="w-full text-sm font-[var(--font-inter)]">
                 <thead>
                   <tr className="border-b border-[#e2e2e2]">
@@ -469,68 +498,114 @@ export default function RepresentantePage() {
             </p>
           </div>
         ) : (
-          <div className="bg-white border border-[#e2e2e2] overflow-x-auto">
-            <table className="w-full text-sm font-[var(--font-inter)]">
-              <thead>
-                <tr className="border-b border-[#e2e2e2]">
-                  {[
-                    "Data",
-                    "Cupom",
-                    "Parceiro",
-                    "Espaço",
-                    "Placas",
-                    "Sua comissão",
-                    "Status",
-                  ].map((h) => (
-                    <th
-                      key={h}
-                      className="text-left px-4 py-3 text-[10px] tracking-[0.1em] uppercase font-bold text-[#74777f] whitespace-nowrap"
-                    >
-                      {h}
-                    </th>
-                  ))}
-                </tr>
-              </thead>
-              <tbody>
-                {uses.map((u) => {
-                  const st = u.sale_status || "em_orcamento";
-                  const stMeta = STATUS_LABELS[st] || STATUS_LABELS.em_orcamento;
-                  return (
-                    <tr key={u.id} className="border-b border-[#f0f0f0] hover:bg-[#fafafa]">
-                      <td className="px-4 py-3 text-xs text-[#43474e] whitespace-nowrap">
-                        {new Date(u.created_at).toLocaleDateString("pt-BR")}
-                      </td>
-                      <td className="px-4 py-3 text-xs font-bold tracking-wider text-[#002045]">
-                        {u.coupon_code || "—"}
-                      </td>
-                      <td className="px-4 py-3 text-xs text-[#43474e]">
-                        {u.partner_name || "—"}
-                      </td>
-                      <td className="px-4 py-3 text-xs text-[#43474e]">{u.space || "—"}</td>
-                      <td className="px-4 py-3 text-xs text-[#43474e]">{u.plates ?? "—"}</td>
-                      <td className="px-4 py-3 text-xs font-semibold">
-                        {st === "cancelado"
-                          ? <span className="text-[#74777f] font-normal">—</span>
-                          : st === "concluido" && u.sales_rep_commission_owed != null
-                          ? <span className="text-[#002045]">{fmt(u.sales_rep_commission_owed)}</span>
-                          : u.sales_rep_commission_owed != null
-                          ? <span className="text-yellow-700">{fmt(u.sales_rep_commission_owed)} (pend.)</span>
-                          : "—"}
-                      </td>
-                      <td className="px-4 py-3">
-                        <span className={`inline-flex items-center gap-1.5 px-2.5 py-1 text-[10px] font-bold tracking-wide rounded-full ${stMeta.cls}`}>
-                          <span className={`w-1.5 h-1.5 rounded-full ${
-                            st === "concluido" ? "bg-green-600" : st === "cancelado" ? "bg-red-500" : "bg-yellow-500"
-                          }`} />
-                          {stMeta.label}
-                        </span>
-                      </td>
-                    </tr>
-                  );
-                })}
-              </tbody>
-            </table>
-          </div>
+          <>
+            {/* Mobile card list — hidden on sm+ */}
+            <div className="sm:hidden bg-white border border-[#e2e2e2] divide-y divide-[#f0f0f0]">
+              {uses.map((u) => {
+                const st = u.sale_status || "em_orcamento";
+                const stMeta = STATUS_LABELS[st] || STATUS_LABELS.em_orcamento;
+                return (
+                  <div key={u.id} className="px-4 py-4">
+                    <div className="flex items-start justify-between mb-3">
+                      <div>
+                        <p className="font-semibold text-[#002045] text-sm font-[var(--font-inter)]">{u.partner_name || "—"}</p>
+                        <p className="text-[#74777f] text-xs font-bold tracking-wider font-[var(--font-inter)] mt-0.5">{u.coupon_code || "—"}</p>
+                      </div>
+                      <span className={`inline-flex items-center gap-1 px-2 py-0.5 text-[10px] font-bold tracking-wide rounded-full flex-shrink-0 ml-2 ${stMeta.cls}`}>
+                        <span className={`w-1.5 h-1.5 rounded-full ${st === "concluido" ? "bg-green-600" : st === "cancelado" ? "bg-red-500" : "bg-yellow-500"}`} />
+                        {stMeta.label}
+                      </span>
+                    </div>
+                    <div className="grid grid-cols-2 gap-x-6 gap-y-2">
+                      <div>
+                        <p className="text-[#74777f] text-[9px] uppercase tracking-wider font-bold font-[var(--font-inter)]">Data</p>
+                        <p className="text-[#43474e] text-xs font-[var(--font-inter)] mt-0.5">{new Date(u.created_at).toLocaleDateString("pt-BR")}</p>
+                      </div>
+                      <div>
+                        <p className="text-[#74777f] text-[9px] uppercase tracking-wider font-bold font-[var(--font-inter)]">Espaço</p>
+                        <p className="text-[#43474e] text-xs font-[var(--font-inter)] mt-0.5">{u.space || "—"}</p>
+                      </div>
+                      <div>
+                        <p className="text-[#74777f] text-[9px] uppercase tracking-wider font-bold font-[var(--font-inter)]">Placas</p>
+                        <p className="text-[#43474e] text-xs font-[var(--font-inter)] mt-0.5">{String(u.plates ?? "—")}</p>
+                      </div>
+                      {st !== "cancelado" && u.sales_rep_commission_owed != null && (
+                        <div>
+                          <p className="text-[#74777f] text-[9px] uppercase tracking-wider font-bold font-[var(--font-inter)]">Sua Comissão</p>
+                          <p className={`text-xs font-semibold mt-0.5 ${st === "concluido" ? "text-[#002045]" : "text-yellow-700"}`}>
+                            {fmt(u.sales_rep_commission_owed)}{st !== "concluido" ? " (pend.)" : ""}
+                          </p>
+                        </div>
+                      )}
+                    </div>
+                  </div>
+                );
+              })}
+            </div>
+            {/* Desktop table — hidden on mobile */}
+            <div className="hidden sm:block bg-white border border-[#e2e2e2] overflow-x-auto">
+              <table className="w-full text-sm font-[var(--font-inter)]">
+                <thead>
+                  <tr className="border-b border-[#e2e2e2]">
+                    {[
+                      "Data",
+                      "Cupom",
+                      "Parceiro",
+                      "Espaço",
+                      "Placas",
+                      "Sua comissão",
+                      "Status",
+                    ].map((h) => (
+                      <th
+                        key={h}
+                        className="text-left px-4 py-3 text-[10px] tracking-[0.1em] uppercase font-bold text-[#74777f] whitespace-nowrap"
+                      >
+                        {h}
+                      </th>
+                    ))}
+                  </tr>
+                </thead>
+                <tbody>
+                  {uses.map((u) => {
+                    const st = u.sale_status || "em_orcamento";
+                    const stMeta = STATUS_LABELS[st] || STATUS_LABELS.em_orcamento;
+                    return (
+                      <tr key={u.id} className="border-b border-[#f0f0f0] hover:bg-[#fafafa]">
+                        <td className="px-4 py-3 text-xs text-[#43474e] whitespace-nowrap">
+                          {new Date(u.created_at).toLocaleDateString("pt-BR")}
+                        </td>
+                        <td className="px-4 py-3 text-xs font-bold tracking-wider text-[#002045]">
+                          {u.coupon_code || "—"}
+                        </td>
+                        <td className="px-4 py-3 text-xs text-[#43474e]">
+                          {u.partner_name || "—"}
+                        </td>
+                        <td className="px-4 py-3 text-xs text-[#43474e]">{u.space || "—"}</td>
+                        <td className="px-4 py-3 text-xs text-[#43474e]">{u.plates ?? "—"}</td>
+                        <td className="px-4 py-3 text-xs font-semibold">
+                          {st === "cancelado"
+                            ? <span className="text-[#74777f] font-normal">—</span>
+                            : st === "concluido" && u.sales_rep_commission_owed != null
+                            ? <span className="text-[#002045]">{fmt(u.sales_rep_commission_owed)}</span>
+                            : u.sales_rep_commission_owed != null
+                            ? <span className="text-yellow-700">{fmt(u.sales_rep_commission_owed)} (pend.)</span>
+                            : "—"}
+                        </td>
+                        <td className="px-4 py-3">
+                          <span className={`inline-flex items-center gap-1.5 px-2.5 py-1 text-[10px] font-bold tracking-wide rounded-full ${stMeta.cls}`}>
+                            <span className={`w-1.5 h-1.5 rounded-full ${
+                              st === "concluido" ? "bg-green-600" : st === "cancelado" ? "bg-red-500" : "bg-yellow-500"
+                            }`} />
+                            {stMeta.label}
+                          </span>
+                        </td>
+                      </tr>
+                    );
+                  })}
+                </tbody>
+              </table>
+            </div>
+          </>
         )}
         </>)}
 
@@ -545,49 +620,95 @@ export default function RepresentantePage() {
                 </p>
               </div>
             ) : (
-              <div className="bg-white border border-[#e2e2e2] overflow-x-auto">
-                <table className="w-full text-sm font-[var(--font-inter)]">
-                  <thead>
-                    <tr className="border-b border-[#e2e2e2]">
-                      {["Parceiro", "Tipo", "Status", "Cupom", "Vendas", "Total gerado", "Última venda"].map((h) => (
-                        <th key={h} className="text-left px-4 py-3 text-[10px] tracking-[0.1em] uppercase font-bold text-[#74777f] whitespace-nowrap">{h}</th>
-                      ))}
-                    </tr>
-                  </thead>
-                  <tbody>
-                    {linkedPartners.map((p) => (
-                      <tr key={p.id} className="border-b border-[#f0f0f0] hover:bg-[#fafafa]">
-                        <td className="px-4 py-3">
-                          <p className="font-semibold text-[#002045]">{p.name}</p>
-                          <p className="text-[10px] text-[#74777f]">desde {new Date(p.created_at).toLocaleDateString("pt-BR")}</p>
-                        </td>
-                        <td className="px-4 py-3 text-xs text-[#43474e]">
-                          {p.profession || <span className="italic text-[#b0b0b0]">—</span>}
-                        </td>
-                        <td className="px-4 py-3">
-                          <span className={`inline-block px-2 py-0.5 text-[10px] font-bold tracking-wide ${
-                            p.status === "active" ? "bg-green-100 text-green-800" :
-                            p.status === "pending" ? "bg-yellow-100 text-yellow-800" :
-                            "bg-gray-100 text-gray-600"
-                          }`}>
-                            {p.status === "active" ? "Ativo" : p.status === "pending" ? "Pendente" : "Inativo"}
-                          </span>
-                        </td>
-                        <td className="px-4 py-3">
-                          <span className="bg-[#eef2f8] text-[#002045] px-2 py-0.5 text-xs font-bold tracking-wider">{p.coupon_code}</span>
-                        </td>
-                        <td className="px-4 py-3 text-xs text-[#43474e]">{p.sales_count}</td>
-                        <td className="px-4 py-3 text-xs font-semibold text-[#002045]">
-                          {p.total_sales > 0 ? p.total_sales.toLocaleString("pt-BR", { style: "currency", currency: "BRL", maximumFractionDigits: 0 }) : "—"}
-                        </td>
-                        <td className="px-4 py-3 text-xs text-[#43474e] whitespace-nowrap">
-                          {p.last_sale_at ? new Date(p.last_sale_at).toLocaleDateString("pt-BR") : <span className="italic text-[#b0b0b0]">Sem vendas</span>}
-                        </td>
+              <>
+                {/* Mobile card list — hidden on sm+ */}
+                <div className="sm:hidden bg-white border border-[#e2e2e2] divide-y divide-[#f0f0f0]">
+                  {linkedPartners.map((p) => {
+                    const statusCls = p.status === "active" ? "bg-green-100 text-green-800" : p.status === "pending" ? "bg-yellow-100 text-yellow-800" : "bg-gray-100 text-gray-600";
+                    const statusLabel = p.status === "active" ? "Ativo" : p.status === "pending" ? "Pendente" : "Inativo";
+                    return (
+                      <div key={p.id} className="px-4 py-4">
+                        <div className="flex items-start justify-between mb-3">
+                          <div>
+                            <p className="font-semibold text-[#002045] text-sm font-[var(--font-inter)]">{p.name}</p>
+                            <p className="text-[#74777f] text-[10px] font-[var(--font-inter)] mt-0.5">desde {new Date(p.created_at).toLocaleDateString("pt-BR")}</p>
+                          </div>
+                          <div className="flex flex-col items-end gap-1 ml-2 flex-shrink-0">
+                            <span className={`inline-block px-2 py-0.5 text-[10px] font-bold tracking-wide ${statusCls}`}>{statusLabel}</span>
+                            <span className="bg-[#eef2f8] text-[#002045] px-2 py-0.5 text-xs font-bold tracking-wider">{p.coupon_code}</span>
+                          </div>
+                        </div>
+                        <div className="grid grid-cols-2 gap-x-6 gap-y-2">
+                          <div>
+                            <p className="text-[#74777f] text-[9px] uppercase tracking-wider font-bold font-[var(--font-inter)]">Profissão</p>
+                            <p className="text-[#43474e] text-xs font-[var(--font-inter)] mt-0.5">{p.profession || "—"}</p>
+                          </div>
+                          <div>
+                            <p className="text-[#74777f] text-[9px] uppercase tracking-wider font-bold font-[var(--font-inter)]">Vendas</p>
+                            <p className="text-[#43474e] text-xs font-[var(--font-inter)] mt-0.5">{p.sales_count}</p>
+                          </div>
+                          <div>
+                            <p className="text-[#74777f] text-[9px] uppercase tracking-wider font-bold font-[var(--font-inter)]">Total gerado</p>
+                            <p className="text-[#002045] text-xs font-semibold font-[var(--font-inter)] mt-0.5">
+                              {p.total_sales > 0 ? p.total_sales.toLocaleString("pt-BR", { style: "currency", currency: "BRL", maximumFractionDigits: 0 }) : "—"}
+                            </p>
+                          </div>
+                          <div>
+                            <p className="text-[#74777f] text-[9px] uppercase tracking-wider font-bold font-[var(--font-inter)]">Última venda</p>
+                            <p className="text-[#43474e] text-xs font-[var(--font-inter)] mt-0.5">
+                              {p.last_sale_at ? new Date(p.last_sale_at).toLocaleDateString("pt-BR") : <span className="italic text-[#b0b0b0]">Sem vendas</span>}
+                            </p>
+                          </div>
+                        </div>
+                      </div>
+                    );
+                  })}
+                </div>
+                {/* Desktop table — hidden on mobile */}
+                <div className="hidden sm:block bg-white border border-[#e2e2e2] overflow-x-auto">
+                  <table className="w-full text-sm font-[var(--font-inter)]">
+                    <thead>
+                      <tr className="border-b border-[#e2e2e2]">
+                        {["Parceiro", "Tipo", "Status", "Cupom", "Vendas", "Total gerado", "Última venda"].map((h) => (
+                          <th key={h} className="text-left px-4 py-3 text-[10px] tracking-[0.1em] uppercase font-bold text-[#74777f] whitespace-nowrap">{h}</th>
+                        ))}
                       </tr>
-                    ))}
-                  </tbody>
-                </table>
-              </div>
+                    </thead>
+                    <tbody>
+                      {linkedPartners.map((p) => (
+                        <tr key={p.id} className="border-b border-[#f0f0f0] hover:bg-[#fafafa]">
+                          <td className="px-4 py-3">
+                            <p className="font-semibold text-[#002045]">{p.name}</p>
+                            <p className="text-[10px] text-[#74777f]">desde {new Date(p.created_at).toLocaleDateString("pt-BR")}</p>
+                          </td>
+                          <td className="px-4 py-3 text-xs text-[#43474e]">
+                            {p.profession || <span className="italic text-[#b0b0b0]">—</span>}
+                          </td>
+                          <td className="px-4 py-3">
+                            <span className={`inline-block px-2 py-0.5 text-[10px] font-bold tracking-wide ${
+                              p.status === "active" ? "bg-green-100 text-green-800" :
+                              p.status === "pending" ? "bg-yellow-100 text-yellow-800" :
+                              "bg-gray-100 text-gray-600"
+                            }`}>
+                              {p.status === "active" ? "Ativo" : p.status === "pending" ? "Pendente" : "Inativo"}
+                            </span>
+                          </td>
+                          <td className="px-4 py-3">
+                            <span className="bg-[#eef2f8] text-[#002045] px-2 py-0.5 text-xs font-bold tracking-wider">{p.coupon_code}</span>
+                          </td>
+                          <td className="px-4 py-3 text-xs text-[#43474e]">{p.sales_count}</td>
+                          <td className="px-4 py-3 text-xs font-semibold text-[#002045]">
+                            {p.total_sales > 0 ? p.total_sales.toLocaleString("pt-BR", { style: "currency", currency: "BRL", maximumFractionDigits: 0 }) : "—"}
+                          </td>
+                          <td className="px-4 py-3 text-xs text-[#43474e] whitespace-nowrap">
+                            {p.last_sale_at ? new Date(p.last_sale_at).toLocaleDateString("pt-BR") : <span className="italic text-[#b0b0b0]">Sem vendas</span>}
+                          </td>
+                        </tr>
+                      ))}
+                    </tbody>
+                  </table>
+                </div>
+              </>
             )}
           </div>
         )}

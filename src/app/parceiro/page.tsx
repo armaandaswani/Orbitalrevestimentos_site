@@ -731,56 +731,106 @@ export default function ParceiroPage() {
               </p>
             </div>
           ) : (
-            <div className="bg-white border border-[#e2e2e2] overflow-x-auto">
-              <table className="w-full text-sm font-[var(--font-inter)]">
-                <thead>
-                  <tr className="border-b border-[#e2e2e2]">
-                    {["Data", "Cliente", "Produto", "Espaço", "Placas", "Comissão", "Status"].map((h) => (
-                      <th key={h} className="text-left px-4 py-3 text-[10px] tracking-[0.1em] uppercase font-bold text-[#74777f] whitespace-nowrap">
-                        {h}
-                      </th>
-                    ))}
-                  </tr>
-                </thead>
-                <tbody>
-                  {uses.map((u) => {
-                    const st = u.sale_status || "em_orcamento";
-                    const stMeta = STATUS_LABELS[st] || STATUS_LABELS.em_orcamento;
-                    return (
-                      <tr key={u.id} className="border-b border-[#f0f0f0] hover:bg-[#fafafa]">
-                        <td className="px-4 py-3 text-xs text-[#43474e] whitespace-nowrap">
-                          {new Date(u.created_at).toLocaleDateString("pt-BR")}
-                        </td>
-                        <td className="px-4 py-3 text-xs text-[#43474e]">{u.architect_name || "—"}</td>
-                        <td className="px-4 py-3 text-xs text-[#43474e]">
-                          <p className="font-semibold">{u.product_name || "—"}</p>
-                          {u.product_code && <p className="text-[#74777f]">{u.product_code}</p>}
-                        </td>
-                        <td className="px-4 py-3 text-xs text-[#43474e]">{u.space || "—"}</td>
-                        <td className="px-4 py-3 text-xs text-[#43474e]">{u.plates ?? "—"}</td>
-                        <td className="px-4 py-3 text-xs font-semibold">
-                          {st === "cancelado"
-                            ? <span className="text-[#74777f] font-normal">—</span>
-                            : st === "concluido" && u.commission_owed != null
-                            ? <span className="text-green-700 font-bold">{fmt(u.commission_owed)}</span>
-                            : u.commission_owed != null
-                            ? <span className="text-yellow-700">{fmt(u.commission_owed)} (pend.)</span>
-                            : "—"}
-                        </td>
-                        <td className="px-4 py-3">
-                          <span className={`inline-flex items-center gap-1.5 px-2.5 py-1 text-[10px] font-bold tracking-wide rounded-full ${stMeta.cls}`}>
-                            <span className={`w-1.5 h-1.5 rounded-full ${
-                              st === "concluido" ? "bg-green-600" : st === "cancelado" ? "bg-red-500" : "bg-yellow-500"
-                            }`} />
-                            {stMeta.label}
-                          </span>
-                        </td>
-                      </tr>
-                    );
-                  })}
-                </tbody>
-              </table>
-            </div>
+            <>
+              {/* Mobile card list — hidden on sm+ */}
+              <div className="sm:hidden bg-white border border-[#e2e2e2] divide-y divide-[#f0f0f0]">
+                {uses.map((u) => {
+                  const st = u.sale_status || "em_orcamento";
+                  const stMeta = STATUS_LABELS[st] || STATUS_LABELS.em_orcamento;
+                  return (
+                    <div key={u.id} className="px-4 py-4">
+                      <div className="flex items-start justify-between mb-3">
+                        <div>
+                          <p className="font-semibold text-[#002045] text-sm font-[var(--font-inter)]">{u.product_name || "—"}</p>
+                          {u.product_code && <p className="text-[#74777f] text-xs mt-0.5">{u.product_code}</p>}
+                        </div>
+                        <span className={`inline-flex items-center gap-1 px-2 py-0.5 text-[10px] font-bold tracking-wide rounded-full flex-shrink-0 ml-2 ${stMeta.cls}`}>
+                          <span className={`w-1.5 h-1.5 rounded-full ${st === "concluido" ? "bg-green-600" : st === "cancelado" ? "bg-red-500" : "bg-yellow-500"}`} />
+                          {stMeta.label}
+                        </span>
+                      </div>
+                      <div className="grid grid-cols-2 gap-x-6 gap-y-2">
+                        <div>
+                          <p className="text-[#74777f] text-[9px] uppercase tracking-wider font-bold font-[var(--font-inter)]">Data</p>
+                          <p className="text-[#43474e] text-xs font-[var(--font-inter)] mt-0.5">{new Date(u.created_at).toLocaleDateString("pt-BR")}</p>
+                        </div>
+                        <div>
+                          <p className="text-[#74777f] text-[9px] uppercase tracking-wider font-bold font-[var(--font-inter)]">Cliente</p>
+                          <p className="text-[#43474e] text-xs font-[var(--font-inter)] mt-0.5">{u.architect_name || "—"}</p>
+                        </div>
+                        <div>
+                          <p className="text-[#74777f] text-[9px] uppercase tracking-wider font-bold font-[var(--font-inter)]">Espaço</p>
+                          <p className="text-[#43474e] text-xs font-[var(--font-inter)] mt-0.5">{u.space || "—"}</p>
+                        </div>
+                        <div>
+                          <p className="text-[#74777f] text-[9px] uppercase tracking-wider font-bold font-[var(--font-inter)]">Placas</p>
+                          <p className="text-[#43474e] text-xs font-[var(--font-inter)] mt-0.5">{String(u.plates ?? "—")}</p>
+                        </div>
+                        {st !== "cancelado" && u.commission_owed != null && (
+                          <div className="col-span-2">
+                            <p className="text-[#74777f] text-[9px] uppercase tracking-wider font-bold font-[var(--font-inter)]">Comissão</p>
+                            <p className={`text-xs font-semibold mt-0.5 ${st === "concluido" ? "text-green-700" : "text-yellow-700"}`}>
+                              {fmt(u.commission_owed)}{st !== "concluido" ? " (pend.)" : ""}
+                            </p>
+                          </div>
+                        )}
+                      </div>
+                    </div>
+                  );
+                })}
+              </div>
+              {/* Desktop table — hidden on mobile */}
+              <div className="hidden sm:block bg-white border border-[#e2e2e2] overflow-x-auto">
+                <table className="w-full text-sm font-[var(--font-inter)]">
+                  <thead>
+                    <tr className="border-b border-[#e2e2e2]">
+                      {["Data", "Cliente", "Produto", "Espaço", "Placas", "Comissão", "Status"].map((h) => (
+                        <th key={h} className="text-left px-4 py-3 text-[10px] tracking-[0.1em] uppercase font-bold text-[#74777f] whitespace-nowrap">
+                          {h}
+                        </th>
+                      ))}
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {uses.map((u) => {
+                      const st = u.sale_status || "em_orcamento";
+                      const stMeta = STATUS_LABELS[st] || STATUS_LABELS.em_orcamento;
+                      return (
+                        <tr key={u.id} className="border-b border-[#f0f0f0] hover:bg-[#fafafa]">
+                          <td className="px-4 py-3 text-xs text-[#43474e] whitespace-nowrap">
+                            {new Date(u.created_at).toLocaleDateString("pt-BR")}
+                          </td>
+                          <td className="px-4 py-3 text-xs text-[#43474e]">{u.architect_name || "—"}</td>
+                          <td className="px-4 py-3 text-xs text-[#43474e]">
+                            <p className="font-semibold">{u.product_name || "—"}</p>
+                            {u.product_code && <p className="text-[#74777f]">{u.product_code}</p>}
+                          </td>
+                          <td className="px-4 py-3 text-xs text-[#43474e]">{u.space || "—"}</td>
+                          <td className="px-4 py-3 text-xs text-[#43474e]">{u.plates ?? "—"}</td>
+                          <td className="px-4 py-3 text-xs font-semibold">
+                            {st === "cancelado"
+                              ? <span className="text-[#74777f] font-normal">—</span>
+                              : st === "concluido" && u.commission_owed != null
+                              ? <span className="text-green-700 font-bold">{fmt(u.commission_owed)}</span>
+                              : u.commission_owed != null
+                              ? <span className="text-yellow-700">{fmt(u.commission_owed)} (pend.)</span>
+                              : "—"}
+                          </td>
+                          <td className="px-4 py-3">
+                            <span className={`inline-flex items-center gap-1.5 px-2.5 py-1 text-[10px] font-bold tracking-wide rounded-full ${stMeta.cls}`}>
+                              <span className={`w-1.5 h-1.5 rounded-full ${
+                                st === "concluido" ? "bg-green-600" : st === "cancelado" ? "bg-red-500" : "bg-yellow-500"
+                              }`} />
+                              {stMeta.label}
+                            </span>
+                          </td>
+                        </tr>
+                      );
+                    })}
+                  </tbody>
+                </table>
+              </div>
+            </>
           )}
         </div>
       )}

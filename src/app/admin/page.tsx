@@ -105,7 +105,7 @@ export default function AdminPage() {
   const [authed, setAuthed] = useState(false);
   const [pw, setPw] = useState("");
   const [pwError, setPwError] = useState("");
-  const [tab, setTab] = useState<"partners" | "representantes" | "history">("partners");
+  const [tab, setTab] = useState<"partners" | "representantes" | "history" | "campaigns">("partners");
 
   // Partners
   const [partners, setPartners] = useState<Partner[]>([]);
@@ -160,6 +160,33 @@ export default function AdminPage() {
   const [cpSuccess, setCpSuccess] = useState(false);
   const [cpLoading, setCpLoading] = useState(false);
 
+  // ── Email Campaigns ─────────────────────
+  interface EmailCampaign {
+    id: string;
+    campaign_type: 'product' | 'educational';
+    campaign_subtype: string;
+    subject: string;
+    preview_text: string | null;
+    html_body: string;
+    status: 'pending_approval' | 'approved' | 'sent';
+    approve_token: string;
+    created_at: string;
+    approved_at: string | null;
+    sent_at: string | null;
+    recipient_count: number | null;
+  }
+
+  const [campaigns, setCampaigns] = useState<EmailCampaign[]>([]);
+  const [campaignsLoading, setCampaignsLoading] = useState(false);
+  const [campaignGenerating, setCampaignGenerating] = useState(false);
+  const [expandedCampaignId, setExpandedCampaignId] = useState<string | null>(null);
+  const [editingCampaignId, setEditingCampaignId] = useState<string | null>(null);
+  const [campaignEditSubject, setCampaignEditSubject] = useState("");
+  const [campaignEditBody, setCampaignEditBody] = useState("");
+  const [campaignEditSaving, setCampaignEditSaving] = useState(false);
+  const [campaignTestSending, setCampaignTestSending] = useState<string | null>(null);
+  const [campaignApproving, setCampaignApproving] = useState<string | null>(null);
+
   const supabaseConfigured = !!process.env.NEXT_PUBLIC_SUPABASE_URL;
 
   useEffect(() => {
@@ -188,12 +215,57 @@ export default function AdminPage() {
     setLoadingUses(false);
   }, []);
 
+  const loadCampaigns = useCallback(async () => {
+    setCampaignsLoading(true);
+    const res = await fetch("/api/email-campaigns");
+    if (res.ok) setCampaigns(await res.json());
+    setCampaignsLoading(false);
+  }, []);
+
   useEffect(() => {
     if (!authed || !supabaseConfigured) return;
     fetchPartners();
     fetchReps();
     fetchUses();
   }, [authed, tab, supabaseConfigured, fetchPartners, fetchReps, fetchUses]);
+
+  useEffect(() => {
+    if (tab === "campaigns" && authed) loadCampaigns();
+  }, [tab, authed, loadCampaigns]);
+
+  async function generateCampaign() {
+    setCampaignGenerating(true);
+    await fetch("/api/email-campaigns", { method: "POST" });
+    await loadCampaigns();
+    setCampaignGenerating(false);
+  }
+
+  async function sendCampaignTest(id: string) {
+    setCampaignTestSending(id);
+    await fetch(`/api/email-campaigns/${id}/test`, { method: "POST" });
+    setCampaignTestSending(null);
+  }
+
+  async function approveCampaign(id: string, token: string) {
+    setCampaignApproving(id);
+    await fetch(`/api/email-campaigns/${id}/approve?token=${token}`);
+    await loadCampaigns();
+    setCampaignApproving(null);
+  }
+
+  async function saveCampaignEdit(id: string) {
+    setCampaignEditSaving(true);
+    const res = await fetch(`/api/email-campaigns/${id}`, {
+      method: "PATCH",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ subject: campaignEditSubject, html_body: campaignEditBody }),
+    });
+    if (res.ok) {
+      await loadCampaigns();
+      setEditingCampaignId(null);
+    }
+    setCampaignEditSaving(false);
+  }
 
   function handleLogin(e: React.FormEvent) {
     e.preventDefault();
@@ -610,9 +682,9 @@ export default function AdminPage() {
 
       <div className="max-w-7xl mx-auto px-8 py-8">
         <div className="flex gap-1 mb-8 border-b border-[#e2e2e2]">
-          {(["partners", "representantes", "history"] as const).map((t) => (
+          {(["partners", "representantes", "history", "campaigns"] as const).map((t) => (
             <button key={t} onClick={() => setTab(t)} className={`px-6 py-3 text-xs tracking-[0.1em] uppercase font-bold font-[var(--font-inter)] transition-colors border-b-2 -mb-px flex items-center gap-2 ${tab === t ? "border-[#002045] text-[#002045]" : "border-transparent text-[#74777f] hover:text-[#002045]"}`}>
-              {t === "partners" ? "Parceiros" : t === "representantes" ? "Representantes" : "Histórico"}
+              {t === "partners" ? "Parceiros" : t === "representantes" ? "Representantes" : t === "history" ? "Histórico" : "Campanhas"}
               {t === "partners" && pendingPartners.length > 0 && (
                 <span className="bg-yellow-400 text-yellow-900 text-[9px] font-bold px-1.5 py-0.5 rounded-full leading-none">
                   {pendingPartners.length}
@@ -1205,6 +1277,161 @@ export default function AdminPage() {
                     )}
                   </tbody>
                 </table>
+              </div>
+            )}
+          </div>
+        )}
+
+        {/* ═══ CAMPAIGNS TAB ═══ */}
+        {tab === "campaigns" && (
+          <div>
+            <div className="flex items-center justify-between mb-6">
+              <h2 className="font-[var(--font-noto-serif)] text-[#002045] text-xl font-normal">
+                Campanhas de E-mail
+              </h2>
+              <button
+                onClick={generateCampaign}
+                disabled={campaignGenerating}
+                className="bg-[#002045] text-white text-xs tracking-[0.12em] uppercase font-bold font-[var(--font-inter)] px-5 py-2.5 hover:bg-[#1a365d] transition-colors disabled:opacity-50"
+              >
+                {campaignGenerating ? "Gerando..." : "+ Gerar Próxima Campanha"}
+              </button>
+            </div>
+
+            {campaignsLoading ? (
+              <p className="text-[#74777f] text-sm font-[var(--font-inter)]">Carregando...</p>
+            ) : campaigns.length === 0 ? (
+              <div className="bg-white border border-[#e2e2e2] px-6 py-12 text-center">
+                <p className="text-[#74777f] text-sm font-[var(--font-inter)]">Nenhuma campanha criada ainda.</p>
+                <p className="text-[#74777f] text-xs font-[var(--font-inter)] mt-1">Clique em &ldquo;Gerar Próxima Campanha&rdquo; para começar.</p>
+              </div>
+            ) : (
+              <div className="space-y-3">
+                {campaigns.map((c) => {
+                  const isExpanded = expandedCampaignId === c.id;
+                  const isEditing = editingCampaignId === c.id;
+                  const statusCls = c.status === 'sent' ? 'bg-green-100 text-green-800' : c.status === 'pending_approval' ? 'bg-yellow-100 text-yellow-800' : 'bg-gray-100 text-gray-600';
+                  const statusLabel = c.status === 'sent' ? 'Enviada' : c.status === 'pending_approval' ? 'Aguardando aprovação' : 'Aprovada';
+                  return (
+                    <div key={c.id} className="bg-white border border-[#e2e2e2]">
+                      {/* Campaign header row */}
+                      <div className="px-6 py-4 flex items-center gap-4">
+                        <div className="flex-1 min-w-0">
+                          <div className="flex items-center gap-2 mb-1">
+                            <span className="text-[9px] uppercase tracking-widest font-bold text-[#74777f] font-[var(--font-inter)]">
+                              {c.campaign_type === 'product' ? 'Produto' : 'Educacional'} · {c.campaign_subtype}
+                            </span>
+                            <span className={`px-2 py-0.5 text-[9px] font-bold tracking-wide rounded-full ${statusCls}`}>{statusLabel}</span>
+                          </div>
+                          <p className="font-semibold text-[#002045] text-sm font-[var(--font-inter)] truncate">{c.subject}</p>
+                          <p className="text-[#74777f] text-xs font-[var(--font-inter)] mt-0.5">
+                            {new Date(c.created_at).toLocaleDateString('pt-BR', { day: '2-digit', month: 'short', year: 'numeric' })}
+                            {c.sent_at && ` · ${c.recipient_count ?? 0} destinatários`}
+                          </p>
+                        </div>
+                        <div className="flex items-center gap-2 flex-shrink-0">
+                          {c.status === 'pending_approval' && (
+                            <>
+                              <button
+                                onClick={() => sendCampaignTest(c.id)}
+                                disabled={campaignTestSending === c.id}
+                                className="text-xs font-[var(--font-inter)] text-[#002045] border border-[#002045] px-3 py-1.5 hover:bg-[#002045] hover:text-white transition-colors disabled:opacity-50"
+                              >
+                                {campaignTestSending === c.id ? "..." : "Reenviar Teste"}
+                              </button>
+                              <button
+                                onClick={() => approveCampaign(c.id, c.approve_token)}
+                                disabled={campaignApproving === c.id}
+                                className="text-xs font-[var(--font-inter)] bg-green-700 text-white px-3 py-1.5 hover:bg-green-800 transition-colors disabled:opacity-50"
+                              >
+                                {campaignApproving === c.id ? "Enviando..." : "✓ Aprovar & Enviar"}
+                              </button>
+                            </>
+                          )}
+                          <button
+                            onClick={() => setExpandedCampaignId(isExpanded ? null : c.id)}
+                            className="text-[#74777f] hover:text-[#002045] transition-colors p-1"
+                          >
+                            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"
+                              className={`transition-transform ${isExpanded ? 'rotate-180' : ''}`}>
+                              <path d="M6 9l6 6 6-6" />
+                            </svg>
+                          </button>
+                        </div>
+                      </div>
+
+                      {/* Expanded details */}
+                      {isExpanded && (
+                        <div className="border-t border-[#e2e2e2] px-6 py-5">
+                          {isEditing ? (
+                            <div className="space-y-4">
+                              <div>
+                                <label className="block text-[10px] uppercase tracking-[0.15em] font-bold font-[var(--font-inter)] text-[#74777f] mb-2">Assunto</label>
+                                <input
+                                  value={campaignEditSubject}
+                                  onChange={(e) => setCampaignEditSubject(e.target.value)}
+                                  className="w-full border border-[#e2e2e2] px-3 py-2.5 text-sm font-[var(--font-inter)] text-[#002045] focus:outline-none focus:border-[#002045]"
+                                />
+                              </div>
+                              <div>
+                                <label className="block text-[10px] uppercase tracking-[0.15em] font-bold font-[var(--font-inter)] text-[#74777f] mb-2">HTML do Email</label>
+                                <textarea
+                                  value={campaignEditBody}
+                                  onChange={(e) => setCampaignEditBody(e.target.value)}
+                                  rows={20}
+                                  className="w-full border border-[#e2e2e2] px-3 py-2.5 text-xs font-mono text-[#002045] focus:outline-none focus:border-[#002045] resize-y"
+                                />
+                              </div>
+                              <div className="flex gap-3">
+                                <button
+                                  onClick={() => saveCampaignEdit(c.id)}
+                                  disabled={campaignEditSaving}
+                                  className="bg-[#002045] text-white text-xs tracking-[0.1em] uppercase font-bold font-[var(--font-inter)] px-5 py-2.5 hover:bg-[#1a365d] disabled:opacity-50"
+                                >
+                                  {campaignEditSaving ? "Salvando..." : "Salvar"}
+                                </button>
+                                <button
+                                  onClick={() => { saveCampaignEdit(c.id).then(() => sendCampaignTest(c.id)); }}
+                                  className="border border-[#002045] text-[#002045] text-xs tracking-[0.1em] uppercase font-bold font-[var(--font-inter)] px-5 py-2.5 hover:bg-[#002045] hover:text-white transition-colors"
+                                >
+                                  Salvar + Reenviar Teste
+                                </button>
+                                <button
+                                  onClick={() => setEditingCampaignId(null)}
+                                  className="text-[#74777f] text-xs font-[var(--font-inter)] underline"
+                                >
+                                  Cancelar
+                                </button>
+                              </div>
+                            </div>
+                          ) : (
+                            <div>
+                              <div className="flex justify-between items-center mb-3">
+                                <p className="text-[10px] uppercase tracking-[0.15em] font-bold font-[var(--font-inter)] text-[#74777f]">Preview do Email</p>
+                                {c.status !== 'sent' && (
+                                  <button
+                                    onClick={() => {
+                                      setEditingCampaignId(c.id);
+                                      setCampaignEditSubject(c.subject);
+                                      setCampaignEditBody(c.html_body);
+                                    }}
+                                    className="text-xs text-[#002045] font-[var(--font-inter)] underline"
+                                  >
+                                    Editar
+                                  </button>
+                                )}
+                              </div>
+                              <div
+                                className="border border-[#e2e2e2] bg-[#f5f5f3] p-2"
+                                dangerouslySetInnerHTML={{ __html: c.html_body }}
+                              />
+                            </div>
+                          )}
+                        </div>
+                      )}
+                    </div>
+                  );
+                })}
               </div>
             )}
           </div>
