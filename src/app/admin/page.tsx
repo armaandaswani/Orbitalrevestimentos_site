@@ -141,6 +141,7 @@ export default function AdminPage() {
   const [repForm, setRepForm] = useState({ ...emptyRepForm });
   const [repFormError, setRepFormError] = useState("");
   const [repFormLoading, setRepFormLoading] = useState(false);
+  const [junctionPartnerCounts, setJunctionPartnerCounts] = useState<Record<string, number>>({});
 
   // History
   const [uses, setUses] = useState<CouponUse[]>([]);
@@ -203,8 +204,12 @@ export default function AdminPage() {
 
   const fetchReps = useCallback(async () => {
     setLoadingReps(true);
-    const res = await fetch("/api/sales-reps");
-    if (res.ok) setSalesReps(await res.json());
+    const [repsRes, countsRes] = await Promise.all([
+      fetch("/api/sales-reps"),
+      fetch("/api/sales-reps/partner-counts"),
+    ]);
+    if (repsRes.ok) setSalesReps(await repsRes.json());
+    if (countsRes.ok) setJunctionPartnerCounts(await countsRes.json());
     setLoadingReps(false);
   }, []);
 
@@ -539,14 +544,16 @@ export default function AdminPage() {
       const sorted = [...s.values].sort((a, b) => a - b);
       const mid = Math.floor(sorted.length / 2);
       const median = sorted.length % 2 ? sorted[mid] : ((sorted[mid - 1] + sorted[mid]) / 2);
-      const partnerCount = partners.filter((p) => p.sales_rep_referral_code === code).length;
+      const legacyCount = partners.filter((p) => p.sales_rep_referral_code === code).length;
+      const junctionCount = r?.id ? (junctionPartnerCounts[r.id] || 0) : 0;
+      const partnerCount = Math.max(legacyCount, junctionCount);
       return { code, name: r?.name || code, total: s.total, count: s.count, median, partnerCount };
     });
     if (repRankSort === "count") rows.sort((a, b) => b.count - a.count);
     else if (repRankSort === "median") rows.sort((a, b) => b.median - a.median);
     else rows.sort((a, b) => b.total - a.total);
     return rows;
-  }, [uses, salesReps, partners, repRankSort]);
+  }, [uses, salesReps, partners, repRankSort, junctionPartnerCounts]);
 
   // Upcoming birthdays this month
   const upcomingBirthdays = useMemo(() => {
@@ -1249,7 +1256,8 @@ export default function AdminPage() {
                       <tr><td colSpan={7} className="px-5 py-8 text-center text-[#74777f]">Nenhum representante cadastrado.</td></tr>
                     ) : (
                       salesReps.map((r) => {
-                        const repPartnerCount = partners.filter((p) => p.sales_rep_referral_code === r.referral_code).length;
+                        const legacyRepCount = partners.filter((p) => p.sales_rep_referral_code === r.referral_code).length;
+                        const repPartnerCount = Math.max(legacyRepCount, junctionPartnerCounts[r.id] || 0);
                         return (
                           <tr key={r.id} className="border-b border-[#f0f0f0] hover:bg-[#fafafa]">
                             <td className="px-5 py-4"><p className="font-semibold text-[#002045]">{r.name}</p>{r.email && <p className="text-xs text-[#74777f]">{r.email}</p>}</td>

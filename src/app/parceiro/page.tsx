@@ -50,7 +50,6 @@ const PROFESSIONS = [
   "Engenheiro civil",
   "Corretor de imóveis",
   "Lojista / revendedor",
-  "Representante comercial",
 ];
 
 const SPECIAL_PRICES: Record<string, number> = { Classic: 399, Brilliance: 429, Elegance: 459 };
@@ -106,9 +105,11 @@ export default function ParceiroPage() {
 
   // ── Special table / simulator state ───────────────────────────────────────
   const [sqLinha, setSqLinha] = useState<"Classic" | "Brilliance" | "Elegance" | "">("");
+  const [sqMode, setSqMode] = useState<"dimensions" | "m2" | "plates">("dimensions");
+  const [sqWidth, setSqWidth] = useState("");
+  const [sqHeight, setSqHeight] = useState("");
+  const [sqM2Input, setSqM2Input] = useState("");
   const [sqQty, setSqQty] = useState("");
-  const [sqClient, setSqClient] = useState("");
-  const [sqNotes, setSqNotes] = useState("");
   const [sqShowMargin, setSqShowMargin] = useState(false);
 
   // ── On mount: check for ?reset=TOKEN ──────────────────────────────────────
@@ -275,11 +276,20 @@ export default function ParceiroPage() {
     .reduce((a, u) => a + (u.commission_owed || 0), 0);
 
   // Special table computed values
-  const sqQtyNum = parseInt(sqQty) || 0;
+  const sqAreaCalc =
+    sqMode === "dimensions"
+      ? (parseFloat(sqWidth) || 0) * (parseFloat(sqHeight) || 0)
+      : sqMode === "m2"
+      ? parseFloat(sqM2Input) || 0
+      : 0;
+  const sqQtyNum =
+    sqMode === "plates"
+      ? parseInt(sqQty) || 0
+      : Math.ceil(sqAreaCalc / PLATE_M2) || 0;
+  const sqArea = sqMode === "plates" ? sqQtyNum * PLATE_M2 : sqAreaCalc;
   const sqSpecialPrice = sqLinha ? SPECIAL_PRICES[sqLinha] : 0;
   const sqNormalPrice = sqLinha ? NORMAL_PRICES[sqLinha] : 0;
   const sqTotal = sqQtyNum * sqSpecialPrice;
-  const sqArea = sqQtyNum * PLATE_M2;
   const sqSavingsPerPlate = sqNormalPrice - sqSpecialPrice;
   const sqTotalSavings = sqQtyNum * sqSavingsPerPlate;
 
@@ -838,21 +848,19 @@ export default function ParceiroPage() {
       {/* ── Special Table tab ── */}
       {portalTab === "special" && (
         <div className="max-w-5xl mx-auto px-4 sm:px-8 py-8">
-          {/* Disclaimer banner */}
-          <div className="bg-[#fffbea] border border-[#e6c84a] px-5 py-4 flex gap-3 items-start mb-8">
-            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#6b5000" strokeWidth="2" className="flex-shrink-0 mt-0.5">
-              <circle cx="12" cy="12" r="10" />
-              <line x1="12" y1="8" x2="12" y2="12" />
-              <line x1="12" y1="16" x2="12.01" y2="16" />
-            </svg>
-            <div className="text-[#6b5000] text-xs font-[var(--font-inter)] leading-relaxed space-y-1">
-              <p><strong>Condições exclusivas para parceiros habilitados.</strong></p>
-              <p>Valores para compra direta com a Orbital · Material apenas · Sem entrega inclusa · Retirada no depósito · Não repassar como tabela pública · Sujeito a disponibilidade de estoque.</p>
-            </div>
+
+          {/* Exclusive header */}
+          <div className="bg-[#002045] px-6 py-5 mb-8">
+            <p className="text-[#a1d494] text-[9px] tracking-[0.2em] uppercase font-bold font-[var(--font-inter)] mb-1">
+              Acesso exclusivo
+            </p>
+            <p className="text-white font-[var(--font-noto-serif)] text-xl font-normal">
+              Condições especiais para {partner.name.split(" ")[0]}
+            </p>
           </div>
 
           {/* Price table */}
-          <div className="mb-8">
+          <div className="mb-4">
             <h2 className="font-[var(--font-noto-serif)] text-[#002045] text-xl font-normal mb-4">
               Tabela de Preços — Compra Direta
             </h2>
@@ -877,66 +885,159 @@ export default function ParceiroPage() {
             <p className="text-[#74777f] text-xs font-[var(--font-inter)] mt-2">Placa: 2,9m × 1,2m × 5mm · 3,48 m² por placa</p>
           </div>
 
+          {/* Important notes */}
+          <div className="bg-[#fffbea] border border-[#e6c84a] px-5 py-4 mb-8">
+            <p className="text-[#6b5000] text-[10px] tracking-[0.15em] uppercase font-bold font-[var(--font-inter)] mb-2">
+              Observações importantes
+            </p>
+            <ul className="text-[#6b5000] text-xs font-[var(--font-inter)] space-y-1 leading-relaxed">
+              <li>· Material apenas — sem entrega inclusa</li>
+              <li>· Retirada no depósito da Orbital</li>
+              <li>· Não repassar como tabela pública</li>
+              <li>· Sujeito a disponibilidade de estoque</li>
+            </ul>
+          </div>
+
           {/* Quote simulator */}
           <div className="bg-white border border-[#e2e2e2] p-6 sm:p-8">
             <h2 className="font-[var(--font-noto-serif)] text-[#002045] text-xl font-normal mb-6">
               Simulador de Orçamento
             </h2>
 
-            {/* Form fields */}
-            <div className="grid grid-cols-1 sm:grid-cols-2 gap-5 mb-6">
-              <div>
-                <label className="block text-[10px] tracking-[0.15em] uppercase font-bold font-[var(--font-inter)] text-[#74777f] mb-2">
-                  Linha *
-                </label>
-                <select
-                  value={sqLinha}
-                  onChange={(e) => setSqLinha(e.target.value as "Classic" | "Brilliance" | "Elegance" | "")}
-                  className="w-full border border-[#e2e2e2] px-4 py-2.5 text-sm font-[var(--font-inter)] text-[#002045] focus:outline-none focus:border-[#002045]"
-                >
-                  <option value="">— Selecionar —</option>
-                  <option value="Classic">Classic — Mármore Fosco</option>
-                  <option value="Brilliance">Brilliance — Mármore Polido</option>
-                  <option value="Elegance">Elegance — Madeira Texturizada</option>
-                </select>
+            {/* Model cards */}
+            <div className="mb-6">
+              <label className="block text-[10px] tracking-[0.15em] uppercase font-bold font-[var(--font-inter)] text-[#74777f] mb-3">
+                Modelo *
+              </label>
+              <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
+                {[
+                  { key: "Classic",    finish: "Mármore Fosco",        price: 399, bg: "bg-[#f0eeeb]" },
+                  { key: "Brilliance", finish: "Mármore Polido",       price: 429, bg: "bg-[#e8ecf0]" },
+                  { key: "Elegance",   finish: "Madeira Texturizada",  price: 459, bg: "bg-[#ede8e0]" },
+                ].map((m) => (
+                  <button
+                    key={m.key}
+                    type="button"
+                    onClick={() => setSqLinha(m.key as "Classic" | "Brilliance" | "Elegance")}
+                    className={`text-left p-4 border-2 transition-all ${
+                      sqLinha === m.key
+                        ? "border-[#002045] bg-[#eef2f8]"
+                        : "border-[#e2e2e2] bg-white hover:border-[#002045]/40"
+                    }`}
+                  >
+                    <div className={`w-full h-7 mb-3 ${m.bg}`} />
+                    <p className="font-bold text-[#002045] text-sm font-[var(--font-inter)]">{m.key}</p>
+                    <p className="text-[#74777f] text-xs font-[var(--font-inter)]">{m.finish}</p>
+                    <p className="text-[#002045] font-bold text-sm font-[var(--font-inter)] mt-1.5">R$ {m.price}/placa</p>
+                  </button>
+                ))}
               </div>
-              <div>
-                <label className="block text-[10px] tracking-[0.15em] uppercase font-bold font-[var(--font-inter)] text-[#74777f] mb-2">
-                  Quantidade de placas *
-                </label>
-                <input
-                  type="number"
-                  min="1"
-                  value={sqQty}
-                  onChange={(e) => setSqQty(e.target.value)}
-                  placeholder="ex: 10"
-                  className="w-full border border-[#e2e2e2] px-4 py-2.5 text-sm font-[var(--font-inter)] text-[#002045] focus:outline-none focus:border-[#002045]"
-                />
+            </div>
+
+            {/* Calculation mode toggle */}
+            <div className="mb-5">
+              <label className="block text-[10px] tracking-[0.15em] uppercase font-bold font-[var(--font-inter)] text-[#74777f] mb-2">
+                Calcular por
+              </label>
+              <div className="flex border border-[#e2e2e2] w-fit overflow-hidden">
+                {([
+                  { key: "dimensions", label: "Larg × Alt" },
+                  { key: "m2",         label: "M² total" },
+                  { key: "plates",     label: "Nº de placas" },
+                ] as const).map((m) => (
+                  <button
+                    key={m.key}
+                    type="button"
+                    onClick={() => setSqMode(m.key)}
+                    className={`px-4 py-2 text-xs font-bold font-[var(--font-inter)] transition-colors whitespace-nowrap ${
+                      sqMode === m.key
+                        ? "bg-[#002045] text-white"
+                        : "bg-white text-[#74777f] hover:bg-[#f5f5f3]"
+                    }`}
+                  >
+                    {m.label}
+                  </button>
+                ))}
               </div>
-              <div>
-                <label className="block text-[10px] tracking-[0.15em] uppercase font-bold font-[var(--font-inter)] text-[#74777f] mb-2">
-                  Nome do cliente <span className="normal-case font-normal">(opcional)</span>
-                </label>
-                <input
-                  type="text"
-                  value={sqClient}
-                  onChange={(e) => setSqClient(e.target.value)}
-                  placeholder="ex: João Silva"
-                  className="w-full border border-[#e2e2e2] px-4 py-2.5 text-sm font-[var(--font-inter)] text-[#002045] focus:outline-none focus:border-[#002045]"
-                />
-              </div>
-              <div>
-                <label className="block text-[10px] tracking-[0.15em] uppercase font-bold font-[var(--font-inter)] text-[#74777f] mb-2">
-                  Observações <span className="normal-case font-normal">(opcional)</span>
-                </label>
-                <textarea
-                  value={sqNotes}
-                  onChange={(e) => setSqNotes(e.target.value)}
-                  placeholder="ex: Ambiente: sala de estar"
-                  rows={1}
-                  className="w-full border border-[#e2e2e2] px-4 py-2.5 text-sm font-[var(--font-inter)] text-[#002045] focus:outline-none focus:border-[#002045] resize-none"
-                />
-              </div>
+            </div>
+
+            {/* Input based on mode */}
+            <div className="mb-6">
+              {sqMode === "dimensions" && (
+                <div className="grid grid-cols-2 gap-4">
+                  <div>
+                    <label className="block text-[10px] tracking-[0.15em] uppercase font-bold font-[var(--font-inter)] text-[#74777f] mb-2">
+                      Largura (m) *
+                    </label>
+                    <input
+                      type="text"
+                      inputMode="decimal"
+                      value={sqWidth}
+                      onChange={(e) => setSqWidth(e.target.value.replace(",", "."))}
+                      placeholder="ex: 4.5"
+                      className="w-full border border-[#e2e2e2] px-4 py-2.5 text-sm font-[var(--font-inter)] text-[#002045] focus:outline-none focus:border-[#002045]"
+                    />
+                  </div>
+                  <div>
+                    <label className="block text-[10px] tracking-[0.15em] uppercase font-bold font-[var(--font-inter)] text-[#74777f] mb-2">
+                      Altura (m) *
+                    </label>
+                    <input
+                      type="text"
+                      inputMode="decimal"
+                      value={sqHeight}
+                      onChange={(e) => setSqHeight(e.target.value.replace(",", "."))}
+                      placeholder="ex: 2.8"
+                      className="w-full border border-[#e2e2e2] px-4 py-2.5 text-sm font-[var(--font-inter)] text-[#002045] focus:outline-none focus:border-[#002045]"
+                    />
+                  </div>
+                  {sqWidth && sqHeight && sqAreaCalc > 0 && (
+                    <p className="col-span-2 text-[#74777f] text-xs font-[var(--font-inter)]">
+                      Área: {sqAreaCalc.toFixed(2)} m² → {sqQtyNum} placa{sqQtyNum !== 1 ? "s" : ""} necessária{sqQtyNum !== 1 ? "s" : ""}
+                    </p>
+                  )}
+                </div>
+              )}
+              {sqMode === "m2" && (
+                <div>
+                  <label className="block text-[10px] tracking-[0.15em] uppercase font-bold font-[var(--font-inter)] text-[#74777f] mb-2">
+                    Área total (m²) *
+                  </label>
+                  <input
+                    type="text"
+                    inputMode="decimal"
+                    value={sqM2Input}
+                    onChange={(e) => setSqM2Input(e.target.value.replace(",", "."))}
+                    placeholder="ex: 12.6"
+                    className="w-full border border-[#e2e2e2] px-4 py-2.5 text-sm font-[var(--font-inter)] text-[#002045] focus:outline-none focus:border-[#002045]"
+                  />
+                  {sqM2Input && sqAreaCalc > 0 && (
+                    <p className="text-[#74777f] text-xs font-[var(--font-inter)] mt-2">
+                      {sqAreaCalc.toFixed(2)} m² → {sqQtyNum} placa{sqQtyNum !== 1 ? "s" : ""} necessária{sqQtyNum !== 1 ? "s" : ""}
+                    </p>
+                  )}
+                </div>
+              )}
+              {sqMode === "plates" && (
+                <div>
+                  <label className="block text-[10px] tracking-[0.15em] uppercase font-bold font-[var(--font-inter)] text-[#74777f] mb-2">
+                    Número de placas *
+                  </label>
+                  <input
+                    type="text"
+                    inputMode="numeric"
+                    value={sqQty}
+                    onChange={(e) => setSqQty(e.target.value.replace(/\D/g, ""))}
+                    placeholder="ex: 10"
+                    className="w-full border border-[#e2e2e2] px-4 py-2.5 text-sm font-[var(--font-inter)] text-[#002045] focus:outline-none focus:border-[#002045]"
+                  />
+                  {sqQtyNum > 0 && (
+                    <p className="text-[#74777f] text-xs font-[var(--font-inter)] mt-2">
+                      Cobre aproximadamente {(sqQtyNum * PLATE_M2).toFixed(2)} m²
+                    </p>
+                  )}
+                </div>
+              )}
             </div>
 
             {/* Results */}
@@ -949,7 +1050,7 @@ export default function ParceiroPage() {
                   </p>
                   <div className="grid grid-cols-2 gap-4 mb-4">
                     <div>
-                      <p className="text-white/50 text-[10px] font-[var(--font-inter)] mb-0.5">Linha</p>
+                      <p className="text-white/50 text-[10px] font-[var(--font-inter)] mb-0.5">Modelo</p>
                       <p className="text-white font-semibold font-[var(--font-inter)]">{sqLinha}</p>
                     </div>
                     <div>
@@ -957,7 +1058,7 @@ export default function ParceiroPage() {
                       <p className="text-white font-semibold font-[var(--font-inter)]">{sqQtyNum} placa{sqQtyNum !== 1 ? "s" : ""}</p>
                     </div>
                     <div>
-                      <p className="text-white/50 text-[10px] font-[var(--font-inter)] mb-0.5">Área estimada</p>
+                      <p className="text-white/50 text-[10px] font-[var(--font-inter)] mb-0.5">Área coberta</p>
                       <p className="text-white font-semibold font-[var(--font-inter)]">{sqArea.toFixed(2)} m²</p>
                     </div>
                     <div>
@@ -970,9 +1071,6 @@ export default function ParceiroPage() {
                       <span className="text-white font-bold font-[var(--font-inter)]">Total do material</span>
                       <span className="text-white text-2xl font-[var(--font-noto-serif)]">{fmt(sqTotal)}</span>
                     </div>
-                    {sqClient && (
-                      <p className="text-white/50 text-xs font-[var(--font-inter)] mt-2">Cliente: {sqClient}</p>
-                    )}
                   </div>
                   <div className="bg-white/10 border border-white/20 px-4 py-3 mt-4">
                     <p className="text-white/70 text-[11px] font-[var(--font-inter)] leading-relaxed">
@@ -994,7 +1092,7 @@ export default function ParceiroPage() {
                 </button>
 
                 {sqShowMargin && (
-                  <div className="bg-[#f0f9eb] border border-[#3b6934]/30 px-6 py-5 mb-4">
+                  <div className="bg-[#f0f9eb] border border-[#3b6934]/30 px-6 py-5">
                     <p className="text-[#3b6934] text-[10px] tracking-[0.15em] uppercase font-bold font-[var(--font-inter)] mb-4">
                       Sua condição especial neste orçamento
                     </p>
@@ -1015,13 +1113,6 @@ export default function ParceiroPage() {
                     <p className="text-[#74777f] text-[10px] font-[var(--font-inter)] mt-4 leading-relaxed">
                       Esta é a diferença entre sua condição especial de parceiro e a tabela de referência. Não deve ser comunicada como margem ao cliente final.
                     </p>
-                  </div>
-                )}
-
-                {sqNotes && (
-                  <div className="bg-[#f5f5f3] border border-[#e2e2e2] px-4 py-3">
-                    <p className="text-[#74777f] text-[10px] tracking-[0.1em] uppercase font-bold font-[var(--font-inter)] mb-1">Observações</p>
-                    <p className="text-[#43474e] text-sm font-[var(--font-inter)]">{sqNotes}</p>
                   </div>
                 )}
               </div>
