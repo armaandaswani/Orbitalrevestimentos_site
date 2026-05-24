@@ -21,12 +21,12 @@ export const metadata: Metadata = {
     "comprar revestimento Manaus",
     "loja de revestimentos Manaus",
   ],
-  alternates: { canonical: "https://orbitalrevestimentos-site.vercel.app/produtos" },
+  alternates: { canonical: "https://orbitalrevestimentos.com.br/produtos" },
   openGraph: {
     title: "Revestimentos PFB — 3 Linhas, 15 Acabamentos em Manaus",
     description:
       "Catálogo completo Orbital: Classic, Brilliance e Elegance. Alternativa superior ao MDF e papel de parede. 15 acabamentos, pronta-entrega em Manaus.",
-    url: "https://orbitalrevestimentos-site.vercel.app/produtos",
+    url: "https://orbitalrevestimentos.com.br/produtos",
   },
 };
 

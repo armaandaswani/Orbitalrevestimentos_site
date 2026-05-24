@@ -22,7 +22,7 @@ const notoSerif = Noto_Serif({
   display: "swap",
 });
 
-const BASE_URL = "https://orbitalrevestimentos-site.vercel.app";
+const BASE_URL = "https://orbitalrevestimentos.com.br";
 
 export const metadata: Metadata = {
   metadataBase: new URL(BASE_URL),

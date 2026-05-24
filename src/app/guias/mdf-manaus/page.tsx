@@ -2,7 +2,7 @@ import type { Metadata } from "next";
 import Image from "next/image";
 import Link from "next/link";
 
-const BASE_URL = "https://orbitalrevestimentos-site.vercel.app";
+const BASE_URL = "https://orbitalrevestimentos.com.br";
 const WA = (msg: string) => `https://wa.me/5592988150149?text=${encodeURIComponent(msg)}`;
 
 export const metadata: Metadata = {

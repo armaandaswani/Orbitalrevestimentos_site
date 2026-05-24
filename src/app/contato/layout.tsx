@@ -13,12 +13,12 @@ export const metadata: Metadata = {
     "orçamento decoração Manaus",
     "quanto custa reformar parede Manaus",
   ],
-  alternates: { canonical: "https://orbitalrevestimentos-site.vercel.app/contato" },
+  alternates: { canonical: "https://orbitalrevestimentos.com.br/contato" },
   openGraph: {
     title: "Simulador de Custo — Orçamento de Revestimento em Manaus",
     description:
       "Calcule o custo do seu projeto agora. Informe as medidas, escolha o acabamento e receba o orçamento na hora.",
-    url: "https://orbitalrevestimentos-site.vercel.app/contato",
+    url: "https://orbitalrevestimentos.com.br/contato",
   },
 };
 

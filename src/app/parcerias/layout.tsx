@@ -15,12 +15,12 @@ export const metadata: Metadata = {
     "revender revestimento Manaus",
     "revestimento com ART CREA Manaus",
   ],
-  alternates: { canonical: "https://orbitalrevestimentos-site.vercel.app/parcerias" },
+  alternates: { canonical: "https://orbitalrevestimentos.com.br/parcerias" },
   openGraph: {
     title: "Parcerias — Arquitetos, Marceneiros e Designers em Manaus",
     description:
       "Condições exclusivas para arquitetos, designers e marceneiros em Manaus. Amostras grátis, ART/CREA e suporte técnico da Orbital Revestimentos.",
-    url: "https://orbitalrevestimentos-site.vercel.app/parcerias",
+    url: "https://orbitalrevestimentos.com.br/parcerias",
   },
 };
 

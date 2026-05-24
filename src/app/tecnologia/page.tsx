@@ -21,12 +21,12 @@ export const metadata: Metadata = {
     "revestimento sustentável Manaus",
     "placa flexível de bambu Amazonas",
   ],
-  alternates: { canonical: "https://orbitalrevestimentos-site.vercel.app/tecnologia" },
+  alternates: { canonical: "https://orbitalrevestimentos.com.br/tecnologia" },
   openGraph: {
     title: "PFB Orbital — Tecnologia, Performance e Ficha Técnica | Revestimento Manaus",
     description:
       "5 camadas, dados de laboratório, ART de Engenheiro Civil. Impermeável, anti-mofo, instalado em 2–3 horas. O revestimento premium feito para o Amazonas.",
-    url: "https://orbitalrevestimentos-site.vercel.app/tecnologia",
+    url: "https://orbitalrevestimentos.com.br/tecnologia",
   },
 };
 
