@@ -10,6 +10,8 @@ interface PartnerInfo {
   discount_value: number;
   commission_type: "percentage" | "fixed";
   commission_value: number;
+  profession: string | null;
+  has_special_table: boolean | null;
 }
 
 interface CouponUse {
@@ -41,9 +43,23 @@ const STATUS_LABELS: Record<string, { label: string; cls: string }> = {
 
 type LoginView = "login" | "forgot" | "reset";
 
+const PROFESSIONS = [
+  "Arquiteto e Urbanista",
+  "Designer de interiores",
+  "Construtor",
+  "Engenheiro civil",
+  "Corretor de imóveis",
+  "Lojista / revendedor",
+  "Representante comercial",
+];
+
+const SPECIAL_PRICES: Record<string, number> = { Classic: 399, Brilliance: 429, Elegance: 459 };
+const NORMAL_PRICES: Record<string, number> = { Classic: 559, Brilliance: 589, Elegance: 649 };
+const PLATE_M2 = 3.48;
+
 export default function ParceiroPage() {
   // ── Auth state ──────────────────────────────────────────────────────────────
-  const [couponCode, setCouponCode] = useState("");
+  const [loginEmail, setLoginEmail] = useState("");
   const [password, setPassword] = useState("");
   const [loginError, setLoginError] = useState("");
   const [loginLoading, setLoginLoading] = useState(false);
@@ -52,7 +68,6 @@ export default function ParceiroPage() {
   const [loginView, setLoginView] = useState<LoginView>("login");
 
   // ── Forgot password state ──────────────────────────────────────────────────
-  const [forgotCoupon, setForgotCoupon] = useState("");
   const [forgotEmail, setForgotEmail] = useState("");
   const [forgotLoading, setForgotLoading] = useState(false);
   const [forgotMessage, setForgotMessage] = useState("");
@@ -80,6 +95,22 @@ export default function ParceiroPage() {
   const [cpError, setCpError] = useState("");
   const [cpSuccess, setCpSuccess] = useState("");
 
+  // ── Profession gate state ──────────────────────────────────────────────────
+  const [profInput, setProfInput] = useState("");
+  const [profOther, setProfOther] = useState("");
+  const [profLoading, setProfLoading] = useState(false);
+  const [profError, setProfError] = useState("");
+
+  // ── Portal tab state ───────────────────────────────────────────────────────
+  const [portalTab, setPortalTab] = useState<"portal" | "special">("portal");
+
+  // ── Special table / simulator state ───────────────────────────────────────
+  const [sqLinha, setSqLinha] = useState<"Classic" | "Brilliance" | "Elegance" | "">("");
+  const [sqQty, setSqQty] = useState("");
+  const [sqClient, setSqClient] = useState("");
+  const [sqNotes, setSqNotes] = useState("");
+  const [sqShowMargin, setSqShowMargin] = useState(false);
+
   // ── On mount: check for ?reset=TOKEN ──────────────────────────────────────
   useEffect(() => {
     const params = new URLSearchParams(window.location.search);
@@ -99,7 +130,7 @@ export default function ParceiroPage() {
     const res = await fetch("/api/parceiro/auth", {
       method: "POST",
       headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ coupon_code: couponCode, portal_password: password }),
+      body: JSON.stringify({ email: loginEmail.trim(), portal_password: password }),
     });
 
     const json = await res.json();
@@ -130,7 +161,7 @@ export default function ParceiroPage() {
     const res = await fetch("/api/parceiro/forgot-password", {
       method: "POST",
       headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ coupon_code: forgotCoupon, email: forgotEmail }),
+      body: JSON.stringify({ email: forgotEmail }),
     });
 
     const json = await res.json();
@@ -212,12 +243,45 @@ export default function ParceiroPage() {
     setShowChangePassword(false);
   }
 
+  async function handleProfessionSubmit(e: React.FormEvent) {
+    e.preventDefault();
+    setProfError("");
+    const selectedValue = profInput === "Outro" ? profOther.trim() : profInput;
+    if (!selectedValue) {
+      setProfError("Por favor, selecione ou informe sua profissão.");
+      return;
+    }
+    if (!partner) return;
+    setProfLoading(true);
+    const res = await fetch(`/api/partners/${partner.id}`, {
+      method: "PUT",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ profession: selectedValue }),
+    });
+    const json = await res.json();
+    setProfLoading(false);
+    if (!res.ok) {
+      setProfError(json.error || "Erro ao salvar profissão.");
+      return;
+    }
+    setPartner({ ...partner, profession: selectedValue });
+  }
+
   // ── Computed ───────────────────────────────────────────────────────────────
   const concludedUses = uses.filter((u) => u.sale_status === "concluido");
   const totalCommission = concludedUses.reduce((a, u) => a + (u.commission_owed || 0), 0);
   const pendingCommission = uses
     .filter((u) => u.sale_status === "em_orcamento" || u.sale_status === null)
     .reduce((a, u) => a + (u.commission_owed || 0), 0);
+
+  // Special table computed values
+  const sqQtyNum = parseInt(sqQty) || 0;
+  const sqSpecialPrice = sqLinha ? SPECIAL_PRICES[sqLinha] : 0;
+  const sqNormalPrice = sqLinha ? NORMAL_PRICES[sqLinha] : 0;
+  const sqTotal = sqQtyNum * sqSpecialPrice;
+  const sqArea = sqQtyNum * PLATE_M2;
+  const sqSavingsPerPlate = sqNormalPrice - sqSpecialPrice;
+  const sqTotalSavings = sqQtyNum * sqSavingsPerPlate;
 
   // ── Auth screens ──────────────────────────────────────────────────────────
   if (!partner) {
@@ -314,7 +378,7 @@ export default function ParceiroPage() {
                 <div className="space-y-4">
                   <p className="text-green-700 text-sm font-[var(--font-inter)]">{forgotMessage}</p>
                   <button
-                    onClick={() => { setLoginView("login"); setForgotMessage(""); setForgotCoupon(""); setForgotEmail(""); }}
+                    onClick={() => { setLoginView("login"); setForgotMessage(""); setForgotEmail(""); }}
                     className="text-[#002045] text-xs font-[var(--font-inter)] underline underline-offset-2"
                   >
                     Voltar ao login
@@ -324,21 +388,7 @@ export default function ParceiroPage() {
                 <form onSubmit={handleForgotPassword} className="space-y-4">
                   <div>
                     <label className="block text-[10px] tracking-[0.15em] uppercase font-bold font-[var(--font-inter)] text-[#74777f] mb-2">
-                      Código do Cupom
-                    </label>
-                    <input
-                      required
-                      value={forgotCoupon}
-                      onChange={(e) => setForgotCoupon(e.target.value.toUpperCase())}
-                      className="w-full border border-[#e2e2e2] px-4 py-3 text-sm font-[var(--font-inter)] text-[#002045] focus:outline-none focus:border-[#002045] uppercase tracking-widest"
-                      placeholder="EX: ARQLIMA10"
-                      autoCapitalize="characters"
-                      autoFocus
-                    />
-                  </div>
-                  <div>
-                    <label className="block text-[10px] tracking-[0.15em] uppercase font-bold font-[var(--font-inter)] text-[#74777f] mb-2">
-                      Email
+                      E-mail cadastrado
                     </label>
                     <input
                       required
@@ -347,6 +397,7 @@ export default function ParceiroPage() {
                       onChange={(e) => setForgotEmail(e.target.value)}
                       className="w-full border border-[#e2e2e2] px-4 py-3 text-sm font-[var(--font-inter)] text-[#002045] focus:outline-none focus:border-[#002045]"
                       placeholder="seu@email.com"
+                      autoFocus
                     />
                   </div>
                   {forgotError && (
@@ -385,15 +436,16 @@ export default function ParceiroPage() {
               <form onSubmit={handleLogin} className="space-y-4">
                 <div>
                   <label className="block text-[10px] tracking-[0.15em] uppercase font-bold font-[var(--font-inter)] text-[#74777f] mb-2">
-                    Código do Cupom
+                    E-mail
                   </label>
                   <input
                     required
-                    value={couponCode}
-                    onChange={(e) => setCouponCode(e.target.value.toUpperCase())}
-                    className="w-full border border-[#e2e2e2] px-4 py-3 text-sm font-[var(--font-inter)] text-[#002045] focus:outline-none focus:border-[#002045] uppercase tracking-widest"
-                    placeholder="EX: ARQLIMA10"
-                    autoCapitalize="characters"
+                    type="email"
+                    value={loginEmail}
+                    onChange={(e) => setLoginEmail(e.target.value)}
+                    className="w-full border border-[#e2e2e2] px-4 py-3 text-sm font-[var(--font-inter)] text-[#002045] focus:outline-none focus:border-[#002045]"
+                    placeholder="seu@email.com"
+                    autoComplete="email"
                     autoFocus
                   />
                 </div>
@@ -407,6 +459,7 @@ export default function ParceiroPage() {
                     value={password}
                     onChange={(e) => setPassword(e.target.value)}
                     className="w-full border border-[#e2e2e2] px-4 py-3 text-sm font-[var(--font-inter)] text-[#002045] focus:outline-none focus:border-[#002045]"
+                    autoComplete="current-password"
                   />
                 </div>
                 {loginError && (
@@ -420,7 +473,7 @@ export default function ParceiroPage() {
                   {loginLoading ? "Entrando..." : "Entrar"}
                 </button>
               </form>
-              <div className="mt-4 text-center">
+              <div className="mt-4 flex flex-col items-center gap-2">
                 <button
                   type="button"
                   onClick={() => { setLoginView("forgot"); setLoginError(""); }}
@@ -428,10 +481,74 @@ export default function ParceiroPage() {
                 >
                   Esqueci minha senha
                 </button>
+                <a
+                  href="/representante"
+                  className="text-[#74777f] text-xs font-[var(--font-inter)] hover:text-[#002045] transition-colors"
+                >
+                  É representante comercial?{" "}
+                  <span className="underline underline-offset-2">Acesse aqui</span>
+                </a>
               </div>
             </>
           )}
 
+        </div>
+      </div>
+    );
+  }
+
+  // ── Profession gate ────────────────────────────────────────────────────────
+  if (!partner.profession) {
+    return (
+      <div className="min-h-screen bg-[#f5f5f3] flex items-center justify-center px-4">
+        <div className="bg-white border border-[#e2e2e2] p-10 w-full max-w-sm">
+          <div className="mb-6">
+            <p className="text-[#002045] font-[var(--font-noto-serif)] text-2xl font-normal mb-1">
+              Complete seu cadastro
+            </p>
+            <p className="text-[#74777f] text-sm font-[var(--font-inter)]">
+              Olá, {partner.name}. Para continuar, precisamos saber sua profissão.
+            </p>
+          </div>
+          <form onSubmit={handleProfessionSubmit} className="space-y-4">
+            <div>
+              <label className="block text-[10px] tracking-[0.15em] uppercase font-bold font-[var(--font-inter)] text-[#74777f] mb-2">
+                Profissão *
+              </label>
+              <select
+                required
+                value={profInput}
+                onChange={(e) => { setProfInput(e.target.value); if (e.target.value !== "Outro") setProfOther(""); }}
+                className="w-full border border-[#e2e2e2] px-4 py-3 text-sm font-[var(--font-inter)] text-[#002045] focus:outline-none focus:border-[#002045]"
+              >
+                <option value="">— Selecionar —</option>
+                {PROFESSIONS.map((prof) => (
+                  <option key={prof} value={prof}>{prof}</option>
+                ))}
+                <option value="Outro">Outro</option>
+              </select>
+              {profInput === "Outro" && (
+                <input
+                  type="text"
+                  required
+                  value={profOther}
+                  onChange={(e) => setProfOther(e.target.value)}
+                  placeholder="Especifique sua profissão"
+                  className="w-full border border-[#e2e2e2] px-4 py-3 text-sm font-[var(--font-inter)] text-[#002045] focus:outline-none focus:border-[#002045] mt-2"
+                />
+              )}
+            </div>
+            {profError && (
+              <p className="text-red-600 text-sm font-[var(--font-inter)]">{profError}</p>
+            )}
+            <button
+              type="submit"
+              disabled={profLoading}
+              className="w-full bg-[#002045] text-white text-xs tracking-[0.12em] uppercase font-bold font-[var(--font-inter)] px-6 py-3 hover:bg-[#1a365d] transition-colors disabled:opacity-50"
+            >
+              {profLoading ? "Salvando..." : "Confirmar e entrar"}
+            </button>
+          </form>
         </div>
       </div>
     );
@@ -451,200 +568,417 @@ export default function ParceiroPage() {
           </p>
         </div>
         <button
-          onClick={() => { setPartner(null); setUses([]); setCouponCode(""); setPassword(""); setCpSuccess(""); }}
+          onClick={() => { setPartner(null); setUses([]); setLoginEmail(""); setPassword(""); setCpSuccess(""); setPortalTab("portal"); }}
           className="text-white/60 hover:text-white text-xs font-[var(--font-inter)] uppercase tracking-widest transition-colors"
         >
           Sair
         </button>
       </div>
 
-      <div className="max-w-5xl mx-auto px-4 sm:px-8 py-8">
-        {/* Partner info card */}
-        <div className="bg-white border border-[#e2e2e2] px-6 py-5 mb-4">
-          <p className="text-[#74777f] text-[10px] tracking-[0.15em] uppercase font-bold font-[var(--font-inter)] mb-3">
-            Seu cupom
-          </p>
-          <div className="flex flex-col sm:flex-row sm:items-center gap-4">
-            <div>
-              <span className="bg-[#eef2f8] text-[#002045] px-4 py-2 text-xl font-bold tracking-[0.2em] font-[var(--font-inter)]">
-                {partner.coupon_code}
-              </span>
+      {/* Tab bar — only shown when partner has special table access */}
+      {partner.has_special_table && (
+        <div className="bg-white border-b border-[#e2e2e2]">
+          <div className="max-w-5xl mx-auto px-4 sm:px-8">
+            <div className="flex gap-1">
+              {(["portal", "special"] as const).map((t) => (
+                <button
+                  key={t}
+                  onClick={() => setPortalTab(t)}
+                  className={`px-6 py-3 text-xs tracking-[0.1em] uppercase font-bold font-[var(--font-inter)] transition-colors border-b-2 -mb-px ${portalTab === t ? "border-[#002045] text-[#002045]" : "border-transparent text-[#74777f] hover:text-[#002045]"}`}
+                >
+                  {t === "portal" ? "Meu Portal" : "Tabela Especial ★"}
+                </button>
+              ))}
             </div>
-            <div className="text-sm font-[var(--font-inter)] text-[#43474e]">
-              <p>Compartilhe seu cupom com clientes para aplicar o desconto automaticamente.</p>
+          </div>
+        </div>
+      )}
+
+      {/* ── Meu Portal tab ── */}
+      {portalTab === "portal" && (
+        <div className="max-w-5xl mx-auto px-4 sm:px-8 py-8">
+          {/* Partner info card */}
+          <div className="bg-white border border-[#e2e2e2] px-6 py-5 mb-4">
+            <p className="text-[#74777f] text-[10px] tracking-[0.15em] uppercase font-bold font-[var(--font-inter)] mb-3">
+              Seu cupom
+            </p>
+            <div className="flex flex-col sm:flex-row sm:items-center gap-4">
+              <div>
+                <span className="bg-[#eef2f8] text-[#002045] px-4 py-2 text-xl font-bold tracking-[0.2em] font-[var(--font-inter)]">
+                  {partner.coupon_code}
+                </span>
+              </div>
+              <div className="text-sm font-[var(--font-inter)] text-[#43474e]">
+                <p>Compartilhe seu cupom com clientes para aplicar o desconto automaticamente.</p>
+              </div>
             </div>
           </div>
-        </div>
 
-        {/* Change password section */}
-        <div className="bg-white border border-[#e2e2e2] px-6 py-4 mb-8">
-          <button
-            type="button"
-            onClick={() => {
-              setShowChangePassword((v) => !v);
-              setCpError("");
-              setCpSuccess("");
-              setCpCurrent("");
-              setCpNew("");
-              setCpConfirm("");
-            }}
-            className="flex items-center gap-2 text-[#002045] text-xs tracking-[0.1em] uppercase font-bold font-[var(--font-inter)] hover:opacity-70 transition-opacity"
-          >
-            <span>{showChangePassword ? "▲" : "▼"}</span>
-            Alterar Senha
-          </button>
+          {/* Change password section */}
+          <div className="bg-white border border-[#e2e2e2] px-6 py-4 mb-8">
+            <button
+              type="button"
+              onClick={() => {
+                setShowChangePassword((v) => !v);
+                setCpError("");
+                setCpSuccess("");
+                setCpCurrent("");
+                setCpNew("");
+                setCpConfirm("");
+              }}
+              className="flex items-center gap-2 text-[#002045] text-xs tracking-[0.1em] uppercase font-bold font-[var(--font-inter)] hover:opacity-70 transition-opacity"
+            >
+              <span>{showChangePassword ? "▲" : "▼"}</span>
+              Alterar Senha
+            </button>
 
-          {showChangePassword && (
-            <form onSubmit={handleChangePassword} className="mt-4 space-y-3 max-w-sm">
-              <div>
-                <label className="block text-[10px] tracking-[0.15em] uppercase font-bold font-[var(--font-inter)] text-[#74777f] mb-1.5">
-                  Senha Atual
-                </label>
-                <input
-                  required
-                  type="password"
-                  value={cpCurrent}
-                  onChange={(e) => setCpCurrent(e.target.value)}
-                  className="w-full border border-[#e2e2e2] px-4 py-2.5 text-sm font-[var(--font-inter)] text-[#002045] focus:outline-none focus:border-[#002045]"
-                  autoFocus
-                />
-              </div>
-              <div>
-                <label className="block text-[10px] tracking-[0.15em] uppercase font-bold font-[var(--font-inter)] text-[#74777f] mb-1.5">
-                  Nova Senha
-                </label>
-                <input
-                  required
-                  type="password"
-                  value={cpNew}
-                  onChange={(e) => setCpNew(e.target.value)}
-                  className="w-full border border-[#e2e2e2] px-4 py-2.5 text-sm font-[var(--font-inter)] text-[#002045] focus:outline-none focus:border-[#002045]"
-                />
-              </div>
-              <div>
-                <label className="block text-[10px] tracking-[0.15em] uppercase font-bold font-[var(--font-inter)] text-[#74777f] mb-1.5">
-                  Confirmar Nova Senha
-                </label>
-                <input
-                  required
-                  type="password"
-                  value={cpConfirm}
-                  onChange={(e) => setCpConfirm(e.target.value)}
-                  className="w-full border border-[#e2e2e2] px-4 py-2.5 text-sm font-[var(--font-inter)] text-[#002045] focus:outline-none focus:border-[#002045]"
-                />
-              </div>
-              {cpError && (
-                <p className="text-red-600 text-sm font-[var(--font-inter)]">{cpError}</p>
-              )}
-              <button
-                type="submit"
-                disabled={cpLoading}
-                className="bg-[#002045] text-white text-xs tracking-[0.12em] uppercase font-bold font-[var(--font-inter)] px-6 py-2.5 hover:bg-[#1a365d] transition-colors disabled:opacity-50"
-              >
-                {cpLoading ? "Salvando..." : "Salvar"}
-              </button>
-            </form>
+            {showChangePassword && (
+              <form onSubmit={handleChangePassword} className="mt-4 space-y-3 max-w-sm">
+                <div>
+                  <label className="block text-[10px] tracking-[0.15em] uppercase font-bold font-[var(--font-inter)] text-[#74777f] mb-1.5">
+                    Senha Atual
+                  </label>
+                  <input
+                    required
+                    type="password"
+                    value={cpCurrent}
+                    onChange={(e) => setCpCurrent(e.target.value)}
+                    className="w-full border border-[#e2e2e2] px-4 py-2.5 text-sm font-[var(--font-inter)] text-[#002045] focus:outline-none focus:border-[#002045]"
+                    autoFocus
+                  />
+                </div>
+                <div>
+                  <label className="block text-[10px] tracking-[0.15em] uppercase font-bold font-[var(--font-inter)] text-[#74777f] mb-1.5">
+                    Nova Senha
+                  </label>
+                  <input
+                    required
+                    type="password"
+                    value={cpNew}
+                    onChange={(e) => setCpNew(e.target.value)}
+                    className="w-full border border-[#e2e2e2] px-4 py-2.5 text-sm font-[var(--font-inter)] text-[#002045] focus:outline-none focus:border-[#002045]"
+                  />
+                </div>
+                <div>
+                  <label className="block text-[10px] tracking-[0.15em] uppercase font-bold font-[var(--font-inter)] text-[#74777f] mb-1.5">
+                    Confirmar Nova Senha
+                  </label>
+                  <input
+                    required
+                    type="password"
+                    value={cpConfirm}
+                    onChange={(e) => setCpConfirm(e.target.value)}
+                    className="w-full border border-[#e2e2e2] px-4 py-2.5 text-sm font-[var(--font-inter)] text-[#002045] focus:outline-none focus:border-[#002045]"
+                  />
+                </div>
+                {cpError && (
+                  <p className="text-red-600 text-sm font-[var(--font-inter)]">{cpError}</p>
+                )}
+                <button
+                  type="submit"
+                  disabled={cpLoading}
+                  className="bg-[#002045] text-white text-xs tracking-[0.12em] uppercase font-bold font-[var(--font-inter)] px-6 py-2.5 hover:bg-[#1a365d] transition-colors disabled:opacity-50"
+                >
+                  {cpLoading ? "Salvando..." : "Salvar"}
+                </button>
+              </form>
+            )}
+
+            {cpSuccess && !showChangePassword && (
+              <p className="mt-3 text-green-700 text-sm font-[var(--font-inter)]">{cpSuccess}</p>
+            )}
+          </div>
+
+          {/* Summary cards */}
+          <div className="grid grid-cols-1 sm:grid-cols-3 gap-4 mb-8">
+            <div className="bg-white border border-[#e2e2e2] px-6 py-5">
+              <p className="text-[#74777f] text-[10px] tracking-[0.15em] uppercase font-bold font-[var(--font-inter)] mb-1">
+                Total de usos
+              </p>
+              <p className="font-[var(--font-noto-serif)] text-[#002045] text-3xl font-normal">
+                {uses.length}
+              </p>
+            </div>
+            <div className="bg-white border border-[#e2e2e2] px-6 py-5">
+              <p className="text-[#74777f] text-[10px] tracking-[0.15em] uppercase font-bold font-[var(--font-inter)] mb-1">
+                Vendas concluídas
+              </p>
+              <p className="font-[var(--font-noto-serif)] text-[#002045] text-3xl font-normal">
+                {uses.filter((u) => u.sale_status === "concluido").length}
+              </p>
+            </div>
+            <div className="bg-white border border-[#e2e2e2] px-6 py-5">
+              <p className="text-[#74777f] text-[10px] tracking-[0.15em] uppercase font-bold font-[var(--font-inter)] mb-1">
+                Em orçamento
+              </p>
+              <p className="font-[var(--font-noto-serif)] text-yellow-700 text-3xl font-normal">
+                {uses.filter((u) => u.sale_status === "em_orcamento" || u.sale_status === null).length}
+              </p>
+            </div>
+          </div>
+
+          {/* Usage history */}
+          <h2 className="font-[var(--font-noto-serif)] text-[#002045] text-xl font-normal mb-4">
+            Histórico de usos
+          </h2>
+
+          {usesLoading ? (
+            <p className="text-[#74777f] text-sm font-[var(--font-inter)]">Carregando...</p>
+          ) : uses.length === 0 ? (
+            <div className="bg-white border border-[#e2e2e2] px-6 py-10 text-center">
+              <p className="text-[#74777f] text-sm font-[var(--font-inter)]">
+                Nenhum uso registrado ainda. Compartilhe seu cupom com clientes!
+              </p>
+            </div>
+          ) : (
+            <div className="bg-white border border-[#e2e2e2] overflow-x-auto">
+              <table className="w-full text-sm font-[var(--font-inter)]">
+                <thead>
+                  <tr className="border-b border-[#e2e2e2]">
+                    {["Data", "Cliente", "Produto", "Espaço", "Placas", "Comissão", "Status"].map((h) => (
+                      <th key={h} className="text-left px-4 py-3 text-[10px] tracking-[0.1em] uppercase font-bold text-[#74777f] whitespace-nowrap">
+                        {h}
+                      </th>
+                    ))}
+                  </tr>
+                </thead>
+                <tbody>
+                  {uses.map((u) => {
+                    const st = u.sale_status || "em_orcamento";
+                    const stMeta = STATUS_LABELS[st] || STATUS_LABELS.em_orcamento;
+                    return (
+                      <tr key={u.id} className="border-b border-[#f0f0f0] hover:bg-[#fafafa]">
+                        <td className="px-4 py-3 text-xs text-[#43474e] whitespace-nowrap">
+                          {new Date(u.created_at).toLocaleDateString("pt-BR")}
+                        </td>
+                        <td className="px-4 py-3 text-xs text-[#43474e]">{u.architect_name || "—"}</td>
+                        <td className="px-4 py-3 text-xs text-[#43474e]">
+                          <p className="font-semibold">{u.product_name || "—"}</p>
+                          {u.product_code && <p className="text-[#74777f]">{u.product_code}</p>}
+                        </td>
+                        <td className="px-4 py-3 text-xs text-[#43474e]">{u.space || "—"}</td>
+                        <td className="px-4 py-3 text-xs text-[#43474e]">{u.plates ?? "—"}</td>
+                        <td className="px-4 py-3 text-xs font-semibold">
+                          {st === "cancelado"
+                            ? <span className="text-[#74777f] font-normal">—</span>
+                            : st === "concluido" && u.commission_owed != null
+                            ? <span className="text-green-700 font-bold">{fmt(u.commission_owed)}</span>
+                            : u.commission_owed != null
+                            ? <span className="text-yellow-700">{fmt(u.commission_owed)} (pend.)</span>
+                            : "—"}
+                        </td>
+                        <td className="px-4 py-3">
+                          <span className={`inline-flex items-center gap-1.5 px-2.5 py-1 text-[10px] font-bold tracking-wide rounded-full ${stMeta.cls}`}>
+                            <span className={`w-1.5 h-1.5 rounded-full ${
+                              st === "concluido" ? "bg-green-600" : st === "cancelado" ? "bg-red-500" : "bg-yellow-500"
+                            }`} />
+                            {stMeta.label}
+                          </span>
+                        </td>
+                      </tr>
+                    );
+                  })}
+                </tbody>
+              </table>
+            </div>
           )}
-
-          {cpSuccess && !showChangePassword && (
-            <p className="mt-3 text-green-700 text-sm font-[var(--font-inter)]">{cpSuccess}</p>
-          )}
         </div>
+      )}
 
-        {/* Summary cards */}
-        <div className="grid grid-cols-1 sm:grid-cols-3 gap-4 mb-8">
-          <div className="bg-white border border-[#e2e2e2] px-6 py-5">
-            <p className="text-[#74777f] text-[10px] tracking-[0.15em] uppercase font-bold font-[var(--font-inter)] mb-1">
-              Total de usos
-            </p>
-            <p className="font-[var(--font-noto-serif)] text-[#002045] text-3xl font-normal">
-              {uses.length}
-            </p>
+      {/* ── Special Table tab ── */}
+      {portalTab === "special" && (
+        <div className="max-w-5xl mx-auto px-4 sm:px-8 py-8">
+          {/* Disclaimer banner */}
+          <div className="bg-[#fffbea] border border-[#e6c84a] px-5 py-4 flex gap-3 items-start mb-8">
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#6b5000" strokeWidth="2" className="flex-shrink-0 mt-0.5">
+              <circle cx="12" cy="12" r="10" />
+              <line x1="12" y1="8" x2="12" y2="12" />
+              <line x1="12" y1="16" x2="12.01" y2="16" />
+            </svg>
+            <div className="text-[#6b5000] text-xs font-[var(--font-inter)] leading-relaxed space-y-1">
+              <p><strong>Condições exclusivas para parceiros habilitados.</strong></p>
+              <p>Valores para compra direta com a Orbital · Material apenas · Sem entrega inclusa · Retirada no depósito · Não repassar como tabela pública · Sujeito a disponibilidade de estoque.</p>
+            </div>
           </div>
-          <div className="bg-white border border-[#e2e2e2] px-6 py-5">
-            <p className="text-[#74777f] text-[10px] tracking-[0.15em] uppercase font-bold font-[var(--font-inter)] mb-1">
-              Vendas concluídas
-            </p>
-            <p className="font-[var(--font-noto-serif)] text-[#002045] text-3xl font-normal">
-              {uses.filter((u) => u.sale_status === "concluido").length}
-            </p>
+
+          {/* Price table */}
+          <div className="mb-8">
+            <h2 className="font-[var(--font-noto-serif)] text-[#002045] text-xl font-normal mb-4">
+              Tabela de Preços — Compra Direta
+            </h2>
+            <div className="bg-white border border-[#e2e2e2] overflow-hidden">
+              {[
+                { linha: "Classic", finish: "Mármore Fosco", special: 399, normal: 559 },
+                { linha: "Brilliance", finish: "Mármore Polido", special: 429, normal: 589 },
+                { linha: "Elegance", finish: "Madeira Texturizada", special: 459, normal: 649 },
+              ].map((row, i) => (
+                <div key={row.linha} className={`flex items-center justify-between px-6 py-4 ${i < 2 ? "border-b border-[#f0f0f0]" : ""}`}>
+                  <div>
+                    <p className="font-semibold text-[#002045] font-[var(--font-inter)]">{row.linha}</p>
+                    <p className="text-[#74777f] text-xs font-[var(--font-inter)]">{row.finish}</p>
+                  </div>
+                  <div className="text-right">
+                    <p className="text-[#002045] font-bold text-lg font-[var(--font-noto-serif)]">R$ {row.special}/placa</p>
+                    <p className="text-[#74777f] text-xs font-[var(--font-inter)]">Ref. público: <span className="line-through">R$ {row.normal}</span></p>
+                  </div>
+                </div>
+              ))}
+            </div>
+            <p className="text-[#74777f] text-xs font-[var(--font-inter)] mt-2">Placa: 2,9m × 1,2m × 5mm · 3,48 m² por placa</p>
           </div>
-          <div className="bg-white border border-[#e2e2e2] px-6 py-5">
-            <p className="text-[#74777f] text-[10px] tracking-[0.15em] uppercase font-bold font-[var(--font-inter)] mb-1">
-              Em orçamento
-            </p>
-            <p className="font-[var(--font-noto-serif)] text-yellow-700 text-3xl font-normal">
-              {uses.filter((u) => u.sale_status === "em_orcamento" || u.sale_status === null).length}
-            </p>
+
+          {/* Quote simulator */}
+          <div className="bg-white border border-[#e2e2e2] p-6 sm:p-8">
+            <h2 className="font-[var(--font-noto-serif)] text-[#002045] text-xl font-normal mb-6">
+              Simulador de Orçamento
+            </h2>
+
+            {/* Form fields */}
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-5 mb-6">
+              <div>
+                <label className="block text-[10px] tracking-[0.15em] uppercase font-bold font-[var(--font-inter)] text-[#74777f] mb-2">
+                  Linha *
+                </label>
+                <select
+                  value={sqLinha}
+                  onChange={(e) => setSqLinha(e.target.value as "Classic" | "Brilliance" | "Elegance" | "")}
+                  className="w-full border border-[#e2e2e2] px-4 py-2.5 text-sm font-[var(--font-inter)] text-[#002045] focus:outline-none focus:border-[#002045]"
+                >
+                  <option value="">— Selecionar —</option>
+                  <option value="Classic">Classic — Mármore Fosco</option>
+                  <option value="Brilliance">Brilliance — Mármore Polido</option>
+                  <option value="Elegance">Elegance — Madeira Texturizada</option>
+                </select>
+              </div>
+              <div>
+                <label className="block text-[10px] tracking-[0.15em] uppercase font-bold font-[var(--font-inter)] text-[#74777f] mb-2">
+                  Quantidade de placas *
+                </label>
+                <input
+                  type="number"
+                  min="1"
+                  value={sqQty}
+                  onChange={(e) => setSqQty(e.target.value)}
+                  placeholder="ex: 10"
+                  className="w-full border border-[#e2e2e2] px-4 py-2.5 text-sm font-[var(--font-inter)] text-[#002045] focus:outline-none focus:border-[#002045]"
+                />
+              </div>
+              <div>
+                <label className="block text-[10px] tracking-[0.15em] uppercase font-bold font-[var(--font-inter)] text-[#74777f] mb-2">
+                  Nome do cliente <span className="normal-case font-normal">(opcional)</span>
+                </label>
+                <input
+                  type="text"
+                  value={sqClient}
+                  onChange={(e) => setSqClient(e.target.value)}
+                  placeholder="ex: João Silva"
+                  className="w-full border border-[#e2e2e2] px-4 py-2.5 text-sm font-[var(--font-inter)] text-[#002045] focus:outline-none focus:border-[#002045]"
+                />
+              </div>
+              <div>
+                <label className="block text-[10px] tracking-[0.15em] uppercase font-bold font-[var(--font-inter)] text-[#74777f] mb-2">
+                  Observações <span className="normal-case font-normal">(opcional)</span>
+                </label>
+                <textarea
+                  value={sqNotes}
+                  onChange={(e) => setSqNotes(e.target.value)}
+                  placeholder="ex: Ambiente: sala de estar"
+                  rows={1}
+                  className="w-full border border-[#e2e2e2] px-4 py-2.5 text-sm font-[var(--font-inter)] text-[#002045] focus:outline-none focus:border-[#002045] resize-none"
+                />
+              </div>
+            </div>
+
+            {/* Results */}
+            {sqLinha && sqQtyNum > 0 && (
+              <div className="border-t border-[#e2e2e2] pt-6">
+                {/* Summary card */}
+                <div className="bg-[#002045] px-6 py-6 mb-4">
+                  <p className="text-[#a1d494] text-[9px] tracking-[0.2em] uppercase font-bold font-[var(--font-inter)] mb-4">
+                    Resumo do orçamento
+                  </p>
+                  <div className="grid grid-cols-2 gap-4 mb-4">
+                    <div>
+                      <p className="text-white/50 text-[10px] font-[var(--font-inter)] mb-0.5">Linha</p>
+                      <p className="text-white font-semibold font-[var(--font-inter)]">{sqLinha}</p>
+                    </div>
+                    <div>
+                      <p className="text-white/50 text-[10px] font-[var(--font-inter)] mb-0.5">Qtd. de placas</p>
+                      <p className="text-white font-semibold font-[var(--font-inter)]">{sqQtyNum} placa{sqQtyNum !== 1 ? "s" : ""}</p>
+                    </div>
+                    <div>
+                      <p className="text-white/50 text-[10px] font-[var(--font-inter)] mb-0.5">Área estimada</p>
+                      <p className="text-white font-semibold font-[var(--font-inter)]">{sqArea.toFixed(2)} m²</p>
+                    </div>
+                    <div>
+                      <p className="text-white/50 text-[10px] font-[var(--font-inter)] mb-0.5">Valor unitário</p>
+                      <p className="text-white font-semibold font-[var(--font-inter)]">R$ {sqSpecialPrice}/placa</p>
+                    </div>
+                  </div>
+                  <div className="border-t border-white/15 pt-4">
+                    <div className="flex items-center justify-between">
+                      <span className="text-white font-bold font-[var(--font-inter)]">Total do material</span>
+                      <span className="text-white text-2xl font-[var(--font-noto-serif)]">{fmt(sqTotal)}</span>
+                    </div>
+                    {sqClient && (
+                      <p className="text-white/50 text-xs font-[var(--font-inter)] mt-2">Cliente: {sqClient}</p>
+                    )}
+                  </div>
+                  <div className="bg-white/10 border border-white/20 px-4 py-3 mt-4">
+                    <p className="text-white/70 text-[11px] font-[var(--font-inter)] leading-relaxed">
+                      Retirada no depósito · Sem entrega inclusa · Sujeito a estoque
+                    </p>
+                  </div>
+                </div>
+
+                {/* Margin/advantage section */}
+                <button
+                  onClick={() => setSqShowMargin(!sqShowMargin)}
+                  className="flex items-center gap-2 text-[#3b6934] text-xs tracking-[0.1em] uppercase font-bold font-[var(--font-inter)] mb-4 hover:text-[#002045] transition-colors"
+                >
+                  <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"
+                    className={`transition-transform duration-200 ${sqShowMargin ? "rotate-180" : ""}`}>
+                    <path d="M6 9l6 6 6-6" />
+                  </svg>
+                  {sqShowMargin ? "Ocultar" : "Ver"} sua condição especial neste orçamento
+                </button>
+
+                {sqShowMargin && (
+                  <div className="bg-[#f0f9eb] border border-[#3b6934]/30 px-6 py-5 mb-4">
+                    <p className="text-[#3b6934] text-[10px] tracking-[0.15em] uppercase font-bold font-[var(--font-inter)] mb-4">
+                      Sua condição especial neste orçamento
+                    </p>
+                    <div className="space-y-3">
+                      <div className="flex items-center justify-between text-sm font-[var(--font-inter)]">
+                        <span className="text-[#43474e]">Sua condição — {sqQtyNum} placa{sqQtyNum !== 1 ? "s" : ""} × R$ {sqSpecialPrice}</span>
+                        <span className="text-[#002045] font-bold">{fmt(sqTotal)}</span>
+                      </div>
+                      <div className="flex items-center justify-between text-sm font-[var(--font-inter)]">
+                        <span className="text-[#74777f]">Referência tabela normal — × R$ {sqNormalPrice}</span>
+                        <span className="text-[#74777f]">{fmt(sqQtyNum * sqNormalPrice)}</span>
+                      </div>
+                      <div className="border-t border-[#3b6934]/20 pt-3 flex items-center justify-between">
+                        <span className="text-[#3b6934] font-bold font-[var(--font-inter)] text-sm">Economia operacional estimada</span>
+                        <span className="text-[#3b6934] font-bold text-lg font-[var(--font-noto-serif)]">{fmt(sqTotalSavings)}</span>
+                      </div>
+                    </div>
+                    <p className="text-[#74777f] text-[10px] font-[var(--font-inter)] mt-4 leading-relaxed">
+                      Esta é a diferença entre sua condição especial de parceiro e a tabela de referência. Não deve ser comunicada como margem ao cliente final.
+                    </p>
+                  </div>
+                )}
+
+                {sqNotes && (
+                  <div className="bg-[#f5f5f3] border border-[#e2e2e2] px-4 py-3">
+                    <p className="text-[#74777f] text-[10px] tracking-[0.1em] uppercase font-bold font-[var(--font-inter)] mb-1">Observações</p>
+                    <p className="text-[#43474e] text-sm font-[var(--font-inter)]">{sqNotes}</p>
+                  </div>
+                )}
+              </div>
+            )}
           </div>
         </div>
-
-        {/* Usage history */}
-        <h2 className="font-[var(--font-noto-serif)] text-[#002045] text-xl font-normal mb-4">
-          Histórico de usos
-        </h2>
-
-        {usesLoading ? (
-          <p className="text-[#74777f] text-sm font-[var(--font-inter)]">Carregando...</p>
-        ) : uses.length === 0 ? (
-          <div className="bg-white border border-[#e2e2e2] px-6 py-10 text-center">
-            <p className="text-[#74777f] text-sm font-[var(--font-inter)]">
-              Nenhum uso registrado ainda. Compartilhe seu cupom com clientes!
-            </p>
-          </div>
-        ) : (
-          <div className="bg-white border border-[#e2e2e2] overflow-x-auto">
-            <table className="w-full text-sm font-[var(--font-inter)]">
-              <thead>
-                <tr className="border-b border-[#e2e2e2]">
-                  {["Data", "Cliente", "Produto", "Espaço", "Placas", "Comissão", "Status"].map((h) => (
-                    <th key={h} className="text-left px-4 py-3 text-[10px] tracking-[0.1em] uppercase font-bold text-[#74777f] whitespace-nowrap">
-                      {h}
-                    </th>
-                  ))}
-                </tr>
-              </thead>
-              <tbody>
-                {uses.map((u) => {
-                  const st = u.sale_status || "em_orcamento";
-                  const stMeta = STATUS_LABELS[st] || STATUS_LABELS.em_orcamento;
-                  return (
-                    <tr key={u.id} className="border-b border-[#f0f0f0] hover:bg-[#fafafa]">
-                      <td className="px-4 py-3 text-xs text-[#43474e] whitespace-nowrap">
-                        {new Date(u.created_at).toLocaleDateString("pt-BR")}
-                      </td>
-                      <td className="px-4 py-3 text-xs text-[#43474e]">{u.architect_name || "—"}</td>
-                      <td className="px-4 py-3 text-xs text-[#43474e]">
-                        <p className="font-semibold">{u.product_name || "—"}</p>
-                        {u.product_code && <p className="text-[#74777f]">{u.product_code}</p>}
-                      </td>
-                      <td className="px-4 py-3 text-xs text-[#43474e]">{u.space || "—"}</td>
-                      <td className="px-4 py-3 text-xs text-[#43474e]">{u.plates ?? "—"}</td>
-                      <td className="px-4 py-3 text-xs font-semibold">
-                        {st === "cancelado"
-                          ? <span className="text-[#74777f] font-normal">—</span>
-                          : st === "concluido" && u.commission_owed != null
-                          ? <span className="text-green-700 font-bold">{fmt(u.commission_owed)}</span>
-                          : u.commission_owed != null
-                          ? <span className="text-yellow-700">{fmt(u.commission_owed)} (pend.)</span>
-                          : "—"}
-                      </td>
-                      <td className="px-4 py-3">
-                        <span className={`inline-flex items-center gap-1.5 px-2.5 py-1 text-[10px] font-bold tracking-wide rounded-full ${stMeta.cls}`}>
-                          <span className={`w-1.5 h-1.5 rounded-full ${
-                            st === "concluido" ? "bg-green-600" : st === "cancelado" ? "bg-red-500" : "bg-yellow-500"
-                          }`} />
-                          {stMeta.label}
-                        </span>
-                      </td>
-                    </tr>
-                  );
-                })}
-              </tbody>
-            </table>
-          </div>
-        )}
-      </div>
+      )}
     </div>
   );
 }

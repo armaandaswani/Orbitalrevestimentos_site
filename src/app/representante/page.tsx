@@ -54,7 +54,7 @@ const STATUS_LABELS: Record<string, { label: string; cls: string }> = {
 };
 
 export default function RepresentantePage() {
-  const [referralCode, setReferralCode] = useState("");
+  const [loginEmail, setLoginEmail] = useState("");
   const [password, setPassword] = useState("");
   const [loginError, setLoginError] = useState("");
   const [loginLoading, setLoginLoading] = useState(false);
@@ -84,7 +84,7 @@ export default function RepresentantePage() {
     const res = await fetch("/api/representante/auth", {
       method: "POST",
       headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ referral_code: referralCode, portal_password: password }),
+      body: JSON.stringify({ email: loginEmail.trim(), portal_password: password }),
     });
 
     const json = await res.json();
@@ -243,15 +243,16 @@ export default function RepresentantePage() {
           <form onSubmit={handleLogin} className="space-y-4">
             <div>
               <label className="block text-[10px] tracking-[0.15em] uppercase font-bold font-[var(--font-inter)] text-[#74777f] mb-2">
-                Código de Indicação
+                E-mail
               </label>
               <input
                 required
-                value={referralCode}
-                onChange={(e) => setReferralCode(e.target.value.toUpperCase())}
-                className="w-full border border-[#e2e2e2] px-4 py-3 text-sm font-[var(--font-inter)] text-[#002045] focus:outline-none focus:border-[#002045] uppercase tracking-widest"
-                placeholder="EX: JOAO"
-                autoCapitalize="characters"
+                type="email"
+                value={loginEmail}
+                onChange={(e) => setLoginEmail(e.target.value)}
+                className="w-full border border-[#e2e2e2] px-4 py-3 text-sm font-[var(--font-inter)] text-[#002045] focus:outline-none focus:border-[#002045]"
+                placeholder="seu@email.com"
+                autoComplete="email"
                 autoFocus
               />
             </div>
@@ -265,6 +266,7 @@ export default function RepresentantePage() {
                 value={password}
                 onChange={(e) => setPassword(e.target.value)}
                 className="w-full border border-[#e2e2e2] px-4 py-3 text-sm font-[var(--font-inter)] text-[#002045] focus:outline-none focus:border-[#002045]"
+                autoComplete="current-password"
               />
             </div>
             {loginError && (
@@ -278,6 +280,15 @@ export default function RepresentantePage() {
               {loginLoading ? "Entrando..." : "Entrar"}
             </button>
           </form>
+          <div className="mt-4 text-center">
+            <a
+              href="/parceiro"
+              className="text-[#74777f] text-xs font-[var(--font-inter)] hover:text-[#002045] transition-colors"
+            >
+              É parceiro?{" "}
+              <span className="underline underline-offset-2">Acesse aqui</span>
+            </a>
+          </div>
         </div>
       </div>
     );
@@ -296,7 +307,7 @@ export default function RepresentantePage() {
           </p>
         </div>
         <button
-          onClick={() => { setSalesRep(null); setUses([]); setReferralCode(""); setPassword(""); setLinkedPartners([]); setRepTab("overview"); }}
+          onClick={() => { setSalesRep(null); setUses([]); setLoginEmail(""); setPassword(""); setLinkedPartners([]); setRepTab("overview"); }}
           className="text-white/60 hover:text-white text-xs font-[var(--font-inter)] uppercase tracking-widest transition-colors"
         >
           Sair

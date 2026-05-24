@@ -8,27 +8,29 @@ const GENERIC_RESPONSE = {
 
 export async function POST(req: NextRequest) {
   const body = await req.json();
-  const { coupon_code, email } = body as { coupon_code: string; email: string };
+  const { coupon_code, email } = body as { coupon_code?: string; email: string };
 
-  if (!coupon_code || !email) {
-    return NextResponse.json({ error: "Campos obrigatórios ausentes." }, { status: 400 });
+  if (!email) {
+    return NextResponse.json({ error: "E-mail obrigatório." }, { status: 400 });
   }
 
   const db = supabaseAdmin();
 
-  const { data: partner, error } = await db
+  // Look up by email; coupon_code is accepted as an optional additional filter (legacy)
+  let query = db
     .from("partners")
     .select("id, email, name")
-    .eq("coupon_code", coupon_code.toUpperCase())
-    .eq("status", "active")
-    .single();
+    .ilike("email", email.trim())
+    .eq("status", "active");
+
+  if (coupon_code) {
+    query = query.eq("coupon_code", coupon_code.toUpperCase());
+  }
+
+  const { data: partner, error } = await query.maybeSingle();
 
   // Always return the generic message to avoid leaking whether the account exists
   if (error || !partner) {
-    return NextResponse.json(GENERIC_RESPONSE);
-  }
-
-  if (partner.email?.toLowerCase() !== email.toLowerCase()) {
     return NextResponse.json(GENERIC_RESPONSE);
   }
 

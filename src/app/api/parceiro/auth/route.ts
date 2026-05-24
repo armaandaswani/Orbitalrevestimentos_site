@@ -2,22 +2,28 @@ import { NextRequest, NextResponse } from "next/server";
 import { supabaseAdmin } from "@/lib/supabase";
 
 export async function POST(req: NextRequest) {
-  const { coupon_code, portal_password } = await req.json();
+  const { coupon_code, email, portal_password } = await req.json();
 
-  if (!coupon_code || !portal_password) {
-    return NextResponse.json({ error: "Código e senha obrigatórios." }, { status: 400 });
+  if ((!coupon_code && !email) || !portal_password) {
+    return NextResponse.json({ error: "E-mail (ou cupom) e senha são obrigatórios." }, { status: 400 });
   }
 
   const db = supabaseAdmin();
-  const { data, error } = await db
+  let query = db
     .from("partners")
-    .select("id, name, coupon_code, discount_type, discount_value, commission_type, commission_value, portal_password, status")
-    .eq("coupon_code", (coupon_code as string).toUpperCase())
-    .eq("status", "active")
-    .single();
+    .select("id, name, coupon_code, discount_type, discount_value, commission_type, commission_value, portal_password, status, profession, has_special_table")
+    .eq("status", "active");
+
+  if (email) {
+    query = query.ilike("email", (email as string).trim());
+  } else {
+    query = query.eq("coupon_code", (coupon_code as string).toUpperCase());
+  }
+
+  const { data, error } = await query.maybeSingle();
 
   if (error || !data) {
-    return NextResponse.json({ error: "Cupom inválido ou inativo." }, { status: 401 });
+    return NextResponse.json({ error: "Credenciais inválidas ou conta inativa." }, { status: 401 });
   }
 
   if (!data.portal_password || data.portal_password !== portal_password) {
@@ -32,5 +38,7 @@ export async function POST(req: NextRequest) {
     discount_value: data.discount_value,
     commission_type: data.commission_type,
     commission_value: data.commission_value,
+    profession: data.profession,
+    has_special_table: data.has_special_table,
   });
 }
