@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useState, useEffect } from "react";
+import React, { useState, useEffect, useRef, useCallback } from "react";
 
 interface PartnerInfo {
   id: string;
@@ -122,6 +122,29 @@ export default function ParceiroPage() {
     }
   }, []);
 
+  // ── fetchUses ──────────────────────────────────────────────────────────────
+  const fetchUses = useCallback(async (code: string) => {
+    setUsesLoading(true);
+    const res = await fetch(`/api/coupons/use?coupon_code=${encodeURIComponent(code)}`);
+    if (res.ok) setUses(await res.json());
+    setUsesLoading(false);
+  }, []);
+
+  // ── 30-second polling when logged in ──────────────────────────────────────
+  const pollingRef = useRef<ReturnType<typeof setInterval> | null>(null);
+  useEffect(() => {
+    if (!partner?.coupon_code) {
+      if (pollingRef.current) { clearInterval(pollingRef.current); pollingRef.current = null; }
+      return;
+    }
+    pollingRef.current = setInterval(() => {
+      fetchUses(partner.coupon_code);
+    }, 30000);
+    return () => {
+      if (pollingRef.current) { clearInterval(pollingRef.current); pollingRef.current = null; }
+    };
+  }, [partner?.coupon_code, fetchUses]);
+
   // ── Handlers ───────────────────────────────────────────────────────────────
   async function handleLogin(e: React.FormEvent) {
     e.preventDefault();
@@ -144,13 +167,6 @@ export default function ParceiroPage() {
 
     setPartner(json as PartnerInfo);
     fetchUses(json.coupon_code);
-  }
-
-  async function fetchUses(code: string) {
-    setUsesLoading(true);
-    const res = await fetch(`/api/coupons/use?coupon_code=${encodeURIComponent(code)}`);
-    if (res.ok) setUses(await res.json());
-    setUsesLoading(false);
   }
 
   async function handleForgotPassword(e: React.FormEvent) {

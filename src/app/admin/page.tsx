@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useState, useEffect, useCallback, useMemo } from "react";
+import React, { useState, useEffect, useCallback, useMemo, useRef } from "react";
 
 interface Partner {
   id: string;
@@ -69,7 +69,6 @@ const PROFESSIONS = [
   "Engenheiro civil",
   "Corretor de imóveis",
   "Lojista / revendedor",
-  "Representante comercial",
 ];
 
 const emptyPartnerForm = {
@@ -188,6 +187,24 @@ export default function AdminPage() {
   const [campaignTestSending, setCampaignTestSending] = useState<string | null>(null);
   const [campaignApproving, setCampaignApproving] = useState<string | null>(null);
 
+  // Follow-up
+  interface FollowUp {
+    id: string;
+    coupon_code: string;
+    partner_name: string | null;
+    space: string | null;
+    product_name: string | null;
+    material_discounted: number | null;
+    created_at: string;
+    next_followup_at: string | null;
+    sale_status: string | null;
+  }
+  const [followUps, setFollowUps] = useState<FollowUp[]>([]);
+  const [followUpModalOpen, setFollowUpModalOpen] = useState(false);
+  const [followUpLoading, setFollowUpLoading] = useState(false);
+  const [snoozeInputId, setSnoozeInputId] = useState<string | null>(null);
+  const [snoozeDays, setSnoozeDays] = useState("2");
+
   const supabaseConfigured = !!process.env.NEXT_PUBLIC_SUPABASE_URL;
 
   useEffect(() => {
@@ -227,16 +244,69 @@ export default function AdminPage() {
     setCampaignsLoading(false);
   }, []);
 
+  const fetchFollowUps = useCallback(async () => {
+    setFollowUpLoading(true);
+    const res = await fetch("/api/admin/followups");
+    if (res.ok) {
+      const data = await res.json();
+      setFollowUps(data);
+      if (data.length > 0) setFollowUpModalOpen(true);
+    }
+    setFollowUpLoading(false);
+  }, []);
+
+  async function resolveFollowUp(id: string, sale_status: string) {
+    await fetch(`/api/coupons/use/${id}`, {
+      method: "PATCH",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ sale_status }),
+    });
+    const remaining = followUps.filter((f) => f.id !== id);
+    setFollowUps(remaining);
+    if (remaining.length === 0) setFollowUpModalOpen(false);
+    fetchUses(); // refresh history tab
+  }
+
+  async function snoozeFollowUp(id: string, days: number) {
+    const until = new Date(Date.now() + days * 24 * 60 * 60 * 1000).toISOString();
+    await fetch(`/api/coupons/use/${id}`, {
+      method: "PATCH",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ next_followup_at: until }),
+    });
+    const remaining = followUps.filter((f) => f.id !== id);
+    setFollowUps(remaining);
+    setSnoozeInputId(null);
+    if (remaining.length === 0) setFollowUpModalOpen(false);
+  }
+
   useEffect(() => {
     if (!authed || !supabaseConfigured) return;
     fetchPartners();
     fetchReps();
     fetchUses();
-  }, [authed, tab, supabaseConfigured, fetchPartners, fetchReps, fetchUses]);
+    fetchFollowUps();
+  }, [authed, tab, supabaseConfigured, fetchPartners, fetchReps, fetchUses, fetchFollowUps]);
 
   useEffect(() => {
     if (tab === "campaigns" && authed) loadCampaigns();
   }, [tab, authed, loadCampaigns]);
+
+  const pollingRef = useRef<ReturnType<typeof setInterval> | null>(null);
+  useEffect(() => {
+    if (!authed) {
+      if (pollingRef.current) { clearInterval(pollingRef.current); pollingRef.current = null; }
+      return;
+    }
+    pollingRef.current = setInterval(() => {
+      fetchPartners();
+      fetchReps();
+      fetchUses();
+    }, 30000);
+    return () => {
+      if (pollingRef.current) { clearInterval(pollingRef.current); pollingRef.current = null; }
+    };
+  }, [authed, fetchPartners, fetchReps, fetchUses]);
 
   async function generateCampaign() {
     setCampaignGenerating(true);
@@ -615,6 +685,92 @@ export default function AdminPage() {
 
   return (
     <div className="min-h-screen bg-[#f5f5f3]">
+      {/* Follow-up modal */}
+      {followUpModalOpen && followUps.length > 0 && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 p-4">
+          <div className="bg-white w-full max-w-lg max-h-[80vh] overflow-y-auto shadow-2xl">
+            <div className="bg-[#002045] px-6 py-4 flex items-center justify-between">
+              <div>
+                <p className="text-white font-[var(--font-noto-serif)] text-lg">Acompanhamento de orçamentos</p>
+                <p className="text-white/60 text-xs font-[var(--font-inter)] mt-0.5">{followUps.length} orçamento{followUps.length !== 1 ? "s" : ""} aguardando retorno</p>
+              </div>
+              <button onClick={() => setFollowUpModalOpen(false)} className="text-white/60 hover:text-white text-xs font-[var(--font-inter)] uppercase tracking-widest">
+                Adiar tudo
+              </button>
+            </div>
+            <div className="divide-y divide-[#f0f0f0]">
+              {followUps.map((f) => (
+                <div key={f.id} className="px-6 py-5">
+                  <div className="flex items-start justify-between mb-3">
+                    <div>
+                      <p className="font-semibold text-[#002045] text-sm font-[var(--font-inter)]">{f.partner_name || f.coupon_code}</p>
+                      <p className="text-[#74777f] text-xs font-[var(--font-inter)] mt-0.5">
+                        {f.space || f.product_name || "—"} · {new Date(f.created_at).toLocaleDateString("pt-BR")}
+                      </p>
+                      {f.material_discounted != null && (
+                        <p className="text-[#002045] text-xs font-semibold font-[var(--font-inter)] mt-0.5">
+                          {f.material_discounted.toLocaleString("pt-BR", { style: "currency", currency: "BRL", maximumFractionDigits: 0 })}
+                        </p>
+                      )}
+                    </div>
+                    <span className="text-[10px] text-[#74777f] font-[var(--font-inter)] bg-yellow-50 px-2 py-0.5 border border-yellow-200 ml-2 flex-shrink-0">
+                      {Math.floor((Date.now() - new Date(f.created_at).getTime()) / 86400000)}d atrás
+                    </span>
+                  </div>
+                  {snoozeInputId === f.id ? (
+                    <div className="flex items-center gap-2 mt-2">
+                      <span className="text-xs text-[#74777f] font-[var(--font-inter)]">Lembrar em</span>
+                      <input
+                        type="number"
+                        min="1"
+                        max="30"
+                        value={snoozeDays}
+                        onChange={(e) => setSnoozeDays(e.target.value)}
+                        className="w-14 border border-[#e2e2e2] px-2 py-1 text-sm text-center font-[var(--font-inter)] focus:outline-none focus:border-[#002045]"
+                      />
+                      <span className="text-xs text-[#74777f] font-[var(--font-inter)]">dias</span>
+                      <button
+                        onClick={() => snoozeFollowUp(f.id, parseInt(snoozeDays) || 2)}
+                        className="bg-[#002045] text-white text-[10px] tracking-wider uppercase font-bold font-[var(--font-inter)] px-3 py-1.5"
+                      >
+                        OK
+                      </button>
+                      <button onClick={() => setSnoozeInputId(null)} className="text-[#74777f] text-xs font-[var(--font-inter)] underline">Cancelar</button>
+                    </div>
+                  ) : (
+                    <div className="flex flex-wrap gap-2 mt-2">
+                      <button
+                        onClick={() => resolveFollowUp(f.id, "concluido")}
+                        className="bg-green-600 text-white text-[10px] tracking-wider uppercase font-bold font-[var(--font-inter)] px-3 py-1.5 hover:bg-green-700"
+                      >
+                        Concluído
+                      </button>
+                      <button
+                        onClick={() => resolveFollowUp(f.id, "cancelado")}
+                        className="bg-red-100 text-red-700 text-[10px] tracking-wider uppercase font-bold font-[var(--font-inter)] px-3 py-1.5 hover:bg-red-200"
+                      >
+                        Cancelado
+                      </button>
+                      <button
+                        onClick={() => snoozeFollowUp(f.id, 2)}
+                        className="border border-[#e2e2e2] text-[#74777f] text-[10px] tracking-wider uppercase font-bold font-[var(--font-inter)] px-3 py-1.5 hover:border-[#002045] hover:text-[#002045]"
+                      >
+                        +2 dias
+                      </button>
+                      <button
+                        onClick={() => { setSnoozeInputId(f.id); setSnoozeDays("2"); }}
+                        className="border border-[#e2e2e2] text-[#74777f] text-[10px] tracking-wider uppercase font-bold font-[var(--font-inter)] px-3 py-1.5 hover:border-[#002045] hover:text-[#002045]"
+                      >
+                        Outro prazo
+                      </button>
+                    </div>
+                  )}
+                </div>
+              ))}
+            </div>
+          </div>
+        </div>
+      )}
       <div className="bg-[#002045] px-8 py-5 flex items-center justify-between">
         <div className="flex items-center gap-4">
           <p className="text-white font-[var(--font-noto-serif)] text-xl">Orbital Admin</p>

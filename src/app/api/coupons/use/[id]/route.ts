@@ -9,7 +9,9 @@ export async function PATCH(
   const body = await req.json();
   const db = supabaseAdmin();
 
-  const updatePayload: Record<string, unknown> = { sale_status: body.sale_status };
+  const updatePayload: Record<string, unknown> = {};
+  if (body.sale_status !== undefined) updatePayload.sale_status = body.sale_status;
+  if (body.next_followup_at !== undefined) updatePayload.next_followup_at = body.next_followup_at;
 
   // When concluding a sale, lock in sales_rep commission if not yet set
   if (body.sale_status === "concluido") {
