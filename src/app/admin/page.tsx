@@ -18,6 +18,8 @@ interface Partner {
   sales_rep_referral_code: string | null;
   created_at: string;
   birthday: string | null;
+  profession: string | null;
+  has_special_table: boolean | null;
 }
 
 interface SalesRep {
@@ -60,6 +62,16 @@ function fmt(n: number) {
 
 const ADMIN_PW = process.env.NEXT_PUBLIC_ADMIN_PASSWORD || "orbital2025";
 
+const PROFESSIONS = [
+  "Arquiteto e Urbanista",
+  "Designer de interiores",
+  "Construtor",
+  "Engenheiro civil",
+  "Corretor de imóveis",
+  "Lojista / revendedor",
+  "Representante comercial",
+];
+
 const emptyPartnerForm = {
   name: "", email: "", phone: "", coupon_code: "",
   discount_type: "percentage" as "percentage" | "fixed",
@@ -70,6 +82,8 @@ const emptyPartnerForm = {
   status: "active" as "active" | "inactive" | "pending",
   sales_rep_referral_code: "",
   birthday: "",
+  profession: "",
+  has_special_table: false,
 };
 
 const emptyRepForm = {
@@ -127,6 +141,9 @@ export default function AdminPage() {
   const [loadingUses, setLoadingUses] = useState(false);
   const [filterPartner, setFilterPartner] = useState<string>("all");
   const [filterRep, setFilterRep] = useState<string>("all");
+
+  // Partner profession "Outro" free-text in admin form
+  const [partnerProfOther, setPartnerProfOther] = useState("");
 
   // Change admin password
   const [cpOpen, setCpOpen] = useState(false);
@@ -207,6 +224,7 @@ export default function AdminPage() {
     setNewlyCreatedPartner(null);
     setPartnerForm({ ...emptyPartnerForm });
     setPartnerFormError("");
+    setPartnerProfOther("");
     setShowPartnerForm(true);
   }
 
@@ -222,7 +240,10 @@ export default function AdminPage() {
       status: p.status,
       sales_rep_referral_code: p.sales_rep_referral_code || "",
       birthday: p.birthday ? p.birthday.split("T")[0] : "",
+      profession: PROFESSIONS.includes(p.profession || "") ? (p.profession || "") : (p.profession ? "Outro" : ""),
+      has_special_table: p.has_special_table ?? false,
     });
+    setPartnerProfOther(PROFESSIONS.includes(p.profession || "") || !p.profession ? "" : p.profession);
     setPartnerFormError("");
     setShowPartnerForm(true);
   }
@@ -231,7 +252,8 @@ export default function AdminPage() {
     e.preventDefault();
     setPartnerFormError("");
     setPartnerFormLoading(true);
-    const payload = { ...partnerForm, coupon_code: partnerForm.coupon_code.toUpperCase(), portal_password: partnerForm.portal_password || null, sales_rep_referral_code: partnerForm.sales_rep_referral_code || null };
+    const resolvedProfession = partnerForm.profession === "Outro" ? (partnerProfOther || null) : (partnerForm.profession || null);
+    const payload = { ...partnerForm, coupon_code: partnerForm.coupon_code.toUpperCase(), portal_password: partnerForm.portal_password || null, sales_rep_referral_code: partnerForm.sales_rep_referral_code || null, profession: resolvedProfession };
     let res: Response;
     if (editingPartnerId) {
       res = await fetch(`/api/partners/${editingPartnerId}`, { method: "PUT", headers: { "Content-Type": "application/json" }, body: JSON.stringify(payload) });
@@ -266,6 +288,11 @@ export default function AdminPage() {
 
   async function togglePartnerStatus(p: Partner) {
     await fetch(`/api/partners/${p.id}`, { method: "PUT", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ status: p.status === "active" ? "inactive" : "active" }) });
+    fetchPartners();
+  }
+
+  async function toggleSpecialTable(p: Partner) {
+    await fetch(`/api/partners/${p.id}`, { method: "PUT", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ has_special_table: !p.has_special_table }) });
     fetchPartners();
   }
 
@@ -796,6 +823,44 @@ export default function AdminPage() {
                         </select>
                       </div>
                     )}
+                    <div>
+                      <label className={labelCls}>Profissão</label>
+                      <select
+                        value={partnerForm.profession}
+                        onChange={(e) => { setPartnerForm({ ...partnerForm, profession: e.target.value }); if (e.target.value !== "Outro") setPartnerProfOther(""); }}
+                        className={inputCls}
+                      >
+                        <option value="">— Selecionar —</option>
+                        {PROFESSIONS.map((prof) => <option key={prof} value={prof}>{prof}</option>)}
+                        <option value="Outro">Outro</option>
+                      </select>
+                      {partnerForm.profession === "Outro" && (
+                        <input
+                          type="text"
+                          value={partnerProfOther}
+                          onChange={(e) => setPartnerProfOther(e.target.value)}
+                          placeholder="Especifique a profissão"
+                          className={inputCls + " mt-2"}
+                        />
+                      )}
+                    </div>
+                  </div>
+                  <div className="border border-[#e2e2e2] p-5 mb-5">
+                    <p className={labelCls + " mb-4"}>Acessos do parceiro</p>
+                    <label className="flex items-center gap-3 cursor-pointer select-none">
+                      <input
+                        type="checkbox"
+                        checked={!!partnerForm.has_special_table}
+                        onChange={(e) => setPartnerForm({ ...partnerForm, has_special_table: e.target.checked })}
+                        className="w-4 h-4 accent-[#002045]"
+                      />
+                      <span className="text-sm font-[var(--font-inter)] text-[#002045]">
+                        Permitir acesso à Tabela Especial de Compra Direta
+                      </span>
+                    </label>
+                    <p className="text-xs text-[#74777f] font-[var(--font-inter)] mt-2 ml-7">
+                      Ativa uma aba exclusiva no portal do parceiro com preços e simulador de compra direta.
+                    </p>
                   </div>
                   {partnerFormError && <p className="text-red-600 text-sm font-[var(--font-inter)] mb-4">{partnerFormError}</p>}
                   <div className="flex gap-3">
@@ -815,19 +880,20 @@ export default function AdminPage() {
                 <table className="w-full text-sm font-[var(--font-inter)]">
                   <thead>
                     <tr className="border-b border-[#e2e2e2]">
-                      {["Nome", "Cupom", "Desconto", "Comissão", "Rep", "Senha Portal", "Status", "Ações"].map((h) => (
+                      {["Nome", "Cupom", "Profissão", "Desconto", "Comissão", "Rep", "Senha Portal", "Status", "Tab. Especial", "Ações"].map((h) => (
                         <th key={h} className="text-left px-5 py-3 text-[10px] tracking-[0.15em] uppercase font-bold text-[#74777f]">{h}</th>
                       ))}
                     </tr>
                   </thead>
                   <tbody>
                     {activePartners.length === 0 ? (
-                      <tr><td colSpan={8} className="px-5 py-8 text-center text-[#74777f]">Nenhum parceiro cadastrado.</td></tr>
+                      <tr><td colSpan={10} className="px-5 py-8 text-center text-[#74777f]">Nenhum parceiro cadastrado.</td></tr>
                     ) : (
                       activePartners.map((p) => (
                         <tr key={p.id} className="border-b border-[#f0f0f0] hover:bg-[#fafafa]">
                           <td className="px-5 py-4"><p className="font-semibold text-[#002045]">{p.name}</p>{p.email && <p className="text-xs text-[#74777f]">{p.email}</p>}</td>
                           <td className="px-5 py-4"><span className="bg-[#eef2f8] text-[#002045] px-2 py-1 text-xs font-bold tracking-wider">{p.coupon_code}</span></td>
+                          <td className="px-5 py-4 text-xs text-[#43474e]">{p.profession || <span className="italic text-[#74777f]">—</span>}</td>
                           <td className="px-5 py-4 text-[#43474e]">{p.discount_type === "percentage" ? `${p.discount_value}%` : fmt(p.discount_value)}</td>
                           <td className="px-5 py-4 text-[#43474e]">{p.commission_type === "percentage" ? `${p.commission_value}%` : fmt(p.commission_value)}</td>
                           <td className="px-5 py-4 text-xs text-[#74777f]">
@@ -840,6 +906,15 @@ export default function AdminPage() {
                             <span className={`px-2 py-1 text-[10px] font-bold tracking-wider ${p.status === "active" ? "bg-green-100 text-green-800" : "bg-gray-100 text-gray-600"}`}>
                               {p.status === "active" ? "Ativo" : "Inativo"}
                             </span>
+                          </td>
+                          <td className="px-5 py-4">
+                            <button
+                              onClick={() => toggleSpecialTable(p)}
+                              title={p.has_special_table ? "Desativar tabela especial" : "Ativar tabela especial"}
+                              className={`relative inline-flex h-5 w-9 flex-shrink-0 cursor-pointer rounded-full border-2 border-transparent transition-colors duration-200 focus:outline-none ${p.has_special_table ? "bg-[#002045]" : "bg-[#d1d5db]"}`}
+                            >
+                              <span className={`inline-block h-4 w-4 transform rounded-full bg-white shadow transition duration-200 ${p.has_special_table ? "translate-x-4" : "translate-x-0"}`} />
+                            </button>
                           </td>
                           <td className="px-5 py-4">
                             <div className="flex gap-2 flex-wrap">
