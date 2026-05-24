@@ -1087,6 +1087,7 @@ export default function ContatoPage() {
                     {
                       label: "Anti-cupim &",
                       desc: "Não propaga Chamas",
+                      labelDesc: true,
                       icon: (
                         <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5">
                           <path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z" />
@@ -1114,14 +1115,14 @@ export default function ContatoPage() {
                         </svg>
                       ),
                     },
-                  ].map(({ label, icon, desc }) => (
+                  ].map(({ label, icon, desc, labelDesc }) => (
                     <div key={label} className="flex flex-col items-center text-center gap-1.5 p-2.5 bg-[#f9f9f9] border border-[#e2e2e2]">
                       <div className="w-6 h-6 bg-[#f0f4f8] flex items-center justify-center text-[#002045] flex-shrink-0">
                         {icon}
                       </div>
                       <div>
                         <p className="text-[#002045] text-[8px] tracking-[0.06em] uppercase font-bold font-[var(--font-inter)] leading-tight">{label}</p>
-                        <p className="text-[#74777f] text-[8px] font-[var(--font-inter)] leading-snug">{desc}</p>
+                        <p className={labelDesc ? "text-[#002045] text-[8px] tracking-[0.06em] uppercase font-bold font-[var(--font-inter)] leading-tight" : "text-[#74777f] text-[8px] font-[var(--font-inter)] leading-snug"}>{desc}</p>
                       </div>
                     </div>
                   ))}
@@ -1223,7 +1224,8 @@ export default function ContatoPage() {
                     </div>
                     <div className="flex items-start justify-between text-sm font-[var(--font-inter)] gap-4">
                       <span className="text-white/55">
-                        MO estimada (R$ {Math.round(moRatePerPlate / PLATE_M2)}/m²)*
+                        Mão de obra estimada
+                        <span className="block text-white/40 text-[10px] mt-0.5">Serviço terceirizado · R$ {Math.round(moRatePerPlate / PLATE_M2)}/m²</span>
                       </span>
                       <span className="text-white font-semibold flex-shrink-0">{fmt(orbMOTotal)}</span>
                     </div>
@@ -1236,10 +1238,16 @@ export default function ContatoPage() {
                       <span className="text-white text-2xl font-[var(--font-noto-serif)]">{fmt(orbTotal)}</span>
                     </div>
                   </div>
-                  <div className="bg-[#3b6934]/30 border border-[#3b6934]/50 px-4 py-3">
+                  <div className="bg-[#3b6934]/30 border border-[#3b6934]/50 px-4 py-3 mb-3">
                     <p className="text-[#a1d494] text-xs font-semibold font-[var(--font-inter)]">10+ anos sem trocar.</p>
                     <p className="text-[#a1d494]/70 text-[11px] font-[var(--font-inter)] mt-0.5 leading-relaxed">
                       Instala uma vez. Impermeável, anti-mofo e resistente ao clima de Manaus.
+                    </p>
+                  </div>
+                  <div className="border border-white/10 bg-white/5 px-4 py-3">
+                    <p className="text-white/70 text-[10px] font-semibold font-[var(--font-inter)] mb-0.5">A Orbital não realiza instalação.</p>
+                    <p className="text-white/45 text-[10px] font-[var(--font-inter)] leading-relaxed">
+                      Trabalhamos apenas com o fornecimento das placas. Quando necessário, podemos indicar empresas terceirizadas que já têm conhecimento sobre a aplicação do material.
                     </p>
                   </div>
                 </div>
