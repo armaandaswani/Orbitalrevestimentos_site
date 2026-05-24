@@ -87,6 +87,11 @@ export async function POST(req: NextRequest) {
     return NextResponse.json({ error: insertError.message }, { status: 500 });
   }
 
+  // Link partner to sales rep in junction table (critical for commission tracking)
+  await db
+    .from("partner_sales_reps")
+    .insert({ partner_id: partner.id, sales_rep_id: salesRep.id });
+
   // Send "under review" email to the partner (non-fatal)
   try {
     const { getResend } = await import("@/lib/resend");

@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useState, useMemo } from "react";
+import React, { useState, useMemo, useEffect, useRef } from "react";
 
 interface SalesRepInfo {
   id: string;
@@ -150,6 +150,20 @@ export default function RepresentantePage() {
     if (!res.ok) { setBdayError("Erro ao salvar. Tente novamente."); return; }
     setSalesRep({ ...salesRep!, birthday: bdayInput });
   }
+
+  // Auto-refresh data every 30 seconds while logged in
+  const pollRef = useRef<ReturnType<typeof setInterval> | null>(null);
+  useEffect(() => {
+    if (!salesRep) {
+      if (pollRef.current) clearInterval(pollRef.current);
+      return;
+    }
+    pollRef.current = setInterval(() => {
+      fetchUses(salesRep.referral_code);
+      fetchLinkedPartners(salesRep.id);
+    }, 30_000);
+    return () => { if (pollRef.current) clearInterval(pollRef.current); };
+  }, [salesRep?.id]); // eslint-disable-line react-hooks/exhaustive-deps
 
   const uniquePartners = new Set(uses.map((u) => u.coupon_code)).size;
   const confirmedCommission = uses
