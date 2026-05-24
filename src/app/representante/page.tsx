@@ -11,6 +11,18 @@ interface SalesRepInfo {
   birthday: string | null;
 }
 
+interface LinkedPartner {
+  id: string;
+  name: string;
+  profession: string | null;
+  status: "active" | "inactive" | "pending";
+  coupon_code: string;
+  created_at: string;
+  total_sales: number;
+  sales_count: number;
+  last_sale_at: string | null;
+}
+
 interface CouponUse {
   id: string;
   coupon_code: string;
@@ -85,6 +97,7 @@ export default function RepresentantePage() {
 
     setSalesRep(json as SalesRepInfo);
     fetchUses(json.referral_code);
+    fetchLinkedPartners(json.id);
   }
 
   async function fetchUses(code: string) {
@@ -92,6 +105,16 @@ export default function RepresentantePage() {
     const res = await fetch(`/api/coupons/use?sales_rep_code=${encodeURIComponent(code)}`);
     if (res.ok) setUses(await res.json());
     setUsesLoading(false);
+  }
+
+  async function fetchLinkedPartners(salesRepId: string) {
+    setPartnersLoading(true);
+    const res = await fetch(`/api/representante/partners?sales_rep_id=${encodeURIComponent(salesRepId)}`);
+    if (res.ok) {
+      const data = await res.json();
+      setLinkedPartners(data);
+    }
+    setPartnersLoading(false);
   }
 
   async function handleChangePassword(e: React.FormEvent) {
@@ -137,6 +160,9 @@ export default function RepresentantePage() {
     .reduce((a, u) => a + (u.sales_rep_commission_owed || 0), 0);
 
   const [partnerRankSort, setPartnerRankSort] = useState<"total" | "count" | "median">("total");
+  const [repTab, setRepTab] = useState<"overview" | "partners">("overview");
+  const [linkedPartners, setLinkedPartners] = useState<LinkedPartner[]>([]);
+  const [partnersLoading, setPartnersLoading] = useState(false);
 
   const partnerRanking = useMemo(() => {
     const byCode: Record<string, { total: number; count: number; values: number[]; name: string }> = {};
@@ -270,7 +296,7 @@ export default function RepresentantePage() {
           </p>
         </div>
         <button
-          onClick={() => { setSalesRep(null); setUses([]); setReferralCode(""); setPassword(""); }}
+          onClick={() => { setSalesRep(null); setUses([]); setReferralCode(""); setPassword(""); setLinkedPartners([]); setRepTab("overview"); }}
           className="text-white/60 hover:text-white text-xs font-[var(--font-inter)] uppercase tracking-widest transition-colors"
         >
           Sair
@@ -278,6 +304,27 @@ export default function RepresentantePage() {
       </div>
 
       <div className="max-w-5xl mx-auto px-4 sm:px-8 py-8">
+        {/* Tab bar */}
+        <div className="flex gap-0 mb-8 border-b border-[#e2e2e2]">
+          {([
+            { key: "overview", label: "Visão Geral" },
+            { key: "partners", label: `Meus Parceiros${linkedPartners.length > 0 ? ` (${linkedPartners.length})` : ""}` },
+          ] as const).map((t) => (
+            <button
+              key={t.key}
+              onClick={() => setRepTab(t.key)}
+              className={`px-5 py-3 text-xs tracking-[0.1em] uppercase font-bold font-[var(--font-inter)] border-b-2 transition-colors -mb-px ${
+                repTab === t.key
+                  ? "border-[#002045] text-[#002045]"
+                  : "border-transparent text-[#74777f] hover:text-[#002045]"
+              }`}
+            >
+              {t.label}
+            </button>
+          ))}
+        </div>
+
+        {repTab === "overview" && (<>
         {/* Summary cards */}
         <div className="grid grid-cols-1 sm:grid-cols-3 gap-4 mb-8">
           <div className="bg-white border border-[#e2e2e2] px-6 py-5">
@@ -472,6 +519,65 @@ export default function RepresentantePage() {
                 })}
               </tbody>
             </table>
+          </div>
+        )}
+        </>)}
+
+        {repTab === "partners" && (
+          <div>
+            {partnersLoading ? (
+              <p className="text-[#74777f] text-sm font-[var(--font-inter)]">Carregando parceiros...</p>
+            ) : linkedPartners.length === 0 ? (
+              <div className="bg-white border border-[#e2e2e2] px-6 py-10 text-center">
+                <p className="text-[#74777f] text-sm font-[var(--font-inter)]">
+                  Nenhum parceiro vinculado ainda.
+                </p>
+              </div>
+            ) : (
+              <div className="bg-white border border-[#e2e2e2] overflow-x-auto">
+                <table className="w-full text-sm font-[var(--font-inter)]">
+                  <thead>
+                    <tr className="border-b border-[#e2e2e2]">
+                      {["Parceiro", "Tipo", "Status", "Cupom", "Vendas", "Total gerado", "Última venda"].map((h) => (
+                        <th key={h} className="text-left px-4 py-3 text-[10px] tracking-[0.1em] uppercase font-bold text-[#74777f] whitespace-nowrap">{h}</th>
+                      ))}
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {linkedPartners.map((p) => (
+                      <tr key={p.id} className="border-b border-[#f0f0f0] hover:bg-[#fafafa]">
+                        <td className="px-4 py-3">
+                          <p className="font-semibold text-[#002045]">{p.name}</p>
+                          <p className="text-[10px] text-[#74777f]">desde {new Date(p.created_at).toLocaleDateString("pt-BR")}</p>
+                        </td>
+                        <td className="px-4 py-3 text-xs text-[#43474e]">
+                          {p.profession || <span className="italic text-[#b0b0b0]">—</span>}
+                        </td>
+                        <td className="px-4 py-3">
+                          <span className={`inline-block px-2 py-0.5 text-[10px] font-bold tracking-wide ${
+                            p.status === "active" ? "bg-green-100 text-green-800" :
+                            p.status === "pending" ? "bg-yellow-100 text-yellow-800" :
+                            "bg-gray-100 text-gray-600"
+                          }`}>
+                            {p.status === "active" ? "Ativo" : p.status === "pending" ? "Pendente" : "Inativo"}
+                          </span>
+                        </td>
+                        <td className="px-4 py-3">
+                          <span className="bg-[#eef2f8] text-[#002045] px-2 py-0.5 text-xs font-bold tracking-wider">{p.coupon_code}</span>
+                        </td>
+                        <td className="px-4 py-3 text-xs text-[#43474e]">{p.sales_count}</td>
+                        <td className="px-4 py-3 text-xs font-semibold text-[#002045]">
+                          {p.total_sales > 0 ? p.total_sales.toLocaleString("pt-BR", { style: "currency", currency: "BRL", maximumFractionDigits: 0 }) : "—"}
+                        </td>
+                        <td className="px-4 py-3 text-xs text-[#43474e] whitespace-nowrap">
+                          {p.last_sale_at ? new Date(p.last_sale_at).toLocaleDateString("pt-BR") : <span className="italic text-[#b0b0b0]">Sem vendas</span>}
+                        </td>
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
+              </div>
+            )}
           </div>
         )}
       </div>
