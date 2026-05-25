@@ -195,6 +195,14 @@ export default function AdminPage() {
   const [campaignEditSaving, setCampaignEditSaving] = useState(false);
   const [campaignTestSending, setCampaignTestSending] = useState<string | null>(null);
   const [campaignApproving, setCampaignApproving] = useState<string | null>(null);
+  const [campaignEditMode, setCampaignEditMode] = useState<"visual" | "html">("visual");
+  const [campaignVisualHeadline, setCampaignVisualHeadline] = useState("");
+  const [campaignVisualSubheadline, setCampaignVisualSubheadline] = useState("");
+  const [campaignVisualBody, setCampaignVisualBody] = useState("");
+  const [campaignVisualImageUrl, setCampaignVisualImageUrl] = useState("");
+  const [campaignVisualCtaText, setCampaignVisualCtaText] = useState("Ver no site");
+  const [campaignVisualCtaUrl, setCampaignVisualCtaUrl] = useState("https://orbitalrevestimentos.com.br");
+  const [campaignImageUploading, setCampaignImageUploading] = useState(false);
 
   // ── Drip campaign editor ────────────────────────────────────────────────────
   interface DripStep {
@@ -400,12 +408,105 @@ export default function AdminPage() {
     setCampaignApproving(null);
   }
 
+  interface EmailBlocks {
+    headline: string;
+    subheadline: string;
+    body: string;
+    imageUrl: string;
+    ctaText: string;
+    ctaUrl: string;
+  }
+
+  function extractEmailBlocks(html: string): EmailBlocks | null {
+    const m = html.match(/<!--ORBITAL_BLOCKS:([\s\S]*?)-->/);
+    if (!m) return null;
+    try { return JSON.parse(m[1]) as EmailBlocks; } catch { return null; }
+  }
+
+  function embedEmailBlocks(html: string, blocks: EmailBlocks): string {
+    // Remove any existing blocks comment first
+    const clean = html.replace(/<!--ORBITAL_BLOCKS:[\s\S]*?-->\n?/, "");
+    return `<!--ORBITAL_BLOCKS:${JSON.stringify(blocks)}-->\n${clean}`;
+  }
+
+  function generateEmailHtml(b: EmailBlocks): string {
+    const bodyHtml = b.body
+      .split("\n")
+      .filter((l) => l.trim())
+      .map((l) => `<p style="margin:0 0 16px 0;color:#43474e;font-size:15px;line-height:1.65;font-family:Arial,Helvetica,sans-serif;">${l}</p>`)
+      .join("");
+
+    const imageSection = b.imageUrl
+      ? `<tr><td style="padding:0;line-height:0;"><img src="${b.imageUrl}" alt="" width="580" style="display:block;width:100%;max-width:580px;height:auto;"></td></tr>`
+      : "";
+
+    const subheadlineHtml = b.subheadline
+      ? `<p style="margin:0 0 10px 0;color:#74777f;font-size:10px;letter-spacing:0.2em;text-transform:uppercase;font-weight:700;font-family:Arial,Helvetica,sans-serif;">${b.subheadline}</p>`
+      : "";
+
+    const ctaHtml = b.ctaText
+      ? `<table cellpadding="0" cellspacing="0" style="margin-top:28px;"><tr><td style="background:#002045;"><a href="${b.ctaUrl}" style="display:block;padding:14px 32px;color:#ffffff;font-size:11px;font-weight:700;letter-spacing:0.15em;text-transform:uppercase;text-decoration:none;font-family:Arial,Helvetica,sans-serif;">${b.ctaText} →</a></td></tr></table>`
+      : "";
+
+    return `<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>${b.headline}</title>
+</head>
+<body style="margin:0;padding:0;background:#f0efec;font-family:Arial,Helvetica,sans-serif;">
+  <table width="100%" cellpadding="0" cellspacing="0" style="background:#f0efec;">
+    <tr><td align="center" style="padding:32px 16px;">
+      <table width="100%" cellpadding="0" cellspacing="0" style="max-width:580px;background:#ffffff;">
+        <tr><td style="background:#002045;padding:24px 36px;">
+          <p style="margin:0;color:#ffffff;font-size:10px;letter-spacing:0.25em;text-transform:uppercase;font-weight:700;font-family:Arial,Helvetica,sans-serif;">ORBITAL REVESTIMENTOS</p>
+        </td></tr>
+        ${imageSection}
+        <tr><td style="padding:40px 36px 32px;">
+          ${subheadlineHtml}
+          <h1 style="margin:0 0 24px 0;color:#002045;font-size:26px;font-weight:400;line-height:1.3;font-family:Georgia,'Times New Roman',serif;">${b.headline}</h1>
+          ${bodyHtml}
+          ${ctaHtml}
+        </td></tr>
+        <tr><td style="background:#f0efec;border-top:1px solid #e2e2e2;padding:20px 36px;text-align:center;">
+          <p style="margin:0;color:#9e9e9e;font-size:10px;font-family:Arial,Helvetica,sans-serif;">Orbital Revestimentos · São Paulo, SP · <a href="{{unsubscribeUrl}}" style="color:#9e9e9e;text-decoration:underline;">Descadastrar</a></p>
+        </td></tr>
+      </table>
+    </td></tr>
+  </table>
+</body>
+</html>`;
+  }
+
+  async function handleCampaignImageUpload(file: File) {
+    setCampaignImageUploading(true);
+    const formData = new FormData();
+    formData.append("file", file);
+    const res = await fetch("/api/admin/upload-image", { method: "POST", body: formData });
+    const json = await res.json();
+    if (res.ok) setCampaignVisualImageUrl(json.url);
+    setCampaignImageUploading(false);
+  }
+
   async function saveCampaignEdit(id: string) {
     setCampaignEditSaving(true);
+    let finalHtml = campaignEditBody;
+    if (campaignEditMode === "visual") {
+      const blocks: EmailBlocks = {
+        headline: campaignVisualHeadline,
+        subheadline: campaignVisualSubheadline,
+        body: campaignVisualBody,
+        imageUrl: campaignVisualImageUrl,
+        ctaText: campaignVisualCtaText,
+        ctaUrl: campaignVisualCtaUrl,
+      };
+      finalHtml = embedEmailBlocks(generateEmailHtml(blocks), blocks);
+    }
     const res = await fetch(`/api/email-campaigns/${id}`, {
       method: "PATCH",
       headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ subject: campaignEditSubject, html_body: campaignEditBody }),
+      body: JSON.stringify({ subject: campaignEditSubject, html_body: finalHtml }),
     });
     if (res.ok) {
       await loadCampaigns();
@@ -1807,42 +1908,123 @@ export default function AdminPage() {
                       {isExpanded && (
                         <div className="border-t border-[#e2e2e2] px-6 py-5">
                           {isEditing ? (
-                            <div className="space-y-4">
-                              <div>
-                                <label className="block text-[10px] uppercase tracking-[0.15em] font-bold font-[var(--font-inter)] text-[#74777f] mb-2">Assunto</label>
-                                <input
-                                  value={campaignEditSubject}
-                                  onChange={(e) => setCampaignEditSubject(e.target.value)}
-                                  className="w-full border border-[#e2e2e2] px-3 py-2.5 text-sm font-[var(--font-inter)] text-[#002045] focus:outline-none focus:border-[#002045]"
-                                />
+                            <div className="space-y-5">
+                              {/* Mode toggle */}
+                              <div className="flex items-center gap-3">
+                                <span className="text-[10px] uppercase tracking-[0.15em] font-bold font-[var(--font-inter)] text-[#74777f]">Editor</span>
+                                <div className="flex border border-[#e2e2e2] overflow-hidden">
+                                  {(["visual", "html"] as const).map((m) => (
+                                    <button key={m} type="button" onClick={() => setCampaignEditMode(m)}
+                                      className={`px-4 py-1.5 text-xs font-bold font-[var(--font-inter)] transition-colors ${campaignEditMode === m ? "bg-[#002045] text-white" : "bg-white text-[#74777f] hover:bg-[#f5f5f3]"}`}>
+                                      {m === "visual" ? "Visual" : "HTML"}
+                                    </button>
+                                  ))}
+                                </div>
                               </div>
+
+                              {/* Subject — always shown */}
                               <div>
-                                <label className="block text-[10px] uppercase tracking-[0.15em] font-bold font-[var(--font-inter)] text-[#74777f] mb-2">HTML do Email</label>
-                                <textarea
-                                  value={campaignEditBody}
-                                  onChange={(e) => setCampaignEditBody(e.target.value)}
-                                  rows={20}
-                                  className="w-full border border-[#e2e2e2] px-3 py-2.5 text-xs font-mono text-[#002045] focus:outline-none focus:border-[#002045] resize-y"
-                                />
+                                <label className="block text-[10px] uppercase tracking-[0.15em] font-bold font-[var(--font-inter)] text-[#74777f] mb-2">Assunto do e-mail</label>
+                                <input value={campaignEditSubject} onChange={(e) => setCampaignEditSubject(e.target.value)}
+                                  className="w-full border border-[#e2e2e2] px-3 py-2.5 text-sm font-[var(--font-inter)] text-[#002045] focus:outline-none focus:border-[#002045]" />
                               </div>
-                              <div className="flex gap-3">
-                                <button
-                                  onClick={() => saveCampaignEdit(c.id)}
-                                  disabled={campaignEditSaving}
-                                  className="bg-[#002045] text-white text-xs tracking-[0.1em] uppercase font-bold font-[var(--font-inter)] px-5 py-2.5 hover:bg-[#1a365d] disabled:opacity-50"
-                                >
+
+                              {campaignEditMode === "visual" ? (
+                                <div className="space-y-5">
+                                  {/* Subheadline */}
+                                  <div>
+                                    <label className="block text-[10px] uppercase tracking-[0.15em] font-bold font-[var(--font-inter)] text-[#74777f] mb-1">
+                                      Etiqueta / Categoria <span className="text-[#9e9e9e] normal-case tracking-normal font-normal">— opcional, aparece acima do título</span>
+                                    </label>
+                                    <input value={campaignVisualSubheadline} onChange={(e) => setCampaignVisualSubheadline(e.target.value)}
+                                      placeholder="ex: Nova coleção · Produto destaque"
+                                      className="w-full border border-[#e2e2e2] px-3 py-2.5 text-sm font-[var(--font-inter)] text-[#002045] focus:outline-none focus:border-[#002045]" />
+                                  </div>
+
+                                  {/* Headline */}
+                                  <div>
+                                    <label className="block text-[10px] uppercase tracking-[0.15em] font-bold font-[var(--font-inter)] text-[#74777f] mb-1">Título principal *</label>
+                                    <input value={campaignVisualHeadline} onChange={(e) => setCampaignVisualHeadline(e.target.value)}
+                                      placeholder="ex: Uma placa. Dez anos. Zero manutenção."
+                                      className="w-full border border-[#e2e2e2] px-3 py-2.5 text-sm font-[var(--font-inter)] text-[#002045] focus:outline-none focus:border-[#002045]" />
+                                  </div>
+
+                                  {/* Body */}
+                                  <div>
+                                    <label className="block text-[10px] uppercase tracking-[0.15em] font-bold font-[var(--font-inter)] text-[#74777f] mb-1">
+                                      Texto do e-mail <span className="text-[#9e9e9e] normal-case tracking-normal font-normal">— cada linha vira um parágrafo</span>
+                                    </label>
+                                    <textarea value={campaignVisualBody} onChange={(e) => setCampaignVisualBody(e.target.value)}
+                                      rows={6} placeholder={"Escreva aqui o conteúdo do e-mail...\n\nVocê pode usar várias linhas — cada linha se torna um parágrafo separado."}
+                                      className="w-full border border-[#e2e2e2] px-3 py-2.5 text-sm font-[var(--font-inter)] text-[#002045] focus:outline-none focus:border-[#002045] resize-y" />
+                                  </div>
+
+                                  {/* Image upload */}
+                                  <div>
+                                    <label className="block text-[10px] uppercase tracking-[0.15em] font-bold font-[var(--font-inter)] text-[#74777f] mb-2">
+                                      Foto <span className="text-[#9e9e9e] normal-case tracking-normal font-normal">— opcional, aparece em destaque no e-mail</span>
+                                    </label>
+                                    {campaignVisualImageUrl ? (
+                                      <div className="relative border border-[#e2e2e2] overflow-hidden">
+                                        <img src={campaignVisualImageUrl} alt="preview" className="w-full max-h-48 object-cover" />
+                                        <button type="button" onClick={() => setCampaignVisualImageUrl("")}
+                                          className="absolute top-2 right-2 bg-white border border-[#e2e2e2] text-[#002045] text-xs px-3 py-1.5 font-bold font-[var(--font-inter)] hover:bg-red-50 hover:border-red-300 hover:text-red-700 transition-colors">
+                                          Remover foto
+                                        </button>
+                                      </div>
+                                    ) : (
+                                      <label className={`flex flex-col items-center justify-center gap-2 border-2 border-dashed border-[#e2e2e2] px-6 py-8 cursor-pointer hover:border-[#002045]/40 transition-colors ${campaignImageUploading ? "opacity-50 pointer-events-none" : ""}`}>
+                                        <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="#74777f" strokeWidth="1.5">
+                                          <path d="M21 15v4a2 2 0 01-2 2H5a2 2 0 01-2-2v-4M17 8l-5-5-5 5M12 3v12"/>
+                                        </svg>
+                                        <span className="text-sm font-[var(--font-inter)] text-[#74777f]">
+                                          {campaignImageUploading ? "Enviando..." : "Clique para selecionar ou arraste uma foto"}
+                                        </span>
+                                        <span className="text-[10px] text-[#9e9e9e] font-[var(--font-inter)]">JPG, PNG ou WebP · máx. 5 MB</span>
+                                        <input type="file" accept="image/*" className="hidden"
+                                          onChange={(e) => { const f = e.target.files?.[0]; if (f) handleCampaignImageUpload(f); }} />
+                                      </label>
+                                    )}
+                                  </div>
+
+                                  {/* CTA button */}
+                                  <div className="grid grid-cols-2 gap-4">
+                                    <div>
+                                      <label className="block text-[10px] uppercase tracking-[0.15em] font-bold font-[var(--font-inter)] text-[#74777f] mb-1">
+                                        Texto do botão <span className="text-[#9e9e9e] normal-case tracking-normal font-normal">— opcional</span>
+                                      </label>
+                                      <input value={campaignVisualCtaText} onChange={(e) => setCampaignVisualCtaText(e.target.value)}
+                                        placeholder="Ver no site"
+                                        className="w-full border border-[#e2e2e2] px-3 py-2.5 text-sm font-[var(--font-inter)] text-[#002045] focus:outline-none focus:border-[#002045]" />
+                                    </div>
+                                    <div>
+                                      <label className="block text-[10px] uppercase tracking-[0.15em] font-bold font-[var(--font-inter)] text-[#74777f] mb-1">Link do botão</label>
+                                      <input value={campaignVisualCtaUrl} onChange={(e) => setCampaignVisualCtaUrl(e.target.value)}
+                                        placeholder="https://orbitalrevestimentos.com.br"
+                                        className="w-full border border-[#e2e2e2] px-3 py-2.5 text-sm font-[var(--font-inter)] text-[#002045] focus:outline-none focus:border-[#002045]" />
+                                    </div>
+                                  </div>
+                                </div>
+                              ) : (
+                                <div>
+                                  <label className="block text-[10px] uppercase tracking-[0.15em] font-bold font-[var(--font-inter)] text-[#74777f] mb-2">HTML do Email</label>
+                                  <textarea value={campaignEditBody} onChange={(e) => setCampaignEditBody(e.target.value)}
+                                    rows={20} className="w-full border border-[#e2e2e2] px-3 py-2.5 text-xs font-mono text-[#002045] focus:outline-none focus:border-[#002045] resize-y" />
+                                </div>
+                              )}
+
+                              {/* Action buttons */}
+                              <div className="flex gap-3 pt-1">
+                                <button onClick={() => saveCampaignEdit(c.id)} disabled={campaignEditSaving}
+                                  className="bg-[#002045] text-white text-xs tracking-[0.1em] uppercase font-bold font-[var(--font-inter)] px-5 py-2.5 hover:bg-[#1a365d] disabled:opacity-50">
                                   {campaignEditSaving ? "Salvando..." : "Salvar"}
                                 </button>
-                                <button
-                                  onClick={() => { saveCampaignEdit(c.id).then(() => sendCampaignTest(c.id)); }}
-                                  className="border border-[#002045] text-[#002045] text-xs tracking-[0.1em] uppercase font-bold font-[var(--font-inter)] px-5 py-2.5 hover:bg-[#002045] hover:text-white transition-colors"
-                                >
+                                <button onClick={() => { saveCampaignEdit(c.id).then(() => sendCampaignTest(c.id)); }}
+                                  className="border border-[#002045] text-[#002045] text-xs tracking-[0.1em] uppercase font-bold font-[var(--font-inter)] px-5 py-2.5 hover:bg-[#002045] hover:text-white transition-colors">
                                   Salvar + Reenviar Teste
                                 </button>
-                                <button
-                                  onClick={() => setEditingCampaignId(null)}
-                                  className="text-[#74777f] text-xs font-[var(--font-inter)] underline"
-                                >
+                                <button onClick={() => setEditingCampaignId(null)}
+                                  className="text-[#74777f] text-xs font-[var(--font-inter)] underline">
                                   Cancelar
                                 </button>
                               </div>
@@ -1857,6 +2039,24 @@ export default function AdminPage() {
                                       setEditingCampaignId(c.id);
                                       setCampaignEditSubject(c.subject);
                                       setCampaignEditBody(c.html_body);
+                                      const blocks = extractEmailBlocks(c.html_body);
+                                      if (blocks) {
+                                        setCampaignEditMode("visual");
+                                        setCampaignVisualHeadline(blocks.headline);
+                                        setCampaignVisualSubheadline(blocks.subheadline);
+                                        setCampaignVisualBody(blocks.body);
+                                        setCampaignVisualImageUrl(blocks.imageUrl);
+                                        setCampaignVisualCtaText(blocks.ctaText);
+                                        setCampaignVisualCtaUrl(blocks.ctaUrl);
+                                      } else {
+                                        setCampaignEditMode("html");
+                                        setCampaignVisualHeadline("");
+                                        setCampaignVisualSubheadline("");
+                                        setCampaignVisualBody("");
+                                        setCampaignVisualImageUrl("");
+                                        setCampaignVisualCtaText("Ver no site");
+                                        setCampaignVisualCtaUrl("https://orbitalrevestimentos.com.br");
+                                      }
                                     }}
                                     className="text-xs text-[#002045] font-[var(--font-inter)] underline"
                                   >
