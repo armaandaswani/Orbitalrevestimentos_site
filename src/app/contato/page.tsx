@@ -394,7 +394,8 @@ export default function ContatoPage() {
   const canAdvance1 = selectedSpace !== null && selectedSpace.viability !== "no";
   const canAdvance2 = selectedProduct !== null;
   const canCalculate = m2 > 0;
-  const canAdvance4 = clientName.trim().length > 0 && clientEmail.trim().length > 0;
+  const validEmail = /^[^\s@]+@[^\s@]+\.[^\s@]{2,}$/.test(clientEmail.trim());
+  const canAdvance4 = clientName.trim().length > 0 && validEmail;
 
   const STEPS = [
     { n: 1 as const, label: "Espaço" },
@@ -917,9 +918,15 @@ export default function ContatoPage() {
                     placeholder="ex: joao@email.com"
                     className="w-full border border-[#e2e2e2] px-4 py-3 text-sm font-[var(--font-inter)] text-[#002045] focus:outline-none focus:border-[#002045] transition-colors"
                   />
-                  <p className="text-[#74777f] text-[10px] font-[var(--font-inter)] mt-1.5">
-                    Você receberá o orçamento detalhado e acompanhamento por e-mail.
-                  </p>
+                  {clientEmail.trim().length > 0 && !validEmail ? (
+                    <p className="text-red-500 text-[10px] font-[var(--font-inter)] mt-1.5">
+                      Insira um e-mail válido (ex: joao@email.com)
+                    </p>
+                  ) : (
+                    <p className="text-[#74777f] text-[10px] font-[var(--font-inter)] mt-1.5">
+                      Você receberá o orçamento detalhado e acompanhamento por e-mail.
+                    </p>
+                  )}
                 </div>
               </div>
 
