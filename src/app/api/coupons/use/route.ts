@@ -1,5 +1,102 @@
 import { NextRequest, NextResponse } from "next/server";
 import { supabaseAdmin } from "@/lib/supabase";
+import { getResend } from "@/lib/resend";
+
+function fmtBRL(n: number) {
+  return n.toLocaleString("pt-BR", { style: "currency", currency: "BRL", maximumFractionDigits: 0 });
+}
+
+async function sendNewBudgetEmails(opts: {
+  partnerEmail: string | null;
+  partnerName: string;
+  repEmails: Array<{ email: string; name: string }>;
+  clientName: string;
+  clientEmail: string;
+  space: string | null;
+  productName: string | null;
+  plates: number | null;
+  areaSqm: number | null;
+  total: number | null;
+  discounted: number | null;
+  couponCode: string;
+}) {
+  const resend = getResend();
+  const siteUrl = process.env.NEXT_PUBLIC_SITE_URL ?? "https://orbitalrevestimentos.com.br";
+
+  const budgetValue = opts.discounted ?? opts.total ?? 0;
+  const detailsHtml = `
+    <table cellpadding="0" cellspacing="0" width="100%" style="border-collapse:collapse;margin:16px 0;">
+      <tr><td style="padding:8px 0;border-bottom:1px solid #f0efec;font-size:12px;color:#74777f;font-family:Arial,sans-serif;width:140px;">Cliente</td><td style="padding:8px 0;border-bottom:1px solid #f0efec;font-size:13px;color:#002045;font-weight:600;font-family:Arial,sans-serif;">${opts.clientName}</td></tr>
+      <tr><td style="padding:8px 0;border-bottom:1px solid #f0efec;font-size:12px;color:#74777f;font-family:Arial,sans-serif;">E-mail do cliente</td><td style="padding:8px 0;border-bottom:1px solid #f0efec;font-size:13px;color:#002045;font-family:Arial,sans-serif;"><a href="mailto:${opts.clientEmail}" style="color:#002045;">${opts.clientEmail}</a></td></tr>
+      ${opts.space ? `<tr><td style="padding:8px 0;border-bottom:1px solid #f0efec;font-size:12px;color:#74777f;font-family:Arial,sans-serif;">Ambiente</td><td style="padding:8px 0;border-bottom:1px solid #f0efec;font-size:13px;color:#43474e;font-family:Arial,sans-serif;">${opts.space}</td></tr>` : ""}
+      ${opts.productName ? `<tr><td style="padding:8px 0;border-bottom:1px solid #f0efec;font-size:12px;color:#74777f;font-family:Arial,sans-serif;">Produto</td><td style="padding:8px 0;border-bottom:1px solid #f0efec;font-size:13px;color:#43474e;font-family:Arial,sans-serif;">${opts.productName}</td></tr>` : ""}
+      ${opts.areaSqm ? `<tr><td style="padding:8px 0;border-bottom:1px solid #f0efec;font-size:12px;color:#74777f;font-family:Arial,sans-serif;">Área</td><td style="padding:8px 0;border-bottom:1px solid #f0efec;font-size:13px;color:#43474e;font-family:Arial,sans-serif;">${opts.areaSqm.toFixed(1)} m² · ${opts.plates ?? "—"} placas</td></tr>` : ""}
+      <tr><td style="padding:8px 0;font-size:12px;color:#74777f;font-family:Arial,sans-serif;">Valor do orçamento</td><td style="padding:8px 0;font-size:16px;color:#002045;font-weight:700;font-family:Georgia,serif;">${fmtBRL(budgetValue)}</td></tr>
+    </table>`;
+
+  const waLink = `https://wa.me/?text=${encodeURIComponent(`Olá ${opts.clientName}, vi que você fez um orçamento Orbital e gostaria de ajudar a avançar com o projeto!`)}`;
+
+  // Email to partner
+  if (opts.partnerEmail) {
+    const partnerHtml = `<!DOCTYPE html><html lang="pt-BR"><head><meta charset="utf-8"></head>
+<body style="margin:0;padding:0;background:#f0efec;font-family:Arial,Helvetica,sans-serif;">
+  <table width="100%" cellpadding="0" cellspacing="0"><tr><td align="center" style="padding:32px 16px 0;">
+    <table cellpadding="0" cellspacing="0" style="max-width:560px;width:100%;">
+      <tr><td style="background:#002045;padding:28px 32px;">
+        <p style="margin:0 0 4px;font-size:11px;letter-spacing:0.2em;text-transform:uppercase;color:#86a0cd;font-family:Arial,sans-serif;">Novo Orçamento</p>
+        <p style="margin:0;font-size:22px;color:#ffffff;font-family:Georgia,serif;font-weight:400;">Seu cupom foi utilizado!</p>
+      </td></tr>
+      <tr><td style="background:#ffffff;border:1px solid #e2e2e2;border-top:0;padding:28px 32px;">
+        <p style="margin:0 0 16px;font-size:14px;color:#43474e;font-family:Arial,sans-serif;">Olá, <strong>${opts.partnerName}</strong> — um cliente usou o seu cupom <strong>${opts.couponCode}</strong> e gerou um orçamento.</p>
+        ${detailsHtml}
+        <p style="margin:16px 0 8px;font-size:12px;color:#74777f;font-family:Arial,sans-serif;">Entre em contato com o cliente para garantir que o projeto avance:</p>
+        <a href="mailto:${opts.clientEmail}" style="display:inline-block;background:#002045;color:#ffffff;text-decoration:none;padding:10px 22px;font-size:11px;letter-spacing:0.12em;text-transform:uppercase;font-weight:700;font-family:Arial,sans-serif;margin-right:8px;">Enviar e-mail</a>
+        <a href="${waLink}" style="display:inline-block;background:#25d366;color:#ffffff;text-decoration:none;padding:10px 22px;font-size:11px;letter-spacing:0.12em;text-transform:uppercase;font-weight:700;font-family:Arial,sans-serif;">WhatsApp</a>
+      </td></tr>
+      <tr><td style="background:#f0efec;border:1px solid #e2e2e2;border-top:0;padding:16px 32px;text-align:center;">
+        <a href="${siteUrl}/parceiro" style="font-size:11px;color:#74777f;font-family:Arial,sans-serif;text-decoration:none;">Ver meu portal →</a>
+      </td></tr>
+    </table>
+  </td></tr></table>
+</body></html>`;
+
+    await resend.emails.send({
+      from: "Orbital Revestimentos <noreply@orbitalrevestimentos.com.br>",
+      to: opts.partnerEmail,
+      subject: `🎉 Novo orçamento via seu cupom ${opts.couponCode} — ${opts.clientName}`,
+      html: partnerHtml,
+    });
+  }
+
+  // Email to each rep
+  for (const rep of opts.repEmails) {
+    const repHtml = `<!DOCTYPE html><html lang="pt-BR"><head><meta charset="utf-8"></head>
+<body style="margin:0;padding:0;background:#f0efec;font-family:Arial,Helvetica,sans-serif;">
+  <table width="100%" cellpadding="0" cellspacing="0"><tr><td align="center" style="padding:32px 16px 0;">
+    <table cellpadding="0" cellspacing="0" style="max-width:560px;width:100%;">
+      <tr><td style="background:#1a365d;padding:28px 32px;">
+        <p style="margin:0 0 4px;font-size:11px;letter-spacing:0.2em;text-transform:uppercase;color:#86a0cd;font-family:Arial,sans-serif;">Novo Orçamento</p>
+        <p style="margin:0;font-size:22px;color:#ffffff;font-family:Georgia,serif;font-weight:400;">Orçamento gerado via parceiro ${opts.partnerName}</p>
+      </td></tr>
+      <tr><td style="background:#ffffff;border:1px solid #e2e2e2;border-top:0;padding:28px 32px;">
+        <p style="margin:0 0 16px;font-size:14px;color:#43474e;font-family:Arial,sans-serif;">Olá, <strong>${rep.name}</strong> — um dos seus parceiros (<strong>${opts.partnerName}</strong>) gerou um novo orçamento.</p>
+        ${detailsHtml}
+      </td></tr>
+      <tr><td style="background:#f0efec;border:1px solid #e2e2e2;border-top:0;padding:16px 32px;text-align:center;">
+        <a href="${siteUrl}/representante" style="font-size:11px;color:#74777f;font-family:Arial,sans-serif;text-decoration:none;">Ver meu portal →</a>
+      </td></tr>
+    </table>
+  </td></tr></table>
+</body></html>`;
+
+    await resend.emails.send({
+      from: "Orbital Revestimentos <noreply@orbitalrevestimentos.com.br>",
+      to: rep.email,
+      subject: `📋 Novo orçamento via ${opts.partnerName} — ${opts.clientName}`,
+      html: repHtml,
+    });
+  }
+}
 
 export async function GET(req: NextRequest) {
   const { searchParams } = new URL(req.url);
@@ -183,6 +280,50 @@ export async function POST(req: NextRequest) {
       }
     } catch {
       // non-fatal
+    }
+  }
+
+  // Send instant notification emails (non-fatal)
+  if (data && body.partner_id && body.architect_name) {
+    try {
+      // Fetch partner email + name
+      const { data: partner } = await db
+        .from("partners")
+        .select("email, name")
+        .eq("id", body.partner_id)
+        .maybeSingle();
+
+      // Fetch all linked reps with email
+      const { data: linkedReps } = await db
+        .from("partner_sales_reps")
+        .select("sales_reps(name, email, status)")
+        .eq("partner_id", body.partner_id);
+
+      const repEmails: Array<{ email: string; name: string }> = [];
+      for (const lr of linkedReps ?? []) {
+        const rep = (lr as Record<string, unknown>).sales_reps as Record<string, unknown> | null;
+        if (rep && rep.status === "active" && rep.email) {
+          repEmails.push({ email: rep.email as string, name: rep.name as string });
+        }
+      }
+
+      await sendNewBudgetEmails({
+        partnerEmail: partner?.email ?? null,
+        partnerName: partner?.name ?? (body.coupon_code as string),
+        repEmails,
+        clientName: body.architect_name as string,
+        clientEmail: (body.client_email as string) ?? "",
+        space: (body.space as string) ?? null,
+        productName: (body.product_name as string) ?? null,
+        plates: (body.plates as number) ?? null,
+        areaSqm: (body.area_m2 as number) ?? null,
+        total: (body.material_total as number) ?? null,
+        discounted: (body.material_discounted as number) ?? null,
+        couponCode: body.coupon_code as string,
+      });
+    } catch (err) {
+      console.error("Notification email failed:", err);
+      // non-fatal — budget was saved, just email failed
     }
   }
 

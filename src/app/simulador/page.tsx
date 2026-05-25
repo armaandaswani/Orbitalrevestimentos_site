@@ -362,6 +362,7 @@ function SimuladorInner() {
               discount_applied: discountAmount,
               commission_owed: commissionOwed,
               architect_name: clientName.trim(),
+              client_email: clientEmail.trim(),
             }),
           });
           if (res.ok) {
