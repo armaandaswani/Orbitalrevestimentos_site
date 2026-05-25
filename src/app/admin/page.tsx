@@ -828,6 +828,14 @@ export default function AdminPage() {
     }
   }
 
+  async function deleteCouponUse(useId: string) {
+    if (!confirm("Excluir este orçamento permanentemente? Esta ação não pode ser desfeita.")) return;
+    const res = await fetch(`/api/coupons/use/${useId}`, { method: "DELETE" });
+    if (res.ok) {
+      setUses((prev) => prev.filter((u) => u.id !== useId));
+    }
+  }
+
   const pendingPartners = partners.filter((p) => p.status === "pending");
   const activePartners = partners.filter((p) => p.status !== "pending");
 
@@ -2131,14 +2139,14 @@ export default function AdminPage() {
                 <table className="w-full text-sm font-[var(--font-inter)]">
                   <thead>
                     <tr className="border-b border-[#e2e2e2]">
-                      {["Data", "Cupom", "Rep.", "Produto", "Espaço", "Área", "Material", "Desconto", "Com. Parceiro", "Com. Rep.", "Status"].map((h) => (
+                      {["Data", "Cupom", "Rep.", "Produto", "Espaço", "Área", "Material", "Desconto", "Com. Parceiro", "Com. Rep.", "Status", ""].map((h) => (
                         <th key={h} className="text-left px-4 py-3 text-[10px] tracking-[0.1em] uppercase font-bold text-[#74777f] whitespace-nowrap">{h}</th>
                       ))}
                     </tr>
                   </thead>
                   <tbody>
                     {filteredUses.length === 0 ? (
-                      <tr><td colSpan={11} className="px-5 py-8 text-center text-[#74777f]">Nenhum uso registrado.</td></tr>
+                      <tr><td colSpan={12} className="px-5 py-8 text-center text-[#74777f]">Nenhum uso registrado.</td></tr>
                     ) : (
                       filteredUses.map((u) => {
                         const st = u.sale_status || "em_orcamento";
@@ -2161,6 +2169,17 @@ export default function AdminPage() {
                                 <option value="concluido">Concluído</option>
                                 <option value="cancelado">Cancelado</option>
                               </select>
+                            </td>
+                            <td className="px-4 py-3">
+                              <button
+                                onClick={() => deleteCouponUse(u.id)}
+                                title="Excluir orçamento"
+                                className="text-red-400 hover:text-red-600 transition-colors"
+                              >
+                                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                                  <path d="M3 6h18M8 6V4h8v2M19 6l-1 14H6L5 6" />
+                                </svg>
+                              </button>
                             </td>
                           </tr>
                         );
