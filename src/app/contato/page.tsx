@@ -153,6 +153,7 @@ export default function ContatoPage() {
   const productsRef = useRef<HTMLDivElement>(null);
   const resultsRef = useRef<HTMLDivElement>(null);
   const stepRef = useRef<HTMLDivElement>(null);
+  const stepCardRef = useRef<HTMLDivElement>(null);
   const nextBtnRef = useRef<HTMLButtonElement>(null);
 
   const [step, setStep] = useState<1 | 2 | 3 | 4 | 5>(1);
@@ -251,16 +252,17 @@ export default function ContatoPage() {
         ].filter(Boolean).join("\n")
       : "Olá! Tenho interesse no PFB Orbital e gostaria de fazer um orçamento.";
 
-  function scrollToSimulator() {
-    setTimeout(() => {
-      stepRef.current?.scrollIntoView({ behavior: "smooth", block: "start" });
-    }, 50);
-  }
-
   function goToStep(n: 1 | 2 | 3 | 4 | 5) {
     setStep(n);
     setShowResult(false);
-    scrollToSimulator();
+    setTimeout(() => {
+      // Step 2 (models): start so the full product grid is visible from top
+      // All other steps: center so the card sits comfortably in the viewport
+      stepCardRef.current?.scrollIntoView({
+        behavior: "smooth",
+        block: n === 2 ? "start" : "center",
+      });
+    }, 50);
   }
 
   function showResults() {
@@ -300,7 +302,7 @@ export default function ContatoPage() {
     setCouponError("");
     setShowResult(false);
     setShowSavings(false);
-    scrollToSimulator();
+    setTimeout(() => stepCardRef.current?.scrollIntoView({ behavior: "smooth", block: "center" }), 50);
   }
 
   async function validateCoupon() {
@@ -428,7 +430,7 @@ export default function ContatoPage() {
             </p>
             <div className="flex flex-col sm:flex-row gap-3 sm:gap-4">
               <button
-                onClick={scrollToSimulator}
+                onClick={() => stepCardRef.current?.scrollIntoView({ behavior: "smooth", block: "center" })}
                 className="inline-flex items-center justify-center gap-2 bg-white text-[#002045] text-xs tracking-[0.12em] uppercase font-bold font-[var(--font-inter)] px-7 py-4 hover:bg-[#f3f3f3] transition-colors"
               >
                 Iniciar simulação
@@ -507,6 +509,9 @@ export default function ContatoPage() {
               </React.Fragment>
             ))}
           </div>
+
+          {/* Step content wrapper — used for scroll-into-view centering */}
+          <div ref={stepCardRef} className="scroll-mt-6">
 
           {/* ── Step 1: Space ─────────────────────────────────────────────── */}
           {step === 1 && (
@@ -1035,6 +1040,8 @@ export default function ContatoPage() {
               </div>
             </div>
           )}
+
+          </div>{/* end stepCardRef wrapper */}
 
           {/* ── Results panel ─────────────────────────────────────────────── */}
           {showResult && selectedProduct && selectedSpace && m2 > 0 && (
