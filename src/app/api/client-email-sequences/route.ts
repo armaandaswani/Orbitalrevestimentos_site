@@ -10,7 +10,7 @@ export async function POST(req: NextRequest) {
     space, model, plates, area_m2, total, partner_name,
   } = body;
 
-  if (!coupon_use_id || !client_name || !client_email) {
+  if (!client_name || !client_email) {
     return NextResponse.json({ error: "Missing required fields" }, { status: 400 });
   }
 
@@ -23,7 +23,7 @@ export async function POST(req: NextRequest) {
   const { data: seq, error } = await db
     .from("client_email_sequences")
     .insert({
-      coupon_use_id,
+      coupon_use_id: coupon_use_id ?? null,
       client_name,
       client_email,
       space: space || null,

@@ -433,3 +433,61 @@ ${cta(`Falar com ${partnerFirst} quando estiver pronto`, wa)}
 
   return { subject: "", html: "" };
 }
+
+// ─── Template interpolation ──────────────────────────────────────────────────
+
+/**
+ * Replace all {{key}} occurrences in template with the corresponding value.
+ */
+export function interpolate(template: string, vars: Record<string, string>): string {
+  return template.replace(/\{\{(\w+)\}\}/g, (_, key) => {
+    return Object.prototype.hasOwnProperty.call(vars, key) ? vars[key] : `{{${key}}}`;
+  });
+}
+
+/**
+ * Generate a client email from a DB template row, or fall back to the
+ * built-in generateClientEmail if no DB row is provided.
+ */
+export async function generateClientEmailFromTemplate(
+  step: number,
+  p: EmailParams,
+  dbRow: { subject: string; body_html: string } | null
+): Promise<{ subject: string; html: string }> {
+  if (!dbRow) {
+    return generateClientEmail(step, p);
+  }
+
+  const first = p.clientName.split(" ")[0];
+  const spaceLabel = p.space || "seu espaço";
+  const finish = FINISH[p.model] || p.model;
+  const wa = waLink(p.clientName, p.partnerName, p.model, p.plates);
+  const partnerFirst = p.partnerName.split(" ")[0];
+  const perM2 = p.area > 0 ? p.total / p.area : 0;
+  const perDay = p.total / (20 * 12 * 30);
+
+  const vars: Record<string, string> = {
+    firstName: first,
+    clientName: p.clientName,
+    spaceLabel,
+    model: p.model,
+    finish,
+    plates: String(p.plates),
+    area: `${fmtArea(p.area)} m²`,
+    total: fmtBRL(p.total),
+    partnerFirst,
+    partnerName: p.partnerName,
+    waLink: wa,
+    quoteCard: quoteCard(p),
+    perM2: fmtBRL(perM2),
+    perDay: fmtBRL(Math.ceil(perDay)),
+  };
+
+  const subject = interpolate(dbRow.subject, vars);
+  const bodyHtml = interpolate(dbRow.body_html, vars);
+
+  // Use the first line of the subject as a preheader approximation
+  const html = wrap(subject, bodyHtml);
+
+  return { subject, html };
+}

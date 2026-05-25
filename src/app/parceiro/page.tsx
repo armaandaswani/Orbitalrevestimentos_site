@@ -1,6 +1,7 @@
 "use client";
 
 import React, { useState, useEffect, useRef, useCallback } from "react";
+import Image from "next/image";
 
 interface PartnerInfo {
   id: string;
@@ -56,6 +57,31 @@ const SPECIAL_PRICES: Record<string, number> = { Classic: 399, Brilliance: 429, 
 const NORMAL_PRICES: Record<string, number> = { Classic: 559, Brilliance: 589, Elegance: 649 };
 const PLATE_M2 = 3.48;
 
+interface SpecialProduct {
+  code: string;
+  name: string;
+  linha: "Classic" | "Brilliance" | "Elegance";
+  img: string;
+}
+
+const SPECIAL_PRODUCTS: SpecialProduct[] = [
+  { code: "ORB-003", name: "Bege Travertino",           linha: "Classic",    img: "/images/catalogue/classic-bege-travertino-orb001.jpeg" },
+  { code: "ORB-001", name: "Terracota",                 linha: "Classic",    img: "/images/catalogue/classic-terracota-orb003.jpeg" },
+  { code: "ORB-006", name: "Branco Calacatta",          linha: "Classic",    img: "/images/catalogue/classic-branco-calacatta-orb006.jpeg" },
+  { code: "ORB-005", name: "Bronze Armani",             linha: "Brilliance", img: "/images/catalogue/brilliance-bronze-armani-orb005.jpeg" },
+  { code: "ORB-007", name: "Bianco Statuario Venato",   linha: "Brilliance", img: "/images/catalogue/brilliance-bianco-statuario-venato-orb007.jpeg" },
+  { code: "ORB-008", name: "Bianco Oro Supremo",        linha: "Brilliance", img: "/images/catalogue/brilliance-bianco-oro-supremo-orb008.jpeg" },
+  { code: "ORB-009", name: "Gris Pietra",               linha: "Brilliance", img: "/images/catalogue/brilliance-gris-pietra-orb009.jpeg" },
+  { code: "ORB-012", name: "Arabescato Orobico Bianco", linha: "Brilliance", img: "/images/catalogue/brilliance-arabescato-orobico-bianco-orb012.jpeg" },
+  { code: "ORB-013", name: "Calacatta Oro",             linha: "Brilliance", img: "/images/catalogue/brilliance-calacatta-oro-orb013.jpeg" },
+  { code: "ORB-014", name: "Calacatta Michelangelo",    linha: "Brilliance", img: "/images/catalogue/brilliance-calacatta-michelangelo-orb014.jpeg" },
+  { code: "ORB-015", name: "Carrara Gioia",             linha: "Brilliance", img: "/images/catalogue/brilliance-carrara-gioia-orb015.jpeg" },
+  { code: "ORB-002", name: "Imbuia",                    linha: "Elegance",   img: "/images/catalogue/elegance-imbuia-orb002.jpeg" },
+  { code: "ORB-004", name: "Louro Freijó",              linha: "Elegance",   img: "/images/catalogue/elegance-louro-freijo-orb004.jpeg" },
+  { code: "ORB-010", name: "Carvalho Natural",          linha: "Elegance",   img: "/images/catalogue/elegance-carvalho-natural-orb010.jpeg" },
+  { code: "ORB-011", name: "Carvalho Branco",           linha: "Elegance",   img: "/images/catalogue/elegance-carvalho-branco-orb011.jpeg" },
+];
+
 export default function ParceiroPage() {
   // ── Auth state ──────────────────────────────────────────────────────────────
   const [loginEmail, setLoginEmail] = useState("");
@@ -105,18 +131,21 @@ export default function ParceiroPage() {
 
   // ── Special table / simulator state ───────────────────────────────────────
   const [sqLinha, setSqLinha] = useState<"Classic" | "Brilliance" | "Elegance" | "">("");
+  const [sqSelectedProduct, setSqSelectedProduct] = useState<SpecialProduct | null>(null);
   const [sqMode, setSqMode] = useState<"dimensions" | "m2" | "plates">("dimensions");
   const [sqWidth, setSqWidth] = useState("");
   const [sqHeight, setSqHeight] = useState("");
   const [sqM2Input, setSqM2Input] = useState("");
   const [sqQty, setSqQty] = useState("");
   const [sqShowMargin, setSqShowMargin] = useState(false);
-  const [sqClientName, setSqClientName] = useState("");
-  const [sqClientEmail, setSqClientEmail] = useState("");
-  const [sqSpace, setSqSpace] = useState("");
-  const [sqSubmitting, setSqSubmitting] = useState(false);
-  const [sqSubmitted, setSqSubmitted] = useState(false);
-  const [sqSubmitError, setSqSubmitError] = useState("");
+
+  // ── Special table scroll refs ───────────────────────────────────────────
+  const sqProductSectionRef = useRef<HTMLDivElement>(null);
+  const sqCalcSectionRef = useRef<HTMLDivElement>(null);
+  const sqWidthRef = useRef<HTMLInputElement>(null);
+  const sqHeightRef = useRef<HTMLInputElement>(null);
+  const sqM2Ref = useRef<HTMLInputElement>(null);
+  const sqQtyRef = useRef<HTMLInputElement>(null);
 
   // ── Password visibility state ──────────────────────────────────────────────
   const [showLoginPw, setShowLoginPw] = useState(false);
@@ -126,14 +155,36 @@ export default function ParceiroPage() {
   const [showCpNew, setShowCpNew] = useState(false);
   const [showCpConfirm, setShowCpConfirm] = useState(false);
 
-  // ── On mount: check for ?reset=TOKEN ──────────────────────────────────────
+  // ── Session constants ──────────────────────────────────────────────────────
+  const SESSION_KEY = "orbital_partner_session";
+  const SESSION_TTL_MS = 30 * 60 * 1000; // 30 minutes
+
+  // ── On mount: restore session from localStorage + check ?reset=TOKEN ──────
   useEffect(() => {
+    // Restore saved session if still valid
+    try {
+      const raw = localStorage.getItem(SESSION_KEY);
+      if (raw) {
+        const { partner: saved, savedAt } = JSON.parse(raw) as { partner: PartnerInfo; savedAt: number };
+        if (Date.now() - savedAt < SESSION_TTL_MS) {
+          setPartner(saved);
+          fetchUses(saved.coupon_code);
+        } else {
+          localStorage.removeItem(SESSION_KEY);
+        }
+      }
+    } catch {
+      localStorage.removeItem(SESSION_KEY);
+    }
+
+    // Check for ?reset=TOKEN
     const params = new URLSearchParams(window.location.search);
     const token = params.get("reset");
     if (token) {
       setResetToken(token);
       setLoginView("reset");
     }
+  // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
   // ── fetchUses ──────────────────────────────────────────────────────────────
@@ -143,6 +194,22 @@ export default function ParceiroPage() {
     if (res.ok) setUses(await res.json());
     setUsesLoading(false);
   }, []);
+
+  // ── Refresh session timestamp every 5 min while partner is active ─────────
+  useEffect(() => {
+    if (!partner) return;
+    const t = setInterval(() => {
+      try {
+        const raw = localStorage.getItem(SESSION_KEY);
+        if (raw) {
+          const parsed = JSON.parse(raw);
+          localStorage.setItem(SESSION_KEY, JSON.stringify({ ...parsed, savedAt: Date.now() }));
+        }
+      } catch { /* ignore */ }
+    }, 5 * 60 * 1000); // every 5 minutes
+    return () => clearInterval(t);
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [partner]);
 
   // ── 30-second polling when logged in ──────────────────────────────────────
   const pollingRef = useRef<ReturnType<typeof setInterval> | null>(null);
@@ -158,6 +225,18 @@ export default function ParceiroPage() {
       if (pollingRef.current) { clearInterval(pollingRef.current); pollingRef.current = null; }
     };
   }, [partner?.coupon_code, fetchUses]);
+
+  // ── Auto-focus calc input when mode changes (only once product chosen) ────
+  useEffect(() => {
+    if (!sqSelectedProduct) return;
+    const t = setTimeout(() => {
+      if (sqMode === "dimensions") sqWidthRef.current?.focus();
+      else if (sqMode === "m2") sqM2Ref.current?.focus();
+      else if (sqMode === "plates") sqQtyRef.current?.focus();
+    }, 50);
+    return () => clearTimeout(t);
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [sqMode]);
 
   // ── Handlers ───────────────────────────────────────────────────────────────
   async function handleLogin(e: React.FormEvent) {
@@ -179,8 +258,11 @@ export default function ParceiroPage() {
       return;
     }
 
-    setPartner(json as PartnerInfo);
-    fetchUses(json.coupon_code);
+    const partnerData = json as PartnerInfo;
+    setPartner(partnerData);
+    fetchUses(partnerData.coupon_code);
+    // Persist session for 7 days
+    localStorage.setItem(SESSION_KEY, JSON.stringify({ partner: partnerData, savedAt: Date.now() }));
   }
 
   async function handleForgotPassword(e: React.FormEvent) {
@@ -272,57 +354,6 @@ export default function ParceiroPage() {
     setCpNew("");
     setCpConfirm("");
     setShowChangePassword(false);
-  }
-
-  async function handleSimulatorSubmit() {
-    if (!sqClientName.trim() || !sqClientEmail.trim() || !sqLinha || sqQtyNum <= 0) return;
-    setSqSubmitting(true);
-    setSqSubmitError("");
-    try {
-      const useRes = await fetch("/api/coupons/use", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
-          partner_id: partner!.id,
-          coupon_code: partner!.coupon_code,
-          architect_name: sqClientName.trim(),
-          space: sqSpace.trim() || null,
-          product_name: `Orbital ${sqLinha}`,
-          product_code: sqLinha,
-          area_m2: parseFloat(sqArea.toFixed(2)),
-          plates: sqQtyNum,
-          material_total: sqQtyNum * sqNormalPrice,
-          material_discounted: sqTotal,
-          discount_applied: sqTotalSavings,
-          commission_owed: partner!.commission_type === "percentage"
-            ? sqTotal * (partner!.commission_value / 100)
-            : partner!.commission_value,
-        }),
-      });
-      if (!useRes.ok) throw new Error("Erro ao registrar orçamento.");
-      const useData = await useRes.json();
-      await fetch("/api/client-email-sequences", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
-          coupon_use_id: useData.id,
-          client_name: sqClientName.trim(),
-          client_email: sqClientEmail.trim(),
-          space: sqSpace.trim() || null,
-          model: sqLinha,
-          plates: sqQtyNum,
-          area_m2: parseFloat(sqArea.toFixed(2)),
-          total: sqTotal,
-          partner_name: partner!.name,
-          partner_coupon: partner!.coupon_code,
-        }),
-      });
-      fetchUses(partner!.coupon_code);
-      setSqSubmitted(true);
-    } catch (err) {
-      setSqSubmitError(err instanceof Error ? err.message : "Erro ao registrar. Tente novamente.");
-    }
-    setSqSubmitting(false);
   }
 
   async function handleProfessionSubmit(e: React.FormEvent) {
@@ -704,7 +735,7 @@ export default function ParceiroPage() {
           </p>
         </div>
         <button
-          onClick={() => { setPartner(null); setUses([]); setLoginEmail(""); setPassword(""); setCpSuccess(""); setPortalTab("portal"); }}
+          onClick={() => { setPartner(null); setUses([]); setLoginEmail(""); setPassword(""); setCpSuccess(""); setPortalTab("portal"); localStorage.removeItem(SESSION_KEY); }}
           className="text-white/60 hover:text-white text-xs font-[var(--font-inter)] uppercase tracking-widest transition-colors"
         >
           Sair
@@ -1075,50 +1106,10 @@ export default function ParceiroPage() {
               Simulador de Orçamento
             </h2>
 
-            {/* Client info */}
-            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 mb-6">
-              <div>
-                <label className="block text-[10px] tracking-[0.15em] uppercase font-bold font-[var(--font-inter)] text-[#74777f] mb-2">
-                  Nome do cliente *
-                </label>
-                <input
-                  type="text"
-                  value={sqClientName}
-                  onChange={(e) => setSqClientName(e.target.value)}
-                  placeholder="Ex: João Silva"
-                  className="w-full border border-[#e2e2e2] px-4 py-2.5 text-sm font-[var(--font-inter)] text-[#002045] focus:outline-none focus:border-[#002045]"
-                />
-              </div>
-              <div>
-                <label className="block text-[10px] tracking-[0.15em] uppercase font-bold font-[var(--font-inter)] text-[#74777f] mb-2">
-                  E-mail do cliente *
-                </label>
-                <input
-                  type="email"
-                  value={sqClientEmail}
-                  onChange={(e) => setSqClientEmail(e.target.value)}
-                  placeholder="cliente@email.com"
-                  className="w-full border border-[#e2e2e2] px-4 py-2.5 text-sm font-[var(--font-inter)] text-[#002045] focus:outline-none focus:border-[#002045]"
-                />
-              </div>
-            </div>
-            <div className="mb-6">
-              <label className="block text-[10px] tracking-[0.15em] uppercase font-bold font-[var(--font-inter)] text-[#74777f] mb-2">
-                Espaço / Ambiente
-              </label>
-              <input
-                type="text"
-                value={sqSpace}
-                onChange={(e) => setSqSpace(e.target.value)}
-                placeholder="Ex: Sala de estar, Cozinha, Banheiro..."
-                className="w-full border border-[#e2e2e2] px-4 py-2.5 text-sm font-[var(--font-inter)] text-[#002045] focus:outline-none focus:border-[#002045]"
-              />
-            </div>
-
-            {/* Model cards */}
+            {/* Line cards */}
             <div className="mb-6">
               <label className="block text-[10px] tracking-[0.15em] uppercase font-bold font-[var(--font-inter)] text-[#74777f] mb-3">
-                Modelo *
+                Linha *
               </label>
               <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
                 {[
@@ -1129,7 +1120,11 @@ export default function ParceiroPage() {
                   <button
                     key={m.key}
                     type="button"
-                    onClick={() => setSqLinha(m.key as "Classic" | "Brilliance" | "Elegance")}
+                    onClick={() => {
+                      setSqLinha(m.key as "Classic" | "Brilliance" | "Elegance");
+                      setSqSelectedProduct(null);
+                      setTimeout(() => sqProductSectionRef.current?.scrollIntoView({ behavior: "smooth", block: "start" }), 80);
+                    }}
                     className={`text-left p-4 border-2 transition-all ${
                       sqLinha === m.key
                         ? "border-[#002045] bg-[#eef2f8]"
@@ -1144,6 +1139,70 @@ export default function ParceiroPage() {
                 ))}
               </div>
             </div>
+
+            {/* Product selection grid — shown once a line is chosen */}
+            {sqLinha && (
+              <div ref={sqProductSectionRef} className="mb-6 scroll-mt-24">
+                <p className="text-[#43474e] text-[10px] tracking-[0.15em] uppercase font-bold font-[var(--font-inter)] mb-4">
+                  Acabamentos {sqLinha}
+                </p>
+                <div className="grid grid-cols-3 sm:grid-cols-4 md:grid-cols-5 gap-2 sm:gap-3 min-[400px]:grid-cols-4">
+                  {SPECIAL_PRODUCTS.filter((p) => p.linha === sqLinha).map((product) => {
+                    const active = sqSelectedProduct?.code === product.code;
+                    return (
+                      <div
+                        key={product.code}
+                        className={`border overflow-hidden transition-all ${
+                          active ? "border-[#002045]" : "border-[#e2e2e2] hover:border-[#1a365d]"
+                        }`}
+                      >
+                        <button
+                          type="button"
+                          onClick={() => {
+                            setSqSelectedProduct(product);
+                            setTimeout(() => sqCalcSectionRef.current?.scrollIntoView({ behavior: "smooth", block: "start" }), 80);
+                          }}
+                          className="relative w-full overflow-hidden bg-[#f7f7f5] block"
+                        >
+                          <div className="relative w-full" style={{ aspectRatio: "812/988" }}>
+                            <Image
+                              src={product.img}
+                              alt={product.name}
+                              fill
+                              className="object-contain"
+                            />
+                          </div>
+                          {active && <div className="absolute inset-0 bg-[#002045]/10" />}
+                          {active && (
+                            <div className="absolute top-2 right-2 w-5 h-5 bg-white flex items-center justify-center shadow-sm">
+                              <svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="#002045" strokeWidth="3">
+                                <path d="M20 6L9 17l-5-5" />
+                              </svg>
+                            </div>
+                          )}
+                        </button>
+                        <button
+                          type="button"
+                          onClick={() => {
+                            setSqSelectedProduct(product);
+                            setTimeout(() => sqCalcSectionRef.current?.scrollIntoView({ behavior: "smooth", block: "start" }), 80);
+                          }}
+                          className="p-2 w-full text-left"
+                        >
+                          <p className={`text-[10px] font-bold font-[var(--font-inter)] leading-tight ${active ? "text-[#002045]" : "text-[#43474e]"}`}>
+                            {product.name}
+                          </p>
+                          <p className="text-[9px] text-[#9e9e9e] font-[var(--font-inter)] mt-0.5">{product.code}</p>
+                        </button>
+                      </div>
+                    );
+                  })}
+                </div>
+              </div>
+            )}
+
+            {/* Calculation mode toggle + inputs */}
+            <div ref={sqCalcSectionRef} className="scroll-mt-24">
 
             {/* Calculation mode toggle */}
             <div className="mb-5">
@@ -1181,10 +1240,12 @@ export default function ParceiroPage() {
                       Largura (m) *
                     </label>
                     <input
+                      ref={sqWidthRef}
                       type="text"
                       inputMode="decimal"
                       value={sqWidth}
                       onChange={(e) => setSqWidth(e.target.value.replace(",", "."))}
+                      onBlur={() => { if (sqWidth) sqHeightRef.current?.focus(); }}
                       placeholder="ex: 4.5"
                       className="w-full border border-[#e2e2e2] px-4 py-2.5 text-sm font-[var(--font-inter)] text-[#002045] focus:outline-none focus:border-[#002045]"
                     />
@@ -1194,6 +1255,7 @@ export default function ParceiroPage() {
                       Altura (m) *
                     </label>
                     <input
+                      ref={sqHeightRef}
                       type="text"
                       inputMode="decimal"
                       value={sqHeight}
@@ -1215,6 +1277,7 @@ export default function ParceiroPage() {
                     Área total (m²) *
                   </label>
                   <input
+                    ref={sqM2Ref}
                     type="text"
                     inputMode="decimal"
                     value={sqM2Input}
@@ -1235,6 +1298,7 @@ export default function ParceiroPage() {
                     Número de placas *
                   </label>
                   <input
+                    ref={sqQtyRef}
                     type="text"
                     inputMode="numeric"
                     value={sqQty}
@@ -1251,6 +1315,8 @@ export default function ParceiroPage() {
               )}
             </div>
 
+            </div>{/* end sqCalcSectionRef div */}
+
             {/* Results */}
             {sqLinha && sqQtyNum > 0 && (
               <div className="border-t border-[#e2e2e2] pt-6">
@@ -1261,9 +1327,16 @@ export default function ParceiroPage() {
                   </p>
                   <div className="grid grid-cols-2 gap-4 mb-4">
                     <div>
-                      <p className="text-white/50 text-[10px] font-[var(--font-inter)] mb-0.5">Modelo</p>
+                      <p className="text-white/50 text-[10px] font-[var(--font-inter)] mb-0.5">Linha</p>
                       <p className="text-white font-semibold font-[var(--font-inter)]">{sqLinha}</p>
                     </div>
+                    {sqSelectedProduct && (
+                      <div>
+                        <p className="text-white/50 text-[10px] font-[var(--font-inter)] mb-0.5">Produto</p>
+                        <p className="text-white font-semibold font-[var(--font-inter)] text-sm leading-tight">{sqSelectedProduct.name}</p>
+                        <p className="text-white/50 text-[10px] font-[var(--font-inter)]">{sqSelectedProduct.code}</p>
+                      </div>
+                    )}
                     <div>
                       <p className="text-white/50 text-[10px] font-[var(--font-inter)] mb-0.5">Qtd. de placas</p>
                       <p className="text-white font-semibold font-[var(--font-inter)]">{sqQtyNum} placa{sqQtyNum !== 1 ? "s" : ""}</p>
@@ -1327,43 +1400,6 @@ export default function ParceiroPage() {
                   </div>
                 )}
 
-                {/* Submit */}
-                <div className="border-t border-[#e2e2e2] mt-6 pt-6">
-                  {sqSubmitted ? (
-                    <div className="bg-green-50 border border-green-200 px-5 py-4 text-center">
-                      <p className="text-green-700 font-semibold text-sm font-[var(--font-inter)]">✓ Orçamento registrado com sucesso!</p>
-                      <p className="text-green-600 text-xs font-[var(--font-inter)] mt-1">Um e-mail de confirmação foi enviado para {sqClientEmail}.</p>
-                      <button
-                        type="button"
-                        onClick={() => {
-                          setSqClientName(""); setSqClientEmail(""); setSqSpace("");
-                          setSqLinha(""); setSqWidth(""); setSqHeight("");
-                          setSqM2Input(""); setSqQty(""); setSqSubmitted(false); setSqSubmitError("");
-                        }}
-                        className="mt-3 text-[#002045] text-xs font-[var(--font-inter)] underline underline-offset-2"
-                      >
-                        Novo orçamento
-                      </button>
-                    </div>
-                  ) : (
-                    <>
-                      {sqSubmitError && (
-                        <p className="text-red-600 text-xs font-[var(--font-inter)] mb-3">{sqSubmitError}</p>
-                      )}
-                      <button
-                        type="button"
-                        disabled={sqSubmitting || !sqClientName.trim() || !sqClientEmail.trim() || !sqLinha || sqQtyNum <= 0}
-                        onClick={handleSimulatorSubmit}
-                        className="w-full bg-[#002045] text-white text-xs tracking-[0.12em] uppercase font-bold font-[var(--font-inter)] px-6 py-4 hover:bg-[#1a365d] transition-colors disabled:opacity-50"
-                      >
-                        {sqSubmitting ? "Registrando..." : "Registrar Orçamento"}
-                      </button>
-                      <p className="text-[#74777f] text-[10px] font-[var(--font-inter)] mt-2 text-center">
-                        O cliente receberá um e-mail com todos os detalhes e acompanhamento do projeto.
-                      </p>
-                    </>
-                  )}
-                </div>
               </div>
             )}
           </div>

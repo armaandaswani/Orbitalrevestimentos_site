@@ -104,7 +104,7 @@ export default function AdminPage() {
   const [authed, setAuthed] = useState(false);
   const [pw, setPw] = useState("");
   const [pwError, setPwError] = useState("");
-  const [tab, setTab] = useState<"partners" | "representantes" | "history" | "campaigns">("partners");
+  const [tab, setTab] = useState<"partners" | "representantes" | "history" | "campaigns" | "drip" | "clientes">("partners");
 
   // Partners
   const [partners, setPartners] = useState<Partner[]>([]);
@@ -196,6 +196,47 @@ export default function AdminPage() {
   const [campaignTestSending, setCampaignTestSending] = useState<string | null>(null);
   const [campaignApproving, setCampaignApproving] = useState<string | null>(null);
 
+  // ── Drip campaign editor ────────────────────────────────────────────────────
+  interface DripStep {
+    step_number: number;
+    delay_days: number | null;
+    subject: string;
+    body_html: string;
+    description: string;
+    updated_at: string;
+  }
+
+  interface ClientSeq {
+    id: string;
+    client_name: string;
+    client_email: string;
+    space: string | null;
+    model: string;
+    plates: number;
+    area_m2: number;
+    total: number;
+    partner_name: string;
+    current_step: number;
+    status: string;
+    next_email_at: string | null;
+    created_at: string;
+  }
+
+  const [dripSteps, setDripSteps] = useState<DripStep[]>([]);
+  const [dripLoading, setDripLoading] = useState(false);
+  const [dripSeeding, setDripSeeding] = useState(false);
+  const [expandedDripStep, setExpandedDripStep] = useState<number | null>(null);
+  const [editingDripStep, setEditingDripStep] = useState<number | null>(null);
+  const [dripEditSubject, setDripEditSubject] = useState("");
+  const [dripEditDelayDays, setDripEditDelayDays] = useState("");
+  const [dripEditBodyHtml, setDripEditBodyHtml] = useState("");
+  const [dripEditSaving, setDripEditSaving] = useState(false);
+  const [dripPreviewStep, setDripPreviewStep] = useState<number | null>(null);
+
+  const [clients, setClients] = useState<ClientSeq[]>([]);
+  const [clientsLoading, setClientsLoading] = useState(false);
+  const [clientsExporting, setClientsExporting] = useState(false);
+
   // Follow-up
   interface FollowUp {
     id: string;
@@ -253,6 +294,20 @@ export default function AdminPage() {
     setCampaignsLoading(false);
   }, []);
 
+  const fetchDripSteps = useCallback(async () => {
+    setDripLoading(true);
+    const res = await fetch("/api/admin/drip");
+    if (res.ok) setDripSteps(await res.json());
+    setDripLoading(false);
+  }, []);
+
+  const fetchClients = useCallback(async () => {
+    setClientsLoading(true);
+    const res = await fetch("/api/admin/clients");
+    if (res.ok) setClients(await res.json());
+    setClientsLoading(false);
+  }, []);
+
   const fetchFollowUps = useCallback(async () => {
     setFollowUpLoading(true);
     const res = await fetch("/api/admin/followups");
@@ -300,6 +355,14 @@ export default function AdminPage() {
   useEffect(() => {
     if (tab === "campaigns" && authed) loadCampaigns();
   }, [tab, authed, loadCampaigns]);
+
+  useEffect(() => {
+    if (tab === "drip" && authed) fetchDripSteps();
+  }, [tab, authed, fetchDripSteps]);
+
+  useEffect(() => {
+    if (tab === "clientes" && authed) fetchClients();
+  }, [tab, authed, fetchClients]);
 
   const pollingRef = useRef<ReturnType<typeof setInterval> | null>(null);
   useEffect(() => {
@@ -349,6 +412,90 @@ export default function AdminPage() {
       setEditingCampaignId(null);
     }
     setCampaignEditSaving(false);
+  }
+
+  async function seedDripSteps() {
+    setDripSeeding(true);
+    await fetch("/api/admin/drip", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ action: "seed" }),
+    });
+    await fetchDripSteps();
+    setDripSeeding(false);
+  }
+
+  async function saveDripEdit(stepNumber: number) {
+    setDripEditSaving(true);
+    const body: Record<string, unknown> = {
+      subject: dripEditSubject,
+      body_html: dripEditBodyHtml,
+    };
+    const step = dripSteps.find((s) => s.step_number === stepNumber);
+    if (step && step.delay_days !== null) {
+      body.delay_days = dripEditDelayDays === "" ? null : parseInt(dripEditDelayDays, 10);
+    } else if (stepNumber !== 98 && stepNumber !== 99) {
+      body.delay_days = dripEditDelayDays === "" ? null : parseInt(dripEditDelayDays, 10);
+    }
+    const res = await fetch(`/api/admin/drip/${stepNumber}`, {
+      method: "PATCH",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify(body),
+    });
+    if (res.ok) {
+      await fetchDripSteps();
+      setEditingDripStep(null);
+    }
+    setDripEditSaving(false);
+  }
+
+  async function exportClients() {
+    setClientsExporting(true);
+    const res = await fetch("/api/admin/clients/export");
+    if (res.ok) {
+      const blob = await res.blob();
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement("a");
+      const date = new Date().toISOString().split("T")[0];
+      a.href = url;
+      a.download = `clientes-orbital-${date}.csv`;
+      a.click();
+      URL.revokeObjectURL(url);
+    }
+    setClientsExporting(false);
+  }
+
+  const DRIP_SAMPLE_VARS: Record<string, string> = {
+    firstName: "João",
+    clientName: "João Silva",
+    spaceLabel: "Sala de estar",
+    model: "Classic",
+    finish: "Mármore Fosco",
+    plates: "8",
+    area: "27,84 m²",
+    total: "R$ 4.472",
+    partnerFirst: "Ana",
+    partnerName: "Ana Lima",
+    waLink: "#",
+    quoteCard: `<table width="100%" cellpadding="0" cellspacing="0" style="background:#002045;margin:24px 0;"><tr><td style="padding:24px 28px;"><p style="margin:0 0 8px;color:rgba(255,255,255,0.45);font-size:10px;letter-spacing:0.2em;text-transform:uppercase;font-family:Arial,sans-serif;">SEU ORÇAMENTO</p><p style="margin:0;color:#ffffff;font-size:22px;font-weight:700;font-family:Arial,sans-serif;">R$ 4.472</p></td></tr></table>`,
+    perM2: "R$ 161",
+    perDay: "R$ 1",
+  };
+
+  function interpolateSample(template: string): string {
+    return template.replace(/\{\{(\w+)\}\}/g, (_, key) => {
+      return Object.prototype.hasOwnProperty.call(DRIP_SAMPLE_VARS, key)
+        ? DRIP_SAMPLE_VARS[key]
+        : `{{${key}}}`;
+    });
+  }
+
+  function dripDelayLabel(step: DripStep): string {
+    if (step.step_number === 1) return "Enviado imediatamente";
+    if (step.step_number === 99) return "Enviado ao concluir";
+    if (step.step_number === 98) return "Enviado ao cancelar";
+    if (step.delay_days != null) return `+${step.delay_days} dia${step.delay_days !== 1 ? "s" : ""} após o anterior`;
+    return "—";
   }
 
   function handleLogin(e: React.FormEvent) {
@@ -931,10 +1078,10 @@ export default function AdminPage() {
       )}
 
       <div className="max-w-7xl mx-auto px-8 py-8">
-        <div className="flex gap-1 mb-8 border-b border-[#e2e2e2]">
-          {(["partners", "representantes", "history", "campaigns"] as const).map((t) => (
+        <div className="flex gap-1 mb-8 border-b border-[#e2e2e2] flex-wrap">
+          {(["partners", "representantes", "history", "campaigns", "drip", "clientes"] as const).map((t) => (
             <button key={t} onClick={() => setTab(t)} className={`px-6 py-3 text-xs tracking-[0.1em] uppercase font-bold font-[var(--font-inter)] transition-colors border-b-2 -mb-px flex items-center gap-2 ${tab === t ? "border-[#002045] text-[#002045]" : "border-transparent text-[#74777f] hover:text-[#002045]"}`}>
-              {t === "partners" ? "Parceiros" : t === "representantes" ? "Representantes" : t === "history" ? "Histórico" : "Campanhas"}
+              {t === "partners" ? "Parceiros" : t === "representantes" ? "Representantes" : t === "history" ? "Histórico" : t === "campaigns" ? "Campanhas" : t === "drip" ? "Drip de Emails" : "Clientes"}
               {t === "partners" && pendingPartners.length > 0 && (
                 <span className="bg-yellow-400 text-yellow-900 text-[9px] font-bold px-1.5 py-0.5 rounded-full leading-none">
                   {pendingPartners.length}
@@ -1822,6 +1969,280 @@ export default function AdminPage() {
                   </tbody>
                 </table>
               </div>
+            )}
+          </div>
+        )}
+        {/* ═══ DRIP TAB ═══ */}
+        {tab === "drip" && (
+          <div>
+            <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4 mb-4">
+              <h2 className="font-[var(--font-noto-serif)] text-[#002045] text-xl font-normal">Campanha Drip de E-mail</h2>
+              <button
+                onClick={seedDripSteps}
+                disabled={dripSeeding}
+                className="bg-[#002045] text-white text-xs tracking-[0.12em] uppercase font-bold font-[var(--font-inter)] px-5 py-2.5 hover:bg-[#1a365d] transition-colors disabled:opacity-50"
+              >
+                {dripSeeding ? "Inicializando..." : "Inicializar Padrões"}
+              </button>
+            </div>
+            <p className="text-[10px] tracking-[0.1em] text-[#74777f] font-[var(--font-inter)] mb-6 bg-white border border-[#e2e2e2] px-4 py-3">
+              Variáveis disponíveis:{" "}
+              {["{{firstName}}", "{{clientName}}", "{{spaceLabel}}", "{{model}}", "{{finish}}", "{{plates}}", "{{area}}", "{{total}}", "{{partnerFirst}}", "{{partnerName}}", "{{waLink}}", "{{quoteCard}}", "{{perM2}}", "{{perDay}}"].join(", ")}
+            </p>
+
+            {dripLoading ? (
+              <p className="text-[#74777f] text-sm font-[var(--font-inter)]">Carregando...</p>
+            ) : dripSteps.length === 0 ? (
+              <div className="bg-white border border-[#e2e2e2] px-6 py-12 text-center">
+                <p className="text-[#74777f] text-sm font-[var(--font-inter)]">Nenhum passo configurado.</p>
+                <p className="text-[#74777f] text-xs font-[var(--font-inter)] mt-1">Clique em &ldquo;Inicializar Padrões&rdquo; para criar os 9 passos padrão.</p>
+              </div>
+            ) : (
+              <div className="space-y-3">
+                {dripSteps.map((step) => {
+                  const isExpanded = expandedDripStep === step.step_number;
+                  const isEditing = editingDripStep === step.step_number;
+                  const isPreviewing = dripPreviewStep === step.step_number;
+                  return (
+                    <div key={step.step_number} className="bg-white border border-[#e2e2e2]">
+                      {/* Step header row */}
+                      <div className="px-6 py-4 flex items-center gap-4">
+                        <div className="flex-shrink-0">
+                          <span className="bg-[#002045] text-white text-[10px] font-bold font-[var(--font-inter)] tracking-widest px-2.5 py-1">
+                            {step.step_number === 99 ? "99" : step.step_number === 98 ? "98" : `0${step.step_number}`.slice(-2)}
+                          </span>
+                        </div>
+                        <div className="flex-1 min-w-0">
+                          <p className="font-semibold text-[#002045] text-sm font-[var(--font-inter)]">{step.description}</p>
+                          <p className="text-[10px] text-[#74777f] font-[var(--font-inter)] mt-0.5">
+                            {dripDelayLabel(step)} · <span className="text-[#43474e]">{step.subject}</span>
+                          </p>
+                        </div>
+                        <div className="flex items-center gap-2 flex-shrink-0">
+                          <button
+                            onClick={() => {
+                              setEditingDripStep(isEditing ? null : step.step_number);
+                              setDripPreviewStep(null);
+                              if (!isEditing) {
+                                setDripEditSubject(step.subject);
+                                setDripEditDelayDays(step.delay_days != null ? String(step.delay_days) : "");
+                                setDripEditBodyHtml(step.body_html);
+                                setExpandedDripStep(step.step_number);
+                              }
+                            }}
+                            className="border border-[#e2e2e2] text-[#74777f] text-xs font-bold font-[var(--font-inter)] px-4 py-2 hover:border-[#002045] hover:text-[#002045] transition-colors"
+                          >
+                            {isEditing ? "Cancelar edição" : "Editar"}
+                          </button>
+                          <button
+                            onClick={() => {
+                              setDripPreviewStep(isPreviewing ? null : step.step_number);
+                              setEditingDripStep(null);
+                              setExpandedDripStep(step.step_number);
+                            }}
+                            className="border border-[#e2e2e2] text-[#74777f] text-xs font-bold font-[var(--font-inter)] px-4 py-2 hover:border-[#002045] hover:text-[#002045] transition-colors"
+                          >
+                            {isPreviewing ? "Fechar preview" : "Visualizar"}
+                          </button>
+                          <button
+                            onClick={() => setExpandedDripStep(isExpanded && !isEditing && !isPreviewing ? null : step.step_number)}
+                            className="text-[#74777f] hover:text-[#002045] transition-colors p-1"
+                          >
+                            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" className={`transition-transform ${isExpanded ? "rotate-180" : ""}`}>
+                              <path d="M6 9l6 6 6-6" />
+                            </svg>
+                          </button>
+                        </div>
+                      </div>
+
+                      {/* Expanded content */}
+                      {isExpanded && (
+                        <div className="border-t border-[#e2e2e2] px-6 py-5">
+                          {isEditing ? (
+                            <div className="space-y-4">
+                              <div>
+                                <label className={labelCls}>Assunto</label>
+                                <input
+                                  value={dripEditSubject}
+                                  onChange={(e) => setDripEditSubject(e.target.value)}
+                                  className={inputCls}
+                                />
+                              </div>
+                              {step.step_number !== 98 && step.step_number !== 99 && (
+                                <div>
+                                  <label className={labelCls}>Delay (dias após o passo anterior)</label>
+                                  <input
+                                    type="number"
+                                    min="0"
+                                    value={dripEditDelayDays}
+                                    onChange={(e) => setDripEditDelayDays(e.target.value)}
+                                    className={inputCls + " w-32"}
+                                  />
+                                </div>
+                              )}
+                              <div>
+                                <label className={labelCls}>HTML do corpo do email</label>
+                                <textarea
+                                  value={dripEditBodyHtml}
+                                  onChange={(e) => setDripEditBodyHtml(e.target.value)}
+                                  rows={20}
+                                  className="w-full border border-[#e2e2e2] px-3 py-2.5 font-mono text-xs text-[#002045] focus:outline-none focus:border-[#002045] resize-y font-[var(--font-inter)]"
+                                />
+                              </div>
+                              <div className="flex gap-3">
+                                <button
+                                  onClick={() => saveDripEdit(step.step_number)}
+                                  disabled={dripEditSaving}
+                                  className="bg-[#002045] text-white text-xs tracking-[0.1em] uppercase font-bold font-[var(--font-inter)] px-5 py-2.5 hover:bg-[#1a365d] transition-colors disabled:opacity-50"
+                                >
+                                  {dripEditSaving ? "Salvando..." : "Salvar"}
+                                </button>
+                                <button
+                                  onClick={() => { setEditingDripStep(null); setExpandedDripStep(null); }}
+                                  className="text-[#74777f] text-xs font-[var(--font-inter)] underline"
+                                >
+                                  Cancelar
+                                </button>
+                              </div>
+                            </div>
+                          ) : isPreviewing ? (
+                            <div>
+                              <p className="text-[10px] uppercase tracking-[0.15em] font-bold font-[var(--font-inter)] text-[#74777f] mb-3">
+                                Preview com dados de exemplo
+                              </p>
+                              <div
+                                className="border border-[#e2e2e2] bg-[#f5f5f3] overflow-y-auto max-h-[600px]"
+                                dangerouslySetInnerHTML={{
+                                  __html: `<!DOCTYPE html><html lang="pt-BR"><head><meta charset="UTF-8"></head><body style="margin:0;padding:0;background:#f0eeeb;"><table width="100%" cellpadding="0" cellspacing="0" style="background:#f0eeeb;padding:40px 16px;"><tr><td align="center"><table width="580" cellpadding="0" cellspacing="0" style="background:#ffffff;max-width:580px;width:100%;"><tr><td style="background:#002045;padding:28px 36px;"><p style="margin:0;color:#ffffff;font-size:18px;font-weight:700;letter-spacing:0.15em;text-transform:uppercase;font-family:Arial,sans-serif;">ORBITAL</p><p style="margin:6px 0 0;color:rgba(255,255,255,0.45);font-size:10px;letter-spacing:0.2em;text-transform:uppercase;font-family:Arial,sans-serif;">Revestimentos · Manaus</p></td></tr><tr><td style="padding:40px 36px;">${interpolateSample(step.body_html)}</td></tr><tr><td style="background:#f5f5f3;padding:24px 36px;border-top:1px solid #e2e2e2;"><p style="margin:0;color:#74777f;font-size:11px;line-height:1.7;font-family:Arial,sans-serif;">Orbital Revestimentos · Manaus, Amazonas</p></td></tr></table></td></tr></table></body></html>`,
+                                }}
+                              />
+                            </div>
+                          ) : (
+                            <div>
+                              <p className="text-[10px] uppercase tracking-[0.15em] font-bold font-[var(--font-inter)] text-[#74777f] mb-2">Assunto</p>
+                              <p className="text-sm text-[#43474e] font-[var(--font-inter)] mb-4">{step.subject}</p>
+                              <p className="text-[10px] uppercase tracking-[0.15em] font-bold font-[var(--font-inter)] text-[#74777f] mb-2">HTML (raw)</p>
+                              <pre className="text-[10px] font-mono text-[#74777f] bg-[#f5f5f3] p-4 overflow-x-auto max-h-60 border border-[#e2e2e2] whitespace-pre-wrap">{step.body_html}</pre>
+                            </div>
+                          )}
+                        </div>
+                      )}
+                    </div>
+                  );
+                })}
+              </div>
+            )}
+          </div>
+        )}
+
+        {/* ═══ CLIENTES TAB ═══ */}
+        {tab === "clientes" && (
+          <div>
+            <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4 mb-6">
+              <div className="flex items-center gap-3">
+                <h2 className="font-[var(--font-noto-serif)] text-[#002045] text-xl font-normal">Lista de Clientes</h2>
+                {!clientsLoading && (
+                  <span className="bg-[#eef2f8] text-[#002045] text-[10px] font-bold font-[var(--font-inter)] tracking-wider px-2 py-0.5">
+                    {clients.length}
+                  </span>
+                )}
+              </div>
+              <button
+                onClick={exportClients}
+                disabled={clientsExporting}
+                className="bg-[#002045] text-white text-xs tracking-[0.12em] uppercase font-bold font-[var(--font-inter)] px-5 py-2.5 hover:bg-[#1a365d] transition-colors disabled:opacity-50"
+              >
+                {clientsExporting ? "Exportando..." : "Exportar CSV"}
+              </button>
+            </div>
+
+            {clientsLoading ? (
+              <p className="text-[#74777f] text-sm font-[var(--font-inter)]">Carregando...</p>
+            ) : clients.length === 0 ? (
+              <div className="bg-white border border-[#e2e2e2] px-6 py-12 text-center">
+                <p className="text-[#74777f] text-sm font-[var(--font-inter)]">Nenhum cliente registrado ainda.</p>
+              </div>
+            ) : (
+              <>
+                {/* Desktop table */}
+                <div className="hidden sm:block bg-white border border-[#e2e2e2] overflow-x-auto">
+                  <table className="w-full text-sm font-[var(--font-inter)]">
+                    <thead>
+                      <tr className="border-b border-[#e2e2e2]">
+                        {["Data", "Nome", "Email", "Espaço", "Modelo", "Placas", "Total", "Parceiro", "Passo", "Status", "Próx. Email"].map((h) => (
+                          <th key={h} className="text-left px-4 py-3 text-[10px] tracking-[0.1em] uppercase font-bold text-[#74777f] whitespace-nowrap">{h}</th>
+                        ))}
+                      </tr>
+                    </thead>
+                    <tbody>
+                      {clients.map((c) => {
+                        const statusCls =
+                          c.status === "active"
+                            ? "bg-yellow-100 text-yellow-800"
+                            : c.status === "completed"
+                            ? "bg-green-100 text-green-800"
+                            : "bg-red-100 text-red-700";
+                        const statusLabel =
+                          c.status === "active" ? "Ativo" : c.status === "completed" ? "Concluído" : c.status === "cancelled" ? "Cancelado" : c.status;
+                        return (
+                          <tr key={c.id} className="border-b border-[#f0f0f0] hover:bg-[#fafafa]">
+                            <td className="px-4 py-3 text-xs text-[#43474e] whitespace-nowrap">{new Date(c.created_at).toLocaleDateString("pt-BR")}</td>
+                            <td className="px-4 py-3 text-xs text-[#002045] font-semibold whitespace-nowrap">{c.client_name}</td>
+                            <td className="px-4 py-3 text-xs text-[#74777f]">{c.client_email}</td>
+                            <td className="px-4 py-3 text-xs text-[#43474e]">{c.space || "—"}</td>
+                            <td className="px-4 py-3 text-xs text-[#43474e]">{c.model}</td>
+                            <td className="px-4 py-3 text-xs text-[#43474e]">{c.plates}</td>
+                            <td className="px-4 py-3 text-xs text-[#002045] font-semibold whitespace-nowrap">
+                              {c.total != null ? c.total.toLocaleString("pt-BR", { style: "currency", currency: "BRL", maximumFractionDigits: 0 }) : "—"}
+                            </td>
+                            <td className="px-4 py-3 text-xs text-[#43474e]">{c.partner_name}</td>
+                            <td className="px-4 py-3 text-xs text-[#43474e] text-center">{c.current_step}</td>
+                            <td className="px-4 py-3">
+                              <span className={`text-[10px] font-bold px-2 py-0.5 ${statusCls}`}>{statusLabel}</span>
+                            </td>
+                            <td className="px-4 py-3 text-xs text-[#74777f] whitespace-nowrap">
+                              {c.next_email_at ? new Date(c.next_email_at).toLocaleDateString("pt-BR") : "—"}
+                            </td>
+                          </tr>
+                        );
+                      })}
+                    </tbody>
+                  </table>
+                </div>
+
+                {/* Mobile cards */}
+                <div className="sm:hidden space-y-3">
+                  {clients.map((c) => {
+                    const statusCls =
+                      c.status === "active"
+                        ? "bg-yellow-100 text-yellow-800"
+                        : c.status === "completed"
+                        ? "bg-green-100 text-green-800"
+                        : "bg-red-100 text-red-700";
+                    const statusLabel =
+                      c.status === "active" ? "Ativo" : c.status === "completed" ? "Concluído" : c.status === "cancelled" ? "Cancelado" : c.status;
+                    return (
+                      <div key={c.id} className="bg-white border border-[#e2e2e2] px-5 py-4">
+                        <div className="flex items-start justify-between mb-2">
+                          <div>
+                            <p className="font-semibold text-[#002045] text-sm font-[var(--font-inter)]">{c.client_name}</p>
+                            <p className="text-xs text-[#74777f] font-[var(--font-inter)]">{c.client_email}</p>
+                          </div>
+                          <span className={`text-[10px] font-bold px-2 py-0.5 flex-shrink-0 ml-2 ${statusCls}`}>{statusLabel}</span>
+                        </div>
+                        <div className="grid grid-cols-2 gap-x-4 gap-y-1 text-xs font-[var(--font-inter)] text-[#43474e]">
+                          <span><span className="text-[#74777f]">Modelo:</span> {c.model}</span>
+                          <span><span className="text-[#74777f]">Placas:</span> {c.plates}</span>
+                          <span><span className="text-[#74777f]">Total:</span> {c.total != null ? c.total.toLocaleString("pt-BR", { style: "currency", currency: "BRL", maximumFractionDigits: 0 }) : "—"}</span>
+                          <span><span className="text-[#74777f]">Passo:</span> {c.current_step}</span>
+                          <span><span className="text-[#74777f]">Parceiro:</span> {c.partner_name}</span>
+                          <span><span className="text-[#74777f]">Cadastro:</span> {new Date(c.created_at).toLocaleDateString("pt-BR")}</span>
+                        </div>
+                      </div>
+                    );
+                  })}
+                </div>
+              </>
             )}
           </div>
         )}

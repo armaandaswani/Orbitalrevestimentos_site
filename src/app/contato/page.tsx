@@ -155,7 +155,7 @@ export default function ContatoPage() {
   const stepRef = useRef<HTMLDivElement>(null);
   const nextBtnRef = useRef<HTMLButtonElement>(null);
 
-  const [step, setStep] = useState<1 | 2 | 3 | 4>(1);
+  const [step, setStep] = useState<1 | 2 | 3 | 4 | 5>(1);
   const [selectedSpace, setSelectedSpace] = useState<Space | null>(null);
   const [selectedLine, setSelectedLine] = useState<ProductLine | null>(null);
   const [selectedProduct, setSelectedProduct] = useState<Product | null>(null);
@@ -164,7 +164,9 @@ export default function ContatoPage() {
   const [height, setHeight] = useState("");
   const [sqmInput, setSqmInput] = useState("");
   const [clientName, setClientName] = useState("");
-  const [clientPhone, setClientPhone] = useState("");
+  const [clientEmail, setClientEmail] = useState("");
+  const [simSubmitting, setSimSubmitting] = useState(false);
+  const [simSubmitted, setSimSubmitted] = useState(false);
   const [couponCode, setCouponCode] = useState("");
   const [couponData, setCouponData] = useState<CouponData | null>(null);
   const [couponValidating, setCouponValidating] = useState(false);
@@ -245,7 +247,7 @@ export default function ContatoPage() {
             : null,
           couponData ? `*Preço com desconto:* ${fmt(orbMaterialDiscounted)}` : null,
           clientName ? `*Cliente:* ${clientName}` : null,
-          clientPhone ? `*WhatsApp do cliente:* ${clientPhone}` : null,
+          clientEmail ? `*E-mail do cliente:* ${clientEmail}` : null,
         ].filter(Boolean).join("\n")
       : "Olá! Tenho interesse no PFB Orbital e gostaria de fazer um orçamento.";
 
@@ -255,7 +257,7 @@ export default function ContatoPage() {
     }, 50);
   }
 
-  function goToStep(n: 1 | 2 | 3 | 4) {
+  function goToStep(n: 1 | 2 | 3 | 4 | 5) {
     setStep(n);
     setShowResult(false);
     scrollToSimulator();
@@ -291,7 +293,8 @@ export default function ContatoPage() {
     setHeight("");
     setSqmInput("");
     setClientName("");
-    setClientPhone("");
+    setClientEmail("");
+    setSimSubmitted(false);
     setCouponCode("");
     setCouponData(null);
     setCouponError("");
@@ -324,41 +327,79 @@ export default function ContatoPage() {
     }
   }
 
-  function logCouponUse() {
-    if (!couponData || !selectedProduct || !selectedSpace) return;
+  async function handleSubmitAndShow() {
+    if (!clientName.trim() || !clientEmail.trim()) return;
+    if (couponCode.trim() && !couponData) await validateCoupon();
+
+    setSimSubmitting(true);
     try {
-      fetch("/api/coupons/use", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
-          partner_id: couponData.id,
-          coupon_code: couponData.coupon_code,
-          space: selectedSpace.label,
-          product_name: selectedProduct.name,
-          product_code: selectedProduct.code,
-          area_m2: m2,
-          plates,
-          material_total: orbMaterialTotal,
-          material_discounted: orbMaterialDiscounted,
-          discount_applied: discountAmount,
-          commission_owed: commissionOwed,
-          architect_name: clientName || null,
-        }),
-      });
-    } catch {
-      // fire and forget
+      // Log coupon use if a coupon was applied — capture the ID for the drip sequence
+      let couponUseId: string | null = null;
+      if (couponData && selectedProduct && selectedSpace) {
+        try {
+          const res = await fetch("/api/coupons/use", {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({
+              partner_id: couponData.id,
+              coupon_code: couponData.coupon_code,
+              space: selectedSpace.label,
+              product_name: selectedProduct.name,
+              product_code: selectedProduct.code,
+              area_m2: m2,
+              plates,
+              material_total: orbMaterialTotal,
+              material_discounted: orbMaterialDiscounted,
+              discount_applied: discountAmount,
+              commission_owed: commissionOwed,
+              architect_name: clientName.trim(),
+            }),
+          });
+          if (res.ok) {
+            const d = await res.json();
+            couponUseId = d.id ?? null;
+          }
+        } catch { /* non-fatal */ }
+      }
+
+      // Start the 7-email drip sequence
+      try {
+        await fetch("/api/client-email-sequences", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({
+            coupon_use_id: couponUseId,
+            client_name: clientName.trim(),
+            client_email: clientEmail.trim(),
+            space: selectedSpace?.label ?? null,
+            model: selectedProduct?.linha ?? "Classic",
+            plates,
+            area_m2: parseFloat(m2.toFixed(2)),
+            total: orbMaterialDiscounted || orbMaterialTotal,
+            partner_name: couponData?.partner_name ?? "Orbital",
+          }),
+        });
+      } catch { /* non-fatal */ }
+
+      setSimSubmitted(true);
+    } finally {
+      setSimSubmitting(false);
     }
+
+    showResults();
   }
 
   const canAdvance1 = selectedSpace !== null && selectedSpace.viability !== "no";
   const canAdvance2 = selectedProduct !== null;
   const canCalculate = m2 > 0;
+  const canAdvance4 = clientName.trim().length > 0 && clientEmail.trim().length > 0;
 
   const STEPS = [
     { n: 1 as const, label: "Espaço" },
     { n: 2 as const, label: "Modelo" },
     { n: 3 as const, label: "Dimensões" },
-    { n: 4 as const, label: "Cupom & Cliente" },
+    { n: 4 as const, label: "Seus dados" },
+    { n: 5 as const, label: "Cupom" },
   ];
 
   return (
@@ -456,7 +497,7 @@ export default function ContatoPage() {
                     </span>
                   </div>
                 </button>
-                {i < 3 && (
+                {i < 4 && (
                   <div
                     className={`flex-1 h-px mx-2 min-w-[12px] max-w-[60px] ${
                       n < step ? "bg-[#3b6934]" : "bg-[#d8d8d8]"
@@ -832,15 +873,87 @@ export default function ContatoPage() {
             </div>
           )}
 
-          {/* ── Step 4: Cupom & Cliente ──────────────────────────────────────── */}
+          {/* ── Step 4: Seus dados (required) ──────────────────────────────── */}
           {step === 4 && (
             <div className="bg-white border border-[#e2e2e2] p-6 lg:p-10">
-              {/* Coupon section */}
+              <h3 className="font-[var(--font-noto-serif)] text-[#002045] text-xl font-normal mb-2">
+                Para quem é este projeto?
+              </h3>
+              <p className="text-[#74777f] text-sm font-[var(--font-inter)] mb-6">
+                Preencha seus dados para receber o orçamento detalhado por e-mail.
+              </p>
+
+              <div className="max-w-md space-y-5 mb-8">
+                <div>
+                  <label className="block text-[10px] tracking-[0.15em] uppercase font-bold font-[var(--font-inter)] text-[#74777f] mb-2">
+                    Nome completo <span className="text-red-500">*</span>
+                  </label>
+                  <input
+                    type="text"
+                    required
+                    autoFocus
+                    value={clientName}
+                    onChange={(e) => setClientName(e.target.value)}
+                    onKeyDown={(e) => { if (e.key === "Enter") { e.preventDefault(); (document.getElementById("contato-email-input") as HTMLInputElement)?.focus(); } }}
+                    placeholder="ex: João Silva"
+                    className="w-full border border-[#e2e2e2] px-4 py-3 text-sm font-[var(--font-inter)] text-[#002045] focus:outline-none focus:border-[#002045] transition-colors"
+                  />
+                </div>
+                <div>
+                  <label className="block text-[10px] tracking-[0.15em] uppercase font-bold font-[var(--font-inter)] text-[#74777f] mb-2">
+                    E-mail <span className="text-red-500">*</span>
+                  </label>
+                  <input
+                    id="contato-email-input"
+                    type="email"
+                    required
+                    value={clientEmail}
+                    onChange={(e) => setClientEmail(e.target.value)}
+                    placeholder="ex: joao@email.com"
+                    className="w-full border border-[#e2e2e2] px-4 py-3 text-sm font-[var(--font-inter)] text-[#002045] focus:outline-none focus:border-[#002045] transition-colors"
+                  />
+                  <p className="text-[#74777f] text-[10px] font-[var(--font-inter)] mt-1.5">
+                    Você receberá o orçamento detalhado e acompanhamento por e-mail.
+                  </p>
+                </div>
+              </div>
+
+              <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3">
+                <button
+                  onClick={() => goToStep(3)}
+                  className="flex items-center gap-1.5 text-xs tracking-[0.1em] uppercase font-semibold font-[var(--font-inter)] text-[#74777f] hover:text-[#002045] transition-colors"
+                >
+                  <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5">
+                    <path d="M19 12H5M12 5l-7 7 7 7" />
+                  </svg>
+                  Voltar
+                </button>
+                <button
+                  onClick={() => canAdvance4 && goToStep(5)}
+                  disabled={!canAdvance4}
+                  className={`w-full sm:w-auto inline-flex items-center justify-center gap-2 text-xs tracking-[0.12em] uppercase font-bold font-[var(--font-inter)] px-8 py-4 transition-colors ${
+                    canAdvance4
+                      ? "bg-[#002045] text-white hover:bg-[#1a365d]"
+                      : "bg-[#e2e2e2] text-[#aaaaaa] cursor-not-allowed"
+                  }`}
+                >
+                  Próximo
+                  <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5">
+                    <path d="M5 12h14M12 5l7 7-7 7" />
+                  </svg>
+                </button>
+              </div>
+            </div>
+          )}
+
+          {/* ── Step 5: Cupom (optional) ────────────────────────────────────── */}
+          {step === 5 && (
+            <div className="bg-white border border-[#e2e2e2] p-6 lg:p-10">
               <h3 className="font-[var(--font-noto-serif)] text-[#002045] text-xl font-normal mb-2">
                 Tem um código de parceiro?
               </h3>
               <p className="text-[#74777f] text-sm font-[var(--font-inter)] mb-6">
-                Opcional — insira o código recebido do seu arquiteto, designer ou indicador.
+                Opcional — insira o código recebido do seu arquiteto, designer ou indicador para aplicar o desconto.
               </p>
 
               <div className="max-w-sm mb-8">
@@ -850,6 +963,7 @@ export default function ContatoPage() {
                 <div className="flex gap-2">
                   <input
                     type="text"
+                    autoFocus
                     value={couponCode}
                     onChange={(e) => {
                       setCouponCode(e.target.value.toUpperCase());
@@ -890,49 +1004,15 @@ export default function ContatoPage() {
                     </p>
                   </div>
                 )}
-              </div>
 
-              {/* Divider */}
-              <div className="border-t border-[#e2e2e2] mb-8" />
-
-              {/* Client section */}
-              <h3 className="font-[var(--font-noto-serif)] text-[#002045] text-xl font-normal mb-2">
-                Para quem é este projeto?
-              </h3>
-              <p className="text-[#74777f] text-sm font-[var(--font-inter)] mb-6">
-                Seus dados para envio do orçamento.
-              </p>
-
-              <div className="max-w-md space-y-5 mb-8">
-                <div>
-                  <label className="block text-[10px] tracking-[0.15em] uppercase font-bold font-[var(--font-inter)] text-[#74777f] mb-2">
-                    Nome completo
-                  </label>
-                  <input
-                    type="text"
-                    value={clientName}
-                    onChange={(e) => setClientName(e.target.value)}
-                    placeholder="ex: João Silva"
-                    className="w-full border border-[#e2e2e2] px-4 py-3 text-sm font-[var(--font-inter)] text-[#002045] focus:outline-none focus:border-[#002045] transition-colors"
-                  />
-                </div>
-                <div>
-                  <label className="block text-[10px] tracking-[0.15em] uppercase font-bold font-[var(--font-inter)] text-[#74777f] mb-2">
-                    WhatsApp
-                  </label>
-                  <input
-                    type="tel"
-                    value={clientPhone}
-                    onChange={(e) => setClientPhone(e.target.value)}
-                    placeholder="ex: (92) 99999-9999"
-                    className="w-full border border-[#e2e2e2] px-4 py-3 text-sm font-[var(--font-inter)] text-[#002045] focus:outline-none focus:border-[#002045] transition-colors"
-                  />
-                </div>
+                <p className="text-[#74777f] text-[10px] font-[var(--font-inter)] mt-3">
+                  Não tem código? Sem problema — avance sem ele.
+                </p>
               </div>
 
               <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3">
                 <button
-                  onClick={() => goToStep(3)}
+                  onClick={() => goToStep(4)}
                   className="flex items-center gap-1.5 text-xs tracking-[0.1em] uppercase font-semibold font-[var(--font-inter)] text-[#74777f] hover:text-[#002045] transition-colors"
                 >
                   <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5">
@@ -941,18 +1021,16 @@ export default function ContatoPage() {
                   Voltar
                 </button>
                 <button
-                  onClick={async () => {
-                    if (couponCode.trim() && !couponData) await validateCoupon();
-                    showResults();
-                    logCouponUse();
-                  }}
-                  disabled={couponValidating}
+                  onClick={handleSubmitAndShow}
+                  disabled={couponValidating || simSubmitting}
                   className="w-full sm:w-auto inline-flex items-center justify-center gap-2 text-xs tracking-[0.12em] uppercase font-bold font-[var(--font-inter)] px-8 py-4 bg-[#002045] text-white hover:bg-[#1a365d] transition-colors disabled:opacity-50"
                 >
-                  Ver simulação
-                  <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5">
-                    <path d="M5 12h14M12 5l7 7-7 7" />
-                  </svg>
+                  {simSubmitting ? "Enviando..." : "Ver minha simulação"}
+                  {!simSubmitting && (
+                    <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5">
+                      <path d="M5 12h14M12 5l7 7-7 7" />
+                    </svg>
+                  )}
                 </button>
               </div>
             </div>
@@ -962,6 +1040,16 @@ export default function ContatoPage() {
           {showResult && selectedProduct && selectedSpace && m2 > 0 && (
             <div className="mt-0" ref={resultsRef}>
 
+              {simSubmitted && clientEmail && (
+                <div className="bg-[#f0f9eb] border border-[#3b6934]/40 px-5 py-4 flex gap-3 items-center">
+                  <svg className="flex-shrink-0 text-[#3b6934]" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                    <path d="M20 6L9 17l-5-5" />
+                  </svg>
+                  <p className="text-[#3b6934] text-xs font-[var(--font-inter)]">
+                    Orçamento enviado para <strong>{clientEmail}</strong>. Você receberá acompanhamento por e-mail.
+                  </p>
+                </div>
+              )}
               <div className="bg-[#fffbea] border border-[#e6c84a] px-5 py-4 flex gap-3 items-start">
                 <svg className="flex-shrink-0 mt-0.5 text-[#a07a00]" width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
                   <circle cx="12" cy="12" r="10"/><path d="M12 8v4m0 4h.01"/>
@@ -1064,7 +1152,7 @@ export default function ContatoPage() {
                     <div>
                       <p className="text-[#74777f] text-[10px] tracking-[0.1em] uppercase font-semibold font-[var(--font-inter)] mb-0.5">Cliente</p>
                       <p className="text-[#002045] text-sm font-semibold font-[var(--font-inter)]">{clientName}</p>
-                      {clientPhone && <p className="text-[#74777f] text-[10px] font-[var(--font-inter)]">{clientPhone}</p>}
+                      {clientEmail && <p className="text-[#74777f] text-[10px] font-[var(--font-inter)]">{clientEmail}</p>}
                     </div>
                   )}
                 </div>
