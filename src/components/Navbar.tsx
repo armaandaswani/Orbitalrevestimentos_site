@@ -22,7 +22,7 @@ export default function Navbar() {
 
   return (
     <header className="fixed top-0 w-full z-50 bg-white/95 backdrop-blur-sm border-b border-[#e8e8e8] shadow-[0_1px_0_0_rgba(0,0,0,0.04)]">
-      <div className="grid grid-cols-3 items-center h-20 px-8 lg:px-16 max-w-[1280px] mx-auto">
+      <div className="grid grid-cols-[auto_1fr_auto] items-center h-20 px-8 lg:px-16 max-w-[1280px] mx-auto gap-x-8">
         {/* Logo — left third */}
         <div className="flex items-center">
           <Link
@@ -35,7 +35,7 @@ export default function Navbar() {
         </div>
 
         {/* Desktop Nav — center third */}
-        <nav className="hidden md:flex items-center justify-center gap-8">
+        <nav className="hidden md:flex items-center justify-center gap-6">
           {navLinks.map(({ href, label }) => {
             const active = pathname === href;
             return (
