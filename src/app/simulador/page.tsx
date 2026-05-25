@@ -1,6 +1,7 @@
 "use client";
 
 import React, { useState, useRef, useEffect } from "react";
+import { useSearchParams } from "next/navigation";
 import Image from "next/image";
 import Link from "next/link";
 import MdfComparison from "@/components/MdfComparison";
@@ -149,6 +150,7 @@ function WaIcon({ size = 15 }: { size?: number }) {
 }
 
 export default function ContatoPage() {
+  const searchParams = useSearchParams();
   const simulatorRef = useRef<HTMLElement>(null);
   const productsRef = useRef<HTMLDivElement>(null);
   const resultsRef = useRef<HTMLDivElement>(null);
@@ -285,6 +287,11 @@ export default function ContatoPage() {
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [selectedSpace]);
+
+  useEffect(() => {
+    const cupom = searchParams.get("cupom");
+    if (cupom) setCouponCode(cupom.toUpperCase());
+  }, [searchParams]);
 
   function reset() {
     setStep(1);
