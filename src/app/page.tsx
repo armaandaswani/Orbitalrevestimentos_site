@@ -202,17 +202,12 @@ export default function Home() {
             >
               Ver Acabamentos
             </Link>
-            <a
-              href={CATALOGUE_URL}
-              target="_blank"
-              rel="noopener noreferrer"
+            <Link
+              href="/contato"
               className="w-full sm:w-auto inline-flex items-center justify-center gap-2 border border-white/60 text-white text-xs tracking-[0.12em] uppercase font-bold font-[var(--font-inter)] px-8 py-4 hover:bg-white/10 transition-colors"
             >
-              <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-                <path d="M21 15v4a2 2 0 01-2 2H5a2 2 0 01-2-2v-4M7 10l5 5 5-5M12 15V3" />
-              </svg>
-              Baixar Catálogo
-            </a>
+              Simulação de Orçamento
+            </Link>
           </div>
         </div>
       </section>
