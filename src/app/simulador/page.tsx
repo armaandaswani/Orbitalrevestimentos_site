@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useState, useRef, useEffect } from "react";
+import React, { useState, useRef, useEffect, Suspense } from "react";
 import { useSearchParams } from "next/navigation";
 import Image from "next/image";
 import Link from "next/link";
@@ -149,7 +149,7 @@ function WaIcon({ size = 15 }: { size?: number }) {
   );
 }
 
-export default function ContatoPage() {
+function SimuladorInner() {
   const searchParams = useSearchParams();
   const simulatorRef = useRef<HTMLElement>(null);
   const productsRef = useRef<HTMLDivElement>(null);
@@ -1724,5 +1724,13 @@ export default function ContatoPage() {
         </div>
       )}
     </div>
+  );
+}
+
+export default function SimuladorPage() {
+  return (
+    <Suspense>
+      <SimuladorInner />
+    </Suspense>
   );
 }
