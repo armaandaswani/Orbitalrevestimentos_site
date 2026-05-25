@@ -24,7 +24,11 @@ export default function Navbar() {
     <header className="fixed top-0 w-full z-50 bg-white/95 backdrop-blur-sm border-b border-[#e8e8e8] shadow-[0_1px_0_0_rgba(0,0,0,0.04)]">
       <div className="flex items-center justify-between h-20 px-8 lg:px-16 max-w-[1280px] mx-auto">
         {/* Logo */}
-        <Link href="/" className="text-xl font-bold tracking-[0.22em] text-[#002045] font-[var(--font-noto-serif)]">
+        <Link
+          href="/"
+          onClick={() => window.scrollTo({ top: 0, behavior: "smooth" })}
+          className="text-xl font-bold tracking-[0.22em] text-[#002045] font-[var(--font-noto-serif)]"
+        >
           ORBITAL
         </Link>
 
