@@ -30,6 +30,7 @@ interface CouponUse {
   architect_name: string | null;
   sale_status: "em_orcamento" | "concluido" | "cancelado" | null;
   created_at: string;
+  partner_commission_paid_at: string | null;
 }
 
 function fmt(n: number) {
@@ -127,7 +128,9 @@ export default function ParceiroPage() {
   const [profError, setProfError] = useState("");
 
   // ── Portal tab state ───────────────────────────────────────────────────────
-  const [portalTab, setPortalTab] = useState<"portal" | "special">("portal");
+  const [portalTab, setPortalTab] = useState<"portal" | "commissions" | "special">("portal");
+  const [copied, setCopied] = useState(false);
+  const [hasNewUses, setHasNewUses] = useState(false);
 
   // ── Special table / simulator state ───────────────────────────────────────
   const [sqLinha, setSqLinha] = useState<"Classic" | "Brilliance" | "Elegance" | "">("");
@@ -225,6 +228,28 @@ export default function ParceiroPage() {
       if (pollingRef.current) { clearInterval(pollingRef.current); pollingRef.current = null; }
     };
   }, [partner?.coupon_code, fetchUses]);
+
+  // ── "Novo" badge: watch uses for new entries since last visit ─────────────
+  useEffect(() => {
+    if (!partner || uses.length === 0) return;
+    try {
+      const key = `orbital_partner_last_visit_${partner.coupon_code}`;
+      const lastVisit = localStorage.getItem(key);
+      if (lastVisit) {
+        const hasNew = uses.some(u => u.created_at > lastVisit);
+        setHasNewUses(hasNew);
+      }
+    } catch { /* ignore */ }
+  }, [uses, partner]);
+
+  function markPortalVisited() {
+    if (!partner) return;
+    try {
+      const key = `orbital_partner_last_visit_${partner.coupon_code}`;
+      localStorage.setItem(key, new Date().toISOString());
+      setHasNewUses(false);
+    } catch { /* ignore */ }
+  }
 
   // ── Auto-focus calc input when mode changes (only once product chosen) ────
   useEffect(() => {
@@ -742,24 +767,32 @@ export default function ParceiroPage() {
         </button>
       </div>
 
-      {/* Tab bar — only shown when partner has special table access */}
-      {partner.has_special_table && (
-        <div className="bg-white border-b border-[#e2e2e2]">
-          <div className="max-w-5xl mx-auto px-4 sm:px-8">
-            <div className="flex gap-1">
-              {(["portal", "special"] as const).map((t) => (
-                <button
-                  key={t}
-                  onClick={() => setPortalTab(t)}
-                  className={`px-6 py-3 text-xs tracking-[0.1em] uppercase font-bold font-[var(--font-inter)] transition-colors border-b-2 -mb-px ${portalTab === t ? "border-[#002045] text-[#002045]" : "border-transparent text-[#74777f] hover:text-[#002045]"}`}
-                >
-                  {t === "portal" ? "Meu Portal" : "Tabela Especial ★"}
-                </button>
-              ))}
-            </div>
+      {/* Tab bar — always visible */}
+      <div className="bg-white border-b border-[#e2e2e2]">
+        <div className="max-w-5xl mx-auto px-4 sm:px-8">
+          <div className="flex gap-0">
+            {([
+              { key: "portal", label: "Meu Portal" },
+              { key: "commissions", label: "Comissões" },
+              ...(partner.has_special_table ? [{ key: "special", label: "Tabela Especial ★" }] : []),
+            ] as { key: "portal" | "commissions" | "special"; label: string }[]).map((t) => (
+              <button
+                key={t.key}
+                onClick={() => {
+                  setPortalTab(t.key);
+                  if (t.key === "portal") markPortalVisited();
+                }}
+                className={`relative px-6 py-3 text-xs tracking-[0.1em] uppercase font-bold font-[var(--font-inter)] transition-colors border-b-2 -mb-px ${portalTab === t.key ? "border-[#002045] text-[#002045]" : "border-transparent text-[#74777f] hover:text-[#002045]"}`}
+              >
+                {t.label}
+                {t.key === "portal" && hasNewUses && (
+                  <span className="absolute top-2 right-2 w-2 h-2 bg-red-500 rounded-full" />
+                )}
+              </button>
+            ))}
           </div>
         </div>
-      )}
+      </div>
 
       {/* ── Meu Portal tab ── */}
       {portalTab === "portal" && (
@@ -779,6 +812,26 @@ export default function ParceiroPage() {
                 <p>Compartilhe seu cupom com clientes para aplicar o desconto automaticamente.</p>
               </div>
             </div>
+          </div>
+
+          {/* Referral link */}
+          <div className="bg-white border border-[#e2e2e2] px-5 py-4 mb-4 flex flex-col sm:flex-row sm:items-center gap-3">
+            <div className="flex-1 min-w-0">
+              <p className="text-[#74777f] text-[9px] tracking-[0.15em] uppercase font-bold font-[var(--font-inter)] mb-1">Seu link de indicação</p>
+              <p className="text-[#43474e] text-xs font-[var(--font-inter)] truncate">
+                orbitalrevestimentos.com.br/contato?cupom={partner.coupon_code}
+              </p>
+            </div>
+            <button
+              onClick={() => {
+                navigator.clipboard.writeText(`https://orbitalrevestimentos.com.br/contato?cupom=${partner.coupon_code}`);
+                setCopied(true);
+                setTimeout(() => setCopied(false), 2000);
+              }}
+              className={`flex-shrink-0 text-xs tracking-[0.1em] uppercase font-bold font-[var(--font-inter)] px-4 py-2 transition-colors ${copied ? "bg-green-600 text-white" : "bg-[#002045] text-white hover:bg-[#1a365d]"}`}
+            >
+              {copied ? "Copiado! ✓" : "Copiar link"}
+            </button>
           </div>
 
           {/* Change password section */}
@@ -902,30 +955,26 @@ export default function ParceiroPage() {
           </div>
 
           {/* Summary cards */}
-          <div className="grid grid-cols-1 sm:grid-cols-3 gap-4 mb-8">
-            <div className="bg-white border border-[#e2e2e2] px-6 py-5">
-              <p className="text-[#74777f] text-[10px] tracking-[0.15em] uppercase font-bold font-[var(--font-inter)] mb-1">
-                Total de usos
-              </p>
-              <p className="font-[var(--font-noto-serif)] text-[#002045] text-3xl font-normal">
-                {uses.length}
+          <div className="grid grid-cols-2 sm:grid-cols-4 gap-3 mb-6">
+            <div className="bg-white border border-[#e2e2e2] px-4 py-4">
+              <p className="text-[#74777f] text-[9px] tracking-[0.15em] uppercase font-bold font-[var(--font-inter)] mb-1">Em orçamento</p>
+              <p className="font-[var(--font-noto-serif)] text-yellow-700 text-2xl font-normal">
+                {uses.filter((u) => u.sale_status === "em_orcamento" || u.sale_status === null).length}
               </p>
             </div>
-            <div className="bg-white border border-[#e2e2e2] px-6 py-5">
-              <p className="text-[#74777f] text-[10px] tracking-[0.15em] uppercase font-bold font-[var(--font-inter)] mb-1">
-                Vendas concluídas
-              </p>
-              <p className="font-[var(--font-noto-serif)] text-[#002045] text-3xl font-normal">
+            <div className="bg-white border border-[#e2e2e2] px-4 py-4">
+              <p className="text-[#74777f] text-[9px] tracking-[0.15em] uppercase font-bold font-[var(--font-inter)] mb-1">Vendas concluídas</p>
+              <p className="font-[var(--font-noto-serif)] text-[#002045] text-2xl font-normal">
                 {uses.filter((u) => u.sale_status === "concluido").length}
               </p>
             </div>
-            <div className="bg-white border border-[#e2e2e2] px-6 py-5">
-              <p className="text-[#74777f] text-[10px] tracking-[0.15em] uppercase font-bold font-[var(--font-inter)] mb-1">
-                Em orçamento
-              </p>
-              <p className="font-[var(--font-noto-serif)] text-yellow-700 text-3xl font-normal">
-                {uses.filter((u) => u.sale_status === "em_orcamento" || u.sale_status === null).length}
-              </p>
+            <div className="bg-white border border-[#e2e2e2] px-4 py-4">
+              <p className="text-[#74777f] text-[9px] tracking-[0.15em] uppercase font-bold font-[var(--font-inter)] mb-1">Comissão confirmada</p>
+              <p className="font-[var(--font-noto-serif)] text-green-700 text-2xl font-normal">{fmt(totalCommission)}</p>
+            </div>
+            <div className="bg-white border border-[#e2e2e2] px-4 py-4">
+              <p className="text-[#74777f] text-[9px] tracking-[0.15em] uppercase font-bold font-[var(--font-inter)] mb-1">Comissão pendente</p>
+              <p className="font-[var(--font-noto-serif)] text-amber-600 text-2xl font-normal">{fmt(pendingCommission)}</p>
             </div>
           </div>
 
@@ -978,14 +1027,6 @@ export default function ParceiroPage() {
                           <p className="text-[#74777f] text-[9px] uppercase tracking-wider font-bold font-[var(--font-inter)]">Placas</p>
                           <p className="text-[#43474e] text-xs font-[var(--font-inter)] mt-0.5">{String(u.plates ?? "—")}</p>
                         </div>
-                        {st !== "cancelado" && u.commission_owed != null && (
-                          <div className="col-span-2">
-                            <p className="text-[#74777f] text-[9px] uppercase tracking-wider font-bold font-[var(--font-inter)]">Comissão</p>
-                            <p className={`text-xs font-semibold mt-0.5 ${st === "concluido" ? "text-green-700" : "text-yellow-700"}`}>
-                              {fmt(u.commission_owed)}{st !== "concluido" ? " (pend.)" : ""}
-                            </p>
-                          </div>
-                        )}
                       </div>
                     </div>
                   );
@@ -996,7 +1037,7 @@ export default function ParceiroPage() {
                 <table className="w-full text-sm font-[var(--font-inter)]">
                   <thead>
                     <tr className="border-b border-[#e2e2e2]">
-                      {["Data", "Cliente", "Produto", "Espaço", "Placas", "Comissão", "Status"].map((h) => (
+                      {["Data", "Cliente", "Produto", "Espaço", "Placas", "Status"].map((h) => (
                         <th key={h} className="text-left px-4 py-3 text-[10px] tracking-[0.1em] uppercase font-bold text-[#74777f] whitespace-nowrap">
                           {h}
                         </th>
@@ -1019,15 +1060,6 @@ export default function ParceiroPage() {
                           </td>
                           <td className="px-4 py-3 text-xs text-[#43474e]">{u.space || "—"}</td>
                           <td className="px-4 py-3 text-xs text-[#43474e]">{u.plates ?? "—"}</td>
-                          <td className="px-4 py-3 text-xs font-semibold">
-                            {st === "cancelado"
-                              ? <span className="text-[#74777f] font-normal">—</span>
-                              : st === "concluido" && u.commission_owed != null
-                              ? <span className="text-green-700 font-bold">{fmt(u.commission_owed)}</span>
-                              : u.commission_owed != null
-                              ? <span className="text-yellow-700">{fmt(u.commission_owed)} (pend.)</span>
-                              : "—"}
-                          </td>
                           <td className="px-4 py-3">
                             <span className={`inline-flex items-center gap-1.5 px-2.5 py-1 text-[10px] font-bold tracking-wide rounded-full ${stMeta.cls}`}>
                               <span className={`w-1.5 h-1.5 rounded-full ${
@@ -1044,6 +1076,63 @@ export default function ParceiroPage() {
               </div>
             </>
           )}
+        </div>
+      )}
+
+      {/* ── Comissões tab ── */}
+      {portalTab === "commissions" && (
+        <div className="max-w-5xl mx-auto px-4 sm:px-8 py-8">
+          {/* Summary */}
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 mb-8">
+            <div className="bg-white border border-[#e2e2e2] px-6 py-5">
+              <p className="text-[#74777f] text-[10px] tracking-[0.15em] uppercase font-bold font-[var(--font-inter)] mb-1">Comissão confirmada</p>
+              <p className="font-[var(--font-noto-serif)] text-green-700 text-3xl font-normal">{fmt(totalCommission)}</p>
+              <p className="text-[#74777f] text-xs font-[var(--font-inter)] mt-1">em {concludedUses.length} venda{concludedUses.length !== 1 ? "s" : ""} concluída{concludedUses.length !== 1 ? "s" : ""}</p>
+            </div>
+            <div className="bg-white border border-[#e2e2e2] px-6 py-5">
+              <p className="text-[#74777f] text-[10px] tracking-[0.15em] uppercase font-bold font-[var(--font-inter)] mb-1">Comissão pendente</p>
+              <p className="font-[var(--font-noto-serif)] text-amber-600 text-3xl font-normal">{fmt(pendingCommission)}</p>
+              <p className="text-[#74777f] text-xs font-[var(--font-inter)] mt-1">aguardando conclusão das vendas</p>
+            </div>
+          </div>
+
+          {/* Commission card list — no table, no horizontal scroll */}
+          <h2 className="font-[var(--font-noto-serif)] text-[#002045] text-xl font-normal mb-4">Detalhamento</h2>
+          {uses.filter(u => u.sale_status !== "cancelado" && u.commission_owed != null).length === 0 ? (
+            <div className="bg-white border border-[#e2e2e2] px-6 py-10 text-center">
+              <p className="text-[#74777f] text-sm font-[var(--font-inter)]">Nenhuma comissão registrada ainda.</p>
+            </div>
+          ) : (
+            <div className="bg-white border border-[#e2e2e2] divide-y divide-[#f0f0f0]">
+              {uses.filter(u => u.sale_status !== "cancelado" && u.commission_owed != null).map(u => {
+                const st = u.sale_status || "em_orcamento";
+                const isPaid = !!u.partner_commission_paid_at;
+                return (
+                  <div key={u.id} className="px-5 py-4 flex items-start justify-between gap-4">
+                    <div className="flex-1 min-w-0">
+                      <p className="text-[#002045] text-sm font-semibold font-[var(--font-inter)] leading-tight">{u.product_name || "—"}</p>
+                      <p className="text-[#74777f] text-xs font-[var(--font-inter)] mt-0.5">{u.architect_name || "—"} · {u.space || "—"} · {new Date(u.created_at).toLocaleDateString("pt-BR")}</p>
+                    </div>
+                    <div className="flex-shrink-0 text-right">
+                      <p className={`text-base font-bold font-[var(--font-noto-serif)] ${st === "concluido" ? "text-green-700" : "text-amber-600"}`}>
+                        {fmt(u.commission_owed!)}
+                      </p>
+                      {st === "concluido" ? (
+                        isPaid
+                          ? <span className="inline-block mt-1 bg-green-100 text-green-800 px-2 py-0.5 text-[10px] font-bold tracking-wide">✓ Pago</span>
+                          : <span className="inline-block mt-1 bg-yellow-100 text-yellow-800 px-2 py-0.5 text-[10px] font-bold tracking-wide">A receber</span>
+                      ) : (
+                        <span className="inline-block mt-1 bg-yellow-50 text-yellow-700 px-2 py-0.5 text-[10px] font-bold tracking-wide">Pendente</span>
+                      )}
+                    </div>
+                  </div>
+                );
+              })}
+            </div>
+          )}
+          <p className="text-[#74777f] text-[10px] font-[var(--font-inter)] mt-4">
+            O status de pagamento é atualizado pela Orbital após confirmação da transferência.
+          </p>
         </div>
       )}
 

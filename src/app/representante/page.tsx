@@ -181,7 +181,7 @@ export default function RepresentantePage() {
     .reduce((a, u) => a + (u.sales_rep_commission_owed || 0), 0);
 
   const [partnerRankSort, setPartnerRankSort] = useState<"total" | "count" | "median">("total");
-  const [repTab, setRepTab] = useState<"overview" | "partners">("overview");
+  const [repTab, setRepTab] = useState<"overview" | "commissions" | "partners">("overview");
   const [linkedPartners, setLinkedPartners] = useState<LinkedPartner[]>([]);
   const [partnersLoading, setPartnersLoading] = useState(false);
   const [copied, setCopied] = useState(false);
@@ -382,6 +382,7 @@ export default function RepresentantePage() {
         <div className="flex gap-0 mb-8 border-b border-[#e2e2e2]">
           {([
             { key: "overview", label: "Visão Geral" },
+            { key: "commissions", label: "Comissões" },
             { key: "partners", label: `Meus Parceiros${linkedPartners.length > 0 ? ` (${linkedPartners.length})` : ""}` },
           ] as const).map((t) => (
             <button
@@ -738,16 +739,6 @@ export default function RepresentantePage() {
                           </p>
                         </div>
                       )}
-                      {st === "concluido" && (
-                        <div>
-                          <p className="text-[#74777f] text-[9px] uppercase tracking-wider font-bold font-[var(--font-inter)]">Pago</p>
-                          <p className="text-xs mt-0.5">
-                            {u.rep_commission_paid_at
-                              ? <span className="text-green-700 font-semibold">✓ Pago</span>
-                              : <span className="text-yellow-700">Pendente</span>}
-                          </p>
-                        </div>
-                      )}
                     </div>
                   </div>
                 );
@@ -765,7 +756,6 @@ export default function RepresentantePage() {
                       "Espaço",
                       "Placas",
                       "Sua comissão",
-                      "Pago",
                       "Status",
                     ].map((h) => (
                       <th
@@ -803,13 +793,6 @@ export default function RepresentantePage() {
                             ? <span className="text-yellow-700">{fmt(u.sales_rep_commission_owed)} (pend.)</span>
                             : "—"}
                         </td>
-                        <td className="px-4 py-3 text-xs">
-                          {st === "concluido" && u.rep_commission_paid_at
-                            ? <span className="text-green-700 font-semibold">✓ Pago</span>
-                            : st === "concluido"
-                            ? <span className="text-yellow-700">Pendente</span>
-                            : null}
-                        </td>
                         <td className="px-4 py-3">
                           <span className={`inline-flex items-center gap-1.5 px-2.5 py-1 text-[10px] font-bold tracking-wide rounded-full ${stMeta.cls}`}>
                             <span className={`w-1.5 h-1.5 rounded-full ${
@@ -828,6 +811,60 @@ export default function RepresentantePage() {
         );
         })()}
         </>)}
+
+        {repTab === "commissions" && (
+          <div>
+            {/* Summary */}
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 mb-8">
+              <div className="bg-white border border-[#e2e2e2] px-6 py-5">
+                <p className="text-[#74777f] text-[10px] tracking-[0.15em] uppercase font-bold font-[var(--font-inter)] mb-1">Comissão confirmada</p>
+                <p className="font-[var(--font-noto-serif)] text-green-700 text-3xl font-normal">{fmt(confirmedCommission)}</p>
+              </div>
+              <div className="bg-white border border-[#e2e2e2] px-6 py-5">
+                <p className="text-[#74777f] text-[10px] tracking-[0.15em] uppercase font-bold font-[var(--font-inter)] mb-1">Comissão pendente</p>
+                <p className="font-[var(--font-noto-serif)] text-amber-600 text-3xl font-normal">{fmt(pendingCommission)}</p>
+              </div>
+            </div>
+
+            {/* Card list — no table, no horizontal scroll */}
+            <h2 className="font-[var(--font-noto-serif)] text-[#002045] text-xl font-normal mb-4">Detalhamento</h2>
+            {uses.filter(u => u.sale_status !== "cancelado" && u.sales_rep_commission_owed != null).length === 0 ? (
+              <div className="bg-white border border-[#e2e2e2] px-6 py-10 text-center">
+                <p className="text-[#74777f] text-sm font-[var(--font-inter)]">Nenhuma comissão registrada ainda.</p>
+              </div>
+            ) : (
+              <div className="bg-white border border-[#e2e2e2] divide-y divide-[#f0f0f0]">
+                {uses.filter(u => u.sale_status !== "cancelado" && u.sales_rep_commission_owed != null).map(u => {
+                  const st = u.sale_status || "em_orcamento";
+                  const isPaid = !!u.rep_commission_paid_at;
+                  return (
+                    <div key={u.id} className="px-5 py-4 flex items-start justify-between gap-4">
+                      <div className="flex-1 min-w-0">
+                        <p className="text-[#002045] text-sm font-semibold font-[var(--font-inter)] leading-tight">{u.partner_name || u.coupon_code}</p>
+                        <p className="text-[#74777f] text-xs font-[var(--font-inter)] mt-0.5">{u.product_name || "—"} · {new Date(u.created_at).toLocaleDateString("pt-BR")}</p>
+                      </div>
+                      <div className="flex-shrink-0 text-right">
+                        <p className={`text-base font-bold font-[var(--font-noto-serif)] ${st === "concluido" ? "text-[#002045]" : "text-amber-600"}`}>
+                          {fmt(u.sales_rep_commission_owed!)}
+                        </p>
+                        {st === "concluido" ? (
+                          isPaid
+                            ? <span className="inline-block mt-1 bg-green-100 text-green-800 px-2 py-0.5 text-[10px] font-bold tracking-wide">✓ Pago</span>
+                            : <span className="inline-block mt-1 bg-yellow-100 text-yellow-800 px-2 py-0.5 text-[10px] font-bold tracking-wide">A receber</span>
+                        ) : (
+                          <span className="inline-block mt-1 bg-yellow-50 text-yellow-700 px-2 py-0.5 text-[10px] font-bold tracking-wide">Pendente</span>
+                        )}
+                      </div>
+                    </div>
+                  );
+                })}
+              </div>
+            )}
+            <p className="text-[#74777f] text-[10px] font-[var(--font-inter)] mt-4">
+              O status de pagamento é atualizado pela Orbital após confirmação da transferência.
+            </p>
+          </div>
+        )}
 
         {repTab === "partners" && (
           <div>
