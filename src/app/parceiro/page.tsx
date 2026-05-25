@@ -748,7 +748,7 @@ export default function ParceiroPage() {
 
   // ── Dashboard ──────────────────────────────────────────────────────────────
   return (
-    <div className="min-h-screen bg-[#f5f5f3]">
+    <div className="min-h-screen bg-[#f5f5f3] pt-20">
       {/* Header */}
       <div className="bg-[#002045] px-6 py-5 flex items-center justify-between">
         <div>

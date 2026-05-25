@@ -143,19 +143,33 @@ export default function RepresentantePage() {
     setTimeout(() => setCpOpen(false), 2000);
   }
 
+  function handleBdayChange(raw: string) {
+    // Strip non-digits and auto-insert slashes for DD/MM/AAAA
+    const digits = raw.replace(/\D/g, "").slice(0, 8);
+    let masked = digits;
+    if (digits.length > 4) masked = digits.slice(0, 2) + "/" + digits.slice(2, 4) + "/" + digits.slice(4);
+    else if (digits.length > 2) masked = digits.slice(0, 2) + "/" + digits.slice(2);
+    setBdayInput(masked);
+  }
+
+  function bdayToISO(dmy: string): string {
+    const [d, m, y] = dmy.split("/");
+    return `${y}-${m.padStart(2, "0")}-${d.padStart(2, "0")}`;
+  }
+
   async function handleSaveBirthday(e: React.FormEvent) {
     e.preventDefault();
-    if (!bdayInput) { setBdayError("Informe sua data de nascimento."); return; }
+    if (!bdayInput || bdayInput.length < 10) { setBdayError("Informe sua data de nascimento no formato DD/MM/AAAA."); return; }
     setBdayLoading(true);
     setBdayError("");
     const res = await fetch(`/api/sales-reps/${salesRep!.id}`, {
       method: "PUT",
       headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ birthday: bdayInput }),
+      body: JSON.stringify({ birthday: bdayToISO(bdayInput) }),
     });
     setBdayLoading(false);
     if (!res.ok) { setBdayError("Erro ao salvar. Tente novamente."); return; }
-    setSalesRep({ ...salesRep!, birthday: bdayInput });
+    setSalesRep({ ...salesRep!, birthday: bdayToISO(bdayInput) });
   }
 
   // Auto-refresh data every 30 seconds while logged in
@@ -212,7 +226,7 @@ export default function RepresentantePage() {
   // Birthday gate — shown after login if birthday is missing
   if (salesRep && !salesRep.birthday) {
     return (
-      <div className="min-h-screen bg-[#f5f5f3] flex items-center justify-center px-4">
+      <div className="min-h-screen bg-[#f5f5f3] pt-20 flex items-center justify-center px-4">
         <div className="bg-white border border-[#e2e2e2] p-10 w-full max-w-sm">
           <div className="mb-6">
             <p className="text-[#002045] font-[var(--font-noto-serif)] text-2xl font-normal mb-1">
@@ -229,9 +243,11 @@ export default function RepresentantePage() {
               </label>
               <input
                 required
-                type="date"
+                type="text"
+                placeholder="DD/MM/AAAA"
                 value={bdayInput}
-                onChange={(e) => setBdayInput(e.target.value)}
+                onChange={(e) => handleBdayChange(e.target.value)}
+                maxLength={10}
                 className="w-full border border-[#e2e2e2] px-4 py-3 text-sm font-[var(--font-inter)] text-[#002045] focus:outline-none focus:border-[#002045]"
               />
             </div>
@@ -253,7 +269,7 @@ export default function RepresentantePage() {
 
   if (!salesRep) {
     return (
-      <div className="min-h-screen bg-[#f5f5f3] flex items-center justify-center px-4">
+      <div className="min-h-screen bg-[#f5f5f3] pt-20 flex items-center justify-center px-4">
         <div className="bg-white border border-[#e2e2e2] p-10 w-full max-w-sm">
           <div className="mb-6">
             <p className="text-[#002045] font-[var(--font-noto-serif)] text-2xl font-normal mb-1">
@@ -333,7 +349,7 @@ export default function RepresentantePage() {
   }
 
   return (
-    <div className="min-h-screen bg-[#f5f5f3]">
+    <div className="min-h-screen bg-[#f5f5f3] pt-20">
       {/* Header */}
       <div className="bg-[#002045] px-6 py-5 flex items-center justify-between">
         <div>

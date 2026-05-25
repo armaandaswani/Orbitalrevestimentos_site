@@ -62,6 +62,28 @@ function fmt(n: number) {
   return n.toLocaleString("pt-BR", { style: "currency", currency: "BRL", maximumFractionDigits: 0 });
 }
 
+/** Convert YYYY-MM-DD → DD/MM/AAAA for display */
+function isoToDMY(iso: string): string {
+  if (!iso) return "";
+  const [y, m, d] = iso.split("-");
+  return `${d}/${m}/${y}`;
+}
+
+/** Convert DD/MM/AAAA → YYYY-MM-DD for storage */
+function dmyToISO(dmy: string): string {
+  if (!dmy || dmy.length < 10) return dmy;
+  const [d, m, y] = dmy.split("/");
+  return `${y}-${m.padStart(2, "0")}-${d.padStart(2, "0")}`;
+}
+
+/** Auto-mask typed input into DD/MM/AAAA */
+function maskBday(raw: string): string {
+  const digits = raw.replace(/\D/g, "").slice(0, 8);
+  if (digits.length > 4) return digits.slice(0, 2) + "/" + digits.slice(2, 4) + "/" + digits.slice(4);
+  if (digits.length > 2) return digits.slice(0, 2) + "/" + digits.slice(2);
+  return digits;
+}
+
 const ADMIN_PW = process.env.NEXT_PUBLIC_ADMIN_PASSWORD || "orbital2025";
 
 const PROFESSIONS = [
@@ -1443,7 +1465,7 @@ export default function AdminPage() {
                     <div><label className={labelCls}>Código do Cupom *</label><input required value={partnerForm.coupon_code} onChange={(e) => setPartnerForm({ ...partnerForm, coupon_code: e.target.value.toUpperCase() })} className={inputCls + " uppercase"} placeholder="ex: ARQLIMA10" /></div>
                     <div><label className={labelCls}>Email</label><input value={partnerForm.email} onChange={(e) => setPartnerForm({ ...partnerForm, email: e.target.value })} type="email" className={inputCls} /></div>
                     <div><label className={labelCls}>Telefone</label><input value={partnerForm.phone} onChange={(e) => setPartnerForm({ ...partnerForm, phone: e.target.value })} className={inputCls} /></div>
-                    <div><label className={labelCls}>Data de Nascimento *</label><input required type="date" value={partnerForm.birthday || ""} onChange={(e) => setPartnerForm({ ...partnerForm, birthday: e.target.value })} className={inputCls} /></div>
+                    <div><label className={labelCls}>Data de Nascimento *</label><input required type="text" placeholder="DD/MM/AAAA" maxLength={10} value={isoToDMY(partnerForm.birthday || "")} onChange={(e) => setPartnerForm({ ...partnerForm, birthday: dmyToISO(maskBday(e.target.value)) })} className={inputCls} /></div>
                     <div>
                       <label className={labelCls}>Tipo de Desconto</label>
                       <select value={partnerForm.discount_type} onChange={(e) => setPartnerForm({ ...partnerForm, discount_type: e.target.value as "percentage" | "fixed" })} className={inputCls}>
@@ -1752,7 +1774,7 @@ export default function AdminPage() {
                     </div>
                     <div><label className={labelCls}>Email</label><input value={repForm.email} onChange={(e) => setRepForm({ ...repForm, email: e.target.value })} type="email" className={inputCls} /></div>
                     <div><label className={labelCls}>Telefone</label><input value={repForm.phone} onChange={(e) => setRepForm({ ...repForm, phone: e.target.value })} className={inputCls} /></div>
-                    <div><label className={labelCls}>Data de Nascimento *</label><input required type="date" value={repForm.birthday || ""} onChange={(e) => setRepForm({ ...repForm, birthday: e.target.value })} className={inputCls} /></div>
+                    <div><label className={labelCls}>Data de Nascimento *</label><input required type="text" placeholder="DD/MM/AAAA" maxLength={10} value={isoToDMY(repForm.birthday || "")} onChange={(e) => setRepForm({ ...repForm, birthday: dmyToISO(maskBday(e.target.value)) })} className={inputCls} /></div>
                     <div>
                       <label className={labelCls}>Tipo de Comissão</label>
                       <select value={repForm.commission_type} onChange={(e) => setRepForm({ ...repForm, commission_type: e.target.value as "percentage" | "fixed" })} className={inputCls}>

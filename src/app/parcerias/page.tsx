@@ -462,6 +462,19 @@ function SelfRegisterSection({ onScrollToSegments }: { onScrollToSegments: () =>
   const [success, setSuccess] = useState<{ coupon_code: string; name: string } | null>(null);
   const formRef = useRef<HTMLDivElement>(null);
 
+  function handleBdayChange(raw: string) {
+    const digits = raw.replace(/\D/g, "").slice(0, 8);
+    let masked = digits;
+    if (digits.length > 4) masked = digits.slice(0, 2) + "/" + digits.slice(2, 4) + "/" + digits.slice(4);
+    else if (digits.length > 2) masked = digits.slice(0, 2) + "/" + digits.slice(2);
+    setForm({ ...form, birthday: masked });
+  }
+
+  function bdayToISO(dmy: string): string {
+    const [d, m, y] = dmy.split("/");
+    return `${y}-${m.padStart(2, "0")}-${d.padStart(2, "0")}`;
+  }
+
   const handleSubmit = useCallback(async (e: React.FormEvent) => {
     e.preventDefault();
     setError("");
@@ -475,7 +488,7 @@ function SelfRegisterSection({ onScrollToSegments }: { onScrollToSegments: () =>
         phone: form.phone,
         sales_rep_referral_code: form.referral_code,
         portal_password: form.portal_password,
-        birthday: form.birthday,
+        birthday: form.birthday.length === 10 ? bdayToISO(form.birthday) : form.birthday,
       }),
     });
     const json = await res.json();
@@ -578,9 +591,11 @@ function SelfRegisterSection({ onScrollToSegments }: { onScrollToSegments: () =>
                     <label className="block text-[10px] tracking-[0.15em] uppercase font-bold font-[var(--font-inter)] text-[#74777f] mb-2">Data de Nascimento *</label>
                     <input
                       required
-                      type="date"
+                      type="text"
+                      placeholder="DD/MM/AAAA"
                       value={form.birthday}
-                      onChange={(e) => setForm({ ...form, birthday: e.target.value })}
+                      onChange={(e) => handleBdayChange(e.target.value)}
+                      maxLength={10}
                       className="w-full border border-[#e2e2e2] px-4 py-3 text-sm font-[var(--font-inter)] text-[#002045] focus:outline-none focus:border-[#002045]"
                     />
                   </div>
