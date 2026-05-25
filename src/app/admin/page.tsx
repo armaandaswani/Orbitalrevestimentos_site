@@ -54,6 +54,8 @@ interface CouponUse {
   sales_rep_referral_code: string | null;
   sales_rep_commission_owed: number | null;
   created_at: string;
+  partner_commission_paid_at: string | null;
+  rep_commission_paid_at: string | null;
 }
 
 function fmt(n: number) {
@@ -104,7 +106,8 @@ export default function AdminPage() {
   const [authed, setAuthed] = useState(false);
   const [pw, setPw] = useState("");
   const [pwError, setPwError] = useState("");
-  const [tab, setTab] = useState<"partners" | "representantes" | "history" | "campaigns" | "drip" | "clientes">("partners");
+  const [tab, setTab] = useState<"partners" | "representantes" | "history" | "campaigns" | "drip" | "clientes" | "commissions">("partners");
+  const [commissionFilter, setCommissionFilter] = useState<"a_pagar" | "pago" | "tudo">("a_pagar");
 
   // Partners
   const [partners, setPartners] = useState<Partner[]>([]);
@@ -836,6 +839,19 @@ export default function AdminPage() {
     }
   }
 
+  async function markCommissionPaid(useId: string, type: "partner" | "rep") {
+    const field = type === "partner" ? "partner_commission_paid_at" : "rep_commission_paid_at";
+    const value = new Date().toISOString();
+    const res = await fetch(`/api/coupons/use/${useId}`, {
+      method: "PATCH",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ [field]: value }),
+    });
+    if (res.ok) {
+      setUses((prev) => prev.map((u) => u.id === useId ? { ...u, [field]: value } : u));
+    }
+  }
+
   const pendingPartners = partners.filter((p) => p.status === "pending");
   const activePartners = partners.filter((p) => p.status !== "pending");
 
@@ -1188,9 +1204,9 @@ export default function AdminPage() {
 
       <div className="max-w-7xl mx-auto px-8 py-8">
         <div className="flex gap-1 mb-8 border-b border-[#e2e2e2] flex-wrap">
-          {(["partners", "representantes", "history", "campaigns", "drip", "clientes"] as const).map((t) => (
+          {(["partners", "representantes", "history", "campaigns", "drip", "clientes", "commissions"] as const).map((t) => (
             <button key={t} onClick={() => setTab(t)} className={`px-6 py-3 text-xs tracking-[0.1em] uppercase font-bold font-[var(--font-inter)] transition-colors border-b-2 -mb-px flex items-center gap-2 ${tab === t ? "border-[#002045] text-[#002045]" : "border-transparent text-[#74777f] hover:text-[#002045]"}`}>
-              {t === "partners" ? "Parceiros" : t === "representantes" ? "Representantes" : t === "history" ? "Histórico" : t === "campaigns" ? "Campanhas" : t === "drip" ? "Drip de Emails" : "Clientes"}
+              {t === "partners" ? "Parceiros" : t === "representantes" ? "Representantes" : t === "history" ? "Histórico" : t === "campaigns" ? "Campanhas" : t === "drip" ? "Drip de Emails" : t === "commissions" ? "Comissões" : "Clientes"}
               {t === "partners" && pendingPartners.length > 0 && (
                 <span className="bg-yellow-400 text-yellow-900 text-[9px] font-bold px-1.5 py-0.5 rounded-full leading-none">
                   {pendingPartners.length}
@@ -2139,14 +2155,14 @@ export default function AdminPage() {
                 <table className="w-full text-sm font-[var(--font-inter)]">
                   <thead>
                     <tr className="border-b border-[#e2e2e2]">
-                      {["Data", "Cupom", "Rep.", "Produto", "Espaço", "Área", "Material", "Desconto", "Com. Parceiro", "Com. Rep.", "Status", ""].map((h) => (
+                      {["Data", "Cupom", "Rep.", "Produto", "Espaço", "Área", "Material", "Desconto", "Com. Parceiro", "Com. Rep.", "Status"].map((h) => (
                         <th key={h} className="text-left px-4 py-3 text-[10px] tracking-[0.1em] uppercase font-bold text-[#74777f] whitespace-nowrap">{h}</th>
                       ))}
                     </tr>
                   </thead>
                   <tbody>
                     {filteredUses.length === 0 ? (
-                      <tr><td colSpan={12} className="px-5 py-8 text-center text-[#74777f]">Nenhum uso registrado.</td></tr>
+                      <tr><td colSpan={11} className="px-5 py-8 text-center text-[#74777f]">Nenhum uso registrado.</td></tr>
                     ) : (
                       filteredUses.map((u) => {
                         const st = u.sale_status || "em_orcamento";
@@ -2169,16 +2185,15 @@ export default function AdminPage() {
                                 <option value="concluido">Concluído</option>
                                 <option value="cancelado">Cancelado</option>
                               </select>
-                            </td>
-                            <td className="px-4 py-3">
                               <button
                                 onClick={() => deleteCouponUse(u.id)}
                                 title="Excluir orçamento"
-                                className="text-red-400 hover:text-red-600 transition-colors"
+                                className="mt-1.5 flex items-center gap-1 text-red-400 hover:text-red-600 transition-colors text-[10px] font-[var(--font-inter)]"
                               >
-                                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                                <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
                                   <path d="M3 6h18M8 6V4h8v2M19 6l-1 14H6L5 6" />
                                 </svg>
+                                Excluir
                               </button>
                             </td>
                           </tr>
@@ -2463,6 +2478,112 @@ export default function AdminPage() {
                 </div>
               </>
             )}
+          </div>
+        )}
+
+        {tab === "commissions" && (
+          <div>
+            {(() => {
+              const concludedAll = uses.filter(u => u.sale_status === "concluido");
+              const totalUnpaidPartner = concludedAll.filter(u => !u.partner_commission_paid_at && u.commission_owed).reduce((a, u) => a + (u.commission_owed ?? 0), 0);
+              const totalUnpaidRep = concludedAll.filter(u => u.sales_rep_commission_owed && !u.rep_commission_paid_at).reduce((a, u) => a + (u.sales_rep_commission_owed ?? 0), 0);
+              const thisMonth = new Date();
+              const monthStart = new Date(thisMonth.getFullYear(), thisMonth.getMonth(), 1).toISOString();
+              const paidThisMonth = concludedAll
+                .filter(u => (u.partner_commission_paid_at && u.partner_commission_paid_at >= monthStart) || (u.rep_commission_paid_at && u.rep_commission_paid_at >= monthStart))
+                .reduce((a, u) => {
+                  let sum = 0;
+                  if (u.partner_commission_paid_at && u.partner_commission_paid_at >= monthStart) sum += (u.commission_owed ?? 0);
+                  if (u.rep_commission_paid_at && u.rep_commission_paid_at >= monthStart) sum += (u.sales_rep_commission_owed ?? 0);
+                  return a + sum;
+                }, 0);
+
+              const pendingRows = concludedAll.filter(u => !u.partner_commission_paid_at || (u.sales_rep_commission_owed && !u.rep_commission_paid_at));
+              const paidRows = concludedAll.filter(u => u.partner_commission_paid_at && (!u.sales_rep_commission_owed || u.rep_commission_paid_at));
+
+              const displayRows = commissionFilter === "a_pagar" ? pendingRows : commissionFilter === "pago" ? paidRows : concludedAll;
+
+              return (
+                <>
+                  <div className="grid grid-cols-1 sm:grid-cols-3 gap-4 mb-6">
+                    <div className="bg-white border border-[#e2e2e2] px-6 py-5">
+                      <p className="text-[#74777f] text-[10px] tracking-[0.15em] uppercase font-bold font-[var(--font-inter)] mb-1">A pagar — Parceiros</p>
+                      <p className="font-[var(--font-noto-serif)] text-[#002045] text-2xl font-normal">{fmt(totalUnpaidPartner)}</p>
+                    </div>
+                    <div className="bg-white border border-[#e2e2e2] px-6 py-5">
+                      <p className="text-[#74777f] text-[10px] tracking-[0.15em] uppercase font-bold font-[var(--font-inter)] mb-1">A pagar — Representantes</p>
+                      <p className="font-[var(--font-noto-serif)] text-[#1a365d] text-2xl font-normal">{fmt(totalUnpaidRep)}</p>
+                    </div>
+                    <div className="bg-white border border-[#e2e2e2] px-6 py-5">
+                      <p className="text-[#74777f] text-[10px] tracking-[0.15em] uppercase font-bold font-[var(--font-inter)] mb-1">Pago este mês</p>
+                      <p className="font-[var(--font-noto-serif)] text-green-700 text-2xl font-normal">{fmt(paidThisMonth)}</p>
+                    </div>
+                  </div>
+
+                  {/* Filter */}
+                  <div className="flex gap-2 mb-4">
+                    {([["a_pagar","A pagar"],["pago","Pago"],["tudo","Tudo"]] as const).map(([val, label]) => (
+                      <button key={val} onClick={() => setCommissionFilter(val)}
+                        className={`text-[10px] tracking-[0.08em] uppercase font-bold font-[var(--font-inter)] px-4 py-2 border transition-colors ${commissionFilter === val ? "bg-[#002045] text-white border-[#002045]" : "text-[#74777f] border-[#e2e2e2] hover:border-[#002045] hover:text-[#002045]"}`}>
+                        {label}
+                      </button>
+                    ))}
+                  </div>
+
+                  {/* Table */}
+                  <div className="bg-white border border-[#e2e2e2] overflow-x-auto">
+                    <table className="w-full text-sm font-[var(--font-inter)]">
+                      <thead>
+                        <tr className="border-b border-[#e2e2e2]">
+                          {["Data","Cupom","Rep.","Produto","Com. Parceiro","Status Parceiro","Com. Rep.","Status Rep."].map(h => (
+                            <th key={h} className="text-left px-4 py-3 text-[10px] tracking-[0.1em] uppercase font-bold text-[#74777f] whitespace-nowrap">{h}</th>
+                          ))}
+                        </tr>
+                      </thead>
+                      <tbody>
+                        {displayRows.length === 0 ? (
+                          <tr><td colSpan={8} className="px-5 py-8 text-center text-[#74777f]">Nenhuma comissão encontrada.</td></tr>
+                        ) : displayRows.map(u => (
+                          <tr key={u.id} className="border-b border-[#f0f0f0] hover:bg-[#fafafa]">
+                            <td className="px-4 py-3 text-xs text-[#43474e] whitespace-nowrap">{new Date(u.created_at).toLocaleDateString("pt-BR")}</td>
+                            <td className="px-4 py-3"><span className="bg-[#eef2f8] text-[#002045] px-2 py-0.5 text-xs font-bold tracking-wider">{u.coupon_code}</span></td>
+                            <td className="px-4 py-3 text-xs text-[#74777f]">{u.sales_rep_referral_code || "—"}</td>
+                            <td className="px-4 py-3 text-xs text-[#43474e]">{u.product_name || "—"}</td>
+                            <td className="px-4 py-3 text-xs font-semibold text-[#002045]">{u.commission_owed ? fmt(u.commission_owed) : "—"}</td>
+                            <td className="px-4 py-3">
+                              {u.partner_commission_paid_at ? (
+                                <span className="inline-block bg-green-100 text-green-800 px-2 py-0.5 text-[10px] font-bold tracking-wide">
+                                  ✓ Pago {new Date(u.partner_commission_paid_at).toLocaleDateString("pt-BR")}
+                                </span>
+                              ) : u.commission_owed ? (
+                                <button onClick={() => markCommissionPaid(u.id, "partner")}
+                                  className="inline-block bg-yellow-100 text-yellow-800 px-2 py-0.5 text-[10px] font-bold tracking-wide hover:bg-yellow-200 transition-colors cursor-pointer">
+                                  A pagar — Marcar pago
+                                </button>
+                              ) : <span className="text-[#ccc]">—</span>}
+                            </td>
+                            <td className="px-4 py-3 text-xs font-semibold text-[#1a365d]">{u.sales_rep_commission_owed ? fmt(u.sales_rep_commission_owed) : "—"}</td>
+                            <td className="px-4 py-3">
+                              {!u.sales_rep_commission_owed ? <span className="text-[#ccc]">—</span> :
+                               u.rep_commission_paid_at ? (
+                                <span className="inline-block bg-green-100 text-green-800 px-2 py-0.5 text-[10px] font-bold tracking-wide">
+                                  ✓ Pago {new Date(u.rep_commission_paid_at).toLocaleDateString("pt-BR")}
+                                </span>
+                              ) : (
+                                <button onClick={() => markCommissionPaid(u.id, "rep")}
+                                  className="inline-block bg-yellow-100 text-yellow-800 px-2 py-0.5 text-[10px] font-bold tracking-wide hover:bg-yellow-200 transition-colors cursor-pointer">
+                                  A pagar — Marcar pago
+                                </button>
+                              )}
+                            </td>
+                          </tr>
+                        ))}
+                      </tbody>
+                    </table>
+                  </div>
+                </>
+              );
+            })()}
           </div>
         )}
       </div>

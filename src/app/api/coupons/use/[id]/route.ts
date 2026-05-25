@@ -23,6 +23,8 @@ export async function PATCH(
   const updatePayload: Record<string, unknown> = {};
   if (body.sale_status !== undefined) updatePayload.sale_status = body.sale_status;
   if (body.next_followup_at !== undefined) updatePayload.next_followup_at = body.next_followup_at;
+  if (body.partner_commission_paid_at !== undefined) updatePayload.partner_commission_paid_at = body.partner_commission_paid_at;
+  if (body.rep_commission_paid_at !== undefined) updatePayload.rep_commission_paid_at = body.rep_commission_paid_at;
 
   // When concluding a sale, lock in sales_rep commission if not yet set
   if (body.sale_status === "concluido") {

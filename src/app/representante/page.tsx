@@ -41,6 +41,7 @@ interface CouponUse {
   architect_name: string | null;
   sale_status: "em_orcamento" | "concluido" | "cancelado" | null;
   created_at: string;
+  rep_commission_paid_at: string | null;
 }
 
 function fmt(n: number) {
@@ -183,6 +184,8 @@ export default function RepresentantePage() {
   const [repTab, setRepTab] = useState<"overview" | "partners">("overview");
   const [linkedPartners, setLinkedPartners] = useState<LinkedPartner[]>([]);
   const [partnersLoading, setPartnersLoading] = useState(false);
+  const [copied, setCopied] = useState(false);
+  const [historyFilter, setHistoryFilter] = useState("");
 
   const partnerRanking = useMemo(() => {
     const byCode: Record<string, { total: number; count: number; values: number[]; name: string }> = {};
@@ -350,6 +353,31 @@ export default function RepresentantePage() {
       </div>
 
       <div className="max-w-5xl mx-auto px-4 sm:px-8 py-8">
+        {/* Referral link card */}
+        {(() => {
+          const referralUrl = `https://orbitalrevestimentos.com.br/parceiro?rep=${salesRep.referral_code}`;
+          return (
+            <div className="bg-white border border-[#e2e2e2] px-6 py-4 mb-6 flex flex-col sm:flex-row sm:items-center gap-3">
+              <div className="flex-1 min-w-0">
+                <p className="text-[#74777f] text-[10px] tracking-[0.15em] uppercase font-bold font-[var(--font-inter)] mb-1">
+                  Seu link de indicação
+                </p>
+                <p className="text-[#002045] text-sm font-[var(--font-inter)] truncate">{referralUrl}</p>
+              </div>
+              <button
+                onClick={() => {
+                  navigator.clipboard.writeText(referralUrl);
+                  setCopied(true);
+                  setTimeout(() => setCopied(false), 2000);
+                }}
+                className="flex-shrink-0 bg-[#002045] text-white text-xs tracking-[0.1em] uppercase font-bold font-[var(--font-inter)] px-5 py-2.5 hover:bg-[#1a365d] transition-colors"
+              >
+                {copied ? "Copiado!" : "Copiar link"}
+              </button>
+            </div>
+          );
+        })()}
+
         {/* Tab bar */}
         <div className="flex gap-0 mb-8 border-b border-[#e2e2e2]">
           {([
@@ -371,8 +399,8 @@ export default function RepresentantePage() {
         </div>
 
         {repTab === "overview" && (<>
-        {/* Summary cards */}
-        <div className="grid grid-cols-1 sm:grid-cols-3 gap-4 mb-8">
+        {/* Summary cards — 4-card grid */}
+        <div className="grid grid-cols-2 sm:grid-cols-4 gap-4 mb-8">
           <div className="bg-white border border-[#e2e2e2] px-6 py-5">
             <p className="text-[#74777f] text-[10px] tracking-[0.15em] uppercase font-bold font-[var(--font-inter)] mb-1">
               Parceiros indicados
@@ -391,13 +419,72 @@ export default function RepresentantePage() {
           </div>
           <div className="bg-white border border-[#e2e2e2] px-6 py-5">
             <p className="text-[#74777f] text-[10px] tracking-[0.15em] uppercase font-bold font-[var(--font-inter)] mb-1">
-              Em orçamento
+              Comissão confirmada
             </p>
-            <p className="font-[var(--font-noto-serif)] text-yellow-700 text-3xl font-normal">
-              {uses.filter((u) => u.sale_status === "em_orcamento" || u.sale_status === null).length}
+            <p className="font-[var(--font-noto-serif)] text-green-700 text-2xl font-normal">
+              {fmt(confirmedCommission)}
+            </p>
+          </div>
+          <div className="bg-white border border-[#e2e2e2] px-6 py-5">
+            <p className="text-[#74777f] text-[10px] tracking-[0.15em] uppercase font-bold font-[var(--font-inter)] mb-1">
+              Comissão pendente
+            </p>
+            <p className="font-[var(--font-noto-serif)] text-amber-600 text-2xl font-normal">
+              {fmt(pendingCommission)}
             </p>
           </div>
         </div>
+
+        {/* Monthly commission bar chart */}
+        {(() => {
+          const confirmedUses = uses.filter((u) => u.sale_status === "concluido");
+          if (confirmedUses.length === 0) return null;
+          // Build last 6 months
+          const now = new Date();
+          const months: { key: string; label: string }[] = [];
+          for (let i = 5; i >= 0; i--) {
+            const d = new Date(now.getFullYear(), now.getMonth() - i, 1);
+            const key = `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, "0")}`;
+            const label = d.toLocaleDateString("pt-BR", { month: "short" }).replace(".", "");
+            months.push({ key, label: label.charAt(0).toUpperCase() + label.slice(1) });
+          }
+          const totals: Record<string, number> = {};
+          for (const m of months) totals[m.key] = 0;
+          for (const u of confirmedUses) {
+            const d = new Date(u.created_at);
+            const key = `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, "0")}`;
+            if (key in totals) totals[key] += u.sales_rep_commission_owed || 0;
+          }
+          const maxVal = Math.max(...months.map((m) => totals[m.key]), 1);
+          return (
+            <div className="bg-white border border-[#e2e2e2] px-6 py-5 mb-8">
+              <p className="text-[#74777f] text-[10px] tracking-[0.15em] uppercase font-bold font-[var(--font-inter)] mb-4">
+                Comissão confirmada — últimos 6 meses
+              </p>
+              <div className="flex items-end gap-3 h-16">
+                {months.map((m) => {
+                  const val = totals[m.key];
+                  const heightPct = Math.round((val / maxVal) * 100);
+                  return (
+                    <div key={m.key} className="flex-1 flex flex-col items-center gap-1">
+                      <div
+                        className="w-full rounded-sm"
+                        style={{
+                          backgroundColor: "#002045",
+                          height: `${Math.max(heightPct, val > 0 ? 4 : 2)}%`,
+                          minHeight: "2px",
+                          opacity: val > 0 ? 1 : 0.15,
+                        }}
+                        title={fmt(val)}
+                      />
+                      <span className="text-[#74777f] text-[10px] font-[var(--font-inter)]">{m.label}</span>
+                    </div>
+                  );
+                })}
+              </div>
+            </div>
+          );
+        })()}
 
         {/* Change password */}
         <div className="bg-white border border-[#e2e2e2] mb-6">
@@ -583,11 +670,27 @@ export default function RepresentantePage() {
         )}
 
         {/* Usage history */}
-        <h2 className="font-[var(--font-noto-serif)] text-[#002045] text-xl font-normal mb-4">
-          Histórico de vendas
-        </h2>
+        <div className="flex items-center gap-3 mb-4">
+          <h2 className="font-[var(--font-noto-serif)] text-[#002045] text-xl font-normal">
+            Histórico de vendas
+          </h2>
+        </div>
+        {uses.length > 0 && (
+          <div className="flex items-center gap-3 mb-4">
+            <label className="text-[10px] tracking-[0.15em] uppercase font-bold font-[var(--font-inter)] text-[#74777f] whitespace-nowrap">Parceiro:</label>
+            <select value={historyFilter} onChange={e => setHistoryFilter(e.target.value)}
+              className="border border-[#e2e2e2] px-3 py-1.5 text-xs font-[var(--font-inter)] text-[#002045] focus:outline-none focus:border-[#002045]">
+              <option value="">Todos</option>
+              {[...new Map(uses.map(u => [u.coupon_code, u.partner_name || u.coupon_code])).entries()].map(([code, name]) => (
+                <option key={code} value={code}>{name} ({code})</option>
+              ))}
+            </select>
+          </div>
+        )}
 
-        {usesLoading ? (
+        {(() => {
+          const filteredHistoryUses = historyFilter ? uses.filter(u => u.coupon_code === historyFilter) : uses;
+          return usesLoading ? (
           <p className="text-[#74777f] text-sm font-[var(--font-inter)]">Carregando...</p>
         ) : uses.length === 0 ? (
           <div className="bg-white border border-[#e2e2e2] px-6 py-10 text-center">
@@ -599,7 +702,7 @@ export default function RepresentantePage() {
           <>
             {/* Mobile card list — hidden on sm+ */}
             <div className="sm:hidden bg-white border border-[#e2e2e2] divide-y divide-[#f0f0f0]">
-              {uses.map((u) => {
+              {filteredHistoryUses.map((u) => {
                 const st = u.sale_status || "em_orcamento";
                 const stMeta = STATUS_LABELS[st] || STATUS_LABELS.em_orcamento;
                 return (
@@ -635,6 +738,16 @@ export default function RepresentantePage() {
                           </p>
                         </div>
                       )}
+                      {st === "concluido" && (
+                        <div>
+                          <p className="text-[#74777f] text-[9px] uppercase tracking-wider font-bold font-[var(--font-inter)]">Pago</p>
+                          <p className="text-xs mt-0.5">
+                            {u.rep_commission_paid_at
+                              ? <span className="text-green-700 font-semibold">✓ Pago</span>
+                              : <span className="text-yellow-700">Pendente</span>}
+                          </p>
+                        </div>
+                      )}
                     </div>
                   </div>
                 );
@@ -652,6 +765,7 @@ export default function RepresentantePage() {
                       "Espaço",
                       "Placas",
                       "Sua comissão",
+                      "Pago",
                       "Status",
                     ].map((h) => (
                       <th
@@ -664,7 +778,7 @@ export default function RepresentantePage() {
                   </tr>
                 </thead>
                 <tbody>
-                  {uses.map((u) => {
+                  {filteredHistoryUses.map((u) => {
                     const st = u.sale_status || "em_orcamento";
                     const stMeta = STATUS_LABELS[st] || STATUS_LABELS.em_orcamento;
                     return (
@@ -689,6 +803,13 @@ export default function RepresentantePage() {
                             ? <span className="text-yellow-700">{fmt(u.sales_rep_commission_owed)} (pend.)</span>
                             : "—"}
                         </td>
+                        <td className="px-4 py-3 text-xs">
+                          {st === "concluido" && u.rep_commission_paid_at
+                            ? <span className="text-green-700 font-semibold">✓ Pago</span>
+                            : st === "concluido"
+                            ? <span className="text-yellow-700">Pendente</span>
+                            : null}
+                        </td>
                         <td className="px-4 py-3">
                           <span className={`inline-flex items-center gap-1.5 px-2.5 py-1 text-[10px] font-bold tracking-wide rounded-full ${stMeta.cls}`}>
                             <span className={`w-1.5 h-1.5 rounded-full ${
@@ -704,7 +825,8 @@ export default function RepresentantePage() {
               </table>
             </div>
           </>
-        )}
+        );
+        })()}
         </>)}
 
         {repTab === "partners" && (
@@ -724,6 +846,7 @@ export default function RepresentantePage() {
                   {linkedPartners.map((p) => {
                     const statusCls = p.status === "active" ? "bg-green-100 text-green-800" : p.status === "pending" ? "bg-yellow-100 text-yellow-800" : "bg-gray-100 text-gray-600";
                     const statusLabel = p.status === "active" ? "Ativo" : p.status === "pending" ? "Pendente" : "Inativo";
+                    const isInactive = p.sales_count === 0 || (!p.last_sale_at || Date.now() - new Date(p.last_sale_at).getTime() > 30 * 24 * 60 * 60 * 1000);
                     return (
                       <div key={p.id} className="px-4 py-4">
                         <div className="flex items-start justify-between mb-3">
@@ -732,7 +855,10 @@ export default function RepresentantePage() {
                             <p className="text-[#74777f] text-[10px] font-[var(--font-inter)] mt-0.5">desde {new Date(p.created_at).toLocaleDateString("pt-BR")}</p>
                           </div>
                           <div className="flex flex-col items-end gap-1 ml-2 flex-shrink-0">
-                            <span className={`inline-block px-2 py-0.5 text-[10px] font-bold tracking-wide ${statusCls}`}>{statusLabel}</span>
+                            <div className="flex items-center gap-1">
+                              <span className={`inline-block px-2 py-0.5 text-[10px] font-bold tracking-wide ${statusCls}`}>{statusLabel}</span>
+                              {isInactive && <span className="inline-block bg-amber-100 text-amber-800 px-2 py-0.5 text-[10px] font-bold tracking-wide">Sem atividade</span>}
+                            </div>
                             <span className="bg-[#eef2f8] text-[#002045] px-2 py-0.5 text-xs font-bold tracking-wider">{p.coupon_code}</span>
                           </div>
                         </div>
@@ -773,7 +899,9 @@ export default function RepresentantePage() {
                       </tr>
                     </thead>
                     <tbody>
-                      {linkedPartners.map((p) => (
+                      {linkedPartners.map((p) => {
+                        const isInactive = p.sales_count === 0 || (!p.last_sale_at || Date.now() - new Date(p.last_sale_at).getTime() > 30 * 24 * 60 * 60 * 1000);
+                        return (
                         <tr key={p.id} className="border-b border-[#f0f0f0] hover:bg-[#fafafa]">
                           <td className="px-4 py-3">
                             <p className="font-semibold text-[#002045]">{p.name}</p>
@@ -783,13 +911,16 @@ export default function RepresentantePage() {
                             {p.profession || <span className="italic text-[#b0b0b0]">—</span>}
                           </td>
                           <td className="px-4 py-3">
-                            <span className={`inline-block px-2 py-0.5 text-[10px] font-bold tracking-wide ${
-                              p.status === "active" ? "bg-green-100 text-green-800" :
-                              p.status === "pending" ? "bg-yellow-100 text-yellow-800" :
-                              "bg-gray-100 text-gray-600"
-                            }`}>
-                              {p.status === "active" ? "Ativo" : p.status === "pending" ? "Pendente" : "Inativo"}
-                            </span>
+                            <div className="flex items-center gap-1 flex-wrap">
+                              <span className={`inline-block px-2 py-0.5 text-[10px] font-bold tracking-wide ${
+                                p.status === "active" ? "bg-green-100 text-green-800" :
+                                p.status === "pending" ? "bg-yellow-100 text-yellow-800" :
+                                "bg-gray-100 text-gray-600"
+                              }`}>
+                                {p.status === "active" ? "Ativo" : p.status === "pending" ? "Pendente" : "Inativo"}
+                              </span>
+                              {isInactive && <span className="inline-block bg-amber-100 text-amber-800 px-2 py-0.5 text-[10px] font-bold tracking-wide">Sem atividade</span>}
+                            </div>
                           </td>
                           <td className="px-4 py-3">
                             <span className="bg-[#eef2f8] text-[#002045] px-2 py-0.5 text-xs font-bold tracking-wider">{p.coupon_code}</span>
@@ -802,7 +933,8 @@ export default function RepresentantePage() {
                             {p.last_sale_at ? new Date(p.last_sale_at).toLocaleDateString("pt-BR") : <span className="italic text-[#b0b0b0]">Sem vendas</span>}
                           </td>
                         </tr>
-                      ))}
+                      );
+                      })}
                     </tbody>
                   </table>
                 </div>
