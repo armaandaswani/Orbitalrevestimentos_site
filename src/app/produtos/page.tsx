@@ -197,7 +197,7 @@ export default function ProdutosPage() {
           </p>
           <div className="flex flex-col sm:flex-row flex-wrap gap-3 lg:gap-4">
             <Link
-              href="/contato"
+              href="/simulador"
               className="w-full sm:w-auto inline-flex items-center justify-center gap-2 bg-white text-[#002045] text-xs tracking-[0.12em] uppercase font-bold font-[var(--font-inter)] px-7 py-3.5 hover:bg-[#f3f3f3] transition-colors"
             >
               Simulação de Orçamento

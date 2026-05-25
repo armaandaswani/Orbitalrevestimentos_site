@@ -43,7 +43,7 @@ export default function Footer() {
                 { href: "/tecnologia", label: "Tecnologia PFB" },
                 { href: "/projetos", label: "Projetos" },
                 { href: "/parcerias", label: "Parcerias" },
-                { href: "/contato", label: "Simulador de Custo" },
+                { href: "/simulador", label: "Simulador de Custo" },
               ].map(({ href, label }) => (
                 <Link
                   key={href}

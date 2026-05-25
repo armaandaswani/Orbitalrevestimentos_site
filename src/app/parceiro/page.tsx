@@ -819,12 +819,12 @@ export default function ParceiroPage() {
             <div className="flex-1 min-w-0">
               <p className="text-[#74777f] text-[9px] tracking-[0.15em] uppercase font-bold font-[var(--font-inter)] mb-1">Seu link de indicação</p>
               <p className="text-[#43474e] text-xs font-[var(--font-inter)] truncate">
-                orbitalrevestimentos.com.br/contato?cupom={partner.coupon_code}
+                orbitalrevestimentos.com.br/simulador?cupom={partner.coupon_code}
               </p>
             </div>
             <button
               onClick={() => {
-                navigator.clipboard.writeText(`https://orbitalrevestimentos.com.br/contato?cupom=${partner.coupon_code}`);
+                navigator.clipboard.writeText(`https://orbitalrevestimentos.com.br/simulador?cupom=${partner.coupon_code}`);
                 setCopied(true);
                 setTimeout(() => setCopied(false), 2000);
               }}

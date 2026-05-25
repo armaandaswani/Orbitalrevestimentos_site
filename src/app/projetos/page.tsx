@@ -353,7 +353,7 @@ export default function ProjetosPage() {
             qualquer ambiente — sem obra pesada, sem poeira.
           </p>
           <Link
-            href="/contato"
+            href="/simulador"
             className="inline-flex items-center gap-2 bg-white text-[#002045] text-xs tracking-[0.12em] uppercase font-bold font-[var(--font-inter)] px-7 py-4 hover:bg-[#f3f3f3] transition-colors"
           >
             Abrir simulador de custo
@@ -601,7 +601,7 @@ export default function ProjetosPage() {
                   Consultar via WhatsApp
                 </a>
                 <Link
-                  href="/contato"
+                  href="/simulador"
                   className="w-full sm:w-auto inline-flex items-center justify-center gap-2 border border-[#002045] text-[#002045] text-xs tracking-[0.12em] uppercase font-bold font-[var(--font-inter)] px-8 py-4 hover:bg-[#002045] hover:text-white transition-colors"
                 >
                   Abrir simulador

@@ -69,7 +69,7 @@ const FAQS: FAQ[] = [
     id: "preco",
     keywords: ["preco", "valor", "quanto custa", "custo", "reais", "investimento", "orcamento", "simulador"],
     answer: "Temos 3 linhas:\n• Classic (Mármore Fosco) — R$ 559/placa\n• Brilliance (Mármore Polido) — R$ 589/placa\n• Elegance (Madeira Texturizada) — R$ 649/placa\n\nCada placa mede 1,2m × 2,9m × 5mm (3,48 m²). Use o simulador para calcular quantas placas você precisa e o custo total.",
-    linkCta: { label: "Usar o Simulador", href: "/contato#simulador" },
+    linkCta: { label: "Usar o Simulador", href: "/simulador" },
   },
   {
     id: "entrega",

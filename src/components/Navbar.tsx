@@ -13,7 +13,7 @@ const navLinks = [
   { href: "/tecnologia", label: "Tecnologia" },
   { href: "/projetos", label: "Projetos" },
   { href: "/parcerias", label: "Parcerias" },
-  { href: "/contato", label: "Simulador" },
+  { href: "/simulador", label: "Simulador" },
 ];
 
 export default function Navbar() {
