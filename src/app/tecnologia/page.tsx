@@ -1,7 +1,7 @@
 import type { Metadata } from "next";
 import Image from "next/image";
 import Link from "next/link";
-import MdfComparison from "@/components/MdfComparison";
+import TecnologiaComparison from "@/components/TecnologiaComparison";
 
 export const metadata: Metadata = {
   title: "PFB Orbital — Tecnologia, Performance e Ficha Técnica | Revestimento Manaus",
@@ -388,7 +388,7 @@ export default function TecnologiaPage() {
         </div>
       </section>
 
-      {/* Comparison Table — PFB vs alternatives (dropdown) */}
+      {/* Comparison Table — PFB vs alternatives (accordion) */}
       <section className="py-12 lg:py-28 bg-[#f9f9f9]">
         <div className="max-w-[1280px] mx-auto px-4 lg:px-16">
           <p className="text-[#74777f] text-xs tracking-[0.2em] uppercase font-semibold font-[var(--font-inter)] mb-4">
@@ -400,7 +400,7 @@ export default function TecnologiaPage() {
           <p className="text-[#43474e] text-sm font-[var(--font-inter)] mb-10 max-w-2xl">
             Avaliações com base em ficha técnica e condições reais de uso no clima do Amazonas. ART de Engenheiro Civil.
           </p>
-          <MdfComparison />
+          <TecnologiaComparison />
         </div>
       </section>
 
