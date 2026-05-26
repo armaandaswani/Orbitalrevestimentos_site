@@ -771,26 +771,54 @@ export default function AdminPage() {
     if (!editingProductId || files.length === 0) return;
     setGalleryUploading(true);
     setGalleryUploadProgress({ done: 0, total: files.length });
+    setProductFormError("");
     const added: ProductImage[] = [];
+    const errors: string[] = [];
+
     for (let i = 0; i < files.length; i++) {
       const formData = new FormData();
       formData.append("file", files[i]);
       formData.append("folder", "products");
-      const uploadRes = await fetch("/api/admin/upload", { method: "POST", headers: { "x-admin-auth": ADMIN_PW }, body: formData });
-      if (uploadRes.ok) {
-        const { url } = await uploadRes.json();
-        const res = await fetch(`/api/products/${editingProductId}/images`, {
-          method: "POST",
-          headers: { "Content-Type": "application/json", "x-admin-auth": ADMIN_PW },
-          body: JSON.stringify({ image_path: url }),
-        });
-        if (res.ok) added.push(await res.json());
+
+      // Step 1: upload file to storage
+      const uploadRes = await fetch("/api/admin/upload", {
+        method: "POST",
+        headers: { "x-admin-auth": ADMIN_PW },
+        body: formData,
+      });
+
+      if (!uploadRes.ok) {
+        const uploadJson = await uploadRes.json().catch(() => ({}));
+        errors.push(`Arquivo ${i + 1}: erro no upload — ${uploadJson.error || uploadRes.status}`);
+        setGalleryUploadProgress({ done: i + 1, total: files.length });
+        continue;
       }
+
+      const { url } = await uploadRes.json();
+
+      // Step 2: save URL to product_images table
+      const res = await fetch(`/api/products/${editingProductId}/images`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json", "x-admin-auth": ADMIN_PW },
+        body: JSON.stringify({ image_path: url }),
+      });
+
+      if (!res.ok) {
+        const json = await res.json().catch(() => ({}));
+        errors.push(`Arquivo ${i + 1}: imagem enviada mas não salva — ${json.error || res.status}`);
+      } else {
+        added.push(await res.json());
+      }
+
       setGalleryUploadProgress({ done: i + 1, total: files.length });
     }
+
     if (added.length > 0) {
       setGalleryImages((prev) => [...prev, ...added]);
       fetchDbProducts();
+    }
+    if (errors.length > 0) {
+      setProductFormError(errors.join(" | "));
     }
     setGalleryUploading(false);
     setGalleryUploadProgress(null);
