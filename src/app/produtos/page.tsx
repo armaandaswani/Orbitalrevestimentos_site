@@ -36,12 +36,67 @@ const linhas: { key: Linha; label: string; desc: string }[] = [
   { key: "Elegance", label: "Elegance", desc: "Madeira Texturizada · R$ 649" },
 ];
 
+const LINHA_INFO: Record<"Classic" | "Brilliance" | "Elegance", {
+  material: string;
+  tagline: string;
+  differentials: { icon: string; text: string }[];
+  color: string;
+}> = {
+  Classic: {
+    material: "Polímero de Alta Densidade · Acabamento Fosco",
+    tagline: "Sofisticação atemporal com textura fosca anti-reflexo. A escolha mais versátil do catálogo.",
+    differentials: [
+      { icon: "◼", text: "Acabamento fosco anti-reflexo — elegância discreta em qualquer iluminação" },
+      { icon: "◼", text: "Absorção de apenas 0,2% em 48h — indicado para banheiros, lavabos e áreas úmidas" },
+      { icon: "◼", text: "Formato maxiplatê 1,2 × 2,9m — menos emendas, visual mais limpo" },
+      { icon: "◼", text: "Instalação em 2 a 3 horas por cômodo, sem obra, sem poeira" },
+    ],
+    color: "bg-blue-50 text-blue-800 border-blue-100",
+  },
+  Brilliance: {
+    material: "Polímero de Alta Densidade · Acabamento Polido",
+    tagline: "Superfície espelhada que replica mármore importado. Presença visual máxima.",
+    differentials: [
+      { icon: "◆", text: "Acabamento polido espelhado — efeito mármore de luxo sem o custo" },
+      { icon: "◆", text: "Reflexo de luz natural amplifica ambientes e cria sensação de amplitude" },
+      { icon: "◆", text: "Alta impermeabilidade — perfeito para banheiros e ambientes de alto padrão" },
+      { icon: "◆", text: "Mesma resistência técnica da linha Classic com visual premium" },
+    ],
+    color: "bg-purple-50 text-purple-800 border-purple-100",
+  },
+  Elegance: {
+    material: "Polímero de Alta Densidade · Textura Madeira",
+    tagline: "Calor e naturalidade da madeira sem nenhuma de suas desvantagens.",
+    differentials: [
+      { icon: "▲", text: "Textura tátil realista — aparência e sensação de madeira natural" },
+      { icon: "▲", text: "Zero manutenção — sem verniz, sem lixamento, sem deterioração" },
+      { icon: "▲", text: "Resistente à umidade — aplicável em banheiros, lavabos e cozinhas" },
+      { icon: "▲", text: "Calor visual com durabilidade industrial: vida útil superior a 20 anos" },
+    ],
+    color: "bg-green-50 text-green-800 border-green-100",
+  },
+};
+
+// All images for a product: cover first, then gallery sorted
+function allImages(product: Product): string[] {
+  const gallery = (product.product_images ?? [])
+    .slice()
+    .sort((a, b) => a.sort_order - b.sort_order)
+    .map((img) => img.image_path);
+  const seen = new Set<string>();
+  const result: string[] = [];
+  for (const url of [product.image_path, ...gallery]) {
+    if (url && !seen.has(url)) { seen.add(url); result.push(url); }
+  }
+  return result;
+}
+
 export default function ProdutosPage() {
   const [activeLinha, setActiveLinha] = useState<Linha>("todos");
   const [products, setProducts] = useState<Product[]>([]);
   const [loadingProducts, setLoadingProducts] = useState(true);
-  const [lightbox, setLightbox] = useState<Product | null>(null);
-  const [lightboxImgIdx, setLightboxImgIdx] = useState(0);
+  const [selected, setSelected] = useState<Product | null>(null);
+  const [imgIdx, setImgIdx] = useState(0);
 
   useEffect(() => {
     fetch("/api/products")
@@ -56,58 +111,39 @@ export default function ProdutosPage() {
       ? products
       : products.filter((p) => p.linha === activeLinha);
 
-  // All images for a product: cover image first, then gallery sorted by sort_order
-  function allImages(product: Product): string[] {
-    const gallery = (product.product_images ?? [])
-      .slice()
-      .sort((a, b) => a.sort_order - b.sort_order)
-      .map((img) => img.image_path);
-    // Deduplicate: if cover is already in gallery, don't repeat it
-    const seen = new Set<string>();
-    const result: string[] = [];
-    for (const url of [product.image_path, ...gallery]) {
-      if (url && !seen.has(url)) { seen.add(url); result.push(url); }
-    }
-    return result;
+  const selectedIndex = selected ? filtered.findIndex((p) => p.code === selected.code) : -1;
+  const images = selected ? allImages(selected) : [];
+
+  function open(product: Product) {
+    setSelected(product);
+    setImgIdx(0);
+  }
+  function close() {
+    setSelected(null);
+    setImgIdx(0);
   }
 
-  // Lightbox navigation
-  const lightboxIndex = lightbox ? filtered.findIndex((p) => p.code === lightbox.code) : -1;
-  const lightboxImages = lightbox ? allImages(lightbox) : [];
+  const goNextProduct = useCallback(() => {
+    if (selectedIndex < filtered.length - 1) open(filtered[selectedIndex + 1]);
+  }, [selectedIndex, filtered]); // eslint-disable-line react-hooks/exhaustive-deps
 
-  const goNext = useCallback(() => {
-    if (!lightbox) return;
-    const imgs = allImages(lightbox);
-    if (lightboxImgIdx < imgs.length - 1) {
-      setLightboxImgIdx(lightboxImgIdx + 1);
-    } else if (lightboxIndex < filtered.length - 1) {
-      setLightbox(filtered[lightboxIndex + 1]);
-      setLightboxImgIdx(0);
-    }
-  }, [lightbox, lightboxImgIdx, lightboxIndex, filtered]); // eslint-disable-line react-hooks/exhaustive-deps
+  const goPrevProduct = useCallback(() => {
+    if (selectedIndex > 0) open(filtered[selectedIndex - 1]);
+  }, [selectedIndex, filtered]); // eslint-disable-line react-hooks/exhaustive-deps
 
-  const goPrev = useCallback(() => {
-    if (!lightbox) return;
-    if (lightboxImgIdx > 0) {
-      setLightboxImgIdx(lightboxImgIdx - 1);
-    } else if (lightboxIndex > 0) {
-      const prevProduct = filtered[lightboxIndex - 1];
-      const prevImgs = allImages(prevProduct);
-      setLightbox(prevProduct);
-      setLightboxImgIdx(prevImgs.length - 1);
-    }
-  }, [lightbox, lightboxImgIdx, lightboxIndex, filtered]); // eslint-disable-line react-hooks/exhaustive-deps
-
-  const hasPrev = lightboxImgIdx > 0 || lightboxIndex > 0;
-  const hasNext = lightbox ? (lightboxImgIdx < lightboxImages.length - 1 || lightboxIndex < filtered.length - 1) : false;
-
-  // Keyboard navigation + ESC
   useEffect(() => {
-    if (!lightbox) return;
+    if (!selected) return;
     const handler = (e: KeyboardEvent) => {
-      if (e.key === "Escape") { setLightbox(null); setLightboxImgIdx(0); }
-      if (e.key === "ArrowRight") goNext();
-      if (e.key === "ArrowLeft") goPrev();
+      if (e.key === "Escape") close();
+      if (e.key === "ArrowRight") {
+        const imgs = allImages(selected);
+        if (imgIdx < imgs.length - 1) setImgIdx(imgIdx + 1);
+        else goNextProduct();
+      }
+      if (e.key === "ArrowLeft") {
+        if (imgIdx > 0) setImgIdx(imgIdx - 1);
+        else goPrevProduct();
+      }
     };
     window.addEventListener("keydown", handler);
     document.body.style.overflow = "hidden";
@@ -115,138 +151,205 @@ export default function ProdutosPage() {
       window.removeEventListener("keydown", handler);
       document.body.style.overflow = "";
     };
-  }, [lightbox, goNext, goPrev]);
+  }, [selected, imgIdx, goNextProduct, goPrevProduct]); // eslint-disable-line react-hooks/exhaustive-deps
 
   return (
     <div className="pt-20">
-      {/* Lightbox */}
-      {lightbox && (
-        <div
-          className="fixed inset-0 z-[100] flex items-center justify-center bg-black/90 backdrop-blur-sm"
-          onClick={() => { setLightbox(null); setLightboxImgIdx(0); }}
-        >
-          {/* Close */}
-          <button
-            onClick={() => { setLightbox(null); setLightboxImgIdx(0); }}
-            className="absolute top-4 right-4 z-10 text-white/70 hover:text-white bg-black/40 hover:bg-black/60 rounded-full w-10 h-10 flex items-center justify-center transition-colors"
-            aria-label="Fechar"
-          >
-            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-              <path d="M18 6L6 18M6 6l12 12" />
-            </svg>
-          </button>
 
-          {/* Prev arrow */}
-          {hasPrev && (
-            <button
-              onClick={(e) => { e.stopPropagation(); goPrev(); }}
-              className="absolute left-3 lg:left-6 z-10 text-white/70 hover:text-white bg-black/40 hover:bg-black/60 rounded-full w-10 h-10 flex items-center justify-center transition-colors"
-              aria-label="Anterior"
-            >
-              <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-                <path d="M15 18l-6-6 6-6" />
-              </svg>
-            </button>
-          )}
-
-          {/* Next arrow */}
-          {hasNext && (
-            <button
-              onClick={(e) => { e.stopPropagation(); goNext(); }}
-              className="absolute right-3 lg:right-6 z-10 text-white/70 hover:text-white bg-black/40 hover:bg-black/60 rounded-full w-10 h-10 flex items-center justify-center transition-colors"
-              aria-label="Próximo"
-            >
-              <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-                <path d="M9 18l6-6-6-6" />
-              </svg>
-            </button>
-          )}
-
-          {/* Content */}
+      {/* ── Product Detail Modal ── */}
+      {selected && (() => {
+        const info = LINHA_INFO[selected.linha];
+        const simulatorUrl = `/simulador?produto=${encodeURIComponent(selected.code)}`;
+        return (
           <div
-            className="flex flex-col lg:flex-row w-full max-w-5xl mx-4 lg:mx-8 max-h-[90dvh] overflow-hidden"
-            onClick={(e) => e.stopPropagation()}
+            className="fixed inset-0 z-[100] flex items-stretch bg-black/80 backdrop-blur-sm"
+            onClick={close}
           >
-            {/* Image */}
-            <div className="relative flex-shrink-0 w-full lg:w-[55%] aspect-[4/5] lg:aspect-auto lg:h-[80dvh] bg-[#111] flex flex-col">
-              <div className="relative flex-1 min-h-0">
-                <img
-                  key={lightboxImages[lightboxImgIdx]}
-                  src={lightboxImages[lightboxImgIdx] ?? lightbox.image_path}
-                  alt={lightbox.name}
-                  className="absolute inset-0 w-full h-full object-contain"
-                />
-              </div>
-              {/* Thumbnail strip */}
-              {lightboxImages.length > 1 && (
-                <div className="flex gap-1.5 p-2 bg-black/60 overflow-x-auto flex-shrink-0" onClick={(e) => e.stopPropagation()}>
-                  {lightboxImages.map((url, i) => (
-                    <button
-                      key={url}
-                      onClick={() => setLightboxImgIdx(i)}
-                      className={`flex-shrink-0 w-12 h-12 lg:w-14 lg:h-14 border-2 overflow-hidden transition-all ${
-                        i === lightboxImgIdx ? "border-white opacity-100" : "border-transparent opacity-50 hover:opacity-80"
-                      }`}
-                    >
-                      <img src={url} alt="" className="w-full h-full object-cover" />
-                    </button>
-                  ))}
-                </div>
-              )}
-            </div>
+            {/* Prev product arrow */}
+            {selectedIndex > 0 && (
+              <button
+                onClick={(e) => { e.stopPropagation(); goPrevProduct(); }}
+                className="absolute left-3 top-1/2 -translate-y-1/2 z-20 text-white/70 hover:text-white bg-black/40 hover:bg-black/60 rounded-full w-10 h-10 items-center justify-center transition-colors hidden lg:flex"
+                aria-label="Produto anterior"
+              >
+                <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><path d="M15 18l-6-6 6-6"/></svg>
+              </button>
+            )}
+            {selectedIndex < filtered.length - 1 && (
+              <button
+                onClick={(e) => { e.stopPropagation(); goNextProduct(); }}
+                className="absolute right-3 top-1/2 -translate-y-1/2 z-20 text-white/70 hover:text-white bg-black/40 hover:bg-black/60 rounded-full w-10 h-10 items-center justify-center transition-colors hidden lg:flex"
+                aria-label="Próximo produto"
+              >
+                <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><path d="M9 18l6-6-6-6"/></svg>
+              </button>
+            )}
 
-            {/* Info panel */}
-            <div className="bg-white lg:flex-1 flex flex-col justify-between p-6 lg:p-10">
-              <div>
-                <span className="text-[#74777f] text-[10px] tracking-[0.18em] uppercase font-semibold font-[var(--font-inter)]">
-                  {lightbox.code} · Linha {lightbox.linha}
-                </span>
-                <h2 className="font-[var(--font-noto-serif)] text-[#002045] text-2xl lg:text-3xl font-normal mt-2 mb-4 leading-snug">
-                  {lightbox.name}
-                </h2>
-                <span className="inline-block bg-[#f3f3f3] text-[#002045] text-[10px] tracking-[0.12em] uppercase font-semibold font-[var(--font-inter)] px-3 py-1.5 mb-5">
-                  {lightbox.finish}
-                </span>
-                <p className="text-[#43474e] text-sm font-[var(--font-inter)] leading-relaxed mb-6">
-                  {lightbox.description}
-                </p>
-                <div className="border-t border-[#e2e2e2] pt-5 space-y-1.5">
-                  <p className="text-[#1a365d] text-xl font-semibold font-[var(--font-inter)]">
-                    R$ {lightbox.price.toLocaleString("pt-BR")}
-                    <span className="text-sm text-[#74777f] font-normal ml-1">/placa</span>
-                  </p>
-                  <p className="text-[#74777f] text-sm font-[var(--font-inter)]">
-                    R$ {lightbox.price_per_m2}/m² · 3,48 m² por placa
-                  </p>
+            {/* Modal card */}
+            <div
+              className="relative m-auto w-full max-w-5xl max-h-[96dvh] flex flex-col lg:flex-row overflow-hidden shadow-2xl"
+              onClick={(e) => e.stopPropagation()}
+            >
+              {/* Close */}
+              <button
+                onClick={close}
+                className="absolute top-3 right-3 z-30 text-white/80 hover:text-white bg-black/50 hover:bg-black/70 rounded-full w-9 h-9 flex items-center justify-center transition-colors"
+                aria-label="Fechar"
+              >
+                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5"><path d="M18 6L6 18M6 6l12 12"/></svg>
+              </button>
+
+              {/* ── Left: Image gallery ── */}
+              <div className="flex-shrink-0 w-full lg:w-[52%] flex flex-col bg-[#0d0d0d] min-h-0">
+                {/* Main image */}
+                <div className="relative flex-1 min-h-0 aspect-[4/5] lg:aspect-auto">
+                  <img
+                    key={images[imgIdx]}
+                    src={images[imgIdx] ?? selected.image_path}
+                    alt={selected.name}
+                    className="absolute inset-0 w-full h-full object-contain"
+                  />
+                  {/* Mobile image prev/next */}
+                  <div className="absolute inset-x-0 top-1/2 -translate-y-1/2 flex justify-between px-2 lg:hidden pointer-events-none">
+                    {imgIdx > 0 && (
+                      <button onClick={() => setImgIdx(imgIdx - 1)} className="pointer-events-auto bg-black/50 text-white rounded-full w-8 h-8 flex items-center justify-center">
+                        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5"><path d="M15 18l-6-6 6-6"/></svg>
+                      </button>
+                    )}
+                    <span />
+                    {imgIdx < images.length - 1 && (
+                      <button onClick={() => setImgIdx(imgIdx + 1)} className="pointer-events-auto bg-black/50 text-white rounded-full w-8 h-8 flex items-center justify-center">
+                        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5"><path d="M9 18l6-6-6-6"/></svg>
+                      </button>
+                    )}
+                  </div>
                 </div>
+
+                {/* Thumbnails */}
+                {images.length > 1 && (
+                  <div className="flex gap-1.5 p-2 bg-black/70 overflow-x-auto flex-shrink-0">
+                    {images.map((url, i) => (
+                      <button
+                        key={url + i}
+                        onClick={() => setImgIdx(i)}
+                        className={`flex-shrink-0 w-12 h-12 lg:w-14 lg:h-14 border-2 overflow-hidden transition-all ${
+                          i === imgIdx ? "border-white opacity-100" : "border-transparent opacity-45 hover:opacity-75"
+                        }`}
+                      >
+                        <img src={url} alt="" className="w-full h-full object-cover" />
+                      </button>
+                    ))}
+                  </div>
+                )}
               </div>
-              <div className="mt-6 flex flex-col sm:flex-row gap-3">
-                <a
-                  href={`https://wa.me/5592988150149?text=${encodeURIComponent(`Olá! Tenho interesse no acabamento ${lightbox.name} (${lightbox.code}). Gostaria de saber mais.`)}`}
-                  target="_blank"
-                  rel="noopener noreferrer"
-                  className="flex-1 inline-flex items-center justify-center gap-2 bg-[#002045] text-white text-xs tracking-[0.12em] uppercase font-bold font-[var(--font-inter)] px-6 py-3.5 hover:bg-[#003070] transition-colors"
-                >
-                  Saber mais →
-                </a>
-                <Link
-                  href="/simulador"
-                  className="flex-1 inline-flex items-center justify-center gap-2 border border-[#002045] text-[#002045] text-xs tracking-[0.12em] uppercase font-bold font-[var(--font-inter)] px-6 py-3.5 hover:bg-[#002045] hover:text-white transition-colors"
-                  onClick={() => { setLightbox(null); setLightboxImgIdx(0); }}
-                >
-                  Simular orçamento
-                </Link>
+
+              {/* ── Right: Product info ── */}
+              <div className="flex-1 bg-white flex flex-col overflow-y-auto">
+                <div className="p-6 lg:p-8 flex flex-col gap-5 flex-1">
+
+                  {/* Breadcrumb + badges */}
+                  <div className="flex items-center gap-2 flex-wrap">
+                    <span className={`text-[10px] tracking-[0.12em] uppercase font-bold font-[var(--font-inter)] px-2.5 py-1 border ${info.color}`}>
+                      Linha {selected.linha}
+                    </span>
+                    <span className="text-[#b0b0b0] text-[10px] font-[var(--font-inter)]">/</span>
+                    <span className="text-[#74777f] text-[10px] tracking-[0.12em] uppercase font-semibold font-[var(--font-inter)]">
+                      {selected.code}
+                    </span>
+                  </div>
+
+                  {/* Name */}
+                  <div>
+                    <h2 className="font-[var(--font-noto-serif)] text-[#002045] text-2xl lg:text-3xl font-normal leading-tight mb-1">
+                      {selected.name}
+                    </h2>
+                    <p className="text-[#74777f] text-xs font-[var(--font-inter)]">{info.material}</p>
+                  </div>
+
+                  {/* Tagline */}
+                  <p className="text-[#43474e] text-sm font-[var(--font-inter)] leading-relaxed italic border-l-2 border-[#002045]/20 pl-3">
+                    {info.tagline}
+                  </p>
+
+                  {/* Description */}
+                  {selected.description && (
+                    <p className="text-[#43474e] text-sm font-[var(--font-inter)] leading-relaxed">
+                      {selected.description}
+                    </p>
+                  )}
+
+                  {/* Specs bar */}
+                  <div className="grid grid-cols-3 gap-0 border border-[#e8e8e8]">
+                    {[
+                      { label: "Espessura", value: "5 mm" },
+                      { label: "Dimensão", value: "1,2 × 2,9m" },
+                      { label: "Área/placa", value: "3,48 m²" },
+                    ].map(({ label, value }, i) => (
+                      <div key={label} className={`px-3 py-2.5 text-center ${i < 2 ? "border-r border-[#e8e8e8]" : ""}`}>
+                        <p className="font-[var(--font-noto-serif)] text-[#002045] text-sm font-normal">{value}</p>
+                        <p className="text-[#74777f] text-[9px] tracking-[0.12em] uppercase font-semibold font-[var(--font-inter)] mt-0.5">{label}</p>
+                      </div>
+                    ))}
+                  </div>
+
+                  {/* Differentials */}
+                  <div>
+                    <p className="text-[10px] tracking-[0.15em] uppercase font-bold font-[var(--font-inter)] text-[#74777f] mb-3">
+                      Principais diferenciais
+                    </p>
+                    <ul className="space-y-2.5">
+                      {info.differentials.map(({ text }, i) => (
+                        <li key={i} className="flex items-start gap-2.5 text-sm font-[var(--font-inter)] text-[#43474e]">
+                          <span className="text-[#002045] text-[10px] mt-0.5 flex-shrink-0">✓</span>
+                          <span className="leading-relaxed">{text}</span>
+                        </li>
+                      ))}
+                    </ul>
+                  </div>
+
+                  {/* Price */}
+                  <div className="border-t border-[#e8e8e8] pt-4">
+                    <p className="text-[#1a365d] text-2xl font-semibold font-[var(--font-inter)]">
+                      R$ {selected.price.toLocaleString("pt-BR")}
+                      <span className="text-sm text-[#74777f] font-normal ml-1">/placa</span>
+                    </p>
+                    <p className="text-[#74777f] text-xs font-[var(--font-inter)] mt-0.5">
+                      R$ {selected.price_per_m2}/m² · {selectedIndex + 1} de {filtered.length} modelos
+                      {images.length > 1 && ` · ${images.length} fotos`}
+                    </p>
+                  </div>
+                </div>
+
+                {/* CTA buttons — pinned to bottom */}
+                <div className="sticky bottom-0 p-4 lg:p-6 bg-white border-t border-[#e8e8e8] flex flex-col sm:flex-row gap-3">
+                  <Link
+                    href={simulatorUrl}
+                    onClick={close}
+                    className="flex-1 inline-flex items-center justify-center gap-2 bg-[#002045] text-white text-xs tracking-[0.12em] uppercase font-bold font-[var(--font-inter)] px-6 py-4 hover:bg-[#003070] transition-colors"
+                  >
+                    <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5">
+                      <path d="M9 7H6a2 2 0 00-2 2v9a2 2 0 002 2h9a2 2 0 002-2v-3M13 3h8m0 0v8m0-8L11 13"/>
+                    </svg>
+                    Simular investimento
+                  </Link>
+                  <a
+                    href={`https://wa.me/5592988150149?text=${encodeURIComponent(`Olá! Tenho interesse no acabamento ${selected.name} (${selected.code} — Linha ${selected.linha}). Gostaria de saber mais.`)}`}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="flex-1 inline-flex items-center justify-center gap-2 border border-[#002045] text-[#002045] text-xs tracking-[0.12em] uppercase font-bold font-[var(--font-inter)] px-6 py-4 hover:bg-[#002045] hover:text-white transition-colors"
+                  >
+                    <svg width="14" height="14" viewBox="0 0 24 24" fill="currentColor">
+                      <path d="M17.472 14.382c-.297-.149-1.758-.867-2.03-.967-.273-.099-.471-.148-.67.15-.197.297-.767.966-.94 1.164-.173.199-.347.223-.644.075-.297-.15-1.255-.463-2.39-1.475-.883-.788-1.48-1.761-1.653-2.059-.173-.297-.018-.458.13-.606.134-.133.298-.347.446-.52.149-.174.198-.298.298-.497.099-.198.05-.371-.025-.52-.075-.149-.669-1.612-.916-2.207-.242-.579-.487-.5-.669-.51-.173-.008-.371-.01-.57-.01-.198 0-.52.074-.792.372-.272.297-1.04 1.016-1.04 2.479 0 1.462 1.065 2.875 1.213 3.074.149.198 2.096 3.2 5.077 4.487.709.306 1.262.489 1.694.625.712.227 1.36.195 1.871.118.571-.085 1.758-.719 2.006-1.413.248-.694.248-1.289.173-1.413-.074-.124-.272-.198-.57-.347m-5.421 7.403h-.004a9.87 9.87 0 01-5.031-1.378l-.361-.214-3.741.982.998-3.648-.235-.374a9.86 9.86 0 01-1.51-5.26c.001-5.45 4.436-9.884 9.888-9.884 2.64 0 5.122 1.03 6.988 2.898a9.825 9.825 0 012.893 6.994c-.003 5.45-4.437 9.884-9.885 9.884m8.413-18.297A11.815 11.815 0 0012.05 0C5.495 0 .16 5.335.157 11.892c0 2.096.547 4.142 1.588 5.945L.057 24l6.305-1.654a11.882 11.882 0 005.683 1.448h.005c6.554 0 11.89-5.335 11.893-11.893a11.821 11.821 0 00-3.48-8.413z"/>
+                    </svg>
+                    Falar no WhatsApp
+                  </a>
+                </div>
               </div>
             </div>
           </div>
+        );
+      })()}
 
-          {/* Counter */}
-          <div className="absolute bottom-4 left-1/2 -translate-x-1/2 text-white/50 text-xs font-[var(--font-inter)] tracking-[0.1em]">
-            Produto {lightboxIndex + 1}/{filtered.length}
-            {lightboxImages.length > 1 && ` · Foto ${lightboxImgIdx + 1}/${lightboxImages.length}`}
-          </div>
-        </div>
-      )}
       {/* Page Header */}
       <section className="bg-[#002045] text-white py-10 lg:py-24">
         <div className="max-w-[1280px] mx-auto px-4 lg:px-16">
@@ -336,7 +439,6 @@ export default function ProdutosPage() {
                     <div className="h-3 bg-[#e2e2e2] rounded w-1/3" />
                     <div className="h-5 bg-[#e2e2e2] rounded w-2/3" />
                     <div className="h-3 bg-[#e2e2e2] rounded w-full hidden sm:block" />
-                    <div className="h-3 bg-[#e2e2e2] rounded w-4/5 hidden sm:block" />
                   </div>
                 </div>
               ))}
@@ -344,25 +446,27 @@ export default function ProdutosPage() {
           ) : (
             <div className="grid grid-cols-2 lg:grid-cols-3 gap-x-4 gap-y-8 lg:gap-x-8 lg:gap-y-14">
               {filtered.map((product) => (
-                <article key={product.code} className="group cursor-pointer">
-                  <div
-                    className="relative aspect-[4/5] overflow-hidden bg-[#eeeeee] mb-3 lg:mb-5 shadow-sm group-hover:shadow-lg transition-shadow duration-500 cursor-zoom-in"
-                    onClick={() => { setLightbox(product); setLightboxImgIdx(0); }}
-                  >
+                <article
+                  key={product.code}
+                  className="group cursor-pointer"
+                  onClick={() => open(product)}
+                >
+                  {/* Image */}
+                  <div className="relative aspect-[4/5] overflow-hidden bg-[#eeeeee] mb-3 lg:mb-5 shadow-sm group-hover:shadow-lg transition-shadow duration-500">
                     <img
                       src={product.image_path}
                       alt={`${product.name} — Linha ${product.linha}`}
                       className="absolute inset-0 w-full h-full object-cover transition-transform duration-700 ease-out group-hover:scale-[1.05]"
                     />
-                    {/* Zoom icon overlay */}
-                    <div className="absolute inset-0 bg-black/0 group-hover:bg-black/20 transition-colors duration-300 flex items-center justify-center">
+                    {/* Hover overlay */}
+                    <div className="absolute inset-0 bg-black/0 group-hover:bg-black/25 transition-colors duration-300 flex items-center justify-center">
                       <div className="opacity-0 group-hover:opacity-100 transition-opacity duration-300 bg-white/90 rounded-full w-10 h-10 flex items-center justify-center shadow-lg">
-                        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#002045" strokeWidth="2.5">
-                          <circle cx="11" cy="11" r="8" />
-                          <path d="M21 21l-4.35-4.35M11 8v6M8 11h6" />
+                        <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="#002045" strokeWidth="2.5">
+                          <path d="M15 3h6m0 0v6m0-6L14 10M9 21H3m0 0v-6m0 6l7-7"/>
                         </svg>
                       </div>
                     </div>
+                    {/* Badges */}
                     <div className="absolute top-2 right-2 lg:top-4 lg:right-4 flex flex-col items-end gap-1.5">
                       <span className="bg-white/95 text-[#002045] text-[9px] lg:text-[10px] tracking-[0.1em] uppercase font-semibold font-[var(--font-inter)] px-2 py-1 lg:px-2.5 lg:py-1.5">
                         {product.finish}
@@ -375,25 +479,23 @@ export default function ProdutosPage() {
                       )}
                     </div>
                   </div>
+
+                  {/* Info */}
                   <div className="space-y-1 lg:space-y-1.5">
-                    <div className="flex items-center justify-between">
-                      <span className="text-[#74777f] text-[9px] lg:text-[10px] tracking-[0.15em] uppercase font-semibold font-[var(--font-inter)]">
-                        {product.code} · {product.linha}
-                      </span>
-                    </div>
-                    <h3 className="font-[var(--font-noto-serif)] text-[#002045] text-base lg:text-xl font-medium leading-snug">
+                    <span className="text-[#74777f] text-[9px] lg:text-[10px] tracking-[0.15em] uppercase font-semibold font-[var(--font-inter)]">
+                      {product.code} · {product.linha}
+                    </span>
+                    <h3 className="font-[var(--font-noto-serif)] text-[#002045] text-base lg:text-xl font-medium leading-snug group-hover:underline underline-offset-2 decoration-[#002045]/30">
                       {product.name}
                     </h3>
-                    <p className="text-[#43474e] text-xs lg:text-sm font-[var(--font-inter)] leading-relaxed hidden sm:block">
+                    <p className="text-[#43474e] text-xs lg:text-sm font-[var(--font-inter)] leading-relaxed hidden sm:block line-clamp-2">
                       {product.description}
                     </p>
-                    <div className="flex items-center justify-between pt-1 lg:pt-2">
+                    <div className="pt-1 lg:pt-2 flex items-center justify-between">
                       <div>
                         <span className="text-[#1a365d] text-sm lg:text-base font-semibold font-[var(--font-inter)]">
                           R$ {product.price.toLocaleString("pt-BR")}
-                          <span className="text-xs text-[#74777f] font-normal ml-1">
-                            /placa
-                          </span>
+                          <span className="text-xs text-[#74777f] font-normal ml-1">/placa</span>
                         </span>
                         <span className="text-[#74777f] text-xs font-[var(--font-inter)] ml-1 lg:ml-2 hidden sm:inline">
                           (R$ {product.price_per_m2}/m²)
@@ -401,14 +503,9 @@ export default function ProdutosPage() {
                       </div>
                     </div>
                     <div className="pt-1">
-                      <a
-                        href={`https://wa.me/5592988150149?text=${encodeURIComponent(`Olá! Tenho interesse no acabamento ${product.name} (${product.code}). Gostaria de saber mais.`)}`}
-                        target="_blank"
-                        rel="noopener noreferrer"
-                        className="inline-block text-[10px] tracking-[0.12em] uppercase font-bold font-[var(--font-inter)] border border-[#002045] text-[#002045] px-4 py-2 lg:px-5 hover:bg-[#002045] hover:text-white transition-colors"
-                      >
-                        Saber mais →
-                      </a>
+                      <button className="inline-block text-[10px] tracking-[0.12em] uppercase font-bold font-[var(--font-inter)] border border-[#002045] text-[#002045] px-4 py-2 lg:px-5 group-hover:bg-[#002045] group-hover:text-white transition-colors">
+                        Ver detalhes →
+                      </button>
                     </div>
                   </div>
                 </article>

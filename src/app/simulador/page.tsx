@@ -290,6 +290,18 @@ function SimuladorInner() {
     if (cupom) setCouponCode(cupom.toUpperCase());
   }, [searchParams]);
 
+  // Pre-select product from ?produto=CODE (set after products are loaded)
+  useEffect(() => {
+    if (loadingProducts || products.length === 0) return;
+    const code = searchParams.get("produto");
+    if (!code) return;
+    const match = products.find((p) => p.code === code);
+    if (match) {
+      setSelectedLine(match.linha);
+      setSelectedProduct(match);
+    }
+  }, [loadingProducts, products, searchParams]);
+
   function reset() {
     setStep(1);
     setSelectedSpace(null);
