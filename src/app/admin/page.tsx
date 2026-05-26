@@ -305,6 +305,7 @@ export default function AdminPage() {
   const [productImageUploading, setProductImageUploading] = useState(false);
   const [galleryImages, setGalleryImages] = useState<ProductImage[]>([]);
   const [galleryUploading, setGalleryUploading] = useState(false);
+  const [galleryUploadProgress, setGalleryUploadProgress] = useState<{done: number; total: number} | null>(null);
   const productTabFormRef = useRef<HTMLDivElement>(null);
 
   // DB Projects
@@ -766,27 +767,33 @@ export default function AdminPage() {
     setTimeout(() => productTabFormRef.current?.scrollIntoView({ behavior: "smooth", block: "start" }), 50);
   }
 
-  async function addGalleryImage(file: File) {
-    if (!editingProductId) return;
+  async function addGalleryImages(files: FileList) {
+    if (!editingProductId || files.length === 0) return;
     setGalleryUploading(true);
-    const formData = new FormData();
-    formData.append("file", file);
-    formData.append("folder", "products");
-    const uploadRes = await fetch("/api/admin/upload", { method: "POST", headers: { "x-admin-auth": ADMIN_PW }, body: formData });
-    if (!uploadRes.ok) { setGalleryUploading(false); return; }
-    const { url } = await uploadRes.json();
-    const res = await fetch(`/api/products/${editingProductId}/images`, {
-      method: "POST",
-      headers: { "Content-Type": "application/json", "x-admin-auth": ADMIN_PW },
-      body: JSON.stringify({ image_path: url }),
-    });
-    if (res.ok) {
-      const newImg = await res.json();
-      setGalleryImages((prev) => [...prev, newImg]);
-      // Refresh the product list so the card count stays accurate
+    setGalleryUploadProgress({ done: 0, total: files.length });
+    const added: ProductImage[] = [];
+    for (let i = 0; i < files.length; i++) {
+      const formData = new FormData();
+      formData.append("file", files[i]);
+      formData.append("folder", "products");
+      const uploadRes = await fetch("/api/admin/upload", { method: "POST", headers: { "x-admin-auth": ADMIN_PW }, body: formData });
+      if (uploadRes.ok) {
+        const { url } = await uploadRes.json();
+        const res = await fetch(`/api/products/${editingProductId}/images`, {
+          method: "POST",
+          headers: { "Content-Type": "application/json", "x-admin-auth": ADMIN_PW },
+          body: JSON.stringify({ image_path: url }),
+        });
+        if (res.ok) added.push(await res.json());
+      }
+      setGalleryUploadProgress({ done: i + 1, total: files.length });
+    }
+    if (added.length > 0) {
+      setGalleryImages((prev) => [...prev, ...added]);
       fetchDbProducts();
     }
     setGalleryUploading(false);
+    setGalleryUploadProgress(null);
   }
 
   async function deleteGalleryImage(imageId: string) {
@@ -2960,17 +2967,16 @@ export default function AdminPage() {
                           {galleryUploading ? (
                             <>
                               <svg className="animate-spin" width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5"><path d="M12 2v4M12 18v4M4.93 4.93l2.83 2.83M16.24 16.24l2.83 2.83M2 12h4M18 12h4M4.93 19.07l2.83-2.83M16.24 7.76l2.83-2.83"/></svg>
-                              Enviando...
+                              {galleryUploadProgress ? `${galleryUploadProgress.done}/${galleryUploadProgress.total}` : "Enviando..."}
                             </>
                           ) : (
                             <>
                               <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5"><path d="M12 5v14M5 12l7-7 7 7"/></svg>
-                              + Foto
+                              + Fotos
                             </>
                           )}
-                          <input type="file" accept="image/*" className="hidden" disabled={galleryUploading} onChange={async (e) => {
-                            const file = e.target.files?.[0];
-                            if (file) await addGalleryImage(file);
+                          <input type="file" accept="image/*" multiple className="hidden" disabled={galleryUploading} onChange={async (e) => {
+                            if (e.target.files && e.target.files.length > 0) await addGalleryImages(e.target.files);
                             e.target.value = "";
                           }} />
                         </label>
