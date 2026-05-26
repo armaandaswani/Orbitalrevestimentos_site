@@ -1512,20 +1512,19 @@ function SimuladorInner() {
                 </p>
               </div>
 
-              {/* Technical comparison — collapsible */}
+              {/* Technical comparison — always visible on desktop, collapsible on mobile */}
               <div className="bg-white border border-[#e2e2e2] border-t-0">
+                {/* Mobile: collapsible toggle */}
                 <button
                   onClick={() => setComparisonExpanded(!comparisonExpanded)}
-                  className="w-full flex items-center justify-between px-6 sm:px-8 py-6 text-left group"
+                  className="lg:hidden w-full flex items-center justify-between px-6 py-5 text-left"
                 >
                   <div>
                     <p className="text-[#43474e] text-[10px] tracking-[0.15em] uppercase font-bold font-[var(--font-inter)] mb-1">
                       PFB Orbital vs. o mercado
                     </p>
                     <p className="text-[#74777f] text-xs font-[var(--font-inter)]">
-                      {comparisonExpanded
-                        ? "Ocultar comparativo"
-                        : "10 critérios técnicos — umidade, durabilidade, mofo e mais"}
+                      {comparisonExpanded ? "Ocultar comparativo" : "10 critérios técnicos — umidade, durabilidade, mofo e mais"}
                     </p>
                   </div>
                   <svg
@@ -1536,11 +1535,18 @@ function SimuladorInner() {
                   </svg>
                 </button>
 
-                {comparisonExpanded && (
-                  <div className="border-t border-[#e2e2e2] px-6 sm:px-8 py-8">
-                    <MdfComparison />
-                  </div>
-                )}
+                {/* Mobile: content shown only when expanded */}
+                <div className={`lg:hidden border-t border-[#e2e2e2] px-6 py-6 ${comparisonExpanded ? "block" : "hidden"}`}>
+                  <MdfComparison />
+                </div>
+
+                {/* Desktop: always visible */}
+                <div className="hidden lg:block border-t border-[#e2e2e2] px-8 py-8">
+                  <p className="text-[#43474e] text-[10px] tracking-[0.15em] uppercase font-bold font-[var(--font-inter)] mb-6">
+                    PFB Orbital vs. o mercado
+                  </p>
+                  <MdfComparison />
+                </div>
               </div>
             </div>
           )}
