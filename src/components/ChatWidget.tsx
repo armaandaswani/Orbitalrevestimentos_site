@@ -51,6 +51,12 @@ const FAQS: FAQ[] = [
     linkCta: { label: "Ver comparativo técnico completo", href: "/tecnologia" },
   },
   {
+    id: "fachada",
+    keywords: ["fachada", "externo", "externa", "exterior", "area externa", "lado de fora", "fora", "fachada externa", "fachada interna", "parede externa"],
+    answer: "Depende. Fachada interna (hall de entrada, corredor externo coberto) — pode sim! Fachada externa exposta ao sol e chuva diretamente — não é indicado. O PFB tem proteção UV, mas não é homologado para exposição direta às intempéries. Para dúvidas sobre um projeto específico, fale com nossa equipe.",
+    waMsg: "Olá! Tenho uma dúvida sobre aplicação do PFB em fachada.",
+  },
+  {
     id: "piso",
     keywords: ["piso", "chao", "chão", "solo", "piso laminado", "no piso", "no chao", "colocar no piso", "usar no piso", "aplicar no piso", "piso frio", "piso porcelanato", "sobre o piso"],
     answer: "Não, o PFB não é indicado para piso — ele é um revestimento de parede e teto. Para piso, a placa não tem a resistência ao impacto e tráfego necessários. Mas nas paredes e teto o resultado é incrível e dura 10+ anos!",
