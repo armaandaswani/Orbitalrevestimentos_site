@@ -698,7 +698,7 @@ function SimuladorInner() {
                         >
                           <button
                             onClick={() => setSelectedProduct(product)}
-                            className="relative w-full overflow-hidden bg-[#f7f7f5] block group"
+                            className="relative w-full overflow-hidden bg-[#f7f7f5] block"
                           >
                             <div className="relative w-full" style={{ aspectRatio: "812/988" }}>
                               <img
@@ -715,16 +715,6 @@ function SimuladorInner() {
                                 </svg>
                               </div>
                             )}
-                            {/* Expand button */}
-                            <button
-                              onClick={(e) => { e.stopPropagation(); setLightboxImg(product.image_path); }}
-                              className="absolute bottom-2 right-2 w-6 h-6 bg-white/90 hover:bg-white flex items-center justify-center shadow-sm opacity-0 group-hover:opacity-100 transition-opacity"
-                              title="Ver imagem ampliada"
-                            >
-                              <svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="#002045" strokeWidth="2">
-                                <path d="M15 3h6v6M9 21H3v-6M21 3l-7 7M3 21l7-7" />
-                              </svg>
-                            </button>
                           </button>
                           <button onClick={() => setSelectedProduct(product)} className="p-2 w-full text-left">
                             <p className={`text-[10px] font-bold font-[var(--font-inter)] leading-tight ${active ? "text-[#002045]" : "text-[#43474e]"}`}>
