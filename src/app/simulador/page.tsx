@@ -1368,29 +1368,17 @@ function SimuladorInner() {
 
                 {/* MDF card — collapsed on mobile, full on desktop */}
                 <div className="bg-[#fafaf8] border border-[#e2e2e2]">
+                  {/* Always visible header */}
+                  <div className="px-6 py-5">
+                    <p className="text-[#74777f] text-[9px] tracking-[0.2em] uppercase font-bold font-[var(--font-inter)]">
+                      MDF — Estimativa por instalação
+                    </p>
+                    <p className="text-[#43474e] text-lg font-[var(--font-noto-serif)] mt-0.5">{fmt(mdfOnce)}</p>
+                  </div>
 
-                  {/* Toggle header */}
-                  <button
-                    className="w-full flex items-center justify-between px-6 py-5 text-left"
-                    onClick={() => setMdfExpanded(!mdfExpanded)}
-                  >
-                    <div>
-                      <p className="text-[#74777f] text-[9px] tracking-[0.2em] uppercase font-bold font-[var(--font-inter)]">
-                        MDF — Estimativa por instalação
-                      </p>
-                      <p className="text-[#43474e] text-lg font-[var(--font-noto-serif)] mt-0.5">{fmt(mdfOnce)}</p>
-                    </div>
-                    <svg
-                      width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#74777f" strokeWidth="2"
-                      className={`flex-shrink-0 transition-transform duration-200 ${mdfExpanded ? "rotate-180" : ""}`}
-                    >
-                      <path d="M6 9l6 6 6-6" />
-                    </svg>
-                  </button>
-
-                  {/* Expandable body */}
-                  <div className={`${mdfExpanded ? "block" : "hidden"} px-6 sm:px-8 pb-8`}>
-                    <div className="space-y-3 mb-6">
+                  {/* Always visible body */}
+                  <div className="px-6 sm:px-8 pb-8 border-t border-[#e2e2e2]">
+                    <div className="space-y-3 mb-6 pt-5">
                       <div className="flex items-start justify-between text-sm font-[var(--font-inter)] gap-4">
                         <span className="text-[#74777f]">
                           Material ({mdfSheets} chapa{mdfSheets !== 1 ? "s" : ""} × R$ {MDF_SHEET_PRICE})
@@ -1502,12 +1490,11 @@ function SimuladorInner() {
                 </p>
               </div>
 
-              {/* Technical comparison — always visible on desktop, collapsible on mobile */}
+              {/* Technical comparison — collapsible on all screen sizes */}
               <div className="bg-white border border-[#e2e2e2] border-t-0">
-                {/* Mobile: collapsible toggle */}
                 <button
                   onClick={() => setComparisonExpanded(!comparisonExpanded)}
-                  className="lg:hidden w-full flex items-center justify-between px-6 py-5 text-left"
+                  className="w-full flex items-center justify-between px-6 py-5 text-left"
                 >
                   <div>
                     <p className="text-[#43474e] text-[10px] tracking-[0.15em] uppercase font-bold font-[var(--font-inter)] mb-1">
@@ -1525,18 +1512,11 @@ function SimuladorInner() {
                   </svg>
                 </button>
 
-                {/* Mobile: content shown only when expanded */}
-                <div className={`lg:hidden border-t border-[#e2e2e2] px-6 py-6 ${comparisonExpanded ? "block" : "hidden"}`}>
-                  <MdfComparison />
-                </div>
-
-                {/* Desktop: always visible */}
-                <div className="hidden lg:block border-t border-[#e2e2e2] px-8 py-8">
-                  <p className="text-[#43474e] text-[10px] tracking-[0.15em] uppercase font-bold font-[var(--font-inter)] mb-6">
-                    PFB Orbital vs. o mercado
-                  </p>
-                  <MdfComparison />
-                </div>
+                {comparisonExpanded && (
+                  <div className="border-t border-[#e2e2e2] px-6 lg:px-8 py-6 lg:py-8">
+                    <MdfComparison />
+                  </div>
+                )}
               </div>
             </div>
           )}
