@@ -97,9 +97,10 @@ const FAQS: FAQ[] = [
   },
   {
     id: "certificacao",
-    keywords: ["certificacao", "art", "crea", "laudo", "aprovacao", "homologado", "tecnico", "engenheiro", "documento", "ficha tecnica"],
-    answer: "Sim, temos ART nº AM20260593657 assinada pelo Eng. Civil Werksson Sousa (CREA 042030134-8-D). Ficha técnica completa disponível — só pedir pelo WhatsApp.",
+    keywords: ["certificacao", "art", "crea", "laudo", "aprovacao", "homologado", "tecnico", "engenheiro", "documento", "ficha tecnica", "o que e art", "o que art", "anotacao", "responsabilidade tecnica", "o que significa art"],
+    answer: "ART = Anotação de Responsabilidade Técnica — é um documento oficial do CREA que vincula um engenheiro habilitado às responsabilidades técnicas de um produto. Significa que o PFB Orbital foi avaliado e aprovado por um profissional de engenharia, não apenas por marketing.\n\nNosso documento:\n• Nº AM20260593657\n• Eng. Civil Werksson Sousa\n• CREA 042030134-8-D\n• Cobre: revestimento de parede e forro de teto\n\nPermite especificação em obras comerciais, clínicas e condomínios. Ficha técnica completa disponível.",
     waMsg: "Olá! Gostaria de receber a ficha técnica completa do PFB Orbital (ART/CREA).",
+    linkCta: { label: "Ver ficha técnica completa", href: "/tecnologia" },
   },
   {
     id: "parceria",

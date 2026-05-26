@@ -2,6 +2,7 @@ import type { Metadata } from "next";
 import Image from "next/image";
 import Link from "next/link";
 import TecnologiaComparison from "@/components/TecnologiaComparison";
+import ARTAccordion from "@/components/ARTAccordion";
 
 export const metadata: Metadata = {
   title: "PFB Orbital — Tecnologia, Performance e Ficha Técnica | Revestimento Manaus",
@@ -143,9 +144,7 @@ export default function TecnologiaPage() {
             <h2 className="font-[var(--font-noto-serif)] text-white text-xl lg:text-3xl font-normal mb-1.5">
               Desempenho comprovado
             </h2>
-            <p className="text-[#86a0cd] text-xs font-[var(--font-inter)]">
-              ART nº AM20260593657 · Eng. Civil Werksson Sousa · CREA 042030134-8-D
-            </p>
+            <ARTAccordion />
           </div>
           <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-5 gap-3 lg:gap-6">
             {specs.map(({ value, unit, label, note }) => (
