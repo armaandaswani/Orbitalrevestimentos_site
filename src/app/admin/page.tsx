@@ -708,19 +708,31 @@ export default function AdminPage() {
   }
 
   // ── Image upload helper ──────────────────
+  /** Upload a single file directly to Supabase (no Next.js size limit). */
+  async function uploadDirect(file: File, folder: string): Promise<string | null> {
+    // Step 1: get a signed upload URL from our API (tiny JSON request, no file bytes)
+    const signRes = await fetch("/api/admin/upload-sign", {
+      method: "POST",
+      headers: { "Content-Type": "application/json", "x-admin-auth": ADMIN_PW },
+      body: JSON.stringify({ folder, filename: file.name, contentType: file.type }),
+    });
+    if (!signRes.ok) return null;
+    const { signedUrl, publicUrl } = await signRes.json();
+
+    // Step 2: PUT the raw file bytes directly to Supabase — bypasses Next.js entirely
+    const uploadRes = await fetch(signedUrl, {
+      method: "PUT",
+      headers: { "Content-Type": file.type },
+      body: file,
+    });
+    if (!uploadRes.ok) return null;
+    return publicUrl;
+  }
+
   async function uploadImage(file: File, folder: string): Promise<string|null> {
     setProductImageUploading(true);
-    const formData = new FormData();
-    formData.append("file", file);
-    formData.append("folder", folder);
-    const res = await fetch("/api/admin/upload", {
-      method: "POST",
-      headers: { "x-admin-auth": ADMIN_PW },
-      body: formData,
-    });
+    const url = await uploadDirect(file, folder);
     setProductImageUploading(false);
-    if (!res.ok) return null;
-    const { url } = await res.json();
     return url;
   }
 
@@ -776,25 +788,14 @@ export default function AdminPage() {
     const errors: string[] = [];
 
     for (let i = 0; i < files.length; i++) {
-      const formData = new FormData();
-      formData.append("file", files[i]);
-      formData.append("folder", "products");
+      // Upload directly to Supabase — no Next.js size limit
+      const url = await uploadDirect(files[i], "products");
 
-      // Step 1: upload file to storage
-      const uploadRes = await fetch("/api/admin/upload", {
-        method: "POST",
-        headers: { "x-admin-auth": ADMIN_PW },
-        body: formData,
-      });
-
-      if (!uploadRes.ok) {
-        const uploadJson = await uploadRes.json().catch(() => ({}));
-        errors.push(`Arquivo ${i + 1}: erro no upload — ${uploadJson.error || uploadRes.status}`);
+      if (!url) {
+        errors.push(`Arquivo ${i + 1}: erro no upload`);
         setGalleryUploadProgress({ done: i + 1, total: files.length });
         continue;
       }
-
-      const { url } = await uploadRes.json();
 
       // Step 2: save URL to product_images table
       const res = await fetch(`/api/products/${editingProductId}/images`, {
@@ -3242,10 +3243,9 @@ export default function AdminPage() {
                             const file = e.target.files?.[0];
                             if (!file) return;
                             setProjectImageUploading(true);
-                            const fd = new FormData(); fd.append("file", file); fd.append("folder", "projetos");
-                            const res = await fetch("/api/admin/upload", { method: "POST", headers: { "x-admin-auth": ADMIN_PW }, body: fd });
+                            const url = await uploadDirect(file, "projetos");
                             setProjectImageUploading(false);
-                            if (res.ok) { const { url } = await res.json(); setPhotoForm((prev) => ({...prev, image_after: url})); }
+                            if (url) setPhotoForm((prev) => ({...prev, image_after: url}));
                           }} />
                         </label>
                       </div>
@@ -3260,10 +3260,9 @@ export default function AdminPage() {
                             const file = e.target.files?.[0];
                             if (!file) return;
                             setProjectImageUploading(true);
-                            const fd = new FormData(); fd.append("file", file); fd.append("folder", "projetos");
-                            const res = await fetch("/api/admin/upload", { method: "POST", headers: { "x-admin-auth": ADMIN_PW }, body: fd });
+                            const url = await uploadDirect(file, "projetos");
                             setProjectImageUploading(false);
-                            if (res.ok) { const { url } = await res.json(); setPhotoForm((prev) => ({...prev, image_before: url})); }
+                            if (url) setPhotoForm((prev) => ({...prev, image_before: url}));
                           }} />
                         </label>
                       </div>
@@ -3361,10 +3360,9 @@ export default function AdminPage() {
                             const file = e.target.files?.[0];
                             if (!file) return;
                             setProjectImageUploading(true);
-                            const fd = new FormData(); fd.append("file", file); fd.append("folder", "renders");
-                            const res = await fetch("/api/admin/upload", { method: "POST", headers: { "x-admin-auth": ADMIN_PW }, body: fd });
+                            const url = await uploadDirect(file, "renders");
                             setProjectImageUploading(false);
-                            if (res.ok) { const { url } = await res.json(); setRenderForm((prev) => ({...prev, image_path: url})); }
+                            if (url) setRenderForm((prev) => ({...prev, image_path: url}));
                           }} />
                         </label>
                       </div>
