@@ -20,6 +20,7 @@ interface Partner {
   birthday: string | null;
   profession: string | null;
   has_special_table: boolean | null;
+  partner_sales_reps?: Array<{ sales_reps: { id: string; name: string; referral_code: string } | null }>;
 }
 
 interface SalesRep {
@@ -398,6 +399,8 @@ export default function AdminPage() {
   }, [tab, authed, fetchClients]);
 
   const pollingRef = useRef<ReturnType<typeof setInterval> | null>(null);
+  const partnerFormRef = useRef<HTMLDivElement>(null);
+  const repFormRef = useRef<HTMLDivElement>(null);
   useEffect(() => {
     if (!authed) {
       if (pollingRef.current) { clearInterval(pollingRef.current); pollingRef.current = null; }
@@ -661,6 +664,7 @@ export default function AdminPage() {
     setPartnerFormError("");
     setPartnerProfOther("");
     setShowPartnerForm(true);
+    setTimeout(() => partnerFormRef.current?.scrollIntoView({ behavior: "smooth", block: "start" }), 50);
   }
 
   function startEditPartner(p: Partner) {
@@ -685,6 +689,7 @@ export default function AdminPage() {
     setRepLinkError("");
     setShowPartnerForm(true);
     loadPartnerReps(p.id);
+    setTimeout(() => partnerFormRef.current?.scrollIntoView({ behavior: "smooth", block: "start" }), 50);
   }
 
   async function handlePartnerSubmit(e: React.FormEvent) {
@@ -767,6 +772,7 @@ export default function AdminPage() {
     }
     setAddingRepId("");
     loadPartnerReps(editingPartnerId);
+    fetchPartners();
   }
 
   async function removeRepFromPartner(salesRepId: string) {
@@ -777,6 +783,7 @@ export default function AdminPage() {
       body: JSON.stringify({ sales_rep_id: salesRepId }),
     });
     loadPartnerReps(editingPartnerId);
+    fetchPartners();
   }
 
   function buildWALink(p: Partner) {
@@ -799,6 +806,7 @@ export default function AdminPage() {
     setRepForm({ ...emptyRepForm });
     setRepFormError("");
     setShowRepForm(true);
+    setTimeout(() => repFormRef.current?.scrollIntoView({ behavior: "smooth", block: "start" }), 50);
   }
 
   function startEditRep(r: SalesRep) {
@@ -813,6 +821,7 @@ export default function AdminPage() {
     });
     setRepFormError("");
     setShowRepForm(true);
+    setTimeout(() => repFormRef.current?.scrollIntoView({ behavior: "smooth", block: "start" }), 50);
   }
 
   async function handleRepSubmit(e: React.FormEvent) {
@@ -1457,7 +1466,7 @@ export default function AdminPage() {
             )}
 
             {showPartnerForm && (
-              <div className="bg-white border border-[#e2e2e2] p-8 mb-6">
+              <div ref={partnerFormRef} className="bg-white border border-[#e2e2e2] p-8 mb-6">
                 <h3 className="font-[var(--font-noto-serif)] text-[#002045] text-lg font-normal mb-6">{editingPartnerId ? "Editar Parceiro" : "Novo Parceiro"}</h3>
                 <form onSubmit={handlePartnerSubmit}>
                   <div className="grid grid-cols-1 sm:grid-cols-2 gap-5 mb-6">
@@ -1640,10 +1649,26 @@ export default function AdminPage() {
                           <td className="px-5 py-4 text-[#43474e]">{p.discount_type === "percentage" ? `${p.discount_value}%` : fmt(p.discount_value)}</td>
                           <td className="px-5 py-4 text-[#43474e]">{p.commission_type === "percentage" ? `${p.commission_value}%` : fmt(p.commission_value)}</td>
                           <td className="px-5 py-4 text-xs text-[#74777f]">
-                            {p.sales_rep_referral_code
-                              ? (() => { const r = salesReps.find((r) => r.referral_code === p.sales_rep_referral_code); return r ? <span title={`Cód. captação: ${r.referral_code}`}>{r.name}</span> : p.sales_rep_referral_code; })()
-                              : "—"}
-                            <span className="block text-[9px] text-[#b0b0b0] font-[var(--font-inter)]">cód. captação</span>
+                            {(() => {
+                              const junctionReps = (p.partner_sales_reps ?? [])
+                                .map((psr) => psr.sales_reps)
+                                .filter(Boolean) as Array<{ name: string; referral_code: string }>;
+                              if (junctionReps.length > 0) {
+                                return (
+                                  <span>
+                                    {junctionReps.map((r) => (
+                                      <span key={r.referral_code} className="block font-semibold text-[#002045]" title={`Cód. captação: ${r.referral_code}`}>{r.name}</span>
+                                    ))}
+                                  </span>
+                                );
+                              }
+                              if (p.sales_rep_referral_code) {
+                                const r = salesReps.find((r) => r.referral_code === p.sales_rep_referral_code);
+                                return r ? <span className="font-semibold text-[#002045]">{r.name}</span> : <span>{p.sales_rep_referral_code}</span>;
+                              }
+                              return <span>—</span>;
+                            })()}
+                            <span className="block text-[9px] text-[#b0b0b0] font-[var(--font-inter)] mt-0.5">cód. captação</span>
                           </td>
                           <td className="px-5 py-4 text-xs text-[#74777f]">{p.portal_password ? <span className="font-mono text-[#43474e]">{p.portal_password}</span> : <span className="italic">—</span>}</td>
                           <td className="px-5 py-4">
@@ -1762,7 +1787,7 @@ export default function AdminPage() {
             </div>
 
             {showRepForm && (
-              <div className="bg-white border border-[#e2e2e2] p-8 mb-6">
+              <div ref={repFormRef} className="bg-white border border-[#e2e2e2] p-8 mb-6">
                 <h3 className="font-[var(--font-noto-serif)] text-[#002045] text-lg font-normal mb-6">{editingRepId ? "Editar Representante" : "Novo Representante"}</h3>
                 <form onSubmit={handleRepSubmit}>
                   <div className="grid grid-cols-1 sm:grid-cols-2 gap-5 mb-6">
