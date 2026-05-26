@@ -37,6 +37,10 @@ interface SalesRep {
   birthday: string | null;
 }
 
+interface DbProduct { id:string; code:string; name:string; linha:"Classic"|"Brilliance"|"Elegance"; finish:string; price:number; price_per_m2:number; description:string; image_path:string; is_active:boolean; sort_order:number; created_at:string; }
+interface DbPhotoProject { id:string; slug:string; title:string; product_code:string; categories:string[]; image_after:string; image_before:string; note:string; is_active:boolean; sort_order:number; }
+interface DbRenderProject { id:string; slug:string; title:string; product_code:string; image_path:string; is_active:boolean; sort_order:number; }
+
 interface CouponUse {
   id: string;
   partner_id: string;
@@ -129,7 +133,7 @@ export default function AdminPage() {
   const [authed, setAuthed] = useState(false);
   const [pw, setPw] = useState("");
   const [pwError, setPwError] = useState("");
-  const [tab, setTab] = useState<"partners" | "representantes" | "history" | "campaigns" | "drip" | "clientes" | "commissions">("partners");
+  const [tab, setTab] = useState<"partners" | "representantes" | "history" | "campaigns" | "drip" | "clientes" | "commissions" | "produtos" | "projetos">("partners");
   const [commissionFilter, setCommissionFilter] = useState<"a_pagar" | "pago" | "tudo">("a_pagar");
 
   // Partners
@@ -289,6 +293,31 @@ export default function AdminPage() {
   const [snoozeInputId, setSnoozeInputId] = useState<string | null>(null);
   const [snoozeDays, setSnoozeDays] = useState("2");
 
+  // DB Products
+  const [dbProducts, setDbProducts] = useState<DbProduct[]>([]);
+  const [loadingDbProducts, setLoadingDbProducts] = useState(false);
+  const [showProductForm, setShowProductForm] = useState(false);
+  const [editingProductId, setEditingProductId] = useState<string|null>(null);
+  const [productForm, setProductForm] = useState({ code:"", name:"", linha:"Classic" as "Classic"|"Brilliance"|"Elegance", finish:"Fosco", price:559, price_per_m2:161, description:"", image_path:"", is_active:true, sort_order:0 });
+  const [productFormError, setProductFormError] = useState("");
+  const [productFormLoading, setProductFormLoading] = useState(false);
+  const [productImageUploading, setProductImageUploading] = useState(false);
+  const productTabFormRef = useRef<HTMLDivElement>(null);
+
+  // DB Projects
+  const [dbPhotoProjects, setDbPhotoProjects] = useState<DbPhotoProject[]>([]);
+  const [dbRenderProjects, setDbRenderProjects] = useState<DbRenderProject[]>([]);
+  const [loadingProjects, setLoadingProjects] = useState(false);
+  const [showPhotoForm, setShowPhotoForm] = useState(false);
+  const [showRenderForm, setShowRenderForm] = useState(false);
+  const [editingPhotoId, setEditingPhotoId] = useState<string|null>(null);
+  const [editingRenderId, setEditingRenderId] = useState<string|null>(null);
+  const [photoForm, setPhotoForm] = useState({ slug:"", title:"", product_code:"", categories:[] as string[], image_after:"", image_before:"", note:"", is_active:true, sort_order:0 });
+  const [renderForm, setRenderForm] = useState({ slug:"", title:"", product_code:"", image_path:"", is_active:true, sort_order:0 });
+  const photoTabFormRef = useRef<HTMLDivElement>(null);
+  const renderTabFormRef = useRef<HTMLDivElement>(null);
+  const [projectImageUploading, setProjectImageUploading] = useState(false);
+
   const supabaseConfigured = !!process.env.NEXT_PUBLIC_SUPABASE_URL;
 
   useEffect(() => {
@@ -353,6 +382,21 @@ export default function AdminPage() {
     setFollowUpLoading(false);
   }, []);
 
+  const fetchDbProducts = useCallback(async () => {
+    setLoadingDbProducts(true);
+    const res = await fetch("/api/products");
+    if (res.ok) setDbProducts(await res.json());
+    setLoadingDbProducts(false);
+  }, []);
+
+  const fetchProjects = useCallback(async () => {
+    setLoadingProjects(true);
+    const [pRes, rRes] = await Promise.all([fetch("/api/projects/photos"), fetch("/api/projects/renders")]);
+    if (pRes.ok) setDbPhotoProjects(await pRes.json());
+    if (rRes.ok) setDbRenderProjects(await rRes.json());
+    setLoadingProjects(false);
+  }, []);
+
   async function resolveFollowUp(id: string, sale_status: string) {
     await fetch(`/api/coupons/use/${id}`, {
       method: "PATCH",
@@ -397,6 +441,9 @@ export default function AdminPage() {
   useEffect(() => {
     if (tab === "clientes" && authed) fetchClients();
   }, [tab, authed, fetchClients]);
+
+  useEffect(() => { if (tab === "produtos" && authed) fetchDbProducts(); }, [tab, authed, fetchDbProducts]);
+  useEffect(() => { if (tab === "projetos" && authed) fetchProjects(); }, [tab, authed, fetchProjects]);
 
   const pollingRef = useRef<ReturnType<typeof setInterval> | null>(null);
   const partnerFormRef = useRef<HTMLDivElement>(null);
@@ -654,6 +701,141 @@ export default function AdminPage() {
     setCpSuccess(true);
     setCpCurrent(""); setCpNew(""); setCpConfirm("");
     setTimeout(() => { setCpOpen(false); setCpSuccess(false); }, 2000);
+  }
+
+  // ── Image upload helper ──────────────────
+  async function uploadImage(file: File, folder: string): Promise<string|null> {
+    setProductImageUploading(true);
+    const formData = new FormData();
+    formData.append("file", file);
+    formData.append("folder", folder);
+    const res = await fetch("/api/admin/upload", {
+      method: "POST",
+      headers: { "x-admin-auth": ADMIN_PW },
+      body: formData,
+    });
+    setProductImageUploading(false);
+    if (!res.ok) return null;
+    const { url } = await res.json();
+    return url;
+  }
+
+  // ── Product CRUD ─────────────────────────
+  async function handleProductSubmit(e: React.FormEvent) {
+    e.preventDefault();
+    setProductFormError("");
+    setProductFormLoading(true);
+    let res: Response;
+    if (editingProductId) {
+      res = await fetch(`/api/products/${editingProductId}`, {
+        method: "PUT",
+        headers: { "Content-Type": "application/json", "x-admin-auth": ADMIN_PW },
+        body: JSON.stringify(productForm),
+      });
+    } else {
+      res = await fetch("/api/products", {
+        method: "POST",
+        headers: { "Content-Type": "application/json", "x-admin-auth": ADMIN_PW },
+        body: JSON.stringify(productForm),
+      });
+    }
+    const json = await res.json();
+    setProductFormLoading(false);
+    if (!res.ok) { setProductFormError(json.error || "Erro desconhecido."); return; }
+    setShowProductForm(false);
+    setEditingProductId(null);
+    setProductForm({ code:"", name:"", linha:"Classic", finish:"Fosco", price:559, price_per_m2:161, description:"", image_path:"", is_active:true, sort_order:0 });
+    fetchDbProducts();
+  }
+
+  async function deleteProduct(id: string, name: string) {
+    if (!confirm(`Excluir produto "${name}"?`)) return;
+    await fetch(`/api/products/${id}`, { method: "DELETE", headers: { "x-admin-auth": ADMIN_PW } });
+    fetchDbProducts();
+  }
+
+  function startEditProduct(p: DbProduct) {
+    setEditingProductId(p.id);
+    setProductForm({ code: p.code, name: p.name, linha: p.linha, finish: p.finish, price: p.price, price_per_m2: p.price_per_m2, description: p.description, image_path: p.image_path, is_active: p.is_active, sort_order: p.sort_order });
+    setProductFormError("");
+    setShowProductForm(true);
+    setTimeout(() => productTabFormRef.current?.scrollIntoView({ behavior: "smooth", block: "start" }), 50);
+  }
+
+  // ── Photo Project CRUD ───────────────────
+  async function handlePhotoSubmit(e: React.FormEvent) {
+    e.preventDefault();
+    let res: Response;
+    if (editingPhotoId) {
+      res = await fetch(`/api/projects/photos/${editingPhotoId}`, {
+        method: "PUT",
+        headers: { "Content-Type": "application/json", "x-admin-auth": ADMIN_PW },
+        body: JSON.stringify(photoForm),
+      });
+    } else {
+      res = await fetch("/api/projects/photos", {
+        method: "POST",
+        headers: { "Content-Type": "application/json", "x-admin-auth": ADMIN_PW },
+        body: JSON.stringify(photoForm),
+      });
+    }
+    if (res.ok) {
+      setShowPhotoForm(false);
+      setEditingPhotoId(null);
+      setPhotoForm({ slug:"", title:"", product_code:"", categories:[], image_after:"", image_before:"", note:"", is_active:true, sort_order:0 });
+      fetchProjects();
+    }
+  }
+
+  async function deletePhoto(id: string, title: string) {
+    if (!confirm(`Excluir projeto "${title}"?`)) return;
+    await fetch(`/api/projects/photos/${id}`, { method: "DELETE", headers: { "x-admin-auth": ADMIN_PW } });
+    fetchProjects();
+  }
+
+  function startEditPhoto(p: DbPhotoProject) {
+    setEditingPhotoId(p.id);
+    setPhotoForm({ slug: p.slug, title: p.title, product_code: p.product_code, categories: p.categories, image_after: p.image_after, image_before: p.image_before, note: p.note, is_active: p.is_active, sort_order: p.sort_order });
+    setShowPhotoForm(true);
+    setTimeout(() => photoTabFormRef.current?.scrollIntoView({ behavior: "smooth", block: "start" }), 50);
+  }
+
+  // ── Render Project CRUD ──────────────────
+  async function handleRenderSubmit(e: React.FormEvent) {
+    e.preventDefault();
+    let res: Response;
+    if (editingRenderId) {
+      res = await fetch(`/api/projects/renders/${editingRenderId}`, {
+        method: "PUT",
+        headers: { "Content-Type": "application/json", "x-admin-auth": ADMIN_PW },
+        body: JSON.stringify(renderForm),
+      });
+    } else {
+      res = await fetch("/api/projects/renders", {
+        method: "POST",
+        headers: { "Content-Type": "application/json", "x-admin-auth": ADMIN_PW },
+        body: JSON.stringify(renderForm),
+      });
+    }
+    if (res.ok) {
+      setShowRenderForm(false);
+      setEditingRenderId(null);
+      setRenderForm({ slug:"", title:"", product_code:"", image_path:"", is_active:true, sort_order:0 });
+      fetchProjects();
+    }
+  }
+
+  async function deleteRender(id: string, title: string) {
+    if (!confirm(`Excluir render "${title}"?`)) return;
+    await fetch(`/api/projects/renders/${id}`, { method: "DELETE", headers: { "x-admin-auth": ADMIN_PW } });
+    fetchProjects();
+  }
+
+  function startEditRender(r: DbRenderProject) {
+    setEditingRenderId(r.id);
+    setRenderForm({ slug: r.slug, title: r.title, product_code: r.product_code, image_path: r.image_path, is_active: r.is_active, sort_order: r.sort_order });
+    setShowRenderForm(true);
+    setTimeout(() => renderTabFormRef.current?.scrollIntoView({ behavior: "smooth", block: "start" }), 50);
   }
 
   // ── Partners ─────────────────────────────
@@ -1235,9 +1417,9 @@ export default function AdminPage() {
 
       <div className="max-w-7xl mx-auto px-8 py-8">
         <div className="flex gap-1 mb-8 border-b border-[#e2e2e2] flex-wrap">
-          {(["partners", "representantes", "history", "campaigns", "drip", "clientes", "commissions"] as const).map((t) => (
+          {(["partners", "representantes", "history", "campaigns", "drip", "clientes", "commissions", "produtos", "projetos"] as const).map((t) => (
             <button key={t} onClick={() => setTab(t)} className={`px-6 py-3 text-xs tracking-[0.1em] uppercase font-bold font-[var(--font-inter)] transition-colors border-b-2 -mb-px flex items-center gap-2 ${tab === t ? "border-[#002045] text-[#002045]" : "border-transparent text-[#74777f] hover:text-[#002045]"}`}>
-              {t === "partners" ? "Parceiros" : t === "representantes" ? "Representantes" : t === "history" ? "Histórico" : t === "campaigns" ? "Campanhas" : t === "drip" ? "Drip de Emails" : t === "commissions" ? "Comissões" : "Clientes"}
+              {t === "partners" ? "Parceiros" : t === "representantes" ? "Representantes" : t === "history" ? "Histórico" : t === "campaigns" ? "Campanhas" : t === "drip" ? "Drip de Emails" : t === "commissions" ? "Comissões" : t === "produtos" ? "Produtos" : t === "projetos" ? "Projetos" : "Clientes"}
               {t === "partners" && pendingPartners.length > 0 && (
                 <span className="bg-yellow-400 text-yellow-900 text-[9px] font-bold px-1.5 py-0.5 rounded-full leading-none">
                   {pendingPartners.length}
@@ -2631,6 +2813,402 @@ export default function AdminPage() {
                 </>
               );
             })()}
+          </div>
+        )}
+
+        {/* ═══ PRODUTOS TAB ═══ */}
+        {tab === "produtos" && (
+          <div>
+            <div className="flex items-center justify-between mb-6">
+              <h2 className="font-[var(--font-noto-serif)] text-[#002045] text-2xl font-normal">Produtos</h2>
+              <button
+                onClick={() => {
+                  setEditingProductId(null);
+                  setProductForm({ code:"", name:"", linha:"Classic", finish:"Fosco", price:559, price_per_m2:161, description:"", image_path:"", is_active:true, sort_order:0 });
+                  setProductFormError("");
+                  setShowProductForm(true);
+                  setTimeout(() => productTabFormRef.current?.scrollIntoView({ behavior: "smooth", block: "start" }), 50);
+                }}
+                className="bg-[#002045] text-white text-xs tracking-[0.1em] uppercase font-bold font-[var(--font-inter)] px-5 py-2.5 hover:bg-[#1a365d] transition-colors"
+              >
+                + Novo Produto
+              </button>
+            </div>
+
+            {showProductForm && (
+              <div ref={productTabFormRef} className="bg-white border border-[#e2e2e2] p-6 mb-8">
+                <h3 className="font-[var(--font-inter)] text-[10px] tracking-[0.15em] uppercase font-bold text-[#002045] mb-6">
+                  {editingProductId ? "Editar Produto" : "Novo Produto"}
+                </h3>
+                <form onSubmit={handleProductSubmit}>
+                  <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 gap-4 mb-4">
+                    <div>
+                      <label className={labelCls}>Código *</label>
+                      <input required type="text" value={productForm.code} onChange={(e) => setProductForm({...productForm, code: e.target.value})} className={inputCls} placeholder="ORB-001" />
+                    </div>
+                    <div>
+                      <label className={labelCls}>Nome *</label>
+                      <input required type="text" value={productForm.name} onChange={(e) => setProductForm({...productForm, name: e.target.value})} className={inputCls} placeholder="Bege Travertino" />
+                    </div>
+                    <div>
+                      <label className={labelCls}>Linha</label>
+                      <select value={productForm.linha} onChange={(e) => {
+                        const linha = e.target.value as "Classic"|"Brilliance"|"Elegance";
+                        const finish = linha === "Classic" ? "Fosco" : linha === "Brilliance" ? "Polido" : "Texturizado";
+                        const price = linha === "Classic" ? 559 : linha === "Brilliance" ? 589 : 649;
+                        setProductForm({...productForm, linha, finish, price, price_per_m2: Math.round(price/3.48)});
+                      }} className={inputCls}>
+                        <option value="Classic">Classic</option>
+                        <option value="Brilliance">Brilliance</option>
+                        <option value="Elegance">Elegance</option>
+                      </select>
+                    </div>
+                    <div>
+                      <label className={labelCls}>Acabamento</label>
+                      <input type="text" value={productForm.finish} onChange={(e) => setProductForm({...productForm, finish: e.target.value})} className={inputCls} />
+                    </div>
+                    <div>
+                      <label className={labelCls}>Preço (R$)</label>
+                      <input type="number" min="0" value={productForm.price} onChange={(e) => {
+                        const price = parseInt(e.target.value) || 0;
+                        setProductForm({...productForm, price, price_per_m2: Math.round(price/3.48)});
+                      }} className={inputCls} />
+                    </div>
+                    <div>
+                      <label className={labelCls}>Preço/m² <span className="font-normal text-[#b0b0b0]">(auto)</span></label>
+                      <input type="number" min="0" value={productForm.price_per_m2} onChange={(e) => setProductForm({...productForm, price_per_m2: parseInt(e.target.value) || 0})} className={inputCls} />
+                    </div>
+                    <div>
+                      <label className={labelCls}>Sort Order</label>
+                      <input type="number" min="0" value={productForm.sort_order} onChange={(e) => setProductForm({...productForm, sort_order: parseInt(e.target.value) || 0})} className={inputCls} />
+                    </div>
+                  </div>
+                  <div className="mb-4">
+                    <label className={labelCls}>Descrição</label>
+                    <textarea rows={3} value={productForm.description} onChange={(e) => setProductForm({...productForm, description: e.target.value})} className={inputCls + " resize-none"} />
+                  </div>
+                  <div className="mb-4">
+                    <label className={labelCls}>Imagem</label>
+                    <div className="flex gap-3 items-start">
+                      <input type="text" value={productForm.image_path} onChange={(e) => setProductForm({...productForm, image_path: e.target.value})} className={inputCls} placeholder="/images/catalogue/..." />
+                      <label className="flex-shrink-0 cursor-pointer bg-[#f0f0f0] border border-[#e2e2e2] px-4 py-2.5 text-xs font-bold font-[var(--font-inter)] text-[#002045] hover:bg-[#e8e8e8] transition-colors whitespace-nowrap">
+                        {productImageUploading ? "Enviando..." : "Upload"}
+                        <input type="file" accept="image/*" className="hidden" onChange={async (e) => {
+                          const file = e.target.files?.[0];
+                          if (!file) return;
+                          const url = await uploadImage(file, "products");
+                          if (url) setProductForm((prev) => ({...prev, image_path: url}));
+                        }} />
+                      </label>
+                    </div>
+                    {productForm.image_path && (
+                      <img src={productForm.image_path} alt="preview" className="mt-2 h-24 object-cover border border-[#e2e2e2]" />
+                    )}
+                  </div>
+                  <div className="mb-6 flex items-center gap-2">
+                    <input type="checkbox" id="prod-active" checked={productForm.is_active} onChange={(e) => setProductForm({...productForm, is_active: e.target.checked})} className="w-4 h-4" />
+                    <label htmlFor="prod-active" className="text-sm font-[var(--font-inter)] text-[#43474e]">Produto ativo</label>
+                  </div>
+                  {productFormError && <p className="text-red-600 text-xs font-[var(--font-inter)] mb-3">{productFormError}</p>}
+                  <div className="flex gap-3">
+                    <button type="submit" disabled={productFormLoading} className="bg-[#002045] text-white text-xs tracking-[0.1em] uppercase font-bold font-[var(--font-inter)] px-6 py-2.5 hover:bg-[#1a365d] transition-colors disabled:opacity-50">
+                      {productFormLoading ? "Salvando..." : "Salvar"}
+                    </button>
+                    <button type="button" onClick={() => { setShowProductForm(false); setEditingProductId(null); }} className="border border-[#e2e2e2] text-[#74777f] text-xs font-[var(--font-inter)] px-6 py-2.5 hover:border-[#002045] hover:text-[#002045] transition-colors">
+                      Cancelar
+                    </button>
+                  </div>
+                </form>
+              </div>
+            )}
+
+            {loadingDbProducts ? (
+              <p className="text-[#74777f] text-sm font-[var(--font-inter)] py-8 text-center">Carregando...</p>
+            ) : (
+              <div className="bg-white border border-[#e2e2e2] overflow-x-auto">
+                <table className="w-full text-sm font-[var(--font-inter)]">
+                  <thead>
+                    <tr className="border-b border-[#e2e2e2]">
+                      {["Código","Nome","Linha","Preço","Status","Ações"].map(h => (
+                        <th key={h} className="text-left px-4 py-3 text-[10px] tracking-[0.1em] uppercase font-bold text-[#74777f] whitespace-nowrap">{h}</th>
+                      ))}
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {dbProducts.length === 0 ? (
+                      <tr><td colSpan={6} className="px-5 py-8 text-center text-[#74777f]">Nenhum produto cadastrado. Clique em &ldquo;+ Novo Produto&rdquo; para adicionar.</td></tr>
+                    ) : dbProducts.map((p) => (
+                      <tr key={p.id} className="border-b border-[#f0f0f0] hover:bg-[#fafafa]">
+                        <td className="px-4 py-3"><span className="bg-[#eef2f8] text-[#002045] px-2 py-0.5 text-xs font-bold tracking-wider">{p.code}</span></td>
+                        <td className="px-4 py-3 text-[#002045] font-medium">{p.name}</td>
+                        <td className="px-4 py-3">
+                          <span className={`inline-block px-2 py-0.5 text-[10px] font-bold tracking-wide ${p.linha === "Classic" ? "bg-blue-100 text-blue-800" : p.linha === "Brilliance" ? "bg-purple-100 text-purple-800" : "bg-green-100 text-green-800"}`}>
+                            {p.linha}
+                          </span>
+                        </td>
+                        <td className="px-4 py-3 text-[#43474e]">R$ {p.price.toLocaleString("pt-BR")}</td>
+                        <td className="px-4 py-3">
+                          <span className={`inline-block px-2 py-0.5 text-[10px] font-bold tracking-wide ${p.is_active ? "bg-green-100 text-green-800" : "bg-gray-100 text-gray-500"}`}>
+                            {p.is_active ? "Ativo" : "Inativo"}
+                          </span>
+                        </td>
+                        <td className="px-4 py-3">
+                          <div className="flex gap-2">
+                            <button onClick={() => startEditProduct(p)} className="text-[10px] tracking-[0.08em] uppercase font-bold font-[var(--font-inter)] px-3 py-1.5 border border-[#002045] text-[#002045] hover:bg-[#002045] hover:text-white transition-colors">Editar</button>
+                            <button onClick={() => deleteProduct(p.id, p.name)} className="text-[10px] tracking-[0.08em] uppercase font-bold font-[var(--font-inter)] px-3 py-1.5 border border-red-300 text-red-600 hover:bg-red-50 transition-colors">Excluir</button>
+                          </div>
+                        </td>
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
+              </div>
+            )}
+          </div>
+        )}
+
+        {/* ═══ PROJETOS TAB ═══ */}
+        {tab === "projetos" && (
+          <div>
+            {/* Section 1: Fotos Reais */}
+            <div className="mb-10">
+              <div className="flex items-center justify-between mb-6">
+                <h3 className="font-[var(--font-noto-serif)] text-[#002045] text-xl font-normal">Fotos Reais</h3>
+                <button
+                  onClick={() => {
+                    setEditingPhotoId(null);
+                    setPhotoForm({ slug:"", title:"", product_code:"", categories:[], image_after:"", image_before:"", note:"", is_active:true, sort_order:0 });
+                    setShowPhotoForm(true);
+                    setTimeout(() => photoTabFormRef.current?.scrollIntoView({ behavior: "smooth", block: "start" }), 50);
+                  }}
+                  className="bg-[#002045] text-white text-xs tracking-[0.1em] uppercase font-bold font-[var(--font-inter)] px-5 py-2.5 hover:bg-[#1a365d] transition-colors"
+                >
+                  + Adicionar
+                </button>
+              </div>
+
+              {showPhotoForm && (
+                <div ref={photoTabFormRef} className="bg-white border border-[#e2e2e2] p-6 mb-6">
+                  <h4 className="font-[var(--font-inter)] text-[10px] tracking-[0.15em] uppercase font-bold text-[#002045] mb-5">
+                    {editingPhotoId ? "Editar Foto" : "Nova Foto Real"}
+                  </h4>
+                  <form onSubmit={handlePhotoSubmit}>
+                    <div className="grid grid-cols-2 sm:grid-cols-3 gap-4 mb-4">
+                      <div>
+                        <label className={labelCls}>Slug *</label>
+                        <input required type="text" value={photoForm.slug} onChange={(e) => setPhotoForm({...photoForm, slug: e.target.value})} className={inputCls} placeholder="lavabo1" />
+                      </div>
+                      <div>
+                        <label className={labelCls}>Título *</label>
+                        <input required type="text" value={photoForm.title} onChange={(e) => setPhotoForm({...photoForm, title: e.target.value})} className={inputCls} placeholder="Lavabo" />
+                      </div>
+                      <div>
+                        <label className={labelCls}>Código do produto</label>
+                        <input type="text" value={photoForm.product_code} onChange={(e) => setPhotoForm({...photoForm, product_code: e.target.value})} className={inputCls} placeholder="ORB-004 · Louro Freijó" />
+                      </div>
+                      <div>
+                        <label className={labelCls}>Nota</label>
+                        <input type="text" value={photoForm.note} onChange={(e) => setPhotoForm({...photoForm, note: e.target.value})} className={inputCls} placeholder="Área úmida" />
+                      </div>
+                      <div>
+                        <label className={labelCls}>Sort Order</label>
+                        <input type="number" min="0" value={photoForm.sort_order} onChange={(e) => setPhotoForm({...photoForm, sort_order: parseInt(e.target.value) || 0})} className={inputCls} />
+                      </div>
+                    </div>
+                    <div className="mb-4">
+                      <label className={labelCls}>Categorias</label>
+                      <div className="flex flex-wrap gap-3">
+                        {["residencial","comercial","umido","nautico"].map((cat) => (
+                          <label key={cat} className="flex items-center gap-1.5 text-sm font-[var(--font-inter)] text-[#43474e] cursor-pointer">
+                            <input type="checkbox" checked={photoForm.categories.includes(cat)} onChange={(e) => {
+                              setPhotoForm({...photoForm, categories: e.target.checked ? [...photoForm.categories, cat] : photoForm.categories.filter(c => c !== cat)});
+                            }} className="w-4 h-4" />
+                            {cat}
+                          </label>
+                        ))}
+                      </div>
+                    </div>
+                    <div className="mb-4">
+                      <label className={labelCls}>Imagem Depois *</label>
+                      <div className="flex gap-3 items-start">
+                        <input required type="text" value={photoForm.image_after} onChange={(e) => setPhotoForm({...photoForm, image_after: e.target.value})} className={inputCls} placeholder="/images/projetos/..." />
+                        <label className="flex-shrink-0 cursor-pointer bg-[#f0f0f0] border border-[#e2e2e2] px-4 py-2.5 text-xs font-bold font-[var(--font-inter)] text-[#002045] hover:bg-[#e8e8e8] transition-colors whitespace-nowrap">
+                          {projectImageUploading ? "Enviando..." : "Upload"}
+                          <input type="file" accept="image/*" className="hidden" onChange={async (e) => {
+                            const file = e.target.files?.[0];
+                            if (!file) return;
+                            setProjectImageUploading(true);
+                            const fd = new FormData(); fd.append("file", file); fd.append("folder", "projetos");
+                            const res = await fetch("/api/admin/upload", { method: "POST", headers: { "x-admin-auth": ADMIN_PW }, body: fd });
+                            setProjectImageUploading(false);
+                            if (res.ok) { const { url } = await res.json(); setPhotoForm((prev) => ({...prev, image_after: url})); }
+                          }} />
+                        </label>
+                      </div>
+                    </div>
+                    <div className="mb-4">
+                      <label className={labelCls}>Imagem Antes <span className="font-normal text-[#b0b0b0]">(opcional)</span></label>
+                      <div className="flex gap-3 items-start">
+                        <input type="text" value={photoForm.image_before} onChange={(e) => setPhotoForm({...photoForm, image_before: e.target.value})} className={inputCls} placeholder="/images/projetos/..." />
+                        <label className="flex-shrink-0 cursor-pointer bg-[#f0f0f0] border border-[#e2e2e2] px-4 py-2.5 text-xs font-bold font-[var(--font-inter)] text-[#002045] hover:bg-[#e8e8e8] transition-colors whitespace-nowrap">
+                          {projectImageUploading ? "Enviando..." : "Upload"}
+                          <input type="file" accept="image/*" className="hidden" onChange={async (e) => {
+                            const file = e.target.files?.[0];
+                            if (!file) return;
+                            setProjectImageUploading(true);
+                            const fd = new FormData(); fd.append("file", file); fd.append("folder", "projetos");
+                            const res = await fetch("/api/admin/upload", { method: "POST", headers: { "x-admin-auth": ADMIN_PW }, body: fd });
+                            setProjectImageUploading(false);
+                            if (res.ok) { const { url } = await res.json(); setPhotoForm((prev) => ({...prev, image_before: url})); }
+                          }} />
+                        </label>
+                      </div>
+                    </div>
+                    <div className="mb-6 flex items-center gap-2">
+                      <input type="checkbox" id="photo-active" checked={photoForm.is_active} onChange={(e) => setPhotoForm({...photoForm, is_active: e.target.checked})} className="w-4 h-4" />
+                      <label htmlFor="photo-active" className="text-sm font-[var(--font-inter)] text-[#43474e]">Projeto ativo</label>
+                    </div>
+                    <div className="flex gap-3">
+                      <button type="submit" className="bg-[#002045] text-white text-xs tracking-[0.1em] uppercase font-bold font-[var(--font-inter)] px-6 py-2.5 hover:bg-[#1a365d] transition-colors">Salvar</button>
+                      <button type="button" onClick={() => { setShowPhotoForm(false); setEditingPhotoId(null); }} className="border border-[#e2e2e2] text-[#74777f] text-xs font-[var(--font-inter)] px-6 py-2.5 hover:border-[#002045] hover:text-[#002045] transition-colors">Cancelar</button>
+                    </div>
+                  </form>
+                </div>
+              )}
+
+              {loadingProjects ? (
+                <p className="text-[#74777f] text-sm font-[var(--font-inter)] py-4">Carregando...</p>
+              ) : (
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                  {dbPhotoProjects.length === 0 ? (
+                    <p className="text-[#74777f] text-sm font-[var(--font-inter)] col-span-2 py-6 text-center">Nenhuma foto cadastrada.</p>
+                  ) : dbPhotoProjects.map((p) => (
+                    <div key={p.id} className="bg-white border border-[#e2e2e2] p-4 flex gap-4">
+                      {p.image_after && <img src={p.image_after} alt={p.title} className="w-20 h-24 object-cover flex-shrink-0 border border-[#e2e2e2]" />}
+                      <div className="flex-1 min-w-0">
+                        <p className="font-semibold text-[#002045] font-[var(--font-inter)] text-sm">{p.title}</p>
+                        <p className="text-xs text-[#3b6934] font-[var(--font-inter)] mt-0.5">{p.product_code}</p>
+                        <div className="flex flex-wrap gap-1 mt-1">
+                          {p.categories.map((c) => (
+                            <span key={c} className="bg-[#eef2f8] text-[#002045] px-1.5 py-0.5 text-[9px] font-bold tracking-wider">{c}</span>
+                          ))}
+                        </div>
+                        <div className="flex gap-2 mt-3">
+                          <button onClick={() => startEditPhoto(p)} className="text-[10px] tracking-[0.08em] uppercase font-bold font-[var(--font-inter)] px-3 py-1.5 border border-[#002045] text-[#002045] hover:bg-[#002045] hover:text-white transition-colors">Editar</button>
+                          <button onClick={() => deletePhoto(p.id, p.title)} className="text-[10px] tracking-[0.08em] uppercase font-bold font-[var(--font-inter)] px-3 py-1.5 border border-red-300 text-red-600 hover:bg-red-50 transition-colors">Excluir</button>
+                        </div>
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              )}
+            </div>
+
+            <div className="border-t border-[#e2e2e2] my-8" />
+
+            {/* Section 2: Renders / CGI */}
+            <div>
+              <div className="flex items-center justify-between mb-6">
+                <h3 className="font-[var(--font-noto-serif)] text-[#002045] text-xl font-normal">Renders / CGI</h3>
+                <button
+                  onClick={() => {
+                    setEditingRenderId(null);
+                    setRenderForm({ slug:"", title:"", product_code:"", image_path:"", is_active:true, sort_order:0 });
+                    setShowRenderForm(true);
+                    setTimeout(() => renderTabFormRef.current?.scrollIntoView({ behavior: "smooth", block: "start" }), 50);
+                  }}
+                  className="bg-[#002045] text-white text-xs tracking-[0.1em] uppercase font-bold font-[var(--font-inter)] px-5 py-2.5 hover:bg-[#1a365d] transition-colors"
+                >
+                  + Adicionar
+                </button>
+              </div>
+
+              {showRenderForm && (
+                <div ref={renderTabFormRef} className="bg-white border border-[#e2e2e2] p-6 mb-6">
+                  <h4 className="font-[var(--font-inter)] text-[10px] tracking-[0.15em] uppercase font-bold text-[#002045] mb-5">
+                    {editingRenderId ? "Editar Render" : "Novo Render"}
+                  </h4>
+                  <form onSubmit={handleRenderSubmit}>
+                    <div className="grid grid-cols-2 sm:grid-cols-3 gap-4 mb-4">
+                      <div>
+                        <label className={labelCls}>Slug *</label>
+                        <input required type="text" value={renderForm.slug} onChange={(e) => setRenderForm({...renderForm, slug: e.target.value})} className={inputCls} placeholder="orb001-sala" />
+                      </div>
+                      <div>
+                        <label className={labelCls}>Título *</label>
+                        <input required type="text" value={renderForm.title} onChange={(e) => setRenderForm({...renderForm, title: e.target.value})} className={inputCls} placeholder="Sala de Estar" />
+                      </div>
+                      <div>
+                        <label className={labelCls}>Código do produto</label>
+                        <input type="text" value={renderForm.product_code} onChange={(e) => setRenderForm({...renderForm, product_code: e.target.value})} className={inputCls} placeholder="ORB-001" />
+                      </div>
+                      <div>
+                        <label className={labelCls}>Sort Order</label>
+                        <input type="number" min="0" value={renderForm.sort_order} onChange={(e) => setRenderForm({...renderForm, sort_order: parseInt(e.target.value) || 0})} className={inputCls} />
+                      </div>
+                    </div>
+                    <div className="mb-4">
+                      <label className={labelCls}>Imagem</label>
+                      <div className="flex gap-3 items-start">
+                        <input type="text" value={renderForm.image_path} onChange={(e) => setRenderForm({...renderForm, image_path: e.target.value})} className={inputCls} placeholder="/images/renders/..." />
+                        <label className="flex-shrink-0 cursor-pointer bg-[#f0f0f0] border border-[#e2e2e2] px-4 py-2.5 text-xs font-bold font-[var(--font-inter)] text-[#002045] hover:bg-[#e8e8e8] transition-colors whitespace-nowrap">
+                          {projectImageUploading ? "Enviando..." : "Upload"}
+                          <input type="file" accept="image/*" className="hidden" onChange={async (e) => {
+                            const file = e.target.files?.[0];
+                            if (!file) return;
+                            setProjectImageUploading(true);
+                            const fd = new FormData(); fd.append("file", file); fd.append("folder", "renders");
+                            const res = await fetch("/api/admin/upload", { method: "POST", headers: { "x-admin-auth": ADMIN_PW }, body: fd });
+                            setProjectImageUploading(false);
+                            if (res.ok) { const { url } = await res.json(); setRenderForm((prev) => ({...prev, image_path: url})); }
+                          }} />
+                        </label>
+                      </div>
+                    </div>
+                    <div className="mb-6 flex items-center gap-2">
+                      <input type="checkbox" id="render-active" checked={renderForm.is_active} onChange={(e) => setRenderForm({...renderForm, is_active: e.target.checked})} className="w-4 h-4" />
+                      <label htmlFor="render-active" className="text-sm font-[var(--font-inter)] text-[#43474e]">Render ativo</label>
+                    </div>
+                    <div className="flex gap-3">
+                      <button type="submit" className="bg-[#002045] text-white text-xs tracking-[0.1em] uppercase font-bold font-[var(--font-inter)] px-6 py-2.5 hover:bg-[#1a365d] transition-colors">Salvar</button>
+                      <button type="button" onClick={() => { setShowRenderForm(false); setEditingRenderId(null); }} className="border border-[#e2e2e2] text-[#74777f] text-xs font-[var(--font-inter)] px-6 py-2.5 hover:border-[#002045] hover:text-[#002045] transition-colors">Cancelar</button>
+                    </div>
+                  </form>
+                </div>
+              )}
+
+              {loadingProjects ? (
+                <p className="text-[#74777f] text-sm font-[var(--font-inter)] py-4">Carregando...</p>
+              ) : (
+                <div className="bg-white border border-[#e2e2e2] overflow-x-auto">
+                  <table className="w-full text-sm font-[var(--font-inter)]">
+                    <thead>
+                      <tr className="border-b border-[#e2e2e2]">
+                        {["Título","Código","Ações"].map(h => (
+                          <th key={h} className="text-left px-4 py-3 text-[10px] tracking-[0.1em] uppercase font-bold text-[#74777f]">{h}</th>
+                        ))}
+                      </tr>
+                    </thead>
+                    <tbody>
+                      {dbRenderProjects.length === 0 ? (
+                        <tr><td colSpan={3} className="px-5 py-8 text-center text-[#74777f]">Nenhum render cadastrado.</td></tr>
+                      ) : dbRenderProjects.map((r) => (
+                        <tr key={r.id} className="border-b border-[#f0f0f0] hover:bg-[#fafafa]">
+                          <td className="px-4 py-3 text-[#002045] font-medium">{r.title}</td>
+                          <td className="px-4 py-3"><span className="bg-[#eef2f8] text-[#002045] px-2 py-0.5 text-xs font-bold tracking-wider">{r.product_code}</span></td>
+                          <td className="px-4 py-3">
+                            <div className="flex gap-2">
+                              <button onClick={() => startEditRender(r)} className="text-[10px] tracking-[0.08em] uppercase font-bold font-[var(--font-inter)] px-3 py-1.5 border border-[#002045] text-[#002045] hover:bg-[#002045] hover:text-white transition-colors">Editar</button>
+                              <button onClick={() => deleteRender(r.id, r.title)} className="text-[10px] tracking-[0.08em] uppercase font-bold font-[var(--font-inter)] px-3 py-1.5 border border-red-300 text-red-600 hover:bg-red-50 transition-colors">Excluir</button>
+                            </div>
+                          </td>
+                        </tr>
+                      ))}
+                    </tbody>
+                  </table>
+                </div>
+              )}
+            </div>
           </div>
         )}
       </div>

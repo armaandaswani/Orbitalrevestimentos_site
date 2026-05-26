@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import Image from "next/image";
 import Link from "next/link";
 
@@ -9,19 +9,21 @@ type Category = "todos" | "residencial" | "comercial" | "umido" | "nautico";
 
 interface Project {
   id: string;
+  slug: string;
   title: string;
-  code: string;
-  categories: Category[];
-  after: string;
-  before?: string;
+  product_code: string;
+  categories: string[];
+  image_after: string;
+  image_before?: string;
   note?: string;
 }
 
 interface Render {
   id: string;
+  slug: string;
   title: string;
-  code: string;
-  img: string;
+  product_code: string;
+  image_path: string;
 }
 
 // ─── Data ─────────────────────────────────────────────────────────────────────
@@ -31,163 +33,26 @@ const WA =
     "Olá! Vi os projetos no site da Orbital e gostaria de fazer um orçamento."
   );
 
-const projects: Project[] = [
-  {
-    id: "restaurante",
-    title: "Restaurante",
-    code: "ORB-002 · Imbuia",
-    categories: ["comercial"],
-    after: "/images/projetos/restaurante-depois.jpeg",
-    before: "/images/projetos/restaurante-antes.png",
-    note: "Ambiente comercial",
-  },
-  {
-    id: "hall",
-    title: "Hall de Entrada",
-    code: "ORB-002 · Imbuia",
-    categories: ["residencial", "comercial"],
-    after: "/images/projetos/hall-depois.png",
-    before: "/images/projetos/hall-antes.png",
-    note: "Residencial · Comercial",
-  },
-  {
-    id: "escritorio",
-    title: "Escritório",
-    code: "ORB-004 · Louro Freijó",
-    categories: ["comercial"],
-    after: "/images/projetos/escritorio-depois.jpeg",
-    before: "/images/projetos/escritorio-antes.png",
-    note: "Ambiente comercial",
-  },
-  {
-    id: "lavabo1",
-    title: "Lavabo",
-    code: "ORB-004 · Louro Freijó",
-    categories: ["residencial", "umido"],
-    after: "/images/projetos/lavabo1-depois.png",
-    before: "/images/projetos/lavabo1-antes.jpeg",
-    note: "Área úmida · impermeável",
-  },
-  {
-    id: "lavabo2",
-    title: "Lavabo II",
-    code: "ORB-011 · Carvalho Branco",
-    categories: ["residencial", "umido"],
-    after: "/images/projetos/lavabo2-depois.png",
-    before: "/images/projetos/lavabo2-antes.jpg",
-    note: "Área úmida",
-  },
-  {
-    id: "lavabo3",
-    title: "Lavabo III",
-    code: "ORB-012 · Arabescato Orobico Bianco",
-    categories: ["residencial", "umido"],
-    after: "/images/projetos/lavabo3-depois.jpg",
-    before: "/images/projetos/lavabo3-antes.png",
-    note: "Área úmida",
-  },
-  {
-    id: "lavabo4",
-    title: "Lavabo IV",
-    code: "ORB-009 + ORB-004",
-    categories: ["residencial", "umido"],
-    after: "/images/projetos/lavabo4-depois.jpeg",
-    before: "/images/projetos/lavabo4-antes.jpeg",
-    note: "Parede ORB-009 · Teto ORB-004",
-  },
-  {
-    id: "cozinha",
-    title: "Cozinha",
-    code: "ORB-014 · Calacatta Michelangelo",
-    categories: ["residencial", "umido"],
-    after: "/images/projetos/cozinha-depois.png",
-    before: "/images/projetos/cozinha-antes.png",
-    note: "Área úmida",
-  },
-  {
-    id: "nautico1",
-    title: "Embarcação Náutica",
-    code: "ORB-004 · Louro Freijó",
-    categories: ["nautico"],
-    after: "/images/projetos/nautico1-depois.png",
-    before: "/images/projetos/nautico1-antes.png",
-    note: "Náutico · homologado",
-  },
-  {
-    id: "nautico2",
-    title: "Embarcação Náutica II",
-    code: "ORB-004 · Louro Freijó",
-    categories: ["nautico"],
-    after: "/images/projetos/nautico2-depois.png",
-    before: "/images/projetos/nautico2-antes.png",
-    note: "Náutico",
-  },
-  {
-    id: "nautico3",
-    title: "Embarcação Náutica III",
-    code: "ORB-004 · Louro Freijó",
-    categories: ["nautico"],
-    after: "/images/projetos/nautico3-depois.png",
-    before: "/images/projetos/nautico3-antes.png",
-    note: "Náutico",
-  },
-  {
-    id: "nautico4",
-    title: "Embarcação Náutica IV",
-    code: "ORB-004 · Louro Freijó",
-    categories: ["nautico"],
-    after: "/images/projetos/nautico4-depois.png",
-    before: "/images/projetos/nautico4-antes.png",
-    note: "Náutico",
-  },
-];
-
-// Gallery sections — storytelling order
+// Gallery sections — storytelling order (slug-based)
 const GALLERY_SECTIONS = [
   {
     key: "comercial",
     label: "Comercial",
     desc: "Restaurantes, escritórios e espaços de uso coletivo",
-    ids: ["restaurante", "hall", "escritorio"],
+    slugs: ["restaurante", "hall", "escritorio"],
   },
   {
     key: "residencial",
     label: "Residencial · Áreas Úmidas",
     desc: "Lavabos, banheiros e cozinhas transformados sem obra",
-    ids: ["lavabo1", "lavabo2", "lavabo3", "lavabo4", "cozinha"],
+    slugs: ["lavabo1", "lavabo2", "lavabo3", "lavabo4", "cozinha"],
   },
   {
     key: "nautico",
     label: "Náutico",
     desc: "Revestimento homologado para embarcações",
-    ids: ["nautico1", "nautico2", "nautico3", "nautico4"],
+    slugs: ["nautico1", "nautico2", "nautico3", "nautico4"],
   },
-];
-
-// AI render data — grouped by room context
-const RENDERS_RESIDENCIAL: Render[] = [
-  { id: "orb001-sala",    title: "Sala de Estar",         code: "ORB-001", img: "/images/renders/orb001-sala.png"        },
-  { id: "orb008-sala",    title: "Sala de Estar",         code: "ORB-008", img: "/images/renders/orb008-sala.png"        },
-  { id: "orb012-sala",    title: "Sala de Estar",         code: "ORB-012", img: "/images/renders/orb012-sala.png"        },
-  { id: "orb013-quarto",  title: "Quarto",                code: "ORB-013", img: "/images/renders/orb013-quarto.png"      },
-  { id: "orb006-banheiro",title: "Banheiro",              code: "ORB-006", img: "/images/renders/orb006-banheiro.png"    },
-  { id: "orb007-banheiro",title: "Banheiro",              code: "ORB-007", img: "/images/renders/orb007-banheiro.png"    },
-  { id: "orb009-banheiro",title: "Banheiro",              code: "ORB-009", img: "/images/renders/orb009-banheiro.png"    },
-  { id: "orb015-banheiro",title: "Banheiro",              code: "ORB-015", img: "/images/renders/orb015-banheiro.png"    },
-  { id: "orb012-cozinha", title: "Roda-banca de Cozinha", code: "ORB-012", img: "/images/renders/orb012-cozinha.png"     },
-  { id: "orb002-mesa",    title: "Mesa de Estudos",       code: "ORB-002", img: "/images/renders/orb002-mesa-estudos.jpg"},
-];
-
-const RENDERS_COMERCIAL: Render[] = [
-  { id: "orb002-restaurante", title: "Restaurante",               code: "ORB-002", img: "/images/renders/orb002-restaurante.png"         },
-  { id: "orb003-restaurante", title: "Restaurante",               code: "ORB-003", img: "/images/renders/orb003-restaurante.png"         },
-  { id: "orb013-restaurante", title: "Restaurante",               code: "ORB-013", img: "/images/renders/orb013-restaurante.png"         },
-  { id: "orb014-escritorio",  title: "Escritório",                code: "ORB-014", img: "/images/renders/orb014-escritorio.png"          },
-  { id: "orb003-conf",        title: "Sala de Conferências",      code: "ORB-003", img: "/images/renders/orb003-sala-conf.png"           },
-  { id: "orb004-comercio",    title: "Comércio — Teto",           code: "ORB-004", img: "/images/renders/orb004-comercio-teto.png"       },
-  { id: "orb001-odonto",      title: "Consultório Odontológico",  code: "ORB-001", img: "/images/renders/orb001-consultorio-odonto.png"  },
-  { id: "orb005-oftalmo",     title: "Consultório Oftalmológico", code: "ORB-005", img: "/images/renders/orb005-consultorio-oftalmo.png" },
-  { id: "orb007-pediatria",   title: "Consultório de Pediatria",  code: "ORB-007", img: "/images/renders/orb007-pediatria.png"           },
 ];
 
 const FILTERS: { key: Category; label: string }[] = [
@@ -201,24 +66,22 @@ const FILTERS: { key: Category; label: string }[] = [
 // ─── Project card — portrait aspect ───────────────────────────────────────────
 function ProjectCard({ project }: { project: Project }) {
   const [showBefore, setShowBefore] = useState(false);
-  const hasBA = !!project.before;
+  const hasBA = !!project.image_before;
 
   return (
     <div className="bg-white flex flex-col">
       {/* Image */}
       <div className="relative w-full aspect-[3/4] overflow-hidden">
-        <Image
-          src={project.after}
+        <img
+          src={project.image_after}
           alt={`${project.title} — depois`}
-          fill
-          className={`object-cover transition-opacity duration-500 ${hasBA && showBefore ? "opacity-0" : "opacity-100"}`}
+          className={`absolute inset-0 w-full h-full object-cover transition-opacity duration-500 ${hasBA && showBefore ? "opacity-0" : "opacity-100"}`}
         />
-        {hasBA && project.before && (
-          <Image
-            src={project.before}
+        {hasBA && project.image_before && (
+          <img
+            src={project.image_before}
             alt={`${project.title} — antes`}
-            fill
-            className={`object-cover transition-opacity duration-500 ${showBefore ? "opacity-100" : "opacity-0"}`}
+            className={`absolute inset-0 w-full h-full object-cover transition-opacity duration-500 ${showBefore ? "opacity-100" : "opacity-0"}`}
           />
         )}
 
@@ -249,7 +112,7 @@ function ProjectCard({ project }: { project: Project }) {
       {/* Caption below image */}
       <div className="px-3 pt-2.5 pb-3 border-t border-[#efefef]">
         <p className="text-[#3b6934] text-[8px] tracking-[0.18em] uppercase font-semibold font-[var(--font-inter)] mb-1">
-          {project.code}
+          {project.product_code}
         </p>
         <h3 className="font-[var(--font-noto-serif)] text-[#002045] text-sm font-normal leading-snug">
           {project.title}
@@ -270,11 +133,10 @@ function RenderCard({ render }: { render: Render }) {
     <div className="bg-[#111827] flex flex-col group">
       {/* Image */}
       <div className="relative w-full aspect-[3/4] overflow-hidden">
-        <Image
-          src={render.img}
-          alt={`${render.title} — ${render.code}`}
-          fill
-          className="object-cover transition-transform duration-500 group-hover:scale-[1.03]"
+        <img
+          src={render.image_path}
+          alt={`${render.title} — ${render.product_code}`}
+          className="absolute inset-0 w-full h-full object-cover transition-transform duration-500 group-hover:scale-[1.03]"
         />
         {/* IA badge — small, unobtrusive */}
         <div className="absolute top-3 left-3 px-2 py-0.5 border border-white/20 bg-black/40 backdrop-blur-sm">
@@ -287,7 +149,7 @@ function RenderCard({ render }: { render: Render }) {
       {/* Caption below image */}
       <div className="px-3 pt-2.5 pb-3 border-t border-white/8">
         <p className="text-[#a1d494] text-[8px] tracking-[0.18em] uppercase font-semibold font-[var(--font-inter)] mb-1">
-          {render.code}
+          {render.product_code}
         </p>
         <h3 className="font-[var(--font-noto-serif)] text-white/85 text-sm font-normal leading-snug">
           {render.title}
@@ -314,6 +176,19 @@ function SectionHeader({ label, desc, light = false }: { label: string; desc: st
 // ─── Page ─────────────────────────────────────────────────────────────────────
 export default function ProjetosPage() {
   const [activeFilter, setActiveFilter] = useState<Category>("todos");
+  const [projects, setProjects] = useState<Project[]>([]);
+  const [renders, setRenders] = useState<Render[]>([]);
+
+  useEffect(() => {
+    fetch("/api/projects/photos")
+      .then((r) => r.json())
+      .then((data) => setProjects(Array.isArray(data) ? data : []))
+      .catch(() => setProjects([]));
+    fetch("/api/projects/renders")
+      .then((r) => r.json())
+      .then((data) => setRenders(Array.isArray(data) ? data : []))
+      .catch(() => setRenders([]));
+  }, []);
 
   const filtered =
     activeFilter === "todos"
@@ -473,14 +348,15 @@ export default function ProjetosPage() {
           {activeFilter === "todos" ? (
             <div className="space-y-16">
               {GALLERY_SECTIONS.map((section) => {
-                const sectionProjects = section.ids
-                  .map((id) => projects.find((p) => p.id === id))
+                const sectionProjects = section.slugs
+                  .map((slug) => projects.find((p) => p.slug === slug))
                   .filter(Boolean) as Project[];
+                const displayProjects = sectionProjects.length > 0 ? sectionProjects : projects.filter((p) => p.categories.includes(section.key));
                 return (
                   <div key={section.key}>
                     <SectionHeader label={section.label} desc={section.desc} />
                     <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 gap-1">
-                      {sectionProjects.map((project) => (
+                      {displayProjects.map((project) => (
                         <ProjectCard key={project.id} project={project} />
                       ))}
                     </div>
@@ -531,33 +407,18 @@ export default function ProjetosPage() {
             </p>
           </div>
 
-          {/* Residencial */}
-          <div className="mb-16">
-            <SectionHeader
-              label="Residencial"
-              desc="Salas, quartos, banheiros e espaços de vida"
-              light
-            />
+          {/* All renders in a single grid */}
+          {renders.length > 0 ? (
             <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-5 gap-1">
-              {RENDERS_RESIDENCIAL.map((render) => (
+              {renders.map((render) => (
                 <RenderCard key={render.id} render={render} />
               ))}
             </div>
-          </div>
-
-          {/* Comercial */}
-          <div>
-            <SectionHeader
-              label="Comercial"
-              desc="Restaurantes, consultórios, escritórios e espaços de serviço"
-              light
-            />
-            <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-3 gap-1">
-              {RENDERS_COMERCIAL.map((render) => (
-                <RenderCard key={render.id} render={render} />
-              ))}
-            </div>
-          </div>
+          ) : (
+            <p className="text-white/30 text-sm font-[var(--font-inter)] text-center py-10">
+              Nenhuma visualização disponível no momento.
+            </p>
+          )}
 
           <p className="text-white/18 text-[10px] font-[var(--font-inter)] italic text-center mt-10">
             Imagens geradas por inteligência artificial para fins ilustrativos.

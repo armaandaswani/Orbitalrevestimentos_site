@@ -38,10 +38,17 @@ type ProductLine = "Classic" | "Brilliance" | "Elegance";
 type SpaceViability = "simple" | "complex" | "no";
 
 interface Product {
+  id: string;
   code: string;
   name: string;
   linha: ProductLine;
-  img: string;
+  finish: string;
+  price: number;
+  price_per_m2: number;
+  description: string;
+  image_path: string;
+  is_active: boolean;
+  sort_order: number;
 }
 
 interface Space {
@@ -69,23 +76,6 @@ const LINE_INFO: Record<ProductLine, { finish: string; price: number; cover: str
   Elegance:   { finish: "Madeira Texturizada", price: 649, cover: "/images/catalogue/elegance-carvalho-natural-orb010.jpeg" },
 };
 
-const PRODUCTS: Product[] = [
-  { code: "ORB-003", name: "Bege Travertino",           linha: "Classic",    img: "/images/catalogue/classic-bege-travertino-orb001.jpeg" },
-  { code: "ORB-001", name: "Terracota",                 linha: "Classic",    img: "/images/catalogue/classic-terracota-orb003.jpeg" },
-  { code: "ORB-006", name: "Branco Calacatta",          linha: "Classic",    img: "/images/catalogue/classic-branco-calacatta-orb006.jpeg" },
-  { code: "ORB-012", name: "Bronze Armani",             linha: "Brilliance", img: "/images/catalogue/brilliance-bronze-armani-orb005.jpeg" },
-  { code: "ORB-007", name: "Bianco Statuario Venato",   linha: "Brilliance", img: "/images/catalogue/brilliance-bianco-statuario-venato-orb007.jpeg" },
-  { code: "ORB-009", name: "Bianco Oro Supremo",        linha: "Brilliance", img: "/images/catalogue/brilliance-bianco-oro-supremo-orb008.jpeg" },
-  { code: "ORB-005", name: "Gris Pietra",               linha: "Brilliance", img: "/images/catalogue/brilliance-gris-pietra-orb009.jpeg" },
-  { code: "ORB-008", name: "Arabescato Orobico Bianco", linha: "Brilliance", img: "/images/catalogue/brilliance-arabescato-orobico-bianco-orb012.jpeg" },
-  { code: "ORB-013", name: "Calacatta Oro",             linha: "Brilliance", img: "/images/catalogue/brilliance-calacatta-oro-orb013.jpeg" },
-  { code: "ORB-014", name: "Calacatta Michelangelo",    linha: "Brilliance", img: "/images/catalogue/brilliance-calacatta-michelangelo-orb014.jpeg" },
-  { code: "ORB-015", name: "Carrara Gioia",             linha: "Brilliance", img: "/images/catalogue/brilliance-carrara-gioia-orb015.jpeg" },
-  { code: "ORB-002", name: "Imbuia",                    linha: "Elegance",   img: "/images/catalogue/elegance-imbuia-orb002.jpeg" },
-  { code: "ORB-004", name: "Louro Freijó",              linha: "Elegance",   img: "/images/catalogue/elegance-louro-freijo-orb004.jpeg" },
-  { code: "ORB-010", name: "Carvalho Natural",          linha: "Elegance",   img: "/images/catalogue/elegance-carvalho-natural-orb010.jpeg" },
-  { code: "ORB-011", name: "Carvalho Branco",           linha: "Elegance",   img: "/images/catalogue/elegance-carvalho-branco-orb011.jpeg" },
-];
 
 const SPACES: Space[] = [
   { id: "parede",     label: "Parede",             viability: "simple" },
@@ -158,6 +148,17 @@ function SimuladorInner() {
   const stepCardRef = useRef<HTMLDivElement>(null);
   const nextBtnRef = useRef<HTMLButtonElement>(null);
 
+  const [products, setProducts] = useState<Product[]>([]);
+  const [loadingProducts, setLoadingProducts] = useState(true);
+
+  useEffect(() => {
+    fetch("/api/products")
+      .then((r) => r.json())
+      .then((data: Product[]) => setProducts(data))
+      .catch(() => setProducts([]))
+      .finally(() => setLoadingProducts(false));
+  }, []);
+
   const [step, setStep] = useState<1 | 2 | 3 | 4 | 5>(1);
   const [selectedSpace, setSelectedSpace] = useState<Space | null>(null);
   const [selectedLine, setSelectedLine] = useState<ProductLine | null>(null);
@@ -194,11 +195,7 @@ function SimuladorInner() {
 
   const isComplex = selectedSpace?.viability === "complex";
 
-  const pricePerPlate =
-    !selectedProduct ? 559
-    : selectedProduct.linha === "Classic" ? 559
-    : selectedProduct.linha === "Brilliance" ? 589
-    : 649;
+  const pricePerPlate = selectedProduct?.price ?? 559;
 
   const orbMaterialTotal = plates * pricePerPlate;
   const moRatePerPlate = plates > 0 ? orbitalMOPerPlate(plates, isComplex) : 0;
@@ -672,8 +669,13 @@ function SimuladorInner() {
                   <p className="text-[#43474e] text-[10px] tracking-[0.15em] uppercase font-bold font-[var(--font-inter)] mb-4">
                     Acabamentos {selectedLine}
                   </p>
+                  {loadingProducts ? (
+                    <div className="flex items-center justify-center py-10">
+                      <div className="w-6 h-6 border-2 border-[#002045] border-t-transparent rounded-full animate-spin" />
+                    </div>
+                  ) : (
                   <div className="grid grid-cols-3 sm:grid-cols-4 md:grid-cols-5 gap-2 sm:gap-3 min-[400px]:grid-cols-4">
-                    {PRODUCTS.filter((p) => p.linha === selectedLine).map((product) => {
+                    {products.filter((p) => p.linha === selectedLine).map((product) => {
                       const active = selectedProduct?.code === product.code;
                       return (
                         <div
@@ -687,11 +689,10 @@ function SimuladorInner() {
                             className="relative w-full overflow-hidden bg-[#f7f7f5] block group"
                           >
                             <div className="relative w-full" style={{ aspectRatio: "812/988" }}>
-                              <Image
-                                src={product.img}
+                              <img
+                                src={product.image_path}
                                 alt={product.name}
-                                fill
-                                className="object-contain"
+                                className="absolute inset-0 w-full h-full object-contain"
                               />
                             </div>
                             {active && <div className="absolute inset-0 bg-[#002045]/10" />}
@@ -704,7 +705,7 @@ function SimuladorInner() {
                             )}
                             {/* Expand button */}
                             <button
-                              onClick={(e) => { e.stopPropagation(); setLightboxImg(product.img); }}
+                              onClick={(e) => { e.stopPropagation(); setLightboxImg(product.image_path); }}
                               className="absolute bottom-2 right-2 w-6 h-6 bg-white/90 hover:bg-white flex items-center justify-center shadow-sm opacity-0 group-hover:opacity-100 transition-opacity"
                               title="Ver imagem ampliada"
                             >
@@ -723,6 +724,7 @@ function SimuladorInner() {
                       );
                     })}
                   </div>
+                  )}
                 </div>
               )}
 
@@ -773,7 +775,7 @@ function SimuladorInner() {
                 {selectedProduct && (
                   <span className="flex items-center gap-2 bg-[#eef2f8] text-[#1a365d] text-xs font-semibold font-[var(--font-inter)] px-3 py-1.5">
                     <span className="relative w-4 h-4 inline-block overflow-hidden flex-shrink-0">
-                      <Image src={selectedProduct.img} alt={selectedProduct.name} fill className="object-cover" />
+                      <img src={selectedProduct.image_path} alt={selectedProduct.name} className="absolute inset-0 w-full h-full object-cover" />
                     </span>
                     {selectedProduct.name} · {selectedProduct.code}
                   </span>
@@ -1087,7 +1089,7 @@ function SimuladorInner() {
               <div className="bg-[#002045] px-5 py-4 flex flex-wrap items-center gap-3 border border-[#2d4f7f] border-b-0">
                 <div className="flex items-center gap-3 min-w-0">
                   <div className="relative w-10 h-10 flex-shrink-0 overflow-hidden">
-                    <Image src={selectedProduct.img} alt={selectedProduct.name} fill className="object-cover" />
+                    <img src={selectedProduct.image_path} alt={selectedProduct.name} className="absolute inset-0 w-full h-full object-cover" />
                   </div>
                   <div className="min-w-0">
                     <p className="text-white text-xs font-bold font-[var(--font-inter)] truncate">{selectedProduct.name}</p>

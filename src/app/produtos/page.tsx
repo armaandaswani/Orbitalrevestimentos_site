@@ -2,168 +2,26 @@
 
 import Image from "next/image";
 import Link from "next/link";
-import { useState } from "react";
+import { useState, useEffect } from "react";
 
 const CATALOGUE_URL =
   "https://drive.google.com/file/d/1zhm5MgKGSDRThqk8FqqwfX-WijI7K-iD/view?usp=drive_link";
 
 type Linha = "todos" | "Classic" | "Brilliance" | "Elegance";
 
-const products = [
-  // Classic — Fosco finish, marble look
-  {
-    code: "ORB-003",
-    name: "Bege Travertino",
-    linha: "Classic" as const,
-    finish: "Fosco",
-    price: "R$ 559",
-    priceM2: "R$ 160/m²",
-    img: "/images/catalogue/classic-bege-travertino-orb001.jpeg",
-    desc: "Tom bege quente com textura travertino. Aconchego e sofisticação atemporal.",
-  },
-  {
-    code: "ORB-001",
-    name: "Terracota",
-    linha: "Classic" as const,
-    finish: "Fosco",
-    price: "R$ 559",
-    priceM2: "R$ 160/m²",
-    img: "/images/catalogue/classic-terracota-orb003.jpeg",
-    desc: "Tons terrosos intensos com acabamento fosco. Calor mediterrâneo para qualquer ambiente.",
-  },
-  {
-    code: "ORB-006",
-    name: "Branco Calacatta",
-    linha: "Classic" as const,
-    finish: "Fosco",
-    price: "R$ 559",
-    priceM2: "R$ 160/m²",
-    img: "/images/catalogue/classic-branco-calacatta-orb006.jpeg",
-    desc: "Branco puro com veios sutis. O clássico que nunca sai de moda.",
-  },
-  // Brilliance — Polido finish, marble look
-  {
-    code: "ORB-012",
-    name: "Bronze Armani",
-    linha: "Brilliance" as const,
-    finish: "Polido",
-    price: "R$ 589",
-    priceM2: "R$ 169/m²",
-    img: "/images/catalogue/brilliance-bronze-armani-orb005.jpeg",
-    desc: "Fundo escuro com veios dourados e bronzeados. Dramaticidade e sofisticação.",
-  },
-  {
-    code: "ORB-007",
-    name: "Bianco Statuario Venato",
-    linha: "Brilliance" as const,
-    finish: "Polido",
-    price: "R$ 589",
-    priceM2: "R$ 169/m²",
-    img: "/images/catalogue/brilliance-bianco-statuario-venato-orb007.jpeg",
-    desc: "Branco estaturário com veios cinza naturais. Imponência clássica italiana.",
-  },
-  {
-    code: "ORB-009",
-    name: "Bianco Oro Supremo",
-    linha: "Brilliance" as const,
-    finish: "Polido",
-    price: "R$ 589",
-    priceM2: "R$ 169/m²",
-    img: "/images/catalogue/brilliance-bianco-oro-supremo-orb008.jpeg",
-    desc: "Branco supremo com reflexos dourados sutis. O ápice do refinamento.",
-  },
-  {
-    code: "ORB-005",
-    name: "Gris Pietra",
-    linha: "Brilliance" as const,
-    finish: "Polido",
-    price: "R$ 589",
-    priceM2: "R$ 169/m²",
-    img: "/images/catalogue/brilliance-gris-pietra-orb009.jpeg",
-    desc: "Cinza profundo com veios brancos. Modernidade e contraste com elegância.",
-  },
-  {
-    code: "ORB-008",
-    name: "Arabescato Orobico Bianco",
-    linha: "Brilliance" as const,
-    finish: "Polido",
-    price: "R$ 589",
-    priceM2: "R$ 169/m²",
-    img: "/images/catalogue/brilliance-arabescato-orobico-bianco-orb012.jpeg",
-    desc: "Veios dramáticos em movimento sobre fundo branco. Alta costura para paredes.",
-  },
-  {
-    code: "ORB-013",
-    name: "Calacatta Oro",
-    linha: "Brilliance" as const,
-    finish: "Polido",
-    price: "R$ 589",
-    priceM2: "R$ 169/m²",
-    img: "/images/catalogue/brilliance-calacatta-oro-orb013.jpeg",
-    desc: "Fundo branco com veios dourados. Luxo e luminosidade em cada detalhe.",
-  },
-  {
-    code: "ORB-014",
-    name: "Calacatta Michelangelo",
-    linha: "Brilliance" as const,
-    finish: "Polido",
-    price: "R$ 589",
-    priceM2: "R$ 169/m²",
-    img: "/images/catalogue/brilliance-calacatta-michelangelo-orb014.jpeg",
-    desc: "Inspirado no mármore dos grandes mestres renascentistas. Presença absoluta.",
-  },
-  {
-    code: "ORB-015",
-    name: "Carrara Gioia",
-    linha: "Brilliance" as const,
-    finish: "Polido",
-    price: "R$ 589",
-    priceM2: "R$ 169/m²",
-    img: "/images/catalogue/brilliance-carrara-gioia-orb015.jpeg",
-    desc: "O mármore Carrara clássico com acabamento polido espelhado. Atemporal.",
-  },
-  // Elegance — Madeira Texturizada finish
-  {
-    code: "ORB-002",
-    name: "Imbuia",
-    linha: "Elegance" as const,
-    finish: "Madeira Texturizada",
-    price: "R$ 649",
-    priceM2: "R$ 186/m²",
-    img: "/images/catalogue/elegance-imbuia-orb002.jpeg",
-    desc: "Madeira escura com grãos expressivos. Calor e profundidade amazônica.",
-  },
-  {
-    code: "ORB-004",
-    name: "Louro Freijó",
-    linha: "Elegance" as const,
-    finish: "Madeira Texturizada",
-    price: "R$ 649",
-    priceM2: "R$ 186/m²",
-    img: "/images/catalogue/elegance-louro-freijo-orb004.jpeg",
-    desc: "Tom amadeirado médio com textura natural expressiva. Equilíbrio perfeito.",
-  },
-  {
-    code: "ORB-010",
-    name: "Carvalho Natural",
-    linha: "Elegance" as const,
-    finish: "Madeira Texturizada",
-    price: "R$ 649",
-    priceM2: "R$ 186/m²",
-    img: "/images/catalogue/elegance-carvalho-natural-orb010.jpeg",
-    desc: "Carvalho claro com grão natural. Frescor nórdico e elegância contemporânea.",
-  },
-  {
-    code: "ORB-011",
-    name: "Carvalho Branco",
-    linha: "Elegance" as const,
-    finish: "Madeira Texturizada",
-    price: "R$ 649",
-    priceM2: "R$ 186/m²",
-    img: "/images/catalogue/elegance-carvalho-branco-orb011.jpeg",
-    desc: "Carvalho branco com grão fino e sutil. Leveza e modernidade escandinava.",
-  },
-];
+interface Product {
+  id: string;
+  code: string;
+  name: string;
+  linha: "Classic" | "Brilliance" | "Elegance";
+  finish: string;
+  price: number;
+  price_per_m2: number;
+  description: string;
+  image_path: string;
+  is_active: boolean;
+  sort_order: number;
+}
 
 const linhas: { key: Linha; label: string; desc: string }[] = [
   { key: "todos", label: "Todos", desc: "15 acabamentos" },
@@ -174,6 +32,16 @@ const linhas: { key: Linha; label: string; desc: string }[] = [
 
 export default function ProdutosPage() {
   const [activeLinha, setActiveLinha] = useState<Linha>("todos");
+  const [products, setProducts] = useState<Product[]>([]);
+  const [loadingProducts, setLoadingProducts] = useState(true);
+
+  useEffect(() => {
+    fetch("/api/products")
+      .then((r) => r.json())
+      .then((data) => setProducts(data))
+      .catch(() => setProducts([]))
+      .finally(() => setLoadingProducts(false));
+  }, []);
 
   const filtered =
     activeLinha === "todos"
@@ -262,61 +130,76 @@ export default function ProdutosPage() {
             </div>
           )}
 
-          <div className="grid grid-cols-2 lg:grid-cols-3 gap-x-4 gap-y-8 lg:gap-x-8 lg:gap-y-14">
-            {filtered.map(({ code, name, linha, finish, price, priceM2, img, desc }) => (
-              <article key={code} className="group cursor-pointer">
-                <div className="relative aspect-[4/5] overflow-hidden bg-[#eeeeee] mb-3 lg:mb-5 shadow-sm group-hover:shadow-lg transition-shadow duration-500">
-                  <Image
-                    src={img}
-                    alt={`${name} — Linha ${linha}`}
-                    fill
-                    className="object-cover transition-transform duration-700 ease-out group-hover:scale-[1.05]"
-                  />
-                  <div className="absolute top-2 right-2 lg:top-4 lg:right-4">
-                    <span className="bg-white/95 text-[#002045] text-[9px] lg:text-[10px] tracking-[0.1em] uppercase font-semibold font-[var(--font-inter)] px-2 py-1 lg:px-2.5 lg:py-1.5">
-                      {finish}
-                    </span>
+          {loadingProducts ? (
+            <div className="grid grid-cols-2 lg:grid-cols-3 gap-x-4 gap-y-8 lg:gap-x-8 lg:gap-y-14">
+              {Array.from({ length: 8 }).map((_, i) => (
+                <div key={i} className="animate-pulse">
+                  <div className="aspect-[4/5] bg-[#e2e2e2] mb-3 lg:mb-5" />
+                  <div className="space-y-2">
+                    <div className="h-3 bg-[#e2e2e2] rounded w-1/3" />
+                    <div className="h-5 bg-[#e2e2e2] rounded w-2/3" />
+                    <div className="h-3 bg-[#e2e2e2] rounded w-full hidden sm:block" />
+                    <div className="h-3 bg-[#e2e2e2] rounded w-4/5 hidden sm:block" />
                   </div>
                 </div>
-                <div className="space-y-1 lg:space-y-1.5">
-                  <div className="flex items-center justify-between">
-                    <span className="text-[#74777f] text-[9px] lg:text-[10px] tracking-[0.15em] uppercase font-semibold font-[var(--font-inter)]">
-                      {code} · {linha}
-                    </span>
-                  </div>
-                  <h3 className="font-[var(--font-noto-serif)] text-[#002045] text-base lg:text-xl font-medium leading-snug">
-                    {name}
-                  </h3>
-                  <p className="text-[#43474e] text-xs lg:text-sm font-[var(--font-inter)] leading-relaxed hidden sm:block">
-                    {desc}
-                  </p>
-                  <div className="flex items-center justify-between pt-1 lg:pt-2">
-                    <div>
-                      <span className="text-[#1a365d] text-sm lg:text-base font-semibold font-[var(--font-inter)]">
-                        {price}
-                        <span className="text-xs text-[#74777f] font-normal ml-1">
-                          /placa
-                        </span>
-                      </span>
-                      <span className="text-[#74777f] text-xs font-[var(--font-inter)] ml-1 lg:ml-2 hidden sm:inline">
-                        ({priceM2})
+              ))}
+            </div>
+          ) : (
+            <div className="grid grid-cols-2 lg:grid-cols-3 gap-x-4 gap-y-8 lg:gap-x-8 lg:gap-y-14">
+              {filtered.map((product) => (
+                <article key={product.code} className="group cursor-pointer">
+                  <div className="relative aspect-[4/5] overflow-hidden bg-[#eeeeee] mb-3 lg:mb-5 shadow-sm group-hover:shadow-lg transition-shadow duration-500">
+                    <img
+                      src={product.image_path}
+                      alt={`${product.name} — Linha ${product.linha}`}
+                      className="absolute inset-0 w-full h-full object-cover transition-transform duration-700 ease-out group-hover:scale-[1.05]"
+                    />
+                    <div className="absolute top-2 right-2 lg:top-4 lg:right-4">
+                      <span className="bg-white/95 text-[#002045] text-[9px] lg:text-[10px] tracking-[0.1em] uppercase font-semibold font-[var(--font-inter)] px-2 py-1 lg:px-2.5 lg:py-1.5">
+                        {product.finish}
                       </span>
                     </div>
                   </div>
-                  <div className="pt-1">
-                    <a
-                      href={`https://wa.me/5592988150149?text=${encodeURIComponent(`Olá! Tenho interesse no acabamento ${name} (${code}). Gostaria de saber mais.`)}`}
-                      target="_blank"
-                      rel="noopener noreferrer"
-                      className="inline-block text-[10px] tracking-[0.12em] uppercase font-bold font-[var(--font-inter)] border border-[#002045] text-[#002045] px-4 py-2 lg:px-5 hover:bg-[#002045] hover:text-white transition-colors"
-                    >
-                      Saber mais →
-                    </a>
+                  <div className="space-y-1 lg:space-y-1.5">
+                    <div className="flex items-center justify-between">
+                      <span className="text-[#74777f] text-[9px] lg:text-[10px] tracking-[0.15em] uppercase font-semibold font-[var(--font-inter)]">
+                        {product.code} · {product.linha}
+                      </span>
+                    </div>
+                    <h3 className="font-[var(--font-noto-serif)] text-[#002045] text-base lg:text-xl font-medium leading-snug">
+                      {product.name}
+                    </h3>
+                    <p className="text-[#43474e] text-xs lg:text-sm font-[var(--font-inter)] leading-relaxed hidden sm:block">
+                      {product.description}
+                    </p>
+                    <div className="flex items-center justify-between pt-1 lg:pt-2">
+                      <div>
+                        <span className="text-[#1a365d] text-sm lg:text-base font-semibold font-[var(--font-inter)]">
+                          R$ {product.price.toLocaleString("pt-BR")}
+                          <span className="text-xs text-[#74777f] font-normal ml-1">
+                            /placa
+                          </span>
+                        </span>
+                        <span className="text-[#74777f] text-xs font-[var(--font-inter)] ml-1 lg:ml-2 hidden sm:inline">
+                          (R$ {product.price_per_m2}/m²)
+                        </span>
+                      </div>
+                    </div>
+                    <div className="pt-1">
+                      <a
+                        href={`https://wa.me/5592988150149?text=${encodeURIComponent(`Olá! Tenho interesse no acabamento ${product.name} (${product.code}). Gostaria de saber mais.`)}`}
+                        target="_blank"
+                        rel="noopener noreferrer"
+                        className="inline-block text-[10px] tracking-[0.12em] uppercase font-bold font-[var(--font-inter)] border border-[#002045] text-[#002045] px-4 py-2 lg:px-5 hover:bg-[#002045] hover:text-white transition-colors"
+                      >
+                        Saber mais →
+                      </a>
+                    </div>
                   </div>
-                </div>
-              </article>
-            ))}
-          </div>
+                </article>
+              ))}
+            </div>
+          )}
         </div>
       </section>
 
