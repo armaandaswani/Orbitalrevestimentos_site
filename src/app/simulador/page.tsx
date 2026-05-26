@@ -638,35 +638,16 @@ function SimuladorInner() {
                 const custom = classifyCustomSpace(customSpaceText);
                 return (
                   <div className="mt-3 mb-4">
-                    <div className="relative">
-                      <input
-                        autoFocus
-                        type="text"
-                        value={customSpaceText}
-                        onChange={(e) => setCustomSpaceText(e.target.value)}
-                        placeholder="Descreva o espaço — ex: varanda interna, hall de entrada, iate…"
-                        className="w-full border border-[#002045] px-4 py-3 text-sm font-[var(--font-inter)] text-[#002045] focus:outline-none placeholder-[#b0b4bc] pr-36"
-                      />
-                      {/* Live classification badge */}
-                      {customSpaceText.trim() && custom && (
-                        <span className={`absolute right-3 top-1/2 -translate-y-1/2 text-[9px] tracking-[0.12em] uppercase font-bold font-[var(--font-inter)] px-2 py-1 ${
-                          custom.viability === "no"      ? "bg-[#fff0f0] text-[#c0392b] border border-[#f0c0c0]"
-                          : custom.viability === "complex" ? "bg-[#fff8e8] text-[#7a4800] border border-[#f0d080]"
-                                                            : "bg-[#f0f9f0] text-[#2d6a2d] border border-[#a8d4a8]"
-                        }`}>
-                          {custom.viability === "no" ? "Não fazemos" : custom.viability === "complex" ? "Complexo" : "Simples"}
-                        </span>
-                      )}
-                    </div>
-
-                    {/* Explanation of classification */}
-                    {customSpaceText.trim() && custom && custom.viability !== "no" && (
-                      <p className="mt-2 text-[#74777f] text-xs font-[var(--font-inter)]">
-                        {custom.viability === "complex"
-                          ? "⚡ Aplicação complexa — muitos cortes ou geometria irregular. O orçamento de MO reflete isso."
-                          : "✓ Aplicação simples — superfície reta, poucos cortes. Custo de mão de obra padrão."}
-                      </p>
-                    )}
+                    <input
+                      autoFocus
+                      type="text"
+                      value={customSpaceText}
+                      onChange={(e) => setCustomSpaceText(e.target.value)}
+                      placeholder="Descreva o espaço — ex: varanda interna, hall de entrada, iate…"
+                      className="w-full border border-[#002045] px-4 py-3 text-sm font-[var(--font-inter)] text-[#002045] focus:outline-none placeholder-[#b0b4bc]"
+                    />
+                    {/* internal: custom.viability used silently for pricing */}
+                    {custom && null}
                   </div>
                 );
               })()}
