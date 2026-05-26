@@ -837,6 +837,37 @@ export default function AdminPage() {
     setProductForm((prev) => ({ ...prev, image_path: url }));
   }
 
+  async function moveGalleryImage(imageId: string, direction: "left" | "right") {
+    const idx = galleryImages.findIndex((img) => img.id === imageId);
+    if (idx === -1) return;
+    const newIdx = direction === "left" ? idx - 1 : idx + 1;
+    if (newIdx < 0 || newIdx >= galleryImages.length) return;
+
+    // Swap in local state immediately for snappy UI
+    const updated = [...galleryImages];
+    const aOrder = updated[idx].sort_order;
+    const bOrder = updated[newIdx].sort_order;
+    updated[idx] = { ...updated[idx], sort_order: bOrder };
+    updated[newIdx] = { ...updated[newIdx], sort_order: aOrder };
+    // Sort by new sort_order
+    updated.sort((a, b) => a.sort_order - b.sort_order);
+    setGalleryImages(updated);
+
+    // Persist both swapped items
+    await Promise.all([
+      fetch(`/api/products/images/${updated.find(i => i.id === imageId)!.id}`, {
+        method: "PATCH",
+        headers: { "Content-Type": "application/json", "x-admin-auth": ADMIN_PW },
+        body: JSON.stringify({ sort_order: bOrder }),
+      }),
+      fetch(`/api/products/images/${galleryImages[newIdx].id}`, {
+        method: "PATCH",
+        headers: { "Content-Type": "application/json", "x-admin-auth": ADMIN_PW },
+        body: JSON.stringify({ sort_order: aOrder }),
+      }),
+    ]);
+  }
+
   // ── Photo Project CRUD ───────────────────
   async function handlePhotoSubmit(e: React.FormEvent) {
     e.preventDefault();
@@ -3015,10 +3046,31 @@ export default function AdminPage() {
                         </p>
                       ) : (
                         <div className="grid grid-cols-3 sm:grid-cols-4 lg:grid-cols-6 gap-2">
-                          {galleryImages.map((img) => (
+                          {[...galleryImages].sort((a, b) => a.sort_order - b.sort_order).map((img, idx, sorted) => (
                             <div key={img.id} className="relative group aspect-square bg-[#f0f0f0] overflow-hidden">
                               <img src={img.image_path} alt="" className="w-full h-full object-cover" />
                               <div className="absolute inset-0 bg-black/0 group-hover:bg-black/50 transition-colors flex flex-col items-center justify-center gap-1 opacity-0 group-hover:opacity-100">
+                                {/* Reorder row */}
+                                <div className="flex gap-1 w-[80%]">
+                                  <button
+                                    type="button"
+                                    onClick={() => moveGalleryImage(img.id, "left")}
+                                    disabled={idx === 0}
+                                    title="Mover para esquerda"
+                                    className="flex-1 bg-white/90 text-[#002045] text-[10px] font-bold px-1 py-1 hover:bg-white disabled:opacity-30 disabled:cursor-not-allowed transition-colors flex items-center justify-center"
+                                  >
+                                    ←
+                                  </button>
+                                  <button
+                                    type="button"
+                                    onClick={() => moveGalleryImage(img.id, "right")}
+                                    disabled={idx === sorted.length - 1}
+                                    title="Mover para direita"
+                                    className="flex-1 bg-white/90 text-[#002045] text-[10px] font-bold px-1 py-1 hover:bg-white disabled:opacity-30 disabled:cursor-not-allowed transition-colors flex items-center justify-center"
+                                  >
+                                    →
+                                  </button>
+                                </div>
                                 <button
                                   type="button"
                                   onClick={() => setImageAsCover(img.image_path)}
@@ -3039,12 +3091,13 @@ export default function AdminPage() {
                               {productForm.image_path === img.image_path && (
                                 <div className="absolute top-1 left-1 bg-[#002045] text-white text-[8px] font-bold tracking-wider px-1 py-0.5">CAPA</div>
                               )}
+                              <div className="absolute bottom-1 right-1 bg-black/50 text-white text-[8px] font-bold px-1">{idx + 1}</div>
                             </div>
                           ))}
                         </div>
                       )}
                       <p className="text-[#b0b0b0] text-[10px] font-[var(--font-inter)] mt-2">
-                        Passe o mouse sobre uma foto para definir como capa ou remover. Salve o produto para confirmar a capa.
+                        Passe o mouse sobre uma foto para reordenar (← →), definir como capa ou remover. O número indica a posição na galeria.
                       </p>
                     </div>
                   )}
