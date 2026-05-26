@@ -104,6 +104,55 @@ const SPACES: Space[] = [
   { id: "box", label: "Box / Ducha", viability: "complex" },
 ];
 
+// ── Custom-space classifier ──────────────────────────────────────────────────
+type CustomClassification =
+  | { viability: "simple" | "complex"; label: string }
+  | { viability: "no"; label: string; msg: string; hint: string; redirect: string };
+
+function classifyCustomSpace(raw: string): CustomClassification | null {
+  if (!raw.trim()) return null;
+  const t = raw.toLowerCase().normalize("NFD").replace(/[̀-ͯ]/g, "");
+
+  // — Forbidden: things we definitely don't do —
+  if (/\b(piso|chao|chão|floor|pavimento|ceramica|ceramico|porcelanato|deck de piso)\b/.test(t)) {
+    return { viability: "no", label: raw.trim(), msg: "O PFB Orbital não é indicado para pisos — não é projetado para suportar pisadas.", hint: "As paredes e o teto do mesmo ambiente ficam extraordinários. Quer simular para a parede?", redirect: "parede" };
+  }
+  if (/\b(fachada externa|exterior|area externa|parede externa|jardim|varanda externa|sacada externa|ao ar livre)\b/.test(t)) {
+    return { viability: "no", label: raw.trim(), msg: "O PFB Orbital é exclusivo para interiores — não certificado para exposição direta à chuva.", hint: "Para hall de entrada, recepção ou sala de frente, o resultado é excepcional.", redirect: "sala" };
+  }
+  if (/\b(ripado|ripa|reglet|lamela|caixotao|caixotão)\b/.test(t)) {
+    return { viability: "no", label: raw.trim(), msg: "O PFB Orbital é uma placa plana — não produzimos ripados ou perfis recortados.", hint: "Para um painel de parede ou forro liso com o mesmo efeito visual, o PFB fica excelente.", redirect: "parede" };
+  }
+  if (/\b(piscina|area molhada externa|spa externo|sauna externa)\b/.test(t)) {
+    return { viability: "no", label: raw.trim(), msg: "O PFB Orbital não é indicado para áreas imersas ou de exposição direta à água.", hint: "Para o ambiente ao redor — vestiário, corredor ou sala de relaxamento — fica perfeito.", redirect: "parede" };
+  }
+  if (/\b(telhado|teto externo|cobertura)\b/.test(t)) {
+    return { viability: "no", label: raw.trim(), msg: "O PFB Orbital é para ambientes internos — não é certificado para cobertura ou telhado externo.", hint: "Para o forro interno logo abaixo do telhado, o PFB é ótima opção.", redirect: "teto" };
+  }
+
+  // — Complex: muitos cortes, curvas, geometria irregular —
+  if (/\b(curvo|curva|curvado|arco|abobada|abóbada|cilindrico|cilíndrico|esfera|ovalado)\b/.test(t) ||
+      /\b(banheiro de barco|lavabo curvo|nicho curvo|coluna)\b/.test(t)) {
+    return { viability: "complex", label: raw.trim() };
+  }
+  if (/\b(escada|degrau|espiral)\b/.test(t)) {
+    return { viability: "complex", label: raw.trim() };
+  }
+  if (/\b(nicho|recuo|recesso|rebaixo|sanca|trapezio|trapezoidal|irregular|recortado)\b/.test(t)) {
+    return { viability: "complex", label: raw.trim() };
+  }
+  if (/\b(pilar|pilastro|coluna|cantoneira)\b/.test(t)) {
+    return { viability: "complex", label: raw.trim() };
+  }
+  // spaces known to be complex even without modifiers
+  if (/\b(banheiro|lavabo|box|ducha|chuveiro|cozinha|roda.pia|roda.banca|porta|movel|marcenaria|balcao|bancada)\b/.test(t)) {
+    return { viability: "complex", label: raw.trim() };
+  }
+
+  // — Simple: straight walls, regular rooms —
+  return { viability: "simple", label: raw.trim() };
+}
+
 const faqs = [
   {
     q: "Como funciona a instalação?",
@@ -161,6 +210,8 @@ function SimuladorInner() {
 
   const [step, setStep] = useState<1 | 2 | 3 | 4 | 5>(1);
   const [selectedSpace, setSelectedSpace] = useState<Space | null>(null);
+  const [customSpaceText, setCustomSpaceText] = useState("");
+  const [showCustomInput, setShowCustomInput] = useState(false);
   const [selectedLine, setSelectedLine] = useState<ProductLine | null>(null);
   const [selectedProduct, setSelectedProduct] = useState<Product | null>(null);
   const [dimMode, setDimMode] = useState<"lxa" | "m2">("lxa");
@@ -178,6 +229,19 @@ function SimuladorInner() {
   const [showResult, setShowResult] = useState(false);
   const [showSavings, setShowSavings] = useState(false);
   const [mdfExpanded, setMdfExpanded] = useState(false);
+
+  // Sync custom space text → selectedSpace whenever text changes
+  useEffect(() => {
+    if (!showCustomInput) return;
+    const custom = classifyCustomSpace(customSpaceText);
+    if (!custom) { setSelectedSpace(null); return; }
+    if (custom.viability === "no") {
+      const c = custom as { viability: "no"; label: string; msg: string; hint: string; redirect: string };
+      setSelectedSpace({ id: "__custom__", label: c.label, viability: "no", msg: c.msg, hint: c.hint, redirect: c.redirect });
+    } else {
+      setSelectedSpace({ id: "__custom__", label: custom.label, viability: custom.viability });
+    }
+  }, [customSpaceText, showCustomInput]); // eslint-disable-line react-hooks/exhaustive-deps
   const [comparisonExpanded, setComparisonExpanded] = useState(false);
   const [lightboxImg, setLightboxImg] = useState<string | null>(null);
 
@@ -541,13 +605,14 @@ function SimuladorInner() {
                 Selecione o tipo de ambiente.
               </p>
 
-              <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 gap-2 mb-6">
+              {/* Viable spaces */}
+              <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 gap-2 mb-2">
                 {SPACES.filter((s) => s.viability !== "no").map((space) => (
                   <button
                     key={space.id}
-                    onClick={() => setSelectedSpace(space)}
+                    onClick={() => { setSelectedSpace(space); setShowCustomInput(false); setCustomSpaceText(""); }}
                     className={`text-left px-3 py-3 min-h-[44px] border text-xs font-semibold font-[var(--font-inter)] transition-all ${
-                      selectedSpace?.id === space.id
+                      selectedSpace?.id === space.id && !showCustomInput
                         ? "border-[#002045] bg-[#002045] text-white"
                         : "border-[#e2e2e2] text-[#43474e] hover:border-[#1a365d] hover:text-[#002045]"
                     }`}
@@ -555,15 +620,65 @@ function SimuladorInner() {
                     {space.label}
                   </button>
                 ))}
+                {/* Outro button */}
+                <button
+                  onClick={() => { setShowCustomInput(true); setSelectedSpace(null); }}
+                  className={`text-left px-3 py-3 min-h-[44px] border text-xs font-semibold font-[var(--font-inter)] transition-all ${
+                    showCustomInput
+                      ? "border-[#002045] bg-[#002045] text-white"
+                      : "border-dashed border-[#c8c8c8] text-[#74777f] hover:border-[#1a365d] hover:text-[#002045]"
+                  }`}
+                >
+                  + Outro
+                </button>
               </div>
 
-              <div className="grid grid-cols-2 sm:grid-cols-3 gap-2 mb-6">
+              {/* Custom space input */}
+              {showCustomInput && (() => {
+                const custom = classifyCustomSpace(customSpaceText);
+                return (
+                  <div className="mt-3 mb-4">
+                    <div className="relative">
+                      <input
+                        autoFocus
+                        type="text"
+                        value={customSpaceText}
+                        onChange={(e) => setCustomSpaceText(e.target.value)}
+                        placeholder="Descreva o espaço — ex: varanda interna, hall de entrada, iate…"
+                        className="w-full border border-[#002045] px-4 py-3 text-sm font-[var(--font-inter)] text-[#002045] focus:outline-none placeholder-[#b0b4bc] pr-36"
+                      />
+                      {/* Live classification badge */}
+                      {customSpaceText.trim() && custom && (
+                        <span className={`absolute right-3 top-1/2 -translate-y-1/2 text-[9px] tracking-[0.12em] uppercase font-bold font-[var(--font-inter)] px-2 py-1 ${
+                          custom.viability === "no"      ? "bg-[#fff0f0] text-[#c0392b] border border-[#f0c0c0]"
+                          : custom.viability === "complex" ? "bg-[#fff8e8] text-[#7a4800] border border-[#f0d080]"
+                                                            : "bg-[#f0f9f0] text-[#2d6a2d] border border-[#a8d4a8]"
+                        }`}>
+                          {custom.viability === "no" ? "Não fazemos" : custom.viability === "complex" ? "Complexo" : "Simples"}
+                        </span>
+                      )}
+                    </div>
+
+                    {/* Explanation of classification */}
+                    {customSpaceText.trim() && custom && custom.viability !== "no" && (
+                      <p className="mt-2 text-[#74777f] text-xs font-[var(--font-inter)]">
+                        {custom.viability === "complex"
+                          ? "⚡ Aplicação complexa — muitos cortes ou geometria irregular. O orçamento de MO reflete isso."
+                          : "✓ Aplicação simples — superfície reta, poucos cortes. Custo de mão de obra padrão."}
+                      </p>
+                    )}
+                  </div>
+                );
+              })()}
+
+              {/* Not-viable grid */}
+              <div className="grid grid-cols-2 sm:grid-cols-3 gap-2 mb-6 mt-4">
                 {SPACES.filter((s) => s.viability === "no").map((space) => (
                   <button
                     key={space.id}
-                    onClick={() => setSelectedSpace(space)}
+                    onClick={() => { setSelectedSpace(space); setShowCustomInput(false); setCustomSpaceText(""); }}
                     className={`text-left px-3 py-3 min-h-[44px] border text-xs font-semibold font-[var(--font-inter)] transition-all ${
-                      selectedSpace?.id === space.id
+                      selectedSpace?.id === space.id && !showCustomInput
                         ? "border-[#c0392b] bg-[#fff5f5] text-[#c0392b]"
                         : "border-[#e2e2e2] text-[#b0b0b0] hover:border-[#e0b0b0]"
                     }`}
@@ -573,6 +688,7 @@ function SimuladorInner() {
                 ))}
               </div>
 
+              {/* Warning for not-viable spaces (preset or custom) */}
               {selectedSpace?.viability === "no" && (
                 <div className="bg-[#fff8f0] border border-[#f0c060] px-5 py-4 mb-6">
                   <p className="text-[#7a4000] text-sm font-semibold font-[var(--font-inter)] mb-1">
@@ -584,7 +700,7 @@ function SimuladorInner() {
                   <button
                     onClick={() => {
                       const r = SPACES.find((s) => s.id === selectedSpace.redirect);
-                      if (r) setSelectedSpace(r);
+                      if (r) { setSelectedSpace(r); setShowCustomInput(false); setCustomSpaceText(""); }
                     }}
                     className="inline-flex items-center gap-2 bg-[#002045] text-white text-xs tracking-[0.1em] uppercase font-bold font-[var(--font-inter)] px-5 py-2.5 hover:bg-[#1a365d] transition-colors"
                   >
