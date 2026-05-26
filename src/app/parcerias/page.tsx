@@ -42,20 +42,20 @@ const segments: Segment[] = [
     badge: "Amostras grátis para moodboard",
     tagline: "Especifique com confiança. Entregue projetos que envelhecem bem.",
     headline: "O projeto que o seu cliente ainda vai elogiar daqui a cinco anos.",
-    body: "Em Manaus, o MDF se deteriora em 2 a 3 anos. O ambiente entregue com perfeição começa a envergonhar o cliente — e a manchar a memória do profissional que assinou o projeto. O PFB Orbital mantém a aparência por anos: os veios do mármore continuam nítidos, a textura da madeira permanece intacta. Especifique o material certo e deixe o projeto falar por você muito depois da entrega.",
+    body: "Em Manaus, o MDF deteriora em 2–3 anos. O PFB Orbital mantém a aparência original — veios nítidos, textura intacta. Especifique o material certo e o projeto fala por você muito depois da entrega.",
     benefits: [
       { title: "Acabamento que preserva a aparência por anos", desc: "Impermeável, anti-mofo e resistente a ciclos térmicos extremos. O visual que saiu da obra se mantém — protegendo a imagem do seu trabalho." },
       { title: "15 acabamentos para moodboard", desc: "Classic (mármore fosco), Brilliance (mármore polido) e Elegance (madeira texturizada). Impressão UV fotorrealística de alta fidelidade." },
       { title: "Amostras físicas gratuitas", desc: "Parceiros arquitetos recebem amostras sem custo para apresentar a clientes e compor moodboards." },
       { title: "Documentação técnica completa", desc: "ART de Engenharia Civil e CREA registrado, com ficha técnica detalhada. Tudo pronto para aprovação de engenharia." },
       { title: "Seja referência em inovação", desc: "O PFB Orbital é um material novo, certificado e premium que poucos arquitetos da cidade ainda conhecem. Especificá-lo posiciona você como profissional que traz o que há de melhor ao cliente — antes dos outros." },
-      { title: "Indicação acima do mercado", desc: "Arquitetos parceiros recebem comissão de indicação acima da média praticada no mercado para projetos especificados com Orbital." },
+      { title: "Condições exclusivas para parceiros", desc: "Arquitetos cadastrados têm acesso a condições e benefícios exclusivos da Orbital — disponíveis apenas para profissionais da rede." },
     ],
     image: "/images/catalogue/aplicacao-sala.jpeg",
     waText: "Olá! Sou arquiteto/urbanista e vim pela aba de Arquitetos no site. Gostaria de conhecer as condições para especificação de projetos com o PFB Orbital.",
     stat: { value: "+5 anos", label: "de aparência preservada" },
     ctaLabel: "Solicitar amostras para projeto",
-    highlight: "Arquitetos parceiros recebem indicação acima do mercado para projetos especificados com Orbital.",
+    highlight: "Arquitetos parceiros têm acesso a condições exclusivas e amostras gratuitas.",
   },
   {
     key: "marceneiros",
@@ -69,7 +69,7 @@ const segments: Segment[] = [
     badge: "Treinamento de instalação gratuito",
     tagline: "Mais projetos por mês. Processo mais simples. Resultado premium.",
     headline: "Quem instala rápido, fecha mais contratos.",
-    body: "Com o PFB Orbital, um cômodo sai em 2 a 3 horas. Você atende mais clientes no mesmo mês, sem aumentar equipe, sem estresse com poeira ou equipamento pesado. O volume é o seu ganho — e o processo é surpreendentemente simples.",
+    body: "Um cômodo em 2–3h. Mais projetos por mês sem aumentar equipe, sem poeira, sem equipamento pesado. O volume é o seu ganho.",
     benefits: [
       { title: "Processo de instalação simplificado", desc: "Cola PU 40 para fixação principal, com uso de tupia recomendado para acabamento perfeito nas bordas. Resultado profissional desde o primeiro projeto." },
       { title: "Ganhe mais pelo volume, não pelo esforço", desc: "Com 2–3h por cômodo, você consegue 4× mais projetos no mesmo mês. Mais contratos fechados, mais receita — sem contratar ninguém." },
@@ -83,7 +83,7 @@ const segments: Segment[] = [
     waText: "Olá! Sou marceneiro e vim pela aba de Marceneiros no site. Gostaria de saber sobre as condições de parceria e preço diferenciado para compra direta do PFB Orbital.",
     stat: { value: "2–3h", label: "instalação por cômodo" },
     ctaLabel: "Quero instalar PFB Orbital",
-    highlight: "Marceneiros parceiros recebem indicação acima do mercado para instalações com PFB Orbital e preço diferenciado para compra direta.",
+    highlight: "Marceneiros parceiros têm acesso a condições exclusivas e tabela diferenciada para compra direta.",
   },
   {
     key: "engenheiros",
@@ -98,7 +98,7 @@ const segments: Segment[] = [
     badge: "ART · CREA · Documentação técnica",
     tagline: "Especifique com segurança. A documentação técnica faz o trabalho.",
     headline: "ART homologada, documentação completa, aprovação sem improviso.",
-    body: "O PFB Orbital vem com ART de Engenharia Civil assinada e CREA registrado, além de ficha técnica completa com dados de resistência, umidade e comportamento ao fogo. Você especifica com base em dados reais — e defende em qualquer aprovação técnica sem precisar improvisar.",
+    body: "ART de Engenharia Civil assinada, CREA registrado, ficha técnica com dados de resistência, umidade e fogo. Especifique com base em dados reais — sem improvisar em aprovações técnicas.",
     benefits: [
       { title: "ART nº AM20260593657", desc: "Assinada por Eng. Civil Werksson Sousa — CREA 042030134-8-D. Disponível para projetos que exigem laudo técnico de engenharia." },
       { title: "72,3 MPa de resistência à flexão", desc: "Mais de 3× a resistência do MDF convencional (17–22 MPa). Dados disponíveis na ficha técnica." },
@@ -110,7 +110,7 @@ const segments: Segment[] = [
     waText: "Olá! Sou engenheiro e vim pela aba de Engenheiros no site. Gostaria de acessar a documentação técnica e as condições de parceria Orbital.",
     stat: { value: "72,3 MPa", label: "resistência à flexão" },
     ctaLabel: "Solicitar documentação técnica",
-    highlight: "Engenheiros parceiros recebem indicação acima do mercado para projetos com PFB Orbital.",
+    highlight: "Engenheiros parceiros têm acesso a condições exclusivas e documentação técnica completa.",
   },
   {
     key: "revendedores",
@@ -126,7 +126,7 @@ const segments: Segment[] = [
     badge: "Tabela exclusiva para parceiros",
     tagline: "Margem real. Estoque em Manaus.",
     headline: "Um produto que seus clientes não encontram em outra loja.",
-    body: "A Orbital oferece tabela exclusiva, pronta entrega e suporte de marketing para revendedores autorizados em Manaus. Um portfólio de alto ticket com diferenciação natural — o material faz a venda sozinho.",
+    body: "Tabela exclusiva, pronta entrega e suporte de marketing. Um portfólio de alto ticket com diferenciação natural — o material faz a venda sozinho.",
     benefits: [
       { title: "Estoque local, entrega em 24–48h", desc: "Sem depender de frete nacional. A reforma do seu cliente começa essa semana." },
       { title: "Tabela de preços diferenciada", desc: "Condições especiais para revendedores cadastrados, com margem compatível com produto premium." },
@@ -457,6 +457,7 @@ export default function ParceriasPage() {
 
 function SelfRegisterSection({ onScrollToSegments }: { onScrollToSegments: () => void }) {
   const [form, setForm] = useState({ name: "", email: "", phone: "", referral_code: "", portal_password: "", birthday: "" });
+  const [noReferral, setNoReferral] = useState(false);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState("");
   const [success, setSuccess] = useState<{ coupon_code: string; name: string } | null>(null);
@@ -512,13 +513,13 @@ function SelfRegisterSection({ onScrollToSegments }: { onScrollToSegments: () =>
               Cadastre-se e receba seu cupom personalizado.
             </h2>
             <p className="text-[#74777f] text-sm font-[var(--font-inter)] leading-relaxed mb-6">
-              Se um representante Orbital já te apresentou o programa, use o código de indicação dele para criar sua conta. Seu cupom é gerado automaticamente e ativado em até 24h.
+              Crie sua conta, receba seu cupom personalizado e acesse seu portal de parceiro.
             </p>
             <div className="space-y-3">
               {[
-                { n: "1", t: "Preencha o formulário com seu código de indicação" },
-                { n: "2", t: "Receba seu cupom personalizado por email" },
-                { n: "3", t: "Acesse seu portal e acompanhe suas comissões" },
+                { n: "1", t: "Preencha o formulário" },
+                { n: "2", t: "Receba seu cupom por email" },
+                { n: "3", t: "Acesse o portal e acompanhe tudo" },
               ].map(({ n, t }) => (
                 <div key={n} className="flex items-start gap-3">
                   <span className="flex-shrink-0 w-6 h-6 rounded-full bg-[#002045] text-white text-[10px] font-bold font-[var(--font-inter)] flex items-center justify-center mt-0.5">{n}</span>
@@ -600,13 +601,30 @@ function SelfRegisterSection({ onScrollToSegments }: { onScrollToSegments: () =>
                     />
                   </div>
                   <div>
-                    <label className="block text-[10px] tracking-[0.15em] uppercase font-bold font-[var(--font-inter)] text-[#74777f] mb-2">Código de indicação *</label>
+                    <div className="flex items-center justify-between mb-2">
+                      <label className="text-[10px] tracking-[0.15em] uppercase font-bold font-[var(--font-inter)] text-[#74777f]">
+                        Código de indicação {noReferral ? "" : "*"}
+                      </label>
+                      <label className="flex items-center gap-1.5 cursor-pointer select-none">
+                        <input
+                          type="checkbox"
+                          checked={noReferral}
+                          onChange={(e) => {
+                            setNoReferral(e.target.checked);
+                            if (e.target.checked) setForm(f => ({ ...f, referral_code: "" }));
+                          }}
+                          className="w-3.5 h-3.5 accent-[#002045] cursor-pointer"
+                        />
+                        <span className="text-[9px] text-[#74777f] font-[var(--font-inter)] whitespace-nowrap">Não tenho código</span>
+                      </label>
+                    </div>
                     <input
-                      required
-                      value={form.referral_code}
+                      required={!noReferral}
+                      disabled={noReferral}
+                      value={noReferral ? "" : form.referral_code}
                       onChange={(e) => setForm({ ...form, referral_code: e.target.value.toUpperCase() })}
-                      className="w-full border border-[#e2e2e2] px-4 py-3 text-sm font-[var(--font-inter)] text-[#002045] focus:outline-none focus:border-[#002045] placeholder-[#b0b4bc] uppercase tracking-widest"
-                      placeholder="EX: REP_JOAO"
+                      className={`w-full border px-4 py-3 text-sm font-[var(--font-inter)] focus:outline-none uppercase tracking-widest transition-colors ${noReferral ? "border-[#e2e2e2] bg-[#f5f5f3] text-[#b0b4bc] cursor-not-allowed" : "border-[#e2e2e2] text-[#002045] focus:border-[#002045] placeholder-[#b0b4bc]"}`}
+                      placeholder={noReferral ? "Sem código de indicação" : "EX: REP_JOAO"}
                     />
                   </div>
                 </div>
