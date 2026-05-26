@@ -51,6 +51,12 @@ const FAQS: FAQ[] = [
     linkCta: { label: "Ver comparativo técnico completo", href: "/tecnologia" },
   },
   {
+    id: "piso",
+    keywords: ["piso", "chao", "chão", "solo", "piso laminado", "no piso", "no chao", "colocar no piso", "usar no piso", "aplicar no piso", "piso frio", "piso porcelanato", "sobre o piso"],
+    answer: "Sim, pode! O PFB pode ser aplicado sobre piso existente — porcelanato, laminado ou cimento. A placa tem 5mm de espessura e é resistente ao tráfego. A instalação no piso segue o mesmo processo da parede: cola PU e sem quebrar nada. Ideal para reformas sem obra.",
+    linkCta: { label: "Simular custo do projeto", href: "/simulador" },
+  },
+  {
     id: "banheiro",
     keywords: ["banheiro", "lavabo", "box", "ducha", "umidade", "agua", "molhado", "umido", "impermeavel", "areas umidas", "cozinha", "area molhada"],
     answer: "Pode sim! O PFB foi aprovado via laudo técnico para uso em banheiro, lavabo, box, ducha e cozinha. Ele é um material resistente à água e umidade, e é anti-mofo por natureza, sem nenhum tratamento extra.",
