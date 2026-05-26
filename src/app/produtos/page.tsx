@@ -319,19 +319,87 @@ export default function ProdutosPage() {
                     ))}
                   </div>
 
-                  {/* Differentials */}
+                  {/* Attribute cards — same style as simulator strip */}
                   <div>
-                    <p className="text-[10px] tracking-[0.15em] uppercase font-bold font-[var(--font-inter)] text-[#74777f] mb-3">
-                      Principais diferenciais
-                    </p>
-                    <ul className="space-y-2.5">
-                      {info.differentials.map(({ text }, i) => (
-                        <li key={i} className="flex items-start gap-2.5 text-sm font-[var(--font-inter)] text-[#43474e]">
-                          <span className="text-[#002045] text-[10px] mt-0.5 flex-shrink-0">✓</span>
-                          <span className="leading-relaxed">{text}</span>
-                        </li>
+                    {/* Mobile: 2×2 combined */}
+                    <div className="grid grid-cols-2 gap-2 md:hidden">
+                      {[
+                        {
+                          label: "Resistente à:",
+                          desc: "Água, Umidade & Mofo",
+                          icon: <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5"><path d="M12 2.69l5.66 5.66a8 8 0 11-11.31 0z"/></svg>,
+                        },
+                        {
+                          label: "Anti-cupim &",
+                          desc: "Não propaga Chamas",
+                          boldDesc: true,
+                          icon: <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/><path d="M9 12l2 2 4-4"/></svg>,
+                        },
+                        {
+                          label: "Pronta-entrega",
+                          desc: "em Manaus",
+                          icon: <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5"><path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0118 0z"/><circle cx="12" cy="10" r="3"/></svg>,
+                        },
+                        {
+                          label: "Instalação",
+                          desc: "Rápida & Limpa",
+                          boldDesc: true,
+                          icon: <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg>,
+                        },
+                      ].map(({ label, icon, desc, boldDesc }) => (
+                        <div key={label} className="flex flex-col items-center text-center gap-1.5 p-2.5 bg-[#f9f9f9] border border-[#e2e2e2]">
+                          <div className="w-6 h-6 bg-[#f0f4f8] flex items-center justify-center text-[#002045] flex-shrink-0">{icon}</div>
+                          <div>
+                            <p className="text-[#002045] text-[8px] tracking-[0.06em] uppercase font-bold font-[var(--font-inter)] leading-tight">{label}</p>
+                            <p className={boldDesc ? "text-[#002045] text-[8px] tracking-[0.06em] uppercase font-bold font-[var(--font-inter)] leading-tight" : "text-[#74777f] text-[8px] font-[var(--font-inter)] leading-snug"}>{desc}</p>
+                          </div>
+                        </div>
                       ))}
-                    </ul>
+                    </div>
+
+                    {/* Desktop: 6 cards in a row */}
+                    <div className="hidden md:grid md:grid-cols-6 gap-2">
+                      {[
+                        {
+                          label: "Anti-mofo",
+                          desc: "Resistente a fungos",
+                          icon: <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/><path d="M9 12l2 2 4-4"/></svg>,
+                        },
+                        {
+                          label: "Anti-cupim",
+                          desc: "Bambu não atrai pragas",
+                          icon: <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5"><circle cx="12" cy="12" r="10"/><line x1="4.93" y1="4.93" x2="19.07" y2="19.07"/></svg>,
+                        },
+                        {
+                          label: "Pronta-entrega",
+                          desc: "Estoque em Manaus",
+                          icon: <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5"><path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0118 0z"/><circle cx="12" cy="10" r="3"/></svg>,
+                        },
+                        {
+                          label: "Resistente à umidade",
+                          desc: "0,2% absorção em 48h",
+                          icon: <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5"><path d="M12 2.69l5.66 5.66a8 8 0 11-11.31 0z"/></svg>,
+                        },
+                        {
+                          label: "Não propaga chamas",
+                          desc: "Sem materiais inflamáveis",
+                          icon: <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/><path d="M12 9c0 1.5-1 2.5-1.5 3.5.5.5 1 1 1.5 1s1-.5 1.5-1C13 11.5 12 10.5 12 9z"/></svg>,
+                        },
+                        {
+                          label: "Instalação rápida",
+                          desc: "2–3h por cômodo",
+                          icon: <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg>,
+                        },
+                      ].map(({ label, icon, desc }) => (
+                        <div key={label} className="flex flex-col items-center text-center gap-1.5 p-2.5 bg-[#f9f9f9] border border-[#e2e2e2]">
+                          <div className="w-6 h-6 bg-[#f0f4f8] flex items-center justify-center text-[#002045] flex-shrink-0">{icon}</div>
+                          <div>
+                            <p className="text-[#002045] text-[8px] tracking-[0.06em] uppercase font-bold font-[var(--font-inter)] leading-tight">{label}</p>
+                            <p className="text-[#74777f] text-[8px] font-[var(--font-inter)] leading-snug">{desc}</p>
+                          </div>
+                        </div>
+                      ))}
+                    </div>
                   </div>
 
                   {/* Price */}
