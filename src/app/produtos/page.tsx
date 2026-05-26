@@ -97,6 +97,7 @@ export default function ProdutosPage() {
   const [loadingProducts, setLoadingProducts] = useState(true);
   const [selected, setSelected] = useState<Product | null>(null);
   const [imgIdx, setImgIdx] = useState(0);
+  const [touchStartX, setTouchStartX] = useState<number | null>(null);
 
   useEffect(() => {
     fetch("/api/products")
@@ -162,10 +163,10 @@ export default function ProdutosPage() {
         const simulatorUrl = `/simulador?produto=${encodeURIComponent(selected.code)}`;
         return (
           <div
-            className="fixed inset-0 z-[100] flex items-stretch bg-black/80 backdrop-blur-sm"
+            className="fixed inset-0 z-[100] flex items-stretch lg:items-center bg-black/80 backdrop-blur-sm"
             onClick={close}
           >
-            {/* Prev product arrow */}
+            {/* Prev product arrow — desktop only */}
             {selectedIndex > 0 && (
               <button
                 onClick={(e) => { e.stopPropagation(); goPrevProduct(); }}
@@ -185,9 +186,9 @@ export default function ProdutosPage() {
               </button>
             )}
 
-            {/* Modal card */}
+            {/* Modal card — full screen on mobile, centered card on desktop */}
             <div
-              className="relative m-auto w-full max-w-5xl max-h-[96dvh] flex flex-col lg:flex-row overflow-hidden shadow-2xl"
+              className="relative w-full h-[100dvh] lg:h-auto lg:m-auto lg:max-w-5xl lg:max-h-[96dvh] flex flex-col lg:flex-row overflow-hidden shadow-2xl"
               onClick={(e) => e.stopPropagation()}
             >
               {/* Close */}
@@ -199,11 +200,23 @@ export default function ProdutosPage() {
                 <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5"><path d="M18 6L6 18M6 6l12 12"/></svg>
               </button>
 
-              {/* ── Left: Image gallery ── */}
-              <div className="flex-shrink-0 w-full lg:w-[52%] flex flex-col bg-[#0d0d0d] min-h-0">
-                {/* Main image */}
-                <div className="relative flex-1 min-h-0 aspect-[4/5] lg:aspect-auto overflow-hidden">
-                  {/* Blurred background fill (same image, blurred + scaled) */}
+              {/* ── Top / Left: Image gallery ── */}
+              <div className="flex-shrink-0 w-full lg:w-[52%] flex flex-col bg-[#0d0d0d]">
+                {/* Main image — 44dvh on mobile, flex-1 on desktop */}
+                <div
+                  className="relative h-[44dvh] lg:h-auto lg:flex-1 overflow-hidden"
+                  onTouchStart={(e) => setTouchStartX(e.touches[0].clientX)}
+                  onTouchEnd={(e) => {
+                    if (touchStartX === null) return;
+                    const delta = e.changedTouches[0].clientX - touchStartX;
+                    if (Math.abs(delta) > 45) {
+                      if (delta < 0 && imgIdx < images.length - 1) setImgIdx(i => i + 1);
+                      else if (delta > 0 && imgIdx > 0) setImgIdx(i => i - 1);
+                    }
+                    setTouchStartX(null);
+                  }}
+                >
+                  {/* Blurred background fill */}
                   <img
                     key={"bg-" + images[imgIdx]}
                     src={images[imgIdx] ?? selected.image_path}
@@ -211,18 +224,29 @@ export default function ProdutosPage() {
                     aria-hidden
                     className="absolute inset-0 w-full h-full object-cover scale-110 blur-xl opacity-40 select-none pointer-events-none"
                   />
-                  {/* Sharp foreground image — object-contain so nothing is cropped */}
+                  {/* Sharp foreground image */}
                   <img
                     key={images[imgIdx]}
                     src={images[imgIdx] ?? selected.image_path}
                     alt={selected.name}
-                    className="absolute inset-0 w-full h-full object-contain relative z-10"
+                    className="absolute inset-0 w-full h-full object-contain z-10"
                   />
-                  {/* Image nav arrows — visible on both mobile and desktop */}
+                  {/* Swipe hint on mobile — fades in only when there are multiple images */}
+                  {images.length > 1 && (
+                    <div className="absolute inset-x-0 bottom-8 flex items-center justify-between px-3 z-20 pointer-events-none lg:hidden">
+                      <div className={`w-8 h-8 rounded-full bg-black/40 flex items-center justify-center transition-opacity ${imgIdx === 0 ? "opacity-0" : "opacity-70"}`}>
+                        <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="white" strokeWidth="2.5"><path d="M15 18l-6-6 6-6"/></svg>
+                      </div>
+                      <div className={`w-8 h-8 rounded-full bg-black/40 flex items-center justify-center transition-opacity ${imgIdx === images.length - 1 ? "opacity-0" : "opacity-70"}`}>
+                        <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="white" strokeWidth="2.5"><path d="M9 18l6-6-6-6"/></svg>
+                      </div>
+                    </div>
+                  )}
+                  {/* Arrow buttons — desktop only (mobile uses swipe) */}
                   {imgIdx > 0 && (
                     <button
                       onClick={() => setImgIdx(imgIdx - 1)}
-                      className="absolute left-2 top-1/2 -translate-y-1/2 z-20 bg-black/50 hover:bg-black/80 text-white rounded-full w-9 h-9 flex items-center justify-center transition-colors"
+                      className="absolute left-2 top-1/2 -translate-y-1/2 z-20 bg-black/50 hover:bg-black/80 text-white rounded-full w-9 h-9 items-center justify-center transition-colors hidden lg:flex"
                       aria-label="Foto anterior"
                     >
                       <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5"><path d="M15 18l-6-6 6-6"/></svg>
@@ -231,20 +255,20 @@ export default function ProdutosPage() {
                   {imgIdx < images.length - 1 && (
                     <button
                       onClick={() => setImgIdx(imgIdx + 1)}
-                      className="absolute right-2 top-1/2 -translate-y-1/2 z-20 bg-black/50 hover:bg-black/80 text-white rounded-full w-9 h-9 flex items-center justify-center transition-colors"
+                      className="absolute right-2 top-1/2 -translate-y-1/2 z-20 bg-black/50 hover:bg-black/80 text-white rounded-full w-9 h-9 items-center justify-center transition-colors hidden lg:flex"
                       aria-label="Próxima foto"
                     >
                       <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5"><path d="M9 18l6-6-6-6"/></svg>
                     </button>
                   )}
-                  {/* Image counter dot indicator */}
+                  {/* Dot indicator */}
                   {images.length > 1 && (
-                    <div className="absolute bottom-2 left-1/2 -translate-x-1/2 z-20 flex gap-1">
+                    <div className="absolute bottom-2 left-1/2 -translate-x-1/2 z-20 flex gap-1.5">
                       {images.map((_, i) => (
                         <button
                           key={i}
                           onClick={() => setImgIdx(i)}
-                          className={`w-1.5 h-1.5 rounded-full transition-all ${i === imgIdx ? "bg-white scale-125" : "bg-white/40 hover:bg-white/70"}`}
+                          className={`rounded-full transition-all ${i === imgIdx ? "bg-white w-4 h-1.5" : "bg-white/40 w-1.5 h-1.5 hover:bg-white/70"}`}
                           aria-label={`Foto ${i + 1}`}
                         />
                       ))}
@@ -254,13 +278,13 @@ export default function ProdutosPage() {
 
                 {/* Thumbnails */}
                 {images.length > 1 && (
-                  <div className="flex gap-1.5 p-2 bg-black/70 overflow-x-auto flex-shrink-0">
+                  <div className="flex gap-1.5 px-2 py-1.5 bg-black/80 overflow-x-auto flex-shrink-0 scrollbar-none">
                     {images.map((url, i) => (
                       <button
                         key={url + i}
                         onClick={() => setImgIdx(i)}
-                        className={`flex-shrink-0 w-12 h-12 lg:w-14 lg:h-14 border-2 overflow-hidden transition-all ${
-                          i === imgIdx ? "border-white opacity-100" : "border-transparent opacity-45 hover:opacity-75"
+                        className={`flex-shrink-0 w-10 h-10 lg:w-14 lg:h-14 border-2 overflow-hidden transition-all ${
+                          i === imgIdx ? "border-white opacity-100" : "border-transparent opacity-40 hover:opacity-70"
                         }`}
                       >
                         <img src={url} alt="" className="w-full h-full object-cover" />
@@ -270,8 +294,8 @@ export default function ProdutosPage() {
                 )}
               </div>
 
-              {/* ── Right: Product info ── */}
-              <div className="flex-1 bg-white flex flex-col overflow-y-auto">
+              {/* ── Bottom / Right: Product info ── */}
+              <div className="flex-1 min-h-0 bg-white flex flex-col overflow-y-auto">
                 <div className="p-6 lg:p-8 flex flex-col gap-5 flex-1">
 
                   {/* Breadcrumb + badges */}
