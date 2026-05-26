@@ -8,6 +8,12 @@ const CATALOGUE_URL =
 
 type Linha = "todos" | "Classic" | "Brilliance" | "Elegance";
 
+interface ProductImage {
+  id: string;
+  image_path: string;
+  sort_order: number;
+}
+
 interface Product {
   id: string;
   code: string;
@@ -20,6 +26,7 @@ interface Product {
   image_path: string;
   is_active: boolean;
   sort_order: number;
+  product_images?: ProductImage[];
 }
 
 const linhas: { key: Linha; label: string; desc: string }[] = [
@@ -34,6 +41,7 @@ export default function ProdutosPage() {
   const [products, setProducts] = useState<Product[]>([]);
   const [loadingProducts, setLoadingProducts] = useState(true);
   const [lightbox, setLightbox] = useState<Product | null>(null);
+  const [lightboxImgIdx, setLightboxImgIdx] = useState(0);
 
   useEffect(() => {
     fetch("/api/products")
@@ -48,20 +56,56 @@ export default function ProdutosPage() {
       ? products
       : products.filter((p) => p.linha === activeLinha);
 
+  // All images for a product: cover image first, then gallery sorted by sort_order
+  function allImages(product: Product): string[] {
+    const gallery = (product.product_images ?? [])
+      .slice()
+      .sort((a, b) => a.sort_order - b.sort_order)
+      .map((img) => img.image_path);
+    // Deduplicate: if cover is already in gallery, don't repeat it
+    const seen = new Set<string>();
+    const result: string[] = [];
+    for (const url of [product.image_path, ...gallery]) {
+      if (url && !seen.has(url)) { seen.add(url); result.push(url); }
+    }
+    return result;
+  }
+
   // Lightbox navigation
   const lightboxIndex = lightbox ? filtered.findIndex((p) => p.code === lightbox.code) : -1;
+  const lightboxImages = lightbox ? allImages(lightbox) : [];
+
   const goNext = useCallback(() => {
-    if (lightboxIndex < filtered.length - 1) setLightbox(filtered[lightboxIndex + 1]);
-  }, [lightboxIndex, filtered]);
+    if (!lightbox) return;
+    const imgs = allImages(lightbox);
+    if (lightboxImgIdx < imgs.length - 1) {
+      setLightboxImgIdx(lightboxImgIdx + 1);
+    } else if (lightboxIndex < filtered.length - 1) {
+      setLightbox(filtered[lightboxIndex + 1]);
+      setLightboxImgIdx(0);
+    }
+  }, [lightbox, lightboxImgIdx, lightboxIndex, filtered]); // eslint-disable-line react-hooks/exhaustive-deps
+
   const goPrev = useCallback(() => {
-    if (lightboxIndex > 0) setLightbox(filtered[lightboxIndex - 1]);
-  }, [lightboxIndex, filtered]);
+    if (!lightbox) return;
+    if (lightboxImgIdx > 0) {
+      setLightboxImgIdx(lightboxImgIdx - 1);
+    } else if (lightboxIndex > 0) {
+      const prevProduct = filtered[lightboxIndex - 1];
+      const prevImgs = allImages(prevProduct);
+      setLightbox(prevProduct);
+      setLightboxImgIdx(prevImgs.length - 1);
+    }
+  }, [lightbox, lightboxImgIdx, lightboxIndex, filtered]); // eslint-disable-line react-hooks/exhaustive-deps
+
+  const hasPrev = lightboxImgIdx > 0 || lightboxIndex > 0;
+  const hasNext = lightbox ? (lightboxImgIdx < lightboxImages.length - 1 || lightboxIndex < filtered.length - 1) : false;
 
   // Keyboard navigation + ESC
   useEffect(() => {
     if (!lightbox) return;
     const handler = (e: KeyboardEvent) => {
-      if (e.key === "Escape") setLightbox(null);
+      if (e.key === "Escape") { setLightbox(null); setLightboxImgIdx(0); }
       if (e.key === "ArrowRight") goNext();
       if (e.key === "ArrowLeft") goPrev();
     };
@@ -79,11 +123,11 @@ export default function ProdutosPage() {
       {lightbox && (
         <div
           className="fixed inset-0 z-[100] flex items-center justify-center bg-black/90 backdrop-blur-sm"
-          onClick={() => setLightbox(null)}
+          onClick={() => { setLightbox(null); setLightboxImgIdx(0); }}
         >
           {/* Close */}
           <button
-            onClick={() => setLightbox(null)}
+            onClick={() => { setLightbox(null); setLightboxImgIdx(0); }}
             className="absolute top-4 right-4 z-10 text-white/70 hover:text-white bg-black/40 hover:bg-black/60 rounded-full w-10 h-10 flex items-center justify-center transition-colors"
             aria-label="Fechar"
           >
@@ -93,7 +137,7 @@ export default function ProdutosPage() {
           </button>
 
           {/* Prev arrow */}
-          {lightboxIndex > 0 && (
+          {hasPrev && (
             <button
               onClick={(e) => { e.stopPropagation(); goPrev(); }}
               className="absolute left-3 lg:left-6 z-10 text-white/70 hover:text-white bg-black/40 hover:bg-black/60 rounded-full w-10 h-10 flex items-center justify-center transition-colors"
@@ -106,7 +150,7 @@ export default function ProdutosPage() {
           )}
 
           {/* Next arrow */}
-          {lightboxIndex < filtered.length - 1 && (
+          {hasNext && (
             <button
               onClick={(e) => { e.stopPropagation(); goNext(); }}
               className="absolute right-3 lg:right-6 z-10 text-white/70 hover:text-white bg-black/40 hover:bg-black/60 rounded-full w-10 h-10 flex items-center justify-center transition-colors"
@@ -124,12 +168,31 @@ export default function ProdutosPage() {
             onClick={(e) => e.stopPropagation()}
           >
             {/* Image */}
-            <div className="relative flex-shrink-0 w-full lg:w-[55%] aspect-[4/5] lg:aspect-auto lg:h-[80dvh] bg-[#111]">
-              <img
-                src={lightbox.image_path}
-                alt={lightbox.name}
-                className="absolute inset-0 w-full h-full object-contain"
-              />
+            <div className="relative flex-shrink-0 w-full lg:w-[55%] aspect-[4/5] lg:aspect-auto lg:h-[80dvh] bg-[#111] flex flex-col">
+              <div className="relative flex-1 min-h-0">
+                <img
+                  key={lightboxImages[lightboxImgIdx]}
+                  src={lightboxImages[lightboxImgIdx] ?? lightbox.image_path}
+                  alt={lightbox.name}
+                  className="absolute inset-0 w-full h-full object-contain"
+                />
+              </div>
+              {/* Thumbnail strip */}
+              {lightboxImages.length > 1 && (
+                <div className="flex gap-1.5 p-2 bg-black/60 overflow-x-auto flex-shrink-0" onClick={(e) => e.stopPropagation()}>
+                  {lightboxImages.map((url, i) => (
+                    <button
+                      key={url}
+                      onClick={() => setLightboxImgIdx(i)}
+                      className={`flex-shrink-0 w-12 h-12 lg:w-14 lg:h-14 border-2 overflow-hidden transition-all ${
+                        i === lightboxImgIdx ? "border-white opacity-100" : "border-transparent opacity-50 hover:opacity-80"
+                      }`}
+                    >
+                      <img src={url} alt="" className="w-full h-full object-cover" />
+                    </button>
+                  ))}
+                </div>
+              )}
             </div>
 
             {/* Info panel */}
@@ -169,7 +232,7 @@ export default function ProdutosPage() {
                 <Link
                   href="/simulador"
                   className="flex-1 inline-flex items-center justify-center gap-2 border border-[#002045] text-[#002045] text-xs tracking-[0.12em] uppercase font-bold font-[var(--font-inter)] px-6 py-3.5 hover:bg-[#002045] hover:text-white transition-colors"
-                  onClick={() => setLightbox(null)}
+                  onClick={() => { setLightbox(null); setLightboxImgIdx(0); }}
                 >
                   Simular orçamento
                 </Link>
@@ -179,7 +242,8 @@ export default function ProdutosPage() {
 
           {/* Counter */}
           <div className="absolute bottom-4 left-1/2 -translate-x-1/2 text-white/50 text-xs font-[var(--font-inter)] tracking-[0.1em]">
-            {lightboxIndex + 1} / {filtered.length}
+            Produto {lightboxIndex + 1}/{filtered.length}
+            {lightboxImages.length > 1 && ` · Foto ${lightboxImgIdx + 1}/${lightboxImages.length}`}
           </div>
         </div>
       )}
@@ -283,7 +347,7 @@ export default function ProdutosPage() {
                 <article key={product.code} className="group cursor-pointer">
                   <div
                     className="relative aspect-[4/5] overflow-hidden bg-[#eeeeee] mb-3 lg:mb-5 shadow-sm group-hover:shadow-lg transition-shadow duration-500 cursor-zoom-in"
-                    onClick={() => setLightbox(product)}
+                    onClick={() => { setLightbox(product); setLightboxImgIdx(0); }}
                   >
                     <img
                       src={product.image_path}
@@ -299,10 +363,16 @@ export default function ProdutosPage() {
                         </svg>
                       </div>
                     </div>
-                    <div className="absolute top-2 right-2 lg:top-4 lg:right-4">
+                    <div className="absolute top-2 right-2 lg:top-4 lg:right-4 flex flex-col items-end gap-1.5">
                       <span className="bg-white/95 text-[#002045] text-[9px] lg:text-[10px] tracking-[0.1em] uppercase font-semibold font-[var(--font-inter)] px-2 py-1 lg:px-2.5 lg:py-1.5">
                         {product.finish}
                       </span>
+                      {allImages(product).length > 1 && (
+                        <span className="bg-black/60 text-white text-[9px] font-semibold font-[var(--font-inter)] px-1.5 py-0.5 flex items-center gap-1">
+                          <svg width="9" height="9" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5"><rect x="3" y="3" width="18" height="18" rx="2"/><path d="M3 9h18M9 21V9"/></svg>
+                          {allImages(product).length}
+                        </span>
+                      )}
                     </div>
                   </div>
                   <div className="space-y-1 lg:space-y-1.5">

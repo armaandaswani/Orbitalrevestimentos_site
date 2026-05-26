@@ -37,7 +37,8 @@ interface SalesRep {
   birthday: string | null;
 }
 
-interface DbProduct { id:string; code:string; name:string; linha:"Classic"|"Brilliance"|"Elegance"; finish:string; price:number; price_per_m2:number; description:string; image_path:string; is_active:boolean; sort_order:number; created_at:string; }
+interface ProductImage { id:string; product_id:string; image_path:string; sort_order:number; }
+interface DbProduct { id:string; code:string; name:string; linha:"Classic"|"Brilliance"|"Elegance"; finish:string; price:number; price_per_m2:number; description:string; image_path:string; is_active:boolean; sort_order:number; created_at:string; product_images?: ProductImage[]; }
 interface DbPhotoProject { id:string; slug:string; title:string; product_code:string; categories:string[]; image_after:string; image_before:string; note:string; is_active:boolean; sort_order:number; }
 interface DbRenderProject { id:string; slug:string; title:string; product_code:string; image_path:string; is_active:boolean; sort_order:number; }
 
@@ -302,6 +303,8 @@ export default function AdminPage() {
   const [productFormError, setProductFormError] = useState("");
   const [productFormLoading, setProductFormLoading] = useState(false);
   const [productImageUploading, setProductImageUploading] = useState(false);
+  const [galleryImages, setGalleryImages] = useState<ProductImage[]>([]);
+  const [galleryUploading, setGalleryUploading] = useState(false);
   const productTabFormRef = useRef<HTMLDivElement>(null);
 
   // DB Projects
@@ -758,8 +761,45 @@ export default function AdminPage() {
     setEditingProductId(p.id);
     setProductForm({ code: p.code, name: p.name, linha: p.linha, finish: p.finish, price: p.price, price_per_m2: p.price_per_m2, description: p.description, image_path: p.image_path, is_active: p.is_active, sort_order: p.sort_order });
     setProductFormError("");
+    setGalleryImages(p.product_images ?? []);
     setShowProductForm(true);
     setTimeout(() => productTabFormRef.current?.scrollIntoView({ behavior: "smooth", block: "start" }), 50);
+  }
+
+  async function addGalleryImage(file: File) {
+    if (!editingProductId) return;
+    setGalleryUploading(true);
+    const formData = new FormData();
+    formData.append("file", file);
+    formData.append("folder", "products");
+    const uploadRes = await fetch("/api/admin/upload", { method: "POST", headers: { "x-admin-auth": ADMIN_PW }, body: formData });
+    if (!uploadRes.ok) { setGalleryUploading(false); return; }
+    const { url } = await uploadRes.json();
+    const res = await fetch(`/api/products/${editingProductId}/images`, {
+      method: "POST",
+      headers: { "Content-Type": "application/json", "x-admin-auth": ADMIN_PW },
+      body: JSON.stringify({ image_path: url }),
+    });
+    if (res.ok) {
+      const newImg = await res.json();
+      setGalleryImages((prev) => [...prev, newImg]);
+      // Refresh the product list so the card count stays accurate
+      fetchDbProducts();
+    }
+    setGalleryUploading(false);
+  }
+
+  async function deleteGalleryImage(imageId: string) {
+    if (!confirm("Remover esta imagem da galeria?")) return;
+    const res = await fetch(`/api/products/images/${imageId}`, { method: "DELETE", headers: { "x-admin-auth": ADMIN_PW } });
+    if (res.ok) {
+      setGalleryImages((prev) => prev.filter((img) => img.id !== imageId));
+      fetchDbProducts();
+    }
+  }
+
+  function setImageAsCover(url: string) {
+    setProductForm((prev) => ({ ...prev, image_path: url }));
   }
 
   // ── Photo Project CRUD ───────────────────
@@ -2826,6 +2866,7 @@ export default function AdminPage() {
                   setEditingProductId(null);
                   setProductForm({ code:"", name:"", linha:"Classic", finish:"Fosco", price:559, price_per_m2:161, description:"", image_path:"", is_active:true, sort_order:0 });
                   setProductFormError("");
+                  setGalleryImages([]);
                   setShowProductForm(true);
                   setTimeout(() => productTabFormRef.current?.scrollIntoView({ behavior: "smooth", block: "start" }), 50);
                 }}
@@ -2905,6 +2946,75 @@ export default function AdminPage() {
                       <img src={productForm.image_path} alt="preview" className="mt-2 h-24 object-cover border border-[#e2e2e2]" />
                     )}
                   </div>
+                  {/* Gallery — only available when editing an existing product */}
+                  {editingProductId && (
+                    <div className="mb-6 border border-[#e2e2e2] p-4">
+                      <div className="flex items-center justify-between mb-3">
+                        <label className="font-[var(--font-inter)] text-[10px] tracking-[0.15em] uppercase font-bold text-[#74777f]">
+                          Galeria de Imagens
+                          <span className="ml-2 font-normal text-[#b0b0b0] normal-case tracking-normal">
+                            ({galleryImages.length} foto{galleryImages.length !== 1 ? "s" : ""})
+                          </span>
+                        </label>
+                        <label className="cursor-pointer bg-[#002045] text-white text-[10px] tracking-[0.1em] uppercase font-bold font-[var(--font-inter)] px-4 py-2 hover:bg-[#1a365d] transition-colors whitespace-nowrap flex items-center gap-1.5">
+                          {galleryUploading ? (
+                            <>
+                              <svg className="animate-spin" width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5"><path d="M12 2v4M12 18v4M4.93 4.93l2.83 2.83M16.24 16.24l2.83 2.83M2 12h4M18 12h4M4.93 19.07l2.83-2.83M16.24 7.76l2.83-2.83"/></svg>
+                              Enviando...
+                            </>
+                          ) : (
+                            <>
+                              <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5"><path d="M12 5v14M5 12l7-7 7 7"/></svg>
+                              + Foto
+                            </>
+                          )}
+                          <input type="file" accept="image/*" className="hidden" disabled={galleryUploading} onChange={async (e) => {
+                            const file = e.target.files?.[0];
+                            if (file) await addGalleryImage(file);
+                            e.target.value = "";
+                          }} />
+                        </label>
+                      </div>
+                      {galleryImages.length === 0 ? (
+                        <p className="text-[#b0b0b0] text-xs font-[var(--font-inter)] text-center py-4">
+                          Nenhuma imagem adicional. Adicione fotos de ambientes, detalhes e texturas.
+                        </p>
+                      ) : (
+                        <div className="grid grid-cols-3 sm:grid-cols-4 lg:grid-cols-6 gap-2">
+                          {galleryImages.map((img) => (
+                            <div key={img.id} className="relative group aspect-square bg-[#f0f0f0] overflow-hidden">
+                              <img src={img.image_path} alt="" className="w-full h-full object-cover" />
+                              <div className="absolute inset-0 bg-black/0 group-hover:bg-black/50 transition-colors flex flex-col items-center justify-center gap-1 opacity-0 group-hover:opacity-100">
+                                <button
+                                  type="button"
+                                  onClick={() => setImageAsCover(img.image_path)}
+                                  title="Usar como capa"
+                                  className="bg-white text-[#002045] text-[9px] tracking-[0.08em] uppercase font-bold font-[var(--font-inter)] px-2 py-1 hover:bg-[#eef2f8] transition-colors w-[80%] text-center"
+                                >
+                                  Capa
+                                </button>
+                                <button
+                                  type="button"
+                                  onClick={() => deleteGalleryImage(img.id)}
+                                  title="Remover"
+                                  className="bg-red-600 text-white text-[9px] tracking-[0.08em] uppercase font-bold font-[var(--font-inter)] px-2 py-1 hover:bg-red-700 transition-colors w-[80%] text-center"
+                                >
+                                  Remover
+                                </button>
+                              </div>
+                              {productForm.image_path === img.image_path && (
+                                <div className="absolute top-1 left-1 bg-[#002045] text-white text-[8px] font-bold tracking-wider px-1 py-0.5">CAPA</div>
+                              )}
+                            </div>
+                          ))}
+                        </div>
+                      )}
+                      <p className="text-[#b0b0b0] text-[10px] font-[var(--font-inter)] mt-2">
+                        Passe o mouse sobre uma foto para definir como capa ou remover. Salve o produto para confirmar a capa.
+                      </p>
+                    </div>
+                  )}
+
                   <div className="mb-6 flex items-center gap-2">
                     <input type="checkbox" id="prod-active" checked={productForm.is_active} onChange={(e) => setProductForm({...productForm, is_active: e.target.checked})} className="w-4 h-4" />
                     <label htmlFor="prod-active" className="text-sm font-[var(--font-inter)] text-[#43474e]">Produto ativo</label>
@@ -2914,7 +3024,7 @@ export default function AdminPage() {
                     <button type="submit" disabled={productFormLoading} className="bg-[#002045] text-white text-xs tracking-[0.1em] uppercase font-bold font-[var(--font-inter)] px-6 py-2.5 hover:bg-[#1a365d] transition-colors disabled:opacity-50">
                       {productFormLoading ? "Salvando..." : "Salvar"}
                     </button>
-                    <button type="button" onClick={() => { setShowProductForm(false); setEditingProductId(null); }} className="border border-[#e2e2e2] text-[#74777f] text-xs font-[var(--font-inter)] px-6 py-2.5 hover:border-[#002045] hover:text-[#002045] transition-colors">
+                    <button type="button" onClick={() => { setShowProductForm(false); setEditingProductId(null); setGalleryImages([]); }} className="border border-[#e2e2e2] text-[#74777f] text-xs font-[var(--font-inter)] px-6 py-2.5 hover:border-[#002045] hover:text-[#002045] transition-colors">
                       Cancelar
                     </button>
                   </div>
@@ -2940,7 +3050,14 @@ export default function AdminPage() {
                     ) : dbProducts.map((p) => (
                       <tr key={p.id} className="border-b border-[#f0f0f0] hover:bg-[#fafafa]">
                         <td className="px-4 py-3"><span className="bg-[#eef2f8] text-[#002045] px-2 py-0.5 text-xs font-bold tracking-wider">{p.code}</span></td>
-                        <td className="px-4 py-3 text-[#002045] font-medium">{p.name}</td>
+                        <td className="px-4 py-3 text-[#002045] font-medium">
+                          {p.name}
+                          {(p.product_images?.length ?? 0) > 0 && (
+                            <span className="ml-2 bg-[#eef2f8] text-[#002045] text-[9px] font-bold tracking-wider px-1.5 py-0.5 align-middle">
+                              {p.product_images!.length} foto{p.product_images!.length !== 1 ? "s" : ""}
+                            </span>
+                          )}
+                        </td>
                         <td className="px-4 py-3">
                           <span className={`inline-block px-2 py-0.5 text-[10px] font-bold tracking-wide ${p.linha === "Classic" ? "bg-blue-100 text-blue-800" : p.linha === "Brilliance" ? "bg-purple-100 text-purple-800" : "bg-green-100 text-green-800"}`}>
                             {p.linha}

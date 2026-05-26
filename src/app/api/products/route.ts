@@ -11,7 +11,7 @@ export async function GET() {
   const sb = supabaseAdmin();
   const { data, error } = await sb
     .from("products")
-    .select("*")
+    .select("*, product_images(id, image_path, sort_order)")
     .eq("is_active", true)
     .order("sort_order", { ascending: true });
 
