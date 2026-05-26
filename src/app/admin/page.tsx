@@ -1,6 +1,7 @@
 "use client";
 
 import React, { useState, useEffect, useCallback, useMemo, useRef } from "react";
+import { SITE_ASSET_MANIFEST } from "@/lib/assets";
 
 interface Partner {
   id: string;
@@ -134,7 +135,7 @@ export default function AdminPage() {
   const [authed, setAuthed] = useState(false);
   const [pw, setPw] = useState("");
   const [pwError, setPwError] = useState("");
-  const [tab, setTab] = useState<"partners" | "representantes" | "history" | "campaigns" | "drip" | "clientes" | "commissions" | "produtos" | "projetos">("partners");
+  const [tab, setTab] = useState<"partners" | "representantes" | "history" | "campaigns" | "drip" | "clientes" | "commissions" | "produtos" | "projetos" | "midia">("partners");
   const [commissionFilter, setCommissionFilter] = useState<"a_pagar" | "pago" | "tudo">("a_pagar");
 
   // Partners
@@ -308,6 +309,12 @@ export default function AdminPage() {
   const [galleryUploadProgress, setGalleryUploadProgress] = useState<{done: number; total: number} | null>(null);
   const productTabFormRef = useRef<HTMLDivElement>(null);
 
+  // Media / Site Assets
+  const [assetManifest, setAssetManifest] = useState<Record<string, string>>({});
+  const [assetLoading, setAssetLoading] = useState(false);
+  const [assetUploading, setAssetUploading] = useState<string | null>(null); // key currently uploading
+  const [assetRestoring, setAssetRestoring] = useState<string | null>(null);
+
   // DB Projects
   const [dbPhotoProjects, setDbPhotoProjects] = useState<DbPhotoProject[]>([]);
   const [dbRenderProjects, setDbRenderProjects] = useState<DbRenderProject[]>([]);
@@ -448,6 +455,12 @@ export default function AdminPage() {
 
   useEffect(() => { if (tab === "produtos" && authed) fetchDbProducts(); }, [tab, authed, fetchDbProducts]);
   useEffect(() => { if (tab === "projetos" && authed) fetchProjects(); }, [tab, authed, fetchProjects]);
+  useEffect(() => {
+    if (tab === "midia" && authed) {
+      setAssetLoading(true);
+      fetch("/api/admin/assets").then(r => r.json()).then(setAssetManifest).finally(() => setAssetLoading(false));
+    }
+  }, [tab, authed]);
 
   const pollingRef = useRef<ReturnType<typeof setInterval> | null>(null);
   const partnerFormRef = useRef<HTMLDivElement>(null);
@@ -1524,9 +1537,9 @@ export default function AdminPage() {
 
       <div className="max-w-7xl mx-auto px-8 py-8">
         <div className="flex gap-1 mb-8 border-b border-[#e2e2e2] flex-wrap">
-          {(["partners", "representantes", "history", "campaigns", "drip", "clientes", "commissions", "produtos", "projetos"] as const).map((t) => (
+          {(["partners", "representantes", "history", "campaigns", "drip", "clientes", "commissions", "produtos", "projetos", "midia"] as const).map((t) => (
             <button key={t} onClick={() => setTab(t)} className={`px-6 py-3 text-xs tracking-[0.1em] uppercase font-bold font-[var(--font-inter)] transition-colors border-b-2 -mb-px flex items-center gap-2 ${tab === t ? "border-[#002045] text-[#002045]" : "border-transparent text-[#74777f] hover:text-[#002045]"}`}>
-              {t === "partners" ? "Parceiros" : t === "representantes" ? "Representantes" : t === "history" ? "Histórico" : t === "campaigns" ? "Campanhas" : t === "drip" ? "Drip de Emails" : t === "commissions" ? "Comissões" : t === "produtos" ? "Produtos" : t === "projetos" ? "Projetos" : "Clientes"}
+              {t === "partners" ? "Parceiros" : t === "representantes" ? "Representantes" : t === "history" ? "Histórico" : t === "campaigns" ? "Campanhas" : t === "drip" ? "Drip de Emails" : t === "commissions" ? "Comissões" : t === "produtos" ? "Produtos" : t === "projetos" ? "Projetos" : t === "midia" ? "Mídia" : "Clientes"}
               {t === "partners" && pendingPartners.length > 0 && (
                 <span className="bg-yellow-400 text-yellow-900 text-[9px] font-bold px-1.5 py-0.5 rounded-full leading-none">
                   {pendingPartners.length}
@@ -3413,6 +3426,143 @@ export default function AdminPage() {
             </div>
           </div>
         )}
+        {/* ═══ MÍDIA TAB ═══ */}
+        {tab === "midia" && (
+          <div>
+            <div className="flex items-center justify-between mb-6">
+              <div>
+                <h2 className="font-[var(--font-inter)] text-xl font-bold text-[#002045]">Imagens do Site</h2>
+                <p className="text-[#74777f] text-sm font-[var(--font-inter)] mt-1">
+                  Faça download das fotos originais, veja as dimensões exatas e substitua imagens diretamente — sem precisar de um deploy.
+                </p>
+              </div>
+            </div>
+
+            {assetLoading ? (
+              <p className="text-[#74777f] text-sm font-[var(--font-inter)] py-8">Carregando...</p>
+            ) : (
+              <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-5">
+                {SITE_ASSET_MANIFEST.map((asset) => {
+                  const overrideUrl = assetManifest[asset.key];
+                  const currentUrl = overrideUrl ?? asset.staticPath;
+                  const isOverridden = !!overrideUrl;
+
+                  async function handleUpload(e: React.ChangeEvent<HTMLInputElement>) {
+                    const file = e.target.files?.[0];
+                    if (!file) return;
+                    setAssetUploading(asset.key);
+                    const url = await uploadDirect(file, "assets");
+                    if (url) {
+                      await fetch("/api/admin/assets", {
+                        method: "POST",
+                        headers: { "Content-Type": "application/json" },
+                        body: JSON.stringify({ key: asset.key, url }),
+                      });
+                      setAssetManifest(prev => ({ ...prev, [asset.key]: url }));
+                    }
+                    setAssetUploading(null);
+                    e.target.value = "";
+                  }
+
+                  async function handleRestore() {
+                    setAssetRestoring(asset.key);
+                    await fetch("/api/admin/assets", {
+                      method: "DELETE",
+                      headers: { "Content-Type": "application/json" },
+                      body: JSON.stringify({ key: asset.key }),
+                    });
+                    setAssetManifest(prev => { const n = { ...prev }; delete n[asset.key]; return n; });
+                    setAssetRestoring(null);
+                  }
+
+                  return (
+                    <div key={asset.key} className="bg-white border border-[#e2e2e2] overflow-hidden flex flex-col">
+                      {/* Preview */}
+                      <div className="relative bg-[#f0f0f0] overflow-hidden" style={{ aspectRatio: asset.nativeW && asset.nativeH ? `${asset.nativeW}/${asset.nativeH}` : "4/3", maxHeight: "260px" }}>
+                        {/* eslint-disable-next-line @next/next/no-img-element */}
+                        <img
+                          src={currentUrl}
+                          alt={asset.label}
+                          className="absolute inset-0 w-full h-full object-cover object-top"
+                        />
+                        {/* Status badge */}
+                        <div className={`absolute top-2 right-2 text-[9px] tracking-[0.1em] uppercase font-bold font-[var(--font-inter)] px-2 py-1 ${isOverridden ? "bg-[#3b6934] text-white" : "bg-white/90 text-[#74777f]"}`}>
+                          {isOverridden ? "Substituída" : "Original"}
+                        </div>
+                      </div>
+
+                      {/* Info */}
+                      <div className="px-4 pt-4 pb-3 flex-1 flex flex-col gap-3">
+                        <div>
+                          <p className="text-[#002045] font-semibold text-sm font-[var(--font-inter)] leading-snug">{asset.label}</p>
+                          <p className="text-[#74777f] text-[10px] tracking-[0.08em] uppercase font-bold font-[var(--font-inter)] mt-0.5">{asset.section}</p>
+                        </div>
+
+                        {/* Dimensions */}
+                        <div className="bg-[#f9f9f9] border border-[#e2e2e2] px-3 py-2 space-y-1">
+                          {asset.nativeW > 0 && (
+                            <div className="flex items-center justify-between">
+                              <span className="text-[#74777f] text-[10px] font-[var(--font-inter)]">Tamanho do arquivo</span>
+                              <span className="text-[#002045] text-[10px] font-bold font-[var(--font-inter)]">{asset.nativeW} × {asset.nativeH} px</span>
+                            </div>
+                          )}
+                          <div className="flex items-start justify-between gap-2">
+                            <span className="text-[#74777f] text-[10px] font-[var(--font-inter)] shrink-0">Exibição no site</span>
+                            <span className="text-[#002045] text-[10px] font-[var(--font-inter)] text-right">{asset.displayInfo}</span>
+                          </div>
+                          <div className="flex items-center justify-between">
+                            <span className="text-[#74777f] text-[10px] font-[var(--font-inter)]">Proporção ideal</span>
+                            <span className="text-[#002045] text-[10px] font-bold font-[var(--font-inter)]">
+                              {asset.nativeW > 0 ? `${asset.nativeW}:${asset.nativeH}` : "livre"}
+                            </span>
+                          </div>
+                        </div>
+
+                        {/* Actions */}
+                        <div className="flex gap-2 mt-auto">
+                          {/* Download */}
+                          <a
+                            href={currentUrl}
+                            download
+                            target="_blank"
+                            rel="noopener noreferrer"
+                            className="flex-1 text-center text-[10px] tracking-[0.08em] uppercase font-bold font-[var(--font-inter)] px-3 py-2 border border-[#1a365d] text-[#1a365d] hover:bg-[#1a365d] hover:text-white transition-colors"
+                          >
+                            Download
+                          </a>
+
+                          {/* Upload replacement */}
+                          <label className="flex-1 text-center text-[10px] tracking-[0.08em] uppercase font-bold font-[var(--font-inter)] px-3 py-2 bg-[#002045] text-white hover:bg-[#1a365d] transition-colors cursor-pointer">
+                            {assetUploading === asset.key ? "Enviando…" : "Substituir"}
+                            <input
+                              type="file"
+                              accept="image/*"
+                              className="hidden"
+                              disabled={assetUploading === asset.key}
+                              onChange={handleUpload}
+                            />
+                          </label>
+                        </div>
+
+                        {/* Restore original */}
+                        {isOverridden && (
+                          <button
+                            onClick={handleRestore}
+                            disabled={assetRestoring === asset.key}
+                            className="w-full text-[10px] tracking-[0.08em] uppercase font-bold font-[var(--font-inter)] px-3 py-2 border border-red-300 text-red-600 hover:bg-red-50 transition-colors"
+                          >
+                            {assetRestoring === asset.key ? "Restaurando…" : "Restaurar imagem original"}
+                          </button>
+                        )}
+                      </div>
+                    </div>
+                  );
+                })}
+              </div>
+            )}
+          </div>
+        )}
+
       </div>
     </div>
   );

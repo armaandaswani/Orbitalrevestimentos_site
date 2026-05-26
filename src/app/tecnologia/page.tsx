@@ -3,6 +3,8 @@ import Image from "next/image";
 import Link from "next/link";
 import TecnologiaComparison from "@/components/TecnologiaComparison";
 import ARTAccordion from "@/components/ARTAccordion";
+import FichaTecnicaAccordion from "@/components/FichaTecnicaAccordion";
+import { getAssetOverrides, resolveAsset } from "@/lib/assets";
 
 export const metadata: Metadata = {
   title: "PFB Orbital — Tecnologia, Performance e Ficha Técnica | Revestimento Manaus",
@@ -47,7 +49,9 @@ const specs = [
   { value: "0,5%", unit: "", label: "Teor de umidade", note: "Estável no clima amazônico" },
 ];
 
-export default function TecnologiaPage() {
+export default async function TecnologiaPage() {
+  const overrides = await getAssetOverrides();
+  const img = (key: string, fallback: string) => resolveAsset(key, fallback, overrides);
   return (
     <div className="pt-20">
       {/* Hero */}
@@ -76,7 +80,7 @@ export default function TecnologiaPage() {
               style={{ background: "radial-gradient(ellipse 72% 78% at 50% 50%, transparent 42%, white 100%)" }}
             />
             <Image
-              src="/images/catalogue/product-anatomy.png"
+              src={img("product-anatomy", "/images/catalogue/product-anatomy.png")}
               alt="Anatomia da Placa PFB Orbital — seção transversal 5mm"
               width={732}
               height={1638}
@@ -145,6 +149,7 @@ export default function TecnologiaPage() {
               Desempenho comprovado
             </h2>
             <ARTAccordion />
+            <FichaTecnicaAccordion />
           </div>
           <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-5 gap-3 lg:gap-6">
             {specs.map(({ value, unit, label, note }) => (
@@ -186,9 +191,9 @@ export default function TecnologiaPage() {
 
           <div className="grid grid-cols-3 gap-2 lg:gap-4 mb-10 lg:max-w-[75%] lg:mx-auto">
             {[
-              { src: "/images/catalogue/pfb-mdf-0h.png", time: "0h", label: "Início do teste", note: "Placa PFB submersa em água em condições controladas de laboratório." },
-              { src: "/images/catalogue/pfb-mdf-24h.png", time: "24h", label: "24 horas de imersão", note: "O PFB mantém integridade estrutural total — sem deformação ou absorção visível." },
-              { src: "/images/catalogue/pfb-mdf-48h.png", time: "48h", label: "48 horas de imersão", note: "O PFB sai intacto após 48h de imersão. 0,2% de absorção — praticamente impermeável." },
+              { src: img("pfb-water-0h", "/images/catalogue/pfb-mdf-0h.png"), time: "0h", label: "Início do teste", note: "Placa PFB submersa em água em condições controladas de laboratório." },
+              { src: img("pfb-water-24h", "/images/catalogue/pfb-mdf-24h.png"), time: "24h", label: "24 horas de imersão", note: "O PFB mantém integridade estrutural total — sem deformação ou absorção visível." },
+              { src: img("pfb-water-48h", "/images/catalogue/pfb-mdf-48h.png"), time: "48h", label: "48 horas de imersão", note: "O PFB sai intacto após 48h de imersão. 0,2% de absorção — praticamente impermeável." },
             ].map(({ src, time, label, note }) => (
               <div key={time} className="group flex flex-col">
                 <div className="relative aspect-[1536/2752] overflow-hidden mb-3">
@@ -441,7 +446,7 @@ export default function TecnologiaPage() {
             <div>
               <div className="relative aspect-[1674/1982] overflow-hidden">
                 <Image
-                  src="/images/catalogue/onde-aplicar-main.jpeg"
+                  src={img("onde-aplicar-main", "/images/catalogue/onde-aplicar-main.jpeg")}
                   alt="PFB Orbital — material ecológico de bambu"
                   fill
                   className="object-cover"
