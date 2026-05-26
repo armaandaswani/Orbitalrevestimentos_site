@@ -53,8 +53,8 @@ const FAQS: FAQ[] = [
   {
     id: "piso",
     keywords: ["piso", "chao", "chão", "solo", "piso laminado", "no piso", "no chao", "colocar no piso", "usar no piso", "aplicar no piso", "piso frio", "piso porcelanato", "sobre o piso"],
-    answer: "Sim, pode! O PFB pode ser aplicado sobre piso existente — porcelanato, laminado ou cimento. A placa tem 5mm de espessura e é resistente ao tráfego. A instalação no piso segue o mesmo processo da parede: cola PU e sem quebrar nada. Ideal para reformas sem obra.",
-    linkCta: { label: "Simular custo do projeto", href: "/simulador" },
+    answer: "Não, o PFB não é indicado para piso — ele é um revestimento de parede e teto. Para piso, a placa não tem a resistência ao impacto e tráfego necessários. Mas nas paredes e teto o resultado é incrível e dura 10+ anos!",
+    linkCta: { label: "Ver modelos disponíveis", href: "/produtos" },
   },
   {
     id: "banheiro",
