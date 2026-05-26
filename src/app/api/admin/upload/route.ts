@@ -18,7 +18,16 @@ export async function POST(req: NextRequest) {
 
   const arrayBuffer = await file.arrayBuffer();
   const buffer = Buffer.from(arrayBuffer);
-  const path = `${folder}/${Date.now()}-${file.name}`;
+
+  // Sanitize filename: remove accents, replace spaces/special chars with hyphens
+  const safeName = file.name
+    .normalize("NFD")
+    .replace(/[̀-ͯ]/g, "") // strip diacritics
+    .replace(/[^a-zA-Z0-9._-]/g, "-") // replace anything else with hyphen
+    .replace(/-+/g, "-") // collapse consecutive hyphens
+    .toLowerCase();
+
+  const path = `${folder}/${Date.now()}-${safeName}`;
 
   const sb = supabaseAdmin();
   const { error } = await sb.storage
