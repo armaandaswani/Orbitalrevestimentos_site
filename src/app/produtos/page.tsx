@@ -43,7 +43,7 @@ const products = [
   },
   // Brilliance — Polido finish, marble look
   {
-    code: "ORB-005",
+    code: "ORB-012",
     name: "Bronze Armani",
     linha: "Brilliance" as const,
     finish: "Polido",
@@ -63,7 +63,7 @@ const products = [
     desc: "Branco estaturário com veios cinza naturais. Imponência clássica italiana.",
   },
   {
-    code: "ORB-008",
+    code: "ORB-009",
     name: "Bianco Oro Supremo",
     linha: "Brilliance" as const,
     finish: "Polido",
@@ -73,7 +73,7 @@ const products = [
     desc: "Branco supremo com reflexos dourados sutis. O ápice do refinamento.",
   },
   {
-    code: "ORB-009",
+    code: "ORB-005",
     name: "Gris Pietra",
     linha: "Brilliance" as const,
     finish: "Polido",
@@ -83,7 +83,7 @@ const products = [
     desc: "Cinza profundo com veios brancos. Modernidade e contraste com elegância.",
   },
   {
-    code: "ORB-012",
+    code: "ORB-008",
     name: "Arabescato Orobico Bianco",
     linha: "Brilliance" as const,
     finish: "Polido",
