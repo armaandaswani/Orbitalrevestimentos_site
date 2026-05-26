@@ -1,8 +1,7 @@
 "use client";
 
-import Image from "next/image";
 import Link from "next/link";
-import { useState, useEffect } from "react";
+import { useState, useEffect, useCallback } from "react";
 
 const CATALOGUE_URL =
   "https://drive.google.com/file/d/1zhm5MgKGSDRThqk8FqqwfX-WijI7K-iD/view?usp=drive_link";
@@ -34,6 +33,7 @@ export default function ProdutosPage() {
   const [activeLinha, setActiveLinha] = useState<Linha>("todos");
   const [products, setProducts] = useState<Product[]>([]);
   const [loadingProducts, setLoadingProducts] = useState(true);
+  const [lightbox, setLightbox] = useState<Product | null>(null);
 
   useEffect(() => {
     fetch("/api/products")
@@ -48,8 +48,141 @@ export default function ProdutosPage() {
       ? products
       : products.filter((p) => p.linha === activeLinha);
 
+  // Lightbox navigation
+  const lightboxIndex = lightbox ? filtered.findIndex((p) => p.code === lightbox.code) : -1;
+  const goNext = useCallback(() => {
+    if (lightboxIndex < filtered.length - 1) setLightbox(filtered[lightboxIndex + 1]);
+  }, [lightboxIndex, filtered]);
+  const goPrev = useCallback(() => {
+    if (lightboxIndex > 0) setLightbox(filtered[lightboxIndex - 1]);
+  }, [lightboxIndex, filtered]);
+
+  // Keyboard navigation + ESC
+  useEffect(() => {
+    if (!lightbox) return;
+    const handler = (e: KeyboardEvent) => {
+      if (e.key === "Escape") setLightbox(null);
+      if (e.key === "ArrowRight") goNext();
+      if (e.key === "ArrowLeft") goPrev();
+    };
+    window.addEventListener("keydown", handler);
+    document.body.style.overflow = "hidden";
+    return () => {
+      window.removeEventListener("keydown", handler);
+      document.body.style.overflow = "";
+    };
+  }, [lightbox, goNext, goPrev]);
+
   return (
     <div className="pt-20">
+      {/* Lightbox */}
+      {lightbox && (
+        <div
+          className="fixed inset-0 z-[100] flex items-center justify-center bg-black/90 backdrop-blur-sm"
+          onClick={() => setLightbox(null)}
+        >
+          {/* Close */}
+          <button
+            onClick={() => setLightbox(null)}
+            className="absolute top-4 right-4 z-10 text-white/70 hover:text-white bg-black/40 hover:bg-black/60 rounded-full w-10 h-10 flex items-center justify-center transition-colors"
+            aria-label="Fechar"
+          >
+            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+              <path d="M18 6L6 18M6 6l12 12" />
+            </svg>
+          </button>
+
+          {/* Prev arrow */}
+          {lightboxIndex > 0 && (
+            <button
+              onClick={(e) => { e.stopPropagation(); goPrev(); }}
+              className="absolute left-3 lg:left-6 z-10 text-white/70 hover:text-white bg-black/40 hover:bg-black/60 rounded-full w-10 h-10 flex items-center justify-center transition-colors"
+              aria-label="Anterior"
+            >
+              <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                <path d="M15 18l-6-6 6-6" />
+              </svg>
+            </button>
+          )}
+
+          {/* Next arrow */}
+          {lightboxIndex < filtered.length - 1 && (
+            <button
+              onClick={(e) => { e.stopPropagation(); goNext(); }}
+              className="absolute right-3 lg:right-6 z-10 text-white/70 hover:text-white bg-black/40 hover:bg-black/60 rounded-full w-10 h-10 flex items-center justify-center transition-colors"
+              aria-label="Próximo"
+            >
+              <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                <path d="M9 18l6-6-6-6" />
+              </svg>
+            </button>
+          )}
+
+          {/* Content */}
+          <div
+            className="flex flex-col lg:flex-row w-full max-w-5xl mx-4 lg:mx-8 max-h-[90dvh] overflow-hidden"
+            onClick={(e) => e.stopPropagation()}
+          >
+            {/* Image */}
+            <div className="relative flex-shrink-0 w-full lg:w-[55%] aspect-[4/5] lg:aspect-auto lg:h-[80dvh] bg-[#111]">
+              <img
+                src={lightbox.image_path}
+                alt={lightbox.name}
+                className="absolute inset-0 w-full h-full object-contain"
+              />
+            </div>
+
+            {/* Info panel */}
+            <div className="bg-white lg:flex-1 flex flex-col justify-between p-6 lg:p-10">
+              <div>
+                <span className="text-[#74777f] text-[10px] tracking-[0.18em] uppercase font-semibold font-[var(--font-inter)]">
+                  {lightbox.code} · Linha {lightbox.linha}
+                </span>
+                <h2 className="font-[var(--font-noto-serif)] text-[#002045] text-2xl lg:text-3xl font-normal mt-2 mb-4 leading-snug">
+                  {lightbox.name}
+                </h2>
+                <span className="inline-block bg-[#f3f3f3] text-[#002045] text-[10px] tracking-[0.12em] uppercase font-semibold font-[var(--font-inter)] px-3 py-1.5 mb-5">
+                  {lightbox.finish}
+                </span>
+                <p className="text-[#43474e] text-sm font-[var(--font-inter)] leading-relaxed mb-6">
+                  {lightbox.description}
+                </p>
+                <div className="border-t border-[#e2e2e2] pt-5 space-y-1.5">
+                  <p className="text-[#1a365d] text-xl font-semibold font-[var(--font-inter)]">
+                    R$ {lightbox.price.toLocaleString("pt-BR")}
+                    <span className="text-sm text-[#74777f] font-normal ml-1">/placa</span>
+                  </p>
+                  <p className="text-[#74777f] text-sm font-[var(--font-inter)]">
+                    R$ {lightbox.price_per_m2}/m² · 3,48 m² por placa
+                  </p>
+                </div>
+              </div>
+              <div className="mt-6 flex flex-col sm:flex-row gap-3">
+                <a
+                  href={`https://wa.me/5592988150149?text=${encodeURIComponent(`Olá! Tenho interesse no acabamento ${lightbox.name} (${lightbox.code}). Gostaria de saber mais.`)}`}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="flex-1 inline-flex items-center justify-center gap-2 bg-[#002045] text-white text-xs tracking-[0.12em] uppercase font-bold font-[var(--font-inter)] px-6 py-3.5 hover:bg-[#003070] transition-colors"
+                >
+                  Saber mais →
+                </a>
+                <Link
+                  href="/simulador"
+                  className="flex-1 inline-flex items-center justify-center gap-2 border border-[#002045] text-[#002045] text-xs tracking-[0.12em] uppercase font-bold font-[var(--font-inter)] px-6 py-3.5 hover:bg-[#002045] hover:text-white transition-colors"
+                  onClick={() => setLightbox(null)}
+                >
+                  Simular orçamento
+                </Link>
+              </div>
+            </div>
+          </div>
+
+          {/* Counter */}
+          <div className="absolute bottom-4 left-1/2 -translate-x-1/2 text-white/50 text-xs font-[var(--font-inter)] tracking-[0.1em]">
+            {lightboxIndex + 1} / {filtered.length}
+          </div>
+        </div>
+      )}
       {/* Page Header */}
       <section className="bg-[#002045] text-white py-10 lg:py-24">
         <div className="max-w-[1280px] mx-auto px-4 lg:px-16">
@@ -148,12 +281,24 @@ export default function ProdutosPage() {
             <div className="grid grid-cols-2 lg:grid-cols-3 gap-x-4 gap-y-8 lg:gap-x-8 lg:gap-y-14">
               {filtered.map((product) => (
                 <article key={product.code} className="group cursor-pointer">
-                  <div className="relative aspect-[4/5] overflow-hidden bg-[#eeeeee] mb-3 lg:mb-5 shadow-sm group-hover:shadow-lg transition-shadow duration-500">
+                  <div
+                    className="relative aspect-[4/5] overflow-hidden bg-[#eeeeee] mb-3 lg:mb-5 shadow-sm group-hover:shadow-lg transition-shadow duration-500 cursor-zoom-in"
+                    onClick={() => setLightbox(product)}
+                  >
                     <img
                       src={product.image_path}
                       alt={`${product.name} — Linha ${product.linha}`}
                       className="absolute inset-0 w-full h-full object-cover transition-transform duration-700 ease-out group-hover:scale-[1.05]"
                     />
+                    {/* Zoom icon overlay */}
+                    <div className="absolute inset-0 bg-black/0 group-hover:bg-black/20 transition-colors duration-300 flex items-center justify-center">
+                      <div className="opacity-0 group-hover:opacity-100 transition-opacity duration-300 bg-white/90 rounded-full w-10 h-10 flex items-center justify-center shadow-lg">
+                        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#002045" strokeWidth="2.5">
+                          <circle cx="11" cy="11" r="8" />
+                          <path d="M21 21l-4.35-4.35M11 8v6M8 11h6" />
+                        </svg>
+                      </div>
+                    </div>
                     <div className="absolute top-2 right-2 lg:top-4 lg:right-4">
                       <span className="bg-white/95 text-[#002045] text-[9px] lg:text-[10px] tracking-[0.1em] uppercase font-semibold font-[var(--font-inter)] px-2 py-1 lg:px-2.5 lg:py-1.5">
                         {product.finish}
