@@ -334,8 +334,33 @@ export default function AdminPage() {
   const [showRenderForm, setShowRenderForm] = useState(false);
   const [editingPhotoId, setEditingPhotoId] = useState<string|null>(null);
   const [editingRenderId, setEditingRenderId] = useState<string|null>(null);
+  const [renderImporting, setRenderImporting] = useState<string | null>(null); // slug being imported
+  const [renderImportingAll, setRenderImportingAll] = useState(false);
   const [photoForm, setPhotoForm] = useState({ slug:"", title:"", product_code:"", categories:[] as string[], image_after:"", image_before:"", note:"", is_active:true, sort_order:0 });
   const [renderForm, setRenderForm] = useState({ slug:"", title:"", product_code:"", image_path:"", is_active:true, sort_order:0 });
+
+  // Same static list as the public projetos page — kept in sync manually
+  const STATIC_RENDERS = [
+    { slug: "orb001-consultorio-odonto", title: "Consultório Odontológico",  product_code: "ORB-001", image_path: "/images/renders/orb001-consultorio-odonto.png" },
+    { slug: "orb001-sala",               title: "Sala de Estar",              product_code: "ORB-001", image_path: "/images/renders/orb001-sala.png" },
+    { slug: "orb002-mesa-estudos",        title: "Mesa de Estudos",            product_code: "ORB-002", image_path: "/images/renders/orb002-mesa-estudos.jpg" },
+    { slug: "orb002-restaurante",         title: "Restaurante",                product_code: "ORB-002", image_path: "/images/renders/orb002-restaurante.png" },
+    { slug: "orb003-restaurante",         title: "Restaurante",                product_code: "ORB-003", image_path: "/images/renders/orb003-restaurante.png" },
+    { slug: "orb003-sala-conf",           title: "Sala de Conferências",       product_code: "ORB-003", image_path: "/images/renders/orb003-sala-conf.png" },
+    { slug: "orb004-comercio-teto",       title: "Comércio",                   product_code: "ORB-004", image_path: "/images/renders/orb004-comercio-teto.png" },
+    { slug: "orb005-consultorio-oftalmo", title: "Consultório Oftalmológico",  product_code: "ORB-005", image_path: "/images/renders/orb005-consultorio-oftalmo.png" },
+    { slug: "orb006-banheiro",            title: "Banheiro",                   product_code: "ORB-006", image_path: "/images/renders/orb006-banheiro.png" },
+    { slug: "orb007-banheiro",            title: "Banheiro",                   product_code: "ORB-007", image_path: "/images/renders/orb007-banheiro.png" },
+    { slug: "orb007-pediatria",           title: "Clínica Pediátrica",         product_code: "ORB-007", image_path: "/images/renders/orb007-pediatria.png" },
+    { slug: "orb008-sala",                title: "Sala de Estar",              product_code: "ORB-008", image_path: "/images/renders/orb008-sala.png" },
+    { slug: "orb009-banheiro",            title: "Banheiro",                   product_code: "ORB-009", image_path: "/images/renders/orb009-banheiro.png" },
+    { slug: "orb012-cozinha",             title: "Cozinha",                    product_code: "ORB-012", image_path: "/images/renders/orb012-cozinha.png" },
+    { slug: "orb012-sala",                title: "Sala de Estar",              product_code: "ORB-012", image_path: "/images/renders/orb012-sala.png" },
+    { slug: "orb013-quarto",              title: "Quarto",                     product_code: "ORB-013", image_path: "/images/renders/orb013-quarto.png" },
+    { slug: "orb013-restaurante",         title: "Restaurante",                product_code: "ORB-013", image_path: "/images/renders/orb013-restaurante.png" },
+    { slug: "orb014-escritorio",          title: "Escritório",                 product_code: "ORB-014", image_path: "/images/renders/orb014-escritorio.png" },
+    { slug: "orb015-banheiro",            title: "Banheiro",                   product_code: "ORB-015", image_path: "/images/renders/orb015-banheiro.png" },
+  ] as const;
   const photoTabFormRef = useRef<HTMLDivElement>(null);
   const renderTabFormRef = useRef<HTMLDivElement>(null);
   const [projectImageUploading, setProjectImageUploading] = useState(false);
@@ -1038,6 +1063,33 @@ export default function AdminPage() {
     setRenderForm({ slug: r.slug, title: r.title, product_code: r.product_code, image_path: r.image_path, is_active: r.is_active, sort_order: r.sort_order });
     setShowRenderForm(true);
     setTimeout(() => renderTabFormRef.current?.scrollIntoView({ behavior: "smooth", block: "start" }), 50);
+  }
+
+  async function importStaticRender(render: { slug: string; title: string; product_code: string; image_path: string }, idx: number) {
+    setRenderImporting(render.slug);
+    await fetch("/api/projects/renders", {
+      method: "POST",
+      headers: { "Content-Type": "application/json", "x-admin-auth": ADMIN_PW },
+      body: JSON.stringify({ ...render, is_active: true, sort_order: idx }),
+    });
+    setRenderImporting(null);
+    fetchProjects();
+  }
+
+  async function importAllStaticRenders() {
+    const dbSlugs = new Set(dbRenderProjects.map((r) => r.slug));
+    const toImport = STATIC_RENDERS.filter((r) => !dbSlugs.has(r.slug));
+    if (toImport.length === 0) return;
+    setRenderImportingAll(true);
+    for (let i = 0; i < toImport.length; i++) {
+      await fetch("/api/projects/renders", {
+        method: "POST",
+        headers: { "Content-Type": "application/json", "x-admin-auth": ADMIN_PW },
+        body: JSON.stringify({ ...toImport[i], is_active: true, sort_order: i }),
+      });
+    }
+    setRenderImportingAll(false);
+    fetchProjects();
   }
 
   // ── Partners ─────────────────────────────
@@ -3804,20 +3856,35 @@ export default function AdminPage() {
 
             {/* Section 2: Renders / CGI */}
             <div>
-              <div className="flex items-center justify-between mb-6">
+              <div className="flex items-center justify-between mb-3">
                 <h3 className="font-[var(--font-noto-serif)] text-[#002045] text-xl font-normal">Renders / CGI</h3>
-                <button
-                  onClick={() => {
-                    setEditingRenderId(null);
-                    setRenderForm({ slug:"", title:"", product_code:"", image_path:"", is_active:true, sort_order:0 });
-                    setShowRenderForm(true);
-                    setTimeout(() => renderTabFormRef.current?.scrollIntoView({ behavior: "smooth", block: "start" }), 50);
-                  }}
-                  className="bg-[#002045] text-white text-xs tracking-[0.1em] uppercase font-bold font-[var(--font-inter)] px-5 py-2.5 hover:bg-[#1a365d] transition-colors"
-                >
-                  + Adicionar
-                </button>
+                <div className="flex gap-2">
+                  {/* Bulk import button — only show if there are unimported statics */}
+                  {STATIC_RENDERS.filter((r) => !dbRenderProjects.some((d) => d.slug === r.slug)).length > 0 && (
+                    <button
+                      onClick={importAllStaticRenders}
+                      disabled={renderImportingAll}
+                      className="border border-[#002045] text-[#002045] text-xs tracking-[0.1em] uppercase font-bold font-[var(--font-inter)] px-4 py-2.5 hover:bg-[#002045] hover:text-white transition-colors disabled:opacity-50"
+                    >
+                      {renderImportingAll ? "Importando…" : `↓ Importar ${STATIC_RENDERS.filter((r) => !dbRenderProjects.some((d) => d.slug === r.slug)).length} estáticos`}
+                    </button>
+                  )}
+                  <button
+                    onClick={() => {
+                      setEditingRenderId(null);
+                      setRenderForm({ slug:"", title:"", product_code:"", image_path:"", is_active:true, sort_order:0 });
+                      setShowRenderForm(true);
+                      setTimeout(() => renderTabFormRef.current?.scrollIntoView({ behavior: "smooth", block: "start" }), 50);
+                    }}
+                    className="bg-[#002045] text-white text-xs tracking-[0.1em] uppercase font-bold font-[var(--font-inter)] px-5 py-2.5 hover:bg-[#1a365d] transition-colors"
+                  >
+                    + Adicionar
+                  </button>
+                </div>
               </div>
+              <p className="text-[#74777f] text-xs font-[var(--font-inter)] mb-5">
+                Renders <span className="font-bold text-[#3b6934]">gerenciados</span> sobrescrevem os estáticos no site quando têm o mesmo slug. Importe os estáticos para editá-los ou substituir as imagens.
+              </p>
 
               {showRenderForm && (
                 <div ref={renderTabFormRef} className="bg-white border border-[#e2e2e2] p-6 mb-6">
@@ -3879,18 +3946,23 @@ export default function AdminPage() {
                   <table className="w-full text-sm font-[var(--font-inter)]">
                     <thead>
                       <tr className="border-b border-[#e2e2e2]">
-                        {["Título","Código","Ações"].map(h => (
+                        {["Imagem","Título","Código","Origem","Ações"].map(h => (
                           <th key={h} className="text-left px-4 py-3 text-[10px] tracking-[0.1em] uppercase font-bold text-[#74777f]">{h}</th>
                         ))}
                       </tr>
                     </thead>
                     <tbody>
-                      {dbRenderProjects.length === 0 ? (
-                        <tr><td colSpan={3} className="px-5 py-8 text-center text-[#74777f]">Nenhum render cadastrado.</td></tr>
-                      ) : dbRenderProjects.map((r) => (
+                      {/* DB (managed) renders first */}
+                      {dbRenderProjects.map((r) => (
                         <tr key={r.id} className="border-b border-[#f0f0f0] hover:bg-[#fafafa]">
+                          <td className="px-3 py-2 w-16">
+                            {r.image_path && <img src={r.image_path} alt={r.title} className="w-14 h-14 object-cover border border-[#e2e2e2]" />}
+                          </td>
                           <td className="px-4 py-3 text-[#002045] font-medium">{r.title}</td>
                           <td className="px-4 py-3"><span className="bg-[#eef2f8] text-[#002045] px-2 py-0.5 text-xs font-bold tracking-wider">{r.product_code}</span></td>
+                          <td className="px-4 py-3">
+                            <span className="text-[9px] font-bold tracking-wide bg-[#3b6934] text-white px-2 py-0.5">GERENCIADO</span>
+                          </td>
                           <td className="px-4 py-3">
                             <div className="flex gap-2">
                               <button onClick={() => startEditRender(r)} className="text-[10px] tracking-[0.08em] uppercase font-bold font-[var(--font-inter)] px-3 py-1.5 border border-[#002045] text-[#002045] hover:bg-[#002045] hover:text-white transition-colors">Editar</button>
@@ -3899,6 +3971,32 @@ export default function AdminPage() {
                           </td>
                         </tr>
                       ))}
+                      {/* Static renders not yet in DB */}
+                      {STATIC_RENDERS.filter((r) => !dbRenderProjects.some((d) => d.slug === r.slug)).map((r, idx) => (
+                        <tr key={r.slug} className="border-b border-[#f0f0f0] hover:bg-[#fafafa] opacity-70">
+                          <td className="px-3 py-2 w-16">
+                            {/* eslint-disable-next-line @next/next/no-img-element */}
+                            <img src={r.image_path} alt={r.title} className="w-14 h-14 object-cover border border-[#e2e2e2]" />
+                          </td>
+                          <td className="px-4 py-3 text-[#002045]">{r.title}</td>
+                          <td className="px-4 py-3"><span className="bg-[#f0f0f0] text-[#74777f] px-2 py-0.5 text-xs font-bold tracking-wider">{r.product_code}</span></td>
+                          <td className="px-4 py-3">
+                            <span className="text-[9px] font-bold tracking-wide bg-[#eef2f8] text-[#74777f] px-2 py-0.5">ESTÁTICO</span>
+                          </td>
+                          <td className="px-4 py-3">
+                            <button
+                              onClick={() => importStaticRender(r, idx)}
+                              disabled={renderImporting === r.slug}
+                              className="text-[10px] tracking-[0.08em] uppercase font-bold font-[var(--font-inter)] px-3 py-1.5 border border-[#3b6934] text-[#3b6934] hover:bg-[#3b6934] hover:text-white transition-colors disabled:opacity-50"
+                            >
+                              {renderImporting === r.slug ? "…" : "↓ Importar"}
+                            </button>
+                          </td>
+                        </tr>
+                      ))}
+                      {dbRenderProjects.length === 0 && (STATIC_RENDERS as readonly unknown[]).length === 0 && (
+                        <tr><td colSpan={5} className="px-5 py-8 text-center text-[#74777f]">Nenhum render.</td></tr>
+                      )}
                     </tbody>
                   </table>
                 </div>
