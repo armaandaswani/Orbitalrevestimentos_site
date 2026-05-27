@@ -337,6 +337,40 @@ export default function AdminPage() {
   const renderTabFormRef = useRef<HTMLDivElement>(null);
   const [projectImageUploading, setProjectImageUploading] = useState(false);
 
+  // Dynamic project categories (persisted in localStorage)
+  const BASE_CATEGORIES = ["residencial", "comercial", "umido", "nautico"];
+  const [customCategories, setCustomCategories] = useState<string[]>([]);
+  const [newCatInput, setNewCatInput] = useState("");
+
+  useEffect(() => {
+    try {
+      const stored = localStorage.getItem("orbital_custom_cats");
+      if (stored) setCustomCategories(JSON.parse(stored));
+    } catch { /* ignore */ }
+  }, []);
+
+  const allCategories = useMemo(() => {
+    const fromProjects = (dbPhotoProjects ?? []).flatMap((p) => p.categories ?? []);
+    return Array.from(new Set([...BASE_CATEGORIES, ...customCategories, ...fromProjects])).sort();
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [dbPhotoProjects, customCategories]);
+
+  function saveCustomCategories(list: string[]) {
+    setCustomCategories(list);
+    try { localStorage.setItem("orbital_custom_cats", JSON.stringify(list)); } catch { /* ignore */ }
+  }
+
+  function addNewCategory(raw: string) {
+    const name = raw.trim().toLowerCase().replace(/\s+/g, "-");
+    if (!name || allCategories.includes(name)) return name;
+    saveCustomCategories([...customCategories, name]);
+    return name;
+  }
+
+  function removeCustomCategory(name: string) {
+    saveCustomCategories(customCategories.filter((c) => c !== name));
+  }
+
   const supabaseConfigured = !!process.env.NEXT_PUBLIC_SUPABASE_URL;
 
   useEffect(() => {
@@ -3450,6 +3484,64 @@ export default function AdminPage() {
         {/* ═══ PROJETOS TAB ═══ */}
         {tab === "projetos" && (
           <div>
+            {/* ── Categories management panel ── */}
+            <div className="bg-white border border-[#e2e2e2] p-4 mb-8">
+              <p className="font-[var(--font-inter)] text-[10px] tracking-[0.15em] uppercase font-bold text-[#002045] mb-3">Categorias de Projetos</p>
+              <div className="flex flex-wrap gap-2 mb-3">
+                {allCategories.map((cat) => {
+                  const isBase = BASE_CATEGORIES.includes(cat);
+                  const isFromProject = !isBase && !customCategories.includes(cat);
+                  return (
+                    <span
+                      key={cat}
+                      className={`inline-flex items-center gap-1.5 px-2.5 py-1 text-[11px] font-bold font-[var(--font-inter)] tracking-wide ${isBase ? "bg-[#eef2f8] text-[#002045]" : "bg-[#f0f5ec] text-[#3b6934]"}`}
+                    >
+                      {cat}
+                      {isBase && <span className="text-[9px] font-normal text-[#74777f] tracking-normal">base</span>}
+                      {isFromProject && <span className="text-[9px] font-normal text-[#74777f] tracking-normal">via projeto</span>}
+                      {!isBase && !isFromProject && (
+                        <button
+                          type="button"
+                          onClick={() => removeCustomCategory(cat)}
+                          title="Remover categoria"
+                          className="text-[#74777f] hover:text-red-600 transition-colors leading-none ml-0.5"
+                        >
+                          ×
+                        </button>
+                      )}
+                    </span>
+                  );
+                })}
+              </div>
+              {/* Quick-add a standalone category */}
+              <div className="flex gap-2 items-center">
+                <input
+                  type="text"
+                  value={newCatInput}
+                  onChange={(e) => setNewCatInput(e.target.value)}
+                  onKeyDown={(e) => {
+                    if (e.key === "Enter") {
+                      e.preventDefault();
+                      addNewCategory(newCatInput);
+                      setNewCatInput("");
+                    }
+                  }}
+                  className="border border-[#e2e2e2] px-3 py-1.5 text-sm font-[var(--font-inter)] text-[#43474e] focus:outline-none focus:border-[#002045] w-48"
+                  placeholder="nova categoria..."
+                />
+                <button
+                  type="button"
+                  onClick={() => { addNewCategory(newCatInput); setNewCatInput(""); }}
+                  className="px-3 py-1.5 bg-[#002045] text-white text-[10px] tracking-[0.08em] uppercase font-bold font-[var(--font-inter)] hover:bg-[#1a365d] transition-colors whitespace-nowrap"
+                >
+                  + Criar
+                </button>
+              </div>
+              <p className="text-[#b0b0b0] text-[10px] font-[var(--font-inter)] mt-2">
+                Categorias &ldquo;base&rdquo; são fixas. Categorias &ldquo;via projeto&rdquo; existem pois já estão em uso — para removê-las edite os projetos que as usam. Categorias criadas aqui aparecem imediatamente nos formulários.
+              </p>
+            </div>
+
             {/* Section 1: Fotos Reais */}
             <div className="mb-10">
               <div className="flex items-center justify-between mb-6">
@@ -3497,8 +3589,8 @@ export default function AdminPage() {
                     </div>
                     <div className="mb-4">
                       <label className={labelCls}>Categorias</label>
-                      <div className="flex flex-wrap gap-3">
-                        {["residencial","comercial","umido","nautico"].map((cat) => (
+                      <div className="flex flex-wrap gap-3 mb-2">
+                        {allCategories.map((cat) => (
                           <label key={cat} className="flex items-center gap-1.5 text-sm font-[var(--font-inter)] text-[#43474e] cursor-pointer">
                             <input type="checkbox" checked={photoForm.categories.includes(cat)} onChange={(e) => {
                               setPhotoForm({...photoForm, categories: e.target.checked ? [...photoForm.categories, cat] : photoForm.categories.filter(c => c !== cat)});
@@ -3506,6 +3598,39 @@ export default function AdminPage() {
                             {cat}
                           </label>
                         ))}
+                      </div>
+                      {/* Inline: add a brand-new category */}
+                      <div className="flex gap-2 items-center">
+                        <input
+                          type="text"
+                          value={newCatInput}
+                          onChange={(e) => setNewCatInput(e.target.value)}
+                          onKeyDown={(e) => {
+                            if (e.key === "Enter") {
+                              e.preventDefault();
+                              const name = addNewCategory(newCatInput);
+                              if (name && !photoForm.categories.includes(name)) {
+                                setPhotoForm(prev => ({ ...prev, categories: [...prev.categories, name] }));
+                              }
+                              setNewCatInput("");
+                            }
+                          }}
+                          className="border border-[#e2e2e2] px-3 py-1.5 text-sm font-[var(--font-inter)] text-[#43474e] focus:outline-none focus:border-[#002045] w-44"
+                          placeholder="nova categoria..."
+                        />
+                        <button
+                          type="button"
+                          onClick={() => {
+                            const name = addNewCategory(newCatInput);
+                            if (name && !photoForm.categories.includes(name)) {
+                              setPhotoForm(prev => ({ ...prev, categories: [...prev.categories, name] }));
+                            }
+                            setNewCatInput("");
+                          }}
+                          className="px-3 py-1.5 bg-[#002045] text-white text-[10px] tracking-[0.08em] uppercase font-bold font-[var(--font-inter)] hover:bg-[#1a365d] transition-colors whitespace-nowrap"
+                        >
+                          + Criar
+                        </button>
                       </div>
                     </div>
                     <div className="mb-4">
