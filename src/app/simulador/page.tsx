@@ -220,6 +220,7 @@ function SimuladorInner() {
   const [sqmInput, setSqmInput] = useState("");
   const [clientName, setClientName] = useState("");
   const [clientEmail, setClientEmail] = useState("");
+  const [clientPhone, setClientPhone] = useState("");
   const [simSubmitting, setSimSubmitting] = useState(false);
   const [simSubmitted, setSimSubmitted] = useState(false);
   const [couponCode, setCouponCode] = useState("");
@@ -410,7 +411,7 @@ function SimuladorInner() {
   }
 
   async function handleSubmitAndShow() {
-    if (!clientName.trim() || !clientEmail.trim()) return;
+    if (!clientName.trim() || !clientEmail.trim() || !clientPhone.trim()) return;
     if (couponCode.trim() && !couponData) await validateCoupon();
 
     setSimSubmitting(true);
@@ -454,6 +455,7 @@ function SimuladorInner() {
             coupon_use_id: couponUseId,
             client_name: clientName.trim(),
             client_email: clientEmail.trim(),
+            client_phone: clientPhone.trim(),
             space: selectedSpace?.label ?? null,
             model: selectedProduct?.linha ?? "Classic",
             plates,
@@ -476,7 +478,8 @@ function SimuladorInner() {
   const canAdvance2 = selectedProduct !== null;
   const canCalculate = m2 > 0;
   const validEmail = /^[^\s@]+@[^\s@]+\.[^\s@]{2,}$/.test(clientEmail.trim());
-  const canAdvance4 = clientName.trim().length > 0 && validEmail;
+  const validPhone = clientPhone.trim().replace(/\D/g, "").length >= 10;
+  const canAdvance4 = clientName.trim().length > 0 && validEmail && validPhone;
 
   const STEPS = [
     { n: 1 as const, label: "Espaço" },
@@ -1024,6 +1027,7 @@ function SimuladorInner() {
                     required
                     value={clientEmail}
                     onChange={(e) => setClientEmail(e.target.value)}
+                    onKeyDown={(e) => { if (e.key === "Enter") { e.preventDefault(); (document.getElementById("contato-phone-input") as HTMLInputElement)?.focus(); } }}
                     placeholder="ex: joao@email.com"
                     className="w-full border border-[#e2e2e2] px-4 py-3 text-sm font-[var(--font-inter)] text-[#002045] focus:outline-none focus:border-[#002045] transition-colors"
                   />
@@ -1036,6 +1040,23 @@ function SimuladorInner() {
                       Você receberá o orçamento detalhado e acompanhamento por e-mail.
                     </p>
                   )}
+                </div>
+                <div>
+                  <label className="block text-[10px] tracking-[0.15em] uppercase font-bold font-[var(--font-inter)] text-[#74777f] mb-2">
+                    WhatsApp <span className="text-red-500">*</span>
+                  </label>
+                  <input
+                    id="contato-phone-input"
+                    type="tel"
+                    required
+                    value={clientPhone}
+                    onChange={(e) => setClientPhone(e.target.value)}
+                    placeholder="ex: (92) 99999-0000"
+                    className="w-full border border-[#e2e2e2] px-4 py-3 text-sm font-[var(--font-inter)] text-[#002045] focus:outline-none focus:border-[#002045] transition-colors"
+                  />
+                  <p className="text-[#74777f] text-[10px] font-[var(--font-inter)] mt-1.5">
+                    Um consultor poderá entrar em contato pelo WhatsApp.
+                  </p>
                 </div>
               </div>
 
@@ -1117,11 +1138,7 @@ function SimuladorInner() {
                       ✓ Cupom <span className="tracking-widest">{couponData.coupon_code}</span> aplicado!
                     </p>
                     <p className="text-[#3b6934]/80 text-xs font-[var(--font-inter)] mt-0.5">
-                      Desconto de{" "}
-                      {couponData.discount_type === "percentage"
-                        ? `${couponData.discount_value}%`
-                        : fmt(couponData.discount_value)}{" "}
-                      no material.
+                      Desconto aplicado no material.
                     </p>
                   </div>
                 )}

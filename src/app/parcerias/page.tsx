@@ -54,7 +54,7 @@ const segments: Segment[] = [
     image: "/images/catalogue/aplicacao-sala.jpeg",
     waText: "Olá! Sou arquiteto/urbanista e vim pela aba de Arquitetos no site. Gostaria de conhecer as condições para especificação de projetos com o PFB Orbital.",
     stat: { value: "+5 anos", label: "de aparência preservada" },
-    ctaLabel: "Solicitar amostras para projeto",
+    ctaLabel: "Saber mais sobre as condições de parceria",
     highlight: "Arquitetos parceiros têm acesso a condições exclusivas e amostras gratuitas.",
   },
   {

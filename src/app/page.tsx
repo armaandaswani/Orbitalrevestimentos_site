@@ -465,9 +465,9 @@ export default function Home() {
               <div className="grid grid-cols-2 gap-3">
                 {[
                   { src: "/images/catalogue/lavabo-real.jpeg", label: "Lavabo" },
-                  { src: "/images/catalogue/projeto-escritorio-depois.jpeg", label: "Escritório" },
+                  { src: "/images/catalogue/projeto-escritorio-depois.jpeg", label: "Comercial — Restaurante" },
                   { src: "/images/catalogue/projeto-varanda.jpeg", label: "Banheiro" },
-                  { src: "/images/catalogue/page13_img5_924x1629.jpeg", label: "Parede Residencial" },
+                  { src: "/images/catalogue/page13_img5_924x1629.jpeg", label: "Escritório" },
                 ].map(({ src, label }, i) => (
                   <ScrollReveal key={label} delay={i * 80} direction="up">
                     <div className="relative aspect-square sm:aspect-[4/5] overflow-hidden group">

@@ -135,7 +135,7 @@ export default function AdminPage() {
   const [authed, setAuthed] = useState(false);
   const [pw, setPw] = useState("");
   const [pwError, setPwError] = useState("");
-  const [tab, setTab] = useState<"partners" | "representantes" | "history" | "campaigns" | "drip" | "clientes" | "commissions" | "produtos" | "projetos" | "midia">("partners");
+  const [tab, setTab] = useState<"partners" | "representantes" | "orcamentos" | "campaigns" | "drip" | "commissions" | "produtos" | "projetos" | "midia">("partners");
   const [commissionFilter, setCommissionFilter] = useState<"a_pagar" | "pago" | "tudo">("a_pagar");
 
   // Partners
@@ -173,6 +173,7 @@ export default function AdminPage() {
   const [repFormError, setRepFormError] = useState("");
   const [repFormLoading, setRepFormLoading] = useState(false);
   const [junctionPartnerCounts, setJunctionPartnerCounts] = useState<Record<string, number>>({});
+  const [expandedRepId, setExpandedRepId] = useState<string | null>(null);
 
   // History
   const [uses, setUses] = useState<CouponUse[]>([]);
@@ -260,6 +261,7 @@ export default function AdminPage() {
     status: string;
     next_email_at: string | null;
     created_at: string;
+    coupon_use_id: string | null;
   }
 
   const [dripSteps, setDripSteps] = useState<DripStep[]>([]);
@@ -276,6 +278,10 @@ export default function AdminPage() {
   const [clients, setClients] = useState<ClientSeq[]>([]);
   const [clientsLoading, setClientsLoading] = useState(false);
   const [clientsExporting, setClientsExporting] = useState(false);
+  const [clientSearch, setClientSearch] = useState("");
+  const [clientStatusFilter, setClientStatusFilter] = useState<string>("all");
+  const [clientPartnerFilter, setClientPartnerFilter] = useState<string>("all");
+  const [deletingClientId, setDeletingClientId] = useState<string | null>(null);
 
   // Follow-up
   interface FollowUp {
@@ -304,6 +310,8 @@ export default function AdminPage() {
   const [productFormError, setProductFormError] = useState("");
   const [productFormLoading, setProductFormLoading] = useState(false);
   const [productImageUploading, setProductImageUploading] = useState(false);
+  const [productImageSubstituting, setProductImageSubstituting] = useState<string | null>(null); // product id being substituted from list
+  const [productImageDims, setProductImageDims] = useState<Record<string, {w: number, h: number}>>({});
   const [galleryImages, setGalleryImages] = useState<ProductImage[]>([]);
   const [galleryUploading, setGalleryUploading] = useState(false);
   const [galleryUploadProgress, setGalleryUploadProgress] = useState<{done: number; total: number} | null>(null);
@@ -450,8 +458,8 @@ export default function AdminPage() {
   }, [tab, authed, fetchDripSteps]);
 
   useEffect(() => {
-    if (tab === "clientes" && authed) fetchClients();
-  }, [tab, authed, fetchClients]);
+    if (tab === "orcamentos" && authed) { fetchClients(); fetchUses(); }
+  }, [tab, authed, fetchClients, fetchUses]);
 
   useEffect(() => { if (tab === "produtos" && authed) fetchDbProducts(); }, [tab, authed, fetchDbProducts]);
   useEffect(() => { if (tab === "projetos" && authed) fetchProjects(); }, [tab, authed, fetchProjects]);
@@ -642,6 +650,18 @@ export default function AdminPage() {
     setDripEditSaving(false);
   }
 
+  async function deleteClient(id: string) {
+    if (!confirm("Excluir este cliente e toda a sua sequência de emails?")) return;
+    setDeletingClientId(id);
+    const res = await fetch("/api/admin/clients", {
+      method: "DELETE",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ id }),
+    });
+    if (res.ok) setClients((prev) => prev.filter((c) => c.id !== id));
+    setDeletingClientId(null);
+  }
+
   async function exportClients() {
     setClientsExporting(true);
     const res = await fetch("/api/admin/clients/export");
@@ -747,6 +767,31 @@ export default function AdminPage() {
     const url = await uploadDirect(file, folder);
     setProductImageUploading(false);
     return url;
+  }
+
+  async function substituteProductCoverImage(product: DbProduct, file: File) {
+    setProductImageSubstituting(product.id);
+    const url = await uploadDirect(file, "products");
+    if (url) {
+      const res = await fetch(`/api/products/${product.id}`, {
+        method: "PUT",
+        headers: { "Content-Type": "application/json", "x-admin-auth": ADMIN_PW },
+        body: JSON.stringify({
+          code: product.code, name: product.name, linha: product.linha,
+          finish: product.finish, price: product.price, price_per_m2: product.price_per_m2,
+          description: product.description, image_path: url,
+          is_active: product.is_active, sort_order: product.sort_order,
+        }),
+      });
+      if (res.ok) {
+        setDbProducts(prev => prev.map(p => p.id === product.id ? { ...p, image_path: url } : p));
+        // Also update the form if this product is currently being edited
+        if (editingProductId === product.id) {
+          setProductForm(prev => ({ ...prev, image_path: url }));
+        }
+      }
+    }
+    setProductImageSubstituting(null);
   }
 
   // ── Product CRUD ─────────────────────────
@@ -1274,6 +1319,45 @@ export default function AdminPage() {
   const totalRepCommission = concludedUses.reduce((a, u) => a + (u.sales_rep_commission_owed || 0), 0);
   const pendingCommission = filteredUses.filter((u) => !u.sale_status || u.sale_status === "em_orcamento").reduce((a, u) => a + (u.commission_owed || 0), 0);
 
+  // ── Merged Orçamentos view ────────────────────────────────────────────────
+  // Build a lookup of coupon_use by id for quick join
+  const useById = useMemo(() => {
+    const map: Record<string, CouponUse> = {};
+    for (const u of uses) map[u.id] = u;
+    return map;
+  }, [uses]);
+
+  const enrichedClients = useMemo(() => {
+    return clients.map((c) => ({
+      ...c,
+      couponUse: c.coupon_use_id ? (useById[c.coupon_use_id] ?? null) : null,
+    }));
+  }, [clients, useById]);
+
+  const filteredClients = useMemo(() => {
+    return enrichedClients.filter((c) => {
+      const search = clientSearch.trim().toLowerCase();
+      if (search) {
+        const name = c.client_name?.toLowerCase() ?? "";
+        const email = c.client_email?.toLowerCase() ?? "";
+        if (!name.includes(search) && !email.includes(search)) return false;
+      }
+      if (clientPartnerFilter !== "all") {
+        const coupon = c.couponUse?.coupon_code;
+        if (coupon !== clientPartnerFilter) return false;
+      }
+      if (clientStatusFilter !== "all") {
+        if (clientStatusFilter === "sem_cupom") {
+          if (c.coupon_use_id) return false;
+        } else {
+          const saleStatus = c.couponUse?.sale_status ?? "em_orcamento";
+          if (saleStatus !== clientStatusFilter) return false;
+        }
+      }
+      return true;
+    });
+  }, [enrichedClients, clientSearch, clientPartnerFilter, clientStatusFilter]);
+
   const inputCls = "w-full border border-[#e2e2e2] px-4 py-2.5 text-sm font-[var(--font-inter)] text-[#002045] focus:outline-none focus:border-[#002045]";
   const labelCls = "block text-[10px] tracking-[0.15em] uppercase font-bold font-[var(--font-inter)] text-[#74777f] mb-2";
 
@@ -1537,9 +1621,9 @@ export default function AdminPage() {
 
       <div className="max-w-7xl mx-auto px-8 py-8">
         <div className="flex gap-1 mb-8 border-b border-[#e2e2e2] flex-wrap">
-          {(["partners", "representantes", "history", "campaigns", "drip", "clientes", "commissions", "produtos", "projetos", "midia"] as const).map((t) => (
+          {(["partners", "representantes", "orcamentos", "campaigns", "drip", "commissions", "produtos", "projetos", "midia"] as const).map((t) => (
             <button key={t} onClick={() => setTab(t)} className={`px-6 py-3 text-xs tracking-[0.1em] uppercase font-bold font-[var(--font-inter)] transition-colors border-b-2 -mb-px flex items-center gap-2 ${tab === t ? "border-[#002045] text-[#002045]" : "border-transparent text-[#74777f] hover:text-[#002045]"}`}>
-              {t === "partners" ? "Parceiros" : t === "representantes" ? "Representantes" : t === "history" ? "Histórico" : t === "campaigns" ? "Campanhas" : t === "drip" ? "Drip de Emails" : t === "commissions" ? "Comissões" : t === "produtos" ? "Produtos" : t === "projetos" ? "Projetos" : t === "midia" ? "Mídia" : "Clientes"}
+              {t === "partners" ? "Parceiros" : t === "representantes" ? "Representantes" : t === "orcamentos" ? "Orçamentos" : t === "campaigns" ? "Campanhas" : t === "drip" ? "Drip de Emails" : t === "commissions" ? "Comissões" : t === "produtos" ? "Produtos" : t === "projetos" ? "Projetos" : "Mídia"}
               {t === "partners" && pendingPartners.length > 0 && (
                 <span className="bg-yellow-400 text-yellow-900 text-[9px] font-bold px-1.5 py-0.5 rounded-full leading-none">
                   {pendingPartners.length}
@@ -2167,28 +2251,87 @@ export default function AdminPage() {
                       salesReps.map((r) => {
                         const legacyRepCount = partners.filter((p) => p.sales_rep_referral_code === r.referral_code).length;
                         const repPartnerCount = Math.max(legacyRepCount, junctionPartnerCounts[r.id] || 0);
+                        const isExpanded = expandedRepId === r.id;
+                        // Partners linked to this rep (junction or legacy referral code)
+                        const repPartners = partners.filter((p) => {
+                          const viaJunction = p.partner_sales_reps?.some((psr) => psr.sales_reps?.id === r.id);
+                          const viaLegacy = p.sales_rep_referral_code === r.referral_code;
+                          return viaJunction || viaLegacy;
+                        });
                         return (
-                          <tr key={r.id} className="border-b border-[#f0f0f0] hover:bg-[#fafafa]">
-                            <td className="px-5 py-4"><p className="font-semibold text-[#002045]">{r.name}</p>{r.email && <p className="text-xs text-[#74777f]">{r.email}</p>}</td>
-                            <td className="px-5 py-4"><span className="bg-[#eef2f8] text-[#002045] px-2 py-1 text-xs font-bold tracking-wider">{r.referral_code}</span></td>
-                            <td className="px-5 py-4 text-[#43474e]">{r.commission_type === "percentage" ? `${r.commission_value}%` : fmt(r.commission_value)} <span className="text-xs text-[#74777f]">da venda</span></td>
-                            <td className="px-5 py-4 text-[#43474e] font-semibold">{repPartnerCount}</td>
-                            <td className="px-5 py-4 text-xs text-[#74777f]">{r.portal_password ? <span className="font-mono text-[#43474e]">{r.portal_password}</span> : <span className="italic">—</span>}</td>
-                            <td className="px-5 py-4">
-                              <span className={`px-2 py-1 text-[10px] font-bold tracking-wider ${r.status === "active" ? "bg-green-100 text-green-800" : "bg-gray-100 text-gray-600"}`}>
-                                {r.status === "active" ? "Ativo" : "Inativo"}
-                              </span>
-                            </td>
-                            <td className="px-5 py-4">
-                              <div className="flex gap-2">
-                                <button onClick={() => startEditRep(r)} className="text-[#1a365d] text-xs font-semibold hover:text-[#002045]">Editar</button>
-                                <span className="text-[#e2e2e2]">|</span>
-                                <button onClick={() => toggleRepStatus(r)} className="text-[#74777f] text-xs font-semibold hover:text-[#002045]">{r.status === "active" ? "Desativar" : "Ativar"}</button>
-                                <span className="text-[#e2e2e2]">|</span>
-                                <button onClick={() => deleteRep(r)} className="text-red-500 text-xs font-semibold hover:text-red-700">Excluir</button>
-                              </div>
-                            </td>
-                          </tr>
+                          <React.Fragment key={r.id}>
+                            <tr className={`border-b border-[#f0f0f0] hover:bg-[#fafafa] ${isExpanded ? "bg-[#f8fafc]" : ""}`}>
+                              <td className="px-5 py-4"><p className="font-semibold text-[#002045]">{r.name}</p>{r.email && <p className="text-xs text-[#74777f]">{r.email}</p>}</td>
+                              <td className="px-5 py-4"><span className="bg-[#eef2f8] text-[#002045] px-2 py-1 text-xs font-bold tracking-wider">{r.referral_code}</span></td>
+                              <td className="px-5 py-4 text-[#43474e]">{r.commission_type === "percentage" ? `${r.commission_value}%` : fmt(r.commission_value)} <span className="text-xs text-[#74777f]">da venda</span></td>
+                              <td className="px-5 py-4">
+                                <button
+                                  onClick={() => setExpandedRepId(isExpanded ? null : r.id)}
+                                  className={`font-semibold text-sm transition-colors ${repPartnerCount > 0 ? "text-[#002045] hover:text-[#1a56db] underline decoration-dotted" : "text-[#43474e]"}`}
+                                >
+                                  {repPartnerCount}
+                                  {repPartnerCount > 0 && (
+                                    <span className="ml-1 text-[10px] font-normal no-underline">{isExpanded ? "▲" : "▼"}</span>
+                                  )}
+                                </button>
+                              </td>
+                              <td className="px-5 py-4 text-xs text-[#74777f]">{r.portal_password ? <span className="font-mono text-[#43474e]">{r.portal_password}</span> : <span className="italic">—</span>}</td>
+                              <td className="px-5 py-4">
+                                <span className={`px-2 py-1 text-[10px] font-bold tracking-wider ${r.status === "active" ? "bg-green-100 text-green-800" : "bg-gray-100 text-gray-600"}`}>
+                                  {r.status === "active" ? "Ativo" : "Inativo"}
+                                </span>
+                              </td>
+                              <td className="px-5 py-4">
+                                <div className="flex gap-2">
+                                  <button onClick={() => startEditRep(r)} className="text-[#1a365d] text-xs font-semibold hover:text-[#002045]">Editar</button>
+                                  <span className="text-[#e2e2e2]">|</span>
+                                  <button onClick={() => toggleRepStatus(r)} className="text-[#74777f] text-xs font-semibold hover:text-[#002045]">{r.status === "active" ? "Desativar" : "Ativar"}</button>
+                                  <span className="text-[#e2e2e2]">|</span>
+                                  <button onClick={() => deleteRep(r)} className="text-red-500 text-xs font-semibold hover:text-red-700">Excluir</button>
+                                </div>
+                              </td>
+                            </tr>
+                            {isExpanded && (
+                              <tr>
+                                <td colSpan={7} className="p-0 border-b border-[#e2e2e2]">
+                                  <div className="bg-[#f0f4fa] px-6 py-4">
+                                    <p className="text-[10px] tracking-[0.2em] uppercase font-bold text-[#002045] font-[var(--font-inter)] mb-3">
+                                      Parceiros de {r.name}
+                                    </p>
+                                    {repPartners.length === 0 ? (
+                                      <p className="text-sm text-[#74777f] font-[var(--font-inter)] italic">Nenhum parceiro vinculado a este representante.</p>
+                                    ) : (
+                                      <table className="w-full text-xs font-[var(--font-inter)] bg-white border border-[#e2e2e2]">
+                                        <thead>
+                                          <tr className="border-b border-[#e2e2e2]">
+                                            {["Nome", "Email", "Telefone", "Cupom", "Status", "Cadastro"].map((h) => (
+                                              <th key={h} className="text-left px-4 py-2 text-[9px] tracking-[0.15em] uppercase font-bold text-[#74777f] whitespace-nowrap">{h}</th>
+                                            ))}
+                                          </tr>
+                                        </thead>
+                                        <tbody>
+                                          {repPartners.map((p) => (
+                                            <tr key={p.id} className="border-b border-[#f0f0f0] hover:bg-[#fafafa]">
+                                              <td className="px-4 py-2.5 font-semibold text-[#002045]">{p.name}</td>
+                                              <td className="px-4 py-2.5 text-[#43474e]">{p.email || <span className="italic text-[#74777f]">—</span>}</td>
+                                              <td className="px-4 py-2.5 text-[#43474e]">{p.phone || <span className="italic text-[#74777f]">—</span>}</td>
+                                              <td className="px-4 py-2.5"><span className="bg-[#eef2f8] text-[#002045] px-1.5 py-0.5 font-bold tracking-wider">{p.coupon_code}</span></td>
+                                              <td className="px-4 py-2.5">
+                                                <span className={`px-1.5 py-0.5 text-[9px] font-bold tracking-wider ${p.status === "active" ? "bg-green-100 text-green-800" : p.status === "pending" ? "bg-yellow-100 text-yellow-800" : "bg-gray-100 text-gray-600"}`}>
+                                                  {p.status === "active" ? "Ativo" : p.status === "pending" ? "Pendente" : "Inativo"}
+                                                </span>
+                                              </td>
+                                              <td className="px-4 py-2.5 text-[#74777f]">{new Date(p.created_at).toLocaleDateString("pt-BR")}</td>
+                                            </tr>
+                                          ))}
+                                        </tbody>
+                                      </table>
+                                    )}
+                                  </div>
+                                </td>
+                              </tr>
+                            )}
+                          </React.Fragment>
                         );
                       })
                     )}
@@ -2453,105 +2596,187 @@ export default function AdminPage() {
           </div>
         )}
 
-        {/* ═══ HISTORY TAB ═══ */}
-        {tab === "history" && (
+        {/* ═══ ORÇAMENTOS TAB (merged Clientes + Histórico) ═══ */}
+        {tab === "orcamentos" && (
           <div>
-            <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4 mb-6">
-              <h2 className="font-[var(--font-noto-serif)] text-[#002045] text-xl font-normal">Histórico de Usos</h2>
+            {/* Header + filters */}
+            <div className="flex flex-col gap-4 mb-6">
+              <div className="flex flex-wrap items-center justify-between gap-3">
+                <div className="flex items-center gap-3">
+                  <h2 className="font-[var(--font-noto-serif)] text-[#002045] text-xl font-normal">Orçamentos</h2>
+                  {!clientsLoading && (
+                    <span className="bg-[#eef2f8] text-[#002045] text-[10px] font-bold font-[var(--font-inter)] tracking-wider px-2 py-0.5">
+                      {filteredClients.length}
+                    </span>
+                  )}
+                </div>
+                <button
+                  onClick={exportClients}
+                  disabled={clientsExporting}
+                  className="bg-[#002045] text-white text-xs tracking-[0.12em] uppercase font-bold font-[var(--font-inter)] px-5 py-2.5 hover:bg-[#1a365d] transition-colors disabled:opacity-50"
+                >
+                  {clientsExporting ? "Exportando..." : "Exportar CSV"}
+                </button>
+              </div>
+              {/* Filters */}
               <div className="flex flex-wrap items-center gap-3">
-                <div className="flex items-center gap-2">
-                  <label className="text-[10px] tracking-[0.15em] uppercase font-bold font-[var(--font-inter)] text-[#74777f] whitespace-nowrap">Parceiro:</label>
-                  <select value={filterPartner} onChange={(e) => setFilterPartner(e.target.value)} className="border border-[#e2e2e2] px-3 py-2 text-sm font-[var(--font-inter)] text-[#002045] focus:outline-none focus:border-[#002045] min-w-[140px]">
-                    <option value="all">Todos</option>
-                    {partners.filter((p) => p.status === "active").map((p) => (
-                      <option key={p.id} value={p.coupon_code}>{p.name} ({p.coupon_code})</option>
-                    ))}
-                  </select>
-                </div>
-                <div className="flex items-center gap-2">
-                  <label className="text-[10px] tracking-[0.15em] uppercase font-bold font-[var(--font-inter)] text-[#74777f] whitespace-nowrap">Representante:</label>
-                  <select value={filterRep} onChange={(e) => setFilterRep(e.target.value)} className="border border-[#e2e2e2] px-3 py-2 text-sm font-[var(--font-inter)] text-[#002045] focus:outline-none focus:border-[#002045] min-w-[140px]">
-                    <option value="all">Todos</option>
-                    {salesReps.map((r) => (
-                      <option key={r.id} value={r.referral_code}>{r.name} ({r.referral_code})</option>
-                    ))}
-                  </select>
-                </div>
+                <input
+                  type="text"
+                  placeholder="Buscar por nome ou e-mail…"
+                  value={clientSearch}
+                  onChange={(e) => setClientSearch(e.target.value)}
+                  className="border border-[#e2e2e2] px-3 py-2 text-sm font-[var(--font-inter)] text-[#002045] focus:outline-none focus:border-[#002045] min-w-[220px]"
+                />
+                <select value={clientStatusFilter} onChange={(e) => setClientStatusFilter(e.target.value)} className="border border-[#e2e2e2] px-3 py-2 text-sm font-[var(--font-inter)] text-[#002045] focus:outline-none focus:border-[#002045]">
+                  <option value="all">Todos os status</option>
+                  <option value="em_orcamento">Em orçamento</option>
+                  <option value="concluido">Concluído</option>
+                  <option value="cancelado">Cancelado</option>
+                  <option value="sem_cupom">Sem cupom</option>
+                </select>
+                <select value={clientPartnerFilter} onChange={(e) => setClientPartnerFilter(e.target.value)} className="border border-[#e2e2e2] px-3 py-2 text-sm font-[var(--font-inter)] text-[#002045] focus:outline-none focus:border-[#002045]">
+                  <option value="all">Todos os parceiros</option>
+                  {partners.filter((p) => p.status === "active").map((p) => (
+                    <option key={p.id} value={p.coupon_code}>{p.name}</option>
+                  ))}
+                </select>
               </div>
             </div>
 
-            <div className="grid grid-cols-2 sm:grid-cols-4 gap-4 mb-8">
-              <div className="bg-white border border-[#e2e2e2] px-6 py-5">
-                <p className="text-[#74777f] text-[10px] tracking-[0.15em] uppercase font-bold font-[var(--font-inter)] mb-1">Total de usos</p>
-                <p className="font-[var(--font-noto-serif)] text-[#002045] text-3xl font-normal">{filteredUses.length}</p>
+            {clientsLoading || loadingUses ? (
+              <p className="text-[#74777f] text-sm font-[var(--font-inter)]">Carregando...</p>
+            ) : filteredClients.length === 0 ? (
+              <div className="bg-white border border-[#e2e2e2] px-6 py-12 text-center">
+                <p className="text-[#74777f] text-sm font-[var(--font-inter)]">Nenhum orçamento encontrado.</p>
               </div>
-              <div className="bg-white border border-[#e2e2e2] px-6 py-5">
-                <p className="text-[#74777f] text-[10px] tracking-[0.15em] uppercase font-bold font-[var(--font-inter)] mb-1">Vendas concluídas</p>
-                <p className="font-[var(--font-noto-serif)] text-[#002045] text-3xl font-normal">{fmt(totalSales)}</p>
-              </div>
-              <div className="bg-white border border-[#e2e2e2] px-6 py-5">
-                <p className="text-[#74777f] text-[10px] tracking-[0.15em] uppercase font-bold font-[var(--font-inter)] mb-1">Comissão parceiros</p>
-                <p className="font-[var(--font-noto-serif)] text-[#002045] text-3xl font-normal">{fmt(totalCommission)}</p>
-              </div>
-              <div className="bg-white border border-[#e2e2e2] px-6 py-5">
-                <p className="text-[#74777f] text-[10px] tracking-[0.15em] uppercase font-bold font-[var(--font-inter)] mb-1">Comissão representantes</p>
-                <p className="font-[var(--font-noto-serif)] text-[#002045] text-3xl font-normal">{fmt(totalRepCommission)}</p>
-              </div>
-            </div>
-
-            {loadingUses ? <p className="text-[#74777f] text-sm font-[var(--font-inter)]">Carregando...</p> : (
-              <div className="bg-white border border-[#e2e2e2] overflow-x-auto">
-                <table className="w-full text-sm font-[var(--font-inter)]">
-                  <thead>
-                    <tr className="border-b border-[#e2e2e2]">
-                      {["Data", "Cupom", "Rep.", "Produto", "Espaço", "Área", "Material", "Desconto", "Com. Parceiro", "Com. Rep.", "Status"].map((h) => (
-                        <th key={h} className="text-left px-4 py-3 text-[10px] tracking-[0.1em] uppercase font-bold text-[#74777f] whitespace-nowrap">{h}</th>
-                      ))}
-                    </tr>
-                  </thead>
-                  <tbody>
-                    {filteredUses.length === 0 ? (
-                      <tr><td colSpan={11} className="px-5 py-8 text-center text-[#74777f]">Nenhum uso registrado.</td></tr>
-                    ) : (
-                      filteredUses.map((u) => {
-                        const st = u.sale_status || "em_orcamento";
-                        const stMeta = STATUS_LABELS[st] || STATUS_LABELS.em_orcamento;
+            ) : (
+              <>
+                {/* Desktop table — 8 cols, no overflow-x */}
+                <div className="hidden sm:block bg-white border border-[#e2e2e2]">
+                  <table className="w-full text-sm font-[var(--font-inter)] table-fixed">
+                    <colgroup>
+                      <col className="w-[90px]" />
+                      <col className="w-[22%]" />
+                      <col className="w-[18%]" />
+                      <col className="w-[10%]" />
+                      <col className="w-[14%]" />
+                      <col className="w-[14%]" />
+                      <col className="w-[9%]" />
+                      <col className="w-[7%]" />
+                    </colgroup>
+                    <thead>
+                      <tr className="border-b border-[#e2e2e2]">
+                        {["Data", "Cliente", "Espaço · Modelo", "Total", "Parceiro", "Status orçamento", "Drip", ""].map((h) => (
+                          <th key={h} className="text-left px-4 py-3 text-[10px] tracking-[0.1em] uppercase font-bold text-[#74777f]">{h}</th>
+                        ))}
+                      </tr>
+                    </thead>
+                    <tbody>
+                      {filteredClients.map((c) => {
+                        const cu = c.couponUse;
+                        const saleStatus = cu?.sale_status ?? null;
+                        const stMeta = saleStatus ? (STATUS_LABELS[saleStatus] ?? STATUS_LABELS.em_orcamento) : null;
+                        const dripCls = c.status === "active" ? "bg-yellow-100 text-yellow-800" : c.status === "completed" ? "bg-green-100 text-green-800" : "bg-gray-100 text-gray-600";
+                        const dripLabel = c.status === "active" ? `Passo ${c.current_step}` : c.status === "completed" ? "Concluído" : "Inativo";
                         return (
-                          <tr key={u.id} className="border-b border-[#f0f0f0] hover:bg-[#fafafa]">
-                            <td className="px-4 py-3 text-xs text-[#43474e] whitespace-nowrap">{new Date(u.created_at).toLocaleDateString("pt-BR")}</td>
-                            <td className="px-4 py-3"><span className="bg-[#eef2f8] text-[#002045] px-2 py-0.5 text-xs font-bold tracking-wider">{u.coupon_code}</span></td>
-                            <td className="px-4 py-3 text-xs text-[#74777f]">{u.sales_rep_referral_code || "—"}</td>
-                            <td className="px-4 py-3 text-xs text-[#43474e]"><p className="font-semibold">{u.product_name}</p><p className="text-[#74777f]">{u.product_code}</p></td>
-                            <td className="px-4 py-3 text-xs text-[#43474e]">{u.space || "—"}</td>
-                            <td className="px-4 py-3 text-xs text-[#43474e]">{u.area_m2 ?? "—"}</td>
-                            <td className="px-4 py-3 text-xs text-[#43474e]">{u.material_total ? fmt(u.material_total) : "—"}</td>
-                            <td className="px-4 py-3 text-xs text-green-700 font-semibold">{u.discount_applied ? fmt(u.discount_applied) : "—"}</td>
-                            <td className="px-4 py-3 text-xs text-[#002045] font-semibold">{u.commission_owed ? fmt(u.commission_owed) : "—"}</td>
-                            <td className="px-4 py-3 text-xs text-[#1a365d] font-semibold">{u.sales_rep_commission_owed ? fmt(u.sales_rep_commission_owed) : "—"}</td>
+                          <tr key={c.id} className="border-b border-[#f0f0f0] hover:bg-[#fafafa]">
+                            <td className="px-4 py-3 text-xs text-[#74777f]">{new Date(c.created_at).toLocaleDateString("pt-BR")}</td>
                             <td className="px-4 py-3">
-                              <select value={st} onChange={(e) => updateSaleStatus(u.id, e.target.value)} className={`text-[10px] font-bold tracking-wide px-2 py-1 border-0 cursor-pointer focus:outline-none focus:ring-1 focus:ring-[#002045] ${stMeta.cls}`}>
-                                <option value="em_orcamento">Em orçamento</option>
-                                <option value="concluido">Concluído</option>
-                                <option value="cancelado">Cancelado</option>
-                              </select>
+                              <p className="font-semibold text-[#002045] text-xs truncate">{c.client_name}</p>
+                              <p className="text-[10px] text-[#74777f] truncate">{c.client_email}</p>
+                            </td>
+                            <td className="px-4 py-3 text-xs text-[#43474e]">
+                              <p className="truncate">{c.space || "—"}</p>
+                              <p className="text-[10px] text-[#74777f]">{c.model} · {c.plates} placa{c.plates !== 1 ? "s" : ""}</p>
+                            </td>
+                            <td className="px-4 py-3 text-xs font-semibold text-[#002045] whitespace-nowrap">
+                              {c.total != null ? c.total.toLocaleString("pt-BR", { style: "currency", currency: "BRL", maximumFractionDigits: 0 }) : "—"}
+                            </td>
+                            <td className="px-4 py-3 text-xs text-[#43474e]">
+                              {cu ? (
+                                <div>
+                                  <p className="truncate">{c.partner_name}</p>
+                                  <span className="text-[10px] bg-[#eef2f8] text-[#002045] px-1.5 py-0.5 font-bold tracking-wider">{cu.coupon_code}</span>
+                                </div>
+                              ) : (
+                                <span className="text-[#74777f] italic text-[10px]">Sem cupom</span>
+                              )}
+                            </td>
+                            <td className="px-4 py-3">
+                              {cu ? (
+                                <select
+                                  value={saleStatus ?? "em_orcamento"}
+                                  onChange={(e) => updateSaleStatus(cu.id, e.target.value)}
+                                  className={`text-[10px] font-bold tracking-wide px-2 py-1 border-0 cursor-pointer focus:outline-none focus:ring-1 focus:ring-[#002045] w-full ${stMeta?.cls ?? STATUS_LABELS.em_orcamento.cls}`}
+                                >
+                                  <option value="em_orcamento">Em orçamento</option>
+                                  <option value="concluido">Concluído</option>
+                                  <option value="cancelado">Cancelado</option>
+                                </select>
+                              ) : (
+                                <span className="text-[10px] text-[#74777f] italic">—</span>
+                              )}
+                            </td>
+                            <td className="px-4 py-3">
+                              <span className={`text-[10px] font-bold px-1.5 py-0.5 ${dripCls}`}>{dripLabel}</span>
+                              {c.next_email_at && c.status === "active" && (
+                                <p className="text-[9px] text-[#74777f] mt-0.5">{new Date(c.next_email_at).toLocaleDateString("pt-BR")}</p>
+                              )}
+                            </td>
+                            <td className="px-4 py-3 text-right">
                               <button
-                                onClick={() => deleteCouponUse(u.id)}
-                                title="Excluir orçamento"
-                                className="mt-1.5 flex items-center gap-1 text-red-400 hover:text-red-600 transition-colors text-[10px] font-[var(--font-inter)]"
+                                onClick={() => deleteClient(c.id)}
+                                disabled={deletingClientId === c.id}
+                                className="text-red-400 hover:text-red-600 transition-colors disabled:opacity-40"
+                                title="Excluir cliente"
                               >
-                                <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
                                   <path d="M3 6h18M8 6V4h8v2M19 6l-1 14H6L5 6" />
                                 </svg>
-                                Excluir
                               </button>
                             </td>
                           </tr>
                         );
-                      })
-                    )}
-                  </tbody>
-                </table>
-              </div>
+                      })}
+                    </tbody>
+                  </table>
+                </div>
+
+                {/* Mobile cards */}
+                <div className="sm:hidden space-y-3">
+                  {filteredClients.map((c) => {
+                    const cu = c.couponUse;
+                    const saleStatus = cu?.sale_status ?? null;
+                    const stMeta = saleStatus ? (STATUS_LABELS[saleStatus] ?? STATUS_LABELS.em_orcamento) : null;
+                    const dripCls = c.status === "active" ? "bg-yellow-100 text-yellow-800" : c.status === "completed" ? "bg-green-100 text-green-800" : "bg-gray-100 text-gray-600";
+                    const dripLabel = c.status === "active" ? `Drip passo ${c.current_step}` : c.status === "completed" ? "Drip concluído" : "Drip inativo";
+                    return (
+                      <div key={c.id} className="bg-white border border-[#e2e2e2] px-5 py-4">
+                        <div className="flex items-start justify-between mb-2">
+                          <div className="flex-1 min-w-0">
+                            <p className="font-semibold text-[#002045] text-sm font-[var(--font-inter)] truncate">{c.client_name}</p>
+                            <p className="text-xs text-[#74777f] font-[var(--font-inter)] truncate">{c.client_email}</p>
+                          </div>
+                          <div className="flex items-center gap-2 ml-2 flex-shrink-0">
+                            {stMeta && <span className={`text-[10px] font-bold px-2 py-0.5 ${stMeta.cls}`}>{stMeta.label}</span>}
+                            <button onClick={() => deleteClient(c.id)} disabled={deletingClientId === c.id} className="text-red-400 hover:text-red-600 disabled:opacity-40">
+                              <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><path d="M3 6h18M8 6V4h8v2M19 6l-1 14H6L5 6" /></svg>
+                            </button>
+                          </div>
+                        </div>
+                        <div className="grid grid-cols-2 gap-x-4 gap-y-1 text-xs font-[var(--font-inter)] text-[#43474e]">
+                          <span><span className="text-[#74777f]">Espaço:</span> {c.space || "—"}</span>
+                          <span><span className="text-[#74777f]">Modelo:</span> {c.model}</span>
+                          <span><span className="text-[#74777f]">Total:</span> {c.total != null ? c.total.toLocaleString("pt-BR", { style: "currency", currency: "BRL", maximumFractionDigits: 0 }) : "—"}</span>
+                          <span><span className="text-[#74777f]">Parceiro:</span> {cu ? c.partner_name : "Sem cupom"}</span>
+                          <span className="col-span-2"><span className="text-[#74777f]">Drip:</span> <span className={`text-[10px] font-bold px-1.5 py-0.5 ${dripCls}`}>{dripLabel}</span></span>
+                          <span className="col-span-2 text-[#74777f] text-[10px]">{new Date(c.created_at).toLocaleDateString("pt-BR")}</span>
+                        </div>
+                      </div>
+                    );
+                  })}
+                </div>
+              </>
             )}
           </div>
         )}
@@ -2714,118 +2939,6 @@ export default function AdminPage() {
                   );
                 })}
               </div>
-            )}
-          </div>
-        )}
-
-        {/* ═══ CLIENTES TAB ═══ */}
-        {tab === "clientes" && (
-          <div>
-            <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4 mb-6">
-              <div className="flex items-center gap-3">
-                <h2 className="font-[var(--font-noto-serif)] text-[#002045] text-xl font-normal">Lista de Clientes</h2>
-                {!clientsLoading && (
-                  <span className="bg-[#eef2f8] text-[#002045] text-[10px] font-bold font-[var(--font-inter)] tracking-wider px-2 py-0.5">
-                    {clients.length}
-                  </span>
-                )}
-              </div>
-              <button
-                onClick={exportClients}
-                disabled={clientsExporting}
-                className="bg-[#002045] text-white text-xs tracking-[0.12em] uppercase font-bold font-[var(--font-inter)] px-5 py-2.5 hover:bg-[#1a365d] transition-colors disabled:opacity-50"
-              >
-                {clientsExporting ? "Exportando..." : "Exportar CSV"}
-              </button>
-            </div>
-
-            {clientsLoading ? (
-              <p className="text-[#74777f] text-sm font-[var(--font-inter)]">Carregando...</p>
-            ) : clients.length === 0 ? (
-              <div className="bg-white border border-[#e2e2e2] px-6 py-12 text-center">
-                <p className="text-[#74777f] text-sm font-[var(--font-inter)]">Nenhum cliente registrado ainda.</p>
-              </div>
-            ) : (
-              <>
-                {/* Desktop table */}
-                <div className="hidden sm:block bg-white border border-[#e2e2e2] overflow-x-auto">
-                  <table className="w-full text-sm font-[var(--font-inter)]">
-                    <thead>
-                      <tr className="border-b border-[#e2e2e2]">
-                        {["Data", "Nome", "Email", "Espaço", "Modelo", "Placas", "Total", "Parceiro", "Passo", "Status", "Próx. Email"].map((h) => (
-                          <th key={h} className="text-left px-4 py-3 text-[10px] tracking-[0.1em] uppercase font-bold text-[#74777f] whitespace-nowrap">{h}</th>
-                        ))}
-                      </tr>
-                    </thead>
-                    <tbody>
-                      {clients.map((c) => {
-                        const statusCls =
-                          c.status === "active"
-                            ? "bg-yellow-100 text-yellow-800"
-                            : c.status === "completed"
-                            ? "bg-green-100 text-green-800"
-                            : "bg-red-100 text-red-700";
-                        const statusLabel =
-                          c.status === "active" ? "Ativo" : c.status === "completed" ? "Concluído" : c.status === "cancelled" ? "Cancelado" : c.status;
-                        return (
-                          <tr key={c.id} className="border-b border-[#f0f0f0] hover:bg-[#fafafa]">
-                            <td className="px-4 py-3 text-xs text-[#43474e] whitespace-nowrap">{new Date(c.created_at).toLocaleDateString("pt-BR")}</td>
-                            <td className="px-4 py-3 text-xs text-[#002045] font-semibold whitespace-nowrap">{c.client_name}</td>
-                            <td className="px-4 py-3 text-xs text-[#74777f]">{c.client_email}</td>
-                            <td className="px-4 py-3 text-xs text-[#43474e]">{c.space || "—"}</td>
-                            <td className="px-4 py-3 text-xs text-[#43474e]">{c.model}</td>
-                            <td className="px-4 py-3 text-xs text-[#43474e]">{c.plates}</td>
-                            <td className="px-4 py-3 text-xs text-[#002045] font-semibold whitespace-nowrap">
-                              {c.total != null ? c.total.toLocaleString("pt-BR", { style: "currency", currency: "BRL", maximumFractionDigits: 0 }) : "—"}
-                            </td>
-                            <td className="px-4 py-3 text-xs text-[#43474e]">{c.partner_name}</td>
-                            <td className="px-4 py-3 text-xs text-[#43474e] text-center">{c.current_step}</td>
-                            <td className="px-4 py-3">
-                              <span className={`text-[10px] font-bold px-2 py-0.5 ${statusCls}`}>{statusLabel}</span>
-                            </td>
-                            <td className="px-4 py-3 text-xs text-[#74777f] whitespace-nowrap">
-                              {c.next_email_at ? new Date(c.next_email_at).toLocaleDateString("pt-BR") : "—"}
-                            </td>
-                          </tr>
-                        );
-                      })}
-                    </tbody>
-                  </table>
-                </div>
-
-                {/* Mobile cards */}
-                <div className="sm:hidden space-y-3">
-                  {clients.map((c) => {
-                    const statusCls =
-                      c.status === "active"
-                        ? "bg-yellow-100 text-yellow-800"
-                        : c.status === "completed"
-                        ? "bg-green-100 text-green-800"
-                        : "bg-red-100 text-red-700";
-                    const statusLabel =
-                      c.status === "active" ? "Ativo" : c.status === "completed" ? "Concluído" : c.status === "cancelled" ? "Cancelado" : c.status;
-                    return (
-                      <div key={c.id} className="bg-white border border-[#e2e2e2] px-5 py-4">
-                        <div className="flex items-start justify-between mb-2">
-                          <div>
-                            <p className="font-semibold text-[#002045] text-sm font-[var(--font-inter)]">{c.client_name}</p>
-                            <p className="text-xs text-[#74777f] font-[var(--font-inter)]">{c.client_email}</p>
-                          </div>
-                          <span className={`text-[10px] font-bold px-2 py-0.5 flex-shrink-0 ml-2 ${statusCls}`}>{statusLabel}</span>
-                        </div>
-                        <div className="grid grid-cols-2 gap-x-4 gap-y-1 text-xs font-[var(--font-inter)] text-[#43474e]">
-                          <span><span className="text-[#74777f]">Modelo:</span> {c.model}</span>
-                          <span><span className="text-[#74777f]">Placas:</span> {c.plates}</span>
-                          <span><span className="text-[#74777f]">Total:</span> {c.total != null ? c.total.toLocaleString("pt-BR", { style: "currency", currency: "BRL", maximumFractionDigits: 0 }) : "—"}</span>
-                          <span><span className="text-[#74777f]">Passo:</span> {c.current_step}</span>
-                          <span><span className="text-[#74777f]">Parceiro:</span> {c.partner_name}</span>
-                          <span><span className="text-[#74777f]">Cadastro:</span> {new Date(c.created_at).toLocaleDateString("pt-BR")}</span>
-                        </div>
-                      </div>
-                    );
-                  })}
-                </div>
-              </>
             )}
           </div>
         )}
@@ -3010,20 +3123,97 @@ export default function AdminPage() {
                   </div>
                   <div className="mb-4">
                     <label className={labelCls}>Imagem</label>
-                    <div className="flex gap-3 items-start">
-                      <input type="text" value={productForm.image_path} onChange={(e) => setProductForm({...productForm, image_path: e.target.value})} className={inputCls} placeholder="/images/catalogue/..." />
-                      <label className="flex-shrink-0 cursor-pointer bg-[#f0f0f0] border border-[#e2e2e2] px-4 py-2.5 text-xs font-bold font-[var(--font-inter)] text-[#002045] hover:bg-[#e8e8e8] transition-colors whitespace-nowrap">
-                        {productImageUploading ? "Enviando..." : "Upload"}
-                        <input type="file" accept="image/*" className="hidden" onChange={async (e) => {
-                          const file = e.target.files?.[0];
-                          if (!file) return;
-                          const url = await uploadImage(file, "products");
-                          if (url) setProductForm((prev) => ({...prev, image_path: url}));
-                        }} />
-                      </label>
-                    </div>
-                    {productForm.image_path && (
-                      <img src={productForm.image_path} alt="preview" className="mt-2 h-24 object-cover border border-[#e2e2e2]" />
+                    {productForm.image_path ? (
+                      /* Card view — matches Mídia tab style */
+                      <div className="border border-[#e2e2e2] overflow-hidden">
+                        {/* Preview */}
+                        <div className="relative bg-[#f0f0f0] overflow-hidden" style={{ maxHeight: "220px", aspectRatio: "4/3" }}>
+                          {/* eslint-disable-next-line @next/next/no-img-element */}
+                          <img
+                            src={productForm.image_path}
+                            alt="preview"
+                            className="absolute inset-0 w-full h-full object-cover object-top"
+                            onLoad={(e) => {
+                              const img = e.currentTarget;
+                              if (img.naturalWidth > 0) {
+                                setProductImageDims(prev => ({
+                                  ...prev,
+                                  [productForm.image_path]: { w: img.naturalWidth, h: img.naturalHeight }
+                                }));
+                              }
+                            }}
+                          />
+                          <div className={`absolute top-2 right-2 text-[9px] tracking-[0.1em] uppercase font-bold font-[var(--font-inter)] px-2 py-1 ${productForm.image_path.startsWith("https://") ? "bg-[#3b6934] text-white" : "bg-white/90 text-[#74777f]"}`}>
+                            {productForm.image_path.startsWith("https://") ? "Substituída" : "Original"}
+                          </div>
+                        </div>
+                        {/* Info + actions */}
+                        <div className="px-4 py-3 flex flex-col gap-3">
+                          {/* Dimensions */}
+                          {productImageDims[productForm.image_path] && (
+                            <div className="bg-[#f9f9f9] border border-[#e2e2e2] px-3 py-2">
+                              <div className="flex items-center justify-between">
+                                <span className="text-[#74777f] text-[10px] font-[var(--font-inter)]">Dimensões nativas</span>
+                                <span className="text-[#002045] text-[10px] font-bold font-[var(--font-inter)]">
+                                  {productImageDims[productForm.image_path].w} × {productImageDims[productForm.image_path].h} px
+                                </span>
+                              </div>
+                            </div>
+                          )}
+                          {/* Path edit */}
+                          <input
+                            type="text"
+                            value={productForm.image_path}
+                            onChange={(e) => setProductForm({...productForm, image_path: e.target.value})}
+                            className={inputCls + " text-xs"}
+                            placeholder="/images/catalogue/..."
+                          />
+                          {/* Action buttons */}
+                          <div className="flex gap-2">
+                            <a
+                              href={productForm.image_path}
+                              download
+                              target="_blank"
+                              rel="noopener noreferrer"
+                              className="flex-1 text-center text-[10px] tracking-[0.08em] uppercase font-bold font-[var(--font-inter)] px-3 py-2 border border-[#1a365d] text-[#1a365d] hover:bg-[#1a365d] hover:text-white transition-colors"
+                            >
+                              Download
+                            </a>
+                            <label className="flex-1 text-center text-[10px] tracking-[0.08em] uppercase font-bold font-[var(--font-inter)] px-3 py-2 bg-[#002045] text-white hover:bg-[#1a365d] transition-colors cursor-pointer">
+                              {productImageUploading ? "Enviando…" : "Substituir"}
+                              <input type="file" accept="image/*" className="hidden" onChange={async (e) => {
+                                const file = e.target.files?.[0];
+                                if (!file) return;
+                                const url = await uploadImage(file, "products");
+                                if (url) setProductForm((prev) => ({...prev, image_path: url}));
+                                e.target.value = "";
+                              }} />
+                            </label>
+                            <button
+                              type="button"
+                              onClick={() => setProductForm(prev => ({...prev, image_path: ""}))}
+                              className="px-3 py-2 border border-red-300 text-red-600 text-[10px] tracking-[0.08em] uppercase font-bold font-[var(--font-inter)] hover:bg-red-50 transition-colors"
+                              title="Remover imagem"
+                            >
+                              Remover
+                            </button>
+                          </div>
+                        </div>
+                      </div>
+                    ) : (
+                      /* Empty state — text input + upload */
+                      <div className="flex gap-3 items-start">
+                        <input type="text" value={productForm.image_path} onChange={(e) => setProductForm({...productForm, image_path: e.target.value})} className={inputCls} placeholder="/images/catalogue/..." />
+                        <label className="flex-shrink-0 cursor-pointer bg-[#f0f0f0] border border-[#e2e2e2] px-4 py-2.5 text-xs font-bold font-[var(--font-inter)] text-[#002045] hover:bg-[#e8e8e8] transition-colors whitespace-nowrap">
+                          {productImageUploading ? "Enviando..." : "Upload"}
+                          <input type="file" accept="image/*" className="hidden" onChange={async (e) => {
+                            const file = e.target.files?.[0];
+                            if (!file) return;
+                            const url = await uploadImage(file, "products");
+                            if (url) setProductForm((prev) => ({...prev, image_path: url}));
+                          }} />
+                        </label>
+                      </div>
                     )}
                   </div>
                   {/* Gallery — only available when editing an existing product */}
@@ -3140,16 +3330,88 @@ export default function AdminPage() {
                 <table className="w-full text-sm font-[var(--font-inter)]">
                   <thead>
                     <tr className="border-b border-[#e2e2e2]">
-                      {["Código","Nome","Linha","Preço","Status","Ações"].map(h => (
-                        <th key={h} className="text-left px-4 py-3 text-[10px] tracking-[0.1em] uppercase font-bold text-[#74777f] whitespace-nowrap">{h}</th>
+                      {["Imagem","Código","Nome","Linha","Preço","Status","Ações"].map(h => (
+                        <th key={h} className={`text-left px-4 py-3 text-[10px] tracking-[0.1em] uppercase font-bold text-[#74777f] whitespace-nowrap${h === "Imagem" ? " w-20" : ""}`}>{h}</th>
                       ))}
                     </tr>
                   </thead>
                   <tbody>
                     {dbProducts.length === 0 ? (
-                      <tr><td colSpan={6} className="px-5 py-8 text-center text-[#74777f]">Nenhum produto cadastrado. Clique em &ldquo;+ Novo Produto&rdquo; para adicionar.</td></tr>
+                      <tr><td colSpan={7} className="px-5 py-8 text-center text-[#74777f]">Nenhum produto cadastrado. Clique em &ldquo;+ Novo Produto&rdquo; para adicionar.</td></tr>
                     ) : dbProducts.map((p) => (
                       <tr key={p.id} className="border-b border-[#f0f0f0] hover:bg-[#fafafa]">
+                        {/* Image thumbnail with download + substitute */}
+                        <td className="px-3 py-2 w-20">
+                          <div className="relative group w-16 h-16 bg-[#f0f0f0] overflow-hidden flex-shrink-0">
+                            {p.image_path ? (
+                              <>
+                                {/* Hidden img to capture natural dimensions */}
+                                {/* eslint-disable-next-line @next/next/no-img-element */}
+                                <img
+                                  src={p.image_path}
+                                  alt={p.name}
+                                  className="w-full h-full object-cover"
+                                  onLoad={(e) => {
+                                    const img = e.currentTarget;
+                                    if (img.naturalWidth > 0) {
+                                      setProductImageDims(prev => ({
+                                        ...prev,
+                                        [p.image_path]: { w: img.naturalWidth, h: img.naturalHeight }
+                                      }));
+                                    }
+                                  }}
+                                />
+                                {/* Substituted badge */}
+                                {p.image_path.startsWith("https://") && (
+                                  <div className="absolute top-0.5 left-0.5 bg-[#3b6934] text-white text-[7px] font-bold tracking-wide px-1 py-0.5 leading-none">SUBST.</div>
+                                )}
+                                {/* Hover overlay: download + substitute */}
+                                <div className="absolute inset-0 bg-black/0 group-hover:bg-black/60 transition-colors flex flex-col items-center justify-center gap-1 opacity-0 group-hover:opacity-100">
+                                  <a
+                                    href={p.image_path}
+                                    download
+                                    target="_blank"
+                                    rel="noopener noreferrer"
+                                    title="Download"
+                                    className="bg-white text-[#002045] text-[8px] font-bold tracking-wide px-2 py-1 hover:bg-[#eef2f8] transition-colors leading-none whitespace-nowrap"
+                                    onClick={e => e.stopPropagation()}
+                                  >
+                                    ↓ DL
+                                  </a>
+                                  <label
+                                    title="Substituir imagem"
+                                    className={`bg-[#002045] text-white text-[8px] font-bold tracking-wide px-2 py-1 hover:bg-[#1a365d] transition-colors leading-none whitespace-nowrap cursor-pointer ${productImageSubstituting === p.id ? "opacity-50 pointer-events-none" : ""}`}
+                                    onClick={e => e.stopPropagation()}
+                                  >
+                                    {productImageSubstituting === p.id ? "…" : "↑ SUB"}
+                                    <input
+                                      type="file"
+                                      accept="image/*"
+                                      className="hidden"
+                                      disabled={productImageSubstituting === p.id}
+                                      onChange={async (e) => {
+                                        const file = e.target.files?.[0];
+                                        if (!file) return;
+                                        await substituteProductCoverImage(p, file);
+                                        e.target.value = "";
+                                      }}
+                                    />
+                                  </label>
+                                </div>
+                              </>
+                            ) : (
+                              <div className="w-full h-full flex items-center justify-center">
+                                <span className="text-[#c0c0c0] text-[9px] font-[var(--font-inter)] text-center leading-tight px-1">sem imagem</span>
+                              </div>
+                            )}
+                          </div>
+                          {/* Dimensions below thumbnail */}
+                          {p.image_path && productImageDims[p.image_path] && (
+                            <p className="text-[9px] text-[#b0b0b0] font-[var(--font-inter)] mt-0.5 text-center leading-none">
+                              {productImageDims[p.image_path].w}×{productImageDims[p.image_path].h}
+                            </p>
+                          )}
+                        </td>
                         <td className="px-4 py-3"><span className="bg-[#eef2f8] text-[#002045] px-2 py-0.5 text-xs font-bold tracking-wider">{p.code}</span></td>
                         <td className="px-4 py-3 text-[#002045] font-medium">
                           {p.name}

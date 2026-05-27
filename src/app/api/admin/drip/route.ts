@@ -12,14 +12,14 @@ const DEFAULT_STEPS = [
     body_html: `
 <p style="font-size:26px;color:#002045;font-weight:700;margin:0 0 6px;font-family:Arial,sans-serif;">{{firstName}},</p>
 <p style="font-size:26px;color:#002045;font-weight:300;margin:0 0 24px;font-family:Arial,sans-serif;">seu orçamento está pronto.</p>
-<p style="color:#43474e;font-size:14px;line-height:1.8;margin:0 0 20px;font-family:Arial,sans-serif;">{{partnerFirst}} preparou esta simulação especialmente para {{spaceLabel}}. Abaixo estão todos os detalhes do seu projeto com os painéis <strong>{{model}}</strong> em acabamento {{finish}}:</p>
+<p style="color:#43474e;font-size:14px;line-height:1.8;margin:0 0 20px;font-family:Arial,sans-serif;">Nossa equipe preparou esta simulação especialmente para {{spaceLabel}}. Abaixo estão todos os detalhes do seu projeto com os painéis <strong>{{model}}</strong> em acabamento {{finish}}:</p>
 {{quoteCard}}
 <p style="color:#43474e;font-size:14px;line-height:1.8;margin:20px 0 12px;font-family:Arial,sans-serif;">Nos próximos dias vamos te enviar mais informações sobre o que torna a Orbital diferente de tudo o que você já viu em revestimentos — incluindo os detalhes técnicos que fazem toda a diferença em um projeto.</p>
-<p style="color:#43474e;font-size:14px;line-height:1.8;margin:0 0 4px;font-family:Arial,sans-serif;">Qualquer dúvida, fale diretamente com {{partnerFirst}}:</p>
+<p style="color:#43474e;font-size:14px;line-height:1.8;margin:0 0 4px;font-family:Arial,sans-serif;">Qualquer dúvida, fale diretamente com um consultor Orbital:</p>
 <table cellpadding="0" cellspacing="0" style="margin:28px 0;">
   <tr>
     <td style="background:#002045;padding:0;">
-      <a href="{{waLink}}" style="display:inline-block;padding:16px 32px;color:#ffffff;text-decoration:none;font-size:12px;font-weight:700;letter-spacing:0.12em;text-transform:uppercase;font-family:Arial,sans-serif;">Falar com {{partnerFirst}}</a>
+      <a href="{{waLink}}" style="display:inline-block;padding:16px 32px;color:#ffffff;text-decoration:none;font-size:12px;font-weight:700;letter-spacing:0.12em;text-transform:uppercase;font-family:Arial,sans-serif;">Falar com um consultor</a>
     </td>
   </tr>
 </table>
@@ -61,7 +61,7 @@ const DEFAULT_STEPS = [
     </td>
   </tr>
 </table>
-<p style="color:#74777f;font-size:12px;line-height:1.7;font-family:Arial,sans-serif;">Tem alguma dúvida técnica? <a href="{{waLink}}" style="color:#002045;text-decoration:underline;">Fale com {{partnerFirst}} pelo WhatsApp.</a></p>
+<p style="color:#74777f;font-size:12px;line-height:1.7;font-family:Arial,sans-serif;">Tem alguma dúvida técnica? <a href="{{waLink}}" style="color:#002045;text-decoration:underline;">Fale com um consultor Orbital pelo WhatsApp.</a></p>
 `,
   },
   {
@@ -113,11 +113,11 @@ const DEFAULT_STEPS = [
     </table>
   </td></tr>
 </table>
-<p style="color:#43474e;font-size:14px;line-height:1.8;margin:0 0 4px;font-family:Arial,sans-serif;">Quer ver esses painéis ao vivo antes de decidir? Nosso showroom em Manaus está disponível — {{partnerFirst}} pode agendar um horário conveniente para você.</p>
+<p style="color:#43474e;font-size:14px;line-height:1.8;margin:0 0 4px;font-family:Arial,sans-serif;">Quer ver esses painéis ao vivo antes de decidir? Nosso showroom em Manaus está disponível — um consultor pode agendar um horário conveniente para você.</p>
 <table cellpadding="0" cellspacing="0" style="margin:28px 0;">
   <tr>
     <td style="background:#002045;padding:0;">
-      <a href="{{waLink}}" style="display:inline-block;padding:16px 32px;color:#ffffff;text-decoration:none;font-size:12px;font-weight:700;letter-spacing:0.12em;text-transform:uppercase;font-family:Arial,sans-serif;">Agendar visita com {{partnerFirst}}</a>
+      <a href="{{waLink}}" style="display:inline-block;padding:16px 32px;color:#ffffff;text-decoration:none;font-size:12px;font-weight:700;letter-spacing:0.12em;text-transform:uppercase;font-family:Arial,sans-serif;">Agendar uma visita</a>
     </td>
   </tr>
 </table>
@@ -149,11 +149,11 @@ const DEFAULT_STEPS = [
 <p style="color:#43474e;font-size:14px;line-height:1.8;margin:0 0 16px;font-family:Arial,sans-serif;">Revestimentos convencionais de qualidade custam entre R$ 80 e R$ 250/m² — e exigem trocas em 8 a 12 anos. Os painéis Orbital, com a manutenção adequada, duram a vida útil do imóvel.</p>
 <p style="color:#43474e;font-size:14px;line-height:1.8;margin:0 0 20px;font-family:Arial,sans-serif;">Essa não é uma despesa de decoração. É uma decisão de infraestrutura — que você vai olhar todos os dias por décadas.</p>
 {{quoteCard}}
-<p style="color:#43474e;font-size:14px;line-height:1.8;margin:0 0 4px;font-family:Arial,sans-serif;">Pronto para garantir este orçamento? {{partnerFirst}} está disponível:</p>
+<p style="color:#43474e;font-size:14px;line-height:1.8;margin:0 0 4px;font-family:Arial,sans-serif;">Pronto para garantir este orçamento? Um consultor Orbital está disponível:</p>
 <table cellpadding="0" cellspacing="0" style="margin:28px 0;">
   <tr>
     <td style="background:#002045;padding:0;">
-      <a href="{{waLink}}" style="display:inline-block;padding:16px 32px;color:#ffffff;text-decoration:none;font-size:12px;font-weight:700;letter-spacing:0.12em;text-transform:uppercase;font-family:Arial,sans-serif;">Confirmar com {{partnerFirst}}</a>
+      <a href="{{waLink}}" style="display:inline-block;padding:16px 32px;color:#ffffff;text-decoration:none;font-size:12px;font-weight:700;letter-spacing:0.12em;text-transform:uppercase;font-family:Arial,sans-serif;">Confirmar com um consultor</a>
     </td>
   </tr>
 </table>
@@ -195,11 +195,11 @@ const DEFAULT_STEPS = [
     <p style="margin:0 0 6px;color:#6b5000;font-size:13px;font-family:Arial,sans-serif;">· Sem retoques, pintura ou rejuntamento no futuro</p>
   </td></tr>
 </table>
-<p style="color:#43474e;font-size:14px;line-height:1.8;margin:0 0 4px;font-family:Arial,sans-serif;">Seu orçamento de <strong>{{total}}</strong> para {{spaceLabel}} ainda está disponível. Fale com {{partnerFirst}}:</p>
+<p style="color:#43474e;font-size:14px;line-height:1.8;margin:0 0 4px;font-family:Arial,sans-serif;">Seu orçamento de <strong>{{total}}</strong> para {{spaceLabel}} ainda está disponível. Fale com um consultor Orbital:</p>
 <table cellpadding="0" cellspacing="0" style="margin:28px 0;">
   <tr>
     <td style="background:#002045;padding:0;">
-      <a href="{{waLink}}" style="display:inline-block;padding:16px 32px;color:#ffffff;text-decoration:none;font-size:12px;font-weight:700;letter-spacing:0.12em;text-transform:uppercase;font-family:Arial,sans-serif;">Falar com {{partnerFirst}}</a>
+      <a href="{{waLink}}" style="display:inline-block;padding:16px 32px;color:#ffffff;text-decoration:none;font-size:12px;font-weight:700;letter-spacing:0.12em;text-transform:uppercase;font-family:Arial,sans-serif;">Falar com um consultor</a>
     </td>
   </tr>
 </table>
@@ -229,11 +229,11 @@ const DEFAULT_STEPS = [
     <p style="margin:0 0 8px;color:#74777f;font-size:13px;font-family:Arial,sans-serif;">→ A transformação que você imaginou continua sendo apenas imaginação</p>
   </td></tr>
 </table>
-<p style="color:#43474e;font-size:14px;line-height:1.8;margin:0 0 4px;font-family:Arial,sans-serif;">Se estiver pronto para dar o próximo passo — ou se ainda tiver alguma dúvida — fale com {{partnerFirst}}. Sem pressão, só clareza.</p>
+<p style="color:#43474e;font-size:14px;line-height:1.8;margin:0 0 4px;font-family:Arial,sans-serif;">Se estiver pronto para dar o próximo passo — ou se ainda tiver alguma dúvida — fale com um consultor Orbital. Sem pressão, só clareza.</p>
 <table cellpadding="0" cellspacing="0" style="margin:28px 0;">
   <tr>
     <td style="background:#002045;padding:0;">
-      <a href="{{waLink}}" style="display:inline-block;padding:16px 32px;color:#ffffff;text-decoration:none;font-size:12px;font-weight:700;letter-spacing:0.12em;text-transform:uppercase;font-family:Arial,sans-serif;">Falar com {{partnerFirst}} agora</a>
+      <a href="{{waLink}}" style="display:inline-block;padding:16px 32px;color:#ffffff;text-decoration:none;font-size:12px;font-weight:700;letter-spacing:0.12em;text-transform:uppercase;font-family:Arial,sans-serif;">Falar com um consultor agora</a>
     </td>
   </tr>
 </table>
@@ -256,7 +256,7 @@ const DEFAULT_STEPS = [
       <p style="margin:0 0 6px;color:#43474e;font-size:12px;font-family:Arial,sans-serif;">✓ {{area}} de {{spaceLabel}} transformados</p>
       <p style="margin:0 0 6px;color:#43474e;font-size:12px;font-family:Arial,sans-serif;">✓ Visual único que dura décadas</p>
       <p style="margin:0 0 6px;color:#43474e;font-size:12px;font-family:Arial,sans-serif;">✓ Decisão que você vai se orgulhar</p>
-      <p style="margin:0 0 6px;color:#43474e;font-size:12px;font-family:Arial,sans-serif;">✓ Suporte completo de {{partnerFirst}}</p>
+      <p style="margin:0 0 6px;color:#43474e;font-size:12px;font-family:Arial,sans-serif;">✓ Suporte completo da equipe Orbital</p>
     </td>
     <td width="4%"></td>
     <td width="48%" style="background:#fff5f5;padding:20px;vertical-align:top;">
@@ -269,11 +269,11 @@ const DEFAULT_STEPS = [
   </tr>
 </table>
 {{quoteCard}}
-<p style="color:#43474e;font-size:14px;line-height:1.8;margin:24px 0 4px;font-family:Arial,sans-serif;">Se este for o momento certo, {{partnerFirst}} está à disposição:</p>
+<p style="color:#43474e;font-size:14px;line-height:1.8;margin:24px 0 4px;font-family:Arial,sans-serif;">Se este for o momento certo, nossa equipe está à disposição:</p>
 <table cellpadding="0" cellspacing="0" style="margin:28px 0;">
   <tr>
     <td style="background:#002045;padding:0;">
-      <a href="{{waLink}}" style="display:inline-block;padding:16px 32px;color:#ffffff;text-decoration:none;font-size:12px;font-weight:700;letter-spacing:0.12em;text-transform:uppercase;font-family:Arial,sans-serif;">Fechar com {{partnerFirst}}</a>
+      <a href="{{waLink}}" style="display:inline-block;padding:16px 32px;color:#ffffff;text-decoration:none;font-size:12px;font-weight:700;letter-spacing:0.12em;text-transform:uppercase;font-family:Arial,sans-serif;">Fechar com um consultor</a>
     </td>
   </tr>
 </table>
@@ -292,7 +292,7 @@ const DEFAULT_STEPS = [
 <table width="100%" cellpadding="0" cellspacing="0" style="background:#f0f9eb;border-left:3px solid #3b6934;margin:24px 0;">
   <tr><td style="padding:24px 28px;">
     <p style="margin:0 0 16px;color:#3b6934;font-size:11px;font-weight:700;text-transform:uppercase;letter-spacing:0.1em;font-family:Arial,sans-serif;">O que acontece agora:</p>
-    <p style="margin:0 0 10px;color:#43474e;font-size:13px;line-height:1.6;font-family:Arial,sans-serif;"><strong style="color:#002045;">1.</strong> {{partnerFirst}} vai confirmar todos os detalhes do pedido com você</p>
+    <p style="margin:0 0 10px;color:#43474e;font-size:13px;line-height:1.6;font-family:Arial,sans-serif;"><strong style="color:#002045;">1.</strong> Um consultor Orbital vai confirmar todos os detalhes do pedido com você</p>
     <p style="margin:0 0 10px;color:#43474e;font-size:13px;line-height:1.6;font-family:Arial,sans-serif;"><strong style="color:#002045;">2.</strong> Verificação de disponibilidade de estoque e prazo estimado</p>
     <p style="margin:0 0 10px;color:#43474e;font-size:13px;line-height:1.6;font-family:Arial,sans-serif;"><strong style="color:#002045;">3.</strong> Agendamento da retirada ou logística no depósito Orbital</p>
     <p style="margin:0 0 10px;color:#43474e;font-size:13px;line-height:1.6;font-family:Arial,sans-serif;"><strong style="color:#002045;">4.</strong> Instalação — podemos indicar profissionais parceiros em Manaus</p>
@@ -306,11 +306,11 @@ const DEFAULT_STEPS = [
     <p style="margin:0 0 6px;color:#74777f;font-size:13px;font-family:Arial,sans-serif;">· Nenhuma manutenção especial necessária além da limpeza regular</p>
   </td></tr>
 </table>
-<p style="color:#43474e;font-size:14px;line-height:1.8;margin:0 0 4px;font-family:Arial,sans-serif;">Qualquer dúvida durante o processo — instalação, logística, especificações — fale com {{partnerFirst}}:</p>
+<p style="color:#43474e;font-size:14px;line-height:1.8;margin:0 0 4px;font-family:Arial,sans-serif;">Qualquer dúvida durante o processo — instalação, logística, especificações — fale com um consultor Orbital:</p>
 <table cellpadding="0" cellspacing="0" style="margin:28px 0;">
   <tr>
     <td style="background:#002045;padding:0;">
-      <a href="{{waLink}}" style="display:inline-block;padding:16px 32px;color:#ffffff;text-decoration:none;font-size:12px;font-weight:700;letter-spacing:0.12em;text-transform:uppercase;font-family:Arial,sans-serif;">Falar com {{partnerFirst}}</a>
+      <a href="{{waLink}}" style="display:inline-block;padding:16px 32px;color:#ffffff;text-decoration:none;font-size:12px;font-weight:700;letter-spacing:0.12em;text-transform:uppercase;font-family:Arial,sans-serif;">Falar com um consultor</a>
     </td>
   </tr>
 </table>
@@ -332,14 +332,14 @@ const DEFAULT_STEPS = [
     <p style="margin:0 0 8px;color:rgba(255,255,255,0.8);font-size:13px;font-family:Arial,sans-serif;">· Modelo {{model}} · {{finish}}</p>
     <p style="margin:0 0 8px;color:rgba(255,255,255,0.8);font-size:13px;font-family:Arial,sans-serif;">· {{plates}} painel(is) · {{area}} de {{spaceLabel}}</p>
     <p style="margin:0 0 16px;color:rgba(255,255,255,0.8);font-size:13px;font-family:Arial,sans-serif;">· Referência: {{total}}</p>
-    <p style="margin:0;color:rgba(255,255,255,0.55);font-size:12px;font-family:Arial,sans-serif;line-height:1.6;">Quando o momento chegar — seja em semanas ou meses — {{partnerFirst}} estará disponível para retomar exatamente de onde paramos. Sem precisar recalcular tudo do zero.</p>
+    <p style="margin:0;color:rgba(255,255,255,0.55);font-size:12px;font-family:Arial,sans-serif;line-height:1.6;">Quando o momento chegar — seja em semanas ou meses — nossa equipe estará disponível para retomar exatamente de onde paramos. Sem precisar recalcular tudo do zero.</p>
   </td></tr>
 </table>
 <p style="color:#43474e;font-size:14px;line-height:1.8;margin:0 0 20px;font-family:Arial,sans-serif;">Nenhuma pressão, nenhum julgamento. Quando estiver pronto, é só falar.</p>
 <table cellpadding="0" cellspacing="0" style="margin:28px 0;">
   <tr>
     <td style="background:#002045;padding:0;">
-      <a href="{{waLink}}" style="display:inline-block;padding:16px 32px;color:#ffffff;text-decoration:none;font-size:12px;font-weight:700;letter-spacing:0.12em;text-transform:uppercase;font-family:Arial,sans-serif;">Falar com {{partnerFirst}} quando estiver pronto</a>
+      <a href="{{waLink}}" style="display:inline-block;padding:16px 32px;color:#ffffff;text-decoration:none;font-size:12px;font-weight:700;letter-spacing:0.12em;text-transform:uppercase;font-family:Arial,sans-serif;">Falar com um consultor quando estiver pronto</a>
     </td>
   </tr>
 </table>

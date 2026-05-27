@@ -151,8 +151,8 @@ export function generateClientEmail(
 <p style="color:#43474e;font-size:14px;line-height:1.8;margin:0 0 20px;font-family:Arial,sans-serif;">Preparamos esta simulação especialmente para ${spacePara}. Abaixo estão todos os detalhes do seu projeto com os painéis <strong>${p.model}</strong> em acabamento ${finish}:</p>
 ${quoteCard(p)}
 <p style="color:#43474e;font-size:14px;line-height:1.8;margin:20px 0 12px;font-family:Arial,sans-serif;">Nos próximos dias vamos te enviar mais informações sobre o que torna a Orbital diferente de tudo o que você já viu em revestimentos — incluindo os detalhes técnicos que fazem toda a diferença em um projeto.</p>
-<p style="color:#43474e;font-size:14px;line-height:1.8;margin:0 0 4px;font-family:Arial,sans-serif;">Qualquer dúvida, fale diretamente com ${partnerFirst}:</p>
-${cta(`Falar com ${partnerFirst}`, wa)}
+<p style="color:#43474e;font-size:14px;line-height:1.8;margin:0 0 4px;font-family:Arial,sans-serif;">Qualquer dúvida, fale diretamente com um consultor Orbital:</p>
+${cta("Falar com um consultor", wa)}
 <p style="color:#74777f;font-size:12px;line-height:1.7;font-family:Arial,sans-serif;">Este orçamento foi preparado com base na sua simulação e pode ser ajustado a qualquer momento. Os preços são válidos conforme disponibilidade de estoque.</p>
 `
       ),
@@ -183,7 +183,7 @@ ${cta(`Falar com ${partnerFirst}`, wa)}
 </table>
 <p style="color:#43474e;font-size:14px;line-height:1.8;margin:0 0 4px;font-family:Arial,sans-serif;">O modelo <strong>${p.model}</strong> que você simulou cobre <strong>${fmtArea(p.area)} m²</strong> do seu ${spaceLabel} com apenas ${p.plates} painel${p.plates !== 1 ? "is" : ""}. Isso é um ambiente inteiro, transformado.</p>
 ${cta("Ver catálogo completo", "https://orbitalrevestimentos.com.br/produtos")}
-<p style="color:#74777f;font-size:12px;line-height:1.7;font-family:Arial,sans-serif;">Tem alguma dúvida técnica? <a href="${wa}" style="color:#002045;text-decoration:underline;">Fale com ${partnerFirst} pelo WhatsApp.</a></p>
+<p style="color:#74777f;font-size:12px;line-height:1.7;font-family:Arial,sans-serif;">Tem alguma dúvida técnica? <a href="${wa}" style="color:#002045;text-decoration:underline;">Fale com um consultor Orbital pelo WhatsApp.</a></p>
 `
       ),
     };
@@ -218,8 +218,8 @@ ${cta("Ver catálogo completo", "https://orbitalrevestimentos.com.br/produtos")}
     </table>`).join("")}
   </td></tr>
 </table>
-<p style="color:#43474e;font-size:14px;line-height:1.8;margin:0 0 4px;font-family:Arial,sans-serif;">Quer ver esses painéis ao vivo antes de decidir? Entre em contato com ${partnerFirst} e agende um horário conveniente para você.</p>
-${cta(`Agendar visita com ${partnerFirst}`, wa)}
+<p style="color:#43474e;font-size:14px;line-height:1.8;margin:0 0 4px;font-family:Arial,sans-serif;">Quer ver esses painéis ao vivo antes de decidir? Entre em contato com um consultor Orbital e agende um horário conveniente para você.</p>
+${cta("Agendar uma visita", wa)}
 `
       ),
     };
@@ -254,8 +254,8 @@ ${cta(`Agendar visita com ${partnerFirst}`, wa)}
 <p style="color:#43474e;font-size:14px;line-height:1.8;margin:0 0 16px;font-family:Arial,sans-serif;">Revestimentos convencionais de qualidade custam entre R$ 80 e R$ 250/m² — e exigem trocas em 8 a 12 anos. Os painéis Orbital, com a manutenção adequada, duram a vida útil do imóvel.</p>
 <p style="color:#43474e;font-size:14px;line-height:1.8;margin:0 0 20px;font-family:Arial,sans-serif;">Essa não é uma despesa de decoração. É uma decisão de infraestrutura — que você vai olhar todos os dias por décadas.</p>
 ${quoteCard(p)}
-<p style="color:#43474e;font-size:14px;line-height:1.8;margin:0 0 4px;font-family:Arial,sans-serif;">Pronto para garantir este orçamento? ${partnerFirst} está disponível:</p>
-${cta(`Confirmar com ${partnerFirst}`, wa)}
+<p style="color:#43474e;font-size:14px;line-height:1.8;margin:0 0 4px;font-family:Arial,sans-serif;">Pronto para garantir este orçamento? Um consultor Orbital está disponível:</p>
+${cta("Confirmar com um consultor", wa)}
 `
       ),
     };
@@ -289,8 +289,8 @@ ${cta(`Confirmar com ${partnerFirst}`, wa)}
     ${["Pano úmido com detergente neutro — semanal", "Evitar produtos abrasivos e ácidos", "Nenhuma selagem periódica necessária", "Sem retoques, pintura ou rejuntamento no futuro"].map(i => `<p style="margin:0 0 6px;color:#6b5000;font-size:13px;font-family:Arial,sans-serif;">· ${i}</p>`).join("")}
   </td></tr>
 </table>
-<p style="color:#43474e;font-size:14px;line-height:1.8;margin:0 0 4px;font-family:Arial,sans-serif;">O seu orçamento de <strong>${fmtBRL(p.total)}</strong> para ${spacePara} ainda está disponível. Fale com ${partnerFirst}:</p>
-${cta(`Falar com ${partnerFirst}`, wa)}
+<p style="color:#43474e;font-size:14px;line-height:1.8;margin:0 0 4px;font-family:Arial,sans-serif;">O seu orçamento de <strong>${fmtBRL(p.total)}</strong> para ${spacePara} ainda está disponível. Fale com um consultor Orbital:</p>
+${cta("Falar com um consultor", wa)}
 `
       ),
     };
@@ -323,8 +323,8 @@ ${cta(`Falar com ${partnerFirst}`, wa)}
     ].map(i => `<p style="margin:0 0 8px;color:#74777f;font-size:13px;font-family:Arial,sans-serif;">→ ${i}</p>`).join("")}
   </td></tr>
 </table>
-<p style="color:#43474e;font-size:14px;line-height:1.8;margin:0 0 4px;font-family:Arial,sans-serif;">Se estiver pronto para dar o próximo passo — ou se ainda tiver alguma dúvida — fale com ${partnerFirst}. Sem pressão, só clareza.</p>
-${cta(`Falar com ${partnerFirst} agora`, wa)}
+<p style="color:#43474e;font-size:14px;line-height:1.8;margin:0 0 4px;font-family:Arial,sans-serif;">Se estiver pronto para dar o próximo passo — ou se ainda tiver alguma dúvida — fale com um consultor Orbital. Sem pressão, só clareza.</p>
+${cta("Falar com um consultor agora", wa)}
 <p style="color:#74777f;font-size:12px;line-height:1.7;font-family:Arial,sans-serif;">Seu orçamento: <strong>${fmtBRL(p.total)}</strong> · ${p.plates} painel${p.plates !== 1 ? "is" : ""} ${p.model} · ${fmtArea(p.area)} m²</p>
 `
       ),
@@ -349,7 +349,7 @@ ${cta(`Falar com ${partnerFirst} agora`, wa)}
         fmtArea(p.area) + " m² do seu " + spaceLabel + " transformados",
         "Visual único que dura décadas",
         "Decisão que você vai se orgulhar",
-        "Suporte completo de " + partnerFirst,
+        "Suporte completo da equipe Orbital",
       ].map(i => `<p style="margin:0 0 6px;color:#43474e;font-size:12px;font-family:Arial,sans-serif;">✓ ${i}</p>`).join("")}
     </td>
     <td width="4%"></td>
@@ -365,8 +365,8 @@ ${cta(`Falar com ${partnerFirst} agora`, wa)}
   </tr>
 </table>
 ${quoteCard(p)}
-<p style="color:#43474e;font-size:14px;line-height:1.8;margin:24px 0 4px;font-family:Arial,sans-serif;">Se este for o momento certo, ${partnerFirst} está à disposição:</p>
-${cta(`Fechar com ${partnerFirst}`, wa)}
+<p style="color:#43474e;font-size:14px;line-height:1.8;margin:24px 0 4px;font-family:Arial,sans-serif;">Se este for o momento certo, nossa equipe está à disposição:</p>
+${cta("Fechar com um consultor", wa)}
 <p style="color:#74777f;font-size:12px;line-height:1.7;font-family:Arial,sans-serif;">Não enviaremos mais mensagens sobre este orçamento após hoje. Quando estiver pronto — seja em dias ou meses — é só entrar em contato. Obrigado pela atenção, ${first}.</p>
 `
       ),
