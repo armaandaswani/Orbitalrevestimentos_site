@@ -251,6 +251,7 @@ export default function AdminPage() {
     id: string;
     client_name: string;
     client_email: string;
+    client_phone: string | null;
     space: string | null;
     model: string;
     plates: number;
@@ -263,6 +264,8 @@ export default function AdminPage() {
     created_at: string;
     coupon_use_id: string | null;
   }
+
+  const DRIP_TOTAL_STEPS = 7;
 
   const [dripSteps, setDripSteps] = useState<DripStep[]>([]);
   const [dripLoading, setDripLoading] = useState(false);
@@ -1391,6 +1394,31 @@ export default function AdminPage() {
       return true;
     });
   }, [enrichedClients, clientSearch, clientPartnerFilter, clientStatusFilter]);
+
+  const orcamentosStats = useMemo(() => {
+    const emAberto = filteredClients.filter((c) => c.couponUse?.sale_status === "em_orcamento" || (!c.couponUse && c.status === "active")).length;
+    const concluidos = filteredClients.filter((c) => c.couponUse?.sale_status === "concluido").length;
+    const totalReceita = filteredClients.reduce((sum, c) => sum + (c.total ?? 0), 0);
+    const comParceiro = filteredClients.filter((c) => !!c.couponUse).length;
+    const dripAtivos = filteredClients.filter((c) => c.status === "active").length;
+    return { emAberto, concluidos, totalReceita, comParceiro, dripAtivos };
+  }, [filteredClients]);
+
+  function nextEmailLabel(next_email_at: string): string {
+    const ms = new Date(next_email_at).getTime() - Date.now();
+    const days = Math.ceil(ms / (1000 * 60 * 60 * 24));
+    if (days <= 0) return "Enviando em breve";
+    if (days === 1) return "Próx. amanhã";
+    return `Próx. em ${days}d`;
+  }
+
+  function ageBadge(created_at: string, status: string) {
+    const days = Math.floor((Date.now() - new Date(created_at).getTime()) / (1000 * 60 * 60 * 24));
+    if (days === 0) return { label: "hoje", cls: "text-green-700 font-bold" };
+    if (days === 1) return { label: "ontem", cls: "text-[#74777f]" };
+    if (days >= 14 && status === "active") return { label: `${days}d — frio`, cls: "text-red-500 font-bold" };
+    return { label: `${days}d atrás`, cls: "text-[#b0b0b0]" };
+  }
 
   const inputCls = "w-full border border-[#e2e2e2] px-4 py-2.5 text-sm font-[var(--font-inter)] text-[#002045] focus:outline-none focus:border-[#002045]";
   const labelCls = "block text-[10px] tracking-[0.15em] uppercase font-bold font-[var(--font-inter)] text-[#74777f] mb-2";
@@ -2677,6 +2705,25 @@ export default function AdminPage() {
               </div>
             </div>
 
+            {/* Stats bar */}
+            {!clientsLoading && !loadingUses && filteredClients.length > 0 && (
+              <div className="grid grid-cols-2 sm:grid-cols-5 gap-3 mb-5">
+                {[
+                  { label: "Total", value: filteredClients.length, sub: "orçamentos" },
+                  { label: "Em aberto", value: orcamentosStats.emAberto, sub: "em orçamento" },
+                  { label: "Concluídos", value: orcamentosStats.concluidos, sub: "finalizados" },
+                  { label: "Receita pot.", value: orcamentosStats.totalReceita.toLocaleString("pt-BR", { style: "currency", currency: "BRL", maximumFractionDigits: 0 }), sub: "sem descontos" },
+                  { label: "Drip ativo", value: orcamentosStats.dripAtivos, sub: `de ${filteredClients.length}` },
+                ].map((s) => (
+                  <div key={s.label} className="bg-white border border-[#e2e2e2] px-4 py-3">
+                    <p className="text-[9px] tracking-[0.1em] uppercase font-bold font-[var(--font-inter)] text-[#74777f]">{s.label}</p>
+                    <p className="text-lg font-semibold font-[var(--font-noto-serif)] text-[#002045] mt-0.5 leading-none">{s.value}</p>
+                    <p className="text-[9px] text-[#b0b0b0] font-[var(--font-inter)] mt-0.5">{s.sub}</p>
+                  </div>
+                ))}
+              </div>
+            )}
+
             {clientsLoading || loadingUses ? (
               <p className="text-[#74777f] text-sm font-[var(--font-inter)]">Carregando...</p>
             ) : filteredClients.length === 0 ? (
@@ -2689,18 +2736,18 @@ export default function AdminPage() {
                 <div className="hidden sm:block bg-white border border-[#e2e2e2]">
                   <table className="w-full text-sm font-[var(--font-inter)] table-fixed">
                     <colgroup>
-                      <col className="w-[90px]" />
-                      <col className="w-[22%]" />
-                      <col className="w-[18%]" />
-                      <col className="w-[10%]" />
-                      <col className="w-[14%]" />
-                      <col className="w-[14%]" />
-                      <col className="w-[9%]" />
-                      <col className="w-[7%]" />
+                      <col style={{width:"9%"}} />
+                      <col style={{width:"20%"}} />
+                      <col style={{width:"16%"}} />
+                      <col style={{width:"9%"}} />
+                      <col style={{width:"13%"}} />
+                      <col style={{width:"13%"}} />
+                      <col style={{width:"17%"}} />
+                      <col style={{width:"3%"}} />
                     </colgroup>
                     <thead>
                       <tr className="border-b border-[#e2e2e2]">
-                        {["Data", "Cliente", "Espaço · Modelo", "Total", "Parceiro", "Status orçamento", "Drip", ""].map((h) => (
+                        {["Data", "Cliente", "Orçamento", "Total", "Parceiro", "Status venda", "Emails / Drip", ""].map((h) => (
                           <th key={h} className="text-left px-4 py-3 text-[10px] tracking-[0.1em] uppercase font-bold text-[#74777f]">{h}</th>
                         ))}
                       </tr>
@@ -2710,22 +2757,38 @@ export default function AdminPage() {
                         const cu = c.couponUse;
                         const saleStatus = cu?.sale_status ?? null;
                         const stMeta = saleStatus ? (STATUS_LABELS[saleStatus] ?? STATUS_LABELS.em_orcamento) : null;
-                        const dripCls = c.status === "active" ? "bg-yellow-100 text-yellow-800" : c.status === "completed" ? "bg-green-100 text-green-800" : "bg-gray-100 text-gray-600";
-                        const dripLabel = c.status === "active" ? `Passo ${c.current_step}` : c.status === "completed" ? "Concluído" : "Inativo";
+                        const age = ageBadge(c.created_at, c.status);
+                        const waHref = c.client_phone ? `https://wa.me/55${c.client_phone.replace(/\D/g, "")}` : null;
                         return (
                           <tr key={c.id} className="border-b border-[#f0f0f0] hover:bg-[#fafafa]">
-                            <td className="px-4 py-3 text-xs text-[#74777f]">{new Date(c.created_at).toLocaleDateString("pt-BR")}</td>
+                            {/* Data + age */}
+                            <td className="px-4 py-3">
+                              <p className="text-xs text-[#74777f]">{new Date(c.created_at).toLocaleDateString("pt-BR")}</p>
+                              <p className={`text-[9px] mt-0.5 ${age.cls}`}>{age.label}</p>
+                            </td>
+                            {/* Cliente + WA */}
                             <td className="px-4 py-3">
                               <p className="font-semibold text-[#002045] text-xs truncate">{c.client_name}</p>
                               <p className="text-[10px] text-[#74777f] truncate">{c.client_email}</p>
+                              {waHref && (
+                                <a href={waHref} target="_blank" rel="noopener noreferrer"
+                                  className="inline-flex items-center gap-1 text-[9px] text-[#3b6934] font-bold hover:underline mt-0.5">
+                                  <svg width="9" height="9" viewBox="0 0 24 24" fill="currentColor"><path d="M17.472 14.382c-.297-.149-1.758-.867-2.03-.967-.273-.099-.471-.148-.67.15-.197.297-.767.966-.94 1.164-.173.199-.347.223-.644.075-.297-.15-1.255-.463-2.39-1.475-.883-.788-1.48-1.761-1.653-2.059-.173-.297-.018-.458.13-.606.134-.133.298-.347.446-.52.149-.174.198-.298.298-.497.099-.198.05-.371-.025-.52-.075-.149-.669-1.612-.916-2.207-.242-.579-.487-.5-.669-.51-.173-.008-.371-.01-.57-.01-.198 0-.52.074-.792.372-.272.297-1.04 1.016-1.04 2.479 0 1.462 1.065 2.875 1.213 3.074.149.198 2.096 3.2 5.077 4.487.709.306 1.262.489 1.694.625.712.227 1.36.195 1.871.118.571-.085 1.758-.719 2.006-1.413.248-.694.248-1.289.173-1.413-.074-.124-.272-.198-.57-.347z"/><path d="M11.5 0C5.149 0 0 5.149 0 11.5c0 2.115.576 4.092 1.578 5.779L.057 23l5.88-1.542A11.45 11.45 0 0011.5 23C17.851 23 23 17.851 23 11.5S17.851 0 11.5 0zm0 21.077a9.555 9.555 0 01-4.87-1.335l-.35-.208-3.63.952.969-3.542-.228-.363A9.533 9.533 0 011.923 11.5C1.923 6.193 6.193 1.923 11.5 1.923S21.077 6.193 21.077 11.5 16.807 21.077 11.5 21.077z"/></svg>
+                                  WA
+                                </a>
+                              )}
                             </td>
+                            {/* Orçamento: space, model, plates, m² */}
                             <td className="px-4 py-3 text-xs text-[#43474e]">
-                              <p className="truncate">{c.space || "—"}</p>
-                              <p className="text-[10px] text-[#74777f]">{c.model} · {c.plates} placa{c.plates !== 1 ? "s" : ""}</p>
+                              <p className="truncate font-medium">{c.space || "—"}</p>
+                              <p className="text-[10px] text-[#74777f]">{c.model} · {c.plates} pl.</p>
+                              {c.area_m2 != null && <p className="text-[9px] text-[#b0b0b0]">{Number(c.area_m2).toFixed(1)} m²</p>}
                             </td>
+                            {/* Total */}
                             <td className="px-4 py-3 text-xs font-semibold text-[#002045] whitespace-nowrap">
                               {c.total != null ? c.total.toLocaleString("pt-BR", { style: "currency", currency: "BRL", maximumFractionDigits: 0 }) : "—"}
                             </td>
+                            {/* Parceiro */}
                             <td className="px-4 py-3 text-xs text-[#43474e]">
                               {cu ? (
                                 <div>
@@ -2736,6 +2799,7 @@ export default function AdminPage() {
                                 <span className="text-[#74777f] italic text-[10px]">Sem cupom</span>
                               )}
                             </td>
+                            {/* Status venda */}
                             <td className="px-4 py-3">
                               {cu ? (
                                 <select
@@ -2751,13 +2815,28 @@ export default function AdminPage() {
                                 <span className="text-[10px] text-[#74777f] italic">—</span>
                               )}
                             </td>
+                            {/* Emails / Drip — progress dots + countdown */}
                             <td className="px-4 py-3">
-                              <span className={`text-[10px] font-bold px-1.5 py-0.5 ${dripCls}`}>{dripLabel}</span>
+                              {/* 7 progress dots */}
+                              <div className="flex gap-[3px] mb-1">
+                                {Array.from({ length: DRIP_TOTAL_STEPS }, (_, i) => (
+                                  <div key={i} className={`w-[9px] h-[9px] rounded-full flex-shrink-0 ${i < c.current_step ? "bg-[#002045]" : "bg-[#e2e2e2]"}`} />
+                                ))}
+                              </div>
+                              {/* Count + status */}
+                              <div className="flex items-center gap-1.5 flex-wrap">
+                                <span className="text-[10px] font-bold text-[#002045]">{c.current_step}/{DRIP_TOTAL_STEPS}</span>
+                                <span className={`text-[9px] font-bold px-1.5 py-0.5 ${c.status === "active" ? "bg-yellow-100 text-yellow-800" : c.status === "completed" ? "bg-green-100 text-green-800" : "bg-gray-100 text-gray-500"}`}>
+                                  {c.status === "active" ? "ativo" : c.status === "completed" ? "concluído" : "parado"}
+                                </span>
+                              </div>
+                              {/* Next email countdown */}
                               {c.next_email_at && c.status === "active" && (
-                                <p className="text-[9px] text-[#74777f] mt-0.5">{new Date(c.next_email_at).toLocaleDateString("pt-BR")}</p>
+                                <p className="text-[9px] text-[#74777f] mt-0.5">{nextEmailLabel(c.next_email_at)}</p>
                               )}
                             </td>
-                            <td className="px-4 py-3 text-right">
+                            {/* Delete */}
+                            <td className="px-3 py-3 text-right">
                               <button
                                 onClick={() => deleteClient(c.id)}
                                 disabled={deletingClientId === c.id}
@@ -2782,14 +2861,18 @@ export default function AdminPage() {
                     const cu = c.couponUse;
                     const saleStatus = cu?.sale_status ?? null;
                     const stMeta = saleStatus ? (STATUS_LABELS[saleStatus] ?? STATUS_LABELS.em_orcamento) : null;
-                    const dripCls = c.status === "active" ? "bg-yellow-100 text-yellow-800" : c.status === "completed" ? "bg-green-100 text-green-800" : "bg-gray-100 text-gray-600";
-                    const dripLabel = c.status === "active" ? `Drip passo ${c.current_step}` : c.status === "completed" ? "Drip concluído" : "Drip inativo";
+                    const age = ageBadge(c.created_at, c.status);
+                    const waHref = c.client_phone ? `https://wa.me/55${c.client_phone.replace(/\D/g, "")}` : null;
                     return (
                       <div key={c.id} className="bg-white border border-[#e2e2e2] px-5 py-4">
                         <div className="flex items-start justify-between mb-2">
                           <div className="flex-1 min-w-0">
                             <p className="font-semibold text-[#002045] text-sm font-[var(--font-inter)] truncate">{c.client_name}</p>
                             <p className="text-xs text-[#74777f] font-[var(--font-inter)] truncate">{c.client_email}</p>
+                            {waHref && (
+                              <a href={waHref} target="_blank" rel="noopener noreferrer"
+                                className="text-[10px] text-[#3b6934] font-bold hover:underline">WA {c.client_phone}</a>
+                            )}
                           </div>
                           <div className="flex items-center gap-2 ml-2 flex-shrink-0">
                             {stMeta && <span className={`text-[10px] font-bold px-2 py-0.5 ${stMeta.cls}`}>{stMeta.label}</span>}
@@ -2798,13 +2881,23 @@ export default function AdminPage() {
                             </button>
                           </div>
                         </div>
+                        {/* Drip dots */}
+                        <div className="flex gap-[3px] mb-2">
+                          {Array.from({ length: DRIP_TOTAL_STEPS }, (_, i) => (
+                            <div key={i} className={`w-3 h-3 rounded-full ${i < c.current_step ? "bg-[#002045]" : "bg-[#e2e2e2]"}`} />
+                          ))}
+                          <span className="text-[10px] font-bold text-[#002045] ml-1.5">{c.current_step}/{DRIP_TOTAL_STEPS}</span>
+                          {c.next_email_at && c.status === "active" && (
+                            <span className="text-[9px] text-[#74777f] ml-1">{nextEmailLabel(c.next_email_at)}</span>
+                          )}
+                        </div>
                         <div className="grid grid-cols-2 gap-x-4 gap-y-1 text-xs font-[var(--font-inter)] text-[#43474e]">
                           <span><span className="text-[#74777f]">Espaço:</span> {c.space || "—"}</span>
                           <span><span className="text-[#74777f]">Modelo:</span> {c.model}</span>
                           <span><span className="text-[#74777f]">Total:</span> {c.total != null ? c.total.toLocaleString("pt-BR", { style: "currency", currency: "BRL", maximumFractionDigits: 0 }) : "—"}</span>
-                          <span><span className="text-[#74777f]">Parceiro:</span> {cu ? c.partner_name : "Sem cupom"}</span>
-                          <span className="col-span-2"><span className="text-[#74777f]">Drip:</span> <span className={`text-[10px] font-bold px-1.5 py-0.5 ${dripCls}`}>{dripLabel}</span></span>
-                          <span className="col-span-2 text-[#74777f] text-[10px]">{new Date(c.created_at).toLocaleDateString("pt-BR")}</span>
+                          <span><span className="text-[#74777f]">m²:</span> {c.area_m2 != null ? `${Number(c.area_m2).toFixed(1)} m²` : "—"}</span>
+                          <span className="col-span-2"><span className="text-[#74777f]">Parceiro:</span> {cu ? `${c.partner_name} (${cu.coupon_code})` : "Sem cupom"}</span>
+                          <span className={`col-span-2 text-[9px] ${age.cls}`}>{new Date(c.created_at).toLocaleDateString("pt-BR")} · {age.label}</span>
                         </div>
                       </div>
                     );

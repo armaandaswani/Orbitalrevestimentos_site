@@ -6,7 +6,7 @@ export async function GET() {
   const { data, error } = await db
     .from("client_email_sequences")
     .select(
-      "id, client_name, client_email, space, model, plates, area_m2, total, partner_name, current_step, status, next_email_at, created_at, coupon_use_id"
+      "id, client_name, client_email, client_phone, space, model, plates, area_m2, total, partner_name, current_step, status, next_email_at, created_at, coupon_use_id"
     )
     .order("created_at", { ascending: false });
 
