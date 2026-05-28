@@ -371,7 +371,7 @@ export default function RepresentantePage() {
       <div className="max-w-5xl mx-auto px-4 sm:px-8 py-8">
         {/* Referral link card */}
         {(() => {
-          const referralUrl = `https://orbitalrevestimentos.com.br/parceiro?rep=${salesRep.referral_code}`;
+          const referralUrl = `https://orbitalrevestimentos.com.br/parcerias?rep=${salesRep.referral_code}`;
           return (
             <div className="bg-white border border-[#e2e2e2] px-6 py-4 mb-6 flex flex-col sm:flex-row sm:items-center gap-3">
               <div className="flex-1 min-w-0">

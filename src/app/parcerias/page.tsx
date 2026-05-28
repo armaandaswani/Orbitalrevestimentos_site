@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useState, useCallback, useRef } from "react";
+import React, { useState, useCallback, useRef, useEffect } from "react";
 import Image from "next/image";
 import Link from "next/link";
 import ScrollReveal from "@/components/ScrollReveal";
@@ -458,10 +458,24 @@ export default function ParceriasPage() {
 function SelfRegisterSection({ onScrollToSegments }: { onScrollToSegments: () => void }) {
   const [form, setForm] = useState({ name: "", email: "", phone: "", referral_code: "", portal_password: "", birthday: "" });
   const [noReferral, setNoReferral] = useState(false);
+  const [lockedRepCode, setLockedRepCode] = useState<string | null>(null); // code pre-filled from ?rep= param
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState("");
   const [success, setSuccess] = useState<{ coupon_code: string; name: string } | null>(null);
   const formRef = useRef<HTMLDivElement>(null);
+
+  // Auto-fill referral code from ?rep= URL param and scroll to form
+  useEffect(() => {
+    const params = new URLSearchParams(window.location.search);
+    const rep = params.get("rep");
+    if (rep) {
+      const code = rep.toUpperCase();
+      setForm((f) => ({ ...f, referral_code: code }));
+      setLockedRepCode(code);
+      setNoReferral(false);
+      setTimeout(() => formRef.current?.scrollIntoView({ behavior: "smooth", block: "start" }), 300);
+    }
+  }, []);
 
   function handleBdayChange(raw: string) {
     const digits = raw.replace(/\D/g, "").slice(0, 8);
@@ -605,27 +619,48 @@ function SelfRegisterSection({ onScrollToSegments }: { onScrollToSegments: () =>
                       <label className="text-[10px] tracking-[0.15em] uppercase font-bold font-[var(--font-inter)] text-[#74777f]">
                         Código de indicação {noReferral ? "" : "*"}
                       </label>
-                      <label className="flex items-center gap-1.5 cursor-pointer select-none">
-                        <input
-                          type="checkbox"
-                          checked={noReferral}
-                          onChange={(e) => {
-                            setNoReferral(e.target.checked);
-                            if (e.target.checked) setForm(f => ({ ...f, referral_code: "" }));
-                          }}
-                          className="w-3.5 h-3.5 accent-[#002045] cursor-pointer"
-                        />
-                        <span className="text-[9px] text-[#74777f] font-[var(--font-inter)] whitespace-nowrap">Não tenho código</span>
-                      </label>
+                      {/* Hide "Não tenho código" when code is locked from URL */}
+                      {!lockedRepCode && (
+                        <label className="flex items-center gap-1.5 cursor-pointer select-none">
+                          <input
+                            type="checkbox"
+                            checked={noReferral}
+                            onChange={(e) => {
+                              setNoReferral(e.target.checked);
+                              if (e.target.checked) setForm(f => ({ ...f, referral_code: "" }));
+                            }}
+                            className="w-3.5 h-3.5 accent-[#002045] cursor-pointer"
+                          />
+                          <span className="text-[9px] text-[#74777f] font-[var(--font-inter)] whitespace-nowrap">Não tenho código</span>
+                        </label>
+                      )}
                     </div>
-                    <input
-                      required={!noReferral}
-                      disabled={noReferral}
-                      value={noReferral ? "" : form.referral_code}
-                      onChange={(e) => setForm({ ...form, referral_code: e.target.value.toUpperCase() })}
-                      className={`w-full border px-4 py-3 text-sm font-[var(--font-inter)] focus:outline-none uppercase tracking-widest transition-colors ${noReferral ? "border-[#e2e2e2] bg-[#f5f5f3] text-[#b0b4bc] cursor-not-allowed" : "border-[#e2e2e2] text-[#002045] focus:border-[#002045] placeholder-[#b0b4bc]"}`}
-                      placeholder={noReferral ? "Sem código de indicação" : "EX: REP_JOAO"}
-                    />
+                    <div className="relative">
+                      <input
+                        required={!noReferral}
+                        disabled={noReferral || !!lockedRepCode}
+                        value={noReferral ? "" : form.referral_code}
+                        onChange={(e) => setForm({ ...form, referral_code: e.target.value.toUpperCase() })}
+                        className={`w-full border px-4 py-3 text-sm font-[var(--font-inter)] focus:outline-none uppercase tracking-widest transition-colors ${
+                          noReferral
+                            ? "border-[#e2e2e2] bg-[#f5f5f3] text-[#b0b4bc] cursor-not-allowed"
+                            : lockedRepCode
+                            ? "border-[#3b6934] bg-[#f0f5ec] text-[#3b6934] cursor-not-allowed font-bold"
+                            : "border-[#e2e2e2] text-[#002045] focus:border-[#002045] placeholder-[#b0b4bc]"
+                        }`}
+                        placeholder={noReferral ? "Sem código de indicação" : "EX: REP_JOAO"}
+                      />
+                      {lockedRepCode && (
+                        <span className="absolute right-3 top-1/2 -translate-y-1/2 text-[9px] font-bold tracking-wide text-[#3b6934] bg-[#dcf0d8] px-1.5 py-0.5">
+                          ✓ Validado
+                        </span>
+                      )}
+                    </div>
+                    {lockedRepCode && (
+                      <p className="text-[9px] text-[#3b6934] font-[var(--font-inter)] mt-1">
+                        Código do seu consultor Orbital aplicado automaticamente.
+                      </p>
+                    )}
                   </div>
                 </div>
                 <div className="mb-5">

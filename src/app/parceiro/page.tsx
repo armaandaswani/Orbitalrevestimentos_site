@@ -180,8 +180,16 @@ export default function ParceiroPage() {
       localStorage.removeItem(SESSION_KEY);
     }
 
-    // Check for ?reset=TOKEN
     const params = new URLSearchParams(window.location.search);
+
+    // ?rep=CODE → redirect to registration form on /parcerias
+    const rep = params.get("rep");
+    if (rep) {
+      window.location.replace(`/parcerias?rep=${encodeURIComponent(rep)}`);
+      return;
+    }
+
+    // Check for ?reset=TOKEN
     const token = params.get("reset");
     if (token) {
       setResetToken(token);
