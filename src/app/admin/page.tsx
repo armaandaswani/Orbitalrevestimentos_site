@@ -251,7 +251,7 @@ export default function AdminPage() {
     id: string;
     client_name: string;
     client_email: string;
-    client_phone: string | null;
+    client_phone?: string | null;
     space: string | null;
     model: string;
     plates: number;
