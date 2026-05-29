@@ -1295,7 +1295,7 @@ function SimuladorInner() {
                         <p className="text-[#3b6934] text-sm font-bold font-[var(--font-inter)] tracking-widest">{couponCode}</p>
                         {couponData ? (
                           <p className="text-[#3b6934]/80 text-[10px] font-[var(--font-inter)] mt-0.5">
-                            Desconto de {couponData.discount_type === "percentage" ? `${couponData.discount_value}%` : fmt(couponData.discount_value)} aplicado no material
+                            Desconto aplicado no material
                           </p>
                         ) : couponValidating ? (
                           <p className="text-[#3b6934]/60 text-[10px] font-[var(--font-inter)] mt-0.5">Validando cupom...</p>
