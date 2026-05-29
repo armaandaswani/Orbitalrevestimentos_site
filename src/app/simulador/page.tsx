@@ -315,7 +315,7 @@ function SimuladorInner() {
           `*Quantidade:* ${plates} placa${plates !== 1 ? "s" : ""} (cobre ~${(plates * PLATE_M2).toFixed(2)} m²)`,
           `*Preço estimado do material:* ${fmt(orbMaterialTotal)}`,
           couponData
-            ? `*Cupom aplicado:* ${couponData.coupon_code} (desconto de ${couponData.discount_type === "percentage" ? couponData.discount_value + "%" : fmt(couponData.discount_value)})`
+            ? `*Cupom aplicado:* ${couponData.coupon_code}`
             : null,
           couponData ? `*Preço com desconto:* ${fmt(orbMaterialDiscounted)}` : null,
           clientName ? `*Cliente:* ${clientName}` : null,
@@ -1658,7 +1658,7 @@ function SimuladorInner() {
                         Material ({plates} placa{plates !== 1 ? "s" : ""} × R$ {pricePerPlate.toLocaleString("pt-BR")})
                         {discountAmount > 0 && (
                           <span className="block text-[#a1d494] text-[10px] mt-0.5">
-                            - {couponData?.discount_type === "percentage" ? couponData.discount_value + "%" : fmt(couponData?.discount_value ?? 0)} (cupom)
+                            - desconto (cupom)
                           </span>
                         )}
                       </span>
