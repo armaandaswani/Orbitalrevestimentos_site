@@ -47,13 +47,6 @@ function wrap(preheader: string, body: string) {
       <!-- Body -->
       <tr><td style="padding:44px 40px 40px;">${body}</td></tr>
 
-      <!-- Logistics note -->
-      <tr><td style="background:#002045;padding:14px 40px;">
-        <p style="margin:0;color:rgba(255,255,255,0.55);font-size:11px;letter-spacing:0.04em;font-family:Arial,sans-serif;">
-          <span style="color:rgba(255,255,255,0.3);margin-right:8px;">▸</span>Retirada em depósito · Sem opção de frete
-        </p>
-      </td></tr>
-
       <!-- Footer -->
       <tr><td style="background:#f5f5f3;padding:24px 40px;border-top:1px solid #e2e2e2;">
         <p style="margin:0;color:#74777f;font-size:11px;line-height:1.8;font-family:Arial,sans-serif;">
