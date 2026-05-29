@@ -263,6 +263,7 @@ export default function AdminPage() {
     next_email_at: string | null;
     created_at: string;
     coupon_use_id: string | null;
+    sale_status: string | null;
   }
 
   const DRIP_TOTAL_STEPS = 7;
@@ -1290,11 +1291,19 @@ export default function AdminPage() {
   }
 
   // ── History ──────────────────────────────
-  async function updateSaleStatus(useId: string, sale_status: string) {
-    const res = await fetch(`/api/coupons/use/${useId}`, { method: "PATCH", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ sale_status }) });
-    if (res.ok) {
-      const updated = await res.json();
-      setUses((prev) => prev.map((u) => (u.id === useId ? { ...u, ...updated } : u)));
+  async function updateSaleStatus(clientId: string, useId: string | null, sale_status: string) {
+    // Always update client_email_sequences.sale_status (drives drip for all clients)
+    const seqRes = await fetch(`/api/admin/clients/${clientId}`, { method: "PATCH", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ sale_status }) });
+    if (seqRes.ok) {
+      setClients((prev) => prev.map((c) => (c.id === clientId ? { ...c, sale_status } : c)));
+    }
+    // Also update coupon_use.sale_status when present (drives commission tracking)
+    if (useId) {
+      const useRes = await fetch(`/api/coupons/use/${useId}`, { method: "PATCH", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ sale_status }) });
+      if (useRes.ok) {
+        const updated = await useRes.json();
+        setUses((prev) => prev.map((u) => (u.id === useId ? { ...u, ...updated } : u)));
+      }
     }
   }
 
@@ -1439,7 +1448,7 @@ export default function AdminPage() {
         if (clientStatusFilter === "sem_cupom") {
           if (c.coupon_use_id) return false;
         } else {
-          const saleStatus = c.couponUse?.sale_status ?? "em_orcamento";
+          const saleStatus = c.sale_status ?? c.couponUse?.sale_status ?? "em_orcamento";
           if (saleStatus !== clientStatusFilter) return false;
         }
       }
@@ -1448,8 +1457,9 @@ export default function AdminPage() {
   }, [enrichedClients, clientSearch, clientPartnerFilter, clientStatusFilter]);
 
   const orcamentosStats = useMemo(() => {
-    const emAberto = filteredClients.filter((c) => c.couponUse?.sale_status === "em_orcamento" || (!c.couponUse && c.status === "active")).length;
-    const concluidos = filteredClients.filter((c) => c.couponUse?.sale_status === "concluido").length;
+    const getStatus = (c: typeof filteredClients[0]) => c.sale_status ?? c.couponUse?.sale_status ?? "em_orcamento";
+    const emAberto = filteredClients.filter((c) => getStatus(c) === "em_orcamento").length;
+    const concluidos = filteredClients.filter((c) => getStatus(c) === "concluido").length;
     const totalReceita = filteredClients.reduce((sum, c) => sum + (c.total ?? 0), 0);
     const comParceiro = filteredClients.filter((c) => !!c.couponUse).length;
     const dripAtivos = filteredClients.filter((c) => c.status === "active").length;
@@ -2807,8 +2817,8 @@ export default function AdminPage() {
                     <tbody>
                       {filteredClients.map((c) => {
                         const cu = c.couponUse;
-                        const saleStatus = cu?.sale_status ?? null;
-                        const stMeta = saleStatus ? (STATUS_LABELS[saleStatus] ?? STATUS_LABELS.em_orcamento) : null;
+                        const saleStatus = c.sale_status ?? cu?.sale_status ?? "em_orcamento";
+                        const stMeta = STATUS_LABELS[saleStatus] ?? STATUS_LABELS.em_orcamento;
                         const age = ageBadge(c.created_at, c.status);
                         const waHref = c.client_phone ? `https://wa.me/55${c.client_phone.replace(/\D/g, "")}` : null;
                         return (
@@ -2853,19 +2863,15 @@ export default function AdminPage() {
                             </td>
                             {/* Status venda */}
                             <td className="px-4 py-3">
-                              {cu ? (
-                                <select
-                                  value={saleStatus ?? "em_orcamento"}
-                                  onChange={(e) => updateSaleStatus(cu.id, e.target.value)}
-                                  className={`text-[10px] font-bold tracking-wide px-2 py-1 border-0 cursor-pointer focus:outline-none focus:ring-1 focus:ring-[#002045] w-full ${stMeta?.cls ?? STATUS_LABELS.em_orcamento.cls}`}
-                                >
-                                  <option value="em_orcamento">Em orçamento</option>
-                                  <option value="concluido">Concluído</option>
-                                  <option value="cancelado">Cancelado</option>
-                                </select>
-                              ) : (
-                                <span className="text-[10px] text-[#74777f] italic">—</span>
-                              )}
+                              <select
+                                value={saleStatus}
+                                onChange={(e) => updateSaleStatus(c.id, cu?.id ?? null, e.target.value)}
+                                className={`text-[10px] font-bold tracking-wide px-2 py-1 border-0 cursor-pointer focus:outline-none focus:ring-1 focus:ring-[#002045] w-full ${stMeta.cls}`}
+                              >
+                                <option value="em_orcamento">Em orçamento</option>
+                                <option value="concluido">Concluído</option>
+                                <option value="cancelado">Cancelado</option>
+                              </select>
                             </td>
                             {/* Emails / Drip — progress dots + countdown */}
                             <td className="px-4 py-3">
@@ -2911,8 +2917,8 @@ export default function AdminPage() {
                 <div className="sm:hidden space-y-3">
                   {filteredClients.map((c) => {
                     const cu = c.couponUse;
-                    const saleStatus = cu?.sale_status ?? null;
-                    const stMeta = saleStatus ? (STATUS_LABELS[saleStatus] ?? STATUS_LABELS.em_orcamento) : null;
+                    const saleStatus = c.sale_status ?? cu?.sale_status ?? "em_orcamento";
+                    const stMeta = STATUS_LABELS[saleStatus] ?? STATUS_LABELS.em_orcamento;
                     const age = ageBadge(c.created_at, c.status);
                     const waHref = c.client_phone ? `https://wa.me/55${c.client_phone.replace(/\D/g, "")}` : null;
                     return (
@@ -2927,7 +2933,15 @@ export default function AdminPage() {
                             )}
                           </div>
                           <div className="flex items-center gap-2 ml-2 flex-shrink-0">
-                            {stMeta && <span className={`text-[10px] font-bold px-2 py-0.5 ${stMeta.cls}`}>{stMeta.label}</span>}
+                            <select
+                              value={saleStatus}
+                              onChange={(e) => updateSaleStatus(c.id, cu?.id ?? null, e.target.value)}
+                              className={`text-[10px] font-bold px-2 py-0.5 border-0 cursor-pointer focus:outline-none ${stMeta.cls}`}
+                            >
+                              <option value="em_orcamento">Em orçamento</option>
+                              <option value="concluido">Concluído</option>
+                              <option value="cancelado">Cancelado</option>
+                            </select>
                             <button onClick={() => deleteClient(c.id)} disabled={deletingClientId === c.id} className="text-red-400 hover:text-red-600 disabled:opacity-40">
                               <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><path d="M3 6h18M8 6V4h8v2M19 6l-1 14H6L5 6" /></svg>
                             </button>
