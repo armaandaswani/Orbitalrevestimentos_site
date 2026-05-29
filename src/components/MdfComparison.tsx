@@ -2,7 +2,7 @@
 
 import { useState } from "react";
 
-const options = [
+export const COMPARISON_OPTIONS = [
   { key: "mdf",   label: "MDF" },
   { key: "papel", label: "Papel de Parede" },
   { key: "forro", label: "Forro PVC" },
@@ -115,32 +115,37 @@ const rows: { attr: string; pfb: string; mdf: string; papel: string; forro: stri
   },
 ];
 
-export default function MdfComparison() {
-  const [selected, setSelected] = useState<RowKey>("mdf");
-  const option = options.find((o) => o.key === selected)!;
+interface MdfComparisonProps {
+  selected?: RowKey;
+  onSelect?: (key: RowKey) => void;
+}
+
+export default function MdfComparison({ selected: externalSelected, onSelect }: MdfComparisonProps = {}) {
+  const [internalSelected, setInternalSelected] = useState<RowKey>("mdf");
+  const selected = externalSelected ?? internalSelected;
+  const setSelected = (key: RowKey) => {
+    setInternalSelected(key);
+    onSelect?.(key);
+  };
+  const option = COMPARISON_OPTIONS.find((o) => o.key === selected)!;
 
   return (
     <div>
-      {/* Selector */}
-      <div className="flex flex-wrap items-center gap-3 mb-8">
-        <span className="text-[#74777f] text-xs tracking-[0.1em] uppercase font-semibold font-[var(--font-inter)]">
-          Comparar com:
-        </span>
-        <div className="flex flex-wrap gap-2">
-          {options.map((o) => (
-            <button
-              key={o.key}
-              onClick={() => setSelected(o.key as RowKey)}
-              className={`text-[11px] tracking-[0.06em] uppercase font-semibold font-[var(--font-inter)] px-4 py-2 border transition-colors duration-200 ${
-                selected === o.key
-                  ? "bg-[#002045] text-white border-[#002045]"
-                  : "bg-white text-[#74777f] border-[#e2e2e2] hover:border-[#002045] hover:text-[#002045]"
-              }`}
-            >
-              {o.label}
-            </button>
-          ))}
-        </div>
+      {/* Material selector buttons */}
+      <div className="flex flex-wrap gap-2 mb-6">
+        {COMPARISON_OPTIONS.map((o) => (
+          <button
+            key={o.key}
+            onClick={() => setSelected(o.key as RowKey)}
+            className={`text-[11px] tracking-[0.06em] uppercase font-semibold font-[var(--font-inter)] px-4 py-2 border transition-colors duration-200 ${
+              selected === o.key
+                ? "bg-[#002045] text-white border-[#002045]"
+                : "bg-white text-[#74777f] border-[#e2e2e2] hover:border-[#002045] hover:text-[#002045]"
+            }`}
+          >
+            {o.label}
+          </button>
+        ))}
       </div>
 
       {/* 2-column table — always fits on screen */}

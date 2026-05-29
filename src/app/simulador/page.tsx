@@ -4,7 +4,7 @@ import React, { useState, useRef, useEffect, Suspense } from "react";
 import { useSearchParams } from "next/navigation";
 import Image from "next/image";
 import Link from "next/link";
-import MdfComparison from "@/components/MdfComparison";
+import MdfComparison, { COMPARISON_OPTIONS } from "@/components/MdfComparison";
 
 const WA_BASE = "https://wa.me/5592988150149?text=";
 const CATALOGUE_URL =
@@ -250,7 +250,7 @@ function SimuladorInner() {
       setSelectedSpace({ id: "__custom__", label: custom.label, viability: custom.viability });
     }
   }, [customSpaceText, showCustomInput]); // eslint-disable-line react-hooks/exhaustive-deps
-  const [comparisonExpanded, setComparisonExpanded] = useState(false);
+  const [comparisonMaterial, setComparisonMaterial] = useState<"mdf" | "papel" | "forro" | "teto" | "tinta">("mdf");
   const [lightboxImg, setLightboxImg] = useState<string | null>(null);
 
   const m2 =
@@ -1837,33 +1837,19 @@ function SimuladorInner() {
                 </p>
               </div>
 
-              {/* Technical comparison — collapsible on all screen sizes */}
+              {/* Technical comparison — always visible */}
               <div className="bg-white border border-[#e2e2e2] border-t-0">
-                <button
-                  onClick={() => setComparisonExpanded(!comparisonExpanded)}
-                  className="w-full flex items-center justify-between px-6 py-5 text-left"
-                >
-                  <div>
-                    <p className="text-[#43474e] text-[10px] tracking-[0.15em] uppercase font-bold font-[var(--font-inter)] mb-1">
-                      PFB Orbital vs. o mercado
-                    </p>
-                    <p className="text-[#74777f] text-xs font-[var(--font-inter)]">
-                      {comparisonExpanded ? "Ocultar comparativo" : "10 critérios técnicos — umidade, durabilidade, mofo e mais"}
-                    </p>
-                  </div>
-                  <svg
-                    width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#74777f" strokeWidth="2"
-                    className={`flex-shrink-0 ml-4 transition-transform duration-300 ${comparisonExpanded ? "rotate-180" : ""}`}
-                  >
-                    <path d="M6 9l6 6 6-6" />
-                  </svg>
-                </button>
-
-                {comparisonExpanded && (
-                  <div className="border-t border-[#e2e2e2] px-6 lg:px-8 py-6 lg:py-8">
-                    <MdfComparison />
-                  </div>
-                )}
+                <div className="px-6 lg:px-8 pt-6 pb-2 border-b border-[#e2e2e2]">
+                  <p className="text-[#43474e] text-[10px] tracking-[0.15em] uppercase font-bold font-[var(--font-inter)] mb-0.5">
+                    PFB Orbital vs. {COMPARISON_OPTIONS.find(o => o.key === comparisonMaterial)?.label ?? "MDF"}
+                  </p>
+                  <p className="text-[#74777f] text-xs font-[var(--font-inter)]">
+                    Selecione o material para comparar
+                  </p>
+                </div>
+                <div className="px-6 lg:px-8 py-6 lg:py-8">
+                  <MdfComparison selected={comparisonMaterial} onSelect={setComparisonMaterial} />
+                </div>
               </div>
             </div>
           )}
