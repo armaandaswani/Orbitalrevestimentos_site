@@ -3,9 +3,9 @@ import { supabaseAdmin } from "@/lib/supabase";
 
 export async function PATCH(
   req: NextRequest,
-  { params }: { params: { id: string } }
+  { params }: { params: Promise<{ id: string }> }
 ) {
-  const { id } = params;
+  const { id } = await params;
   const body = await req.json();
   if (!id) return NextResponse.json({ error: "Missing id" }, { status: 400 });
 
