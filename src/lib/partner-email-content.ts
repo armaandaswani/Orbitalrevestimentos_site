@@ -75,6 +75,13 @@ export interface PartnerWelcomeParams {
   couponCode: string;
   discountLabel: string;   // e.g. "10%" or "R$ 150"
   bonusLabel: string;      // e.g. "5% sobre o material" or "R$ 200 por venda"
+  portalPassword?: string; // include initial credentials when set by admin
+}
+
+/** Format a commission/discount value into a human-readable label */
+export function formatValueLabel(type: "percentage" | "fixed", value: number): string {
+  if (type === "percentage") return `${value}%`;
+  return value.toLocaleString("pt-BR", { style: "currency", currency: "BRL", maximumFractionDigits: 0 });
 }
 
 export function generatePartnerWelcomeEmail(p: PartnerWelcomeParams): { subject: string; html: string } {
@@ -114,6 +121,20 @@ ${sectionLabel("Seu cupom de desconto")}
     </table>
   </td></tr>
 </table>
+${p.portalPassword ? `
+<!-- Credentials block -->
+<table width="100%" cellpadding="0" cellspacing="0" style="border:1px solid #e2e2e2;margin:12px 0 16px;">
+  <tr><td style="padding:16px 20px;border-bottom:1px solid #f0f0f0;">
+    <p style="margin:0 0 4px;color:#74777f;font-size:10px;letter-spacing:0.18em;text-transform:uppercase;font-family:Arial,sans-serif;">Seu login</p>
+    <p style="margin:0;color:#002045;font-size:14px;font-weight:700;letter-spacing:0.12em;font-family:Arial,sans-serif;">${p.couponCode}</p>
+  </td></tr>
+  <tr><td style="padding:16px 20px;">
+    <p style="margin:0 0 4px;color:#74777f;font-size:10px;letter-spacing:0.18em;text-transform:uppercase;font-family:Arial,sans-serif;">Senha inicial</p>
+    <p style="margin:0;color:#002045;font-size:14px;font-weight:700;letter-spacing:0.08em;font-family:Arial,monospace;">${p.portalPassword}</p>
+    <p style="margin:4px 0 0;color:#b0b0b0;font-size:10px;font-family:Arial,sans-serif;">Recomendamos alterar após o primeiro acesso.</p>
+  </td></tr>
+</table>
+` : ""}
 <p style="color:#74777f;font-size:12px;line-height:1.7;margin:0 0 8px;font-family:Arial,sans-serif;">Compartilhe seu cupom com clientes para aplicar o desconto automaticamente — ou use o simulador abaixo para gerar um link já configurado.</p>
 
 ${sectionLabel("O simulador de orçamento")}
