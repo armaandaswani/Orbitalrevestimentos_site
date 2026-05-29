@@ -231,6 +231,13 @@ function SimuladorInner() {
   const [showSavings, setShowSavings] = useState(false);
   const [mdfExpanded, setMdfExpanded] = useState(false);
 
+  // ── Partner / client-link mode ───────────────────────────────────────────
+  const [partnerMode, setPartnerMode] = useState(false);       // opened with ?mode=partner
+  const [fromPartnerLink, setFromPartnerLink] = useState(false); // opened from a partner-generated link
+  const [hasJumpedFromLink, setHasJumpedFromLink] = useState(false);
+  const [partnerLinkCopied, setPartnerLinkCopied] = useState(false);
+  const [partnerLinkGenerated, setPartnerLinkGenerated] = useState(false);
+
   // Sync custom space text → selectedSpace whenever text changes
   useEffect(() => {
     if (!showCustomInput) return;
@@ -351,8 +358,38 @@ function SimuladorInner() {
   }, [selectedSpace]);
 
   useEffect(() => {
+    const mode = searchParams.get("mode");
     const cupom = searchParams.get("cupom");
+
+    if (mode === "partner") {
+      setPartnerMode(true);
+      if (cupom) setCouponCode(cupom.toUpperCase()); // keep partner's coupon for the generated link
+      return;
+    }
+
     if (cupom) setCouponCode(cupom.toUpperCase());
+
+    // Pre-fill space from ?space=ID (or ?space=custom&customSpace=TEXT)
+    const spaceParam = searchParams.get("space");
+    if (spaceParam) {
+      if (spaceParam === "custom") {
+        const txt = searchParams.get("customSpace");
+        if (txt) { setCustomSpaceText(decodeURIComponent(txt)); setShowCustomInput(true); }
+      } else {
+        const sp = SPACES.find((s) => s.id === spaceParam);
+        if (sp) setSelectedSpace(sp);
+      }
+    }
+
+    // Pre-fill area from ?area=N.NN
+    const areaParam = searchParams.get("area");
+    if (areaParam) { setSqmInput(areaParam); setDimMode("m2"); }
+
+    // Mark as partner-generated link if all key params present
+    if (cupom && spaceParam && (areaParam || searchParams.get("produto"))) {
+      setFromPartnerLink(true);
+    }
+  // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [searchParams]);
 
   // Pre-select product from ?produto=CODE (set after products are loaded)
@@ -366,6 +403,24 @@ function SimuladorInner() {
       setSelectedProduct(match);
     }
   }, [loadingProducts, products, searchParams]);
+
+  // Auto-jump to Step 4 once everything is pre-filled from a partner link
+  useEffect(() => {
+    if (!fromPartnerLink || hasJumpedFromLink) return;
+    if (selectedSpace && selectedProduct && m2 > 0) {
+      setHasJumpedFromLink(true);
+      setStep(4);
+      setTimeout(() => stepCardRef.current?.scrollIntoView({ behavior: "smooth", block: "start" }), 100);
+    }
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [fromPartnerLink, hasJumpedFromLink, selectedSpace, selectedProduct]);
+
+  // Auto-validate coupon when arriving from a partner link (so step 5 shows it as locked/applied)
+  useEffect(() => {
+    if (!fromPartnerLink || !couponCode.trim() || couponData || couponValidating) return;
+    validateCoupon();
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [fromPartnerLink, couponCode]);
 
   function reset() {
     setStep(1);
@@ -481,13 +536,36 @@ function SimuladorInner() {
   const validPhone = clientPhone.trim().replace(/\D/g, "").length >= 10;
   const canAdvance4 = clientName.trim().length > 0 && validEmail && validPhone;
 
-  const STEPS = [
-    { n: 1 as const, label: "Espaço" },
-    { n: 2 as const, label: "Modelo" },
-    { n: 3 as const, label: "Dimensões" },
-    { n: 4 as const, label: "Seus dados" },
-    { n: 5 as const, label: "Cupom" },
-  ];
+  // In partner mode only show 3 steps (no client data / coupon steps)
+  const STEPS = partnerMode
+    ? [
+        { n: 1 as const, label: "Espaço" },
+        { n: 2 as const, label: "Modelo" },
+        { n: 3 as const, label: "Dimensões" },
+      ]
+    : [
+        { n: 1 as const, label: "Espaço" },
+        { n: 2 as const, label: "Modelo" },
+        { n: 3 as const, label: "Dimensões" },
+        { n: 4 as const, label: "Seus dados" },
+        { n: 5 as const, label: "Cupom" },
+      ];
+
+  // Build the partner-shareable client link
+  function buildPartnerLink(): string {
+    const origin = typeof window !== "undefined" ? window.location.origin : "https://orbitalrevestimentos.com.br";
+    const params = new URLSearchParams();
+    if (showCustomInput && customSpaceText.trim()) {
+      params.set("space", "custom");
+      params.set("customSpace", customSpaceText.trim());
+    } else if (selectedSpace) {
+      params.set("space", selectedSpace.id);
+    }
+    if (selectedProduct) params.set("produto", selectedProduct.code);
+    params.set("area", m2.toFixed(2));
+    if (couponCode) params.set("cupom", couponCode);
+    return `${origin}/simulador?${params.toString()}`;
+  }
 
   return (
     <div className="pt-20">
@@ -584,7 +662,7 @@ function SimuladorInner() {
                     </span>
                   </div>
                 </button>
-                {i < 4 && (
+                {i < STEPS.length - 1 && (
                   <div
                     className={`flex-1 h-px mx-2 min-w-[12px] max-w-[60px] ${
                       n < step ? "bg-[#3b6934]" : "bg-[#d8d8d8]"
@@ -973,27 +1051,131 @@ function SimuladorInner() {
                   </svg>
                   Voltar
                 </button>
-                <button
-                  onClick={() => canCalculate && goToStep(4)}
-                  disabled={!canCalculate}
-                  className={`w-full sm:w-auto inline-flex items-center justify-center gap-2 text-xs tracking-[0.12em] uppercase font-bold font-[var(--font-inter)] px-8 py-4 transition-colors ${
-                    canCalculate
-                      ? "bg-[#002045] text-white hover:bg-[#1a365d]"
-                      : "bg-[#e2e2e2] text-[#aaaaaa] cursor-not-allowed"
-                  }`}
-                >
-                  Próximo
-                  <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5">
-                    <path d="M5 12h14M12 5l7 7-7 7" />
-                  </svg>
-                </button>
+                {partnerMode ? (
+                  <button
+                    onClick={() => { if (canCalculate) setPartnerLinkGenerated(true); }}
+                    disabled={!canCalculate}
+                    className={`w-full sm:w-auto inline-flex items-center justify-center gap-2 text-xs tracking-[0.12em] uppercase font-bold font-[var(--font-inter)] px-8 py-4 transition-colors ${
+                      canCalculate
+                        ? "bg-[#3b6934] text-white hover:bg-[#2d5228]"
+                        : "bg-[#e2e2e2] text-[#aaaaaa] cursor-not-allowed"
+                    }`}
+                  >
+                    <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5">
+                      <path d="M10 13a5 5 0 007.54.54l3-3a5 5 0 00-7.07-7.07l-1.72 1.71" /><path d="M14 11a5 5 0 00-7.54-.54l-3 3a5 5 0 007.07 7.07l1.71-1.71" />
+                    </svg>
+                    Gerar link para cliente
+                  </button>
+                ) : (
+                  <button
+                    onClick={() => canCalculate && goToStep(4)}
+                    disabled={!canCalculate}
+                    className={`w-full sm:w-auto inline-flex items-center justify-center gap-2 text-xs tracking-[0.12em] uppercase font-bold font-[var(--font-inter)] px-8 py-4 transition-colors ${
+                      canCalculate
+                        ? "bg-[#002045] text-white hover:bg-[#1a365d]"
+                        : "bg-[#e2e2e2] text-[#aaaaaa] cursor-not-allowed"
+                    }`}
+                  >
+                    Próximo
+                    <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5">
+                      <path d="M5 12h14M12 5l7 7-7 7" />
+                    </svg>
+                  </button>
+                )}
               </div>
+
+              {/* ── Partner link panel ── shown after "Gerar link" is clicked */}
+              {partnerMode && partnerLinkGenerated && canCalculate && selectedProduct && selectedSpace && (
+                <div className="mt-6 border border-[#3b6934]/40 bg-[#f2faf0]">
+                  <div className="px-5 py-4 border-b border-[#3b6934]/20">
+                    <p className="text-[#3b6934] text-[10px] tracking-[0.15em] uppercase font-bold font-[var(--font-inter)] mb-0.5">
+                      Link gerado com sucesso
+                    </p>
+                    <p className="text-[#2d5228] text-sm font-[var(--font-inter)]">
+                      Envie este link ao cliente. Ele verá a simulação configurada por você e só precisará preencher os dados.
+                    </p>
+                  </div>
+
+                  {/* Summary */}
+                  <div className="px-5 py-4 border-b border-[#3b6934]/20 grid grid-cols-2 sm:grid-cols-4 gap-3">
+                    <div>
+                      <p className="text-[#74777f] text-[9px] tracking-[0.12em] uppercase font-bold font-[var(--font-inter)] mb-0.5">Espaço</p>
+                      <p className="text-[#002045] text-sm font-semibold font-[var(--font-inter)]">{selectedSpace.label}</p>
+                    </div>
+                    <div>
+                      <p className="text-[#74777f] text-[9px] tracking-[0.12em] uppercase font-bold font-[var(--font-inter)] mb-0.5">Modelo</p>
+                      <p className="text-[#002045] text-sm font-semibold font-[var(--font-inter)]">{selectedProduct.name}</p>
+                      <p className="text-[#74777f] text-[10px] font-[var(--font-inter)]">{selectedProduct.code}</p>
+                    </div>
+                    <div>
+                      <p className="text-[#74777f] text-[9px] tracking-[0.12em] uppercase font-bold font-[var(--font-inter)] mb-0.5">Área</p>
+                      <p className="text-[#002045] text-sm font-semibold font-[var(--font-inter)]">{m2.toFixed(2)} m²</p>
+                      <p className="text-[#74777f] text-[10px] font-[var(--font-inter)]">{plates} placa{plates !== 1 ? "s" : ""}</p>
+                    </div>
+                    <div>
+                      <p className="text-[#74777f] text-[9px] tracking-[0.12em] uppercase font-bold font-[var(--font-inter)] mb-0.5">Estimativa material</p>
+                      {discountAmount > 0 ? (
+                        <>
+                          <p className="text-[#3b6934] text-sm font-bold font-[var(--font-inter)]">{fmt(orbMaterialDiscounted)}</p>
+                          <p className="text-[#74777f] text-[10px] font-[var(--font-inter)] line-through">{fmt(orbMaterialTotal)}</p>
+                        </>
+                      ) : (
+                        <p className="text-[#002045] text-sm font-semibold font-[var(--font-inter)]">{fmt(orbMaterialTotal)}</p>
+                      )}
+                    </div>
+                  </div>
+
+                  {/* Link copy */}
+                  <div className="px-5 py-4">
+                    <p className="text-[#74777f] text-[10px] tracking-[0.12em] uppercase font-bold font-[var(--font-inter)] mb-2">Link do cliente</p>
+                    <div className="flex gap-2">
+                      <input
+                        readOnly
+                        value={buildPartnerLink()}
+                        className="flex-1 min-w-0 border border-[#3b6934]/30 bg-white px-3 py-2.5 text-xs font-[var(--font-inter)] text-[#002045] focus:outline-none select-all truncate"
+                        onClick={(e) => (e.target as HTMLInputElement).select()}
+                      />
+                      <button
+                        onClick={() => {
+                          navigator.clipboard.writeText(buildPartnerLink());
+                          setPartnerLinkCopied(true);
+                          setTimeout(() => setPartnerLinkCopied(false), 2500);
+                        }}
+                        className={`flex-shrink-0 px-4 py-2.5 text-xs tracking-[0.08em] uppercase font-bold font-[var(--font-inter)] transition-colors ${
+                          partnerLinkCopied
+                            ? "bg-[#3b6934] text-white"
+                            : "bg-[#002045] text-white hover:bg-[#1a365d]"
+                        }`}
+                      >
+                        {partnerLinkCopied ? "✓ Copiado!" : "Copiar link"}
+                      </button>
+                    </div>
+                    <p className="text-[#74777f] text-[10px] font-[var(--font-inter)] mt-2">
+                      {couponCode ? `Cupom ${couponCode} já incluído no link. O cliente não precisa digitar nada.` : "Selecione mais opções ou copie o link acima."}
+                    </p>
+                  </div>
+                </div>
+              )}
             </div>
           )}
 
           {/* ── Step 4: Seus dados (required) ──────────────────────────────── */}
           {step === 4 && (
             <div className="bg-white border border-[#e2e2e2] p-6 lg:p-10">
+
+              {/* Banner shown when client arrives via a partner-generated link */}
+              {fromPartnerLink && (
+                <div className="flex items-start gap-3 bg-[#eef6ff] border border-[#b3d4f5] px-4 py-3 mb-6">
+                  <svg className="flex-shrink-0 mt-0.5 text-[#1a5fa8]" width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                    <circle cx="12" cy="12" r="10"/><path d="M12 8v4m0 4h.01"/>
+                  </svg>
+                  <p className="text-[#1a3c6e] text-xs font-[var(--font-inter)] leading-relaxed">
+                    <strong>Projeto configurado pelo seu consultor Orbital.</strong>{" "}
+                    Preencha seus dados abaixo para receber a simulação detalhada por e-mail.
+                  </p>
+                </div>
+              )}
+
               <h3 className="font-[var(--font-noto-serif)] text-[#002045] text-xl font-normal mb-2">
                 Para quem é este projeto?
               </h3>
@@ -1092,60 +1274,92 @@ function SimuladorInner() {
           {step === 5 && (
             <div className="bg-white border border-[#e2e2e2] p-6 lg:p-10">
               <h3 className="font-[var(--font-noto-serif)] text-[#002045] text-xl font-normal mb-2">
-                Tem um código de parceiro?
+                {fromPartnerLink ? "Cupom aplicado pelo seu consultor" : "Tem um código de parceiro?"}
               </h3>
               <p className="text-[#74777f] text-sm font-[var(--font-inter)] mb-6">
-                Opcional — insira o código recebido do seu arquiteto, designer ou indicador para aplicar o desconto.
+                {fromPartnerLink
+                  ? "O desconto já foi configurado pelo consultor que montou esta simulação para você."
+                  : "Opcional — insira o código recebido do seu arquiteto, designer ou indicador para aplicar o desconto."}
               </p>
 
               <div className="max-w-sm mb-8">
-                <label className="block text-[10px] tracking-[0.15em] uppercase font-bold font-[var(--font-inter)] text-[#74777f] mb-2">
-                  Código do cupom
-                </label>
-                <div className="flex gap-2">
-                  <input
-                    type="text"
-                    autoFocus
-                    value={couponCode}
-                    onChange={(e) => {
-                      setCouponCode(e.target.value.toUpperCase());
-                      setCouponData(null);
-                      setCouponError("");
-                    }}
-                    placeholder="ex: ARQLIMA10"
-                    className="flex-1 border border-[#e2e2e2] px-4 py-3 text-sm font-[var(--font-inter)] text-[#002045] uppercase focus:outline-none focus:border-[#002045] transition-colors tracking-widest"
-                  />
-                  {couponCode && !couponData && (
-                    <button
-                      onClick={validateCoupon}
-                      disabled={couponValidating}
-                      className="px-4 py-3 bg-[#002045] text-white text-xs font-bold font-[var(--font-inter)] hover:bg-[#1a365d] transition-colors disabled:opacity-50 whitespace-nowrap"
-                    >
-                      {couponValidating ? "..." : "Validar"}
-                    </button>
-                  )}
-                </div>
-
-                {couponValidating && (
-                  <p className="text-[#74777f] text-xs font-[var(--font-inter)] mt-2">Validando cupom...</p>
-                )}
-                {couponError && (
-                  <p className="text-red-600 text-xs font-[var(--font-inter)] mt-2">{couponError}</p>
-                )}
-                {couponData && (
-                  <div className="mt-3 bg-[#f0f9eb] border border-[#3b6934]/30 px-4 py-3">
-                    <p className="text-[#3b6934] text-xs font-bold font-[var(--font-inter)]">
-                      ✓ Cupom <span className="tracking-widest">{couponData.coupon_code}</span> aplicado!
-                    </p>
-                    <p className="text-[#3b6934]/80 text-xs font-[var(--font-inter)] mt-0.5">
-                      Desconto aplicado no material.
+                {fromPartnerLink ? (
+                  /* Locked coupon — client link mode */
+                  <div>
+                    <label className="block text-[10px] tracking-[0.15em] uppercase font-bold font-[var(--font-inter)] text-[#74777f] mb-2">
+                      Código do cupom
+                    </label>
+                    <div className="flex items-center gap-3 bg-[#f0f9eb] border border-[#3b6934]/40 px-4 py-3">
+                      <svg className="flex-shrink-0 text-[#3b6934]" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5"><path d="M20 6L9 17l-5-5"/></svg>
+                      <div>
+                        <p className="text-[#3b6934] text-sm font-bold font-[var(--font-inter)] tracking-widest">{couponCode}</p>
+                        {couponData ? (
+                          <p className="text-[#3b6934]/80 text-[10px] font-[var(--font-inter)] mt-0.5">
+                            Desconto de {couponData.discount_type === "percentage" ? `${couponData.discount_value}%` : fmt(couponData.discount_value)} aplicado no material
+                          </p>
+                        ) : couponValidating ? (
+                          <p className="text-[#3b6934]/60 text-[10px] font-[var(--font-inter)] mt-0.5">Validando cupom...</p>
+                        ) : (
+                          <p className="text-[#3b6934]/80 text-[10px] font-[var(--font-inter)] mt-0.5">Cupom aplicado pelo consultor</p>
+                        )}
+                      </div>
+                    </div>
+                    <p className="text-[#74777f] text-[10px] font-[var(--font-inter)] mt-2">
+                      Este desconto foi configurado pelo consultor que preparou esta simulação.
                     </p>
                   </div>
-                )}
+                ) : (
+                  /* Normal editable coupon */
+                  <>
+                    <label className="block text-[10px] tracking-[0.15em] uppercase font-bold font-[var(--font-inter)] text-[#74777f] mb-2">
+                      Código do cupom
+                    </label>
+                    <div className="flex gap-2">
+                      <input
+                        type="text"
+                        autoFocus
+                        value={couponCode}
+                        onChange={(e) => {
+                          setCouponCode(e.target.value.toUpperCase());
+                          setCouponData(null);
+                          setCouponError("");
+                        }}
+                        placeholder="ex: ARQLIMA10"
+                        className="flex-1 border border-[#e2e2e2] px-4 py-3 text-sm font-[var(--font-inter)] text-[#002045] uppercase focus:outline-none focus:border-[#002045] transition-colors tracking-widest"
+                      />
+                      {couponCode && !couponData && (
+                        <button
+                          onClick={validateCoupon}
+                          disabled={couponValidating}
+                          className="px-4 py-3 bg-[#002045] text-white text-xs font-bold font-[var(--font-inter)] hover:bg-[#1a365d] transition-colors disabled:opacity-50 whitespace-nowrap"
+                        >
+                          {couponValidating ? "..." : "Validar"}
+                        </button>
+                      )}
+                    </div>
 
-                <p className="text-[#74777f] text-[10px] font-[var(--font-inter)] mt-3">
-                  Não tem código? Sem problema — avance sem ele.
-                </p>
+                    {couponValidating && (
+                      <p className="text-[#74777f] text-xs font-[var(--font-inter)] mt-2">Validando cupom...</p>
+                    )}
+                    {couponError && (
+                      <p className="text-red-600 text-xs font-[var(--font-inter)] mt-2">{couponError}</p>
+                    )}
+                    {couponData && (
+                      <div className="mt-3 bg-[#f0f9eb] border border-[#3b6934]/30 px-4 py-3">
+                        <p className="text-[#3b6934] text-xs font-bold font-[var(--font-inter)]">
+                          ✓ Cupom <span className="tracking-widest">{couponData.coupon_code}</span> aplicado!
+                        </p>
+                        <p className="text-[#3b6934]/80 text-xs font-[var(--font-inter)] mt-0.5">
+                          Desconto aplicado no material.
+                        </p>
+                      </div>
+                    )}
+
+                    <p className="text-[#74777f] text-[10px] font-[var(--font-inter)] mt-3">
+                      Não tem código? Sem problema — avance sem ele.
+                    </p>
+                  </>
+                )}
               </div>
 
               <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3">

@@ -128,7 +128,7 @@ export default function ParceiroPage() {
   const [profError, setProfError] = useState("");
 
   // ── Portal tab state ───────────────────────────────────────────────────────
-  const [portalTab, setPortalTab] = useState<"portal" | "commissions" | "special">("portal");
+  const [portalTab, setPortalTab] = useState<"portal" | "commissions" | "special" | "simulate">("portal");
   const [copied, setCopied] = useState(false);
   const [hasNewUses, setHasNewUses] = useState(false);
 
@@ -782,8 +782,9 @@ export default function ParceiroPage() {
             {([
               { key: "portal", label: "Meu Portal" },
               { key: "commissions", label: "Comissões" },
+              { key: "simulate", label: "Simular" },
               ...(partner.has_special_table ? [{ key: "special", label: "Tabela Especial ★" }] : []),
-            ] as { key: "portal" | "commissions" | "special"; label: string }[]).map((t) => (
+            ] as { key: "portal" | "commissions" | "special" | "simulate"; label: string }[]).map((t) => (
               <button
                 key={t.key}
                 onClick={() => {
@@ -1140,6 +1141,92 @@ export default function ParceiroPage() {
           )}
           <p className="text-[#74777f] text-[10px] font-[var(--font-inter)] mt-4">
             O status de pagamento é atualizado pela Orbital após confirmação da transferência.
+          </p>
+        </div>
+      )}
+
+      {/* ── Simular tab ── */}
+      {portalTab === "simulate" && (
+        <div className="max-w-5xl mx-auto px-4 sm:px-8 py-8">
+
+          {/* Header */}
+          <div className="mb-6">
+            <h2 className="font-[var(--font-noto-serif)] text-[#002045] text-2xl font-normal mb-2">
+              Simulador para parceiros
+            </h2>
+            <p className="text-[#43474e] text-sm font-[var(--font-inter)] leading-relaxed max-w-2xl">
+              Configure uma simulação completa — espaço, modelo e área — e gere um link personalizado para enviar ao seu cliente.
+              O cliente abrirá o link com tudo pré-configurado e só precisará preencher os dados pessoais.
+              Seu cupom de desconto é incluído automaticamente.
+            </p>
+          </div>
+
+          {/* Feature cards */}
+          <div className="grid grid-cols-1 sm:grid-cols-3 gap-4 mb-8">
+            {[
+              {
+                icon: (
+                  <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5">
+                    <path d="M9 11l3 3L22 4" /><path d="M21 12v7a2 2 0 01-2 2H5a2 2 0 01-2-2V5a2 2 0 012-2h11" />
+                  </svg>
+                ),
+                title: "Configure em 3 passos",
+                desc: "Escolha o espaço, modelo e a área. Apenas 3 passos rápidos.",
+              },
+              {
+                icon: (
+                  <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5">
+                    <path d="M10 13a5 5 0 007.54.54l3-3a5 5 0 00-7.07-7.07l-1.72 1.71" /><path d="M14 11a5 5 0 00-7.54-.54l-3 3a5 5 0 007.07 7.07l1.71-1.71" />
+                  </svg>
+                ),
+                title: "Gere o link personalizado",
+                desc: "Um link único com todas as suas seleções. Copie e envie pelo WhatsApp ou e-mail.",
+              },
+              {
+                icon: (
+                  <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5">
+                    <rect x="2" y="4" width="20" height="16" rx="2"/><path d="M7 15h10M7 11h4" />
+                  </svg>
+                ),
+                title: "Cliente preenche os dados",
+                desc: `Seu cupom ${partner.coupon_code} é aplicado automaticamente. O cliente só insere nome, e-mail e WhatsApp.`,
+              },
+            ].map(({ icon, title, desc }) => (
+              <div key={title} className="bg-white border border-[#e2e2e2] px-5 py-5">
+                <div className="w-9 h-9 bg-[#eef2f8] flex items-center justify-center text-[#002045] mb-3">
+                  {icon}
+                </div>
+                <p className="text-[#002045] text-sm font-bold font-[var(--font-inter)] mb-1">{title}</p>
+                <p className="text-[#74777f] text-xs font-[var(--font-inter)] leading-relaxed">{desc}</p>
+              </div>
+            ))}
+          </div>
+
+          {/* CTA */}
+          <div className="bg-[#002045] px-6 py-6 flex flex-col sm:flex-row sm:items-center gap-4">
+            <div className="flex-1">
+              <p className="text-white text-base font-[var(--font-noto-serif)] font-normal mb-1">
+                Pronto para simular?
+              </p>
+              <p className="text-white/60 text-xs font-[var(--font-inter)]">
+                Seu cupom <strong className="text-white tracking-widest">{partner.coupon_code}</strong> será vinculado automaticamente à simulação.
+              </p>
+            </div>
+            <a
+              href={`/simulador?mode=partner&cupom=${encodeURIComponent(partner.coupon_code)}`}
+              target="_blank"
+              rel="noopener noreferrer"
+              className="flex-shrink-0 inline-flex items-center gap-2 bg-white text-[#002045] text-xs tracking-[0.12em] uppercase font-bold font-[var(--font-inter)] px-7 py-4 hover:bg-[#f0f4f8] transition-colors"
+            >
+              Abrir simulador
+              <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5">
+                <path d="M5 12h14M12 5l7 7-7 7" />
+              </svg>
+            </a>
+          </div>
+
+          <p className="text-[#74777f] text-[10px] font-[var(--font-inter)] mt-3">
+            O simulador abrirá em uma nova aba. Após configurar, use o botão "Gerar link para cliente" para obter o link compartilhável.
           </p>
         </div>
       )}
