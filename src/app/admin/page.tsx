@@ -42,6 +42,7 @@ interface ProductImage { id:string; product_id:string; image_path:string; sort_o
 interface DbProduct { id:string; code:string; name:string; linha:"Classic"|"Brilliance"|"Elegance"; finish:string; price:number; price_per_m2:number; description:string; image_path:string; is_active:boolean; sort_order:number; created_at:string; product_images?: ProductImage[]; }
 interface DbPhotoProject { id:string; slug:string; title:string; product_code:string; categories:string[]; image_after:string; image_before:string; note:string; is_active:boolean; sort_order:number; }
 interface DbRenderProject { id:string; slug:string; title:string; product_code:string; image_path:string; is_active:boolean; sort_order:number; }
+interface ProjectMedia { id:string; project_slug:string; type:"image"|"video"; url:string; caption:string|null; sort_order:number; }
 
 interface CouponUse {
   id: string;
@@ -339,6 +340,10 @@ export default function AdminPage() {
   const [renderImportingAll, setRenderImportingAll] = useState(false);
   const [photoForm, setPhotoForm] = useState({ slug:"", title:"", product_code:"", categories:[] as string[], image_after:"", image_before:"", note:"", is_active:true, sort_order:0 });
   const [renderForm, setRenderForm] = useState({ slug:"", title:"", product_code:"", image_path:"", is_active:true, sort_order:0 });
+  const [projectMediaMap, setProjectMediaMap] = useState<Record<string, ProjectMedia[]>>({});
+  const [expandedMediaSlug, setExpandedMediaSlug] = useState<string | null>(null);
+  const [mediaUploading, setMediaUploading] = useState(false);
+  const [videoUrlInput, setVideoUrlInput] = useState("");
 
   // Same static list as the public projetos page — kept in sync manually
   const STATIC_RENDERS = [
@@ -1064,6 +1069,47 @@ export default function AdminPage() {
     setRenderForm({ slug: r.slug, title: r.title, product_code: r.product_code, image_path: r.image_path, is_active: r.is_active, sort_order: r.sort_order });
     setShowRenderForm(true);
     setTimeout(() => renderTabFormRef.current?.scrollIntoView({ behavior: "smooth", block: "start" }), 50);
+  }
+
+  // ── Project Media CRUD ──────────────────
+  async function fetchProjectMedia(slug: string) {
+    const res = await fetch(`/api/projects/media?slug=${slug}`, { headers: { "x-admin-auth": ADMIN_PW } });
+    if (res.ok) {
+      const data = await res.json();
+      setProjectMediaMap((prev) => ({ ...prev, [slug]: data }));
+    }
+  }
+
+  async function addProjectMediaImage(slug: string, file: File) {
+    setMediaUploading(true);
+    const url = await uploadDirect(file, "projetos");
+    if (url) {
+      const existing = projectMediaMap[slug] ?? [];
+      await fetch("/api/projects/media", {
+        method: "POST",
+        headers: { "Content-Type": "application/json", "x-admin-auth": ADMIN_PW },
+        body: JSON.stringify({ project_slug: slug, type: "image", url, sort_order: existing.length }),
+      });
+      await fetchProjectMedia(slug);
+    }
+    setMediaUploading(false);
+  }
+
+  async function addProjectMediaVideo(slug: string, url: string) {
+    if (!url.trim()) return;
+    const existing = projectMediaMap[slug] ?? [];
+    await fetch("/api/projects/media", {
+      method: "POST",
+      headers: { "Content-Type": "application/json", "x-admin-auth": ADMIN_PW },
+      body: JSON.stringify({ project_slug: slug, type: "video", url: url.trim(), sort_order: existing.length }),
+    });
+    await fetchProjectMedia(slug);
+    setVideoUrlInput("");
+  }
+
+  async function deleteProjectMedia(id: string, slug: string) {
+    await fetch(`/api/projects/media/${id}`, { method: "DELETE", headers: { "x-admin-auth": ADMIN_PW } });
+    await fetchProjectMedia(slug);
   }
 
   async function importStaticRender(render: { slug: string; title: string; product_code: string; image_path: string }, idx: number) {
@@ -3844,24 +3890,104 @@ export default function AdminPage() {
                 <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                   {dbPhotoProjects.length === 0 ? (
                     <p className="text-[#74777f] text-sm font-[var(--font-inter)] col-span-2 py-6 text-center">Nenhuma foto cadastrada.</p>
-                  ) : dbPhotoProjects.map((p) => (
-                    <div key={p.id} className="bg-white border border-[#e2e2e2] p-4 flex gap-4">
-                      {p.image_after && <img src={p.image_after} alt={p.title} className="w-20 h-24 object-cover flex-shrink-0 border border-[#e2e2e2]" />}
-                      <div className="flex-1 min-w-0">
-                        <p className="font-semibold text-[#002045] font-[var(--font-inter)] text-sm">{p.title}</p>
-                        <p className="text-xs text-[#3b6934] font-[var(--font-inter)] mt-0.5">{p.product_code}</p>
-                        <div className="flex flex-wrap gap-1 mt-1">
-                          {p.categories.map((c) => (
-                            <span key={c} className="bg-[#eef2f8] text-[#002045] px-1.5 py-0.5 text-[9px] font-bold tracking-wider">{c}</span>
-                          ))}
+                  ) : dbPhotoProjects.map((p) => {
+                    const isMediaOpen = expandedMediaSlug === p.slug;
+                    const media = projectMediaMap[p.slug] ?? [];
+                    return (
+                      <div key={p.id} className="bg-white border border-[#e2e2e2] flex flex-col">
+                        <div className="p-4 flex gap-4">
+                          {p.image_after && <img src={p.image_after} alt={p.title} className="w-20 h-24 object-cover flex-shrink-0 border border-[#e2e2e2]" />}
+                          <div className="flex-1 min-w-0">
+                            <p className="font-semibold text-[#002045] font-[var(--font-inter)] text-sm">{p.title}</p>
+                            <p className="text-xs text-[#3b6934] font-[var(--font-inter)] mt-0.5">{p.product_code}</p>
+                            <div className="flex flex-wrap gap-1 mt-1">
+                              {p.categories.map((c) => (
+                                <span key={c} className="bg-[#eef2f8] text-[#002045] px-1.5 py-0.5 text-[9px] font-bold tracking-wider">{c}</span>
+                              ))}
+                            </div>
+                            <div className="flex gap-2 mt-3 flex-wrap">
+                              <button onClick={() => startEditPhoto(p)} className="text-[10px] tracking-[0.08em] uppercase font-bold font-[var(--font-inter)] px-3 py-1.5 border border-[#002045] text-[#002045] hover:bg-[#002045] hover:text-white transition-colors">Editar</button>
+                              <button
+                                onClick={() => {
+                                  if (!isMediaOpen) fetchProjectMedia(p.slug);
+                                  setExpandedMediaSlug(isMediaOpen ? null : p.slug);
+                                  setVideoUrlInput("");
+                                }}
+                                className={`text-[10px] tracking-[0.08em] uppercase font-bold font-[var(--font-inter)] px-3 py-1.5 border transition-colors ${isMediaOpen ? "bg-[#3b6934] text-white border-[#3b6934]" : "border-[#3b6934] text-[#3b6934] hover:bg-[#3b6934] hover:text-white"}`}
+                              >
+                                {isMediaOpen ? "▲ Mídias" : `▼ Mídias${media.length ? ` (${media.length})` : ""}`}
+                              </button>
+                              <button onClick={() => deletePhoto(p.id, p.title)} className="text-[10px] tracking-[0.08em] uppercase font-bold font-[var(--font-inter)] px-3 py-1.5 border border-red-300 text-red-600 hover:bg-red-50 transition-colors">Excluir</button>
+                            </div>
+                          </div>
                         </div>
-                        <div className="flex gap-2 mt-3">
-                          <button onClick={() => startEditPhoto(p)} className="text-[10px] tracking-[0.08em] uppercase font-bold font-[var(--font-inter)] px-3 py-1.5 border border-[#002045] text-[#002045] hover:bg-[#002045] hover:text-white transition-colors">Editar</button>
-                          <button onClick={() => deletePhoto(p.id, p.title)} className="text-[10px] tracking-[0.08em] uppercase font-bold font-[var(--font-inter)] px-3 py-1.5 border border-red-300 text-red-600 hover:bg-red-50 transition-colors">Excluir</button>
-                        </div>
+
+                        {/* ── Media panel ── */}
+                        {isMediaOpen && (
+                          <div className="border-t border-[#e2e2e2] bg-[#f9f9f9] p-4">
+                            <p className="text-[10px] tracking-[0.12em] uppercase font-bold text-[#002045] font-[var(--font-inter)] mb-3">Mídia adicional da obra</p>
+
+                            {/* Existing media grid */}
+                            {media.length > 0 && (
+                              <div className="flex flex-wrap gap-2 mb-4">
+                                {media.map((m) => (
+                                  <div key={m.id} className="relative group w-20 h-20">
+                                    {m.type === "image" ? (
+                                      <img src={m.url} alt={m.caption ?? ""} className="w-full h-full object-cover border border-[#e2e2e2]" />
+                                    ) : (
+                                      <div className="w-full h-full bg-[#002045] flex items-center justify-center border border-[#002045]">
+                                        <svg width="20" height="20" viewBox="0 0 24 24" fill="white"><path d="M8 5v14l11-7z"/></svg>
+                                      </div>
+                                    )}
+                                    <button
+                                      onClick={() => deleteProjectMedia(m.id, p.slug)}
+                                      className="absolute top-0.5 right-0.5 w-5 h-5 bg-red-600 text-white text-[10px] font-bold flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity"
+                                    >×</button>
+                                    {m.type === "video" && (
+                                      <span className="absolute bottom-0.5 left-0.5 text-[7px] text-white/70 font-bold tracking-wide">VÍD</span>
+                                    )}
+                                  </div>
+                                ))}
+                              </div>
+                            )}
+
+                            {/* Add image */}
+                            <div className="flex flex-col sm:flex-row gap-3">
+                              <label className={`relative cursor-pointer text-[10px] tracking-[0.1em] uppercase font-bold font-[var(--font-inter)] px-4 py-2 border border-[#002045] text-[#002045] hover:bg-[#002045] hover:text-white transition-colors whitespace-nowrap ${mediaUploading ? "opacity-50 pointer-events-none" : ""}`}>
+                                {mediaUploading ? "Enviando…" : "+ Foto"}
+                                <input
+                                  type="file" accept="image/*" className="absolute inset-0 opacity-0 cursor-pointer w-full"
+                                  onChange={async (e) => {
+                                    const file = e.target.files?.[0];
+                                    if (file) await addProjectMediaImage(p.slug, file);
+                                    e.target.value = "";
+                                  }}
+                                />
+                              </label>
+
+                              {/* Add video URL */}
+                              <div className="flex gap-2 flex-1">
+                                <input
+                                  type="url"
+                                  value={videoUrlInput}
+                                  onChange={(e) => setVideoUrlInput(e.target.value)}
+                                  placeholder="URL do vídeo (YouTube, Vimeo, .mp4…)"
+                                  className="flex-1 border border-[#e2e2e2] px-3 py-2 text-sm font-[var(--font-inter)] text-[#43474e] focus:outline-none focus:border-[#002045]"
+                                />
+                                <button
+                                  onClick={() => addProjectMediaVideo(p.slug, videoUrlInput)}
+                                  disabled={!videoUrlInput.trim()}
+                                  className="text-[10px] tracking-[0.1em] uppercase font-bold font-[var(--font-inter)] px-4 py-2 bg-[#002045] text-white hover:bg-[#1a365d] transition-colors disabled:opacity-40 whitespace-nowrap"
+                                >
+                                  + Vídeo
+                                </button>
+                              </div>
+                            </div>
+                          </div>
+                        )}
                       </div>
-                    </div>
-                  ))}
+                    );
+                  })}
                 </div>
               )}
             </div>

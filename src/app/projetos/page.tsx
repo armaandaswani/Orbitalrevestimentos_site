@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect } from "react";
+import { useState, useEffect, useCallback, useRef } from "react";
 import Image from "next/image";
 import Link from "next/link";
 
@@ -24,6 +24,163 @@ interface Render {
   title: string;
   product_code: string;
   image_path: string;
+}
+
+interface ProjectMedia {
+  id: string;
+  project_slug: string;
+  type: "image" | "video";
+  url: string;
+  caption: string | null;
+  sort_order: number;
+}
+
+type LightboxItem =
+  | { kind: "image"; url: string; label?: string }
+  | { kind: "video"; url: string; label?: string };
+
+function buildLightboxItems(project: Project, extra: ProjectMedia[]): LightboxItem[] {
+  const items: LightboxItem[] = [
+    { kind: "image", url: project.image_after, label: "Depois" },
+  ];
+  if (project.image_before) items.push({ kind: "image", url: project.image_before, label: "Antes" });
+  for (const m of extra) {
+    items.push({ kind: m.type, url: m.url, label: m.caption ?? undefined });
+  }
+  return items;
+}
+
+function getVideoEmbed(url: string): string | null {
+  const yt = url.match(/(?:youtube\.com\/watch\?v=|youtu\.be\/)([^&\s]+)/);
+  if (yt) return `https://www.youtube.com/embed/${yt[1]}?autoplay=1`;
+  const vm = url.match(/vimeo\.com\/(\d+)/);
+  if (vm) return `https://player.vimeo.com/video/${vm[1]}?autoplay=1`;
+  return null;
+}
+
+function isDirectVideo(url: string) {
+  return /\.(mp4|webm|mov)(\?|$)/i.test(url);
+}
+
+// ─── Lightbox ─────────────────────────────────────────────────────────────────
+function ProjectLightbox({
+  project,
+  items,
+  loading,
+  idx,
+  onClose,
+  onPrev,
+  onNext,
+  onDotClick,
+}: {
+  project: Project;
+  items: LightboxItem[];
+  loading: boolean;
+  idx: number;
+  onClose: () => void;
+  onPrev: () => void;
+  onNext: () => void;
+  onDotClick: (i: number) => void;
+}) {
+  const current = items[idx];
+
+  return (
+    <div
+      className="fixed inset-0 z-50 bg-black/92 flex flex-col"
+      onClick={onClose}
+    >
+      {/* Header */}
+      <div
+        className="flex items-center justify-between px-5 py-4 flex-shrink-0"
+        onClick={(e) => e.stopPropagation()}
+      >
+        <div>
+          <p className="text-[#a1d494] text-[9px] tracking-[0.2em] uppercase font-bold font-[var(--font-inter)]">
+            {project.product_code}
+          </p>
+          <p className="text-white font-[var(--font-noto-serif)] text-base">{project.title}</p>
+        </div>
+        <button onClick={onClose} className="text-white/50 hover:text-white text-2xl leading-none ml-4">×</button>
+      </div>
+
+      {/* Main image area */}
+      <div
+        className="flex-1 relative flex items-center justify-center overflow-hidden min-h-0"
+        onClick={(e) => e.stopPropagation()}
+      >
+        {loading ? (
+          <div className="w-8 h-8 border-2 border-white/20 border-t-white/80 rounded-full animate-spin" />
+        ) : current?.kind === "image" ? (
+          <img
+            key={current.url}
+            src={current.url}
+            alt={current.label ?? project.title}
+            className="max-h-full max-w-full object-contain select-none"
+            draggable={false}
+          />
+        ) : current?.kind === "video" ? (
+          (() => {
+            const embed = getVideoEmbed(current.url);
+            return embed ? (
+              <iframe
+                key={current.url}
+                src={embed}
+                className="w-full max-w-3xl aspect-video"
+                allowFullScreen
+                allow="autoplay; fullscreen"
+              />
+            ) : isDirectVideo(current.url) ? (
+              <video key={current.url} src={current.url} controls autoPlay className="max-h-full max-w-full" />
+            ) : null;
+          })()
+        ) : null}
+
+        {/* Label pill */}
+        {current?.label && (
+          <span className="absolute top-4 left-4 text-[9px] tracking-[0.15em] uppercase font-bold font-[var(--font-inter)] px-2.5 py-1 bg-black/50 text-white/70 backdrop-blur-sm">
+            {current.label}
+          </span>
+        )}
+
+        {/* Nav arrows */}
+        {items.length > 1 && (
+          <>
+            <button
+              onClick={onPrev}
+              className="absolute left-3 top-1/2 -translate-y-1/2 w-10 h-10 flex items-center justify-center bg-black/40 hover:bg-black/70 text-white transition-colors"
+            >
+              <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><path d="M15 18l-6-6 6-6"/></svg>
+            </button>
+            <button
+              onClick={onNext}
+              className="absolute right-3 top-1/2 -translate-y-1/2 w-10 h-10 flex items-center justify-center bg-black/40 hover:bg-black/70 text-white transition-colors"
+            >
+              <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><path d="M9 18l6-6-6-6"/></svg>
+            </button>
+          </>
+        )}
+      </div>
+
+      {/* Dots + counter */}
+      {items.length > 1 && (
+        <div
+          className="flex items-center justify-center gap-2 py-4 flex-shrink-0"
+          onClick={(e) => e.stopPropagation()}
+        >
+          {items.map((item, i) => (
+            <button
+              key={i}
+              onClick={() => onDotClick(i)}
+              className={`transition-all rounded-full ${i === idx ? "w-5 h-1.5 bg-white" : "w-1.5 h-1.5 bg-white/30 hover:bg-white/60"}`}
+            />
+          ))}
+          <span className="text-white/40 text-[10px] font-[var(--font-inter)] ml-3">
+            {idx + 1} / {items.length}
+          </span>
+        </div>
+      )}
+    </div>
+  );
 }
 
 // ─── Data ─────────────────────────────────────────────────────────────────────
@@ -87,30 +244,47 @@ const FILTERS: { key: Category; label: string }[] = [
 ];
 
 // ─── Project card — portrait aspect ───────────────────────────────────────────
-function ProjectCard({ project }: { project: Project }) {
+function ProjectCard({ project, onOpen }: { project: Project; onOpen: (p: Project) => void }) {
   const [showBefore, setShowBefore] = useState(false);
   const hasBA = !!project.image_before;
 
   return (
-    <div className="bg-white flex flex-col">
+    <div
+      className="bg-white flex flex-col cursor-pointer group"
+      onClick={() => onOpen(project)}
+    >
       {/* Image */}
       <div className="relative w-full aspect-[3/4] overflow-hidden">
         <img
           src={project.image_after}
           alt={`${project.title} — depois`}
-          className={`absolute inset-0 w-full h-full object-cover transition-opacity duration-500 ${hasBA && showBefore ? "opacity-0" : "opacity-100"}`}
+          className={`absolute inset-0 w-full h-full object-cover transition-all duration-500 group-hover:scale-[1.03] ${hasBA && showBefore ? "opacity-0" : "opacity-100"}`}
         />
         {hasBA && project.image_before && (
           <img
             src={project.image_before}
             alt={`${project.title} — antes`}
-            className={`absolute inset-0 w-full h-full object-cover transition-opacity duration-500 ${showBefore ? "opacity-100" : "opacity-0"}`}
+            className={`absolute inset-0 w-full h-full object-cover transition-all duration-500 group-hover:scale-[1.03] ${showBefore ? "opacity-100" : "opacity-0"}`}
           />
         )}
 
-        {/* Antes / Depois toggle */}
+        {/* Hover overlay — gallery cue */}
+        <div className="absolute inset-0 bg-black/0 group-hover:bg-black/35 transition-colors duration-300 flex items-center justify-center">
+          <div className="opacity-0 group-hover:opacity-100 transition-opacity duration-300 flex flex-col items-center gap-1.5">
+            <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="white" strokeWidth="1.5">
+              <rect x="3" y="3" width="7" height="7" rx="1"/><rect x="14" y="3" width="7" height="7" rx="1"/>
+              <rect x="3" y="14" width="7" height="7" rx="1"/><rect x="14" y="14" width="7" height="7" rx="1"/>
+            </svg>
+            <span className="text-white text-[9px] tracking-[0.2em] uppercase font-bold font-[var(--font-inter)]">Ver galeria</span>
+          </div>
+        </div>
+
+        {/* Antes / Depois toggle — stop propagation so it doesn't open lightbox */}
         {hasBA && (
-          <div className="absolute top-3 right-3 flex overflow-hidden border border-white/30 bg-black/40 backdrop-blur-sm">
+          <div
+            className="absolute top-3 right-3 flex overflow-hidden border border-white/30 bg-black/40 backdrop-blur-sm"
+            onClick={(e) => e.stopPropagation()}
+          >
             <button
               onClick={() => setShowBefore(true)}
               className={`text-[9px] tracking-[0.1em] uppercase font-bold font-[var(--font-inter)] px-3.5 py-2 transition-colors duration-150 ${
@@ -145,6 +319,13 @@ function ProjectCard({ project }: { project: Project }) {
             {project.note}
           </p>
         )}
+        <p className="text-[#74777f] text-[8px] font-[var(--font-inter)] mt-1.5 flex items-center gap-1">
+          <svg width="9" height="9" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+            <rect x="3" y="3" width="7" height="7" rx="1"/><rect x="14" y="3" width="7" height="7" rx="1"/>
+            <rect x="3" y="14" width="7" height="7" rx="1"/><rect x="14" y="14" width="7" height="7" rx="1"/>
+          </svg>
+          Ver galeria completa
+        </p>
       </div>
     </div>
   );
@@ -202,6 +383,53 @@ export default function ProjetosPage() {
   const [projects, setProjects] = useState<Project[]>([]);
   const [renders, setRenders] = useState<Render[]>([]);
 
+  // Lightbox
+  const [lightboxProject, setLightboxProject] = useState<Project | null>(null);
+  const [lightboxItems, setLightboxItems] = useState<LightboxItem[]>([]);
+  const [lightboxIdx, setLightboxIdx] = useState(0);
+  const [lightboxLoading, setLightboxLoading] = useState(false);
+
+  const openLightbox = useCallback(async (project: Project) => {
+    setLightboxProject(project);
+    setLightboxIdx(0);
+    setLightboxLoading(true);
+    setLightboxItems(buildLightboxItems(project, []));
+    try {
+      const res = await fetch(`/api/projects/media?slug=${project.slug}`);
+      const extra: ProjectMedia[] = res.ok ? await res.json() : [];
+      setLightboxItems(buildLightboxItems(project, extra));
+    } catch { /* show what we have */ }
+    setLightboxLoading(false);
+  }, []);
+
+  const closeLightbox = useCallback(() => setLightboxProject(null), []);
+
+  const lightboxPrev = useCallback(() =>
+    setLightboxIdx((i) => (i - 1 + lightboxItems.length) % lightboxItems.length),
+  [lightboxItems.length]);
+
+  const lightboxNext = useCallback(() =>
+    setLightboxIdx((i) => (i + 1) % lightboxItems.length),
+  [lightboxItems.length]);
+
+  // Keyboard navigation
+  useEffect(() => {
+    if (!lightboxProject) return;
+    const handler = (e: KeyboardEvent) => {
+      if (e.key === "Escape") closeLightbox();
+      if (e.key === "ArrowLeft") lightboxPrev();
+      if (e.key === "ArrowRight") lightboxNext();
+    };
+    window.addEventListener("keydown", handler);
+    return () => window.removeEventListener("keydown", handler);
+  }, [lightboxProject, closeLightbox, lightboxPrev, lightboxNext]);
+
+  // Prevent body scroll when lightbox open
+  useEffect(() => {
+    document.body.style.overflow = lightboxProject ? "hidden" : "";
+    return () => { document.body.style.overflow = ""; };
+  }, [lightboxProject]);
+
   useEffect(() => {
     fetch("/api/projects/photos")
       .then((r) => r.json())
@@ -227,6 +455,20 @@ export default function ProjetosPage() {
 
   return (
     <div className="pt-20">
+
+      {/* ── Lightbox ─────────────────────────────────────────────────────────── */}
+      {lightboxProject && (
+        <ProjectLightbox
+          project={lightboxProject}
+          items={lightboxItems}
+          loading={lightboxLoading}
+          idx={lightboxIdx}
+          onClose={closeLightbox}
+          onPrev={lightboxPrev}
+          onNext={lightboxNext}
+          onDotClick={setLightboxIdx}
+        />
+      )}
 
       {/* ── Hero ────────────────────────────────────────────────────────────── */}
       <section className="relative h-screen min-h-[640px] max-h-[960px] flex items-center lg:items-end">
@@ -387,7 +629,7 @@ export default function ProjetosPage() {
                     <SectionHeader label={section.label} desc={section.desc} />
                     <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 gap-1">
                       {displayProjects.map((project) => (
-                        <ProjectCard key={project.id} project={project} />
+                        <ProjectCard key={project.id} project={project} onOpen={openLightbox} />
                       ))}
                     </div>
                   </div>
@@ -404,7 +646,7 @@ export default function ProjetosPage() {
               ) : (
                 <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 gap-1">
                   {filtered.map((project) => (
-                    <ProjectCard key={project.id} project={project} />
+                    <ProjectCard key={project.id} project={project} onOpen={openLightbox} />
                   ))}
                 </div>
               )}
