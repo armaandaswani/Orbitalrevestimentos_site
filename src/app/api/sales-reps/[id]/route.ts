@@ -43,7 +43,7 @@ export async function PUT(
           if (passwordChanged) changes.push(`<tr><td style="padding:8px 0;border-bottom:1px solid #eee;color:#555;font-size:14px">Nova senha</td><td style="padding:8px 0;border-bottom:1px solid #eee;font-weight:600;font-size:14px;text-align:right;font-family:monospace">${body.portal_password}</td></tr>`);
 
           await resend.emails.send({
-            from: "Orbital Revestimentos <noreply@orbitalrevestimentos.com.br>",
+            from: "Orbital Revestimentos <orbitalrevestimentos@gmail.com>",
             to: recipientEmail,
             subject: "Seus dados de acesso foram atualizados — Orbital Revestimentos",
             html: `

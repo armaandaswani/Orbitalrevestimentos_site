@@ -129,7 +129,7 @@ export async function GET(req: NextRequest) {
   try {
     const resend = getResend();
     await resend.emails.send({
-      from: "Orbital Revestimentos <noreply@orbitalrevestimentos.com.br>",
+      from: "Orbital Revestimentos <orbitalrevestimentos@gmail.com>",
       to: ADMIN_EMAIL,
       subject: `[TESTE] ${content.subject}`,
       html: testHtml,

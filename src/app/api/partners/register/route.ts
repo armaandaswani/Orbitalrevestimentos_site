@@ -97,7 +97,7 @@ export async function POST(req: NextRequest) {
     const { getResend } = await import("@/lib/resend");
     const resend = getResend();
     await resend.emails.send({
-      from: "Orbital Revestimentos <noreply@orbitalrevestimentos.com.br>",
+      from: "Orbital Revestimentos <orbitalrevestimentos@gmail.com>",
       to: email,
       subject: "Recebemos o seu cadastro — Orbital Revestimentos",
       html: `
@@ -128,7 +128,7 @@ export async function POST(req: NextRequest) {
     const waLink = `https://wa.me/5592988150149?text=${waText}`;
 
     await resend.emails.send({
-      from: "Orbital Revestimentos <noreply@orbitalrevestimentos.com.br>",
+      from: "Orbital Revestimentos <orbitalrevestimentos@gmail.com>",
       to: "armaandaswani19@gmail.com",
       subject: `Novo parceiro aguardando aprovação: ${name}`,
       html: `
@@ -179,7 +179,7 @@ export async function POST(req: NextRequest) {
       const { getResend } = await import("@/lib/resend");
       const resend = getResend();
       await resend.emails.send({
-        from: "Orbital Revestimentos <noreply@orbitalrevestimentos.com.br>",
+        from: "Orbital Revestimentos <orbitalrevestimentos@gmail.com>",
         to: salesRep.email,
         subject: `Novo parceiro cadastrado: ${name}`,
         html: `

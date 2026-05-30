@@ -61,7 +61,7 @@ export async function POST(req: NextRequest) {
       partnerName: partner_name as string,
     });
     await resend.emails.send({
-      from: "Orbital Revestimentos <noreply@orbitalrevestimentos.com.br>",
+      from: "Orbital Revestimentos <orbitalrevestimentos@gmail.com>",
       to: client_email as string,
       subject,
       html,
@@ -78,7 +78,7 @@ export async function POST(req: NextRequest) {
     const couponLine = partner_name && partner_name !== "Orbital" ? `<tr><td style="padding:6px 0;color:#74777f;font-size:13px;font-family:Arial,sans-serif;">Cupom parceiro</td><td style="padding:6px 0 6px 16px;color:#002045;font-size:13px;font-weight:700;font-family:Arial,sans-serif;">${partner_name}</td></tr>` : "";
 
     await resend.emails.send({
-      from: "Orbital Revestimentos <noreply@orbitalrevestimentos.com.br>",
+      from: "Orbital Revestimentos <orbitalrevestimentos@gmail.com>",
       to: ADMIN_EMAIL,
       subject: `🆕 Novo orçamento — ${client_name} (${totalFmt})`,
       html: `

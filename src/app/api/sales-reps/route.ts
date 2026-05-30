@@ -71,7 +71,7 @@ export async function POST(req: NextRequest) {
       const portalUrl = "https://orbitalrevestimentos.com.br/representante";
 
       await resend.emails.send({
-        from: "Orbital Revestimentos <noreply@orbitalrevestimentos.com.br>",
+        from: "Orbital Revestimentos <orbitalrevestimentos@gmail.com>",
         to: email,
         subject: `Bem-vindo à Orbital — seu acesso está pronto`,
         html: `

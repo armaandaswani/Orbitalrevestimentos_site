@@ -222,7 +222,7 @@ export async function GET(req: NextRequest) {
   try {
     const resend = getResend();
     await resend.emails.send({
-      from: "Orbital Revestimentos <noreply@orbitalrevestimentos.com.br>",
+      from: "Orbital Revestimentos <orbitalrevestimentos@gmail.com>",
       to: ADMIN_EMAIL,
       subject: `💰 Comissões a pagar — ${totalPending} pendente${totalPending !== 1 ? "s" : ""} · ${fmt(totalUnpaidPartner + totalUnpaidRep)}`,
       html,
