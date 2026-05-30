@@ -31,9 +31,9 @@ interface Product {
 
 const linhas: { key: Linha; label: string; desc: string }[] = [
   { key: "todos", label: "Todos", desc: "15 acabamentos" },
-  { key: "Classic", label: "Classic", desc: "Mármore Fosco · R$ 559" },
-  { key: "Brilliance", label: "Brilliance", desc: "Mármore Polido · R$ 589" },
-  { key: "Elegance", label: "Elegance", desc: "Madeira Texturizada · R$ 649" },
+  { key: "Classic", label: "Classic", desc: "Mármore Fosco · 559/placa" },
+  { key: "Brilliance", label: "Brilliance", desc: "Mármore Polido · 589/placa" },
+  { key: "Elegance", label: "Elegance", desc: "Madeira Texturizada · 649/placa" },
 ];
 
 const LINHA_INFO: Record<"Classic" | "Brilliance" | "Elegance", {
@@ -384,11 +384,11 @@ export default function ProdutosPage() {
                   {/* Price */}
                   <div className="border-t border-[#e8e8e8] pt-4">
                     <p className="text-[#1a365d] text-2xl font-semibold font-[var(--font-inter)]">
-                      R$ {selected.price.toLocaleString("pt-BR")}
+                      {selected.price.toLocaleString("pt-BR")}
                       <span className="text-sm text-[#74777f] font-normal ml-1">/placa</span>
                     </p>
                     <p className="text-[#74777f] text-xs font-[var(--font-inter)] mt-0.5">
-                      R$ {selected.price_per_m2}/m² · {selectedIndex + 1} de {filtered.length} modelos
+                      {selected.price_per_m2}/m² · {selectedIndex + 1} de {filtered.length} modelos
                       {images.length > 1 && ` · ${images.length} fotos`}
                     </p>
                   </div>
@@ -484,11 +484,11 @@ export default function ProdutosPage() {
               </h2>
               <p className="text-[#43474e] text-sm font-[var(--font-inter)]">
                 {activeLinha === "Classic" &&
-                  "Mármore Fosco · 5mm · 1,2m × 2,9m = 3,48m² · R$ 559/placa · R$ 160/m²"}
+                  "Mármore Fosco · 5mm · 1,2m × 2,9m = 3,48m² · 559/placa · 160/m²"}
                 {activeLinha === "Brilliance" &&
-                  "Mármore Polido · 5mm · 1,2m × 2,9m = 3,48m² · R$ 589/placa · R$ 169/m²"}
+                  "Mármore Polido · 5mm · 1,2m × 2,9m = 3,48m² · 589/placa · 169/m²"}
                 {activeLinha === "Elegance" &&
-                  "Madeira Texturizada · 5mm · 1,2m × 2,9m = 3,48m² · R$ 649/placa · R$ 186/m²"}
+                  "Madeira Texturizada · 5mm · 1,2m × 2,9m = 3,48m² · 649/placa · 186/m²"}
               </p>
             </div>
           )}
@@ -557,11 +557,11 @@ export default function ProdutosPage() {
                     <div className="pt-1 lg:pt-2 flex items-center justify-between">
                       <div>
                         <span className="text-[#1a365d] text-sm lg:text-base font-semibold font-[var(--font-inter)]">
-                          R$ {product.price.toLocaleString("pt-BR")}
+                          {product.price.toLocaleString("pt-BR")}
                           <span className="text-xs text-[#74777f] font-normal ml-1">/placa</span>
                         </span>
                         <span className="text-[#74777f] text-xs font-[var(--font-inter)] ml-1 lg:ml-2 hidden sm:inline">
-                          (R$ {product.price_per_m2}/m²)
+                          ({product.price_per_m2}/m²)
                         </span>
                       </div>
                     </div>

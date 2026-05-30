@@ -28,8 +28,7 @@ function orbitalMOPerPlate(plates: number, complex: boolean) {
 
 function fmt(n: number) {
   return n.toLocaleString("pt-BR", {
-    style: "currency",
-    currency: "BRL",
+    style: "decimal",
     maximumFractionDigits: 0,
   });
 }
@@ -854,7 +853,7 @@ function SimuladorInner() {
                       </div>
                       <div className="border-t border-[#e8e8e8] pt-3">
                         <p className="text-[#002045] text-sm font-bold font-[var(--font-inter)]">
-                          R$ {info.price.toLocaleString("pt-BR")} / placa
+                          {info.price.toLocaleString("pt-BR")} / placa
                         </p>
                         <p className="text-[#9e9e9e] text-[10px] font-[var(--font-inter)] mt-0.5">
                           2,9m × 1,2m × 5mm · 3,48 m²
@@ -1499,7 +1498,7 @@ function SimuladorInner() {
                     <p className="text-[#74777f] text-[10px] font-[var(--font-inter)]">cobre ~{(plates * PLATE_M2).toFixed(2)} m²</p>
                   </div>
                   <div>
-                    <p className="text-[#74777f] text-[10px] tracking-[0.1em] uppercase font-semibold font-[var(--font-inter)] mb-0.5">Preço do material</p>
+                    <p className="text-[#74777f] text-[10px] tracking-[0.1em] uppercase font-semibold font-[var(--font-inter)] mb-0.5">Investimento em material</p>
                     {discountAmount > 0 ? (
                       <>
                         <p className="text-[#74777f] text-sm line-through font-[var(--font-inter)]">{fmt(orbMaterialTotal)}</p>
@@ -1509,7 +1508,7 @@ function SimuladorInner() {
                     ) : (
                       <>
                         <p className="text-[#002045] text-sm font-semibold font-[var(--font-inter)]">{fmt(orbMaterialTotal)}</p>
-                        <p className="text-[#74777f] text-[10px] font-[var(--font-inter)]">R$ {pricePerPlate.toLocaleString("pt-BR")}/placa</p>
+                        <p className="text-[#74777f] text-[10px] font-[var(--font-inter)]">{pricePerPlate.toLocaleString("pt-BR")}/placa</p>
                       </>
                     )}
                   </div>
@@ -1666,7 +1665,7 @@ function SimuladorInner() {
                   <div className="space-y-3 mb-6">
                     <div className="flex items-start justify-between text-sm font-[var(--font-inter)] gap-4">
                       <span className="text-white/55">
-                        Material ({plates} placa{plates !== 1 ? "s" : ""} × R$ {pricePerPlate.toLocaleString("pt-BR")})
+                        Material ({plates} placa{plates !== 1 ? "s" : ""} × {pricePerPlate.toLocaleString("pt-BR")})
                         <span className="block text-white/30 text-[10px] mt-0.5">2,9m × 1,2m × 5mm por placa</span>
                         {discountAmount > 0 && (
                           <span className="block text-[#a1d494] text-[10px] mt-0.5">
@@ -1679,7 +1678,7 @@ function SimuladorInner() {
                     <div className="flex items-start justify-between text-sm font-[var(--font-inter)] gap-4">
                       <span className="text-white/55">
                         Mão de obra estimada
-                        <span className="block text-white/40 text-[10px] mt-0.5">Serviço terceirizado · R$ {Math.round(moRatePerPlate / PLATE_M2)}/m²</span>
+                        <span className="block text-white/40 text-[10px] mt-0.5">Serviço terceirizado · {Math.round(moRatePerPlate / PLATE_M2)}/m²</span>
                       </span>
                       <span className="text-white font-semibold flex-shrink-0">{fmt(orbMOTotal)}</span>
                     </div>
@@ -1740,16 +1739,16 @@ function SimuladorInner() {
                     <div className="space-y-3 mb-6 pt-5">
                       <div className="flex items-start justify-between text-sm font-[var(--font-inter)] gap-4">
                         <span className="text-[#74777f]">
-                          Material ({mdfSheets} chapa{mdfSheets !== 1 ? "s" : ""} × R$ {MDF_SHEET_PRICE})
+                          Material ({mdfSheets} chapa{mdfSheets !== 1 ? "s" : ""} × {MDF_SHEET_PRICE})
                         </span>
                         <span className="text-[#43474e] font-semibold flex-shrink-0">{fmt(mdfMaterialTotal)}</span>
                       </div>
                       <div className="flex items-start justify-between text-sm font-[var(--font-inter)] gap-4">
-                        <span className="text-[#74777f]">MO estimada (R$ {isComplex ? MDF_MO_COMPLEX : MDF_MO_SIMPLE}/m²)*</span>
+                        <span className="text-[#74777f]">MO estimada ({isComplex ? MDF_MO_COMPLEX : MDF_MO_SIMPLE}/m²)*</span>
                         <span className="text-[#43474e] font-semibold flex-shrink-0">{fmt(mdfMOTotal)}</span>
                       </div>
                       <div className="flex items-start justify-between text-sm font-[var(--font-inter)] gap-4">
-                        <span className="text-[#74777f]">Acabamentos (R$ {MDF_ACABAMENTO}/m²)</span>
+                        <span className="text-[#74777f]">Acabamentos ({MDF_ACABAMENTO}/m²)</span>
                         <span className="text-[#43474e] font-semibold flex-shrink-0">{fmt(mdfAcabamentoTotal)}</span>
                       </div>
                       <div className="border-t border-[#e2e2e2] pt-3 flex items-center justify-between">

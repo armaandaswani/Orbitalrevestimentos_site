@@ -34,7 +34,7 @@ interface CouponUse {
 }
 
 function fmt(n: number) {
-  return n.toLocaleString("pt-BR", { style: "currency", currency: "BRL", maximumFractionDigits: 0 });
+  return n.toLocaleString("pt-BR", { style: "decimal", maximumFractionDigits: 0 });
 }
 
 const STATUS_LABELS: Record<string, { label: string; cls: string }> = {
@@ -1262,8 +1262,8 @@ export default function ParceiroPage() {
                     <p className="text-[#74777f] text-xs font-[var(--font-inter)]">{row.finish}</p>
                   </div>
                   <div className="text-right">
-                    <p className="text-[#002045] font-bold text-lg font-[var(--font-noto-serif)]">R$ {row.special}/placa</p>
-                    <p className="text-[#74777f] text-xs font-[var(--font-inter)]">Ref. público: <span className="line-through">R$ {row.normal}</span></p>
+                    <p className="text-[#002045] font-bold text-lg font-[var(--font-noto-serif)]">{row.special}/placa</p>
+                    <p className="text-[#74777f] text-xs font-[var(--font-inter)]">Ref. público: <span className="line-through">{row.normal}</span></p>
                   </div>
                 </div>
               ))}
@@ -1318,7 +1318,7 @@ export default function ParceiroPage() {
                     <div className={`w-full h-7 mb-3 ${m.bg}`} />
                     <p className="font-bold text-[#002045] text-sm font-[var(--font-inter)]">{m.key}</p>
                     <p className="text-[#74777f] text-xs font-[var(--font-inter)]">{m.finish}</p>
-                    <p className="text-[#002045] font-bold text-sm font-[var(--font-inter)] mt-1.5">R$ {m.price}/placa</p>
+                    <p className="text-[#002045] font-bold text-sm font-[var(--font-inter)] mt-1.5">{m.price}/placa</p>
                   </button>
                 ))}
               </div>
@@ -1531,7 +1531,7 @@ export default function ParceiroPage() {
                     </div>
                     <div>
                       <p className="text-white/50 text-[10px] font-[var(--font-inter)] mb-0.5">Valor unitário</p>
-                      <p className="text-white font-semibold font-[var(--font-inter)]">R$ {sqSpecialPrice}/placa</p>
+                      <p className="text-white font-semibold font-[var(--font-inter)]">{sqSpecialPrice}/placa</p>
                     </div>
                   </div>
                   <div className="border-t border-white/15 pt-4">
@@ -1566,11 +1566,11 @@ export default function ParceiroPage() {
                     </p>
                     <div className="space-y-3">
                       <div className="flex items-center justify-between text-sm font-[var(--font-inter)]">
-                        <span className="text-[#43474e]">Sua condição — {sqQtyNum} placa{sqQtyNum !== 1 ? "s" : ""} × R$ {sqSpecialPrice}</span>
+                        <span className="text-[#43474e]">Sua condição — {sqQtyNum} placa{sqQtyNum !== 1 ? "s" : ""} × {sqSpecialPrice}</span>
                         <span className="text-[#002045] font-bold">{fmt(sqTotal)}</span>
                       </div>
                       <div className="flex items-center justify-between text-sm font-[var(--font-inter)]">
-                        <span className="text-[#74777f]">Referência tabela normal — × R$ {sqNormalPrice}</span>
+                        <span className="text-[#74777f]">Referência tabela normal — × {sqNormalPrice}</span>
                         <span className="text-[#74777f]">{fmt(sqQtyNum * sqNormalPrice)}</span>
                       </div>
                       <div className="border-t border-[#3b6934]/20 pt-3 flex items-center justify-between">
