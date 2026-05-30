@@ -1,12 +1,15 @@
 import { NextRequest, NextResponse } from "next/server";
 import { supabaseAdmin } from "@/lib/supabase";
 import { getResend } from "@/lib/resend";
-import { generateClientEmail, STEP_DELAYS_DAYS, TOTAL_STEPS } from "@/lib/client-email-content";
+import { generateClientEmailFromTemplate, STEP_DELAYS_DAYS, TOTAL_STEPS } from "@/lib/client-email-content";
 
 export async function GET(req: NextRequest) {
-  const secret = req.headers.get("x-cron-secret");
-  if (secret !== process.env.CRON_SECRET) {
-    return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+  const cronSecret = process.env.CRON_SECRET;
+  if (cronSecret) {
+    const auth = req.headers.get("authorization");
+    if (auth !== `Bearer ${cronSecret}`) {
+      return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+    }
   }
 
   const db = supabaseAdmin();
@@ -20,6 +23,13 @@ export async function GET(req: NextRequest) {
     .lte("next_email_at", now);
 
   if (error) return NextResponse.json({ error: error.message }, { status: 500 });
+
+  // Pre-fetch all DB drip templates so we use admin-customised content when available
+  const { data: dripTemplates } = await db
+    .from("email_campaign_steps")
+    .select("step_number, subject, body_html");
+  const templateByStep: Record<number, { subject: string; body_html: string }> = {};
+  for (const t of dripTemplates ?? []) templateByStep[t.step_number] = t;
 
   let sent = 0;
   const resend = getResend();
@@ -37,7 +47,8 @@ export async function GET(req: NextRequest) {
     }
 
     try {
-      const { subject, html } = generateClientEmail(nextStep, {
+      const dbRow = templateByStep[nextStep] ?? null;
+      const { subject, html } = await generateClientEmailFromTemplate(nextStep, {
         clientName: seq.client_name as string,
         space: seq.space as string | null,
         model: seq.model as string,
@@ -45,7 +56,7 @@ export async function GET(req: NextRequest) {
         area: seq.area_m2 as number,
         total: seq.total as number,
         partnerName: seq.partner_name as string,
-      });
+      }, dbRow);
 
       await resend.emails.send({
         from: "Orbital Revestimentos <noreply@orbitalrevestimentos.com.br>",
