@@ -565,7 +565,10 @@ export default function ProdutosPage() {
                         </span>
                       </div>
                     </div>
-                    <div className="pt-1">
+                    <p className="text-[#b0b4bb] text-[10px] tracking-[0.08em] font-[var(--font-inter)] pt-0.5">
+                      2,9m × 1,2m × 5mm
+                    </p>
+                    <div className="pt-1.5">
                       <button className="inline-block text-[10px] tracking-[0.12em] uppercase font-bold font-[var(--font-inter)] border border-[#002045] text-[#002045] px-4 py-2 lg:px-5 group-hover:bg-[#002045] group-hover:text-white transition-colors">
                         Ver detalhes →
                       </button>
