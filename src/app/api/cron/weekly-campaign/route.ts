@@ -32,13 +32,12 @@ import {
 const ADMIN_EMAIL = "armaandaswani19@gmail.com";
 
 export async function GET(req: NextRequest) {
-  // Security: verify CRON_SECRET header (or allow Vercel's own cron runner in production)
-  const authHeader = req.headers.get("authorization");
   const cronSecret = process.env.CRON_SECRET;
-  const isVercelCron = process.env.VERCEL_ENV === "production";
-
-  if (!isVercelCron && (!cronSecret || authHeader !== `Bearer ${cronSecret}`)) {
-    return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+  if (cronSecret) {
+    const auth = req.headers.get("authorization");
+    if (auth !== `Bearer ${cronSecret}`) {
+      return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+    }
   }
 
   const db = supabaseAdmin();
@@ -130,7 +129,7 @@ export async function GET(req: NextRequest) {
   try {
     const resend = getResend();
     await resend.emails.send({
-      from: "Orbital Revestimentos <contato@orbitalrevestimentos.com.br>",
+      from: "Orbital Revestimentos <noreply@orbitalrevestimentos.com.br>",
       to: ADMIN_EMAIL,
       subject: `[TESTE] ${content.subject}`,
       html: testHtml,

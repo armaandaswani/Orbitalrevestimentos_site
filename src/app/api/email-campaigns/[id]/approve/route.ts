@@ -110,7 +110,7 @@ export async function GET(
           .replace(/{{COUPON_CODE}}/g, partner.coupon_code);
 
         return resend.emails.send({
-          from: "Orbital Revestimentos <contato@orbitalrevestimentos.com.br>",
+          from: "Orbital Revestimentos <noreply@orbitalrevestimentos.com.br>",
           to: partner.email,
           subject: campaign.subject,
           html: personalizedHtml,

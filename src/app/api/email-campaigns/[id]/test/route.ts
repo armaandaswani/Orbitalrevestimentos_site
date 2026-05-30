@@ -80,7 +80,7 @@ export async function POST(
   try {
     const resend = getResend();
     await resend.emails.send({
-      from: "Orbital Revestimentos <contato@orbitalrevestimentos.com.br>",
+      from: "Orbital Revestimentos <noreply@orbitalrevestimentos.com.br>",
       to: ADMIN_EMAIL,
       subject: `[TESTE] ${campaign.subject}`,
       html: testHtml,

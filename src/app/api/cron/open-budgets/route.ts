@@ -18,12 +18,12 @@ function fmtDate(iso: string) {
 }
 
 export async function GET(req: NextRequest) {
-  const authHeader = req.headers.get("authorization");
   const cronSecret = process.env.CRON_SECRET;
-  const isVercelCron = process.env.VERCEL_ENV === "production";
-
-  if (!isVercelCron && (!cronSecret || authHeader !== `Bearer ${cronSecret}`)) {
-    return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+  if (cronSecret) {
+    const auth = req.headers.get("authorization");
+    if (auth !== `Bearer ${cronSecret}`) {
+      return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+    }
   }
 
   const db = supabaseAdmin();
