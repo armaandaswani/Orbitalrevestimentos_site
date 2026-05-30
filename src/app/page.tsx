@@ -399,6 +399,9 @@ export default function Home() {
                       <p className="text-[#1a365d] text-sm font-semibold font-[var(--font-inter)] pt-1">
                         {price}
                       </p>
+                      <p className="text-[#b0b4bb] text-[10px] tracking-[0.08em] font-[var(--font-inter)]">
+                        2,9m × 1,2m × 5mm
+                      </p>
                     </div>
                   </Link>
                   <a
