@@ -237,6 +237,7 @@ function SimuladorInner() {
   const [hasJumpedFromLink, setHasJumpedFromLink] = useState(false);
   const [partnerLinkCopied, setPartnerLinkCopied] = useState(false);
   const [partnerLinkGenerated, setPartnerLinkGenerated] = useState(false);
+  const [platesOverride, setPlatesOverride] = useState<number | null>(null); // locked plate count from partner link
 
   // Sync custom space text → selectedSpace whenever text changes
   useEffect(() => {
@@ -259,7 +260,9 @@ function SimuladorInner() {
       : parseFloat(sqmInput) || 0;
 
   const plates =
-    dimMode === "lxa" && (parseFloat(width) || 0) > 0 && (parseFloat(height) || 0) > 0
+    platesOverride !== null
+      ? platesOverride
+      : dimMode === "lxa" && (parseFloat(width) || 0) > 0 && (parseFloat(height) || 0) > 0
       ? Math.ceil((parseFloat(width) || 0) / PLATE_W) * Math.ceil((parseFloat(height) || 0) / PLATE_H)
       : m2 > 0
       ? Math.ceil(m2 / PLATE_M2)
@@ -384,6 +387,13 @@ function SimuladorInner() {
     // Pre-fill area from ?area=N.NN
     const areaParam = searchParams.get("area");
     if (areaParam) { setSqmInput(areaParam); setDimMode("m2"); }
+
+    // Lock plate count from partner-calculated ?placas=N (prevents formula mismatch)
+    const placasParam = searchParams.get("placas");
+    if (placasParam) {
+      const n = parseInt(placasParam, 10);
+      if (!isNaN(n) && n > 0) setPlatesOverride(n);
+    }
 
     // Mark as partner-generated link if all key params present
     if (cupom && spaceParam && (areaParam || searchParams.get("produto"))) {
@@ -563,6 +573,7 @@ function SimuladorInner() {
     }
     if (selectedProduct) params.set("produto", selectedProduct.code);
     params.set("area", m2.toFixed(2));
+    params.set("placas", plates.toString());
     if (couponCode) params.set("cupom", couponCode);
     return `${origin}/simulador?${params.toString()}`;
   }
