@@ -1667,6 +1667,7 @@ function SimuladorInner() {
                     <div className="flex items-start justify-between text-sm font-[var(--font-inter)] gap-4">
                       <span className="text-white/55">
                         Material ({plates} placa{plates !== 1 ? "s" : ""} × R$ {pricePerPlate.toLocaleString("pt-BR")})
+                        <span className="block text-white/30 text-[10px] mt-0.5">2,9m × 1,2m × 5mm por placa</span>
                         {discountAmount > 0 && (
                           <span className="block text-[#a1d494] text-[10px] mt-0.5">
                             - desconto (cupom)
