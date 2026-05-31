@@ -1107,6 +1107,21 @@ export default function AdminPage() {
     setVideoUrlInput("");
   }
 
+  async function addProjectMediaVideoFile(slug: string, file: File) {
+    setMediaUploading(true);
+    const url = await uploadDirect(file, "projetos");
+    if (url) {
+      const existing = projectMediaMap[slug] ?? [];
+      await fetch("/api/projects/media", {
+        method: "POST",
+        headers: { "Content-Type": "application/json", "x-admin-auth": ADMIN_PW },
+        body: JSON.stringify({ project_slug: slug, type: "video", url, sort_order: existing.length }),
+      });
+      await fetchProjectMedia(slug);
+    }
+    setMediaUploading(false);
+  }
+
   async function deleteProjectMedia(id: string, slug: string) {
     await fetch(`/api/projects/media/${id}`, { method: "DELETE", headers: { "x-admin-auth": ADMIN_PW } });
     await fetchProjectMedia(slug);
@@ -3951,8 +3966,8 @@ export default function AdminPage() {
                               </div>
                             )}
 
-                            {/* Add image */}
-                            <div className="flex flex-col sm:flex-row gap-3">
+                            {/* Add image + video file */}
+                            <div className="flex flex-wrap gap-3">
                               <label className={`relative cursor-pointer text-[10px] tracking-[0.1em] uppercase font-bold font-[var(--font-inter)] px-4 py-2 border border-[#002045] text-[#002045] hover:bg-[#002045] hover:text-white transition-colors whitespace-nowrap ${mediaUploading ? "opacity-50 pointer-events-none" : ""}`}>
                                 {mediaUploading ? "Enviando…" : "+ Foto"}
                                 <input
@@ -3965,23 +3980,35 @@ export default function AdminPage() {
                                 />
                               </label>
 
-                              {/* Add video URL */}
-                              <div className="flex gap-2 flex-1">
+                              <label className={`relative cursor-pointer text-[10px] tracking-[0.1em] uppercase font-bold font-[var(--font-inter)] px-4 py-2 bg-[#3b6934] text-white hover:bg-[#2d5128] transition-colors whitespace-nowrap ${mediaUploading ? "opacity-50 pointer-events-none" : ""}`}>
+                                {mediaUploading ? "Enviando…" : "+ Vídeo (arquivo)"}
                                 <input
-                                  type="url"
-                                  value={videoUrlInput}
-                                  onChange={(e) => setVideoUrlInput(e.target.value)}
-                                  placeholder="URL do vídeo (YouTube, Vimeo, .mp4…)"
-                                  className="flex-1 border border-[#e2e2e2] px-3 py-2 text-sm font-[var(--font-inter)] text-[#43474e] focus:outline-none focus:border-[#002045]"
+                                  type="file" accept="video/*,.mov,.mp4,.m4v,.webm,.avi" className="absolute inset-0 opacity-0 cursor-pointer w-full"
+                                  onChange={async (e) => {
+                                    const file = e.target.files?.[0];
+                                    if (file) await addProjectMediaVideoFile(p.slug, file);
+                                    e.target.value = "";
+                                  }}
                                 />
-                                <button
-                                  onClick={() => addProjectMediaVideo(p.slug, videoUrlInput)}
-                                  disabled={!videoUrlInput.trim()}
-                                  className="text-[10px] tracking-[0.1em] uppercase font-bold font-[var(--font-inter)] px-4 py-2 bg-[#002045] text-white hover:bg-[#1a365d] transition-colors disabled:opacity-40 whitespace-nowrap"
-                                >
-                                  + Vídeo
-                                </button>
-                              </div>
+                              </label>
+                            </div>
+
+                            {/* Add video URL */}
+                            <div className="flex gap-2">
+                              <input
+                                type="url"
+                                value={videoUrlInput}
+                                onChange={(e) => setVideoUrlInput(e.target.value)}
+                                placeholder="Ou cole URL do vídeo (YouTube, Vimeo…)"
+                                className="flex-1 border border-[#e2e2e2] px-3 py-2 text-sm font-[var(--font-inter)] text-[#43474e] focus:outline-none focus:border-[#002045]"
+                              />
+                              <button
+                                onClick={() => addProjectMediaVideo(p.slug, videoUrlInput)}
+                                disabled={!videoUrlInput.trim()}
+                                className="text-[10px] tracking-[0.1em] uppercase font-bold font-[var(--font-inter)] px-4 py-2 bg-[#002045] text-white hover:bg-[#1a365d] transition-colors disabled:opacity-40 whitespace-nowrap"
+                              >
+                                + URL
+                              </button>
                             </div>
                           </div>
                         )}
