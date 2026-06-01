@@ -1159,11 +1159,7 @@ function SimuladorInner() {
                         {sp.productName} · {sp.productCode} · {sp.dimLabel} · <strong>{sp.plates} placa{sp.plates !== 1 ? "s" : ""}</strong>
                       </p>
                     </div>
-                    <div className="text-right flex-shrink-0">
-                      <p className="text-[#002045] text-sm font-semibold font-[var(--font-inter)]">{sp.materialDiscounted.toLocaleString("pt-BR", { style: "decimal", maximumFractionDigits: 0 })}</p>
-                      <p className="text-[#74777f] text-[9px] font-[var(--font-inter)]">material</p>
-                    </div>
-                    <button onClick={() => setSavedSpaces(prev => prev.filter((_, idx) => idx !== i))} className="text-[#cc0000] hover:text-[#ff0000] text-sm ml-1 flex-shrink-0" title="Remover">✕</button>
+                    <button onClick={() => setSavedSpaces(prev => prev.filter((_, idx) => idx !== i))} className="text-[#cc0000] hover:text-[#ff0000] text-sm ml-2 flex-shrink-0" title="Remover">✕</button>
                   </div>
                 ))}
 
@@ -1178,19 +1174,7 @@ function SimuladorInner() {
                       {plates > 0 && ` · ${plates} placa${plates !== 1 ? "s" : ""}`}
                     </p>
                   </div>
-                  <div className="text-right flex-shrink-0">
-                    <p className="text-[#002045] text-sm font-semibold font-[var(--font-inter)]">{orbMaterialDiscounted.toLocaleString("pt-BR", { style: "decimal", maximumFractionDigits: 0 })}</p>
-                    <p className="text-[#74777f] text-[9px] font-[var(--font-inter)]">material</p>
-                  </div>
                 </div>
-
-                {/* Grand material total row */}
-                {(savedSpaces.length > 0) && (
-                  <div className="flex items-center justify-between px-4 py-3 bg-[#002045]">
-                    <span className="text-white/70 text-[10px] tracking-[0.12em] uppercase font-bold font-[var(--font-inter)]">Total material estimado</span>
-                    <span className="text-white text-sm font-bold font-[var(--font-noto-serif)]">{grandMaterialDiscounted.toLocaleString("pt-BR", { style: "decimal", maximumFractionDigits: 0 })}</span>
-                  </div>
-                )}
               </div>
 
               <div className="flex flex-col sm:flex-row gap-3 items-start sm:items-center justify-between">
@@ -1242,7 +1226,7 @@ function SimuladorInner() {
           )}
 
           {/* ── Step 3: Dimensions ────────────────────────────────────────── */}
-          {step === 3 && (
+          {step === 3 && !showAmbientsReview && (
             <div className="bg-white border border-[#e2e2e2] p-6 lg:p-10">
               <h3 className="font-[var(--font-noto-serif)] text-[#002045] text-xl font-normal mb-2">
                 Qual é a área a revestir?
