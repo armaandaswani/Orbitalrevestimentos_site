@@ -16,26 +16,27 @@ const PLATE_H = 2.9;
 const MDF_SHEET_W = 1.85;
 const MDF_SHEET_H = 2.75;
 const MDF_SHEET_M2 = MDF_SHEET_W * MDF_SHEET_H;
-const MDF_SHEET_PRICE = 415;
-const MDF_MO_SIMPLE = 30;
-const MDF_MO_COMPLEX = 50;
-const MDF_ACABAMENTO = 25;
+// MDF — mercado Manaus 2025 (COMPLAC e fornecedores locais; chapa 15mm revestida 1,85×2,75m)
+const MDF_SHEET_PRICE = 415;      // R$/chapa — preço Manaus (15–25% acima do Sul/SE por logística)
+const MDF_MO_SIMPLE = 40;         // R$/m² MO simples — marceneiro Manaus ~R$150/h (GetNinjas AM)
+const MDF_MO_COMPLEX = 60;        // R$/m² MO complexo
+const MDF_ACABAMENTO = 28;        // R$/m² primer + tinta / acabamento local Manaus
 
-// Forro PVC — mercado Manaus 2025 (padrão branco, régua 100–200 mm)
-const FORRO_M2_MATERIAL = 15;     // R$/m² painéis + clips + trilho
-const FORRO_M2_STRUCTURE = 20;    // R$/m² perfil metálico galvanizado
-const FORRO_MO_SIMPLE = 28;       // R$/m² mão de obra simples
-const FORRO_MO_COMPLEX = 40;      // R$/m² mão de obra complexo
-const FORRO_ACABAMENTO = 7;       // R$/m² rodateto / moldura
+// Forro PVC amadeirado boa qualidade — Manaus 2025 (painéis acima do padrão básico)
+const FORRO_M2_MATERIAL = 55;     // R$/m² painéis amadeirados boa qualidade (acima do R$48 "a partir" local)
+const FORRO_M2_STRUCTURE = 10;    // R$/m² metalon galvanizado (Metalúrgica Marlin Manaus)
+const FORRO_MO_SIMPLE = 27;       // R$/m² MO (Habitissimo/Cronoshare Manaus)
+const FORRO_MO_COMPLEX = 38;      // R$/m² MO complexo
+const FORRO_ACABAMENTO = 5;       // R$/m² perfil roda-forro U (Casa da Madeira AM ~R$5,40/barra)
 const FORRO_INSTALLS_10Y = 1;     // vida útil ~12 anos → 1 instalação em 10 anos
 
-// Teto Laminado — premium decorativo (Larhauss / Portilato, Manaus 2025)
-const TETO_M2_MATERIAL = 150;     // R$/m² painel PVC laminado decorativo
-const TETO_M2_STRUCTURE = 22;     // R$/m² subestrutura metálica
-const TETO_MO_SIMPLE = 50;        // R$/m² mão de obra simples
-const TETO_MO_COMPLEX = 68;       // R$/m² mão de obra complexo
+// Teto Laminado amadeirado — Mercatto Decor Manaus (a partir R$99/m², boa qualidade ~R$120/m²)
+const TETO_M2_MATERIAL = 120;     // R$/m² teto laminado amadeirado boa qualidade (Mercatto Decor Manaus)
+const TETO_M2_STRUCTURE = 12;     // R$/m² subestrutura metálica Manaus
+const TETO_MO_SIMPLE = 45;        // R$/m² MO Manaus
+const TETO_MO_COMPLEX = 62;       // R$/m² MO complexo
 const TETO_ACABAMENTO = 13;       // R$/m² acabamento / moldura
-const TETO_INSTALLS_10Y = 2;      // vida útil ~8 anos → troca na ~ano 8 → 2 instalações em 10 anos
+const TETO_INSTALLS_10Y = 2;      // vida útil ~8 anos → troca ~ano 8 → 2 instalações em 10 anos
 const MDF_INSTALLS_10Y = 3;
 
 function orbitalMOPerPlate(plates: number, complex: boolean) {
@@ -2136,19 +2137,19 @@ function SimuladorInner() {
                   <div className="bg-[#fafaf8] border border-[#e2e2e2]">
                     <button className="lg:hidden w-full flex items-center justify-between px-6 py-5 text-left" onClick={() => setForroExpanded(!forroExpanded)}>
                       <div>
-                        <p className="text-[#74777f] text-[9px] tracking-[0.2em] uppercase font-bold font-[var(--font-inter)]">Forro PVC — Estimativa por instalação</p>
+                        <p className="text-[#74777f] text-[9px] tracking-[0.2em] uppercase font-bold font-[var(--font-inter)]">Forro PVC Amadeirado — Estimativa por instalação</p>
                         <p className="text-[#43474e] text-lg font-[var(--font-noto-serif)] mt-0.5">{fmt(forroOnce)}</p>
                       </div>
                       <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#74777f" strokeWidth="2" className={`flex-shrink-0 transition-transform duration-200 ${forroExpanded ? "rotate-180" : ""}`}><path d="M6 9l6 6 6-6" /></svg>
                     </button>
                     <div className="hidden lg:block px-6 py-5">
-                      <p className="text-[#74777f] text-[9px] tracking-[0.2em] uppercase font-bold font-[var(--font-inter)]">Forro PVC — Estimativa por instalação</p>
+                      <p className="text-[#74777f] text-[9px] tracking-[0.2em] uppercase font-bold font-[var(--font-inter)]">Forro PVC Amadeirado — Estimativa por instalação</p>
                       <p className="text-[#43474e] text-lg font-[var(--font-noto-serif)] mt-0.5">{fmt(forroOnce)}</p>
                     </div>
                     <div className={`border-t border-[#e2e2e2] px-6 sm:px-8 pb-8 lg:block ${forroExpanded ? "block" : "hidden"}`}>
                       <div className="space-y-3 mb-6 pt-5">
                         <div className="flex items-start justify-between text-sm font-[var(--font-inter)] gap-4">
-                          <span className="text-[#74777f]">Material painéis + clips ({FORRO_M2_MATERIAL}/m²)</span>
+                          <span className="text-[#74777f]">Painéis amadeirados boa qualidade ({FORRO_M2_MATERIAL}/m²)</span>
                           <span className="text-[#43474e] font-semibold flex-shrink-0">{fmt(m2 * FORRO_M2_MATERIAL)}</span>
                         </div>
                         <div className="flex items-start justify-between text-sm font-[var(--font-inter)] gap-4">
@@ -2180,19 +2181,19 @@ function SimuladorInner() {
                   <div className="bg-[#fafaf8] border border-[#e2e2e2]">
                     <button className="lg:hidden w-full flex items-center justify-between px-6 py-5 text-left" onClick={() => setTetoExpanded(!tetoExpanded)}>
                       <div>
-                        <p className="text-[#74777f] text-[9px] tracking-[0.2em] uppercase font-bold font-[var(--font-inter)]">Teto Laminado — Estimativa por instalação</p>
+                        <p className="text-[#74777f] text-[9px] tracking-[0.2em] uppercase font-bold font-[var(--font-inter)]">Teto Laminado Amadeirado — Estimativa por instalação</p>
                         <p className="text-[#43474e] text-lg font-[var(--font-noto-serif)] mt-0.5">{fmt(tetoOnce)}</p>
                       </div>
                       <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#74777f" strokeWidth="2" className={`flex-shrink-0 transition-transform duration-200 ${tetoExpanded ? "rotate-180" : ""}`}><path d="M6 9l6 6 6-6" /></svg>
                     </button>
                     <div className="hidden lg:block px-6 py-5">
-                      <p className="text-[#74777f] text-[9px] tracking-[0.2em] uppercase font-bold font-[var(--font-inter)]">Teto Laminado — Estimativa por instalação</p>
+                      <p className="text-[#74777f] text-[9px] tracking-[0.2em] uppercase font-bold font-[var(--font-inter)]">Teto Laminado Amadeirado — Estimativa por instalação</p>
                       <p className="text-[#43474e] text-lg font-[var(--font-noto-serif)] mt-0.5">{fmt(tetoOnce)}</p>
                     </div>
                     <div className={`border-t border-[#e2e2e2] px-6 sm:px-8 pb-8 lg:block ${tetoExpanded ? "block" : "hidden"}`}>
                       <div className="space-y-3 mb-6 pt-5">
                         <div className="flex items-start justify-between text-sm font-[var(--font-inter)] gap-4">
-                          <span className="text-[#74777f]">Painel PVC laminado decorativo ({TETO_M2_MATERIAL}/m²)</span>
+                          <span className="text-[#74777f]">Teto laminado amadeirado boa qualidade ({TETO_M2_MATERIAL}/m²)</span>
                           <span className="text-[#43474e] font-semibold flex-shrink-0">{fmt(m2 * TETO_M2_MATERIAL)}</span>
                         </div>
                         <div className="flex items-start justify-between text-sm font-[var(--font-inter)] gap-4">
