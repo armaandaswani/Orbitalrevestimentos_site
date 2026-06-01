@@ -42,7 +42,7 @@ interface ProductImage { id:string; product_id:string; image_path:string; sort_o
 interface DbProduct { id:string; code:string; name:string; linha:"Classic"|"Brilliance"|"Elegance"; finish:string; price:number; price_per_m2:number; description:string; image_path:string; is_active:boolean; sort_order:number; created_at:string; product_images?: ProductImage[]; }
 interface DbPhotoProject { id:string; slug:string; title:string; product_code:string; categories:string[]; image_after:string; image_before:string; note:string; is_active:boolean; sort_order:number; }
 interface DbRenderProject { id:string; slug:string; title:string; product_code:string; image_path:string; is_active:boolean; sort_order:number; }
-interface ProjectMedia { id:string; project_slug:string; type:"image"|"video"; url:string; caption:string|null; sort_order:number; }
+interface ProjectMedia { id:string; project_slug:string; type:"image"|"video"; url:string; caption:string|null; description:string|null; category:"antes"|"depois"|"geral"; sort_order:number; }
 
 interface CouponUse {
   id: string;
@@ -344,6 +344,9 @@ export default function AdminPage() {
   const [expandedMediaSlug, setExpandedMediaSlug] = useState<string | null>(null);
   const [mediaUploading, setMediaUploading] = useState(false);
   const [videoUrlInput, setVideoUrlInput] = useState("");
+  const [mediaMigrated, setMediaMigrated] = useState<boolean | null>(null);
+  const [editingMediaId, setEditingMediaId] = useState<string | null>(null);
+  const [editMediaDraft, setEditMediaDraft] = useState<{ description: string; category: "antes" | "depois" | "geral" }>({ description: "", category: "geral" });
 
   // ── Admin simulator ──────────────────────────────────────────────────────
   interface SimSpace { key: string; spaceName: string; productCode: string; w: string; h: string; }
@@ -542,6 +545,15 @@ export default function AdminPage() {
 
   useEffect(() => { if ((tab === "produtos" || tab === "simulador") && authed) fetchDbProducts(); }, [tab, authed, fetchDbProducts]);
   useEffect(() => { if (tab === "projetos" && authed) fetchProjects(); }, [tab, authed, fetchProjects]);
+  useEffect(() => {
+    if (tab === "projetos" && authed && mediaMigrated === null) {
+      fetch("/api/admin/migrate-media", { headers: { "x-admin-auth": ADMIN_PW } })
+        .then(r => r.json())
+        .then(d => setMediaMigrated(d.migrated === true))
+        .catch(() => setMediaMigrated(false));
+    }
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [tab, authed]);
   useEffect(() => {
     if (tab === "midia" && authed) {
       setAssetLoading(true);
@@ -1151,6 +1163,15 @@ export default function AdminPage() {
 
   async function deleteProjectMedia(id: string, slug: string) {
     await fetch(`/api/projects/media/${id}`, { method: "DELETE", headers: { "x-admin-auth": ADMIN_PW } });
+    await fetchProjectMedia(slug);
+  }
+
+  async function patchProjectMedia(id: string, slug: string, body: Partial<ProjectMedia>) {
+    await fetch(`/api/projects/media/${id}`, {
+      method: "PATCH",
+      headers: { "Content-Type": "application/json", "x-admin-auth": ADMIN_PW },
+      body: JSON.stringify(body),
+    });
     await fetchProjectMedia(slug);
   }
 
@@ -4083,32 +4104,111 @@ export default function AdminPage() {
                         {/* ── Media panel ── */}
                         {isMediaOpen && (
                           <div className="border-t border-[#e2e2e2] bg-[#f9f9f9] p-4">
-                            <p className="text-[10px] tracking-[0.12em] uppercase font-bold text-[#002045] font-[var(--font-inter)] mb-3">Mídia adicional da obra</p>
+                            <div className="flex items-center justify-between mb-3">
+                              <p className="text-[10px] tracking-[0.12em] uppercase font-bold text-[#002045] font-[var(--font-inter)]">Mídia adicional da obra</p>
+                              {mediaMigrated === false && (
+                                <span className="text-[9px] text-amber-700 bg-amber-50 border border-amber-200 px-2 py-1 font-[var(--font-inter)]">
+                                  ⚠ Execute a migração SQL no Supabase para habilitar categoria e descrição
+                                </span>
+                              )}
+                            </div>
 
                             {/* Existing media grid */}
                             {media.length > 0 && (
                               <div className="flex flex-wrap gap-2 mb-4">
                                 {media.map((m) => (
-                                  <div key={m.id} className="relative group w-20 h-20">
-                                    {m.type === "image" ? (
-                                      <img src={m.url} alt={m.caption ?? ""} className="w-full h-full object-cover border border-[#e2e2e2]" />
-                                    ) : (
-                                      <div className="w-full h-full bg-[#002045] flex items-center justify-center border border-[#002045]">
-                                        <svg width="20" height="20" viewBox="0 0 24 24" fill="white"><path d="M8 5v14l11-7z"/></svg>
+                                  <div key={m.id} className="relative group">
+                                    {/* Thumbnail */}
+                                    <div className="relative w-20 h-20">
+                                      {m.type === "image" ? (
+                                        <img src={m.url} alt={m.caption ?? ""} className="w-full h-full object-cover border border-[#e2e2e2]" />
+                                      ) : (
+                                        <div className="w-full h-full bg-[#002045] flex items-center justify-center border border-[#002045]">
+                                          <svg width="20" height="20" viewBox="0 0 24 24" fill="white"><path d="M8 5v14l11-7z"/></svg>
+                                        </div>
+                                      )}
+                                      {m.type === "image" && (
+                                        <a href={m.url} download target="_blank" rel="noopener noreferrer"
+                                          className="absolute top-0.5 left-0.5 w-5 h-5 bg-[#002045] text-white text-[9px] font-bold flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity"
+                                          title="Download"
+                                        >↓</a>
+                                      )}
+                                      <button
+                                        onClick={() => deleteProjectMedia(m.id, p.slug)}
+                                        className="absolute top-0.5 right-0.5 w-5 h-5 bg-red-600 text-white text-[10px] font-bold flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity"
+                                      >×</button>
+                                      {m.type === "video" && (
+                                        <span className="absolute bottom-0.5 left-0.5 text-[7px] text-white/70 font-bold tracking-wide">VÍD</span>
+                                      )}
+                                      {/* Category badge */}
+                                      {mediaMigrated && m.category && m.category !== "geral" && (
+                                        <span className={`absolute bottom-0.5 right-0.5 text-[7px] font-bold px-1 ${m.category === "antes" ? "bg-amber-500 text-white" : "bg-[#3b6934] text-white"}`}>
+                                          {m.category === "antes" ? "A" : "D"}
+                                        </span>
+                                      )}
+                                      {/* Edit overlay */}
+                                      {mediaMigrated && (
+                                        <button
+                                          onClick={() => {
+                                            setEditingMediaId(m.id);
+                                            setEditMediaDraft({ description: m.description ?? "", category: m.category ?? "geral" });
+                                          }}
+                                          className="absolute inset-0 bg-black/0 group-hover:bg-black/30 transition-colors flex items-center justify-center opacity-0 group-hover:opacity-100"
+                                          title="Editar categoria / descrição"
+                                        >
+                                          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="white" strokeWidth="2"><path d="M11 4H4a2 2 0 00-2 2v14a2 2 0 002 2h14a2 2 0 002-2v-7"/><path d="M18.5 2.5a2.121 2.121 0 013 3L12 15l-4 1 1-4 9.5-9.5z"/></svg>
+                                        </button>
+                                      )}
+                                    </div>
+
+                                    {/* Inline edit popover */}
+                                    {editingMediaId === m.id && (
+                                      <div className="absolute z-10 top-full left-0 mt-1 bg-white border border-[#e2e2e2] p-3 shadow-lg w-64" onClick={(e) => e.stopPropagation()}>
+                                        <p className="text-[9px] tracking-[0.12em] uppercase font-bold text-[#002045] font-[var(--font-inter)] mb-2">Editar mídia</p>
+                                        {/* Category */}
+                                        <div className="mb-2">
+                                          <label className="text-[9px] text-[#74777f] font-[var(--font-inter)] uppercase tracking-wider font-bold block mb-1">Categoria</label>
+                                          <div className="flex gap-1">
+                                            {(["geral", "antes", "depois"] as const).map((cat) => (
+                                              <button
+                                                key={cat}
+                                                onClick={() => setEditMediaDraft(d => ({ ...d, category: cat }))}
+                                                className={`flex-1 text-[9px] uppercase font-bold tracking-wider py-1.5 border transition-colors ${editMediaDraft.category === cat ? "bg-[#002045] text-white border-[#002045]" : "border-[#e2e2e2] text-[#74777f] hover:border-[#002045]"}`}
+                                              >
+                                                {cat}
+                                              </button>
+                                            ))}
+                                          </div>
+                                        </div>
+                                        {/* Description */}
+                                        <div className="mb-3">
+                                          <label className="text-[9px] text-[#74777f] font-[var(--font-inter)] uppercase tracking-wider font-bold block mb-1">Descrição (visível ao usuário)</label>
+                                          <textarea
+                                            value={editMediaDraft.description}
+                                            onChange={(e) => setEditMediaDraft(d => ({ ...d, description: e.target.value }))}
+                                            rows={2}
+                                            placeholder="Ex: Detalhe da textura instalada…"
+                                            className="w-full border border-[#e2e2e2] px-2 py-1.5 text-xs font-[var(--font-inter)] text-[#43474e] focus:outline-none focus:border-[#002045] resize-none"
+                                          />
+                                        </div>
+                                        <div className="flex gap-2">
+                                          <button
+                                            onClick={async () => {
+                                              await patchProjectMedia(m.id, p.slug, { category: editMediaDraft.category, description: editMediaDraft.description || null });
+                                              setEditingMediaId(null);
+                                            }}
+                                            className="flex-1 bg-[#002045] text-white text-[9px] uppercase font-bold tracking-wider py-1.5 hover:bg-[#1a365d] transition-colors"
+                                          >
+                                            Salvar
+                                          </button>
+                                          <button
+                                            onClick={() => setEditingMediaId(null)}
+                                            className="flex-1 border border-[#e2e2e2] text-[#74777f] text-[9px] uppercase font-bold tracking-wider py-1.5 hover:border-[#002045] transition-colors"
+                                          >
+                                            Cancelar
+                                          </button>
+                                        </div>
                                       </div>
-                                    )}
-                                    {m.type === "image" && (
-                                      <a href={m.url} download target="_blank" rel="noopener noreferrer"
-                                        className="absolute top-0.5 left-0.5 w-5 h-5 bg-[#002045] text-white text-[9px] font-bold flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity"
-                                        title="Download"
-                                      >↓</a>
-                                    )}
-                                    <button
-                                      onClick={() => deleteProjectMedia(m.id, p.slug)}
-                                      className="absolute top-0.5 right-0.5 w-5 h-5 bg-red-600 text-white text-[10px] font-bold flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity"
-                                    >×</button>
-                                    {m.type === "video" && (
-                                      <span className="absolute bottom-0.5 left-0.5 text-[7px] text-white/70 font-bold tracking-wide">VÍD</span>
                                     )}
                                   </div>
                                 ))}
@@ -4143,12 +4243,12 @@ export default function AdminPage() {
                             </div>
 
                             {/* Add video URL */}
-                            <div className="flex gap-2">
+                            <div className="flex gap-2 mt-3">
                               <input
                                 type="url"
                                 value={videoUrlInput}
                                 onChange={(e) => setVideoUrlInput(e.target.value)}
-                                placeholder="Ou cole URL do vídeo (YouTube, Vimeo…)"
+                                placeholder="Ou cole URL do vídeo (YouTube, Vimeo, Drive…)"
                                 className="flex-1 border border-[#e2e2e2] px-3 py-2 text-sm font-[var(--font-inter)] text-[#43474e] focus:outline-none focus:border-[#002045]"
                               />
                               <button
@@ -4159,6 +4259,16 @@ export default function AdminPage() {
                                 + URL
                               </button>
                             </div>
+                            {mediaMigrated === false && (
+                              <details className="mt-3">
+                                <summary className="text-[9px] text-amber-700 cursor-pointer font-[var(--font-inter)] font-semibold">Ver SQL da migração ▸</summary>
+                                <pre className="mt-2 text-[8px] bg-amber-50 border border-amber-200 p-2 text-amber-800 overflow-x-auto font-mono leading-relaxed whitespace-pre-wrap">
+{`ALTER TABLE project_media ADD COLUMN IF NOT EXISTS category TEXT NOT NULL DEFAULT 'geral';
+ALTER TABLE project_media ADD COLUMN IF NOT EXISTS description TEXT;`}
+                                </pre>
+                                <p className="text-[9px] text-[#74777f] font-[var(--font-inter)] mt-1">Cole no Supabase Dashboard → SQL Editor → New query → Run.</p>
+                              </details>
+                            )}
                           </div>
                         )}
                       </div>

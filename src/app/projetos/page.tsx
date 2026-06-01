@@ -26,36 +26,43 @@ interface Render {
   image_path: string;
 }
 
+type MediaCategory = "antes" | "depois" | "geral";
+
 interface ProjectMedia {
   id: string;
   project_slug: string;
   type: "image" | "video";
   url: string;
   caption: string | null;
+  description: string | null;
+  category: MediaCategory;
   sort_order: number;
 }
 
-type LightboxItem =
-  | { kind: "image"; url: string; label?: string }
-  | { kind: "video"; url: string; label?: string };
+interface LightboxItem {
+  kind: "image" | "video";
+  url: string;
+  label?: string;
+  description?: string;
+  category: MediaCategory;
+}
 
 function buildLightboxItems(project: Project, extra: ProjectMedia[]): LightboxItem[] {
   const items: LightboxItem[] = [
-    { kind: "image", url: project.image_after, label: "Depois" },
+    { kind: "image", url: project.image_after, label: "Depois", category: "depois" },
   ];
-  if (project.image_before) items.push({ kind: "image", url: project.image_before, label: "Antes" });
+  if (project.image_before)
+    items.push({ kind: "image", url: project.image_before, label: "Antes", category: "antes" });
   for (const m of extra) {
-    items.push({ kind: m.type, url: m.url, label: m.caption ?? undefined });
+    items.push({
+      kind: m.type,
+      url: m.url,
+      label: m.caption ?? undefined,
+      description: m.description ?? undefined,
+      category: m.category ?? "geral",
+    });
   }
   return items;
-}
-
-function getVideoEmbed(url: string): string | null {
-  const yt = url.match(/(?:youtube\.com\/watch\?v=|youtu\.be\/)([^&\s]+)/);
-  if (yt) return `https://www.youtube.com/embed/${yt[1]}?autoplay=1`;
-  const vm = url.match(/vimeo\.com\/(\d+)/);
-  if (vm) return `https://player.vimeo.com/video/${vm[1]}?autoplay=1`;
-  return null;
 }
 
 function isDirectVideo(url: string) {
@@ -63,6 +70,25 @@ function isDirectVideo(url: string) {
 }
 
 // ─── Lightbox ─────────────────────────────────────────────────────────────────
+type ViewMode = "carousel" | "grid" | "split";
+type LightboxFilter = "all" | MediaCategory;
+
+function CategoryPill({ cat }: { cat: MediaCategory }) {
+  if (cat === "antes")
+    return (
+      <span className="text-[8px] tracking-[0.15em] uppercase font-bold font-[var(--font-inter)] px-2 py-0.5 bg-amber-500/20 text-amber-300 border border-amber-500/30">
+        Antes
+      </span>
+    );
+  if (cat === "depois")
+    return (
+      <span className="text-[8px] tracking-[0.15em] uppercase font-bold font-[var(--font-inter)] px-2 py-0.5 bg-[#3b6934]/30 text-[#a1d494] border border-[#3b6934]/40">
+        Depois
+      </span>
+    );
+  return null;
+}
+
 function ProjectLightbox({
   project,
   items,
@@ -82,103 +108,282 @@ function ProjectLightbox({
   onNext: () => void;
   onDotClick: (i: number) => void;
 }) {
-  const current = items[idx];
+  const [viewMode, setViewMode] = useState<ViewMode>("carousel");
+  const [filter, setFilter] = useState<LightboxFilter>("all");
+
+  const hasAntes  = items.some((i) => i.category === "antes");
+  const hasDepois = items.some((i) => i.category === "depois");
+  const hasVideos = items.some((i) => i.kind === "video");
+  const canSplit  = hasAntes && hasDepois;
+
+  const visibleItems =
+    filter === "all" ? items : items.filter((i) => i.category === filter);
+
+  // keep carousel idx in bounds when filter changes
+  const safeIdx = Math.min(idx, Math.max(visibleItems.length - 1, 0));
+  const current = visibleItems[safeIdx];
+
+  // Split-mode images
+  const antesImg  = items.find((i) => i.category === "antes" && i.kind === "image");
+  const depoisImg = items.find((i) => i.category === "depois" && i.kind === "image");
 
   return (
-    <div
-      className="fixed inset-0 z-50 bg-black/92 flex flex-col"
-      onClick={onClose}
-    >
-      {/* Header */}
+    <div className="fixed inset-0 z-50 bg-[#0a0f1a]/95 flex flex-col" onClick={onClose}>
+
+      {/* ── Header ── */}
       <div
-        className="flex items-center justify-between px-5 py-4 flex-shrink-0"
+        className="flex items-start justify-between px-5 pt-4 pb-3 flex-shrink-0 border-b border-white/8"
         onClick={(e) => e.stopPropagation()}
       >
         <div>
           <p className="text-[#a1d494] text-[9px] tracking-[0.2em] uppercase font-bold font-[var(--font-inter)]">
             {project.product_code}
           </p>
-          <p className="text-white font-[var(--font-noto-serif)] text-base">{project.title}</p>
+          <p className="text-white font-[var(--font-noto-serif)] text-base mt-0.5">{project.title}</p>
         </div>
-        <button onClick={onClose} className="text-white/50 hover:text-white text-2xl leading-none ml-4">×</button>
+
+        {/* View mode + filter row */}
+        <div className="flex items-center gap-3 ml-4">
+          {/* Filter tabs */}
+          {(hasAntes || hasDepois || hasVideos) && (
+            <div className="hidden sm:flex items-center gap-1 bg-white/5 border border-white/10 p-0.5">
+              {(["all", ...(hasAntes ? ["antes"] : []), ...(hasDepois ? ["depois"] : []), ...(hasVideos ? ["video"] : [])] as (LightboxFilter | "video")[]).map((f) => (
+                <button
+                  key={f}
+                  onClick={() => { setFilter(f as LightboxFilter); setViewMode("carousel"); }}
+                  className={`text-[9px] tracking-[0.12em] uppercase font-bold font-[var(--font-inter)] px-3 py-1.5 transition-colors ${filter === f ? "bg-white text-[#0a0f1a]" : "text-white/40 hover:text-white/80"}`}
+                >
+                  {f === "all" ? "Todas" : f === "geral" ? "Geral" : f.charAt(0).toUpperCase() + f.slice(1)}
+                </button>
+              ))}
+            </div>
+          )}
+
+          {/* View mode icons */}
+          {!loading && items.length > 1 && (
+            <div className="flex items-center gap-1 bg-white/5 border border-white/10 p-0.5">
+              {/* Carousel */}
+              <button
+                title="Carrossel"
+                onClick={() => setViewMode("carousel")}
+                className={`w-7 h-7 flex items-center justify-center transition-colors ${viewMode === "carousel" ? "bg-white text-[#0a0f1a]" : "text-white/40 hover:text-white/80"}`}
+              >
+                <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><rect x="2" y="4" width="20" height="16" rx="1"/><path d="M8 12h8M12 8v8"/></svg>
+              </button>
+              {/* Grid */}
+              <button
+                title="Galeria"
+                onClick={() => setViewMode("grid")}
+                className={`w-7 h-7 flex items-center justify-center transition-colors ${viewMode === "grid" ? "bg-white text-[#0a0f1a]" : "text-white/40 hover:text-white/80"}`}
+              >
+                <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><rect x="3" y="3" width="7" height="7"/><rect x="14" y="3" width="7" height="7"/><rect x="3" y="14" width="7" height="7"/><rect x="14" y="14" width="7" height="7"/></svg>
+              </button>
+              {/* Split / antes×depois */}
+              {canSplit && (
+                <button
+                  title="Antes × Depois"
+                  onClick={() => setViewMode("split")}
+                  className={`w-7 h-7 flex items-center justify-center transition-colors ${viewMode === "split" ? "bg-white text-[#0a0f1a]" : "text-white/40 hover:text-white/80"}`}
+                >
+                  <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><rect x="2" y="4" width="9" height="16" rx="1"/><rect x="13" y="4" width="9" height="16" rx="1"/></svg>
+                </button>
+              )}
+            </div>
+          )}
+
+          <button onClick={onClose} className="text-white/50 hover:text-white text-2xl leading-none w-8 h-8 flex items-center justify-center">×</button>
+        </div>
       </div>
 
-      {/* Main image area */}
-      <div
-        className="flex-1 relative flex items-center justify-center overflow-hidden min-h-0"
-        onClick={(e) => e.stopPropagation()}
-      >
-        {loading ? (
-          <div className="w-8 h-8 border-2 border-white/20 border-t-white/80 rounded-full animate-spin" />
-        ) : current?.kind === "image" ? (
-          <img
-            key={current.url}
-            src={current.url}
-            alt={current.label ?? project.title}
-            className="max-h-full max-w-full object-contain select-none"
-            draggable={false}
-          />
-        ) : current?.kind === "video" ? (
-          (() => {
-            const embed = getVideoEmbed(current.url);
-            return embed ? (
-              <iframe
-                key={current.url}
-                src={embed}
-                className="w-full max-w-3xl aspect-video"
-                allowFullScreen
-                allow="autoplay; fullscreen"
-              />
-            ) : isDirectVideo(current.url) ? (
-              <video key={current.url} src={current.url} controls autoPlay className="max-h-full max-w-full" />
-            ) : null;
-          })()
-        ) : null}
-
-        {/* Label pill */}
-        {current?.label && (
-          <span className="absolute top-4 left-4 text-[9px] tracking-[0.15em] uppercase font-bold font-[var(--font-inter)] px-2.5 py-1 bg-black/50 text-white/70 backdrop-blur-sm">
-            {current.label}
-          </span>
-        )}
-
-        {/* Nav arrows */}
-        {items.length > 1 && (
-          <>
+      {/* Mobile filter bar */}
+      {(hasAntes || hasDepois || hasVideos) && (
+        <div className="flex sm:hidden items-center gap-1 px-5 py-2 border-b border-white/8 flex-shrink-0" onClick={(e) => e.stopPropagation()}>
+          {(["all", ...(hasAntes ? ["antes"] : []), ...(hasDepois ? ["depois"] : [])] as LightboxFilter[]).map((f) => (
             <button
-              onClick={onPrev}
-              className="absolute left-3 top-1/2 -translate-y-1/2 w-10 h-10 flex items-center justify-center bg-black/40 hover:bg-black/70 text-white transition-colors"
+              key={f}
+              onClick={() => { setFilter(f); setViewMode("carousel"); }}
+              className={`text-[9px] tracking-[0.12em] uppercase font-bold font-[var(--font-inter)] px-3 py-1.5 border transition-colors ${filter === f ? "bg-white text-[#0a0f1a] border-white" : "border-white/20 text-white/50 hover:text-white/80"}`}
             >
-              <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><path d="M15 18l-6-6 6-6"/></svg>
+              {f === "all" ? "Todas" : f.charAt(0).toUpperCase() + f.slice(1)}
             </button>
-            <button
-              onClick={onNext}
-              className="absolute right-3 top-1/2 -translate-y-1/2 w-10 h-10 flex items-center justify-center bg-black/40 hover:bg-black/70 text-white transition-colors"
-            >
-              <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><path d="M9 18l6-6-6-6"/></svg>
-            </button>
-          </>
-        )}
-      </div>
-
-      {/* Dots + counter */}
-      {items.length > 1 && (
-        <div
-          className="flex items-center justify-center gap-2 py-4 flex-shrink-0"
-          onClick={(e) => e.stopPropagation()}
-        >
-          {items.map((item, i) => (
-            <button
-              key={i}
-              onClick={() => onDotClick(i)}
-              className={`transition-all rounded-full ${i === idx ? "w-5 h-1.5 bg-white" : "w-1.5 h-1.5 bg-white/30 hover:bg-white/60"}`}
-            />
           ))}
-          <span className="text-white/40 text-[10px] font-[var(--font-inter)] ml-3">
-            {idx + 1} / {items.length}
-          </span>
         </div>
       )}
+
+      {/* ── Content area ── */}
+      <div className="flex-1 min-h-0 overflow-hidden" onClick={(e) => e.stopPropagation()}>
+
+        {/* LOADING */}
+        {loading && (
+          <div className="h-full flex items-center justify-center">
+            <div className="w-8 h-8 border-2 border-white/20 border-t-white/80 rounded-full animate-spin" />
+          </div>
+        )}
+
+        {/* SPLIT MODE */}
+        {!loading && viewMode === "split" && canSplit && (
+          <div className="h-full grid grid-cols-2 gap-px bg-white/5">
+            {[
+              { item: antesImg, label: "Antes" },
+              { item: depoisImg, label: "Depois" },
+            ].map(({ item, label }) =>
+              item ? (
+                <div key={label} className="relative flex flex-col h-full overflow-hidden">
+                  <div className="flex-1 flex items-center justify-center bg-black overflow-hidden">
+                    <img
+                      src={item.url}
+                      alt={label}
+                      className="max-h-full max-w-full object-contain"
+                    />
+                  </div>
+                  <div className="flex-shrink-0 px-4 py-2.5 bg-black/60 border-t border-white/8 flex items-start gap-2.5">
+                    <CategoryPill cat={item.category} />
+                    {item.description && (
+                      <p className="text-white/60 text-[10px] font-[var(--font-inter)] leading-relaxed">{item.description}</p>
+                    )}
+                  </div>
+                </div>
+              ) : null
+            )}
+          </div>
+        )}
+
+        {/* GRID MODE */}
+        {!loading && viewMode === "grid" && (
+          <div className="h-full overflow-y-auto py-4 px-4">
+            <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 gap-2 max-w-5xl mx-auto">
+              {visibleItems.map((item, i) => (
+                <button
+                  key={i}
+                  onClick={() => { onDotClick(i); setViewMode("carousel"); }}
+                  className="relative aspect-square group overflow-hidden bg-black/30 focus:outline-none"
+                >
+                  {item.kind === "image" ? (
+                    <img
+                      src={item.url}
+                      alt={item.label ?? ""}
+                      className="w-full h-full object-cover transition-transform duration-300 group-hover:scale-105"
+                    />
+                  ) : (
+                    <div className="w-full h-full flex items-center justify-center bg-[#0a1628]">
+                      <svg width="28" height="28" viewBox="0 0 24 24" fill="white" opacity=".6"><path d="M8 5v14l11-7z"/></svg>
+                    </div>
+                  )}
+                  {/* Hover overlay */}
+                  <div className="absolute inset-0 bg-black/0 group-hover:bg-black/40 transition-colors flex items-end p-2">
+                    <div className="opacity-0 group-hover:opacity-100 transition-opacity flex flex-col gap-1 w-full">
+                      {item.category !== "geral" && <CategoryPill cat={item.category} />}
+                      {item.description && (
+                        <p className="text-white/80 text-[9px] font-[var(--font-inter)] leading-tight line-clamp-2">{item.description}</p>
+                      )}
+                    </div>
+                  </div>
+                  {/* Video badge */}
+                  {item.kind === "video" && (
+                    <div className="absolute top-2 right-2 bg-black/60 px-1.5 py-0.5">
+                      <span className="text-white/60 text-[7px] tracking-[0.2em] uppercase font-bold font-[var(--font-inter)]">VÍD</span>
+                    </div>
+                  )}
+                </button>
+              ))}
+            </div>
+          </div>
+        )}
+
+        {/* CAROUSEL MODE */}
+        {!loading && viewMode === "carousel" && (
+          <div className="h-full flex flex-col">
+            {/* Main display */}
+            <div className="flex-1 relative flex items-center justify-center min-h-0 px-12">
+              {current?.kind === "image" ? (
+                <img
+                  key={current.url}
+                  src={current.url}
+                  alt={current.label ?? project.title}
+                  className="max-h-full max-w-full object-contain select-none"
+                  draggable={false}
+                />
+              ) : current?.kind === "video" ? (
+                (() => {
+                  // Try direct video first
+                  if (isDirectVideo(current.url)) {
+                    return (
+                      <video key={current.url} src={current.url} controls autoPlay className="max-h-full max-w-full" />
+                    );
+                  }
+                  // For all other URLs (YouTube, Vimeo, Drive, etc.) — open in new tab
+                  return (
+                    <div className="flex flex-col items-center justify-center gap-5 text-center px-6">
+                      <div className="w-16 h-16 rounded-full bg-white/10 border border-white/20 flex items-center justify-center">
+                        <svg width="26" height="26" viewBox="0 0 24 24" fill="white" opacity=".8"><path d="M8 5v14l11-7z"/></svg>
+                      </div>
+                      {current.description && (
+                        <p className="text-white/60 text-sm font-[var(--font-inter)] max-w-xs leading-relaxed">{current.description}</p>
+                      )}
+                      <a
+                        href={current.url}
+                        target="_blank"
+                        rel="noopener noreferrer"
+                        className="inline-flex items-center gap-2.5 bg-white text-[#0a0f1a] text-xs tracking-[0.1em] uppercase font-bold font-[var(--font-inter)] px-6 py-3 hover:bg-white/90 transition-colors"
+                        onClick={(e) => e.stopPropagation()}
+                      >
+                        <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><path d="M8 5v14l11-7z"/></svg>
+                        Assistir ao vídeo
+                        <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><path d="M18 13v6a2 2 0 01-2 2H5a2 2 0 01-2-2V8a2 2 0 012-2h6M15 3h6v6M10 14L21 3"/></svg>
+                      </a>
+                      <p className="text-white/25 text-[9px] font-[var(--font-inter)]">Abre em nova aba</p>
+                    </div>
+                  );
+                })()
+              ) : null}
+
+              {/* Nav arrows */}
+              {visibleItems.length > 1 && (
+                <>
+                  <button
+                    onClick={onPrev}
+                    className="absolute left-2 top-1/2 -translate-y-1/2 w-10 h-10 flex items-center justify-center bg-black/40 hover:bg-black/70 text-white transition-colors"
+                  >
+                    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><path d="M15 18l-6-6 6-6"/></svg>
+                  </button>
+                  <button
+                    onClick={onNext}
+                    className="absolute right-2 top-1/2 -translate-y-1/2 w-10 h-10 flex items-center justify-center bg-black/40 hover:bg-black/70 text-white transition-colors"
+                  >
+                    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><path d="M9 18l6-6-6-6"/></svg>
+                  </button>
+                </>
+              )}
+            </div>
+
+            {/* Info bar — category pill + description */}
+            {(current?.category !== "geral" || current?.description) && (
+              <div className="flex-shrink-0 px-5 py-2 border-t border-white/8 flex items-center gap-3">
+                {current?.category && current.category !== "geral" && <CategoryPill cat={current.category} />}
+                {current?.description && (
+                  <p className="text-white/55 text-xs font-[var(--font-inter)] leading-relaxed">{current.description}</p>
+                )}
+              </div>
+            )}
+
+            {/* Dots + counter */}
+            {visibleItems.length > 1 && (
+              <div className="flex-shrink-0 flex items-center justify-center gap-1.5 py-3 px-5">
+                {visibleItems.map((_, i) => (
+                  <button
+                    key={i}
+                    onClick={() => onDotClick(i)}
+                    className={`transition-all rounded-full ${i === safeIdx ? "w-5 h-1.5 bg-white" : "w-1.5 h-1.5 bg-white/25 hover:bg-white/55"}`}
+                  />
+                ))}
+                <span className="text-white/35 text-[10px] font-[var(--font-inter)] ml-3">
+                  {safeIdx + 1} / {visibleItems.length}
+                </span>
+              </div>
+            )}
+          </div>
+        )}
+      </div>
     </div>
   );
 }
