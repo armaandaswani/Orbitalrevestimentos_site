@@ -2730,12 +2730,23 @@ export default function AdminPage() {
                                       Foto <span className="text-[#9e9e9e] normal-case tracking-normal font-normal">— opcional, aparece em destaque no e-mail</span>
                                     </label>
                                     {campaignVisualImageUrl ? (
-                                      <div className="relative border border-[#e2e2e2] overflow-hidden">
+                                      <div className="border border-[#e2e2e2] overflow-hidden">
                                         <img src={campaignVisualImageUrl} alt="preview" className="w-full max-h-48 object-cover" />
-                                        <button type="button" onClick={() => setCampaignVisualImageUrl("")}
-                                          className="absolute top-2 right-2 bg-white border border-[#e2e2e2] text-[#002045] text-xs px-3 py-1.5 font-bold font-[var(--font-inter)] hover:bg-red-50 hover:border-red-300 hover:text-red-700 transition-colors">
-                                          Remover foto
-                                        </button>
+                                        <div className="flex border-t border-[#e2e2e2]">
+                                          <a href={campaignVisualImageUrl} download target="_blank" rel="noopener noreferrer"
+                                            className="flex-1 text-center text-[10px] tracking-[0.08em] uppercase font-bold font-[var(--font-inter)] px-3 py-2 border-r border-[#e2e2e2] text-[#1a365d] hover:bg-[#eef2f8] transition-colors">
+                                            ↓ Download
+                                          </a>
+                                          <label className="flex-1 text-center text-[10px] tracking-[0.08em] uppercase font-bold font-[var(--font-inter)] px-3 py-2 border-r border-[#e2e2e2] bg-[#002045] text-white hover:bg-[#1a365d] transition-colors cursor-pointer">
+                                            {campaignImageUploading ? "Enviando…" : "Substituir"}
+                                            <input type="file" accept="image/*" className="hidden"
+                                              onChange={(e) => { const f = e.target.files?.[0]; if (f) handleCampaignImageUpload(f); e.currentTarget.value = ""; }} />
+                                          </label>
+                                          <button type="button" onClick={() => setCampaignVisualImageUrl("")}
+                                            className="px-3 py-2 text-[10px] tracking-[0.08em] uppercase font-bold font-[var(--font-inter)] text-red-600 hover:bg-red-50 transition-colors">
+                                            Remover
+                                          </button>
+                                        </div>
                                       </div>
                                     ) : (
                                       <label className={`flex flex-col items-center justify-center gap-2 border-2 border-dashed border-[#e2e2e2] px-6 py-8 cursor-pointer hover:border-[#002045]/40 transition-colors ${campaignImageUploading ? "opacity-50 pointer-events-none" : ""}`}>
@@ -3593,6 +3604,16 @@ export default function AdminPage() {
                                     →
                                   </button>
                                 </div>
+                                <a
+                                  href={img.image_path}
+                                  download
+                                  target="_blank"
+                                  rel="noopener noreferrer"
+                                  title="Download"
+                                  className="bg-[#1a365d] text-white text-[9px] tracking-[0.08em] uppercase font-bold font-[var(--font-inter)] px-2 py-1 hover:bg-[#002045] transition-colors w-[80%] text-center"
+                                >
+                                  ↓ Download
+                                </a>
                                 <button
                                   type="button"
                                   onClick={() => setImageAsCover(img.image_path)}
@@ -3919,37 +3940,95 @@ export default function AdminPage() {
                     </div>
                     <div className="mb-4">
                       <label className={labelCls}>Imagem Depois *</label>
-                      <div className="flex gap-3 items-start">
-                        <input required type="text" value={photoForm.image_after} onChange={(e) => setPhotoForm({...photoForm, image_after: e.target.value})} className={inputCls} placeholder="/images/projetos/..." />
-                        <label className="flex-shrink-0 cursor-pointer bg-[#f0f0f0] border border-[#e2e2e2] px-4 py-2.5 text-xs font-bold font-[var(--font-inter)] text-[#002045] hover:bg-[#e8e8e8] transition-colors whitespace-nowrap">
-                          {projectImageUploading ? "Enviando..." : "Upload"}
-                          <input type="file" accept="image/*" className="hidden" onChange={async (e) => {
-                            const file = e.target.files?.[0];
-                            if (!file) return;
-                            setProjectImageUploading(true);
-                            const url = await uploadDirect(file, "projetos");
-                            setProjectImageUploading(false);
-                            if (url) setPhotoForm((prev) => ({...prev, image_after: url}));
-                          }} />
-                        </label>
-                      </div>
+                      {photoForm.image_after ? (
+                        <div className="border border-[#e2e2e2]">
+                          <img src={photoForm.image_after} alt="Imagem Depois" className="w-full max-h-48 object-cover" />
+                          <div className="flex border-t border-[#e2e2e2]">
+                            <a href={photoForm.image_after} download target="_blank" rel="noopener noreferrer"
+                              className="flex-1 text-center text-[10px] tracking-[0.08em] uppercase font-bold font-[var(--font-inter)] px-3 py-2 border-r border-[#e2e2e2] text-[#1a365d] hover:bg-[#eef2f8] transition-colors">
+                              ↓ Download
+                            </a>
+                            <label className="flex-1 text-center text-[10px] tracking-[0.08em] uppercase font-bold font-[var(--font-inter)] px-3 py-2 border-r border-[#e2e2e2] bg-[#002045] text-white hover:bg-[#1a365d] transition-colors cursor-pointer">
+                              {projectImageUploading ? "Enviando…" : "Substituir"}
+                              <input type="file" accept="image/*" className="hidden" onChange={async (e) => {
+                                const file = e.target.files?.[0];
+                                if (!file) return;
+                                setProjectImageUploading(true);
+                                const url = await uploadDirect(file, "projetos");
+                                setProjectImageUploading(false);
+                                if (url) setPhotoForm((prev) => ({...prev, image_after: url}));
+                                e.target.value = "";
+                              }} />
+                            </label>
+                            <button type="button" onClick={() => setPhotoForm(prev => ({...prev, image_after: ""}))}
+                              className="px-3 py-2 text-[10px] tracking-[0.08em] uppercase font-bold font-[var(--font-inter)] border-red-300 text-red-600 hover:bg-red-50 transition-colors">
+                              Remover
+                            </button>
+                          </div>
+                        </div>
+                      ) : (
+                        <div className="flex gap-3 items-start">
+                          <input required type="text" value={photoForm.image_after} onChange={(e) => setPhotoForm({...photoForm, image_after: e.target.value})} className={inputCls} placeholder="/images/projetos/..." />
+                          <label className="flex-shrink-0 cursor-pointer bg-[#f0f0f0] border border-[#e2e2e2] px-4 py-2.5 text-xs font-bold font-[var(--font-inter)] text-[#002045] hover:bg-[#e8e8e8] transition-colors whitespace-nowrap">
+                            {projectImageUploading ? "Enviando..." : "Upload"}
+                            <input type="file" accept="image/*" className="hidden" onChange={async (e) => {
+                              const file = e.target.files?.[0];
+                              if (!file) return;
+                              setProjectImageUploading(true);
+                              const url = await uploadDirect(file, "projetos");
+                              setProjectImageUploading(false);
+                              if (url) setPhotoForm((prev) => ({...prev, image_after: url}));
+                              e.target.value = "";
+                            }} />
+                          </label>
+                        </div>
+                      )}
                     </div>
                     <div className="mb-4">
                       <label className={labelCls}>Imagem Antes <span className="font-normal text-[#b0b0b0]">(opcional)</span></label>
-                      <div className="flex gap-3 items-start">
-                        <input type="text" value={photoForm.image_before} onChange={(e) => setPhotoForm({...photoForm, image_before: e.target.value})} className={inputCls} placeholder="/images/projetos/..." />
-                        <label className="flex-shrink-0 cursor-pointer bg-[#f0f0f0] border border-[#e2e2e2] px-4 py-2.5 text-xs font-bold font-[var(--font-inter)] text-[#002045] hover:bg-[#e8e8e8] transition-colors whitespace-nowrap">
-                          {projectImageUploading ? "Enviando..." : "Upload"}
-                          <input type="file" accept="image/*" className="hidden" onChange={async (e) => {
-                            const file = e.target.files?.[0];
-                            if (!file) return;
-                            setProjectImageUploading(true);
-                            const url = await uploadDirect(file, "projetos");
-                            setProjectImageUploading(false);
-                            if (url) setPhotoForm((prev) => ({...prev, image_before: url}));
-                          }} />
-                        </label>
-                      </div>
+                      {photoForm.image_before ? (
+                        <div className="border border-[#e2e2e2]">
+                          <img src={photoForm.image_before} alt="Imagem Antes" className="w-full max-h-48 object-cover" />
+                          <div className="flex border-t border-[#e2e2e2]">
+                            <a href={photoForm.image_before} download target="_blank" rel="noopener noreferrer"
+                              className="flex-1 text-center text-[10px] tracking-[0.08em] uppercase font-bold font-[var(--font-inter)] px-3 py-2 border-r border-[#e2e2e2] text-[#1a365d] hover:bg-[#eef2f8] transition-colors">
+                              ↓ Download
+                            </a>
+                            <label className="flex-1 text-center text-[10px] tracking-[0.08em] uppercase font-bold font-[var(--font-inter)] px-3 py-2 border-r border-[#e2e2e2] bg-[#002045] text-white hover:bg-[#1a365d] transition-colors cursor-pointer">
+                              {projectImageUploading ? "Enviando…" : "Substituir"}
+                              <input type="file" accept="image/*" className="hidden" onChange={async (e) => {
+                                const file = e.target.files?.[0];
+                                if (!file) return;
+                                setProjectImageUploading(true);
+                                const url = await uploadDirect(file, "projetos");
+                                setProjectImageUploading(false);
+                                if (url) setPhotoForm((prev) => ({...prev, image_before: url}));
+                                e.target.value = "";
+                              }} />
+                            </label>
+                            <button type="button" onClick={() => setPhotoForm(prev => ({...prev, image_before: ""}))}
+                              className="px-3 py-2 text-[10px] tracking-[0.08em] uppercase font-bold font-[var(--font-inter)] border-red-300 text-red-600 hover:bg-red-50 transition-colors">
+                              Remover
+                            </button>
+                          </div>
+                        </div>
+                      ) : (
+                        <div className="flex gap-3 items-start">
+                          <input type="text" value={photoForm.image_before} onChange={(e) => setPhotoForm({...photoForm, image_before: e.target.value})} className={inputCls} placeholder="/images/projetos/..." />
+                          <label className="flex-shrink-0 cursor-pointer bg-[#f0f0f0] border border-[#e2e2e2] px-4 py-2.5 text-xs font-bold font-[var(--font-inter)] text-[#002045] hover:bg-[#e8e8e8] transition-colors whitespace-nowrap">
+                            {projectImageUploading ? "Enviando..." : "Upload"}
+                            <input type="file" accept="image/*" className="hidden" onChange={async (e) => {
+                              const file = e.target.files?.[0];
+                              if (!file) return;
+                              setProjectImageUploading(true);
+                              const url = await uploadDirect(file, "projetos");
+                              setProjectImageUploading(false);
+                              if (url) setPhotoForm((prev) => ({...prev, image_before: url}));
+                              e.target.value = "";
+                            }} />
+                          </label>
+                        </div>
+                      )}
                     </div>
                     <div className="mb-6 flex items-center gap-2">
                       <input type="checkbox" id="photo-active" checked={photoForm.is_active} onChange={(e) => setPhotoForm({...photoForm, is_active: e.target.checked})} className="w-4 h-4" />
@@ -4017,6 +4096,12 @@ export default function AdminPage() {
                                       <div className="w-full h-full bg-[#002045] flex items-center justify-center border border-[#002045]">
                                         <svg width="20" height="20" viewBox="0 0 24 24" fill="white"><path d="M8 5v14l11-7z"/></svg>
                                       </div>
+                                    )}
+                                    {m.type === "image" && (
+                                      <a href={m.url} download target="_blank" rel="noopener noreferrer"
+                                        className="absolute top-0.5 left-0.5 w-5 h-5 bg-[#002045] text-white text-[9px] font-bold flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity"
+                                        title="Download"
+                                      >↓</a>
                                     )}
                                     <button
                                       onClick={() => deleteProjectMedia(m.id, p.slug)}
