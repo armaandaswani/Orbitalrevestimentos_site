@@ -2122,8 +2122,8 @@ function SimuladorInner() {
                 </div>
               </div>
 
-              {/* 10-year comparison */}
-              <div className="bg-white border border-[#e2e2e2] border-t-0 px-6 sm:px-8 py-8">
+              {/* 10-year comparison — only shown when PFB is genuinely cheaper over 10 years */}
+              {mdfIn10y > 0 && savings10y / mdfIn10y >= 0.35 && <div className="bg-white border border-[#e2e2e2] border-t-0 px-6 sm:px-8 py-8">
                 <p className="text-[#43474e] text-[10px] tracking-[0.15em] uppercase font-bold font-[var(--font-inter)] mb-6">
                   Custo acumulado em 10 anos
                 </p>
@@ -2203,7 +2203,7 @@ function SimuladorInner() {
                   Preços sujeitos a alteração.
                 </p>
 
-              </div>
+              </div>}
 
               {/* Technical comparison — always visible */}
               <div className="bg-white border border-[#e2e2e2] border-t-0">
