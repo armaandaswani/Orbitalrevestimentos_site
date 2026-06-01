@@ -118,22 +118,26 @@ const rows: { attr: string; pfb: string; mdf: string; papel: string; forro: stri
 interface MdfComparisonProps {
   selected?: RowKey;
   onSelect?: (key: RowKey) => void;
+  allowedKeys?: RowKey[];
 }
 
-export default function MdfComparison({ selected: externalSelected, onSelect }: MdfComparisonProps = {}) {
+export default function MdfComparison({ selected: externalSelected, onSelect, allowedKeys }: MdfComparisonProps = {}) {
   const [internalSelected, setInternalSelected] = useState<RowKey>("mdf");
   const selected = externalSelected ?? internalSelected;
   const setSelected = (key: RowKey) => {
     setInternalSelected(key);
     onSelect?.(key);
   };
-  const option = COMPARISON_OPTIONS.find((o) => o.key === selected)!;
+  const visibleOptions = allowedKeys
+    ? COMPARISON_OPTIONS.filter((o) => allowedKeys.includes(o.key as RowKey))
+    : COMPARISON_OPTIONS;
+  const option = COMPARISON_OPTIONS.find((o) => o.key === selected) ?? COMPARISON_OPTIONS[0];
 
   return (
     <div>
       {/* Material selector buttons */}
       <div className="flex flex-wrap gap-2 mb-6">
-        {COMPARISON_OPTIONS.map((o) => (
+        {visibleOptions.map((o) => (
           <button
             key={o.key}
             onClick={() => setSelected(o.key as RowKey)}

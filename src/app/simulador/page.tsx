@@ -36,8 +36,14 @@ const TETO_M2_STRUCTURE = 12;     // R$/m² subestrutura metálica Manaus
 const TETO_MO_SIMPLE = 45;        // R$/m² MO Manaus
 const TETO_MO_COMPLEX = 62;       // R$/m² MO complexo
 const TETO_ACABAMENTO = 13;       // R$/m² acabamento / moldura
-const TETO_INSTALLS_10Y = 2;      // vida útil ~8 anos → troca ~ano 8 → 2 instalações em 10 anos
+const TETO_INSTALLS_10Y = 1;      // 1 ciclo em 10 anos (conforme instrução)
 const MDF_INSTALLS_10Y = 3;
+
+// Unidades de venda — para calcular por régua/prancha como PFB calcula por placa
+const FORRO_PLANK_M2 = 1.2;       // régua PVC 20cm × 6m = 1,2m² por régua
+const FORRO_WASTE = 1.10;         // 10% desperdício de corte
+const TETO_BOARD_M2 = 0.6;        // prancha teto laminado 20cm × 3m = 0,6m²
+const TETO_WASTE = 1.10;
 
 function orbitalMOPerPlate(plates: number, complex: boolean) {
   return plates > 10 ? (complex ? 150 : 130) : (complex ? 175 : 150);
@@ -261,7 +267,6 @@ function SimuladorInner() {
   const [couponError, setCouponError] = useState("");
   const [showResult, setShowResult] = useState(false);
   const [showAmbientsReview, setShowAmbientsReview] = useState(false);
-  const [showSavings, setShowSavings] = useState(false);
   const [mdfExpanded, setMdfExpanded] = useState(false);
   const [forroExpanded, setForroExpanded] = useState(false);
   const [tetoExpanded, setTetoExpanded] = useState(false);
@@ -339,11 +344,15 @@ function SimuladorInner() {
   const savings10y = mdfIn10y - orbTotal;
 
   const forroMORate = isComplex ? FORRO_MO_COMPLEX : FORRO_MO_SIMPLE;
-  const forroOnce = m2 * (FORRO_M2_MATERIAL + FORRO_M2_STRUCTURE + forroMORate + FORRO_ACABAMENTO);
+  const forroUnits = m2 > 0 ? Math.ceil(m2 * FORRO_WASTE / FORRO_PLANK_M2) : 0;
+  const forroMaterialCost = forroUnits * (FORRO_M2_MATERIAL * FORRO_PLANK_M2);
+  const forroOnce = forroMaterialCost + m2 * (FORRO_M2_STRUCTURE + forroMORate + FORRO_ACABAMENTO);
   const forroIn10y = forroOnce * FORRO_INSTALLS_10Y;
 
   const tetoMORate = isComplex ? TETO_MO_COMPLEX : TETO_MO_SIMPLE;
-  const tetoOnce = m2 * (TETO_M2_MATERIAL + TETO_M2_STRUCTURE + tetoMORate + TETO_ACABAMENTO);
+  const tetoUnits = m2 > 0 ? Math.ceil(m2 * TETO_WASTE / TETO_BOARD_M2) : 0;
+  const tetoMaterialCost = tetoUnits * (TETO_M2_MATERIAL * TETO_BOARD_M2);
+  const tetoOnce = tetoMaterialCost + m2 * (TETO_M2_STRUCTURE + tetoMORate + TETO_ACABAMENTO);
   const tetoIn10y = tetoOnce * TETO_INSTALLS_10Y;
 
   const grandMaterialTotal = savedSpaces.reduce((s, sp) => s + sp.materialTotal, 0) + orbMaterialTotal;
@@ -355,6 +364,14 @@ function SimuladorInner() {
   const pfbTotal10y = savedSpaces.length > 0 ? grandTotal : orbTotal;
   const savingsForro = forroIn10y - pfbTotal10y;
   const savingsTeto = tetoIn10y - pfbTotal10y;
+
+  // Ceiling-space detection: forro/teto are ceiling products, only compare when relevant
+  const isCeilingApp = (name: string) => /teto|forro|tecto|laje|plafon|ceiling/i.test(name);
+  const anySpaceIsCeiling =
+    savedSpaces.some((s) => isCeilingApp(s.label)) || isCeilingApp(customSpaceText);
+  // Show ceiling tabs only if the space is a ceiling app AND PFB is NOT >30% more expensive
+  const showForroTab = anySpaceIsCeiling && pfbTotal10y <= forroIn10y * 1.30;
+  const showTetoTab  = anySpaceIsCeiling && pfbTotal10y <= tetoIn10y  * 1.30;
 
   const commissionOwed = couponData
     ? couponData.commission_type === "percentage"
@@ -609,6 +626,17 @@ function SimuladorInner() {
   // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [fromPartnerLink, couponCode]);
 
+  // Auto-switch away from ceiling-only tabs when they become unavailable
+  useEffect(() => {
+    if (
+      (comparisonMaterial === "forro" && !showForroTab) ||
+      (comparisonMaterial === "teto" && !showTetoTab)
+    ) {
+      setComparisonMaterial("mdf");
+    }
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [showForroTab, showTetoTab]);
+
   function reset() {
     setStep(1);
     setSelectedSpace(null);
@@ -625,7 +653,6 @@ function SimuladorInner() {
     setCouponError("");
     setShowResult(false);
     setShowAmbientsReview(false);
-    setShowSavings(false);
     setSavedSpaces([]);
     setTimeout(() => stepCardRef.current?.scrollIntoView({ behavior: "smooth", block: "center" }), 50);
   }
@@ -2016,6 +2043,43 @@ function SimuladorInner() {
                 </div>
               </div>
 
+              {/* ── Material selector — prominent tabs ─────────────────────── */}
+              {(() => {
+                const tabs: { key: "mdf" | "forro" | "teto"; label: string; sub: string }[] = [
+                  { key: "mdf",   label: "MDF",            sub: "3× instalações · 2–3 anos vida útil" },
+                  ...(showForroTab ? [{ key: "forro" as const, label: "Forro PVC",      sub: "1× instalação · ~12 anos vida útil" }] : []),
+                  ...(showTetoTab  ? [{ key: "teto"  as const, label: "Teto Laminado",  sub: "1× instalação · ~10 anos vida útil" }] : []),
+                ];
+                if (tabs.length <= 1) return null;
+                return (
+                  <div className="bg-[#f5f5f3] border border-[#e2e2e2] border-b-0 px-6 sm:px-8 pt-6 pb-5">
+                    <p className="text-[#43474e] text-[9px] tracking-[0.2em] uppercase font-bold font-[var(--font-inter)] mb-3">
+                      Comparar PFB Orbital com:
+                    </p>
+                    <div className="flex flex-wrap gap-2">
+                      {tabs.map((t) => (
+                        <button
+                          key={t.key}
+                          onClick={() => setComparisonMaterial(t.key)}
+                          className={`flex flex-col items-start px-5 py-3 border-2 transition-colors duration-150 min-w-[130px] ${
+                            comparisonMaterial === t.key
+                              ? "bg-[#002045] border-[#002045] text-white"
+                              : "bg-white border-[#e2e2e2] text-[#43474e] hover:border-[#002045]/50 hover:bg-[#f8f8f8]"
+                          }`}
+                        >
+                          <span className={`text-sm font-bold font-[var(--font-inter)] ${comparisonMaterial === t.key ? "text-white" : "text-[#002045]"}`}>
+                            {t.label}
+                          </span>
+                          <span className={`text-[9px] font-[var(--font-inter)] mt-0.5 leading-tight ${comparisonMaterial === t.key ? "text-white/60" : "text-[#a0a0a0]"}`}>
+                            {t.sub}
+                          </span>
+                        </button>
+                      ))}
+                    </div>
+                  </div>
+                );
+              })()}
+
               {/* Cost comparison */}
               <div className="grid grid-cols-1 md:grid-cols-2">
                 <div className="bg-[#002045] px-6 sm:px-8 py-8 border border-[#2d4f7f]">
@@ -2149,8 +2213,11 @@ function SimuladorInner() {
                     <div className={`border-t border-[#e2e2e2] px-6 sm:px-8 pb-8 lg:block ${forroExpanded ? "block" : "hidden"}`}>
                       <div className="space-y-3 mb-6 pt-5">
                         <div className="flex items-start justify-between text-sm font-[var(--font-inter)] gap-4">
-                          <span className="text-[#74777f]">Painéis amadeirados boa qualidade ({FORRO_M2_MATERIAL}/m²)</span>
-                          <span className="text-[#43474e] font-semibold flex-shrink-0">{fmt(m2 * FORRO_M2_MATERIAL)}</span>
+                          <span className="text-[#74777f]">
+                            Réguas amadeiradas boa qualidade
+                            <span className="block text-[#b0b0b0] text-[10px] mt-0.5">{forroUnits} régua{forroUnits !== 1 ? "s" : ""} × R${fmt(Math.round(FORRO_M2_MATERIAL * FORRO_PLANK_M2))} (+10% corte)</span>
+                          </span>
+                          <span className="text-[#43474e] font-semibold flex-shrink-0">{fmt(forroMaterialCost)}</span>
                         </div>
                         <div className="flex items-start justify-between text-sm font-[var(--font-inter)] gap-4">
                           <span className="text-[#74777f]">Perfil metálico / subestrutura ({FORRO_M2_STRUCTURE}/m²)</span>
@@ -2193,8 +2260,11 @@ function SimuladorInner() {
                     <div className={`border-t border-[#e2e2e2] px-6 sm:px-8 pb-8 lg:block ${tetoExpanded ? "block" : "hidden"}`}>
                       <div className="space-y-3 mb-6 pt-5">
                         <div className="flex items-start justify-between text-sm font-[var(--font-inter)] gap-4">
-                          <span className="text-[#74777f]">Teto laminado amadeirado boa qualidade ({TETO_M2_MATERIAL}/m²)</span>
-                          <span className="text-[#43474e] font-semibold flex-shrink-0">{fmt(m2 * TETO_M2_MATERIAL)}</span>
+                          <span className="text-[#74777f]">
+                            Pranchas teto laminado amadeirado boa qualidade
+                            <span className="block text-[#b0b0b0] text-[10px] mt-0.5">{tetoUnits} prancha{tetoUnits !== 1 ? "s" : ""} × R${fmt(Math.round(TETO_M2_MATERIAL * TETO_BOARD_M2))} (+10% corte)</span>
+                          </span>
+                          <span className="text-[#43474e] font-semibold flex-shrink-0">{fmt(tetoMaterialCost)}</span>
                         </div>
                         <div className="flex items-start justify-between text-sm font-[var(--font-inter)] gap-4">
                           <span className="text-[#74777f]">Subestrutura metálica ({TETO_M2_STRUCTURE}/m²)</span>
@@ -2230,92 +2300,123 @@ function SimuladorInner() {
                 )}
               </div>
 
-              {/* 10-year comparison — dynamic per comparisonMaterial, only when PFB saves ≥35% */}
+              {/* 10-year comparison — psychological framing */}
               {(() => {
                 let competitorIn10y = 0;
                 let competitorLabel = "";
                 let competitorInstalls = 0;
                 let savingsValue = 0;
+                let competitorName = "";
+                let competitorWarning = "";
+
                 if (comparisonMaterial === "mdf") {
-                  competitorIn10y = mdfIn10y; competitorLabel = `MDF — ${MDF_INSTALLS_10Y} instalações em 10 anos`;
-                  competitorInstalls = MDF_INSTALLS_10Y; savingsValue = savings10y;
+                  if (savings10y / mdfIn10y < 0.35) return null;
+                  competitorIn10y = mdfIn10y;
+                  competitorName = "MDF";
+                  competitorLabel = `MDF — ${MDF_INSTALLS_10Y} reformas em 10 anos`;
+                  competitorInstalls = MDF_INSTALLS_10Y;
+                  savingsValue = savings10y;
+                  competitorWarning = "O MDF em Manaus não dura. Umidade, mofo e calor inchama e apodrece o material em 2–3 anos. Cada reforma significa obra, bagunça e dinheiro jogado fora — de novo.";
                 } else if (comparisonMaterial === "forro") {
-                  competitorIn10y = forroIn10y; competitorLabel = `Forro PVC — ${FORRO_INSTALLS_10Y} instalação em 10 anos`;
-                  competitorInstalls = FORRO_INSTALLS_10Y; savingsValue = savingsForro;
+                  if (pfbTotal10y > forroIn10y * 1.30) return null;
+                  competitorIn10y = forroIn10y;
+                  competitorName = "Forro PVC";
+                  competitorLabel = `Forro PVC — ${FORRO_INSTALLS_10Y} instalação em 10 anos`;
+                  competitorInstalls = FORRO_INSTALLS_10Y;
+                  savingsValue = savingsForro;
+                  competitorWarning = "Forro PVC amarela e racha com o UV de Manaus. O que era bonito vira plástico desbotado — e a próxima reforma já está marcada no calendário.";
                 } else if (comparisonMaterial === "teto") {
-                  competitorIn10y = tetoIn10y; competitorLabel = `Teto Laminado — ${TETO_INSTALLS_10Y} instalações em 10 anos`;
-                  competitorInstalls = TETO_INSTALLS_10Y; savingsValue = savingsTeto;
+                  if (pfbTotal10y > tetoIn10y * 1.30) return null;
+                  competitorIn10y = tetoIn10y;
+                  competitorName = "Teto Laminado";
+                  competitorLabel = `Teto Laminado — ${TETO_INSTALLS_10Y} instalação em 10 anos`;
+                  competitorInstalls = TETO_INSTALLS_10Y;
+                  savingsValue = savingsTeto;
+                  competitorWarning = "O laminado descola com o ciclo de umidade e calor amazônico. A laminação se solta nas bordas, incha e perde totalmente o aspecto visual — exigindo reposição completa.";
                 }
-                if (!competitorIn10y || savingsValue / competitorIn10y < 0.35) return null;
+
+                if (!competitorIn10y) return null;
+
+                const pfbWidth = Math.max(Math.min((pfbTotal10y / competitorIn10y) * 100, 100), 12);
+                const savingsPositive = savingsValue > 0;
+
                 return (
                   <div className="bg-white border border-[#e2e2e2] border-t-0 px-6 sm:px-8 py-8">
-                    <p className="text-[#43474e] text-[10px] tracking-[0.15em] uppercase font-bold font-[var(--font-inter)] mb-6">
-                      Custo acumulado em 10 anos
-                    </p>
-
-                    <div className="mb-4">
-                      <div className="flex items-center justify-between mb-2">
-                        <span className="text-xs font-bold font-[var(--font-inter)] text-[#002045]">PFB Orbital — 1 instalação</span>
-                        <span className="text-base font-[var(--font-noto-serif)] text-[#002045] font-normal">{fmt(pfbTotal10y)}</span>
+                    <div className="flex flex-col sm:flex-row sm:items-end sm:justify-between gap-3 mb-6">
+                      <div>
+                        <p className="text-[#43474e] text-[10px] tracking-[0.15em] uppercase font-bold font-[var(--font-inter)]">
+                          O que você realmente paga em 10 anos
+                        </p>
+                        {savingsPositive && (
+                          <p className="text-[#a03030] text-xs font-[var(--font-inter)] mt-1 leading-snug">
+                            Com {competitorName}, você gastaria <span className="font-bold">R${fmt(savingsValue)} a mais</span> — apenas para manter o mesmo ambiente.
+                          </p>
+                        )}
                       </div>
-                      <div className="h-9 bg-[#e8edf5] overflow-hidden">
+                    </div>
+
+                    {/* PFB bar */}
+                    <div className="mb-3">
+                      <div className="flex items-baseline justify-between mb-1.5 gap-4">
+                        <span className="text-xs font-bold font-[var(--font-inter)] text-[#002045]">PFB Orbital — 1 instalação, 10+ anos</span>
+                        <span className="text-lg font-[var(--font-noto-serif)] text-[#002045] font-normal flex-shrink-0">{fmt(pfbTotal10y)}</span>
+                      </div>
+                      <div className="h-10 bg-[#e8edf5] overflow-hidden relative">
                         <div
                           className="h-full bg-[#002045] transition-all duration-700 flex items-center px-3"
-                          style={{ width: `${Math.max(Math.min((pfbTotal10y / competitorIn10y) * 100, 100), 8)}%` }}
+                          style={{ width: `${pfbWidth}%` }}
                         >
-                          <span className="text-white text-[10px] font-bold font-[var(--font-inter)] whitespace-nowrap">1×</span>
+                          <span className="text-white text-[10px] font-bold font-[var(--font-inter)] whitespace-nowrap">1 instalação</span>
                         </div>
                       </div>
                     </div>
 
-                    <div className="mb-8">
-                      <div className="flex items-center justify-between mb-2">
-                        <span className="text-xs font-bold font-[var(--font-inter)] text-[#74777f]">{competitorLabel}</span>
-                        <span className="text-base font-[var(--font-noto-serif)] text-[#a03030] font-normal">{fmt(competitorIn10y)}</span>
+                    {/* Competitor bar */}
+                    <div className="mb-6">
+                      <div className="flex items-baseline justify-between mb-1.5 gap-4">
+                        <span className="text-xs font-bold font-[var(--font-inter)] text-[#a03030]">{competitorLabel}</span>
+                        <span className="text-lg font-[var(--font-noto-serif)] text-[#a03030] font-normal flex-shrink-0">{fmt(competitorIn10y)}</span>
                       </div>
-                      <div className="h-9 bg-[#f5e8e8] overflow-hidden">
-                        <div className="h-full bg-[#c0392b]/55 flex items-center px-3" style={{ width: "100%" }}>
-                          <span className="text-[#7a0000] text-[10px] font-bold font-[var(--font-inter)]">{competitorInstalls}×</span>
+                      <div className="h-10 bg-[#fde8e8] overflow-hidden">
+                        <div className="h-full bg-[#c0392b]/60 flex items-center gap-2 px-3" style={{ width: "100%" }}>
+                          <span className="text-[#7a0000] text-[11px] font-bold font-[var(--font-inter)]">
+                            {competitorInstalls}× {competitorInstalls > 1 ? "reformas" : "reforma"}
+                          </span>
+                          {savingsPositive && (
+                            <span className="text-[#c0392b] text-[9px] font-semibold font-[var(--font-inter)] bg-white/80 px-1.5 py-0.5 rounded-sm whitespace-nowrap">
+                              +R${fmt(savingsValue)} a mais
+                            </span>
+                          )}
                         </div>
                       </div>
                     </div>
 
-                    <div className="flex flex-col sm:flex-row sm:items-center gap-4 mb-4">
-                      <a
-                        href={`${WA_BASE}${encodeURIComponent(waMsg)}`}
-                        target="_blank"
-                        rel="noopener noreferrer"
-                        className="inline-flex items-center justify-center gap-2.5 bg-[#002045] text-white text-xs tracking-[0.12em] uppercase font-bold font-[var(--font-inter)] px-7 py-4 hover:bg-[#1a365d] transition-colors"
-                      >
-                        <WaIcon />
-                        Solicitar orçamento
-                      </a>
-                      <button
-                        onClick={() => setShowSavings(!showSavings)}
-                        className="inline-flex items-center gap-2 text-xs tracking-[0.1em] uppercase font-semibold font-[var(--font-inter)] text-[#3b6934] hover:text-[#002045] transition-colors"
-                      >
-                        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" className={`transition-transform duration-300 ${showSavings ? "rotate-180" : ""}`}>
-                          <path d="M6 9l6 6 6-6" />
-                        </svg>
-                        {showSavings ? "Ocultar" : "Ver"} economia estimada em 10 anos
-                      </button>
-                    </div>
-
-                    {showSavings && (
-                      <div className="bg-[#f0f9eb] border border-[#3b6934]/30 px-6 py-6 mb-4">
-                        <p className="text-[#3b6934] text-[10px] tracking-[0.15em] uppercase font-bold font-[var(--font-inter)] mb-2">
-                          Economia estimada em 10 anos com PFB Orbital
+                    {/* Savings callout — always visible */}
+                    {savingsPositive && (
+                      <div className="bg-[#fff8f8] border border-[#e8c0c0] px-5 py-4 mb-6">
+                        <p className="text-[#a03030] text-[10px] tracking-[0.12em] uppercase font-bold font-[var(--font-inter)] mb-1">
+                          Dinheiro que você não precisa gastar
                         </p>
-                        <p className="font-[var(--font-noto-serif)] text-[#002045] text-4xl font-normal mb-2">
-                          {fmt(savingsValue)}
+                        <p className="font-[var(--font-noto-serif)] text-[#002045] text-3xl sm:text-4xl font-normal mb-1.5">
+                          R$ {fmt(savingsValue)}
                         </p>
-                        <p className="text-[#43474e] text-xs font-[var(--font-inter)] leading-relaxed">
-                          Sem contar o custo de transtorno, reforma e substituição de material ao longo dos anos.
+                        <p className="text-[#74777f] text-xs font-[var(--font-inter)] leading-relaxed">
+                          {competitorWarning}
                         </p>
                       </div>
                     )}
 
-                    <p className="text-[#b0b0b0] text-[10px] font-[var(--font-inter)] mt-4 leading-relaxed">
+                    <a
+                      href={`${WA_BASE}${encodeURIComponent(waMsg)}`}
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      className="inline-flex items-center justify-center gap-2.5 bg-[#002045] text-white text-xs tracking-[0.12em] uppercase font-bold font-[var(--font-inter)] px-7 py-4 hover:bg-[#1a365d] transition-colors w-full sm:w-auto mb-4"
+                    >
+                      <WaIcon />
+                      Solicitar orçamento
+                    </a>
+
+                    <p className="text-[#b0b0b0] text-[10px] font-[var(--font-inter)] leading-relaxed">
                       * Todos os valores de mão de obra são estimativas de referência baseadas em preços de mercado em Manaus (2025).
                       A Orbital comercializa exclusivamente o material — não presta nem intermedia serviços de instalação.
                       Preços sujeitos a alteração.
@@ -2325,19 +2426,30 @@ function SimuladorInner() {
               })()}
 
               {/* Technical comparison — always visible */}
-              <div className="bg-white border border-[#e2e2e2] border-t-0">
-                <div className="px-6 lg:px-8 pt-6 pb-2 border-b border-[#e2e2e2]">
-                  <p className="text-[#43474e] text-[10px] tracking-[0.15em] uppercase font-bold font-[var(--font-inter)] mb-0.5">
-                    PFB Orbital vs. {COMPARISON_OPTIONS.find(o => o.key === comparisonMaterial)?.label ?? "MDF"}
-                  </p>
-                  <p className="text-[#74777f] text-xs font-[var(--font-inter)]">
-                    Selecione o material para comparar
-                  </p>
-                </div>
-                <div className="px-6 lg:px-8 py-6 lg:py-8">
-                  <MdfComparison selected={comparisonMaterial} onSelect={setComparisonMaterial} />
-                </div>
-              </div>
+              {(() => {
+                const allowedKeys: ("mdf" | "papel" | "forro" | "teto" | "tinta")[] = [
+                  "mdf",
+                  ...(showForroTab ? ["forro" as const] : []),
+                  ...(showTetoTab  ? ["teto"  as const] : []),
+                  "papel",
+                  "tinta",
+                ];
+                return (
+                  <div className="bg-white border border-[#e2e2e2] border-t-0">
+                    <div className="px-6 lg:px-8 pt-6 pb-2 border-b border-[#e2e2e2]">
+                      <p className="text-[#43474e] text-[10px] tracking-[0.15em] uppercase font-bold font-[var(--font-inter)] mb-0.5">
+                        PFB Orbital vs. {COMPARISON_OPTIONS.find(o => o.key === comparisonMaterial)?.label ?? "MDF"}
+                      </p>
+                      <p className="text-[#74777f] text-xs font-[var(--font-inter)]">
+                        Selecione o material para comparar tecnicamente
+                      </p>
+                    </div>
+                    <div className="px-6 lg:px-8 py-6 lg:py-8">
+                      <MdfComparison selected={comparisonMaterial} onSelect={setComparisonMaterial} allowedKeys={allowedKeys} />
+                    </div>
+                  </div>
+                );
+              })()}
             </div>
           )}
         </div>
