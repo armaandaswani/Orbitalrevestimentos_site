@@ -20,6 +20,22 @@ const MDF_SHEET_PRICE = 415;
 const MDF_MO_SIMPLE = 30;
 const MDF_MO_COMPLEX = 50;
 const MDF_ACABAMENTO = 25;
+
+// Forro PVC — mercado Manaus 2025 (padrão branco, régua 100–200 mm)
+const FORRO_M2_MATERIAL = 15;     // R$/m² painéis + clips + trilho
+const FORRO_M2_STRUCTURE = 20;    // R$/m² perfil metálico galvanizado
+const FORRO_MO_SIMPLE = 28;       // R$/m² mão de obra simples
+const FORRO_MO_COMPLEX = 40;      // R$/m² mão de obra complexo
+const FORRO_ACABAMENTO = 7;       // R$/m² rodateto / moldura
+const FORRO_INSTALLS_10Y = 1;     // vida útil ~12 anos → 1 instalação em 10 anos
+
+// Teto Laminado — premium decorativo (Larhauss / Portilato, Manaus 2025)
+const TETO_M2_MATERIAL = 150;     // R$/m² painel PVC laminado decorativo
+const TETO_M2_STRUCTURE = 22;     // R$/m² subestrutura metálica
+const TETO_MO_SIMPLE = 50;        // R$/m² mão de obra simples
+const TETO_MO_COMPLEX = 68;       // R$/m² mão de obra complexo
+const TETO_ACABAMENTO = 13;       // R$/m² acabamento / moldura
+const TETO_INSTALLS_10Y = 2;      // vida útil ~8 anos → troca na ~ano 8 → 2 instalações em 10 anos
 const MDF_INSTALLS_10Y = 3;
 
 function orbitalMOPerPlate(plates: number, complex: boolean) {
@@ -246,6 +262,8 @@ function SimuladorInner() {
   const [showAmbientsReview, setShowAmbientsReview] = useState(false);
   const [showSavings, setShowSavings] = useState(false);
   const [mdfExpanded, setMdfExpanded] = useState(false);
+  const [forroExpanded, setForroExpanded] = useState(false);
+  const [tetoExpanded, setTetoExpanded] = useState(false);
   const [savedSpaces, setSavedSpaces] = useState<SavedSpace[]>([]);
 
   // Raw multi-space params from URL — resolved into savedSpaces once products load
@@ -319,11 +337,23 @@ function SimuladorInner() {
   const mdfIn10y = mdfOnce * MDF_INSTALLS_10Y;
   const savings10y = mdfIn10y - orbTotal;
 
+  const forroMORate = isComplex ? FORRO_MO_COMPLEX : FORRO_MO_SIMPLE;
+  const forroOnce = m2 * (FORRO_M2_MATERIAL + FORRO_M2_STRUCTURE + forroMORate + FORRO_ACABAMENTO);
+  const forroIn10y = forroOnce * FORRO_INSTALLS_10Y;
+
+  const tetoMORate = isComplex ? TETO_MO_COMPLEX : TETO_MO_SIMPLE;
+  const tetoOnce = m2 * (TETO_M2_MATERIAL + TETO_M2_STRUCTURE + tetoMORate + TETO_ACABAMENTO);
+  const tetoIn10y = tetoOnce * TETO_INSTALLS_10Y;
+
   const grandMaterialTotal = savedSpaces.reduce((s, sp) => s + sp.materialTotal, 0) + orbMaterialTotal;
   const grandMaterialDiscounted = savedSpaces.reduce((s, sp) => s + sp.materialDiscounted, 0) + orbMaterialDiscounted;
   const grandMOTotal = savedSpaces.reduce((s, sp) => s + sp.moTotal, 0) + orbMOTotal;
   const grandTotal = savedSpaces.reduce((s, sp) => s + sp.total, 0) + orbTotal;
   const grandPlates = savedSpaces.reduce((s, sp) => s + sp.plates, 0) + plates;
+
+  const pfbTotal10y = savedSpaces.length > 0 ? grandTotal : orbTotal;
+  const savingsForro = forroIn10y - pfbTotal10y;
+  const savingsTeto = tetoIn10y - pfbTotal10y;
 
   const commissionOwed = couponData
     ? couponData.commission_type === "percentage"
@@ -2061,149 +2091,237 @@ function SimuladorInner() {
                   </div>
                 </div>
 
-                {/* MDF card — collapsed on mobile, full on desktop */}
-                <div className="bg-[#fafaf8] border border-[#e2e2e2]">
-                  {/* Mobile: collapsible toggle */}
-                  <button
-                    className="lg:hidden w-full flex items-center justify-between px-6 py-5 text-left"
-                    onClick={() => setMdfExpanded(!mdfExpanded)}
-                  >
-                    <div>
-                      <p className="text-[#74777f] text-[9px] tracking-[0.2em] uppercase font-bold font-[var(--font-inter)]">
-                        MDF — Estimativa por instalação
-                      </p>
+                {/* Competitor breakdown card — adapts to comparisonMaterial */}
+                {comparisonMaterial === "mdf" && (
+                  <div className="bg-[#fafaf8] border border-[#e2e2e2]">
+                    <button className="lg:hidden w-full flex items-center justify-between px-6 py-5 text-left" onClick={() => setMdfExpanded(!mdfExpanded)}>
+                      <div>
+                        <p className="text-[#74777f] text-[9px] tracking-[0.2em] uppercase font-bold font-[var(--font-inter)]">MDF — Estimativa por instalação</p>
+                        <p className="text-[#43474e] text-lg font-[var(--font-noto-serif)] mt-0.5">{fmt(mdfOnce)}</p>
+                      </div>
+                      <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#74777f" strokeWidth="2" className={`flex-shrink-0 transition-transform duration-200 ${mdfExpanded ? "rotate-180" : ""}`}><path d="M6 9l6 6 6-6" /></svg>
+                    </button>
+                    <div className="hidden lg:block px-6 py-5">
+                      <p className="text-[#74777f] text-[9px] tracking-[0.2em] uppercase font-bold font-[var(--font-inter)]">MDF — Estimativa por instalação</p>
                       <p className="text-[#43474e] text-lg font-[var(--font-noto-serif)] mt-0.5">{fmt(mdfOnce)}</p>
                     </div>
-                    <svg
-                      width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#74777f" strokeWidth="2"
-                      className={`flex-shrink-0 transition-transform duration-200 ${mdfExpanded ? "rotate-180" : ""}`}
-                    >
-                      <path d="M6 9l6 6 6-6" />
-                    </svg>
-                  </button>
-
-                  {/* Desktop: always visible header */}
-                  <div className="hidden lg:block px-6 py-5">
-                    <p className="text-[#74777f] text-[9px] tracking-[0.2em] uppercase font-bold font-[var(--font-inter)]">
-                      MDF — Estimativa por instalação
-                    </p>
-                    <p className="text-[#43474e] text-lg font-[var(--font-noto-serif)] mt-0.5">{fmt(mdfOnce)}</p>
-                  </div>
-
-                  {/* Mobile: body shown only when expanded. Desktop: always visible */}
-                  <div className={`border-t border-[#e2e2e2] px-6 sm:px-8 pb-8 lg:block ${mdfExpanded ? "block" : "hidden"}`}>
-                    <div className="space-y-3 mb-6 pt-5">
-                      <div className="flex items-start justify-between text-sm font-[var(--font-inter)] gap-4">
-                        <span className="text-[#74777f]">
-                          Material ({mdfSheets} chapa{mdfSheets !== 1 ? "s" : ""} × {MDF_SHEET_PRICE})
-                        </span>
-                        <span className="text-[#43474e] font-semibold flex-shrink-0">{fmt(mdfMaterialTotal)}</span>
+                    <div className={`border-t border-[#e2e2e2] px-6 sm:px-8 pb-8 lg:block ${mdfExpanded ? "block" : "hidden"}`}>
+                      <div className="space-y-3 mb-6 pt-5">
+                        <div className="flex items-start justify-between text-sm font-[var(--font-inter)] gap-4">
+                          <span className="text-[#74777f]">Material ({mdfSheets} chapa{mdfSheets !== 1 ? "s" : ""} × {MDF_SHEET_PRICE})</span>
+                          <span className="text-[#43474e] font-semibold flex-shrink-0">{fmt(mdfMaterialTotal)}</span>
+                        </div>
+                        <div className="flex items-start justify-between text-sm font-[var(--font-inter)] gap-4">
+                          <span className="text-[#74777f]">MO estimada ({isComplex ? MDF_MO_COMPLEX : MDF_MO_SIMPLE}/m²)*</span>
+                          <span className="text-[#43474e] font-semibold flex-shrink-0">{fmt(mdfMOTotal)}</span>
+                        </div>
+                        <div className="flex items-start justify-between text-sm font-[var(--font-inter)] gap-4">
+                          <span className="text-[#74777f]">Acabamentos ({MDF_ACABAMENTO}/m²)</span>
+                          <span className="text-[#43474e] font-semibold flex-shrink-0">{fmt(mdfAcabamentoTotal)}</span>
+                        </div>
+                        <div className="border-t border-[#e2e2e2] pt-3 flex items-center justify-between">
+                          <span className="text-[#43474e] text-sm font-bold font-[var(--font-inter)]">Por instalação</span>
+                          <span className="text-[#43474e] text-2xl font-[var(--font-noto-serif)]">{fmt(mdfOnce)}</span>
+                        </div>
                       </div>
-                      <div className="flex items-start justify-between text-sm font-[var(--font-inter)] gap-4">
-                        <span className="text-[#74777f]">MO estimada ({isComplex ? MDF_MO_COMPLEX : MDF_MO_SIMPLE}/m²)*</span>
-                        <span className="text-[#43474e] font-semibold flex-shrink-0">{fmt(mdfMOTotal)}</span>
-                      </div>
-                      <div className="flex items-start justify-between text-sm font-[var(--font-inter)] gap-4">
-                        <span className="text-[#74777f]">Acabamentos ({MDF_ACABAMENTO}/m²)</span>
-                        <span className="text-[#43474e] font-semibold flex-shrink-0">{fmt(mdfAcabamentoTotal)}</span>
-                      </div>
-                      <div className="border-t border-[#e2e2e2] pt-3 flex items-center justify-between">
-                        <span className="text-[#43474e] text-sm font-bold font-[var(--font-inter)]">Por instalação</span>
-                        <span className="text-[#43474e] text-2xl font-[var(--font-noto-serif)]">{fmt(mdfOnce)}</span>
+                      <div className="bg-[#fff3f3] border border-[#e8c0c0] px-4 py-3">
+                        <p className="text-[#a03030] text-xs font-semibold font-[var(--font-inter)]">Repõe a cada 2–3 anos em Manaus.</p>
+                        <p className="text-[#a03030]/70 text-[11px] font-[var(--font-inter)] mt-0.5 leading-relaxed">A umidade amazônica faz o MDF inchar, empenar e deteriorar continuamente.</p>
                       </div>
                     </div>
-                    <div className="bg-[#fff3f3] border border-[#e8c0c0] px-4 py-3">
-                      <p className="text-[#a03030] text-xs font-semibold font-[var(--font-inter)]">Repõe a cada 2–3 anos em Manaus.</p>
-                      <p className="text-[#a03030]/70 text-[11px] font-[var(--font-inter)] mt-0.5 leading-relaxed">
-                        A umidade amazônica faz o MDF inchar, empenar e deteriorar continuamente.
-                      </p>
-                    </div>
-                  </div>
-                </div>
-              </div>
-
-              {/* 10-year comparison — only shown when PFB is genuinely cheaper over 10 years */}
-              {mdfIn10y > 0 && savings10y / mdfIn10y >= 0.35 && <div className="bg-white border border-[#e2e2e2] border-t-0 px-6 sm:px-8 py-8">
-                <p className="text-[#43474e] text-[10px] tracking-[0.15em] uppercase font-bold font-[var(--font-inter)] mb-6">
-                  Custo acumulado em 10 anos
-                </p>
-
-                <div className="mb-4">
-                  <div className="flex items-center justify-between mb-2">
-                    <span className="text-xs font-bold font-[var(--font-inter)] text-[#002045]">PFB Orbital — 1 instalação</span>
-                    <span className="text-base font-[var(--font-noto-serif)] text-[#002045] font-normal">{fmt(savedSpaces.length > 0 ? grandTotal : orbTotal)}</span>
-                  </div>
-                  <div className="h-9 bg-[#e8edf5] overflow-hidden">
-                    <div
-                      className="h-full bg-[#002045] transition-all duration-700 flex items-center px-3"
-                      style={{ width: `${Math.max(Math.min(((savedSpaces.length > 0 ? grandTotal : orbTotal) / mdfIn10y) * 100, 100), 8)}%` }}
-                    >
-                      <span className="text-white text-[10px] font-bold font-[var(--font-inter)] whitespace-nowrap">1×</span>
-                    </div>
-                  </div>
-                </div>
-
-                <div className="mb-8">
-                  <div className="flex items-center justify-between mb-2">
-                    <span className="text-xs font-bold font-[var(--font-inter)] text-[#74777f]">
-                      MDF — {MDF_INSTALLS_10Y} instalações em 10 anos
-                    </span>
-                    <span className="text-base font-[var(--font-noto-serif)] text-[#a03030] font-normal">{fmt(mdfIn10y)}</span>
-                  </div>
-                  <div className="h-9 bg-[#f5e8e8] overflow-hidden">
-                    <div className="h-full bg-[#c0392b]/55 flex items-center px-3" style={{ width: "100%" }}>
-                      <span className="text-[#7a0000] text-[10px] font-bold font-[var(--font-inter)]">{MDF_INSTALLS_10Y}×</span>
-                    </div>
-                  </div>
-                </div>
-
-                <div className="flex flex-col sm:flex-row sm:items-center gap-4 mb-4">
-                  <a
-                    href={`${WA_BASE}${encodeURIComponent(waMsg)}`}
-                    target="_blank"
-                    rel="noopener noreferrer"
-                    className="inline-flex items-center justify-center gap-2.5 bg-[#002045] text-white text-xs tracking-[0.12em] uppercase font-bold font-[var(--font-inter)] px-7 py-4 hover:bg-[#1a365d] transition-colors"
-                  >
-                    <WaIcon />
-                    Solicitar orçamento
-                  </a>
-                  {savings10y > 0 && (
-                    <button
-                      onClick={() => setShowSavings(!showSavings)}
-                      className="inline-flex items-center gap-2 text-xs tracking-[0.1em] uppercase font-semibold font-[var(--font-inter)] text-[#3b6934] hover:text-[#002045] transition-colors"
-                    >
-                      <svg
-                        width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"
-                        className={`transition-transform duration-300 ${showSavings ? "rotate-180" : ""}`}
-                      >
-                        <path d="M6 9l6 6 6-6" />
-                      </svg>
-                      {showSavings ? "Ocultar" : "Ver"} economia estimada em 10 anos
-                    </button>
-                  )}
-                </div>
-
-                {savings10y > 0 && showSavings && (
-                  <div className="bg-[#f0f9eb] border border-[#3b6934]/30 px-6 py-6 mb-4">
-                    <p className="text-[#3b6934] text-[10px] tracking-[0.15em] uppercase font-bold font-[var(--font-inter)] mb-2">
-                      Economia estimada em 10 anos com PFB Orbital
-                    </p>
-                    <p className="font-[var(--font-noto-serif)] text-[#002045] text-4xl font-normal mb-2">
-                      {fmt(savings10y)}
-                    </p>
-                    <p className="text-[#43474e] text-xs font-[var(--font-inter)] leading-relaxed">
-                      Sem contar o custo de transtorno, reforma e substituição de material ao longo dos anos.
-                    </p>
                   </div>
                 )}
 
-                <p className="text-[#b0b0b0] text-[10px] font-[var(--font-inter)] mt-4 leading-relaxed">
-                  * Todos os valores de mão de obra são estimativas de referência baseadas em preços de mercado em Manaus (2025).
-                  A Orbital comercializa exclusivamente o material — não presta nem intermedia serviços de instalação.
-                  Preços sujeitos a alteração.
-                </p>
+                {comparisonMaterial === "forro" && (
+                  <div className="bg-[#fafaf8] border border-[#e2e2e2]">
+                    <button className="lg:hidden w-full flex items-center justify-between px-6 py-5 text-left" onClick={() => setForroExpanded(!forroExpanded)}>
+                      <div>
+                        <p className="text-[#74777f] text-[9px] tracking-[0.2em] uppercase font-bold font-[var(--font-inter)]">Forro PVC — Estimativa por instalação</p>
+                        <p className="text-[#43474e] text-lg font-[var(--font-noto-serif)] mt-0.5">{fmt(forroOnce)}</p>
+                      </div>
+                      <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#74777f" strokeWidth="2" className={`flex-shrink-0 transition-transform duration-200 ${forroExpanded ? "rotate-180" : ""}`}><path d="M6 9l6 6 6-6" /></svg>
+                    </button>
+                    <div className="hidden lg:block px-6 py-5">
+                      <p className="text-[#74777f] text-[9px] tracking-[0.2em] uppercase font-bold font-[var(--font-inter)]">Forro PVC — Estimativa por instalação</p>
+                      <p className="text-[#43474e] text-lg font-[var(--font-noto-serif)] mt-0.5">{fmt(forroOnce)}</p>
+                    </div>
+                    <div className={`border-t border-[#e2e2e2] px-6 sm:px-8 pb-8 lg:block ${forroExpanded ? "block" : "hidden"}`}>
+                      <div className="space-y-3 mb-6 pt-5">
+                        <div className="flex items-start justify-between text-sm font-[var(--font-inter)] gap-4">
+                          <span className="text-[#74777f]">Material painéis + clips ({FORRO_M2_MATERIAL}/m²)</span>
+                          <span className="text-[#43474e] font-semibold flex-shrink-0">{fmt(m2 * FORRO_M2_MATERIAL)}</span>
+                        </div>
+                        <div className="flex items-start justify-between text-sm font-[var(--font-inter)] gap-4">
+                          <span className="text-[#74777f]">Perfil metálico / subestrutura ({FORRO_M2_STRUCTURE}/m²)</span>
+                          <span className="text-[#43474e] font-semibold flex-shrink-0">{fmt(m2 * FORRO_M2_STRUCTURE)}</span>
+                        </div>
+                        <div className="flex items-start justify-between text-sm font-[var(--font-inter)] gap-4">
+                          <span className="text-[#74777f]">MO estimada ({forroMORate}/m²)*</span>
+                          <span className="text-[#43474e] font-semibold flex-shrink-0">{fmt(m2 * forroMORate)}</span>
+                        </div>
+                        <div className="flex items-start justify-between text-sm font-[var(--font-inter)] gap-4">
+                          <span className="text-[#74777f]">Rodateto / moldura ({FORRO_ACABAMENTO}/m²)</span>
+                          <span className="text-[#43474e] font-semibold flex-shrink-0">{fmt(m2 * FORRO_ACABAMENTO)}</span>
+                        </div>
+                        <div className="border-t border-[#e2e2e2] pt-3 flex items-center justify-between">
+                          <span className="text-[#43474e] text-sm font-bold font-[var(--font-inter)]">Por instalação</span>
+                          <span className="text-[#43474e] text-2xl font-[var(--font-noto-serif)]">{fmt(forroOnce)}</span>
+                        </div>
+                      </div>
+                      <div className="bg-[#fff3f3] border border-[#e8c0c0] px-4 py-3">
+                        <p className="text-[#a03030] text-xs font-semibold font-[var(--font-inter)]">Amarela e fragiliza com UV e calor.</p>
+                        <p className="text-[#a03030]/70 text-[11px] font-[var(--font-inter)] mt-0.5 leading-relaxed">O PVC sem estabilizador UV amarela e torna-se quebradiço em 8–12 anos no clima de Manaus.</p>
+                      </div>
+                    </div>
+                  </div>
+                )}
 
-              </div>}
+                {comparisonMaterial === "teto" && (
+                  <div className="bg-[#fafaf8] border border-[#e2e2e2]">
+                    <button className="lg:hidden w-full flex items-center justify-between px-6 py-5 text-left" onClick={() => setTetoExpanded(!tetoExpanded)}>
+                      <div>
+                        <p className="text-[#74777f] text-[9px] tracking-[0.2em] uppercase font-bold font-[var(--font-inter)]">Teto Laminado — Estimativa por instalação</p>
+                        <p className="text-[#43474e] text-lg font-[var(--font-noto-serif)] mt-0.5">{fmt(tetoOnce)}</p>
+                      </div>
+                      <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#74777f" strokeWidth="2" className={`flex-shrink-0 transition-transform duration-200 ${tetoExpanded ? "rotate-180" : ""}`}><path d="M6 9l6 6 6-6" /></svg>
+                    </button>
+                    <div className="hidden lg:block px-6 py-5">
+                      <p className="text-[#74777f] text-[9px] tracking-[0.2em] uppercase font-bold font-[var(--font-inter)]">Teto Laminado — Estimativa por instalação</p>
+                      <p className="text-[#43474e] text-lg font-[var(--font-noto-serif)] mt-0.5">{fmt(tetoOnce)}</p>
+                    </div>
+                    <div className={`border-t border-[#e2e2e2] px-6 sm:px-8 pb-8 lg:block ${tetoExpanded ? "block" : "hidden"}`}>
+                      <div className="space-y-3 mb-6 pt-5">
+                        <div className="flex items-start justify-between text-sm font-[var(--font-inter)] gap-4">
+                          <span className="text-[#74777f]">Painel PVC laminado decorativo ({TETO_M2_MATERIAL}/m²)</span>
+                          <span className="text-[#43474e] font-semibold flex-shrink-0">{fmt(m2 * TETO_M2_MATERIAL)}</span>
+                        </div>
+                        <div className="flex items-start justify-between text-sm font-[var(--font-inter)] gap-4">
+                          <span className="text-[#74777f]">Subestrutura metálica ({TETO_M2_STRUCTURE}/m²)</span>
+                          <span className="text-[#43474e] font-semibold flex-shrink-0">{fmt(m2 * TETO_M2_STRUCTURE)}</span>
+                        </div>
+                        <div className="flex items-start justify-between text-sm font-[var(--font-inter)] gap-4">
+                          <span className="text-[#74777f]">MO estimada ({tetoMORate}/m²)*</span>
+                          <span className="text-[#43474e] font-semibold flex-shrink-0">{fmt(m2 * tetoMORate)}</span>
+                        </div>
+                        <div className="flex items-start justify-between text-sm font-[var(--font-inter)] gap-4">
+                          <span className="text-[#74777f]">Acabamento / moldura ({TETO_ACABAMENTO}/m²)</span>
+                          <span className="text-[#43474e] font-semibold flex-shrink-0">{fmt(m2 * TETO_ACABAMENTO)}</span>
+                        </div>
+                        <div className="border-t border-[#e2e2e2] pt-3 flex items-center justify-between">
+                          <span className="text-[#43474e] text-sm font-bold font-[var(--font-inter)]">Por instalação</span>
+                          <span className="text-[#43474e] text-2xl font-[var(--font-noto-serif)]">{fmt(tetoOnce)}</span>
+                        </div>
+                      </div>
+                      <div className="bg-[#fff3f3] border border-[#e8c0c0] px-4 py-3">
+                        <p className="text-[#a03030] text-xs font-semibold font-[var(--font-inter)]">Laminação descola em ~8 anos em Manaus.</p>
+                        <p className="text-[#a03030]/70 text-[11px] font-[var(--font-inter)] mt-0.5 leading-relaxed">O ciclo de umidade e calor do Amazonas delamina o filme decorativo e exige reposição completa.</p>
+                      </div>
+                    </div>
+                  </div>
+                )}
+
+                {(comparisonMaterial === "papel" || comparisonMaterial === "tinta") && (
+                  <div className="bg-[#fafaf8] border border-[#e2e2e2] flex items-center justify-center px-6 py-10 text-center">
+                    <p className="text-[#74777f] text-xs font-[var(--font-inter)] leading-relaxed max-w-[220px]">
+                      Comparativo de custo detalhado disponível para MDF, Forro PVC e Teto Laminado.<br/>Consulte as abas acima.
+                    </p>
+                  </div>
+                )}
+              </div>
+
+              {/* 10-year comparison — dynamic per comparisonMaterial, only when PFB saves ≥35% */}
+              {(() => {
+                let competitorIn10y = 0;
+                let competitorLabel = "";
+                let competitorInstalls = 0;
+                let savingsValue = 0;
+                if (comparisonMaterial === "mdf") {
+                  competitorIn10y = mdfIn10y; competitorLabel = `MDF — ${MDF_INSTALLS_10Y} instalações em 10 anos`;
+                  competitorInstalls = MDF_INSTALLS_10Y; savingsValue = savings10y;
+                } else if (comparisonMaterial === "forro") {
+                  competitorIn10y = forroIn10y; competitorLabel = `Forro PVC — ${FORRO_INSTALLS_10Y} instalação em 10 anos`;
+                  competitorInstalls = FORRO_INSTALLS_10Y; savingsValue = savingsForro;
+                } else if (comparisonMaterial === "teto") {
+                  competitorIn10y = tetoIn10y; competitorLabel = `Teto Laminado — ${TETO_INSTALLS_10Y} instalações em 10 anos`;
+                  competitorInstalls = TETO_INSTALLS_10Y; savingsValue = savingsTeto;
+                }
+                if (!competitorIn10y || savingsValue / competitorIn10y < 0.35) return null;
+                return (
+                  <div className="bg-white border border-[#e2e2e2] border-t-0 px-6 sm:px-8 py-8">
+                    <p className="text-[#43474e] text-[10px] tracking-[0.15em] uppercase font-bold font-[var(--font-inter)] mb-6">
+                      Custo acumulado em 10 anos
+                    </p>
+
+                    <div className="mb-4">
+                      <div className="flex items-center justify-between mb-2">
+                        <span className="text-xs font-bold font-[var(--font-inter)] text-[#002045]">PFB Orbital — 1 instalação</span>
+                        <span className="text-base font-[var(--font-noto-serif)] text-[#002045] font-normal">{fmt(pfbTotal10y)}</span>
+                      </div>
+                      <div className="h-9 bg-[#e8edf5] overflow-hidden">
+                        <div
+                          className="h-full bg-[#002045] transition-all duration-700 flex items-center px-3"
+                          style={{ width: `${Math.max(Math.min((pfbTotal10y / competitorIn10y) * 100, 100), 8)}%` }}
+                        >
+                          <span className="text-white text-[10px] font-bold font-[var(--font-inter)] whitespace-nowrap">1×</span>
+                        </div>
+                      </div>
+                    </div>
+
+                    <div className="mb-8">
+                      <div className="flex items-center justify-between mb-2">
+                        <span className="text-xs font-bold font-[var(--font-inter)] text-[#74777f]">{competitorLabel}</span>
+                        <span className="text-base font-[var(--font-noto-serif)] text-[#a03030] font-normal">{fmt(competitorIn10y)}</span>
+                      </div>
+                      <div className="h-9 bg-[#f5e8e8] overflow-hidden">
+                        <div className="h-full bg-[#c0392b]/55 flex items-center px-3" style={{ width: "100%" }}>
+                          <span className="text-[#7a0000] text-[10px] font-bold font-[var(--font-inter)]">{competitorInstalls}×</span>
+                        </div>
+                      </div>
+                    </div>
+
+                    <div className="flex flex-col sm:flex-row sm:items-center gap-4 mb-4">
+                      <a
+                        href={`${WA_BASE}${encodeURIComponent(waMsg)}`}
+                        target="_blank"
+                        rel="noopener noreferrer"
+                        className="inline-flex items-center justify-center gap-2.5 bg-[#002045] text-white text-xs tracking-[0.12em] uppercase font-bold font-[var(--font-inter)] px-7 py-4 hover:bg-[#1a365d] transition-colors"
+                      >
+                        <WaIcon />
+                        Solicitar orçamento
+                      </a>
+                      <button
+                        onClick={() => setShowSavings(!showSavings)}
+                        className="inline-flex items-center gap-2 text-xs tracking-[0.1em] uppercase font-semibold font-[var(--font-inter)] text-[#3b6934] hover:text-[#002045] transition-colors"
+                      >
+                        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" className={`transition-transform duration-300 ${showSavings ? "rotate-180" : ""}`}>
+                          <path d="M6 9l6 6 6-6" />
+                        </svg>
+                        {showSavings ? "Ocultar" : "Ver"} economia estimada em 10 anos
+                      </button>
+                    </div>
+
+                    {showSavings && (
+                      <div className="bg-[#f0f9eb] border border-[#3b6934]/30 px-6 py-6 mb-4">
+                        <p className="text-[#3b6934] text-[10px] tracking-[0.15em] uppercase font-bold font-[var(--font-inter)] mb-2">
+                          Economia estimada em 10 anos com PFB Orbital
+                        </p>
+                        <p className="font-[var(--font-noto-serif)] text-[#002045] text-4xl font-normal mb-2">
+                          {fmt(savingsValue)}
+                        </p>
+                        <p className="text-[#43474e] text-xs font-[var(--font-inter)] leading-relaxed">
+                          Sem contar o custo de transtorno, reforma e substituição de material ao longo dos anos.
+                        </p>
+                      </div>
+                    )}
+
+                    <p className="text-[#b0b0b0] text-[10px] font-[var(--font-inter)] mt-4 leading-relaxed">
+                      * Todos os valores de mão de obra são estimativas de referência baseadas em preços de mercado em Manaus (2025).
+                      A Orbital comercializa exclusivamente o material — não presta nem intermedia serviços de instalação.
+                      Preços sujeitos a alteração.
+                    </p>
+                  </div>
+                );
+              })()}
 
               {/* Technical comparison — always visible */}
               <div className="bg-white border border-[#e2e2e2] border-t-0">

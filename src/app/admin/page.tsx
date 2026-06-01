@@ -4033,12 +4033,12 @@ export default function AdminPage() {
                             {/* Add image + video file */}
                             <div className="flex flex-wrap gap-3">
                               <label className={`relative cursor-pointer text-[10px] tracking-[0.1em] uppercase font-bold font-[var(--font-inter)] px-4 py-2 border border-[#002045] text-[#002045] hover:bg-[#002045] hover:text-white transition-colors whitespace-nowrap ${mediaUploading ? "opacity-50 pointer-events-none" : ""}`}>
-                                {mediaUploading ? "Enviando…" : "+ Foto"}
+                                {mediaUploading ? "Enviando…" : "+ Fotos"}
                                 <input
-                                  type="file" accept="image/*" className="absolute inset-0 opacity-0 cursor-pointer w-full"
+                                  type="file" accept="image/*" multiple className="absolute inset-0 opacity-0 cursor-pointer w-full"
                                   onChange={async (e) => {
-                                    const file = e.target.files?.[0];
-                                    if (file) await addProjectMediaImage(p.slug, file);
+                                    const files = Array.from(e.target.files ?? []);
+                                    for (const file of files) await addProjectMediaImage(p.slug, file);
                                     e.target.value = "";
                                   }}
                                 />
