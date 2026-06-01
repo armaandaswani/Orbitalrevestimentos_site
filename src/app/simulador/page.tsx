@@ -368,7 +368,10 @@ function SimuladorInner() {
   // Ceiling-space detection: forro/teto are ceiling products, only compare when relevant
   const isCeilingApp = (name: string) => /teto|forro|tecto|laje|plafon|ceiling/i.test(name);
   const anySpaceIsCeiling =
-    savedSpaces.some((s) => isCeilingApp(s.label)) || isCeilingApp(customSpaceText);
+    savedSpaces.some((s) => isCeilingApp(s.label)) ||
+    isCeilingApp(customSpaceText) ||
+    isCeilingApp(selectedSpace?.label ?? "") ||
+    selectedSpace?.id === "teto";
   // Show ceiling tabs only if the space is a ceiling app AND PFB is NOT >30% more expensive
   const showForroTab = anySpaceIsCeiling && pfbTotal10y <= forroIn10y * 1.30;
   const showTetoTab  = anySpaceIsCeiling && pfbTotal10y <= tetoIn10y  * 1.30;
@@ -518,8 +521,9 @@ function SimuladorInner() {
       if (!isNaN(n) && n > 0) setPlatesOverride(n);
     }
 
-    // Mark as partner-generated link if all key params present
-    if (cupom && spaceParam && (areaParam || searchParams.get("produto"))) {
+    // Mark as partner-generated link if admin-generated (from=consultor) OR all key params present
+    const fromAdmin = searchParams.get("from") === "consultor";
+    if (fromAdmin || (cupom && spaceParam && (areaParam || searchParams.get("produto")))) {
       setFromPartnerLink(true);
     }
   // eslint-disable-next-line react-hooks/exhaustive-deps

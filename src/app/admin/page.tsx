@@ -4607,6 +4607,7 @@ ALTER TABLE project_media ADD COLUMN IF NOT EXISTS description TEXT;`}
           function buildSimLink() {
             const origin = typeof window !== "undefined" ? window.location.origin : "https://orbitalrevestimentos.com.br";
             const p = new URLSearchParams();
+            p.set("from", "consultor"); // tells simulador to skip to step 4
             if (simCoupon.trim()) p.set("cupom", simCoupon.trim().toUpperCase());
 
             if (allSpaces.length === 1) {
