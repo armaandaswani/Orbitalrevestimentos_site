@@ -817,7 +817,12 @@ export default function AdminPage() {
       headers: { "Content-Type": "application/json", "x-admin-auth": ADMIN_PW },
       body: JSON.stringify({ folder, filename: file.name, contentType: file.type }),
     });
-    if (!signRes.ok) return null;
+    if (!signRes.ok) {
+      const err = await signRes.text();
+      console.error("[uploadDirect] sign failed:", err);
+      alert(`Erro ao assinar upload: ${err}`);
+      return null;
+    }
     const { signedUrl, publicUrl } = await signRes.json();
 
     // Step 2: PUT the raw file bytes directly to Supabase — bypasses Next.js entirely
@@ -826,7 +831,12 @@ export default function AdminPage() {
       headers: { "Content-Type": file.type },
       body: file,
     });
-    if (!uploadRes.ok) return null;
+    if (!uploadRes.ok) {
+      const err = await uploadRes.text();
+      console.error("[uploadDirect] PUT failed:", uploadRes.status, err);
+      alert(`Erro no upload (${uploadRes.status}): ${err}`);
+      return null;
+    }
     return publicUrl;
   }
 

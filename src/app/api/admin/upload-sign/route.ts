@@ -37,7 +37,7 @@ export async function POST(req: NextRequest) {
 
   const { data, error } = await sb.storage
     .from("site-images")
-    .createSignedUploadUrl(path);
+    .createSignedUploadUrl(path, { upsert: true });
 
   if (error || !data) {
     return NextResponse.json({ error: error?.message ?? "Failed to create signed URL" }, { status: 500 });
