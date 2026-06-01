@@ -347,6 +347,7 @@ export default function AdminPage() {
   const [mediaMigrated, setMediaMigrated] = useState<boolean | null>(null);
   const [editingMediaId, setEditingMediaId] = useState<string | null>(null);
   const [editMediaDraft, setEditMediaDraft] = useState<{ description: string; category: "antes" | "depois" | "geral" }>({ description: "", category: "geral" });
+  const [aiDescGenerating, setAiDescGenerating] = useState(false);
 
   // ── Admin simulator ──────────────────────────────────────────────────────
   interface SimSpace { key: string; spaceName: string; productCode: string; w: string; h: string; }
@@ -358,6 +359,18 @@ export default function AdminPage() {
   const [simCoupon, setSimCoupon] = useState("");
   const [simLink, setSimLink] = useState("");
   const [simLinkCopied, setSimLinkCopied] = useState(false);
+
+  // ── Admin coupon creator ────────────────────────────────────────────────
+  interface AdminCoupon { id: string; code: string; discount_pct: number; payment_type: string; usage_type: string; expires_at: string | null; used: boolean; created_at: string; }
+  const [adminCoupons, setAdminCoupons] = useState<AdminCoupon[]>([]);
+  const [showCouponCreator, setShowCouponCreator] = useState(false);
+  const [newCouponCode, setNewCouponCode] = useState("");
+  const [newCouponPct, setNewCouponPct] = useState("5");
+  const [newCouponPayment, setNewCouponPayment] = useState<"a_vista" | "parcelado" | "qualquer">("a_vista");
+  const [newCouponUsage, setNewCouponUsage] = useState<"single_use" | "temporary">("single_use");
+  const [newCouponExpiry, setNewCouponExpiry] = useState("");
+  const [couponCreating, setCouponCreating] = useState(false);
+  const [couponCreatedMsg, setCouponCreatedMsg] = useState("");
 
   // Same static list as the public projetos page — kept in sync manually
   const STATIC_RENDERS = [
@@ -1173,6 +1186,65 @@ export default function AdminPage() {
       body: JSON.stringify(body),
     });
     await fetchProjectMedia(slug);
+  }
+
+  async function generateAiDescription(imageUrl: string) {
+    setAiDescGenerating(true);
+    try {
+      const res = await fetch("/api/admin/generate-description", {
+        method: "POST",
+        headers: { "Content-Type": "application/json", "x-admin-auth": ADMIN_PW },
+        body: JSON.stringify({
+          imageUrl,
+          category: editMediaDraft.category,
+        }),
+      });
+      const json = await res.json();
+      if (json.description) {
+        setEditMediaDraft(d => ({ ...d, description: json.description }));
+      } else {
+        alert(json.error || "Erro ao gerar descrição.");
+      }
+    } finally {
+      setAiDescGenerating(false);
+    }
+  }
+
+  async function fetchAdminCoupons() {
+    const res = await fetch("/api/admin/coupons", { headers: { "x-admin-auth": ADMIN_PW } });
+    if (res.ok) setAdminCoupons(await res.json());
+  }
+
+  async function createAdminCoupon() {
+    if (!newCouponCode.trim() || !newCouponPct) return;
+    setCouponCreating(true);
+    setCouponCreatedMsg("");
+    const res = await fetch("/api/admin/coupons", {
+      method: "POST",
+      headers: { "Content-Type": "application/json", "x-admin-auth": ADMIN_PW },
+      body: JSON.stringify({
+        code: newCouponCode.trim().toUpperCase(),
+        discount_pct: parseFloat(newCouponPct),
+        payment_type: newCouponPayment,
+        usage_type: newCouponUsage,
+        expires_at: newCouponUsage === "temporary" && newCouponExpiry ? new Date(newCouponExpiry).toISOString() : null,
+      }),
+    });
+    const json = await res.json();
+    if (json.error) {
+      alert("Erro: " + json.error);
+    } else {
+      setCouponCreatedMsg(`Cupom ${json.code} criado!`);
+      setNewCouponCode("");
+      setSimCoupon(json.code);
+      await fetchAdminCoupons();
+    }
+    setCouponCreating(false);
+  }
+
+  async function deleteAdminCoupon(id: string) {
+    await fetch("/api/admin/coupons", { method: "DELETE", headers: { "Content-Type": "application/json", "x-admin-auth": ADMIN_PW }, body: JSON.stringify({ id }) });
+    await fetchAdminCoupons();
   }
 
   async function importStaticRender(render: { slug: string; title: string; product_code: string; image_path: string }, idx: number) {
@@ -4182,7 +4254,21 @@ export default function AdminPage() {
                                         </div>
                                         {/* Description */}
                                         <div className="mb-3">
-                                          <label className="text-[9px] text-[#74777f] font-[var(--font-inter)] uppercase tracking-wider font-bold block mb-1">Descrição (visível ao usuário)</label>
+                                          <div className="flex items-center justify-between mb-1">
+                                            <label className="text-[9px] text-[#74777f] font-[var(--font-inter)] uppercase tracking-wider font-bold">Descrição (visível ao usuário)</label>
+                                            <button
+                                              disabled={aiDescGenerating || m.type === "video"}
+                                              onClick={() => generateAiDescription(m.url)}
+                                              className="flex items-center gap-1 text-[8px] tracking-wide uppercase font-bold font-[var(--font-inter)] text-[#002045] border border-[#002045] px-2 py-0.5 hover:bg-[#002045] hover:text-white transition-colors disabled:opacity-40 disabled:cursor-not-allowed"
+                                            >
+                                              {aiDescGenerating ? (
+                                                <svg className="animate-spin" width="8" height="8" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="3"><path d="M12 2v4M12 18v4M4.93 4.93l2.83 2.83M16.24 16.24l2.83 2.83M2 12h4M18 12h4M4.93 19.07l2.83-2.83M16.24 7.76l2.83-2.83"/></svg>
+                                              ) : (
+                                                <svg width="8" height="8" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5"><path d="M12 2l2.4 7.4H22l-6.2 4.5 2.4 7.4L12 17l-6.2 4.3 2.4-7.4L2 9.4h7.6z"/></svg>
+                                              )}
+                                              {aiDescGenerating ? "Gerando…" : "IA"}
+                                            </button>
+                                          </div>
                                           <textarea
                                             value={editMediaDraft.description}
                                             onChange={(e) => setEditMediaDraft(d => ({ ...d, description: e.target.value }))}
@@ -4744,8 +4830,126 @@ ALTER TABLE project_media ADD COLUMN IF NOT EXISTS description TEXT;`}
 
                 {/* Coupon */}
                 <div>
-                  <label className={labelCls}>Cupom (opcional)</label>
-                  <input type="text" value={simCoupon} onChange={e => setSimCoupon(e.target.value.toUpperCase())} placeholder="Ex: PARCEIRO01" className={inputCls} />
+                  <div className="flex items-center justify-between mb-1">
+                    <label className={labelCls} style={{marginBottom:0}}>Cupom (opcional)</label>
+                    <button
+                      onClick={() => { setShowCouponCreator(v => !v); if (!showCouponCreator) fetchAdminCoupons(); }}
+                      className="text-[8px] uppercase tracking-widest font-bold font-[var(--font-inter)] text-[#002045] border border-[#002045] px-2 py-0.5 hover:bg-[#002045] hover:text-white transition-colors"
+                    >
+                      {showCouponCreator ? "Fechar" : "+ Criar cupom"}
+                    </button>
+                  </div>
+                  <input type="text" value={simCoupon} onChange={e => setSimCoupon(e.target.value.toUpperCase())} placeholder="Ex: PARCEIRO01 ou código gerado" className={inputCls} />
+
+                  {/* Coupon creator panel */}
+                  {showCouponCreator && (
+                    <div className="mt-2 border border-[#e2e2e2] bg-[#fafafa] p-3 space-y-2.5">
+                      <p className="text-[9px] tracking-[0.12em] uppercase font-bold text-[#002045] font-[var(--font-inter)]">Criar cupom de desconto</p>
+
+                      {/* Code + % */}
+                      <div className="flex gap-2">
+                        <div className="flex-1">
+                          <label className="text-[8px] text-[#74777f] uppercase font-bold tracking-wider font-[var(--font-inter)] block mb-0.5">Código</label>
+                          <input
+                            type="text"
+                            value={newCouponCode}
+                            onChange={e => setNewCouponCode(e.target.value.toUpperCase())}
+                            placeholder="Ex: AVISTA5"
+                            className={inputCls}
+                          />
+                        </div>
+                        <div className="w-20">
+                          <label className="text-[8px] text-[#74777f] uppercase font-bold tracking-wider font-[var(--font-inter)] block mb-0.5">Desconto %</label>
+                          <input
+                            type="number"
+                            min="1" max="50"
+                            value={newCouponPct}
+                            onChange={e => setNewCouponPct(e.target.value)}
+                            className={inputCls}
+                          />
+                        </div>
+                      </div>
+
+                      {/* Payment type */}
+                      <div>
+                        <label className="text-[8px] text-[#74777f] uppercase font-bold tracking-wider font-[var(--font-inter)] block mb-1">Tipo de pagamento</label>
+                        <div className="flex gap-1">
+                          {([["a_vista","À Vista"],["parcelado","Parcelado"],["qualquer","Qualquer"]] as const).map(([val, label]) => (
+                            <button
+                              key={val}
+                              onClick={() => setNewCouponPayment(val)}
+                              className={`flex-1 text-[8px] uppercase font-bold tracking-wider py-1.5 border transition-colors font-[var(--font-inter)] ${newCouponPayment === val ? "bg-[#002045] text-white border-[#002045]" : "border-[#e2e2e2] text-[#74777f] hover:border-[#002045]"}`}
+                            >
+                              {label}
+                            </button>
+                          ))}
+                        </div>
+                      </div>
+
+                      {/* Usage type */}
+                      <div>
+                        <label className="text-[8px] text-[#74777f] uppercase font-bold tracking-wider font-[var(--font-inter)] block mb-1">Tipo de uso</label>
+                        <div className="flex gap-1">
+                          {([["single_use","Uso único"],["temporary","Temporário"]] as const).map(([val, label]) => (
+                            <button
+                              key={val}
+                              onClick={() => setNewCouponUsage(val)}
+                              className={`flex-1 text-[8px] uppercase font-bold tracking-wider py-1.5 border transition-colors font-[var(--font-inter)] ${newCouponUsage === val ? "bg-[#002045] text-white border-[#002045]" : "border-[#e2e2e2] text-[#74777f] hover:border-[#002045]"}`}
+                            >
+                              {label}
+                            </button>
+                          ))}
+                        </div>
+                        {newCouponUsage === "temporary" && (
+                          <div className="mt-1.5">
+                            <label className="text-[8px] text-[#74777f] uppercase font-bold tracking-wider font-[var(--font-inter)] block mb-0.5">Válido até</label>
+                            <input type="datetime-local" value={newCouponExpiry} onChange={e => setNewCouponExpiry(e.target.value)} className={inputCls} />
+                          </div>
+                        )}
+                      </div>
+
+                      <button
+                        disabled={couponCreating || !newCouponCode.trim()}
+                        onClick={createAdminCoupon}
+                        className="w-full py-2 text-[9px] tracking-[0.12em] uppercase font-bold font-[var(--font-inter)] bg-[#002045] text-white hover:bg-[#1a365d] transition-colors disabled:opacity-40"
+                      >
+                        {couponCreating ? "Criando…" : "Criar cupom e usar"}
+                      </button>
+
+                      {couponCreatedMsg && (
+                        <p className="text-[#2e7d32] text-[9px] font-bold font-[var(--font-inter)]">✓ {couponCreatedMsg}</p>
+                      )}
+
+                      {/* Existing admin coupons list */}
+                      {adminCoupons.length > 0 && (
+                        <div className="mt-2 border-t border-[#e2e2e2] pt-2 space-y-1">
+                          <p className="text-[8px] uppercase tracking-widest font-bold text-[#74777f] font-[var(--font-inter)] mb-1">Cupons criados</p>
+                          {adminCoupons.map(c => (
+                            <div key={c.id} className="flex items-center justify-between bg-white border border-[#e2e2e2] px-2 py-1">
+                              <div>
+                                <span className="text-[9px] font-bold text-[#002045] font-[var(--font-inter)]">{c.code}</span>
+                                <span className="text-[8px] text-[#74777f] font-[var(--font-inter)] ml-1.5">{c.discount_pct}% · {c.payment_type === "a_vista" ? "à vista" : c.payment_type === "parcelado" ? "parcelado" : "qualquer"} · {c.usage_type === "single_use" ? "uso único" : "temporário"}</span>
+                                {c.used && <span className="text-[7px] text-[#d32f2f] font-bold ml-1">USADO</span>}
+                                {c.expires_at && !c.used && <span className="text-[7px] text-[#f57c00] ml-1">até {new Date(c.expires_at).toLocaleDateString("pt-BR")}</span>}
+                              </div>
+                              <button
+                                onClick={() => { setSimCoupon(c.code); }}
+                                className="text-[7px] uppercase font-bold text-[#002045] border border-[#002045] px-1.5 py-0.5 hover:bg-[#002045] hover:text-white transition-colors font-[var(--font-inter)] mr-1"
+                              >
+                                Usar
+                              </button>
+                              <button
+                                onClick={() => deleteAdminCoupon(c.id)}
+                                className="text-[7px] text-[#d32f2f] hover:text-[#b71c1c] font-bold font-[var(--font-inter)]"
+                              >
+                                ✕
+                              </button>
+                            </div>
+                          ))}
+                        </div>
+                      )}
+                    </div>
+                  )}
                 </div>
 
                 {/* Grand total when multiple */}
