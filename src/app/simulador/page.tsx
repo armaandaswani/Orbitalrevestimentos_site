@@ -243,6 +243,7 @@ function SimuladorInner() {
   const [couponValidating, setCouponValidating] = useState(false);
   const [couponError, setCouponError] = useState("");
   const [showResult, setShowResult] = useState(false);
+  const [showAmbientsReview, setShowAmbientsReview] = useState(false);
   const [showSavings, setShowSavings] = useState(false);
   const [mdfExpanded, setMdfExpanded] = useState(false);
   const [savedSpaces, setSavedSpaces] = useState<SavedSpace[]>([]);
@@ -494,6 +495,7 @@ function SimuladorInner() {
     setCouponData(null);
     setCouponError("");
     setShowResult(false);
+    setShowAmbientsReview(false);
     setShowSavings(false);
     setSavedSpaces([]);
     setTimeout(() => stepCardRef.current?.scrollIntoView({ behavior: "smooth", block: "center" }), 50);
@@ -1027,6 +1029,111 @@ function SimuladorInner() {
             </div>
           )}
 
+          {/* ── Ambientes Review ── shown between step 3 and step 4 */}
+          {showAmbientsReview && step === 3 && selectedSpace && selectedProduct && (
+            <div ref={stepCardRef} className="bg-white border border-[#e2e2e2] p-6 lg:p-10">
+              <p className="text-[#74777f] text-[10px] tracking-[0.15em] uppercase font-bold font-[var(--font-inter)] mb-1">
+                {savedSpaces.length + 1} ambiente{savedSpaces.length + 1 !== 1 ? "s" : ""} no seu projeto
+              </p>
+              <h3 className="font-[var(--font-noto-serif)] text-[#002045] text-xl font-normal mb-2">
+                Revisar ambientes
+              </h3>
+              <p className="text-[#74777f] text-sm font-[var(--font-inter)] mb-6">
+                Adicione mais ambientes ou continue para preencher seus dados.
+              </p>
+
+              <div className="border border-[#e2e2e2] mb-6 divide-y divide-[#f0f0f0]">
+                {savedSpaces.map((sp, i) => (
+                  <div key={sp.key} className="flex items-center gap-4 px-4 py-4">
+                    <span className="w-6 h-6 rounded-full bg-[#3b6934] text-white text-[10px] font-bold font-[var(--font-inter)] flex items-center justify-center flex-shrink-0">{i + 1}</span>
+                    <div className="flex-1 min-w-0">
+                      <p className="text-[#002045] text-sm font-semibold font-[var(--font-inter)]">{sp.label}</p>
+                      <p className="text-[#74777f] text-[11px] font-[var(--font-inter)]">
+                        {sp.productName} · {sp.productCode} · {sp.dimLabel} · <strong>{sp.plates} placa{sp.plates !== 1 ? "s" : ""}</strong>
+                      </p>
+                    </div>
+                    <div className="text-right flex-shrink-0">
+                      <p className="text-[#002045] text-sm font-semibold font-[var(--font-inter)]">{sp.materialDiscounted.toLocaleString("pt-BR", { style: "decimal", maximumFractionDigits: 0 })}</p>
+                      <p className="text-[#74777f] text-[9px] font-[var(--font-inter)]">material</p>
+                    </div>
+                    <button onClick={() => setSavedSpaces(prev => prev.filter((_, idx) => idx !== i))} className="text-[#cc0000] hover:text-[#ff0000] text-sm ml-1 flex-shrink-0" title="Remover">✕</button>
+                  </div>
+                ))}
+
+                {/* Current (pending) space */}
+                <div className="flex items-center gap-4 px-4 py-4 bg-[#f9fbff]">
+                  <span className="w-6 h-6 rounded-full bg-[#002045] text-white text-[10px] font-bold font-[var(--font-inter)] flex items-center justify-center flex-shrink-0">{savedSpaces.length + 1}</span>
+                  <div className="flex-1 min-w-0">
+                    <p className="text-[#002045] text-sm font-semibold font-[var(--font-inter)]">{selectedSpace.label}</p>
+                    <p className="text-[#74777f] text-[11px] font-[var(--font-inter)]">
+                      {selectedProduct.name} · {selectedProduct.code}
+                      {dimMode === "lxa" && width && height ? ` · ${width}m × ${height}m` : m2 > 0 ? ` · ${m2.toFixed(2)} m²` : ""}
+                      {plates > 0 && ` · ${plates} placa${plates !== 1 ? "s" : ""}`}
+                    </p>
+                  </div>
+                  <div className="text-right flex-shrink-0">
+                    <p className="text-[#002045] text-sm font-semibold font-[var(--font-inter)]">{orbMaterialDiscounted.toLocaleString("pt-BR", { style: "decimal", maximumFractionDigits: 0 })}</p>
+                    <p className="text-[#74777f] text-[9px] font-[var(--font-inter)]">material</p>
+                  </div>
+                </div>
+
+                {/* Grand material total row */}
+                {(savedSpaces.length > 0) && (
+                  <div className="flex items-center justify-between px-4 py-3 bg-[#002045]">
+                    <span className="text-white/70 text-[10px] tracking-[0.12em] uppercase font-bold font-[var(--font-inter)]">Total material estimado</span>
+                    <span className="text-white text-sm font-bold font-[var(--font-noto-serif)]">{grandMaterialDiscounted.toLocaleString("pt-BR", { style: "decimal", maximumFractionDigits: 0 })}</span>
+                  </div>
+                )}
+              </div>
+
+              <div className="flex flex-col sm:flex-row gap-3 items-start sm:items-center justify-between">
+                <button
+                  onClick={() => {
+                    setSavedSpaces(prev => [...prev, {
+                      key: `space-${Date.now()}`,
+                      label: selectedSpace!.label,
+                      productName: selectedProduct!.name,
+                      productCode: selectedProduct!.code,
+                      linha: selectedProduct!.linha,
+                      dimLabel: dimMode === "lxa" && width && height ? `${width}m × ${height}m` : `${m2.toFixed(2)} m²`,
+                      m2,
+                      plates,
+                      pricePerPlate,
+                      materialTotal: orbMaterialTotal,
+                      materialDiscounted: orbMaterialDiscounted,
+                      moTotal: orbMOTotal,
+                      total: orbTotal,
+                    }]);
+                    setSelectedSpace(null);
+                    setCustomSpaceText("");
+                    setShowCustomInput(false);
+                    setSelectedLine(null);
+                    setSelectedProduct(null);
+                    setWidth("");
+                    setHeight("");
+                    setSqmInput("");
+                    setDimMode("lxa");
+                    setPlatesOverride(null);
+                    setShowAmbientsReview(false);
+                    goToStep(1);
+                  }}
+                  className="inline-flex items-center gap-2 text-xs tracking-[0.12em] uppercase font-bold font-[var(--font-inter)] border border-[#002045] text-[#002045] px-5 py-3 hover:bg-[#002045] hover:text-white transition-colors"
+                >
+                  <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5"><path d="M12 5v14M5 12h14"/></svg>
+                  Adicionar outro ambiente
+                </button>
+
+                <button
+                  onClick={() => { setShowAmbientsReview(false); goToStep(4); }}
+                  className="w-full sm:w-auto inline-flex items-center justify-center gap-2 text-xs tracking-[0.12em] uppercase font-bold font-[var(--font-inter)] px-8 py-4 bg-[#002045] text-white hover:bg-[#1a365d] transition-colors"
+                >
+                  Continuar com meus dados
+                  <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5"><path d="M5 12h14M12 5l7 7-7 7"/></svg>
+                </button>
+              </div>
+            </div>
+          )}
+
           {/* ── Step 3: Dimensions ────────────────────────────────────────── */}
           {step === 3 && (
             <div className="bg-white border border-[#e2e2e2] p-6 lg:p-10">
@@ -1159,7 +1266,7 @@ function SimuladorInner() {
                   </button>
                 ) : (
                   <button
-                    onClick={() => canCalculate && goToStep(4)}
+                    onClick={() => { if (canCalculate) setShowAmbientsReview(true); }}
                     disabled={!canCalculate}
                     className={`w-full sm:w-auto inline-flex items-center justify-center gap-2 text-xs tracking-[0.12em] uppercase font-bold font-[var(--font-inter)] px-8 py-4 transition-colors ${
                       canCalculate
@@ -1791,27 +1898,54 @@ function SimuladorInner() {
               <div className="grid grid-cols-1 md:grid-cols-2">
                 <div className="bg-[#002045] px-6 sm:px-8 py-8 border border-[#2d4f7f]">
                   <p className="text-[#a1d494] text-[9px] tracking-[0.2em] uppercase font-bold font-[var(--font-inter)] mb-5">
-                    PFB Orbital — Estimativa de custo
+                    PFB Orbital — Estimativa de investimento
                   </p>
                   <div className="space-y-3 mb-6">
-                    <div className="flex items-start justify-between text-sm font-[var(--font-inter)] gap-4">
-                      <span className="text-white/55">
-                        Material ({plates} placa{plates !== 1 ? "s" : ""} × {pricePerPlate.toLocaleString("pt-BR")})
-                        <span className="block text-white/30 text-[10px] mt-0.5">2,9m × 1,2m × 5mm por placa</span>
-                        {discountAmount > 0 && (
-                          <span className="block text-[#a1d494] text-[10px] mt-0.5">
-                            - desconto (cupom)
+                    {savedSpaces.length > 0 && (
+                      <>
+                        {savedSpaces.map((sp, i) => (
+                          <div key={sp.key} className="flex items-center justify-between text-sm font-[var(--font-inter)] gap-4 pb-2 border-b border-white/10">
+                            <span className="text-white/55">
+                              <span className="block text-white/80 text-xs font-semibold">{sp.label}</span>
+                              {sp.plates} placa{sp.plates !== 1 ? "s" : ""} · {sp.productCode}
+                            </span>
+                            <span className="text-white font-semibold flex-shrink-0">{fmt(sp.materialDiscounted)}</span>
+                          </div>
+                        ))}
+                        <div className="flex items-center justify-between text-sm font-[var(--font-inter)] gap-4 pb-2 border-b border-white/10">
+                          <span className="text-white/55">
+                            <span className="block text-white/80 text-xs font-semibold">{selectedSpace.label}</span>
+                            {plates} placa{plates !== 1 ? "s" : ""} · {selectedProduct.code}
+                            {discountAmount > 0 && <span className="block text-[#a1d494] text-[10px] mt-0.5">- desconto (cupom)</span>}
                           </span>
-                        )}
-                      </span>
-                      <span className="text-white font-semibold flex-shrink-0">{fmt(orbMaterialDiscounted)}</span>
-                    </div>
+                          <span className="text-white font-semibold flex-shrink-0">{fmt(orbMaterialDiscounted)}</span>
+                        </div>
+                        <div className="flex items-center justify-between text-sm font-[var(--font-inter)] gap-4">
+                          <span className="text-white/55">Subtotal material — {grandPlates} placas</span>
+                          <span className="text-white font-semibold flex-shrink-0">{fmt(grandMaterialDiscounted)}</span>
+                        </div>
+                      </>
+                    )}
+                    {savedSpaces.length === 0 && (
+                      <div className="flex items-start justify-between text-sm font-[var(--font-inter)] gap-4">
+                        <span className="text-white/55">
+                          Material ({plates} placa{plates !== 1 ? "s" : ""} × {pricePerPlate.toLocaleString("pt-BR")})
+                          <span className="block text-white/30 text-[10px] mt-0.5">2,9m × 1,2m × 5mm por placa</span>
+                          {discountAmount > 0 && (
+                            <span className="block text-[#a1d494] text-[10px] mt-0.5">
+                              - desconto (cupom)
+                            </span>
+                          )}
+                        </span>
+                        <span className="text-white font-semibold flex-shrink-0">{fmt(orbMaterialDiscounted)}</span>
+                      </div>
+                    )}
                     <div className="flex items-start justify-between text-sm font-[var(--font-inter)] gap-4">
                       <span className="text-white/55">
                         Mão de obra estimada
                         <span className="block text-white/40 text-[10px] mt-0.5">Serviço terceirizado · {Math.round(moRatePerPlate / PLATE_M2)}/m²</span>
                       </span>
-                      <span className="text-white font-semibold flex-shrink-0">{fmt(orbMOTotal)}</span>
+                      <span className="text-white font-semibold flex-shrink-0">{fmt(savedSpaces.length > 0 ? grandMOTotal : orbMOTotal)}</span>
                     </div>
                     <div className="flex items-start justify-between text-sm font-[var(--font-inter)] gap-4">
                       <span className="text-white/55">Acabamento / pintura</span>
@@ -1819,7 +1953,7 @@ function SimuladorInner() {
                     </div>
                     <div className="border-t border-white/15 pt-3 flex items-center justify-between">
                       <span className="text-white text-sm font-bold font-[var(--font-inter)]">Total</span>
-                      <span className="text-white text-2xl font-[var(--font-noto-serif)]">{fmt(orbTotal)}</span>
+                      <span className="text-white text-2xl font-[var(--font-noto-serif)]">{fmt(savedSpaces.length > 0 ? grandTotal : orbTotal)}</span>
                     </div>
                   </div>
                   <div className="bg-[#3b6934]/30 border border-[#3b6934]/50 px-4 py-3 mb-3">
@@ -1906,12 +2040,12 @@ function SimuladorInner() {
                 <div className="mb-4">
                   <div className="flex items-center justify-between mb-2">
                     <span className="text-xs font-bold font-[var(--font-inter)] text-[#002045]">PFB Orbital — 1 instalação</span>
-                    <span className="text-base font-[var(--font-noto-serif)] text-[#002045] font-normal">{fmt(orbTotal)}</span>
+                    <span className="text-base font-[var(--font-noto-serif)] text-[#002045] font-normal">{fmt(savedSpaces.length > 0 ? grandTotal : orbTotal)}</span>
                   </div>
                   <div className="h-9 bg-[#e8edf5] overflow-hidden">
                     <div
                       className="h-full bg-[#002045] transition-all duration-700 flex items-center px-3"
-                      style={{ width: `${Math.max(Math.min((orbTotal / mdfIn10y) * 100, 100), 8)}%` }}
+                      style={{ width: `${Math.max(Math.min(((savedSpaces.length > 0 ? grandTotal : orbTotal) / mdfIn10y) * 100, 100), 8)}%` }}
                     >
                       <span className="text-white text-[10px] font-bold font-[var(--font-inter)] whitespace-nowrap">1×</span>
                     </div>
@@ -1978,23 +2112,6 @@ function SimuladorInner() {
                   Preços sujeitos a alteração.
                 </p>
 
-                {/* Add another space */}
-                {!partnerMode && (
-                  <div className="border-t border-[#e2e2e2] pt-5 mt-5">
-                    <button
-                      onClick={saveCurrentSpace}
-                      className="inline-flex items-center gap-2 text-[10px] tracking-[0.12em] uppercase font-bold font-[var(--font-inter)] border border-[#002045] text-[#002045] px-5 py-3 hover:bg-[#002045] hover:text-white transition-colors"
-                    >
-                      <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5">
-                        <path d="M12 5v14M5 12h14"/>
-                      </svg>
-                      Adicionar outro ambiente
-                    </button>
-                    <p className="text-[#b0b4bb] text-[10px] font-[var(--font-inter)] mt-2">
-                      Simule mais espaços e envie um orçamento completo de uma vez.
-                    </p>
-                  </div>
-                )}
               </div>
 
               {/* Technical comparison — always visible */}
