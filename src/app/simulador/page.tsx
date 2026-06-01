@@ -69,6 +69,22 @@ interface CouponData {
   commission_value: number;
 }
 
+interface SavedSpace {
+  key: string;
+  label: string;
+  productName: string;
+  productCode: string;
+  linha: string;
+  dimLabel: string;
+  m2: number;
+  plates: number;
+  pricePerPlate: number;
+  materialTotal: number;
+  materialDiscounted: number;
+  moTotal: number;
+  total: number;
+}
+
 const LINE_INFO: Record<ProductLine, { finish: string; price: number; cover: string }> = {
   Classic:    { finish: "Mármore Fosco",       price: 559, cover: "/images/catalogue/classic-branco-calacatta-orb006.jpeg" },
   Brilliance: { finish: "Mármore Polido",      price: 589, cover: "/images/catalogue/brilliance-calacatta-oro-orb013.jpeg" },
@@ -229,6 +245,7 @@ function SimuladorInner() {
   const [showResult, setShowResult] = useState(false);
   const [showSavings, setShowSavings] = useState(false);
   const [mdfExpanded, setMdfExpanded] = useState(false);
+  const [savedSpaces, setSavedSpaces] = useState<SavedSpace[]>([]);
 
   // ── Partner / client-link mode ───────────────────────────────────────────
   const [partnerMode, setPartnerMode] = useState(false);       // opened with ?mode=partner
@@ -297,6 +314,12 @@ function SimuladorInner() {
   const mdfIn10y = mdfOnce * MDF_INSTALLS_10Y;
   const savings10y = mdfIn10y - orbTotal;
 
+  const grandMaterialTotal = savedSpaces.reduce((s, sp) => s + sp.materialTotal, 0) + orbMaterialTotal;
+  const grandMaterialDiscounted = savedSpaces.reduce((s, sp) => s + sp.materialDiscounted, 0) + orbMaterialDiscounted;
+  const grandMOTotal = savedSpaces.reduce((s, sp) => s + sp.moTotal, 0) + orbMOTotal;
+  const grandTotal = savedSpaces.reduce((s, sp) => s + sp.total, 0) + orbTotal;
+  const grandPlates = savedSpaces.reduce((s, sp) => s + sp.plates, 0) + plates;
+
   const commissionOwed = couponData
     ? couponData.commission_type === "percentage"
       ? Math.round(orbMaterialDiscounted * couponData.commission_value / 100)
@@ -305,24 +328,49 @@ function SimuladorInner() {
 
   const waMsg =
     selectedProduct && selectedSpace && m2 > 0
-      ? [
-          "Olá! Gostaria de solicitar um orçamento do PFB Orbital.",
-          "",
-          `*Acabamento:* ${selectedProduct.name} (${selectedProduct.code} — ${selectedProduct.linha})`,
-          `*Espaço:* ${selectedSpace.label}`,
-          dimMode === "lxa" && width && height
-            ? `*Dimensões:* ${width}m × ${height}m`
-            : `*Área informada:* ${m2.toFixed(2)} m²`,
-          `*Área total:* ${m2.toFixed(2)} m²`,
-          `*Quantidade:* ${plates} placa${plates !== 1 ? "s" : ""} (cobre ~${(plates * PLATE_M2).toFixed(2)} m²)`,
-          `*Preço estimado do material:* ${fmt(orbMaterialTotal)}`,
-          couponData
-            ? `*Cupom aplicado:* ${couponData.coupon_code}`
-            : null,
-          couponData ? `*Preço com desconto:* ${fmt(orbMaterialDiscounted)}` : null,
-          clientName ? `*Cliente:* ${clientName}` : null,
-          clientEmail ? `*E-mail do cliente:* ${clientEmail}` : null,
-        ].filter(Boolean).join("\n")
+      ? savedSpaces.length > 0
+        ? [
+            "Olá! Gostaria de solicitar um orçamento para múltiplos ambientes com PFB Orbital.",
+            "",
+            ...savedSpaces.map((sp, i) => [
+              `*${i + 1}. ${sp.label}*`,
+              `Acabamento: ${sp.productName} (${sp.productCode} — ${sp.linha})`,
+              `Dimensões: ${sp.dimLabel}`,
+              `Placas: ${sp.plates} | Material: ${fmt(sp.materialDiscounted)}`,
+            ].join("\n")),
+            `*${savedSpaces.length + 1}. ${selectedSpace.label}*`,
+            `Acabamento: ${selectedProduct.name} (${selectedProduct.code} — ${selectedProduct.linha})`,
+            dimMode === "lxa" && width && height
+              ? `Dimensões: ${width}m × ${height}m`
+              : `Área: ${m2.toFixed(2)} m²`,
+            `Placas: ${plates} | Material: ${fmt(orbMaterialDiscounted)}`,
+            "",
+            `*Total geral:* ${grandPlates} placa${grandPlates !== 1 ? "s" : ""}`,
+            `*Material total:* ${fmt(grandMaterialDiscounted)}`,
+            `*MO estimada:* ${fmt(grandMOTotal)}`,
+            `*Total:* ${fmt(grandTotal)}`,
+            couponData ? `*Cupom aplicado:* ${couponData.coupon_code}` : null,
+            clientName ? `*Cliente:* ${clientName}` : null,
+            clientEmail ? `*E-mail:* ${clientEmail}` : null,
+          ].filter(Boolean).join("\n")
+        : [
+            "Olá! Gostaria de solicitar um orçamento do PFB Orbital.",
+            "",
+            `*Acabamento:* ${selectedProduct.name} (${selectedProduct.code} — ${selectedProduct.linha})`,
+            `*Espaço:* ${selectedSpace.label}`,
+            dimMode === "lxa" && width && height
+              ? `*Dimensões:* ${width}m × ${height}m`
+              : `*Área informada:* ${m2.toFixed(2)} m²`,
+            `*Área total:* ${m2.toFixed(2)} m²`,
+            `*Quantidade:* ${plates} placa${plates !== 1 ? "s" : ""} (cobre ~${(plates * PLATE_M2).toFixed(2)} m²)`,
+            `*Preço estimado do material:* ${fmt(orbMaterialTotal)}`,
+            couponData
+              ? `*Cupom aplicado:* ${couponData.coupon_code}`
+              : null,
+            couponData ? `*Preço com desconto:* ${fmt(orbMaterialDiscounted)}` : null,
+            clientName ? `*Cliente:* ${clientName}` : null,
+            clientEmail ? `*E-mail do cliente:* ${clientEmail}` : null,
+          ].filter(Boolean).join("\n")
       : "Olá! Tenho interesse no PFB Orbital e gostaria de fazer um orçamento.";
 
   function goToStep(n: 1 | 2 | 3 | 4 | 5) {
@@ -447,7 +495,40 @@ function SimuladorInner() {
     setCouponError("");
     setShowResult(false);
     setShowSavings(false);
+    setSavedSpaces([]);
     setTimeout(() => stepCardRef.current?.scrollIntoView({ behavior: "smooth", block: "center" }), 50);
+  }
+
+  function saveCurrentSpace() {
+    if (!selectedSpace || !selectedProduct || plates === 0) return;
+    setSavedSpaces(prev => [...prev, {
+      key: `space-${Date.now()}`,
+      label: selectedSpace.label,
+      productName: selectedProduct.name,
+      productCode: selectedProduct.code,
+      linha: selectedProduct.linha,
+      dimLabel: dimMode === "lxa" && width && height ? `${width}m × ${height}m` : `${m2.toFixed(2)} m²`,
+      m2,
+      plates,
+      pricePerPlate,
+      materialTotal: orbMaterialTotal,
+      materialDiscounted: orbMaterialDiscounted,
+      moTotal: orbMOTotal,
+      total: orbTotal,
+    }]);
+    // Reset space/product/dims but keep client info and coupon
+    setSelectedSpace(null);
+    setCustomSpaceText("");
+    setShowCustomInput(false);
+    setSelectedLine(null);
+    setSelectedProduct(null);
+    setWidth("");
+    setHeight("");
+    setSqmInput("");
+    setDimMode("lxa");
+    setPlatesOverride(null);
+    setShowResult(false);
+    goToStep(1);
   }
 
   async function validateCoupon() {
@@ -1456,6 +1537,56 @@ function SimuladorInner() {
                 </div>
               </div>
 
+              {/* Multi-space summary */}
+              {savedSpaces.length > 0 && (
+                <div className="bg-white border border-[#e2e2e2] border-t-0 px-5 sm:px-8 py-6">
+                  <p className="text-[#43474e] text-[10px] tracking-[0.15em] uppercase font-bold font-[var(--font-inter)] mb-4">
+                    Todos os ambientes simulados
+                  </p>
+                  <div className="space-y-0 border border-[#e2e2e2]">
+                    {savedSpaces.map((sp, i) => (
+                      <div key={sp.key} className="flex items-center justify-between px-4 py-3 border-b border-[#f0f0f0] last:border-b-0">
+                        <div className="flex items-center gap-3 min-w-0">
+                          <span className="text-[#86a0cd] text-[10px] font-bold font-[var(--font-inter)] w-5 flex-shrink-0">{i + 1}</span>
+                          <div className="min-w-0">
+                            <p className="text-[#002045] text-sm font-semibold font-[var(--font-inter)] truncate">{sp.label}</p>
+                            <p className="text-[#74777f] text-[10px] font-[var(--font-inter)]">{sp.productName} · {sp.dimLabel} · {sp.plates} placas</p>
+                          </div>
+                        </div>
+                        <div className="flex items-center gap-3 flex-shrink-0">
+                          <span className="text-[#002045] text-sm font-semibold font-[var(--font-inter)]">{fmt(sp.materialDiscounted)}</span>
+                          <button
+                            onClick={() => setSavedSpaces(prev => prev.filter((_, idx) => idx !== i))}
+                            className="text-[#cc0000] hover:text-[#ff0000] text-[10px] font-bold font-[var(--font-inter)] transition-colors"
+                            title="Remover ambiente"
+                          >
+                            ✕
+                          </button>
+                        </div>
+                      </div>
+                    ))}
+                    {/* Current space row */}
+                    <div className="flex items-center justify-between px-4 py-3 bg-[#f9fbff]">
+                      <div className="flex items-center gap-3 min-w-0">
+                        <span className="text-[#86a0cd] text-[10px] font-bold font-[var(--font-inter)] w-5 flex-shrink-0">{savedSpaces.length + 1}</span>
+                        <div className="min-w-0">
+                          <p className="text-[#002045] text-sm font-semibold font-[var(--font-inter)] truncate">{selectedSpace.label}</p>
+                          <p className="text-[#74777f] text-[10px] font-[var(--font-inter)]">{selectedProduct.name} · {dimMode === "lxa" && width && height ? `${width}m × ${height}m` : `${m2.toFixed(2)} m²`} · {plates} placas</p>
+                        </div>
+                      </div>
+                      <span className="text-[#002045] text-sm font-semibold font-[var(--font-inter)] flex-shrink-0">{fmt(orbMaterialDiscounted)}</span>
+                    </div>
+                    {/* Grand total row */}
+                    <div className="flex items-center justify-between px-4 py-3 bg-[#002045]">
+                      <div className="flex items-center gap-3">
+                        <span className="text-white/60 text-[10px] font-bold font-[var(--font-inter)] uppercase tracking-wider">Total — material</span>
+                      </div>
+                      <span className="text-white text-base font-bold font-[var(--font-noto-serif)]">{fmt(grandMaterialDiscounted)}</span>
+                    </div>
+                  </div>
+                </div>
+              )}
+
               {/* Input summary */}
               <div className="bg-white border border-[#e2e2e2] border-t-0 px-5 sm:px-8 py-6">
                 <p className="text-[#43474e] text-[10px] tracking-[0.15em] uppercase font-bold font-[var(--font-inter)] mb-4">
@@ -1846,6 +1977,24 @@ function SimuladorInner() {
                   A Orbital comercializa exclusivamente o material — não presta nem intermedia serviços de instalação.
                   Preços sujeitos a alteração.
                 </p>
+
+                {/* Add another space */}
+                {!partnerMode && (
+                  <div className="border-t border-[#e2e2e2] pt-5 mt-5">
+                    <button
+                      onClick={saveCurrentSpace}
+                      className="inline-flex items-center gap-2 text-[10px] tracking-[0.12em] uppercase font-bold font-[var(--font-inter)] border border-[#002045] text-[#002045] px-5 py-3 hover:bg-[#002045] hover:text-white transition-colors"
+                    >
+                      <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5">
+                        <path d="M12 5v14M5 12h14"/>
+                      </svg>
+                      Adicionar outro ambiente
+                    </button>
+                    <p className="text-[#b0b4bb] text-[10px] font-[var(--font-inter)] mt-2">
+                      Simule mais espaços e envie um orçamento completo de uma vez.
+                    </p>
+                  </div>
+                )}
               </div>
 
               {/* Technical comparison — always visible */}
