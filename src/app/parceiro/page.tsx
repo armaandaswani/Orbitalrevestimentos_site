@@ -133,6 +133,9 @@ export default function ParceiroPage() {
   const [hasNewUses, setHasNewUses] = useState(false);
 
   // ── Special table / simulator state ───────────────────────────────────────
+  interface SqSavedSpace { key: string; spaceName: string; product: SpecialProduct; plates: number; area: number; total: number; }
+  const [sqSavedSpaces, setSqSavedSpaces] = useState<SqSavedSpace[]>([]);
+  const [sqSpaceName, setSqSpaceName] = useState("");
   const [sqLinha, setSqLinha] = useState<"Classic" | "Brilliance" | "Elegance" | "">("");
   const [sqSelectedProduct, setSqSelectedProduct] = useState<SpecialProduct | null>(null);
   const [sqMode, setSqMode] = useState<"dimensions" | "m2" | "plates">("dimensions");
@@ -141,6 +144,16 @@ export default function ParceiroPage() {
   const [sqM2Input, setSqM2Input] = useState("");
   const [sqQty, setSqQty] = useState("");
   const [sqShowMargin, setSqShowMargin] = useState(false);
+
+  // ── Simulate tab: multi-space link generator ───────────────────────────────
+  interface PSimSpace { key: string; spaceName: string; productCode: string; w: string; h: string; }
+  const [pSimSpaces, setPSimSpaces] = useState<PSimSpace[]>([]);
+  const [pSimSpaceName, setPSimSpaceName] = useState("");
+  const [pSimProductCode, setPSimProductCode] = useState("");
+  const [pSimW, setPSimW] = useState("");
+  const [pSimH, setPSimH] = useState("");
+  const [pSimLink, setPSimLink] = useState("");
+  const [pSimLinkCopied, setPSimLinkCopied] = useState(false);
 
   // ── Special table scroll refs ───────────────────────────────────────────
   const sqProductSectionRef = useRef<HTMLDivElement>(null);
@@ -1146,90 +1159,208 @@ export default function ParceiroPage() {
       )}
 
       {/* ── Simular tab ── */}
-      {portalTab === "simulate" && (
-        <div className="max-w-5xl mx-auto px-4 sm:px-8 py-8">
+      {portalTab === "simulate" && (() => {
+        const PL_W = 1.2; const PL_H = 2.9;
+        const pWn = parseFloat(pSimW) || 0;
+        const pHn = parseFloat(pSimH) || 0;
+        const pArea = pWn * pHn;
+        const pPlates = pWn > 0 && pHn > 0 ? Math.ceil(pWn / PL_W) * Math.ceil(pHn / PL_H) : 0;
+        const pProd = SPECIAL_PRODUCTS.find(p => p.code === pSimProductCode) ?? null;
+        const pNormalPrice = pProd ? NORMAL_PRICES[pProd.linha] : 0;
+        const pDiscountFactor = partner.discount_type === "percentage" ? (1 - partner.discount_value / 100) : 1;
+        const pClientPrice = Math.round(pNormalPrice * pDiscountFactor);
+        const pMaterial = pPlates * pClientPrice;
+        const canAddPSim = pSimSpaceName.trim() !== "" && pProd !== null && pPlates > 0;
 
-          {/* Header */}
-          <div className="mb-6">
-            <h2 className="font-[var(--font-noto-serif)] text-[#002045] text-2xl font-normal mb-2">
-              Simulador para parceiros
-            </h2>
-            <p className="text-[#43474e] text-sm font-[var(--font-inter)] leading-relaxed max-w-2xl">
-              Configure uma simulação completa — espaço, modelo e área — e gere um link personalizado para enviar ao seu cliente.
-              O cliente abrirá o link com tudo pré-configurado e só precisará preencher os dados pessoais.
-              Seu cupom de desconto é incluído automaticamente.
-            </p>
-          </div>
+        interface PSimCalc { spaceName: string; productCode: string; product: typeof pProd; plates: number; area: number; material: number; }
+        const pAllSpaces: PSimCalc[] = [
+          ...pSimSpaces.map(s => {
+            const wn = parseFloat(s.w) || 0; const hn = parseFloat(s.h) || 0;
+            const pl = wn > 0 && hn > 0 ? Math.ceil(wn / PL_W) * Math.ceil(hn / PL_H) : 0;
+            const prod = SPECIAL_PRODUCTS.find(p => p.code === s.productCode) ?? null;
+            const np = prod ? NORMAL_PRICES[prod.linha] : 0;
+            const cp = Math.round(np * pDiscountFactor);
+            return { spaceName: s.spaceName, productCode: s.productCode, product: prod, plates: pl, area: wn * hn, material: pl * cp };
+          }),
+          ...(canAddPSim ? [{ spaceName: pSimSpaceName.trim(), productCode: pSimProductCode, product: pProd, plates: pPlates, area: pArea, material: pMaterial }] : []),
+        ];
+        const pGrandPlates = pAllSpaces.reduce((s, sp) => s + sp.plates, 0);
+        const pGrandMaterial = pAllSpaces.reduce((s, sp) => s + sp.material, 0);
+        const canGeneratePSim = pAllSpaces.length > 0;
 
-          {/* Feature cards */}
-          <div className="grid grid-cols-1 sm:grid-cols-3 gap-4 mb-8">
-            {[
-              {
-                icon: (
-                  <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5">
-                    <path d="M9 11l3 3L22 4" /><path d="M21 12v7a2 2 0 01-2 2H5a2 2 0 01-2-2V5a2 2 0 012-2h11" />
-                  </svg>
-                ),
-                title: "Configure em 3 passos",
-                desc: "Escolha o espaço, modelo e a área. Apenas 3 passos rápidos.",
-              },
-              {
-                icon: (
-                  <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5">
-                    <path d="M10 13a5 5 0 007.54.54l3-3a5 5 0 00-7.07-7.07l-1.72 1.71" /><path d="M14 11a5 5 0 00-7.54-.54l-3 3a5 5 0 007.07 7.07l1.71-1.71" />
-                  </svg>
-                ),
-                title: "Gere o link personalizado",
-                desc: "Um link único com todas as suas seleções. Copie e envie pelo WhatsApp ou e-mail.",
-              },
-              {
-                icon: (
-                  <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5">
-                    <rect x="2" y="4" width="20" height="16" rx="2"/><path d="M7 15h10M7 11h4" />
-                  </svg>
-                ),
-                title: "Cliente preenche os dados",
-                desc: `Seu cupom ${partner.coupon_code} é aplicado automaticamente. O cliente só insere nome, e-mail e WhatsApp.`,
-              },
-            ].map(({ icon, title, desc }) => (
-              <div key={title} className="bg-white border border-[#e2e2e2] px-5 py-5">
-                <div className="w-9 h-9 bg-[#eef2f8] flex items-center justify-center text-[#002045] mb-3">
-                  {icon}
-                </div>
-                <p className="text-[#002045] text-sm font-bold font-[var(--font-inter)] mb-1">{title}</p>
-                <p className="text-[#74777f] text-xs font-[var(--font-inter)] leading-relaxed">{desc}</p>
-              </div>
-            ))}
-          </div>
+        function buildPSimLink() {
+          const origin = typeof window !== "undefined" ? window.location.origin : "https://orbitalrevestimentos.com.br";
+          const p = new URLSearchParams();
+          if (partner) p.set("cupom", partner.coupon_code);
+          if (pAllSpaces.length === 1) {
+            const sp = pAllSpaces[0];
+            p.set("space", "custom"); p.set("customSpace", sp.spaceName);
+            p.set("produto", sp.productCode); p.set("area", sp.area.toFixed(2));
+            p.set("placas", sp.plates.toString());
+          } else {
+            p.set("ms", pAllSpaces.length.toString());
+            pAllSpaces.forEach((sp, i) => { p.set(`s${i}`, sp.spaceName); p.set(`p${i}`, sp.productCode); p.set(`pl${i}`, sp.plates.toString()); });
+          }
+          return `${origin}/simulador?${p.toString()}`;
+        }
 
-          {/* CTA */}
-          <div className="bg-[#002045] px-6 py-6 flex flex-col sm:flex-row sm:items-center gap-4">
-            <div className="flex-1">
-              <p className="text-white text-base font-[var(--font-noto-serif)] font-normal mb-1">
-                Pronto para simular?
-              </p>
-              <p className="text-white/60 text-xs font-[var(--font-inter)]">
-                Seu cupom <strong className="text-white tracking-widest">{partner.coupon_code}</strong> será vinculado automaticamente à simulação.
+        const pWaLines = pAllSpaces.map((sp, i) =>
+          `*${i + 1}. ${sp.spaceName}* — ${sp.product?.name ?? sp.productCode}\n   ${pSimSpaces[i]?.w || pSimW}m × ${pSimSpaces[i]?.h || pSimH}m · ${sp.plates} placas`
+        );
+        const pWaText = canGeneratePSim ? encodeURIComponent(
+          [`Olá! Segue o link de simulação do projeto com seu cupom Orbital:`, ``, buildPSimLink(), ``, ...pWaLines,
+           ...(pAllSpaces.length > 1 ? [``, `*Total: ${pGrandPlates} placas*`] : [])].join("\n")
+        ) : "";
+
+        const fmtParceiro = (n: number) => n.toLocaleString("pt-BR", { style: "decimal", maximumFractionDigits: 0 });
+
+        return (
+          <div className="max-w-2xl mx-auto px-4 sm:px-8 py-8">
+            <div className="mb-6">
+              <h2 className="font-[var(--font-noto-serif)] text-[#002045] text-2xl font-normal mb-2">Simulador para clientes</h2>
+              <p className="text-[#43474e] text-sm font-[var(--font-inter)] leading-relaxed">
+                Configure um ou mais ambientes, gere um link personalizado e envie ao seu cliente. O cupom <strong>{partner.coupon_code}</strong> é aplicado automaticamente.
               </p>
             </div>
-            <a
-              href={`/simulador?mode=partner&cupom=${encodeURIComponent(partner.coupon_code)}`}
-              target="_blank"
-              rel="noopener noreferrer"
-              className="flex-shrink-0 inline-flex items-center gap-2 bg-white text-[#002045] text-xs tracking-[0.12em] uppercase font-bold font-[var(--font-inter)] px-7 py-4 hover:bg-[#f0f4f8] transition-colors"
-            >
-              Abrir simulador
-              <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5">
-                <path d="M5 12h14M12 5l7 7-7 7" />
-              </svg>
-            </a>
-          </div>
 
-          <p className="text-[#74777f] text-[10px] font-[var(--font-inter)] mt-3">
-            O simulador abrirá em uma nova aba. Após configurar, use o botão "Gerar link para cliente" para obter o link compartilhável.
-          </p>
-        </div>
-      )}
+            {/* Saved spaces list */}
+            {pSimSpaces.length > 0 && (
+              <div className="bg-white border border-[#e2e2e2] mb-4 divide-y divide-[#f0f0f0]">
+                {pSimSpaces.map((s, i) => {
+                  const wn = parseFloat(s.w) || 0; const hn = parseFloat(s.h) || 0;
+                  const pl = wn > 0 && hn > 0 ? Math.ceil(wn / PL_W) * Math.ceil(hn / PL_H) : 0;
+                  const prod = SPECIAL_PRODUCTS.find(p => p.code === s.productCode) ?? null;
+                  const np = prod ? NORMAL_PRICES[prod.linha] : 0;
+                  const cp = Math.round(np * pDiscountFactor);
+                  const mat = pl * cp;
+                  return (
+                    <div key={s.key} className="flex items-center gap-3 px-4 py-3">
+                      <span className="w-6 h-6 rounded-full bg-[#3b6934] text-white text-[10px] font-bold font-[var(--font-inter)] flex items-center justify-center flex-shrink-0">{i + 1}</span>
+                      <div className="flex-1 min-w-0">
+                        <p className="text-[#002045] text-sm font-semibold font-[var(--font-inter)]">{s.spaceName}</p>
+                        <p className="text-[#74777f] text-[10px] font-[var(--font-inter)]">{prod?.name ?? s.productCode} · {wn}m × {hn}m · {pl} pl.</p>
+                      </div>
+                      <p className="text-[#002045] text-sm font-semibold font-[var(--font-inter)] flex-shrink-0">{fmtParceiro(mat)}</p>
+                      <button onClick={() => { setPSimSpaces(prev => prev.filter((_, idx) => idx !== i)); setPSimLink(""); }} className="text-red-400 hover:text-red-600 flex-shrink-0 ml-1">
+                        <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5"><path d="M18 6L6 18M6 6l12 12"/></svg>
+                      </button>
+                    </div>
+                  );
+                })}
+              </div>
+            )}
+
+            {/* Add space form */}
+            <div className="bg-white border border-[#e2e2e2] p-6 space-y-5">
+              <p className="text-[#002045] text-[10px] tracking-[0.15em] uppercase font-bold font-[var(--font-inter)]">
+                {pSimSpaces.length === 0 ? "Ambiente" : `Ambiente ${pSimSpaces.length + 1}`}
+              </p>
+
+              <div>
+                <label className="block text-[10px] tracking-[0.15em] uppercase font-bold font-[var(--font-inter)] text-[#74777f] mb-2">Nome do espaço</label>
+                <input type="text" value={pSimSpaceName} onChange={e => setPSimSpaceName(e.target.value)} placeholder="Ex: Sala, Quarto, Garagem…"
+                  className="w-full border border-[#e2e2e2] px-4 py-2.5 text-sm font-[var(--font-inter)] text-[#002045] focus:outline-none focus:border-[#002045]" />
+              </div>
+
+              <div>
+                <label className="block text-[10px] tracking-[0.15em] uppercase font-bold font-[var(--font-inter)] text-[#74777f] mb-2">Produto</label>
+                <select value={pSimProductCode} onChange={e => setPSimProductCode(e.target.value)}
+                  className="w-full border border-[#e2e2e2] px-4 py-2.5 text-sm font-[var(--font-inter)] text-[#002045] focus:outline-none focus:border-[#002045]">
+                  <option value="">— selecione —</option>
+                  {(["Classic","Brilliance","Elegance"] as const).map(linha => (
+                    <optgroup key={linha} label={linha}>
+                      {SPECIAL_PRODUCTS.filter(p => p.linha === linha).map(p => (
+                        <option key={p.code} value={p.code}>{p.name} ({p.code})</option>
+                      ))}
+                    </optgroup>
+                  ))}
+                </select>
+              </div>
+
+              <div className="grid grid-cols-2 gap-4">
+                <div>
+                  <label className="block text-[10px] tracking-[0.15em] uppercase font-bold font-[var(--font-inter)] text-[#74777f] mb-2">Largura (m)</label>
+                  <input type="number" min="0" step="0.01" value={pSimW} onChange={e => setPSimW(e.target.value)} placeholder="Ex: 6.10"
+                    className="w-full border border-[#e2e2e2] px-4 py-2.5 text-sm font-[var(--font-inter)] text-[#002045] focus:outline-none focus:border-[#002045]" />
+                </div>
+                <div>
+                  <label className="block text-[10px] tracking-[0.15em] uppercase font-bold font-[var(--font-inter)] text-[#74777f] mb-2">Altura (m)</label>
+                  <input type="number" min="0" step="0.01" value={pSimH} onChange={e => setPSimH(e.target.value)} placeholder="Ex: 5.16"
+                    className="w-full border border-[#e2e2e2] px-4 py-2.5 text-sm font-[var(--font-inter)] text-[#002045] focus:outline-none focus:border-[#002045]" />
+                </div>
+              </div>
+
+              {/* Live preview */}
+              {pPlates > 0 && pProd && (
+                <div className="bg-[#f9fbff] border border-[#dce8f5] px-5 py-4">
+                  <div className="grid grid-cols-3 gap-4">
+                    <div>
+                      <p className="text-[#74777f] text-[9px] uppercase tracking-widest font-bold font-[var(--font-inter)]">Área</p>
+                      <p className="text-[#002045] text-sm font-semibold font-[var(--font-inter)]">{pArea.toFixed(2)} m²</p>
+                    </div>
+                    <div>
+                      <p className="text-[#74777f] text-[9px] uppercase tracking-widest font-bold font-[var(--font-inter)]">Placas</p>
+                      <p className="text-[#002045] text-sm font-semibold font-[var(--font-inter)]">{pPlates}</p>
+                    </div>
+                    <div>
+                      <p className="text-[#74777f] text-[9px] uppercase tracking-widest font-bold font-[var(--font-inter)]">Valor c/ cupom</p>
+                      <p className="text-[#002045] text-sm font-semibold font-[var(--font-inter)]">{fmtParceiro(pMaterial)}</p>
+                    </div>
+                  </div>
+                </div>
+              )}
+
+              <button disabled={!canAddPSim} onClick={() => {
+                setPSimSpaces(prev => [...prev, { key: `ps-${Date.now()}`, spaceName: pSimSpaceName.trim(), productCode: pSimProductCode, w: pSimW, h: pSimH }]);
+                setPSimSpaceName(""); setPSimProductCode(""); setPSimW(""); setPSimH(""); setPSimLink("");
+              }}
+                className="w-full py-2.5 text-xs tracking-[0.12em] uppercase font-bold font-[var(--font-inter)] border border-[#002045] text-[#002045] hover:bg-[#f0f4fa] transition-colors disabled:opacity-40">
+                <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" className="inline mr-1.5 mb-0.5"><path d="M12 5v14M5 12h14"/></svg>
+                Salvar e adicionar outro ambiente
+              </button>
+
+              {/* Grand total */}
+              {pAllSpaces.length > 1 && (
+                <div className="bg-[#002045] px-5 py-4 flex items-center justify-between">
+                  <div>
+                    <p className="text-white/60 text-[9px] uppercase tracking-widest font-bold font-[var(--font-inter)]">Total do projeto (c/ cupom)</p>
+                    <p className="text-white/60 text-[10px] font-[var(--font-inter)]">{pAllSpaces.length} ambientes · {pGrandPlates} placas</p>
+                  </div>
+                  <p className="text-white text-xl font-[var(--font-noto-serif)]">{fmtParceiro(pGrandMaterial)}</p>
+                </div>
+              )}
+
+              <button disabled={!canGeneratePSim} onClick={() => { setPSimLink(buildPSimLink()); setPSimLinkCopied(false); }}
+                className="w-full py-3 text-xs tracking-[0.12em] uppercase font-bold font-[var(--font-inter)] bg-[#002045] text-white hover:bg-[#1a365d] transition-colors disabled:opacity-40">
+                Gerar link para o cliente
+              </button>
+            </div>
+
+            {/* Generated link */}
+            {pSimLink && (
+              <div className="mt-6 bg-white border border-[#e2e2e2] p-6 space-y-4">
+                <p className="text-[#002045] text-[10px] tracking-[0.15em] uppercase font-bold font-[var(--font-inter)]">Link gerado</p>
+                <div className="flex gap-2">
+                  <input readOnly value={pSimLink} onClick={e => (e.target as HTMLInputElement).select()}
+                    className="flex-1 border border-[#e2e2e2] px-3 py-2 text-xs font-[var(--font-inter)] text-[#43474e] bg-[#fafafa] focus:outline-none" />
+                  <button onClick={() => { navigator.clipboard.writeText(pSimLink); setPSimLinkCopied(true); setTimeout(() => setPSimLinkCopied(false), 2000); }}
+                    className="px-4 py-2 text-[10px] tracking-[0.1em] uppercase font-bold font-[var(--font-inter)] border border-[#002045] text-[#002045] hover:bg-[#002045] hover:text-white transition-colors whitespace-nowrap">
+                    {pSimLinkCopied ? "Copiado ✓" : "Copiar"}
+                  </button>
+                </div>
+                <a href={`https://wa.me/?text=${pWaText}`} target="_blank" rel="noopener noreferrer"
+                  className="inline-flex items-center gap-2.5 bg-[#25d366] text-white text-xs tracking-[0.12em] uppercase font-bold font-[var(--font-inter)] px-5 py-3 hover:bg-[#1ebe5d] transition-colors">
+                  <svg width="14" height="14" viewBox="0 0 24 24" fill="currentColor"><path d="M17.472 14.382c-.297-.149-1.758-.867-2.03-.967-.273-.099-.471-.148-.67.15-.197.297-.767.966-.94 1.164-.173.199-.347.223-.644.075-.297-.15-1.255-.463-2.39-1.475-.883-.788-1.48-1.761-1.653-2.059-.173-.297-.018-.458.13-.606.134-.133.298-.347.446-.52.149-.174.198-.298.298-.497.099-.198.05-.371-.025-.52-.075-.149-.669-1.612-.916-2.207-.242-.579-.487-.5-.669-.51-.173-.008-.371-.01-.57-.01-.198 0-.52.074-.792.372-.272.297-1.04 1.016-1.04 2.479 0 1.462 1.065 2.875 1.213 3.074.149.198 2.096 3.2 5.077 4.487.709.306 1.262.489 1.694.625.712.227 1.36.195 1.871.118.571-.085 1.758-.719 2.006-1.413.248-.694.248-1.289.173-1.413-.074-.124-.272-.198-.57-.347m-5.421 7.403h-.004a9.87 9.87 0 01-5.031-1.378l-.361-.214-3.741.982.998-3.648-.235-.374a9.86 9.86 0 01-1.51-5.26c.001-5.45 4.436-9.884 9.888-9.884 2.64 0 5.122 1.03 6.988 2.898a9.825 9.825 0 012.893 6.994c-.003 5.45-4.437 9.884-9.885 9.884m8.413-18.297A11.815 11.815 0 0012.05 0C5.495 0 .16 5.335.157 11.892c0 2.096.547 4.142 1.588 5.945L.057 24l6.305-1.654a11.882 11.882 0 005.683 1.448h.005c6.554 0 11.89-5.335 11.893-11.893a11.821 11.821 0 00-3.48-8.413z"/></svg>
+                  Enviar link por WhatsApp
+                </a>
+                <p className="text-[#b0b4bb] text-[10px] font-[var(--font-inter)]">
+                  {pAllSpaces.length > 1 ? `${pAllSpaces.length} ambientes pré-configurados. O cliente só preenche nome, e-mail e WhatsApp.` : `Espaço e produto pré-configurados com seu cupom.`}
+                </p>
+              </div>
+            )}
+          </div>
+        );
+      })()}
 
       {/* ── Special Table tab ── */}
       {portalTab === "special" && (
@@ -1286,9 +1417,44 @@ export default function ParceiroPage() {
 
           {/* Quote simulator */}
           <div className="bg-white border border-[#e2e2e2] p-6 sm:p-8">
-            <h2 className="font-[var(--font-noto-serif)] text-[#002045] text-xl font-normal mb-6">
-              Simulador de Orçamento
-            </h2>
+            <div className="flex items-center justify-between mb-6">
+              <h2 className="font-[var(--font-noto-serif)] text-[#002045] text-xl font-normal">
+                Simulador de Orçamento
+              </h2>
+              {sqSavedSpaces.length > 0 && (
+                <span className="bg-[#002045] text-white text-[10px] font-bold font-[var(--font-inter)] tracking-wider px-2 py-0.5">
+                  {sqSavedSpaces.length} ambiente{sqSavedSpaces.length !== 1 ? "s" : ""} salvo{sqSavedSpaces.length !== 1 ? "s" : ""}
+                </span>
+              )}
+            </div>
+
+            {/* Saved spaces list */}
+            {sqSavedSpaces.length > 0 && (
+              <div className="border border-[#e2e2e2] mb-6 divide-y divide-[#f0f0f0]">
+                {sqSavedSpaces.map((sp, i) => (
+                  <div key={sp.key} className="flex items-center gap-3 px-4 py-3">
+                    <span className="w-6 h-6 rounded-full bg-[#3b6934] text-white text-[10px] font-bold font-[var(--font-inter)] flex items-center justify-center flex-shrink-0">{i + 1}</span>
+                    <div className="flex-1 min-w-0">
+                      <p className="text-[#002045] text-sm font-semibold font-[var(--font-inter)]">{sp.spaceName || sp.product.name}</p>
+                      <p className="text-[#74777f] text-[10px] font-[var(--font-inter)]">{sp.product.name} · {sp.plates} placa{sp.plates !== 1 ? "s" : ""} · {sp.area.toFixed(2)} m²</p>
+                    </div>
+                    <p className="text-[#002045] text-sm font-semibold font-[var(--font-inter)] flex-shrink-0">{sp.total.toLocaleString("pt-BR", { style: "decimal", maximumFractionDigits: 0 })}</p>
+                    <button onClick={() => setSqSavedSpaces(prev => prev.filter((_, idx) => idx !== i))} className="text-red-400 hover:text-red-600 flex-shrink-0 ml-1">
+                      <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5"><path d="M18 6L6 18M6 6l12 12"/></svg>
+                    </button>
+                  </div>
+                ))}
+              </div>
+            )}
+
+            {/* Space name input */}
+            <div className="mb-5">
+              <label className="block text-[10px] tracking-[0.15em] uppercase font-bold font-[var(--font-inter)] text-[#74777f] mb-2">
+                {sqSavedSpaces.length === 0 ? "Nome do ambiente (opcional)" : `Ambiente ${sqSavedSpaces.length + 1} — nome`}
+              </label>
+              <input type="text" value={sqSpaceName} onChange={e => setSqSpaceName(e.target.value)} placeholder="Ex: Sala, Quarto, Garagem…"
+                className="w-full border border-[#e2e2e2] px-4 py-2.5 text-sm font-[var(--font-inter)] text-[#002045] focus:outline-none focus:border-[#002045]" />
+            </div>
 
             {/* Line cards */}
             <div className="mb-6">
@@ -1501,13 +1667,13 @@ export default function ParceiroPage() {
 
             </div>{/* end sqCalcSectionRef div */}
 
-            {/* Results */}
+            {/* Results for current space */}
             {sqLinha && sqQtyNum > 0 && (
               <div className="border-t border-[#e2e2e2] pt-6">
-                {/* Summary card */}
+                {/* Current space summary card */}
                 <div className="bg-[#002045] px-6 py-6 mb-4">
                   <p className="text-[#a1d494] text-[9px] tracking-[0.2em] uppercase font-bold font-[var(--font-inter)] mb-4">
-                    Resumo do orçamento
+                    {sqSavedSpaces.length > 0 ? `Ambiente ${sqSavedSpaces.length + 1}` : "Resumo do orçamento"}
                   </p>
                   <div className="grid grid-cols-2 gap-4 mb-4">
                     <div>
@@ -1547,6 +1713,52 @@ export default function ParceiroPage() {
                   </div>
                 </div>
 
+                {/* Add another space */}
+                <button
+                  onClick={() => {
+                    if (!sqSelectedProduct || sqQtyNum === 0) return;
+                    setSqSavedSpaces(prev => [...prev, {
+                      key: `sq-${Date.now()}`,
+                      spaceName: sqSpaceName.trim() || sqSelectedProduct.name,
+                      product: sqSelectedProduct,
+                      plates: sqQtyNum,
+                      area: sqArea,
+                      total: sqTotal,
+                    }]);
+                    setSqSpaceName(""); setSqLinha(""); setSqSelectedProduct(null);
+                    setSqMode("dimensions"); setSqWidth(""); setSqHeight(""); setSqM2Input(""); setSqQty("");
+                  }}
+                  className="w-full mb-4 py-2.5 text-xs tracking-[0.12em] uppercase font-bold font-[var(--font-inter)] border border-[#002045] text-[#002045] hover:bg-[#f0f4fa] transition-colors"
+                >
+                  <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" className="inline mr-1.5 mb-0.5"><path d="M12 5v14M5 12h14"/></svg>
+                  Salvar e adicionar outro ambiente
+                </button>
+
+                {/* Grand total across all saved + current */}
+                {sqSavedSpaces.length > 0 && (
+                  <div className="bg-[#002045] px-6 py-5 mb-6">
+                    <p className="text-[#a1d494] text-[9px] tracking-[0.2em] uppercase font-bold font-[var(--font-inter)] mb-3">
+                      Total do projeto — {sqSavedSpaces.length + 1} ambientes
+                    </p>
+                    <div className="space-y-1.5 mb-4">
+                      {sqSavedSpaces.map((sp, i) => (
+                        <div key={sp.key} className="flex items-center justify-between text-sm font-[var(--font-inter)]">
+                          <span className="text-white/70">{i + 1}. {sp.spaceName} — {sp.plates} pl.</span>
+                          <span className="text-white font-semibold">{fmt(sp.total)}</span>
+                        </div>
+                      ))}
+                      <div className="flex items-center justify-between text-sm font-[var(--font-inter)]">
+                        <span className="text-white/70">{sqSavedSpaces.length + 1}. {sqSpaceName.trim() || (sqSelectedProduct?.name ?? "")} — {sqQtyNum} pl.</span>
+                        <span className="text-white font-semibold">{fmt(sqTotal)}</span>
+                      </div>
+                    </div>
+                    <div className="border-t border-white/20 pt-4 flex items-center justify-between">
+                      <span className="text-white font-bold font-[var(--font-inter)]">Total geral</span>
+                      <span className="text-white text-2xl font-[var(--font-noto-serif)]">{fmt(sqSavedSpaces.reduce((s, sp) => s + sp.total, 0) + sqTotal)}</span>
+                    </div>
+                  </div>
+                )}
+
                 {/* Margin/advantage section */}
                 <button
                   onClick={() => setSqShowMargin(!sqShowMargin)}
@@ -1564,20 +1776,43 @@ export default function ParceiroPage() {
                     <p className="text-[#3b6934] text-[10px] tracking-[0.15em] uppercase font-bold font-[var(--font-inter)] mb-4">
                       Sua condição especial neste orçamento
                     </p>
-                    <div className="space-y-3">
-                      <div className="flex items-center justify-between text-sm font-[var(--font-inter)]">
-                        <span className="text-[#43474e]">Sua condição — {sqQtyNum} placa{sqQtyNum !== 1 ? "s" : ""} × {sqSpecialPrice}</span>
-                        <span className="text-[#002045] font-bold">{fmt(sqTotal)}</span>
+                    {sqSavedSpaces.length > 0 ? (
+                      <div className="space-y-2 mb-4">
+                        {[...sqSavedSpaces, { spaceName: sqSpaceName.trim() || (sqSelectedProduct?.name ?? ""), product: sqSelectedProduct!, plates: sqQtyNum, area: sqArea, total: sqTotal, key: "cur" }].map((sp, i) => {
+                          const normalPr = NORMAL_PRICES[sp.product?.linha ?? sqLinha];
+                          const specialPr = SPECIAL_PRICES[sp.product?.linha ?? sqLinha];
+                          const savings = sp.plates * (normalPr - specialPr);
+                          return (
+                            <div key={sp.key} className="flex items-center justify-between text-xs font-[var(--font-inter)]">
+                              <span className="text-[#43474e]">{i + 1}. {sp.spaceName} — economia</span>
+                              <span className="text-[#3b6934] font-bold">{fmt(savings)}</span>
+                            </div>
+                          );
+                        })}
+                        <div className="border-t border-[#3b6934]/20 pt-2 flex items-center justify-between">
+                          <span className="text-[#3b6934] font-bold font-[var(--font-inter)] text-sm">Economia total estimada</span>
+                          <span className="text-[#3b6934] font-bold text-lg font-[var(--font-noto-serif)]">
+                            {fmt([...sqSavedSpaces, { product: sqSelectedProduct!, plates: sqQtyNum, total: sqTotal, key: "cur", spaceName: "", area: 0 }]
+                              .reduce((s, sp) => s + sp.plates * (NORMAL_PRICES[sp.product?.linha ?? sqLinha] - SPECIAL_PRICES[sp.product?.linha ?? sqLinha]), 0))}
+                          </span>
+                        </div>
                       </div>
-                      <div className="flex items-center justify-between text-sm font-[var(--font-inter)]">
-                        <span className="text-[#74777f]">Referência tabela normal — × {sqNormalPrice}</span>
-                        <span className="text-[#74777f]">{fmt(sqQtyNum * sqNormalPrice)}</span>
+                    ) : (
+                      <div className="space-y-3">
+                        <div className="flex items-center justify-between text-sm font-[var(--font-inter)]">
+                          <span className="text-[#43474e]">Sua condição — {sqQtyNum} placa{sqQtyNum !== 1 ? "s" : ""} × {sqSpecialPrice}</span>
+                          <span className="text-[#002045] font-bold">{fmt(sqTotal)}</span>
+                        </div>
+                        <div className="flex items-center justify-between text-sm font-[var(--font-inter)]">
+                          <span className="text-[#74777f]">Referência tabela normal — × {sqNormalPrice}</span>
+                          <span className="text-[#74777f]">{fmt(sqQtyNum * sqNormalPrice)}</span>
+                        </div>
+                        <div className="border-t border-[#3b6934]/20 pt-3 flex items-center justify-between">
+                          <span className="text-[#3b6934] font-bold font-[var(--font-inter)] text-sm">Economia operacional estimada</span>
+                          <span className="text-[#3b6934] font-bold text-lg font-[var(--font-noto-serif)]">{fmt(sqTotalSavings)}</span>
+                        </div>
                       </div>
-                      <div className="border-t border-[#3b6934]/20 pt-3 flex items-center justify-between">
-                        <span className="text-[#3b6934] font-bold font-[var(--font-inter)] text-sm">Economia operacional estimada</span>
-                        <span className="text-[#3b6934] font-bold text-lg font-[var(--font-noto-serif)]">{fmt(sqTotalSavings)}</span>
-                      </div>
-                    </div>
+                    )}
                     <p className="text-[#74777f] text-[10px] font-[var(--font-inter)] mt-4 leading-relaxed">
                       Esta é a diferença entre sua condição especial de parceiro e a tabela de referência. Não deve ser comunicada como margem ao cliente final.
                     </p>
@@ -1588,12 +1823,17 @@ export default function ParceiroPage() {
                 <a
                   href={`https://wa.me/5592988150149?text=${encodeURIComponent(
                     `Olá! Sou ${partner.name}, parceiro Orbital (cupom ${partner.coupon_code}).\n\nGostaria de solicitar um orçamento:\n\n` +
-                    `• Linha: ${sqLinha}\n` +
-                    (sqSelectedProduct ? `• Produto: ${sqSelectedProduct.name} (${sqSelectedProduct.code})\n` : "") +
-                    `• Qtd.: ${sqQtyNum} placa${sqQtyNum !== 1 ? "s" : ""}\n` +
-                    `• Área coberta: ${sqArea.toFixed(2)} m²\n` +
-                    `• Total (tabela especial): ${fmt(sqTotal)}\n\n` +
-                    `Aguardo confirmação de estoque.`
+                    (sqSavedSpaces.length > 0
+                      ? [...sqSavedSpaces, { spaceName: sqSpaceName.trim() || (sqSelectedProduct?.name ?? ""), product: sqSelectedProduct!, plates: sqQtyNum, area: sqArea, total: sqTotal, key: "cur" }]
+                          .map((sp, i) => `*${i + 1}. ${sp.spaceName}* — ${sp.product?.name ?? ""} (${sp.product?.code ?? ""})\n   ${sp.plates} placa${sp.plates !== 1 ? "s" : ""} · ${sp.area.toFixed(2)} m² · ${fmt(sp.total)}`)
+                          .join("\n") +
+                        `\n\n*Total geral: ${fmt(sqSavedSpaces.reduce((s, sp) => s + sp.total, 0) + sqTotal)}*`
+                      : `• Linha: ${sqLinha}\n` +
+                        (sqSelectedProduct ? `• Produto: ${sqSelectedProduct.name} (${sqSelectedProduct.code})\n` : "") +
+                        `• Qtd.: ${sqQtyNum} placa${sqQtyNum !== 1 ? "s" : ""}\n` +
+                        `• Área coberta: ${sqArea.toFixed(2)} m²\n` +
+                        `• Total (tabela especial): ${fmt(sqTotal)}`) +
+                    `\n\nAguardo confirmação de estoque.`
                   )}`}
                   target="_blank"
                   rel="noopener noreferrer"

@@ -346,6 +346,8 @@ export default function AdminPage() {
   const [videoUrlInput, setVideoUrlInput] = useState("");
 
   // ── Admin simulator ──────────────────────────────────────────────────────
+  interface SimSpace { key: string; spaceName: string; productCode: string; w: string; h: string; }
+  const [simSpaces, setSimSpaces] = useState<SimSpace[]>([]);
   const [simSpaceName, setSimSpaceName] = useState("");
   const [simProductCode, setSimProductCode] = useState("");
   const [simW, setSimW] = useState("");
@@ -727,15 +729,21 @@ export default function AdminPage() {
     setDripEditSaving(false);
   }
 
-  async function deleteClient(id: string) {
-    if (!confirm("Excluir este cliente e toda a sua sequência de emails?")) return;
+  async function deleteClient(id: string, isStandalone?: boolean) {
+    if (!confirm(isStandalone ? "Excluir este orçamento permanentemente?" : "Excluir este cliente e toda a sua sequência de emails?")) return;
     setDeletingClientId(id);
-    const res = await fetch("/api/admin/clients", {
-      method: "DELETE",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ id }),
-    });
-    if (res.ok) setClients((prev) => prev.filter((c) => c.id !== id));
+    if (isStandalone) {
+      // Standalone coupon_use row — delete from coupon_uses
+      const res = await fetch(`/api/coupons/use/${id}`, { method: "DELETE" });
+      if (res.ok) setUses((prev) => prev.filter((u) => u.id !== id));
+    } else {
+      const res = await fetch("/api/admin/clients", {
+        method: "DELETE",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ id }),
+      });
+      if (res.ok) setClients((prev) => prev.filter((c) => c.id !== id));
+    }
     setDeletingClientId(null);
   }
 
@@ -1371,13 +1379,15 @@ export default function AdminPage() {
   }
 
   // ── History ──────────────────────────────
-  async function updateSaleStatus(clientId: string, useId: string | null, sale_status: string) {
-    // Always update client_email_sequences.sale_status (drives drip for all clients)
-    const seqRes = await fetch(`/api/admin/clients/${clientId}`, { method: "PATCH", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ sale_status }) });
-    if (seqRes.ok) {
-      setClients((prev) => prev.map((c) => (c.id === clientId ? { ...c, sale_status } : c)));
+  async function updateSaleStatus(clientId: string, useId: string | null, sale_status: string, isStandalone?: boolean) {
+    if (!isStandalone) {
+      // Update client_email_sequences.sale_status (drives drip)
+      const seqRes = await fetch(`/api/admin/clients/${clientId}`, { method: "PATCH", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ sale_status }) });
+      if (seqRes.ok) {
+        setClients((prev) => prev.map((c) => (c.id === clientId ? { ...c, sale_status } : c)));
+      }
     }
-    // Also update coupon_use.sale_status when present (drives commission tracking)
+    // Update coupon_use.sale_status when present (drives commission tracking)
     if (useId) {
       const useRes = await fetch(`/api/coupons/use/${useId}`, { method: "PATCH", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ sale_status }) });
       if (useRes.ok) {
@@ -1506,11 +1516,46 @@ export default function AdminPage() {
   }, [uses]);
 
   const enrichedClients = useMemo(() => {
-    return clients.map((c) => ({
+    // Rows from client_email_sequences (have contact info + drip data)
+    const fromSeqs = clients.map((c) => ({
       ...c,
       couponUse: c.coupon_use_id ? (useById[c.coupon_use_id] ?? null) : null,
+      _isStandaloneUse: false as const,
     }));
-  }, [clients, useById]);
+
+    // coupon_uses that have NO linked client_email_sequences entry yet
+    const linkedUseIds = new Set(clients.map((c) => c.coupon_use_id).filter(Boolean) as string[]);
+    const standaloneUses = uses
+      .filter((u) => !linkedUseIds.has(u.id))
+      .map((u) => {
+        const partnerName = partners.find((p) => p.coupon_code === u.coupon_code)?.name ?? u.coupon_code ?? "Orbital";
+        return {
+          id: u.id,
+          client_name: u.architect_name ?? "—",
+          client_email: "",
+          client_phone: null as string | null,
+          space: u.space,
+          model: u.product_name ?? "",
+          plates: u.plates ?? 0,
+          area_m2: u.area_m2 ?? 0,
+          total: u.material_discounted ?? u.material_total ?? 0,
+          partner_name: partnerName,
+          current_step: 0,
+          status: "inactive",
+          next_email_at: null as string | null,
+          created_at: u.created_at,
+          coupon_use_id: u.id,
+          sale_status: u.sale_status,
+          couponUse: u,
+          _isStandaloneUse: true as const,
+        };
+      });
+
+    // Merge, sort by created_at descending
+    return [...fromSeqs, ...standaloneUses].sort(
+      (a, b) => new Date(b.created_at).getTime() - new Date(a.created_at).getTime()
+    );
+  }, [clients, useById, uses, partners]);
 
   const filteredClients = useMemo(() => {
     return enrichedClients.filter((c) => {
@@ -2945,7 +2990,7 @@ export default function AdminPage() {
                             <td className="px-4 py-3">
                               <select
                                 value={saleStatus}
-                                onChange={(e) => updateSaleStatus(c.id, cu?.id ?? null, e.target.value)}
+                                onChange={(e) => updateSaleStatus(c.id, cu?.id ?? null, e.target.value, c._isStandaloneUse)}
                                 className={`text-[10px] font-bold tracking-wide px-2 py-1 border-0 cursor-pointer focus:outline-none focus:ring-1 focus:ring-[#002045] w-full ${stMeta.cls}`}
                               >
                                 <option value="em_orcamento">Em orçamento</option>
@@ -2976,7 +3021,7 @@ export default function AdminPage() {
                             {/* Delete */}
                             <td className="px-3 py-3 text-right">
                               <button
-                                onClick={() => deleteClient(c.id)}
+                                onClick={() => deleteClient(c.id, c._isStandaloneUse)}
                                 disabled={deletingClientId === c.id}
                                 className="text-red-400 hover:text-red-600 transition-colors disabled:opacity-40"
                                 title="Excluir cliente"
@@ -3015,14 +3060,14 @@ export default function AdminPage() {
                           <div className="flex items-center gap-2 ml-2 flex-shrink-0">
                             <select
                               value={saleStatus}
-                              onChange={(e) => updateSaleStatus(c.id, cu?.id ?? null, e.target.value)}
+                              onChange={(e) => updateSaleStatus(c.id, cu?.id ?? null, e.target.value, c._isStandaloneUse)}
                               className={`text-[10px] font-bold px-2 py-0.5 border-0 cursor-pointer focus:outline-none ${stMeta.cls}`}
                             >
                               <option value="em_orcamento">Em orçamento</option>
                               <option value="concluido">Concluído</option>
                               <option value="cancelado">Cancelado</option>
                             </select>
-                            <button onClick={() => deleteClient(c.id)} disabled={deletingClientId === c.id} className="text-red-400 hover:text-red-600 disabled:opacity-40">
+                            <button onClick={() => deleteClient(c.id, c._isStandaloneUse)} disabled={deletingClientId === c.id} className="text-red-400 hover:text-red-600 disabled:opacity-40">
                               <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><path d="M3 6h18M8 6V4h8v2M19 6l-1 14H6L5 6" /></svg>
                             </button>
                           </div>
@@ -4334,34 +4379,72 @@ export default function AdminPage() {
           const simWn = parseFloat(simW) || 0;
           const simHn = parseFloat(simH) || 0;
           const simArea = simWn * simHn;
-          // L×A grid formula — same as partner simulator fix — avoids the mismatch
           const simPlates = simWn > 0 && simHn > 0
             ? Math.ceil(simWn / PLATE_W) * Math.ceil(simHn / PLATE_H)
             : 0;
           const simProduct = dbProducts.find(p => p.code === simProductCode) ?? null;
           const simMaterial = simPlates * (simProduct?.price ?? 0);
-          const canGenerate = simSpaceName.trim() && simProduct && simPlates > 0;
+          const canAddSpace = simSpaceName.trim() !== "" && simProduct !== null && simPlates > 0;
+
+          // All spaces = saved + current (if valid)
+          interface SimSpaceCalc { spaceName: string; productCode: string; product: typeof simProduct; plates: number; area: number; material: number; }
+          const allSpaces: SimSpaceCalc[] = [
+            ...simSpaces.map(s => {
+              const wn = parseFloat(s.w) || 0;
+              const hn = parseFloat(s.h) || 0;
+              const pl = wn > 0 && hn > 0 ? Math.ceil(wn / PLATE_W) * Math.ceil(hn / PLATE_H) : 0;
+              const prod = dbProducts.find(p => p.code === s.productCode) ?? null;
+              return { spaceName: s.spaceName, productCode: s.productCode, product: prod, plates: pl, area: wn * hn, material: pl * (prod?.price ?? 0) };
+            }),
+            ...(canAddSpace ? [{ spaceName: simSpaceName.trim(), productCode: simProductCode, product: simProduct, plates: simPlates, area: simArea, material: simMaterial }] : []),
+          ];
+          const grandPlatesSim = allSpaces.reduce((s, sp) => s + sp.plates, 0);
+          const grandMaterialSim = allSpaces.reduce((s, sp) => s + sp.material, 0);
+          const canGenerate = allSpaces.length > 0;
+
+          function addCurrentSpace() {
+            if (!canAddSpace) return;
+            setSimSpaces(prev => [...prev, { key: `sim-${Date.now()}`, spaceName: simSpaceName.trim(), productCode: simProductCode, w: simW, h: simH }]);
+            setSimSpaceName(""); setSimProductCode(""); setSimW(""); setSimH("");
+            setSimLink(""); setSimLinkCopied(false);
+          }
 
           function buildSimLink() {
             const origin = typeof window !== "undefined" ? window.location.origin : "https://orbitalrevestimentos.com.br";
             const p = new URLSearchParams();
-            p.set("space", "custom");
-            p.set("customSpace", simSpaceName.trim());
-            p.set("produto", simProduct!.code);
-            p.set("area", simArea.toFixed(2));
-            p.set("placas", simPlates.toString()); // locked — avoids recalculation mismatch
             if (simCoupon.trim()) p.set("cupom", simCoupon.trim().toUpperCase());
+
+            if (allSpaces.length === 1) {
+              // Single space — use existing single-space format
+              const sp = allSpaces[0];
+              p.set("space", "custom");
+              p.set("customSpace", sp.spaceName);
+              p.set("produto", sp.productCode);
+              p.set("area", sp.area.toFixed(2));
+              p.set("placas", sp.plates.toString());
+            } else {
+              // Multi-space — indexed params
+              p.set("ms", allSpaces.length.toString());
+              allSpaces.forEach((sp, i) => {
+                p.set(`s${i}`, sp.spaceName);
+                p.set(`p${i}`, sp.productCode);
+                p.set(`pl${i}`, sp.plates.toString());
+              });
+            }
             return `${origin}/simulador?${p.toString()}`;
           }
 
-          const waText = simProduct && simPlates > 0 ? encodeURIComponent(
+          const waLines = allSpaces.map((sp, i) =>
+            `*${i + 1}. ${sp.spaceName}* — ${sp.product?.name ?? sp.productCode} (${sp.productCode})\n   ${parseFloat(simSpaces[i]?.w || simW) || "?"}m × ${parseFloat(simSpaces[i]?.h || simH) || "?"}m · ${sp.plates} placas · ${sp.material.toLocaleString("pt-BR")}`
+          );
+          const waText = canGenerate ? encodeURIComponent(
             [
-              `Olá! Segue o link para simular o orçamento do seu projeto com PFB Orbital:`,
+              `Olá! Segue o link para confirmar o orçamento do seu projeto com PFB Orbital:`,
               ``,
               buildSimLink(),
               ``,
-              `*${simSpaceName.trim()}* — ${simProduct.name} (${simProduct.code})`,
-              `${simWn}m × ${simHn}m · ${simPlates} placas · aprox. ${new Intl.NumberFormat("pt-BR").format(simMaterial)}`,
+              ...waLines,
+              ...(allSpaces.length > 1 ? [``, `*Total material: ${grandMaterialSim.toLocaleString("pt-BR")}*`] : []),
             ].join("\n")
           ) : "";
 
@@ -4369,24 +4452,45 @@ export default function AdminPage() {
             <div className="max-w-2xl">
               <div className="mb-6">
                 <h2 className="font-[var(--font-inter)] text-[10px] tracking-[0.2em] uppercase font-bold text-[#002045] mb-1">Simulador de Orçamento</h2>
-                <p className="text-[#74777f] text-xs font-[var(--font-inter)]">Configure a simulação e envie o link direto para o cliente. O número de placas é calculado pela grade L×A — o mesmo valor que o cliente verá ao abrir o link.</p>
+                <p className="text-[#74777f] text-xs font-[var(--font-inter)]">Adicione um ou mais ambientes, configure produto e medidas, e gere o link personalizado para o cliente.</p>
               </div>
 
-              <div className="bg-white border border-[#e2e2e2] p-6 space-y-5">
+              {/* Saved spaces list */}
+              {simSpaces.length > 0 && (
+                <div className="bg-white border border-[#e2e2e2] mb-4 divide-y divide-[#f0f0f0]">
+                  {simSpaces.map((s, i) => {
+                    const wn = parseFloat(s.w) || 0; const hn = parseFloat(s.h) || 0;
+                    const pl = wn > 0 && hn > 0 ? Math.ceil(wn / PLATE_W) * Math.ceil(hn / PLATE_H) : 0;
+                    const prod = dbProducts.find(p => p.code === s.productCode) ?? null;
+                    const mat = pl * (prod?.price ?? 0);
+                    return (
+                      <div key={s.key} className="flex items-center gap-3 px-4 py-3">
+                        <span className="w-6 h-6 rounded-full bg-[#3b6934] text-white text-[10px] font-bold font-[var(--font-inter)] flex items-center justify-center flex-shrink-0">{i + 1}</span>
+                        <div className="flex-1 min-w-0">
+                          <p className="text-[#002045] text-sm font-semibold font-[var(--font-inter)]">{s.spaceName}</p>
+                          <p className="text-[#74777f] text-[10px] font-[var(--font-inter)]">{prod?.name ?? s.productCode} · {wn}m × {hn}m · {pl} pl.</p>
+                        </div>
+                        <p className="text-[#002045] text-sm font-semibold font-[var(--font-inter)] flex-shrink-0">{mat.toLocaleString("pt-BR")}</p>
+                        <button onClick={() => { setSimSpaces(prev => prev.filter((_, idx) => idx !== i)); setSimLink(""); }} className="text-red-400 hover:text-red-600 flex-shrink-0 ml-1">
+                          <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5"><path d="M18 6L6 18M6 6l12 12"/></svg>
+                        </button>
+                      </div>
+                    );
+                  })}
+                </div>
+              )}
 
-                {/* Space name */}
+              {/* Add space form */}
+              <div className="bg-white border border-[#e2e2e2] p-6 space-y-5">
+                <p className="text-[#002045] text-[10px] tracking-[0.15em] uppercase font-bold font-[var(--font-inter)]">
+                  {simSpaces.length === 0 ? "Ambiente" : `Ambiente ${simSpaces.length + 1}`}
+                </p>
+
                 <div>
                   <label className={labelCls}>Nome do espaço</label>
-                  <input
-                    type="text"
-                    value={simSpaceName}
-                    onChange={e => setSimSpaceName(e.target.value)}
-                    placeholder="Ex: Garagem, Marquise, Área de Lazer…"
-                    className={inputCls}
-                  />
+                  <input type="text" value={simSpaceName} onChange={e => setSimSpaceName(e.target.value)} placeholder="Ex: Garagem, Marquise, Área de Lazer…" className={inputCls} />
                 </div>
 
-                {/* Product */}
                 <div>
                   <label className={labelCls}>Produto / Acabamento</label>
                   <select value={simProductCode} onChange={e => setSimProductCode(e.target.value)} className={inputCls}>
@@ -4401,7 +4505,6 @@ export default function AdminPage() {
                   </select>
                 </div>
 
-                {/* Dimensions */}
                 <div className="grid grid-cols-2 gap-4">
                   <div>
                     <label className={labelCls}>Largura (m)</label>
@@ -4413,16 +4516,9 @@ export default function AdminPage() {
                   </div>
                 </div>
 
-                {/* Coupon */}
-                <div>
-                  <label className={labelCls}>Cupom (opcional)</label>
-                  <input type="text" value={simCoupon} onChange={e => setSimCoupon(e.target.value.toUpperCase())} placeholder="Ex: PARCEIRO01" className={inputCls} />
-                </div>
-
-                {/* Live preview */}
+                {/* Live preview for current space */}
                 {simPlates > 0 && simProduct && (
-                  <div className="bg-[#f9fbff] border border-[#dce8f5] px-5 py-4 space-y-1.5">
-                    <p className="text-[#002045] text-[10px] tracking-[0.15em] uppercase font-bold font-[var(--font-inter)] mb-2">Prévia do orçamento</p>
+                  <div className="bg-[#f9fbff] border border-[#dce8f5] px-5 py-4">
                     <div className="grid grid-cols-3 gap-4">
                       <div>
                         <p className="text-[#74777f] text-[9px] uppercase tracking-widest font-bold font-[var(--font-inter)]">Área</p>
@@ -4430,15 +4526,40 @@ export default function AdminPage() {
                       </div>
                       <div>
                         <p className="text-[#74777f] text-[9px] uppercase tracking-widest font-bold font-[var(--font-inter)]">Placas</p>
-                        <p className="text-[#002045] text-sm font-semibold font-[var(--font-inter)]">{simPlates} placas</p>
-                        <p className="text-[#74777f] text-[9px] font-[var(--font-inter)]">cobre ~{(simPlates * 3.48).toFixed(2)} m²</p>
+                        <p className="text-[#002045] text-sm font-semibold font-[var(--font-inter)]">{simPlates}</p>
                       </div>
                       <div>
                         <p className="text-[#74777f] text-[9px] uppercase tracking-widest font-bold font-[var(--font-inter)]">Material</p>
                         <p className="text-[#002045] text-sm font-semibold font-[var(--font-inter)]">{simMaterial.toLocaleString("pt-BR")}</p>
-                        <p className="text-[#74777f] text-[9px] font-[var(--font-inter)]">{simProduct.price.toLocaleString("pt-BR")}/placa</p>
                       </div>
                     </div>
+                  </div>
+                )}
+
+                {/* Add another space button */}
+                <button
+                  disabled={!canAddSpace}
+                  onClick={addCurrentSpace}
+                  className="w-full py-2.5 text-xs tracking-[0.12em] uppercase font-bold font-[var(--font-inter)] border border-[#002045] text-[#002045] hover:bg-[#f0f4fa] transition-colors disabled:opacity-40"
+                >
+                  <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" className="inline mr-1.5 mb-0.5"><path d="M12 5v14M5 12h14"/></svg>
+                  Salvar e adicionar outro ambiente
+                </button>
+
+                {/* Coupon */}
+                <div>
+                  <label className={labelCls}>Cupom (opcional)</label>
+                  <input type="text" value={simCoupon} onChange={e => setSimCoupon(e.target.value.toUpperCase())} placeholder="Ex: PARCEIRO01" className={inputCls} />
+                </div>
+
+                {/* Grand total when multiple */}
+                {allSpaces.length > 1 && (
+                  <div className="bg-[#002045] px-5 py-4 flex items-center justify-between">
+                    <div>
+                      <p className="text-white/60 text-[9px] uppercase tracking-widest font-bold font-[var(--font-inter)]">Total do projeto</p>
+                      <p className="text-white/60 text-[10px] font-[var(--font-inter)]">{allSpaces.length} ambientes · {grandPlatesSim} placas</p>
+                    </div>
+                    <p className="text-white text-xl font-[var(--font-noto-serif)]">{grandMaterialSim.toLocaleString("pt-BR")}</p>
                   </div>
                 )}
 
@@ -4458,12 +4579,9 @@ export default function AdminPage() {
                   <p className="text-[#002045] text-[10px] tracking-[0.15em] uppercase font-bold font-[var(--font-inter)]">Link gerado</p>
 
                   <div className="flex gap-2">
-                    <input
-                      readOnly
-                      value={simLink}
+                    <input readOnly value={simLink}
                       className="flex-1 border border-[#e2e2e2] px-3 py-2 text-xs font-[var(--font-inter)] text-[#43474e] bg-[#fafafa] focus:outline-none select-all"
-                      onClick={e => (e.target as HTMLInputElement).select()}
-                    />
+                      onClick={e => (e.target as HTMLInputElement).select()} />
                     <button
                       onClick={() => { navigator.clipboard.writeText(simLink); setSimLinkCopied(true); setTimeout(() => setSimLinkCopied(false), 2000); }}
                       className="px-4 py-2 text-[10px] tracking-[0.1em] uppercase font-bold font-[var(--font-inter)] border border-[#002045] text-[#002045] hover:bg-[#002045] hover:text-white transition-colors whitespace-nowrap"
@@ -4472,20 +4590,17 @@ export default function AdminPage() {
                     </button>
                   </div>
 
-                  <a
-                    href={`https://wa.me/5592988150149?text=${waText}`}
-                    target="_blank"
-                    rel="noopener noreferrer"
-                    className="inline-flex items-center gap-2.5 bg-[#25d366] text-white text-xs tracking-[0.12em] uppercase font-bold font-[var(--font-inter)] px-5 py-3 hover:bg-[#1ebe5d] transition-colors"
-                  >
-                    <svg width="14" height="14" viewBox="0 0 24 24" fill="currentColor">
-                      <path d="M17.472 14.382c-.297-.149-1.758-.867-2.03-.967-.273-.099-.471-.148-.67.15-.197.297-.767.966-.94 1.164-.173.199-.347.223-.644.075-.297-.15-1.255-.463-2.39-1.475-.883-.788-1.48-1.761-1.653-2.059-.173-.297-.018-.458.13-.606.134-.133.298-.347.446-.52.149-.174.198-.298.298-.497.099-.198.05-.371-.025-.52-.075-.149-.669-1.612-.916-2.207-.242-.579-.487-.5-.669-.51-.173-.008-.371-.01-.57-.01-.198 0-.52.074-.792.372-.272.297-1.04 1.016-1.04 2.479 0 1.462 1.065 2.875 1.213 3.074.149.198 2.096 3.2 5.077 4.487.709.306 1.262.489 1.694.625.712.227 1.36.195 1.871.118.571-.085 1.758-.719 2.006-1.413.248-.694.248-1.289.173-1.413-.074-.124-.272-.198-.57-.347m-5.421 7.403h-.004a9.87 9.87 0 01-5.031-1.378l-.361-.214-3.741.982.998-3.648-.235-.374a9.86 9.86 0 01-1.51-5.26c.001-5.45 4.436-9.884 9.888-9.884 2.64 0 5.122 1.03 6.988 2.898a9.825 9.825 0 012.893 6.994c-.003 5.45-4.437 9.884-9.885 9.884m8.413-18.297A11.815 11.815 0 0012.05 0C5.495 0 .16 5.335.157 11.892c0 2.096.547 4.142 1.588 5.945L.057 24l6.305-1.654a11.882 11.882 0 005.683 1.448h.005c6.554 0 11.89-5.335 11.893-11.893a11.821 11.821 0 00-3.48-8.413z"/>
-                    </svg>
+                  <a href={`https://wa.me/5592988150149?text=${waText}`} target="_blank" rel="noopener noreferrer"
+                    className="inline-flex items-center gap-2.5 bg-[#25d366] text-white text-xs tracking-[0.12em] uppercase font-bold font-[var(--font-inter)] px-5 py-3 hover:bg-[#1ebe5d] transition-colors">
+                    <svg width="14" height="14" viewBox="0 0 24 24" fill="currentColor"><path d="M17.472 14.382c-.297-.149-1.758-.867-2.03-.967-.273-.099-.471-.148-.67.15-.197.297-.767.966-.94 1.164-.173.199-.347.223-.644.075-.297-.15-1.255-.463-2.39-1.475-.883-.788-1.48-1.761-1.653-2.059-.173-.297-.018-.458.13-.606.134-.133.298-.347.446-.52.149-.174.198-.298.298-.497.099-.198.05-.371-.025-.52-.075-.149-.669-1.612-.916-2.207-.242-.579-.487-.5-.669-.51-.173-.008-.371-.01-.57-.01-.198 0-.52.074-.792.372-.272.297-1.04 1.016-1.04 2.479 0 1.462 1.065 2.875 1.213 3.074.149.198 2.096 3.2 5.077 4.487.709.306 1.262.489 1.694.625.712.227 1.36.195 1.871.118.571-.085 1.758-.719 2.006-1.413.248-.694.248-1.289.173-1.413-.074-.124-.272-.198-.57-.347m-5.421 7.403h-.004a9.87 9.87 0 01-5.031-1.378l-.361-.214-3.741.982.998-3.648-.235-.374a9.86 9.86 0 01-1.51-5.26c.001-5.45 4.436-9.884 9.888-9.884 2.64 0 5.122 1.03 6.988 2.898a9.825 9.825 0 012.893 6.994c-.003 5.45-4.437 9.884-9.885 9.884m8.413-18.297A11.815 11.815 0 0012.05 0C5.495 0 .16 5.335.157 11.892c0 2.096.547 4.142 1.588 5.945L.057 24l6.305-1.654a11.882 11.882 0 005.683 1.448h.005c6.554 0 11.89-5.335 11.893-11.893a11.821 11.821 0 00-3.48-8.413z"/></svg>
                     Enviar via WhatsApp
                   </a>
 
                   <p className="text-[#b0b4bb] text-[10px] font-[var(--font-inter)] leading-relaxed">
-                    O link abre o simulador com o espaço, produto e <strong>{simPlates} placas</strong> já pré-configurados. O cliente pode ajustar dados pessoais e adicionar outros ambientes antes de solicitar o orçamento.
+                    {allSpaces.length > 1
+                      ? `O link carrega os ${allSpaces.length} ambientes pré-configurados. O cliente só precisa preencher seus dados para finalizar.`
+                      : `O link abre o simulador com espaço, produto e ${allSpaces[0]?.plates ?? 0} placas já pré-configurados.`
+                    }
                   </p>
                 </div>
               )}

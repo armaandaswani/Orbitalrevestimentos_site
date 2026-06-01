@@ -248,6 +248,10 @@ function SimuladorInner() {
   const [mdfExpanded, setMdfExpanded] = useState(false);
   const [savedSpaces, setSavedSpaces] = useState<SavedSpace[]>([]);
 
+  // Raw multi-space params from URL — resolved into savedSpaces once products load
+  interface PendingMsSpace { spaceName: string; productCode: string; plates: number; }
+  const [pendingMsParams, setPendingMsParams] = useState<PendingMsSpace[] | null>(null);
+
   // ── Partner / client-link mode ───────────────────────────────────────────
   const [partnerMode, setPartnerMode] = useState(false);       // opened with ?mode=partner
   const [fromPartnerLink, setFromPartnerLink] = useState(false); // opened from a partner-generated link
@@ -420,6 +424,29 @@ function SimuladorInner() {
 
     if (cupom) setCouponCode(cupom.toUpperCase());
 
+    // ── Multi-space link: ?ms=N&s0=…&p0=…&pl0=…&s1=…&p1=…&pl1=… ──────────
+    const msParam = searchParams.get("ms");
+    if (msParam) {
+      const count = parseInt(msParam, 10);
+      if (!isNaN(count) && count > 1) {
+        const spaces: { spaceName: string; productCode: string; plates: number }[] = [];
+        for (let i = 0; i < count; i++) {
+          const spaceName = searchParams.get(`s${i}`) ?? "";
+          const productCode = searchParams.get(`p${i}`) ?? "";
+          const plStr = searchParams.get(`pl${i}`) ?? "";
+          const pl = parseInt(plStr, 10);
+          if (spaceName && productCode && !isNaN(pl) && pl > 0) {
+            spaces.push({ spaceName, productCode, plates: pl });
+          }
+        }
+        if (spaces.length > 1) {
+          setPendingMsParams(spaces);
+          setFromPartnerLink(true);
+        }
+      }
+      return; // skip single-space param parsing
+    }
+
     // Pre-fill space from ?space=ID (or ?space=custom&customSpace=TEXT)
     const spaceParam = searchParams.get("space");
     if (spaceParam) {
@@ -461,6 +488,77 @@ function SimuladorInner() {
       setSelectedProduct(match);
     }
   }, [loadingProducts, products, searchParams]);
+
+  // Resolve multi-space URL params → savedSpaces + active space (runs once products load)
+  useEffect(() => {
+    if (loadingProducts || products.length === 0) return;
+    if (!pendingMsParams || pendingMsParams.length === 0) return;
+
+    // All spaces except the last become savedSpaces; the last becomes the active space.
+    const allButLast = pendingMsParams.slice(0, -1);
+    const lastSpace = pendingMsParams[pendingMsParams.length - 1];
+
+    const newSaved: SavedSpace[] = allButLast.map((sp, idx) => {
+      const product = products.find((p) => p.code === sp.productCode);
+      const ppp = product?.price ?? 559;
+      const classification = classifyCustomSpace(sp.spaceName);
+      const complex = classification?.viability === "complex";
+      const moRate = orbitalMOPerPlate(sp.plates, complex);
+      const materialTotal = sp.plates * ppp;
+      const moTotal = moRate * sp.plates;
+      const areaM2 = parseFloat((sp.plates * PLATE_M2).toFixed(2));
+      return {
+        key: `ms-space-${idx}`,
+        label: sp.spaceName,
+        productName: product?.name ?? sp.productCode,
+        productCode: sp.productCode,
+        linha: product?.linha ?? "Classic",
+        dimLabel: `${areaM2.toFixed(2)} m²`,
+        m2: areaM2,
+        plates: sp.plates,
+        pricePerPlate: ppp,
+        materialTotal,
+        materialDiscounted: materialTotal, // discount applied retroactively when coupon validates
+        moTotal,
+        total: materialTotal + moTotal,
+      };
+    });
+
+    setSavedSpaces(newSaved);
+
+    // Pre-fill the last space as the active space
+    const lastProduct = products.find((p) => p.code === lastSpace.productCode);
+    if (lastProduct) {
+      setSelectedLine(lastProduct.linha);
+      setSelectedProduct(lastProduct);
+    }
+    setCustomSpaceText(lastSpace.spaceName);
+    setShowCustomInput(true);
+    setPlatesOverride(lastSpace.plates);
+    setSqmInput((lastSpace.plates * PLATE_M2).toFixed(2));
+    setDimMode("m2");
+
+    setPendingMsParams(null); // mark as resolved
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [loadingProducts, products, pendingMsParams]);
+
+  // When a coupon is validated, retroactively apply the discount to pre-loaded savedSpaces
+  // (pre-loaded spaces have materialDiscounted === materialTotal, i.e. no discount yet)
+  useEffect(() => {
+    if (!couponData) return;
+    setSavedSpaces((prev) =>
+      prev.map((sp) => {
+        if (sp.materialDiscounted !== sp.materialTotal) return sp; // already discounted manually
+        const discAmt =
+          couponData.discount_type === "percentage"
+            ? Math.round(sp.materialTotal * couponData.discount_value / 100)
+            : Math.min(couponData.discount_value, sp.materialTotal);
+        const materialDiscounted = sp.materialTotal - discAmt;
+        return { ...sp, materialDiscounted, total: materialDiscounted + sp.moTotal };
+      })
+    );
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [couponData]);
 
   // Auto-jump to Step 4 once everything is pre-filled from a partner link
   useEffect(() => {
@@ -594,6 +692,15 @@ function SimuladorInner() {
       }
 
       // Start the 7-email drip sequence
+      // When multiple spaces were added, report the grand total; otherwise single-space values.
+      const hasMultipleSpaces = savedSpaces.length > 0;
+      const seqSpace = hasMultipleSpaces
+        ? savedSpaces.map((sp) => sp.label).concat(selectedSpace?.label ?? []).join(", ")
+        : (selectedSpace?.label ?? null);
+      const seqModel = selectedProduct?.linha ?? (savedSpaces[0]?.linha ?? "Classic");
+      const seqPlates = hasMultipleSpaces ? grandPlates : plates;
+      const seqArea = hasMultipleSpaces ? parseFloat((savedSpaces.reduce((s, sp) => s + sp.m2, 0) + m2).toFixed(2)) : parseFloat(m2.toFixed(2));
+      const seqTotal = hasMultipleSpaces ? grandMaterialDiscounted : (orbMaterialDiscounted || orbMaterialTotal);
       try {
         await fetch("/api/client-email-sequences", {
           method: "POST",
@@ -603,11 +710,11 @@ function SimuladorInner() {
             client_name: clientName.trim(),
             client_email: clientEmail.trim(),
             client_phone: clientPhone.trim(),
-            space: selectedSpace?.label ?? null,
-            model: selectedProduct?.linha ?? "Classic",
-            plates,
-            area_m2: parseFloat(m2.toFixed(2)),
-            total: orbMaterialDiscounted || orbMaterialTotal,
+            space: seqSpace,
+            model: seqModel,
+            plates: seqPlates,
+            area_m2: seqArea,
+            total: seqTotal,
             partner_name: couponData?.partner_name ?? "Orbital",
           }),
         });
