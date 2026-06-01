@@ -6,6 +6,7 @@ SOBRE O PRODUTO PFB:
 - Placa de fibra de bambu com acabamento fotorrealista: Mármore Fosco, Mármore Polido ou Madeira Texturizada
 - Medidas: 1,2m × 2,9m × 5mm = 3,48m² por placa | Peso: 3,5 kg/m²
 - Instalação: cola PU na parede ou cola de contato no teto — sem obra, sem quebradeira, 2–3h por cômodo
+- IMPORTANTE: a Orbital NÃO presta serviço de instalação. O cliente contrata seu próprio marceneiro ou instalador. Nosso time pode indicar parceiros, mas não executa instalação.
 - Resistência à umidade: absorve só 0,2% (MDF absorve 35%) — feito para o clima úmido de Manaus
 - Durabilidade: 10+ anos (MDF dura 2–3 anos em Manaus)
 - Anti-mofo, anti-cupim, não propaga chamas (certificado)

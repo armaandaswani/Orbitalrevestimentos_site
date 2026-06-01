@@ -12,7 +12,7 @@ export async function POST(req: NextRequest) {
   if (!apiBase)
     return NextResponse.json({ error: "FREE_LLM_API_URL não configurada no servidor." }, { status: 503 });
 
-  const { imageUrl, category } = await req.json();
+  const { imageUrl, category, hint } = await req.json();
 
   if (!imageUrl)
     return NextResponse.json({ error: "imageUrl obrigatório." }, { status: 400 });
@@ -26,7 +26,9 @@ export async function POST(req: NextRequest) {
 
   const systemPrompt = `Você é um redator de portfólio de revestimentos arquitetônicos premium para a empresa Orbital Revestimentos, em Manaus.`;
 
-  const userPrompt = `${categoryHint}
+  const hintLine = hint?.trim() ? `\nFoco especial: ${hint.trim()}` : "";
+
+  const userPrompt = `${categoryHint}${hintLine}
 
 Analise a imagem e escreva uma legenda curta (máximo 2 frases, até 120 caracteres) para o portfólio online.
 - Destaque o material (painel de fibra de bambu) e o efeito visual
