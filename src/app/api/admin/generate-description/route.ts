@@ -48,7 +48,7 @@ Analise a imagem e escreva uma legenda curta (máximo 2 frases, até 120 caracte
   }
 
   const body = {
-    model: process.env.FREE_LLM_MODEL || "gemini-2.0-flash",
+    model: process.env.FREE_LLM_MODEL || "gemini-2.0-flash-lite",
     messages: [
       { role: "system", content: systemPrompt },
       {

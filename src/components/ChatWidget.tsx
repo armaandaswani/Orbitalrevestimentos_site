@@ -3,163 +3,28 @@
 import { useState, useRef, useEffect, KeyboardEvent } from "react";
 import Link from "next/link";
 
-const WA_BASE = "https://wa.me/5592988150149?text=";
-
-function normalize(s: string) {
-  return s
-    .toLowerCase()
-    .normalize("NFD")
-    .replace(/[̀-ͯ]/g, "")
-    .replace(/[^\w\s]/g, " ");
-}
+const WA_NUMBER = "5592988150149";
+const WA_BASE = `https://wa.me/${WA_NUMBER}?text=`;
 
 interface Message {
   from: "user" | "bot";
   text: string;
-  waMsg?: string;
+  showWa?: boolean;
   linkCta?: { label: string; href: string };
 }
 
-interface FAQ {
-  id: string;
-  keywords: string[];
-  answer: string;
-  waMsg?: string;
-  linkCta?: { label: string; href: string };
-}
-
-const FAQS: FAQ[] = [
-  {
-    id: "pfb",
-    keywords: ["pfb", "placa", "bambu", "o que e", "material", "produto", "painel", "flexivel", "revestimento", "o que sao"],
-    answer: "O PFB é uma placa de revestimento feita de fibra de bambu com acabamento fotorrealista e textura premium — com acabamento de Mármore Fosco, Mármore Polido ou Madeira. Instala direto na sua parede atual, sem quebrar nada, em poucas horas. Eco-premium e feito pra durar.",
-  },
-  {
-    id: "mdf",
-    keywords: ["mdf", "melhor que mdf", "diferenca mdf", "vantagem mdf", "comparar mdf"],
-    answer: "MDF no clima de Manaus dura 2 a 3 anos — a umidade faz ele inchar, empenar e deteriorar. O PFB absorve só 0,2% de umidade (contra 35% do MDF), é anti-mofo, anti-cupim e não propaga chamas. Uma instalação dura 10+ anos.",
-  },
-  {
-    id: "papel",
-    keywords: ["papel de parede", "papel", "vinil", "adesivo"],
-    answer: "Papel de parede em Manaus é praticamente descartável — com a umidade, bolha, descasca e mofa por baixo. O PFB é uma placa sólida de 5mm, impermeável e lavável. Não tem comparação.",
-  },
-  {
-    id: "vsoutras",
-    keywords: ["vs", "versus", "comparar", "comparacao", "alternativas", "opcoes de mercado", "outras opcoes", "concorrente", "vale a pena", "compensa", "melhor opcao", "outras alternativas"],
-    answer: "O PFB se destaca em todas as comparações:\n• vs MDF — dura 10+ anos contra 2–3 anos do MDF no clima úmido de Manaus\n• vs Papel de parede — impermeável, lavável e permanente. Papel bolha e mofa.\n• vs Forro PVC — estética arquitetônica, aprovado com ART para teto\n• vs Tinta — acabamento fotorrealista de pedra ou madeira, sem retoque periódico",
-    linkCta: { label: "Ver comparativo técnico completo", href: "/tecnologia" },
-  },
-  {
-    id: "fachada",
-    keywords: ["fachada", "externo", "externa", "exterior", "area externa", "lado de fora", "fora", "fachada externa", "fachada interna", "parede externa"],
-    answer: "Depende. Fachada interna (hall de entrada, corredor externo coberto) — pode sim! Fachada externa exposta ao sol e chuva diretamente — não é indicado. O PFB tem proteção UV, mas não é homologado para exposição direta às intempéries. Para dúvidas sobre um projeto específico, fale com nossa equipe.",
-    waMsg: "Olá! Tenho uma dúvida sobre aplicação do PFB em fachada.",
-  },
-  {
-    id: "piso",
-    keywords: ["piso", "chao", "chão", "solo", "piso laminado", "no piso", "no chao", "colocar no piso", "usar no piso", "aplicar no piso", "piso frio", "piso porcelanato", "sobre o piso"],
-    answer: "Não, o PFB não é indicado para piso — ele é um revestimento de parede e teto. Para piso, a placa não tem a resistência ao impacto e tráfego necessários. Mas nas paredes e teto o resultado é incrível e dura 10+ anos!",
-    linkCta: { label: "Ver modelos disponíveis", href: "/produtos" },
-  },
-  {
-    id: "banheiro",
-    keywords: ["banheiro", "lavabo", "box", "ducha", "umidade", "agua", "molhado", "umido", "impermeavel", "areas umidas", "cozinha", "area molhada"],
-    answer: "Pode sim! O PFB foi aprovado via laudo técnico para uso em banheiro, lavabo, box, ducha e cozinha. Ele é um material resistente à água e umidade, e é anti-mofo por natureza, sem nenhum tratamento extra.",
-  },
-  {
-    id: "teto",
-    keywords: ["teto", "forro", "forro pvc", "tecto", "telhado"],
-    answer: "Com certeza. A placa pesa só 3,5 kg/m², então vai sem problema no teto. Temos ART de Engenheiro Civil (CREA) para aplicação em forro. Fica muito mais bonito que forro PVC.",
-  },
-  {
-    id: "instalacao",
-    keywords: ["instalar", "instalacao", "como instala", "tempo", "obra", "cola", "colocacao", "aplicacao", "horas", "rapido"],
-    answer: "Super prático e rápido! Instalado com Cola PU na parede ou cola de contato no teto. Sem quebradeira, sem poeira, sem barulho de obra. Um cômodo padrão fica pronto em 2 a 3 horas — dá pra instalar com a casa habitada.",
-  },
-  {
-    id: "preco",
-    keywords: ["preco", "valor", "quanto custa", "custo", "reais", "investimento", "orcamento", "simulador"],
-    answer: "Temos 3 linhas:\n• Classic (Mármore Fosco) — R$ 559/placa\n• Brilliance (Mármore Polido) — R$ 589/placa\n• Elegance (Madeira Texturizada) — R$ 649/placa\n\nCada placa mede 1,2m × 2,9m × 5mm (3,48 m²). Use o simulador para calcular quantas placas você precisa e o custo total.",
-    linkCta: { label: "Usar o Simulador", href: "/simulador" },
-  },
-  {
-    id: "entrega",
-    keywords: ["entrega", "prazo", "estoque", "pronta entrega", "quando", "receber", "disponivel"],
-    answer: "Todos os 15 acabamentos em estoque aqui em Manaus. Sem esperar frete de fora — você pode ter o material ainda essa semana.",
-    waMsg: "Olá! Gostaria de saber sobre disponibilidade e prazo de entrega.",
-  },
-  {
-    id: "instaladores",
-    keywords: ["voces instalam", "faz instalacao", "fazem instalacao", "voces fazem", "instalador", "mao de obra", "quem instala", "servico de instalacao", "fazem a instalacao"],
-    answer: "A Orbital fornece o material — não fazemos instalação. Mas podemos lhe colocar em contato com profissionais instaladores que já fizeram obras para clientes. É só pedir pelo WhatsApp.",
-    waMsg: "Olá! Gostaria de indicação de instaladores parceiros para o PFB Orbital.",
-  },
-  {
-    id: "certificacao",
-    keywords: ["certificacao", "art", "crea", "laudo", "aprovacao", "homologado", "tecnico", "engenheiro", "documento", "ficha tecnica", "o que e art", "o que art", "anotacao", "responsabilidade tecnica", "o que significa art"],
-    answer: "ART = Anotação de Responsabilidade Técnica — é um documento oficial do CREA que vincula um engenheiro habilitado às responsabilidades técnicas de um produto. Significa que o PFB Orbital foi avaliado e aprovado por um profissional de engenharia, não apenas por marketing.\n\nNosso documento:\n• Nº AM20260593657\n• Eng. Civil Werksson Sousa\n• CREA 042030134-8-D\n• Cobre: revestimento de parede e forro de teto\n\nPermite especificação em obras comerciais, clínicas e condomínios. Ficha técnica completa disponível.",
-    waMsg: "Olá! Gostaria de receber a ficha técnica completa do PFB Orbital (ART/CREA).",
-    linkCta: { label: "Ver ficha técnica completa", href: "/tecnologia" },
-  },
-  {
-    id: "parceria",
-    keywords: ["arquiteto", "designer", "engenheiro", "parceria", "parceiro", "especificar", "projeto", "amostra", "marceneiro", "revendedor", "profissional"],
-    answer: "Temos condições exclusivas para parceria com arquitetos, designers, engenheiros, marceneiros e revendedores. Disponibilizamos amostras grátis, temos fichas técnicas com ART e suporte técnico para especificação. Quer saber mais?",
-    waMsg: "Olá! Sou profissional e gostaria de saber sobre o programa de parcerias Orbital.",
-  },
-  {
-    id: "dimensoes",
-    keywords: ["tamanho", "dimensao", "medida", "comprimento", "largura", "espessura", "peso", "5mm", "metros"],
-    answer: "Cada placa tem 1,2m × 2,9m × 5mm — isso é 3,48 m² por placa. Pesa só 3,5 kg/m². O grande formato significa menos emendas e um acabamento muito mais limpo.",
-  },
-  {
-    id: "showroom",
-    keywords: ["showroom", "loja", "visitar", "visita", "onde fica", "localizacao", "manaus", "comprar", "onde comprar", "ver pessoalmente", "endereco"],
-    answer: "Trabalhamos via showroom em Manaus. Vale muito a visita — ver os acabamentos ao vivo é completamente diferente de foto. Agende pelo WhatsApp para um atendimento personalizado e especializado.",
-    waMsg: "Olá! Gostaria de agendar uma visita ao showroom da Orbital.",
-  },
-  {
-    id: "linhas",
-    keywords: ["linha", "classic", "brilliance", "elegance", "acabamento", "modelo", "cor", "opcoes", "colecao", "catalogo"],
-    answer: "São 3 linhas, 15 acabamentos no total:\n• Classic — 3 mármores foscos\n• Brilliance — 8 mármores polidos\n• Elegance — 4 madeiras texturizadas",
-    linkCta: { label: "Ver catálogo completo", href: "/produtos" },
-  },
-];
-
+// Quick chips stay as conversation starters
 const QUICK_CHIPS = [
-  { label: "O que é o PFB?",      id: "pfb"      },
-  { label: "PFB vs outras opções", id: "vsoutras" },
-  { label: "Quanto custa?",        id: "preco"    },
-  { label: "Serve p/ banheiro?",   id: "banheiro" },
-  { label: "Como instalar?",       id: "instalacao" },
+  { label: "O que é o PFB?",        prompt: "O que é o PFB Orbital?" },
+  { label: "PFB vs outras opções",  prompt: "Como o PFB se compara a MDF, papel de parede e forro PVC?" },
+  { label: "Quanto custa?",         prompt: "Quanto custa o PFB Orbital? Quais são as linhas e preços?" },
+  { label: "Serve p/ banheiro?",    prompt: "Posso usar o PFB no banheiro ou em áreas úmidas?" },
+  { label: "Como instalar?",        prompt: "Como é feita a instalação do PFB?" },
 ];
 
-function findAnswer(input: string): FAQ | null {
-  const norm = normalize(input);
-  const words = norm.split(/\s+/).filter((w) => w.length > 2);
-
-  let best: FAQ | null = null;
-  let bestScore = 0;
-
-  for (const faq of FAQS) {
-    let score = 0;
-    for (const kw of faq.keywords) {
-      if (norm.includes(kw)) {
-        score += kw.split(" ").length + 1;
-      } else {
-        for (const w of words) {
-          if (kw === w) score += 1;
-        }
-      }
-    }
-    if (score > bestScore) {
-      bestScore = score;
-      best = faq;
-    }
-  }
-
-  return bestScore >= 2 ? best : null;
+// Messages that should always offer WA CTA
+function shouldShowWa(text: string) {
+  return /whatsapp|showroom|visita|orçamento|comprar|agendar|preço específico/i.test(text);
 }
 
 function WaIcon({ size = 13 }: { size?: number }) {
@@ -170,46 +35,91 @@ function WaIcon({ size = 13 }: { size?: number }) {
   );
 }
 
+function TypingIndicator() {
+  return (
+    <div className="flex justify-start">
+      <div className="bg-[#f3f5f8] px-4 py-3 flex items-center gap-1">
+        {[0, 1, 2].map((i) => (
+          <span
+            key={i}
+            className="w-1.5 h-1.5 bg-[#74777f] rounded-full animate-bounce"
+            style={{ animationDelay: `${i * 0.15}s`, animationDuration: "0.8s" }}
+          />
+        ))}
+      </div>
+    </div>
+  );
+}
+
 export default function ChatWidget() {
   const [open, setOpen] = useState(false);
   const [messages, setMessages] = useState<Message[]>([
-    { from: "bot", text: "Olá! Como posso ajudar com o PFB Orbital?" },
+    { from: "bot", text: "Olá! Sou o assistente da Orbital. Pode me perguntar qualquer coisa sobre o PFB, instalação, preços ou projetos 👋" },
   ]);
   const [input, setInput] = useState("");
   const [showChips, setShowChips] = useState(true);
+  const [typing, setTyping] = useState(false);
   const endRef = useRef<HTMLDivElement>(null);
+
+  // conversation history for the API (role + content only)
+  const historyRef = useRef<{ role: string; content: string }[]>([]);
 
   useEffect(() => {
     if (open) endRef.current?.scrollIntoView({ behavior: "smooth" });
-  }, [messages, open]);
+  }, [messages, open, typing]);
 
-  function sendMessage(text: string) {
+  async function sendMessage(text: string) {
     setShowChips(false);
-    const faq = findAnswer(text);
-    const botMsg: Message = faq
-      ? { from: "bot", text: faq.answer, waMsg: faq.waMsg, linkCta: faq.linkCta }
-      : {
-          from: "bot",
-          text: "Não encontrei uma resposta específica para isso. Nossa equipe pode te ajudar pelo WhatsApp.",
-          waMsg: `Olá! Tenho uma dúvida: ${text}`,
-        };
-    setMessages((prev) => [...prev, { from: "user", text }, botMsg]);
     setInput("");
+
+    // Optimistically add user message
+    setMessages((prev) => [...prev, { from: "user", text }]);
+    historyRef.current = [...historyRef.current, { role: "user", content: text }];
+
+    setTyping(true);
+
+    try {
+      const res = await fetch("/api/chat", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ messages: historyRef.current }),
+      });
+
+      const json = await res.json();
+      const botText: string = json.text || "Não consegui responder agora. Tente pelo WhatsApp!";
+
+      historyRef.current = [...historyRef.current, { role: "assistant", content: botText }];
+
+      setMessages((prev) => [
+        ...prev,
+        {
+          from: "bot",
+          text: botText,
+          showWa: shouldShowWa(botText),
+        },
+      ]);
+    } catch {
+      setMessages((prev) => [
+        ...prev,
+        {
+          from: "bot",
+          text: "Ops, ocorreu um erro. Fale direto com nossa equipe no WhatsApp!",
+          showWa: true,
+        },
+      ]);
+    } finally {
+      setTyping(false);
+    }
   }
 
-  function handleChip(id: string, label: string) {
+  function handleChip(prompt: string, label: string) {
     setShowChips(false);
-    const faq = FAQS.find((f) => f.id === id);
-    if (!faq) return;
-    setMessages((prev) => [
-      ...prev,
-      { from: "user", text: label },
-      { from: "bot", text: faq.answer, waMsg: faq.waMsg, linkCta: faq.linkCta },
-    ]);
+    // Show user message then send
+    sendMessage(label);
   }
 
   function handleKeyDown(e: KeyboardEvent<HTMLInputElement>) {
-    if (e.key === "Enter" && input.trim()) sendMessage(input.trim());
+    if (e.key === "Enter" && input.trim() && !typing) sendMessage(input.trim());
   }
 
   return (
@@ -227,7 +137,7 @@ export default function ChatWidget() {
                 ORBITAL
               </p>
               <p className="text-[#86a0cd] text-[10px] tracking-[0.12em] uppercase font-[var(--font-inter)] mt-0.5">
-                Assistente
+                Assistente IA
               </p>
             </div>
             <button
@@ -254,7 +164,6 @@ export default function ChatWidget() {
                 >
                   {msg.text}
 
-                  {/* Internal link CTA */}
                   {msg.linkCta && (
                     <Link
                       href={msg.linkCta.href}
@@ -267,10 +176,9 @@ export default function ChatWidget() {
                     </Link>
                   )}
 
-                  {/* WhatsApp CTA */}
-                  {msg.waMsg && !msg.linkCta && (
+                  {msg.showWa && (
                     <a
-                      href={`${WA_BASE}${encodeURIComponent(msg.waMsg)}`}
+                      href={`${WA_BASE}${encodeURIComponent("Olá! Vim pelo site e gostaria de mais informações sobre o PFB Orbital.")}`}
                       target="_blank"
                       rel="noopener noreferrer"
                       className="flex items-center gap-1.5 mt-3 text-[10px] tracking-[0.1em] uppercase font-bold bg-[#3b6934] text-white px-3 py-2 hover:bg-[#2d5228] transition-colors w-fit"
@@ -283,13 +191,16 @@ export default function ChatWidget() {
               </div>
             ))}
 
+            {/* Typing indicator */}
+            {typing && <TypingIndicator />}
+
             {/* Quick reply chips */}
-            {showChips && (
+            {showChips && !typing && (
               <div className="flex flex-wrap gap-2 pt-1">
-                {QUICK_CHIPS.map(({ label, id }) => (
+                {QUICK_CHIPS.map(({ label, prompt }) => (
                   <button
-                    key={id}
-                    onClick={() => handleChip(id, label)}
+                    key={label}
+                    onClick={() => handleChip(prompt, label)}
                     className="text-[10px] tracking-[0.08em] uppercase font-bold font-[var(--font-inter)] border border-[#3b6934] text-[#3b6934] px-3 py-1.5 hover:bg-[#3b6934] hover:text-white transition-colors"
                   >
                     {label}
@@ -309,11 +220,12 @@ export default function ChatWidget() {
               onChange={(e) => setInput(e.target.value)}
               onKeyDown={handleKeyDown}
               placeholder="Digite sua pergunta..."
-              className="flex-1 text-sm font-[var(--font-inter)] text-[#1a1c1c] placeholder-[#b0b0b0] border border-[#e2e2e2] px-3 py-2 focus:outline-none focus:border-[#002045] transition-colors"
+              disabled={typing}
+              className="flex-1 text-sm font-[var(--font-inter)] text-[#1a1c1c] placeholder-[#b0b0b0] border border-[#e2e2e2] px-3 py-2 focus:outline-none focus:border-[#002045] transition-colors disabled:opacity-50"
             />
             <button
-              onClick={() => input.trim() && sendMessage(input.trim())}
-              disabled={!input.trim()}
+              onClick={() => input.trim() && !typing && sendMessage(input.trim())}
+              disabled={!input.trim() || typing}
               className="w-10 h-10 bg-[#002045] text-white flex items-center justify-center hover:bg-[#1a365d] transition-colors disabled:opacity-30 disabled:cursor-not-allowed flex-shrink-0"
               aria-label="Enviar"
             >

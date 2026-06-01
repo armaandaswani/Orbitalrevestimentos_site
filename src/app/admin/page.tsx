@@ -348,6 +348,7 @@ export default function AdminPage() {
   const [editingMediaId, setEditingMediaId] = useState<string | null>(null);
   const [editMediaDraft, setEditMediaDraft] = useState<{ description: string; category: "antes" | "depois" | "geral" }>({ description: "", category: "geral" });
   const [aiDescGenerating, setAiDescGenerating] = useState(false);
+  const [aiTextGenerating, setAiTextGenerating] = useState<string | null>(null); // field key being generated
 
   // ── Admin simulator ──────────────────────────────────────────────────────
   interface SimSpace { key: string; spaceName: string; productCode: string; w: string; h: string; }
@@ -1207,6 +1208,22 @@ export default function AdminPage() {
       }
     } finally {
       setAiDescGenerating(false);
+    }
+  }
+
+  async function generateAiText(fieldKey: string, systemPrompt: string, userPrompt: string, setter: (text: string) => void) {
+    setAiTextGenerating(fieldKey);
+    try {
+      const res = await fetch("/api/admin/generate-text", {
+        method: "POST",
+        headers: { "Content-Type": "application/json", "x-admin-auth": ADMIN_PW },
+        body: JSON.stringify({ systemPrompt, userPrompt, maxTokens: 500 }),
+      });
+      const json = await res.json();
+      if (json.text) setter(json.text);
+      else alert(json.error || "Erro ao gerar texto.");
+    } finally {
+      setAiTextGenerating(null);
     }
   }
 
@@ -2809,9 +2826,28 @@ export default function AdminPage() {
 
                                   {/* Body */}
                                   <div>
-                                    <label className="block text-[10px] uppercase tracking-[0.15em] font-bold font-[var(--font-inter)] text-[#74777f] mb-1">
-                                      Texto do e-mail <span className="text-[#9e9e9e] normal-case tracking-normal font-normal">— cada linha vira um parágrafo</span>
-                                    </label>
+                                    <div className="flex items-center justify-between mb-1">
+                                      <label className="block text-[10px] uppercase tracking-[0.15em] font-bold font-[var(--font-inter)] text-[#74777f]">
+                                        Texto do e-mail <span className="text-[#9e9e9e] normal-case tracking-normal font-normal">— cada linha vira um parágrafo</span>
+                                      </label>
+                                      <button
+                                        disabled={aiTextGenerating === "campaignBody"}
+                                        onClick={() => generateAiText(
+                                          "campaignBody",
+                                          "Você é um redator de e-mail marketing premium para a Orbital Revestimentos, empresa de revestimentos PFB (painel de fibra de bambu) em Manaus.",
+                                          `Escreva o corpo de um e-mail marketing para a campanha cujo título é: "${campaignVisualHeadline || "campanha Orbital"}". O e-mail deve ter 3 parágrafos curtos, tom elegante e persuasivo, destacando os benefícios do PFB para o clima de Manaus. Cada parágrafo em uma linha separada. Sem saudação nem assinatura.`,
+                                          setCampaignVisualBody
+                                        )}
+                                        className="flex items-center gap-1 text-[8px] tracking-wide uppercase font-bold font-[var(--font-inter)] text-[#002045] border border-[#002045] px-2 py-0.5 hover:bg-[#002045] hover:text-white transition-colors disabled:opacity-40"
+                                      >
+                                        {aiTextGenerating === "campaignBody" ? (
+                                          <svg className="animate-spin" width="8" height="8" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="3"><path d="M12 2v4M12 18v4M4.93 4.93l2.83 2.83M16.24 16.24l2.83 2.83M2 12h4M18 12h4M4.93 19.07l2.83-2.83M16.24 7.76l2.83-2.83"/></svg>
+                                        ) : (
+                                          <svg width="8" height="8" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5"><path d="M12 2l2.4 7.4H22l-6.2 4.5 2.4 7.4L12 17l-6.2 4.3 2.4-7.4L2 9.4h7.6z"/></svg>
+                                        )}
+                                        {aiTextGenerating === "campaignBody" ? "Gerando…" : "IA"}
+                                      </button>
+                                    </div>
                                     <textarea value={campaignVisualBody} onChange={(e) => setCampaignVisualBody(e.target.value)}
                                       rows={6} placeholder={"Escreva aqui o conteúdo do e-mail...\n\nVocê pode usar várias linhas — cada linha se torna um parágrafo separado."}
                                       className="w-full border border-[#e2e2e2] px-3 py-2.5 text-sm font-[var(--font-inter)] text-[#002045] focus:outline-none focus:border-[#002045] resize-y" />
@@ -3540,7 +3576,26 @@ export default function AdminPage() {
                     </div>
                   </div>
                   <div className="mb-4">
-                    <label className={labelCls}>Descrição</label>
+                    <div className="flex items-center justify-between mb-2">
+                      <label className={labelCls} style={{marginBottom:0}}>Descrição</label>
+                      <button
+                        disabled={aiTextGenerating === "productDesc"}
+                        onClick={() => generateAiText(
+                          "productDesc",
+                          "Você é um redator de catálogo de revestimentos premium para a Orbital Revestimentos, empresa especializada em PFB (painel de fibra de bambu) em Manaus.",
+                          `Escreva uma descrição de produto elegante e técnica (máximo 2 frases, 150 caracteres) para o produto "${productForm.name || "PFB Orbital"}" (código ${productForm.code || "N/A"}). Destaque o acabamento visual e a durabilidade. Responda SOMENTE com a descrição, sem aspas.`,
+                          (text) => setProductForm(f => ({ ...f, description: text }))
+                        )}
+                        className="flex items-center gap-1 text-[8px] tracking-wide uppercase font-bold font-[var(--font-inter)] text-[#002045] border border-[#002045] px-2 py-0.5 hover:bg-[#002045] hover:text-white transition-colors disabled:opacity-40"
+                      >
+                        {aiTextGenerating === "productDesc" ? (
+                          <svg className="animate-spin" width="8" height="8" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="3"><path d="M12 2v4M12 18v4M4.93 4.93l2.83 2.83M16.24 16.24l2.83 2.83M2 12h4M18 12h4M4.93 19.07l2.83-2.83M16.24 7.76l2.83-2.83"/></svg>
+                        ) : (
+                          <svg width="8" height="8" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5"><path d="M12 2l2.4 7.4H22l-6.2 4.5 2.4 7.4L12 17l-6.2 4.3 2.4-7.4L2 9.4h7.6z"/></svg>
+                        )}
+                        {aiTextGenerating === "productDesc" ? "Gerando…" : "IA"}
+                      </button>
+                    </div>
                     <textarea rows={3} value={productForm.description} onChange={(e) => setProductForm({...productForm, description: e.target.value})} className={inputCls + " resize-none"} />
                   </div>
                   <div className="mb-4">
