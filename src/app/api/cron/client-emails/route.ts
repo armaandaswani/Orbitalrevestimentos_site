@@ -59,7 +59,7 @@ export async function GET(req: NextRequest) {
       }, dbRow);
 
       await resend.emails.send({
-        from: "Orbital Revestimentos <orbitalrevestimentos@gmail.com>",
+        from: "Orbital Revestimentos <noreply@orbitalrevestimentos.com.br>",
         to: seq.client_email as string,
         subject,
         html,

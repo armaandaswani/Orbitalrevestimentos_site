@@ -54,7 +54,7 @@ export async function POST(req: NextRequest) {
   try {
     const resend = getResend();
     await resend.emails.send({
-      from: "orbitalrevestimentos@gmail.com",
+      from: "Orbital Revestimentos <noreply@orbitalrevestimentos.com.br>",
       to: partner.email,
       subject: "Redefinição de senha — Orbital Revestimentos",
       html: `

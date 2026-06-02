@@ -151,7 +151,7 @@ export async function GET(req: NextRequest) {
 
     try {
       await resend.emails.send({
-        from: "Orbital Revestimentos <orbitalrevestimentos@gmail.com>",
+        from: "Orbital Revestimentos <noreply@orbitalrevestimentos.com.br>",
         to: partner.email!,
         subject: `📋 ${uses.length} orçamento${uses.length > 1 ? "s" : ""} em aberto — lembrete semanal`,
         html,

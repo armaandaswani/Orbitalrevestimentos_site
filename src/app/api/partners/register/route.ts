@@ -97,7 +97,7 @@ export async function POST(req: NextRequest) {
     const { getResend } = await import("@/lib/resend");
     const resend = getResend();
     await resend.emails.send({
-      from: "Orbital Revestimentos <orbitalrevestimentos@gmail.com>",
+      from: "Orbital Revestimentos <noreply@orbitalrevestimentos.com.br>",
       to: email,
       subject: "Recebemos o seu cadastro — Orbital Revestimentos",
       html: `
@@ -114,8 +114,8 @@ export async function POST(req: NextRequest) {
         </div>
       `,
     });
-  } catch {
-    // email failure is non-fatal
+  } catch (e) {
+    console.error("[email] partner confirmation failed:", e);
   }
 
   // Send admin notification email (non-fatal)
@@ -128,7 +128,7 @@ export async function POST(req: NextRequest) {
     const waLink = `https://wa.me/5592988150149?text=${waText}`;
 
     await resend.emails.send({
-      from: "Orbital Revestimentos <orbitalrevestimentos@gmail.com>",
+      from: "Orbital Revestimentos <noreply@orbitalrevestimentos.com.br>",
       to: "armaandaswani19@gmail.com",
       subject: `Novo parceiro aguardando aprovação: ${name}`,
       html: `
@@ -169,8 +169,8 @@ export async function POST(req: NextRequest) {
         </div>
       `,
     });
-  } catch {
-    // email failure is non-fatal
+  } catch (e) {
+    console.error("[email] admin notification failed:", e);
   }
 
   // Send notification to the sales rep (non-fatal)
@@ -179,7 +179,7 @@ export async function POST(req: NextRequest) {
       const { getResend } = await import("@/lib/resend");
       const resend = getResend();
       await resend.emails.send({
-        from: "Orbital Revestimentos <orbitalrevestimentos@gmail.com>",
+        from: "Orbital Revestimentos <noreply@orbitalrevestimentos.com.br>",
         to: salesRep.email,
         subject: `Novo parceiro cadastrado: ${name}`,
         html: `
@@ -209,8 +209,8 @@ export async function POST(req: NextRequest) {
           </div>
         `,
       });
-    } catch {
-      // email failure is non-fatal
+    } catch (e) {
+      console.error("[email] sales rep notification failed:", e);
     }
   }
 

@@ -61,7 +61,7 @@ async function sendNewBudgetEmails(opts: {
 </body></html>`;
 
     await resend.emails.send({
-      from: "Orbital Revestimentos <orbitalrevestimentos@gmail.com>",
+      from: "Orbital Revestimentos <noreply@orbitalrevestimentos.com.br>",
       to: opts.partnerEmail,
       subject: `🎉 Novo orçamento via seu cupom ${opts.couponCode} — ${opts.clientName}`,
       html: partnerHtml,
@@ -90,7 +90,7 @@ async function sendNewBudgetEmails(opts: {
 </body></html>`;
 
     await resend.emails.send({
-      from: "Orbital Revestimentos <orbitalrevestimentos@gmail.com>",
+      from: "Orbital Revestimentos <noreply@orbitalrevestimentos.com.br>",
       to: rep.email,
       subject: `📋 Novo orçamento via ${opts.partnerName} — ${opts.clientName}`,
       html: repHtml,

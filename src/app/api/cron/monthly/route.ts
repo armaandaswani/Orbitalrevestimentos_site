@@ -90,7 +90,7 @@ export async function GET(req: NextRequest) {
 
   // Send monthly summary
   await resend.emails.send({
-    from: "Orbital Revestimentos <orbitalrevestimentos@gmail.com>",
+    from: "Orbital Revestimentos <noreply@orbitalrevestimentos.com.br>",
     to: adminEmail,
     subject: `Orbital — Resumo de ${lastMonthName} ${lastMonthDate.getFullYear()}`,
     html: `<div style="font-family:sans-serif;max-width:600px;margin:0 auto;padding:32px 24px;color:#1a1a1a">
@@ -112,7 +112,7 @@ export async function GET(req: NextRequest) {
 
   // Send birthdays this month
   await resend.emails.send({
-    from: "Orbital Revestimentos <orbitalrevestimentos@gmail.com>",
+    from: "Orbital Revestimentos <noreply@orbitalrevestimentos.com.br>",
     to: adminEmail,
     subject: `Orbital — Aniversariantes de ${thisMonthName}`,
     html: `<div style="font-family:sans-serif;max-width:560px;margin:0 auto;padding:32px 24px;color:#1a1a1a">

@@ -88,7 +88,7 @@ export async function POST(req: NextRequest) {
           portalPassword: portal_password as string,
         });
         await resend.emails.send({
-          from: "Orbital Revestimentos <orbitalrevestimentos@gmail.com>",
+          from: "Orbital Revestimentos <noreply@orbitalrevestimentos.com.br>",
           to: email as string,
           subject,
           html,
@@ -103,7 +103,7 @@ export async function POST(req: NextRequest) {
         const resetUrl = `${portalUrl}?reset=${token}`;
 
         await resend.emails.send({
-          from: "Orbital Revestimentos <orbitalrevestimentos@gmail.com>",
+          from: "Orbital Revestimentos <noreply@orbitalrevestimentos.com.br>",
           to: email as string,
           subject: `Orbital — crie sua senha de acesso`,
           html: `

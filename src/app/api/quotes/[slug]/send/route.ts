@@ -108,7 +108,7 @@ export async function POST(
   try {
     const resend = getResend();
     await resend.emails.send({
-      from: "Orbital Revestimentos <orbitalrevestimentos@gmail.com>",
+      from: "Orbital Revestimentos <noreply@orbitalrevestimentos.com.br>",
       to: clientEmail,
       subject: `Orçamento Orbital${quote.partner_name ? ` — ${quote.partner_name}` : ""} · válido até ${expiresFormatted}`,
       html,

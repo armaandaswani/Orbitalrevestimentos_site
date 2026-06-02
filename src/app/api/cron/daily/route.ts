@@ -44,7 +44,7 @@ export async function GET(req: NextRequest) {
         : null;
 
       await resend.emails.send({
-        from: "Orbital Revestimentos <orbitalrevestimentos@gmail.com>",
+        from: "Orbital Revestimentos <noreply@orbitalrevestimentos.com.br>",
         to: "armaandaswani19@gmail.com",
         subject: `🎂 Aniversário hoje: ${partner.name}`,
         html: `
