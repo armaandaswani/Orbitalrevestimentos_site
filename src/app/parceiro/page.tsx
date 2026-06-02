@@ -1234,7 +1234,7 @@ export default function ParceiroPage() {
         const pProd = SPECIAL_PRODUCTS.find(p => p.code === pSimProductCode) ?? null;
         const pNormalPrice = pProd ? NORMAL_PRICES[pProd.linha] : 0;
         const pDiscountFactor = partner.discount_type === "percentage" ? (1 - partner.discount_value / 100) : 1;
-        const pClientPrice = Math.round(pNormalPrice * pDiscountFactor);
+        const pClientPrice = pNormalPrice;
         const pMaterial = pPlates * pClientPrice;
         const canAddPSim = pSimSpaceName.trim() !== "" && pProd !== null && pPlates > 0;
 
@@ -1296,9 +1296,9 @@ export default function ParceiroPage() {
           { id: "comercial",    label: "Clínica / Comercial" },
         ];
         const PSim_LINE_INFO: Record<"Classic"|"Brilliance"|"Elegance", { finish: string; price: number }> = {
-          Classic:    { finish: "Mármore Fosco",       price: pDiscountFactor < 1 ? Math.round(NORMAL_PRICES.Classic * pDiscountFactor) : NORMAL_PRICES.Classic },
-          Brilliance: { finish: "Mármore Polido",      price: pDiscountFactor < 1 ? Math.round(NORMAL_PRICES.Brilliance * pDiscountFactor) : NORMAL_PRICES.Brilliance },
-          Elegance:   { finish: "Madeira Texturizada", price: pDiscountFactor < 1 ? Math.round(NORMAL_PRICES.Elegance * pDiscountFactor) : NORMAL_PRICES.Elegance },
+          Classic:    { finish: "Mármore Fosco",       price: NORMAL_PRICES.Classic },
+          Brilliance: { finish: "Mármore Polido",      price: NORMAL_PRICES.Brilliance },
+          Elegance:   { finish: "Madeira Texturizada", price: NORMAL_PRICES.Elegance },
         };
 
         return (
@@ -1318,7 +1318,7 @@ export default function ParceiroPage() {
                   const pl = wn > 0 && hn > 0 ? Math.ceil(wn / PL_W) * Math.ceil(hn / PL_H) : 0;
                   const prod = SPECIAL_PRODUCTS.find(p => p.code === s.productCode) ?? null;
                   const np = prod ? NORMAL_PRICES[prod.linha] : 0;
-                  const cp = Math.round(np * pDiscountFactor);
+                  const cp = np;
                   const mat = pl * cp;
                   return (
                     <div key={s.key} className="flex items-center gap-3 px-4 py-3">
@@ -1391,7 +1391,6 @@ export default function ParceiroPage() {
                         <p className="text-[#002045] text-xs font-bold font-[var(--font-inter)]">
                           R$ {info.price.toLocaleString("pt-BR")}
                           <span className="font-normal text-[#9e9e9e]">/placa</span>
-                          {pDiscountFactor < 1 && <span className="ml-1 text-[#3b6934] text-[9px]">c/ cupom</span>}
                         </p>
                       </button>
                     );
@@ -1464,7 +1463,7 @@ export default function ParceiroPage() {
                       <p className="text-[#002045] text-sm font-semibold font-[var(--font-inter)]">{pPlates}</p>
                     </div>
                     <div>
-                      <p className="text-[#74777f] text-[9px] uppercase tracking-widest font-bold font-[var(--font-inter)]">Valor c/ cupom</p>
+                      <p className="text-[#74777f] text-[9px] uppercase tracking-widest font-bold font-[var(--font-inter)]">Material</p>
                       <p className="text-[#002045] text-sm font-semibold font-[var(--font-inter)]">{fmtParceiro(pMaterial)}</p>
                     </div>
                   </div>
@@ -1484,7 +1483,7 @@ export default function ParceiroPage() {
               {pAllSpaces.length > 1 && (
                 <div className="bg-[#002045] px-5 py-4 flex items-center justify-between">
                   <div>
-                    <p className="text-white/60 text-[9px] uppercase tracking-widest font-bold font-[var(--font-inter)]">Total do projeto (c/ cupom)</p>
+                    <p className="text-white/60 text-[9px] uppercase tracking-widest font-bold font-[var(--font-inter)]">Total do projeto</p>
                     <p className="text-white/60 text-[10px] font-[var(--font-inter)]">{pAllSpaces.length} ambientes · {pGrandPlates} placas</p>
                   </div>
                   <p className="text-white text-xl font-[var(--font-noto-serif)]">{fmtParceiro(pGrandMaterial)}</p>
