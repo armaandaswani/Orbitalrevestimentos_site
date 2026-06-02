@@ -136,8 +136,24 @@ export default function AdminPage() {
   const [authed, setAuthed] = useState(false);
   const [pw, setPw] = useState("");
   const [pwError, setPwError] = useState("");
-  const [tab, setTab] = useState<"partners" | "representantes" | "orcamentos" | "campaigns" | "drip" | "commissions" | "produtos" | "projetos" | "midia" | "simulador" | "chat">("partners");
+  const [tab, setTab] = useState<"dashboard" | "partners" | "representantes" | "orcamentos" | "campaigns" | "drip" | "commissions" | "produtos" | "projetos" | "midia" | "simulador" | "chat">("dashboard");
   const [commissionFilter, setCommissionFilter] = useState<"a_pagar" | "pago" | "tudo">("a_pagar");
+
+  // Dashboard
+  interface DashboardData {
+    totalOrcamentos: number; totalValor: number;
+    concluidos: number; emOrcamento: number; cancelados: number;
+    conversionRate: number; comissaoPendente: number;
+    hoje: { count: number; valor: number };
+    semana: { count: number; valor: number };
+    mes: { count: number; valor: number; concluidos: number };
+    parceirosAtivos: number; parceirosPendentes: number;
+    topProducts: { name: string; count: number }[];
+    monthlyTrend: { month: string; count: number; valor: number }[];
+    recentActivity: { id: string; architect_name: string | null; product_name: string | null; space: string | null; material_discounted: number | null; sale_status: string | null; created_at: string; coupon_code: string }[];
+  }
+  const [dashData, setDashData] = useState<DashboardData | null>(null);
+  const [dashLoading, setDashLoading] = useState(false);
 
   // Partners
   const [partners, setPartners] = useState<Partner[]>([]);
@@ -555,6 +571,17 @@ export default function AdminPage() {
     fetchUses();
     fetchFollowUps();
   }, [authed, tab, supabaseConfigured, fetchPartners, fetchReps, fetchUses, fetchFollowUps]);
+
+  useEffect(() => {
+    if (tab === "dashboard" && authed && !dashData && !dashLoading) {
+      setDashLoading(true);
+      fetch("/api/admin/dashboard", { headers: { "x-admin-auth": pw } })
+        .then((r) => r.json())
+        .then((d) => { setDashData(d); setDashLoading(false); })
+        .catch(() => setDashLoading(false));
+    }
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [tab, authed]);
 
   useEffect(() => {
     if (tab === "campaigns" && authed) loadCampaigns();
@@ -2042,9 +2069,9 @@ export default function AdminPage() {
 
       <div className="max-w-7xl mx-auto px-8 py-8">
         <div className="flex gap-1 mb-8 border-b border-[#e2e2e2] flex-wrap">
-          {(["partners", "representantes", "orcamentos", "campaigns", "drip", "commissions", "produtos", "projetos", "midia", "simulador", "chat"] as const).map((t) => (
+          {(["dashboard", "partners", "representantes", "orcamentos", "campaigns", "drip", "commissions", "produtos", "projetos", "midia", "simulador", "chat"] as const).map((t) => (
             <button key={t} onClick={() => setTab(t)} className={`px-6 py-3 text-xs tracking-[0.1em] uppercase font-bold font-[var(--font-inter)] transition-colors border-b-2 -mb-px flex items-center gap-2 ${tab === t ? "border-[#002045] text-[#002045]" : "border-transparent text-[#74777f] hover:text-[#002045]"}`}>
-              {t === "partners" ? "Parceiros" : t === "representantes" ? "Representantes" : t === "orcamentos" ? "Orçamentos" : t === "campaigns" ? "Campanhas" : t === "drip" ? "Drip de Emails" : t === "commissions" ? "Comissões" : t === "produtos" ? "Produtos" : t === "projetos" ? "Projetos" : t === "midia" ? "Mídia" : t === "simulador" ? "Simulador" : "Chat IA"}
+              {t === "dashboard" ? "Dashboard" : t === "partners" ? "Parceiros" : t === "representantes" ? "Representantes" : t === "orcamentos" ? "Orçamentos" : t === "campaigns" ? "Campanhas" : t === "drip" ? "Drip de Emails" : t === "commissions" ? "Comissões" : t === "produtos" ? "Produtos" : t === "projetos" ? "Projetos" : t === "midia" ? "Mídia" : t === "simulador" ? "Simulador" : "Chat IA"}
               {t === "partners" && pendingPartners.length > 0 && (
                 <span className="bg-yellow-400 text-yellow-900 text-[9px] font-bold px-1.5 py-0.5 rounded-full leading-none">
                   {pendingPartners.length}
@@ -2053,6 +2080,184 @@ export default function AdminPage() {
             </button>
           ))}
         </div>
+
+        {/* ═══ DASHBOARD TAB ═══ */}
+        {tab === "dashboard" && (() => {
+          const fmtBRL = (n: number) => n.toLocaleString("pt-BR", { style: "currency", currency: "BRL", maximumFractionDigits: 0 });
+          const fmtK = (n: number) => n >= 1000 ? `R$${(n / 1000).toFixed(1)}k` : fmtBRL(n);
+
+          if (dashLoading || !dashData) {
+            return (
+              <div className="flex items-center justify-center py-24">
+                <div className="flex flex-col items-center gap-4">
+                  <div className="w-8 h-8 border-2 border-[#002045] border-t-transparent rounded-full animate-spin" />
+                  <p className="text-[#74777f] text-xs tracking-[0.15em] uppercase font-[var(--font-inter)]">Carregando dados…</p>
+                </div>
+              </div>
+            );
+          }
+
+          const d = dashData;
+          const maxMonth = Math.max(...d.monthlyTrend.map((m) => m.count), 1);
+          const STATUS_MAP: Record<string, string> = { em_orcamento: "Em orçamento", concluido: "Concluído", cancelado: "Cancelado" };
+
+          return (
+            <div className="space-y-8 pb-10">
+              {/* ── Top KPI cards ── */}
+              <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
+                {[
+                  { label: "Orçamentos hoje", value: d.hoje.count.toString(), sub: fmtK(d.hoje.valor), color: "border-l-[#002045]" },
+                  { label: "Esta semana", value: d.semana.count.toString(), sub: fmtK(d.semana.valor), color: "border-l-[#1a365d]" },
+                  { label: "Este mês", value: d.mes.count.toString(), sub: `${d.mes.concluidos} concluídos`, color: "border-l-[#2c5282]" },
+                  { label: "Total histórico", value: d.totalOrcamentos.toString(), sub: fmtBRL(d.totalValor), color: "border-l-[#4a7cc7]" },
+                ].map((card) => (
+                  <div key={card.label} className={`bg-white border border-[#e2e2e2] border-l-4 ${card.color} p-5`}>
+                    <p className="text-[#74777f] text-[10px] tracking-[0.15em] uppercase font-[var(--font-inter)] mb-2">{card.label}</p>
+                    <p className="font-[var(--font-noto-serif)] text-[#002045] text-3xl font-normal">{card.value}</p>
+                    <p className="text-[#74777f] text-xs font-[var(--font-inter)] mt-1">{card.sub}</p>
+                  </div>
+                ))}
+              </div>
+
+              {/* ── Middle row ── */}
+              <div className="grid grid-cols-1 lg:grid-cols-3 gap-4">
+
+                {/* Status breakdown */}
+                <div className="bg-white border border-[#e2e2e2] p-6">
+                  <p className="text-[10px] tracking-[0.15em] uppercase font-bold font-[var(--font-inter)] text-[#002045] mb-4">Status dos orçamentos</p>
+                  <div className="space-y-3">
+                    {[
+                      { label: "Em orçamento", value: d.emOrcamento, total: d.totalOrcamentos, color: "bg-yellow-400" },
+                      { label: "Concluídos", value: d.concluidos, total: d.totalOrcamentos, color: "bg-green-400" },
+                      { label: "Cancelados", value: d.cancelados, total: d.totalOrcamentos, color: "bg-red-300" },
+                    ].map((s) => (
+                      <div key={s.label}>
+                        <div className="flex justify-between items-center mb-1">
+                          <span className="text-xs font-[var(--font-inter)] text-[#43474e]">{s.label}</span>
+                          <span className="text-xs font-bold font-[var(--font-inter)] text-[#002045]">{s.value}</span>
+                        </div>
+                        <div className="h-1.5 bg-[#f0efec] rounded-full overflow-hidden">
+                          <div className={`h-full ${s.color} rounded-full transition-all`} style={{ width: `${s.total > 0 ? Math.round((s.value / s.total) * 100) : 0}%` }} />
+                        </div>
+                      </div>
+                    ))}
+                    <div className="pt-2 border-t border-[#f0efec] flex items-center justify-between">
+                      <span className="text-xs font-[var(--font-inter)] text-[#74777f]">Taxa de conversão</span>
+                      <span className="text-sm font-bold font-[var(--font-inter)] text-[#002045]">{d.conversionRate}%</span>
+                    </div>
+                  </div>
+                </div>
+
+                {/* Partners + commission */}
+                <div className="bg-white border border-[#e2e2e2] p-6">
+                  <p className="text-[10px] tracking-[0.15em] uppercase font-bold font-[var(--font-inter)] text-[#002045] mb-4">Parceiros & comissões</p>
+                  <div className="space-y-4">
+                    <div className="flex justify-between items-center">
+                      <span className="text-xs font-[var(--font-inter)] text-[#74777f]">Parceiros ativos</span>
+                      <span className="font-[var(--font-noto-serif)] text-2xl text-[#002045]">{d.parceirosAtivos}</span>
+                    </div>
+                    {d.parceirosPendentes > 0 && (
+                      <div className="flex justify-between items-center">
+                        <span className="text-xs font-[var(--font-inter)] text-[#74777f]">Aguardando aprovação</span>
+                        <span className="text-sm font-bold font-[var(--font-inter)] text-yellow-600">{d.parceirosPendentes}</span>
+                      </div>
+                    )}
+                    <div className="pt-3 border-t border-[#f0efec]">
+                      <p className="text-[#74777f] text-[10px] uppercase tracking-widest font-[var(--font-inter)] mb-1">Comissões a pagar</p>
+                      <p className="font-[var(--font-noto-serif)] text-[#002045] text-2xl">{fmtBRL(d.comissaoPendente)}</p>
+                    </div>
+                    <button onClick={() => setTab("commissions")} className="w-full text-center text-[10px] tracking-widest uppercase font-bold font-[var(--font-inter)] text-[#002045] border border-[#002045] py-2 hover:bg-[#002045] hover:text-white transition-colors">
+                      Ver comissões →
+                    </button>
+                  </div>
+                </div>
+
+                {/* Top products */}
+                <div className="bg-white border border-[#e2e2e2] p-6">
+                  <p className="text-[10px] tracking-[0.15em] uppercase font-bold font-[var(--font-inter)] text-[#002045] mb-4">Produtos mais orçados</p>
+                  <div className="space-y-2.5">
+                    {d.topProducts.length === 0 ? (
+                      <p className="text-[#74777f] text-xs font-[var(--font-inter)]">Nenhum dado disponível.</p>
+                    ) : d.topProducts.map((p, i) => (
+                      <div key={p.name} className="flex items-center gap-3">
+                        <span className="text-[#74777f] text-[10px] font-[var(--font-inter)] w-4 text-right">{i + 1}</span>
+                        <div className="flex-1">
+                          <p className="text-xs font-[var(--font-inter)] text-[#43474e] truncate">{p.name}</p>
+                        </div>
+                        <span className="text-xs font-bold font-[var(--font-inter)] text-[#002045]">{p.count}×</span>
+                      </div>
+                    ))}
+                  </div>
+                </div>
+              </div>
+
+              {/* ── Monthly trend ── */}
+              <div className="bg-white border border-[#e2e2e2] p-6">
+                <p className="text-[10px] tracking-[0.15em] uppercase font-bold font-[var(--font-inter)] text-[#002045] mb-5">Orçamentos — últimos 6 meses</p>
+                <div className="flex items-end gap-3 h-28">
+                  {d.monthlyTrend.map((m) => {
+                    const [year, month] = m.month.split("-");
+                    const monthNames = ["jan","fev","mar","abr","mai","jun","jul","ago","set","out","nov","dez"];
+                    const label = `${monthNames[parseInt(month) - 1]}/${year.slice(2)}`;
+                    const pct = maxMonth > 0 ? Math.round((m.count / maxMonth) * 100) : 0;
+                    return (
+                      <div key={m.month} className="flex-1 flex flex-col items-center gap-1.5">
+                        <span className="text-[#002045] text-[10px] font-bold font-[var(--font-inter)]">{m.count > 0 ? m.count : ""}</span>
+                        <div className="w-full bg-[#f0efec] rounded-sm overflow-hidden" style={{ height: "80px" }}>
+                          <div className="w-full bg-[#002045] rounded-sm transition-all duration-500" style={{ height: `${pct}%`, marginTop: `${100 - pct}%` }} />
+                        </div>
+                        <span className="text-[#74777f] text-[9px] font-[var(--font-inter)]">{label}</span>
+                      </div>
+                    );
+                  })}
+                </div>
+              </div>
+
+              {/* ── Recent activity ── */}
+              <div className="bg-white border border-[#e2e2e2]">
+                <div className="px-6 py-4 border-b border-[#f0efec] flex items-center justify-between">
+                  <p className="text-[10px] tracking-[0.15em] uppercase font-bold font-[var(--font-inter)] text-[#002045]">Atividade recente</p>
+                  <button onClick={() => setTab("orcamentos")} className="text-[10px] tracking-widest uppercase font-bold font-[var(--font-inter)] text-[#74777f] hover:text-[#002045] transition-colors">
+                    Ver todos →
+                  </button>
+                </div>
+                <div className="divide-y divide-[#f0efec]">
+                  {(d.recentActivity ?? []).length === 0 ? (
+                    <p className="px-6 py-4 text-xs text-[#74777f] font-[var(--font-inter)]">Nenhuma atividade recente.</p>
+                  ) : (d.recentActivity ?? []).map((a) => {
+                    const statusCls = a.sale_status === "concluido" ? "text-green-600" : a.sale_status === "cancelado" ? "text-red-500" : "text-yellow-600";
+                    return (
+                      <div key={a.id} className="px-6 py-3 flex items-center gap-4 hover:bg-[#fafafa] transition-colors">
+                        <div className="w-1.5 h-1.5 rounded-full bg-[#002045] flex-shrink-0" />
+                        <div className="flex-1 min-w-0">
+                          <p className="text-xs font-[var(--font-inter)] text-[#002045] truncate">{a.architect_name ?? "—"} · {a.product_name ?? "—"}</p>
+                          <p className="text-[10px] font-[var(--font-inter)] text-[#74777f]">{a.space ?? "—"} · {a.coupon_code}</p>
+                        </div>
+                        <div className="text-right flex-shrink-0">
+                          <p className="text-xs font-bold font-[var(--font-inter)] text-[#002045]">{a.material_discounted ? fmtBRL(a.material_discounted) : "—"}</p>
+                          <p className={`text-[10px] font-[var(--font-inter)] ${statusCls}`}>{STATUS_MAP[a.sale_status ?? ""] ?? "Em orçamento"}</p>
+                        </div>
+                        <p className="text-[10px] font-[var(--font-inter)] text-[#b0b0b0] flex-shrink-0 hidden sm:block">
+                          {new Date(a.created_at).toLocaleDateString("pt-BR")}
+                        </p>
+                      </div>
+                    );
+                  })}
+                </div>
+              </div>
+
+              {/* Refresh */}
+              <div className="text-right">
+                <button
+                  onClick={() => { setDashData(null); setDashLoading(true); fetch("/api/admin/dashboard", { headers: { "x-admin-auth": pw } }).then(r => r.json()).then(d2 => { setDashData(d2); setDashLoading(false); }); }}
+                  className="text-[10px] tracking-widest uppercase font-bold font-[var(--font-inter)] text-[#74777f] hover:text-[#002045] transition-colors"
+                >
+                  ↺ Atualizar dados
+                </button>
+              </div>
+            </div>
+          );
+        })()}
 
         {/* ═══ PARTNERS TAB ═══ */}
         {tab === "partners" && (
