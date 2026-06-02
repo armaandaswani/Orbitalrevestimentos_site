@@ -4528,8 +4528,8 @@ export default function AdminPage() {
                                         >↓</a>
                                       )}
                                       <button
-                                        onClick={() => deleteProjectMedia(m.id, p.slug)}
-                                        className="absolute top-0.5 right-0.5 w-5 h-5 bg-red-600 text-white text-[10px] font-bold flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity"
+                                        onClick={(e) => { e.stopPropagation(); deleteProjectMedia(m.id, p.slug); }}
+                                        className="absolute top-0.5 right-0.5 w-5 h-5 bg-red-600 text-white text-[10px] font-bold flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity z-10"
                                       >×</button>
                                       {m.type === "video" && (
                                         <span className="absolute bottom-0.5 left-0.5 text-[7px] text-white/70 font-bold tracking-wide">VÍD</span>

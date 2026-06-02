@@ -304,37 +304,27 @@ function ProjectLightbox({
                   draggable={false}
                 />
               ) : current?.kind === "video" ? (
-                (() => {
-                  // Try direct video first
-                  if (isDirectVideo(current.url)) {
-                    return (
-                      <video key={current.url} src={current.url} controls autoPlay className="max-h-full max-w-full" />
-                    );
-                  }
-                  // For all other URLs (YouTube, Vimeo, Drive, etc.) — open in new tab
-                  return (
-                    <div className="flex flex-col items-center justify-center gap-5 text-center px-6">
-                      <div className="w-16 h-16 rounded-full bg-white/10 border border-white/20 flex items-center justify-center">
-                        <svg width="26" height="26" viewBox="0 0 24 24" fill="white" opacity=".8"><path d="M8 5v14l11-7z"/></svg>
-                      </div>
-                      {current.description && (
-                        <p className="text-white/60 text-sm font-[var(--font-inter)] max-w-xs leading-relaxed">{current.description}</p>
-                      )}
-                      <a
-                        href={current.url}
-                        target="_blank"
-                        rel="noopener noreferrer"
-                        className="inline-flex items-center gap-2.5 bg-white text-[#0a0f1a] text-xs tracking-[0.1em] uppercase font-bold font-[var(--font-inter)] px-6 py-3 hover:bg-white/90 transition-colors"
-                        onClick={(e) => e.stopPropagation()}
-                      >
-                        <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><path d="M8 5v14l11-7z"/></svg>
-                        Assistir ao vídeo
-                        <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><path d="M18 13v6a2 2 0 01-2 2H5a2 2 0 01-2-2V8a2 2 0 012-2h6M15 3h6v6M10 14L21 3"/></svg>
-                      </a>
-                      <p className="text-white/25 text-[9px] font-[var(--font-inter)]">Abre em nova aba</p>
-                    </div>
-                  );
-                })()
+                // Always show a link/button — never try to embed
+                <div className="flex flex-col items-center justify-center gap-5 text-center px-6">
+                  <div className="w-16 h-16 rounded-full bg-white/10 border border-white/20 flex items-center justify-center">
+                    <svg width="26" height="26" viewBox="0 0 24 24" fill="white" opacity=".8"><path d="M8 5v14l11-7z"/></svg>
+                  </div>
+                  {current.description && (
+                    <p className="text-white/60 text-sm font-[var(--font-inter)] max-w-xs leading-relaxed">{current.description}</p>
+                  )}
+                  <a
+                    href={current.url}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="inline-flex items-center gap-2.5 bg-white text-[#0a0f1a] text-xs tracking-[0.1em] uppercase font-bold font-[var(--font-inter)] px-6 py-3 hover:bg-white/90 transition-colors"
+                    onClick={(e) => e.stopPropagation()}
+                  >
+                    <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><path d="M8 5v14l11-7z"/></svg>
+                    Assistir ao vídeo
+                    <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><path d="M18 13v6a2 2 0 01-2 2H5a2 2 0 01-2-2V8a2 2 0 012-2h6M15 3h6v6M10 14L21 3"/></svg>
+                  </a>
+                  <p className="text-white/25 text-[9px] font-[var(--font-inter)]">Abre em nova aba</p>
+                </div>
               ) : null}
 
               {/* Nav arrows */}
