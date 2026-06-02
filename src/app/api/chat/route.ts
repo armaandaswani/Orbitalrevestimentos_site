@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
+import { supabaseAdmin } from "@/lib/supabase";
 
-const SYSTEM_PROMPT = `Você é o assistente virtual da Orbital Revestimentos, empresa sediada em Manaus especializada em PFB (Painel de Fibra de Bambu), um revestimento de parede e teto premium.
+export const DEFAULT_SYSTEM_PROMPT = `Você é o assistente virtual da Orbital Revestimentos, empresa sediada em Manaus especializada em PFB (Painel de Fibra de Bambu), um revestimento de parede e teto premium.
 
 SOBRE O PRODUTO PFB:
 - Placa de fibra de bambu com acabamento fotorrealista: Mármore Fosco, Mármore Polido ou Madeira Texturizada
@@ -36,7 +37,15 @@ INSTRUÇÕES DE COMPORTAMENTO:
 - Foque em ajudar o cliente a resolver sua dúvida específica
 - Para orçamento detalhado, visita ao showroom ou compra, sugira o WhatsApp
 - Não invente especificações, preços ou dados que não estão acima
-- Se não souber responder com certeza, diga que vai verificar e sugira o WhatsApp`;
+- Se não souber responder com certeza, diga que vai verificar e sugira o WhatsApp
+
+NUNCA DIGA / NUNCA FAÇA:
+- Nunca invente preços, medidas ou especificações além das listadas acima
+- Nunca diga que a Orbital faz a instalação diretamente
+- Nunca mencione produtos, linhas ou acabamentos que não sejam Classic, Brilliance ou Elegance
+- Nunca prometa prazos de entrega, descontos ou condições especiais sem o cliente passar pelo WhatsApp
+- Nunca invente nomes de funcionários, endereços ou informações de contato além do WhatsApp (92) 98815-0149
+- Se a pergunta não tiver resposta certa no contexto acima, diga honestamente que não sabe e redirecione ao WhatsApp`;
 
 export async function POST(req: NextRequest) {
   const apiBase = process.env.FREE_LLM_API_URL;
@@ -52,6 +61,16 @@ export async function POST(req: NextRequest) {
     return NextResponse.json({ error: "messages obrigatório." }, { status: 400 });
   }
 
+  // Load custom prompt from Supabase, fall back to default
+  let systemPrompt = DEFAULT_SYSTEM_PROMPT;
+  try {
+    const sb = supabaseAdmin();
+    const { data } = await sb.from("site_settings").select("value").eq("key", "chat_system_prompt").single();
+    if (data?.value?.trim()) systemPrompt = data.value.trim();
+  } catch {
+    // ignore — use default
+  }
+
   const res = await fetch(`${apiBase}/chat/completions`, {
     method: "POST",
     headers: {
@@ -61,7 +80,7 @@ export async function POST(req: NextRequest) {
     body: JSON.stringify({
       model: process.env.FREE_LLM_MODEL || "gemini-2.0-flash-lite",
       messages: [
-        { role: "system", content: SYSTEM_PROMPT },
+        { role: "system", content: systemPrompt },
         ...messages,
       ],
       max_tokens: 300,

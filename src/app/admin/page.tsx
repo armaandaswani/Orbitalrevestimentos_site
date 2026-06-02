@@ -136,7 +136,7 @@ export default function AdminPage() {
   const [authed, setAuthed] = useState(false);
   const [pw, setPw] = useState("");
   const [pwError, setPwError] = useState("");
-  const [tab, setTab] = useState<"partners" | "representantes" | "orcamentos" | "campaigns" | "drip" | "commissions" | "produtos" | "projetos" | "midia" | "simulador">("partners");
+  const [tab, setTab] = useState<"partners" | "representantes" | "orcamentos" | "campaigns" | "drip" | "commissions" | "produtos" | "projetos" | "midia" | "simulador" | "chat">("partners");
   const [commissionFilter, setCommissionFilter] = useState<"a_pagar" | "pago" | "tudo">("a_pagar");
 
   // Partners
@@ -361,6 +361,10 @@ export default function AdminPage() {
   const [simCoupon, setSimCoupon] = useState("");
   const [simLink, setSimLink] = useState("");
   const [simLinkCopied, setSimLinkCopied] = useState(false);
+  // Extended UI state for full-featured simulator
+  const [simSelectedLine, setSimSelectedLine] = useState<"Classic" | "Brilliance" | "Elegance" | null>(null);
+  const [simShowCustom, setSimShowCustom] = useState(false);
+  const [simCustomText, setSimCustomText] = useState("");
 
   // ── Admin coupon creator ────────────────────────────────────────────────
   interface AdminCoupon { id: string; code: string; discount_pct: number; payment_type: string; usage_type: string; expires_at: string | null; used: boolean; created_at: string; }
@@ -373,6 +377,12 @@ export default function AdminPage() {
   const [newCouponExpiry, setNewCouponExpiry] = useState("");
   const [couponCreating, setCouponCreating] = useState(false);
   const [couponCreatedMsg, setCouponCreatedMsg] = useState("");
+
+  // Chat IA prompt editor
+  const [chatPrompt, setChatPrompt] = useState("");
+  const [chatPromptLoaded, setChatPromptLoaded] = useState(false);
+  const [chatPromptSaving, setChatPromptSaving] = useState(false);
+  const [chatPromptMsg, setChatPromptMsg] = useState("");
 
   // Same static list as the public projetos page — kept in sync manually
   const STATIC_RENDERS = [
@@ -553,6 +563,11 @@ export default function AdminPage() {
   useEffect(() => {
     if (tab === "drip" && authed) fetchDripSteps();
   }, [tab, authed, fetchDripSteps]);
+
+  useEffect(() => {
+    if (tab === "chat" && authed && !chatPromptLoaded) fetchChatPrompt();
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [tab, authed, chatPromptLoaded]);
 
   useEffect(() => {
     if (tab === "orcamentos" && authed) { fetchClients(); fetchUses(); }
@@ -1264,6 +1279,51 @@ export default function AdminPage() {
   async function deleteAdminCoupon(id: string) {
     await fetch("/api/admin/coupons", { method: "DELETE", headers: { "Content-Type": "application/json", "x-admin-auth": ADMIN_PW }, body: JSON.stringify({ id }) });
     await fetchAdminCoupons();
+  }
+
+  async function fetchChatPrompt() {
+    const res = await fetch("/api/admin/chat-settings", { headers: { "x-admin-auth": ADMIN_PW } });
+    if (res.ok) {
+      const json = await res.json();
+      // If no custom prompt saved yet, load the default from the API
+      if (json.prompt) {
+        setChatPrompt(json.prompt);
+      } else {
+        const defRes = await fetch("/api/admin/chat-settings/default", { headers: { "x-admin-auth": ADMIN_PW } });
+        if (defRes.ok) {
+          const defJson = await defRes.json();
+          setChatPrompt(defJson.prompt ?? "");
+        }
+      }
+    }
+    setChatPromptLoaded(true);
+  }
+
+  async function saveChatPrompt() {
+    if (!chatPrompt.trim()) return;
+    setChatPromptSaving(true);
+    setChatPromptMsg("");
+    const res = await fetch("/api/admin/chat-settings", {
+      method: "PUT",
+      headers: { "Content-Type": "application/json", "x-admin-auth": ADMIN_PW },
+      body: JSON.stringify({ prompt: chatPrompt }),
+    });
+    if (res.ok) {
+      setChatPromptMsg("Salvo com sucesso! O assistente já usa o novo prompt.");
+    } else {
+      const json = await res.json();
+      setChatPromptMsg("Erro: " + (json.error || "desconhecido"));
+    }
+    setChatPromptSaving(false);
+    setTimeout(() => setChatPromptMsg(""), 4000);
+  }
+
+  async function resetChatPrompt() {
+    const res = await fetch("/api/admin/chat-settings/default", { headers: { "x-admin-auth": ADMIN_PW } });
+    if (res.ok) {
+      const json = await res.json();
+      setChatPrompt(json.prompt ?? "");
+    }
   }
 
   async function importStaticRender(render: { slug: string; title: string; product_code: string; image_path: string }, idx: number) {
@@ -1982,9 +2042,9 @@ export default function AdminPage() {
 
       <div className="max-w-7xl mx-auto px-8 py-8">
         <div className="flex gap-1 mb-8 border-b border-[#e2e2e2] flex-wrap">
-          {(["partners", "representantes", "orcamentos", "campaigns", "drip", "commissions", "produtos", "projetos", "midia", "simulador"] as const).map((t) => (
+          {(["partners", "representantes", "orcamentos", "campaigns", "drip", "commissions", "produtos", "projetos", "midia", "simulador", "chat"] as const).map((t) => (
             <button key={t} onClick={() => setTab(t)} className={`px-6 py-3 text-xs tracking-[0.1em] uppercase font-bold font-[var(--font-inter)] transition-colors border-b-2 -mb-px flex items-center gap-2 ${tab === t ? "border-[#002045] text-[#002045]" : "border-transparent text-[#74777f] hover:text-[#002045]"}`}>
-              {t === "partners" ? "Parceiros" : t === "representantes" ? "Representantes" : t === "orcamentos" ? "Orçamentos" : t === "campaigns" ? "Campanhas" : t === "drip" ? "Drip de Emails" : t === "commissions" ? "Comissões" : t === "produtos" ? "Produtos" : t === "projetos" ? "Projetos" : t === "midia" ? "Mídia" : "Simulador"}
+              {t === "partners" ? "Parceiros" : t === "representantes" ? "Representantes" : t === "orcamentos" ? "Orçamentos" : t === "campaigns" ? "Campanhas" : t === "drip" ? "Drip de Emails" : t === "commissions" ? "Comissões" : t === "produtos" ? "Produtos" : t === "projetos" ? "Projetos" : t === "midia" ? "Mídia" : t === "simulador" ? "Simulador" : "Chat IA"}
               {t === "partners" && pendingPartners.length > 0 && (
                 <span className="bg-yellow-400 text-yellow-900 text-[9px] font-bold px-1.5 py-0.5 rounded-full leading-none">
                   {pendingPartners.length}
@@ -4723,6 +4783,26 @@ ALTER TABLE project_media ADD COLUMN IF NOT EXISTS description TEXT;`}
         {tab === "simulador" && (() => {
           const PLATE_W = 1.2;
           const PLATE_H = 2.9;
+          const SIM_SPACES = [
+            { id: "parede",      label: "Parede" },
+            { id: "teto",        label: "Teto" },
+            { id: "sala",        label: "Sala" },
+            { id: "quarto",      label: "Quarto" },
+            { id: "escritorio",  label: "Escritório" },
+            { id: "corredor",    label: "Corredor" },
+            { id: "banheiro",    label: "Banheiro" },
+            { id: "lavabo",      label: "Lavabo" },
+            { id: "cozinha",     label: "Cozinha" },
+            { id: "box",         label: "Box / Ducha" },
+            { id: "movel",       label: "Móvel / Marcenaria" },
+            { id: "home-theater",label: "Home Theater" },
+            { id: "comercial",   label: "Clínica / Comercial" },
+          ];
+          const LINE_INFO_SIM: Record<"Classic"|"Brilliance"|"Elegance", { finish: string; price: number }> = {
+            Classic:    { finish: "Mármore Fosco",       price: 559 },
+            Brilliance: { finish: "Mármore Polido",      price: 589 },
+            Elegance:   { finish: "Madeira Texturizada", price: 649 },
+          };
           const simWn = parseFloat(simW) || 0;
           const simHn = parseFloat(simH) || 0;
           const simArea = simWn * simHn;
@@ -4733,17 +4813,16 @@ ALTER TABLE project_media ADD COLUMN IF NOT EXISTS description TEXT;`}
           const simMaterial = simPlates * (simProduct?.price ?? 0);
           const canAddSpace = simSpaceName.trim() !== "" && simProduct !== null && simPlates > 0;
 
-          // All spaces = saved + current (if valid)
-          interface SimSpaceCalc { spaceName: string; productCode: string; product: typeof simProduct; plates: number; area: number; material: number; }
+          interface SimSpaceCalc { spaceName: string; productCode: string; product: typeof simProduct; plates: number; area: number; material: number; w: string; h: string; }
           const allSpaces: SimSpaceCalc[] = [
             ...simSpaces.map(s => {
               const wn = parseFloat(s.w) || 0;
               const hn = parseFloat(s.h) || 0;
               const pl = wn > 0 && hn > 0 ? Math.ceil(wn / PLATE_W) * Math.ceil(hn / PLATE_H) : 0;
               const prod = dbProducts.find(p => p.code === s.productCode) ?? null;
-              return { spaceName: s.spaceName, productCode: s.productCode, product: prod, plates: pl, area: wn * hn, material: pl * (prod?.price ?? 0) };
+              return { spaceName: s.spaceName, productCode: s.productCode, product: prod, plates: pl, area: wn * hn, material: pl * (prod?.price ?? 0), w: s.w, h: s.h };
             }),
-            ...(canAddSpace ? [{ spaceName: simSpaceName.trim(), productCode: simProductCode, product: simProduct, plates: simPlates, area: simArea, material: simMaterial }] : []),
+            ...(canAddSpace ? [{ spaceName: simSpaceName.trim(), productCode: simProductCode, product: simProduct, plates: simPlates, area: simArea, material: simMaterial, w: simW, h: simH }] : []),
           ];
           const grandPlatesSim = allSpaces.reduce((s, sp) => s + sp.plates, 0);
           const grandMaterialSim = allSpaces.reduce((s, sp) => s + sp.material, 0);
@@ -4753,17 +4832,16 @@ ALTER TABLE project_media ADD COLUMN IF NOT EXISTS description TEXT;`}
             if (!canAddSpace) return;
             setSimSpaces(prev => [...prev, { key: `sim-${Date.now()}`, spaceName: simSpaceName.trim(), productCode: simProductCode, w: simW, h: simH }]);
             setSimSpaceName(""); setSimProductCode(""); setSimW(""); setSimH("");
+            setSimSelectedLine(null); setSimShowCustom(false); setSimCustomText("");
             setSimLink(""); setSimLinkCopied(false);
           }
 
           function buildSimLink() {
             const origin = typeof window !== "undefined" ? window.location.origin : "https://orbitalrevestimentos.com.br";
             const p = new URLSearchParams();
-            p.set("from", "consultor"); // tells simulador to skip to step 4
+            p.set("from", "consultor");
             if (simCoupon.trim()) p.set("cupom", simCoupon.trim().toUpperCase());
-
             if (allSpaces.length === 1) {
-              // Single space — use existing single-space format
               const sp = allSpaces[0];
               p.set("space", "custom");
               p.set("customSpace", sp.spaceName);
@@ -4771,7 +4849,6 @@ ALTER TABLE project_media ADD COLUMN IF NOT EXISTS description TEXT;`}
               p.set("area", sp.area.toFixed(2));
               p.set("placas", sp.plates.toString());
             } else {
-              // Multi-space — indexed params
               p.set("ms", allSpaces.length.toString());
               allSpaces.forEach((sp, i) => {
                 p.set(`s${i}`, sp.spaceName);
@@ -4783,24 +4860,18 @@ ALTER TABLE project_media ADD COLUMN IF NOT EXISTS description TEXT;`}
           }
 
           const waLines = allSpaces.map((sp, i) =>
-            `*${i + 1}. ${sp.spaceName}* — ${sp.product?.name ?? sp.productCode} (${sp.productCode})\n   ${parseFloat(simSpaces[i]?.w || simW) || "?"}m × ${parseFloat(simSpaces[i]?.h || simH) || "?"}m · ${sp.plates} placas · ${sp.material.toLocaleString("pt-BR")}`
+            `*${i + 1}. ${sp.spaceName}* — ${sp.product?.name ?? sp.productCode} (${sp.productCode})\n   ${parseFloat(sp.w) || "?"}m × ${parseFloat(sp.h) || "?"}m · ${sp.plates} placas · ${sp.material.toLocaleString("pt-BR")}`
           );
           const waText = canGenerate ? encodeURIComponent(
-            [
-              `Olá! Segue o link para confirmar o orçamento do seu projeto com PFB Orbital:`,
-              ``,
-              buildSimLink(),
-              ``,
-              ...waLines,
-              ...(allSpaces.length > 1 ? [``, `*Total material: ${grandMaterialSim.toLocaleString("pt-BR")}*`] : []),
-            ].join("\n")
+            [`Olá! Segue o link para confirmar o orçamento do seu projeto com PFB Orbital:`, ``, buildSimLink(), ``, ...waLines,
+             ...(allSpaces.length > 1 ? [``, `*Total material: ${grandMaterialSim.toLocaleString("pt-BR")}*`] : [])].join("\n")
           ) : "";
 
           return (
-            <div className="max-w-2xl mx-auto px-4 sm:px-8 py-8">
+            <div className="max-w-3xl mx-auto px-4 sm:px-8 py-8">
               <div className="mb-6">
                 <h2 className="font-[var(--font-noto-serif)] text-[#002045] text-2xl font-normal mb-2">Simulador para clientes</h2>
-                <p className="text-[#43474e] text-sm font-[var(--font-inter)] leading-relaxed">Configure um ou mais ambientes, gere um link personalizado e envie ao seu cliente. O link abre direto no passo de confirmação.</p>
+                <p className="text-[#43474e] text-sm font-[var(--font-inter)] leading-relaxed">Configure um ou mais ambientes, gere o link e envie ao cliente. O link abre direto no passo de confirmação.</p>
               </div>
 
               {/* Saved spaces list */}
@@ -4814,11 +4885,12 @@ ALTER TABLE project_media ADD COLUMN IF NOT EXISTS description TEXT;`}
                     return (
                       <div key={s.key} className="flex items-center gap-3 px-4 py-3">
                         <span className="w-6 h-6 rounded-full bg-[#3b6934] text-white text-[10px] font-bold font-[var(--font-inter)] flex items-center justify-center flex-shrink-0">{i + 1}</span>
+                        {prod && <img src={prod.image_path} alt={prod.name} className="w-10 h-10 object-cover flex-shrink-0 border border-[#e2e2e2]" />}
                         <div className="flex-1 min-w-0">
                           <p className="text-[#002045] text-sm font-semibold font-[var(--font-inter)]">{s.spaceName}</p>
                           <p className="text-[#74777f] text-[10px] font-[var(--font-inter)]">{prod?.name ?? s.productCode} · {wn}m × {hn}m · {pl} pl.</p>
                         </div>
-                        <p className="text-[#002045] text-sm font-semibold font-[var(--font-inter)] flex-shrink-0">{mat.toLocaleString("pt-BR")}</p>
+                        <p className="text-[#002045] text-sm font-semibold font-[var(--font-inter)] flex-shrink-0">{fmt(mat)}</p>
                         <button onClick={() => { setSimSpaces(prev => prev.filter((_, idx) => idx !== i)); setSimLink(""); }} className="text-red-400 hover:text-red-600 flex-shrink-0 ml-1">
                           <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5"><path d="M18 6L6 18M6 6l12 12"/></svg>
                         </button>
@@ -4828,46 +4900,109 @@ ALTER TABLE project_media ADD COLUMN IF NOT EXISTS description TEXT;`}
                 </div>
               )}
 
-              {/* Add space form */}
-              <div className="bg-white border border-[#e2e2e2] p-6 space-y-5">
+              {/* New space card */}
+              <div className="bg-white border border-[#e2e2e2] p-6 space-y-6">
                 <p className="text-[#002045] text-[10px] tracking-[0.15em] uppercase font-bold font-[var(--font-inter)]">
-                  {simSpaces.length === 0 ? "Ambiente" : `Ambiente ${simSpaces.length + 1}`}
+                  {simSpaces.length === 0 ? "1 — Escolha o espaço" : `Ambiente ${simSpaces.length + 1} — Escolha o espaço`}
                 </p>
 
+                {/* Space buttons */}
+                <div className="grid grid-cols-3 sm:grid-cols-4 md:grid-cols-5 gap-2">
+                  {SIM_SPACES.map(space => (
+                    <button key={space.id} onClick={() => { setSimSpaceName(space.label); setSimShowCustom(false); setSimCustomText(""); }}
+                      className={`px-3 py-2.5 min-h-[44px] border text-xs font-semibold font-[var(--font-inter)] transition-all text-left ${
+                        simSpaceName === space.label && !simShowCustom
+                          ? "border-[#002045] bg-[#002045] text-white"
+                          : "border-[#e2e2e2] text-[#43474e] hover:border-[#002045] hover:text-[#002045]"
+                      }`}>{space.label}</button>
+                  ))}
+                  <button onClick={() => { setSimShowCustom(true); setSimSpaceName(""); }}
+                    className={`px-3 py-2.5 min-h-[44px] border text-xs font-semibold font-[var(--font-inter)] transition-all text-left ${
+                      simShowCustom ? "border-[#002045] bg-[#002045] text-white" : "border-dashed border-[#c8c8c8] text-[#74777f] hover:border-[#002045] hover:text-[#002045]"
+                    }`}>+ Outro</button>
+                </div>
+                {simShowCustom && (
+                  <input autoFocus type="text" value={simCustomText}
+                    onChange={e => { setSimCustomText(e.target.value); setSimSpaceName(e.target.value); }}
+                    placeholder="Descreva o espaço — ex: varanda interna, garagem, hall…"
+                    className="w-full border border-[#002045] px-4 py-3 text-sm font-[var(--font-inter)] text-[#002045] focus:outline-none" />
+                )}
+
+                {/* Product line + cards */}
                 <div>
-                  <label className={labelCls}>Nome do espaço</label>
-                  <input type="text" value={simSpaceName} onChange={e => setSimSpaceName(e.target.value)} placeholder="Ex: Garagem, Marquise, Área de Lazer…" className={inputCls} />
+                  <p className="text-[#002045] text-[10px] tracking-[0.15em] uppercase font-bold font-[var(--font-inter)] mb-3">2 — Escolha o modelo</p>
+                  <div className="grid grid-cols-3 gap-3 mb-4">
+                    {(["Classic","Brilliance","Elegance"] as const).map(linha => {
+                      const info = LINE_INFO_SIM[linha];
+                      const active = simSelectedLine === linha;
+                      return (
+                        <button key={linha} onClick={() => { setSimSelectedLine(linha); setSimProductCode(""); }}
+                          className={`border text-left p-4 transition-all relative ${active ? "border-[#002045] bg-[#eef2fb]" : "border-[#e2e2e2] hover:border-[#002045] bg-[#fafafa]"}`}>
+                          {active && <div className="absolute top-2 right-2 w-4 h-4 bg-[#002045] flex items-center justify-center"><svg width="8" height="8" viewBox="0 0 24 24" fill="none" stroke="white" strokeWidth="3"><path d="M20 6L9 17l-5-5"/></svg></div>}
+                          <p className="text-[#002045] text-sm font-bold font-[var(--font-inter)] mb-0.5">{linha}</p>
+                          <p className="text-[10px] tracking-[0.12em] uppercase font-bold font-[var(--font-inter)] text-[#3b6934] mb-2">{info.finish}</p>
+                          <p className="text-[#002045] text-xs font-bold font-[var(--font-inter)]">R$ {info.price.toLocaleString("pt-BR")}<span className="font-normal text-[#9e9e9e]">/placa</span></p>
+                        </button>
+                      );
+                    })}
+                  </div>
+
+                  {simSelectedLine && (
+                    <div>
+                      <p className="text-[#43474e] text-[10px] tracking-[0.15em] uppercase font-bold font-[var(--font-inter)] mb-3">Acabamentos {simSelectedLine}</p>
+                      {loadingDbProducts ? (
+                        <div className="flex items-center justify-center py-8"><div className="w-5 h-5 border-2 border-[#002045] border-t-transparent rounded-full animate-spin" /></div>
+                      ) : (
+                        <div className="grid grid-cols-3 sm:grid-cols-4 md:grid-cols-5 gap-2">
+                          {dbProducts.filter(p => p.linha === simSelectedLine && p.is_active).map(product => {
+                            const active = simProductCode === product.code;
+                            return (
+                              <div key={product.code} onClick={() => setSimProductCode(product.code)}
+                                className={`border overflow-hidden cursor-pointer transition-all ${active ? "border-[#002045]" : "border-[#e2e2e2] hover:border-[#002045]"}`}>
+                                <div className="relative w-full bg-[#f7f7f5]" style={{ aspectRatio: "812/988" }}>
+                                  <img src={product.image_path} alt={product.name} className="absolute inset-0 w-full h-full object-contain" />
+                                  {active && <div className="absolute inset-0 bg-[#002045]/10" />}
+                                  {active && <div className="absolute top-1.5 right-1.5 w-5 h-5 bg-white shadow flex items-center justify-center"><svg width="9" height="9" viewBox="0 0 24 24" fill="none" stroke="#002045" strokeWidth="3"><path d="M20 6L9 17l-5-5"/></svg></div>}
+                                </div>
+                                <div className="p-1.5">
+                                  <p className={`text-[10px] font-bold font-[var(--font-inter)] leading-tight ${active ? "text-[#002045]" : "text-[#43474e]"}`}>{product.name}</p>
+                                  <p className="text-[9px] text-[#9e9e9e] font-[var(--font-inter)]">{product.code}</p>
+                                </div>
+                              </div>
+                            );
+                          })}
+                        </div>
+                      )}
+                    </div>
+                  )}
                 </div>
 
+                {/* Dimensions */}
                 <div>
-                  <label className={labelCls}>Produto / Acabamento</label>
-                  <select value={simProductCode} onChange={e => setSimProductCode(e.target.value)} className={inputCls}>
-                    <option value="">— selecione —</option>
-                    {["Classic","Brilliance","Elegance"].map(linha => (
-                      <optgroup key={linha} label={linha}>
-                        {dbProducts.filter(p => p.linha === linha && p.is_active).map(p => (
-                          <option key={p.id} value={p.code}>{p.name} ({p.code}) — {p.price.toLocaleString("pt-BR")}/placa</option>
-                        ))}
-                      </optgroup>
-                    ))}
-                  </select>
-                </div>
-
-                <div className="grid grid-cols-2 gap-4">
-                  <div>
-                    <label className={labelCls}>Largura (m)</label>
-                    <input type="number" min="0" step="0.01" value={simW} onChange={e => setSimW(e.target.value)} placeholder="Ex: 6.10" className={inputCls} />
-                  </div>
-                  <div>
-                    <label className={labelCls}>Altura (m)</label>
-                    <input type="number" min="0" step="0.01" value={simH} onChange={e => setSimH(e.target.value)} placeholder="Ex: 5.16" className={inputCls} />
+                  <p className="text-[#002045] text-[10px] tracking-[0.15em] uppercase font-bold font-[var(--font-inter)] mb-3">3 — Dimensões</p>
+                  <div className="grid grid-cols-2 gap-4">
+                    <div>
+                      <label className={labelCls}>Largura (m)</label>
+                      <input type="number" min="0" step="0.01" value={simW} onChange={e => setSimW(e.target.value)} placeholder="Ex: 6.10" className={inputCls} />
+                    </div>
+                    <div>
+                      <label className={labelCls}>Altura (m)</label>
+                      <input type="number" min="0" step="0.01" value={simH} onChange={e => setSimH(e.target.value)} placeholder="Ex: 5.16" className={inputCls} />
+                    </div>
                   </div>
                 </div>
 
-                {/* Live preview for current space */}
+                {/* Live preview */}
                 {simPlates > 0 && simProduct && (
                   <div className="bg-[#f9fbff] border border-[#dce8f5] px-5 py-4">
-                    <div className="grid grid-cols-3 gap-4">
+                    <div className="flex items-center gap-4 mb-3">
+                      <img src={simProduct.image_path} alt={simProduct.name} className="w-12 h-12 object-cover border border-[#e2e2e2]" />
+                      <div>
+                        <p className="text-[#002045] text-sm font-bold font-[var(--font-inter)]">{simProduct.name}</p>
+                        <p className="text-[#74777f] text-[10px] font-[var(--font-inter)]">{simSpaceName} · {simProduct.code}</p>
+                      </div>
+                    </div>
+                    <div className="grid grid-cols-3 gap-4 border-t border-[#dce8f5] pt-3">
                       <div>
                         <p className="text-[#74777f] text-[9px] uppercase tracking-widest font-bold font-[var(--font-inter)]">Área</p>
                         <p className="text-[#002045] text-sm font-semibold font-[var(--font-inter)]">{simArea.toFixed(2)} m²</p>
@@ -4878,39 +5013,31 @@ ALTER TABLE project_media ADD COLUMN IF NOT EXISTS description TEXT;`}
                       </div>
                       <div>
                         <p className="text-[#74777f] text-[9px] uppercase tracking-widest font-bold font-[var(--font-inter)]">Material</p>
-                        <p className="text-[#002045] text-sm font-semibold font-[var(--font-inter)]">{simMaterial.toLocaleString("pt-BR")}</p>
+                        <p className="text-[#002045] text-sm font-semibold font-[var(--font-inter)]">{fmt(simMaterial)}</p>
                       </div>
                     </div>
                   </div>
                 )}
 
-                {/* Add another space button */}
-                <button
-                  disabled={!canAddSpace}
-                  onClick={addCurrentSpace}
-                  className="w-full py-2.5 text-xs tracking-[0.12em] uppercase font-bold font-[var(--font-inter)] border border-[#002045] text-[#002045] hover:bg-[#f0f4fa] transition-colors disabled:opacity-40"
-                >
+                {/* Add another + grand total + generate */}
+                <button disabled={!canAddSpace} onClick={addCurrentSpace}
+                  className="w-full py-2.5 text-xs tracking-[0.12em] uppercase font-bold font-[var(--font-inter)] border border-[#002045] text-[#002045] hover:bg-[#f0f4fa] transition-colors disabled:opacity-40">
                   <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" className="inline mr-1.5 mb-0.5"><path d="M12 5v14M5 12h14"/></svg>
                   Salvar e adicionar outro ambiente
                 </button>
 
-                {/* Grand total when multiple */}
                 {allSpaces.length > 1 && (
                   <div className="bg-[#002045] px-5 py-4 flex items-center justify-between">
                     <div>
                       <p className="text-white/60 text-[9px] uppercase tracking-widest font-bold font-[var(--font-inter)]">Total do projeto</p>
                       <p className="text-white/60 text-[10px] font-[var(--font-inter)]">{allSpaces.length} ambientes · {grandPlatesSim} placas</p>
                     </div>
-                    <p className="text-white text-xl font-[var(--font-noto-serif)]">{grandMaterialSim.toLocaleString("pt-BR")}</p>
+                    <p className="text-white text-xl font-[var(--font-noto-serif)]">{fmt(grandMaterialSim)}</p>
                   </div>
                 )}
 
-                {/* Generate button */}
-                <button
-                  disabled={!canGenerate}
-                  onClick={() => { setSimLink(buildSimLink()); setSimLinkCopied(false); }}
-                  className="w-full py-3 text-xs tracking-[0.12em] uppercase font-bold font-[var(--font-inter)] bg-[#002045] text-white hover:bg-[#1a365d] transition-colors disabled:opacity-40"
-                >
+                <button disabled={!canGenerate} onClick={() => { setSimLink(buildSimLink()); setSimLinkCopied(false); }}
+                  className="w-full py-3 text-xs tracking-[0.12em] uppercase font-bold font-[var(--font-inter)] bg-[#002045] text-white hover:bg-[#1a365d] transition-colors disabled:opacity-40">
                   Gerar link para o cliente
                 </button>
               </div>
@@ -5052,6 +5179,68 @@ ALTER TABLE project_media ADD COLUMN IF NOT EXISTS description TEXT;`}
             </div>
           );
         })()}
+
+        {/* ═══ CHAT IA TAB ═══ */}
+        {tab === "chat" && (
+          <div className="max-w-3xl mx-auto px-4 sm:px-8 py-8">
+            <div className="mb-6">
+              <h2 className="font-[var(--font-noto-serif)] text-[#002045] text-2xl font-normal mb-2">Chat IA — Treinamento</h2>
+              <p className="text-[#43474e] text-sm font-[var(--font-inter)] leading-relaxed">
+                Este é o prompt de sistema do assistente virtual. Edite aqui para corrigir respostas erradas, adicionar novos fatos ou criar regras de comportamento. O assistente usa este texto como base de conhecimento.
+              </p>
+            </div>
+
+            <div className="bg-white border border-[#e2e2e2] p-6 space-y-4">
+              <div className="flex items-center justify-between">
+                <p className="text-[10px] tracking-[0.15em] uppercase font-bold font-[var(--font-inter)] text-[#002045]">Prompt do sistema</p>
+                <button
+                  onClick={resetChatPrompt}
+                  className="text-[9px] uppercase tracking-widest font-bold font-[var(--font-inter)] text-[#74777f] border border-[#e2e2e2] px-3 py-1 hover:border-[#002045] hover:text-[#002045] transition-colors"
+                >
+                  ↺ Restaurar padrão
+                </button>
+              </div>
+
+              {!chatPromptLoaded ? (
+                <p className="text-[#74777f] text-sm font-[var(--font-inter)]">Carregando…</p>
+              ) : (
+                <textarea
+                  value={chatPrompt}
+                  onChange={e => setChatPrompt(e.target.value)}
+                  rows={28}
+                  className="w-full border border-[#e2e2e2] px-4 py-3 text-xs font-mono text-[#1a1a1a] focus:outline-none focus:border-[#002045] resize-y leading-relaxed"
+                  spellCheck={false}
+                />
+              )}
+
+              <div className="flex items-center gap-4">
+                <button
+                  disabled={chatPromptSaving || !chatPromptLoaded}
+                  onClick={saveChatPrompt}
+                  className="bg-[#002045] text-white text-[10px] uppercase tracking-widest font-bold font-[var(--font-inter)] px-6 py-2.5 hover:bg-[#1a365d] transition-colors disabled:opacity-40"
+                >
+                  {chatPromptSaving ? "Salvando…" : "Salvar e aplicar"}
+                </button>
+                {chatPromptMsg && (
+                  <p className={`text-sm font-[var(--font-inter)] ${chatPromptMsg.startsWith("Erro") ? "text-red-500" : "text-[#2e7d32]"}`}>
+                    {chatPromptMsg}
+                  </p>
+                )}
+              </div>
+
+              <div className="border-t border-[#e2e2e2] pt-4">
+                <p className="text-[10px] tracking-[0.12em] uppercase font-bold font-[var(--font-inter)] text-[#74777f] mb-2">Dicas de treinamento</p>
+                <ul className="text-[11px] font-[var(--font-inter)] text-[#43474e] space-y-1 list-disc list-inside leading-relaxed">
+                  <li>Para corrigir uma resposta errada, adicione em <strong>NUNCA DIGA</strong>: ex. <em>"Nunca diga que X — a resposta correta é Y"</em></li>
+                  <li>Para adicionar um novo fato, cole no bloco <strong>SOBRE O PRODUTO PFB</strong> ou crie uma nova seção</li>
+                  <li>Para mudar o tom (mais formal, mais curto, etc.), edite <strong>INSTRUÇÕES DE COMPORTAMENTO</strong></li>
+                  <li>Para atualizar preços, edite o bloco <strong>PREÇOS</strong> diretamente</li>
+                  <li>Ao salvar, o novo prompt entra em vigor imediatamente — sem redeploy necessário</li>
+                </ul>
+              </div>
+            </div>
+          </div>
+        )}
 
       </div>
     </div>
