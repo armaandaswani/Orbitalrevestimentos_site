@@ -154,6 +154,9 @@ export default function ParceiroPage() {
   const [pSimH, setPSimH] = useState("");
   const [pSimLink, setPSimLink] = useState("");
   const [pSimLinkCopied, setPSimLinkCopied] = useState(false);
+  const [pSimSelectedLine, setPSimSelectedLine] = useState<"Classic" | "Brilliance" | "Elegance" | null>(null);
+  const [pSimShowCustom, setPSimShowCustom] = useState(false);
+  const [pSimCustomText, setPSimCustomText] = useState("");
 
   // ── Special table scroll refs ───────────────────────────────────────────
   const sqProductSectionRef = useRef<HTMLDivElement>(null);
@@ -1214,12 +1217,33 @@ export default function ParceiroPage() {
 
         const fmtParceiro = (n: number) => n.toLocaleString("pt-BR", { style: "decimal", maximumFractionDigits: 0 });
 
+        const PSim_SPACES = [
+          { id: "parede",       label: "Parede" },
+          { id: "teto",         label: "Teto" },
+          { id: "sala",         label: "Sala" },
+          { id: "quarto",       label: "Quarto" },
+          { id: "escritorio",   label: "Escritório" },
+          { id: "corredor",     label: "Corredor" },
+          { id: "banheiro",     label: "Banheiro" },
+          { id: "lavabo",       label: "Lavabo" },
+          { id: "cozinha",      label: "Cozinha" },
+          { id: "box",          label: "Box / Ducha" },
+          { id: "movel",        label: "Móvel / Marcenaria" },
+          { id: "home-theater", label: "Home Theater" },
+          { id: "comercial",    label: "Clínica / Comercial" },
+        ];
+        const PSim_LINE_INFO: Record<"Classic"|"Brilliance"|"Elegance", { finish: string; price: number }> = {
+          Classic:    { finish: "Mármore Fosco",       price: pDiscountFactor < 1 ? Math.round(NORMAL_PRICES.Classic * pDiscountFactor) : NORMAL_PRICES.Classic },
+          Brilliance: { finish: "Mármore Polido",      price: pDiscountFactor < 1 ? Math.round(NORMAL_PRICES.Brilliance * pDiscountFactor) : NORMAL_PRICES.Brilliance },
+          Elegance:   { finish: "Madeira Texturizada", price: pDiscountFactor < 1 ? Math.round(NORMAL_PRICES.Elegance * pDiscountFactor) : NORMAL_PRICES.Elegance },
+        };
+
         return (
-          <div className="max-w-2xl mx-auto px-4 sm:px-8 py-8">
+          <div className="max-w-3xl mx-auto px-4 sm:px-8 py-8">
             <div className="mb-6">
               <h2 className="font-[var(--font-noto-serif)] text-[#002045] text-2xl font-normal mb-2">Simulador para clientes</h2>
               <p className="text-[#43474e] text-sm font-[var(--font-inter)] leading-relaxed">
-                Configure um ou mais ambientes, gere um link personalizado e envie ao seu cliente. O cupom <strong>{partner.coupon_code}</strong> é aplicado automaticamente.
+                Configure um ou mais ambientes, gere o link e envie ao seu cliente. O cupom <strong>{partner.coupon_code}</strong> é aplicado automaticamente.
               </p>
             </div>
 
@@ -1236,6 +1260,7 @@ export default function ParceiroPage() {
                   return (
                     <div key={s.key} className="flex items-center gap-3 px-4 py-3">
                       <span className="w-6 h-6 rounded-full bg-[#3b6934] text-white text-[10px] font-bold font-[var(--font-inter)] flex items-center justify-center flex-shrink-0">{i + 1}</span>
+                      {prod && <img src={prod.img} alt={prod.name} className="w-10 h-10 object-cover flex-shrink-0 border border-[#e2e2e2]" />}
                       <div className="flex-1 min-w-0">
                         <p className="text-[#002045] text-sm font-semibold font-[var(--font-inter)]">{s.spaceName}</p>
                         <p className="text-[#74777f] text-[10px] font-[var(--font-inter)]">{prod?.name ?? s.productCode} · {wn}m × {hn}m · {pl} pl.</p>
@@ -1250,50 +1275,123 @@ export default function ParceiroPage() {
               </div>
             )}
 
-            {/* Add space form */}
-            <div className="bg-white border border-[#e2e2e2] p-6 space-y-5">
+            {/* New space card */}
+            <div className="bg-white border border-[#e2e2e2] p-6 space-y-6">
               <p className="text-[#002045] text-[10px] tracking-[0.15em] uppercase font-bold font-[var(--font-inter)]">
-                {pSimSpaces.length === 0 ? "Ambiente" : `Ambiente ${pSimSpaces.length + 1}`}
+                {pSimSpaces.length === 0 ? "1 — Escolha o espaço" : `Ambiente ${pSimSpaces.length + 1} — Escolha o espaço`}
               </p>
 
-              <div>
-                <label className="block text-[10px] tracking-[0.15em] uppercase font-bold font-[var(--font-inter)] text-[#74777f] mb-2">Nome do espaço</label>
-                <input type="text" value={pSimSpaceName} onChange={e => setPSimSpaceName(e.target.value)} placeholder="Ex: Sala, Quarto, Garagem…"
-                  className="w-full border border-[#e2e2e2] px-4 py-2.5 text-sm font-[var(--font-inter)] text-[#002045] focus:outline-none focus:border-[#002045]" />
+              {/* Space buttons */}
+              <div className="grid grid-cols-3 sm:grid-cols-4 md:grid-cols-5 gap-2">
+                {PSim_SPACES.map(space => (
+                  <button key={space.id} onClick={() => {
+                    setPSimSpaceName(space.label); setPSimShowCustom(false); setPSimCustomText("");
+                    setTimeout(() => document.getElementById("psim-products")?.scrollIntoView({ behavior: "smooth", block: "start" }), 60);
+                  }}
+                    className={`px-3 py-2.5 min-h-[44px] border text-xs font-semibold font-[var(--font-inter)] transition-all text-left ${
+                      pSimSpaceName === space.label && !pSimShowCustom
+                        ? "border-[#002045] bg-[#002045] text-white"
+                        : "border-[#e2e2e2] text-[#43474e] hover:border-[#002045] hover:text-[#002045]"
+                    }`}>{space.label}</button>
+                ))}
+                <button onClick={() => {
+                  setPSimShowCustom(true); setPSimSpaceName("");
+                  setTimeout(() => document.getElementById("psim-products")?.scrollIntoView({ behavior: "smooth", block: "start" }), 60);
+                }}
+                  className={`px-3 py-2.5 min-h-[44px] border text-xs font-semibold font-[var(--font-inter)] transition-all text-left ${
+                    pSimShowCustom ? "border-[#002045] bg-[#002045] text-white" : "border-dashed border-[#c8c8c8] text-[#74777f] hover:border-[#002045] hover:text-[#002045]"
+                  }`}>+ Outro</button>
               </div>
+              {pSimShowCustom && (
+                <input autoFocus type="text" value={pSimCustomText}
+                  onChange={e => { setPSimCustomText(e.target.value); setPSimSpaceName(e.target.value); }}
+                  placeholder="Descreva o espaço — ex: varanda interna, garagem, hall…"
+                  className="w-full border border-[#002045] px-4 py-3 text-sm font-[var(--font-inter)] text-[#002045] focus:outline-none" />
+              )}
 
-              <div>
-                <label className="block text-[10px] tracking-[0.15em] uppercase font-bold font-[var(--font-inter)] text-[#74777f] mb-2">Produto</label>
-                <select value={pSimProductCode} onChange={e => setPSimProductCode(e.target.value)}
-                  className="w-full border border-[#e2e2e2] px-4 py-2.5 text-sm font-[var(--font-inter)] text-[#002045] focus:outline-none focus:border-[#002045]">
-                  <option value="">— selecione —</option>
-                  {(["Classic","Brilliance","Elegance"] as const).map(linha => (
-                    <optgroup key={linha} label={linha}>
-                      {SPECIAL_PRODUCTS.filter(p => p.linha === linha).map(p => (
-                        <option key={p.code} value={p.code}>{p.name} ({p.code})</option>
-                      ))}
-                    </optgroup>
-                  ))}
-                </select>
-              </div>
-
-              <div className="grid grid-cols-2 gap-4">
-                <div>
-                  <label className="block text-[10px] tracking-[0.15em] uppercase font-bold font-[var(--font-inter)] text-[#74777f] mb-2">Largura (m)</label>
-                  <input type="number" min="0" step="0.01" value={pSimW} onChange={e => setPSimW(e.target.value)} placeholder="Ex: 6.10"
-                    className="w-full border border-[#e2e2e2] px-4 py-2.5 text-sm font-[var(--font-inter)] text-[#002045] focus:outline-none focus:border-[#002045]" />
+              {/* Product line + cards */}
+              <div id="psim-products">
+                <p className="text-[#002045] text-[10px] tracking-[0.15em] uppercase font-bold font-[var(--font-inter)] mb-3">2 — Escolha o modelo</p>
+                <div className="grid grid-cols-3 gap-3 mb-4">
+                  {(["Classic","Brilliance","Elegance"] as const).map(linha => {
+                    const info = PSim_LINE_INFO[linha];
+                    const active = pSimSelectedLine === linha;
+                    return (
+                      <button key={linha} onClick={() => {
+                        setPSimSelectedLine(linha); setPSimProductCode("");
+                        setTimeout(() => document.getElementById("psim-product-cards")?.scrollIntoView({ behavior: "smooth", block: "start" }), 60);
+                      }}
+                        className={`border text-left p-4 transition-all relative ${active ? "border-[#002045] bg-[#eef2fb]" : "border-[#e2e2e2] hover:border-[#002045] bg-[#fafafa]"}`}>
+                        {active && <div className="absolute top-2 right-2 w-4 h-4 bg-[#002045] flex items-center justify-center"><svg width="8" height="8" viewBox="0 0 24 24" fill="none" stroke="white" strokeWidth="3"><path d="M20 6L9 17l-5-5"/></svg></div>}
+                        <p className="text-[#002045] text-sm font-bold font-[var(--font-inter)] mb-0.5">{linha}</p>
+                        <p className="text-[10px] tracking-[0.12em] uppercase font-bold font-[var(--font-inter)] text-[#3b6934] mb-2">{info.finish}</p>
+                        <p className="text-[#002045] text-xs font-bold font-[var(--font-inter)]">
+                          R$ {info.price.toLocaleString("pt-BR")}
+                          <span className="font-normal text-[#9e9e9e]">/placa</span>
+                          {pDiscountFactor < 1 && <span className="ml-1 text-[#3b6934] text-[9px]">c/ cupom</span>}
+                        </p>
+                      </button>
+                    );
+                  })}
                 </div>
-                <div>
-                  <label className="block text-[10px] tracking-[0.15em] uppercase font-bold font-[var(--font-inter)] text-[#74777f] mb-2">Altura (m)</label>
-                  <input type="number" min="0" step="0.01" value={pSimH} onChange={e => setPSimH(e.target.value)} placeholder="Ex: 5.16"
-                    className="w-full border border-[#e2e2e2] px-4 py-2.5 text-sm font-[var(--font-inter)] text-[#002045] focus:outline-none focus:border-[#002045]" />
+
+                {pSimSelectedLine && (
+                  <div id="psim-product-cards">
+                    <p className="text-[#43474e] text-[10px] tracking-[0.15em] uppercase font-bold font-[var(--font-inter)] mb-3">Acabamentos {pSimSelectedLine}</p>
+                    <div className="grid grid-cols-3 sm:grid-cols-4 md:grid-cols-5 gap-2">
+                      {SPECIAL_PRODUCTS.filter(p => p.linha === pSimSelectedLine).map(product => {
+                        const active = pSimProductCode === product.code;
+                        return (
+                          <div key={product.code} onClick={() => {
+                            setPSimProductCode(product.code);
+                            setTimeout(() => document.getElementById("psim-dims")?.scrollIntoView({ behavior: "smooth", block: "start" }), 60);
+                          }}
+                            className={`border overflow-hidden cursor-pointer transition-all ${active ? "border-[#002045]" : "border-[#e2e2e2] hover:border-[#002045]"}`}>
+                            <div className="relative w-full bg-[#f7f7f5]" style={{ aspectRatio: "812/988" }}>
+                              <img src={product.img} alt={product.name} className="absolute inset-0 w-full h-full object-contain" />
+                              {active && <div className="absolute inset-0 bg-[#002045]/10" />}
+                              {active && <div className="absolute top-1.5 right-1.5 w-5 h-5 bg-white shadow flex items-center justify-center"><svg width="9" height="9" viewBox="0 0 24 24" fill="none" stroke="#002045" strokeWidth="3"><path d="M20 6L9 17l-5-5"/></svg></div>}
+                            </div>
+                            <div className="p-1.5">
+                              <p className={`text-[10px] font-bold font-[var(--font-inter)] leading-tight ${active ? "text-[#002045]" : "text-[#43474e]"}`}>{product.name}</p>
+                              <p className="text-[9px] text-[#9e9e9e] font-[var(--font-inter)]">{product.code}</p>
+                            </div>
+                          </div>
+                        );
+                      })}
+                    </div>
+                  </div>
+                )}
+              </div>
+
+              {/* Dimensions */}
+              <div id="psim-dims">
+                <p className="text-[#002045] text-[10px] tracking-[0.15em] uppercase font-bold font-[var(--font-inter)] mb-3">3 — Dimensões</p>
+                <div className="grid grid-cols-2 gap-4">
+                  <div>
+                    <label className="block text-[10px] tracking-[0.15em] uppercase font-bold font-[var(--font-inter)] text-[#74777f] mb-2">Largura (m)</label>
+                    <input type="number" min="0" step="0.01" value={pSimW} onChange={e => setPSimW(e.target.value)} placeholder="Ex: 6.10"
+                      className="w-full border border-[#e2e2e2] px-4 py-2.5 text-sm font-[var(--font-inter)] text-[#002045] focus:outline-none focus:border-[#002045]" />
+                  </div>
+                  <div>
+                    <label className="block text-[10px] tracking-[0.15em] uppercase font-bold font-[var(--font-inter)] text-[#74777f] mb-2">Altura (m)</label>
+                    <input type="number" min="0" step="0.01" value={pSimH} onChange={e => setPSimH(e.target.value)} placeholder="Ex: 5.16"
+                      className="w-full border border-[#e2e2e2] px-4 py-2.5 text-sm font-[var(--font-inter)] text-[#002045] focus:outline-none focus:border-[#002045]" />
+                  </div>
                 </div>
               </div>
 
               {/* Live preview */}
               {pPlates > 0 && pProd && (
                 <div className="bg-[#f9fbff] border border-[#dce8f5] px-5 py-4">
-                  <div className="grid grid-cols-3 gap-4">
+                  <div className="flex items-center gap-4 mb-3">
+                    <img src={pProd.img} alt={pProd.name} className="w-12 h-12 object-cover border border-[#e2e2e2]" />
+                    <div>
+                      <p className="text-[#002045] text-sm font-bold font-[var(--font-inter)]">{pProd.name}</p>
+                      <p className="text-[#74777f] text-[10px] font-[var(--font-inter)]">{pSimSpaceName} · {pProd.code}</p>
+                    </div>
+                  </div>
+                  <div className="grid grid-cols-3 gap-4 border-t border-[#dce8f5] pt-3">
                     <div>
                       <p className="text-[#74777f] text-[9px] uppercase tracking-widest font-bold font-[var(--font-inter)]">Área</p>
                       <p className="text-[#002045] text-sm font-semibold font-[var(--font-inter)]">{pArea.toFixed(2)} m²</p>
@@ -1313,13 +1411,13 @@ export default function ParceiroPage() {
               <button disabled={!canAddPSim} onClick={() => {
                 setPSimSpaces(prev => [...prev, { key: `ps-${Date.now()}`, spaceName: pSimSpaceName.trim(), productCode: pSimProductCode, w: pSimW, h: pSimH }]);
                 setPSimSpaceName(""); setPSimProductCode(""); setPSimW(""); setPSimH(""); setPSimLink("");
+                setPSimSelectedLine(null); setPSimShowCustom(false); setPSimCustomText("");
               }}
                 className="w-full py-2.5 text-xs tracking-[0.12em] uppercase font-bold font-[var(--font-inter)] border border-[#002045] text-[#002045] hover:bg-[#f0f4fa] transition-colors disabled:opacity-40">
                 <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" className="inline mr-1.5 mb-0.5"><path d="M12 5v14M5 12h14"/></svg>
                 Salvar e adicionar outro ambiente
               </button>
 
-              {/* Grand total */}
               {pAllSpaces.length > 1 && (
                 <div className="bg-[#002045] px-5 py-4 flex items-center justify-between">
                   <div>
@@ -1330,13 +1428,17 @@ export default function ParceiroPage() {
                 </div>
               )}
 
-              <button disabled={!canGeneratePSim} onClick={() => { setPSimLink(buildPSimLink()); setPSimLinkCopied(false); }}
+              <button disabled={!canGeneratePSim} onClick={() => {
+                setPSimLink(buildPSimLink()); setPSimLinkCopied(false);
+                setTimeout(() => document.getElementById("psim-link")?.scrollIntoView({ behavior: "smooth", block: "start" }), 80);
+              }}
                 className="w-full py-3 text-xs tracking-[0.12em] uppercase font-bold font-[var(--font-inter)] bg-[#002045] text-white hover:bg-[#1a365d] transition-colors disabled:opacity-40">
                 Gerar link para o cliente
               </button>
             </div>
 
             {/* Generated link */}
+            <div id="psim-link" />
             {pSimLink && (
               <div className="mt-6 bg-white border border-[#e2e2e2] p-6 space-y-4">
                 <p className="text-[#002045] text-[10px] tracking-[0.15em] uppercase font-bold font-[var(--font-inter)]">Link gerado</p>

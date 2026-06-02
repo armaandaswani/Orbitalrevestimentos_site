@@ -4909,14 +4909,20 @@ ALTER TABLE project_media ADD COLUMN IF NOT EXISTS description TEXT;`}
                 {/* Space buttons */}
                 <div className="grid grid-cols-3 sm:grid-cols-4 md:grid-cols-5 gap-2">
                   {SIM_SPACES.map(space => (
-                    <button key={space.id} onClick={() => { setSimSpaceName(space.label); setSimShowCustom(false); setSimCustomText(""); }}
+                    <button key={space.id} onClick={() => {
+                      setSimSpaceName(space.label); setSimShowCustom(false); setSimCustomText("");
+                      setTimeout(() => document.getElementById("sim-products")?.scrollIntoView({ behavior: "smooth", block: "start" }), 60);
+                    }}
                       className={`px-3 py-2.5 min-h-[44px] border text-xs font-semibold font-[var(--font-inter)] transition-all text-left ${
                         simSpaceName === space.label && !simShowCustom
                           ? "border-[#002045] bg-[#002045] text-white"
                           : "border-[#e2e2e2] text-[#43474e] hover:border-[#002045] hover:text-[#002045]"
                       }`}>{space.label}</button>
                   ))}
-                  <button onClick={() => { setSimShowCustom(true); setSimSpaceName(""); }}
+                  <button onClick={() => {
+                    setSimShowCustom(true); setSimSpaceName("");
+                    setTimeout(() => document.getElementById("sim-products")?.scrollIntoView({ behavior: "smooth", block: "start" }), 60);
+                  }}
                     className={`px-3 py-2.5 min-h-[44px] border text-xs font-semibold font-[var(--font-inter)] transition-all text-left ${
                       simShowCustom ? "border-[#002045] bg-[#002045] text-white" : "border-dashed border-[#c8c8c8] text-[#74777f] hover:border-[#002045] hover:text-[#002045]"
                     }`}>+ Outro</button>
@@ -4929,14 +4935,17 @@ ALTER TABLE project_media ADD COLUMN IF NOT EXISTS description TEXT;`}
                 )}
 
                 {/* Product line + cards */}
-                <div>
+                <div id="sim-products">
                   <p className="text-[#002045] text-[10px] tracking-[0.15em] uppercase font-bold font-[var(--font-inter)] mb-3">2 — Escolha o modelo</p>
                   <div className="grid grid-cols-3 gap-3 mb-4">
                     {(["Classic","Brilliance","Elegance"] as const).map(linha => {
                       const info = LINE_INFO_SIM[linha];
                       const active = simSelectedLine === linha;
                       return (
-                        <button key={linha} onClick={() => { setSimSelectedLine(linha); setSimProductCode(""); }}
+                        <button key={linha} onClick={() => {
+                          setSimSelectedLine(linha); setSimProductCode("");
+                          setTimeout(() => document.getElementById("sim-product-cards")?.scrollIntoView({ behavior: "smooth", block: "start" }), 60);
+                        }}
                           className={`border text-left p-4 transition-all relative ${active ? "border-[#002045] bg-[#eef2fb]" : "border-[#e2e2e2] hover:border-[#002045] bg-[#fafafa]"}`}>
                           {active && <div className="absolute top-2 right-2 w-4 h-4 bg-[#002045] flex items-center justify-center"><svg width="8" height="8" viewBox="0 0 24 24" fill="none" stroke="white" strokeWidth="3"><path d="M20 6L9 17l-5-5"/></svg></div>}
                           <p className="text-[#002045] text-sm font-bold font-[var(--font-inter)] mb-0.5">{linha}</p>
@@ -4948,7 +4957,7 @@ ALTER TABLE project_media ADD COLUMN IF NOT EXISTS description TEXT;`}
                   </div>
 
                   {simSelectedLine && (
-                    <div>
+                    <div id="sim-product-cards">
                       <p className="text-[#43474e] text-[10px] tracking-[0.15em] uppercase font-bold font-[var(--font-inter)] mb-3">Acabamentos {simSelectedLine}</p>
                       {loadingDbProducts ? (
                         <div className="flex items-center justify-center py-8"><div className="w-5 h-5 border-2 border-[#002045] border-t-transparent rounded-full animate-spin" /></div>
@@ -4957,7 +4966,10 @@ ALTER TABLE project_media ADD COLUMN IF NOT EXISTS description TEXT;`}
                           {dbProducts.filter(p => p.linha === simSelectedLine && p.is_active).map(product => {
                             const active = simProductCode === product.code;
                             return (
-                              <div key={product.code} onClick={() => setSimProductCode(product.code)}
+                              <div key={product.code} onClick={() => {
+                                setSimProductCode(product.code);
+                                setTimeout(() => document.getElementById("sim-dims")?.scrollIntoView({ behavior: "smooth", block: "start" }), 60);
+                              }}
                                 className={`border overflow-hidden cursor-pointer transition-all ${active ? "border-[#002045]" : "border-[#e2e2e2] hover:border-[#002045]"}`}>
                                 <div className="relative w-full bg-[#f7f7f5]" style={{ aspectRatio: "812/988" }}>
                                   <img src={product.image_path} alt={product.name} className="absolute inset-0 w-full h-full object-contain" />
@@ -4978,7 +4990,7 @@ ALTER TABLE project_media ADD COLUMN IF NOT EXISTS description TEXT;`}
                 </div>
 
                 {/* Dimensions */}
-                <div>
+                <div id="sim-dims">
                   <p className="text-[#002045] text-[10px] tracking-[0.15em] uppercase font-bold font-[var(--font-inter)] mb-3">3 — Dimensões</p>
                   <div className="grid grid-cols-2 gap-4">
                     <div>
@@ -5036,7 +5048,10 @@ ALTER TABLE project_media ADD COLUMN IF NOT EXISTS description TEXT;`}
                   </div>
                 )}
 
-                <button disabled={!canGenerate} onClick={() => { setSimLink(buildSimLink()); setSimLinkCopied(false); }}
+                <button disabled={!canGenerate} onClick={() => {
+                  setSimLink(buildSimLink()); setSimLinkCopied(false);
+                  setTimeout(() => document.getElementById("sim-link")?.scrollIntoView({ behavior: "smooth", block: "start" }), 80);
+                }}
                   className="w-full py-3 text-xs tracking-[0.12em] uppercase font-bold font-[var(--font-inter)] bg-[#002045] text-white hover:bg-[#1a365d] transition-colors disabled:opacity-40">
                   Gerar link para o cliente
                 </button>
@@ -5146,6 +5161,7 @@ ALTER TABLE project_media ADD COLUMN IF NOT EXISTS description TEXT;`}
               </div>
 
               {/* Generated link */}
+              <div id="sim-link" />
               {simLink && (
                 <div className="mt-6 bg-white border border-[#e2e2e2] p-6 space-y-4">
                   <p className="text-[#002045] text-[10px] tracking-[0.15em] uppercase font-bold font-[var(--font-inter)]">Link gerado</p>
