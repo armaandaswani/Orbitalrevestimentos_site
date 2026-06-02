@@ -753,8 +753,54 @@ function SimuladorInner() {
         } catch { /* non-fatal */ }
       }
 
-      // Start the 7-email drip sequence
-      // When multiple spaces were added, report the grand total; otherwise single-space values.
+      // Save a permanent quote (valid 7 days) and get its slug for the email
+      let quoteSlug: string | null = null;
+      try {
+        const allSpaces = [
+          ...savedSpaces.map((sp) => ({
+            spaceName: sp.label,
+            productCode: sp.productCode,
+            productName: sp.productName,
+            productImg: (products.find((p) => p.code === sp.productCode)?.image_path) ?? "",
+            linha: sp.linha,
+            plates: sp.plates,
+            area: sp.m2,
+            pricePerPlate: sp.pricePerPlate,
+            total: sp.materialDiscounted,
+          })),
+          ...(selectedProduct && selectedSpace ? [{
+            spaceName: selectedSpace.label,
+            productCode: selectedProduct.code,
+            productName: selectedProduct.name,
+            productImg: selectedProduct.image_path,
+            linha: selectedProduct.linha,
+            plates,
+            area: m2,
+            pricePerPlate: selectedProduct.price,
+            total: orbMaterialDiscounted,
+          }] : []),
+        ];
+        const qRes = await fetch("/api/quotes", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({
+            partner_id: couponData?.id ?? null,
+            partner_name: couponData?.partner_name ?? null,
+            coupon_code: couponData?.coupon_code ?? null,
+            spaces: allSpaces,
+            total_plates: grandPlates,
+            total_area_m2: parseFloat((savedSpaces.reduce((s, sp) => s + sp.m2, 0) + m2).toFixed(2)),
+            material_total: grandMaterialTotal,
+            material_discounted: grandMaterialDiscounted,
+          }),
+        });
+        if (qRes.ok) {
+          const qData = await qRes.json();
+          quoteSlug = qData.slug ?? null;
+        }
+      } catch { /* non-fatal */ }
+
+      // Start the 7-email drip sequence (include quote link if available)
       const hasMultipleSpaces = savedSpaces.length > 0;
       const seqSpace = hasMultipleSpaces
         ? savedSpaces.map((sp) => sp.label).concat(selectedSpace?.label ?? []).join(", ")
@@ -763,6 +809,7 @@ function SimuladorInner() {
       const seqPlates = hasMultipleSpaces ? grandPlates : plates;
       const seqArea = hasMultipleSpaces ? parseFloat((savedSpaces.reduce((s, sp) => s + sp.m2, 0) + m2).toFixed(2)) : parseFloat(m2.toFixed(2));
       const seqTotal = hasMultipleSpaces ? grandMaterialDiscounted : (orbMaterialDiscounted || orbMaterialTotal);
+      const siteUrl = typeof window !== "undefined" ? window.location.origin : "https://orbitalrevestimentos.com.br";
       try {
         await fetch("/api/client-email-sequences", {
           method: "POST",
@@ -778,6 +825,7 @@ function SimuladorInner() {
             area_m2: seqArea,
             total: seqTotal,
             partner_name: couponData?.partner_name ?? "Orbital",
+            quote_url: quoteSlug ? `${siteUrl}/orcamento/${quoteSlug}` : null,
           }),
         });
       } catch { /* non-fatal */ }

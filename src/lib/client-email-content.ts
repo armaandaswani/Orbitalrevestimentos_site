@@ -36,6 +36,7 @@ export interface EmailParams {
   area: number;         // m²
   total: number;        // BRL
   partnerName: string;
+  quoteUrl?: string | null;
 }
 
 // ─── Helpers ────────────────────────────────────────────────────────────────
@@ -141,6 +142,14 @@ export function generateClientEmail(
 
   // ── STEP 1 — Immediate confirmation ────────────────────────────────────────
   if (step === 1) {
+    const quoteLinkBlock = p.quoteUrl ? `
+<table cellpadding="0" cellspacing="0" width="100%" style="margin:20px 0;border:1px solid #e2e2e2;">
+  <tr><td style="padding:16px 20px;">
+    <p style="margin:0 0 6px;font-size:10px;letter-spacing:0.18em;text-transform:uppercase;color:#74777f;font-family:Arial,sans-serif;">Seu orçamento online</p>
+    <p style="margin:0 0 10px;font-size:13px;color:#43474e;font-family:Arial,sans-serif;line-height:1.6;">Acesse o link abaixo a qualquer momento para ver todas as fotos dos produtos e os detalhes do seu projeto. Válido por 7 dias.</p>
+    <a href="${p.quoteUrl}" style="display:inline-block;background:#002045;color:#ffffff;text-decoration:none;padding:12px 24px;font-size:11px;font-weight:700;letter-spacing:0.12em;text-transform:uppercase;font-family:Arial,sans-serif;">Ver orçamento completo →</a>
+  </td></tr>
+</table>` : "";
     return {
       subject: `Seu orçamento Orbital está pronto, ${first}`,
       html: wrap(
@@ -150,6 +159,7 @@ export function generateClientEmail(
 <p style="font-size:26px;color:#002045;font-weight:300;margin:0 0 24px;font-family:Arial,sans-serif;">seu orçamento está pronto.</p>
 <p style="color:#43474e;font-size:14px;line-height:1.8;margin:0 0 20px;font-family:Arial,sans-serif;">Preparamos esta simulação especialmente para ${spacePara}. Abaixo estão todos os detalhes do seu projeto com os painéis <strong>${p.model}</strong> em acabamento ${finish}:</p>
 ${quoteCard(p)}
+${quoteLinkBlock}
 <p style="color:#43474e;font-size:14px;line-height:1.8;margin:20px 0 12px;font-family:Arial,sans-serif;">Nos próximos dias vamos te enviar mais informações sobre o que torna a Orbital diferente de tudo o que você já viu em revestimentos — incluindo os detalhes técnicos que fazem toda a diferença em um projeto.</p>
 <p style="color:#43474e;font-size:14px;line-height:1.8;margin:0 0 4px;font-family:Arial,sans-serif;">Qualquer dúvida, fale diretamente com um consultor Orbital:</p>
 ${cta("Falar com um consultor", wa)}

@@ -13,7 +13,7 @@ export async function POST(req: NextRequest) {
   const body = await req.json();
   const {
     coupon_use_id, client_name, client_email, client_phone,
-    space, model, plates, area_m2, total, partner_name,
+    space, model, plates, area_m2, total, partner_name, quote_url,
   } = body;
 
   if (!client_name || !client_email) {
@@ -59,6 +59,7 @@ export async function POST(req: NextRequest) {
       area: area_m2 as number,
       total: total as number,
       partnerName: partner_name as string,
+      quoteUrl: (quote_url as string | null) ?? null,
     });
     await resend.emails.send({
       from: "Orbital Revestimentos <orbitalrevestimentos@gmail.com>",
