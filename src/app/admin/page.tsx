@@ -577,7 +577,11 @@ export default function AdminPage() {
       setDashLoading(true);
       fetch("/api/admin/dashboard", { headers: { "x-admin-auth": pw } })
         .then((r) => r.json())
-        .then((d) => { setDashData(d); setDashLoading(false); })
+        .then((d) => {
+          // Only store if it looks like a valid response (not an error payload)
+          if (d && d.totalOrcamentos !== undefined) setDashData(d);
+          setDashLoading(false);
+        })
         .catch(() => setDashLoading(false));
     }
   // eslint-disable-next-line react-hooks/exhaustive-deps
@@ -2098,7 +2102,8 @@ export default function AdminPage() {
           }
 
           const d = dashData;
-          const maxMonth = Math.max(...d.monthlyTrend.map((m) => m.count), 1);
+          const trend = d.monthlyTrend ?? [];
+          const maxMonth = trend.length > 0 ? Math.max(...trend.map((m) => m.count), 1) : 1;
           const STATUS_MAP: Record<string, string> = { em_orcamento: "Em orçamento", concluido: "Concluído", cancelado: "Cancelado" };
 
           return (
@@ -2176,9 +2181,9 @@ export default function AdminPage() {
                 <div className="bg-white border border-[#e2e2e2] p-6">
                   <p className="text-[10px] tracking-[0.15em] uppercase font-bold font-[var(--font-inter)] text-[#002045] mb-4">Produtos mais orçados</p>
                   <div className="space-y-2.5">
-                    {d.topProducts.length === 0 ? (
+                    {(d.topProducts ?? []).length === 0 ? (
                       <p className="text-[#74777f] text-xs font-[var(--font-inter)]">Nenhum dado disponível.</p>
-                    ) : d.topProducts.map((p, i) => (
+                    ) : (d.topProducts ?? []).map((p, i) => (
                       <div key={p.name} className="flex items-center gap-3">
                         <span className="text-[#74777f] text-[10px] font-[var(--font-inter)] w-4 text-right">{i + 1}</span>
                         <div className="flex-1">
@@ -2195,7 +2200,7 @@ export default function AdminPage() {
               <div className="bg-white border border-[#e2e2e2] p-6">
                 <p className="text-[10px] tracking-[0.15em] uppercase font-bold font-[var(--font-inter)] text-[#002045] mb-5">Orçamentos — últimos 6 meses</p>
                 <div className="flex items-end gap-3 h-28">
-                  {d.monthlyTrend.map((m) => {
+                  {trend.map((m) => {
                     const [year, month] = m.month.split("-");
                     const monthNames = ["jan","fev","mar","abr","mai","jun","jul","ago","set","out","nov","dez"];
                     const label = `${monthNames[parseInt(month) - 1]}/${year.slice(2)}`;

@@ -117,7 +117,9 @@ function ProjectLightbox({
   const canSplit  = hasAntes && hasDepois;
 
   const visibleItems =
-    filter === "all" ? items : items.filter((i) => i.category === filter);
+    filter === "all" ? items :
+    filter === ("video" as LightboxFilter) ? items.filter((i) => i.kind === "video") :
+    items.filter((i) => i.category === filter);
 
   // keep carousel idx in bounds when filter changes
   const safeIdx = Math.min(idx, Math.max(visibleItems.length - 1, 0));
