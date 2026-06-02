@@ -575,7 +575,7 @@ export default function AdminPage() {
   useEffect(() => {
     if (tab === "dashboard" && authed && !dashData && !dashLoading) {
       setDashLoading(true);
-      fetch("/api/admin/dashboard", { headers: { "x-admin-auth": pw } })
+      fetch("/api/admin/dashboard", { headers: { "x-admin-auth": ADMIN_PW } })
         .then((r) => r.json())
         .then((d) => {
           // Only store if it looks like a valid response (not an error payload)
@@ -2254,7 +2254,7 @@ export default function AdminPage() {
               {/* Refresh */}
               <div className="text-right">
                 <button
-                  onClick={() => { setDashData(null); setDashLoading(true); fetch("/api/admin/dashboard", { headers: { "x-admin-auth": pw } }).then(r => r.json()).then(d2 => { setDashData(d2); setDashLoading(false); }); }}
+                  onClick={() => { setDashData(null); setDashLoading(true); fetch("/api/admin/dashboard", { headers: { "x-admin-auth": ADMIN_PW } }).then(r => r.json()).then(d2 => { if (d2 && d2.totalOrcamentos !== undefined) setDashData(d2); setDashLoading(false); }); }}
                   className="text-[10px] tracking-widest uppercase font-bold font-[var(--font-inter)] text-[#74777f] hover:text-[#002045] transition-colors"
                 >
                   ↺ Atualizar dados
