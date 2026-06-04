@@ -889,6 +889,27 @@ function SimuladorInner() {
         seenImgUrls.add(img.imageUrl);
         return true;
       });
+      // Per-space breakdown for admin notification (one row per space)
+      const seqSpaceBreakdown = [
+        ...savedSpaces.map((sp) => ({
+          spaceName: sp.label,
+          productName: sp.productName,
+          dimLabel: sp.dimLabel,
+          plates: sp.plates,
+          area_m2: parseFloat(sp.m2.toFixed(2)),
+          total: sp.materialDiscounted,
+          imageUrl: sp.imagePath ? `${siteUrl}${sp.imagePath}` : "",
+        })),
+        ...(selectedProduct && selectedSpace ? [{
+          spaceName: ambienteName.trim() || selectedSpace.label,
+          productName: selectedProduct.name,
+          dimLabel: currentDimLabel,
+          plates,
+          area_m2: parseFloat(m2.toFixed(2)),
+          total: orbMaterialDiscounted || orbMaterialTotal,
+          imageUrl: selectedProduct.image_path ? `${siteUrl}${selectedProduct.image_path}` : "",
+        }] : []),
+      ];
       try {
         await fetch("/api/client-email-sequences", {
           method: "POST",
@@ -905,6 +926,7 @@ function SimuladorInner() {
             total: seqTotal,
             dim_label: seqDimLabel,
             product_images: seqProductImages,
+            space_breakdown: seqSpaceBreakdown,
             partner_name: couponData?.partner_name ?? "Orbital",
             quote_url: quoteSlug ? `${siteUrl}/orcamento/${quoteSlug}` : null,
           }),
