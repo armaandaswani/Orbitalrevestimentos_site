@@ -132,94 +132,118 @@ export function generateClientEmail(
 ): { subject: string; html: string } {
   const first = p.clientName.split(" ")[0];
   const spaceLabel = p.space || "seu espaço";
-  // Article helpers — avoids bare noun ("para Corredor" → "para o seu Corredor")
-  const spacePara = p.space ? `o seu ${p.space}` : "seu espaço";    // after "para"
-  const spaceEm   = p.space ? `no seu ${p.space}` : "no seu espaço"; // after "em"
-  const spaceSubj = p.space ? `O seu ${p.space}` : "Seu espaço";    // sentence subject
+  const spacePara = p.space ? `o seu ${p.space}` : "seu espaço";
+  const spaceEm   = p.space ? `no seu ${p.space}` : "no seu espaço";
+  const spaceSubj = p.space ? `O seu ${p.space}` : "Seu espaço";
+  const spaceA    = p.space ? `a sua ${p.space}` : "o seu espaço";
   const finish = FINISH[p.model] || p.model;
   const wa = waLink(p.clientName, p.partnerName, p.model, p.plates);
   const partnerFirst = p.partnerName.split(" ")[0];
 
-  // ── STEP 1 — Immediate confirmation ────────────────────────────────────────
+  // ── STEP 1 — Immediate: orçamento confirmado ──────────────────────────────
   if (step === 1) {
     const quoteLinkBlock = p.quoteUrl ? `
 <table cellpadding="0" cellspacing="0" width="100%" style="margin:20px 0;border:1px solid #e2e2e2;">
   <tr><td style="padding:16px 20px;">
-    <p style="margin:0 0 6px;font-size:10px;letter-spacing:0.18em;text-transform:uppercase;color:#74777f;font-family:Arial,sans-serif;">Seu orçamento online</p>
-    <p style="margin:0 0 10px;font-size:13px;color:#43474e;font-family:Arial,sans-serif;line-height:1.6;">Acesse o link abaixo a qualquer momento para ver todas as fotos dos produtos e os detalhes do seu projeto. Válido por 7 dias.</p>
+    <p style="margin:0 0 6px;font-size:10px;letter-spacing:0.18em;text-transform:uppercase;color:#74777f;font-family:Arial,sans-serif;">Seu orçamento completo</p>
+    <p style="margin:0 0 10px;font-size:13px;color:#43474e;font-family:Arial,sans-serif;line-height:1.6;">Todas as fotos, especificações e o detalhamento do seu projeto — válido por 7 dias.</p>
     <a href="${p.quoteUrl}" style="display:inline-block;background:#002045;color:#ffffff;text-decoration:none;padding:12px 24px;font-size:11px;font-weight:700;letter-spacing:0.12em;text-transform:uppercase;font-family:Arial,sans-serif;">Ver orçamento completo →</a>
   </td></tr>
 </table>` : "";
+
     return {
-      subject: `Seu orçamento Orbital está pronto, ${first}`,
+      subject: `${first}, seu orçamento Orbital está pronto`,
       html: wrap(
-        `${first}, aqui estão todos os detalhes da sua simulação com os painéis Orbital.`,
+        `${p.plates} placas ${p.model} para ${spaceLabel} — ${fmtBRL(p.total)}. Veja todos os detalhes.`,
         `
 <p style="font-size:26px;color:#002045;font-weight:700;margin:0 0 6px;font-family:Arial,sans-serif;">${first},</p>
-<p style="font-size:26px;color:#002045;font-weight:300;margin:0 0 24px;font-family:Arial,sans-serif;">seu orçamento está pronto.</p>
-<p style="color:#43474e;font-size:14px;line-height:1.8;margin:0 0 20px;font-family:Arial,sans-serif;">Preparamos esta simulação especialmente para ${spacePara}. Abaixo estão todos os detalhes do seu projeto com os painéis <strong>${p.model}</strong> em acabamento ${finish}:</p>
+<p style="font-size:24px;color:#002045;font-weight:300;margin:0 0 24px;font-family:Arial,sans-serif;">seu orçamento está aqui.</p>
+<p style="color:#43474e;font-size:14px;line-height:1.8;margin:0 0 20px;font-family:Arial,sans-serif;">
+  ${p.plates} painel${p.plates !== 1 ? "is" : ""} <strong>${p.model} · ${finish}</strong>. ${fmtArea(p.area)} m² ${spaceEm}. Instalação sem obra, em 2 a 3 horas.
+</p>
 ${quoteCard(p)}
 ${quoteLinkBlock}
-<p style="color:#43474e;font-size:14px;line-height:1.8;margin:20px 0 12px;font-family:Arial,sans-serif;">Nos próximos dias vamos te enviar mais informações sobre o que torna a Orbital diferente de tudo o que você já viu em revestimentos — incluindo os detalhes técnicos que fazem toda a diferença em um projeto.</p>
-<p style="color:#43474e;font-size:14px;line-height:1.8;margin:0 0 4px;font-family:Arial,sans-serif;">Qualquer dúvida, fale diretamente com um consultor Orbital:</p>
+<p style="color:#43474e;font-size:14px;line-height:1.8;margin:20px 0 4px;font-family:Arial,sans-serif;">
+  Nos próximos dias vamos te mandar algumas informações que fazem a diferença antes de você decidir — especialmente sobre o que o clima de Manaus faz com os revestimentos convencionais.
+</p>
+<p style="color:#43474e;font-size:14px;line-height:1.8;margin:12px 0 4px;font-family:Arial,sans-serif;">Qualquer dúvida, fala com a gente:</p>
 ${cta("Falar com um consultor", wa)}
-<p style="color:#74777f;font-size:12px;line-height:1.7;font-family:Arial,sans-serif;">Este orçamento foi preparado com base na sua simulação e pode ser ajustado a qualquer momento. Os preços são válidos conforme disponibilidade de estoque.</p>
 `
       ),
     };
   }
 
-  // ── STEP 2 — Day 3: O que há por trás de cada painel ──────────────────────
+  // ── STEP 2 — Day 3: O que o clima de Manaus faz com revestimentos ─────────
   if (step === 2) {
     return {
-      subject: `${first}, o que ninguém te conta sobre revestimentos`,
+      subject: `${first}, o que o clima de Manaus faz com a maioria dos revestimentos`,
       html: wrap(
-        `Por que os painéis Orbital são radicalmente diferentes do que você já viu.`,
+        `Tem algo que ninguém te conta na hora da reforma — e que faz toda a diferença aqui em Manaus.`,
         `
-<p style="font-size:20px;color:#002045;font-weight:700;margin:0 0 24px;font-family:Arial,sans-serif;">Existe um motivo pelo qual arquitetos escolhem Orbital.</p>
-<p style="color:#43474e;font-size:14px;line-height:1.8;margin:0 0 20px;font-family:Arial,sans-serif;">Olá, ${first}. Há alguns dias você simulou um orçamento para ${spacePara}. Antes de você decidir — queremos que você entenda exatamente o que está comprando.</p>
-<p style="color:#43474e;font-size:14px;line-height:1.8;margin:0 0 24px;font-family:Arial,sans-serif;">A maioria dos revestimentos no mercado mede entre 60×60cm e 90×90cm. Os painéis Orbital medem <strong>2,9m × 1,2m</strong>. Isso não é apenas um número diferente — é uma experiência completamente diferente.</p>
-<table width="100%" cellpadding="0" cellspacing="0" style="margin:0 0 24px;">
-  ${[
-    ["Muito menos emendas", `Cada painel Orbital cobre ${fmtArea(3.48)} m². Um painel convencional de 60×60 cobre 0,36 m². Isso significa até 10× menos rejuntamento — e um visual infinitamente mais limpo.`],
-    ["Acabamento " + finish, `O modelo ${p.model} foi desenvolvido para ambientes que recusam o ordinário. Resistente a impactos, fácil de limpar, e com uma estética que não envelhece com tendências.`],
-    ["5mm de espessura", "Calculada para fixação perfeita e resistência ao uso intenso ao longo de décadas — sem o risco de fissuras e descolamentos comuns em materiais mais finos."],
-    ["Instalação mais rápida", "Menos peças para assentar = menos tempo de obra, menos argamassa, menos desgaste no seu projeto. O que levaria semanas pode ser feito em dias."],
-  ].map(([title, desc]) => `
-  <tr><td style="padding:16px 0;border-bottom:1px solid #f0f0f0;vertical-align:top;">
-    <p style="margin:0 0 6px;color:#002045;font-size:14px;font-weight:700;font-family:Arial,sans-serif;">${title}</p>
-    <p style="margin:0;color:#74777f;font-size:13px;line-height:1.7;font-family:Arial,sans-serif;">${desc}</p>
-  </td></tr>`).join("")}
-</table>
-<p style="color:#43474e;font-size:14px;line-height:1.8;margin:0 0 4px;font-family:Arial,sans-serif;">O modelo <strong>${p.model}</strong> que você simulou cobre <strong>${fmtArea(p.area)} m²</strong> do seu ${spaceLabel} com apenas ${p.plates} painel${p.plates !== 1 ? "is" : ""}. Isso é um ambiente inteiro, transformado.</p>
-${cta("Ver catálogo completo", "https://orbitalrevestimentos.com.br/produtos")}
-<p style="color:#74777f;font-size:12px;line-height:1.7;font-family:Arial,sans-serif;">Tem alguma dúvida técnica? <a href="${wa}" style="color:#002045;text-decoration:underline;">Fale com um consultor Orbital pelo WhatsApp.</a></p>
-`
-      ),
-    };
-  }
-
-  // ── STEP 3 — Day 5: Visualização do espaço ────────────────────────────────
-  if (step === 3) {
-    return {
-      subject: `Imagine ${spaceLabel} assim, ${first}`,
-      html: wrap(
-        `Fechou os olhos e visualizou? É mais poderoso do que você imagina.`,
-        `
-<p style="font-size:20px;color:#002045;font-weight:700;margin:0 0 24px;font-family:Arial,sans-serif;">Feche os olhos por um segundo, ${first}.</p>
-<p style="color:#43474e;font-size:14px;line-height:1.8;margin:0 0 20px;font-family:Arial,sans-serif;">Imagine entrar ${spaceEm} e se deparar com ${fmtArea(p.area)} m² de painéis ${p.model} no acabamento ${finish}. Superfícies amplas sem interrupção. Um visual que faz o ambiente parecer maior, mais sofisticado, mais <em>intencional</em>.</p>
-<table width="100%" cellpadding="0" cellspacing="0" style="background:#f5f5f3;margin:24px 0;">
-  <tr><td style="padding:24px 28px;">
-    <p style="margin:0 0 16px;color:#002045;font-size:12px;font-weight:700;text-transform:uppercase;letter-spacing:0.1em;font-family:Arial,sans-serif;">O que muda visualmente ${spaceEm}:</p>
+<p style="font-size:20px;color:#002045;font-weight:700;margin:0 0 24px;font-family:Arial,sans-serif;">Tem um problema que começa no dia seguinte à reforma, ${first}.</p>
+<p style="color:#43474e;font-size:14px;line-height:1.8;margin:0 0 20px;font-family:Arial,sans-serif;">
+  Manaus tem uma das maiores taxas de umidade relativa do ar do Brasil — e isso não é detalhe. É o motivo pelo qual revestimentos que duram 15 anos em outras cidades se deterioram aqui em 2, 3 anos.
+</p>
+<p style="color:#43474e;font-size:14px;line-height:1.8;margin:0 0 24px;font-family:Arial,sans-serif;">
+  A maioria dos materiais absorve umidade constantemente — pelo rejunte, pelas juntas, pela própria estrutura. Aqui em Manaus, com o clima que a gente tem, isso não é detalhe: é o que faz a reforma de hoje virar problema em 2, 3 anos. Rejunte que escurece. Borda que mofa. Material que descola.
+</p>
+<table width="100%" cellpadding="0" cellspacing="0" style="background:#002045;margin:24px 0;">
+  <tr><td style="padding:28px;">
+    <p style="margin:0 0 16px;color:rgba(255,255,255,0.5);font-size:10px;letter-spacing:0.2em;text-transform:uppercase;font-family:Arial,sans-serif;">O que torna o PFB diferente nesse clima:</p>
     ${[
-      ["Continuidade visual", "Sem quebras a cada 60cm. O olho percorre o ambiente sem interrupção — é a diferença entre um espaço comum e um espaço projetado."],
-      ["Percepção de amplitude", "Painéis grandes criam a ilusão óptica de mais espaço. Mesmo ambientes menores parecem maiores com esse formato."],
-      ["Personalidade própria", "O acabamento " + finish + " traz profundidade e textura que revestimentos convencionais simplesmente não conseguem replicar."],
-      ["Facilidade de limpeza", "Menos rejunte significa muito menos acúmulo de umidade, mofo e sujeira. Manutenção de minutos, não de horas."],
+      ["Praticamente impermeável", "O material foi desenvolvido para resistir à umidade intensa — não absorve, não incha, não descola. Feito para o Norte do Brasil."],
+      ["Anti-mofo e anti-cupim certificado", "Não é argumento de venda — é certificação técnica. O PFB não oferece substrato para desenvolvimento de mofo nem para proliferação de cupim."],
+      ["Sem rejunte entre as placas", "Cada painel tem 1,2m × 2,9m. A superfície é contínua — sem as juntas onde a umidade normalmente se acumula e o mofo começa."],
     ].map(([title, desc]) => `
     <table width="100%" cellpadding="0" cellspacing="0" style="margin-bottom:16px;">
       <tr>
-        <td width="4" style="background:#002045;"></td>
+        <td width="3" style="background:rgba(255,255,255,0.2);vertical-align:top;"></td>
+        <td style="padding:0 0 0 14px;">
+          <p style="margin:0 0 4px;color:#ffffff;font-size:13px;font-weight:700;font-family:Arial,sans-serif;">${title}</p>
+          <p style="margin:0;color:rgba(255,255,255,0.6);font-size:12px;line-height:1.6;font-family:Arial,sans-serif;">${desc}</p>
+        </td>
+      </tr>
+    </table>`).join("")}
+  </td></tr>
+</table>
+<p style="color:#43474e;font-size:14px;line-height:1.8;margin:0 0 16px;font-family:Arial,sans-serif;">
+  É por isso que os painéis Orbital têm certificação técnica de engenharia — projetados especificamente para o clima do Norte do Brasil.
+</p>
+<p style="color:#43474e;font-size:14px;line-height:1.8;margin:0 0 4px;font-family:Arial,sans-serif;">
+  Ainda tem dúvidas sobre o que o ${p.model} entrega para ${spaceA}? Fala com a gente.
+</p>
+${cta("Tirar dúvidas agora", wa)}
+`
+      ),
+    };
+  }
+
+  // ── STEP 3 — Day 5: O ambiente que você não precisa aguentar ──────────────
+  if (step === 3) {
+    return {
+      subject: `Sabe aquela sensação de abrir ${spaceA} e sentir bafo, ${first}?`,
+      html: wrap(
+        `Tem uma razão para isso acontecer — e uma razão para não acontecer mais.`,
+        `
+<p style="font-size:20px;color:#002045;font-weight:700;margin:0 0 24px;font-family:Arial,sans-serif;">Aquele cheiro de fechado tem um culpado, ${first}.</p>
+<p style="color:#43474e;font-size:14px;line-height:1.8;margin:0 0 20px;font-family:Arial,sans-serif;">
+  Sabe quando você fica alguns dias fora ou só deixa ${spaceA} fechada por um tempo — e quando abre, tem aquele bafo? Aquela energia pesada, aquele ar úmido?
+</p>
+<p style="color:#43474e;font-size:14px;line-height:1.8;margin:0 0 20px;font-family:Arial,sans-serif;">
+  Isso não é só a falta de circulação de ar. É o que os próprios materiais do ambiente absorvem e liberam de volta. Paredes que bebem umidade dia e noite — e soltam quando o ambiente fica fechado.
+</p>
+<table width="100%" cellpadding="0" cellspacing="0" style="background:#f5f5f3;margin:24px 0;">
+  <tr><td style="padding:28px;">
+    <p style="margin:0 0 16px;color:#002045;font-size:13px;font-weight:700;font-family:Arial,sans-serif;">O que muda quando ${spaceSubj.toLowerCase()} tem PFB:</p>
+    ${[
+      ["Ambiente mais seco naturalmente", "Com 0,2% de absorção de umidade, o PFB não retém nem devolve umidade para o ar. O ambiente se mantém mais seco e fresco — mesmo fechado."],
+      ["Sem mofo, sem cheiro", "Sem umidade acumulada nos materiais, não tem substrato para mofo se desenvolver. Nem nas juntas, nem atrás dos painéis."],
+      ["Superfície fácil de manter limpa", "Pano úmido com sabão neutro. Sem precisar de produtos especiais, sem rejunte para esfregar, sem nada que acumule com o tempo."],
+      ["Visual que não envelhece", "O acabamento " + finish + " do " + p.model + " não oxida, não amarela, não descasca. Daqui a 10 anos vai estar exatamente igual ao dia da instalação."],
+    ].map(([title, desc]) => `
+    <table width="100%" cellpadding="0" cellspacing="0" style="margin-bottom:16px;">
+      <tr>
+        <td width="4" style="background:#002045;vertical-align:top;padding-top:4px;"></td>
         <td style="padding:0 0 0 16px;">
           <p style="margin:0 0 4px;color:#002045;font-size:13px;font-weight:700;font-family:Arial,sans-serif;">${title}</p>
           <p style="margin:0;color:#74777f;font-size:12px;line-height:1.6;font-family:Arial,sans-serif;">${desc}</p>
@@ -228,114 +252,121 @@ ${cta("Ver catálogo completo", "https://orbitalrevestimentos.com.br/produtos")}
     </table>`).join("")}
   </td></tr>
 </table>
-<p style="color:#43474e;font-size:14px;line-height:1.8;margin:0 0 4px;font-family:Arial,sans-serif;">Quer ver esses painéis ao vivo antes de decidir? Entre em contato com um consultor Orbital e agende um horário conveniente para você.</p>
+<p style="color:#43474e;font-size:14px;line-height:1.8;margin:0 0 16px;font-family:Arial,sans-serif;">
+  São ${fmtArea(p.area)} m² de ${spaceLabel}. Esse é o ambiente que você vai usar todos os dias — e que os seus convidados vão notar.
+</p>
+<p style="color:#43474e;font-size:14px;line-height:1.8;margin:0 0 4px;font-family:Arial,sans-serif;">Quer ver os painéis ao vivo no nosso showroom antes de decidir?</p>
 ${cta("Agendar uma visita", wa)}
 `
       ),
     };
   }
 
-  // ── STEP 4 — Day 9: O investimento que se justifica ───────────────────────
+  // ── STEP 4 — Day 9: Quanto custa reformar duas vezes ──────────────────────
   if (step === 4) {
     const perM2 = p.area > 0 ? p.total / p.area : 0;
-    const per20years = p.total / (20 * 12 * 30); // cost per day over 20 years
+    const reformaCheap = Math.round(perM2 * 0.45); // hypothetical cheaper option ~45% of cost
+    const reformaDouble = reformaCheap * 2; // double because you do it twice
+
     return {
-      subject: `${first}, veja o que ${fmtBRL(p.total)} realmente compra`,
+      subject: `${first}, quanto custa reformar a mesma parede duas vezes?`,
       html: wrap(
-        `Um número diferente quando você muda a perspectiva.`,
+        `A matemática que ninguém mostra antes de você escolher o revestimento.`,
         `
-<p style="font-size:20px;color:#002045;font-weight:700;margin:0 0 24px;font-family:Arial,sans-serif;">${first}, vamos falar sobre o investimento.</p>
-<p style="color:#43474e;font-size:14px;line-height:1.8;margin:0 0 20px;font-family:Arial,sans-serif;">Seu orçamento ficou em <strong>${fmtBRL(p.total)}</strong>. Antes de tomar uma decisão, vale colocar esse número em perspectiva — porque quando você faz a conta certa, o número muda completamente.</p>
+<p style="font-size:20px;color:#002045;font-weight:700;margin:0 0 24px;font-family:Arial,sans-serif;">A conta que pouca gente faz antes de reformar, ${first}.</p>
+<p style="color:#43474e;font-size:14px;line-height:1.8;margin:0 0 20px;font-family:Arial,sans-serif;">
+  Opções mais baratas existem. Sempre vão existir. A pergunta certa não é "quanto custa agora" — é "quanto vou gastar ao longo dos próximos 15 anos".
+</p>
 <table width="100%" cellpadding="0" cellspacing="0" style="margin:24px 0;">
   <tr>
-    <td width="48%" style="background:#f0f9eb;border-left:3px solid #3b6934;padding:20px 20px;">
-      <p style="margin:0 0 4px;color:#3b6934;font-size:10px;font-weight:700;text-transform:uppercase;letter-spacing:0.1em;font-family:Arial,sans-serif;">Custo por m²</p>
-      <p style="margin:0;color:#002045;font-size:26px;font-weight:700;font-family:Arial,sans-serif;">${fmtBRL(perM2)}</p>
-      <p style="margin:4px 0 0;color:#74777f;font-size:11px;font-family:Arial,sans-serif;">Para ${fmtArea(p.area)} m² do seu ${spaceLabel}</p>
+    <td width="48%" style="background:#fff5f5;border-top:3px solid #c0392b;padding:20px;vertical-align:top;">
+      <p style="margin:0 0 8px;color:#c0392b;font-size:10px;font-weight:700;text-transform:uppercase;letter-spacing:0.1em;font-family:Arial,sans-serif;">Opção convencional</p>
+      <p style="margin:0 0 4px;color:#002045;font-size:22px;font-weight:700;font-family:Arial,sans-serif;">Menor agora.</p>
+      <p style="margin:0 0 16px;color:#74777f;font-size:12px;line-height:1.6;font-family:Arial,sans-serif;">Em 2–3 anos em Manaus: rejunte escurecido, bordas com mofo, descolamento. Nova reforma necessária.</p>
+      <p style="margin:0;color:#c0392b;font-size:12px;font-family:Arial,sans-serif;font-style:italic;">Custo real = material × 2 + mão de obra × 2 + desgaste do ambiente</p>
     </td>
     <td width="4%"></td>
-    <td width="48%" style="background:#eef2f8;border-left:3px solid #002045;padding:20px 20px;">
-      <p style="margin:0 0 4px;color:#002045;font-size:10px;font-weight:700;text-transform:uppercase;letter-spacing:0.1em;font-family:Arial,sans-serif;">Custo por dia*</p>
-      <p style="margin:0;color:#002045;font-size:26px;font-weight:700;font-family:Arial,sans-serif;">${fmtBRL(Math.ceil(per20years))}</p>
-      <p style="margin:4px 0 0;color:#74777f;font-size:11px;font-family:Arial,sans-serif;">*Dividido por 20 anos de uso</p>
+    <td width="48%" style="background:#f0f9eb;border-top:3px solid #3b6934;padding:20px;vertical-align:top;">
+      <p style="margin:0 0 8px;color:#3b6934;font-size:10px;font-weight:700;text-transform:uppercase;letter-spacing:0.1em;font-family:Arial,sans-serif;">Painéis Orbital PFB</p>
+      <p style="margin:0 0 4px;color:#002045;font-size:22px;font-weight:700;font-family:Arial,sans-serif;">Uma vez.</p>
+      <p style="margin:0 0 16px;color:#74777f;font-size:12px;line-height:1.6;font-family:Arial,sans-serif;">10+ anos de durabilidade certificada. Anti-mofo, anti-cupim, resistente à umidade. Sem obra, sem retoque, sem refazer.</p>
+      <p style="margin:0;color:#3b6934;font-size:12px;font-family:Arial,sans-serif;font-style:italic;">Aprovado com ART/CREA para parede e forro de teto</p>
     </td>
   </tr>
 </table>
-<p style="color:#43474e;font-size:14px;line-height:1.8;margin:0 0 16px;font-family:Arial,sans-serif;">Revestimentos convencionais de qualidade custam entre R$ 80 e R$ 250/m² — e exigem trocas em 8 a 12 anos. Os painéis Orbital, com a manutenção adequada, duram a vida útil do imóvel.</p>
-<p style="color:#43474e;font-size:14px;line-height:1.8;margin:0 0 20px;font-family:Arial,sans-serif;">Essa não é uma despesa de decoração. É uma decisão de infraestrutura — que você vai olhar todos os dias por décadas.</p>
+<p style="color:#43474e;font-size:14px;line-height:1.8;margin:0 0 20px;font-family:Arial,sans-serif;">
+  Seu orçamento de <strong>${fmtBRL(p.total)}</strong> para ${spacePara} é uma decisão que você faz uma vez. Não tem segunda obra, não tem segunda mão de obra, não tem segundo mês sem usar ${spaceA}.
+</p>
 ${quoteCard(p)}
-<p style="color:#43474e;font-size:14px;line-height:1.8;margin:0 0 4px;font-family:Arial,sans-serif;">Pronto para garantir este orçamento? Um consultor Orbital está disponível:</p>
-${cta("Confirmar com um consultor", wa)}
-`
-      ),
-    };
-  }
-
-  // ── STEP 5 — Day 12: Excelência técnica + durabilidade ────────────────────
-  if (step === 5) {
-    return {
-      subject: `${first}, o que acontece com os painéis Orbital em 10 anos?`,
-      html: wrap(
-        `A resposta vai mudar como você pensa em revestimentos.`,
-        `
-<p style="font-size:20px;color:#002045;font-weight:700;margin:0 0 24px;font-family:Arial,sans-serif;">O teste do tempo, ${first}.</p>
-<p style="color:#43474e;font-size:14px;line-height:1.8;margin:0 0 20px;font-family:Arial,sans-serif;">Existe uma pergunta que poucos fazem antes de reformar: <em>"Como isso vai parecer em 10 anos?"</em></p>
-<p style="color:#43474e;font-size:14px;line-height:1.8;margin:0 0 24px;font-family:Arial,sans-serif;">Com revestimentos convencionais, a resposta costuma ser: rejunte escurecido, peças descoladas, padrão fora de moda. Com os painéis Orbital — a resposta é diferente.</p>
-<table width="100%" cellpadding="0" cellspacing="0" style="margin:0 0 24px;">
-  ${[
-    ["Superfície sem rejunte excessivo", "Menos rejunte = menos ponto de entrada para umidade, mofo e deterioração. A superfície se mantém limpa e intacta por muito mais tempo."],
-    ["Acabamento " + finish + " que não oxida", "O processo de fabricação garante que a textura e a cor do modelo " + p.model + " se mantenham estáveis — sem amarelamento, sem desbotamento, sem perda de brilho."],
-    ["Resistência a impactos cotidianos", "5mm de espessura com material de alta densidade. Os painéis suportam o uso intenso de ambientes residenciais e comerciais sem fissurar."],
-    ["Instalação que não faz concessões", "Quando instalado corretamente, o sistema de fixação dos painéis Orbital é permanente. Não há recalque, não há ondulação, não há descolamento com o tempo."],
-  ].map(([title, desc]) => `
-  <tr><td style="padding:16px 0;border-bottom:1px solid #f0f0f0;">
-    <p style="margin:0 0 6px;color:#002045;font-size:14px;font-weight:700;font-family:Arial,sans-serif;">${title}</p>
-    <p style="margin:0;color:#74777f;font-size:13px;line-height:1.7;font-family:Arial,sans-serif;">${desc}</p>
-  </td></tr>`).join("")}
-</table>
-<table width="100%" cellpadding="0" cellspacing="0" style="background:#fffbea;border:1px solid #e6c84a;margin:24px 0;">
-  <tr><td style="padding:20px 24px;">
-    <p style="margin:0 0 8px;color:#6b5000;font-size:11px;font-weight:700;text-transform:uppercase;letter-spacing:0.1em;font-family:Arial,sans-serif;">Manutenção simples que preserva tudo:</p>
-    ${["Pano úmido com detergente neutro — semanal", "Evitar produtos abrasivos e ácidos", "Nenhuma selagem periódica necessária", "Sem retoques, pintura ou rejuntamento no futuro"].map(i => `<p style="margin:0 0 6px;color:#6b5000;font-size:13px;font-family:Arial,sans-serif;">· ${i}</p>`).join("")}
-  </td></tr>
-</table>
-<p style="color:#43474e;font-size:14px;line-height:1.8;margin:0 0 4px;font-family:Arial,sans-serif;">O seu orçamento de <strong>${fmtBRL(p.total)}</strong> para ${spacePara} ainda está disponível. Fale com um consultor Orbital:</p>
+<p style="color:#43474e;font-size:14px;line-height:1.8;margin:0 0 4px;font-family:Arial,sans-serif;">Tem alguma dúvida sobre o produto antes de decidir?</p>
 ${cta("Falar com um consultor", wa)}
 `
       ),
     };
   }
 
-  // ── STEP 6 — Day 16: O custo de não agir ──────────────────────────────────
+  // ── STEP 5 — Day 12: Por que arquitetos escolhem Orbital ──────────────────
+  if (step === 5) {
+    return {
+      subject: `${first}, o motivo pelo qual arquitetos escolhem os painéis Orbital`,
+      html: wrap(
+        `Tem uma razão técnica por trás de cada escolha de um bom arquiteto.`,
+        `
+<p style="font-size:20px;color:#002045;font-weight:700;margin:0 0 24px;font-family:Arial,sans-serif;">Arquitetos não escolhem por acidente, ${first}.</p>
+<p style="color:#43474e;font-size:14px;line-height:1.8;margin:0 0 20px;font-family:Arial,sans-serif;">
+  Quando um arquiteto especifica um material, ele está colocando o nome dele naquele projeto. Ele não pode errar. É por isso que os painéis Orbital estão nos projetos de quem entende — não como alternativa, mas como primeira escolha.
+</p>
+<table width="100%" cellpadding="0" cellspacing="0" style="margin:0 0 24px;">
+  ${[
+    ["Painéis de 2,9m × 1,2m", `Cada painel cobre ${fmtArea(3.48)} m² sem interrupção. Comparado a revestimentos de 60×60cm, isso é até 10× menos rejunte — e um visual completamente diferente. ${spaceSubj} com superfícies contínuas parece maior, mais projetado, mais intencional.`],
+    ["Certificado ART/CREA", "Aprovação técnica de engenharia civil para uso em parede e forro de teto. Não é produto de loja de construção — é material de obra com respaldo técnico."],
+    ["Acabamento fotorrealístico", `O ${finish} do ${p.model} não é uma impressão sobre superfície qualquer. É um processo de alta definição que replica a textura real do material. De perto e de longe, o resultado é o mesmo.`],
+    ["Instalação em horas, não em dias", "Cola PU na parede ou cola de contato no teto — sem quebradeira, sem entulho, sem semanas de obra. Um profissional cobre um cômodo inteiro em 2 a 3 horas."],
+  ].map(([title, desc]) => `
+  <tr><td style="padding:16px 0;border-bottom:1px solid #f0f0f0;vertical-align:top;">
+    <p style="margin:0 0 6px;color:#002045;font-size:14px;font-weight:700;font-family:Arial,sans-serif;">${title}</p>
+    <p style="margin:0;color:#74777f;font-size:13px;line-height:1.7;font-family:Arial,sans-serif;">${desc}</p>
+  </td></tr>`).join("")}
+</table>
+<p style="color:#43474e;font-size:14px;line-height:1.8;margin:0 0 16px;font-family:Arial,sans-serif;">
+  O seu orçamento para ${spacePara} ainda está no sistema. ${p.plates} painel${p.plates !== 1 ? "is" : ""} prontos para entrega em estoque aqui em Manaus — sem esperar frete de fora.
+</p>
+${cta("Garantir meu orçamento", wa)}
+`
+      ),
+    };
+  }
+
+  // ── STEP 6 — Day 16: O custo de adiar ────────────────────────────────────
   if (step === 6) {
     return {
-      subject: `${first}, uma pergunta honesta sobre ${spaceLabel}`,
+      subject: `${first}, a sua ${spaceLabel} continua igual — e isso tem um custo`,
       html: wrap(
-        `Às vezes o maior custo é não fazer nada — e ninguém fala sobre isso.`,
+        `Cada mês que passa é um mês a mais com o ambiente que você quer mudar.`,
         `
-<p style="font-size:20px;color:#002045;font-weight:700;margin:0 0 24px;font-family:Arial,sans-serif;">Uma pergunta honesta, ${first}.</p>
-<p style="color:#43474e;font-size:14px;line-height:1.8;margin:0 0 20px;font-family:Arial,sans-serif;">Já faz mais de duas semanas desde que você simulou o orçamento para ${spacePara}. E queremos te fazer uma pergunta direta:</p>
+<p style="font-size:20px;color:#002045;font-weight:700;margin:0 0 24px;font-family:Arial,sans-serif;">${first}, uma pergunta direta.</p>
+<p style="color:#43474e;font-size:14px;line-height:1.8;margin:0 0 20px;font-family:Arial,sans-serif;">
+  Já faz mais de duas semanas desde que você simulou o orçamento para ${spacePara}. E a gente quer te perguntar: o que está segurando a decisão?
+</p>
+<p style="color:#43474e;font-size:14px;line-height:1.8;margin:0 0 24px;font-family:Arial,sans-serif;">
+  Porque na maioria das vezes não é o dinheiro, não é o produto, não é a logística. É o ritmo natural das coisas — a vida não para, e o projeto fica para "depois". E o "depois" vira meses.
+</p>
 <table width="100%" cellpadding="0" cellspacing="0" style="background:#002045;margin:24px 0;">
   <tr><td style="padding:28px;">
-    <p style="margin:0;color:#ffffff;font-size:18px;font-weight:300;line-height:1.6;font-family:Arial,sans-serif;text-align:center;font-style:italic;">"Se eu não fizer isso agora, quando vou fazer?"</p>
+    <p style="margin:0 0 4px;color:rgba(255,255,255,0.45);font-size:10px;letter-spacing:0.2em;text-transform:uppercase;font-family:Arial,sans-serif;">O que permanece igual enquanto você decide:</p>
+    <p style="margin:16px 0 0;color:#ffffff;font-size:16px;font-weight:300;line-height:1.7;font-family:Arial,sans-serif;font-style:italic;">
+      ${spaceSubj} continua como está. A umidade continua trabalhando. O material atual continua envelhecendo. E a transformação que você imaginou continua sendo só imaginação.
+    </p>
   </td></tr>
 </table>
-<p style="color:#43474e;font-size:14px;line-height:1.8;margin:0 0 16px;font-family:Arial,sans-serif;">Reformas e projetos de revestimento são daquelas decisões que ficam na gaveta por meses — às vezes anos. E cada mês que passa, ${spaceSubj.toLowerCase()} continua como está. Não transformado. Não do jeito que você imaginou.</p>
-<p style="color:#43474e;font-size:14px;line-height:1.8;margin:0 0 24px;font-family:Arial,sans-serif;">Não estamos aqui para criar pressão artificial. Estamos aqui para lembrar que você já tomou 80% da decisão quando fez a simulação. Você escolheu o modelo. Você calculou a área. Você viu o número.</p>
-<table width="100%" cellpadding="0" cellspacing="0" style="background:#f5f5f3;margin:24px 0;">
-  <tr><td style="padding:24px 28px;">
-    <p style="margin:0 0 16px;color:#002045;font-size:13px;font-weight:700;font-family:Arial,sans-serif;">O que fica para trás se você adiar mais:</p>
-    ${[
-      "Cada mês que passa, o seu " + spaceLabel + " permanece como está — não do jeito que você quer",
-      "Disponibilidade de estoque não é garantida indefinidamente",
-      "Projetos de obra têm janelas de oportunidade — coordenar agora é mais fácil",
-      "A transformação que você imaginou continua sendo apenas imaginação",
-    ].map(i => `<p style="margin:0 0 8px;color:#74777f;font-size:13px;font-family:Arial,sans-serif;">→ ${i}</p>`).join("")}
-  </td></tr>
-</table>
-<p style="color:#43474e;font-size:14px;line-height:1.8;margin:0 0 4px;font-family:Arial,sans-serif;">Se estiver pronto para dar o próximo passo — ou se ainda tiver alguma dúvida — fale com um consultor Orbital. Sem pressão, só clareza.</p>
-${cta("Falar com um consultor agora", wa)}
-<p style="color:#74777f;font-size:12px;line-height:1.7;font-family:Arial,sans-serif;">Seu orçamento: <strong>${fmtBRL(p.total)}</strong> · ${p.plates} painel${p.plates !== 1 ? "is" : ""} ${p.model} · ${fmtArea(p.area)} m²</p>
+<p style="color:#43474e;font-size:14px;line-height:1.8;margin:0 0 16px;font-family:Arial,sans-serif;">
+  Você já fez o trabalho difícil — calculou, escolheu o modelo, viu o número. O próximo passo é só falar com a gente.
+</p>
+<p style="color:#43474e;font-size:14px;line-height:1.8;margin:0 0 4px;font-family:Arial,sans-serif;">
+  Sem pressão. Sem compromisso. Só uma conversa para tirar o que ainda está emperrado.
+</p>
+${cta("Retomar o projeto agora", wa)}
+<p style="color:#74777f;font-size:12px;line-height:1.7;font-family:Arial,sans-serif;">Orçamento em aberto: <strong>${fmtBRL(p.total)}</strong> · ${p.plates} painel${p.plates !== 1 ? "is" : ""} ${p.model} · ${fmtArea(p.area)} m²</p>
 `
       ),
     };
@@ -344,40 +375,46 @@ ${cta("Falar com um consultor agora", wa)}
   // ── STEP 7 — Day 19: Última mensagem ──────────────────────────────────────
   if (step === 7) {
     return {
-      subject: `Esta é nossa última mensagem, ${first}`,
+      subject: `${first}, esta é a nossa última mensagem sobre este orçamento`,
       html: wrap(
-        `Respeitamos o seu tempo e a sua decisão. Esta é a última mensagem sobre este orçamento.`,
+        `Não vamos te mandar mais nada sobre este projeto. Mas a porta fica aberta.`,
         `
-<p style="font-size:20px;color:#002045;font-weight:700;margin:0 0 24px;font-family:Arial,sans-serif;">${first}, esta é a nossa última mensagem.</p>
-<p style="color:#43474e;font-size:14px;line-height:1.8;margin:0 0 20px;font-family:Arial,sans-serif;">Nas últimas três semanas, compartilhamos tudo que achamos importante sobre os painéis Orbital — o produto, o investimento, a durabilidade, a transformação que o seu ${spaceLabel} poderia ter.</p>
-<p style="color:#43474e;font-size:14px;line-height:1.8;margin:0 0 24px;font-family:Arial,sans-serif;">Agora a decisão é completamente sua. E qualquer que seja, nós respeitamos.</p>
+<p style="font-size:20px;color:#002045;font-weight:700;margin:0 0 24px;font-family:Arial,sans-serif;">Esta é a nossa última mensagem, ${first}.</p>
+<p style="color:#43474e;font-size:14px;line-height:1.8;margin:0 0 20px;font-family:Arial,sans-serif;">
+  Nas últimas semanas compartilhamos o que achamos importante: o que o clima de Manaus faz com os revestimentos, a diferença que os painéis Orbital entregam, e o que significa investir uma vez em vez de duas.
+</p>
+<p style="color:#43474e;font-size:14px;line-height:1.8;margin:0 0 24px;font-family:Arial,sans-serif;">
+  A decisão é completamente sua — e nós respeitamos isso.
+</p>
 <table width="100%" cellpadding="0" cellspacing="0" style="margin:24px 0;">
   <tr>
-    <td width="48%" style="background:#f0f9eb;padding:20px;vertical-align:top;">
-      <p style="margin:0 0 12px;color:#3b6934;font-size:11px;font-weight:700;text-transform:uppercase;letter-spacing:0.1em;font-family:Arial,sans-serif;">Se você disser sim:</p>
+    <td width="48%" style="background:#f0f9eb;border-top:3px solid #3b6934;padding:20px;vertical-align:top;">
+      <p style="margin:0 0 12px;color:#3b6934;font-size:11px;font-weight:700;text-transform:uppercase;letter-spacing:0.1em;font-family:Arial,sans-serif;">Se você avançar:</p>
       ${[
-        fmtArea(p.area) + " m² do seu " + spaceLabel + " transformados",
-        "Visual único que dura décadas",
-        "Decisão que você vai se orgulhar",
-        "Suporte completo da equipe Orbital",
-      ].map(i => `<p style="margin:0 0 6px;color:#43474e;font-size:12px;font-family:Arial,sans-serif;">✓ ${i}</p>`).join("")}
+        fmtArea(p.area) + " m² de " + spaceLabel + " transformados",
+        "Um ambiente que não envelhece com o clima",
+        "Zero obra, zero entulho, resultado em horas",
+        "Material com ART/CREA e garantia técnica",
+      ].map(i => `<p style="margin:0 0 8px;color:#43474e;font-size:12px;font-family:Arial,sans-serif;">✓ ${i}</p>`).join("")}
     </td>
     <td width="4%"></td>
-    <td width="48%" style="background:#fff5f5;padding:20px;vertical-align:top;">
-      <p style="margin:0 0 12px;color:#c0392b;font-size:11px;font-weight:700;text-transform:uppercase;letter-spacing:0.1em;font-family:Arial,sans-serif;">Se você disser não agora:</p>
+    <td width="48%" style="background:#f9f9f7;border-top:3px solid #c8c4be;padding:20px;vertical-align:top;">
+      <p style="margin:0 0 12px;color:#74777f;font-size:11px;font-weight:700;text-transform:uppercase;letter-spacing:0.1em;font-family:Arial,sans-serif;">Se precisar de mais tempo:</p>
       ${[
-        "O seu " + spaceLabel + " continua como está",
-        "A transformação fica para outra hora",
-        "O orçamento pode mudar com o estoque",
-        "Mas a porta Orbital nunca fecha",
-      ].map(i => `<p style="margin:0 0 6px;color:#74777f;font-size:12px;font-family:Arial,sans-serif;">· ${i}</p>`).join("")}
+        "Seu orçamento fica registrado conosco",
+        "Quando estiver pronto, é só falar",
+        "Retomamos de onde paramos, sem burocracia",
+        "A porta Orbital fica sempre aberta",
+      ].map(i => `<p style="margin:0 0 8px;color:#74777f;font-size:12px;font-family:Arial,sans-serif;">· ${i}</p>`).join("")}
     </td>
   </tr>
 </table>
 ${quoteCard(p)}
-<p style="color:#43474e;font-size:14px;line-height:1.8;margin:24px 0 4px;font-family:Arial,sans-serif;">Se este for o momento certo, nossa equipe está à disposição:</p>
+<p style="color:#43474e;font-size:14px;line-height:1.8;margin:24px 0 4px;font-family:Arial,sans-serif;">Se este for o momento, estamos aqui:</p>
 ${cta("Fechar com um consultor", wa)}
-<p style="color:#74777f;font-size:12px;line-height:1.7;font-family:Arial,sans-serif;">Não enviaremos mais mensagens sobre este orçamento após hoje. Quando estiver pronto — seja em dias ou meses — é só entrar em contato. Obrigado pela atenção, ${first}.</p>
+<p style="color:#74777f;font-size:12px;line-height:1.7;font-family:Arial,sans-serif;">
+  Não enviaremos mais mensagens sobre este orçamento após hoje. Obrigado pelo seu tempo, ${first}.
+</p>
 `
       ),
     };
@@ -386,33 +423,35 @@ ${cta("Fechar com um consultor", wa)}
   // ── STEP 99 — Concluído ────────────────────────────────────────────────────
   if (step === 99) {
     return {
-      subject: `Bem-vindo à família Orbital, ${first}! 🎉`,
+      subject: `${first}, bem-vindo à família Orbital`,
       html: wrap(
-        `Você fez a escolha certa. Estamos muito felizes em recebê-lo como cliente Orbital.`,
+        `Você fez a escolha certa. Agora é só aproveitar o resultado.`,
         `
 <p style="font-size:26px;color:#002045;font-weight:700;margin:0 0 6px;font-family:Arial,sans-serif;">${first},</p>
-<p style="font-size:26px;color:#002045;font-weight:300;margin:0 0 24px;font-family:Arial,sans-serif;">você fez a escolha certa.</p>
-<p style="color:#43474e;font-size:14px;line-height:1.8;margin:0 0 20px;font-family:Arial,sans-serif;">Estamos muito felizes em tê-lo como cliente Orbital. O seu projeto para ${spacePara} com os painéis <strong>${p.model} · ${finish}</strong> vai ficar extraordinário — e você vai entender exatamente o porquê quando vir o resultado final.</p>
+<p style="font-size:24px;color:#002045;font-weight:300;margin:0 0 24px;font-family:Arial,sans-serif;">você fez a escolha certa.</p>
+<p style="color:#43474e;font-size:14px;line-height:1.8;margin:0 0 20px;font-family:Arial,sans-serif;">
+  ${fmtArea(p.area)} m² de <strong>${p.model} · ${finish}</strong> para ${spacePara}. Esse ambiente vai ter uma vida completamente diferente do que você está acostumado.
+</p>
 <table width="100%" cellpadding="0" cellspacing="0" style="background:#f0f9eb;border-left:3px solid #3b6934;margin:24px 0;">
   <tr><td style="padding:24px 28px;">
     <p style="margin:0 0 16px;color:#3b6934;font-size:11px;font-weight:700;text-transform:uppercase;letter-spacing:0.1em;font-family:Arial,sans-serif;">O que acontece agora:</p>
     ${[
       partnerFirst + " vai confirmar todos os detalhes do pedido com você",
-      "Verificação de disponibilidade de estoque e prazo estimado",
-      "Agendamento da retirada ou logística no depósito Orbital",
-      "Instalação — podemos indicar profissionais parceiros em Manaus",
+      "Verificação de estoque e prazo de retirada",
+      "Agendamento da retirada no depósito Orbital em Manaus",
+      "Precisando de instalador? A Orbital pode indicar profissionais habilitados",
     ].map((item, i) => `<p style="margin:0 0 10px;color:#43474e;font-size:13px;line-height:1.6;font-family:Arial,sans-serif;"><strong style="color:#002045;">${i + 1}.</strong> ${item}</p>`).join("")}
   </td></tr>
 </table>
 <table width="100%" cellpadding="0" cellspacing="0" style="background:#f5f5f3;margin:24px 0;">
   <tr><td style="padding:20px 24px;">
-    <p style="margin:0 0 12px;color:#002045;font-size:12px;font-weight:700;font-family:Arial,sans-serif;">Cuidado simples que preserva seus painéis por décadas:</p>
-    ${["Pano úmido com detergente neutro — semanal", "Sem produtos abrasivos, ácidos ou solventes", "Nenhuma manutenção especial necessária além da limpeza regular"].map(i => `<p style="margin:0 0 6px;color:#74777f;font-size:13px;font-family:Arial,sans-serif;">· ${i}</p>`).join("")}
+    <p style="margin:0 0 12px;color:#002045;font-size:12px;font-weight:700;font-family:Arial,sans-serif;">Para os seus painéis durarem décadas:</p>
+    ${["Pano úmido com detergente neutro — isso é tudo o que precisa", "Sem produtos abrasivos, sem esponjas de aço, sem ácidos", "Sem manutenção especial, sem retoque, sem rejuntamento periódico"].map(i => `<p style="margin:0 0 6px;color:#74777f;font-size:13px;font-family:Arial,sans-serif;">· ${i}</p>`).join("")}
   </td></tr>
 </table>
-<p style="color:#43474e;font-size:14px;line-height:1.8;margin:0 0 4px;font-family:Arial,sans-serif;">Qualquer dúvida durante o processo — instalação, logística, especificações — fale com ${partnerFirst}:</p>
+<p style="color:#43474e;font-size:14px;line-height:1.8;margin:0 0 4px;font-family:Arial,sans-serif;">Dúvidas durante o processo — fala com ${partnerFirst}:</p>
 ${cta(`Falar com ${partnerFirst}`, wa)}
-<p style="color:#74777f;font-size:13px;line-height:1.7;font-family:Arial,sans-serif;font-style:italic;">Obrigado por escolher a Orbital, ${first}. Cada painel que instalamos é um projeto em que acreditamos.</p>
+<p style="color:#74777f;font-size:13px;line-height:1.7;font-family:Arial,sans-serif;font-style:italic;">Obrigado pela confiança, ${first}. Cada projeto é um que acreditamos.</p>
 `
       ),
     };
@@ -421,25 +460,28 @@ ${cta(`Falar com ${partnerFirst}`, wa)}
   // ── STEP 98 — Cancelado ────────────────────────────────────────────────────
   if (step === 98) {
     return {
-      subject: `Obrigado por considerar a Orbital, ${first}`,
+      subject: `Tudo bem, ${first} — a porta fica aberta`,
       html: wrap(
-        `O momento certo para um projeto nem sempre é agora — e isso é completamente válido.`,
+        `Sem pressão, sem julgamento. Quando o momento chegar, a gente retoma de onde paramos.`,
         `
-<p style="font-size:20px;color:#002045;font-weight:700;margin:0 0 24px;font-family:Arial,sans-serif;">Obrigado, ${first}.</p>
-<p style="color:#43474e;font-size:14px;line-height:1.8;margin:0 0 20px;font-family:Arial,sans-serif;">Sabemos que o momento certo para um projeto nem sempre é agora — e isso é completamente válido. Ficamos felizes que você tenha dedicado tempo para conhecer os painéis Orbital e simular um orçamento para ${spacePara}.</p>
-<p style="color:#43474e;font-size:14px;line-height:1.8;margin:0 0 24px;font-family:Arial,sans-serif;">Não vamos te mandar mais mensagens sobre este projeto. Mas queremos deixar uma coisa registrada:</p>
+<p style="font-size:20px;color:#002045;font-weight:700;margin:0 0 24px;font-family:Arial,sans-serif;">Entendemos, ${first}.</p>
+<p style="color:#43474e;font-size:14px;line-height:1.8;margin:0 0 20px;font-family:Arial,sans-serif;">
+  O momento certo para um projeto nem sempre é agora — e isso é completamente válido. Não vamos te mandar mais mensagens sobre este orçamento.
+</p>
 <table width="100%" cellpadding="0" cellspacing="0" style="background:#002045;margin:24px 0;">
   <tr><td style="padding:28px;">
-    <p style="margin:0 0 16px;color:rgba(255,255,255,0.5);font-size:10px;letter-spacing:0.2em;text-transform:uppercase;font-family:Arial,sans-serif;">O que fica guardado para você:</p>
-    <p style="margin:0 0 8px;color:rgba(255,255,255,0.8);font-size:13px;font-family:Arial,sans-serif;">· Modelo ${p.model} · ${finish}</p>
-    <p style="margin:0 0 8px;color:rgba(255,255,255,0.8);font-size:13px;font-family:Arial,sans-serif;">· ${p.plates} painel${p.plates !== 1 ? "is" : ""} · ${fmtArea(p.area)} m² do seu ${spaceLabel}</p>
-    <p style="margin:0 0 16px;color:rgba(255,255,255,0.8);font-size:13px;font-family:Arial,sans-serif;">· Referência: ${fmtBRL(p.total)}</p>
-    <p style="margin:0;color:rgba(255,255,255,0.55);font-size:12px;font-family:Arial,sans-serif;line-height:1.6;">Quando o momento chegar — seja em semanas ou meses — ${partnerFirst} estará disponível para retomar exatamente de onde paramos. Sem precisar recalcular tudo do zero.</p>
+    <p style="margin:0 0 16px;color:rgba(255,255,255,0.5);font-size:10px;letter-spacing:0.2em;text-transform:uppercase;font-family:Arial,sans-serif;">Seu orçamento fica guardado:</p>
+    <p style="margin:0 0 8px;color:rgba(255,255,255,0.8);font-size:13px;font-family:Arial,sans-serif;">· ${p.model} · ${finish}</p>
+    <p style="margin:0 0 8px;color:rgba(255,255,255,0.8);font-size:13px;font-family:Arial,sans-serif;">· ${p.plates} painel${p.plates !== 1 ? "is" : ""} · ${fmtArea(p.area)} m² para ${spacePara}</p>
+    <p style="margin:0 0 20px;color:rgba(255,255,255,0.8);font-size:13px;font-family:Arial,sans-serif;">· Referência: ${fmtBRL(p.total)}</p>
+    <p style="margin:0;color:rgba(255,255,255,0.55);font-size:12px;font-family:Arial,sans-serif;line-height:1.6;">
+      Quando o momento chegar — em semanas ou em meses — ${partnerFirst} retoma tudo exatamente de onde paramos. Sem recalcular, sem começar do zero.
+    </p>
   </td></tr>
 </table>
-<p style="color:#43474e;font-size:14px;line-height:1.8;margin:0 0 20px;font-family:Arial,sans-serif;">Nenhuma pressão, nenhum julgamento. Quando estiver pronto, é só falar.</p>
-${cta(`Falar com ${partnerFirst} quando estiver pronto`, wa)}
-<p style="color:#74777f;font-size:12px;line-height:1.7;font-family:Arial,sans-serif;">Esta é a última mensagem que enviaremos sobre este orçamento. Obrigado pela atenção — foi um prazer.</p>
+<p style="color:#43474e;font-size:14px;line-height:1.8;margin:0 0 4px;font-family:Arial,sans-serif;">Quando estiver pronto, é só falar:</p>
+${cta(`Falar com ${partnerFirst}`, wa)}
+<p style="color:#74777f;font-size:12px;line-height:1.7;font-family:Arial,sans-serif;">Esta é a última mensagem sobre este orçamento. Obrigado pela atenção, ${first}.</p>
 `
       ),
     };
@@ -500,8 +542,6 @@ export async function generateClientEmailFromTemplate(
 
   const subject = interpolate(dbRow.subject, vars);
   const bodyHtml = interpolate(dbRow.body_html, vars);
-
-  // Use the first line of the subject as a preheader approximation
   const html = wrap(subject, bodyHtml);
 
   return { subject, html };

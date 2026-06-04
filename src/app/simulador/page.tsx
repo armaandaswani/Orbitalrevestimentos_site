@@ -256,6 +256,7 @@ function SimuladorInner() {
   const [width, setWidth] = useState("");
   const [height, setHeight] = useState("");
   const [sqmInput, setSqmInput] = useState("");
+  const [ambienteName, setAmbienteName] = useState("");
   const [clientName, setClientName] = useState("");
   const [clientEmail, setClientEmail] = useState("");
   const [clientPhone, setClientPhone] = useState("");
@@ -644,6 +645,7 @@ function SimuladorInner() {
   function reset() {
     setStep(1);
     setSelectedSpace(null);
+    setAmbienteName("");
     setSelectedLine(null);
     setSelectedProduct(null);
     setWidth("");
@@ -665,7 +667,7 @@ function SimuladorInner() {
     if (!selectedSpace || !selectedProduct || plates === 0) return;
     setSavedSpaces(prev => [...prev, {
       key: `space-${Date.now()}`,
-      label: selectedSpace.label,
+      label: ambienteName.trim() || selectedSpace.label,
       productName: selectedProduct.name,
       productCode: selectedProduct.code,
       linha: selectedProduct.linha,
@@ -680,6 +682,7 @@ function SimuladorInner() {
     }]);
     // Reset space/product/dims but keep client info and coupon
     setSelectedSpace(null);
+    setAmbienteName("");
     setCustomSpaceText("");
     setShowCustomInput(false);
     setSelectedLine(null);
@@ -809,6 +812,13 @@ function SimuladorInner() {
       const seqPlates = hasMultipleSpaces ? grandPlates : plates;
       const seqArea = hasMultipleSpaces ? parseFloat((savedSpaces.reduce((s, sp) => s + sp.m2, 0) + m2).toFixed(2)) : parseFloat(m2.toFixed(2));
       const seqTotal = hasMultipleSpaces ? grandMaterialDiscounted : (orbMaterialDiscounted || orbMaterialTotal);
+      // Build dimension label for admin notification
+      const currentDimLabel = dimMode === "lxa" && width && height
+        ? `${width}m × ${height}m`
+        : `${m2.toFixed(2).replace(".", ",")} m²`;
+      const seqDimLabel = hasMultipleSpaces
+        ? [...savedSpaces.map((sp) => `${sp.label}: ${sp.dimLabel}`), `${selectedSpace?.label ?? ""}: ${currentDimLabel}`].join(" | ")
+        : currentDimLabel;
       const siteUrl = typeof window !== "undefined" ? window.location.origin : "https://orbitalrevestimentos.com.br";
       try {
         await fetch("/api/client-email-sequences", {
@@ -824,6 +834,7 @@ function SimuladorInner() {
             plates: seqPlates,
             area_m2: seqArea,
             total: seqTotal,
+            dim_label: seqDimLabel,
             partner_name: couponData?.partner_name ?? "Orbital",
             quote_url: quoteSlug ? `${siteUrl}/orcamento/${quoteSlug}` : null,
           }),
@@ -1001,7 +1012,7 @@ function SimuladorInner() {
                 {SPACES.filter((s) => s.viability !== "no").map((space) => (
                   <button
                     key={space.id}
-                    onClick={() => { setSelectedSpace(space); setShowCustomInput(false); setCustomSpaceText(""); }}
+                    onClick={() => { setSelectedSpace(space); setShowCustomInput(false); setCustomSpaceText(""); setAmbienteName(""); }}
                     className={`text-left px-3 py-3 min-h-[44px] border text-xs font-semibold font-[var(--font-inter)] transition-all ${
                       selectedSpace?.id === space.id && !showCustomInput
                         ? "border-[#002045] bg-[#002045] text-white"
@@ -1013,7 +1024,7 @@ function SimuladorInner() {
                 ))}
                 {/* Outro button */}
                 <button
-                  onClick={() => { setShowCustomInput(true); setSelectedSpace(null); }}
+                  onClick={() => { setShowCustomInput(true); setSelectedSpace(null); setAmbienteName(""); }}
                   className={`text-left px-3 py-3 min-h-[44px] border text-xs font-semibold font-[var(--font-inter)] transition-all ${
                     showCustomInput
                       ? "border-[#002045] bg-[#002045] text-white"
@@ -1048,7 +1059,7 @@ function SimuladorInner() {
                 {SPACES.filter((s) => s.viability === "no").map((space) => (
                   <button
                     key={space.id}
-                    onClick={() => { setSelectedSpace(space); setShowCustomInput(false); setCustomSpaceText(""); }}
+                    onClick={() => { setSelectedSpace(space); setShowCustomInput(false); setCustomSpaceText(""); setAmbienteName(""); }}
                     className={`text-left px-3 py-3 min-h-[44px] border text-xs font-semibold font-[var(--font-inter)] transition-all ${
                       selectedSpace?.id === space.id && !showCustomInput
                         ? "border-[#c0392b] bg-[#fff5f5] text-[#c0392b]"
@@ -1081,6 +1092,22 @@ function SimuladorInner() {
                       <path d="M5 12h14M12 5l7 7-7 7" />
                     </svg>
                   </button>
+                </div>
+              )}
+
+              {/* Optional ambiente name — shown when a viable space is selected */}
+              {selectedSpace && selectedSpace.viability !== "no" && (
+                <div className="mb-6">
+                  <label className="block text-[10px] tracking-[0.12em] uppercase font-bold font-[var(--font-inter)] text-[#74777f] mb-1.5">
+                    Nome do ambiente <span className="normal-case tracking-normal font-normal">(opcional)</span>
+                  </label>
+                  <input
+                    type="text"
+                    value={ambienteName}
+                    onChange={(e) => setAmbienteName(e.target.value)}
+                    placeholder={`Ex: Sala de Estar, Banheiro do Casal, Escritório…`}
+                    className="w-full border border-[#e2e2e2] px-4 py-3 text-sm font-[var(--font-inter)] text-[#002045] focus:outline-none focus:border-[#002045] placeholder-[#b0b4bc]"
+                  />
                 </div>
               )}
 
@@ -1277,7 +1304,7 @@ function SimuladorInner() {
                 <div className="flex items-center gap-4 px-4 py-4 bg-[#f9fbff]">
                   <span className="w-6 h-6 rounded-full bg-[#002045] text-white text-[10px] font-bold font-[var(--font-inter)] flex items-center justify-center flex-shrink-0">{savedSpaces.length + 1}</span>
                   <div className="flex-1 min-w-0">
-                    <p className="text-[#002045] text-sm font-semibold font-[var(--font-inter)]">{selectedSpace.label}</p>
+                    <p className="text-[#002045] text-sm font-semibold font-[var(--font-inter)]">{ambienteName.trim() || selectedSpace.label}</p>
                     <p className="text-[#74777f] text-[11px] font-[var(--font-inter)]">
                       {selectedProduct.name} · {selectedProduct.code}
                       {dimMode === "lxa" && width && height ? ` · ${width}m × ${height}m` : m2 > 0 ? ` · ${m2.toFixed(2)} m²` : ""}
@@ -1292,7 +1319,7 @@ function SimuladorInner() {
                   onClick={() => {
                     setSavedSpaces(prev => [...prev, {
                       key: `space-${Date.now()}`,
-                      label: selectedSpace!.label,
+                      label: ambienteName.trim() || selectedSpace!.label,
                       productName: selectedProduct!.name,
                       productCode: selectedProduct!.code,
                       linha: selectedProduct!.linha,
@@ -1306,6 +1333,7 @@ function SimuladorInner() {
                       total: orbTotal,
                     }]);
                     setSelectedSpace(null);
+                    setAmbienteName("");
                     setCustomSpaceText("");
                     setShowCustomInput(false);
                     setSelectedLine(null);

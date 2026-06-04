@@ -13,7 +13,7 @@ export async function POST(req: NextRequest) {
   const body = await req.json();
   const {
     coupon_use_id, client_name, client_email, client_phone,
-    space, model, plates, area_m2, total, partner_name, quote_url,
+    space, model, plates, area_m2, total, dim_label, partner_name, quote_url,
   } = body;
 
   if (!client_name || !client_email) {
@@ -32,11 +32,13 @@ export async function POST(req: NextRequest) {
       coupon_use_id: coupon_use_id ?? null,
       client_name,
       client_email,
+      client_phone: client_phone ?? null,
       space: space || null,
       model,
       plates,
       area_m2,
       total,
+      dim_label: dim_label ?? null,
       partner_name,
       current_step: 1,
       next_email_at: nextEmailAt,
@@ -73,8 +75,10 @@ export async function POST(req: NextRequest) {
 
   // Send internal notification to Orbital team (non-fatal)
   try {
+    const FINISH: Record<string, string> = { Classic: "Mármore Fosco", Brilliance: "Mármore Polido", Elegance: "Madeira Texturizada" };
     const spaceLabel = space || "não informado";
     const totalFmt = fmtBRL(total as number);
+    const modelFull = `${model}${FINISH[model as string] ? ` · ${FINISH[model as string]}` : ""}`;
     const phoneLine = client_phone ? `<tr><td style="padding:6px 0;color:#74777f;font-size:13px;font-family:Arial,sans-serif;">WhatsApp</td><td style="padding:6px 0 6px 16px;color:#002045;font-size:13px;font-weight:700;font-family:Arial,sans-serif;"><a href="https://wa.me/55${String(client_phone).replace(/\D/g,"")}" style="color:#002045;">${client_phone}</a></td></tr>` : "";
     const couponLine = partner_name && partner_name !== "Orbital" ? `<tr><td style="padding:6px 0;color:#74777f;font-size:13px;font-family:Arial,sans-serif;">Cupom parceiro</td><td style="padding:6px 0 6px 16px;color:#002045;font-size:13px;font-weight:700;font-family:Arial,sans-serif;">${partner_name}</td></tr>` : "";
 
@@ -100,8 +104,9 @@ export async function POST(req: NextRequest) {
           ${phoneLine}
           <tr><td colspan="2" style="padding:12px 0 4px;border-top:1px solid #f0f0f0;"></td></tr>
           <tr><td style="padding:6px 0;color:#74777f;font-size:13px;font-family:Arial,sans-serif;">Espaço</td><td style="padding:6px 0 6px 16px;color:#002045;font-size:13px;font-family:Arial,sans-serif;">${spaceLabel}</td></tr>
-          <tr><td style="padding:6px 0;color:#74777f;font-size:13px;font-family:Arial,sans-serif;">Modelo</td><td style="padding:6px 0 6px 16px;color:#002045;font-size:13px;font-family:Arial,sans-serif;">${model}</td></tr>
+          <tr><td style="padding:6px 0;color:#74777f;font-size:13px;font-family:Arial,sans-serif;">Modelo</td><td style="padding:6px 0 6px 16px;color:#002045;font-size:13px;font-weight:700;font-family:Arial,sans-serif;">${modelFull}</td></tr>
           <tr><td style="padding:6px 0;color:#74777f;font-size:13px;font-family:Arial,sans-serif;">Placas / Área</td><td style="padding:6px 0 6px 16px;color:#002045;font-size:13px;font-family:Arial,sans-serif;">${plates} placas — ${Number(area_m2).toFixed(2).replace(".", ",")} m²</td></tr>
+          ${dim_label ? `<tr><td style="padding:6px 0;color:#74777f;font-size:13px;font-family:Arial,sans-serif;">Dimensões</td><td style="padding:6px 0 6px 16px;color:#43474e;font-size:12px;font-family:Arial,sans-serif;">${String(dim_label)}</td></tr>` : ""}
           <tr><td style="padding:6px 0;color:#74777f;font-size:13px;font-family:Arial,sans-serif;">Total material</td><td style="padding:6px 0 6px 16px;color:#002045;font-size:15px;font-weight:700;font-family:Arial,sans-serif;">${totalFmt}</td></tr>
           ${couponLine}
         </table>
