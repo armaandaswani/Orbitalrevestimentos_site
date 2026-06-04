@@ -97,6 +97,7 @@ interface SavedSpace {
   label: string;
   productName: string;
   productCode: string;
+  imagePath: string;
   linha: string;
   dimLabel: string;
   m2: number;
@@ -565,6 +566,7 @@ function SimuladorInner() {
         label: sp.spaceName,
         productName: product?.name ?? sp.productCode,
         productCode: sp.productCode,
+        imagePath: product?.image_path ?? "",
         linha: product?.linha ?? "Classic",
         dimLabel: `${areaM2.toFixed(2)} m²`,
         m2: areaM2,
@@ -670,6 +672,7 @@ function SimuladorInner() {
       label: ambienteName.trim() || selectedSpace.label,
       productName: selectedProduct.name,
       productCode: selectedProduct.code,
+      imagePath: selectedProduct.image_path ?? "",
       linha: selectedProduct.linha,
       dimLabel: dimMode === "lxa" && width && height ? `${width}m × ${height}m` : `${m2.toFixed(2)} m²`,
       m2,
@@ -820,6 +823,26 @@ function SimuladorInner() {
         ? [...savedSpaces.map((sp) => `${sp.label}: ${sp.dimLabel}`), `${selectedSpace?.label ?? ""}: ${currentDimLabel}`].join(" | ")
         : currentDimLabel;
       const siteUrl = typeof window !== "undefined" ? window.location.origin : "https://orbitalrevestimentos.com.br";
+      // Build per-space product images array (deduped by imageUrl)
+      const allSpaceImages = [
+        ...savedSpaces.map((sp) => ({
+          imageUrl: sp.imagePath ? `${siteUrl}${sp.imagePath}` : "",
+          productName: sp.productName,
+          spaceName: sp.label,
+        })),
+        ...(selectedProduct && selectedProduct.image_path ? [{
+          imageUrl: `${siteUrl}${selectedProduct.image_path}`,
+          productName: selectedProduct.name,
+          spaceName: ambienteName.trim() || selectedSpace?.label || "",
+        }] : []),
+      ].filter((img) => img.imageUrl);
+      // Deduplicate by imageUrl
+      const seenImgUrls = new Set<string>();
+      const seqProductImages = allSpaceImages.filter((img) => {
+        if (seenImgUrls.has(img.imageUrl)) return false;
+        seenImgUrls.add(img.imageUrl);
+        return true;
+      });
       try {
         await fetch("/api/client-email-sequences", {
           method: "POST",
@@ -835,6 +858,7 @@ function SimuladorInner() {
             area_m2: seqArea,
             total: seqTotal,
             dim_label: seqDimLabel,
+            product_images: seqProductImages,
             partner_name: couponData?.partner_name ?? "Orbital",
             quote_url: quoteSlug ? `${siteUrl}/orcamento/${quoteSlug}` : null,
           }),
@@ -1322,6 +1346,7 @@ function SimuladorInner() {
                       label: ambienteName.trim() || selectedSpace!.label,
                       productName: selectedProduct!.name,
                       productCode: selectedProduct!.code,
+                      imagePath: selectedProduct!.image_path ?? "",
                       linha: selectedProduct!.linha,
                       dimLabel: dimMode === "lxa" && width && height ? `${width}m × ${height}m` : `${m2.toFixed(2)} m²`,
                       m2,

@@ -37,6 +37,7 @@ export interface EmailParams {
   total: number;        // BRL
   partnerName: string;
   quoteUrl?: string | null;
+  productImages?: Array<{ imageUrl: string; productName: string; spaceName: string }> | null;
 }
 
 // ─── Helpers ────────────────────────────────────────────────────────────────
@@ -151,6 +152,26 @@ export function generateClientEmail(
   </td></tr>
 </table>` : "";
 
+    const imgs = p.productImages?.filter((i) => i.imageUrl) ?? [];
+    const productImgBlock = imgs.length === 0 ? "" : imgs.length === 1 ? `
+<table cellpadding="0" cellspacing="0" width="100%" style="margin:0 0 24px;">
+  <tr><td style="padding:0;text-align:center;">
+    <img src="${imgs[0].imageUrl}" alt="${imgs[0].productName}" style="display:inline-block;width:auto;max-width:100%;max-height:320px;height:auto;border:0;" />
+  </td></tr>
+  <tr><td style="padding:6px 0 0;text-align:center;">
+    <p style="margin:0;font-size:11px;color:#74777f;font-family:Arial,sans-serif;letter-spacing:0.05em;">${imgs[0].productName}</p>
+  </td></tr>
+</table>` : `
+<table cellpadding="0" cellspacing="0" width="100%" style="margin:0 0 24px;border-collapse:separate;border-spacing:8px 0;">
+  <tr>
+    ${imgs.slice(0, 3).map((img) => `
+    <td style="width:${Math.floor(100 / Math.min(imgs.length, 3))}%;vertical-align:top;padding:0 4px;">
+      <img src="${img.imageUrl}" alt="${img.productName}" style="display:block;width:100%;height:auto;border:0;" />
+      <p style="margin:4px 0 0;font-size:10px;color:#74777f;font-family:Arial,sans-serif;line-height:1.4;">${img.spaceName}<br><span style="color:#002045;font-weight:700;">${img.productName}</span></p>
+    </td>`).join("")}
+  </tr>
+</table>`;
+
     return {
       subject: `${first}, seu orçamento Orbital está pronto`,
       html: wrap(
@@ -158,6 +179,7 @@ export function generateClientEmail(
         `
 <p style="font-size:26px;color:#002045;font-weight:700;margin:0 0 6px;font-family:Arial,sans-serif;">${first},</p>
 <p style="font-size:24px;color:#002045;font-weight:300;margin:0 0 24px;font-family:Arial,sans-serif;">seu orçamento está aqui.</p>
+${productImgBlock}
 <p style="color:#43474e;font-size:14px;line-height:1.8;margin:0 0 20px;font-family:Arial,sans-serif;">
   ${p.plates} painel${p.plates !== 1 ? "is" : ""} <strong>${p.model} · ${finish}</strong>. ${fmtArea(p.area)} m² ${spaceEm}. Instalação sem obra, em 2 a 3 horas.
 </p>
