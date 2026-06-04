@@ -49,6 +49,25 @@ function orbitalMOPerPlate(plates: number, complex: boolean) {
   return plates > 10 ? (complex ? 150 : 130) : (complex ? 175 : 150);
 }
 
+/**
+ * Compute the number of MDF sheets needed for a given space.
+ * When dimLabel contains explicit "Wm × Hm" dimensions, uses the exact
+ * sheet-grid calculation (same logic as the active space with lxa mode).
+ * Falls back to area-based rounding otherwise.
+ */
+function mdfSheetsForSpace(m2: number, dimLabel: string): number {
+  // Try to parse "12.19m × 2.59m" (or "12,19m × 2,59m") from dimLabel
+  const match = dimLabel.match(/^([\d.,]+)\s*m\s*[×x]\s*([\d.,]+)\s*m/i);
+  if (match) {
+    const wParsed = parseFloat(match[1].replace(",", "."));
+    const hParsed = parseFloat(match[2].replace(",", "."));
+    if (wParsed > 0 && hParsed > 0) {
+      return Math.ceil(wParsed / MDF_SHEET_W) * Math.ceil(hParsed / MDF_SHEET_H);
+    }
+  }
+  return m2 > 0 ? Math.ceil(m2 / MDF_SHEET_M2) : 0;
+}
+
 function fmt(n: number) {
   return n.toLocaleString("pt-BR", {
     style: "decimal",
@@ -107,6 +126,7 @@ interface SavedSpace {
   materialDiscounted: number;
   moTotal: number;
   total: number;
+  viability: "simple" | "complex";
 }
 
 const LINE_INFO: Record<ProductLine, { finish: string; price: number; cover: string }> = {
@@ -263,6 +283,8 @@ function SimuladorInner() {
   const [clientPhone, setClientPhone] = useState("");
   const [simSubmitting, setSimSubmitting] = useState(false);
   const [simSubmitted, setSimSubmitted] = useState(false);
+  const [quoteShareUrl, setQuoteShareUrl] = useState<string | null>(null);
+  const [quoteUrlCopied, setQuoteUrlCopied] = useState(false);
   const [couponCode, setCouponCode] = useState("");
   const [couponData, setCouponData] = useState<CouponData | null>(null);
   const [couponValidating, setCouponValidating] = useState(false);
@@ -331,6 +353,16 @@ function SimuladorInner() {
   const orbMaterialDiscounted = orbMaterialTotal - discountAmount;
   const orbTotal = orbMaterialDiscounted + orbMOTotal;
 
+  // Grand totals (all saved spaces + current space)
+  const grandMaterialTotal = savedSpaces.reduce((s, sp) => s + sp.materialTotal, 0) + orbMaterialTotal;
+  const grandMaterialDiscounted = savedSpaces.reduce((s, sp) => s + sp.materialDiscounted, 0) + orbMaterialDiscounted;
+  const grandMOTotal = savedSpaces.reduce((s, sp) => s + sp.moTotal, 0) + orbMOTotal;
+  const grandTotal = savedSpaces.reduce((s, sp) => s + sp.total, 0) + orbTotal;
+  const grandPlates = savedSpaces.reduce((s, sp) => s + sp.plates, 0) + plates;
+
+  // pfbTotal10y: the full PFB investment for all spaces (used consistently in all comparisons)
+  const pfbTotal10y = savedSpaces.length > 0 ? grandTotal : orbTotal;
+
   const w = parseFloat(width) || 0;
   const h = parseFloat(height) || 0;
   const mdfSheets =
@@ -341,9 +373,22 @@ function SimuladorInner() {
   const mdfMOPerSheet = Math.round((isComplex ? MDF_MO_COMPLEX : MDF_MO_SIMPLE) * MDF_SHEET_M2);
   const mdfMOTotal = mdfMOPerSheet * mdfSheets;
   const mdfAcabamentoTotal = MDF_ACABAMENTO * m2;
+  // mdfOnce: per-installation cost for the CURRENT space only (shown in the breakdown panel)
   const mdfOnce = mdfMaterialTotal + mdfMOTotal + mdfAcabamentoTotal;
-  const mdfIn10y = mdfOnce * MDF_INSTALLS_10Y;
-  const savings10y = mdfIn10y - orbTotal;
+
+  // mdfAllOnce: aggregate per-installation cost across ALL spaces (saved + current)
+  // used for the 10-year bar chart comparison so it's apples-to-apples with pfbTotal10y.
+  // Uses exact sheet-grid calculation from dimLabel dimensions when available.
+  const mdfAllOnce = savedSpaces.reduce((sum, sp) => {
+    const sheets = mdfSheetsForSpace(sp.m2, sp.dimLabel);
+    const moRate = sp.viability === "complex" ? MDF_MO_COMPLEX : MDF_MO_SIMPLE;
+    const mo = Math.round(moRate * MDF_SHEET_M2);
+    return sum + sheets * MDF_SHEET_PRICE + mo * sheets + MDF_ACABAMENTO * sp.m2;
+  }, 0) + mdfOnce;
+
+  const mdfIn10y = mdfAllOnce * MDF_INSTALLS_10Y;
+  // savings10y: against full PFB investment (all spaces) — negative means PFB is more expensive
+  const savings10y = mdfIn10y - pfbTotal10y;
 
   const forroMORate = isComplex ? FORRO_MO_COMPLEX : FORRO_MO_SIMPLE;
   const forroUnits = m2 > 0 ? Math.ceil(m2 * FORRO_WASTE / FORRO_PLANK_M2) : 0;
@@ -357,13 +402,6 @@ function SimuladorInner() {
   const tetoOnce = tetoMaterialCost + m2 * (TETO_M2_STRUCTURE + tetoMORate + TETO_ACABAMENTO);
   const tetoIn10y = tetoOnce * TETO_INSTALLS_10Y;
 
-  const grandMaterialTotal = savedSpaces.reduce((s, sp) => s + sp.materialTotal, 0) + orbMaterialTotal;
-  const grandMaterialDiscounted = savedSpaces.reduce((s, sp) => s + sp.materialDiscounted, 0) + orbMaterialDiscounted;
-  const grandMOTotal = savedSpaces.reduce((s, sp) => s + sp.moTotal, 0) + orbMOTotal;
-  const grandTotal = savedSpaces.reduce((s, sp) => s + sp.total, 0) + orbTotal;
-  const grandPlates = savedSpaces.reduce((s, sp) => s + sp.plates, 0) + plates;
-
-  const pfbTotal10y = savedSpaces.length > 0 ? grandTotal : orbTotal;
   const savingsForro = forroIn10y - pfbTotal10y;
   const savingsTeto = tetoIn10y - pfbTotal10y;
 
@@ -576,6 +614,7 @@ function SimuladorInner() {
         materialDiscounted: materialTotal, // discount applied retroactively when coupon validates
         moTotal,
         total: materialTotal + moTotal,
+        viability: complex ? "complex" : "simple",
       };
     });
 
@@ -662,6 +701,8 @@ function SimuladorInner() {
     setShowResult(false);
     setShowAmbientsReview(false);
     setSavedSpaces([]);
+    setQuoteShareUrl(null);
+    setQuoteUrlCopied(false);
     setTimeout(() => stepCardRef.current?.scrollIntoView({ behavior: "smooth", block: "center" }), 50);
   }
 
@@ -682,6 +723,7 @@ function SimuladorInner() {
       materialDiscounted: orbMaterialDiscounted,
       moTotal: orbMOTotal,
       total: orbTotal,
+      viability: selectedSpace.viability === "complex" ? "complex" : "simple",
     }]);
     // Reset space/product/dims but keep client info and coupon
     setSelectedSpace(null);
@@ -759,6 +801,8 @@ function SimuladorInner() {
         } catch { /* non-fatal */ }
       }
 
+      const siteUrl = typeof window !== "undefined" ? window.location.origin : "https://orbitalrevestimentos.com.br";
+
       // Save a permanent quote (valid 7 days) and get its slug for the email
       let quoteSlug: string | null = null;
       try {
@@ -803,6 +847,9 @@ function SimuladorInner() {
         if (qRes.ok) {
           const qData = await qRes.json();
           quoteSlug = qData.slug ?? null;
+          if (quoteSlug) {
+            setQuoteShareUrl(`${siteUrl}/orcamento/${quoteSlug}`);
+          }
         }
       } catch { /* non-fatal */ }
 
@@ -822,7 +869,6 @@ function SimuladorInner() {
       const seqDimLabel = hasMultipleSpaces
         ? [...savedSpaces.map((sp) => `${sp.label}: ${sp.dimLabel}`), `${selectedSpace?.label ?? ""}: ${currentDimLabel}`].join(" | ")
         : currentDimLabel;
-      const siteUrl = typeof window !== "undefined" ? window.location.origin : "https://orbitalrevestimentos.com.br";
       // Build per-space product images array (deduped by imageUrl)
       const allSpaceImages = [
         ...savedSpaces.map((sp) => ({
@@ -1356,6 +1402,7 @@ function SimuladorInner() {
                       materialDiscounted: orbMaterialDiscounted,
                       moTotal: orbMOTotal,
                       total: orbTotal,
+                      viability: selectedSpace!.viability === "complex" ? "complex" : "simple",
                     }]);
                     setSelectedSpace(null);
                     setAmbienteName("");
@@ -1847,13 +1894,43 @@ function SimuladorInner() {
             <div className="mt-0" ref={resultsRef}>
 
               {simSubmitted && clientEmail && (
-                <div className="bg-[#f0f9eb] border border-[#3b6934]/40 px-5 py-4 flex gap-3 items-center">
-                  <svg className="flex-shrink-0 text-[#3b6934]" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-                    <path d="M20 6L9 17l-5-5" />
-                  </svg>
-                  <p className="text-[#3b6934] text-xs font-[var(--font-inter)]">
-                    Orçamento enviado para <strong>{clientEmail}</strong>. Você receberá acompanhamento por e-mail.
-                  </p>
+                <div className="bg-[#f0f9eb] border border-[#3b6934]/40 px-5 py-4 flex flex-col gap-3">
+                  <div className="flex gap-3 items-center">
+                    <svg className="flex-shrink-0 text-[#3b6934]" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                      <path d="M20 6L9 17l-5-5" />
+                    </svg>
+                    <p className="text-[#3b6934] text-xs font-[var(--font-inter)]">
+                      Orçamento enviado para <strong>{clientEmail}</strong>. Você receberá acompanhamento por e-mail.
+                    </p>
+                  </div>
+                  {quoteShareUrl && (
+                    <div className="flex flex-col sm:flex-row gap-2 sm:items-center pt-1 border-t border-[#3b6934]/20">
+                      <div className="flex-1 min-w-0">
+                        <p className="text-[#3b6934] text-[10px] tracking-[0.1em] uppercase font-bold font-[var(--font-inter)] mb-1">Link para compartilhar</p>
+                        <p className="text-[#3b6934]/70 text-[11px] font-[var(--font-inter)] truncate">{quoteShareUrl}</p>
+                      </div>
+                      <button
+                        onClick={() => {
+                          navigator.clipboard.writeText(quoteShareUrl);
+                          setQuoteUrlCopied(true);
+                          setTimeout(() => setQuoteUrlCopied(false), 2500);
+                        }}
+                        className="flex-shrink-0 flex items-center gap-1.5 px-4 py-2 bg-[#3b6934] text-white text-[10px] tracking-[0.1em] uppercase font-bold font-[var(--font-inter)] hover:bg-[#2e5229] transition-colors"
+                      >
+                        {quoteUrlCopied ? (
+                          <>
+                            <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5"><path d="M20 6L9 17l-5-5"/></svg>
+                            Copiado!
+                          </>
+                        ) : (
+                          <>
+                            <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><rect x="9" y="9" width="13" height="13" rx="2"/><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"/></svg>
+                            Copiar link
+                          </>
+                        )}
+                      </button>
+                    </div>
+                  )}
                 </div>
               )}
               <div className="bg-[#fffbea] border border-[#e6c84a] px-5 py-4 flex gap-3 items-start">
