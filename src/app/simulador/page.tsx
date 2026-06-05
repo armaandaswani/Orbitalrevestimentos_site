@@ -285,6 +285,7 @@ function SimuladorInner() {
   const [simSubmitted, setSimSubmitted] = useState(false);
   const [quoteShareUrl, setQuoteShareUrl] = useState<string | null>(null);
   const [quoteUrlCopied, setQuoteUrlCopied] = useState(false);
+  const [partnerSimId, setPartnerSimId] = useState<string | null>(null);
   const [couponCode, setCouponCode] = useState("");
   const [couponData, setCouponData] = useState<CouponData | null>(null);
   const [couponValidating, setCouponValidating] = useState(false);
@@ -514,6 +515,10 @@ function SimuladorInner() {
     }
 
     if (cupom) setCouponCode(cupom.toUpperCase());
+
+    // Capture partner simulation ID (added to URL when partner generates the link)
+    const simId = searchParams.get("sim_id");
+    if (simId) setPartnerSimId(simId);
 
     // ── Multi-space link: ?ms=N&s0=…&p0=…&pl0=…&s1=…&p1=…&pl1=… ──────────
     const msParam = searchParams.get("ms");
@@ -929,6 +934,7 @@ function SimuladorInner() {
             space_breakdown: seqSpaceBreakdown,
             partner_name: couponData?.partner_name ?? "Orbital",
             quote_url: quoteSlug ? `${siteUrl}/orcamento/${quoteSlug}` : null,
+            sim_id: partnerSimId ?? undefined,
           }),
         });
       } catch { /* non-fatal */ }

@@ -128,7 +128,7 @@ export default function ParceiroPage() {
   const [profError, setProfError] = useState("");
 
   // ── Portal tab state ───────────────────────────────────────────────────────
-  const [portalTab, setPortalTab] = useState<"portal" | "commissions" | "special" | "simulate">("portal");
+  const [portalTab, setPortalTab] = useState<"portal" | "commissions" | "special" | "simulate" | "simulations">("portal");
   const [copied, setCopied] = useState(false);
   const [hasNewUses, setHasNewUses] = useState(false);
 
@@ -154,6 +154,25 @@ export default function ParceiroPage() {
   const [pSimH, setPSimH] = useState("");
   const [pSimLink, setPSimLink] = useState("");
   const [pSimLinkCopied, setPSimLinkCopied] = useState(false);
+  const [pSimGenerating, setPSimGenerating] = useState(false);
+
+  // ── Simulations tab ─────────────────────────────────────────────────────────
+  interface PartnerSimulation {
+    id: string;
+    spaces: Array<{ spaceName: string; productName: string; plates: number; area_m2: number; material: number }>;
+    total_plates: number | null;
+    total_area_m2: number | null;
+    material_discounted: number | null;
+    sim_url: string | null;
+    status: "pending" | "converted";
+    converted_at: string | null;
+    created_at: string;
+  }
+  const [simulations, setSimulations] = useState<PartnerSimulation[]>([]);
+  const [simulationsLoading, setSimulationsLoading] = useState(false);
+  const [simulationsLoaded, setSimulationsLoaded] = useState(false);
+  const [deletingSimId, setDeletingSimId] = useState<string | null>(null);
+  const [simLinkCopied, setSimLinkCopied] = useState<string | null>(null);
   const [pSimSelectedLine, setPSimSelectedLine] = useState<"Classic" | "Brilliance" | "Elegance" | null>(null);
   const [pSimShowCustom, setPSimShowCustom] = useState(false);
   const [pSimCustomText, setPSimCustomText] = useState("");
@@ -799,13 +818,22 @@ export default function ParceiroPage() {
               { key: "portal", label: "Meu Portal" },
               { key: "commissions", label: "Comissões" },
               { key: "simulate", label: "Simular" },
+              { key: "simulations", label: "Simulações" },
               ...(partner.has_special_table ? [{ key: "special", label: "Tabela Especial ★" }] : []),
-            ] as { key: "portal" | "commissions" | "special" | "simulate"; label: string }[]).map((t) => (
+            ] as { key: "portal" | "commissions" | "special" | "simulate" | "simulations"; label: string }[]).map((t) => (
               <button
                 key={t.key}
                 onClick={() => {
                   setPortalTab(t.key);
                   if (t.key === "portal") markPortalVisited();
+                  if (t.key === "simulations" && !simulationsLoaded) {
+                    setSimulationsLoading(true);
+                    fetch(`/api/partner-simulations?partner_id=${partner.id}`)
+                      .then(r => r.json())
+                      .then(d => { setSimulations(Array.isArray(d) ? d : []); setSimulationsLoaded(true); })
+                      .catch(() => setSimulations([]))
+                      .finally(() => setSimulationsLoading(false));
+                  }
                 }}
                 className={`relative px-6 py-3 text-xs tracking-[0.1em] uppercase font-bold font-[var(--font-inter)] transition-colors border-b-2 -mb-px ${portalTab === t.key ? "border-[#002045] text-[#002045]" : "border-transparent text-[#74777f] hover:text-[#002045]"}`}
               >
@@ -1273,8 +1301,10 @@ export default function ParceiroPage() {
         const pWaLines = pAllSpaces.map((sp, i) =>
           `*${i + 1}. ${sp.spaceName}* — ${sp.product?.name ?? sp.productCode}\n   ${pSimSpaces[i]?.w || pSimW}m × ${pSimSpaces[i]?.h || pSimH}m · ${sp.plates} placas`
         );
+        // Use pSimLink (which includes sim_id after generation) for WA text; fall back to buildPSimLink() if not yet generated
+        const pWaLinkForText = pSimLink || buildPSimLink();
         const pWaText = canGeneratePSim ? encodeURIComponent(
-          [`Olá! Segue o link de simulação do projeto com seu cupom Orbital:`, ``, buildPSimLink(), ``, ...pWaLines,
+          [`Olá! Segue o link de simulação do projeto com seu cupom Orbital:`, ``, pWaLinkForText, ``, ...pWaLines,
            ...(pAllSpaces.length > 1 ? [``, `*Total: ${pGrandPlates} placas*`] : [])].join("\n")
         ) : "";
 
@@ -1490,12 +1520,55 @@ export default function ParceiroPage() {
                 </div>
               )}
 
-              <button disabled={!canGeneratePSim} onClick={() => {
-                setPSimLink(buildPSimLink()); setPSimLinkCopied(false);
-                setTimeout(() => document.getElementById("psim-link")?.scrollIntoView({ behavior: "smooth", block: "start" }), 80);
+              <button disabled={!canGeneratePSim || pSimGenerating} onClick={async () => {
+                if (!canGeneratePSim || pSimGenerating) return;
+                setPSimGenerating(true);
+                setPSimLinkCopied(false);
+                try {
+                  const baseUrl = buildPSimLink();
+                  // Save simulation to DB and get back an ID
+                  const res = await fetch("/api/partner-simulations", {
+                    method: "POST",
+                    headers: { "Content-Type": "application/json" },
+                    body: JSON.stringify({
+                      partner_id: partner.id,
+                      coupon_code: partner.coupon_code,
+                      partner_name: partner.name,
+                      spaces: pAllSpaces.map(sp => ({
+                        spaceName: sp.spaceName,
+                        productCode: sp.productCode,
+                        productName: sp.product?.name ?? sp.productCode,
+                        plates: sp.plates,
+                        area_m2: parseFloat(sp.area.toFixed(2)),
+                        material: sp.material,
+                      })),
+                      total_plates: pGrandPlates,
+                      total_area_m2: parseFloat(pAllSpaces.reduce((s, sp) => s + sp.area, 0).toFixed(2)),
+                      material_total: pGrandMaterial,
+                      material_discounted: pGrandMaterial,
+                      sim_url: baseUrl,
+                    }),
+                  });
+                  let finalUrl = baseUrl;
+                  if (res.ok) {
+                    const { id } = await res.json();
+                    if (id) {
+                      const u = new URL(baseUrl);
+                      u.searchParams.set("sim_id", id);
+                      finalUrl = u.toString();
+                    }
+                  }
+                  setPSimLink(finalUrl);
+                } catch {
+                  // non-fatal — fall back to URL without sim_id
+                  setPSimLink(buildPSimLink());
+                } finally {
+                  setPSimGenerating(false);
+                  setTimeout(() => document.getElementById("psim-link")?.scrollIntoView({ behavior: "smooth", block: "start" }), 80);
+                }
               }}
                 className="w-full py-3 text-xs tracking-[0.12em] uppercase font-bold font-[var(--font-inter)] bg-[#002045] text-white hover:bg-[#1a365d] transition-colors disabled:opacity-40">
-                Gerar link para o cliente
+                {pSimGenerating ? "Gerando..." : "Gerar link para o cliente"}
               </button>
             </div>
 
@@ -1525,6 +1598,133 @@ export default function ParceiroPage() {
           </div>
         );
       })()}
+
+      {/* ── Simulações tab ── */}
+      {portalTab === "simulations" && (
+        <div className="max-w-3xl mx-auto px-4 sm:px-8 py-8">
+          <div className="mb-6 flex items-end justify-between gap-4">
+            <div>
+              <h2 className="font-[var(--font-noto-serif)] text-[#002045] text-2xl font-normal mb-1">Simulações geradas</h2>
+              <p className="text-[#74777f] text-sm font-[var(--font-inter)]">Links que você enviou a clientes e seu status de conversão.</p>
+            </div>
+            <button
+              onClick={() => {
+                setSimulationsLoading(true);
+                fetch(`/api/partner-simulations?partner_id=${partner.id}`)
+                  .then(r => r.json())
+                  .then(d => { setSimulations(Array.isArray(d) ? d : []); })
+                  .catch(() => {})
+                  .finally(() => setSimulationsLoading(false));
+              }}
+              className="flex-shrink-0 text-[10px] tracking-[0.1em] uppercase font-bold font-[var(--font-inter)] text-[#74777f] hover:text-[#002045] transition-colors"
+            >
+              ↺ Atualizar
+            </button>
+          </div>
+
+          {simulationsLoading && (
+            <div className="py-12 text-center text-[#74777f] text-sm font-[var(--font-inter)]">Carregando…</div>
+          )}
+
+          {!simulationsLoading && simulations.length === 0 && (
+            <div className="py-12 text-center border border-dashed border-[#e2e2e2]">
+              <p className="text-[#74777f] text-sm font-[var(--font-inter)]">Nenhuma simulação gerada ainda.</p>
+              <p className="text-[#b0b4bb] text-xs font-[var(--font-inter)] mt-1">Vá para a aba <strong>Simular</strong> para criar e enviar um link a um cliente.</p>
+            </div>
+          )}
+
+          {!simulationsLoading && simulations.length > 0 && (
+            <div className="divide-y divide-[#f0f0f0] border border-[#e2e2e2]">
+              {simulations.map((sim) => {
+                const isConverted = sim.status === "converted";
+                const dateStr = new Date(sim.created_at).toLocaleDateString("pt-BR", { day: "2-digit", month: "short", year: "numeric" });
+                const convertedStr = sim.converted_at
+                  ? new Date(sim.converted_at).toLocaleDateString("pt-BR", { day: "2-digit", month: "short", year: "numeric" })
+                  : null;
+                const spaces = Array.isArray(sim.spaces) ? sim.spaces : [];
+                const fmtVal = (n: number | null) => n != null ? n.toLocaleString("pt-BR", { style: "decimal", maximumFractionDigits: 0 }) : "—";
+
+                return (
+                  <div key={sim.id} className="px-5 py-4 bg-white">
+                    {/* Header row */}
+                    <div className="flex items-start gap-3 mb-3">
+                      <span className={`flex-shrink-0 mt-0.5 inline-flex items-center px-2 py-0.5 text-[9px] tracking-[0.12em] uppercase font-bold font-[var(--font-inter)] ${
+                        isConverted
+                          ? "bg-[#f0f9eb] text-[#3b6934]"
+                          : "bg-[#fff8e1] text-[#a07a00]"
+                      }`}>
+                        {isConverted ? "✓ Convertida" : "Pendente"}
+                      </span>
+                      <div className="flex-1 min-w-0">
+                        <p className="text-[#74777f] text-[10px] font-[var(--font-inter)]">
+                          Gerada em {dateStr}
+                          {convertedStr && <span className="ml-2 text-[#3b6934]">· Convertida em {convertedStr}</span>}
+                        </p>
+                      </div>
+                      <p className="flex-shrink-0 text-[#002045] text-sm font-bold font-[var(--font-inter)]">
+                        R$ {fmtVal(sim.material_discounted)}
+                      </p>
+                    </div>
+
+                    {/* Spaces list */}
+                    {spaces.length > 0 && (
+                      <div className="mb-3 space-y-1">
+                        {spaces.map((sp, i) => (
+                          <div key={i} className="flex items-baseline gap-2">
+                            <span className="w-4 h-4 rounded-full bg-[#e8edf5] text-[#002045] text-[9px] font-bold font-[var(--font-inter)] flex items-center justify-center flex-shrink-0">{i + 1}</span>
+                            <p className="text-[#002045] text-xs font-semibold font-[var(--font-inter)]">{sp.spaceName}</p>
+                            <p className="text-[#74777f] text-[10px] font-[var(--font-inter)]">{sp.productName} · {sp.plates} placa{sp.plates !== 1 ? "s" : ""}</p>
+                          </div>
+                        ))}
+                      </div>
+                    )}
+
+                    {/* Actions */}
+                    <div className="flex items-center gap-2 flex-wrap">
+                      {sim.sim_url && (
+                        <button
+                          onClick={() => {
+                            navigator.clipboard.writeText(sim.sim_url!);
+                            setSimLinkCopied(sim.id);
+                            setTimeout(() => setSimLinkCopied(null), 2000);
+                          }}
+                          className={`flex items-center gap-1.5 px-3 py-1.5 text-[10px] tracking-[0.08em] uppercase font-bold font-[var(--font-inter)] border transition-colors ${
+                            simLinkCopied === sim.id
+                              ? "border-[#3b6934] bg-[#3b6934] text-white"
+                              : "border-[#002045] text-[#002045] hover:bg-[#002045] hover:text-white"
+                          }`}
+                        >
+                          {simLinkCopied === sim.id ? (
+                            <><svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5"><path d="M20 6L9 17l-5-5"/></svg>Copiado</>
+                          ) : (
+                            <><svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><rect x="9" y="9" width="13" height="13" rx="2"/><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"/></svg>Copiar link</>
+                          )}
+                        </button>
+                      )}
+                      <button
+                        disabled={deletingSimId === sim.id}
+                        onClick={async () => {
+                          if (!confirm("Apagar esta simulação?")) return;
+                          setDeletingSimId(sim.id);
+                          try {
+                            await fetch(`/api/partner-simulations/${sim.id}?partner_id=${partner.id}`, { method: "DELETE" });
+                            setSimulations(prev => prev.filter(s => s.id !== sim.id));
+                          } catch { /* non-fatal */ }
+                          finally { setDeletingSimId(null); }
+                        }}
+                        className="flex items-center gap-1.5 px-3 py-1.5 text-[10px] tracking-[0.08em] uppercase font-bold font-[var(--font-inter)] border border-[#e2e2e2] text-[#c0392b] hover:border-[#c0392b] hover:bg-[#fff5f5] transition-colors disabled:opacity-40"
+                      >
+                        <svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><polyline points="3 6 5 6 21 6"/><path d="M19 6l-1 14a2 2 0 0 1-2 2H8a2 2 0 0 1-2-2L5 6"/><path d="M10 11v6M14 11v6"/><path d="M9 6V4a1 1 0 0 1 1-1h4a1 1 0 0 1 1 1v2"/></svg>
+                        {deletingSimId === sim.id ? "Apagando…" : "Apagar"}
+                      </button>
+                    </div>
+                  </div>
+                );
+              })}
+            </div>
+          )}
+        </div>
+      )}
 
       {/* ── Special Table tab ── */}
       {portalTab === "special" && (

@@ -28,7 +28,7 @@ export async function POST(req: NextRequest) {
   const {
     coupon_use_id, client_name, client_email, client_phone,
     space, model, plates, area_m2, total, dim_label, product_images,
-    space_breakdown, partner_name, quote_url,
+    space_breakdown, partner_name, quote_url, sim_id,
   } = body;
 
   if (!client_name || !client_email) {
@@ -63,6 +63,21 @@ export async function POST(req: NextRequest) {
     .single();
 
   if (error) return NextResponse.json({ error: error.message }, { status: 500 });
+
+  // Mark the partner simulation as converted (non-fatal)
+  if (sim_id) {
+    try {
+      await db
+        .from("partner_simulations")
+        .update({
+          status: "converted",
+          converted_at: new Date().toISOString(),
+          client_email_sequence_id: seq.id,
+        })
+        .eq("id", sim_id)
+        .eq("status", "pending"); // only update if still pending
+    } catch { /* non-fatal */ }
+  }
 
   const resend = getResend();
 
