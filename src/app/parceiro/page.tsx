@@ -173,6 +173,7 @@ export default function ParceiroPage() {
   const [simulationsLoaded, setSimulationsLoaded] = useState(false);
   const [deletingSimId, setDeletingSimId] = useState<string | null>(null);
   const [simLinkCopied, setSimLinkCopied] = useState<string | null>(null);
+  const [pendingSimsCount, setPendingSimsCount] = useState<number | null>(null);
   const [pSimSelectedLine, setPSimSelectedLine] = useState<"Classic" | "Brilliance" | "Elegance" | null>(null);
   const [pSimShowCustom, setPSimShowCustom] = useState(false);
   const [pSimCustomText, setPSimCustomText] = useState("");
@@ -271,6 +272,23 @@ export default function ParceiroPage() {
       if (pollingRef.current) { clearInterval(pollingRef.current); pollingRef.current = null; }
     };
   }, [partner?.coupon_code, fetchUses]);
+
+  // ── Load pending simulations count for dashboard ─────────────────────────
+  useEffect(() => {
+    if (!partner?.id) return;
+    fetch(`/api/partner-simulations?partner_id=${partner.id}`)
+      .then(r => r.json())
+      .then((d: Array<{ status: string }>) => {
+        if (Array.isArray(d)) {
+          setPendingSimsCount(d.filter(s => s.status === "pending").length);
+          // If simulations tab was already loaded, refresh its data too
+          setSimulations(d as PartnerSimulation[]);
+          setSimulationsLoaded(true);
+        }
+      })
+      .catch(() => {});
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [partner?.id]);
 
   // ── "Novo" badge: watch uses for new entries since last visit ─────────────
   useEffect(() => {
@@ -878,6 +896,34 @@ export default function ParceiroPage() {
                       <p className="text-[#74777f] text-[10px] font-[var(--font-inter)] mt-1">{card.sub}</p>
                     </div>
                   ))}
+                </div>
+
+                {/* Pipeline cards — em orçamento + simulações pendentes */}
+                <div className="grid grid-cols-2 gap-3 mb-3">
+                  <button
+                    onClick={() => setPortalTab("commissions")}
+                    className="bg-white border border-[#e2e2e2] border-l-4 border-l-[#f59e0b] p-4 text-left hover:border-[#002045] transition-colors group"
+                  >
+                    <p className="text-[#74777f] text-[9px] tracking-[0.15em] uppercase font-[var(--font-inter)] mb-1.5">Em orçamento</p>
+                    <p className="font-[var(--font-noto-serif)] text-[#002045] text-xl font-normal leading-tight">{emOrcamento}</p>
+                    <p className="text-[#74777f] text-[10px] font-[var(--font-inter)] mt-1 group-hover:text-[#002045] transition-colors">
+                      {emOrcamento === 1 ? "pedido aguardando decisão" : "pedidos aguardando decisão"} →
+                    </p>
+                  </button>
+                  <button
+                    onClick={() => {
+                      setPortalTab("simulations");
+                    }}
+                    className="bg-white border border-[#e2e2e2] border-l-4 border-l-[#6366f1] p-4 text-left hover:border-[#002045] transition-colors group"
+                  >
+                    <p className="text-[#74777f] text-[9px] tracking-[0.15em] uppercase font-[var(--font-inter)] mb-1.5">Simulações pendentes</p>
+                    <p className="font-[var(--font-noto-serif)] text-[#002045] text-xl font-normal leading-tight">
+                      {pendingSimsCount ?? "—"}
+                    </p>
+                    <p className="text-[#74777f] text-[10px] font-[var(--font-inter)] mt-1 group-hover:text-[#002045] transition-colors">
+                      {pendingSimsCount === 1 ? "link ainda não convertido" : "links ainda não convertidos"} →
+                    </p>
+                  </button>
                 </div>
 
                 {/* Recent activity strip */}
