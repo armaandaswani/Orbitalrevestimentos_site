@@ -240,6 +240,8 @@ export async function POST(req: NextRequest) {
       discount_applied: body.discount_applied,
       commission_owed: body.commission_owed,
       architect_name: body.architect_name,
+      client_email: body.client_email ?? null,
+      client_phone: body.client_phone ?? null,
       sales_rep_referral_code: salesRepReferralCode,
       sales_rep_commission_owed: salesRepCommissionOwed,
     })

@@ -797,6 +797,7 @@ function SimuladorInner() {
               commission_owed: commissionOwed,
               architect_name: clientName.trim(),
               client_email: clientEmail.trim(),
+              client_phone: clientPhone.trim(),
             }),
           });
           if (res.ok) {

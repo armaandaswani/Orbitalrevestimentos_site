@@ -58,6 +58,8 @@ interface CouponUse {
   discount_applied: number | null;
   commission_owed: number | null;
   architect_name: string | null;
+  client_email: string | null;
+  client_phone: string | null;
   sale_status: "em_orcamento" | "concluido" | "cancelado" | null;
   sales_rep_referral_code: string | null;
   sales_rep_commission_owed: number | null;
@@ -1735,8 +1737,8 @@ export default function AdminPage() {
         return {
           id: u.id,
           client_name: u.architect_name ?? "—",
-          client_email: "",
-          client_phone: null as string | null,
+          client_email: u.client_email ?? "",
+          client_phone: u.client_phone ?? null,
           space: u.space,
           model: u.product_name ?? "",
           plates: u.plates ?? 0,
