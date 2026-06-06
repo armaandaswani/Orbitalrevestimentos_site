@@ -124,6 +124,15 @@
 .stagger-5 { animation-delay: 400ms; }
 .stagger-6 { animation-delay: 500ms; }
 
+/* Hide scrollbar utility (for horizontally-scrollable tab bars) */
+.scrollbar-none {
+  -ms-overflow-style: none;
+  scrollbar-width: none;
+}
+.scrollbar-none::-webkit-scrollbar {
+  display: none;
+}
+
 /* Custom scrollbar */
 ::-webkit-scrollbar {
   width: 4px;

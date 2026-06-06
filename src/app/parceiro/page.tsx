@@ -828,10 +828,10 @@ export default function ParceiroPage() {
         </button>
       </div>
 
-      {/* Tab bar — always visible */}
+      {/* Tab bar — always visible, scrollable on mobile */}
       <div className="bg-white border-b border-[#e2e2e2]">
-        <div className="max-w-5xl mx-auto px-4 sm:px-8">
-          <div className="flex gap-0">
+        <div className="max-w-5xl mx-auto px-2 sm:px-8">
+          <div className="flex gap-0 overflow-x-auto scrollbar-none">
             {([
               { key: "portal", label: "Meu Portal" },
               { key: "commissions", label: "Comissões" },
@@ -853,7 +853,7 @@ export default function ParceiroPage() {
                       .finally(() => setSimulationsLoading(false));
                   }
                 }}
-                className={`relative px-6 py-3 text-xs tracking-[0.1em] uppercase font-bold font-[var(--font-inter)] transition-colors border-b-2 -mb-px ${portalTab === t.key ? "border-[#002045] text-[#002045]" : "border-transparent text-[#74777f] hover:text-[#002045]"}`}
+                className={`relative flex-shrink-0 px-3 sm:px-6 py-3 text-[10px] sm:text-xs tracking-[0.08em] sm:tracking-[0.1em] uppercase font-bold font-[var(--font-inter)] transition-colors border-b-2 -mb-px whitespace-nowrap ${portalTab === t.key ? "border-[#002045] text-[#002045]" : "border-transparent text-[#74777f] hover:text-[#002045]"}`}
               >
                 {t.label}
                 {t.key === "portal" && hasNewUses && (
@@ -1415,7 +1415,7 @@ export default function ParceiroPage() {
             )}
 
             {/* New space card */}
-            <div className="bg-white border border-[#e2e2e2] p-6 space-y-6">
+            <div className="bg-white border border-[#e2e2e2] p-4 sm:p-6 space-y-6">
               <p className="text-[#002045] text-[10px] tracking-[0.15em] uppercase font-bold font-[var(--font-inter)]">
                 {pSimSpaces.length === 0 ? "1 — Escolha o espaço" : `Ambiente ${pSimSpaces.length + 1} — Escolha o espaço`}
               </p>
@@ -1425,7 +1425,7 @@ export default function ParceiroPage() {
                 {PSim_SPACES.map(space => (
                   <button key={space.id} onClick={() => {
                     setPSimSpaceName(space.label); setPSimShowCustom(false); setPSimCustomText("");
-                    setTimeout(() => document.getElementById("psim-products")?.scrollIntoView({ behavior: "smooth", block: "start" }), 60);
+                    setTimeout(() => document.getElementById("psim-products")?.scrollIntoView({ behavior: "smooth", block: "nearest" }), 60);
                   }}
                     className={`px-3 py-2.5 min-h-[44px] border text-xs font-semibold font-[var(--font-inter)] transition-all text-left ${
                       pSimSpaceName === space.label && !pSimShowCustom
@@ -1435,7 +1435,7 @@ export default function ParceiroPage() {
                 ))}
                 <button onClick={() => {
                   setPSimShowCustom(true); setPSimSpaceName("");
-                  setTimeout(() => document.getElementById("psim-products")?.scrollIntoView({ behavior: "smooth", block: "start" }), 60);
+                  setTimeout(() => document.getElementById("psim-products")?.scrollIntoView({ behavior: "smooth", block: "nearest" }), 60);
                 }}
                   className={`px-3 py-2.5 min-h-[44px] border text-xs font-semibold font-[var(--font-inter)] transition-all text-left ${
                     pSimShowCustom ? "border-[#002045] bg-[#002045] text-white" : "border-dashed border-[#c8c8c8] text-[#74777f] hover:border-[#002045] hover:text-[#002045]"
@@ -1449,7 +1449,7 @@ export default function ParceiroPage() {
               )}
 
               {/* Product line + cards */}
-              <div id="psim-products">
+              <div id="psim-products" className="scroll-mt-20">
                 <p className="text-[#002045] text-[10px] tracking-[0.15em] uppercase font-bold font-[var(--font-inter)] mb-3">2 — Escolha o modelo</p>
                 <div className="grid grid-cols-3 gap-3 mb-4">
                   {(["Classic","Brilliance","Elegance"] as const).map(linha => {
@@ -1458,7 +1458,7 @@ export default function ParceiroPage() {
                     return (
                       <button key={linha} onClick={() => {
                         setPSimSelectedLine(linha); setPSimProductCode("");
-                        setTimeout(() => document.getElementById("psim-product-cards")?.scrollIntoView({ behavior: "smooth", block: "start" }), 60);
+                        setTimeout(() => document.getElementById("psim-product-cards")?.scrollIntoView({ behavior: "smooth", block: "nearest" }), 60);
                       }}
                         className={`border text-left p-4 transition-all relative ${active ? "border-[#002045] bg-[#eef2fb]" : "border-[#e2e2e2] hover:border-[#002045] bg-[#fafafa]"}`}>
                         {active && <div className="absolute top-2 right-2 w-4 h-4 bg-[#002045] flex items-center justify-center"><svg width="8" height="8" viewBox="0 0 24 24" fill="none" stroke="white" strokeWidth="3"><path d="M20 6L9 17l-5-5"/></svg></div>}
@@ -1474,15 +1474,15 @@ export default function ParceiroPage() {
                 </div>
 
                 {pSimSelectedLine && (
-                  <div id="psim-product-cards">
+                  <div id="psim-product-cards" className="scroll-mt-20">
                     <p className="text-[#43474e] text-[10px] tracking-[0.15em] uppercase font-bold font-[var(--font-inter)] mb-3">Acabamentos {pSimSelectedLine}</p>
-                    <div className="grid grid-cols-3 sm:grid-cols-4 md:grid-cols-5 gap-2">
+                    <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 gap-2">
                       {SPECIAL_PRODUCTS.filter(p => p.linha === pSimSelectedLine).map(product => {
                         const active = pSimProductCode === product.code;
                         return (
                           <div key={product.code} onClick={() => {
                             setPSimProductCode(product.code);
-                            setTimeout(() => document.getElementById("psim-dims")?.scrollIntoView({ behavior: "smooth", block: "start" }), 60);
+                            setTimeout(() => document.getElementById("psim-dims")?.scrollIntoView({ behavior: "smooth", block: "nearest" }), 60);
                           }}
                             className={`border overflow-hidden cursor-pointer transition-all ${active ? "border-[#002045]" : "border-[#e2e2e2] hover:border-[#002045]"}`}>
                             <div className="relative w-full bg-[#f7f7f5]" style={{ aspectRatio: "812/988" }}>
@@ -1503,7 +1503,7 @@ export default function ParceiroPage() {
               </div>
 
               {/* Dimensions */}
-              <div id="psim-dims">
+              <div id="psim-dims" className="scroll-mt-20">
                 <p className="text-[#002045] text-[10px] tracking-[0.15em] uppercase font-bold font-[var(--font-inter)] mb-3">3 — Dimensões</p>
                 <div className="grid grid-cols-2 gap-4">
                   <div>
@@ -1610,7 +1610,7 @@ export default function ParceiroPage() {
                   setPSimLink(buildPSimLink());
                 } finally {
                   setPSimGenerating(false);
-                  setTimeout(() => document.getElementById("psim-link")?.scrollIntoView({ behavior: "smooth", block: "start" }), 80);
+                  setTimeout(() => document.getElementById("psim-link")?.scrollIntoView({ behavior: "smooth", block: "nearest" }), 80);
                 }
               }}
                 className="w-full py-3 text-xs tracking-[0.12em] uppercase font-bold font-[var(--font-inter)] bg-[#002045] text-white hover:bg-[#1a365d] transition-colors disabled:opacity-40">
@@ -1883,7 +1883,7 @@ export default function ParceiroPage() {
                     onClick={() => {
                       setSqLinha(m.key as "Classic" | "Brilliance" | "Elegance");
                       setSqSelectedProduct(null);
-                      setTimeout(() => sqProductSectionRef.current?.scrollIntoView({ behavior: "smooth", block: "start" }), 80);
+                      setTimeout(() => sqProductSectionRef.current?.scrollIntoView({ behavior: "smooth", block: "nearest" }), 80);
                     }}
                     className={`text-left p-4 border-2 transition-all ${
                       sqLinha === m.key
@@ -1920,7 +1920,7 @@ export default function ParceiroPage() {
                           type="button"
                           onClick={() => {
                             setSqSelectedProduct(product);
-                            setTimeout(() => sqCalcSectionRef.current?.scrollIntoView({ behavior: "smooth", block: "start" }), 80);
+                            setTimeout(() => sqCalcSectionRef.current?.scrollIntoView({ behavior: "smooth", block: "nearest" }), 80);
                           }}
                           className="relative w-full overflow-hidden bg-[#f7f7f5] block"
                         >
@@ -1945,7 +1945,7 @@ export default function ParceiroPage() {
                           type="button"
                           onClick={() => {
                             setSqSelectedProduct(product);
-                            setTimeout(() => sqCalcSectionRef.current?.scrollIntoView({ behavior: "smooth", block: "start" }), 80);
+                            setTimeout(() => sqCalcSectionRef.current?.scrollIntoView({ behavior: "smooth", block: "nearest" }), 80);
                           }}
                           className="p-2 w-full text-left"
                         >
