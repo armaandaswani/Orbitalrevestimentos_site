@@ -296,6 +296,8 @@ function SimuladorInner() {
   const [forroExpanded, setForroExpanded] = useState(false);
   const [tetoExpanded, setTetoExpanded] = useState(false);
   const [savedSpaces, setSavedSpaces] = useState<SavedSpace[]>([]);
+  // Index of the space shown in the Resumo block; null = current active space
+  const [resumeIdx, setResumeIdx] = useState<number | null>(null);
 
   // Raw multi-space params from URL — resolved into savedSpaces once products load
   interface PendingMsSpace { spaceName: string; productCode: string; plates: number; }
@@ -2017,44 +2019,63 @@ function SimuladorInner() {
                     Todos os ambientes simulados
                   </p>
                   <div className="space-y-0 border border-[#e2e2e2]">
-                    {savedSpaces.map((sp, i) => (
-                      <div key={sp.key} className="flex items-center justify-between px-4 py-3 border-b border-[#f0f0f0] last:border-b-0">
-                        <div className="flex items-center gap-3 min-w-0">
-                          <span className="text-[#86a0cd] text-[10px] font-bold font-[var(--font-inter)] w-5 flex-shrink-0">{i + 1}</span>
-                          {sp.imagePath && (
-                            <img src={sp.imagePath} alt={sp.productName} className="w-9 h-9 object-cover flex-shrink-0 border border-[#e2e2e2]" />
-                          )}
-                          <div className="min-w-0">
-                            <p className="text-[#002045] text-sm font-semibold font-[var(--font-inter)] truncate">{sp.label}</p>
-                            <p className="text-[#74777f] text-[10px] font-[var(--font-inter)]">{sp.productName} · {sp.dimLabel} · {sp.plates} placas</p>
+                    {savedSpaces.map((sp, i) => {
+                      const isSelected = resumeIdx === i;
+                      return (
+                        <div key={sp.key}
+                          onClick={() => setResumeIdx(isSelected ? null : i)}
+                          className={`flex items-center justify-between px-4 py-3 border-b border-[#f0f0f0] last:border-b-0 cursor-pointer transition-colors ${isSelected ? "bg-[#eef2fb] border-l-2 border-l-[#002045]" : "hover:bg-[#fafafa]"}`}>
+                          <div className="flex items-center gap-3 min-w-0">
+                            <span className="text-[#86a0cd] text-[10px] font-bold font-[var(--font-inter)] w-5 flex-shrink-0">{i + 1}</span>
+                            {sp.imagePath && (
+                              <img src={sp.imagePath} alt={sp.productName} className="w-9 h-9 object-cover flex-shrink-0 border border-[#e2e2e2]" />
+                            )}
+                            <div className="min-w-0">
+                              <p className="text-[#002045] text-sm font-semibold font-[var(--font-inter)] truncate">{sp.label}</p>
+                              <p className="text-[#74777f] text-[10px] font-[var(--font-inter)]">{sp.productName} · {sp.dimLabel} · {sp.plates} placas</p>
+                            </div>
+                          </div>
+                          <div className="flex items-center gap-3 flex-shrink-0">
+                            <span className="text-[#002045] text-sm font-semibold font-[var(--font-inter)]">{fmt(sp.materialDiscounted)}</span>
+                            {isSelected
+                              ? <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="#002045" strokeWidth="2.5"><path d="M18 15l-6-6-6 6"/></svg>
+                              : <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="#b0b0b0" strokeWidth="2"><path d="M6 9l6 6 6-6"/></svg>
+                            }
+                            <button
+                              onClick={e => { e.stopPropagation(); setSavedSpaces(prev => prev.filter((_, idx) => idx !== i)); if (resumeIdx === i) setResumeIdx(null); }}
+                              className="text-[#cc0000] hover:text-[#ff0000] text-[10px] font-bold font-[var(--font-inter)] transition-colors"
+                              title="Remover ambiente"
+                            >✕</button>
                           </div>
                         </div>
-                        <div className="flex items-center gap-3 flex-shrink-0">
-                          <span className="text-[#002045] text-sm font-semibold font-[var(--font-inter)]">{fmt(sp.materialDiscounted)}</span>
-                          <button
-                            onClick={() => setSavedSpaces(prev => prev.filter((_, idx) => idx !== i))}
-                            className="text-[#cc0000] hover:text-[#ff0000] text-[10px] font-bold font-[var(--font-inter)] transition-colors"
-                            title="Remover ambiente"
-                          >
-                            ✕
-                          </button>
-                        </div>
-                      </div>
-                    ))}
+                      );
+                    })}
                     {/* Current space row */}
-                    <div className="flex items-center justify-between px-4 py-3 bg-[#f9fbff]">
-                      <div className="flex items-center gap-3 min-w-0">
-                        <span className="text-[#86a0cd] text-[10px] font-bold font-[var(--font-inter)] w-5 flex-shrink-0">{savedSpaces.length + 1}</span>
-                        {selectedProduct.image_path && (
-                          <img src={selectedProduct.image_path} alt={selectedProduct.name} className="w-9 h-9 object-cover flex-shrink-0 border border-[#e2e2e2]" />
-                        )}
-                        <div className="min-w-0">
-                          <p className="text-[#002045] text-sm font-semibold font-[var(--font-inter)] truncate">{selectedSpace.label}</p>
-                          <p className="text-[#74777f] text-[10px] font-[var(--font-inter)]">{selectedProduct.name} · {dimMode === "lxa" && width && height ? `${width}m × ${height}m` : `${m2.toFixed(2)} m²`} · {plates} placas</p>
+                    {(() => {
+                      const isSelected = resumeIdx === null;
+                      return (
+                        <div onClick={() => setResumeIdx(null)}
+                          className={`flex items-center justify-between px-4 py-3 cursor-pointer transition-colors ${isSelected ? "bg-[#eef2fb] border-l-2 border-l-[#002045]" : "bg-[#f9fbff] hover:bg-[#f0f4fa]"}`}>
+                          <div className="flex items-center gap-3 min-w-0">
+                            <span className="text-[#86a0cd] text-[10px] font-bold font-[var(--font-inter)] w-5 flex-shrink-0">{savedSpaces.length + 1}</span>
+                            {selectedProduct.image_path && (
+                              <img src={selectedProduct.image_path} alt={selectedProduct.name} className="w-9 h-9 object-cover flex-shrink-0 border border-[#e2e2e2]" />
+                            )}
+                            <div className="min-w-0">
+                              <p className="text-[#002045] text-sm font-semibold font-[var(--font-inter)] truncate">{selectedSpace.label}</p>
+                              <p className="text-[#74777f] text-[10px] font-[var(--font-inter)]">{selectedProduct.name} · {dimMode === "lxa" && width && height ? `${width}m × ${height}m` : `${m2.toFixed(2)} m²`} · {plates} placas</p>
+                            </div>
+                          </div>
+                          <div className="flex items-center gap-2 flex-shrink-0">
+                            <span className="text-[#002045] text-sm font-semibold font-[var(--font-inter)]">{fmt(orbMaterialDiscounted)}</span>
+                            {isSelected
+                              ? <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="#002045" strokeWidth="2.5"><path d="M18 15l-6-6-6 6"/></svg>
+                              : <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="#b0b0b0" strokeWidth="2"><path d="M6 9l6 6 6-6"/></svg>
+                            }
+                          </div>
                         </div>
-                      </div>
-                      <span className="text-[#002045] text-sm font-semibold font-[var(--font-inter)] flex-shrink-0">{fmt(orbMaterialDiscounted)}</span>
-                    </div>
+                      );
+                    })()}
                     {/* Grand total row */}
                     <div className="flex items-center justify-between px-4 py-3 bg-[#002045]">
                       <div className="flex items-center gap-3">
@@ -2066,59 +2087,63 @@ function SimuladorInner() {
                 </div>
               )}
 
-              {/* Input summary */}
+              {/* Input summary — switches between saved spaces and current space */}
+              {(() => {
+                const isSaved = resumeIdx !== null && resumeIdx < savedSpaces.length;
+                const sp = isSaved ? savedSpaces[resumeIdx!] : null;
+                const resumeLabel = sp ? sp.label : selectedSpace.label;
+                const resumeProductName = sp ? sp.productName : selectedProduct.name;
+                const resumeProductCode = sp ? sp.productCode : selectedProduct.code;
+                const resumeLinha = sp ? sp.linha : selectedProduct.linha;
+                const resumeDimLabel = sp ? sp.dimLabel : (dimMode === "lxa" && width && height ? `${width}m × ${height}m` : `${m2.toFixed(2)} m²`);
+                const resumeM2 = sp ? sp.m2 : m2;
+                const resumePlates = sp ? sp.plates : plates;
+                const resumeTotal = sp ? sp.materialDiscounted : orbMaterialDiscounted;
+                const resumeTotalFull = sp ? sp.materialTotal : orbMaterialTotal;
+                const resumeImg = sp ? sp.imagePath : (selectedProduct.image_path ?? "");
+                const hasDiscount = !sp && discountAmount > 0;
+                return (
               <div className="bg-white border border-[#e2e2e2] border-t-0 px-5 sm:px-8 py-6">
-                <p className="text-[#43474e] text-[10px] tracking-[0.15em] uppercase font-bold font-[var(--font-inter)] mb-4">
-                  Resumo da sua simulação
-                </p>
+                <div className="flex items-center justify-between mb-4">
+                  <p className="text-[#43474e] text-[10px] tracking-[0.15em] uppercase font-bold font-[var(--font-inter)]">
+                    Resumo — {resumeLabel}
+                  </p>
+                  {resumeImg && (
+                    <img src={resumeImg} alt={resumeProductName} className="w-10 h-10 object-cover border border-[#e2e2e2]" />
+                  )}
+                </div>
                 <div className="grid grid-cols-2 sm:grid-cols-3 gap-x-6 gap-y-4">
                   <div>
                     <p className="text-[#74777f] text-[10px] tracking-[0.1em] uppercase font-semibold font-[var(--font-inter)] mb-0.5">Espaço</p>
-                    <p className="text-[#002045] text-sm font-semibold font-[var(--font-inter)]">{selectedSpace.label}</p>
+                    <p className="text-[#002045] text-sm font-semibold font-[var(--font-inter)]">{resumeLabel}</p>
                   </div>
                   <div>
                     <p className="text-[#74777f] text-[10px] tracking-[0.1em] uppercase font-semibold font-[var(--font-inter)] mb-0.5">Acabamento</p>
-                    <p className="text-[#002045] text-sm font-semibold font-[var(--font-inter)]">{selectedProduct.name}</p>
-                    <p className="text-[#74777f] text-[10px] font-[var(--font-inter)]">{selectedProduct.code} · {selectedProduct.linha}</p>
+                    <p className="text-[#002045] text-sm font-semibold font-[var(--font-inter)]">{resumeProductName}</p>
+                    <p className="text-[#74777f] text-[10px] font-[var(--font-inter)]">{resumeProductCode} · {resumeLinha}</p>
                   </div>
-                  {dimMode === "lxa" && width && height ? (
-                    <>
-                      <div>
-                        <p className="text-[#74777f] text-[10px] tracking-[0.1em] uppercase font-semibold font-[var(--font-inter)] mb-0.5">Largura</p>
-                        <p className="text-[#002045] text-sm font-semibold font-[var(--font-inter)]">{width} m</p>
-                      </div>
-                      <div>
-                        <p className="text-[#74777f] text-[10px] tracking-[0.1em] uppercase font-semibold font-[var(--font-inter)] mb-0.5">Altura</p>
-                        <p className="text-[#002045] text-sm font-semibold font-[var(--font-inter)]">{height} m</p>
-                      </div>
-                    </>
-                  ) : (
-                    <div>
-                      <p className="text-[#74777f] text-[10px] tracking-[0.1em] uppercase font-semibold font-[var(--font-inter)] mb-0.5">Área informada</p>
-                      <p className="text-[#002045] text-sm font-semibold font-[var(--font-inter)]">{sqmInput} m²</p>
-                    </div>
-                  )}
                   <div>
-                    <p className="text-[#74777f] text-[10px] tracking-[0.1em] uppercase font-semibold font-[var(--font-inter)] mb-0.5">Área total</p>
-                    <p className="text-[#002045] text-sm font-semibold font-[var(--font-inter)]">{m2.toFixed(2)} m²</p>
+                    <p className="text-[#74777f] text-[10px] tracking-[0.1em] uppercase font-semibold font-[var(--font-inter)] mb-0.5">Dimensões / Área</p>
+                    <p className="text-[#002045] text-sm font-semibold font-[var(--font-inter)]">{resumeDimLabel}</p>
+                    <p className="text-[#74777f] text-[10px] font-[var(--font-inter)]">{resumeM2.toFixed(2)} m²</p>
                   </div>
                   <div>
                     <p className="text-[#74777f] text-[10px] tracking-[0.1em] uppercase font-semibold font-[var(--font-inter)] mb-0.5">Qtd. recomendada</p>
-                    <p className="text-[#002045] text-sm font-semibold font-[var(--font-inter)]">{plates} placa{plates !== 1 ? "s" : ""}</p>
-                    <p className="text-[#74777f] text-[10px] font-[var(--font-inter)]">cobre ~{(plates * PLATE_M2).toFixed(2)} m²</p>
+                    <p className="text-[#002045] text-sm font-semibold font-[var(--font-inter)]">{resumePlates} placa{resumePlates !== 1 ? "s" : ""}</p>
+                    <p className="text-[#74777f] text-[10px] font-[var(--font-inter)]">cobre ~{(resumePlates * PLATE_M2).toFixed(2)} m²</p>
                   </div>
                   <div>
                     <p className="text-[#74777f] text-[10px] tracking-[0.1em] uppercase font-semibold font-[var(--font-inter)] mb-0.5">Investimento em material</p>
-                    {discountAmount > 0 ? (
+                    {hasDiscount ? (
                       <>
-                        <p className="text-[#74777f] text-sm line-through font-[var(--font-inter)]">{fmt(orbMaterialTotal)}</p>
-                        <p className="text-[#3b6934] text-sm font-bold font-[var(--font-inter)]">{fmt(orbMaterialDiscounted)}</p>
+                        <p className="text-[#74777f] text-sm line-through font-[var(--font-inter)]">{fmt(resumeTotalFull)}</p>
+                        <p className="text-[#3b6934] text-sm font-bold font-[var(--font-inter)]">{fmt(resumeTotal)}</p>
                         <p className="text-[#3b6934] text-[10px] font-[var(--font-inter)]">cupom {couponData?.coupon_code}</p>
                       </>
                     ) : (
                       <>
-                        <p className="text-[#002045] text-sm font-semibold font-[var(--font-inter)]">{fmt(orbMaterialTotal)}</p>
-                        <p className="text-[#74777f] text-[10px] font-[var(--font-inter)]">{pricePerPlate.toLocaleString("pt-BR")}/placa</p>
+                        <p className="text-[#002045] text-sm font-semibold font-[var(--font-inter)]">{fmt(resumeTotal)}</p>
+                        <p className="text-[#74777f] text-[10px] font-[var(--font-inter)]">{resumeTotalFull > 0 ? Math.round(resumeTotalFull / resumePlates).toLocaleString("pt-BR") : "—"}/placa</p>
                       </>
                     )}
                   </div>
@@ -2131,6 +2156,8 @@ function SimuladorInner() {
                   )}
                 </div>
               </div>
+              );
+              })()}
 
               {/* PFB Attribute strip — 4 cards on mobile (2×2), 6 cards on desktop */}
               <div className="bg-white border border-[#e2e2e2] border-t-0 px-5 sm:px-8 py-5">
