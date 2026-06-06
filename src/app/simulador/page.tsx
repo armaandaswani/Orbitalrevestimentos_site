@@ -295,6 +295,7 @@ function SimuladorInner() {
   const [mdfExpanded, setMdfExpanded] = useState(false);
   const [forroExpanded, setForroExpanded] = useState(false);
   const [tetoExpanded, setTetoExpanded] = useState(false);
+  const [savingsExpanded, setSavingsExpanded] = useState(false);
   const [savedSpaces, setSavedSpaces] = useState<SavedSpace[]>([]);
   // Index of the space shown in the Resumo block; null = current active space
   const [resumeIdx, setResumeIdx] = useState<number | null>(null);
@@ -382,12 +383,15 @@ function SimuladorInner() {
   // mdfAllOnce: aggregate per-installation cost across ALL spaces (saved + current)
   // used for the 10-year bar chart comparison so it's apples-to-apples with pfbTotal10y.
   // Uses exact sheet-grid calculation from dimLabel dimensions when available.
-  const mdfAllOnce = savedSpaces.reduce((sum, sp) => {
+  const mdfAllSheetsCount = savedSpaces.reduce((sum, sp) => sum + mdfSheetsForSpace(sp.m2, sp.dimLabel), 0) + mdfSheets;
+  const mdfAllMaterialTotal = savedSpaces.reduce((sum, sp) => sum + mdfSheetsForSpace(sp.m2, sp.dimLabel) * MDF_SHEET_PRICE, 0) + mdfMaterialTotal;
+  const mdfAllMOTotal = savedSpaces.reduce((sum, sp) => {
     const sheets = mdfSheetsForSpace(sp.m2, sp.dimLabel);
     const moRate = sp.viability === "complex" ? MDF_MO_COMPLEX : MDF_MO_SIMPLE;
-    const mo = Math.round(moRate * MDF_SHEET_M2);
-    return sum + sheets * MDF_SHEET_PRICE + mo * sheets + MDF_ACABAMENTO * sp.m2;
-  }, 0) + mdfOnce;
+    return sum + Math.round(moRate * MDF_SHEET_M2) * sheets;
+  }, 0) + mdfMOTotal;
+  const mdfAllAcabamentoTotal = savedSpaces.reduce((sum, sp) => sum + MDF_ACABAMENTO * sp.m2, 0) + mdfAcabamentoTotal;
+  const mdfAllOnce = mdfAllMaterialTotal + mdfAllMOTotal + mdfAllAcabamentoTotal;
 
   const mdfIn10y = mdfAllOnce * MDF_INSTALLS_10Y;
   // savings10y: against full PFB investment (all spaces) — negative means PFB is more expensive
@@ -643,13 +647,15 @@ function SimuladorInner() {
   // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [loadingProducts, products, pendingMsParams]);
 
-  // When a coupon is validated, retroactively apply the discount to pre-loaded savedSpaces
-  // (pre-loaded spaces have materialDiscounted === materialTotal, i.e. no discount yet)
+  // Whenever couponData changes (applied, changed, or removed), recalculate materialDiscounted
+  // for ALL saved spaces so every environment reflects the correct discounted price.
   useEffect(() => {
-    if (!couponData) return;
     setSavedSpaces((prev) =>
       prev.map((sp) => {
-        if (sp.materialDiscounted !== sp.materialTotal) return sp; // already discounted manually
+        if (!couponData) {
+          // Coupon removed — reset to full price
+          return { ...sp, materialDiscounted: sp.materialTotal, total: sp.materialTotal + sp.moTotal };
+        }
         const discAmt =
           couponData.discount_type === "percentage"
             ? Math.round(sp.materialTotal * couponData.discount_value / 100)
@@ -779,27 +785,56 @@ function SimuladorInner() {
     setSimSubmitting(true);
     try {
       // Log coupon use if a coupon was applied — capture the ID for the drip sequence
+      // For multi-space: send aggregate totals + full breakdown so partner/rep emails are complete
       let couponUseId: string | null = null;
       if (couponData && selectedProduct && selectedSpace) {
         try {
+          const isMultiSpace = savedSpaces.length > 0;
+          const allSpacesLabel = isMultiSpace
+            ? [...savedSpaces.map((sp) => sp.label), selectedSpace.label].join(", ")
+            : selectedSpace.label;
+          const currentDimLabelForCoupon = dimMode === "lxa" && width && height
+            ? `${width}m × ${height}m`
+            : `${m2.toFixed(2)} m²`;
+          const couponSpaceBreakdown = isMultiSpace ? [
+            ...savedSpaces.map((sp) => ({
+              spaceName: sp.label,
+              productName: sp.productName,
+              dimLabel: sp.dimLabel,
+              plates: sp.plates,
+              area_m2: parseFloat(sp.m2.toFixed(2)),
+              total: sp.materialDiscounted,
+            })),
+            {
+              spaceName: ambienteName.trim() || selectedSpace.label,
+              productName: selectedProduct.name,
+              dimLabel: currentDimLabelForCoupon,
+              plates,
+              area_m2: parseFloat(m2.toFixed(2)),
+              total: orbMaterialDiscounted || orbMaterialTotal,
+            },
+          ] : null;
           const res = await fetch("/api/coupons/use", {
             method: "POST",
             headers: { "Content-Type": "application/json" },
             body: JSON.stringify({
               partner_id: couponData.id,
               coupon_code: couponData.coupon_code,
-              space: selectedSpace.label,
-              product_name: selectedProduct.name,
+              space: allSpacesLabel,
+              product_name: isMultiSpace ? `${savedSpaces.length + 1} ambientes` : selectedProduct.name,
               product_code: selectedProduct.code,
-              area_m2: m2,
-              plates,
-              material_total: orbMaterialTotal,
-              material_discounted: orbMaterialDiscounted,
-              discount_applied: discountAmount,
+              area_m2: isMultiSpace ? parseFloat((savedSpaces.reduce((s, sp) => s + sp.m2, 0) + m2).toFixed(2)) : m2,
+              plates: isMultiSpace ? grandPlates : plates,
+              material_total: isMultiSpace ? grandMaterialTotal : orbMaterialTotal,
+              material_discounted: isMultiSpace ? grandMaterialDiscounted : orbMaterialDiscounted,
+              discount_applied: isMultiSpace
+                ? grandMaterialTotal - grandMaterialDiscounted
+                : discountAmount,
               commission_owed: commissionOwed,
               architect_name: clientName.trim(),
               client_email: clientEmail.trim(),
               client_phone: clientPhone.trim(),
+              space_breakdown: couponSpaceBreakdown,
             }),
           });
           if (res.ok) {
@@ -2036,7 +2071,12 @@ function SimuladorInner() {
                             </div>
                           </div>
                           <div className="flex items-center gap-3 flex-shrink-0">
-                            <span className="text-[#002045] text-sm font-semibold font-[var(--font-inter)]">{fmt(sp.materialDiscounted)}</span>
+                            <div className="text-right">
+                              {couponData && sp.materialDiscounted < sp.materialTotal && (
+                                <p className="text-[#74777f] text-[9px] line-through font-[var(--font-inter)]">{fmt(sp.materialTotal)}</p>
+                              )}
+                              <span className={`text-sm font-semibold font-[var(--font-inter)] ${couponData && sp.materialDiscounted < sp.materialTotal ? "text-[#3b6934]" : "text-[#002045]"}`}>{fmt(sp.materialDiscounted)}</span>
+                            </div>
                             {isSelected
                               ? <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="#002045" strokeWidth="2.5"><path d="M18 15l-6-6-6 6"/></svg>
                               : <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="#b0b0b0" strokeWidth="2"><path d="M6 9l6 6 6-6"/></svg>
@@ -2101,7 +2141,9 @@ function SimuladorInner() {
                 const resumeTotal = sp ? sp.materialDiscounted : orbMaterialDiscounted;
                 const resumeTotalFull = sp ? sp.materialTotal : orbMaterialTotal;
                 const resumeImg = sp ? sp.imagePath : (selectedProduct.image_path ?? "");
-                const hasDiscount = !sp && discountAmount > 0;
+                const hasDiscount = sp
+                  ? sp.materialDiscounted < sp.materialTotal
+                  : discountAmount > 0;
                 return (
               <div className="bg-white border border-[#e2e2e2] border-t-0 px-5 sm:px-8 py-6">
                 <div className="flex items-center justify-between mb-4">
@@ -2344,6 +2386,9 @@ function SimuladorInner() {
                             <span className="text-white/55">
                               <span className="block text-white/80 text-xs font-semibold">{sp.label}</span>
                               {sp.plates} placa{sp.plates !== 1 ? "s" : ""} · {sp.productCode}
+                              {couponData && sp.materialDiscounted < sp.materialTotal && (
+                                <span className="block text-[#a1d494] text-[10px] mt-0.5">- desconto (cupom)</span>
+                              )}
                             </span>
                             <span className="text-white font-semibold flex-shrink-0">{fmt(sp.materialDiscounted)}</span>
                           </div>
@@ -2407,36 +2452,43 @@ function SimuladorInner() {
                 </div>
 
                 {/* Competitor breakdown card — adapts to comparisonMaterial */}
-                {comparisonMaterial === "mdf" && (
+                {comparisonMaterial === "mdf" && (() => {
+                  const isMulti = savedSpaces.length > 0;
+                  const displayOnce = isMulti ? mdfAllOnce : mdfOnce;
+                  const displaySheets = isMulti ? mdfAllSheetsCount : mdfSheets;
+                  const displayMaterial = isMulti ? mdfAllMaterialTotal : mdfMaterialTotal;
+                  const displayMO = isMulti ? mdfAllMOTotal : mdfMOTotal;
+                  const displayAcabamento = isMulti ? mdfAllAcabamentoTotal : mdfAcabamentoTotal;
+                  return (
                   <div className="bg-[#fafaf8] border border-[#e2e2e2]">
                     <button className="lg:hidden w-full flex items-center justify-between px-6 py-5 text-left" onClick={() => setMdfExpanded(!mdfExpanded)}>
                       <div>
-                        <p className="text-[#74777f] text-[9px] tracking-[0.2em] uppercase font-bold font-[var(--font-inter)]">MDF — Estimativa por instalação</p>
-                        <p className="text-[#43474e] text-lg font-[var(--font-noto-serif)] mt-0.5">{fmt(mdfOnce)}</p>
+                        <p className="text-[#74777f] text-[9px] tracking-[0.2em] uppercase font-bold font-[var(--font-inter)]">MDF — Estimativa por instalação{isMulti ? ` (${savedSpaces.length + 1} ambientes)` : ""}</p>
+                        <p className="text-[#43474e] text-lg font-[var(--font-noto-serif)] mt-0.5">{fmt(displayOnce)}</p>
                       </div>
                       <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#74777f" strokeWidth="2" className={`flex-shrink-0 transition-transform duration-200 ${mdfExpanded ? "rotate-180" : ""}`}><path d="M6 9l6 6 6-6" /></svg>
                     </button>
                     <div className="hidden lg:block px-6 py-5">
-                      <p className="text-[#74777f] text-[9px] tracking-[0.2em] uppercase font-bold font-[var(--font-inter)]">MDF — Estimativa por instalação</p>
-                      <p className="text-[#43474e] text-lg font-[var(--font-noto-serif)] mt-0.5">{fmt(mdfOnce)}</p>
+                      <p className="text-[#74777f] text-[9px] tracking-[0.2em] uppercase font-bold font-[var(--font-inter)]">MDF — Estimativa por instalação{isMulti ? ` (${savedSpaces.length + 1} ambientes)` : ""}</p>
+                      <p className="text-[#43474e] text-lg font-[var(--font-noto-serif)] mt-0.5">{fmt(displayOnce)}</p>
                     </div>
                     <div className={`border-t border-[#e2e2e2] px-6 sm:px-8 pb-8 lg:block ${mdfExpanded ? "block" : "hidden"}`}>
                       <div className="space-y-3 mb-6 pt-5">
                         <div className="flex items-start justify-between text-sm font-[var(--font-inter)] gap-4">
-                          <span className="text-[#74777f]">Material ({mdfSheets} chapa{mdfSheets !== 1 ? "s" : ""} × {MDF_SHEET_PRICE})</span>
-                          <span className="text-[#43474e] font-semibold flex-shrink-0">{fmt(mdfMaterialTotal)}</span>
+                          <span className="text-[#74777f]">Material ({displaySheets} chapa{displaySheets !== 1 ? "s" : ""} × {MDF_SHEET_PRICE})</span>
+                          <span className="text-[#43474e] font-semibold flex-shrink-0">{fmt(displayMaterial)}</span>
                         </div>
                         <div className="flex items-start justify-between text-sm font-[var(--font-inter)] gap-4">
-                          <span className="text-[#74777f]">MO estimada ({isComplex ? MDF_MO_COMPLEX : MDF_MO_SIMPLE}/m²)*</span>
-                          <span className="text-[#43474e] font-semibold flex-shrink-0">{fmt(mdfMOTotal)}</span>
+                          <span className="text-[#74777f]">MO estimada (todos ambientes)*</span>
+                          <span className="text-[#43474e] font-semibold flex-shrink-0">{fmt(displayMO)}</span>
                         </div>
                         <div className="flex items-start justify-between text-sm font-[var(--font-inter)] gap-4">
                           <span className="text-[#74777f]">Acabamentos ({MDF_ACABAMENTO}/m²)</span>
-                          <span className="text-[#43474e] font-semibold flex-shrink-0">{fmt(mdfAcabamentoTotal)}</span>
+                          <span className="text-[#43474e] font-semibold flex-shrink-0">{fmt(displayAcabamento)}</span>
                         </div>
                         <div className="border-t border-[#e2e2e2] pt-3 flex items-center justify-between">
                           <span className="text-[#43474e] text-sm font-bold font-[var(--font-inter)]">Por instalação</span>
-                          <span className="text-[#43474e] text-2xl font-[var(--font-noto-serif)]">{fmt(mdfOnce)}</span>
+                          <span className="text-[#43474e] text-2xl font-[var(--font-noto-serif)]">{fmt(displayOnce)}</span>
                         </div>
                       </div>
                       <div className="bg-[#fff3f3] border border-[#e8c0c0] px-4 py-3">
@@ -2445,7 +2497,8 @@ function SimuladorInner() {
                       </div>
                     </div>
                   </div>
-                )}
+                  );
+                })()}
 
                 {comparisonMaterial === "forro" && (
                   <div className="bg-[#fafaf8] border border-[#e2e2e2]">
@@ -2641,18 +2694,34 @@ function SimuladorInner() {
                       </div>
                     </div>
 
-                    {/* Savings callout — always visible */}
+                    {/* Savings callout — collapsible */}
                     {savingsPositive && (
-                      <div className="bg-[#fff8f8] border border-[#e8c0c0] px-5 py-4 mb-6">
-                        <p className="text-[#a03030] text-[10px] tracking-[0.12em] uppercase font-bold font-[var(--font-inter)] mb-1">
-                          Dinheiro que você não precisa gastar
-                        </p>
-                        <p className="font-[var(--font-noto-serif)] text-[#002045] text-3xl sm:text-4xl font-normal mb-1.5">
-                          R$ {fmt(savingsValue)}
-                        </p>
-                        <p className="text-[#74777f] text-xs font-[var(--font-inter)] leading-relaxed">
-                          {competitorWarning}
-                        </p>
+                      <div className="border border-[#e8c0c0] mb-6">
+                        <button
+                          onClick={() => setSavingsExpanded(v => !v)}
+                          className="w-full flex items-center justify-between px-5 py-3 bg-[#fff8f8] text-left"
+                        >
+                          <span className="text-[#a03030] text-xs font-bold font-[var(--font-inter)] tracking-[0.06em] uppercase flex items-center gap-2">
+                            <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" className="flex-shrink-0">
+                              <line x1="12" y1="1" x2="12" y2="23"/><path d="M17 5H9.5a3.5 3.5 0 0 0 0 7h5a3.5 3.5 0 0 1 0 7H6"/>
+                            </svg>
+                            Ver economia potencial
+                          </span>
+                          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="#a03030" strokeWidth="2" className={`flex-shrink-0 transition-transform duration-200 ${savingsExpanded ? "rotate-180" : ""}`}><path d="M6 9l6 6 6-6"/></svg>
+                        </button>
+                        {savingsExpanded && (
+                          <div className="bg-[#fff8f8] border-t border-[#e8c0c0] px-5 py-4">
+                            <p className="font-[var(--font-noto-serif)] text-[#002045] text-3xl sm:text-4xl font-normal mb-1.5">
+                              R$ {fmt(savingsValue)}
+                            </p>
+                            <p className="text-[#a03030] text-[10px] tracking-[0.1em] uppercase font-bold font-[var(--font-inter)] mb-2">
+                              que você não precisaria gastar
+                            </p>
+                            <p className="text-[#74777f] text-xs font-[var(--font-inter)] leading-relaxed">
+                              {competitorWarning}
+                            </p>
+                          </div>
+                        )}
                       </div>
                     )}
 

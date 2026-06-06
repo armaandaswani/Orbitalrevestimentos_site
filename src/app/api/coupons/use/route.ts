@@ -6,12 +6,22 @@ function fmtBRL(n: number) {
   return n.toLocaleString("pt-BR", { style: "currency", currency: "BRL", maximumFractionDigits: 0 });
 }
 
+interface SpaceBreakdownItem {
+  spaceName: string;
+  productName: string;
+  dimLabel?: string;
+  plates: number;
+  area_m2: number;
+  total: number;
+}
+
 async function sendNewBudgetEmails(opts: {
   partnerEmail: string | null;
   partnerName: string;
   repEmails: Array<{ email: string; name: string }>;
   clientName: string;
   clientEmail: string;
+  clientPhone?: string | null;
   space: string | null;
   productName: string | null;
   plates: number | null;
@@ -19,22 +29,52 @@ async function sendNewBudgetEmails(opts: {
   total: number | null;
   discounted: number | null;
   couponCode: string;
+  spaceBreakdown?: SpaceBreakdownItem[] | null;
 }) {
   const resend = getResend();
   const siteUrl = process.env.NEXT_PUBLIC_SITE_URL ?? "https://orbitalrevestimentos.com.br";
 
   const budgetValue = opts.discounted ?? opts.total ?? 0;
+  const hasBreakdown = opts.spaceBreakdown && opts.spaceBreakdown.length > 1;
+
+  // Per-space breakdown table (multi-space only)
+  const breakdownRows = hasBreakdown ? opts.spaceBreakdown!.map((sp, i) => `
+<tr style="${i > 0 ? "border-top:1px solid #f0f0f0;" : ""}">
+  <td style="padding:10px 0;vertical-align:top;">
+    <p style="margin:0 0 2px;color:#002045;font-size:13px;font-weight:700;font-family:Arial,sans-serif;">${sp.spaceName}</p>
+    <p style="margin:0;color:#74777f;font-size:11px;font-family:Arial,sans-serif;">${sp.productName}${sp.dimLabel ? ` · ${sp.dimLabel}` : ""}</p>
+  </td>
+  <td style="padding:10px 0 10px 12px;text-align:right;vertical-align:top;white-space:nowrap;">
+    <p style="margin:0 0 2px;color:#002045;font-size:13px;font-weight:700;font-family:Arial,sans-serif;">${fmtBRL(sp.total)}</p>
+    <p style="margin:0;color:#74777f;font-size:11px;font-family:Arial,sans-serif;">${sp.plates} placa${sp.plates !== 1 ? "s" : ""} · ${sp.area_m2.toFixed(1)} m²</p>
+  </td>
+</tr>`).join("") : "";
+
+  const breakdownBlock = hasBreakdown ? `
+<table width="100%" cellpadding="0" cellspacing="0" style="margin:16px 0 0;border-top:2px solid #002045;">
+  ${breakdownRows}
+  <tr style="border-top:2px solid #002045;">
+    <td style="padding:12px 0 4px;color:#002045;font-size:13px;font-weight:700;font-family:Arial,sans-serif;">Total material</td>
+    <td style="padding:12px 0 4px;text-align:right;color:#002045;font-size:18px;font-weight:700;font-family:Arial,sans-serif;white-space:nowrap;">${fmtBRL(budgetValue)}</td>
+  </tr>
+</table>` : "";
+
+  // Client summary (always shown)
+  const waLink = opts.clientPhone
+    ? `https://wa.me/55${String(opts.clientPhone).replace(/\D/g, "")}`
+    : `https://wa.me/?text=${encodeURIComponent(`Olá ${opts.clientName}, vi que você fez um orçamento Orbital e gostaria de ajudar a avançar com o projeto!`)}`;
+
   const detailsHtml = `
     <table cellpadding="0" cellspacing="0" width="100%" style="border-collapse:collapse;margin:16px 0;">
       <tr><td style="padding:8px 0;border-bottom:1px solid #f0efec;font-size:12px;color:#74777f;font-family:Arial,sans-serif;width:140px;">Cliente</td><td style="padding:8px 0;border-bottom:1px solid #f0efec;font-size:13px;color:#002045;font-weight:600;font-family:Arial,sans-serif;">${opts.clientName}</td></tr>
       <tr><td style="padding:8px 0;border-bottom:1px solid #f0efec;font-size:12px;color:#74777f;font-family:Arial,sans-serif;">E-mail do cliente</td><td style="padding:8px 0;border-bottom:1px solid #f0efec;font-size:13px;color:#002045;font-family:Arial,sans-serif;"><a href="mailto:${opts.clientEmail}" style="color:#002045;">${opts.clientEmail}</a></td></tr>
-      ${opts.space ? `<tr><td style="padding:8px 0;border-bottom:1px solid #f0efec;font-size:12px;color:#74777f;font-family:Arial,sans-serif;">Ambiente</td><td style="padding:8px 0;border-bottom:1px solid #f0efec;font-size:13px;color:#43474e;font-family:Arial,sans-serif;">${opts.space}</td></tr>` : ""}
-      ${opts.productName ? `<tr><td style="padding:8px 0;border-bottom:1px solid #f0efec;font-size:12px;color:#74777f;font-family:Arial,sans-serif;">Produto</td><td style="padding:8px 0;border-bottom:1px solid #f0efec;font-size:13px;color:#43474e;font-family:Arial,sans-serif;">${opts.productName}</td></tr>` : ""}
-      ${opts.areaSqm ? `<tr><td style="padding:8px 0;border-bottom:1px solid #f0efec;font-size:12px;color:#74777f;font-family:Arial,sans-serif;">Área</td><td style="padding:8px 0;border-bottom:1px solid #f0efec;font-size:13px;color:#43474e;font-family:Arial,sans-serif;">${opts.areaSqm.toFixed(1)} m² · ${opts.plates ?? "—"} placas</td></tr>` : ""}
-      <tr><td style="padding:8px 0;font-size:12px;color:#74777f;font-family:Arial,sans-serif;">Valor do orçamento</td><td style="padding:8px 0;font-size:16px;color:#002045;font-weight:700;font-family:Georgia,serif;">${fmtBRL(budgetValue)}</td></tr>
-    </table>`;
-
-  const waLink = `https://wa.me/?text=${encodeURIComponent(`Olá ${opts.clientName}, vi que você fez um orçamento Orbital e gostaria de ajudar a avançar com o projeto!`)}`;
+      ${opts.clientPhone ? `<tr><td style="padding:8px 0;border-bottom:1px solid #f0efec;font-size:12px;color:#74777f;font-family:Arial,sans-serif;">WhatsApp</td><td style="padding:8px 0;border-bottom:1px solid #f0efec;font-size:13px;color:#002045;font-weight:700;font-family:Arial,sans-serif;"><a href="https://wa.me/55${String(opts.clientPhone).replace(/\D/g,"")}" style="color:#002045;">${opts.clientPhone}</a></td></tr>` : ""}
+      ${!hasBreakdown && opts.space ? `<tr><td style="padding:8px 0;border-bottom:1px solid #f0efec;font-size:12px;color:#74777f;font-family:Arial,sans-serif;">Ambiente</td><td style="padding:8px 0;border-bottom:1px solid #f0efec;font-size:13px;color:#43474e;font-family:Arial,sans-serif;">${opts.space}</td></tr>` : ""}
+      ${!hasBreakdown && opts.productName ? `<tr><td style="padding:8px 0;border-bottom:1px solid #f0efec;font-size:12px;color:#74777f;font-family:Arial,sans-serif;">Produto</td><td style="padding:8px 0;border-bottom:1px solid #f0efec;font-size:13px;color:#43474e;font-family:Arial,sans-serif;">${opts.productName}</td></tr>` : ""}
+      ${!hasBreakdown && opts.areaSqm ? `<tr><td style="padding:8px 0;border-bottom:1px solid #f0efec;font-size:12px;color:#74777f;font-family:Arial,sans-serif;">Área</td><td style="padding:8px 0;border-bottom:1px solid #f0efec;font-size:13px;color:#43474e;font-family:Arial,sans-serif;">${opts.areaSqm.toFixed(1)} m² · ${opts.plates ?? "—"} placas</td></tr>` : ""}
+      ${!hasBreakdown ? `<tr><td style="padding:8px 0;font-size:12px;color:#74777f;font-family:Arial,sans-serif;">Valor do orçamento</td><td style="padding:8px 0;font-size:16px;color:#002045;font-weight:700;font-family:Georgia,serif;">${fmtBRL(budgetValue)}</td></tr>` : ""}
+    </table>
+    ${breakdownBlock}`;
 
   // Email to partner
   if (opts.partnerEmail) {
@@ -315,6 +355,7 @@ export async function POST(req: NextRequest) {
         repEmails,
         clientName: body.architect_name as string,
         clientEmail: (body.client_email as string) ?? "",
+        clientPhone: (body.client_phone as string | null) ?? null,
         space: (body.space as string) ?? null,
         productName: (body.product_name as string) ?? null,
         plates: (body.plates as number) ?? null,
@@ -322,6 +363,7 @@ export async function POST(req: NextRequest) {
         total: (body.material_total as number) ?? null,
         discounted: (body.material_discounted as number) ?? null,
         couponCode: body.coupon_code as string,
+        spaceBreakdown: Array.isArray(body.space_breakdown) ? body.space_breakdown as SpaceBreakdownItem[] : null,
       });
     } catch (err) {
       console.error("Notification email failed:", err);
