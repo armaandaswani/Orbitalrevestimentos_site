@@ -917,7 +917,7 @@ function SimuladorInner() {
         }] : []),
       ];
       try {
-        await fetch("/api/client-email-sequences", {
+        const seqRes = await fetch("/api/client-email-sequences", {
           method: "POST",
           headers: { "Content-Type": "application/json" },
           body: JSON.stringify({
@@ -938,7 +938,13 @@ function SimuladorInner() {
             sim_id: partnerSimId ?? undefined,
           }),
         });
-      } catch { /* non-fatal */ }
+        if (!seqRes.ok) {
+          const errBody = await seqRes.json().catch(() => ({}));
+          console.error("[sequence] insert failed", seqRes.status, errBody);
+        }
+      } catch (err) {
+        console.error("[sequence] fetch error", err);
+      }
 
       setSimSubmitted(true);
     } finally {
