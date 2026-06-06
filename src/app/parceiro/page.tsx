@@ -149,6 +149,7 @@ export default function ParceiroPage() {
   interface PSimSpace { key: string; spaceName: string; productCode: string; w: string; h: string; }
   const [pSimSpaces, setPSimSpaces] = useState<PSimSpace[]>([]);
   const [pSimSpaceName, setPSimSpaceName] = useState("");
+  const [pSimAmbienteName, setPSimAmbienteName] = useState("");
   const [pSimProductCode, setPSimProductCode] = useState("");
   const [pSimW, setPSimW] = useState("");
   const [pSimH, setPSimH] = useState("");
@@ -1424,7 +1425,7 @@ export default function ParceiroPage() {
               <div className="grid grid-cols-3 sm:grid-cols-4 md:grid-cols-5 gap-2">
                 {PSim_SPACES.map(space => (
                   <button key={space.id} onClick={() => {
-                    setPSimSpaceName(space.label); setPSimShowCustom(false); setPSimCustomText("");
+                    setPSimSpaceName(space.label); setPSimAmbienteName(""); setPSimShowCustom(false); setPSimCustomText("");
                     setTimeout(() => document.getElementById("psim-products")?.scrollIntoView({ behavior: "smooth", block: "nearest" }), 60);
                   }}
                     className={`px-3 py-2.5 min-h-[44px] border text-xs font-semibold font-[var(--font-inter)] transition-all text-left ${
@@ -1446,6 +1447,22 @@ export default function ParceiroPage() {
                   onChange={e => { setPSimCustomText(e.target.value); setPSimSpaceName(e.target.value); }}
                   placeholder="Descreva o espaço — ex: varanda interna, garagem, hall…"
                   className="w-full border border-[#002045] px-4 py-3 text-sm font-[var(--font-inter)] text-[#002045] focus:outline-none" />
+              )}
+
+              {/* Optional environment label (visible once a space type is chosen) */}
+              {pSimSpaceName && !pSimShowCustom && (
+                <div>
+                  <label className="block text-[10px] tracking-[0.15em] uppercase font-bold font-[var(--font-inter)] text-[#74777f] mb-2">
+                    Nome do ambiente <span className="normal-case tracking-normal font-normal">(opcional)</span>
+                  </label>
+                  <input
+                    type="text"
+                    value={pSimAmbienteName}
+                    onChange={e => setPSimAmbienteName(e.target.value)}
+                    placeholder={`Ex: ${pSimSpaceName} da Sala, ${pSimSpaceName} Principal…`}
+                    className="w-full border border-[#e2e2e2] px-4 py-2.5 text-sm font-[var(--font-inter)] text-[#002045] focus:outline-none focus:border-[#002045]"
+                  />
+                </div>
               )}
 
               {/* Product line + cards */}
@@ -1526,7 +1543,7 @@ export default function ParceiroPage() {
                     <img src={pProd.img} alt={pProd.name} className="w-12 h-12 object-cover border border-[#e2e2e2]" />
                     <div>
                       <p className="text-[#002045] text-sm font-bold font-[var(--font-inter)]">{pProd.name}</p>
-                      <p className="text-[#74777f] text-[10px] font-[var(--font-inter)]">{pSimSpaceName} · {pProd.code}</p>
+                      <p className="text-[#74777f] text-[10px] font-[var(--font-inter)]">{pSimAmbienteName || pSimSpaceName} · {pProd.code}</p>
                     </div>
                   </div>
                   <div className="grid grid-cols-3 gap-4 border-t border-[#dce8f5] pt-3">
@@ -1547,8 +1564,9 @@ export default function ParceiroPage() {
               )}
 
               <button disabled={!canAddPSim} onClick={() => {
-                setPSimSpaces(prev => [...prev, { key: `ps-${Date.now()}`, spaceName: pSimSpaceName.trim(), productCode: pSimProductCode, w: pSimW, h: pSimH }]);
-                setPSimSpaceName(""); setPSimProductCode(""); setPSimW(""); setPSimH(""); setPSimLink("");
+                const finalName = pSimAmbienteName.trim() || pSimSpaceName.trim();
+                setPSimSpaces(prev => [...prev, { key: `ps-${Date.now()}`, spaceName: finalName, productCode: pSimProductCode, w: pSimW, h: pSimH }]);
+                setPSimSpaceName(""); setPSimAmbienteName(""); setPSimProductCode(""); setPSimW(""); setPSimH(""); setPSimLink("");
                 setPSimSelectedLine(null); setPSimShowCustom(false); setPSimCustomText("");
               }}
                 className="w-full py-2.5 text-xs tracking-[0.12em] uppercase font-bold font-[var(--font-inter)] border border-[#002045] text-[#002045] hover:bg-[#f0f4fa] transition-colors disabled:opacity-40">
