@@ -2021,6 +2021,9 @@ function SimuladorInner() {
                       <div key={sp.key} className="flex items-center justify-between px-4 py-3 border-b border-[#f0f0f0] last:border-b-0">
                         <div className="flex items-center gap-3 min-w-0">
                           <span className="text-[#86a0cd] text-[10px] font-bold font-[var(--font-inter)] w-5 flex-shrink-0">{i + 1}</span>
+                          {sp.imagePath && (
+                            <img src={sp.imagePath} alt={sp.productName} className="w-9 h-9 object-cover flex-shrink-0 border border-[#e2e2e2]" />
+                          )}
                           <div className="min-w-0">
                             <p className="text-[#002045] text-sm font-semibold font-[var(--font-inter)] truncate">{sp.label}</p>
                             <p className="text-[#74777f] text-[10px] font-[var(--font-inter)]">{sp.productName} · {sp.dimLabel} · {sp.plates} placas</p>
@@ -2042,6 +2045,9 @@ function SimuladorInner() {
                     <div className="flex items-center justify-between px-4 py-3 bg-[#f9fbff]">
                       <div className="flex items-center gap-3 min-w-0">
                         <span className="text-[#86a0cd] text-[10px] font-bold font-[var(--font-inter)] w-5 flex-shrink-0">{savedSpaces.length + 1}</span>
+                        {selectedProduct.image_path && (
+                          <img src={selectedProduct.image_path} alt={selectedProduct.name} className="w-9 h-9 object-cover flex-shrink-0 border border-[#e2e2e2]" />
+                        )}
                         <div className="min-w-0">
                           <p className="text-[#002045] text-sm font-semibold font-[var(--font-inter)] truncate">{selectedSpace.label}</p>
                           <p className="text-[#74777f] text-[10px] font-[var(--font-inter)]">{selectedProduct.name} · {dimMode === "lxa" && width && height ? `${width}m × ${height}m` : `${m2.toFixed(2)} m²`} · {plates} placas</p>
