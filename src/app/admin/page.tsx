@@ -161,6 +161,7 @@ export default function AdminPage() {
   const [partners, setPartners] = useState<Partner[]>([]);
   const [loadingPartners, setLoadingPartners] = useState(false);
   const [showPartnerForm, setShowPartnerForm] = useState(false);
+  const [partnerSearch, setPartnerSearch] = useState("");
   const [editingPartnerId, setEditingPartnerId] = useState<string | null>(null);
   const [partnerForm, setPartnerForm] = useState({ ...emptyPartnerForm });
   const [partnerFormError, setPartnerFormError] = useState("");
@@ -1624,7 +1625,15 @@ export default function AdminPage() {
   }
 
   const pendingPartners = partners.filter((p) => p.status === "pending");
-  const activePartners = partners.filter((p) => p.status !== "pending");
+  const activePartners = partners.filter((p) => p.status !== "pending").filter((p) => {
+    if (!partnerSearch.trim()) return true;
+    const q = partnerSearch.toLowerCase();
+    return (
+      (p.name?.toLowerCase().includes(q) ?? false) ||
+      (p.email?.toLowerCase().includes(q) ?? false) ||
+      (p.coupon_code?.toLowerCase().includes(q) ?? false)
+    );
+  });
 
   // Partner rankings (from completed coupon uses)
   const partnerRanking = useMemo(() => {
@@ -2460,9 +2469,21 @@ export default function AdminPage() {
             })()}
 
             {/* Active partners */}
-            <div className="flex items-center justify-between mb-6">
-              <h2 className="font-[var(--font-noto-serif)] text-[#002045] text-xl font-normal">Parceiros</h2>
-              <button onClick={startCreatePartner} className="bg-[#002045] text-white text-xs tracking-[0.1em] uppercase font-bold font-[var(--font-inter)] px-5 py-2.5 hover:bg-[#1a365d] transition-colors">
+            <div className="flex flex-col sm:flex-row sm:items-center gap-3 mb-6">
+              <div className="flex items-center gap-3 flex-1 min-w-0">
+                <h2 className="font-[var(--font-noto-serif)] text-[#002045] text-xl font-normal flex-shrink-0">Parceiros</h2>
+                <span className="bg-[#eef2f8] text-[#002045] text-[11px] font-bold font-[var(--font-inter)] px-2 py-0.5 flex-shrink-0">
+                  {partners.filter(p => p.status !== "pending").length}
+                </span>
+                <input
+                  type="text"
+                  value={partnerSearch}
+                  onChange={(e) => setPartnerSearch(e.target.value)}
+                  placeholder="Filtrar por nome, email ou cupom…"
+                  className="flex-1 min-w-0 border border-[#e2e2e2] px-3 py-2 text-sm font-[var(--font-inter)] text-[#002045] focus:outline-none focus:border-[#002045] placeholder-[#b0b4bc]"
+                />
+              </div>
+              <button onClick={startCreatePartner} className="flex-shrink-0 bg-[#002045] text-white text-xs tracking-[0.1em] uppercase font-bold font-[var(--font-inter)] px-5 py-2.5 hover:bg-[#1a365d] transition-colors">
                 + Novo Parceiro
               </button>
             </div>
@@ -2658,7 +2679,7 @@ export default function AdminPage() {
                   </thead>
                   <tbody>
                     {activePartners.length === 0 ? (
-                      <tr><td colSpan={10} className="px-5 py-8 text-center text-[#74777f]">Nenhum parceiro cadastrado.</td></tr>
+                      <tr><td colSpan={10} className="px-5 py-8 text-center text-[#74777f]">{partnerSearch.trim() ? "Nenhum parceiro encontrado para essa busca." : "Nenhum parceiro cadastrado."}</td></tr>
                     ) : (
                       activePartners.map((p) => (
                         <tr key={p.id} className="border-b border-[#f0f0f0] hover:bg-[#fafafa]">
