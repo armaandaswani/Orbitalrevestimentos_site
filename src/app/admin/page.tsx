@@ -3386,6 +3386,7 @@ export default function AdminPage() {
                             {/* Data + age */}
                             <td className="px-4 py-3">
                               <p className="text-xs text-[#74777f]">{new Date(c.created_at).toLocaleDateString("pt-BR")}</p>
+                              <p className="text-[10px] text-[#43474e]">{new Date(c.created_at).toLocaleTimeString("pt-BR", { hour: "2-digit", minute: "2-digit" })}</p>
                               <p className={`text-[9px] mt-0.5 ${age.cls}`}>{age.label}</p>
                             </td>
                             {/* Cliente + WA */}

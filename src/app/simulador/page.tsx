@@ -297,6 +297,13 @@ function SimuladorInner() {
   const [tetoExpanded, setTetoExpanded] = useState(false);
   const [savingsExpanded, setSavingsExpanded] = useState(false);
   const [savedSpaces, setSavedSpaces] = useState<SavedSpace[]>([]);
+  // Inline editing of a saved space in the review list
+  const [editingSpaceIdx, setEditingSpaceIdx] = useState<number | null>(null);
+  const [editSpaceLabel, setEditSpaceLabel] = useState("");
+  const [editSpaceWidth, setEditSpaceWidth] = useState("");
+  const [editSpaceHeight, setEditSpaceHeight] = useState("");
+  const [editSpaceM2, setEditSpaceM2] = useState("");
+  const [editSpaceDimMode, setEditSpaceDimMode] = useState<"lxa" | "m2">("lxa");
   // Index of the space shown in the Resumo block; null = current active space
   const [resumeIdx, setResumeIdx] = useState<number | null>(null);
 
@@ -1429,18 +1436,132 @@ function SimuladorInner() {
               </p>
 
               <div className="border border-[#e2e2e2] mb-6 divide-y divide-[#f0f0f0]">
-                {savedSpaces.map((sp, i) => (
-                  <div key={sp.key} className="flex items-center gap-4 px-4 py-4">
-                    <span className="w-6 h-6 rounded-full bg-[#3b6934] text-white text-[10px] font-bold font-[var(--font-inter)] flex items-center justify-center flex-shrink-0">{i + 1}</span>
-                    <div className="flex-1 min-w-0">
-                      <p className="text-[#002045] text-sm font-semibold font-[var(--font-inter)]">{sp.label}</p>
-                      <p className="text-[#74777f] text-[11px] font-[var(--font-inter)]">
-                        {sp.productName} · {sp.productCode} · {sp.dimLabel} · <strong>{sp.plates} placa{sp.plates !== 1 ? "s" : ""}</strong>
-                      </p>
-                    </div>
-                    <button onClick={() => setSavedSpaces(prev => prev.filter((_, idx) => idx !== i))} className="text-[#cc0000] hover:text-[#ff0000] text-sm ml-2 flex-shrink-0" title="Remover">✕</button>
+                {savedSpaces.map((sp, i) => {
+                  const isEditing = editingSpaceIdx === i;
+                  // derive edit plate count for preview
+                  const editPlates = isEditing
+                    ? editSpaceDimMode === "lxa" && parseFloat(editSpaceWidth) > 0 && parseFloat(editSpaceHeight) > 0
+                      ? Math.ceil(parseFloat(editSpaceWidth) / PLATE_W) * Math.ceil(parseFloat(editSpaceHeight) / PLATE_H)
+                      : parseFloat(editSpaceM2) > 0
+                      ? Math.ceil(parseFloat(editSpaceM2) / PLATE_M2)
+                      : 0
+                    : sp.plates;
+
+                  function startEdit() {
+                    // detect dim mode from stored dimLabel
+                    const isLxa = /×/.test(sp.dimLabel);
+                    setEditSpaceDimMode(isLxa ? "lxa" : "m2");
+                    if (isLxa) {
+                      const parts = sp.dimLabel.replace(/m/g, "").split("×").map((s) => s.trim());
+                      setEditSpaceWidth(parts[0] ?? "");
+                      setEditSpaceHeight(parts[1] ?? "");
+                      setEditSpaceM2("");
+                    } else {
+                      setEditSpaceWidth("");
+                      setEditSpaceHeight("");
+                      setEditSpaceM2(sp.dimLabel.replace(/\s*m²/, "").trim());
+                    }
+                    setEditSpaceLabel(sp.label);
+                    setEditingSpaceIdx(i);
+                  }
+
+                  function saveEdit() {
+                    const newLabel = editSpaceLabel.trim() || sp.label;
+                    let newM2 = 0;
+                    let newDimLabel = sp.dimLabel;
+                    if (editSpaceDimMode === "lxa" && parseFloat(editSpaceWidth) > 0 && parseFloat(editSpaceHeight) > 0) {
+                      newM2 = parseFloat(editSpaceWidth) * parseFloat(editSpaceHeight);
+                      newDimLabel = `${editSpaceWidth}m × ${editSpaceHeight}m`;
+                    } else if (parseFloat(editSpaceM2) > 0) {
+                      newM2 = parseFloat(editSpaceM2);
+                      newDimLabel = `${newM2.toFixed(2)} m²`;
+                    } else {
+                      // no valid dims entered — just update label
+                      setSavedSpaces(prev => prev.map((s, idx) => idx === i ? { ...s, label: newLabel } : s));
+                      setEditingSpaceIdx(null);
+                      return;
+                    }
+                    const newPlates = editSpaceDimMode === "lxa" && parseFloat(editSpaceWidth) > 0 && parseFloat(editSpaceHeight) > 0
+                      ? Math.ceil(parseFloat(editSpaceWidth) / PLATE_W) * Math.ceil(parseFloat(editSpaceHeight) / PLATE_H)
+                      : Math.ceil(newM2 / PLATE_M2);
+                    const moRate = orbitalMOPerPlate(newPlates, sp.viability === "complex");
+                    const newMaterialTotal = newPlates * sp.pricePerPlate;
+                    const newMOTotal = moRate * newPlates;
+                    const discAmt = couponData
+                      ? couponData.discount_type === "percentage"
+                        ? Math.round(newMaterialTotal * couponData.discount_value / 100)
+                        : Math.min(couponData.discount_value, newMaterialTotal)
+                      : 0;
+                    const newMaterialDiscounted = newMaterialTotal - discAmt;
+                    setSavedSpaces(prev => prev.map((s, idx) =>
+                      idx === i
+                        ? { ...s, label: newLabel, dimLabel: newDimLabel, m2: newM2, plates: newPlates, materialTotal: newMaterialTotal, materialDiscounted: newMaterialDiscounted, moTotal: newMOTotal, total: newMaterialDiscounted + newMOTotal }
+                        : s
+                    ));
+                    setEditingSpaceIdx(null);
+                  }
+
+                  return (
+                  <div key={sp.key} className="divide-y divide-[#f0f0f0]">
+                    {!isEditing ? (
+                      <div className="flex items-center gap-4 px-4 py-4">
+                        <span className="w-6 h-6 rounded-full bg-[#3b6934] text-white text-[10px] font-bold font-[var(--font-inter)] flex items-center justify-center flex-shrink-0">{i + 1}</span>
+                        <div className="flex-1 min-w-0">
+                          <p className="text-[#002045] text-sm font-semibold font-[var(--font-inter)]">{sp.label}</p>
+                          <p className="text-[#74777f] text-[11px] font-[var(--font-inter)]">
+                            {sp.productName} · {sp.productCode} · {sp.dimLabel} · <strong>{sp.plates} placa{sp.plates !== 1 ? "s" : ""}</strong>
+                          </p>
+                        </div>
+                        <button onClick={startEdit} className="text-[#002045] hover:text-[#3b6934] flex-shrink-0 p-1" title="Editar">
+                          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"/><path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"/></svg>
+                        </button>
+                        <button onClick={() => setSavedSpaces(prev => prev.filter((_, idx) => idx !== i))} className="text-[#cc0000] hover:text-[#ff0000] text-sm flex-shrink-0 p-1" title="Remover">✕</button>
+                      </div>
+                    ) : (
+                      <div className="px-4 py-4 bg-[#f9fbff]">
+                        <div className="flex items-center gap-2 mb-3">
+                          <span className="w-6 h-6 rounded-full bg-[#3b6934] text-white text-[10px] font-bold font-[var(--font-inter)] flex items-center justify-center flex-shrink-0">{i + 1}</span>
+                          <span className="text-[#002045] text-[10px] tracking-[0.1em] uppercase font-bold font-[var(--font-inter)]">Editar ambiente</span>
+                        </div>
+                        {/* Name */}
+                        <div className="mb-3">
+                          <label className="block text-[10px] text-[#74777f] uppercase tracking-wider font-[var(--font-inter)] mb-1">Nome do ambiente</label>
+                          <input
+                            type="text"
+                            value={editSpaceLabel}
+                            onChange={(e) => setEditSpaceLabel(e.target.value)}
+                            className="w-full border border-[#c8cdd5] px-3 py-2 text-sm font-[var(--font-inter)] text-[#002045] focus:outline-none focus:border-[#002045]"
+                          />
+                        </div>
+                        {/* Dim mode toggle */}
+                        <div className="mb-3">
+                          <label className="block text-[10px] text-[#74777f] uppercase tracking-wider font-[var(--font-inter)] mb-1">Dimensões</label>
+                          <div className="flex gap-2 mb-2">
+                            <button type="button" onClick={() => setEditSpaceDimMode("lxa")} className={`px-3 py-1 text-[11px] font-bold font-[var(--font-inter)] border ${editSpaceDimMode === "lxa" ? "bg-[#002045] text-white border-[#002045]" : "bg-white text-[#002045] border-[#c8cdd5] hover:border-[#002045]"}`}>Larg × Alt</button>
+                            <button type="button" onClick={() => setEditSpaceDimMode("m2")} className={`px-3 py-1 text-[11px] font-bold font-[var(--font-inter)] border ${editSpaceDimMode === "m2" ? "bg-[#002045] text-white border-[#002045]" : "bg-white text-[#002045] border-[#c8cdd5] hover:border-[#002045]"}`}>m²</button>
+                          </div>
+                          {editSpaceDimMode === "lxa" ? (
+                            <div className="flex gap-2 items-center">
+                              <input type="number" min="0" step="0.1" value={editSpaceWidth} onChange={(e) => setEditSpaceWidth(e.target.value)} placeholder="Largura (m)" className="flex-1 border border-[#c8cdd5] px-3 py-2 text-sm font-[var(--font-inter)] text-[#002045] focus:outline-none focus:border-[#002045]" />
+                              <span className="text-[#74777f] text-sm">×</span>
+                              <input type="number" min="0" step="0.1" value={editSpaceHeight} onChange={(e) => setEditSpaceHeight(e.target.value)} placeholder="Altura (m)" className="flex-1 border border-[#c8cdd5] px-3 py-2 text-sm font-[var(--font-inter)] text-[#002045] focus:outline-none focus:border-[#002045]" />
+                            </div>
+                          ) : (
+                            <input type="number" min="0" step="0.1" value={editSpaceM2} onChange={(e) => setEditSpaceM2(e.target.value)} placeholder="Área total (m²)" className="w-full border border-[#c8cdd5] px-3 py-2 text-sm font-[var(--font-inter)] text-[#002045] focus:outline-none focus:border-[#002045]" />
+                          )}
+                          {editPlates > 0 && (
+                            <p className="text-[10px] text-[#3b6934] mt-1.5 font-[var(--font-inter)]">{editPlates} placa{editPlates !== 1 ? "s" : ""}</p>
+                          )}
+                        </div>
+                        <div className="flex gap-2">
+                          <button onClick={saveEdit} className="bg-[#002045] text-white text-[11px] tracking-[0.1em] uppercase font-bold font-[var(--font-inter)] px-4 py-2 hover:bg-[#1a365d]">Salvar</button>
+                          <button onClick={() => setEditingSpaceIdx(null)} className="border border-[#c8cdd5] text-[#43474e] text-[11px] tracking-[0.1em] uppercase font-bold font-[var(--font-inter)] px-4 py-2 hover:border-[#002045]">Cancelar</button>
+                        </div>
+                      </div>
+                    )}
                   </div>
-                ))}
+                  );
+                })}
 
                 {/* Current (pending) space */}
                 <div className="flex items-center gap-4 px-4 py-4 bg-[#f9fbff]">
