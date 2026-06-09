@@ -368,6 +368,8 @@ export default function AdminPage() {
   const [editMediaDraft, setEditMediaDraft] = useState<{ description: string; category: "antes" | "depois" | "geral" }>({ description: "", category: "geral" });
   const [aiDescGenerating, setAiDescGenerating] = useState(false);
   const [aiDescHint, setAiDescHint] = useState("");
+  const [dragMediaId, setDragMediaId] = useState<string | null>(null);
+  const [dragOverMediaId, setDragOverMediaId] = useState<string | null>(null);
   const [aiTextGenerating, setAiTextGenerating] = useState<string | null>(null); // field key being generated
 
   // ── Admin simulator ──────────────────────────────────────────────────────
@@ -1237,6 +1239,32 @@ export default function AdminPage() {
       body: JSON.stringify(body),
     });
     await fetchProjectMedia(slug);
+  }
+
+  async function reorderMedia(slug: string, fromId: string, toId: string) {
+    const items = [...(projectMediaMap[slug] ?? [])];
+    const fromIdx = items.findIndex((m) => m.id === fromId);
+    const toIdx = items.findIndex((m) => m.id === toId);
+    if (fromIdx === -1 || toIdx === -1 || fromIdx === toIdx) return;
+    // Reorder array
+    const [moved] = items.splice(fromIdx, 1);
+    items.splice(toIdx, 0, moved);
+    // Reassign sort_order sequentially
+    const reindexed = items.map((m, i) => ({ ...m, sort_order: i }));
+    // Optimistic update
+    setProjectMediaMap((prev) => ({ ...prev, [slug]: reindexed }));
+    // Persist only changed items
+    await Promise.all(
+      reindexed
+        .filter((m, i) => (projectMediaMap[slug] ?? [])[i]?.id !== m.id || (projectMediaMap[slug] ?? [])[i]?.sort_order !== m.sort_order)
+        .map((m) =>
+          fetch(`/api/projects/media/${m.id}`, {
+            method: "PATCH",
+            headers: { "Content-Type": "application/json", "x-admin-auth": ADMIN_PW },
+            body: JSON.stringify({ sort_order: m.sort_order }),
+          })
+        )
+    );
   }
 
   async function generateAiDescription(imageUrl: string) {
@@ -4540,7 +4568,15 @@ export default function AdminPage() {
                             {media.length > 0 && (
                               <div className="flex flex-wrap gap-2 mb-4">
                                 {media.map((m) => (
-                                  <div key={m.id} className="relative group">
+                                  <div
+                                    key={m.id}
+                                    draggable
+                                    onDragStart={() => setDragMediaId(m.id)}
+                                    onDragEnd={() => { setDragMediaId(null); setDragOverMediaId(null); }}
+                                    onDragOver={(e) => { e.preventDefault(); setDragOverMediaId(m.id); }}
+                                    onDrop={(e) => { e.preventDefault(); if (dragMediaId && dragMediaId !== m.id) reorderMedia(p.slug, dragMediaId, m.id); setDragMediaId(null); setDragOverMediaId(null); }}
+                                    className={`relative group cursor-grab active:cursor-grabbing transition-opacity ${dragMediaId === m.id ? "opacity-30" : "opacity-100"} ${dragOverMediaId === m.id && dragMediaId !== m.id ? "ring-2 ring-[#002045]" : ""}`}
+                                  >
                                     {/* Thumbnail */}
                                     <div className="relative w-20 h-20">
                                       {m.type === "image" ? (
