@@ -220,11 +220,10 @@ export default function SobrePage() {
         <div className="flex flex-col lg:flex-row-reverse min-h-[560px]">
           <div className="lg:w-1/2 relative min-h-[380px]">
             <Image
-              src="/images/catalogue/produto-anatomy.png"
+              src="/images/catalogue/product-anatomy.png"
               alt="PFB Orbital — revestimento de alto padrão em Manaus"
               fill
               className="object-cover"
-              onError={() => {}}
             />
             {/* fallback bg in case image is missing */}
           </div>
