@@ -49,11 +49,21 @@ const specs = [
   { value: "0,5%", unit: "", label: "Teor de umidade", note: "Estável no clima amazônico" },
 ];
 
+const breadcrumbSchema = {
+  "@context": "https://schema.org",
+  "@type": "BreadcrumbList",
+  itemListElement: [
+    { "@type": "ListItem", position: 1, name: "Home", item: "https://orbitalrevestimentos.com.br" },
+    { "@type": "ListItem", position: 2, name: "Tecnologia", item: "https://orbitalrevestimentos.com.br/tecnologia" },
+  ],
+};
+
 export default async function TecnologiaPage() {
   const overrides = await getAssetOverrides();
   const img = (key: string, fallback: string) => resolveAsset(key, fallback, overrides);
   return (
     <div className="pt-20">
+      <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: JSON.stringify(breadcrumbSchema) }} />
       {/* Hero */}
       <section className="bg-[#002045] text-white py-14 lg:py-32">
         <div className="max-w-[1280px] mx-auto px-4 lg:px-16">

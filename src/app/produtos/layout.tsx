@@ -87,10 +87,19 @@ const productSchemas = [
   },
 ];
 
+const breadcrumbSchema = {
+  "@context": "https://schema.org",
+  "@type": "BreadcrumbList",
+  itemListElement: [
+    { "@type": "ListItem", position: 1, name: "Home", item: "https://orbitalrevestimentos.com.br" },
+    { "@type": "ListItem", position: 2, name: "Produtos", item: "https://orbitalrevestimentos.com.br/produtos" },
+  ],
+};
+
 export default function ProdutosLayout({ children }: { children: React.ReactNode }) {
   return (
     <>
-      {productSchemas.map((schema, i) => (
+      {[...productSchemas, breadcrumbSchema].map((schema, i) => (
         <script
           key={i}
           type="application/ld+json"

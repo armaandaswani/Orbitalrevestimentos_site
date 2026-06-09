@@ -4,8 +4,19 @@
     {
       "name": "dev",
       "runtimeExecutable": "npm",
-      "runtimeArgs": ["run", "dev"],
-      "port": 3000
+      "runtimeArgs": [
+        "run",
+        "dev"
+      ],
+      "port": 3000,
+      "cwd": "/Users/armaandaswani/Desktop/Orbital/orbital-site"
+    },
+    {
+      "name": "email-preview",
+      "runtimeExecutable": "python3",
+      "runtimeArgs": ["-m", "http.server", "8765"],
+      "port": 8765,
+      "cwd": "/Users/armaandaswani/Desktop/Orbital/orbital-site/public"
     }
   ]
 }
