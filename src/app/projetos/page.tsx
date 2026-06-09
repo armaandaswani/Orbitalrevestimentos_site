@@ -690,11 +690,12 @@ export default function ProjetosPage() {
             </p>
           </div>
           <h1 className="font-[var(--font-noto-serif)] text-white text-3xl sm:text-5xl lg:text-[5.5rem] font-normal tracking-[-0.025em] leading-[1.02] mb-6 max-w-3xl mx-auto md:mx-0">
+            <span className="sr-only">Orbital Revestimentos — projetos em Manaus. </span>
             Espaços que viram referência.
           </h1>
           <p className="text-white/55 text-base lg:text-lg font-[var(--font-inter)] leading-relaxed max-w-xl mb-10 mx-auto md:mx-0">
-            Residencial, comercial, náutico. O PFB Orbital transforma
-            qualquer ambiente — sem obra pesada, sem poeira.
+            Residencial, comercial, náutico. O PFB Orbital Revestimentos transforma
+            qualquer ambiente em Manaus — sem obra pesada, sem poeira.
           </p>
           <Link
             href="/simulador"

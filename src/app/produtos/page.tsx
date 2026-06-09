@@ -417,14 +417,14 @@ export default function ProdutosPage() {
       <section className="bg-[#002045] text-white py-10 lg:py-24">
         <div className="max-w-[1280px] mx-auto px-4 lg:px-16">
           <p className="text-[#86a0cd] text-xs tracking-[0.2em] uppercase font-semibold font-[var(--font-inter)] mb-4">
-            Catálogo · 2026
+            Orbital Revestimentos · Catálogo 2026
           </p>
           <h1 className="font-[var(--font-noto-serif)] text-3xl lg:text-6xl font-normal tracking-[-0.02em] leading-tight mb-5">
             Catálogo de Acabamentos
           </h1>
           <p className="text-white/70 text-base lg:text-lg font-[var(--font-inter)] leading-relaxed max-w-2xl mb-8">
-            3 linhas exclusivas. 15 acabamentos em estoque. Precisão técnica e
-            estética arquitetônica para projetos exigentes.
+            3 linhas exclusivas da Orbital. 15 acabamentos em estoque. Precisão técnica e
+            estética arquitetônica para projetos exigentes em Manaus.
           </p>
           <div className="flex flex-col sm:flex-row flex-wrap gap-3 lg:gap-4">
             <Link

@@ -176,7 +176,7 @@ export default function ParceriasPage() {
         <div className="relative max-w-[1280px] mx-auto px-4 lg:px-16">
           <div className="max-w-3xl mb-10 lg:mb-12">
             <p className="text-[#a1d494] text-xs tracking-[0.2em] uppercase font-semibold font-[var(--font-inter)] mb-5">
-              Programa de Parceiros
+              Orbital Revestimentos · Programa de Parceiros · Manaus
             </p>
             <h1 className="font-[var(--font-noto-serif)] text-3xl lg:text-6xl font-normal tracking-[-0.02em] leading-tight mb-6">
               Para cada profissional,
@@ -184,7 +184,7 @@ export default function ParceriasPage() {
               <em className="text-[#86a0cd]">uma proposta única.</em>
             </h1>
             <p className="text-white/65 text-lg font-[var(--font-inter)] leading-relaxed max-w-2xl mb-8">
-              Selecione o seu perfil e veja as condições exclusivas da Orbital para você.
+              Selecione o seu perfil e veja as condições exclusivas da Orbital Revestimentos para você.
             </p>
             <button
               onClick={() => scrollTo(registerRef)}

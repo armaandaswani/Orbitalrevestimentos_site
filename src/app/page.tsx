@@ -185,15 +185,16 @@ export default function Home() {
         </div>
         <div className="relative z-10 w-full max-w-[1280px] mx-auto px-4 lg:px-16 py-16 lg:pb-28 lg:pt-0">
           <p className="text-[#86a0cd] text-xs tracking-[0.2em] uppercase font-semibold font-[var(--font-inter)] mb-5">
-            Placas Flexíveis de Bambu · PFB 5mm
+            Orbital Revestimentos · Manaus, AM
           </p>
           <h1 className="font-[var(--font-noto-serif)] text-white text-3xl lg:text-7xl font-normal leading-[1.1] tracking-[-0.02em] mb-6 max-w-3xl">
+            <span className="sr-only">Orbital Revestimentos — revestimento de parede e teto em Manaus. </span>
             Instalado em horas.<br />
             <em>Admirado por anos.</em>
           </h1>
           <p className="text-white/80 text-base lg:text-lg font-[var(--font-inter)] font-normal leading-relaxed mb-8 lg:mb-10 max-w-xl">
-            Revestimentos eco-premium que transformam paredes e tetos com
-            acabamento arquitetônico — sem obra, sem espera.
+            Revestimentos eco-premium da Orbital que transformam paredes e tetos
+            em Manaus com acabamento arquitetônico — sem obra, sem espera.
           </p>
           <div className="flex flex-col sm:flex-row flex-wrap gap-3 lg:gap-4">
             <Link
