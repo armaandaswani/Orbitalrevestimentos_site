@@ -79,14 +79,14 @@ const equipe = [
   {
     nome: "Armaan Daswani",
     cargo: "Fundador & CEO",
-    bio: "Lidera a visão estratégica e o desenvolvimento de produto da Orbital. Responsável pela identificação de soluções inovadoras no mercado global e pela construção da cadeia de fornecimento direta na origem.",
+    bio: "É o motor por trás da Orbital. Lidera a visão estratégica, o desenvolvimento de produto, a construção de marca, o marketing e a operação do dia a dia — do primeiro contato com o cliente à entrega final do projeto. Multifacetado por escolha e por necessidade, garante que cada detalhe da experiência Orbital esteja à altura do produto que entregamos.",
     foto: "/images/team/armaan.jpg",
     hasPhoto: true,
   },
   {
     nome: "Junior Hemnani",
     cargo: "Fundador & CFO",
-    bio: "Responsável pela estrutura financeira, operacional e logística da Orbital. Garante a eficiência da cadeia de suprimentos e a disponibilidade de estoque local para atendimento imediato em Manaus.",
+    bio: "Responsável pela solidez financeira da Orbital. Atua diretamente na inteligência de suprimentos e na cadeia de fornecimento global — percorrendo mercados internacionais para identificar soluções que o mercado amazônico ainda não conhecia. Garante que cada placa chegue a Manaus no prazo, no custo certo e com estoque disponível para atender qualquer projeto.",
     foto: "/images/team/junior.jpg",
     hasPhoto: false,
   },
