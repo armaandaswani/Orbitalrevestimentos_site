@@ -6,6 +6,7 @@ import Link from "next/link";
 const WA_BASE = "https://wa.me/5592988150149?text=";
 
 type ProductLine = "Classic" | "Brilliance" | "Elegance";
+type FinishKind = "matte" | "polished" | "wood";
 
 interface Product {
   id: string;
@@ -25,8 +26,21 @@ const LINE_LABEL: Record<ProductLine, string> = {
   Brilliance: "Brilliance · Mármore Polido",
   Elegance: "Elegance · Madeira",
 };
+const FINISH_BY_LINE: Record<ProductLine, FinishKind> = {
+  Classic: "matte",
+  Brilliance: "polished",
+  Elegance: "wood",
+};
 
-const MAX_CANVAS = 1400; // longest side, internal resolution cap
+// Read a File into a data URL for sending to the render API.
+function fileToDataUrl(file: File): Promise<string> {
+  return new Promise((resolve, reject) => {
+    const r = new FileReader();
+    r.onload = () => resolve(r.result as string);
+    r.onerror = () => reject(new Error("Falha ao ler o arquivo."));
+    r.readAsDataURL(file);
+  });
+}
 
 export default function VisualizadorPage() {
   const [products, setProducts] = useState<Product[]>([]);
@@ -34,28 +48,13 @@ export default function VisualizadorPage() {
   const [lineFilter, setLineFilter] = useState<ProductLine | "Todas">("Todas");
   const [selected, setSelected] = useState<Product | null>(null);
 
-  const [photoSrc, setPhotoSrc] = useState<string | null>(null);
-  const [ready, setReady] = useState(false);
-  const [hasPainted, setHasPainted] = useState(false);
+  const [photoData, setPhotoData] = useState<string | null>(null); // wall photo data URL
+  const [result, setResult] = useState<string | null>(null); // generated image data URL
+  const [generating, setGenerating] = useState(false);
+  const [error, setError] = useState<string | null>(null);
 
-  const [brush, setBrush] = useState(70);
-  const [strength, setStrength] = useState(0.85);
-  const [mode, setMode] = useState<"paint" | "erase">("paint");
-
-  const [cursor, setCursor] = useState<{ x: number; y: number; show: boolean }>({ x: 0, y: 0, show: false });
-  const [downloading, setDownloading] = useState(false);
-
-  // Canvas refs
-  const canvasRef = useRef<HTMLCanvasElement | null>(null);
-  const maskRef = useRef<HTMLCanvasElement | null>(null);
-  const fxRef = useRef<HTMLCanvasElement | null>(null);
-  const photoRef = useRef<HTMLImageElement | null>(null);
-  const patternRef = useRef<CanvasPattern | null>(null);
-  const drawingRef = useRef(false);
-  const lastPtRef = useRef<{ x: number; y: number } | null>(null);
-  const rafRef = useRef<number | null>(null);
-  const historyRef = useRef<ImageData[]>([]);
-  const [canUndo, setCanUndo] = useState(false);
+  const fileInputRef = useRef<HTMLInputElement | null>(null);
+  const [dragOver, setDragOver] = useState(false);
 
   // ── Load products ──────────────────────────────────────────────
   useEffect(() => {
@@ -82,264 +81,64 @@ export default function VisualizadorPage() {
   const filtered =
     lineFilter === "Todas" ? products : products.filter((p) => p.linha === lineFilter);
 
-  // ── Composite render (throttled via rAF) ───────────────────────
-  const renderComposite = useCallback(() => {
-    const cvs = canvasRef.current;
-    const photo = photoRef.current;
-    const mask = maskRef.current;
-    const fx = fxRef.current;
-    if (!cvs || !photo || !mask || !fx) return;
-    const ctx = cvs.getContext("2d");
-    if (!ctx) return;
-    const w = cvs.width;
-    const h = cvs.height;
-
-    ctx.globalCompositeOperation = "source-over";
-    ctx.globalAlpha = 1;
-    ctx.clearRect(0, 0, w, h);
-    ctx.drawImage(photo, 0, 0, w, h);
-
-    const pattern = patternRef.current;
-    if (pattern) {
-      const fctx = fx.getContext("2d");
-      if (fctx) {
-        fctx.globalCompositeOperation = "source-over";
-        fctx.globalAlpha = 1;
-        fctx.clearRect(0, 0, w, h);
-        fctx.fillStyle = pattern;
-        fctx.fillRect(0, 0, w, h);
-        // clip the finish to the painted mask
-        fctx.globalCompositeOperation = "destination-in";
-        fctx.drawImage(mask, 0, 0);
-        fctx.globalCompositeOperation = "source-over";
-
-        // multiply preserves the wall's real lighting & shadows
-        ctx.globalCompositeOperation = "multiply";
-        ctx.globalAlpha = strength;
-        ctx.drawImage(fx, 0, 0);
-        // light normal pass so color reads even on dark walls
-        ctx.globalCompositeOperation = "source-over";
-        ctx.globalAlpha = strength * 0.3;
-        ctx.drawImage(fx, 0, 0);
-        ctx.globalAlpha = 1;
-        ctx.globalCompositeOperation = "source-over";
-      }
-    }
-  }, [strength]);
-
-  const scheduleRender = useCallback(() => {
-    if (rafRef.current != null) return;
-    rafRef.current = requestAnimationFrame(() => {
-      rafRef.current = null;
-      renderComposite();
-    });
-  }, [renderComposite]);
-
-  // recomposite when strength changes
-  useEffect(() => {
-    if (ready) scheduleRender();
-  }, [strength, ready, scheduleRender]);
-
-  // ── Load finish texture into a pattern ─────────────────────────
-  useEffect(() => {
-    if (!selected) {
-      patternRef.current = null;
-      if (ready) scheduleRender();
-      return;
-    }
-    const cvs = canvasRef.current;
-    if (!cvs) return;
-    const img = new Image();
-    img.crossOrigin = "anonymous";
-    img.onload = () => {
-      const ctx = cvs.getContext("2d");
-      if (!ctx) return;
-      const pat = ctx.createPattern(img, "repeat");
-      if (pat) {
-        // scale the texture so it reads at a believable size on the wall
-        const target = cvs.width * 0.55; // ~ width of one swatch on the wall
-        const scale = target / img.width;
-        if (typeof DOMMatrix !== "undefined" && pat.setTransform) {
-          pat.setTransform(new DOMMatrix([scale, 0, 0, scale, 0, 0]));
-        }
-        patternRef.current = pat;
-        scheduleRender();
-      }
-    };
-    img.src = selected.image_path;
-  }, [selected, ready, scheduleRender]);
-
-  // ── Photo upload ───────────────────────────────────────────────
-  const [photoNonce, setPhotoNonce] = useState(0);
-  const handleFile = useCallback((file: File | undefined | null) => {
+  const handleFile = useCallback(async (file: File | undefined | null) => {
     if (!file || !file.type.startsWith("image/")) return;
-    const url = URL.createObjectURL(file);
-    const img = new Image();
-    img.onload = () => {
-      photoRef.current = img;
-      historyRef.current = [];
-      patternRef.current = null;
-      setCanUndo(false);
-      setHasPainted(false);
-      setPhotoNonce((n) => n + 1);
-      setReady(true); // mounts the editor + canvas; sizing happens in the effect below
-    };
-    img.src = url;
-    setPhotoSrc(url);
+    setError(null);
+    setResult(null);
+    try {
+      const dataUrl = await fileToDataUrl(file);
+      setPhotoData(dataUrl);
+    } catch {
+      setError("Não foi possível ler essa imagem. Tente outra.");
+    }
   }, []);
 
-  // Size canvases + initial render once the editor canvas is mounted
-  useEffect(() => {
-    if (!ready) return;
-    const img = photoRef.current;
-    const cvs = canvasRef.current;
-    const mask = maskRef.current;
-    const fx = fxRef.current;
-    if (!img || !cvs || !mask || !fx) return;
-    const maxSide = Math.max(img.width, img.height);
-    const scale = Math.min(1, MAX_CANVAS / maxSide);
-    const w = Math.round(img.width * scale);
-    const h = Math.round(img.height * scale);
-    cvs.width = w;
-    cvs.height = h;
-    mask.width = w;
-    mask.height = h;
-    fx.width = w;
-    fx.height = h;
-    mask.getContext("2d")?.clearRect(0, 0, w, h);
-    renderComposite();
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [ready, photoNonce]);
-
-  // ── Pointer → canvas coords ────────────────────────────────────
-  const toCanvasPt = (clientX: number, clientY: number) => {
-    const cvs = canvasRef.current!;
-    const rect = cvs.getBoundingClientRect();
-    const sx = cvs.width / rect.width;
-    const sy = cvs.height / rect.height;
-    return { x: (clientX - rect.left) * sx, y: (clientY - rect.top) * sy };
-  };
-
-  const pushHistory = () => {
-    const mask = maskRef.current;
-    if (!mask) return;
-    const mctx = mask.getContext("2d");
-    if (!mctx) return;
+  const generate = useCallback(async () => {
+    if (!photoData || !selected) return;
+    setGenerating(true);
+    setError(null);
+    setResult(null);
     try {
-      const snap = mctx.getImageData(0, 0, mask.width, mask.height);
-      historyRef.current.push(snap);
-      if (historyRef.current.length > 14) historyRef.current.shift();
-      setCanUndo(true);
-    } catch {
-      /* ignore */
+      const res = await fetch("/api/visualizador/render", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          photo: photoData,
+          referenceUrl: selected.image_path,
+          finish: FINISH_BY_LINE[selected.linha],
+        }),
+      });
+      const json = await res.json();
+      if (!res.ok || !json.image) {
+        throw new Error(json.error || "Não foi possível gerar a visualização.");
+      }
+      setResult(json.image);
+    } catch (e) {
+      setError(e instanceof Error ? e.message : "Erro ao gerar a visualização.");
+    } finally {
+      setGenerating(false);
     }
-  };
-
-  const paintSegment = (from: { x: number; y: number }, to: { x: number; y: number }) => {
-    const mask = maskRef.current;
-    if (!mask) return;
-    const mctx = mask.getContext("2d");
-    if (!mctx) return;
-    mctx.globalCompositeOperation = mode === "erase" ? "destination-out" : "source-over";
-    mctx.strokeStyle = "rgba(255,255,255,1)";
-    mctx.fillStyle = "rgba(255,255,255,1)";
-    mctx.lineCap = "round";
-    mctx.lineJoin = "round";
-    mctx.lineWidth = brush;
-    mctx.beginPath();
-    mctx.moveTo(from.x, from.y);
-    mctx.lineTo(to.x, to.y);
-    mctx.stroke();
-    // dot for single taps
-    mctx.beginPath();
-    mctx.arc(to.x, to.y, brush / 2, 0, Math.PI * 2);
-    mctx.fill();
-    mctx.globalCompositeOperation = "source-over";
-  };
-
-  const onPointerDown = (e: React.PointerEvent<HTMLCanvasElement>) => {
-    if (!ready) return;
-    (e.target as HTMLElement).setPointerCapture?.(e.pointerId);
-    pushHistory();
-    drawingRef.current = true;
-    const pt = toCanvasPt(e.clientX, e.clientY);
-    lastPtRef.current = pt;
-    paintSegment(pt, pt);
-    if (mode === "paint") setHasPainted(true);
-    scheduleRender();
-  };
-
-  const onPointerMove = (e: React.PointerEvent<HTMLCanvasElement>) => {
-    const rect = canvasRef.current?.getBoundingClientRect();
-    if (rect) {
-      setCursor({ x: e.clientX - rect.left, y: e.clientY - rect.top, show: true });
-    }
-    if (!drawingRef.current || !ready) return;
-    const pt = toCanvasPt(e.clientX, e.clientY);
-    const last = lastPtRef.current ?? pt;
-    paintSegment(last, pt);
-    lastPtRef.current = pt;
-    scheduleRender();
-  };
-
-  const endStroke = () => {
-    drawingRef.current = false;
-    lastPtRef.current = null;
-  };
-
-  const undo = () => {
-    const mask = maskRef.current;
-    const snap = historyRef.current.pop();
-    if (!mask || !snap) return;
-    const mctx = mask.getContext("2d");
-    mctx?.putImageData(snap, 0, 0);
-    setCanUndo(historyRef.current.length > 0);
-    scheduleRender();
-  };
-
-  const clearMask = () => {
-    const mask = maskRef.current;
-    if (!mask) return;
-    pushHistory();
-    mask.getContext("2d")?.clearRect(0, 0, mask.width, mask.height);
-    setHasPainted(false);
-    scheduleRender();
-  };
+  }, [photoData, selected]);
 
   const changePhoto = () => {
-    setReady(false);
-    setHasPainted(false);
-    historyRef.current = [];
-    setCanUndo(false);
-    if (photoSrc) URL.revokeObjectURL(photoSrc);
-    setPhotoSrc(null);
+    setPhotoData(null);
+    setResult(null);
+    setError(null);
   };
 
   const download = () => {
-    const cvs = canvasRef.current;
-    if (!cvs) return;
-    setDownloading(true);
-    renderComposite();
-    requestAnimationFrame(() => {
-      cvs.toBlob((blob) => {
-        if (blob) {
-          const a = document.createElement("a");
-          a.href = URL.createObjectURL(blob);
-          a.download = `orbital-${selected?.code ?? "visualizacao"}.png`;
-          a.click();
-          setTimeout(() => URL.revokeObjectURL(a.href), 2000);
-        }
-        setDownloading(false);
-      }, "image/png");
-    });
+    if (!result) return;
+    const a = document.createElement("a");
+    a.href = result;
+    a.download = `orbital-${selected?.code ?? "visualizacao"}.png`;
+    a.click();
   };
-
-  const fileInputRef = useRef<HTMLInputElement | null>(null);
-  const [dragOver, setDragOver] = useState(false);
 
   const waMsg = selected
     ? `Olá! Usei o Visualizador e gostei do acabamento ${selected.name} (${selected.linha}). Gostaria de um orçamento.`
     : "Olá! Usei o Visualizador de revestimentos e gostaria de um orçamento.";
+
+  const ready = !!photoData;
 
   return (
     <main className="bg-white">
@@ -354,8 +153,9 @@ export default function VisualizadorPage() {
             Veja o acabamento na <span className="text-[#a1d494]">sua parede</span>
           </h1>
           <p className="text-white/70 font-[var(--font-inter)] text-base sm:text-lg max-w-[640px] mx-auto leading-relaxed">
-            Envie uma foto da parede, escolha um dos 15 acabamentos e pinte por cima
-            para ver como o revestimento PFB ficaria — antes mesmo de comprar.
+            Envie uma foto da sua parede e escolha um dos 15 acabamentos. Nossa
+            inteligência aplica o revestimento na imagem — no mesmo ângulo, com a
+            perspectiva e a iluminação reais do seu ambiente.
           </p>
         </div>
       </section>
@@ -396,9 +196,12 @@ export default function VisualizadorPage() {
                   Clique para escolher ou arraste a imagem aqui
                 </p>
                 <p className="text-[#a0a3a9] text-xs font-[var(--font-inter)] mt-3">
-                  JPG ou PNG · a foto fica só no seu navegador
+                  JPG ou PNG · foto de frente e bem iluminada funciona melhor
                 </p>
               </div>
+              {error && (
+                <p className="mt-3 text-sm text-[#b42318] font-[var(--font-inter)]">{error}</p>
+              )}
               <input
                 ref={fileInputRef}
                 type="file"
@@ -416,7 +219,7 @@ export default function VisualizadorPage() {
                 {[
                   { n: "1", t: "Envie a foto", d: "Use uma foto bem iluminada e de frente para a parede." },
                   { n: "2", t: "Escolha o acabamento", d: "São 15 opções entre mármore fosco, polido e madeira." },
-                  { n: "3", t: "Pinte sobre a parede", d: "O acabamento aparece com a iluminação e as sombras reais da sua foto." },
+                  { n: "3", t: "Gere a visualização", d: "A IA aplica o revestimento na sua parede, respeitando ângulo e luz." },
                   { n: "4", t: "Salve e compartilhe", d: "Baixe a imagem ou peça um orçamento no WhatsApp." },
                 ].map((s) => (
                   <li key={s.n} className="flex gap-4">
@@ -435,131 +238,74 @@ export default function VisualizadorPage() {
         ) : (
           // Editor state
           <div className="grid lg:grid-cols-[1fr_320px] gap-8 items-start">
-            {/* Canvas + toolbar */}
+            {/* Preview column */}
             <div>
-              <div
-                className="relative bg-[#11151b] rounded-sm overflow-hidden select-none"
-                onMouseLeave={() => setCursor((c) => ({ ...c, show: false }))}
-              >
-                <canvas
-                  ref={canvasRef}
-                  onPointerDown={onPointerDown}
-                  onPointerMove={onPointerMove}
-                  onPointerUp={endStroke}
-                  onPointerCancel={endStroke}
-                  className="block w-full h-auto touch-none"
-                  style={{ cursor: "none" }}
+              <div className="relative bg-[#11151b] rounded-sm overflow-hidden select-none aspect-[4/5] sm:aspect-auto">
+                {/* eslint-disable-next-line @next/next/no-img-element */}
+                <img
+                  src={result ?? photoData!}
+                  alt={result ? "Visualização gerada" : "Sua parede"}
+                  className="block w-full h-auto"
                 />
-                {/* brush cursor ring */}
-                {cursor.show && (
-                  <div
-                    className="pointer-events-none absolute rounded-full border-2"
-                    style={{
-                      left: cursor.x,
-                      top: cursor.y,
-                      transform: "translate(-50%, -50%)",
-                      boxShadow: `0 0 0 1px rgba(0,0,0,0.5)`,
-                      borderColor: mode === "erase" ? "#f87171" : "#a1d494",
-                      // ring scaled by display/canvas ratio
-                      ...(() => {
-                        const cvs = canvasRef.current;
-                        const rect = cvs?.getBoundingClientRect();
-                        const ratio = cvs && rect ? rect.width / cvs.width : 1;
-                        const d = brush * ratio;
-                        return { width: d, height: d };
-                      })(),
-                    }}
-                  />
-                )}
-                {!hasPainted && (
-                  <div className="pointer-events-none absolute inset-x-0 bottom-0 p-4 bg-gradient-to-t from-black/70 to-transparent">
-                    <p className="text-white/90 text-center text-sm font-[var(--font-inter)]">
-                      ✏️ Pinte sobre a parede para aplicar o acabamento
+
+                {/* original / result badge */}
+                <div className="pointer-events-none absolute top-3 left-3 bg-black/55 backdrop-blur-sm px-3 py-1.5 rounded-full">
+                  <p className="text-white/90 text-xs font-[var(--font-inter)]">
+                    {result ? "Resultado gerado" : "Foto original"}
+                  </p>
+                </div>
+
+                {/* generating overlay */}
+                {generating && (
+                  <div className="absolute inset-0 bg-black/70 flex flex-col items-center justify-center gap-4 text-center px-6">
+                    <div className="w-10 h-10 border-2 border-white/30 border-t-[#a1d494] rounded-full animate-spin" />
+                    <p className="text-white font-[var(--font-inter)] text-sm">
+                      Aplicando {selected?.name} na sua parede…
+                    </p>
+                    <p className="text-white/60 font-[var(--font-inter)] text-xs">
+                      Isso pode levar alguns segundos.
                     </p>
                   </div>
                 )}
               </div>
 
-              {/* Toolbar */}
-              <div className="mt-4 bg-[#f9f9f7] border border-[#e2e2e2] rounded-sm p-4 flex flex-wrap items-center gap-x-6 gap-y-4">
-                <div className="flex items-center gap-1 bg-white border border-[#e2e2e2] rounded-sm p-1">
-                  <button
-                    onClick={() => setMode("paint")}
-                    className={`px-3 py-1.5 text-xs font-bold font-[var(--font-inter)] tracking-wide rounded-sm transition-colors ${
-                      mode === "paint" ? "bg-[#002045] text-white" : "text-[#74777f] hover:text-[#002045]"
-                    }`}
-                  >
-                    Pincel
-                  </button>
-                  <button
-                    onClick={() => setMode("erase")}
-                    className={`px-3 py-1.5 text-xs font-bold font-[var(--font-inter)] tracking-wide rounded-sm transition-colors ${
-                      mode === "erase" ? "bg-[#002045] text-white" : "text-[#74777f] hover:text-[#002045]"
-                    }`}
-                  >
-                    Borracha
-                  </button>
-                </div>
+              {error && (
+                <p className="mt-3 text-sm text-[#b42318] font-[var(--font-inter)]">{error}</p>
+              )}
 
-                <label className="flex items-center gap-2 text-xs font-[var(--font-inter)] text-[#43474e]">
-                  <span className="font-semibold whitespace-nowrap">Pincel</span>
-                  <input
-                    type="range"
-                    min={15}
-                    max={220}
-                    value={brush}
-                    onChange={(e) => setBrush(Number(e.target.value))}
-                    className="w-28 accent-[#002045]"
-                  />
-                </label>
-
-                <label className="flex items-center gap-2 text-xs font-[var(--font-inter)] text-[#43474e]">
-                  <span className="font-semibold whitespace-nowrap">Intensidade</span>
-                  <input
-                    type="range"
-                    min={0.3}
-                    max={1}
-                    step={0.05}
-                    value={strength}
-                    onChange={(e) => setStrength(Number(e.target.value))}
-                    className="w-28 accent-[#002045]"
-                  />
-                </label>
-
-                <div className="flex items-center gap-2 ml-auto">
-                  <button
-                    onClick={undo}
-                    disabled={!canUndo}
-                    className="px-3 py-1.5 text-xs font-bold font-[var(--font-inter)] tracking-wide border border-[#e2e2e2] rounded-sm text-[#43474e] hover:border-[#002045] disabled:opacity-40 disabled:cursor-not-allowed"
-                  >
-                    Desfazer
-                  </button>
-                  <button
-                    onClick={clearMask}
-                    className="px-3 py-1.5 text-xs font-bold font-[var(--font-inter)] tracking-wide border border-[#e2e2e2] rounded-sm text-[#43474e] hover:border-[#002045]"
-                  >
-                    Limpar
-                  </button>
-                  <button
-                    onClick={changePhoto}
-                    className="px-3 py-1.5 text-xs font-bold font-[var(--font-inter)] tracking-wide border border-[#e2e2e2] rounded-sm text-[#43474e] hover:border-[#002045]"
-                  >
-                    Trocar foto
-                  </button>
-                </div>
-              </div>
-
+              {/* Action row */}
               <div className="mt-4 flex flex-wrap gap-3">
                 <button
-                  onClick={download}
-                  disabled={downloading}
-                  className="inline-flex items-center gap-2 bg-[#002045] text-white text-xs tracking-[0.12em] uppercase font-bold font-[var(--font-inter)] px-6 py-3 hover:bg-[#1a365d] transition-colors disabled:opacity-50"
+                  onClick={generate}
+                  disabled={generating || !selected}
+                  className="inline-flex items-center gap-2 bg-[#3b6934] text-white text-xs tracking-[0.12em] uppercase font-bold font-[var(--font-inter)] px-6 py-3 hover:bg-[#2f5429] transition-colors disabled:opacity-50"
                 >
-                  <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-                    <path d="M21 15v4a2 2 0 01-2 2H5a2 2 0 01-2-2v-4M7 10l5 5 5-5M12 15V3" />
+                  <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                    <path d="M5 3v4M3 5h4M6 17v4m-2-2h4M13 3l2.5 6.5L22 12l-6.5 2.5L13 21l-2.5-6.5L4 12l6.5-2.5z" />
                   </svg>
-                  {downloading ? "Salvando..." : "Baixar imagem"}
+                  {generating ? "Gerando…" : result ? "Gerar novamente" : "Gerar visualização"}
                 </button>
+
+                {result && (
+                  <button
+                    onClick={download}
+                    className="inline-flex items-center gap-2 bg-[#002045] text-white text-xs tracking-[0.12em] uppercase font-bold font-[var(--font-inter)] px-6 py-3 hover:bg-[#1a365d] transition-colors"
+                  >
+                    <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                      <path d="M21 15v4a2 2 0 01-2 2H5a2 2 0 01-2-2v-4M7 10l5 5 5-5M12 15V3" />
+                    </svg>
+                    Baixar
+                  </button>
+                )}
+
+                <button
+                  onClick={changePhoto}
+                  disabled={generating}
+                  className="inline-flex items-center gap-2 border border-[#e2e2e2] text-[#43474e] text-xs tracking-[0.12em] uppercase font-bold font-[var(--font-inter)] px-6 py-3 hover:border-[#002045] transition-colors disabled:opacity-50"
+                >
+                  Trocar foto
+                </button>
+
                 <a
                   href={`${WA_BASE}${encodeURIComponent(waMsg)}`}
                   target="_blank"
@@ -571,13 +317,11 @@ export default function VisualizadorPage() {
                   </svg>
                   Pedir orçamento
                 </a>
-                <Link
-                  href="/simulador"
-                  className="inline-flex items-center gap-2 border border-[#002045] text-[#002045] text-xs tracking-[0.12em] uppercase font-bold font-[var(--font-inter)] px-6 py-3 hover:bg-[#002045] hover:text-white transition-colors"
-                >
-                  Calcular preço
-                </Link>
               </div>
+
+              <p className="mt-3 text-[#a0a3a9] text-xs font-[var(--font-inter)]">
+                A imagem gerada é uma simulação e pode diferir do resultado real.
+              </p>
             </div>
 
             {/* Finish picker */}
@@ -594,10 +338,6 @@ export default function VisualizadorPage() {
           </div>
         )}
       </section>
-
-      {/* offscreen canvases */}
-      <canvas ref={maskRef} className="hidden" />
-      <canvas ref={fxRef} className="hidden" />
 
       {/* ── CTA ──────────────────────────────────────────────── */}
       <section className="bg-[#002045] px-6 py-16">

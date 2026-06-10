@@ -14,6 +14,8 @@ export const metadata: Metadata = {
     "mármore na parede simulação",
     "madeira na parede simulação",
   ],
+  // De-listed until the AI image-generation backend (paid Gemini key) is in place.
+  robots: { index: false, follow: false },
   alternates: { canonical: "https://orbitalrevestimentos.com.br/visualizador" },
   openGraph: {
     title: "Visualizador — Veja o Revestimento na Sua Parede",

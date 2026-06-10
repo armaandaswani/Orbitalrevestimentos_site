@@ -43,7 +43,6 @@ export default function Footer() {
                 { href: "/tecnologia", label: "Tecnologia PFB" },
                 { href: "/projetos", label: "Projetos" },
                 { href: "/parcerias", label: "Parcerias" },
-                { href: "/visualizador", label: "Visualizador na Parede" },
                 { href: "/simulador", label: "Simulador de Custo" },
                 { href: "/sobre", label: "Sobre a Orbital" },
                 { href: "/guias/revestimento-parede-manaus", label: "Guia: Revestimento Manaus" },
