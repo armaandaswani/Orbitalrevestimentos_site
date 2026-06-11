@@ -459,7 +459,7 @@ ${cta("Garantir meu orçamento", wa)}
         `
 <p style="font-size:20px;color:#002045;font-weight:700;margin:0 0 24px;font-family:Arial,sans-serif;">${first}, uma pergunta direta.</p>
 <p style="color:#43474e;font-size:14px;line-height:1.8;margin:0 0 20px;font-family:Arial,sans-serif;">
-  Já faz mais de duas semanas desde que você simulou o orçamento para ${spacePara}. Então vou ser direto: o que está faltando para você seguir?
+  Já faz mais de duas semanas desde que você simulou o orçamento para ${spacePara}. Então vou direto ao ponto: o que está faltando para você seguir?
 </p>
 <p style="color:#43474e;font-size:14px;line-height:1.8;margin:0 0 24px;font-family:Arial,sans-serif;">
   Na maioria das vezes não é o dinheiro, não é o produto, não é a entrega. É o ritmo da vida — o projeto fica para "depois", e o "depois" vira meses sem ninguém decidir nada.
@@ -473,12 +473,12 @@ ${cta("Garantir meu orçamento", wa)}
   </td></tr>
 </table>
 <p style="color:#43474e;font-size:14px;line-height:1.8;margin:0 0 16px;font-family:Arial,sans-serif;">
-  Você já fez a parte difícil — calculou, escolheu o modelo, viu o número. Falta um passo só: falar com a gente.
+  Você já fez a parte difícil — calculou, escolheu o modelo, viu o número. Falta um único passo: falar com a gente e fechar.
 </p>
 <p style="color:#43474e;font-size:14px;line-height:1.8;margin:0 0 4px;font-family:Arial,sans-serif;">
-  Sem pressão. Sem compromisso. Só uma conversa para destravar o que ainda está no caminho.
+  O resultado que você imaginou para ${spacePara} está a uma conversa de distância. A gente confirma o estoque, tira qualquer dúvida e organiza a retirada — você só precisa dizer "vamos".
 </p>
-${cta("Retomar o projeto agora", wa)}
+${cta("Quero fechar meu orçamento agora", wa)}
 <p style="color:#74777f;font-size:12px;line-height:1.7;font-family:Arial,sans-serif;">Orçamento em aberto: <strong>${fmtBRL(p.total)}</strong> · ${p.plates} painel${p.plates !== 1 ? "is" : ""} ${p.model} · ${fmtArea(p.area)} m²</p>
 `
       ),
