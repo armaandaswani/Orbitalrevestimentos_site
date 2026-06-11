@@ -56,6 +56,75 @@ const FINISH: Record<string, string> = {
   Elegance: "Madeira Texturizada",
 };
 
+// Grammatical gender of the known simulator space labels (lowercased, as stored).
+// Used to build article/possessive forms that agree with the noun. Anything not
+// listed here (custom names, or a multi-ambiente concatenation) falls back to the
+// gender-stable generic "espaço" forms below.
+const SPACE_GENDER: Record<string, "f" | "m"> = {
+  "parede": "f",
+  "sala": "f",
+  "cozinha": "f",
+  "porta": "f",
+  "roda-pia": "f",
+  "roda-banca": "f",
+  "fachada externa": "f",
+  "teto": "m",
+  "quarto": "m",
+  "escritório": "m",
+  "corredor": "m",
+  "banheiro": "m",
+  "lavabo": "m",
+  "móvel / marcenaria": "m",
+  "piso / chão": "m",
+  "box / ducha": "m",
+};
+
+export interface SpaceForms {
+  /** Possessive form without leading article — used after "para"/"de": "sua parede" / "seu espaço". */
+  label: string;
+  /** Article + possessive — object form: "a sua parede" / "o seu espaço". */
+  para: string;
+  /** Locative — "na sua parede" / "no seu espaço". */
+  em: string;
+  /** Sentence-start, capitalized: "Sua parede" / "Seu espaço". */
+  subj: string;
+}
+
+const GENERIC_SPACE: SpaceForms = {
+  label: "seu espaço",
+  para: "o seu espaço",
+  em: "no seu espaço",
+  subj: "Seu espaço",
+};
+
+/**
+ * Builds grammatically-correct article/possessive forms for the client's space.
+ *
+ * The simulator stores `space` as a single known label (e.g. "Parede") for one
+ * ambiente, or several labels joined with ", " for a multi-ambiente simulation
+ * (e.g. "Parede, Parede, Teto"). Interpolating that raw string into fixed-gender
+ * phrases like `o seu ${space}` produced ungrammatical, broken-looking emails.
+ *
+ * Rules:
+ *  - empty/null              → generic masculine "espaço" forms
+ *  - exactly one known label → gender-correct personalized forms
+ *  - multiple distinct, or an unknown/custom label → generic forms (always safe)
+ */
+export function spaceForms(space: string | null | undefined): SpaceForms {
+  if (!space) return GENERIC_SPACE;
+  const parts = space.split(",").map((s) => s.trim()).filter(Boolean);
+  const unique = Array.from(new Set(parts.map((s) => s.toLowerCase())));
+  if (unique.length !== 1) return GENERIC_SPACE; // 0 or 2+ distinct ambientes
+  const name = parts[0];
+  const gender = SPACE_GENDER[name.toLowerCase()];
+  if (!gender) return GENERIC_SPACE; // custom/unknown name → stay safe
+  const lower = name.toLowerCase();
+  const cap = name.charAt(0).toUpperCase() + name.slice(1).toLowerCase();
+  return gender === "f"
+    ? { label: `sua ${lower}`, para: `a sua ${lower}`, em: `na sua ${lower}`, subj: `Sua ${cap}` }
+    : { label: `seu ${lower}`, para: `o seu ${lower}`, em: `no seu ${lower}`, subj: `Seu ${cap}` };
+}
+
 function waLink(clientName: string, partnerName: string, model: string, plates: number) {
   const msg = `Olá! Sou ${clientName.split(" ")[0]}, recebi um orçamento Orbital pelo parceiro ${partnerName} e tenho interesse. Modelo: ${model}, ${plates} placas.`;
   return `https://wa.me/${WA_PHONE}?text=${encodeURIComponent(msg)}`;
@@ -132,11 +201,12 @@ export function generateClientEmail(
   p: EmailParams
 ): { subject: string; html: string } {
   const first = p.clientName.split(" ")[0];
-  const spaceLabel = p.space || "seu espaço";
-  const spacePara = p.space ? `o seu ${p.space}` : "seu espaço";
-  const spaceEm   = p.space ? `no seu ${p.space}` : "no seu espaço";
-  const spaceSubj = p.space ? `O seu ${p.space}` : "Seu espaço";
-  const spaceA    = p.space ? `a sua ${p.space}` : "o seu espaço";
+  const sf = spaceForms(p.space);
+  const spaceLabel = sf.label;
+  const spacePara = sf.para;
+  const spaceEm   = sf.em;
+  const spaceSubj = sf.subj;
+  const spaceA    = sf.para; // "<art> <poss> X" object form (gender-correct)
   const finish = FINISH[p.model] || p.model;
   const wa = waLink(p.clientName, p.partnerName, p.model, p.plates);
   const partnerFirst = p.partnerName.split(" ")[0];
@@ -249,7 +319,7 @@ ${cta("Tirar dúvidas agora", wa)}
         `
 <p style="font-size:20px;color:#002045;font-weight:700;margin:0 0 24px;font-family:Arial,sans-serif;">Aquele cheiro de fechado tem um culpado, ${first}.</p>
 <p style="color:#43474e;font-size:14px;line-height:1.8;margin:0 0 20px;font-family:Arial,sans-serif;">
-  Sabe quando você fica alguns dias fora ou só deixa ${spaceA} fechada por um tempo — e quando abre, tem aquele bafo? Aquela energia pesada, aquele ar úmido?
+  Sabe quando você fica alguns dias fora ou passa um tempo sem usar ${spaceA} — e quando volta, tem aquele bafo? Aquela energia pesada, aquele ar úmido?
 </p>
 <p style="color:#43474e;font-size:14px;line-height:1.8;margin:0 0 20px;font-family:Arial,sans-serif;">
   Isso não é só a falta de circulação de ar. É o que os próprios materiais do ambiente absorvem e liberam de volta. Paredes que bebem umidade dia e noite — e soltam quando o ambiente fica fechado.
@@ -362,7 +432,7 @@ ${cta("Garantir meu orçamento", wa)}
   // ── STEP 6 — Day 16: O custo de adiar ────────────────────────────────────
   if (step === 6) {
     return {
-      subject: `${first}, a sua ${spaceLabel} continua igual — e isso tem um custo`,
+      subject: `${first}, ${spaceSubj.toLowerCase()} continua igual — e isso tem um custo`,
       html: wrap(
         `Cada mês que passa é um mês a mais com o ambiente que você quer mudar.`,
         `
@@ -537,8 +607,9 @@ export async function generateClientEmailFromTemplate(
   }
 
   const first = p.clientName.split(" ")[0];
-  const spaceLabel = p.space || "seu espaço";
-  const spacePara = p.space ? `o seu ${p.space}` : "seu espaço";
+  const sf = spaceForms(p.space);
+  const spaceLabel = sf.label;
+  const spacePara = sf.para;
   const finish = FINISH[p.model] || p.model;
   const wa = waLink(p.clientName, p.partnerName, p.model, p.plates);
   const partnerFirst = p.partnerName.split(" ")[0];
@@ -549,6 +620,9 @@ export async function generateClientEmailFromTemplate(
     firstName: first,
     clientName: p.clientName,
     spaceLabel,
+    spacePara,
+    spaceEm: sf.em,
+    spaceSubj: sf.subj,
     model: p.model,
     finish,
     plates: String(p.plates),
