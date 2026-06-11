@@ -109,6 +109,7 @@ interface CouponData {
   discount_value: number;
   commission_type: "percentage" | "fixed";
   commission_value: number;
+  source?: string;
 }
 
 interface SavedSpace {
@@ -288,6 +289,8 @@ function SimuladorInner() {
   const [partnerSimId, setPartnerSimId] = useState<string | null>(null);
   const [couponCode, setCouponCode] = useState("");
   const [couponData, setCouponData] = useState<CouponData | null>(null);
+  // Admin-set discount % for a rep direct-sale link (?desc=N). Applied to rep coupons only.
+  const [repDiscountOverride, setRepDiscountOverride] = useState<number | null>(null);
   const [couponValidating, setCouponValidating] = useState(false);
   const [couponError, setCouponError] = useState("");
   const [showResult, setShowResult] = useState(false);
@@ -528,6 +531,13 @@ function SimuladorInner() {
     }
 
     if (cupom) setCouponCode(cupom.toUpperCase());
+
+    // Admin-set discount % for a rep direct-sale link (?desc=N)
+    const descParam = searchParams.get("desc");
+    if (descParam) {
+      const d = parseFloat(descParam);
+      if (!isNaN(d) && d >= 0) setRepDiscountOverride(d);
+    }
 
     // Capture partner simulation ID (added to URL when partner generates the link)
     const simId = searchParams.get("sim_id");
@@ -774,6 +784,11 @@ function SimuladorInner() {
       });
       const json = await res.json();
       if (res.ok) {
+        // For rep direct-sale links, apply the admin-set discount % from ?desc
+        if (json.source === "rep" && repDiscountOverride != null) {
+          json.discount_type = "percentage";
+          json.discount_value = repDiscountOverride;
+        }
         setCouponData(json);
       } else {
         setCouponError(json.error || "Cupom inválido.");
@@ -825,7 +840,10 @@ function SimuladorInner() {
             method: "POST",
             headers: { "Content-Type": "application/json" },
             body: JSON.stringify({
-              partner_id: couponData.id,
+              // For rep direct sales there is no partner — attribute to the rep instead.
+              partner_id: couponData.source === "rep" ? null : couponData.id,
+              source: couponData.source ?? "partner",
+              sales_rep_referral_code: couponData.source === "rep" ? couponData.coupon_code : null,
               coupon_code: couponData.coupon_code,
               space: allSpacesLabel,
               product_name: isMultiSpace ? `${savedSpaces.length + 1} ambientes` : selectedProduct.name,

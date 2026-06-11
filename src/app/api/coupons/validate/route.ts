@@ -36,6 +36,27 @@ export async function POST(req: NextRequest) {
     .single();
 
   if (!adminCoupon) {
+    // 3. Check sales rep referral codes (direct sales)
+    const { data: rep } = await db
+      .from("sales_reps")
+      .select("id, name, referral_code, commission_type, commission_value, status")
+      .eq("referral_code", upperCode)
+      .eq("status", "active")
+      .single();
+
+    if (rep) {
+      return NextResponse.json({
+        id: rep.id,
+        partner_name: rep.name,
+        coupon_code: rep.referral_code,
+        discount_type: "percentage",
+        discount_value: 0,
+        commission_type: rep.commission_type,
+        commission_value: rep.commission_value,
+        source: "rep",
+      });
+    }
+
     return NextResponse.json({ error: "Cupom inválido ou inativo." }, { status: 404 });
   }
 

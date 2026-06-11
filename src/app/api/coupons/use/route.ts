@@ -30,6 +30,8 @@ async function sendNewBudgetEmails(opts: {
   discounted: number | null;
   couponCode: string;
   spaceBreakdown?: SpaceBreakdownItem[] | null;
+  // When true, the rep made the sale directly (no partner) — adjusts the rep email copy.
+  directSale?: boolean;
 }) {
   const resend = getResend();
   const siteUrl = process.env.NEXT_PUBLIC_SITE_URL ?? "https://orbitalrevestimentos.com.br";
@@ -116,10 +118,10 @@ async function sendNewBudgetEmails(opts: {
     <table cellpadding="0" cellspacing="0" style="max-width:560px;width:100%;">
       <tr><td style="background:#1a365d;padding:28px 32px;">
         <p style="margin:0 0 4px;font-size:11px;letter-spacing:0.2em;text-transform:uppercase;color:#86a0cd;font-family:Arial,sans-serif;">Novo Orçamento</p>
-        <p style="margin:0;font-size:22px;color:#ffffff;font-family:Georgia,serif;font-weight:400;">Orçamento gerado via parceiro ${opts.partnerName}</p>
+        <p style="margin:0;font-size:22px;color:#ffffff;font-family:Georgia,serif;font-weight:400;">${opts.directSale ? "Sua venda direta foi registrada" : `Orçamento gerado via parceiro ${opts.partnerName}`}</p>
       </td></tr>
       <tr><td style="background:#ffffff;border:1px solid #e2e2e2;border-top:0;padding:28px 32px;">
-        <p style="margin:0 0 16px;font-size:14px;color:#43474e;font-family:Arial,sans-serif;">Olá, <strong>${rep.name}</strong> — um dos seus parceiros (<strong>${opts.partnerName}</strong>) gerou um novo orçamento.</p>
+        <p style="margin:0 0 16px;font-size:14px;color:#43474e;font-family:Arial,sans-serif;">${opts.directSale ? `Olá, <strong>${rep.name}</strong> — sua venda direta foi registrada e sua comissão será calculada sobre o valor com desconto.` : `Olá, <strong>${rep.name}</strong> — um dos seus parceiros (<strong>${opts.partnerName}</strong>) gerou um novo orçamento.`}</p>
         ${detailsHtml}
       </td></tr>
       <tr><td style="background:#f0efec;border:1px solid #e2e2e2;border-top:0;padding:16px 32px;text-align:center;">
@@ -235,11 +237,38 @@ export async function POST(req: NextRequest) {
   const body = await req.json();
   const db = supabaseAdmin();
 
+  const isRepDirect = body.source === "rep";
+
   // Look up the partner to get their sales_rep_referral_code
   let salesRepReferralCode: string | null = null;
   let salesRepCommissionOwed: number | null = null;
+  // For rep direct sales: the rep record itself (used for commission + notification)
+  let repDirect: { id: string; name: string; email: string | null; referral_code: string } | null = null;
 
-  if (body.coupon_code) {
+  if (isRepDirect && body.sales_rep_referral_code) {
+    const { data: rep } = await db
+      .from("sales_reps")
+      .select("id, name, email, referral_code, commission_type, commission_value, status")
+      .eq("referral_code", (body.sales_rep_referral_code as string).toUpperCase())
+      .eq("status", "active")
+      .maybeSingle();
+
+    if (rep) {
+      repDirect = {
+        id: rep.id as string,
+        name: rep.name as string,
+        email: (rep.email as string) ?? null,
+        referral_code: rep.referral_code as string,
+      };
+      salesRepReferralCode = rep.referral_code as string;
+      if (body.material_discounted != null) {
+        salesRepCommissionOwed =
+          rep.commission_type === "percentage"
+            ? (body.material_discounted as number) * (rep.commission_value as number) / 100
+            : (rep.commission_value as number);
+      }
+    }
+  } else if (body.coupon_code) {
     const { data: partner } = await db
       .from("partners")
       .select("sales_rep_referral_code")
@@ -278,7 +307,8 @@ export async function POST(req: NextRequest) {
       material_total: body.material_total,
       material_discounted: body.material_discounted,
       discount_applied: body.discount_applied,
-      commission_owed: body.commission_owed,
+      // Partner commission — zero for rep direct sales (no partner involved)
+      commission_owed: isRepDirect ? 0 : body.commission_owed,
       architect_name: body.architect_name,
       client_email: body.client_email ?? null,
       client_phone: body.client_phone ?? null,
@@ -368,6 +398,47 @@ export async function POST(req: NextRequest) {
     } catch (err) {
       console.error("Notification email failed:", err);
       // non-fatal — budget was saved, just email failed
+    }
+  }
+
+  // ── Rep direct sale: commission record + notification (non-fatal) ──────────
+  if (data && isRepDirect && repDirect) {
+    try {
+      await db.from("coupon_use_commissions").insert({
+        coupon_use_id: (data as Record<string, unknown>).id as string,
+        sales_rep_id: repDirect.id,
+        sales_rep_referral_code: repDirect.referral_code,
+        commission_owed: salesRepCommissionOwed ?? 0,
+      });
+    } catch {
+      // non-fatal
+    }
+
+    if (body.architect_name) {
+      try {
+        await sendNewBudgetEmails({
+          partnerEmail: null,
+          partnerName: repDirect.name,
+          repEmails: repDirect.email
+            ? [{ email: repDirect.email, name: repDirect.name }]
+            : [],
+          clientName: body.architect_name as string,
+          clientEmail: (body.client_email as string) ?? "",
+          clientPhone: (body.client_phone as string | null) ?? null,
+          space: (body.space as string) ?? null,
+          productName: (body.product_name as string) ?? null,
+          plates: (body.plates as number) ?? null,
+          areaSqm: (body.area_m2 as number) ?? null,
+          total: (body.material_total as number) ?? null,
+          discounted: (body.material_discounted as number) ?? null,
+          couponCode: body.coupon_code as string,
+          spaceBreakdown: Array.isArray(body.space_breakdown) ? body.space_breakdown as SpaceBreakdownItem[] : null,
+          directSale: true,
+        });
+      } catch (err) {
+        console.error("Rep notification email failed:", err);
+        // non-fatal
+      }
     }
   }
 

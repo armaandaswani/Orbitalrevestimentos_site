@@ -380,6 +380,9 @@ export default function AdminPage() {
   const [simW, setSimW] = useState("");
   const [simH, setSimH] = useState("");
   const [simCoupon, setSimCoupon] = useState("");
+  // Direct-sale: a sales rep's referral code + optional admin-set discount % for the link
+  const [simRepCode, setSimRepCode] = useState("");
+  const [simRepDiscount, setSimRepDiscount] = useState("");
   const [simLink, setSimLink] = useState("");
   const [simLinkCopied, setSimLinkCopied] = useState(false);
   // Extended UI state for full-featured simulator
@@ -5110,7 +5113,15 @@ ALTER TABLE project_media ADD COLUMN IF NOT EXISTS description TEXT;`}
             const origin = typeof window !== "undefined" ? window.location.origin : "https://orbitalrevestimentos.com.br";
             const p = new URLSearchParams();
             p.set("from", "consultor");
-            if (simCoupon.trim()) p.set("cupom", simCoupon.trim().toUpperCase());
+            // Rep direct sale takes precedence: use the rep's referral code as the coupon
+            // and pass the admin-set discount % via ?desc so their commission is calculated.
+            if (simRepCode.trim()) {
+              p.set("cupom", simRepCode.trim().toUpperCase());
+              const d = parseFloat(simRepDiscount);
+              if (!isNaN(d) && d > 0) p.set("desc", d.toString());
+            } else if (simCoupon.trim()) {
+              p.set("cupom", simCoupon.trim().toUpperCase());
+            }
             if (allSpaces.length === 1) {
               const sp = allSpaces[0];
               p.set("space", "custom");
@@ -5342,9 +5353,33 @@ ALTER TABLE project_media ADD COLUMN IF NOT EXISTS description TEXT;`}
                   </button>
                 </div>
 
+                {/* Direct sale via sales rep — uses the rep's code + admin-set discount */}
+                <div className="mb-3 border-b border-[#e2e2e2] pb-3">
+                  <label className="block text-[10px] tracking-[0.15em] uppercase font-bold font-[var(--font-inter)] text-[#74777f] mb-2">Venda direta — Representante</label>
+                  <div className="flex gap-3">
+                    <select value={simRepCode} onChange={e => setSimRepCode(e.target.value)}
+                      className="flex-1 border border-[#e2e2e2] px-4 py-2.5 text-sm font-[var(--font-inter)] text-[#002045] focus:outline-none focus:border-[#002045] bg-white">
+                      <option value="">Nenhum (cupom normal)</option>
+                      {salesReps.filter(r => r.status === "active").map(r => (
+                        <option key={r.id} value={r.referral_code}>{r.name} ({r.referral_code})</option>
+                      ))}
+                    </select>
+                    <div className="w-28">
+                      <input type="number" min="0" max="50" value={simRepDiscount} onChange={e => setSimRepDiscount(e.target.value)}
+                        disabled={!simRepCode}
+                        placeholder="Desc. %"
+                        className="w-full border border-[#e2e2e2] px-4 py-2.5 text-sm font-[var(--font-inter)] text-[#002045] focus:outline-none focus:border-[#002045] disabled:opacity-40" />
+                    </div>
+                  </div>
+                  {simRepCode && (
+                    <p className="text-[#74777f] text-xs font-[var(--font-inter)] mt-2">A comissão do representante será calculada sobre o valor com desconto quando o cliente preencher os dados.</p>
+                  )}
+                </div>
+
                 <input type="text" value={simCoupon} onChange={e => setSimCoupon(e.target.value.toUpperCase())}
-                  placeholder="Ex: PARCEIRO01 ou código gerado abaixo"
-                  className="w-full border border-[#e2e2e2] px-4 py-2.5 text-sm font-[var(--font-inter)] text-[#002045] focus:outline-none focus:border-[#002045]" />
+                  disabled={!!simRepCode}
+                  placeholder={simRepCode ? "Usando código do representante" : "Ex: PARCEIRO01 ou código gerado abaixo"}
+                  className="w-full border border-[#e2e2e2] px-4 py-2.5 text-sm font-[var(--font-inter)] text-[#002045] focus:outline-none focus:border-[#002045] disabled:opacity-40" />
 
                 {/* Coupon creator panel */}
                 {showCouponCreator && (
