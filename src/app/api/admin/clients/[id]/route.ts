@@ -71,6 +71,7 @@ export async function PATCH(
           area: data.area_m2 as number,
           total: data.total as number,
           partnerName: data.partner_name as string,
+          hasCoupon: Boolean(data.coupon_use_id),
         },
         tpl ?? null
       );

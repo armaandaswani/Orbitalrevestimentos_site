@@ -93,6 +93,7 @@ export async function PATCH(
           area: seq.area_m2 as number,
           total: seq.total as number,
           partnerName: seq.partner_name as string,
+          hasCoupon: Boolean(seq.coupon_use_id),
         });
         await resend.emails.send({
           from: "Orbital Revestimentos <noreply@orbitalrevestimentos.com.br>",

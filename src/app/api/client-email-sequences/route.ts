@@ -91,6 +91,7 @@ export async function POST(req: NextRequest) {
       area: area_m2 as number,
       total: total as number,
       partnerName: partner_name as string,
+      hasCoupon: Boolean(coupon_use_id),
       quoteUrl: (quote_url as string | null) ?? null,
       productImages: Array.isArray(product_images) ? product_images as Array<{ imageUrl: string; productName: string; spaceName: string }> : null,
     });
