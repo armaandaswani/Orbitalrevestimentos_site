@@ -413,15 +413,15 @@ ${cta("Falar com um consultor", wa)}
 
     const content = p.hasCoupon
       ? {
-          subject: `${first}, por que os arquitetos assinam projetos com a Orbital?`,
+          subject: `${first}, sabe por que os arquitetos assinam projetos com a Orbital?`,
           preview: "Quando a reputação do profissional está em jogo, a escolha não é por acaso.",
-          headline: `Arquiteto bom não aposta, ${first}.`,
+          headline: `Arquiteto bom nunca aposta em algo em que não confia, ${first}.`,
           intro: `Quando um arquiteto especifica um material, ele assina embaixo — o nome dele fica naquele projeto por anos. Por isso não escolhe pelo mais barato nem pelo mais bonito na foto, e sim pelo que não vai decepcionar depois. O profissional que está te orientando escolheu Orbital pelo mesmo motivo.`,
         }
       : {
-          subject: `${first}, resultado de arquiteto — sem precisar contratar um`,
+          subject: `${first}, quer um resultado de arquiteto sem precisar contratar um?`,
           preview: "Os painéis Orbital foram feitos para entregar um acabamento de alto padrão sem você depender de um projetista.",
-          headline: `Um acabamento profissional, sem arquiteto, ${first}.`,
+          headline: `Um acabamento profissional com resultado de arquiteto, ${first}.`,
           intro: `Nem todo projeto tem um arquiteto por trás — e, com os painéis Orbital, você não precisa de um para ter um resultado de alto padrão. O produto foi pensado para que qualquer ambiente fique sofisticado, mesmo sem um profissional especificando cada detalhe.`,
         };
 
