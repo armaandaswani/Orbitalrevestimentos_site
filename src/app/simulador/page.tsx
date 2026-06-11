@@ -310,13 +310,15 @@ function SimuladorInner() {
   // Index of the space shown in the Resumo block; null = current active space
   const [resumeIdx, setResumeIdx] = useState<number | null>(null);
 
-  // Raw multi-space params from URL — resolved into savedSpaces once products load
-  interface PendingMsSpace { spaceName: string; productCode: string; plates: number; }
+  // Raw multi-space params from URL — resolved into savedSpaces once products load.
+  // plates comes from partner links (pl{i}); w/h come from Visualizador links (w{i}/h{i}).
+  interface PendingMsSpace { spaceName: string; productCode: string; plates: number | null; w: number | null; h: number | null; }
   const [pendingMsParams, setPendingMsParams] = useState<PendingMsSpace[] | null>(null);
 
   // ── Partner / client-link mode ───────────────────────────────────────────
   const [partnerMode, setPartnerMode] = useState(false);       // opened with ?mode=partner
   const [fromPartnerLink, setFromPartnerLink] = useState(false); // opened from a partner-generated link
+  const [vizPrefill, setVizPrefill] = useState(false);          // opened from the Visualizador (?src=viz)
   const [hasJumpedFromLink, setHasJumpedFromLink] = useState(false);
   const [partnerLinkCopied, setPartnerLinkCopied] = useState(false);
   const [partnerLinkGenerated, setPartnerLinkGenerated] = useState(false);
@@ -543,24 +545,41 @@ function SimuladorInner() {
     const simId = searchParams.get("sim_id");
     if (simId) setPartnerSimId(simId);
 
-    // ── Multi-space link: ?ms=N&s0=…&p0=…&pl0=…&s1=…&p1=…&pl1=… ──────────
+    // Visualizador handoff link (?src=viz) — prefill without the partner banner/coupon UI
+    const srcViz = searchParams.get("src") === "viz";
+    if (srcViz) setVizPrefill(true);
+
+    // ── Multi-space link: ?ms=N&s0=…&p0=…&pl0=…  (partner: pl{i} plates) ──
+    // ── or                ?ms=N&s0=…&p0=…&w0=…&h0=… (visualizador: dims) ──
     const msParam = searchParams.get("ms");
     if (msParam) {
       const count = parseInt(msParam, 10);
       if (!isNaN(count) && count > 1) {
-        const spaces: { spaceName: string; productCode: string; plates: number }[] = [];
+        const spaces: PendingMsSpace[] = [];
         for (let i = 0; i < count; i++) {
           const spaceName = searchParams.get(`s${i}`) ?? "";
           const productCode = searchParams.get(`p${i}`) ?? "";
-          const plStr = searchParams.get(`pl${i}`) ?? "";
-          const pl = parseInt(plStr, 10);
-          if (spaceName && productCode && !isNaN(pl) && pl > 0) {
-            spaces.push({ spaceName, productCode, plates: pl });
+          const pl = parseInt(searchParams.get(`pl${i}`) ?? "", 10);
+          const wv = parseFloat(searchParams.get(`w${i}`) ?? "");
+          const hv = parseFloat(searchParams.get(`h${i}`) ?? "");
+          const hasPl = !isNaN(pl) && pl > 0;
+          const hasDims = !isNaN(wv) && wv > 0 && !isNaN(hv) && hv > 0;
+          if (!spaceName || !productCode) continue;
+          // Entries need plates or dims, except the LAST one from the
+          // Visualizador, which may arrive dimensionless (user fills step 3).
+          if (hasPl || hasDims || (srcViz && i === count - 1)) {
+            spaces.push({
+              spaceName,
+              productCode,
+              plates: hasPl ? pl : null,
+              w: hasDims ? wv : null,
+              h: hasDims ? hv : null,
+            });
           }
         }
         if (spaces.length > 1) {
           setPendingMsParams(spaces);
-          setFromPartnerLink(true);
+          if (!srcViz) setFromPartnerLink(true);
         }
       }
       return; // skip single-space param parsing
@@ -581,6 +600,15 @@ function SimuladorInner() {
     // Pre-fill area from ?area=N.NN
     const areaParam = searchParams.get("area");
     if (areaParam) { setSqmInput(areaParam); setDimMode("m2"); }
+
+    // Pre-fill real measurements from the Visualizador (?w=L&h=A, meters)
+    const wParam = parseFloat(searchParams.get("w") ?? "");
+    const hParam = parseFloat(searchParams.get("h") ?? "");
+    if (!isNaN(wParam) && wParam > 0 && !isNaN(hParam) && hParam > 0) {
+      setWidth(String(wParam));
+      setHeight(String(hParam));
+      setDimMode("lxa");
+    }
 
     // Lock plate count from partner-calculated ?placas=N (prevents formula mismatch)
     const placasParam = searchParams.get("placas");
@@ -623,10 +651,17 @@ function SimuladorInner() {
       const ppp = product?.price ?? 559;
       const classification = classifyCustomSpace(sp.spaceName);
       const complex = classification?.viability === "complex";
-      const moRate = orbitalMOPerPlate(sp.plates, complex);
-      const materialTotal = sp.plates * ppp;
-      const moTotal = moRate * sp.plates;
-      const areaM2 = parseFloat((sp.plates * PLATE_M2).toFixed(2));
+      // Plate count: explicit (partner link) or derived from real dims (visualizador)
+      const hasDims = sp.w !== null && sp.h !== null;
+      const spPlates = sp.plates ?? (hasDims
+        ? Math.ceil((sp.w as number) / PLATE_W) * Math.ceil((sp.h as number) / PLATE_H)
+        : 0);
+      const moRate = orbitalMOPerPlate(spPlates, complex);
+      const materialTotal = spPlates * ppp;
+      const moTotal = moRate * spPlates;
+      const areaM2 = hasDims
+        ? parseFloat(((sp.w as number) * (sp.h as number)).toFixed(2))
+        : parseFloat((spPlates * PLATE_M2).toFixed(2));
       return {
         key: `ms-space-${idx}`,
         label: sp.spaceName,
@@ -634,9 +669,9 @@ function SimuladorInner() {
         productCode: sp.productCode,
         imagePath: product?.image_path ?? "",
         linha: product?.linha ?? "Classic",
-        dimLabel: `${areaM2.toFixed(2)} m²`,
+        dimLabel: hasDims ? `${sp.w}m × ${sp.h}m` : `${areaM2.toFixed(2)} m²`,
         m2: areaM2,
-        plates: sp.plates,
+        plates: spPlates,
         pricePerPlate: ppp,
         materialTotal,
         materialDiscounted: materialTotal, // discount applied retroactively when coupon validates
@@ -656,9 +691,17 @@ function SimuladorInner() {
     }
     setCustomSpaceText(lastSpace.spaceName);
     setShowCustomInput(true);
-    setPlatesOverride(lastSpace.plates);
-    setSqmInput((lastSpace.plates * PLATE_M2).toFixed(2));
-    setDimMode("m2");
+    if (lastSpace.w !== null && lastSpace.h !== null) {
+      // Visualizador dims — keep the real L×A so the user sees (and can edit) them
+      setWidth(String(lastSpace.w));
+      setHeight(String(lastSpace.h));
+      setDimMode("lxa");
+    } else if (lastSpace.plates !== null) {
+      setPlatesOverride(lastSpace.plates);
+      setSqmInput((lastSpace.plates * PLATE_M2).toFixed(2));
+      setDimMode("m2");
+    }
+    // else: dimensionless visualizador entry — user fills dims in step 3
 
     setPendingMsParams(null); // mark as resolved
   // eslint-disable-next-line react-hooks/exhaustive-deps
@@ -684,16 +727,23 @@ function SimuladorInner() {
   // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [couponData]);
 
-  // Auto-jump to Step 4 once everything is pre-filled from a partner link
+  // Auto-jump once everything is pre-filled from a partner or Visualizador link.
+  // With dims/area present → step 4 (client data); Visualizador link missing
+  // dims for the active space → step 3 so the user types only the measurements.
   useEffect(() => {
-    if (!fromPartnerLink || hasJumpedFromLink) return;
-    if (selectedSpace && selectedProduct && m2 > 0) {
+    if ((!fromPartnerLink && !vizPrefill) || hasJumpedFromLink) return;
+    if (!selectedSpace || !selectedProduct) return;
+    if (m2 > 0) {
       setHasJumpedFromLink(true);
       setStep(4);
       setTimeout(() => stepCardRef.current?.scrollIntoView({ behavior: "smooth", block: "start" }), 100);
+    } else if (vizPrefill) {
+      setHasJumpedFromLink(true);
+      setStep(3);
+      setTimeout(() => stepCardRef.current?.scrollIntoView({ behavior: "smooth", block: "start" }), 100);
     }
   // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [fromPartnerLink, hasJumpedFromLink, selectedSpace, selectedProduct]);
+  }, [fromPartnerLink, vizPrefill, hasJumpedFromLink, selectedSpace, selectedProduct, m2]);
 
   // Auto-validate coupon when arriving from a partner link (so step 5 shows it as locked/applied)
   useEffect(() => {

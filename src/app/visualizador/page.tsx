@@ -5,6 +5,10 @@ import Link from "next/link";
 
 const WA_BASE = "https://wa.me/5592988150149?text=";
 
+// Same plate size used by the Simulador — keep these in sync.
+const PLATE_W = 1.2;
+const PLATE_H = 2.9;
+
 type ProductLine = "Classic" | "Brilliance" | "Elegance";
 type FinishKind = "matte" | "polished" | "wood";
 
@@ -32,6 +36,45 @@ const FINISH_BY_LINE: Record<ProductLine, FinishKind> = {
   Elegance: "wood",
 };
 
+// Locais de aplicação — ids/labels match the Simulador's SPACES list so the
+// handoff pre-fills the same space there.
+const VIZ_SPACES: { id: string; label: string }[] = [
+  { id: "parede", label: "Parede" },
+  { id: "teto", label: "Teto" },
+  { id: "sala", label: "Sala" },
+  { id: "quarto", label: "Quarto" },
+  { id: "escritorio", label: "Escritório" },
+  { id: "corredor", label: "Corredor" },
+  { id: "banheiro", label: "Banheiro" },
+  { id: "lavabo", label: "Lavabo" },
+  { id: "cozinha", label: "Cozinha" },
+  { id: "movel", label: "Móvel / Marcenaria" },
+  { id: "porta", label: "Porta" },
+  { id: "box", label: "Box / Ducha" },
+];
+
+// An ambiente the client finished visualizing — carried into the Simulador.
+interface SavedAmbiente {
+  key: string;
+  spaceId: string | null; // null = custom text local
+  local: string;
+  width: number | null;
+  height: number | null;
+  productCode: string;
+  productName: string;
+  productImage: string;
+  thumb: string; // generated result if available, else the wall photo
+}
+
+function platesFor(w: number, h: number): number {
+  return Math.ceil(w / PLATE_W) * Math.ceil(h / PLATE_H);
+}
+
+function parseDim(v: string): number | null {
+  const n = parseFloat(v.replace(",", "."));
+  return isFinite(n) && n > 0 ? n : null;
+}
+
 // Read a File into a data URL for sending to the render API.
 function fileToDataUrl(file: File): Promise<string> {
   return new Promise((resolve, reject) => {
@@ -40,6 +83,40 @@ function fileToDataUrl(file: File): Promise<string> {
     r.onerror = () => reject(new Error("Falha ao ler o arquivo."));
     r.readAsDataURL(file);
   });
+}
+
+// Build the Simulador URL with everything pre-filled. Ambientes with medidas
+// come first (they become saved spaces there); at most one without medidas is
+// allowed and goes last (it becomes the active space awaiting dimensions).
+function buildSimuladorUrl(ambientes: SavedAmbiente[]): string {
+  if (ambientes.length === 1) {
+    const a = ambientes[0];
+    const qp = new URLSearchParams({ src: "viz" });
+    if (a.spaceId) qp.set("space", a.spaceId);
+    else {
+      qp.set("space", "custom");
+      qp.set("customSpace", a.local);
+    }
+    qp.set("produto", a.productCode);
+    if (a.width && a.height) {
+      qp.set("w", String(a.width));
+      qp.set("h", String(a.height));
+    }
+    return `/simulador?${qp.toString()}`;
+  }
+  const withDims = ambientes.filter((a) => a.width && a.height);
+  const withoutDims = ambientes.filter((a) => !(a.width && a.height));
+  const ordered = [...withDims, ...withoutDims];
+  const qp = new URLSearchParams({ src: "viz", ms: String(ordered.length) });
+  ordered.forEach((a, i) => {
+    qp.set(`s${i}`, a.local);
+    qp.set(`p${i}`, a.productCode);
+    if (a.width && a.height) {
+      qp.set(`w${i}`, String(a.width));
+      qp.set(`h${i}`, String(a.height));
+    }
+  });
+  return `/simulador?${qp.toString()}`;
 }
 
 export default function VisualizadorPage() {
@@ -52,6 +129,16 @@ export default function VisualizadorPage() {
   const [result, setResult] = useState<string | null>(null); // generated image data URL
   const [generating, setGenerating] = useState(false);
   const [error, setError] = useState<string | null>(null);
+
+  // Ambiente details (local + medidas) — optional, improve the render and
+  // pre-fill the Simulador.
+  const [spaceId, setSpaceId] = useState<string>("parede");
+  const [customLocal, setCustomLocal] = useState("");
+  const [width, setWidth] = useState("");
+  const [height, setHeight] = useState("");
+
+  const [savedAmbientes, setSavedAmbientes] = useState<SavedAmbiente[]>([]);
+  const [saveNotice, setSaveNotice] = useState<string | null>(null);
 
   const fileInputRef = useRef<HTMLInputElement | null>(null);
   const [dragOver, setDragOver] = useState(false);
@@ -81,6 +168,16 @@ export default function VisualizadorPage() {
   const filtered =
     lineFilter === "Todas" ? products : products.filter((p) => p.linha === lineFilter);
 
+  const wNum = parseDim(width);
+  const hNum = parseDim(height);
+  const hasDims = !!(wNum && hNum);
+  const plates = hasDims ? platesFor(wNum!, hNum!) : 0;
+
+  const localLabel =
+    spaceId === "__custom__"
+      ? customLocal.trim()
+      : VIZ_SPACES.find((s) => s.id === spaceId)?.label ?? "Parede";
+
   const handleFile = useCallback(async (file: File | undefined | null) => {
     if (!file || !file.type.startsWith("image/")) return;
     setError(null);
@@ -107,6 +204,9 @@ export default function VisualizadorPage() {
           productId: selected.id, // the server resolves the per-model prompt from this
           referenceUrl: selected.image_path, // legacy fallback during rollout
           finish: FINISH_BY_LINE[selected.linha], // legacy fallback during rollout
+          // Real measurements (optional) — the AI uses them to scale panels.
+          wallWidthM: wNum ?? undefined,
+          wallHeightM: hNum ?? undefined,
         }),
       });
       const json = await res.json();
@@ -119,7 +219,7 @@ export default function VisualizadorPage() {
     } finally {
       setGenerating(false);
     }
-  }, [photoData, selected]);
+  }, [photoData, selected, wNum, hNum]);
 
   const changePhoto = () => {
     setPhotoData(null);
@@ -135,8 +235,67 @@ export default function VisualizadorPage() {
     a.click();
   };
 
+  // ── Multi-ambiente ─────────────────────────────────────────────
+  const canSaveAmbiente = !!photoData && !!selected && !!localLabel;
+
+  const saveAmbiente = () => {
+    if (!canSaveAmbiente || !selected) return;
+    setSavedAmbientes((prev) => [
+      ...prev,
+      {
+        key: `amb-${Date.now()}`,
+        spaceId: spaceId === "__custom__" ? null : spaceId,
+        local: localLabel,
+        width: wNum,
+        height: hNum,
+        productCode: selected.code,
+        productName: selected.name,
+        productImage: selected.image_path,
+        thumb: result ?? photoData!,
+      },
+    ]);
+    // Reset for the next ambiente — keep the product selection.
+    setPhotoData(null);
+    setResult(null);
+    setError(null);
+    setWidth("");
+    setHeight("");
+    setSpaceId("parede");
+    setCustomLocal("");
+    setSaveNotice("Ambiente salvo! Envie a foto do próximo ambiente.");
+    setTimeout(() => setSaveNotice(null), 4000);
+  };
+
+  const removeAmbiente = (key: string) =>
+    setSavedAmbientes((prev) => prev.filter((a) => a.key !== key));
+
+  // Ambientes that go to the Simulador: saved ones + the one being edited
+  // (counts as soon as a product and local are chosen, photo not required
+  // for the orçamento itself).
+  const currentAsAmbiente: SavedAmbiente | null =
+    selected && localLabel && photoData
+      ? {
+          key: "__current__",
+          spaceId: spaceId === "__custom__" ? null : spaceId,
+          local: localLabel,
+          width: wNum,
+          height: hNum,
+          productCode: selected.code,
+          productName: selected.name,
+          productImage: selected.image_path,
+          thumb: result ?? photoData,
+        }
+      : null;
+
+  const quoteAmbientes = [...savedAmbientes, ...(currentAsAmbiente ? [currentAsAmbiente] : [])];
+  const missingDimsCount = quoteAmbientes.filter((a) => !(a.width && a.height)).length;
+  const quoteReady = quoteAmbientes.length > 0 && missingDimsCount <= 1;
+  const simuladorHref = quoteReady ? buildSimuladorUrl(quoteAmbientes) : "/simulador";
+
   const waMsg = selected
-    ? `Olá! Usei o Visualizador e gostei do acabamento ${selected.name} (${selected.linha}). Gostaria de um orçamento.`
+    ? `Olá! Usei o Visualizador e gostei do acabamento ${selected.name} (${selected.linha})${
+        localLabel ? ` para ${localLabel.toLowerCase()}` : ""
+      }${hasDims ? ` — área de ${width}m × ${height}m (${plates} placa${plates !== 1 ? "s" : ""})` : ""}. Gostaria de um orçamento.`
     : "Olá! Usei o Visualizador de revestimentos e gostaria de um orçamento.";
 
   const ready = !!photoData;
@@ -154,15 +313,22 @@ export default function VisualizadorPage() {
             Veja o acabamento na <span className="text-[#a1d494]">sua parede</span>
           </h1>
           <p className="text-white/70 font-[var(--font-inter)] text-base sm:text-lg max-w-[640px] mx-auto leading-relaxed">
-            Envie uma foto da sua parede e escolha um dos 15 acabamentos. Nossa
-            inteligência aplica o revestimento na imagem — no mesmo ângulo, com a
-            perspectiva e a iluminação reais do seu ambiente.
+            Envie uma foto do seu ambiente, informe as medidas e escolha um dos 15
+            acabamentos. Nossa inteligência aplica o revestimento na imagem — e os
+            detalhes já vão preenchidos direto para o orçamento.
           </p>
         </div>
       </section>
 
       {/* ── Tool ─────────────────────────────────────────────── */}
       <section className="px-4 sm:px-6 py-12 max-w-[1280px] mx-auto">
+        {saveNotice && (
+          <div className="mb-6 flex items-center gap-2 bg-[#f3f8f1] border border-[#bcd8b4] px-4 py-3">
+            <span className="w-5 h-5 rounded-full bg-[#3b6934] text-white text-[11px] flex items-center justify-center">✓</span>
+            <p className="text-[#2f5429] text-sm font-[var(--font-inter)]">{saveNotice}</p>
+          </div>
+        )}
+
         {!ready ? (
           // Upload state
           <div className="grid lg:grid-cols-[1.1fr_0.9fr] gap-10 items-start">
@@ -191,7 +357,9 @@ export default function VisualizadorPage() {
                   <path d="M12 3v12" />
                 </svg>
                 <p className="font-[var(--font-noto-serif)] text-[#002045] text-xl mb-1">
-                  Envie uma foto da sua parede
+                  {savedAmbientes.length > 0
+                    ? "Envie a foto do próximo ambiente"
+                    : "Envie uma foto do seu ambiente"}
                 </p>
                 <p className="text-[#74777f] text-sm font-[var(--font-inter)]">
                   Clique para escolher ou arraste a imagem aqui
@@ -219,9 +387,10 @@ export default function VisualizadorPage() {
               <ol className="space-y-5">
                 {[
                   { n: "1", t: "Envie a foto", d: "Use uma foto bem iluminada e de frente para a parede." },
-                  { n: "2", t: "Escolha o acabamento", d: "São 15 opções entre mármore fosco, polido e madeira." },
-                  { n: "3", t: "Gere a visualização", d: "A IA aplica o revestimento na sua parede, respeitando ângulo e luz." },
-                  { n: "4", t: "Salve e compartilhe", d: "Baixe a imagem ou peça um orçamento no WhatsApp." },
+                  { n: "2", t: "Informe local e medidas", d: "Opcional, mas melhora o resultado — e já preenche o orçamento automaticamente." },
+                  { n: "3", t: "Escolha o acabamento", d: "São 15 opções entre mármore fosco, polido e madeira." },
+                  { n: "4", t: "Gere a visualização", d: "A IA aplica o revestimento respeitando ângulo, luz e as medidas reais." },
+                  { n: "5", t: "Simule o orçamento", d: "Adicione quantos ambientes quiser — tudo vai pronto para o Simulador de Custo." },
                 ].map((s) => (
                   <li key={s.n} className="flex gap-4">
                     <span className="flex-shrink-0 w-8 h-8 rounded-full bg-[#002045] text-white text-sm font-bold font-[var(--font-inter)] flex items-center justify-center">
@@ -307,17 +476,16 @@ export default function VisualizadorPage() {
                   Trocar foto
                 </button>
 
-                <a
-                  href={`${WA_BASE}${encodeURIComponent(waMsg)}`}
-                  target="_blank"
-                  rel="noopener noreferrer"
-                  className="inline-flex items-center gap-2 bg-[#25d366] text-white text-xs tracking-[0.12em] uppercase font-bold font-[var(--font-inter)] px-6 py-3 hover:brightness-95 transition"
+                <button
+                  onClick={saveAmbiente}
+                  disabled={generating || !canSaveAmbiente}
+                  className="inline-flex items-center gap-2 border border-[#3b6934] text-[#3b6934] text-xs tracking-[0.12em] uppercase font-bold font-[var(--font-inter)] px-6 py-3 hover:bg-[#f3f8f1] transition-colors disabled:opacity-50"
                 >
-                  <svg width="15" height="15" viewBox="0 0 24 24" fill="currentColor">
-                    <path d="M12 2a10 10 0 00-8.6 15l-1.3 4.7 4.8-1.3A10 10 0 1012 2zm0 18a8 8 0 01-4.1-1.1l-.3-.2-2.8.7.8-2.7-.2-.3A8 8 0 1112 20zm4.4-6c-.2-.1-1.4-.7-1.6-.8s-.4-.1-.5.1-.6.8-.8.9-.3.2-.5 0a6.5 6.5 0 01-1.9-1.2 7.3 7.3 0 01-1.3-1.7c-.1-.2 0-.4.1-.5l.4-.4.2-.4v-.4l-.8-1.8c-.2-.5-.4-.4-.5-.4h-.5a1 1 0 00-.7.3 2.9 2.9 0 00-.9 2.2 5.1 5.1 0 001.1 2.7 11.6 11.6 0 004.4 3.9c2.6 1 2.6.7 3.1.7a2.6 2.6 0 001.7-1.2 2.1 2.1 0 00.2-1.2c-.1-.1-.3-.2-.5-.3z" />
+                  <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5">
+                    <path d="M12 5v14M5 12h14" />
                   </svg>
-                  Pedir orçamento
-                </a>
+                  Adicionar outro ambiente
+                </button>
               </div>
 
               <p className="mt-3 text-[#a0a3a9] text-xs font-[var(--font-inter)]">
@@ -325,8 +493,20 @@ export default function VisualizadorPage() {
               </p>
             </div>
 
-            {/* Finish picker */}
-            <div className="lg:sticky lg:top-24">
+            {/* Ambiente details + finish picker */}
+            <div className="lg:sticky lg:top-24 space-y-4">
+              <AmbientePanel
+                spaceId={spaceId}
+                setSpaceId={setSpaceId}
+                customLocal={customLocal}
+                setCustomLocal={setCustomLocal}
+                width={width}
+                setWidth={setWidth}
+                height={height}
+                setHeight={setHeight}
+                hasDims={hasDims}
+                plates={plates}
+              />
               <FinishPicker
                 filtered={filtered}
                 lineFilter={lineFilter}
@@ -335,6 +515,83 @@ export default function VisualizadorPage() {
                 setSelected={setSelected}
                 loading={loadingProducts}
               />
+            </div>
+          </div>
+        )}
+
+        {/* ── Saved ambientes + orçamento handoff ───────────── */}
+        {(savedAmbientes.length > 0 || quoteAmbientes.length > 0) && (
+          <div className="mt-10 border border-[#e2e2e2] rounded-sm p-5 sm:p-6 bg-[#fbfbfa]">
+            <div className="flex flex-wrap items-center justify-between gap-3 mb-4">
+              <p className="text-[10px] tracking-[0.18em] uppercase font-bold font-[var(--font-inter)] text-[#002045]">
+                Seus ambientes ({quoteAmbientes.length})
+              </p>
+            </div>
+
+            {quoteAmbientes.length > 0 && (
+              <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 gap-3 mb-5">
+                {quoteAmbientes.map((a) => {
+                  const isCurrent = a.key === "__current__";
+                  const ambPlates = a.width && a.height ? platesFor(a.width, a.height) : null;
+                  return (
+                    <div key={a.key} className="relative bg-white border border-[#e2e2e2] rounded-sm overflow-hidden">
+                      <div className="relative" style={{ aspectRatio: "4 / 3" }}>
+                        {/* eslint-disable-next-line @next/next/no-img-element */}
+                        <img src={a.thumb} alt={a.local} className="absolute inset-0 w-full h-full object-cover" />
+                        {isCurrent && (
+                          <span className="absolute top-1.5 left-1.5 bg-[#002045] text-white text-[9px] tracking-[0.08em] uppercase font-bold font-[var(--font-inter)] px-2 py-0.5 rounded-full">
+                            Em edição
+                          </span>
+                        )}
+                        {!isCurrent && (
+                          <button
+                            onClick={() => removeAmbiente(a.key)}
+                            title="Remover ambiente"
+                            className="absolute top-1.5 right-1.5 w-6 h-6 rounded-full bg-black/55 text-white text-xs flex items-center justify-center hover:bg-[#b42318] transition-colors"
+                          >
+                            ✕
+                          </button>
+                        )}
+                      </div>
+                      <div className="p-2.5">
+                        <p className="text-[#002045] text-xs font-semibold font-[var(--font-inter)] truncate">{a.local}</p>
+                        <p className="text-[#74777f] text-[11px] font-[var(--font-inter)] truncate">{a.productName}</p>
+                        <p className="text-[#a0a3a9] text-[10px] font-[var(--font-inter)]">
+                          {a.width && a.height
+                            ? `${a.width}m × ${a.height}m · ${ambPlates} placa${ambPlates !== 1 ? "s" : ""}`
+                            : "Sem medidas — informe no orçamento"}
+                        </p>
+                      </div>
+                    </div>
+                  );
+                })}
+              </div>
+            )}
+
+            <div className="flex flex-col sm:flex-row sm:items-center gap-3">
+              {quoteReady ? (
+                <Link
+                  href={simuladorHref}
+                  className="inline-flex items-center justify-center gap-2 bg-[#002045] text-white text-xs tracking-[0.12em] uppercase font-bold font-[var(--font-inter)] px-7 py-3.5 hover:bg-[#1a365d] transition-colors"
+                >
+                  <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                    <rect x="4" y="2" width="16" height="20" rx="2" />
+                    <path d="M8 6h8M8 10h8M8 14h4" />
+                  </svg>
+                  Simular orçamento com {quoteAmbientes.length === 1 ? "este ambiente" : `estes ${quoteAmbientes.length} ambientes`}
+                </Link>
+              ) : (
+                <span className="inline-flex items-center justify-center gap-2 bg-[#e8e8e6] text-[#a0a3a9] text-xs tracking-[0.12em] uppercase font-bold font-[var(--font-inter)] px-7 py-3.5 cursor-not-allowed">
+                  Simular orçamento
+                </span>
+              )}
+              <p className="text-[#74777f] text-xs font-[var(--font-inter)] leading-relaxed">
+                {quoteReady
+                  ? "Local, medidas e acabamento de cada ambiente já vão preenchidos — sem digitar nada de novo."
+                  : missingDimsCount > 1
+                  ? "Informe as medidas (largura × altura) dos ambientes para levar tudo preenchido ao orçamento."
+                  : "Escolha um acabamento e um local para simular o orçamento."}
+              </p>
             </div>
           </div>
         )}
@@ -352,7 +609,7 @@ export default function VisualizadorPage() {
           </p>
           <div className="flex flex-wrap gap-3 justify-center">
             <a
-              href={`${WA_BASE}${encodeURIComponent("Olá! Usei o Visualizador da Orbital e quero falar sobre um projeto.")}`}
+              href={`${WA_BASE}${encodeURIComponent(waMsg)}`}
               target="_blank"
               rel="noopener noreferrer"
               className="bg-[#25d366] text-white text-xs tracking-[0.12em] uppercase font-bold font-[var(--font-inter)] px-7 py-3.5 hover:brightness-95 transition"
@@ -369,6 +626,100 @@ export default function VisualizadorPage() {
         </div>
       </section>
     </main>
+  );
+}
+
+// ── Ambiente details panel ───────────────────────────────────────
+function AmbientePanel({
+  spaceId,
+  setSpaceId,
+  customLocal,
+  setCustomLocal,
+  width,
+  setWidth,
+  height,
+  setHeight,
+  hasDims,
+  plates,
+}: {
+  spaceId: string;
+  setSpaceId: (v: string) => void;
+  customLocal: string;
+  setCustomLocal: (v: string) => void;
+  width: string;
+  setWidth: (v: string) => void;
+  height: string;
+  setHeight: (v: string) => void;
+  hasDims: boolean;
+  plates: number;
+}) {
+  const sanitizeDim = (v: string) => v.replace(/[^0-9.,]/g, "").replace(",", ".");
+  return (
+    <div className="bg-white border border-[#e2e2e2] rounded-sm p-4">
+      <p className="text-[10px] tracking-[0.18em] uppercase font-bold font-[var(--font-inter)] text-[#002045] mb-3">
+        Ambiente
+      </p>
+
+      <label className="block text-[10px] tracking-[0.15em] uppercase font-bold font-[var(--font-inter)] text-[#74777f] mb-1.5">
+        Local de aplicação
+      </label>
+      <select
+        value={spaceId}
+        onChange={(e) => setSpaceId(e.target.value)}
+        className="w-full border border-[#e2e2e2] px-3 py-2.5 text-sm font-[var(--font-inter)] text-[#002045] bg-white focus:outline-none focus:border-[#002045] transition-colors mb-3"
+      >
+        {VIZ_SPACES.map((s) => (
+          <option key={s.id} value={s.id}>
+            {s.label}
+          </option>
+        ))}
+        <option value="__custom__">Outro…</option>
+      </select>
+
+      {spaceId === "__custom__" && (
+        <input
+          type="text"
+          value={customLocal}
+          onChange={(e) => setCustomLocal(e.target.value)}
+          placeholder="ex: Hall de entrada"
+          className="w-full border border-[#e2e2e2] px-3 py-2.5 text-sm font-[var(--font-inter)] text-[#002045] focus:outline-none focus:border-[#002045] transition-colors mb-3"
+        />
+      )}
+
+      <label className="block text-[10px] tracking-[0.15em] uppercase font-bold font-[var(--font-inter)] text-[#74777f] mb-1.5">
+        Medidas da área <span className="normal-case font-normal">(opcional)</span>
+      </label>
+      <div className="grid grid-cols-2 gap-2 mb-2">
+        <input
+          type="text"
+          inputMode="decimal"
+          value={width}
+          onChange={(e) => setWidth(sanitizeDim(e.target.value))}
+          placeholder="Largura (m)"
+          className="w-full border border-[#e2e2e2] px-3 py-2.5 text-sm font-[var(--font-inter)] text-[#002045] focus:outline-none focus:border-[#002045] transition-colors"
+        />
+        <input
+          type="text"
+          inputMode="decimal"
+          value={height}
+          onChange={(e) => setHeight(sanitizeDim(e.target.value))}
+          placeholder="Altura (m)"
+          className="w-full border border-[#e2e2e2] px-3 py-2.5 text-sm font-[var(--font-inter)] text-[#002045] focus:outline-none focus:border-[#002045] transition-colors"
+        />
+      </div>
+
+      {hasDims ? (
+        <p className="text-[#2f5429] text-xs font-[var(--font-inter)] bg-[#f3f8f1] border border-[#dcebd7] px-3 py-2">
+          ≈ <strong>{plates} placa{plates !== 1 ? "s" : ""}</strong> de 1,2m × 2,9m ·
+          medidas vão direto para o orçamento
+        </p>
+      ) : (
+        <p className="text-[#a0a3a9] text-[11px] font-[var(--font-inter)] leading-relaxed">
+          Com as medidas reais, a IA aplica as placas na escala certa e o
+          orçamento já sai calculado.
+        </p>
+      )}
+    </div>
   );
 }
 

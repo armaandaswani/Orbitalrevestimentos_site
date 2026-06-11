@@ -81,7 +81,15 @@ export async function POST(req: NextRequest) {
     );
   }
 
-  let body: { photo?: string; productId?: string; referenceUrl?: string; finish?: FinishKind };
+  let body: {
+    photo?: string;
+    productId?: string;
+    referenceUrl?: string;
+    finish?: FinishKind;
+    // Optional real wall measurements typed by the client (meters).
+    wallWidthM?: number | string;
+    wallHeightM?: number | string;
+  };
   try {
     body = await req.json();
   } catch {
@@ -128,12 +136,19 @@ export async function POST(req: NextRequest) {
     );
   }
 
+  // Client-provided wall measurements (optional, capped to sane values).
+  const wallW = toPositiveNumber(body.wallWidthM ?? null, 0);
+  const wallH = toPositiveNumber(body.wallHeightM ?? null, 0);
+  const hasWallDims = wallW > 0 && wallW <= 50 && wallH > 0 && wallH <= 20;
+
   const prompt = composePrompt({
     finishText: finishText ?? finishDescription(finish),
     panelWidthM: toPositiveNumber(product?.render_panel_width_m, DEFAULT_PANEL_WIDTH_M),
     panelHeightM: toPositiveNumber(product?.render_panel_height_m, DEFAULT_PANEL_HEIGHT_M),
     extraNotes: usePerModel ? product?.render_extra_notes : null,
     hasContextImage: !!contextImage,
+    wallWidthM: hasWallDims ? wallW : null,
+    wallHeightM: hasWallDims ? wallH : null,
   });
 
   const parts: Array<{ text: string } | { inline_data: { mime_type: string; data: string } }> = [
