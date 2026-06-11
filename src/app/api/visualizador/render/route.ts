@@ -1,5 +1,12 @@
 import { NextRequest, NextResponse } from "next/server";
 import { supabaseAdmin } from "@/lib/supabase";
+import {
+  composePrompt,
+  finishDescription,
+  DEFAULT_PANEL_WIDTH_M,
+  DEFAULT_PANEL_HEIGHT_M,
+  type FinishKind,
+} from "@/lib/render-prompt";
 
 // Gemini image generation ("nano-banana"): takes the client's wall photo +
 // the chosen PFB panel reference image and renders the panel applied to that
@@ -14,66 +21,6 @@ export const maxDuration = 60;
 
 const GEMINI_BASE = "https://generativelanguage.googleapis.com/v1beta";
 const MODEL = process.env.GEMINI_IMAGE_MODEL || "gemini-2.5-flash-image";
-
-const DEFAULT_PANEL_WIDTH_M = 1.2;
-const DEFAULT_PANEL_HEIGHT_M = 2.9;
-
-type FinishKind = "matte" | "polished" | "wood";
-
-function finishDescription(kind: FinishKind): string {
-  switch (kind) {
-    case "polished":
-      return "polished marble with a glossy, reflective sheen and rich veining";
-    case "wood":
-      return "warm textured wood with natural grain";
-    case "matte":
-    default:
-      return "matte marble with a soft, non-reflective surface and subtle veining";
-  }
-}
-
-// Fixed scaffold: every invariant rule lives here. Per-model (or per-line
-// fallback) specifics are injected as parameters.
-function composePrompt(opts: {
-  finishText: string;
-  panelWidthM: number;
-  panelHeightM: number;
-  extraNotes?: string | null;
-  hasContextImage?: boolean;
-}): string {
-  const lines = [
-    "You are an architectural visualization engine.",
-    "The FIRST image is a real photo of a client's wall.",
-    "The SECOND image is the product reference: a PFB wall panel with a",
-    `${opts.finishText} finish.`,
-  ];
-  if (opts.hasContextImage) {
-    lines.push(
-      "The THIRD image shows this panel installed in a real room — use it as",
-      "a guide for how the finish reads in context (scale, sheen, light response)."
-    );
-  }
-  lines.push(
-    "",
-    "Re-render the FIRST photo so the wall is fully covered with this exact",
-    "panel finish, as if the panels were physically installed on it.",
-    "Rules:",
-    "- Keep the EXACT same camera angle, viewpoint, framing and room as the original photo.",
-    "- Apply the finish from the reference image precisely — same texture, color and tonality.",
-    "- Cover the entire wall, floor to ceiling, respecting the panel proportions.",
-    `- Panel size reference: ${opts.panelWidthM}m wide x ${opts.panelHeightM}m tall. Do not distort the texture.`,
-    "- The whole wall must read as one continuous finish: no mixed textures or tones.",
-    "- Preserve the real perspective, the room's existing furniture, floor, ceiling and lighting.",
-    "- Keep the wall's natural shadows and light falloff so it looks photorealistic.",
-    "- Ray-trace the result, cinematic studio lighting, soft shadows, ultra-realistic, ultra HD."
-  );
-  const notes = opts.extraNotes?.trim();
-  if (notes) {
-    lines.push(`Additional model-specific notes: ${notes}`);
-  }
-  lines.push("Output only the edited photo.");
-  return lines.join("\n");
-}
 
 interface RenderProduct {
   image_path: string | null;

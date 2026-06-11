@@ -425,7 +425,7 @@ function FinishPicker({
       {loading ? (
         <p className="text-[#74777f] text-sm font-[var(--font-inter)] py-6 text-center">Carregando…</p>
       ) : (
-        <div className="grid grid-cols-3 gap-2 max-h-[420px] overflow-y-auto pr-1">
+        <div className="grid grid-cols-3 gap-x-2 gap-y-3 max-h-[440px] overflow-y-auto pr-1 pb-1">
           {filtered.map((p) => {
             const active = selected?.id === p.id;
             return (
@@ -433,22 +433,37 @@ function FinishPicker({
                 key={p.id}
                 onClick={() => setSelected(p)}
                 title={p.name}
-                className={`group relative aspect-square overflow-hidden rounded-sm border-2 transition-all ${
-                  active ? "border-[#3b6934] ring-2 ring-[#a1d494]" : "border-transparent hover:border-[#86a0cd]"
-                }`}
+                className="group text-left"
               >
-                {/* eslint-disable-next-line @next/next/no-img-element */}
-                <img
-                  src={p.image_path}
-                  alt={p.name}
-                  className="w-full h-full object-cover"
-                  loading="lazy"
-                />
-                {active && (
-                  <span className="absolute top-1 right-1 w-4 h-4 rounded-full bg-[#3b6934] text-white text-[9px] flex items-center justify-center">
-                    ✓
-                  </span>
-                )}
+                <span
+                  style={{ aspectRatio: "1 / 1" }}
+                  className={`relative block w-full overflow-hidden rounded-sm border-2 transition-colors ${
+                    active ? "border-[#3b6934]" : "border-[#e8e8e6] group-hover:border-[#86a0cd]"
+                  }`}
+                >
+                  {/* eslint-disable-next-line @next/next/no-img-element */}
+                  <img
+                    src={p.image_path}
+                    alt={p.name}
+                    className="absolute inset-0 w-full h-full object-cover scale-[1.35]"
+                    loading="lazy"
+                  />
+                  {active && (
+                    <span className="absolute top-1 right-1 w-4.5 h-4.5 min-w-[18px] min-h-[18px] rounded-full bg-[#3b6934] text-white text-[10px] flex items-center justify-center shadow">
+                      ✓
+                    </span>
+                  )}
+                </span>
+                <span
+                  className={`mt-1 block text-[11px] leading-tight font-[var(--font-inter)] truncate ${
+                    active ? "text-[#002045] font-semibold" : "text-[#43474e]"
+                  }`}
+                >
+                  {p.name}
+                </span>
+                <span className="block text-[10px] text-[#a0a3a9] font-[var(--font-inter)]">
+                  R$ {p.price}
+                </span>
               </button>
             );
           })}

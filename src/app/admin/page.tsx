@@ -2,6 +2,12 @@
 
 import React, { useState, useEffect, useCallback, useMemo, useRef } from "react";
 import { SITE_ASSET_MANIFEST } from "@/lib/assets";
+import {
+  composePrompt,
+  finishDescription,
+  DEFAULT_PANEL_WIDTH_M,
+  DEFAULT_PANEL_HEIGHT_M,
+} from "@/lib/render-prompt";
 
 interface Partner {
   id: string;
@@ -4189,7 +4195,7 @@ export default function AdminPage() {
                         Se preenchida, é enviada como terceira referência para a IA ver o acabamento aplicado em contexto.
                       </p>
                     </div>
-                    <div>
+                    <div className="mb-4">
                       <label className={labelCls}>Notas extras (opcional)</label>
                       <textarea
                         rows={2}
@@ -4199,6 +4205,32 @@ export default function AdminPage() {
                         placeholder='Ex.: "this finish has directional grain — keep it vertical"'
                       />
                     </div>
+
+                    {/* Live preview of the exact prompt the AI receives */}
+                    <details className="group">
+                      <summary className="cursor-pointer select-none text-[10px] tracking-[0.15em] uppercase font-bold font-[var(--font-inter)] text-[#002045] hover:text-[#3b6934] transition-colors">
+                        Ver prompt final enviado à IA
+                        <span className="ml-2 text-[#b0b0b0] normal-case tracking-normal font-normal">
+                          ({productForm.render_finish_description.trim() ? "personalizado deste modelo" : "genérico da linha " + productForm.linha})
+                        </span>
+                      </summary>
+                      <pre className="mt-2 bg-[#f7f7f5] border border-[#e2e2e2] p-3 text-[11px] leading-relaxed text-[#43474e] whitespace-pre-wrap font-mono max-h-64 overflow-y-auto">
+{composePrompt({
+  finishText:
+    productForm.render_finish_description.trim() ||
+    finishDescription(
+      productForm.linha === "Brilliance" ? "polished" : productForm.linha === "Elegance" ? "wood" : "matte"
+    ),
+  panelWidthM: productForm.render_panel_width_m > 0 ? productForm.render_panel_width_m : DEFAULT_PANEL_WIDTH_M,
+  panelHeightM: productForm.render_panel_height_m > 0 ? productForm.render_panel_height_m : DEFAULT_PANEL_HEIGHT_M,
+  extraNotes: productForm.render_finish_description.trim() ? productForm.render_extra_notes : null,
+  hasContextImage: !!(productForm.render_finish_description.trim() && productForm.render_context_image_path.trim()),
+})}
+                      </pre>
+                      <p className="text-[#b0b0b0] text-[10px] font-[var(--font-inter)] mt-1">
+                        Atualiza em tempo real conforme você edita os campos acima. A foto da parede do cliente entra como primeira imagem e a foto do produto como segunda.
+                      </p>
+                    </details>
                   </div>
 
                   <div className="mb-6 flex items-center gap-2">
