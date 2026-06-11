@@ -2,10 +2,10 @@ import { NextRequest, NextResponse } from "next/server";
 import { supabaseAdmin } from "@/lib/supabase";
 
 
-const ADMIN_PW = process.env.NEXT_PUBLIC_ADMIN_PASSWORD || "orbital2025";
+import { isAdminRequest } from "@/lib/admin-auth";
 
 export async function POST(req: NextRequest) {
-  if (req.headers.get("x-admin-auth") !== ADMIN_PW) {
+  if (!isAdminRequest(req)) {
     return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
   }
 

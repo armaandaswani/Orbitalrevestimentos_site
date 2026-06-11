@@ -1,4 +1,5 @@
 import { NextRequest, NextResponse } from "next/server";
+import { isAdminRequest } from "@/lib/admin-auth";
 import { supabaseAdmin } from "@/lib/supabase";
 import { getResend } from "@/lib/resend";
 import {
@@ -8,7 +9,9 @@ import {
 
 const ADMIN_EMAIL = "armaandaswani19@gmail.com";
 
-export async function GET() {
+export async function GET(req: NextRequest) {
+  if (!isAdminRequest(req)) return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+
   const db = supabaseAdmin();
   const { data, error } = await db
     .from("email_campaigns")
@@ -23,6 +26,8 @@ export async function GET() {
 }
 
 export async function POST(req: NextRequest) {
+  if (!isAdminRequest(req)) return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+
   const db = supabaseAdmin();
   const siteUrl =
     process.env.NEXT_PUBLIC_SITE_URL ||

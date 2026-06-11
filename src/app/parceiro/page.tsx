@@ -383,6 +383,10 @@ export default function ParceiroPage() {
       setResetError("As senhas não coincidem.");
       return;
     }
+    if (resetNewPassword.length < 8) {
+      setResetError("A nova senha deve ter pelo menos 8 caracteres.");
+      return;
+    }
 
     setResetLoading(true);
 
@@ -412,6 +416,10 @@ export default function ParceiroPage() {
 
     if (cpNew !== cpConfirm) {
       setCpError("As senhas não coincidem.");
+      return;
+    }
+    if (cpNew.length < 8) {
+      setCpError("A nova senha deve ter pelo menos 8 caracteres.");
       return;
     }
 
@@ -822,7 +830,7 @@ export default function ParceiroPage() {
           </p>
         </div>
         <button
-          onClick={() => { setPartner(null); setUses([]); setLoginEmail(""); setPassword(""); setCpSuccess(""); setPortalTab("portal"); localStorage.removeItem(SESSION_KEY); }}
+          onClick={() => { fetch("/api/parceiro/auth", { method: "DELETE" }).catch(() => {}); setPartner(null); setUses([]); setLoginEmail(""); setPassword(""); setCpSuccess(""); setPortalTab("portal"); localStorage.removeItem(SESSION_KEY); }}
           className="text-white/60 hover:text-white text-xs font-[var(--font-inter)] uppercase tracking-widest transition-colors"
         >
           Sair

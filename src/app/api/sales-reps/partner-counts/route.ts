@@ -1,8 +1,11 @@
-import { NextResponse } from "next/server";
+import { NextRequest, NextResponse } from "next/server";
+import { isAdminRequest } from "@/lib/admin-auth";
 import { supabaseAdmin } from "@/lib/supabase";
 
 // Returns { [sales_rep_id]: count } from the partner_sales_reps junction table
-export async function GET() {
+export async function GET(req: NextRequest) {
+  if (!isAdminRequest(req)) return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+
   const db = supabaseAdmin();
   const { data, error } = await db
     .from("partner_sales_reps")

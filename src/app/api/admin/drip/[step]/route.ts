@@ -1,10 +1,13 @@
 import { NextRequest, NextResponse } from "next/server";
+import { isAdminRequest } from "@/lib/admin-auth";
 import { supabaseAdmin } from "@/lib/supabase";
 
 export async function PATCH(
   req: NextRequest,
   { params }: { params: Promise<{ step: string }> }
 ) {
+  if (!isAdminRequest(req)) return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+
   const { step } = await params;
   const stepNumber = parseInt(step, 10);
   if (isNaN(stepNumber)) {

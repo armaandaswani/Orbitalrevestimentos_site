@@ -1,11 +1,14 @@
 import { NextRequest, NextResponse } from "next/server";
+import { isAdminRequest } from "@/lib/admin-auth";
 import { supabaseAdmin } from "@/lib/supabase";
 import { MANIFEST_PATH, MANIFEST_PUBLIC_URL } from "@/lib/assets";
 
 const BUCKET = "site-images";
 
 /** GET  /api/admin/assets — returns { [key]: url } manifest */
-export async function GET() {
+export async function GET(req: NextRequest) {
+  if (!isAdminRequest(req)) return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+
   try {
     const res = await fetch(MANIFEST_PUBLIC_URL, { cache: "no-store" });
     if (!res.ok) return NextResponse.json({});
@@ -18,6 +21,8 @@ export async function GET() {
 
 /** POST /api/admin/assets — body: { key, url } — upserts one entry */
 export async function POST(req: NextRequest) {
+  if (!isAdminRequest(req)) return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+
   try {
     const { key, url } = await req.json();
     if (!key || !url) return NextResponse.json({ error: "key and url required" }, { status: 400 });
@@ -47,6 +52,8 @@ export async function POST(req: NextRequest) {
 
 /** DELETE /api/admin/assets — body: { key } — removes one entry (restores original) */
 export async function DELETE(req: NextRequest) {
+  if (!isAdminRequest(req)) return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+
   try {
     const { key } = await req.json();
     if (!key) return NextResponse.json({ error: "key required" }, { status: 400 });

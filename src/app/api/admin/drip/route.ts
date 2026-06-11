@@ -1,4 +1,5 @@
 import { NextRequest, NextResponse } from "next/server";
+import { isAdminRequest } from "@/lib/admin-auth";
 import { supabaseAdmin } from "@/lib/supabase";
 
 // ─── Default templates ───────────────────────────────────────────────────────
@@ -350,7 +351,9 @@ const DEFAULT_STEPS = [
 
 // ─── Route handlers ──────────────────────────────────────────────────────────
 
-export async function GET() {
+export async function GET(req: NextRequest) {
+  if (!isAdminRequest(req)) return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+
   const db = supabaseAdmin();
   const { data, error } = await db
     .from("email_campaign_steps")
@@ -362,6 +365,8 @@ export async function GET() {
 }
 
 export async function POST(req: NextRequest) {
+  if (!isAdminRequest(req)) return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+
   const body = await req.json().catch(() => ({}));
   if (body?.action !== "seed") {
     return NextResponse.json({ error: "Unknown action" }, { status: 400 });

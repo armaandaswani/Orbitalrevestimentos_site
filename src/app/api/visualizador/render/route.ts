@@ -1,12 +1,22 @@
 import { NextRequest, NextResponse } from "next/server";
+import { supabaseAdmin } from "@/lib/supabase";
 
 // Gemini image generation ("nano-banana"): takes the client's wall photo +
 // the chosen PFB panel reference image and renders the panel applied to that
 // exact wall, keeping the original viewpoint, perspective and lighting.
+//
+// The prompt is resolved PER MODEL: when the request carries a productId and
+// that product has per-model render fields set (migration 011), the prompt is
+// composed from a fixed scaffold + those fields. Otherwise it falls back to
+// the legacy per-line (matte/polished/wood) prompt so existing products keep
+// rendering during rollout.
 export const maxDuration = 60;
 
 const GEMINI_BASE = "https://generativelanguage.googleapis.com/v1beta";
 const MODEL = process.env.GEMINI_IMAGE_MODEL || "gemini-2.5-flash-image";
+
+const DEFAULT_PANEL_WIDTH_M = 1.2;
+const DEFAULT_PANEL_HEIGHT_M = 2.9;
 
 type FinishKind = "matte" | "polished" | "wood";
 
@@ -22,13 +32,28 @@ function finishDescription(kind: FinishKind): string {
   }
 }
 
-function buildPrompt(kind: FinishKind): string {
-  const finish = finishDescription(kind);
-  return [
+// Fixed scaffold: every invariant rule lives here. Per-model (or per-line
+// fallback) specifics are injected as parameters.
+function composePrompt(opts: {
+  finishText: string;
+  panelWidthM: number;
+  panelHeightM: number;
+  extraNotes?: string | null;
+  hasContextImage?: boolean;
+}): string {
+  const lines = [
     "You are an architectural visualization engine.",
     "The FIRST image is a real photo of a client's wall.",
     "The SECOND image is the product reference: a PFB wall panel with a",
-    `${finish} finish.`,
+    `${opts.finishText} finish.`,
+  ];
+  if (opts.hasContextImage) {
+    lines.push(
+      "The THIRD image shows this panel installed in a real room — use it as",
+      "a guide for how the finish reads in context (scale, sheen, light response)."
+    );
+  }
+  lines.push(
     "",
     "Re-render the FIRST photo so the wall is fully covered with this exact",
     "panel finish, as if the panels were physically installed on it.",
@@ -36,13 +61,48 @@ function buildPrompt(kind: FinishKind): string {
     "- Keep the EXACT same camera angle, viewpoint, framing and room as the original photo.",
     "- Apply the finish from the reference image precisely — same texture, color and tonality.",
     "- Cover the entire wall, floor to ceiling, respecting the panel proportions.",
-    "- Panel size reference: 1.2m wide x 2.9m tall. Do not distort the texture.",
+    `- Panel size reference: ${opts.panelWidthM}m wide x ${opts.panelHeightM}m tall. Do not distort the texture.`,
     "- The whole wall must read as one continuous finish: no mixed textures or tones.",
     "- Preserve the real perspective, the room's existing furniture, floor, ceiling and lighting.",
     "- Keep the wall's natural shadows and light falloff so it looks photorealistic.",
-    "- Ray-trace the result, cinematic studio lighting, soft shadows, ultra-realistic, ultra HD.",
-    "Output only the edited photo.",
-  ].join("\n");
+    "- Ray-trace the result, cinematic studio lighting, soft shadows, ultra-realistic, ultra HD."
+  );
+  const notes = opts.extraNotes?.trim();
+  if (notes) {
+    lines.push(`Additional model-specific notes: ${notes}`);
+  }
+  lines.push("Output only the edited photo.");
+  return lines.join("\n");
+}
+
+interface RenderProduct {
+  image_path: string | null;
+  linha: string | null;
+  render_finish_description: string | null;
+  render_panel_width_m: number | string | null;
+  render_panel_height_m: number | string | null;
+  render_context_image_path: string | null;
+  render_extra_notes: string | null;
+}
+
+// Loads the product's render fields. Returns null on ANY failure (product not
+// found, migration 011 not yet applied, etc.) so the caller falls back to the
+// legacy per-line prompt instead of breaking the render.
+async function loadRenderProduct(productId: string): Promise<RenderProduct | null> {
+  try {
+    const sb = supabaseAdmin();
+    const { data, error } = await sb
+      .from("products")
+      .select(
+        "image_path, linha, render_finish_description, render_panel_width_m, render_panel_height_m, render_context_image_path, render_extra_notes"
+      )
+      .eq("id", productId)
+      .single();
+    if (error || !data) return null;
+    return data as RenderProduct;
+  } catch {
+    return null;
+  }
 }
 
 async function fetchAsBase64(url: string): Promise<{ data: string; mime: string }> {
@@ -60,6 +120,11 @@ function parseInline(input: string, fallbackMime = "image/jpeg"): { data: string
   return { mime: fallbackMime, data: input };
 }
 
+function toPositiveNumber(v: number | string | null | undefined, fallback: number): number {
+  const n = typeof v === "string" ? parseFloat(v) : v;
+  return typeof n === "number" && isFinite(n) && n > 0 ? n : fallback;
+}
+
 export async function POST(req: NextRequest) {
   const apiKey = process.env.FREE_LLM_API_KEY;
   if (!apiKey) {
@@ -69,30 +134,46 @@ export async function POST(req: NextRequest) {
     );
   }
 
-  let body: { photo?: string; referenceUrl?: string; finish?: FinishKind };
+  let body: { photo?: string; productId?: string; referenceUrl?: string; finish?: FinishKind };
   try {
     body = await req.json();
   } catch {
     return NextResponse.json({ error: "Requisição inválida." }, { status: 400 });
   }
 
-  const { photo, referenceUrl } = body;
+  const { photo, productId } = body;
   const finish: FinishKind = body.finish ?? "matte";
 
   if (!photo) return NextResponse.json({ error: "Foto da parede obrigatória." }, { status: 400 });
+
+  // Per-model path: resolve the product's curated render fields server-side.
+  const product = productId ? await loadRenderProduct(productId) : null;
+  const finishText = product?.render_finish_description?.trim() || null;
+  const usePerModel = !!finishText;
+
+  // The panel swatch reference: prefer the server-side product image, fall
+  // back to the legacy client-provided referenceUrl during rollout.
+  const referenceUrl = product?.image_path || body.referenceUrl;
   if (!referenceUrl)
     return NextResponse.json({ error: "Acabamento de referência obrigatório." }, { status: 400 });
 
   // Resolve relative reference paths (e.g. /images/...) against this request's origin.
-  const absoluteRef = /^https?:\/\//.test(referenceUrl)
-    ? referenceUrl
-    : new URL(referenceUrl, req.nextUrl.origin).toString();
+  const toAbsolute = (url: string) =>
+    /^https?:\/\//.test(url) ? url : new URL(url, req.nextUrl.origin).toString();
+
+  const contextImagePath = usePerModel ? product?.render_context_image_path?.trim() || null : null;
 
   let wall: { data: string; mime: string };
   let reference: { data: string; mime: string };
+  let contextImage: { data: string; mime: string } | null = null;
   try {
     wall = parseInline(photo);
-    reference = await fetchAsBase64(absoluteRef);
+    reference = await fetchAsBase64(toAbsolute(referenceUrl));
+    if (contextImagePath) {
+      // The in-ambience reference is optional — if it fails to load, render
+      // without it rather than failing the whole request.
+      contextImage = await fetchAsBase64(toAbsolute(contextImagePath)).catch(() => null);
+    }
   } catch (e) {
     return NextResponse.json(
       { error: e instanceof Error ? e.message : "Falha ao preparar as imagens." },
@@ -100,17 +181,25 @@ export async function POST(req: NextRequest) {
     );
   }
 
+  const prompt = composePrompt({
+    finishText: finishText ?? finishDescription(finish),
+    panelWidthM: toPositiveNumber(product?.render_panel_width_m, DEFAULT_PANEL_WIDTH_M),
+    panelHeightM: toPositiveNumber(product?.render_panel_height_m, DEFAULT_PANEL_HEIGHT_M),
+    extraNotes: usePerModel ? product?.render_extra_notes : null,
+    hasContextImage: !!contextImage,
+  });
+
+  const parts: Array<{ text: string } | { inline_data: { mime_type: string; data: string } }> = [
+    { text: prompt },
+    { inline_data: { mime_type: wall.mime, data: wall.data } },
+    { inline_data: { mime_type: reference.mime, data: reference.data } },
+  ];
+  if (contextImage) {
+    parts.push({ inline_data: { mime_type: contextImage.mime, data: contextImage.data } });
+  }
+
   const payload = {
-    contents: [
-      {
-        role: "user",
-        parts: [
-          { text: buildPrompt(finish) },
-          { inline_data: { mime_type: wall.mime, data: wall.data } },
-          { inline_data: { mime_type: reference.mime, data: reference.data } },
-        ],
-      },
-    ],
+    contents: [{ role: "user", parts }],
     generationConfig: { responseModalities: ["IMAGE"] },
   };
 
@@ -134,12 +223,12 @@ export async function POST(req: NextRequest) {
   }
 
   const json = await res.json();
-  const parts: Array<{ inlineData?: { data: string; mimeType?: string }; inline_data?: { data: string; mime_type?: string } }> =
+  const outParts: Array<{ inlineData?: { data: string; mimeType?: string }; inline_data?: { data: string; mime_type?: string } }> =
     json?.candidates?.[0]?.content?.parts ?? [];
 
   let outData: string | null = null;
   let outMime = "image/png";
-  for (const p of parts) {
+  for (const p of outParts) {
     const inline = p.inlineData ?? p.inline_data;
     if (inline?.data) {
       outData = inline.data;

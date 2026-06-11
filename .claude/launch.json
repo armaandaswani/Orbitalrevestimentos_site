@@ -12,6 +12,13 @@
       "cwd": "/Users/armaandaswani/Desktop/Orbital/orbital-site"
     },
     {
+      "name": "prod",
+      "runtimeExecutable": "npx",
+      "runtimeArgs": ["next", "start", "-p", "3100"],
+      "port": 3100,
+      "cwd": "/Users/armaandaswani/Desktop/Orbital/orbital-site"
+    },
+    {
       "name": "email-preview",
       "runtimeExecutable": "python3",
       "runtimeArgs": ["-m", "http.server", "8765"],

@@ -673,8 +673,8 @@ function SelfRegisterSection({ onScrollToSegments }: { onScrollToSegments: () =>
                       value={form.portal_password}
                       onChange={(e) => setForm({ ...form, portal_password: e.target.value })}
                       className="w-full border border-[#e2e2e2] px-4 py-3 pr-12 text-sm font-[var(--font-inter)] text-[#002045] focus:outline-none focus:border-[#002045] placeholder-[#b0b4bc]"
-                      placeholder="Mínimo 6 caracteres"
-                      minLength={6}
+                      placeholder="Mínimo 8 caracteres"
+                      minLength={8}
                     />
                     <button
                       type="button"

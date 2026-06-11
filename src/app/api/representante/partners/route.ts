@@ -1,11 +1,17 @@
 import { NextRequest, NextResponse } from "next/server";
 import { supabaseAdmin } from "@/lib/supabase";
+import { isAdminRequest, repIdFromRequest } from "@/lib/admin-auth";
 
 export async function GET(req: NextRequest) {
   const { searchParams } = new URL(req.url);
   const salesRepId = searchParams.get("sales_rep_id");
 
   if (!salesRepId) return NextResponse.json({ error: "sales_rep_id required" }, { status: 400 });
+
+  // Only the rep themselves (via portal session cookie) or an admin may read this.
+  if (!isAdminRequest(req) && repIdFromRequest(req) !== salesRepId) {
+    return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+  }
 
   const db = supabaseAdmin();
 

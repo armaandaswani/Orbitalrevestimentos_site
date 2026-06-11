@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
 import { supabaseAdmin } from "@/lib/supabase";
+import { hashPassword } from "@/lib/admin-auth";
 
 export async function POST(req: NextRequest) {
   const body = await req.json();
@@ -8,6 +9,12 @@ export async function POST(req: NextRequest) {
   if (!name || !email || !phone || !sales_rep_referral_code || !portal_password || !birthday) {
     return NextResponse.json(
       { error: "Todos os campos são obrigatórios." },
+      { status: 400 }
+    );
+  }
+  if ((portal_password as string).length < 8) {
+    return NextResponse.json(
+      { error: "A senha deve ter pelo menos 8 caracteres." },
       { status: 400 }
     );
   }
@@ -75,7 +82,7 @@ export async function POST(req: NextRequest) {
       discount_value: 0,
       commission_type: "percentage",
       commission_value: 0,
-      portal_password,
+      portal_password: hashPassword(portal_password),
       sales_rep_referral_code: (sales_rep_referral_code as string).toUpperCase(),
       birthday: birthday || null,
       profession: profession || null,
@@ -214,5 +221,6 @@ export async function POST(req: NextRequest) {
     }
   }
 
-  return NextResponse.json(partner, { status: 201 });
+  const { portal_password: _pw, ...safePartner } = partner;
+  return NextResponse.json(safePartner, { status: 201 });
 }

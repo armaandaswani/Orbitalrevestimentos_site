@@ -104,8 +104,9 @@ export default function VisualizadorPage() {
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
           photo: photoData,
-          referenceUrl: selected.image_path,
-          finish: FINISH_BY_LINE[selected.linha],
+          productId: selected.id, // the server resolves the per-model prompt from this
+          referenceUrl: selected.image_path, // legacy fallback during rollout
+          finish: FINISH_BY_LINE[selected.linha], // legacy fallback during rollout
         }),
       });
       const json = await res.json();

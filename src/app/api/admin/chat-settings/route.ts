@@ -1,10 +1,10 @@
 import { NextRequest, NextResponse } from "next/server";
 import { supabaseAdmin } from "@/lib/supabase";
 
-const ADMIN_PW = process.env.NEXT_PUBLIC_ADMIN_PASSWORD || "orbital2025";
+import { isAdminRequest } from "@/lib/admin-auth";
 
 function checkAuth(req: NextRequest) {
-  return req.headers.get("x-admin-auth") === ADMIN_PW;
+  return isAdminRequest(req);
 }
 
 export async function GET(req: NextRequest) {

@@ -1,9 +1,9 @@
 import { NextRequest, NextResponse } from "next/server";
 
-const ADMIN_PW = process.env.NEXT_PUBLIC_ADMIN_PASSWORD || "orbital2025";
+import { isAdminRequest } from "@/lib/admin-auth";
 
 export async function POST(req: NextRequest) {
-  if (req.headers.get("x-admin-auth") !== ADMIN_PW)
+  if (!isAdminRequest(req))
     return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
 
   const apiBase = process.env.FREE_LLM_API_URL;

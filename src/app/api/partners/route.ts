@@ -1,7 +1,10 @@
 import { NextRequest, NextResponse } from "next/server";
+import { isAdminRequest, hashPassword } from "@/lib/admin-auth";
 import { supabaseAdmin } from "@/lib/supabase";
 
-export async function GET() {
+export async function GET(req: NextRequest) {
+  if (!isAdminRequest(req)) return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+
   const db = supabaseAdmin();
   const { data, error } = await db
     .from("partners")
@@ -9,10 +12,17 @@ export async function GET() {
     .order("created_at", { ascending: false });
 
   if (error) return NextResponse.json({ error: error.message }, { status: 500 });
-  return NextResponse.json(data);
+  // Never expose password hashes — expose only whether a password is set.
+  const safe = (data ?? []).map((row: Record<string, unknown>) => {
+    const { portal_password, ...rest } = row;
+    return { ...rest, has_portal_password: !!portal_password };
+  });
+  return NextResponse.json(safe);
 }
 
 export async function POST(req: NextRequest) {
+  if (!isAdminRequest(req)) return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+
   const body = await req.json();
   const {
     name, email, phone, coupon_code,
@@ -25,6 +35,9 @@ export async function POST(req: NextRequest) {
 
   if (!coupon_code) {
     return NextResponse.json({ error: "coupon_code is required" }, { status: 400 });
+  }
+  if (portal_password && (portal_password as string).length < 8) {
+    return NextResponse.json({ error: "A senha deve ter pelo menos 8 caracteres." }, { status: 400 });
   }
 
   const db = supabaseAdmin();
@@ -51,7 +64,7 @@ export async function POST(req: NextRequest) {
       discount_value,
       commission_type,
       commission_value,
-      portal_password: portal_password || null,
+      portal_password: portal_password ? hashPassword(portal_password) : null,
       birthday: birthday || null,
       profession: profession || null,
     })
@@ -128,5 +141,6 @@ export async function POST(req: NextRequest) {
     }
   }
 
-  return NextResponse.json(data, { status: 201 });
+  const { portal_password: _pw, ...safeData } = data;
+  return NextResponse.json({ ...safeData, has_portal_password: !!portal_password }, { status: 201 });
 }

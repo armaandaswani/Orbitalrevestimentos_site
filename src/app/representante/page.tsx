@@ -128,7 +128,7 @@ export default function RepresentantePage() {
     e.preventDefault();
     setCpError("");
     if (cpNew !== cpConfirm) { setCpError("As senhas não coincidem."); return; }
-    if (cpNew.length < 6) { setCpError("A nova senha deve ter pelo menos 6 caracteres."); return; }
+    if (cpNew.length < 8) { setCpError("A nova senha deve ter pelo menos 8 caracteres."); return; }
     setCpLoading(true);
     const res = await fetch("/api/representante/change-password", {
       method: "POST",
@@ -361,7 +361,7 @@ export default function RepresentantePage() {
           </p>
         </div>
         <button
-          onClick={() => { setSalesRep(null); setUses([]); setLoginEmail(""); setPassword(""); setLinkedPartners([]); setRepTab("overview"); }}
+          onClick={() => { fetch("/api/representante/auth", { method: "DELETE" }).catch(() => {}); setSalesRep(null); setUses([]); setLoginEmail(""); setPassword(""); setLinkedPartners([]); setRepTab("overview"); }}
           className="text-white/60 hover:text-white text-xs font-[var(--font-inter)] uppercase tracking-widest transition-colors"
         >
           Sair

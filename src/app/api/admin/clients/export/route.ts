@@ -1,4 +1,5 @@
-import { NextResponse } from "next/server";
+import { NextRequest, NextResponse } from "next/server";
+import { isAdminRequest } from "@/lib/admin-auth";
 import { supabaseAdmin } from "@/lib/supabase";
 
 function fmtDate(iso: string | null) {
@@ -20,7 +21,9 @@ function escapeCsv(v: string | number | null | undefined): string {
   return str;
 }
 
-export async function GET() {
+export async function GET(req: NextRequest) {
+  if (!isAdminRequest(req)) return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+
   const db = supabaseAdmin();
   const { data, error } = await db
     .from("client_email_sequences")

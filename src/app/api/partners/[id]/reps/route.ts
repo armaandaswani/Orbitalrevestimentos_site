@@ -1,4 +1,5 @@
 import { NextRequest, NextResponse } from "next/server";
+import { isAdminRequest } from "@/lib/admin-auth";
 import { supabaseAdmin } from "@/lib/supabase";
 
 // GET /api/partners/[id]/reps — return all reps linked to this partner
@@ -6,6 +7,8 @@ export async function GET(
   _req: NextRequest,
   { params }: { params: Promise<{ id: string }> }
 ) {
+  if (!isAdminRequest(_req)) return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+
   const { id } = await params;
   const db = supabaseAdmin();
   const { data, error } = await db
@@ -24,6 +27,8 @@ export async function POST(
   req: NextRequest,
   { params }: { params: Promise<{ id: string }> }
 ) {
+  if (!isAdminRequest(req)) return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+
   const { id } = await params;
   const { sales_rep_id } = await req.json();
   if (!sales_rep_id) return NextResponse.json({ error: "sales_rep_id required" }, { status: 400 });
@@ -46,6 +51,8 @@ export async function DELETE(
   req: NextRequest,
   { params }: { params: Promise<{ id: string }> }
 ) {
+  if (!isAdminRequest(req)) return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+
   const { id } = await params;
   const { sales_rep_id } = await req.json();
   if (!sales_rep_id) return NextResponse.json({ error: "sales_rep_id required" }, { status: 400 });

@@ -13,7 +13,7 @@ interface Partner {
   discount_value: number;
   commission_type: "percentage" | "fixed";
   commission_value: number;
-  portal_password: string | null;
+  has_portal_password?: boolean;
   status: "active" | "inactive" | "pending";
   is_self_registered: boolean | null;
   sales_rep_referral_code: string | null;
@@ -32,14 +32,14 @@ interface SalesRep {
   referral_code: string;
   commission_type: "percentage" | "fixed";
   commission_value: number;
-  portal_password: string | null;
+  has_portal_password?: boolean;
   status: "active" | "inactive";
   created_at: string;
   birthday: string | null;
 }
 
 interface ProductImage { id:string; product_id:string; image_path:string; sort_order:number; }
-interface DbProduct { id:string; code:string; name:string; linha:"Classic"|"Brilliance"|"Elegance"; finish:string; price:number; price_per_m2:number; description:string; image_path:string; is_active:boolean; sort_order:number; created_at:string; product_images?: ProductImage[]; }
+interface DbProduct { id:string; code:string; name:string; linha:"Classic"|"Brilliance"|"Elegance"; finish:string; price:number; price_per_m2:number; description:string; image_path:string; is_active:boolean; sort_order:number; created_at:string; product_images?: ProductImage[]; render_finish_description?: string | null; render_panel_width_m?: number | null; render_panel_height_m?: number | null; render_context_image_path?: string | null; render_extra_notes?: string | null; }
 interface DbPhotoProject { id:string; slug:string; title:string; product_code:string; categories:string[]; image_after:string; image_before:string; note:string; is_active:boolean; sort_order:number; }
 interface DbRenderProject { id:string; slug:string; title:string; product_code:string; image_path:string; is_active:boolean; sort_order:number; }
 interface ProjectMedia { id:string; project_slug:string; type:"image"|"video"; url:string; caption:string|null; description:string|null; category:"antes"|"depois"|"geral"; sort_order:number; }
@@ -93,8 +93,6 @@ function maskBday(raw: string): string {
   if (digits.length > 2) return digits.slice(0, 2) + "/" + digits.slice(2);
   return digits;
 }
-
-const ADMIN_PW = process.env.NEXT_PUBLIC_ADMIN_PASSWORD || "orbital2025";
 
 const PROFESSIONS = [
   "Arquiteto e Urbanista",
@@ -330,7 +328,7 @@ export default function AdminPage() {
   const [loadingDbProducts, setLoadingDbProducts] = useState(false);
   const [showProductForm, setShowProductForm] = useState(false);
   const [editingProductId, setEditingProductId] = useState<string|null>(null);
-  const [productForm, setProductForm] = useState({ code:"", name:"", linha:"Classic" as "Classic"|"Brilliance"|"Elegance", finish:"Fosco", price:559, price_per_m2:161, description:"", image_path:"", is_active:true, sort_order:0 });
+  const [productForm, setProductForm] = useState({ code:"", name:"", linha:"Classic" as "Classic"|"Brilliance"|"Elegance", finish:"Fosco", price:559, price_per_m2:161, description:"", image_path:"", is_active:true, sort_order:0, render_finish_description:"", render_panel_width_m:1.2, render_panel_height_m:2.9, render_context_image_path:"", render_extra_notes:"" });
   const [productFormError, setProductFormError] = useState("");
   const [productFormLoading, setProductFormLoading] = useState(false);
   const [productImageUploading, setProductImageUploading] = useState(false);
@@ -471,8 +469,12 @@ export default function AdminPage() {
   const supabaseConfigured = !!process.env.NEXT_PUBLIC_SUPABASE_URL;
 
   useEffect(() => {
-    const stored = sessionStorage.getItem("orbital_admin_auth");
-    if (stored === "1") setAuthed(true);
+    fetch("/api/admin/login")
+      .then((r) => r.json())
+      .then((d) => {
+        if (d?.authed) setAuthed(true);
+      })
+      .catch(() => {});
   }, []);
 
   const fetchPartners = useCallback(async () => {
@@ -583,7 +585,7 @@ export default function AdminPage() {
   useEffect(() => {
     if (tab === "dashboard" && authed && !dashData && !dashLoading) {
       setDashLoading(true);
-      fetch("/api/admin/dashboard", { headers: { "x-admin-auth": ADMIN_PW } })
+      fetch("/api/admin/dashboard")
         .then((r) => r.json())
         .then((d) => {
           // Only store if it looks like a valid response (not an error payload)
@@ -616,7 +618,7 @@ export default function AdminPage() {
   useEffect(() => { if (tab === "projetos" && authed) fetchProjects(); }, [tab, authed, fetchProjects]);
   useEffect(() => {
     if (tab === "projetos" && authed && mediaMigrated === null) {
-      fetch("/api/admin/migrate-media", { headers: { "x-admin-auth": ADMIN_PW } })
+      fetch("/api/admin/migrate-media")
         .then(r => r.json())
         .then(d => setMediaMigrated(d.migrated === true))
         .catch(() => setMediaMigrated(false));
@@ -877,13 +879,24 @@ export default function AdminPage() {
     return "—";
   }
 
-  function handleLogin(e: React.FormEvent) {
+  async function handleLogin(e: React.FormEvent) {
     e.preventDefault();
-    if (pw === ADMIN_PW) {
-      sessionStorage.setItem("orbital_admin_auth", "1");
-      setAuthed(true);
-    } else {
-      setPwError("Senha incorreta.");
+    setPwError("");
+    try {
+      const res = await fetch("/api/admin/login", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ password: pw }),
+      });
+      if (res.ok) {
+        setPw("");
+        setAuthed(true);
+      } else {
+        const data = await res.json().catch(() => null);
+        setPwError(data?.error || "Senha incorreta.");
+      }
+    } catch {
+      setPwError("Erro ao conectar. Tente novamente.");
     }
   }
 
@@ -891,7 +904,7 @@ export default function AdminPage() {
     e.preventDefault();
     setCpError("");
     if (cpNew !== cpConfirm) { setCpError("As senhas não coincidem."); return; }
-    if (cpNew.length < 6) { setCpError("A nova senha deve ter pelo menos 6 caracteres."); return; }
+    if (cpNew.length < 8) { setCpError("A nova senha deve ter pelo menos 8 caracteres."); return; }
     setCpLoading(true);
     const res = await fetch("/api/admin/change-password", {
       method: "POST",
@@ -912,7 +925,7 @@ export default function AdminPage() {
     // Step 1: get a signed upload URL from our API (tiny JSON request, no file bytes)
     const signRes = await fetch("/api/admin/upload-sign", {
       method: "POST",
-      headers: { "Content-Type": "application/json", "x-admin-auth": ADMIN_PW },
+      headers: { "Content-Type": "application/json" },
       body: JSON.stringify({ folder, filename: file.name, contentType: file.type }),
     });
     if (!signRes.ok) {
@@ -951,7 +964,7 @@ export default function AdminPage() {
     if (url) {
       const res = await fetch(`/api/products/${product.id}`, {
         method: "PUT",
-        headers: { "Content-Type": "application/json", "x-admin-auth": ADMIN_PW },
+        headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
           code: product.code, name: product.name, linha: product.linha,
           finish: product.finish, price: product.price, price_per_m2: product.price_per_m2,
@@ -979,13 +992,13 @@ export default function AdminPage() {
     if (editingProductId) {
       res = await fetch(`/api/products/${editingProductId}`, {
         method: "PUT",
-        headers: { "Content-Type": "application/json", "x-admin-auth": ADMIN_PW },
+        headers: { "Content-Type": "application/json" },
         body: JSON.stringify(productForm),
       });
     } else {
       res = await fetch("/api/products", {
         method: "POST",
-        headers: { "Content-Type": "application/json", "x-admin-auth": ADMIN_PW },
+        headers: { "Content-Type": "application/json" },
         body: JSON.stringify(productForm),
       });
     }
@@ -994,19 +1007,19 @@ export default function AdminPage() {
     if (!res.ok) { setProductFormError(json.error || "Erro desconhecido."); return; }
     setShowProductForm(false);
     setEditingProductId(null);
-    setProductForm({ code:"", name:"", linha:"Classic", finish:"Fosco", price:559, price_per_m2:161, description:"", image_path:"", is_active:true, sort_order:0 });
+    setProductForm({ code:"", name:"", linha:"Classic", finish:"Fosco", price:559, price_per_m2:161, description:"", image_path:"", is_active:true, sort_order:0, render_finish_description:"", render_panel_width_m:1.2, render_panel_height_m:2.9, render_context_image_path:"", render_extra_notes:"" });
     fetchDbProducts();
   }
 
   async function deleteProduct(id: string, name: string) {
     if (!confirm(`Excluir produto "${name}"?`)) return;
-    await fetch(`/api/products/${id}`, { method: "DELETE", headers: { "x-admin-auth": ADMIN_PW } });
+    await fetch(`/api/products/${id}`, { method: "DELETE" });
     fetchDbProducts();
   }
 
   function startEditProduct(p: DbProduct) {
     setEditingProductId(p.id);
-    setProductForm({ code: p.code, name: p.name, linha: p.linha, finish: p.finish, price: p.price, price_per_m2: p.price_per_m2, description: p.description, image_path: p.image_path, is_active: p.is_active, sort_order: p.sort_order });
+    setProductForm({ code: p.code, name: p.name, linha: p.linha, finish: p.finish, price: p.price, price_per_m2: p.price_per_m2, description: p.description, image_path: p.image_path, is_active: p.is_active, sort_order: p.sort_order, render_finish_description: p.render_finish_description ?? "", render_panel_width_m: Number(p.render_panel_width_m) || 1.2, render_panel_height_m: Number(p.render_panel_height_m) || 2.9, render_context_image_path: p.render_context_image_path ?? "", render_extra_notes: p.render_extra_notes ?? "" });
     setProductFormError("");
     setGalleryImages(p.product_images ?? []);
     setShowProductForm(true);
@@ -1034,7 +1047,7 @@ export default function AdminPage() {
       // Step 2: save URL to product_images table
       const res = await fetch(`/api/products/${editingProductId}/images`, {
         method: "POST",
-        headers: { "Content-Type": "application/json", "x-admin-auth": ADMIN_PW },
+        headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ image_path: url }),
       });
 
@@ -1061,7 +1074,7 @@ export default function AdminPage() {
 
   async function deleteGalleryImage(imageId: string) {
     if (!confirm("Remover esta imagem da galeria?")) return;
-    const res = await fetch(`/api/products/images/${imageId}`, { method: "DELETE", headers: { "x-admin-auth": ADMIN_PW } });
+    const res = await fetch(`/api/products/images/${imageId}`, { method: "DELETE" });
     if (res.ok) {
       setGalleryImages((prev) => prev.filter((img) => img.id !== imageId));
       fetchDbProducts();
@@ -1092,12 +1105,12 @@ export default function AdminPage() {
     await Promise.all([
       fetch(`/api/products/images/${updated.find(i => i.id === imageId)!.id}`, {
         method: "PATCH",
-        headers: { "Content-Type": "application/json", "x-admin-auth": ADMIN_PW },
+        headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ sort_order: bOrder }),
       }),
       fetch(`/api/products/images/${galleryImages[newIdx].id}`, {
         method: "PATCH",
-        headers: { "Content-Type": "application/json", "x-admin-auth": ADMIN_PW },
+        headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ sort_order: aOrder }),
       }),
     ]);
@@ -1110,13 +1123,13 @@ export default function AdminPage() {
     if (editingPhotoId) {
       res = await fetch(`/api/projects/photos/${editingPhotoId}`, {
         method: "PUT",
-        headers: { "Content-Type": "application/json", "x-admin-auth": ADMIN_PW },
+        headers: { "Content-Type": "application/json" },
         body: JSON.stringify(photoForm),
       });
     } else {
       res = await fetch("/api/projects/photos", {
         method: "POST",
-        headers: { "Content-Type": "application/json", "x-admin-auth": ADMIN_PW },
+        headers: { "Content-Type": "application/json" },
         body: JSON.stringify(photoForm),
       });
     }
@@ -1130,7 +1143,7 @@ export default function AdminPage() {
 
   async function deletePhoto(id: string, title: string) {
     if (!confirm(`Excluir projeto "${title}"?`)) return;
-    await fetch(`/api/projects/photos/${id}`, { method: "DELETE", headers: { "x-admin-auth": ADMIN_PW } });
+    await fetch(`/api/projects/photos/${id}`, { method: "DELETE" });
     fetchProjects();
   }
 
@@ -1148,13 +1161,13 @@ export default function AdminPage() {
     if (editingRenderId) {
       res = await fetch(`/api/projects/renders/${editingRenderId}`, {
         method: "PUT",
-        headers: { "Content-Type": "application/json", "x-admin-auth": ADMIN_PW },
+        headers: { "Content-Type": "application/json" },
         body: JSON.stringify(renderForm),
       });
     } else {
       res = await fetch("/api/projects/renders", {
         method: "POST",
-        headers: { "Content-Type": "application/json", "x-admin-auth": ADMIN_PW },
+        headers: { "Content-Type": "application/json" },
         body: JSON.stringify(renderForm),
       });
     }
@@ -1168,7 +1181,7 @@ export default function AdminPage() {
 
   async function deleteRender(id: string, title: string) {
     if (!confirm(`Excluir render "${title}"?`)) return;
-    await fetch(`/api/projects/renders/${id}`, { method: "DELETE", headers: { "x-admin-auth": ADMIN_PW } });
+    await fetch(`/api/projects/renders/${id}`, { method: "DELETE" });
     fetchProjects();
   }
 
@@ -1181,7 +1194,7 @@ export default function AdminPage() {
 
   // ── Project Media CRUD ──────────────────
   async function fetchProjectMedia(slug: string) {
-    const res = await fetch(`/api/projects/media?slug=${slug}`, { headers: { "x-admin-auth": ADMIN_PW } });
+    const res = await fetch(`/api/projects/media?slug=${slug}`);
     if (res.ok) {
       const data = await res.json();
       setProjectMediaMap((prev) => ({ ...prev, [slug]: data }));
@@ -1195,7 +1208,7 @@ export default function AdminPage() {
       const existing = projectMediaMap[slug] ?? [];
       await fetch("/api/projects/media", {
         method: "POST",
-        headers: { "Content-Type": "application/json", "x-admin-auth": ADMIN_PW },
+        headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ project_slug: slug, type: "image", url, sort_order: existing.length }),
       });
       await fetchProjectMedia(slug);
@@ -1208,7 +1221,7 @@ export default function AdminPage() {
     const existing = projectMediaMap[slug] ?? [];
     await fetch("/api/projects/media", {
       method: "POST",
-      headers: { "Content-Type": "application/json", "x-admin-auth": ADMIN_PW },
+      headers: { "Content-Type": "application/json" },
       body: JSON.stringify({ project_slug: slug, type: "video", url: url.trim(), sort_order: existing.length }),
     });
     await fetchProjectMedia(slug);
@@ -1222,7 +1235,7 @@ export default function AdminPage() {
       const existing = projectMediaMap[slug] ?? [];
       await fetch("/api/projects/media", {
         method: "POST",
-        headers: { "Content-Type": "application/json", "x-admin-auth": ADMIN_PW },
+        headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ project_slug: slug, type: "video", url, sort_order: existing.length }),
       });
       await fetchProjectMedia(slug);
@@ -1231,14 +1244,14 @@ export default function AdminPage() {
   }
 
   async function deleteProjectMedia(id: string, slug: string) {
-    await fetch(`/api/projects/media/${id}`, { method: "DELETE", headers: { "x-admin-auth": ADMIN_PW } });
+    await fetch(`/api/projects/media/${id}`, { method: "DELETE" });
     await fetchProjectMedia(slug);
   }
 
   async function patchProjectMedia(id: string, slug: string, body: Partial<ProjectMedia>) {
     await fetch(`/api/projects/media/${id}`, {
       method: "PATCH",
-      headers: { "Content-Type": "application/json", "x-admin-auth": ADMIN_PW },
+      headers: { "Content-Type": "application/json" },
       body: JSON.stringify(body),
     });
     await fetchProjectMedia(slug);
@@ -1263,7 +1276,7 @@ export default function AdminPage() {
         .map((m) =>
           fetch(`/api/projects/media/${m.id}`, {
             method: "PATCH",
-            headers: { "Content-Type": "application/json", "x-admin-auth": ADMIN_PW },
+            headers: { "Content-Type": "application/json" },
             body: JSON.stringify({ sort_order: m.sort_order }),
           })
         )
@@ -1275,7 +1288,7 @@ export default function AdminPage() {
     try {
       const res = await fetch("/api/admin/generate-description", {
         method: "POST",
-        headers: { "Content-Type": "application/json", "x-admin-auth": ADMIN_PW },
+        headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
           imageUrl,
           category: editMediaDraft.category,
@@ -1298,7 +1311,7 @@ export default function AdminPage() {
     try {
       const res = await fetch("/api/admin/generate-text", {
         method: "POST",
-        headers: { "Content-Type": "application/json", "x-admin-auth": ADMIN_PW },
+        headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ systemPrompt, userPrompt, maxTokens: 500 }),
       });
       const json = await res.json();
@@ -1310,7 +1323,7 @@ export default function AdminPage() {
   }
 
   async function fetchAdminCoupons() {
-    const res = await fetch("/api/admin/coupons", { headers: { "x-admin-auth": ADMIN_PW } });
+    const res = await fetch("/api/admin/coupons");
     if (res.ok) setAdminCoupons(await res.json());
   }
 
@@ -1320,7 +1333,7 @@ export default function AdminPage() {
     setCouponCreatedMsg("");
     const res = await fetch("/api/admin/coupons", {
       method: "POST",
-      headers: { "Content-Type": "application/json", "x-admin-auth": ADMIN_PW },
+      headers: { "Content-Type": "application/json" },
       body: JSON.stringify({
         code: newCouponCode.trim().toUpperCase(),
         discount_pct: parseFloat(newCouponPct),
@@ -1342,19 +1355,19 @@ export default function AdminPage() {
   }
 
   async function deleteAdminCoupon(id: string) {
-    await fetch("/api/admin/coupons", { method: "DELETE", headers: { "Content-Type": "application/json", "x-admin-auth": ADMIN_PW }, body: JSON.stringify({ id }) });
+    await fetch("/api/admin/coupons", { method: "DELETE", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ id }) });
     await fetchAdminCoupons();
   }
 
   async function fetchChatPrompt() {
-    const res = await fetch("/api/admin/chat-settings", { headers: { "x-admin-auth": ADMIN_PW } });
+    const res = await fetch("/api/admin/chat-settings");
     if (res.ok) {
       const json = await res.json();
       // If no custom prompt saved yet, load the default from the API
       if (json.prompt) {
         setChatPrompt(json.prompt);
       } else {
-        const defRes = await fetch("/api/admin/chat-settings/default", { headers: { "x-admin-auth": ADMIN_PW } });
+        const defRes = await fetch("/api/admin/chat-settings/default");
         if (defRes.ok) {
           const defJson = await defRes.json();
           setChatPrompt(defJson.prompt ?? "");
@@ -1370,7 +1383,7 @@ export default function AdminPage() {
     setChatPromptMsg("");
     const res = await fetch("/api/admin/chat-settings", {
       method: "PUT",
-      headers: { "Content-Type": "application/json", "x-admin-auth": ADMIN_PW },
+      headers: { "Content-Type": "application/json" },
       body: JSON.stringify({ prompt: chatPrompt }),
     });
     if (res.ok) {
@@ -1384,7 +1397,7 @@ export default function AdminPage() {
   }
 
   async function resetChatPrompt() {
-    const res = await fetch("/api/admin/chat-settings/default", { headers: { "x-admin-auth": ADMIN_PW } });
+    const res = await fetch("/api/admin/chat-settings/default");
     if (res.ok) {
       const json = await res.json();
       setChatPrompt(json.prompt ?? "");
@@ -1395,7 +1408,7 @@ export default function AdminPage() {
     setRenderImporting(render.slug);
     await fetch("/api/projects/renders", {
       method: "POST",
-      headers: { "Content-Type": "application/json", "x-admin-auth": ADMIN_PW },
+      headers: { "Content-Type": "application/json" },
       body: JSON.stringify({ ...render, is_active: true, sort_order: idx }),
     });
     setRenderImporting(null);
@@ -1410,7 +1423,7 @@ export default function AdminPage() {
     for (let i = 0; i < toImport.length; i++) {
       await fetch("/api/projects/renders", {
         method: "POST",
-        headers: { "Content-Type": "application/json", "x-admin-auth": ADMIN_PW },
+        headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ ...toImport[i], is_active: true, sort_order: i }),
       });
     }
@@ -1437,7 +1450,7 @@ export default function AdminPage() {
       coupon_code: p.coupon_code,
       discount_type: p.discount_type, discount_value: p.discount_value,
       commission_type: p.commission_type, commission_value: p.commission_value,
-      portal_password: p.portal_password || "",
+      portal_password: "",
       status: p.status,
       sales_rep_referral_code: p.sales_rep_referral_code || "",
       birthday: p.birthday ? p.birthday.split("T")[0] : "",
@@ -1459,7 +1472,8 @@ export default function AdminPage() {
     setPartnerFormError("");
     setPartnerFormLoading(true);
     const resolvedProfession = partnerForm.profession === "Outro" ? (partnerProfOther || null) : (partnerForm.profession || null);
-    const payload = { ...partnerForm, coupon_code: partnerForm.coupon_code.toUpperCase(), portal_password: partnerForm.portal_password || null, sales_rep_referral_code: partnerForm.sales_rep_referral_code || null, profession: resolvedProfession };
+    const payload: Record<string, unknown> = { ...partnerForm, coupon_code: partnerForm.coupon_code.toUpperCase(), sales_rep_referral_code: partnerForm.sales_rep_referral_code || null, profession: resolvedProfession };
+    if (!partnerForm.portal_password) delete payload.portal_password; // empty = keep current password
     let res: Response;
     if (editingPartnerId) {
       res = await fetch(`/api/partners/${editingPartnerId}`, { method: "PUT", headers: { "Content-Type": "application/json" }, body: JSON.stringify(payload) });
@@ -1479,7 +1493,7 @@ export default function AdminPage() {
     await fetch(`/api/partners/${p.id}`, {
       method: "PUT",
       headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ ...approvalForm, portal_password: approvalForm.portal_password || null, status: "active" }),
+      body: JSON.stringify({ ...approvalForm, ...(approvalForm.portal_password ? {} : { portal_password: undefined }), status: "active" }),
     });
     setApprovalLoading(false);
     setApprovingId(null);
@@ -1552,7 +1566,6 @@ export default function AdminPage() {
     const siteUrl = typeof window !== "undefined" ? window.location.origin : "https://orbitalrevestimentos.com.br";
     const discountLabel = p.discount_type === "percentage" ? `${p.discount_value}% de desconto` : `R$ ${p.discount_value} de desconto`;
     const lines = [`Olá ${p.name}! 👋`, ``, `Seu cupom Orbital foi aprovado:`, ``, `🎟 Código: *${p.coupon_code}*`, `💰 ${discountLabel} para seus clientes`, ``, `Acesse seu painel em:`, `${siteUrl}/parceiro`];
-    if (p.portal_password) lines.push(`🔑 Senha: ${p.portal_password}`);
     const text = encodeURIComponent(lines.join("\n"));
     if (p.phone) {
       const digits = p.phone.replace(/\D/g, "");
@@ -1577,7 +1590,7 @@ export default function AdminPage() {
       name: r.name, email: r.email || "", phone: r.phone || "",
       referral_code: r.referral_code,
       commission_type: r.commission_type, commission_value: r.commission_value,
-      portal_password: r.portal_password || "",
+      portal_password: "",
       status: r.status,
       birthday: r.birthday ? r.birthday.split("T")[0] : "",
     });
@@ -1590,7 +1603,8 @@ export default function AdminPage() {
     e.preventDefault();
     setRepFormError("");
     setRepFormLoading(true);
-    const payload = { ...repForm, referral_code: repForm.referral_code.toUpperCase(), portal_password: repForm.portal_password || null };
+    const payload: Record<string, unknown> = { ...repForm, referral_code: repForm.referral_code.toUpperCase() };
+    if (!repForm.portal_password) delete payload.portal_password; // empty = keep current password
     let res: Response;
     if (editingRepId) {
       res = await fetch(`/api/sales-reps/${editingRepId}`, { method: "PUT", headers: { "Content-Type": "application/json" }, body: JSON.stringify(payload) });
@@ -1994,7 +2008,7 @@ export default function AdminPage() {
           >
             Alterar senha
           </button>
-          <button onClick={() => { sessionStorage.removeItem("orbital_admin_auth"); setAuthed(false); }} className="text-white/60 hover:text-white text-xs font-[var(--font-inter)] uppercase tracking-widest transition-colors">
+          <button onClick={() => { fetch("/api/admin/login", { method: "DELETE" }).finally(() => setAuthed(false)); }} className="text-white/60 hover:text-white text-xs font-[var(--font-inter)] uppercase tracking-widest transition-colors">
             Sair
           </button>
         </div>
@@ -2296,7 +2310,7 @@ export default function AdminPage() {
               {/* Refresh */}
               <div className="text-right">
                 <button
-                  onClick={() => { setDashData(null); setDashLoading(true); fetch("/api/admin/dashboard", { headers: { "x-admin-auth": ADMIN_PW } }).then(r => r.json()).then(d2 => { if (d2 && d2.totalOrcamentos !== undefined) setDashData(d2); setDashLoading(false); }); }}
+                  onClick={() => { setDashData(null); setDashLoading(true); fetch("/api/admin/dashboard").then(r => r.json()).then(d2 => { if (d2 && d2.totalOrcamentos !== undefined) setDashData(d2); setDashLoading(false); }); }}
                   className="text-[10px] tracking-widest uppercase font-bold font-[var(--font-inter)] text-[#74777f] hover:text-[#002045] transition-colors"
                 >
                   ↺ Atualizar dados
@@ -2337,7 +2351,7 @@ export default function AdminPage() {
                           </p>
                         </div>
                         <div className="flex gap-2 flex-shrink-0">
-                          <button onClick={() => { setApprovingId(approvingId === p.id ? null : p.id); setApprovalForm({ discount_type: "percentage", discount_value: 10, commission_type: "percentage", commission_value: 5, portal_password: p.portal_password || "" }); }}
+                          <button onClick={() => { setApprovingId(approvingId === p.id ? null : p.id); setApprovalForm({ discount_type: "percentage", discount_value: 10, commission_type: "percentage", commission_value: 5, portal_password: "" }); }}
                             className="bg-[#002045] text-white text-xs font-bold font-[var(--font-inter)] tracking-[0.08em] uppercase px-4 py-2 hover:bg-[#1a365d] transition-colors">
                             Aprovar
                           </button>
@@ -2377,7 +2391,7 @@ export default function AdminPage() {
                           <div className="mb-3 max-w-xs">
                             <label className={labelCls}>Senha do portal</label>
                             <div className="relative">
-                              <input value={approvalForm.portal_password} onChange={(e) => setApprovalForm({ ...approvalForm, portal_password: e.target.value })} className={inputCls + " pr-10"} type={showApprovalPw ? "text" : "password"} placeholder="Opcional" />
+                              <input value={approvalForm.portal_password} onChange={(e) => setApprovalForm({ ...approvalForm, portal_password: e.target.value })} className={inputCls + " pr-10"} type={showApprovalPw ? "text" : "password"} placeholder="Opcional · mín. 8 caracteres" />
                               <button
                                 type="button"
                                 tabIndex={-1}
@@ -2525,7 +2539,6 @@ export default function AdminPage() {
                   <p className="text-green-900 text-sm font-[var(--font-inter)] font-semibold mb-0.5">Parceiro criado!</p>
                   <p className="text-green-700 text-xs font-[var(--font-inter)]">
                     Cupom: <strong>{newlyCreatedPartner.coupon_code}</strong>
-                    {newlyCreatedPartner.portal_password && <> · Senha: <strong>{newlyCreatedPartner.portal_password}</strong></>}
                   </p>
                 </div>
                 <a href={buildWALink(newlyCreatedPartner)} target="_blank" rel="noopener noreferrer"
@@ -2563,7 +2576,7 @@ export default function AdminPage() {
                     <div>
                       <label className={labelCls}>Senha do Portal <span className="normal-case font-normal">(acesso parceiro)</span></label>
                       <div className="relative">
-                        <input value={partnerForm.portal_password} onChange={(e) => setPartnerForm({ ...partnerForm, portal_password: e.target.value })} className={inputCls + " pr-10"} type={showPartnerPw ? "text" : "password"} placeholder="Deixe em branco para sem acesso" />
+                        <input value={partnerForm.portal_password} onChange={(e) => setPartnerForm({ ...partnerForm, portal_password: e.target.value })} className={inputCls + " pr-10"} type={showPartnerPw ? "text" : "password"} placeholder="Em branco = manter senha atual" />
                         <button
                           type="button"
                           tabIndex={-1}
@@ -2741,7 +2754,7 @@ export default function AdminPage() {
                             })()}
                             <span className="block text-[9px] text-[#b0b0b0] font-[var(--font-inter)] mt-0.5">cód. captação</span>
                           </td>
-                          <td className="px-5 py-4 text-xs text-[#74777f]">{p.portal_password ? <span className="font-mono text-[#43474e]">{p.portal_password}</span> : <span className="italic">—</span>}</td>
+                          <td className="px-5 py-4 text-xs text-[#74777f]">{p.has_portal_password ? <span className="text-green-700 font-semibold">Definida</span> : <span className="italic">—</span>}</td>
                           <td className="px-5 py-4">
                             <span className={`px-2 py-1 text-[10px] font-bold tracking-wider ${p.status === "active" ? "bg-green-100 text-green-800" : "bg-gray-100 text-gray-600"}`}>
                               {p.status === "active" ? "Ativo" : "Inativo"}
@@ -2881,7 +2894,7 @@ export default function AdminPage() {
                     <div>
                       <label className={labelCls}>Senha do Portal <span className="normal-case font-normal">(acesso representante)</span></label>
                       <div className="relative">
-                        <input value={repForm.portal_password} onChange={(e) => setRepForm({ ...repForm, portal_password: e.target.value })} className={inputCls + " pr-10"} type={showRepPw ? "text" : "password"} placeholder="Deixe em branco para sem acesso" />
+                        <input value={repForm.portal_password} onChange={(e) => setRepForm({ ...repForm, portal_password: e.target.value })} className={inputCls + " pr-10"} type={showRepPw ? "text" : "password"} placeholder="Em branco = manter senha atual" />
                         <button
                           type="button"
                           tabIndex={-1}
@@ -2960,7 +2973,7 @@ export default function AdminPage() {
                                   )}
                                 </button>
                               </td>
-                              <td className="px-5 py-4 text-xs text-[#74777f]">{r.portal_password ? <span className="font-mono text-[#43474e]">{r.portal_password}</span> : <span className="italic">—</span>}</td>
+                              <td className="px-5 py-4 text-xs text-[#74777f]">{r.has_portal_password ? <span className="text-green-700 font-semibold">Definida</span> : <span className="italic">—</span>}</td>
                               <td className="px-5 py-4">
                                 <span className={`px-2 py-1 text-[10px] font-bold tracking-wider ${r.status === "active" ? "bg-green-100 text-green-800" : "bg-gray-100 text-gray-600"}`}>
                                   {r.status === "active" ? "Ativo" : "Inativo"}
@@ -3842,7 +3855,7 @@ export default function AdminPage() {
               <button
                 onClick={() => {
                   setEditingProductId(null);
-                  setProductForm({ code:"", name:"", linha:"Classic", finish:"Fosco", price:559, price_per_m2:161, description:"", image_path:"", is_active:true, sort_order:0 });
+                  setProductForm({ code:"", name:"", linha:"Classic", finish:"Fosco", price:559, price_per_m2:161, description:"", image_path:"", is_active:true, sort_order:0, render_finish_description:"", render_panel_width_m:1.2, render_panel_height_m:2.9, render_context_image_path:"", render_extra_notes:"" });
                   setProductFormError("");
                   setGalleryImages([]);
                   setShowProductForm(true);
@@ -4119,6 +4132,74 @@ export default function AdminPage() {
                       </p>
                     </div>
                   )}
+
+                  {/* ── Visualizador / Render — per-model prompt fields ── */}
+                  <div className="mb-6 border border-[#e2e2e2] p-4">
+                    <label className="font-[var(--font-inter)] text-[10px] tracking-[0.15em] uppercase font-bold text-[#74777f] block mb-1">
+                      Visualizador / Render
+                    </label>
+                    <p className="text-[#b0b0b0] text-[10px] font-[var(--font-inter)] mb-4">
+                      Prompt fixo deste modelo no Visualizador. Em branco, o sistema usa o texto genérico da linha ({productForm.linha === "Brilliance" ? "mármore polido" : productForm.linha === "Elegance" ? "madeira" : "mármore fosco"}).
+                    </p>
+                    <div className="mb-4">
+                      <label className={labelCls}>Descrição do acabamento para o render</label>
+                      <textarea
+                        rows={3}
+                        value={productForm.render_finish_description}
+                        onChange={(e) => setProductForm({...productForm, render_finish_description: e.target.value})}
+                        className={inputCls + " resize-none"}
+                        placeholder='Ex.: "polished Carrara marble, cool white background with soft grey veining, glossy reflective sheen"'
+                      />
+                    </div>
+                    <div className="grid grid-cols-2 sm:grid-cols-4 gap-4 mb-4">
+                      <div>
+                        <label className={labelCls}>Largura da placa (m)</label>
+                        <input type="number" min="0" step="0.01" value={productForm.render_panel_width_m} onChange={(e) => setProductForm({...productForm, render_panel_width_m: parseFloat(e.target.value) || 0})} className={inputCls} />
+                      </div>
+                      <div>
+                        <label className={labelCls}>Altura da placa (m)</label>
+                        <input type="number" min="0" step="0.01" value={productForm.render_panel_height_m} onChange={(e) => setProductForm({...productForm, render_panel_height_m: parseFloat(e.target.value) || 0})} className={inputCls} />
+                      </div>
+                    </div>
+                    <div className="mb-4">
+                      <label className={labelCls}>Imagem de contexto (opcional)</label>
+                      <div className="flex gap-3 items-start">
+                        <input type="text" value={productForm.render_context_image_path} onChange={(e) => setProductForm({...productForm, render_context_image_path: e.target.value})} className={inputCls} placeholder="Foto do painel aplicado em um ambiente real" />
+                        <label className="flex-shrink-0 cursor-pointer bg-[#f0f0f0] border border-[#e2e2e2] px-4 py-2.5 text-xs font-bold font-[var(--font-inter)] text-[#002045] hover:bg-[#e8e8e8] transition-colors whitespace-nowrap">
+                          {productImageUploading ? "Enviando..." : "Upload"}
+                          <input type="file" accept="image/*" className="hidden" onChange={async (e) => {
+                            const file = e.target.files?.[0];
+                            if (!file) return;
+                            const url = await uploadImage(file, "products");
+                            if (url) setProductForm((prev) => ({...prev, render_context_image_path: url}));
+                            e.target.value = "";
+                          }} />
+                        </label>
+                      </div>
+                      {productForm.render_context_image_path && (
+                        <div className="mt-2 flex items-center gap-3">
+                          {/* eslint-disable-next-line @next/next/no-img-element */}
+                          <img src={productForm.render_context_image_path} alt="contexto" className="h-16 w-16 object-cover border border-[#e2e2e2]" />
+                          <button type="button" onClick={() => setProductForm(prev => ({...prev, render_context_image_path: ""}))} className="px-3 py-1.5 border border-red-300 text-red-600 text-[10px] tracking-[0.08em] uppercase font-bold font-[var(--font-inter)] hover:bg-red-50 transition-colors">
+                            Remover
+                          </button>
+                        </div>
+                      )}
+                      <p className="text-[#b0b0b0] text-[10px] font-[var(--font-inter)] mt-1">
+                        Se preenchida, é enviada como terceira referência para a IA ver o acabamento aplicado em contexto.
+                      </p>
+                    </div>
+                    <div>
+                      <label className={labelCls}>Notas extras (opcional)</label>
+                      <textarea
+                        rows={2}
+                        value={productForm.render_extra_notes}
+                        onChange={(e) => setProductForm({...productForm, render_extra_notes: e.target.value})}
+                        className={inputCls + " resize-none"}
+                        placeholder='Ex.: "this finish has directional grain — keep it vertical"'
+                      />
+                    </div>
+                  </div>
 
                   <div className="mb-6 flex items-center gap-2">
                     <input type="checkbox" id="prod-active" checked={productForm.is_active} onChange={(e) => setProductForm({...productForm, is_active: e.target.checked})} className="w-4 h-4" />

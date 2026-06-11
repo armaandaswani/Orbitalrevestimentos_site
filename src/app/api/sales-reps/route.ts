@@ -1,7 +1,10 @@
 import { NextRequest, NextResponse } from "next/server";
+import { isAdminRequest, hashPassword } from "@/lib/admin-auth";
 import { supabaseAdmin } from "@/lib/supabase";
 
-export async function GET() {
+export async function GET(req: NextRequest) {
+  if (!isAdminRequest(req)) return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+
   const db = supabaseAdmin();
   const { data, error } = await db
     .from("sales_reps")
@@ -9,10 +12,17 @@ export async function GET() {
     .order("created_at", { ascending: false });
 
   if (error) return NextResponse.json({ error: error.message }, { status: 500 });
-  return NextResponse.json(data);
+  // Never expose password hashes — expose only whether a password is set.
+  const safe = (data ?? []).map((row: Record<string, unknown>) => {
+    const { portal_password, ...rest } = row;
+    return { ...rest, has_portal_password: !!portal_password };
+  });
+  return NextResponse.json(safe);
 }
 
 export async function POST(req: NextRequest) {
+  if (!isAdminRequest(req)) return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+
   const body = await req.json();
   const {
     name,
@@ -27,6 +37,9 @@ export async function POST(req: NextRequest) {
 
   if (!name || !referral_code) {
     return NextResponse.json({ error: "name e referral_code são obrigatórios." }, { status: 400 });
+  }
+  if (portal_password && (portal_password as string).length < 8) {
+    return NextResponse.json({ error: "A senha deve ter pelo menos 8 caracteres." }, { status: 400 });
   }
 
   const db = supabaseAdmin();
@@ -51,7 +64,7 @@ export async function POST(req: NextRequest) {
       referral_code: (referral_code as string).toUpperCase(),
       commission_type: commission_type || "percentage",
       commission_value: commission_value ?? 5,
-      portal_password: portal_password || null,
+      portal_password: portal_password ? hashPassword(portal_password) : null,
       birthday: birthday || null,
     })
     .select()
@@ -103,5 +116,6 @@ export async function POST(req: NextRequest) {
     }
   }
 
-  return NextResponse.json(data, { status: 201 });
+  const { portal_password: _pw, ...safeData } = data;
+  return NextResponse.json({ ...safeData, has_portal_password: !!portal_password }, { status: 201 });
 }

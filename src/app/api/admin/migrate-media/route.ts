@@ -1,7 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { supabaseAdmin } from "@/lib/supabase";
 
-const ADMIN_PW = process.env.NEXT_PUBLIC_ADMIN_PASSWORD || "orbital2025";
+import { isAdminRequest } from "@/lib/admin-auth";
 
 /**
  * GET  — probe whether the new columns already exist
@@ -10,7 +10,7 @@ const ADMIN_PW = process.env.NEXT_PUBLIC_ADMIN_PASSWORD || "orbital2025";
  */
 
 export async function GET(req: NextRequest) {
-  if (req.headers.get("x-admin-auth") !== ADMIN_PW)
+  if (!isAdminRequest(req))
     return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
 
   const sb = supabaseAdmin();
