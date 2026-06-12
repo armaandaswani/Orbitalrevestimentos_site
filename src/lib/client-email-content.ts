@@ -416,7 +416,7 @@ ${cta("Falar com um consultor", wa)}
           subject: `${first}, sabe por que os arquitetos assinam projetos com a Orbital?`,
           preview: "Quando a reputação do profissional está em jogo, a escolha não é por acaso.",
           headline: `Arquiteto bom nunca aposta em algo em que não confia, ${first}.`,
-          intro: `Quando um arquiteto especifica um material, ele assina embaixo — o nome dele fica naquele projeto por anos. Por isso não escolhe pelo mais barato nem pelo mais bonito na foto, e sim pelo que não vai decepcionar depois. O profissional que está te orientando escolheu Orbital pelo mesmo motivo.`,
+          intro: `Quando um arquiteto especifica um material, ele assina embaixo — o nome dele fica naquele projeto por anos. Por isso não escolhe pelo mais barato nem pelo mais bonito na foto, e sim pelo que não vai decepcionar depois. O profissional que está te orientando escolheu a Orbital pelo mesmo motivo.`,
         }
       : {
           subject: `${first}, quer um resultado de arquiteto sem precisar contratar um?`,
@@ -494,7 +494,7 @@ ${cta("Quero fechar meu orçamento agora", wa)}
         `
 <p style="font-size:20px;color:#002045;font-weight:700;margin:0 0 24px;font-family:Arial,sans-serif;">Esta é a nossa última mensagem, ${first}.</p>
 <p style="color:#43474e;font-size:14px;line-height:1.8;margin:0 0 20px;font-family:Arial,sans-serif;">
-  Nas últimas semanas mostramos o que importa de verdade: o que o clima de Manaus faz com revestimento comum, a diferença que os painéis Orbital entregam, e o que significa investir uma vez em vez de duas.
+  Nas últimas semanas mostramos o que importa de verdade: o que o clima de Manaus faz com revestimento comum, a diferença que os painéis Orbital entregam, e o que significa investir uma vez em vez de duas ou mais.
 </p>
 <p style="color:#43474e;font-size:14px;line-height:1.8;margin:0 0 24px;font-family:Arial,sans-serif;">
   A decisão é completamente sua — e a gente respeita isso.
@@ -517,7 +517,7 @@ ${cta("Quero fechar meu orçamento agora", wa)}
         "Seu orçamento fica registrado conosco",
         "Quando estiver pronto, é só falar",
         "Retomamos de onde paramos, sem burocracia",
-        "A porta Orbital fica sempre aberta",
+        "A porta da Orbital fica sempre aberta",
       ].map(i => `<p style="margin:0 0 8px;color:#74777f;font-size:12px;font-family:Arial,sans-serif;">· ${i}</p>`).join("")}
     </td>
   </tr>
@@ -551,7 +551,7 @@ ${cta("Fechar com um consultor", wa)}
     ${[
       partnerFirst + " vai confirmar todos os detalhes do pedido com você",
       "Verificação de estoque e prazo de retirada",
-      "Agendamento da retirada no depósito Orbital em Manaus",
+      "Agendamento da retirada no depósito da Orbital em Manaus",
       "Precisando de instalador? A Orbital pode indicar profissionais habilitados",
     ].map((item, i) => `<p style="margin:0 0 10px;color:#43474e;font-size:13px;line-height:1.6;font-family:Arial,sans-serif;"><strong style="color:#002045;">${i + 1}.</strong> ${item}</p>`).join("")}
   </td></tr>
