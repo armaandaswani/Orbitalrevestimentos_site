@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from "next/server";
 import { supabaseAdmin } from "@/lib/supabase";
 import { getResend } from "@/lib/resend";
 import { generateClientEmail, STEP_DELAYS_DAYS } from "@/lib/client-email-content";
+import { upsertLeadFromSource } from "@/lib/leads";
 
 const ADMIN_EMAIL = "armaandaswani19@gmail.com";
 
@@ -63,6 +64,22 @@ export async function POST(req: NextRequest) {
     .single();
 
   if (error) return NextResponse.json({ error: error.message }, { status: 500 });
+
+  // Auto-ingest into the CRM (non-fatal, deduped by email). A website orçamento
+  // that used a partner coupon is attributed to that partner; otherwise it's an
+  // inbound "de fora" website lead.
+  await upsertLeadFromSource({
+    name: client_name,
+    email: client_email,
+    phone: client_phone ?? null,
+    source: coupon_use_id ? "partner" : "website",
+    partnerName: partner_name && partner_name !== "Orbital" ? partner_name : null,
+    couponUseId: coupon_use_id ?? null,
+    clientEmailSequenceId: seq.id,
+    space: space || null,
+    productName: model ?? null,
+    estimatedValue: typeof total === "number" ? total : null,
+  });
 
   // Mark the partner simulation as converted (non-fatal)
   if (sim_id) {

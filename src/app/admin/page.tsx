@@ -2,6 +2,7 @@
 
 import React, { useState, useEffect, useCallback, useMemo, useRef } from "react";
 import { SITE_ASSET_MANIFEST } from "@/lib/assets";
+import LeadsTab from "./LeadsTab";
 import {
   composePrompt,
   finishDescription,
@@ -142,7 +143,7 @@ export default function AdminPage() {
   const [authed, setAuthed] = useState(false);
   const [pw, setPw] = useState("");
   const [pwError, setPwError] = useState("");
-  const [tab, setTab] = useState<"dashboard" | "partners" | "representantes" | "orcamentos" | "campaigns" | "drip" | "commissions" | "produtos" | "projetos" | "midia" | "simulador" | "chat">("dashboard");
+  const [tab, setTab] = useState<"dashboard" | "leads" | "partners" | "representantes" | "orcamentos" | "campaigns" | "drip" | "commissions" | "produtos" | "projetos" | "midia" | "simulador" | "chat">("dashboard");
   const [commissionFilter, setCommissionFilter] = useState<"a_pagar" | "pago" | "tudo">("a_pagar");
 
   // Dashboard
@@ -202,6 +203,12 @@ export default function AdminPage() {
   // History
   const [uses, setUses] = useState<CouponUse[]>([]);
   const [loadingUses, setLoadingUses] = useState(false);
+  // Surfaces real HTTP/data errors for the Orçamentos tab so a failed fetch
+  // (401/500/empty-from-anon-key) is no longer indistinguishable from "no orders".
+  // Tracked per source so a failure in one (e.g. /api/admin/clients 401) no longer
+  // hides rows that loaded fine from the other (/api/coupons/use), and vice-versa.
+  const [clientsError, setClientsError] = useState<string | null>(null);
+  const [usesError, setUsesError] = useState<string | null>(null);
   const [filterPartner, setFilterPartner] = useState<string>("all");
   const [filterRep, setFilterRep] = useState<string>("all");
 
@@ -503,8 +510,19 @@ export default function AdminPage() {
 
   const fetchUses = useCallback(async () => {
     setLoadingUses(true);
-    const res = await fetch("/api/coupons/use");
-    if (res.ok) setUses(await res.json());
+    try {
+      const res = await fetch("/api/coupons/use");
+      const data = await res.json().catch(() => null);
+      if (res.ok && Array.isArray(data)) {
+        setUses(data);
+        setUsesError(null);
+      } else {
+        const msg = (data && typeof data === "object" && "error" in data) ? String(data.error) : `HTTP ${res.status}`;
+        setUsesError(`Falha ao carregar cupons (/api/coupons/use): ${msg}`);
+      }
+    } catch (e) {
+      setUsesError(`Falha ao carregar cupons (/api/coupons/use): ${e instanceof Error ? e.message : "erro de rede"}`);
+    }
     setLoadingUses(false);
   }, []);
 
@@ -524,8 +542,21 @@ export default function AdminPage() {
 
   const fetchClients = useCallback(async () => {
     setClientsLoading(true);
-    const res = await fetch("/api/admin/clients");
-    if (res.ok) setClients(await res.json());
+    try {
+      const res = await fetch("/api/admin/clients");
+      const data = await res.json().catch(() => null);
+      if (res.ok && Array.isArray(data)) {
+        setClients(data);
+        setClientsError(null);
+      } else {
+        const msg = res.status === 401
+          ? "sessão de admin expirada ou inválida (401) — faça login novamente"
+          : (data && typeof data === "object" && "error" in data) ? String(data.error) : `HTTP ${res.status}`;
+        setClientsError(`Falha ao carregar orçamentos (/api/admin/clients): ${msg}`);
+      }
+    } catch (e) {
+      setClientsError(`Falha ao carregar orçamentos (/api/admin/clients): ${e instanceof Error ? e.message : "erro de rede"}`);
+    }
     setClientsLoading(false);
   }, []);
 
@@ -617,7 +648,7 @@ export default function AdminPage() {
   }, [tab, authed, chatPromptLoaded]);
 
   useEffect(() => {
-    if (tab === "orcamentos" && authed) { fetchClients(); fetchUses(); }
+    if (tab === "orcamentos" && authed) { setClientsError(null); setUsesError(null); fetchClients(); fetchUses(); }
   }, [tab, authed, fetchClients, fetchUses]);
 
   useEffect(() => { if ((tab === "produtos" || tab === "simulador") && authed) fetchDbProducts(); }, [tab, authed, fetchDbProducts]);
@@ -2135,9 +2166,9 @@ export default function AdminPage() {
 
       <div className="max-w-7xl mx-auto px-8 py-8">
         <div className="flex gap-1 mb-8 border-b border-[#e2e2e2] flex-wrap">
-          {(["dashboard", "partners", "representantes", "orcamentos", "campaigns", "drip", "commissions", "produtos", "projetos", "midia", "simulador", "chat"] as const).map((t) => (
+          {(["dashboard", "leads", "partners", "representantes", "orcamentos", "campaigns", "drip", "commissions", "produtos", "projetos", "midia", "simulador", "chat"] as const).map((t) => (
             <button key={t} onClick={() => setTab(t)} className={`px-6 py-3 text-xs tracking-[0.1em] uppercase font-bold font-[var(--font-inter)] transition-colors border-b-2 -mb-px flex items-center gap-2 ${tab === t ? "border-[#002045] text-[#002045]" : "border-transparent text-[#74777f] hover:text-[#002045]"}`}>
-              {t === "dashboard" ? "Dashboard" : t === "partners" ? "Parceiros" : t === "representantes" ? "Representantes" : t === "orcamentos" ? "Orçamentos" : t === "campaigns" ? "Campanhas" : t === "drip" ? "Drip de Emails" : t === "commissions" ? "Comissões" : t === "produtos" ? "Produtos" : t === "projetos" ? "Projetos" : t === "midia" ? "Mídia" : t === "simulador" ? "Simulador" : "Chat IA"}
+              {t === "dashboard" ? "Dashboard" : t === "leads" ? "Leads / CRM" : t === "partners" ? "Parceiros" : t === "representantes" ? "Representantes" : t === "orcamentos" ? "Orçamentos" : t === "campaigns" ? "Campanhas" : t === "drip" ? "Drip de Emails" : t === "commissions" ? "Comissões" : t === "produtos" ? "Produtos" : t === "projetos" ? "Projetos" : t === "midia" ? "Mídia" : t === "simulador" ? "Simulador" : "Chat IA"}
               {t === "partners" && pendingPartners.length > 0 && (
                 <span className="bg-yellow-400 text-yellow-900 text-[9px] font-bold px-1.5 py-0.5 rounded-full leading-none">
                   {pendingPartners.length}
@@ -3398,12 +3429,43 @@ export default function AdminPage() {
 
             {clientsLoading || loadingUses ? (
               <p className="text-[#74777f] text-sm font-[var(--font-inter)]">Carregando...</p>
+            ) : filteredClients.length === 0 && (clientsError || usesError) ? (
+              // Nothing loaded from EITHER source and at least one fetch failed —
+              // this is a real error, not "no orders". Block with a retry.
+              <div className="bg-red-50 border border-red-200 px-6 py-8 text-center">
+                <p className="text-red-800 text-sm font-semibold font-[var(--font-inter)]">Não foi possível carregar os orçamentos</p>
+                {clientsError && <p className="text-red-700 text-xs font-[var(--font-inter)] mt-1 break-words">{clientsError}</p>}
+                {usesError && <p className="text-red-700 text-xs font-[var(--font-inter)] mt-1 break-words">{usesError}</p>}
+                <button
+                  onClick={() => { setClientsError(null); setUsesError(null); fetchClients(); fetchUses(); }}
+                  className="mt-4 inline-block border border-red-300 text-red-800 px-4 py-2 text-[10px] tracking-[0.12em] uppercase font-bold font-[var(--font-inter)] hover:bg-red-100 transition-colors"
+                >
+                  Tentar novamente
+                </button>
+              </div>
             ) : filteredClients.length === 0 ? (
               <div className="bg-white border border-[#e2e2e2] px-6 py-12 text-center">
                 <p className="text-[#74777f] text-sm font-[var(--font-inter)]">Nenhum orçamento encontrado.</p>
               </div>
             ) : (
               <>
+                {/* One source failed but the other returned rows — show the data and
+                    surface the partial failure as a non-blocking warning. */}
+                {(clientsError || usesError) && (
+                  <div className="bg-amber-50 border border-amber-200 px-4 py-3 mb-3 flex items-start justify-between gap-3">
+                    <div>
+                      <p className="text-amber-800 text-xs font-semibold font-[var(--font-inter)]">Alguns dados podem estar incompletos</p>
+                      {clientsError && <p className="text-amber-700 text-[11px] font-[var(--font-inter)] mt-0.5 break-words">{clientsError}</p>}
+                      {usesError && <p className="text-amber-700 text-[11px] font-[var(--font-inter)] mt-0.5 break-words">{usesError}</p>}
+                    </div>
+                    <button
+                      onClick={() => { setClientsError(null); setUsesError(null); fetchClients(); fetchUses(); }}
+                      className="shrink-0 border border-amber-300 text-amber-800 px-3 py-1.5 text-[10px] tracking-[0.12em] uppercase font-bold font-[var(--font-inter)] hover:bg-amber-100 transition-colors"
+                    >
+                      Recarregar
+                    </button>
+                  </div>
+                )}
                 {/* Desktop table — 8 cols, no overflow-x */}
                 <div className="hidden sm:block bg-white border border-[#e2e2e2]">
                   <table className="w-full text-sm font-[var(--font-inter)] table-fixed">
@@ -3584,6 +3646,8 @@ export default function AdminPage() {
             )}
           </div>
         )}
+        {/* ═══ LEADS / CRM TAB ═══ */}
+        {tab === "leads" && authed && <LeadsTab />}
         {/* ═══ DRIP TAB ═══ */}
         {tab === "drip" && (
           <div>

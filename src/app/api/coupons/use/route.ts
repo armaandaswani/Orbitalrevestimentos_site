@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { supabaseAdmin } from "@/lib/supabase";
 import { getResend } from "@/lib/resend";
+import { upsertLeadFromSource } from "@/lib/leads";
 
 function fmtBRL(n: number) {
   return n.toLocaleString("pt-BR", { style: "currency", currency: "BRL", maximumFractionDigits: 0 });
@@ -319,6 +320,22 @@ export async function POST(req: NextRequest) {
     .single();
 
   if (error) return NextResponse.json({ error: error.message }, { status: 500 });
+
+  // Auto-ingest into the CRM as a partner-sourced lead (non-fatal, deduped by
+  // email). partner_name is resolved later from partner_id in the leads GET.
+  if (data) {
+    await upsertLeadFromSource({
+      name: (body.architect_name as string) ?? "—",
+      email: (body.client_email as string) ?? null,
+      phone: (body.client_phone as string) ?? null,
+      source: "partner",
+      partnerId: (body.partner_id as string) ?? null,
+      couponUseId: (data as Record<string, unknown>).id as string,
+      space: (body.space as string) ?? null,
+      productName: (body.product_name as string) ?? null,
+      estimatedValue: (body.material_discounted as number) ?? (body.material_total as number) ?? null,
+    });
+  }
 
   // Create commission records for all reps linked to this partner
   if (data && body.partner_id) {
