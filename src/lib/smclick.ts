@@ -6,7 +6,7 @@
  * sending instance id are NOT discoverable from the public docs — they live
  * in the account's SM Click panel (Integrações e Documentação API). Configure:
  *
- *   SMCLICK_API_URL      base gateway URL, e.g. https://api.smclick.com.br/public/v2/api
+ *   SMCLICK_API_URL      base gateway URL, e.g. https://api.smclick.com.br
  *   SMCLICK_API_KEY      the account API key (X-API-KEY header)
  *   SMCLICK_INSTANCE_ID  the WhatsApp instance to send messages from
  *   SMCLICK_DEFAULT_TAGS optional comma-separated tag ids applied to pushed contacts
