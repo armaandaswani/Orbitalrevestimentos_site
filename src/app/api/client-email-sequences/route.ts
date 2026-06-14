@@ -2,7 +2,9 @@ import { NextRequest, NextResponse } from "next/server";
 import { supabaseAdmin } from "@/lib/supabase";
 import { getResend } from "@/lib/resend";
 import { generateClientEmail, STEP_DELAYS_DAYS } from "@/lib/client-email-content";
-import { upsertLeadFromSource } from "@/lib/leads";
+import { upsertLeadFromSource, touchLeadContacted } from "@/lib/leads";
+import { smclickConfigured, sendText, normalizePhone } from "@/lib/smclick";
+import { clientOrcamentoMessage, ownerHighValueMessage } from "@/lib/smclick-messages";
 
 const ADMIN_EMAIL = "armaandaswani19@gmail.com";
 
@@ -29,7 +31,7 @@ export async function POST(req: NextRequest) {
   const {
     coupon_use_id, client_name, client_email, client_phone,
     space, model, plates, area_m2, total, dim_label, product_images,
-    space_breakdown, partner_name, quote_url, sim_id,
+    space_breakdown, partner_name, quote_url, sim_id, sim_session_id,
   } = body;
 
   if (!client_name || !client_email) {
@@ -68,7 +70,7 @@ export async function POST(req: NextRequest) {
   // Auto-ingest into the CRM (non-fatal, deduped by email). A website orçamento
   // that used a partner coupon is attributed to that partner; otherwise it's an
   // inbound "de fora" website lead.
-  await upsertLeadFromSource({
+  const leadId = await upsertLeadFromSource({
     name: client_name,
     email: client_email,
     phone: client_phone ?? null,
@@ -80,6 +82,63 @@ export async function POST(req: NextRequest) {
     productName: model ?? null,
     estimatedValue: typeof total === "number" ? total : null,
   });
+
+  // Feature 6 — mark the abandoned-simulador session complete so the recovery
+  // cron never nudges someone who actually finished (non-fatal).
+  if (sim_session_id) {
+    try {
+      await db
+        .from("simulador_sessions")
+        .update({ completed: true, updated_at: new Date().toISOString() })
+        .eq("id", sim_session_id);
+    } catch { /* non-fatal */ }
+  }
+
+  // Feature 1 — instant orçamento confirmation to the customer on WhatsApp.
+  // Within WhatsApp's 24h window because they just engaged. Non-fatal: the email
+  // drip above still runs regardless.
+  try {
+    const phone = normalizePhone(client_phone as string | null);
+    if (smclickConfigured() && phone) {
+      const res = await sendText(
+        phone,
+        clientOrcamentoMessage({
+          name: client_name as string,
+          total: typeof total === "number" ? total : null,
+          space: (space as string | null) || null,
+          model: (model as string | null) || null,
+          quoteUrl: (quote_url as string | null) ?? null,
+        })
+      );
+      if (res.ok && leadId) await touchLeadContacted(leadId);
+    }
+  } catch { /* non-fatal */ }
+
+  // Feature 4 — real-time owner ping for high-value orçamentos. Threshold (BRL)
+  // is configurable; alerts are off until SMCLICK_HIGH_VALUE_THRESHOLD is set.
+  try {
+    const threshold = Number(process.env.SMCLICK_HIGH_VALUE_THRESHOLD || "0");
+    const ownerPhone = normalizePhone(process.env.SMCLICK_REMINDER_TO);
+    if (
+      smclickConfigured() &&
+      ownerPhone &&
+      threshold > 0 &&
+      typeof total === "number" &&
+      total >= threshold
+    ) {
+      await sendText(
+        ownerPhone,
+        ownerHighValueMessage({
+          name: client_name as string,
+          phone: (client_phone as string | null) ?? null,
+          total,
+          space: (space as string | null) || null,
+          model: (model as string | null) || null,
+          quoteUrl: (quote_url as string | null) ?? null,
+        })
+      );
+    }
+  } catch { /* non-fatal */ }
 
   // Mark the partner simulation as converted (non-fatal)
   if (sim_id) {

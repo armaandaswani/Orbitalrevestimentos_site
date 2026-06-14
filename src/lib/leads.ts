@@ -5,9 +5,75 @@ import {
   extractContactId,
   normalizePhone,
   smclickDefaultTags,
+  sendText,
+  assignTag,
 } from "@/lib/smclick";
+import { statusGanhoMessage, statusOrcamentoMessage } from "@/lib/smclick-messages";
 
 export type LeadSource = "website" | "partner" | "manual" | "whatsapp";
+
+/**
+ * Record that we just had a WhatsApp touch with this lead (outbound send or
+ * inbound message), powering the CRM's "Último contato" column. NEVER throws.
+ */
+export async function touchLeadContacted(leadId: string): Promise<void> {
+  try {
+    await supabaseAdmin()
+      .from("leads")
+      .update({ last_contacted_at: new Date().toISOString() })
+      .eq("id", leadId);
+  } catch {
+    // non-fatal
+  }
+}
+
+// Status → (SM Click tag env var, client message builder). Moving a lead into
+// one of these stages fires the automation: tag the SM Click contact (so SM
+// Click's own approved-template journeys can take over) and best-effort send a
+// direct message (only lands inside WhatsApp's 24h window).
+const STATUS_AUTOMATION: Record<
+  string,
+  { tagEnv: string; message: (name: string | null) => string }
+> = {
+  ganho: { tagEnv: "SMCLICK_TAG_GANHO", message: statusGanhoMessage },
+  orcamento: { tagEnv: "SMCLICK_TAG_ORCAMENTO", message: statusOrcamentoMessage },
+};
+
+/**
+ * Feature 5 — react to a CRM status change. Only acts on "ganho"/"orcamento".
+ * Applies the mapped SM Click tag (when both a contact id and a configured tag
+ * id exist) and sends a thank-you / next-steps WhatsApp. NEVER throws.
+ */
+export async function applyLeadStatusAutomation(leadId: string, newStatus: string): Promise<void> {
+  try {
+    if (!smclickConfigured()) return;
+    const auto = STATUS_AUTOMATION[newStatus];
+    if (!auto) return;
+
+    const db = supabaseAdmin();
+    const { data: lead } = await db
+      .from("leads")
+      .select("id, name, phone, smclick_contact_id")
+      .eq("id", leadId)
+      .maybeSingle();
+    if (!lead) return;
+
+    // Tag the SM Click contact (drives their own journeys/templates).
+    const tagId = process.env[auto.tagEnv];
+    if (tagId && lead.smclick_contact_id) {
+      await assignTag(lead.smclick_contact_id as string, tagId);
+    }
+
+    // Best-effort direct message (24h window applies; failure is non-fatal).
+    const phone = normalizePhone(lead.phone as string | null);
+    if (phone) {
+      const res = await sendText(phone, auto.message((lead.name as string) || null));
+      if (res.ok) await touchLeadContacted(leadId);
+    }
+  } catch {
+    // non-fatal
+  }
+}
 
 /**
  * Push a lead to SM Click as a WhatsApp contact, once. Re-reads the lead so it

@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from "next/server";
 import { isAdminRequest } from "@/lib/admin-auth";
 import { supabaseAdmin } from "@/lib/supabase";
 import { smclickConfigured, sendText, normalizePhone } from "@/lib/smclick";
+import { touchLeadContacted } from "@/lib/leads";
 
 /**
  * POST /api/admin/leads/:id/whatsapp — send a one-off WhatsApp message to a
@@ -47,5 +48,6 @@ export async function POST(
       { status: 502 }
     );
   }
+  await touchLeadContacted(id); // Feature 7: record the contact
   return NextResponse.json({ ok: true });
 }

@@ -32,6 +32,7 @@ export interface Lead {
   smclick_contact_id: string | null;
   smclick_synced_at: string | null;
   reminder_sent_at: string | null;
+  last_contacted_at: string | null;
   created_at: string;
   updated_at: string;
 }
@@ -464,6 +465,9 @@ export default function LeadsTab() {
                         {(l.product_name || l.space) && (
                           <p className="text-[9px] text-[#b0b0b0] mt-0.5 truncate">{[l.space, l.product_name].filter(Boolean).join(" · ")}</p>
                         )}
+                        {l.last_contacted_at && (
+                          <p className="text-[9px] text-[#3b6934] mt-0.5">Último contato: {fmtDate(l.last_contacted_at)}</p>
+                        )}
                       </td>
                       <td className="px-4 py-3">
                         <span className={`inline-block text-[9px] font-bold px-2 py-0.5 ${sm.cls}`}>{sm.label}</span>
@@ -537,6 +541,9 @@ export default function LeadsTab() {
                     <span className="text-xs text-[#002045] font-semibold">{fmtBRL(l.estimated_value)}</span>
                   </div>
                   {rb && <p className={`text-[10px] mt-2 ${rb.cls}`}>⏰ {rb.label}</p>}
+                  {l.last_contacted_at && (
+                    <p className="text-[10px] text-[#3b6934] mt-1">Último contato: {fmtDate(l.last_contacted_at)}</p>
+                  )}
                   <div className="flex gap-4 mt-3 pt-3 border-t border-[#f0f0f0]">
                     {l.phone && (
                       <button onClick={() => { setWaLead(l); setWaMessage(""); setWaError(null); }} className="text-[10px] text-[#128c3e] font-bold">WhatsApp</button>

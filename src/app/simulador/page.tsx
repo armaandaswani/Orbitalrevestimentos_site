@@ -282,6 +282,10 @@ function SimuladorInner() {
   const [clientName, setClientName] = useState("");
   const [clientEmail, setClientEmail] = useState("");
   const [clientPhone, setClientPhone] = useState("");
+  // Abandoned-simulador recovery (Feature 6): stable id for this visit + the
+  // last phone we captured, so we re-capture only when the number changes.
+  const simSessionId = useRef<string>("");
+  const lastCapturedPhoneRef = useRef("");
   const [simSubmitting, setSimSubmitting] = useState(false);
   const [simSubmitted, setSimSubmitted] = useState(false);
   const [quoteShareUrl, setQuoteShareUrl] = useState<string | null>(null);
@@ -850,6 +854,38 @@ function SimuladorInner() {
     }
   }
 
+  // Feature 6 — capture a partial session as soon as a valid phone is entered,
+  // before submission, so the recovery cron can nudge if they never finish.
+  // Re-captures only when the phone changes; fully non-fatal.
+  async function captureSession() {
+    const phoneDigits = clientPhone.trim().replace(/\D/g, "");
+    if (phoneDigits.length < 10) return;
+    const phone = clientPhone.trim();
+    if (phone === lastCapturedPhoneRef.current) return;
+    if (!simSessionId.current) {
+      simSessionId.current =
+        typeof crypto !== "undefined" && "randomUUID" in crypto
+          ? crypto.randomUUID()
+          : `sess-${Date.now()}-${Math.random().toString(36).slice(2)}`;
+    }
+    lastCapturedPhoneRef.current = phone;
+    try {
+      await fetch("/api/simulador/capture", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          id: simSessionId.current,
+          name: clientName.trim() || null,
+          email: clientEmail.trim() || null,
+          phone,
+          space: selectedSpace?.label ?? null,
+          product_name: selectedProduct?.name ?? null,
+          estimated_total: grandMaterialDiscounted || orbMaterialDiscounted || orbMaterialTotal || null,
+        }),
+      });
+    } catch { /* non-fatal */ }
+  }
+
   async function handleSubmitAndShow() {
     if (!clientName.trim() || !clientEmail.trim() || !clientPhone.trim()) return;
     if (couponCode.trim() && !couponData) await validateCoupon();
@@ -1048,6 +1084,7 @@ function SimuladorInner() {
             partner_name: couponData?.partner_name ?? "Orbital",
             quote_url: quoteSlug ? `${siteUrl}/orcamento/${quoteSlug}` : null,
             sim_id: partnerSimId ?? undefined,
+            sim_session_id: simSessionId.current || undefined,
           }),
         });
         if (!seqRes.ok) {
@@ -1993,6 +2030,7 @@ function SimuladorInner() {
                     required
                     value={clientPhone}
                     onChange={(e) => setClientPhone(e.target.value)}
+                    onBlur={() => { void captureSession(); }}
                     placeholder="ex: (92) 99999-0000"
                     className="w-full border border-[#e2e2e2] px-4 py-3 text-sm font-[var(--font-inter)] text-[#002045] focus:outline-none focus:border-[#002045] transition-colors"
                   />

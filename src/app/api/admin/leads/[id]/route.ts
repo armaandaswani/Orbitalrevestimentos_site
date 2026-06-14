@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { isAdminRequest } from "@/lib/admin-auth";
 import { supabaseAdmin } from "@/lib/supabase";
+import { applyLeadStatusAutomation } from "@/lib/leads";
 
 // Columns the admin is allowed to edit on a lead.
 const EDITABLE = new Set([
@@ -40,8 +41,23 @@ export async function PATCH(
   }
 
   const db = supabaseAdmin();
+
+  // Read the prior status so we only fire automations on an actual transition.
+  let prevStatus: string | null = null;
+  if (typeof patch.status === "string") {
+    const { data: before } = await db.from("leads").select("status").eq("id", id).maybeSingle();
+    prevStatus = (before?.status as string | null) ?? null;
+  }
+
   const { data, error } = await db.from("leads").update(patch).eq("id", id).select().single();
   if (error) return NextResponse.json({ error: error.message }, { status: 500 });
+
+  // Feature 5 — status-change automations (tag the SM Click contact + send a
+  // thank-you / next-steps WhatsApp). Non-fatal, only on a real transition.
+  if (typeof patch.status === "string" && patch.status !== prevStatus) {
+    await applyLeadStatusAutomation(id, patch.status);
+  }
+
   return NextResponse.json(data);
 }
 

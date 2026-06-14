@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from "next/server";
-import { upsertLeadFromWhatsApp } from "@/lib/leads";
+import { upsertLeadFromWhatsApp, touchLeadContacted } from "@/lib/leads";
 
 /**
  * Inbound SM Click webhook receiver.
@@ -57,11 +57,14 @@ export async function POST(req: NextRequest) {
   if (CONTACT_EVENTS.has(event)) {
     const contact = extractContact(body as Record<string, unknown>);
     if (contact?.id) {
-      await upsertLeadFromWhatsApp({
+      const leadId = await upsertLeadFromWhatsApp({
         smclickContactId: String(contact.id),
         name: contact.name ?? null,
         phone: contact.telephone ?? null,
       });
+      // Feature 7: an inbound message is a contact too — record it so the CRM's
+      // "Último contato" reflects the latest conversation activity.
+      if (leadId && event === "new-chat-message") await touchLeadContacted(leadId);
     }
   }
 
