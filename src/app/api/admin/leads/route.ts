@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { isAdminRequest } from "@/lib/admin-auth";
 import { supabaseAdmin } from "@/lib/supabase";
+import { isMissingColumn } from "@/lib/db-compat";
 
 /** GET /api/admin/leads?source=website|partner|manual&status=novo&search=foo */
 export async function GET(req: NextRequest) {
@@ -61,25 +62,30 @@ export async function POST(req: NextRequest) {
   }
 
   const db = supabaseAdmin();
-  const { data, error } = await db
-    .from("leads")
-    .insert({
-      name: body.name.trim(),
-      email: body.email ? String(body.email).trim().toLowerCase() : null,
-      phone: body.phone ? String(body.phone).trim() : null,
-      source: "manual",
-      status: body.status ?? "novo",
-      partner_id: body.partner_id ?? null,
-      partner_name: body.partner_name ?? null,
-      space: body.space ?? null,
-      product_name: body.product_name ?? null,
-      estimated_value: body.estimated_value ?? null,
-      next_reminder_at: body.next_reminder_at ?? null,
-      reminder_note: body.reminder_note ?? null,
-      notes: body.notes ?? null,
-    })
-    .select()
-    .single();
+  const payload: Record<string, unknown> = {
+    name: body.name.trim(),
+    email: body.email ? String(body.email).trim().toLowerCase() : null,
+    phone: body.phone ? String(body.phone).trim() : null,
+    source: "manual",
+    status: body.status ?? "novo",
+    partner_id: body.partner_id ?? null,
+    partner_name: body.partner_name ?? null,
+    space: body.space ?? null,
+    product_name: body.product_name ?? null,
+    estimated_value: body.estimated_value ?? null,
+    next_reminder_at: body.next_reminder_at ?? null,
+    reminder_note: body.reminder_note ?? null,
+    reminder_recur: body.reminder_recur ?? "none",
+    notes: body.notes ?? null,
+  };
+
+  let { data, error } = await db.from("leads").insert(payload).select().single();
+
+  // Migration 016 (reminder_recur) may not have run yet — retry without it.
+  if (error && isMissingColumn(error)) {
+    delete payload.reminder_recur;
+    ({ data, error } = await db.from("leads").insert(payload).select().single());
+  }
 
   if (error) return NextResponse.json({ error: error.message }, { status: 500 });
   return NextResponse.json(data, { status: 201 });

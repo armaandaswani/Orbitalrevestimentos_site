@@ -3,6 +3,7 @@
 import React, { useState, useEffect, useCallback, useMemo, useRef } from "react";
 import { SITE_ASSET_MANIFEST } from "@/lib/assets";
 import LeadsTab from "./LeadsTab";
+import RemindersTab from "./RemindersTab";
 import {
   composePrompt,
   finishDescription,
@@ -143,7 +144,7 @@ export default function AdminPage() {
   const [authed, setAuthed] = useState(false);
   const [pw, setPw] = useState("");
   const [pwError, setPwError] = useState("");
-  const [tab, setTab] = useState<"dashboard" | "leads" | "partners" | "representantes" | "orcamentos" | "campaigns" | "drip" | "commissions" | "produtos" | "projetos" | "midia" | "simulador" | "chat">("dashboard");
+  const [tab, setTab] = useState<"dashboard" | "lembretes" | "leads" | "partners" | "representantes" | "orcamentos" | "campaigns" | "drip" | "commissions" | "produtos" | "projetos" | "midia" | "simulador" | "chat">("dashboard");
   const [commissionFilter, setCommissionFilter] = useState<"a_pagar" | "pago" | "tudo">("a_pagar");
 
   // Dashboard
@@ -2164,19 +2165,57 @@ export default function AdminPage() {
         </div>
       )}
 
-      <div className="max-w-7xl mx-auto px-8 py-8">
-        <div className="flex gap-1 mb-8 border-b border-[#e2e2e2] flex-wrap">
-          {(["dashboard", "leads", "partners", "representantes", "orcamentos", "campaigns", "drip", "commissions", "produtos", "projetos", "midia", "simulador", "chat"] as const).map((t) => (
-            <button key={t} onClick={() => setTab(t)} className={`px-6 py-3 text-xs tracking-[0.1em] uppercase font-bold font-[var(--font-inter)] transition-colors border-b-2 -mb-px flex items-center gap-2 ${tab === t ? "border-[#002045] text-[#002045]" : "border-transparent text-[#74777f] hover:text-[#002045]"}`}>
-              {t === "dashboard" ? "Dashboard" : t === "leads" ? "Leads / CRM" : t === "partners" ? "Parceiros" : t === "representantes" ? "Representantes" : t === "orcamentos" ? "Orçamentos" : t === "campaigns" ? "Campanhas" : t === "drip" ? "Drip de Emails" : t === "commissions" ? "Comissões" : t === "produtos" ? "Produtos" : t === "projetos" ? "Projetos" : t === "midia" ? "Mídia" : t === "simulador" ? "Simulador" : "Chat IA"}
-              {t === "partners" && pendingPartners.length > 0 && (
-                <span className="bg-yellow-400 text-yellow-900 text-[9px] font-bold px-1.5 py-0.5 rounded-full leading-none">
-                  {pendingPartners.length}
-                </span>
-              )}
-            </button>
-          ))}
-        </div>
+      <div className="max-w-[1500px] mx-auto px-4 sm:px-6 py-6 flex flex-col md:flex-row gap-6 items-start">
+        {/* ═══ GROUPED SIDEBAR NAV ═══ */}
+        <aside className="w-full md:w-52 md:flex-shrink-0 md:sticky md:top-6 flex flex-col gap-5 bg-white md:bg-transparent border md:border-0 border-[#e2e2e2] rounded-lg md:rounded-none p-3 md:p-0">
+          {/* ═══ SIDEBAR BRAND ═══ */}
+          <div className="hidden md:block px-3 pb-3 mb-1 border-b border-[#e2e2e2]">
+            <p className="font-[var(--font-noto-serif)] text-[#002045] text-lg leading-none">Orbital</p>
+            <p className="text-[9px] tracking-[0.22em] uppercase font-bold font-[var(--font-inter)] text-[#a0a3a8] mt-1.5">Sistema Interno</p>
+          </div>
+          {(() => {
+            const NAV_LABELS: Record<string, string> = {
+              dashboard: "Dashboard", lembretes: "Lembretes", leads: "Leads / CRM", orcamentos: "Orçamentos",
+              partners: "Parceiros", representantes: "Representantes", commissions: "Comissões",
+              campaigns: "Campanhas", drip: "Drip de Emails", produtos: "Produtos",
+              projetos: "Projetos", midia: "Mídia", simulador: "Simulador", chat: "Chat IA",
+            };
+            const NAV_GROUPS: ReadonlyArray<{ group: string; items: ReadonlyArray<typeof tab> }> = [
+              { group: "Geral", items: ["dashboard", "lembretes"] },
+              { group: "Comercial", items: ["leads", "orcamentos", "partners", "representantes", "commissions"] },
+              { group: "Marketing", items: ["campaigns", "drip"] },
+              { group: "Catálogo", items: ["produtos", "projetos", "midia"] },
+              { group: "Ferramentas", items: ["simulador", "chat"] },
+            ];
+            return NAV_GROUPS.map((sec) => (
+              <div key={sec.group}>
+                <p className="text-[9px] tracking-[0.2em] uppercase font-bold font-[var(--font-inter)] text-[#a0a3a8] px-3 mb-1.5">{sec.group}</p>
+                <div className="flex flex-col gap-0.5">
+                  {sec.items.map((t) => {
+                    const active = tab === t;
+                    return (
+                      <button
+                        key={t}
+                        onClick={() => setTab(t)}
+                        className={`group flex items-center justify-between gap-2 px-3 py-2 text-xs font-[var(--font-inter)] rounded-md text-left transition-colors ${active ? "bg-[#002045] text-white font-bold" : "text-[#43474e] hover:bg-[#eef0f3]"}`}
+                      >
+                        <span className="truncate">{NAV_LABELS[t]}</span>
+                        {t === "partners" && pendingPartners.length > 0 && (
+                          <span className="bg-yellow-400 text-yellow-900 text-[9px] font-bold px-1.5 py-0.5 rounded-full leading-none flex-shrink-0">
+                            {pendingPartners.length}
+                          </span>
+                        )}
+                      </button>
+                    );
+                  })}
+                </div>
+              </div>
+            ));
+          })()}
+        </aside>
+
+        {/* ═══ MAIN CONTENT ═══ */}
+        <main className="flex-1 min-w-0 w-full">
 
         {/* ═══ DASHBOARD TAB ═══ */}
         {tab === "dashboard" && (() => {
@@ -2201,6 +2240,22 @@ export default function AdminPage() {
 
           return (
             <div className="space-y-8 pb-10">
+              {/* ── Command-center header ── */}
+              <div className="flex flex-wrap items-end justify-between gap-4 pb-3 border-b border-[#e2e2e2]">
+                <div>
+                  <h1 className="font-[var(--font-noto-serif)] text-[#002045] text-2xl font-normal leading-tight">Painel de Controle</h1>
+                  <p className="text-[#74777f] text-xs font-[var(--font-inter)] mt-1 capitalize">
+                    {new Date().toLocaleDateString("pt-BR", { weekday: "long", day: "numeric", month: "long", year: "numeric" })}
+                  </p>
+                </div>
+                <div className="flex flex-wrap gap-2">
+                  <button onClick={() => setTab("orcamentos")} className="bg-[#002045] text-white text-[10px] tracking-[0.12em] uppercase font-bold font-[var(--font-inter)] px-4 py-2.5 hover:bg-[#1a365d] transition-colors">Ver orçamentos</button>
+                  <button onClick={() => setTab("leads")} className="border border-[#002045] text-[#002045] text-[10px] tracking-[0.12em] uppercase font-bold font-[var(--font-inter)] px-4 py-2.5 hover:bg-[#002045] hover:text-white transition-colors">Leads / CRM</button>
+                  <button onClick={() => setTab("lembretes")} className="border border-[#e2e2e2] text-[#43474e] text-[10px] tracking-[0.12em] uppercase font-bold font-[var(--font-inter)] px-4 py-2.5 hover:border-[#002045] hover:text-[#002045] transition-colors">Lembretes</button>
+                  <button onClick={() => setTab("partners")} className="border border-[#e2e2e2] text-[#43474e] text-[10px] tracking-[0.12em] uppercase font-bold font-[var(--font-inter)] px-4 py-2.5 hover:border-[#002045] hover:text-[#002045] transition-colors">Parceiros</button>
+                </div>
+              </div>
+
               {/* ── Top KPI cards ── */}
               <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
                 {[
@@ -3648,6 +3703,8 @@ export default function AdminPage() {
         )}
         {/* ═══ LEADS / CRM TAB ═══ */}
         {tab === "leads" && authed && <LeadsTab />}
+
+        {tab === "lembretes" && authed && <RemindersTab />}
         {/* ═══ DRIP TAB ═══ */}
         {tab === "drip" && (
           <div>
@@ -5740,6 +5797,7 @@ ALTER TABLE project_media ADD COLUMN IF NOT EXISTS description TEXT;`}
           </div>
         )}
 
+        </main>
       </div>
     </div>
   );

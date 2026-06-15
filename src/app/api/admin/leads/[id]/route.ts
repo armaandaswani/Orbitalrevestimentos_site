@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from "next/server";
 import { isAdminRequest } from "@/lib/admin-auth";
 import { supabaseAdmin } from "@/lib/supabase";
 import { applyLeadStatusAutomation } from "@/lib/leads";
+import { isMissingColumn } from "@/lib/db-compat";
 
 // Columns the admin is allowed to edit on a lead.
 const EDITABLE = new Set([
@@ -16,6 +17,7 @@ const EDITABLE = new Set([
   "estimated_value",
   "next_reminder_at",
   "reminder_note",
+  "reminder_recur",
   "notes",
 ]);
 
@@ -49,7 +51,14 @@ export async function PATCH(
     prevStatus = (before?.status as string | null) ?? null;
   }
 
-  const { data, error } = await db.from("leads").update(patch).eq("id", id).select().single();
+  let { data, error } = await db.from("leads").update(patch).eq("id", id).select().single();
+
+  // Migration 016 (reminder_recur) may not have run yet — retry without it.
+  if (error && isMissingColumn(error) && "reminder_recur" in patch) {
+    delete patch.reminder_recur;
+    ({ data, error } = await db.from("leads").update(patch).eq("id", id).select().single());
+  }
+
   if (error) return NextResponse.json({ error: error.message }, { status: 500 });
 
   // Feature 5 — status-change automations (tag the SM Click contact + send a

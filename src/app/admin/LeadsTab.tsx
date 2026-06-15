@@ -4,6 +4,7 @@ import React, { useState, useEffect, useCallback, useMemo } from "react";
 
 // ─── Types ──────────────────────────────────────────────────────────────────
 export type LeadSource = "website" | "partner" | "manual" | "whatsapp";
+export type ReminderRecur = "none" | "daily" | "weekly" | "monthly";
 export type LeadStatus =
   | "novo"
   | "contatado"
@@ -28,11 +29,32 @@ export interface Lead {
   estimated_value: number | null;
   next_reminder_at: string | null;
   reminder_note: string | null;
+  reminder_recur: ReminderRecur;
   notes: string | null;
   smclick_contact_id: string | null;
   smclick_synced_at: string | null;
   reminder_sent_at: string | null;
   last_contacted_at: string | null;
+  ai_summary: string | null;
+  ai_summary_at: string | null;
+  created_at: string;
+  updated_at: string;
+}
+
+export type LeadNoteKind = "note" | "call" | "message" | "meeting" | "email" | "system" | "ai";
+export interface LeadNote {
+  id: string;
+  lead_id: string;
+  kind: LeadNoteKind;
+  body: string;
+  author: string | null;
+  created_at: string;
+}
+export interface LeadDataPoint {
+  id: string;
+  lead_id: string;
+  label: string;
+  value: string | null;
   created_at: string;
   updated_at: string;
 }
@@ -60,6 +82,13 @@ const SOURCE_META: Record<LeadSource, { label: string; cls: string }> = {
   partner: { label: "Parceiro", cls: "bg-green-100 text-green-800" },
   manual: { label: "Manual", cls: "bg-amber-100 text-amber-800" },
   whatsapp: { label: "WhatsApp", cls: "bg-emerald-100 text-emerald-800" },
+};
+
+export const RECUR_META: Record<ReminderRecur, string> = {
+  none: "Não repetir",
+  daily: "Diário",
+  weekly: "Semanal",
+  monthly: "Mensal",
 };
 
 function fmtBRL(n: number | null | undefined) {
@@ -116,6 +145,13 @@ export default function LeadsTab() {
   const [waSending, setWaSending] = useState(false);
   const [waError, setWaError] = useState<string | null>(null);
 
+  // CRM detail drawer (timeline, data points, AI assist)
+  const [detailLead, setDetailLead] = useState<Lead | null>(null);
+
+  // AI-suggested reminder timing inside the edit modal
+  const [timingBusy, setTimingBusy] = useState(false);
+  const [timingHint, setTimingHint] = useState<string | null>(null);
+
   const fetchLeads = useCallback(async () => {
     setLoading(true);
     setError(null);
@@ -142,6 +178,11 @@ export default function LeadsTab() {
   useEffect(() => {
     fetchLeads();
   }, [fetchLeads]);
+
+  // Clear the AI timing hint whenever a different lead is opened in the modal.
+  useEffect(() => {
+    setTimingHint(null);
+  }, [draft?.id]);
 
   // ── Derived ────────────────────────────────────────────────────────────────
   const sourceCounts = useMemo(() => {
@@ -256,6 +297,31 @@ export default function LeadsTab() {
     else await fetchLeads();
   }
 
+  async function suggestTiming() {
+    if (!draft?.id || timingBusy) return;
+    setTimingBusy(true);
+    setTimingHint(null);
+    try {
+      const res = await fetch(`/api/admin/leads/${draft.id}/ai`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ action: "reminder_timing" }),
+      });
+      const d = await res.json().catch(() => null);
+      if (res.ok) {
+        setDraft((prev) =>
+          prev ? { ...prev, next_reminder_at: d?.suggested_at ?? prev.next_reminder_at } : prev
+        );
+        setTimingHint(d?.text || "Sugestão aplicada.");
+      } else {
+        setTimingHint(`Erro: ${d?.error ?? `HTTP ${res.status}`}`);
+      }
+    } catch (e) {
+      setTimingHint(`Erro: ${e instanceof Error ? e.message : "rede"}`);
+    }
+    setTimingBusy(false);
+  }
+
   async function saveDraft() {
     if (!draft || !draft.name?.trim()) return;
     setSaving(true);
@@ -269,6 +335,7 @@ export default function LeadsTab() {
       estimated_value: draft.estimated_value ?? null,
       next_reminder_at: draft.next_reminder_at ?? null,
       reminder_note: draft.reminder_note ?? null,
+      reminder_recur: draft.reminder_recur ?? "none",
       notes: draft.notes ?? null,
     };
     try {
@@ -452,7 +519,7 @@ export default function LeadsTab() {
                         <p className="text-xs text-[#74777f]">{fmtDate(l.created_at)}</p>
                       </td>
                       <td className="px-4 py-3">
-                        <p className="font-semibold text-[#002045] text-xs truncate">{l.name}</p>
+                        <button onClick={() => setDetailLead(l)} className="font-semibold text-[#002045] text-xs truncate hover:underline text-left block max-w-full">{l.name}</button>
                         {l.email && <p className="text-[10px] text-[#74777f] truncate">{l.email}</p>}
                         <div className="flex items-center gap-2 mt-0.5">
                           {waHref && (
@@ -504,6 +571,7 @@ export default function LeadsTab() {
                             WhatsApp
                           </button>
                         )}
+                        <button onClick={() => setDetailLead(l)} className="text-[10px] text-[#002045] font-bold hover:underline mr-3">Detalhes</button>
                         <button onClick={() => setDraft({ ...l })} className="text-[10px] text-[#002045] font-bold hover:underline mr-3">Editar</button>
                         <button onClick={() => deleteLead(l.id)} className="text-[10px] text-red-600 font-bold hover:underline">Excluir</button>
                       </td>
@@ -523,7 +591,7 @@ export default function LeadsTab() {
                 <div key={l.id} className="bg-white border border-[#e2e2e2] p-4">
                   <div className="flex items-start justify-between gap-2">
                     <div className="min-w-0">
-                      <p className="font-semibold text-[#002045] text-sm truncate">{l.name}</p>
+                      <button onClick={() => setDetailLead(l)} className="font-semibold text-[#002045] text-sm truncate hover:underline text-left block max-w-full">{l.name}</button>
                       {l.email && <p className="text-[11px] text-[#74777f] truncate">{l.email}</p>}
                     </div>
                     <span className={`shrink-0 text-[9px] font-bold px-2 py-0.5 ${sm.cls}`}>{sm.label}</span>
@@ -548,6 +616,7 @@ export default function LeadsTab() {
                     {l.phone && (
                       <button onClick={() => { setWaLead(l); setWaMessage(""); setWaError(null); }} className="text-[10px] text-[#128c3e] font-bold">WhatsApp</button>
                     )}
+                    <button onClick={() => setDetailLead(l)} className="text-[10px] text-[#002045] font-bold">Detalhes</button>
                     <button onClick={() => setDraft({ ...l })} className="text-[10px] text-[#002045] font-bold">Editar</button>
                     <button onClick={() => deleteLead(l.id)} className="text-[10px] text-red-600 font-bold">Excluir</button>
                   </div>
@@ -556,6 +625,20 @@ export default function LeadsTab() {
             })}
           </div>
         </>
+      )}
+
+      {/* CRM detail drawer */}
+      {detailLead && (
+        <LeadDetailDrawer
+          lead={detailLead}
+          onClose={() => setDetailLead(null)}
+          onLeadChange={(updated) => {
+            setDetailLead(updated);
+            setLeads((prev) => prev.map((l) => (l.id === updated.id ? updated : l)));
+          }}
+          onEdit={(l) => { setDetailLead(null); setDraft({ ...l }); }}
+          onWhatsApp={(l) => { setDetailLead(null); setWaLead(l); setWaMessage(""); setWaError(null); }}
+        />
       )}
 
       {/* WhatsApp send modal (SM Click) */}
@@ -648,14 +731,40 @@ export default function LeadsTab() {
                   <input className={inputCls} value={draft.product_name ?? ""} onChange={(e) => setDraft({ ...draft, product_name: e.target.value })} />
                 </Field>
               </div>
-              <Field label="Lembrete (data e hora)">
-                <input
-                  type="datetime-local"
-                  className={inputCls}
-                  value={toLocalInput(draft.next_reminder_at)}
-                  onChange={(e) => setDraft({ ...draft, next_reminder_at: e.target.value ? new Date(e.target.value).toISOString() : null })}
-                />
-              </Field>
+              <div className="grid grid-cols-2 gap-3">
+                <Field label="Lembrete (data e hora)">
+                  <input
+                    type="datetime-local"
+                    className={inputCls}
+                    value={toLocalInput(draft.next_reminder_at)}
+                    onChange={(e) => setDraft({ ...draft, next_reminder_at: e.target.value ? new Date(e.target.value).toISOString() : null })}
+                  />
+                </Field>
+                <Field label="Repetição">
+                  <select
+                    className={inputCls}
+                    value={draft.reminder_recur ?? "none"}
+                    onChange={(e) => setDraft({ ...draft, reminder_recur: e.target.value as ReminderRecur })}
+                  >
+                    {(Object.keys(RECUR_META) as ReminderRecur[]).map((r) => (
+                      <option key={r} value={r}>{RECUR_META[r]}</option>
+                    ))}
+                  </select>
+                </Field>
+              </div>
+              {!draft._isNew && draft.id && (
+                <div>
+                  <button
+                    type="button"
+                    onClick={suggestTiming}
+                    disabled={timingBusy}
+                    className="border border-purple-300 text-purple-800 text-[10px] tracking-[0.08em] uppercase font-bold font-[var(--font-inter)] px-3 py-1.5 hover:bg-purple-50 transition-colors disabled:opacity-50"
+                  >
+                    {timingBusy ? "Consultando IA…" : "✨ Sugerir melhor data (IA)"}
+                  </button>
+                  {timingHint && <p className="text-[11px] text-[#43474e] font-[var(--font-inter)] mt-1.5 leading-relaxed">{timingHint}</p>}
+                </div>
+              )}
               <Field label="Nota do lembrete">
                 <input className={inputCls} value={draft.reminder_note ?? ""} onChange={(e) => setDraft({ ...draft, reminder_note: e.target.value })} placeholder="Ex: ligar para confirmar interesse" />
               </Field>
@@ -689,5 +798,395 @@ function Field({ label, children }: { label: string; children: React.ReactNode }
       <span className="block text-[10px] tracking-[0.1em] uppercase font-bold font-[var(--font-inter)] text-[#74777f] mb-1">{label}</span>
       {children}
     </label>
+  );
+}
+
+// ─── CRM detail drawer ────────────────────────────────────────────────────────
+const NOTE_KIND_META: Record<LeadNoteKind, { label: string; icon: string; cls: string }> = {
+  note: { label: "Nota", icon: "•", cls: "bg-[#eef2f8] text-[#002045]" },
+  call: { label: "Ligação", icon: "📞", cls: "bg-blue-100 text-blue-800" },
+  message: { label: "Mensagem", icon: "💬", cls: "bg-emerald-100 text-emerald-800" },
+  meeting: { label: "Reunião", icon: "🤝", cls: "bg-amber-100 text-amber-800" },
+  email: { label: "E-mail", icon: "✉️", cls: "bg-indigo-100 text-indigo-800" },
+  system: { label: "Sistema", icon: "⚙", cls: "bg-gray-100 text-gray-600" },
+  ai: { label: "IA", icon: "✨", cls: "bg-purple-100 text-purple-800" },
+};
+const NOTE_KIND_ORDER: LeadNoteKind[] = ["note", "call", "message", "meeting", "email"];
+
+function fmtDateTime(s: string | null | undefined) {
+  if (!s) return "—";
+  return new Date(s).toLocaleString("pt-BR", { day: "2-digit", month: "2-digit", year: "numeric", hour: "2-digit", minute: "2-digit" });
+}
+
+type AiAction = "summary" | "followup" | "next_steps";
+
+function LeadDetailDrawer({
+  lead,
+  onClose,
+  onLeadChange,
+  onEdit,
+  onWhatsApp,
+}: {
+  lead: Lead;
+  onClose: () => void;
+  onLeadChange: (lead: Lead) => void;
+  onEdit: (lead: Lead) => void;
+  onWhatsApp: (lead: Lead) => void;
+}) {
+  const [notes, setNotes] = useState<LeadNote[]>([]);
+  const [points, setPoints] = useState<LeadDataPoint[]>([]);
+  const [loading, setLoading] = useState(true);
+
+  // new note
+  const [noteKind, setNoteKind] = useState<LeadNoteKind>("note");
+  const [noteBody, setNoteBody] = useState("");
+  const [savingNote, setSavingNote] = useState(false);
+
+  // new data point
+  const [dpLabel, setDpLabel] = useState("");
+  const [dpValue, setDpValue] = useState("");
+  const [savingDp, setSavingDp] = useState(false);
+
+  // AI
+  const [aiBusy, setAiBusy] = useState<AiAction | null>(null);
+  const [aiAction, setAiAction] = useState<AiAction | null>(null);
+  const [aiText, setAiText] = useState("");
+  const [aiError, setAiError] = useState<string | null>(null);
+
+  const sm = SOURCE_META[lead.source];
+
+  const load = useCallback(async () => {
+    setLoading(true);
+    try {
+      const [nRes, pRes] = await Promise.all([
+        fetch(`/api/admin/leads/${lead.id}/notes`),
+        fetch(`/api/admin/leads/${lead.id}/data-points`),
+      ]);
+      const nData = await nRes.json().catch(() => null);
+      const pData = await pRes.json().catch(() => null);
+      if (Array.isArray(nData)) setNotes(nData);
+      if (Array.isArray(pData)) setPoints(pData);
+    } catch {
+      /* ignore */
+    }
+    setLoading(false);
+  }, [lead.id]);
+
+  useEffect(() => {
+    load();
+  }, [load]);
+
+  async function addNote() {
+    if (!noteBody.trim() || savingNote) return;
+    setSavingNote(true);
+    try {
+      const res = await fetch(`/api/admin/leads/${lead.id}/notes`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ kind: noteKind, body: noteBody.trim() }),
+      });
+      const d = await res.json().catch(() => null);
+      if (res.ok && d?.id) {
+        setNotes((prev) => [d as LeadNote, ...prev]);
+        setNoteBody("");
+        setNoteKind("note");
+      }
+    } finally {
+      setSavingNote(false);
+    }
+  }
+
+  async function deleteNote(noteId: string) {
+    const res = await fetch(`/api/admin/leads/${lead.id}/notes?note=${noteId}`, { method: "DELETE" });
+    if (res.ok) setNotes((prev) => prev.filter((n) => n.id !== noteId));
+  }
+
+  async function addPoint() {
+    if (!dpLabel.trim() || savingDp) return;
+    setSavingDp(true);
+    try {
+      const res = await fetch(`/api/admin/leads/${lead.id}/data-points`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ label: dpLabel.trim(), value: dpValue.trim() || null }),
+      });
+      const d = await res.json().catch(() => null);
+      if (res.ok && d?.id) {
+        setPoints((prev) => {
+          const without = prev.filter((p) => p.label !== (d as LeadDataPoint).label);
+          return [...without, d as LeadDataPoint];
+        });
+        setDpLabel("");
+        setDpValue("");
+      }
+    } finally {
+      setSavingDp(false);
+    }
+  }
+
+  async function deletePoint(pointId: string) {
+    const res = await fetch(`/api/admin/leads/${lead.id}/data-points?point=${pointId}`, { method: "DELETE" });
+    if (res.ok) setPoints((prev) => prev.filter((p) => p.id !== pointId));
+  }
+
+  async function runAi(action: AiAction) {
+    if (aiBusy) return;
+    setAiBusy(action);
+    setAiAction(action);
+    setAiText("");
+    setAiError(null);
+    try {
+      const res = await fetch(`/api/admin/leads/${lead.id}/ai`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ action }),
+      });
+      const d = await res.json().catch(() => null);
+      if (res.ok && d?.text) {
+        setAiText(d.text);
+        if (action === "summary") {
+          onLeadChange({ ...lead, ai_summary: d.text, ai_summary_at: new Date().toISOString() });
+        }
+      } else {
+        setAiError(d?.error ?? `HTTP ${res.status}`);
+      }
+    } catch (e) {
+      setAiError(e instanceof Error ? e.message : "erro de rede");
+    }
+    setAiBusy(null);
+  }
+
+  // Save the generated text into the timeline as an AI note.
+  async function saveAiToTimeline() {
+    if (!aiText.trim()) return;
+    const res = await fetch(`/api/admin/leads/${lead.id}/notes`, {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ kind: "ai", body: aiText.trim(), author: "ia" }),
+    });
+    const d = await res.json().catch(() => null);
+    if (res.ok && d?.id) setNotes((prev) => [d as LeadNote, ...prev]);
+  }
+
+  const rb = reminderBadge(lead.next_reminder_at);
+
+  return (
+    <div className="fixed inset-0 z-50 flex justify-end bg-black/40" onClick={onClose}>
+      <div
+        className="bg-[#f7f7f5] w-full max-w-xl h-full overflow-y-auto shadow-xl"
+        onClick={(e) => e.stopPropagation()}
+      >
+        {/* Header */}
+        <div className="bg-[#002045] px-6 py-5 sticky top-0 z-10">
+          <div className="flex items-start justify-between gap-3">
+            <div className="min-w-0">
+              <p className="text-white font-[var(--font-noto-serif)] text-xl leading-tight truncate">{lead.name}</p>
+              <div className="flex flex-wrap items-center gap-2 mt-1.5">
+                <span className={`text-[9px] font-bold px-2 py-0.5 ${sm.cls}`}>{sm.label}</span>
+                <span className={`text-[9px] font-bold px-2 py-0.5 ${STATUS_META[lead.status].cls}`}>{STATUS_META[lead.status].label}</span>
+                {lead.partner_name && <span className="text-[10px] text-white/70">via {lead.partner_name}</span>}
+              </div>
+            </div>
+            <button onClick={onClose} className="text-white/60 hover:text-white text-2xl leading-none shrink-0">×</button>
+          </div>
+          <div className="flex flex-wrap gap-3 mt-3">
+            {lead.email && <span className="text-[11px] text-white/80">{lead.email}</span>}
+            {lead.phone && <span className="text-[11px] text-white/80">{lead.phone}</span>}
+          </div>
+          <div className="flex gap-2 mt-4">
+            <button onClick={() => onEdit(lead)} className="border border-white/30 text-white text-[10px] tracking-[0.1em] uppercase font-bold px-3 py-1.5 hover:bg-white/10 transition-colors">Editar</button>
+            {lead.phone && (
+              <button onClick={() => onWhatsApp(lead)} className="border border-[#25d366] text-[#9ff0bd] text-[10px] tracking-[0.1em] uppercase font-bold px-3 py-1.5 hover:bg-white/10 transition-colors">WhatsApp</button>
+            )}
+          </div>
+        </div>
+
+        <div className="p-6 space-y-6">
+          {/* Snapshot */}
+          <div className="grid grid-cols-2 gap-3">
+            <SnapItem label="Valor estimado" value={fmtBRL(lead.estimated_value)} />
+            <SnapItem label="Ambiente" value={lead.space || "—"} />
+            <SnapItem label="Produto" value={lead.product_name || "—"} />
+            <SnapItem label="Próximo lembrete" value={rb ? rb.label : "—"} />
+          </div>
+
+          {/* AI assist */}
+          <section className="bg-white border border-[#e2e2e2]">
+            <div className="px-4 py-3 border-b border-[#e2e2e2] flex items-center gap-2">
+              <span className="text-purple-700">✨</span>
+              <h3 className="text-[11px] tracking-[0.1em] uppercase font-bold font-[var(--font-inter)] text-[#002045]">Assistente IA</h3>
+            </div>
+            <div className="p-4 space-y-3">
+              <div className="flex flex-wrap gap-2">
+                {([
+                  ["summary", "Resumir cliente"],
+                  ["followup", "Sugerir follow-up"],
+                  ["next_steps", "Próximos passos"],
+                ] as const).map(([action, label]) => (
+                  <button
+                    key={action}
+                    onClick={() => runAi(action)}
+                    disabled={aiBusy !== null}
+                    className="border border-purple-300 text-purple-800 text-[10px] tracking-[0.08em] uppercase font-bold font-[var(--font-inter)] px-3 py-2 hover:bg-purple-50 transition-colors disabled:opacity-50"
+                  >
+                    {aiBusy === action ? "Gerando…" : label}
+                  </button>
+                ))}
+              </div>
+              {lead.ai_summary && !aiText && (
+                <div className="bg-purple-50 border border-purple-100 p-3">
+                  <p className="text-[9px] tracking-[0.1em] uppercase font-bold text-purple-700 mb-1">Resumo salvo · {fmtDate(lead.ai_summary_at)}</p>
+                  <p className="text-xs text-[#43474e] font-[var(--font-inter)] whitespace-pre-wrap leading-relaxed">{lead.ai_summary}</p>
+                </div>
+              )}
+              {aiError && <p className="text-xs text-red-700 font-[var(--font-inter)]">{aiError}</p>}
+              {aiText && (
+                <div className="bg-purple-50 border border-purple-100 p-3 space-y-2">
+                  <p className="text-[9px] tracking-[0.1em] uppercase font-bold text-purple-700">
+                    {aiAction === "summary" ? "Resumo" : aiAction === "followup" ? "Mensagem de follow-up" : "Próximos passos"}
+                  </p>
+                  <p className="text-xs text-[#43474e] font-[var(--font-inter)] whitespace-pre-wrap leading-relaxed">{aiText}</p>
+                  <div className="flex flex-wrap gap-3 pt-1">
+                    <button onClick={() => navigator.clipboard?.writeText(aiText)} className="text-[10px] text-purple-800 font-bold hover:underline">Copiar</button>
+                    <button onClick={saveAiToTimeline} className="text-[10px] text-purple-800 font-bold hover:underline">Salvar no histórico</button>
+                    {aiAction === "followup" && lead.phone && (
+                      <button onClick={() => onWhatsApp(lead)} className="text-[10px] text-[#128c3e] font-bold hover:underline">Enviar no WhatsApp</button>
+                    )}
+                  </div>
+                </div>
+              )}
+              <p className="text-[9px] text-[#b0b0b0] font-[var(--font-inter)]">
+                A IA usa apenas os dados deste cliente (perfil, histórico e dados adicionais).
+              </p>
+            </div>
+          </section>
+
+          {/* Custom data points */}
+          <section className="bg-white border border-[#e2e2e2]">
+            <div className="px-4 py-3 border-b border-[#e2e2e2]">
+              <h3 className="text-[11px] tracking-[0.1em] uppercase font-bold font-[var(--font-inter)] text-[#002045]">Dados adicionais</h3>
+            </div>
+            <div className="p-4 space-y-3">
+              {points.length > 0 ? (
+                <div className="space-y-1.5">
+                  {points.map((p) => (
+                    <div key={p.id} className="flex items-center justify-between gap-3 border-b border-[#f0f0f0] pb-1.5 group">
+                      <div className="min-w-0">
+                        <p className="text-[9px] tracking-[0.08em] uppercase font-bold text-[#74777f]">{p.label}</p>
+                        <p className="text-sm text-[#002045] font-[var(--font-inter)] break-words">{p.value || "—"}</p>
+                      </div>
+                      <button onClick={() => deletePoint(p.id)} className="text-[10px] text-red-500 opacity-0 group-hover:opacity-100 hover:underline shrink-0">remover</button>
+                    </div>
+                  ))}
+                </div>
+              ) : (
+                <p className="text-xs text-[#b0b0b0] font-[var(--font-inter)]">Nenhum dado adicional. Adicione campos personalizados (ex: metragem, arquiteto, prazo de obra).</p>
+              )}
+              <div className="flex gap-2 pt-1">
+                <input
+                  className={`${inputCls} flex-[0_0_38%]`}
+                  placeholder="Rótulo"
+                  value={dpLabel}
+                  onChange={(e) => setDpLabel(e.target.value)}
+                />
+                <input
+                  className={`${inputCls} flex-1`}
+                  placeholder="Valor"
+                  value={dpValue}
+                  onChange={(e) => setDpValue(e.target.value)}
+                  onKeyDown={(e) => { if (e.key === "Enter") addPoint(); }}
+                />
+                <button
+                  onClick={addPoint}
+                  disabled={!dpLabel.trim() || savingDp}
+                  className="bg-[#002045] text-white text-[10px] font-bold uppercase tracking-wider px-3 hover:bg-[#1a365d] disabled:opacity-50 shrink-0"
+                >
+                  +
+                </button>
+              </div>
+            </div>
+          </section>
+
+          {/* Activity timeline */}
+          <section className="bg-white border border-[#e2e2e2]">
+            <div className="px-4 py-3 border-b border-[#e2e2e2]">
+              <h3 className="text-[11px] tracking-[0.1em] uppercase font-bold font-[var(--font-inter)] text-[#002045]">Histórico de interações</h3>
+            </div>
+            <div className="p-4 space-y-4">
+              {/* Add note */}
+              <div className="space-y-2">
+                <div className="flex flex-wrap gap-1.5">
+                  {NOTE_KIND_ORDER.map((k) => (
+                    <button
+                      key={k}
+                      onClick={() => setNoteKind(k)}
+                      className={`text-[10px] font-bold px-2 py-1 border transition-colors ${
+                        noteKind === k ? "border-[#002045] bg-[#002045] text-white" : "border-[#e2e2e2] text-[#74777f] hover:text-[#002045]"
+                      }`}
+                    >
+                      {NOTE_KIND_META[k].label}
+                    </button>
+                  ))}
+                </div>
+                <textarea
+                  className={`${inputCls} min-h-[64px]`}
+                  placeholder="Registrar uma interação ou anotação…"
+                  value={noteBody}
+                  onChange={(e) => setNoteBody(e.target.value)}
+                />
+                <div className="flex justify-end">
+                  <button
+                    onClick={addNote}
+                    disabled={!noteBody.trim() || savingNote}
+                    className="bg-[#002045] text-white text-[10px] font-bold uppercase tracking-wider px-4 py-2 hover:bg-[#1a365d] disabled:opacity-50"
+                  >
+                    {savingNote ? "Registrando…" : "Registrar"}
+                  </button>
+                </div>
+              </div>
+
+              {/* Timeline list */}
+              {loading ? (
+                <p className="text-xs text-[#74777f] font-[var(--font-inter)]">Carregando…</p>
+              ) : notes.length === 0 ? (
+                <p className="text-xs text-[#b0b0b0] font-[var(--font-inter)]">Nenhuma interação registrada ainda.</p>
+              ) : (
+                <ul className="space-y-3">
+                  {notes.map((n) => {
+                    const meta = NOTE_KIND_META[n.kind];
+                    return (
+                      <li key={n.id} className="flex gap-3 group">
+                        <span className={`shrink-0 w-7 h-7 flex items-center justify-center text-xs ${meta.cls}`}>{meta.icon}</span>
+                        <div className="min-w-0 flex-1 border-b border-[#f0f0f0] pb-3">
+                          <div className="flex items-center justify-between gap-2">
+                            <p className="text-[9px] tracking-[0.08em] uppercase font-bold text-[#74777f]">
+                              {meta.label}{n.author ? ` · ${n.author}` : ""}
+                            </p>
+                            <div className="flex items-center gap-2 shrink-0">
+                              <span className="text-[9px] text-[#b0b0b0]">{fmtDateTime(n.created_at)}</span>
+                              <button onClick={() => deleteNote(n.id)} className="text-[10px] text-red-500 opacity-0 group-hover:opacity-100 hover:underline">×</button>
+                            </div>
+                          </div>
+                          <p className="text-sm text-[#43474e] font-[var(--font-inter)] whitespace-pre-wrap leading-relaxed mt-0.5">{n.body}</p>
+                        </div>
+                      </li>
+                    );
+                  })}
+                </ul>
+              )}
+            </div>
+          </section>
+        </div>
+      </div>
+    </div>
+  );
+}
+
+function SnapItem({ label, value }: { label: string; value: React.ReactNode }) {
+  return (
+    <div className="bg-white border border-[#e2e2e2] px-3 py-2">
+      <p className="text-[9px] tracking-[0.1em] uppercase font-bold font-[var(--font-inter)] text-[#74777f]">{label}</p>
+      <p className="text-sm text-[#002045] font-[var(--font-inter)] mt-0.5 break-words">{value}</p>
+    </div>
   );
 }
