@@ -18,6 +18,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { supabaseAdmin } from "@/lib/supabase";
 import { smclickConfigured, sendText, normalizePhone } from "@/lib/smclick";
+import { isMissingColumn } from "@/lib/db-compat";
 
 function fmtDate(iso: string) {
   return new Date(iso).toLocaleString("pt-BR", { timeZone: "America/Manaus" });
@@ -62,13 +63,29 @@ export async function GET(req: NextRequest) {
   const nowIso = new Date().toISOString();
 
   // Due reminders that haven't been sent for this reminder time yet.
-  const { data: leads, error } = await db
-    .from("leads")
-    .select("id, name, phone, status, reminder_note, next_reminder_at, reminder_sent_at, reminder_recur")
-    .not("next_reminder_at", "is", null)
-    .lte("next_reminder_at", nowIso)
-    .order("next_reminder_at", { ascending: true })
-    .limit(100);
+  const dueQuery = () =>
+    db
+      .from("leads")
+      .select("id, name, phone, status, reminder_note, next_reminder_at, reminder_sent_at, reminder_recur")
+      .not("next_reminder_at", "is", null)
+      .lte("next_reminder_at", nowIso)
+      .order("next_reminder_at", { ascending: true })
+      .limit(100);
+
+  let { data: leads, error } = await dueQuery();
+
+  // Migration 016 (reminder_recur) may not have run yet — retry without it;
+  // every reminder is then treated as one-off (the pre-migration behavior).
+  if (error && isMissingColumn(error)) {
+    ({ data: leads, error } = await db
+      .from("leads")
+      .select("id, name, phone, status, reminder_note, next_reminder_at, reminder_sent_at")
+      .not("next_reminder_at", "is", null)
+      .lte("next_reminder_at", nowIso)
+      .order("next_reminder_at", { ascending: true })
+      .limit(100));
+  }
+
   if (error) return NextResponse.json({ error: error.message }, { status: 500 });
 
   const due = (leads ?? []).filter((l) => {

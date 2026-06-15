@@ -1,6 +1,9 @@
 import { NextRequest, NextResponse } from "next/server";
 import { isAdminRequest } from "@/lib/admin-auth";
 import { supabaseAdmin } from "@/lib/supabase";
+import { isMissingTable } from "@/lib/db-compat";
+
+const MIGRATION_HINT = "Recurso indisponível — rode a migração 015 (lead_data_points) no Supabase.";
 
 /** GET /api/admin/leads/[id]/data-points — custom key/value attributes. */
 export async function GET(
@@ -19,6 +22,8 @@ export async function GET(
     .eq("lead_id", id)
     .order("created_at", { ascending: true });
 
+  // Migration 015 may not have run yet — empty keeps the drawer usable.
+  if (error && isMissingTable(error)) return NextResponse.json([]);
   if (error) return NextResponse.json({ error: error.message }, { status: 500 });
   return NextResponse.json(data ?? []);
 }
@@ -59,6 +64,7 @@ export async function POST(
     .select()
     .single();
 
+  if (error && isMissingTable(error)) return NextResponse.json({ error: MIGRATION_HINT }, { status: 503 });
   if (error) return NextResponse.json({ error: error.message }, { status: 500 });
   return NextResponse.json(data, { status: 201 });
 }
