@@ -111,8 +111,11 @@ export async function POST(req: NextRequest) {
         })
       );
       if (res.ok && leadId) await touchLeadContacted(leadId);
+      else if (!res.ok) console.error("[smclick] client orçamento WhatsApp failed", { status: res.status, error: res.error });
+    } else {
+      console.warn("[smclick] client orçamento WhatsApp skipped", { configured: smclickConfigured(), hasPhone: Boolean(phone) });
     }
-  } catch { /* non-fatal */ }
+  } catch (e) { console.error("[smclick] client orçamento WhatsApp threw", e); }
 
   // Feature 4 — real-time owner ping for high-value orçamentos. Threshold (BRL)
   // is configurable; alerts are off until SMCLICK_HIGH_VALUE_THRESHOLD is set.
