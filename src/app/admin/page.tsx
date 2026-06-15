@@ -2167,6 +2167,11 @@ export default function AdminPage() {
       <div className="max-w-[1500px] mx-auto px-4 sm:px-6 py-6 flex flex-col md:flex-row gap-6 items-start">
         {/* ═══ GROUPED SIDEBAR NAV ═══ */}
         <aside className="w-full md:w-52 md:flex-shrink-0 md:sticky md:top-6 flex flex-col gap-5 bg-white md:bg-transparent border md:border-0 border-[#e2e2e2] rounded-lg md:rounded-none p-3 md:p-0">
+          {/* ═══ SIDEBAR BRAND ═══ */}
+          <div className="hidden md:block px-3 pb-3 mb-1 border-b border-[#e2e2e2]">
+            <p className="font-[var(--font-noto-serif)] text-[#002045] text-lg leading-none">Orbital</p>
+            <p className="text-[9px] tracking-[0.22em] uppercase font-bold font-[var(--font-inter)] text-[#a0a3a8] mt-1.5">Sistema Interno</p>
+          </div>
           {(() => {
             const NAV_LABELS: Record<string, string> = {
               dashboard: "Dashboard", leads: "Leads / CRM", orcamentos: "Orçamentos",
@@ -2234,6 +2239,21 @@ export default function AdminPage() {
 
           return (
             <div className="space-y-8 pb-10">
+              {/* ── Command-center header ── */}
+              <div className="flex flex-wrap items-end justify-between gap-4 pb-3 border-b border-[#e2e2e2]">
+                <div>
+                  <h1 className="font-[var(--font-noto-serif)] text-[#002045] text-2xl font-normal leading-tight">Painel de Controle</h1>
+                  <p className="text-[#74777f] text-xs font-[var(--font-inter)] mt-1 capitalize">
+                    {new Date().toLocaleDateString("pt-BR", { weekday: "long", day: "numeric", month: "long", year: "numeric" })}
+                  </p>
+                </div>
+                <div className="flex flex-wrap gap-2">
+                  <button onClick={() => setTab("orcamentos")} className="bg-[#002045] text-white text-[10px] tracking-[0.12em] uppercase font-bold font-[var(--font-inter)] px-4 py-2.5 hover:bg-[#1a365d] transition-colors">Ver orçamentos</button>
+                  <button onClick={() => setTab("leads")} className="border border-[#002045] text-[#002045] text-[10px] tracking-[0.12em] uppercase font-bold font-[var(--font-inter)] px-4 py-2.5 hover:bg-[#002045] hover:text-white transition-colors">Leads / CRM</button>
+                  <button onClick={() => setTab("partners")} className="border border-[#e2e2e2] text-[#43474e] text-[10px] tracking-[0.12em] uppercase font-bold font-[var(--font-inter)] px-4 py-2.5 hover:border-[#002045] hover:text-[#002045] transition-colors">Parceiros</button>
+                </div>
+              </div>
+
               {/* ── Top KPI cards ── */}
               <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
                 {[
