@@ -4,6 +4,7 @@ import React, { useState, useEffect, useCallback, useMemo, useRef } from "react"
 import { SITE_ASSET_MANIFEST } from "@/lib/assets";
 import LeadsTab from "./LeadsTab";
 import RemindersTab from "./RemindersTab";
+import PedidosTab from "./PedidosTab";
 import {
   composePrompt,
   finishDescription,
@@ -144,7 +145,7 @@ export default function AdminPage() {
   const [authed, setAuthed] = useState(false);
   const [pw, setPw] = useState("");
   const [pwError, setPwError] = useState("");
-  const [tab, setTab] = useState<"dashboard" | "lembretes" | "leads" | "partners" | "representantes" | "orcamentos" | "campaigns" | "drip" | "commissions" | "produtos" | "projetos" | "midia" | "simulador" | "chat">("dashboard");
+  const [tab, setTab] = useState<"dashboard" | "lembretes" | "leads" | "pedidos" | "partners" | "representantes" | "orcamentos" | "campaigns" | "drip" | "commissions" | "produtos" | "projetos" | "midia" | "simulador" | "chat">("dashboard");
   const [commissionFilter, setCommissionFilter] = useState<"a_pagar" | "pago" | "tudo">("a_pagar");
 
   // Dashboard
@@ -2277,13 +2278,13 @@ export default function AdminPage() {
           {(() => {
             const NAV_LABELS: Record<string, string> = {
               dashboard: "Dashboard", lembretes: "Lembretes", leads: "Leads / CRM", orcamentos: "Orçamentos",
-              partners: "Parceiros", representantes: "Representantes", commissions: "Comissões",
+              pedidos: "Pedidos", partners: "Parceiros", representantes: "Representantes", commissions: "Comissões",
               campaigns: "Campanhas", drip: "Drip de Emails", produtos: "Produtos",
               projetos: "Projetos", midia: "Mídia", simulador: "Simulador", chat: "Chat IA",
             };
             const NAV_GROUPS: ReadonlyArray<{ group: string; items: ReadonlyArray<typeof tab> }> = [
               { group: "Geral", items: ["dashboard", "lembretes"] },
-              { group: "Comercial", items: ["leads", "orcamentos", "partners", "representantes", "commissions"] },
+              { group: "Comercial", items: ["leads", "orcamentos", "pedidos", "partners", "representantes", "commissions"] },
               { group: "Marketing", items: ["campaigns", "drip"] },
               { group: "Catálogo", items: ["produtos", "projetos", "midia"] },
               { group: "Ferramentas", items: ["simulador", "chat"] },
@@ -3840,6 +3841,7 @@ export default function AdminPage() {
         )}
         {/* ═══ LEADS / CRM TAB ═══ */}
         {tab === "leads" && authed && <LeadsTab />}
+        {tab === "pedidos" && authed && <PedidosTab />}
 
         {tab === "lembretes" && authed && <RemindersTab />}
         {/* ═══ DRIP TAB ═══ */}
