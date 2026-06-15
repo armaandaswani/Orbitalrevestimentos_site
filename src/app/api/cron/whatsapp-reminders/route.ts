@@ -77,13 +77,16 @@ export async function GET(req: NextRequest) {
   // Migration 016 (reminder_recur) may not have run yet — retry without it;
   // every reminder is then treated as one-off (the pre-migration behavior).
   if (error && isMissingColumn(error)) {
-    ({ data: leads, error } = await db
+    const fallback = await db
       .from("leads")
       .select("id, name, phone, status, reminder_note, next_reminder_at, reminder_sent_at")
       .not("next_reminder_at", "is", null)
       .lte("next_reminder_at", nowIso)
       .order("next_reminder_at", { ascending: true })
-      .limit(100));
+      .limit(100);
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    leads = fallback.data as any;
+    error = fallback.error;
   }
 
   if (error) return NextResponse.json({ error: error.message }, { status: 500 });
