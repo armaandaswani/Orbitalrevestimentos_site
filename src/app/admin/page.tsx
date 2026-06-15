@@ -268,6 +268,9 @@ export default function AdminPage() {
   const [campaignVisualCtaText, setCampaignVisualCtaText] = useState("Ver no site");
   const [campaignVisualCtaUrl, setCampaignVisualCtaUrl] = useState("https://orbitalrevestimentos.com.br");
   const [campaignImageUploading, setCampaignImageUploading] = useState(false);
+  const [campaignDeleting, setCampaignDeleting] = useState<string | null>(null);
+  const [campaignAiInstruction, setCampaignAiInstruction] = useState("");
+  const [campaignAiEditing, setCampaignAiEditing] = useState(false);
 
   // ── Drip campaign editor ────────────────────────────────────────────────────
   interface DripStep {
@@ -721,6 +724,104 @@ export default function AdminPage() {
     const m = html.match(/<!--ORBITAL_BLOCKS:([\s\S]*?)-->/);
     if (!m) return null;
     try { return JSON.parse(m[1]) as EmailBlocks; } catch { return null; }
+  }
+
+  // Best-effort parse of a campaign's HTML into editable blocks, used when the
+  // campaign has no embedded ORBITAL_BLOCKS comment (e.g. system-generated
+  // templates). Without this the Visual editor would open with empty fields.
+  function htmlToBlocks(html: string): EmailBlocks {
+    const decode = (s: string) =>
+      s
+        .replace(/&mdash;/g, "—").replace(/&ndash;/g, "–").replace(/&nbsp;/g, " ")
+        .replace(/&ldquo;/g, "“").replace(/&rdquo;/g, "”")
+        .replace(/&rsquo;/g, "’").replace(/&lsquo;/g, "‘")
+        .replace(/&#8594;/g, "").replace(/&rarr;/g, "")
+        .replace(/&#10003;/g, "").replace(/&quot;/g, '"').replace(/&#39;/g, "'")
+        .replace(/&gt;/g, ">").replace(/&lt;/g, "<").replace(/&amp;/g, "&");
+    const strip = (s: string) => decode(s.replace(/<[^>]+>/g, "")).replace(/\s+/g, " ").trim();
+
+    let headline = "";
+    const h1 = html.match(/<h1[^>]*>([\s\S]*?)<\/h1>/i);
+    if (h1) headline = strip(h1[1]);
+    else {
+      const big = html.match(/<p[^>]*font-size:2\dpx[^>]*>([\s\S]*?)<\/p>/i);
+      if (big) headline = strip(big[1]);
+    }
+
+    let subheadline = "";
+    const sub = html.match(/<p[^>]*color:#74777f;[^>]*text-transform:uppercase[^>]*>([\s\S]*?)<\/p>/i);
+    if (sub) subheadline = strip(sub[1]);
+
+    const imgs = [...html.matchAll(/<img[^>]*src="([^"]+)"[^>]*>/gi)].map((m) => m[1]);
+    const imageUrl = imgs.find((u) => u && !/logo/i.test(u)) ?? "";
+
+    let ctaText = "";
+    let ctaUrl = "";
+    const anchors = [...html.matchAll(/<a[^>]*href="([^"]+)"[^>]*>([\s\S]*?)<\/a>/gi)];
+    const btn = anchors.find((a) => /→|&#8594;|&rarr;/.test(a[2]) || /padding:1\d/.test(a[0]));
+    if (btn) {
+      ctaUrl = btn[1];
+      ctaText = strip(btn[2]).replace(/\s*→\s*$/, "");
+    }
+
+    const paras = [...html.matchAll(/<p[^>]*>([\s\S]*?)<\/p>/gi)].map((m) => strip(m[1])).filter(Boolean);
+    const body = paras
+      .filter(
+        (t) =>
+          t !== headline &&
+          t !== subheadline &&
+          !/PARTNER_NAME|COUPON_CODE|Descadastrar|cancelar|contato@|Portal do Parceiro|ORBITAL REVESTIMENTOS/i.test(t),
+      )
+      .join("\n");
+
+    return { headline, subheadline, body, imageUrl, ctaText, ctaUrl };
+  }
+
+  async function deleteCampaign(id: string) {
+    if (!confirm("Excluir esta campanha permanentemente? Esta ação não pode ser desfeita.")) return;
+    setCampaignDeleting(id);
+    const res = await fetch(`/api/email-campaigns/${id}`, { method: "DELETE" });
+    if (res.ok) {
+      if (expandedCampaignId === id) setExpandedCampaignId(null);
+      if (editingCampaignId === id) setEditingCampaignId(null);
+      setCampaigns((prev) => prev.filter((c) => c.id !== id));
+    } else {
+      const json = await res.json().catch(() => null);
+      alert((json && json.error) || "Falha ao excluir a campanha.");
+    }
+    setCampaignDeleting(null);
+  }
+
+  async function runCampaignAiEdit() {
+    if (!campaignAiInstruction.trim()) return;
+    setCampaignAiEditing(true);
+    try {
+      const res = await fetch("/api/email-campaigns/ai-edit", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          instruction: campaignAiInstruction.trim(),
+          current: {
+            subject: campaignEditSubject,
+            subheadline: campaignVisualSubheadline,
+            headline: campaignVisualHeadline,
+            body: campaignVisualBody,
+          },
+        }),
+      });
+      const json = await res.json().catch(() => null);
+      if (!res.ok || !json) {
+        alert((json && json.error) || "Erro ao gerar com IA.");
+        return;
+      }
+      if (typeof json.subject === "string" && json.subject.trim()) setCampaignEditSubject(json.subject.trim());
+      if (typeof json.subheadline === "string") setCampaignVisualSubheadline(json.subheadline);
+      if (typeof json.headline === "string" && json.headline.trim()) setCampaignVisualHeadline(json.headline);
+      if (typeof json.body === "string" && json.body.trim()) setCampaignVisualBody(json.body);
+      setCampaignAiInstruction("");
+    } finally {
+      setCampaignAiEditing(false);
+    }
   }
 
   function embedEmailBlocks(html: string, blocks: EmailBlocks): string {
@@ -3199,6 +3300,20 @@ export default function AdminPage() {
                             </>
                           )}
                           <button
+                            onClick={() => deleteCampaign(c.id)}
+                            disabled={campaignDeleting === c.id}
+                            title="Excluir campanha"
+                            className="text-[#74777f] hover:text-red-600 transition-colors p-1 disabled:opacity-40"
+                          >
+                            {campaignDeleting === c.id ? (
+                              <svg className="animate-spin" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><path d="M12 2v4M12 18v4M4.93 4.93l2.83 2.83M16.24 16.24l2.83 2.83M2 12h4M18 12h4M4.93 19.07l2.83-2.83M16.24 7.76l2.83-2.83"/></svg>
+                            ) : (
+                              <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                                <path d="M3 6h18M8 6V4a1 1 0 011-1h6a1 1 0 011 1v2m2 0v14a1 1 0 01-1 1H6a1 1 0 01-1-1V6h14M10 11v6M14 11v6" />
+                              </svg>
+                            )}
+                          </button>
+                          <button
                             onClick={() => setExpandedCampaignId(isExpanded ? null : c.id)}
                             className="text-[#74777f] hover:text-[#002045] transition-colors p-1"
                           >
@@ -3237,6 +3352,35 @@ export default function AdminPage() {
 
                               {campaignEditMode === "visual" ? (
                                 <div className="space-y-5">
+                                  {/* AI assistant — product-grounded edit/add */}
+                                  <div className="border border-[#cdd8e6] bg-[#eef2f8] p-4">
+                                    <div className="flex items-center gap-2 mb-2">
+                                      <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="#002045" strokeWidth="2.5"><path d="M12 2l2.4 7.4H22l-6.2 4.5 2.4 7.4L12 17l-6.2 4.3 2.4-7.4L2 9.4h7.6z"/></svg>
+                                      <span className="text-[10px] uppercase tracking-[0.15em] font-bold font-[var(--font-inter)] text-[#002045]">Assistente IA</span>
+                                    </div>
+                                    <p className="text-xs text-[#5b6470] font-[var(--font-inter)] mb-3 leading-relaxed">
+                                      Peça para alterar ou adicionar conteúdo — ex: &ldquo;deixe o texto mais curto&rdquo;, &ldquo;adicione um parágrafo sobre resistência à umidade&rdquo;, &ldquo;reescreva o título de forma mais elegante&rdquo;. A IA usa apenas dados reais do produto Orbital e não inventa informações.
+                                    </p>
+                                    <textarea
+                                      value={campaignAiInstruction}
+                                      onChange={(e) => setCampaignAiInstruction(e.target.value)}
+                                      rows={2}
+                                      placeholder="O que você quer alterar ou adicionar?"
+                                      className="w-full border border-[#cdd8e6] bg-white px-3 py-2.5 text-sm font-[var(--font-inter)] text-[#002045] focus:outline-none focus:border-[#002045] resize-y"
+                                    />
+                                    <button
+                                      type="button"
+                                      onClick={runCampaignAiEdit}
+                                      disabled={campaignAiEditing || !campaignAiInstruction.trim()}
+                                      className="mt-2 inline-flex items-center gap-2 bg-[#002045] text-white text-[10px] tracking-[0.12em] uppercase font-bold font-[var(--font-inter)] px-4 py-2 hover:bg-[#1a365d] transition-colors disabled:opacity-40"
+                                    >
+                                      {campaignAiEditing ? (
+                                        <svg className="animate-spin" width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="3"><path d="M12 2v4M12 18v4M4.93 4.93l2.83 2.83M16.24 16.24l2.83 2.83M2 12h4M18 12h4M4.93 19.07l2.83-2.83M16.24 7.76l2.83-2.83"/></svg>
+                                      ) : null}
+                                      {campaignAiEditing ? "Gerando…" : "Aplicar com IA"}
+                                    </button>
+                                  </div>
+
                                   {/* Subheadline */}
                                   <div>
                                     <label className="block text-[10px] uppercase tracking-[0.15em] font-bold font-[var(--font-inter)] text-[#74777f] mb-1">
@@ -3375,24 +3519,17 @@ export default function AdminPage() {
                                       setEditingCampaignId(c.id);
                                       setCampaignEditSubject(c.subject);
                                       setCampaignEditBody(c.html_body);
-                                      const blocks = extractEmailBlocks(c.html_body);
-                                      if (blocks) {
-                                        setCampaignEditMode("visual");
-                                        setCampaignVisualHeadline(blocks.headline);
-                                        setCampaignVisualSubheadline(blocks.subheadline);
-                                        setCampaignVisualBody(blocks.body);
-                                        setCampaignVisualImageUrl(blocks.imageUrl);
-                                        setCampaignVisualCtaText(blocks.ctaText);
-                                        setCampaignVisualCtaUrl(blocks.ctaUrl);
-                                      } else {
-                                        setCampaignEditMode("html");
-                                        setCampaignVisualHeadline("");
-                                        setCampaignVisualSubheadline("");
-                                        setCampaignVisualBody("");
-                                        setCampaignVisualImageUrl("");
-                                        setCampaignVisualCtaText("Ver no site");
-                                        setCampaignVisualCtaUrl("https://orbitalrevestimentos.com.br");
-                                      }
+                                      setCampaignAiInstruction("");
+                                      // Prefer embedded blocks; otherwise parse the HTML so the
+                                      // Visual editor never opens with empty fields.
+                                      const blocks = extractEmailBlocks(c.html_body) ?? htmlToBlocks(c.html_body);
+                                      setCampaignEditMode("visual");
+                                      setCampaignVisualHeadline(blocks.headline);
+                                      setCampaignVisualSubheadline(blocks.subheadline);
+                                      setCampaignVisualBody(blocks.body);
+                                      setCampaignVisualImageUrl(blocks.imageUrl);
+                                      setCampaignVisualCtaText(blocks.ctaText || "Ver no site");
+                                      setCampaignVisualCtaUrl(blocks.ctaUrl || "https://orbitalrevestimentos.com.br");
                                     }}
                                     className="text-xs text-[#002045] font-[var(--font-inter)] underline"
                                   >
