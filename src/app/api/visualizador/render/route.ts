@@ -94,6 +94,9 @@ export async function POST(req: NextRequest) {
     // Optional real wall measurements typed by the client (meters).
     wallWidthM?: number | string;
     wallHeightM?: number | string;
+    // Optional description of WHERE to apply the panel (the guided flow's
+    // "Aplicação" step): a preset surface phrase or the client's own text.
+    applicationArea?: string;
   };
   try {
     body = await req.json();
@@ -146,6 +149,13 @@ export async function POST(req: NextRequest) {
   const wallH = toPositiveNumber(body.wallHeightM ?? null, 0);
   const hasWallDims = wallW > 0 && wallW <= 50 && wallH > 0 && wallH <= 20;
 
+  // WHERE to apply the panel (optional). This is client-supplied text that goes
+  // straight into the LLM prompt, so collapse whitespace and cap the length.
+  const applicationArea =
+    typeof body.applicationArea === "string"
+      ? body.applicationArea.replace(/\s+/g, " ").trim().slice(0, 80) || null
+      : null;
+
   const prompt = composePrompt({
     finishText: finishText ?? finishDescription(finish),
     panelWidthM: toPositiveNumber(product?.render_panel_width_m, DEFAULT_PANEL_WIDTH_M),
@@ -154,6 +164,7 @@ export async function POST(req: NextRequest) {
     hasContextImage: !!contextImage,
     wallWidthM: hasWallDims ? wallW : null,
     wallHeightM: hasWallDims ? wallH : null,
+    applicationArea,
   });
 
   const parts: Array<{ text: string } | { inline_data: { mime_type: string; data: string } }> = [

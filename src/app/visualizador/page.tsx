@@ -2,6 +2,7 @@
 
 import React, { useState, useRef, useEffect, useCallback } from "react";
 import Link from "next/link";
+import { applicationAreaFor } from "@/lib/render-prompt";
 
 const WA_BASE = "https://wa.me/5592988150149?text=";
 
@@ -207,6 +208,10 @@ export default function VisualizadorPage() {
           // Real measurements (optional) — the AI uses them to scale panels.
           wallWidthM: wNum ?? undefined,
           wallHeightM: hNum ?? undefined,
+          // WHERE to apply the panel — derived from the "Local de aplicação"
+          // choice. Surfaces (teto/porta/box/móvel) steer the AI; rooms/parede
+          // resolve to undefined so the prompt targets the main wall by default.
+          applicationArea: applicationAreaFor(spaceId, customLocal) ?? undefined,
         }),
       });
       const json = await res.json();
@@ -219,7 +224,7 @@ export default function VisualizadorPage() {
     } finally {
       setGenerating(false);
     }
-  }, [photoData, selected, wNum, hNum]);
+  }, [photoData, selected, wNum, hNum, spaceId, customLocal]);
 
   const changePhoto = () => {
     setPhotoData(null);

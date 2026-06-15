@@ -25,6 +25,35 @@ export function finishDescription(kind: FinishKind): string {
   }
 }
 
+// Maps a Visualizador "Local de aplicação" choice to the English surface phrase
+// the render prompt needs. Keys are the spaceId values from the client's
+// VIZ_SPACES list (kept in sync with the Simulador). Whole-room choices are
+// deliberately absent → applicationAreaFor returns null and composePrompt falls
+// back to its default ("the main wall facing the camera"): in a photo of a room
+// the panel still belongs on the main wall. Only true surfaces override it.
+const APPLICATION_AREA_PHRASES: Record<string, string> = {
+  teto: "the ceiling",
+  movel:
+    "the cabinetry / millwork unit facing the camera (only its visible front faces and panels)",
+  porta: "the door (the full face of the door leaf facing the camera)",
+  box: "the shower-enclosure walls (the wet-area walls of the box/ducha)",
+};
+
+// Resolves the chosen local into an applicationArea phrase for composePrompt.
+// `spaceId` is the VIZ_SPACES id (e.g. "teto"); for the "Outro…" option pass
+// "__custom__" with the client's typed text in `customLabel`. Returns null for
+// "parede"/whole-room choices so the prompt uses its default target surface.
+export function applicationAreaFor(
+  spaceId: string | null | undefined,
+  customLabel?: string | null
+): string | null {
+  if (!spaceId || spaceId === "__custom__" || spaceId === "custom") {
+    const t = customLabel?.trim();
+    return t ? t : null;
+  }
+  return APPLICATION_AREA_PHRASES[spaceId] ?? null;
+}
+
 // How many whole panels cover a wall of the given size (grid layout —
 // same formula the Simulador uses to count plates).
 export function panelGrid(
