@@ -127,6 +127,42 @@ export function listContacts(): Promise<SmClickResult> {
   return call("GET", "/contacts");
 }
 
+/** Pull a contacts array out of whatever envelope SM Click wraps the list in. */
+function extractContactsArray(data: unknown): Record<string, unknown>[] {
+  if (Array.isArray(data)) return data as Record<string, unknown>[];
+  if (data && typeof data === "object") {
+    const o = data as Record<string, unknown>;
+    for (const key of ["data", "contacts", "results", "items"]) {
+      if (Array.isArray(o[key])) return o[key] as Record<string, unknown>[];
+    }
+  }
+  return [];
+}
+
+/**
+ * Find an existing SM Click contact by phone. Used when createContact fails
+ * because the contact already exists (e.g. it was auto-created when the person
+ * messaged the business on WhatsApp). Matches on the normalized telephone.
+ */
+export async function findContactByTelephone(telephone: string): Promise<string | null> {
+  const norm = normalizePhone(telephone);
+  if (!norm) return null;
+  const res = await listContacts();
+  if (!res.ok) return null;
+  const contacts = extractContactsArray(res.data);
+  for (const c of contacts) {
+    const candidate =
+      (c.telephone as string | undefined) ??
+      (c.phone as string | undefined) ??
+      (c.number as string | undefined) ??
+      "";
+    if (candidate && normalizePhone(String(candidate)) === norm) {
+      return extractContactId(c);
+    }
+  }
+  return null;
+}
+
 export function assignTag(contactId: string, tagId: string): Promise<SmClickResult> {
   return call("POST", `/contacts/${encodeURIComponent(contactId)}/tag/${encodeURIComponent(tagId)}/`);
 }

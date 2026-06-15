@@ -5,6 +5,7 @@ import {
   smclickConfigured,
   createContact,
   extractContactId,
+  findContactByTelephone,
   normalizePhone,
   smclickDefaultTags,
 } from "@/lib/smclick";
@@ -58,9 +59,16 @@ export async function POST(req: NextRequest) {
   if (error) return NextResponse.json({ error: error.message }, { status: 500 });
 
   let pushed = 0;
+  let linked = 0;
   let skipped = 0;
   let failed = 0;
   const errors: string[] = [];
+
+  const recordSync = (leadId: string, contactId: string | null) =>
+    db
+      .from("leads")
+      .update({ smclick_contact_id: contactId, smclick_synced_at: new Date().toISOString() })
+      .eq("id", leadId);
 
   for (const lead of leads ?? []) {
     if (lead.smclick_contact_id && onlyUnsynced) {
@@ -78,15 +86,26 @@ export async function POST(req: NextRequest) {
       tags: tagIds,
     });
     if (!res.ok) {
+      // SM Click returns a generic 400 when the contact already exists (it was
+      // auto-created when the person messaged the business on WhatsApp). Try to
+      // link the existing contact by phone instead of reporting a failure.
+      const existingId = await findContactByTelephone(telephone);
+      if (existingId) {
+        await recordSync(lead.id as string, existingId);
+        linked++;
+        continue;
+      }
       failed++;
-      if (errors.length < 5) errors.push(`${lead.name}: [HTTP ${res.status}] ${res.error ?? "erro"}`);
+      if (errors.length < 5) {
+        const body =
+          res.data != null && typeof res.data === "object"
+            ? ` ${JSON.stringify(res.data).slice(0, 200)}`
+            : "";
+        errors.push(`${lead.name}: [HTTP ${res.status}] ${res.error ?? "erro"}${body}`);
+      }
       continue;
     }
-    const contactId = extractContactId(res.data);
-    await db
-      .from("leads")
-      .update({ smclick_contact_id: contactId, smclick_synced_at: new Date().toISOString() })
-      .eq("id", lead.id);
+    await recordSync(lead.id as string, extractContactId(res.data));
     pushed++;
   }
 
@@ -95,6 +114,7 @@ export async function POST(req: NextRequest) {
     ok: true,
     total,
     pushed,
+    linked,
     skipped,
     failed,
     capped: total >= MAX_PER_CALL,

@@ -257,7 +257,9 @@ export default function LeadsTab() {
             ? ` — ${d.errors.join(" | ")}`
             : "";
         setSyncResult(
-          `${d.pushed} enviado(s) ao SM Click · ${d.skipped} ignorado(s)` +
+          `${d.pushed} enviado(s) ao SM Click` +
+            (d.linked ? ` · ${d.linked} já existente(s) vinculado(s)` : "") +
+            ` · ${d.skipped} ignorado(s)` +
             (d.failed ? ` · ${d.failed} falha(s)` : "") +
             (d.capped ? " · limite por execução atingido, rode novamente" : "") +
             detail
