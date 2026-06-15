@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
 import { isAdminRequest } from "@/lib/admin-auth";
-import { smclickConfigured, listInstances, sendText, normalizePhone } from "@/lib/smclick";
+import { smclickConfigured, listInstances, listContacts, sendText, normalizePhone } from "@/lib/smclick";
 
 /**
  * SM Click diagnostics — figure out *why* a WhatsApp send did or didn't go out.
@@ -45,11 +45,40 @@ export async function GET(req: NextRequest) {
     instances = { ok: res.ok, status: res.status, error: res.error ?? null, data: res.data ?? null };
   }
 
+  // Optional ?contacts=1 — dump the raw shape of GET /contacts so we can see the
+  // envelope (array vs {data}/{results}/...) and the phone field name/format SM
+  // Click stores, which is what bulk-sync's findContactByTelephone matches on.
+  let contacts: unknown = undefined;
+  if (configured && new URL(req.url).searchParams.get("contacts")) {
+    const res = await listContacts();
+    const raw = res.data;
+    const envelopeKeys =
+      raw && typeof raw === "object" && !Array.isArray(raw) ? Object.keys(raw as object) : null;
+    const arr = Array.isArray(raw)
+      ? raw
+      : raw && typeof raw === "object"
+        ? ((raw as Record<string, unknown>).data ??
+            (raw as Record<string, unknown>).results ??
+            (raw as Record<string, unknown>).contacts ??
+            (raw as Record<string, unknown>).items)
+        : null;
+    contacts = {
+      ok: res.ok,
+      status: res.status,
+      error: res.error ?? null,
+      isArray: Array.isArray(raw),
+      envelopeKeys,
+      count: Array.isArray(arr) ? arr.length : null,
+      sample: Array.isArray(arr) ? arr.slice(0, 2) : raw,
+    };
+  }
+
   return NextResponse.json({
     configured,
     sendReady: configured && Boolean(process.env.SMCLICK_INSTANCE_ID),
     env,
     instances,
+    ...(contacts !== undefined ? { contacts } : {}),
   });
 }
 
