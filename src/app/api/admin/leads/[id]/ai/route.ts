@@ -11,7 +11,7 @@ import { supabaseAdmin } from "@/lib/supabase";
  * leads.ai_summary so re-opening the drawer doesn't re-bill the LLM.
  */
 
-type Action = "summary" | "followup" | "next_steps";
+type Action = "summary" | "followup" | "next_steps" | "reminder_timing";
 
 const PT_STATUS: Record<string, string> = {
   novo: "Novo",
@@ -36,6 +36,8 @@ function buildUserPrompt(action: Action, dossier: string): string {
       return `Escreva uma mensagem curta e natural de follow-up (para WhatsApp) para reaquecer este cliente e avançar a venda. Tom humano, sem ser robótico. Apenas a mensagem, sem explicações.\n\n=== DOSSIÊ ===\n${dossier}`;
     case "next_steps":
       return `Sugira os próximos passos concretos para avançar esta venda. Liste 2-4 ações práticas e priorizadas. Seja específico.\n\n=== DOSSIÊ ===\n${dossier}`;
+    case "reminder_timing":
+      return `Com base no estágio e no histórico deste cliente, em quantos dias a equipe deve fazer o próximo follow-up? Responda EXATAMENTE neste formato: a primeira linha apenas "DIAS: N" (N = número inteiro de dias a partir de hoje), e depois 1-2 frases explicando o porquê.\n\n=== DOSSIÊ ===\n${dossier}`;
   }
 }
 
@@ -54,7 +56,7 @@ export async function POST(
 
   const body = await req.json().catch(() => null);
   const action = body?.action as Action;
-  if (!["summary", "followup", "next_steps"].includes(action)) {
+  if (!["summary", "followup", "next_steps", "reminder_timing"].includes(action)) {
     return NextResponse.json({ error: "Ação inválida." }, { status: 400 });
   }
 
@@ -119,6 +121,22 @@ export async function POST(
       .from("leads")
       .update({ ai_summary: text, ai_summary_at: new Date().toISOString() })
       .eq("id", id);
+  }
+
+  // For reminder timing, parse the "DIAS: N" header into a concrete ISO date the
+  // UI can apply to next_reminder_at with one click.
+  if (action === "reminder_timing") {
+    const m = text.match(/DIAS:\s*(\d+)/i);
+    let suggestedAt: string | null = null;
+    if (m) {
+      const days = Math.min(parseInt(m[1], 10), 365);
+      const d = new Date();
+      d.setDate(d.getDate() + days);
+      d.setHours(9, 0, 0, 0); // default to 09:00 local
+      suggestedAt = d.toISOString();
+    }
+    const reason = text.replace(/^\s*DIAS:\s*\d+\s*/i, "").trim();
+    return NextResponse.json({ text: reason || text, suggested_at: suggestedAt });
   }
 
   return NextResponse.json({ text });

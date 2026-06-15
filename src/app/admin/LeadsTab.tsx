@@ -4,6 +4,7 @@ import React, { useState, useEffect, useCallback, useMemo } from "react";
 
 // ─── Types ──────────────────────────────────────────────────────────────────
 export type LeadSource = "website" | "partner" | "manual" | "whatsapp";
+export type ReminderRecur = "none" | "daily" | "weekly" | "monthly";
 export type LeadStatus =
   | "novo"
   | "contatado"
@@ -28,6 +29,7 @@ export interface Lead {
   estimated_value: number | null;
   next_reminder_at: string | null;
   reminder_note: string | null;
+  reminder_recur: ReminderRecur;
   notes: string | null;
   smclick_contact_id: string | null;
   smclick_synced_at: string | null;
@@ -80,6 +82,13 @@ const SOURCE_META: Record<LeadSource, { label: string; cls: string }> = {
   partner: { label: "Parceiro", cls: "bg-green-100 text-green-800" },
   manual: { label: "Manual", cls: "bg-amber-100 text-amber-800" },
   whatsapp: { label: "WhatsApp", cls: "bg-emerald-100 text-emerald-800" },
+};
+
+export const RECUR_META: Record<ReminderRecur, string> = {
+  none: "Não repetir",
+  daily: "Diário",
+  weekly: "Semanal",
+  monthly: "Mensal",
 };
 
 function fmtBRL(n: number | null | undefined) {
@@ -139,6 +148,10 @@ export default function LeadsTab() {
   // CRM detail drawer (timeline, data points, AI assist)
   const [detailLead, setDetailLead] = useState<Lead | null>(null);
 
+  // AI-suggested reminder timing inside the edit modal
+  const [timingBusy, setTimingBusy] = useState(false);
+  const [timingHint, setTimingHint] = useState<string | null>(null);
+
   const fetchLeads = useCallback(async () => {
     setLoading(true);
     setError(null);
@@ -165,6 +178,11 @@ export default function LeadsTab() {
   useEffect(() => {
     fetchLeads();
   }, [fetchLeads]);
+
+  // Clear the AI timing hint whenever a different lead is opened in the modal.
+  useEffect(() => {
+    setTimingHint(null);
+  }, [draft?.id]);
 
   // ── Derived ────────────────────────────────────────────────────────────────
   const sourceCounts = useMemo(() => {
@@ -279,6 +297,31 @@ export default function LeadsTab() {
     else await fetchLeads();
   }
 
+  async function suggestTiming() {
+    if (!draft?.id || timingBusy) return;
+    setTimingBusy(true);
+    setTimingHint(null);
+    try {
+      const res = await fetch(`/api/admin/leads/${draft.id}/ai`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ action: "reminder_timing" }),
+      });
+      const d = await res.json().catch(() => null);
+      if (res.ok) {
+        setDraft((prev) =>
+          prev ? { ...prev, next_reminder_at: d?.suggested_at ?? prev.next_reminder_at } : prev
+        );
+        setTimingHint(d?.text || "Sugestão aplicada.");
+      } else {
+        setTimingHint(`Erro: ${d?.error ?? `HTTP ${res.status}`}`);
+      }
+    } catch (e) {
+      setTimingHint(`Erro: ${e instanceof Error ? e.message : "rede"}`);
+    }
+    setTimingBusy(false);
+  }
+
   async function saveDraft() {
     if (!draft || !draft.name?.trim()) return;
     setSaving(true);
@@ -292,6 +335,7 @@ export default function LeadsTab() {
       estimated_value: draft.estimated_value ?? null,
       next_reminder_at: draft.next_reminder_at ?? null,
       reminder_note: draft.reminder_note ?? null,
+      reminder_recur: draft.reminder_recur ?? "none",
       notes: draft.notes ?? null,
     };
     try {
@@ -687,14 +731,40 @@ export default function LeadsTab() {
                   <input className={inputCls} value={draft.product_name ?? ""} onChange={(e) => setDraft({ ...draft, product_name: e.target.value })} />
                 </Field>
               </div>
-              <Field label="Lembrete (data e hora)">
-                <input
-                  type="datetime-local"
-                  className={inputCls}
-                  value={toLocalInput(draft.next_reminder_at)}
-                  onChange={(e) => setDraft({ ...draft, next_reminder_at: e.target.value ? new Date(e.target.value).toISOString() : null })}
-                />
-              </Field>
+              <div className="grid grid-cols-2 gap-3">
+                <Field label="Lembrete (data e hora)">
+                  <input
+                    type="datetime-local"
+                    className={inputCls}
+                    value={toLocalInput(draft.next_reminder_at)}
+                    onChange={(e) => setDraft({ ...draft, next_reminder_at: e.target.value ? new Date(e.target.value).toISOString() : null })}
+                  />
+                </Field>
+                <Field label="Repetição">
+                  <select
+                    className={inputCls}
+                    value={draft.reminder_recur ?? "none"}
+                    onChange={(e) => setDraft({ ...draft, reminder_recur: e.target.value as ReminderRecur })}
+                  >
+                    {(Object.keys(RECUR_META) as ReminderRecur[]).map((r) => (
+                      <option key={r} value={r}>{RECUR_META[r]}</option>
+                    ))}
+                  </select>
+                </Field>
+              </div>
+              {!draft._isNew && draft.id && (
+                <div>
+                  <button
+                    type="button"
+                    onClick={suggestTiming}
+                    disabled={timingBusy}
+                    className="border border-purple-300 text-purple-800 text-[10px] tracking-[0.08em] uppercase font-bold font-[var(--font-inter)] px-3 py-1.5 hover:bg-purple-50 transition-colors disabled:opacity-50"
+                  >
+                    {timingBusy ? "Consultando IA…" : "✨ Sugerir melhor data (IA)"}
+                  </button>
+                  {timingHint && <p className="text-[11px] text-[#43474e] font-[var(--font-inter)] mt-1.5 leading-relaxed">{timingHint}</p>}
+                </div>
+              )}
               <Field label="Nota do lembrete">
                 <input className={inputCls} value={draft.reminder_note ?? ""} onChange={(e) => setDraft({ ...draft, reminder_note: e.target.value })} placeholder="Ex: ligar para confirmar interesse" />
               </Field>

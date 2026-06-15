@@ -16,6 +16,7 @@ const EDITABLE = new Set([
   "estimated_value",
   "next_reminder_at",
   "reminder_note",
+  "reminder_recur",
   "notes",
 ]);
 

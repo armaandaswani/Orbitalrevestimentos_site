@@ -76,6 +76,7 @@ export async function POST(req: NextRequest) {
       estimated_value: body.estimated_value ?? null,
       next_reminder_at: body.next_reminder_at ?? null,
       reminder_note: body.reminder_note ?? null,
+      reminder_recur: body.reminder_recur ?? "none",
       notes: body.notes ?? null,
     })
     .select()

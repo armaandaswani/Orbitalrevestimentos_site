@@ -23,6 +23,24 @@ function fmtDate(iso: string) {
   return new Date(iso).toLocaleString("pt-BR", { timeZone: "America/Manaus" });
 }
 
+/**
+ * Next occurrence strictly after `now` for a recurring reminder, starting from
+ * the original `from` time so the time-of-day is preserved. Returns null for
+ * non-recurring reminders.
+ */
+function nextOccurrence(from: string, recur: string, now: Date): string | null {
+  if (recur === "none" || !recur) return null;
+  const d = new Date(from);
+  let guard = 0;
+  while (d <= now && guard++ < 1000) {
+    if (recur === "daily") d.setDate(d.getDate() + 1);
+    else if (recur === "weekly") d.setDate(d.getDate() + 7);
+    else if (recur === "monthly") d.setMonth(d.getMonth() + 1);
+    else return null;
+  }
+  return d.toISOString();
+}
+
 export async function GET(req: NextRequest) {
   const cronSecret = process.env.CRON_SECRET;
   if (cronSecret) {
@@ -46,7 +64,7 @@ export async function GET(req: NextRequest) {
   // Due reminders that haven't been sent for this reminder time yet.
   const { data: leads, error } = await db
     .from("leads")
-    .select("id, name, phone, status, reminder_note, next_reminder_at, reminder_sent_at")
+    .select("id, name, phone, status, reminder_note, next_reminder_at, reminder_sent_at, reminder_recur")
     .not("next_reminder_at", "is", null)
     .lte("next_reminder_at", nowIso)
     .order("next_reminder_at", { ascending: true })
@@ -81,9 +99,29 @@ export async function GET(req: NextRequest) {
     );
   }
 
-  // Mark each due reminder as sent.
-  const ids = due.map((l) => l.id);
-  await db.from("leads").update({ reminder_sent_at: nowIso }).in("id", ids);
+  // Recurring reminders advance to their next occurrence; one-off reminders are
+  // simply marked sent so they don't fire again.
+  const now = new Date();
+  const recurring: { id: string; next: string }[] = [];
+  const oneOff: string[] = [];
+  for (const l of due) {
+    const next = nextOccurrence(l.next_reminder_at as string, (l.reminder_recur as string) ?? "none", now);
+    if (next) recurring.push({ id: l.id as string, next });
+    else oneOff.push(l.id as string);
+  }
 
-  return NextResponse.json({ ok: true, due: due.length, notified: due.map((l) => fmtDate(l.next_reminder_at as string)) });
+  if (oneOff.length) {
+    await db.from("leads").update({ reminder_sent_at: nowIso }).in("id", oneOff);
+  }
+  for (const r of recurring) {
+    await db.from("leads").update({ next_reminder_at: r.next, reminder_sent_at: nowIso }).eq("id", r.id);
+  }
+
+  return NextResponse.json({
+    ok: true,
+    due: due.length,
+    recurring: recurring.length,
+    oneOff: oneOff.length,
+    notified: due.map((l) => fmtDate(l.next_reminder_at as string)),
+  });
 }

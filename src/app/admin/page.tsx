@@ -3,6 +3,7 @@
 import React, { useState, useEffect, useCallback, useMemo, useRef } from "react";
 import { SITE_ASSET_MANIFEST } from "@/lib/assets";
 import LeadsTab from "./LeadsTab";
+import RemindersTab from "./RemindersTab";
 import {
   composePrompt,
   finishDescription,
@@ -143,7 +144,7 @@ export default function AdminPage() {
   const [authed, setAuthed] = useState(false);
   const [pw, setPw] = useState("");
   const [pwError, setPwError] = useState("");
-  const [tab, setTab] = useState<"dashboard" | "leads" | "partners" | "representantes" | "orcamentos" | "campaigns" | "drip" | "commissions" | "produtos" | "projetos" | "midia" | "simulador" | "chat">("dashboard");
+  const [tab, setTab] = useState<"dashboard" | "lembretes" | "leads" | "partners" | "representantes" | "orcamentos" | "campaigns" | "drip" | "commissions" | "produtos" | "projetos" | "midia" | "simulador" | "chat">("dashboard");
   const [commissionFilter, setCommissionFilter] = useState<"a_pagar" | "pago" | "tudo">("a_pagar");
 
   // Dashboard
@@ -2174,13 +2175,13 @@ export default function AdminPage() {
           </div>
           {(() => {
             const NAV_LABELS: Record<string, string> = {
-              dashboard: "Dashboard", leads: "Leads / CRM", orcamentos: "Orçamentos",
+              dashboard: "Dashboard", lembretes: "Lembretes", leads: "Leads / CRM", orcamentos: "Orçamentos",
               partners: "Parceiros", representantes: "Representantes", commissions: "Comissões",
               campaigns: "Campanhas", drip: "Drip de Emails", produtos: "Produtos",
               projetos: "Projetos", midia: "Mídia", simulador: "Simulador", chat: "Chat IA",
             };
             const NAV_GROUPS: ReadonlyArray<{ group: string; items: ReadonlyArray<typeof tab> }> = [
-              { group: "Geral", items: ["dashboard"] },
+              { group: "Geral", items: ["dashboard", "lembretes"] },
               { group: "Comercial", items: ["leads", "orcamentos", "partners", "representantes", "commissions"] },
               { group: "Marketing", items: ["campaigns", "drip"] },
               { group: "Catálogo", items: ["produtos", "projetos", "midia"] },
@@ -2250,6 +2251,7 @@ export default function AdminPage() {
                 <div className="flex flex-wrap gap-2">
                   <button onClick={() => setTab("orcamentos")} className="bg-[#002045] text-white text-[10px] tracking-[0.12em] uppercase font-bold font-[var(--font-inter)] px-4 py-2.5 hover:bg-[#1a365d] transition-colors">Ver orçamentos</button>
                   <button onClick={() => setTab("leads")} className="border border-[#002045] text-[#002045] text-[10px] tracking-[0.12em] uppercase font-bold font-[var(--font-inter)] px-4 py-2.5 hover:bg-[#002045] hover:text-white transition-colors">Leads / CRM</button>
+                  <button onClick={() => setTab("lembretes")} className="border border-[#e2e2e2] text-[#43474e] text-[10px] tracking-[0.12em] uppercase font-bold font-[var(--font-inter)] px-4 py-2.5 hover:border-[#002045] hover:text-[#002045] transition-colors">Lembretes</button>
                   <button onClick={() => setTab("partners")} className="border border-[#e2e2e2] text-[#43474e] text-[10px] tracking-[0.12em] uppercase font-bold font-[var(--font-inter)] px-4 py-2.5 hover:border-[#002045] hover:text-[#002045] transition-colors">Parceiros</button>
                 </div>
               </div>
@@ -3701,6 +3703,8 @@ export default function AdminPage() {
         )}
         {/* ═══ LEADS / CRM TAB ═══ */}
         {tab === "leads" && authed && <LeadsTab />}
+
+        {tab === "lembretes" && authed && <RemindersTab />}
         {/* ═══ DRIP TAB ═══ */}
         {tab === "drip" && (
           <div>
