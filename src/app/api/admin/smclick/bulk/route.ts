@@ -79,7 +79,7 @@ export async function POST(req: NextRequest) {
     });
     if (!res.ok) {
       failed++;
-      if (errors.length < 5) errors.push(`${lead.name}: ${res.error ?? "erro"}`);
+      if (errors.length < 5) errors.push(`${lead.name}: [HTTP ${res.status}] ${res.error ?? "erro"}`);
       continue;
     }
     const contactId = extractContactId(res.data);

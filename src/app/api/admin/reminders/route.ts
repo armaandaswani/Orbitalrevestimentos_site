@@ -21,17 +21,25 @@ export async function GET(req: NextRequest) {
     .not("next_reminder_at", "is", null)
     .order("next_reminder_at", { ascending: true });
 
-  // Migration 016 (reminder_recur) may not have run yet — retry without it.
+  // The full select references columns from migrations that may not have run on
+  // this environment yet: reminder_recur (016) and last_contacted_at (014).
+  // On a missing-column error, retry with only the base columns guaranteed by
+  // migrations 012/013 so the reminders inbox keeps working, then backfill the
+  // optional fields with safe defaults to preserve the response shape.
   if (error && isMissingColumn(error)) {
     const fallback = await db
       .from("leads")
       .select(
-        "id, name, email, phone, source, status, partner_name, space, product_name, estimated_value, next_reminder_at, reminder_note, reminder_sent_at, last_contacted_at"
+        "id, name, email, phone, source, status, partner_name, space, product_name, estimated_value, next_reminder_at, reminder_note, reminder_sent_at"
       )
       .not("next_reminder_at", "is", null)
       .order("next_reminder_at", { ascending: true });
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    data = fallback.data as any;
+    data = (fallback.data ?? []).map((r: any) => ({
+      reminder_recur: "none",
+      last_contacted_at: null,
+      ...r,
+    })) as any;
     error = fallback.error;
   }
 

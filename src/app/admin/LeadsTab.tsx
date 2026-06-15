@@ -252,10 +252,15 @@ export default function LeadsTab() {
       });
       const d = await res.json().catch(() => null);
       if (res.ok && d?.ok) {
+        const detail =
+          d.failed && Array.isArray(d.errors) && d.errors.length > 0
+            ? ` — ${d.errors.join(" | ")}`
+            : "";
         setSyncResult(
           `${d.pushed} enviado(s) ao SM Click · ${d.skipped} ignorado(s)` +
             (d.failed ? ` · ${d.failed} falha(s)` : "") +
-            (d.capped ? " · limite por execução atingido, rode novamente" : "")
+            (d.capped ? " · limite por execução atingido, rode novamente" : "") +
+            detail
         );
         await fetchLeads();
       } else {
@@ -395,9 +400,15 @@ export default function LeadsTab() {
         </div>
 
         {syncResult && (
-          <div className="bg-[#eafaf0] border border-[#bce7cd] text-[#128c3e] text-xs font-[var(--font-inter)] px-4 py-2 flex items-center justify-between gap-3">
-            <span>{syncResult}</span>
-            <button onClick={() => setSyncResult(null)} className="text-[#128c3e]/60 hover:text-[#128c3e] text-base leading-none">×</button>
+          <div
+            className={
+              /falha|Erro/i.test(syncResult)
+                ? "bg-[#fdedeb] border border-[#f3b7ad] text-[#b3261e] text-xs font-[var(--font-inter)] px-4 py-2 flex items-center justify-between gap-3"
+                : "bg-[#eafaf0] border border-[#bce7cd] text-[#128c3e] text-xs font-[var(--font-inter)] px-4 py-2 flex items-center justify-between gap-3"
+            }
+          >
+            <span className="break-all">{syncResult}</span>
+            <button onClick={() => setSyncResult(null)} className="opacity-60 hover:opacity-100 text-base leading-none flex-shrink-0">×</button>
           </div>
         )}
 
