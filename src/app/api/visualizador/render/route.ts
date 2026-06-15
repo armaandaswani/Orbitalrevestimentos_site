@@ -73,7 +73,12 @@ function toPositiveNumber(v: number | string | null | undefined, fallback: numbe
 }
 
 export async function POST(req: NextRequest) {
-  const apiKey = process.env.FREE_LLM_API_KEY;
+  // Image generation talks to Google's Gemini API DIRECTLY, so it needs a real
+  // Google Generative Language API key (from AI Studio) — NOT FREE_LLM_API_KEY,
+  // which is the key for the OpenAI-compatible proxy the chat/CRM routes use.
+  // Prefer a dedicated var; fall back to FREE_LLM_API_KEY only for back-compat.
+  const apiKey =
+    process.env.GEMINI_API_KEY || process.env.GOOGLE_API_KEY || process.env.FREE_LLM_API_KEY;
   if (!apiKey) {
     return NextResponse.json(
       { error: "Serviço de visualização não configurado no servidor." },
