@@ -44,7 +44,7 @@ export default function Footer() {
                 { href: "/projetos", label: "Projetos" },
                 { href: "/parcerias", label: "Parcerias" },
                 { href: "/simulador", label: "Simulador de Custo" },
-                { href: "/visualizador", label: "Visualizador de Ambientes" },
+                { href: "/visualizador", label: "Ver no Ambiente" },
                 { href: "/sobre", label: "Sobre a Orbital" },
                 { href: "/guias/revestimento-parede-manaus", label: "Guia: Revestimento Manaus" },
                 { href: "/guias/revestimento-banheiro-manaus", label: "Guia: Banheiro Manaus" },
