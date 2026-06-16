@@ -68,6 +68,14 @@ interface Zone {
   detecting: boolean; // true while the surface detection is in flight
 }
 
+// Prefill data received from the Simulador via URL params (?src=sim&…)
+interface SimPrefill {
+  productCode: string;
+  spaceId: string;
+  w?: number;
+  h?: number;
+}
+
 interface SavedAmbiente {
   key: string;
   spaceId: string | null;
@@ -241,6 +249,41 @@ export default function VisualizadorPage() {
   const [leadSubmitted, setLeadSubmitted] = useState(false);
   const vizRenderIdRef = useRef<string>("");
 
+  // Prefill slots received from the Simulador (?src=sim). Index matches zone
+  // creation order: the Nth zone created gets simPrefillsRef.current[N] applied.
+  const [simPrefills, setSimPrefills] = useState<SimPrefill[]>([]);
+  const simPrefillsRef = useRef<SimPrefill[]>([]);
+  useEffect(() => { simPrefillsRef.current = simPrefills; }, [simPrefills]);
+
+  // Parse Simulador handoff params on mount (client-side only).
+  useEffect(() => {
+    if (typeof window === "undefined") return;
+    const params = new URLSearchParams(window.location.search);
+    if (params.get("src") !== "sim") return;
+    const prefills: SimPrefill[] = [];
+    const msParam = params.get("ms");
+    if (msParam) {
+      const count = parseInt(msParam, 10);
+      for (let i = 0; i < count; i++) {
+        const productCode = params.get(`p${i}`) ?? "";
+        const spaceId = params.get(`s${i}`) ?? "parede";
+        const w = parseFloat(params.get(`w${i}`) ?? "");
+        const h = parseFloat(params.get(`h${i}`) ?? "");
+        prefills.push({ productCode, spaceId, w: isNaN(w) ? undefined : w, h: isNaN(h) ? undefined : h });
+      }
+    } else {
+      const productCode = params.get("produto") ?? "";
+      const spaceId = params.get("space") ?? "parede";
+      const w = parseFloat(params.get("w") ?? "");
+      const h = parseFloat(params.get("h") ?? "");
+      if (productCode || spaceId !== "parede") {
+        prefills.push({ productCode, spaceId, w: isNaN(w) ? undefined : w, h: isNaN(h) ? undefined : h });
+      }
+    }
+    if (prefills.length > 0) setSimPrefills(prefills);
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
+
   const fileInputRef = useRef<HTMLInputElement | null>(null);
   const [dragOver, setDragOver] = useState(false);
 
@@ -297,6 +340,26 @@ export default function VisualizadorPage() {
   }, []);
 
   const productById = useCallback((id: string) => products.find((p) => p.id === id) ?? null, [products]);
+
+  // Resolve a SimPrefill into zone defaults. Called at zone-creation time with
+  // the index of the new zone (= zones.length before it's appended).
+  const resolveZonePrefill = useCallback(
+    (zoneIdx: number): { productId: string; surface: string; customLabel: string; width: string; height: string } => {
+      const pf = simPrefillsRef.current[zoneIdx];
+      const defaultProduct = products[0]?.id ?? "";
+      if (!pf) return { productId: defaultProduct, surface: "parede", customLabel: "", width: "", height: "" };
+      const prod = products.find((p) => p.code === pf.productCode);
+      const knownSpace = VIZ_SPACES.some((s) => s.id === pf.spaceId);
+      return {
+        productId: prod?.id ?? defaultProduct,
+        surface: knownSpace ? pf.spaceId : (pf.spaceId ? "__custom__" : "parede"),
+        customLabel: knownSpace ? "" : (pf.spaceId ?? ""),
+        width: pf.w ? String(pf.w) : "",
+        height: pf.h ? String(pf.h) : "",
+      };
+    },
+    [products]
+  );
 
   const handleFile = useCallback(
     async (file: File | undefined | null) => {
@@ -379,19 +442,20 @@ export default function VisualizadorPage() {
       if (!photoData) return;
       const id = `z-${Date.now()}`;
       const idx = zones.length;
+      const pf = resolveZonePrefill(idx);
       const z: Zone = {
         id,
         label: `Área ${idx + 1}`,
-        surface: "parede",
-        customLabel: "",
-        productId: products[0]?.id ?? "",
+        surface: pf.surface,
+        customLabel: pf.customLabel,
+        productId: pf.productId,
         polygon: null,
         maskUrl: null,
         rect: null,
         manual: false,
         instruction: "",
-        width: "",
-        height: "",
+        width: pf.width,
+        height: pf.height,
         detecting: true,
       };
       setZones((prev) => [...prev, z]);
@@ -399,7 +463,7 @@ export default function VisualizadorPage() {
       scrollZoneRef.current = id;
       void detectInto(id, idx, nx, ny);
     },
-    [photoData, zones.length, products, detectInto]
+    [photoData, zones.length, products, detectInto, resolveZonePrefill]
   );
 
   // Re-run detection for an existing zone at a new tapped point.
@@ -430,55 +494,57 @@ export default function VisualizadorPage() {
     (rect: Rect) => {
       const id = `z-${Date.now()}`;
       const idx = zones.length;
+      const pf = resolveZonePrefill(idx);
       setZones((prev) => [
         ...prev,
         {
           id,
           label: `Área ${idx + 1}`,
-          surface: "parede",
-          customLabel: "",
-          productId: products[0]?.id ?? "",
+          surface: pf.surface,
+          customLabel: pf.customLabel,
+          productId: pf.productId,
           polygon: null,
           maskUrl: null,
           rect,
           manual: true,
           instruction: "",
-          width: "",
-          height: "",
+          width: pf.width,
+          height: pf.height,
           detecting: false,
         },
       ]);
       setActiveZoneId(id);
       scrollZoneRef.current = id;
     },
-    [zones.length, products]
+    [zones.length, products, resolveZonePrefill]
   );
 
   // "Descrever": create a text-only area (no marking on the photo).
   const addTextZone = useCallback(() => {
     const id = `z-${Date.now()}`;
     const idx = zones.length;
+    const pf = resolveZonePrefill(idx);
     setZones((prev) => [
       ...prev,
       {
         id,
         label: `Área ${idx + 1}`,
-        surface: "parede",
-        customLabel: "",
-        productId: products[0]?.id ?? "",
+        surface: pf.surface,
+        customLabel: pf.customLabel,
+        productId: pf.productId,
         polygon: null,
         maskUrl: null,
         rect: null,
         manual: false,
         instruction: "",
-        width: "",
-        height: "",
+        width: pf.width,
+        height: pf.height,
         detecting: false,
       },
     ]);
     setActiveZoneId(id);
     scrollZoneRef.current = id;
-  }, [zones.length, products]);
+  }, [zones.length, products, resolveZonePrefill]);
 
   const zonesReady = zones.filter((z) => z.productId);
   const canReview = !!photoData && zonesReady.length > 0;
@@ -713,6 +779,8 @@ export default function VisualizadorPage() {
             handleFile={handleFile}
             error={error}
             hasBanked={savedAmbientes.length > 0}
+            simPrefills={simPrefills}
+            products={products}
           />
         )}
 
@@ -734,6 +802,7 @@ export default function VisualizadorPage() {
             loadingProducts={loadingProducts}
             productById={productById}
             canReview={canReview}
+            simPrefills={simPrefills}
             onBack={() => setStep("upload")}
             onReview={() => setStep("review")}
           />
@@ -876,6 +945,8 @@ function UploadStep({
   handleFile,
   error,
   hasBanked,
+  simPrefills,
+  products,
 }: {
   fileInputRef: React.RefObject<HTMLInputElement | null>;
   dragOver: boolean;
@@ -883,7 +954,24 @@ function UploadStep({
   handleFile: (f: File | undefined | null) => void;
   error: string | null;
   hasBanked: boolean;
+  simPrefills?: SimPrefill[];
+  products?: Product[];
 }) {
+  const simBanner = React.useMemo(() => {
+    if (!simPrefills?.length || !products?.length) return null;
+    if (simPrefills.length === 1) {
+      const pf = simPrefills[0];
+      const prod = products.find((p) => p.code === pf.productCode);
+      const spaceLabel = VIZ_SPACES.find((s) => s.id === pf.spaceId)?.label ?? pf.spaceId;
+      return prod ? `${prod.name} · ${spaceLabel}` : spaceLabel;
+    }
+    const names = simPrefills.map((pf) => {
+      const prod = products.find((p) => p.code === pf.productCode);
+      return prod?.name ?? pf.productCode;
+    }).filter(Boolean);
+    return `${simPrefills.length} modelos: ${names.join(", ")}`;
+  }, [simPrefills, products]);
+
   return (
     <div className="grid lg:grid-cols-[1.1fr_0.9fr] gap-10 items-start mt-6">
       <div>
@@ -915,6 +1003,19 @@ function UploadStep({
           <p className="text-[#a0a3a9] text-xs font-[var(--font-inter)] mt-3">JPG ou PNG · foto de frente e bem iluminada funciona melhor</p>
         </div>
         {error && <p className="mt-3 text-sm text-[#b42318] font-[var(--font-inter)]">{error}</p>}
+        {simBanner && (
+          <div className="mt-4 border border-[#bcd0e8] bg-[#f5f8fc] px-4 py-3">
+            <p className="text-[10px] tracking-[0.15em] uppercase font-bold font-[var(--font-inter)] text-[#002045] mb-0.5">
+              Vindo do Simulador
+            </p>
+            <p className="text-[#43474e] text-sm font-[var(--font-inter)]">
+              {simBanner}.{" "}
+              {(simPrefills?.length ?? 0) > 1
+                ? "Os modelos serão pré-selecionados conforme você adiciona as áreas."
+                : "O modelo será pré-selecionado quando você marcar a área."}
+            </p>
+          </div>
+        )}
         <input ref={fileInputRef} type="file" accept="image/*" className="hidden" onChange={(e) => handleFile(e.target.files?.[0])} />
       </div>
 
@@ -979,6 +1080,7 @@ function ZonesStep({
   loadingProducts: boolean;
   productById: (id: string) => Product | null;
   canReview: boolean;
+  simPrefills?: SimPrefill[];
   onBack: () => void;
   onReview: () => void;
 }) {
@@ -1071,6 +1173,18 @@ function ZonesStep({
         <p className="text-[10px] tracking-[0.18em] uppercase font-bold font-[var(--font-inter)] text-[#002045]">
           Áreas ({zones.length})
         </p>
+        {zones.length === 0 && simPrefills && simPrefills.length > 0 && (
+          <div className="border border-[#bcd0e8] bg-[#f5f8fc] px-3 py-2.5 mb-1">
+            <p className="text-[10px] tracking-[0.15em] uppercase font-bold font-[var(--font-inter)] text-[#002045] mb-0.5">
+              Simulador
+            </p>
+            <p className="text-[#43474e] text-xs font-[var(--font-inter)]">
+              {simPrefills.length === 1
+                ? "Marque uma área — o modelo do Simulador será pré-selecionado."
+                : `${simPrefills.length} modelos aguardando. Marque cada área e eles serão pré-selecionados em ordem.`}
+            </p>
+          </div>
+        )}
         {zones.length === 0 && (
           <p className="text-[#74777f] text-sm font-[var(--font-inter)] border border-dashed border-[#cdd3dd] px-4 py-6 text-center">
             Toque, desenhe ou descreva uma área para começar.

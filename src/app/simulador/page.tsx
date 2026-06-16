@@ -5,7 +5,6 @@ import { useSearchParams } from "next/navigation";
 import Image from "next/image";
 import Link from "next/link";
 import MdfComparison, { COMPARISON_OPTIONS } from "@/components/MdfComparison";
-import { applicationAreaFor } from "@/lib/render-prompt";
 
 const WA_BASE = "https://wa.me/5592988150149?text=";
 const CATALOGUE_URL =
@@ -1138,6 +1137,52 @@ function SimuladorInner() {
         { n: 5 as const, label: "Cupom" },
       ];
 
+  // Build the link to open the full Visualizador with the current selection pre-filled.
+  // Single space → ?src=sim&produto=CODE&space=ID[&w=W&h=H]
+  // Multi-space  → ?src=sim&ms=N&p0=…&s0=…[&w0=…&h0=…]…
+  function buildVizUrl(): string {
+    if (!selectedProduct) return "/visualizador";
+    const params = new URLSearchParams({ src: "sim" });
+
+    const parseDimLabel = (label: string) => {
+      const m = label.match(/([\d.]+)m\s*[×x]\s*([\d.]+)m/);
+      return m ? { w: parseFloat(m[1]), h: parseFloat(m[2]) } : { w: undefined, h: undefined };
+    };
+
+    const currentEntry = {
+      productCode: selectedProduct.code,
+      spaceId: showCustomInput ? (customSpaceText.trim() || "parede") : (selectedSpace?.id ?? "parede"),
+      w: dimMode === "lxa" && parseFloat(width) > 0 ? parseFloat(width) : undefined,
+      h: dimMode === "lxa" && parseFloat(height) > 0 ? parseFloat(height) : undefined,
+    };
+
+    if (savedSpaces.length === 0) {
+      params.set("produto", currentEntry.productCode);
+      params.set("space", currentEntry.spaceId);
+      if (currentEntry.w && currentEntry.h) {
+        params.set("w", String(currentEntry.w));
+        params.set("h", String(currentEntry.h));
+      }
+    } else {
+      const allEntries = [
+        ...savedSpaces.map((sp) => {
+          const spEntry = SPACES.find((s) => s.label === sp.label);
+          const { w, h } = parseDimLabel(sp.dimLabel);
+          return { productCode: sp.productCode, spaceId: spEntry?.id ?? sp.label, w, h };
+        }),
+        currentEntry,
+      ];
+      params.set("ms", String(allEntries.length));
+      allEntries.forEach((e, i) => {
+        params.set(`p${i}`, e.productCode);
+        params.set(`s${i}`, e.spaceId);
+        if (e.w && e.h) { params.set(`w${i}`, String(e.w)); params.set(`h${i}`, String(e.h)); }
+      });
+    }
+
+    return `/visualizador?${params.toString()}`;
+  }
+
   // Build the partner-shareable client link
   function buildPartnerLink(): string {
     const origin = typeof window !== "undefined" ? window.location.origin : "https://orbitalrevestimentos.com.br";
@@ -1852,16 +1897,23 @@ function SimuladorInner() {
               )}
 
               {!partnerMode && selectedProduct && selectedSpace && (
-                <InlineVisualizer
-                  product={selectedProduct}
-                  spaceId={selectedSpace.id}
-                  spaceLabel={selectedSpace.label}
-                  widthM={dimMode === "lxa" ? parseFloat(width) || undefined : undefined}
-                  heightM={dimMode === "lxa" ? parseFloat(height) || undefined : undefined}
-                  onSaved={(id) => {
-                    vizRenderId.current = id;
-                  }}
-                />
+                <div className="mb-6 border border-dashed border-[#bcd0e8] bg-[#f5f8fc] px-4 py-4 flex flex-col sm:flex-row sm:items-center gap-3">
+                  <div className="flex-1">
+                    <p className="text-[#002045] text-sm font-semibold font-[var(--font-inter)]">
+                      Quer ver como fica no seu ambiente?{" "}
+                      <span className="font-normal text-[#74777f]">(opcional)</span>
+                    </p>
+                    <p className="text-[#74777f] text-xs font-[var(--font-inter)] mt-0.5">
+                      Envie uma foto e a IA aplica o {selectedProduct.name} antes de você ver o orçamento.
+                    </p>
+                  </div>
+                  <a
+                    href={buildVizUrl()}
+                    className="self-start sm:self-auto inline-flex items-center gap-2 border border-[#002045] text-[#002045] text-xs tracking-[0.1em] uppercase font-bold font-[var(--font-inter)] px-5 py-2.5 hover:bg-[#002045] hover:text-white transition-colors"
+                  >
+                    Ver no ambiente →
+                  </a>
+                </div>
               )}
 
               <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3">
@@ -3222,180 +3274,6 @@ function SimuladorInner() {
   );
 }
 
-// ── Optional inline Visualizador (step 3) ────────────────────────
-// Lets the client see the selected acabamento rendered on a photo of their own
-// space BEFORE seeing the orçamento. Best-effort: the render is also saved
-// (save-render) and its id bubbled up via onSaved so it rides into the
-// orçamento submit (e-mail / WhatsApp / admin), exactly like the Visualizador.
-const VIZ_FINISH: Record<string, string> = { Classic: "matte", Brilliance: "polished", Elegance: "wood" };
-
-function InlineVisualizer({
-  product,
-  spaceId,
-  spaceLabel,
-  widthM,
-  heightM,
-  onSaved,
-}: {
-  product: { id: string; code: string; name: string; linha: string; image_path: string };
-  spaceId: string;
-  spaceLabel: string;
-  widthM?: number;
-  heightM?: number;
-  onSaved: (renderId: string) => void;
-}) {
-  const [open, setOpen] = useState(false);
-  const [photo, setPhoto] = useState<string | null>(null);
-  const [result, setResult] = useState<string | null>(null);
-  const [busy, setBusy] = useState(false);
-  const [err, setErr] = useState<string | null>(null);
-  const inputRef = useRef<HTMLInputElement | null>(null);
-
-  const readFile = (f: File | undefined | null) => {
-    if (!f || !f.type.startsWith("image/")) return;
-    const r = new FileReader();
-    r.onload = () => {
-      setPhoto(r.result as string);
-      setResult(null);
-      setErr(null);
-    };
-    r.readAsDataURL(f);
-  };
-
-  const render = async () => {
-    if (!photo || busy) return;
-    setBusy(true);
-    setErr(null);
-    try {
-      const res = await fetch("/api/visualizador/render", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
-          photo,
-          productId: product.id,
-          referenceUrl: product.image_path,
-          finish: VIZ_FINISH[product.linha] ?? "matte",
-          wallWidthM: widthM,
-          wallHeightM: heightM,
-          applicationArea: applicationAreaFor(spaceId, spaceLabel) ?? undefined,
-        }),
-      });
-      const json = await res.json();
-      if (!res.ok || !json.image) throw new Error(json.error || "Não foi possível gerar a visualização.");
-      setResult(json.image);
-      // Persist for the orçamento (best-effort, non-blocking on failure).
-      try {
-        const sv = await fetch("/api/visualizador/save-render", {
-          method: "POST",
-          headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({
-            image: json.image,
-            local: spaceLabel,
-            productName: product.name,
-            productCode: product.code,
-          }),
-        });
-        if (sv.ok) {
-          const d = (await sv.json()) as { id?: string };
-          if (d.id) onSaved(d.id);
-        }
-      } catch {
-        /* non-fatal */
-      }
-    } catch (e) {
-      setErr(e instanceof Error ? e.message : "Erro ao gerar a visualização.");
-    } finally {
-      setBusy(false);
-    }
-  };
-
-  if (!open) {
-    return (
-      <div className="mb-6 border border-dashed border-[#bcd0e8] bg-[#f5f8fc] px-4 py-4 flex flex-col sm:flex-row sm:items-center gap-3">
-        <div className="flex-1">
-          <p className="text-[#002045] text-sm font-semibold font-[var(--font-inter)]">
-            Quer ver como fica no seu ambiente? <span className="font-normal text-[#74777f]">(opcional)</span>
-          </p>
-          <p className="text-[#74777f] text-xs font-[var(--font-inter)] mt-0.5">
-            Envie uma foto e a IA aplica o {product.name} antes de você ver o orçamento.
-          </p>
-        </div>
-        <button
-          type="button"
-          onClick={() => setOpen(true)}
-          className="self-start sm:self-auto inline-flex items-center gap-2 border border-[#002045] text-[#002045] text-xs tracking-[0.1em] uppercase font-bold font-[var(--font-inter)] px-5 py-2.5 hover:bg-[#002045] hover:text-white transition-colors"
-        >
-          Ver no meu ambiente
-        </button>
-      </div>
-    );
-  }
-
-  return (
-    <div className="mb-6 border border-[#e2e2e2] bg-[#fbfbfa] p-4">
-      <div className="flex items-center justify-between mb-3">
-        <p className="text-[10px] tracking-[0.18em] uppercase font-bold font-[var(--font-inter)] text-[#002045]">
-          Ver no meu ambiente · {product.name}
-        </p>
-        <button onClick={() => setOpen(false)} className="text-[#74777f] hover:text-[#002045] text-xs font-[var(--font-inter)]">
-          Fechar
-        </button>
-      </div>
-
-      {!photo ? (
-        <div
-          onClick={() => inputRef.current?.click()}
-          className="cursor-pointer border-2 border-dashed border-[#cdd3dd] bg-white px-6 py-10 text-center hover:border-[#002045] transition-colors"
-        >
-          <p className="font-[var(--font-inter)] text-[#002045] text-sm font-semibold">Envie uma foto do ambiente</p>
-          <p className="text-[#74777f] text-xs font-[var(--font-inter)] mt-1">JPG ou PNG · foto de frente e bem iluminada</p>
-        </div>
-      ) : (
-        <div className="relative bg-[#11151b] overflow-hidden">
-          {/* eslint-disable-next-line @next/next/no-img-element */}
-          <img src={result ?? photo} alt={result ? "Resultado" : "Sua foto"} className="block w-full h-auto" />
-          {busy && (
-            <div className="absolute inset-0 bg-black/70 flex flex-col items-center justify-center gap-3 text-center px-6">
-              <div className="w-9 h-9 border-2 border-white/30 border-t-[#a1d494] rounded-full animate-spin" />
-              <p className="text-white text-sm font-[var(--font-inter)]">Aplicando {product.name}…</p>
-            </div>
-          )}
-        </div>
-      )}
-
-      <input ref={inputRef} type="file" accept="image/*" className="hidden" onChange={(e) => readFile(e.target.files?.[0])} />
-      {err && <p className="mt-2 text-xs text-[#b42318] font-[var(--font-inter)]">{err}</p>}
-
-      {photo && (
-        <div className="mt-3 flex flex-wrap gap-2">
-          <button
-            onClick={render}
-            disabled={busy}
-            className="inline-flex items-center gap-2 bg-[#3b6934] text-white text-xs tracking-[0.1em] uppercase font-bold font-[var(--font-inter)] px-5 py-2.5 hover:bg-[#2f5429] transition-colors disabled:opacity-50"
-          >
-            {busy ? "Gerando…" : result ? "Gerar novamente" : "Gerar visualização"}
-          </button>
-          <button
-            onClick={() => {
-              setPhoto(null);
-              setResult(null);
-              setErr(null);
-            }}
-            disabled={busy}
-            className="inline-flex items-center gap-2 border border-[#e2e2e2] text-[#43474e] text-xs tracking-[0.1em] uppercase font-bold font-[var(--font-inter)] px-5 py-2.5 hover:border-[#002045] transition-colors disabled:opacity-50"
-          >
-            Trocar foto
-          </button>
-        </div>
-      )}
-      {result && (
-        <p className="mt-2 text-xs text-[#2f5429] font-[var(--font-inter)]">
-          ✓ Pronto! Continue para ver o orçamento — a imagem vai junto.
-        </p>
-      )}
-    </div>
-  );
-}
 
 export default function SimuladorPage() {
   return (
