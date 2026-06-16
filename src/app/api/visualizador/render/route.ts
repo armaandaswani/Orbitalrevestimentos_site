@@ -197,21 +197,39 @@ export async function POST(req: NextRequest) {
     generationConfig: { responseModalities: ["IMAGE"] },
   };
 
-  let res: Response;
-  try {
-    res = await fetch(`${GEMINI_BASE}/models/${MODEL}:generateContent?key=${apiKey}`, {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify(payload),
-    });
-  } catch {
+  // Retry up to 3 times on 503 (Gemini capacity fluctuations).
+  let res: Response | null = null;
+  const bodyStr = JSON.stringify(payload);
+  const url = `${GEMINI_BASE}/models/${MODEL}:generateContent?key=${apiKey}`;
+  for (let attempt = 0; attempt < 3; attempt++) {
+    try {
+      res = await fetch(url, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: bodyStr,
+      });
+      if (res.status !== 503) break;
+      if (attempt < 2) await new Promise((r) => setTimeout(r, 1500));
+    } catch {
+      if (attempt === 2) {
+        return NextResponse.json({ error: "Não foi possível contatar o gerador de imagem." }, { status: 502 });
+      }
+    }
+  }
+  if (!res) {
     return NextResponse.json({ error: "Não foi possível contatar o gerador de imagem." }, { status: 502 });
   }
 
   if (!res.ok) {
     const errText = await res.text();
+    const isBusy = res.status === 503 || res.status === 429;
     return NextResponse.json(
-      { error: `Erro do gerador de imagem (${res.status}).`, detail: errText.slice(0, 500) },
+      {
+        error: isBusy
+          ? "O gerador de imagem está temporariamente sobrecarregado. Aguarde alguns segundos e tente novamente."
+          : `Erro do gerador de imagem (${res.status}).`,
+        detail: errText.slice(0, 500),
+      },
       { status: 502 }
     );
   }
