@@ -19,6 +19,8 @@ export interface OrcamentoMessageInput {
   total: number | null;
   space?: string | null;
   model?: string | null;
+  // Exact dimensions the client entered, e.g. "3m × 2,7m" or "8,10 m²".
+  dimLabel?: string | null;
   quoteUrl?: string | null;
   // Public URLs of the renders the client generated in the Visualizador.
   renderUrls?: string[] | null;
@@ -37,6 +39,7 @@ export function clientOrcamentoMessage(i: OrcamentoMessageInput): string {
   ];
   if (i.space) lines.push(`📍 Ambiente: ${i.space}`);
   if (i.model) lines.push(`🎨 Modelo: ${i.model}`);
+  if (i.dimLabel) lines.push(`📐 Medidas: ${i.dimLabel}`);
   lines.push(`💰 Total estimado: ${fmtBRL(i.total)}`);
   lines.push(``);
   const renders = (i.renderUrls ?? []).filter(Boolean);

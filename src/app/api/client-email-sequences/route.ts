@@ -160,6 +160,7 @@ export async function POST(req: NextRequest) {
           total: typeof total === "number" ? total : null,
           space: (space as string | null) || null,
           model: (model as string | null) || null,
+          dimLabel: (dim_label as string | null) || null,
           quoteUrl: (quote_url as string | null) ?? null,
           renderUrls: vizRenders.map((r) => r.url),
         })
