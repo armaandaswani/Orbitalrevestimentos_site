@@ -109,6 +109,29 @@ function loadImage(src: string): Promise<HTMLImageElement> {
   });
 }
 
+// Normalize ANY uploaded photo (incl. iPhone HEIC and very large gallery shots)
+// into a web-safe JPEG capped at MAX_DIM px. This is essential: HEIC isn't
+// accepted by fal/Gemini, and multi-MB data URLs blow past the serverless body
+// limit — both surface as opaque "string did not match" / failed-request errors.
+const MAX_DIM = 1600;
+async function normalizeImage(file: File): Promise<{ dataUrl: string; w: number; h: number }> {
+  const raw = await fileToDataUrl(file);
+  const im = await loadImage(raw); // throws if the browser can't decode it
+  let w = im.naturalWidth;
+  let h = im.naturalHeight;
+  if (!w || !h) return { dataUrl: raw, w: 0, h: 0 };
+  const scale = Math.min(1, MAX_DIM / Math.max(w, h));
+  w = Math.round(w * scale);
+  h = Math.round(h * scale);
+  const c = document.createElement("canvas");
+  c.width = w;
+  c.height = h;
+  const ctx = c.getContext("2d");
+  if (!ctx) return { dataUrl: raw, w: im.naturalWidth, h: im.naturalHeight };
+  ctx.drawImage(im, 0, 0, w, h);
+  return { dataUrl: c.toDataURL("image/jpeg", 0.9), w, h };
+}
+
 // Turn a fal SAM mask (binary mask, or cutout with alpha) into a tinted
 // translucent overlay PNG + the normalized bounding box. Runs on the client.
 async function maskToOverlay(maskUrl: string, hex: string): Promise<{ url: string; rect: Rect | null }> {
@@ -272,21 +295,21 @@ export default function VisualizadorPage() {
 
   const handleFile = useCallback(
     async (file: File | undefined | null) => {
-      if (!file || !file.type.startsWith("image/")) return;
+      // iOS sometimes reports an empty MIME for HEIC — allow it and let the
+      // decoder decide, rather than silently rejecting the upload.
+      if (!file) return;
+      if (file.type && !file.type.startsWith("image/")) return;
       setError(null);
       try {
-        const dataUrl = await fileToDataUrl(file);
+        const { dataUrl, w, h } = await normalizeImage(file);
         setPhotoData(dataUrl);
+        setPhotoDims(w && h ? { w, h } : null);
         setResult(null);
         setZones([]);
         setActiveZoneId(null);
         setStep("zones");
-        // Natural pixel size — fal needs the point prompt in pixels.
-        loadImage(dataUrl)
-          .then((im) => setPhotoDims({ w: im.naturalWidth, h: im.naturalHeight }))
-          .catch(() => setPhotoDims(null));
       } catch {
-        setError("Não foi possível ler essa imagem. Tente outra.");
+        setError("Não foi possível ler essa imagem. Tente outra foto (JPG ou PNG).");
       }
     },
     []
