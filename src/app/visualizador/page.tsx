@@ -238,6 +238,7 @@ export default function VisualizadorPage() {
 
   const [leadName, setLeadName] = useState("");
   const [leadPhone, setLeadPhone] = useState("");
+  const [leadSubmitted, setLeadSubmitted] = useState(false);
   const vizRenderIdRef = useRef<string>("");
 
   const fileInputRef = useRef<HTMLInputElement | null>(null);
@@ -311,6 +312,7 @@ export default function VisualizadorPage() {
         setResult(null);
         setZones([]);
         setActiveZoneId(null);
+        setLeadSubmitted(false);
         vizRenderIdRef.current = "";
         setStep("zones");
       } catch {
@@ -558,6 +560,19 @@ export default function VisualizadorPage() {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [photoData, zones, productById]);
 
+  const handleLeadSubmit = useCallback(() => {
+    if (!leadName.trim() || !leadPhone.trim()) return;
+    setLeadSubmitted(true);
+    const id = vizRenderIdRef.current;
+    if (id) {
+      void fetch("/api/visualizador/save-render", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ id, name: leadName.trim(), phone: leadPhone.trim() }),
+      }).catch(() => {});
+    }
+  }, [leadName, leadPhone]);
+
   const download = () => {
     if (!result) return;
     const a = document.createElement("a");
@@ -741,6 +756,12 @@ export default function VisualizadorPage() {
             generating={generating}
             progress={progress}
             error={error}
+            leadSubmitted={leadSubmitted}
+            leadName={leadName}
+            leadPhone={leadPhone}
+            onLeadNameChange={setLeadName}
+            onLeadPhoneChange={setLeadPhone}
+            onLeadSubmit={handleLeadSubmit}
             onRetry={() => setStep("zones")}
             onRegenerate={generate}
             onDownload={download}
@@ -754,27 +775,11 @@ export default function VisualizadorPage() {
               Continuar para o orçamento
             </p>
             <p className="text-[#74777f] text-xs font-[var(--font-inter)] mb-4">
-              {allAmbientes.length} {allAmbientes.length === 1 ? "área" : "áreas"} · informe seus dados para prosseguir.
+              {allAmbientes.length} {allAmbientes.length === 1 ? "área" : "áreas"} pronta{allAmbientes.length === 1 ? "" : "s"} para o orçamento.
             </p>
 
-            <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 mb-4">
-              <input
-                value={leadName}
-                onChange={(e) => setLeadName(e.target.value)}
-                placeholder="Seu nome completo"
-                className="border border-[#e2e2e2] px-3 py-2.5 text-sm font-[var(--font-inter)] text-[#002045] focus:outline-none focus:border-[#002045] bg-white"
-              />
-              <input
-                value={leadPhone}
-                onChange={(e) => setLeadPhone(e.target.value)}
-                placeholder="WhatsApp (92) 99999-9999"
-                inputMode="tel"
-                className="border border-[#e2e2e2] px-3 py-2.5 text-sm font-[var(--font-inter)] text-[#002045] focus:outline-none focus:border-[#002045] bg-white"
-              />
-            </div>
-
             <div className="flex flex-col sm:flex-row sm:items-center gap-3">
-              {quoteReady && leadName.trim() && leadPhone.trim() ? (
+              {quoteReady && leadSubmitted ? (
                 <button
                   type="button"
                   onClick={goToSimulador}
@@ -793,8 +798,8 @@ export default function VisualizadorPage() {
                 </span>
               )}
               <p className="text-[#74777f] text-xs font-[var(--font-inter)] leading-relaxed">
-                {!leadName.trim() || !leadPhone.trim()
-                  ? "Informe nome e WhatsApp para continuar."
+                {!leadSubmitted
+                  ? "Visualize o resultado para continuar."
                   : quoteReady
                   ? "Cada área já vai preenchida — sem digitar nada de novo."
                   : "Informe as medidas das áreas para levar tudo preenchido."}
@@ -1531,6 +1536,12 @@ function ResultStep({
   generating,
   progress,
   error,
+  leadSubmitted,
+  leadName,
+  leadPhone,
+  onLeadNameChange,
+  onLeadPhoneChange,
+  onLeadSubmit,
   onRetry,
   onRegenerate,
   onDownload,
@@ -1541,20 +1552,95 @@ function ResultStep({
   generating: boolean;
   progress: { i: number; total: number; label: string } | null;
   error: string | null;
+  leadSubmitted: boolean;
+  leadName: string;
+  leadPhone: string;
+  onLeadNameChange: (v: string) => void;
+  onLeadPhoneChange: (v: string) => void;
+  onLeadSubmit: () => void;
   onRetry: () => void;
   onRegenerate: () => void;
   onDownload: () => void;
   onAddPhoto: () => void;
 }) {
+  const showLeadOverlay = !leadSubmitted && !error;
+  const leadReady = leadName.trim().length > 0 && leadPhone.trim().length > 0;
+  const resultReady = !generating && !!result;
+
   return (
     <div className="mt-6">
       <div className="relative bg-[#11151b] rounded-sm overflow-hidden">
         {/* eslint-disable-next-line @next/next/no-img-element */}
-        <img src={result ?? photoData ?? ""} alt={result ? "Visualização gerada" : "Sua foto"} className="block w-full h-auto" />
+        <img
+          src={result ?? photoData ?? ""}
+          alt={result ? "Visualização gerada" : "Sua foto"}
+          className={`block w-full h-auto${showLeadOverlay && result ? " blur-md scale-[1.02]" : ""}`}
+        />
         <div className="pointer-events-none absolute top-3 left-3 bg-black/55 backdrop-blur-sm px-3 py-1.5 rounded-full">
           <p className="text-white/90 text-xs font-[var(--font-inter)]">{result ? "Resultado gerado" : "Sua foto"}</p>
         </div>
-        {generating && (
+
+        {/* Lead capture overlay — shown while generating AND until lead info is submitted */}
+        {showLeadOverlay && (
+          <div className="absolute inset-0 bg-black/70 flex flex-col items-center justify-center gap-5 px-4 py-8">
+            {generating && (
+              <div className="flex items-center gap-3">
+                <div className="w-7 h-7 border-2 border-white/30 border-t-[#a1d494] rounded-full animate-spin flex-shrink-0" />
+                <p className="text-white font-[var(--font-inter)] text-sm">
+                  {progress ? `Aplicando ${progress.label} (${progress.i} de ${progress.total})…` : "Gerando…"}
+                </p>
+              </div>
+            )}
+
+            <div className="bg-white w-full max-w-xs px-5 py-5">
+              {resultReady ? (
+                <>
+                  <p className="font-[var(--font-noto-serif)] text-[#002045] text-lg leading-snug mb-1">
+                    Sua visualização está pronta!
+                  </p>
+                  <p className="text-[#74777f] text-sm font-[var(--font-inter)] mb-4">
+                    Informe seus dados para ver o resultado.
+                  </p>
+                </>
+              ) : (
+                <>
+                  <p className="text-[10px] tracking-[0.18em] uppercase font-bold font-[var(--font-inter)] text-[#002045] mb-1">
+                    Enquanto geramos sua visualização
+                  </p>
+                  <p className="text-[#74777f] text-xs font-[var(--font-inter)] mb-4">
+                    Informe seus dados para receber o resultado.
+                  </p>
+                </>
+              )}
+              <div className="flex flex-col gap-2.5 mb-4">
+                <input
+                  value={leadName}
+                  onChange={(e) => onLeadNameChange(e.target.value)}
+                  placeholder="Seu nome completo"
+                  className="border border-[#e2e2e2] px-3 py-2.5 text-sm font-[var(--font-inter)] text-[#002045] focus:outline-none focus:border-[#002045] bg-white w-full"
+                />
+                <input
+                  value={leadPhone}
+                  onChange={(e) => onLeadPhoneChange(e.target.value)}
+                  placeholder="WhatsApp (92) 99999-9999"
+                  inputMode="tel"
+                  className="border border-[#e2e2e2] px-3 py-2.5 text-sm font-[var(--font-inter)] text-[#002045] focus:outline-none focus:border-[#002045] bg-white w-full"
+                  onKeyDown={(e) => { if (e.key === "Enter" && leadReady) onLeadSubmit(); }}
+                />
+              </div>
+              <button
+                onClick={onLeadSubmit}
+                disabled={!leadReady}
+                className="w-full inline-flex items-center justify-center bg-[#002045] text-white text-xs tracking-[0.12em] uppercase font-bold font-[var(--font-inter)] px-5 py-3 hover:bg-[#1a365d] transition-colors disabled:opacity-40 disabled:cursor-not-allowed"
+              >
+                {resultReady ? "Ver resultado →" : "Salvar e aguardar →"}
+              </button>
+            </div>
+          </div>
+        )}
+
+        {/* Plain spinner — only shown after lead is submitted and render still running */}
+        {generating && leadSubmitted && (
           <div className="absolute inset-0 bg-black/70 flex flex-col items-center justify-center gap-4 text-center px-6">
             <div className="w-10 h-10 border-2 border-white/30 border-t-[#a1d494] rounded-full animate-spin" />
             <p className="text-white font-[var(--font-inter)] text-sm">
@@ -1567,9 +1653,9 @@ function ResultStep({
 
       {error && <p className="mt-3 text-sm text-[#b42318] font-[var(--font-inter)]">{error}</p>}
 
-      {!generating && (
+      {!generating && (leadSubmitted || !!error) && (
         <div className="mt-4 flex flex-wrap gap-3">
-          {result && (
+          {result && leadSubmitted && (
             <>
               <button onClick={onDownload} className="inline-flex items-center gap-2 bg-[#002045] text-white text-xs tracking-[0.12em] uppercase font-bold font-[var(--font-inter)] px-6 py-3 hover:bg-[#1a365d] transition-colors">
                 <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
