@@ -300,6 +300,7 @@ export default function AdminPage() {
     created_at: string;
     coupon_use_id: string | null;
     sale_status: string | null;
+    render_images?: Array<{ url: string; local: string | null; productName: string | null; productCode: string | null }> | null;
   }
 
   const DRIP_TOTAL_STEPS = 7;
@@ -3831,6 +3832,22 @@ export default function AdminPage() {
                           <span className="col-span-2"><span className="text-[#74777f]">Parceiro:</span> {cu ? `${c.partner_name} (${cu.coupon_code})` : "Sem cupom"}</span>
                           <span className={`col-span-2 text-[9px] ${age.cls}`}>{new Date(c.created_at).toLocaleDateString("pt-BR")} · {age.label}</span>
                         </div>
+                        {(() => {
+                          const imgs = ("render_images" in c ? c.render_images : null) ?? [];
+                          if (!imgs || imgs.length === 0) return null;
+                          return (
+                            <div className="mt-3 pt-3 border-t border-[#f0f0f0]">
+                              <p className="text-[10px] font-bold uppercase tracking-wide text-[#74777f] mb-1.5 font-[var(--font-inter)]">Renders do Visualizador</p>
+                              <div className="flex gap-2 flex-wrap">
+                                {imgs.slice(0, 6).map((r, i) => (
+                                  <a key={i} href={r.url} target="_blank" rel="noopener noreferrer" title={[r.local, r.productName].filter(Boolean).join(" · ")}>
+                                    <img src={r.url} alt={r.productName ?? "Render"} className="w-16 h-16 object-cover border border-[#e2e2e2] hover:border-[#002045] transition-colors" />
+                                  </a>
+                                ))}
+                              </div>
+                            </div>
+                          );
+                        })()}
                       </div>
                     );
                   })}

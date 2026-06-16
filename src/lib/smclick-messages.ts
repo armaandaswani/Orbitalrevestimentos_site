@@ -20,6 +20,8 @@ export interface OrcamentoMessageInput {
   space?: string | null;
   model?: string | null;
   quoteUrl?: string | null;
+  // Public URLs of the renders the client generated in the Visualizador.
+  renderUrls?: string[] | null;
 }
 
 /**
@@ -37,6 +39,12 @@ export function clientOrcamentoMessage(i: OrcamentoMessageInput): string {
   if (i.model) lines.push(`🎨 Modelo: ${i.model}`);
   lines.push(`💰 Total estimado: ${fmtBRL(i.total)}`);
   lines.push(``);
+  const renders = (i.renderUrls ?? []).filter(Boolean);
+  if (renders.length > 0) {
+    lines.push(renders.length === 1 ? `🖼️ Veja como ficou no seu ambiente:` : `🖼️ Veja como ficou nos seus ambientes:`);
+    renders.forEach((u) => lines.push(u));
+    lines.push(``);
+  }
   if (i.quoteUrl) {
     lines.push(`Veja o orçamento completo aqui:`);
     lines.push(i.quoteUrl);

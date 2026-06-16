@@ -11,7 +11,7 @@ export async function GET(req: NextRequest) {
   const { data, error } = await db
     .from("client_email_sequences")
     .select(
-      "id, client_name, client_email, client_phone, space, model, plates, area_m2, total, dim_label, partner_name, current_step, status, next_email_at, created_at, coupon_use_id, sale_status"
+      "id, client_name, client_email, client_phone, space, model, plates, area_m2, total, dim_label, partner_name, current_step, status, next_email_at, created_at, coupon_use_id, sale_status, render_images"
     )
     .order("created_at", { ascending: false });
 

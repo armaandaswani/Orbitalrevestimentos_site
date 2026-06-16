@@ -285,6 +285,10 @@ function SimuladorInner() {
   // Abandoned-simulador recovery (Feature 6): stable id for this visit + the
   // last phone we captured, so we re-capture only when the number changes.
   const simSessionId = useRef<string>("");
+  // Render-session id handed over by the Visualizador (?viz_render=…). Carried
+  // into the orçamento submit so the saved renders get e-mailed/WhatsApp'd and
+  // shown in admin.
+  const vizRenderId = useRef<string>("");
   const lastCapturedPhoneRef = useRef("");
   const [simSubmitting, setSimSubmitting] = useState(false);
   const [simSubmitted, setSimSubmitted] = useState(false);
@@ -552,6 +556,8 @@ function SimuladorInner() {
     // Visualizador handoff link (?src=viz) — prefill without the partner banner/coupon UI
     const srcViz = searchParams.get("src") === "viz";
     if (srcViz) setVizPrefill(true);
+    const vizRender = searchParams.get("viz_render");
+    if (vizRender) vizRenderId.current = vizRender;
 
     // ── Multi-space link: ?ms=N&s0=…&p0=…&pl0=…  (partner: pl{i} plates) ──
     // ── or                ?ms=N&s0=…&p0=…&w0=…&h0=… (visualizador: dims) ──
@@ -1085,6 +1091,7 @@ function SimuladorInner() {
             quote_url: quoteSlug ? `${siteUrl}/orcamento/${quoteSlug}` : null,
             sim_id: partnerSimId ?? undefined,
             sim_session_id: simSessionId.current || undefined,
+            viz_render_id: vizRenderId.current || undefined,
           }),
         });
         if (!seqRes.ok) {

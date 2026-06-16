@@ -65,6 +65,7 @@ interface SavedAmbiente {
   productName: string;
   productImage: string;
   thumb: string; // generated result if available, else the wall photo
+  isRender: boolean; // true when `thumb` is an AI render (not just the photo)
 }
 
 function platesFor(w: number, h: number): number {
@@ -257,6 +258,7 @@ export default function VisualizadorPage() {
         productName: selected.name,
         productImage: selected.image_path,
         thumb: result ?? photoData!,
+        isRender: !!result,
       },
     ]);
     // Reset for the next ambiente — keep the product selection.
@@ -289,6 +291,7 @@ export default function VisualizadorPage() {
           productName: selected.name,
           productImage: selected.image_path,
           thumb: result ?? photoData,
+          isRender: !!result,
         }
       : null;
 
@@ -296,6 +299,46 @@ export default function VisualizadorPage() {
   const missingDimsCount = quoteAmbientes.filter((a) => !(a.width && a.height)).length;
   const quoteReady = quoteAmbientes.length > 0 && missingDimsCount <= 1;
   const simuladorHref = quoteReady ? buildSimuladorUrl(quoteAmbientes) : "/simulador";
+
+  // "Prosseguir para o simulador": before navigating, persist any AI renders so
+  // they can be e-mailed/WhatsApp'd to the client + team and shown in admin once
+  // the orçamento is submitted. The render-session id rides along on the URL
+  // (?viz_render=…). Best-effort — navigation happens regardless of the upload.
+  const [proceeding, setProceeding] = useState(false);
+  const goToSimulador = useCallback(async () => {
+    if (proceeding) return;
+    let url = simuladorHref;
+    // Upload one render at a time (each ~2MB, under Vercel's body cap), threading
+    // the session id so they all land in one row. Best-effort.
+    const renders = quoteAmbientes.filter((a) => a.isRender && a.thumb.startsWith("data:"));
+    if (renders.length > 0) {
+      setProceeding(true);
+      let renderId: string | undefined;
+      for (const a of renders) {
+        try {
+          const res = await fetch("/api/visualizador/save-render", {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({
+              id: renderId,
+              image: a.thumb,
+              local: a.local,
+              productName: a.productName,
+              productCode: a.productCode,
+            }),
+          });
+          if (res.ok) {
+            const data = (await res.json()) as { id?: string };
+            if (data.id) renderId = data.id;
+          }
+        } catch {
+          /* non-fatal — keep going / proceed without this render */
+        }
+      }
+      if (renderId) url += `${url.includes("?") ? "&" : "?"}viz_render=${encodeURIComponent(renderId)}`;
+    }
+    window.location.assign(url);
+  }, [proceeding, simuladorHref, quoteAmbientes]);
 
   const waMsg = selected
     ? `Olá! Usei o Visualizador e gostei do acabamento ${selected.name} (${selected.linha})${
@@ -575,16 +618,20 @@ export default function VisualizadorPage() {
 
             <div className="flex flex-col sm:flex-row sm:items-center gap-3">
               {quoteReady ? (
-                <Link
-                  href={simuladorHref}
-                  className="inline-flex items-center justify-center gap-2 bg-[#002045] text-white text-xs tracking-[0.12em] uppercase font-bold font-[var(--font-inter)] px-7 py-3.5 hover:bg-[#1a365d] transition-colors"
+                <button
+                  type="button"
+                  onClick={goToSimulador}
+                  disabled={proceeding}
+                  className="inline-flex items-center justify-center gap-2 bg-[#002045] text-white text-xs tracking-[0.12em] uppercase font-bold font-[var(--font-inter)] px-7 py-3.5 hover:bg-[#1a365d] transition-colors disabled:opacity-70 disabled:cursor-wait"
                 >
                   <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
                     <rect x="4" y="2" width="16" height="20" rx="2" />
                     <path d="M8 6h8M8 10h8M8 14h4" />
                   </svg>
-                  Simular orçamento com {quoteAmbientes.length === 1 ? "este ambiente" : `estes ${quoteAmbientes.length} ambientes`}
-                </Link>
+                  {proceeding
+                    ? "Preparando…"
+                    : `Simular orçamento com ${quoteAmbientes.length === 1 ? "este ambiente" : `estes ${quoteAmbientes.length} ambientes`}`}
+                </button>
               ) : (
                 <span className="inline-flex items-center justify-center gap-2 bg-[#e8e8e6] text-[#a0a3a9] text-xs tracking-[0.12em] uppercase font-bold font-[var(--font-inter)] px-7 py-3.5 cursor-not-allowed">
                   Simular orçamento

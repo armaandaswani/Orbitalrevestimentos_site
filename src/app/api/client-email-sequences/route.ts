@@ -26,12 +26,50 @@ interface SpaceBreakdownItem {
   imageUrl?: string;
 }
 
+interface VizRender {
+  url: string;
+  local: string | null;
+  productName: string | null;
+  productCode: string | null;
+}
+
+// Load the Visualizador renders the client saved before the handoff. Returns []
+// for a missing id, an unknown session, or if the table doesn't exist yet —
+// never throws, so it can't break the orçamento submit.
+async function loadVizRenders(
+  db: ReturnType<typeof supabaseAdmin>,
+  id: unknown
+): Promise<VizRender[]> {
+  if (!id || typeof id !== "string") return [];
+  try {
+    const { data, error } = await db
+      .from("visualizador_renders")
+      .select("images")
+      .eq("id", id)
+      .single();
+    if (error || !data) return [];
+    const imgs = (data as { images?: unknown }).images;
+    if (!Array.isArray(imgs)) return [];
+    return imgs
+      .filter((r): r is VizRender => !!r && typeof (r as VizRender).url === "string")
+      .map((r) => ({
+        url: r.url,
+        local: r.local ?? null,
+        productName: r.productName ?? null,
+        productCode: r.productCode ?? null,
+      }));
+  } catch {
+    return [];
+  }
+}
+
 export async function POST(req: NextRequest) {
   const body = await req.json();
   const {
     coupon_use_id, client_name, client_email, client_phone,
     space, model, plates, area_m2, total, dim_label, product_images,
     space_breakdown, partner_name, quote_url, sim_id, sim_session_id,
+    viz_render_id,
   } = body;
 
   if (!client_name || !client_email) {
@@ -39,6 +77,11 @@ export async function POST(req: NextRequest) {
   }
 
   const db = supabaseAdmin();
+
+  // Visualizador renders the client generated before coming to the Simulador
+  // (carried over as ?viz_render=…). Best-effort: a missing/empty session just
+  // means no renders to attach.
+  const vizRenders = await loadVizRenders(db, viz_render_id);
 
   // Next email at: step 2 scheduled in STEP_DELAYS_DAYS[1] days
   const delayDays = STEP_DELAYS_DAYS[1] ?? 3;
@@ -66,6 +109,16 @@ export async function POST(req: NextRequest) {
     .single();
 
   if (error) return NextResponse.json({ error: error.message }, { status: 500 });
+
+  // Persist the Visualizador renders on the sequence row so they show in admin.
+  // Separate, non-fatal update: keeps the critical insert above decoupled from
+  // the render_images column (migration 018) — if the column is missing, the
+  // orçamento still saves.
+  if (vizRenders.length > 0) {
+    try {
+      await db.from("client_email_sequences").update({ render_images: vizRenders }).eq("id", seq.id);
+    } catch { /* non-fatal — column may not exist yet */ }
+  }
 
   // Auto-ingest into the CRM (non-fatal, deduped by email). A website orçamento
   // that used a partner coupon is attributed to that partner; otherwise it's an
@@ -108,6 +161,7 @@ export async function POST(req: NextRequest) {
           space: (space as string | null) || null,
           model: (model as string | null) || null,
           quoteUrl: (quote_url as string | null) ?? null,
+          renderUrls: vizRenders.map((r) => r.url),
         })
       );
       if (res.ok && leadId) await touchLeadContacted(leadId);
@@ -184,6 +238,53 @@ export async function POST(req: NextRequest) {
     // email failure is non-fatal — sequence record already created
   }
 
+  // Send the client their Visualizador render(s) (non-fatal). A short, separate
+  // email so it lands even if the drip content lib changes.
+  if (vizRenders.length > 0) {
+    try {
+      const firstName = String(client_name).trim().split(/\s+/)[0] || "Olá";
+      const renderImgs = vizRenders
+        .map(
+          (r) => `
+<table width="100%" cellpadding="0" cellspacing="0" style="margin:0 0 16px;">
+  <tr><td style="padding:0;"><img src="${r.url}" alt="${r.productName ?? "Render"}" style="display:block;width:100%;max-width:520px;height:auto;border:0;" /></td></tr>
+  ${r.local || r.productName ? `<tr><td style="padding:6px 0 0;color:#74777f;font-size:12px;font-family:Arial,sans-serif;">${[r.local, r.productName].filter(Boolean).join(" · ")}</td></tr>` : ""}
+</table>`
+        )
+        .join("");
+      await getResend().emails.send({
+        from: "Orbital Revestimentos <noreply@orbitalrevestimentos.com.br>",
+        to: client_email as string,
+        subject: "Seu ambiente com o revestimento Orbital 🖼️",
+        html: `<!DOCTYPE html>
+<html>
+<body style="margin:0;padding:0;background:#f0eeeb;font-family:Arial,sans-serif;">
+<table width="100%" cellpadding="0" cellspacing="0" style="padding:32px 16px;">
+  <tr><td align="center">
+    <table width="560" cellpadding="0" cellspacing="0" style="background:#ffffff;max-width:560px;width:100%;">
+      <tr><td style="background:#002045;padding:20px 28px;">
+        <p style="margin:0;color:rgba(255,255,255,0.5);font-size:10px;letter-spacing:0.2em;text-transform:uppercase;font-family:Arial,sans-serif;">Orbital Revestimentos</p>
+        <p style="margin:6px 0 0;color:#ffffff;font-size:20px;font-weight:700;font-family:Arial,sans-serif;">Seu ambiente, transformado</p>
+      </td></tr>
+      <tr><td style="padding:28px;">
+        <p style="margin:0 0 18px;color:#002045;font-size:14px;line-height:1.6;font-family:Arial,sans-serif;">${firstName}, aqui está a simulação que você gerou no nosso Visualizador. É só uma prévia — na instalação real o acabamento fica ainda melhor.</p>
+        ${renderImgs}
+        <p style="margin:18px 0 0;color:#74777f;font-size:12px;line-height:1.6;font-family:Arial,sans-serif;">Quer ver pessoalmente ou tirar dúvidas? É só responder este e-mail ou chamar a gente no WhatsApp. 🙌</p>
+      </td></tr>
+      <tr><td style="background:#f5f5f3;padding:16px 28px;border-top:1px solid #e2e2e2;">
+        <p style="margin:0;color:#b0b0b0;font-size:10px;font-family:Arial,sans-serif;">Orbital Revestimentos · Manaus</p>
+      </td></tr>
+    </table>
+  </td></tr>
+</table>
+</body>
+</html>`,
+      });
+    } catch {
+      // non-fatal
+    }
+  }
+
   // Send internal notification to Orbital team (non-fatal)
   try {
     const totalFmt = fmtBRL(total as number);
@@ -257,6 +358,20 @@ export async function POST(req: NextRequest) {
   </tr>
 </table>` : "";
 
+    // ── Visualizador renders the client generated ───────────────────────────
+    const renderThumbs = vizRenders.slice(0, 3);
+    const renderBlock = renderThumbs.length === 0 ? "" : `
+<p style="margin:0 0 8px;color:#002045;font-size:12px;font-weight:700;letter-spacing:0.08em;text-transform:uppercase;font-family:Arial,sans-serif;">Renders do cliente (Visualizador)</p>
+<table cellpadding="0" cellspacing="0" width="100%" style="margin:0 0 24px;border-collapse:separate;border-spacing:8px 0;">
+  <tr>
+    ${renderThumbs.map((r) => `
+    <td style="width:${Math.floor(100 / renderThumbs.length)}%;vertical-align:top;padding:0 4px;">
+      <a href="${r.url}"><img src="${r.url}" alt="${r.productName ?? "Render"}" style="display:block;width:100%;height:auto;border:0;" /></a>
+      <p style="margin:4px 0 0;font-size:10px;color:#74777f;font-family:Arial,sans-serif;line-height:1.4;">${r.local ?? ""}${r.productName ? `<br><span style="color:#002045;font-weight:700;">${r.productName}</span>` : ""}</p>
+    </td>`).join("")}
+  </tr>
+</table>`;
+
     await resend.emails.send({
       from: "Orbital Revestimentos <noreply@orbitalrevestimentos.com.br>",
       to: ADMIN_EMAIL,
@@ -276,6 +391,8 @@ export async function POST(req: NextRequest) {
 
       <!-- Body -->
       <tr><td style="padding:28px;">
+
+        ${renderBlock}
 
         ${thumbBlock}
 

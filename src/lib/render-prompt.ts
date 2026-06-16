@@ -129,9 +129,14 @@ export function composePrompt(opts: {
     "- Success test: if the newly applied panel were erased from your output, the",
     "  rest of the image must be indistinguishable from the original IMAGE 1.",
     "",
-    "PANEL FIDELITY:",
+    "PANEL FIDELITY — the installed surface MUST look like IMAGE 2 and nothing else:",
     "- Use the EXACT panel from IMAGE 2. Do not invent, restyle, reinterpret or",
     "  beautify it. Do not change its pattern, color, texture or proportions.",
+    "- Match IMAGE 2's specific material, color and veining/grain — the SAME stone or",
+    "  wood, the same vein layout, the same color temperature and tonality. It cannot",
+    "  have different textures or tonalities. Do NOT substitute a generic marble, a",
+    "  whiter/greyer slab, or a different pattern. If in doubt, copy IMAGE 2 literally",
+    "  pixel-for-pixel and only re-project it onto the surface.",
     "- Do not mix in other materials or models — one panel product, on this area only.",
     "- The panel in your output must be visually identical to IMAGE 2, only adapted",
     "  to the target surface's perspective and lighting.",
@@ -142,19 +147,49 @@ export function composePrompt(opts: {
     "  shadows where the surface meets adjacent surfaces.",
     "- Anything currently in front of the area (furniture, switches, outlets, frames,",
     "  plants) stays in front and occludes the panel — the panel goes BEHIND it.",
-    `- Panel module size: ${opts.panelWidthM}m wide x ${opts.panelHeightM}m tall. Keep`,
-    "  this aspect ratio; never stretch or squash the pattern to fit. Show the real",
-    "  seams/joints between panels laid edge-to-edge, at the correct scale.",
+    "- Render the panel itself in ultra-high definition with detailed, lifelike",
+    "  textures and soft, realistic (ray-traced) contact shadows. Aim for photoreal,",
+    "  not stylized — but keep the room's OWN lighting, white balance and exposure",
+    "  unchanged; do not add studio or cinematic lighting that wasn't in IMAGE 1.",
+    "",
+    "PANEL SCALE & LAYOUT — this is the #1 thing renders get wrong, read it twice:",
+    `- These are LARGE-FORMAT panels. Each module is ${opts.panelWidthM}m wide x ${opts.panelHeightM}m`,
+    "  tall — roughly the height of a whole wall. They are NOT tiles, bricks, slabs",
+    "  or mosaic. Do NOT chop the surface into a grid of small repeated squares.",
+    "- Cover the ENTIRE target surface, edge to edge and floor to ceiling — leave no",
+    "  part of it unpanelled and do not float the panels in the middle of the wall.",
+    `- A ${opts.panelHeightM}m-tall panel is essentially floor-to-ceiling in a normal room`,
+    "  (ceilings are usually ~2.6–2.9m). Unless the target surface is visibly taller",
+    "  than that, render the panels at FULL HEIGHT: a single row running from the floor",
+    "  (or skirting) to the ceiling, with NO horizontal seam across the middle.",
+    `- Lay the panels VERTICALLY and side by side, edge-to-edge. The ONLY joints are the`,
+    `  thin vertical seams every ${opts.panelWidthM}m. Use the FEWEST panels the real width`,
+    "  needs — never multiply into many narrow strips, and never add seams that aren't there.",
+    "- Keep the module aspect ratio; never stretch, squash, zoom or shrink the pattern",
+    "  to make it fit. Adjust how many panels you use, not the size of the pattern.",
+    "- Calibrate scale against real references visible in the photo: a standard door is",
+    "  ~2.1m tall, light switches/outlets ~1.1m and ~0.3m off the floor, countertops",
+    "  ~0.9m. The veining must read at life-size against these — if the pattern looks",
+    "  tiny next to a door or socket, your scale is wrong; make the panels bigger.",
     ...(opts.wallWidthM && opts.wallHeightM
       ? (() => {
           const g = panelGrid(opts.wallWidthM, opts.wallHeightM, opts.panelWidthM, opts.panelHeightM);
+          const rowsPhrase =
+            g.rows === 1
+              ? "a SINGLE full-height row (no horizontal seam)"
+              : `${g.rows} rows high`;
           return [
-            `- The client measured this area: ${opts.wallWidthM}m wide x ${opts.wallHeightM}m tall, ` +
-              `≈ ${g.count} panel${g.count !== 1 ? "s" : ""} (${g.cols} across x ${g.rows} high) ` +
-              "laid edge-to-edge. Use these real dimensions to scale the texture and seams correctly.",
+            `- The client measured this exact area: ${opts.wallWidthM}m wide x ${opts.wallHeightM}m tall.`,
+            `  That is ${g.cols} panel${g.cols !== 1 ? "s" : ""} across and ${rowsPhrase}` +
+              ` — ${g.count} panel${g.count !== 1 ? "s" : ""} total, laid edge-to-edge. Match this`,
+            "  layout and scale precisely; do not add or remove seams.",
           ];
         })()
-      : []),
+      : [
+          "- No measurements were given. Assume a standard room: render the panels",
+          "  full-height in a single row and use only as many vertical panels as the",
+          "  wall's real width needs at the module width above.",
+        ]),
     "",
     "PRIORITY ORDER (never sacrifice an earlier item to satisfy a later one):",
     "1. Preserve the original environment.",
