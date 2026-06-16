@@ -773,6 +773,7 @@ function ZonesStep({
         <p className="mt-3 text-[#74777f] text-xs font-[var(--font-inter)] leading-relaxed">
           <strong>Desenhar área:</strong> arraste sobre a foto para marcar onde o modelo entra.{" "}
           <strong>Detectar superfície:</strong> toque numa parede/teto e a IA marca a área — você ajusta depois.
+          Cena difícil de desenhar? Em cada área você pode <strong>descrever o local em palavras</strong>.
           Áreas são opcionais: sem marcação, o modelo é aplicado na parede principal.
         </p>
 
@@ -1102,6 +1103,22 @@ function ZoneCard({
         />
       )}
 
+      {/* describe where, in words — best when the scene is busy and hard to draw */}
+      <label className="block text-[10px] tracking-[0.15em] uppercase font-bold font-[var(--font-inter)] text-[#74777f] mb-1 mt-1">
+        Onde aplicar (em palavras) <span className="normal-case font-normal">(opcional)</span>
+      </label>
+      <textarea
+        value={zone.instruction}
+        onClick={(e) => e.stopPropagation()}
+        onChange={(e) => onChange({ instruction: e.target.value })}
+        rows={2}
+        placeholder="ex: nas paredes cinza ao fundo, atrás do sofá e ao lado do espelho redondo"
+        className="w-full border border-[#e2e2e2] px-2.5 py-2 text-sm font-[var(--font-inter)] text-[#002045] focus:outline-none focus:border-[#002045] mb-1 resize-none"
+      />
+      <p className="text-[10px] text-[#a0a3a9] font-[var(--font-inter)] mb-1">
+        Difícil desenhar? Descreva o local em palavras — a IA aplica exatamente onde você indicar (com ou sem desenho).
+      </p>
+
       {/* product */}
       <label className="block text-[10px] tracking-[0.15em] uppercase font-bold font-[var(--font-inter)] text-[#74777f] mb-1 mt-1">
         Acabamento {prod ? `· ${prod.name}` : ""}
@@ -1168,7 +1185,11 @@ function ZoneCard({
         />
       </div>
       <p className="mt-2 text-[10px] text-[#a0a3a9] font-[var(--font-inter)]">
-        {zone.rect ? "Área marcada na foto ✓" : "Sem marcação — aplicado na parede principal."}
+        {zone.rect
+          ? "Área marcada na foto ✓"
+          : zone.instruction.trim()
+          ? "Local descrito em texto ✓"
+          : "Sem marcação — aplicado na parede principal."}
       </p>
     </div>
   );
@@ -1219,7 +1240,14 @@ function ReviewStep({
                   <span><span className="text-[#74777f]">Superfície:</span> {surfaceLabel}</span>
                   <span><span className="text-[#74777f]">Modelo:</span> {prod?.name ?? "—"}</span>
                   <span><span className="text-[#74777f]">Medidas:</span> {dims ?? "—"}</span>
-                  <span><span className="text-[#74777f]">Área marcada:</span> {z.rect ? "Sim" : "Parede principal"}</span>
+                  <span className="col-span-2">
+                    <span className="text-[#74777f]">Onde:</span>{" "}
+                    {z.instruction.trim()
+                      ? z.instruction.trim()
+                      : z.rect
+                      ? "Área desenhada na foto"
+                      : "Parede principal"}
+                  </span>
                 </div>
               </li>
             );

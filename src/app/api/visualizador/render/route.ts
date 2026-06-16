@@ -154,9 +154,11 @@ export async function POST(req: NextRequest) {
 
   // WHERE to apply the panel (optional). This is client-supplied text that goes
   // straight into the LLM prompt, so collapse whitespace and cap the length.
+  // Allow a full sentence-length description (e.g. "the grey walls at the back,
+  // behind the sofa") since that's often clearer than a drawn rectangle.
   const applicationArea =
     typeof body.applicationArea === "string"
-      ? body.applicationArea.replace(/\s+/g, " ").trim().slice(0, 80) || null
+      ? body.applicationArea.replace(/\s+/g, " ").trim().slice(0, 240) || null
       : null;
 
   // Optional drawn rectangle (normalized 0..1), clamped to valid bounds.
