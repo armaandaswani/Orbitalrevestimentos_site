@@ -61,6 +61,7 @@ interface Zone {
   polygon: Poly | null; // normalized 0..1 outline (Gemini fallback)
   maskUrl: string | null; // tinted translucent overlay PNG (fal.ai SAM mask)
   rect: Rect | null; // bounding box of the selection (used to confine the render)
+  manual: boolean; // true when the rect was drawn by hand (render a rectangle)
   instruction: string;
   width: string;
   height: string;
@@ -325,6 +326,7 @@ export default function VisualizadorPage() {
         polygon: null,
         maskUrl: null,
         rect: null,
+        manual: false,
         instruction: "",
         width: "",
         height: "",
@@ -359,6 +361,59 @@ export default function VisualizadorPage() {
     },
     [retargetId, redetectZone, tapAddSurface]
   );
+
+  // "Desenhar": create a new area from a hand-drawn rectangle (no detection).
+  const drawAddRect = useCallback(
+    (rect: Rect) => {
+      const id = `z-${Date.now()}`;
+      const idx = zones.length;
+      setZones((prev) => [
+        ...prev,
+        {
+          id,
+          label: `Área ${idx + 1}`,
+          surface: "parede",
+          customLabel: "",
+          productId: products[0]?.id ?? "",
+          polygon: null,
+          maskUrl: null,
+          rect,
+          manual: true,
+          instruction: "",
+          width: "",
+          height: "",
+          detecting: false,
+        },
+      ]);
+      setActiveZoneId(id);
+    },
+    [zones.length, products]
+  );
+
+  // "Descrever": create a text-only area (no marking on the photo).
+  const addTextZone = useCallback(() => {
+    const id = `z-${Date.now()}`;
+    const idx = zones.length;
+    setZones((prev) => [
+      ...prev,
+      {
+        id,
+        label: `Área ${idx + 1}`,
+        surface: "parede",
+        customLabel: "",
+        productId: products[0]?.id ?? "",
+        polygon: null,
+        maskUrl: null,
+        rect: null,
+        manual: false,
+        instruction: "",
+        width: "",
+        height: "",
+        detecting: false,
+      },
+    ]);
+    setActiveZoneId(id);
+  }, [zones.length, products]);
 
   const zonesReady = zones.filter((z) => z.productId);
   const canReview = !!photoData && zonesReady.length > 0;
@@ -538,6 +593,8 @@ export default function VisualizadorPage() {
             activeZoneId={activeZoneId}
             setActiveZoneId={setActiveZoneId}
             onTapPhoto={onTapPhoto}
+            onDrawRect={drawAddRect}
+            onAddTextZone={addTextZone}
             updateZone={updateZone}
             removeZone={removeZone}
             retargetId={retargetId}
@@ -742,12 +799,16 @@ function UploadStep({
   );
 }
 
+type ZoneMode = "tap" | "draw";
+
 function ZonesStep({
   photoData,
   zones,
   activeZoneId,
   setActiveZoneId,
   onTapPhoto,
+  onDrawRect,
+  onAddTextZone,
   updateZone,
   removeZone,
   retargetId,
@@ -765,6 +826,8 @@ function ZonesStep({
   activeZoneId: string | null;
   setActiveZoneId: (id: string | null) => void;
   onTapPhoto: (nx: number, ny: number) => void;
+  onDrawRect: (rect: Rect) => void;
+  onAddTextZone: () => void;
   updateZone: (id: string, patch: Partial<Zone>) => void;
   removeZone: (id: string) => void;
   retargetId: string | null;
@@ -777,27 +840,67 @@ function ZonesStep({
   onBack: () => void;
   onReview: () => void;
 }) {
+  // The client picks HOW to mark areas — no method is forced.
+  const [mode, setMode] = useState<ZoneMode>("tap");
+
   return (
     <div className="grid lg:grid-cols-[1fr_360px] gap-8 items-start mt-6">
       <div>
+        {/* method picker */}
+        <div className="mb-3 flex flex-wrap items-center gap-2">
+          <span className="text-[10px] tracking-[0.15em] uppercase font-bold font-[var(--font-inter)] text-[#74777f] mr-1">Como marcar:</span>
+          <div className="inline-flex border border-[#e2e2e2] rounded-sm overflow-hidden">
+            {([
+              { id: "tap" as const, label: "Tocar" },
+              { id: "draw" as const, label: "Desenhar" },
+            ]).map((m) => (
+              <button
+                key={m.id}
+                onClick={() => {
+                  setMode(m.id);
+                  setRetargetId(null);
+                }}
+                className={`px-3.5 py-2 text-[11px] font-bold font-[var(--font-inter)] transition-colors ${mode === m.id ? "bg-[#002045] text-white" : "text-[#74777f] hover:text-[#002045]"}`}
+              >
+                {m.label}
+              </button>
+            ))}
+          </div>
+          <button
+            onClick={onAddTextZone}
+            className="inline-flex items-center gap-1 px-3 py-2 text-[11px] font-bold font-[var(--font-inter)] text-[#3b6934] border border-[#bcd8b4] rounded-sm hover:bg-[#f3f8f1] transition-colors"
+          >
+            <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5"><path d="M12 5v14M5 12h14" /></svg>
+            Descrever em texto
+          </button>
+        </div>
+
         <SurfaceCanvas
           photoData={photoData}
           zones={zones}
           activeZoneId={activeZoneId}
           setActiveZoneId={setActiveZoneId}
+          mode={mode}
           onTapPhoto={onTapPhoto}
+          onDrawRect={onDrawRect}
+          updateZone={updateZone}
           busy={anyDetecting}
           retargeting={!!retargetId}
         />
         <p className="mt-3 text-[#74777f] text-xs font-[var(--font-inter)] leading-relaxed">
           {retargetId ? (
             <strong className="text-[#b4791e]">Toque no ponto certo da superfície para refazer a seleção.</strong>
+          ) : mode === "tap" ? (
+            <>
+              <strong>Tocar:</strong> toque numa superfície (parede, teto, móvel…) e a IA marca a área sozinha.
+            </>
           ) : (
             <>
-              <strong>Toque</strong> numa superfície (parede, teto, móvel…) e a IA marca a área. Toque em
-              outra para adicionar. Cena difícil? Em cada área você pode <strong>descrever o local em palavras</strong>.
+              <strong>Desenhar:</strong> arraste sobre a foto para desenhar a área você mesmo. Arraste a área
+              para mover, ou o canto para redimensionar.
             </>
-          )}
+          )}{" "}
+          Você também pode <strong>Descrever em texto</strong> — escolha o que preferir; nenhum método é obrigatório.
         </p>
 
         <div className="mt-5 flex flex-wrap gap-3">
@@ -816,7 +919,7 @@ function ZonesStep({
           </button>
           {!canReview && (
             <span className="text-xs text-[#b4791e] font-[var(--font-inter)] self-center">
-              Toque numa superfície e atribua um acabamento.
+              Adicione uma área (tocar, desenhar ou texto) e atribua um acabamento.
             </span>
           )}
         </div>
@@ -828,7 +931,7 @@ function ZonesStep({
         </p>
         {zones.length === 0 && (
           <p className="text-[#74777f] text-sm font-[var(--font-inter)] border border-dashed border-[#cdd3dd] px-4 py-6 text-center">
-            Toque numa superfície da foto para começar.
+            Toque, desenhe ou descreva uma área para começar.
           </p>
         )}
         {zones.map((z, i) => (
@@ -841,7 +944,10 @@ function ZonesStep({
             onSelect={() => setActiveZoneId(z.id)}
             onChange={(patch) => updateZone(z.id, patch)}
             onRemove={() => removeZone(z.id)}
-            onRetarget={() => setRetargetId(retargetId === z.id ? null : z.id)}
+            onRetarget={() => {
+              setMode("tap");
+              setRetargetId(retargetId === z.id ? null : z.id);
+            }}
             products={products}
             loadingProducts={loadingProducts}
             productById={productById}
@@ -858,7 +964,10 @@ function SurfaceCanvas({
   zones,
   activeZoneId,
   setActiveZoneId,
+  mode,
   onTapPhoto,
+  onDrawRect,
+  updateZone,
   busy,
   retargeting,
 }: {
@@ -866,24 +975,78 @@ function SurfaceCanvas({
   zones: Zone[];
   activeZoneId: string | null;
   setActiveZoneId: (id: string | null) => void;
+  mode: ZoneMode;
   onTapPhoto: (nx: number, ny: number) => void;
+  onDrawRect: (rect: Rect) => void;
+  updateZone: (id: string, patch: Partial<Zone>) => void;
   busy: boolean;
   retargeting: boolean;
 }) {
   const ref = useRef<HTMLDivElement | null>(null);
-  const handleClick = (e: React.MouseEvent) => {
-    const el = ref.current;
-    if (!el) return;
-    const r = el.getBoundingClientRect();
-    const nx = Math.min(1, Math.max(0, (e.clientX - r.left) / r.width));
-    const ny = Math.min(1, Math.max(0, (e.clientY - r.top) / r.height));
-    onTapPhoto(nx, ny);
+  const drag = useRef<
+    | null
+    | { kind: "create"; sx: number; sy: number }
+    | { kind: "move"; id: string; offX: number; offY: number; w: number; h: number }
+    | { kind: "resize"; id: string; x: number; y: number }
+  >(null);
+  const [draft, setDraft] = useState<Rect | null>(null);
+  const draftRef = useRef<Rect | null>(null); // mirror of `draft` for synchronous reads in pointerup
+  const setDraftBoth = (r: Rect | null) => {
+    draftRef.current = r;
+    setDraft(r);
   };
+
+  const norm = (cx: number, cy: number) => {
+    const el = ref.current;
+    if (!el) return { x: 0, y: 0 };
+    const r = el.getBoundingClientRect();
+    return { x: Math.min(1, Math.max(0, (cx - r.left) / r.width)), y: Math.min(1, Math.max(0, (cy - r.top) / r.height)) };
+  };
+
+  // Tap mode: a click creates + auto-detects a new area.
+  const handleClick = (e: React.MouseEvent) => {
+    if (mode !== "tap") return;
+    const p = norm(e.clientX, e.clientY);
+    onTapPhoto(p.x, p.y);
+  };
+
+  // Draw mode: drag on the background to create a rectangle.
+  const onBgPointerDown = (e: React.PointerEvent) => {
+    if (mode !== "draw") return;
+    const p = norm(e.clientX, e.clientY);
+    (e.currentTarget as HTMLElement).setPointerCapture?.(e.pointerId);
+    drag.current = { kind: "create", sx: p.x, sy: p.y };
+    setDraftBoth({ x: p.x, y: p.y, w: 0, h: 0 });
+  };
+  const onPointerMove = (e: React.PointerEvent) => {
+    const d = drag.current;
+    if (!d) return;
+    const p = norm(e.clientX, e.clientY);
+    if (d.kind === "create") {
+      setDraftBoth({ x: Math.min(d.sx, p.x), y: Math.min(d.sy, p.y), w: Math.abs(p.x - d.sx), h: Math.abs(p.y - d.sy) });
+    } else if (d.kind === "move") {
+      updateZone(d.id, { rect: { x: Math.min(1 - d.w, Math.max(0, p.x - d.offX)), y: Math.min(1 - d.h, Math.max(0, p.y - d.offY)), w: d.w, h: d.h } });
+    } else if (d.kind === "resize") {
+      updateZone(d.id, { rect: { x: d.x, y: d.y, w: Math.max(0.03, Math.min(1 - d.x, p.x - d.x)), h: Math.max(0.03, Math.min(1 - d.y, p.y - d.y)) } });
+    }
+  };
+  const onPointerUp = () => {
+    const d = drag.current;
+    const f = draftRef.current;
+    if (d?.kind === "create" && f && f.w > 0.03 && f.h > 0.03) onDrawRect(f);
+    drag.current = null;
+    setDraftBoth(null);
+  };
+
   return (
     <div
       ref={ref}
       onClick={handleClick}
-      className={`relative bg-[#11151b] rounded-sm overflow-hidden select-none ${retargeting ? "cursor-crosshair" : "cursor-pointer"}`}
+      onPointerDown={onBgPointerDown}
+      onPointerMove={onPointerMove}
+      onPointerUp={onPointerUp}
+      onPointerLeave={onPointerUp}
+      className={`relative bg-[#11151b] rounded-sm overflow-hidden select-none touch-none ${mode === "draw" || retargeting ? "cursor-crosshair" : "cursor-pointer"}`}
     >
       {/* eslint-disable-next-line @next/next/no-img-element */}
       <img src={photoData} alt="Seu ambiente" className="block w-full h-auto pointer-events-none" />
@@ -939,6 +1102,50 @@ function SurfaceCanvas({
           </button>
         );
       })}
+
+      {/* hand-drawn rectangle zones (movable / resizable in draw mode) */}
+      {zones.map((z, i) => {
+        if (!z.manual || !z.rect) return null;
+        const color = ZONE_COLORS[i % ZONE_COLORS.length];
+        const rect = z.rect;
+        const active = z.id === activeZoneId;
+        return (
+          <div
+            key={z.id}
+            onPointerDown={(e) => {
+              if (mode !== "draw") return;
+              e.stopPropagation();
+              setActiveZoneId(z.id);
+              const p = norm(e.clientX, e.clientY);
+              try { (e.currentTarget as HTMLElement).setPointerCapture(e.pointerId); } catch {}
+              drag.current = { kind: "move", id: z.id, offX: p.x - rect.x, offY: p.y - rect.y, w: rect.w, h: rect.h };
+            }}
+            style={{ left: `${rect.x * 100}%`, top: `${rect.y * 100}%`, width: `${rect.w * 100}%`, height: `${rect.h * 100}%`, borderColor: color, background: `${color}22` }}
+            className={`absolute border-2 ${active ? "ring-2 ring-white/70" : ""} ${mode === "draw" ? "cursor-move" : "pointer-events-none"}`}
+          >
+            {mode === "draw" && (
+              <span
+                onPointerDown={(e) => {
+                  e.stopPropagation();
+                  setActiveZoneId(z.id);
+                  try { (e.currentTarget as HTMLElement).setPointerCapture(e.pointerId); } catch {}
+                  drag.current = { kind: "resize", id: z.id, x: rect.x, y: rect.y };
+                }}
+                style={{ background: color }}
+                className="absolute -bottom-2 -right-2 w-4 h-4 rounded-full border-2 border-white cursor-nwse-resize"
+              />
+            )}
+          </div>
+        );
+      })}
+
+      {/* live draft while drawing */}
+      {draft && draft.w > 0 && (
+        <div
+          style={{ left: `${draft.x * 100}%`, top: `${draft.y * 100}%`, width: `${draft.w * 100}%`, height: `${draft.h * 100}%` }}
+          className="absolute border-2 border-dashed border-white bg-white/10 pointer-events-none"
+        />
+      )}
 
       {busy && (
         <div className="absolute inset-0 bg-black/40 flex items-center justify-center pointer-events-none">
@@ -1012,8 +1219,10 @@ function ZoneCard({
             <span className="text-[#74777f]">Detectando superfície…</span>
           ) : zone.polygon || zone.maskUrl ? (
             <span className="text-[#2f5429]">Superfície detectada ✓</span>
+          ) : zone.manual && zone.rect ? (
+            <span className="text-[#2f5429]">Área desenhada ✓</span>
           ) : (
-            <span className="text-[#b4791e]">Não detectada — descreva em texto abaixo</span>
+            <span className="text-[#b4791e]">Descreva o local em texto abaixo</span>
           )}
         </p>
         <button
@@ -1145,7 +1354,7 @@ function ReviewStep({
                   <span><span className="text-[#74777f]">Medidas:</span> {dims ?? "—"}</span>
                   <span className="col-span-2">
                     <span className="text-[#74777f]">Onde:</span>{" "}
-                    {z.instruction.trim() ? z.instruction.trim() : z.polygon || z.maskUrl ? "Área marcada na foto" : "Parede principal"}
+                    {z.instruction.trim() ? z.instruction.trim() : z.polygon || z.maskUrl || (z.manual && z.rect) ? "Área marcada na foto" : "Parede principal"}
                   </span>
                 </div>
               </li>
