@@ -216,6 +216,38 @@ export default function VisualizadorPage() {
   const fileInputRef = useRef<HTMLInputElement | null>(null);
   const [dragOver, setDragOver] = useState(false);
 
+  // ── Dynamic flow: keep the next thing to do in view (esp. on mobile) ──────
+  const topRef = useRef<HTMLDivElement | null>(null);
+  const stepInit = useRef(true);
+  // On every step change, jump the viewport to the top of the wizard so the new
+  // step's content (and the stepper) is what the user sees — not the old button.
+  useEffect(() => {
+    if (stepInit.current) {
+      stepInit.current = false;
+      return;
+    }
+    topRef.current?.scrollIntoView({ behavior: "smooth", block: "start" });
+  }, [step]);
+
+  // When a new area is added, bring its card into view once it's ready, so the
+  // next required input (choosing the acabamento) is obvious.
+  const scrollZoneRef = useRef<string | null>(null);
+  useEffect(() => {
+    const id = scrollZoneRef.current;
+    if (!id) return;
+    const z = zones.find((zz) => zz.id === id);
+    if (!z) {
+      scrollZoneRef.current = null;
+      return;
+    }
+    if (z.detecting) return; // wait until detection finishes
+    scrollZoneRef.current = null;
+    const t = setTimeout(() => {
+      document.getElementById(`zone-${id}`)?.scrollIntoView({ behavior: "smooth", block: "nearest" });
+    }, 60);
+    return () => clearTimeout(t);
+  }, [zones]);
+
   useEffect(() => {
     let cancelled = false;
     fetch("/api/products")
@@ -334,6 +366,7 @@ export default function VisualizadorPage() {
       };
       setZones((prev) => [...prev, z]);
       setActiveZoneId(id);
+      scrollZoneRef.current = id;
       void detectInto(id, idx, nx, ny);
     },
     [photoData, zones.length, products, detectInto]
@@ -386,6 +419,7 @@ export default function VisualizadorPage() {
         },
       ]);
       setActiveZoneId(id);
+      scrollZoneRef.current = id;
     },
     [zones.length, products]
   );
@@ -413,6 +447,7 @@ export default function VisualizadorPage() {
       },
     ]);
     setActiveZoneId(id);
+    scrollZoneRef.current = id;
   }, [zones.length, products]);
 
   const zonesReady = zones.filter((z) => z.productId);
@@ -572,6 +607,7 @@ export default function VisualizadorPage() {
         </div>
       </section>
 
+      <div ref={topRef} className="scroll-mt-24" />
       <Stepper step={step} />
 
       <section className="px-4 sm:px-6 pb-12 max-w-[1280px] mx-auto">
@@ -1192,8 +1228,9 @@ function ZoneCard({
 
   return (
     <div
+      id={`zone-${zone.id}`}
       onClick={onSelect}
-      className={`bg-white border rounded-sm p-4 cursor-pointer transition-colors ${active ? "border-[#002045] shadow-sm" : "border-[#e2e2e2] hover:border-[#86a0cd]"}`}
+      className={`scroll-mt-24 bg-white border rounded-sm p-4 cursor-pointer transition-colors ${active ? "border-[#002045] shadow-sm" : "border-[#e2e2e2] hover:border-[#86a0cd]"}`}
     >
       <div className="flex items-center justify-between mb-3">
         <div className="flex items-center gap-2 min-w-0">
