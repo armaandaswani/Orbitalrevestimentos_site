@@ -81,15 +81,30 @@ export function composePrompt(opts: {
   wallHeightM?: number | null;
   // WHERE to apply the panel (optional). A short phrase describing the target
   // surface, e.g. "the ceiling", "the wall behind the TV", "the right-side
-  // wall". When omitted, defaults to the main wall facing the camera. Future
+  // wall". When omitted, defaults to the main wall facing the camera. The
   // guided-flow / drawing steps pass the client's chosen area here.
   applicationArea?: string | null;
+  // Optional rectangular region the client drew on the photo, normalized 0..1
+  // (x,y = top-left corner; w,h = size). When present the panel is confined to
+  // this rectangle — used by the multi-zone flow so each panel stays in its zone.
+  rect?: { x: number; y: number; w: number; h: number } | null;
 }): string {
   const area = opts.applicationArea?.trim();
   const areaPhrase =
     area && area.length > 0
       ? area
       : "the main wall directly facing the camera (the single largest uninterrupted wall surface visible in the photo)";
+
+  // Turn a normalized rect into a human percentage description for the prompt.
+  const r = opts.rect;
+  const rectPhrase =
+    r && r.w > 0 && r.h > 0
+      ? (() => {
+          const pct = (n: number) => Math.round(Math.min(1, Math.max(0, n)) * 100);
+          const x1 = pct(r.x), y1 = pct(r.y), x2 = pct(r.x + r.w), y2 = pct(r.y + r.h);
+          return `the rectangular region of IMAGE 1 spanning ${x1}%–${x2}% horizontally and ${y1}%–${y2}% vertically (measured from the top-left corner)`;
+        })()
+      : null;
 
   const lines: string[] = [
     "You are a precision interior-visualization tool for a wall-panel company.",
@@ -117,6 +132,14 @@ export function composePrompt(opts: {
     "",
     `TASK: Apply the IMAGE 2 panel onto ${areaPhrase} of IMAGE 1, as if the panels`,
     "were physically installed there. Change NOTHING else in the photo.",
+    ...(rectPhrase
+      ? [
+          `- Confine the panel STRICTLY to ${rectPhrase}. That rectangle is the target`,
+          "  area: apply the panel only to the real surface inside it, and leave every",
+          "  pixel outside the rectangle exactly as in IMAGE 1. If a previous panel was",
+          "  already installed elsewhere in the photo, keep it untouched.",
+        ]
+      : []),
     "",
     "ENVIRONMENT PRESERVATION — highest priority:",
     "- Edit ONLY the target surface named above. Every other pixel must stay",

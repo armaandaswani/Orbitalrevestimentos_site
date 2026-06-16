@@ -97,6 +97,9 @@ export async function POST(req: NextRequest) {
     // Optional description of WHERE to apply the panel (the guided flow's
     // "Aplicação" step): a preset surface phrase or the client's own text.
     applicationArea?: string;
+    // Optional rectangular zone the client drew (normalized 0..1). Confines the
+    // panel to that region so multi-zone renders keep each panel in its zone.
+    rect?: { x?: number; y?: number; w?: number; h?: number };
   };
   try {
     body = await req.json();
@@ -156,6 +159,16 @@ export async function POST(req: NextRequest) {
       ? body.applicationArea.replace(/\s+/g, " ").trim().slice(0, 80) || null
       : null;
 
+  // Optional drawn rectangle (normalized 0..1), clamped to valid bounds.
+  const clamp01 = (n: unknown) => (typeof n === "number" && isFinite(n) ? Math.min(1, Math.max(0, n)) : null);
+  let rect: { x: number; y: number; w: number; h: number } | null = null;
+  if (body.rect && typeof body.rect === "object") {
+    const x = clamp01(body.rect.x), y = clamp01(body.rect.y), w = clamp01(body.rect.w), h = clamp01(body.rect.h);
+    if (x !== null && y !== null && w !== null && h !== null && w > 0.02 && h > 0.02) {
+      rect = { x, y, w: Math.min(w, 1 - x), h: Math.min(h, 1 - y) };
+    }
+  }
+
   const prompt = composePrompt({
     finishText: finishText ?? finishDescription(finish),
     panelWidthM: toPositiveNumber(product?.render_panel_width_m, DEFAULT_PANEL_WIDTH_M),
@@ -165,6 +178,7 @@ export async function POST(req: NextRequest) {
     wallWidthM: hasWallDims ? wallW : null,
     wallHeightM: hasWallDims ? wallH : null,
     applicationArea,
+    rect,
   });
 
   const parts: Array<{ text: string } | { inline_data: { mime_type: string; data: string } }> = [
