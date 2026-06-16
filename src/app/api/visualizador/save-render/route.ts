@@ -2,17 +2,14 @@ import { NextRequest, NextResponse } from "next/server";
 import { randomUUID } from "crypto";
 import { supabaseAdmin } from "@/lib/supabase";
 
-// POST /api/visualizador/save-render — public.
+// POST /api/visualizador/save-render — public, best-effort.
 //
-// Called from the Visualizador the moment the client clicks "Prosseguir para o
-// simulador". Persists ONE generated render per request (Vercel caps request
-// bodies at ~4.5MB and a render is ~2MB, so the client uploads them one at a
-// time, threading the returned `id`). The renders are later e-mailed +
-// WhatsApp'd to the client and the Orbital team when the orçamento is submitted
-// in the Simulador, and shown in the admin Clientes tab.
-//
-// Best-effort: the Visualizador navigates to the Simulador regardless of the
-// result, so a failure here only means the renders won't be attached.
+// Two modes:
+//   1. Image upload (body.image present): upload to Storage, append to images[]
+//      in visualizador_renders, optionally store name+phone.
+//   2. Contact-only update (no body.image): update name+phone on an existing
+//      row identified by body.id. Used when the render was already auto-saved
+//      and the client just collected lead info.
 
 export const maxDuration = 30;
 
@@ -26,8 +23,6 @@ interface StoredRender {
   productCode: string | null;
 }
 
-// Parse a data URL into a Buffer + extension. Returns null for anything that
-// isn't an inline base64 image we can store.
 function parseDataUrl(input: string): { buf: Buffer; ext: string; mime: string } | null {
   const m = input.match(/^data:(image\/([a-zA-Z0-9.+-]+));base64,([\s\S]+)$/);
   if (!m) return null;
@@ -47,6 +42,8 @@ export async function POST(req: NextRequest) {
     local?: string;
     productName?: string;
     productCode?: string;
+    name?: string;
+    phone?: string;
   };
   try {
     body = await req.json();
@@ -54,18 +51,30 @@ export async function POST(req: NextRequest) {
     return NextResponse.json({ error: "Requisição inválida." }, { status: 400 });
   }
 
+  const db = supabaseAdmin();
+  const nameVal = body.name?.trim() || null;
+  const phoneVal = body.phone?.trim() || null;
+
+  // ── Contact-only update (no image) ─────────────────────────────────────────
   if (!body.image) {
-    return NextResponse.json({ error: "Nenhuma imagem para salvar." }, { status: 400 });
-  }
-  const parsed = parseDataUrl(body.image);
-  if (!parsed) {
-    return NextResponse.json({ error: "Imagem inválida." }, { status: 400 });
+    const id = body.id?.trim();
+    if (!id) return NextResponse.json({ error: "id obrigatório." }, { status: 400 });
+    if (!nameVal && !phoneVal) return NextResponse.json({ error: "Nenhum dado." }, { status: 400 });
+
+    const patch: Record<string, string | null> = {};
+    if (nameVal) patch.name = nameVal;
+    if (phoneVal) patch.phone = phoneVal;
+
+    const { error } = await db.from("visualizador_renders").update(patch).eq("id", id);
+    if (error) console.error("[save-render] contact update failed", error.message);
+    return NextResponse.json({ id });
   }
 
-  // Reuse the id the client already holds (so multiple renders land in one row),
-  // or mint a new session id on the first upload.
+  // ── Image upload ────────────────────────────────────────────────────────────
+  const parsed = parseDataUrl(body.image);
+  if (!parsed) return NextResponse.json({ error: "Imagem inválida." }, { status: 400 });
+
   const id = typeof body.id === "string" && body.id.length > 0 ? body.id : randomUUID();
-  const db = supabaseAdmin();
 
   const path = `${FOLDER}/${id}/${Date.now()}.${parsed.ext}`;
   const { error: upErr } = await db.storage
@@ -84,8 +93,6 @@ export async function POST(req: NextRequest) {
     productCode: body.productCode?.trim() || null,
   };
 
-  // Append to the existing session row, or create it. Read-modify-write is safe
-  // here because the client uploads renders sequentially.
   const { data: existing } = await db
     .from("visualizador_renders")
     .select("images")
@@ -93,13 +100,17 @@ export async function POST(req: NextRequest) {
     .maybeSingle();
 
   const prior = Array.isArray((existing as { images?: unknown } | null)?.images)
-    ? ((existing as { images: StoredRender[] }).images)
+    ? (existing as { images: StoredRender[] }).images
     : [];
   const images = [...prior, entry];
 
+  const upsertPayload: Record<string, unknown> = { id, images };
+  if (nameVal) upsertPayload.name = nameVal;
+  if (phoneVal) upsertPayload.phone = phoneVal;
+
   const { error: writeErr } = await db
     .from("visualizador_renders")
-    .upsert({ id, images }, { onConflict: "id" });
+    .upsert(upsertPayload, { onConflict: "id" });
 
   if (writeErr) {
     console.error("[save-render] upsert failed", writeErr.message);

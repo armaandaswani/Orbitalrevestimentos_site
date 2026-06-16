@@ -145,7 +145,7 @@ export default function AdminPage() {
   const [authed, setAuthed] = useState(false);
   const [pw, setPw] = useState("");
   const [pwError, setPwError] = useState("");
-  const [tab, setTab] = useState<"dashboard" | "lembretes" | "leads" | "pedidos" | "partners" | "representantes" | "orcamentos" | "campaigns" | "drip" | "commissions" | "produtos" | "projetos" | "midia" | "simulador" | "chat">("dashboard");
+  const [tab, setTab] = useState<"dashboard" | "lembretes" | "leads" | "pedidos" | "partners" | "representantes" | "orcamentos" | "campaigns" | "drip" | "commissions" | "produtos" | "projetos" | "midia" | "simulador" | "chat" | "visualizacoes">("dashboard");
   const [commissionFilter, setCommissionFilter] = useState<"a_pagar" | "pago" | "tudo">("a_pagar");
 
   // Dashboard
@@ -315,6 +315,25 @@ export default function AdminPage() {
   const [dripEditBodyHtml, setDripEditBodyHtml] = useState("");
   const [dripEditSaving, setDripEditSaving] = useState(false);
   const [dripPreviewStep, setDripPreviewStep] = useState<number | null>(null);
+
+  interface VizRender {
+    id: string;
+    name: string | null;
+    phone: string | null;
+    images: Array<{ url: string; local: string | null; productName: string | null; productCode: string | null }>;
+    created_at: string;
+  }
+  const [vizRenders, setVizRenders] = useState<VizRender[]>([]);
+  const [vizRendersLoading, setVizRendersLoading] = useState(false);
+
+  const fetchVizRenders = useCallback(async () => {
+    setVizRendersLoading(true);
+    try {
+      const res = await fetch("/api/admin/visualizacoes");
+      if (res.ok) setVizRenders((await res.json()) as VizRender[]);
+    } catch {}
+    setVizRendersLoading(false);
+  }, []);
 
   const [clients, setClients] = useState<ClientSeq[]>([]);
   const [clientsLoading, setClientsLoading] = useState(false);
@@ -659,6 +678,7 @@ export default function AdminPage() {
 
   useEffect(() => { if ((tab === "produtos" || tab === "simulador") && authed) fetchDbProducts(); }, [tab, authed, fetchDbProducts]);
   useEffect(() => { if (tab === "projetos" && authed) fetchProjects(); }, [tab, authed, fetchProjects]);
+  useEffect(() => { if (tab === "visualizacoes" && authed) fetchVizRenders(); }, [tab, authed, fetchVizRenders]);
   useEffect(() => {
     if (tab === "projetos" && authed && mediaMigrated === null) {
       fetch("/api/admin/migrate-media")
@@ -2282,13 +2302,14 @@ export default function AdminPage() {
               pedidos: "Pedidos", partners: "Parceiros", representantes: "Representantes", commissions: "Comissões",
               campaigns: "Campanhas", drip: "Drip de Emails", produtos: "Produtos",
               projetos: "Projetos", midia: "Mídia", simulador: "Simulador", chat: "Chat IA",
+              visualizacoes: "Visualizações",
             };
             const NAV_GROUPS: ReadonlyArray<{ group: string; items: ReadonlyArray<typeof tab> }> = [
               { group: "Geral", items: ["dashboard", "lembretes"] },
               { group: "Comercial", items: ["leads", "orcamentos", "pedidos", "partners", "representantes", "commissions"] },
               { group: "Marketing", items: ["campaigns", "drip"] },
               { group: "Catálogo", items: ["produtos", "projetos", "midia"] },
-              { group: "Ferramentas", items: ["simulador", "chat"] },
+              { group: "Ferramentas", items: ["simulador", "chat", "visualizacoes"] },
             ];
             return NAV_GROUPS.map((sec) => (
               <div key={sec.group}>
@@ -3861,6 +3882,134 @@ export default function AdminPage() {
         {tab === "pedidos" && authed && <PedidosTab />}
 
         {tab === "lembretes" && authed && <RemindersTab />}
+
+        {/* ═══ VISUALIZAÇÕES TAB ═══ */}
+        {tab === "visualizacoes" && authed && (
+          <div>
+            <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4 mb-6">
+              <div>
+                <h2 className="font-[var(--font-noto-serif)] text-[#002045] text-xl font-normal">Visualizações geradas</h2>
+                <p className="text-[#74777f] text-xs font-[var(--font-inter)] mt-1">
+                  Todas as imagens geradas pelo Visualizador Orbital, com dados de contato quando informados.
+                </p>
+              </div>
+              <button
+                onClick={fetchVizRenders}
+                disabled={vizRendersLoading}
+                className="inline-flex items-center gap-2 border border-[#e2e2e2] text-[#43474e] text-[11px] tracking-[0.1em] uppercase font-bold font-[var(--font-inter)] px-4 py-2.5 hover:border-[#002045] transition-colors disabled:opacity-50"
+              >
+                {vizRendersLoading ? "Carregando…" : "Atualizar"}
+              </button>
+            </div>
+
+            {/* Stats strip */}
+            <div className="grid grid-cols-3 gap-4 mb-6">
+              {[
+                { label: "Total de renders", value: vizRenders.length },
+                { label: "Com contato", value: vizRenders.filter((r) => r.name || r.phone).length },
+                { label: "Sem contato", value: vizRenders.filter((r) => !r.name && !r.phone).length },
+              ].map((s) => (
+                <div key={s.label} className="border border-[#e2e2e2] rounded-sm p-4 bg-[#fafaf9]">
+                  <p className="text-2xl font-bold font-[var(--font-noto-serif)] text-[#002045]">{s.value}</p>
+                  <p className="text-[10px] tracking-[0.12em] uppercase font-bold font-[var(--font-inter)] text-[#74777f] mt-1">{s.label}</p>
+                </div>
+              ))}
+            </div>
+
+            {vizRendersLoading && (
+              <div className="flex items-center gap-3 text-[#74777f] text-sm font-[var(--font-inter)] py-12 justify-center">
+                <div className="w-5 h-5 border-2 border-[#e2e2e2] border-t-[#002045] rounded-full animate-spin" />
+                Carregando renders…
+              </div>
+            )}
+
+            {!vizRendersLoading && vizRenders.length === 0 && (
+              <p className="text-center text-[#74777f] text-sm font-[var(--font-inter)] py-12">
+                Nenhuma visualização encontrada. Certifique-se de ter executado a migração SQL.
+              </p>
+            )}
+
+            {!vizRendersLoading && vizRenders.length > 0 && (
+              <div className="flex flex-col gap-4">
+                {vizRenders.map((r) => {
+                  const date = new Date(r.created_at).toLocaleString("pt-BR", { day: "2-digit", month: "2-digit", year: "numeric", hour: "2-digit", minute: "2-digit" });
+                  const waHref = r.phone
+                    ? `https://wa.me/55${r.phone.replace(/\D/g, "")}?text=${encodeURIComponent(`Olá ${r.name ?? ""}! Vi que você usou o Visualizador Orbital. Posso ajudar com um orçamento?`)}`
+                    : null;
+                  return (
+                    <div key={r.id} className="border border-[#e2e2e2] rounded-sm p-4 bg-white">
+                      <div className="flex flex-col sm:flex-row sm:items-start sm:justify-between gap-3">
+                        {/* Contact info */}
+                        <div className="min-w-0">
+                          <div className="flex items-center gap-2 flex-wrap">
+                            <p className="font-semibold text-[#002045] font-[var(--font-inter)] text-sm">
+                              {r.name ?? <span className="text-[#a0a3a9] font-normal italic">Anônimo</span>}
+                            </p>
+                            {(r.name || r.phone) && (
+                              <span className="text-[9px] tracking-[0.15em] uppercase font-bold font-[var(--font-inter)] bg-[#e8f5e4] text-[#3b6934] px-2 py-0.5 rounded-full">Lead</span>
+                            )}
+                          </div>
+                          {r.phone ? (
+                            <a
+                              href={waHref ?? "#"}
+                              target="_blank"
+                              rel="noopener noreferrer"
+                              className="inline-flex items-center gap-1 text-[#25d366] text-xs font-[var(--font-inter)] hover:underline mt-0.5"
+                            >
+                              <svg width="11" height="11" viewBox="0 0 24 24" fill="currentColor">
+                                <path d="M17.472 14.382c-.297-.149-1.758-.867-2.03-.967-.273-.099-.471-.148-.67.15-.197.297-.767.966-.94 1.164-.173.199-.347.223-.644.075-.297-.15-1.255-.463-2.39-1.475-.883-.788-1.48-1.761-1.653-2.059-.173-.297-.018-.458.13-.606.134-.133.298-.347.446-.52.149-.174.198-.298.298-.497.099-.198.05-.371-.025-.52-.075-.149-.669-1.612-.916-2.207-.242-.579-.487-.5-.669-.51-.173-.008-.371-.01-.57-.01-.198 0-.52.074-.792.372-.272.297-1.04 1.016-1.04 2.479 0 1.462 1.065 2.875 1.213 3.074.149.198 2.096 3.2 5.077 4.487.709.306 1.262.489 1.694.625.712.227 1.36.195 1.871.118.571-.085 1.758-.719 2.006-1.413.248-.694.248-1.289.173-1.413-.074-.124-.272-.198-.57-.347m-5.421 7.403h-.004a9.87 9.87 0 01-5.031-1.378l-.361-.214-3.741.982.998-3.648-.235-.374a9.86 9.86 0 01-1.51-5.26c.001-5.45 4.436-9.884 9.888-9.884 2.64 0 5.122 1.03 6.988 2.898a9.825 9.825 0 012.893 6.994c-.003 5.45-4.437 9.884-9.885 9.884m8.413-18.297A11.815 11.815 0 0012.05 0C5.495 0 .16 5.335.157 11.892c0 2.096.547 4.142 1.588 5.945L.057 24l6.305-1.654a11.882 11.882 0 005.683 1.448h.005c6.554 0 11.89-5.335 11.893-11.893a11.821 11.821 0 00-3.48-8.413z" />
+                              </svg>
+                              {r.phone}
+                            </a>
+                          ) : (
+                            <p className="text-[#a0a3a9] text-xs font-[var(--font-inter)] italic mt-0.5">Sem WhatsApp</p>
+                          )}
+                          <p className="text-[#a0a3a9] text-[11px] font-[var(--font-inter)] mt-1">{date}</p>
+                        </div>
+
+                        {/* Actions */}
+                        {waHref && (
+                          <a
+                            href={waHref}
+                            target="_blank"
+                            rel="noopener noreferrer"
+                            className="flex-shrink-0 inline-flex items-center gap-2 bg-[#25d366] text-white text-[11px] tracking-[0.1em] uppercase font-bold font-[var(--font-inter)] px-4 py-2 hover:brightness-95 transition"
+                          >
+                            <svg width="12" height="12" viewBox="0 0 24 24" fill="currentColor">
+                              <path d="M17.472 14.382c-.297-.149-1.758-.867-2.03-.967-.273-.099-.471-.148-.67.15-.197.297-.767.966-.94 1.164-.173.199-.347.223-.644.075-.297-.15-1.255-.463-2.39-1.475-.883-.788-1.48-1.761-1.653-2.059-.173-.297-.018-.458.13-.606.134-.133.298-.347.446-.52.149-.174.198-.298.298-.497.099-.198.05-.371-.025-.52-.075-.149-.669-1.612-.916-2.207-.242-.579-.487-.5-.669-.51-.173-.008-.371-.01-.57-.01-.198 0-.52.074-.792.372-.272.297-1.04 1.016-1.04 2.479 0 1.462 1.065 2.875 1.213 3.074.149.198 2.096 3.2 5.077 4.487.709.306 1.262.489 1.694.625.712.227 1.36.195 1.871.118.571-.085 1.758-.719 2.006-1.413.248-.694.248-1.289.173-1.413-.074-.124-.272-.198-.57-.347m-5.421 7.403h-.004a9.87 9.87 0 01-5.031-1.378l-.361-.214-3.741.982.998-3.648-.235-.374a9.86 9.86 0 01-1.51-5.26c.001-5.45 4.436-9.884 9.888-9.884 2.64 0 5.122 1.03 6.988 2.898a9.825 9.825 0 012.893 6.994c-.003 5.45-4.437 9.884-9.885 9.884m8.413-18.297A11.815 11.815 0 0012.05 0C5.495 0 .16 5.335.157 11.892c0 2.096.547 4.142 1.588 5.945L.057 24l6.305-1.654a11.882 11.882 0 005.683 1.448h.005c6.554 0 11.89-5.335 11.893-11.893a11.821 11.821 0 00-3.48-8.413z" />
+                            </svg>
+                            Contatar
+                          </a>
+                        )}
+                      </div>
+
+                      {/* Render thumbnails */}
+                      {r.images && r.images.length > 0 && (
+                        <div className="mt-3 flex gap-2 flex-wrap">
+                          {r.images.map((img, idx) => (
+                            <a key={idx} href={img.url} target="_blank" rel="noopener noreferrer" title={img.productName ?? img.local ?? ""} className="group relative">
+                              {/* eslint-disable-next-line @next/next/no-img-element */}
+                              <img
+                                src={img.url}
+                                alt={img.productName ?? "Render"}
+                                className="w-20 h-20 object-cover rounded-sm border border-[#e2e2e2] group-hover:border-[#002045] transition"
+                              />
+                              {img.productName && (
+                                <span className="absolute bottom-0 left-0 right-0 bg-black/60 text-white text-[8px] px-1 py-0.5 truncate rounded-b-sm font-[var(--font-inter)]">
+                                  {img.productName}
+                                </span>
+                              )}
+                            </a>
+                          ))}
+                        </div>
+                      )}
+                    </div>
+                  );
+                })}
+              </div>
+            )}
+          </div>
+        )}
         {/* ═══ DRIP TAB ═══ */}
         {tab === "drip" && (
           <div>

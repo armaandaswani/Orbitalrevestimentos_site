@@ -236,6 +236,10 @@ export default function VisualizadorPage() {
   const [savedAmbientes, setSavedAmbientes] = useState<SavedAmbiente[]>([]);
   const [proceeding, setProceeding] = useState(false);
 
+  const [leadName, setLeadName] = useState("");
+  const [leadPhone, setLeadPhone] = useState("");
+  const vizRenderIdRef = useRef<string>("");
+
   const fileInputRef = useRef<HTMLInputElement | null>(null);
   const [dragOver, setDragOver] = useState(false);
 
@@ -307,6 +311,7 @@ export default function VisualizadorPage() {
         setResult(null);
         setZones([]);
         setActiveZoneId(null);
+        vizRenderIdRef.current = "";
         setStep("zones");
       } catch {
         setError("Não foi possível ler essa imagem. Tente outra foto (JPG ou PNG).");
@@ -517,6 +522,33 @@ export default function VisualizadorPage() {
         current = json.image;
       }
       setResult(current);
+
+      // Auto-save the final render so the admin can see it regardless of whether
+      // the client proceeds to the simulador.
+      const firstZ = zs[0];
+      const firstProd = firstZ ? productById(firstZ.productId) : null;
+      const localLabel = firstZ
+        ? (VIZ_SPACES.find((s) => s.id === firstZ.surface)?.label ?? firstZ.customLabel) || "Área"
+        : "Ambiente";
+      void (async () => {
+        try {
+          const sr = await fetch("/api/visualizador/save-render", {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({
+              id: vizRenderIdRef.current || undefined,
+              image: current,
+              local: localLabel,
+              productName: firstProd?.name ?? null,
+              productCode: firstProd?.code ?? null,
+            }),
+          });
+          if (sr.ok) {
+            const sd = (await sr.json()) as { id?: string };
+            if (sd.id) vizRenderIdRef.current = sd.id;
+          }
+        } catch {}
+      })();
     } catch (e) {
       setError(e instanceof Error ? e.message : "Erro ao gerar a visualização.");
     } finally {
@@ -581,35 +613,59 @@ export default function VisualizadorPage() {
 
   const goToSimulador = useCallback(async () => {
     if (proceeding) return;
+    setProceeding(true);
     let url = simuladorHref;
-    const seen = new Set<string>();
-    const renders = allAmbientes.filter((a) => {
-      if (!a.isRender || !a.thumb.startsWith("data:") || seen.has(a.thumb)) return false;
-      seen.add(a.thumb);
-      return true;
-    });
-    if (renders.length > 0) {
-      setProceeding(true);
+
+    const existingId = vizRenderIdRef.current;
+    if (existingId) {
+      // Render was already auto-saved — just update the contact info.
+      try {
+        await fetch("/api/visualizador/save-render", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({
+            id: existingId,
+            name: leadName.trim() || undefined,
+            phone: leadPhone.trim() || undefined,
+          }),
+        });
+      } catch {}
+      url += `${url.includes("?") ? "&" : "?"}viz_render=${encodeURIComponent(existingId)}`;
+    } else {
+      // Auto-save didn't succeed — upload now and include contact info.
+      const seen = new Set<string>();
+      const renders = allAmbientes.filter((a) => {
+        if (!a.isRender || !a.thumb.startsWith("data:") || seen.has(a.thumb)) return false;
+        seen.add(a.thumb);
+        return true;
+      });
       let renderId: string | undefined;
       for (const a of renders) {
         try {
           const res = await fetch("/api/visualizador/save-render", {
             method: "POST",
             headers: { "Content-Type": "application/json" },
-            body: JSON.stringify({ id: renderId, image: a.thumb, local: a.local, productName: a.productName, productCode: a.productCode }),
+            body: JSON.stringify({
+              id: renderId,
+              image: a.thumb,
+              local: a.local,
+              productName: a.productName,
+              productCode: a.productCode,
+              name: leadName.trim() || undefined,
+              phone: leadPhone.trim() || undefined,
+            }),
           });
           if (res.ok) {
             const data = (await res.json()) as { id?: string };
             if (data.id) renderId = data.id;
           }
-        } catch {
-          /* non-fatal */
-        }
+        } catch {}
       }
       if (renderId) url += `${url.includes("?") ? "&" : "?"}viz_render=${encodeURIComponent(renderId)}`;
     }
+
     window.location.assign(url);
-  }, [proceeding, simuladorHref, allAmbientes]);
+  }, [proceeding, simuladorHref, allAmbientes, leadName, leadPhone]);
 
   return (
     <main className="bg-white">
@@ -694,11 +750,31 @@ export default function VisualizadorPage() {
 
         {allAmbientes.length > 0 && (step === "result" || savedAmbientes.length > 0) && (
           <div className="mt-10 border border-[#e2e2e2] rounded-sm p-5 sm:p-6 bg-[#fbfbfa]">
-            <p className="text-[10px] tracking-[0.18em] uppercase font-bold font-[var(--font-inter)] text-[#002045] mb-4">
-              Seu orçamento ({allAmbientes.length} {allAmbientes.length === 1 ? "área" : "áreas"})
+            <p className="text-[10px] tracking-[0.18em] uppercase font-bold font-[var(--font-inter)] text-[#002045] mb-1">
+              Continuar para o orçamento
             </p>
+            <p className="text-[#74777f] text-xs font-[var(--font-inter)] mb-4">
+              {allAmbientes.length} {allAmbientes.length === 1 ? "área" : "áreas"} · informe seus dados para prosseguir.
+            </p>
+
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 mb-4">
+              <input
+                value={leadName}
+                onChange={(e) => setLeadName(e.target.value)}
+                placeholder="Seu nome completo"
+                className="border border-[#e2e2e2] px-3 py-2.5 text-sm font-[var(--font-inter)] text-[#002045] focus:outline-none focus:border-[#002045] bg-white"
+              />
+              <input
+                value={leadPhone}
+                onChange={(e) => setLeadPhone(e.target.value)}
+                placeholder="WhatsApp (92) 99999-9999"
+                inputMode="tel"
+                className="border border-[#e2e2e2] px-3 py-2.5 text-sm font-[var(--font-inter)] text-[#002045] focus:outline-none focus:border-[#002045] bg-white"
+              />
+            </div>
+
             <div className="flex flex-col sm:flex-row sm:items-center gap-3">
-              {quoteReady ? (
+              {quoteReady && leadName.trim() && leadPhone.trim() ? (
                 <button
                   type="button"
                   onClick={goToSimulador}
@@ -717,9 +793,11 @@ export default function VisualizadorPage() {
                 </span>
               )}
               <p className="text-[#74777f] text-xs font-[var(--font-inter)] leading-relaxed">
-                {quoteReady
-                  ? "Cada área (local, medidas e acabamento) já vai preenchida — sem digitar nada de novo."
-                  : "Informe as medidas das áreas para levar tudo preenchido ao orçamento."}
+                {!leadName.trim() || !leadPhone.trim()
+                  ? "Informe nome e WhatsApp para continuar."
+                  : quoteReady
+                  ? "Cada área já vai preenchida — sem digitar nada de novo."
+                  : "Informe as medidas das áreas para levar tudo preenchido."}
               </p>
             </div>
           </div>
@@ -1012,6 +1090,16 @@ function ZonesStep({
             productById={productById}
           />
         ))}
+
+        {zones.length > 0 && (
+          <button
+            onClick={onReview}
+            disabled={!canReview}
+            className="w-full inline-flex items-center justify-center gap-2 bg-[#002045] text-white text-xs tracking-[0.12em] uppercase font-bold font-[var(--font-inter)] px-7 py-3.5 hover:bg-[#1a365d] transition-colors disabled:opacity-50"
+          >
+            Revisar e gerar →
+          </button>
+        )}
       </div>
     </div>
   );
