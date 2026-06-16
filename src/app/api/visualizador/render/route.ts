@@ -223,6 +223,8 @@ export async function POST(req: NextRequest) {
   if (!res.ok) {
     const errText = await res.text();
     const isBusy = res.status === 503 || res.status === 429;
+    // Log to Vercel function logs so the admin can see what Gemini actually says.
+    console.error(`[render] Gemini ${res.status} using model ${MODEL}:`, errText.slice(0, 800));
     return NextResponse.json(
       {
         error: isBusy
