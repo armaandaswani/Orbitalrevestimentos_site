@@ -58,8 +58,9 @@ interface Zone {
   surface: string; // VIZ_SPACES id or "__custom__"
   customLabel: string;
   productId: string;
-  polygon: Poly | null; // normalized 0..1 outline of the detected surface
-  rect: Rect | null; // bounding box of the polygon (used to confine the render)
+  polygon: Poly | null; // normalized 0..1 outline (Gemini fallback)
+  maskUrl: string | null; // tinted translucent overlay PNG (fal.ai SAM mask)
+  rect: Rect | null; // bounding box of the selection (used to confine the render)
   instruction: string;
   width: string;
   height: string;
@@ -91,6 +92,66 @@ function fileToDataUrl(file: File): Promise<string> {
     r.onerror = () => reject(new Error("Falha ao ler o arquivo."));
     r.readAsDataURL(file);
   });
+}
+
+function hexToRgb(hex: string): { r: number; g: number; b: number } {
+  const h = hex.replace("#", "");
+  return { r: parseInt(h.slice(0, 2), 16), g: parseInt(h.slice(2, 4), 16), b: parseInt(h.slice(4, 6), 16) };
+}
+
+function loadImage(src: string): Promise<HTMLImageElement> {
+  return new Promise((res, rej) => {
+    const im = new Image();
+    im.onload = () => res(im);
+    im.onerror = () => rej(new Error("img"));
+    im.src = src;
+  });
+}
+
+// Turn a fal SAM mask (binary mask, or cutout with alpha) into a tinted
+// translucent overlay PNG + the normalized bounding box. Runs on the client.
+async function maskToOverlay(maskUrl: string, hex: string): Promise<{ url: string; rect: Rect | null }> {
+  const im = await loadImage(maskUrl);
+  const w = im.naturalWidth;
+  const h = im.naturalHeight;
+  const c = document.createElement("canvas");
+  c.width = w;
+  c.height = h;
+  const ctx = c.getContext("2d")!;
+  ctx.drawImage(im, 0, 0);
+  const src = ctx.getImageData(0, 0, w, h).data;
+  let hasAlpha = false;
+  for (let i = 3; i < src.length; i += 4) {
+    if (src[i] < 250) {
+      hasAlpha = true;
+      break;
+    }
+  }
+  const { r, g, b } = hexToRgb(hex);
+  const out = ctx.createImageData(w, h);
+  const od = out.data;
+  let minX = w, minY = h, maxX = 0, maxY = 0, any = false;
+  for (let p = 0, pi = 0; p < w * h; p++, pi += 4) {
+    const on = hasAlpha ? src[pi + 3] > 40 : src[pi] * 0.299 + src[pi + 1] * 0.587 + src[pi + 2] * 0.114 > 110;
+    if (on) {
+      od[pi] = r;
+      od[pi + 1] = g;
+      od[pi + 2] = b;
+      od[pi + 3] = 125;
+      const x = p % w;
+      const y = (p / w) | 0;
+      if (x < minX) minX = x;
+      if (x > maxX) maxX = x;
+      if (y < minY) minY = y;
+      if (y > maxY) maxY = y;
+      any = true;
+    } else {
+      od[pi + 3] = 0;
+    }
+  }
+  ctx.putImageData(out, 0, 0);
+  const rect = any ? { x: minX / w, y: minY / h, w: (maxX - minX + 1) / w, h: (maxY - minY + 1) / h } : null;
+  return { url: c.toDataURL(), rect };
 }
 
 function buildSimuladorUrl(ambientes: SavedAmbiente[]): string {
@@ -138,6 +199,7 @@ export default function VisualizadorPage() {
 
   const [step, setStep] = useState<Step>("upload");
   const [photoData, setPhotoData] = useState<string | null>(null);
+  const [photoDims, setPhotoDims] = useState<{ w: number; h: number } | null>(null);
 
   const [zones, setZones] = useState<Zone[]>([]);
   const [activeZoneId, setActiveZoneId] = useState<string | null>(null);
@@ -186,6 +248,10 @@ export default function VisualizadorPage() {
         setZones([]);
         setActiveZoneId(null);
         setStep("zones");
+        // Natural pixel size — fal needs the point prompt in pixels.
+        loadImage(dataUrl)
+          .then((im) => setPhotoDims({ w: im.naturalWidth, h: im.naturalHeight }))
+          .catch(() => setPhotoDims(null));
       } catch {
         setError("Não foi possível ler essa imagem. Tente outra.");
       }
@@ -202,18 +268,62 @@ export default function VisualizadorPage() {
     setActiveZoneId((cur) => (cur === id ? null : cur));
   }, []);
 
-  // Tap on the photo → create a new area and auto-detect its surface polygon.
+  // Call the detector and apply the result (fal mask or Gemini polygon) to a zone.
+  const detectInto = useCallback(
+    async (id: string, colorIdx: number, nx: number, ny: number) => {
+      if (!photoData) return;
+      updateZone(id, { detecting: true });
+      try {
+        const res = await fetch("/api/visualizador/detect-surface", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({
+            photo: photoData,
+            point: { x: nx, y: ny },
+            width: photoDims?.w,
+            height: photoDims?.h,
+          }),
+        });
+        const j = (await res.json()) as {
+          mask?: string;
+          polygon?: Array<[number, number]>;
+          rect?: Rect;
+        };
+        if (res.ok && typeof j.mask === "string") {
+          try {
+            const { url, rect } = await maskToOverlay(j.mask, ZONE_COLORS[colorIdx % ZONE_COLORS.length]);
+            updateZone(id, { maskUrl: url, rect, polygon: null, detecting: false });
+            return;
+          } catch {
+            /* fall through to no-selection */
+          }
+        }
+        if (res.ok && Array.isArray(j.polygon)) {
+          updateZone(id, { polygon: j.polygon, rect: j.rect ?? null, maskUrl: null, detecting: false });
+          return;
+        }
+        updateZone(id, { detecting: false });
+      } catch {
+        updateZone(id, { detecting: false });
+      }
+    },
+    [photoData, photoDims, updateZone]
+  );
+
+  // Tap on the photo → create a new area and auto-detect its surface.
   const tapAddSurface = useCallback(
-    async (nx: number, ny: number) => {
+    (nx: number, ny: number) => {
       if (!photoData) return;
       const id = `z-${Date.now()}`;
+      const idx = zones.length;
       const z: Zone = {
         id,
-        label: `Área ${zones.length + 1}`,
+        label: `Área ${idx + 1}`,
         surface: "parede",
         customLabel: "",
         productId: products[0]?.id ?? "",
         polygon: null,
+        maskUrl: null,
         rect: null,
         instruction: "",
         width: "",
@@ -222,44 +332,18 @@ export default function VisualizadorPage() {
       };
       setZones((prev) => [...prev, z]);
       setActiveZoneId(id);
-      try {
-        const res = await fetch("/api/visualizador/detect-surface", {
-          method: "POST",
-          headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({ photo: photoData, point: { x: nx, y: ny } }),
-        });
-        const j = await res.json();
-        if (res.ok && Array.isArray(j.polygon)) {
-          updateZone(id, { polygon: j.polygon, rect: j.rect ?? null, detecting: false });
-        } else {
-          updateZone(id, { detecting: false });
-        }
-      } catch {
-        updateZone(id, { detecting: false });
-      }
+      void detectInto(id, idx, nx, ny);
     },
-    [photoData, zones.length, products, updateZone]
+    [photoData, zones.length, products, detectInto]
   );
 
   // Re-run detection for an existing zone at a new tapped point.
   const redetectZone = useCallback(
-    async (id: string, nx: number, ny: number) => {
-      if (!photoData) return;
-      updateZone(id, { detecting: true });
-      try {
-        const res = await fetch("/api/visualizador/detect-surface", {
-          method: "POST",
-          headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({ photo: photoData, point: { x: nx, y: ny } }),
-        });
-        const j = await res.json();
-        if (res.ok && Array.isArray(j.polygon)) updateZone(id, { polygon: j.polygon, rect: j.rect ?? null, detecting: false });
-        else updateZone(id, { detecting: false });
-      } catch {
-        updateZone(id, { detecting: false });
-      }
+    (id: string, nx: number, ny: number) => {
+      const idx = zones.findIndex((z) => z.id === id);
+      void detectInto(id, idx < 0 ? 0 : idx, nx, ny);
     },
-    [photoData, updateZone]
+    [zones, detectInto]
   );
 
   // When a zone is awaiting a re-detect tap, this holds its id.
@@ -804,6 +888,20 @@ function SurfaceCanvas({
       {/* eslint-disable-next-line @next/next/no-img-element */}
       <img src={photoData} alt="Seu ambiente" className="block w-full h-auto pointer-events-none" />
 
+      {/* fal SAM mask overlays (already tinted + translucent) */}
+      {zones.map((z) =>
+        z.maskUrl ? (
+          // eslint-disable-next-line @next/next/no-img-element
+          <img
+            key={z.id}
+            src={z.maskUrl}
+            alt=""
+            className={`absolute inset-0 w-full h-full pointer-events-none transition-opacity ${z.id === activeZoneId ? "opacity-100" : "opacity-75"}`}
+          />
+        ) : null
+      )}
+
+      {/* Gemini polygon overlays (fallback) */}
       <svg viewBox="0 0 1 1" preserveAspectRatio="none" className="absolute inset-0 w-full h-full pointer-events-none">
         {zones.map((z, i) => {
           if (!z.polygon || z.polygon.length < 3) return null;
@@ -912,7 +1010,7 @@ function ZoneCard({
         <p className="text-[10px] font-[var(--font-inter)]">
           {zone.detecting ? (
             <span className="text-[#74777f]">Detectando superfície…</span>
-          ) : zone.polygon ? (
+          ) : zone.polygon || zone.maskUrl ? (
             <span className="text-[#2f5429]">Superfície detectada ✓</span>
           ) : (
             <span className="text-[#b4791e]">Não detectada — descreva em texto abaixo</span>
@@ -1047,7 +1145,7 @@ function ReviewStep({
                   <span><span className="text-[#74777f]">Medidas:</span> {dims ?? "—"}</span>
                   <span className="col-span-2">
                     <span className="text-[#74777f]">Onde:</span>{" "}
-                    {z.instruction.trim() ? z.instruction.trim() : z.polygon ? "Área marcada na foto" : "Parede principal"}
+                    {z.instruction.trim() ? z.instruction.trim() : z.polygon || z.maskUrl ? "Área marcada na foto" : "Parede principal"}
                   </span>
                 </div>
               </li>
