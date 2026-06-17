@@ -247,6 +247,7 @@ export default function VisualizadorPage() {
   const [leadName, setLeadName] = useState("");
   const [leadPhone, setLeadPhone] = useState("");
   const [leadSubmitted, setLeadSubmitted] = useState(false);
+  const pendingLeadRef = useRef({ name: "", phone: "" });
   const vizRenderIdRef = useRef<string>("");
 
   // Prefill slots received from the Simulador (?src=sim). Index matches zone
@@ -609,6 +610,8 @@ export default function VisualizadorPage() {
               local: localLabel,
               productName: firstProd?.name ?? null,
               productCode: firstProd?.code ?? null,
+              name: pendingLeadRef.current.name || undefined,
+              phone: pendingLeadRef.current.phone || undefined,
             }),
           });
           if (sr.ok) {
@@ -628,6 +631,7 @@ export default function VisualizadorPage() {
 
   const handleLeadSubmit = useCallback(() => {
     if (!leadName.trim() || !leadPhone.trim()) return;
+    pendingLeadRef.current = { name: leadName.trim(), phone: leadPhone.trim() };
     setLeadSubmitted(true);
     const id = vizRenderIdRef.current;
     if (id) {
@@ -1061,6 +1065,7 @@ function ZonesStep({
   loadingProducts,
   productById,
   canReview,
+  simPrefills,
   onBack,
   onReview,
 }: {
