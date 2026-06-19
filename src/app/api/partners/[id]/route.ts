@@ -102,9 +102,15 @@ export async function PUT(
         const { getResend } = await import("@/lib/resend");
         const { generatePartnerSpecialTableEmail } = await import("@/lib/partner-email-content");
         const resend = getResend();
+        const { data: pricingRows } = await supabaseAdmin().from("line_pricing").select("linha, special_price, public_price");
+        const fetchedPricing: Record<string, { special_price: number; public_price: number }> = {};
+        (pricingRows ?? []).forEach((r: { linha: string; special_price: number; public_price: number }) => {
+          fetchedPricing[r.linha] = { special_price: r.special_price, public_price: r.public_price };
+        });
         const { subject, html } = generatePartnerSpecialTableEmail({
           partnerName: data.name as string,
           couponCode: data.coupon_code as string,
+          linePricing: fetchedPricing,
         });
         await resend.emails.send({
           from: "Orbital Revestimentos <noreply@orbitalrevestimentos.com.br>",

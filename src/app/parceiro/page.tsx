@@ -54,8 +54,12 @@ const PROFESSIONS = [
   "Lojista / revendedor",
 ];
 
-const SPECIAL_PRICES: Record<string, number> = { Classic: 399, Brilliance: 429, Elegance: 459 };
-const NORMAL_PRICES: Record<string, number> = { Classic: 559, Brilliance: 589, Elegance: 649 };
+type LinePricingMap = Record<string, { special_price: number; public_price: number }>;
+const DEFAULT_LINE_PRICING: LinePricingMap = {
+  Classic:    { special_price: 399, public_price: 559 },
+  Brilliance: { special_price: 429, public_price: 589 },
+  Elegance:   { special_price: 499, public_price: 649 },
+};
 const PLATE_M2 = 3.48;
 
 interface SpecialProduct {
@@ -194,6 +198,26 @@ export default function ParceiroPage() {
   const [showCpCurrent, setShowCpCurrent] = useState(false);
   const [showCpNew, setShowCpNew] = useState(false);
   const [showCpConfirm, setShowCpConfirm] = useState(false);
+
+  // ── Live line pricing (fetched from DB, falls back to defaults) ───────────
+  const [linePricing, setLinePricing] = useState<LinePricingMap>(DEFAULT_LINE_PRICING);
+  const SPECIAL_PRICES: Record<string, number> = Object.fromEntries(
+    Object.entries(linePricing).map(([k, v]) => [k, v.special_price])
+  );
+  const NORMAL_PRICES: Record<string, number> = Object.fromEntries(
+    Object.entries(linePricing).map(([k, v]) => [k, v.public_price])
+  );
+  useEffect(() => {
+    fetch("/api/admin/pricing")
+      .then((r) => r.json())
+      .then((rows: Array<{ linha: string; special_price: number; public_price: number }>) => {
+        if (!Array.isArray(rows) || rows.length === 0) return;
+        const map: LinePricingMap = { ...DEFAULT_LINE_PRICING };
+        rows.forEach((r) => { map[r.linha] = { special_price: r.special_price, public_price: r.public_price }; });
+        setLinePricing(map);
+      })
+      .catch(() => {});
+  }, []);
 
   // ── Session constants ──────────────────────────────────────────────────────
   const SESSION_KEY = "orbital_partner_session";
@@ -1818,11 +1842,10 @@ export default function ParceiroPage() {
               Tabela de Preços — Compra Direta
             </h2>
             <div className="bg-white border border-[#e2e2e2] overflow-hidden">
-              {[
-                { linha: "Classic", finish: "Mármore Fosco", special: 399, normal: 559 },
-                { linha: "Brilliance", finish: "Mármore Polido", special: 429, normal: 589 },
-                { linha: "Elegance", finish: "Madeira Texturizada", special: 459, normal: 649 },
-              ].map((row, i) => (
+              {(["Classic", "Brilliance", "Elegance"] as const).map((linha, i) => {
+                const finish = { Classic: "Mármore Fosco", Brilliance: "Mármore Polido", Elegance: "Madeira Texturizada" }[linha];
+                const row = { linha, finish, special: linePricing[linha]?.special_price ?? 0, normal: linePricing[linha]?.public_price ?? 0 };
+                return (
                 <div key={row.linha} className={`flex items-center justify-between px-6 py-4 ${i < 2 ? "border-b border-[#f0f0f0]" : ""}`}>
                   <div>
                     <p className="font-semibold text-[#002045] font-[var(--font-inter)]">{row.linha}</p>
@@ -1833,7 +1856,7 @@ export default function ParceiroPage() {
                     <p className="text-[#74777f] text-xs font-[var(--font-inter)]">Ref. público: <span className="line-through">{row.normal}</span></p>
                   </div>
                 </div>
-              ))}
+              ); })}
             </div>
             <p className="text-[#74777f] text-xs font-[var(--font-inter)] mt-2">Placa: 2,9m × 1,2m × 5mm · 3,48 m² por placa</p>
           </div>
@@ -1898,11 +1921,12 @@ export default function ParceiroPage() {
                 Linha *
               </label>
               <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
-                {[
-                  { key: "Classic",    finish: "Mármore Fosco",        price: 399, bg: "bg-[#f0eeeb]" },
-                  { key: "Brilliance", finish: "Mármore Polido",       price: 429, bg: "bg-[#e8ecf0]" },
-                  { key: "Elegance",   finish: "Madeira Texturizada",  price: 459, bg: "bg-[#ede8e0]" },
-                ].map((m) => (
+                {(["Classic", "Brilliance", "Elegance"] as const).map((key) => {
+                  const finish = { Classic: "Mármore Fosco", Brilliance: "Mármore Polido", Elegance: "Madeira Texturizada" }[key];
+                  const bg = { Classic: "bg-[#f0eeeb]", Brilliance: "bg-[#e8ecf0]", Elegance: "bg-[#ede8e0]" }[key];
+                  const price = linePricing[key]?.special_price ?? 0;
+                  const m = { key, finish, bg, price };
+                  return (
                   <button
                     key={m.key}
                     type="button"
@@ -1922,7 +1946,7 @@ export default function ParceiroPage() {
                     <p className="text-[#74777f] text-xs font-[var(--font-inter)]">{m.finish}</p>
                     <p className="text-[#002045] font-bold text-sm font-[var(--font-inter)] mt-1.5">{m.price}/placa</p>
                   </button>
-                ))}
+                ); })}
               </div>
             </div>
 

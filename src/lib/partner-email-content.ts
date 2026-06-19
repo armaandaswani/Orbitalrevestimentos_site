@@ -192,15 +192,20 @@ ${cta("Acessar portal do parceiro", PORTAL_URL)}
 export interface PartnerSpecialTableParams {
   partnerName: string;
   couponCode: string;
+  linePricing?: Record<string, { special_price: number; public_price: number }>;
 }
 
 export function generatePartnerSpecialTableEmail(p: PartnerSpecialTableParams): { subject: string; html: string } {
   const first = p.partnerName.split(" ")[0];
+  const lp = p.linePricing ?? {};
+
+  const sp = (linha: string, fallback: number) => lp[linha]?.special_price ?? fallback;
+  const pp = (linha: string, fallback: number) => lp[linha]?.public_price ?? fallback;
 
   const prices = [
-    { linha: "Classic",    finish: "Mármore Fosco",       special: "R$ 399", public_: "R$ 559", savings: "R$ 160" },
-    { linha: "Brilliance", finish: "Mármore Polido",      special: "R$ 429", public_: "R$ 589", savings: "R$ 160" },
-    { linha: "Elegance",   finish: "Madeira Texturizada", special: "R$ 459", public_: "R$ 649", savings: "R$ 190" },
+    { linha: "Classic",    finish: "Mármore Fosco",       special: `R$ ${sp("Classic", 399)}`,    public_: `R$ ${pp("Classic", 559)}`,    savings: `R$ ${pp("Classic", 559) - sp("Classic", 399)}` },
+    { linha: "Brilliance", finish: "Mármore Polido",      special: `R$ ${sp("Brilliance", 429)}`, public_: `R$ ${pp("Brilliance", 589)}`, savings: `R$ ${pp("Brilliance", 589) - sp("Brilliance", 429)}` },
+    { linha: "Elegance",   finish: "Madeira Texturizada", special: `R$ ${sp("Elegance", 499)}`,   public_: `R$ ${pp("Elegance", 649)}`,   savings: `R$ ${pp("Elegance", 649) - sp("Elegance", 499)}` },
   ];
 
   return {

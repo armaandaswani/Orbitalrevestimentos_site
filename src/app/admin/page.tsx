@@ -145,7 +145,7 @@ export default function AdminPage() {
   const [authed, setAuthed] = useState(false);
   const [pw, setPw] = useState("");
   const [pwError, setPwError] = useState("");
-  const [tab, setTab] = useState<"dashboard" | "lembretes" | "leads" | "pedidos" | "partners" | "representantes" | "orcamentos" | "campaigns" | "drip" | "commissions" | "produtos" | "projetos" | "midia" | "simulador" | "chat" | "visualizacoes">("dashboard");
+  const [tab, setTab] = useState<"dashboard" | "lembretes" | "leads" | "pedidos" | "partners" | "representantes" | "orcamentos" | "campaigns" | "drip" | "commissions" | "produtos" | "projetos" | "midia" | "simulador" | "chat" | "visualizacoes" | "precos">("dashboard");
   const [commissionFilter, setCommissionFilter] = useState<"a_pagar" | "pago" | "tudo">("a_pagar");
 
   // Dashboard
@@ -444,6 +444,14 @@ export default function AdminPage() {
   const [chatPromptSaving, setChatPromptSaving] = useState(false);
   const [chatPromptMsg, setChatPromptMsg] = useState("");
 
+  // ── Pricing tab state ───────────────────────────────────────────────────────
+  interface PricingRow { linha: string; special_price: number; public_price: number; updated_at?: string; }
+  const [pricingRows, setPricingRows] = useState<PricingRow[]>([]);
+  const [pricingLoaded, setPricingLoaded] = useState(false);
+  const [pricingEdits, setPricingEdits] = useState<Record<string, { special: string; public_: string }>>({});
+  const [pricingSaving, setPricingSaving] = useState<Record<string, boolean>>({});
+  const [pricingMsg, setPricingMsg] = useState<Record<string, string>>({});
+
   // Same static list as the public projetos page — kept in sync manually
   const STATIC_RENDERS = [
     { slug: "orb001-consultorio-odonto", title: "Consultório Odontológico",  product_code: "ORB-001", image_path: "/images/renders/orb001-consultorio-odonto.png" },
@@ -671,6 +679,22 @@ export default function AdminPage() {
     if (tab === "chat" && authed && !chatPromptLoaded) fetchChatPrompt();
   // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [tab, authed, chatPromptLoaded]);
+
+  useEffect(() => {
+    if (tab === "precos" && authed && !pricingLoaded) {
+      fetch("/api/admin/pricing")
+        .then((r) => r.json())
+        .then((rows: PricingRow[]) => {
+          setPricingRows(rows);
+          const edits: Record<string, { special: string; public_: string }> = {};
+          rows.forEach((r) => { edits[r.linha] = { special: String(r.special_price), public_: String(r.public_price) }; });
+          setPricingEdits(edits);
+          setPricingLoaded(true);
+        })
+        .catch(() => {});
+    }
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [tab, authed, pricingLoaded]);
 
   useEffect(() => {
     if (tab === "orcamentos" && authed) { setClientsError(null); setUsesError(null); fetchClients(); fetchUses(); }
@@ -1565,6 +1589,32 @@ export default function AdminPage() {
     }
   }
 
+  async function savePricing(linha: string) {
+    const edit = pricingEdits[linha];
+    if (!edit) return;
+    const special_price = parseInt(edit.special);
+    const public_price = parseInt(edit.public_);
+    if (!special_price || !public_price || special_price <= 0 || public_price <= 0) {
+      setPricingMsg((prev) => ({ ...prev, [linha]: "Valores inválidos." }));
+      return;
+    }
+    setPricingSaving((prev) => ({ ...prev, [linha]: true }));
+    setPricingMsg((prev) => ({ ...prev, [linha]: "" }));
+    const res = await fetch("/api/admin/pricing", {
+      method: "PATCH",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ linha, special_price, public_price }),
+    });
+    setPricingSaving((prev) => ({ ...prev, [linha]: false }));
+    if (res.ok) {
+      setPricingMsg((prev) => ({ ...prev, [linha]: "Salvo ✓" }));
+      setPricingRows((prev) => prev.map((r) => r.linha === linha ? { ...r, special_price, public_price } : r));
+    } else {
+      setPricingMsg((prev) => ({ ...prev, [linha]: "Erro ao salvar." }));
+    }
+    setTimeout(() => setPricingMsg((prev) => ({ ...prev, [linha]: "" })), 4000);
+  }
+
   async function importStaticRender(render: { slug: string; title: string; product_code: string; image_path: string }, idx: number) {
     setRenderImporting(render.slug);
     await fetch("/api/projects/renders", {
@@ -2302,7 +2352,7 @@ export default function AdminPage() {
               pedidos: "Pedidos", partners: "Parceiros", representantes: "Representantes", commissions: "Comissões",
               campaigns: "Campanhas", drip: "Drip de Emails", produtos: "Produtos",
               projetos: "Projetos", midia: "Mídia", simulador: "Simulador", chat: "Chat IA",
-              visualizacoes: "Visualizações",
+              visualizacoes: "Visualizações", precos: "Tabela de Preços",
             };
             const NAV_GROUPS: ReadonlyArray<{ group: string; items: ReadonlyArray<typeof tab> }> = [
               { group: "Geral", items: ["dashboard", "lembretes"] },
@@ -2310,6 +2360,7 @@ export default function AdminPage() {
               { group: "Marketing", items: ["campaigns", "drip"] },
               { group: "Catálogo", items: ["produtos", "projetos", "midia"] },
               { group: "Ferramentas", items: ["simulador", "chat", "visualizacoes"] },
+              { group: "Configurações", items: ["precos"] },
             ];
             return NAV_GROUPS.map((sec) => (
               <div key={sec.group}>
@@ -6099,6 +6150,101 @@ ALTER TABLE project_media ADD COLUMN IF NOT EXISTS description TEXT;`}
                 </ul>
               </div>
             </div>
+          </div>
+        )}
+
+        {tab === "precos" && authed && (
+          <div className="max-w-2xl mx-auto px-4 sm:px-8 py-8">
+            <div className="mb-6">
+              <h2 className="font-[var(--font-noto-serif)] text-[#002045] text-2xl font-normal mb-2">Tabela de Preços — Parceiros</h2>
+              <p className="text-[#43474e] text-sm font-[var(--font-inter)] leading-relaxed">
+                Altere os preços aqui e eles são atualizados automaticamente no portal do parceiro, nas propostas e nos emails enviados quando a tabela especial é ativada.
+              </p>
+            </div>
+
+            {!pricingLoaded ? (
+              <p className="text-[#74777f] text-sm font-[var(--font-inter)]">Carregando…</p>
+            ) : (
+              <div className="space-y-4">
+                {(pricingRows.length > 0
+                  ? pricingRows
+                  : [
+                      { linha: "Classic",    special_price: 399, public_price: 559 },
+                      { linha: "Brilliance", special_price: 429, public_price: 589 },
+                      { linha: "Elegance",   special_price: 499, public_price: 649 },
+                    ]
+                ).map((row) => {
+                  const finish = { Classic: "Mármore Fosco", Brilliance: "Mármore Polido", Elegance: "Madeira Texturizada" }[row.linha] ?? "";
+                  const edit = pricingEdits[row.linha] ?? { special: String(row.special_price), public_: String(row.public_price) };
+                  return (
+                    <div key={row.linha} className="bg-white border border-[#e2e2e2] p-6">
+                      <div className="flex items-start justify-between mb-5">
+                        <div>
+                          <p className="font-bold text-[#002045] font-[var(--font-inter)]">{row.linha}</p>
+                          <p className="text-[#74777f] text-xs font-[var(--font-inter)]">{finish}</p>
+                        </div>
+                        <span className="text-[9px] tracking-[0.15em] uppercase font-bold font-[var(--font-inter)] text-[#a0a3a8] border border-[#e2e2e2] px-2 py-1">Placa 2,9×1,2m</span>
+                      </div>
+                      <div className="grid grid-cols-2 gap-4 mb-4">
+                        <div>
+                          <label className="block text-[10px] tracking-[0.12em] uppercase font-bold font-[var(--font-inter)] text-[#74777f] mb-1.5">
+                            Preço especial (parceiro)
+                          </label>
+                          <div className="flex items-center border border-[#e2e2e2] focus-within:border-[#002045] transition-colors">
+                            <span className="text-[#74777f] text-sm font-[var(--font-inter)] pl-3 pr-1">R$</span>
+                            <input
+                              type="number"
+                              min={1}
+                              value={edit.special}
+                              onChange={(e) => setPricingEdits((prev) => ({ ...prev, [row.linha]: { ...edit, special: e.target.value } }))}
+                              className="flex-1 py-2 pr-3 text-sm font-[var(--font-inter)] text-[#002045] font-bold focus:outline-none bg-transparent"
+                            />
+                          </div>
+                        </div>
+                        <div>
+                          <label className="block text-[10px] tracking-[0.12em] uppercase font-bold font-[var(--font-inter)] text-[#74777f] mb-1.5">
+                            Preço público (referência)
+                          </label>
+                          <div className="flex items-center border border-[#e2e2e2] focus-within:border-[#002045] transition-colors">
+                            <span className="text-[#74777f] text-sm font-[var(--font-inter)] pl-3 pr-1">R$</span>
+                            <input
+                              type="number"
+                              min={1}
+                              value={edit.public_}
+                              onChange={(e) => setPricingEdits((prev) => ({ ...prev, [row.linha]: { ...edit, public_: e.target.value } }))}
+                              className="flex-1 py-2 pr-3 text-sm font-[var(--font-inter)] text-[#002045] focus:outline-none bg-transparent"
+                            />
+                          </div>
+                        </div>
+                      </div>
+                      <div className="flex items-center gap-4">
+                        <button
+                          disabled={pricingSaving[row.linha]}
+                          onClick={() => savePricing(row.linha)}
+                          className="bg-[#002045] text-white text-[10px] uppercase tracking-widest font-bold font-[var(--font-inter)] px-6 py-2.5 hover:bg-[#1a365d] transition-colors disabled:opacity-40"
+                        >
+                          {pricingSaving[row.linha] ? "Salvando…" : "Salvar"}
+                        </button>
+                        {pricingMsg[row.linha] && (
+                          <p className={`text-sm font-[var(--font-inter)] ${pricingMsg[row.linha].startsWith("Erro") || pricingMsg[row.linha].startsWith("Valores") ? "text-red-500" : "text-[#2e7d32]"}`}>
+                            {pricingMsg[row.linha]}
+                          </p>
+                        )}
+                      </div>
+                    </div>
+                  );
+                })}
+
+                <div className="bg-[#fffbea] border border-[#e6c84a] px-5 py-4">
+                  <p className="text-[#6b5000] text-[10px] tracking-[0.15em] uppercase font-bold font-[var(--font-inter)] mb-2">Onde estes preços aparecem</p>
+                  <ul className="text-[#6b5000] text-xs font-[var(--font-inter)] space-y-1 leading-relaxed">
+                    <li>· Portal do parceiro — tabela de preços e seletor de linha no simulador de orçamento</li>
+                    <li>· Email enviado quando a tabela especial é ativada para um parceiro</li>
+                    <li>· O preço especial é usado nos cálculos de orçamento gerados pelo parceiro</li>
+                  </ul>
+                </div>
+              </div>
+            )}
           </div>
         )}
 
