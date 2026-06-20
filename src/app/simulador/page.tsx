@@ -5,6 +5,7 @@ import { useSearchParams } from "next/navigation";
 import Image from "next/image";
 import Link from "next/link";
 import MdfComparison, { COMPARISON_OPTIONS } from "@/components/MdfComparison";
+import VisualizadorWizard, { type SimPrefill } from "@/components/VisualizadorWizard";
 
 const WA_BASE = "https://wa.me/5592988150149?text=";
 const CATALOGUE_URL =
@@ -1134,7 +1135,7 @@ function SimuladorInner() {
         { n: 2 as const, label: "Modelo" },
         { n: 3 as const, label: "Dimensões" },
         { n: 4 as const, label: "Seus dados" },
-        { n: 5 as const, label: "Cupom" },
+        { n: 5 as const, label: "Ver no ambiente" },
       ];
 
   // Build the link to open the full Visualizador with the current selection pre-filled.
@@ -1181,6 +1182,30 @@ function SimuladorInner() {
     }
 
     return `/visualizador?${params.toString()}`;
+  }
+
+  // Build SimPrefill[] for the embedded VisualizadorWizard in step 5
+  function buildVizPrefills(): SimPrefill[] {
+    const parseDimLabel = (label: string) => {
+      const m = label.match(/([\d.]+)m\s*[×x]\s*([\d.]+)m/);
+      return m ? { w: parseFloat(m[1]), h: parseFloat(m[2]) } : { w: undefined, h: undefined };
+    };
+    const result: SimPrefill[] = [
+      ...savedSpaces.map((sp) => {
+        const spEntry = SPACES.find((s) => s.label === sp.label);
+        const { w, h } = parseDimLabel(sp.dimLabel);
+        return { productCode: sp.productCode, spaceId: spEntry?.id ?? sp.label, w, h };
+      }),
+    ];
+    if (selectedProduct && selectedSpace && selectedSpace.viability !== "no") {
+      result.push({
+        productCode: selectedProduct.code,
+        spaceId: showCustomInput ? (customSpaceText.trim() || "parede") : selectedSpace.id,
+        w: dimMode === "lxa" && parseFloat(width) > 0 ? parseFloat(width) : undefined,
+        h: dimMode === "lxa" && parseFloat(height) > 0 ? parseFloat(height) : undefined,
+      });
+    }
+    return result;
   }
 
   // Build the partner-shareable client link
@@ -1896,26 +1921,6 @@ function SimuladorInner() {
                 </p>
               )}
 
-              {!partnerMode && selectedProduct && selectedSpace && (
-                <div className="mb-6 border border-dashed border-[#bcd0e8] bg-[#f5f8fc] px-4 py-4 flex flex-col sm:flex-row sm:items-center gap-3">
-                  <div className="flex-1">
-                    <p className="text-[#002045] text-sm font-semibold font-[var(--font-inter)]">
-                      Quer ver como fica no seu ambiente?{" "}
-                      <span className="font-normal text-[#74777f]">(opcional)</span>
-                    </p>
-                    <p className="text-[#74777f] text-xs font-[var(--font-inter)] mt-0.5">
-                      Envie uma foto e a IA aplica o {selectedProduct.name} antes de você ver o orçamento.
-                    </p>
-                  </div>
-                  <a
-                    href={buildVizUrl()}
-                    className="self-start sm:self-auto inline-flex items-center gap-2 border border-[#002045] text-[#002045] text-xs tracking-[0.1em] uppercase font-bold font-[var(--font-inter)] px-5 py-2.5 hover:bg-[#002045] hover:text-white transition-colors"
-                  >
-                    Ver no ambiente →
-                  </a>
-                </div>
-              )}
-
               <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3">
                 <button
                   onClick={() => goToStep(2)}
@@ -2118,7 +2123,52 @@ function SimuladorInner() {
                 </div>
               </div>
 
-              <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3">
+              {/* Coupon — moved from step 5 */}
+              <div className="max-w-md mt-6 pt-6 border-t border-[#e2e2e2]">
+                <p className="text-[10px] tracking-[0.15em] uppercase font-bold font-[var(--font-inter)] text-[#74777f] mb-2">
+                  {fromPartnerLink ? "Cupom do consultor" : "Código de parceiro (opcional)"}
+                </p>
+                {fromPartnerLink ? (
+                  <div className="flex items-center gap-3 bg-[#f0f9eb] border border-[#3b6934]/40 px-4 py-3">
+                    <svg className="flex-shrink-0 text-[#3b6934]" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5"><path d="M20 6L9 17l-5-5"/></svg>
+                    <div>
+                      <p className="text-[#3b6934] text-sm font-bold font-[var(--font-inter)] tracking-widest">{couponCode}</p>
+                      <p className="text-[#3b6934]/80 text-[10px] font-[var(--font-inter)] mt-0.5">
+                        {couponData ? "Desconto aplicado no material" : couponValidating ? "Validando cupom..." : "Cupom aplicado pelo consultor"}
+                      </p>
+                    </div>
+                  </div>
+                ) : (
+                  <>
+                    <div className="flex gap-2">
+                      <input
+                        type="text"
+                        value={couponCode}
+                        onChange={(e) => { setCouponCode(e.target.value.toUpperCase()); setCouponData(null); setCouponError(""); }}
+                        placeholder="ex: ARQLIMA10"
+                        className="flex-1 border border-[#e2e2e2] px-3 py-2.5 text-sm font-[var(--font-inter)] text-[#002045] uppercase focus:outline-none focus:border-[#002045] transition-colors tracking-widest"
+                      />
+                      {couponCode && !couponData && (
+                        <button onClick={validateCoupon} disabled={couponValidating}
+                          className="px-4 py-2.5 bg-[#002045] text-white text-xs font-bold font-[var(--font-inter)] hover:bg-[#1a365d] transition-colors disabled:opacity-50 whitespace-nowrap">
+                          {couponValidating ? "..." : "Validar"}
+                        </button>
+                      )}
+                    </div>
+                    {couponError && <p className="text-red-600 text-xs font-[var(--font-inter)] mt-1.5">{couponError}</p>}
+                    {couponData && (
+                      <div className="mt-2 bg-[#f0f9eb] border border-[#3b6934]/30 px-3 py-2.5">
+                        <p className="text-[#3b6934] text-xs font-bold font-[var(--font-inter)]">
+                          ✓ Cupom <span className="tracking-widest">{couponData.coupon_code}</span> aplicado!
+                        </p>
+                      </div>
+                    )}
+                    <p className="text-[#74777f] text-[10px] font-[var(--font-inter)] mt-1.5">Não tem código? Sem problema — avance sem ele.</p>
+                  </>
+                )}
+              </div>
+
+              <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3 mt-8">
                 <button
                   onClick={() => goToStep(3)}
                   className="flex items-center gap-1.5 text-xs tracking-[0.1em] uppercase font-semibold font-[var(--font-inter)] text-[#74777f] hover:text-[#002045] transition-colors"
@@ -2146,120 +2196,51 @@ function SimuladorInner() {
             </div>
           )}
 
-          {/* ── Step 5: Cupom (optional) ────────────────────────────────────── */}
+          {/* ── Step 5: Ver no ambiente (visualization) ────────────────────── */}
           {step === 5 && (
-            <div className="bg-white border border-[#e2e2e2] p-6 lg:p-10">
-              <h3 className="font-[var(--font-noto-serif)] text-[#002045] text-xl font-normal mb-2">
-                {fromPartnerLink ? "Cupom aplicado pelo seu consultor" : "Tem um código de parceiro?"}
-              </h3>
-              <p className="text-[#74777f] text-sm font-[var(--font-inter)] mb-6">
-                {fromPartnerLink
-                  ? "O desconto já foi configurado pelo consultor que montou esta simulação para você."
-                  : "Opcional — insira o código recebido do seu arquiteto, designer ou indicador para aplicar o desconto."}
-              </p>
-
-              <div className="max-w-sm mb-8">
-                {fromPartnerLink ? (
-                  /* Locked coupon — client link mode */
-                  <div>
-                    <label className="block text-[10px] tracking-[0.15em] uppercase font-bold font-[var(--font-inter)] text-[#74777f] mb-2">
-                      Código do cupom
-                    </label>
-                    <div className="flex items-center gap-3 bg-[#f0f9eb] border border-[#3b6934]/40 px-4 py-3">
-                      <svg className="flex-shrink-0 text-[#3b6934]" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5"><path d="M20 6L9 17l-5-5"/></svg>
-                      <div>
-                        <p className="text-[#3b6934] text-sm font-bold font-[var(--font-inter)] tracking-widest">{couponCode}</p>
-                        {couponData ? (
-                          <p className="text-[#3b6934]/80 text-[10px] font-[var(--font-inter)] mt-0.5">
-                            Desconto aplicado no material
-                          </p>
-                        ) : couponValidating ? (
-                          <p className="text-[#3b6934]/60 text-[10px] font-[var(--font-inter)] mt-0.5">Validando cupom...</p>
-                        ) : (
-                          <p className="text-[#3b6934]/80 text-[10px] font-[var(--font-inter)] mt-0.5">Cupom aplicado pelo consultor</p>
-                        )}
-                      </div>
-                    </div>
-                    <p className="text-[#74777f] text-[10px] font-[var(--font-inter)] mt-2">
-                      Este desconto foi configurado pelo consultor que preparou esta simulação.
-                    </p>
-                  </div>
-                ) : (
-                  /* Normal editable coupon */
-                  <>
-                    <label className="block text-[10px] tracking-[0.15em] uppercase font-bold font-[var(--font-inter)] text-[#74777f] mb-2">
-                      Código do cupom
-                    </label>
-                    <div className="flex gap-2">
-                      <input
-                        type="text"
-                        autoFocus
-                        value={couponCode}
-                        onChange={(e) => {
-                          setCouponCode(e.target.value.toUpperCase());
-                          setCouponData(null);
-                          setCouponError("");
-                        }}
-                        placeholder="ex: ARQLIMA10"
-                        className="flex-1 border border-[#e2e2e2] px-4 py-3 text-sm font-[var(--font-inter)] text-[#002045] uppercase focus:outline-none focus:border-[#002045] transition-colors tracking-widest"
-                      />
-                      {couponCode && !couponData && (
-                        <button
-                          onClick={validateCoupon}
-                          disabled={couponValidating}
-                          className="px-4 py-3 bg-[#002045] text-white text-xs font-bold font-[var(--font-inter)] hover:bg-[#1a365d] transition-colors disabled:opacity-50 whitespace-nowrap"
-                        >
-                          {couponValidating ? "..." : "Validar"}
-                        </button>
-                      )}
-                    </div>
-
-                    {couponValidating && (
-                      <p className="text-[#74777f] text-xs font-[var(--font-inter)] mt-2">Validando cupom...</p>
-                    )}
-                    {couponError && (
-                      <p className="text-red-600 text-xs font-[var(--font-inter)] mt-2">{couponError}</p>
-                    )}
-                    {couponData && (
-                      <div className="mt-3 bg-[#f0f9eb] border border-[#3b6934]/30 px-4 py-3">
-                        <p className="text-[#3b6934] text-xs font-bold font-[var(--font-inter)]">
-                          ✓ Cupom <span className="tracking-widest">{couponData.coupon_code}</span> aplicado!
-                        </p>
-                        <p className="text-[#3b6934]/80 text-xs font-[var(--font-inter)] mt-0.5">
-                          Desconto aplicado no material.
-                        </p>
-                      </div>
-                    )}
-
-                    <p className="text-[#74777f] text-[10px] font-[var(--font-inter)] mt-3">
-                      Não tem código? Sem problema — avance sem ele.
-                    </p>
-                  </>
-                )}
-              </div>
-
-              <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3">
-                <button
-                  onClick={() => goToStep(4)}
-                  className="flex items-center gap-1.5 text-xs tracking-[0.1em] uppercase font-semibold font-[var(--font-inter)] text-[#74777f] hover:text-[#002045] transition-colors"
-                >
-                  <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5">
-                    <path d="M19 12H5M12 5l-7 7 7 7" />
-                  </svg>
-                  Voltar
-                </button>
-                <button
-                  onClick={handleSubmitAndShow}
-                  disabled={couponValidating || simSubmitting}
-                  className="w-full sm:w-auto inline-flex items-center justify-center gap-2 text-xs tracking-[0.12em] uppercase font-bold font-[var(--font-inter)] px-8 py-4 bg-[#002045] text-white hover:bg-[#1a365d] transition-colors disabled:opacity-50"
-                >
-                  {simSubmitting ? "Enviando..." : "Ver minha simulação"}
-                  {!simSubmitting && (
-                    <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5">
-                      <path d="M5 12h14M12 5l7 7-7 7" />
+            <div className="bg-white border border-[#e2e2e2]">
+              <div className="px-6 pt-6 lg:px-10 lg:pt-8 flex flex-col sm:flex-row sm:items-start sm:justify-between gap-4 border-b border-[#f0f0ee] pb-5">
+                <div>
+                  <h3 className="font-[var(--font-noto-serif)] text-[#002045] text-xl font-normal mb-1">
+                    Visualize no seu ambiente
+                  </h3>
+                  <p className="text-[#74777f] text-sm font-[var(--font-inter)]">
+                    Opcional — envie uma foto e a IA aplica os acabamentos antes de ver a simulação.
+                  </p>
+                </div>
+                <div className="flex items-center gap-3 flex-shrink-0">
+                  <button
+                    onClick={() => goToStep(4)}
+                    className="flex items-center gap-1.5 text-xs tracking-[0.1em] uppercase font-semibold font-[var(--font-inter)] text-[#74777f] hover:text-[#002045] transition-colors"
+                  >
+                    <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5">
+                      <path d="M19 12H5M12 5l-7 7 7 7" />
                     </svg>
-                  )}
-                </button>
+                    Voltar
+                  </button>
+                  <button
+                    onClick={handleSubmitAndShow}
+                    disabled={simSubmitting}
+                    className="inline-flex items-center gap-1.5 text-xs tracking-[0.1em] uppercase font-semibold font-[var(--font-inter)] text-[#002045] hover:underline transition-colors disabled:opacity-50"
+                  >
+                    {simSubmitting ? "Enviando..." : "Pular etapa →"}
+                  </button>
+                </div>
+              </div>
+              <div className="px-4 sm:px-6 lg:px-10 pb-8">
+                <VisualizadorWizard
+                  products={products}
+                  loadingProducts={loadingProducts}
+                  simPrefills={buildVizPrefills()}
+                  embeddedMode
+                  prefilledLeadName={clientName}
+                  prefilledLeadPhone={clientPhone}
+                  onComplete={(rid) => {
+                    if (rid) vizRenderId.current = rid;
+                    void handleSubmitAndShow();
+                  }}
+                  onSkip={handleSubmitAndShow}
+                />
               </div>
             </div>
           )}

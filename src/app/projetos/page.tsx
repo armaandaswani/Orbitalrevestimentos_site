@@ -199,14 +199,14 @@ function ProjectLightbox({
 
       {/* Mobile filter bar */}
       {(hasAntes || hasDepois || hasVideos) && (
-        <div className="flex sm:hidden items-center gap-1 px-5 py-2 border-b border-white/8 flex-shrink-0" onClick={(e) => e.stopPropagation()}>
-          {(["all", ...(hasAntes ? ["antes"] : []), ...(hasDepois ? ["depois"] : [])] as LightboxFilter[]).map((f) => (
+        <div className="flex sm:hidden items-center gap-1 px-5 py-2 border-b border-white/8 flex-shrink-0 overflow-x-auto" onClick={(e) => e.stopPropagation()}>
+          {(["all", ...(hasAntes ? ["antes"] : []), ...(hasDepois ? ["depois"] : []), ...(hasVideos ? ["video"] : [])] as (LightboxFilter | "video")[]).map((f) => (
             <button
               key={f}
-              onClick={() => { setFilter(f); setViewMode("carousel"); }}
-              className={`text-[9px] tracking-[0.12em] uppercase font-bold font-[var(--font-inter)] px-3 py-1.5 border transition-colors ${filter === f ? "bg-white text-[#0a0f1a] border-white" : "border-white/20 text-white/50 hover:text-white/80"}`}
+              onClick={() => { setFilter(f as LightboxFilter); setViewMode("carousel"); }}
+              className={`flex-shrink-0 text-[9px] tracking-[0.12em] uppercase font-bold font-[var(--font-inter)] px-3 py-1.5 border transition-colors ${filter === f ? "bg-white text-[#0a0f1a] border-white" : "border-white/20 text-white/50 hover:text-white/80"}`}
             >
-              {f === "all" ? "Todas" : f.charAt(0).toUpperCase() + f.slice(1)}
+              {f === "all" ? "Todas" : f === "geral" ? "Geral" : f.charAt(0).toUpperCase() + f.slice(1)}
             </button>
           ))}
         </div>
