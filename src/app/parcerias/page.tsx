@@ -502,7 +502,7 @@ function SelfRegisterSection({ onScrollToSegments }: { onScrollToSegments: () =>
         name: form.name,
         email: form.email,
         phone: form.phone,
-        sales_rep_referral_code: form.referral_code,
+        sales_rep_referral_code: noReferral ? null : (form.referral_code || null),
         portal_password: form.portal_password,
         birthday: form.birthday.length === 10 ? bdayToISO(form.birthday) : form.birthday,
       }),

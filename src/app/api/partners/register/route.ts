@@ -6,7 +6,7 @@ export async function POST(req: NextRequest) {
   const body = await req.json();
   const { name, email, phone, sales_rep_referral_code, portal_password, birthday, profession } = body;
 
-  if (!name || !email || !phone || !sales_rep_referral_code || !portal_password || !birthday) {
+  if (!name || !email || !phone || !portal_password || !birthday) {
     return NextResponse.json(
       { error: "Todos os campos são obrigatórios." },
       { status: 400 }
@@ -30,19 +30,23 @@ export async function POST(req: NextRequest) {
     return NextResponse.json({ error: "Este e-mail já está cadastrado no sistema." }, { status: 409 });
   }
 
-  // Validate sales_rep_referral_code exists and is active
-  const { data: salesRep, error: repError } = await db
-    .from("sales_reps")
-    .select("id, name, referral_code, email")
-    .eq("referral_code", (sales_rep_referral_code as string).toUpperCase())
-    .eq("status", "active")
-    .single();
+  // Validate sales_rep_referral_code if provided
+  let salesRep: { id: string; name: string; referral_code: string; email: string | null } | null = null;
+  if (sales_rep_referral_code) {
+    const { data, error: repError } = await db
+      .from("sales_reps")
+      .select("id, name, referral_code, email")
+      .eq("referral_code", (sales_rep_referral_code as string).toUpperCase())
+      .eq("status", "active")
+      .single();
 
-  if (repError || !salesRep) {
-    return NextResponse.json(
-      { error: "Código de representante inválido ou inativo." },
-      { status: 400 }
-    );
+    if (repError || !data) {
+      return NextResponse.json(
+        { error: "Código de representante inválido ou inativo." },
+        { status: 400 }
+      );
+    }
+    salesRep = data;
   }
 
   // Generate coupon code: first word of name uppercased (letters only) + last 2 digits of year
@@ -83,7 +87,7 @@ export async function POST(req: NextRequest) {
       commission_type: "percentage",
       commission_value: 0,
       portal_password: hashPassword(portal_password),
-      sales_rep_referral_code: (sales_rep_referral_code as string).toUpperCase(),
+      sales_rep_referral_code: sales_rep_referral_code ? (sales_rep_referral_code as string).toUpperCase() : null,
       birthday: birthday || null,
       profession: profession || null,
     })
@@ -95,9 +99,11 @@ export async function POST(req: NextRequest) {
   }
 
   // Link partner to sales rep in junction table (critical for commission tracking)
-  await db
-    .from("partner_sales_reps")
-    .insert({ partner_id: partner.id, sales_rep_id: salesRep.id });
+  if (salesRep) {
+    await db
+      .from("partner_sales_reps")
+      .insert({ partner_id: partner.id, sales_rep_id: salesRep.id });
+  }
 
   // Send "under review" email to the partner (non-fatal)
   try {
@@ -129,8 +135,9 @@ export async function POST(req: NextRequest) {
   try {
     const { getResend } = await import("@/lib/resend");
     const resend = getResend();
+    const repLabel = sales_rep_referral_code ? (sales_rep_referral_code as string).toUpperCase() : "Sem código";
     const waText = encodeURIComponent(
-      `Novo parceiro aguardando aprovação!\nNome: ${name}\nEmail: ${email}\nTelefone: ${phone}\nCupom: ${couponCode}\nRepresentante: ${(sales_rep_referral_code as string).toUpperCase()}`
+      `Novo parceiro aguardando aprovação!\nNome: ${name}\nEmail: ${email}\nTelefone: ${phone}\nCupom: ${couponCode}\nRepresentante: ${repLabel}`
     );
     const waLink = `https://wa.me/5592988150149?text=${waText}`;
 
@@ -161,7 +168,7 @@ export async function POST(req: NextRequest) {
             </tr>
             <tr>
               <td style="padding:10px 0;color:#555;font-size:14px">Representante</td>
-              <td style="padding:10px 0;font-weight:600;font-size:14px;text-align:right">${(sales_rep_referral_code as string).toUpperCase()}</td>
+              <td style="padding:10px 0;font-weight:600;font-size:14px;text-align:right">${repLabel}</td>
             </tr>
           </table>
           <div style="display:flex;gap:12px;flex-wrap:wrap">
@@ -181,7 +188,7 @@ export async function POST(req: NextRequest) {
   }
 
   // Send notification to the sales rep (non-fatal)
-  if (salesRep.email) {
+  if (salesRep?.email) {
     try {
       const { getResend } = await import("@/lib/resend");
       const resend = getResend();
