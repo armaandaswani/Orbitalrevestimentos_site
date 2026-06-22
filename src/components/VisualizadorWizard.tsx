@@ -165,6 +165,82 @@ async function maskToOverlay(maskUrl: string, hex: string): Promise<{ url: strin
   return { url: c.toDataURL(), rect };
 }
 
+// ── Mask-stencil compositing ────────────────────────────────────────────────
+// Gemini's render call is a full-image regeneration, not true inpainting — it
+// only gets a soft "confine to this area" instruction. Chaining renders (each
+// zone's output feeding the next zone's input) lets drift compound across
+// zones. Instead of trusting the model's promise to leave everything else
+// untouched, we enforce it ourselves: accept ONLY each zone's masked pixels
+// from its AI output, onto a running composite that started as the pristine
+// photo. Falls through maskUrl (precise SAM mask) → polygon (Gemini-fallback
+// detection) → rect (manual zones) → null (text-only zones, no spatial info
+// — caller then accepts that zone's output wholesale, same as before).
+async function buildStencil(z: Zone, targetW: number, targetH: number): Promise<HTMLCanvasElement | null> {
+  const c = document.createElement("canvas");
+  c.width = targetW;
+  c.height = targetH;
+  const ctx = c.getContext("2d")!;
+
+  if (z.maskUrl) {
+    // maskUrl is the tinted overlay from maskToOverlay (alpha=125 inside /
+    // 0 outside). Scale to targetW/targetH, then binarize alpha so no
+    // partial edge value from the tint leaks into the composite.
+    const im = await loadImage(z.maskUrl);
+    ctx.drawImage(im, 0, 0, targetW, targetH);
+    const id = ctx.getImageData(0, 0, targetW, targetH);
+    for (let i = 3; i < id.data.length; i += 4) id.data[i] = id.data[i] > 20 ? 255 : 0;
+    ctx.putImageData(id, 0, 0);
+    return c;
+  }
+  if (z.polygon && z.polygon.length >= 3) {
+    ctx.fillStyle = "#fff";
+    ctx.beginPath();
+    z.polygon.forEach(([x, y], i) => {
+      const px = x * targetW, py = y * targetH;
+      if (i === 0) ctx.moveTo(px, py); else ctx.lineTo(px, py);
+    });
+    ctx.closePath();
+    ctx.fill();
+    return c;
+  }
+  if (z.rect && z.rect.w > 0 && z.rect.h > 0) {
+    ctx.fillStyle = "#fff";
+    ctx.fillRect(z.rect.x * targetW, z.rect.y * targetH, z.rect.w * targetW, z.rect.h * targetH);
+    return c;
+  }
+  return null;
+}
+
+// Composites sourceDataUrl (this zone's full Gemini output) onto baseDataUrl
+// (the running composite): keeps ONLY the pixels inside the zone's mask from
+// source, everything else from base. Output is pinned to base's pixel
+// dimensions regardless of source's actual size — drawImage's scale-to-fit
+// absorbs any Gemini output-size wobble, same implicit-scaling idiom
+// normalizeImage/maskToOverlay already rely on elsewhere in this file.
+async function compositeMaskedRegion(baseDataUrl: string, sourceDataUrl: string, z: Zone): Promise<string> {
+  const [baseImg, sourceImg] = await Promise.all([loadImage(baseDataUrl), loadImage(sourceDataUrl)]);
+  const w = baseImg.naturalWidth, h = baseImg.naturalHeight;
+
+  const stencil = await buildStencil(z, w, h);
+  if (!stencil) return sourceDataUrl; // no spatial constraint available — trust output wholesale
+
+  const cut = document.createElement("canvas");
+  cut.width = w;
+  cut.height = h;
+  const cutCtx = cut.getContext("2d")!;
+  cutCtx.drawImage(sourceImg, 0, 0, w, h);
+  cutCtx.globalCompositeOperation = "destination-in";
+  cutCtx.drawImage(stencil, 0, 0);
+
+  const out = document.createElement("canvas");
+  out.width = w;
+  out.height = h;
+  const outCtx = out.getContext("2d")!;
+  outCtx.drawImage(baseImg, 0, 0, w, h);
+  outCtx.drawImage(cut, 0, 0);
+  return out.toDataURL("image/jpeg", 0.92);
+}
+
 function buildSimuladorUrl(ambientes: SavedAmbiente[]): string {
   if (ambientes.length === 1) {
     const a = ambientes[0];
@@ -541,7 +617,11 @@ export default function VisualizadorWizard({
         });
         const json = await res.json();
         if (!res.ok || !json.image) throw new Error(json.error || "Não foi possível gerar a visualização.");
-        current = json.image;
+        try {
+          current = await compositeMaskedRegion(current, json.image, z);
+        } catch {
+          current = json.image; // compositing failed — fall back rather than failing the whole render
+        }
       }
       setResult(current);
 
