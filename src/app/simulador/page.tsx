@@ -295,6 +295,12 @@ function SimuladorInner() {
   // shown in admin.
   const vizRenderId = useRef<string>("");
   const lastCapturedPhoneRef = useRef("");
+  // Guards the ?produto= pre-select effect below so it only ever applies once.
+  // Without this, if the effect's deps (products/searchParams) get a new
+  // reference for any reason after the client has manually picked a
+  // different model, it silently overwrites that choice back to the URL's
+  // original product — sending the wrong model through to the quote/email.
+  const produtoParamAppliedRef = useRef(false);
   const [simSubmitting, setSimSubmitting] = useState(false);
   const [simSubmitted, setSimSubmitted] = useState(false);
   const [quoteShareUrl, setQuoteShareUrl] = useState<string | null>(null);
@@ -657,13 +663,16 @@ function SimuladorInner() {
   // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [searchParams]);
 
-  // Pre-select product from ?produto=CODE (set after products are loaded)
+  // Pre-select product from ?produto=CODE (set after products are loaded).
+  // Applies at most once — see produtoParamAppliedRef above.
   useEffect(() => {
     if (loadingProducts || products.length === 0) return;
+    if (produtoParamAppliedRef.current) return;
     const code = searchParams.get("produto");
     if (!code) return;
     const match = products.find((p) => p.code === code);
     if (match) {
+      produtoParamAppliedRef.current = true;
       setSelectedLine(match.linha);
       setSelectedProduct(match);
     }
@@ -2704,30 +2713,33 @@ function SimuladorInner() {
                   {/* Mão de obra — not part of the price above; the Orbital quote is
                       material only. Closed by default, no price shown: it's only an
                       estimate that can change, and showing a fixed number here is what
-                      led clients to think Orbital charges for installation. */}
-                  <div className="border border-white/10 mb-3">
+                      led clients to think Orbital charges for installation. Styled to
+                      stand out (bright card on the dark panel) since a low-contrast
+                      row was getting missed entirely. */}
+                  <div className="bg-[#a1d494] mb-3">
                     <button
                       type="button"
                       onClick={() => setShowMoInfo((v) => !v)}
-                      className="w-full flex items-center justify-between gap-3 px-4 py-3 text-left"
+                      className="w-full flex items-center justify-between gap-3 px-4 py-3.5 text-left"
                     >
-                      <span className="text-white/70 text-xs font-semibold font-[var(--font-inter)]">
-                        Precisa de instalação? <span className="text-white/45 font-normal">(opcional, não incluso)</span>
+                      <span className="text-[#002045] text-sm font-bold font-[var(--font-inter)]">
+                        Precisa de instalação? <span className="font-normal">(opcional, não incluso)</span>
                       </span>
                       <svg
-                        width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"
-                        className={`text-white/50 flex-shrink-0 transition-transform duration-200 ${showMoInfo ? "rotate-180" : ""}`}
+                        width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#002045" strokeWidth="2.5"
+                        className={`flex-shrink-0 transition-transform duration-200 ${showMoInfo ? "rotate-180" : ""}`}
                       >
                         <path d="M6 9l6 6 6-6" />
                       </svg>
                     </button>
                     {showMoInfo && (
-                      <div className="border-t border-white/10 px-4 py-4 space-y-3">
-                        <p className="text-white/60 text-[11px] font-[var(--font-inter)] leading-relaxed">
-                          A Orbital é fornecedora do painel — não realizamos instalação e o valor acima é só do material.
-                          Quem instala é uma equipe terceirizada especializada, que já aplicou os painéis Orbital em diversos
-                          projetos e conhece bem o produto. O custo da instalação varia por projeto, então não temos um
-                          preço fixo para mostrar aqui — fale direto com o responsável para um orçamento.
+                      <div className="bg-[#0a1f3d] px-4 py-4 space-y-3">
+                        <p className="text-white/70 text-[11px] font-[var(--font-inter)] leading-relaxed">
+                          Orbital é fornecedora do painel — não realizamos instalação e o valor acima é só do material.
+                          Quem indicamos para instalações é uma empresa terceirizada que detém equipes especializadas e
+                          que já aplicou os painéis Orbital em diversos projetos e conhece bem o produto. O custo da
+                          instalação varia por projeto, então não temos um preço fixo para mostrar aqui — fale direto
+                          com o responsável para um orçamento.
                         </p>
                         <a
                           href={`${WERKSSON_WA_BASE}${encodeURIComponent(werkssonMsg)}`}
