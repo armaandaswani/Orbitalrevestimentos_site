@@ -5,6 +5,7 @@ import { SITE_ASSET_MANIFEST } from "@/lib/assets";
 import LeadsTab from "./LeadsTab";
 import RemindersTab from "./RemindersTab";
 import PedidosTab from "./PedidosTab";
+import RepOversightTab from "./RepOversightTab";
 import {
   composePrompt,
   finishDescription,
@@ -3129,6 +3130,8 @@ export default function AdminPage() {
                 </table>
               </div>
             </div>
+
+            <RepOversightTab reps={salesReps.map((r) => ({ id: r.id, name: r.name }))} />
 
             <div className="flex items-center justify-between mb-6">
               <h2 className="font-[var(--font-noto-serif)] text-[#002045] text-xl font-normal">Representantes Comerciais</h2>

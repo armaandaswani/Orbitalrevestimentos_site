@@ -1,6 +1,8 @@
 "use client";
 
 import React, { useState, useMemo, useEffect, useRef } from "react";
+import RepAgendaTab from "./RepAgendaTab";
+import RepCrmTab from "./RepCrmTab";
 
 interface SalesRepInfo {
   id: string;
@@ -195,7 +197,7 @@ export default function RepresentantePage() {
     .reduce((a, u) => a + (u.sales_rep_commission_owed || 0), 0);
 
   const [partnerRankSort, setPartnerRankSort] = useState<"total" | "count" | "median">("total");
-  const [repTab, setRepTab] = useState<"overview" | "commissions" | "partners">("overview");
+  const [repTab, setRepTab] = useState<"overview" | "commissions" | "partners" | "agenda" | "crm">("overview");
   const [linkedPartners, setLinkedPartners] = useState<LinkedPartner[]>([]);
   const [partnersLoading, setPartnersLoading] = useState(false);
   const [copied, setCopied] = useState(false);
@@ -400,6 +402,8 @@ export default function RepresentantePage() {
             { key: "overview", label: "Visão Geral" },
             { key: "commissions", label: "Comissões" },
             { key: "partners", label: `Meus Parceiros${linkedPartners.length > 0 ? ` (${linkedPartners.length})` : ""}` },
+            { key: "agenda", label: "Agenda" },
+            { key: "crm", label: "Meu CRM" },
           ] as const).map((t) => (
             <button
               key={t.key}
@@ -994,6 +998,14 @@ export default function RepresentantePage() {
               </>
             )}
           </div>
+        )}
+
+        {repTab === "agenda" && (
+          <RepAgendaTab salesRepId={salesRep.id} linkedPartners={linkedPartners} />
+        )}
+
+        {repTab === "crm" && (
+          <RepCrmTab salesRepId={salesRep.id} linkedPartners={linkedPartners} />
         )}
       </div>
     </div>
