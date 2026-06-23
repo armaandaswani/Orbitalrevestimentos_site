@@ -11,7 +11,7 @@ const WA_BASE = "https://wa.me/5592988150149?text=";
 // Werk Engenharia — terceirizado de instalação. Mão de obra é apenas
 // estimativa e não é cobrada/processada pela Orbital; o contato direto evita
 // que o cliente pense que a Orbital realiza ou fatura a instalação.
-const WERKSSON_WA_BASE = "https://wa.me/5592992097165?text=";
+const WERK_ENGENHARIA_WA_BASE = "https://wa.me/5592993974821?text=";
 const CATALOGUE_URL =
   "https://drive.google.com/file/d/1zhm5MgKGSDRThqk8FqqwfX-WijI7K-iD/view?usp=drive_link";
 const PLATE_M2 = 3.48;
@@ -2769,7 +2769,7 @@ function SimuladorInner() {
                           com o responsável para um orçamento.
                         </p>
                         <a
-                          href={`${WERKSSON_WA_BASE}${encodeURIComponent(werkssonMsg)}`}
+                          href={`${WERK_ENGENHARIA_WA_BASE}${encodeURIComponent(werkssonMsg)}`}
                           target="_blank"
                           rel="noopener noreferrer"
                           className="inline-flex items-center gap-2 bg-[#25d366] text-white text-xs tracking-[0.1em] uppercase font-bold font-[var(--font-inter)] px-5 py-2.5 hover:brightness-95 transition"
