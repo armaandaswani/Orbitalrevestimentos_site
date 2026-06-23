@@ -260,29 +260,34 @@ export default function Home() {
               </Link>
             </ScrollReveal>
             <ScrollReveal className="lg:col-span-6" direction="right" delay={100}>
-              <Link href="/simulador" className="block bg-[#002045] p-6 lg:p-8 hover:opacity-95 transition-opacity">
-                <p className="text-[#a1d494] text-[10px] tracking-[0.2em] uppercase font-bold font-[var(--font-inter)] mb-5">
-                  PFB Orbital — Estimativa de investimento
-                </p>
-                <div className="space-y-3 mb-5">
-                  <div className="flex items-center justify-between text-sm font-[var(--font-inter)]">
-                    <span className="text-white/55">Material (5 placas × 589)</span>
-                    <span className="text-white font-semibold">2.945</span>
-                  </div>
-                  <div className="flex items-center justify-between text-sm font-[var(--font-inter)]">
-                    <span className="text-white/55">Acabamento / pintura</span>
-                    <span className="text-[#a1d494] font-semibold">Não necessário</span>
-                  </div>
-                  <div className="border-t border-white/15 pt-3 flex items-center justify-between">
-                    <span className="text-white text-sm font-bold font-[var(--font-inter)]">Total — material</span>
-                    <span className="text-white text-2xl font-[var(--font-noto-serif)]">2.945</span>
-                  </div>
+              {/* Fanned swatch stack — real finishes, no numbers. Ties directly
+                  into the simulator's first step (choosing a finish). */}
+              <Link href="/simulador" className="group relative block h-[300px] sm:h-[380px] lg:h-[440px]">
+                <div className="absolute inset-0 flex items-center justify-center">
+                  {[
+                    { img: "/images/catalogue/classic-bege-travertino-orb001.jpeg", rot: -18, x: -84 },
+                    { img: "/images/catalogue/brilliance-bronze-armani-orb005.jpeg", rot: -9, x: -42 },
+                    { img: "/images/catalogue/elegance-imbuia-orb002.jpeg", rot: 0, x: 0 },
+                    { img: "/images/catalogue/brilliance-gris-pietra-orb009.jpeg", rot: 9, x: 42 },
+                    { img: "/images/catalogue/classic-branco-calacatta-orb006.jpeg", rot: 18, x: 84 },
+                  ].map((s, i) => (
+                    <div
+                      key={s.img}
+                      className="absolute w-[120px] sm:w-[150px] lg:w-[175px] aspect-[3/4] shadow-2xl overflow-hidden border-[3px] border-white transition-transform duration-500 ease-out group-hover:scale-[1.015]"
+                      style={{
+                        transform: `rotate(${s.rot}deg) translate(${s.x}px, ${i === 2 ? -14 : 0}px)`,
+                        zIndex: i === 2 ? 10 : 5 - Math.abs(i - 2),
+                      }}
+                    >
+                      <Image src={s.img} alt="" fill className="object-cover" sizes="175px" />
+                    </div>
+                  ))}
                 </div>
-                <div className="bg-[#3b6934]/30 border border-[#3b6934]/50 px-4 py-3">
-                  <p className="text-[#a1d494] text-xs font-semibold font-[var(--font-inter)]">10+ anos sem trocar.</p>
-                  <p className="text-[#a1d494]/70 text-[11px] font-[var(--font-inter)] mt-0.5 leading-relaxed">
-                    Instala uma vez. Impermeável e resistente ao clima de Manaus.
-                  </p>
+                <div className="absolute top-0 right-0 sm:top-2 sm:right-2 bg-[#a1d494] text-[#002045] w-12 h-12 sm:w-14 sm:h-14 rounded-full flex items-center justify-center shadow-lg z-20">
+                  <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                    <path d="M21.3 15.3a1 1 0 000-1.42L9.88 2.7a1 1 0 00-1.42 0L2.7 8.46a1 1 0 000 1.42l11.42 11.42a1 1 0 001.42 0z" />
+                    <path d="M14.5 7.5l2 2M11 11l2 2M7.5 14.5l2 2" />
+                  </svg>
                 </div>
               </Link>
             </ScrollReveal>
@@ -295,28 +300,26 @@ export default function Home() {
         <div className="max-w-[1280px] mx-auto px-4 lg:px-16">
           <div className="grid grid-cols-1 lg:grid-cols-12 gap-10 lg:gap-16 items-center">
             <ScrollReveal className="lg:col-span-5 lg:order-1" direction="left">
-              <Link href="/visualizador" className="grid grid-cols-2 gap-1.5 group">
-                <div className="relative aspect-[3/4] overflow-hidden">
+              {/* Single polished AI render in a soft frame — shows the actual
+                  output quality instead of a raw construction antes/depois pair. */}
+              <Link href="/visualizador" className="group relative block max-w-[360px] mx-auto">
+                <div className="relative aspect-[4/5] overflow-hidden shadow-2xl">
                   <Image
-                    src="/images/projetos/escritorio-antes.png"
-                    alt="Escritório — antes"
+                    src="/images/renders/orb014-escritorio.png"
+                    alt="Visualização gerada por inteligência artificial"
                     fill
-                    className="object-cover brightness-[0.85] saturate-75 transition-transform duration-700 group-hover:scale-[1.03]"
+                    className="object-cover transition-transform duration-700 group-hover:scale-[1.04]"
                   />
-                  <span className="absolute bottom-2 left-2 bg-black/55 text-white/80 text-[9px] tracking-[0.15em] uppercase font-bold font-[var(--font-inter)] px-2 py-1">
-                    Antes
+                  <div className="absolute inset-0 bg-gradient-to-t from-black/45 via-transparent to-transparent" />
+                  <span className="absolute bottom-3 left-3 bg-black/55 text-white text-[9px] tracking-[0.15em] uppercase font-bold font-[var(--font-inter)] px-3 py-1.5">
+                    Gerado por IA
                   </span>
                 </div>
-                <div className="relative aspect-[3/4] overflow-hidden">
-                  <Image
-                    src="/images/projetos/escritorio-depois.jpeg"
-                    alt="Escritório — depois"
-                    fill
-                    className="object-cover transition-transform duration-700 group-hover:scale-[1.03]"
-                  />
-                  <span className="absolute bottom-2 left-2 bg-[#a1d494] text-[#002045] text-[9px] tracking-[0.15em] uppercase font-bold font-[var(--font-inter)] px-2 py-1">
-                    Depois
-                  </span>
+                <div className="absolute -top-4 -right-4 sm:-top-5 sm:-right-5 bg-white text-[#002045] w-14 h-14 sm:w-16 sm:h-16 rounded-full flex items-center justify-center shadow-xl">
+                  <svg width="26" height="26" viewBox="0 0 24 24" fill="currentColor">
+                    <path d="M12 2l1.5 5.5L19 9l-5.5 1.5L12 16l-1.5-5.5L5 9l5.5-1.5z" />
+                    <path d="M19.5 14l.7 1.9 1.9.7-1.9.7-.7 1.9-.7-1.9-1.9-.7 1.9-.7z" opacity="0.65" />
+                  </svg>
                 </div>
               </Link>
             </ScrollReveal>
