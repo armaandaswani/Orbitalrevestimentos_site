@@ -232,6 +232,119 @@ export default function Home() {
         </div>
       </section>
 
+      {/* Simulador Teaser — surfaced on the homepage so mobile users who don't
+          explore the nav menu can still find it. */}
+      <section className="py-12 lg:py-28 bg-white border-b border-[#eeeeee]">
+        <div className="max-w-[1280px] mx-auto px-4 lg:px-16">
+          <div className="grid grid-cols-1 lg:grid-cols-12 gap-10 lg:gap-16 items-center">
+            <ScrollReveal className="lg:col-span-6" direction="left">
+              <p className="text-[#74777f] text-xs tracking-[0.2em] uppercase font-semibold font-[var(--font-inter)] mb-5">
+                Simulador de Investimento
+              </p>
+              <h2 className="font-[var(--font-noto-serif)] text-[#002045] text-2xl lg:text-[40px] font-normal leading-[1.2] mb-6">
+                Simule seu orçamento em segundos.
+              </h2>
+              <p className="text-[#43474e] text-base font-[var(--font-inter)] leading-relaxed mb-8 max-w-md">
+                Escolha o acabamento, informe a área do seu espaço e veja na hora
+                quanto você investe — e quanto economiza em relação ao MDF ao
+                longo de 10 anos.
+              </p>
+              <Link
+                href="/simulador"
+                className="inline-flex items-center justify-center gap-2 bg-[#002045] text-white text-xs tracking-[0.12em] uppercase font-bold font-[var(--font-inter)] px-8 py-4 hover:bg-[#1a365d] transition-colors"
+              >
+                Simular meu orçamento
+                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                  <path d="M5 12h14M12 5l7 7-7 7" />
+                </svg>
+              </Link>
+            </ScrollReveal>
+            <ScrollReveal className="lg:col-span-6" direction="right" delay={100}>
+              <Link href="/simulador" className="block bg-[#002045] p-6 lg:p-8 hover:opacity-95 transition-opacity">
+                <p className="text-[#a1d494] text-[10px] tracking-[0.2em] uppercase font-bold font-[var(--font-inter)] mb-5">
+                  PFB Orbital — Estimativa de investimento
+                </p>
+                <div className="space-y-3 mb-5">
+                  <div className="flex items-center justify-between text-sm font-[var(--font-inter)]">
+                    <span className="text-white/55">Material (5 placas × 589)</span>
+                    <span className="text-white font-semibold">2.945</span>
+                  </div>
+                  <div className="flex items-center justify-between text-sm font-[var(--font-inter)]">
+                    <span className="text-white/55">Acabamento / pintura</span>
+                    <span className="text-[#a1d494] font-semibold">Não necessário</span>
+                  </div>
+                  <div className="border-t border-white/15 pt-3 flex items-center justify-between">
+                    <span className="text-white text-sm font-bold font-[var(--font-inter)]">Total — material</span>
+                    <span className="text-white text-2xl font-[var(--font-noto-serif)]">2.945</span>
+                  </div>
+                </div>
+                <div className="bg-[#3b6934]/30 border border-[#3b6934]/50 px-4 py-3">
+                  <p className="text-[#a1d494] text-xs font-semibold font-[var(--font-inter)]">10+ anos sem trocar.</p>
+                  <p className="text-[#a1d494]/70 text-[11px] font-[var(--font-inter)] mt-0.5 leading-relaxed">
+                    Instala uma vez. Impermeável e resistente ao clima de Manaus.
+                  </p>
+                </div>
+              </Link>
+            </ScrollReveal>
+          </div>
+        </div>
+      </section>
+
+      {/* Visualizador Teaser — same reasoning as above, dedicated section. */}
+      <section className="py-12 lg:py-28 bg-[#0a0f1a]">
+        <div className="max-w-[1280px] mx-auto px-4 lg:px-16">
+          <div className="grid grid-cols-1 lg:grid-cols-12 gap-10 lg:gap-16 items-center">
+            <ScrollReveal className="lg:col-span-5 lg:order-1" direction="left">
+              <Link href="/visualizador" className="grid grid-cols-2 gap-1.5 group">
+                <div className="relative aspect-[3/4] overflow-hidden">
+                  <Image
+                    src="/images/projetos/escritorio-antes.png"
+                    alt="Escritório — antes"
+                    fill
+                    className="object-cover brightness-[0.85] saturate-75 transition-transform duration-700 group-hover:scale-[1.03]"
+                  />
+                  <span className="absolute bottom-2 left-2 bg-black/55 text-white/80 text-[9px] tracking-[0.15em] uppercase font-bold font-[var(--font-inter)] px-2 py-1">
+                    Antes
+                  </span>
+                </div>
+                <div className="relative aspect-[3/4] overflow-hidden">
+                  <Image
+                    src="/images/projetos/escritorio-depois.jpeg"
+                    alt="Escritório — depois"
+                    fill
+                    className="object-cover transition-transform duration-700 group-hover:scale-[1.03]"
+                  />
+                  <span className="absolute bottom-2 left-2 bg-[#a1d494] text-[#002045] text-[9px] tracking-[0.15em] uppercase font-bold font-[var(--font-inter)] px-2 py-1">
+                    Depois
+                  </span>
+                </div>
+              </Link>
+            </ScrollReveal>
+            <ScrollReveal className="lg:col-span-7 lg:order-2" direction="right" delay={100}>
+              <p className="text-[#a1d494] text-xs tracking-[0.2em] uppercase font-semibold font-[var(--font-inter)] mb-5">
+                Visualizador com IA
+              </p>
+              <h2 className="font-[var(--font-noto-serif)] text-white text-2xl lg:text-[40px] font-normal leading-[1.2] mb-6">
+                Veja como fica no seu ambiente.
+              </h2>
+              <p className="text-white/65 text-base font-[var(--font-inter)] leading-relaxed mb-8 max-w-md">
+                Envie uma foto do seu espaço e a inteligência artificial aplica
+                o acabamento escolhido na hora — antes de você decidir.
+              </p>
+              <Link
+                href="/visualizador"
+                className="inline-flex items-center justify-center gap-2 bg-white text-[#002045] text-xs tracking-[0.12em] uppercase font-bold font-[var(--font-inter)] px-8 py-4 hover:bg-[#f3f3f3] transition-colors"
+              >
+                Ver no meu ambiente
+                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                  <path d="M5 12h14M12 5l7 7-7 7" />
+                </svg>
+              </Link>
+            </ScrollReveal>
+          </div>
+        </div>
+      </section>
+
       {/* Brand Story */}
       <section className="overflow-hidden bg-white">
         <div className="flex flex-col lg:flex-row">
