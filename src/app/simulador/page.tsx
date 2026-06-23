@@ -8,9 +8,9 @@ import MdfComparison, { COMPARISON_OPTIONS } from "@/components/MdfComparison";
 import VisualizadorWizard, { type SimPrefill } from "@/components/VisualizadorWizard";
 
 const WA_BASE = "https://wa.me/5592988150149?text=";
-// Werksson — terceirizado de instalação. Mão de obra é apenas estimativa e não
-// é cobrada/processada pela Orbital; o contato direto evita que o cliente
-// pense que a Orbital realiza ou fatura a instalação.
+// Werk Engenharia — terceirizado de instalação. Mão de obra é apenas
+// estimativa e não é cobrada/processada pela Orbital; o contato direto evita
+// que o cliente pense que a Orbital realiza ou fatura a instalação.
 const WERKSSON_WA_BASE = "https://wa.me/5592992097165?text=";
 const CATALOGUE_URL =
   "https://drive.google.com/file/d/1zhm5MgKGSDRThqk8FqqwfX-WijI7K-iD/view?usp=drive_link";
@@ -508,21 +508,44 @@ function SimuladorInner() {
           ].filter(Boolean).join("\n")
       : "Olá! Tenho interesse no PFB Orbital e gostaria de fazer um orçamento.";
 
-  // Message for Werksson (terceirizado de instalação) — never includes a
-  // labor price (that's his estimate to give, not ours); only the ambientes/
-  // quantities and the material value the client is paying Orbital, so he has
-  // context to quote the installation.
+  // Message for Werk Engenharia (terceirizado de instalação) — per-ambiente
+  // breakdown only (space, dimensions, plate count, model). Never includes a
+  // price: the material value is closed directly with Orbital, not something
+  // the installer needs or should see.
+  const werkssonGreeting =
+    "Olá Werk Engenharia! Sou cliente da Orbital Revestimentos e gostaria de um orçamento de instalação para os painéis PFB.";
   const werkssonMsg =
     selectedProduct && selectedSpace && m2 > 0
-      ? [
-          "Olá Werksson! Sou cliente da Orbital Revestimentos e gostaria de um orçamento de instalação para os painéis PFB.",
-          "",
-          ...savedSpaces.map((sp) => `${sp.label}: ${sp.plates} placa${sp.plates !== 1 ? "s" : ""}`),
-          `${selectedSpace.label}: ${plates} placa${plates !== 1 ? "s" : ""}`,
-          "",
-          `*Valor do material com a Orbital:* ${fmt(savedSpaces.length > 0 ? grandMaterialDiscounted : orbMaterialDiscounted)}`,
-        ].join("\n")
-      : "Olá Werksson! Sou cliente da Orbital Revestimentos e gostaria de um orçamento de instalação para os painéis PFB.";
+      ? (() => {
+          const ambientes = [
+            ...savedSpaces.map((sp) => ({
+              label: sp.label,
+              dims: sp.dimLabel.includes("×") ? sp.dimLabel : "",
+              plates: sp.plates,
+              code: sp.productCode,
+              name: sp.productName,
+            })),
+            {
+              label: selectedSpace.label,
+              dims: dimMode === "lxa" && width && height ? `${width}m × ${height}m` : "",
+              plates,
+              code: selectedProduct.code,
+              name: selectedProduct.name,
+            },
+          ];
+          const lines = [werkssonGreeting, ""];
+          ambientes.forEach((a, i) => {
+            lines.push(
+              `Ambiente ${i + 1}: ${a.label}`,
+              `Dimensões: ${a.dims}`,
+              `Quantidade: ${a.plates} placa${a.plates !== 1 ? "s" : ""}`,
+              `Modelo: ${a.code} | ${a.name.toUpperCase()}`,
+              ""
+            );
+          });
+          return lines.join("\n").trimEnd();
+        })()
+      : werkssonGreeting;
 
   function goToStep(n: 1 | 2 | 3 | 4 | 5) {
     setStep(n);
@@ -924,6 +947,10 @@ function SimuladorInner() {
   }
 
   async function handleSubmitAndShow() {
+    // Step 5 can now reach this two ways — the visualization auto-advancing
+    // on its first successful render, or the always-visible "Pular etapa"
+    // button — so guard against submitting (and re-emailing) twice.
+    if (simSubmitted || simSubmitting) return;
     if (!clientName.trim() || !clientEmail.trim() || !clientPhone.trim()) return;
     if (couponCode.trim() && !couponData) await validateCoupon();
 
