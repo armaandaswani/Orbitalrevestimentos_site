@@ -517,6 +517,42 @@ export default function VisualizadorWizard({
     [photoData, photoDims, updateZone]
   );
 
+  // Box-prompt detection for a manually drawn rectangle — used because
+  // tap-to-detect can fragment a joint-divided surface (e.g. a tiled
+  // backsplash) into several small SAM2 regions. Drawing a box and asking
+  // SAM2 to fill it as one object is far more likely to produce a single
+  // cohesive mask. Falls back to the raw drawn rect (today's behavior) if
+  // fal/Gemini can't improve on it.
+  const detectIntoFromBox = useCallback(
+    async (id: string, colorIdx: number, rect: Rect) => {
+      if (!photoData) return;
+      updateZone(id, { detecting: true });
+      try {
+        const res = await fetch("/api/visualizador/detect-surface", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ photo: photoData, box: rect, width: photoDims?.w, height: photoDims?.h }),
+        });
+        const j = (await res.json()) as { mask?: string; polygon?: Array<[number, number]>; rect?: Rect };
+        if (res.ok && typeof j.mask === "string") {
+          try {
+            const { url, rect: maskRect } = await maskToOverlay(j.mask, ZONE_COLORS[colorIdx % ZONE_COLORS.length]);
+            updateZone(id, { maskUrl: url, rect: maskRect ?? rect, polygon: null, detecting: false });
+            return;
+          } catch { /* fall through to keep the raw rect */ }
+        }
+        if (res.ok && Array.isArray(j.polygon)) {
+          updateZone(id, { polygon: j.polygon, rect: j.rect ?? rect, maskUrl: null, detecting: false });
+          return;
+        }
+        updateZone(id, { detecting: false }); // keep the manually drawn rect as-is
+      } catch {
+        updateZone(id, { detecting: false });
+      }
+    },
+    [photoData, photoDims, updateZone]
+  );
+
   const tapAddSurface = useCallback(
     (nx: number, ny: number) => {
       if (!photoData) return;
@@ -559,12 +595,13 @@ export default function VisualizadorWizard({
       setZones((prev) => [...prev, {
         id, label: `Área ${idx + 1}`, surface: pf.surface, customLabel: pf.customLabel,
         productId: pf.productId, polygon: null, maskUrl: null, rect, manual: true,
-        instruction: "", width: pf.width, height: pf.height, detecting: false,
+        instruction: "", width: pf.width, height: pf.height, detecting: true,
       }]);
       setActiveZoneId(id);
       scrollZoneRef.current = id;
+      void detectIntoFromBox(id, idx, rect);
     },
-    [zones.length, resolveZonePrefill]
+    [zones.length, resolveZonePrefill, detectIntoFromBox]
   );
 
   const addTextZone = useCallback(() => {
