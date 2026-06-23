@@ -283,14 +283,14 @@ interface VisualizadorWizardProps {
   simPrefills?: SimPrefill[];
   /**
    * When true: lead was already captured upstream — suppress the lead-form
-   * overlay, show a "Ver minha simulação" CTA when the result is ready, and
-   * call onComplete/onSkip instead of handing off to /simulador.
+   * overlay, and call onComplete automatically the first time a generation
+   * succeeds (no extra click) instead of handing off to /simulador.
    */
   embeddedMode?: boolean;
   /** Lead info from the parent (used for auto-saving the render). */
   prefilledLeadName?: string;
   prefilledLeadPhone?: string;
-  /** Called when the user is done with the visualization (result ready + clicked CTA). */
+  /** Called once, right after the first successful generation, with the saved render id. */
   onComplete?: (vizRenderId?: string) => void;
   /** Called when the user skips the visualization step entirely. */
   onSkip?: () => void;
@@ -354,6 +354,10 @@ export default function VisualizadorWizard({
   const [leadSubmitted, setLeadSubmitted] = useState(embeddedMode);
   const pendingLeadRef = useRef({ name: prefilledLeadName, phone: prefilledLeadPhone });
   const vizRenderIdRef = useRef<string>("");
+  // Embedded mode: advance straight to the orçamento on the first successful
+  // generation, no extra click. Guards against re-firing onComplete (which
+  // triggers the parent's lead/quote submission + emails) on a regenerate.
+  const autoAdvancedRef = useRef(false);
 
   // Sync prefilled lead into ref when props change (e.g. parent fills data after mount)
   useEffect(() => {
@@ -631,27 +635,34 @@ export default function VisualizadorWizard({
       const localLabel = firstZ
         ? (VIZ_SPACES.find((s) => s.id === firstZ.surface)?.label ?? firstZ.customLabel) || "Área"
         : "Ambiente";
-      void (async () => {
-        try {
-          const sr = await fetch("/api/visualizador/save-render", {
-            method: "POST",
-            headers: { "Content-Type": "application/json" },
-            body: JSON.stringify({
-              id: vizRenderIdRef.current || undefined,
-              image: current,
-              local: localLabel,
-              productName: firstProd?.name ?? null,
-              productCode: firstProd?.code ?? null,
-              name: pendingLeadRef.current.name || undefined,
-              phone: pendingLeadRef.current.phone || undefined,
-            }),
-          });
-          if (sr.ok) {
-            const sd = (await sr.json()) as { id?: string };
-            if (sd.id) vizRenderIdRef.current = sd.id;
-          }
-        } catch {}
-      })();
+      try {
+        const sr = await fetch("/api/visualizador/save-render", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({
+            id: vizRenderIdRef.current || undefined,
+            image: current,
+            local: localLabel,
+            productName: firstProd?.name ?? null,
+            productCode: firstProd?.code ?? null,
+            name: pendingLeadRef.current.name || undefined,
+            phone: pendingLeadRef.current.phone || undefined,
+          }),
+        });
+        if (sr.ok) {
+          const sd = (await sr.json()) as { id?: string };
+          if (sd.id) vizRenderIdRef.current = sd.id;
+        }
+      } catch {}
+
+      // Embedded mode: advance straight to the orçamento on the first
+      // successful generation — no extra click. A later "Gerar novamente"
+      // updates the saved render above but must not re-fire onComplete,
+      // since that triggers the parent's one-time lead/quote submission.
+      if (embeddedMode && !autoAdvancedRef.current) {
+        autoAdvancedRef.current = true;
+        onComplete?.(vizRenderIdRef.current || undefined);
+      }
     } catch (e) {
       setError(e instanceof Error ? e.message : "Erro ao gerar a visualização.");
     } finally {
@@ -659,7 +670,7 @@ export default function VisualizadorWizard({
       setProgress(null);
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [photoData, zones, productById]);
+  }, [photoData, zones, productById, embeddedMode, onComplete]);
 
   // ── Lead submit (standalone mode) ─────────────────────────────────────────
   const handleLeadSubmit = useCallback(() => {
@@ -759,11 +770,6 @@ export default function VisualizadorWizard({
     window.location.assign(url);
   }, [proceeding, simuladorHref, allAmbientes, leadName, leadPhone]);
 
-  // ── Embedded: "Ver minha simulação" handler ───────────────────────────────
-  const handleEmbeddedComplete = useCallback(() => {
-    onComplete?.(vizRenderIdRef.current || undefined);
-  }, [onComplete]);
-
   // ── Render ────────────────────────────────────────────────────────────────
   return (
     <div>
@@ -844,7 +850,6 @@ export default function VisualizadorWizard({
             onDownload={download}
             onAddPhoto={addAnotherPhoto}
             embeddedMode={embeddedMode}
-            onEmbeddedComplete={handleEmbeddedComplete}
           />
         )}
 
@@ -1410,14 +1415,14 @@ function ResultStep({
   photoData, result, generating, progress, error,
   leadSubmitted, leadName, leadPhone, onLeadNameChange, onLeadPhoneChange, onLeadSubmit,
   onRetry, onRegenerate, onDownload, onAddPhoto,
-  embeddedMode, onEmbeddedComplete,
+  embeddedMode,
 }: {
   photoData: string | null; result: string | null; generating: boolean;
   progress: { i: number; total: number; label: string } | null; error: string | null;
   leadSubmitted: boolean; leadName: string; leadPhone: string;
   onLeadNameChange: (v: string) => void; onLeadPhoneChange: (v: string) => void; onLeadSubmit: () => void;
   onRetry: () => void; onRegenerate: () => void; onDownload: () => void; onAddPhoto: () => void;
-  embeddedMode?: boolean; onEmbeddedComplete?: () => void;
+  embeddedMode?: boolean;
 }) {
   const showLeadOverlay = !embeddedMode && !leadSubmitted && !error;
   const leadReady = leadName.trim().length > 0 && leadPhone.trim().length > 0;
@@ -1483,14 +1488,6 @@ function ResultStep({
 
       {!generating && (leadSubmitted || !!error) && (
         <div className="mt-4 flex flex-wrap gap-3">
-          {/* Embedded mode: "Ver minha simulação" CTA */}
-          {embeddedMode && result && (
-            <button onClick={onEmbeddedComplete}
-              className="inline-flex items-center gap-2 bg-[#002045] text-white text-xs tracking-[0.12em] uppercase font-bold font-[var(--font-inter)] px-7 py-3.5 hover:bg-[#1a365d] transition-colors">
-              <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5"><path d="M5 12h14M12 5l7 7-7 7" /></svg>
-              Ver minha simulação
-            </button>
-          )}
           {/* Standalone: download + add photo */}
           {!embeddedMode && result && leadSubmitted && (
             <>
