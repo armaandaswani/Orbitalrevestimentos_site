@@ -265,12 +265,11 @@ function buildSimuladorUrl(ambientes: SavedAmbiente[]): string {
 
 // ── Wizard step type ──────────────────────────────────────────────────────────
 
-export type VizStep = "upload" | "zones" | "review" | "result";
+export type VizStep = "upload" | "zones" | "result";
 const STEP_LABELS: { id: VizStep; n: string; label: string }[] = [
   { id: "upload", n: "1", label: "Foto" },
   { id: "zones", n: "2", label: "Áreas e modelos" },
-  { id: "review", n: "3", label: "Revisão" },
-  { id: "result", n: "4", label: "Resultado" },
+  { id: "result", n: "3", label: "Resultado" },
 ];
 
 // ── Props ──────────────────────────────────────────────────────────────────────
@@ -582,7 +581,7 @@ export default function VisualizadorWizard({
   }, [zones.length, resolveZonePrefill]);
 
   const zonesReady = zones.filter((z) => z.productId);
-  const canReview = !!photoData && zonesReady.length > 0;
+  const canGenerate = !!photoData && zonesReady.length > 0;
   const anyDetecting = zones.some((z) => z.detecting);
 
   const areaForZone = (z: Zone): string | undefined => {
@@ -815,19 +814,9 @@ export default function VisualizadorWizard({
             products={products}
             loadingProducts={loadingProducts}
             productById={productById}
-            canReview={canReview}
+            canGenerate={canGenerate}
             simPrefills={simPrefills}
             onBack={() => setStep("upload")}
-            onReview={() => setStep("review")}
-          />
-        )}
-
-        {step === "review" && photoData && (
-          <ReviewStep
-            photoData={photoData}
-            zones={zones.filter((z) => z.productId)}
-            productById={productById}
-            onBack={() => setStep("zones")}
             onGenerate={generate}
           />
         )}
@@ -1009,8 +998,7 @@ function UploadStep({
           {[
             { n: "1", t: "Envie a foto", d: "Use uma foto bem iluminada e de frente para o ambiente." },
             { n: "2", t: "Toque nas superfícies", d: "Toque numa parede, teto ou móvel — a IA marca a área. Escolha o acabamento de cada uma." },
-            { n: "3", t: "Revise", d: "Confira as áreas, modelos e medidas antes de gerar." },
-            { n: "4", t: "Gere e veja", d: embeddedMode ? "A IA aplica cada modelo na sua área — resultado em segundos." : "A IA aplica cada modelo na sua área — e tudo vai pronto para o orçamento." },
+            { n: "3", t: "Gere e veja", d: embeddedMode ? "A IA aplica cada modelo na sua área — resultado em segundos." : "A IA aplica cada modelo na sua área — e tudo vai pronto para o orçamento." },
           ].map((s) => (
             <li key={s.n} className="flex gap-4">
               <span className="flex-shrink-0 w-8 h-8 rounded-full bg-[#002045] text-white text-sm font-bold font-[var(--font-inter)] flex items-center justify-center">{s.n}</span>
@@ -1031,7 +1019,7 @@ type ZoneMode = "tap" | "draw";
 function ZonesStep({
   photoData, zones, activeZoneId, setActiveZoneId, onTapPhoto, onDrawRect, onAddTextZone,
   updateZone, removeZone, retargetId, setRetargetId, anyDetecting, products, loadingProducts,
-  productById, canReview, simPrefills, onBack, onReview,
+  productById, canGenerate, simPrefills, onBack, onGenerate,
 }: {
   photoData: string;
   zones: Zone[];
@@ -1048,10 +1036,10 @@ function ZonesStep({
   products: VizProduct[];
   loadingProducts: boolean;
   productById: (id: string) => VizProduct | null;
-  canReview: boolean;
+  canGenerate: boolean;
   simPrefills?: SimPrefill[];
   onBack: () => void;
-  onReview: () => void;
+  onGenerate: () => void;
 }) {
   const [mode, setMode] = useState<ZoneMode>("tap");
 
@@ -1096,11 +1084,12 @@ function ZonesStep({
             className="inline-flex items-center gap-2 border border-[#e2e2e2] text-[#43474e] text-xs tracking-[0.12em] uppercase font-bold font-[var(--font-inter)] px-6 py-3 hover:border-[#002045] transition-colors">
             Trocar foto
           </button>
-          <button onClick={onReview} disabled={!canReview}
-            className="inline-flex items-center gap-2 bg-[#002045] text-white text-xs tracking-[0.12em] uppercase font-bold font-[var(--font-inter)] px-7 py-3 hover:bg-[#1a365d] transition-colors disabled:opacity-50">
-            Revisar e gerar →
+          <button onClick={onGenerate} disabled={!canGenerate}
+            className="inline-flex items-center gap-2 bg-[#3b6934] text-white text-xs tracking-[0.12em] uppercase font-bold font-[var(--font-inter)] px-7 py-3 hover:bg-[#2f5429] transition-colors disabled:opacity-50">
+            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><path d="M5 3v4M3 5h4M6 17v4m-2-2h4M13 3l2.5 6.5L22 12l-6.5 2.5L13 21l-2.5-6.5L4 12l6.5-2.5z" /></svg>
+            Gerar visualização
           </button>
-          {!canReview && (
+          {!canGenerate && (
             <span className="text-xs text-[#b4791e] font-[var(--font-inter)] self-center">
               Adicione uma área e atribua um acabamento.
             </span>
@@ -1133,9 +1122,10 @@ function ZonesStep({
           />
         ))}
         {zones.length > 0 && (
-          <button onClick={onReview} disabled={!canReview}
-            className="w-full inline-flex items-center justify-center gap-2 bg-[#002045] text-white text-xs tracking-[0.12em] uppercase font-bold font-[var(--font-inter)] px-7 py-3.5 hover:bg-[#1a365d] transition-colors disabled:opacity-50">
-            Revisar e gerar →
+          <button onClick={onGenerate} disabled={!canGenerate}
+            className="w-full inline-flex items-center justify-center gap-2 bg-[#3b6934] text-white text-xs tracking-[0.12em] uppercase font-bold font-[var(--font-inter)] px-7 py-3.5 hover:bg-[#2f5429] transition-colors disabled:opacity-50">
+            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><path d="M5 3v4M3 5h4M6 17v4m-2-2h4M13 3l2.5 6.5L22 12l-6.5 2.5L13 21l-2.5-6.5L4 12l6.5-2.5z" /></svg>
+            Gerar visualização
           </button>
         )}
       </div>
@@ -1355,57 +1345,6 @@ function ZoneCard({ zone, index, active, retargeting, onSelect, onChange, onRemo
       <div className="grid grid-cols-2 gap-2" onClick={(e) => e.stopPropagation()}>
         <input inputMode="decimal" value={zone.width} onChange={(e) => onChange({ width: sanitizeDim(e.target.value) })} placeholder="Largura (m)" className="w-full border border-[#e2e2e2] px-2.5 py-2 text-sm font-[var(--font-inter)] text-[#002045] focus:outline-none focus:border-[#002045]" />
         <input inputMode="decimal" value={zone.height} onChange={(e) => onChange({ height: sanitizeDim(e.target.value) })} placeholder="Altura (m)" className="w-full border border-[#e2e2e2] px-2.5 py-2 text-sm font-[var(--font-inter)] text-[#002045] focus:outline-none focus:border-[#002045]" />
-      </div>
-    </div>
-  );
-}
-
-function ReviewStep({ photoData, zones, productById, onBack, onGenerate }: {
-  photoData: string; zones: Zone[]; productById: (id: string) => VizProduct | null; onBack: () => void; onGenerate: () => void;
-}) {
-  return (
-    <div className="grid lg:grid-cols-[1fr_360px] gap-8 items-start mt-6">
-      <div className="bg-[#11151b] rounded-sm overflow-hidden">
-        {/* eslint-disable-next-line @next/next/no-img-element */}
-        <img src={photoData} alt="Seu ambiente" className="block w-full h-auto" />
-      </div>
-      <div className="space-y-4">
-        <div>
-          <p className="text-[10px] tracking-[0.18em] uppercase font-bold font-[var(--font-inter)] text-[#002045] mb-1">Revise antes de gerar</p>
-          <p className="text-[#74777f] text-xs font-[var(--font-inter)]">
-            {zones.length} {zones.length === 1 ? "área será aplicada" : "áreas serão aplicadas"}, uma de cada vez.
-          </p>
-        </div>
-        <ol className="space-y-2">
-          {zones.map((z, i) => {
-            const prod = productById(z.productId);
-            const surfaceLabel = z.surface === "__custom__" ? z.customLabel || "Outro" : VIZ_SPACES.find((s) => s.id === z.surface)?.label;
-            const dims = z.width && z.height ? `${z.width}m × ${z.height}m` : null;
-            return (
-              <li key={z.id} className="border border-[#e2e2e2] rounded-sm p-3">
-                <div className="flex items-center gap-2 mb-1">
-                  <span className="w-3 h-3 rounded-sm flex-shrink-0" style={{ background: ZONE_COLORS[i % ZONE_COLORS.length] }} />
-                  <p className="text-sm font-semibold text-[#002045] font-[var(--font-inter)]">{z.label}</p>
-                </div>
-                <div className="grid grid-cols-2 gap-x-3 gap-y-0.5 text-xs font-[var(--font-inter)] text-[#43474e] pl-5">
-                  <span><span className="text-[#74777f]">Superfície:</span> {surfaceLabel}</span>
-                  <span><span className="text-[#74777f]">Modelo:</span> {prod?.name ?? "—"}</span>
-                  <span><span className="text-[#74777f]">Medidas:</span> {dims ?? "—"}</span>
-                  <span className="col-span-2"><span className="text-[#74777f]">Onde:</span>{" "}
-                    {z.instruction.trim() ? z.instruction.trim() : z.polygon || z.maskUrl || (z.manual && z.rect) ? "Área marcada na foto" : "Parede principal"}
-                  </span>
-                </div>
-              </li>
-            );
-          })}
-        </ol>
-        <div className="flex flex-wrap gap-3">
-          <button onClick={onBack} className="inline-flex items-center gap-2 border border-[#e2e2e2] text-[#43474e] text-xs tracking-[0.12em] uppercase font-bold font-[var(--font-inter)] px-6 py-3 hover:border-[#002045] transition-colors">← Voltar</button>
-          <button onClick={onGenerate} className="inline-flex items-center gap-2 bg-[#3b6934] text-white text-xs tracking-[0.12em] uppercase font-bold font-[var(--font-inter)] px-7 py-3 hover:bg-[#2f5429] transition-colors">
-            <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><path d="M5 3v4M3 5h4M6 17v4m-2-2h4M13 3l2.5 6.5L22 12l-6.5 2.5L13 21l-2.5-6.5L4 12l6.5-2.5z" /></svg>
-            Gerar visualização
-          </button>
-        </div>
       </div>
     </div>
   );
