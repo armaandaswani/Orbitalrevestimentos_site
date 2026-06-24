@@ -165,6 +165,22 @@ async function maskToOverlay(maskUrl: string, hex: string): Promise<{ url: strin
   return { url: c.toDataURL(), rect };
 }
 
+// Safety net for box-prompt detection: SAM2/Gemini are told "treat the whole
+// joint-divided surface as one object," which is exactly the kind of
+// instruction that can overshoot on an unverified API field or an
+// over-eager polygon trace. If the detected region's bounding box balloons
+// well past what the user actually drew, reject it rather than risk
+// rendering across half the photo — fall back to the safe, contained rect.
+function withinDrawnBox(detected: Rect, drawn: Rect): boolean {
+  const pad = 0.05; // flat 5% of image — enough for true-edge snapping, not runaway growth
+  return (
+    detected.x >= drawn.x - pad &&
+    detected.y >= drawn.y - pad &&
+    detected.x + detected.w <= drawn.x + drawn.w + pad &&
+    detected.y + detected.h <= drawn.y + drawn.h + pad
+  );
+}
+
 // ── Mask-stencil compositing ────────────────────────────────────────────────
 // Gemini's render call is a full-image regeneration, not true inpainting — it
 // only gets a soft "confine to this area" instruction. Chaining renders (each
@@ -537,15 +553,17 @@ export default function VisualizadorWizard({
         if (res.ok && typeof j.mask === "string") {
           try {
             const { url, rect: maskRect } = await maskToOverlay(j.mask, ZONE_COLORS[colorIdx % ZONE_COLORS.length]);
-            updateZone(id, { maskUrl: url, rect: maskRect ?? rect, polygon: null, detecting: false });
-            return;
+            if (maskRect && withinDrawnBox(maskRect, rect)) {
+              updateZone(id, { maskUrl: url, rect: maskRect, polygon: null, detecting: false });
+              return;
+            }
           } catch { /* fall through to keep the raw rect */ }
         }
-        if (res.ok && Array.isArray(j.polygon)) {
-          updateZone(id, { polygon: j.polygon, rect: j.rect ?? rect, maskUrl: null, detecting: false });
+        if (res.ok && Array.isArray(j.polygon) && j.rect && withinDrawnBox(j.rect, rect)) {
+          updateZone(id, { polygon: j.polygon, rect: j.rect, maskUrl: null, detecting: false });
           return;
         }
-        updateZone(id, { detecting: false }); // keep the manually drawn rect as-is
+        updateZone(id, { detecting: false }); // detection missing/oversized — keep the manually drawn rect as-is
       } catch {
         updateZone(id, { detecting: false });
       }
@@ -1252,7 +1270,10 @@ function SurfaceCanvas({
         );
       })}
       {zones.map((z, i) => {
-        if (!z.manual || !z.rect) return null;
+        // Once a manually-drawn box gets upgraded to a precise mask/polygon,
+        // show only that (like a tap-detected zone) — the raw box outline
+        // underneath it is now stale and just visual clutter.
+        if (!z.manual || !z.rect || z.maskUrl || (z.polygon && z.polygon.length >= 3)) return null;
         const color = ZONE_COLORS[i % ZONE_COLORS.length];
         const rect = z.rect;
         const active = z.id === activeZoneId;
