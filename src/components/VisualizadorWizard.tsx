@@ -257,6 +257,34 @@ async function compositeMaskedRegion(baseDataUrl: string, sourceDataUrl: string,
   return out.toDataURL("image/jpeg", 0.92);
 }
 
+// Builds a clean white-on-black binary mask (PNG data URL) at w×h from the
+// zone's spatial descriptor, to hand to the render API so Gemini paints only
+// the real surface under the white region — following its true perspective and
+// keeping foreground objects on top. Returns null for text-only zones (no
+// spatial info), so the render falls back to the text/rect prompt as before.
+async function buildMaskDataUrl(z: Zone, w: number, h: number): Promise<string | null> {
+  const stencil = await buildStencil(z, w, h); // opaque inside / transparent outside
+  if (!stencil) return null;
+  const c = document.createElement("canvas");
+  c.width = w;
+  c.height = h;
+  const ctx = c.getContext("2d")!;
+  ctx.fillStyle = "#000";
+  ctx.fillRect(0, 0, w, h);
+  // Paint pure white only where the stencil is opaque (color-independent: the
+  // SAM overlay stencil carries the zone tint, not white — normalize it here).
+  const white = document.createElement("canvas");
+  white.width = w;
+  white.height = h;
+  const wctx = white.getContext("2d")!;
+  wctx.fillStyle = "#fff";
+  wctx.fillRect(0, 0, w, h);
+  wctx.globalCompositeOperation = "destination-in";
+  wctx.drawImage(stencil, 0, 0);
+  ctx.drawImage(white, 0, 0);
+  return c.toDataURL("image/png");
+}
+
 function buildSimuladorUrl(ambientes: SavedAmbiente[]): string {
   if (ambientes.length === 1) {
     const a = ambientes[0];
@@ -655,12 +683,28 @@ export default function VisualizadorWizard({
     setResult(null);
     setStep("result");
     let current = photoData;
+    // Photo pixel dimensions, used to build each zone's mask at the right size.
+    // Compositing preserves these, so they stay constant across the loop.
+    let dims = photoDims;
+    if (!dims) {
+      try {
+        const im = await loadImage(photoData);
+        dims = { w: im.naturalWidth, h: im.naturalHeight };
+      } catch { dims = null; }
+    }
     try {
       for (let i = 0; i < zs.length; i++) {
         const z = zs[i];
         const prod = productById(z.productId);
         if (!prod) continue;
         setProgress({ i: i + 1, total: zs.length, label: z.label });
+        // Hand Gemini the zone's exact mask (when it has one) so it paints only
+        // the real surface, follows its perspective, and keeps foreground
+        // objects on top — far more reliable than the bounding rect alone.
+        let maskImage: string | null = null;
+        if (dims && dims.w > 0 && dims.h > 0) {
+          try { maskImage = await buildMaskDataUrl(z, dims.w, dims.h); } catch { maskImage = null; }
+        }
         const res = await fetch("/api/visualizador/render", {
           method: "POST",
           headers: { "Content-Type": "application/json" },
@@ -671,6 +715,7 @@ export default function VisualizadorWizard({
             wallHeightM: parseDim(z.height) ?? undefined,
             applicationArea: areaForZone(z),
             rect: z.rect ?? undefined,
+            maskImage: maskImage ?? undefined,
           }),
         });
         const json = await res.json();

@@ -100,6 +100,11 @@ export async function POST(req: NextRequest) {
     // Optional rectangular zone the client drew (normalized 0..1). Confines the
     // panel to that region so multi-zone renders keep each panel in its zone.
     rect?: { x?: number; y?: number; w?: number; h?: number };
+    // Optional black-and-white mask (data URL) aligned to the photo: white =
+    // the exact target surface, black = leave untouched. Far more precise than
+    // rect — the model follows the masked surface's real shape and perspective
+    // and won't paint over foreground objects. When present it supersedes rect.
+    maskImage?: string;
   };
   try {
     body = await req.json();
@@ -128,6 +133,13 @@ export async function POST(req: NextRequest) {
     /^https?:\/\//.test(url) ? url : new URL(url, req.nextUrl.origin).toString();
 
   const contextImagePath = usePerModel ? product?.render_context_image_path?.trim() || null : null;
+
+  // Optional binary mask supplied by the client (data URL). Parsed defensively:
+  // a malformed mask must never break a render — we just fall back to the rect.
+  const maskInline =
+    typeof body.maskImage === "string" && body.maskImage.startsWith("data:")
+      ? parseInline(body.maskImage, "image/png")
+      : null;
 
   let wall: { data: string; mime: string };
   let reference: { data: string; mime: string };
@@ -177,17 +189,23 @@ export async function POST(req: NextRequest) {
     panelHeightM: toPositiveNumber(product?.render_panel_height_m, DEFAULT_PANEL_HEIGHT_M),
     extraNotes: usePerModel ? product?.render_extra_notes : null,
     hasContextImage: !!contextImage,
+    hasMaskImage: !!maskInline,
     wallWidthM: hasWallDims ? wallW : null,
     wallHeightM: hasWallDims ? wallH : null,
     applicationArea,
     rect,
   });
 
+  // Image order MUST match composePrompt's numbering: photo (1), panel (2),
+  // mask (3 if present), context (next if present).
   const parts: Array<{ text: string } | { inline_data: { mime_type: string; data: string } }> = [
     { text: prompt },
     { inline_data: { mime_type: wall.mime, data: wall.data } },
     { inline_data: { mime_type: reference.mime, data: reference.data } },
   ];
+  if (maskInline) {
+    parts.push({ inline_data: { mime_type: maskInline.mime, data: maskInline.data } });
+  }
   if (contextImage) {
     parts.push({ inline_data: { mime_type: contextImage.mime, data: contextImage.data } });
   }

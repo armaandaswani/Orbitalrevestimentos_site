@@ -75,6 +75,13 @@ export function composePrompt(opts: {
   panelHeightM: number;
   extraNotes?: string | null;
   hasContextImage?: boolean;
+  // When true, a black-and-white MASK image is supplied to the model (white =
+  // the exact target surface, black = leave untouched). This is far more precise
+  // than the rectangle: the model follows the masked surface's real perspective
+  // and shape, and never bleeds the panel onto foreground objects (a mirror,
+  // frame, plant) that sit in front of the surface. The mask is the #1 spatial
+  // signal whenever present; the rectangle below becomes a redundant hint.
+  hasMaskImage?: boolean;
   // Real measurements typed by the client (optional). When present the prompt
   // states the true scale and how many panels cover the area.
   wallWidthM?: number | null;
@@ -89,16 +96,26 @@ export function composePrompt(opts: {
   // this rectangle — used by the multi-zone flow so each panel stays in its zone.
   rect?: { x: number; y: number; w: number; h: number } | null;
 }): string {
+  // Dynamic image numbering: IMAGE 1 = photo, IMAGE 2 = panel always. The mask
+  // (when present) and the context image follow, in that order — matching the
+  // order the render route appends them to the request parts.
+  let imgIdx = 2;
+  const maskIdx = opts.hasMaskImage ? ++imgIdx : null;
+  const ctxIdx = opts.hasContextImage ? ++imgIdx : null;
+
   const area = opts.applicationArea?.trim();
-  const areaPhrase =
-    area && area.length > 0
+  const areaPhrase = opts.hasMaskImage
+    ? `the surface marked by the WHITE region of the mask (IMAGE ${maskIdx})`
+    : area && area.length > 0
       ? area
       : "the main wall directly facing the camera (the single largest uninterrupted wall surface visible in the photo)";
 
   // Turn a normalized rect into a human percentage description for the prompt.
+  // Only used as a fallback when no mask image is supplied — the mask is far
+  // more precise, so we don't muddy the prompt with a rectangle alongside it.
   const r = opts.rect;
   const rectPhrase =
-    r && r.w > 0 && r.h > 0
+    !opts.hasMaskImage && r && r.w > 0 && r.h > 0
       ? (() => {
           const pct = (n: number) => Math.round(Math.min(1, Math.max(0, n)) * 100);
           const x1 = pct(r.x), y1 = pct(r.y), x2 = pct(r.x + r.w), y2 = pct(r.y + r.h);
@@ -120,11 +137,24 @@ export function composePrompt(opts: {
     "  IMAGE 2 is the source of truth for how the panel looks — if any wording",
     "  below seems to conflict with IMAGE 2, IMAGE 2 wins.",
   ];
-  if (opts.hasContextImage) {
+  if (maskIdx) {
     lines.push(
-      "- IMAGE 3 = the same panel already installed in another room, provided ONLY",
+      `- IMAGE ${maskIdx} = a black-and-white MASK aligned pixel-for-pixel to IMAGE 1.`,
+      "  The WHITE region marks the EXACT real surface to apply the panel to. Apply",
+      "  the panel ONLY under the white region, following that surface's true",
+      "  perspective, angle, curvature and contours as seen in IMAGE 1 — do NOT",
+      "  flatten it into a frontal rectangle. Every pixel where the mask is BLACK",
+      "  must stay EXACTLY as in IMAGE 1: do not extend the panel past the white",
+      "  region, do not change the wall's shape, and keep anything that sits IN",
+      "  FRONT of the surface (a mirror, picture frame, plant, furniture, switch)",
+      "  fully visible on top of the panel, occluding it.",
+    );
+  }
+  if (ctxIdx) {
+    lines.push(
+      `- IMAGE ${ctxIdx} = the same panel already installed in another room, provided ONLY`,
       "  as a guide for how the finish reads in real light (sheen, scale, reflection).",
-      "  Do NOT copy IMAGE 3's room, layout, furniture, colors or framing."
+      `  Do NOT copy IMAGE ${ctxIdx}'s room, layout, furniture, colors or framing.`
     );
   }
 
@@ -132,6 +162,14 @@ export function composePrompt(opts: {
     "",
     `TASK: Apply the IMAGE 2 panel onto ${areaPhrase} of IMAGE 1, as if the panels`,
     "were physically installed there. Change NOTHING else in the photo.",
+    ...(maskIdx
+      ? [
+          `- The white region of the mask (IMAGE ${maskIdx}) is the ONLY area you may`,
+          "  change. Treat its boundary as the exact edge of the installed panel.",
+          "  Leave every black-mask pixel identical to IMAGE 1. If a previous panel",
+          "  was already installed elsewhere in the photo, keep it untouched.",
+        ]
+      : []),
     ...(rectPhrase
       ? [
           `- Confine the panel STRICTLY to ${rectPhrase}. That rectangle is the target`,
