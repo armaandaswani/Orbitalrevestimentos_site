@@ -182,6 +182,23 @@ export function sendText(telephone: string, message: string): Promise<SmClickRes
   });
 }
 
+/**
+ * POST /instances/messages — send an image message (by public URL) with an
+ * optional caption. The media URL must be publicly reachable so SM Click's
+ * WhatsApp instance can fetch it. Same envelope as sendText, type "image".
+ */
+export function sendImage(telephone: string, imageUrl: string, caption?: string): Promise<SmClickResult> {
+  const instance = INSTANCE_ID();
+  if (!instance) {
+    return Promise.resolve({ ok: false, status: 0, error: "SMCLICK_INSTANCE_ID não configurado." });
+  }
+  return call("POST", "/instances/messages", {
+    instance,
+    type: "image",
+    content: { telephone, url: imageUrl, caption: caption ?? "" },
+  });
+}
+
 /** POST /instances/messages — send an approved WhatsApp template message. */
 export function sendTemplate(
   telephone: string,

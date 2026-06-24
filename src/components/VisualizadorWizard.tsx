@@ -165,20 +165,64 @@ async function maskToOverlay(maskUrl: string, hex: string): Promise<{ url: strin
   return { url: c.toDataURL(), rect };
 }
 
-// Safety net for box-prompt detection: SAM2/Gemini are told "treat the whole
-// joint-divided surface as one object," which is exactly the kind of
-// instruction that can overshoot on an unverified API field or an
-// over-eager polygon trace. If the detected region's bounding box balloons
-// well past what the user actually drew, reject it rather than risk
-// rendering across half the photo — fall back to the safe, contained rect.
-function withinDrawnBox(detected: Rect, drawn: Rect): boolean {
-  const pad = 0.05; // flat 5% of image — enough for true-edge snapping, not runaway growth
-  return (
-    detected.x >= drawn.x - pad &&
-    detected.y >= drawn.y - pad &&
-    detected.x + detected.w <= drawn.x + drawn.w + pad &&
-    detected.y + detected.h <= drawn.y + drawn.h + pad
-  );
+// Box-draw detection: intersect the detected surface with the rectangle the
+// user drew. The drawn box is a region-of-interest, not the answer itself —
+// SAM2/Gemini finds the real surface (clean edges, foreground objects like a
+// mirror excluded), and we keep only the part of it inside the box. So a big
+// box covering a whole wall yields that whole wall; a small box yields just
+// that portion of the wall; and because the result is bounded by the box it
+// can never run away across the photo. `overlayUrl` is a tinted mask overlay
+// (alpha inside / transparent outside); `box` is normalized 0..1. Returns the
+// clipped overlay + its new bounding box, or null if nothing remains.
+async function clipOverlayToBox(overlayUrl: string, box: Rect): Promise<{ url: string; rect: Rect } | null> {
+  const im = await loadImage(overlayUrl);
+  const w = im.naturalWidth, h = im.naturalHeight;
+  if (!w || !h) return null;
+  const c = document.createElement("canvas");
+  c.width = w;
+  c.height = h;
+  const ctx = c.getContext("2d")!;
+  ctx.drawImage(im, 0, 0);
+  // Keep only pixels inside the drawn box.
+  ctx.globalCompositeOperation = "destination-in";
+  ctx.fillStyle = "#fff";
+  ctx.fillRect(Math.round(box.x * w), Math.round(box.y * h), Math.round(box.w * w), Math.round(box.h * h));
+  ctx.globalCompositeOperation = "source-over";
+  const data = ctx.getImageData(0, 0, w, h).data;
+  let minX = w, minY = h, maxX = 0, maxY = 0, any = false;
+  for (let p = 0, pi = 0; p < w * h; p++, pi += 4) {
+    if (data[pi + 3] > 40) {
+      const x = p % w, y = (p / w) | 0;
+      if (x < minX) minX = x;
+      if (x > maxX) maxX = x;
+      if (y < minY) minY = y;
+      if (y > maxY) maxY = y;
+      any = true;
+    }
+  }
+  if (!any) return null;
+  return { url: c.toDataURL(), rect: { x: minX / w, y: minY / h, w: (maxX - minX + 1) / w, h: (maxY - minY + 1) / h } };
+}
+
+// Rasterizes a normalized polygon into a tinted overlay (same look as
+// maskToOverlay) so the Gemini-polygon fallback can be clipped to the box the
+// same way the fal mask is.
+function polygonToOverlay(polygon: Array<[number, number]>, hex: string, w: number, h: number): string {
+  const c = document.createElement("canvas");
+  c.width = w;
+  c.height = h;
+  const ctx = c.getContext("2d")!;
+  const { r, g, b } = hexToRgb(hex);
+  ctx.fillStyle = `rgba(${r}, ${g}, ${b}, 0.49)`;
+  ctx.beginPath();
+  polygon.forEach(([x, y], i) => {
+    const px = x * w, py = y * h;
+    if (i === 0) ctx.moveTo(px, py);
+    else ctx.lineTo(px, py);
+  });
+  ctx.closePath();
+  ctx.fill();
+  return c.toDataURL();
 }
 
 // ── Mask-stencil compositing ────────────────────────────────────────────────
@@ -561,12 +605,12 @@ export default function VisualizadorWizard({
     [photoData, photoDims, updateZone]
   );
 
-  // Box-prompt detection for a manually drawn rectangle — used because
-  // tap-to-detect can fragment a joint-divided surface (e.g. a tiled
-  // backsplash) into several small SAM2 regions. Drawing a box and asking
-  // SAM2 to fill it as one object is far more likely to produce a single
-  // cohesive mask. Falls back to the raw drawn rect (today's behavior) if
-  // fal/Gemini can't improve on it.
+  // Box-draw detection: the user drew a rectangle to mark roughly where the
+  // surface is. We run SAM2/Gemini to find the real surface, then keep only the
+  // part of it inside the drawn box (see clipOverlayToBox) — so the panel
+  // follows the wall's true edges and excludes foreground objects (a mirror,
+  // plant…), bounded by what the user marked. Falls back to the raw rect only
+  // if detection returns nothing usable.
   const detectIntoFromBox = useCallback(
     async (id: string, colorIdx: number, rect: Rect) => {
       if (!photoData) return;
@@ -578,20 +622,28 @@ export default function VisualizadorWizard({
           body: JSON.stringify({ photo: photoData, box: rect, width: photoDims?.w, height: photoDims?.h }),
         });
         const j = (await res.json()) as { mask?: string; polygon?: Array<[number, number]>; rect?: Rect };
+        const color = ZONE_COLORS[colorIdx % ZONE_COLORS.length];
+
+        // Turn whichever detection came back into a tinted overlay, then clip it
+        // to the drawn box.
+        let overlayUrl: string | null = null;
         if (res.ok && typeof j.mask === "string") {
-          try {
-            const { url, rect: maskRect } = await maskToOverlay(j.mask, ZONE_COLORS[colorIdx % ZONE_COLORS.length]);
-            if (maskRect && withinDrawnBox(maskRect, rect)) {
-              updateZone(id, { maskUrl: url, rect: maskRect, polygon: null, detecting: false });
-              return;
-            }
-          } catch { /* fall through to keep the raw rect */ }
+          try { overlayUrl = (await maskToOverlay(j.mask, color)).url; } catch { overlayUrl = null; }
+        } else if (
+          res.ok && Array.isArray(j.polygon) && j.polygon.length >= 3 &&
+          photoDims && photoDims.w > 0 && photoDims.h > 0
+        ) {
+          overlayUrl = polygonToOverlay(j.polygon, color, photoDims.w, photoDims.h);
         }
-        if (res.ok && Array.isArray(j.polygon) && j.rect && withinDrawnBox(j.rect, rect)) {
-          updateZone(id, { polygon: j.polygon, rect: j.rect, maskUrl: null, detecting: false });
-          return;
+
+        if (overlayUrl) {
+          const clipped = await clipOverlayToBox(overlayUrl, rect);
+          if (clipped) {
+            updateZone(id, { maskUrl: clipped.url, rect: clipped.rect, polygon: null, detecting: false });
+            return;
+          }
         }
-        updateZone(id, { detecting: false }); // detection missing/oversized — keep the manually drawn rect as-is
+        updateZone(id, { detecting: false }); // detection unusable — keep the manually drawn rect as-is
       } catch {
         updateZone(id, { detecting: false });
       }
@@ -734,6 +786,12 @@ export default function VisualizadorWizard({
       const localLabel = firstZ
         ? (VIZ_SPACES.find((s) => s.id === firstZ.surface)?.label ?? firstZ.customLabel) || "Área"
         : "Ambiente";
+      // Per-zone summary for the WhatsApp caption (all areas + models).
+      const items = zs.map((z) => {
+        const p = productById(z.productId);
+        const local = (VIZ_SPACES.find((s) => s.id === z.surface)?.label ?? z.customLabel) || "Área";
+        return { local, productName: p?.name ?? null, productCode: p?.code ?? null };
+      });
       try {
         const sr = await fetch("/api/visualizador/save-render", {
           method: "POST",
@@ -746,6 +804,7 @@ export default function VisualizadorWizard({
             productCode: firstProd?.code ?? null,
             name: pendingLeadRef.current.name || undefined,
             phone: pendingLeadRef.current.phone || undefined,
+            items,
           }),
         });
         if (sr.ok) {
@@ -1467,7 +1526,11 @@ function ResultStep({
   embeddedMode?: boolean;
 }) {
   const showLeadOverlay = !embeddedMode && !leadSubmitted && !error;
-  const leadReady = leadName.trim().length > 0 && leadPhone.trim().length > 0;
+  // A real WhatsApp number has 8–13 digits (local 8–9 digits, or with DDD /
+  // country code up to 13). Don't enable submit on a single stray digit.
+  const phoneDigits = leadPhone.replace(/\D/g, "").length;
+  const phoneValid = phoneDigits >= 8 && phoneDigits <= 13;
+  const leadReady = leadName.trim().length > 0 && phoneValid;
   const resultReady = !generating && !!result;
 
   return (
@@ -1505,6 +1568,9 @@ function ResultStep({
                 <input value={leadPhone} onChange={(e) => onLeadPhoneChange(e.target.value)} placeholder="WhatsApp (92) 99999-9999"
                   inputMode="tel" className="border border-[#e2e2e2] px-3 py-2.5 text-sm font-[var(--font-inter)] text-[#002045] focus:outline-none focus:border-[#002045] bg-white w-full"
                   onKeyDown={(e) => { if (e.key === "Enter" && leadReady) onLeadSubmit(); }} />
+                {phoneDigits > 0 && !phoneValid && (
+                  <p className="text-[#b4791e] text-[11px] font-[var(--font-inter)]">Informe um WhatsApp válido com DDD.</p>
+                )}
               </div>
               <button onClick={onLeadSubmit} disabled={!leadReady}
                 className="w-full inline-flex items-center justify-center bg-[#002045] text-white text-xs tracking-[0.12em] uppercase font-bold font-[var(--font-inter)] px-5 py-3 hover:bg-[#1a365d] transition-colors disabled:opacity-40 disabled:cursor-not-allowed">

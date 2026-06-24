@@ -1,6 +1,8 @@
 import { NextRequest, NextResponse } from "next/server";
 import { randomUUID } from "crypto";
+import type { SupabaseClient } from "@supabase/supabase-js";
 import { supabaseAdmin } from "@/lib/supabase";
+import { smclickConfigured, normalizePhone, sendImage, sendText } from "@/lib/smclick";
 
 // POST /api/visualizador/save-render — public, best-effort.
 //
@@ -35,6 +37,73 @@ function parseDataUrl(input: string): { buf: Buffer; ext: string; mime: string }
   }
 }
 
+interface RenderItem { local?: string | null; productName?: string | null; productCode?: string | null }
+
+// Builds the engaging WhatsApp caption from what the client actually
+// visualized — one bullet per area/model so the message feels personal and
+// dynamic rather than a generic blast.
+function buildCaption(items: RenderItem[]): string {
+  const parts = items.filter((it) => it && (it.productName || it.local));
+  if (parts.length === 0) {
+    return "Olá! 🎨 Aqui está a sua visualização Orbital. Gostou do resultado? É só responder esta mensagem que a gente te ajuda com o orçamento e a instalação. ✨";
+  }
+  const lines = parts.map((it) => {
+    const code = it.productCode ? ` (${it.productCode})` : "";
+    const prod = it.productName ? `*${it.productName}*${code}` : "o acabamento escolhido";
+    // Dash + label avoids PT gender agreement traps ("na parede" vs "no teto")
+    // and works for custom area names too.
+    const local = it.local ? ` — ${it.local}` : "";
+    return `• ${prod}${local}`;
+  });
+  const intro =
+    parts.length === 1
+      ? "Olá! 🎨 Aqui está a sua visualização Orbital — veja como ficou:"
+      : "Olá! 🎨 Aqui está a sua visualização Orbital — veja os acabamentos que você escolheu:";
+  return `${intro}\n${lines.join("\n")}\n\nGostou do resultado? É só responder esta mensagem que a gente te ajuda com o orçamento e a instalação. ✨`;
+}
+
+// Best-effort: deliver the saved render to the client's WhatsApp via SM Click,
+// exactly once. Reads the row for the latest image URL, the stored caption and
+// the dedup stamp; sends an image message (falling back to a text + link if the
+// instance rejects media) and records whatsapp_sent_at on success. Never throws.
+async function maybeSendRenderWhatsapp(
+  db: SupabaseClient,
+  id: string,
+  phoneRaw: string | null
+): Promise<void> {
+  try {
+    if (!phoneRaw || !smclickConfigured()) return;
+    const tel = normalizePhone(phoneRaw);
+    if (!tel) return;
+
+    const { data } = await db
+      .from("visualizador_renders")
+      .select("images, summary, whatsapp_sent_at")
+      .eq("id", id)
+      .maybeSingle();
+    const row = data as { images?: StoredRender[]; summary?: string | null; whatsapp_sent_at?: string | null } | null;
+    if (!row || row.whatsapp_sent_at) return; // missing or already sent
+
+    const imgs = Array.isArray(row.images) ? row.images : [];
+    const url = imgs[imgs.length - 1]?.url;
+    if (!url) return;
+
+    const caption =
+      (row.summary && row.summary.trim()) ||
+      buildCaption(imgs.map((i) => ({ local: i.local, productName: i.productName, productCode: i.productCode })));
+
+    let r = await sendImage(tel, url, caption);
+    if (!r.ok) r = await sendText(tel, `${caption}\n\n${url}`); // media rejected → link fallback
+    if (r.ok) {
+      await db.from("visualizador_renders").update({ whatsapp_sent_at: new Date().toISOString() }).eq("id", id);
+    } else {
+      console.error("[save-render] whatsapp send failed", r.error);
+    }
+  } catch (e) {
+    console.error("[save-render] whatsapp send error", e instanceof Error ? e.message : e);
+  }
+}
+
 export async function POST(req: NextRequest) {
   let body: {
     id?: string;
@@ -44,6 +113,8 @@ export async function POST(req: NextRequest) {
     productCode?: string;
     name?: string;
     phone?: string;
+    // All zones the client visualized, for the WhatsApp caption (multi-zone).
+    items?: RenderItem[];
   };
   try {
     body = await req.json();
@@ -67,6 +138,8 @@ export async function POST(req: NextRequest) {
 
     const { error } = await db.from("visualizador_renders").update(patch).eq("id", id);
     if (error) console.error("[save-render] contact update failed", error.message);
+    // Phone just arrived (standalone lead capture) — deliver the render now.
+    if (phoneVal) await maybeSendRenderWhatsapp(db, id, phoneVal);
     return NextResponse.json({ id });
   }
 
@@ -107,6 +180,10 @@ export async function POST(req: NextRequest) {
   const upsertPayload: Record<string, unknown> = { id, images };
   if (nameVal) upsertPayload.name = nameVal;
   if (phoneVal) upsertPayload.phone = phoneVal;
+  // Store the caption describing what was visualized, so it's available when
+  // the phone arrives later (standalone flow captures the lead after the save).
+  const items = Array.isArray(body.items) ? body.items : [];
+  if (items.length > 0) upsertPayload.summary = buildCaption(items);
 
   const { error: writeErr } = await db
     .from("visualizador_renders")
@@ -116,6 +193,10 @@ export async function POST(req: NextRequest) {
     console.error("[save-render] upsert failed", writeErr.message);
     return NextResponse.json({ error: "Falha ao registrar o render." }, { status: 500 });
   }
+
+  // If the phone is already known (embedded flow, or a regenerate after lead
+  // capture), deliver the render now; the dedup guard prevents double-sends.
+  if (phoneVal) await maybeSendRenderWhatsapp(db, id, phoneVal);
 
   return NextResponse.json({ id, count: images.length });
 }
