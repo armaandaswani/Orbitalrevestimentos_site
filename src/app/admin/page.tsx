@@ -7,6 +7,7 @@ import RemindersTab from "./RemindersTab";
 import PedidosTab from "./PedidosTab";
 import RepOversightTab from "./RepOversightTab";
 import EstoqueTab from "./EstoqueTab";
+import FinanceiroTab from "./FinanceiroTab";
 import {
   composePrompt,
   finishDescription,
@@ -147,7 +148,7 @@ export default function AdminPage() {
   const [authed, setAuthed] = useState(false);
   const [pw, setPw] = useState("");
   const [pwError, setPwError] = useState("");
-  const [tab, setTab] = useState<"dashboard" | "lembretes" | "leads" | "pedidos" | "estoque" | "partners" | "representantes" | "orcamentos" | "campaigns" | "drip" | "commissions" | "produtos" | "projetos" | "midia" | "simulador" | "chat" | "visualizacoes" | "precos">("dashboard");
+  const [tab, setTab] = useState<"dashboard" | "lembretes" | "leads" | "pedidos" | "estoque" | "financeiro" | "partners" | "representantes" | "orcamentos" | "campaigns" | "drip" | "commissions" | "produtos" | "projetos" | "midia" | "simulador" | "chat" | "visualizacoes" | "precos">("dashboard");
   const [commissionFilter, setCommissionFilter] = useState<"a_pagar" | "pago" | "tudo">("a_pagar");
 
   // Dashboard
@@ -2354,10 +2355,10 @@ export default function AdminPage() {
               pedidos: "Pedidos", estoque: "Estoque", partners: "Parceiros", representantes: "Representantes", commissions: "Comissões",
               campaigns: "Campanhas", drip: "Drip de Emails", produtos: "Produtos",
               projetos: "Projetos", midia: "Mídia", simulador: "Simulador", chat: "Chat IA",
-              visualizacoes: "Visualizações", precos: "Tabela de Preços",
+              visualizacoes: "Visualizações", precos: "Tabela de Preços", financeiro: "Financeiro",
             };
             const NAV_GROUPS: ReadonlyArray<{ group: string; items: ReadonlyArray<typeof tab> }> = [
-              { group: "Geral", items: ["dashboard", "lembretes"] },
+              { group: "Geral", items: ["dashboard", "financeiro", "lembretes"] },
               { group: "Comercial", items: ["leads", "orcamentos", "pedidos", "estoque", "partners", "representantes", "commissions"] },
               { group: "Marketing", items: ["campaigns", "drip"] },
               { group: "Catálogo", items: ["produtos", "projetos", "midia"] },
@@ -3936,6 +3937,7 @@ export default function AdminPage() {
         {tab === "leads" && authed && <LeadsTab />}
         {tab === "pedidos" && authed && <PedidosTab />}
         {tab === "estoque" && authed && <EstoqueTab />}
+        {tab === "financeiro" && authed && <FinanceiroTab />}
 
         {tab === "lembretes" && authed && <RemindersTab />}
 
