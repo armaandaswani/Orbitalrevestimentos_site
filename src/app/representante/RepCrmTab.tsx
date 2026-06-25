@@ -133,6 +133,8 @@ export default function RepCrmTab({
   const [search, setSearch] = useState("");
   const [stageFilter, setStageFilter] = useState<Stage | "all">("all");
   const [sortKey, setSortKey] = useState<SortKey>("activity");
+  const [view, setView] = useState<"list" | "board">("list");
+  const [draggingId, setDraggingId] = useState<string | null>(null);
 
   const fetchCrm = useCallback(async () => {
     setLoading(true);
@@ -262,6 +264,33 @@ export default function RepCrmTab({
   }, [rows]);
   const actionable = reminderBuckets.overdue.length + reminderBuckets.today.length;
 
+  // Strategy funnel: how relationships progress contato → reunião → especificou
+  // → ativo, plus value generated and how many have stalled.
+  const metrics = useMemo(() => {
+    const total = rows.length;
+    const byStage: Record<Stage, number> = {
+      novo_contato: 0, reuniao_agendada: 0, reuniao_realizada: 0, acompanhamento: 0, ativo: 0, inativo: 0,
+    };
+    let met = 0, specified = 0, active = 0, value = 0, projects = 0, stalled = 0;
+    const advanced: Stage[] = ["reuniao_realizada", "acompanhamento", "ativo"];
+    for (const r of rows) {
+      byStage[r.stage]++;
+      if (r.meeting_happened_at || advanced.includes(r.stage)) met++;
+      if (r.has_specified) specified++;
+      if (r.stage === "ativo") active++;
+      value += r.total_generated || 0;
+      projects += r.projects_count || 0;
+      if (r.stage !== "inativo" && (daysSince(r.last_followup_at || r.first_contact_at) ?? 0) >= 30) stalled++;
+    }
+    const pct = (a: number, b: number) => (b > 0 ? Math.round((a / b) * 100) : 0);
+    return {
+      total, byStage, met, specified, active, value, projects, stalled,
+      rateMet: pct(met, total),
+      rateSpecified: pct(specified, met),
+      rateActive: pct(active, total),
+    };
+  }, [rows]);
+
   const visibleRows = useMemo(() => {
     const q = search.trim().toLowerCase();
     let list = rows.filter((r) => {
@@ -375,8 +404,42 @@ export default function RepCrmTab({
         </div>
       )}
 
-      {/* Toolbar: search / filter / sort */}
+      {/* Strategy funnel metrics */}
       {rows.length > 0 && (
+        <div className="bg-white border border-[#e2e2e2] px-5 py-4 mb-4">
+          <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-6 gap-4">
+            {[
+              { label: "Relações", value: String(metrics.total), sub: `${metrics.byStage.ativo} ativos` },
+              { label: "Reuniões", value: String(metrics.met), sub: `${metrics.rateMet}% do total` },
+              { label: "Especificaram", value: String(metrics.specified), sub: `${metrics.rateSpecified}% das reuniões` },
+              { label: "Ativos", value: String(metrics.active), sub: `${metrics.rateActive}% conversão` },
+              { label: "Valor gerado", value: fmtBRL(metrics.value), sub: `${metrics.projects} projeto${metrics.projects !== 1 ? "s" : ""}` },
+              { label: "Parados 30d+", value: String(metrics.stalled), sub: metrics.stalled > 0 ? "precisam atenção" : "tudo em dia" },
+            ].map((m) => (
+              <div key={m.label}>
+                <p className="text-[#74777f] text-[9px] uppercase tracking-wider font-bold font-[var(--font-inter)]">{m.label}</p>
+                <p className="text-[#002045] text-lg font-[var(--font-noto-serif)] mt-0.5">{m.value}</p>
+                <p className="text-[#b0b0b0] text-[10px] font-[var(--font-inter)]">{m.sub}</p>
+              </div>
+            ))}
+          </div>
+        </div>
+      )}
+
+      {/* View toggle */}
+      {rows.length > 0 && (
+        <div className="flex items-center gap-1 mb-4">
+          {(["list", "board"] as const).map((v) => (
+            <button key={v} onClick={() => setView(v)}
+              className={`text-[11px] tracking-[0.08em] uppercase font-bold font-[var(--font-inter)] px-3 py-1.5 border ${view === v ? "bg-[#002045] text-white border-[#002045]" : "bg-white text-[#74777f] border-[#e2e2e2] hover:border-[#002045] hover:text-[#002045]"}`}>
+              {v === "list" ? "Lista" : "Quadro"}
+            </button>
+          ))}
+        </div>
+      )}
+
+      {/* Toolbar: search / filter / sort */}
+      {rows.length > 0 && view === "list" && (
         <div className="flex flex-wrap items-center gap-2 mb-4">
           <input value={search} onChange={(e) => setSearch(e.target.value)} placeholder="Buscar por nome…"
             className="flex-1 min-w-[160px] border border-[#e2e2e2] px-3 py-2 text-xs font-[var(--font-inter)] text-[#002045] focus:outline-none focus:border-[#002045]" />
@@ -402,6 +465,45 @@ export default function RepCrmTab({
           <p className="text-[#74777f] text-sm font-[var(--font-inter)]">
             Nenhum parceiro no seu CRM ainda. Adicione um parceiro vinculado ou um prospecto acima para começar.
           </p>
+        </div>
+      ) : view === "board" ? (
+        <div className="flex gap-3 overflow-x-auto pb-3">
+          {STAGE_ORDER.map((stage) => {
+            const colRows = rows.filter(
+              (r) => r.stage === stage && (!search.trim() || r.partner.name.toLowerCase().includes(search.trim().toLowerCase()))
+            );
+            return (
+              <div key={stage}
+                onDragOver={(e) => e.preventDefault()}
+                onDrop={() => { if (draggingId) { patchRow(draggingId, { stage }); setDraggingId(null); } }}
+                className="flex-shrink-0 w-[240px] bg-[#f4f5f7] border border-[#e8e8e8] rounded-sm">
+                <div className="px-3 py-2 border-b border-[#e2e2e2] flex items-center justify-between">
+                  <span className={`text-[10px] font-bold px-1.5 py-0.5 ${STAGE_META[stage].cls}`}>{STAGE_META[stage].label}</span>
+                  <span className="text-[#74777f] text-[11px] font-bold font-[var(--font-inter)]">{colRows.length}</span>
+                </div>
+                <div className="p-2 space-y-2 min-h-[80px]">
+                  {colRows.map((r) => (
+                    <div key={r.id} draggable
+                      onDragStart={() => setDraggingId(r.id)}
+                      onDragEnd={() => setDraggingId(null)}
+                      className={`bg-white border border-[#e2e2e2] px-3 py-2 cursor-grab active:cursor-grabbing ${draggingId === r.id ? "opacity-50" : ""}`}>
+                      <div className="flex items-center gap-1.5 flex-wrap">
+                        <p className="text-[#002045] text-xs font-semibold font-[var(--font-inter)]">{r.partner.name}</p>
+                        {r.is_prospect && <span className="text-[8px] font-bold px-1 py-0.5 bg-[#fde9cf] text-[#8a5a12]">Prosp.</span>}
+                      </div>
+                      {r.total_generated > 0 && (
+                        <p className="text-[#2f5429] text-[11px] font-semibold font-[var(--font-inter)] mt-1">{fmtBRL(r.total_generated)}</p>
+                      )}
+                      {r.next_reminder_at && (
+                        <p className="text-[#74777f] text-[10px] font-[var(--font-inter)] mt-0.5">⏰ {fmtDate(r.next_reminder_at)}</p>
+                      )}
+                    </div>
+                  ))}
+                  {colRows.length === 0 && <p className="text-[#b0b0b0] text-[10px] font-[var(--font-inter)] text-center py-3">—</p>}
+                </div>
+              </div>
+            );
+          })}
         </div>
       ) : visibleRows.length === 0 ? (
         <p className="text-[#74777f] text-sm font-[var(--font-inter)]">Nenhum resultado para o filtro atual.</p>
