@@ -734,7 +734,13 @@ export default function VisualizadorWizard({
     setError(null);
     setResult(null);
     setStep("result");
-    let current = photoData;
+    // Each zone is rendered against the PRISTINE photo (not the running
+    // composite) and then composited in by its own mask. This guarantees zones
+    // are independent: a second zone's render can never see, alter, or be
+    // confused by a panel already applied for the first — the recurring
+    // multi-zone failure. The composite accumulates each zone's masked pixels.
+    const base = photoData;
+    let composite = photoData;
     // Photo pixel dimensions, used to build each zone's mask at the right size.
     // Compositing preserves these, so they stay constant across the loop.
     let dims = photoDims;
@@ -761,7 +767,7 @@ export default function VisualizadorWizard({
           method: "POST",
           headers: { "Content-Type": "application/json" },
           body: JSON.stringify({
-            photo: current, productId: prod.id, referenceUrl: prod.image_path,
+            photo: base, productId: prod.id, referenceUrl: prod.image_path,
             finish: FINISH_BY_LINE[prod.linha],
             wallWidthM: parseDim(z.width) ?? undefined,
             wallHeightM: parseDim(z.height) ?? undefined,
@@ -773,11 +779,12 @@ export default function VisualizadorWizard({
         const json = await res.json();
         if (!res.ok || !json.image) throw new Error(json.error || "Não foi possível gerar a visualização.");
         try {
-          current = await compositeMaskedRegion(current, json.image, z);
+          composite = await compositeMaskedRegion(composite, json.image, z);
         } catch {
-          current = json.image; // compositing failed — fall back rather than failing the whole render
+          composite = json.image; // compositing failed — fall back rather than failing the whole render
         }
       }
+      const current = composite;
       setResult(current);
 
       // Auto-save the render so admin can see it regardless of later steps
