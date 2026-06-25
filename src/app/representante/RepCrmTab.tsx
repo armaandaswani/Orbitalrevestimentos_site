@@ -37,6 +37,9 @@ interface CrmRow {
   next_reminder_at: string | null;
   reminder_note: string | null;
   reminder_recur: Recur;
+  auto_followup_enabled: boolean;
+  auto_followup_message: string | null;
+  auto_followup_sent_at: string | null;
   prospect_name?: string | null;
   prospect_phone?: string | null;
   prospect_email?: string | null;
@@ -966,39 +969,68 @@ export default function RepCrmTab({
                       </div>
                     </div>
 
-                    <div className="grid grid-cols-1 lg:grid-cols-[1fr_140px_1fr_auto] gap-2 mb-4 bg-white border border-[#e2e2e2] px-3 py-3">
-                      <div>
-                        <label className="block text-[9px] tracking-wider uppercase font-bold font-[var(--font-inter)] text-[#74777f] mb-1">Próximo follow-up</label>
-                        <input
-                          type="datetime-local"
-                          value={r.next_reminder_at ? r.next_reminder_at.slice(0, 16) : ""}
-                          onChange={(e) => patchRow(r.id, { next_reminder_at: e.target.value ? new Date(e.target.value).toISOString() : null })}
-                          className="w-full border border-[#e2e2e2] px-2 py-2 text-xs font-[var(--font-inter)] text-[#002045] focus:outline-none focus:border-[#002045]"
-                        />
+                    <div className="mb-4 bg-white border border-[#e2e2e2] px-3 py-3">
+                      <div className="grid grid-cols-1 lg:grid-cols-[1fr_140px_1fr_auto] gap-2">
+                        <div>
+                          <label className="block text-[9px] tracking-wider uppercase font-bold font-[var(--font-inter)] text-[#74777f] mb-1">Próximo follow-up</label>
+                          <input
+                            type="datetime-local"
+                            value={r.next_reminder_at ? r.next_reminder_at.slice(0, 16) : ""}
+                            onChange={(e) => patchRow(r.id, { next_reminder_at: e.target.value ? new Date(e.target.value).toISOString() : null })}
+                            className="w-full border border-[#e2e2e2] px-2 py-2 text-xs font-[var(--font-inter)] text-[#002045] focus:outline-none focus:border-[#002045]"
+                          />
+                        </div>
+                        <div>
+                          <label className="block text-[9px] tracking-wider uppercase font-bold font-[var(--font-inter)] text-[#74777f] mb-1">Repetição</label>
+                          <select value={r.reminder_recur} onChange={(e) => patchRow(r.id, { reminder_recur: e.target.value as Recur })}
+                            className="w-full border border-[#e2e2e2] px-2 py-2 text-xs font-[var(--font-inter)] text-[#002045] focus:outline-none focus:border-[#002045]">
+                            {(Object.keys(RECUR_META) as Recur[]).map((k) => <option key={k} value={k}>{RECUR_META[k]}</option>)}
+                          </select>
+                        </div>
+                        <div>
+                          <label className="block text-[9px] tracking-wider uppercase font-bold font-[var(--font-inter)] text-[#74777f] mb-1">Nota interna</label>
+                          <input
+                            value={r.reminder_note || ""}
+                            onChange={(e) => patchRow(r.id, { reminder_note: e.target.value })}
+                            placeholder="Ex: enviar proposta, cobrar retorno..."
+                            className="w-full border border-[#e2e2e2] px-2 py-2 text-xs font-[var(--font-inter)] text-[#002045] focus:outline-none focus:border-[#002045]"
+                          />
+                        </div>
+                        <div className="flex gap-1 items-end">
+                          {[1, 7].map((d) => (
+                            <button key={d} onClick={() => snoozeReminder(r.id, d)}
+                              className="text-[10px] text-[#74777f] font-bold border border-[#e2e2e2] px-2 py-2 hover:border-[#002045] hover:text-[#002045]">
+                              +{d}d
+                            </button>
+                          ))}
+                        </div>
                       </div>
-                      <div>
-                        <label className="block text-[9px] tracking-wider uppercase font-bold font-[var(--font-inter)] text-[#74777f] mb-1">Repetição</label>
-                        <select value={r.reminder_recur} onChange={(e) => patchRow(r.id, { reminder_recur: e.target.value as Recur })}
-                          className="w-full border border-[#e2e2e2] px-2 py-2 text-xs font-[var(--font-inter)] text-[#002045] focus:outline-none focus:border-[#002045]">
-                          {(Object.keys(RECUR_META) as Recur[]).map((k) => <option key={k} value={k}>{RECUR_META[k]}</option>)}
-                        </select>
-                      </div>
-                      <div>
-                        <label className="block text-[9px] tracking-wider uppercase font-bold font-[var(--font-inter)] text-[#74777f] mb-1">Nota do lembrete</label>
-                        <input
-                          value={r.reminder_note || ""}
-                          onChange={(e) => patchRow(r.id, { reminder_note: e.target.value })}
-                          placeholder="Ex: enviar proposta, cobrar retorno..."
-                          className="w-full border border-[#e2e2e2] px-2 py-2 text-xs font-[var(--font-inter)] text-[#002045] focus:outline-none focus:border-[#002045]"
-                        />
-                      </div>
-                      <div className="flex gap-1 items-end">
-                        {[1, 7].map((d) => (
-                          <button key={d} onClick={() => snoozeReminder(r.id, d)}
-                            className="text-[10px] text-[#74777f] font-bold border border-[#e2e2e2] px-2 py-2 hover:border-[#002045] hover:text-[#002045]">
-                            +{d}d
-                          </button>
-                        ))}
+
+                      <div className="mt-3 pt-3 border-t border-[#f0f0f0] grid grid-cols-1 lg:grid-cols-[260px_1fr] gap-3 items-start">
+                        <label className="flex items-start gap-2 text-xs font-[var(--font-inter)] text-[#43474e] leading-5">
+                          <input
+                            type="checkbox"
+                            checked={!!r.auto_followup_enabled}
+                            onChange={(e) => patchRow(r.id, { auto_followup_enabled: e.target.checked })}
+                            className="mt-1 h-3.5 w-3.5 accent-[#002045]"
+                          />
+                          Enviar WhatsApp automático
+                        </label>
+                        <div>
+                          <label className="block text-[9px] tracking-wider uppercase font-bold font-[var(--font-inter)] text-[#74777f] mb-1">Mensagem para o parceiro</label>
+                          <textarea
+                            value={r.auto_followup_message || ""}
+                            onChange={(e) => patchRow(r.id, { auto_followup_message: e.target.value })}
+                            placeholder="Oi, {nome}. Tudo bem? Passando para dar sequência ao nosso contato..."
+                            rows={2}
+                            className="w-full border border-[#e2e2e2] px-2 py-2 text-xs font-[var(--font-inter)] text-[#002045] focus:outline-none focus:border-[#002045] resize-y min-h-[58px]"
+                          />
+                          {r.auto_followup_sent_at && (
+                            <p className="text-[#74777f] text-[10px] font-[var(--font-inter)] mt-1">
+                              Último envio automático: {fmtDateTime(r.auto_followup_sent_at)}
+                            </p>
+                          )}
+                        </div>
                       </div>
                     </div>
 

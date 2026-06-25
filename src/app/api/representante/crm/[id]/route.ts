@@ -21,6 +21,9 @@ const EDITABLE = new Set([
   "next_reminder_at",
   "reminder_note",
   "reminder_recur",
+  "auto_followup_enabled",
+  "auto_followup_message",
+  "auto_followup_sent_at",
   // Inline-prospect fields + linking a prospect to a registered partner later.
   "partner_id",
   "prospect_name",
