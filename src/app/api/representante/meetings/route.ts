@@ -14,9 +14,108 @@ interface MeetingRow {
   sales_rep_id: string;
   title: string;
   scheduled_at: string;
+  duration_minutes?: number | null;
   location: string | null;
   invitees: Invitee[];
   invitees_notified_at?: string | null;
+}
+
+function addMinutes(iso: string, minutes: number) {
+  return new Date(new Date(iso).getTime() + minutes * 60_000);
+}
+
+function calendarStamp(date: Date) {
+  return date.toISOString().replace(/[-:]/g, "").replace(/\.\d{3}Z$/, "Z");
+}
+
+function calendarLinks(meeting: MeetingRow, repName: string | null) {
+  const start = new Date(meeting.scheduled_at);
+  const end = addMinutes(meeting.scheduled_at, meeting.duration_minutes || 60);
+  const details = [
+    `Reunião agendada pela Orbital Revestimentos${repName ? ` com ${repName}` : ""}.`,
+    "Qualquer dúvida, responda ao e-mail ou WhatsApp recebido.",
+  ].join("\n\n");
+  const params = new URLSearchParams({
+    action: "TEMPLATE",
+    text: meeting.title,
+    dates: `${calendarStamp(start)}/${calendarStamp(end)}`,
+    details,
+  });
+  if (meeting.location) params.set("location", meeting.location);
+  return {
+    google: `https://calendar.google.com/calendar/render?${params.toString()}`,
+    start,
+    end,
+    details,
+  };
+}
+
+function escapeIcs(s: string | null | undefined) {
+  return (s || "")
+    .replace(/\\/g, "\\\\")
+    .replace(/\n/g, "\\n")
+    .replace(/,/g, "\\,")
+    .replace(/;/g, "\\;");
+}
+
+function makeIcs(meeting: MeetingRow, invitee: Invitee, repName: string | null) {
+  const { start, end, details } = calendarLinks(meeting, repName);
+  const lines = [
+    "BEGIN:VCALENDAR",
+    "VERSION:2.0",
+    "PRODID:-//Orbital Revestimentos//CRM//PT-BR",
+    "CALSCALE:GREGORIAN",
+    "METHOD:REQUEST",
+    "BEGIN:VEVENT",
+    `UID:${meeting.id}@orbitalrevestimentos.com.br`,
+    `DTSTAMP:${calendarStamp(new Date())}`,
+    `DTSTART:${calendarStamp(start)}`,
+    `DTEND:${calendarStamp(end)}`,
+    `SUMMARY:${escapeIcs(meeting.title)}`,
+    `DESCRIPTION:${escapeIcs(details)}`,
+    meeting.location ? `LOCATION:${escapeIcs(meeting.location)}` : "",
+    "ORGANIZER;CN=Orbital Revestimentos:mailto:noreply@orbitalrevestimentos.com.br",
+    invitee.email ? `ATTENDEE;CN=${escapeIcs(invitee.name)};RSVP=TRUE:mailto:${invitee.email}` : "",
+    "END:VEVENT",
+    "END:VCALENDAR",
+  ].filter(Boolean);
+  return lines.join("\r\n");
+}
+
+function isGoogleEmail(email: string) {
+  const domain = email.split("@")[1]?.toLowerCase() || "";
+  return domain === "gmail.com" || domain === "googlemail.com";
+}
+
+function meetingEmailHtml(input: {
+  message: string;
+  googleCalendarUrl: string;
+  googlePreferred: boolean;
+}) {
+  const escapedMessage = input.message
+    .replace(/&/g, "&amp;")
+    .replace(/</g, "&lt;")
+    .replace(/>/g, "&gt;")
+    .replace(/\n/g, "<br>");
+  const primary = input.googlePreferred
+    ? "Adicionar ao Google Calendar"
+    : "Usar o arquivo .ics anexado";
+  const secondary = input.googlePreferred
+    ? "Também anexamos um arquivo .ics para Apple Calendar, Outlook e outros calendários."
+    : "Como este e-mail não parece ser Gmail, anexamos um convite .ics compatível com Apple Calendar, Outlook e outros calendários.";
+  return `
+    <div style="font-family:Inter,Arial,sans-serif;color:#1a1c1c;line-height:1.55;max-width:620px">
+      <p>${escapedMessage}</p>
+      ${input.googlePreferred ? `
+        <p style="margin:24px 0">
+          <a href="${input.googleCalendarUrl}" style="background:#002045;color:#ffffff;text-decoration:none;padding:12px 18px;font-weight:700;display:inline-block">
+            ${primary}
+          </a>
+        </p>
+      ` : ""}
+      <p style="font-size:13px;color:#74777f">${secondary}</p>
+    </div>
+  `;
 }
 
 // Best-effort: notify every invitee of a freshly-scheduled meeting over WhatsApp
@@ -45,12 +144,17 @@ async function notifyInvitees(db: SupabaseClient, meeting: MeetingRow): Promise<
     }
 
     for (const inv of invitees) {
+      const calendar = calendarLinks(meeting, repName);
+      const googlePreferred = isGoogleEmail(inv.email);
       const msg = meetingInviteMessage({
         inviteeName: inv.name, title: meeting.title, whenLabel, location: meeting.location, repName,
       });
       if (inv.phone && smclickConfigured()) {
         const tel = normalizePhone(inv.phone);
-        if (tel) await sendText(tel, msg).catch(() => {});
+        const calendarHint = inv.email
+          ? `\n\nTambém enviamos o convite por e-mail${googlePreferred ? " com link do Google Calendar" : " com arquivo .ics para calendário"}.`
+          : "";
+        if (tel) await sendText(tel, `${msg}${calendarHint}`).catch(() => {});
       }
       if (inv.email && resend) {
         await resend.emails
@@ -58,7 +162,22 @@ async function notifyInvitees(db: SupabaseClient, meeting: MeetingRow): Promise<
             from: "Orbital Revestimentos <noreply@orbitalrevestimentos.com.br>",
             to: inv.email,
             subject: "Reunião agendada — Orbital Revestimentos",
-            text: msg,
+            text: `${msg}\n\n${
+              googlePreferred
+                ? `Adicionar ao Google Calendar: ${calendar.google}\n\nTambém anexamos um arquivo .ics para outros calendários.`
+                : "Anexamos um arquivo .ics para adicionar esta reunião ao seu calendário."
+            }`,
+            html: meetingEmailHtml({
+              message: msg,
+              googleCalendarUrl: calendar.google,
+              googlePreferred,
+            }),
+            attachments: [
+              {
+                filename: "reuniao-orbital.ics",
+                content: Buffer.from(makeIcs(meeting, inv, repName)).toString("base64"),
+              },
+            ],
           })
           .catch(() => {});
       }

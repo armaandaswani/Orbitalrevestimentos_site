@@ -94,6 +94,43 @@ function bucketOf(iso: string): Bucket {
   return "upcoming";
 }
 
+function initials(name: string) {
+  return name
+    .split(" ")
+    .filter(Boolean)
+    .slice(0, 2)
+    .map((part) => part[0])
+    .join("")
+    .toUpperCase();
+}
+
+function staleDays(row: CrmRow) {
+  if (row.stage === "inativo") return null;
+  const days = daysSince(row.last_followup_at || row.first_contact_at);
+  return days !== null && days >= 30 ? days : null;
+}
+
+function actionSummary(row: CrmRow): { label: string; detail: string; tone: "urgent" | "today" | "normal" | "quiet" } {
+  if (row.next_reminder_at) {
+    const bucket = bucketOf(row.next_reminder_at);
+    if (bucket === "overdue") {
+      return { label: "Atrasado", detail: row.reminder_note || fmtDateTime(row.next_reminder_at), tone: "urgent" };
+    }
+    if (bucket === "today") {
+      return { label: "Hoje", detail: row.reminder_note || fmtDateTime(row.next_reminder_at), tone: "today" };
+    }
+    return { label: "Próximo", detail: row.reminder_note || fmtDate(row.next_reminder_at), tone: "normal" };
+  }
+  const stalled = staleDays(row);
+  if (stalled) return { label: "Sem contato", detail: `${stalled} dias sem follow-up`, tone: "urgent" };
+  if (row.stage === "novo_contato") return { label: "Próxima ação", detail: "Agendar primeira conversa", tone: "normal" };
+  if (row.stage === "reuniao_agendada") return { label: "Próxima ação", detail: "Confirmar reunião e preparar pauta", tone: "normal" };
+  if (row.stage === "reuniao_realizada") return { label: "Próxima ação", detail: "Registrar especificação ou próximo passo", tone: "normal" };
+  if (row.stage === "acompanhamento") return { label: "Próxima ação", detail: "Definir follow-up", tone: "normal" };
+  if (row.stage === "ativo") return { label: "Relacionamento ativo", detail: "Manter aquecido", tone: "quiet" };
+  return { label: "Inativo", detail: "Sem ação pendente", tone: "quiet" };
+}
+
 // In-card meeting scheduler. Creates a rep_meeting tied to this CRM
 // relationship; the partner/prospect (and any contact info on file) is added as
 // an invitee and auto-notified by email + WhatsApp on the server.
@@ -110,10 +147,17 @@ function ScheduleMeeting({
   const [when, setWhen] = useState("");
   const [title, setTitle] = useState(`Reunião com ${row.partner.name}`);
   const [location, setLocation] = useState("");
+  const [inviteEmail, setInviteEmail] = useState(row.partner.email || row.prospect_email || "");
   const [busy, setBusy] = useState(false);
   const [msg, setMsg] = useState<string | null>(null);
 
-  const hasContact = !!(row.partner.phone || row.partner.email);
+  const invitePhone = row.partner.phone || row.prospect_phone || "";
+  const cleanEmail = inviteEmail.trim();
+  const emailDomain = cleanEmail.split("@")[1]?.toLowerCase() || "";
+  const calendarMode = cleanEmail
+    ? (emailDomain === "gmail.com" || emailDomain === "googlemail.com" ? "Google Calendar" : "iCal / Outlook / Apple Calendar")
+    : null;
+  const hasContact = !!(invitePhone || cleanEmail);
 
   async function submit() {
     if (!when || busy) return;
@@ -129,7 +173,7 @@ function ScheduleMeeting({
         title: title.trim() || `Reunião com ${row.partner.name}`,
         scheduled_at: new Date(when).toISOString(),
         location: location.trim() || undefined,
-        invitees: [{ name: row.partner.name, phone: row.partner.phone || "", email: row.partner.email || "" }],
+        invitees: [{ name: row.partner.name, phone: invitePhone, email: cleanEmail }],
       }),
     });
     setBusy(false);
@@ -162,17 +206,26 @@ function ScheduleMeeting({
           className="border border-[#e2e2e2] px-2 py-1.5 text-xs font-[var(--font-inter)] text-[#002045] focus:outline-none focus:border-[#002045]" />
         <input value={location} onChange={(e) => setLocation(e.target.value)} placeholder="Local (opcional)"
           className="sm:col-span-2 border border-[#e2e2e2] px-2 py-1.5 text-xs font-[var(--font-inter)] text-[#002045] focus:outline-none focus:border-[#002045]" />
+        <input type="email" value={inviteEmail} onChange={(e) => setInviteEmail(e.target.value)} inputMode="email" placeholder="E-mail para convite/calendário"
+          className="sm:col-span-2 border border-[#e2e2e2] px-2 py-1.5 text-xs font-[var(--font-inter)] text-[#002045] focus:outline-none focus:border-[#002045]" />
       </div>
-      <p className="text-[#74777f] text-[10px] font-[var(--font-inter)] mb-2">
-        {hasContact
-          ? `${row.partner.name} será convidado e notificado automaticamente${row.partner.phone ? " por WhatsApp" : ""}${row.partner.phone && row.partner.email ? " e" : ""}${row.partner.email ? " por e-mail" : ""}.`
-          : `Sem telefone/e-mail no cadastro — a reunião será agendada, mas ${row.partner.name} não receberá convite automático.`}
-      </p>
+      <div className="text-[#74777f] text-[10px] font-[var(--font-inter)] mb-2 space-y-1">
+        <p>
+          {hasContact
+            ? `${row.partner.name} será notificado${invitePhone ? " por WhatsApp" : ""}${invitePhone && cleanEmail ? " e" : ""}${cleanEmail ? " por e-mail" : ""}.`
+            : `Sem telefone/e-mail — a reunião será salva, mas ${row.partner.name} não receberá convite automático.`}
+        </p>
+        {cleanEmail && (
+          <p>
+            Calendário: {calendarMode}. Gmail recebe link do Google Calendar; outros e-mails recebem convite .ics compatível.
+          </p>
+        )}
+      </div>
       {msg && <p className="text-red-600 text-[11px] font-[var(--font-inter)] mb-2">{msg}</p>}
       <div className="flex items-center gap-2">
         <button onClick={submit} disabled={!when || busy}
           className="bg-[#002045] text-white text-xs font-bold font-[var(--font-inter)] px-4 py-2 hover:bg-[#1a365d] disabled:opacity-50">
-          {busy ? "Agendando…" : "Agendar e convidar"}
+          {busy ? "Agendando…" : hasContact ? "Agendar e convidar" : "Agendar"}
         </button>
         <button onClick={() => setOpen(false)} className="text-[#74777f] text-xs font-[var(--font-inter)] px-2 py-2 hover:text-[#002045]">Cancelar</button>
       </div>
@@ -213,6 +266,7 @@ export default function RepCrmTab({
   const [addPartnerId, setAddPartnerId] = useState("");
   const [prospectName, setProspectName] = useState("");
   const [prospectPhone, setProspectPhone] = useState("");
+  const [prospectEmail, setProspectEmail] = useState("");
   const [adding, setAdding] = useState(false);
 
   // Toolbar
@@ -259,12 +313,14 @@ export default function RepCrmTab({
         sales_rep_id: salesRepId,
         prospect_name: prospectName.trim(),
         prospect_phone: prospectPhone.trim() || undefined,
+        prospect_email: prospectEmail.trim() || undefined,
       }),
     });
     setAdding(false);
     if (res.ok) {
       setProspectName("");
       setProspectPhone("");
+      setProspectEmail("");
       setAddMode("none");
       fetchCrm();
     }
@@ -406,28 +462,48 @@ export default function RepCrmTab({
     return list;
   }, [rows, search, stageFilter, sortKey]);
 
+  const focusRows = useMemo(() => {
+    const due = [...reminderBuckets.overdue, ...reminderBuckets.today];
+    const dueIds = new Set(due.map((r) => r.id));
+    const stalled = rows
+      .filter((r) => !dueIds.has(r.id) && staleDays(r))
+      .sort((a, b) => (staleDays(b) ?? 0) - (staleDays(a) ?? 0));
+    return [...due, ...stalled].slice(0, 5);
+  }, [reminderBuckets, rows]);
+
+  const hasFilters = !!search.trim() || stageFilter !== "all" || sortKey !== "activity";
+
+  function clearFilters() {
+    setSearch("");
+    setStageFilter("all");
+    setSortKey("activity");
+  }
+
   return (
-    <div>
-      <div className="flex flex-wrap items-center justify-between gap-3 mb-5">
-        <div className="flex items-center gap-3">
-          <h2 className="font-[var(--font-noto-serif)] text-[#002045] text-xl font-normal">Meu CRM</h2>
-          {actionable > 0 && (
-            <span className="bg-red-100 text-red-700 text-[10px] font-bold font-[var(--font-inter)] tracking-wider px-2 py-0.5">
-              {actionable} follow-up{actionable !== 1 ? "s" : ""} pendente{actionable !== 1 ? "s" : ""}
-            </span>
-          )}
+    <div className="space-y-5">
+      <div className="flex flex-col lg:flex-row lg:items-start lg:justify-between gap-4">
+        <div>
+          <p className="text-[#74777f] text-[10px] tracking-[0.16em] uppercase font-bold font-[var(--font-inter)] mb-1">
+            CRM de relacionamento
+          </p>
+          <h2 className="font-[var(--font-noto-serif)] text-[#002045] text-2xl font-normal">
+            Quem precisa de atenção agora?
+          </h2>
+          <p className="text-[#74777f] text-sm font-[var(--font-inter)] mt-1">
+            Priorize follow-ups, avance estágio e registre a próxima conversa sem procurar em mil campos.
+          </p>
         </div>
-        <div className="flex items-center gap-2">
+        <div className="flex flex-wrap items-center gap-2">
           {addMode === "none" && (
             <>
               <button onClick={() => setAddMode("prospect")}
-                className="border border-[#002045] text-[#002045] text-xs tracking-[0.1em] uppercase font-bold font-[var(--font-inter)] px-3 py-2 hover:bg-[#002045] hover:text-white transition-colors">
-                + Prospecto
+                className="border border-[#002045] text-[#002045] text-xs tracking-[0.08em] uppercase font-bold font-[var(--font-inter)] px-4 py-2.5 hover:bg-[#002045] hover:text-white transition-colors">
+                Novo prospecto
               </button>
               {untrackedPartners.length > 0 && (
                 <button onClick={() => setAddMode("partner")}
-                  className="bg-[#002045] text-white text-xs tracking-[0.1em] uppercase font-bold font-[var(--font-inter)] px-3 py-2 hover:bg-[#1a365d] transition-colors">
-                  + Parceiro
+                  className="bg-[#002045] text-white text-xs tracking-[0.08em] uppercase font-bold font-[var(--font-inter)] px-4 py-2.5 hover:bg-[#1a365d] transition-colors">
+                  Adicionar parceiro
                 </button>
               )}
             </>
@@ -437,110 +513,158 @@ export default function RepCrmTab({
 
       {/* Add a registered partner */}
       {addMode === "partner" && (
-        <div className="bg-white border border-[#e2e2e2] px-4 py-3 mb-5 flex flex-wrap items-center gap-2">
+        <div className="bg-white border border-[#d7dbe3] px-4 py-4 flex flex-col md:flex-row md:items-end gap-3">
+          <div className="flex-1 min-w-[220px]">
+            <label className="block text-[#74777f] text-[10px] tracking-[0.12em] uppercase font-bold font-[var(--font-inter)] mb-1.5">
+              Parceiro vinculado
+            </label>
           <select value={addPartnerId} onChange={(e) => setAddPartnerId(e.target.value)}
-            className="border border-[#e2e2e2] px-3 py-2 text-xs font-[var(--font-inter)] text-[#002045] focus:outline-none focus:border-[#002045]">
+            className="w-full border border-[#d7dbe3] px-3 py-2.5 text-sm font-[var(--font-inter)] text-[#002045] focus:outline-none focus:border-[#002045]">
             <option value="">Selecione um parceiro vinculado...</option>
             {untrackedPartners.map((p) => (
               <option key={p.id} value={p.id}>{p.name}</option>
             ))}
           </select>
+          </div>
           <button onClick={addPartner} disabled={!addPartnerId || adding}
-            className="bg-[#002045] text-white text-xs font-bold font-[var(--font-inter)] px-4 py-2 hover:bg-[#1a365d] disabled:opacity-50">
+            className="bg-[#002045] text-white text-xs font-bold font-[var(--font-inter)] px-5 py-3 hover:bg-[#1a365d] disabled:opacity-50">
             Adicionar
           </button>
           <button onClick={() => { setAddMode("none"); setAddPartnerId(""); }}
-            className="text-[#74777f] text-xs font-[var(--font-inter)] px-2 py-2 hover:text-[#002045]">Cancelar</button>
+            className="text-[#74777f] text-xs font-[var(--font-inter)] px-2 py-3 hover:text-[#002045]">Cancelar</button>
         </div>
       )}
 
       {/* Add an inline prospect */}
       {addMode === "prospect" && (
-        <div className="bg-white border border-[#e2e2e2] px-4 py-3 mb-5 flex flex-wrap items-center gap-2">
+        <div className="bg-white border border-[#d7dbe3] px-4 py-4 grid grid-cols-1 md:grid-cols-[1fr_200px_240px_auto_auto] gap-3 md:items-end">
+          <div>
+            <label className="block text-[#74777f] text-[10px] tracking-[0.12em] uppercase font-bold font-[var(--font-inter)] mb-1.5">
+              Nome do prospecto
+            </label>
           <input value={prospectName} onChange={(e) => setProspectName(e.target.value)} autoFocus
             placeholder="Nome do prospecto"
-            className="border border-[#e2e2e2] px-3 py-2 text-xs font-[var(--font-inter)] text-[#002045] focus:outline-none focus:border-[#002045]" />
+            className="w-full border border-[#d7dbe3] px-3 py-2.5 text-sm font-[var(--font-inter)] text-[#002045] focus:outline-none focus:border-[#002045]" />
+          </div>
+          <div>
+            <label className="block text-[#74777f] text-[10px] tracking-[0.12em] uppercase font-bold font-[var(--font-inter)] mb-1.5">
+              WhatsApp
+            </label>
           <input value={prospectPhone} onChange={(e) => setProspectPhone(e.target.value)} inputMode="tel"
             placeholder="WhatsApp (opcional)"
-            className="border border-[#e2e2e2] px-3 py-2 text-xs font-[var(--font-inter)] text-[#002045] focus:outline-none focus:border-[#002045]" />
+            className="w-full border border-[#d7dbe3] px-3 py-2.5 text-sm font-[var(--font-inter)] text-[#002045] focus:outline-none focus:border-[#002045]" />
+          </div>
+          <div>
+            <label className="block text-[#74777f] text-[10px] tracking-[0.12em] uppercase font-bold font-[var(--font-inter)] mb-1.5">
+              E-mail
+            </label>
+          <input type="email" value={prospectEmail} onChange={(e) => setProspectEmail(e.target.value)} inputMode="email"
+            placeholder="E-mail (opcional)"
+            className="w-full border border-[#d7dbe3] px-3 py-2.5 text-sm font-[var(--font-inter)] text-[#002045] focus:outline-none focus:border-[#002045]" />
+          </div>
           <button onClick={addProspect} disabled={!prospectName.trim() || adding}
-            className="bg-[#002045] text-white text-xs font-bold font-[var(--font-inter)] px-4 py-2 hover:bg-[#1a365d] disabled:opacity-50">
+            className="bg-[#002045] text-white text-xs font-bold font-[var(--font-inter)] px-5 py-3 hover:bg-[#1a365d] disabled:opacity-50">
             Adicionar
           </button>
-          <button onClick={() => { setAddMode("none"); setProspectName(""); setProspectPhone(""); }}
-            className="text-[#74777f] text-xs font-[var(--font-inter)] px-2 py-2 hover:text-[#002045]">Cancelar</button>
+          <button onClick={() => { setAddMode("none"); setProspectName(""); setProspectPhone(""); setProspectEmail(""); }}
+            className="text-[#74777f] text-xs font-[var(--font-inter)] px-2 py-3 hover:text-[#002045]">Cancelar</button>
         </div>
       )}
 
-      {/* Reminders strip */}
-      {actionable > 0 && (
-        <div className="bg-white border border-[#e2e2e2] border-l-4 border-l-red-500 px-5 py-4 mb-6">
-          <p className="text-[11px] tracking-[0.12em] uppercase font-bold font-[var(--font-inter)] text-red-700 mb-2">
-            Follow-ups para hoje / atrasados
-          </p>
-          <div className="space-y-1.5">
-            {[...reminderBuckets.overdue, ...reminderBuckets.today].map((r) => (
-              <div key={r.id} className="flex items-center justify-between gap-3 text-xs font-[var(--font-inter)]">
-                <span className="text-[#002045] font-semibold">{r.partner.name}</span>
-                <span className="text-[#74777f]">{r.reminder_note || "Follow-up agendado"} · {fmtDateTime(r.next_reminder_at!)}</span>
-                <button onClick={() => toggleExpand(r.id)} className="text-[#002045] font-bold hover:underline whitespace-nowrap">Ver →</button>
-              </div>
-            ))}
-          </div>
-        </div>
-      )}
-
-      {/* Strategy funnel metrics */}
       {rows.length > 0 && (
-        <div className="bg-white border border-[#e2e2e2] px-5 py-4 mb-4">
-          <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-6 gap-4">
+        <div className="grid grid-cols-2 lg:grid-cols-4 gap-3">
             {[
-              { label: "Relações", value: String(metrics.total), sub: `${metrics.byStage.ativo} ativos` },
-              { label: "Reuniões", value: String(metrics.met), sub: `${metrics.rateMet}% do total` },
-              { label: "Especificaram", value: String(metrics.specified), sub: `${metrics.rateSpecified}% das reuniões` },
-              { label: "Ativos", value: String(metrics.active), sub: `${metrics.rateActive}% conversão` },
+              { label: "Atenção agora", value: String(focusRows.length), sub: actionable > 0 ? `${actionable} follow-up${actionable !== 1 ? "s" : ""} vencendo` : "sem urgência" },
+              { label: "Relacionamentos", value: String(metrics.total), sub: `${metrics.byStage.ativo} ativos` },
+              { label: "Conversão", value: `${metrics.rateActive}%`, sub: `${metrics.active} ativos de ${metrics.total}` },
               { label: "Valor gerado", value: fmtBRL(metrics.value), sub: `${metrics.projects} projeto${metrics.projects !== 1 ? "s" : ""}` },
-              { label: "Parados 30d+", value: String(metrics.stalled), sub: metrics.stalled > 0 ? "precisam atenção" : "tudo em dia" },
             ].map((m) => (
-              <div key={m.label}>
+              <div key={m.label} className="bg-white border border-[#e2e2e2] px-4 py-3">
                 <p className="text-[#74777f] text-[9px] uppercase tracking-wider font-bold font-[var(--font-inter)]">{m.label}</p>
                 <p className="text-[#002045] text-lg font-[var(--font-noto-serif)] mt-0.5">{m.value}</p>
                 <p className="text-[#b0b0b0] text-[10px] font-[var(--font-inter)]">{m.sub}</p>
               </div>
             ))}
+        </div>
+      )}
+
+      {focusRows.length > 0 && (
+        <div className="bg-[#fffaf2] border border-[#ead8bd] px-4 py-4">
+          <div className="flex items-center justify-between gap-3 mb-3">
+            <div>
+              <p className="text-[#8a5a12] text-[10px] tracking-[0.14em] uppercase font-bold font-[var(--font-inter)]">
+                Atenção agora
+              </p>
+              <p className="text-[#5f3f0f] text-sm font-[var(--font-inter)]">
+                Comece por estes contatos antes de navegar o restante do pipeline.
+              </p>
+            </div>
+          </div>
+          <div className="grid grid-cols-1 lg:grid-cols-2 gap-2">
+            {focusRows.map((r) => {
+              const action = actionSummary(r);
+              return (
+                <button
+                  key={r.id}
+                  onClick={() => toggleExpand(r.id)}
+                  className="text-left bg-white border border-[#ead8bd] px-3 py-3 hover:border-[#002045] transition-colors"
+                >
+                  <div className="flex items-start justify-between gap-3">
+                    <div className="min-w-0">
+                      <p className="text-[#002045] text-sm font-semibold font-[var(--font-inter)] truncate">{r.partner.name}</p>
+                      <p className="text-[#74777f] text-xs font-[var(--font-inter)] mt-0.5">{action.detail}</p>
+                    </div>
+                    <span className={`shrink-0 text-[10px] font-bold px-2 py-1 ${
+                      action.tone === "urgent" ? "bg-red-100 text-red-700" :
+                      action.tone === "today" ? "bg-amber-100 text-amber-800" :
+                      "bg-blue-50 text-blue-800"
+                    }`}>
+                      {action.label}
+                    </span>
+                  </div>
+                </button>
+              );
+            })}
           </div>
         </div>
       )}
 
-      {/* View toggle */}
       {rows.length > 0 && (
-        <div className="flex items-center gap-1 mb-4">
-          {(["list", "board"] as const).map((v) => (
-            <button key={v} onClick={() => setView(v)}
-              className={`text-[11px] tracking-[0.08em] uppercase font-bold font-[var(--font-inter)] px-3 py-1.5 border ${view === v ? "bg-[#002045] text-white border-[#002045]" : "bg-white text-[#74777f] border-[#e2e2e2] hover:border-[#002045] hover:text-[#002045]"}`}>
-              {v === "list" ? "Lista" : "Quadro"}
-            </button>
-          ))}
-        </div>
-      )}
-
-      {/* Toolbar: search / filter / sort */}
-      {rows.length > 0 && view === "list" && (
-        <div className="flex flex-wrap items-center gap-2 mb-4">
+        <div className="bg-white border border-[#e2e2e2] px-4 py-4">
+          <div className="grid grid-cols-1 lg:grid-cols-[1fr_auto] gap-3 lg:items-end">
+            <div>
+              <label className="block text-[#74777f] text-[10px] tracking-[0.12em] uppercase font-bold font-[var(--font-inter)] mb-1.5">
+                Buscar relacionamento
+              </label>
           <input value={search} onChange={(e) => setSearch(e.target.value)} placeholder="Buscar por nome…"
-            className="flex-1 min-w-[160px] border border-[#e2e2e2] px-3 py-2 text-xs font-[var(--font-inter)] text-[#002045] focus:outline-none focus:border-[#002045]" />
+            className="w-full border border-[#d7dbe3] px-3 py-2.5 text-sm font-[var(--font-inter)] text-[#002045] focus:outline-none focus:border-[#002045]" />
+            </div>
+            <div className="flex flex-wrap gap-2">
           <select value={stageFilter} onChange={(e) => setStageFilter(e.target.value as Stage | "all")}
-            className="border border-[#e2e2e2] px-2 py-2 text-xs font-[var(--font-inter)] text-[#002045] focus:outline-none focus:border-[#002045]">
+            className="border border-[#d7dbe3] px-2 py-2.5 text-xs font-[var(--font-inter)] text-[#002045] focus:outline-none focus:border-[#002045]">
             <option value="all">Todos os estágios</option>
             {STAGE_ORDER.map((s) => <option key={s} value={s}>{STAGE_META[s].label}</option>)}
           </select>
           <select value={sortKey} onChange={(e) => setSortKey(e.target.value as SortKey)}
-            className="border border-[#e2e2e2] px-2 py-2 text-xs font-[var(--font-inter)] text-[#002045] focus:outline-none focus:border-[#002045]">
+            className="border border-[#d7dbe3] px-2 py-2.5 text-xs font-[var(--font-inter)] text-[#002045] focus:outline-none focus:border-[#002045]">
             <option value="activity">Atividade recente</option>
             <option value="overdue">Follow-up mais próximo</option>
             <option value="value">Maior valor gerado</option>
             <option value="name">Nome (A–Z)</option>
           </select>
+              {hasFilters && (
+                <button onClick={clearFilters} className="text-[#74777f] text-xs font-bold font-[var(--font-inter)] px-3 py-2 hover:text-[#002045]">
+                  Limpar
+                </button>
+              )}
+              {(["list", "board"] as const).map((v) => (
+                <button key={v} onClick={() => setView(v)}
+                  className={`text-[11px] tracking-[0.08em] uppercase font-bold font-[var(--font-inter)] px-3 py-2 border ${view === v ? "bg-[#002045] text-white border-[#002045]" : "bg-white text-[#74777f] border-[#d7dbe3] hover:border-[#002045] hover:text-[#002045]"}`}>
+                  {v === "list" ? "Lista" : "Quadro"}
+                </button>
+              ))}
+            </div>
+          </div>
         </div>
       )}
 
@@ -594,109 +718,166 @@ export default function RepCrmTab({
       ) : visibleRows.length === 0 ? (
         <p className="text-[#74777f] text-sm font-[var(--font-inter)]">Nenhum resultado para o filtro atual.</p>
       ) : (
-        <div className="space-y-4">
+        <div className="space-y-3">
           {visibleRows.map((r) => {
             const expanded = expandedId === r.id;
             const stageMeta = STAGE_META[r.stage];
-            const stale = r.stage !== "inativo" && (daysSince(r.last_followup_at || r.first_contact_at) ?? 0) >= 30;
+            const action = actionSummary(r);
+            const stalled = staleDays(r);
             return (
-              <div key={r.id} className="bg-white border border-[#e2e2e2]">
-                <div className="px-5 py-4">
-                  <div className="flex flex-wrap items-start justify-between gap-3 mb-3">
-                    <div className="min-w-0">
-                      <div className="flex items-center gap-2 flex-wrap">
-                        <p className="text-[#002045] text-sm font-semibold font-[var(--font-inter)]">{r.partner.name}</p>
-                        <span className={`text-[9px] font-bold px-1.5 py-0.5 ${stageMeta.cls}`}>{stageMeta.label}</span>
-                        {r.is_prospect && <span className="text-[9px] font-bold px-1.5 py-0.5 bg-[#fde9cf] text-[#8a5a12]">Prospecto</span>}
-                        {stale && <span className="text-[9px] font-bold px-1.5 py-0.5 bg-red-50 text-red-600">Parado {daysSince(r.last_followup_at || r.first_contact_at)}d</span>}
+              <div key={r.id} className={`bg-white border ${expanded ? "border-[#002045]" : "border-[#e2e2e2]"}`}>
+                <div className="px-4 py-4">
+                  <div className="grid grid-cols-1 lg:grid-cols-[minmax(0,1fr)_190px_160px_auto] gap-4 lg:items-center">
+                    <div className="flex items-start gap-3 min-w-0">
+                      <div className="w-10 h-10 shrink-0 bg-[#edf1f6] text-[#002045] flex items-center justify-center text-xs font-bold font-[var(--font-inter)]">
+                        {initials(r.partner.name) || "?"}
                       </div>
-                      {r.partner.profession && <p className="text-[#74777f] text-xs font-[var(--font-inter)] mt-0.5">{r.partner.profession}</p>}
-                      {r.partner.phone && <p className="text-[#74777f] text-xs font-[var(--font-inter)] mt-0.5">{r.partner.phone}</p>}
+                      <div className="min-w-0">
+                        <div className="flex items-center gap-2 flex-wrap">
+                          <p className="text-[#002045] text-base font-semibold font-[var(--font-inter)] truncate">{r.partner.name}</p>
+                          {r.is_prospect && <span className="text-[9px] font-bold px-1.5 py-0.5 bg-[#fde9cf] text-[#8a5a12]">Prospecto</span>}
+                          {stalled && <span className="text-[9px] font-bold px-1.5 py-0.5 bg-red-50 text-red-600">Parado {stalled}d</span>}
+                        </div>
+                        <p className="text-[#74777f] text-xs font-[var(--font-inter)] mt-0.5">
+                          {[r.partner.profession, r.partner.phone, r.partner.email].filter(Boolean).join(" · ") || "Sem profissão/telefone/e-mail cadastrado"}
+                        </p>
+                      </div>
                     </div>
-                    <div className="flex items-center gap-2">
+
+                    <div>
+                      <p className="text-[#74777f] text-[9px] uppercase tracking-wider font-bold font-[var(--font-inter)] mb-1">
+                        Estágio
+                      </p>
                       <select value={r.stage} onChange={(e) => patchRow(r.id, { stage: e.target.value as Stage })}
-                        className="border border-[#e2e2e2] px-2 py-1.5 text-[11px] font-[var(--font-inter)] text-[#002045] focus:outline-none focus:border-[#002045]">
+                        className="w-full border border-[#d7dbe3] px-2 py-2 text-xs font-[var(--font-inter)] text-[#002045] focus:outline-none focus:border-[#002045]">
                         {STAGE_ORDER.map((s) => <option key={s} value={s}>{STAGE_META[s].label}</option>)}
                       </select>
-                      <button onClick={() => removeRow(r.id)} title="Remover do CRM" className="text-[#b42318] hover:text-[#7a1610]">
-                        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><path d="M3 6h18M8 6V4h8v2M19 6l-1 14H6L5 6" /></svg>
+                    </div>
+
+                    <div>
+                      <p className="text-[#74777f] text-[9px] uppercase tracking-wider font-bold font-[var(--font-inter)] mb-1">
+                        Próxima ação
+                      </p>
+                      <p className={`text-xs font-semibold font-[var(--font-inter)] ${
+                        action.tone === "urgent" ? "text-red-700" :
+                        action.tone === "today" ? "text-amber-800" :
+                        "text-[#002045]"
+                      }`}>
+                        {action.label}
+                      </p>
+                      <p className="text-[#74777f] text-[11px] font-[var(--font-inter)] mt-0.5 line-clamp-2">
+                        {action.detail}
+                      </p>
+                    </div>
+
+                    <div className="flex flex-wrap lg:justify-end items-center gap-2">
+                      <div className="text-left lg:text-right mr-auto lg:mr-2">
+                        <p className="text-[#74777f] text-[9px] uppercase tracking-wider font-bold font-[var(--font-inter)]">Gerado</p>
+                        <p className="text-[#002045] text-xs font-semibold font-[var(--font-inter)]">
+                          {r.total_generated > 0 ? fmtBRL(r.total_generated) : "—"}
+                        </p>
+                      </div>
+                      <button
+                        onClick={() => snoozeReminder(r.id, 1)}
+                        className="border border-[#d7dbe3] text-[#002045] text-[11px] font-bold font-[var(--font-inter)] px-3 py-2 hover:border-[#002045]"
+                      >
+                        Amanhã
+                      </button>
+                      <button
+                        onClick={() => toggleExpand(r.id)}
+                        className="bg-[#002045] text-white text-[11px] font-bold font-[var(--font-inter)] px-3 py-2 hover:bg-[#1a365d]"
+                      >
+                        {expanded ? "Fechar" : "Detalhes"}
                       </button>
                     </div>
                   </div>
-
-                  {/* Prospect inline editing */}
-                  {r.is_prospect && (
-                    <div className="grid grid-cols-1 sm:grid-cols-3 gap-2 mb-4">
-                      <input defaultValue={r.prospect_name ?? ""} onBlur={(e) => { const v = e.target.value.trim(); if (v && v !== r.prospect_name) patchRow(r.id, { prospect_name: v } as Partial<CrmRow>); }}
-                        placeholder="Nome" className="border border-[#e2e2e2] px-2 py-1.5 text-xs font-[var(--font-inter)] text-[#002045] focus:outline-none focus:border-[#002045]" />
-                      <input defaultValue={r.prospect_phone ?? ""} onBlur={(e) => patchRow(r.id, { prospect_phone: e.target.value.trim() || null } as Partial<CrmRow>)}
-                        placeholder="WhatsApp" className="border border-[#e2e2e2] px-2 py-1.5 text-xs font-[var(--font-inter)] text-[#002045] focus:outline-none focus:border-[#002045]" />
-                      <input defaultValue={r.prospect_profession ?? ""} onBlur={(e) => patchRow(r.id, { prospect_profession: e.target.value.trim() || null } as Partial<CrmRow>)}
-                        placeholder="Profissão" className="border border-[#e2e2e2] px-2 py-1.5 text-xs font-[var(--font-inter)] text-[#002045] focus:outline-none focus:border-[#002045]" />
-                    </div>
-                  )}
-
-                  <div className="grid grid-cols-2 sm:grid-cols-4 gap-x-4 gap-y-3 mb-4">
-                    <DateField label="1º contato" value={r.first_contact_at} onChange={(iso) => patchRow(r.id, { first_contact_at: iso })} />
-                    <DateField label="Reunião realizada" value={r.meeting_happened_at} onChange={(iso) => patchRow(r.id, { meeting_happened_at: iso })} />
-                    <DateField label="Último follow-up" value={r.last_followup_at} onChange={(iso) => patchRow(r.id, { last_followup_at: iso })} />
-                    <div>
-                      <p className="text-[#74777f] text-[9px] uppercase tracking-wider font-bold font-[var(--font-inter)]">Gerado / projetos</p>
-                      <p className="text-[#002045] text-xs font-semibold font-[var(--font-inter)] mt-1">
-                        {r.total_generated > 0 ? `${fmtBRL(r.total_generated)} · ${r.projects_count}` : "—"}
-                      </p>
-                    </div>
-                  </div>
-
-                  <div className="flex flex-wrap items-center gap-4 mb-4">
-                    <label className="flex items-center gap-2 text-xs font-[var(--font-inter)] text-[#43474e] cursor-pointer">
-                      <input type="checkbox" checked={r.mostruario_sent} onChange={(e) => patchRow(r.id, { mostruario_sent: e.target.checked })} />
-                      Mostruário enviado{r.mostruario_sent && r.mostruario_sent_at ? ` (${fmtDate(r.mostruario_sent_at)})` : ""}
-                    </label>
-                    <label className="flex items-center gap-2 text-xs font-[var(--font-inter)] text-[#43474e] cursor-pointer">
-                      <input type="checkbox" checked={r.has_specified} onChange={(e) => patchRow(r.id, { has_specified: e.target.checked })} />
-                      Especificou Orbital{r.has_specified && r.last_specified_at ? ` (${fmtDate(r.last_specified_at)})` : ""}
-                    </label>
-                  </div>
-
-                  {/* Reminder controls */}
-                  <div className="flex flex-wrap items-center gap-2 mb-3 bg-[#fafafa] border border-[#f0f0f0] px-3 py-2.5">
-                    <span className="text-[10px] tracking-wider uppercase font-bold font-[var(--font-inter)] text-[#74777f]">Próximo follow-up:</span>
-                    <input
-                      type="datetime-local"
-                      value={r.next_reminder_at ? r.next_reminder_at.slice(0, 16) : ""}
-                      onChange={(e) => patchRow(r.id, { next_reminder_at: e.target.value ? new Date(e.target.value).toISOString() : null })}
-                      className="border border-[#e2e2e2] px-2 py-1 text-xs font-[var(--font-inter)] text-[#002045] focus:outline-none focus:border-[#002045]"
-                    />
-                    <select value={r.reminder_recur} onChange={(e) => patchRow(r.id, { reminder_recur: e.target.value as Recur })}
-                      className="border border-[#e2e2e2] px-2 py-1 text-xs font-[var(--font-inter)] text-[#002045] focus:outline-none focus:border-[#002045]">
-                      {(Object.keys(RECUR_META) as Recur[]).map((k) => <option key={k} value={k}>{RECUR_META[k]}</option>)}
-                    </select>
-                    <input
-                      value={r.reminder_note || ""}
-                      onChange={(e) => patchRow(r.id, { reminder_note: e.target.value })}
-                      placeholder="Nota do lembrete"
-                      className="flex-1 min-w-[120px] border border-[#e2e2e2] px-2 py-1 text-xs font-[var(--font-inter)] text-[#002045] focus:outline-none focus:border-[#002045]"
-                    />
-                    {r.next_reminder_at && (
-                      <div className="flex gap-1">
-                        {[1, 7].map((d) => (
-                          <button key={d} onClick={() => snoozeReminder(r.id, d)}
-                            className="text-[9px] text-[#74777f] font-bold border border-[#e2e2e2] px-1.5 py-1 hover:border-[#002045] hover:text-[#002045]">
-                            +{d}d
-                          </button>
-                        ))}
-                      </div>
-                    )}
-                  </div>
-
-                  <button onClick={() => toggleExpand(r.id)} className="text-[11px] text-[#002045] font-bold font-[var(--font-inter)] hover:underline">
-                    {expanded ? "Ocultar histórico ▲" : "Ver histórico e notas ▼"}
-                  </button>
                 </div>
 
                 {expanded && (
                   <div className="border-t border-[#e2e2e2] px-5 py-4 bg-[#fafafa]">
+                    <div className="flex flex-wrap items-center justify-between gap-3 mb-4">
+                      <div className="flex items-center gap-2 flex-wrap">
+                        <span className={`text-[9px] font-bold px-1.5 py-0.5 ${stageMeta.cls}`}>{stageMeta.label}</span>
+                        {r.mostruario_sent && <span className="text-[9px] font-bold px-1.5 py-0.5 bg-green-50 text-green-700">Mostruário enviado</span>}
+                        {r.has_specified && <span className="text-[9px] font-bold px-1.5 py-0.5 bg-blue-50 text-blue-800">Especificou</span>}
+                      </div>
+                      <button onClick={() => removeRow(r.id)} title="Remover do CRM" className="text-[#b42318] hover:text-[#7a1610]">
+                        <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><path d="M3 6h18M8 6V4h8v2M19 6l-1 14H6L5 6" /></svg>
+                      </button>
+                    </div>
+
+                    {r.is_prospect && (
+                      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-2 mb-4">
+                        <input defaultValue={r.prospect_name ?? ""} onBlur={(e) => { const v = e.target.value.trim(); if (v && v !== r.prospect_name) patchRow(r.id, { prospect_name: v } as Partial<CrmRow>); }}
+                          placeholder="Nome" className="border border-[#e2e2e2] px-2 py-2 text-xs font-[var(--font-inter)] text-[#002045] bg-white focus:outline-none focus:border-[#002045]" />
+                        <input defaultValue={r.prospect_phone ?? ""} onBlur={(e) => patchRow(r.id, { prospect_phone: e.target.value.trim() || null } as Partial<CrmRow>)}
+                          placeholder="WhatsApp" className="border border-[#e2e2e2] px-2 py-2 text-xs font-[var(--font-inter)] text-[#002045] bg-white focus:outline-none focus:border-[#002045]" />
+                        <input type="email" defaultValue={r.prospect_email ?? ""} onBlur={(e) => patchRow(r.id, { prospect_email: e.target.value.trim() || null } as Partial<CrmRow>)}
+                          placeholder="E-mail" className="border border-[#e2e2e2] px-2 py-2 text-xs font-[var(--font-inter)] text-[#002045] bg-white focus:outline-none focus:border-[#002045]" />
+                        <input defaultValue={r.prospect_profession ?? ""} onBlur={(e) => patchRow(r.id, { prospect_profession: e.target.value.trim() || null } as Partial<CrmRow>)}
+                          placeholder="Profissão" className="border border-[#e2e2e2] px-2 py-2 text-xs font-[var(--font-inter)] text-[#002045] bg-white focus:outline-none focus:border-[#002045]" />
+                      </div>
+                    )}
+
+                    <div className="grid grid-cols-2 lg:grid-cols-4 gap-x-4 gap-y-3 mb-4">
+                      <DateField label="1º contato" value={r.first_contact_at} onChange={(iso) => patchRow(r.id, { first_contact_at: iso })} />
+                      <DateField label="Reunião realizada" value={r.meeting_happened_at} onChange={(iso) => patchRow(r.id, { meeting_happened_at: iso })} />
+                      <DateField label="Último follow-up" value={r.last_followup_at} onChange={(iso) => patchRow(r.id, { last_followup_at: iso })} />
+                      <div>
+                        <p className="text-[#74777f] text-[9px] uppercase tracking-wider font-bold font-[var(--font-inter)]">Projetos</p>
+                        <p className="text-[#002045] text-xs font-semibold font-[var(--font-inter)] mt-1">
+                          {r.total_generated > 0 ? `${fmtBRL(r.total_generated)} · ${r.projects_count}` : "—"}
+                        </p>
+                      </div>
+                    </div>
+
+                    <div className="grid grid-cols-1 lg:grid-cols-[1fr_140px_1fr_auto] gap-2 mb-4 bg-white border border-[#e2e2e2] px-3 py-3">
+                      <div>
+                        <label className="block text-[9px] tracking-wider uppercase font-bold font-[var(--font-inter)] text-[#74777f] mb-1">Próximo follow-up</label>
+                        <input
+                          type="datetime-local"
+                          value={r.next_reminder_at ? r.next_reminder_at.slice(0, 16) : ""}
+                          onChange={(e) => patchRow(r.id, { next_reminder_at: e.target.value ? new Date(e.target.value).toISOString() : null })}
+                          className="w-full border border-[#e2e2e2] px-2 py-2 text-xs font-[var(--font-inter)] text-[#002045] focus:outline-none focus:border-[#002045]"
+                        />
+                      </div>
+                      <div>
+                        <label className="block text-[9px] tracking-wider uppercase font-bold font-[var(--font-inter)] text-[#74777f] mb-1">Repetição</label>
+                        <select value={r.reminder_recur} onChange={(e) => patchRow(r.id, { reminder_recur: e.target.value as Recur })}
+                          className="w-full border border-[#e2e2e2] px-2 py-2 text-xs font-[var(--font-inter)] text-[#002045] focus:outline-none focus:border-[#002045]">
+                          {(Object.keys(RECUR_META) as Recur[]).map((k) => <option key={k} value={k}>{RECUR_META[k]}</option>)}
+                        </select>
+                      </div>
+                      <div>
+                        <label className="block text-[9px] tracking-wider uppercase font-bold font-[var(--font-inter)] text-[#74777f] mb-1">Nota do lembrete</label>
+                        <input
+                          value={r.reminder_note || ""}
+                          onChange={(e) => patchRow(r.id, { reminder_note: e.target.value })}
+                          placeholder="Ex: enviar proposta, cobrar retorno..."
+                          className="w-full border border-[#e2e2e2] px-2 py-2 text-xs font-[var(--font-inter)] text-[#002045] focus:outline-none focus:border-[#002045]"
+                        />
+                      </div>
+                      <div className="flex gap-1 items-end">
+                        {[1, 7].map((d) => (
+                          <button key={d} onClick={() => snoozeReminder(r.id, d)}
+                            className="text-[10px] text-[#74777f] font-bold border border-[#e2e2e2] px-2 py-2 hover:border-[#002045] hover:text-[#002045]">
+                            +{d}d
+                          </button>
+                        ))}
+                      </div>
+                    </div>
+
+                    <div className="flex flex-wrap items-center gap-4 mb-4">
+                      <label className="flex items-center gap-2 text-xs font-[var(--font-inter)] text-[#43474e] cursor-pointer">
+                        <input type="checkbox" checked={r.mostruario_sent} onChange={(e) => patchRow(r.id, { mostruario_sent: e.target.checked })} />
+                        Mostruário enviado{r.mostruario_sent && r.mostruario_sent_at ? ` (${fmtDate(r.mostruario_sent_at)})` : ""}
+                      </label>
+                      <label className="flex items-center gap-2 text-xs font-[var(--font-inter)] text-[#43474e] cursor-pointer">
+                        <input type="checkbox" checked={r.has_specified} onChange={(e) => patchRow(r.id, { has_specified: e.target.checked })} />
+                        Especificou Orbital{r.has_specified && r.last_specified_at ? ` (${fmtDate(r.last_specified_at)})` : ""}
+                      </label>
+                    </div>
+
                     <ScheduleMeeting
                       row={r}
                       salesRepId={salesRepId}
