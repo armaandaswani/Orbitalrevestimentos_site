@@ -7,6 +7,7 @@ import { smclickConfigured, normalizePhone, sendText } from "@/lib/smclick";
 import { meetingInviteMessage } from "@/lib/smclick-messages";
 
 const MIGRATION_HINT = "Recurso indisponível — rode a migração 019 (rep_meetings) no Supabase.";
+const ORBITAL_MEETING_EMAIL = "orbitalrevestimentos@gmail.com";
 
 interface Invitee { name: string; phone: string; email: string }
 interface MeetingRow {
@@ -145,7 +146,7 @@ async function notifyInvitees(db: SupabaseClient, meeting: MeetingRow): Promise<
 
     for (const inv of invitees) {
       const calendar = calendarLinks(meeting, repName);
-      const googlePreferred = isGoogleEmail(inv.email);
+      const googlePreferred = inv.email ? isGoogleEmail(inv.email) : isGoogleEmail(ORBITAL_MEETING_EMAIL);
       const msg = meetingInviteMessage({
         inviteeName: inv.name, title: meeting.title, whenLabel, location: meeting.location, repName,
       });
@@ -156,11 +157,12 @@ async function notifyInvitees(db: SupabaseClient, meeting: MeetingRow): Promise<
           : "";
         if (tel) await sendText(tel, `${msg}${calendarHint}`).catch(() => {});
       }
-      if (inv.email && resend) {
+      if (resend) {
+        const recipients = Array.from(new Set([inv.email, ORBITAL_MEETING_EMAIL].filter(Boolean)));
         await resend.emails
           .send({
             from: "Orbital Revestimentos <noreply@orbitalrevestimentos.com.br>",
-            to: inv.email,
+            to: recipients,
             subject: "Reunião agendada — Orbital Revestimentos",
             text: `${msg}\n\n${
               googlePreferred

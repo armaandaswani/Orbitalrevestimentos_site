@@ -9,8 +9,14 @@ const EDITABLE = new Set([
   "meeting_happened_at",
   "mostruario_sent",
   "mostruario_sent_at",
+  "mostruario_received",
+  "mostruario_received_at",
   "has_specified",
   "last_specified_at",
+  "specified_count",
+  "project_added",
+  "project_added_at",
+  "project_added_count",
   "last_followup_at",
   "next_reminder_at",
   "reminder_note",
@@ -59,8 +65,20 @@ export async function PATCH(
   if (patch.mostruario_sent === true && !("mostruario_sent_at" in patch)) {
     patch.mostruario_sent_at = new Date().toISOString();
   }
+  if (patch.mostruario_received === true && !("mostruario_received_at" in patch)) {
+    patch.mostruario_received_at = new Date().toISOString();
+  }
+  if (typeof patch.specified_count === "number" && patch.specified_count > 0 && !("has_specified" in patch)) {
+    patch.has_specified = true;
+  }
   if (patch.has_specified === true && !("last_specified_at" in patch)) {
     patch.last_specified_at = new Date().toISOString();
+  }
+  if (typeof patch.project_added_count === "number" && patch.project_added_count > 0 && !("project_added" in patch)) {
+    patch.project_added = true;
+  }
+  if (patch.project_added === true && !("project_added_at" in patch)) {
+    patch.project_added_at = new Date().toISOString();
   }
 
   const { data, error } = await db.from("rep_partner_crm").update(patch).eq("id", id).select().single();

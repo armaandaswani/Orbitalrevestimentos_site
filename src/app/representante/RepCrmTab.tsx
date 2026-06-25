@@ -25,8 +25,14 @@ interface CrmRow {
   meeting_happened_at: string | null;
   mostruario_sent: boolean;
   mostruario_sent_at: string | null;
+  mostruario_received: boolean;
+  mostruario_received_at: string | null;
   has_specified: boolean;
   last_specified_at: string | null;
+  specified_count: number;
+  project_added: boolean;
+  project_added_at: string | null;
+  project_added_count: number;
   last_followup_at: string | null;
   next_reminder_at: string | null;
   reminder_note: string | null;
@@ -418,10 +424,10 @@ export default function RepCrmTab({
     for (const r of rows) {
       byStage[r.stage]++;
       if (r.meeting_happened_at || advanced.includes(r.stage)) met++;
-      if (r.has_specified) specified++;
+      if (r.has_specified || (r.specified_count || 0) > 0) specified++;
       if (r.stage === "ativo") active++;
       value += r.total_generated || 0;
-      projects += r.projects_count || 0;
+      projects += Math.max(r.projects_count || 0, r.project_added_count || 0);
       if (r.stage !== "inativo" && (daysSince(r.last_followup_at || r.first_contact_at) ?? 0) >= 30) stalled++;
     }
     const pct = (a: number, b: number) => (b > 0 ? Math.round((a / b) * 100) : 0);
@@ -659,8 +665,8 @@ export default function RepCrmTab({
               )}
               {(["list", "board"] as const).map((v) => (
                 <button key={v} onClick={() => setView(v)}
-                  className={`text-[11px] tracking-[0.08em] uppercase font-bold font-[var(--font-inter)] px-3 py-2 border ${view === v ? "bg-[#002045] text-white border-[#002045]" : "bg-white text-[#74777f] border-[#d7dbe3] hover:border-[#002045] hover:text-[#002045]"}`}>
-                  {v === "list" ? "Lista" : "Quadro"}
+                  className={`text-[11px] tracking-[0.08em] uppercase font-bold font-[var(--font-inter)] px-4 py-2 border ${view === v ? "bg-[#002045] text-white border-[#002045]" : "bg-white text-[#74777f] border-[#d7dbe3] hover:border-[#002045] hover:text-[#002045]"}`}>
+                  {v === "list" ? "Lista de ação" : "Kanban do pipeline"}
                 </button>
               ))}
             </div>
@@ -677,6 +683,23 @@ export default function RepCrmTab({
           </p>
         </div>
       ) : view === "board" ? (
+        <div>
+        <div className="flex flex-col lg:flex-row lg:items-end lg:justify-between gap-2 mb-3">
+          <div>
+            <p className="text-[#74777f] text-[10px] tracking-[0.14em] uppercase font-bold font-[var(--font-inter)]">
+              Kanban do pipeline
+            </p>
+            <p className="text-[#74777f] text-sm font-[var(--font-inter)]">
+              Arraste contatos entre estágios para atualizar o relacionamento.
+            </p>
+          </div>
+          <button
+            onClick={() => setView("list")}
+            className="self-start lg:self-auto text-[#002045] text-xs font-bold font-[var(--font-inter)] border border-[#002045] px-3 py-2 hover:bg-[#002045] hover:text-white"
+          >
+            Voltar para lista
+          </button>
+        </div>
         <div className="flex gap-3 overflow-x-auto pb-3">
           {STAGE_ORDER.map((stage) => {
             const colRows = rows.filter(
@@ -686,7 +709,7 @@ export default function RepCrmTab({
               <div key={stage}
                 onDragOver={(e) => e.preventDefault()}
                 onDrop={() => { if (draggingId) { patchRow(draggingId, { stage }); setDraggingId(null); } }}
-                className="flex-shrink-0 w-[240px] bg-[#f4f5f7] border border-[#e8e8e8] rounded-sm">
+                className="flex-shrink-0 w-[280px] bg-[#f4f5f7] border border-[#e8e8e8] rounded-sm">
                 <div className="px-3 py-2 border-b border-[#e2e2e2] flex items-center justify-between">
                   <span className={`text-[10px] font-bold px-1.5 py-0.5 ${STAGE_META[stage].cls}`}>{STAGE_META[stage].label}</span>
                   <span className="text-[#74777f] text-[11px] font-bold font-[var(--font-inter)]">{colRows.length}</span>
@@ -707,6 +730,17 @@ export default function RepCrmTab({
                       {r.next_reminder_at && (
                         <p className="text-[#74777f] text-[10px] font-[var(--font-inter)] mt-0.5">⏰ {fmtDate(r.next_reminder_at)}</p>
                       )}
+                      <div className="flex flex-wrap gap-1 mt-2">
+                        {(r.specified_count || 0) > 0 && (
+                          <span className="text-[9px] font-bold px-1.5 py-0.5 bg-blue-50 text-blue-800">{r.specified_count} espec.</span>
+                        )}
+                        {(r.project_added_count || 0) > 0 && (
+                          <span className="text-[9px] font-bold px-1.5 py-0.5 bg-purple-50 text-purple-800">{r.project_added_count} proj.</span>
+                        )}
+                        {!!r.mostruario_received && (
+                          <span className="text-[9px] font-bold px-1.5 py-0.5 bg-green-50 text-green-700">Mostruário ok</span>
+                        )}
+                      </div>
                     </div>
                   ))}
                   {colRows.length === 0 && <p className="text-[#b0b0b0] text-[10px] font-[var(--font-inter)] text-center py-3">—</p>}
@@ -714,6 +748,7 @@ export default function RepCrmTab({
               </div>
             );
           })}
+        </div>
         </div>
       ) : visibleRows.length === 0 ? (
         <p className="text-[#74777f] text-sm font-[var(--font-inter)]">Nenhum resultado para o filtro atual.</p>
@@ -799,7 +834,9 @@ export default function RepCrmTab({
                       <div className="flex items-center gap-2 flex-wrap">
                         <span className={`text-[9px] font-bold px-1.5 py-0.5 ${stageMeta.cls}`}>{stageMeta.label}</span>
                         {r.mostruario_sent && <span className="text-[9px] font-bold px-1.5 py-0.5 bg-green-50 text-green-700">Mostruário enviado</span>}
-                        {r.has_specified && <span className="text-[9px] font-bold px-1.5 py-0.5 bg-blue-50 text-blue-800">Especificou</span>}
+                        {!!r.mostruario_received && <span className="text-[9px] font-bold px-1.5 py-0.5 bg-green-50 text-green-700">Mostruário recebido</span>}
+                        {(!!r.has_specified || (r.specified_count || 0) > 0) && <span className="text-[9px] font-bold px-1.5 py-0.5 bg-blue-50 text-blue-800">Especificou {r.specified_count || 1}x</span>}
+                        {(!!r.project_added || (r.project_added_count || 0) > 0) && <span className="text-[9px] font-bold px-1.5 py-0.5 bg-purple-50 text-purple-800">Projeto {r.project_added_count || 1}x</span>}
                       </div>
                       <button onClick={() => removeRow(r.id)} title="Remover do CRM" className="text-[#b42318] hover:text-[#7a1610]">
                         <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><path d="M3 6h18M8 6V4h8v2M19 6l-1 14H6L5 6" /></svg>
@@ -819,14 +856,112 @@ export default function RepCrmTab({
                       </div>
                     )}
 
-                    <div className="grid grid-cols-2 lg:grid-cols-4 gap-x-4 gap-y-3 mb-4">
+                    <div className="bg-white border border-[#e2e2e2] px-3 py-3 mb-4">
+                      <p className="text-[#74777f] text-[9px] uppercase tracking-wider font-bold font-[var(--font-inter)] mb-3">
+                        Datas principais
+                      </p>
+                    <div className="grid grid-cols-2 lg:grid-cols-4 gap-x-4 gap-y-3">
                       <DateField label="1º contato" value={r.first_contact_at} onChange={(iso) => patchRow(r.id, { first_contact_at: iso })} />
+                      <DateField label="Mostruário enviado" value={r.mostruario_sent_at} onChange={(iso) => patchRow(r.id, { mostruario_sent_at: iso, mostruario_sent: !!iso })} />
+                      <DateField label="Mostruário recebido" value={r.mostruario_received_at} onChange={(iso) => patchRow(r.id, { mostruario_received_at: iso, mostruario_received: !!iso })} />
                       <DateField label="Reunião realizada" value={r.meeting_happened_at} onChange={(iso) => patchRow(r.id, { meeting_happened_at: iso })} />
                       <DateField label="Último follow-up" value={r.last_followup_at} onChange={(iso) => patchRow(r.id, { last_followup_at: iso })} />
-                      <div>
-                        <p className="text-[#74777f] text-[9px] uppercase tracking-wider font-bold font-[var(--font-inter)]">Projetos</p>
-                        <p className="text-[#002045] text-xs font-semibold font-[var(--font-inter)] mt-1">
-                          {r.total_generated > 0 ? `${fmtBRL(r.total_generated)} · ${r.projects_count}` : "—"}
+                      <DateField label="Última especificação" value={r.last_specified_at} onChange={(iso) => patchRow(r.id, { last_specified_at: iso, has_specified: !!iso || !!r.has_specified })} />
+                      <DateField label="Adicionado a projeto" value={r.project_added_at} onChange={(iso) => patchRow(r.id, { project_added_at: iso, project_added: !!iso || !!r.project_added })} />
+                    </div>
+                    </div>
+
+                    <div className="grid grid-cols-1 lg:grid-cols-3 gap-3 mb-4">
+                      <div className="bg-white border border-[#e2e2e2] px-3 py-3">
+                        <p className="text-[#74777f] text-[9px] uppercase tracking-wider font-bold font-[var(--font-inter)] mb-3">Mostruário</p>
+                        <div className="space-y-2">
+                          <label className="flex items-center gap-2 text-xs font-[var(--font-inter)] text-[#43474e] cursor-pointer">
+                            <input
+                              type="checkbox"
+                              checked={!!r.mostruario_sent}
+                              onChange={(e) => patchRow(r.id, {
+                                mostruario_sent: e.target.checked,
+                                mostruario_sent_at: e.target.checked ? (r.mostruario_sent_at || new Date().toISOString()) : null,
+                              })}
+                            />
+                            Enviado
+                          </label>
+                          <label className="flex items-center gap-2 text-xs font-[var(--font-inter)] text-[#43474e] cursor-pointer">
+                            <input
+                              type="checkbox"
+                              checked={!!r.mostruario_received}
+                              onChange={(e) => patchRow(r.id, {
+                                mostruario_received: e.target.checked,
+                                mostruario_received_at: e.target.checked ? (r.mostruario_received_at || new Date().toISOString()) : null,
+                              })}
+                            />
+                            Recebido pelo parceiro
+                          </label>
+                        </div>
+                      </div>
+
+                      <div className="bg-white border border-[#e2e2e2] px-3 py-3">
+                        <p className="text-[#74777f] text-[9px] uppercase tracking-wider font-bold font-[var(--font-inter)] mb-3">Especificações</p>
+                        <label className="flex items-center gap-2 text-xs font-[var(--font-inter)] text-[#43474e] cursor-pointer mb-2">
+                          <input
+                            type="checkbox"
+                            checked={!!r.has_specified || (r.specified_count || 0) > 0}
+                            onChange={(e) => patchRow(r.id, {
+                              has_specified: e.target.checked,
+                              specified_count: e.target.checked ? Math.max(r.specified_count || 0, 1) : 0,
+                              last_specified_at: e.target.checked ? (r.last_specified_at || new Date().toISOString()) : null,
+                            })}
+                          />
+                          Já especificou Orbital
+                        </label>
+                        <input
+                          type="number"
+                          min={0}
+                          defaultValue={r.specified_count || 0}
+                          onBlur={(e) => {
+                            const count = Math.max(0, Number(e.target.value) || 0);
+                            patchRow(r.id, {
+                              specified_count: count,
+                              has_specified: count > 0,
+                              last_specified_at: count > 0 ? (r.last_specified_at || new Date().toISOString()) : null,
+                            });
+                          }}
+                          className="w-full border border-[#e2e2e2] px-2 py-2 text-xs font-[var(--font-inter)] text-[#002045] focus:outline-none focus:border-[#002045]"
+                          placeholder="Quantas vezes?"
+                        />
+                      </div>
+
+                      <div className="bg-white border border-[#e2e2e2] px-3 py-3">
+                        <p className="text-[#74777f] text-[9px] uppercase tracking-wider font-bold font-[var(--font-inter)] mb-3">Projetos</p>
+                        <label className="flex items-center gap-2 text-xs font-[var(--font-inter)] text-[#43474e] cursor-pointer mb-2">
+                          <input
+                            type="checkbox"
+                            checked={!!r.project_added || (r.project_added_count || 0) > 0}
+                            onChange={(e) => patchRow(r.id, {
+                              project_added: e.target.checked,
+                              project_added_count: e.target.checked ? Math.max(r.project_added_count || 0, 1) : 0,
+                              project_added_at: e.target.checked ? (r.project_added_at || new Date().toISOString()) : null,
+                            })}
+                          />
+                          Adicionou Orbital a projeto
+                        </label>
+                        <input
+                          type="number"
+                          min={0}
+                          defaultValue={r.project_added_count || 0}
+                          onBlur={(e) => {
+                            const count = Math.max(0, Number(e.target.value) || 0);
+                            patchRow(r.id, {
+                              project_added_count: count,
+                              project_added: count > 0,
+                              project_added_at: count > 0 ? (r.project_added_at || new Date().toISOString()) : null,
+                            });
+                          }}
+                          className="w-full border border-[#e2e2e2] px-2 py-2 text-xs font-[var(--font-inter)] text-[#002045] focus:outline-none focus:border-[#002045]"
+                          placeholder="Quantos projetos?"
+                        />
+                        <p className="text-[#b0b0b0] text-[10px] font-[var(--font-inter)] mt-2">
+                          Orçamentos registrados: {r.projects_count || 0}
                         </p>
                       </div>
                     </div>
@@ -865,17 +1000,6 @@ export default function RepCrmTab({
                           </button>
                         ))}
                       </div>
-                    </div>
-
-                    <div className="flex flex-wrap items-center gap-4 mb-4">
-                      <label className="flex items-center gap-2 text-xs font-[var(--font-inter)] text-[#43474e] cursor-pointer">
-                        <input type="checkbox" checked={r.mostruario_sent} onChange={(e) => patchRow(r.id, { mostruario_sent: e.target.checked })} />
-                        Mostruário enviado{r.mostruario_sent && r.mostruario_sent_at ? ` (${fmtDate(r.mostruario_sent_at)})` : ""}
-                      </label>
-                      <label className="flex items-center gap-2 text-xs font-[var(--font-inter)] text-[#43474e] cursor-pointer">
-                        <input type="checkbox" checked={r.has_specified} onChange={(e) => patchRow(r.id, { has_specified: e.target.checked })} />
-                        Especificou Orbital{r.has_specified && r.last_specified_at ? ` (${fmtDate(r.last_specified_at)})` : ""}
-                      </label>
                     </div>
 
                     <ScheduleMeeting
