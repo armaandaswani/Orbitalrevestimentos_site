@@ -91,11 +91,14 @@ export default function EstoqueTab() {
     }).then(() => fetchStock()).catch(() => {});
   }
 
-  const loadMovements = useCallback(async (productId: string, force = false) => {
-    if (!force && movements[productId]) return;
-    const res = await fetch(`/api/admin/stock/${productId}`);
-    if (res.ok) setMovements((cur) => ({ ...cur, [productId]: await res.json() }));
-  }, [movements]);
+	  const loadMovements = useCallback(async (productId: string, force = false) => {
+	    if (!force && movements[productId]) return;
+	    const res = await fetch(`/api/admin/stock/${productId}`);
+	    if (res.ok) {
+	      const data = await res.json();
+	      setMovements((cur) => ({ ...cur, [productId]: data }));
+	    }
+	  }, [movements]);
 
   function toggleExpand(id: string) {
     if (expandedId === id) { setExpandedId(null); return; }
