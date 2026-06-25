@@ -1,6 +1,7 @@
 "use client";
 
-import React, { useState, useEffect, useCallback } from "react";
+import React, { useState, useEffect, useCallback, useMemo } from "react";
+import RepCrmTab from "../representante/RepCrmTab";
 
 interface RepOption {
   id: string;
@@ -17,39 +18,43 @@ interface Meeting {
   status: "scheduled" | "completed" | "cancelled";
 }
 
-interface CrmRow {
+interface AllCrmRow {
   id: string;
+  sales_rep_id: string;
+  sales_rep_name: string | null;
   stage: string;
-  next_reminder_at: string | null;
-  mostruario_sent: boolean;
   has_specified: boolean;
+  meeting_happened_at: string | null;
   last_followup_at: string | null;
-  partner: { name: string };
+  first_contact_at: string | null;
+  total_generated: number;
+  projects_count: number;
 }
 
-const STAGE_LABEL: Record<string, string> = {
-  novo_contato: "Novo contato",
-  reuniao_agendada: "Reunião agendada",
-  reuniao_realizada: "Reunião realizada",
-  acompanhamento: "Acompanhamento",
-  ativo: "Ativo",
-  inativo: "Inativo",
-};
+interface PartnerOption {
+  id: string;
+  name: string;
+}
 
+function fmtBRL(n: number) {
+  return n.toLocaleString("pt-BR", { style: "currency", currency: "BRL", maximumFractionDigits: 0 });
+}
 function fmtDateTime(s: string) {
   return new Date(s).toLocaleString("pt-BR", { day: "2-digit", month: "2-digit", hour: "2-digit", minute: "2-digit" });
 }
-function fmtDate(s: string | null) {
-  return s ? new Date(s).toLocaleDateString("pt-BR") : "—";
+function daysSince(iso: string | null): number | null {
+  if (!iso) return null;
+  return Math.floor((Date.now() - new Date(iso).getTime()) / 86_400_000);
 }
 
-/** Read-only oversight of every rep's agenda + own-CRM pipeline. */
+/** Admin: team-wide funnel + full view/edit of every rep's CRM pipeline. */
 export default function RepOversightTab({ reps }: { reps: RepOption[] }) {
   const [meetings, setMeetings] = useState<Meeting[]>([]);
   const [meetingsLoading, setMeetingsLoading] = useState(false);
-  const [pipelineByRep, setPipelineByRep] = useState<Record<string, CrmRow[]>>({});
-  const [pipelineLoading, setPipelineLoading] = useState(false);
+  const [allRows, setAllRows] = useState<AllCrmRow[]>([]);
+  const [allLoading, setAllLoading] = useState(false);
   const [expandedRepId, setExpandedRepId] = useState<string | null>(null);
+  const [partnersByRep, setPartnersByRep] = useState<Record<string, PartnerOption[]>>({});
 
   const fetchMeetings = useCallback(async () => {
     setMeetingsLoading(true);
@@ -60,29 +65,96 @@ export default function RepOversightTab({ reps }: { reps: RepOption[] }) {
     setMeetingsLoading(false);
   }, []);
 
+  const fetchAll = useCallback(async () => {
+    setAllLoading(true);
+    const res = await fetch(`/api/representante/crm?all=true`);
+    if (res.ok) setAllRows(await res.json());
+    setAllLoading(false);
+  }, []);
+
   useEffect(() => {
     fetchMeetings();
-  }, [fetchMeetings]);
+    fetchAll();
+  }, [fetchMeetings, fetchAll]);
 
-  async function loadPipeline(repId: string) {
-    if (pipelineByRep[repId]) {
-      setExpandedRepId(expandedRepId === repId ? null : repId);
+  async function toggleRep(repId: string) {
+    if (expandedRepId === repId) {
+      setExpandedRepId(null);
       return;
     }
-    setPipelineLoading(true);
-    const res = await fetch(`/api/representante/crm?sales_rep_id=${encodeURIComponent(repId)}`);
-    if (res.ok) {
-      const data = await res.json();
-      setPipelineByRep((cur) => ({ ...cur, [repId]: data }));
-    }
-    setPipelineLoading(false);
     setExpandedRepId(repId);
+    if (!partnersByRep[repId]) {
+      const res = await fetch(`/api/representante/partners?sales_rep_id=${encodeURIComponent(repId)}`);
+      if (res.ok) {
+        const data = (await res.json()) as Array<{ id: string; name: string }>;
+        setPartnersByRep((cur) => ({ ...cur, [repId]: (data ?? []).map((p) => ({ id: p.id, name: p.name })) }));
+      } else {
+        setPartnersByRep((cur) => ({ ...cur, [repId]: [] }));
+      }
+    }
   }
 
   const upcoming = meetings.filter((m) => m.status === "scheduled");
 
+  // Team-wide funnel across every rep.
+  const team = useMemo(() => {
+    const advanced = ["reuniao_realizada", "acompanhamento", "ativo"];
+    let met = 0, specified = 0, active = 0, value = 0, projects = 0, stalled = 0;
+    for (const r of allRows) {
+      if (r.meeting_happened_at || advanced.includes(r.stage)) met++;
+      if (r.has_specified) specified++;
+      if (r.stage === "ativo") active++;
+      value += r.total_generated || 0;
+      projects += r.projects_count || 0;
+      if (r.stage !== "inativo" && (daysSince(r.last_followup_at || r.first_contact_at) ?? 0) >= 30) stalled++;
+    }
+    const total = allRows.length;
+    const pct = (a: number, b: number) => (b > 0 ? Math.round((a / b) * 100) : 0);
+    return { total, met, specified, active, value, projects, stalled, rateMet: pct(met, total), rateActive: pct(active, total) };
+  }, [allRows]);
+
+  // Per-rep summary counts.
+  const repSummary = useMemo(() => {
+    const m: Record<string, { count: number; active: number; value: number }> = {};
+    for (const r of allRows) {
+      const s = (m[r.sales_rep_id] ??= { count: 0, active: 0, value: 0 });
+      s.count++;
+      if (r.stage === "ativo") s.active++;
+      s.value += r.total_generated || 0;
+    }
+    return m;
+  }, [allRows]);
+
   return (
     <div className="mb-10">
+      {/* Team funnel */}
+      <h3 className="font-[var(--font-inter)] text-[10px] tracking-[0.2em] uppercase font-bold text-[#002045] mb-3">
+        Funil da equipe — todos os representantes
+      </h3>
+      {allLoading ? (
+        <p className="text-[#74777f] text-sm font-[var(--font-inter)] mb-8">Carregando...</p>
+      ) : (
+        <div className="bg-white border border-[#e2e2e2] px-5 py-4 mb-8">
+          <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-6 gap-4">
+            {[
+              { label: "Relações", value: String(team.total), sub: `${team.active} ativos` },
+              { label: "Reuniões", value: String(team.met), sub: `${team.rateMet}% do total` },
+              { label: "Especificaram", value: String(team.specified), sub: "" },
+              { label: "Ativos", value: String(team.active), sub: `${team.rateActive}% conversão` },
+              { label: "Valor gerado", value: fmtBRL(team.value), sub: `${team.projects} projeto${team.projects !== 1 ? "s" : ""}` },
+              { label: "Parados 30d+", value: String(team.stalled), sub: team.stalled > 0 ? "precisam atenção" : "tudo em dia" },
+            ].map((m) => (
+              <div key={m.label}>
+                <p className="text-[#74777f] text-[9px] uppercase tracking-wider font-bold font-[var(--font-inter)]">{m.label}</p>
+                <p className="text-[#002045] text-lg font-[var(--font-noto-serif)] mt-0.5">{m.value}</p>
+                {m.sub && <p className="text-[#b0b0b0] text-[10px] font-[var(--font-inter)]">{m.sub}</p>}
+              </div>
+            ))}
+          </div>
+        </div>
+      )}
+
+      {/* Upcoming meetings */}
       <h3 className="font-[var(--font-inter)] text-[10px] tracking-[0.2em] uppercase font-bold text-[#002045] mb-3">
         Agenda dos representantes — próximos 14 dias
       </h3>
@@ -115,53 +187,29 @@ export default function RepOversightTab({ reps }: { reps: RepOption[] }) {
         </div>
       )}
 
+      {/* Per-rep editable pipeline */}
       <h3 className="font-[var(--font-inter)] text-[10px] tracking-[0.2em] uppercase font-bold text-[#002045] mb-3">
-        Pipeline de parceiros por representante
+        Pipeline por representante — visualizar e editar
       </h3>
-      <div className="bg-white border border-[#e2e2e2] divide-y divide-[#f0f0f0] mb-8">
+      <div className="bg-white border border-[#e2e2e2] divide-y divide-[#f0f0f0]">
         {reps.map((rep) => {
-          const pipeline = pipelineByRep[rep.id];
           const expanded = expandedRepId === rep.id;
+          const s = repSummary[rep.id];
           return (
             <div key={rep.id}>
               <button
-                onClick={() => loadPipeline(rep.id)}
+                onClick={() => toggleRep(rep.id)}
                 className="w-full flex items-center justify-between px-5 py-3 text-left hover:bg-[#fafafa] transition-colors"
               >
                 <span className="text-sm font-semibold text-[#002045] font-[var(--font-inter)]">{rep.name}</span>
                 <span className="text-[10px] text-[#74777f] font-[var(--font-inter)]">
-                  {pipeline ? `${pipeline.length} parceiro${pipeline.length !== 1 ? "s" : ""}` : "Ver pipeline →"}
+                  {s ? `${s.count} relaç${s.count !== 1 ? "ões" : "ão"} · ${s.active} ativo${s.active !== 1 ? "s" : ""} · ${fmtBRL(s.value)}` : "—"}
+                  <span className="ml-2">{expanded ? "▲" : "▼"}</span>
                 </span>
               </button>
               {expanded && (
-                <div className="border-t border-[#f0f0f0] overflow-x-auto">
-                  {pipelineLoading && !pipeline ? (
-                    <p className="text-[#74777f] text-xs font-[var(--font-inter)] px-5 py-3">Carregando...</p>
-                  ) : !pipeline || pipeline.length === 0 ? (
-                    <p className="text-[#74777f] text-xs font-[var(--font-inter)] px-5 py-3">Nenhum parceiro neste CRM ainda.</p>
-                  ) : (
-                    <table className="w-full text-sm font-[var(--font-inter)]">
-                      <thead>
-                        <tr className="border-b border-[#f0f0f0] bg-[#fafafa]">
-                          {["Parceiro", "Estágio", "Mostruário", "Especificou", "Último follow-up", "Próx. lembrete"].map((h) => (
-                            <th key={h} className="text-left px-4 py-2 text-[9px] tracking-[0.12em] uppercase font-bold text-[#74777f] whitespace-nowrap">{h}</th>
-                          ))}
-                        </tr>
-                      </thead>
-                      <tbody>
-                        {pipeline.map((row) => (
-                          <tr key={row.id} className="border-b border-[#f5f5f3]">
-                            <td className="px-4 py-2 text-xs font-semibold text-[#002045]">{row.partner.name}</td>
-                            <td className="px-4 py-2 text-xs text-[#43474e]">{STAGE_LABEL[row.stage] ?? row.stage}</td>
-                            <td className="px-4 py-2 text-xs">{row.mostruario_sent ? "✓" : "—"}</td>
-                            <td className="px-4 py-2 text-xs">{row.has_specified ? "✓" : "—"}</td>
-                            <td className="px-4 py-2 text-xs text-[#43474e]">{fmtDate(row.last_followup_at)}</td>
-                            <td className="px-4 py-2 text-xs text-[#43474e]">{row.next_reminder_at ? fmtDateTime(row.next_reminder_at) : "—"}</td>
-                          </tr>
-                        ))}
-                      </tbody>
-                    </table>
-                  )}
+                <div className="border-t border-[#f0f0f0] px-5 py-5 bg-[#fafafa]">
+                  <RepCrmTab salesRepId={rep.id} linkedPartners={partnersByRep[rep.id] ?? []} />
                 </div>
               )}
             </div>

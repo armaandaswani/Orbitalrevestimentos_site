@@ -13,23 +13,35 @@ const MIGRATION_HINT = "Recurso indisponível — rode a migração 019 (rep_par
 export async function GET(req: NextRequest) {
   const { searchParams } = new URL(req.url);
   const salesRepId = searchParams.get("sales_rep_id");
-  if (!salesRepId) return NextResponse.json({ error: "sales_rep_id required" }, { status: 400 });
+  // Admin team-wide view: every rep's pipeline in one call.
+  const all = searchParams.get("all") === "true";
 
-  if (!isAdminRequest(req) && repIdFromRequest(req) !== salesRepId) {
-    return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+  if (all) {
+    if (!isAdminRequest(req)) return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+  } else {
+    if (!salesRepId) return NextResponse.json({ error: "sales_rep_id required" }, { status: 400 });
+    if (!isAdminRequest(req) && repIdFromRequest(req) !== salesRepId) {
+      return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+    }
   }
 
   const db = supabaseAdmin();
 
-  const { data: crmRows, error: crmErr } = await db
-    .from("rep_partner_crm")
-    .select("*")
-    .eq("sales_rep_id", salesRepId)
-    .order("updated_at", { ascending: false });
+  let crmQuery = db.from("rep_partner_crm").select("*").order("updated_at", { ascending: false });
+  if (!all) crmQuery = crmQuery.eq("sales_rep_id", salesRepId as string);
+  const { data: crmRows, error: crmErr } = await crmQuery;
 
   if (crmErr && isMissingTable(crmErr)) return NextResponse.json([]);
   if (crmErr) return NextResponse.json({ error: crmErr.message }, { status: 500 });
   if (!crmRows || crmRows.length === 0) return NextResponse.json([]);
+
+  // For the team-wide view, attach each rep's name.
+  const repNameById = new Map<string, string>();
+  if (all) {
+    const repIds = [...new Set(crmRows.map((r) => r.sales_rep_id as string))];
+    const { data: reps } = await db.from("sales_reps").select("id, name").in("id", repIds);
+    for (const rp of reps ?? []) repNameById.set(rp.id as string, rp.name as string);
+  }
 
   const partnerIds = crmRows.map((r) => r.partner_id).filter(Boolean) as string[];
   const { data: partners, error: partnersErr } = partnerIds.length
@@ -87,6 +99,7 @@ export async function GET(req: NextRequest) {
       return {
         ...row,
         is_prospect: !row.partner_id,
+        sales_rep_name: repNameById.get(row.sales_rep_id as string) ?? null,
         partner,
         total_generated: stats.total,
         projects_count: stats.count,
