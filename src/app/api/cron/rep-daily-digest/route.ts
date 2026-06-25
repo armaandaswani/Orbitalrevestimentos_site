@@ -14,6 +14,7 @@ import { getResend } from "@/lib/resend";
 import { isMissingTable } from "@/lib/db-compat";
 
 const TIME_ZONE = "America/Sao_Paulo";
+const DEFAULT_ADMIN_WHATSAPP = "92992097165";
 
 interface RepRow {
   id: string;
@@ -155,6 +156,7 @@ export async function GET(req: NextRequest) {
   }
 
   const results: Array<{ rep: string; meetings: number; followups: number; sentVia: string[] }> = [];
+  const adminSections: string[] = [];
 
   for (const rep of reps as RepRow[]) {
     const { data: meetings, error: meetingsErr } = await db
@@ -180,7 +182,6 @@ export async function GET(req: NextRequest) {
 
     const todaysMeetings = ((meetings ?? []) as MeetingRow[]).filter((m) => dateKey(m.scheduled_at) === today);
     const dueFollowups = ((crmRows ?? []) as CrmRow[]).filter((r) => dueForDigest(r, today));
-    if (!todaysMeetings.length && !dueFollowups.length) continue;
 
     const partnerIds = [
       ...new Set(
@@ -196,6 +197,32 @@ export async function GET(req: NextRequest) {
     const partnerMap = new Map<string, PartnerRow>(
       ((partners ?? []) as PartnerRow[]).map((p) => [p.id, p])
     );
+
+    const adminLines = [
+      `${rep.name}: ${todaysMeetings.length} reuniao(oes), ${dueFollowups.length} follow-up(s).`,
+    ];
+    if (todaysMeetings.length) {
+      adminLines.push("Reunioes para confirmar:");
+      todaysMeetings.forEach((m, i) => {
+        adminLines.push(`${i + 1}. ${fmtTime(m.scheduled_at)} - ${meetingLabel(m, partnerMap)}`);
+      });
+    }
+    if (dueFollowups.length) {
+      adminLines.push("Acoes/follow-ups:");
+      dueFollowups.forEach((r, i) => {
+        const note = r.reminder_note ? ` Nota: ${r.reminder_note}.` : "";
+        adminLines.push(`${i + 1}. ${partnerLabel(r, partnerMap)} - ${suggestedAction(r)}${note}`);
+      });
+    }
+    if (!todaysMeetings.length && !dueFollowups.length) {
+      adminLines.push("Sem reunioes ou follow-ups previstos para hoje.");
+    }
+    adminSections.push(adminLines.join("\n"));
+
+    if (!todaysMeetings.length && !dueFollowups.length) {
+      results.push({ rep: rep.name, meetings: 0, followups: 0, sentVia: [] });
+      continue;
+    }
 
     const lines: string[] = [
       `Bom dia, ${rep.name}.`,
@@ -247,12 +274,29 @@ export async function GET(req: NextRequest) {
     results.push({ rep: rep.name, meetings: todaysMeetings.length, followups: dueFollowups.length, sentVia });
   }
 
+  const adminPhone = normalizePhone(process.env.REP_DAILY_DIGEST_ADMIN_WHATSAPP || DEFAULT_ADMIN_WHATSAPP);
+  let adminSent = false;
+  let adminError: string | null = null;
+  if (canWhatsapp && adminPhone && adminSections.length) {
+    const adminMessage = [
+      `Digest admin dos representantes - ${today}`,
+      "Prioridade do dia: confirmar reunioes, depois acompanhar follow-ups.",
+      "",
+      adminSections.join("\n\n"),
+    ].join("\n");
+    const res = await sendText(adminPhone, adminMessage);
+    adminSent = res.ok;
+    adminError = res.ok ? null : res.error ?? `HTTP ${res.status}`;
+  }
+
   return NextResponse.json({
     ok: true,
     timezone: TIME_ZONE,
     date: today,
     reps: (reps as RepRow[]).length,
     sent: results.filter((r) => r.sentVia.length > 0).length,
+    adminSent,
+    adminError,
     results,
   });
 }
