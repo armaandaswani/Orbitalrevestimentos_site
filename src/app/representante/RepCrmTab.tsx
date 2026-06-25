@@ -13,11 +13,13 @@ const STAGE_META: Record<Stage, { label: string; cls: string }> = {
   ativo: { label: "Ativo", cls: "bg-green-100 text-green-800" },
   inativo: { label: "Inativo", cls: "bg-gray-100 text-gray-500" },
 };
+const STAGE_ORDER = Object.keys(STAGE_META) as Stage[];
 const RECUR_META: Record<Recur, string> = { none: "Não repete", daily: "Diário", weekly: "Semanal", monthly: "Mensal" };
 
 interface CrmRow {
   id: string;
-  partner_id: string;
+  partner_id: string | null;
+  is_prospect?: boolean;
   stage: Stage;
   first_contact_at: string | null;
   meeting_happened_at: string | null;
@@ -29,10 +31,15 @@ interface CrmRow {
   next_reminder_at: string | null;
   reminder_note: string | null;
   reminder_recur: Recur;
-  partner: { id: string; name: string; profession: string | null; phone?: string | null; email?: string | null };
+  prospect_name?: string | null;
+  prospect_phone?: string | null;
+  prospect_email?: string | null;
+  prospect_profession?: string | null;
+  partner: { id: string | null; name: string; profession: string | null; phone?: string | null; email?: string | null };
   total_generated: number;
   projects_count: number;
   last_sale_at: string | null;
+  updated_at?: string | null;
 }
 
 interface Note {
@@ -48,6 +55,8 @@ interface PartnerOption {
   name: string;
 }
 
+type SortKey = "activity" | "value" | "overdue" | "name";
+
 function fmtBRL(n: number) {
   return n.toLocaleString("pt-BR", { style: "currency", currency: "BRL", maximumFractionDigits: 0 });
 }
@@ -58,6 +67,22 @@ function fmtDate(s: string | null) {
 function fmtDateTime(s: string) {
   return new Date(s).toLocaleString("pt-BR", { day: "2-digit", month: "2-digit", hour: "2-digit", minute: "2-digit" });
 }
+// ISO timestamp <-> <input type="date"> value (yyyy-MM-dd), local time.
+function toDateInput(iso: string | null): string {
+  if (!iso) return "";
+  const d = new Date(iso);
+  if (isNaN(d.getTime())) return "";
+  return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, "0")}-${String(d.getDate()).padStart(2, "0")}`;
+}
+function fromDateInput(s: string): string | null {
+  if (!s) return null;
+  const d = new Date(`${s}T12:00:00`); // noon local — avoids day-shift across TZ
+  return isNaN(d.getTime()) ? null : d.toISOString();
+}
+function daysSince(iso: string | null): number | null {
+  if (!iso) return null;
+  return Math.floor((Date.now() - new Date(iso).getTime()) / 86_400_000);
+}
 
 type Bucket = "overdue" | "today" | "upcoming";
 function bucketOf(iso: string): Bucket {
@@ -67,6 +92,21 @@ function bucketOf(iso: string): Bucket {
   if (due < now.getTime()) return "overdue";
   if (due <= endOfToday) return "today";
   return "upcoming";
+}
+
+// A compact editable date field used for each pipeline milestone.
+function DateField({ label, value, onChange }: { label: string; value: string | null; onChange: (iso: string | null) => void }) {
+  return (
+    <div>
+      <p className="text-[#74777f] text-[9px] uppercase tracking-wider font-bold font-[var(--font-inter)]">{label}</p>
+      <input
+        type="date"
+        value={toDateInput(value)}
+        onChange={(e) => onChange(fromDateInput(e.target.value))}
+        className="mt-0.5 w-full bg-transparent text-[#43474e] text-xs font-[var(--font-inter)] border-b border-transparent hover:border-[#e2e2e2] focus:border-[#002045] focus:outline-none cursor-pointer"
+      />
+    </div>
+  );
 }
 
 export default function RepCrmTab({
@@ -81,7 +121,18 @@ export default function RepCrmTab({
   const [expandedId, setExpandedId] = useState<string | null>(null);
   const [notesByCrmId, setNotesByCrmId] = useState<Record<string, Note[]>>({});
   const [noteDraft, setNoteDraft] = useState("");
+
+  // Add controls
+  const [addMode, setAddMode] = useState<"none" | "partner" | "prospect">("none");
   const [addPartnerId, setAddPartnerId] = useState("");
+  const [prospectName, setProspectName] = useState("");
+  const [prospectPhone, setProspectPhone] = useState("");
+  const [adding, setAdding] = useState(false);
+
+  // Toolbar
+  const [search, setSearch] = useState("");
+  const [stageFilter, setStageFilter] = useState<Stage | "all">("all");
+  const [sortKey, setSortKey] = useState<SortKey>("activity");
 
   const fetchCrm = useCallback(async () => {
     setLoading(true);
@@ -94,21 +145,55 @@ export default function RepCrmTab({
     fetchCrm();
   }, [fetchCrm]);
 
-  async function startTracking() {
+  async function addPartner() {
     if (!addPartnerId) return;
+    setAdding(true);
     const res = await fetch("/api/representante/crm", {
       method: "POST",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({ sales_rep_id: salesRepId, partner_id: addPartnerId }),
     });
+    setAdding(false);
     if (res.ok) {
       setAddPartnerId("");
+      setAddMode("none");
+      fetchCrm();
+    }
+  }
+
+  async function addProspect() {
+    if (!prospectName.trim()) return;
+    setAdding(true);
+    const res = await fetch("/api/representante/crm", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({
+        sales_rep_id: salesRepId,
+        prospect_name: prospectName.trim(),
+        prospect_phone: prospectPhone.trim() || undefined,
+      }),
+    });
+    setAdding(false);
+    if (res.ok) {
+      setProspectName("");
+      setProspectPhone("");
+      setAddMode("none");
       fetchCrm();
     }
   }
 
   async function patchRow(id: string, patch: Partial<CrmRow>) {
-    setRows((cur) => cur.map((r) => (r.id === id ? { ...r, ...patch } : r)));
+    setRows((cur) =>
+      cur.map((r) => {
+        if (r.id !== id) return r;
+        const next = { ...r, ...patch };
+        // Keep the displayed name in sync when editing a prospect.
+        if ("prospect_name" in patch && r.is_prospect) {
+          next.partner = { ...r.partner, name: (patch.prospect_name as string) || "Prospecto" };
+        }
+        return next;
+      })
+    );
     const res = await fetch(`/api/representante/crm/${id}`, {
       method: "PATCH",
       headers: { "Content-Type": "application/json" },
@@ -117,8 +202,14 @@ export default function RepCrmTab({
     if (!res.ok) fetchCrm();
     else {
       const updated = await res.json();
-      setRows((cur) => cur.map((r) => (r.id === id ? { ...r, ...updated } : r)));
+      setRows((cur) => cur.map((r) => (r.id === id ? { ...r, ...updated, partner: r.partner, is_prospect: r.is_prospect } : r)));
     }
+  }
+
+  async function removeRow(id: string) {
+    if (!confirm("Remover esta relação do seu CRM? O histórico de notas será apagado.")) return;
+    setRows((cur) => cur.filter((r) => r.id !== id));
+    await fetch(`/api/representante/crm/${id}`, { method: "DELETE" }).catch(() => {});
   }
 
   async function toggleExpand(id: string) {
@@ -158,7 +249,7 @@ export default function RepCrmTab({
     patchRow(id, { next_reminder_at: d.toISOString() });
   }
 
-  const trackedPartnerIds = new Set(rows.map((r) => r.partner_id));
+  const trackedPartnerIds = new Set(rows.map((r) => r.partner_id).filter(Boolean) as string[]);
   const untrackedPartners = linkedPartners.filter((p) => !trackedPartnerIds.has(p.id));
 
   const reminderBuckets = useMemo(() => {
@@ -171,9 +262,38 @@ export default function RepCrmTab({
   }, [rows]);
   const actionable = reminderBuckets.overdue.length + reminderBuckets.today.length;
 
+  const visibleRows = useMemo(() => {
+    const q = search.trim().toLowerCase();
+    let list = rows.filter((r) => {
+      if (stageFilter !== "all" && r.stage !== stageFilter) return false;
+      if (q && !r.partner.name.toLowerCase().includes(q)) return false;
+      return true;
+    });
+    list = [...list].sort((a, b) => {
+      switch (sortKey) {
+        case "value":
+          return b.total_generated - a.total_generated;
+        case "name":
+          return a.partner.name.localeCompare(b.partner.name);
+        case "overdue": {
+          const av = a.next_reminder_at ? new Date(a.next_reminder_at).getTime() : Infinity;
+          const bv = b.next_reminder_at ? new Date(b.next_reminder_at).getTime() : Infinity;
+          return av - bv;
+        }
+        case "activity":
+        default: {
+          const av = a.last_followup_at || a.updated_at || "";
+          const bv = b.last_followup_at || b.updated_at || "";
+          return bv.localeCompare(av);
+        }
+      }
+    });
+    return list;
+  }, [rows, search, stageFilter, sortKey]);
+
   return (
     <div>
-      <div className="flex flex-wrap items-center justify-between gap-3 mb-6">
+      <div className="flex flex-wrap items-center justify-between gap-3 mb-5">
         <div className="flex items-center gap-3">
           <h2 className="font-[var(--font-noto-serif)] text-[#002045] text-xl font-normal">Meu CRM</h2>
           {actionable > 0 && (
@@ -182,26 +302,64 @@ export default function RepCrmTab({
             </span>
           )}
         </div>
-        {untrackedPartners.length > 0 && (
-          <div className="flex items-center gap-2">
-            <select value={addPartnerId} onChange={(e) => setAddPartnerId(e.target.value)}
-              className="border border-[#e2e2e2] px-3 py-2 text-xs font-[var(--font-inter)] text-[#002045] focus:outline-none focus:border-[#002045]">
-              <option value="">Adicionar parceiro ao CRM...</option>
-              {untrackedPartners.map((p) => (
-                <option key={p.id} value={p.id}>{p.name}</option>
-              ))}
-            </select>
-            <button onClick={startTracking} disabled={!addPartnerId}
-              className="bg-[#002045] text-white text-xs tracking-[0.1em] uppercase font-bold font-[var(--font-inter)] px-4 py-2 hover:bg-[#1a365d] transition-colors disabled:opacity-50">
-              Adicionar
-            </button>
-          </div>
-        )}
+        <div className="flex items-center gap-2">
+          {addMode === "none" && (
+            <>
+              <button onClick={() => setAddMode("prospect")}
+                className="border border-[#002045] text-[#002045] text-xs tracking-[0.1em] uppercase font-bold font-[var(--font-inter)] px-3 py-2 hover:bg-[#002045] hover:text-white transition-colors">
+                + Prospecto
+              </button>
+              {untrackedPartners.length > 0 && (
+                <button onClick={() => setAddMode("partner")}
+                  className="bg-[#002045] text-white text-xs tracking-[0.1em] uppercase font-bold font-[var(--font-inter)] px-3 py-2 hover:bg-[#1a365d] transition-colors">
+                  + Parceiro
+                </button>
+              )}
+            </>
+          )}
+        </div>
       </div>
+
+      {/* Add a registered partner */}
+      {addMode === "partner" && (
+        <div className="bg-white border border-[#e2e2e2] px-4 py-3 mb-5 flex flex-wrap items-center gap-2">
+          <select value={addPartnerId} onChange={(e) => setAddPartnerId(e.target.value)}
+            className="border border-[#e2e2e2] px-3 py-2 text-xs font-[var(--font-inter)] text-[#002045] focus:outline-none focus:border-[#002045]">
+            <option value="">Selecione um parceiro vinculado...</option>
+            {untrackedPartners.map((p) => (
+              <option key={p.id} value={p.id}>{p.name}</option>
+            ))}
+          </select>
+          <button onClick={addPartner} disabled={!addPartnerId || adding}
+            className="bg-[#002045] text-white text-xs font-bold font-[var(--font-inter)] px-4 py-2 hover:bg-[#1a365d] disabled:opacity-50">
+            Adicionar
+          </button>
+          <button onClick={() => { setAddMode("none"); setAddPartnerId(""); }}
+            className="text-[#74777f] text-xs font-[var(--font-inter)] px-2 py-2 hover:text-[#002045]">Cancelar</button>
+        </div>
+      )}
+
+      {/* Add an inline prospect */}
+      {addMode === "prospect" && (
+        <div className="bg-white border border-[#e2e2e2] px-4 py-3 mb-5 flex flex-wrap items-center gap-2">
+          <input value={prospectName} onChange={(e) => setProspectName(e.target.value)} autoFocus
+            placeholder="Nome do prospecto"
+            className="border border-[#e2e2e2] px-3 py-2 text-xs font-[var(--font-inter)] text-[#002045] focus:outline-none focus:border-[#002045]" />
+          <input value={prospectPhone} onChange={(e) => setProspectPhone(e.target.value)} inputMode="tel"
+            placeholder="WhatsApp (opcional)"
+            className="border border-[#e2e2e2] px-3 py-2 text-xs font-[var(--font-inter)] text-[#002045] focus:outline-none focus:border-[#002045]" />
+          <button onClick={addProspect} disabled={!prospectName.trim() || adding}
+            className="bg-[#002045] text-white text-xs font-bold font-[var(--font-inter)] px-4 py-2 hover:bg-[#1a365d] disabled:opacity-50">
+            Adicionar
+          </button>
+          <button onClick={() => { setAddMode("none"); setProspectName(""); setProspectPhone(""); }}
+            className="text-[#74777f] text-xs font-[var(--font-inter)] px-2 py-2 hover:text-[#002045]">Cancelar</button>
+        </div>
+      )}
 
       {/* Reminders strip */}
       {actionable > 0 && (
-        <div className="bg-white border border-[#e2e2e2] border-l-4 border-l-red-500 px-5 py-4 mb-8">
+        <div className="bg-white border border-[#e2e2e2] border-l-4 border-l-red-500 px-5 py-4 mb-6">
           <p className="text-[11px] tracking-[0.12em] uppercase font-bold font-[var(--font-inter)] text-red-700 mb-2">
             Follow-ups para hoje / atrasados
           </p>
@@ -217,54 +375,86 @@ export default function RepCrmTab({
         </div>
       )}
 
+      {/* Toolbar: search / filter / sort */}
+      {rows.length > 0 && (
+        <div className="flex flex-wrap items-center gap-2 mb-4">
+          <input value={search} onChange={(e) => setSearch(e.target.value)} placeholder="Buscar por nome…"
+            className="flex-1 min-w-[160px] border border-[#e2e2e2] px-3 py-2 text-xs font-[var(--font-inter)] text-[#002045] focus:outline-none focus:border-[#002045]" />
+          <select value={stageFilter} onChange={(e) => setStageFilter(e.target.value as Stage | "all")}
+            className="border border-[#e2e2e2] px-2 py-2 text-xs font-[var(--font-inter)] text-[#002045] focus:outline-none focus:border-[#002045]">
+            <option value="all">Todos os estágios</option>
+            {STAGE_ORDER.map((s) => <option key={s} value={s}>{STAGE_META[s].label}</option>)}
+          </select>
+          <select value={sortKey} onChange={(e) => setSortKey(e.target.value as SortKey)}
+            className="border border-[#e2e2e2] px-2 py-2 text-xs font-[var(--font-inter)] text-[#002045] focus:outline-none focus:border-[#002045]">
+            <option value="activity">Atividade recente</option>
+            <option value="overdue">Follow-up mais próximo</option>
+            <option value="value">Maior valor gerado</option>
+            <option value="name">Nome (A–Z)</option>
+          </select>
+        </div>
+      )}
+
       {loading ? (
         <p className="text-[#74777f] text-sm font-[var(--font-inter)]">Carregando...</p>
       ) : rows.length === 0 ? (
         <div className="bg-white border border-[#e2e2e2] px-6 py-10 text-center">
           <p className="text-[#74777f] text-sm font-[var(--font-inter)]">
-            Nenhum parceiro no seu CRM ainda. Adicione um parceiro vinculado acima para começar a acompanhar a relação.
+            Nenhum parceiro no seu CRM ainda. Adicione um parceiro vinculado ou um prospecto acima para começar.
           </p>
         </div>
+      ) : visibleRows.length === 0 ? (
+        <p className="text-[#74777f] text-sm font-[var(--font-inter)]">Nenhum resultado para o filtro atual.</p>
       ) : (
         <div className="space-y-4">
-          {rows.map((r) => {
+          {visibleRows.map((r) => {
             const expanded = expandedId === r.id;
             const stageMeta = STAGE_META[r.stage];
+            const stale = r.stage !== "inativo" && (daysSince(r.last_followup_at || r.first_contact_at) ?? 0) >= 30;
             return (
               <div key={r.id} className="bg-white border border-[#e2e2e2]">
                 <div className="px-5 py-4">
                   <div className="flex flex-wrap items-start justify-between gap-3 mb-3">
-                    <div>
+                    <div className="min-w-0">
                       <div className="flex items-center gap-2 flex-wrap">
                         <p className="text-[#002045] text-sm font-semibold font-[var(--font-inter)]">{r.partner.name}</p>
                         <span className={`text-[9px] font-bold px-1.5 py-0.5 ${stageMeta.cls}`}>{stageMeta.label}</span>
+                        {r.is_prospect && <span className="text-[9px] font-bold px-1.5 py-0.5 bg-[#fde9cf] text-[#8a5a12]">Prospecto</span>}
+                        {stale && <span className="text-[9px] font-bold px-1.5 py-0.5 bg-red-50 text-red-600">Parado {daysSince(r.last_followup_at || r.first_contact_at)}d</span>}
                       </div>
                       {r.partner.profession && <p className="text-[#74777f] text-xs font-[var(--font-inter)] mt-0.5">{r.partner.profession}</p>}
+                      {r.partner.phone && <p className="text-[#74777f] text-xs font-[var(--font-inter)] mt-0.5">{r.partner.phone}</p>}
                     </div>
-                    <select value={r.stage} onChange={(e) => patchRow(r.id, { stage: e.target.value as Stage })}
-                      className="border border-[#e2e2e2] px-2 py-1.5 text-[11px] font-[var(--font-inter)] text-[#002045] focus:outline-none focus:border-[#002045]">
-                      {(Object.keys(STAGE_META) as Stage[]).map((s) => (
-                        <option key={s} value={s}>{STAGE_META[s].label}</option>
-                      ))}
-                    </select>
+                    <div className="flex items-center gap-2">
+                      <select value={r.stage} onChange={(e) => patchRow(r.id, { stage: e.target.value as Stage })}
+                        className="border border-[#e2e2e2] px-2 py-1.5 text-[11px] font-[var(--font-inter)] text-[#002045] focus:outline-none focus:border-[#002045]">
+                        {STAGE_ORDER.map((s) => <option key={s} value={s}>{STAGE_META[s].label}</option>)}
+                      </select>
+                      <button onClick={() => removeRow(r.id)} title="Remover do CRM" className="text-[#b42318] hover:text-[#7a1610]">
+                        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><path d="M3 6h18M8 6V4h8v2M19 6l-1 14H6L5 6" /></svg>
+                      </button>
+                    </div>
                   </div>
 
+                  {/* Prospect inline editing */}
+                  {r.is_prospect && (
+                    <div className="grid grid-cols-1 sm:grid-cols-3 gap-2 mb-4">
+                      <input defaultValue={r.prospect_name ?? ""} onBlur={(e) => { const v = e.target.value.trim(); if (v && v !== r.prospect_name) patchRow(r.id, { prospect_name: v } as Partial<CrmRow>); }}
+                        placeholder="Nome" className="border border-[#e2e2e2] px-2 py-1.5 text-xs font-[var(--font-inter)] text-[#002045] focus:outline-none focus:border-[#002045]" />
+                      <input defaultValue={r.prospect_phone ?? ""} onBlur={(e) => patchRow(r.id, { prospect_phone: e.target.value.trim() || null } as Partial<CrmRow>)}
+                        placeholder="WhatsApp" className="border border-[#e2e2e2] px-2 py-1.5 text-xs font-[var(--font-inter)] text-[#002045] focus:outline-none focus:border-[#002045]" />
+                      <input defaultValue={r.prospect_profession ?? ""} onBlur={(e) => patchRow(r.id, { prospect_profession: e.target.value.trim() || null } as Partial<CrmRow>)}
+                        placeholder="Profissão" className="border border-[#e2e2e2] px-2 py-1.5 text-xs font-[var(--font-inter)] text-[#002045] focus:outline-none focus:border-[#002045]" />
+                    </div>
+                  )}
+
                   <div className="grid grid-cols-2 sm:grid-cols-4 gap-x-4 gap-y-3 mb-4">
-                    <div>
-                      <p className="text-[#74777f] text-[9px] uppercase tracking-wider font-bold font-[var(--font-inter)]">1º contato</p>
-                      <p className="text-[#43474e] text-xs font-[var(--font-inter)] mt-0.5">{fmtDate(r.first_contact_at)}</p>
-                    </div>
-                    <div>
-                      <p className="text-[#74777f] text-[9px] uppercase tracking-wider font-bold font-[var(--font-inter)]">Reunião realizada</p>
-                      <p className="text-[#43474e] text-xs font-[var(--font-inter)] mt-0.5">{fmtDate(r.meeting_happened_at)}</p>
-                    </div>
-                    <div>
-                      <p className="text-[#74777f] text-[9px] uppercase tracking-wider font-bold font-[var(--font-inter)]">Último follow-up</p>
-                      <p className="text-[#43474e] text-xs font-[var(--font-inter)] mt-0.5">{fmtDate(r.last_followup_at)}</p>
-                    </div>
+                    <DateField label="1º contato" value={r.first_contact_at} onChange={(iso) => patchRow(r.id, { first_contact_at: iso })} />
+                    <DateField label="Reunião realizada" value={r.meeting_happened_at} onChange={(iso) => patchRow(r.id, { meeting_happened_at: iso })} />
+                    <DateField label="Último follow-up" value={r.last_followup_at} onChange={(iso) => patchRow(r.id, { last_followup_at: iso })} />
                     <div>
                       <p className="text-[#74777f] text-[9px] uppercase tracking-wider font-bold font-[var(--font-inter)]">Gerado / projetos</p>
-                      <p className="text-[#002045] text-xs font-semibold font-[var(--font-inter)] mt-0.5">
+                      <p className="text-[#002045] text-xs font-semibold font-[var(--font-inter)] mt-1">
                         {r.total_generated > 0 ? `${fmtBRL(r.total_generated)} · ${r.projects_count}` : "—"}
                       </p>
                     </div>
@@ -292,9 +482,7 @@ export default function RepCrmTab({
                     />
                     <select value={r.reminder_recur} onChange={(e) => patchRow(r.id, { reminder_recur: e.target.value as Recur })}
                       className="border border-[#e2e2e2] px-2 py-1 text-xs font-[var(--font-inter)] text-[#002045] focus:outline-none focus:border-[#002045]">
-                      {(Object.keys(RECUR_META) as Recur[]).map((k) => (
-                        <option key={k} value={k}>{RECUR_META[k]}</option>
-                      ))}
+                      {(Object.keys(RECUR_META) as Recur[]).map((k) => <option key={k} value={k}>{RECUR_META[k]}</option>)}
                     </select>
                     <input
                       value={r.reminder_note || ""}

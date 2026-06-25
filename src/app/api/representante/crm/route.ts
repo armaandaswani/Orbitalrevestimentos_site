@@ -31,11 +31,13 @@ export async function GET(req: NextRequest) {
   if (crmErr) return NextResponse.json({ error: crmErr.message }, { status: 500 });
   if (!crmRows || crmRows.length === 0) return NextResponse.json([]);
 
-  const partnerIds = crmRows.map((r) => r.partner_id as string);
-  const { data: partners, error: partnersErr } = await db
-    .from("partners")
-    .select("id, name, profession, status, coupon_code, phone, email")
-    .in("id", partnerIds);
+  const partnerIds = crmRows.map((r) => r.partner_id).filter(Boolean) as string[];
+  const { data: partners, error: partnersErr } = partnerIds.length
+    ? await db
+        .from("partners")
+        .select("id, name, profession, status, coupon_code, phone, email")
+        .in("id", partnerIds)
+    : { data: [], error: null };
   if (partnersErr) return NextResponse.json({ error: partnersErr.message }, { status: 500 });
 
   const partnerById = new Map((partners ?? []).map((p) => [p.id as string, p]));
@@ -66,11 +68,25 @@ export async function GET(req: NextRequest) {
 
   const result = crmRows
     .map((row) => {
-      const partner = partnerById.get(row.partner_id as string);
-      if (!partner) return null;
-      const stats = statsByCode[partner.coupon_code as string] ?? { total: 0, count: 0, lastDate: null };
+      // Registered partner, or an inline prospect (no partners row yet).
+      const partner = row.partner_id
+        ? partnerById.get(row.partner_id as string)
+        : {
+            id: null,
+            name: (row.prospect_name as string) || "Prospecto",
+            profession: (row.prospect_profession as string) ?? null,
+            status: "prospect",
+            coupon_code: null,
+            phone: (row.prospect_phone as string) ?? null,
+            email: (row.prospect_email as string) ?? null,
+          };
+      if (!partner) return null; // partner_id set but partner was deleted
+      const stats = partner.coupon_code
+        ? statsByCode[partner.coupon_code as string] ?? { total: 0, count: 0, lastDate: null }
+        : { total: 0, count: 0, lastDate: null };
       return {
         ...row,
+        is_prospect: !row.partner_id,
         partner,
         total_generated: stats.total,
         projects_count: stats.count,
@@ -90,28 +106,37 @@ export async function POST(req: NextRequest) {
   }
 
   const salesRepId = body.sales_rep_id;
-  const partnerId = body.partner_id;
-  if (!salesRepId || !partnerId) {
-    return NextResponse.json({ error: "sales_rep_id e partner_id são obrigatórios." }, { status: 400 });
+  const partnerId = body.partner_id || null;
+  const prospectName = typeof body.prospect_name === "string" ? body.prospect_name.trim() : "";
+  // Either track a registered partner, or create an inline prospect by name.
+  if (!salesRepId || (!partnerId && !prospectName)) {
+    return NextResponse.json(
+      { error: "Informe um parceiro ou o nome de um prospecto." },
+      { status: 400 }
+    );
   }
   if (!isAdminRequest(req) && repIdFromRequest(req) !== salesRepId) {
     return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
   }
 
   const db = supabaseAdmin();
-  const { data, error } = await db
-    .from("rep_partner_crm")
-    .insert({
-      sales_rep_id: salesRepId,
-      partner_id: partnerId,
-      first_contact_at: body.first_contact_at || new Date().toISOString(),
-    })
-    .select()
-    .single();
+  const insertRow: Record<string, unknown> = {
+    sales_rep_id: salesRepId,
+    partner_id: partnerId,
+    first_contact_at: body.first_contact_at || new Date().toISOString(),
+  };
+  if (!partnerId) {
+    insertRow.prospect_name = prospectName;
+    if (typeof body.prospect_phone === "string") insertRow.prospect_phone = body.prospect_phone.trim() || null;
+    if (typeof body.prospect_email === "string") insertRow.prospect_email = body.prospect_email.trim() || null;
+    if (typeof body.prospect_profession === "string") insertRow.prospect_profession = body.prospect_profession.trim() || null;
+  }
+
+  const { data, error } = await db.from("rep_partner_crm").insert(insertRow).select().single();
 
   if (error && isMissingTable(error)) return NextResponse.json({ error: MIGRATION_HINT }, { status: 503 });
-  // Already tracking this partner — return the existing row instead of erroring.
-  if (error?.code === "23505") {
+  // Already tracking this registered partner — return the existing row.
+  if (error?.code === "23505" && partnerId) {
     const { data: existing } = await db
       .from("rep_partner_crm")
       .select("*")

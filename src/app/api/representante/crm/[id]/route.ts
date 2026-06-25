@@ -15,6 +15,12 @@ const EDITABLE = new Set([
   "next_reminder_at",
   "reminder_note",
   "reminder_recur",
+  // Inline-prospect fields + linking a prospect to a registered partner later.
+  "partner_id",
+  "prospect_name",
+  "prospect_phone",
+  "prospect_email",
+  "prospect_profession",
 ]);
 
 /** PATCH /api/representante/crm/[id] — update pipeline/stage/reminder fields. */
@@ -60,4 +66,30 @@ export async function PATCH(
   const { data, error } = await db.from("rep_partner_crm").update(patch).eq("id", id).select().single();
   if (error) return NextResponse.json({ error: error.message }, { status: 500 });
   return NextResponse.json(data);
+}
+
+/** DELETE /api/representante/crm/[id] — stop tracking (cascades notes). */
+export async function DELETE(
+  req: NextRequest,
+  { params }: { params: Promise<{ id: string }> }
+) {
+  const { id } = await params;
+  if (!id) return NextResponse.json({ error: "Missing id" }, { status: 400 });
+
+  const db = supabaseAdmin();
+  const { data: existing, error: fetchErr } = await db
+    .from("rep_partner_crm")
+    .select("sales_rep_id")
+    .eq("id", id)
+    .maybeSingle();
+  if (fetchErr) return NextResponse.json({ error: fetchErr.message }, { status: 500 });
+  if (!existing) return NextResponse.json({ ok: true }); // already gone
+
+  if (!isAdminRequest(req) && repIdFromRequest(req) !== existing.sales_rep_id) {
+    return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+  }
+
+  const { error } = await db.from("rep_partner_crm").delete().eq("id", id);
+  if (error) return NextResponse.json({ error: error.message }, { status: 500 });
+  return NextResponse.json({ ok: true });
 }
