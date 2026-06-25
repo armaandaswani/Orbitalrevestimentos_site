@@ -94,6 +94,92 @@ function bucketOf(iso: string): Bucket {
   return "upcoming";
 }
 
+// In-card meeting scheduler. Creates a rep_meeting tied to this CRM
+// relationship; the partner/prospect (and any contact info on file) is added as
+// an invitee and auto-notified by email + WhatsApp on the server.
+function ScheduleMeeting({
+  row,
+  salesRepId,
+  onScheduled,
+}: {
+  row: CrmRow;
+  salesRepId: string;
+  onScheduled: (iso: string) => void;
+}) {
+  const [open, setOpen] = useState(false);
+  const [when, setWhen] = useState("");
+  const [title, setTitle] = useState(`Reunião com ${row.partner.name}`);
+  const [location, setLocation] = useState("");
+  const [busy, setBusy] = useState(false);
+  const [msg, setMsg] = useState<string | null>(null);
+
+  const hasContact = !!(row.partner.phone || row.partner.email);
+
+  async function submit() {
+    if (!when || busy) return;
+    setBusy(true);
+    setMsg(null);
+    const res = await fetch("/api/representante/meetings", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({
+        sales_rep_id: salesRepId,
+        crm_id: row.id,
+        partner_id: row.partner_id,
+        title: title.trim() || `Reunião com ${row.partner.name}`,
+        scheduled_at: new Date(when).toISOString(),
+        location: location.trim() || undefined,
+        invitees: [{ name: row.partner.name, phone: row.partner.phone || "", email: row.partner.email || "" }],
+      }),
+    });
+    setBusy(false);
+    if (res.ok) {
+      onScheduled(new Date(when).toISOString());
+      setOpen(false);
+      setWhen("");
+      setLocation("");
+    } else {
+      const j = await res.json().catch(() => null);
+      setMsg(j?.error || "Não foi possível agendar.");
+    }
+  }
+
+  if (!open) {
+    return (
+      <button onClick={() => setOpen(true)}
+        className="mb-4 inline-flex items-center gap-1.5 text-[11px] tracking-[0.08em] uppercase font-bold font-[var(--font-inter)] text-[#002045] border border-[#002045] px-3 py-2 hover:bg-[#002045] hover:text-white transition-colors">
+        📅 Agendar reunião
+      </button>
+    );
+  }
+
+  return (
+    <div className="mb-4 bg-white border border-[#e2e2e2] px-3 py-3">
+      <div className="grid grid-cols-1 sm:grid-cols-2 gap-2 mb-2">
+        <input value={title} onChange={(e) => setTitle(e.target.value)} placeholder="Título"
+          className="border border-[#e2e2e2] px-2 py-1.5 text-xs font-[var(--font-inter)] text-[#002045] focus:outline-none focus:border-[#002045]" />
+        <input type="datetime-local" value={when} onChange={(e) => setWhen(e.target.value)}
+          className="border border-[#e2e2e2] px-2 py-1.5 text-xs font-[var(--font-inter)] text-[#002045] focus:outline-none focus:border-[#002045]" />
+        <input value={location} onChange={(e) => setLocation(e.target.value)} placeholder="Local (opcional)"
+          className="sm:col-span-2 border border-[#e2e2e2] px-2 py-1.5 text-xs font-[var(--font-inter)] text-[#002045] focus:outline-none focus:border-[#002045]" />
+      </div>
+      <p className="text-[#74777f] text-[10px] font-[var(--font-inter)] mb-2">
+        {hasContact
+          ? `${row.partner.name} será convidado e notificado automaticamente${row.partner.phone ? " por WhatsApp" : ""}${row.partner.phone && row.partner.email ? " e" : ""}${row.partner.email ? " por e-mail" : ""}.`
+          : `Sem telefone/e-mail no cadastro — a reunião será agendada, mas ${row.partner.name} não receberá convite automático.`}
+      </p>
+      {msg && <p className="text-red-600 text-[11px] font-[var(--font-inter)] mb-2">{msg}</p>}
+      <div className="flex items-center gap-2">
+        <button onClick={submit} disabled={!when || busy}
+          className="bg-[#002045] text-white text-xs font-bold font-[var(--font-inter)] px-4 py-2 hover:bg-[#1a365d] disabled:opacity-50">
+          {busy ? "Agendando…" : "Agendar e convidar"}
+        </button>
+        <button onClick={() => setOpen(false)} className="text-[#74777f] text-xs font-[var(--font-inter)] px-2 py-2 hover:text-[#002045]">Cancelar</button>
+      </div>
+    </div>
+  );
+}
+
 // A compact editable date field used for each pipeline milestone.
 function DateField({ label, value, onChange }: { label: string; value: string | null; onChange: (iso: string | null) => void }) {
   return (
@@ -611,6 +697,15 @@ export default function RepCrmTab({
 
                 {expanded && (
                   <div className="border-t border-[#e2e2e2] px-5 py-4 bg-[#fafafa]">
+                    <ScheduleMeeting
+                      row={r}
+                      salesRepId={salesRepId}
+                      onScheduled={(iso) => {
+                        patchRow(r.id, { stage: "reuniao_agendada", next_reminder_at: iso });
+                        const sysNote: Note = { id: `tmp-${Date.now()}`, kind: "meeting", body: `Reunião agendada para ${fmtDateTime(iso)}`, author: null, created_at: new Date().toISOString() };
+                        setNotesByCrmId((cur) => ({ ...cur, [r.id]: [sysNote, ...(cur[r.id] ?? [])] }));
+                      }}
+                    />
                     <div className="flex gap-2 mb-4">
                       <input
                         value={noteDraft}

@@ -70,6 +70,32 @@ export function productEducationMessage(): string {
   ].join("\n");
 }
 
+export interface MeetingInviteInput {
+  inviteeName?: string | null;
+  title: string;
+  whenLabel: string; // pre-formatted date/time, e.g. "12/07/2026 14:30"
+  location?: string | null;
+  repName?: string | null;
+}
+
+/**
+ * Sent to each invitee (WhatsApp and/or email) when a rep schedules a meeting
+ * from the CRM. Plain text so it works for both channels.
+ */
+export function meetingInviteMessage(i: MeetingInviteInput): string {
+  const lines: string[] = [
+    `Olá${i.inviteeName ? `, ${i.inviteeName.trim().split(/\s+/)[0]}` : ""}! 👋`,
+    "",
+    `Você tem uma reunião agendada com a Orbital Revestimentos${i.repName ? ` (${i.repName})` : ""}:`,
+    "",
+    `📅 ${i.whenLabel}`,
+    `📌 ${i.title}`,
+  ];
+  if (i.location && i.location.trim()) lines.push(`📍 ${i.location.trim()}`);
+  lines.push("", "Qualquer dúvida, é só responder esta mensagem. Até lá! 🙌");
+  return lines.join("\n");
+}
+
 export interface OrcamentoMessageInput {
   name: string | null;
   total: number | null;
