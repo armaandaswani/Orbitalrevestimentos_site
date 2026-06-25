@@ -197,6 +197,10 @@ export async function POST(req: NextRequest) {
     width?: number;
     height?: number;
     hint?: string;
+    // When true, skip fal SAM2 and go straight to the Gemini polygon. The tap
+    // client sets this on a retry when fal's point-prompt mask came back empty
+    // or degenerate, so it can still get a usable whole-surface outline.
+    skipFal?: boolean;
   };
   try {
     body = await req.json();
@@ -210,6 +214,7 @@ export async function POST(req: NextRequest) {
   const natW = typeof body.width === "number" && body.width > 0 ? body.width : 0;
   const natH = typeof body.height === "number" && body.height > 0 ? body.height : 0;
   const hint = typeof body.hint === "string" && body.hint.trim() ? body.hint.trim() : null;
+  const useFal = !body.skipFal && !!process.env.FAL_KEY;
 
   const b = body.box;
   const box =
@@ -226,7 +231,7 @@ export async function POST(req: NextRequest) {
   // detect fragmented the surface). Confine SAM2 to "the one object filling
   // this box" instead of wherever a single point would have landed.
   if (box) {
-    if (process.env.FAL_KEY && natW > 0 && natH > 0) {
+    if (useFal && natW > 0 && natH > 0) {
       const fal = await detectFalBox(body.photo, box.x1 * natW, box.y1 * natH, box.x2 * natW, box.y2 * natH);
       if (fal) return NextResponse.json({ mask: fal.mask, maskWidth: fal.width, maskHeight: fal.height });
     }
@@ -240,11 +245,11 @@ export async function POST(req: NextRequest) {
     return NextResponse.json({ error: "Superfície não detectada." }, { status: 422 });
   }
 
-  // Point-prompt path (tap-to-detect) — unchanged.
+  // Point-prompt path (tap-to-detect).
   const nx = Math.min(1, Math.max(0, body.point?.x ?? 0.5));
   const ny = Math.min(1, Math.max(0, body.point?.y ?? 0.5));
 
-  if (process.env.FAL_KEY && natW > 0 && natH > 0) {
+  if (useFal && natW > 0 && natH > 0) {
     const fal = await detectFal(body.photo, nx * natW, ny * natH);
     if (fal) return NextResponse.json({ mask: fal.mask, maskWidth: fal.width, maskHeight: fal.height });
   }

@@ -132,7 +132,10 @@ async function normalizeImage(file: File): Promise<{ dataUrl: string; w: number;
   return { dataUrl: c.toDataURL("image/jpeg", 0.9), w, h };
 }
 
-async function maskToOverlay(maskUrl: string, hex: string): Promise<{ url: string; rect: Rect | null }> {
+async function maskToOverlay(
+  maskUrl: string,
+  hex: string
+): Promise<{ url: string; rect: Rect | null; coverage: number }> {
   const im = await loadImage(maskUrl);
   const w = im.naturalWidth;
   const h = im.naturalHeight;
@@ -149,7 +152,7 @@ async function maskToOverlay(maskUrl: string, hex: string): Promise<{ url: strin
   const { r, g, b } = hexToRgb(hex);
   const out = ctx.createImageData(w, h);
   const od = out.data;
-  let minX = w, minY = h, maxX = 0, maxY = 0, any = false;
+  let minX = w, minY = h, maxX = 0, maxY = 0, any = false, count = 0;
   for (let p = 0, pi = 0; p < w * h; p++, pi += 4) {
     const on = hasAlpha ? src[pi + 3] > 40 : src[pi] * 0.299 + src[pi + 1] * 0.587 + src[pi + 2] * 0.114 > 110;
     if (on) {
@@ -157,12 +160,13 @@ async function maskToOverlay(maskUrl: string, hex: string): Promise<{ url: strin
       const x = p % w; const y = (p / w) | 0;
       if (x < minX) minX = x; if (x > maxX) maxX = x;
       if (y < minY) minY = y; if (y > maxY) maxY = y;
-      any = true;
+      any = true; count++;
     } else { od[pi + 3] = 0; }
   }
   ctx.putImageData(out, 0, 0);
   const rect = any ? { x: minX / w, y: minY / h, w: (maxX - minX + 1) / w, h: (maxY - minY + 1) / h } : null;
-  return { url: c.toDataURL(), rect };
+  const coverage = w * h > 0 ? count / (w * h) : 0;
+  return { url: c.toDataURL(), rect, coverage };
 }
 
 // Box-draw detection: intersect the detected surface with the rectangle the
@@ -579,23 +583,46 @@ export default function VisualizadorWizard({
     async (id: string, colorIdx: number, nx: number, ny: number) => {
       if (!photoData) return;
       updateZone(id, { detecting: true });
-      try {
+      const color = ZONE_COLORS[colorIdx % ZONE_COLORS.length];
+      type DetectResp = { mask?: string; polygon?: Array<[number, number]>; rect?: Rect };
+      const callDetect = async (skipFal: boolean): Promise<DetectResp | null> => {
         const res = await fetch("/api/visualizador/detect-surface", {
           method: "POST",
           headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({ photo: photoData, point: { x: nx, y: ny }, width: photoDims?.w, height: photoDims?.h }),
+          body: JSON.stringify({ photo: photoData, point: { x: nx, y: ny }, width: photoDims?.w, height: photoDims?.h, skipFal }),
         });
-        const j = (await res.json()) as { mask?: string; polygon?: Array<[number, number]>; rect?: Rect };
-        if (res.ok && typeof j.mask === "string") {
+        return res.ok ? ((await res.json()) as DetectResp) : null;
+      };
+      try {
+        // 1) Try fal SAM2 (point prompt). Its mask is only trustworthy if it
+        //    actually covers a sensible area — a single tap often makes SAM2
+        //    return an empty / pinhole / whole-image mask, which used to be
+        //    accepted silently and looked like "nothing detected".
+        let j = await callDetect(false);
+        if (j && typeof j.mask === "string") {
           try {
-            const { url, rect } = await maskToOverlay(j.mask, ZONE_COLORS[colorIdx % ZONE_COLORS.length]);
-            updateZone(id, { maskUrl: url, rect, polygon: null, detecting: false });
-            return;
-          } catch { /* fall through */ }
+            const { url, rect, coverage } = await maskToOverlay(j.mask, color);
+            if (rect && coverage >= 0.005 && coverage <= 0.92) {
+              updateZone(id, { maskUrl: url, rect, polygon: null, detecting: false });
+              return;
+            }
+          } catch { /* fall through to Gemini retry */ }
+          // 2) fal mask was empty/degenerate → retry forcing the Gemini polygon,
+          //    which reliably traces the whole tapped surface.
+          j = await callDetect(true);
         }
-        if (res.ok && Array.isArray(j.polygon)) {
+        if (j && Array.isArray(j.polygon)) {
           updateZone(id, { polygon: j.polygon, rect: j.rect ?? null, maskUrl: null, detecting: false });
           return;
+        }
+        if (j && typeof j.mask === "string") {
+          try {
+            const { url, rect, coverage } = await maskToOverlay(j.mask, color);
+            if (rect && coverage >= 0.005) {
+              updateZone(id, { maskUrl: url, rect, polygon: null, detecting: false });
+              return;
+            }
+          } catch { /* fall through */ }
         }
         updateZone(id, { detecting: false });
       } catch {
@@ -763,21 +790,39 @@ export default function VisualizadorWizard({
         if (dims && dims.w > 0 && dims.h > 0) {
           try { maskImage = await buildMaskDataUrl(z, dims.w, dims.h); } catch { maskImage = null; }
         }
-        const res = await fetch("/api/visualizador/render", {
-          method: "POST",
-          headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({
-            photo: base, productId: prod.id, referenceUrl: prod.image_path,
-            finish: FINISH_BY_LINE[prod.linha],
-            wallWidthM: parseDim(z.width) ?? undefined,
-            wallHeightM: parseDim(z.height) ?? undefined,
-            applicationArea: areaForZone(z),
-            rect: z.rect ?? undefined,
-            maskImage: maskImage ?? undefined,
-          }),
+        const reqBody = JSON.stringify({
+          photo: base, productId: prod.id, referenceUrl: prod.image_path,
+          finish: FINISH_BY_LINE[prod.linha],
+          wallWidthM: parseDim(z.width) ?? undefined,
+          wallHeightM: parseDim(z.height) ?? undefined,
+          applicationArea: areaForZone(z),
+          rect: z.rect ?? undefined,
+          maskImage: maskImage ?? undefined,
         });
-        const json = await res.json();
-        if (!res.ok || !json.image) throw new Error(json.error || "Não foi possível gerar a visualização.");
+        // The image generator occasionally returns a transient capacity error
+        // (the "error the first time, worked the second" case). Auto-retry once
+        // on a server/network error before surfacing it, so the user doesn't
+        // have to manually press generate again.
+        let json: { image?: string; error?: string } | null = null;
+        let lastErr = "Não foi possível gerar a visualização.";
+        for (let attempt = 0; attempt < 2; attempt++) {
+          try {
+            const res = await fetch("/api/visualizador/render", {
+              method: "POST",
+              headers: { "Content-Type": "application/json" },
+              body: reqBody,
+            });
+            const body = (await res.json()) as { image?: string; error?: string };
+            if (res.ok && body.image) { json = body; break; }
+            lastErr = body.error || lastErr;
+            // Only retry transient server errors (5xx); a 4xx won't fix itself.
+            if (res.status < 500 || attempt === 1) break;
+          } catch {
+            if (attempt === 1) break;
+          }
+          await new Promise((r) => setTimeout(r, 1500));
+        }
+        if (!json || !json.image) throw new Error(lastErr);
         try {
           composite = await compositeMaskedRegion(composite, json.image, z);
         } catch {

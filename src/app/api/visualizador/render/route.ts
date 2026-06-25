@@ -215,7 +215,10 @@ export async function POST(req: NextRequest) {
     generationConfig: { responseModalities: ["IMAGE"] },
   };
 
-  // Retry up to 3 times on 503 (Gemini capacity fluctuations).
+  // Retry on transient Gemini failures — 503 (overloaded), 429 (rate) and 500
+  // (sporadic server error), which are the usual "worked the second time"
+  // cases. Exponential-ish backoff between attempts.
+  const RETRYABLE = new Set([429, 500, 503]);
   let res: Response | null = null;
   const bodyStr = JSON.stringify(payload);
   const url = `${GEMINI_BASE}/models/${MODEL}:generateContent?key=${apiKey}`;
@@ -226,12 +229,13 @@ export async function POST(req: NextRequest) {
         headers: { "Content-Type": "application/json" },
         body: bodyStr,
       });
-      if (res.status !== 503) break;
-      if (attempt < 2) await new Promise((r) => setTimeout(r, 1500));
+      if (!RETRYABLE.has(res.status)) break;
+      if (attempt < 2) await new Promise((r) => setTimeout(r, 1200 * (attempt + 1)));
     } catch {
       if (attempt === 2) {
         return NextResponse.json({ error: "Não foi possível contatar o gerador de imagem." }, { status: 502 });
       }
+      await new Promise((r) => setTimeout(r, 1200 * (attempt + 1)));
     }
   }
   if (!res) {
