@@ -85,6 +85,20 @@ export default function PedidosTab() {
   const [draft, setDraft] = useState<PedidoDraft | null>(null);
   const [saving, setSaving] = useState(false);
 
+  // Stock-aware line items for the create form (model + plate qty).
+  type StockProduct = { id: string; name: string; code: string | null; available: number; stock_on_hand: number };
+  type OrderItem = { product_id: string; plates: number };
+  const [stockProducts, setStockProducts] = useState<StockProduct[]>([]);
+  const [items, setItems] = useState<OrderItem[]>([]);
+
+  useEffect(() => {
+    // Best-effort: if migration 023 isn't applied the picker just stays empty.
+    fetch("/api/admin/stock")
+      .then((r) => (r.ok ? r.json() : null))
+      .then((j) => { if (j?.products) setStockProducts(j.products); })
+      .catch(() => {});
+  }, []);
+
   const fetchPedidos = useCallback(async () => {
     setLoading(true);
     setError(null);
@@ -193,12 +207,13 @@ export default function PedidosTab() {
       notes: draft.notes ?? null,
       expected_delivery_at: draft.expected_delivery_at ?? null,
     };
+    const cleanItems = items.filter((it) => it.product_id && it.plates > 0);
     try {
       if (draft._isNew) {
         const res = await fetch("/api/admin/pedidos", {
           method: "POST",
           headers: { "Content-Type": "application/json" },
-          body: JSON.stringify(payload),
+          body: JSON.stringify({ ...payload, items: cleanItems }),
         });
         if (res.ok) {
           const created = await res.json();
@@ -232,7 +247,7 @@ export default function PedidosTab() {
             )}
           </div>
           <button
-            onClick={() => setDraft({ _isNew: true, status: "em_producao", payment_status: "pendente" })}
+            onClick={() => { setItems([]); setDraft({ _isNew: true, status: "em_producao", payment_status: "pendente" }); }}
             className="bg-[#002045] text-white text-xs tracking-[0.12em] uppercase font-bold font-[var(--font-inter)] px-5 py-2.5 hover:bg-[#1a365d] transition-colors"
           >
             + Novo pedido
@@ -488,6 +503,51 @@ export default function PedidosTab() {
                   <input className={inputCls} value={draft.product_name ?? ""} onChange={(e) => setDraft({ ...draft, product_name: e.target.value })} />
                 </Field>
               </div>
+
+              {/* Stock-aware line items (model + plate qty). Reserves stock for
+                  active orders; powers profit. Only on new orders. */}
+              {draft._isNew && stockProducts.length > 0 && (
+                <div className="border border-[#e2e2e2] rounded-sm p-3">
+                  <p className="text-[10px] tracking-[0.12em] uppercase font-bold font-[var(--font-inter)] text-[#74777f] mb-2">
+                    Placas (baixa de estoque)
+                  </p>
+                  <div className="space-y-2">
+                    {items.map((it, idx) => {
+                      const prod = stockProducts.find((p) => p.id === it.product_id);
+                      const over = prod && it.plates > prod.available;
+                      return (
+                        <div key={idx} className="flex items-center gap-2">
+                          <select value={it.product_id}
+                            onChange={(e) => setItems((cur) => cur.map((x, i) => i === idx ? { ...x, product_id: e.target.value } : x))}
+                            className={`${inputCls} flex-1`}>
+                            <option value="">Selecione o modelo…</option>
+                            {stockProducts.map((p) => (
+                              <option key={p.id} value={p.id}>{p.name}{p.code ? ` (${p.code})` : ""} — {p.available} disp.</option>
+                            ))}
+                          </select>
+                          <input type="number" min="1" value={it.plates || ""} placeholder="placas"
+                            onChange={(e) => setItems((cur) => cur.map((x, i) => i === idx ? { ...x, plates: Number(e.target.value) } : x))}
+                            className={`${inputCls} w-24`} />
+                          <button onClick={() => setItems((cur) => cur.filter((_, i) => i !== idx))}
+                            className="text-[#b42318] text-lg leading-none px-1" title="Remover">×</button>
+                          {over && <span className="text-amber-600 text-[10px] font-[var(--font-inter)] whitespace-nowrap">só {prod!.available} disp.</span>}
+                        </div>
+                      );
+                    })}
+                  </div>
+                  <button onClick={() => setItems((cur) => [...cur, { product_id: "", plates: 1 }])}
+                    className="mt-2 text-[11px] font-bold font-[var(--font-inter)] text-[#002045] hover:underline">
+                    + Adicionar modelo
+                  </button>
+                  {items.some((it) => it.product_id && it.plates > 0) && (
+                    <p className="text-[#74777f] text-[10px] font-[var(--font-inter)] mt-2">
+                      {(draft.status ?? "em_producao") === "entregue"
+                        ? "Estoque será baixado (pedido entregue)."
+                        : "Estoque será reservado enquanto o pedido estiver em produção."}
+                    </p>
+                  )}
+                </div>
+              )}
               <div className="grid grid-cols-2 gap-3">
                 <Field label="Área (m²)">
                   <input

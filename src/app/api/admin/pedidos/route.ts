@@ -2,6 +2,9 @@ import { NextRequest, NextResponse } from "next/server";
 import { isAdminRequest } from "@/lib/admin-auth";
 import { supabaseAdmin } from "@/lib/supabase";
 import { isMissingTable } from "@/lib/db-compat";
+import { transitionOrderStock } from "@/lib/stock";
+
+interface OrderItemInput { product_id?: string; plates?: number }
 
 // Pedidos / Produção — what happens AFTER a lead is won: the order is cut,
 // finished and delivered. Backed by the `pedidos` table (migration 017). If
@@ -68,6 +71,43 @@ export async function POST(req: NextRequest) {
   };
 
   const { data, error } = await db.from("pedidos").insert(payload).select().single();
+
+  // Structured line items (model + plate qty) → enables stock + profit. Created
+  // alongside the order; reserve stock immediately for active orders. All
+  // best-effort: a missing migration 023 must never block order creation.
+  if (data && Array.isArray(body.items) && body.items.length > 0) {
+    const rawItems = (body.items as OrderItemInput[])
+      .filter((it) => it && it.product_id && Number(it.plates) > 0)
+      .map((it) => ({ product_id: it.product_id as string, plates: Math.round(Number(it.plates)) }));
+    if (rawItems.length > 0) {
+      try {
+        // Snapshot cost/price per model at order time.
+        const ids = [...new Set(rawItems.map((i) => i.product_id))];
+        const { data: prods } = await db.from("products").select("id, name, cost_price, price").in("id", ids);
+        const byId = new Map((prods ?? []).map((p) => [p.id as string, p]));
+        const itemRows = rawItems.map((i) => {
+          const p = byId.get(i.product_id);
+          return {
+            pedido_id: data.id,
+            product_id: i.product_id,
+            product_name: (p?.name as string) ?? null,
+            plates: i.plates,
+            unit_cost: p?.cost_price ?? null,
+            unit_price: p?.price ?? null,
+          };
+        });
+        await db.from("pedido_items").insert(itemRows);
+
+        const status = (payload.status as string) || "em_producao";
+        if (status === "em_producao" || status === "pronto") {
+          const r = await transitionOrderStock(db, data.id, "none", "reserved", "admin");
+          if (r.ok && r.newState) {
+            await db.from("pedidos").update({ stock_state: r.newState }).eq("id", data.id);
+          }
+        }
+      } catch { /* stock/items tables missing — order still created */ }
+    }
+  }
 
   if (error) {
     if (isMissingTable(error)) {
