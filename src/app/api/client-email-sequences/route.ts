@@ -4,7 +4,7 @@ import { getResend } from "@/lib/resend";
 import { generateClientEmail, STEP_DELAYS_DAYS } from "@/lib/client-email-content";
 import { upsertLeadFromSource, touchLeadContacted } from "@/lib/leads";
 import { smclickConfigured, sendText, normalizePhone } from "@/lib/smclick";
-import { clientOrcamentoMessage, ownerHighValueMessage } from "@/lib/smclick-messages";
+import { clientOrcamentoMessage, ownerHighValueMessage, productEducationMessage } from "@/lib/smclick-messages";
 
 const ADMIN_EMAIL = "armaandaswani19@gmail.com";
 
@@ -167,6 +167,14 @@ export async function POST(req: NextRequest) {
       );
       if (res.ok && leadId) await touchLeadContacted(leadId);
       else if (!res.ok) console.error("[smclick] client orçamento WhatsApp failed", { status: res.status, error: res.error });
+
+      // Message 2 — product education / qualification, right after the
+      // orçamento confirmation. Teaches the lead what the bamboo panels are and
+      // why they suit the Amazonian climate. Non-fatal.
+      if (res.ok) {
+        const edu = await sendText(phone, productEducationMessage());
+        if (!edu.ok) console.error("[smclick] product education WhatsApp failed", { status: edu.status, error: edu.error });
+      }
     } else {
       console.warn("[smclick] client orçamento WhatsApp skipped", { configured: smclickConfigured(), hasPhone: Boolean(phone) });
     }
