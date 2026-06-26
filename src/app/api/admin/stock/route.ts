@@ -1,9 +1,10 @@
 import { NextRequest, NextResponse } from "next/server";
 import { isAdminRequest } from "@/lib/admin-auth";
 import { supabaseAdmin } from "@/lib/supabase";
-import { applyStockMovement, deltasForKind, type MovementKind } from "@/lib/stock";
+import { applyStockMovement, deltasForKind, type ManualExitType, type MovementKind } from "@/lib/stock";
 
 const MIGRATION_HINT = "Recurso indisponível — rode a migração 023 (estoque) no Supabase.";
+const MANUAL_EXIT_TYPES = new Set(["sale", "loss", "sample", "internal"]);
 
 function isMissingStock(err: { message?: string } | null): boolean {
   const m = err?.message?.toLowerCase() ?? "";
@@ -40,7 +41,7 @@ export async function GET(req: NextRequest) {
 
 /**
  * POST /api/admin/stock — record a MANUAL movement.
- *   { product_id, kind: 'manual_in'|'manual_out'|'adjust', qty, reason }
+ *   { product_id, kind: 'manual_in'|'manual_out'|'adjust', qty, reason, manual_exit_type?, sale_amount? }
  * For 'adjust', qty is the new absolute on-hand count (we compute the delta).
  */
 export async function POST(req: NextRequest) {
@@ -76,6 +77,17 @@ export async function POST(req: NextRequest) {
     onHandDelta = deltasForKind(kind, Math.round(qty)).onHand;
   }
 
+  const rawExitType = typeof body.manual_exit_type === "string" ? body.manual_exit_type : "";
+  const manualExitType: ManualExitType | null =
+    kind === "manual_out"
+      ? (MANUAL_EXIT_TYPES.has(rawExitType) ? rawExitType as ManualExitType : "loss")
+      : null;
+  const rawSaleAmount = Number(body.sale_amount);
+  const saleAmount =
+    manualExitType === "sale" && Number.isFinite(rawSaleAmount) && rawSaleAmount >= 0
+      ? rawSaleAmount
+      : null;
+
   const res = await applyStockMovement(sb, {
     productId,
     kind,
@@ -83,6 +95,8 @@ export async function POST(req: NextRequest) {
     reservedDelta: 0,
     reason: typeof body.reason === "string" ? body.reason.trim() || null : null,
     createdBy: "admin",
+    manualExitType,
+    saleAmount,
   });
 
   if (!res.ok && isMissingStock({ message: res.error })) {

@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
 import { isAdminRequest } from "@/lib/admin-auth";
+import { isMissingTable } from "@/lib/db-compat";
 import { supabaseAdmin } from "@/lib/supabase";
 
 // GET /api/admin/financeiro?from=ISO&to=ISO — P&L over a date range.
@@ -41,13 +42,23 @@ export async function GET(req: NextRequest) {
   const rangeDays = Math.max(1, (toMs - fromMs) / DAY);
 
   const sb = supabaseAdmin();
+  const monthKey = (iso: string) => { const d = new Date(iso); return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, "0")}`; };
 
   // 1) Completed orders in range.
-  let completed: Array<{ id: string; total: number | null; other_costs?: Array<{ amount?: number }>; delivered_at: string | null; created_at: string; client_name: string }> = [];
+  let completed: Array<{
+    id: string;
+    total: number | null;
+    discount_amount?: number | null;
+    freight_amount?: number | null;
+    other_costs?: Array<{ amount?: number }>;
+    delivered_at: string | null;
+    created_at: string;
+    client_name: string;
+  }> = [];
   try {
     const { data } = await sb
       .from("pedidos")
-      .select("id, total, other_costs, delivered_at, created_at, client_name, status")
+      .select("id, total, discount_amount, freight_amount, other_costs, delivered_at, created_at, client_name, status")
       .eq("status", "entregue");
     completed = ((data ?? []) as typeof completed & Array<{ status: string }>).filter((p) => {
       const ts = new Date(p.delivered_at || p.created_at).getTime();
@@ -79,24 +90,132 @@ export async function GET(req: NextRequest) {
     } catch { /* no items table */ }
   }
 
-  let revenue = 0, cogs = 0, orderCosts = 0;
+  let revenue = 0, cogs = 0, orderCosts = 0, discounts = 0;
   const perOrder = completed.map((p) => {
     const manualRev = Number(p.total) || 0;
     const itemRev = itemRevenueByOrder[p.id] ?? 0;
-    const rev = manualRev > 0 ? manualRev : itemRev;
+    const discount = Math.max(0, Number(p.discount_amount) || 0);
+    const freight = Math.max(0, Number(p.freight_amount) || 0);
+    const rev = itemRev > 0 ? Math.max(0, itemRev - discount + freight) : manualRev;
     const c = cogsByOrder[p.id] ?? 0;
     const oc = Array.isArray(p.other_costs) ? p.other_costs.reduce((s, x) => s + (Number(x?.amount) || 0), 0) : 0;
     if (missingCostByOrder[p.id] || !(p.id in cogsByOrder)) ordersWithoutCost++;
     if (manualRev <= 0 && (missingPriceByOrder[p.id] || !(p.id in itemRevenueByOrder))) ordersWithoutPrice++;
-    revenue += rev; cogs += c; orderCosts += oc;
+    revenue += rev; cogs += c; orderCosts += oc; discounts += discount;
     const profit = rev - c - oc;
     return {
       id: p.id, client_name: p.client_name, when: p.delivered_at || p.created_at,
-      revenue: rev, cogs: c, other_costs: oc, profit,
+      revenue: rev, cogs: c, other_costs: oc, discount, freight, profit,
       margin: rev > 0 ? Math.round((profit / rev) * 100) : 0,
       below_cost: rev > 0 && profit < 0,
     };
   });
+
+  // 2b) Manual stock exits that carry financial meaning.
+  // sale: off-order revenue + COGS. loss/sample/internal: stock expense only.
+  let manualSales = 0;
+  let inventoryLosses = 0;
+  const inventoryLossesByMonth: Record<string, number> = {};
+  try {
+    const { data: moves, error: movesErr } = await sb
+      .from("stock_movements")
+      .select("id, product_id, on_hand_delta, reason, created_at, manual_exit_type, sale_amount")
+      .eq("kind", "manual_out")
+      .gte("created_at", from.toISOString())
+      .lte("created_at", to.toISOString());
+
+    if (!movesErr) {
+      const rows = (moves ?? []) as Array<{
+        id: string;
+        product_id: string;
+        on_hand_delta: number;
+        reason: string | null;
+        created_at: string;
+        manual_exit_type: "sale" | "loss" | "sample" | "internal" | null;
+        sale_amount: number | null;
+      }>;
+      const productIds = Array.from(new Set(rows.map((m) => m.product_id).filter(Boolean)));
+      const productsById: Record<string, { name: string; price: number | null; cost_price: number | null }> = {};
+      if (productIds.length > 0) {
+        const { data: prods } = await sb.from("products").select("id, name, price, cost_price").in("id", productIds);
+        for (const p of (prods ?? []) as Array<{ id: string; name: string; price: number | null; cost_price: number | null }>) {
+          productsById[p.id] = { name: p.name, price: p.price, cost_price: p.cost_price };
+        }
+      }
+      for (const m of rows) {
+        if (!m.manual_exit_type) continue;
+        const qty = Math.abs(Number(m.on_hand_delta) || 0);
+        const product = productsById[m.product_id];
+        const stockCost = qty * (Number(product?.cost_price) || 0);
+        if (m.manual_exit_type === "sale") {
+          const sale = Number(m.sale_amount) || qty * (Number(product?.price) || 0);
+          const profit = sale - stockCost;
+          manualSales += sale;
+          revenue += sale;
+          cogs += stockCost;
+          perOrder.push({
+            id: `stock-${m.id}`,
+            client_name: `Venda avulsa${product?.name ? ` · ${product.name}` : ""}`,
+            when: m.created_at,
+            revenue: sale,
+            cogs: stockCost,
+            other_costs: 0,
+            discount: 0,
+            freight: 0,
+            profit,
+            margin: sale > 0 ? Math.round((profit / sale) * 100) : 0,
+            below_cost: sale > 0 && profit < 0,
+          });
+        } else {
+          inventoryLosses += stockCost;
+          const k = monthKey(m.created_at);
+          inventoryLossesByMonth[k] = (inventoryLossesByMonth[k] ?? 0) + stockCost;
+        }
+      }
+    }
+  } catch { /* migration 029 may not be installed yet */ }
+
+  // 2c) Commissions owed on concluded coupon/direct sales in this period.
+  let partnerCommissions = 0;
+  let repCommissions = 0;
+  const commissionsByMonth: Record<string, number> = {};
+  try {
+    const { data: uses } = await sb
+      .from("coupon_uses")
+      .select("id, commission_owed, sales_rep_commission_owed, sale_status, created_at")
+      .eq("sale_status", "concluido")
+      .gte("created_at", from.toISOString())
+      .lte("created_at", to.toISOString());
+    const rows = (uses ?? []) as Array<{
+      id: string;
+      commission_owed: number | null;
+      sales_rep_commission_owed: number | null;
+      created_at: string;
+    }>;
+    const useIds = rows.map((u) => u.id);
+    const repByUse: Record<string, number> = {};
+    if (useIds.length > 0) {
+      const { data: splitRows, error: splitErr } = await sb
+        .from("coupon_use_commissions")
+        .select("coupon_use_id, commission_owed")
+        .in("coupon_use_id", useIds);
+      if (!splitErr || !isMissingTable(splitErr)) {
+        for (const r of (splitRows ?? []) as Array<{ coupon_use_id: string; commission_owed: number | null }>) {
+          repByUse[r.coupon_use_id] = (repByUse[r.coupon_use_id] ?? 0) + (Number(r.commission_owed) || 0);
+        }
+      }
+    }
+    for (const u of rows) {
+      const partner = Number(u.commission_owed) || 0;
+      const rep = repByUse[u.id] != null ? repByUse[u.id] : (Number(u.sales_rep_commission_owed) || 0);
+      partnerCommissions += partner;
+      repCommissions += rep;
+      const total = partner + rep;
+      const k = monthKey(u.created_at);
+      commissionsByMonth[k] = (commissionsByMonth[k] ?? 0) + total;
+    }
+  } catch { /* commissions are best-effort */ }
+  const commissions = partnerCommissions + repCommissions;
 
   // 3) Fixed costs — fetched here, charged per calendar month in the loop below.
   //    A MONTHLY cost hits IN FULL for every month the range touches (it does
@@ -137,18 +256,17 @@ export async function GET(req: NextRequest) {
 
   // Monthly series for trend charts: bucket completed-order revenue/COGS/costs
   // by delivery month, and prorate each active fixed cost into each month.
-  const monthMap: Record<string, { month: string; revenue: number; cogs: number; order_costs: number; fixed: number; net: number }> = {};
-  const monthKey = (iso: string) => { const d = new Date(iso); return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, "0")}`; };
+  const monthMap: Record<string, { month: string; revenue: number; cogs: number; order_costs: number; fixed: number; commissions: number; inventory_losses: number; net: number }> = {};
   for (const o of perOrder) {
     const k = monthKey(o.when);
-    const m = (monthMap[k] ||= { month: k, revenue: 0, cogs: 0, order_costs: 0, fixed: 0, net: 0 });
+    const m = (monthMap[k] ||= { month: k, revenue: 0, cogs: 0, order_costs: 0, fixed: 0, commissions: 0, inventory_losses: 0, net: 0 });
     m.revenue += o.revenue; m.cogs += o.cogs; m.order_costs += o.other_costs;
   }
   // Enumerate every month in [from,to] so empty months still show on the chart.
   { const d = new Date(from.getFullYear(), from.getMonth(), 1); const end = new Date(to.getFullYear(), to.getMonth(), 1);
     while (d <= end) {
       const k = `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, "0")}`;
-      const m = (monthMap[k] ||= { month: k, revenue: 0, cogs: 0, order_costs: 0, fixed: 0, net: 0 });
+      const m = (monthMap[k] ||= { month: k, revenue: 0, cogs: 0, order_costs: 0, fixed: 0, commissions: 0, inventory_losses: 0, net: 0 });
       const mStart = Math.max(fromMs, new Date(d.getFullYear(), d.getMonth(), 1).getTime());
       const mEnd = Math.min(toMs, new Date(d.getFullYear(), d.getMonth() + 1, 1).getTime());
       const mDays = Math.max(0, (mEnd - mStart) / DAY);
@@ -163,8 +281,16 @@ export async function GET(req: NextRequest) {
       d.setMonth(d.getMonth() + 1);
     }
   }
+  for (const [k, amount] of Object.entries(commissionsByMonth)) {
+    const m = (monthMap[k] ||= { month: k, revenue: 0, cogs: 0, order_costs: 0, fixed: 0, commissions: 0, inventory_losses: 0, net: 0 });
+    m.commissions += amount;
+  }
+  for (const [k, amount] of Object.entries(inventoryLossesByMonth)) {
+    const m = (monthMap[k] ||= { month: k, revenue: 0, cogs: 0, order_costs: 0, fixed: 0, commissions: 0, inventory_losses: 0, net: 0 });
+    m.inventory_losses += amount;
+  }
   const monthly = Object.values(monthMap)
-    .map((m) => ({ ...m, net: m.revenue - m.cogs - m.order_costs - m.fixed }))
+    .map((m) => ({ ...m, net: m.revenue - m.cogs - m.order_costs - m.fixed - m.commissions - m.inventory_losses }))
     .sort((a, b) => a.month.localeCompare(b.month));
   const fixedTotal = monthly.reduce((s, m) => s + m.fixed, 0);
   const fixedBreakdown = Object.values(fixedAccum);
@@ -179,17 +305,24 @@ export async function GET(req: NextRequest) {
   } catch { /* no stock columns */ }
 
   const grossProfit = revenue - cogs - orderCosts;
-  const netProfit = grossProfit - fixedTotal;
+  const netProfit = grossProfit - fixedTotal - commissions - inventoryLosses;
 
   return NextResponse.json({
     range: { from: from.toISOString(), to: to.toISOString(), days: Math.round(rangeDays) },
     revenue,
+    gross_revenue: revenue + discounts,
+    discounts,
     cogs,
     order_costs: orderCosts,
     gross_profit: grossProfit,
     gross_margin: revenue > 0 ? Math.round((grossProfit / revenue) * 100) : 0,
     fixed_costs: fixedTotal,
     fixed_breakdown: fixedBreakdown,
+    commissions,
+    partner_commissions: partnerCommissions,
+    rep_commissions: repCommissions,
+    manual_sales: manualSales,
+    inventory_losses: inventoryLosses,
     net_profit: netProfit,
     net_margin: revenue > 0 ? Math.round((netProfit / revenue) * 100) : 0,
     completed_count: completed.length,

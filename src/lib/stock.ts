@@ -10,6 +10,7 @@
 // counters is acceptable. The ledger row is the source of truth either way.
 
 import type { SupabaseClient } from "@supabase/supabase-js";
+import { isMissingColumn } from "@/lib/db-compat";
 
 export type MovementKind =
   | "manual_in"
@@ -19,6 +20,8 @@ export type MovementKind =
   | "release"
   | "consume"
   | "return";
+
+export type ManualExitType = "sale" | "loss" | "sample" | "internal";
 
 export interface MovementResult {
   ok: boolean;
@@ -63,9 +66,11 @@ export async function applyStockMovement(
     pedidoId?: string | null;
     reason?: string | null;
     createdBy?: string | null;
+    manualExitType?: ManualExitType | null;
+    saleAmount?: number | null;
   }
 ): Promise<MovementResult> {
-  const { productId, kind, onHandDelta, reservedDelta, pedidoId, reason, createdBy } = params;
+  const { productId, kind, onHandDelta, reservedDelta, pedidoId, reason, createdBy, manualExitType, saleAmount } = params;
 
   const { data: prod, error: readErr } = await db
     .from("products")
@@ -78,7 +83,7 @@ export async function applyStockMovement(
   const nextOnHand = Math.max(0, (prod.stock_on_hand ?? 0) + onHandDelta);
   const nextReserved = Math.max(0, (prod.stock_reserved ?? 0) + reservedDelta);
 
-  const { error: ledgerErr } = await db.from("stock_movements").insert({
+  const ledgerPayload: Record<string, unknown> = {
     product_id: productId,
     pedido_id: pedidoId ?? null,
     kind,
@@ -86,7 +91,16 @@ export async function applyStockMovement(
     reserved_delta: reservedDelta,
     reason: reason ?? null,
     created_by: createdBy ?? null,
-  });
+  };
+  if (manualExitType) ledgerPayload.manual_exit_type = manualExitType;
+  if (saleAmount != null) ledgerPayload.sale_amount = saleAmount;
+
+  let { error: ledgerErr } = await db.from("stock_movements").insert(ledgerPayload);
+  if (ledgerErr && isMissingColumn(ledgerErr)) {
+    delete ledgerPayload.manual_exit_type;
+    delete ledgerPayload.sale_amount;
+    ({ error: ledgerErr } = await db.from("stock_movements").insert(ledgerPayload));
+  }
   if (ledgerErr) return { ok: false, error: ledgerErr.message };
 
   const { error: updErr } = await db

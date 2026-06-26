@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
 import { isAdminRequest } from "@/lib/admin-auth";
+import { isMissingColumn } from "@/lib/db-compat";
 import { supabaseAdmin } from "@/lib/supabase";
 
 /** GET /api/admin/stock/[id] — the movement ledger for one product (newest first). */
@@ -9,12 +10,25 @@ export async function GET(req: NextRequest, { params }: { params: Promise<{ id: 
   if (!id) return NextResponse.json({ error: "Missing id" }, { status: 400 });
 
   const sb = supabaseAdmin();
-  const { data, error } = await sb
+  const primary = await sb
     .from("stock_movements")
-    .select("id, kind, on_hand_delta, reserved_delta, reason, created_by, created_at, pedido_id")
+    .select("id, kind, on_hand_delta, reserved_delta, reason, created_by, created_at, pedido_id, manual_exit_type, sale_amount")
     .eq("product_id", id)
     .order("created_at", { ascending: false })
     .limit(200);
+  let data: unknown = primary.data;
+  let error = primary.error;
+
+  if (error && isMissingColumn(error)) {
+    const fallback = await sb
+      .from("stock_movements")
+      .select("id, kind, on_hand_delta, reserved_delta, reason, created_by, created_at, pedido_id")
+      .eq("product_id", id)
+      .order("created_at", { ascending: false })
+      .limit(200);
+    data = fallback.data;
+    error = fallback.error;
+  }
 
   if (error) {
     const m = error.message.toLowerCase();

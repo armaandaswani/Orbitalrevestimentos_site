@@ -18,12 +18,16 @@ interface StockProduct {
   is_active: boolean;
 }
 
+type ManualExitType = "sale" | "loss" | "sample" | "internal";
+
 interface Movement {
   id: string;
   kind: string;
   on_hand_delta: number;
   reserved_delta: number;
   reason: string | null;
+  manual_exit_type?: ManualExitType | null;
+  sale_amount?: number | null;
   created_by: string | null;
   created_at: string;
   pedido_id: string | null;
@@ -32,6 +36,12 @@ interface Movement {
 const KIND_LABEL: Record<string, string> = {
   manual_in: "Entrada", manual_out: "Saída", adjust: "Ajuste",
   reserve: "Reservado", release: "Liberado", consume: "Baixa (entregue)", return: "Devolução",
+};
+const EXIT_LABEL: Record<ManualExitType, string> = {
+  sale: "Venda avulsa",
+  loss: "Perda/quebra",
+  sample: "Amostra",
+  internal: "Uso interno",
 };
 
 function fmtBRL(n: number) {
@@ -67,11 +77,17 @@ export default function EstoqueTab() {
 
   useEffect(() => { fetchStock(); }, [fetchStock]);
 
-  async function move(productId: string, kind: "manual_in" | "manual_out" | "adjust", qty: number, reason: string) {
+  async function move(
+    productId: string,
+    kind: "manual_in" | "manual_out" | "adjust",
+    qty: number,
+    reason: string,
+    opts?: { manual_exit_type?: ManualExitType | null; sale_amount?: number | null }
+  ) {
     const res = await fetch("/api/admin/stock", {
       method: "POST",
       headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ product_id: productId, kind, qty, reason }),
+      body: JSON.stringify({ product_id: productId, kind, qty, reason, ...opts }),
     });
     if (res.ok) {
       await fetchStock();
@@ -154,7 +170,7 @@ export default function EstoqueTab() {
               expanded={expandedId === p.id}
               movements={movements[p.id] ?? null}
               onToggle={() => toggleExpand(p.id)}
-              onMove={(kind, qty, reason) => move(p.id, kind, qty, reason)}
+              onMove={(kind, qty, reason, opts) => move(p.id, kind, qty, reason, opts)}
               onPatch={(patch) => patchProduct(p.id, patch)}
             />
           ))}
@@ -172,20 +188,30 @@ function StockRow({
   expanded: boolean;
   movements: Movement[] | null;
   onToggle: () => void;
-  onMove: (kind: "manual_in" | "manual_out" | "adjust", qty: number, reason: string) => void;
+  onMove: (kind: "manual_in" | "manual_out" | "adjust", qty: number, reason: string, opts?: { manual_exit_type?: ManualExitType | null; sale_amount?: number | null }) => void;
   onPatch: (patch: { price?: number | null; cost_price?: number | null; reorder_point?: number }) => void;
 }) {
   const [mode, setMode] = useState<"manual_in" | "manual_out" | "adjust" | null>(null);
   const [qty, setQty] = useState("");
   const [reason, setReason] = useState("");
+  const [exitType, setExitType] = useState<ManualExitType>("loss");
+  const [saleAmount, setSaleAmount] = useState("");
   const unitProfit = p.price != null && p.cost_price != null ? p.price - p.cost_price : null;
   const unitMargin = p.price && unitProfit != null ? Math.round((unitProfit / p.price) * 100) : null;
+  const qtyNumber = Number(qty);
+  const suggestedSaleAmount = Number.isFinite(qtyNumber) && qtyNumber > 0 ? qtyNumber * (Number(p.price) || 0) : 0;
 
   function submit() {
     const n = Number(qty);
     if (!Number.isFinite(n) || n < 0) return;
-    onMove(mode!, n, reason);
-    setMode(null); setQty(""); setReason("");
+    const manualOpts = mode === "manual_out"
+      ? {
+          manual_exit_type: exitType,
+          sale_amount: exitType === "sale" ? Number(saleAmount || suggestedSaleAmount || 0) : null,
+        }
+      : undefined;
+    onMove(mode!, n, reason, manualOpts);
+    setMode(null); setQty(""); setReason(""); setSaleAmount(""); setExitType("loss");
   }
 
   return (
@@ -210,7 +236,7 @@ function StockRow({
           </div>
           <div className="flex items-center gap-1.5">
             {(["manual_in", "manual_out", "adjust"] as const).map((k) => (
-              <button key={k} onClick={() => { setMode(mode === k ? null : k); setQty(""); setReason(""); }}
+              <button key={k} onClick={() => { setMode(mode === k ? null : k); setQty(""); setReason(""); setSaleAmount(""); setExitType("loss"); }}
                 className={`text-[10px] uppercase tracking-[0.06em] font-bold font-[var(--font-inter)] px-2.5 py-1.5 border transition-colors ${mode === k ? "bg-[#002045] text-white border-[#002045]" : "border-[#e2e2e2] text-[#002045] hover:border-[#002045]"}`}>
                 {k === "manual_in" ? "+ Entrada" : k === "manual_out" ? "− Saída" : "Ajustar"}
               </button>
@@ -223,6 +249,22 @@ function StockRow({
             <input type="number" min="0" value={qty} onChange={(e) => setQty(e.target.value)} autoFocus
               placeholder={mode === "adjust" ? "Nova contagem" : "Placas"}
               className="w-28 border border-[#e2e2e2] px-2 py-1.5 text-xs font-[var(--font-inter)] text-[#002045] focus:outline-none focus:border-[#002045]" />
+            {mode === "manual_out" && (
+              <>
+                <select value={exitType} onChange={(e) => setExitType(e.target.value as ManualExitType)}
+                  className="border border-[#e2e2e2] px-2 py-1.5 text-xs font-[var(--font-inter)] text-[#002045] focus:outline-none focus:border-[#002045]">
+                  <option value="sale">Venda avulsa</option>
+                  <option value="loss">Perda/quebra</option>
+                  <option value="sample">Amostra</option>
+                  <option value="internal">Uso interno</option>
+                </select>
+                {exitType === "sale" && (
+                  <input type="number" min="0" step="0.01" value={saleAmount} onChange={(e) => setSaleAmount(e.target.value)}
+                    placeholder={suggestedSaleAmount ? `Venda ${fmtBRL(suggestedSaleAmount)}` : "Valor da venda"}
+                    className="w-36 border border-[#e2e2e2] px-2 py-1.5 text-xs font-[var(--font-inter)] text-[#002045] focus:outline-none focus:border-[#002045]" />
+                )}
+              </>
+            )}
             <input value={reason} onChange={(e) => setReason(e.target.value)} placeholder="Motivo (opcional)"
               className="flex-1 min-w-[140px] border border-[#e2e2e2] px-2 py-1.5 text-xs font-[var(--font-inter)] text-[#002045] focus:outline-none focus:border-[#002045]" />
             <button onClick={submit} className="bg-[#002045] text-white text-xs font-bold font-[var(--font-inter)] px-4 py-1.5 hover:bg-[#1a365d]">Confirmar</button>
@@ -278,6 +320,8 @@ function StockRow({
                   <span className="text-[#43474e] flex-1">
                     {m.on_hand_delta !== 0 && <span className={m.on_hand_delta > 0 ? "text-green-700" : "text-red-700"}>{m.on_hand_delta > 0 ? "+" : ""}{m.on_hand_delta} estoque </span>}
                     {m.reserved_delta !== 0 && <span className="text-blue-700">{m.reserved_delta > 0 ? "+" : ""}{m.reserved_delta} reserva </span>}
+                    {m.manual_exit_type && <span>· {EXIT_LABEL[m.manual_exit_type]} </span>}
+                    {m.manual_exit_type === "sale" && m.sale_amount != null && <span>· {fmtBRL(Number(m.sale_amount) || 0)} </span>}
                     {m.reason ? `· ${m.reason}` : ""}
                   </span>
                   <span className="text-[#b0b0b0] whitespace-nowrap">{fmtDateTime(m.created_at)}</span>

@@ -4,15 +4,16 @@ import React, { useState, useEffect, useCallback } from "react";
 
 interface PerOrder {
   id: string; client_name: string; when: string;
-  revenue: number; cogs: number; other_costs: number; profit: number; margin: number; below_cost: boolean;
+  revenue: number; cogs: number; other_costs: number; discount?: number; freight?: number; profit: number; margin: number; below_cost: boolean;
 }
 interface FixedBreakdown { name: string; cadence: string; amount: number; prorated: number }
-interface MonthPoint { month: string; revenue: number; cogs: number; order_costs: number; fixed: number; net: number }
+interface MonthPoint { month: string; revenue: number; cogs: number; order_costs: number; fixed: number; commissions?: number; inventory_losses?: number; net: number }
 interface PnL {
   range: { from: string; to: string; days: number };
-  revenue: number; cogs: number; order_costs: number;
+  revenue: number; gross_revenue?: number; discounts?: number; cogs: number; order_costs: number;
   gross_profit: number; gross_margin: number;
   fixed_costs: number; fixed_breakdown: FixedBreakdown[];
+  commissions?: number; partner_commissions?: number; rep_commissions?: number; manual_sales?: number; inventory_losses?: number;
   net_profit: number; net_margin: number;
   completed_count: number; orders_without_cost: number; orders_without_price: number; stock_value: number;
   monthly?: MonthPoint[];
@@ -116,20 +117,26 @@ export default function FinanceiroTab() {
           {/* P&L cards */}
           <div className="grid grid-cols-2 lg:grid-cols-4 gap-4 mb-6">
             <PnlCard
-              label="Receita"
+              label="Receita líquida"
               value={fmtBRL(pnl.revenue)}
               sub={pnl.orders_without_price > 0 ? `${pnl.orders_without_price} sem preço de venda` : `${pnl.completed_count} pedido${pnl.completed_count !== 1 ? "s" : ""} entregue${pnl.completed_count !== 1 ? "s" : ""}`}
               subTone={pnl.orders_without_price > 0 ? "warn" : undefined}
             />
             <PnlCard label="CMV (custo placas)" value={fmtBRL(pnl.cogs)} sub={pnl.orders_without_cost > 0 ? `${pnl.orders_without_cost} sem custo` : "todos com custo"} subTone={pnl.orders_without_cost > 0 ? "warn" : undefined} />
-            <PnlCard label="Custos fixos (rateado)" value={fmtBRL(pnl.fixed_costs)} sub={`${pnl.range.days} dias`} />
+            <PnlCard label="Comissões a pagar" value={fmtBRL(pnl.commissions ?? 0)} sub={`parceiros ${fmtBRL(pnl.partner_commissions ?? 0)} · reps ${fmtBRL(pnl.rep_commissions ?? 0)}`} />
             <PnlCard label="Lucro líquido" value={fmtBRL(pnl.net_profit)} sub={`${pnl.net_margin}% margem`} tone={pnl.net_profit >= 0 ? "good" : "bad"} big />
           </div>
           <div className="grid grid-cols-2 lg:grid-cols-4 gap-4 mb-8">
+            <PnlCard label="Descontos abatidos" value={fmtBRL(pnl.discounts ?? 0)} sub={`bruto ${fmtBRL(pnl.gross_revenue ?? pnl.revenue)}`} />
             <PnlCard label="Custos do pedido" value={fmtBRL(pnl.order_costs)} sub="frete, mão de obra…" />
+            <PnlCard label="Custos fixos" value={fmtBRL(pnl.fixed_costs)} sub={`${pnl.range.days} dias`} />
+            <PnlCard label="Perdas/uso estoque" value={fmtBRL(pnl.inventory_losses ?? 0)} sub="sem receita vinculada" />
+          </div>
+          <div className="grid grid-cols-2 lg:grid-cols-4 gap-4 mb-8">
             <PnlCard label="Lucro bruto" value={fmtBRL(pnl.gross_profit)} sub={`${pnl.gross_margin}% margem`} tone={pnl.gross_profit >= 0 ? "good" : "bad"} />
-            <PnlCard label="Valor em estoque" value={fmtBRL(pnl.stock_value)} sub="a preço de custo (atual)" />
+            <PnlCard label="Vendas avulsas" value={fmtBRL(pnl.manual_sales ?? 0)} sub="saídas manuais como venda" />
             <PnlCard label="Ticket médio" value={fmtBRL(pnl.completed_count ? pnl.revenue / pnl.completed_count : 0)} sub="por pedido entregue" />
+            <PnlCard label="Valor em estoque" value={fmtBRL(pnl.stock_value)} sub="a preço de custo (atual)" />
           </div>
 
           {/* Charts */}
@@ -183,7 +190,7 @@ export default function FinanceiroTab() {
               <table className="w-full text-sm font-[var(--font-inter)]">
                 <thead>
                   <tr className="border-b border-[#e2e2e2] bg-[#fafafa]">
-                    {["Cliente", "Data", "Receita", "Custo placas", "Outros", "Lucro", "Margem"].map((h) => (
+                    {["Cliente", "Data", "Receita", "Desc.", "Custo placas", "Outros", "Lucro", "Margem"].map((h) => (
                       <th key={h} className="text-left px-4 py-2 text-[9px] tracking-[0.12em] uppercase font-bold text-[#74777f] whitespace-nowrap">{h}</th>
                     ))}
                   </tr>
@@ -194,6 +201,7 @@ export default function FinanceiroTab() {
                       <td className="px-4 py-2 text-xs font-semibold text-[#002045]">{o.client_name}{o.below_cost && <span className="ml-2 text-[9px] font-bold px-1 py-0.5 bg-red-50 text-red-600">abaixo do custo</span>}</td>
                       <td className="px-4 py-2 text-xs text-[#74777f] whitespace-nowrap">{fmtDate(o.when)}</td>
                       <td className="px-4 py-2 text-xs text-[#43474e]">{fmtBRL(o.revenue)}</td>
+                      <td className="px-4 py-2 text-xs text-[#43474e]">{o.discount ? fmtBRL(o.discount) : "—"}</td>
                       <td className="px-4 py-2 text-xs text-[#43474e]">{o.cogs ? fmtBRL(o.cogs) : "—"}</td>
                       <td className="px-4 py-2 text-xs text-[#43474e]">{o.other_costs ? fmtBRL(o.other_costs) : "—"}</td>
                       <td className={`px-4 py-2 text-xs font-semibold ${o.profit >= 0 ? "text-[#2f5429]" : "text-red-600"}`}>{fmtBRL(o.profit)}</td>
@@ -265,11 +273,15 @@ function MonthlyTrend({ data }: { data: MonthPoint[] }) {
 // Where the revenue goes: stacked composition bar.
 function Composition({ pnl }: { pnl: PnL }) {
   const profit = Math.max(0, pnl.net_profit);
-  const base = pnl.revenue > 0 ? pnl.revenue : pnl.cogs + pnl.order_costs + pnl.fixed_costs + profit;
+  const commissions = pnl.commissions ?? 0;
+  const inventoryLosses = pnl.inventory_losses ?? 0;
+  const base = pnl.revenue > 0 ? pnl.revenue : pnl.cogs + pnl.order_costs + pnl.fixed_costs + commissions + inventoryLosses + profit;
   const segs = [
     { v: pnl.cogs, color: "#8a5a12", label: "CMV" },
     { v: pnl.order_costs, color: "#b4791e", label: "Custos pedido" },
     { v: pnl.fixed_costs, color: "#74777f", label: "Custos fixos" },
+    { v: commissions, color: "#9f4a54", label: "Comissões" },
+    { v: inventoryLosses, color: "#c2410c", label: "Perdas estoque" },
     { v: profit, color: "#2f5429", label: "Lucro" },
   ].filter((s) => s.v > 0);
   return (
