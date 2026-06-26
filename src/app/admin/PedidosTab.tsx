@@ -86,7 +86,7 @@ export default function PedidosTab() {
   const [saving, setSaving] = useState(false);
 
   // Stock-aware line items for the create form (model + plate qty).
-  type StockProduct = { id: string; name: string; code: string | null; available: number; stock_on_hand: number };
+  type StockProduct = { id: string; name: string; code: string | null; price: number | null; cost_price: number | null; available: number; stock_on_hand: number };
   type OrderItem = { product_id: string; plates: number };
   const [stockProducts, setStockProducts] = useState<StockProduct[]>([]);
   const [items, setItems] = useState<OrderItem[]>([]);
@@ -159,6 +159,23 @@ export default function PedidosTab() {
     ).length;
     return { emProducao, prontos, entregues, aReceber, atrasados };
   }, [filtered]);
+
+  const itemPricing = useMemo(() => {
+    let total = 0;
+    let cost = 0;
+    let missingPrice = false;
+    let missingCost = false;
+    for (const item of items) {
+      if (!item.product_id || !item.plates) continue;
+      const product = stockProducts.find((p) => p.id === item.product_id);
+      if (!product) continue;
+      if (product.price == null) missingPrice = true;
+      else total += product.price * item.plates;
+      if (product.cost_price == null) missingCost = true;
+      else cost += product.cost_price * item.plates;
+    }
+    return { total, cost, grossProfit: total - cost, missingPrice, missingCost };
+  }, [items, stockProducts]);
 
   // ── Mutations ────────────────────────────────────────────────────────────────
   async function patchPedido(id: string, patch: Partial<Pedido>) {
@@ -522,7 +539,9 @@ export default function PedidosTab() {
                             className={`${inputCls} flex-1`}>
                             <option value="">Selecione o modelo…</option>
                             {stockProducts.map((p) => (
-                              <option key={p.id} value={p.id}>{p.name}{p.code ? ` (${p.code})` : ""} — {p.available} disp.</option>
+                              <option key={p.id} value={p.id}>
+                                {p.name}{p.code ? ` (${p.code})` : ""} — {p.available} disp. — venda {p.price != null ? fmtBRL(p.price) : "sem preço"}
+                              </option>
                             ))}
                           </select>
                           <input type="number" min="1" value={it.plates || ""} placeholder="placas"
@@ -540,11 +559,40 @@ export default function PedidosTab() {
                     + Adicionar modelo
                   </button>
                   {items.some((it) => it.product_id && it.plates > 0) && (
-                    <p className="text-[#74777f] text-[10px] font-[var(--font-inter)] mt-2">
-                      {(draft.status ?? "em_producao") === "entregue"
-                        ? "Estoque será baixado (pedido entregue)."
-                        : "Estoque será reservado enquanto o pedido estiver em produção."}
-                    </p>
+                    <div className="mt-3 border-t border-[#f0f0f0] pt-3">
+                      <div className="flex flex-wrap items-center justify-between gap-2">
+                        <div>
+                          <p className="text-[10px] tracking-[0.12em] uppercase font-bold font-[var(--font-inter)] text-[#74777f]">Total sugerido pelas placas</p>
+                          <p className="text-sm font-semibold font-[var(--font-inter)] text-[#002045]">
+                            {itemPricing.total > 0 ? fmtBRL(itemPricing.total) : "Defina preço de venda no Estoque"}
+                          </p>
+                          {itemPricing.total > 0 && !itemPricing.missingCost && (
+                            <p className="text-[10px] text-[#74777f] font-[var(--font-inter)]">
+                              Margem bruta estimada: {fmtBRL(itemPricing.grossProfit)}
+                            </p>
+                          )}
+                        </div>
+                        <button
+                          type="button"
+                          onClick={() => setDraft({ ...draft, total: itemPricing.total })}
+                          disabled={itemPricing.total <= 0}
+                          className="border border-[#002045] text-[#002045] disabled:opacity-40 text-[10px] uppercase tracking-[0.1em] font-bold font-[var(--font-inter)] px-3 py-2 hover:bg-[#eef2f8]"
+                        >
+                          Usar total
+                        </button>
+                      </div>
+                      {(itemPricing.missingPrice || itemPricing.missingCost) && (
+                        <p className="text-amber-700 text-[10px] font-[var(--font-inter)] mt-2">
+                          {itemPricing.missingPrice ? "Há modelo sem preço de venda. " : ""}
+                          {itemPricing.missingCost ? "Há modelo sem custo para margem." : ""}
+                        </p>
+                      )}
+                      <p className="text-[#74777f] text-[10px] font-[var(--font-inter)] mt-2">
+                        {(draft.status ?? "em_producao") === "entregue"
+                          ? "Estoque será baixado (pedido entregue)."
+                          : "Estoque será reservado enquanto o pedido estiver em produção."}
+                      </p>
+                    </div>
                   )}
                 </div>
               )}

@@ -55,28 +55,39 @@ export async function GET(req: NextRequest) {
     });
   } catch { completed = []; }
 
-  // 2) Line items → COGS per order.
+  // 2) Line items → COGS + sale-price fallback per order.
   const ids = completed.map((p) => p.id);
   const cogsByOrder: Record<string, number> = {};
+  const itemRevenueByOrder: Record<string, number> = {};
+  const missingCostByOrder: Record<string, boolean> = {};
+  const missingPriceByOrder: Record<string, boolean> = {};
   let ordersWithoutCost = 0;
+  let ordersWithoutPrice = 0;
   if (ids.length > 0) {
     try {
       const { data: items } = await sb
         .from("pedido_items")
-        .select("pedido_id, plates, unit_cost")
+        .select("pedido_id, plates, unit_cost, unit_price")
         .in("pedido_id", ids);
-      for (const it of (items ?? []) as Array<{ pedido_id: string; plates: number; unit_cost: number | null }>) {
-        cogsByOrder[it.pedido_id] = (cogsByOrder[it.pedido_id] ?? 0) + (it.plates || 0) * (Number(it.unit_cost) || 0);
+      for (const it of (items ?? []) as Array<{ pedido_id: string; plates: number; unit_cost: number | null; unit_price: number | null }>) {
+        const plates = it.plates || 0;
+        if (it.unit_cost == null) missingCostByOrder[it.pedido_id] = true;
+        if (it.unit_price == null) missingPriceByOrder[it.pedido_id] = true;
+        cogsByOrder[it.pedido_id] = (cogsByOrder[it.pedido_id] ?? 0) + plates * (Number(it.unit_cost) || 0);
+        itemRevenueByOrder[it.pedido_id] = (itemRevenueByOrder[it.pedido_id] ?? 0) + plates * (Number(it.unit_price) || 0);
       }
     } catch { /* no items table */ }
   }
 
   let revenue = 0, cogs = 0, orderCosts = 0;
   const perOrder = completed.map((p) => {
-    const rev = Number(p.total) || 0;
+    const manualRev = Number(p.total) || 0;
+    const itemRev = itemRevenueByOrder[p.id] ?? 0;
+    const rev = manualRev > 0 ? manualRev : itemRev;
     const c = cogsByOrder[p.id] ?? 0;
     const oc = Array.isArray(p.other_costs) ? p.other_costs.reduce((s, x) => s + (Number(x?.amount) || 0), 0) : 0;
-    if (!(p.id in cogsByOrder)) ordersWithoutCost++;
+    if (missingCostByOrder[p.id] || !(p.id in cogsByOrder)) ordersWithoutCost++;
+    if (manualRev <= 0 && (missingPriceByOrder[p.id] || !(p.id in itemRevenueByOrder))) ordersWithoutPrice++;
     revenue += rev; cogs += c; orderCosts += oc;
     const profit = rev - c - oc;
     return {
@@ -127,6 +138,7 @@ export async function GET(req: NextRequest) {
     net_margin: revenue > 0 ? Math.round((netProfit / revenue) * 100) : 0,
     completed_count: completed.length,
     orders_without_cost: ordersWithoutCost,
+    orders_without_price: ordersWithoutPrice,
     stock_value: stockValue,
     per_order: perOrder.sort((a, b) => b.revenue - a.revenue),
   });

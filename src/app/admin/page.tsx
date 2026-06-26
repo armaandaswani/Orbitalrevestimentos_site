@@ -2358,12 +2358,13 @@ export default function AdminPage() {
               visualizacoes: "Visualizações", precos: "Tabela de Preços", financeiro: "Financeiro",
             };
             const NAV_GROUPS: ReadonlyArray<{ group: string; items: ReadonlyArray<typeof tab> }> = [
-              { group: "Geral", items: ["dashboard", "financeiro", "lembretes"] },
-              { group: "Comercial", items: ["leads", "orcamentos", "pedidos", "estoque", "partners", "representantes", "commissions"] },
+              { group: "Geral", items: ["dashboard", "lembretes"] },
+              { group: "Comercial", items: ["leads", "orcamentos", "partners", "representantes", "commissions"] },
+              { group: "Operação", items: ["pedidos", "estoque"] },
+              { group: "Financeiro", items: ["financeiro", "precos"] },
               { group: "Marketing", items: ["campaigns", "drip"] },
               { group: "Catálogo", items: ["produtos", "projetos", "midia"] },
               { group: "Ferramentas", items: ["simulador", "chat", "visualizacoes"] },
-              { group: "Configurações", items: ["precos"] },
             ];
             return NAV_GROUPS.map((sec) => (
               <div key={sec.group}>

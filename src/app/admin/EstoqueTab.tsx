@@ -82,7 +82,7 @@ export default function EstoqueTab() {
     }
   }
 
-  async function patchProduct(productId: string, patch: { cost_price?: number; reorder_point?: number }) {
+  async function patchProduct(productId: string, patch: { price?: number | null; cost_price?: number | null; reorder_point?: number }) {
     setProducts((cur) => cur.map((p) => (p.id === productId ? { ...p, ...patch } : p)));
     await fetch(`/api/admin/stock/${productId}`, {
       method: "PATCH",
@@ -91,14 +91,14 @@ export default function EstoqueTab() {
     }).then(() => fetchStock()).catch(() => {});
   }
 
-	  const loadMovements = useCallback(async (productId: string, force = false) => {
-	    if (!force && movements[productId]) return;
-	    const res = await fetch(`/api/admin/stock/${productId}`);
-	    if (res.ok) {
-	      const data = await res.json();
-	      setMovements((cur) => ({ ...cur, [productId]: data }));
-	    }
-	  }, [movements]);
+  const loadMovements = useCallback(async (productId: string, force = false) => {
+    if (!force && movements[productId]) return;
+    const res = await fetch(`/api/admin/stock/${productId}`);
+    if (res.ok) {
+      const data = await res.json();
+      setMovements((cur) => ({ ...cur, [productId]: data }));
+    }
+  }, [movements]);
 
   function toggleExpand(id: string) {
     if (expandedId === id) { setExpandedId(null); return; }
@@ -173,11 +173,13 @@ function StockRow({
   movements: Movement[] | null;
   onToggle: () => void;
   onMove: (kind: "manual_in" | "manual_out" | "adjust", qty: number, reason: string) => void;
-  onPatch: (patch: { cost_price?: number; reorder_point?: number }) => void;
+  onPatch: (patch: { price?: number | null; cost_price?: number | null; reorder_point?: number }) => void;
 }) {
   const [mode, setMode] = useState<"manual_in" | "manual_out" | "adjust" | null>(null);
   const [qty, setQty] = useState("");
   const [reason, setReason] = useState("");
+  const unitProfit = p.price != null && p.cost_price != null ? p.price - p.cost_price : null;
+  const unitMargin = p.price && unitProfit != null ? Math.round((unitProfit / p.price) * 100) : null;
 
   function submit() {
     const n = Number(qty);
@@ -201,7 +203,9 @@ function StockRow({
               <Stat label="Em estoque" value={String(p.stock_on_hand)} strong />
               <Stat label="Reservado" value={String(p.stock_reserved)} />
               <Stat label="Disponível" value={String(p.available)} strong tone={p.available <= 0 ? "danger" : "ok"} />
-              <Stat label="Valor" value={p.cost_price ? fmtBRL(p.stock_value) : "—"} />
+              <Stat label="Venda/placa" value={p.price != null ? fmtBRL(p.price) : "—"} />
+              <Stat label="Margem" value={unitMargin != null ? `${fmtBRL(unitProfit!)} · ${unitMargin}%` : "—"} />
+              <Stat label="Valor estoque" value={p.cost_price ? fmtBRL(p.stock_value) : "—"} />
             </div>
           </div>
           <div className="flex items-center gap-1.5">
@@ -226,12 +230,26 @@ function StockRow({
           </div>
         )}
 
-        {/* Cost + reorder editing */}
+        {/* Pricing + reorder editing */}
         <div className="flex flex-wrap items-center gap-4 mt-3">
           <label className="flex items-center gap-2 text-[11px] font-[var(--font-inter)] text-[#74777f]">
+            Preço venda/placa
+            <input type="number" min="0" step="0.01" defaultValue={p.price ?? ""} placeholder="—"
+              onBlur={(e) => {
+                const raw = e.target.value.trim();
+                const v = raw === "" ? null : Number(raw);
+                if ((v === null && p.price !== null) || (typeof v === "number" && Number.isFinite(v) && v !== p.price)) onPatch({ price: v });
+              }}
+              className="w-28 border border-[#e2e2e2] px-2 py-1 text-xs text-[#002045] focus:outline-none focus:border-[#002045]" />
+          </label>
+          <label className="flex items-center gap-2 text-[11px] font-[var(--font-inter)] text-[#74777f]">
             Custo/placa
-            <input type="number" min="0" defaultValue={p.cost_price ?? ""} placeholder="—"
-              onBlur={(e) => { const v = Number(e.target.value); if (e.target.value !== "" && v !== p.cost_price) onPatch({ cost_price: v }); }}
+            <input type="number" min="0" step="0.01" defaultValue={p.cost_price ?? ""} placeholder="—"
+              onBlur={(e) => {
+                const raw = e.target.value.trim();
+                const v = raw === "" ? null : Number(raw);
+                if ((v === null && p.cost_price !== null) || (typeof v === "number" && Number.isFinite(v) && v !== p.cost_price)) onPatch({ cost_price: v });
+              }}
               className="w-24 border border-[#e2e2e2] px-2 py-1 text-xs text-[#002045] focus:outline-none focus:border-[#002045]" />
           </label>
           <label className="flex items-center gap-2 text-[11px] font-[var(--font-inter)] text-[#74777f]">

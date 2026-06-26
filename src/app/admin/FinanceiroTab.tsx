@@ -13,7 +13,7 @@ interface PnL {
   gross_profit: number; gross_margin: number;
   fixed_costs: number; fixed_breakdown: FixedBreakdown[];
   net_profit: number; net_margin: number;
-  completed_count: number; orders_without_cost: number; stock_value: number;
+  completed_count: number; orders_without_cost: number; orders_without_price: number; stock_value: number;
   per_order: PerOrder[];
 }
 interface FixedCost {
@@ -111,7 +111,12 @@ export default function FinanceiroTab() {
         <>
           {/* P&L cards */}
           <div className="grid grid-cols-2 lg:grid-cols-4 gap-4 mb-6">
-            <PnlCard label="Receita" value={fmtBRL(pnl.revenue)} sub={`${pnl.completed_count} pedido${pnl.completed_count !== 1 ? "s" : ""} entregue${pnl.completed_count !== 1 ? "s" : ""}`} />
+            <PnlCard
+              label="Receita"
+              value={fmtBRL(pnl.revenue)}
+              sub={pnl.orders_without_price > 0 ? `${pnl.orders_without_price} sem preço de venda` : `${pnl.completed_count} pedido${pnl.completed_count !== 1 ? "s" : ""} entregue${pnl.completed_count !== 1 ? "s" : ""}`}
+              subTone={pnl.orders_without_price > 0 ? "warn" : undefined}
+            />
             <PnlCard label="CMV (custo placas)" value={fmtBRL(pnl.cogs)} sub={pnl.orders_without_cost > 0 ? `${pnl.orders_without_cost} sem custo` : "todos com custo"} subTone={pnl.orders_without_cost > 0 ? "warn" : undefined} />
             <PnlCard label="Custos fixos (rateado)" value={fmtBRL(pnl.fixed_costs)} sub={`${pnl.range.days} dias`} />
             <PnlCard label="Lucro líquido" value={fmtBRL(pnl.net_profit)} sub={`${pnl.net_margin}% margem`} tone={pnl.net_profit >= 0 ? "good" : "bad"} big />
@@ -187,6 +192,11 @@ export default function FinanceiroTab() {
           {pnl.orders_without_cost > 0 && (
             <p className="text-[#b4791e] text-[11px] font-[var(--font-inter)] mt-3">
               {pnl.orders_without_cost} pedido(s) entregue(s) sem itens de custo cadastrados — o lucro deles está superestimado. Defina o custo/placa no Estoque e registre os modelos no pedido para precisão.
+            </p>
+          )}
+          {pnl.orders_without_price > 0 && (
+            <p className="text-[#b4791e] text-[11px] font-[var(--font-inter)] mt-2">
+              {pnl.orders_without_price} pedido(s) entregue(s) sem total e sem preço de venda nos itens — a receita deles está incompleta. Defina o preço venda/placa no Estoque ou preencha o valor total do pedido.
             </p>
           )}
         </>
