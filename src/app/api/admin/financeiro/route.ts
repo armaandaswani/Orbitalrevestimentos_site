@@ -98,23 +98,26 @@ export async function GET(req: NextRequest) {
     };
   });
 
-  // 3) Fixed costs prorated across the range.
-  let fixedTotal = 0;
-  const fixedBreakdown: Array<{ name: string; cadence: string; amount: number; prorated: number }> = [];
+  // 3) Fixed costs — fetched here, charged per calendar month in the loop below.
+  //    A MONTHLY cost hits IN FULL for every month the range touches (it does
+  //    not get prorated by day count — "é mensal e pronto"). Weekly/daily are
+  //    proportional to the days in the range.
   type FixedRow = { name: string; amount: number; cadence: string; started_at: string | null; ended_at: string | null };
   let fixedRows: FixedRow[] = [];
   try {
     const { data: fc } = await sb.from("fixed_costs").select("*").eq("active", true);
     fixedRows = (fc ?? []) as FixedRow[];
-    for (const f of fixedRows) {
-      const cs = f.started_at ? new Date(f.started_at).getTime() : -Infinity;
-      const ce = f.ended_at ? new Date(f.ended_at).getTime() : Infinity;
-      const days = f.started_at || f.ended_at ? clampDays(fromMs, toMs, cs, ce) : rangeDays;
-      const prorated = dailyEquivalent(Number(f.amount) || 0, f.cadence) * days;
-      fixedTotal += prorated;
-      fixedBreakdown.push({ name: f.name, cadence: f.cadence, amount: Number(f.amount) || 0, prorated });
-    }
   } catch { /* no fixed_costs table */ }
+  const fixedAccum: Record<string, { name: string; cadence: string; amount: number; prorated: number }> = {};
+  const fixedContribution = (f: FixedRow, mStart: number, mEnd: number): number => {
+    const cs = f.started_at ? new Date(f.started_at).getTime() : -Infinity;
+    const ce = f.ended_at ? new Date(f.ended_at).getTime() : Infinity;
+    const overlapDays = f.started_at || f.ended_at ? clampDays(mStart, mEnd, cs, ce) : (mEnd - mStart) / DAY;
+    if (overlapDays <= 0) return 0;
+    const amt = Number(f.amount) || 0;
+    if (f.cadence === "monthly") return amt; // full amount per month, always
+    return dailyEquivalent(amt, f.cadence) * overlapDays; // weekly/daily proportional
+  };
 
   // Monthly series for trend charts: bucket completed-order revenue/COGS/costs
   // by delivery month, and prorate each active fixed cost into each month.
@@ -134,17 +137,21 @@ export async function GET(req: NextRequest) {
       const mEnd = Math.min(toMs, new Date(d.getFullYear(), d.getMonth() + 1, 1).getTime());
       const mDays = Math.max(0, (mEnd - mStart) / DAY);
       for (const f of fixedRows) {
-        const cs = f.started_at ? new Date(f.started_at).getTime() : -Infinity;
-        const ce = f.ended_at ? new Date(f.ended_at).getTime() : Infinity;
-        const days = f.started_at || f.ended_at ? clampDays(mStart, mEnd, cs, ce) : mDays;
-        m.fixed += dailyEquivalent(Number(f.amount) || 0, f.cadence) * days;
+        const c = fixedContribution(f, mStart, mEnd);
+        if (c <= 0) continue;
+        m.fixed += c;
+        const k = `${f.name}|${f.cadence}|${f.amount}`;
+        (fixedAccum[k] ||= { name: f.name, cadence: f.cadence, amount: Number(f.amount) || 0, prorated: 0 }).prorated += c;
       }
+      void mDays;
       d.setMonth(d.getMonth() + 1);
     }
   }
   const monthly = Object.values(monthMap)
     .map((m) => ({ ...m, net: m.revenue - m.cogs - m.order_costs - m.fixed }))
     .sort((a, b) => a.month.localeCompare(b.month));
+  const fixedTotal = monthly.reduce((s, m) => s + m.fixed, 0);
+  const fixedBreakdown = Object.values(fixedAccum);
 
   // 4) Current stock valuation (point-in-time).
   let stockValue = 0;
