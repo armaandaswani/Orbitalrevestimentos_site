@@ -10,6 +10,9 @@ interface PedidoItem {
   plates: number;
   unit_price: number | null;
   unit_cost: number | null;
+  unit_label?: string | null;
+  product_description?: string | null;
+  product_image_path?: string | null;
 }
 
 interface PedidoDocument {
@@ -145,21 +148,42 @@ function addressLines(pedido: PedidoDocument) {
   ].filter(Boolean);
 }
 
+function normalizeAssetPath(path: string | null | undefined) {
+  if (!path) return null;
+  if (/^https?:\/\//i.test(path)) return path;
+  return path.startsWith("/") ? path : `/${path}`;
+}
+
 export default function PedidoDocumentoPage({ params }: { params: Promise<{ id: string }> }) {
   const [id, setId] = useState<string | null>(null);
   const [docType, setDocType] = useState<DocumentType>("orcamento");
+  const [includeImages, setIncludeImages] = useState(false);
+  const [includeDescriptions, setIncludeDescriptions] = useState(false);
   const [pedido, setPedido] = useState<PedidoDocument | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
+  const [sending, setSending] = useState<"email" | "whatsapp" | null>(null);
+  const [sendStatus, setSendStatus] = useState("");
 
   useEffect(() => {
     params.then((p) => setId(p.id));
   }, [params]);
 
   useEffect(() => {
-    const tipo = new URLSearchParams(window.location.search).get("tipo") || "orcamento";
+    const search = new URLSearchParams(window.location.search);
+    const tipo = search.get("tipo") || "orcamento";
     if (["orcamento", "pedido", "nota", "recibo"].includes(tipo)) setDocType(tipo as DocumentType);
+    setIncludeImages(search.get("imagens") === "1");
+    setIncludeDescriptions(search.get("descricoes") === "1");
   }, []);
+
+  useEffect(() => {
+    const search = new URLSearchParams(window.location.search);
+    search.set("tipo", docType);
+    if (includeImages) search.set("imagens", "1"); else search.delete("imagens");
+    if (includeDescriptions) search.set("descricoes", "1"); else search.delete("descricoes");
+    window.history.replaceState(null, "", `${window.location.pathname}?${search.toString()}`);
+  }, [docType, includeImages, includeDescriptions]);
 
   useEffect(() => {
     if (!id) return;
@@ -212,6 +236,33 @@ export default function PedidoDocumentoPage({ params }: { params: Promise<{ id: 
       }];
   const customerAddress = addressLines(pedido);
   const notes = pedido.document_notes?.trim() || DEFAULT_NOTES;
+  const documentUrl = typeof window !== "undefined" ? window.location.href : "";
+
+  async function sendDocument(channel: "email" | "whatsapp") {
+    if (!id) return;
+    setSending(channel);
+    setSendStatus("");
+    try {
+      const res = await fetch(`/api/admin/pedidos/${id}/send-document`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          channel,
+          tipo: docType,
+          include_images: includeImages,
+          include_descriptions: includeDescriptions,
+          document_url: documentUrl,
+        }),
+      });
+      const data = await res.json().catch(() => null);
+      if (!res.ok) throw new Error(data?.error || `HTTP ${res.status}`);
+      setSendStatus(channel === "email" ? "E-mail enviado." : "WhatsApp enviado.");
+    } catch (e) {
+      setSendStatus(e instanceof Error ? e.message : "Falha ao enviar.");
+    } finally {
+      setSending(null);
+    }
+  }
 
   return (
     <main className="document-shell min-h-screen bg-[#f4f2ee] pt-28 pb-12 px-4">
@@ -220,16 +271,49 @@ export default function PedidoDocumentoPage({ params }: { params: Promise<{ id: 
           <p className="text-[10px] uppercase tracking-[0.18em] font-bold text-[#74777f]">Documento comercial</p>
           <h1 className="font-[var(--font-noto-serif)] text-2xl text-[#002045]">{DOC_LABEL[docType]} {docNumber(pedido)}</h1>
         </div>
-        <div className="flex gap-2">
+        <div className="document-toolbar flex flex-wrap gap-2 items-center">
+          <select
+            value={docType}
+            onChange={(e) => setDocType(e.target.value as DocumentType)}
+            className="border border-[#d8d5cf] bg-white px-3 py-2 text-xs font-bold uppercase tracking-[0.08em] text-[#002045]"
+          >
+            <option value="orcamento">Orçamento</option>
+            <option value="pedido">Pedido de Venda</option>
+            <option value="nota">Nota de Venda</option>
+            <option value="recibo">Recibo</option>
+          </select>
+          <label className="border border-[#d8d5cf] bg-white px-3 py-2 text-xs font-bold uppercase tracking-[0.08em] text-[#002045] flex items-center gap-2">
+            <input type="checkbox" checked={includeImages} onChange={(e) => setIncludeImages(e.target.checked)} />
+            Imagens
+          </label>
+          <label className="border border-[#d8d5cf] bg-white px-3 py-2 text-xs font-bold uppercase tracking-[0.08em] text-[#002045] flex items-center gap-2">
+            <input type="checkbox" checked={includeDescriptions} onChange={(e) => setIncludeDescriptions(e.target.checked)} />
+            Descrições
+          </label>
           <a href="/admin" className="border border-[#d8d5cf] bg-white px-4 py-2 text-xs font-bold uppercase tracking-[0.1em] text-[#002045]">Voltar</a>
           <button onClick={() => window.print()} className="bg-[#002045] text-white px-5 py-2 text-xs font-bold uppercase tracking-[0.1em]">Imprimir / PDF</button>
+          <button
+            onClick={() => sendDocument("email")}
+            disabled={sending != null || !pedido.client_email}
+            className="border border-[#002045] bg-white text-[#002045] disabled:opacity-40 px-4 py-2 text-xs font-bold uppercase tracking-[0.1em]"
+          >
+            {sending === "email" ? "Enviando..." : "Enviar e-mail"}
+          </button>
+          <button
+            onClick={() => sendDocument("whatsapp")}
+            disabled={sending != null || !pedido.client_phone}
+            className="border border-[#2e7d32] bg-white text-[#2e7d32] disabled:opacity-40 px-4 py-2 text-xs font-bold uppercase tracking-[0.1em]"
+          >
+            {sending === "whatsapp" ? "Enviando..." : "Enviar WhatsApp"}
+          </button>
         </div>
+        {sendStatus && <p className="basis-full text-[11px] font-bold text-[#74777f]">{sendStatus}</p>}
       </div>
 
       <article className="document-page mx-auto bg-white text-[#1a1c1c] shadow-sm">
         <section className="doc-header">
           {/* eslint-disable-next-line @next/next/no-img-element */}
-          <img src="/images/orbital-logo.png" alt="Orbital" className="doc-logo" />
+          <img src="/images/logo.png" alt="Orbital" className="doc-logo" />
           <div>
             <h2>{COMPANY.name}</h2>
             <p>{COMPANY.cnpj}</p>
@@ -276,7 +360,7 @@ export default function PedidoDocumentoPage({ params }: { params: Promise<{ id: 
                   <tr key={it.id}>
                     <td>{it.product_name || "Produto Orbital"}</td>
                     <td>{qty}</td>
-                    <td>un</td>
+                    <td>{it.unit_label || "un"}</td>
                     <td>{fmtBRL(unit)}</td>
                     <td>{fmtBRL(unit * qty)}</td>
                   </tr>
@@ -285,6 +369,29 @@ export default function PedidoDocumentoPage({ params }: { params: Promise<{ id: 
             </tbody>
           </table>
         </section>
+
+        {(includeImages || includeDescriptions) && (
+          <section className="doc-product-details">
+            <p className="doc-section-label">Detalhes dos produtos</p>
+            <div className="doc-product-grid">
+              {items.map((it) => {
+                const imagePath = normalizeAssetPath(it.product_image_path);
+                return (
+                  <div key={`${it.id}-details`} className="doc-product-card">
+                    {includeImages && imagePath && (
+                      // eslint-disable-next-line @next/next/no-img-element
+                      <img src={imagePath} alt={it.product_name || "Produto Orbital"} />
+                    )}
+                    <div>
+                      <p className="doc-product-name">{it.product_name || "Produto Orbital"}</p>
+                      {includeDescriptions && it.product_description && <p>{it.product_description}</p>}
+                    </div>
+                  </div>
+                );
+              })}
+            </div>
+          </section>
+        )}
 
         <section className="doc-totals">
           <div>
@@ -373,6 +480,7 @@ export default function PedidoDocumentoPage({ params }: { params: Promise<{ id: 
           margin: 10px 0 14px;
         }
         .doc-table { width: 100%; border-collapse: collapse; margin-top: 5px; }
+        .doc-table thead { display: table-header-group; }
         .doc-table th {
           background: #e1e1e1;
           font-weight: 400;
@@ -392,6 +500,12 @@ export default function PedidoDocumentoPage({ params }: { params: Promise<{ id: 
           margin-bottom: 18px;
         }
         .doc-commercial p { margin: 0; }
+        .doc-product-details { margin: 4px 0 18px; page-break-inside: avoid; }
+        .doc-product-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; }
+        .doc-product-card { display: grid; grid-template-columns: 72px 1fr; gap: 8px; border: 1px solid #e4e4e4; padding: 8px; page-break-inside: avoid; }
+        .doc-product-card img { width: 72px; height: 72px; object-fit: cover; display: block; }
+        .doc-product-card p { margin: 0; color: #555; font-size: 9.5px; }
+        .doc-product-name { color: #1a1c1c !important; font-weight: 700; font-size: 10.5px !important; margin-bottom: 3px !important; }
         .doc-notes { margin-top: 8px; page-break-inside: auto; }
         .doc-order-notes { white-space: pre-wrap; margin: 0 0 12px; }
         .doc-contract { white-space: pre-wrap; margin: 0; font-size: 9.5px; color: #555; }
@@ -419,17 +533,20 @@ export default function PedidoDocumentoPage({ params }: { params: Promise<{ id: 
         }
 
         @media print {
-          @page { size: A4; margin: 0; }
+          @page { size: A4; margin: 12mm 13mm; }
           html, body { background: #fff !important; }
           body > header, body > footer, .document-actions, .fixed, iframe { display: none !important; }
           .document-shell { padding: 0 !important; background: #fff !important; }
           .document-page {
-            width: 210mm;
-            min-height: 297mm;
-            padding: 14mm 15mm;
+            width: auto;
+            min-height: auto;
+            padding: 0;
             box-shadow: none !important;
             margin: 0 !important;
           }
+          .doc-header, .doc-grid, .doc-title-bar, .doc-commercial, .doc-product-card, .doc-signatures { page-break-inside: avoid; }
+          .doc-section-label { break-after: avoid; }
+          .doc-contract { font-size: 10px; line-height: 1.28; }
         }
       `}</style>
     </main>

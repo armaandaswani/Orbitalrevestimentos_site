@@ -205,6 +205,7 @@ export async function POST(req: NextRequest) {
     partner_commission_amount: cleanMoney(body.partner_commission_amount),
     sales_rep_commission_pct: cleanMoney(body.sales_rep_commission_pct),
     sales_rep_commission_amount: cleanMoney(body.sales_rep_commission_amount),
+    coupon_use_id: body.coupon_use_id ?? null,
   };
 
   let { data, error } = await db.from("pedidos").insert(payload).select().single();

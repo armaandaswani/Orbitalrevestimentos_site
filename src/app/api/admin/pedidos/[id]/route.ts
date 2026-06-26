@@ -164,6 +164,7 @@ const EDITABLE = new Set([
   "partner_commission_amount",
   "sales_rep_commission_pct",
   "sales_rep_commission_amount",
+  "coupon_use_id",
 ]);
 
 /** GET /api/admin/pedidos/[id] — the order plus its line items. */
@@ -183,7 +184,28 @@ export async function GET(req: NextRequest, { params }: { params: Promise<{ id: 
       .from("pedido_items")
       .select("id, product_id, product_name, plates, unit_cost, unit_price, unit_label")
       .eq("pedido_id", id);
-    items = data ?? [];
+    const rows = (data ?? []) as Array<Record<string, unknown>>;
+    const productIds = rows.map((row) => row.product_id).filter(Boolean) as string[];
+    let productById = new Map<string, Record<string, unknown>>();
+    if (productIds.length > 0) {
+      const { data: products } = await db
+        .from("products")
+        .select("id, description, image_path, product_images(image_path, sort_order)")
+        .in("id", productIds);
+      productById = new Map((products ?? []).map((p) => [p.id as string, p as Record<string, unknown>]));
+    }
+    items = rows.map((row) => {
+      const product = row.product_id ? productById.get(row.product_id as string) : null;
+      const images = (product?.product_images as Array<{ image_path?: string; sort_order?: number }> | undefined) ?? [];
+      const sortedImages = images
+        .filter((img) => img.image_path)
+        .sort((a, b) => (a.sort_order ?? 0) - (b.sort_order ?? 0));
+      return {
+        ...row,
+        product_description: product?.description ?? null,
+        product_image_path: sortedImages[0]?.image_path ?? product?.image_path ?? null,
+      };
+    });
   } catch { /* table missing — no items */ }
 
   return NextResponse.json({ ...pedido, items });

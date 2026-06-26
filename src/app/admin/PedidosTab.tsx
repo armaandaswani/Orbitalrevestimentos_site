@@ -190,6 +190,25 @@ type SalesRepOption = {
   commission_value: number;
 };
 
+type QuoteOption = {
+  id: string;
+  source: "coupon" | "client";
+  client_name: string;
+  client_email: string | null;
+  client_phone: string | null;
+  space: string | null;
+  product_name: string | null;
+  product_code: string | null;
+  area_m2: number | null;
+  plates: number | null;
+  total: number | null;
+  coupon_code: string | null;
+  partner_name: string | null;
+  coupon_use_id: string | null;
+  sales_rep_referral_code: string | null;
+  created_at: string;
+};
+
 export default function PedidosTab() {
   const [pedidos, setPedidos] = useState<Pedido[]>([]);
   const [loading, setLoading] = useState(false);
@@ -210,6 +229,10 @@ export default function PedidosTab() {
   const [items, setItems] = useState<OrderItem[]>([]);
   const [partners, setPartners] = useState<PartnerOption[]>([]);
   const [salesReps, setSalesReps] = useState<SalesRepOption[]>([]);
+  const [quoteImportOpen, setQuoteImportOpen] = useState(false);
+  const [quoteOptions, setQuoteOptions] = useState<QuoteOption[]>([]);
+  const [quoteImportLoading, setQuoteImportLoading] = useState(false);
+  const [quoteImportError, setQuoteImportError] = useState("");
 
   useEffect(() => {
     // Best-effort: if migration 023 isn't applied the picker just stays empty.
@@ -393,6 +416,127 @@ export default function PedidosTab() {
     }
   }
 
+  function openDocument(id: string, tipo: "orcamento" | "pedido" | "nota" | "recibo") {
+    window.open(`/admin/pedidos/${id}/documento?tipo=${tipo}`, "_blank", "noopener,noreferrer");
+  }
+
+  async function openQuoteImport() {
+    setQuoteImportOpen(true);
+    setQuoteImportLoading(true);
+    setQuoteImportError("");
+    try {
+      const [usesRes, clientsRes] = await Promise.all([fetch("/api/coupons/use"), fetch("/api/admin/clients")]);
+      const uses = usesRes.ok ? await usesRes.json().catch(() => []) : [];
+      const clients = clientsRes.ok ? await clientsRes.json().catch(() => []) : [];
+      const seenCouponUseIds = new Set<string>();
+
+      const fromUses: QuoteOption[] = Array.isArray(uses)
+        ? uses.map((u: Record<string, unknown>) => {
+            const couponCode = typeof u.coupon_code === "string" ? u.coupon_code : null;
+            const partner = couponCode ? partners.find((p) => p.coupon_code === couponCode) : null;
+            const id = String(u.id ?? "");
+            if (id) seenCouponUseIds.add(id);
+            return {
+              id: `coupon:${id}`,
+              source: "coupon",
+              client_name: String(u.architect_name || u.client_name || "Cliente"),
+              client_email: typeof u.client_email === "string" ? u.client_email : null,
+              client_phone: typeof u.client_phone === "string" ? u.client_phone : null,
+              space: typeof u.space === "string" ? u.space : null,
+              product_name: typeof u.product_name === "string" ? u.product_name : null,
+              product_code: typeof u.product_code === "string" ? u.product_code : null,
+              area_m2: u.area_m2 == null ? null : Number(u.area_m2),
+              plates: u.plates == null ? null : Number(u.plates),
+              total: u.material_discounted == null && u.material_total == null ? null : Number(u.material_discounted ?? u.material_total),
+              coupon_code: couponCode,
+              partner_name: partner?.name ?? (typeof u.partner_name === "string" ? u.partner_name : null),
+              coupon_use_id: id || null,
+              sales_rep_referral_code: typeof u.sales_rep_referral_code === "string" ? u.sales_rep_referral_code : null,
+              created_at: String(u.created_at ?? new Date().toISOString()),
+            };
+          })
+        : [];
+
+      const fromClients: QuoteOption[] = Array.isArray(clients)
+        ? clients
+            .filter((c: Record<string, unknown>) => {
+              const couponUseId = typeof c.coupon_use_id === "string" ? c.coupon_use_id : null;
+              return !couponUseId || !seenCouponUseIds.has(couponUseId);
+            })
+            .map((c: Record<string, unknown>) => ({
+              id: `client:${String(c.id ?? "")}`,
+              source: "client",
+              client_name: String(c.client_name || "Cliente"),
+              client_email: typeof c.client_email === "string" ? c.client_email : null,
+              client_phone: typeof c.client_phone === "string" ? c.client_phone : null,
+              space: typeof c.space === "string" ? c.space : null,
+              product_name: typeof c.model === "string" ? c.model : null,
+              product_code: null,
+              area_m2: c.area_m2 == null ? null : Number(c.area_m2),
+              plates: c.plates == null ? null : Number(c.plates),
+              total: c.total == null ? null : Number(c.total),
+              coupon_code: null,
+              partner_name: typeof c.partner_name === "string" ? c.partner_name : null,
+              coupon_use_id: typeof c.coupon_use_id === "string" ? c.coupon_use_id : null,
+              sales_rep_referral_code: null,
+              created_at: String(c.created_at ?? new Date().toISOString()),
+            }))
+        : [];
+
+      setQuoteOptions([...fromUses, ...fromClients].sort((a, b) => new Date(b.created_at).getTime() - new Date(a.created_at).getTime()));
+    } catch (e) {
+      setQuoteImportError(e instanceof Error ? e.message : "Não foi possível carregar os orçamentos.");
+    } finally {
+      setQuoteImportLoading(false);
+    }
+  }
+
+  function startDraftFromQuote(q: QuoteOption) {
+    const partner =
+      (q.coupon_code ? partners.find((p) => p.coupon_code === q.coupon_code) : null) ??
+      (q.partner_name ? partners.find((p) => p.name === q.partner_name) : null) ??
+      null;
+    const linkedRep = partner?.partner_sales_reps?.map((l) => l.sales_reps).find(Boolean) ?? null;
+    const salesRep =
+      (q.sales_rep_referral_code ? salesReps.find((r) => r.referral_code === q.sales_rep_referral_code) : null) ??
+      (linkedRep ? salesReps.find((r) => r.id === linkedRep.id) : null) ??
+      null;
+    const product =
+      (q.product_code ? stockProducts.find((p) => p.code === q.product_code) : null) ??
+      (q.product_name ? stockProducts.find((p) => p.name.toLowerCase() === q.product_name!.toLowerCase()) : null) ??
+      null;
+    const total = q.total ?? null;
+    const partnerPct = partner?.commission_type === "percentage" ? Number(partner.commission_value) || 0 : pctFromMoney(Number(partner?.commission_value) || 0, Number(total) || 0);
+    const repPct = salesRep?.commission_type === "percentage" ? Number(salesRep.commission_value) || 0 : pctFromMoney(Number(salesRep?.commission_value) || 0, Number(total) || 0);
+
+    setItems(product ? [{ product_id: product.id, plates: Math.max(1, Math.round(q.plates ?? 1)) }] : []);
+    setDraft({
+      _isNew: true,
+      client_name: q.client_name,
+      client_email: q.client_email,
+      client_phone: q.client_phone,
+      partner_id: partner?.id ?? null,
+      partner_name: partner?.name ?? q.partner_name,
+      sales_rep_id: salesRep?.id ?? null,
+      space: q.space,
+      product_name: q.product_name,
+      area_m2: q.area_m2,
+      total,
+      status: "em_producao",
+      payment_status: "pendente",
+      payment_methods: ["Pix"],
+      payment_terms: DEFAULT_PAYMENT_TERMS,
+      quote_valid_until: plusDays(7),
+      document_notes: DEFAULT_DOCUMENT_NOTES,
+      coupon_use_id: q.coupon_use_id,
+      partner_commission_pct: partnerPct,
+      partner_commission_amount: partner?.commission_type === "fixed" ? Number(partner.commission_value) || 0 : moneyFromPct(partnerPct, Number(total) || 0),
+      sales_rep_commission_pct: repPct,
+      sales_rep_commission_amount: salesRep?.commission_type === "fixed" ? Number(salesRep.commission_value) || 0 : moneyFromPct(repPct, Number(total) || 0),
+    });
+    setQuoteImportOpen(false);
+  }
+
   // ── Mutations ────────────────────────────────────────────────────────────────
   async function patchPedido(id: string, patch: Partial<Pedido>) {
     // optimistic
@@ -457,6 +601,7 @@ export default function PedidosTab() {
       partner_commission_amount: draft.partner_commission_amount ?? moneyFromPct(Number(draft.partner_commission_pct) || 0),
       sales_rep_commission_pct: draft.sales_rep_commission_pct ?? 0,
       sales_rep_commission_amount: draft.sales_rep_commission_amount ?? moneyFromPct(Number(draft.sales_rep_commission_pct) || 0),
+      coupon_use_id: draft.coupon_use_id ?? null,
     };
     const cleanItems = items.filter((it) => it.product_id && it.plates > 0);
     try {
@@ -497,12 +642,20 @@ export default function PedidosTab() {
               </span>
             )}
           </div>
-          <button
-            onClick={() => { setItems([]); setDraft({ _isNew: true, status: "em_producao", payment_status: "pendente", payment_methods: ["Pix"], payment_terms: DEFAULT_PAYMENT_TERMS, quote_valid_until: plusDays(7), document_notes: DEFAULT_DOCUMENT_NOTES }); }}
-            className="bg-[#002045] text-white text-xs tracking-[0.12em] uppercase font-bold font-[var(--font-inter)] px-5 py-2.5 hover:bg-[#1a365d] transition-colors"
-          >
-            + Novo pedido
-          </button>
+          <div className="flex flex-wrap gap-2">
+            <button
+              onClick={openQuoteImport}
+              className="border border-[#002045] text-[#002045] bg-white text-xs tracking-[0.12em] uppercase font-bold font-[var(--font-inter)] px-5 py-2.5 hover:bg-[#eef2f8] transition-colors"
+            >
+              Importar orçamento
+            </button>
+            <button
+              onClick={() => { setItems([]); setDraft({ _isNew: true, status: "em_producao", payment_status: "pendente", payment_methods: ["Pix"], payment_terms: DEFAULT_PAYMENT_TERMS, quote_valid_until: plusDays(7), document_notes: DEFAULT_DOCUMENT_NOTES }); }}
+              className="bg-[#002045] text-white text-xs tracking-[0.12em] uppercase font-bold font-[var(--font-inter)] px-5 py-2.5 hover:bg-[#1a365d] transition-colors"
+            >
+              + Novo pedido
+            </button>
+          </div>
         </div>
 
         {/* Status segmentation */}
@@ -664,7 +817,20 @@ export default function PedidosTab() {
                         )}
                       </td>
                       <td className="px-4 py-3 text-right whitespace-nowrap">
-                        <a href={`/admin/pedidos/${p.id}/documento?tipo=orcamento`} target="_blank" rel="noopener noreferrer" className="text-[10px] text-[#1e5fb4] font-bold hover:underline mr-3">PDF</a>
+                        <select
+                          defaultValue=""
+                          onChange={(e) => {
+                            if (e.target.value) openDocument(p.id, e.target.value as "orcamento" | "pedido" | "nota" | "recibo");
+                            e.currentTarget.value = "";
+                          }}
+                          className="text-[10px] text-[#1e5fb4] font-bold bg-transparent border border-transparent hover:border-[#e2e2e2] mr-2 focus:outline-none"
+                        >
+                          <option value="">PDF...</option>
+                          <option value="orcamento">Orçamento</option>
+                          <option value="pedido">Pedido de venda</option>
+                          <option value="nota">Nota de venda</option>
+                          <option value="recibo">Recibo</option>
+                        </select>
                         <button onClick={() => setDraft({ ...p })} className="text-[10px] text-[#002045] font-bold hover:underline mr-3">Editar</button>
                         <button onClick={() => deletePedido(p.id)} className="text-[10px] text-red-600 font-bold hover:underline">Excluir</button>
                       </td>
@@ -717,7 +883,20 @@ export default function PedidosTab() {
                     <p className={`text-[10px] mt-2 ${db.cls}`}>📦 {db.label}</p>
                   ) : null}
                   <div className="flex gap-4 mt-3 pt-3 border-t border-[#f0f0f0]">
-                    <a href={`/admin/pedidos/${p.id}/documento?tipo=orcamento`} target="_blank" rel="noopener noreferrer" className="text-[10px] text-[#1e5fb4] font-bold">PDF</a>
+                    <select
+                      defaultValue=""
+                      onChange={(e) => {
+                        if (e.target.value) openDocument(p.id, e.target.value as "orcamento" | "pedido" | "nota" | "recibo");
+                        e.currentTarget.value = "";
+                      }}
+                      className="text-[10px] text-[#1e5fb4] font-bold bg-white border border-[#e2e2e2]"
+                    >
+                      <option value="">PDF...</option>
+                      <option value="orcamento">Orçamento</option>
+                      <option value="pedido">Pedido de venda</option>
+                      <option value="nota">Nota de venda</option>
+                      <option value="recibo">Recibo</option>
+                    </select>
                     <button onClick={() => setDraft({ ...p })} className="text-[10px] text-[#002045] font-bold">Editar</button>
                     <button onClick={() => deletePedido(p.id)} className="text-[10px] text-red-600 font-bold">Excluir</button>
                   </div>
@@ -726,6 +905,53 @@ export default function PedidosTab() {
             })}
           </div>
         </>
+      )}
+
+      {quoteImportOpen && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 p-4" onClick={() => setQuoteImportOpen(false)}>
+          <div className="bg-white w-full max-w-3xl max-h-[86vh] overflow-y-auto" onClick={(e) => e.stopPropagation()}>
+            <div className="bg-[#002045] px-6 py-4 flex items-center justify-between sticky top-0">
+              <p className="text-white font-[var(--font-noto-serif)] text-lg">Importar orçamento para pedido</p>
+              <button onClick={() => setQuoteImportOpen(false)} className="text-white/60 hover:text-white text-xl leading-none">×</button>
+            </div>
+            <div className="p-6">
+              {quoteImportLoading ? (
+                <p className="text-sm text-[#74777f] font-[var(--font-inter)]">Carregando orçamentos...</p>
+              ) : quoteImportError ? (
+                <p className="text-sm text-red-700 font-[var(--font-inter)]">{quoteImportError}</p>
+              ) : quoteOptions.length === 0 ? (
+                <p className="text-sm text-[#74777f] font-[var(--font-inter)]">Nenhum orçamento encontrado para importar.</p>
+              ) : (
+                <div className="space-y-2">
+                  {quoteOptions.map((q) => (
+                    <button
+                      key={q.id}
+                      onClick={() => startDraftFromQuote(q)}
+                      className="w-full text-left border border-[#e2e2e2] bg-white px-4 py-3 hover:border-[#002045] hover:bg-[#fafafa] transition-colors"
+                    >
+                      <div className="flex flex-wrap items-start justify-between gap-3">
+                        <div className="min-w-0">
+                          <p className="text-sm font-bold text-[#002045] font-[var(--font-inter)]">{q.client_name}</p>
+                          <p className="text-xs text-[#74777f] font-[var(--font-inter)] truncate">
+                            {[q.client_email, q.client_phone, q.space, q.product_name].filter(Boolean).join(" · ")}
+                          </p>
+                          <p className="text-[10px] text-[#74777f] font-[var(--font-inter)] mt-1">
+                            {q.partner_name ? `Parceiro: ${q.partner_name}` : "Sem parceiro identificado"}
+                            {q.coupon_code ? ` · Cupom ${q.coupon_code}` : ""}
+                          </p>
+                        </div>
+                        <div className="text-right shrink-0">
+                          <p className="text-sm font-bold text-[#002045] font-[var(--font-inter)]">{fmtBRL(q.total)}</p>
+                          <p className="text-[10px] text-[#74777f] font-[var(--font-inter)]">{fmtDate(q.created_at)}</p>
+                        </div>
+                      </div>
+                    </button>
+                  ))}
+                </div>
+              )}
+            </div>
+          </div>
+        </div>
       )}
 
       {/* Create / edit modal */}
