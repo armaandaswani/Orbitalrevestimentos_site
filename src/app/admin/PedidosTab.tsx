@@ -22,6 +22,18 @@ export interface Pedido {
   notes: string | null;
   expected_delivery_at: string | null;
   delivered_at: string | null;
+  client_zip: string | null;
+  client_address: string | null;
+  client_address_complement: string | null;
+  client_city: string | null;
+  client_state: string | null;
+  discount_amount: number | null;
+  freight_amount: number | null;
+  payment_methods: string[] | null;
+  payment_terms: string | null;
+  quote_valid_until: string | null;
+  warranty_terms: string | null;
+  document_notes: string | null;
   created_at: string;
   updated_at: string;
 }
@@ -41,6 +53,10 @@ const PAYMENT_META: Record<PaymentStatus, { label: string; cls: string }> = {
   pago: { label: "Pago", cls: "bg-green-100 text-green-800" },
 };
 const PAYMENT_ORDER: PaymentStatus[] = ["pendente", "parcial", "pago"];
+const PAYMENT_METHODS = ["Pix", "Dinheiro", "Cartão de Crédito", "Cartão de Débito", "Boleto", "Transferência Bancária"] as const;
+const DEFAULT_PAYMENT_TERMS = "PIX ou dinheiro à vista";
+const DEFAULT_DOCUMENT_NOTES =
+  "CLÁUSULAS CONTRATUAIS - DISPOSIÇÕES GERAIS ORBITAL REVESTIMENTOS\n\nA ORBITAL atua como fornecedora de revestimentos decorativos. Instalação, preparação de base, transporte e serviços terceirizados devem ser contratados e acompanhados pelo COMPRADOR quando não constarem expressamente no pedido.\n\nA liberação para retirada ou entrega dos produtos ocorre mediante pagamento integral à vista ou aprovação formal da condição comercial registrada neste documento.\n\nProdutos fornecidos possuem variações naturais de tonalidade, textura e brilho entre lotes. Imagens, amostras e catálogos têm caráter ilustrativo.";
 
 function fmtBRL(n: number | null | undefined) {
   if (n == null) return "—";
@@ -56,6 +72,15 @@ function toLocalInput(iso: string | null | undefined): string {
   const d = new Date(iso);
   const pad = (n: number) => String(n).padStart(2, "0");
   return `${d.getFullYear()}-${pad(d.getMonth() + 1)}-${pad(d.getDate())}T${pad(d.getHours())}:${pad(d.getMinutes())}`;
+}
+function toDateInput(iso: string | null | undefined): string {
+  if (!iso) return "";
+  return iso.slice(0, 10);
+}
+function plusDays(days: number): string {
+  const d = new Date();
+  d.setDate(d.getDate() + days);
+  return d.toISOString().slice(0, 10);
 }
 
 /** Relative delivery badge: overdue / hoje / future date. Suppressed once delivered. */
@@ -223,6 +248,18 @@ export default function PedidosTab() {
       payment_status: draft.payment_status ?? "pendente",
       notes: draft.notes ?? null,
       expected_delivery_at: draft.expected_delivery_at ?? null,
+      client_zip: draft.client_zip ?? null,
+      client_address: draft.client_address ?? null,
+      client_address_complement: draft.client_address_complement ?? null,
+      client_city: draft.client_city ?? null,
+      client_state: draft.client_state ?? null,
+      discount_amount: draft.discount_amount ?? 0,
+      freight_amount: draft.freight_amount ?? 0,
+      payment_methods: draft.payment_methods?.length ? draft.payment_methods : ["Pix"],
+      payment_terms: draft.payment_terms ?? null,
+      quote_valid_until: draft.quote_valid_until ?? null,
+      warranty_terms: draft.warranty_terms ?? null,
+      document_notes: draft.document_notes ?? null,
     };
     const cleanItems = items.filter((it) => it.product_id && it.plates > 0);
     try {
@@ -264,7 +301,7 @@ export default function PedidosTab() {
             )}
           </div>
           <button
-            onClick={() => { setItems([]); setDraft({ _isNew: true, status: "em_producao", payment_status: "pendente" }); }}
+            onClick={() => { setItems([]); setDraft({ _isNew: true, status: "em_producao", payment_status: "pendente", payment_methods: ["Pix"], payment_terms: DEFAULT_PAYMENT_TERMS, quote_valid_until: plusDays(7), document_notes: DEFAULT_DOCUMENT_NOTES }); }}
             className="bg-[#002045] text-white text-xs tracking-[0.12em] uppercase font-bold font-[var(--font-inter)] px-5 py-2.5 hover:bg-[#1a365d] transition-colors"
           >
             + Novo pedido
@@ -430,6 +467,7 @@ export default function PedidosTab() {
                         )}
                       </td>
                       <td className="px-4 py-3 text-right whitespace-nowrap">
+                        <a href={`/admin/pedidos/${p.id}/documento?tipo=orcamento`} target="_blank" rel="noopener noreferrer" className="text-[10px] text-[#1e5fb4] font-bold hover:underline mr-3">PDF</a>
                         <button onClick={() => setDraft({ ...p })} className="text-[10px] text-[#002045] font-bold hover:underline mr-3">Editar</button>
                         <button onClick={() => deletePedido(p.id)} className="text-[10px] text-red-600 font-bold hover:underline">Excluir</button>
                       </td>
@@ -482,6 +520,7 @@ export default function PedidosTab() {
                     <p className={`text-[10px] mt-2 ${db.cls}`}>📦 {db.label}</p>
                   ) : null}
                   <div className="flex gap-4 mt-3 pt-3 border-t border-[#f0f0f0]">
+                    <a href={`/admin/pedidos/${p.id}/documento?tipo=orcamento`} target="_blank" rel="noopener noreferrer" className="text-[10px] text-[#1e5fb4] font-bold">PDF</a>
                     <button onClick={() => setDraft({ ...p })} className="text-[10px] text-[#002045] font-bold">Editar</button>
                     <button onClick={() => deletePedido(p.id)} className="text-[10px] text-red-600 font-bold">Excluir</button>
                   </div>
@@ -510,6 +549,26 @@ export default function PedidosTab() {
                 </Field>
                 <Field label="Telefone / WhatsApp">
                   <input className={inputCls} value={draft.client_phone ?? ""} onChange={(e) => setDraft({ ...draft, client_phone: e.target.value })} />
+                </Field>
+              </div>
+              <div className="border border-[#e2e2e2] p-3 space-y-3">
+                <p className="text-[10px] tracking-[0.12em] uppercase font-bold font-[var(--font-inter)] text-[#74777f]">Dados do cliente no documento</p>
+                <div className="grid grid-cols-2 gap-3">
+                  <Field label="CEP">
+                    <input className={inputCls} value={draft.client_zip ?? ""} onChange={(e) => setDraft({ ...draft, client_zip: e.target.value })} placeholder="69000-000" />
+                  </Field>
+                  <Field label="Cidade / UF">
+                    <div className="grid grid-cols-[1fr_64px] gap-2">
+                      <input className={inputCls} value={draft.client_city ?? ""} onChange={(e) => setDraft({ ...draft, client_city: e.target.value })} placeholder="Manaus" />
+                      <input className={inputCls} value={draft.client_state ?? ""} onChange={(e) => setDraft({ ...draft, client_state: e.target.value.toUpperCase().slice(0, 2) })} placeholder="AM" />
+                    </div>
+                  </Field>
+                </div>
+                <Field label="Endereço">
+                  <input className={inputCls} value={draft.client_address ?? ""} onChange={(e) => setDraft({ ...draft, client_address: e.target.value })} placeholder="Rua, avenida, número" />
+                </Field>
+                <Field label="Complemento">
+                  <input className={inputCls} value={draft.client_address_complement ?? ""} onChange={(e) => setDraft({ ...draft, client_address_complement: e.target.value })} placeholder="Bairro, sala, referência" />
                 </Field>
               </div>
               <div className="grid grid-cols-2 gap-3">
@@ -612,6 +671,81 @@ export default function PedidosTab() {
                     value={draft.total ?? ""}
                     onChange={(e) => setDraft({ ...draft, total: e.target.value === "" ? null : Number(e.target.value) })}
                   />
+                </Field>
+              </div>
+              <div className="grid grid-cols-2 gap-3">
+                <Field label="Desconto (R$)">
+                  <input
+                    type="number"
+                    min="0"
+                    className={inputCls}
+                    value={draft.discount_amount ?? ""}
+                    onChange={(e) => setDraft({ ...draft, discount_amount: e.target.value === "" ? 0 : Number(e.target.value) })}
+                  />
+                </Field>
+                <Field label="Frete / despesas (R$)">
+                  <input
+                    type="number"
+                    min="0"
+                    className={inputCls}
+                    value={draft.freight_amount ?? ""}
+                    onChange={(e) => setDraft({ ...draft, freight_amount: e.target.value === "" ? 0 : Number(e.target.value) })}
+                  />
+                </Field>
+              </div>
+              <div className="border border-[#e2e2e2] p-3 space-y-3">
+                <div className="flex flex-wrap items-center justify-between gap-2">
+                  <p className="text-[10px] tracking-[0.12em] uppercase font-bold font-[var(--font-inter)] text-[#74777f]">Documento comercial</p>
+                  {draft.id && (
+                    <div className="flex flex-wrap gap-2">
+                      {(["orcamento", "pedido", "nota", "recibo"] as const).map((tipo) => (
+                        <a
+                          key={tipo}
+                          href={`/admin/pedidos/${draft.id}/documento?tipo=${tipo}`}
+                          target="_blank"
+                          rel="noopener noreferrer"
+                          className="border border-[#e2e2e2] px-2 py-1 text-[9px] uppercase tracking-[0.08em] font-bold text-[#002045] hover:border-[#002045]"
+                        >
+                          {tipo === "orcamento" ? "Orçamento" : tipo === "pedido" ? "Pedido" : tipo === "nota" ? "Nota" : "Recibo"}
+                        </a>
+                      ))}
+                    </div>
+                  )}
+                </div>
+                <Field label="Formas de pagamento">
+                  <div className="grid grid-cols-2 gap-2">
+                    {PAYMENT_METHODS.map((method) => {
+                      const selected = (draft.payment_methods ?? ["Pix"]).includes(method);
+                      return (
+                        <label key={method} className="flex items-center gap-2 text-xs font-[var(--font-inter)] text-[#43474e]">
+                          <input
+                            type="checkbox"
+                            checked={selected}
+                            onChange={(e) => {
+                              const current = draft.payment_methods ?? ["Pix"];
+                              const next = e.target.checked ? [...current, method] : current.filter((m) => m !== method);
+                              setDraft({ ...draft, payment_methods: next.length ? next : ["Pix"] });
+                            }}
+                          />
+                          {method}
+                        </label>
+                      );
+                    })}
+                  </div>
+                </Field>
+                <Field label="Condição de pagamento">
+                  <input className={inputCls} value={draft.payment_terms ?? ""} onChange={(e) => setDraft({ ...draft, payment_terms: e.target.value })} placeholder={DEFAULT_PAYMENT_TERMS} />
+                </Field>
+                <div className="grid grid-cols-2 gap-3">
+                  <Field label="Validade do orçamento">
+                    <input type="date" className={inputCls} value={toDateInput(draft.quote_valid_until)} onChange={(e) => setDraft({ ...draft, quote_valid_until: e.target.value || null })} />
+                  </Field>
+                  <Field label="Garantia">
+                    <input className={inputCls} value={draft.warranty_terms ?? ""} onChange={(e) => setDraft({ ...draft, warranty_terms: e.target.value })} placeholder="Garantia legal conforme CDC" />
+                  </Field>
+                </div>
+                <Field label="Observações do documento">
+                  <textarea className={`${inputCls} min-h-[120px]`} value={draft.document_notes ?? ""} onChange={(e) => setDraft({ ...draft, document_notes: e.target.value })} placeholder={DEFAULT_DOCUMENT_NOTES} />
                 </Field>
               </div>
               <div className="grid grid-cols-2 gap-3">

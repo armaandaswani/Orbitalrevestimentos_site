@@ -1,10 +1,40 @@
 import { NextRequest, NextResponse } from "next/server";
 import { isAdminRequest } from "@/lib/admin-auth";
 import { supabaseAdmin } from "@/lib/supabase";
-import { isMissingTable } from "@/lib/db-compat";
+import { isMissingColumn, isMissingTable } from "@/lib/db-compat";
 import { transitionOrderStock } from "@/lib/stock";
 
 interface OrderItemInput { product_id?: string; plates?: number }
+
+const DOCUMENT_COLUMNS = [
+  "client_zip",
+  "client_address",
+  "client_address_complement",
+  "client_city",
+  "client_state",
+  "discount_amount",
+  "freight_amount",
+  "payment_methods",
+  "payment_terms",
+  "quote_valid_until",
+  "warranty_terms",
+  "document_notes",
+];
+
+function cleanText(v: unknown): string | null {
+  return typeof v === "string" && v.trim() ? v.trim() : null;
+}
+
+function cleanMoney(v: unknown): number {
+  const n = Number(v);
+  return Number.isFinite(n) && n >= 0 ? n : 0;
+}
+
+function cleanPaymentMethods(v: unknown): string[] {
+  if (!Array.isArray(v)) return ["Pix"];
+  const methods = v.map((x) => String(x).trim()).filter(Boolean);
+  return methods.length ? methods : ["Pix"];
+}
 
 // Pedidos / Produção — what happens AFTER a lead is won: the order is cut,
 // finished and delivered. Backed by the `pedidos` table (migration 017). If
@@ -68,9 +98,25 @@ export async function POST(req: NextRequest) {
     payment_status: body.payment_status ?? "pendente",
     notes: body.notes ?? null,
     expected_delivery_at: body.expected_delivery_at ?? null,
+    client_zip: cleanText(body.client_zip),
+    client_address: cleanText(body.client_address),
+    client_address_complement: cleanText(body.client_address_complement),
+    client_city: cleanText(body.client_city),
+    client_state: cleanText(body.client_state),
+    discount_amount: cleanMoney(body.discount_amount),
+    freight_amount: cleanMoney(body.freight_amount),
+    payment_methods: cleanPaymentMethods(body.payment_methods),
+    payment_terms: cleanText(body.payment_terms),
+    quote_valid_until: cleanText(body.quote_valid_until),
+    warranty_terms: cleanText(body.warranty_terms),
+    document_notes: cleanText(body.document_notes),
   };
 
-  const { data, error } = await db.from("pedidos").insert(payload).select().single();
+  let { data, error } = await db.from("pedidos").insert(payload).select().single();
+  if (error && isMissingColumn(error)) {
+    for (const col of DOCUMENT_COLUMNS) delete payload[col];
+    ({ data, error } = await db.from("pedidos").insert(payload).select().single());
+  }
 
   // Structured line items (model + plate qty) → enables stock + profit. Created
   // alongside the order; reserve stock immediately for active orders. All

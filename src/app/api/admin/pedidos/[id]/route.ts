@@ -4,6 +4,21 @@ import { supabaseAdmin } from "@/lib/supabase";
 import { isMissingColumn } from "@/lib/db-compat";
 import { transitionOrderStock } from "@/lib/stock";
 
+const OPTIONAL_DOCUMENT_COLUMNS = [
+  "client_zip",
+  "client_address",
+  "client_address_complement",
+  "client_city",
+  "client_state",
+  "discount_amount",
+  "freight_amount",
+  "payment_methods",
+  "payment_terms",
+  "quote_valid_until",
+  "warranty_terms",
+  "document_notes",
+];
+
 // Maps an order's NEW production status (+ what stock phase it's already in) to
 // the stock action to apply. Returns null when nothing should change.
 function stockTargetFor(
@@ -40,6 +55,18 @@ const EDITABLE = new Set([
   "notes",
   "expected_delivery_at",
   "delivered_at",
+  "client_zip",
+  "client_address",
+  "client_address_complement",
+  "client_city",
+  "client_state",
+  "discount_amount",
+  "freight_amount",
+  "payment_methods",
+  "payment_terms",
+  "quote_valid_until",
+  "warranty_terms",
+  "document_notes",
 ]);
 
 /** GET /api/admin/pedidos/[id] — the order plus its line items. */
@@ -116,6 +143,7 @@ export async function PATCH(
   if (error && isMissingColumn(error)) {
     delete patch.delivered_at;
     delete patch.payment_status;
+    for (const col of OPTIONAL_DOCUMENT_COLUMNS) delete patch[col];
     ({ data, error } = await db.from("pedidos").update(patch).eq("id", id).select().single());
   }
 
