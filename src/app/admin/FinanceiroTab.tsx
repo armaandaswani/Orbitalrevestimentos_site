@@ -24,11 +24,12 @@ interface PnL {
 }
 interface FixedCost {
   id: string; name: string; amount: number; cadence: "daily" | "weekly" | "monthly"; active: boolean;
-  weekday: number | null; started_at: string | null; ended_at: string | null; notes: string | null;
+  weekday: number | null; month_day: number | null; started_at: string | null; ended_at: string | null; notes: string | null;
 }
 
 const CADENCE_LABEL: Record<string, string> = { daily: "Diário", weekly: "Semanal", monthly: "Mensal" };
 const WEEKDAYS = ["Domingo", "Segunda", "Terça", "Quarta", "Quinta", "Sexta", "Sábado"];
+const MONTH_DAYS = Array.from({ length: 31 }, (_, i) => i + 1);
 
 function fmtBRL(n: number) {
   return n.toLocaleString("pt-BR", { style: "currency", currency: "BRL", maximumFractionDigits: 0 });
@@ -74,16 +75,75 @@ export default function FinanceiroTab() {
   const [fAmount, setFAmount] = useState("");
   const [fCadence, setFCadence] = useState<"daily" | "weekly" | "monthly">("monthly");
   const [fWeekday, setFWeekday] = useState(3); // default quarta
+  const [fMonthDay, setFMonthDay] = useState(1);
+  const [editingFixedId, setEditingFixedId] = useState<string | null>(null);
+  const [editFixed, setEditFixed] = useState<Partial<FixedCost>>({});
+
+  function resetEditFixed() {
+    setEditingFixedId(null);
+    setEditFixed({});
+  }
+
+  function startEditFixed(c: FixedCost) {
+    setEditingFixedId(c.id);
+    setEditFixed({
+      name: c.name,
+      amount: c.amount,
+      cadence: c.cadence,
+      weekday: c.weekday ?? 3,
+      month_day: c.month_day ?? 1,
+      active: c.active,
+      notes: c.notes,
+    });
+  }
+
+  function cadenceDetail(c: Pick<FixedCost, "cadence" | "weekday" | "month_day">) {
+    if (c.cadence === "weekly") return c.weekday != null ? ` (${WEEKDAYS[c.weekday]})` : " (sem dia definido)";
+    if (c.cadence === "monthly") return c.month_day != null ? ` (dia ${c.month_day})` : " (dia 1)";
+    return "";
+  }
 
   async function addFixed() {
     const amount = Number(fAmount);
     if (!fName.trim() || !Number.isFinite(amount) || amount <= 0) return;
     const res = await fetch("/api/admin/fixed-costs", {
       method: "POST", headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ name: fName.trim(), amount, cadence: fCadence, weekday: fCadence === "weekly" ? fWeekday : undefined }),
+      body: JSON.stringify({
+        name: fName.trim(),
+        amount,
+        cadence: fCadence,
+        weekday: fCadence === "weekly" ? fWeekday : undefined,
+        month_day: fCadence === "monthly" ? fMonthDay : undefined,
+      }),
     });
     if (res.ok) { setFName(""); setFAmount(""); fetchFixed(); fetchPnl(); }
     else { const j = await res.json().catch(() => null); alert(j?.error || "Falha ao adicionar."); }
+  }
+  async function saveFixedEdit(c: FixedCost) {
+    const cadence = (editFixed.cadence ?? c.cadence) as FixedCost["cadence"];
+    const amount = Number(editFixed.amount);
+    const payload = {
+      name: String(editFixed.name ?? c.name).trim(),
+      amount,
+      cadence,
+      weekday: cadence === "weekly" ? Number(editFixed.weekday ?? c.weekday ?? 3) : null,
+      month_day: cadence === "monthly" ? Number(editFixed.month_day ?? c.month_day ?? 1) : null,
+      notes: typeof editFixed.notes === "string" ? editFixed.notes : c.notes,
+    };
+    if (!payload.name || !Number.isFinite(payload.amount) || payload.amount < 0) return;
+    const res = await fetch(`/api/admin/fixed-costs/${c.id}`, {
+      method: "PATCH",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify(payload),
+    });
+    if (!res.ok) {
+      const j = await res.json().catch(() => null);
+      alert(j?.error || "Falha ao editar.");
+      return;
+    }
+    resetEditFixed();
+    fetchFixed();
+    fetchPnl();
   }
   async function toggleFixed(c: FixedCost) {
     await fetch(`/api/admin/fixed-costs/${c.id}`, { method: "PATCH", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ active: !c.active }) });
@@ -167,6 +227,11 @@ export default function FinanceiroTab() {
                   {WEEKDAYS.map((w, i) => <option key={i} value={i}>{w}</option>)}
                 </select>
               )}
+              {fCadence === "monthly" && (
+                <select value={fMonthDay} onChange={(e) => setFMonthDay(Number(e.target.value))} className="border border-[#e2e2e2] px-2 py-1.5 text-xs font-[var(--font-inter)] text-[#002045] focus:outline-none focus:border-[#002045]">
+                  {MONTH_DAYS.map((d) => <option key={d} value={d}>Dia {d}</option>)}
+                </select>
+              )}
               <button onClick={addFixed} className="bg-[#002045] text-white text-xs font-bold font-[var(--font-inter)] px-4 py-1.5 hover:bg-[#1a365d]">Adicionar</button>
             </div>
             {fixed.length === 0 ? (
@@ -174,13 +239,63 @@ export default function FinanceiroTab() {
             ) : (
               <div className="divide-y divide-[#f5f5f3]">
                 {fixed.map((c) => (
-                  <div key={c.id} className={`flex items-center justify-between gap-3 px-4 py-2.5 ${!c.active ? "opacity-50" : ""}`}>
-                    <span className="text-xs font-semibold text-[#002045] font-[var(--font-inter)] flex-1">{c.name}</span>
-                    <span className="text-xs text-[#43474e] font-[var(--font-inter)]">{fmtBRL(c.amount)} · {CADENCE_LABEL[c.cadence]}{c.cadence === "weekly" && c.weekday != null ? ` (${WEEKDAYS[c.weekday]})` : ""}</span>
-                    <button onClick={() => toggleFixed(c)} className="text-[10px] font-bold font-[var(--font-inter)] text-[#1e5fb4] hover:underline">{c.active ? "Pausar" : "Ativar"}</button>
-                    <button onClick={() => delFixed(c)} className="text-[#b42318] hover:text-[#7a1610]" title="Remover">
-                      <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><path d="M3 6h18M8 6V4h8v2M19 6l-1 14H6L5 6" /></svg>
-                    </button>
+                  <div key={c.id} className={`px-4 py-2.5 ${!c.active ? "opacity-50" : ""}`}>
+                    {editingFixedId === c.id ? (
+                      <div className="grid grid-cols-1 lg:grid-cols-[1fr_120px_130px_150px_auto] gap-2 items-center">
+                        <input
+                          value={String(editFixed.name ?? "")}
+                          onChange={(e) => setEditFixed((cur) => ({ ...cur, name: e.target.value }))}
+                          className="border border-[#e2e2e2] px-2 py-1.5 text-xs font-[var(--font-inter)] text-[#002045] focus:outline-none focus:border-[#002045]"
+                        />
+                        <input
+                          type="number"
+                          min="0"
+                          value={String(editFixed.amount ?? "")}
+                          onChange={(e) => setEditFixed((cur) => ({ ...cur, amount: Number(e.target.value) }))}
+                          className="border border-[#e2e2e2] px-2 py-1.5 text-xs font-[var(--font-inter)] text-[#002045] focus:outline-none focus:border-[#002045]"
+                        />
+                        <select
+                          value={(editFixed.cadence ?? c.cadence) as FixedCost["cadence"]}
+                          onChange={(e) => setEditFixed((cur) => ({ ...cur, cadence: e.target.value as FixedCost["cadence"] }))}
+                          className="border border-[#e2e2e2] px-2 py-1.5 text-xs font-[var(--font-inter)] text-[#002045] focus:outline-none focus:border-[#002045]"
+                        >
+                          <option value="daily">Diário</option>
+                          <option value="weekly">Semanal</option>
+                          <option value="monthly">Mensal</option>
+                        </select>
+                        {(editFixed.cadence ?? c.cadence) === "weekly" ? (
+                          <select
+                            value={Number(editFixed.weekday ?? c.weekday ?? 3)}
+                            onChange={(e) => setEditFixed((cur) => ({ ...cur, weekday: Number(e.target.value) }))}
+                            className="border border-[#e2e2e2] px-2 py-1.5 text-xs font-[var(--font-inter)] text-[#002045] focus:outline-none focus:border-[#002045]"
+                          >
+                            {WEEKDAYS.map((w, i) => <option key={i} value={i}>{w}</option>)}
+                          </select>
+                        ) : (editFixed.cadence ?? c.cadence) === "monthly" ? (
+                          <select
+                            value={Number(editFixed.month_day ?? c.month_day ?? 1)}
+                            onChange={(e) => setEditFixed((cur) => ({ ...cur, month_day: Number(e.target.value) }))}
+                            className="border border-[#e2e2e2] px-2 py-1.5 text-xs font-[var(--font-inter)] text-[#002045] focus:outline-none focus:border-[#002045]"
+                          >
+                            {MONTH_DAYS.map((d) => <option key={d} value={d}>Dia {d}</option>)}
+                          </select>
+                        ) : <span className="text-[10px] text-[#74777f] font-[var(--font-inter)]">Conta todos os dias</span>}
+                        <div className="flex justify-end gap-3">
+                          <button onClick={() => saveFixedEdit(c)} className="text-[10px] font-bold font-[var(--font-inter)] text-[#1e5fb4] hover:underline">Salvar</button>
+                          <button onClick={resetEditFixed} className="text-[10px] font-bold font-[var(--font-inter)] text-[#74777f] hover:underline">Cancelar</button>
+                        </div>
+                      </div>
+                    ) : (
+                      <div className="flex items-center justify-between gap-3">
+                        <span className="text-xs font-semibold text-[#002045] font-[var(--font-inter)] flex-1">{c.name}</span>
+                        <span className="text-xs text-[#43474e] font-[var(--font-inter)]">{fmtBRL(c.amount)} · {CADENCE_LABEL[c.cadence]}{cadenceDetail(c)}</span>
+                        <button onClick={() => startEditFixed(c)} className="text-[10px] font-bold font-[var(--font-inter)] text-[#1e5fb4] hover:underline">Editar</button>
+                        <button onClick={() => toggleFixed(c)} className="text-[10px] font-bold font-[var(--font-inter)] text-[#1e5fb4] hover:underline">{c.active ? "Pausar" : "Ativar"}</button>
+                        <button onClick={() => delFixed(c)} className="text-[#b42318] hover:text-[#7a1610]" title="Remover">
+                          <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><path d="M3 6h18M8 6V4h8v2M19 6l-1 14H6L5 6" /></svg>
+                        </button>
+                      </div>
+                    )}
                   </div>
                 ))}
               </div>

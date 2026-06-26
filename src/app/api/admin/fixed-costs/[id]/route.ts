@@ -2,7 +2,7 @@ import { NextRequest, NextResponse } from "next/server";
 import { isAdminRequest } from "@/lib/admin-auth";
 import { supabaseAdmin } from "@/lib/supabase";
 
-const EDITABLE = new Set(["name", "amount", "cadence", "active", "started_at", "ended_at", "notes", "weekday"]);
+const EDITABLE = new Set(["name", "amount", "cadence", "active", "started_at", "ended_at", "notes", "weekday", "month_day"]);
 const CADENCES = new Set(["daily", "weekly", "monthly"]);
 
 /** PATCH /api/admin/fixed-costs/[id] — edit / activate / deactivate. */
@@ -19,6 +19,14 @@ export async function PATCH(req: NextRequest, { params }: { params: Promise<{ id
     if (!EDITABLE.has(k)) continue;
     if (k === "amount") { const n = Number(v); if (Number.isFinite(n) && n >= 0) patch[k] = n; }
     else if (k === "cadence") { if (CADENCES.has(String(v))) patch[k] = v; }
+    else if (k === "weekday") {
+      const n = Number(v);
+      patch[k] = Number.isInteger(n) && n >= 0 && n <= 6 ? n : null;
+    }
+    else if (k === "month_day") {
+      const n = Number(v);
+      patch[k] = Number.isInteger(n) && n >= 1 && n <= 31 ? n : null;
+    }
     else patch[k] = v;
   }
 

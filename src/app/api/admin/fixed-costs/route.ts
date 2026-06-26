@@ -36,6 +36,8 @@ export async function POST(req: NextRequest) {
   // financeiro counts each occurrence in the period.
   const wd = Number(body.weekday);
   const weekday = cadence === "weekly" && Number.isInteger(wd) && wd >= 0 && wd <= 6 ? wd : null;
+  const md = Number(body.month_day);
+  const monthDay = cadence === "monthly" && Number.isInteger(md) && md >= 1 && md <= 31 ? md : null;
 
   const sb = supabaseAdmin();
   const row: Record<string, unknown> = {
@@ -50,11 +52,13 @@ export async function POST(req: NextRequest) {
   // Only reference the weekday column when actually set, so costs still save if
   // migration 025 (fixed_costs.weekday) hasn't been applied yet.
   if (weekday !== null) row.weekday = weekday;
+  if (monthDay !== null) row.month_day = monthDay;
 
   let { data, error } = await sb.from("fixed_costs").insert(row).select().single();
   // weekday column not there yet → retry without it.
-  if (error && /weekday/i.test(error.message)) {
+  if (error && /(weekday|month_day)/i.test(error.message)) {
     delete row.weekday;
+    delete row.month_day;
     ({ data, error } = await sb.from("fixed_costs").insert(row).select().single());
   }
 

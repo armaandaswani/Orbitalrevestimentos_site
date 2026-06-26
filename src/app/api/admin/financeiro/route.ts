@@ -8,24 +8,12 @@ import { supabaseAdmin } from "@/lib/supabase";
 // Revenue is recognised when an order is DELIVERED (entregue) within the range
 // (by delivered_at, falling back to created_at). COGS comes from the order's
 // line items (plates × unit_cost snapshot). Per-order extra costs come from
-// pedidos.other_costs. Fixed recurring costs are prorated across the range by
-// converting each to a daily equivalent. Everything is best-effort so a missing
-// migration 023 yields zeros rather than an error.
+// pedidos.other_costs. Fixed recurring costs are counted by their configured
+// recurrence: daily per day, weekly on the chosen weekday, monthly on the chosen
+// day of month. Everything is best-effort so a missing migration 023 yields
+// zeros rather than an error.
 
 const DAY = 86_400_000;
-
-function dailyEquivalent(amount: number, cadence: string): number {
-  if (cadence === "daily") return amount;
-  if (cadence === "weekly") return amount / 7;
-  return amount / 30; // monthly
-}
-
-function clampDays(rangeStart: number, rangeEnd: number, costStart: number, costEnd: number): number {
-  const s = Math.max(rangeStart, costStart);
-  const e = Math.min(rangeEnd, costEnd);
-  if (e <= s) return 0;
-  return (e - s) / DAY;
-}
 
 export async function GET(req: NextRequest) {
   if (!isAdminRequest(req)) return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
@@ -266,11 +254,8 @@ export async function GET(req: NextRequest) {
   } catch { /* commissions are best-effort */ }
   const commissions = partnerCommissions + repCommissions;
 
-  // 3) Fixed costs — fetched here, charged per calendar month in the loop below.
-  //    A MONTHLY cost hits IN FULL for every month the range touches (it does
-  //    not get prorated by day count — "é mensal e pronto"). Weekly/daily are
-  //    proportional to the days in the range.
-  type FixedRow = { name: string; amount: number; cadence: string; weekday: number | null; started_at: string | null; ended_at: string | null };
+  // 3) Fixed costs — fetched here, charged by actual recurrence occurrences.
+  type FixedRow = { name: string; amount: number; cadence: string; weekday: number | null; month_day: number | null; started_at: string | null; ended_at: string | null };
   let fixedRows: FixedRow[] = [];
   try {
     const { data: fc } = await sb.from("fixed_costs").select("*").eq("active", true);
@@ -287,13 +272,30 @@ export async function GET(req: NextRequest) {
     }
     return n;
   };
+  // Count how many times a chosen day-of-month falls in [a,b). If a month has
+  // fewer days than requested (ex: dia 31 in February), charge on the month's
+  // last day so the cost is not silently skipped.
+  const countMonthDay = (a: number, b: number, monthDay: number): number => {
+    if (b <= a) return 0;
+    let n = 0;
+    const start = new Date(a);
+    const end = new Date(b);
+    for (let y = start.getFullYear(), m = start.getMonth(); y < end.getFullYear() || (y === end.getFullYear() && m <= end.getMonth()); m++) {
+      if (m > 11) { y++; m = 0; }
+      const lastDay = new Date(y, m + 1, 0).getDate();
+      const day = Math.min(Math.max(1, monthDay), lastDay);
+      const occurrence = new Date(y, m, day, 12, 0, 0, 0).getTime();
+      if (occurrence >= a && occurrence < b) n++;
+    }
+    return n;
+  };
   const fixedContribution = (f: FixedRow, mStart: number, mEnd: number): number => {
     const cs = f.started_at ? new Date(f.started_at).getTime() : -Infinity;
     const ce = f.ended_at ? new Date(f.ended_at).getTime() : Infinity;
     const es = Math.max(mStart, cs), ee = Math.min(mEnd, ce);
     if (ee <= es) return 0;
     const amt = Number(f.amount) || 0;
-    if (f.cadence === "monthly") return amt; // full amount per month, always
+    if (f.cadence === "monthly") return amt * countMonthDay(es, ee, typeof f.month_day === "number" ? f.month_day : 1);
     if (f.cadence === "weekly") {
       // Charge the full amount on each occurrence of the chosen weekday. If no
       // weekday set (legacy), fall back to weeks ≈ days/7.
@@ -323,7 +325,7 @@ export async function GET(req: NextRequest) {
         const c = fixedContribution(f, mStart, mEnd);
         if (c <= 0) continue;
         m.fixed += c;
-        const k = `${f.name}|${f.cadence}|${f.amount}`;
+        const k = `${f.name}|${f.cadence}|${f.amount}|${f.weekday ?? ""}|${f.month_day ?? ""}`;
         (fixedAccum[k] ||= { name: f.name, cadence: f.cadence, amount: Number(f.amount) || 0, prorated: 0 }).prorated += c;
       }
       void mDays;
