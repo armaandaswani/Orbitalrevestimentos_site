@@ -609,7 +609,8 @@ export default function AdminPage() {
 
   const fetchDbProducts = useCallback(async () => {
     setLoadingDbProducts(true);
-    const res = await fetch("/api/products");
+    // Admin sees ALL products (incl. inactive) so they can manage/reactivate.
+    const res = await fetch("/api/products?all=true");
     if (res.ok) setDbProducts(await res.json());
     setLoadingDbProducts(false);
   }, []);

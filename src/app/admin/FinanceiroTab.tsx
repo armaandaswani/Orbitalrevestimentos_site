@@ -7,6 +7,7 @@ interface PerOrder {
   revenue: number; cogs: number; other_costs: number; profit: number; margin: number; below_cost: boolean;
 }
 interface FixedBreakdown { name: string; cadence: string; amount: number; prorated: number }
+interface MonthPoint { month: string; revenue: number; cogs: number; order_costs: number; fixed: number; net: number }
 interface PnL {
   range: { from: string; to: string; days: number };
   revenue: number; cogs: number; order_costs: number;
@@ -14,6 +15,7 @@ interface PnL {
   fixed_costs: number; fixed_breakdown: FixedBreakdown[];
   net_profit: number; net_margin: number;
   completed_count: number; orders_without_cost: number; orders_without_price: number; stock_value: number;
+  monthly?: MonthPoint[];
   per_order: PerOrder[];
 }
 interface FixedCost {
@@ -128,6 +130,12 @@ export default function FinanceiroTab() {
             <PnlCard label="Ticket médio" value={fmtBRL(pnl.completed_count ? pnl.revenue / pnl.completed_count : 0)} sub="por pedido entregue" />
           </div>
 
+          {/* Charts */}
+          <div className="grid grid-cols-1 lg:grid-cols-2 gap-4 mb-8">
+            <MonthlyTrend data={pnl.monthly ?? []} />
+            <Composition pnl={pnl} />
+          </div>
+
           {/* Fixed costs management */}
           <h3 className="font-[var(--font-inter)] text-[10px] tracking-[0.2em] uppercase font-bold text-[#002045] mb-3">Custos fixos recorrentes</h3>
           <div className="bg-white border border-[#e2e2e2] mb-8">
@@ -199,6 +207,80 @@ export default function FinanceiroTab() {
               {pnl.orders_without_price} pedido(s) entregue(s) sem total e sem preço de venda nos itens — a receita deles está incompleta. Defina o preço venda/placa no Estoque ou preencha o valor total do pedido.
             </p>
           )}
+        </>
+      )}
+    </div>
+  );
+}
+
+const MONTH_ABBR = ["jan", "fev", "mar", "abr", "mai", "jun", "jul", "ago", "set", "out", "nov", "dez"];
+function monthLabel(m: string) {
+  const [y, mo] = m.split("-");
+  return `${MONTH_ABBR[Number(mo) - 1] ?? mo}/${y.slice(2)}`;
+}
+
+function Legend({ color, label }: { color: string; label: string }) {
+  return (
+    <span className="flex items-center gap-1.5 text-[10px] font-[var(--font-inter)] text-[#74777f]">
+      <span className="w-2.5 h-2.5 rounded-sm" style={{ background: color }} /> {label}
+    </span>
+  );
+}
+
+// Revenue vs net-profit bars per month — dependency-free.
+function MonthlyTrend({ data }: { data: MonthPoint[] }) {
+  const max = Math.max(1, ...data.map((d) => Math.max(d.revenue, Math.abs(d.net))));
+  return (
+    <div className="bg-white border border-[#e2e2e2] p-4">
+      <p className="text-[10px] tracking-[0.12em] uppercase font-bold font-[var(--font-inter)] text-[#002045] mb-3">Receita × lucro por mês</p>
+      {data.length === 0 ? (
+        <p className="text-[#b0b0b0] text-xs font-[var(--font-inter)] py-8 text-center">Sem dados no período.</p>
+      ) : (
+        <>
+          <div className="flex items-end gap-2 h-40 overflow-x-auto">
+            {data.map((d) => (
+              <div key={d.month} className="flex flex-col items-center gap-1 flex-1 min-w-[40px]">
+                <div className="flex items-end gap-1 h-32 w-full justify-center">
+                  <div title={`Receita ${fmtBRL(d.revenue)}`} style={{ height: `${(d.revenue / max) * 100}%` }} className="w-3.5 bg-[#002045] rounded-t-sm transition-all" />
+                  <div title={`Líquido ${fmtBRL(d.net)}`} style={{ height: `${(Math.abs(d.net) / max) * 100}%` }} className={`w-3.5 rounded-t-sm transition-all ${d.net >= 0 ? "bg-[#2f5429]" : "bg-red-500"}`} />
+                </div>
+                <span className="text-[9px] text-[#74777f] font-[var(--font-inter)] whitespace-nowrap">{monthLabel(d.month)}</span>
+              </div>
+            ))}
+          </div>
+          <div className="flex gap-4 mt-3"><Legend color="#002045" label="Receita" /><Legend color="#2f5429" label="Lucro líquido" /></div>
+        </>
+      )}
+    </div>
+  );
+}
+
+// Where the revenue goes: stacked composition bar.
+function Composition({ pnl }: { pnl: PnL }) {
+  const profit = Math.max(0, pnl.net_profit);
+  const base = pnl.revenue > 0 ? pnl.revenue : pnl.cogs + pnl.order_costs + pnl.fixed_costs + profit;
+  const segs = [
+    { v: pnl.cogs, color: "#8a5a12", label: "CMV" },
+    { v: pnl.order_costs, color: "#b4791e", label: "Custos pedido" },
+    { v: pnl.fixed_costs, color: "#74777f", label: "Custos fixos" },
+    { v: profit, color: "#2f5429", label: "Lucro" },
+  ].filter((s) => s.v > 0);
+  return (
+    <div className="bg-white border border-[#e2e2e2] p-4">
+      <p className="text-[10px] tracking-[0.12em] uppercase font-bold font-[var(--font-inter)] text-[#002045] mb-3">Composição da receita</p>
+      {base <= 0 ? (
+        <p className="text-[#b0b0b0] text-xs font-[var(--font-inter)] py-8 text-center">Sem dados no período.</p>
+      ) : (
+        <>
+          <div className="flex w-full h-7 rounded-sm overflow-hidden">
+            {segs.map((s) => (
+              <div key={s.label} title={`${s.label}: ${fmtBRL(s.v)}`} style={{ width: `${(s.v / base) * 100}%`, background: s.color }} />
+            ))}
+          </div>
+          <div className="flex flex-wrap gap-x-4 gap-y-1 mt-3">
+            {segs.map((s) => <Legend key={s.label} color={s.color} label={`${s.label} ${Math.round((s.v / base) * 100)}%`} />)}
+          </div>
+          {pnl.net_profit < 0 && <p className="text-red-600 text-[11px] font-[var(--font-inter)] mt-2">Prejuízo de {fmtBRL(Math.abs(pnl.net_profit))} no período.</p>}
         </>
       )}
     </div>

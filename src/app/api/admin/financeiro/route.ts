@@ -101,9 +101,12 @@ export async function GET(req: NextRequest) {
   // 3) Fixed costs prorated across the range.
   let fixedTotal = 0;
   const fixedBreakdown: Array<{ name: string; cadence: string; amount: number; prorated: number }> = [];
+  type FixedRow = { name: string; amount: number; cadence: string; started_at: string | null; ended_at: string | null };
+  let fixedRows: FixedRow[] = [];
   try {
     const { data: fc } = await sb.from("fixed_costs").select("*").eq("active", true);
-    for (const f of (fc ?? []) as Array<{ name: string; amount: number; cadence: string; started_at: string | null; ended_at: string | null }>) {
+    fixedRows = (fc ?? []) as FixedRow[];
+    for (const f of fixedRows) {
       const cs = f.started_at ? new Date(f.started_at).getTime() : -Infinity;
       const ce = f.ended_at ? new Date(f.ended_at).getTime() : Infinity;
       const days = f.started_at || f.ended_at ? clampDays(fromMs, toMs, cs, ce) : rangeDays;
@@ -112,6 +115,36 @@ export async function GET(req: NextRequest) {
       fixedBreakdown.push({ name: f.name, cadence: f.cadence, amount: Number(f.amount) || 0, prorated });
     }
   } catch { /* no fixed_costs table */ }
+
+  // Monthly series for trend charts: bucket completed-order revenue/COGS/costs
+  // by delivery month, and prorate each active fixed cost into each month.
+  const monthMap: Record<string, { month: string; revenue: number; cogs: number; order_costs: number; fixed: number; net: number }> = {};
+  const monthKey = (iso: string) => { const d = new Date(iso); return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, "0")}`; };
+  for (const o of perOrder) {
+    const k = monthKey(o.when);
+    const m = (monthMap[k] ||= { month: k, revenue: 0, cogs: 0, order_costs: 0, fixed: 0, net: 0 });
+    m.revenue += o.revenue; m.cogs += o.cogs; m.order_costs += o.other_costs;
+  }
+  // Enumerate every month in [from,to] so empty months still show on the chart.
+  { const d = new Date(from.getFullYear(), from.getMonth(), 1); const end = new Date(to.getFullYear(), to.getMonth(), 1);
+    while (d <= end) {
+      const k = `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, "0")}`;
+      const m = (monthMap[k] ||= { month: k, revenue: 0, cogs: 0, order_costs: 0, fixed: 0, net: 0 });
+      const mStart = Math.max(fromMs, new Date(d.getFullYear(), d.getMonth(), 1).getTime());
+      const mEnd = Math.min(toMs, new Date(d.getFullYear(), d.getMonth() + 1, 1).getTime());
+      const mDays = Math.max(0, (mEnd - mStart) / DAY);
+      for (const f of fixedRows) {
+        const cs = f.started_at ? new Date(f.started_at).getTime() : -Infinity;
+        const ce = f.ended_at ? new Date(f.ended_at).getTime() : Infinity;
+        const days = f.started_at || f.ended_at ? clampDays(mStart, mEnd, cs, ce) : mDays;
+        m.fixed += dailyEquivalent(Number(f.amount) || 0, f.cadence) * days;
+      }
+      d.setMonth(d.getMonth() + 1);
+    }
+  }
+  const monthly = Object.values(monthMap)
+    .map((m) => ({ ...m, net: m.revenue - m.cogs - m.order_costs - m.fixed }))
+    .sort((a, b) => a.month.localeCompare(b.month));
 
   // 4) Current stock valuation (point-in-time).
   let stockValue = 0;
@@ -140,6 +173,7 @@ export async function GET(req: NextRequest) {
     orders_without_cost: ordersWithoutCost,
     orders_without_price: ordersWithoutPrice,
     stock_value: stockValue,
+    monthly,
     per_order: perOrder.sort((a, b) => b.revenue - a.revenue),
   });
 }
