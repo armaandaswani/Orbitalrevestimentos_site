@@ -32,21 +32,31 @@ export async function POST(req: NextRequest) {
   if (!name || !Number.isFinite(amount) || amount < 0 || !CADENCES.has(cadence)) {
     return NextResponse.json({ error: "Nome, valor e periodicidade (daily/weekly/monthly) obrigatórios." }, { status: 400 });
   }
+  // For weekly costs, the weekday it lands on (0=domingo … 6=sábado) so the
+  // financeiro counts each occurrence in the period.
+  const wd = Number(body.weekday);
+  const weekday = cadence === "weekly" && Number.isInteger(wd) && wd >= 0 && wd <= 6 ? wd : null;
 
   const sb = supabaseAdmin();
-  const { data, error } = await sb
-    .from("fixed_costs")
-    .insert({
-      name,
-      amount,
-      cadence,
-      active: body.active === false ? false : true,
-      started_at: body.started_at || null,
-      ended_at: body.ended_at || null,
-      notes: typeof body.notes === "string" ? body.notes.trim() || null : null,
-    })
-    .select()
-    .single();
+  const row: Record<string, unknown> = {
+    name,
+    amount,
+    cadence,
+    active: body.active === false ? false : true,
+    started_at: body.started_at || null,
+    ended_at: body.ended_at || null,
+    notes: typeof body.notes === "string" ? body.notes.trim() || null : null,
+  };
+  // Only reference the weekday column when actually set, so costs still save if
+  // migration 025 (fixed_costs.weekday) hasn't been applied yet.
+  if (weekday !== null) row.weekday = weekday;
+
+  let { data, error } = await sb.from("fixed_costs").insert(row).select().single();
+  // weekday column not there yet → retry without it.
+  if (error && /weekday/i.test(error.message)) {
+    delete row.weekday;
+    ({ data, error } = await sb.from("fixed_costs").insert(row).select().single());
+  }
 
   if (error && isMissing(error)) return NextResponse.json({ error: MIGRATION_HINT }, { status: 503 });
   if (error) return NextResponse.json({ error: error.message }, { status: 500 });

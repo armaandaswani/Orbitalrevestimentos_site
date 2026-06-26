@@ -102,21 +102,37 @@ export async function GET(req: NextRequest) {
   //    A MONTHLY cost hits IN FULL for every month the range touches (it does
   //    not get prorated by day count — "é mensal e pronto"). Weekly/daily are
   //    proportional to the days in the range.
-  type FixedRow = { name: string; amount: number; cadence: string; started_at: string | null; ended_at: string | null };
+  type FixedRow = { name: string; amount: number; cadence: string; weekday: number | null; started_at: string | null; ended_at: string | null };
   let fixedRows: FixedRow[] = [];
   try {
     const { data: fc } = await sb.from("fixed_costs").select("*").eq("active", true);
     fixedRows = (fc ?? []) as FixedRow[];
   } catch { /* no fixed_costs table */ }
   const fixedAccum: Record<string, { name: string; cadence: string; amount: number; prorated: number }> = {};
+  // Count how many times a given weekday (0=Sun..6=Sat) falls in [a,b).
+  const countWeekday = (a: number, b: number, wd: number): number => {
+    if (b <= a) return 0;
+    let n = 0;
+    // Walk day by day (each bucket is at most one month) at local noon.
+    for (let t = new Date(a).setHours(12, 0, 0, 0); t < b; t += DAY) {
+      if (t >= a && new Date(t).getDay() === wd) n++;
+    }
+    return n;
+  };
   const fixedContribution = (f: FixedRow, mStart: number, mEnd: number): number => {
     const cs = f.started_at ? new Date(f.started_at).getTime() : -Infinity;
     const ce = f.ended_at ? new Date(f.ended_at).getTime() : Infinity;
-    const overlapDays = f.started_at || f.ended_at ? clampDays(mStart, mEnd, cs, ce) : (mEnd - mStart) / DAY;
-    if (overlapDays <= 0) return 0;
+    const es = Math.max(mStart, cs), ee = Math.min(mEnd, ce);
+    if (ee <= es) return 0;
     const amt = Number(f.amount) || 0;
     if (f.cadence === "monthly") return amt; // full amount per month, always
-    return dailyEquivalent(amt, f.cadence) * overlapDays; // weekly/daily proportional
+    if (f.cadence === "weekly") {
+      // Charge the full amount on each occurrence of the chosen weekday. If no
+      // weekday set (legacy), fall back to weeks ≈ days/7.
+      if (typeof f.weekday === "number") return amt * countWeekday(es, ee, f.weekday);
+      return amt * (((ee - es) / DAY) / 7);
+    }
+    return amt * ((ee - es) / DAY); // daily: full amount per day
   };
 
   // Monthly series for trend charts: bucket completed-order revenue/COGS/costs

@@ -2,7 +2,7 @@ import { NextRequest, NextResponse } from "next/server";
 import { isAdminRequest } from "@/lib/admin-auth";
 import { supabaseAdmin } from "@/lib/supabase";
 
-const EDITABLE = new Set(["name", "amount", "cadence", "active", "started_at", "ended_at", "notes"]);
+const EDITABLE = new Set(["name", "amount", "cadence", "active", "started_at", "ended_at", "notes", "weekday"]);
 const CADENCES = new Set(["daily", "weekly", "monthly"]);
 
 /** PATCH /api/admin/fixed-costs/[id] — edit / activate / deactivate. */

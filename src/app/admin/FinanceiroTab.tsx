@@ -20,10 +20,11 @@ interface PnL {
 }
 interface FixedCost {
   id: string; name: string; amount: number; cadence: "daily" | "weekly" | "monthly"; active: boolean;
-  started_at: string | null; ended_at: string | null; notes: string | null;
+  weekday: number | null; started_at: string | null; ended_at: string | null; notes: string | null;
 }
 
 const CADENCE_LABEL: Record<string, string> = { daily: "Diário", weekly: "Semanal", monthly: "Mensal" };
+const WEEKDAYS = ["Domingo", "Segunda", "Terça", "Quarta", "Quinta", "Sexta", "Sábado"];
 
 function fmtBRL(n: number) {
   return n.toLocaleString("pt-BR", { style: "currency", currency: "BRL", maximumFractionDigits: 0 });
@@ -67,13 +68,14 @@ export default function FinanceiroTab() {
   const [fName, setFName] = useState("");
   const [fAmount, setFAmount] = useState("");
   const [fCadence, setFCadence] = useState<"daily" | "weekly" | "monthly">("monthly");
+  const [fWeekday, setFWeekday] = useState(3); // default quarta
 
   async function addFixed() {
     const amount = Number(fAmount);
     if (!fName.trim() || !Number.isFinite(amount) || amount <= 0) return;
     const res = await fetch("/api/admin/fixed-costs", {
       method: "POST", headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ name: fName.trim(), amount, cadence: fCadence }),
+      body: JSON.stringify({ name: fName.trim(), amount, cadence: fCadence, weekday: fCadence === "weekly" ? fWeekday : undefined }),
     });
     if (res.ok) { setFName(""); setFAmount(""); fetchFixed(); fetchPnl(); }
     else { const j = await res.json().catch(() => null); alert(j?.error || "Falha ao adicionar."); }
@@ -145,6 +147,11 @@ export default function FinanceiroTab() {
               <select value={fCadence} onChange={(e) => setFCadence(e.target.value as "daily" | "weekly" | "monthly")} className="border border-[#e2e2e2] px-2 py-1.5 text-xs font-[var(--font-inter)] text-[#002045] focus:outline-none focus:border-[#002045]">
                 <option value="daily">Diário</option><option value="weekly">Semanal</option><option value="monthly">Mensal</option>
               </select>
+              {fCadence === "weekly" && (
+                <select value={fWeekday} onChange={(e) => setFWeekday(Number(e.target.value))} className="border border-[#e2e2e2] px-2 py-1.5 text-xs font-[var(--font-inter)] text-[#002045] focus:outline-none focus:border-[#002045]">
+                  {WEEKDAYS.map((w, i) => <option key={i} value={i}>{w}</option>)}
+                </select>
+              )}
               <button onClick={addFixed} className="bg-[#002045] text-white text-xs font-bold font-[var(--font-inter)] px-4 py-1.5 hover:bg-[#1a365d]">Adicionar</button>
             </div>
             {fixed.length === 0 ? (
@@ -154,7 +161,7 @@ export default function FinanceiroTab() {
                 {fixed.map((c) => (
                   <div key={c.id} className={`flex items-center justify-between gap-3 px-4 py-2.5 ${!c.active ? "opacity-50" : ""}`}>
                     <span className="text-xs font-semibold text-[#002045] font-[var(--font-inter)] flex-1">{c.name}</span>
-                    <span className="text-xs text-[#43474e] font-[var(--font-inter)]">{fmtBRL(c.amount)} · {CADENCE_LABEL[c.cadence]}</span>
+                    <span className="text-xs text-[#43474e] font-[var(--font-inter)]">{fmtBRL(c.amount)} · {CADENCE_LABEL[c.cadence]}{c.cadence === "weekly" && c.weekday != null ? ` (${WEEKDAYS[c.weekday]})` : ""}</span>
                     <button onClick={() => toggleFixed(c)} className="text-[10px] font-bold font-[var(--font-inter)] text-[#1e5fb4] hover:underline">{c.active ? "Pausar" : "Ativar"}</button>
                     <button onClick={() => delFixed(c)} className="text-[#b42318] hover:text-[#7a1610]" title="Remover">
                       <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><path d="M3 6h18M8 6V4h8v2M19 6l-1 14H6L5 6" /></svg>
