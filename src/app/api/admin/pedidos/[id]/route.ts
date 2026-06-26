@@ -86,9 +86,17 @@ async function syncPedidoPortalAttribution(db: ReturnType<typeof supabaseAdmin>,
       const { data, error } = await db.from("coupon_uses").update(couponPayload).eq("id", existingId).select("id").maybeSingle();
       if (!error && data?.id) couponUseId = data.id as string;
     } else {
-      const { data, error } = await db.from("coupon_uses").upsert(couponPayload, { onConflict: "source_pedido_id" }).select("id").single();
-      if (error) return;
-      couponUseId = data.id as string;
+      // Partial unique index on source_pedido_id → ON CONFLICT upsert fails to
+      // match it. Resolve any existing row explicitly, then update or insert.
+      const { data: found } = await db.from("coupon_uses").select("id").eq("source_pedido_id", pedido.id as string).maybeSingle();
+      if (found?.id) {
+        await db.from("coupon_uses").update(couponPayload).eq("id", found.id as string);
+        couponUseId = found.id as string;
+      } else {
+        const { data, error } = await db.from("coupon_uses").insert(couponPayload).select("id").single();
+        if (error) return;
+        couponUseId = data.id as string;
+      }
       await db.from("pedidos").update({ coupon_use_id: couponUseId }).eq("id", pedido.id as string);
     }
   } catch {

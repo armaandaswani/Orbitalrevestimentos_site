@@ -18,7 +18,7 @@ interface PnL {
   fixed_costs: number; fixed_breakdown: FixedBreakdown[];
   commissions?: number; partner_commissions?: number; rep_commissions?: number; manual_sales?: number; inventory_losses?: number;
   net_profit: number; net_margin: number;
-  completed_count: number; orders_without_cost: number; orders_without_price: number; stock_value: number;
+  completed_count: number; sales_count?: number; orders_without_cost: number; orders_without_price: number; stock_value: number;
   monthly?: MonthPoint[];
   per_order: PerOrder[];
 }
@@ -143,7 +143,7 @@ export default function FinanceiroTab() {
             <PnlCard label="Vendas avulsas" value={fmtBRL(pnl.manual_sales ?? 0)} sub="saídas manuais como venda" />
           </div>
           <div className="grid grid-cols-2 lg:grid-cols-4 gap-4 mb-8">
-            <PnlCard label="Ticket médio" value={fmtBRL(pnl.completed_count ? pnl.revenue / pnl.completed_count : 0)} sub="por pedido entregue" />
+            <PnlCard label="Ticket médio" value={fmtBRL((pnl.sales_count ?? pnl.completed_count) ? pnl.revenue / (pnl.sales_count ?? pnl.completed_count) : 0)} sub="por venda (inclui avulsas)" />
             <PnlCard label="Valor em estoque" value={fmtBRL(pnl.stock_value)} sub="a preço de custo (atual)" />
           </div>
 

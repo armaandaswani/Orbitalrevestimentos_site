@@ -135,7 +135,9 @@ export async function GET(req: NextRequest) {
     const itemRev = itemRevenueByOrder[p.id] ?? 0;
     const discount = Math.max(0, Number(p.discount_amount) || 0);
     const freight = Math.max(0, Number(p.freight_amount) || 0);
-    const rev = itemRev > 0 ? Math.max(0, itemRev - discount + freight) : manualRev;
+    // Freight is treated as pass-through (the default): it does NOT inflate
+    // revenue/profit. It's shown per order but kept out of the margin math.
+    const rev = itemRev > 0 ? Math.max(0, itemRev - discount) : manualRev;
     const c = cogsByOrder[p.id] ?? 0;
     const oc = Array.isArray(p.other_costs) ? p.other_costs.reduce((s, x) => s + (Number(x?.amount) || 0), 0) : 0;
     if (missingCostByOrder[p.id] || !(p.id in cogsByOrder)) ordersWithoutCost++;
@@ -155,6 +157,7 @@ export async function GET(req: NextRequest) {
   // 2b) Manual stock exits that carry financial meaning.
   // sale: off-order revenue + COGS. loss/sample/internal: stock expense only.
   let manualSales = 0;
+  let manualSalesCount = 0;
   let inventoryLosses = 0;
   const inventoryLossesByMonth: Record<string, number> = {};
   try {
@@ -194,6 +197,7 @@ export async function GET(req: NextRequest) {
           const { taxes, opex } = taxFor(sale, icms, m.created_at);
           const profit = sale - stockCost - taxes.total - opex;
           manualSales += sale;
+          manualSalesCount++;
           revenue += sale;
           cogs += stockCost;
           perOrder.push({
@@ -384,6 +388,7 @@ export async function GET(req: NextRequest) {
     net_profit: netProfit,
     net_margin: revenue > 0 ? Math.round((netProfit / revenue) * 100) : 0,
     completed_count: completed.length,
+    sales_count: completed.length + manualSalesCount,
     orders_without_cost: ordersWithoutCost,
     orders_without_price: ordersWithoutPrice,
     stock_value: stockValue,
