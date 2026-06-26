@@ -41,6 +41,17 @@ export async function GET(req: NextRequest) {
   const toMs = to.getTime();
   const rangeDays = Math.max(1, (toMs - fromMs) / DAY);
 
+  // Tax rates (% of revenue), editable via query params, defaulting to the
+  // accountant's effective rates. ICMS is per-product (products.icms_rate);
+  // these four federal taxes + operational costs are flat on revenue.
+  const rate = (key: string, def: number) => {
+    const v = Number(searchParams.get(key));
+    return Number.isFinite(v) && v >= 0 ? v : def;
+  };
+  const PIS = rate("pis", 0.65), COFINS = rate("cofins", 3), IRPJ = rate("irpj", 1.2), CSLL = rate("csll", 1.08), OPEX = rate("opex", 7);
+  const fedRate = (PIS + COFINS + IRPJ + CSLL) / 100;
+  const opexRate = OPEX / 100;
+
   const sb = supabaseAdmin();
   const monthKey = (iso: string) => { const d = new Date(iso); return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, "0")}`; };
 
@@ -70,6 +81,7 @@ export async function GET(req: NextRequest) {
   const ids = completed.map((p) => p.id);
   const cogsByOrder: Record<string, number> = {};
   const itemRevenueByOrder: Record<string, number> = {};
+  const icmsByOrder: Record<string, number> = {}; // R$ ICMS per order (per-line, by product rate)
   const missingCostByOrder: Record<string, boolean> = {};
   const missingPriceByOrder: Record<string, boolean> = {};
   let ordersWithoutCost = 0;
@@ -78,19 +90,46 @@ export async function GET(req: NextRequest) {
     try {
       const { data: items } = await sb
         .from("pedido_items")
-        .select("pedido_id, plates, unit_cost, unit_price")
+        .select("pedido_id, product_id, plates, unit_cost, unit_price")
         .in("pedido_id", ids);
-      for (const it of (items ?? []) as Array<{ pedido_id: string; plates: number; unit_cost: number | null; unit_price: number | null }>) {
+      const rows = (items ?? []) as Array<{ pedido_id: string; product_id: string | null; plates: number; unit_cost: number | null; unit_price: number | null }>;
+      // ICMS rate per product (0% for plates under substituição, 7% for PU-40…).
+      const icmsByProduct: Record<string, number> = {};
+      const itemProductIds = Array.from(new Set(rows.map((r) => r.product_id).filter(Boolean))) as string[];
+      if (itemProductIds.length > 0) {
+        const { data: ip } = await sb.from("products").select("id, icms_rate").in("id", itemProductIds);
+        for (const p of (ip ?? []) as Array<{ id: string; icms_rate: number | null }>) icmsByProduct[p.id] = Number(p.icms_rate) || 0;
+      }
+      for (const it of rows) {
         const plates = it.plates || 0;
         if (it.unit_cost == null) missingCostByOrder[it.pedido_id] = true;
         if (it.unit_price == null) missingPriceByOrder[it.pedido_id] = true;
+        const lineRev = plates * (Number(it.unit_price) || 0);
         cogsByOrder[it.pedido_id] = (cogsByOrder[it.pedido_id] ?? 0) + plates * (Number(it.unit_cost) || 0);
-        itemRevenueByOrder[it.pedido_id] = (itemRevenueByOrder[it.pedido_id] ?? 0) + plates * (Number(it.unit_price) || 0);
+        itemRevenueByOrder[it.pedido_id] = (itemRevenueByOrder[it.pedido_id] ?? 0) + lineRev;
+        const icmsRate = it.product_id ? (icmsByProduct[it.product_id] ?? 0) : 0;
+        icmsByOrder[it.pedido_id] = (icmsByOrder[it.pedido_id] ?? 0) + lineRev * (icmsRate / 100);
       }
     } catch { /* no items table */ }
   }
 
   let revenue = 0, cogs = 0, orderCosts = 0, discounts = 0;
+  let taxesTotal = 0, opexTotal = 0;
+  let taxPis = 0, taxCofins = 0, taxIrpj = 0, taxCsll = 0, taxIcms = 0;
+  const taxesByMonth: Record<string, number> = {};
+  const opexByMonth: Record<string, number> = {};
+  // Compute the per-order tax/opex breakdown and roll it into the accumulators.
+  const taxFor = (rev: number, icms: number, when: string) => {
+    const pis = rev * (PIS / 100), cofins = rev * (COFINS / 100), irpj = rev * (IRPJ / 100), csll = rev * (CSLL / 100);
+    const total = pis + cofins + irpj + csll + icms;
+    const opex = rev * opexRate;
+    taxPis += pis; taxCofins += cofins; taxIrpj += irpj; taxCsll += csll; taxIcms += icms;
+    taxesTotal += total; opexTotal += opex;
+    const k = monthKey(when);
+    taxesByMonth[k] = (taxesByMonth[k] ?? 0) + total;
+    opexByMonth[k] = (opexByMonth[k] ?? 0) + opex;
+    return { taxes: { pis, cofins, irpj, csll, icms, total }, opex };
+  };
   const perOrder = completed.map((p) => {
     const manualRev = Number(p.total) || 0;
     const itemRev = itemRevenueByOrder[p.id] ?? 0;
@@ -102,10 +141,12 @@ export async function GET(req: NextRequest) {
     if (missingCostByOrder[p.id] || !(p.id in cogsByOrder)) ordersWithoutCost++;
     if (manualRev <= 0 && (missingPriceByOrder[p.id] || !(p.id in itemRevenueByOrder))) ordersWithoutPrice++;
     revenue += rev; cogs += c; orderCosts += oc; discounts += discount;
-    const profit = rev - c - oc;
+    const when = p.delivered_at || p.created_at;
+    const { taxes, opex } = taxFor(rev, icmsByOrder[p.id] ?? 0, when);
+    const profit = rev - c - oc - taxes.total - opex;
     return {
-      id: p.id, client_name: p.client_name, when: p.delivered_at || p.created_at,
-      revenue: rev, cogs: c, other_costs: oc, discount, freight, profit,
+      id: p.id, client_name: p.client_name, when,
+      revenue: rev, cogs: c, other_costs: oc, discount, freight, taxes, opex, profit,
       margin: rev > 0 ? Math.round((profit / rev) * 100) : 0,
       below_cost: rev > 0 && profit < 0,
     };
@@ -135,11 +176,11 @@ export async function GET(req: NextRequest) {
         sale_amount: number | null;
       }>;
       const productIds = Array.from(new Set(rows.map((m) => m.product_id).filter(Boolean)));
-      const productsById: Record<string, { name: string; price: number | null; cost_price: number | null }> = {};
+      const productsById: Record<string, { name: string; price: number | null; cost_price: number | null; icms_rate: number | null }> = {};
       if (productIds.length > 0) {
-        const { data: prods } = await sb.from("products").select("id, name, price, cost_price").in("id", productIds);
-        for (const p of (prods ?? []) as Array<{ id: string; name: string; price: number | null; cost_price: number | null }>) {
-          productsById[p.id] = { name: p.name, price: p.price, cost_price: p.cost_price };
+        const { data: prods } = await sb.from("products").select("id, name, price, cost_price, icms_rate").in("id", productIds);
+        for (const p of (prods ?? []) as Array<{ id: string; name: string; price: number | null; cost_price: number | null; icms_rate: number | null }>) {
+          productsById[p.id] = { name: p.name, price: p.price, cost_price: p.cost_price, icms_rate: p.icms_rate };
         }
       }
       for (const m of rows) {
@@ -149,7 +190,9 @@ export async function GET(req: NextRequest) {
         const stockCost = qty * (Number(product?.cost_price) || 0);
         if (m.manual_exit_type === "sale") {
           const sale = Number(m.sale_amount) || qty * (Number(product?.price) || 0);
-          const profit = sale - stockCost;
+          const icms = sale * ((Number(product?.icms_rate) || 0) / 100);
+          const { taxes, opex } = taxFor(sale, icms, m.created_at);
+          const profit = sale - stockCost - taxes.total - opex;
           manualSales += sale;
           revenue += sale;
           cogs += stockCost;
@@ -162,6 +205,8 @@ export async function GET(req: NextRequest) {
             other_costs: 0,
             discount: 0,
             freight: 0,
+            taxes,
+            opex,
             profit,
             margin: sale > 0 ? Math.round((profit / sale) * 100) : 0,
             below_cost: sale > 0 && profit < 0,
@@ -256,17 +301,17 @@ export async function GET(req: NextRequest) {
 
   // Monthly series for trend charts: bucket completed-order revenue/COGS/costs
   // by delivery month, and prorate each active fixed cost into each month.
-  const monthMap: Record<string, { month: string; revenue: number; cogs: number; order_costs: number; fixed: number; commissions: number; inventory_losses: number; net: number }> = {};
+  const monthMap: Record<string, { month: string; revenue: number; cogs: number; order_costs: number; fixed: number; commissions: number; inventory_losses: number; taxes: number; opex: number; net: number }> = {};
   for (const o of perOrder) {
     const k = monthKey(o.when);
-    const m = (monthMap[k] ||= { month: k, revenue: 0, cogs: 0, order_costs: 0, fixed: 0, commissions: 0, inventory_losses: 0, net: 0 });
+    const m = (monthMap[k] ||= { month: k, revenue: 0, cogs: 0, order_costs: 0, fixed: 0, commissions: 0, inventory_losses: 0, taxes: 0, opex: 0, net: 0 });
     m.revenue += o.revenue; m.cogs += o.cogs; m.order_costs += o.other_costs;
   }
   // Enumerate every month in [from,to] so empty months still show on the chart.
   { const d = new Date(from.getFullYear(), from.getMonth(), 1); const end = new Date(to.getFullYear(), to.getMonth(), 1);
     while (d <= end) {
       const k = `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, "0")}`;
-      const m = (monthMap[k] ||= { month: k, revenue: 0, cogs: 0, order_costs: 0, fixed: 0, commissions: 0, inventory_losses: 0, net: 0 });
+      const m = (monthMap[k] ||= { month: k, revenue: 0, cogs: 0, order_costs: 0, fixed: 0, commissions: 0, inventory_losses: 0, taxes: 0, opex: 0, net: 0 });
       const mStart = Math.max(fromMs, new Date(d.getFullYear(), d.getMonth(), 1).getTime());
       const mEnd = Math.min(toMs, new Date(d.getFullYear(), d.getMonth() + 1, 1).getTime());
       const mDays = Math.max(0, (mEnd - mStart) / DAY);
@@ -282,15 +327,23 @@ export async function GET(req: NextRequest) {
     }
   }
   for (const [k, amount] of Object.entries(commissionsByMonth)) {
-    const m = (monthMap[k] ||= { month: k, revenue: 0, cogs: 0, order_costs: 0, fixed: 0, commissions: 0, inventory_losses: 0, net: 0 });
+    const m = (monthMap[k] ||= { month: k, revenue: 0, cogs: 0, order_costs: 0, fixed: 0, commissions: 0, inventory_losses: 0, taxes: 0, opex: 0, net: 0 });
     m.commissions += amount;
   }
   for (const [k, amount] of Object.entries(inventoryLossesByMonth)) {
-    const m = (monthMap[k] ||= { month: k, revenue: 0, cogs: 0, order_costs: 0, fixed: 0, commissions: 0, inventory_losses: 0, net: 0 });
+    const m = (monthMap[k] ||= { month: k, revenue: 0, cogs: 0, order_costs: 0, fixed: 0, commissions: 0, inventory_losses: 0, taxes: 0, opex: 0, net: 0 });
     m.inventory_losses += amount;
   }
+  for (const [k, amount] of Object.entries(taxesByMonth)) {
+    const m = (monthMap[k] ||= { month: k, revenue: 0, cogs: 0, order_costs: 0, fixed: 0, commissions: 0, inventory_losses: 0, taxes: 0, opex: 0, net: 0 });
+    m.taxes += amount;
+  }
+  for (const [k, amount] of Object.entries(opexByMonth)) {
+    const m = (monthMap[k] ||= { month: k, revenue: 0, cogs: 0, order_costs: 0, fixed: 0, commissions: 0, inventory_losses: 0, taxes: 0, opex: 0, net: 0 });
+    m.opex += amount;
+  }
   const monthly = Object.values(monthMap)
-    .map((m) => ({ ...m, net: m.revenue - m.cogs - m.order_costs - m.fixed - m.commissions - m.inventory_losses }))
+    .map((m) => ({ ...m, net: m.revenue - m.cogs - m.order_costs - m.taxes - m.opex - m.fixed - m.commissions - m.inventory_losses }))
     .sort((a, b) => a.month.localeCompare(b.month));
   const fixedTotal = monthly.reduce((s, m) => s + m.fixed, 0);
   const fixedBreakdown = Object.values(fixedAccum);
@@ -304,7 +357,9 @@ export async function GET(req: NextRequest) {
     }
   } catch { /* no stock columns */ }
 
-  const grossProfit = revenue - cogs - orderCosts;
+  // Gross profit is after COGS + order costs + taxes + operational costs;
+  // net profit additionally absorbs fixed costs, commissions and stock losses.
+  const grossProfit = revenue - cogs - orderCosts - taxesTotal - opexTotal;
   const netProfit = grossProfit - fixedTotal - commissions - inventoryLosses;
 
   return NextResponse.json({
@@ -314,6 +369,9 @@ export async function GET(req: NextRequest) {
     discounts,
     cogs,
     order_costs: orderCosts,
+    taxes: { pis: taxPis, cofins: taxCofins, irpj: taxIrpj, csll: taxCsll, icms: taxIcms, total: taxesTotal },
+    tax_rates: { pis: PIS, cofins: COFINS, irpj: IRPJ, csll: CSLL, opex: OPEX },
+    opex: opexTotal,
     gross_profit: grossProfit,
     gross_margin: revenue > 0 ? Math.round((grossProfit / revenue) * 100) : 0,
     fixed_costs: fixedTotal,
