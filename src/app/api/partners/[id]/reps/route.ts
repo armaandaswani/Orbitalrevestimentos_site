@@ -1,6 +1,22 @@
 import { NextRequest, NextResponse } from "next/server";
 import { isAdminRequest } from "@/lib/admin-auth";
 import { supabaseAdmin } from "@/lib/supabase";
+import { isMissingTable } from "@/lib/db-compat";
+
+const MIGRATION_HINT = "Recurso indisponível — rode a migração 028 (partner_sales_reps) no Supabase.";
+
+async function syncCrmLink(db: ReturnType<typeof supabaseAdmin>, partnerId: string, salesRepId: string) {
+  const { error } = await db
+    .from("rep_partner_crm")
+    .insert({
+      partner_id: partnerId,
+      sales_rep_id: salesRepId,
+      first_contact_at: new Date().toISOString(),
+    })
+    .select("id")
+    .single();
+  return error;
+}
 
 // GET /api/partners/[id]/reps — return all reps linked to this partner
 export async function GET(
@@ -17,6 +33,7 @@ export async function GET(
     .eq("partner_id", id)
     .order("created_at", { ascending: true });
 
+  if (error && isMissingTable(error)) return NextResponse.json({ error: MIGRATION_HINT }, { status: 503 });
   if (error) return NextResponse.json({ error: error.message }, { status: 500 });
   return NextResponse.json(data ?? []);
 }
@@ -39,9 +56,22 @@ export async function POST(
     .insert({ partner_id: id, sales_rep_id });
 
   if (error) {
-    if (error.code === "23505") return NextResponse.json({ error: "Representante já vinculado." }, { status: 409 });
+    if (error.code === "23505") {
+      try { await syncCrmLink(db, id, sales_rep_id); } catch { /* non-fatal */ }
+      return NextResponse.json({ ok: true, already_linked: true });
+    }
+    if (isMissingTable(error)) return NextResponse.json({ error: MIGRATION_HINT }, { status: 503 });
     return NextResponse.json({ error: error.message }, { status: 500 });
   }
+
+  try {
+    const syncErr = await syncCrmLink(db, id, sales_rep_id);
+    if (syncErr && syncErr.code !== "23505") {
+      // CRM sync is useful for agenda/kanban, but the canonical link was saved.
+      console.warn("[partner-reps] CRM sync failed", syncErr.message);
+    }
+  } catch { /* CRM sync is non-fatal */ }
+
   return NextResponse.json({ ok: true }, { status: 201 });
 }
 
@@ -64,6 +94,16 @@ export async function DELETE(
     .eq("partner_id", id)
     .eq("sales_rep_id", sales_rep_id);
 
+  if (error && isMissingTable(error)) return NextResponse.json({ error: MIGRATION_HINT }, { status: 503 });
   if (error) return NextResponse.json({ error: error.message }, { status: 500 });
+
+  // Keep the representative CRM consistent with the admin ownership link.
+  try {
+    await db
+      .from("rep_partner_crm")
+      .delete()
+      .eq("partner_id", id)
+      .eq("sales_rep_id", sales_rep_id);
+  } catch { /* CRM sync is non-fatal */ }
   return NextResponse.json({ ok: true });
 }

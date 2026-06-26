@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { supabaseAdmin } from "@/lib/supabase";
 import { isAdminRequest, repIdFromRequest } from "@/lib/admin-auth";
+import { isMissingTable } from "@/lib/db-compat";
 
 export async function GET(req: NextRequest) {
   const { searchParams } = new URL(req.url);
@@ -16,11 +17,22 @@ export async function GET(req: NextRequest) {
   const db = supabaseAdmin();
 
   // 1. Get partner IDs linked to this rep
-  const { data: links, error: linksErr } = await db
+  let { data: links, error: linksErr } = await db
     .from("partner_sales_reps")
     .select("partner_id")
     .eq("sales_rep_id", salesRepId);
 
+  if (linksErr && isMissingTable(linksErr)) {
+    const fallback = await db
+      .from("rep_partner_crm")
+      .select("partner_id")
+      .eq("sales_rep_id", salesRepId)
+      .not("partner_id", "is", null);
+    links = fallback.data;
+    linksErr = fallback.error;
+  }
+
+  if (linksErr && isMissingTable(linksErr)) return NextResponse.json([]);
   if (linksErr) return NextResponse.json({ error: linksErr.message }, { status: 500 });
   if (!links || links.length === 0) return NextResponse.json([]);
 

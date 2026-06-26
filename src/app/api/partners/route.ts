@@ -1,15 +1,23 @@
 import { NextRequest, NextResponse } from "next/server";
 import { isAdminRequest, hashPassword } from "@/lib/admin-auth";
 import { supabaseAdmin } from "@/lib/supabase";
+import { isMissingTable } from "@/lib/db-compat";
 
 export async function GET(req: NextRequest) {
   if (!isAdminRequest(req)) return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
 
   const db = supabaseAdmin();
-  const { data, error } = await db
+  let { data, error } = await db
     .from("partners")
     .select("*, partner_sales_reps(sales_reps(id, name, referral_code))")
     .order("created_at", { ascending: false });
+
+  if (error && isMissingTable(error)) {
+    ({ data, error } = await db
+      .from("partners")
+      .select("*")
+      .order("created_at", { ascending: false }));
+  }
 
   if (error) return NextResponse.json({ error: error.message }, { status: 500 });
   // Never expose password hashes — expose only whether a password is set.

@@ -100,9 +100,18 @@ export async function POST(req: NextRequest) {
 
   // Link partner to sales rep in junction table (critical for commission tracking)
   if (salesRep) {
-    await db
+    const { error: linkError } = await db
       .from("partner_sales_reps")
       .insert({ partner_id: partner.id, sales_rep_id: salesRep.id });
+    if (!linkError || linkError.code === "23505") {
+      await db
+        .from("rep_partner_crm")
+        .insert({
+          partner_id: partner.id,
+          sales_rep_id: salesRep.id,
+          first_contact_at: new Date().toISOString(),
+        });
+    }
   }
 
   // Send "under review" email to the partner (non-fatal)
