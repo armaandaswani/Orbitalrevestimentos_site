@@ -4,6 +4,9 @@ import { supabaseAdmin } from "@/lib/supabase";
 import { isMissingColumn } from "@/lib/db-compat";
 import { transitionOrderStock } from "@/lib/stock";
 
+type PartnerLite = { id: string; name: string; coupon_code: string };
+type SalesRepLite = { id: string; name: string; referral_code: string };
+
 const OPTIONAL_DOCUMENT_COLUMNS = [
   "client_zip",
   "client_address",
@@ -17,7 +20,95 @@ const OPTIONAL_DOCUMENT_COLUMNS = [
   "quote_valid_until",
   "warranty_terms",
   "document_notes",
+  "partner_id",
+  "sales_rep_id",
+  "partner_commission_pct",
+  "partner_commission_amount",
+  "sales_rep_commission_pct",
+  "sales_rep_commission_amount",
+  "coupon_use_id",
 ];
+
+function cleanMoney(v: unknown): number {
+  const n = Number(v);
+  return Number.isFinite(n) && n >= 0 ? n : 0;
+}
+
+async function syncPedidoPortalAttribution(db: ReturnType<typeof supabaseAdmin>, pedido: Record<string, unknown>) {
+  const partnerId = (pedido.partner_id as string | null) ?? null;
+  const salesRepId = (pedido.sales_rep_id as string | null) ?? null;
+  if (!partnerId && !salesRepId) return;
+
+  const total = Number(pedido.total) || 0;
+  const discount = cleanMoney(pedido.discount_amount);
+  const gross = Math.max(total, total + discount - cleanMoney(pedido.freight_amount));
+  const partnerCommission = cleanMoney(pedido.partner_commission_amount);
+  const repCommission = cleanMoney(pedido.sales_rep_commission_amount);
+
+  let partner: PartnerLite | null = null;
+  if (partnerId) {
+    const { data } = await db.from("partners").select("id, name, coupon_code").eq("id", partnerId).maybeSingle();
+    partner = data as PartnerLite | null;
+  }
+  let rep: SalesRepLite | null = null;
+  if (salesRepId) {
+    const { data } = await db.from("sales_reps").select("id, name, referral_code").eq("id", salesRepId).maybeSingle();
+    rep = data as SalesRepLite | null;
+  }
+
+  const status = pedido.status === "entregue" ? "concluido" : pedido.status === "cancelado" ? "cancelado" : "em_orcamento";
+  const couponPayload: Record<string, unknown> = {
+    source: "pedido_admin",
+    source_pedido_id: pedido.id,
+    partner_id: partner?.id ?? null,
+    coupon_code: partner?.coupon_code ?? rep?.referral_code ?? "PEDIDO",
+    space: pedido.space ?? null,
+    product_name: pedido.product_name ?? null,
+    product_code: null,
+    area_m2: pedido.area_m2 ?? null,
+    plates: null,
+    material_total: gross,
+    material_discounted: total,
+    discount_applied: discount,
+    commission_owed: partner ? partnerCommission : 0,
+    architect_name: pedido.client_name ?? "Cliente",
+    client_email: pedido.client_email ?? null,
+    client_phone: pedido.client_phone ?? null,
+    sales_rep_referral_code: rep?.referral_code ?? null,
+    sales_rep_commission_owed: rep ? repCommission : null,
+    sale_status: status,
+  };
+
+  const existingId = (pedido.coupon_use_id as string | null) ?? null;
+  let couponUseId = existingId;
+  try {
+    if (existingId) {
+      const { data, error } = await db.from("coupon_uses").update(couponPayload).eq("id", existingId).select("id").maybeSingle();
+      if (!error && data?.id) couponUseId = data.id as string;
+    } else {
+      const { data, error } = await db.from("coupon_uses").upsert(couponPayload, { onConflict: "source_pedido_id" }).select("id").single();
+      if (error) return;
+      couponUseId = data.id as string;
+      await db.from("pedidos").update({ coupon_use_id: couponUseId }).eq("id", pedido.id as string);
+    }
+  } catch {
+    return;
+  }
+
+  if (couponUseId) {
+    try {
+      await db.from("coupon_use_commissions").delete().eq("coupon_use_id", couponUseId);
+      if (rep && repCommission > 0) {
+        await db.from("coupon_use_commissions").insert({
+          coupon_use_id: couponUseId,
+          sales_rep_id: rep.id,
+          sales_rep_referral_code: rep.referral_code,
+          commission_owed: repCommission,
+        });
+      }
+    } catch { /* non-fatal */ }
+  }
+}
 
 // Maps an order's NEW production status (+ what stock phase it's already in) to
 // the stock action to apply. Returns null when nothing should change.
@@ -45,6 +136,8 @@ const EDITABLE = new Set([
   "client_name",
   "client_email",
   "client_phone",
+  "partner_id",
+  "sales_rep_id",
   "partner_name",
   "space",
   "product_name",
@@ -67,6 +160,10 @@ const EDITABLE = new Set([
   "quote_valid_until",
   "warranty_terms",
   "document_notes",
+  "partner_commission_pct",
+  "partner_commission_amount",
+  "sales_rep_commission_pct",
+  "sales_rep_commission_amount",
 ]);
 
 /** GET /api/admin/pedidos/[id] — the order plus its line items. */
@@ -84,7 +181,7 @@ export async function GET(req: NextRequest, { params }: { params: Promise<{ id: 
   try {
     const { data } = await db
       .from("pedido_items")
-      .select("id, product_id, product_name, plates, unit_cost, unit_price")
+      .select("id, product_id, product_name, plates, unit_cost, unit_price, unit_label")
       .eq("pedido_id", id);
     items = data ?? [];
   } catch { /* table missing — no items */ }
@@ -162,6 +259,8 @@ export async function PATCH(
       } catch { /* stock tables missing or transient — leave order as-is */ }
     }
   }
+
+  if (data) await syncPedidoPortalAttribution(db, data as Record<string, unknown>);
 
   return NextResponse.json(data);
 }

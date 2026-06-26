@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
 import { isAdminRequest } from "@/lib/admin-auth";
+import { isMissingColumn } from "@/lib/db-compat";
 import { supabaseAdmin } from "@/lib/supabase";
 import { applyStockMovement, deltasForKind, type ManualExitType, type MovementKind } from "@/lib/stock";
 
@@ -16,22 +17,35 @@ export async function GET(req: NextRequest) {
   if (!isAdminRequest(req)) return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
 
   const sb = supabaseAdmin();
-  const { data, error } = await sb
+  const primary = await sb
     .from("products")
-    .select("id, name, code, linha, price, cost_price, stock_on_hand, stock_reserved, reorder_point, is_active")
+    .select("id, name, code, linha, price, cost_price, sale_unit, stock_on_hand, stock_reserved, reorder_point, is_active")
     .order("sort_order", { ascending: true });
+  let data = primary.data as Array<Record<string, unknown>> | null;
+  let error = primary.error;
+
+  if (error && isMissingColumn(error)) {
+    const fallback = await sb
+      .from("products")
+      .select("id, name, code, linha, price, cost_price, stock_on_hand, stock_reserved, reorder_point, is_active")
+      .order("sort_order", { ascending: true });
+    data = fallback.data as Array<Record<string, unknown>> | null;
+    error = fallback.error;
+  }
 
   if (error && isMissingStock(error)) return NextResponse.json({ error: MIGRATION_HINT }, { status: 503 });
   if (error) return NextResponse.json({ error: error.message }, { status: 500 });
 
   const rows = (data ?? []).map((p) => {
-    const onHand = p.stock_on_hand ?? 0;
-    const reserved = p.stock_reserved ?? 0;
+    const onHand = Number(p.stock_on_hand ?? 0);
+    const reserved = Number(p.stock_reserved ?? 0);
+    const reorderPoint = Number(p.reorder_point ?? 0);
     return {
       ...p,
+      sale_unit: typeof p.sale_unit === "string" && p.sale_unit.trim() ? p.sale_unit : "placa",
       available: Math.max(0, onHand - reserved),
       stock_value: p.cost_price ? onHand * Number(p.cost_price) : 0,
-      low: p.reorder_point > 0 && onHand - reserved <= p.reorder_point,
+      low: reorderPoint > 0 && onHand - reserved <= reorderPoint,
     };
   });
 

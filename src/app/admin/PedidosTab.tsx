@@ -12,6 +12,8 @@ export interface Pedido {
   client_name: string;
   client_email: string | null;
   client_phone: string | null;
+  partner_id: string | null;
+  sales_rep_id: string | null;
   partner_name: string | null;
   space: string | null;
   product_name: string | null;
@@ -34,6 +36,11 @@ export interface Pedido {
   quote_valid_until: string | null;
   warranty_terms: string | null;
   document_notes: string | null;
+  partner_commission_pct: number | null;
+  partner_commission_amount: number | null;
+  sales_rep_commission_pct: number | null;
+  sales_rep_commission_amount: number | null;
+  coupon_use_id: string | null;
   created_at: string;
   updated_at: string;
 }
@@ -166,6 +173,23 @@ function deliveryBadge(iso: string | null | undefined): { label: string; cls: st
 // Draft used by the create/edit modal.
 type PedidoDraft = Partial<Pedido> & { _isNew?: boolean };
 
+type PartnerOption = {
+  id: string;
+  name: string;
+  coupon_code: string;
+  commission_type: "percentage" | "fixed";
+  commission_value: number;
+  partner_sales_reps?: Array<{ sales_reps?: { id: string; name: string; referral_code: string } | null }>;
+};
+
+type SalesRepOption = {
+  id: string;
+  name: string;
+  referral_code: string;
+  commission_type: "percentage" | "fixed";
+  commission_value: number;
+};
+
 export default function PedidosTab() {
   const [pedidos, setPedidos] = useState<Pedido[]>([]);
   const [loading, setLoading] = useState(false);
@@ -176,12 +200,16 @@ export default function PedidosTab() {
 
   const [draft, setDraft] = useState<PedidoDraft | null>(null);
   const [saving, setSaving] = useState(false);
+  const [cepLoading, setCepLoading] = useState(false);
+  const [cepError, setCepError] = useState("");
 
   // Stock-aware line items for the create form (model + plate qty).
-  type StockProduct = { id: string; name: string; code: string | null; price: number | null; cost_price: number | null; available: number; stock_on_hand: number };
+  type StockProduct = { id: string; name: string; code: string | null; price: number | null; cost_price: number | null; sale_unit: string | null; available: number; stock_on_hand: number };
   type OrderItem = { product_id: string; plates: number };
   const [stockProducts, setStockProducts] = useState<StockProduct[]>([]);
   const [items, setItems] = useState<OrderItem[]>([]);
+  const [partners, setPartners] = useState<PartnerOption[]>([]);
+  const [salesReps, setSalesReps] = useState<SalesRepOption[]>([]);
 
   useEffect(() => {
     // Best-effort: if migration 023 isn't applied the picker just stays empty.
@@ -189,6 +217,17 @@ export default function PedidosTab() {
       .then((r) => (r.ok ? r.json() : null))
       .then((j) => { if (j?.products) setStockProducts(j.products); })
       .catch(() => {});
+  }, []);
+
+  useEffect(() => {
+    fetch("/api/partners")
+      .then((r) => (r.ok ? r.json() : []))
+      .then((rows) => setPartners(Array.isArray(rows) ? rows : []))
+      .catch(() => setPartners([]));
+    fetch("/api/sales-reps")
+      .then((r) => (r.ok ? r.json() : []))
+      .then((rows) => setSalesReps(Array.isArray(rows) ? rows : []))
+      .catch(() => setSalesReps([]));
   }, []);
 
   const fetchPedidos = useCallback(async () => {
@@ -269,6 +308,91 @@ export default function PedidosTab() {
     return { total, cost, grossProfit: total - cost, missingPrice, missingCost };
   }, [items, stockProducts]);
 
+  const currentTotal = Math.max(0, Number(draft?.total) || 0);
+  const selectedPartner = partners.find((p) => p.id === draft?.partner_id) ?? null;
+  const selectedRep = salesReps.find((r) => r.id === draft?.sales_rep_id) ?? null;
+
+  function moneyFromPct(pct: number, total = currentTotal) {
+    return Math.round((Math.max(0, total) * Math.max(0, pct)) / 100);
+  }
+
+  function pctFromMoney(amount: number, total = currentTotal) {
+    return total > 0 ? Math.round((Math.max(0, amount) / total) * 10_000) / 100 : 0;
+  }
+
+  function applyPartnerSelection(partnerId: string) {
+    if (!draft) return;
+    const partner = partners.find((p) => p.id === partnerId) ?? null;
+    if (!partner) {
+      setDraft({ ...draft, partner_id: null, partner_name: null, partner_commission_pct: 0, partner_commission_amount: 0 });
+      return;
+    }
+    const linkedRep = partner.partner_sales_reps?.map((l) => l.sales_reps).find(Boolean) ?? null;
+    const pct = partner.commission_type === "percentage" ? Number(partner.commission_value) || 0 : pctFromMoney(Number(partner.commission_value) || 0);
+    const next: PedidoDraft = {
+      ...draft,
+      partner_id: partner.id,
+      partner_name: partner.name,
+      partner_commission_pct: pct,
+      partner_commission_amount: partner.commission_type === "percentage" ? moneyFromPct(pct) : Number(partner.commission_value) || 0,
+    };
+    if (linkedRep && !draft.sales_rep_id) {
+      const rep = salesReps.find((r) => r.id === linkedRep.id);
+      const repPct = rep?.commission_type === "percentage" ? Number(rep.commission_value) || 0 : pctFromMoney(Number(rep?.commission_value) || 0);
+      next.sales_rep_id = linkedRep.id;
+      next.sales_rep_commission_pct = repPct;
+      next.sales_rep_commission_amount = rep?.commission_type === "percentage" ? moneyFromPct(repPct) : Number(rep?.commission_value) || 0;
+    }
+    setDraft(next);
+  }
+
+  function applySalesRepSelection(repId: string) {
+    if (!draft) return;
+    const rep = salesReps.find((r) => r.id === repId) ?? null;
+    if (!rep) {
+      setDraft({ ...draft, sales_rep_id: null, sales_rep_commission_pct: 0, sales_rep_commission_amount: 0 });
+      return;
+    }
+    const pct = rep.commission_type === "percentage" ? Number(rep.commission_value) || 0 : pctFromMoney(Number(rep.commission_value) || 0);
+    setDraft({
+      ...draft,
+      sales_rep_id: rep.id,
+      sales_rep_commission_pct: pct,
+      sales_rep_commission_amount: rep.commission_type === "percentage" ? moneyFromPct(pct) : Number(rep.commission_value) || 0,
+    });
+  }
+
+  async function lookupCep() {
+    if (!draft) return;
+    const cep = String(draft.client_zip ?? "").replace(/\D/g, "");
+    if (cep.length !== 8) {
+      setCepError("Digite um CEP com 8 números.");
+      return;
+    }
+    setCepLoading(true);
+    setCepError("");
+    try {
+      const res = await fetch(`https://viacep.com.br/ws/${cep}/json/`);
+      const data = await res.json();
+      if (!res.ok || data?.erro) {
+        setCepError("CEP não encontrado.");
+        return;
+      }
+      setDraft({
+        ...draft,
+        client_zip: cep.replace(/^(\d{5})(\d{3})$/, "$1-$2"),
+        client_address: data.logradouro || draft.client_address || "",
+        client_address_complement: draft.client_address_complement || data.bairro || "",
+        client_city: data.localidade || draft.client_city || "",
+        client_state: data.uf || draft.client_state || "",
+      });
+    } catch {
+      setCepError("Não foi possível buscar o CEP agora.");
+    } finally {
+      setCepLoading(false);
+    }
+  }
+
   // ── Mutations ────────────────────────────────────────────────────────────────
   async function patchPedido(id: string, patch: Partial<Pedido>) {
     // optimistic
@@ -306,6 +430,8 @@ export default function PedidosTab() {
       client_name: draft.client_name?.trim(),
       client_email: draft.client_email ?? null,
       client_phone: draft.client_phone ?? null,
+      partner_id: draft.partner_id ?? null,
+      sales_rep_id: draft.sales_rep_id ?? null,
       partner_name: draft.partner_name ?? null,
       space: draft.space ?? null,
       product_name: draft.product_name ?? null,
@@ -327,6 +453,10 @@ export default function PedidosTab() {
       quote_valid_until: draft.quote_valid_until ?? null,
       warranty_terms: draft.warranty_terms ?? null,
       document_notes: draft.document_notes ?? null,
+      partner_commission_pct: draft.partner_commission_pct ?? 0,
+      partner_commission_amount: draft.partner_commission_amount ?? moneyFromPct(Number(draft.partner_commission_pct) || 0),
+      sales_rep_commission_pct: draft.sales_rep_commission_pct ?? 0,
+      sales_rep_commission_amount: draft.sales_rep_commission_amount ?? moneyFromPct(Number(draft.sales_rep_commission_pct) || 0),
     };
     const cleanItems = items.filter((it) => it.product_id && it.plates > 0);
     try {
@@ -622,7 +752,27 @@ export default function PedidosTab() {
                 <p className="text-[10px] tracking-[0.12em] uppercase font-bold font-[var(--font-inter)] text-[#74777f]">Dados do cliente no documento</p>
                 <div className="grid grid-cols-2 gap-3">
                   <Field label="CEP">
-                    <input className={inputCls} value={draft.client_zip ?? ""} onChange={(e) => setDraft({ ...draft, client_zip: e.target.value })} placeholder="69000-000" />
+                    <div className="flex gap-2">
+                      <input
+                        className={inputCls}
+                        value={draft.client_zip ?? ""}
+                        onChange={(e) => { setCepError(""); setDraft({ ...draft, client_zip: e.target.value }); }}
+                        onBlur={() => {
+                          const cep = String(draft.client_zip ?? "").replace(/\D/g, "");
+                          if (cep.length === 8) lookupCep();
+                        }}
+                        placeholder="69000-000"
+                      />
+                      <button
+                        type="button"
+                        onClick={lookupCep}
+                        disabled={cepLoading}
+                        className="border border-[#002045] text-[#002045] disabled:opacity-50 px-3 text-[10px] uppercase tracking-[0.08em] font-bold font-[var(--font-inter)] hover:bg-[#eef2f8]"
+                      >
+                        {cepLoading ? "..." : "Buscar"}
+                      </button>
+                    </div>
+                    {cepError && <p className="text-red-600 text-[10px] font-[var(--font-inter)] mt-1">{cepError}</p>}
                   </Field>
                   <Field label="Cidade / UF">
                     <div className="grid grid-cols-[1fr_64px] gap-2">
@@ -652,30 +802,45 @@ export default function PedidosTab() {
               {draft._isNew && stockProducts.length > 0 && (
                 <div className="border border-[#e2e2e2] rounded-sm p-3">
                   <p className="text-[10px] tracking-[0.12em] uppercase font-bold font-[var(--font-inter)] text-[#74777f] mb-2">
-                    Placas (baixa de estoque)
+                    Itens do pedido (reserva/baixa de estoque)
                   </p>
                   <div className="space-y-2">
                     {items.map((it, idx) => {
                       const prod = stockProducts.find((p) => p.id === it.product_id);
+                      const unit = prod?.sale_unit || "placa";
                       const over = prod && it.plates > prod.available;
                       return (
-                        <div key={idx} className="flex items-center gap-2">
+                        <div key={idx} className="border border-[#f0f0f0] bg-white p-2">
+                          <div className="grid grid-cols-[1fr_120px_28px] gap-2 items-start">
                           <select value={it.product_id}
                             onChange={(e) => setItems((cur) => cur.map((x, i) => i === idx ? { ...x, product_id: e.target.value } : x))}
-                            className={`${inputCls} flex-1`}>
+                            className={`${inputCls} min-w-0`}>
                             <option value="">Selecione o modelo…</option>
                             {stockProducts.map((p) => (
                               <option key={p.id} value={p.id}>
-                                {p.name}{p.code ? ` (${p.code})` : ""} — {p.available} disp. — venda {p.price != null ? fmtBRL(p.price) : "sem preço"}
+                                {p.name}{p.code ? ` (${p.code})` : ""} — {p.available} {p.sale_unit || "placa"} disp. — venda/{p.sale_unit || "placa"} {p.price != null ? fmtBRL(p.price) : "sem preço"}
                               </option>
                             ))}
                           </select>
-                          <input type="number" min="1" value={it.plates || ""} placeholder="placas"
-                            onChange={(e) => setItems((cur) => cur.map((x, i) => i === idx ? { ...x, plates: Number(e.target.value) } : x))}
-                            className={`${inputCls} w-24`} />
+                          <div className="flex">
+                            <input type="number" min="1" value={it.plates || ""} placeholder="Qtd."
+                              onChange={(e) => setItems((cur) => cur.map((x, i) => i === idx ? { ...x, plates: Number(e.target.value) } : x))}
+                              className={`${inputCls} rounded-none`} />
+                            <span className="border border-l-0 border-[#e2e2e2] px-2 flex items-center text-[10px] font-bold text-[#74777f] bg-[#fafafa] min-w-[52px] justify-center">
+                              {unit}
+                            </span>
+                          </div>
                           <button onClick={() => setItems((cur) => cur.filter((_, i) => i !== idx))}
                             className="text-[#b42318] text-lg leading-none px-1" title="Remover">×</button>
-                          {over && <span className="text-amber-600 text-[10px] font-[var(--font-inter)] whitespace-nowrap">só {prod!.available} disp.</span>}
+                          </div>
+                          {prod && (
+                            <div className="flex flex-wrap gap-x-4 gap-y-1 mt-2 text-[10px] font-[var(--font-inter)] text-[#74777f]">
+                              <span className="font-semibold text-[#002045]">{prod.name}{prod.code ? ` · ${prod.code}` : ""}</span>
+                              <span>{prod.available} {unit} disponíveis</span>
+                              <span>Venda/{unit}: {prod.price != null ? fmtBRL(prod.price) : "sem preço"}</span>
+                              {over && <span className="text-amber-700 font-bold">Quantidade acima do disponível</span>}
+                            </div>
+                          )}
                         </div>
                       );
                     })}
@@ -688,7 +853,7 @@ export default function PedidosTab() {
                     <div className="mt-3 border-t border-[#f0f0f0] pt-3">
                       <div className="flex flex-wrap items-center justify-between gap-2">
                         <div>
-                          <p className="text-[10px] tracking-[0.12em] uppercase font-bold font-[var(--font-inter)] text-[#74777f]">Total sugerido pelas placas</p>
+                          <p className="text-[10px] tracking-[0.12em] uppercase font-bold font-[var(--font-inter)] text-[#74777f]">Total sugerido pelos itens</p>
                           <p className="text-sm font-semibold font-[var(--font-inter)] text-[#002045]">
                             {itemPricing.total > 0 ? fmtBRL(itemPricing.total) : "Defina preço de venda no Estoque"}
                           </p>
@@ -700,7 +865,12 @@ export default function PedidosTab() {
                         </div>
                         <button
                           type="button"
-                          onClick={() => setDraft({ ...draft, total: itemPricing.total })}
+                          onClick={() => setDraft({
+                            ...draft,
+                            total: itemPricing.total,
+                            partner_commission_amount: moneyFromPct(Number(draft.partner_commission_pct) || 0, itemPricing.total),
+                            sales_rep_commission_amount: moneyFromPct(Number(draft.sales_rep_commission_pct) || 0, itemPricing.total),
+                          })}
                           disabled={itemPricing.total <= 0}
                           className="border border-[#002045] text-[#002045] disabled:opacity-40 text-[10px] uppercase tracking-[0.1em] font-bold font-[var(--font-inter)] px-3 py-2 hover:bg-[#eef2f8]"
                         >
@@ -736,9 +906,108 @@ export default function PedidosTab() {
                     type="number"
                     className={inputCls}
                     value={draft.total ?? ""}
-                    onChange={(e) => setDraft({ ...draft, total: e.target.value === "" ? null : Number(e.target.value) })}
+                    onChange={(e) => {
+                      const total = e.target.value === "" ? null : Number(e.target.value);
+                      setDraft({
+                        ...draft,
+                        total,
+                        partner_commission_amount: moneyFromPct(Number(draft.partner_commission_pct) || 0, Number(total) || 0),
+                        sales_rep_commission_amount: moneyFromPct(Number(draft.sales_rep_commission_pct) || 0, Number(total) || 0),
+                      });
+                    }}
                   />
                 </Field>
+              </div>
+              <div className="border border-[#e2e2e2] p-3 space-y-3">
+                <p className="text-[10px] tracking-[0.12em] uppercase font-bold font-[var(--font-inter)] text-[#74777f]">Vínculos comerciais e comissões</p>
+                <div className="grid grid-cols-2 gap-3">
+                  <Field label="Parceiro">
+                    <select className={inputCls} value={draft.partner_id ?? ""} onChange={(e) => applyPartnerSelection(e.target.value)}>
+                      <option value="">Sem parceiro</option>
+                      {partners.map((p) => (
+                        <option key={p.id} value={p.id}>{p.name} · {p.coupon_code}</option>
+                      ))}
+                    </select>
+                  </Field>
+                  <Field label="Representante">
+                    <select className={inputCls} value={draft.sales_rep_id ?? ""} onChange={(e) => applySalesRepSelection(e.target.value)}>
+                      <option value="">Sem representante</option>
+                      {salesReps.map((r) => (
+                        <option key={r.id} value={r.id}>{r.name} · {r.referral_code}</option>
+                      ))}
+                    </select>
+                  </Field>
+                </div>
+                {(selectedPartner || selectedRep) && (
+                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                    {selectedPartner && (
+                      <div className="border border-[#f0f0f0] p-3">
+                        <p className="text-[10px] uppercase tracking-[0.1em] font-bold text-[#002045] mb-2">Repasse parceiro</p>
+                        <div className="grid grid-cols-2 gap-2">
+                          <Field label="% do pedido">
+                            <input
+                              type="number"
+                              min="0"
+                              step="0.01"
+                              className={inputCls}
+                              value={draft.partner_commission_pct ?? 0}
+                              onChange={(e) => {
+                                const pct = Number(e.target.value) || 0;
+                                setDraft({ ...draft, partner_commission_pct: pct, partner_commission_amount: moneyFromPct(pct) });
+                              }}
+                            />
+                          </Field>
+                          <Field label="Valor (R$)">
+                            <input
+                              type="number"
+                              min="0"
+                              step="0.01"
+                              className={inputCls}
+                              value={draft.partner_commission_amount ?? 0}
+                              onChange={(e) => {
+                                const amount = Number(e.target.value) || 0;
+                                setDraft({ ...draft, partner_commission_amount: amount, partner_commission_pct: pctFromMoney(amount) });
+                              }}
+                            />
+                          </Field>
+                        </div>
+                      </div>
+                    )}
+                    {selectedRep && (
+                      <div className="border border-[#f0f0f0] p-3">
+                        <p className="text-[10px] uppercase tracking-[0.1em] font-bold text-[#002045] mb-2">Comissão representante</p>
+                        <div className="grid grid-cols-2 gap-2">
+                          <Field label="% do pedido">
+                            <input
+                              type="number"
+                              min="0"
+                              step="0.01"
+                              className={inputCls}
+                              value={draft.sales_rep_commission_pct ?? 0}
+                              onChange={(e) => {
+                                const pct = Number(e.target.value) || 0;
+                                setDraft({ ...draft, sales_rep_commission_pct: pct, sales_rep_commission_amount: moneyFromPct(pct) });
+                              }}
+                            />
+                          </Field>
+                          <Field label="Valor (R$)">
+                            <input
+                              type="number"
+                              min="0"
+                              step="0.01"
+                              className={inputCls}
+                              value={draft.sales_rep_commission_amount ?? 0}
+                              onChange={(e) => {
+                                const amount = Number(e.target.value) || 0;
+                                setDraft({ ...draft, sales_rep_commission_amount: amount, sales_rep_commission_pct: pctFromMoney(amount) });
+                              }}
+                            />
+                          </Field>
+                        </div>
+                      </div>
+                    )}
+                  </div>
+                )}
               </div>
               <div className="grid grid-cols-2 gap-3">
                 <Field label="Desconto (R$)">

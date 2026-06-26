@@ -38,7 +38,7 @@ export async function GET(req: NextRequest, { params }: { params: Promise<{ id: 
   return NextResponse.json(data ?? []);
 }
 
-/** PATCH /api/admin/stock/[id] — update a product's sale price / cost / reorder point. */
+/** PATCH /api/admin/stock/[id] — update a product's sale price / cost / unit / reorder point. */
 export async function PATCH(req: NextRequest, { params }: { params: Promise<{ id: string }> }) {
   if (!isAdminRequest(req)) return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
   const { id } = await params;
@@ -56,6 +56,10 @@ export async function PATCH(req: NextRequest, { params }: { params: Promise<{ id
     const c = Number(body.cost_price);
     patch.cost_price = body.cost_price === null || body.cost_price === "" ? null : Number.isFinite(c) && c >= 0 ? c : null;
   }
+  if (body.sale_unit !== undefined) {
+    const unit = String(body.sale_unit || "").trim().slice(0, 32);
+    patch.sale_unit = unit || "placa";
+  }
   if (body.reorder_point !== undefined) {
     const r = Number(body.reorder_point);
     patch.reorder_point = Number.isFinite(r) && r >= 0 ? Math.round(r) : 0;
@@ -63,7 +67,11 @@ export async function PATCH(req: NextRequest, { params }: { params: Promise<{ id
   if (Object.keys(patch).length === 0) return NextResponse.json({ error: "Nada para atualizar." }, { status: 400 });
 
   const sb = supabaseAdmin();
-  const { data, error } = await sb.from("products").update(patch).eq("id", id).select("id, price, cost_price, reorder_point").single();
+  let { data, error } = await sb.from("products").update(patch).eq("id", id).select("id, price, cost_price, sale_unit, reorder_point").single();
+  if (error && isMissingColumn(error)) {
+    delete patch.sale_unit;
+    ({ data, error } = await sb.from("products").update(patch).eq("id", id).select("id, price, cost_price, reorder_point").single());
+  }
   if (error) return NextResponse.json({ error: error.message }, { status: 500 });
   return NextResponse.json(data);
 }
