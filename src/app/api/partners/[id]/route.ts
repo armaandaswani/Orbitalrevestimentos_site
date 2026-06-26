@@ -2,8 +2,10 @@ import { NextRequest, NextResponse } from "next/server";
 import { isAdminRequest, partnerIdFromRequest, hashPassword, verifyPassword } from "@/lib/admin-auth";
 import { supabaseAdmin } from "@/lib/supabase";
 
-// Fields a logged-in partner may update on their own record.
-const PARTNER_SELF_FIELDS = ["name", "email", "phone", "profession", "birthday"] as const;
+// Fields a logged-in partner may update on their own record — profile basics
+// plus how they split their commission pool between a client discount and their
+// own commission (capped at commission_pool_pct, validated below).
+const PARTNER_SELF_FIELDS = ["name", "email", "phone", "profession", "birthday", "discount_value", "commission_value"] as const;
 
 export async function PUT(
   req: NextRequest,
@@ -46,19 +48,55 @@ export async function PUT(
 
   const db = supabaseAdmin();
 
-  // Fetch current record to detect changes
+  // Fetch current record (change detection + commission-pool validation).
   const { data: current } = await db
     .from("partners")
-    .select("name, email, portal_password, coupon_code, status, profession, has_special_table")
+    .select("name, email, portal_password, coupon_code, status, profession, has_special_table, discount_value, commission_value, discount_type, commission_type")
     .eq("id", id)
     .single();
 
-  const { data, error } = await db
-    .from("partners")
-    .update(update)
-    .eq("id", id)
-    .select()
-    .single();
+  // The pool column may not exist yet (migration 026) — fetch it tolerantly.
+  let currentPool: number | null = null;
+  try {
+    const { data: pp } = await db.from("partners").select("commission_pool_pct").eq("id", id).single();
+    currentPool = (pp?.commission_pool_pct as number | null) ?? null;
+  } catch { currentPool = null; }
+
+  // Commission-pool cap: client discount + partner commission can't exceed the
+  // % the admin made available. Admin sets the pool; the partner splits within
+  // it. Only enforced for percentage-based values.
+  {
+    const num = (v: unknown): number | null => {
+      if (v === undefined || v === null || v === "") return null;
+      const n = Number(v);
+      return Number.isFinite(n) ? n : null;
+    };
+    const bodyPool = isAdmin ? num(body.commission_pool_pct) : null;
+    const pool = bodyPool ?? currentPool;
+    const touchingAlloc = "discount_value" in update || "commission_value" in update || bodyPool !== null;
+    const dType = (update.discount_type as string) ?? (current?.discount_type as string) ?? "percentage";
+    const cType = (update.commission_type as string) ?? (current?.commission_type as string) ?? "percentage";
+    if (touchingAlloc && pool != null && pool > 0 && dType === "percentage" && cType === "percentage") {
+      const d = num(update.discount_value) ?? (current?.discount_value as number | null) ?? 0;
+      const c = num(update.commission_value) ?? (current?.commission_value as number | null) ?? 0;
+      if (d < 0 || c < 0) {
+        return NextResponse.json({ error: "Desconto e comissão não podem ser negativos." }, { status: 400 });
+      }
+      if (d + c > pool + 0.001) {
+        return NextResponse.json(
+          { error: `Desconto + comissão (${d}% + ${c}%) excede o repasse disponível de ${pool}%.` },
+          { status: 400 }
+        );
+      }
+    }
+  }
+
+  let { data, error } = await db.from("partners").update(update).eq("id", id).select().single();
+  // commission_pool_pct column not there yet → retry without it.
+  if (error && /commission_pool_pct/i.test(error.message)) {
+    delete update.commission_pool_pct;
+    ({ data, error } = await db.from("partners").update(update).eq("id", id).select().single());
+  }
 
   if (error) return NextResponse.json({ error: error.message }, { status: 500 });
 

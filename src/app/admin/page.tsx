@@ -25,6 +25,7 @@ interface Partner {
   discount_value: number;
   commission_type: "percentage" | "fixed";
   commission_value: number;
+  commission_pool_pct?: number | null;
   has_portal_password?: boolean;
   status: "active" | "inactive" | "pending";
   is_self_registered: boolean | null;
@@ -127,6 +128,7 @@ const emptyPartnerForm = {
   birthday: "",
   profession: "",
   has_special_table: false,
+  commission_pool_pct: 7,
 };
 
 const emptyRepForm = {
@@ -1671,6 +1673,9 @@ export default function AdminPage() {
       birthday: p.birthday ? p.birthday.split("T")[0] : "",
       profession: PROFESSIONS.includes(p.profession || "") ? (p.profession || "") : (p.profession ? "Outro" : ""),
       has_special_table: p.has_special_table ?? false,
+      // Default the pool to the current discount+commission for legacy partners
+      // (so the cap matches what they already have) or 7% when both are zero.
+      commission_pool_pct: p.commission_pool_pct ?? ((p.discount_value || 0) + (p.commission_value || 0) || 7),
     });
     setPartnerProfOther(PROFESSIONS.includes(p.profession || "") || !p.profession ? "" : p.profession);
     setPartnerFormError("");
@@ -2845,6 +2850,20 @@ export default function AdminPage() {
                       </select>
                     </div>
                     <div><label className={labelCls}>Valor da Comissão {partnerForm.commission_type === "percentage" ? "(%)" : "(R$)"}</label><input type="number" min="0" step="0.01" value={partnerForm.commission_value} onChange={(e) => setPartnerForm({ ...partnerForm, commission_value: parseFloat(e.target.value) || 0 })} className={inputCls} /></div>
+                    <div className="md:col-span-2">
+                      <label className={labelCls}>Repasse total ao parceiro (%) <span className="normal-case font-normal">(teto que o parceiro divide entre desconto e comissão)</span></label>
+                      <input type="number" min="0" step="0.01" value={partnerForm.commission_pool_pct} onChange={(e) => setPartnerForm({ ...partnerForm, commission_pool_pct: parseFloat(e.target.value) || 0 })} className={inputCls} />
+                      {partnerForm.discount_type === "percentage" && partnerForm.commission_type === "percentage" && (() => {
+                        const alloc = (partnerForm.discount_value || 0) + (partnerForm.commission_value || 0);
+                        const rem = (partnerForm.commission_pool_pct || 0) - alloc;
+                        const over = rem < -0.001;
+                        return (
+                          <p className={`text-[11px] font-[var(--font-inter)] mt-1 ${over ? "text-red-600 font-bold" : "text-[#74777f]"}`}>
+                            {partnerForm.discount_value || 0}% cliente · {partnerForm.commission_value || 0}% parceiro · {over ? `excede o repasse em ${Math.abs(Math.round(rem * 100) / 100)}%` : `${Math.round(rem * 100) / 100}% ainda disponível`}
+                          </p>
+                        );
+                      })()}
+                    </div>
                     <div>
                       <label className={labelCls}>Senha do Portal <span className="normal-case font-normal">(acesso parceiro)</span></label>
                       <div className="relative">
