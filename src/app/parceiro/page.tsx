@@ -11,6 +11,7 @@ interface PartnerInfo {
   discount_value: number;
   commission_type: "percentage" | "fixed";
   commission_value: number;
+  commission_pool_pct?: number | null;
   profession: string | null;
   has_special_table: boolean | null;
 }
@@ -1008,6 +1009,11 @@ export default function ParceiroPage() {
               </div>
             </div>
           </div>
+
+          {/* Repasse: partner splits their available pool between client discount and own commission */}
+          {partner.commission_pool_pct != null && partner.discount_type === "percentage" && partner.commission_type === "percentage" && (
+            <RepasseCard partner={partner} onSaved={(d, c) => setPartner({ ...partner, discount_value: d, commission_value: c })} />
+          )}
 
           {/* Referral link */}
           <div className="bg-white border border-[#e2e2e2] px-5 py-4 mb-4 flex flex-col sm:flex-row sm:items-center gap-3">
@@ -2310,6 +2316,77 @@ export default function ParceiroPage() {
           </div>
         </div>
       )}
+    </div>
+  );
+}
+
+// Partner-side control: split the commission pool the admin made available
+// between a client discount and the partner's own commission, capped at the pool.
+function RepasseCard({ partner, onSaved }: { partner: PartnerInfo; onSaved: (discount: number, commission: number) => void }) {
+  const pool = partner.commission_pool_pct ?? 0;
+  const [disc, setDisc] = useState<number>(partner.discount_value || 0);
+  const [comm, setComm] = useState<number>(partner.commission_value || 0);
+  const [saving, setSaving] = useState(false);
+  const [msg, setMsg] = useState<string | null>(null);
+
+  const alloc = (Number(disc) || 0) + (Number(comm) || 0);
+  const over = alloc > pool + 0.001;
+  const rem = Math.round((pool - alloc) * 100) / 100;
+  const dirty = (Number(disc) || 0) !== (partner.discount_value || 0) || (Number(comm) || 0) !== (partner.commission_value || 0);
+
+  async function save() {
+    if (over || saving) return;
+    setSaving(true);
+    setMsg(null);
+    const res = await fetch(`/api/partners/${partner.id}`, {
+      method: "PUT",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ discount_value: Number(disc) || 0, commission_value: Number(comm) || 0 }),
+    });
+    setSaving(false);
+    if (res.ok) {
+      onSaved(Number(disc) || 0, Number(comm) || 0);
+      setMsg("Salvo!");
+      setTimeout(() => setMsg(null), 2500);
+    } else {
+      const j = await res.json().catch(() => null);
+      setMsg(j?.error || "Erro ao salvar.");
+    }
+  }
+
+  const inputCls =
+    "w-24 border border-[#e2e2e2] px-2 py-1.5 text-sm font-[var(--font-inter)] text-[#002045] focus:outline-none focus:border-[#002045]";
+
+  return (
+    <div className="bg-white border border-[#e2e2e2] px-6 py-5 mb-4">
+      <p className="text-[#74777f] text-[10px] tracking-[0.15em] uppercase font-bold font-[var(--font-inter)] mb-1">
+        Seu repasse
+      </p>
+      <p className="text-[#43474e] text-sm font-[var(--font-inter)] mb-4">
+        Você tem <strong className="text-[#002045]">{pool}%</strong> da venda para distribuir. Escolha quanto vira desconto
+        para o cliente e quanto fica como sua comissão (a soma não pode passar de {pool}%).
+      </p>
+      <div className="flex flex-wrap items-end gap-5">
+        <label className="flex flex-col gap-1">
+          <span className="text-[#74777f] text-[10px] uppercase tracking-wider font-bold font-[var(--font-inter)]">Desconto ao cliente (%)</span>
+          <input type="number" min="0" step="0.5" max={pool} value={disc} onChange={(e) => setDisc(parseFloat(e.target.value) || 0)} className={inputCls} />
+        </label>
+        <label className="flex flex-col gap-1">
+          <span className="text-[#74777f] text-[10px] uppercase tracking-wider font-bold font-[var(--font-inter)]">Sua comissão (%)</span>
+          <input type="number" min="0" step="0.5" max={pool} value={comm} onChange={(e) => setComm(parseFloat(e.target.value) || 0)} className={inputCls} />
+        </label>
+        <button
+          onClick={save}
+          disabled={over || saving || !dirty}
+          className="bg-[#002045] text-white text-xs tracking-[0.1em] uppercase font-bold font-[var(--font-inter)] px-5 py-2.5 hover:bg-[#1a365d] transition-colors disabled:opacity-40 disabled:cursor-not-allowed"
+        >
+          {saving ? "Salvando…" : "Salvar"}
+        </button>
+        <p className={`text-xs font-[var(--font-inter)] ${over ? "text-red-600 font-bold" : "text-[#74777f]"}`}>
+          {over ? `Excede o repasse em ${Math.abs(rem)}%` : `${rem}% ainda disponível`}
+          {msg ? ` · ${msg}` : ""}
+        </p>
+      </div>
     </div>
   );
 }
