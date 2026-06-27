@@ -1651,6 +1651,7 @@ function SurfaceCanvas({
               <polygon points={q.map(([x, y]) => `${x},${y}`).join(" ")} fill="none" stroke="#ffffff" strokeWidth={0.004} strokeDasharray="0.014 0.009" strokeLinejoin="round" />
             </svg>
             {q.map(([x, y], idx) => (
+              // Large transparent hit area (finger-friendly) wrapping a small dot.
               <span key={idx}
                 onPointerDown={(e) => {
                   e.stopPropagation();
@@ -1659,7 +1660,9 @@ function SurfaceCanvas({
                 }}
                 onClick={(e) => e.stopPropagation()}
                 style={{ left: `${x * 100}%`, top: `${y * 100}%` }}
-                className="absolute -translate-x-1/2 -translate-y-1/2 w-5 h-5 rounded-full bg-white border-2 border-[#002045] shadow-md cursor-grab active:cursor-grabbing touch-none" />
+                className="absolute -translate-x-1/2 -translate-y-1/2 w-10 h-10 flex items-center justify-center cursor-grab active:cursor-grabbing touch-none">
+                <span className="w-5 h-5 rounded-full bg-white border-2 border-[#002045] shadow-md" />
+              </span>
             ))}
             <div className="absolute bottom-2 left-1/2 -translate-x-1/2 bg-black/70 text-white text-[10px] font-[var(--font-inter)] px-3 py-1 rounded-full pointer-events-none whitespace-nowrap">
               Arraste os 4 cantos para alinhar à parede
