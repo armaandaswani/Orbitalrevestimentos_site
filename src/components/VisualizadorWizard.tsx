@@ -1,7 +1,14 @@
 "use client";
 
 import React, { useState, useRef, useEffect, useCallback, useMemo } from "react";
-import { applicationAreaFor } from "@/lib/render-prompt";
+import { applicationAreaFor, DEFAULT_PANEL_WIDTH_M, DEFAULT_PANEL_HEIGHT_M } from "@/lib/render-prompt";
+import {
+  type Quad,
+  panelLayout,
+  tileTexture,
+  projectTextureToQuad,
+  transferLuminance,
+} from "@/lib/texture-projection";
 
 // ── Types ─────────────────────────────────────────────────────────────────────
 
@@ -18,6 +25,9 @@ export interface VizProduct {
   image_path: string;
   is_active: boolean;
   sort_order: number;
+  // Flat, front-on, glare-free slab texture for the deterministic pixel-exact
+  // projection. When absent, the zone falls back to the generative render path.
+  render_texture_path?: string | null;
 }
 
 export const LINE_ORDER: ProductLine[] = ["Classic", "Brilliance", "Elegance"];
@@ -61,6 +71,10 @@ export interface Zone {
   width: string;
   height: string;
   detecting: boolean;
+  // Four wall corners (normalized 0..1, TL/TR/BR/BL) for pixel-exact projection.
+  // Pre-filled from the mask, user-adjustable. Null until the projection flow
+  // captures it; the generative path ignores it.
+  quad?: Quad | null;
 }
 
 export interface SimPrefill {
@@ -333,6 +347,40 @@ async function buildMaskDataUrl(z: Zone, w: number, h: number): Promise<string |
   return c.toDataURL("image/png");
 }
 
+// A normalized rect → a TL/TR/BR/BL quad (axis-aligned). Used to seed a zone's
+// adjustable 4-corner quad from its detected bounding box before the user nudges
+// the corners to the wall's true perspective.
+function rectToQuad(r: Rect): Quad {
+  return [
+    [r.x, r.y],
+    [r.x + r.w, r.y],
+    [r.x + r.w, r.y + r.h],
+    [r.x, r.y + r.h],
+  ];
+}
+
+// Deterministic pixel-exact render for one zone: tiles the flat slab texture at
+// panel scale, warps it into the zone's 4-corner quad (true perspective), and
+// transfers the room's shading onto it. Returns a full-image PNG (the panel,
+// transparent everywhere else) ready for compositeMaskedRegion to clip to the
+// zone's mask. NO generative model touches the material → the finish is exact.
+async function renderZoneProjection(
+  textureUrl: string,
+  quad: Quad,
+  widthStr: string,
+  heightStr: string,
+  base: string,
+  w: number,
+  h: number
+): Promise<string> {
+  const [tex, photo] = await Promise.all([loadImage(textureUrl), loadImage(base)]);
+  const { cols, rows } = panelLayout(parseDim(widthStr), parseDim(heightStr), DEFAULT_PANEL_WIDTH_M, DEFAULT_PANEL_HEIGHT_M);
+  const tiled = tileTexture(tex, tex.naturalWidth || 1, tex.naturalHeight || 1, cols, rows);
+  const projected = projectTextureToQuad(tiled, quad, w, h);
+  const lit = transferLuminance(projected, photo, w, h);
+  return lit.toDataURL("image/png");
+}
+
 function buildSimuladorUrl(ambientes: SavedAmbiente[]): string {
   if (ambientes.length === 1) {
     const a = ambientes[0];
@@ -432,6 +480,10 @@ export default function VisualizadorWizard({
   const [zones, setZones] = useState<Zone[]>([]);
   const [activeZoneId, setActiveZoneId] = useState<string | null>(null);
   const [generating, setGenerating] = useState(false);
+  // Pixel-exact deterministic projection vs. the legacy generative render.
+  // Default ON; the toggle is the rollout fallback (e.g. for products that
+  // don't have a flat texture yet, or unusual surfaces).
+  const [useProjection, setUseProjection] = useState(true);
   const [progress, setProgress] = useState<{ i: number; total: number; label: string } | null>(null);
   const [result, setResult] = useState<string | null>(null);
   const [error, setError] = useState<string | null>(null);
@@ -642,25 +694,51 @@ export default function VisualizadorWizard({
     async (id: string, colorIdx: number, rect: Rect) => {
       if (!photoData) return;
       updateZone(id, { detecting: true });
-      try {
+      const color = ZONE_COLORS[colorIdx % ZONE_COLORS.length];
+      type DetectResp = { mask?: string; polygon?: Array<[number, number]>; rect?: Rect };
+      const callDetect = async (skipFal: boolean): Promise<DetectResp | null> => {
         const res = await fetch("/api/visualizador/detect-surface", {
           method: "POST",
           headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({ photo: photoData, box: rect, width: photoDims?.w, height: photoDims?.h }),
+          body: JSON.stringify({ photo: photoData, box: rect, width: photoDims?.w, height: photoDims?.h, skipFal }),
         });
-        const j = (await res.json()) as { mask?: string; polygon?: Array<[number, number]>; rect?: Rect };
-        const color = ZONE_COLORS[colorIdx % ZONE_COLORS.length];
-
-        // Turn whichever detection came back into a tinted overlay, then clip it
-        // to the drawn box.
+        return res.ok ? ((await res.json()) as DetectResp) : null;
+      };
+      try {
+        // The drawn box is a region-of-interest, not the answer: SAM2/Gemini finds
+        // the real surface (clean edges, foreground objects excluded) and we keep
+        // only the part inside the box. CRITICAL: we must VALIDATE SAM2's mask the
+        // same way the tap path does — a box prompt frequently returns an empty,
+        // pinhole or whole-image mask, which previously got accepted silently and
+        // left the zone as a bare rectangle. A bare rectangle lets the renderer
+        // regenerate everything inside it (inventing furniture, changing the
+        // model), so when SAM2 is degenerate we fall back to the Gemini polygon
+        // tracer, which reliably outlines the whole surface.
         let overlayUrl: string | null = null;
-        if (res.ok && typeof j.mask === "string") {
-          try { overlayUrl = (await maskToOverlay(j.mask, color)).url; } catch { overlayUrl = null; }
-        } else if (
-          res.ok && Array.isArray(j.polygon) && j.polygon.length >= 3 &&
-          photoDims && photoDims.w > 0 && photoDims.h > 0
-        ) {
+
+        // 1) fal SAM2 (box prompt) — accept only if coverage is sane.
+        let j = await callDetect(false);
+        if (j && typeof j.mask === "string") {
+          try {
+            const { url, coverage } = await maskToOverlay(j.mask, color);
+            if (coverage >= 0.005 && coverage <= 0.92) overlayUrl = url;
+          } catch { /* fall through to Gemini retry */ }
+          // 2) SAM2 mask empty/degenerate → force the Gemini polygon for the box.
+          if (!overlayUrl) j = await callDetect(true);
+        }
+
+        // 3) Gemini polygon (the forced-fallback, or the first response when fal
+        //    is unavailable). Rasterize it to a tinted overlay.
+        if (!overlayUrl && j && Array.isArray(j.polygon) && j.polygon.length >= 3 &&
+            photoDims && photoDims.w > 0 && photoDims.h > 0) {
           overlayUrl = polygonToOverlay(j.polygon, color, photoDims.w, photoDims.h);
+        }
+        // 4) A mask may still come back on the forced retry (rare) — last resort.
+        if (!overlayUrl && j && typeof j.mask === "string") {
+          try {
+            const { url, coverage } = await maskToOverlay(j.mask, color);
+            if (coverage >= 0.005) overlayUrl = url;
+          } catch { /* nothing usable */ }
         }
 
         if (overlayUrl) {
@@ -746,6 +824,19 @@ export default function VisualizadorWizard({
   const canGenerate = !!photoData && zonesReady.length > 0;
   const anyDetecting = zones.some((z) => z.detecting);
 
+  // Seed an adjustable 4-corner quad (from the detected box) for any zone whose
+  // chosen product has a flat texture — that's what surfaces the corner handles
+  // on the photo and enables pixel-exact projection. Runs once per zone (guarded
+  // by !z.quad), so it never fights a user who's dragging the corners.
+  useEffect(() => {
+    if (!useProjection) return;
+    for (const z of zones) {
+      if (z.quad || !z.rect) continue;
+      const prod = z.productId ? productById(z.productId) : null;
+      if (prod?.render_texture_path?.trim()) updateZone(z.id, { quad: rectToQuad(z.rect) });
+    }
+  }, [zones, useProjection, productById, updateZone]);
+
   const areaForZone = (z: Zone): string | undefined => {
     const txt = z.instruction.trim();
     if (txt) return txt;
@@ -783,6 +874,23 @@ export default function VisualizadorWizard({
         const prod = productById(z.productId);
         if (!prod) continue;
         setProgress({ i: i + 1, total: zs.length, label: z.label });
+
+        // ── Pixel-exact projection path ─────────────────────────────────────
+        // When the product has a flat slab texture and the zone has a 4-corner
+        // quad (seeded from the detected box, refined by the user), render the
+        // panel deterministically: the EXACT swatch warped into perspective,
+        // composited only under the zone's mask. No generative model touches the
+        // material. Any failure (or the toggle off) falls through to Gemini.
+        const textureUrl = prod.render_texture_path?.trim() || null;
+        const quad: Quad | null = z.quad ?? (z.rect ? rectToQuad(z.rect) : null);
+        if (useProjection && textureUrl && quad && dims && dims.w > 0 && dims.h > 0) {
+          try {
+            const panel = await renderZoneProjection(textureUrl, quad, z.width, z.height, base, dims.w, dims.h);
+            composite = await compositeMaskedRegion(composite, panel, z);
+            continue; // zone done deterministically — skip the generative call
+          } catch { /* fall through to the generative render below */ }
+        }
+
         // Hand Gemini the zone's exact mask (when it has one) so it paints only
         // the real surface, follows its perspective, and keeps foreground
         // objects on top — far more reliable than the bounding rect alone.
@@ -880,7 +988,7 @@ export default function VisualizadorWizard({
       setProgress(null);
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [photoData, zones, productById, embeddedMode, onComplete]);
+  }, [photoData, zones, productById, embeddedMode, onComplete, useProjection]);
 
   // ── Lead submit (standalone mode) ─────────────────────────────────────────
   const handleLeadSubmit = useCallback(() => {
@@ -1029,6 +1137,8 @@ export default function VisualizadorWizard({
             simPrefills={simPrefills}
             onBack={() => setStep("upload")}
             onGenerate={generate}
+            useProjection={useProjection}
+            setUseProjection={setUseProjection}
           />
         )}
 
@@ -1230,7 +1340,7 @@ type ZoneMode = "tap" | "draw";
 function ZonesStep({
   photoData, zones, activeZoneId, setActiveZoneId, onTapPhoto, onDrawRect, onAddTextZone,
   updateZone, removeZone, retargetId, setRetargetId, anyDetecting, products, loadingProducts,
-  productById, canGenerate, simPrefills, onBack, onGenerate,
+  productById, canGenerate, simPrefills, onBack, onGenerate, useProjection, setUseProjection,
 }: {
   photoData: string;
   zones: Zone[];
@@ -1251,6 +1361,8 @@ function ZonesStep({
   simPrefills?: SimPrefill[];
   onBack: () => void;
   onGenerate: () => void;
+  useProjection: boolean;
+  setUseProjection: (v: boolean) => void;
 }) {
   const [mode, setMode] = useState<ZoneMode>("tap");
 
@@ -1306,6 +1418,12 @@ function ZonesStep({
             </span>
           )}
         </div>
+        <label className="mt-3 flex items-center gap-2 cursor-pointer select-none">
+          <input type="checkbox" checked={useProjection} onChange={(e) => setUseProjection(e.target.checked)} className="accent-[#3b6934]" />
+          <span className="text-[11px] font-[var(--font-inter)] text-[#43474e]">
+            Projeção exata (recomendado) — usa a textura real da placa. Desmarque para usar a IA generativa.
+          </span>
+        </label>
       </div>
 
       <div className="lg:sticky lg:top-24 space-y-3">
@@ -1352,7 +1470,7 @@ function SurfaceCanvas({
   updateZone: (id: string, patch: Partial<Zone>) => void; busy: boolean; retargeting: boolean;
 }) {
   const ref = useRef<HTMLDivElement | null>(null);
-  const drag = useRef<null | { kind: "create"; sx: number; sy: number } | { kind: "move"; id: string; offX: number; offY: number; w: number; h: number } | { kind: "resize"; id: string; x: number; y: number }>(null);
+  const drag = useRef<null | { kind: "create"; sx: number; sy: number } | { kind: "move"; id: string; offX: number; offY: number; w: number; h: number } | { kind: "resize"; id: string; x: number; y: number } | { kind: "corner"; id: string; idx: number }>(null);
   const [draft, setDraft] = useState<Rect | null>(null);
   const draftRef = useRef<Rect | null>(null);
   const setDraftBoth = (r: Rect | null) => { draftRef.current = r; setDraft(r); };
@@ -1387,6 +1505,12 @@ function SurfaceCanvas({
       updateZone(d.id, { rect: { x: Math.min(1 - d.w, Math.max(0, p.x - d.offX)), y: Math.min(1 - d.h, Math.max(0, p.y - d.offY)), w: d.w, h: d.h } });
     } else if (d.kind === "resize") {
       updateZone(d.id, { rect: { x: d.x, y: d.y, w: Math.max(0.03, Math.min(1 - d.x, p.x - d.x)), h: Math.max(0.03, Math.min(1 - d.y, p.y - d.y)) } });
+    } else if (d.kind === "corner") {
+      const zone = zones.find((z) => z.id === d.id);
+      if (zone?.quad) {
+        const nq = zone.quad.map((pt, i) => (i === d.idx ? ([p.x, p.y] as [number, number]) : pt)) as Quad;
+        updateZone(d.id, { quad: nq });
+      }
     }
   };
   const onPointerUp = () => {
@@ -1456,6 +1580,32 @@ function SurfaceCanvas({
           </div>
         );
       })}
+      {/* Pixel-exact projection: draggable 4-corner quad for the active zone.
+          Drag each corner to the wall's true corners so the panel follows the
+          real perspective. Only shown once a textured product seeded the quad. */}
+      {(() => {
+        const az = zones.find((z) => z.id === activeZoneId);
+        if (!az?.quad) return null;
+        const q = az.quad;
+        return (
+          <>
+            <svg viewBox="0 0 1 1" preserveAspectRatio="none" className="absolute inset-0 w-full h-full pointer-events-none">
+              <polygon points={q.map(([x, y]) => `${x},${y}`).join(" ")} fill="none" stroke="#ffffff" strokeWidth={0.004} strokeDasharray="0.014 0.009" strokeLinejoin="round" />
+            </svg>
+            {q.map(([x, y], idx) => (
+              <span key={idx}
+                onPointerDown={(e) => {
+                  e.stopPropagation();
+                  try { (e.currentTarget as HTMLElement).setPointerCapture(e.pointerId); } catch {}
+                  drag.current = { kind: "corner", id: az.id, idx };
+                }}
+                onClick={(e) => e.stopPropagation()}
+                style={{ left: `${x * 100}%`, top: `${y * 100}%` }}
+                className="absolute -translate-x-1/2 -translate-y-1/2 w-5 h-5 rounded-full bg-white border-2 border-[#002045] shadow-md cursor-grab active:cursor-grabbing touch-none" />
+            ))}
+          </>
+        );
+      })()}
       {draft && draft.w > 0 && (
         <div style={{ left: `${draft.x * 100}%`, top: `${draft.y * 100}%`, width: `${draft.w * 100}%`, height: `${draft.h * 100}%` }}
           className="absolute border-2 border-dashed border-white bg-white/10 pointer-events-none" />

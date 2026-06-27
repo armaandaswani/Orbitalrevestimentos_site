@@ -4819,6 +4819,10 @@ export default function AdminPage() {
                         <div className="mt-2 flex items-center gap-3">
                           {/* eslint-disable-next-line @next/next/no-img-element */}
                           <img src={productForm.render_texture_path} alt="textura" className="h-16 w-16 object-cover border border-[#e2e2e2]" />
+                          <a href={productForm.render_texture_path} target="_blank" rel="noopener noreferrer" download
+                            className="px-3 py-1.5 border border-[#e2e2e2] text-[#002045] text-[10px] tracking-[0.08em] uppercase font-bold font-[var(--font-inter)] hover:bg-[#f0f0f0] transition-colors">
+                            Baixar
+                          </a>
                           <button type="button" onClick={() => setProductForm(prev => ({...prev, render_texture_path: ""}))} className="px-3 py-1.5 border border-red-300 text-red-600 text-[10px] tracking-[0.08em] uppercase font-bold font-[var(--font-inter)] hover:bg-red-50 transition-colors">
                             Remover
                           </button>
