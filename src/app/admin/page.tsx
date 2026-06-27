@@ -53,7 +53,7 @@ interface SalesRep {
 }
 
 interface ProductImage { id:string; product_id:string; image_path:string; sort_order:number; }
-interface DbProduct { id:string; code:string; name:string; linha:"Classic"|"Brilliance"|"Elegance"; finish:string; price:number; price_per_m2:number; description:string; image_path:string; is_active:boolean; sort_order:number; created_at:string; product_images?: ProductImage[]; render_finish_description?: string | null; render_panel_width_m?: number | null; render_panel_height_m?: number | null; render_context_image_path?: string | null; render_extra_notes?: string | null; }
+interface DbProduct { id:string; code:string; name:string; linha:"Classic"|"Brilliance"|"Elegance"; finish:string; price:number; price_per_m2:number; description:string; image_path:string; is_active:boolean; sort_order:number; created_at:string; product_images?: ProductImage[]; render_finish_description?: string | null; render_panel_width_m?: number | null; render_panel_height_m?: number | null; render_context_image_path?: string | null; render_texture_path?: string | null; render_extra_notes?: string | null; }
 interface DbPhotoProject { id:string; slug:string; title:string; product_code:string; categories:string[]; image_after:string; image_before:string; note:string; is_active:boolean; sort_order:number; }
 interface DbRenderProject { id:string; slug:string; title:string; product_code:string; image_path:string; is_active:boolean; sort_order:number; }
 interface ProjectMedia { id:string; project_slug:string; type:"image"|"video"; url:string; caption:string|null; description:string|null; category:"antes"|"depois"|"geral"; sort_order:number; }
@@ -392,7 +392,7 @@ export default function AdminPage() {
   const [loadingDbProducts, setLoadingDbProducts] = useState(false);
   const [showProductForm, setShowProductForm] = useState(false);
   const [editingProductId, setEditingProductId] = useState<string|null>(null);
-  const [productForm, setProductForm] = useState({ code:"", name:"", linha:"Classic" as "Classic"|"Brilliance"|"Elegance", finish:"Fosco", price:559, price_per_m2:161, description:"", image_path:"", is_active:true, sort_order:0, render_finish_description:"", render_panel_width_m:1.2, render_panel_height_m:2.9, render_context_image_path:"", render_extra_notes:"" });
+  const [productForm, setProductForm] = useState({ code:"", name:"", linha:"Classic" as "Classic"|"Brilliance"|"Elegance", finish:"Fosco", price:559, price_per_m2:161, description:"", image_path:"", is_active:true, sort_order:0, render_finish_description:"", render_panel_width_m:1.2, render_panel_height_m:2.9, render_context_image_path:"", render_texture_path:"", render_extra_notes:"" });
   const [productFormError, setProductFormError] = useState("");
   const [productFormLoading, setProductFormLoading] = useState(false);
   const [productImageUploading, setProductImageUploading] = useState(false);
@@ -1245,7 +1245,7 @@ export default function AdminPage() {
     if (!res.ok) { setProductFormError(json.error || "Erro desconhecido."); return; }
     setShowProductForm(false);
     setEditingProductId(null);
-    setProductForm({ code:"", name:"", linha:"Classic", finish:"Fosco", price:559, price_per_m2:161, description:"", image_path:"", is_active:true, sort_order:0, render_finish_description:"", render_panel_width_m:1.2, render_panel_height_m:2.9, render_context_image_path:"", render_extra_notes:"" });
+    setProductForm({ code:"", name:"", linha:"Classic", finish:"Fosco", price:559, price_per_m2:161, description:"", image_path:"", is_active:true, sort_order:0, render_finish_description:"", render_panel_width_m:1.2, render_panel_height_m:2.9, render_context_image_path:"", render_texture_path:"", render_extra_notes:"" });
     fetchDbProducts();
   }
 
@@ -1257,7 +1257,7 @@ export default function AdminPage() {
 
   function startEditProduct(p: DbProduct) {
     setEditingProductId(p.id);
-    setProductForm({ code: p.code, name: p.name, linha: p.linha, finish: p.finish, price: p.price, price_per_m2: p.price_per_m2, description: p.description, image_path: p.image_path, is_active: p.is_active, sort_order: p.sort_order, render_finish_description: p.render_finish_description ?? "", render_panel_width_m: Number(p.render_panel_width_m) || 1.2, render_panel_height_m: Number(p.render_panel_height_m) || 2.9, render_context_image_path: p.render_context_image_path ?? "", render_extra_notes: p.render_extra_notes ?? "" });
+    setProductForm({ code: p.code, name: p.name, linha: p.linha, finish: p.finish, price: p.price, price_per_m2: p.price_per_m2, description: p.description, image_path: p.image_path, is_active: p.is_active, sort_order: p.sort_order, render_finish_description: p.render_finish_description ?? "", render_panel_width_m: Number(p.render_panel_width_m) || 1.2, render_panel_height_m: Number(p.render_panel_height_m) || 2.9, render_context_image_path: p.render_context_image_path ?? "", render_texture_path: p.render_texture_path ?? "", render_extra_notes: p.render_extra_notes ?? "" });
     setProductFormError("");
     setGalleryImages(p.product_images ?? []);
     setShowProductForm(true);
@@ -4466,7 +4466,7 @@ export default function AdminPage() {
               <button
                 onClick={() => {
                   setEditingProductId(null);
-                  setProductForm({ code:"", name:"", linha:"Classic", finish:"Fosco", price:559, price_per_m2:161, description:"", image_path:"", is_active:true, sort_order:0, render_finish_description:"", render_panel_width_m:1.2, render_panel_height_m:2.9, render_context_image_path:"", render_extra_notes:"" });
+                  setProductForm({ code:"", name:"", linha:"Classic", finish:"Fosco", price:559, price_per_m2:161, description:"", image_path:"", is_active:true, sort_order:0, render_finish_description:"", render_panel_width_m:1.2, render_panel_height_m:2.9, render_context_image_path:"", render_texture_path:"", render_extra_notes:"" });
                   setProductFormError("");
                   setGalleryImages([]);
                   setShowProductForm(true);
@@ -4798,6 +4798,34 @@ export default function AdminPage() {
                       )}
                       <p className="text-[#b0b0b0] text-[10px] font-[var(--font-inter)] mt-1">
                         Se preenchida, é enviada como terceira referência para a IA ver o acabamento aplicado em contexto.
+                      </p>
+                    </div>
+                    <div className="mb-4">
+                      <label className={labelCls}>Textura plana do painel (projeção exata)</label>
+                      <div className="flex gap-3 items-start">
+                        <input type="text" value={productForm.render_texture_path} onChange={(e) => setProductForm({...productForm, render_texture_path: e.target.value})} className={inputCls} placeholder="Imagem frontal e plana da placa (sem ângulo, sem brilho, sem ambiente)" />
+                        <label className="flex-shrink-0 cursor-pointer bg-[#f0f0f0] border border-[#e2e2e2] px-4 py-2.5 text-xs font-bold font-[var(--font-inter)] text-[#002045] hover:bg-[#e8e8e8] transition-colors whitespace-nowrap">
+                          {productImageUploading ? "Enviando..." : "Upload"}
+                          <input type="file" accept="image/*" className="hidden" onChange={async (e) => {
+                            const file = e.target.files?.[0];
+                            if (!file) return;
+                            const url = await uploadImage(file, "products");
+                            if (url) setProductForm((prev) => ({...prev, render_texture_path: url}));
+                            e.target.value = "";
+                          }} />
+                        </label>
+                      </div>
+                      {productForm.render_texture_path && (
+                        <div className="mt-2 flex items-center gap-3">
+                          {/* eslint-disable-next-line @next/next/no-img-element */}
+                          <img src={productForm.render_texture_path} alt="textura" className="h-16 w-16 object-cover border border-[#e2e2e2]" />
+                          <button type="button" onClick={() => setProductForm(prev => ({...prev, render_texture_path: ""}))} className="px-3 py-1.5 border border-red-300 text-red-600 text-[10px] tracking-[0.08em] uppercase font-bold font-[var(--font-inter)] hover:bg-red-50 transition-colors">
+                            Remover
+                          </button>
+                        </div>
+                      )}
+                      <p className="text-[#b0b0b0] text-[10px] font-[var(--font-inter)] mt-1">
+                        Imagem retificada e sem brilho da placa, usada pela projeção exata (pixel-perfeita) do Visualizador. Diferente da foto de catálogo (em ângulo).
                       </p>
                     </div>
                     <div className="mb-4">
