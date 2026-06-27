@@ -1505,6 +1505,7 @@ function ZonesStep({
             onSelect={() => setActiveZoneId(z.id)} onChange={(patch) => updateZone(z.id, patch)} onRemove={() => removeZone(z.id)}
             onRetarget={() => { setMode("tap"); setRetargetId(retargetId === z.id ? null : z.id); }}
             products={products} loadingProducts={loadingProducts} productById={productById}
+            useProjection={useProjection}
           />
         ))}
         {zones.length > 0 && (
@@ -1682,10 +1683,11 @@ function SurfaceCanvas({
   );
 }
 
-function ZoneCard({ zone, index, active, retargeting, onSelect, onChange, onRemove, onRetarget, products, loadingProducts, productById }: {
+function ZoneCard({ zone, index, active, retargeting, onSelect, onChange, onRemove, onRetarget, products, loadingProducts, productById, useProjection }: {
   zone: Zone; index: number; active: boolean; retargeting: boolean;
   onSelect: () => void; onChange: (patch: Partial<Zone>) => void; onRemove: () => void; onRetarget: () => void;
   products: VizProduct[]; loadingProducts: boolean; productById: (id: string) => VizProduct | null;
+  useProjection: boolean;
 }) {
   const color = ZONE_COLORS[index % ZONE_COLORS.length];
   const prod = productById(zone.productId);
@@ -1718,6 +1720,23 @@ function ZoneCard({ zone, index, active, retargeting, onSelect, onChange, onRemo
           {retargeting ? "Toque na foto…" : "Refazer seleção"}
         </button>
       </div>
+      {/* Projection status: tells the user whether this zone renders the exact
+          texture (projection) or the generative AI, and offers a corner reset. */}
+      {prod && (
+        <div className="flex items-center justify-between mb-2 -mt-0.5">
+          {useProjection && prod.render_texture_path?.trim() ? (
+            <span className="text-[10px] font-bold font-[var(--font-inter)] text-[#2f5429]">● Projeção exata</span>
+          ) : (
+            <span className="text-[10px] font-[var(--font-inter)] text-[#74777f]">○ IA generativa{useProjection ? " (sem textura)" : ""}</span>
+          )}
+          {useProjection && prod.render_texture_path?.trim() && zone.quad && (
+            <button onClick={(e) => { e.stopPropagation(); onChange({ quad: null }); }}
+              className="text-[10px] font-bold font-[var(--font-inter)] text-[#1e5fb4] hover:underline">
+              Redefinir cantos
+            </button>
+          )}
+        </div>
+      )}
       <label className="block text-[10px] tracking-[0.15em] uppercase font-bold font-[var(--font-inter)] text-[#74777f] mb-1">Tipo de superfície</label>
       <select value={zone.surface} onClick={(e) => e.stopPropagation()} onChange={(e) => onChange({ surface: e.target.value })}
         className="w-full border border-[#e2e2e2] px-2.5 py-2 text-sm font-[var(--font-inter)] text-[#002045] bg-white focus:outline-none focus:border-[#002045] mb-2">
