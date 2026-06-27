@@ -54,17 +54,24 @@ export function applicationAreaFor(
   return APPLICATION_AREA_PHRASES[spaceId] ?? null;
 }
 
-// How many whole panels cover a wall of the given size (grid layout —
-// same formula the Simulador uses to count plates).
+// How many whole panels cover a wall of the given size, accounting for cut
+// reuse. A wall that is slightly taller than the panel height should not double
+// the full wall count; the extra horizontal band can be cut from fewer panels.
 export function panelGrid(
   wallWidthM: number,
   wallHeightM: number,
   panelWidthM = DEFAULT_PANEL_WIDTH_M,
   panelHeightM = DEFAULT_PANEL_HEIGHT_M
-): { cols: number; rows: number; count: number } {
+): { cols: number; rows: number; fullRows: number; extraPanels: number; remainderHeightM: number; count: number } {
   const cols = Math.max(1, Math.ceil(wallWidthM / panelWidthM));
-  const rows = Math.max(1, Math.ceil(wallHeightM / panelHeightM));
-  return { cols, rows, count: cols * rows };
+  const fullRows = Math.max(0, Math.floor(wallHeightM / panelHeightM));
+  const remainderHeightM = Math.max(0, wallHeightM - fullRows * panelHeightM);
+  const hasRemainder = remainderHeightM > 0.001;
+  const stripsPerPanel = hasRemainder ? Math.max(1, Math.floor(panelHeightM / remainderHeightM)) : 0;
+  const extraPanels = hasRemainder ? Math.ceil(cols / stripsPerPanel) : 0;
+  const rows = fullRows + (extraPanels > 0 ? 1 : 0);
+  const count = fullRows * cols + extraPanels;
+  return { cols, rows: Math.max(1, rows), fullRows, extraPanels, remainderHeightM, count: Math.max(1, count) };
 }
 
 // Fixed scaffold: every invariant rule lives here. Per-model (or per-line
@@ -246,9 +253,11 @@ export function composePrompt(opts: {
       ? (() => {
           const g = panelGrid(opts.wallWidthM, opts.wallHeightM, opts.panelWidthM, opts.panelHeightM);
           const rowsPhrase =
-            g.rows === 1
+            g.fullRows === 0
+              ? "cut to the measured height"
+              : g.extraPanels === 0
               ? "a SINGLE full-height row (no horizontal seam)"
-              : `${g.rows} rows high`;
+              : `${g.fullRows} full-height row${g.fullRows !== 1 ? "s" : ""} plus a ${g.remainderHeightM.toFixed(2)}m high cut band using ${g.extraPanels} extra panel${g.extraPanels !== 1 ? "s" : ""}`;
           return [
             `- The client measured this exact area: ${opts.wallWidthM}m wide x ${opts.wallHeightM}m tall.`,
             `  That is ${g.cols} panel${g.cols !== 1 ? "s" : ""} across and ${rowsPhrase}` +

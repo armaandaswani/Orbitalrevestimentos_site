@@ -6,6 +6,7 @@ import Image from "next/image";
 import Link from "next/link";
 import MdfComparison, { COMPARISON_OPTIONS } from "@/components/MdfComparison";
 import VisualizadorWizard, { type SimPrefill } from "@/components/VisualizadorWizard";
+import { panelGrid } from "@/lib/render-prompt";
 
 const WA_BASE = "https://wa.me/5592988150149?text=";
 // Werk Engenharia — terceirizado de instalação. Mão de obra é apenas
@@ -17,6 +18,11 @@ const CATALOGUE_URL =
 const PLATE_M2 = 3.48;
 const PLATE_W = 1.2;
 const PLATE_H = 2.9;
+
+function orbitalPlatesForDimensions(widthM: number, heightM: number): number {
+  if (!Number.isFinite(widthM) || !Number.isFinite(heightM) || widthM <= 0 || heightM <= 0) return 0;
+  return panelGrid(widthM, heightM, PLATE_W, PLATE_H).count;
+}
 
 const MDF_SHEET_W = 1.85;
 const MDF_SHEET_H = 2.75;
@@ -368,7 +374,7 @@ function SimuladorInner() {
     platesOverride !== null
       ? platesOverride
       : dimMode === "lxa" && (parseFloat(width) || 0) > 0 && (parseFloat(height) || 0) > 0
-      ? Math.ceil((parseFloat(width) || 0) / PLATE_W) * Math.ceil((parseFloat(height) || 0) / PLATE_H)
+      ? orbitalPlatesForDimensions(parseFloat(width) || 0, parseFloat(height) || 0)
       : m2 > 0
       ? Math.ceil(m2 / PLATE_M2)
       : 0;
@@ -718,7 +724,7 @@ function SimuladorInner() {
       // Plate count: explicit (partner link) or derived from real dims (visualizador)
       const hasDims = sp.w !== null && sp.h !== null;
       const spPlates = sp.plates ?? (hasDims
-        ? Math.ceil((sp.w as number) / PLATE_W) * Math.ceil((sp.h as number) / PLATE_H)
+        ? orbitalPlatesForDimensions(sp.w as number, sp.h as number)
         : 0);
       const moRate = orbitalMOPerPlate(spPlates, complex);
       const materialTotal = spPlates * ppp;
@@ -1686,7 +1692,7 @@ function SimuladorInner() {
                   // derive edit plate count for preview
                   const editPlates = isEditing
                     ? editSpaceDimMode === "lxa" && parseFloat(editSpaceWidth) > 0 && parseFloat(editSpaceHeight) > 0
-                      ? Math.ceil(parseFloat(editSpaceWidth) / PLATE_W) * Math.ceil(parseFloat(editSpaceHeight) / PLATE_H)
+                      ? orbitalPlatesForDimensions(parseFloat(editSpaceWidth), parseFloat(editSpaceHeight))
                       : parseFloat(editSpaceM2) > 0
                       ? Math.ceil(parseFloat(editSpaceM2) / PLATE_M2)
                       : 0
@@ -1727,7 +1733,7 @@ function SimuladorInner() {
                       return;
                     }
                     const newPlates = editSpaceDimMode === "lxa" && parseFloat(editSpaceWidth) > 0 && parseFloat(editSpaceHeight) > 0
-                      ? Math.ceil(parseFloat(editSpaceWidth) / PLATE_W) * Math.ceil(parseFloat(editSpaceHeight) / PLATE_H)
+                      ? orbitalPlatesForDimensions(parseFloat(editSpaceWidth), parseFloat(editSpaceHeight))
                       : Math.ceil(newM2 / PLATE_M2);
                     const moRate = orbitalMOPerPlate(newPlates, sp.viability === "complex");
                     const newMaterialTotal = newPlates * sp.pricePerPlate;
