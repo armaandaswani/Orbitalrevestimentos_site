@@ -88,12 +88,47 @@ function fromDateInput(s: string): string | null {
   const d = new Date(`${s}T12:00:00`); // noon local — avoids day-shift across TZ
   return isNaN(d.getTime()) ? null : d.toISOString();
 }
+function toDateTimeInputs(iso: string | null): { date: string; time: string } {
+  if (!iso) return { date: "", time: "09:00" };
+  const d = new Date(iso);
+  if (isNaN(d.getTime())) return { date: "", time: "09:00" };
+  return {
+    date: `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, "0")}-${String(d.getDate()).padStart(2, "0")}`,
+    time: `${String(d.getHours()).padStart(2, "0")}:${String(d.getMinutes()).padStart(2, "0")}`,
+  };
+}
+function fromDateTimeInputs(date: string, time: string): string | null {
+  if (!date) return null;
+  const d = new Date(`${date}T${time || "09:00"}:00`);
+  return isNaN(d.getTime()) ? null : d.toISOString();
+}
 function daysSince(iso: string | null): number | null {
   if (!iso) return null;
   return Math.floor((Date.now() - new Date(iso).getTime()) / 86_400_000);
 }
 
 type Bucket = "overdue" | "today" | "upcoming";
+type FollowupDraft = {
+  date: string;
+  time: string;
+  reminder_recur: Recur;
+  reminder_note: string;
+  auto_followup_enabled: boolean;
+  auto_followup_message: string;
+};
+
+function draftFromRow(row: CrmRow): FollowupDraft {
+  const reminder = toDateTimeInputs(row.next_reminder_at);
+  return {
+    date: reminder.date,
+    time: reminder.time,
+    reminder_recur: row.reminder_recur || "none",
+    reminder_note: row.reminder_note || "",
+    auto_followup_enabled: !!row.auto_followup_enabled,
+    auto_followup_message: row.auto_followup_message || "",
+  };
+}
+
 function bucketOf(iso: string): Bucket {
   const due = new Date(iso).getTime();
   const now = new Date();
@@ -269,6 +304,8 @@ export default function RepCrmTab({
   const [expandedId, setExpandedId] = useState<string | null>(null);
   const [notesByCrmId, setNotesByCrmId] = useState<Record<string, Note[]>>({});
   const [noteDraft, setNoteDraft] = useState("");
+  const [followupDrafts, setFollowupDrafts] = useState<Record<string, FollowupDraft>>({});
+  const [savingFollowupId, setSavingFollowupId] = useState<string | null>(null);
 
   // Add controls
   const [addMode, setAddMode] = useState<"none" | "partner" | "prospect">("none");
@@ -371,6 +408,10 @@ export default function RepCrmTab({
       return;
     }
     setExpandedId(id);
+    const row = rows.find((r) => r.id === id);
+    if (row) {
+      setFollowupDrafts((cur) => (cur[id] ? cur : { ...cur, [id]: draftFromRow(row) }));
+    }
     if (!notesByCrmId[id]) {
       const res = await fetch(`/api/representante/crm/${id}/notes`);
       if (res.ok) {
@@ -396,10 +437,57 @@ export default function RepCrmTab({
   }
 
   function snoozeReminder(id: string, days: number) {
+    const row = rows.find((r) => r.id === id);
+    if (!row) return;
     const d = new Date();
     d.setDate(d.getDate() + days);
     d.setHours(9, 0, 0, 0);
-    patchRow(id, { next_reminder_at: d.toISOString() });
+    setFollowupDrafts((cur) => ({
+      ...cur,
+      [id]: {
+        ...(cur[id] || draftFromRow(row)),
+        ...toDateTimeInputs(d.toISOString()),
+      },
+    }));
+  }
+
+  function updateFollowupDraft(id: string, patch: Partial<FollowupDraft>) {
+    const row = rows.find((r) => r.id === id);
+    if (!row) return;
+    setFollowupDrafts((cur) => ({ ...cur, [id]: { ...(cur[id] || draftFromRow(row)), ...patch } }));
+  }
+
+  async function saveFollowup(id: string) {
+    const row = rows.find((r) => r.id === id);
+    if (!row) return;
+    const draft = followupDrafts[id] || draftFromRow(row);
+    setSavingFollowupId(id);
+    await patchRow(id, {
+      next_reminder_at: fromDateTimeInputs(draft.date, draft.time),
+      reminder_recur: draft.reminder_recur,
+      reminder_note: draft.reminder_note.trim() || null,
+      auto_followup_enabled: draft.auto_followup_enabled,
+      auto_followup_message: draft.auto_followup_message.trim() || null,
+    } as Partial<CrmRow>);
+    setSavingFollowupId(null);
+  }
+
+  async function clearFollowup(id: string) {
+    updateFollowupDraft(id, {
+      date: "",
+      time: "09:00",
+      reminder_recur: "none",
+      reminder_note: "",
+      auto_followup_enabled: false,
+      auto_followup_message: "",
+    });
+    await patchRow(id, {
+      next_reminder_at: null,
+      reminder_recur: "none",
+      reminder_note: null,
+      auto_followup_enabled: false,
+      auto_followup_message: null,
+    } as Partial<CrmRow>);
   }
 
   const trackedPartnerIds = new Set(rows.map((r) => r.partner_id).filter(Boolean) as string[]);
@@ -762,6 +850,7 @@ export default function RepCrmTab({
             const stageMeta = STAGE_META[r.stage];
             const action = actionSummary(r);
             const stalled = staleDays(r);
+            const followupDraft = followupDrafts[r.id] || draftFromRow(r);
             return (
               <div key={r.id} className={`bg-white border ${expanded ? "border-[#002045]" : "border-[#e2e2e2]"}`}>
                 <div className="px-4 py-4">
@@ -970,19 +1059,44 @@ export default function RepCrmTab({
                     </div>
 
                     <div className="mb-4 bg-white border border-[#e2e2e2] px-3 py-3">
-                      <div className="grid grid-cols-1 lg:grid-cols-[1fr_140px_1fr_auto] gap-2">
+                      <div className="flex flex-wrap items-start justify-between gap-2 mb-3">
                         <div>
-                          <label className="block text-[9px] tracking-wider uppercase font-bold font-[var(--font-inter)] text-[#74777f] mb-1">Próximo follow-up</label>
+                          <p className="text-[#74777f] text-[9px] uppercase tracking-wider font-bold font-[var(--font-inter)]">
+                            Próximo follow-up
+                          </p>
+                          <p className="text-[#74777f] text-[11px] font-[var(--font-inter)] mt-0.5">
+                            Escolha data, hora e mensagem; depois clique em salvar.
+                          </p>
+                        </div>
+                        {r.next_reminder_at && (
+                          <p className="text-[#002045] text-[11px] font-semibold font-[var(--font-inter)]">
+                            Salvo: {fmtDateTime(r.next_reminder_at)}
+                          </p>
+                        )}
+                      </div>
+
+                      <div className="grid grid-cols-1 sm:grid-cols-[1fr_120px_150px] lg:grid-cols-[180px_120px_150px_1fr_auto] gap-2">
+                        <div>
+                          <label className="block text-[9px] tracking-wider uppercase font-bold font-[var(--font-inter)] text-[#74777f] mb-1">Data</label>
                           <input
-                            type="datetime-local"
-                            value={r.next_reminder_at ? r.next_reminder_at.slice(0, 16) : ""}
-                            onChange={(e) => patchRow(r.id, { next_reminder_at: e.target.value ? new Date(e.target.value).toISOString() : null })}
+                            type="date"
+                            value={followupDraft.date}
+                            onChange={(e) => updateFollowupDraft(r.id, { date: e.target.value })}
+                            className="w-full border border-[#e2e2e2] px-2 py-2 text-xs font-[var(--font-inter)] text-[#002045] focus:outline-none focus:border-[#002045]"
+                          />
+                        </div>
+                        <div>
+                          <label className="block text-[9px] tracking-wider uppercase font-bold font-[var(--font-inter)] text-[#74777f] mb-1">Hora</label>
+                          <input
+                            type="time"
+                            value={followupDraft.time}
+                            onChange={(e) => updateFollowupDraft(r.id, { time: e.target.value })}
                             className="w-full border border-[#e2e2e2] px-2 py-2 text-xs font-[var(--font-inter)] text-[#002045] focus:outline-none focus:border-[#002045]"
                           />
                         </div>
                         <div>
                           <label className="block text-[9px] tracking-wider uppercase font-bold font-[var(--font-inter)] text-[#74777f] mb-1">Repetição</label>
-                          <select value={r.reminder_recur} onChange={(e) => patchRow(r.id, { reminder_recur: e.target.value as Recur })}
+                          <select value={followupDraft.reminder_recur} onChange={(e) => updateFollowupDraft(r.id, { reminder_recur: e.target.value as Recur })}
                             className="w-full border border-[#e2e2e2] px-2 py-2 text-xs font-[var(--font-inter)] text-[#002045] focus:outline-none focus:border-[#002045]">
                             {(Object.keys(RECUR_META) as Recur[]).map((k) => <option key={k} value={k}>{RECUR_META[k]}</option>)}
                           </select>
@@ -990,8 +1104,8 @@ export default function RepCrmTab({
                         <div>
                           <label className="block text-[9px] tracking-wider uppercase font-bold font-[var(--font-inter)] text-[#74777f] mb-1">Nota interna</label>
                           <input
-                            value={r.reminder_note || ""}
-                            onChange={(e) => patchRow(r.id, { reminder_note: e.target.value })}
+                            value={followupDraft.reminder_note}
+                            onChange={(e) => updateFollowupDraft(r.id, { reminder_note: e.target.value })}
                             placeholder="Ex: enviar proposta, cobrar retorno..."
                             className="w-full border border-[#e2e2e2] px-2 py-2 text-xs font-[var(--font-inter)] text-[#002045] focus:outline-none focus:border-[#002045]"
                           />
@@ -1010,8 +1124,8 @@ export default function RepCrmTab({
                         <label className="flex items-start gap-2 text-xs font-[var(--font-inter)] text-[#43474e] leading-5">
                           <input
                             type="checkbox"
-                            checked={!!r.auto_followup_enabled}
-                            onChange={(e) => patchRow(r.id, { auto_followup_enabled: e.target.checked })}
+                            checked={followupDraft.auto_followup_enabled}
+                            onChange={(e) => updateFollowupDraft(r.id, { auto_followup_enabled: e.target.checked })}
                             className="mt-1 h-3.5 w-3.5 accent-[#002045]"
                           />
                           Enviar WhatsApp automático
@@ -1019,18 +1133,39 @@ export default function RepCrmTab({
                         <div>
                           <label className="block text-[9px] tracking-wider uppercase font-bold font-[var(--font-inter)] text-[#74777f] mb-1">Mensagem para o parceiro</label>
                           <textarea
-                            value={r.auto_followup_message || ""}
-                            onChange={(e) => patchRow(r.id, { auto_followup_message: e.target.value })}
+                            value={followupDraft.auto_followup_message}
+                            onChange={(e) => updateFollowupDraft(r.id, { auto_followup_message: e.target.value })}
                             placeholder="Oi, {nome}. Tudo bem? Passando para dar sequência ao nosso contato..."
-                            rows={2}
-                            className="w-full border border-[#e2e2e2] px-2 py-2 text-xs font-[var(--font-inter)] text-[#002045] focus:outline-none focus:border-[#002045] resize-y min-h-[58px]"
+                            rows={3}
+                            className="w-full border border-[#e2e2e2] px-2 py-2 text-xs font-[var(--font-inter)] text-[#002045] focus:outline-none focus:border-[#002045] resize-y min-h-[76px]"
                           />
+                          <p className="text-[#74777f] text-[10px] font-[var(--font-inter)] mt-1">
+                            Use {"{nome}"} para preencher automaticamente o primeiro nome do parceiro.
+                          </p>
                           {r.auto_followup_sent_at && (
                             <p className="text-[#74777f] text-[10px] font-[var(--font-inter)] mt-1">
                               Último envio automático: {fmtDateTime(r.auto_followup_sent_at)}
                             </p>
                           )}
                         </div>
+                      </div>
+
+                      <div className="mt-3 flex flex-wrap items-center gap-2 justify-end">
+                        <button
+                          type="button"
+                          onClick={() => clearFollowup(r.id)}
+                          className="text-[#74777f] text-[11px] font-bold font-[var(--font-inter)] px-3 py-2 hover:text-[#002045]"
+                        >
+                          Limpar follow-up
+                        </button>
+                        <button
+                          type="button"
+                          onClick={() => saveFollowup(r.id)}
+                          disabled={savingFollowupId === r.id}
+                          className="bg-[#002045] text-white text-[11px] tracking-[0.08em] uppercase font-bold font-[var(--font-inter)] px-4 py-2 hover:bg-[#1a365d] disabled:opacity-50"
+                        >
+                          {savingFollowupId === r.id ? "Salvando..." : "Aplicar e salvar"}
+                        </button>
                       </div>
                     </div>
 
