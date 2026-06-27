@@ -13,6 +13,7 @@ import {
   finishDescription,
   DEFAULT_PANEL_WIDTH_M,
   DEFAULT_PANEL_HEIGHT_M,
+  panelGrid,
 } from "@/lib/render-prompt";
 
 interface Partner {
@@ -79,6 +80,7 @@ interface CouponUse {
   created_at: string;
   partner_commission_paid_at: string | null;
   rep_commission_paid_at: string | null;
+  source_pedido_id?: string | null;
 }
 
 function fmt(n: number) {
@@ -307,6 +309,25 @@ export default function AdminPage() {
     sale_status: string | null;
     render_images?: Array<{ url: string; local: string | null; productName: string | null; productCode: string | null }> | null;
   }
+
+  // Orders from the Pedidos table, surfaced in the Orçamentos tab alongside
+  // simulador-coupon quotes. Only the fields the orçamentos list needs.
+  interface PedidoLite {
+    id: string;
+    client_name: string;
+    client_email: string | null;
+    client_phone: string | null;
+    space: string | null;
+    product_name: string | null;
+    area_m2: number | null;
+    total: number | null;
+    status: string | null;
+    partner_name: string | null;
+    created_at: string;
+  }
+  const [pedidos, setPedidos] = useState<PedidoLite[]>([]);
+  const [pedidosLoading, setPedidosLoading] = useState(false);
+  const [pedidosError, setPedidosError] = useState<string | null>(null);
 
   const DRIP_TOTAL_STEPS = 7;
 
@@ -598,6 +619,26 @@ export default function AdminPage() {
     setClientsLoading(false);
   }, []);
 
+  const fetchPedidos = useCallback(async () => {
+    setPedidosLoading(true);
+    try {
+      const res = await fetch("/api/admin/pedidos");
+      const data = await res.json().catch(() => null);
+      if (res.ok && Array.isArray(data)) {
+        setPedidos(data as PedidoLite[]);
+        setPedidosError(null);
+      } else {
+        const msg = res.status === 401
+          ? "sessão de admin expirada ou inválida (401) — faça login novamente"
+          : (data && typeof data === "object" && "error" in data) ? String(data.error) : `HTTP ${res.status}`;
+        setPedidosError(`Falha ao carregar pedidos (/api/admin/pedidos): ${msg}`);
+      }
+    } catch (e) {
+      setPedidosError(`Falha ao carregar pedidos (/api/admin/pedidos): ${e instanceof Error ? e.message : "erro de rede"}`);
+    }
+    setPedidosLoading(false);
+  }, []);
+
   const fetchFollowUps = useCallback(async () => {
     setFollowUpLoading(true);
     const res = await fetch("/api/admin/followups");
@@ -703,8 +744,8 @@ export default function AdminPage() {
   }, [tab, authed, pricingLoaded]);
 
   useEffect(() => {
-    if (tab === "orcamentos" && authed) { setClientsError(null); setUsesError(null); fetchClients(); fetchUses(); }
-  }, [tab, authed, fetchClients, fetchUses]);
+    if (tab === "orcamentos" && authed) { setClientsError(null); setUsesError(null); setPedidosError(null); fetchClients(); fetchUses(); fetchPedidos(); }
+  }, [tab, authed, fetchClients, fetchUses, fetchPedidos]);
 
   useEffect(() => { if ((tab === "produtos" || tab === "simulador") && authed) fetchDbProducts(); }, [tab, authed, fetchDbProducts]);
   useEffect(() => { if (tab === "projetos" && authed) fetchProjects(); }, [tab, authed, fetchProjects]);
@@ -1003,9 +1044,15 @@ export default function AdminPage() {
     setDripEditSaving(false);
   }
 
-  async function deleteClient(id: string, isStandalone?: boolean) {
-    if (!confirm(isStandalone ? "Excluir este orçamento permanentemente?" : "Excluir este cliente e toda a sua sequência de emails?")) return;
+  async function deleteClient(id: string, isStandalone?: boolean, isPedido?: boolean) {
+    if (!confirm(isPedido ? "Excluir este pedido permanentemente?" : isStandalone ? "Excluir este orçamento permanentemente?" : "Excluir este cliente e toda a sua sequência de emails?")) return;
     setDeletingClientId(id);
+    if (isPedido) {
+      const res = await fetch(`/api/admin/pedidos/${id}`, { method: "DELETE" });
+      if (res.ok) setPedidos((prev) => prev.filter((p) => p.id !== id));
+      setDeletingClientId(null);
+      return;
+    }
     if (isStandalone) {
       // Standalone coupon_use row — delete from coupon_uses
       const res = await fetch(`/api/coupons/use/${id}`, { method: "DELETE" });
@@ -1850,7 +1897,16 @@ export default function AdminPage() {
   }
 
   // ── History ──────────────────────────────
-  async function updateSaleStatus(clientId: string, useId: string | null, sale_status: string, isStandalone?: boolean) {
+  async function updateSaleStatus(clientId: string, useId: string | null, sale_status: string, isStandalone?: boolean, isPedido?: boolean) {
+    if (isPedido) {
+      // Pedido row — map the sale stage back to a production status and PATCH the
+      // order (this also drives the stock state machine server-side).
+      const statusMap: Record<string, string> = { concluido: "entregue", cancelado: "cancelado", em_orcamento: "em_producao" };
+      const newStatus = statusMap[sale_status] ?? "em_producao";
+      const res = await fetch(`/api/admin/pedidos/${clientId}`, { method: "PATCH", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ status: newStatus }) });
+      if (res.ok) setPedidos((prev) => prev.map((p) => (p.id === clientId ? { ...p, status: newStatus } : p)));
+      return;
+    }
     if (!isStandalone) {
       // Update client_email_sequences.sale_status (drives drip)
       const seqRes = await fetch(`/api/admin/clients/${clientId}`, { method: "PATCH", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ sale_status }) });
@@ -2000,6 +2056,7 @@ export default function AdminPage() {
       ...c,
       couponUse: c.coupon_use_id ? (useById[c.coupon_use_id] ?? null) : null,
       _isStandaloneUse: false as const,
+      _isPedido: false as const,
     }));
 
     // coupon_uses that have NO linked client_email_sequences entry yet
@@ -2027,14 +2084,49 @@ export default function AdminPage() {
           sale_status: u.sale_status,
           couponUse: u,
           _isStandaloneUse: true as const,
+          _isPedido: false as const,
+        };
+      });
+
+    // Orders from the Pedidos table. A pedido that carries a partner/rep already
+    // produced a coupon_use (source_pedido_id = pedido.id) and thus shows up via
+    // standaloneUses above — skip those here to avoid double-counting.
+    const pedidoIdsViaUse = new Set(
+      uses.map((u) => u.source_pedido_id).filter(Boolean) as string[]
+    );
+    const fromPedidos = pedidos
+      .filter((p) => !pedidoIdsViaUse.has(p.id))
+      .map((p) => {
+        const saleStatus =
+          p.status === "entregue" ? "concluido" : p.status === "cancelado" ? "cancelado" : "em_orcamento";
+        return {
+          id: p.id,
+          client_name: p.client_name,
+          client_email: p.client_email ?? "",
+          client_phone: p.client_phone ?? null,
+          space: p.space,
+          model: p.product_name ?? "",
+          plates: 0,
+          area_m2: p.area_m2 ?? 0,
+          total: p.total ?? 0,
+          partner_name: p.partner_name ?? "Orbital",
+          current_step: 0,
+          status: "inactive",
+          next_email_at: null as string | null,
+          created_at: p.created_at,
+          coupon_use_id: null as string | null,
+          sale_status: saleStatus,
+          couponUse: null,
+          _isStandaloneUse: false as const,
+          _isPedido: true as const,
         };
       });
 
     // Merge, sort by created_at descending
-    return [...fromSeqs, ...standaloneUses].sort(
+    return [...fromSeqs, ...standaloneUses, ...fromPedidos].sort(
       (a, b) => new Date(b.created_at).getTime() - new Date(a.created_at).getTime()
     );
-  }, [clients, useById, uses, partners]);
+  }, [clients, useById, uses, partners, pedidos]);
 
   const filteredClients = useMemo(() => {
     return enrichedClients.filter((c) => {
@@ -3701,7 +3793,7 @@ export default function AdminPage() {
             </div>
 
             {/* Stats bar */}
-            {!clientsLoading && !loadingUses && filteredClients.length > 0 && (
+            {!clientsLoading && !loadingUses && !pedidosLoading && filteredClients.length > 0 && (
               <div className="grid grid-cols-2 sm:grid-cols-5 gap-3 mb-5">
                 {[
                   { label: "Total", value: filteredClients.length, sub: "orçamentos" },
@@ -3719,17 +3811,18 @@ export default function AdminPage() {
               </div>
             )}
 
-            {clientsLoading || loadingUses ? (
+            {clientsLoading || loadingUses || pedidosLoading ? (
               <p className="text-[#74777f] text-sm font-[var(--font-inter)]">Carregando...</p>
-            ) : filteredClients.length === 0 && (clientsError || usesError) ? (
+            ) : filteredClients.length === 0 && (clientsError || usesError || pedidosError) ? (
               // Nothing loaded from EITHER source and at least one fetch failed —
               // this is a real error, not "no orders". Block with a retry.
               <div className="bg-red-50 border border-red-200 px-6 py-8 text-center">
                 <p className="text-red-800 text-sm font-semibold font-[var(--font-inter)]">Não foi possível carregar os orçamentos</p>
                 {clientsError && <p className="text-red-700 text-xs font-[var(--font-inter)] mt-1 break-words">{clientsError}</p>}
                 {usesError && <p className="text-red-700 text-xs font-[var(--font-inter)] mt-1 break-words">{usesError}</p>}
+                {pedidosError && <p className="text-red-700 text-xs font-[var(--font-inter)] mt-1 break-words">{pedidosError}</p>}
                 <button
-                  onClick={() => { setClientsError(null); setUsesError(null); fetchClients(); fetchUses(); }}
+                  onClick={() => { setClientsError(null); setUsesError(null); setPedidosError(null); fetchClients(); fetchUses(); fetchPedidos(); }}
                   className="mt-4 inline-block border border-red-300 text-red-800 px-4 py-2 text-[10px] tracking-[0.12em] uppercase font-bold font-[var(--font-inter)] hover:bg-red-100 transition-colors"
                 >
                   Tentar novamente
@@ -3743,15 +3836,16 @@ export default function AdminPage() {
               <>
                 {/* One source failed but the other returned rows — show the data and
                     surface the partial failure as a non-blocking warning. */}
-                {(clientsError || usesError) && (
+                {(clientsError || usesError || pedidosError) && (
                   <div className="bg-amber-50 border border-amber-200 px-4 py-3 mb-3 flex items-start justify-between gap-3">
                     <div>
                       <p className="text-amber-800 text-xs font-semibold font-[var(--font-inter)]">Alguns dados podem estar incompletos</p>
                       {clientsError && <p className="text-amber-700 text-[11px] font-[var(--font-inter)] mt-0.5 break-words">{clientsError}</p>}
                       {usesError && <p className="text-amber-700 text-[11px] font-[var(--font-inter)] mt-0.5 break-words">{usesError}</p>}
+                      {pedidosError && <p className="text-amber-700 text-[11px] font-[var(--font-inter)] mt-0.5 break-words">{pedidosError}</p>}
                     </div>
                     <button
-                      onClick={() => { setClientsError(null); setUsesError(null); fetchClients(); fetchUses(); }}
+                      onClick={() => { setClientsError(null); setUsesError(null); setPedidosError(null); fetchClients(); fetchUses(); fetchPedidos(); }}
                       className="shrink-0 border border-amber-300 text-amber-800 px-3 py-1.5 text-[10px] tracking-[0.12em] uppercase font-bold font-[var(--font-inter)] hover:bg-amber-100 transition-colors"
                     >
                       Recarregar
@@ -3795,7 +3889,10 @@ export default function AdminPage() {
                             </td>
                             {/* Cliente + WA */}
                             <td className="px-4 py-3">
-                              <p className="font-semibold text-[#002045] text-xs truncate">{c.client_name}</p>
+                              <p className="font-semibold text-[#002045] text-xs truncate">
+                                {c.client_name}
+                                {c._isPedido && <span className="ml-1.5 align-middle text-[8px] bg-[#002045] text-white px-1.5 py-0.5 font-bold tracking-wider rounded-sm">PEDIDO</span>}
+                              </p>
                               <p className="text-[10px] text-[#74777f] truncate">{c.client_email}</p>
                               {waHref && (
                                 <a href={waHref} target="_blank" rel="noopener noreferrer"
@@ -3830,7 +3927,7 @@ export default function AdminPage() {
                             <td className="px-4 py-3">
                               <select
                                 value={saleStatus}
-                                onChange={(e) => updateSaleStatus(c.id, cu?.id ?? null, e.target.value, c._isStandaloneUse)}
+                                onChange={(e) => updateSaleStatus(c.id, cu?.id ?? null, e.target.value, c._isStandaloneUse, c._isPedido)}
                                 className={`text-[10px] font-bold tracking-wide px-2 py-1 border-0 cursor-pointer focus:outline-none focus:ring-1 focus:ring-[#002045] w-full ${stMeta.cls}`}
                               >
                                 <option value="em_orcamento">Em orçamento</option>
@@ -3861,7 +3958,7 @@ export default function AdminPage() {
                             {/* Delete */}
                             <td className="px-3 py-3 text-right">
                               <button
-                                onClick={() => deleteClient(c.id, c._isStandaloneUse)}
+                                onClick={() => deleteClient(c.id, c._isStandaloneUse, c._isPedido)}
                                 disabled={deletingClientId === c.id}
                                 className="text-red-400 hover:text-red-600 transition-colors disabled:opacity-40"
                                 title="Excluir cliente"
@@ -3890,7 +3987,10 @@ export default function AdminPage() {
                       <div key={c.id} className="bg-white border border-[#e2e2e2] px-5 py-4">
                         <div className="flex items-start justify-between mb-2">
                           <div className="flex-1 min-w-0">
-                            <p className="font-semibold text-[#002045] text-sm font-[var(--font-inter)] truncate">{c.client_name}</p>
+                            <p className="font-semibold text-[#002045] text-sm font-[var(--font-inter)] truncate">
+                              {c.client_name}
+                              {c._isPedido && <span className="ml-1.5 align-middle text-[8px] bg-[#002045] text-white px-1.5 py-0.5 font-bold tracking-wider rounded-sm">PEDIDO</span>}
+                            </p>
                             <p className="text-xs text-[#74777f] font-[var(--font-inter)] truncate">{c.client_email}</p>
                             {waHref && (
                               <a href={waHref} target="_blank" rel="noopener noreferrer"
@@ -3900,14 +4000,14 @@ export default function AdminPage() {
                           <div className="flex items-center gap-2 ml-2 flex-shrink-0">
                             <select
                               value={saleStatus}
-                              onChange={(e) => updateSaleStatus(c.id, cu?.id ?? null, e.target.value, c._isStandaloneUse)}
+                              onChange={(e) => updateSaleStatus(c.id, cu?.id ?? null, e.target.value, c._isStandaloneUse, c._isPedido)}
                               className={`text-[10px] font-bold px-2 py-0.5 border-0 cursor-pointer focus:outline-none ${stMeta.cls}`}
                             >
                               <option value="em_orcamento">Em orçamento</option>
                               <option value="concluido">Concluído</option>
                               <option value="cancelado">Cancelado</option>
                             </select>
-                            <button onClick={() => deleteClient(c.id, c._isStandaloneUse)} disabled={deletingClientId === c.id} className="text-red-400 hover:text-red-600 disabled:opacity-40">
+                            <button onClick={() => deleteClient(c.id, c._isStandaloneUse, c._isPedido)} disabled={deletingClientId === c.id} className="text-red-400 hover:text-red-600 disabled:opacity-40">
                               <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><path d="M3 6h18M8 6V4h8v2M19 6l-1 14H6L5 6" /></svg>
                             </button>
                           </div>
@@ -5674,6 +5774,8 @@ ALTER TABLE project_media ADD COLUMN IF NOT EXISTS description TEXT;`}
         {tab === "simulador" && (() => {
           const PLATE_W = 1.2;
           const PLATE_H = 2.9;
+          const simPlatesForDimensions = (w: number, h: number) =>
+            w > 0 && h > 0 ? panelGrid(w, h, PLATE_W, PLATE_H).count : 0;
           const SIM_SPACES = [
             { id: "parede",      label: "Parede" },
             { id: "teto",        label: "Teto" },
@@ -5697,9 +5799,7 @@ ALTER TABLE project_media ADD COLUMN IF NOT EXISTS description TEXT;`}
           const simWn = parseFloat(simW) || 0;
           const simHn = parseFloat(simH) || 0;
           const simArea = simWn * simHn;
-          const simPlates = simWn > 0 && simHn > 0
-            ? Math.ceil(simWn / PLATE_W) * Math.ceil(simHn / PLATE_H)
-            : 0;
+          const simPlates = simPlatesForDimensions(simWn, simHn);
           const simProduct = dbProducts.find(p => p.code === simProductCode) ?? null;
           const simMaterial = simPlates * (simProduct?.price ?? 0);
           const canAddSpace = simSpaceName.trim() !== "" && simProduct !== null && simPlates > 0;
@@ -5709,7 +5809,7 @@ ALTER TABLE project_media ADD COLUMN IF NOT EXISTS description TEXT;`}
             ...simSpaces.map(s => {
               const wn = parseFloat(s.w) || 0;
               const hn = parseFloat(s.h) || 0;
-              const pl = wn > 0 && hn > 0 ? Math.ceil(wn / PLATE_W) * Math.ceil(hn / PLATE_H) : 0;
+              const pl = simPlatesForDimensions(wn, hn);
               const prod = dbProducts.find(p => p.code === s.productCode) ?? null;
               return { spaceName: s.spaceName, productCode: s.productCode, product: prod, plates: pl, area: wn * hn, material: pl * (prod?.price ?? 0), w: s.w, h: s.h };
             }),
@@ -5778,7 +5878,7 @@ ALTER TABLE project_media ADD COLUMN IF NOT EXISTS description TEXT;`}
                 <div className="bg-white border border-[#e2e2e2] mb-4 divide-y divide-[#f0f0f0]">
                   {simSpaces.map((s, i) => {
                     const wn = parseFloat(s.w) || 0; const hn = parseFloat(s.h) || 0;
-                    const pl = wn > 0 && hn > 0 ? Math.ceil(wn / PLATE_W) * Math.ceil(hn / PLATE_H) : 0;
+                    const pl = simPlatesForDimensions(wn, hn);
                     const prod = dbProducts.find(p => p.code === s.productCode) ?? null;
                     const mat = pl * (prod?.price ?? 0);
                     return (
