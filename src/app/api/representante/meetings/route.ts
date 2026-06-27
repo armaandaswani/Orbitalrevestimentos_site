@@ -10,6 +10,7 @@ const MIGRATION_HINT = "Recurso indisponível — rode a migração 019 (rep_mee
 const ORBITAL_MEETING_EMAIL = "orbitalrevestimentos@gmail.com";
 
 interface Invitee { name: string; phone: string; email: string }
+interface EmailRecipient extends Invitee { role: "partner" | "rep" | "admin" }
 interface MeetingRow {
   id: string;
   sales_rep_id: string;
@@ -88,6 +89,16 @@ function isGoogleEmail(email: string) {
   return domain === "gmail.com" || domain === "googlemail.com";
 }
 
+function normalizeEmail(email: string | null | undefined) {
+  return (email || "").trim().toLowerCase();
+}
+
+function addEmailRecipient(recipients: EmailRecipient[], recipient: EmailRecipient) {
+  const email = normalizeEmail(recipient.email);
+  if (!email || recipients.some((r) => normalizeEmail(r.email) === email)) return;
+  recipients.push({ ...recipient, email });
+}
+
 function meetingEmailHtml(input: {
   message: string;
   googleCalendarUrl: string;
@@ -126,12 +137,14 @@ function meetingEmailHtml(input: {
 async function notifyInvitees(db: SupabaseClient, meeting: MeetingRow): Promise<void> {
   try {
     const invitees = Array.isArray(meeting.invitees) ? meeting.invitees : [];
-    if (invitees.length === 0 || meeting.invitees_notified_at) return;
+    if (meeting.invitees_notified_at) return;
 
     let repName: string | null = null;
+    let repEmail: string | null = null;
     try {
-      const { data } = await db.from("sales_reps").select("name").eq("id", meeting.sales_rep_id).maybeSingle();
+      const { data } = await db.from("sales_reps").select("name,email").eq("id", meeting.sales_rep_id).maybeSingle();
       repName = (data as { name?: string } | null)?.name ?? null;
+      repEmail = (data as { email?: string } | null)?.email ?? null;
     } catch { /* non-fatal */ }
 
     const whenLabel = new Date(meeting.scheduled_at).toLocaleString("pt-BR", {
@@ -144,25 +157,55 @@ async function notifyInvitees(db: SupabaseClient, meeting: MeetingRow): Promise<
       try { resend = (await import("@/lib/resend")).getResend(); } catch { resend = null; }
     }
 
+    const calendar = calendarLinks(meeting, repName);
+    const emailRecipients: EmailRecipient[] = [];
+
     for (const inv of invitees) {
-      const calendar = calendarLinks(meeting, repName);
-      const googlePreferred = inv.email ? isGoogleEmail(inv.email) : isGoogleEmail(ORBITAL_MEETING_EMAIL);
       const msg = meetingInviteMessage({
         inviteeName: inv.name, title: meeting.title, whenLabel, location: meeting.location, repName,
       });
       if (inv.phone && smclickConfigured()) {
         const tel = normalizePhone(inv.phone);
+        const googlePreferred = inv.email ? isGoogleEmail(inv.email) : false;
         const calendarHint = inv.email
           ? `\n\nTambém enviamos o convite por e-mail${googlePreferred ? " com link do Google Calendar" : " com arquivo .ics para calendário"}.`
           : "";
         if (tel) await sendText(tel, `${msg}${calendarHint}`).catch(() => {});
       }
-      if (resend) {
-        const recipients = Array.from(new Set([inv.email, ORBITAL_MEETING_EMAIL].filter(Boolean)));
+
+      addEmailRecipient(emailRecipients, {
+        role: "partner",
+        name: inv.name,
+        phone: inv.phone,
+        email: inv.email,
+      });
+    }
+
+    addEmailRecipient(emailRecipients, {
+      role: "rep",
+      name: repName || "Representante Orbital",
+      phone: "",
+      email: repEmail || "",
+    });
+    addEmailRecipient(emailRecipients, {
+      role: "admin",
+      name: "Admin Orbital",
+      phone: "",
+      email: ORBITAL_MEETING_EMAIL,
+    });
+
+    if (resend) {
+      for (const recipient of emailRecipients) {
+        const googlePreferred = isGoogleEmail(recipient.email);
+        const inviteeName = recipient.role === "partner" ? recipient.name : recipient.role === "rep" ? (repName || recipient.name) : "Admin Orbital";
+        const msg = meetingInviteMessage({
+          inviteeName, title: meeting.title, whenLabel, location: meeting.location, repName,
+        });
+
         await resend.emails
           .send({
             from: "Orbital Revestimentos <noreply@orbitalrevestimentos.com.br>",
-            to: recipients,
+            to: recipient.email,
             subject: "Reunião agendada — Orbital Revestimentos",
             text: `${msg}\n\n${
               googlePreferred
@@ -177,7 +220,7 @@ async function notifyInvitees(db: SupabaseClient, meeting: MeetingRow): Promise<
             attachments: [
               {
                 filename: "reuniao-orbital.ics",
-                content: Buffer.from(makeIcs(meeting, inv, repName)).toString("base64"),
+                content: Buffer.from(makeIcs(meeting, recipient, repName)).toString("base64"),
               },
             ],
           })
