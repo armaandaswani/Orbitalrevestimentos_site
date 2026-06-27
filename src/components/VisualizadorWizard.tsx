@@ -359,6 +359,52 @@ function rectToQuad(r: Rect): Quad {
   ];
 }
 
+// Perspective-aware quad from a set of normalized points: the 4 extreme corners
+// by min/max of x±y (TL/TR/BR/BL). For an angled wall this starts the corners
+// near the surface's real corners — far closer than an axis-aligned bbox, so the
+// user barely has to nudge them. Returns null if the points are degenerate.
+function quadFromPoints(pts: Array<[number, number]>): Quad | null {
+  if (pts.length < 3) return null;
+  let tl = pts[0], tr = pts[0], br = pts[0], bl = pts[0];
+  let sTL = Infinity, sTR = -Infinity, sBR = -Infinity, sBL = Infinity;
+  for (const p of pts) {
+    const sum = p[0] + p[1], dif = p[0] - p[1];
+    if (sum < sTL) { sTL = sum; tl = p; }
+    if (dif > sTR) { sTR = dif; tr = p; }
+    if (sum > sBR) { sBR = sum; br = p; }
+    if (dif < sBL) { sBL = dif; bl = p; }
+  }
+  const q: Quad = [[tl[0], tl[1]], [tr[0], tr[1]], [br[0], br[1]], [bl[0], bl[1]]];
+  // Reject if it collapsed (e.g. a thin sliver) — caller falls back to the rect.
+  const area = Math.abs((q[2][0] - q[0][0]) * (q[2][1] - q[0][1]));
+  return area > 0.0008 ? q : null;
+}
+
+// Same, but scans a tinted mask-overlay PNG's alpha for the extreme corners.
+async function quadFromMaskUrl(maskUrl: string): Promise<Quad | null> {
+  try {
+    const im = await loadImage(maskUrl);
+    const w = im.naturalWidth, h = im.naturalHeight;
+    if (!w || !h) return null;
+    const c = document.createElement("canvas");
+    c.width = w; c.height = h;
+    const ctx = c.getContext("2d");
+    if (!ctx) return null;
+    ctx.drawImage(im, 0, 0);
+    const d = ctx.getImageData(0, 0, w, h).data;
+    const pts: Array<[number, number]> = [];
+    const step = Math.max(1, Math.round(Math.min(w, h) / 240));
+    for (let y = 0; y < h; y += step) {
+      for (let x = 0; x < w; x += step) {
+        if (d[(y * w + x) * 4 + 3] > 40) pts.push([x / w, y / h]);
+      }
+    }
+    return quadFromPoints(pts);
+  } catch {
+    return null;
+  }
+}
+
 // Deterministic pixel-exact render for one zone: tiles the flat slab texture at
 // panel scale, warps it into the zone's 4-corner quad (true perspective), and
 // transfers the room's shading onto it. Returns a full-image PNG (the panel,
@@ -830,11 +876,22 @@ export default function VisualizadorWizard({
   // by !z.quad), so it never fights a user who's dragging the corners.
   useEffect(() => {
     if (!useProjection) return;
-    for (const z of zones) {
-      if (z.quad || !z.rect) continue;
-      const prod = z.productId ? productById(z.productId) : null;
-      if (prod?.render_texture_path?.trim()) updateZone(z.id, { quad: rectToQuad(z.rect) });
-    }
+    let cancelled = false;
+    (async () => {
+      for (const z of zones) {
+        if (z.quad) continue;
+        const prod = z.productId ? productById(z.productId) : null;
+        if (!prod?.render_texture_path?.trim()) continue;
+        // Prefer a perspective-aware quad from the real surface shape; fall back
+        // to the polygon, then the axis-aligned box.
+        let q: Quad | null = null;
+        if (z.maskUrl) q = await quadFromMaskUrl(z.maskUrl);
+        if (!q && z.polygon && z.polygon.length >= 3) q = quadFromPoints(z.polygon);
+        if (!q && z.rect) q = rectToQuad(z.rect);
+        if (q && !cancelled) updateZone(z.id, { quad: q });
+      }
+    })();
+    return () => { cancelled = true; };
   }, [zones, useProjection, productById, updateZone]);
 
   const areaForZone = (z: Zone): string | undefined => {
@@ -1603,6 +1660,9 @@ function SurfaceCanvas({
                 style={{ left: `${x * 100}%`, top: `${y * 100}%` }}
                 className="absolute -translate-x-1/2 -translate-y-1/2 w-5 h-5 rounded-full bg-white border-2 border-[#002045] shadow-md cursor-grab active:cursor-grabbing touch-none" />
             ))}
+            <div className="absolute bottom-2 left-1/2 -translate-x-1/2 bg-black/70 text-white text-[10px] font-[var(--font-inter)] px-3 py-1 rounded-full pointer-events-none whitespace-nowrap">
+              Arraste os 4 cantos para alinhar à parede
+            </div>
           </>
         );
       })()}
