@@ -57,12 +57,21 @@ async function detectFal(
         sync_mode: true, // inline the result as a data URI (no CDN round-trip)
       }),
     });
-    if (!res.ok) return null;
+    if (!res.ok) {
+      // Surface WHY fal failed (401 = bad/missing key, 422 = bad prompt, etc.)
+      // instead of silently falling back to the coarse Gemini polygon.
+      console.error(`[detect] fal SAM2 HTTP ${res.status}:`, (await res.text().catch(() => "")).slice(0, 300));
+      return null;
+    }
     const j = await res.json();
     const img = j?.image;
-    if (!img?.url || typeof img.url !== "string") return null;
+    if (!img?.url || typeof img.url !== "string") {
+      console.error("[detect] fal SAM2 returned no mask image");
+      return null;
+    }
     return { mask: img.url, width: img.width ?? 0, height: img.height ?? 0 };
-  } catch {
+  } catch (e) {
+    console.error("[detect] fal SAM2 threw:", e instanceof Error ? e.message : e);
     return null;
   }
 }
@@ -98,12 +107,21 @@ async function detectFalBox(
         sync_mode: true,
       }),
     });
-    if (!res.ok) return null;
+    if (!res.ok) {
+      // Surface WHY fal failed (401 = bad/missing key, 422 = bad prompt, etc.)
+      // instead of silently falling back to the coarse Gemini polygon.
+      console.error(`[detect] fal SAM2 HTTP ${res.status}:`, (await res.text().catch(() => "")).slice(0, 300));
+      return null;
+    }
     const j = await res.json();
     const img = j?.image;
-    if (!img?.url || typeof img.url !== "string") return null;
+    if (!img?.url || typeof img.url !== "string") {
+      console.error("[detect] fal SAM2 returned no mask image");
+      return null;
+    }
     return { mask: img.url, width: img.width ?? 0, height: img.height ?? 0 };
-  } catch {
+  } catch (e) {
+    console.error("[detect] fal SAM2 threw:", e instanceof Error ? e.message : e);
     return null;
   }
 }
@@ -233,7 +251,7 @@ export async function POST(req: NextRequest) {
   if (box) {
     if (useFal && natW > 0 && natH > 0) {
       const fal = await detectFalBox(body.photo, box.x1 * natW, box.y1 * natH, box.x2 * natW, box.y2 * natH);
-      if (fal) return NextResponse.json({ mask: fal.mask, maskWidth: fal.width, maskHeight: fal.height });
+      if (fal) return NextResponse.json({ mask: fal.mask, maskWidth: fal.width, maskHeight: fal.height, engine: "fal" });
     }
     const gem = await detectGemini(
       img,
@@ -241,7 +259,7 @@ export async function POST(req: NextRequest) {
         `to (x=${Math.round(box.x2 * 1000)}, y=${Math.round(box.y2 * 1000)}) (coordinates 0–1000, origin top-left).`,
       hint
     );
-    if (gem) return NextResponse.json(gem);
+    if (gem) return NextResponse.json({ ...gem, engine: "gemini" });
     return NextResponse.json({ error: "Superfície não detectada." }, { status: 422 });
   }
 
@@ -259,7 +277,7 @@ export async function POST(req: NextRequest) {
     `that contains the point x=${Math.round(nx * 1000)}, y=${Math.round(ny * 1000)} (coordinates 0–1000, origin top-left).`,
     hint
   );
-  if (gem) return NextResponse.json(gem);
+  if (gem) return NextResponse.json({ ...gem, engine: "gemini" });
 
   return NextResponse.json({ error: "Superfície não detectada." }, { status: 422 });
 }
