@@ -1612,7 +1612,8 @@ function SurfaceCanvas({
 
   return (
     <div ref={ref} onClick={handleClick} onPointerDown={onBgPointerDown} onPointerMove={onPointerMove}
-      onPointerUp={onPointerUp} onPointerLeave={onPointerUp}
+      onPointerUp={onPointerUp} onPointerCancel={onPointerUp}
+      style={{ WebkitTouchCallout: "none", WebkitUserSelect: "none", touchAction: "none" }}
       className={`relative bg-[#11151b] rounded-sm overflow-hidden select-none touch-none ${mode === "draw" || retargeting ? "cursor-crosshair" : "cursor-pointer"}`}>
       {/* eslint-disable-next-line @next/next/no-img-element */}
       <img src={photoData} alt="Seu ambiente" className="block w-full h-auto pointer-events-none" />
@@ -1653,7 +1654,11 @@ function SurfaceCanvas({
               if (mode !== "draw") return;
               e.stopPropagation(); setActiveZoneId(z.id);
               const p = norm(e.clientX, e.clientY);
-              try { (e.currentTarget as HTMLElement).setPointerCapture(e.pointerId); } catch {}
+              // Capture on the STABLE container, not the handle: the handle
+              // re-renders as it moves (its style changes every frame), which
+              // drops capture on the handle element and makes the drag stop
+              // after a few px. The root never remounts mid-drag.
+              try { ref.current?.setPointerCapture(e.pointerId); } catch {}
               drag.current = { kind: "move", id: z.id, offX: p.x - rect.x, offY: p.y - rect.y, w: rect.w, h: rect.h };
             }}
             style={{ left: `${rect.x * 100}%`, top: `${rect.y * 100}%`, width: `${rect.w * 100}%`, height: `${rect.h * 100}%`, borderColor: color, background: `${color}22` }}
@@ -1661,7 +1666,11 @@ function SurfaceCanvas({
             {mode === "draw" && (
               <span onPointerDown={(e) => {
                   e.stopPropagation(); setActiveZoneId(z.id);
-                  try { (e.currentTarget as HTMLElement).setPointerCapture(e.pointerId); } catch {}
+                  // Capture on the STABLE container, not the handle: the handle
+              // re-renders as it moves (its style changes every frame), which
+              // drops capture on the handle element and makes the drag stop
+              // after a few px. The root never remounts mid-drag.
+              try { ref.current?.setPointerCapture(e.pointerId); } catch {}
                   drag.current = { kind: "resize", id: z.id, x: rect.x, y: rect.y };
                 }}
                 style={{ background: color }}
@@ -1702,7 +1711,11 @@ function SurfaceCanvas({
               <span key={idx}
                 onPointerDown={(e) => {
                   e.stopPropagation();
-                  try { (e.currentTarget as HTMLElement).setPointerCapture(e.pointerId); } catch {}
+                  // Capture on the STABLE container, not the handle: the handle
+              // re-renders as it moves (its style changes every frame), which
+              // drops capture on the handle element and makes the drag stop
+              // after a few px. The root never remounts mid-drag.
+              try { ref.current?.setPointerCapture(e.pointerId); } catch {}
                   drag.current = { kind: "corner", id: az.id, idx };
                 }}
                 onClick={(e) => e.stopPropagation()}
