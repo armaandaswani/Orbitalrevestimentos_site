@@ -75,6 +75,9 @@ export interface Zone {
   // Pre-filled from the mask, user-adjustable. Null until the projection flow
   // captures it; the generative path ignores it.
   quad?: Quad | null;
+  // True once the user pressed "Atualizar pontos": the corner handles hide and
+  // SAM2 has re-detected the surface from the adjusted corners. Recallable.
+  quadConfirmed?: boolean;
 }
 
 export interface SimPrefill {
@@ -118,9 +121,13 @@ function hexToRgb(hex: string): { r: number; g: number; b: number } {
   return { r: parseInt(h.slice(0, 2), 16), g: parseInt(h.slice(2, 4), 16), b: parseInt(h.slice(4, 6), 16) };
 }
 
-function loadImage(src: string): Promise<HTMLImageElement> {
+function loadImage(src: string, cors = false): Promise<HTMLImageElement> {
   return new Promise((res, rej) => {
     const im = new Image();
+    // Cross-origin textures (Supabase storage) must be loaded with CORS or the
+    // canvas becomes tainted and toDataURL/getImageData throw — which silently
+    // breaks the deterministic projection. Set it BEFORE assigning src.
+    if (cors) im.crossOrigin = "anonymous";
     im.onload = () => res(im);
     im.onerror = () => rej(new Error("img"));
     im.src = src;
@@ -419,7 +426,9 @@ async function renderZoneProjection(
   w: number,
   h: number
 ): Promise<string> {
-  const [tex, photo] = await Promise.all([loadImage(textureUrl), loadImage(base)]);
+  // Texture is a cross-origin Supabase URL → load with CORS so the canvas isn't
+  // tainted. Base photo is a same-origin data URL.
+  const [tex, photo] = await Promise.all([loadImage(textureUrl, true), loadImage(base)]);
   const { cols, rows } = panelLayout(parseDim(widthStr), parseDim(heightStr), DEFAULT_PANEL_WIDTH_M, DEFAULT_PANEL_HEIGHT_M);
   const tiled = tileTexture(tex, tex.naturalWidth || 1, tex.naturalHeight || 1, cols, rows);
   const projected = projectTextureToQuad(tiled, quad, w, h);
@@ -866,6 +875,22 @@ export default function VisualizadorWizard({
     scrollZoneRef.current = id;
   }, [zones.length, resolveZonePrefill]);
 
+  // "Atualizar pontos": re-run SAM2 over the box the user framed with the 4
+  // corners, then hide the handles. This is the explicit, on-demand re-detection
+  // (we never re-run SAM2 on every corner drag — only when the user asks).
+  const confirmQuad = useCallback(async (id: string) => {
+    const z = zones.find((x) => x.id === id);
+    if (z?.quad) {
+      const xs = z.quad.map((p) => p[0]);
+      const ys = z.quad.map((p) => p[1]);
+      const x = Math.min(...xs), y = Math.min(...ys);
+      const w = Math.max(...xs) - x, h = Math.max(...ys) - y;
+      const idx = zones.findIndex((x) => x.id === id);
+      if (w > 0.02 && h > 0.02) await detectIntoFromBox(id, idx < 0 ? 0 : idx, { x, y, w, h });
+    }
+    updateZone(id, { quadConfirmed: true });
+  }, [zones, detectIntoFromBox, updateZone]);
+
   const zonesReady = zones.filter((z) => z.productId);
   const canGenerate = !!photoData && zonesReady.length > 0;
   const anyDetecting = zones.some((z) => z.detecting);
@@ -945,7 +970,11 @@ export default function VisualizadorWizard({
             const panel = await renderZoneProjection(textureUrl, quad, z.width, z.height, base, dims.w, dims.h);
             composite = await compositeMaskedRegion(composite, panel, z);
             continue; // zone done deterministically — skip the generative call
-          } catch { /* fall through to the generative render below */ }
+          } catch (e) {
+            // Surface WHY projection bailed (e.g. a tainted-canvas SecurityError
+            // from a non-CORS texture) instead of silently using generative.
+            console.error("[viz] projection failed, falling back to generative:", e instanceof Error ? e.message : e);
+          }
         }
 
         // Hand Gemini the zone's exact mask (when it has one) so it paints only
@@ -1182,6 +1211,7 @@ export default function VisualizadorWizard({
             onTapPhoto={onTapPhoto}
             onDrawRect={drawAddRect}
             onAddTextZone={addTextZone}
+            onConfirmQuad={confirmQuad}
             updateZone={updateZone}
             removeZone={removeZone}
             retargetId={retargetId}
@@ -1395,7 +1425,7 @@ function UploadStep({
 type ZoneMode = "tap" | "draw";
 
 function ZonesStep({
-  photoData, zones, activeZoneId, setActiveZoneId, onTapPhoto, onDrawRect, onAddTextZone,
+  photoData, zones, activeZoneId, setActiveZoneId, onTapPhoto, onDrawRect, onAddTextZone, onConfirmQuad,
   updateZone, removeZone, retargetId, setRetargetId, anyDetecting, products, loadingProducts,
   productById, canGenerate, simPrefills, onBack, onGenerate, useProjection, setUseProjection,
 }: {
@@ -1406,6 +1436,7 @@ function ZonesStep({
   onTapPhoto: (nx: number, ny: number) => void;
   onDrawRect: (rect: Rect) => void;
   onAddTextZone: () => void;
+  onConfirmQuad: (id: string) => void;
   updateZone: (id: string, patch: Partial<Zone>) => void;
   removeZone: (id: string) => void;
   retargetId: string | null;
@@ -1446,7 +1477,7 @@ function ZonesStep({
         <SurfaceCanvas
           photoData={photoData} zones={zones} activeZoneId={activeZoneId} setActiveZoneId={setActiveZoneId}
           mode={mode} onTapPhoto={onTapPhoto} onDrawRect={onDrawRect} updateZone={updateZone}
-          busy={anyDetecting} retargeting={!!retargetId}
+          busy={anyDetecting} retargeting={!!retargetId} onConfirmQuad={onConfirmQuad}
         />
         <p className="mt-3 text-[#74777f] text-xs font-[var(--font-inter)] leading-relaxed">
           {retargetId ? (
@@ -1521,11 +1552,12 @@ function ZonesStep({
 }
 
 function SurfaceCanvas({
-  photoData, zones, activeZoneId, setActiveZoneId, mode, onTapPhoto, onDrawRect, updateZone, busy, retargeting,
+  photoData, zones, activeZoneId, setActiveZoneId, mode, onTapPhoto, onDrawRect, updateZone, busy, retargeting, onConfirmQuad,
 }: {
   photoData: string; zones: Zone[]; activeZoneId: string | null; setActiveZoneId: (id: string | null) => void;
   mode: ZoneMode; onTapPhoto: (nx: number, ny: number) => void; onDrawRect: (rect: Rect) => void;
   updateZone: (id: string, patch: Partial<Zone>) => void; busy: boolean; retargeting: boolean;
+  onConfirmQuad: (id: string) => void;
 }) {
   const ref = useRef<HTMLDivElement | null>(null);
   const drag = useRef<null | { kind: "create"; sx: number; sy: number } | { kind: "move"; id: string; offX: number; offY: number; w: number; h: number } | { kind: "resize"; id: string; x: number; y: number } | { kind: "corner"; id: string; idx: number }>(null);
@@ -1638,13 +1670,28 @@ function SurfaceCanvas({
           </div>
         );
       })}
-      {/* Pixel-exact projection: draggable 4-corner quad for the active zone.
-          Drag each corner to the wall's true corners so the panel follows the
-          real perspective. Only shown once a textured product seeded the quad. */}
+      {/* Pixel-exact projection: 4-corner quad for the active zone.
+          - Not confirmed → draggable handles + "Atualizar pontos" (re-runs SAM2).
+          - Confirmed → handles hidden, just an "Editar cantos" pill to recall. */}
       {(() => {
         const az = zones.find((z) => z.id === activeZoneId);
         if (!az?.quad) return null;
         const q = az.quad;
+        const cx = (q[0][0] + q[1][0] + q[2][0] + q[3][0]) / 4;
+        const cy = (q[0][1] + q[1][1] + q[2][1] + q[3][1]) / 4;
+
+        if (az.quadConfirmed) {
+          // Collapsed: only a small recall pill at the centre.
+          return (
+            <button
+              onPointerDown={(e) => e.stopPropagation()}
+              onClick={(e) => { e.stopPropagation(); updateZone(az.id, { quadConfirmed: false }); }}
+              style={{ left: `${cx * 100}%`, top: `${cy * 100}%` }}
+              className="absolute -translate-x-1/2 -translate-y-1/2 bg-black/70 hover:bg-black/85 text-white text-[10px] font-bold font-[var(--font-inter)] px-3 py-1.5 rounded-full whitespace-nowrap shadow-md">
+              ✎ Editar cantos
+            </button>
+          );
+        }
         return (
           <>
             <svg viewBox="0 0 1 1" preserveAspectRatio="none" className="absolute inset-0 w-full h-full pointer-events-none">
@@ -1664,8 +1711,16 @@ function SurfaceCanvas({
                 <span className="w-5 h-5 rounded-full bg-white border-2 border-[#002045] shadow-md" />
               </span>
             ))}
+            {/* Confirm button at the quad centre — re-runs SAM2, then hides handles. */}
+            <button
+              onPointerDown={(e) => e.stopPropagation()}
+              onClick={(e) => { e.stopPropagation(); onConfirmQuad(az.id); }}
+              style={{ left: `${cx * 100}%`, top: `${cy * 100}%` }}
+              className="absolute -translate-x-1/2 -translate-y-1/2 bg-[#3b6934] hover:bg-[#2f5429] text-white text-[11px] font-bold font-[var(--font-inter)] px-4 py-2 rounded-full whitespace-nowrap shadow-lg">
+              ✓ Atualizar pontos
+            </button>
             <div className="absolute bottom-2 left-1/2 -translate-x-1/2 bg-black/70 text-white text-[10px] font-[var(--font-inter)] px-3 py-1 rounded-full pointer-events-none whitespace-nowrap">
-              Arraste os 4 cantos para alinhar à parede
+              Arraste os 4 cantos e toque em “Atualizar pontos”
             </div>
           </>
         );
