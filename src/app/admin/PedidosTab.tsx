@@ -252,6 +252,38 @@ export default function PedidosTab() {
   const [areaCalcOpen, setAreaCalcOpen] = useState<Record<number, boolean>>({});
   const [areaCalcValue, setAreaCalcValue] = useState<Record<number, string>>({});
 
+  // Reusable presets ("cadastrar") for Condição de pagamento and custom Forma
+  // de pagamento, so the admin doesn't retype the same wording every order.
+  type Preset = { id: string; kind: "payment_terms" | "payment_method"; label: string };
+  const [paymentTermsPresets, setPaymentTermsPresets] = useState<Preset[]>([]);
+  const [paymentMethodPresets, setPaymentMethodPresets] = useState<Preset[]>([]);
+  const [newPaymentMethod, setNewPaymentMethod] = useState("");
+
+  const fetchPresets = useCallback(async () => {
+    const [terms, methods] = await Promise.all([
+      fetch("/api/admin/pedido-presets?kind=payment_terms").then((r) => (r.ok ? r.json() : [])).catch(() => []),
+      fetch("/api/admin/pedido-presets?kind=payment_method").then((r) => (r.ok ? r.json() : [])).catch(() => []),
+    ]);
+    setPaymentTermsPresets(Array.isArray(terms) ? terms : []);
+    setPaymentMethodPresets(Array.isArray(methods) ? methods : []);
+  }, []);
+
+  async function savePreset(kind: "payment_terms" | "payment_method", label: string) {
+    const trimmed = label.trim();
+    if (!trimmed) return;
+    const res = await fetch("/api/admin/pedido-presets", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ kind, label: trimmed }),
+    });
+    if (res.ok) await fetchPresets();
+  }
+
+  async function deletePreset(id: string) {
+    await fetch(`/api/admin/pedido-presets/${id}`, { method: "DELETE" });
+    await fetchPresets();
+  }
+
   // Real panel size for a stock product (falls back to the Visualizador's
   // default panel dimensions when the product has none set), so a desired m²
   // can be converted into a plate count.
@@ -285,6 +317,8 @@ export default function PedidosTab() {
       .then((rows) => setSalesReps(Array.isArray(rows) ? rows : []))
       .catch(() => setSalesReps([]));
   }, []);
+
+  useEffect(() => { fetchPresets(); }, [fetchPresets]);
 
   const fetchPedidos = useCallback(async () => {
     setLoading(true);
@@ -1064,10 +1098,14 @@ export default function PedidosTab() {
         </div>
       )}
 
-      {/* Create / edit modal */}
+      {/* Create / edit modal. No backdrop-click-to-close: this form holds a lot
+          of typed-in data, and any ambient click landing on the backdrop (a
+          native date-picker popup, a stray tap while scrolling, etc.) used to
+          silently discard everything. Only the explicit × / Cancelar buttons
+          close it now. */}
       {draft && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 p-4" onClick={() => !saving && setDraft(null)}>
-          <div className="bg-white w-full max-w-lg max-h-[90vh] overflow-y-auto" onClick={(e) => e.stopPropagation()}>
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 p-4">
+          <div className="bg-white w-full max-w-lg max-h-[90vh] overflow-y-auto">
             <div className="bg-[#002045] px-6 py-4 flex items-center justify-between sticky top-0">
               <p className="text-white font-[var(--font-noto-serif)] text-lg">{draft._isNew ? "Novo pedido" : "Editar pedido"}</p>
               <button onClick={() => !saving && setDraft(null)} className="text-white/60 hover:text-white text-xl leading-none">×</button>
@@ -1244,14 +1282,12 @@ export default function PedidosTab() {
                   )}
                 </div>
               )}
-              <div className="grid grid-cols-2 gap-3">
-                {items.some((it) => it.product_id && it.plates > 0) ? (
-                  <Field label="Área estimada (m²)">
-                    <p className={`${inputCls} bg-[#fafafa] text-[#43474e] flex items-center`}>
-                      {(draft.area_m2 ?? itemPricing.areaM2).toFixed(2)} m²
-                    </p>
-                  </Field>
-                ) : (
+              {/* Área/Total only need a manual box when there are no items to
+                  compute them from — once a model+quantity is picked, the
+                  "Total calculado pelos itens" summary above already shows
+                  both, so repeating them here was just duplicate clutter. */}
+              {!items.some((it) => it.product_id && it.plates > 0) && (
+                <div className="grid grid-cols-2 gap-3">
                   <Field label="Área (m²)">
                     <input
                       type="number"
@@ -1260,24 +1296,24 @@ export default function PedidosTab() {
                       onChange={(e) => setDraft({ ...draft, area_m2: e.target.value === "" ? null : Number(e.target.value) })}
                     />
                   </Field>
-                )}
-                <Field label="Valor total (R$)">
-                  <input
-                    type="number"
-                    className={inputCls}
-                    value={draft.total ?? ""}
-                    onChange={(e) => {
-                      const total = e.target.value === "" ? null : Number(e.target.value);
-                      setDraft({
-                        ...draft,
-                        total,
-                        partner_commission_amount: moneyFromPct(Number(draft.partner_commission_pct) || 0, Number(total) || 0),
-                        sales_rep_commission_amount: moneyFromPct(Number(draft.sales_rep_commission_pct) || 0, Number(total) || 0),
-                      });
-                    }}
-                  />
-                </Field>
-              </div>
+                  <Field label="Valor total (R$)">
+                    <input
+                      type="number"
+                      className={inputCls}
+                      value={draft.total ?? ""}
+                      onChange={(e) => {
+                        const total = e.target.value === "" ? null : Number(e.target.value);
+                        setDraft({
+                          ...draft,
+                          total,
+                          partner_commission_amount: moneyFromPct(Number(draft.partner_commission_pct) || 0, Number(total) || 0),
+                          sales_rep_commission_amount: moneyFromPct(Number(draft.sales_rep_commission_pct) || 0, Number(total) || 0),
+                        });
+                      }}
+                    />
+                  </Field>
+                </div>
+              )}
               <div className="border border-[#e2e2e2] p-3 space-y-3">
                 <p className="text-[10px] tracking-[0.12em] uppercase font-bold font-[var(--font-inter)] text-[#74777f]">Vínculos comerciais e comissões</p>
                 <div className="grid grid-cols-2 gap-3">
@@ -1461,42 +1497,91 @@ export default function PedidosTab() {
                   {draft.id && (
                     <div className="flex flex-wrap gap-2">
                       {(["orcamento", "pedido", "nota", "recibo"] as const).map((tipo) => (
-                        <a
+                        // A plain <a target="_blank"> here was navigating the
+                        // CURRENT tab away on some mobile browsers instead of
+                        // opening a new one — looked exactly like the form
+                        // crashing/closing without saving. window.open is reliable.
+                        <button
                           key={tipo}
-                          href={`/admin/pedidos/${draft.id}/documento?tipo=${tipo}`}
-                          target="_blank"
-                          rel="noopener noreferrer"
+                          type="button"
+                          onClick={(e) => { e.preventDefault(); e.stopPropagation(); openDocument(draft.id as string, tipo); }}
                           className="border border-[#e2e2e2] px-2 py-1 text-[9px] uppercase tracking-[0.08em] font-bold text-[#002045] hover:border-[#002045]"
                         >
                           {tipo === "orcamento" ? "Orçamento" : tipo === "pedido" ? "Pedido" : tipo === "nota" ? "Nota" : "Recibo"}
-                        </a>
+                        </button>
                       ))}
                     </div>
                   )}
                 </div>
                 <Field label="Formas de pagamento">
                   <div className="grid grid-cols-2 gap-2">
-                    {PAYMENT_METHODS.map((method) => {
+                    {[...PAYMENT_METHODS, ...paymentMethodPresets.map((p) => p.label)].map((method) => {
                       const selected = (draft.payment_methods ?? ["Pix"]).includes(method);
+                      const isCustom = !(PAYMENT_METHODS as readonly string[]).includes(method);
+                      const preset = isCustom ? paymentMethodPresets.find((p) => p.label === method) : null;
                       return (
-                        <label key={method} className="flex items-center gap-2 text-xs font-[var(--font-inter)] text-[#43474e]">
-                          <input
-                            type="checkbox"
-                            checked={selected}
-                            onChange={(e) => {
-                              const current = draft.payment_methods ?? ["Pix"];
-                              const next = e.target.checked ? [...current, method] : current.filter((m) => m !== method);
-                              setDraft({ ...draft, payment_methods: next.length ? next : ["Pix"] });
-                            }}
-                          />
-                          {method}
-                        </label>
+                        <div key={method} className="flex items-center gap-1">
+                          <label className="flex items-center gap-2 text-xs font-[var(--font-inter)] text-[#43474e]">
+                            <input
+                              type="checkbox"
+                              checked={selected}
+                              onChange={(e) => {
+                                const current = draft.payment_methods ?? ["Pix"];
+                                const next = e.target.checked ? [...current, method] : current.filter((m) => m !== method);
+                                setDraft({ ...draft, payment_methods: next.length ? next : ["Pix"] });
+                              }}
+                            />
+                            {method}
+                          </label>
+                          {preset && (
+                            <button type="button" onClick={() => deletePreset(preset.id)} title="Remover esta forma cadastrada"
+                              className="text-[#b0b0b0] hover:text-[#b42318] text-[10px] leading-none">×</button>
+                          )}
+                        </div>
                       );
                     })}
+                  </div>
+                  <div className="flex gap-2 mt-2">
+                    <input value={newPaymentMethod} onChange={(e) => setNewPaymentMethod(e.target.value)}
+                      placeholder="Cadastrar nova forma (ex: Crediário próprio)"
+                      className={`${inputCls} flex-1`} />
+                    <button type="button"
+                      onClick={async () => {
+                        const label = newPaymentMethod.trim();
+                        if (!label) return;
+                        await savePreset("payment_method", label);
+                        const current = draft.payment_methods ?? ["Pix"];
+                        if (!current.includes(label)) setDraft({ ...draft, payment_methods: [...current, label] });
+                        setNewPaymentMethod("");
+                      }}
+                      className="border border-[#002045] text-[#002045] text-[10px] uppercase tracking-[0.08em] font-bold font-[var(--font-inter)] px-3 hover:bg-[#eef2f8]"
+                    >
+                      + Cadastrar
+                    </button>
                   </div>
                 </Field>
                 <Field label="Condição de pagamento">
                   <input className={inputCls} value={draft.payment_terms ?? ""} onChange={(e) => setDraft({ ...draft, payment_terms: e.target.value })} placeholder={DEFAULT_PAYMENT_TERMS} />
+                  {paymentTermsPresets.length > 0 && (
+                    <div className="flex flex-wrap gap-1.5 mt-2">
+                      {paymentTermsPresets.map((p) => (
+                        <span key={p.id} className="inline-flex items-center gap-1 bg-[#f0f0f0] text-[#43474e] text-[10px] font-[var(--font-inter)] pl-2 pr-1 py-1">
+                          <button type="button" onClick={() => setDraft({ ...draft, payment_terms: p.label })} className="hover:underline text-left">
+                            {p.label}
+                          </button>
+                          <button type="button" onClick={() => deletePreset(p.id)} title="Remover esta predefinição"
+                            className="text-[#b0b0b0] hover:text-[#b42318] px-1">×</button>
+                        </span>
+                      ))}
+                    </div>
+                  )}
+                  <button type="button"
+                    onClick={() => savePreset("payment_terms", draft.payment_terms ?? "")}
+                    disabled={!draft.payment_terms?.trim()}
+                    className="mt-2 text-[10px] font-bold font-[var(--font-inter)] text-[#002045] hover:underline disabled:opacity-40 disabled:cursor-default"
+                  >
+                    + Cadastrar este texto como predefinição
+                  </button>
                 </Field>
                 <div className="grid grid-cols-2 gap-3">
                   <Field label="Validade do orçamento">
