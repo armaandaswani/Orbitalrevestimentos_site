@@ -108,6 +108,25 @@ export default function EstoqueTab() {
     }).then(() => fetchStock()).catch(() => {});
   }
 
+  // Cancels a still-active reservation (frees it back to "available") without
+  // touching the order's items or other fields. Server-side guards against
+  // double-releasing one that's already been freed or consumed.
+  async function cancelReservation(productId: string, pedidoId: string) {
+    if (!confirm("Cancelar esta reserva e devolver a quantidade para disponível?")) return;
+    const res = await fetch("/api/admin/stock/release-reservation", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ pedido_id: pedidoId }),
+    });
+    if (res.ok) {
+      await fetchStock();
+      loadMovements(productId, true);
+    } else {
+      const j = await res.json().catch(() => null);
+      alert(j?.error || "Falha ao cancelar a reserva.");
+    }
+  }
+
   const loadMovements = useCallback(async (productId: string, force = false) => {
     if (!force && movements[productId]) return;
     const res = await fetch(`/api/admin/stock/${productId}`);
@@ -173,6 +192,7 @@ export default function EstoqueTab() {
               onToggle={() => toggleExpand(p.id)}
               onMove={(kind, qty, reason, opts) => move(p.id, kind, qty, reason, opts)}
               onPatch={(patch) => patchProduct(p.id, patch)}
+              onCancelReservation={(pedidoId) => cancelReservation(p.id, pedidoId)}
             />
           ))}
           {visible.length === 0 && <p className="text-[#74777f] text-sm font-[var(--font-inter)]">Nenhum modelo.</p>}
@@ -183,7 +203,7 @@ export default function EstoqueTab() {
 }
 
 function StockRow({
-  p, expanded, movements, onToggle, onMove, onPatch,
+  p, expanded, movements, onToggle, onMove, onPatch, onCancelReservation,
 }: {
   p: StockProduct;
   expanded: boolean;
@@ -191,6 +211,7 @@ function StockRow({
   onToggle: () => void;
   onMove: (kind: "manual_in" | "manual_out" | "adjust", qty: number, reason: string, opts?: { manual_exit_type?: ManualExitType | null; sale_amount?: number | null }) => void;
   onPatch: (patch: { price?: number | null; cost_price?: number | null; sale_unit?: string; reorder_point?: number }) => void;
+  onCancelReservation: (pedidoId: string) => void;
 }) {
   const [mode, setMode] = useState<"manual_in" | "manual_out" | "adjust" | null>(null);
   const [qty, setQty] = useState("");
@@ -334,6 +355,15 @@ function StockRow({
                     {m.manual_exit_type === "sale" && m.sale_amount != null && <span>· {fmtBRL(Number(m.sale_amount) || 0)} </span>}
                     {m.reason ? `· ${m.reason}` : ""}
                   </span>
+                  {m.kind === "reserve" && m.pedido_id && (
+                    <button
+                      onClick={() => onCancelReservation(m.pedido_id as string)}
+                      className="text-[#b42318] font-bold hover:underline whitespace-nowrap"
+                      title="Cancelar esta reserva e devolver ao disponível"
+                    >
+                      Cancelar reserva
+                    </button>
+                  )}
                   <span className="text-[#b0b0b0] whitespace-nowrap">{fmtDateTime(m.created_at)}</span>
                 </div>
               ))}
