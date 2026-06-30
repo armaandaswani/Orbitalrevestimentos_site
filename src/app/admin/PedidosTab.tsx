@@ -556,15 +556,36 @@ export default function PedidosTab() {
       (q.sales_rep_referral_code ? salesReps.find((r) => r.referral_code === q.sales_rep_referral_code) : null) ??
       (linkedRep ? salesReps.find((r) => r.id === linkedRep.id) : null) ??
       null;
+    // Quote product names often carry the code baked in, e.g. "Louro Freijó
+    // (ORB-004)" — comparing that whole string against the stock product's
+    // bare name ("Louro Freijó") always failed, silently leaving the items
+    // list empty even when the model clearly exists in stock. Strip a
+    // trailing "(CODE)" before comparing, and also try the code it contains.
+    const norm = (s: string) => s.trim().toLowerCase();
+    const parenCode = q.product_name?.match(/\(([^)]+)\)\s*$/)?.[1]?.trim() ?? null;
+    const nameOnly = q.product_name?.replace(/\s*\([^)]*\)\s*$/, "").trim() || null;
     const product =
-      (q.product_code ? stockProducts.find((p) => p.code === q.product_code) : null) ??
-      (q.product_name ? stockProducts.find((p) => p.name.toLowerCase() === q.product_name!.toLowerCase()) : null) ??
+      (q.product_code ? stockProducts.find((p) => p.code && norm(p.code) === norm(q.product_code!)) : null) ??
+      (parenCode ? stockProducts.find((p) => p.code && norm(p.code) === norm(parenCode)) : null) ??
+      (nameOnly ? stockProducts.find((p) => norm(p.name) === norm(nameOnly)) : null) ??
+      (q.product_name ? stockProducts.find((p) => norm(p.name) === norm(q.product_name!)) : null) ??
       null;
     const total = q.total ?? null;
     const partnerPct = partner?.commission_type === "percentage" ? Number(partner.commission_value) || 0 : pctFromMoney(Number(partner?.commission_value) || 0, Number(total) || 0);
     const repPct = salesRep?.commission_type === "percentage" ? Number(salesRep.commission_value) || 0 : pctFromMoney(Number(salesRep?.commission_value) || 0, Number(total) || 0);
 
-    setItems(product ? [{ product_id: product.id, plates: Math.max(1, Math.round(q.plates ?? 1)) }] : []);
+    // Plates: trust the quote's own count when it has one; otherwise derive it
+    // from the imported area so a 206 m² quote doesn't silently become "1
+    // placa" just because the original quote never recorded a plate count.
+    const seedPlates = product
+      ? (q.plates && q.plates > 0
+          ? Math.max(1, Math.round(q.plates))
+          : (q.area_m2 && q.area_m2 > 0 ? Math.max(1, Math.ceil(q.area_m2 / panelAreaM2(product))) : 1))
+      : 1;
+    // Always seed at least one row — even unmatched — so the quantity editor
+    // is immediately visible and usable instead of hiding behind "+
+    // Adicionar modelo" with the old Área/Total boxes still showing.
+    setItems([{ product_id: product?.id ?? "", plates: seedPlates }]);
     setItemsReady(true);
     setDraft({
       _isNew: true,
@@ -612,10 +633,17 @@ export default function PedidosTab() {
       const mapped: OrderItem[] = rows
         .filter((it: { product_id?: string; plates?: number }) => it.product_id && Number(it.plates) > 0)
         .map((it: { product_id?: string; plates?: number }) => ({ product_id: it.product_id as string, plates: Math.round(Number(it.plates)) }));
-      if (mapped.length > 0) setItems(mapped);
+      // No real items yet (a legacy order created via the old Área/Total
+      // fields) — still seed one blank row so the quantity editor is visible
+      // and usable right away, instead of hiding behind "+ Adicionar modelo"
+      // with the old freeform boxes left looking unchanged.
+      setItems(mapped.length > 0 ? mapped : (stockProducts.length > 0 ? [{ product_id: "", plates: 1 }] : []));
       setItemsReady(true); // authoritative now, even if mapped is empty
     } catch { /* itemsReady stays false — best-effort, save() won't touch items */ }
-  }, []);
+    // stockProducts in deps: this closure reads it for the blank-row fallback
+    // above — without it, the check would always see the empty initial array
+    // from before the /api/admin/stock fetch resolved.
+  }, [stockProducts]);
 
   // ── Mutations ────────────────────────────────────────────────────────────────
   async function patchPedido(id: string, patch: Partial<Pedido> & { items?: OrderItem[] }) {
@@ -732,7 +760,7 @@ export default function PedidosTab() {
               Importar orçamento
             </button>
             <button
-              onClick={() => { setItems([]); setItemsReady(true); setDraft({ _isNew: true, status: "em_producao", payment_status: "pendente", payment_methods: ["Pix"], payment_terms: DEFAULT_PAYMENT_TERMS, freight_is_revenue: false, other_costs: [], quote_valid_until: plusDays(7), document_notes: DEFAULT_DOCUMENT_NOTES }); }}
+              onClick={() => { setItems(stockProducts.length > 0 ? [{ product_id: "", plates: 1 }] : []); setItemsReady(true); setDraft({ _isNew: true, status: "em_producao", payment_status: "pendente", payment_methods: ["Pix"], payment_terms: DEFAULT_PAYMENT_TERMS, freight_is_revenue: false, other_costs: [], quote_valid_until: plusDays(7), document_notes: DEFAULT_DOCUMENT_NOTES }); }}
               className="bg-[#002045] text-white text-xs tracking-[0.12em] uppercase font-bold font-[var(--font-inter)] px-5 py-2.5 hover:bg-[#1a365d] transition-colors"
             >
               + Novo pedido
