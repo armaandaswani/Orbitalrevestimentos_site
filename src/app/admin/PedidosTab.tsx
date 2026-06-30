@@ -1185,7 +1185,7 @@ export default function PedidosTab() {
                               <span>{prod.available} {unit} disponíveis</span>
                               <span>Venda/{unit}: {prod.price != null ? fmtBRL(prod.price) : "sem preço"}</span>
                               <span>≈ {(it.plates * panelAreaM2(prod)).toFixed(2)} m²</span>
-                              {over && <span className="text-amber-700 font-bold">Quantidade acima do disponível</span>}
+                              {over && <span className="text-amber-700 font-bold">Acima do disponível — pode comprar mais para repor; o pedido pode ser criado normalmente</span>}
                               <button type="button" onClick={() => setAreaCalcOpen((cur) => ({ ...cur, [idx]: !cur[idx] }))}
                                 className="text-[#1e5fb4] font-bold hover:underline">
                                 Calcular pela área
