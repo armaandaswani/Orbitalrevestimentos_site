@@ -35,7 +35,25 @@ export async function GET(req: NextRequest, { params }: { params: Promise<{ id: 
     if (m.includes("does not exist") || m.includes("stock_movements")) return NextResponse.json([]);
     return NextResponse.json({ error: error.message }, { status: 500 });
   }
-  return NextResponse.json(data ?? []);
+
+  // Tag each movement with whether ITS order's reservation is still actually
+  // active. A product can have several historical "reserve" rows from past
+  // orders that have since been delivered or released — without this, every
+  // one of them looks cancellable in the UI even though only (at most) one
+  // currently is, and clicking the wrong one always fails.
+  const rows = (data ?? []) as Array<{ pedido_id?: string | null }>;
+  const pedidoIds = [...new Set(rows.map((r) => r.pedido_id).filter(Boolean))] as string[];
+  let stateById = new Map<string, string>();
+  if (pedidoIds.length > 0) {
+    const { data: pedidos } = await sb.from("pedidos").select("id, stock_state").in("id", pedidoIds);
+    stateById = new Map((pedidos ?? []).map((p) => [p.id as string, (p.stock_state as string) ?? "none"]));
+  }
+  const tagged = rows.map((r) => ({
+    ...r,
+    pedido_stock_state: r.pedido_id ? stateById.get(r.pedido_id) ?? null : null,
+  }));
+
+  return NextResponse.json(tagged);
 }
 
 /** PATCH /api/admin/stock/[id] — update a product's sale price / cost / unit / reorder point. */

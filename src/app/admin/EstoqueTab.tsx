@@ -32,6 +32,11 @@ interface Movement {
   created_by: string | null;
   created_at: string;
   pedido_id: string | null;
+  // The order's CURRENT stock_state (not this movement's own kind) — tells us
+  // whether THIS reservation is still the live one, or has since been
+  // delivered/released by a later movement. Without it, every historical
+  // "reserve" row looks cancellable even when only one (at most) still is.
+  pedido_stock_state?: string | null;
 }
 
 const KIND_LABEL: Record<string, string> = {
@@ -356,13 +361,21 @@ function StockRow({
                     {m.reason ? `· ${m.reason}` : ""}
                   </span>
                   {m.kind === "reserve" && m.pedido_id && (
-                    <button
-                      onClick={() => onCancelReservation(m.pedido_id as string)}
-                      className="text-[#b42318] font-bold hover:underline whitespace-nowrap"
-                      title="Cancelar esta reserva e devolver ao disponível"
-                    >
-                      Cancelar reserva
-                    </button>
+                    m.pedido_stock_state === "reserved" ? (
+                      <button
+                        onClick={() => onCancelReservation(m.pedido_id as string)}
+                        className="text-[#b42318] font-bold hover:underline whitespace-nowrap"
+                        title="Cancelar esta reserva e devolver ao disponível"
+                      >
+                        Cancelar reserva
+                      </button>
+                    ) : (
+                      // This reservation has already been delivered or
+                      // released by a later movement — nothing to cancel.
+                      <span className="text-[#b0b0b0] whitespace-nowrap" title="Esta reserva já foi liberada ou baixada">
+                        (já resolvida)
+                      </span>
+                    )
                   )}
                   <span className="text-[#b0b0b0] whitespace-nowrap">{fmtDateTime(m.created_at)}</span>
                 </div>
