@@ -164,6 +164,9 @@ export default function PedidoDocumentoPage({ params }: { params: Promise<{ id: 
   const [error, setError] = useState<string | null>(null);
   const [sending, setSending] = useState<"email" | "whatsapp" | null>(null);
   const [sendStatus, setSendStatus] = useState("");
+  const [notesDraft, setNotesDraft] = useState("");
+  const [savingNotes, setSavingNotes] = useState(false);
+  const [notesSaved, setNotesSaved] = useState(false);
 
   useEffect(() => {
     params.then((p) => setId(p.id));
@@ -193,6 +196,7 @@ export default function PedidoDocumentoPage({ params }: { params: Promise<{ id: 
         const data = await res.json().catch(() => null);
         if (!res.ok) throw new Error(data?.error || `HTTP ${res.status}`);
         setPedido(data as PedidoDocument);
+        setNotesDraft((data as PedidoDocument).document_notes ?? "");
         setError(null);
       })
       .catch((e) => setError(e instanceof Error ? e.message : "Falha ao carregar documento."))
@@ -235,8 +239,32 @@ export default function PedidoDocumentoPage({ params }: { params: Promise<{ id: 
         unit_cost: null,
       }];
   const customerAddress = addressLines(pedido);
-  const notes = pedido.document_notes?.trim() || DEFAULT_NOTES;
+  // The long contractual boilerplate only applies to a binding sale (Pedido de
+  // Venda / Nota de Venda) — an Orçamento is just a price quote and shouldn't
+  // pre-fill legal clauses. It can still carry whatever custom text the admin
+  // typed below, just never the default boilerplate.
+  const condicoesBoilerplate = docType !== "orcamento" ? (pedido.document_notes?.trim() || DEFAULT_NOTES) : null;
+  const condicoesCustom = docType === "orcamento" ? (pedido.document_notes?.trim() || "") : "";
   const documentUrl = typeof window !== "undefined" ? window.location.href : "";
+
+  async function saveNotes() {
+    if (!id) return;
+    setSavingNotes(true);
+    setNotesSaved(false);
+    try {
+      const res = await fetch(`/api/admin/pedidos/${id}`, {
+        method: "PATCH",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ document_notes: notesDraft.trim() || null }),
+      });
+      if (res.ok) {
+        setPedido((cur) => (cur ? { ...cur, document_notes: notesDraft.trim() || null } : cur));
+        setNotesSaved(true);
+      }
+    } catch { /* best-effort */ } finally {
+      setSavingNotes(false);
+    }
+  }
 
   async function sendDocument(channel: "email" | "whatsapp") {
     if (!id) return;
@@ -310,6 +338,33 @@ export default function PedidoDocumentoPage({ params }: { params: Promise<{ id: 
         {sendStatus && <p className="basis-full text-[11px] font-bold text-[#74777f]">{sendStatus}</p>}
       </div>
 
+      {/* Screen-only editor — never printed. Lets the admin add/replace the
+          Condições text right here instead of going back to Pedidos. For
+          Orçamento this is the ONLY text shown (no legal boilerplate); for
+          Pedido/Nota it overrides the default boilerplate once saved. */}
+      <div className="document-notes-editor max-w-[980px] mx-auto mb-4 bg-white border border-[#d8d5cf] p-4">
+        <p className="text-[10px] uppercase tracking-[0.18em] font-bold text-[#74777f] mb-2">
+          {docType === "orcamento" ? "Texto adicional (opcional, aparece em Condições)" : "Condições — editar texto"}
+        </p>
+        <textarea
+          value={notesDraft}
+          onChange={(e) => { setNotesDraft(e.target.value); setNotesSaved(false); }}
+          rows={4}
+          placeholder={docType === "orcamento" ? "ex: validade da proposta, observações para o cliente…" : "Deixe em branco para usar o texto padrão de cláusulas contratuais."}
+          className="w-full border border-[#d8d5cf] px-3 py-2 text-xs font-[var(--font-inter)] text-[#1a1c1c] focus:outline-none focus:border-[#002045] resize-y"
+        />
+        <div className="flex items-center gap-3 mt-2">
+          <button
+            onClick={saveNotes}
+            disabled={savingNotes}
+            className="bg-[#002045] text-white disabled:opacity-50 px-4 py-2 text-xs font-bold uppercase tracking-[0.1em]"
+          >
+            {savingNotes ? "Salvando..." : "Salvar texto"}
+          </button>
+          {notesSaved && <span className="text-[11px] font-bold text-[#2e7d32]">Salvo.</span>}
+        </div>
+      </div>
+
       <article className="document-page mx-auto bg-white text-[#1a1c1c] shadow-sm">
         <section className="doc-header">
           {/* eslint-disable-next-line @next/next/no-img-element */}
@@ -376,11 +431,16 @@ export default function PedidoDocumentoPage({ params }: { params: Promise<{ id: 
             <div className="doc-product-grid">
               {items.map((it) => {
                 const imagePath = normalizeAssetPath(it.product_image_path);
+                const hasImage = includeImages && !!imagePath;
+                // An item with no image (e.g. "Cola PU-40") has no photo to put
+                // beside the text — render it as a plain compact box instead of
+                // the two-column image+text card, which would otherwise reserve
+                // an empty 72px gap on the left for an image that never renders.
                 return (
-                  <div key={`${it.id}-details`} className="doc-product-card">
-                    {includeImages && imagePath && (
+                  <div key={`${it.id}-details`} className={hasImage ? "doc-product-card" : "doc-product-card-noimg"}>
+                    {hasImage && (
                       // eslint-disable-next-line @next/next/no-img-element
-                      <img src={imagePath} alt={it.product_name || "Produto Orbital"} />
+                      <img src={imagePath ?? undefined} alt={it.product_name || "Produto Orbital"} />
                     )}
                     <div>
                       <p className="doc-product-name">{it.product_name || "Produto Orbital"}</p>
@@ -417,11 +477,12 @@ export default function PedidoDocumentoPage({ params }: { params: Promise<{ id: 
           </div>
         </section>
 
-        {(pedido.notes || notes) && (
+        {(pedido.notes || condicoesBoilerplate || condicoesCustom) && (
           <section className="doc-notes">
             <p className="doc-section-label">Condições</p>
             {pedido.notes && <p className="doc-order-notes">{pedido.notes}</p>}
-            <p className="doc-contract">{notes}</p>
+            {condicoesBoilerplate && <p className="doc-contract">{condicoesBoilerplate}</p>}
+            {condicoesCustom && <p className="doc-contract">{condicoesCustom}</p>}
           </section>
         )}
 
@@ -502,9 +563,10 @@ export default function PedidoDocumentoPage({ params }: { params: Promise<{ id: 
         .doc-commercial p { margin: 0; }
         .doc-product-details { margin: 4px 0 18px; page-break-inside: avoid; }
         .doc-product-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; }
-        .doc-product-card { display: grid; grid-template-columns: 72px 1fr; gap: 8px; border: 1px solid #e4e4e4; padding: 8px; page-break-inside: avoid; }
+        .doc-product-card { display: grid; grid-template-columns: 72px 1fr; gap: 8px; border: 1px solid #e4e4e4; padding: 8px; page-break-inside: avoid; align-items: center; }
         .doc-product-card img { width: 72px; height: 72px; object-fit: cover; display: block; }
-        .doc-product-card p { margin: 0; color: #555; font-size: 9.5px; }
+        .doc-product-card p, .doc-product-card-noimg p { margin: 0; color: #555; font-size: 9.5px; }
+        .doc-product-card-noimg { border: 1px solid #e4e4e4; padding: 8px; page-break-inside: avoid; }
         .doc-product-name { color: #1a1c1c !important; font-weight: 700; font-size: 10.5px !important; margin-bottom: 3px !important; }
         .doc-notes { margin-top: 8px; page-break-inside: auto; }
         .doc-order-notes { white-space: pre-wrap; margin: 0 0 12px; }
@@ -535,7 +597,7 @@ export default function PedidoDocumentoPage({ params }: { params: Promise<{ id: 
         @media print {
           @page { size: A4; margin: 12mm 13mm; }
           html, body { background: #fff !important; }
-          body > header, body > footer, .document-actions, .fixed, iframe { display: none !important; }
+          body > header, body > footer, .document-actions, .document-notes-editor, .fixed, iframe { display: none !important; }
           .document-shell { padding: 0 !important; background: #fff !important; }
           .document-page {
             width: auto;
@@ -544,7 +606,7 @@ export default function PedidoDocumentoPage({ params }: { params: Promise<{ id: 
             box-shadow: none !important;
             margin: 0 !important;
           }
-          .doc-header, .doc-grid, .doc-title-bar, .doc-commercial, .doc-product-card, .doc-signatures { page-break-inside: avoid; }
+          .doc-header, .doc-grid, .doc-title-bar, .doc-commercial, .doc-product-card, .doc-product-card-noimg, .doc-signatures { page-break-inside: avoid; }
           .doc-section-label { break-after: avoid; }
           .doc-contract { font-size: 10px; line-height: 1.28; }
         }
