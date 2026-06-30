@@ -1067,10 +1067,40 @@ export default function VisualizadorWizard({
             // painting flat rectangles over foreground (mirror, plants); the mask
             // keeps those in front and confines the texture to the real wall.
             composite = await compositeMaskedRegion(composite, panel, z, false);
-            continue; // zone done deterministically — skip the generative call
+
+            // Hybrid Stage 2 — AI relight (ADDITIVE, never destructive): hand the
+            // composite (with the EXACT panel already in place) + this zone's mask
+            // to Gemini in relight mode. It only adds the room's lighting/shadows
+            // to the masked panel and respects the finish (shiny/matte). We then
+            // keep ONLY that relit masked region, so the rest of the photo and all
+            // other zones are untouched. ANY failure → keep the exact panel as-is
+            // (so realism is a bonus, never a regression of the exact result).
+            try {
+              const maskImage = await buildMaskDataUrl(z, dims.w, dims.h);
+              if (maskImage) {
+                const relitRes = await fetch("/api/visualizador/render", {
+                  method: "POST",
+                  headers: { "Content-Type": "application/json" },
+                  body: JSON.stringify({
+                    mode: "relight",
+                    photo: composite,
+                    productId: prod.id,
+                    finish: FINISH_BY_LINE[prod.linha],
+                    maskImage,
+                  }),
+                });
+                const relitBody = (await relitRes.json()) as { image?: string };
+                if (relitRes.ok && relitBody.image) {
+                  composite = await compositeMaskedRegion(composite, relitBody.image, z, false);
+                }
+              }
+            } catch (e) {
+              console.error("[viz] relight skipped (kept exact panel):", e instanceof Error ? e.message : e);
+            }
+            continue; // zone done — exact texture (+ relight when it succeeded)
           } catch (e) {
-            // Never silently fall back to Gemini when the user asked for exact
-            // texture. A fallback can hallucinate the slab and alter the photo.
+            // Never silently fall back to the generative "apply" path when the
+            // user asked for exact texture — it can hallucinate the slab.
             console.error("[viz] exact texture projection failed:", e instanceof Error ? e.message : e);
             throw new Error(`Não consegui aplicar a textura exata em ${z.label}. Verifique os 4 pontos ou tente outro acabamento.`);
           }

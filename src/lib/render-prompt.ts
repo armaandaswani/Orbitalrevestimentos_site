@@ -302,3 +302,51 @@ export function composePrompt(opts: {
   );
   return lines.join("\n");
 }
+
+// ── Relight prompt (hybrid Stage 2) ──────────────────────────────────────────
+// Used by the render route in mode="relight". The panel is ALREADY installed,
+// pixel-exact, in IMAGE 1 (the deterministic projection output). The model must
+// ONLY add realistic lighting/shadows to that panel — never change its pattern,
+// colour or design, and never touch anything else in the photo. IMAGE 2 is the
+// exact slab texture, given so the model knows the true material it is lighting.
+export function composeRelightPrompt(opts: {
+  finish: FinishKind;
+  finishText?: string | null;
+  hasMaskImage?: boolean;
+  hasTextureRef?: boolean;
+}): string {
+  let imgIdx = 1;
+  const texIdx = opts.hasTextureRef ? ++imgIdx : null;
+  const maskIdx = opts.hasMaskImage ? ++imgIdx : null;
+
+  const finishLine =
+    opts.finish === "polished"
+      ? "This is a POLISHED, glossy panel: add subtle, physically-plausible specular sheen and soft reflections consistent with the room's actual light sources — tasteful, not mirror-like, never blown out."
+      : opts.finish === "wood"
+        ? "This is a wood-grain panel: at most a soft satin sheen; no glossy mirror reflections."
+        : "This is a MATTE panel: keep it soft and non-reflective — NO glossy highlights, NO mirror reflections.";
+
+  const lines: string[] = [
+    "You are a photo RELIGHTING tool — NOT an image generator.",
+    "IMAGE 1 is a real room photo in which a wall panel has ALREADY been installed.",
+    "Its pattern, veining, colour and scale are FINAL and CORRECT — treat them as ground truth.",
+    texIdx ? `IMAGE ${texIdx} is the exact panel material, shown only so you know the true look of what you are lighting.` : "",
+    maskIdx ? `IMAGE ${maskIdx} is a mask: the WHITE region marks the installed panel (the ONLY area you may relight).` : "",
+    "",
+    "YOUR ONLY TASK: make the installed panel look naturally lit by THIS room. Add:",
+    "- the room's existing light gradient across the panel (brighter near lights, falling off in shade),",
+    "- soft, realistic contact/ambient-occlusion shadows where the panel meets the ceiling, floor, corners and any object in front of it,",
+    "- believable integration with the room's white balance and exposure.",
+    `- FINISH: ${finishLine}`,
+    "",
+    "ABSOLUTE RULES (do not break):",
+    "- Do NOT change the panel's pattern, veining, design, scale or colour. Do NOT invent, redraw, beautify, sharpen or hallucinate any pattern. Adjust ONLY light and shadow on it.",
+    "- Do NOT alter ANYTHING outside the panel: furniture, plants, mirrors, frames, the floor, ceiling, other walls, windows and the rest of the photo must stay pixel-identical to IMAGE 1.",
+    "- Keep the camera, viewpoint, framing, crop and resolution identical.",
+    "- Subtlety over drama: this is gentle, photoreal relighting, not a restyle.",
+    opts.finishText ? `Material note: ${opts.finishText}` : "",
+    "",
+    "Output ONLY the relit version of IMAGE 1, at the same framing and resolution.",
+  ];
+  return lines.filter(Boolean).join("\n");
+}

@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from "next/server";
 import { supabaseAdmin } from "@/lib/supabase";
 import {
   composePrompt,
+  composeRelightPrompt,
   finishDescription,
   DEFAULT_PANEL_WIDTH_M,
   DEFAULT_PANEL_HEIGHT_M,
@@ -106,6 +107,10 @@ export async function POST(req: NextRequest) {
     // rect — the model follows the masked surface's real shape and perspective
     // and won't paint over foreground objects. When present it supersedes rect.
     maskImage?: string;
+    // "relight" = hybrid Stage 2: `photo` is the already-projected exact panel;
+    // only add lighting/shadows, never re-apply or change the material. Anything
+    // else (or absent) = the legacy generative "apply the panel" path (fallback).
+    mode?: "apply" | "relight";
   };
   try {
     body = await req.json();
@@ -115,6 +120,7 @@ export async function POST(req: NextRequest) {
 
   const { photo, productId } = body;
   const finish: FinishKind = body.finish ?? "matte";
+  const isRelight = body.mode === "relight";
 
   if (!photo) return NextResponse.json({ error: "Foto da parede obrigatória." }, { status: 400 });
 
@@ -138,7 +144,9 @@ export async function POST(req: NextRequest) {
   const toAbsolute = (url: string) =>
     /^https?:\/\//.test(url) ? url : new URL(url, req.nextUrl.origin).toString();
 
-  const contextImagePath = usePerModel ? product?.render_context_image_path?.trim() || null : null;
+  // Relight uses only photo(1)+texture(2)+mask(3); the in-ambience context image
+  // is for the legacy apply path and would shift the part numbering, so skip it.
+  const contextImagePath = (!isRelight && usePerModel) ? product?.render_context_image_path?.trim() || null : null;
 
   // Optional binary mask supplied by the client (data URL). Parsed defensively:
   // a malformed mask must never break a render — we just fall back to the rect.
@@ -189,19 +197,26 @@ export async function POST(req: NextRequest) {
     }
   }
 
-  const prompt = composePrompt({
-    finishText: finishText ?? finishDescription(finish),
-    panelWidthM: toPositiveNumber(product?.render_panel_width_m, DEFAULT_PANEL_WIDTH_M),
-    panelHeightM: toPositiveNumber(product?.render_panel_height_m, DEFAULT_PANEL_HEIGHT_M),
-    extraNotes: usePerModel ? product?.render_extra_notes : null,
-    hasContextImage: !!contextImage,
-    hasMaskImage: !!maskInline,
-    wallWidthM: hasWallDims ? wallW : null,
-    wallHeightM: hasWallDims ? wallH : null,
-    applicationArea,
-    rect,
-    referenceIsFlatTexture: usingFlatTexture,
-  });
+  const prompt = isRelight
+    ? composeRelightPrompt({
+        finish,
+        finishText: finishText ?? finishDescription(finish),
+        hasTextureRef: true, // IMAGE 2 = the slab texture (reference)
+        hasMaskImage: !!maskInline,
+      })
+    : composePrompt({
+        finishText: finishText ?? finishDescription(finish),
+        panelWidthM: toPositiveNumber(product?.render_panel_width_m, DEFAULT_PANEL_WIDTH_M),
+        panelHeightM: toPositiveNumber(product?.render_panel_height_m, DEFAULT_PANEL_HEIGHT_M),
+        extraNotes: usePerModel ? product?.render_extra_notes : null,
+        hasContextImage: !!contextImage,
+        hasMaskImage: !!maskInline,
+        wallWidthM: hasWallDims ? wallW : null,
+        wallHeightM: hasWallDims ? wallH : null,
+        applicationArea,
+        rect,
+        referenceIsFlatTexture: usingFlatTexture,
+      });
 
   // Image order MUST match composePrompt's numbering: photo (1), panel (2),
   // mask (3 if present), context (next if present).
