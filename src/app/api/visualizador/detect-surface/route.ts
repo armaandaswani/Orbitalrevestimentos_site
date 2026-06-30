@@ -36,6 +36,15 @@ function parseInline(input: string): { data: string; mime: string } | null {
   return { mime: m[1], data: m[2] };
 }
 
+async function imageUrlToDataUri(url: string): Promise<string> {
+  if (url.startsWith("data:")) return url;
+  const res = await fetch(url);
+  if (!res.ok) throw new Error(`mask fetch ${res.status}`);
+  const mime = res.headers.get("content-type") || "image/png";
+  const buf = Buffer.from(await res.arrayBuffer());
+  return `data:${mime};base64,${buf.toString("base64")}`;
+}
+
 // ── fal.ai SAM2 ──────────────────────────────────────────────────────────────
 // pxX/pxY are PIXEL coordinates in the source image.
 async function detectFal(
@@ -69,7 +78,7 @@ async function detectFal(
       console.error("[detect] fal SAM2 returned no mask image");
       return null;
     }
-    return { mask: img.url, width: img.width ?? 0, height: img.height ?? 0 };
+    return { mask: await imageUrlToDataUri(img.url), width: img.width ?? 0, height: img.height ?? 0 };
   } catch (e) {
     console.error("[detect] fal SAM2 threw:", e instanceof Error ? e.message : e);
     return null;
@@ -119,7 +128,7 @@ async function detectFalBox(
       console.error("[detect] fal SAM2 returned no mask image");
       return null;
     }
-    return { mask: img.url, width: img.width ?? 0, height: img.height ?? 0 };
+    return { mask: await imageUrlToDataUri(img.url), width: img.width ?? 0, height: img.height ?? 0 };
   } catch (e) {
     console.error("[detect] fal SAM2 threw:", e instanceof Error ? e.message : e);
     return null;

@@ -265,12 +265,26 @@ function polygonToOverlay(polygon: Array<[number, number]>, hex: string, w: numb
 // photo. Falls through maskUrl (precise SAM mask) → polygon (Gemini-fallback
 // detection) → rect (manual zones) → null (text-only zones, no spatial info
 // — caller then accepts that zone's output wholesale, same as before).
-async function buildStencil(z: Zone, targetW: number, targetH: number): Promise<HTMLCanvasElement | null> {
+async function buildStencil(z: Zone, targetW: number, targetH: number, preferQuad = false): Promise<HTMLCanvasElement | null> {
   const c = document.createElement("canvas");
   c.width = targetW;
   c.height = targetH;
   const ctx = c.getContext("2d")!;
 
+  const paintQuad = (q: Quad) => {
+    ctx.fillStyle = "#fff";
+    ctx.beginPath();
+    q.forEach(([x, y], i) => {
+      const px = x * targetW, py = y * targetH;
+      if (i === 0) ctx.moveTo(px, py);
+      else ctx.lineTo(px, py);
+    });
+    ctx.closePath();
+    ctx.fill();
+    return c;
+  };
+
+  if (preferQuad && z.quad) return paintQuad(z.quad);
   if (z.maskUrl) {
     // maskUrl is the tinted overlay from maskToOverlay (alpha=125 inside /
     // 0 outside). Scale to targetW/targetH, then binarize alpha so no
@@ -298,6 +312,7 @@ async function buildStencil(z: Zone, targetW: number, targetH: number): Promise<
     ctx.fillRect(z.rect.x * targetW, z.rect.y * targetH, z.rect.w * targetW, z.rect.h * targetH);
     return c;
   }
+  if (z.quad) return paintQuad(z.quad);
   return null;
 }
 
@@ -307,11 +322,11 @@ async function buildStencil(z: Zone, targetW: number, targetH: number): Promise<
 // dimensions regardless of source's actual size — drawImage's scale-to-fit
 // absorbs any Gemini output-size wobble, same implicit-scaling idiom
 // normalizeImage/maskToOverlay already rely on elsewhere in this file.
-async function compositeMaskedRegion(baseDataUrl: string, sourceDataUrl: string, z: Zone): Promise<string> {
+async function compositeMaskedRegion(baseDataUrl: string, sourceDataUrl: string, z: Zone, preferQuad = false): Promise<string> {
   const [baseImg, sourceImg] = await Promise.all([loadImage(baseDataUrl), loadImage(sourceDataUrl)]);
   const w = baseImg.naturalWidth, h = baseImg.naturalHeight;
 
-  const stencil = await buildStencil(z, w, h);
+  const stencil = await buildStencil(z, w, h, preferQuad);
   if (!stencil) return sourceDataUrl; // no spatial constraint available — trust output wholesale
 
   const cut = document.createElement("canvas");
@@ -369,6 +384,17 @@ function rectToQuad(r: Rect): Quad {
     [r.x + r.w, r.y + r.h],
     [r.x, r.y + r.h],
   ];
+}
+
+function rectAroundPoint(nx: number, ny: number): Rect {
+  const w = 0.46;
+  const h = 0.36;
+  return {
+    x: Math.min(1 - w, Math.max(0, nx - w / 2)),
+    y: Math.min(1 - h, Math.max(0, ny - h / 2)),
+    w,
+    h,
+  };
 }
 
 // Perspective-aware quad from a set of normalized points: the 4 extreme corners
@@ -544,12 +570,11 @@ export default function VisualizadorWizard({
   const [zones, setZones] = useState<Zone[]>([]);
   const [activeZoneId, setActiveZoneId] = useState<string | null>(null);
   const [generating, setGenerating] = useState(false);
-  // Render mode. Default OFF = AI generative render fed the EXACT flat slab
-  // texture as its reference (Gemini reproduces the real material and adds the
-  // room's lighting/shadows). ON = deterministic geometric projection of the
-  // texture into the 4 corners (pixel-exact pattern, flatter lighting,
-  // experimental). Generative-with-texture is the reliable default.
-  const [useProjection, setUseProjection] = useState(false);
+  // Render mode. Default ON = deterministic texture projection: the exact slab
+  // texture is warped into the selected 4 corners, with no generative model
+  // allowed to reinterpret the material. Gemini remains only as an optional
+  // fallback mode or when a product lacks a flat texture.
+  const [useProjection, setUseProjection] = useState(true);
   const [progress, setProgress] = useState<{ i: number; total: number; label: string } | null>(null);
   const [result, setResult] = useState<string | null>(null);
   const [error, setError] = useState<string | null>(null);
@@ -742,9 +767,31 @@ export default function VisualizadorWizard({
             }
           } catch { /* fall through */ }
         }
-        updateZone(id, { detecting: false, detectFailed: true, detectEngine: null });
+        const fallback = rectAroundPoint(nx, ny);
+        updateZone(id, {
+          rect: fallback,
+          quad: rectToQuad(fallback),
+          quadConfirmed: false,
+          maskUrl: null,
+          polygon: null,
+          manual: true,
+          detecting: false,
+          detectFailed: true,
+          detectEngine: null,
+        });
       } catch {
-        updateZone(id, { detecting: false });
+        const fallback = rectAroundPoint(nx, ny);
+        updateZone(id, {
+          rect: fallback,
+          quad: rectToQuad(fallback),
+          quadConfirmed: false,
+          maskUrl: null,
+          polygon: null,
+          manual: true,
+          detecting: false,
+          detectFailed: true,
+          detectEngine: null,
+        });
       }
     },
     [photoData, photoDims, updateZone]
@@ -818,12 +865,32 @@ export default function VisualizadorWizard({
         }
         // Both engines returned nothing usable — keep the drawn rect and flag it
         // so the UI can say "detection failed" instead of silently doing nothing.
-        updateZone(id, { detecting: false, detectFailed: true, detectEngine: null });
+        const existing = zones.find((z) => z.id === id);
+        updateZone(id, {
+          maskUrl: null,
+          polygon: null,
+          rect,
+          quad: existing?.quad ?? rectToQuad(rect),
+          quadConfirmed: false,
+          manual: true,
+          detecting: false,
+          detectFailed: true,
+          detectEngine: null,
+        });
       } catch {
-        updateZone(id, { detecting: false });
+        const existing = zones.find((z) => z.id === id);
+        updateZone(id, {
+          rect,
+          quad: existing?.quad ?? rectToQuad(rect),
+          quadConfirmed: false,
+          manual: true,
+          detecting: false,
+          detectFailed: true,
+          detectEngine: null,
+        });
       }
     },
-    [photoData, photoDims, updateZone]
+    [photoData, photoDims, updateZone, zones]
   );
 
   const tapAddSurface = useCallback(
@@ -907,7 +974,11 @@ export default function VisualizadorWizard({
   }, [zones, detectIntoFromBox, updateZone]);
 
   const zonesReady = zones.filter((z) => z.productId);
-  const canGenerate = !!photoData && zonesReady.length > 0;
+  const needsExactArea = useProjection && zonesReady.some((z) => {
+    const prod = z.productId ? productById(z.productId) : null;
+    return !!prod?.render_texture_path?.trim() && !z.quad && !z.rect;
+  });
+  const canGenerate = !!photoData && zonesReady.length > 0 && !needsExactArea;
   const anyDetecting = zones.some((z) => z.detecting);
 
   // Seed an adjustable 4-corner quad (from the detected box) for any zone whose
@@ -915,7 +986,6 @@ export default function VisualizadorWizard({
   // on the photo and enables pixel-exact projection. Runs once per zone (guarded
   // by !z.quad), so it never fights a user who's dragging the corners.
   useEffect(() => {
-    if (!useProjection) return;
     let cancelled = false;
     (async () => {
       for (const z of zones) {
@@ -932,7 +1002,7 @@ export default function VisualizadorWizard({
       }
     })();
     return () => { cancelled = true; };
-  }, [zones, useProjection, productById, updateZone]);
+  }, [zones, productById, updateZone]);
 
   const areaForZone = (z: Zone): string | undefined => {
     const txt = z.instruction.trim();
@@ -977,18 +1047,23 @@ export default function VisualizadorWizard({
         // quad (seeded from the detected box, refined by the user), render the
         // panel deterministically: the EXACT swatch warped into perspective,
         // composited only under the zone's mask. No generative model touches the
-        // material. Any failure (or the toggle off) falls through to Gemini.
+        // material. If exact texture projection fails, stop and surface the
+        // issue instead of silently falling through to Gemini.
         const textureUrl = prod.render_texture_path?.trim() || null;
         const quad: Quad | null = z.quad ?? (z.rect ? rectToQuad(z.rect) : null);
+        if (useProjection && textureUrl && !quad) {
+          throw new Error(`Ajuste a área de ${z.label} com os 4 pontos antes de gerar.`);
+        }
         if (useProjection && textureUrl && quad && dims && dims.w > 0 && dims.h > 0) {
           try {
             const panel = await renderZoneProjection(textureUrl, quad, z.width, z.height, base, dims.w, dims.h);
-            composite = await compositeMaskedRegion(composite, panel, z);
+            composite = await compositeMaskedRegion(composite, panel, z, true);
             continue; // zone done deterministically — skip the generative call
           } catch (e) {
-            // Surface WHY projection bailed (e.g. a tainted-canvas SecurityError
-            // from a non-CORS texture) instead of silently using generative.
-            console.error("[viz] projection failed, falling back to generative:", e instanceof Error ? e.message : e);
+            // Never silently fall back to Gemini when the user asked for exact
+            // texture. A fallback can hallucinate the slab and alter the photo.
+            console.error("[viz] exact texture projection failed:", e instanceof Error ? e.message : e);
+            throw new Error(`Não consegui aplicar a textura exata em ${z.label}. Verifique os 4 pontos ou tente outro acabamento.`);
           }
         }
 
@@ -1236,6 +1311,7 @@ export default function VisualizadorWizard({
             loadingProducts={loadingProducts}
             productById={productById}
             canGenerate={canGenerate}
+            needsExactArea={needsExactArea}
             simPrefills={simPrefills}
             onBack={() => setStep("upload")}
             onGenerate={generate}
@@ -1442,7 +1518,7 @@ type ZoneMode = "tap" | "draw";
 function ZonesStep({
   photoData, zones, activeZoneId, setActiveZoneId, onTapPhoto, onDrawRect, onAddTextZone, onConfirmQuad,
   updateZone, removeZone, retargetId, setRetargetId, anyDetecting, products, loadingProducts,
-  productById, canGenerate, simPrefills, onBack, onGenerate, useProjection, setUseProjection,
+  productById, canGenerate, needsExactArea, simPrefills, onBack, onGenerate, useProjection, setUseProjection,
 }: {
   photoData: string;
   zones: Zone[];
@@ -1461,6 +1537,7 @@ function ZonesStep({
   loadingProducts: boolean;
   productById: (id: string) => VizProduct | null;
   canGenerate: boolean;
+  needsExactArea: boolean;
   simPrefills?: SimPrefill[];
   onBack: () => void;
   onGenerate: () => void;
@@ -1475,7 +1552,7 @@ function ZonesStep({
         <div className="mb-3 flex flex-wrap items-center gap-2">
           <span className="text-[10px] tracking-[0.15em] uppercase font-bold font-[var(--font-inter)] text-[#74777f] mr-1">Como marcar:</span>
           <div className="inline-flex border border-[#e2e2e2] rounded-sm overflow-hidden">
-            {([{ id: "tap" as const, label: "Tocar" }, { id: "draw" as const, label: "Desenhar" }]).map((m) => (
+            {([{ id: "tap" as const, label: "Tocar" }, { id: "draw" as const, label: "4 pontos" }]).map((m) => (
               <button key={m.id} onClick={() => { setMode(m.id); setRetargetId(null); }}
                 className={`px-3.5 py-2 text-[11px] font-bold font-[var(--font-inter)] transition-colors ${mode === m.id ? "bg-[#002045] text-white" : "text-[#74777f] hover:text-[#002045]"}`}>
                 {m.label}
@@ -1500,7 +1577,7 @@ function ZonesStep({
           ) : mode === "tap" ? (
             <><strong>Tocar:</strong> toque numa superfície (parede, teto, móvel…) e a IA marca a área sozinha.</>
           ) : (
-            <><strong>Desenhar:</strong> arraste sobre a foto para desenhar a área você mesmo.</>
+            <><strong>4 pontos:</strong> arraste para criar a área e ajuste os quatro cantos na foto.</>
           )}{" "}
           Você também pode <strong>Descrever em texto</strong> — escolha o que preferir.
         </p>
@@ -1517,16 +1594,33 @@ function ZonesStep({
           </button>
           {!canGenerate && (
             <span className="text-xs text-[#b4791e] font-[var(--font-inter)] self-center">
-              Adicione uma área e atribua um acabamento.
+              {needsExactArea ? "Marque a área na foto com Tocar ou 4 pontos." : "Adicione uma área e atribua um acabamento."}
             </span>
           )}
         </div>
-        <label className="mt-3 flex items-start gap-2 cursor-pointer select-none">
-          <input type="checkbox" checked={useProjection} onChange={(e) => setUseProjection(e.target.checked)} className="accent-[#3b6934]" />
-          <span className="text-[11px] font-[var(--font-inter)] text-[#43474e] leading-snug">
-            Usar projeção geométrica experimental. O padrão recomendado é IA com a textura real da placa, preservando luz e sombras do ambiente.
-          </span>
-        </label>
+        <div className="mt-3 border border-[#e2e2e2] bg-white p-2">
+          <p className="text-[10px] tracking-[0.14em] uppercase font-bold font-[var(--font-inter)] text-[#74777f] mb-2">Modo do resultado</p>
+          <div className="grid grid-cols-2 gap-2">
+            <button
+              type="button"
+              onClick={() => setUseProjection(true)}
+              className={`px-3 py-2 text-[11px] font-bold font-[var(--font-inter)] uppercase tracking-[0.08em] border transition-colors ${
+                useProjection ? "bg-[#3b6934] border-[#3b6934] text-white" : "bg-white border-[#e2e2e2] text-[#43474e] hover:border-[#3b6934]"
+              }`}
+            >
+              Textura exata
+            </button>
+            <button
+              type="button"
+              onClick={() => setUseProjection(false)}
+              className={`px-3 py-2 text-[11px] font-bold font-[var(--font-inter)] uppercase tracking-[0.08em] border transition-colors ${
+                !useProjection ? "bg-[#002045] border-[#002045] text-white" : "bg-white border-[#e2e2e2] text-[#43474e] hover:border-[#002045]"
+              }`}
+            >
+              IA do ambiente
+            </button>
+          </div>
+        </div>
       </div>
 
       <div className="lg:sticky lg:top-24 space-y-3">
@@ -1797,7 +1891,7 @@ function ZoneCard({ zone, index, active, retargeting, onSelect, onChange, onRemo
       <div className="flex items-center justify-between mb-2">
         <p className="text-[10px] font-[var(--font-inter)]">
           {zone.detecting ? <span className="text-[#74777f]">Detectando superfície…</span>
-            : zone.detectFailed ? <span className="text-[#b42318]">Detecção falhou (SAM2/contorno indisponível)</span>
+            : zone.detectFailed ? <span className="text-[#b42318]">Ajuste manual pelos 4 pontos</span>
             : (zone.polygon || zone.maskUrl) && zone.detectEngine === "fal" ? <span className="text-[#2f5429]">Superfície detectada (SAM2) ✓</span>
             : (zone.polygon || zone.maskUrl) && zone.detectEngine === "gemini" ? <span className="text-[#b4791e]">Contorno aproximado (SAM2 indisponível)</span>
             : zone.polygon || zone.maskUrl ? <span className="text-[#2f5429]">Superfície detectada ✓</span>
@@ -1809,18 +1903,17 @@ function ZoneCard({ zone, index, active, retargeting, onSelect, onChange, onRemo
           {retargeting ? "Toque na foto…" : "Refazer seleção"}
         </button>
       </div>
-      {/* Render status: tells the user whether this zone uses the recommended
-          Gemini-with-flat-texture path or the optional geometric projection. */}
+      {/* Render status: tells the user whether this zone uses exact texture or AI. */}
       {prod && (
         <div className="flex items-center justify-between mb-2 -mt-0.5">
           {useProjection && prod.render_texture_path?.trim() ? (
-            <span className="text-[10px] font-bold font-[var(--font-inter)] text-[#2f5429]">● Projeção geométrica</span>
+            <span className="text-[10px] font-bold font-[var(--font-inter)] text-[#2f5429]">● Textura exata</span>
           ) : prod.render_texture_path?.trim() ? (
-            <span className="text-[10px] font-bold font-[var(--font-inter)] text-[#2f5429]">● IA com textura real</span>
+            <span className="text-[10px] font-bold font-[var(--font-inter)] text-[#b4791e]">● IA com referência</span>
           ) : (
             <span className="text-[10px] font-[var(--font-inter)] text-[#74777f]">○ IA com foto de referência</span>
           )}
-          {useProjection && prod.render_texture_path?.trim() && zone.quad && (
+          {prod.render_texture_path?.trim() && zone.quad && (
             <button onClick={(e) => { e.stopPropagation(); onChange({ quad: null }); }}
               className="text-[10px] font-bold font-[var(--font-inter)] text-[#1e5fb4] hover:underline">
               Redefinir cantos

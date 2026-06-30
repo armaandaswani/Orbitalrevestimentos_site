@@ -109,15 +109,15 @@ function makeCanvas(w: number, h: number): HTMLCanvasElement {
 }
 
 // Tiles the flat slab texture into a cols×rows grid at the texture's native
-// aspect. `flipAlternate` mirrors every other column to soften obvious vein
-// repetition (a cheap stand-in for book-matching). Returns the tiled canvas.
+// aspect. By default it repeats the exact slab texture without mirroring:
+// fidelity beats hiding repetition in a sales visualizer.
 export function tileTexture(
   texture: CanvasImageSource,
   texW: number,
   texH: number,
   cols: number,
   rows: number,
-  flipAlternate = true
+  flipAlternate = false
 ): HTMLCanvasElement {
   const c = makeCanvas(texW * cols, texH * rows);
   const ctx = c.getContext("2d")!;
@@ -244,7 +244,7 @@ export function transferLuminance(
   photo: CanvasImageSource,
   outW: number,
   outH: number,
-  strength = 0.85
+  strength = 0.4
 ): HTMLCanvasElement {
   // 1. Low-frequency luminance of the photo: downscale heavily then upscale.
   const small = makeCanvas(Math.max(1, outW / 16), Math.max(1, outH / 16));
@@ -273,7 +273,7 @@ export function transferLuminance(
     // never blow out or crush the texture.
     let f = mean > 0 ? l / mean : 1;
     f = 1 + (f - 1) * strength;
-    f = Math.min(1.3, Math.max(0.55, f));
+    f = Math.min(1.18, Math.max(0.72, f));
     // Pack the factor so the MEAN luminance maps to 255 → multiply ×1.0 (texture
     // unchanged at average light). Darker-than-average areas (<1) darken; lighter
     // areas clamp at 255 (multiply can't brighten). The earlier /1.6 darkened the
