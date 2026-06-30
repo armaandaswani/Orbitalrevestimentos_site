@@ -397,7 +397,7 @@ export default function PedidoDocumentoPage({ params }: { params: Promise<{ id: 
           <div>
             <p><span>Subtotal</span><strong>{fmtBRL(totals.subtotal)}</strong></p>
             {totals.discount > 0 && <p><span>Desconto</span><strong>- {fmtBRL(totals.discount)}</strong></p>}
-            {totals.freight > 0 && <p><span>Frete / despesas</span><strong>{fmtBRL(totals.freight)}</strong></p>}
+            {totals.freight > 0 && <p><span>Frete</span><strong>{fmtBRL(totals.freight)}</strong></p>}
             <p className="doc-total"><span>Total</span><strong>{fmtBRL(totals.total)}</strong></p>
           </div>
         </section>

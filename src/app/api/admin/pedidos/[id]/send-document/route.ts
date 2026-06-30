@@ -227,7 +227,7 @@ async function generatePedidoPdf(input: {
   }
   if (freight > 0) {
     doc.moveDown(0.5);
-    doc.font("Helvetica").text("Frete/desp.", 360, doc.y, { width: 80 });
+    doc.font("Helvetica").text("Frete", 360, doc.y, { width: 80 });
     doc.font("Helvetica-Bold").text(fmtBRL(freight), 450, doc.y - 12, { width: 103, align: "right" });
   }
   doc.moveDown(0.8);

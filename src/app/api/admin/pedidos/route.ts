@@ -16,6 +16,8 @@ const DOCUMENT_COLUMNS = [
   "client_state",
   "discount_amount",
   "freight_amount",
+  "freight_is_revenue",
+  "other_costs",
   "payment_methods",
   "payment_terms",
   "quote_valid_until",
@@ -37,6 +39,13 @@ function cleanText(v: unknown): string | null {
 function cleanMoney(v: unknown): number {
   const n = Number(v);
   return Number.isFinite(n) && n >= 0 ? n : 0;
+}
+
+function cleanOtherCosts(v: unknown): Array<{ label: string; amount: number }> {
+  if (!Array.isArray(v)) return [];
+  return v
+    .map((x) => ({ label: cleanText((x as { label?: unknown })?.label) || "Despesa", amount: cleanMoney((x as { amount?: unknown })?.amount) }))
+    .filter((x) => x.amount > 0);
 }
 
 function cleanPaymentMethods(v: unknown): string[] {
@@ -201,6 +210,8 @@ export async function POST(req: NextRequest) {
     client_state: cleanText(body.client_state),
     discount_amount: cleanMoney(body.discount_amount),
     freight_amount: cleanMoney(body.freight_amount),
+    freight_is_revenue: body.freight_is_revenue === true,
+    other_costs: cleanOtherCosts(body.other_costs),
     payment_methods: cleanPaymentMethods(body.payment_methods),
     payment_terms: cleanText(body.payment_terms),
     quote_valid_until: cleanText(body.quote_valid_until),

@@ -15,6 +15,8 @@ const OPTIONAL_DOCUMENT_COLUMNS = [
   "client_state",
   "discount_amount",
   "freight_amount",
+  "freight_is_revenue",
+  "other_costs",
   "payment_methods",
   "payment_terms",
   "quote_valid_until",
@@ -32,6 +34,17 @@ const OPTIONAL_DOCUMENT_COLUMNS = [
 function cleanMoney(v: unknown): number {
   const n = Number(v);
   return Number.isFinite(n) && n >= 0 ? n : 0;
+}
+
+function cleanText(v: unknown): string | null {
+  return typeof v === "string" && v.trim() ? v.trim() : null;
+}
+
+function cleanOtherCosts(v: unknown): Array<{ label: string; amount: number }> {
+  if (!Array.isArray(v)) return [];
+  return v
+    .map((x) => ({ label: cleanText((x as { label?: unknown })?.label) || "Despesa", amount: cleanMoney((x as { amount?: unknown })?.amount) }))
+    .filter((x) => x.amount > 0);
 }
 
 async function syncPedidoPortalAttribution(db: ReturnType<typeof supabaseAdmin>, pedido: Record<string, unknown>) {
@@ -163,6 +176,8 @@ const EDITABLE = new Set([
   "client_state",
   "discount_amount",
   "freight_amount",
+  "freight_is_revenue",
+  "other_costs",
   "payment_methods",
   "payment_terms",
   "quote_valid_until",
@@ -237,6 +252,9 @@ export async function PATCH(
   for (const [k, v] of Object.entries(body)) {
     if (!EDITABLE.has(k)) continue;
     if (k === "client_email" && typeof v === "string") patch[k] = v.trim().toLowerCase() || null;
+    else if (k === "discount_amount" || k === "freight_amount" || k === "partner_commission_pct" || k === "partner_commission_amount" || k === "sales_rep_commission_pct" || k === "sales_rep_commission_amount") patch[k] = cleanMoney(v);
+    else if (k === "freight_is_revenue") patch[k] = v === true;
+    else if (k === "other_costs") patch[k] = cleanOtherCosts(v);
     else patch[k] = v;
   }
 

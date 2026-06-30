@@ -6,6 +6,7 @@ interface TaxBreakdown { pis: number; cofins: number; irpj: number; csll: number
 interface PerOrder {
   id: string; client_name: string; when: string;
   revenue: number; cogs: number; other_costs: number; discount?: number; freight?: number;
+  freight_is_revenue?: boolean; freight_revenue?: number;
   taxes?: TaxBreakdown; opex?: number; profit: number; margin: number; below_cost: boolean;
 }
 interface FixedBreakdown { name: string; cadence: string; amount: number; prorated: number }
@@ -193,7 +194,7 @@ export default function FinanceiroTab() {
           <div className="grid grid-cols-2 lg:grid-cols-4 gap-4 mb-8">
             <PnlCard label="Impostos" value={fmtBRL(pnl.taxes?.total ?? 0)} sub="PIS/COFINS/IRPJ/CSLL/ICMS" />
             <PnlCard label="Custos operacionais" value={fmtBRL(pnl.opex ?? 0)} sub={`${pnl.tax_rates?.opex ?? 7}% da receita`} />
-            <PnlCard label="Custos do pedido" value={fmtBRL(pnl.order_costs)} sub="frete, mão de obra…" />
+            <PnlCard label="Custos do pedido" value={fmtBRL(pnl.order_costs)} sub="mão de obra, perdas e extras" />
             <PnlCard label="Custos fixos" value={fmtBRL(pnl.fixed_costs)} sub={`${pnl.range.days} dias`} />
           </div>
           <div className="grid grid-cols-2 lg:grid-cols-4 gap-4 mb-8">
@@ -313,7 +314,7 @@ export default function FinanceiroTab() {
               <table className="w-full text-sm font-[var(--font-inter)]">
                 <thead>
                   <tr className="border-b border-[#e2e2e2] bg-[#fafafa]">
-                    {["Cliente", "Data", "Receita", "Desc.", "Custo placas", "Impostos", "Outros", "Lucro", "Margem", ""].map((h, i) => (
+                    {["Cliente", "Data", "Receita", "Frete", "Desc.", "Custo placas", "Impostos", "Extras", "Lucro", "Margem", ""].map((h, i) => (
                       <th key={i} className="text-left px-4 py-2 text-[9px] tracking-[0.12em] uppercase font-bold text-[#74777f] whitespace-nowrap">{h}</th>
                     ))}
                   </tr>
@@ -329,6 +330,16 @@ export default function FinanceiroTab() {
                           <td className="px-4 py-2 text-xs font-semibold text-[#002045]">{o.client_name}{o.below_cost && <span className="ml-2 text-[9px] font-bold px-1 py-0.5 bg-red-50 text-red-600">abaixo do custo</span>}</td>
                           <td className="px-4 py-2 text-xs text-[#74777f] whitespace-nowrap">{fmtDate(o.when)}</td>
                           <td className="px-4 py-2 text-xs text-[#43474e]">{fmtBRL(o.revenue)}</td>
+                          <td className="px-4 py-2 text-xs text-[#43474e] whitespace-nowrap">
+                            {o.freight ? (
+                              <span>
+                                {fmtBRL(o.freight)}
+                                <span className={`block text-[9px] font-bold uppercase tracking-[0.08em] ${o.freight_is_revenue ? "text-[#2f5429]" : "text-[#74777f]"}`}>
+                                  {o.freight_is_revenue ? "receita" : "pass-through"}
+                                </span>
+                              </span>
+                            ) : "—"}
+                          </td>
                           <td className="px-4 py-2 text-xs text-[#43474e]">{o.discount ? fmtBRL(o.discount) : "—"}</td>
                           <td className="px-4 py-2 text-xs text-[#43474e]">{o.cogs ? fmtBRL(o.cogs) : "—"}</td>
                           <td className="px-4 py-2 text-xs text-[#43474e]">{taxTotal ? fmtBRL(taxTotal) : "—"}</td>
@@ -345,7 +356,7 @@ export default function FinanceiroTab() {
                         </tr>
                         {open && t && (
                           <tr className="bg-[#fafafa] border-b border-[#f5f5f3]">
-                            <td colSpan={10} className="px-4 py-3">
+                            <td colSpan={11} className="px-4 py-3">
                               <div className="flex flex-wrap gap-x-6 gap-y-1.5">
                                 {[
                                   ["PIS", t.pis], ["COFINS", t.cofins], ["IRPJ", t.irpj], ["CSLL", t.csll], ["ICMS", t.icms],

@@ -49,6 +49,7 @@ export async function GET(req: NextRequest) {
     total: number | null;
     discount_amount?: number | null;
     freight_amount?: number | null;
+    freight_is_revenue?: boolean | null;
     other_costs?: Array<{ amount?: number }>;
     delivered_at: string | null;
     created_at: string;
@@ -57,7 +58,7 @@ export async function GET(req: NextRequest) {
   try {
     const { data } = await sb
       .from("pedidos")
-      .select("id, total, discount_amount, freight_amount, other_costs, delivered_at, created_at, client_name, status")
+      .select("id, total, discount_amount, freight_amount, freight_is_revenue, other_costs, delivered_at, created_at, client_name, status")
       .eq("status", "entregue");
     completed = ((data ?? []) as typeof completed & Array<{ status: string }>).filter((p) => {
       const ts = new Date(p.delivered_at || p.created_at).getTime();
@@ -123,9 +124,12 @@ export async function GET(req: NextRequest) {
     const itemRev = itemRevenueByOrder[p.id] ?? 0;
     const discount = Math.max(0, Number(p.discount_amount) || 0);
     const freight = Math.max(0, Number(p.freight_amount) || 0);
-    // Freight is treated as pass-through (the default): it does NOT inflate
-    // revenue/profit. It's shown per order but kept out of the margin math.
-    const rev = itemRev > 0 ? Math.max(0, itemRev - discount) : manualRev;
+    // Freight is pass-through by default (excluded from profit); when the order
+    // is flagged freight_is_revenue, it's added to revenue/margin instead.
+    const freightRev = p.freight_is_revenue ? freight : 0;
+    const rev = itemRev > 0
+      ? Math.max(0, itemRev - discount + freightRev)
+      : Math.max(0, manualRev - (p.freight_is_revenue ? 0 : freight));
     const c = cogsByOrder[p.id] ?? 0;
     const oc = Array.isArray(p.other_costs) ? p.other_costs.reduce((s, x) => s + (Number(x?.amount) || 0), 0) : 0;
     if (missingCostByOrder[p.id] || !(p.id in cogsByOrder)) ordersWithoutCost++;
@@ -136,7 +140,7 @@ export async function GET(req: NextRequest) {
     const profit = rev - c - oc - taxes.total - opex;
     return {
       id: p.id, client_name: p.client_name, when,
-      revenue: rev, cogs: c, other_costs: oc, discount, freight, taxes, opex, profit,
+      revenue: rev, cogs: c, other_costs: oc, discount, freight, freight_is_revenue: !!p.freight_is_revenue, freight_revenue: freightRev, taxes, opex, profit,
       margin: rev > 0 ? Math.round((profit / rev) * 100) : 0,
       below_cost: rev > 0 && profit < 0,
     };
@@ -197,6 +201,8 @@ export async function GET(req: NextRequest) {
             other_costs: 0,
             discount: 0,
             freight: 0,
+            freight_is_revenue: false,
+            freight_revenue: 0,
             taxes,
             opex,
             profit,

@@ -6,6 +6,8 @@ import React, { useState, useEffect, useCallback, useMemo } from "react";
 export type PedidoStatus = "em_producao" | "pronto" | "entregue" | "cancelado";
 export type PaymentStatus = "pendente" | "parcial" | "pago";
 
+type PedidoOtherCost = { label?: string | null; amount?: number | null };
+
 export interface Pedido {
   id: string;
   lead_id: string | null;
@@ -31,6 +33,8 @@ export interface Pedido {
   client_state: string | null;
   discount_amount: number | null;
   freight_amount: number | null;
+  freight_is_revenue: boolean | null;
+  other_costs: PedidoOtherCost[] | null;
   payment_methods: string[] | null;
   payment_terms: string | null;
   quote_valid_until: string | null;
@@ -172,6 +176,15 @@ function deliveryBadge(iso: string | null | undefined): { label: string; cls: st
 
 // Draft used by the create/edit modal.
 type PedidoDraft = Partial<Pedido> & { _isNew?: boolean };
+
+function cleanDraftOtherCosts(costs: PedidoOtherCost[] | null | undefined) {
+  return (costs ?? [])
+    .map((cost) => ({
+      label: (cost.label ?? "").trim() || "Despesa",
+      amount: Math.max(0, Number(cost.amount) || 0),
+    }))
+    .filter((cost) => cost.amount > 0);
+}
 
 type PartnerOption = {
   id: string;
@@ -526,6 +539,8 @@ export default function PedidosTab() {
       payment_status: "pendente",
       payment_methods: ["Pix"],
       payment_terms: DEFAULT_PAYMENT_TERMS,
+      freight_is_revenue: false,
+      other_costs: [],
       quote_valid_until: plusDays(7),
       document_notes: DEFAULT_DOCUMENT_NOTES,
       coupon_use_id: q.coupon_use_id,
@@ -592,6 +607,8 @@ export default function PedidosTab() {
       client_state: draft.client_state ?? null,
       discount_amount: draft.discount_amount ?? 0,
       freight_amount: draft.freight_amount ?? 0,
+      freight_is_revenue: draft.freight_is_revenue === true,
+      other_costs: cleanDraftOtherCosts(draft.other_costs),
       payment_methods: draft.payment_methods?.length ? draft.payment_methods : ["Pix"],
       payment_terms: draft.payment_terms ?? null,
       quote_valid_until: draft.quote_valid_until ?? null,
@@ -650,7 +667,7 @@ export default function PedidosTab() {
               Importar orçamento
             </button>
             <button
-              onClick={() => { setItems([]); setDraft({ _isNew: true, status: "em_producao", payment_status: "pendente", payment_methods: ["Pix"], payment_terms: DEFAULT_PAYMENT_TERMS, quote_valid_until: plusDays(7), document_notes: DEFAULT_DOCUMENT_NOTES }); }}
+              onClick={() => { setItems([]); setDraft({ _isNew: true, status: "em_producao", payment_status: "pendente", payment_methods: ["Pix"], payment_terms: DEFAULT_PAYMENT_TERMS, freight_is_revenue: false, other_costs: [], quote_valid_until: plusDays(7), document_notes: DEFAULT_DOCUMENT_NOTES }); }}
               className="bg-[#002045] text-white text-xs tracking-[0.12em] uppercase font-bold font-[var(--font-inter)] px-5 py-2.5 hover:bg-[#1a365d] transition-colors"
             >
               + Novo pedido
@@ -1235,7 +1252,7 @@ export default function PedidosTab() {
                   </div>
                 )}
               </div>
-              <div className="grid grid-cols-2 gap-3">
+              <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
                 <Field label="Desconto (R$)">
                   <input
                     type="number"
@@ -1245,7 +1262,7 @@ export default function PedidosTab() {
                     onChange={(e) => setDraft({ ...draft, discount_amount: e.target.value === "" ? 0 : Number(e.target.value) })}
                   />
                 </Field>
-                <Field label="Frete / despesas (R$)">
+                <Field label="Frete (R$)">
                   <input
                     type="number"
                     min="0"
@@ -1254,6 +1271,72 @@ export default function PedidosTab() {
                     onChange={(e) => setDraft({ ...draft, freight_amount: e.target.value === "" ? 0 : Number(e.target.value) })}
                   />
                 </Field>
+                <label className="border border-[#e2e2e2] px-3 py-2 flex items-center gap-2 min-h-[42px] mt-5">
+                  <input
+                    type="checkbox"
+                    checked={draft.freight_is_revenue === true}
+                    onChange={(e) => setDraft({ ...draft, freight_is_revenue: e.target.checked })}
+                  />
+                  <span className="text-xs font-[var(--font-inter)] text-[#43474e]">Frete entra como receita</span>
+                </label>
+              </div>
+              <div className="border border-[#e2e2e2] p-3 space-y-3">
+                <div className="flex items-center justify-between gap-3">
+                  <div>
+                    <p className="text-[10px] tracking-[0.12em] uppercase font-bold font-[var(--font-inter)] text-[#74777f]">Custos extras do pedido</p>
+                    <p className="text-[11px] text-[#74777f] font-[var(--font-inter)] mt-1">Mão de obra, perdas, embalagens ou custos internos que reduzem a margem.</p>
+                  </div>
+                  <button
+                    type="button"
+                    onClick={() => setDraft({ ...draft, other_costs: [...(draft.other_costs ?? []), { label: "", amount: 0 }] })}
+                    className="border border-[#002045] px-3 py-1.5 text-[10px] uppercase tracking-[0.08em] font-bold text-[#002045] hover:bg-[#eef2f8] whitespace-nowrap"
+                  >
+                    + Custo
+                  </button>
+                </div>
+                {(draft.other_costs ?? []).length === 0 ? (
+                  <p className="text-xs text-[#9aa3b3] font-[var(--font-inter)]">Nenhum custo extra cadastrado para este pedido.</p>
+                ) : (
+                  <div className="space-y-2">
+                    {(draft.other_costs ?? []).map((cost, index) => {
+                      const costs = draft.other_costs ?? [];
+                      return (
+                        <div key={index} className="grid grid-cols-1 sm:grid-cols-[1fr_140px_auto] gap-2 items-center">
+                          <input
+                            className={inputCls}
+                            value={cost.label ?? ""}
+                            placeholder="Ex: mão de obra terceirizada"
+                            onChange={(e) => {
+                              const next = [...costs];
+                              next[index] = { ...next[index], label: e.target.value };
+                              setDraft({ ...draft, other_costs: next });
+                            }}
+                          />
+                          <input
+                            type="number"
+                            min="0"
+                            className={inputCls}
+                            value={cost.amount ?? ""}
+                            placeholder="Valor"
+                            onChange={(e) => {
+                              const next = [...costs];
+                              next[index] = { ...next[index], amount: e.target.value === "" ? 0 : Number(e.target.value) };
+                              setDraft({ ...draft, other_costs: next });
+                            }}
+                          />
+                          <button
+                            type="button"
+                            onClick={() => setDraft({ ...draft, other_costs: costs.filter((_, i) => i !== index) })}
+                            className="px-2 py-2 text-[#b42318] hover:bg-red-50"
+                            title="Remover custo"
+                          >
+                            ×
+                          </button>
+                        </div>
+                      );
+                    })}
+                  </div>
+                )}
               </div>
               <div className="border border-[#e2e2e2] p-3 space-y-3">
                 <div className="flex flex-wrap items-center justify-between gap-2">
