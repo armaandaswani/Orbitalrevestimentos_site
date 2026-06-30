@@ -38,6 +38,7 @@ interface PedidoDocument {
   quote_valid_until: string | null;
   warranty_terms: string | null;
   document_notes: string | null;
+  show_legal_terms?: boolean | null;
   items?: PedidoItem[];
 }
 
@@ -172,6 +173,18 @@ export default function PedidoDocumentoPage({ params }: { params: Promise<{ id: 
     params.then((p) => setId(p.id));
   }, [params]);
 
+  // This page has no admin/route layout of its own, so it inherits the public
+  // site's <Navbar>/<Footer> from the root layout. The earlier @media print
+  // rule that hid them wasn't reliable for every "save as PDF" path (notably
+  // iOS Safari's Print sheet) — a downloaded Orçamento PDF showed the full
+  // "HOME PRODUTOS TECNOLOGIA…" marketing nav at the top. Hide them
+  // unconditionally (screen AND print) for as long as this page is mounted;
+  // there's no reason a commercial document view needs the marketing chrome.
+  useEffect(() => {
+    document.body.classList.add("orbital-doc-page");
+    return () => document.body.classList.remove("orbital-doc-page");
+  }, []);
+
   useEffect(() => {
     const search = new URLSearchParams(window.location.search);
     const tipo = search.get("tipo") || "orcamento";
@@ -215,12 +228,12 @@ export default function PedidoDocumentoPage({ params }: { params: Promise<{ id: 
   }, [pedido]);
 
   if (loading) {
-    return <main className="min-h-screen pt-28 bg-[#f4f2ee] flex items-center justify-center text-[#74777f]">Carregando documento...</main>;
+    return <main className="min-h-screen pt-8 bg-[#f4f2ee] flex items-center justify-center text-[#74777f]">Carregando documento...</main>;
   }
 
   if (error || !pedido) {
     return (
-      <main className="min-h-screen pt-28 bg-[#f4f2ee] flex items-center justify-center px-4">
+      <main className="min-h-screen pt-8 bg-[#f4f2ee] flex items-center justify-center px-4">
         <div className="bg-white border border-red-200 p-6 max-w-md text-center">
           <p className="text-red-700 font-semibold">Não foi possível carregar o documento.</p>
           <p className="text-[#74777f] text-sm mt-2">{error}</p>
@@ -241,10 +254,15 @@ export default function PedidoDocumentoPage({ params }: { params: Promise<{ id: 
   const customerAddress = addressLines(pedido);
   // The long contractual boilerplate only applies to a binding sale (Pedido de
   // Venda / Nota de Venda) — an Orçamento is just a price quote and shouldn't
-  // pre-fill legal clauses. It can still carry whatever custom text the admin
-  // typed below, just never the default boilerplate.
-  const condicoesBoilerplate = docType !== "orcamento" ? (pedido.document_notes?.trim() || DEFAULT_NOTES) : null;
-  const condicoesCustom = docType === "orcamento" ? (pedido.document_notes?.trim() || "") : "";
+  // pre-fill legal clauses. show_legal_terms is the admin's explicit override
+  // (per pedido, in the Pedidos editor) on top of that per-type default —
+  // false hides the whole Condições/legal section regardless of doc type.
+  // Whatever custom text the admin typed into document_notes always wins over
+  // the default boilerplate when present.
+  const legalTermsEnabled = pedido.show_legal_terms !== false;
+  const legalText = legalTermsEnabled
+    ? (pedido.document_notes?.trim() || (docType !== "orcamento" ? DEFAULT_NOTES : ""))
+    : "";
   const documentUrl = typeof window !== "undefined" ? window.location.href : "";
 
   async function saveNotes() {
@@ -264,6 +282,18 @@ export default function PedidoDocumentoPage({ params }: { params: Promise<{ id: 
     } catch { /* best-effort */ } finally {
       setSavingNotes(false);
     }
+  }
+
+  async function toggleLegalTerms(next: boolean) {
+    if (!id) return;
+    setPedido((cur) => (cur ? { ...cur, show_legal_terms: next } : cur)); // optimistic
+    try {
+      await fetch(`/api/admin/pedidos/${id}`, {
+        method: "PATCH",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ show_legal_terms: next }),
+      });
+    } catch { /* best-effort */ }
   }
 
   async function sendDocument(channel: "email" | "whatsapp") {
@@ -293,7 +323,7 @@ export default function PedidoDocumentoPage({ params }: { params: Promise<{ id: 
   }
 
   return (
-    <main className="document-shell min-h-screen bg-[#f4f2ee] pt-28 pb-12 px-4">
+    <main className="document-shell min-h-screen bg-[#f4f2ee] pt-8 pb-12 px-4">
       <div className="document-actions max-w-[980px] mx-auto mb-4 flex flex-wrap items-center justify-between gap-3">
         <div>
           <p className="text-[10px] uppercase tracking-[0.18em] font-bold text-[#74777f]">Documento comercial</p>
@@ -363,6 +393,14 @@ export default function PedidoDocumentoPage({ params }: { params: Promise<{ id: 
           </button>
           {notesSaved && <span className="text-[11px] font-bold text-[#2e7d32]">Salvo.</span>}
         </div>
+        <label className="flex items-center gap-2 text-xs font-[var(--font-inter)] text-[#43474e] mt-3 pt-3 border-t border-[#f0f0f0]">
+          <input
+            type="checkbox"
+            checked={legalTermsEnabled}
+            onChange={(e) => toggleLegalTerms(e.target.checked)}
+          />
+          Mostrar a seção &quot;Condições&quot; (cláusulas) neste pedido
+        </label>
       </div>
 
       <article className="document-page mx-auto bg-white text-[#1a1c1c] shadow-sm">
@@ -477,12 +515,11 @@ export default function PedidoDocumentoPage({ params }: { params: Promise<{ id: 
           </div>
         </section>
 
-        {(pedido.notes || condicoesBoilerplate || condicoesCustom) && (
+        {(pedido.notes || legalText) && (
           <section className="doc-notes">
             <p className="doc-section-label">Condições</p>
             {pedido.notes && <p className="doc-order-notes">{pedido.notes}</p>}
-            {condicoesBoilerplate && <p className="doc-contract">{condicoesBoilerplate}</p>}
-            {condicoesCustom && <p className="doc-contract">{condicoesCustom}</p>}
+            {legalText && <p className="doc-contract">{legalText}</p>}
           </section>
         )}
 
@@ -494,6 +531,12 @@ export default function PedidoDocumentoPage({ params }: { params: Promise<{ id: 
       </article>
 
       <style jsx global>{`
+        /* Unconditional (screen AND print) — see the orbital-doc-page effect
+           above for why @media print alone wasn't reliable. */
+        body.orbital-doc-page > header,
+        body.orbital-doc-page > footer {
+          display: none !important;
+        }
         .document-page {
           width: 210mm;
           min-height: 297mm;
