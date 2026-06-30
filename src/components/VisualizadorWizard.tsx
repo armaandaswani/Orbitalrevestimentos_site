@@ -431,9 +431,13 @@ async function renderZoneProjection(
   w: number,
   h: number
 ): Promise<string> {
-  // Texture is a cross-origin Supabase URL → load with CORS so the canvas isn't
-  // tainted. Base photo is a same-origin data URL.
-  const [tex, photo] = await Promise.all([loadImage(textureUrl, true), loadImage(base)]);
+  // Route absolute (cross-origin Supabase) textures through our same-origin
+  // proxy so the canvas is never tainted (CORS-independent). Base photo is a
+  // same-origin data URL.
+  const texSrc = /^https?:\/\//.test(textureUrl)
+    ? `/api/visualizador/texture-proxy?url=${encodeURIComponent(textureUrl)}`
+    : textureUrl;
+  const [tex, photo] = await Promise.all([loadImage(texSrc), loadImage(base)]);
   const { cols, rows } = panelLayout(parseDim(widthStr), parseDim(heightStr), DEFAULT_PANEL_WIDTH_M, DEFAULT_PANEL_HEIGHT_M);
   const tiled = tileTexture(tex, tex.naturalWidth || 1, tex.naturalHeight || 1, cols, rows);
   const projected = projectTextureToQuad(tiled, quad, w, h);

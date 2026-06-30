@@ -273,14 +273,18 @@ export function transferLuminance(
     // never blow out or crush the texture.
     let f = mean > 0 ? l / mean : 1;
     f = 1 + (f - 1) * strength;
-    f = Math.min(1.6, Math.max(0.4, f));
-    const g = Math.round(Math.min(255, 255 * (f / 1.6))); // pack factor→gray for 'multiply'
+    f = Math.min(1.3, Math.max(0.55, f));
+    // Pack the factor so the MEAN luminance maps to 255 → multiply ×1.0 (texture
+    // unchanged at average light). Darker-than-average areas (<1) darken; lighter
+    // areas clamp at 255 (multiply can't brighten). The earlier /1.6 darkened the
+    // whole panel ~40%, washing the marble grey — that was the bug.
+    const g = Math.round(Math.min(255, Math.max(0, 255 * f)));
     px[i] = px[i + 1] = px[i + 2] = g;
     px[i + 3] = 255;
   }
   shctx.putImageData(id, 0, 0);
 
-  // 2. Multiply the shading (×1.6 to undo the pack) over the projected texture.
+  // 2. Multiply the shading over the projected texture.
   const out = makeCanvas(outW, outH);
   const octx = out.getContext("2d")!;
   octx.drawImage(projected, 0, 0);
