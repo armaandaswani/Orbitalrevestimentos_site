@@ -98,6 +98,9 @@ export async function POST(req: NextRequest) {
     phone?: string;
     // All zones the client visualized, for the WhatsApp caption (multi-zone).
     items?: VisualizadorItem[];
+    // Used by the embedded orçamento flow: save the render for the quote, but
+    // do not send the standalone Visualizador WhatsApp messages.
+    suppressWhatsapp?: boolean;
   };
   try {
     body = await req.json();
@@ -108,6 +111,7 @@ export async function POST(req: NextRequest) {
   const db = supabaseAdmin();
   const nameVal = body.name?.trim() || null;
   const phoneVal = body.phone?.trim() || null;
+  const suppressWhatsapp = body.suppressWhatsapp === true;
 
   // ── Contact-only update (no image) ─────────────────────────────────────────
   if (!body.image) {
@@ -122,7 +126,7 @@ export async function POST(req: NextRequest) {
     const { error } = await db.from("visualizador_renders").update(patch).eq("id", id);
     if (error) console.error("[save-render] contact update failed", error.message);
     // Phone just arrived (standalone lead capture) — deliver the render now.
-    if (phoneVal) await maybeSendRenderWhatsapp(db, id, phoneVal);
+    if (phoneVal && !suppressWhatsapp) await maybeSendRenderWhatsapp(db, id, phoneVal);
     return NextResponse.json({ id });
   }
 
@@ -177,9 +181,9 @@ export async function POST(req: NextRequest) {
     return NextResponse.json({ error: "Falha ao registrar o render." }, { status: 500 });
   }
 
-  // If the phone is already known (embedded flow, or a regenerate after lead
-  // capture), deliver the render now; the dedup guard prevents double-sends.
-  if (phoneVal) await maybeSendRenderWhatsapp(db, id, phoneVal);
+  // If the phone is already known in standalone Visualizador mode, deliver the
+  // render now; the dedup guard prevents double-sends.
+  if (phoneVal && !suppressWhatsapp) await maybeSendRenderWhatsapp(db, id, phoneVal);
 
   return NextResponse.json({ id, count: images.length });
 }

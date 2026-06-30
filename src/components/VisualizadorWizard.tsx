@@ -1163,6 +1163,7 @@ export default function VisualizadorWizard({
             name: pendingLeadRef.current.name || undefined,
             phone: pendingLeadRef.current.phone || undefined,
             items,
+            suppressWhatsapp: embeddedMode,
           }),
         });
         if (sr.ok) {
