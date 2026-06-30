@@ -1067,37 +1067,12 @@ export default function VisualizadorWizard({
             // painting flat rectangles over foreground (mirror, plants); the mask
             // keeps those in front and confines the texture to the real wall.
             composite = await compositeMaskedRegion(composite, panel, z, false);
-
-            // Hybrid Stage 2 — AI relight (ADDITIVE, never destructive): hand the
-            // composite (with the EXACT panel already in place) + this zone's mask
-            // to Gemini in relight mode. It only adds the room's lighting/shadows
-            // to the masked panel and respects the finish (shiny/matte). We then
-            // keep ONLY that relit masked region, so the rest of the photo and all
-            // other zones are untouched. ANY failure → keep the exact panel as-is
-            // (so realism is a bonus, never a regression of the exact result).
-            try {
-              const maskImage = await buildMaskDataUrl(z, dims.w, dims.h);
-              if (maskImage) {
-                const relitRes = await fetch("/api/visualizador/render", {
-                  method: "POST",
-                  headers: { "Content-Type": "application/json" },
-                  body: JSON.stringify({
-                    mode: "relight",
-                    photo: composite,
-                    productId: prod.id,
-                    finish: FINISH_BY_LINE[prod.linha],
-                    maskImage,
-                  }),
-                });
-                const relitBody = (await relitRes.json()) as { image?: string };
-                if (relitRes.ok && relitBody.image) {
-                  composite = await compositeMaskedRegion(composite, relitBody.image, z, false);
-                }
-              }
-            } catch (e) {
-              console.error("[viz] relight skipped (kept exact panel):", e instanceof Error ? e.message : e);
-            }
-            continue; // zone done — exact texture (+ relight when it succeeded)
+            // NOTE: the direct Gemini relight pass was REMOVED — it hallucinated
+            // (duplicated mirrors, "damaged" the slab) because it regenerates the
+            // whole image. Realism will return as a lighting-ONLY multiply that
+            // can never alter the pattern. For now: pure exact projection (the
+            // state confirmed good), no generative relight.
+            continue; // zone done — exact texture only
           } catch (e) {
             // Never silently fall back to the generative "apply" path when the
             // user asked for exact texture — it can hallucinate the slab.
