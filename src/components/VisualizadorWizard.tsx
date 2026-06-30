@@ -570,11 +570,12 @@ export default function VisualizadorWizard({
   const [zones, setZones] = useState<Zone[]>([]);
   const [activeZoneId, setActiveZoneId] = useState<string | null>(null);
   const [generating, setGenerating] = useState(false);
-  // Render mode. Default ON = deterministic texture projection: the exact slab
-  // texture is warped into the selected 4 corners, with no generative model
-  // allowed to reinterpret the material. Gemini remains only as an optional
-  // fallback mode or when a product lacks a flat texture.
-  const [useProjection, setUseProjection] = useState(true);
+  // Render mode. Default OFF = AI generative render fed the EXACT flat slab
+  // texture as its reference (Gemini reproduces the real material and adds the
+  // room's lighting/shadows). This is the reliable path. ON = deterministic
+  // geometric projection — pixel-exact pattern but flat/fragile, kept behind the
+  // toggle until it's solid. (Was reset to ON by a parallel edit; restored.)
+  const [useProjection, setUseProjection] = useState(false);
   const [progress, setProgress] = useState<{ i: number; total: number; label: string } | null>(null);
   const [result, setResult] = useState<string | null>(null);
   const [error, setError] = useState<string | null>(null);
