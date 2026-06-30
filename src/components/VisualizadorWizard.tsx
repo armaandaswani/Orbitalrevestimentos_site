@@ -573,13 +573,17 @@ export default function VisualizadorWizard({
   const [zones, setZones] = useState<Zone[]>([]);
   const [activeZoneId, setActiveZoneId] = useState<string | null>(null);
   const [generating, setGenerating] = useState(false);
-  // HYBRID render, Stage 1: deterministic exact-texture projection is the
-  // material method (always on; the user-facing toggle was removed). The flat
-  // slab texture is warped into the zone's 4-corner quad and clipped to the
-  // PRECISE SAM mask (so foreground objects stay in front — no rectangles), per
-  // zone, so multiple panels each render exactly. Stage 2 adds an AI relight
-  // pass on top for realistic shadows without altering the material.
-  const [useProjection, setUseProjection] = useState(true);
+  // Render method. Default OFF: the whole point of the Visualizador is for a
+  // client to SEE the panel realistically rendered into their own room —
+  // lighting, shadows, perspective integration — which only Gemini's
+  // generative pass gives. It's hardened against hallucination: fed the
+  // EXACT flat slab texture as its reference (told that IMAGE 2 is ground
+  // truth to reproduce pixel-for-pixel) plus the zone's precise SAM mask (told
+  // it may touch ONLY the masked surface, nothing else). The deterministic
+  // projection path below (flat, no Gemini) stays in the code, dormant,
+  // for a future "exact but flat" mode — but is not the default, since a flat
+  // pasted-on texture defeats the purpose of a visualizer.
+  const [useProjection, setUseProjection] = useState(false);
   const [progress, setProgress] = useState<{ i: number; total: number; label: string } | null>(null);
   const [result, setResult] = useState<string | null>(null);
   const [error, setError] = useState<string | null>(null);
@@ -988,9 +992,13 @@ export default function VisualizadorWizard({
 
   // Seed an adjustable 4-corner quad (from the detected box) for any zone whose
   // chosen product has a flat texture — that's what surfaces the corner handles
-  // on the photo and enables pixel-exact projection. Runs once per zone (guarded
-  // by !z.quad), so it never fights a user who's dragging the corners.
+  // on the photo and enables pixel-exact projection. Only relevant when the
+  // (currently dormant) projection path is active; gated on useProjection so
+  // the corner-picker UI doesn't appear and do nothing while Gemini is the
+  // render method. Runs once per zone (guarded by !z.quad), so it never fights
+  // a user who's dragging the corners.
   useEffect(() => {
+    if (!useProjection) return;
     let cancelled = false;
     (async () => {
       for (const z of zones) {
@@ -1007,7 +1015,7 @@ export default function VisualizadorWizard({
       }
     })();
     return () => { cancelled = true; };
-  }, [zones, productById, updateZone]);
+  }, [zones, productById, updateZone, useProjection]);
 
   const areaForZone = (z: Zone): string | undefined => {
     const txt = z.instruction.trim();
