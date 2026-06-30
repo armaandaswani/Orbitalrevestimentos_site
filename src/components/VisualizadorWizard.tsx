@@ -7,7 +7,6 @@ import {
   panelLayout,
   tileTexture,
   projectTextureToQuad,
-  transferLuminance,
 } from "@/lib/texture-projection";
 
 // ── Types ─────────────────────────────────────────────────────────────────────
@@ -463,12 +462,16 @@ async function renderZoneProjection(
   const texSrc = /^https?:\/\//.test(textureUrl)
     ? `/api/visualizador/texture-proxy?url=${encodeURIComponent(textureUrl)}`
     : textureUrl;
-  const [tex, photo] = await Promise.all([loadImage(texSrc), loadImage(base)]);
+  const tex = await loadImage(texSrc);
   const { cols, rows } = panelLayout(parseDim(widthStr), parseDim(heightStr), DEFAULT_PANEL_WIDTH_M, DEFAULT_PANEL_HEIGHT_M);
   const tiled = tileTexture(tex, tex.naturalWidth || 1, tex.naturalHeight || 1, cols, rows);
   const projected = projectTextureToQuad(tiled, quad, w, h);
-  const lit = transferLuminance(projected, photo, w, h);
-  return lit.toDataURL("image/png");
+  // Deterministic lighting removed for now: return the pure, exact texture (flat)
+  // so its true colour shows with zero modulation. If the result is correct,
+  // realistic lighting will be added back via a Gemini relight pass (hybrid
+  // Stage 2). `base` is kept in the signature for that upcoming step.
+  void base;
+  return projected.toDataURL("image/png");
 }
 
 function buildSimuladorUrl(ambientes: SavedAmbiente[]): string {
