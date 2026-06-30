@@ -24,6 +24,7 @@ const MODEL = process.env.GEMINI_IMAGE_MODEL || "gemini-2.5-flash-image";
 
 interface RenderProduct {
   image_path: string | null;
+  render_texture_path: string | null;
   linha: string | null;
   render_finish_description: string | null;
   render_panel_width_m: number | string | null;
@@ -41,7 +42,7 @@ async function loadRenderProduct(productId: string): Promise<RenderProduct | nul
     const { data, error } = await sb
       .from("products")
       .select(
-        "image_path, linha, render_finish_description, render_panel_width_m, render_panel_height_m, render_context_image_path, render_extra_notes"
+        "image_path, render_texture_path, linha, render_finish_description, render_panel_width_m, render_panel_height_m, render_context_image_path, render_extra_notes"
       )
       .eq("id", productId)
       .single();
@@ -122,9 +123,14 @@ export async function POST(req: NextRequest) {
   const finishText = product?.render_finish_description?.trim() || null;
   const usePerModel = !!finishText;
 
-  // The panel swatch reference: prefer the server-side product image, fall
-  // back to the legacy client-provided referenceUrl during rollout.
-  const referenceUrl = product?.image_path || body.referenceUrl;
+  // The panel reference Gemini must reproduce. Prefer the FLAT, rectified slab
+  // texture (render_texture_path) — that's the exact, glare-free, front-on
+  // sample. Fall back to the styled catalogue photo (image_path), then the
+  // legacy client referenceUrl. Using the flat texture here is what lets the
+  // generative render reproduce the real material instead of a look-alike.
+  const referenceUrl =
+    product?.render_texture_path?.trim() || product?.image_path || body.referenceUrl;
+  const usingFlatTexture = !!product?.render_texture_path?.trim();
   if (!referenceUrl)
     return NextResponse.json({ error: "Acabamento de referência obrigatório." }, { status: 400 });
 
@@ -194,6 +200,7 @@ export async function POST(req: NextRequest) {
     wallHeightM: hasWallDims ? wallH : null,
     applicationArea,
     rect,
+    referenceIsFlatTexture: usingFlatTexture,
   });
 
   // Image order MUST match composePrompt's numbering: photo (1), panel (2),

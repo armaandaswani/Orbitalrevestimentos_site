@@ -544,10 +544,12 @@ export default function VisualizadorWizard({
   const [zones, setZones] = useState<Zone[]>([]);
   const [activeZoneId, setActiveZoneId] = useState<string | null>(null);
   const [generating, setGenerating] = useState(false);
-  // Pixel-exact deterministic projection vs. the legacy generative render.
-  // Default ON; the toggle is the rollout fallback (e.g. for products that
-  // don't have a flat texture yet, or unusual surfaces).
-  const [useProjection, setUseProjection] = useState(true);
+  // Render mode. Default OFF = AI generative render fed the EXACT flat slab
+  // texture as its reference (Gemini reproduces the real material and adds the
+  // room's lighting/shadows). ON = deterministic geometric projection of the
+  // texture into the 4 corners (pixel-exact pattern, flatter lighting,
+  // experimental). Generative-with-texture is the reliable default.
+  const [useProjection, setUseProjection] = useState(false);
   const [progress, setProgress] = useState<{ i: number; total: number; label: string } | null>(null);
   const [result, setResult] = useState<string | null>(null);
   const [error, setError] = useState<string | null>(null);
@@ -1519,10 +1521,10 @@ function ZonesStep({
             </span>
           )}
         </div>
-        <label className="mt-3 flex items-center gap-2 cursor-pointer select-none">
+        <label className="mt-3 flex items-start gap-2 cursor-pointer select-none">
           <input type="checkbox" checked={useProjection} onChange={(e) => setUseProjection(e.target.checked)} className="accent-[#3b6934]" />
-          <span className="text-[11px] font-[var(--font-inter)] text-[#43474e]">
-            Projeção exata (recomendado) — usa a textura real da placa. Desmarque para usar a IA generativa.
+          <span className="text-[11px] font-[var(--font-inter)] text-[#43474e] leading-snug">
+            Usar projeção geométrica experimental. O padrão recomendado é IA com a textura real da placa, preservando luz e sombras do ambiente.
           </span>
         </label>
       </div>
@@ -1807,14 +1809,16 @@ function ZoneCard({ zone, index, active, retargeting, onSelect, onChange, onRemo
           {retargeting ? "Toque na foto…" : "Refazer seleção"}
         </button>
       </div>
-      {/* Projection status: tells the user whether this zone renders the exact
-          texture (projection) or the generative AI, and offers a corner reset. */}
+      {/* Render status: tells the user whether this zone uses the recommended
+          Gemini-with-flat-texture path or the optional geometric projection. */}
       {prod && (
         <div className="flex items-center justify-between mb-2 -mt-0.5">
           {useProjection && prod.render_texture_path?.trim() ? (
-            <span className="text-[10px] font-bold font-[var(--font-inter)] text-[#2f5429]">● Projeção exata</span>
+            <span className="text-[10px] font-bold font-[var(--font-inter)] text-[#2f5429]">● Projeção geométrica</span>
+          ) : prod.render_texture_path?.trim() ? (
+            <span className="text-[10px] font-bold font-[var(--font-inter)] text-[#2f5429]">● IA com textura real</span>
           ) : (
-            <span className="text-[10px] font-[var(--font-inter)] text-[#74777f]">○ IA generativa{useProjection ? " (sem textura)" : ""}</span>
+            <span className="text-[10px] font-[var(--font-inter)] text-[#74777f]">○ IA com foto de referência</span>
           )}
           {useProjection && prod.render_texture_path?.trim() && zone.quad && (
             <button onClick={(e) => { e.stopPropagation(); onChange({ quad: null }); }}

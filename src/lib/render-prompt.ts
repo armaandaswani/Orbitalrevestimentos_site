@@ -102,6 +102,10 @@ export function composePrompt(opts: {
   // (x,y = top-left corner; w,h = size). When present the panel is confined to
   // this rectangle — used by the multi-zone flow so each panel stays in its zone.
   rect?: { x: number; y: number; w: number; h: number } | null;
+  // True when IMAGE 2 is a FLAT, rectified, front-on slab texture (the exact
+  // sample) rather than a styled/angled catalogue photo. Tells the model to
+  // reproduce that texture's pattern/colour exactly, tiled at panel scale.
+  referenceIsFlatTexture?: boolean;
 }): string {
   // Dynamic image numbering: IMAGE 1 = photo, IMAGE 2 = panel always. The mask
   // (when present) and the context image follow, in that order — matching the
@@ -143,6 +147,15 @@ export function composePrompt(opts: {
     `  its pattern, color, veining/grain, texture and ${opts.finishText}.`,
     "  IMAGE 2 is the source of truth for how the panel looks — if any wording",
     "  below seems to conflict with IMAGE 2, IMAGE 2 wins.",
+    ...(opts.referenceIsFlatTexture
+      ? [
+          "  IMAGE 2 is a FLAT, straight-on, edge-to-edge sample of the real slab",
+          "  (no perspective, no environment). Reproduce THIS exact pattern and",
+          "  colour on the target surface — same veins, same tones — only adapting",
+          "  it to the wall's perspective and the room's light. Do not invent a",
+          "  different marble or a generic look-alike; copy IMAGE 2's material.",
+        ]
+      : []),
   ];
   if (maskIdx) {
     lines.push(
