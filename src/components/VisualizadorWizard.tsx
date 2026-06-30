@@ -78,6 +78,11 @@ export interface Zone {
   // True once the user pressed "Atualizar pontos": the corner handles hide and
   // SAM2 has re-detected the surface from the adjusted corners. Recallable.
   quadConfirmed?: boolean;
+  // Which engine produced the current surface ("fal" = precise SAM2, "gemini" =
+  // coarse polygon fallback), and whether the last detection failed entirely.
+  // Surfaced in the zone card so SAM2 misconfiguration is visible, not silent.
+  detectEngine?: "fal" | "gemini" | null;
+  detectFailed?: boolean;
 }
 
 export interface SimPrefill {
@@ -691,7 +696,7 @@ export default function VisualizadorWizard({
       if (!photoData) return;
       updateZone(id, { detecting: true });
       const color = ZONE_COLORS[colorIdx % ZONE_COLORS.length];
-      type DetectResp = { mask?: string; polygon?: Array<[number, number]>; rect?: Rect };
+      type DetectResp = { mask?: string; polygon?: Array<[number, number]>; rect?: Rect; engine?: string };
       const callDetect = async (skipFal: boolean): Promise<DetectResp | null> => {
         const res = await fetch("/api/visualizador/detect-surface", {
           method: "POST",
@@ -710,7 +715,7 @@ export default function VisualizadorWizard({
           try {
             const { url, rect, coverage } = await maskToOverlay(j.mask, color);
             if (rect && coverage >= 0.005 && coverage <= 0.92) {
-              updateZone(id, { maskUrl: url, rect, polygon: null, detecting: false });
+              updateZone(id, { maskUrl: url, rect, polygon: null, detecting: false, detectEngine: "fal", detectFailed: false });
               return;
             }
           } catch { /* fall through to Gemini retry */ }
@@ -719,19 +724,19 @@ export default function VisualizadorWizard({
           j = await callDetect(true);
         }
         if (j && Array.isArray(j.polygon)) {
-          updateZone(id, { polygon: j.polygon, rect: j.rect ?? null, maskUrl: null, detecting: false });
+          updateZone(id, { polygon: j.polygon, rect: j.rect ?? null, maskUrl: null, detecting: false, detectEngine: "gemini", detectFailed: false });
           return;
         }
         if (j && typeof j.mask === "string") {
           try {
             const { url, rect, coverage } = await maskToOverlay(j.mask, color);
             if (rect && coverage >= 0.005) {
-              updateZone(id, { maskUrl: url, rect, polygon: null, detecting: false });
+              updateZone(id, { maskUrl: url, rect, polygon: null, detecting: false, detectEngine: j.engine === "fal" ? "fal" : "gemini", detectFailed: false });
               return;
             }
           } catch { /* fall through */ }
         }
-        updateZone(id, { detecting: false });
+        updateZone(id, { detecting: false, detectFailed: true, detectEngine: null });
       } catch {
         updateZone(id, { detecting: false });
       }
@@ -750,7 +755,7 @@ export default function VisualizadorWizard({
       if (!photoData) return;
       updateZone(id, { detecting: true });
       const color = ZONE_COLORS[colorIdx % ZONE_COLORS.length];
-      type DetectResp = { mask?: string; polygon?: Array<[number, number]>; rect?: Rect };
+      type DetectResp = { mask?: string; polygon?: Array<[number, number]>; rect?: Rect; engine?: string };
       const callDetect = async (skipFal: boolean): Promise<DetectResp | null> => {
         const res = await fetch("/api/visualizador/detect-surface", {
           method: "POST",
@@ -759,6 +764,7 @@ export default function VisualizadorWizard({
         });
         return res.ok ? ((await res.json()) as DetectResp) : null;
       };
+      let engine: "fal" | "gemini" | null = null;
       try {
         // The drawn box is a region-of-interest, not the answer: SAM2/Gemini finds
         // the real surface (clean edges, foreground objects excluded) and we keep
@@ -776,7 +782,7 @@ export default function VisualizadorWizard({
         if (j && typeof j.mask === "string") {
           try {
             const { url, coverage } = await maskToOverlay(j.mask, color);
-            if (coverage >= 0.005 && coverage <= 0.92) overlayUrl = url;
+            if (coverage >= 0.005 && coverage <= 0.92) { overlayUrl = url; engine = "fal"; }
           } catch { /* fall through to Gemini retry */ }
           // 2) SAM2 mask empty/degenerate → force the Gemini polygon for the box.
           if (!overlayUrl) j = await callDetect(true);
@@ -787,23 +793,26 @@ export default function VisualizadorWizard({
         if (!overlayUrl && j && Array.isArray(j.polygon) && j.polygon.length >= 3 &&
             photoDims && photoDims.w > 0 && photoDims.h > 0) {
           overlayUrl = polygonToOverlay(j.polygon, color, photoDims.w, photoDims.h);
+          engine = "gemini";
         }
         // 4) A mask may still come back on the forced retry (rare) — last resort.
         if (!overlayUrl && j && typeof j.mask === "string") {
           try {
             const { url, coverage } = await maskToOverlay(j.mask, color);
-            if (coverage >= 0.005) overlayUrl = url;
+            if (coverage >= 0.005) { overlayUrl = url; engine = j.engine === "fal" ? "fal" : "gemini"; }
           } catch { /* nothing usable */ }
         }
 
         if (overlayUrl) {
           const clipped = await clipOverlayToBox(overlayUrl, rect);
           if (clipped) {
-            updateZone(id, { maskUrl: clipped.url, rect: clipped.rect, polygon: null, detecting: false });
+            updateZone(id, { maskUrl: clipped.url, rect: clipped.rect, polygon: null, detecting: false, detectEngine: engine, detectFailed: false });
             return;
           }
         }
-        updateZone(id, { detecting: false }); // detection unusable — keep the manually drawn rect as-is
+        // Both engines returned nothing usable — keep the drawn rect and flag it
+        // so the UI can say "detection failed" instead of silently doing nothing.
+        updateZone(id, { detecting: false, detectFailed: true, detectEngine: null });
       } catch {
         updateZone(id, { detecting: false });
       }
@@ -1782,6 +1791,9 @@ function ZoneCard({ zone, index, active, retargeting, onSelect, onChange, onRemo
       <div className="flex items-center justify-between mb-2">
         <p className="text-[10px] font-[var(--font-inter)]">
           {zone.detecting ? <span className="text-[#74777f]">Detectando superfície…</span>
+            : zone.detectFailed ? <span className="text-[#b42318]">Detecção falhou (SAM2/contorno indisponível)</span>
+            : (zone.polygon || zone.maskUrl) && zone.detectEngine === "fal" ? <span className="text-[#2f5429]">Superfície detectada (SAM2) ✓</span>
+            : (zone.polygon || zone.maskUrl) && zone.detectEngine === "gemini" ? <span className="text-[#b4791e]">Contorno aproximado (SAM2 indisponível)</span>
             : zone.polygon || zone.maskUrl ? <span className="text-[#2f5429]">Superfície detectada ✓</span>
             : zone.manual && zone.rect ? <span className="text-[#2f5429]">Área desenhada ✓</span>
             : <span className="text-[#b4791e]">Descreva o local em texto abaixo</span>}
