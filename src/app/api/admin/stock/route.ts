@@ -19,7 +19,7 @@ export async function GET(req: NextRequest) {
   const sb = supabaseAdmin();
   const primary = await sb
     .from("products")
-    .select("id, name, code, linha, price, cost_price, sale_unit, stock_on_hand, stock_reserved, reorder_point, is_active")
+    .select("id, name, code, linha, price, cost_price, sale_unit, stock_on_hand, stock_reserved, reorder_point, is_active, render_panel_width_m, render_panel_height_m")
     .order("sort_order", { ascending: true });
   let data = primary.data as Array<Record<string, unknown>> | null;
   let error = primary.error;

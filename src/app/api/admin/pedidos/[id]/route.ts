@@ -131,6 +131,66 @@ async function syncPedidoPortalAttribution(db: ReturnType<typeof supabaseAdmin>,
   }
 }
 
+interface ItemInput { product_id?: string; plates?: number }
+
+// Replaces a pedido's line items (model + plate qty) and reconciles the stock
+// ledger for the swap: releases/returns whatever was held for the OLD items
+// (read from pedido_items before we touch them), swaps the rows, then
+// re-reserves or re-consumes for the NEW items according to the order's final
+// status. Used when the admin edits quantities on an existing order — not just
+// at creation. Returns the resulting stock_state to persist on the pedido.
+async function reconcileItemsAndStock(
+  db: ReturnType<typeof supabaseAdmin>,
+  pedidoId: string,
+  rawItems: ItemInput[],
+  priorStockState: string,
+  finalStatus: string
+): Promise<string> {
+  const clean = rawItems
+    .filter((it) => it.product_id && Number(it.plates) > 0)
+    .map((it) => ({ product_id: it.product_id as string, plates: Math.round(Number(it.plates)) }));
+
+  // Free whatever the OLD items held, before we replace the rows they're read from.
+  if (priorStockState === "reserved") {
+    await transitionOrderStock(db, pedidoId, "reserved", "released", "admin");
+  } else if (priorStockState === "consumed") {
+    await transitionOrderStock(db, pedidoId, "consumed", "returned", "admin");
+  }
+
+  await db.from("pedido_items").delete().eq("pedido_id", pedidoId);
+  if (clean.length > 0) {
+    const ids = [...new Set(clean.map((c) => c.product_id))];
+    const { data: prods } = await db.from("products").select("id, name, cost_price, price, sale_unit").in("id", ids);
+    const byId = new Map((prods ?? []).map((p) => [p.id as string, p]));
+    const rows = clean.map((c) => {
+      const p = byId.get(c.product_id);
+      return {
+        pedido_id: pedidoId,
+        product_id: c.product_id,
+        product_name: (p?.name as string) ?? null,
+        plates: c.plates,
+        unit_cost: p?.cost_price ?? null,
+        unit_price: p?.price ?? null,
+        unit_label: (p?.sale_unit as string) ?? "placa",
+      };
+    });
+    await db.from("pedido_items").insert(rows);
+  }
+
+  let newState = "none";
+  if (clean.length > 0) {
+    if (finalStatus === "em_producao" || finalStatus === "pronto") {
+      const r = await transitionOrderStock(db, pedidoId, "none", "reserved", "admin");
+      if (r.ok) newState = "reserved";
+    } else if (finalStatus === "entregue") {
+      const r = await transitionOrderStock(db, pedidoId, "none", "consumed", "admin");
+      if (r.ok) newState = "consumed";
+    }
+  }
+  await db.from("pedidos").update({ stock_state: newState }).eq("id", pedidoId);
+  return newState;
+}
+
 // Maps an order's NEW production status (+ what stock phase it's already in) to
 // the stock action to apply. Returns null when nothing should change.
 function stockTargetFor(
@@ -294,8 +354,24 @@ export async function PATCH(
 
   if (error) return NextResponse.json({ error: error.message }, { status: 500 });
 
+  // Editing the quantity of panels: when `items` is present, replace the
+  // pedido's line items and reconcile the stock ledger for the swap. This is
+  // the only path that touches stock_state when items are involved — it
+  // supersedes the status-driven block below for this request.
+  const itemsInput = Array.isArray(body.items) ? (body.items as ItemInput[]) : null;
+  let itemsHandledStock = false;
+  if (itemsInput) {
+    try {
+      const finalStatus =
+        (typeof patch.status === "string" ? patch.status : (data as Record<string, unknown>)?.status as string) ?? "em_producao";
+      const newState = await reconcileItemsAndStock(db, id, itemsInput, priorStockState, finalStatus);
+      (data as Record<string, unknown>).stock_state = newState;
+      itemsHandledStock = true;
+    } catch { /* stock tables missing or transient — items/stock left as-is */ }
+  }
+
   // Drive inventory off the new status (non-fatal — never block the edit).
-  if (typeof patch.status === "string") {
+  if (!itemsHandledStock && typeof patch.status === "string") {
     const target = stockTargetFor(patch.status, priorStockState);
     if (target) {
       try {

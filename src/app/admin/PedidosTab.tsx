@@ -1,6 +1,7 @@
 "use client";
 
 import React, { useState, useEffect, useCallback, useMemo } from "react";
+import { DEFAULT_PANEL_WIDTH_M, DEFAULT_PANEL_HEIGHT_M } from "@/lib/render-prompt";
 
 // ─── Types ──────────────────────────────────────────────────────────────────
 export type PedidoStatus = "em_producao" | "pronto" | "entregue" | "cancelado";
@@ -236,10 +237,29 @@ export default function PedidosTab() {
   const [cepError, setCepError] = useState("");
 
   // Stock-aware line items for the create form (model + plate qty).
-  type StockProduct = { id: string; name: string; code: string | null; price: number | null; cost_price: number | null; sale_unit: string | null; available: number; stock_on_hand: number };
+  type StockProduct = { id: string; name: string; code: string | null; price: number | null; cost_price: number | null; sale_unit: string | null; available: number; stock_on_hand: number; render_panel_width_m?: number | string | null; render_panel_height_m?: number | string | null };
   type OrderItem = { product_id: string; plates: number };
   const [stockProducts, setStockProducts] = useState<StockProduct[]>([]);
   const [items, setItems] = useState<OrderItem[]>([]);
+  // True once `items` reflects authoritative state for the open draft (fresh
+  // for a new order, or successfully fetched for an existing one). Guards the
+  // PATCH payload below from sending an empty `items: []` — and silently
+  // wiping a real order's stock-reserved line items — if the items fetch
+  // failed (network blip, expired session) when opening the edit modal.
+  const [itemsReady, setItemsReady] = useState(false);
+  // Per-item "calcular pela área" inline helper (index → desired m² typed, and
+  // whether that helper is expanded for that row).
+  const [areaCalcOpen, setAreaCalcOpen] = useState<Record<number, boolean>>({});
+  const [areaCalcValue, setAreaCalcValue] = useState<Record<number, string>>({});
+
+  // Real panel size for a stock product (falls back to the Visualizador's
+  // default panel dimensions when the product has none set), so a desired m²
+  // can be converted into a plate count.
+  const panelAreaM2 = useCallback((prod: StockProduct | undefined): number => {
+    const w = Number(prod?.render_panel_width_m) || DEFAULT_PANEL_WIDTH_M;
+    const h = Number(prod?.render_panel_height_m) || DEFAULT_PANEL_HEIGHT_M;
+    return w * h;
+  }, []);
   const [partners, setPartners] = useState<PartnerOption[]>([]);
   const [salesReps, setSalesReps] = useState<SalesRepOption[]>([]);
   const [quoteImportOpen, setQuoteImportOpen] = useState(false);
@@ -330,6 +350,7 @@ export default function PedidosTab() {
   const itemPricing = useMemo(() => {
     let total = 0;
     let cost = 0;
+    let areaM2 = 0;
     let missingPrice = false;
     let missingCost = false;
     for (const item of items) {
@@ -340,9 +361,30 @@ export default function PedidosTab() {
       else total += product.price * item.plates;
       if (product.cost_price == null) missingCost = true;
       else cost += product.cost_price * item.plates;
+      areaM2 += item.plates * panelAreaM2(product);
     }
-    return { total, cost, grossProfit: total - cost, missingPrice, missingCost };
-  }, [items, stockProducts]);
+    return { total, cost, areaM2, grossProfit: total - cost, missingPrice, missingCost };
+  }, [items, stockProducts, panelAreaM2]);
+
+  // Value + estimated area follow the items live: whenever the quantity of
+  // panels changes, the total and m² recompute automatically — no manual
+  // "use this total" step.
+  useEffect(() => {
+    const hasValidItems = items.some((it) => it.product_id && it.plates > 0);
+    if (!hasValidItems || itemPricing.total <= 0) return;
+    setDraft((d) => {
+      if (!d) return d;
+      const total = itemPricing.total;
+      return {
+        ...d,
+        total,
+        area_m2: Math.round(itemPricing.areaM2 * 100) / 100,
+        partner_commission_amount: moneyFromPct(Number(d.partner_commission_pct) || 0, total),
+        sales_rep_commission_amount: moneyFromPct(Number(d.sales_rep_commission_pct) || 0, total),
+      };
+    });
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [itemPricing.total, itemPricing.areaM2, items]);
 
   const currentTotal = Math.max(0, Number(draft?.total) || 0);
   const selectedPartner = partners.find((p) => p.id === draft?.partner_id) ?? null;
@@ -523,6 +565,7 @@ export default function PedidosTab() {
     const repPct = salesRep?.commission_type === "percentage" ? Number(salesRep.commission_value) || 0 : pctFromMoney(Number(salesRep?.commission_value) || 0, Number(total) || 0);
 
     setItems(product ? [{ product_id: product.id, plates: Math.max(1, Math.round(q.plates ?? 1)) }] : []);
+    setItemsReady(true);
     setDraft({
       _isNew: true,
       client_name: q.client_name,
@@ -552,8 +595,30 @@ export default function PedidosTab() {
     setQuoteImportOpen(false);
   }
 
+  // Opens the edit modal for an existing pedido, fetching its current line
+  // items (model + plate qty) so the quantity editor is pre-filled instead of
+  // starting empty — without this, editing an order never showed its items.
+  const openEdit = useCallback(async (p: Pedido) => {
+    setItems([]);
+    setItemsReady(false);
+    setAreaCalcOpen({});
+    setAreaCalcValue({});
+    setDraft({ ...p });
+    try {
+      const res = await fetch(`/api/admin/pedidos/${p.id}`);
+      if (!res.ok) return; // itemsReady stays false — save() won't touch items
+      const full = await res.json().catch(() => null);
+      const rows = Array.isArray(full?.items) ? full.items : [];
+      const mapped: OrderItem[] = rows
+        .filter((it: { product_id?: string; plates?: number }) => it.product_id && Number(it.plates) > 0)
+        .map((it: { product_id?: string; plates?: number }) => ({ product_id: it.product_id as string, plates: Math.round(Number(it.plates)) }));
+      if (mapped.length > 0) setItems(mapped);
+      setItemsReady(true); // authoritative now, even if mapped is empty
+    } catch { /* itemsReady stays false — best-effort, save() won't touch items */ }
+  }, []);
+
   // ── Mutations ────────────────────────────────────────────────────────────────
-  async function patchPedido(id: string, patch: Partial<Pedido>) {
+  async function patchPedido(id: string, patch: Partial<Pedido> & { items?: OrderItem[] }) {
     // optimistic
     setPedidos((prev) => prev.map((p) => (p.id === id ? { ...p, ...patch } : p)));
     try {
@@ -637,7 +702,7 @@ export default function PedidosTab() {
           alert(`Erro ao salvar: ${d?.error ?? res.status}`);
         }
       } else if (draft.id) {
-        await patchPedido(draft.id, payload);
+        await patchPedido(draft.id, itemsReady ? { ...payload, items: cleanItems } : payload);
         setDraft(null);
       }
     } finally {
@@ -667,7 +732,7 @@ export default function PedidosTab() {
               Importar orçamento
             </button>
             <button
-              onClick={() => { setItems([]); setDraft({ _isNew: true, status: "em_producao", payment_status: "pendente", payment_methods: ["Pix"], payment_terms: DEFAULT_PAYMENT_TERMS, freight_is_revenue: false, other_costs: [], quote_valid_until: plusDays(7), document_notes: DEFAULT_DOCUMENT_NOTES }); }}
+              onClick={() => { setItems([]); setItemsReady(true); setDraft({ _isNew: true, status: "em_producao", payment_status: "pendente", payment_methods: ["Pix"], payment_terms: DEFAULT_PAYMENT_TERMS, freight_is_revenue: false, other_costs: [], quote_valid_until: plusDays(7), document_notes: DEFAULT_DOCUMENT_NOTES }); }}
               className="bg-[#002045] text-white text-xs tracking-[0.12em] uppercase font-bold font-[var(--font-inter)] px-5 py-2.5 hover:bg-[#1a365d] transition-colors"
             >
               + Novo pedido
@@ -782,7 +847,7 @@ export default function PedidosTab() {
                         <p className="text-xs text-[#74777f]">{fmtDate(p.created_at)}</p>
                       </td>
                       <td className="px-4 py-3">
-                        <button onClick={() => setDraft({ ...p })} className="font-semibold text-[#002045] text-xs truncate hover:underline text-left block max-w-full">{p.client_name}</button>
+                        <button onClick={() => openEdit(p)} className="font-semibold text-[#002045] text-xs truncate hover:underline text-left block max-w-full">{p.client_name}</button>
                         {p.client_email && <p className="text-[10px] text-[#74777f] truncate">{p.client_email}</p>}
                         <div className="flex items-center gap-2 mt-0.5">
                           {waHref && (
@@ -848,7 +913,7 @@ export default function PedidosTab() {
                           <option value="nota">Nota de venda</option>
                           <option value="recibo">Recibo</option>
                         </select>
-                        <button onClick={() => setDraft({ ...p })} className="text-[10px] text-[#002045] font-bold hover:underline mr-3">Editar</button>
+                        <button onClick={() => openEdit(p)} className="text-[10px] text-[#002045] font-bold hover:underline mr-3">Editar</button>
                         <button onClick={() => deletePedido(p.id)} className="text-[10px] text-red-600 font-bold hover:underline">Excluir</button>
                       </td>
                     </tr>
@@ -866,7 +931,7 @@ export default function PedidosTab() {
                 <div key={p.id} className="bg-white border border-[#e2e2e2] p-4">
                   <div className="flex items-start justify-between gap-2">
                     <div className="min-w-0">
-                      <button onClick={() => setDraft({ ...p })} className="font-semibold text-[#002045] text-sm truncate hover:underline text-left block max-w-full">{p.client_name}</button>
+                      <button onClick={() => openEdit(p)} className="font-semibold text-[#002045] text-sm truncate hover:underline text-left block max-w-full">{p.client_name}</button>
                       {p.client_email && <p className="text-[11px] text-[#74777f] truncate">{p.client_email}</p>}
                       {(p.product_name || p.space) && (
                         <p className="text-[10px] text-[#b0b0b0] mt-0.5 truncate">{[p.space, p.product_name].filter(Boolean).join(" · ")}</p>
@@ -914,7 +979,7 @@ export default function PedidosTab() {
                       <option value="nota">Nota de venda</option>
                       <option value="recibo">Recibo</option>
                     </select>
-                    <button onClick={() => setDraft({ ...p })} className="text-[10px] text-[#002045] font-bold">Editar</button>
+                    <button onClick={() => openEdit(p)} className="text-[10px] text-[#002045] font-bold">Editar</button>
                     <button onClick={() => deletePedido(p.id)} className="text-[10px] text-red-600 font-bold">Excluir</button>
                   </div>
                 </div>
@@ -1040,18 +1105,28 @@ export default function PedidosTab() {
                 </Field>
               </div>
 
-              {/* Stock-aware line items (model + plate qty). Reserves stock for
-                  active orders; powers profit. Only on new orders. */}
-              {draft._isNew && stockProducts.length > 0 && (
+              {/* Stock-aware line items (model + plate qty). Reserves/baixa de
+                  estoque; the editable quantity here — not a freeform m² box —
+                  drives both the estimated area and the total automatically. */}
+              {stockProducts.length > 0 && (
                 <div className="border border-[#e2e2e2] rounded-sm p-3">
                   <p className="text-[10px] tracking-[0.12em] uppercase font-bold font-[var(--font-inter)] text-[#74777f] mb-2">
-                    Itens do pedido (reserva/baixa de estoque)
+                    Itens do pedido — quantidade de placas
                   </p>
                   <div className="space-y-2">
                     {items.map((it, idx) => {
                       const prod = stockProducts.find((p) => p.id === it.product_id);
                       const unit = prod?.sale_unit || "placa";
                       const over = prod && it.plates > prod.available;
+                      const calcOpen = !!areaCalcOpen[idx];
+                      const calcM2 = areaCalcValue[idx] ?? "";
+                      const applyAreaCalc = () => {
+                        const desired = Number(String(calcM2).replace(",", "."));
+                        if (!prod || !Number.isFinite(desired) || desired <= 0) return;
+                        const suggested = Math.max(1, Math.ceil(desired / panelAreaM2(prod)));
+                        setItems((cur) => cur.map((x, i) => i === idx ? { ...x, plates: suggested } : x));
+                        setAreaCalcOpen((cur) => ({ ...cur, [idx]: false }));
+                      };
                       return (
                         <div key={idx} className="border border-[#f0f0f0] bg-white p-2">
                           <div className="grid grid-cols-[1fr_120px_28px] gap-2 items-start">
@@ -1077,11 +1152,31 @@ export default function PedidosTab() {
                             className="text-[#b42318] text-lg leading-none px-1" title="Remover">×</button>
                           </div>
                           {prod && (
-                            <div className="flex flex-wrap gap-x-4 gap-y-1 mt-2 text-[10px] font-[var(--font-inter)] text-[#74777f]">
+                            <div className="flex flex-wrap items-center gap-x-4 gap-y-1 mt-2 text-[10px] font-[var(--font-inter)] text-[#74777f]">
                               <span className="font-semibold text-[#002045]">{prod.name}{prod.code ? ` · ${prod.code}` : ""}</span>
                               <span>{prod.available} {unit} disponíveis</span>
                               <span>Venda/{unit}: {prod.price != null ? fmtBRL(prod.price) : "sem preço"}</span>
+                              <span>≈ {(it.plates * panelAreaM2(prod)).toFixed(2)} m²</span>
                               {over && <span className="text-amber-700 font-bold">Quantidade acima do disponível</span>}
+                              <button type="button" onClick={() => setAreaCalcOpen((cur) => ({ ...cur, [idx]: !cur[idx] }))}
+                                className="text-[#1e5fb4] font-bold hover:underline">
+                                Calcular pela área
+                              </button>
+                            </div>
+                          )}
+                          {calcOpen && prod && (
+                            <div className="flex items-center gap-2 mt-2 bg-[#fafafa] border border-[#f0f0f0] px-2 py-1.5">
+                              <input type="number" min="0" step="0.01" value={calcM2} autoFocus
+                                onChange={(e) => setAreaCalcValue((cur) => ({ ...cur, [idx]: e.target.value }))}
+                                placeholder="m² desejado"
+                                className="w-28 border border-[#e2e2e2] px-2 py-1 text-xs font-[var(--font-inter)] text-[#002045] focus:outline-none focus:border-[#002045]" />
+                              <span className="text-[10px] text-[#74777f] font-[var(--font-inter)]">
+                                ({panelAreaM2(prod).toFixed(2)} m²/placa)
+                              </span>
+                              <button type="button" onClick={applyAreaCalc}
+                                className="bg-[#002045] text-white text-[10px] font-bold font-[var(--font-inter)] px-3 py-1.5 hover:bg-[#1a365d]">
+                                → placas
+                              </button>
                             </div>
                           )}
                         </div>
@@ -1096,29 +1191,15 @@ export default function PedidosTab() {
                     <div className="mt-3 border-t border-[#f0f0f0] pt-3">
                       <div className="flex flex-wrap items-center justify-between gap-2">
                         <div>
-                          <p className="text-[10px] tracking-[0.12em] uppercase font-bold font-[var(--font-inter)] text-[#74777f]">Total sugerido pelos itens</p>
+                          <p className="text-[10px] tracking-[0.12em] uppercase font-bold font-[var(--font-inter)] text-[#74777f]">Total calculado pelos itens</p>
                           <p className="text-sm font-semibold font-[var(--font-inter)] text-[#002045]">
                             {itemPricing.total > 0 ? fmtBRL(itemPricing.total) : "Defina preço de venda no Estoque"}
                           </p>
-                          {itemPricing.total > 0 && !itemPricing.missingCost && (
-                            <p className="text-[10px] text-[#74777f] font-[var(--font-inter)]">
-                              Margem bruta estimada: {fmtBRL(itemPricing.grossProfit)}
-                            </p>
-                          )}
+                          <p className="text-[10px] text-[#74777f] font-[var(--font-inter)]">
+                            ≈ {itemPricing.areaM2.toFixed(2)} m² no total
+                            {itemPricing.total > 0 && !itemPricing.missingCost ? ` · Margem bruta estimada: ${fmtBRL(itemPricing.grossProfit)}` : ""}
+                          </p>
                         </div>
-                        <button
-                          type="button"
-                          onClick={() => setDraft({
-                            ...draft,
-                            total: itemPricing.total,
-                            partner_commission_amount: moneyFromPct(Number(draft.partner_commission_pct) || 0, itemPricing.total),
-                            sales_rep_commission_amount: moneyFromPct(Number(draft.sales_rep_commission_pct) || 0, itemPricing.total),
-                          })}
-                          disabled={itemPricing.total <= 0}
-                          className="border border-[#002045] text-[#002045] disabled:opacity-40 text-[10px] uppercase tracking-[0.1em] font-bold font-[var(--font-inter)] px-3 py-2 hover:bg-[#eef2f8]"
-                        >
-                          Usar total
-                        </button>
                       </div>
                       {(itemPricing.missingPrice || itemPricing.missingCost) && (
                         <p className="text-amber-700 text-[10px] font-[var(--font-inter)] mt-2">
@@ -1136,14 +1217,22 @@ export default function PedidosTab() {
                 </div>
               )}
               <div className="grid grid-cols-2 gap-3">
-                <Field label="Área (m²)">
-                  <input
-                    type="number"
-                    className={inputCls}
-                    value={draft.area_m2 ?? ""}
-                    onChange={(e) => setDraft({ ...draft, area_m2: e.target.value === "" ? null : Number(e.target.value) })}
-                  />
-                </Field>
+                {items.some((it) => it.product_id && it.plates > 0) ? (
+                  <Field label="Área estimada (m²)">
+                    <p className={`${inputCls} bg-[#fafafa] text-[#43474e] flex items-center`}>
+                      {(draft.area_m2 ?? itemPricing.areaM2).toFixed(2)} m²
+                    </p>
+                  </Field>
+                ) : (
+                  <Field label="Área (m²)">
+                    <input
+                      type="number"
+                      className={inputCls}
+                      value={draft.area_m2 ?? ""}
+                      onChange={(e) => setDraft({ ...draft, area_m2: e.target.value === "" ? null : Number(e.target.value) })}
+                    />
+                  </Field>
+                )}
                 <Field label="Valor total (R$)">
                   <input
                     type="number"
