@@ -570,12 +570,13 @@ export default function VisualizadorWizard({
   const [zones, setZones] = useState<Zone[]>([]);
   const [activeZoneId, setActiveZoneId] = useState<string | null>(null);
   const [generating, setGenerating] = useState(false);
-  // Render mode. Default OFF = AI generative render fed the EXACT flat slab
-  // texture as its reference (Gemini reproduces the real material and adds the
-  // room's lighting/shadows). This is the reliable path. ON = deterministic
-  // geometric projection — pixel-exact pattern but flat/fragile, kept behind the
-  // toggle until it's solid. (Was reset to ON by a parallel edit; restored.)
-  const [useProjection, setUseProjection] = useState(false);
+  // HYBRID render, Stage 1: deterministic exact-texture projection is the
+  // material method (always on; the user-facing toggle was removed). The flat
+  // slab texture is warped into the zone's 4-corner quad and clipped to the
+  // PRECISE SAM mask (so foreground objects stay in front — no rectangles), per
+  // zone, so multiple panels each render exactly. Stage 2 adds an AI relight
+  // pass on top for realistic shadows without altering the material.
+  const [useProjection, setUseProjection] = useState(true);
   const [progress, setProgress] = useState<{ i: number; total: number; label: string } | null>(null);
   const [result, setResult] = useState<string | null>(null);
   const [error, setError] = useState<string | null>(null);
@@ -1058,7 +1059,11 @@ export default function VisualizadorWizard({
         if (useProjection && textureUrl && quad && dims && dims.w > 0 && dims.h > 0) {
           try {
             const panel = await renderZoneProjection(textureUrl, quad, z.width, z.height, base, dims.w, dims.h);
-            composite = await compositeMaskedRegion(composite, panel, z, true);
+            // Clip to the PRECISE SAM mask (preferQuad=false), NOT the quad —
+            // the quad only drove the perspective warp. Clipping to the quad was
+            // painting flat rectangles over foreground (mirror, plants); the mask
+            // keeps those in front and confines the texture to the real wall.
+            composite = await compositeMaskedRegion(composite, panel, z, false);
             continue; // zone done deterministically — skip the generative call
           } catch (e) {
             // Never silently fall back to Gemini when the user asked for exact
