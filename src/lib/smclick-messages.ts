@@ -58,16 +58,17 @@ export function visualizadorRenderMessage(items: VisualizadorItem[]): string {
  */
 export function productEducationMessage(): string {
   return [
-    "A nossa solução, as *Placas Flexíveis de Bambu*, tem durabilidade comprovada no clima amazônico! 🌳",
+    "Os painéis Fibra de Bambu são uma forma prática de transformar o ambiente com acabamento sofisticado, sem obra pesada. E tem durabilidade comprovada no clima amazônico! 🌳",
     "",
     "💧 Resistente à água, mofo e umidade",
-    "🐜 Anti-cupim",
     "🔥 Não propaga chamas",
-    "⚡ Aplicação rápida e limpa, sem quebra-quebra",
+    "⚡ Aplicação rápida e limpa",
     "🚚 Pronta entrega em Manaus",
-    "",
-    "Quer saber se combina com o seu ambiente? É só responder esta mensagem que a gente te ajuda! 🙌",
   ].join("\n");
+}
+
+export function clientOrcamentoCtaMessage(): string {
+  return "Quer que eu revise com você as medidas e lhe ajude a seguir com o pedido?";
 }
 
 export interface MeetingInviteInput {
@@ -117,25 +118,23 @@ export function clientOrcamentoMessage(i: OrcamentoMessageInput): string {
   const lines: string[] = [
     `Olá, ${firstName(i.name)}! 👋 Aqui é a Orbital Revestimentos.`,
     ``,
-    `Recebemos o seu orçamento e está tudo pronto:`,
+    `Recebemos sua simulação e já deixamos tudo pronto para você revisar com calma:`,
   ];
-  if (i.space) lines.push(`📍 Ambiente: ${i.space}`);
-  if (i.model) lines.push(`🎨 Modelo: ${i.model}`);
-  if (i.dimLabel) lines.push(`📐 Medidas: ${i.dimLabel}`);
-  lines.push(`💰 Total estimado: ${fmtBRL(i.total)}`);
-  lines.push(``);
   const renders = (i.renderUrls ?? []).filter(Boolean);
   if (renders.length > 0) {
+    lines.push(``);
     lines.push(renders.length === 1 ? `🖼️ Veja como ficou no seu ambiente:` : `🖼️ Veja como ficou nos seus ambientes:`);
     renders.forEach((u) => lines.push(u));
-    lines.push(``);
   }
   if (i.quoteUrl) {
-    lines.push(`Veja o orçamento completo aqui:`);
-    lines.push(i.quoteUrl);
     lines.push(``);
+    lines.push(`📄 Acesse seu orçamento completo:`);
+    lines.push(i.quoteUrl);
   }
-  lines.push(`Qualquer dúvida, é só responder esta mensagem. Estamos à disposição! 🙌`);
+  lines.push(
+    ``,
+    `A Orbital fornece somente o material. A instalação é contratada à parte, mas temos uma empresa parceira especializada nesse tipo de aplicação. O contato dela aparece dentro do link do orçamento.`
+  );
   return lines.join("\n");
 }
 

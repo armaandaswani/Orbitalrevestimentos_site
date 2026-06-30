@@ -4,7 +4,12 @@ import { getResend } from "@/lib/resend";
 import { generateClientEmail, STEP_DELAYS_DAYS } from "@/lib/client-email-content";
 import { upsertLeadFromSource, touchLeadContacted } from "@/lib/leads";
 import { smclickConfigured, sendText, normalizePhone } from "@/lib/smclick";
-import { clientOrcamentoMessage, ownerHighValueMessage, productEducationMessage } from "@/lib/smclick-messages";
+import {
+  clientOrcamentoCtaMessage,
+  clientOrcamentoMessage,
+  ownerHighValueMessage,
+  productEducationMessage,
+} from "@/lib/smclick-messages";
 
 const ADMIN_EMAIL = "armaandaswani19@gmail.com";
 
@@ -174,6 +179,8 @@ export async function POST(req: NextRequest) {
       if (res.ok) {
         const edu = await sendText(phone, productEducationMessage());
         if (!edu.ok) console.error("[smclick] product education WhatsApp failed", { status: edu.status, error: edu.error });
+        const cta = await sendText(phone, clientOrcamentoCtaMessage());
+        if (!cta.ok) console.error("[smclick] client CTA WhatsApp failed", { status: cta.status, error: cta.error });
       }
     } else {
       console.warn("[smclick] client orçamento WhatsApp skipped", { configured: smclickConfigured(), hasPhone: Boolean(phone) });
