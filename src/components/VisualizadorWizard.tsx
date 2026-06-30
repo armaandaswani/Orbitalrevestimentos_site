@@ -1076,7 +1076,7 @@ export default function VisualizadorWizard({
           try { maskImage = await buildMaskDataUrl(z, dims.w, dims.h); } catch { maskImage = null; }
         }
         const reqBody = JSON.stringify({
-          photo: base, productId: prod.id, referenceUrl: prod.image_path,
+          photo: base, productId: prod.id, referenceUrl: prod.render_texture_path?.trim() || prod.image_path,
           finish: FINISH_BY_LINE[prod.linha],
           wallWidthM: parseDim(z.width) ?? undefined,
           wallHeightM: parseDim(z.height) ?? undefined,
@@ -1553,7 +1553,7 @@ function ZonesStep({
         <div className="mb-3 flex flex-wrap items-center gap-2">
           <span className="text-[10px] tracking-[0.15em] uppercase font-bold font-[var(--font-inter)] text-[#74777f] mr-1">Como marcar:</span>
           <div className="inline-flex border border-[#e2e2e2] rounded-sm overflow-hidden">
-            {([{ id: "tap" as const, label: "Tocar" }, { id: "draw" as const, label: "4 pontos" }]).map((m) => (
+            {([{ id: "tap" as const, label: "Tocar" }, { id: "draw" as const, label: "Desenhar" }]).map((m) => (
               <button key={m.id} onClick={() => { setMode(m.id); setRetargetId(null); }}
                 className={`px-3.5 py-2 text-[11px] font-bold font-[var(--font-inter)] transition-colors ${mode === m.id ? "bg-[#002045] text-white" : "text-[#74777f] hover:text-[#002045]"}`}>
                 {m.label}
@@ -1578,7 +1578,7 @@ function ZonesStep({
           ) : mode === "tap" ? (
             <><strong>Tocar:</strong> toque numa superfície (parede, teto, móvel…) e a IA marca a área sozinha.</>
           ) : (
-            <><strong>4 pontos:</strong> arraste para criar a área e ajuste os quatro cantos na foto.</>
+            <><strong>Desenhar:</strong> arraste sobre a foto para desenhar a área você mesmo.</>
           )}{" "}
           Você também pode <strong>Descrever em texto</strong> — escolha o que preferir.
         </p>
@@ -1598,29 +1598,6 @@ function ZonesStep({
               {needsExactArea ? "Marque a área na foto com Tocar ou 4 pontos." : "Adicione uma área e atribua um acabamento."}
             </span>
           )}
-        </div>
-        <div className="mt-3 border border-[#e2e2e2] bg-white p-2">
-          <p className="text-[10px] tracking-[0.14em] uppercase font-bold font-[var(--font-inter)] text-[#74777f] mb-2">Modo do resultado</p>
-          <div className="grid grid-cols-2 gap-2">
-            <button
-              type="button"
-              onClick={() => setUseProjection(true)}
-              className={`px-3 py-2 text-[11px] font-bold font-[var(--font-inter)] uppercase tracking-[0.08em] border transition-colors ${
-                useProjection ? "bg-[#3b6934] border-[#3b6934] text-white" : "bg-white border-[#e2e2e2] text-[#43474e] hover:border-[#3b6934]"
-              }`}
-            >
-              Textura exata
-            </button>
-            <button
-              type="button"
-              onClick={() => setUseProjection(false)}
-              className={`px-3 py-2 text-[11px] font-bold font-[var(--font-inter)] uppercase tracking-[0.08em] border transition-colors ${
-                !useProjection ? "bg-[#002045] border-[#002045] text-white" : "bg-white border-[#e2e2e2] text-[#43474e] hover:border-[#002045]"
-              }`}
-            >
-              IA do ambiente
-            </button>
-          </div>
         </div>
       </div>
 
