@@ -41,6 +41,7 @@ export interface Pedido {
   quote_valid_until: string | null;
   warranty_terms: string | null;
   document_notes: string | null;
+  show_legal_terms: boolean | null;
   partner_commission_pct: number | null;
   partner_commission_amount: number | null;
   sales_rep_commission_pct: number | null;
@@ -640,7 +641,11 @@ export default function PedidosTab() {
       freight_is_revenue: false,
       other_costs: [],
       quote_valid_until: plusDays(7),
-      document_notes: DEFAULT_DOCUMENT_NOTES,
+      // Leave document_notes UNSET — the documento page already falls back to
+      // the legal boilerplate for Pedido/Nota on its own; pre-seeding it here
+      // baked the boilerplate into every order's actual saved data, which
+      // defeated the per-document-type suppression on Orçamento (it was never
+      // "empty", just full of legal text from the moment the order was made).
       coupon_use_id: q.coupon_use_id,
       partner_commission_pct: partnerPct,
       partner_commission_amount: partner?.commission_type === "fixed" ? Number(partner.commission_value) || 0 : moneyFromPct(partnerPct, Number(total) || 0),
@@ -741,6 +746,7 @@ export default function PedidosTab() {
       quote_valid_until: draft.quote_valid_until ?? null,
       warranty_terms: draft.warranty_terms ?? null,
       document_notes: draft.document_notes ?? null,
+      show_legal_terms: draft.show_legal_terms !== false,
       partner_commission_pct: draft.partner_commission_pct ?? 0,
       partner_commission_amount: draft.partner_commission_amount ?? moneyFromPct(Number(draft.partner_commission_pct) || 0),
       sales_rep_commission_pct: draft.sales_rep_commission_pct ?? 0,
@@ -794,7 +800,7 @@ export default function PedidosTab() {
               Importar orçamento
             </button>
             <button
-              onClick={() => { setItems(stockProducts.length > 0 ? [{ product_id: "", plates: 1 }] : []); setItemsReady(true); setDraft({ _isNew: true, status: "em_producao", payment_status: "pendente", payment_methods: ["Pix"], payment_terms: DEFAULT_PAYMENT_TERMS, freight_is_revenue: false, other_costs: [], quote_valid_until: plusDays(7), document_notes: DEFAULT_DOCUMENT_NOTES }); }}
+              onClick={() => { setItems(stockProducts.length > 0 ? [{ product_id: "", plates: 1 }] : []); setItemsReady(true); setDraft({ _isNew: true, status: "em_producao", payment_status: "pendente", payment_methods: ["Pix"], payment_terms: DEFAULT_PAYMENT_TERMS, freight_is_revenue: false, other_costs: [], quote_valid_until: plusDays(7) }); }}
               className="bg-[#002045] text-white text-xs tracking-[0.12em] uppercase font-bold font-[var(--font-inter)] px-5 py-2.5 hover:bg-[#1a365d] transition-colors"
             >
               + Novo pedido
@@ -1593,7 +1599,18 @@ export default function PedidosTab() {
                 </div>
                 <Field label="Observações do documento">
                   <textarea className={`${inputCls} min-h-[120px]`} value={draft.document_notes ?? ""} onChange={(e) => setDraft({ ...draft, document_notes: e.target.value })} placeholder={DEFAULT_DOCUMENT_NOTES} />
+                  <p className="text-[#b0b0b0] text-[10px] font-[var(--font-inter)] mt-1">
+                    Se vazio, Pedido de Venda e Nota de Venda usam as cláusulas padrão; Orçamento não mostra cláusula nenhuma por padrão.
+                  </p>
                 </Field>
+                <label className="flex items-center gap-2 text-xs font-[var(--font-inter)] text-[#43474e]">
+                  <input
+                    type="checkbox"
+                    checked={draft.show_legal_terms !== false}
+                    onChange={(e) => setDraft({ ...draft, show_legal_terms: e.target.checked })}
+                  />
+                  Mostrar a seção "Condições" (cláusulas) nos documentos deste pedido
+                </label>
               </div>
               <div className="grid grid-cols-2 gap-3">
                 <Field label="Status da produção">

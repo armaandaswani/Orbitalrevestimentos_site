@@ -22,6 +22,7 @@ const OPTIONAL_DOCUMENT_COLUMNS = [
   "quote_valid_until",
   "warranty_terms",
   "document_notes",
+  "show_legal_terms",
   "partner_id",
   "sales_rep_id",
   "partner_commission_pct",
@@ -243,6 +244,7 @@ const EDITABLE = new Set([
   "quote_valid_until",
   "warranty_terms",
   "document_notes",
+  "show_legal_terms",
   "partner_commission_pct",
   "partner_commission_amount",
   "sales_rep_commission_pct",
@@ -314,6 +316,7 @@ export async function PATCH(
     if (k === "client_email" && typeof v === "string") patch[k] = v.trim().toLowerCase() || null;
     else if (k === "discount_amount" || k === "freight_amount" || k === "partner_commission_pct" || k === "partner_commission_amount" || k === "sales_rep_commission_pct" || k === "sales_rep_commission_amount") patch[k] = cleanMoney(v);
     else if (k === "freight_is_revenue") patch[k] = v === true;
+    else if (k === "show_legal_terms") patch[k] = v !== false;
     else if (k === "other_costs") patch[k] = cleanOtherCosts(v);
     else patch[k] = v;
   }
