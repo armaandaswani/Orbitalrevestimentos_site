@@ -534,6 +534,93 @@ async function renderZoneProjection(
   return projected.toDataURL("image/png");
 }
 
+// Applies ONLY the lighting/shadow from a Gemini relight pass onto an image,
+// inside the zone's mask, WITHOUT changing the texture in the slightest. For
+// each masked pixel we keep the exact-projected panel's own colour and multiply
+// it by the RATIO of the relit luminance to its own luminance — so the panel
+// picks up the room's light gradient, contact shadows, and (for a polished
+// finish) a sheen, while its pattern, veins and colour stay pixel-identical.
+// The ratio is clamped so lighting can only shade/highlight, never recolour or
+// wash out the material. This is a per-pixel brightness map, not a repaint.
+async function blendLuminanceInMask(
+  baseDataUrl: string,
+  litDataUrl: string,
+  z: Zone,
+  w: number,
+  h: number
+): Promise<string> {
+  const [baseImg, litImg, stencil] = await Promise.all([
+    loadImage(baseDataUrl),
+    loadImage(litDataUrl),
+    buildStencil(z, w, h),
+  ]);
+  if (!stencil) return baseDataUrl; // no spatial info → leave the exact panel as-is
+
+  const sample = (img: HTMLImageElement | HTMLCanvasElement) => {
+    const c = document.createElement("canvas");
+    c.width = w; c.height = h;
+    const ctx = c.getContext("2d")!;
+    ctx.drawImage(img, 0, 0, w, h);
+    return ctx.getImageData(0, 0, w, h).data;
+  };
+  const litD = sample(litImg);
+  const mskD = sample(stencil);
+
+  const outCanvas = document.createElement("canvas");
+  outCanvas.width = w; outCanvas.height = h;
+  const outCtx = outCanvas.getContext("2d")!;
+  outCtx.drawImage(baseImg, 0, 0, w, h);
+  const outImg = outCtx.getImageData(0, 0, w, h);
+  const o = outImg.data;
+
+  const lum = (r: number, g: number, b: number) => 0.299 * r + 0.587 * g + 0.114 * b;
+  for (let i = 0; i < o.length; i += 4) {
+    if (mskD[i + 3] < 20) continue; // outside mask → panel/photo untouched
+    const bl = lum(o[i], o[i + 1], o[i + 2]);
+    if (bl < 1) continue;
+    const ll = lum(litD[i], litD[i + 1], litD[i + 2]);
+    // Clamp the shading ratio: shade/highlight only, never recolour or blow out.
+    // The upper bound leaves room for a polished sheen; matte/wood relights come
+    // back flatter from the prompt, so they naturally stay near 1.0.
+    const ratio = Math.max(0.6, Math.min(1.6, ll / bl));
+    o[i] = Math.min(255, o[i] * ratio);
+    o[i + 1] = Math.min(255, o[i + 1] * ratio);
+    o[i + 2] = Math.min(255, o[i + 2] * ratio);
+  }
+  outCtx.putImageData(outImg, 0, 0);
+  return outCanvas.toDataURL("image/jpeg", 0.92);
+}
+
+// Asks the render API for a lighting-ONLY pass (mode="relight") over an image
+// that already has the exact panel installed. `finish` drives how Gemini lights
+// it (polished = sheen/reflections, matte/wood = soft/none). Returns Gemini's
+// relit image or null on any failure, so the caller keeps the flat exact panel
+// rather than failing the render. Only this output's LUMINANCE is used.
+async function requestZoneRelight(
+  photoComposite: string,
+  prod: VizProduct,
+  maskDataUrl: string | null
+): Promise<string | null> {
+  try {
+    const res = await fetch("/api/visualizador/render", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({
+        photo: photoComposite,
+        productId: prod.id,
+        referenceUrl: prod.render_texture_path?.trim() || prod.image_path,
+        finish: FINISH_BY_LINE[prod.linha],
+        maskImage: maskDataUrl ?? undefined,
+        mode: "relight",
+      }),
+    });
+    const j = (await res.json()) as { image?: string };
+    return res.ok && j.image ? j.image : null;
+  } catch {
+    return null;
+  }
+}
+
 function buildSimuladorUrl(ambientes: SavedAmbiente[]): string {
   if (ambientes.length === 1) {
     const a = ambientes[0];
@@ -1143,7 +1230,22 @@ export default function VisualizadorWizard({
             // to the client's photo.
             const panel = await renderZoneProjection(textureUrl, quad, z.width, z.height, base, dims.w, dims.h);
             composite = await compositeMaskedRegion(composite, panel, z, false);
-            continue; // zone done — exact texture only
+
+            // Lighting pass — let Gemini add the room's light/shadow onto the
+            // exact panel (a sheen on polished finishes; none on matte/wood),
+            // then keep ONLY its luminance mapped back onto the exact texture
+            // (blendLuminanceInMask). The pattern/colour cannot change in the
+            // slightest — this is a brightness map, not a repaint. Best-effort:
+            // if the relight call fails/unconfigured, the flat exact panel is
+            // kept rather than failing the render.
+            try {
+              const relightMask = await buildMaskDataUrl(z, dims.w, dims.h);
+              const relit = await requestZoneRelight(composite, prod, relightMask);
+              if (relit) composite = await blendLuminanceInMask(composite, relit, z, dims.w, dims.h);
+            } catch (e) {
+              console.warn("[viz] lighting pass skipped:", e instanceof Error ? e.message : e);
+            }
+            continue; // zone done — exact texture, optionally relit
           } catch (e) {
             console.error("[viz] exact texture projection failed:", e instanceof Error ? e.message : e);
             throw new Error(`Não consegui aplicar a textura exata em ${z.label}. Tente refazer a seleção da área ou outro acabamento.`);
