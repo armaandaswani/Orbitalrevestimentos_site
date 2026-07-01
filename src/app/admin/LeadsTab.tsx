@@ -39,6 +39,10 @@ export interface Lead {
   ai_summary_at: string | null;
   created_at: string;
   updated_at: string;
+  // The order this lead converted into, if any (attached server-side by
+  // GET /api/admin/leads) — drives "Converter em Pedido" vs "Ver pedido".
+  pedido_id?: string | null;
+  pedido_status?: string | null;
 }
 
 export type LeadNoteKind = "note" | "call" | "message" | "meeting" | "email" | "system" | "ai";
@@ -123,7 +127,22 @@ function reminderBadge(iso: string | null | undefined): { label: string; cls: st
 // Draft used by the create/edit modal.
 type LeadDraft = Partial<Lead> & { _isNew?: boolean };
 
-export default function LeadsTab() {
+interface LeadsTabProps {
+  // "Converter em Pedido" — opens Pedidos prefilled from this won lead.
+  onConvertToPedido?: (lead: Lead) => void;
+  // "Ver pedido" — jumps to Pedidos, focused on the order this lead produced.
+  onViewPedido?: (pedidoId: string) => void;
+  // Set by Pedidos' "Lead de origem" link — opens this lead's detail drawer.
+  focusLeadId?: string | null;
+  onFocusConsumed?: () => void;
+}
+
+export default function LeadsTab({
+  onConvertToPedido,
+  onViewPedido,
+  focusLeadId,
+  onFocusConsumed,
+}: LeadsTabProps = {}) {
   const [leads, setLeads] = useState<Lead[]>([]);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -178,6 +197,17 @@ export default function LeadsTab() {
   useEffect(() => {
     fetchLeads();
   }, [fetchLeads]);
+
+  // Consume a "Lead de origem" focus request from the Pedidos tab: open that
+  // lead's detail drawer once it's in the fetched list.
+  useEffect(() => {
+    if (!focusLeadId) return;
+    const found = leads.find((l) => l.id === focusLeadId);
+    if (!found) return;
+    setDetailLead(found);
+    onFocusConsumed?.();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [focusLeadId, leads]);
 
   // Clear the AI timing hint whenever a different lead is opened in the modal.
   useEffect(() => {
@@ -586,6 +616,11 @@ export default function LeadsTab() {
                         )}
                         <button onClick={() => setDetailLead(l)} className="text-[10px] text-[#002045] font-bold hover:underline mr-3">Detalhes</button>
                         <button onClick={() => setDraft({ ...l })} className="text-[10px] text-[#002045] font-bold hover:underline mr-3">Editar</button>
+                        {l.pedido_id ? (
+                          <button onClick={() => onViewPedido?.(l.pedido_id as string)} className="text-[10px] text-[#3b6934] font-bold hover:underline mr-3">Ver pedido →</button>
+                        ) : l.status === "ganho" && onConvertToPedido ? (
+                          <button onClick={() => onConvertToPedido(l)} className="text-[10px] text-[#3b6934] font-bold hover:underline mr-3">Converter em Pedido</button>
+                        ) : null}
                         <button onClick={() => deleteLead(l.id)} className="text-[10px] text-red-600 font-bold hover:underline">Excluir</button>
                       </td>
                     </tr>
@@ -631,6 +666,11 @@ export default function LeadsTab() {
                     )}
                     <button onClick={() => setDetailLead(l)} className="text-[10px] text-[#002045] font-bold">Detalhes</button>
                     <button onClick={() => setDraft({ ...l })} className="text-[10px] text-[#002045] font-bold">Editar</button>
+                    {l.pedido_id ? (
+                      <button onClick={() => onViewPedido?.(l.pedido_id as string)} className="text-[10px] text-[#3b6934] font-bold">Ver pedido →</button>
+                    ) : l.status === "ganho" && onConvertToPedido ? (
+                      <button onClick={() => onConvertToPedido(l)} className="text-[10px] text-[#3b6934] font-bold">Converter</button>
+                    ) : null}
                     <button onClick={() => deleteLead(l.id)} className="text-[10px] text-red-600 font-bold">Excluir</button>
                   </div>
                 </div>
@@ -651,6 +691,8 @@ export default function LeadsTab() {
           }}
           onEdit={(l) => { setDetailLead(null); setDraft({ ...l }); }}
           onWhatsApp={(l) => { setDetailLead(null); setWaLead(l); setWaMessage(""); setWaError(null); }}
+          onConvertToPedido={onConvertToPedido ? (l) => { setDetailLead(null); onConvertToPedido(l); } : undefined}
+          onViewPedido={onViewPedido ? (id) => { setDetailLead(null); onViewPedido(id); } : undefined}
         />
       )}
 
@@ -839,12 +881,16 @@ function LeadDetailDrawer({
   onLeadChange,
   onEdit,
   onWhatsApp,
+  onConvertToPedido,
+  onViewPedido,
 }: {
   lead: Lead;
   onClose: () => void;
   onLeadChange: (lead: Lead) => void;
   onEdit: (lead: Lead) => void;
   onWhatsApp: (lead: Lead) => void;
+  onConvertToPedido?: (lead: Lead) => void;
+  onViewPedido?: (pedidoId: string) => void;
 }) {
   const [notes, setNotes] = useState<LeadNote[]>([]);
   const [points, setPoints] = useState<LeadDataPoint[]>([]);
@@ -1011,6 +1057,11 @@ function LeadDetailDrawer({
             {lead.phone && (
               <button onClick={() => onWhatsApp(lead)} className="border border-[#25d366] text-[#9ff0bd] text-[10px] tracking-[0.1em] uppercase font-bold px-3 py-1.5 hover:bg-white/10 transition-colors">WhatsApp</button>
             )}
+            {lead.pedido_id && onViewPedido ? (
+              <button onClick={() => onViewPedido(lead.pedido_id as string)} className="border border-[#9ff0bd] text-[#9ff0bd] text-[10px] tracking-[0.1em] uppercase font-bold px-3 py-1.5 hover:bg-white/10 transition-colors">Ver pedido →</button>
+            ) : lead.status === "ganho" && onConvertToPedido ? (
+              <button onClick={() => onConvertToPedido(lead)} className="border border-[#9ff0bd] text-[#9ff0bd] text-[10px] tracking-[0.1em] uppercase font-bold px-3 py-1.5 hover:bg-white/10 transition-colors">Converter em Pedido</button>
+            ) : null}
           </div>
         </div>
 

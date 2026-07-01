@@ -2,6 +2,7 @@
 
 import React, { useState, useEffect, useCallback, useMemo } from "react";
 import { DEFAULT_PANEL_WIDTH_M, DEFAULT_PANEL_HEIGHT_M } from "@/lib/render-prompt";
+import type { Lead } from "./LeadsTab";
 
 // ─── Types ──────────────────────────────────────────────────────────────────
 export type PedidoStatus = "em_producao" | "pronto" | "entregue" | "cancelado";
@@ -224,7 +225,25 @@ type QuoteOption = {
   created_at: string;
 };
 
-export default function PedidosTab() {
+interface PedidosTabProps {
+  // Set by the Leads tab's "Converter em Pedido" action — opens the create
+  // form prefilled from that lead's data. Consumed once (parent clears it).
+  leadPrefill?: Lead | null;
+  onLeadPrefillConsumed?: () => void;
+  // Jumps to the Leads tab focused on this lead (the "Lead de origem" link).
+  onViewLead?: (leadId: string) => void;
+  // Set by the Leads tab's "Ver pedido" action — opens that order's editor.
+  focusPedidoId?: string | null;
+  onPedidoFocusConsumed?: () => void;
+}
+
+export default function PedidosTab({
+  leadPrefill,
+  onLeadPrefillConsumed,
+  onViewLead,
+  focusPedidoId,
+  onPedidoFocusConsumed,
+}: PedidosTabProps = {}) {
   const [pedidos, setPedidos] = useState<Pedido[]>([]);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -347,6 +366,42 @@ export default function PedidosTab() {
   useEffect(() => {
     fetchPedidos();
   }, [fetchPedidos]);
+
+  // Consume a "Converter em Pedido" prefill from the Leads tab: open the
+  // create form seeded from that lead, then tell the parent to clear it so
+  // navigating back to Leads and converting again doesn't re-trigger.
+  useEffect(() => {
+    if (!leadPrefill) return;
+    startDraftFromLead(leadPrefill);
+    onLeadPrefillConsumed?.();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [leadPrefill]);
+
+  // Consume a "Ver pedido" focus request from the Leads tab: open that
+  // pedido's editor once it's in the fetched list.
+  useEffect(() => {
+    if (!focusPedidoId) return;
+    const found = pedidos.find((p) => p.id === focusPedidoId);
+    if (!found) return;
+    openEdit(found);
+    onPedidoFocusConsumed?.();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [focusPedidoId, pedidos]);
+
+  // "Lead de origem" — resolve the lead's name for display in the editor when
+  // the open draft has a lead_id (either just-converted, or an older order
+  // that already had one from a prior version of this flow).
+  const [originLeadName, setOriginLeadName] = useState<string | null>(null);
+  useEffect(() => {
+    const leadId = draft?.lead_id;
+    if (!leadId) { setOriginLeadName(null); return; }
+    let cancelled = false;
+    fetch(`/api/admin/leads/${leadId}`)
+      .then((r) => (r.ok ? r.json() : null))
+      .then((j) => { if (!cancelled) setOriginLeadName(j?.name ?? null); })
+      .catch(() => { if (!cancelled) setOriginLeadName(null); });
+    return () => { cancelled = true; };
+  }, [draft?.lead_id]);
 
   // ── Derived ────────────────────────────────────────────────────────────────
   const statusCounts = useMemo(() => {
@@ -655,6 +710,59 @@ export default function PedidosTab() {
     setQuoteImportOpen(false);
   }
 
+  // Same idea as startDraftFromQuote, but seeded from a won LEAD instead of a
+  // quote — the "Converter em Pedido" action. A lead carries no area/plate
+  // count the way a quote does, so we seed one row (matched product if found)
+  // with a single plate; the admin fills in the real quantity once known.
+  function startDraftFromLead(lead: Lead) {
+    const partner =
+      (lead.partner_id ? partners.find((p) => p.id === lead.partner_id) : null) ??
+      (lead.partner_name ? partners.find((p) => p.name === lead.partner_name) : null) ??
+      null;
+    const linkedRep = partner?.partner_sales_reps?.map((l) => l.sales_reps).find(Boolean) ?? null;
+    const salesRep = linkedRep ? salesReps.find((r) => r.id === linkedRep.id) ?? null : null;
+
+    const norm = (s: string) => s.trim().toLowerCase();
+    const parenCode = lead.product_name?.match(/\(([^)]+)\)\s*$/)?.[1]?.trim() ?? null;
+    const nameOnly = lead.product_name?.replace(/\s*\([^)]*\)\s*$/, "").trim() || null;
+    const product =
+      (parenCode ? stockProducts.find((p) => p.code && norm(p.code) === norm(parenCode)) : null) ??
+      (nameOnly ? stockProducts.find((p) => norm(p.name) === norm(nameOnly)) : null) ??
+      (lead.product_name ? stockProducts.find((p) => norm(p.name) === norm(lead.product_name!)) : null) ??
+      null;
+
+    const total = lead.estimated_value ?? null;
+    const partnerPct = partner?.commission_type === "percentage" ? Number(partner.commission_value) || 0 : pctFromMoney(Number(partner?.commission_value) || 0, Number(total) || 0);
+    const repPct = salesRep?.commission_type === "percentage" ? Number(salesRep.commission_value) || 0 : pctFromMoney(Number(salesRep?.commission_value) || 0, Number(total) || 0);
+
+    setItems([{ product_id: product?.id ?? "", plates: 1 }]);
+    setItemsReady(true);
+    setDraft({
+      _isNew: true,
+      lead_id: lead.id,
+      client_name: lead.name,
+      client_email: lead.email,
+      client_phone: lead.phone,
+      partner_id: partner?.id ?? null,
+      partner_name: partner?.name ?? lead.partner_name,
+      sales_rep_id: salesRep?.id ?? null,
+      space: lead.space,
+      product_name: lead.product_name,
+      total,
+      status: "em_producao",
+      payment_status: "pendente",
+      payment_methods: ["Pix"],
+      payment_terms: DEFAULT_PAYMENT_TERMS,
+      freight_is_revenue: false,
+      other_costs: [],
+      quote_valid_until: plusDays(7),
+      partner_commission_pct: partnerPct,
+      partner_commission_amount: partner?.commission_type === "fixed" ? Number(partner.commission_value) || 0 : moneyFromPct(partnerPct, Number(total) || 0),
+      sales_rep_commission_pct: repPct,
+      sales_rep_commission_amount: salesRep?.commission_type === "fixed" ? Number(salesRep.commission_value) || 0 : moneyFromPct(repPct, Number(total) || 0),
+    });
+  }
+
   // Opens the edit modal for an existing pedido, fetching its current line
   // items (model + plate qty) so the quantity editor is pre-filled instead of
   // starting empty — without this, editing an order never showed its items.
@@ -752,6 +860,7 @@ export default function PedidosTab() {
       sales_rep_commission_pct: draft.sales_rep_commission_pct ?? 0,
       sales_rep_commission_amount: draft.sales_rep_commission_amount ?? moneyFromPct(Number(draft.sales_rep_commission_pct) || 0),
       coupon_use_id: draft.coupon_use_id ?? null,
+      lead_id: draft.lead_id ?? null,
     };
     const cleanItems = items.filter((it) => it.product_id && it.plates > 0);
     try {
@@ -1322,6 +1431,16 @@ export default function PedidosTab() {
               )}
               <div className="border border-[#e2e2e2] p-3 space-y-3">
                 <p className="text-[10px] tracking-[0.12em] uppercase font-bold font-[var(--font-inter)] text-[#74777f]">Vínculos comerciais e comissões</p>
+                {draft.lead_id && (
+                  <button
+                    type="button"
+                    onClick={() => onViewLead?.(draft.lead_id as string)}
+                    disabled={!onViewLead}
+                    className="text-left text-xs font-[var(--font-inter)] text-[#002045] underline decoration-dotted disabled:no-underline disabled:cursor-default"
+                  >
+                    Lead de origem: {originLeadName ?? "carregando…"}
+                  </button>
+                )}
                 <div className="grid grid-cols-2 gap-3">
                   <Field label="Parceiro">
                     <select className={inputCls} value={draft.partner_id ?? ""} onChange={(e) => applyPartnerSelection(e.target.value)}>

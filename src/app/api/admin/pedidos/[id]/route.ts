@@ -250,6 +250,7 @@ const EDITABLE = new Set([
   "sales_rep_commission_pct",
   "sales_rep_commission_amount",
   "coupon_use_id",
+  "lead_id",
 ]);
 
 /** GET /api/admin/pedidos/[id] — the order plus its line items. */

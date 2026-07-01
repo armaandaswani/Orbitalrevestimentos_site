@@ -2,7 +2,7 @@
 
 import React, { useState, useEffect, useCallback, useMemo, useRef } from "react";
 import { SITE_ASSET_MANIFEST } from "@/lib/assets";
-import LeadsTab from "./LeadsTab";
+import LeadsTab, { type Lead } from "./LeadsTab";
 import RemindersTab from "./RemindersTab";
 import PedidosTab from "./PedidosTab";
 import RepOversightTab from "./RepOversightTab";
@@ -154,6 +154,14 @@ export default function AdminPage() {
   const [pwError, setPwError] = useState("");
   const [tab, setTab] = useState<"dashboard" | "lembretes" | "leads" | "pedidos" | "estoque" | "financeiro" | "partners" | "representantes" | "orcamentos" | "campaigns" | "drip" | "commissions" | "produtos" | "projetos" | "midia" | "simulador" | "chat" | "visualizacoes" | "precos">("dashboard");
   const [commissionFilter, setCommissionFilter] = useState<"a_pagar" | "pago" | "tudo">("a_pagar");
+
+  // Cross-tab handoff for the Lead → Order conversion flow: no context/store,
+  // just parent-owned prefill/focus state passed as props (same shape as the
+  // existing simPrefills pattern in the Simulador), consumed once by the
+  // receiving tab and then cleared.
+  const [pedidoLeadPrefill, setPedidoLeadPrefill] = useState<Lead | null>(null);
+  const [leadFocusId, setLeadFocusId] = useState<string | null>(null);
+  const [pedidoFocusId, setPedidoFocusId] = useState<string | null>(null);
 
   // Dashboard
   interface DashboardData {
@@ -4055,8 +4063,23 @@ export default function AdminPage() {
           </div>
         )}
         {/* ═══ LEADS / CRM TAB ═══ */}
-        {tab === "leads" && authed && <LeadsTab />}
-        {tab === "pedidos" && authed && <PedidosTab />}
+        {tab === "leads" && authed && (
+          <LeadsTab
+            onConvertToPedido={(lead) => { setPedidoLeadPrefill(lead); setTab("pedidos"); }}
+            onViewPedido={(pedidoId) => { setPedidoFocusId(pedidoId); setTab("pedidos"); }}
+            focusLeadId={leadFocusId}
+            onFocusConsumed={() => setLeadFocusId(null)}
+          />
+        )}
+        {tab === "pedidos" && authed && (
+          <PedidosTab
+            leadPrefill={pedidoLeadPrefill}
+            onLeadPrefillConsumed={() => setPedidoLeadPrefill(null)}
+            onViewLead={(leadId) => { setLeadFocusId(leadId); setTab("leads"); }}
+            focusPedidoId={pedidoFocusId}
+            onPedidoFocusConsumed={() => setPedidoFocusId(null)}
+          />
+        )}
         {tab === "estoque" && authed && <EstoqueTab />}
         {tab === "financeiro" && authed && <FinanceiroTab />}
 

@@ -21,6 +21,24 @@ const EDITABLE = new Set([
   "notes",
 ]);
 
+/** GET /api/admin/leads/[id] — fetch a single lead (e.g. to resolve a pedido's
+ * "Lead de origem" display from just a lead_id). */
+export async function GET(
+  req: NextRequest,
+  { params }: { params: Promise<{ id: string }> }
+) {
+  if (!isAdminRequest(req)) return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+
+  const { id } = await params;
+  if (!id) return NextResponse.json({ error: "Missing id" }, { status: 400 });
+
+  const db = supabaseAdmin();
+  const { data, error } = await db.from("leads").select("*").eq("id", id).maybeSingle();
+  if (error) return NextResponse.json({ error: error.message }, { status: 500 });
+  if (!data) return NextResponse.json({ error: "Lead não encontrado." }, { status: 404 });
+  return NextResponse.json(data);
+}
+
 export async function PATCH(
   req: NextRequest,
   { params }: { params: Promise<{ id: string }> }

@@ -46,6 +46,31 @@ export async function GET(req: NextRequest) {
     }
   }
 
+  // Attach the pedido (order) each lead converted into, if any — lets the
+  // admin UI show "Ver pedido" instead of "Converter em Pedido" once a won
+  // lead has already produced an order. A lead should have at most one, but
+  // if it somehow has more, keep the most recent.
+  const leadIds = rows.map((r) => r.id as string);
+  if (leadIds.length > 0) {
+    try {
+      const { data: pedidos } = await db
+        .from("pedidos")
+        .select("id, lead_id, status, created_at")
+        .in("lead_id", leadIds)
+        .order("created_at", { ascending: false });
+      const pedidoByLead: Record<string, { id: string; status: string }> = {};
+      for (const p of pedidos ?? []) {
+        const lid = p.lead_id as string;
+        if (!pedidoByLead[lid]) pedidoByLead[lid] = { id: p.id as string, status: p.status as string };
+      }
+      for (const r of rows) {
+        const match = pedidoByLead[r.id as string];
+        r.pedido_id = match?.id ?? null;
+        r.pedido_status = match?.status ?? null;
+      }
+    } catch { /* pedidos table missing/migration not run — leave unset */ }
+  }
+
   return NextResponse.json(rows);
 }
 
