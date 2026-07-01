@@ -46,21 +46,41 @@ async function imageUrlToDataUri(url: string): Promise<string> {
 }
 
 // ── fal.ai SAM2 ──────────────────────────────────────────────────────────────
-// pxX/pxY are PIXEL coordinates in the source image.
+// pxX/pxY are PIXEL coordinates in the source image; natW/natH are the image's
+// pixel dimensions (used to size the point cluster).
 async function detectFal(
   photoDataUrl: string,
   pxX: number,
-  pxY: number
+  pxY: number,
+  natW: number,
+  natH: number
 ): Promise<{ mask: string; width: number; height: number } | null> {
   const key = process.env.FAL_KEY;
   if (!key) return null;
   try {
+    // A SINGLE point is the weakest SAM2 prompt: on a large flat surface it
+    // often returns only the sub-region it's most confident about (one slab
+    // section, or the part cut off by a shadow/seam) → partial masks and empty
+    // spaces. Send a small CLUSTER of positive points around the tap (±5% of
+    // the image) so SAM2 reads "this whole surface", not one spot. The offset
+    // is small enough to stay on the intended wall in the common case.
+    const dx = Math.round((natW || 1000) * 0.05);
+    const dy = Math.round((natH || 1000) * 0.05);
+    const cx = (v: number) => Math.max(0, Math.min((natW || 1) - 1, Math.round(v)));
+    const cy = (v: number) => Math.max(0, Math.min((natH || 1) - 1, Math.round(v)));
+    const prompts = [
+      { x: cx(pxX), y: cy(pxY), label: 1 },
+      { x: cx(pxX + dx), y: cy(pxY), label: 1 },
+      { x: cx(pxX - dx), y: cy(pxY), label: 1 },
+      { x: cx(pxX), y: cy(pxY + dy), label: 1 },
+      { x: cx(pxX), y: cy(pxY - dy), label: 1 },
+    ];
     const res = await fetch(FAL_RUN, {
       method: "POST",
       headers: { Authorization: `Key ${key}`, "Content-Type": "application/json" },
       body: JSON.stringify({
         image_url: photoDataUrl,
-        prompts: [{ x: Math.round(pxX), y: Math.round(pxY), label: 1 }],
+        prompts,
         output_format: "png",
         apply_mask: false, // return the binary mask, not a cutout
         sync_mode: true, // inline the result as a data URI (no CDN round-trip)
@@ -277,7 +297,7 @@ export async function POST(req: NextRequest) {
   const ny = Math.min(1, Math.max(0, body.point?.y ?? 0.5));
 
   if (useFal && natW > 0 && natH > 0) {
-    const fal = await detectFal(body.photo, nx * natW, ny * natH);
+    const fal = await detectFal(body.photo, nx * natW, ny * natH, natW, natH);
     if (fal) return NextResponse.json({ mask: fal.mask, maskWidth: fal.width, maskHeight: fal.height });
   }
 

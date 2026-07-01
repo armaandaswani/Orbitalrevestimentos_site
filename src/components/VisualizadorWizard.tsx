@@ -157,6 +157,58 @@ async function normalizeImage(file: File): Promise<{ dataUrl: string; w: number;
   return { dataUrl: c.toDataURL("image/jpeg", 0.9), w, h };
 }
 
+// Morphological CLOSE of a binary mask, done with two Gaussian-blur+threshold
+// passes on a canvas (dilate = blur then keep low alpha; erode = blur then keep
+// high alpha). Closing bridges the seam-width gaps and smooths the jagged
+// boundary that a raw SAM2 mask has — which is exactly what shows up as "torn
+// edges / empty spaces" once the mask is used to clip the projected panel. The
+// radius is small (~1.2% of the shorter side), so it only fills grout/seam-width
+// gaps and never a big foreground hole (a mirror or frame in front of the wall
+// stays cut out). `onAt(i)` reports whether source pixel i is inside the mask.
+function refineMaskCanvas(
+  w: number,
+  h: number,
+  onAt: (pixelIndex: number) => boolean
+): Uint8ClampedArray {
+  const r = Math.max(1.5, Math.min(w, h) * 0.012);
+  const mk = () => {
+    const c = document.createElement("canvas");
+    c.width = w; c.height = h;
+    return c;
+  };
+  // Binary white-on-transparent starting mask.
+  const bin = mk();
+  const bctx = bin.getContext("2d")!;
+  const img = bctx.createImageData(w, h);
+  for (let p = 0, pi = 0; p < w * h; p++, pi += 4) {
+    if (onAt(p)) { img.data[pi] = 255; img.data[pi + 1] = 255; img.data[pi + 2] = 255; img.data[pi + 3] = 255; }
+  }
+  bctx.putImageData(img, 0, 0);
+
+  // Pass 1 — dilate: blur, then everything with any meaningful alpha turns on.
+  const dil = mk();
+  const dctx = dil.getContext("2d")!;
+  dctx.filter = `blur(${r}px)`;
+  dctx.drawImage(bin, 0, 0);
+  dctx.filter = "none";
+  const dilData = dctx.getImageData(0, 0, w, h).data;
+  const dil2 = mk();
+  const d2ctx = dil2.getContext("2d")!;
+  const dimg = d2ctx.createImageData(w, h);
+  for (let p = 0, pi = 3; p < w * h; p++, pi += 4) {
+    if (dilData[pi] > 24) { dimg.data[pi - 3] = 255; dimg.data[pi - 2] = 255; dimg.data[pi - 1] = 255; dimg.data[pi] = 255; }
+  }
+  d2ctx.putImageData(dimg, 0, 0);
+
+  // Pass 2 — erode: blur the dilated mask, keep only the solid core (high alpha).
+  const ero = mk();
+  const ectx = ero.getContext("2d")!;
+  ectx.filter = `blur(${r}px)`;
+  ectx.drawImage(dil2, 0, 0);
+  ectx.filter = "none";
+  return ectx.getImageData(0, 0, w, h).data as unknown as Uint8ClampedArray;
+}
+
 async function maskToOverlay(
   maskUrl: string,
   hex: string
@@ -174,12 +226,20 @@ async function maskToOverlay(
   for (let i = 3; i < src.length; i += 4) {
     if (src[i] < 250) { hasAlpha = true; break; }
   }
+  // Clean the raw SAM2 mask (close gaps + smooth edges) before tinting it, so
+  // the overlay the client sees AND the stencil the projection clips to are
+  // both free of the ragged holes that caused torn panel edges.
+  const closed = refineMaskCanvas(w, h, (p) => {
+    const pi = p * 4;
+    return hasAlpha ? src[pi + 3] > 40 : src[pi] * 0.299 + src[pi + 1] * 0.587 + src[pi + 2] * 0.114 > 110;
+  });
   const { r, g, b } = hexToRgb(hex);
   const out = ctx.createImageData(w, h);
   const od = out.data;
   let minX = w, minY = h, maxX = 0, maxY = 0, any = false, count = 0;
   for (let p = 0, pi = 0; p < w * h; p++, pi += 4) {
-    const on = hasAlpha ? src[pi + 3] > 40 : src[pi] * 0.299 + src[pi + 1] * 0.587 + src[pi + 2] * 0.114 > 110;
+    // Read the CLEANED (closed) mask, not the raw SAM output.
+    const on = closed[pi + 3] > 128;
     if (on) {
       od[pi] = r; od[pi + 1] = g; od[pi + 2] = b; od[pi + 3] = 125;
       const x = p % w; const y = (p / w) | 0;
@@ -573,17 +633,17 @@ export default function VisualizadorWizard({
   const [zones, setZones] = useState<Zone[]>([]);
   const [activeZoneId, setActiveZoneId] = useState<string | null>(null);
   const [generating, setGenerating] = useState(false);
-  // Render method. Default OFF: the whole point of the Visualizador is for a
-  // client to SEE the panel realistically rendered into their own room —
-  // lighting, shadows, perspective integration — which only Gemini's
-  // generative pass gives. It's hardened against hallucination: fed the
-  // EXACT flat slab texture as its reference (told that IMAGE 2 is ground
-  // truth to reproduce pixel-for-pixel) plus the zone's precise SAM mask (told
-  // it may touch ONLY the masked surface, nothing else). The deterministic
-  // projection path below (flat, no Gemini) stays in the code, dormant,
-  // for a future "exact but flat" mode — but is not the default, since a flat
-  // pasted-on texture defeats the purpose of a visualizer.
-  const [useProjection, setUseProjection] = useState(false);
+  // Render method. Default ON (4-point exact projection). A generative model
+  // (Gemini) can never be pixel-exact — it repaints the panel and invents a
+  // look-alike design, which is unacceptable for a product bought by its exact
+  // pattern. So the panel is laid down DETERMINISTICALLY: the exact flat slab
+  // texture is tiled at panel scale and warped into the wall via the 4-corner
+  // quad (auto-seeded from the SAM mask, adjustable by the client), then clipped
+  // to the CLEANED SAM mask (refineMaskCanvas) so its edges are solid, not
+  // torn. Gemini never touches the panel → it cannot hallucinate or change the
+  // design; the pattern is exact and repetitive and the rest of the photo stays
+  // pixel-identical. Products without a flat texture fall back to Gemini-apply.
+  const [useProjection, setUseProjection] = useState(true);
   const [progress, setProgress] = useState<{ i: number; total: number; label: string } | null>(null);
   const [result, setResult] = useState<string | null>(null);
   const [error, setError] = useState<string | null>(null);
@@ -1063,29 +1123,30 @@ export default function VisualizadorWizard({
         // material. If exact texture projection fails, stop and surface the
         // issue instead of silently falling through to Gemini.
         const textureUrl = prod.render_texture_path?.trim() || null;
-        const quad: Quad | null = z.quad ?? (z.rect ? rectToQuad(z.rect) : null);
+        // Derive the perspective quad automatically from the cleaned SAM mask
+        // (then polygon, then drawn rect), or use the quad the client nudged with
+        // the 4 corner handles. No manual 4-point step is required to generate.
+        let quad: Quad | null = z.quad ?? null;
         if (useProjection && textureUrl && !quad) {
-          throw new Error(`Ajuste a área de ${z.label} com os 4 pontos antes de gerar.`);
+          if (z.maskUrl) quad = await quadFromMaskUrl(z.maskUrl);
+          if (!quad && z.polygon && z.polygon.length >= 3) quad = quadFromPoints(z.polygon);
+          if (!quad && z.rect) quad = rectToQuad(z.rect);
         }
         if (useProjection && textureUrl && quad && dims && dims.w > 0 && dims.h > 0) {
           try {
+            // Lay down the EXACT slab, deterministically: the real texture tiled
+            // at panel scale and warped into the quad, then clipped to the CLEANED
+            // SAM mask (preferQuad=false) so foreground objects (mirror, plants)
+            // stay on top and the edges are solid, not torn. No generative model
+            // touches the material → the design is exact, repetitive, and can
+            // never be hallucinated; everything outside the mask is byte-identical
+            // to the client's photo.
             const panel = await renderZoneProjection(textureUrl, quad, z.width, z.height, base, dims.w, dims.h);
-            // Clip to the PRECISE SAM mask (preferQuad=false), NOT the quad —
-            // the quad only drove the perspective warp. Clipping to the quad was
-            // painting flat rectangles over foreground (mirror, plants); the mask
-            // keeps those in front and confines the texture to the real wall.
             composite = await compositeMaskedRegion(composite, panel, z, false);
-            // NOTE: the direct Gemini relight pass was REMOVED — it hallucinated
-            // (duplicated mirrors, "damaged" the slab) because it regenerates the
-            // whole image. Realism will return as a lighting-ONLY multiply that
-            // can never alter the pattern. For now: pure exact projection (the
-            // state confirmed good), no generative relight.
             continue; // zone done — exact texture only
           } catch (e) {
-            // Never silently fall back to the generative "apply" path when the
-            // user asked for exact texture — it can hallucinate the slab.
             console.error("[viz] exact texture projection failed:", e instanceof Error ? e.message : e);
-            throw new Error(`Não consegui aplicar a textura exata em ${z.label}. Verifique os 4 pontos ou tente outro acabamento.`);
+            throw new Error(`Não consegui aplicar a textura exata em ${z.label}. Tente refazer a seleção da área ou outro acabamento.`);
           }
         }
 
