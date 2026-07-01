@@ -1183,7 +1183,10 @@ function SimuladorInner() {
   const canAdvance2 = selectedProduct !== null;
   const canCalculate = m2 > 0;
   const validEmail = /^[^\s@]+@[^\s@]+\.[^\s@]{2,}$/.test(clientEmail.trim());
-  const validPhone = clientPhone.trim().replace(/\D/g, "").length >= 10;
+  const validPhone = (() => {
+    const digits = clientPhone.trim().replace(/\D/g, "").length;
+    return digits >= 8 && digits <= 13;
+  })();
   const canAdvance4 = clientName.trim().length > 0 && validEmail && validPhone;
 
   // In partner mode only show 3 steps (no client data / coupon steps)
@@ -2177,7 +2180,8 @@ function SimuladorInner() {
                     value={clientPhone}
                     onChange={(e) => setClientPhone(e.target.value)}
                     onBlur={() => { void captureSession(); }}
-                    placeholder="ex: (92) 99999-0000"
+                    placeholder="ex: 92988150149"
+                    maxLength={20}
                     className="w-full border border-[#e2e2e2] px-4 py-3 text-sm font-[var(--font-inter)] text-[#002045] focus:outline-none focus:border-[#002045] transition-colors"
                   />
                   <p className="text-[#74777f] text-[10px] font-[var(--font-inter)] mt-1.5">
