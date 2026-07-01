@@ -535,19 +535,24 @@ async function renderZoneProjection(
 }
 
 // Applies ONLY the lighting/shadow from a Gemini relight pass onto an image,
-// inside the zone's mask, WITHOUT changing the texture in the slightest. For
-// each masked pixel we keep the exact-projected panel's own colour and multiply
-// it by the RATIO of the relit luminance to its own luminance — so the panel
-// picks up the room's light gradient, contact shadows, and (for a polished
-// finish) a sheen, while its pattern, veins and colour stay pixel-identical.
-// The ratio is clamped so lighting can only shade/highlight, never recolour or
-// wash out the material. This is a per-pixel brightness map, not a repaint.
+// inside the zone's mask, WITHOUT changing the texture in the slightest.
+//
+// We build a per-pixel BRIGHTNESS-MULTIPLIER map (ratio of relit luminance to
+// the exact panel's own luminance), then BLUR it before applying. The blur is
+// the key: Gemini's relit output contains sharp reflections of real room
+// objects (a mirror, chairs), and copying those verbatim "prints" ghost
+// furniture onto the slab. Blurring the multiplier keeps only the broad light
+// GRADIENT — a smooth sheen — and discards the reflected-object detail. The
+// multiplier is then amplified per finish (a strong sheen for polished; flat
+// for matte/wood) and applied as a pure brightness scale, so the pattern,
+// veins and colour stay pixel-identical. Not a repaint — a smoothed light map.
 async function blendLuminanceInMask(
   baseDataUrl: string,
   litDataUrl: string,
   z: Zone,
   w: number,
-  h: number
+  h: number,
+  finish: FinishKind
 ): Promise<string> {
   const [baseImg, litImg, stencil] = await Promise.all([
     loadImage(baseDataUrl),
@@ -573,19 +578,52 @@ async function blendLuminanceInMask(
   const outImg = outCtx.getImageData(0, 0, w, h);
   const o = outImg.data;
 
+  // How hard the sheen reads, per finish. Polished = strong, wide range;
+  // matte/wood = nearly flat (a whisper of shading only).
+  const amp = finish === "polished" ? 2.2 : finish === "wood" ? 0.9 : 1.0;
+  const hiCap = finish === "polished" ? 2.5 : 1.35;
+  const loCap = finish === "polished" ? 0.45 : 0.7;
+
   const lum = (r: number, g: number, b: number) => 0.299 * r + 0.587 * g + 0.114 * b;
+
+  // Multiplier map, stored as grayscale where 100 = neutral 1.0×. Neutral (100)
+  // outside the mask so the blur at the boundary doesn't darken the edge.
+  const mult = document.createElement("canvas");
+  mult.width = w; mult.height = h;
+  const mctx = mult.getContext("2d")!;
+  const mimg = mctx.createImageData(w, h);
+  const md = mimg.data;
+  for (let i = 0; i < o.length; i += 4) {
+    let v = 100;
+    if (mskD[i + 3] >= 20) {
+      const bl = lum(o[i], o[i + 1], o[i + 2]);
+      if (bl >= 1) {
+        const raw = lum(litD[i], litD[i + 1], litD[i + 2]) / bl;
+        // Amplify the deviation from neutral, then clamp.
+        const r = Math.max(loCap, Math.min(hiCap, 1 + (raw - 1) * amp));
+        v = Math.max(0, Math.min(255, Math.round(r * 100)));
+      }
+    }
+    md[i] = v; md[i + 1] = v; md[i + 2] = v; md[i + 3] = 255;
+  }
+  mctx.putImageData(mimg, 0, 0);
+
+  // Blur the multiplier → smooth sheen gradient, no ghosted reflections.
+  const blurR = Math.max(3, Math.round(Math.min(w, h) * 0.02));
+  const smooth = document.createElement("canvas");
+  smooth.width = w; smooth.height = h;
+  const sctx = smooth.getContext("2d")!;
+  sctx.filter = `blur(${blurR}px)`;
+  sctx.drawImage(mult, 0, 0);
+  sctx.filter = "none";
+  const sd = sctx.getImageData(0, 0, w, h).data;
+
   for (let i = 0; i < o.length; i += 4) {
     if (mskD[i + 3] < 20) continue; // outside mask → panel/photo untouched
-    const bl = lum(o[i], o[i + 1], o[i + 2]);
-    if (bl < 1) continue;
-    const ll = lum(litD[i], litD[i + 1], litD[i + 2]);
-    // Clamp the shading ratio: shade/highlight only, never recolour or blow out.
-    // The upper bound leaves room for a polished sheen; matte/wood relights come
-    // back flatter from the prompt, so they naturally stay near 1.0.
-    const ratio = Math.max(0.6, Math.min(1.6, ll / bl));
-    o[i] = Math.min(255, o[i] * ratio);
-    o[i + 1] = Math.min(255, o[i + 1] * ratio);
-    o[i + 2] = Math.min(255, o[i + 2] * ratio);
+    const m = sd[i] / 100; // decode multiplier
+    o[i] = Math.min(255, o[i] * m);
+    o[i + 1] = Math.min(255, o[i + 1] * m);
+    o[i + 2] = Math.min(255, o[i + 2] * m);
   }
   outCtx.putImageData(outImg, 0, 0);
   return outCanvas.toDataURL("image/jpeg", 0.92);
@@ -1241,7 +1279,7 @@ export default function VisualizadorWizard({
             try {
               const relightMask = await buildMaskDataUrl(z, dims.w, dims.h);
               const relit = await requestZoneRelight(composite, prod, relightMask);
-              if (relit) composite = await blendLuminanceInMask(composite, relit, z, dims.w, dims.h);
+              if (relit) composite = await blendLuminanceInMask(composite, relit, z, dims.w, dims.h, FINISH_BY_LINE[prod.linha]);
             } catch (e) {
               console.warn("[viz] lighting pass skipped:", e instanceof Error ? e.message : e);
             }
