@@ -1567,26 +1567,38 @@ export default function PedidosTab() {
                   </div>
                 </Field>
                 <Field label="Condição de pagamento">
-                  <input className={inputCls} value={draft.payment_terms ?? ""} onChange={(e) => setDraft({ ...draft, payment_terms: e.target.value })} placeholder={DEFAULT_PAYMENT_TERMS} />
+                  <textarea className={`${inputCls} min-h-[72px]`} value={draft.payment_terms ?? ""} onChange={(e) => setDraft({ ...draft, payment_terms: e.target.value })} placeholder={`${DEFAULT_PAYMENT_TERMS}\n(uma condição por linha — clique nas predefinições abaixo para adicionar)`} />
                   {paymentTermsPresets.length > 0 && (
                     <div className="flex flex-wrap gap-1.5 mt-2">
-                      {paymentTermsPresets.map((p) => (
-                        <span key={p.id} className="inline-flex items-center gap-1 bg-[#f0f0f0] text-[#43474e] text-[10px] font-[var(--font-inter)] pl-2 pr-1 py-1">
-                          <button type="button" onClick={() => setDraft({ ...draft, payment_terms: p.label })} className="hover:underline text-left">
-                            {p.label}
-                          </button>
-                          <button type="button" onClick={() => deletePreset(p.id)} title="Remover esta predefinição"
-                            className="text-[#b0b0b0] hover:text-[#b42318] px-1">×</button>
-                        </span>
-                      ))}
+                      {paymentTermsPresets.map((p) => {
+                        // Clicking a preset TOGGLES its line in payment_terms (one
+                        // condition per line), so several can be combined instead
+                        // of each click replacing the field.
+                        const lines = (draft.payment_terms ?? "").split("\n").map((s) => s.trim()).filter(Boolean);
+                        const selected = lines.includes(p.label);
+                        return (
+                          <span key={p.id} className={`inline-flex items-center gap-1 text-[10px] font-[var(--font-inter)] pl-2 pr-1 py-1 ${selected ? "bg-[#002045] text-white" : "bg-[#f0f0f0] text-[#43474e]"}`}>
+                            <button type="button"
+                              onClick={() => {
+                                const next = selected ? lines.filter((l) => l !== p.label) : [...lines, p.label];
+                                setDraft({ ...draft, payment_terms: next.join("\n") });
+                              }}
+                              className="hover:underline text-left">
+                              {selected ? "✓ " : "+ "}{p.label}
+                            </button>
+                            <button type="button" onClick={() => deletePreset(p.id)} title="Remover esta predefinição"
+                              className={`px-1 ${selected ? "text-white/70 hover:text-white" : "text-[#b0b0b0] hover:text-[#b42318]"}`}>×</button>
+                          </span>
+                        );
+                      })}
                     </div>
                   )}
                   <button type="button"
-                    onClick={() => savePreset("payment_terms", draft.payment_terms ?? "")}
+                    onClick={() => savePreset("payment_terms", (draft.payment_terms ?? "").split("\n").map((s) => s.trim()).filter(Boolean).pop() || "")}
                     disabled={!draft.payment_terms?.trim()}
                     className="mt-2 text-[10px] font-bold font-[var(--font-inter)] text-[#002045] hover:underline disabled:opacity-40 disabled:cursor-default"
                   >
-                    + Cadastrar este texto como predefinição
+                    + Cadastrar a última linha como predefinição
                   </button>
                 </Field>
                 <div className="grid grid-cols-2 gap-3">

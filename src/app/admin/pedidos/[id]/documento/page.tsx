@@ -463,33 +463,54 @@ export default function PedidoDocumentoPage({ params }: { params: Promise<{ id: 
           </table>
         </section>
 
-        {(includeImages || includeDescriptions) && (
-          <section className="doc-product-details">
-            <p className="doc-section-label">Detalhes dos produtos</p>
-            <div className="doc-product-grid">
-              {items.map((it) => {
-                const imagePath = normalizeAssetPath(it.product_image_path);
-                const hasImage = includeImages && !!imagePath;
-                // An item with no image (e.g. "Cola PU-40") has no photo to put
-                // beside the text — render it as a plain compact box instead of
-                // the two-column image+text card, which would otherwise reserve
-                // an empty 72px gap on the left for an image that never renders.
-                return (
-                  <div key={`${it.id}-details`} className={hasImage ? "doc-product-card" : "doc-product-card-noimg"}>
-                    {hasImage && (
-                      // eslint-disable-next-line @next/next/no-img-element
+        {(() => {
+          // Build the "Detalhes dos produtos" list. An item earns a detail entry
+          // ONLY if it actually has something to show there:
+          //   • an image (when Imagens is on), or
+          //   • a description (when Descrições is on).
+          // An item with no image (e.g. "Cola PU-40") gets NO card at all — not a
+          // bordered "no image" placeholder, not an empty slot, nothing. It simply
+          // doesn't appear in this section. (This is the ornament-PDF layout the
+          // user asked for: image on the same line as the name, and image-less
+          // items omitted entirely.)
+          const detail = items
+            .map((it) => {
+              const imagePath = normalizeAssetPath(it.product_image_path);
+              return {
+                it,
+                imagePath,
+                hasImage: includeImages && !!imagePath,
+                hasDesc: includeDescriptions && !!it.product_description,
+              };
+            })
+            .filter((d) => d.hasImage || d.hasDesc);
+          if (detail.length === 0) return null;
+          return (
+            <section className="doc-product-details">
+              <p className="doc-section-label">Detalhes dos produtos</p>
+              <div className="doc-product-grid">
+                {detail.map(({ it, imagePath, hasImage }) =>
+                  hasImage ? (
+                    <div key={`${it.id}-details`} className="doc-product-card">
+                      {/* eslint-disable-next-line @next/next/no-img-element */}
                       <img src={imagePath ?? undefined} alt={it.product_name || "Produto Orbital"} />
-                    )}
-                    <div>
-                      <p className="doc-product-name">{it.product_name || "Produto Orbital"}</p>
-                      {includeDescriptions && it.product_description && <p>{it.product_description}</p>}
+                      <div>
+                        <p className="doc-product-name">{it.product_name || "Produto Orbital"}</p>
+                        {includeDescriptions && it.product_description && <p>{it.product_description}</p>}
+                      </div>
                     </div>
-                  </div>
-                );
-              })}
-            </div>
-          </section>
-        )}
+                  ) : (
+                    // Description-only (no image): plain text, no bordered box.
+                    <div key={`${it.id}-details`} className="doc-product-textonly">
+                      <p className="doc-product-name">{it.product_name || "Produto Orbital"}</p>
+                      <p>{it.product_description}</p>
+                    </div>
+                  )
+                )}
+              </div>
+            </section>
+          );
+        })()}
 
         <section className="doc-totals">
           <div>
@@ -507,7 +528,7 @@ export default function PedidoDocumentoPage({ params }: { params: Promise<{ id: 
           </div>
           <div>
             <p className="doc-section-label">Condições de pagamento</p>
-            <p>{pedido.payment_terms || "PIX ou dinheiro à vista"}</p>
+            <p style={{ whiteSpace: "pre-line" }}>{pedido.payment_terms || "PIX ou dinheiro à vista"}</p>
           </div>
           <div>
             <p className="doc-section-label">Garantia</p>
@@ -608,8 +629,8 @@ export default function PedidoDocumentoPage({ params }: { params: Promise<{ id: 
         .doc-product-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; }
         .doc-product-card { display: grid; grid-template-columns: 72px 1fr; gap: 8px; border: 1px solid #e4e4e4; padding: 8px; page-break-inside: avoid; align-items: center; }
         .doc-product-card img { width: 72px; height: 72px; object-fit: cover; display: block; }
-        .doc-product-card p, .doc-product-card-noimg p { margin: 0; color: #555; font-size: 9.5px; }
-        .doc-product-card-noimg { border: 1px solid #e4e4e4; padding: 8px; page-break-inside: avoid; }
+        .doc-product-card p, .doc-product-textonly p { margin: 0; color: #555; font-size: 9.5px; }
+        .doc-product-textonly { padding: 8px 0; page-break-inside: avoid; }
         .doc-product-name { color: #1a1c1c !important; font-weight: 700; font-size: 10.5px !important; margin-bottom: 3px !important; }
         .doc-notes { margin-top: 8px; page-break-inside: auto; }
         .doc-order-notes { white-space: pre-wrap; margin: 0 0 12px; }
