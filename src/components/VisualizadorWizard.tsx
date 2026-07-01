@@ -474,91 +474,6 @@ async function renderZoneProjection(
   return projected.toDataURL("image/png");
 }
 
-// Applies ONLY the lighting/shadow from a Gemini relight pass onto an image,
-// inside the zone's mask, WITHOUT changing colour or pattern. For every masked
-// pixel we keep the base (exact-texture) chroma and scale it by the RATIO of the
-// relit luminance to the base luminance — so the panel picks up the room's light
-// gradient and contact shadows while its design stays pixel-identical to the
-// projected slab. This is what lets Gemini "render" the panel into the space
-// while mathematically guaranteeing the design/pattern/colour cannot change.
-async function blendLuminanceInMask(
-  baseDataUrl: string,
-  litDataUrl: string,
-  z: Zone,
-  w: number,
-  h: number
-): Promise<string> {
-  const [baseImg, litImg, stencil] = await Promise.all([
-    loadImage(baseDataUrl),
-    loadImage(litDataUrl),
-    buildStencil(z, w, h),
-  ]);
-  if (!stencil) return baseDataUrl; // no spatial info → leave exact panel as-is
-
-  const sample = (img: HTMLImageElement | HTMLCanvasElement) => {
-    const c = document.createElement("canvas");
-    c.width = w; c.height = h;
-    const ctx = c.getContext("2d")!;
-    ctx.drawImage(img, 0, 0, w, h);
-    return ctx.getImageData(0, 0, w, h).data;
-  };
-  const litD = sample(litImg);
-  const mskD = sample(stencil);
-
-  const outCanvas = document.createElement("canvas");
-  outCanvas.width = w; outCanvas.height = h;
-  const outCtx = outCanvas.getContext("2d")!;
-  outCtx.drawImage(baseImg, 0, 0, w, h);
-  const outImg = outCtx.getImageData(0, 0, w, h);
-  const o = outImg.data;
-
-  const lum = (r: number, g: number, b: number) => 0.299 * r + 0.587 * g + 0.114 * b;
-  for (let i = 0; i < o.length; i += 4) {
-    if (mskD[i + 3] < 20) continue; // outside mask → keep the exact panel/photo untouched
-    const bl = lum(o[i], o[i + 1], o[i + 2]);
-    if (bl < 1) continue;
-    const ll = lum(litD[i], litD[i + 1], litD[i + 2]);
-    // Clamp the shading ratio: Gemini may only darken (shadow) or lighten
-    // (highlight) modestly — never recolour or blow the panel out.
-    const ratio = Math.max(0.55, Math.min(1.7, ll / bl));
-    o[i] = Math.min(255, o[i] * ratio);
-    o[i + 1] = Math.min(255, o[i + 1] * ratio);
-    o[i + 2] = Math.min(255, o[i + 2] * ratio);
-  }
-  outCtx.putImageData(outImg, 0, 0);
-  return outCanvas.toDataURL("image/jpeg", 0.92);
-}
-
-// Asks the render API for a lighting-ONLY pass (mode="relight") over an image
-// that already has the exact panel installed. Returns Gemini's relit image, or
-// null on any failure (unconfigured key, transient error) so the caller keeps
-// the flat exact panel instead of failing the render. The panel's pattern is
-// NOT trusted from this output — only its luminance is used downstream.
-async function requestZoneRelight(
-  photoComposite: string,
-  prod: VizProduct,
-  maskDataUrl: string | null
-): Promise<string | null> {
-  try {
-    const res = await fetch("/api/visualizador/render", {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({
-        photo: photoComposite,
-        productId: prod.id,
-        referenceUrl: prod.render_texture_path?.trim() || prod.image_path,
-        finish: FINISH_BY_LINE[prod.linha],
-        maskImage: maskDataUrl ?? undefined,
-        mode: "relight",
-      }),
-    });
-    const j = (await res.json()) as { image?: string };
-    return res.ok && j.image ? j.image : null;
-  } catch {
-    return null;
-  }
-}
-
 function buildSimuladorUrl(ambientes: SavedAmbiente[]): string {
   if (ambientes.length === 1) {
     const a = ambientes[0];
@@ -658,22 +573,17 @@ export default function VisualizadorWizard({
   const [zones, setZones] = useState<Zone[]>([]);
   const [activeZoneId, setActiveZoneId] = useState<string | null>(null);
   const [generating, setGenerating] = useState(false);
-  // Render method — DEFAULT ON (exact projection + Gemini lighting).
-  //
-  // A generative model (Gemini) CANNOT be pixel-exact: fed the texture as a
-  // reference it still repaints the panel from scratch and hallucinates a
-  // look-alike / warped / "damaged" slab. That is unacceptable for a product
-  // the client is buying by its exact design. So the panel is painted
-  // DETERMINISTICALLY: the exact flat slab texture is warped into the wall's
-  // real perspective (from the SAM-detected area) and composited only under the
-  // zone's mask — the design/pattern/colour CANNOT change and every pixel
-  // outside the area stays identical to the photo. Gemini is then used for the
-  // one thing it's good at and can't get wrong: adding the room's lighting and
-  // contact shadows — and even that is applied as a luminance-only ratio
-  // (blendLuminanceInMask) so it can shade the panel but never alter its design.
-  // Products without a flat texture still fall back to the legacy Gemini-apply
-  // path further down.
-  const [useProjection, setUseProjection] = useState(true);
+  // Render method. Default OFF: the whole point of the Visualizador is for a
+  // client to SEE the panel realistically rendered into their own room —
+  // lighting, shadows, perspective integration — which only Gemini's
+  // generative pass gives. It's hardened against hallucination: fed the
+  // EXACT flat slab texture as its reference (told that IMAGE 2 is ground
+  // truth to reproduce pixel-for-pixel) plus the zone's precise SAM mask (told
+  // it may touch ONLY the masked surface, nothing else). The deterministic
+  // projection path below (flat, no Gemini) stays in the code, dormant,
+  // for a future "exact but flat" mode — but is not the default, since a flat
+  // pasted-on texture defeats the purpose of a visualizer.
+  const [useProjection, setUseProjection] = useState(false);
   const [progress, setProgress] = useState<{ i: number; total: number; label: string } | null>(null);
   const [result, setResult] = useState<string | null>(null);
   const [error, setError] = useState<string | null>(null);
@@ -1073,14 +983,9 @@ export default function VisualizadorWizard({
   }, [zones, detectIntoFromBox, updateZone]);
 
   const zonesReady = zones.filter((z) => z.productId);
-  // Exact projection needs SOME spatial descriptor to derive the perspective
-  // quad from — but any of them works (SAM mask, polygon, drawn rect, or a
-  // user-adjusted quad), so we only block generation when a texture zone has
-  // NONE of them (i.e. the client hasn't marked the area at all yet).
   const needsExactArea = useProjection && zonesReady.some((z) => {
     const prod = z.productId ? productById(z.productId) : null;
-    if (!prod?.render_texture_path?.trim()) return false;
-    return !z.quad && !z.rect && !z.maskUrl && !(z.polygon && z.polygon.length >= 3);
+    return !!prod?.render_texture_path?.trim() && !z.quad && !z.rect;
   });
   const canGenerate = !!photoData && zonesReady.length > 0 && !needsExactArea;
   const anyDetecting = zones.some((z) => z.detecting);
@@ -1158,45 +1063,29 @@ export default function VisualizadorWizard({
         // material. If exact texture projection fails, stop and surface the
         // issue instead of silently falling through to Gemini.
         const textureUrl = prod.render_texture_path?.trim() || null;
-        // Derive the perspective quad automatically — NO manual 4-point step.
-        // Prefer the SAM mask's real corners, then the polygon, then the drawn
-        // rect, then the user-adjusted quad if they did nudge the corners.
-        let quad: Quad | null = z.quad ?? null;
+        const quad: Quad | null = z.quad ?? (z.rect ? rectToQuad(z.rect) : null);
         if (useProjection && textureUrl && !quad) {
-          if (z.maskUrl) quad = await quadFromMaskUrl(z.maskUrl);
-          if (!quad && z.polygon && z.polygon.length >= 3) quad = quadFromPoints(z.polygon);
-          if (!quad && z.rect) quad = rectToQuad(z.rect);
+          throw new Error(`Ajuste a área de ${z.label} com os 4 pontos antes de gerar.`);
         }
         if (useProjection && textureUrl && quad && dims && dims.w > 0 && dims.h > 0) {
           try {
-            // STEP 1 — paint the EXACT slab, deterministically. The real texture
-            // is warped into the wall's perspective and composited ONLY under the
-            // precise SAM mask (preferQuad=false so foreground objects stay on
-            // top). The design/pattern/colour cannot change; everything outside
-            // the mask stays byte-for-byte the client's photo.
             const panel = await renderZoneProjection(textureUrl, quad, z.width, z.height, base, dims.w, dims.h);
+            // Clip to the PRECISE SAM mask (preferQuad=false), NOT the quad —
+            // the quad only drove the perspective warp. Clipping to the quad was
+            // painting flat rectangles over foreground (mirror, plants); the mask
+            // keeps those in front and confines the texture to the real wall.
             composite = await compositeMaskedRegion(composite, panel, z, false);
-
-            // STEP 2 — let Gemini add ONLY the room's lighting/shadows onto that
-            // exact panel, then keep just its luminance (blendLuminanceInMask) so
-            // the pattern is mathematically locked. Best-effort: if the relight
-            // call fails or is unconfigured, we keep the flat exact panel rather
-            // than failing the whole render (still correct, just less lit).
-            try {
-              const relightMask = await buildMaskDataUrl(z, dims.w, dims.h);
-              const relit = await requestZoneRelight(composite, prod, relightMask);
-              if (relit) {
-                composite = await blendLuminanceInMask(composite, relit, z, dims.w, dims.h);
-              }
-            } catch (e) {
-              console.warn("[viz] lighting pass skipped:", e instanceof Error ? e.message : e);
-            }
-            continue; // zone done — exact texture, optionally relit
+            // NOTE: the direct Gemini relight pass was REMOVED — it hallucinated
+            // (duplicated mirrors, "damaged" the slab) because it regenerates the
+            // whole image. Realism will return as a lighting-ONLY multiply that
+            // can never alter the pattern. For now: pure exact projection (the
+            // state confirmed good), no generative relight.
+            continue; // zone done — exact texture only
           } catch (e) {
-            // Never silently fall back to the generative "apply" path when we have
-            // an exact texture — it can hallucinate the slab.
+            // Never silently fall back to the generative "apply" path when the
+            // user asked for exact texture — it can hallucinate the slab.
             console.error("[viz] exact texture projection failed:", e instanceof Error ? e.message : e);
-            throw new Error(`Não consegui aplicar a textura exata em ${z.label}. Tente refazer a seleção da área ou outro acabamento.`);
+            throw new Error(`Não consegui aplicar a textura exata em ${z.label}. Verifique os 4 pontos ou tente outro acabamento.`);
           }
         }
 
