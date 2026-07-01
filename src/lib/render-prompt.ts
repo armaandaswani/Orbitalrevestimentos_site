@@ -305,10 +305,15 @@ export function composePrompt(opts: {
 
 // ── Relight prompt (hybrid Stage 2) ──────────────────────────────────────────
 // Used by the render route in mode="relight". The panel is ALREADY installed,
-// pixel-exact, in IMAGE 1 (the deterministic projection output). The model must
-// ONLY add realistic lighting/shadows to that panel — never change its pattern,
-// colour or design, and never touch anything else in the photo. IMAGE 2 is the
-// exact slab texture, given so the model knows the true material it is lighting.
+// pixel-exact, in IMAGE 1 (the deterministic projection output). Downstream we
+// keep ONLY the LUMINANCE of this output, mean-normalized, and map it back onto
+// the exact texture — so this prompt's job is narrow: produce a version of the
+// panel that shows WHERE the room's light lands on it (its highlight/sheen
+// pattern). It must brighten, not darken, and must never redraw the material.
+//
+// Written clean/standalone (no legacy layout/scale rules — those belong to the
+// APPLY prompt, not here) because mixing them made the model darken and
+// restyle the panel instead of simply adding shine.
 export function composeRelightPrompt(opts: {
   finish: FinishKind;
   finishText?: string | null;
@@ -319,34 +324,51 @@ export function composeRelightPrompt(opts: {
   const texIdx = opts.hasTextureRef ? ++imgIdx : null;
   const maskIdx = opts.hasMaskImage ? ++imgIdx : null;
 
-  const finishLine =
+  const finishBlock =
     opts.finish === "polished"
-      ? "This is a POLISHED, glossy panel: add subtle, physically-plausible specular sheen and soft reflections consistent with the room's actual light sources — tasteful, not mirror-like, never blown out."
+      ? [
+          "The panel is POLISHED / GLOSSY. Add clear, bright specular SHINE:",
+          "- bright highlight streaks and soft glossy reflections where the room's",
+          "  lights (ceiling spots, windows, lamps) fall on the surface,",
+          "- a gentle glossy gradient so it reads as a reflective stone slab,",
+          "- keep it bright and clean — this is a shiny showroom finish.",
+        ]
       : opts.finish === "wood"
-        ? "This is a wood-grain panel: at most a soft satin sheen; no glossy mirror reflections."
-        : "This is a MATTE panel: keep it soft and non-reflective — NO glossy highlights, NO mirror reflections.";
+        ? [
+            "The panel is WOOD. Give it at most a soft satin sheen — NO glossy",
+            "mirror highlights, NO wet look. Keep it natural and matte-ish.",
+          ]
+        : [
+            "The panel is MATTE. Keep it soft and non-reflective — NO glossy",
+            "highlights, NO shine, NO mirror reflections. Only the faintest light",
+            "gradient from the room.",
+          ];
 
   const lines: string[] = [
-    "You are a photo RELIGHTING tool — NOT an image generator.",
-    "IMAGE 1 is a real room photo in which a wall panel has ALREADY been installed.",
-    "Its pattern, veining, colour and scale are FINAL and CORRECT — treat them as ground truth.",
-    texIdx ? `IMAGE ${texIdx} is the exact panel material, shown only so you know the true look of what you are lighting.` : "",
-    maskIdx ? `IMAGE ${maskIdx} is a mask: the WHITE region marks the installed panel (the ONLY area you may relight).` : "",
+    "You are a photo RELIGHTING tool — NOT an image generator, NOT a restyler.",
+    "IMAGE 1 is a real room photo with a wall panel ALREADY installed. Its",
+    "pattern, veining, colour, scale and position are FINAL and CORRECT.",
+    texIdx ? `IMAGE ${texIdx} is the exact panel material (reference only — the true look of the stone).` : "",
+    maskIdx ? `IMAGE ${maskIdx} is a mask: only the WHITE region (the installed panel) may be relit.` : "",
     "",
-    "YOUR ONLY TASK: make the installed panel look naturally lit by THIS room. Add:",
-    "- the room's existing light gradient across the panel (brighter near lights, falling off in shade),",
-    "- soft, realistic contact/ambient-occlusion shadows where the panel meets the ceiling, floor, corners and any object in front of it,",
-    "- believable integration with the room's white balance and exposure.",
-    `- FINISH: ${finishLine}`,
+    "YOUR ONLY JOB: show how the room's light plays across that panel.",
+    ...finishBlock,
     "",
-    "ABSOLUTE RULES (do not break):",
-    "- Do NOT change the panel's pattern, veining, design, scale or colour. Do NOT invent, redraw, beautify, sharpen or hallucinate any pattern. Adjust ONLY light and shadow on it.",
-    "- Do NOT alter ANYTHING outside the panel: furniture, plants, mirrors, frames, the floor, ceiling, other walls, windows and the rest of the photo must stay pixel-identical to IMAGE 1.",
+    "BRIGHTNESS RULE (critical):",
+    "- Keep the panel AT LEAST as bright as it is now. You may ADD highlights;",
+    "  do NOT darken it, do NOT drape it in shadow, do NOT make it moody or",
+    "  dramatic. Only a light touch of soft shading in genuine corners/contact",
+    "  edges is allowed — the overall panel must stay light and clearly visible.",
+    "",
+    "ABSOLUTE RULES:",
+    "- Do NOT change the panel's pattern, veining, design, scale or colour. Do NOT",
+    "  redraw, invent, sharpen, beautify or hallucinate any pattern. Only light.",
+    "- Do NOT alter anything OUTSIDE the panel — furniture, plants, mirrors, the",
+    "  floor, ceiling, walls and the rest of the photo stay pixel-identical.",
     "- Keep the camera, viewpoint, framing, crop and resolution identical.",
-    "- Subtlety over drama: this is gentle, photoreal relighting, not a restyle.",
     opts.finishText ? `Material note: ${opts.finishText}` : "",
     "",
-    "Output ONLY the relit version of IMAGE 1, at the same framing and resolution.",
+    "Output ONLY the relit version of IMAGE 1, same framing and resolution.",
   ];
   return lines.filter(Boolean).join("\n");
 }

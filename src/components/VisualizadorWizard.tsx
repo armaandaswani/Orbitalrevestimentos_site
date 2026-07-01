@@ -578,31 +578,47 @@ async function blendLuminanceInMask(
   const outImg = outCtx.getImageData(0, 0, w, h);
   const o = outImg.data;
 
-  // How hard the sheen reads, per finish. Polished = strong, wide range;
-  // matte/wood = nearly flat (a whisper of shading only).
-  const amp = finish === "polished" ? 2.2 : finish === "wood" ? 0.9 : 1.0;
-  const hiCap = finish === "polished" ? 2.5 : 1.35;
-  const loCap = finish === "polished" ? 0.45 : 0.7;
-
   const lum = (r: number, g: number, b: number) => 0.299 * r + 0.587 * g + 0.114 * b;
 
-  // Multiplier map, stored as grayscale where 100 = neutral 1.0×. Neutral (100)
-  // outside the mask so the blur at the boundary doesn't darken the edge.
+  // PASS A — raw ratios + their mean over the masked area. Gemini often returns
+  // a globally darker (or lighter) image; we mean-NORMALISE by this average so
+  // only the RELATIVE light variation (where highlights vs shade fall) is kept,
+  // and the panel's overall brightness stays exactly the exact texture's. This
+  // is what prevents the "went dark and shadowy" failure regardless of what
+  // exposure Gemini hands back.
+  const raw = new Float32Array(w * h);
+  let sum = 0, n = 0;
+  for (let p = 0, i = 0; p < w * h; p++, i += 4) {
+    if (mskD[i + 3] < 20) continue;
+    const bl = lum(o[i], o[i + 1], o[i + 2]);
+    if (bl < 1) { raw[p] = 1; continue; }
+    const r = lum(litD[i], litD[i + 1], litD[i + 2]) / bl;
+    raw[p] = r; sum += r; n++;
+  }
+  const mean = n > 0 ? sum / n : 1;
+
+  // Highlight-biased amplification: brightening (shine) is amplified hard;
+  // darkening is barely allowed and floored, so a polished panel can only gain
+  // sheen, never turn moody. Matte/wood stay almost flat.
+  const ampHi = finish === "polished" ? 2.4 : finish === "wood" ? 0.9 : 1.0;
+  const ampLo = finish === "polished" ? 0.5 : 0.6;
+  const hiCap = finish === "polished" ? 2.6 : 1.3;
+  const loCap = finish === "polished" ? 0.82 : 0.8;
+
+  // Multiplier map, grayscale where 100 = neutral 1.0×. Neutral outside the mask
+  // so the blur at the boundary doesn't darken the edge.
   const mult = document.createElement("canvas");
   mult.width = w; mult.height = h;
   const mctx = mult.getContext("2d")!;
   const mimg = mctx.createImageData(w, h);
   const md = mimg.data;
-  for (let i = 0; i < o.length; i += 4) {
+  for (let p = 0, i = 0; p < w * h; p++, i += 4) {
     let v = 100;
     if (mskD[i + 3] >= 20) {
-      const bl = lum(o[i], o[i + 1], o[i + 2]);
-      if (bl >= 1) {
-        const raw = lum(litD[i], litD[i + 1], litD[i + 2]) / bl;
-        // Amplify the deviation from neutral, then clamp.
-        const r = Math.max(loCap, Math.min(hiCap, 1 + (raw - 1) * amp));
-        v = Math.max(0, Math.min(255, Math.round(r * 100)));
-      }
+      const norm = raw[p] / mean; // centre on 1.0 → removes global exposure shift
+      const dev = norm - 1;
+      const r = 1 + dev * (dev >= 0 ? ampHi : ampLo);
+      v = Math.max(0, Math.min(255, Math.round(Math.max(loCap, Math.min(hiCap, r)) * 100)));
     }
     md[i] = v; md[i + 1] = v; md[i + 2] = v; md[i + 3] = 255;
   }
