@@ -2,6 +2,7 @@
 
 import React, { useEffect, useState, useRef } from "react";
 import Image from "next/image";
+import MdfComparison from "@/components/MdfComparison";
 
 interface QuoteSpace {
   spaceName: string;
@@ -11,6 +12,9 @@ interface QuoteSpace {
   linha: "Classic" | "Brilliance" | "Elegance";
   plates: number;
   area: number;
+  // Older quotes (saved before this field existed) won't have it — falls back
+  // to just the area, same as before.
+  dimLabel?: string | null;
   pricePerPlate: number;
   total: number;
 }
@@ -158,6 +162,23 @@ export default function OrcamentoPage({ params }: { params: Promise<{ slug: stri
       `Referência: orbitalrevestimentos.com.br/orcamento/${quote.slug}`,
     ].join("\n")
   );
+  // "Editar este orçamento" — resumes the simulador prefilled with every saved
+  // space (name, exact model, exact plate count), using the same ?ms=N&s{i}=…
+  // &p{i}=…&pl{i}=… multi-space format the visualizador/partner-link handoffs
+  // already use. src=quote (not viz/consultor) drives its own banner/copy in
+  // the simulador rather than reusing the "configured by your consultor" one.
+  const editUrl = (() => {
+    const spaces = quote.spaces ?? [];
+    if (spaces.length === 0) return null;
+    const qp = new URLSearchParams({ src: "quote", ms: String(spaces.length) });
+    spaces.forEach((sp, i) => {
+      qp.set(`s${i}`, sp.spaceName);
+      qp.set(`p${i}`, sp.productCode);
+      qp.set(`pl${i}`, String(sp.plates));
+    });
+    if (quote.coupon_code) qp.set("cupom", quote.coupon_code);
+    return `/simulador?${qp.toString()}`;
+  })();
 
   return (
     <div className="min-h-screen bg-[#f0efec]">
@@ -241,6 +262,12 @@ export default function OrcamentoPage({ params }: { params: Promise<{ slug: stri
                       </span>
                     </div>
                     <div className="flex items-center gap-4 text-xs text-[#74777f] font-[var(--font-inter)] flex-wrap">
+                      {sp.dimLabel && sp.dimLabel.includes("×") && (
+                        <>
+                          <span>{sp.dimLabel}</span>
+                          <span>·</span>
+                        </>
+                      )}
                       <span>{fmtDec(sp.area)} m²</span>
                       <span>·</span>
                       <span>{sp.plates} {sp.plates === 1 ? "placa" : "placas"}</span>
@@ -360,6 +387,16 @@ export default function OrcamentoPage({ params }: { params: Promise<{ slug: stri
             </a>
           )}
 
+          {editUrl && (
+            <a
+              href={editUrl}
+              className="flex items-center justify-center gap-2 w-full py-3 border border-[#e2e2e2] text-[#43474e] text-xs tracking-[0.12em] uppercase font-bold font-[var(--font-inter)] hover:border-[#002045] hover:text-[#002045] transition-colors"
+            >
+              <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><path d="M11 4H4a2 2 0 00-2 2v14a2 2 0 002 2h14a2 2 0 002-2v-7"/><path d="M18.5 2.5a2.121 2.121 0 013 3L12 15l-4 1 1-4 9.5-9.5z"/></svg>
+              Editar este orçamento
+            </a>
+          )}
+
           <button
             onClick={() => {
               const url = window.location.href;
@@ -400,6 +437,23 @@ export default function OrcamentoPage({ params }: { params: Promise<{ slug: stri
                 <p className="text-[#74777f] text-[10px] font-[var(--font-inter)]">{item.sub}</p>
               </div>
             ))}
+          </div>
+        </div>
+
+        {/* Technical comparison — same table shown at the end of the simulador
+            flow; a client returning via this saved link should still be able
+            to see how PFB stacks up against MDF/papel/forro/tinta. */}
+        <div className="bg-white border border-[#e2e2e2] mt-8">
+          <div className="px-6 lg:px-8 pt-6 pb-2 border-b border-[#e2e2e2]">
+            <p className="text-[#43474e] text-[10px] tracking-[0.15em] uppercase font-bold font-[var(--font-inter)] mb-0.5">
+              PFB Orbital vs. outros materiais
+            </p>
+            <p className="text-[#74777f] text-xs font-[var(--font-inter)]">
+              Selecione o material para comparar tecnicamente
+            </p>
+          </div>
+          <div className="px-6 lg:px-8 py-6 lg:py-8">
+            <MdfComparison />
           </div>
         </div>
 

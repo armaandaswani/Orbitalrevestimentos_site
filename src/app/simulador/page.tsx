@@ -344,6 +344,7 @@ function SimuladorInner() {
   // ── Partner / client-link mode ───────────────────────────────────────────
   const [partnerMode, setPartnerMode] = useState(false);       // opened with ?mode=partner
   const [fromPartnerLink, setFromPartnerLink] = useState(false); // opened from a partner-generated link
+  const [fromQuoteEdit, setFromQuoteEdit] = useState(false);     // opened to edit a saved orçamento (?src=quote)
   const [vizPrefill, setVizPrefill] = useState(false);          // opened from the Visualizador (?src=viz)
   const [hasJumpedFromLink, setHasJumpedFromLink] = useState(false);
   const [partnerLinkCopied, setPartnerLinkCopied] = useState(false);
@@ -616,12 +617,21 @@ function SimuladorInner() {
     const vizRender = searchParams.get("viz_render");
     if (vizRender) vizRenderId.current = vizRender;
 
-    // ── Multi-space link: ?ms=N&s0=…&p0=…&pl0=…  (partner: pl{i} plates) ──
+    // "Editar este orçamento" link from a saved /orcamento/[slug] page (?src=quote)
+    // — same ms= multi-space format, but its own banner/copy: not a partner's
+    // project, not a Visualizador handoff, just the client revisiting their own
+    // saved quote to change it.
+    const srcQuote = searchParams.get("src") === "quote";
+
+    // ── Multi-space link: ?ms=N&s0=…&p0=…&pl0=…  (partner/quote-edit: pl{i} plates) ──
     // ── or                ?ms=N&s0=…&p0=…&w0=…&h0=… (visualizador: dims) ──
+    // N can be exactly 1 (a saved quote with a single ambiente) — the resolver
+    // effect below already handles a length-1 array correctly (it becomes the
+    // active space, nothing goes to savedSpaces).
     const msParam = searchParams.get("ms");
     if (msParam) {
       const count = parseInt(msParam, 10);
-      if (!isNaN(count) && count > 1) {
+      if (!isNaN(count) && count >= 1) {
         const spaces: PendingMsSpace[] = [];
         for (let i = 0; i < count; i++) {
           const spaceName = searchParams.get(`s${i}`) ?? "";
@@ -644,9 +654,10 @@ function SimuladorInner() {
             });
           }
         }
-        if (spaces.length > 1) {
+        if (spaces.length >= 1) {
           setPendingMsParams(spaces);
-          if (!srcViz) setFromPartnerLink(true);
+          if (srcQuote) setFromQuoteEdit(true);
+          else if (!srcViz) setFromPartnerLink(true);
         }
       }
       return; // skip single-space param parsing
@@ -759,6 +770,12 @@ function SimuladorInner() {
       setSelectedLine(lastProduct.linha);
       setSelectedProduct(lastProduct);
     }
+    // If the saved space name matches one of the canonical SPACES (e.g. the
+    // client picked "Parede" rather than typing a custom room name — the
+    // common case), select it properly so canAdvance1 and the auto-jump below
+    // are satisfied and the client lands straight on step 4, not step 1.
+    const canonicalSpace = SPACES.find((s) => s.label.toLowerCase() === lastSpace.spaceName.trim().toLowerCase());
+    if (canonicalSpace) setSelectedSpace(canonicalSpace);
     setCustomSpaceText(lastSpace.spaceName);
     setShowCustomInput(true);
     if (lastSpace.w !== null && lastSpace.h !== null) {
@@ -797,11 +814,12 @@ function SimuladorInner() {
   // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [couponData]);
 
-  // Auto-jump once everything is pre-filled from a partner or Visualizador link.
-  // With dims/area present → step 4 (client data); Visualizador link missing
-  // dims for the active space → step 3 so the user types only the measurements.
+  // Auto-jump once everything is pre-filled from a partner, Visualizador, or
+  // saved-quote-edit link. With dims/area present → step 4 (client data);
+  // Visualizador link missing dims for the active space → step 3 so the user
+  // types only the measurements.
   useEffect(() => {
-    if ((!fromPartnerLink && !vizPrefill) || hasJumpedFromLink) return;
+    if ((!fromPartnerLink && !vizPrefill && !fromQuoteEdit) || hasJumpedFromLink) return;
     if (!selectedSpace || !selectedProduct) return;
     if (m2 > 0) {
       setHasJumpedFromLink(true);
@@ -813,14 +831,15 @@ function SimuladorInner() {
       setTimeout(() => stepCardRef.current?.scrollIntoView({ behavior: "smooth", block: "start" }), 100);
     }
   // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [fromPartnerLink, vizPrefill, hasJumpedFromLink, selectedSpace, selectedProduct, m2]);
+  }, [fromPartnerLink, vizPrefill, fromQuoteEdit, hasJumpedFromLink, selectedSpace, selectedProduct, m2]);
 
-  // Auto-validate coupon when arriving from a partner link (so step 5 shows it as locked/applied)
+  // Auto-validate coupon when arriving from a partner link or a saved-quote
+  // edit that had a coupon applied (so step 5 shows it as locked/applied)
   useEffect(() => {
-    if (!fromPartnerLink || !couponCode.trim() || couponData || couponValidating) return;
+    if ((!fromPartnerLink && !fromQuoteEdit) || !couponCode.trim() || couponData || couponValidating) return;
     validateCoupon();
   // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [fromPartnerLink, couponCode]);
+  }, [fromPartnerLink, fromQuoteEdit, couponCode]);
 
   // Auto-switch away from ceiling-only tabs when they become unavailable
   useEffect(() => {
@@ -1039,6 +1058,7 @@ function SimuladorInner() {
             linha: sp.linha,
             plates: sp.plates,
             area: sp.m2,
+            dimLabel: sp.dimLabel,
             pricePerPlate: sp.pricePerPlate,
             total: sp.materialDiscounted,
           })),
@@ -1050,6 +1070,7 @@ function SimuladorInner() {
             linha: selectedProduct.linha,
             plates,
             area: m2,
+            dimLabel: dimMode === "lxa" && width && height ? `${width}m × ${height}m` : `${m2.toFixed(2)} m²`,
             pricePerPlate: selectedProduct.price,
             total: orbMaterialDiscounted,
           }] : []),
@@ -2109,15 +2130,25 @@ function SimuladorInner() {
           {step === 4 && (
             <div className="bg-white border border-[#e2e2e2] p-6 lg:p-10">
 
-              {/* Banner shown when client arrives via a partner-generated link */}
-              {fromPartnerLink && (
+              {/* Banner shown when client arrives via a partner-generated link,
+                  or is editing a previously saved orçamento */}
+              {(fromPartnerLink || fromQuoteEdit) && (
                 <div className="flex items-start gap-3 bg-[#eef6ff] border border-[#b3d4f5] px-4 py-3 mb-6">
                   <svg className="flex-shrink-0 mt-0.5 text-[#1a5fa8]" width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
                     <circle cx="12" cy="12" r="10"/><path d="M12 8v4m0 4h.01"/>
                   </svg>
                   <p className="text-[#1a3c6e] text-xs font-[var(--font-inter)] leading-relaxed">
-                    <strong>Projeto configurado pelo seu consultor Orbital.</strong>{" "}
-                    Preencha seus dados abaixo para receber a simulação detalhada por e-mail.
+                    {fromQuoteEdit ? (
+                      <>
+                        <strong>Editando seu orçamento salvo.</strong>{" "}
+                        Ajuste o que precisar e confirme seus dados para gerar uma versão atualizada.
+                      </>
+                    ) : (
+                      <>
+                        <strong>Projeto configurado pelo seu consultor Orbital.</strong>{" "}
+                        Preencha seus dados abaixo para receber a simulação detalhada por e-mail.
+                      </>
+                    )}
                   </p>
                 </div>
               )}
