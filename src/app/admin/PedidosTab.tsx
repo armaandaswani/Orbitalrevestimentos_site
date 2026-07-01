@@ -206,7 +206,7 @@ type SalesRepOption = {
   commission_value: number;
 };
 
-type QuoteOption = {
+export type QuoteOption = {
   id: string;
   source: "coupon" | "client";
   client_name: string;
@@ -235,6 +235,10 @@ interface PedidosTabProps {
   // Set by the Leads tab's "Ver pedido" action — opens that order's editor.
   focusPedidoId?: string | null;
   onPedidoFocusConsumed?: () => void;
+  // Set by the Orçamentos tab's "Converter em Pedido" action (a quote, not a
+  // lead) — same idea as leadPrefill, seeding startDraftFromQuote instead.
+  quotePrefill?: QuoteOption | null;
+  onQuotePrefillConsumed?: () => void;
 }
 
 export default function PedidosTab({
@@ -243,6 +247,8 @@ export default function PedidosTab({
   onViewLead,
   focusPedidoId,
   onPedidoFocusConsumed,
+  quotePrefill,
+  onQuotePrefillConsumed,
 }: PedidosTabProps = {}) {
   const [pedidos, setPedidos] = useState<Pedido[]>([]);
   const [loading, setLoading] = useState(false);
@@ -376,6 +382,16 @@ export default function PedidosTab({
     onLeadPrefillConsumed?.();
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [leadPrefill]);
+
+  // Same idea, but for a "Converter em Pedido" prefill from the Orçamentos
+  // tab (a quote, not a lead) — seeds the create form via the existing
+  // startDraftFromQuote (used today by the "Importar orçamento" picker).
+  useEffect(() => {
+    if (!quotePrefill) return;
+    startDraftFromQuote(quotePrefill);
+    onQuotePrefillConsumed?.();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [quotePrefill]);
 
   // Consume a "Ver pedido" focus request from the Leads tab: open that
   // pedido's editor once it's in the fetched list.

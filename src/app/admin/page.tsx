@@ -4,7 +4,7 @@ import React, { useState, useEffect, useCallback, useMemo, useRef } from "react"
 import { SITE_ASSET_MANIFEST } from "@/lib/assets";
 import LeadsTab, { type Lead } from "./LeadsTab";
 import RemindersTab from "./RemindersTab";
-import PedidosTab from "./PedidosTab";
+import PedidosTab, { type QuoteOption } from "./PedidosTab";
 import RepOversightTab from "./RepOversightTab";
 import EstoqueTab from "./EstoqueTab";
 import FinanceiroTab from "./FinanceiroTab";
@@ -162,6 +162,8 @@ export default function AdminPage() {
   const [pedidoLeadPrefill, setPedidoLeadPrefill] = useState<Lead | null>(null);
   const [leadFocusId, setLeadFocusId] = useState<string | null>(null);
   const [pedidoFocusId, setPedidoFocusId] = useState<string | null>(null);
+  // Same pattern, Phase 2: converting a QUOTE (Orçamentos tab) into a pedido.
+  const [pedidoQuotePrefill, setPedidoQuotePrefill] = useState<QuoteOption | null>(null);
 
   // Dashboard
   interface DashboardData {
@@ -2136,6 +2138,31 @@ export default function AdminPage() {
     );
   }, [clients, useById, uses, partners, pedidos]);
 
+  // Builds a PedidosTab-ready QuoteOption from an Orçamentos row — reuses the
+  // exact shape PedidosTab's own "Importar orçamento" picker already produces,
+  // so startDraftFromQuote needs no changes to accept it.
+  function quoteOptionFromRow(c: (typeof enrichedClients)[number]): QuoteOption {
+    const cu = c.couponUse;
+    return {
+      id: `row:${c.id}`,
+      source: c._isStandaloneUse ? "coupon" : "client",
+      client_name: c.client_name,
+      client_email: c.client_email || null,
+      client_phone: c.client_phone ?? null,
+      space: c.space,
+      product_name: c.model,
+      product_code: cu?.product_code ?? null,
+      area_m2: c.area_m2,
+      plates: c.plates,
+      total: c.total,
+      coupon_code: cu?.coupon_code ?? null,
+      partner_name: c.partner_name,
+      coupon_use_id: c.coupon_use_id,
+      sales_rep_referral_code: cu?.sales_rep_referral_code ?? null,
+      created_at: c.created_at,
+    };
+  }
+
   const filteredClients = useMemo(() => {
     return enrichedClients.filter((c) => {
       const search = clientSearch.trim().toLowerCase();
@@ -3899,7 +3926,11 @@ export default function AdminPage() {
                             <td className="px-4 py-3">
                               <p className="font-semibold text-[#002045] text-xs truncate">
                                 {c.client_name}
-                                {c._isPedido && <span className="ml-1.5 align-middle text-[8px] bg-[#002045] text-white px-1.5 py-0.5 font-bold tracking-wider rounded-sm">PEDIDO</span>}
+                                {c._isPedido ? (
+                                  <span className="ml-1.5 align-middle text-[8px] bg-[#002045] text-white px-1.5 py-0.5 font-bold tracking-wider rounded-sm">PEDIDO</span>
+                                ) : (
+                                  <span className="ml-1.5 align-middle text-[8px] bg-[#eef2f8] text-[#43474e] px-1.5 py-0.5 font-bold tracking-wider rounded-sm">ORÇAMENTO</span>
+                                )}
                               </p>
                               <p className="text-[10px] text-[#74777f] truncate">{c.client_email}</p>
                               {waHref && (
@@ -3964,7 +3995,14 @@ export default function AdminPage() {
                               )}
                             </td>
                             {/* Delete */}
-                            <td className="px-3 py-3 text-right">
+                            <td className="px-3 py-3 text-right whitespace-nowrap">
+                              {c._isPedido ? (
+                                <button onClick={() => { setPedidoFocusId(c.id); setTab("pedidos"); }} className="text-[10px] text-[#3b6934] font-bold hover:underline mr-3">Ver pedido →</button>
+                              ) : cu?.source_pedido_id ? (
+                                <button onClick={() => { setPedidoFocusId(cu.source_pedido_id as string); setTab("pedidos"); }} className="text-[10px] text-[#3b6934] font-bold hover:underline mr-3">Ver pedido →</button>
+                              ) : (
+                                <button onClick={() => { setPedidoQuotePrefill(quoteOptionFromRow(c)); setTab("pedidos"); }} className="text-[10px] text-[#3b6934] font-bold hover:underline mr-3">Converter em Pedido</button>
+                              )}
                               <button
                                 onClick={() => deleteClient(c.id, c._isStandaloneUse, c._isPedido)}
                                 disabled={deletingClientId === c.id}
@@ -3997,7 +4035,11 @@ export default function AdminPage() {
                           <div className="flex-1 min-w-0">
                             <p className="font-semibold text-[#002045] text-sm font-[var(--font-inter)] truncate">
                               {c.client_name}
-                              {c._isPedido && <span className="ml-1.5 align-middle text-[8px] bg-[#002045] text-white px-1.5 py-0.5 font-bold tracking-wider rounded-sm">PEDIDO</span>}
+                              {c._isPedido ? (
+                                <span className="ml-1.5 align-middle text-[8px] bg-[#002045] text-white px-1.5 py-0.5 font-bold tracking-wider rounded-sm">PEDIDO</span>
+                              ) : (
+                                <span className="ml-1.5 align-middle text-[8px] bg-[#eef2f8] text-[#43474e] px-1.5 py-0.5 font-bold tracking-wider rounded-sm">ORÇAMENTO</span>
+                              )}
                             </p>
                             <p className="text-xs text-[#74777f] font-[var(--font-inter)] truncate">{c.client_email}</p>
                             {waHref && (
@@ -4037,6 +4079,15 @@ export default function AdminPage() {
                           <span><span className="text-[#74777f]">m²:</span> {c.area_m2 != null ? `${Number(c.area_m2).toFixed(1)} m²` : "—"}</span>
                           <span className="col-span-2"><span className="text-[#74777f]">Parceiro:</span> {cu ? `${c.partner_name} (${cu.coupon_code})` : "Sem cupom"}</span>
                           <span className={`col-span-2 text-[9px] ${age.cls}`}>{new Date(c.created_at).toLocaleDateString("pt-BR")} · {age.label}</span>
+                        </div>
+                        <div className="mt-3 pt-3 border-t border-[#f0f0f0]">
+                          {c._isPedido ? (
+                            <button onClick={() => { setPedidoFocusId(c.id); setTab("pedidos"); }} className="text-[10px] text-[#3b6934] font-bold">Ver pedido →</button>
+                          ) : cu?.source_pedido_id ? (
+                            <button onClick={() => { setPedidoFocusId(cu.source_pedido_id as string); setTab("pedidos"); }} className="text-[10px] text-[#3b6934] font-bold">Ver pedido →</button>
+                          ) : (
+                            <button onClick={() => { setPedidoQuotePrefill(quoteOptionFromRow(c)); setTab("pedidos"); }} className="text-[10px] text-[#3b6934] font-bold">Converter em Pedido</button>
+                          )}
                         </div>
                         {(() => {
                           const imgs = ("render_images" in c ? c.render_images : null) ?? [];
@@ -4078,6 +4129,8 @@ export default function AdminPage() {
             onViewLead={(leadId) => { setLeadFocusId(leadId); setTab("leads"); }}
             focusPedidoId={pedidoFocusId}
             onPedidoFocusConsumed={() => setPedidoFocusId(null)}
+            quotePrefill={pedidoQuotePrefill}
+            onQuotePrefillConsumed={() => setPedidoQuotePrefill(null)}
           />
         )}
         {tab === "estoque" && authed && <EstoqueTab />}
