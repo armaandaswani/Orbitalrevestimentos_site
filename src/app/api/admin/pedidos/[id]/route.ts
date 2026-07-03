@@ -32,6 +32,7 @@ const OPTIONAL_DOCUMENT_COLUMNS = [
   "coupon_use_id",
   "partner_commission_paid_at",
   "sales_rep_commission_paid_at",
+  "price_tier",
 ];
 
 function cleanMoney(v: unknown): number {
@@ -255,6 +256,7 @@ const EDITABLE = new Set([
   "lead_id",
   "partner_commission_paid_at",
   "sales_rep_commission_paid_at",
+  "price_tier",
 ]);
 
 /** GET /api/admin/pedidos/[id] — the order plus its line items. */

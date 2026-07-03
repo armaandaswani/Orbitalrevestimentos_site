@@ -48,6 +48,7 @@ export interface Pedido {
   sales_rep_commission_pct: number | null;
   sales_rep_commission_amount: number | null;
   coupon_use_id: string | null;
+  price_tier: "varejo" | "atacado";
   created_at: string;
   updated_at: string;
 }
@@ -263,7 +264,7 @@ export default function PedidosTab({
   const [cepError, setCepError] = useState("");
 
   // Stock-aware line items for the create form (model + plate qty).
-  type StockProduct = { id: string; name: string; code: string | null; price: number | null; cost_price: number | null; sale_unit: string | null; available: number; stock_on_hand: number; render_panel_width_m?: number | string | null; render_panel_height_m?: number | string | null };
+  type StockProduct = { id: string; name: string; code: string | null; linha: string | null; price: number | null; cost_price: number | null; sale_unit: string | null; available: number; stock_on_hand: number; render_panel_width_m?: number | string | null; render_panel_height_m?: number | string | null };
   type OrderItem = { product_id: string; plates: number };
   const [stockProducts, setStockProducts] = useState<StockProduct[]>([]);
   const [items, setItems] = useState<OrderItem[]>([]);
@@ -330,6 +331,23 @@ export default function PedidosTab({
     fetch("/api/admin/stock")
       .then((r) => (r.ok ? r.json() : null))
       .then((j) => { if (j?.products) setStockProducts(j.products); })
+      .catch(() => {});
+  }, []);
+
+  // Preços tab's rate card (special_price = atacado, public_price = varejo),
+  // keyed by linha — used by itemPricing to price items when a pedido is
+  // tagged atacado. Best-effort: if it fails to load, atacado just falls back
+  // to each product's own price (itemPricing already guards for this).
+  type PricingRow = { linha: string; special_price: number; public_price: number };
+  const [pricingByLinha, setPricingByLinha] = useState<Record<string, PricingRow>>({});
+  useEffect(() => {
+    fetch("/api/admin/pricing")
+      .then((r) => (r.ok ? r.json() : []))
+      .then((rows: PricingRow[]) => {
+        const map: Record<string, PricingRow> = {};
+        for (const r of rows) map[r.linha] = r;
+        setPricingByLinha(map);
+      })
       .catch(() => {});
   }, []);
 
@@ -454,6 +472,7 @@ export default function PedidosTab({
   }, [filtered]);
 
   const itemPricing = useMemo(() => {
+    const isAtacado = draft?.price_tier === "atacado";
     let total = 0;
     let cost = 0;
     let areaM2 = 0;
@@ -463,14 +482,18 @@ export default function PedidosTab({
       if (!item.product_id || !item.plates) continue;
       const product = stockProducts.find((p) => p.id === item.product_id);
       if (!product) continue;
-      if (product.price == null) missingPrice = true;
-      else total += product.price * item.plates;
+      // Atacado substitutes the linha's special_price (Preços tab) for the
+      // product's own price — falls back to the product's price if that
+      // linha has no rate-card row yet, rather than blocking the render.
+      const unitPrice = isAtacado ? pricingByLinha[product.linha ?? ""]?.special_price ?? product.price : product.price;
+      if (unitPrice == null) missingPrice = true;
+      else total += unitPrice * item.plates;
       if (product.cost_price == null) missingCost = true;
       else cost += product.cost_price * item.plates;
       areaM2 += item.plates * panelAreaM2(product);
     }
     return { total, cost, areaM2, grossProfit: total - cost, missingPrice, missingCost };
-  }, [items, stockProducts, panelAreaM2]);
+  }, [items, stockProducts, panelAreaM2, draft?.price_tier, pricingByLinha]);
 
   // Value + estimated area follow the items live: whenever the quantity of
   // panels changes, the total and m² recompute automatically — no manual
@@ -712,6 +735,7 @@ export default function PedidosTab({
       freight_is_revenue: false,
       other_costs: [],
       quote_valid_until: plusDays(7),
+      price_tier: "varejo",
       // Leave document_notes UNSET — the documento page already falls back to
       // the legal boilerplate for Pedido/Nota on its own; pre-seeding it here
       // baked the boilerplate into every order's actual saved data, which
@@ -772,6 +796,7 @@ export default function PedidosTab({
       freight_is_revenue: false,
       other_costs: [],
       quote_valid_until: plusDays(7),
+      price_tier: "varejo",
       partner_commission_pct: partnerPct,
       partner_commission_amount: partner?.commission_type === "fixed" ? Number(partner.commission_value) || 0 : moneyFromPct(partnerPct, Number(total) || 0),
       sales_rep_commission_pct: repPct,
@@ -877,6 +902,7 @@ export default function PedidosTab({
       sales_rep_commission_amount: draft.sales_rep_commission_amount ?? moneyFromPct(Number(draft.sales_rep_commission_pct) || 0),
       coupon_use_id: draft.coupon_use_id ?? null,
       lead_id: draft.lead_id ?? null,
+      price_tier: (draft.price_tier === "atacado" ? "atacado" : "varejo") as "varejo" | "atacado",
     };
     const cleanItems = items.filter((it) => it.product_id && it.plates > 0);
     try {
@@ -925,7 +951,7 @@ export default function PedidosTab({
               Importar orçamento
             </button>
             <button
-              onClick={() => { setItems(stockProducts.length > 0 ? [{ product_id: "", plates: 1 }] : []); setItemsReady(true); setDraft({ _isNew: true, status: "em_producao", payment_status: "pendente", payment_methods: ["Pix"], payment_terms: DEFAULT_PAYMENT_TERMS, freight_is_revenue: false, other_costs: [], quote_valid_until: plusDays(7) }); }}
+              onClick={() => { setItems(stockProducts.length > 0 ? [{ product_id: "", plates: 1 }] : []); setItemsReady(true); setDraft({ _isNew: true, status: "em_producao", payment_status: "pendente", payment_methods: ["Pix"], payment_terms: DEFAULT_PAYMENT_TERMS, freight_is_revenue: false, other_costs: [], quote_valid_until: plusDays(7), price_tier: "varejo" }); }}
               className="bg-[#002045] text-white text-xs tracking-[0.12em] uppercase font-bold font-[var(--font-inter)] px-5 py-2.5 hover:bg-[#1a365d] transition-colors"
             >
               + Novo pedido
@@ -1310,6 +1336,27 @@ export default function PedidosTab({
                   <p className="text-[10px] tracking-[0.12em] uppercase font-bold font-[var(--font-inter)] text-[#74777f] mb-2">
                     Itens do pedido — quantidade de placas
                   </p>
+                  <div className="flex items-center gap-2 mb-3">
+                    {([["varejo", "Varejo"], ["atacado", "Atacado"]] as const).map(([val, label]) => (
+                      <button
+                        key={val}
+                        type="button"
+                        onClick={() => setDraft({ ...draft, price_tier: val })}
+                        className={`text-[10px] tracking-[0.08em] uppercase font-bold font-[var(--font-inter)] px-3 py-1.5 border transition-colors ${
+                          (draft.price_tier ?? "varejo") === val
+                            ? "bg-[#002045] text-white border-[#002045]"
+                            : "text-[#74777f] border-[#e2e2e2] hover:border-[#002045] hover:text-[#002045]"
+                        }`}
+                      >
+                        {label}
+                      </button>
+                    ))}
+                    {draft.price_tier === "atacado" && (
+                      <span className="text-[10px] text-[#74777f] font-[var(--font-inter)]">
+                        Usa o preço especial da linha (aba Preços)
+                      </span>
+                    )}
+                  </div>
                   <div className="space-y-2">
                     {items.map((it, idx) => {
                       const prod = stockProducts.find((p) => p.id === it.product_id);
@@ -1352,7 +1399,13 @@ export default function PedidosTab({
                             <div className="flex flex-wrap items-center gap-x-4 gap-y-1 mt-2 text-[10px] font-[var(--font-inter)] text-[#74777f]">
                               <span className="font-semibold text-[#002045]">{prod.name}{prod.code ? ` · ${prod.code}` : ""}</span>
                               <span>{prod.available} {unit} disponíveis</span>
-                              <span>Venda/{unit}: {prod.price != null ? fmtBRL(prod.price) : "sem preço"}</span>
+                              <span>
+                                Venda/{unit}: {(() => {
+                                  const effective = draft.price_tier === "atacado" ? pricingByLinha[prod.linha ?? ""]?.special_price ?? prod.price : prod.price;
+                                  return effective != null ? fmtBRL(effective) : "sem preço";
+                                })()}
+                                {draft.price_tier === "atacado" && <span className="text-[#3b6934] font-bold"> (atacado)</span>}
+                              </span>
                               <span>≈ {(it.plates * panelAreaM2(prod)).toFixed(2)} m²</span>
                               {over && <span className="text-amber-700 font-bold">Acima do disponível — pode comprar mais para repor; o pedido pode ser criado normalmente</span>}
                               <button type="button" onClick={() => setAreaCalcOpen((cur) => ({ ...cur, [idx]: !cur[idx] }))}

@@ -31,6 +31,7 @@ const DOCUMENT_COLUMNS = [
   "sales_rep_commission_pct",
   "sales_rep_commission_amount",
   "coupon_use_id",
+  "price_tier",
 ];
 
 function cleanText(v: unknown): string | null {
@@ -224,6 +225,7 @@ export async function POST(req: NextRequest) {
     sales_rep_commission_pct: cleanMoney(body.sales_rep_commission_pct),
     sales_rep_commission_amount: cleanMoney(body.sales_rep_commission_amount),
     coupon_use_id: body.coupon_use_id ?? null,
+    price_tier: body.price_tier === "atacado" ? "atacado" : "varejo",
   };
 
   let { data, error } = await db.from("pedidos").insert(payload).select().single();
