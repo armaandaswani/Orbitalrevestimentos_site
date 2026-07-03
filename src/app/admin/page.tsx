@@ -321,7 +321,7 @@ export default function AdminPage() {
   }
 
   // Orders from the Pedidos table, surfaced in the Orçamentos tab alongside
-  // simulador-coupon quotes. Only the fields the orçamentos list needs.
+  // simulador-coupon quotes, and (commission fields) in the Commissions tab.
   interface PedidoLite {
     id: string;
     client_name: string;
@@ -334,6 +334,12 @@ export default function AdminPage() {
     status: string | null;
     partner_name: string | null;
     created_at: string;
+    partner_id: string | null;
+    sales_rep_id: string | null;
+    partner_commission_amount: number | null;
+    sales_rep_commission_amount: number | null;
+    partner_commission_paid_at: string | null;
+    sales_rep_commission_paid_at: string | null;
   }
   const [pedidos, setPedidos] = useState<PedidoLite[]>([]);
   const [pedidosLoading, setPedidosLoading] = useState(false);
@@ -2161,6 +2167,80 @@ export default function AdminPage() {
       sales_rep_referral_code: cu?.sales_rep_referral_code ?? null,
       created_at: c.created_at,
     };
+  }
+
+  // Phase 3 — unified commission view. Coupon-based commissions (coupon_uses)
+  // already had payment tracking; order-based commissions (pedidos) had the
+  // amounts but no paid-at tracking at all until migration 036. This merges
+  // both into one row shape, same "concluded sales only" semantics each side
+  // already used ("concluido" for coupons, "entregue" for pedidos).
+  interface CommissionRow {
+    id: string;
+    source: "coupon" | "pedido";
+    created_at: string;
+    couponCode: string | null;
+    clientName: string | null;
+    productName: string | null;
+    partnerName: string;
+    partnerAmount: number;
+    partnerPaidAt: string | null;
+    repName: string;
+    repAmount: number;
+    repPaidAt: string | null;
+  }
+
+  const commissionRows = useMemo<CommissionRow[]>(() => {
+    const fromCoupons: CommissionRow[] = uses
+      .filter((u) => u.sale_status === "concluido")
+      .map((u) => ({
+        id: u.id,
+        source: "coupon" as const,
+        created_at: u.created_at,
+        couponCode: u.coupon_code,
+        clientName: u.architect_name,
+        productName: u.product_name,
+        partnerName: partners.find((p) => p.coupon_code === u.coupon_code)?.name ?? u.coupon_code ?? "Orbital",
+        partnerAmount: u.commission_owed ?? 0,
+        partnerPaidAt: u.partner_commission_paid_at,
+        repName:
+          (u.sales_rep_referral_code ? salesReps.find((r) => r.referral_code === u.sales_rep_referral_code)?.name : null) ??
+          u.sales_rep_referral_code ??
+          "—",
+        repAmount: u.sales_rep_commission_owed ?? 0,
+        repPaidAt: u.rep_commission_paid_at,
+      }));
+
+    const fromPedidos: CommissionRow[] = pedidos
+      .filter((p) => p.status === "entregue" && (p.partner_commission_amount || p.sales_rep_commission_amount))
+      .map((p) => ({
+        id: p.id,
+        source: "pedido" as const,
+        created_at: p.created_at,
+        couponCode: null,
+        clientName: p.client_name,
+        productName: p.product_name,
+        partnerName: (p.partner_id ? partners.find((p2) => p2.id === p.partner_id)?.name : null) ?? p.partner_name ?? "Orbital",
+        partnerAmount: p.partner_commission_amount ?? 0,
+        partnerPaidAt: p.partner_commission_paid_at,
+        repName: (p.sales_rep_id ? salesReps.find((r) => r.id === p.sales_rep_id)?.name : null) ?? "—",
+        repAmount: p.sales_rep_commission_amount ?? 0,
+        repPaidAt: p.sales_rep_commission_paid_at,
+      }));
+
+    return [...fromCoupons, ...fromPedidos].sort(
+      (a, b) => new Date(b.created_at).getTime() - new Date(a.created_at).getTime()
+    );
+  }, [uses, pedidos, partners, salesReps]);
+
+  async function markPedidoCommissionPaid(pedidoId: string, type: "partner" | "rep") {
+    const field = type === "partner" ? "partner_commission_paid_at" : "sales_rep_commission_paid_at";
+    const value = new Date().toISOString();
+    const res = await fetch(`/api/admin/pedidos/${pedidoId}`, {
+      method: "PATCH",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ [field]: value }),
+    });
+    if (res.ok) setPedidos((prev) => prev.map((p) => (p.id === pedidoId ? { ...p, [field]: value } : p)));
   }
 
   const filteredClients = useMemo(() => {
@@ -4431,24 +4511,23 @@ export default function AdminPage() {
         {tab === "commissions" && (
           <div>
             {(() => {
-              const concludedAll = uses.filter(u => u.sale_status === "concluido");
-              const totalUnpaidPartner = concludedAll.filter(u => !u.partner_commission_paid_at && u.commission_owed).reduce((a, u) => a + (u.commission_owed ?? 0), 0);
-              const totalUnpaidRep = concludedAll.filter(u => u.sales_rep_commission_owed && !u.rep_commission_paid_at).reduce((a, u) => a + (u.sales_rep_commission_owed ?? 0), 0);
+              const totalUnpaidPartner = commissionRows.filter(r => !r.partnerPaidAt && r.partnerAmount).reduce((a, r) => a + r.partnerAmount, 0);
+              const totalUnpaidRep = commissionRows.filter(r => r.repAmount && !r.repPaidAt).reduce((a, r) => a + r.repAmount, 0);
               const thisMonth = new Date();
               const monthStart = new Date(thisMonth.getFullYear(), thisMonth.getMonth(), 1).toISOString();
-              const paidThisMonth = concludedAll
-                .filter(u => (u.partner_commission_paid_at && u.partner_commission_paid_at >= monthStart) || (u.rep_commission_paid_at && u.rep_commission_paid_at >= monthStart))
-                .reduce((a, u) => {
+              const paidThisMonth = commissionRows
+                .filter(r => (r.partnerPaidAt && r.partnerPaidAt >= monthStart) || (r.repPaidAt && r.repPaidAt >= monthStart))
+                .reduce((a, r) => {
                   let sum = 0;
-                  if (u.partner_commission_paid_at && u.partner_commission_paid_at >= monthStart) sum += (u.commission_owed ?? 0);
-                  if (u.rep_commission_paid_at && u.rep_commission_paid_at >= monthStart) sum += (u.sales_rep_commission_owed ?? 0);
+                  if (r.partnerPaidAt && r.partnerPaidAt >= monthStart) sum += r.partnerAmount;
+                  if (r.repPaidAt && r.repPaidAt >= monthStart) sum += r.repAmount;
                   return a + sum;
                 }, 0);
 
-              const pendingRows = concludedAll.filter(u => !u.partner_commission_paid_at || (u.sales_rep_commission_owed && !u.rep_commission_paid_at));
-              const paidRows = concludedAll.filter(u => u.partner_commission_paid_at && (!u.sales_rep_commission_owed || u.rep_commission_paid_at));
+              const pendingRows = commissionRows.filter(r => !r.partnerPaidAt || (r.repAmount && !r.repPaidAt));
+              const paidRows = commissionRows.filter(r => r.partnerPaidAt && (!r.repAmount || r.repPaidAt));
 
-              const displayRows = commissionFilter === "a_pagar" ? pendingRows : commissionFilter === "pago" ? paidRows : concludedAll;
+              const displayRows = commissionFilter === "a_pagar" ? pendingRows : commissionFilter === "pago" ? paidRows : commissionRows;
 
               return (
                 <>
@@ -4482,45 +4561,57 @@ export default function AdminPage() {
                     <table className="w-full text-sm font-[var(--font-inter)]">
                       <thead>
                         <tr className="border-b border-[#e2e2e2]">
-                          {["Data","Cupom","Rep.","Produto","Com. Parceiro","Status Parceiro","Com. Rep.","Status Rep."].map(h => (
+                          {["Data","Origem","Rep.","Produto","Com. Parceiro","Status Parceiro","Com. Rep.","Status Rep.",""].map(h => (
                             <th key={h} className="text-left px-4 py-3 text-[10px] tracking-[0.1em] uppercase font-bold text-[#74777f] whitespace-nowrap">{h}</th>
                           ))}
                         </tr>
                       </thead>
                       <tbody>
                         {displayRows.length === 0 ? (
-                          <tr><td colSpan={8} className="px-5 py-8 text-center text-[#74777f]">Nenhuma comissão encontrada.</td></tr>
-                        ) : displayRows.map(u => (
-                          <tr key={u.id} className="border-b border-[#f0f0f0] hover:bg-[#fafafa]">
-                            <td className="px-4 py-3 text-xs text-[#43474e] whitespace-nowrap">{new Date(u.created_at).toLocaleDateString("pt-BR")}</td>
-                            <td className="px-4 py-3"><span className="bg-[#eef2f8] text-[#002045] px-2 py-0.5 text-xs font-bold tracking-wider">{u.coupon_code}</span></td>
-                            <td className="px-4 py-3 text-xs text-[#74777f]">{u.sales_rep_referral_code || "—"}</td>
-                            <td className="px-4 py-3 text-xs text-[#43474e]">{u.product_name || "—"}</td>
-                            <td className="px-4 py-3 text-xs font-semibold text-[#002045]">{u.commission_owed ? fmt(u.commission_owed) : "—"}</td>
+                          <tr><td colSpan={9} className="px-5 py-8 text-center text-[#74777f]">Nenhuma comissão encontrada.</td></tr>
+                        ) : displayRows.map(r => (
+                          <tr key={`${r.source}:${r.id}`} className="border-b border-[#f0f0f0] hover:bg-[#fafafa]">
+                            <td className="px-4 py-3 text-xs text-[#43474e] whitespace-nowrap">{new Date(r.created_at).toLocaleDateString("pt-BR")}</td>
                             <td className="px-4 py-3">
-                              {u.partner_commission_paid_at ? (
+                              {r.source === "pedido" ? (
+                                <span className="bg-[#002045] text-white px-2 py-0.5 text-[10px] font-bold tracking-wider rounded-sm">PEDIDO</span>
+                              ) : (
+                                <span className="bg-[#eef2f8] text-[#002045] px-2 py-0.5 text-xs font-bold tracking-wider">{r.couponCode}</span>
+                              )}
+                              {r.source === "pedido" && r.clientName && <p className="text-[10px] text-[#74777f] mt-0.5">{r.clientName}</p>}
+                            </td>
+                            <td className="px-4 py-3 text-xs text-[#74777f]">{r.repName}</td>
+                            <td className="px-4 py-3 text-xs text-[#43474e]">{r.productName || "—"}</td>
+                            <td className="px-4 py-3 text-xs font-semibold text-[#002045]">{r.partnerAmount ? fmt(r.partnerAmount) : "—"}</td>
+                            <td className="px-4 py-3">
+                              {r.partnerPaidAt ? (
                                 <span className="inline-block bg-green-100 text-green-800 px-2 py-0.5 text-[10px] font-bold tracking-wide">
-                                  ✓ Pago {new Date(u.partner_commission_paid_at).toLocaleDateString("pt-BR")}
+                                  ✓ Pago {new Date(r.partnerPaidAt).toLocaleDateString("pt-BR")}
                                 </span>
-                              ) : u.commission_owed ? (
-                                <button onClick={() => markCommissionPaid(u.id, "partner")}
+                              ) : r.partnerAmount ? (
+                                <button onClick={() => r.source === "coupon" ? markCommissionPaid(r.id, "partner") : markPedidoCommissionPaid(r.id, "partner")}
                                   className="inline-block bg-yellow-100 text-yellow-800 px-2 py-0.5 text-[10px] font-bold tracking-wide hover:bg-yellow-200 transition-colors cursor-pointer">
                                   A pagar — Marcar pago
                                 </button>
                               ) : <span className="text-[#ccc]">—</span>}
                             </td>
-                            <td className="px-4 py-3 text-xs font-semibold text-[#1a365d]">{u.sales_rep_commission_owed ? fmt(u.sales_rep_commission_owed) : "—"}</td>
+                            <td className="px-4 py-3 text-xs font-semibold text-[#1a365d]">{r.repAmount ? fmt(r.repAmount) : "—"}</td>
                             <td className="px-4 py-3">
-                              {!u.sales_rep_commission_owed ? <span className="text-[#ccc]">—</span> :
-                               u.rep_commission_paid_at ? (
+                              {!r.repAmount ? <span className="text-[#ccc]">—</span> :
+                               r.repPaidAt ? (
                                 <span className="inline-block bg-green-100 text-green-800 px-2 py-0.5 text-[10px] font-bold tracking-wide">
-                                  ✓ Pago {new Date(u.rep_commission_paid_at).toLocaleDateString("pt-BR")}
+                                  ✓ Pago {new Date(r.repPaidAt).toLocaleDateString("pt-BR")}
                                 </span>
                               ) : (
-                                <button onClick={() => markCommissionPaid(u.id, "rep")}
+                                <button onClick={() => r.source === "coupon" ? markCommissionPaid(r.id, "rep") : markPedidoCommissionPaid(r.id, "rep")}
                                   className="inline-block bg-yellow-100 text-yellow-800 px-2 py-0.5 text-[10px] font-bold tracking-wide hover:bg-yellow-200 transition-colors cursor-pointer">
                                   A pagar — Marcar pago
                                 </button>
+                              )}
+                            </td>
+                            <td className="px-4 py-3 text-right whitespace-nowrap">
+                              {r.source === "pedido" && (
+                                <button onClick={() => { setPedidoFocusId(r.id); setTab("pedidos"); }} className="text-[10px] text-[#3b6934] font-bold hover:underline">Ver pedido →</button>
                               )}
                             </td>
                           </tr>
