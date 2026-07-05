@@ -157,20 +157,24 @@ async function normalizeImage(file: File): Promise<{ dataUrl: string; w: number;
   return { dataUrl: c.toDataURL("image/jpeg", 0.9), w, h };
 }
 
-// Morphological CLOSE of a binary mask, done with two Gaussian-blur+threshold
-// passes on a canvas (dilate = blur then keep low alpha; erode = blur then keep
-// high alpha). Closing bridges the seam-width gaps and smooths the jagged
-// boundary that a raw SAM2 mask has — which is exactly what shows up as "torn
-// edges / empty spaces" once the mask is used to clip the projected panel. The
-// radius is small (~1.2% of the shorter side), so it only fills grout/seam-width
-// gaps and never a big foreground hole (a mirror or frame in front of the wall
-// stays cut out). `onAt(i)` reports whether source pixel i is inside the mask.
+// Cleans a raw SAM2 mask so the projected panel doesn't come out torn:
+//  1. Morphological CLOSE (blur+threshold dilate, then erode) — bridges thin
+//     gaps (grout lines, lamp cords crossing the wall) and smooths the jagged
+//     boundary. Radius ~1.8% of the shorter side.
+//  2. Interior HOLE FILL with a size threshold — SAM2 often punches holes in
+//     the middle of a wall where the original paint has highlight streaks or
+//     reflections; those show up as ugly patches of unpainted wall inside the
+//     panel. Any hole NOT connected to the outside and smaller than ~3% of the
+//     image is filled. LARGE interior holes (a mirror, a framed picture, a
+//     plant in front of the wall) stay cut out, so real foreground objects are
+//     still preserved on top of the panel.
+// `onAt(i)` reports whether source pixel i is inside the raw mask.
 function refineMaskCanvas(
   w: number,
   h: number,
   onAt: (pixelIndex: number) => boolean
 ): Uint8ClampedArray {
-  const r = Math.max(1.5, Math.min(w, h) * 0.012);
+  const r = Math.max(2, Math.min(w, h) * 0.018);
   const mk = () => {
     const c = document.createElement("canvas");
     c.width = w; c.height = h;
@@ -206,7 +210,75 @@ function refineMaskCanvas(
   ectx.filter = `blur(${r}px)`;
   ectx.drawImage(dil2, 0, 0);
   ectx.filter = "none";
-  return ectx.getImageData(0, 0, w, h).data as unknown as Uint8ClampedArray;
+  const closed = ectx.getImageData(0, 0, w, h).data;
+
+  // Pass 3 — fill small interior holes. Work on a downsampled grid (≤ ~360px
+  // on the long side) so the flood fill is cheap even on a 4K photo: BFS from
+  // every border cell over "off" cells marks the true OUTSIDE; any remaining
+  // off-region is an interior hole — fill it if it's small, keep it if large
+  // (that's a real foreground object).
+  const scale = Math.max(1, Math.ceil(Math.max(w, h) / 360));
+  const gw = Math.ceil(w / scale);
+  const gh = Math.ceil(h / scale);
+  const grid = new Uint8Array(gw * gh); // 1 = on (mask), 0 = off
+  for (let gy = 0; gy < gh; gy++) {
+    for (let gx = 0; gx < gw; gx++) {
+      const x = Math.min(w - 1, gx * scale + (scale >> 1));
+      const y = Math.min(h - 1, gy * scale + (scale >> 1));
+      if (closed[(y * w + x) * 4 + 3] > 128) grid[gy * gw + gx] = 1;
+    }
+  }
+  // BFS from borders: label 2 = outside.
+  const queue: number[] = [];
+  for (let gx = 0; gx < gw; gx++) {
+    for (const gy of [0, gh - 1]) {
+      const i = gy * gw + gx;
+      if (grid[i] === 0) { grid[i] = 2; queue.push(i); }
+    }
+  }
+  for (let gy = 0; gy < gh; gy++) {
+    for (const gx of [0, gw - 1]) {
+      const i = gy * gw + gx;
+      if (grid[i] === 0) { grid[i] = 2; queue.push(i); }
+    }
+  }
+  while (queue.length > 0) {
+    const i = queue.pop()!;
+    const gx = i % gw, gy = (i / gw) | 0;
+    if (gx > 0 && grid[i - 1] === 0) { grid[i - 1] = 2; queue.push(i - 1); }
+    if (gx < gw - 1 && grid[i + 1] === 0) { grid[i + 1] = 2; queue.push(i + 1); }
+    if (gy > 0 && grid[i - gw] === 0) { grid[i - gw] = 2; queue.push(i - gw); }
+    if (gy < gh - 1 && grid[i + gw] === 0) { grid[i + gw] = 2; queue.push(i + gw); }
+  }
+  // Remaining 0-cells are interior holes. Component-label them; fill small ones.
+  const maxHoleCells = Math.round(gw * gh * 0.03);
+  for (let start = 0; start < gw * gh; start++) {
+    if (grid[start] !== 0) continue;
+    const comp: number[] = [start];
+    grid[start] = 3; // visiting
+    for (let qi = 0; qi < comp.length; qi++) {
+      const i = comp[qi];
+      const gx = i % gw, gy = (i / gw) | 0;
+      if (gx > 0 && grid[i - 1] === 0) { grid[i - 1] = 3; comp.push(i - 1); }
+      if (gx < gw - 1 && grid[i + 1] === 0) { grid[i + 1] = 3; comp.push(i + 1); }
+      if (gy > 0 && grid[i - gw] === 0) { grid[i - gw] = 3; comp.push(i - gw); }
+      if (gy < gh - 1 && grid[i + gw] === 0) { grid[i + gw] = 3; comp.push(i + gw); }
+    }
+    const fill = comp.length <= maxHoleCells;
+    for (const i of comp) grid[i] = fill ? 4 : 5; // 4 = fill, 5 = keep hole
+  }
+  // Upscale the fill decision back onto the full-res alpha.
+  for (let y = 0; y < h; y++) {
+    const gy = Math.min(gh - 1, (y / scale) | 0);
+    for (let x = 0; x < w; x++) {
+      const pi = (y * w + x) * 4 + 3;
+      if (closed[pi] <= 128) {
+        const g = grid[gy * gw + Math.min(gw - 1, (x / scale) | 0)];
+        if (g === 4) closed[pi] = 255;
+      }
+    }
+  }
+  return closed as unknown as Uint8ClampedArray;
 }
 
 async function maskToOverlay(
@@ -388,13 +460,25 @@ async function compositeMaskedRegion(baseDataUrl: string, sourceDataUrl: string,
   const stencil = await buildStencil(z, w, h, preferQuad);
   if (!stencil) return sourceDataUrl; // no spatial constraint available — trust output wholesale
 
+  // Feather the stencil's edge slightly (~0.3% of the shorter side) so the
+  // panel boundary blends a couple of pixels into the photo instead of the
+  // razor-sharp cut that made every mask imperfection read as a "tear".
+  const feather = Math.max(1.5, Math.min(w, h) * 0.003);
+  const soft = document.createElement("canvas");
+  soft.width = w;
+  soft.height = h;
+  const softCtx = soft.getContext("2d")!;
+  softCtx.filter = `blur(${feather}px)`;
+  softCtx.drawImage(stencil, 0, 0);
+  softCtx.filter = "none";
+
   const cut = document.createElement("canvas");
   cut.width = w;
   cut.height = h;
   const cutCtx = cut.getContext("2d")!;
   cutCtx.drawImage(sourceImg, 0, 0, w, h);
   cutCtx.globalCompositeOperation = "destination-in";
-  cutCtx.drawImage(stencil, 0, 0);
+  cutCtx.drawImage(soft, 0, 0);
 
   const out = document.createElement("canvas");
   out.width = w;
