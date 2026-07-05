@@ -5,6 +5,7 @@ import Script from "next/script";
 import Navbar from "@/components/Navbar";
 import Footer from "@/components/Footer";
 import ChatWidget from "@/components/ChatWidget";
+import SiteChrome from "@/components/SiteChrome";
 import { SpeedInsights } from "@vercel/speed-insights/next";
 import { Analytics } from "@vercel/analytics/next";
 
@@ -291,10 +292,14 @@ export default function RootLayout({
             dangerouslySetInnerHTML={{ __html: JSON.stringify(schema) }}
           />
         ))}
-        <Navbar />
+        <SiteChrome>
+          <Navbar />
+        </SiteChrome>
         <div className="flex-1">{children}</div>
-        <Footer />
-        <ChatWidget />
+        <SiteChrome>
+          <Footer />
+          <ChatWidget />
+        </SiteChrome>
         <SpeedInsights />
         <Analytics />
       </body>

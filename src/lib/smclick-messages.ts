@@ -97,6 +97,32 @@ export function meetingInviteMessage(i: MeetingInviteInput): string {
   return lines.join("\n");
 }
 
+export interface AdminMeetingAlertInput {
+  repName?: string | null;
+  title: string;
+  whenLabel: string;
+  location?: string | null;
+  inviteeNames?: string[];
+}
+
+/**
+ * Real-time WhatsApp alert to the OWNER when a rep schedules a meeting —
+ * previously the admin only got a transactional email (easy to miss) and the
+ * next-day digest. Mirrors meetingInviteMessage's style, framed for the admin.
+ */
+export function adminMeetingAlertMessage(i: AdminMeetingAlertInput): string {
+  const lines: string[] = [
+    `📆 Nova reunião agendada${i.repName ? ` por ${i.repName}` : ""}:`,
+    "",
+    `📌 ${i.title}`,
+    `📅 ${i.whenLabel}`,
+  ];
+  if (i.location && i.location.trim()) lines.push(`📍 ${i.location.trim()}`);
+  if (i.inviteeNames && i.inviteeNames.length > 0) lines.push(`👥 ${i.inviteeNames.join(", ")}`);
+  lines.push("", "Detalhes no painel admin → Representantes.");
+  return lines.join("\n");
+}
+
 export interface OrcamentoMessageInput {
   name: string | null;
   total: number | null;
@@ -140,6 +166,24 @@ export function clientOrcamentoMessage(i: OrcamentoMessageInput): string {
 
 export interface OwnerAlertInput extends OrcamentoMessageInput {
   phone?: string | null;
+}
+
+/**
+ * Real-time ping to the OWNER for EVERY new orçamento — previously the owner
+ * only heard about high-value ones (and only when the threshold env was set),
+ * so normal orçamentos arrived silently.
+ */
+export function ownerNewOrcamentoMessage(i: OwnerAlertInput): string {
+  const lines: string[] = [
+    `📝 Novo orçamento no site!`,
+    ``,
+    `👤 ${i.name ?? "—"}${i.phone ? ` (${i.phone})` : ""}`,
+    `💰 ${fmtBRL(i.total)}`,
+  ];
+  const detail = [i.space, i.model].filter(Boolean).join(" · ");
+  if (detail) lines.push(`📦 ${detail}`);
+  if (i.quoteUrl) lines.push(i.quoteUrl);
+  return lines.join("\n");
 }
 
 /**

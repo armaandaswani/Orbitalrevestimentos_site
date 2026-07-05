@@ -9,12 +9,11 @@
 
 import { NextRequest, NextResponse } from "next/server";
 import { supabaseAdmin } from "@/lib/supabase";
-import { smclickConfigured, sendText, normalizePhone } from "@/lib/smclick";
+import { smclickConfigured, sendText, normalizePhone, adminWhatsappPhone } from "@/lib/smclick";
 import { getResend } from "@/lib/resend";
 import { isMissingTable } from "@/lib/db-compat";
 
 const TIME_ZONE = "America/Sao_Paulo";
-const DEFAULT_ADMIN_WHATSAPP = "92992097165";
 
 interface RepRow {
   id: string;
@@ -274,7 +273,7 @@ export async function GET(req: NextRequest) {
     results.push({ rep: rep.name, meetings: todaysMeetings.length, followups: dueFollowups.length, sentVia });
   }
 
-  const adminPhone = normalizePhone(process.env.REP_DAILY_DIGEST_ADMIN_WHATSAPP || DEFAULT_ADMIN_WHATSAPP);
+  const adminPhone = adminWhatsappPhone();
   let adminSent = false;
   let adminError: string | null = null;
   if (canWhatsapp && adminPhone && adminSections.length) {

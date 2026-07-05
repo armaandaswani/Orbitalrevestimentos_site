@@ -8,6 +8,8 @@ import PedidosTab, { type QuoteOption } from "./PedidosTab";
 import RepOversightTab from "./RepOversightTab";
 import EstoqueTab from "./EstoqueTab";
 import FinanceiroTab from "./FinanceiroTab";
+import DashboardTab, { type OverviewData } from "./DashboardTab";
+import { inputCls, labelCls, NavIcon, EmptyState, type AdminTab } from "./ui";
 import {
   composePrompt,
   finishDescription,
@@ -15,6 +17,35 @@ import {
   DEFAULT_PANEL_HEIGHT_M,
   panelGrid,
 } from "@/lib/render-prompt";
+
+// ─── Sidebar IA ───────────────────────────────────────────────────────────────
+// Ordered as the business actually flows, top to bottom: what needs attention
+// → the client's journey (lead → quote → order) → the sales network that
+// feeds it → the product/order journey (product → stock → purchase) →
+// management dashboards → marketing content → working tools → set-and-forget
+// configuration. `custos`/`compras`/`relatorios` are new modules (built in
+// the redesign's later phases; they mount as placeholders until then).
+const NAV_LABELS: Record<AdminTab, string> = {
+  dashboard: "Hoje", lembretes: "Lembretes",
+  leads: "Leads / CRM", orcamentos: "Orçamentos", pedidos: "Pedidos",
+  partners: "Parceiros", representantes: "Representantes", commissions: "Comissões",
+  produtos: "Produtos", estoque: "Estoque", compras: "Compras & Importação",
+  financeiro: "Financeiro (P&L)", custos: "Custos & Margens", relatorios: "Relatórios",
+  campaigns: "Campanhas", projetos: "Projetos", midia: "Mídia",
+  simulador: "Simulador", visualizacoes: "Visualizações",
+  precos: "Tabela de Preços", drip: "Réguas de E-mail", chat: "Chat IA",
+};
+
+const NAV_GROUPS: ReadonlyArray<{ group: string; items: ReadonlyArray<AdminTab> }> = [
+  { group: "Início", items: ["dashboard", "lembretes"] },
+  { group: "Jornada do Cliente", items: ["leads", "orcamentos", "pedidos"] },
+  { group: "Rede de Vendas", items: ["partners", "representantes", "commissions"] },
+  { group: "Produtos & Estoque", items: ["produtos", "estoque", "compras"] },
+  { group: "Gestão & Finanças", items: ["financeiro", "custos", "relatorios"] },
+  { group: "Marketing", items: ["campaigns", "projetos", "midia"] },
+  { group: "Ferramentas", items: ["simulador", "visualizacoes"] },
+  { group: "Configurações", items: ["precos", "drip", "chat"] },
+];
 
 interface Partner {
   id: string;
@@ -152,7 +183,9 @@ export default function AdminPage() {
   const [authed, setAuthed] = useState(false);
   const [pw, setPw] = useState("");
   const [pwError, setPwError] = useState("");
-  const [tab, setTab] = useState<"dashboard" | "lembretes" | "leads" | "pedidos" | "estoque" | "financeiro" | "partners" | "representantes" | "orcamentos" | "campaigns" | "drip" | "commissions" | "produtos" | "projetos" | "midia" | "simulador" | "chat" | "visualizacoes" | "precos">("dashboard");
+  const [tab, setTab] = useState<AdminTab>("dashboard");
+  // Mobile nav drawer (hamburger). Desktop sidebar is always visible.
+  const [navOpen, setNavOpen] = useState(false);
   const [commissionFilter, setCommissionFilter] = useState<"a_pagar" | "pago" | "tudo">("a_pagar");
 
   // Cross-tab handoff for the Lead → Order conversion flow: no context/store,
@@ -180,6 +213,20 @@ export default function AdminPage() {
   }
   const [dashData, setDashData] = useState<DashboardData | null>(null);
   const [dashLoading, setDashLoading] = useState(false);
+
+  // "Atenção agora" feed — owned here (not in DashboardTab) because the
+  // sidebar badges (lembretes atrasados, estoque baixo) read from it too.
+  const [overview, setOverview] = useState<OverviewData | null>(null);
+  const [overviewLoading, setOverviewLoading] = useState(false);
+  const fetchOverview = useCallback(async () => {
+    setOverviewLoading(true);
+    try {
+      const res = await fetch("/api/admin/overview");
+      const j = await res.json().catch(() => null);
+      if (res.ok && j && typeof j === "object" && "followupsOverdue" in j) setOverview(j as OverviewData);
+    } catch { /* best-effort */ }
+    setOverviewLoading(false);
+  }, []);
 
   // Partners
   const [partners, setPartners] = useState<Partner[]>([]);
@@ -729,6 +776,12 @@ export default function AdminPage() {
     }
   // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [tab, authed]);
+
+  // "Atenção agora" + sidebar badges: fetch once on login.
+  useEffect(() => {
+    if (authed && supabaseConfigured && !overview && !overviewLoading) fetchOverview();
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [authed, supabaseConfigured]);
 
   useEffect(() => {
     if (tab === "campaigns" && authed) loadCampaigns();
@@ -2293,9 +2346,6 @@ export default function AdminPage() {
     return { label: `${days}d atrás`, cls: "text-[#b0b0b0]" };
   }
 
-  const inputCls = "w-full border border-[#e2e2e2] px-4 py-2.5 text-sm font-[var(--font-inter)] text-[#002045] focus:outline-none focus:border-[#002045]";
-  const labelCls = "block text-[10px] tracking-[0.15em] uppercase font-bold font-[var(--font-inter)] text-[#74777f] mb-2";
-
   if (!authed) {
     return (
       <div className="min-h-screen bg-[#f5f5f3] flex items-center justify-center px-4">
@@ -2554,255 +2604,122 @@ export default function AdminPage() {
         </div>
       )}
 
-      <div className="max-w-[1500px] mx-auto px-4 sm:px-6 py-6 flex flex-col md:flex-row gap-6 items-start">
-        {/* ═══ GROUPED SIDEBAR NAV ═══ */}
-        <aside className="w-full md:w-52 md:flex-shrink-0 md:sticky md:top-6 flex flex-col gap-5 bg-white md:bg-transparent border md:border-0 border-[#e2e2e2] rounded-lg md:rounded-none p-3 md:p-0">
-          {/* ═══ SIDEBAR BRAND ═══ */}
-          <div className="hidden md:block px-3 pb-3 mb-1 border-b border-[#e2e2e2]">
-            <p className="font-[var(--font-noto-serif)] text-[#002045] text-lg leading-none">Orbital</p>
-            <p className="text-[9px] tracking-[0.22em] uppercase font-bold font-[var(--font-inter)] text-[#a0a3a8] mt-1.5">Sistema Interno</p>
-          </div>
-          {(() => {
-            const NAV_LABELS: Record<string, string> = {
-              dashboard: "Dashboard", lembretes: "Lembretes", leads: "Leads / CRM", orcamentos: "Orçamentos",
-              pedidos: "Pedidos", estoque: "Estoque", partners: "Parceiros", representantes: "Representantes", commissions: "Comissões",
-              campaigns: "Campanhas", drip: "Drip de Emails", produtos: "Produtos",
-              projetos: "Projetos", midia: "Mídia", simulador: "Simulador", chat: "Chat IA",
-              visualizacoes: "Visualizações", precos: "Tabela de Preços", financeiro: "Financeiro",
-            };
-            const NAV_GROUPS: ReadonlyArray<{ group: string; items: ReadonlyArray<typeof tab> }> = [
-              { group: "Geral", items: ["dashboard", "lembretes"] },
-              { group: "Comercial", items: ["leads", "orcamentos", "partners", "representantes", "commissions"] },
-              { group: "Operação", items: ["pedidos", "estoque"] },
-              { group: "Financeiro", items: ["financeiro", "precos"] },
-              { group: "Marketing", items: ["campaigns", "drip"] },
-              { group: "Catálogo", items: ["produtos", "projetos", "midia"] },
-              { group: "Ferramentas", items: ["simulador", "chat", "visualizacoes"] },
-            ];
-            return NAV_GROUPS.map((sec) => (
+      {/* ═══ MOBILE TOP BAR ═══ */}
+      <div className="md:hidden sticky top-0 z-40 bg-white border-b border-[#e2e2e2] px-4 py-3 flex items-center justify-between gap-3">
+        <div className="min-w-0">
+          <p className="font-[var(--font-noto-serif)] text-[#002045] text-base leading-none">Orbital Admin</p>
+          <p className="text-[9px] tracking-[0.18em] uppercase font-bold font-[var(--font-inter)] text-[#a0a3a8] mt-1 truncate">{NAV_LABELS[tab]}</p>
+        </div>
+        <button
+          onClick={() => setNavOpen(true)}
+          aria-label="Abrir menu"
+          className="flex-shrink-0 border border-[#e2e2e2] rounded-md p-2 text-[#002045] hover:border-[#002045] transition-colors"
+        >
+          <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round"><line x1="3" y1="6" x2="21" y2="6" /><line x1="3" y1="12" x2="21" y2="12" /><line x1="3" y1="18" x2="21" y2="18" /></svg>
+        </button>
+      </div>
+
+      {/* ═══ MOBILE NAV DRAWER ═══ */}
+      {navOpen && (
+        <div className="md:hidden fixed inset-0 z-50">
+          <div className="absolute inset-0 bg-black/40" onClick={() => setNavOpen(false)} />
+          <div className="absolute inset-y-0 left-0 w-72 max-w-[85vw] bg-white shadow-xl overflow-y-auto p-4 flex flex-col gap-5">
+            <div className="flex items-center justify-between pb-3 border-b border-[#e2e2e2]">
+              <div>
+                <p className="font-[var(--font-noto-serif)] text-[#002045] text-lg leading-none">Orbital</p>
+                <p className="text-[9px] tracking-[0.22em] uppercase font-bold font-[var(--font-inter)] text-[#a0a3a8] mt-1.5">Sistema Interno</p>
+              </div>
+              <button onClick={() => setNavOpen(false)} aria-label="Fechar menu" className="text-[#74777f] hover:text-[#002045] text-2xl leading-none px-1">×</button>
+            </div>
+            {NAV_GROUPS.map((sec) => (
               <div key={sec.group}>
                 <p className="text-[9px] tracking-[0.2em] uppercase font-bold font-[var(--font-inter)] text-[#a0a3a8] px-3 mb-1.5">{sec.group}</p>
                 <div className="flex flex-col gap-0.5">
                   {sec.items.map((t) => {
                     const active = tab === t;
+                    const badge = t === "partners" ? pendingPartners.length : t === "lembretes" ? (overview?.followupsOverdue.count ?? 0) : t === "estoque" ? (overview?.lowStock.count ?? 0) : 0;
                     return (
                       <button
                         key={t}
-                        onClick={() => setTab(t)}
-                        className={`group flex items-center justify-between gap-2 px-3 py-2 text-xs font-[var(--font-inter)] rounded-md text-left transition-colors ${active ? "bg-[#002045] text-white font-bold" : "text-[#43474e] hover:bg-[#eef0f3]"}`}
+                        onClick={() => { setTab(t); setNavOpen(false); }}
+                        className={`flex items-center gap-2.5 px-3 py-2.5 text-sm font-[var(--font-inter)] rounded-md text-left transition-colors ${active ? "bg-[#002045] text-white font-bold" : "text-[#43474e] hover:bg-[#eef0f3]"}`}
                       >
-                        <span className="truncate">{NAV_LABELS[t]}</span>
-                        {t === "partners" && pendingPartners.length > 0 && (
-                          <span className="bg-yellow-400 text-yellow-900 text-[9px] font-bold px-1.5 py-0.5 rounded-full leading-none flex-shrink-0">
-                            {pendingPartners.length}
-                          </span>
+                        <NavIcon id={t} className={active ? "text-white" : "text-[#a0a3a8]"} />
+                        <span className="truncate flex-1">{NAV_LABELS[t]}</span>
+                        {badge > 0 && (
+                          <span className="bg-yellow-400 text-yellow-900 text-[9px] font-bold px-1.5 py-0.5 rounded-full leading-none flex-shrink-0">{badge}</span>
                         )}
                       </button>
                     );
                   })}
                 </div>
               </div>
-            ));
-          })()}
+            ))}
+          </div>
+        </div>
+      )}
+
+      <div className="max-w-[1500px] mx-auto px-4 sm:px-6 py-6 flex flex-col md:flex-row gap-6 items-start">
+        {/* ═══ GROUPED SIDEBAR NAV (desktop) ═══ */}
+        <aside className="hidden md:flex w-56 flex-shrink-0 md:sticky md:top-6 flex-col gap-5 max-h-[calc(100vh-3rem)] overflow-y-auto pr-1">
+          {/* Brand */}
+          <div className="px-3 pb-3 mb-1 border-b border-[#e2e2e2] flex items-center gap-2.5">
+            <span className="w-8 h-8 rounded-lg bg-[#002045] text-white flex items-center justify-center font-[var(--font-noto-serif)] text-base flex-shrink-0">O</span>
+            <div className="min-w-0">
+              <p className="font-[var(--font-noto-serif)] text-[#002045] text-lg leading-none">Orbital</p>
+              <p className="text-[9px] tracking-[0.22em] uppercase font-bold font-[var(--font-inter)] text-[#a0a3a8] mt-1">Sistema Interno</p>
+            </div>
+          </div>
+          {NAV_GROUPS.map((sec) => (
+            <div key={sec.group}>
+              <p className="text-[9px] tracking-[0.2em] uppercase font-bold font-[var(--font-inter)] text-[#a0a3a8] px-3 mb-1.5">{sec.group}</p>
+              <div className="flex flex-col gap-0.5">
+                {sec.items.map((t) => {
+                  const active = tab === t;
+                  const badge = t === "partners" ? pendingPartners.length : t === "lembretes" ? (overview?.followupsOverdue.count ?? 0) : t === "estoque" ? (overview?.lowStock.count ?? 0) : 0;
+                  return (
+                    <button
+                      key={t}
+                      onClick={() => setTab(t)}
+                      className={`group flex items-center gap-2.5 px-3 py-2 text-xs font-[var(--font-inter)] rounded-md text-left transition-colors ${active ? "bg-[#002045] text-white font-bold" : "text-[#43474e] hover:bg-[#eef0f3]"}`}
+                    >
+                      <NavIcon id={t} className={active ? "text-white" : "text-[#a0a3a8] group-hover:text-[#43474e]"} />
+                      <span className="truncate flex-1">{NAV_LABELS[t]}</span>
+                      {badge > 0 && (
+                        <span className="bg-yellow-400 text-yellow-900 text-[9px] font-bold px-1.5 py-0.5 rounded-full leading-none flex-shrink-0">{badge}</span>
+                      )}
+                    </button>
+                  );
+                })}
+              </div>
+            </div>
+          ))}
         </aside>
 
         {/* ═══ MAIN CONTENT ═══ */}
         <main className="flex-1 min-w-0 w-full">
 
         {/* ═══ DASHBOARD TAB ═══ */}
-        {tab === "dashboard" && (() => {
-          const fmtBRL = (n: number) => n.toLocaleString("pt-BR", { style: "currency", currency: "BRL", maximumFractionDigits: 0 });
-          const fmtK = (n: number) => n >= 1000 ? `R$${(n / 1000).toFixed(1)}k` : fmtBRL(n);
-
-          if (dashLoading || !dashData) {
-            return (
-              <div className="flex items-center justify-center py-24">
-                <div className="flex flex-col items-center gap-4">
-                  <div className="w-8 h-8 border-2 border-[#002045] border-t-transparent rounded-full animate-spin" />
-                  <p className="text-[#74777f] text-xs tracking-[0.15em] uppercase font-[var(--font-inter)]">Carregando dados…</p>
-                </div>
-              </div>
-            );
-          }
-
-          const d = dashData;
-          const trend = d.monthlyTrend ?? [];
-          const maxMonth = trend.length > 0 ? Math.max(...trend.map((m) => m.count), 1) : 1;
-          const STATUS_MAP: Record<string, string> = { em_orcamento: "Em orçamento", concluido: "Concluído", cancelado: "Cancelado" };
-
-          return (
-            <div className="space-y-8 pb-10">
-              {/* ── Command-center header ── */}
-              <div className="flex flex-wrap items-end justify-between gap-4 pb-3 border-b border-[#e2e2e2]">
-                <div>
-                  <h1 className="font-[var(--font-noto-serif)] text-[#002045] text-2xl font-normal leading-tight">Painel de Controle</h1>
-                  <p className="text-[#74777f] text-xs font-[var(--font-inter)] mt-1 capitalize">
-                    {new Date().toLocaleDateString("pt-BR", { weekday: "long", day: "numeric", month: "long", year: "numeric" })}
-                  </p>
-                </div>
-                <div className="flex flex-wrap gap-2">
-                  <button onClick={() => setTab("orcamentos")} className="bg-[#002045] text-white text-[10px] tracking-[0.12em] uppercase font-bold font-[var(--font-inter)] px-4 py-2.5 hover:bg-[#1a365d] transition-colors">Ver orçamentos</button>
-                  <button onClick={() => setTab("leads")} className="border border-[#002045] text-[#002045] text-[10px] tracking-[0.12em] uppercase font-bold font-[var(--font-inter)] px-4 py-2.5 hover:bg-[#002045] hover:text-white transition-colors">Leads / CRM</button>
-                  <button onClick={() => setTab("lembretes")} className="border border-[#e2e2e2] text-[#43474e] text-[10px] tracking-[0.12em] uppercase font-bold font-[var(--font-inter)] px-4 py-2.5 hover:border-[#002045] hover:text-[#002045] transition-colors">Lembretes</button>
-                  <button onClick={() => setTab("partners")} className="border border-[#e2e2e2] text-[#43474e] text-[10px] tracking-[0.12em] uppercase font-bold font-[var(--font-inter)] px-4 py-2.5 hover:border-[#002045] hover:text-[#002045] transition-colors">Parceiros</button>
-                </div>
-              </div>
-
-              {/* ── Top KPI cards ── */}
-              <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
-                {[
-                  { label: "Orçamentos hoje", value: d.hoje.count.toString(), sub: fmtK(d.hoje.valor), color: "border-l-[#002045]" },
-                  { label: "Esta semana", value: d.semana.count.toString(), sub: fmtK(d.semana.valor), color: "border-l-[#1a365d]" },
-                  { label: "Este mês", value: d.mes.count.toString(), sub: `${d.mes.concluidos} concluídos`, color: "border-l-[#2c5282]" },
-                  { label: "Total histórico", value: d.totalOrcamentos.toString(), sub: fmtBRL(d.totalValor), color: "border-l-[#4a7cc7]" },
-                ].map((card) => (
-                  <div key={card.label} className={`bg-white border border-[#e2e2e2] border-l-4 ${card.color} p-5`}>
-                    <p className="text-[#74777f] text-[10px] tracking-[0.15em] uppercase font-[var(--font-inter)] mb-2">{card.label}</p>
-                    <p className="font-[var(--font-noto-serif)] text-[#002045] text-3xl font-normal">{card.value}</p>
-                    <p className="text-[#74777f] text-xs font-[var(--font-inter)] mt-1">{card.sub}</p>
-                  </div>
-                ))}
-              </div>
-
-              {/* ── Middle row ── */}
-              <div className="grid grid-cols-1 lg:grid-cols-3 gap-4">
-
-                {/* Status breakdown */}
-                <div className="bg-white border border-[#e2e2e2] p-6">
-                  <p className="text-[10px] tracking-[0.15em] uppercase font-bold font-[var(--font-inter)] text-[#002045] mb-4">Status dos orçamentos</p>
-                  <div className="space-y-3">
-                    {[
-                      { label: "Em orçamento", value: d.emOrcamento, total: d.totalOrcamentos, color: "bg-yellow-400" },
-                      { label: "Concluídos", value: d.concluidos, total: d.totalOrcamentos, color: "bg-green-400" },
-                      { label: "Cancelados", value: d.cancelados, total: d.totalOrcamentos, color: "bg-red-300" },
-                    ].map((s) => (
-                      <div key={s.label}>
-                        <div className="flex justify-between items-center mb-1">
-                          <span className="text-xs font-[var(--font-inter)] text-[#43474e]">{s.label}</span>
-                          <span className="text-xs font-bold font-[var(--font-inter)] text-[#002045]">{s.value}</span>
-                        </div>
-                        <div className="h-1.5 bg-[#f0efec] rounded-full overflow-hidden">
-                          <div className={`h-full ${s.color} rounded-full transition-all`} style={{ width: `${s.total > 0 ? Math.round((s.value / s.total) * 100) : 0}%` }} />
-                        </div>
-                      </div>
-                    ))}
-                    <div className="pt-2 border-t border-[#f0efec] flex items-center justify-between">
-                      <span className="text-xs font-[var(--font-inter)] text-[#74777f]">Taxa de conversão</span>
-                      <span className="text-sm font-bold font-[var(--font-inter)] text-[#002045]">{d.conversionRate}%</span>
-                    </div>
-                  </div>
-                </div>
-
-                {/* Partners + commission */}
-                <div className="bg-white border border-[#e2e2e2] p-6">
-                  <p className="text-[10px] tracking-[0.15em] uppercase font-bold font-[var(--font-inter)] text-[#002045] mb-4">Parceiros & comissões</p>
-                  <div className="space-y-4">
-                    <div className="flex justify-between items-center">
-                      <span className="text-xs font-[var(--font-inter)] text-[#74777f]">Parceiros ativos</span>
-                      <span className="font-[var(--font-noto-serif)] text-2xl text-[#002045]">{d.parceirosAtivos}</span>
-                    </div>
-                    {d.parceirosPendentes > 0 && (
-                      <div className="flex justify-between items-center">
-                        <span className="text-xs font-[var(--font-inter)] text-[#74777f]">Aguardando aprovação</span>
-                        <span className="text-sm font-bold font-[var(--font-inter)] text-yellow-600">{d.parceirosPendentes}</span>
-                      </div>
-                    )}
-                    <div className="pt-3 border-t border-[#f0efec]">
-                      <p className="text-[#74777f] text-[10px] uppercase tracking-widest font-[var(--font-inter)] mb-1">Comissões a pagar</p>
-                      <p className="font-[var(--font-noto-serif)] text-[#002045] text-2xl">{fmtBRL(d.comissaoPendente)}</p>
-                    </div>
-                    <button onClick={() => setTab("commissions")} className="w-full text-center text-[10px] tracking-widest uppercase font-bold font-[var(--font-inter)] text-[#002045] border border-[#002045] py-2 hover:bg-[#002045] hover:text-white transition-colors">
-                      Ver comissões →
-                    </button>
-                  </div>
-                </div>
-
-                {/* Top products */}
-                <div className="bg-white border border-[#e2e2e2] p-6">
-                  <p className="text-[10px] tracking-[0.15em] uppercase font-bold font-[var(--font-inter)] text-[#002045] mb-4">Produtos mais orçados</p>
-                  <div className="space-y-2.5">
-                    {(d.topProducts ?? []).length === 0 ? (
-                      <p className="text-[#74777f] text-xs font-[var(--font-inter)]">Nenhum dado disponível.</p>
-                    ) : (d.topProducts ?? []).map((p, i) => (
-                      <div key={p.name} className="flex items-center gap-3">
-                        <span className="text-[#74777f] text-[10px] font-[var(--font-inter)] w-4 text-right">{i + 1}</span>
-                        <div className="flex-1">
-                          <p className="text-xs font-[var(--font-inter)] text-[#43474e] truncate">{p.name}</p>
-                        </div>
-                        <span className="text-xs font-bold font-[var(--font-inter)] text-[#002045]">{p.count}×</span>
-                      </div>
-                    ))}
-                  </div>
-                </div>
-              </div>
-
-              {/* ── Monthly trend ── */}
-              <div className="bg-white border border-[#e2e2e2] p-6">
-                <p className="text-[10px] tracking-[0.15em] uppercase font-bold font-[var(--font-inter)] text-[#002045] mb-5">Orçamentos — últimos 6 meses</p>
-                <div className="flex items-end gap-3 h-28">
-                  {trend.map((m) => {
-                    const [year, month] = m.month.split("-");
-                    const monthNames = ["jan","fev","mar","abr","mai","jun","jul","ago","set","out","nov","dez"];
-                    const label = `${monthNames[parseInt(month) - 1]}/${year.slice(2)}`;
-                    const pct = maxMonth > 0 ? Math.round((m.count / maxMonth) * 100) : 0;
-                    return (
-                      <div key={m.month} className="flex-1 flex flex-col items-center gap-1.5">
-                        <span className="text-[#002045] text-[10px] font-bold font-[var(--font-inter)]">{m.count > 0 ? m.count : ""}</span>
-                        <div className="w-full bg-[#f0efec] rounded-sm overflow-hidden" style={{ height: "80px" }}>
-                          <div className="w-full bg-[#002045] rounded-sm transition-all duration-500" style={{ height: `${pct}%`, marginTop: `${100 - pct}%` }} />
-                        </div>
-                        <span className="text-[#74777f] text-[9px] font-[var(--font-inter)]">{label}</span>
-                      </div>
-                    );
-                  })}
-                </div>
-              </div>
-
-              {/* ── Recent activity ── */}
-              <div className="bg-white border border-[#e2e2e2]">
-                <div className="px-6 py-4 border-b border-[#f0efec] flex items-center justify-between">
-                  <p className="text-[10px] tracking-[0.15em] uppercase font-bold font-[var(--font-inter)] text-[#002045]">Atividade recente</p>
-                  <button onClick={() => setTab("orcamentos")} className="text-[10px] tracking-widest uppercase font-bold font-[var(--font-inter)] text-[#74777f] hover:text-[#002045] transition-colors">
-                    Ver todos →
-                  </button>
-                </div>
-                <div className="divide-y divide-[#f0efec]">
-                  {(d.recentActivity ?? []).length === 0 ? (
-                    <p className="px-6 py-4 text-xs text-[#74777f] font-[var(--font-inter)]">Nenhuma atividade recente.</p>
-                  ) : (d.recentActivity ?? []).map((a) => {
-                    const statusCls = a.sale_status === "concluido" ? "text-green-600" : a.sale_status === "cancelado" ? "text-red-500" : "text-yellow-600";
-                    return (
-                      <div key={a.id} className="px-6 py-3 flex items-center gap-4 hover:bg-[#fafafa] transition-colors">
-                        <div className="w-1.5 h-1.5 rounded-full bg-[#002045] flex-shrink-0" />
-                        <div className="flex-1 min-w-0">
-                          <p className="text-xs font-[var(--font-inter)] text-[#002045] truncate">{a.architect_name ?? "—"} · {a.product_name ?? "—"}</p>
-                          <p className="text-[10px] font-[var(--font-inter)] text-[#74777f]">{a.space ?? "—"} · {a.coupon_code}</p>
-                        </div>
-                        <div className="text-right flex-shrink-0">
-                          <p className="text-xs font-bold font-[var(--font-inter)] text-[#002045]">{a.material_discounted ? fmtBRL(a.material_discounted) : "—"}</p>
-                          <p className={`text-[10px] font-[var(--font-inter)] ${statusCls}`}>{STATUS_MAP[a.sale_status ?? ""] ?? "Em orçamento"}</p>
-                        </div>
-                        <p className="text-[10px] font-[var(--font-inter)] text-[#b0b0b0] flex-shrink-0 hidden sm:block">
-                          {new Date(a.created_at).toLocaleDateString("pt-BR")}
-                        </p>
-                      </div>
-                    );
-                  })}
-                </div>
-              </div>
-
-              {/* Refresh */}
-              <div className="text-right">
-                <button
-                  onClick={() => { setDashData(null); setDashLoading(true); fetch("/api/admin/dashboard").then(r => r.json()).then(d2 => { if (d2 && d2.totalOrcamentos !== undefined) setDashData(d2); setDashLoading(false); }); }}
-                  className="text-[10px] tracking-widest uppercase font-bold font-[var(--font-inter)] text-[#74777f] hover:text-[#002045] transition-colors"
-                >
-                  ↺ Atualizar dados
-                </button>
-              </div>
-            </div>
-          );
-        })()}
+        {tab === "dashboard" && (
+          <DashboardTab
+            dash={dashData}
+            dashLoading={dashLoading}
+            onRefreshDash={() => {
+              setDashData(null);
+              setDashLoading(true);
+              fetch("/api/admin/dashboard")
+                .then((r) => r.json())
+                .then((d2) => { if (d2 && d2.totalOrcamentos !== undefined) setDashData(d2); setDashLoading(false); })
+                .catch(() => setDashLoading(false));
+            }}
+            overview={overview}
+            overviewLoading={overviewLoading}
+            onRefreshOverview={fetchOverview}
+            onNavigate={(t) => setTab(t)}
+            onOpenLead={(id) => { setLeadFocusId(id); setTab("leads"); }}
+            onOpenPedido={(id) => { setPedidoFocusId(id); setTab("pedidos"); }}
+          />
+        )}
 
         {/* ═══ PARTNERS TAB ═══ */}
         {tab === "partners" && (
@@ -4215,6 +4132,27 @@ export default function AdminPage() {
         )}
         {tab === "estoque" && authed && <EstoqueTab />}
         {tab === "financeiro" && authed && <FinanceiroTab />}
+
+        {/* New modules — placeholders until their redesign phases land, so the
+            final navigation structure ships (and is navigable) from day one. */}
+        {tab === "custos" && authed && (
+          <EmptyState
+            title="Custos & Margens"
+            hint="Módulo em construção (próxima fase do redesign). Aqui você vai montar o custo real de cada produto — FOB + frete + impostos de importação — e ver a margem de cada modelo no varejo e no atacado, com simulador de cenários."
+          />
+        )}
+        {tab === "compras" && authed && (
+          <EmptyState
+            title="Compras & Importação"
+            hint="Módulo em construção. Aqui você vai ver sugestões de compra a partir do estoque mínimo, planejar pedidos de importação (container, câmbio, custos) e dar entrada no estoque ao receber."
+          />
+        )}
+        {tab === "relatorios" && authed && (
+          <EmptyState
+            title="Relatórios"
+            hint="Módulo em construção. Aqui você vai ver a rentabilidade por produto, vendas por mês/parceiro/representante e o giro de estoque (quanto tempo até cada produto acabar)."
+          />
+        )}
 
         {tab === "lembretes" && authed && <RemindersTab />}
 

@@ -3,11 +3,12 @@ import { supabaseAdmin } from "@/lib/supabase";
 import { getResend } from "@/lib/resend";
 import { generateClientEmail, STEP_DELAYS_DAYS } from "@/lib/client-email-content";
 import { upsertLeadFromSource, touchLeadContacted } from "@/lib/leads";
-import { smclickConfigured, sendText, normalizePhone } from "@/lib/smclick";
+import { smclickConfigured, sendText, normalizePhone, adminWhatsappPhone } from "@/lib/smclick";
 import {
   clientOrcamentoCtaMessage,
   clientOrcamentoMessage,
   ownerHighValueMessage,
+  ownerNewOrcamentoMessage,
   productEducationMessage,
 } from "@/lib/smclick-messages";
 
@@ -187,8 +188,46 @@ export async function POST(req: NextRequest) {
     }
   } catch (e) { console.error("[smclick] client orçamento WhatsApp threw", e); }
 
-  // Feature 4 — real-time owner ping for high-value orçamentos. Threshold (BRL)
-  // is configurable; alerts are off until SMCLICK_HIGH_VALUE_THRESHOLD is set.
+  // Owner notification for EVERY new orçamento (WhatsApp + email). Previously
+  // the owner only heard about high-value ones (and only when the threshold
+  // env was set) and got NO email at all — normal orçamentos arrived silently.
+  const ownerAlert = {
+    name: client_name as string,
+    phone: (client_phone as string | null) ?? null,
+    total: (total as number | null) ?? null,
+    space: (space as string | null) || null,
+    model: (model as string | null) || null,
+    quoteUrl: (quote_url as string | null) ?? null,
+  };
+  try {
+    const ownerPhone = adminWhatsappPhone();
+    if (smclickConfigured() && ownerPhone) {
+      await sendText(ownerPhone, ownerNewOrcamentoMessage(ownerAlert)).catch(() => {});
+    }
+  } catch { /* non-fatal */ }
+  try {
+    const fmt = (n: number | null) => (Number(n) || 0).toLocaleString("pt-BR", { style: "currency", currency: "BRL", maximumFractionDigits: 0 });
+    await getResend().emails.send({
+      from: "Orbital Revestimentos <noreply@orbitalrevestimentos.com.br>",
+      to: "orbitalrevestimentos@gmail.com",
+      subject: `Novo orçamento — ${client_name} (${fmt(ownerAlert.total)})`,
+      text: [
+        `Novo orçamento pelo site:`,
+        ``,
+        `Cliente: ${client_name}`,
+        `E-mail: ${client_email}`,
+        ownerAlert.phone ? `WhatsApp: ${ownerAlert.phone}` : null,
+        ownerAlert.space || ownerAlert.model ? `Projeto: ${[ownerAlert.space, ownerAlert.model].filter(Boolean).join(" · ")}` : null,
+        `Total: ${fmt(ownerAlert.total)}`,
+        ownerAlert.quoteUrl ? `Link: ${ownerAlert.quoteUrl}` : null,
+        ``,
+        `Painel: https://orbitalrevestimentos.com.br/admin`,
+      ].filter((l): l is string => l !== null).join("\n"),
+    });
+  } catch { /* non-fatal */ }
+
+  // Feature 4 — EXTRA emphasis ping for high-value orçamentos (kept on top of
+  // the unconditional alert above). Off until SMCLICK_HIGH_VALUE_THRESHOLD set.
   try {
     const threshold = Number(process.env.SMCLICK_HIGH_VALUE_THRESHOLD || "0");
     const ownerPhone = normalizePhone(process.env.SMCLICK_REMINDER_TO);
@@ -199,17 +238,7 @@ export async function POST(req: NextRequest) {
       typeof total === "number" &&
       total >= threshold
     ) {
-      await sendText(
-        ownerPhone,
-        ownerHighValueMessage({
-          name: client_name as string,
-          phone: (client_phone as string | null) ?? null,
-          total,
-          space: (space as string | null) || null,
-          model: (model as string | null) || null,
-          quoteUrl: (quote_url as string | null) ?? null,
-        })
-      );
+      await sendText(ownerPhone, ownerHighValueMessage(ownerAlert));
     }
   } catch { /* non-fatal */ }
 

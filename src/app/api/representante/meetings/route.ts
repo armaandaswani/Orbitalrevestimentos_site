@@ -3,8 +3,8 @@ import type { SupabaseClient } from "@supabase/supabase-js";
 import { isAdminRequest, repIdFromRequest } from "@/lib/admin-auth";
 import { supabaseAdmin } from "@/lib/supabase";
 import { isMissingTable } from "@/lib/db-compat";
-import { smclickConfigured, normalizePhone, sendText } from "@/lib/smclick";
-import { meetingInviteMessage } from "@/lib/smclick-messages";
+import { smclickConfigured, normalizePhone, sendText, adminWhatsappPhone } from "@/lib/smclick";
+import { meetingInviteMessage, adminMeetingAlertMessage } from "@/lib/smclick-messages";
 
 const MIGRATION_HINT = "Recurso indisponível — rode a migração 019 (rep_meetings) no Supabase.";
 const ORBITAL_MEETING_EMAIL = "orbitalrevestimentos@gmail.com";
@@ -225,6 +225,25 @@ async function notifyInvitees(db: SupabaseClient, meeting: MeetingRow): Promise<
             ],
           })
           .catch(() => {});
+      }
+    }
+
+    // Real-time WhatsApp to the OWNER — the transactional email above is easy
+    // to miss and the daily digest arrives only the next morning; this is the
+    // "a rep booked a meeting and I never knew" fix. Best-effort like the rest.
+    if (smclickConfigured()) {
+      const adminTel = adminWhatsappPhone();
+      if (adminTel) {
+        await sendText(
+          adminTel,
+          adminMeetingAlertMessage({
+            repName,
+            title: meeting.title,
+            whenLabel,
+            location: meeting.location,
+            inviteeNames: invitees.map((i) => i.name).filter(Boolean),
+          })
+        ).catch(() => {});
       }
     }
 
