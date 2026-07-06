@@ -9,6 +9,7 @@ import RepOversightTab from "./RepOversightTab";
 import EstoqueTab from "./EstoqueTab";
 import FinanceiroTab from "./FinanceiroTab";
 import DashboardTab, { type OverviewData } from "./DashboardTab";
+import CustosTab from "./CustosTab";
 import { inputCls, labelCls, NavIcon, EmptyState, type AdminTab } from "./ui";
 import {
   composePrompt,
@@ -4135,12 +4136,7 @@ export default function AdminPage() {
 
         {/* New modules — placeholders until their redesign phases land, so the
             final navigation structure ships (and is navigable) from day one. */}
-        {tab === "custos" && authed && (
-          <EmptyState
-            title="Custos & Margens"
-            hint="Módulo em construção (próxima fase do redesign). Aqui você vai montar o custo real de cada produto — FOB + frete + impostos de importação — e ver a margem de cada modelo no varejo e no atacado, com simulador de cenários."
-          />
-        )}
+        {tab === "custos" && authed && <CustosTab />}
         {tab === "compras" && authed && (
           <EmptyState
             title="Compras & Importação"
