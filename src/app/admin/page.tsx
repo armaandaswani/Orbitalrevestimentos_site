@@ -10,6 +10,7 @@ import EstoqueTab from "./EstoqueTab";
 import FinanceiroTab from "./FinanceiroTab";
 import DashboardTab, { type OverviewData } from "./DashboardTab";
 import CustosTab from "./CustosTab";
+import ComprasTab from "./ComprasTab";
 import { inputCls, labelCls, NavIcon, EmptyState, type AdminTab } from "./ui";
 import {
   composePrompt,
@@ -4137,12 +4138,7 @@ export default function AdminPage() {
         {/* New modules — placeholders until their redesign phases land, so the
             final navigation structure ships (and is navigable) from day one. */}
         {tab === "custos" && authed && <CustosTab />}
-        {tab === "compras" && authed && (
-          <EmptyState
-            title="Compras & Importação"
-            hint="Módulo em construção. Aqui você vai ver sugestões de compra a partir do estoque mínimo, planejar pedidos de importação (container, câmbio, custos) e dar entrada no estoque ao receber."
-          />
-        )}
+        {tab === "compras" && authed && <ComprasTab />}
         {tab === "relatorios" && authed && (
           <EmptyState
             title="Relatórios"

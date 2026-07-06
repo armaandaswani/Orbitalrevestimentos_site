@@ -38,6 +38,7 @@ export async function GET(req: NextRequest) {
     usesRes,
     pedidosCommRes,
     partnersPendingRes,
+    arrivalsRes,
   ] = await Promise.all([
     // Overdue follow-ups: leads with a reminder due now or earlier, still open.
     safe(
@@ -110,6 +111,16 @@ export async function GET(req: NextRequest) {
       { data: [] as Record<string, unknown>[] } as never
     ),
     safe(db.from("partners").select("id").eq("status", "pending"), { data: [] as Record<string, unknown>[] } as never),
+    // Incoming shipments (purchase orders on the way).
+    safe(
+      db
+        .from("purchase_orders")
+        .select("id, reference, status, expected_arrival, supplier_id")
+        .in("status", ["ordered", "in_transit"])
+        .order("expected_arrival", { ascending: true })
+        .limit(20),
+      { data: [] as Record<string, unknown>[] } as never
+    ),
   ]);
 
   const rows = (r: unknown): Record<string, unknown>[] =>
@@ -171,5 +182,6 @@ export async function GET(req: NextRequest) {
     quotesExpiring: { count: quotesExpiring.length, rows: quotesExpiring.slice(0, 5) },
     commissionsUnpaid,
     partnersPending: rows(partnersPendingRes).length,
+    incomingShipments: { count: rows(arrivalsRes).length, rows: rows(arrivalsRes).slice(0, 5) },
   });
 }

@@ -33,6 +33,7 @@ export interface OverviewData {
   quotesExpiring: { count: number; rows: Array<{ id: string; client_name: string; quote_valid_until: string | null; total: number | null }> };
   commissionsUnpaid: number;
   partnersPending: number;
+  incomingShipments?: { count: number; rows: Array<{ id: string; reference: string | null; status: string; expected_arrival: string | null }> };
 }
 
 interface DashboardTabProps {
@@ -204,6 +205,17 @@ export default function DashboardTab({ dash, dashLoading, onRefreshDash, overvie
                 <AttentionRow key={q.id} primary={q.client_name} meta={`vence ${fmtDateShort(q.quote_valid_until)}`} onClick={() => onOpenPedido(q.id)} />
               ))}
             </AttentionCard>
+
+            {overview.incomingShipments && (
+              <AttentionCard
+                title="Chegadas previstas" count={overview.incomingShipments.count} tone="info"
+                emptyLabel="Nenhuma importação a caminho." ctaLabel="Ver compras" onCta={() => onNavigate("compras")}
+              >
+                {overview.incomingShipments.rows.map((s) => (
+                  <AttentionRow key={s.id} primary={s.reference || "Pedido de compra"} secondary={s.status === "in_transit" ? "em trânsito" : "pedido feito"} meta={s.expected_arrival ? fmtDateShort(s.expected_arrival) : undefined} />
+                ))}
+              </AttentionCard>
+            )}
 
             <div className="grid grid-rows-2 gap-4 min-w-0">
               <KpiCard
