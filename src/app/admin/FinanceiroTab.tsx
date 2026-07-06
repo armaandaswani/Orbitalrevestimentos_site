@@ -310,7 +310,8 @@ export default function FinanceiroTab() {
               <p className="text-[#74777f] text-sm font-[var(--font-inter)]">Nenhum pedido entregue neste período.</p>
             </div>
           ) : (
-            <div className="bg-white border border-[#e2e2e2] overflow-x-auto">
+            <>
+            <div className="hidden md:block bg-white border border-[#e2e2e2]">
               <table className="w-full text-sm font-[var(--font-inter)]">
                 <thead>
                   <tr className="border-b border-[#e2e2e2] bg-[#fafafa]">
@@ -379,6 +380,50 @@ export default function FinanceiroTab() {
                 </tbody>
               </table>
             </div>
+            {/* Mobile cards */}
+            <div className="md:hidden space-y-2">
+              {pnl.per_order.map((o) => {
+                const t = o.taxes;
+                const taxTotal = (t?.total ?? 0) + (o.opex ?? 0);
+                const open = openTax === o.id;
+                return (
+                  <div key={o.id} className="bg-white border border-[#e2e2e2] p-4">
+                    <div className="flex items-start justify-between gap-2 mb-2.5">
+                      <div className="min-w-0">
+                        <p className="text-sm font-semibold text-[#002045] truncate">{o.client_name}</p>
+                        <p className="text-[11px] text-[#74777f]">{fmtDate(o.when)}</p>
+                        {o.below_cost && <span className="inline-block mt-1 text-[9px] font-bold px-1 py-0.5 bg-red-50 text-red-600">abaixo do custo</span>}
+                      </div>
+                      <div className="text-right flex-shrink-0">
+                        <p className={`text-sm font-bold ${o.profit >= 0 ? "text-[#2f5429]" : "text-red-600"}`}>{fmtBRL(o.profit)}</p>
+                        <p className={`text-[11px] font-semibold ${o.profit >= 0 ? "text-[#2f5429]" : "text-red-600"}`}>{o.margin}% margem</p>
+                      </div>
+                    </div>
+                    <div className="grid grid-cols-2 gap-x-4 gap-y-1.5 text-xs font-[var(--font-inter)]">
+                      <span className="text-[#74777f]">Receita</span><span className="text-right text-[#43474e]">{fmtBRL(o.revenue)}</span>
+                      <span className="text-[#74777f]">Frete</span><span className="text-right text-[#43474e]">{o.freight ? `${fmtBRL(o.freight)} ${o.freight_is_revenue ? "(receita)" : "(pass-through)"}` : "—"}</span>
+                      <span className="text-[#74777f]">Desconto</span><span className="text-right text-[#43474e]">{o.discount ? fmtBRL(o.discount) : "—"}</span>
+                      <span className="text-[#74777f]">Custo placas</span><span className="text-right text-[#43474e]">{o.cogs ? fmtBRL(o.cogs) : "—"}</span>
+                      <span className="text-[#74777f]">Impostos</span><span className="text-right text-[#43474e]">{taxTotal ? fmtBRL(taxTotal) : "—"}</span>
+                      <span className="text-[#74777f]">Extras</span><span className="text-right text-[#43474e]">{o.other_costs ? fmtBRL(o.other_costs) : "—"}</span>
+                    </div>
+                    {t && (
+                      <div className="mt-2.5 pt-2.5 border-t border-[#f0f0f0]">
+                        <button onClick={() => setOpenTax(open ? null : o.id)} className="text-[#1e5fb4] text-[11px] font-bold font-[var(--font-inter)] hover:underline">Impostos {open ? "▲" : "▾"}</button>
+                        {open && (
+                          <div className="flex flex-wrap gap-x-4 gap-y-1.5 mt-2">
+                            {[["PIS", t.pis], ["COFINS", t.cofins], ["IRPJ", t.irpj], ["CSLL", t.csll], ["ICMS", t.icms], ["Custos operac.", o.opex ?? 0]].map(([label, val]) => (
+                              <span key={label as string} className="text-[11px] font-[var(--font-inter)] text-[#43474e]"><span className="text-[#74777f] uppercase tracking-wider text-[9px] font-bold mr-1">{label}</span>{fmtBRL(val as number)}</span>
+                            ))}
+                          </div>
+                        )}
+                      </div>
+                    )}
+                  </div>
+                );
+              })}
+            </div>
+            </>
           )}
           {pnl.orders_without_cost > 0 && (
             <p className="text-[#b4791e] text-[11px] font-[var(--font-inter)] mt-3">

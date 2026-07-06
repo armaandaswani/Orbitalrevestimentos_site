@@ -463,7 +463,9 @@ export default function RepOversightTab({ reps }: { reps: RepOption[] }) {
           <p className="text-[#74777f] text-sm font-[var(--font-inter)]">Nenhuma reunião agendada nos próximos 14 dias.</p>
         </div>
       ) : (
-        <div className="bg-white border border-[#e2e2e2] overflow-x-auto mb-8">
+        <>
+        {/* Desktop table */}
+        <div className="hidden md:block bg-white border border-[#e2e2e2] mb-8">
           <table className="w-full text-sm font-[var(--font-inter)]">
             <thead>
               <tr className="border-b border-[#e2e2e2]">
@@ -483,6 +485,19 @@ export default function RepOversightTab({ reps }: { reps: RepOption[] }) {
             </tbody>
           </table>
         </div>
+        {/* Mobile cards */}
+        <div className="md:hidden space-y-2 mb-8">
+          {upcoming.map((m) => (
+            <div key={m.id} className="bg-white border border-[#e2e2e2] p-4">
+              <div className="flex items-center justify-between gap-2 mb-1">
+                <span className="text-sm font-semibold text-[#002045] truncate">{m.sales_rep_name ?? "—"}</span>
+                <span className="text-[11px] text-[#74777f] whitespace-nowrap flex-shrink-0">{fmtDateTime(m.scheduled_at)}</span>
+              </div>
+              <p className="text-xs text-[#43474e] font-[var(--font-inter)]">{m.title}</p>
+            </div>
+          ))}
+        </div>
+        </>
       )}
 
       {/* Per-rep editable pipeline */}
