@@ -53,6 +53,20 @@ export const VIZ_SPACES: { id: string; label: string }[] = [
 
 const ZONE_COLORS = ["#3b6934", "#b4791e", "#1e5fb4", "#a83279", "#2a9d8f", "#9b2226"];
 
+// ── Render engine ────────────────────────────────────────────────────────────
+// PRODUCTION path = Gemini generative "apply the panel" (see /api/visualizador/
+// render + composePrompt): the client's photo is preserved untouched and the
+// panel is rendered realistically onto the selected surface — how the space
+// would actually look installed.
+//
+// The deterministic texture-projection engine (warp the flat slab into the
+// drawn quad locally) is kept in the code but DISABLED: it produced flat,
+// pasted-looking panels (no perspective realism, no room lighting). The 4-point
+// draw UI stays on regardless — its quad/box just defines WHERE Gemini applies
+// the panel (via the surface mask), it no longer drives a local paste.
+// Flip to true only to re-enable the (worse) deterministic paste.
+const DETERMINISTIC_PROJECTION = false;
+
 export type Rect = { x: number; y: number; w: number; h: number };
 type Poly = Array<[number, number]>;
 
@@ -1352,12 +1366,12 @@ export default function VisualizadorWizard({
         // (then polygon, then drawn rect), or use the quad the client nudged with
         // the 4 corner handles. No manual 4-point step is required to generate.
         let quad: Quad | null = z.quad ?? null;
-        if (useProjection && textureUrl && !quad) {
+        if (DETERMINISTIC_PROJECTION && textureUrl && !quad) {
           if (z.maskUrl) quad = await quadFromMaskUrl(z.maskUrl);
           if (!quad && z.polygon && z.polygon.length >= 3) quad = quadFromPoints(z.polygon);
           if (!quad && z.rect) quad = rectToQuad(z.rect);
         }
-        if (useProjection && textureUrl && quad && dims && dims.w > 0 && dims.h > 0) {
+        if (DETERMINISTIC_PROJECTION && textureUrl && quad && dims && dims.w > 0 && dims.h > 0) {
           try {
             // Lay down the EXACT slab, deterministically: the real texture tiled
             // at panel scale and warped into the quad, then clipped to the CLEANED
@@ -2207,7 +2221,7 @@ function ZoneCard({ zone, index, active, retargeting, onSelect, onChange, onRemo
       {/* Render status: tells the user whether this zone uses exact texture or AI. */}
       {prod && (
         <div className="flex items-center justify-between mb-2 -mt-0.5">
-          {useProjection && prod.render_texture_path?.trim() ? (
+          {DETERMINISTIC_PROJECTION && prod.render_texture_path?.trim() ? (
             <span className="text-[10px] font-bold font-[var(--font-inter)] text-[#2f5429]">● Textura exata</span>
           ) : prod.render_texture_path?.trim() ? (
             <span className="text-[10px] font-bold font-[var(--font-inter)] text-[#b4791e]">● IA com referência</span>
