@@ -2883,7 +2883,8 @@ export default function AdminPage() {
                       ))}
                     </div>
                   </div>
-                  <div className="bg-white border border-[#e2e2e2] overflow-x-auto">
+                  {/* Desktop table */}
+                  <div className="hidden md:block bg-white border border-[#e2e2e2]">
                     <table className="w-full text-sm font-[var(--font-inter)]">
                       <thead>
                         <tr className="border-b border-[#e2e2e2]">
@@ -2912,6 +2913,32 @@ export default function AdminPage() {
                         })}
                       </tbody>
                     </table>
+                  </div>
+                  {/* Mobile cards */}
+                  <div className="md:hidden space-y-2">
+                    {sorted.length === 0 ? (
+                      <div className="bg-white border border-[#e2e2e2] px-4 py-6 text-center text-[#74777f] text-sm font-[var(--font-inter)]">Nenhuma venda concluída registrada ainda.</div>
+                    ) : sorted.map((r, i) => {
+                      const p = activePartners.find((ap) => ap.coupon_code === r.code);
+                      const rep = p?.sales_rep_referral_code ? salesReps.find((sr) => sr.referral_code === p.sales_rep_referral_code) : null;
+                      return (
+                        <div key={r.code} className="bg-white border border-[#e2e2e2] p-4">
+                          <div className="flex items-center justify-between gap-2 mb-2.5">
+                            <div className="flex items-center gap-2 min-w-0">
+                              <span className="font-bold text-[#002045] flex-shrink-0">{i + 1}°</span>
+                              <span className="font-semibold text-[#002045] truncate">{r.name}</span>
+                            </div>
+                            <span className="bg-[#eef2f8] text-[#002045] px-2 py-0.5 text-xs font-bold tracking-wider flex-shrink-0">{r.code}</span>
+                          </div>
+                          <div className="grid grid-cols-2 gap-x-4 gap-y-1.5 text-xs font-[var(--font-inter)]">
+                            <span className="text-[#74777f]">Total vendido</span><span className="text-right font-semibold text-green-700">{fmt(r.total)}</span>
+                            <span className="text-[#74777f]">Vendas</span><span className="text-right text-[#43474e]">{r.count}</span>
+                            <span className="text-[#74777f]">Ticket médio</span><span className="text-right text-[#43474e]">{r.median > 0 ? fmt(r.median) : "—"}</span>
+                            <span className="text-[#74777f]">Representante</span><span className="text-right text-[#43474e]">{rep ? rep.name : "—"}</span>
+                          </div>
+                        </div>
+                      );
+                    })}
                   </div>
                 </div>
               );
@@ -3130,7 +3157,8 @@ export default function AdminPage() {
             )}
 
             {loadingPartners ? <p className="text-[#74777f] text-sm font-[var(--font-inter)]">Carregando...</p> : (
-              <div className="bg-white border border-[#e2e2e2] overflow-x-auto">
+              <>
+              <div className="hidden md:block bg-white border border-[#e2e2e2]">
                 <table className="w-full text-sm font-[var(--font-inter)]">
                   <thead>
                     <tr className="border-b border-[#e2e2e2]">
@@ -3202,6 +3230,58 @@ export default function AdminPage() {
                   </tbody>
                 </table>
               </div>
+              {/* Mobile cards */}
+              <div className="md:hidden space-y-2">
+                {activePartners.length === 0 ? (
+                  <div className="bg-white border border-[#e2e2e2] px-4 py-6 text-center text-[#74777f] text-sm font-[var(--font-inter)]">{partnerSearch.trim() ? "Nenhum parceiro encontrado para essa busca." : "Nenhum parceiro cadastrado."}</div>
+                ) : activePartners.map((p) => {
+                  const junctionReps = (p.partner_sales_reps ?? []).map((psr) => psr.sales_reps).filter(Boolean) as Array<{ name: string; referral_code: string }>;
+                  const repName = junctionReps.length > 0
+                    ? junctionReps.map((r) => r.name).join(", ")
+                    : p.sales_rep_referral_code
+                      ? (salesReps.find((r) => r.referral_code === p.sales_rep_referral_code)?.name ?? p.sales_rep_referral_code)
+                      : "—";
+                  return (
+                    <div key={p.id} className="bg-white border border-[#e2e2e2] p-4">
+                      <div className="flex items-start justify-between gap-2 mb-2.5">
+                        <div className="min-w-0">
+                          <p className="font-semibold text-[#002045]">{p.name}</p>
+                          {p.email && <p className="text-xs text-[#74777f] truncate">{p.email}</p>}
+                        </div>
+                        <span className="bg-[#eef2f8] text-[#002045] px-2 py-0.5 text-xs font-bold tracking-wider flex-shrink-0">{p.coupon_code}</span>
+                      </div>
+                      <div className="grid grid-cols-2 gap-x-4 gap-y-1.5 text-xs font-[var(--font-inter)] mb-3">
+                        <span className="text-[#74777f]">Profissão</span><span className="text-right text-[#43474e]">{p.profession || "—"}</span>
+                        <span className="text-[#74777f]">Desconto</span><span className="text-right text-[#43474e]">{p.discount_type === "percentage" ? `${p.discount_value}%` : fmt(p.discount_value)}</span>
+                        <span className="text-[#74777f]">Comissão</span><span className="text-right text-[#43474e]">{p.commission_type === "percentage" ? `${p.commission_value}%` : fmt(p.commission_value)}</span>
+                        <span className="text-[#74777f]">Rep. (captação)</span><span className="text-right text-[#43474e] truncate">{repName}</span>
+                        <span className="text-[#74777f]">Senha Portal</span><span className="text-right">{p.has_portal_password ? <span className="text-green-700 font-semibold">Definida</span> : <span className="text-[#74777f] italic">—</span>}</span>
+                        <span className="text-[#74777f]">Status</span><span className="text-right"><span className={`px-2 py-0.5 text-[10px] font-bold tracking-wider ${p.status === "active" ? "bg-green-100 text-green-800" : "bg-gray-100 text-gray-600"}`}>{p.status === "active" ? "Ativo" : "Inativo"}</span></span>
+                      </div>
+                      <div className="flex items-center justify-between gap-2 pt-2.5 border-t border-[#f0f0f0]">
+                        <label className="flex items-center gap-2 cursor-pointer select-none">
+                          <button
+                            onClick={() => toggleSpecialTable(p)}
+                            title={p.has_special_table ? "Desativar tabela especial" : "Ativar tabela especial"}
+                            className={`relative inline-flex h-5 w-9 flex-shrink-0 cursor-pointer rounded-full border-2 border-transparent transition-colors duration-200 focus:outline-none ${p.has_special_table ? "bg-[#002045]" : "bg-[#d1d5db]"}`}
+                          >
+                            <span className={`inline-block h-4 w-4 transform rounded-full bg-white shadow transition duration-200 ${p.has_special_table ? "translate-x-4" : "translate-x-0"}`} />
+                          </button>
+                          <span className="text-[11px] text-[#74777f]">Tab. Especial</span>
+                        </label>
+                        <div className="flex gap-2 flex-wrap justify-end">
+                          <button onClick={() => startEditPartner(p)} className="text-[#1a365d] text-xs font-semibold hover:text-[#002045]">Editar</button>
+                          <span className="text-[#e2e2e2]">|</span>
+                          <button onClick={() => togglePartnerStatus(p)} className="text-[#74777f] text-xs font-semibold hover:text-[#002045]">{p.status === "active" ? "Desativar" : "Ativar"}</button>
+                          <span className="text-[#e2e2e2]">|</span>
+                          <button onClick={() => deletePartner(p)} className="text-red-500 text-xs font-semibold hover:text-red-700">Excluir</button>
+                        </div>
+                      </div>
+                    </div>
+                  );
+                })}
+              </div>
+              </>
             )}
           </div>
         )}
@@ -3253,7 +3333,8 @@ export default function AdminPage() {
                   ))}
                 </div>
               </div>
-              <div className="bg-white border border-[#e2e2e2] overflow-x-auto">
+              {/* Desktop table */}
+              <div className="hidden md:block bg-white border border-[#e2e2e2]">
                 <table className="w-full text-sm font-[var(--font-inter)]">
                   <thead>
                     <tr className="border-b border-[#e2e2e2]">
@@ -3278,6 +3359,28 @@ export default function AdminPage() {
                     ))}
                   </tbody>
                 </table>
+              </div>
+              {/* Mobile cards */}
+              <div className="md:hidden space-y-2">
+                {repRanking.length === 0 ? (
+                  <div className="bg-white border border-[#e2e2e2] px-4 py-6 text-center text-[#74777f] text-sm font-[var(--font-inter)]">Nenhuma venda concluída registrada ainda.</div>
+                ) : repRanking.map((r, i) => (
+                  <div key={r.code} className="bg-white border border-[#e2e2e2] p-4">
+                    <div className="flex items-center justify-between gap-2 mb-2.5">
+                      <div className="flex items-center gap-2 min-w-0">
+                        <span className="font-bold text-[#002045] flex-shrink-0">{i + 1}°</span>
+                        <span className="font-semibold text-[#002045] truncate">{r.name}</span>
+                      </div>
+                      <span className="bg-[#eef2f8] text-[#002045] px-2 py-0.5 text-xs font-bold tracking-wider flex-shrink-0">{r.code}</span>
+                    </div>
+                    <div className="grid grid-cols-2 gap-x-4 gap-y-1.5 text-xs font-[var(--font-inter)]">
+                      <span className="text-[#74777f]">Total gerado</span><span className="text-right font-semibold text-green-700">{fmt(r.total)}</span>
+                      <span className="text-[#74777f]">Vendas</span><span className="text-right text-[#43474e]">{r.count}</span>
+                      <span className="text-[#74777f]">Ticket médio</span><span className="text-right text-[#43474e]">{r.median > 0 ? fmt(r.median) : "—"}</span>
+                      <span className="text-[#74777f]">Parceiros</span><span className="text-right text-[#43474e]">{r.partnerCount}</span>
+                    </div>
+                  </div>
+                ))}
               </div>
             </div>
 
@@ -3353,7 +3456,8 @@ export default function AdminPage() {
             )}
 
             {loadingReps ? <p className="text-[#74777f] text-sm font-[var(--font-inter)]">Carregando...</p> : (
-              <div className="bg-white border border-[#e2e2e2] overflow-x-auto">
+              <>
+              <div className="hidden md:block bg-white border border-[#e2e2e2]">
                 <table className="w-full text-sm font-[var(--font-inter)]">
                   <thead>
                     <tr className="border-b border-[#e2e2e2]">
@@ -3456,6 +3560,70 @@ export default function AdminPage() {
                   </tbody>
                 </table>
               </div>
+              {/* Mobile cards */}
+              <div className="md:hidden space-y-2">
+                {salesReps.length === 0 ? (
+                  <div className="bg-white border border-[#e2e2e2] px-4 py-6 text-center text-[#74777f] text-sm font-[var(--font-inter)]">Nenhum representante cadastrado.</div>
+                ) : salesReps.map((r) => {
+                  const legacyRepCount = partners.filter((p) => p.sales_rep_referral_code === r.referral_code).length;
+                  const repPartnerCount = Math.max(legacyRepCount, junctionPartnerCounts[r.id] || 0);
+                  const isExpanded = expandedRepId === r.id;
+                  const repPartners = partners.filter((p) => {
+                    const viaJunction = p.partner_sales_reps?.some((psr) => psr.sales_reps?.id === r.id);
+                    const viaLegacy = p.sales_rep_referral_code === r.referral_code;
+                    return viaJunction || viaLegacy;
+                  });
+                  return (
+                    <div key={r.id} className="bg-white border border-[#e2e2e2] p-4">
+                      <div className="flex items-start justify-between gap-2 mb-2.5">
+                        <div className="min-w-0">
+                          <p className="font-semibold text-[#002045]">{r.name}</p>
+                          {r.email && <p className="text-xs text-[#74777f] truncate">{r.email}</p>}
+                        </div>
+                        <span className="bg-[#eef2f8] text-[#002045] px-2 py-0.5 text-xs font-bold tracking-wider flex-shrink-0">{r.referral_code}</span>
+                      </div>
+                      <div className="grid grid-cols-2 gap-x-4 gap-y-1.5 text-xs font-[var(--font-inter)] mb-3">
+                        <span className="text-[#74777f]">Comissão</span><span className="text-right text-[#43474e]">{r.commission_type === "percentage" ? `${r.commission_value}%` : fmt(r.commission_value)} da venda</span>
+                        <span className="text-[#74777f]">Senha Portal</span><span className="text-right">{r.has_portal_password ? <span className="text-green-700 font-semibold">Definida</span> : <span className="text-[#74777f] italic">—</span>}</span>
+                        <span className="text-[#74777f]">Status</span><span className="text-right"><span className={`px-2 py-0.5 text-[10px] font-bold tracking-wider ${r.status === "active" ? "bg-green-100 text-green-800" : "bg-gray-100 text-gray-600"}`}>{r.status === "active" ? "Ativo" : "Inativo"}</span></span>
+                        <span className="text-[#74777f]">Parceiros</span>
+                        <span className="text-right">
+                          <button
+                            onClick={() => setExpandedRepId(isExpanded ? null : r.id)}
+                            className={`font-semibold text-sm transition-colors ${repPartnerCount > 0 ? "text-[#002045] underline decoration-dotted" : "text-[#43474e]"}`}
+                          >
+                            {repPartnerCount}{repPartnerCount > 0 && <span className="ml-1 text-[10px] font-normal no-underline">{isExpanded ? "▲" : "▼"}</span>}
+                          </button>
+                        </span>
+                      </div>
+                      {isExpanded && (
+                        <div className="bg-[#f0f4fa] -mx-4 px-4 py-3 mb-3 space-y-2">
+                          <p className="text-[10px] tracking-[0.2em] uppercase font-bold text-[#002045] font-[var(--font-inter)]">Parceiros de {r.name}</p>
+                          {repPartners.length === 0 ? (
+                            <p className="text-xs text-[#74777f] font-[var(--font-inter)] italic">Nenhum parceiro vinculado.</p>
+                          ) : repPartners.map((p) => (
+                            <div key={p.id} className="bg-white border border-[#e2e2e2] px-3 py-2">
+                              <div className="flex items-center justify-between gap-2">
+                                <span className="text-xs font-semibold text-[#002045] truncate">{p.name}</span>
+                                <span className="bg-[#eef2f8] text-[#002045] px-1.5 py-0.5 text-[10px] font-bold tracking-wider flex-shrink-0">{p.coupon_code}</span>
+                              </div>
+                              {(p.email || p.phone) && <p className="text-[11px] text-[#74777f] mt-0.5 truncate">{[p.email, p.phone].filter(Boolean).join(" · ")}</p>}
+                            </div>
+                          ))}
+                        </div>
+                      )}
+                      <div className="flex gap-2 justify-end pt-2.5 border-t border-[#f0f0f0]">
+                        <button onClick={() => startEditRep(r)} className="text-[#1a365d] text-xs font-semibold hover:text-[#002045]">Editar</button>
+                        <span className="text-[#e2e2e2]">|</span>
+                        <button onClick={() => toggleRepStatus(r)} className="text-[#74777f] text-xs font-semibold hover:text-[#002045]">{r.status === "active" ? "Desativar" : "Ativar"}</button>
+                        <span className="text-[#e2e2e2]">|</span>
+                        <button onClick={() => deleteRep(r)} className="text-red-500 text-xs font-semibold hover:text-red-700">Excluir</button>
+                      </div>
+                    </div>
+                  );
+                })}
+              </div>
+              </>
             )}
           </div>
         )}
@@ -4482,8 +4650,8 @@ export default function AdminPage() {
                     ))}
                   </div>
 
-                  {/* Table */}
-                  <div className="bg-white border border-[#e2e2e2] overflow-x-auto">
+                  {/* Table — desktop */}
+                  <div className="hidden md:block bg-white border border-[#e2e2e2]">
                     <table className="w-full text-sm font-[var(--font-inter)]">
                       <thead>
                         <tr className="border-b border-[#e2e2e2]">
@@ -4544,6 +4712,51 @@ export default function AdminPage() {
                         ))}
                       </tbody>
                     </table>
+                  </div>
+                  {/* Table — mobile cards */}
+                  <div className="md:hidden space-y-2">
+                    {displayRows.length === 0 ? (
+                      <div className="bg-white border border-[#e2e2e2] px-4 py-6 text-center text-[#74777f] text-sm font-[var(--font-inter)]">Nenhuma comissão encontrada.</div>
+                    ) : displayRows.map(r => (
+                      <div key={`${r.source}:${r.id}`} className="bg-white border border-[#e2e2e2] p-4">
+                        <div className="flex items-start justify-between gap-2 mb-2.5">
+                          <div className="min-w-0">
+                            {r.source === "pedido" ? (
+                              <span className="bg-[#002045] text-white px-2 py-0.5 text-[10px] font-bold tracking-wider rounded-sm">PEDIDO</span>
+                            ) : (
+                              <span className="bg-[#eef2f8] text-[#002045] px-2 py-0.5 text-xs font-bold tracking-wider">{r.couponCode}</span>
+                            )}
+                            {r.clientName && <p className="text-xs text-[#002045] font-semibold mt-1 truncate">{r.clientName}</p>}
+                            <p className="text-[11px] text-[#74777f] truncate">{[r.repName, r.productName].filter((x) => x && x !== "—").join(" · ") || "—"}</p>
+                          </div>
+                          <span className="text-[10px] text-[#74777f] whitespace-nowrap flex-shrink-0">{new Date(r.created_at).toLocaleDateString("pt-BR")}</span>
+                        </div>
+                        <div className="space-y-2 pt-2.5 border-t border-[#f0f0f0]">
+                          <div className="flex items-center justify-between gap-2">
+                            <span className="text-xs text-[#74777f]">Parceiro: <b className="text-[#002045]">{r.partnerAmount ? fmt(r.partnerAmount) : "—"}</b></span>
+                            {r.partnerPaidAt ? (
+                              <span className="inline-block bg-green-100 text-green-800 px-2 py-0.5 text-[10px] font-bold tracking-wide">✓ Pago {new Date(r.partnerPaidAt).toLocaleDateString("pt-BR")}</span>
+                            ) : r.partnerAmount ? (
+                              <button onClick={() => r.source === "coupon" ? markCommissionPaid(r.id, "partner") : markPedidoCommissionPaid(r.id, "partner")} className="inline-block bg-yellow-100 text-yellow-800 px-2 py-0.5 text-[10px] font-bold tracking-wide hover:bg-yellow-200 transition-colors">Marcar pago</button>
+                            ) : <span className="text-[#ccc] text-xs">—</span>}
+                          </div>
+                          <div className="flex items-center justify-between gap-2">
+                            <span className="text-xs text-[#74777f]">Rep.: <b className="text-[#1a365d]">{r.repAmount ? fmt(r.repAmount) : "—"}</b></span>
+                            {!r.repAmount ? <span className="text-[#ccc] text-xs">—</span> :
+                              r.repPaidAt ? (
+                                <span className="inline-block bg-green-100 text-green-800 px-2 py-0.5 text-[10px] font-bold tracking-wide">✓ Pago {new Date(r.repPaidAt).toLocaleDateString("pt-BR")}</span>
+                              ) : (
+                                <button onClick={() => r.source === "coupon" ? markCommissionPaid(r.id, "rep") : markPedidoCommissionPaid(r.id, "rep")} className="inline-block bg-yellow-100 text-yellow-800 px-2 py-0.5 text-[10px] font-bold tracking-wide hover:bg-yellow-200 transition-colors">Marcar pago</button>
+                              )}
+                          </div>
+                        </div>
+                        {r.source === "pedido" && (
+                          <div className="flex justify-end pt-2.5 mt-2.5 border-t border-[#f0f0f0]">
+                            <button onClick={() => { setPedidoFocusId(r.id); setTab("pedidos"); }} className="text-[10px] text-[#3b6934] font-bold hover:underline">Ver pedido →</button>
+                          </div>
+                        )}
+                      </div>
+                    ))}
                   </div>
                 </>
               );
@@ -4983,7 +5196,8 @@ export default function AdminPage() {
             {loadingDbProducts ? (
               <p className="text-[#74777f] text-sm font-[var(--font-inter)] py-8 text-center">Carregando...</p>
             ) : (
-              <div className="bg-white border border-[#e2e2e2] overflow-x-auto">
+              <>
+              <div className="hidden md:block bg-white border border-[#e2e2e2]">
                 <table className="w-full text-sm font-[var(--font-inter)]">
                   <thead>
                     <tr className="border-b border-[#e2e2e2]">
@@ -5100,6 +5314,40 @@ export default function AdminPage() {
                   </tbody>
                 </table>
               </div>
+              {/* Mobile cards */}
+              <div className="md:hidden space-y-2">
+                {dbProducts.length === 0 ? (
+                  <div className="bg-white border border-[#e2e2e2] px-4 py-6 text-center text-[#74777f] text-sm font-[var(--font-inter)]">Nenhum produto cadastrado. Toque em &ldquo;+ Novo Produto&rdquo; para adicionar.</div>
+                ) : dbProducts.map((p) => (
+                  <div key={p.id} className="bg-white border border-[#e2e2e2] p-3 flex gap-3">
+                    <div className="w-16 h-16 bg-[#f0f0f0] overflow-hidden flex-shrink-0">
+                      {p.image_path ? (
+                        // eslint-disable-next-line @next/next/no-img-element
+                        <img src={p.image_path} alt={p.name} className="w-full h-full object-cover" />
+                      ) : (
+                        <div className="w-full h-full flex items-center justify-center"><span className="text-[#c0c0c0] text-[9px] font-[var(--font-inter)] text-center leading-tight px-1">sem imagem</span></div>
+                      )}
+                    </div>
+                    <div className="min-w-0 flex-1">
+                      <div className="flex items-start justify-between gap-2">
+                        <p className="text-[#002045] font-medium text-sm min-w-0 truncate">{p.name}</p>
+                        <span className="bg-[#eef2f8] text-[#002045] px-2 py-0.5 text-[10px] font-bold tracking-wider flex-shrink-0">{p.code}</span>
+                      </div>
+                      <div className="flex flex-wrap items-center gap-1.5 mt-1.5">
+                        <span className={`inline-block px-2 py-0.5 text-[10px] font-bold tracking-wide ${p.linha === "Classic" ? "bg-blue-100 text-blue-800" : p.linha === "Brilliance" ? "bg-purple-100 text-purple-800" : "bg-green-100 text-green-800"}`}>{p.linha}</span>
+                        <span className={`inline-block px-2 py-0.5 text-[10px] font-bold tracking-wide ${p.is_active ? "bg-green-100 text-green-800" : "bg-gray-100 text-gray-500"}`}>{p.is_active ? "Ativo" : "Inativo"}</span>
+                        {(p.product_images?.length ?? 0) > 0 && <span className="bg-[#eef2f8] text-[#002045] text-[9px] font-bold tracking-wider px-1.5 py-0.5">{p.product_images!.length} foto{p.product_images!.length !== 1 ? "s" : ""}</span>}
+                      </div>
+                      <p className="text-[#43474e] text-sm mt-1.5">R$ {p.price.toLocaleString("pt-BR")}</p>
+                      <div className="flex gap-2 mt-2">
+                        <button onClick={() => startEditProduct(p)} className="text-[10px] tracking-[0.08em] uppercase font-bold font-[var(--font-inter)] px-3 py-1.5 border border-[#002045] text-[#002045] hover:bg-[#002045] hover:text-white transition-colors">Editar</button>
+                        <button onClick={() => deleteProduct(p.id, p.name)} className="text-[10px] tracking-[0.08em] uppercase font-bold font-[var(--font-inter)] px-3 py-1.5 border border-red-300 text-red-600 hover:bg-red-50 transition-colors">Excluir</button>
+                      </div>
+                    </div>
+                  </div>
+                ))}
+              </div>
+              </>
             )}
           </div>
         )}
@@ -5696,7 +5944,8 @@ ALTER TABLE project_media ADD COLUMN IF NOT EXISTS description TEXT;`}
               {loadingProjects ? (
                 <p className="text-[#74777f] text-sm font-[var(--font-inter)] py-4">Carregando...</p>
               ) : (
-                <div className="bg-white border border-[#e2e2e2] overflow-x-auto">
+                <>
+                <div className="hidden md:block bg-white border border-[#e2e2e2]">
                   <table className="w-full text-sm font-[var(--font-inter)]">
                     <thead>
                       <tr className="border-b border-[#e2e2e2]">
@@ -5754,6 +6003,48 @@ ALTER TABLE project_media ADD COLUMN IF NOT EXISTS description TEXT;`}
                     </tbody>
                   </table>
                 </div>
+                {/* Mobile cards */}
+                <div className="md:hidden space-y-2">
+                  {dbRenderProjects.map((r) => (
+                    <div key={r.id} className="bg-white border border-[#e2e2e2] p-3 flex gap-3">
+                      {r.image_path && (
+                        // eslint-disable-next-line @next/next/no-img-element
+                        <img src={r.image_path} alt={r.title} className="w-14 h-14 object-cover border border-[#e2e2e2] flex-shrink-0" />
+                      )}
+                      <div className="min-w-0 flex-1">
+                        <div className="flex items-start justify-between gap-2">
+                          <p className="text-[#002045] font-medium text-sm min-w-0 truncate">{r.title}</p>
+                          <span className="text-[9px] font-bold tracking-wide bg-[#3b6934] text-white px-2 py-0.5 flex-shrink-0">GERENCIADO</span>
+                        </div>
+                        <span className="inline-block bg-[#eef2f8] text-[#002045] px-2 py-0.5 text-[10px] font-bold tracking-wider mt-1.5">{r.product_code}</span>
+                        <div className="flex gap-2 mt-2">
+                          <button onClick={() => startEditRender(r)} className="text-[10px] tracking-[0.08em] uppercase font-bold font-[var(--font-inter)] px-3 py-1.5 border border-[#002045] text-[#002045] hover:bg-[#002045] hover:text-white transition-colors">Editar</button>
+                          <button onClick={() => deleteRender(r.id, r.title)} className="text-[10px] tracking-[0.08em] uppercase font-bold font-[var(--font-inter)] px-3 py-1.5 border border-red-300 text-red-600 hover:bg-red-50 transition-colors">Excluir</button>
+                        </div>
+                      </div>
+                    </div>
+                  ))}
+                  {STATIC_RENDERS.filter((r) => !dbRenderProjects.some((d) => d.slug === r.slug)).map((r, idx) => (
+                    <div key={r.slug} className="bg-white border border-[#e2e2e2] p-3 flex gap-3 opacity-70">
+                      {/* eslint-disable-next-line @next/next/no-img-element */}
+                      <img src={r.image_path} alt={r.title} className="w-14 h-14 object-cover border border-[#e2e2e2] flex-shrink-0" />
+                      <div className="min-w-0 flex-1">
+                        <div className="flex items-start justify-between gap-2">
+                          <p className="text-[#002045] text-sm min-w-0 truncate">{r.title}</p>
+                          <span className="text-[9px] font-bold tracking-wide bg-[#eef2f8] text-[#74777f] px-2 py-0.5 flex-shrink-0">ESTÁTICO</span>
+                        </div>
+                        <span className="inline-block bg-[#f0f0f0] text-[#74777f] px-2 py-0.5 text-[10px] font-bold tracking-wider mt-1.5">{r.product_code}</span>
+                        <div className="mt-2">
+                          <button onClick={() => importStaticRender(r, idx)} disabled={renderImporting === r.slug} className="text-[10px] tracking-[0.08em] uppercase font-bold font-[var(--font-inter)] px-3 py-1.5 border border-[#3b6934] text-[#3b6934] hover:bg-[#3b6934] hover:text-white transition-colors disabled:opacity-50">{renderImporting === r.slug ? "…" : "↓ Importar"}</button>
+                        </div>
+                      </div>
+                    </div>
+                  ))}
+                  {dbRenderProjects.length === 0 && (STATIC_RENDERS as readonly unknown[]).length === 0 && (
+                    <div className="bg-white border border-[#e2e2e2] px-4 py-6 text-center text-[#74777f] text-sm font-[var(--font-inter)]">Nenhum render.</div>
+                  )}
+                </div>
+                </>
               )}
             </div>
           </div>
