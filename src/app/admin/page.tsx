@@ -11,7 +11,8 @@ import FinanceiroTab from "./FinanceiroTab";
 import DashboardTab, { type OverviewData } from "./DashboardTab";
 import CustosTab from "./CustosTab";
 import ComprasTab from "./ComprasTab";
-import { inputCls, labelCls, NavIcon, EmptyState, type AdminTab } from "./ui";
+import RelatoriosTab from "./RelatoriosTab";
+import { inputCls, labelCls, NavIcon, type AdminTab } from "./ui";
 import {
   composePrompt,
   finishDescription,
@@ -4139,12 +4140,7 @@ export default function AdminPage() {
             final navigation structure ships (and is navigable) from day one. */}
         {tab === "custos" && authed && <CustosTab />}
         {tab === "compras" && authed && <ComprasTab />}
-        {tab === "relatorios" && authed && (
-          <EmptyState
-            title="Relatórios"
-            hint="Módulo em construção. Aqui você vai ver a rentabilidade por produto, vendas por mês/parceiro/representante e o giro de estoque (quanto tempo até cada produto acabar)."
-          />
-        )}
+        {tab === "relatorios" && authed && <RelatoriosTab />}
 
         {tab === "lembretes" && authed && <RemindersTab />}
 
