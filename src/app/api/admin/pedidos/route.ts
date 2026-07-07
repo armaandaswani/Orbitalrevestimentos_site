@@ -4,7 +4,7 @@ import { supabaseAdmin } from "@/lib/supabase";
 import { isMissingColumn, isMissingTable } from "@/lib/db-compat";
 import { transitionOrderStock } from "@/lib/stock";
 
-interface OrderItemInput { product_id?: string; plates?: number }
+interface OrderItemInput { product_id?: string; plates?: number; unit_price?: number | null }
 type PartnerLite = { id: string; name: string; coupon_code: string };
 type SalesRepLite = { id: string; name: string; referral_code: string };
 
@@ -240,7 +240,14 @@ export async function POST(req: NextRequest) {
   if (data && Array.isArray(body.items) && body.items.length > 0) {
     const rawItems = (body.items as OrderItemInput[])
       .filter((it) => it && it.product_id && Number(it.plates) > 0)
-      .map((it) => ({ product_id: it.product_id as string, plates: Math.round(Number(it.plates)) }));
+      .map((it) => ({
+        product_id: it.product_id as string,
+        plates: Math.round(Number(it.plates)),
+        // Price actually charged (tier price or manual override) resolved on the
+        // client. When provided, it's authoritative; else fall back to the
+        // product's varejo price below.
+        unit_price: it.unit_price != null && Number.isFinite(Number(it.unit_price)) ? Number(it.unit_price) : null,
+      }));
     if (rawItems.length > 0) {
       try {
         // Snapshot cost/price per model at order time.
@@ -255,7 +262,7 @@ export async function POST(req: NextRequest) {
             product_name: (p?.name as string) ?? null,
             plates: i.plates,
             unit_cost: p?.cost_price ?? null,
-            unit_price: p?.price ?? null,
+            unit_price: i.unit_price ?? p?.price ?? null,
             unit_label: (p?.sale_unit as string) ?? "placa",
           };
         });

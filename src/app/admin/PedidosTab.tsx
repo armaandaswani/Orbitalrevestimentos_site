@@ -265,7 +265,10 @@ export default function PedidosTab({
 
   // Stock-aware line items for the create form (model + plate qty).
   type StockProduct = { id: string; name: string; code: string | null; linha: string | null; price: number | null; cost_price: number | null; sale_unit: string | null; available: number; stock_on_hand: number; render_panel_width_m?: number | string | null; render_panel_height_m?: number | string | null };
-  type OrderItem = { product_id: string; plates: number };
+  // unit_price: optional manual override for this line's sale price per plate.
+  // When null/undefined the effective price falls back to the tier price
+  // (varejo = product.price, atacado = linha special_price). See effectiveUnitPrice.
+  type OrderItem = { product_id: string; plates: number; unit_price?: number | null };
   const [stockProducts, setStockProducts] = useState<StockProduct[]>([]);
   const [items, setItems] = useState<OrderItem[]>([]);
   // True once `items` reflects authoritative state for the open draft (fresh
@@ -462,17 +465,33 @@ export default function PedidosTab({
     const prontos = filtered.filter((p) => p.status === "pronto").length;
     const entregues = filtered.filter((p) => p.status === "entregue").length;
     // Money still owed across non-cancelled orders that aren't fully paid.
+    // Net of any discount given — the discount reduces what the client owes.
     const aReceber = filtered
       .filter((p) => p.status !== "cancelado" && p.payment_status !== "pago")
-      .reduce((a, p) => a + (p.total ?? 0), 0);
+      .reduce((a, p) => a + Math.max(0, (p.total ?? 0) - (p.discount_amount ?? 0)), 0);
     const atrasados = ativos.filter(
       (p) => p.expected_delivery_at && new Date(p.expected_delivery_at).getTime() < Date.now()
     ).length;
     return { emProducao, prontos, entregues, aReceber, atrasados };
   }, [filtered]);
 
+  // The tier price for a product: atacado substitutes the linha's special_price
+  // (Preços tab), falling back to the product's own price if that linha has no
+  // rate-card row yet. Varejo is always the product's own price.
+  const tierUnitPrice = useCallback((product: StockProduct): number | null => {
+    if (draft?.price_tier === "atacado") return pricingByLinha[product.linha ?? ""]?.special_price ?? product.price;
+    return product.price;
+  }, [draft?.price_tier, pricingByLinha]);
+
+  // The price actually charged for a line: the manual per-item override when set,
+  // otherwise the tier price. Single source of truth for the total, the row UI
+  // and what gets saved onto pedido_items.
+  const effectiveUnitPrice = useCallback((item: OrderItem, product: StockProduct): number | null => {
+    if (item.unit_price != null && Number.isFinite(item.unit_price)) return item.unit_price;
+    return tierUnitPrice(product);
+  }, [tierUnitPrice]);
+
   const itemPricing = useMemo(() => {
-    const isAtacado = draft?.price_tier === "atacado";
     let total = 0;
     let cost = 0;
     let areaM2 = 0;
@@ -482,10 +501,7 @@ export default function PedidosTab({
       if (!item.product_id || !item.plates) continue;
       const product = stockProducts.find((p) => p.id === item.product_id);
       if (!product) continue;
-      // Atacado substitutes the linha's special_price (Preços tab) for the
-      // product's own price — falls back to the product's price if that
-      // linha has no rate-card row yet, rather than blocking the render.
-      const unitPrice = isAtacado ? pricingByLinha[product.linha ?? ""]?.special_price ?? product.price : product.price;
+      const unitPrice = effectiveUnitPrice(item, product);
       if (unitPrice == null) missingPrice = true;
       else total += unitPrice * item.plates;
       if (product.cost_price == null) missingCost = true;
@@ -493,7 +509,7 @@ export default function PedidosTab({
       areaM2 += item.plates * panelAreaM2(product);
     }
     return { total, cost, areaM2, grossProfit: total - cost, missingPrice, missingCost };
-  }, [items, stockProducts, panelAreaM2, draft?.price_tier, pricingByLinha]);
+  }, [items, stockProducts, panelAreaM2, effectiveUnitPrice]);
 
   // Value + estimated area follow the items live: whenever the quantity of
   // panels changes, the total and m² recompute automatically — no manual
@@ -504,18 +520,26 @@ export default function PedidosTab({
     setDraft((d) => {
       if (!d) return d;
       const total = itemPricing.total;
+      const net = Math.max(0, total - (Math.max(0, Number(d.discount_amount) || 0)));
       return {
         ...d,
         total,
         area_m2: Math.round(itemPricing.areaM2 * 100) / 100,
-        partner_commission_amount: moneyFromPct(Number(d.partner_commission_pct) || 0, total),
-        sales_rep_commission_amount: moneyFromPct(Number(d.sales_rep_commission_pct) || 0, total),
+        partner_commission_amount: moneyFromPct(Number(d.partner_commission_pct) || 0, net),
+        sales_rep_commission_amount: moneyFromPct(Number(d.sales_rep_commission_pct) || 0, net),
       };
     });
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [itemPricing.total, itemPricing.areaM2, items]);
+  }, [itemPricing.total, itemPricing.areaM2, items, draft?.discount_amount]);
 
-  const currentTotal = Math.max(0, Number(draft?.total) || 0);
+  // Gross = sum of line items. Net receivable = gross − discount. Commissions and
+  // "valores a receber" are based on the NET (the discount reflects everywhere),
+  // while `total` stays gross (Financeiro/documents subtract the discount
+  // themselves). currentTotal is the commission base → net.
+  const grossTotal = Math.max(0, Number(draft?.total) || 0);
+  const discountAmount = Math.max(0, Number(draft?.discount_amount) || 0);
+  const netTotal = Math.max(0, grossTotal - discountAmount);
+  const currentTotal = netTotal;
   const selectedPartner = partners.find((p) => p.id === draft?.partner_id) ?? null;
   const selectedRep = salesReps.find((r) => r.id === draft?.sales_rep_id) ?? null;
 
@@ -820,7 +844,11 @@ export default function PedidosTab({
       const rows = Array.isArray(full?.items) ? full.items : [];
       const mapped: OrderItem[] = rows
         .filter((it: { product_id?: string; plates?: number }) => it.product_id && Number(it.plates) > 0)
-        .map((it: { product_id?: string; plates?: number }) => ({ product_id: it.product_id as string, plates: Math.round(Number(it.plates)) }));
+        .map((it: { product_id?: string; plates?: number; unit_price?: number | null }) => ({
+          product_id: it.product_id as string,
+          plates: Math.round(Number(it.plates)),
+          unit_price: it.unit_price == null ? null : Number(it.unit_price),
+        }));
       // No real items yet (a legacy order created via the old Área/Total
       // fields) — still seed one blank row so the quantity editor is visible
       // and usable right away, instead of hiding behind "+ Adicionar modelo"
@@ -904,7 +932,16 @@ export default function PedidosTab({
       lead_id: draft.lead_id ?? null,
       price_tier: (draft.price_tier === "atacado" ? "atacado" : "varejo") as "varejo" | "atacado",
     };
-    const cleanItems = items.filter((it) => it.product_id && it.plates > 0);
+    // Snapshot the price actually charged per line (tier price or manual
+    // override) so the saved pedido_items match the total shown here — the API
+    // stores this unit_price instead of blindly re-reading the varejo price.
+    const cleanItems = items
+      .filter((it) => it.product_id && it.plates > 0)
+      .map((it) => {
+        const prod = stockProducts.find((p) => p.id === it.product_id);
+        const eff = prod ? effectiveUnitPrice(it, prod) : (it.unit_price ?? null);
+        return { product_id: it.product_id, plates: it.plates, unit_price: eff };
+      });
     try {
       if (draft._isNew) {
         const res = await fetch("/api/admin/pedidos", {
@@ -1106,7 +1143,10 @@ export default function PedidosTab({
                         </select>
                       </td>
                       <td className="px-4 py-3">
-                        <p className="text-xs text-[#002045] font-semibold">{fmtBRL(p.total)}</p>
+                        <p className="text-xs text-[#002045] font-semibold">{fmtBRL(Math.max(0, (p.total ?? 0) - (p.discount_amount ?? 0)))}</p>
+                        {(p.discount_amount ?? 0) > 0 && (
+                          <p className="text-[9px] text-[#74777f] mt-0.5">bruto {fmtBRL(p.total)} · desc. {fmtBRL(p.discount_amount ?? 0)}</p>
+                        )}
                       </td>
                       <td className="px-4 py-3">
                         {p.status === "entregue" ? (
@@ -1156,7 +1196,10 @@ export default function PedidosTab({
                         <p className="text-[10px] text-[#b0b0b0] mt-0.5 truncate">{[p.space, p.product_name].filter(Boolean).join(" · ")}</p>
                       )}
                     </div>
-                    <span className="text-xs text-[#002045] font-semibold shrink-0">{fmtBRL(p.total)}</span>
+                    <div className="text-right shrink-0">
+                      <span className="text-xs text-[#002045] font-semibold">{fmtBRL(Math.max(0, (p.total ?? 0) - (p.discount_amount ?? 0)))}</span>
+                      {(p.discount_amount ?? 0) > 0 && <p className="text-[9px] text-[#74777f]">desc. {fmtBRL(p.discount_amount ?? 0)}</p>}
+                    </div>
                   </div>
                   <div className="flex items-center gap-2 mt-3">
                     <select
@@ -1399,13 +1442,29 @@ export default function PedidosTab({
                             <div className="flex flex-wrap items-center gap-x-4 gap-y-1 mt-2 text-[10px] font-[var(--font-inter)] text-[#74777f]">
                               <span className="font-semibold text-[#002045]">{prod.name}{prod.code ? ` · ${prod.code}` : ""}</span>
                               <span>{prod.available} {unit} disponíveis</span>
-                              <span>
-                                Venda/{unit}: {(() => {
-                                  const effective = draft.price_tier === "atacado" ? pricingByLinha[prod.linha ?? ""]?.special_price ?? prod.price : prod.price;
-                                  return effective != null ? fmtBRL(effective) : "sem preço";
-                                })()}
-                                {draft.price_tier === "atacado" && <span className="text-[#3b6934] font-bold"> (atacado)</span>}
+                              <span className="flex items-center gap-1">
+                                Venda/{unit}: R$
+                                <input
+                                  type="number" min="0" step="0.01"
+                                  value={it.unit_price != null ? it.unit_price : (tierUnitPrice(prod) ?? "")}
+                                  onChange={(e) => {
+                                    const v = e.target.value;
+                                    setItems((cur) => cur.map((x, i) => i === idx ? { ...x, unit_price: v === "" ? null : Number(v) } : x));
+                                  }}
+                                  className="w-20 border border-[#e2e2e2] px-1.5 py-0.5 text-[10px] text-right text-[#002045] focus:outline-none focus:border-[#002045]"
+                                  title="Preço por placa desta linha — edite para ajustar manualmente"
+                                />
+                                {it.unit_price != null ? (
+                                  <button type="button" title="Voltar ao preço da tabela"
+                                    onClick={() => setItems((cur) => cur.map((x, i) => i === idx ? { ...x, unit_price: null } : x))}
+                                    className="text-[#1e5fb4] font-bold hover:underline">padrão</button>
+                                ) : draft.price_tier === "atacado" ? (
+                                  <span className="text-[#3b6934] font-bold">(atacado)</span>
+                                ) : (
+                                  <span className="text-[#9aa3b3]">(varejo)</span>
+                                )}
                               </span>
+                              <span>Subtotal: {(() => { const u = effectiveUnitPrice(it, prod); return u != null ? fmtBRL(u * (it.plates || 0)) : "—"; })()}</span>
                               <span>≈ {(it.plates * panelAreaM2(prod)).toFixed(2)} m²</span>
                               {over && <span className="text-amber-700 font-bold">Acima do disponível — pode comprar mais para repor; o pedido pode ser criado normalmente</span>}
                               <button type="button" onClick={() => setAreaCalcOpen((cur) => ({ ...cur, [idx]: !cur[idx] }))}
@@ -1445,9 +1504,15 @@ export default function PedidosTab({
                           <p className="text-sm font-semibold font-[var(--font-inter)] text-[#002045]">
                             {itemPricing.total > 0 ? fmtBRL(itemPricing.total) : "Defina preço de venda no Estoque"}
                           </p>
+                          {itemPricing.total > 0 && discountAmount > 0 && (
+                            <p className="text-[11px] font-[var(--font-inter)] mt-0.5">
+                              <span className="text-[#b42318]">− Desconto {fmtBRL(discountAmount)}</span>
+                              <span className="text-[#002045] font-bold ml-2">A receber (líquido): {fmtBRL(Math.max(0, itemPricing.total - discountAmount))}</span>
+                            </p>
+                          )}
                           <p className="text-[10px] text-[#74777f] font-[var(--font-inter)]">
                             ≈ {itemPricing.areaM2.toFixed(2)} m² no total
-                            {itemPricing.total > 0 && !itemPricing.missingCost ? ` · Margem bruta estimada: ${fmtBRL(itemPricing.grossProfit)}` : ""}
+                            {itemPricing.total > 0 && !itemPricing.missingCost ? ` · Margem bruta estimada: ${fmtBRL(Math.max(0, itemPricing.total - discountAmount) - itemPricing.cost)}` : ""}
                           </p>
                         </div>
                       </div>
@@ -1608,6 +1673,11 @@ export default function PedidosTab({
                     value={draft.discount_amount ?? ""}
                     onChange={(e) => setDraft({ ...draft, discount_amount: e.target.value === "" ? 0 : Number(e.target.value) })}
                   />
+                  {discountAmount > 0 && grossTotal > 0 && (
+                    <p className="text-[10px] text-[#74777f] font-[var(--font-inter)] mt-1">
+                      Bruto {fmtBRL(grossTotal)} − desconto = <span className="font-bold text-[#002045]">a receber {fmtBRL(netTotal)}</span>
+                    </p>
+                  )}
                 </Field>
                 <Field label="Frete (R$)">
                   <input

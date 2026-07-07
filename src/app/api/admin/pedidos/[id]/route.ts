@@ -135,7 +135,7 @@ async function syncPedidoPortalAttribution(db: ReturnType<typeof supabaseAdmin>,
   }
 }
 
-interface ItemInput { product_id?: string; plates?: number }
+interface ItemInput { product_id?: string; plates?: number; unit_price?: number | null }
 
 // Replaces a pedido's line items (model + plate qty) and reconciles the stock
 // ledger for the swap: releases/returns whatever was held for the OLD items
@@ -152,7 +152,11 @@ async function reconcileItemsAndStock(
 ): Promise<string> {
   const clean = rawItems
     .filter((it) => it.product_id && Number(it.plates) > 0)
-    .map((it) => ({ product_id: it.product_id as string, plates: Math.round(Number(it.plates)) }));
+    .map((it) => ({
+      product_id: it.product_id as string,
+      plates: Math.round(Number(it.plates)),
+      unit_price: it.unit_price != null && Number.isFinite(Number(it.unit_price)) ? Number(it.unit_price) : null,
+    }));
 
   // Free whatever the OLD items held, before we replace the rows they're read from.
   if (priorStockState === "reserved") {
@@ -174,7 +178,7 @@ async function reconcileItemsAndStock(
         product_name: (p?.name as string) ?? null,
         plates: c.plates,
         unit_cost: p?.cost_price ?? null,
-        unit_price: p?.price ?? null,
+        unit_price: c.unit_price ?? p?.price ?? null,
         unit_label: (p?.sale_unit as string) ?? "placa",
       };
     });
