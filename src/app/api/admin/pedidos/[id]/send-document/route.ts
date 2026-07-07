@@ -330,12 +330,15 @@ export async function POST(req: NextRequest, { params }: { params: Promise<{ id:
     const phone = normalizePhone(typeof pedido.client_phone === "string" ? pedido.client_phone : null);
     if (!phone) return NextResponse.json({ error: "Pedido sem WhatsApp válido." }, { status: 400 });
     if (!smclickConfigured()) return NextResponse.json({ error: "SM Click não configurado." }, { status: 400 });
+    // Link the client can actually open — the document page falls back to the
+    // public, read-only view when there's no admin session. Build it here when
+    // the caller didn't pass one, so every send includes a working link.
+    const link = documentUrl || `${req.nextUrl.origin}/admin/pedidos/${id}/documento?tipo=${docType}`;
     const message = [
       `Olá, ${pedido.client_name ?? ""}!`,
-      `Segue o resumo do seu ${label.toLowerCase()} Orbital ${number}.`,
-      `Total: ${fmtBRL(total)}.`,
-      documentUrl ? `Documento revisado: ${documentUrl}` : null,
-      `Também podemos enviar o PDF formal por e-mail.`,
+      `Segue o seu ${label.toLowerCase()} Orbital ${number}.`,
+      `Acesse o documento aqui: ${link}`,
+      `Também enviamos o PDF formal por e-mail.`,
     ].filter(Boolean).join("\n\n");
     const res = await sendText(phone, message);
     if (!res.ok) return NextResponse.json({ error: res.error || "Falha ao enviar WhatsApp." }, { status: 502 });

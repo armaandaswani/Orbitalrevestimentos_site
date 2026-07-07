@@ -168,6 +168,9 @@ export default function PedidoDocumentoPage({ params }: { params: Promise<{ id: 
   const [notesDraft, setNotesDraft] = useState("");
   const [savingNotes, setSavingNotes] = useState(false);
   const [notesSaved, setNotesSaved] = useState(false);
+  // True when loaded via the PUBLIC endpoint (a client opening the shared link
+  // without an admin session): hide all admin controls, show the document only.
+  const [readOnly, setReadOnly] = useState(false);
 
   useEffect(() => {
     params.then((p) => setId(p.id));
@@ -210,9 +213,23 @@ export default function PedidoDocumentoPage({ params }: { params: Promise<{ id: 
         if (!res.ok) throw new Error(data?.error || `HTTP ${res.status}`);
         setPedido(data as PedidoDocument);
         setNotesDraft((data as PedidoDocument).document_notes ?? "");
+        setReadOnly(false);
         setError(null);
       })
-      .catch((e) => setError(e instanceof Error ? e.message : "Falha ao carregar documento."))
+      .catch(async () => {
+        // No admin session — this is the CLIENT opening the shared link. Load the
+        // public, read-only view instead of showing "Unauthorized".
+        try {
+          const r = await fetch(`/api/pedidos/${id}`);
+          const data = await r.json().catch(() => null);
+          if (!r.ok) throw new Error(data?.error || `HTTP ${r.status}`);
+          setPedido(data as PedidoDocument);
+          setReadOnly(true);
+          setError(null);
+        } catch (e) {
+          setError(e instanceof Error ? e.message : "Falha ao carregar documento.");
+        }
+      })
       .finally(() => setLoading(false));
   }, [id]);
 
@@ -330,48 +347,58 @@ export default function PedidoDocumentoPage({ params }: { params: Promise<{ id: 
           <h1 className="font-[var(--font-noto-serif)] text-2xl text-[#002045]">{DOC_LABEL[docType]} {docNumber(pedido)}</h1>
         </div>
         <div className="document-toolbar flex flex-wrap gap-2 items-center">
-          <select
-            value={docType}
-            onChange={(e) => setDocType(e.target.value as DocumentType)}
-            className="border border-[#d8d5cf] bg-white px-3 py-2 text-xs font-bold uppercase tracking-[0.08em] text-[#002045]"
-          >
-            <option value="orcamento">Orçamento</option>
-            <option value="pedido">Pedido de Venda</option>
-            <option value="nota">Nota de Venda</option>
-            <option value="recibo">Recibo</option>
-          </select>
-          <label className="border border-[#d8d5cf] bg-white px-3 py-2 text-xs font-bold uppercase tracking-[0.08em] text-[#002045] flex items-center gap-2">
-            <input type="checkbox" checked={includeImages} onChange={(e) => setIncludeImages(e.target.checked)} />
-            Imagens
-          </label>
-          <label className="border border-[#d8d5cf] bg-white px-3 py-2 text-xs font-bold uppercase tracking-[0.08em] text-[#002045] flex items-center gap-2">
-            <input type="checkbox" checked={includeDescriptions} onChange={(e) => setIncludeDescriptions(e.target.checked)} />
-            Descrições
-          </label>
-          <a href="/admin" className="border border-[#d8d5cf] bg-white px-4 py-2 text-xs font-bold uppercase tracking-[0.1em] text-[#002045]">Voltar</a>
+          {!readOnly && (
+            <>
+              <select
+                value={docType}
+                onChange={(e) => setDocType(e.target.value as DocumentType)}
+                className="border border-[#d8d5cf] bg-white px-3 py-2 text-xs font-bold uppercase tracking-[0.08em] text-[#002045]"
+              >
+                <option value="orcamento">Orçamento</option>
+                <option value="pedido">Pedido de Venda</option>
+                <option value="nota">Nota de Venda</option>
+                <option value="recibo">Recibo</option>
+              </select>
+              <label className="border border-[#d8d5cf] bg-white px-3 py-2 text-xs font-bold uppercase tracking-[0.08em] text-[#002045] flex items-center gap-2">
+                <input type="checkbox" checked={includeImages} onChange={(e) => setIncludeImages(e.target.checked)} />
+                Imagens
+              </label>
+              <label className="border border-[#d8d5cf] bg-white px-3 py-2 text-xs font-bold uppercase tracking-[0.08em] text-[#002045] flex items-center gap-2">
+                <input type="checkbox" checked={includeDescriptions} onChange={(e) => setIncludeDescriptions(e.target.checked)} />
+                Descrições
+              </label>
+              <a href="/admin" className="border border-[#d8d5cf] bg-white px-4 py-2 text-xs font-bold uppercase tracking-[0.1em] text-[#002045]">Voltar</a>
+            </>
+          )}
           <button onClick={() => window.print()} className="bg-[#002045] text-white px-5 py-2 text-xs font-bold uppercase tracking-[0.1em]">Imprimir / PDF</button>
-          <button
-            onClick={() => sendDocument("email")}
-            disabled={sending != null || !pedido.client_email}
-            className="border border-[#002045] bg-white text-[#002045] disabled:opacity-40 px-4 py-2 text-xs font-bold uppercase tracking-[0.1em]"
-          >
-            {sending === "email" ? "Enviando..." : "Enviar e-mail"}
-          </button>
-          <button
-            onClick={() => sendDocument("whatsapp")}
-            disabled={sending != null || !pedido.client_phone}
-            className="border border-[#2e7d32] bg-white text-[#2e7d32] disabled:opacity-40 px-4 py-2 text-xs font-bold uppercase tracking-[0.1em]"
-          >
-            {sending === "whatsapp" ? "Enviando..." : "Enviar WhatsApp"}
-          </button>
+          {!readOnly && (
+            <>
+              <button
+                onClick={() => sendDocument("email")}
+                disabled={sending != null || !pedido.client_email}
+                className="border border-[#002045] bg-white text-[#002045] disabled:opacity-40 px-4 py-2 text-xs font-bold uppercase tracking-[0.1em]"
+              >
+                {sending === "email" ? "Enviando..." : "Enviar e-mail"}
+              </button>
+              <button
+                onClick={() => sendDocument("whatsapp")}
+                disabled={sending != null || !pedido.client_phone}
+                className="border border-[#2e7d32] bg-white text-[#2e7d32] disabled:opacity-40 px-4 py-2 text-xs font-bold uppercase tracking-[0.1em]"
+              >
+                {sending === "whatsapp" ? "Enviando..." : "Enviar WhatsApp"}
+              </button>
+            </>
+          )}
         </div>
-        {sendStatus && <p className="basis-full text-[11px] font-bold text-[#74777f]">{sendStatus}</p>}
+        {!readOnly && sendStatus && <p className="basis-full text-[11px] font-bold text-[#74777f]">{sendStatus}</p>}
       </div>
 
       {/* Screen-only editor — never printed. Lets the admin add/replace the
           Condições text right here instead of going back to Pedidos. For
           Orçamento this is the ONLY text shown (no legal boilerplate); for
-          Pedido/Nota it overrides the default boilerplate once saved. */}
+          Pedido/Nota it overrides the default boilerplate once saved.
+          Hidden entirely for the client's read-only view. */}
+      {!readOnly && (
       <div className="document-notes-editor max-w-[980px] mx-auto mb-4 bg-white border border-[#d8d5cf] p-4">
         <p className="text-[10px] uppercase tracking-[0.18em] font-bold text-[#74777f] mb-2">
           {docType === "orcamento" ? "Texto adicional (opcional, aparece em Condições)" : "Condições — editar texto"}
@@ -402,6 +429,7 @@ export default function PedidoDocumentoPage({ params }: { params: Promise<{ id: 
           Mostrar a seção &quot;Condições&quot; (cláusulas) neste pedido
         </label>
       </div>
+      )}
 
       <article className="document-page mx-auto bg-white text-[#1a1c1c] shadow-sm">
         <section className="doc-header">
