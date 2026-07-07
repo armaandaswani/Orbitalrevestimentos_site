@@ -75,6 +75,14 @@ interface PartnerOption {
   name: string;
 }
 
+interface AdminEvent {
+  id: string;
+  title: string;
+  scheduled_at: string;
+  location: string | null;
+  status: "scheduled" | "cancelled";
+}
+
 function fmtBRL(n: number) {
   return n.toLocaleString("pt-BR", { style: "currency", currency: "BRL", maximumFractionDigits: 0 });
 }
@@ -153,6 +161,12 @@ export default function RepOversightTab({ reps }: { reps: RepOption[] }) {
   // Inline reschedule: the meeting id being rescheduled + the new datetime.
   const [reschedulingId, setReschedulingId] = useState<string | null>(null);
   const [rescheduleValue, setRescheduleValue] = useState<string>("");
+  // Personal admin calendar ("minha agenda").
+  const [myEvents, setMyEvents] = useState<AdminEvent[]>([]);
+  const [addingEvent, setAddingEvent] = useState(false);
+  const [eventForm, setEventForm] = useState<{ title: string; when: string; location: string }>({ title: "", when: "", location: "" });
+  const [evtRescheduleId, setEvtRescheduleId] = useState<string | null>(null);
+  const [evtRescheduleValue, setEvtRescheduleValue] = useState<string>("");
 
   const fetchMeetings = useCallback(async () => {
     setMeetingsLoading(true);
@@ -177,11 +191,41 @@ export default function RepOversightTab({ reps }: { reps: RepOption[] }) {
     setLeadsLoading(false);
   }, []);
 
+  const fetchMyEvents = useCallback(async () => {
+    const now = new Date();
+    const in30d = new Date(Date.now() + 30 * 24 * 3600 * 1000);
+    const res = await fetch(`/api/admin/events?from=${now.toISOString()}&to=${in30d.toISOString()}`);
+    if (res.ok) setMyEvents(await res.json());
+  }, []);
+
   useEffect(() => {
     fetchMeetings();
     fetchAll();
     fetchLeads();
-  }, [fetchMeetings, fetchAll, fetchLeads]);
+    fetchMyEvents();
+  }, [fetchMeetings, fetchAll, fetchLeads, fetchMyEvents]);
+
+  async function createEvent() {
+    if (!eventForm.title.trim() || !eventForm.when) return;
+    const res = await fetch("/api/admin/events", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ title: eventForm.title.trim(), scheduled_at: new Date(eventForm.when).toISOString(), location: eventForm.location.trim() || null }),
+    });
+    if (res.ok) { setEventForm({ title: "", when: "", location: "" }); setAddingEvent(false); fetchMyEvents(); }
+    else { const j = await res.json().catch(() => null); alert(j?.error || "Não foi possível salvar o evento."); }
+  }
+
+  async function patchEvent(id: string, patch: Record<string, unknown>) {
+    const res = await fetch(`/api/admin/events/${id}`, { method: "PATCH", headers: { "Content-Type": "application/json" }, body: JSON.stringify(patch) });
+    if (res.ok) fetchMyEvents(); else alert("Não foi possível atualizar o evento.");
+  }
+
+  async function deleteEvent(id: string) {
+    if (!confirm("Remover este evento da sua agenda?")) return;
+    const res = await fetch(`/api/admin/events/${id}`, { method: "DELETE" });
+    if (res.ok) setMyEvents((cur) => cur.filter((e) => e.id !== id)); else fetchMyEvents();
+  }
 
   async function toggleRep(repId: string) {
     if (expandedRepId === repId) {
@@ -623,6 +667,57 @@ export default function RepOversightTab({ reps }: { reps: RepOption[] }) {
           ))}
         </div>
         </>
+      )}
+
+      {/* Minha agenda — the admin's own personal calendar (separate from reps) */}
+      <div className="flex items-center justify-between gap-2 mb-3">
+        <h3 className="font-[var(--font-inter)] text-[10px] tracking-[0.2em] uppercase font-bold text-[#002045]">
+          Minha agenda — próximos 30 dias
+        </h3>
+        <button onClick={() => setAddingEvent((v) => !v)} className="text-[10px] tracking-[0.1em] uppercase font-bold font-[var(--font-inter)] text-[#1e5fb4] hover:underline">
+          {addingEvent ? "Fechar" : "+ Novo evento"}
+        </button>
+      </div>
+      {addingEvent && (
+        <div className="bg-white border border-[#e2e2e2] p-3 mb-3 grid grid-cols-1 sm:grid-cols-[1fr_180px_1fr_auto] gap-2 items-center">
+          <input value={eventForm.title} onChange={(e) => setEventForm({ ...eventForm, title: e.target.value })} placeholder="Título do evento"
+            className="border border-[#e2e2e2] px-3 py-2 text-sm font-[var(--font-inter)] text-[#002045] focus:outline-none focus:border-[#002045]" />
+          <input type="datetime-local" value={eventForm.when} onChange={(e) => setEventForm({ ...eventForm, when: e.target.value })}
+            className="border border-[#e2e2e2] px-2 py-2 text-sm font-[var(--font-inter)] text-[#002045] focus:outline-none focus:border-[#002045]" />
+          <input value={eventForm.location} onChange={(e) => setEventForm({ ...eventForm, location: e.target.value })} placeholder="Local (opcional)"
+            className="border border-[#e2e2e2] px-3 py-2 text-sm font-[var(--font-inter)] text-[#002045] focus:outline-none focus:border-[#002045]" />
+          <button onClick={createEvent} disabled={!eventForm.title.trim() || !eventForm.when}
+            className="bg-[#002045] text-white text-xs tracking-[0.1em] uppercase font-bold font-[var(--font-inter)] px-4 py-2 hover:bg-[#1a365d] disabled:opacity-50 whitespace-nowrap">Salvar</button>
+        </div>
+      )}
+      {myEvents.length === 0 ? (
+        <div className="bg-white border border-[#e2e2e2] px-5 py-6 text-center mb-8">
+          <p className="text-[#74777f] text-sm font-[var(--font-inter)]">Nenhum evento pessoal nos próximos 30 dias.</p>
+        </div>
+      ) : (
+        <div className="bg-white border border-[#e2e2e2] divide-y divide-[#f0f0f0] mb-8">
+          {myEvents.map((ev) => (
+            <div key={ev.id} className="flex items-center justify-between gap-3 px-4 py-2.5">
+              <div className="min-w-0">
+                <p className="text-sm font-semibold text-[#002045] font-[var(--font-inter)] truncate">{ev.title}</p>
+                <p className="text-[11px] text-[#74777f] font-[var(--font-inter)]">{fmtDateTime(ev.scheduled_at)}{ev.location ? ` · ${ev.location}` : ""}</p>
+              </div>
+              {evtRescheduleId === ev.id ? (
+                <span className="inline-flex items-center gap-1 shrink-0">
+                  <input type="datetime-local" value={evtRescheduleValue} onChange={(e) => setEvtRescheduleValue(e.target.value)}
+                    className="border border-[#e2e2e2] px-1.5 py-1 text-[11px] text-[#002045] focus:outline-none focus:border-[#002045]" />
+                  <button onClick={() => { if (evtRescheduleValue) { patchEvent(ev.id, { scheduled_at: new Date(evtRescheduleValue).toISOString() }); setEvtRescheduleId(null); } }} className="text-[10px] font-bold text-[#2f5429]">OK</button>
+                  <button onClick={() => setEvtRescheduleId(null)} className="text-[10px] text-[#74777f]">×</button>
+                </span>
+              ) : (
+                <span className="inline-flex items-center gap-3 shrink-0">
+                  <button onClick={() => { setEvtRescheduleId(ev.id); setEvtRescheduleValue(ev.scheduled_at.slice(0, 16)); }} className="text-[10px] font-bold text-[#1e5fb4] hover:underline">Remarcar</button>
+                  <button onClick={() => deleteEvent(ev.id)} className="text-[10px] font-bold text-[#b42318] hover:underline">Excluir</button>
+                </span>
+              )}
+            </div>
+          ))}
+        </div>
       )}
 
       {/* Per-rep editable pipeline */}
