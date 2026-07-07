@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { isAdminRequest, repIdFromRequest } from "@/lib/admin-auth";
 import { supabaseAdmin } from "@/lib/supabase";
+import { notifyMeeting, type MeetingRow, type NotifyKind } from "@/lib/rep-meeting-notify";
 
 const EDITABLE = new Set([
   "title",
@@ -58,5 +59,16 @@ export async function PATCH(
 
   const { data, error } = await db.from("rep_meetings").update(patch).eq("id", id).select().single();
   if (error) return NextResponse.json({ error: error.message }, { status: 500 });
+
+  // Reflect the change in the calendar invite: a reschedule (scheduled_at
+  // changed) re-sends an updated .ics; a cancellation sends a CANCEL. Both are
+  // best-effort and never block the response. `notify: false` opts out.
+  if (data && body.notify !== false) {
+    let kind: NotifyKind | null = null;
+    if ("status" in body && body.status === "cancelled") kind = "cancel";
+    else if ("scheduled_at" in body) kind = "reschedule";
+    if (kind) await notifyMeeting(db, data as MeetingRow, kind);
+  }
+
   return NextResponse.json(data);
 }

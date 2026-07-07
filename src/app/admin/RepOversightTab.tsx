@@ -150,6 +150,9 @@ export default function RepOversightTab({ reps }: { reps: RepOption[] }) {
   const [repFilter, setRepFilter] = useState<string>("all");
   // The CRM row currently open in the inline edit modal (click a rep card).
   const [editingRow, setEditingRow] = useState<AllCrmRow | null>(null);
+  // Inline reschedule: the meeting id being rescheduled + the new datetime.
+  const [reschedulingId, setReschedulingId] = useState<string | null>(null);
+  const [rescheduleValue, setRescheduleValue] = useState<string>("");
 
   const fetchMeetings = useCallback(async () => {
     setMeetingsLoading(true);
@@ -316,6 +319,32 @@ export default function RepOversightTab({ reps }: { reps: RepOption[] }) {
       body: JSON.stringify({ stage }),
     });
     if (!res.ok) fetchAll();
+  }
+
+  // Reschedule/cancel a rep meeting from the admin agenda. The endpoint accepts
+  // admin auth and re-sends the calendar invite (.ics) to invitees, so the
+  // change reflects in their calendar + CRM. Best-effort; re-fetches on success.
+  async function patchMeeting(id: string, patch: Record<string, unknown>) {
+    const res = await fetch(`/api/representante/meetings/${id}`, {
+      method: "PATCH",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify(patch),
+    });
+    if (res.ok) { await fetchMeetings(); return true; }
+    alert("Não foi possível atualizar a reunião.");
+    return false;
+  }
+
+  async function cancelMeeting(m: Meeting) {
+    if (!confirm(`Cancelar a reunião "${m.title}"? Os convidados serão avisados e o convite removido do calendário.`)) return;
+    await patchMeeting(m.id, { status: "cancelled" });
+  }
+
+  async function submitReschedule(id: string) {
+    if (!rescheduleValue) return;
+    const iso = new Date(rescheduleValue).toISOString();
+    const ok = await patchMeeting(id, { scheduled_at: iso });
+    if (ok) { setReschedulingId(null); setRescheduleValue(""); }
   }
 
   // Save edits made in the contact modal — admin edits a rep's CRM row exactly
@@ -522,7 +551,7 @@ export default function RepOversightTab({ reps }: { reps: RepOption[] }) {
 
       {/* Upcoming meetings */}
       <h3 className="font-[var(--font-inter)] text-[10px] tracking-[0.2em] uppercase font-bold text-[#002045] mb-3">
-        Agenda dos representantes — próximos 14 dias
+        {repName ? `Agenda — ${repName}` : "Agenda dos representantes"} · próximos 14 dias
       </h3>
       {meetingsLoading ? (
         <p className="text-[#74777f] text-sm font-[var(--font-inter)]">Carregando...</p>
@@ -537,8 +566,8 @@ export default function RepOversightTab({ reps }: { reps: RepOption[] }) {
           <table className="w-full text-sm font-[var(--font-inter)]">
             <thead>
               <tr className="border-b border-[#e2e2e2]">
-                {["Quando", "Representante", "Reunião"].map((h) => (
-                  <th key={h} className="text-left px-4 py-2.5 text-[10px] tracking-[0.15em] uppercase font-bold text-[#74777f] whitespace-nowrap">{h}</th>
+                {["Quando", "Representante", "Reunião", ""].map((h, i) => (
+                  <th key={i} className="text-left px-4 py-2.5 text-[10px] tracking-[0.15em] uppercase font-bold text-[#74777f] whitespace-nowrap">{h}</th>
                 ))}
               </tr>
             </thead>
@@ -548,6 +577,21 @@ export default function RepOversightTab({ reps }: { reps: RepOption[] }) {
                   <td className="px-4 py-2.5 text-xs text-[#43474e] whitespace-nowrap">{fmtDateTime(m.scheduled_at)}</td>
                   <td className="px-4 py-2.5 text-xs font-semibold text-[#002045]">{m.sales_rep_name ?? "—"}</td>
                   <td className="px-4 py-2.5 text-xs text-[#43474e]">{m.title}</td>
+                  <td className="px-4 py-2.5 text-right whitespace-nowrap">
+                    {reschedulingId === m.id ? (
+                      <span className="inline-flex items-center gap-1">
+                        <input type="datetime-local" value={rescheduleValue} onChange={(e) => setRescheduleValue(e.target.value)}
+                          className="border border-[#e2e2e2] px-1.5 py-1 text-[11px] text-[#002045] focus:outline-none focus:border-[#002045]" />
+                        <button onClick={() => submitReschedule(m.id)} className="text-[10px] font-bold text-[#2f5429] hover:underline">OK</button>
+                        <button onClick={() => { setReschedulingId(null); setRescheduleValue(""); }} className="text-[10px] text-[#74777f] hover:underline">×</button>
+                      </span>
+                    ) : (
+                      <span className="inline-flex items-center gap-3">
+                        <button onClick={() => { setReschedulingId(m.id); setRescheduleValue(m.scheduled_at.slice(0, 16)); }} className="text-[10px] font-bold text-[#1e5fb4] hover:underline">Remarcar</button>
+                        <button onClick={() => cancelMeeting(m)} className="text-[10px] font-bold text-[#b42318] hover:underline">Cancelar</button>
+                      </span>
+                    )}
+                  </td>
                 </tr>
               ))}
             </tbody>
@@ -562,6 +606,19 @@ export default function RepOversightTab({ reps }: { reps: RepOption[] }) {
                 <span className="text-[11px] text-[#74777f] whitespace-nowrap flex-shrink-0">{fmtDateTime(m.scheduled_at)}</span>
               </div>
               <p className="text-xs text-[#43474e] font-[var(--font-inter)]">{m.title}</p>
+              {reschedulingId === m.id ? (
+                <div className="flex items-center gap-2 mt-2 pt-2 border-t border-[#f0f0f0]">
+                  <input type="datetime-local" value={rescheduleValue} onChange={(e) => setRescheduleValue(e.target.value)}
+                    className="border border-[#e2e2e2] px-2 py-1 text-[11px] text-[#002045] focus:outline-none focus:border-[#002045] flex-1" />
+                  <button onClick={() => submitReschedule(m.id)} className="text-[11px] font-bold text-[#2f5429]">OK</button>
+                  <button onClick={() => { setReschedulingId(null); setRescheduleValue(""); }} className="text-[11px] text-[#74777f]">×</button>
+                </div>
+              ) : (
+                <div className="flex gap-4 mt-2 pt-2 border-t border-[#f0f0f0]">
+                  <button onClick={() => { setReschedulingId(m.id); setRescheduleValue(m.scheduled_at.slice(0, 16)); }} className="text-[11px] font-bold text-[#1e5fb4]">Remarcar</button>
+                  <button onClick={() => cancelMeeting(m)} className="text-[11px] font-bold text-[#b42318]">Cancelar</button>
+                </div>
+              )}
             </div>
           ))}
         </div>
