@@ -277,6 +277,9 @@ export default function PedidosTab({
   // wiping a real order's stock-reserved line items — if the items fetch
   // failed (network blip, expired session) when opening the edit modal.
   const [itemsReady, setItemsReady] = useState(false);
+  // Wizard step for the create/edit modal (1 Cliente · 2 Itens · 3 Comercial ·
+  // 4 Revisar/Enviar). Reset to 1 whenever a different order opens.
+  const [formStep, setFormStep] = useState(1);
   // Per-item "calcular pela área" inline helper (index → desired m² typed, and
   // whether that helper is expanded for that row).
   const [areaCalcOpen, setAreaCalcOpen] = useState<Record<number, boolean>>({});
@@ -531,6 +534,13 @@ export default function PedidosTab({
     });
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [itemPricing.total, itemPricing.areaM2, items, draft?.discount_amount]);
+
+  // Reset to the first step whenever a different order opens (new vs an edit of
+  // a specific id) — not on every keystroke, so the deps are stable identifiers.
+  useEffect(() => {
+    if (draft) setFormStep(1);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [draft?.id, draft?._isNew]);
 
   // Gross = sum of line items. Net receivable = gross − discount. Commissions and
   // "valores a receber" are based on the NET (the discount reflects everywhere),
@@ -889,6 +899,43 @@ export default function PedidosTab({
     const res = await fetch(`/api/admin/pedidos/${id}`, { method: "DELETE" });
     if (res.ok) setPedidos((prev) => prev.filter((p) => p.id !== id));
     else await fetchPedidos();
+  }
+
+  // Step 4 "Enviar ao cliente": choose the document, channels and whether to
+  // start the e-mail drip, then fire them. Reuses the existing send-document
+  // endpoint (email PDF / WhatsApp) + the drip enrollment endpoint.
+  type SendDocType = "orcamento" | "pedido" | "nota";
+  const [sendDoc, setSendDoc] = useState<{ tipo: SendDocType; email: boolean; whatsapp: boolean; drip: boolean; busy: boolean; done: string | null }>(
+    { tipo: "orcamento", email: true, whatsapp: true, drip: true, busy: false, done: null }
+  );
+
+  async function sendToClient() {
+    if (!draft?.id) return;
+    setSendDoc((s) => ({ ...s, busy: true, done: null }));
+    const results: string[] = [];
+    const post = (url: string, payload: unknown) =>
+      fetch(url, { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify(payload) });
+    try {
+      if (sendDoc.email) {
+        const r = await post(`/api/admin/pedidos/${draft.id}/send-document`, { channel: "email", tipo: sendDoc.tipo });
+        results.push(r.ok ? "E-mail enviado ✓" : `E-mail: ${(await r.json().catch(() => ({}))).error ?? r.status}`);
+      }
+      if (sendDoc.whatsapp) {
+        const r = await post(`/api/admin/pedidos/${draft.id}/send-document`, { channel: "whatsapp", tipo: sendDoc.tipo });
+        results.push(r.ok ? "WhatsApp enviado ✓" : `WhatsApp: ${(await r.json().catch(() => ({}))).error ?? r.status}`);
+      }
+      if (sendDoc.drip && draft.client_email) {
+        const r = await post(`/api/client-email-sequences`, {
+          client_name: draft.client_name, client_email: draft.client_email, client_phone: draft.client_phone ?? null,
+          space: draft.space ?? null, model: draft.product_name ?? null, plates: 0, area_m2: draft.area_m2 ?? 0,
+          total: netTotal, partner_name: draft.partner_name ?? null,
+        });
+        results.push(r.ok ? "Régua de e-mail iniciada ✓" : "Régua não iniciou");
+      }
+      setSendDoc((s) => ({ ...s, busy: false, done: results.join(" · ") || "Nada selecionado." }));
+    } catch {
+      setSendDoc((s) => ({ ...s, busy: false, done: "Falha ao enviar." }));
+    }
   }
 
   async function saveDraft() {
@@ -1310,7 +1357,24 @@ export default function PedidosTab({
               <p className="text-white font-[var(--font-noto-serif)] text-lg">{draft._isNew ? "Novo pedido" : "Editar pedido"}</p>
               <button onClick={() => !saving && setDraft(null)} className="text-white/60 hover:text-white text-xl leading-none">×</button>
             </div>
-            <div className="p-6 space-y-4">
+            {/* Wizard progress */}
+            <div className="flex items-center gap-1 px-6 pt-4">
+              {([["Cliente", 1], ["Itens", 2], ["Comercial", 3], ["Revisar", 4]] as const).map(([label, n]) => (
+                <button
+                  key={n}
+                  type="button"
+                  onClick={() => setFormStep(n)}
+                  className={`flex-1 text-[9px] tracking-[0.08em] uppercase font-bold font-[var(--font-inter)] py-1.5 border-b-2 transition-colors ${
+                    formStep === n ? "border-[#002045] text-[#002045]" : formStep > n ? "border-[#3b6934] text-[#3b6934]" : "border-[#e2e2e2] text-[#b0b0b0]"
+                  }`}
+                >
+                  {n}. {label}
+                </button>
+              ))}
+            </div>
+            <div className="p-6">
+              {formStep === 1 && (
+              <div className="space-y-4">
               <Field label="Cliente *">
                 <input className={inputCls} value={draft.client_name ?? ""} onChange={(e) => setDraft({ ...draft, client_name: e.target.value })} />
               </Field>
@@ -1362,6 +1426,11 @@ export default function PedidosTab({
                   <input className={inputCls} value={draft.client_address_complement ?? ""} onChange={(e) => setDraft({ ...draft, client_address_complement: e.target.value })} placeholder="Bairro, sala, referência" />
                 </Field>
               </div>
+              </div>
+              )}
+
+              {formStep === 2 && (
+              <div className="space-y-4">
               <div className="grid grid-cols-2 gap-3">
                 <Field label="Ambiente">
                   <input className={inputCls} value={draft.space ?? ""} onChange={(e) => setDraft({ ...draft, space: e.target.value })} />
@@ -1563,6 +1632,11 @@ export default function PedidosTab({
                   </Field>
                 </div>
               )}
+              </div>
+              )}
+
+              {formStep === 3 && (
+              <div className="space-y-4">
               <div className="border border-[#e2e2e2] p-3 space-y-3">
                 <p className="text-[10px] tracking-[0.12em] uppercase font-bold font-[var(--font-inter)] text-[#74777f]">Vínculos comerciais e comissões</p>
                 {draft.lead_id && (
@@ -1909,16 +1983,90 @@ export default function PedidosTab({
               <Field label="Anotações">
                 <textarea className={`${inputCls} min-h-[80px]`} value={draft.notes ?? ""} onChange={(e) => setDraft({ ...draft, notes: e.target.value })} placeholder="Ex: medidas, detalhes de acabamento, instruções de instalação" />
               </Field>
+              </div>
+              )}
+
+              {formStep === 4 && (
+              <div className="space-y-4">
+                {/* Resumo */}
+                <div className="border border-[#e2e2e2] p-4 space-y-3">
+                  <p className="text-[10px] tracking-[0.12em] uppercase font-bold font-[var(--font-inter)] text-[#74777f]">Revisão do pedido</p>
+                  <div>
+                    <p className="text-sm font-semibold text-[#002045] font-[var(--font-inter)]">{draft.client_name || "—"}</p>
+                    <p className="text-[11px] text-[#74777f] font-[var(--font-inter)]">{[draft.client_email, draft.client_phone].filter(Boolean).join(" · ") || "sem contato"}</p>
+                  </div>
+                  <div className="border-t border-[#f0f0f0] pt-2 space-y-1">
+                    {items.filter((it) => it.product_id && it.plates > 0).map((it, i) => {
+                      const p = stockProducts.find((x) => x.id === it.product_id);
+                      const u = p ? effectiveUnitPrice(it, p) : null;
+                      return (
+                        <div key={i} className="flex justify-between text-xs font-[var(--font-inter)]">
+                          <span className="text-[#43474e]">{p?.name ?? "—"} × {it.plates}</span>
+                          <span className="text-[#002045]">{u != null ? fmtBRL(u * it.plates) : "—"}</span>
+                        </div>
+                      );
+                    })}
+                    {items.filter((it) => it.product_id && it.plates > 0).length === 0 && (
+                      <p className="text-[11px] text-[#b42318] font-[var(--font-inter)]">Nenhum item adicionado (volte à etapa Itens).</p>
+                    )}
+                  </div>
+                  <div className="border-t border-[#f0f0f0] pt-2 space-y-1 text-xs font-[var(--font-inter)]">
+                    <div className="flex justify-between"><span className="text-[#74777f]">Bruto</span><span className="text-[#43474e]">{fmtBRL(grossTotal)}</span></div>
+                    {discountAmount > 0 && <div className="flex justify-between"><span className="text-[#b42318]">Desconto</span><span className="text-[#b42318]">− {fmtBRL(discountAmount)}</span></div>}
+                    <div className="flex justify-between font-bold text-[#002045]"><span>A receber</span><span>{fmtBRL(netTotal)}</span></div>
+                    {selectedPartner && <div className="flex justify-between"><span className="text-[#74777f]">Comissão parceiro</span><span className="text-[#43474e]">{fmtBRL(Number(draft.partner_commission_amount) || 0)}</span></div>}
+                    {selectedRep && <div className="flex justify-between"><span className="text-[#74777f]">Comissão representante</span><span className="text-[#43474e]">{fmtBRL(Number(draft.sales_rep_commission_amount) || 0)}</span></div>}
+                  </div>
+                </div>
+
+                {/* Enviar ao cliente */}
+                <div className="border border-[#e2e2e2] p-4 space-y-3">
+                  <p className="text-[10px] tracking-[0.12em] uppercase font-bold font-[var(--font-inter)] text-[#74777f]">Enviar ao cliente</p>
+                  {!draft.id ? (
+                    <p className="text-xs text-[#74777f] font-[var(--font-inter)]">Crie o pedido primeiro (botão abaixo) para revisar a prévia e enviar o documento ao cliente.</p>
+                  ) : (
+                    <>
+                      <div className="flex flex-wrap gap-2">
+                        {([["orcamento", "Orçamento"], ["pedido", "Pedido de venda"], ["nota", "Nota de venda"]] as const).map(([v, l]) => (
+                          <button key={v} type="button" onClick={() => setSendDoc((s) => ({ ...s, tipo: v, done: null }))}
+                            className={`text-[10px] uppercase tracking-[0.08em] font-bold font-[var(--font-inter)] px-3 py-1.5 border transition-colors ${sendDoc.tipo === v ? "bg-[#002045] text-white border-[#002045]" : "text-[#74777f] border-[#e2e2e2] hover:border-[#002045]"}`}>
+                            {l}
+                          </button>
+                        ))}
+                      </div>
+                      <button type="button" onClick={() => openDocument(draft.id as string, sendDoc.tipo)} className="text-[11px] font-bold font-[var(--font-inter)] text-[#1e5fb4] hover:underline">Ver prévia →</button>
+                      <div className="flex flex-col gap-1.5">
+                        <label className="flex items-center gap-2 text-xs font-[var(--font-inter)] text-[#43474e]"><input type="checkbox" checked={sendDoc.email} disabled={!draft.client_email} onChange={(e) => setSendDoc((s) => ({ ...s, email: e.target.checked }))} /> E-mail {draft.client_email ? `(${draft.client_email})` : "— sem e-mail"}</label>
+                        <label className="flex items-center gap-2 text-xs font-[var(--font-inter)] text-[#43474e]"><input type="checkbox" checked={sendDoc.whatsapp} disabled={!draft.client_phone} onChange={(e) => setSendDoc((s) => ({ ...s, whatsapp: e.target.checked }))} /> WhatsApp {draft.client_phone ? `(${draft.client_phone})` : "— sem telefone"}</label>
+                        <label className="flex items-center gap-2 text-xs font-[var(--font-inter)] text-[#43474e]"><input type="checkbox" checked={sendDoc.drip} disabled={!draft.client_email} onChange={(e) => setSendDoc((s) => ({ ...s, drip: e.target.checked }))} /> Iniciar régua de e-mail</label>
+                      </div>
+                      <button type="button" onClick={sendToClient} disabled={sendDoc.busy || (!sendDoc.email && !sendDoc.whatsapp && !sendDoc.drip)}
+                        className="bg-[#3b6934] text-white px-4 py-2 text-xs font-bold uppercase tracking-wider hover:bg-[#2f5429] disabled:opacity-50">
+                        {sendDoc.busy ? "Enviando…" : "Enviar ao cliente"}
+                      </button>
+                      {sendDoc.done && <p className="text-[11px] text-[#2f5429] font-semibold font-[var(--font-inter)]">{sendDoc.done}</p>}
+                    </>
+                  )}
+                </div>
+              </div>
+              )}
             </div>
-            <div className="px-6 py-4 border-t border-[#e2e2e2] flex justify-end gap-3 sticky bottom-0 bg-white">
+            <div className="px-6 py-4 border-t border-[#e2e2e2] flex items-center justify-between gap-3 sticky bottom-0 bg-white">
               <button onClick={() => !saving && setDraft(null)} className="px-4 py-2 text-xs font-bold uppercase tracking-wider text-[#74777f] hover:text-[#002045]">Cancelar</button>
-              <button
-                onClick={saveDraft}
-                disabled={saving || !draft.client_name?.trim()}
-                className="bg-[#002045] text-white px-5 py-2 text-xs font-bold uppercase tracking-wider hover:bg-[#1a365d] disabled:opacity-50"
-              >
-                {saving ? "Salvando..." : draft._isNew ? "Criar pedido" : "Salvar"}
-              </button>
+              <div className="flex items-center gap-2">
+                {formStep > 1 && (
+                  <button type="button" onClick={() => setFormStep((s) => Math.max(1, s - 1))} className="px-4 py-2 text-xs font-bold uppercase tracking-wider border border-[#e2e2e2] text-[#43474e] hover:border-[#002045]">← Voltar</button>
+                )}
+                {formStep < 4 ? (
+                  <button type="button" onClick={() => setFormStep((s) => Math.min(4, s + 1))} disabled={formStep === 1 && !draft.client_name?.trim()}
+                    className="bg-[#002045] text-white px-5 py-2 text-xs font-bold uppercase tracking-wider hover:bg-[#1a365d] disabled:opacity-50">Próximo →</button>
+                ) : (
+                  <button onClick={saveDraft} disabled={saving || !draft.client_name?.trim()}
+                    className="bg-[#002045] text-white px-5 py-2 text-xs font-bold uppercase tracking-wider hover:bg-[#1a365d] disabled:opacity-50">
+                    {saving ? "Salvando..." : draft._isNew ? "Criar pedido" : "Salvar"}
+                  </button>
+                )}
+              </div>
             </div>
           </div>
         </div>
