@@ -145,6 +145,11 @@ export default function RepOversightTab({ reps }: { reps: RepOption[] }) {
   const [unifiedSearch, setUnifiedSearch] = useState("");
   const [unifiedKind, setUnifiedKind] = useState<"all" | "lead" | "rep">("all");
   const [draggingCard, setDraggingCard] = useState<UnifiedCard | null>(null);
+  // Scope the whole oversight view (funnel, kanban, agenda) to one rep. "all" =
+  // the whole team. Drives team funnel, unified kanban cards and the agenda.
+  const [repFilter, setRepFilter] = useState<string>("all");
+  // The CRM row currently open in the inline edit modal (click a rep card).
+  const [editingRow, setEditingRow] = useState<AllCrmRow | null>(null);
 
   const fetchMeetings = useCallback(async () => {
     setMeetingsLoading(true);
@@ -192,13 +197,20 @@ export default function RepOversightTab({ reps }: { reps: RepOption[] }) {
     }
   }
 
-  const upcoming = meetings.filter((m) => m.status === "scheduled");
+  // Rows/meetings scoped to the selected rep (or the whole team).
+  const scopedRows = useMemo(
+    () => (repFilter === "all" ? allRows : allRows.filter((r) => r.sales_rep_id === repFilter)),
+    [allRows, repFilter]
+  );
+  const upcoming = meetings.filter(
+    (m) => m.status === "scheduled" && (repFilter === "all" || m.sales_rep_id === repFilter)
+  );
 
-  // Team-wide funnel across every rep.
+  // Funnel across the scoped rep(s).
   const team = useMemo(() => {
     const advanced = ["reuniao_realizada", "acompanhamento", "ativo"];
     let met = 0, specified = 0, active = 0, value = 0, projects = 0, stalled = 0;
-    for (const r of allRows) {
+    for (const r of scopedRows) {
       if (r.meeting_happened_at || advanced.includes(r.stage)) met++;
       if (r.has_specified) specified++;
       if (r.stage === "ativo") active++;
@@ -206,10 +218,10 @@ export default function RepOversightTab({ reps }: { reps: RepOption[] }) {
       projects += r.projects_count || 0;
       if (r.stage !== "inativo" && (daysSince(r.last_followup_at || r.first_contact_at) ?? 0) >= 30) stalled++;
     }
-    const total = allRows.length;
+    const total = scopedRows.length;
     const pct = (a: number, b: number) => (b > 0 ? Math.round((a / b) * 100) : 0);
     return { total, met, specified, active, value, projects, stalled, rateMet: pct(met, total), rateActive: pct(active, total) };
-  }, [allRows]);
+  }, [scopedRows]);
 
   // Per-rep summary counts.
   const repSummary = useMemo(() => {
@@ -238,7 +250,7 @@ export default function RepOversightTab({ reps }: { reps: RepOption[] }) {
       badges: lead.reminder_note ? ["follow-up"] : [],
     }));
 
-    const repCards: UnifiedCard[] = allRows.map((row) => {
+    const repCards: UnifiedCard[] = scopedRows.map((row) => {
       const stage = (row.stage || "novo_contato") as RepStage;
       const title = row.partner?.name || row.prospect_name || "Parceiro";
       const badges: string[] = [];
@@ -260,13 +272,17 @@ export default function RepOversightTab({ reps }: { reps: RepOption[] }) {
       };
     });
 
+    // When a specific rep is selected, leads (which are unassigned admin CRM
+    // entries) don't belong to anyone — hide them so the board shows only that
+    // rep's pipeline.
+    const base = repFilter === "all" ? [...leadCards, ...repCards] : repCards;
     const q = unifiedSearch.trim().toLowerCase();
-    return [...leadCards, ...repCards].filter((card) => {
+    return base.filter((card) => {
       if (unifiedKind !== "all" && card.type !== unifiedKind) return false;
       if (!q) return true;
       return `${card.title} ${card.owner} ${card.meta} ${card.detail ?? ""}`.toLowerCase().includes(q);
     });
-  }, [allRows, leads, unifiedKind, unifiedSearch]);
+  }, [scopedRows, leads, unifiedKind, unifiedSearch, repFilter]);
 
   const unifiedStats = useMemo(() => {
     return {
@@ -302,11 +318,49 @@ export default function RepOversightTab({ reps }: { reps: RepOption[] }) {
     if (!res.ok) fetchAll();
   }
 
+  // Save edits made in the contact modal — admin edits a rep's CRM row exactly
+  // as the rep would (the /api/representante/crm/[id] PATCH accepts admin auth).
+  async function saveContact(id: string, patch: Partial<AllCrmRow>) {
+    setAllRows((cur) => cur.map((row) => (row.id === id ? { ...row, ...patch } : row)));
+    const res = await fetch(`/api/representante/crm/${id}`, {
+      method: "PATCH",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify(patch),
+    });
+    if (!res.ok) { fetchAll(); return false; }
+    return true;
+  }
+
+  const repName = repFilter === "all" ? null : (reps.find((r) => r.id === repFilter)?.name ?? "Representante");
+
   return (
     <div className="mb-10">
+      {/* Rep scope filter — drives the funnel, kanban and agenda below. */}
+      <div className="flex flex-wrap items-center gap-2 mb-5">
+        <span className="text-[10px] tracking-[0.15em] uppercase font-bold font-[var(--font-inter)] text-[#74777f]">Representante</span>
+        <select
+          value={repFilter}
+          onChange={(e) => setRepFilter(e.target.value)}
+          className="border border-[#d7dbe3] px-3 py-2 text-xs font-[var(--font-inter)] text-[#002045] focus:outline-none focus:border-[#002045] min-w-[200px]"
+        >
+          <option value="all">Todos os representantes</option>
+          {reps.map((r) => (
+            <option key={r.id} value={r.id}>{r.name}</option>
+          ))}
+        </select>
+        {repFilter !== "all" && (
+          <button
+            onClick={() => setRepFilter("all")}
+            className="text-[10px] tracking-[0.1em] uppercase font-bold font-[var(--font-inter)] text-[#1e5fb4] hover:underline"
+          >
+            limpar
+          </button>
+        )}
+      </div>
+
       {/* Team funnel */}
       <h3 className="font-[var(--font-inter)] text-[10px] tracking-[0.2em] uppercase font-bold text-[#002045] mb-3">
-        Funil da equipe — todos os representantes
+        {repName ? `Funil — ${repName}` : "Funil da equipe — todos os representantes"}
       </h3>
       {allLoading ? (
         <p className="text-[#74777f] text-sm font-[var(--font-inter)] mb-8">Carregando...</p>
@@ -439,6 +493,20 @@ export default function RepOversightTab({ reps }: { reps: RepOption[] }) {
                             ))}
                           </div>
                         )}
+                        {card.type === "rep" && (
+                          <div className="flex justify-end mt-2 pt-2 border-t border-[#f0f0f0]">
+                            <button
+                              onClick={(e) => {
+                                e.stopPropagation();
+                                const row = allRows.find((r) => r.id === card.id);
+                                if (row) setEditingRow(row);
+                              }}
+                              className="text-[10px] font-bold font-[var(--font-inter)] text-[#1e5fb4] hover:underline"
+                            >
+                              Abrir / editar →
+                            </button>
+                          </div>
+                        )}
                       </div>
                     ))}
                     {cards.length === 0 && (
@@ -528,6 +596,108 @@ export default function RepOversightTab({ reps }: { reps: RepOption[] }) {
             </div>
           );
         })}
+      </div>
+
+      {editingRow && (
+        <RepContactEditor
+          row={editingRow}
+          onClose={() => setEditingRow(null)}
+          onSave={saveContact}
+        />
+      )}
+    </div>
+  );
+}
+
+// ── Contact editor modal ─────────────────────────────────────────────────────
+// Opened from a rep card on the unified kanban. Edits the same fields the rep
+// edits in their own CRM (stage, next follow-up, name, value) and saves through
+// the admin-capable /api/representante/crm/[id] PATCH.
+const STAGE_OPTIONS: { value: RepStage; label: string }[] = [
+  { value: "novo_contato", label: "Novo contato" },
+  { value: "reuniao_agendada", label: "Reunião agendada" },
+  { value: "reuniao_realizada", label: "Reunião realizada" },
+  { value: "acompanhamento", label: "Acompanhamento" },
+  { value: "ativo", label: "Ativo" },
+  { value: "inativo", label: "Inativo" },
+];
+
+function RepContactEditor({
+  row,
+  onClose,
+  onSave,
+}: {
+  row: AllCrmRow;
+  onClose: () => void;
+  onSave: (id: string, patch: Partial<AllCrmRow>) => Promise<boolean>;
+}) {
+  const isProspect = row.partner == null;
+  const [stage, setStage] = useState<string>(row.stage || "novo_contato");
+  const [prospectName, setProspectName] = useState<string>(row.prospect_name ?? "");
+  const [reminder, setReminder] = useState<string>(row.next_reminder_at ? row.next_reminder_at.slice(0, 10) : "");
+  const [value, setValue] = useState<string>(row.total_generated ? String(row.total_generated) : "");
+  const [saving, setSaving] = useState(false);
+
+  async function submit() {
+    setSaving(true);
+    const patch: Partial<AllCrmRow> = {
+      stage,
+      next_reminder_at: reminder ? new Date(`${reminder}T09:00:00`).toISOString() : null,
+      total_generated: value === "" ? 0 : Number(value) || 0,
+    };
+    if (isProspect) patch.prospect_name = prospectName.trim() || null;
+    const ok = await onSave(row.id, patch);
+    setSaving(false);
+    if (ok) onClose();
+  }
+
+  const label = row.partner?.name || row.prospect_name || "Contato";
+
+  return (
+    <div className="fixed inset-0 z-50 bg-black/40 flex items-start sm:items-center justify-center p-4 overflow-y-auto" onClick={onClose}>
+      <div className="bg-white w-full max-w-md border border-[#e2e2e2] shadow-xl" onClick={(e) => e.stopPropagation()}>
+        <div className="flex items-center justify-between px-5 py-3 border-b border-[#e2e2e2] bg-[#002045]">
+          <div className="min-w-0">
+            <p className="text-white text-sm font-semibold font-[var(--font-inter)] truncate">{label}</p>
+            <p className="text-[#a9b6c8] text-[10px] font-[var(--font-inter)]">{row.sales_rep_name || "Representante"} · CRM</p>
+          </div>
+          <button onClick={onClose} className="text-white/80 hover:text-white text-lg leading-none">×</button>
+        </div>
+        <div className="p-5 space-y-4">
+          {isProspect && (
+            <div>
+              <label className="block text-[10px] tracking-[0.15em] uppercase font-bold font-[var(--font-inter)] text-[#74777f] mb-1">Nome do contato</label>
+              <input value={prospectName} onChange={(e) => setProspectName(e.target.value)}
+                className="w-full border border-[#e2e2e2] px-3 py-2 text-sm font-[var(--font-inter)] text-[#002045] focus:outline-none focus:border-[#002045]" />
+            </div>
+          )}
+          <div>
+            <label className="block text-[10px] tracking-[0.15em] uppercase font-bold font-[var(--font-inter)] text-[#74777f] mb-1">Estágio</label>
+            <select value={stage} onChange={(e) => setStage(e.target.value)}
+              className="w-full border border-[#e2e2e2] px-3 py-2 text-sm font-[var(--font-inter)] text-[#002045] focus:outline-none focus:border-[#002045]">
+              {STAGE_OPTIONS.map((o) => <option key={o.value} value={o.value}>{o.label}</option>)}
+            </select>
+          </div>
+          <div className="grid grid-cols-2 gap-3">
+            <div>
+              <label className="block text-[10px] tracking-[0.15em] uppercase font-bold font-[var(--font-inter)] text-[#74777f] mb-1">Próximo follow-up</label>
+              <input type="date" value={reminder} onChange={(e) => setReminder(e.target.value)}
+                className="w-full border border-[#e2e2e2] px-3 py-2 text-sm font-[var(--font-inter)] text-[#002045] focus:outline-none focus:border-[#002045]" />
+            </div>
+            <div>
+              <label className="block text-[10px] tracking-[0.15em] uppercase font-bold font-[var(--font-inter)] text-[#74777f] mb-1">Valor gerado (R$)</label>
+              <input type="number" min="0" value={value} onChange={(e) => setValue(e.target.value)}
+                className="w-full border border-[#e2e2e2] px-3 py-2 text-sm font-[var(--font-inter)] text-[#002045] focus:outline-none focus:border-[#002045]" />
+            </div>
+          </div>
+          <p className="text-[10px] text-[#74777f] font-[var(--font-inter)]">
+            Para gerenciar reuniões, notas e etapas detalhadas, abra o pipeline do representante abaixo.
+          </p>
+        </div>
+        <div className="flex justify-end gap-2 px-5 py-3 border-t border-[#e2e2e2]">
+          <button onClick={onClose} className="text-[#74777f] text-xs tracking-[0.1em] uppercase font-bold font-[var(--font-inter)] px-4 py-2 border border-[#e2e2e2] hover:border-[#74777f]">Cancelar</button>
+          <button onClick={submit} disabled={saving} className="bg-[#002045] text-white text-xs tracking-[0.1em] uppercase font-bold font-[var(--font-inter)] px-5 py-2 hover:bg-[#1a365d] disabled:opacity-50">{saving ? "Salvando…" : "Salvar"}</button>
+        </div>
       </div>
     </div>
   );
