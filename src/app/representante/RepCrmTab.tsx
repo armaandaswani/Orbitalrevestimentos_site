@@ -832,6 +832,14 @@ export default function RepCrmTab({
                           <span className="text-[9px] font-bold px-1.5 py-0.5 bg-green-50 text-green-700">Mostruário ok</span>
                         )}
                       </div>
+                      <div className="flex justify-end mt-2 pt-2 border-t border-[#f0f0f0]">
+                        <button
+                          onClick={(e) => { e.stopPropagation(); setView("list"); setExpandedId(r.id); setTimeout(() => document.getElementById(`crm-row-${r.id}`)?.scrollIntoView({ behavior: "smooth", block: "center" }), 60); }}
+                          className="text-[10px] font-bold font-[var(--font-inter)] text-[#1e5fb4] hover:underline"
+                        >
+                          Abrir / editar →
+                        </button>
+                      </div>
                     </div>
                   ))}
                   {colRows.length === 0 && <p className="text-[#b0b0b0] text-[10px] font-[var(--font-inter)] text-center py-3">—</p>}
@@ -852,7 +860,7 @@ export default function RepCrmTab({
             const stalled = staleDays(r);
             const followupDraft = followupDrafts[r.id] || draftFromRow(r);
             return (
-              <div key={r.id} className={`bg-white border ${expanded ? "border-[#002045]" : "border-[#e2e2e2]"}`}>
+              <div key={r.id} id={`crm-row-${r.id}`} className={`bg-white border ${expanded ? "border-[#002045]" : "border-[#e2e2e2]"}`}>
                 <div className="px-4 py-4">
                   <div className="grid grid-cols-1 lg:grid-cols-[minmax(0,1fr)_190px_160px_auto] gap-4 lg:items-center">
                     <div className="flex items-start gap-3 min-w-0">
