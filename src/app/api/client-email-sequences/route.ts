@@ -174,15 +174,14 @@ export async function POST(req: NextRequest) {
       if (res.ok && leadId) await touchLeadContacted(leadId);
       else if (!res.ok) console.error("[smclick] client orçamento WhatsApp failed", { status: res.status, error: res.error });
 
-      // Message 2 — product education / qualification, right after the
-      // orçamento confirmation. Teaches the lead what the bamboo panels are and
-      // why they suit the Amazonian climate. Non-fatal.
-      if (res.ok) {
-        const edu = await sendText(phone, productEducationMessage());
-        if (!edu.ok) console.error("[smclick] product education WhatsApp failed", { status: edu.status, error: edu.error });
-        const cta = await sendText(phone, clientOrcamentoCtaMessage());
-        if (!cta.ok) console.error("[smclick] client CTA WhatsApp failed", { status: cta.status, error: cta.error });
-      }
+      // Messages 2 & 3 — product education + CTA. Sent INDEPENDENTLY of message
+      // 1: a hiccup on the (longer, render-carrying) first message must not
+      // swallow the whole sequence, which is exactly what happened when a render
+      // was attached. Each is best-effort.
+      const edu = await sendText(phone, productEducationMessage()).catch((e) => ({ ok: false, status: 0, error: String(e) }));
+      if (!edu.ok) console.error("[smclick] product education WhatsApp failed", { status: edu.status, error: edu.error });
+      const cta = await sendText(phone, clientOrcamentoCtaMessage()).catch((e) => ({ ok: false, status: 0, error: String(e) }));
+      if (!cta.ok) console.error("[smclick] client CTA WhatsApp failed", { status: cta.status, error: cta.error });
     } else {
       console.warn("[smclick] client orçamento WhatsApp skipped", { configured: smclickConfigured(), hasPhone: Boolean(phone) });
     }

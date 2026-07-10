@@ -146,20 +146,20 @@ export function clientOrcamentoMessage(i: OrcamentoMessageInput): string {
     ``,
     `Recebemos sua simulação e já deixamos tudo pronto para você revisar com calma:`,
   ];
+  if (i.quoteUrl) {
+    lines.push(``);
+    lines.push(`📄  Acesse seu orçamento completo:`);
+    lines.push(i.quoteUrl);
+  }
   const renders = (i.renderUrls ?? []).filter(Boolean);
   if (renders.length > 0) {
     lines.push(``);
-    lines.push(renders.length === 1 ? `🖼️ Veja como ficou no seu ambiente:` : `🖼️ Veja como ficou nos seus ambientes:`);
+    lines.push(renders.length === 1 ? `🎨  Sua renderização:` : `🎨  Suas renderizações:`);
     renders.forEach((u) => lines.push(u));
-  }
-  if (i.quoteUrl) {
-    lines.push(``);
-    lines.push(`📄 Acesse seu orçamento completo:`);
-    lines.push(i.quoteUrl);
   }
   lines.push(
     ``,
-    `A Orbital fornece somente o material. A instalação é contratada à parte, mas temos uma empresa parceira especializada nesse tipo de aplicação. O contato dela aparece dentro do link do orçamento.`
+    `*A Orbital fornece somente o material*. A instalação é contratada à parte, mas temos uma empresa parceira especializada nesse tipo de aplicação. O contato dela aparece dentro do link do orçamento.`
   );
   return lines.join("\n");
 }
