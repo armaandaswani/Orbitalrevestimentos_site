@@ -280,6 +280,11 @@ export default function PedidosTab({
   // Wizard step for the create/edit modal (1 Cliente · 2 Itens · 3 Comercial ·
   // 4 Revisar/Enviar). Reset to 1 whenever a different order opens.
   const [formStep, setFormStep] = useState(1);
+  // Discount calculator mode: percent of the gross, fixed R$ value, or the
+  // desired final total (back-calculated). `discountRaw` is what's typed in the
+  // active mode; it resolves to draft.discount_amount (always stored in R$).
+  const [discountMode, setDiscountMode] = useState<"percent" | "value" | "final">("value");
+  const [discountRaw, setDiscountRaw] = useState("");
   // Per-item "calcular pela área" inline helper (index → desired m² typed, and
   // whether that helper is expanded for that row).
   const [areaCalcOpen, setAreaCalcOpen] = useState<Record<number, boolean>>({});
@@ -538,7 +543,12 @@ export default function PedidosTab({
   // Reset to the first step whenever a different order opens (new vs an edit of
   // a specific id) — not on every keystroke, so the deps are stable identifiers.
   useEffect(() => {
-    if (draft) setFormStep(1);
+    if (draft) {
+      setFormStep(1);
+      // Seed the discount calculator from the stored R$ value (value mode).
+      setDiscountMode("value");
+      setDiscountRaw(draft.discount_amount ? String(draft.discount_amount) : "");
+    }
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [draft?.id, draft?._isNew]);
 
@@ -552,6 +562,38 @@ export default function PedidosTab({
   const currentTotal = netTotal;
   const selectedPartner = partners.find((p) => p.id === draft?.partner_id) ?? null;
   const selectedRep = salesReps.find((r) => r.id === draft?.sales_rep_id) ?? null;
+
+  // ── Discount calculator ─────────────────────────────────────────────────────
+  const round2 = (n: number) => Math.round(n * 100) / 100;
+  // Resolve the typed value (in the active mode) to a R$ discount, clamped to
+  // [0, gross]. percent = % of gross; value = R$ directly; final = gross − final.
+  function resolveDiscount(raw: string, mode: "percent" | "value" | "final", gross: number): number {
+    const n = Number(String(raw).replace(",", "."));
+    if (!Number.isFinite(n) || n < 0) return 0;
+    const d = mode === "percent" ? (gross * n) / 100 : mode === "final" ? gross - n : n;
+    return Math.min(gross, Math.max(0, round2(d)));
+  }
+  function applyDiscountInput(raw: string) {
+    setDiscountRaw(raw);
+    const d = resolveDiscount(raw, discountMode, grossTotal);
+    setDraft((cur) => (cur ? { ...cur, discount_amount: d } : cur));
+  }
+  function switchDiscountMode(mode: "percent" | "value" | "final") {
+    // Convert the current R$ discount into the new mode's field representation.
+    let raw = "";
+    if (discountAmount > 0 && grossTotal > 0) {
+      raw = mode === "percent"
+        ? String(round2((discountAmount / grossTotal) * 100))
+        : mode === "final"
+          ? String(round2(grossTotal - discountAmount))
+          : String(round2(discountAmount));
+    } else if (mode === "final" && grossTotal > 0) {
+      raw = String(round2(grossTotal));
+    }
+    setDiscountMode(mode);
+    setDiscountRaw(raw);
+  }
+  const discountPct = grossTotal > 0 ? Math.round((discountAmount / grossTotal) * 1000) / 10 : 0;
 
   function moneyFromPct(pct: number, total = currentTotal) {
     return Math.round((Math.max(0, total) * Math.max(0, pct)) / 100);
@@ -1738,21 +1780,53 @@ export default function PedidosTab({
                   </div>
                 )}
               </div>
-              <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
-                <Field label="Desconto (R$)">
-                  <input
-                    type="number"
-                    min="0"
-                    className={inputCls}
-                    value={draft.discount_amount ?? ""}
-                    onChange={(e) => setDraft({ ...draft, discount_amount: e.target.value === "" ? 0 : Number(e.target.value) })}
-                  />
-                  {discountAmount > 0 && grossTotal > 0 && (
-                    <p className="text-[10px] text-[#74777f] font-[var(--font-inter)] mt-1">
-                      Bruto {fmtBRL(grossTotal)} − desconto = <span className="font-bold text-[#002045]">a receber {fmtBRL(netTotal)}</span>
-                    </p>
-                  )}
-                </Field>
+              <Field label="Desconto">
+                <div className="flex gap-1 mb-2">
+                  {([["percent", "%"], ["value", "R$"], ["final", "Total final"]] as const).map(([m, l]) => (
+                    <button
+                      key={m}
+                      type="button"
+                      onClick={() => switchDiscountMode(m)}
+                      className={`flex-1 text-[10px] tracking-[0.06em] uppercase font-bold font-[var(--font-inter)] px-2 py-1.5 border transition-colors ${
+                        discountMode === m ? "bg-[#002045] text-white border-[#002045]" : "text-[#74777f] border-[#e2e2e2] hover:border-[#002045] hover:text-[#002045]"
+                      }`}
+                    >
+                      {l}
+                    </button>
+                  ))}
+                </div>
+                <input
+                  type="number"
+                  min="0"
+                  step="0.01"
+                  inputMode="decimal"
+                  className={inputCls}
+                  value={discountRaw}
+                  onChange={(e) => applyDiscountInput(e.target.value)}
+                  placeholder={discountMode === "percent" ? "% do total dos produtos" : discountMode === "final" ? "total final desejado (R$)" : "valor do desconto (R$)"}
+                />
+                {grossTotal > 0 && (
+                  <div className="mt-2 bg-[#f7f8fa] border border-[#eef0f3] px-3 py-2 text-xs font-[var(--font-inter)]">
+                    <div className="flex items-center justify-between">
+                      <span className="text-[#74777f]">Total dos produtos</span>
+                      <span className={discountAmount > 0 ? "text-[#74777f] line-through" : "text-[#002045] font-semibold"}>{fmtBRL(grossTotal)}</span>
+                    </div>
+                    {discountAmount > 0 && (
+                      <>
+                        <div className="flex items-center justify-between mt-0.5">
+                          <span className="text-[#b42318]">Desconto ({discountPct}%)</span>
+                          <span className="text-[#b42318]">− {fmtBRL(discountAmount)}</span>
+                        </div>
+                        <div className="flex items-center justify-between mt-1 pt-1 border-t border-[#e6e8ec]">
+                          <span className="text-[#002045] font-bold">Novo total (a receber)</span>
+                          <span className="text-[#002045] font-bold">{fmtBRL(netTotal)}</span>
+                        </div>
+                      </>
+                    )}
+                  </div>
+                )}
+              </Field>
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
                 <Field label="Frete (R$)">
                   <input
                     type="number"
