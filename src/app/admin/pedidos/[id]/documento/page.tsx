@@ -240,7 +240,11 @@ export default function PedidoDocumentoPage({ params }: { params: Promise<{ id: 
     const freight = Number(pedido?.freight_amount) || 0;
     const fallbackSubtotal = Math.max(0, (Number(pedido?.total) || 0) + discount - freight);
     const subtotal = itemSubtotal > 0 ? itemSubtotal : fallbackSubtotal;
-    const total = Number(pedido?.total) || Math.max(0, subtotal - discount + freight);
+    // Total the client pays = subtotal − discount + freight. Do NOT fall back to
+    // pedido.total: that's the GROSS sum of line items (pre-discount), so using
+    // it made the document ignore the discount. For legacy orders with no items
+    // this still resolves to pedido.total (fallbackSubtotal cancels out).
+    const total = Math.max(0, subtotal - discount + freight);
     return { subtotal, discount, freight, total };
   }, [pedido]);
 

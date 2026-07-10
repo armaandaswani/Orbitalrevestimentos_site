@@ -214,7 +214,10 @@ async function generatePedidoPdf(input: {
 
   const discount = Number(pedido.discount_amount) || 0;
   const freight = Number(pedido.freight_amount) || 0;
-  const total = Number(pedido.total) || Math.max(0, subtotal - discount + freight);
+  // Total the client pays = subtotal − discount + freight. `subtotal` is the
+  // gross line sum (or the pedido.total fallback item for legacy orders), so
+  // this always subtracts the discount instead of printing the gross total.
+  const total = Math.max(0, subtotal - discount + freight);
   ensureSpace(doc, 104);
   doc.x = 360;
   doc.font("Helvetica").fontSize(10).fillColor("#333");
@@ -298,7 +301,12 @@ export async function POST(req: NextRequest, { params }: { params: Promise<{ id:
     const { pedido, items } = await fetchPedido(id);
     const label = DOC_LABEL[docType];
     const number = docNumber(pedido);
-    const total = Number(pedido.total) || 0;
+    // Net total the client pays (gross line sum − discount + freight), so the
+    // e-mail body matches the PDF/document instead of showing the pre-discount total.
+    const total = Math.max(
+      0,
+      (Number(pedido.total) || 0) - (Number(pedido.discount_amount) || 0) + (Number(pedido.freight_amount) || 0)
+    );
 
     if (channel === "email") {
       const to = typeof pedido.client_email === "string" ? pedido.client_email : "";
