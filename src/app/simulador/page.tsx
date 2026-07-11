@@ -1315,6 +1315,20 @@ function SimuladorInner() {
   return (
     <div className="pt-20">
 
+      {/* Full-screen "generating" overlay — the submit sends the WhatsApp/e-mail
+          before showing the result, which can take a couple of seconds. Without
+          this, the only signal was a tiny "Enviando…" in the corner and the page
+          looked frozen. This makes it obvious the site responded and is working. */}
+      {simSubmitting && (
+        <div className="fixed inset-0 z-[70] bg-[#002045]/95 backdrop-blur-sm flex flex-col items-center justify-center gap-5 text-center px-6">
+          <div className="w-12 h-12 border-2 border-white/25 border-t-[#a1d494] rounded-full animate-spin" />
+          <div>
+            <p className="text-white font-[var(--font-noto-serif)] text-2xl lg:text-3xl">Gerando seu orçamento…</p>
+            <p className="text-white/70 font-[var(--font-inter)] text-sm mt-2">Estamos preparando os detalhes do seu investimento.</p>
+          </div>
+        </div>
+      )}
+
       {/* ── Hero ─────────────────────────────────────────────────────────── */}
       <section className="bg-[#002045] text-white py-10 lg:py-32 relative overflow-hidden">
         <div
@@ -1370,10 +1384,10 @@ function SimuladorInner() {
               Simulador de investimento
             </p>
             <h2 className="font-[var(--font-noto-serif)] text-[#002045] text-2xl lg:text-4xl font-normal mb-3">
-              Quanto custa revestir o seu espaço?
+              Veja o investimento necessário para transformar o seu espaço.
             </h2>
             <p className="text-[#43474e] text-sm font-[var(--font-inter)] leading-relaxed max-w-2xl">
-              Simule o custo do PFB Orbital e compare com o MDF ao longo de 10 anos.
+              Simule o investimento no PFB Orbital e compare com o MDF ao longo de 10 anos.
               Valores de mão de obra são estimativas de mercado.
             </p>
           </div>
@@ -2394,9 +2408,9 @@ function SimuladorInner() {
                   <circle cx="12" cy="12" r="10"/><path d="M12 8v4m0 4h.01"/>
                 </svg>
                 <p className="text-[#6b5000] text-xs font-[var(--font-inter)] leading-relaxed">
-                  <strong>Simulação para referência apenas.</strong> Os valores abaixo são estimativas de custo.
+                  <strong>Simulação para referência apenas.</strong> Os valores abaixo são estimativas de investimento.
                   A Orbital vende exclusivamente o material — não realizamos instalação.
-                  O custo de mão de obra é uma estimativa de mercado.
+                  O valor de mão de obra é uma estimativa de mercado.
                 </p>
               </div>
 
@@ -3026,7 +3040,7 @@ function SimuladorInner() {
       <div className="bg-[#f9f9f9] border-t border-[#eeeeee] py-5 text-center">
         <p className="text-[#74777f] text-xs font-[var(--font-inter)] italic">
           Orbital · Manaus, AM · Fornecedores diretos — não realizamos instalação.
-          Estimativas de custo para referência; valores sujeitos a alteração.
+          Estimativas de investimento para referência; valores sujeitos a alteração.
         </p>
       </div>
 
