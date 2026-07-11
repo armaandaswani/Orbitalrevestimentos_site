@@ -1920,20 +1920,23 @@ function ZonesStep({
           Você também pode <strong>Descrever em texto</strong> — escolha o que preferir.
         </p>
 
-        <div className="mt-5 flex flex-wrap gap-3">
+        {/* Single generate CTA lives in the "Áreas" column below (after the model
+            picker) so it never appears before the client has chosen a finish —
+            especially on mobile, where the columns stack. Here we only keep
+            "Trocar foto" plus a cue pointing the client to the next action. */}
+        <div className="mt-5 flex flex-wrap items-center gap-3">
           <button onClick={onBack}
             className="inline-flex items-center gap-2 border border-[#e2e2e2] text-[#43474e] text-xs tracking-[0.12em] uppercase font-bold font-[var(--font-inter)] px-6 py-3 hover:border-[#002045] transition-colors">
             Trocar foto
           </button>
-          <button onClick={onGenerate} disabled={!canGenerate}
-            className="inline-flex items-center gap-2 bg-[#3b6934] text-white text-xs tracking-[0.12em] uppercase font-bold font-[var(--font-inter)] px-7 py-3 hover:bg-[#2f5429] transition-colors disabled:opacity-50">
-            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><path d="M5 3v4M3 5h4M6 17v4m-2-2h4M13 3l2.5 6.5L22 12l-6.5 2.5L13 21l-2.5-6.5L4 12l6.5-2.5z" /></svg>
-            Gerar visualização
-          </button>
-          {!canGenerate && (
-            <span className="text-xs text-[#b4791e] font-[var(--font-inter)] self-center">
-              {needsExactArea ? "Marque a área na foto com Tocar ou 4 pontos." : "Adicione uma área e atribua um acabamento."}
+          {zones.length === 0 ? (
+            <span className="text-xs text-[#74777f] font-[var(--font-inter)]">Marque uma área na foto para começar.</span>
+          ) : !canGenerate ? (
+            <span className="text-xs text-[#b4791e] font-semibold font-[var(--font-inter)]">
+              {needsExactArea ? "Marque a área na foto com Tocar ou 4 pontos." : "Agora escolha o acabamento abaixo ↓"}
             </span>
+          ) : (
+            <span className="text-xs text-[#3b6934] font-semibold font-[var(--font-inter)]">✓ Pronto — toque em “Gerar visualização” abaixo ↓</span>
           )}
         </div>
       </div>
@@ -1964,11 +1967,18 @@ function ZonesStep({
           />
         ))}
         {zones.length > 0 && (
-          <button onClick={onGenerate} disabled={!canGenerate}
-            className="w-full inline-flex items-center justify-center gap-2 bg-[#3b6934] text-white text-xs tracking-[0.12em] uppercase font-bold font-[var(--font-inter)] px-7 py-3.5 hover:bg-[#2f5429] transition-colors disabled:opacity-50">
-            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><path d="M5 3v4M3 5h4M6 17v4m-2-2h4M13 3l2.5 6.5L22 12l-6.5 2.5L13 21l-2.5-6.5L4 12l6.5-2.5z" /></svg>
-            Gerar visualização
-          </button>
+          <>
+            <button onClick={onGenerate} disabled={!canGenerate}
+              className="w-full inline-flex items-center justify-center gap-2 bg-[#3b6934] text-white text-xs tracking-[0.12em] uppercase font-bold font-[var(--font-inter)] px-7 py-3.5 hover:bg-[#2f5429] transition-colors disabled:opacity-50">
+              <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><path d="M5 3v4M3 5h4M6 17v4m-2-2h4M13 3l2.5 6.5L22 12l-6.5 2.5L13 21l-2.5-6.5L4 12l6.5-2.5z" /></svg>
+              Gerar visualização
+            </button>
+            {!canGenerate && (
+              <p className="text-[11px] text-[#b4791e] font-[var(--font-inter)] text-center">
+                {needsExactArea ? "Marque a área na foto para gerar." : "Escolha um acabamento em cada área para gerar."}
+              </p>
+            )}
+          </>
         )}
       </div>
     </div>
@@ -2396,12 +2406,20 @@ function ResultStep({
               Baixar imagem
             </button>
           )}
+          {result && (
+            <button onClick={onRetry} className="inline-flex items-center gap-2 border-2 border-[#3b6934] text-[#3b6934] text-xs tracking-[0.12em] uppercase font-bold font-[var(--font-inter)] px-6 py-3 hover:bg-[#f3f8f1] transition-colors">
+              <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><path d="M4 4v6h6M20 20v-6h-6M20 8a8 8 0 0 0-14-3M4 16a8 8 0 0 0 14 3" /></svg>
+              Trocar acabamento
+            </button>
+          )}
           <button onClick={onRegenerate} className="inline-flex items-center gap-2 border border-[#e2e2e2] text-[#43474e] text-xs tracking-[0.12em] uppercase font-bold font-[var(--font-inter)] px-6 py-3 hover:border-[#002045] transition-colors">
             {result ? "Gerar novamente" : "Tentar novamente"}
           </button>
-          <button onClick={onRetry} className="inline-flex items-center gap-2 border border-[#e2e2e2] text-[#43474e] text-xs tracking-[0.12em] uppercase font-bold font-[var(--font-inter)] px-6 py-3 hover:border-[#002045] transition-colors">
-            Editar áreas
-          </button>
+          {!result && (
+            <button onClick={onRetry} className="inline-flex items-center gap-2 border border-[#e2e2e2] text-[#43474e] text-xs tracking-[0.12em] uppercase font-bold font-[var(--font-inter)] px-6 py-3 hover:border-[#002045] transition-colors">
+              Editar áreas
+            </button>
+          )}
         </div>
       )}
 
