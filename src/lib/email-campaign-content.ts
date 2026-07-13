@@ -217,7 +217,7 @@ const CONTENT: Record<
     ctaPath: "/",
     body: `
       <p style="font-size:26px;line-height:1.2;color:#002045;font-weight:700;margin:0 0 16px;">PFB vs. MDF: a comparação que fecha a decisão.</p>
-      <p style="font-size:15px;line-height:1.7;color:#43474e;margin:16px 0;">Quando o cliente compara preço, ele esquece de comparar durabilidade. Mostre os números antes que a concorrência apareça.</p>
+      <p style="font-size:15px;line-height:1.7;color:#43474e;margin:16px 0;">A <strong>Placa de Fibra de Bambu (PFB)</strong> entrega mais desempenho, mais durabilidade e uma aplicação muito mais eficiente. Compare o <strong>custo total da aplicação</strong> — não só o preço da chapa — e mostre os números antes que a concorrência apareça.</p>
       <div style="background:#eef2f8;border-left:3px solid #002045;padding:14px 18px;margin:20px 0;">
         <table width="100%" cellpadding="0" cellspacing="0" style="font-family:Arial,sans-serif;font-size:12px;">
           <tr>
@@ -245,9 +245,19 @@ const CONTENT: Record<
             <td style="padding:8px;color:#dc2626;text-align:center;">Sim</td>
             <td style="padding:8px;color:#16a34a;text-align:center;font-weight:700;">Não</td>
           </tr>
+          <tr style="border-top:1px solid #e2e2e2;">
+            <td style="padding:8px 0;color:#43474e;">Preparo, estrutura e marcenaria</td>
+            <td style="padding:8px;color:#dc2626;text-align:center;">Necessários</td>
+            <td style="padding:8px;color:#16a34a;text-align:center;font-weight:700;">Dispensa</td>
+          </tr>
+          <tr style="border-top:1px solid #e2e2e2;">
+            <td style="padding:8px 0;color:#43474e;">Custo total da aplicação</td>
+            <td style="padding:8px;color:#dc2626;text-align:center;font-weight:700;">Mais alto</td>
+            <td style="padding:8px;color:#16a34a;text-align:center;font-weight:700;">Menor</td>
+          </tr>
         </table>
       </div>
-      <p style="font-size:15px;line-height:1.7;color:#43474e;margin:16px 0;">O PFB custa mais na placa, mas custa menos no ciclo de vida. Mostre esse argumento ao seu cliente e feche com mais margem.</p>
+      <p style="font-size:15px;line-height:1.7;color:#43474e;margin:16px 0;">Na chapa isolada, o MDF parece barato — mas exige preparo de superfície, estrutura, marcenaria, mão de obra especializada, mais tempo de obra e troca em poucos anos. Somando tudo, o sistema em MDF sai <strong>mais caro</strong> e ainda não tem a durabilidade da PFB. A PFB é leve (~11 kg por placa de 2,90 × 1,20 m), de fibra de bambu renovável, resistente a mofo, cupins e umidade, sem formaldeído, não propaga chamas, instala em horas e vai em parede e forro — ideal para o clima de Manaus. Mostre o custo total ao seu cliente e feche com mais margem.</p>
     `,
   },
 };
