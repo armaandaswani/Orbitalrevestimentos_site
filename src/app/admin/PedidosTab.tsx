@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useState, useEffect, useCallback, useMemo } from "react";
+import React, { useState, useEffect, useCallback, useMemo, useRef } from "react";
 import { DEFAULT_PANEL_WIDTH_M, DEFAULT_PANEL_HEIGHT_M } from "@/lib/render-prompt";
 import type { Lead } from "./LeadsTab";
 
@@ -337,12 +337,14 @@ export default function PedidosTab({
   const [quoteImportLoading, setQuoteImportLoading] = useState(false);
   const [quoteImportError, setQuoteImportError] = useState("");
 
+  const [stockLoaded, setStockLoaded] = useState(false);
   useEffect(() => {
     // Best-effort: if migration 023 isn't applied the picker just stays empty.
     fetch("/api/admin/stock")
       .then((r) => (r.ok ? r.json() : null))
       .then((j) => { if (j?.products) setStockProducts(j.products); })
-      .catch(() => {});
+      .catch(() => {})
+      .finally(() => setStockLoaded(true));
   }, []);
 
   // Preços tab's rate card (special_price = atacado, public_price = varejo),
@@ -405,22 +407,30 @@ export default function PedidosTab({
   // Consume a "Converter em Pedido" prefill from the Leads tab: open the
   // create form seeded from that lead, then tell the parent to clear it so
   // navigating back to Leads and converting again doesn't re-trigger.
+  const leadPrefillConsumed = useRef<typeof leadPrefill>(null);
   useEffect(() => {
-    if (!leadPrefill) return;
+    if (!leadPrefill || !stockLoaded) return;
+    if (leadPrefillConsumed.current === leadPrefill) return;
+    leadPrefillConsumed.current = leadPrefill;
     startDraftFromLead(leadPrefill);
     onLeadPrefillConsumed?.();
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [leadPrefill]);
+  }, [leadPrefill, stockLoaded]);
 
   // Same idea, but for a "Converter em Pedido" prefill from the Orçamentos
-  // tab (a quote, not a lead) — seeds the create form via the existing
-  // startDraftFromQuote (used today by the "Importar orçamento" picker).
+  // tab (a quote, not a lead) — seeds the create form via startDraftFromQuote.
+  // WAIT for the stock catalog to load first: otherwise the quote's model can't
+  // be matched, the line item lands empty and the plate count silently resets
+  // to 1 (the "placas sumiram" bug). Guarded by a ref so it runs once.
+  const quotePrefillConsumed = useRef<QuoteOption | null>(null);
   useEffect(() => {
-    if (!quotePrefill) return;
+    if (!quotePrefill || !stockLoaded) return;
+    if (quotePrefillConsumed.current === quotePrefill) return;
+    quotePrefillConsumed.current = quotePrefill;
     startDraftFromQuote(quotePrefill);
     onQuotePrefillConsumed?.();
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [quotePrefill]);
+  }, [quotePrefill, stockLoaded]);
 
   // Consume a "Ver pedido" focus request from the Leads tab: open that
   // pedido's editor once it's in the fetched list.
@@ -782,11 +792,10 @@ export default function PedidosTab({
     // Plates: trust the quote's own count when it has one; otherwise derive it
     // from the imported area so a 206 m² quote doesn't silently become "1
     // placa" just because the original quote never recorded a plate count.
-    const seedPlates = product
-      ? (q.plates && q.plates > 0
-          ? Math.max(1, Math.round(q.plates))
-          : (q.area_m2 && q.area_m2 > 0 ? Math.max(1, Math.ceil(q.area_m2 / panelAreaM2(product))) : 1))
-      : 1;
+    const seedPlates =
+      q.plates && q.plates > 0
+        ? Math.max(1, Math.round(q.plates))
+        : (product && q.area_m2 && q.area_m2 > 0 ? Math.max(1, Math.ceil(q.area_m2 / panelAreaM2(product))) : 1);
     // Always seed at least one row — even unmatched — so the quantity editor
     // is immediately visible and usable instead of hiding behind "+
     // Adicionar modelo" with the old Área/Total boxes still showing.
