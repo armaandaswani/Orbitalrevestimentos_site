@@ -224,6 +224,9 @@ export type QuoteOption = {
   coupon_use_id: string | null;
   sales_rep_referral_code: string | null;
   created_at: string;
+  // Per-ambiente breakdown (multi-space simulador quotes) — each becomes its
+  // own order line item on conversion.
+  space_breakdown?: Array<{ spaceName?: string; productName?: string; productCode?: string | null; plates?: number; area_m2?: number; total?: number }> | null;
 };
 
 interface PedidosTabProps {
@@ -792,14 +795,33 @@ export default function PedidosTab({
     // Plates: trust the quote's own count when it has one; otherwise derive it
     // from the imported area so a 206 m² quote doesn't silently become "1
     // placa" just because the original quote never recorded a plate count.
-    const seedPlates =
-      q.plates && q.plates > 0
-        ? Math.max(1, Math.round(q.plates))
-        : (product && q.area_m2 && q.area_m2 > 0 ? Math.max(1, Math.ceil(q.area_m2 / panelAreaM2(product))) : 1);
-    // Always seed at least one row — even unmatched — so the quantity editor
-    // is immediately visible and usable instead of hiding behind "+
-    // Adicionar modelo" with the old Área/Total boxes still showing.
-    setItems([{ product_id: product?.id ?? "", plates: seedPlates }]);
+    // Match a stock product from a free-text name/code (handles "Nome (CODE)").
+    const matchProduct = (name?: string | null, code?: string | null): StockProduct | null => {
+      const pc = code?.trim() || name?.match(/\(([^)]+)\)\s*$/)?.[1]?.trim() || null;
+      const nm = name?.replace(/\s*\([^)]*\)\s*$/, "").trim() || null;
+      return (
+        (pc ? stockProducts.find((p) => p.code && norm(p.code) === norm(pc)) : null) ??
+        (nm ? stockProducts.find((p) => norm(p.name) === norm(nm)) : null) ??
+        (name ? stockProducts.find((p) => norm(p.name) === norm(name)) : null) ??
+        null
+      );
+    };
+    const platesFor = (plates?: number | null, prod?: StockProduct | null, area?: number | null) =>
+      plates && plates > 0
+        ? Math.max(1, Math.round(plates))
+        : (prod && area && area > 0 ? Math.max(1, Math.ceil(area / panelAreaM2(prod))) : 1);
+
+    // Multi-ambiente quote → one line item per ambiente (model + placas).
+    const breakdown = (q.space_breakdown ?? []).filter((b) => b && (b.productName || (b.plates ?? 0) > 0));
+    const seededItems: OrderItem[] = breakdown.length > 0
+      ? breakdown.map((b) => {
+          const prod = matchProduct(b.productName, b.productCode ?? null);
+          return { product_id: prod?.id ?? "", plates: platesFor(b.plates, prod, b.area_m2) };
+        })
+      // Single-ambiente (or no breakdown): keep the plate count from the quote
+      // even when the model didn't match, so it never silently resets to 1.
+      : [{ product_id: product?.id ?? "", plates: platesFor(q.plates, product, q.area_m2) }];
+    setItems(seededItems);
     setItemsReady(true);
     setDraft({
       _isNew: true,
@@ -950,6 +972,27 @@ export default function PedidosTab({
     const res = await fetch(`/api/admin/pedidos/${id}`, { method: "DELETE" });
     if (res.ok) setPedidos((prev) => prev.filter((p) => p.id !== id));
     else await fetchPedidos();
+  }
+
+  // Re-send the document to the client — for when the admin changes the client's
+  // name/WhatsApp/e-mail and wants to push the updated link again, without walking
+  // through the whole review/send step. Uses the saved order data.
+  const [resendingId, setResendingId] = useState<string | null>(null);
+  async function resendToClient(p: Pedido) {
+    if (!p.client_phone && !p.client_email) { alert("Este pedido não tem WhatsApp nem e-mail do cliente."); return; }
+    const tipo = p.status === "entregue" ? "nota" : "orcamento";
+    const dest = [p.client_phone ? `WhatsApp ${p.client_phone}` : null, p.client_email ? `e-mail ${p.client_email}` : null].filter(Boolean).join(" e ");
+    if (!confirm(`Reenviar o documento ao cliente (${dest})?`)) return;
+    setResendingId(p.id);
+    const done: string[] = [];
+    const post = (channel: "whatsapp" | "email") =>
+      fetch(`/api/admin/pedidos/${p.id}/send-document`, { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ channel, tipo }) });
+    try {
+      if (p.client_phone) { const r = await post("whatsapp"); done.push(r.ok ? "WhatsApp ✓" : `WhatsApp: ${(await r.json().catch(() => ({}))).error ?? r.status}`); }
+      if (p.client_email) { const r = await post("email"); done.push(r.ok ? "E-mail ✓" : `E-mail: ${(await r.json().catch(() => ({}))).error ?? r.status}`); }
+      alert(`Reenvio: ${done.join(" · ")}`);
+    } catch { alert("Falha ao reenviar."); }
+    setResendingId(null);
   }
 
   // Step 4 "Enviar ao cliente": choose the document, channels and whether to
@@ -1271,6 +1314,7 @@ export default function PedidosTab({
                           <option value="recibo">Recibo</option>
                         </select>
                         <button onClick={() => openEdit(p)} className="text-[10px] text-[#002045] font-bold hover:underline mr-3">Editar</button>
+                        <button onClick={() => resendToClient(p)} disabled={resendingId === p.id} className="text-[10px] text-[#3b6934] font-bold hover:underline mr-3 disabled:opacity-50">{resendingId === p.id ? "Reenviando…" : "Reenviar"}</button>
                         <button onClick={() => deletePedido(p.id)} className="text-[10px] text-red-600 font-bold hover:underline">Excluir</button>
                       </td>
                     </tr>
@@ -1340,6 +1384,7 @@ export default function PedidosTab({
                       <option value="recibo">Recibo</option>
                     </select>
                     <button onClick={() => openEdit(p)} className="text-[10px] text-[#002045] font-bold">Editar</button>
+                    <button onClick={() => resendToClient(p)} disabled={resendingId === p.id} className="text-[10px] text-[#3b6934] font-bold disabled:opacity-50">{resendingId === p.id ? "Reenviando…" : "Reenviar"}</button>
                     <button onClick={() => deletePedido(p.id)} className="text-[10px] text-red-600 font-bold">Excluir</button>
                   </div>
                 </div>

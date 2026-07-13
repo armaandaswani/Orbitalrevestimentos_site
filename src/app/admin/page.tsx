@@ -94,10 +94,21 @@ interface DbPhotoProject { id:string; slug:string; title:string; product_code:st
 interface DbRenderProject { id:string; slug:string; title:string; product_code:string; image_path:string; is_active:boolean; sort_order:number; }
 interface ProjectMedia { id:string; project_slug:string; type:"image"|"video"; url:string; caption:string|null; description:string|null; category:"antes"|"depois"|"geral"; sort_order:number; }
 
+interface SpaceBreakdownItem {
+  spaceName?: string;
+  productName?: string;
+  productCode?: string | null;
+  dimLabel?: string;
+  plates?: number;
+  area_m2?: number;
+  total?: number;
+}
+
 interface CouponUse {
   id: string;
   partner_id: string;
   coupon_code: string;
+  space_breakdown?: SpaceBreakdownItem[] | null;
   space: string | null;
   product_name: string | null;
   product_code: string | null;
@@ -2232,6 +2243,9 @@ export default function AdminPage() {
       coupon_use_id: c.coupon_use_id,
       sales_rep_referral_code: cu?.sales_rep_referral_code ?? null,
       created_at: c.created_at,
+      // Per-ambiente breakdown from the simulador — lets the conversion create
+      // one order line item per ambiente instead of collapsing to one.
+      space_breakdown: Array.isArray(cu?.space_breakdown) ? cu!.space_breakdown : null,
     };
   }
 
