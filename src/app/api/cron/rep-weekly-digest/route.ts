@@ -29,9 +29,33 @@ function fmtDate(iso: string) {
 
 interface CrmRow {
   id: string;
-  partner_id: string;
+  partner_id: string | null;
+  prospect_name: string | null;
+  stage: string | null;
   reminder_note: string | null;
   next_reminder_at: string;
+  mostruario_sent?: boolean | null;
+  mostruario_received?: boolean | null;
+  has_specified?: boolean | null;
+  specified_count?: number | null;
+  project_added?: boolean | null;
+  project_added_count?: number | null;
+}
+
+// What the rep should do next for this contact — mirrors the daily digest so
+// the summary explains the action, not just the name.
+function crmAction(r: CrmRow): string {
+  if (r.mostruario_sent && !r.mostruario_received) return "Confirmar se o mostruário chegou";
+  if (r.mostruario_received && !(r.has_specified || (r.specified_count ?? 0) > 0)) return "Pedir feedback do mostruário e puxar a primeira especificação";
+  if ((r.specified_count ?? 0) > 0 && !(r.project_added || (r.project_added_count ?? 0) > 0)) return "Perguntar em qual projeto a Orbital pode entrar";
+  switch (r.stage) {
+    case "reuniao_agendada": return "Confirmar presença, horário e pauta";
+    case "reuniao_realizada": return "Registrar o resultado e combinar o próximo passo";
+    case "acompanhamento": return "Fazer o follow-up combinado";
+    case "ativo": return "Manter aquecido e buscar novo projeto";
+    case "inativo": return "Reativar ou arquivar";
+    default: return "Fazer o primeiro contato e tentar agendar reunião";
+  }
 }
 interface MeetingRow {
   id: string;
@@ -75,7 +99,7 @@ export async function GET(req: NextRequest) {
   for (const rep of reps) {
     const { data: crmDue, error: crmErr } = await db
       .from("rep_partner_crm")
-      .select("id, partner_id, reminder_note, next_reminder_at")
+      .select("id, partner_id, prospect_name, stage, reminder_note, next_reminder_at, mostruario_sent, mostruario_received, has_specified, specified_count, project_added, project_added_count")
       .eq("sales_rep_id", rep.id)
       .not("next_reminder_at", "is", null)
       .lte("next_reminder_at", nowIso)
@@ -98,7 +122,7 @@ export async function GET(req: NextRequest) {
     const upcoming = (meetings ?? []) as MeetingRow[];
     if (due.length === 0 && upcoming.length === 0) continue;
 
-    const partnerIds = [...new Set([...due.map((d) => d.partner_id), ...upcoming.map((m) => m.partner_id).filter(Boolean) as string[]])];
+    const partnerIds = [...new Set([...due.map((d) => d.partner_id).filter(Boolean) as string[], ...upcoming.map((m) => m.partner_id).filter(Boolean) as string[]])];
     const { data: partners } = partnerIds.length
       ? await db.from("partners").select("id, name").in("id", partnerIds)
       : { data: [] };
@@ -108,9 +132,9 @@ export async function GET(req: NextRequest) {
     if (due.length > 0) {
       lines.push(`📋 Follow-ups pendentes (${due.length}):`);
       due.forEach((d, i) => {
-        const partnerName = partnerNameById.get(d.partner_id) ?? "Parceiro";
-        const note = d.reminder_note ? ` — ${d.reminder_note}` : "";
-        lines.push(`${i + 1}. ${partnerName}${note}`);
+        const name = (d.partner_id ? partnerNameById.get(d.partner_id) : null) ?? d.prospect_name ?? "Contato";
+        const action = d.reminder_note?.trim() || crmAction(d);
+        lines.push(`${i + 1}. ${name} — ${action}`);
       });
     }
     if (upcoming.length > 0) {

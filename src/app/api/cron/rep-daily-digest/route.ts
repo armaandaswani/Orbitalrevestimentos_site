@@ -74,6 +74,16 @@ function fmtTime(iso: string) {
   });
 }
 
+function fmtDate(iso: string) {
+  return new Date(iso).toLocaleString("pt-BR", {
+    timeZone: TIME_ZONE,
+    day: "2-digit",
+    month: "2-digit",
+    hour: "2-digit",
+    minute: "2-digit",
+  });
+}
+
 function escapeHtml(s: string) {
   return s
     .replace(/&/g, "&amp;")
@@ -100,7 +110,13 @@ function stageAction(stage: string) {
   }
 }
 
-function suggestedAction(row: CrmRow) {
+function suggestedAction(row: CrmRow, hasPastMeeting = false) {
+  // A meeting whose date already passed but the contact is still "reuniao
+  // agendada" means the update is pending — ask if it happened instead of
+  // telling the rep to "confirm attendance" for a meeting that's already gone.
+  if (hasPastMeeting && row.stage === "reuniao_agendada") {
+    return "A reunião já passou — ela aconteceu? Registre o resultado e o próximo passo.";
+  }
   if (row.mostruario_sent && !row.mostruario_received) return "Confirmar se o mostruario chegou.";
   if (row.mostruario_received && !(row.has_specified || (row.specified_count ?? 0) > 0)) {
     return "Pedir feedback do mostruario e puxar primeira especificacao.";
@@ -144,8 +160,10 @@ export async function GET(req: NextRequest) {
 
   const now = new Date();
   const today = dateKey(now);
-  const roughStart = new Date(now.getTime() - 18 * 3600 * 1000).toISOString();
   const roughEnd = new Date(now.getTime() + 36 * 3600 * 1000).toISOString();
+  // Look back a week for still-"scheduled" meetings whose date already passed —
+  // those need an "aconteceu?" nudge, not silence.
+  const meetingWindowStart = new Date(now.getTime() - 7 * 24 * 3600 * 1000).toISOString();
   const canWhatsapp = smclickConfigured();
   let resend: ReturnType<typeof getResend> | null = null;
   try {
@@ -163,7 +181,7 @@ export async function GET(req: NextRequest) {
       .select("id, title, scheduled_at, partner_id, invitees")
       .eq("sales_rep_id", rep.id)
       .eq("status", "scheduled")
-      .gte("scheduled_at", roughStart)
+      .gte("scheduled_at", meetingWindowStart)
       .lte("scheduled_at", roughEnd)
       .order("scheduled_at", { ascending: true })
       .limit(100);
@@ -179,13 +197,19 @@ export async function GET(req: NextRequest) {
       .limit(100);
     if (crmErr && !isMissingTable(crmErr)) continue;
 
-    const todaysMeetings = ((meetings ?? []) as MeetingRow[]).filter((m) => dateKey(m.scheduled_at) === today);
+    const allMeetings = (meetings ?? []) as MeetingRow[];
+    const todaysMeetings = allMeetings.filter((m) => dateKey(m.scheduled_at) === today);
+    // Still-scheduled meetings whose date already passed → pending confirmation.
+    const pastMeetings = allMeetings.filter((m) => dateKey(m.scheduled_at) < today);
+    const pastMeetingPartnerIds = new Set(pastMeetings.map((m) => m.partner_id).filter(Boolean) as string[]);
+    const hasPast = (r: CrmRow) => !!r.partner_id && pastMeetingPartnerIds.has(r.partner_id);
     const dueFollowups = ((crmRows ?? []) as CrmRow[]).filter((r) => dueForDigest(r, today));
 
     const partnerIds = [
       ...new Set(
         [
           ...todaysMeetings.map((m) => m.partner_id).filter(Boolean),
+          ...pastMeetings.map((m) => m.partner_id).filter(Boolean),
           ...dueFollowups.map((r) => r.partner_id).filter(Boolean),
         ] as string[]
       ),
@@ -198,8 +222,14 @@ export async function GET(req: NextRequest) {
     );
 
     const adminLines = [
-      `${rep.name}: ${todaysMeetings.length} reuniao(oes), ${dueFollowups.length} follow-up(s).`,
+      `${rep.name}: ${todaysMeetings.length} reuniao(oes), ${dueFollowups.length} follow-up(s)${pastMeetings.length ? `, ${pastMeetings.length} reuniao(oes) a confirmar` : ""}.`,
     ];
+    if (pastMeetings.length) {
+      adminLines.push("Reunioes que ja passaram (aconteceram?):");
+      pastMeetings.forEach((m, i) => {
+        adminLines.push(`${i + 1}. ${fmtDate(m.scheduled_at)} - ${meetingLabel(m, partnerMap)}`);
+      });
+    }
     if (todaysMeetings.length) {
       adminLines.push("Reunioes para confirmar:");
       todaysMeetings.forEach((m, i) => {
@@ -210,15 +240,15 @@ export async function GET(req: NextRequest) {
       adminLines.push("Acoes/follow-ups:");
       dueFollowups.forEach((r, i) => {
         const note = r.reminder_note ? ` Nota: ${r.reminder_note}.` : "";
-        adminLines.push(`${i + 1}. ${partnerLabel(r, partnerMap)} - ${suggestedAction(r)}${note}`);
+        adminLines.push(`${i + 1}. ${partnerLabel(r, partnerMap)} - ${suggestedAction(r, hasPast(r))}${note}`);
       });
     }
-    if (!todaysMeetings.length && !dueFollowups.length) {
+    if (!todaysMeetings.length && !dueFollowups.length && !pastMeetings.length) {
       adminLines.push("Sem reunioes ou follow-ups previstos para hoje.");
     }
     adminSections.push(adminLines.join("\n"));
 
-    if (!todaysMeetings.length && !dueFollowups.length) {
+    if (!todaysMeetings.length && !dueFollowups.length && !pastMeetings.length) {
       results.push({ rep: rep.name, meetings: 0, followups: 0, sentVia: [] });
       continue;
     }
@@ -229,8 +259,17 @@ export async function GET(req: NextRequest) {
       "",
     ];
 
+    let sec = 0;
+    if (pastMeetings.length) {
+      lines.push(`${++sec}) Reunioes que ja passaram — aconteceram? (${pastMeetings.length})`);
+      pastMeetings.forEach((m, i) => {
+        lines.push(`${i + 1}. ${fmtDate(m.scheduled_at)} - ${meetingLabel(m, partnerMap)} - registre o resultado e o proximo passo.`);
+      });
+      lines.push("");
+    }
+
     if (todaysMeetings.length) {
-      lines.push(`1) Confirmar reunioes de hoje (${todaysMeetings.length})`);
+      lines.push(`${++sec}) Confirmar reunioes de hoje (${todaysMeetings.length})`);
       todaysMeetings.forEach((m, i) => {
         lines.push(`${i + 1}. ${fmtTime(m.scheduled_at)} - ${meetingLabel(m, partnerMap)} - confirmar presenca e pauta.`);
       });
@@ -238,10 +277,10 @@ export async function GET(req: NextRequest) {
     }
 
     if (dueFollowups.length) {
-      lines.push(`${todaysMeetings.length ? "2" : "1"}) Follow-ups para hoje/atrasados (${dueFollowups.length})`);
+      lines.push(`${++sec}) Follow-ups para hoje/atrasados (${dueFollowups.length})`);
       dueFollowups.forEach((r, i) => {
         const note = r.reminder_note ? ` Nota: ${r.reminder_note}.` : "";
-        lines.push(`${i + 1}. ${partnerLabel(r, partnerMap)} - ${suggestedAction(r)}${note}`);
+        lines.push(`${i + 1}. ${partnerLabel(r, partnerMap)} - ${suggestedAction(r, hasPast(r))}${note}`);
       });
       lines.push("");
     }
