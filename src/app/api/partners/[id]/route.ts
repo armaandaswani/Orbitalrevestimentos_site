@@ -91,10 +91,19 @@ export async function PUT(
     }
   }
 
+  // Audit the commission-split change: who last moved the slider and when.
+  const touchingSplit = "discount_value" in update || "commission_value" in update;
+  if (touchingSplit) {
+    update.commission_updated_at = new Date().toISOString();
+    update.commission_updated_by = isAdmin ? "Admin" : ((current?.name as string) || "Parceiro");
+  }
+
   let { data, error } = await db.from("partners").update(update).eq("id", id).select().single();
-  // commission_pool_pct column not there yet → retry without it.
-  if (error && /commission_pool_pct/i.test(error.message)) {
+  // Newer columns may not exist yet (migrations 026/041) — drop them and retry.
+  if (error && /commission_pool_pct|commission_updated_at|commission_updated_by/i.test(error.message)) {
     delete update.commission_pool_pct;
+    delete update.commission_updated_at;
+    delete update.commission_updated_by;
     ({ data, error } = await db.from("partners").update(update).eq("id", id).select().single());
   }
 
@@ -111,10 +120,9 @@ export async function PUT(
         const { subject, html } = generatePartnerWelcomeEmail({
           partnerName: data.name as string,
           couponCode: data.coupon_code as string,
-          discountLabel: formatValueLabel(
-            (data.discount_type as "percentage" | "fixed") ?? "percentage",
-            (data.discount_value as number) ?? 0
-          ),
+          discountLabel: (Number(data.discount_value) || 0) > 0
+            ? formatValueLabel((data.discount_type as "percentage" | "fixed") ?? "percentage", data.discount_value as number)
+            : null,
           bonusLabel: formatValueLabel(
             (data.commission_type as "percentage" | "fixed") ?? "percentage",
             (data.commission_value as number) ?? 0

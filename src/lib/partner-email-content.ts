@@ -66,7 +66,9 @@ function wrap(preheader: string, body: string) {
 export interface PartnerWelcomeParams {
   partnerName: string;
   couponCode: string;
-  discountLabel: string;   // e.g. "10%" or "R$ 150"
+  // null/empty ⇒ the client gets no discount → the "desconto para o cliente"
+  // column is omitted entirely (never show "0%" / negative wording).
+  discountLabel: string | null;   // e.g. "10%" or "R$ 150"
   bonusLabel: string;      // e.g. "5% sobre o material" or "R$ 200 por venda"
   portalPassword?: string; // include initial credentials when set by admin
 }
@@ -91,7 +93,7 @@ export function generatePartnerWelcomeEmail(p: PartnerWelcomeParams): { subject:
 
 <p style="color:#43474e;font-size:14px;line-height:1.85;margin:0 0 8px;font-family:Arial,sans-serif;">Seu cadastro como parceiro Orbital foi aprovado. A partir de agora, você tem acesso a todas as ferramentas do programa — e este e-mail reúne o essencial para começar.</p>
 
-${sectionLabel("Seu cupom de desconto")}
+${sectionLabel(p.discountLabel ? "Seu cupom de desconto" : "Seu cupom exclusivo")}
 
 <!-- Coupon block -->
 <table width="100%" cellpadding="0" cellspacing="0" style="background:#002045;margin:0 0 12px;">
@@ -100,12 +102,12 @@ ${sectionLabel("Seu cupom de desconto")}
     <p style="margin:0 0 20px;color:#ffffff;font-size:32px;font-weight:700;letter-spacing:0.28em;font-family:Arial,sans-serif;">${p.couponCode}</p>
     <table width="100%" cellpadding="0" cellspacing="0">
       <tr>
-        <td style="width:50%;padding-right:12px;border-right:1px solid rgba(255,255,255,0.12);">
+        ${p.discountLabel ? `<td style="width:50%;padding-right:12px;border-right:1px solid rgba(255,255,255,0.12);">
           <p style="margin:0 0 4px;color:rgba(255,255,255,0.4);font-size:9px;letter-spacing:0.18em;text-transform:uppercase;font-family:Arial,sans-serif;">Desconto para o cliente</p>
           <p style="margin:0;color:#a1d494;font-size:16px;font-weight:700;font-family:Arial,sans-serif;">${p.discountLabel}</p>
           <p style="margin:2px 0 0;color:rgba(255,255,255,0.35);font-size:10px;font-family:Arial,sans-serif;">sobre o material</p>
         </td>
-        <td style="width:50%;padding-left:20px;">
+        <td style="width:50%;padding-left:20px;">` : `<td style="width:100%;">`}
           <p style="margin:0 0 4px;color:rgba(255,255,255,0.4);font-size:9px;letter-spacing:0.18em;text-transform:uppercase;font-family:Arial,sans-serif;">Sua bonificação prevista</p>
           <p style="margin:0;color:#a1d494;font-size:16px;font-weight:700;font-family:Arial,sans-serif;">${p.bonusLabel}</p>
           <p style="margin:2px 0 0;color:rgba(255,255,255,0.35);font-size:10px;font-family:Arial,sans-serif;">por venda concluída</p>
@@ -128,7 +130,7 @@ ${p.portalPassword ? `
   </td></tr>
 </table>
 ` : ""}
-<p style="color:#74777f;font-size:12px;line-height:1.7;margin:0 0 8px;font-family:Arial,sans-serif;">Compartilhe seu cupom com clientes para aplicar o desconto automaticamente — ou use o simulador abaixo para gerar um link já configurado.</p>
+<p style="color:#74777f;font-size:12px;line-height:1.7;margin:0 0 8px;font-family:Arial,sans-serif;">Compartilhe seu cupom com clientes para ${p.discountLabel ? "aplicar o desconto automaticamente" : "vincular a venda a você automaticamente"} — ou use o simulador abaixo para gerar um link já configurado.</p>
 
 ${sectionLabel("O simulador de orçamento")}
 

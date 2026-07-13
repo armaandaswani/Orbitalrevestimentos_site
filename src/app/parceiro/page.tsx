@@ -2322,71 +2322,83 @@ export default function ParceiroPage() {
 
 // Partner-side control: split the commission pool the admin made available
 // between a client discount and the partner's own commission, capped at the pool.
+// Single-slider commission split. The partner has a fixed pool (%) to share
+// between the client discount and their own commission — the two ALWAYS sum to
+// the pool, so one slider is enough. Auto-saves (debounced) on change; no Save
+// button. The distribution reflects everywhere the partner is read (quotes,
+// discounts, admin) on the next load.
 function RepasseCard({ partner, onSaved }: { partner: PartnerInfo; onSaved: (discount: number, commission: number) => void }) {
-  const pool = partner.commission_pool_pct ?? 0;
-  const [disc, setDisc] = useState<number>(partner.discount_value || 0);
-  const [comm, setComm] = useState<number>(partner.commission_value || 0);
-  const [saving, setSaving] = useState(false);
-  const [msg, setMsg] = useState<string | null>(null);
+  const pool = Math.max(0, partner.commission_pool_pct ?? 0);
+  const round = (n: number) => Math.round(n * 100) / 100;
+  const [disc, setDisc] = useState<number>(Math.min(pool, Math.max(0, partner.discount_value || 0)));
+  const comm = round(pool - disc);
+  const [status, setStatus] = useState<"idle" | "saving" | "saved" | "error">("idle");
+  const timer = useRef<ReturnType<typeof setTimeout> | null>(null);
 
-  const alloc = (Number(disc) || 0) + (Number(comm) || 0);
-  const over = alloc > pool + 0.001;
-  const rem = Math.round((pool - alloc) * 100) / 100;
-  const dirty = (Number(disc) || 0) !== (partner.discount_value || 0) || (Number(comm) || 0) !== (partner.commission_value || 0);
-
-  async function save() {
-    if (over || saving) return;
-    setSaving(true);
-    setMsg(null);
-    const res = await fetch(`/api/partners/${partner.id}`, {
+  function persist(nextDisc: number) {
+    setStatus("saving");
+    fetch(`/api/partners/${partner.id}`, {
       method: "PUT",
       headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ discount_value: Number(disc) || 0, commission_value: Number(comm) || 0 }),
-    });
-    setSaving(false);
-    if (res.ok) {
-      onSaved(Number(disc) || 0, Number(comm) || 0);
-      setMsg("Salvo!");
-      setTimeout(() => setMsg(null), 2500);
-    } else {
-      const j = await res.json().catch(() => null);
-      setMsg(j?.error || "Erro ao salvar.");
-    }
+      body: JSON.stringify({ discount_value: round(nextDisc), commission_value: round(pool - nextDisc) }),
+    })
+      .then((res) => {
+        if (res.ok) { setStatus("saved"); onSaved(round(nextDisc), round(pool - nextDisc)); }
+        else setStatus("error");
+      })
+      .catch(() => setStatus("error"));
   }
 
-  const inputCls =
-    "w-24 border border-[#e2e2e2] px-2 py-1.5 text-sm font-[var(--font-inter)] text-[#002045] focus:outline-none focus:border-[#002045]";
+  function onSlide(v: number) {
+    const nd = Math.min(pool, Math.max(0, v));
+    setDisc(nd);
+    if (timer.current) clearTimeout(timer.current);
+    timer.current = setTimeout(() => persist(nd), 500);
+  }
+
+  useEffect(() => () => { if (timer.current) clearTimeout(timer.current); }, []);
+
+  if (pool <= 0) return null;
 
   return (
     <div className="bg-white border border-[#e2e2e2] px-6 py-5 mb-4">
       <p className="text-[#74777f] text-[10px] tracking-[0.15em] uppercase font-bold font-[var(--font-inter)] mb-1">
         Seu repasse
       </p>
-      <p className="text-[#43474e] text-sm font-[var(--font-inter)] mb-4">
-        Você tem <strong className="text-[#002045]">{pool}%</strong> da venda para distribuir. Escolha quanto vira desconto
-        para o cliente e quanto fica como sua comissão (a soma não pode passar de {pool}%).
+      <p className="text-[#43474e] text-sm font-[var(--font-inter)] mb-5">
+        Você tem <strong className="text-[#002045]">{pool}%</strong> da venda para dividir entre a sua comissão e o desconto do cliente.
+        Arraste para ajustar — salva sozinho.
       </p>
-      <div className="flex flex-wrap items-end gap-5">
-        <label className="flex flex-col gap-1">
-          <span className="text-[#74777f] text-[10px] uppercase tracking-wider font-bold font-[var(--font-inter)]">Desconto ao cliente (%)</span>
-          <input type="number" min="0" step="0.5" max={pool} value={disc} onChange={(e) => setDisc(parseFloat(e.target.value) || 0)} className={inputCls} />
-        </label>
-        <label className="flex flex-col gap-1">
-          <span className="text-[#74777f] text-[10px] uppercase tracking-wider font-bold font-[var(--font-inter)]">Sua comissão (%)</span>
-          <input type="number" min="0" step="0.5" max={pool} value={comm} onChange={(e) => setComm(parseFloat(e.target.value) || 0)} className={inputCls} />
-        </label>
-        <button
-          onClick={save}
-          disabled={over || saving || !dirty}
-          className="bg-[#002045] text-white text-xs tracking-[0.1em] uppercase font-bold font-[var(--font-inter)] px-5 py-2.5 hover:bg-[#1a365d] transition-colors disabled:opacity-40 disabled:cursor-not-allowed"
-        >
-          {saving ? "Salvando…" : "Salvar"}
-        </button>
-        <p className={`text-xs font-[var(--font-inter)] ${over ? "text-red-600 font-bold" : "text-[#74777f]"}`}>
-          {over ? `Excede o repasse em ${Math.abs(rem)}%` : `${rem}% ainda disponível`}
-          {msg ? ` · ${msg}` : ""}
-        </p>
+
+      <div className="flex items-end justify-between mb-2">
+        <div>
+          <p className="text-[#74777f] text-[10px] tracking-[0.12em] uppercase font-bold font-[var(--font-inter)]">Sua comissão</p>
+          <p className="text-[#3b6934] text-2xl font-bold font-[var(--font-inter)] leading-none mt-1">{comm}%</p>
+        </div>
+        <div className="text-right">
+          <p className="text-[#74777f] text-[10px] tracking-[0.12em] uppercase font-bold font-[var(--font-inter)]">Desconto ao cliente</p>
+          <p className="text-[#002045] text-2xl font-bold font-[var(--font-inter)] leading-none mt-1">{disc}%</p>
+        </div>
       </div>
+
+      <input
+        type="range"
+        min={0}
+        max={pool}
+        step={0.5}
+        value={disc}
+        onChange={(e) => onSlide(parseFloat(e.target.value) || 0)}
+        className="w-full accent-[#002045] cursor-pointer"
+        aria-label="Distribuição do repasse entre comissão e desconto"
+      />
+      <div className="flex justify-between text-[10px] text-[#9aa3b3] font-[var(--font-inter)] mt-1">
+        <span>Tudo como comissão</span>
+        <span>Tudo como desconto</span>
+      </div>
+
+      <p className={`text-xs font-[var(--font-inter)] mt-3 ${status === "error" ? "text-red-600 font-bold" : "text-[#74777f]"}`}>
+        {status === "saving" ? "Salvando…" : status === "saved" ? "✓ Salvo automaticamente" : status === "error" ? "Erro ao salvar — tente de novo." : "As mudanças são salvas automaticamente."}
+      </p>
     </div>
   );
 }

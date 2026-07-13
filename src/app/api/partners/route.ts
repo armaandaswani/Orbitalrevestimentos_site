@@ -98,10 +98,9 @@ export async function POST(req: NextRequest) {
         const { subject, html } = generatePartnerWelcomeEmail({
           partnerName: name as string,
           couponCode: (coupon_code as string).toUpperCase(),
-          discountLabel: formatValueLabel(
-            (discount_type as "percentage" | "fixed") ?? "percentage",
-            (discount_value as number) ?? 0
-          ),
+          discountLabel: (Number(discount_value) || 0) > 0
+            ? formatValueLabel((discount_type as "percentage" | "fixed") ?? "percentage", discount_value as number)
+            : null,
           bonusLabel: formatValueLabel(
             (commission_type as "percentage" | "fixed") ?? "percentage",
             (commission_value as number) ?? 0

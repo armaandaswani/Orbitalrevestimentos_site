@@ -61,6 +61,8 @@ interface Partner {
   commission_type: "percentage" | "fixed";
   commission_value: number;
   commission_pool_pct?: number | null;
+  commission_updated_at?: string | null;
+  commission_updated_by?: string | null;
   has_portal_password?: boolean;
   status: "active" | "inactive" | "pending";
   is_self_registered: boolean | null;
@@ -764,6 +766,14 @@ export default function AdminPage() {
     fetchUses();
     fetchFollowUps();
   }, [authed, tab, supabaseConfigured, fetchPartners, fetchReps, fetchUses, fetchFollowUps]);
+
+  // Auto-refresh the Parceiros tab so a partner moving their commission slider
+  // shows up here without a manual reload (poll — no realtime socket needed).
+  useEffect(() => {
+    if (!authed || tab !== "partners") return;
+    const t = setInterval(() => { fetchPartners(); }, 20000);
+    return () => clearInterval(t);
+  }, [authed, tab, fetchPartners]);
 
   useEffect(() => {
     if (tab === "dashboard" && authed && !dashData && !dashLoading) {
@@ -3177,7 +3187,15 @@ export default function AdminPage() {
                           <td className="px-5 py-4"><span className="bg-[#eef2f8] text-[#002045] px-2 py-1 text-xs font-bold tracking-wider">{p.coupon_code}</span></td>
                           <td className="px-5 py-4 text-xs text-[#43474e]">{p.profession || <span className="italic text-[#74777f]">—</span>}</td>
                           <td className="px-5 py-4 text-[#43474e]">{p.discount_type === "percentage" ? `${p.discount_value}%` : fmt(p.discount_value)}</td>
-                          <td className="px-5 py-4 text-[#43474e]">{p.commission_type === "percentage" ? `${p.commission_value}%` : fmt(p.commission_value)}</td>
+                          <td className="px-5 py-4 text-[#43474e]">
+                            {p.commission_type === "percentage" ? `${p.commission_value}%` : fmt(p.commission_value)}
+                            {p.commission_pool_pct != null && p.commission_type === "percentage" && (
+                              <span className="block text-[9px] text-[#74777f] mt-0.5">repasse {p.commission_pool_pct}% · cliente {p.discount_value}%</span>
+                            )}
+                            {p.commission_updated_at && (
+                              <span className="block text-[9px] text-[#b0b0b0] mt-0.5">↻ {new Date(p.commission_updated_at).toLocaleDateString("pt-BR")} · {p.commission_updated_by || "—"}</span>
+                            )}
+                          </td>
                           <td className="px-5 py-4 text-xs text-[#74777f]">
                             {(() => {
                               const junctionReps = (p.partner_sales_reps ?? [])
@@ -3253,7 +3271,12 @@ export default function AdminPage() {
                       <div className="grid grid-cols-2 gap-x-4 gap-y-1.5 text-xs font-[var(--font-inter)] mb-3">
                         <span className="text-[#74777f]">Profissão</span><span className="text-right text-[#43474e]">{p.profession || "—"}</span>
                         <span className="text-[#74777f]">Desconto</span><span className="text-right text-[#43474e]">{p.discount_type === "percentage" ? `${p.discount_value}%` : fmt(p.discount_value)}</span>
-                        <span className="text-[#74777f]">Comissão</span><span className="text-right text-[#43474e]">{p.commission_type === "percentage" ? `${p.commission_value}%` : fmt(p.commission_value)}</span>
+                        <span className="text-[#74777f]">Comissão</span>
+                        <span className="text-right text-[#43474e]">
+                          {p.commission_type === "percentage" ? `${p.commission_value}%` : fmt(p.commission_value)}
+                          {p.commission_pool_pct != null && p.commission_type === "percentage" && <span className="block text-[9px] text-[#74777f]">repasse {p.commission_pool_pct}% · cliente {p.discount_value}%</span>}
+                          {p.commission_updated_at && <span className="block text-[9px] text-[#b0b0b0]">↻ {new Date(p.commission_updated_at).toLocaleDateString("pt-BR")} · {p.commission_updated_by || "—"}</span>}
+                        </span>
                         <span className="text-[#74777f]">Rep. (captação)</span><span className="text-right text-[#43474e] truncate">{repName}</span>
                         <span className="text-[#74777f]">Senha Portal</span><span className="text-right">{p.has_portal_password ? <span className="text-green-700 font-semibold">Definida</span> : <span className="text-[#74777f] italic">—</span>}</span>
                         <span className="text-[#74777f]">Status</span><span className="text-right"><span className={`px-2 py-0.5 text-[10px] font-bold tracking-wider ${p.status === "active" ? "bg-green-100 text-green-800" : "bg-gray-100 text-gray-600"}`}>{p.status === "active" ? "Ativo" : "Inativo"}</span></span>
