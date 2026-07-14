@@ -151,7 +151,27 @@ export default function RelatoriosTab() {
 
           {/* Rentabilidade por produto */}
           <Card title="Rentabilidade por produto" padded={false}>
-            <div className="overflow-x-auto">
+            {/* Mobile: card per product */}
+            <div className="md:hidden divide-y divide-[#f0f0f0]">
+              {data.by_product.map((p, i) => (
+                <div key={p.product_id ?? `n${i}`} className="p-4">
+                  <div className="flex items-start justify-between gap-2">
+                    <p className="text-sm font-semibold text-[#002045] min-w-0">
+                      <span className="text-[10px] text-[#b0b0b0] font-bold mr-2">{i + 1}</span>{p.name}
+                    </p>
+                    <StatusBadge tone={marginTone(p.margin)}>{p.margin}%</StatusBadge>
+                  </div>
+                  <div className="grid grid-cols-3 gap-2 mt-3">
+                    <div><p className="text-[9px] uppercase tracking-wider font-bold text-[#74777f]">Receita</p><p className="text-xs text-[#002045]">{fmtBRL(p.revenue)}</p></div>
+                    <div><p className="text-[9px] uppercase tracking-wider font-bold text-[#74777f]">Custo</p><p className="text-xs text-[#74777f]">{fmtBRL(p.cost)}</p></div>
+                    <div><p className="text-[9px] uppercase tracking-wider font-bold text-[#74777f]">Lucro</p><p className={`text-xs font-bold ${p.profit < 0 ? "text-red-600" : "text-[#002045]"}`}>{fmtBRL(p.profit)}</p></div>
+                  </div>
+                  <p className="text-[10px] text-[#74777f] mt-2">{p.units} unid. · {p.orders} pedido{p.orders !== 1 ? "s" : ""}</p>
+                </div>
+              ))}
+            </div>
+            {/* Desktop: table */}
+            <div className="hidden md:block overflow-x-auto">
               <table className="w-full text-sm font-[var(--font-inter)]">
                 <thead>
                   <tr>
@@ -232,7 +252,33 @@ export default function RelatoriosTab() {
             {data.velocity.length === 0 ? (
               <p className="px-5 py-6 text-xs text-[#74777f] font-[var(--font-inter)]">Sem dados de estoque para calcular o giro.</p>
             ) : (
-              <div className="overflow-x-auto">
+              <>
+              {/* Mobile: card per product */}
+              <div className="md:hidden divide-y divide-[#f0f0f0]">
+                {data.velocity.map((v) => {
+                  const d = v.days_to_empty;
+                  const tone = d == null ? "gray" : d <= 14 ? "red" : d <= 45 ? "yellow" : "green";
+                  const label = d == null ? "sem giro" : d <= 0 ? "esgotado" : `${d} dias`;
+                  return (
+                    <div key={v.product_id} className="p-4">
+                      <div className="flex items-start justify-between gap-2">
+                        <div className="min-w-0">
+                          <p className="text-sm font-semibold text-[#002045] truncate">{v.name}</p>
+                          {v.code && <p className="text-[10px] text-[#74777f]">{v.code}</p>}
+                        </div>
+                        <StatusBadge tone={tone}>{label}</StatusBadge>
+                      </div>
+                      <div className="grid grid-cols-3 gap-2 mt-3">
+                        <div><p className="text-[9px] uppercase tracking-wider font-bold text-[#74777f]">Em estoque</p><p className="text-xs text-[#43474e]">{v.on_hand} {v.unit}</p></div>
+                        <div><p className="text-[9px] uppercase tracking-wider font-bold text-[#74777f]">Consumo/dia</p><p className="text-xs text-[#43474e]">{v.per_day > 0 ? v.per_day : "—"}</p></div>
+                        <div><p className="text-[9px] uppercase tracking-wider font-bold text-[#74777f]">Saiu no período</p><p className="text-xs text-[#74777f]">{v.consumed_window}</p></div>
+                      </div>
+                    </div>
+                  );
+                })}
+              </div>
+              {/* Desktop: table */}
+              <div className="hidden md:block overflow-x-auto">
                 <table className="w-full text-sm font-[var(--font-inter)]">
                   <thead>
                     <tr>
@@ -262,6 +308,7 @@ export default function RelatoriosTab() {
                   </tbody>
                 </table>
               </div>
+              </>
             )}
             <p className="px-4 py-3 text-[11px] text-[#74777f] font-[var(--font-inter)] border-t border-[#f0f0f0]">Consumo/dia = saídas (vendas + baixas) ÷ {data.range.velocity_days} dias. &quot;Acaba em&quot; projeta o estoque atual nesse ritmo. Produtos parados aparecem como &quot;sem giro&quot;.</p>
           </Card>

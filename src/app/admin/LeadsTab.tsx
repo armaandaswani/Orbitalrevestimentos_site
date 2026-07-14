@@ -475,7 +475,7 @@ export default function LeadsTab({
             placeholder="Buscar por nome, e-mail, telefone…"
             value={search}
             onChange={(e) => setSearch(e.target.value)}
-            className="border border-[#e2e2e2] px-3 py-2 text-sm font-[var(--font-inter)] text-[#002045] focus:outline-none focus:border-[#002045] min-w-[240px]"
+            className="w-full sm:w-auto border border-[#e2e2e2] px-3 py-2 text-sm font-[var(--font-inter)] text-[#002045] focus:outline-none focus:border-[#002045] sm:min-w-[240px]"
           />
           <select
             value={statusFilter}

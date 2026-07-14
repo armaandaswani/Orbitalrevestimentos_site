@@ -414,7 +414,7 @@ export default function RepOversightTab({ reps }: { reps: RepOption[] }) {
         <select
           value={repFilter}
           onChange={(e) => setRepFilter(e.target.value)}
-          className="border border-[#d7dbe3] px-3 py-2 text-xs font-[var(--font-inter)] text-[#002045] focus:outline-none focus:border-[#002045] min-w-[200px]"
+          className="w-full sm:w-auto border border-[#d7dbe3] px-3 py-2 text-xs font-[var(--font-inter)] text-[#002045] focus:outline-none focus:border-[#002045] sm:min-w-[200px]"
         >
           <option value="all">Todos os representantes</option>
           {reps.map((r) => (
@@ -474,7 +474,7 @@ export default function RepOversightTab({ reps }: { reps: RepOption[] }) {
               value={unifiedSearch}
               onChange={(e) => setUnifiedSearch(e.target.value)}
               placeholder="Buscar no funil..."
-              className="border border-[#d7dbe3] px-3 py-2 text-xs font-[var(--font-inter)] text-[#002045] focus:outline-none focus:border-[#002045] min-w-[220px]"
+              className="w-full sm:w-auto border border-[#d7dbe3] px-3 py-2 text-xs font-[var(--font-inter)] text-[#002045] focus:outline-none focus:border-[#002045] sm:min-w-[220px]"
             />
             {(["all", "lead", "rep"] as const).map((kind) => (
               <button

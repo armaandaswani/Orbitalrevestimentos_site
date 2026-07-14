@@ -187,7 +187,44 @@ export default function CustosTab() {
 
       {view === "custos" ? (
         <Card title="Composição de custo por produto" padded={false}>
-          <div className="overflow-x-auto">
+          {/* Mobile: card per product */}
+          <div className="md:hidden divide-y divide-[#f0f0f0]">
+            {products.map((p) => {
+              const d = draftOf(p);
+              const landed = landedOf(d);
+              const dirty = !!drafts[p.id];
+              const applied = num(p.cost_price) > 0 && Math.abs(num(p.cost_price) - landed) < 0.005;
+              return (
+                <div key={p.id} className="p-4">
+                  <p className="text-sm font-semibold text-[#002045]">{p.name}</p>
+                  <p className="text-[10px] text-[#74777f] mb-3">{[p.code, p.linha].filter(Boolean).join(" · ") || "—"}</p>
+                  <div className="grid grid-cols-2 gap-3">
+                    <label className="block"><span className="block text-[9px] uppercase tracking-wider font-bold text-[#74777f] mb-1">FOB</span><MoneyInput value={d.fob_cost ?? null} onChange={(v) => setField(p.id, "fob_cost", v)} /></label>
+                    <label className="block"><span className="block text-[9px] uppercase tracking-wider font-bold text-[#74777f] mb-1">Frete</span><MoneyInput value={d.freight_cost ?? null} onChange={(v) => setField(p.id, "freight_cost", v)} /></label>
+                    <label className="block"><span className="block text-[9px] uppercase tracking-wider font-bold text-[#74777f] mb-1">Imposto</span><MoneyInput value={d.duty_cost ?? null} onChange={(v) => setField(p.id, "duty_cost", v)} /></label>
+                    <label className="block"><span className="block text-[9px] uppercase tracking-wider font-bold text-[#74777f] mb-1">Outros</span><MoneyInput value={d.other_import_cost ?? null} onChange={(v) => setField(p.id, "other_import_cost", v)} /></label>
+                  </div>
+                  <div className="flex items-center justify-between mt-3 pt-3 border-t border-[#f0f0f0]">
+                    <div>
+                      <p className="text-[9px] uppercase tracking-wider font-bold text-[#74777f]">Custo total</p>
+                      <p className="text-sm font-bold text-[#002045]">{landed > 0 ? fmtBRL(landed) : "—"}</p>
+                      <p className="text-[10px] text-[#74777f]">atual: {num(p.cost_price) > 0 ? fmtBRL(num(p.cost_price)) : "—"}</p>
+                    </div>
+                    <div className="flex flex-col items-end gap-1.5">
+                      {dirty && <button onClick={() => save(p)} disabled={savingId === p.id} className="text-[11px] text-[#74777f] font-bold hover:text-[#002045]">Salvar</button>}
+                      {landed > 0 && !applied ? (
+                        <button onClick={() => save(p, { cost_price: landed })} disabled={savingId === p.id} className="text-[11px] text-[#3b6934] font-bold hover:underline">Aplicar como custo →</button>
+                      ) : applied ? (
+                        <StatusBadge tone="green">custo aplicado</StatusBadge>
+                      ) : null}
+                    </div>
+                  </div>
+                </div>
+              );
+            })}
+          </div>
+          {/* Desktop: table */}
+          <div className="hidden md:block overflow-x-auto">
             <table className="w-full text-sm font-[var(--font-inter)]">
               <thead>
                 <tr>
@@ -251,7 +288,54 @@ export default function CustosTab() {
             {costShock > 0 && <span className="text-[11px] text-[#74777f] font-[var(--font-inter)]">Custo simulado +{costShock}% (não altera nada salvo)</span>}
           </div>
           <Card title="Margem por produto — varejo e atacado" padded={false}>
-            <div className="overflow-x-auto">
+            {/* Mobile: card per product */}
+            <div className="md:hidden divide-y divide-[#f0f0f0]">
+              {products.map((p) => {
+                const baseCost = num(p.cost_price);
+                const cost = baseCost * (1 + costShock / 100);
+                const varejo = num(p.price);
+                const rate = p.linha ? pricingByLinha[p.linha] : undefined;
+                const atacado = rate ? num(rate.special_price) : 0;
+                const noCost = baseCost <= 0;
+                const mVarejo = marginPct(varejo, cost);
+                const mAtacado = marginPct(atacado, cost);
+                const marginCell = (price: number, m: number) => {
+                  if (noCost) return <span className="text-[10px] text-[#b0b0b0]">defina o custo</span>;
+                  if (price <= 0) return <span className="text-[#b0b0b0]">—</span>;
+                  const tone = m < 0 ? "red" : m < 20 ? "yellow" : "green";
+                  return <StatusBadge tone={tone}>{m.toFixed(0)}%</StatusBadge>;
+                };
+                return (
+                  <div key={p.id} className="p-4">
+                    <div className="flex items-start justify-between gap-2">
+                      <div className="min-w-0">
+                        <p className="text-sm font-semibold text-[#002045] truncate">{p.name}</p>
+                        <p className="text-[10px] text-[#74777f]">{[p.code, p.linha].filter(Boolean).join(" · ") || "—"}</p>
+                      </div>
+                      <div className="text-right shrink-0">
+                        <p className="text-[9px] uppercase tracking-wider font-bold text-[#74777f]">Custo</p>
+                        <p className="text-xs text-[#002045]">{noCost ? "—" : fmtBRL(cost)}</p>
+                        {costShock > 0 && !noCost && <p className="text-[9px] text-[#74777f]">base {fmtBRL(baseCost)}</p>}
+                      </div>
+                    </div>
+                    <div className="grid grid-cols-2 gap-3 mt-3">
+                      <div>
+                        <p className="text-[9px] uppercase tracking-wider font-bold text-[#74777f]">Varejo</p>
+                        <p className="text-xs text-[#002045] mb-1">{varejo > 0 ? fmtBRL(varejo) : "—"}</p>
+                        {marginCell(varejo, mVarejo)}
+                      </div>
+                      <div>
+                        <p className="text-[9px] uppercase tracking-wider font-bold text-[#74777f]">Atacado</p>
+                        <p className="text-xs text-[#002045] mb-1">{atacado > 0 ? fmtBRL(atacado) : "sem tabela"}</p>
+                        {marginCell(atacado, mAtacado)}
+                      </div>
+                    </div>
+                  </div>
+                );
+              })}
+            </div>
+            {/* Desktop: table */}
+            <div className="hidden md:block overflow-x-auto">
               <table className="w-full text-sm font-[var(--font-inter)]">
                 <thead>
                   <tr>

@@ -1190,7 +1190,7 @@ export default function PedidosTab({
             placeholder="Buscar por cliente, e-mail, telefone, produto…"
             value={search}
             onChange={(e) => setSearch(e.target.value)}
-            className="border border-[#e2e2e2] px-3 py-2 text-sm font-[var(--font-inter)] text-[#002045] focus:outline-none focus:border-[#002045] min-w-[280px]"
+            className="w-full sm:w-auto border border-[#e2e2e2] px-3 py-2 text-sm font-[var(--font-inter)] text-[#002045] focus:outline-none focus:border-[#002045] sm:min-w-[280px]"
           />
         </div>
       </div>
@@ -2235,7 +2235,7 @@ function RowActions({ p, resending, onEdit, onResend, onDocument, onDelete }: {
   const close = () => setOpen(false);
   const hasWa = !!p.client_phone;
   const hasEmail = !!p.client_email;
-  const item = "block w-full text-left px-3 py-1.5 text-xs hover:bg-[#f7f7f7]";
+  const item = "block w-full text-left px-3 py-1.5 text-xs hover:bg-[#f7f7f7] break-words";
   const label = "px-3 pt-2 pb-1 text-[9px] uppercase tracking-wider text-[#b0b0b0] font-[var(--font-inter)]";
   return (
     <div className="relative inline-block text-left" ref={ref}>
@@ -2248,7 +2248,7 @@ function RowActions({ p, resending, onEdit, onResend, onDocument, onDelete }: {
         {resending ? "Enviando…" : "Ações ▾"}
       </button>
       {open && (
-        <div className="absolute right-0 z-30 mt-1 w-56 bg-white border border-[#e2e2e2] shadow-lg py-1 font-[var(--font-inter)]">
+        <div className="absolute left-0 sm:left-auto sm:right-0 z-30 mt-1 w-56 max-w-[calc(100vw-2.5rem)] bg-white border border-[#e2e2e2] shadow-lg py-1 font-[var(--font-inter)]">
           <button onClick={() => { close(); onEdit(); }} className={`${item} text-[#002045] font-semibold`}>Editar</button>
 
           <div className={label}>Reenviar ao cliente</div>
