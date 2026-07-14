@@ -465,14 +465,14 @@ function MonthlyTrend({ data }: { data: MonthPoint[] }) {
         <p className="text-[#b0b0b0] text-xs font-[var(--font-inter)] py-8 text-center">Sem dados no período.</p>
       ) : (
         <>
-          <div className="flex items-end gap-2 h-40 overflow-x-auto">
+          <div className="flex items-end gap-1 sm:gap-2 h-40">
             {data.map((d) => (
-              <div key={d.month} className="flex flex-col items-center gap-1 flex-1 min-w-[40px]">
-                <div className="flex items-end gap-1 h-32 w-full justify-center">
-                  <div title={`Receita ${fmtBRL(d.revenue)}`} style={{ height: `${(d.revenue / max) * 100}%` }} className="w-3.5 bg-[#002045] rounded-t-sm transition-all" />
-                  <div title={`Líquido ${fmtBRL(d.net)}`} style={{ height: `${(Math.abs(d.net) / max) * 100}%` }} className={`w-3.5 rounded-t-sm transition-all ${d.net >= 0 ? "bg-[#2f5429]" : "bg-red-500"}`} />
+              <div key={d.month} className="flex flex-col items-center gap-1 flex-1 min-w-0">
+                <div className="flex items-end gap-0.5 sm:gap-1 h-32 w-full justify-center">
+                  <div title={`Receita ${fmtBRL(d.revenue)}`} style={{ height: `${(d.revenue / max) * 100}%` }} className="w-2.5 sm:w-3.5 bg-[#002045] rounded-t-sm transition-all" />
+                  <div title={`Líquido ${fmtBRL(d.net)}`} style={{ height: `${(Math.abs(d.net) / max) * 100}%` }} className={`w-2.5 sm:w-3.5 rounded-t-sm transition-all ${d.net >= 0 ? "bg-[#2f5429]" : "bg-red-500"}`} />
                 </div>
-                <span className="text-[9px] text-[#74777f] font-[var(--font-inter)] whitespace-nowrap">{monthLabel(d.month)}</span>
+                <span className="text-[8px] sm:text-[9px] text-[#74777f] font-[var(--font-inter)] whitespace-nowrap">{monthLabel(d.month)}</span>
               </div>
             ))}
           </div>

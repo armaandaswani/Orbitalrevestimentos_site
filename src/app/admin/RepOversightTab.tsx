@@ -510,7 +510,7 @@ export default function RepOversightTab({ reps }: { reps: RepOption[] }) {
         {leadsLoading || allLoading ? (
           <p className="text-[#74777f] text-sm font-[var(--font-inter)]">Carregando funil...</p>
         ) : (
-          <div className="flex gap-3 overflow-x-auto pb-3">
+          <div className="flex flex-col md:flex-row gap-3 md:overflow-x-auto pb-3">
             {UNIFIED_COLUMNS.map((column) => {
               const cards = unifiedCards.filter((card) => card.column === column.id);
               const columnValue = cards.reduce((sum, card) => sum + card.value, 0);
@@ -519,7 +519,7 @@ export default function RepOversightTab({ reps }: { reps: RepOption[] }) {
                   key={column.id}
                   onDragOver={(e) => e.preventDefault()}
                   onDrop={() => { if (draggingCard) moveUnifiedCard(draggingCard, column.id); }}
-                  className="flex-shrink-0 w-[292px] bg-[#f7f8fa] border border-[#e2e2e2]"
+                  className="w-full md:w-[292px] md:flex-shrink-0 bg-[#f7f8fa] border border-[#e2e2e2]"
                 >
                   <div className="px-3 py-2.5 border-b border-[#e2e2e2] bg-white">
                     <div className="flex items-center justify-between gap-2">
@@ -531,7 +531,7 @@ export default function RepOversightTab({ reps }: { reps: RepOption[] }) {
                       {columnValue > 0 && <p className="text-[#2f5429] text-[10px] font-semibold font-[var(--font-inter)]">{fmtBRL(columnValue)}</p>}
                     </div>
                   </div>
-                  <div className="p-2 space-y-2 min-h-[220px]">
+                  <div className="p-2 space-y-2 md:min-h-[220px]">
                     {cards.map((card) => (
                       <div
                         key={card.key}
