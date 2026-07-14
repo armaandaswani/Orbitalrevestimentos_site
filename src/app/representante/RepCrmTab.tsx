@@ -490,6 +490,19 @@ export default function RepCrmTab({
     } as Partial<CrmRow>);
   }
 
+  // One-tap snooze straight from the "Atenção agora" cards — persists immediately
+  // (unlike snoozeReminder, which only stages a draft for the expanded editor),
+  // so the rep clears an item without opening anything. Keeps the note.
+  const [quickBusyId, setQuickBusyId] = useState<string | null>(null);
+  async function quickSnooze(id: string, days: number) {
+    const d = new Date();
+    d.setDate(d.getDate() + days);
+    d.setHours(9, 0, 0, 0);
+    setQuickBusyId(id);
+    await patchRow(id, { next_reminder_at: d.toISOString() } as Partial<CrmRow>);
+    setQuickBusyId(null);
+  }
+
   const trackedPartnerIds = new Set(rows.map((r) => r.partner_id).filter(Boolean) as string[]);
   const untrackedPartners = linkedPartners.filter((p) => !trackedPartnerIds.has(p.id));
 
@@ -700,26 +713,41 @@ export default function RepCrmTab({
           <div className="grid grid-cols-1 lg:grid-cols-2 gap-2">
             {focusRows.map((r) => {
               const action = actionSummary(r);
+              const hasReminder = !!r.next_reminder_at;
+              const busy = quickBusyId === r.id;
               return (
-                <button
-                  key={r.id}
-                  onClick={() => toggleExpand(r.id)}
-                  className="text-left bg-white border border-[#ead8bd] px-3 py-3 hover:border-[#002045] transition-colors"
-                >
-                  <div className="flex items-start justify-between gap-3">
-                    <div className="min-w-0">
-                      <p className="text-[#002045] text-sm font-semibold font-[var(--font-inter)] truncate">{r.partner.name}</p>
-                      <p className="text-[#74777f] text-xs font-[var(--font-inter)] mt-0.5">{action.detail}</p>
+                <div key={r.id} className="bg-white border border-[#ead8bd] px-3 py-3">
+                  <button onClick={() => toggleExpand(r.id)} className="w-full text-left">
+                    <div className="flex items-start justify-between gap-3">
+                      <div className="min-w-0">
+                        <p className="text-[#002045] text-sm font-semibold font-[var(--font-inter)] truncate">{r.partner.name}</p>
+                        <p className="text-[#74777f] text-xs font-[var(--font-inter)] mt-0.5">{action.detail}</p>
+                      </div>
+                      <span className={`shrink-0 text-[10px] font-bold px-2 py-1 ${
+                        action.tone === "urgent" ? "bg-red-100 text-red-700" :
+                        action.tone === "today" ? "bg-amber-100 text-amber-800" :
+                        "bg-blue-50 text-blue-800"
+                      }`}>
+                        {action.label}
+                      </span>
                     </div>
-                    <span className={`shrink-0 text-[10px] font-bold px-2 py-1 ${
-                      action.tone === "urgent" ? "bg-red-100 text-red-700" :
-                      action.tone === "today" ? "bg-amber-100 text-amber-800" :
-                      "bg-blue-50 text-blue-800"
-                    }`}>
-                      {action.label}
-                    </span>
+                  </button>
+                  {/* One-tap actions — no need to open the full editor */}
+                  <div className="flex flex-wrap gap-1.5 mt-2.5 pt-2.5 border-t border-[#f3e8d3]">
+                    {hasReminder && (
+                      <>
+                        <button disabled={busy} onClick={() => quickSnooze(r.id, 2)}
+                          className="text-[11px] font-bold font-[var(--font-inter)] px-2.5 py-1 border border-[#d7dbe3] text-[#74777f] hover:border-[#002045] hover:text-[#002045] disabled:opacity-50">Adiar 2d</button>
+                        <button disabled={busy} onClick={() => quickSnooze(r.id, 7)}
+                          className="text-[11px] font-bold font-[var(--font-inter)] px-2.5 py-1 border border-[#d7dbe3] text-[#74777f] hover:border-[#002045] hover:text-[#002045] disabled:opacity-50">Adiar 7d</button>
+                        <button disabled={busy} onClick={() => clearFollowup(r.id)}
+                          className="text-[11px] font-bold font-[var(--font-inter)] px-2.5 py-1 border border-[#3b6934] text-[#3b6934] hover:bg-[#eafaf0] disabled:opacity-50">Concluído</button>
+                      </>
+                    )}
+                    <button onClick={() => toggleExpand(r.id)}
+                      className="text-[11px] font-bold font-[var(--font-inter)] px-2.5 py-1 border border-[#002045] text-[#002045] hover:bg-[#eef2f8] ml-auto">Abrir</button>
                   </div>
-                </button>
+                </div>
               );
             })}
           </div>
@@ -791,7 +819,7 @@ export default function RepCrmTab({
             Voltar para lista
           </button>
         </div>
-        <div className="flex gap-3 overflow-x-auto pb-3">
+        <div className="flex flex-col md:flex-row gap-3 md:overflow-x-auto pb-3">
           {STAGE_ORDER.map((stage) => {
             const colRows = rows.filter(
               (r) => r.stage === stage && (!search.trim() || r.partner.name.toLowerCase().includes(search.trim().toLowerCase()))
@@ -800,7 +828,7 @@ export default function RepCrmTab({
               <div key={stage}
                 onDragOver={(e) => e.preventDefault()}
                 onDrop={() => { if (draggingId) { patchRow(draggingId, { stage }); setDraggingId(null); } }}
-                className="flex-shrink-0 w-[280px] bg-[#f4f5f7] border border-[#e8e8e8] rounded-sm">
+                className="w-full md:w-[280px] md:flex-shrink-0 bg-[#f4f5f7] border border-[#e8e8e8] rounded-sm">
                 <div className="px-3 py-2 border-b border-[#e2e2e2] flex items-center justify-between">
                   <span className={`text-[10px] font-bold px-1.5 py-0.5 ${STAGE_META[stage].cls}`}>{STAGE_META[stage].label}</span>
                   <span className="text-[#74777f] text-[11px] font-bold font-[var(--font-inter)]">{colRows.length}</span>
