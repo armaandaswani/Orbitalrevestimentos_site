@@ -43,7 +43,7 @@ export async function PATCH(
   const db = supabaseAdmin();
   const { data: existing, error: fetchErr } = await db
     .from("rep_partner_crm")
-    .select("sales_rep_id")
+    .select("sales_rep_id, stage, next_reminder_at")
     .eq("id", id)
     .maybeSingle();
   if (fetchErr) return NextResponse.json({ error: fetchErr.message }, { status: 500 });
@@ -82,6 +82,28 @@ export async function PATCH(
   }
   if (patch.project_added === true && !("project_added_at" in patch)) {
     patch.project_added_at = new Date().toISOString();
+  }
+
+  // Digest hygiene: when the rep registers progress on a contact (advances the
+  // stage or logs a milestone) and DIDN'T set a fresh reminder, an overdue
+  // reminder left behind would keep nagging in the daily/weekly digest for a
+  // task that's already done ("Beatriz já avançou mas ainda pede resultado").
+  // Clear the stale overdue reminder so the contact drops out of the next
+  // digest; an explicit next_reminder_at from the caller is always respected.
+  const stageChanged = "stage" in patch && patch.stage !== (existing as { stage?: string }).stage;
+  const milestoneRegistered =
+    patch.meeting_happened_at != null ||
+    patch.mostruario_received === true ||
+    patch.has_specified === true ||
+    (typeof patch.specified_count === "number" && patch.specified_count > 0) ||
+    patch.project_added === true ||
+    (typeof patch.project_added_count === "number" && patch.project_added_count > 0);
+  const existingReminder = (existing as { next_reminder_at?: string | null }).next_reminder_at;
+  const reminderOverdue = !!existingReminder && new Date(existingReminder).getTime() <= Date.now();
+  if ((stageChanged || milestoneRegistered) && !("next_reminder_at" in patch) && reminderOverdue) {
+    patch.next_reminder_at = null;
+    patch.reminder_note = null;
+    patch.reminder_sent_at = null;
   }
 
   const { data, error } = await db.from("rep_partner_crm").update(patch).eq("id", id).select().single();

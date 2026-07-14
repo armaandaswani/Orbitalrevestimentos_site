@@ -198,9 +198,14 @@ export async function GET(req: NextRequest) {
     if (crmErr && !isMissingTable(crmErr)) continue;
 
     const allMeetings = (meetings ?? []) as MeetingRow[];
-    const todaysMeetings = allMeetings.filter((m) => dateKey(m.scheduled_at) === today);
-    // Still-scheduled meetings whose date already passed → pending confirmation.
-    const pastMeetings = allMeetings.filter((m) => dateKey(m.scheduled_at) < today);
+    const nowMs = now.getTime();
+    // Confirm only meetings still ahead of us today; anything whose time already
+    // passed (earlier today OR previous days) is a "já passou — aconteceu?"
+    // nudge, never a "confirmar presença" for a meeting that's already gone.
+    const todaysMeetings = allMeetings.filter(
+      (m) => new Date(m.scheduled_at).getTime() >= nowMs && dateKey(m.scheduled_at) === today
+    );
+    const pastMeetings = allMeetings.filter((m) => new Date(m.scheduled_at).getTime() < nowMs);
     const pastMeetingPartnerIds = new Set(pastMeetings.map((m) => m.partner_id).filter(Boolean) as string[]);
     const hasPast = (r: CrmRow) => !!r.partner_id && pastMeetingPartnerIds.has(r.partner_id);
     const dueFollowups = ((crmRows ?? []) as CrmRow[]).filter((r) => dueForDigest(r, today));
