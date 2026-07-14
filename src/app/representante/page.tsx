@@ -3,6 +3,7 @@
 import React, { useState, useMemo, useEffect, useRef } from "react";
 import RepAgendaTab from "./RepAgendaTab";
 import RepCrmTab from "./RepCrmTab";
+import RepMeetingPrompts from "./RepMeetingPrompts";
 
 interface SalesRepInfo {
   id: string;
@@ -396,8 +397,11 @@ export default function RepresentantePage() {
           );
         })()}
 
+        {/* Proactive "a reunião aconteceu?" banners for past-due meetings */}
+        <RepMeetingPrompts salesRepId={salesRep.id} repName={salesRep.name} />
+
         {/* Tab bar */}
-        <div className="flex gap-0 mb-8 border-b border-[#e2e2e2]">
+        <div className="flex flex-wrap gap-x-1 mb-8 border-b border-[#e2e2e2]">
           {([
             { key: "overview", label: "Visão Geral" },
             { key: "commissions", label: "Comissões" },
