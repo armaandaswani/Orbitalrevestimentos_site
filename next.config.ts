@@ -18,6 +18,14 @@ const nextConfig: NextConfig = {
       bodySizeLimit: "20mb",
     },
   },
+  // pdfkit reads its built-in font metrics (.afm) from node_modules at runtime.
+  // Vercel's serverless tracing doesn't detect these dynamic reads, so the
+  // send-document PDF failed in production with
+  //   ENOENT ... /node_modules/pdfkit/js/data/Helvetica.afm
+  // Force them into the function bundle for the only route that generates PDFs.
+  outputFileTracingIncludes: {
+    "/api/admin/pedidos/**": ["./node_modules/pdfkit/js/data/**/*"],
+  },
 };
 
 export default nextConfig;

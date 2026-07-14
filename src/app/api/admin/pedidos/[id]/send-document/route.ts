@@ -19,6 +19,24 @@ const DOC_LABEL: Record<DocumentType, string> = {
   recibo: "Recibo",
 };
 
+// ASCII, hyphen-safe token for filenames — accents stripped, spaces/punctuation
+// collapsed to single hyphens (e.g. "Pedido de Venda" → "Pedido-de-Venda",
+// "João Silva" → "Joao-Silva").
+function slug(s: string) {
+  return s
+    .normalize("NFD").replace(/[̀-ͯ]/g, "")
+    .replace(/[^a-zA-Z0-9]+/g, "-")
+    .replace(/^-+|-+$/g, "");
+}
+
+// Standardized PDF filename: Tipo_Numero_Cliente-Nome.pdf
+// e.g. Pedido-de-Venda_37063F3D-26_Cliente-Adriane.pdf
+function pdfFilename(docType: DocumentType, number: string, clientName: string) {
+  const tipo = slug(DOC_LABEL[docType]);
+  const cliente = slug(clientName || "Cliente");
+  return `${tipo}_${number}_Cliente-${cliente}.pdf`;
+}
+
 const COMPANY = {
   name: "Orbital Materiais de Construção LTDA",
   cnpj: "58.013.651/0001-04",
@@ -317,18 +335,18 @@ export async function POST(req: NextRequest, { params }: { params: Promise<{ id:
         from: "Orbital Revestimentos <noreply@orbitalrevestimentos.com.br>",
         to,
         cc: COMPANY.email,
-        subject: `${label} Orbital ${number}`,
+        subject: `${label} nº ${number} — ${pedido.client_name ?? "Cliente"}`,
         html: `
           <div style="font-family:Arial,sans-serif;max-width:560px;margin:0 auto;padding:28px;color:#1a1c1c">
-            <h2 style="margin:0 0 8px;color:#002045">${label} Orbital</h2>
-            <p style="line-height:1.6;color:#43474e">Olá, ${pedido.client_name ?? "cliente"}. Segue em anexo o ${label.toLowerCase()} formal da Orbital Revestimentos.</p>
+            <h2 style="margin:0 0 8px;color:#002045">${label} nº ${number}</h2>
+            <p style="line-height:1.6;color:#43474e">Olá, ${pedido.client_name ?? "cliente"}. Segue em anexo o ${label.toLowerCase()} nº ${number} da Orbital Revestimentos.</p>
             <p style="font-size:18px;color:#002045;font-weight:700">Total: ${fmtBRL(total)}</p>
             ${documentUrl ? `<p style="font-size:12px;color:#74777f">Documento revisado internamente: <a href="${documentUrl}" style="color:#002045">${documentUrl}</a></p>` : ""}
             <p style="font-size:12px;color:#74777f;margin-top:24px">Orbital Revestimentos · Manaus, AM</p>
           </div>
         `,
         attachments: [{
-          filename: `${label.toLowerCase().replace(/\s+/g, "-")}-${number}.pdf`,
+          filename: pdfFilename(docType, number, String(pedido.client_name ?? "Cliente")),
           content: pdf.toString("base64"),
         }],
       });
@@ -342,11 +360,15 @@ export async function POST(req: NextRequest, { params }: { params: Promise<{ id:
     // public, read-only view when there's no admin session. Build it here when
     // the caller didn't pass one, so every send includes a working link.
     const link = documentUrl || `${req.nextUrl.origin}/admin/pedidos/${id}/documento?tipo=${docType}`;
+    // ONE objective message for this action: what was generated, the link, and
+    // (only when the client has an e-mail on file) the PDF note. No simulador
+    // follow-ups — those come from the website flow, not a document send.
+    const hasEmail = typeof pedido.client_email === "string" && pedido.client_email.trim().length > 0;
+    const greeting = pedido.client_name ? `Olá, ${pedido.client_name}.` : "Olá.";
     const message = [
-      `Olá, ${pedido.client_name ?? ""}!`,
-      `Segue o seu ${label.toLowerCase()} Orbital ${number}.`,
-      `Acesse o documento aqui: ${link}`,
-      `Também enviamos o PDF formal por e-mail.`,
+      `${greeting} Seu ${label.toLowerCase()} nº ${number} está disponível. Você pode acessar o documento pelo link abaixo:`,
+      link,
+      hasEmail ? "Também enviamos uma cópia em PDF para o seu e-mail." : null,
     ].filter(Boolean).join("\n\n");
     const res = await sendText(phone, message);
     if (!res.ok) return NextResponse.json({ error: res.error || "Falha ao enviar WhatsApp." }, { status: 502 });

@@ -204,6 +204,19 @@ export default function PedidoDocumentoPage({ params }: { params: Promise<{ id: 
     window.history.replaceState(null, "", `${window.location.pathname}?${search.toString()}`);
   }, [docType, includeImages, includeDescriptions]);
 
+  // Name the browser tab (and therefore the "Save as PDF" / share filename) as
+  // Tipo_Numero_Cliente-Nome so a document saved from this page is identifiable
+  // — instead of the generic "Orbital Admin | Orbital Revestimentos".
+  useEffect(() => {
+    if (!pedido) return;
+    const slug = (s: string) =>
+      s.normalize("NFD").replace(/[̀-ͯ]/g, "").replace(/[^a-zA-Z0-9]+/g, "-").replace(/^-+|-+$/g, "");
+    const title = `${slug(DOC_LABEL[docType])}_${docNumber(pedido)}_Cliente-${slug(pedido.client_name || "Cliente")}`;
+    const prev = document.title;
+    document.title = title;
+    return () => { document.title = prev; };
+  }, [pedido, docType]);
+
   useEffect(() => {
     if (!id) return;
     setLoading(true);

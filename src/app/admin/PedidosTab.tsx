@@ -1001,12 +1001,15 @@ export default function PedidosTab({
     setResendingId(null);
   }
 
-  // Step 4 "Enviar ao cliente": choose the document, channels and whether to
-  // start the e-mail drip, then fire them. Reuses the existing send-document
-  // endpoint (email PDF / WhatsApp) + the drip enrollment endpoint.
+  // Step 4 "Enviar ao cliente": choose the document + channels, then fire them.
+  // ONE action → ONE communication per channel: the document link on WhatsApp
+  // and/or the formal PDF by e-mail. Deliberately does NOT enrol the client in
+  // the website simulador flow (/api/client-email-sequences) — that endpoint
+  // fires "Recebemos sua simulação" + product-education + CTA messages and owner
+  // alerts, which flooded the client's chat with 3–4 messages for a single send.
   type SendDocType = "orcamento" | "pedido" | "nota";
-  const [sendDoc, setSendDoc] = useState<{ tipo: SendDocType; email: boolean; whatsapp: boolean; drip: boolean; busy: boolean; done: string | null }>(
-    { tipo: "orcamento", email: true, whatsapp: true, drip: true, busy: false, done: null }
+  const [sendDoc, setSendDoc] = useState<{ tipo: SendDocType; email: boolean; whatsapp: boolean; busy: boolean; done: string | null }>(
+    { tipo: "orcamento", email: true, whatsapp: true, busy: false, done: null }
   );
 
   async function sendToClient() {
@@ -1030,14 +1033,6 @@ export default function PedidosTab({
       if (sendDoc.whatsapp) {
         const r = await post(`/api/admin/pedidos/${draft.id}/send-document`, { channel: "whatsapp", tipo: sendDoc.tipo });
         results.push(r.ok ? "WhatsApp enviado ✓" : `WhatsApp: ${(await r.json().catch(() => ({}))).error ?? r.status}`);
-      }
-      if (sendDoc.drip && draft.client_email) {
-        const r = await post(`/api/client-email-sequences`, {
-          client_name: draft.client_name, client_email: draft.client_email, client_phone: draft.client_phone ?? null,
-          space: draft.space ?? null, model: draft.product_name ?? null, plates: 0, area_m2: draft.area_m2 ?? 0,
-          total: netTotal, partner_name: draft.partner_name ?? null,
-        });
-        results.push(r.ok ? "Régua de e-mail iniciada ✓" : "Régua não iniciou");
       }
       setSendDoc((s) => ({ ...s, busy: false, done: results.join(" · ") || "Nada selecionado." }));
     } catch {
@@ -2160,9 +2155,9 @@ export default function PedidosTab({
                       <div className="flex flex-col gap-1.5">
                         <label className="flex items-center gap-2 text-xs font-[var(--font-inter)] text-[#43474e]"><input type="checkbox" checked={sendDoc.email} disabled={!draft.client_email} onChange={(e) => setSendDoc((s) => ({ ...s, email: e.target.checked }))} /> E-mail {draft.client_email ? `(${draft.client_email})` : "— sem e-mail"}</label>
                         <label className="flex items-center gap-2 text-xs font-[var(--font-inter)] text-[#43474e]"><input type="checkbox" checked={sendDoc.whatsapp} disabled={!draft.client_phone} onChange={(e) => setSendDoc((s) => ({ ...s, whatsapp: e.target.checked }))} /> WhatsApp {draft.client_phone ? `(${draft.client_phone})` : "— sem telefone"}</label>
-                        <label className="flex items-center gap-2 text-xs font-[var(--font-inter)] text-[#43474e]"><input type="checkbox" checked={sendDoc.drip} disabled={!draft.client_email} onChange={(e) => setSendDoc((s) => ({ ...s, drip: e.target.checked }))} /> Iniciar régua de e-mail</label>
                       </div>
-                      <button type="button" onClick={sendToClient} disabled={sendDoc.busy || (!sendDoc.email && !sendDoc.whatsapp && !sendDoc.drip)}
+                      <p className="text-[10px] text-[#a0a3a8] font-[var(--font-inter)]">Uma mensagem objetiva por canal: o link do documento no WhatsApp e o PDF por e-mail.</p>
+                      <button type="button" onClick={sendToClient} disabled={sendDoc.busy || (!sendDoc.email && !sendDoc.whatsapp)}
                         className="bg-[#3b6934] text-white px-4 py-2 text-xs font-bold uppercase tracking-wider hover:bg-[#2f5429] disabled:opacity-50">
                         {sendDoc.busy ? "Enviando…" : "Enviar ao cliente"}
                       </button>
