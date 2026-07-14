@@ -978,18 +978,24 @@ export default function PedidosTab({
   // name/WhatsApp/e-mail and wants to push the updated link again, without walking
   // through the whole review/send step. Uses the saved order data.
   const [resendingId, setResendingId] = useState<string | null>(null);
-  async function resendToClient(p: Pedido) {
-    if (!p.client_phone && !p.client_email) { alert("Este pedido não tem WhatsApp nem e-mail do cliente."); return; }
+  // Re-send by the explicitly chosen channel(s). Shows the exact destination
+  // (number/e-mail) in the confirm so a wrong/edited number is caught before it
+  // goes out. Uses the SAVED order data — save the editor first if you changed it.
+  async function resendToClient(p: Pedido, channels: Array<"whatsapp" | "email">) {
+    const wantsWa = channels.includes("whatsapp");
+    const wantsEmail = channels.includes("email");
+    if (wantsWa && !p.client_phone) { alert("Este pedido não tem WhatsApp do cliente."); return; }
+    if (wantsEmail && !p.client_email) { alert("Este pedido não tem e-mail do cliente."); return; }
     const tipo = p.status === "entregue" ? "nota" : "orcamento";
-    const dest = [p.client_phone ? `WhatsApp ${p.client_phone}` : null, p.client_email ? `e-mail ${p.client_email}` : null].filter(Boolean).join(" e ");
-    if (!confirm(`Reenviar o documento ao cliente (${dest})?`)) return;
+    const dest = [wantsWa ? `WhatsApp ${p.client_phone}` : null, wantsEmail ? `e-mail ${p.client_email}` : null].filter(Boolean).join(" e ");
+    if (!confirm(`Reenviar o documento ao cliente por ${dest}?\n\nConfira se o número/e-mail está correto.`)) return;
     setResendingId(p.id);
     const done: string[] = [];
     const post = (channel: "whatsapp" | "email") =>
       fetch(`/api/admin/pedidos/${p.id}/send-document`, { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ channel, tipo }) });
     try {
-      if (p.client_phone) { const r = await post("whatsapp"); done.push(r.ok ? "WhatsApp ✓" : `WhatsApp: ${(await r.json().catch(() => ({}))).error ?? r.status}`); }
-      if (p.client_email) { const r = await post("email"); done.push(r.ok ? "E-mail ✓" : `E-mail: ${(await r.json().catch(() => ({}))).error ?? r.status}`); }
+      if (wantsWa) { const r = await post("whatsapp"); done.push(r.ok ? "WhatsApp ✓" : `WhatsApp: ${(await r.json().catch(() => ({}))).error ?? r.status}`); }
+      if (wantsEmail) { const r = await post("email"); done.push(r.ok ? "E-mail ✓" : `E-mail: ${(await r.json().catch(() => ({}))).error ?? r.status}`); }
       alert(`Reenvio: ${done.join(" · ")}`);
     } catch { alert("Falha ao reenviar."); }
     setResendingId(null);
@@ -1005,11 +1011,18 @@ export default function PedidosTab({
 
   async function sendToClient() {
     if (!draft?.id) return;
+    if (!draft.client_name?.trim()) { alert("Informe o nome do cliente antes de enviar."); return; }
     setSendDoc((s) => ({ ...s, busy: true, done: null }));
     const results: string[] = [];
     const post = (url: string, payload: unknown) =>
       fetch(url, { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify(payload) });
     try {
+      // Persist the current form (contact, totals, items) FIRST so the server
+      // sends to exactly the name/WhatsApp/e-mail shown on screen — otherwise a
+      // just-edited but unsaved number would be ignored and the document would
+      // go to the previously saved number. Keeps the editor open.
+      const { payload, cleanItems } = buildDraftPayload(draft);
+      await patchPedido(draft.id, itemsReady ? { ...payload, items: cleanItems } : payload);
       if (sendDoc.email) {
         const r = await post(`/api/admin/pedidos/${draft.id}/send-document`, { channel: "email", tipo: sendDoc.tipo });
         results.push(r.ok ? "E-mail enviado ✓" : `E-mail: ${(await r.json().catch(() => ({}))).error ?? r.status}`);
@@ -1032,46 +1045,48 @@ export default function PedidosTab({
     }
   }
 
-  async function saveDraft() {
-    if (!draft || !draft.client_name?.trim()) return;
-    setSaving(true);
+  // Build the PATCH/POST payload + line-item snapshot from the current draft +
+  // items state. Shared by saveDraft (which then closes the editor) and
+  // sendToClient (which persists WITHOUT closing, so the server sends to exactly
+  // the client name/number/e-mail and totals shown on screen).
+  function buildDraftPayload(d: NonNullable<typeof draft>) {
     const payload = {
-      client_name: draft.client_name?.trim(),
-      client_email: draft.client_email ?? null,
-      client_phone: draft.client_phone ?? null,
-      partner_id: draft.partner_id ?? null,
-      sales_rep_id: draft.sales_rep_id ?? null,
-      partner_name: draft.partner_name ?? null,
-      space: draft.space ?? null,
-      product_name: draft.product_name ?? null,
-      area_m2: draft.area_m2 ?? null,
-      total: draft.total ?? null,
-      status: draft.status ?? "em_producao",
-      payment_status: draft.payment_status ?? "pendente",
-      notes: draft.notes ?? null,
-      expected_delivery_at: draft.expected_delivery_at ?? null,
-      client_zip: draft.client_zip ?? null,
-      client_address: draft.client_address ?? null,
-      client_address_complement: draft.client_address_complement ?? null,
-      client_city: draft.client_city ?? null,
-      client_state: draft.client_state ?? null,
-      discount_amount: draft.discount_amount ?? 0,
-      freight_amount: draft.freight_amount ?? 0,
-      freight_is_revenue: draft.freight_is_revenue === true,
-      other_costs: cleanDraftOtherCosts(draft.other_costs),
-      payment_methods: draft.payment_methods?.length ? draft.payment_methods : ["Pix"],
-      payment_terms: draft.payment_terms ?? null,
-      quote_valid_until: draft.quote_valid_until ?? null,
-      warranty_terms: draft.warranty_terms ?? null,
-      document_notes: draft.document_notes ?? null,
-      show_legal_terms: draft.show_legal_terms !== false,
-      partner_commission_pct: draft.partner_commission_pct ?? 0,
-      partner_commission_amount: draft.partner_commission_amount ?? moneyFromPct(Number(draft.partner_commission_pct) || 0),
-      sales_rep_commission_pct: draft.sales_rep_commission_pct ?? 0,
-      sales_rep_commission_amount: draft.sales_rep_commission_amount ?? moneyFromPct(Number(draft.sales_rep_commission_pct) || 0),
-      coupon_use_id: draft.coupon_use_id ?? null,
-      lead_id: draft.lead_id ?? null,
-      price_tier: (draft.price_tier === "atacado" ? "atacado" : "varejo") as "varejo" | "atacado",
+      client_name: d.client_name?.trim(),
+      client_email: d.client_email ?? null,
+      client_phone: d.client_phone ?? null,
+      partner_id: d.partner_id ?? null,
+      sales_rep_id: d.sales_rep_id ?? null,
+      partner_name: d.partner_name ?? null,
+      space: d.space ?? null,
+      product_name: d.product_name ?? null,
+      area_m2: d.area_m2 ?? null,
+      total: d.total ?? null,
+      status: d.status ?? "em_producao",
+      payment_status: d.payment_status ?? "pendente",
+      notes: d.notes ?? null,
+      expected_delivery_at: d.expected_delivery_at ?? null,
+      client_zip: d.client_zip ?? null,
+      client_address: d.client_address ?? null,
+      client_address_complement: d.client_address_complement ?? null,
+      client_city: d.client_city ?? null,
+      client_state: d.client_state ?? null,
+      discount_amount: d.discount_amount ?? 0,
+      freight_amount: d.freight_amount ?? 0,
+      freight_is_revenue: d.freight_is_revenue === true,
+      other_costs: cleanDraftOtherCosts(d.other_costs),
+      payment_methods: d.payment_methods?.length ? d.payment_methods : ["Pix"],
+      payment_terms: d.payment_terms ?? null,
+      quote_valid_until: d.quote_valid_until ?? null,
+      warranty_terms: d.warranty_terms ?? null,
+      document_notes: d.document_notes ?? null,
+      show_legal_terms: d.show_legal_terms !== false,
+      partner_commission_pct: d.partner_commission_pct ?? 0,
+      partner_commission_amount: d.partner_commission_amount ?? moneyFromPct(Number(d.partner_commission_pct) || 0),
+      sales_rep_commission_pct: d.sales_rep_commission_pct ?? 0,
+      sales_rep_commission_amount: d.sales_rep_commission_amount ?? moneyFromPct(Number(d.sales_rep_commission_pct) || 0),
+      coupon_use_id: d.coupon_use_id ?? null,
+      lead_id: d.lead_id ?? null,
+      price_tier: (d.price_tier === "atacado" ? "atacado" : "varejo") as "varejo" | "atacado",
     };
     // Snapshot the price actually charged per line (tier price or manual
     // override) so the saved pedido_items match the total shown here — the API
@@ -1083,6 +1098,13 @@ export default function PedidosTab({
         const eff = prod ? effectiveUnitPrice(it, prod) : (it.unit_price ?? null);
         return { product_id: it.product_id, plates: it.plates, unit_price: eff };
       });
+    return { payload, cleanItems };
+  }
+
+  async function saveDraft() {
+    if (!draft || !draft.client_name?.trim()) return;
+    setSaving(true);
+    const { payload, cleanItems } = buildDraftPayload(draft);
     try {
       if (draft._isNew) {
         const res = await fetch("/api/admin/pedidos", {
@@ -1298,24 +1320,10 @@ export default function PedidosTab({
                           <span className="text-[10px] text-[#b0b0b0]">—</span>
                         )}
                       </td>
-                      <td className="px-4 py-3 text-right whitespace-nowrap">
-                        <select
-                          defaultValue=""
-                          onChange={(e) => {
-                            if (e.target.value) openDocument(p.id, e.target.value as "orcamento" | "pedido" | "nota" | "recibo");
-                            e.currentTarget.value = "";
-                          }}
-                          className="text-[10px] text-[#1e5fb4] font-bold bg-transparent border border-transparent hover:border-[#e2e2e2] mr-2 focus:outline-none"
-                        >
-                          <option value="">PDF...</option>
-                          <option value="orcamento">Orçamento</option>
-                          <option value="pedido">Pedido de venda</option>
-                          <option value="nota">Nota de venda</option>
-                          <option value="recibo">Recibo</option>
-                        </select>
-                        <button onClick={() => openEdit(p)} className="text-[10px] text-[#002045] font-bold hover:underline mr-3">Editar</button>
-                        <button onClick={() => resendToClient(p)} disabled={resendingId === p.id} className="text-[10px] text-[#3b6934] font-bold hover:underline mr-3 disabled:opacity-50">{resendingId === p.id ? "Reenviando…" : "Reenviar"}</button>
-                        <button onClick={() => deletePedido(p.id)} className="text-[10px] text-red-600 font-bold hover:underline">Excluir</button>
+                      <td className="px-4 py-3 text-right">
+                        <RowActions p={p} resending={resendingId === p.id}
+                          onEdit={() => openEdit(p)} onResend={(ch) => resendToClient(p, ch)}
+                          onDocument={(t) => openDocument(p.id, t)} onDelete={() => deletePedido(p.id)} />
                       </td>
                     </tr>
                   );
@@ -1368,24 +1376,10 @@ export default function PedidosTab({
                   ) : db ? (
                     <p className={`text-[10px] mt-2 ${db.cls}`}>📦 {db.label}</p>
                   ) : null}
-                  <div className="flex gap-4 mt-3 pt-3 border-t border-[#f0f0f0]">
-                    <select
-                      defaultValue=""
-                      onChange={(e) => {
-                        if (e.target.value) openDocument(p.id, e.target.value as "orcamento" | "pedido" | "nota" | "recibo");
-                        e.currentTarget.value = "";
-                      }}
-                      className="text-[10px] text-[#1e5fb4] font-bold bg-white border border-[#e2e2e2]"
-                    >
-                      <option value="">PDF...</option>
-                      <option value="orcamento">Orçamento</option>
-                      <option value="pedido">Pedido de venda</option>
-                      <option value="nota">Nota de venda</option>
-                      <option value="recibo">Recibo</option>
-                    </select>
-                    <button onClick={() => openEdit(p)} className="text-[10px] text-[#002045] font-bold">Editar</button>
-                    <button onClick={() => resendToClient(p)} disabled={resendingId === p.id} className="text-[10px] text-[#3b6934] font-bold disabled:opacity-50">{resendingId === p.id ? "Reenviando…" : "Reenviar"}</button>
-                    <button onClick={() => deletePedido(p.id)} className="text-[10px] text-red-600 font-bold">Excluir</button>
+                  <div className="mt-3 pt-3 border-t border-[#f0f0f0]">
+                    <RowActions p={p} resending={resendingId === p.id}
+                      onEdit={() => openEdit(p)} onResend={(ch) => resendToClient(p, ch)}
+                      onDocument={(t) => openDocument(p.id, t)} onDelete={() => deletePedido(p.id)} />
                   </div>
                 </div>
               );
@@ -2212,5 +2206,67 @@ function Field({ label, children }: { label: string; children: React.ReactNode }
       <span className="block text-[10px] tracking-[0.1em] uppercase font-bold font-[var(--font-inter)] text-[#74777f] mb-1">{label}</span>
       {children}
     </label>
+  );
+}
+
+// Compact per-row actions menu. A single "Ações ▾" button so the row never
+// overflows horizontally (previously Editar/Reenviar/Excluir/PDF sat inline and
+// pushed the row off-screen). Reenviar exposes an explicit channel choice
+// (WhatsApp / E-mail / Ambos), each showing the exact destination so a wrong
+// number is caught before it goes out.
+function RowActions({ p, resending, onEdit, onResend, onDocument, onDelete }: {
+  p: Pedido;
+  resending: boolean;
+  onEdit: () => void;
+  onResend: (channels: Array<"whatsapp" | "email">) => void;
+  onDocument: (tipo: "orcamento" | "pedido" | "nota" | "recibo") => void;
+  onDelete: () => void;
+}) {
+  const [open, setOpen] = useState(false);
+  const ref = useRef<HTMLDivElement>(null);
+  useEffect(() => {
+    if (!open) return;
+    const onDoc = (e: MouseEvent) => {
+      if (ref.current && !ref.current.contains(e.target as Node)) setOpen(false);
+    };
+    document.addEventListener("mousedown", onDoc);
+    return () => document.removeEventListener("mousedown", onDoc);
+  }, [open]);
+  const close = () => setOpen(false);
+  const hasWa = !!p.client_phone;
+  const hasEmail = !!p.client_email;
+  const item = "block w-full text-left px-3 py-1.5 text-xs hover:bg-[#f7f7f7]";
+  const label = "px-3 pt-2 pb-1 text-[9px] uppercase tracking-wider text-[#b0b0b0] font-[var(--font-inter)]";
+  return (
+    <div className="relative inline-block text-left" ref={ref}>
+      <button
+        type="button"
+        onClick={() => setOpen((o) => !o)}
+        disabled={resending}
+        className="text-xs font-bold text-[#002045] px-3 py-1.5 border border-[#e2e2e2] hover:bg-[#f7f7f7] disabled:opacity-50 whitespace-nowrap"
+      >
+        {resending ? "Enviando…" : "Ações ▾"}
+      </button>
+      {open && (
+        <div className="absolute right-0 z-30 mt-1 w-56 bg-white border border-[#e2e2e2] shadow-lg py-1 font-[var(--font-inter)]">
+          <button onClick={() => { close(); onEdit(); }} className={`${item} text-[#002045] font-semibold`}>Editar</button>
+
+          <div className={label}>Reenviar ao cliente</div>
+          <button disabled={!hasWa} onClick={() => { close(); onResend(["whatsapp"]); }} className={`${item} text-[#3b6934] disabled:text-[#c9c9c9] disabled:hover:bg-white`}>WhatsApp{hasWa ? ` · ${p.client_phone}` : " — sem número"}</button>
+          <button disabled={!hasEmail} onClick={() => { close(); onResend(["email"]); }} className={`${item} text-[#3b6934] disabled:text-[#c9c9c9] disabled:hover:bg-white`}>E-mail{hasEmail ? ` · ${p.client_email}` : " — sem e-mail"}</button>
+          <button disabled={!hasWa || !hasEmail} onClick={() => { close(); onResend(["whatsapp", "email"]); }} className={`${item} text-[#3b6934] disabled:text-[#c9c9c9] disabled:hover:bg-white`}>Ambos</button>
+
+          <div className={label}>Documento (PDF)</div>
+          <button onClick={() => { close(); onDocument("orcamento"); }} className={`${item} text-[#1e5fb4]`}>Orçamento</button>
+          <button onClick={() => { close(); onDocument("pedido"); }} className={`${item} text-[#1e5fb4]`}>Pedido de venda</button>
+          <button onClick={() => { close(); onDocument("nota"); }} className={`${item} text-[#1e5fb4]`}>Nota de venda</button>
+          <button onClick={() => { close(); onDocument("recibo"); }} className={`${item} text-[#1e5fb4]`}>Recibo</button>
+
+          <div className="border-t border-[#f0f0f0] mt-1 pt-1">
+            <button onClick={() => { close(); onDelete(); }} className={`${item} text-red-600 hover:bg-red-50`}>Excluir</button>
+          </div>
+        </div>
+      )}
+    </div>
   );
 }
