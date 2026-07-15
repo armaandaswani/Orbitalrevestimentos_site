@@ -96,6 +96,12 @@ export interface Zone {
   // Surfaced in the zone card so SAM2 misconfiguration is visible, not silent.
   detectEngine?: "fal" | "gemini" | null;
   detectFailed?: boolean;
+  // True once the client has EXPLICITLY picked a finish for this area (tapped a
+  // swatch, or it came pre-chosen from the Simulador). A default productId is
+  // seeded so rendering has a target, but generation stays gated until the
+  // client actively chooses — that's the "modelo escolhido" step of the guided
+  // flow, and why the Gerar button no longer lights up prematurely.
+  productChosen?: boolean;
 }
 
 export interface SimPrefill {
@@ -798,11 +804,21 @@ function buildSimuladorUrl(ambientes: SavedAmbiente[]): string {
 // ── Wizard step type ──────────────────────────────────────────────────────────
 
 export type VizStep = "upload" | "zones" | "result";
-const STEP_LABELS: { id: VizStep; n: string; label: string }[] = [
-  { id: "upload", n: "1", label: "Foto" },
-  { id: "zones", n: "2", label: "Áreas e modelos" },
-  { id: "result", n: "3", label: "Resultado" },
+// The guided flow the client sees. "zones" is internally split into three
+// phases (mark → confirm → model); the stepper shows them as distinct steps so
+// the client always knows what's done, what's now, and what's left.
+const STEP_LABELS: { n: string; label: string }[] = [
+  { n: "1", label: "Foto" },
+  { n: "2", label: "Área" },
+  { n: "3", label: "Confirmar" },
+  { n: "4", label: "Modelo" },
+  { n: "5", label: "Resultado" },
 ];
+function stepIndex(step: VizStep, phase: "mark" | "confirm" | "model"): number {
+  if (step === "upload") return 0;
+  if (step === "result") return 4;
+  return phase === "mark" ? 1 : phase === "confirm" ? 2 : 3;
+}
 
 // ── Props ──────────────────────────────────────────────────────────────────────
 
@@ -867,6 +883,11 @@ export default function VisualizadorWizard({
 
   // ── Wizard state ──────────────────────────────────────────────────────────
   const [step, setStep] = useState<VizStep>("upload");
+  // Sub-phase of the "zones" step — turns one long scroll into a guided flow:
+  //   mark    → mark/draw the area (canvas + tools only)
+  //   confirm → "A área está correta?" (review the marked area)
+  //   model   → pick the finish, then Gerar (gallery only, no marking clutter)
+  const [zonePhase, setZonePhase] = useState<"mark" | "confirm" | "model">("mark");
   const [photoData, setPhotoData] = useState<string | null>(null);
   const [photoDims, setPhotoDims] = useState<{ w: number; h: number } | null>(null);
   const [zones, setZones] = useState<Zone[]>([]);
@@ -994,6 +1015,7 @@ export default function VisualizadorWizard({
       setActiveZoneId(null);
       setLeadSubmitted(embeddedMode);
       vizRenderIdRef.current = "";
+      setZonePhase("mark");
       setStep("zones");
     } catch {
       setError("Não foi possível ler essa imagem. Tente outra foto (JPG ou PNG).");
@@ -1004,18 +1026,21 @@ export default function VisualizadorWizard({
   const productById = useCallback((id: string) => products.find((p) => p.id === id) ?? null, [products]);
 
   const resolveZonePrefill = useCallback(
-    (zoneIdx: number): { productId: string; surface: string; customLabel: string; width: string; height: string } => {
+    (zoneIdx: number): { productId: string; surface: string; customLabel: string; width: string; height: string; chosen: boolean } => {
       const pf = simPrefillsRef.current[zoneIdx];
       const defaultProduct = products[0]?.id ?? "";
-      if (!pf) return { productId: defaultProduct, surface: "parede", customLabel: "", width: "", height: "" };
+      // No Simulador prefill → seed a default product for rendering, but leave it
+      // UN-chosen so the guided flow still requires an explicit finish pick.
+      if (!pf) return { productId: defaultProduct, surface: "parede", customLabel: "", width: "", height: "", chosen: false };
       const prod = products.find((p) => p.code === pf.productCode);
-      const knownSpace = VIZ_SPACES.some((s) => s.id === pf.spaceId);
       return {
         productId: prod?.id ?? defaultProduct,
-        surface: knownSpace ? pf.spaceId : (pf.spaceId ? "__custom__" : "parede"),
-        customLabel: knownSpace ? "" : (pf.spaceId ?? ""),
+        surface: VIZ_SPACES.some((s) => s.id === pf.spaceId) ? pf.spaceId : (pf.spaceId ? "__custom__" : "parede"),
+        customLabel: VIZ_SPACES.some((s) => s.id === pf.spaceId) ? "" : (pf.spaceId ?? ""),
         width: pf.w ? String(pf.w) : "",
         height: pf.h ? String(pf.h) : "",
+        // A finish carried over from the Simulador counts as already chosen.
+        chosen: !!prod,
       };
     },
     [products]
@@ -1209,7 +1234,7 @@ export default function VisualizadorWizard({
       const pf = resolveZonePrefill(idx);
       setZones((prev) => [...prev, {
         id, label: `Área ${idx + 1}`, surface: pf.surface, customLabel: pf.customLabel,
-        productId: pf.productId, polygon: null, maskUrl: null, rect: null, manual: false,
+        productId: pf.productId, productChosen: pf.chosen, polygon: null, maskUrl: null, rect: null, manual: false,
         instruction: "", width: pf.width, height: pf.height, detecting: true,
       }]);
       setActiveZoneId(id);
@@ -1242,7 +1267,7 @@ export default function VisualizadorWizard({
       const pf = resolveZonePrefill(idx);
       setZones((prev) => [...prev, {
         id, label: `Área ${idx + 1}`, surface: pf.surface, customLabel: pf.customLabel,
-        productId: pf.productId, polygon: null, maskUrl: null, rect, manual: true,
+        productId: pf.productId, productChosen: pf.chosen, polygon: null, maskUrl: null, rect, manual: true,
         instruction: "", width: pf.width, height: pf.height, detecting: true,
       }]);
       setActiveZoneId(id);
@@ -1258,7 +1283,7 @@ export default function VisualizadorWizard({
     const pf = resolveZonePrefill(idx);
     setZones((prev) => [...prev, {
       id, label: `Área ${idx + 1}`, surface: pf.surface, customLabel: pf.customLabel,
-      productId: pf.productId, polygon: null, maskUrl: null, rect: null, manual: false,
+      productId: pf.productId, productChosen: pf.chosen, polygon: null, maskUrl: null, rect: null, manual: false,
       instruction: "", width: pf.width, height: pf.height, detecting: false,
     }]);
     setActiveZoneId(id);
@@ -1282,11 +1307,23 @@ export default function VisualizadorWizard({
   }, [zones, detectIntoFromBox, updateZone]);
 
   const zonesReady = zones.filter((z) => z.productId);
-  const needsExactArea = useProjection && zonesReady.some((z) => {
+  // Only the deterministic projection path needs a pixel-exact quad/rect, and
+  // that path is off (DETERMINISTIC_PROJECTION = false) — generation is
+  // generative (Gemini applies the finish to the marked/described area). So this
+  // must NOT block, otherwise a text-described area with a textured finish could
+  // never generate even after the client picked a model.
+  const needsExactArea = DETERMINISTIC_PROJECTION && useProjection && zonesReady.some((z) => {
     const prod = z.productId ? productById(z.productId) : null;
     return !!prod?.render_texture_path?.trim() && !z.quad && !z.rect;
   });
-  const canGenerate = !!photoData && zonesReady.length > 0 && !needsExactArea;
+  // Ready to leave the "mark" phase: at least one area exists and none are still
+  // mid-detection (a text/described area qualifies immediately).
+  const anyAreaMarked = zones.length > 0 && !zones.some((z) => z.detecting);
+  const allModelsChosen = zones.length > 0 && zones.every((z) => z.productChosen);
+  // Generation is gated on the full guided flow: a photo, at least one ready
+  // area, exact-area captured where needed, AND an explicit finish chosen for
+  // every area (no more "Gerar" before the client picks a model).
+  const canGenerate = !!photoData && zonesReady.length > 0 && !needsExactArea && allModelsChosen;
   const anyDetecting = zones.some((z) => z.detecting);
 
   // Seed an adjustable 4-corner quad (from the detected box) for any zone whose
@@ -1610,7 +1647,7 @@ export default function VisualizadorWizard({
       {/* Stepper — only in standalone mode */}
       {!embeddedMode && (
         <section className="px-4 sm:px-6 pt-10 pb-2 max-w-[1280px] mx-auto">
-          <WizStepper step={step} />
+          <WizStepper activeIndex={stepIndex(step, zonePhase)} />
         </section>
       )}
 
@@ -1632,6 +1669,8 @@ export default function VisualizadorWizard({
 
         {step === "zones" && photoData && (
           <ZonesStep
+            phase={zonePhase}
+            setPhase={setZonePhase}
             photoData={photoData}
             zones={zones}
             activeZoneId={activeZoneId}
@@ -1650,6 +1689,8 @@ export default function VisualizadorWizard({
             productById={productById}
             canGenerate={canGenerate}
             needsExactArea={needsExactArea}
+            anyAreaMarked={anyAreaMarked}
+            allModelsChosen={allModelsChosen}
             simPrefills={simPrefills}
             onBack={() => setStep("upload")}
             onGenerate={generate}
@@ -1671,7 +1712,8 @@ export default function VisualizadorWizard({
             onLeadNameChange={setLeadName}
             onLeadPhoneChange={setLeadPhone}
             onLeadSubmit={handleLeadSubmit}
-            onRetry={() => setStep("zones")}
+            onChooseModel={() => { setZonePhase("model"); setStep("zones"); }}
+            onAdjustArea={() => { setZonePhase("mark"); setStep("zones"); }}
             onRegenerate={generate}
             onDownload={download}
             onAddPhoto={addAnotherPhoto}
@@ -1723,20 +1765,21 @@ export default function VisualizadorWizard({
 
 // ── Sub-components ─────────────────────────────────────────────────────────────
 
-function WizStepper({ step }: { step: VizStep }) {
-  const idx = STEP_LABELS.findIndex((s) => s.id === step);
+function WizStepper({ activeIndex }: { activeIndex: number }) {
+  const idx = activeIndex;
   return (
-    <ol className="flex items-center gap-2 sm:gap-3">
+    <ol className="flex items-center gap-1.5 sm:gap-3">
       {STEP_LABELS.map((s, i) => {
         const done = i < idx;
         const active = i === idx;
         return (
-          <li key={s.id} className="flex items-center gap-2 sm:gap-3 flex-1 last:flex-none">
+          <li key={s.n} className="flex items-center gap-1.5 sm:gap-3 flex-1 last:flex-none min-w-0">
             <div className="flex items-center gap-2 min-w-0">
               <span className={`flex-shrink-0 w-7 h-7 rounded-full text-xs font-bold font-[var(--font-inter)] flex items-center justify-center ${active ? "bg-[#002045] text-white" : done ? "bg-[#3b6934] text-white" : "bg-[#e8e8e6] text-[#a0a3a9]"}`}>
                 {done ? "✓" : s.n}
               </span>
-              <span className={`text-[11px] sm:text-xs font-[var(--font-inter)] truncate ${active ? "text-[#002045] font-bold" : "text-[#74777f]"}`}>
+              {/* On mobile only the current step's label shows — keeps 5 steps on one row */}
+              <span className={`text-[11px] sm:text-xs font-[var(--font-inter)] truncate ${active ? "text-[#002045] font-bold inline" : "text-[#74777f] hidden sm:inline"}`}>
                 {s.label}
               </span>
             </div>
@@ -1854,10 +1897,12 @@ function UploadStep({
 type ZoneMode = "tap" | "draw";
 
 function ZonesStep({
-  photoData, zones, activeZoneId, setActiveZoneId, onTapPhoto, onDrawRect, onAddTextZone, onConfirmQuad,
+  phase, setPhase, photoData, zones, activeZoneId, setActiveZoneId, onTapPhoto, onDrawRect, onAddTextZone, onConfirmQuad,
   updateZone, removeZone, retargetId, setRetargetId, anyDetecting, products, loadingProducts,
-  productById, canGenerate, needsExactArea, simPrefills, onBack, onGenerate, useProjection, setUseProjection,
+  productById, canGenerate, anyAreaMarked, simPrefills, onBack, onGenerate, useProjection,
 }: {
+  phase: "mark" | "confirm" | "model";
+  setPhase: (p: "mark" | "confirm" | "model") => void;
   photoData: string;
   zones: Zone[];
   activeZoneId: string | null;
@@ -1876,6 +1921,8 @@ function ZonesStep({
   productById: (id: string) => VizProduct | null;
   canGenerate: boolean;
   needsExactArea: boolean;
+  anyAreaMarked: boolean;
+  allModelsChosen: boolean;
   simPrefills?: SimPrefill[];
   onBack: () => void;
   onGenerate: () => void;
@@ -1884,9 +1931,14 @@ function ZonesStep({
 }) {
   const [mode, setMode] = useState<ZoneMode>("tap");
 
-  return (
-    <div className="grid lg:grid-cols-[1fr_360px] gap-8 items-start mt-6">
-      <div>
+  const backBtn = "inline-flex items-center gap-2 border border-[#e2e2e2] text-[#43474e] text-xs tracking-[0.12em] uppercase font-bold font-[var(--font-inter)] px-5 py-3 hover:border-[#002045] transition-colors";
+  const nextBtn = "flex-1 min-w-[180px] inline-flex items-center justify-center gap-2 text-white text-xs tracking-[0.12em] uppercase font-bold font-[var(--font-inter)] px-6 py-3.5 transition-colors disabled:opacity-50 disabled:cursor-not-allowed";
+
+  // ── Phase 2 — MARK ────────────────────────────────────────────────────────
+  if (phase === "mark") {
+    return (
+      <div className="mt-6 max-w-2xl mx-auto">
+        <StepHead title="Marque a área" subtitle="Toque na imagem ou desenhe sobre a área onde deseja aplicar o revestimento." />
         <div className="mb-3 flex flex-wrap items-center gap-2">
           <span className="text-[10px] tracking-[0.15em] uppercase font-bold font-[var(--font-inter)] text-[#74777f] mr-1">Como marcar:</span>
           <div className="inline-flex border border-[#e2e2e2] rounded-sm overflow-hidden">
@@ -1916,71 +1968,109 @@ function ZonesStep({
             <><strong>Tocar:</strong> toque numa superfície (parede, teto, móvel…) e a IA marca a área sozinha.</>
           ) : (
             <><strong>Desenhar:</strong> arraste sobre a foto para desenhar a área você mesmo.</>
-          )}{" "}
-          Você também pode <strong>Descrever em texto</strong> — escolha o que preferir.
+          )}
         </p>
 
-        {/* Single generate CTA lives in the "Áreas" column below (after the model
-            picker) so it never appears before the client has chosen a finish —
-            especially on mobile, where the columns stack. Here we only keep
-            "Trocar foto" plus a cue pointing the client to the next action. */}
-        <div className="mt-5 flex flex-wrap items-center gap-3">
-          <button onClick={onBack}
-            className="inline-flex items-center gap-2 border border-[#e2e2e2] text-[#43474e] text-xs tracking-[0.12em] uppercase font-bold font-[var(--font-inter)] px-6 py-3 hover:border-[#002045] transition-colors">
-            Trocar foto
-          </button>
-          {zones.length === 0 ? (
-            <span className="text-xs text-[#74777f] font-[var(--font-inter)]">Marque uma área na foto para começar.</span>
-          ) : !canGenerate ? (
-            <span className="text-xs text-[#b4791e] font-semibold font-[var(--font-inter)]">
-              {needsExactArea ? "Marque a área na foto com Tocar ou 4 pontos." : "Agora escolha o acabamento abaixo ↓"}
-            </span>
-          ) : (
-            <span className="text-xs text-[#3b6934] font-semibold font-[var(--font-inter)]">✓ Pronto — toque em “Gerar visualização” abaixo ↓</span>
-          )}
-        </div>
-      </div>
-
-      <div className="lg:sticky lg:top-24 space-y-3">
-        <p className="text-[10px] tracking-[0.18em] uppercase font-bold font-[var(--font-inter)] text-[#002045]">Áreas ({zones.length})</p>
+        {/* Compact list of marked areas — rename/remove only, no model picker yet */}
+        {zones.length > 0 && (
+          <div className="mt-4 space-y-1.5">
+            <p className="text-[10px] tracking-[0.18em] uppercase font-bold font-[var(--font-inter)] text-[#002045]">Áreas marcadas ({zones.length})</p>
+            {zones.map((z, i) => (
+              <div key={z.id} className={`flex items-center gap-2 border px-3 py-2 rounded-sm ${activeZoneId === z.id ? "border-[#002045]" : "border-[#e2e2e2]"}`}>
+                <span className="w-3 h-3 rounded-sm flex-shrink-0" style={{ background: ZONE_COLORS[i % ZONE_COLORS.length] }} />
+                <span className="text-sm font-semibold text-[#002045] font-[var(--font-inter)] truncate flex-1">{z.label}</span>
+                <span className="text-[10px] font-[var(--font-inter)] flex-shrink-0">
+                  {z.detecting ? <span className="text-[#74777f]">detectando…</span>
+                    : (z.maskUrl || z.polygon || z.rect) ? <span className="text-[#2f5429]">área ✓</span>
+                    : <span className="text-[#b4791e]">descrever</span>}
+                </span>
+                <button onClick={() => { setMode("tap"); setRetargetId(retargetId === z.id ? null : z.id); }}
+                  className="text-[10px] font-bold font-[var(--font-inter)] text-[#1e5fb4] hover:underline flex-shrink-0">Refazer</button>
+                <button onClick={() => removeZone(z.id)} title="Remover" className="text-[#b42318] hover:text-[#7a1610] flex-shrink-0">
+                  <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><path d="M3 6h18M8 6V4h8v2M19 6l-1 14H6L5 6" /></svg>
+                </button>
+              </div>
+            ))}
+          </div>
+        )}
         {zones.length === 0 && simPrefills && simPrefills.length > 0 && (
-          <div className="border border-[#bcd0e8] bg-[#f5f8fc] px-3 py-2.5 mb-1">
+          <div className="mt-4 border border-[#bcd0e8] bg-[#f5f8fc] px-3 py-2.5">
             <p className="text-[10px] tracking-[0.15em] uppercase font-bold font-[var(--font-inter)] text-[#002045] mb-0.5">Simulador</p>
             <p className="text-[#43474e] text-xs font-[var(--font-inter)]">
-              {simPrefills.length === 1
-                ? "Marque uma área — o modelo do Simulador será pré-selecionado."
-                : `${simPrefills.length} modelos aguardando. Marque cada área e eles serão pré-selecionados em ordem.`}
+              {simPrefills.length === 1 ? "Marque uma área — o modelo do Simulador será pré-selecionado." : `${simPrefills.length} modelos aguardando. Marque cada área na ordem.`}
             </p>
           </div>
         )}
-        {zones.length === 0 && (
-          <p className="text-[#74777f] text-sm font-[var(--font-inter)] border border-dashed border-[#cdd3dd] px-4 py-6 text-center">
-            Toque, desenhe ou descreva uma área para começar.
-          </p>
-        )}
+
+        <div className="mt-5 flex flex-wrap items-center gap-3">
+          <button onClick={onBack} className={backBtn}>Trocar foto</button>
+          <button onClick={() => setPhase("confirm")} disabled={!anyAreaMarked} className={`${nextBtn} bg-[#002045] hover:bg-[#1a365d]`}>
+            {anyDetecting ? "Detectando área…" : anyAreaMarked ? "Confirmar área →" : "Marque uma área para continuar"}
+          </button>
+        </div>
+      </div>
+    );
+  }
+
+  // ── Phase 3 — CONFIRM ─────────────────────────────────────────────────────
+  if (phase === "confirm") {
+    return (
+      <div className="mt-6 max-w-2xl mx-auto">
+        <StepHead title="A área selecionada está correta?" subtitle="Confira a marcação. Se precisar, volte e ajuste antes de escolher o acabamento." />
+        <SurfaceCanvas
+          photoData={photoData} zones={zones} activeZoneId={activeZoneId} setActiveZoneId={setActiveZoneId}
+          mode="tap" onTapPhoto={onTapPhoto} onDrawRect={onDrawRect} updateZone={updateZone}
+          busy={anyDetecting} retargeting={!!retargetId} onConfirmQuad={onConfirmQuad}
+        />
+        <p className="mt-3 text-[#74777f] text-xs font-[var(--font-inter)]">
+          {zones.length} {zones.length === 1 ? "área marcada" : "áreas marcadas"}. Toque na foto para adicionar outra, ou volte para ajustar.
+        </p>
+        <div className="mt-5 flex flex-wrap items-center gap-3">
+          <button onClick={() => setPhase("mark")} className={backBtn}>← Voltar e ajustar</button>
+          <button onClick={() => setPhase("model")} className={`${nextBtn} bg-[#002045] hover:bg-[#1a365d]`}>
+            Sim, escolher modelo →
+          </button>
+        </div>
+      </div>
+    );
+  }
+
+  // ── Phase 4 — MODEL ───────────────────────────────────────────────────────
+  return (
+    <div className="mt-6 max-w-2xl mx-auto">
+      <StepHead title="Escolha o modelo" subtitle={zones.length > 1 ? "Selecione o acabamento para cada área." : "Selecione o acabamento que deseja aplicar."} />
+      <div className="space-y-3">
         {zones.map((z, i) => (
           <ZoneCard key={z.id} zone={z} index={i} active={activeZoneId === z.id} retargeting={retargetId === z.id}
             onSelect={() => setActiveZoneId(z.id)} onChange={(patch) => updateZone(z.id, patch)} onRemove={() => removeZone(z.id)}
-            onRetarget={() => { setMode("tap"); setRetargetId(retargetId === z.id ? null : z.id); }}
+            onRetarget={() => { setMode("tap"); setRetargetId(z.id); setPhase("mark"); }}
             products={products} loadingProducts={loadingProducts} productById={productById}
             useProjection={useProjection}
           />
         ))}
-        {zones.length > 0 && (
-          <>
-            <button onClick={onGenerate} disabled={!canGenerate}
-              className="w-full inline-flex items-center justify-center gap-2 bg-[#3b6934] text-white text-xs tracking-[0.12em] uppercase font-bold font-[var(--font-inter)] px-7 py-3.5 hover:bg-[#2f5429] transition-colors disabled:opacity-50">
-              <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><path d="M5 3v4M3 5h4M6 17v4m-2-2h4M13 3l2.5 6.5L22 12l-6.5 2.5L13 21l-2.5-6.5L4 12l6.5-2.5z" /></svg>
-              Gerar visualização
-            </button>
-            {!canGenerate && (
-              <p className="text-[11px] text-[#b4791e] font-[var(--font-inter)] text-center">
-                {needsExactArea ? "Marque a área na foto para gerar." : "Escolha um acabamento em cada área para gerar."}
-              </p>
-            )}
-          </>
-        )}
       </div>
+      <div className="mt-5 flex flex-wrap items-center gap-3">
+        <button onClick={() => setPhase("mark")} className={backBtn}>← Ajustar área</button>
+        <button onClick={onGenerate} disabled={!canGenerate} className={`${nextBtn} bg-[#3b6934] hover:bg-[#2f5429]`}>
+          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><path d="M5 3v4M3 5h4M6 17v4m-2-2h4M13 3l2.5 6.5L22 12l-6.5 2.5L13 21l-2.5-6.5L4 12l6.5-2.5z" /></svg>
+          Gerar visualização
+        </button>
+      </div>
+      {!canGenerate && (
+        <p className="mt-2 text-[11px] text-[#b4791e] font-[var(--font-inter)] text-center">
+          Escolha um acabamento em cada área para gerar.
+        </p>
+      )}
+    </div>
+  );
+}
+
+// Small step heading used across the guided phases — the "what to do now" cue.
+function StepHead({ title, subtitle }: { title: string; subtitle: string }) {
+  return (
+    <div className="mb-4">
+      <h2 className="font-[var(--font-noto-serif)] text-[#002045] text-xl sm:text-2xl leading-tight">{title}</h2>
+      <p className="text-[#74777f] text-sm font-[var(--font-inter)] mt-1">{subtitle}</p>
     </div>
   );
 }
@@ -2278,9 +2368,12 @@ function ZoneCard({ zone, index, active, retargeting, onSelect, onChange, onRemo
       ) : (
         <div className="grid grid-cols-4 gap-1.5 max-h-[180px] overflow-y-auto pr-1" onClick={(e) => e.stopPropagation()}>
           {list.map((p) => {
-            const sel = zone.productId === p.id;
+            // Highlight only once the client has actively chosen — a seeded
+            // default must not look pre-selected, or the "choose a model" step
+            // would seem already done.
+            const sel = !!zone.productChosen && zone.productId === p.id;
             return (
-              <button key={p.id} onClick={() => onChange({ productId: p.id })} title={p.name} className="group text-left">
+              <button key={p.id} onClick={() => onChange({ productId: p.id, productChosen: true })} title={p.name} className="group text-left">
                 <span style={{ aspectRatio: "1 / 1" }} className={`relative block w-full overflow-hidden rounded-sm border-2 ${sel ? "border-[#3b6934]" : "border-[#e8e8e6] group-hover:border-[#86a0cd]"}`}>
                   {/* eslint-disable-next-line @next/next/no-img-element */}
                   <img src={p.image_path} alt={p.name} className="absolute inset-0 w-full h-full object-cover scale-[1.35]" loading="lazy" />
@@ -2305,14 +2398,15 @@ function ZoneCard({ zone, index, active, retargeting, onSelect, onChange, onRemo
 function ResultStep({
   photoData, result, generating, progress, error,
   leadSubmitted, leadName, leadPhone, onLeadNameChange, onLeadPhoneChange, onLeadSubmit,
-  onRetry, onRegenerate, onDownload, onAddPhoto,
+  onChooseModel, onAdjustArea, onRegenerate, onDownload, onAddPhoto,
   embeddedMode,
 }: {
   photoData: string | null; result: string | null; generating: boolean;
   progress: { i: number; total: number; label: string } | null; error: string | null;
   leadSubmitted: boolean; leadName: string; leadPhone: string;
   onLeadNameChange: (v: string) => void; onLeadPhoneChange: (v: string) => void; onLeadSubmit: () => void;
-  onRetry: () => void; onRegenerate: () => void; onDownload: () => void; onAddPhoto: () => void;
+  onChooseModel: () => void; onAdjustArea: () => void;
+  onRegenerate: () => void; onDownload: () => void; onAddPhoto: () => void;
   embeddedMode?: boolean;
 }) {
   const showLeadOverlay = !embeddedMode && !leadSubmitted && !error;
@@ -2384,42 +2478,46 @@ function ResultStep({
 
       {error && <p className="mt-3 text-sm text-[#b42318] font-[var(--font-inter)]">{error}</p>}
 
-      {!generating && (leadSubmitted || !!error) && (
-        <div className="mt-4 flex flex-wrap gap-3">
-          {/* Standalone: download + add photo */}
-          {!embeddedMode && result && leadSubmitted && (
-            <>
-              <button onClick={onDownload} className="inline-flex items-center gap-2 bg-[#002045] text-white text-xs tracking-[0.12em] uppercase font-bold font-[var(--font-inter)] px-6 py-3 hover:bg-[#1a365d] transition-colors">
-                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><path d="M21 15v4a2 2 0 01-2 2H5a2 2 0 01-2-2v-4M7 10l5 5 5-5M12 15V3" /></svg>
-                Baixar
-              </button>
-              <button onClick={onAddPhoto} className="inline-flex items-center gap-2 border border-[#3b6934] text-[#3b6934] text-xs tracking-[0.12em] uppercase font-bold font-[var(--font-inter)] px-6 py-3 hover:bg-[#f3f8f1] transition-colors">
-                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5"><path d="M12 5v14M5 12h14" /></svg>
-                Adicionar outra foto
-              </button>
-            </>
-          )}
-          {/* Download also shown in embedded mode */}
-          {embeddedMode && result && (
-            <button onClick={onDownload} className="inline-flex items-center gap-2 border border-[#e2e2e2] text-[#43474e] text-xs tracking-[0.12em] uppercase font-bold font-[var(--font-inter)] px-6 py-3 hover:border-[#002045] transition-colors">
-              <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><path d="M21 15v4a2 2 0 01-2 2H5a2 2 0 01-2-2v-4M7 10l5 5 5-5M12 15V3" /></svg>
-              Baixar imagem
-            </button>
-          )}
-          {result && (
-            <button onClick={onRetry} className="inline-flex items-center gap-2 border-2 border-[#3b6934] text-[#3b6934] text-xs tracking-[0.12em] uppercase font-bold font-[var(--font-inter)] px-6 py-3 hover:bg-[#f3f8f1] transition-colors">
-              <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><path d="M4 4v6h6M20 20v-6h-6M20 8a8 8 0 0 0-14-3M4 16a8 8 0 0 0 14 3" /></svg>
-              Trocar acabamento
-            </button>
-          )}
-          <button onClick={onRegenerate} className="inline-flex items-center gap-2 border border-[#e2e2e2] text-[#43474e] text-xs tracking-[0.12em] uppercase font-bold font-[var(--font-inter)] px-6 py-3 hover:border-[#002045] transition-colors">
-            {result ? "Gerar novamente" : "Tentar novamente"}
+      {/* Clear, named next actions — so the client knows exactly what each does
+          (the old "Editar dados/áreas" was ambiguous about swapping the model). */}
+      {!generating && result && (leadSubmitted || embeddedMode) && (
+        <div className="mt-4 space-y-3">
+          {/* Primary — the most common change after seeing the render */}
+          <button onClick={onChooseModel}
+            className="w-full sm:w-auto inline-flex items-center justify-center gap-2 bg-[#3b6934] text-white text-xs tracking-[0.12em] uppercase font-bold font-[var(--font-inter)] px-6 py-3.5 hover:bg-[#2f5429] transition-colors">
+            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><path d="M3 3h7v7H3zM14 3h7v7h-7zM14 14h7v7h-7zM3 14h7v7H3z" /></svg>
+            Escolher outro modelo
           </button>
-          {!result && (
-            <button onClick={onRetry} className="inline-flex items-center gap-2 border border-[#e2e2e2] text-[#43474e] text-xs tracking-[0.12em] uppercase font-bold font-[var(--font-inter)] px-6 py-3 hover:border-[#002045] transition-colors">
-              Editar áreas
+          <div className="flex flex-wrap gap-2.5">
+            <button onClick={onAdjustArea} className="inline-flex items-center gap-2 border border-[#e2e2e2] text-[#43474e] text-xs tracking-[0.1em] uppercase font-bold font-[var(--font-inter)] px-4 py-2.5 hover:border-[#002045] transition-colors">
+              Ajustar área
             </button>
-          )}
+            <button onClick={onAddPhoto} className="inline-flex items-center gap-2 border border-[#e2e2e2] text-[#43474e] text-xs tracking-[0.1em] uppercase font-bold font-[var(--font-inter)] px-4 py-2.5 hover:border-[#002045] transition-colors">
+              Enviar outra foto
+            </button>
+            <button onClick={onDownload} className="inline-flex items-center gap-2 border border-[#e2e2e2] text-[#43474e] text-xs tracking-[0.1em] uppercase font-bold font-[var(--font-inter)] px-4 py-2.5 hover:border-[#002045] transition-colors">
+              <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><path d="M21 15v4a2 2 0 01-2 2H5a2 2 0 01-2-2v-4M7 10l5 5 5-5M12 15V3" /></svg>
+              Salvar imagem
+            </button>
+            <button onClick={onRegenerate} className="inline-flex items-center gap-2 border border-[#e2e2e2] text-[#74777f] text-xs tracking-[0.1em] uppercase font-bold font-[var(--font-inter)] px-4 py-2.5 hover:border-[#002045] transition-colors">
+              Gerar novamente
+            </button>
+          </div>
+        </div>
+      )}
+
+      {/* Error (no result) — recovery actions */}
+      {!generating && !result && !!error && (
+        <div className="mt-4 flex flex-wrap gap-2.5">
+          <button onClick={onRegenerate} className="inline-flex items-center gap-2 bg-[#002045] text-white text-xs tracking-[0.12em] uppercase font-bold font-[var(--font-inter)] px-6 py-3 hover:bg-[#1a365d] transition-colors">
+            Tentar novamente
+          </button>
+          <button onClick={onAdjustArea} className="inline-flex items-center gap-2 border border-[#e2e2e2] text-[#43474e] text-xs tracking-[0.1em] uppercase font-bold font-[var(--font-inter)] px-4 py-2.5 hover:border-[#002045] transition-colors">
+            Ajustar área
+          </button>
+          <button onClick={onChooseModel} className="inline-flex items-center gap-2 border border-[#e2e2e2] text-[#43474e] text-xs tracking-[0.1em] uppercase font-bold font-[var(--font-inter)] px-4 py-2.5 hover:border-[#002045] transition-colors">
+            Escolher outro modelo
+          </button>
         </div>
       )}
 
