@@ -328,6 +328,29 @@ export default function PedidosTab({
     await fetchPresets();
   }
 
+  // Rename a saved preset in place, and keep the current draft in sync — if the
+  // old wording was already applied to this order, swap it for the new one.
+  async function renamePreset(id: string, oldLabel: string, kind: "payment_terms" | "payment_method") {
+    const next = window.prompt("Renomear:", oldLabel);
+    if (next == null) return;
+    const label = next.trim();
+    if (!label || label === oldLabel) return;
+    const res = await fetch(`/api/admin/pedido-presets/${id}`, {
+      method: "PATCH", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ label }),
+    });
+    if (!res.ok) { alert("Não foi possível renomear."); return; }
+    await fetchPresets();
+    setDraft((d) => {
+      if (!d) return d;
+      if (kind === "payment_terms") {
+        const lines = (d.payment_terms ?? "").split("\n").map((s) => s.trim()).filter(Boolean);
+        return lines.includes(oldLabel) ? { ...d, payment_terms: lines.map((l) => (l === oldLabel ? label : l)).join("\n") } : d;
+      }
+      const methods = d.payment_methods ?? [];
+      return methods.includes(oldLabel) ? { ...d, payment_methods: methods.map((m) => (m === oldLabel ? label : m)) } : d;
+    });
+  }
+
   // Real panel size for a stock product (falls back to the Visualizador's
   // default panel dimensions when the product has none set), so a desired m²
   // can be converted into a plate count.
@@ -1999,8 +2022,12 @@ export default function PedidosTab({
                             {method}
                           </label>
                           {preset && (
-                            <button type="button" onClick={() => deletePreset(preset.id)} title="Remover esta forma cadastrada"
-                              className="text-[#b0b0b0] hover:text-[#b42318] text-[10px] leading-none">×</button>
+                            <>
+                              <button type="button" onClick={() => renamePreset(preset.id, preset.label, "payment_method")} title="Renomear esta forma"
+                                className="text-[#b0b0b0] hover:text-[#002045] text-[10px] leading-none">✎</button>
+                              <button type="button" onClick={() => deletePreset(preset.id)} title="Remover esta forma cadastrada"
+                                className="text-[#b0b0b0] hover:text-[#b42318] text-[10px] leading-none">×</button>
+                            </>
                           )}
                         </div>
                       );
@@ -2045,6 +2072,8 @@ export default function PedidosTab({
                               className="hover:underline text-left">
                               {selected ? "✓ " : "+ "}{p.label}
                             </button>
+                            <button type="button" onClick={() => renamePreset(p.id, p.label, "payment_terms")} title="Renomear esta condição"
+                              className={`px-1 ${selected ? "text-white/70 hover:text-white" : "text-[#b0b0b0] hover:text-[#002045]"}`}>✎</button>
                             <button type="button" onClick={() => deletePreset(p.id)} title="Remover esta predefinição"
                               className={`px-1 ${selected ? "text-white/70 hover:text-white" : "text-[#b0b0b0] hover:text-[#b42318]"}`}>×</button>
                           </span>
