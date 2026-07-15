@@ -7,6 +7,9 @@ type DocumentType = "orcamento" | "pedido" | "nota" | "recibo";
 interface PedidoItem {
   id: string;
   product_name: string | null;
+  product_code?: string | null;
+  panel_w?: number | string | null;
+  panel_h?: number | string | null;
   plates: number;
   unit_price: number | null;
   unit_cost: number | null;
@@ -139,6 +142,19 @@ function fmtDate(s: string | null | undefined) {
 function docNumber(pedido: PedidoDocument) {
   const year = new Date(pedido.created_at).getFullYear().toString().slice(-2);
   return `${pedido.id.slice(0, 8).toUpperCase()}-${year}`;
+}
+
+// Short unit + a descriptive detail (placas carry their real dimensions).
+function itemUnitInfo(it: PedidoItem): { short: string; detail: string } {
+  const unit = (it.unit_label || "un").trim() || "un";
+  const short = unit.charAt(0).toUpperCase() + unit.slice(1);
+  const h = Number(it.panel_h) || 0; // ≈2,90 m
+  const w = Number(it.panel_w) || 0; // ≈1,20 m
+  const fmtM = (n: number) => n.toFixed(2).replace(".", ",");
+  if (/placa/i.test(unit) && h > 0 && w > 0) {
+    return { short, detail: `Placa ${fmtM(h)} m × ${fmtM(w)} m × 5 mm` };
+  }
+  return { short, detail: short };
 }
 
 function addressLines(pedido: PedidoDocument) {
@@ -494,11 +510,17 @@ export default function PedidoDocumentoPage({ params }: { params: Promise<{ id: 
               {items.map((it) => {
                 const unit = Number(it.unit_price) || 0;
                 const qty = Number(it.plates) || 0;
+                const u = itemUnitInfo(it);
+                const sub = [it.product_code ? `Modelo: ${it.product_code}` : null, u.detail]
+                  .filter(Boolean).join("  ·  ");
                 return (
                   <tr key={it.id}>
-                    <td>{it.product_name || "Produto Orbital"}</td>
+                    <td>
+                      <span className="doc-item-name">{it.product_name || "Produto Orbital"}</span>
+                      {sub && <span className="doc-item-sub">{sub}</span>}
+                    </td>
                     <td>{qty}</td>
-                    <td>{it.unit_label || "un"}</td>
+                    <td>{u.short}</td>
                     <td>{fmtBRL(unit)}</td>
                     <td>{fmtBRL(unit * qty)}</td>
                   </tr>
@@ -658,7 +680,9 @@ export default function PedidoDocumentoPage({ params }: { params: Promise<{ id: 
           padding: 4px;
         }
         .doc-table th:not(:first-child), .doc-table td:not(:first-child) { text-align: right; }
-        .doc-table td { padding: 4px; border-bottom: 1px solid #eee; }
+        .doc-table td { padding: 4px; border-bottom: 1px solid #eee; vertical-align: top; }
+        .doc-item-name { display: block; font-weight: 700; }
+        .doc-item-sub { display: block; font-size: 11px; color: #777; margin-top: 1px; }
         .doc-totals { display: flex; justify-content: flex-end; margin: 18px 0 22px; }
         .doc-totals > div { width: 230px; }
         .doc-totals p { display: flex; justify-content: space-between; margin: 0 0 7px; gap: 20px; }

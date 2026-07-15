@@ -54,6 +54,24 @@ function fmtDate(s: string | null | undefined) {
   return new Date(s).toLocaleDateString("pt-BR");
 }
 
+function fmtMeters(n: number) {
+  return n.toFixed(2).replace(".", ",");
+}
+
+// Short unit for the "Un." column + a descriptive detail for the name sub-line.
+// A placa carries its real dimensions (e.g. "Placa 2,90 m × 1,20 m × 5 mm");
+// everything else (tubo, un…) just capitalizes the stored unit.
+function unitInfo(item: Record<string, unknown>): { short: string; detail: string } {
+  const unit = String(item.unit_label ?? "un").trim() || "un";
+  const short = unit.charAt(0).toUpperCase() + unit.slice(1);
+  const h = Number(item.panel_h) || 0; // height (≈2,90 m)
+  const w = Number(item.panel_w) || 0; // width  (≈1,20 m)
+  if (/placa/i.test(unit) && h > 0 && w > 0) {
+    return { short, detail: `Placa ${fmtMeters(h)} m × ${fmtMeters(w)} m × 5 mm` };
+  }
+  return { short, detail: short };
+}
+
 function docNumber(pedido: Record<string, unknown>) {
   const createdAt = typeof pedido.created_at === "string" ? pedido.created_at : new Date().toISOString();
   const year = new Date(createdAt).getFullYear().toString().slice(-2);
@@ -96,7 +114,7 @@ async function fetchPedido(id: string) {
     try {
       const { data: products } = await db
         .from("products")
-        .select("id, description, image_path, product_images(image_path, sort_order)")
+        .select("id, code, description, image_path, render_panel_width_m, render_panel_height_m, product_images(image_path, sort_order)")
         .in("id", productIds);
       const byId = new Map((products ?? []).map((p) => [p.id as string, p as Record<string, unknown>]));
       items = items.map((it) => {
@@ -105,6 +123,9 @@ async function fetchPedido(id: string) {
         const sorted = images.filter((img) => img.image_path).sort((a, b) => (a.sort_order ?? 0) - (b.sort_order ?? 0));
         return {
           ...it,
+          product_code: product?.code ?? null,
+          panel_w: product?.render_panel_width_m ?? null,
+          panel_h: product?.render_panel_height_m ?? null,
           product_description: product?.description ?? null,
           product_image_path: sorted[0]?.image_path ?? product?.image_path ?? null,
         };
@@ -195,26 +216,33 @@ async function generatePedidoPdf(input: {
   doc.fillColor("#1a1c1c").font("Helvetica").fontSize(9)
     .text("Nome", cols.name, tableTop + 6)
     .text("Qtd.", cols.qty, tableTop + 6, { width: 44, align: "right" })
-    .text("Un.", cols.unit, tableTop + 6, { width: 32, align: "right" })
+    .text("Un.", cols.unit, tableTop + 6, { width: 44, align: "right" })
     .text("Vlr. unit.", cols.price, tableTop + 6, { width: 58, align: "right" })
     .text("Total", cols.total, tableTop + 6, { width: 53, align: "right" });
   doc.y = tableTop + 26;
 
   let subtotal = 0;
   for (const item of items) {
-    ensureSpace(doc, includeImages || includeDescriptions ? 96 : 26);
+    ensureSpace(doc, includeImages || includeDescriptions ? 104 : 34);
     const y = doc.y;
     const qty = Number(item.plates) || 0;
     const unitPrice = Number(item.unit_price) || 0;
     const lineTotal = qty * unitPrice;
     subtotal += lineTotal;
+    const { short: unitShort, detail: unitDetail } = unitInfo(item);
+    const code = item.product_code ? String(item.product_code) : null;
+    // Name + a sub-line identifying the item: "Modelo: ORB-004 · Placa 2,90 m …"
+    const subParts = [code ? `Modelo: ${code}` : null, unitDetail].filter(Boolean).join("  ·  ");
+    doc.font("Helvetica-Bold").fontSize(9).fillColor("#1a1c1c")
+      .text(String(item.product_name ?? "Produto Orbital"), cols.name, y, { width: 268 });
+    doc.font("Helvetica").fontSize(7.5).fillColor("#777")
+      .text(subParts, cols.name, y + 11, { width: 268 });
     doc.font("Helvetica").fontSize(9).fillColor("#1a1c1c")
-      .text(String(item.product_name ?? "Produto Orbital"), cols.name, y, { width: 260 })
       .text(String(qty), cols.qty, y, { width: 44, align: "right" })
-      .text(String(item.unit_label ?? "un"), cols.unit, y, { width: 32, align: "right" })
+      .text(unitShort, cols.unit, y, { width: 44, align: "right" })
       .text(fmtBRL(unitPrice), cols.price, y, { width: 58, align: "right" })
       .text(fmtBRL(lineTotal), cols.total, y, { width: 53, align: "right" });
-    doc.y = y + 18;
+    doc.y = y + 26;
 
     const localImage = includeImages ? maybeLocalImage(item.product_image_path) : null;
     if (localImage || (includeDescriptions && item.product_description)) {

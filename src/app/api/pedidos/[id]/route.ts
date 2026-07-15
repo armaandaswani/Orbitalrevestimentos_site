@@ -12,6 +12,9 @@ export const dynamic = "force-dynamic";
 
 const SAFE_ITEM = (it: Record<string, unknown>) => ({
   product_name: it.product_name ?? null,
+  product_code: it.product_code ?? null,
+  panel_w: it.panel_w ?? null,
+  panel_h: it.panel_h ?? null,
   plates: it.plates ?? null,
   unit_price: it.unit_price ?? null,
   unit_label: it.unit_label ?? "placa",
@@ -26,10 +29,22 @@ export async function GET(_req: NextRequest, { params }: { params: Promise<{ id:
   if (error) return NextResponse.json({ error: error.message }, { status: 500 });
   if (!pedido) return NextResponse.json({ error: "Documento não encontrado." }, { status: 404 });
 
-  const { data: items } = await db
+  const { data: itemRows } = await db
     .from("pedido_items")
-    .select("product_name, plates, unit_price, unit_label")
+    .select("product_id, product_name, plates, unit_price, unit_label")
     .eq("pedido_id", id);
+  // Join the product's code + panel dimensions (client-safe) so the document can
+  // show "Modelo: ORB-004" and "Placa 2,90 m × 1,20 m × 5 mm".
+  const itemProductIds = (itemRows ?? []).map((r) => (r as Record<string, unknown>).product_id).filter(Boolean) as string[];
+  const prodMeta = itemProductIds.length
+    ? (await db.from("products").select("id, code, render_panel_width_m, render_panel_height_m").in("id", itemProductIds)).data ?? []
+    : [];
+  const prodMetaById = new Map(prodMeta.map((p) => [(p as Record<string, unknown>).id as string, p as Record<string, unknown>]));
+  const items = (itemRows ?? []).map((r) => {
+    const row = r as Record<string, unknown>;
+    const meta = row.product_id ? prodMetaById.get(row.product_id as string) : null;
+    return { ...row, product_code: meta?.code ?? null, panel_w: meta?.render_panel_width_m ?? null, panel_h: meta?.render_panel_height_m ?? null };
+  });
 
   const p = pedido as Record<string, unknown>;
   // Whitelist — everything the document renderer needs, nothing internal.

@@ -286,7 +286,7 @@ export async function GET(req: NextRequest, { params }: { params: Promise<{ id: 
     if (productIds.length > 0) {
       const { data: products } = await db
         .from("products")
-        .select("id, description, image_path, product_images(image_path, sort_order)")
+        .select("id, code, description, image_path, render_panel_width_m, render_panel_height_m, product_images(image_path, sort_order)")
         .in("id", productIds);
       productById = new Map((products ?? []).map((p) => [p.id as string, p as Record<string, unknown>]));
     }
@@ -298,6 +298,9 @@ export async function GET(req: NextRequest, { params }: { params: Promise<{ id: 
         .sort((a, b) => (a.sort_order ?? 0) - (b.sort_order ?? 0));
       return {
         ...row,
+        product_code: product?.code ?? null,
+        panel_w: product?.render_panel_width_m ?? null,
+        panel_h: product?.render_panel_height_m ?? null,
         product_description: product?.description ?? null,
         product_image_path: sortedImages[0]?.image_path ?? product?.image_path ?? null,
       };
