@@ -68,7 +68,10 @@ const PAYMENT_META: Record<PaymentStatus, { label: string; cls: string }> = {
   pago: { label: "Pago", cls: "bg-green-100 text-green-800" },
 };
 const PAYMENT_ORDER: PaymentStatus[] = ["pendente", "parcial", "pago"];
-const PAYMENT_METHODS = ["Pix", "Dinheiro", "Cartão de Crédito", "Cartão de Débito", "Boleto", "Transferência Bancária"] as const;
+// Formas de pagamento = the MEANS the client pays with (kept separate from
+// "condições", which are the commercial rules — discount/parcelamento — managed
+// as presets). "Dinheiro" kept for backward-compat with older orders.
+const PAYMENT_METHODS = ["Pix", "Cartão de Crédito", "Cartão de Débito", "Espécie", "Cheque", "Boleto", "Transferência Bancária", "Dinheiro"] as const;
 const DEFAULT_PAYMENT_TERMS = "PIX ou dinheiro à vista";
 const DEFAULT_DOCUMENT_NOTES =
   `CLÁUSULAS CONTRATUAIS - DISPOSIÇÕES GERAIS
