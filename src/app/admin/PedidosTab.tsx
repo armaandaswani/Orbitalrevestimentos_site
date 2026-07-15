@@ -1571,16 +1571,17 @@ export default function PedidosTab({
                       return (
                         <div key={idx} className="border border-[#f0f0f0] bg-white p-2">
                           <div className="grid grid-cols-[1fr_120px_28px] gap-2 items-start">
-                          <select value={it.product_id}
-                            onChange={(e) => setItems((cur) => cur.map((x, i) => i === idx ? { ...x, product_id: e.target.value } : x))}
-                            className={`${inputCls} min-w-0`}>
-                            <option value="">Selecione o modelo…</option>
-                            {stockProducts.map((p) => (
-                              <option key={p.id} value={p.id}>
-                                {p.name}{p.code ? ` (${p.code})` : ""} — {p.available} {p.sale_unit || "placa"} disp. — venda/{p.sale_unit || "placa"} {p.price != null ? fmtBRL(p.price) : "sem preço"}
-                              </option>
-                            ))}
-                          </select>
+                          <SearchSelect
+                            value={it.product_id}
+                            onChange={(id) => setItems((cur) => cur.map((x, i) => i === idx ? { ...x, product_id: id } : x))}
+                            placeholder="Selecione o modelo…"
+                            options={stockProducts.map((p) => ({
+                              id: p.id,
+                              label: `${p.name}${p.code ? ` (${p.code})` : ""}`,
+                              search: `${p.name} ${p.code ?? ""} ${p.linha ?? ""}`,
+                              hint: `${p.available} ${p.sale_unit || "placa"} disp. · venda/${p.sale_unit || "placa"} ${p.price != null ? fmtBRL(p.price) : "sem preço"}`,
+                            }))}
+                          />
                           <div className="flex">
                             <input type="number" min="1" value={it.plates || ""} placeholder="Qtd."
                               onChange={(e) => setItems((cur) => cur.map((x, i) => i === idx ? { ...x, plates: Number(e.target.value) } : x))}
@@ -1736,12 +1737,18 @@ export default function PedidosTab({
                 )}
                 <div className="grid grid-cols-2 gap-3">
                   <Field label="Parceiro">
-                    <select className={inputCls} value={draft.partner_id ?? ""} onChange={(e) => applyPartnerSelection(e.target.value)}>
-                      <option value="">Sem parceiro</option>
-                      {partners.map((p) => (
-                        <option key={p.id} value={p.id}>{p.name} · {p.coupon_code}</option>
-                      ))}
-                    </select>
+                    <SearchSelect
+                      value={draft.partner_id ?? ""}
+                      onChange={(id) => applyPartnerSelection(id)}
+                      placeholder="Sem parceiro"
+                      emptyOption={{ id: "", label: "Sem parceiro" }}
+                      options={partners.map((p) => ({
+                        id: p.id,
+                        label: p.name,
+                        search: `${p.name} ${p.coupon_code ?? ""}`,
+                        hint: p.coupon_code ?? undefined,
+                      }))}
+                    />
                   </Field>
                   <Field label="Representante">
                     <select className={inputCls} value={draft.sales_rep_id ?? ""} onChange={(e) => applySalesRepSelection(e.target.value)}>
@@ -2201,6 +2208,59 @@ function Field({ label, children }: { label: string; children: React.ReactNode }
       <span className="block text-[10px] tracking-[0.1em] uppercase font-bold font-[var(--font-inter)] text-[#74777f] mb-1">{label}</span>
       {children}
     </label>
+  );
+}
+
+// Searchable single-select (combobox). For long lists (products, partners) the
+// client/admin types to filter by name/code instead of scrolling a native
+// <select>. Filters on each option's `search` string.
+function SearchSelect({
+  value, onChange, options, placeholder, emptyOption,
+}: {
+  value: string;
+  onChange: (id: string) => void;
+  options: Array<{ id: string; label: string; search: string; hint?: string }>;
+  placeholder: string;
+  emptyOption?: { id: string; label: string };
+}) {
+  const [open, setOpen] = useState(false);
+  const [q, setQ] = useState("");
+  const ref = useRef<HTMLDivElement>(null);
+  useEffect(() => {
+    if (!open) return;
+    const onDoc = (e: MouseEvent) => { if (ref.current && !ref.current.contains(e.target as Node)) { setOpen(false); setQ(""); } };
+    document.addEventListener("mousedown", onDoc);
+    return () => document.removeEventListener("mousedown", onDoc);
+  }, [open]);
+  const selected = value ? options.find((o) => o.id === value) : null;
+  const selectedLabel = selected ? selected.label : (emptyOption && value === emptyOption.id ? emptyOption.label : "");
+  const ql = q.trim().toLowerCase();
+  const filtered = ql ? options.filter((o) => o.search.toLowerCase().includes(ql)) : options;
+  return (
+    <div className="relative min-w-0" ref={ref}>
+      <button type="button" onClick={() => setOpen((o) => !o)}
+        className={`${inputCls} text-left flex items-center justify-between gap-2`}>
+        <span className={`truncate ${selectedLabel ? "" : "text-[#a0a3a8]"}`}>{selectedLabel || placeholder}</span>
+        <span className="text-[#74777f] flex-shrink-0 text-xs">▾</span>
+      </button>
+      {open && (
+        <div className="absolute z-30 mt-1 left-0 right-0 bg-white border border-[#e2e2e2] shadow-lg max-h-72 overflow-y-auto">
+          <input autoFocus value={q} onChange={(e) => setQ(e.target.value)} placeholder="Buscar por nome ou código…"
+            className="sticky top-0 w-full border-b border-[#e2e2e2] px-3 py-2 text-sm font-[var(--font-inter)] text-[#002045] focus:outline-none bg-white" />
+          {emptyOption && (
+            <button type="button" onClick={() => { onChange(emptyOption.id); setOpen(false); setQ(""); }}
+              className="block w-full text-left px-3 py-2 text-sm font-[var(--font-inter)] text-[#74777f] hover:bg-[#f5f5f3]">{emptyOption.label}</button>
+          )}
+          {filtered.map((o) => (
+            <button key={o.id} type="button" onClick={() => { onChange(o.id); setOpen(false); setQ(""); }}
+              className={`block w-full text-left px-3 py-2 text-sm font-[var(--font-inter)] hover:bg-[#f5f5f3] ${o.id === value ? "bg-[#eef2f8] text-[#002045] font-semibold" : "text-[#002045]"}`}>
+              {o.label}{o.hint ? <span className="block text-[10px] text-[#74777f] font-normal">{o.hint}</span> : null}
+            </button>
+          ))}
+          {filtered.length === 0 && <p className="px-3 py-3 text-xs text-[#74777f] font-[var(--font-inter)]">Nada encontrado.</p>}
+        </div>
+      )}
+    </div>
   );
 }
 
