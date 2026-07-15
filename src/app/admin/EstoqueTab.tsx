@@ -313,12 +313,30 @@ function StockRow({
           </label>
           <label className="flex items-center gap-2 text-[11px] font-[var(--font-inter)] text-[#74777f]">
             Unidade venda
-            <input defaultValue={p.sale_unit || "placa"} placeholder="placa"
-              onBlur={(e) => {
-                const v = e.target.value.trim() || "placa";
-                if (v !== (p.sale_unit || "placa")) onPatch({ sale_unit: v });
-              }}
-              className="w-24 border border-[#e2e2e2] px-2 py-1 text-xs text-[#002045] focus:outline-none focus:border-[#002045]" />
+            {(() => {
+              const cur = p.sale_unit || "placa";
+              // Common units up front; keep any existing custom value selectable,
+              // and "Outro…" for anything else — so a glue reads "tubo", tiles
+              // "m²", etc. without free-typing (which let "placa" slip onto Cola PU).
+              const PRESETS = ["placa", "tubo", "un", "m²", "kg", "rolo", "litro", "caixa", "par", "metro"];
+              const opts = PRESETS.includes(cur) ? PRESETS : [cur, ...PRESETS];
+              return (
+                <select value={cur}
+                  onChange={(e) => {
+                    let v = e.target.value;
+                    if (v === "__custom__") {
+                      const c = window.prompt("Unidade de venda (ex: conjunto, galão):", cur);
+                      if (!c || !c.trim()) return;
+                      v = c.trim().slice(0, 32);
+                    }
+                    if (v !== cur) onPatch({ sale_unit: v });
+                  }}
+                  className="border border-[#e2e2e2] px-2 py-1 text-xs text-[#002045] bg-white focus:outline-none focus:border-[#002045]">
+                  {opts.map((u) => <option key={u} value={u}>{u}</option>)}
+                  <option value="__custom__">Outro…</option>
+                </select>
+              );
+            })()}
           </label>
           <label className="flex items-center gap-2 text-[11px] font-[var(--font-inter)] text-[#74777f]">
             Custo/{p.sale_unit || "placa"}
