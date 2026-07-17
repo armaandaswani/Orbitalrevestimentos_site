@@ -308,9 +308,17 @@ function ProjectLightbox({
               ) : current?.kind === "video" ? (
                 // Always show a link/button — never try to embed
                 <div className="flex flex-col items-center justify-center gap-5 text-center px-6">
-                  <div className="w-16 h-16 rounded-full bg-white/10 border border-white/20 flex items-center justify-center">
+                  {/* The play circle is a link too — users tap it first out of habit */}
+                  <a
+                    href={current.url}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    onClick={(e) => e.stopPropagation()}
+                    aria-label="Assistir ao vídeo"
+                    className="w-16 h-16 rounded-full bg-white/10 border border-white/20 flex items-center justify-center hover:bg-white/20 transition-colors cursor-pointer"
+                  >
                     <svg width="26" height="26" viewBox="0 0 24 24" fill="white" opacity=".8"><path d="M8 5v14l11-7z"/></svg>
-                  </div>
+                  </a>
                   {current.description && (
                     <p className="text-white/60 text-sm font-[var(--font-inter)] max-w-xs leading-relaxed">{current.description}</p>
                   )}

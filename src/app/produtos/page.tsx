@@ -27,6 +27,9 @@ interface Product {
   is_active: boolean;
   sort_order: number;
   product_images?: ProductImage[];
+  // Flat tileable texture (uploaded in the admin) — the file architects download
+  // for their own 3D mockups; falls back to the beauty photo when unset.
+  render_texture_path?: string | null;
 }
 
 const linhas: { key: Linha; label: string; desc: string }[] = [
@@ -395,7 +398,7 @@ export default function ProdutosPage() {
                 </div>
 
                 {/* CTA — pinned to bottom */}
-                <div className="sticky bottom-0 p-4 lg:p-6 bg-white border-t border-[#e8e8e8]">
+                <div className="sticky bottom-0 p-4 lg:p-6 bg-white border-t border-[#e8e8e8] space-y-2">
                   <Link
                     href={simulatorUrl}
                     onClick={close}
@@ -406,6 +409,37 @@ export default function ProdutosPage() {
                     </svg>
                     Simular investimento
                   </Link>
+                  {/* Download the currently-shown texture. Fetches the blob so the
+                      cross-origin Supabase URL actually downloads (the `download`
+                      attribute is ignored cross-origin); falls back to opening it. */}
+                  <button
+                    type="button"
+                    onClick={async () => {
+                      // The flat tileable texture (uploaded in the admin) is the
+                      // asset architects want; fall back to the shown photo if a
+                      // product has no texture file yet.
+                      const url = selected.render_texture_path?.trim() || images[imgIdx] || selected.image_path;
+                      const base = `Orbital_${selected.code}_${selected.name}_textura`.normalize("NFD").replace(/[̀-ͯ]/g, "").replace(/[^a-zA-Z0-9_-]+/g, "-");
+                      try {
+                        const res = await fetch(url);
+                        const blob = await res.blob();
+                        const obj = URL.createObjectURL(blob);
+                        const ext = (blob.type.split("/")[1] || "jpg").replace("jpeg", "jpg");
+                        const a = document.createElement("a");
+                        a.href = obj; a.download = `${base}.${ext}`;
+                        document.body.appendChild(a); a.click(); a.remove();
+                        setTimeout(() => URL.revokeObjectURL(obj), 1000);
+                      } catch {
+                        window.open(url, "_blank", "noopener");
+                      }
+                    }}
+                    className="w-full inline-flex items-center justify-center gap-2 border border-[#002045] text-[#002045] text-xs tracking-[0.12em] uppercase font-bold font-[var(--font-inter)] px-6 py-3 hover:bg-[#eef2f8] transition-colors"
+                  >
+                    <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                      <path d="M21 15v4a2 2 0 01-2 2H5a2 2 0 01-2-2v-4M7 10l5 5 5-5M12 15V3"/>
+                    </svg>
+                    Baixar textura
+                  </button>
                 </div>
               </div>
             </div>
