@@ -167,7 +167,7 @@ export default function OrcamentoPage({ params }: { params: Promise<{ slug: stri
   // &p{i}=…&pl{i}=… multi-space format the visualizador/partner-link handoffs
   // already use. src=quote (not viz/consultor) drives its own banner/copy in
   // the simulador rather than reusing the "configured by your consultor" one.
-  const editUrl = (() => {
+  const editUrlWith = (goto?: "modelo" | "dimensoes") => {
     const spaces = quote.spaces ?? [];
     if (spaces.length === 0) return null;
     const qp = new URLSearchParams({ src: "quote", ms: String(spaces.length) });
@@ -177,8 +177,13 @@ export default function OrcamentoPage({ params }: { params: Promise<{ slug: stri
       qp.set(`pl${i}`, String(sp.plates));
     });
     if (quote.coupon_code) qp.set("cupom", quote.coupon_code);
+    // edit=<slug> makes the simulador UPDATE this same quote in place (no new
+    // orçamento); goto lands the client on the step they chose to change.
+    if (quote.slug) qp.set("edit", quote.slug);
+    if (goto) qp.set("goto", goto);
     return `/simulador?${qp.toString()}`;
-  })();
+  };
+  const editUrl = editUrlWith();
 
   return (
     <div className="min-h-screen bg-[#f0efec]">
@@ -388,13 +393,24 @@ export default function OrcamentoPage({ params }: { params: Promise<{ slug: stri
           )}
 
           {editUrl && (
-            <a
-              href={editUrl}
-              className="flex items-center justify-center gap-2 w-full py-3 border border-[#e2e2e2] text-[#43474e] text-xs tracking-[0.12em] uppercase font-bold font-[var(--font-inter)] hover:border-[#002045] hover:text-[#002045] transition-colors"
-            >
-              <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><path d="M11 4H4a2 2 0 00-2 2v14a2 2 0 002 2h14a2 2 0 002-2v-7"/><path d="M18.5 2.5a2.121 2.121 0 013 3L12 15l-4 1 1-4 9.5-9.5z"/></svg>
-              Editar este orçamento
-            </a>
+            <div className="border border-[#e2e2e2] p-4">
+              <p className="text-[#002045] text-xs tracking-[0.12em] uppercase font-bold font-[var(--font-inter)] mb-1">Editar este orçamento</p>
+              <p className="text-[#74777f] text-xs font-[var(--font-inter)] mb-3">Seus dados já estão salvos — é só ajustar o que quiser. As alterações atualizam este mesmo orçamento.</p>
+              <div className="grid gap-2">
+                <a href={editUrlWith("dimensoes")!} className="flex items-center gap-2.5 w-full px-3 py-2.5 border border-[#e2e2e2] text-[#43474e] text-sm font-[var(--font-inter)] hover:border-[#002045] hover:text-[#002045] transition-colors">
+                  <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><path d="M21 3L3 21M9 3H3v6M21 15v6h-6"/></svg>
+                  Ajustar dimensões (largura / altura)
+                </a>
+                <a href={editUrlWith("modelo")!} className="flex items-center gap-2.5 w-full px-3 py-2.5 border border-[#e2e2e2] text-[#43474e] text-sm font-[var(--font-inter)] hover:border-[#002045] hover:text-[#002045] transition-colors">
+                  <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><rect x="3" y="3" width="7" height="7"/><rect x="14" y="3" width="7" height="7"/><rect x="14" y="14" width="7" height="7"/><rect x="3" y="14" width="7" height="7"/></svg>
+                  Trocar o modelo do revestimento
+                </a>
+                <a href={editUrl} className="flex items-center gap-2.5 w-full px-3 py-2.5 border border-[#e2e2e2] text-[#43474e] text-sm font-[var(--font-inter)] hover:border-[#002045] hover:text-[#002045] transition-colors">
+                  <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><path d="M12 5v14M5 12h14"/></svg>
+                  Adicionar ambiente / revisar tudo
+                </a>
+              </div>
+            </div>
           )}
 
           <button

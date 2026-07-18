@@ -345,6 +345,7 @@ function SimuladorInner() {
   const [partnerMode, setPartnerMode] = useState(false);       // opened with ?mode=partner
   const [fromPartnerLink, setFromPartnerLink] = useState(false); // opened from a partner-generated link
   const [fromQuoteEdit, setFromQuoteEdit] = useState(false);     // opened to edit a saved orçamento (?src=quote)
+  const [editSlug, setEditSlug] = useState<string | null>(null); // slug to UPDATE in place (?edit=…)
   const [vizPrefill, setVizPrefill] = useState(false);          // opened from the Visualizador (?src=viz)
   const [hasJumpedFromLink, setHasJumpedFromLink] = useState(false);
   const [partnerLinkCopied, setPartnerLinkCopied] = useState(false);
@@ -622,6 +623,11 @@ function SimuladorInner() {
     // project, not a Visualizador handoff, just the client revisiting their own
     // saved quote to change it.
     const srcQuote = searchParams.get("src") === "quote";
+    // The slug of the quote being edited — present when the client came from
+    // "Editar este orçamento". Drives update-in-place (PATCH the same quote) and
+    // pre-filling their dados, instead of creating a brand-new orçamento.
+    const editParam = searchParams.get("edit");
+    if (srcQuote && editParam) setEditSlug(editParam);
 
     // ── Multi-space link: ?ms=N&s0=…&p0=…&pl0=…  (partner/quote-edit: pl{i} plates) ──
     // ── or                ?ms=N&s0=…&p0=…&w0=…&h0=… (visualizador: dims) ──
@@ -702,6 +708,23 @@ function SimuladorInner() {
     }
   // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [searchParams]);
+
+  // Editing a saved quote: pre-fill the client's dados from the quote so they
+  // don't retype them (migration 042 stores them on the quote). Best-effort.
+  useEffect(() => {
+    if (!editSlug) return;
+    let cancelled = false;
+    fetch(`/api/quotes/${editSlug}`)
+      .then((r) => (r.ok ? r.json() : null))
+      .then((q) => {
+        if (cancelled || !q) return;
+        if (typeof q.client_name === "string" && q.client_name) setClientName(q.client_name);
+        if (typeof q.client_email === "string" && q.client_email) setClientEmail(q.client_email);
+        if (typeof q.client_phone === "string" && q.client_phone) setClientPhone(q.client_phone);
+      })
+      .catch(() => {});
+    return () => { cancelled = true; };
+  }, [editSlug]);
 
   // Pre-select product from ?produto=CODE (set after products are loaded).
   // Applies at most once — see produtoParamAppliedRef above.
@@ -823,7 +846,10 @@ function SimuladorInner() {
     if (!selectedSpace || !selectedProduct) return;
     if (m2 > 0) {
       setHasJumpedFromLink(true);
-      setStep(4);
+      // Editing a quote: land on the step the client chose to change (?goto=…),
+      // otherwise the review/dados step as before.
+      const goto = searchParams.get("goto");
+      setStep(fromQuoteEdit && goto === "modelo" ? 2 : fromQuoteEdit && goto === "dimensoes" ? 3 : 4);
       setTimeout(() => stepCardRef.current?.scrollIntoView({ behavior: "smooth", block: "start" }), 100);
     } else if (vizPrefill) {
       setHasJumpedFromLink(true);
@@ -1075,23 +1101,28 @@ function SimuladorInner() {
             total: orbMaterialDiscounted,
           }] : []),
         ];
-        const qRes = await fetch("/api/quotes", {
-          method: "POST",
-          headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({
-            partner_id: couponData?.id ?? null,
-            partner_name: couponData?.partner_name ?? null,
-            coupon_code: couponData?.coupon_code ?? null,
-            spaces: allSpaces,
-            total_plates: grandPlates,
-            total_area_m2: parseFloat((savedSpaces.reduce((s, sp) => s + sp.m2, 0) + m2).toFixed(2)),
-            material_total: grandMaterialTotal,
-            material_discounted: grandMaterialDiscounted,
-          }),
+        const quoteBody = JSON.stringify({
+          partner_id: couponData?.id ?? null,
+          partner_name: couponData?.partner_name ?? null,
+          coupon_code: couponData?.coupon_code ?? null,
+          spaces: allSpaces,
+          total_plates: grandPlates,
+          total_area_m2: parseFloat((savedSpaces.reduce((s, sp) => s + sp.m2, 0) + m2).toFixed(2)),
+          material_total: grandMaterialTotal,
+          material_discounted: grandMaterialDiscounted,
+          client_name: clientName || null,
+          client_email: clientEmail || null,
+          client_phone: clientPhone || null,
         });
+        // Editing a saved quote → PATCH the SAME slug in place, so the client's
+        // existing link reflects the changes (instead of minting a new orçamento
+        // the client never sees). Otherwise create a new one.
+        const qRes = editSlug
+          ? await fetch(`/api/quotes/${editSlug}`, { method: "PATCH", headers: { "Content-Type": "application/json" }, body: quoteBody })
+          : await fetch("/api/quotes", { method: "POST", headers: { "Content-Type": "application/json" }, body: quoteBody });
         if (qRes.ok) {
           const qData = await qRes.json();
-          quoteSlug = qData.slug ?? null;
+          quoteSlug = qData.slug ?? editSlug ?? null;
           if (quoteSlug) {
             setQuoteShareUrl(`${siteUrl}/orcamento/${quoteSlug}`);
           }
@@ -1160,36 +1191,41 @@ function SimuladorInner() {
           imageUrl: selectedProduct.image_path ? `${siteUrl}${selectedProduct.image_path}` : "",
         }] : []),
       ];
-      try {
-        const seqRes = await fetch("/api/client-email-sequences", {
-          method: "POST",
-          headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({
-            coupon_use_id: couponUseId,
-            client_name: clientName.trim(),
-            client_email: clientEmail.trim(),
-            client_phone: clientPhone.trim(),
-            space: seqSpace,
-            model: seqModel,
-            plates: seqPlates,
-            area_m2: seqArea,
-            total: seqTotal,
-            dim_label: seqDimLabel,
-            product_images: seqProductImages,
-            space_breakdown: seqSpaceBreakdown,
-            partner_name: couponData?.partner_name ?? "Orbital",
-            quote_url: quoteSlug ? `${siteUrl}/orcamento/${quoteSlug}` : null,
-            sim_id: partnerSimId ?? undefined,
-            sim_session_id: simSessionId.current || undefined,
-            viz_render_id: vizRenderId.current || undefined,
-          }),
-        });
-        if (!seqRes.ok) {
-          const errBody = await seqRes.json().catch(() => ({}));
-          console.error("[sequence] insert failed", seqRes.status, errBody);
+      // Only on a NEW quote: enrol the e-mail drip + fire the client/owner
+      // WhatsApp+e-mail. Editing an existing quote must NOT re-blast the client
+      // and owner (same "one action, one message" discipline as the pedidos send).
+      if (!editSlug) {
+        try {
+          const seqRes = await fetch("/api/client-email-sequences", {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({
+              coupon_use_id: couponUseId,
+              client_name: clientName.trim(),
+              client_email: clientEmail.trim(),
+              client_phone: clientPhone.trim(),
+              space: seqSpace,
+              model: seqModel,
+              plates: seqPlates,
+              area_m2: seqArea,
+              total: seqTotal,
+              dim_label: seqDimLabel,
+              product_images: seqProductImages,
+              space_breakdown: seqSpaceBreakdown,
+              partner_name: couponData?.partner_name ?? "Orbital",
+              quote_url: quoteSlug ? `${siteUrl}/orcamento/${quoteSlug}` : null,
+              sim_id: partnerSimId ?? undefined,
+              sim_session_id: simSessionId.current || undefined,
+              viz_render_id: vizRenderId.current || undefined,
+            }),
+          });
+          if (!seqRes.ok) {
+            const errBody = await seqRes.json().catch(() => ({}));
+            console.error("[sequence] insert failed", seqRes.status, errBody);
+          }
+        } catch (err) {
+          console.error("[sequence] fetch error", err);
         }
-      } catch (err) {
-        console.error("[sequence] fetch error", err);
       }
 
       setSimSubmitted(true);
