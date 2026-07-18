@@ -133,7 +133,11 @@ export default function ParceiroPage() {
   const [profError, setProfError] = useState("");
 
   // ── Portal tab state ───────────────────────────────────────────────────────
-  const [portalTab, setPortalTab] = useState<"portal" | "commissions" | "special" | "simulate" | "simulations">("portal");
+  const [portalTab, setPortalTab] = useState<"portal" | "commissions" | "special" | "especificar">("portal");
+  // "Especificar" merges the old Simular + Simulações tabs (which confused
+  // partners): a sub-tab to create a new especificação, and one listing past
+  // especificações with their statuses.
+  const [especTab, setEspecTab] = useState<"nova" | "anteriores">("nova");
   const [copied, setCopied] = useState(false);
   const [hasNewUses, setHasNewUses] = useState(false);
 
@@ -180,6 +184,19 @@ export default function ParceiroPage() {
   const [deletingSimId, setDeletingSimId] = useState<string | null>(null);
   const [simLinkCopied, setSimLinkCopied] = useState<string | null>(null);
   const [pendingSimsCount, setPendingSimsCount] = useState<number | null>(null);
+
+  // Lazy-load the partner's past especificações (once), used when opening the
+  // "Especificações anteriores" sub-tab or jumping there from Meu Portal.
+  const loadSimulations = () => {
+    if (simulationsLoaded || simulationsLoading) return;
+    setSimulationsLoading(true);
+    fetch(`/api/partner-simulations?partner_id=${partner?.id}`)
+      .then((r) => r.json())
+      .then((d) => { setSimulations(Array.isArray(d) ? d : []); setSimulationsLoaded(true); })
+      .catch(() => setSimulations([]))
+      .finally(() => setSimulationsLoading(false));
+  };
+  const openEspecAnteriores = () => { setPortalTab("especificar"); setEspecTab("anteriores"); loadSimulations(); };
   const [pSimSelectedLine, setPSimSelectedLine] = useState<"Classic" | "Brilliance" | "Elegance" | null>(null);
   const [pSimShowCustom, setPSimShowCustom] = useState(false);
   const [pSimCustomText, setPSimCustomText] = useState("");
@@ -869,23 +886,14 @@ export default function ParceiroPage() {
             {([
               { key: "portal", label: "Meu Portal" },
               { key: "commissions", label: "Comissões" },
-              { key: "simulate", label: "Simular" },
-              { key: "simulations", label: "Simulações" },
+              { key: "especificar", label: "Especificar" },
               ...(partner.has_special_table ? [{ key: "special", label: "Tabela Especial ★" }] : []),
-            ] as { key: "portal" | "commissions" | "special" | "simulate" | "simulations"; label: string }[]).map((t) => (
+            ] as { key: "portal" | "commissions" | "special" | "especificar"; label: string }[]).map((t) => (
               <button
                 key={t.key}
                 onClick={() => {
                   setPortalTab(t.key);
                   if (t.key === "portal") markPortalVisited();
-                  if (t.key === "simulations" && !simulationsLoaded) {
-                    setSimulationsLoading(true);
-                    fetch(`/api/partner-simulations?partner_id=${partner.id}`)
-                      .then(r => r.json())
-                      .then(d => { setSimulations(Array.isArray(d) ? d : []); setSimulationsLoaded(true); })
-                      .catch(() => setSimulations([]))
-                      .finally(() => setSimulationsLoading(false));
-                  }
                 }}
                 className={`relative flex-shrink-0 px-3 sm:px-6 py-3 text-[10px] sm:text-xs tracking-[0.08em] sm:tracking-[0.1em] uppercase font-bold font-[var(--font-inter)] transition-colors border-b-2 -mb-px whitespace-nowrap ${portalTab === t.key ? "border-[#002045] text-[#002045]" : "border-transparent text-[#74777f] hover:text-[#002045]"}`}
               >
@@ -945,12 +953,10 @@ export default function ParceiroPage() {
                     </p>
                   </button>
                   <button
-                    onClick={() => {
-                      setPortalTab("simulations");
-                    }}
+                    onClick={openEspecAnteriores}
                     className="bg-white border border-[#e2e2e2] border-l-4 border-l-[#6366f1] p-4 text-left hover:border-[#002045] transition-colors group"
                   >
-                    <p className="text-[#74777f] text-[9px] tracking-[0.15em] uppercase font-[var(--font-inter)] mb-1.5">Simulações pendentes</p>
+                    <p className="text-[#74777f] text-[9px] tracking-[0.15em] uppercase font-[var(--font-inter)] mb-1.5">Especificações pendentes</p>
                     <p className="font-[var(--font-noto-serif)] text-[#002045] text-xl font-normal leading-tight">
                       {pendingSimsCount ?? "—"}
                     </p>
@@ -1337,8 +1343,28 @@ export default function ParceiroPage() {
         </div>
       )}
 
-      {/* ── Simular tab ── */}
-      {portalTab === "simulate" && (() => {
+      {/* ── Especificar tab: sub-tab switcher (Nova / Anteriores) ── */}
+      {portalTab === "especificar" && (
+        <div className="max-w-5xl mx-auto px-4 sm:px-8 pt-6">
+          <div className="inline-flex border border-[#e2e2e2] rounded-sm overflow-hidden">
+            {([
+              { key: "nova", label: "Nova especificação" },
+              { key: "anteriores", label: "Especificações anteriores" },
+            ] as { key: "nova" | "anteriores"; label: string }[]).map((s) => (
+              <button
+                key={s.key}
+                onClick={() => { setEspecTab(s.key); if (s.key === "anteriores") loadSimulations(); }}
+                className={`px-4 py-2.5 text-xs font-bold font-[var(--font-inter)] transition-colors ${especTab === s.key ? "bg-[#002045] text-white" : "text-[#74777f] hover:text-[#002045]"}`}
+              >
+                {s.label}
+              </button>
+            ))}
+          </div>
+        </div>
+      )}
+
+      {/* ── Especificar › Nova especificação ── */}
+      {portalTab === "especificar" && especTab === "nova" && (() => {
         const PL_W = 1.2; const PL_H = 2.9;
         const pWn = parseFloat(pSimW) || 0;
         const pHn = parseFloat(pSimH) || 0;
@@ -1701,13 +1727,13 @@ export default function ParceiroPage() {
         );
       })()}
 
-      {/* ── Simulações tab ── */}
-      {portalTab === "simulations" && (
+      {/* ── Especificar › Especificações anteriores ── */}
+      {portalTab === "especificar" && especTab === "anteriores" && (
         <div className="max-w-3xl mx-auto px-4 sm:px-8 py-8">
           <div className="mb-6 flex items-end justify-between gap-4">
             <div>
-              <h2 className="font-[var(--font-noto-serif)] text-[#002045] text-2xl font-normal mb-1">Simulações geradas</h2>
-              <p className="text-[#74777f] text-sm font-[var(--font-inter)]">Links que você enviou a clientes e seu status de conversão.</p>
+              <h2 className="font-[var(--font-noto-serif)] text-[#002045] text-2xl font-normal mb-1">Especificações anteriores</h2>
+              <p className="text-[#74777f] text-sm font-[var(--font-inter)]">Especificações que você enviou a clientes e seu status de conversão.</p>
             </div>
             <button
               onClick={() => {
@@ -1730,8 +1756,8 @@ export default function ParceiroPage() {
 
           {!simulationsLoading && simulations.length === 0 && (
             <div className="py-12 text-center border border-dashed border-[#e2e2e2]">
-              <p className="text-[#74777f] text-sm font-[var(--font-inter)]">Nenhuma simulação gerada ainda.</p>
-              <p className="text-[#b0b4bb] text-xs font-[var(--font-inter)] mt-1">Vá para a aba <strong>Simular</strong> para criar e enviar um link a um cliente.</p>
+              <p className="text-[#74777f] text-sm font-[var(--font-inter)]">Nenhuma especificação ainda.</p>
+              <button onClick={() => setEspecTab("nova")} className="text-[#002045] text-xs font-bold font-[var(--font-inter)] mt-1 hover:underline">Criar nova especificação →</button>
             </div>
           )}
 
@@ -1806,7 +1832,7 @@ export default function ParceiroPage() {
                       <button
                         disabled={deletingSimId === sim.id}
                         onClick={async () => {
-                          if (!confirm("Apagar esta simulação?")) return;
+                          if (!confirm("Apagar esta especificação?")) return;
                           setDeletingSimId(sim.id);
                           try {
                             await fetch(`/api/partner-simulations/${sim.id}?partner_id=${partner.id}`, { method: "DELETE" });
