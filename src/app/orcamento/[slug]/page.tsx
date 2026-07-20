@@ -17,6 +17,11 @@ interface QuoteSpace {
   dimLabel?: string | null;
   pricePerPlate: number;
   total: number;
+  // Original measurement method + raw values (added later; older quotes lack them).
+  measurementType?: "dimensions" | "square_meters" | null;
+  width?: number | null;
+  height?: number | null;
+  squareMeters?: number | null;
 }
 
 interface SavedQuote {
@@ -174,7 +179,20 @@ export default function OrcamentoPage({ params }: { params: Promise<{ slug: stri
     spaces.forEach((sp, i) => {
       qp.set(`s${i}`, sp.spaceName);
       qp.set(`p${i}`, sp.productCode);
-      qp.set(`pl${i}`, String(sp.plates));
+      // Carry the ORIGINAL measurement method so editing restores it exactly:
+      // L×A → w/h (plates recompute); m² → a (area). Fall back to plates for
+      // legacy quotes saved before the method was stored.
+      const method = sp.measurementType ?? (sp.width != null && sp.height != null ? "dimensions" : null);
+      if (method === "dimensions" && sp.width != null && sp.height != null) {
+        qp.set(`mt${i}`, "dimensions");
+        qp.set(`w${i}`, String(sp.width));
+        qp.set(`h${i}`, String(sp.height));
+      } else if (method === "square_meters" && (sp.squareMeters != null || sp.area != null)) {
+        qp.set(`mt${i}`, "square_meters");
+        qp.set(`a${i}`, String(sp.squareMeters ?? sp.area));
+      } else {
+        qp.set(`pl${i}`, String(sp.plates));
+      }
     });
     if (quote.coupon_code) qp.set("cupom", quote.coupon_code);
     // edit=<slug> makes the simulador UPDATE this same quote in place (no new

@@ -139,6 +139,12 @@ interface SavedSpace {
   moTotal: number;
   total: number;
   viability: "simple" | "complex";
+  // How the client entered the measurement — preserved so editing a saved
+  // quote restores the SAME method + values (never converts L×A into m²).
+  measurementType: "dimensions" | "square_meters";
+  width: number | null;
+  height: number | null;
+  squareMeters: number | null;
 }
 
 const LINE_INFO: Record<ProductLine, { finish: string; price: number; cover: string }> = {
@@ -338,7 +344,7 @@ function SimuladorInner() {
 
   // Raw multi-space params from URL — resolved into savedSpaces once products load.
   // plates comes from partner links (pl{i}); w/h come from Visualizador links (w{i}/h{i}).
-  interface PendingMsSpace { spaceName: string; productCode: string; plates: number | null; w: number | null; h: number | null; }
+  interface PendingMsSpace { spaceName: string; productCode: string; plates: number | null; w: number | null; h: number | null; measurementType?: "dimensions" | "square_meters" | null; sqm?: number | null; }
   const [pendingMsParams, setPendingMsParams] = useState<PendingMsSpace[] | null>(null);
 
   // ── Partner / client-link mode ───────────────────────────────────────────
@@ -351,6 +357,7 @@ function SimuladorInner() {
   const [partnerLinkCopied, setPartnerLinkCopied] = useState(false);
   const [partnerLinkGenerated, setPartnerLinkGenerated] = useState(false);
   const [platesOverride, setPlatesOverride] = useState<number | null>(null); // locked plate count from partner link
+  const [measureAck, setMeasureAck] = useState(false); // user confirmed an unusual measurement
 
   // Sync custom space text → selectedSpace whenever text changes
   useEffect(() => {
@@ -382,6 +389,13 @@ function SimuladorInner() {
       : 0;
 
   const isComplex = selectedSpace?.viability === "complex";
+
+  // The client's measurement method + raw values as entered right now — stored on
+  // the space/quote so a later edit restores exactly this (L×A stays L×A).
+  const currentMeasurement = (): { measurementType: "dimensions" | "square_meters"; width: number | null; height: number | null; squareMeters: number | null } =>
+    dimMode === "lxa"
+      ? { measurementType: "dimensions", width: parseFloat(width) || null, height: parseFloat(height) || null, squareMeters: m2 > 0 ? parseFloat(m2.toFixed(2)) : null }
+      : { measurementType: "square_meters", width: null, height: null, squareMeters: parseFloat(sqmInput) || null };
 
   const pricePerPlate = selectedProduct?.price ?? 559;
 
@@ -645,18 +659,24 @@ function SimuladorInner() {
           const pl = parseInt(searchParams.get(`pl${i}`) ?? "", 10);
           const wv = parseFloat(searchParams.get(`w${i}`) ?? "");
           const hv = parseFloat(searchParams.get(`h${i}`) ?? "");
+          const av = parseFloat(searchParams.get(`a${i}`) ?? ""); // m² (quote edit, square_meters method)
+          const mtRaw = searchParams.get(`mt${i}`);               // "dimensions" | "square_meters" (quote edit)
+          const measurementType = mtRaw === "dimensions" || mtRaw === "square_meters" ? mtRaw : null;
           const hasPl = !isNaN(pl) && pl > 0;
           const hasDims = !isNaN(wv) && wv > 0 && !isNaN(hv) && hv > 0;
+          const hasSqm = !isNaN(av) && av > 0;
           if (!spaceName || !productCode) continue;
-          // Entries need plates or dims, except the LAST one from the
+          // Entries need plates, dims, or m² — except the LAST one from the
           // Visualizador, which may arrive dimensionless (user fills step 3).
-          if (hasPl || hasDims || (srcViz && i === count - 1)) {
+          if (hasPl || hasDims || hasSqm || (srcViz && i === count - 1)) {
             spaces.push({
               spaceName,
               productCode,
               plates: hasPl ? pl : null,
               w: hasDims ? wv : null,
               h: hasDims ? hv : null,
+              measurementType,
+              sqm: hasSqm ? av : null,
             });
           }
         }
@@ -726,6 +746,9 @@ function SimuladorInner() {
     return () => { cancelled = true; };
   }, [editSlug]);
 
+  // A changed measurement invalidates any prior "yes it's correct" confirmation.
+  useEffect(() => { setMeasureAck(false); }, [width, height, sqmInput, dimMode]);
+
   // Pre-select product from ?produto=CODE (set after products are loaded).
   // Applies at most once — see produtoParamAppliedRef above.
   useEffect(() => {
@@ -757,15 +780,19 @@ function SimuladorInner() {
       const complex = classification?.viability === "complex";
       // Plate count: explicit (partner link) or derived from real dims (visualizador)
       const hasDims = sp.w !== null && sp.h !== null;
-      const spPlates = sp.plates ?? (hasDims
+      // Measurement method is preserved from the quote; fall back to inferring it.
+      const measurementType: "dimensions" | "square_meters" =
+        sp.measurementType ?? (hasDims ? "dimensions" : "square_meters");
+      const areaM2 = hasDims
+        ? parseFloat(((sp.w as number) * (sp.h as number)).toFixed(2))
+        : (sp.sqm != null && sp.sqm > 0 ? parseFloat(sp.sqm.toFixed(2)) : parseFloat(((sp.plates ?? 0) * PLATE_M2).toFixed(2)));
+      // Plate count from real dims / m² (never a frozen override on an edit).
+      const spPlates = hasDims
         ? orbitalPlatesForDimensions(sp.w as number, sp.h as number)
-        : 0);
+        : (sp.sqm != null && sp.sqm > 0 ? Math.ceil(sp.sqm / PLATE_M2) : (sp.plates ?? 0));
       const moRate = orbitalMOPerPlate(spPlates, complex);
       const materialTotal = spPlates * ppp;
       const moTotal = moRate * spPlates;
-      const areaM2 = hasDims
-        ? parseFloat(((sp.w as number) * (sp.h as number)).toFixed(2))
-        : parseFloat((spPlates * PLATE_M2).toFixed(2));
       return {
         key: `ms-space-${idx}`,
         label: sp.spaceName,
@@ -782,6 +809,10 @@ function SimuladorInner() {
         moTotal,
         total: materialTotal + moTotal,
         viability: complex ? "complex" : "simple",
+        measurementType,
+        width: hasDims ? (sp.w as number) : null,
+        height: hasDims ? (sp.h as number) : null,
+        squareMeters: measurementType === "square_meters" ? areaM2 : (hasDims ? areaM2 : null),
       };
     });
 
@@ -801,12 +832,27 @@ function SimuladorInner() {
     if (canonicalSpace) setSelectedSpace(canonicalSpace);
     setCustomSpaceText(lastSpace.spaceName);
     setShowCustomInput(true);
-    if (lastSpace.w !== null && lastSpace.h !== null) {
-      // Visualizador dims — keep the real L×A so the user sees (and can edit) them
+    // Restore the ACTIVE space using the client's ORIGINAL measurement method.
+    // A quote edit carries measurementType; a partner "plates" link still locks
+    // the plate count (setPlatesOverride) as before.
+    const lastMethod = lastSpace.measurementType
+      ?? (lastSpace.w !== null && lastSpace.h !== null ? "dimensions" : lastSpace.sqm != null ? "square_meters" : null);
+    if (lastMethod === "dimensions" && lastSpace.w !== null && lastSpace.h !== null) {
+      // Keep the real L×A so the client sees — and can directly edit — them.
+      // No platesOverride: plates recompute from the dimensions.
+      setWidth(String(lastSpace.w));
+      setHeight(String(lastSpace.h));
+      setDimMode("lxa");
+    } else if (lastMethod === "square_meters" && lastSpace.sqm != null) {
+      // Preserve the m² method + value; plates recompute from m² (no lock).
+      setSqmInput(String(lastSpace.sqm));
+      setDimMode("m2");
+    } else if (lastSpace.w !== null && lastSpace.h !== null) {
       setWidth(String(lastSpace.w));
       setHeight(String(lastSpace.h));
       setDimMode("lxa");
     } else if (lastSpace.plates !== null) {
+      // Partner link without a measurement method: lock the calculated plates.
       setPlatesOverride(lastSpace.plates);
       setSqmInput((lastSpace.plates * PLATE_M2).toFixed(2));
       setDimMode("m2");
@@ -919,6 +965,7 @@ function SimuladorInner() {
       moTotal: orbMOTotal,
       total: orbTotal,
       viability: selectedSpace.viability === "complex" ? "complex" : "simple",
+      ...currentMeasurement(),
     }]);
     // Reset space/product/dims but keep client info and coupon
     setSelectedSpace(null);
@@ -1075,6 +1122,7 @@ function SimuladorInner() {
       // Save a permanent quote (valid 7 days) and get its slug for the email
       let quoteSlug: string | null = null;
       try {
+        const cur = currentMeasurement();
         const allSpaces = [
           ...savedSpaces.map((sp) => ({
             spaceName: sp.label,
@@ -1087,6 +1135,11 @@ function SimuladorInner() {
             dimLabel: sp.dimLabel,
             pricePerPlate: sp.pricePerPlate,
             total: sp.materialDiscounted,
+            // Preserve the original measurement method + raw values (for editing).
+            measurementType: sp.measurementType ?? (sp.width != null && sp.height != null ? "dimensions" : "square_meters"),
+            width: sp.width ?? null,
+            height: sp.height ?? null,
+            squareMeters: sp.squareMeters ?? sp.m2 ?? null,
           })),
           ...(selectedProduct && selectedSpace ? [{
             spaceName: selectedSpace.label,
@@ -1099,6 +1152,10 @@ function SimuladorInner() {
             dimLabel: dimMode === "lxa" && width && height ? `${width}m × ${height}m` : `${m2.toFixed(2)} m²`,
             pricePerPlate: selectedProduct.price,
             total: orbMaterialDiscounted,
+            measurementType: cur.measurementType,
+            width: cur.width,
+            height: cur.height,
+            squareMeters: cur.squareMeters,
           }] : []),
         ];
         const quoteBody = JSON.stringify({
@@ -1239,6 +1296,21 @@ function SimuladorInner() {
   const canAdvance1 = selectedSpace !== null && selectedSpace.viability !== "no";
   const canAdvance2 = selectedProduct !== null;
   const canCalculate = m2 > 0;
+  // Flag measurements that are almost certainly typos (a decimal slip like 240
+  // instead of 2,40, an impossibly large wall, or an area meant for a whole
+  // building). We warn and require a confirmation instead of silently accepting.
+  const measurementWarning: string | null = (() => {
+    if (dimMode === "lxa") {
+      const w = parseFloat(width) || 0, h = parseFloat(height) || 0;
+      if (w >= 100 || h >= 100) return "Um valor parece 100× maior que o esperado — talvez 240 em vez de 2,40 m. Confira largura e altura em metros.";
+      if (w > 25 || h > 25) return "Largura ou altura acima de 25 m é incomum para um ambiente. Confirme se está em metros.";
+    } else {
+      const a = parseFloat(sqmInput) || 0;
+      if (a >= 1000) return "Área acima de 1.000 m² é muito alta para um ambiente — confira o valor.";
+    }
+    return null;
+  })();
+  const canProceedMeasure = canCalculate && (!measurementWarning || measureAck);
   const validEmail = /^[^\s@]+@[^\s@]+\.[^\s@]{2,}$/.test(clientEmail.trim());
   const validPhone = (() => {
     const digits = clientPhone.trim().replace(/\D/g, "").length;
@@ -1921,6 +1993,7 @@ function SimuladorInner() {
                       moTotal: orbMOTotal,
                       total: orbTotal,
                       viability: selectedSpace!.viability === "complex" ? "complex" : "simple",
+                      ...currentMeasurement(),
                     }]);
                     setSelectedSpace(null);
                     setAmbienteName("");
@@ -2058,6 +2131,18 @@ function SimuladorInner() {
                 </p>
               )}
 
+              {/* Sanity check: warn on likely typos before letting the client proceed */}
+              {measurementWarning && (
+                <div className="mb-5 border border-[#e0b23c] bg-[#fdf6e3] px-4 py-3">
+                  <p className="text-[#8a5a12] text-sm font-[var(--font-inter)] font-semibold">⚠ Confira a medida</p>
+                  <p className="text-[#8a5a12] text-xs font-[var(--font-inter)] mt-0.5">{measurementWarning}</p>
+                  <label className="flex items-center gap-2 mt-2.5 text-[#43474e] text-xs font-[var(--font-inter)] cursor-pointer">
+                    <input type="checkbox" checked={measureAck} onChange={(e) => setMeasureAck(e.target.checked)} />
+                    Confirmo que a medida está correta
+                  </label>
+                </div>
+              )}
+
               <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3">
                 <button
                   onClick={() => goToStep(2)}
@@ -2070,10 +2155,10 @@ function SimuladorInner() {
                 </button>
                 {partnerMode ? (
                   <button
-                    onClick={() => { if (canCalculate) setPartnerLinkGenerated(true); }}
-                    disabled={!canCalculate}
+                    onClick={() => { if (canProceedMeasure) setPartnerLinkGenerated(true); }}
+                    disabled={!canProceedMeasure}
                     className={`w-full sm:w-auto inline-flex items-center justify-center gap-2 text-xs tracking-[0.12em] uppercase font-bold font-[var(--font-inter)] px-8 py-4 transition-colors ${
-                      canCalculate
+                      canProceedMeasure
                         ? "bg-[#3b6934] text-white hover:bg-[#2d5228]"
                         : "bg-[#e2e2e2] text-[#aaaaaa] cursor-not-allowed"
                     }`}
@@ -2085,10 +2170,10 @@ function SimuladorInner() {
                   </button>
                 ) : (
                   <button
-                    onClick={() => { if (canCalculate) setShowAmbientsReview(true); }}
-                    disabled={!canCalculate}
+                    onClick={() => { if (canProceedMeasure) setShowAmbientsReview(true); }}
+                    disabled={!canProceedMeasure}
                     className={`w-full sm:w-auto inline-flex items-center justify-center gap-2 text-xs tracking-[0.12em] uppercase font-bold font-[var(--font-inter)] px-8 py-4 transition-colors ${
-                      canCalculate
+                      canProceedMeasure
                         ? "bg-[#002045] text-white hover:bg-[#1a365d]"
                         : "bg-[#e2e2e2] text-[#aaaaaa] cursor-not-allowed"
                     }`}
