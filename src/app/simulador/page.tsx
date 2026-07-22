@@ -584,6 +584,7 @@ function SimuladorInner() {
 
   function showResults() {
     setShowResult(true);
+    setStep(5); // stepper now ends at "Resultado" (Ver no ambiente is opt-in)
   }
 
   useEffect(() => {
@@ -1330,7 +1331,7 @@ function SimuladorInner() {
         { n: 2 as const, label: "Modelo" },
         { n: 3 as const, label: "Dimensões" },
         { n: 4 as const, label: "Seus dados" },
-        { n: 5 as const, label: "Ver no ambiente" },
+        { n: 5 as const, label: "Resultado" },
       ];
 
   // Build the link to open the full Visualizador with the current selection pre-filled.
@@ -2412,15 +2413,15 @@ function SimuladorInner() {
                   Voltar
                 </button>
                 <button
-                  onClick={() => canAdvance4 && goToStep(5)}
-                  disabled={!canAdvance4}
+                  onClick={() => { if (canAdvance4 && !simSubmitting) void handleSubmitAndShow(); }}
+                  disabled={!canAdvance4 || simSubmitting}
                   className={`w-full sm:w-auto inline-flex items-center justify-center gap-2 text-xs tracking-[0.12em] uppercase font-bold font-[var(--font-inter)] px-8 py-4 transition-colors ${
-                    canAdvance4
+                    canAdvance4 && !simSubmitting
                       ? "bg-[#002045] text-white hover:bg-[#1a365d]"
                       : "bg-[#e2e2e2] text-[#aaaaaa] cursor-not-allowed"
                   }`}
                 >
-                  Próximo
+                  {simSubmitting ? "Calculando…" : "Ver meu investimento"}
                   <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5">
                     <path d="M5 12h14M12 5l7 7-7 7" />
                   </svg>
@@ -2429,8 +2430,10 @@ function SimuladorInner() {
             </div>
           )}
 
-          {/* ── Step 5: Ver no ambiente (visualization) ────────────────────── */}
-          {step === 5 && (
+          {/* ── Step 5 (legacy "Ver no ambiente") — now opt-in only; the result
+                section renders instead once the client submits. Kept for any
+                direct navigation but hidden when the result is shown. ───────── */}
+          {step === 5 && !showResult && (
             <div className="bg-white border border-[#e2e2e2]">
               <div className="px-6 pt-6 lg:px-10 lg:pt-8 flex flex-col sm:flex-row sm:items-start sm:justify-between gap-4 border-b border-[#f0f0ee] pb-5">
                 <div>
