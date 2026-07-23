@@ -447,6 +447,15 @@ export default function AdminPage() {
   const [clientStatusFilter, setClientStatusFilter] = useState<string>("all");
   const [clientPartnerFilter, setClientPartnerFilter] = useState<string>("all");
   const [deletingClientId, setDeletingClientId] = useState<string | null>(null);
+  // Orçamentos formais gerados pelo site público (saved_quotes) + conversão.
+  interface FormalQuote {
+    slug: string; formal_number: string; stage: string | null; pedido_id: string | null;
+    client_name: string | null; client_phone: string | null; total_plates: number | null;
+    total_amount: number | null; payment_condition: string | null; frete_free: boolean | null;
+    frete_amount: number | null; formalized_at: string | null;
+  }
+  const [formalQuotes, setFormalQuotes] = useState<FormalQuote[]>([]);
+  const [convertingSlug, setConvertingSlug] = useState<string | null>(null);
 
   // Follow-up
   interface FollowUp {
@@ -848,7 +857,14 @@ export default function AdminPage() {
   }, [tab, authed, pricingLoaded]);
 
   useEffect(() => {
-    if (tab === "orcamentos" && authed) { setClientsError(null); setUsesError(null); setPedidosError(null); fetchClients(); fetchUses(); fetchPedidos(); }
+    if (tab === "orcamentos" && authed) {
+      setClientsError(null); setUsesError(null); setPedidosError(null);
+      fetchClients(); fetchUses(); fetchPedidos();
+      fetch("/api/admin/orcamentos-formalizados")
+        .then((r) => (r.ok ? r.json() : []))
+        .then((rows) => { if (Array.isArray(rows)) setFormalQuotes(rows); })
+        .catch(() => {});
+    }
   }, [tab, authed, fetchClients, fetchUses, fetchPedidos]);
 
   useEffect(() => { if ((tab === "produtos" || tab === "simulador") && authed) fetchDbProducts(); }, [tab, authed, fetchDbProducts]);
@@ -1794,6 +1810,26 @@ export default function AdminPage() {
     } finally {
       setOrcCfgSaving(false);
       setTimeout(() => setOrcCfgMsg(""), 4000);
+    }
+  }
+
+  async function convertFormalQuote(slug: string) {
+    if (!confirm("Converter este orçamento formalizado em pedido? Os dados do cliente, endereço, produtos, Cola PU, frete e condição serão reaproveitados.")) return;
+    setConvertingSlug(slug);
+    try {
+      const res = await fetch(`/api/admin/orcamento/${slug}/convert`, { method: "POST" });
+      const data = await res.json().catch(() => null);
+      if (res.ok && data?.pedidoId) {
+        setFormalQuotes((prev) => prev.map((q) => (q.slug === slug ? { ...q, stage: "pedido", pedido_id: data.pedidoId } : q)));
+        fetchPedidos();
+        alert("Pedido criado com sucesso a partir do orçamento.");
+      } else {
+        alert(data?.error ?? "Falha ao converter em pedido.");
+      }
+    } catch {
+      alert("Erro de rede ao converter.");
+    } finally {
+      setConvertingSlug(null);
     }
   }
 
@@ -4067,6 +4103,48 @@ export default function AdminPage() {
                 </select>
               </div>
             </div>
+
+            {/* Orçamentos formalizados pelo site — convertíveis em pedido sem redigitar */}
+            {formalQuotes.length > 0 && (
+              <div className="bg-white border border-[#002045]/20 mb-5">
+                <div className="bg-[#002045] px-4 py-2.5">
+                  <p className="text-white text-[10px] tracking-[0.15em] uppercase font-bold font-[var(--font-inter)]">
+                    Orçamentos formalizados no site ({formalQuotes.length})
+                  </p>
+                </div>
+                <div className="divide-y divide-[#f0f0f0]">
+                  {formalQuotes.map((fq) => {
+                    const converted = !!fq.pedido_id;
+                    return (
+                      <div key={fq.slug} className="flex flex-wrap items-center justify-between gap-3 px-4 py-3">
+                        <div className="min-w-0">
+                          <p className="text-[#002045] text-sm font-semibold font-[var(--font-inter)]">
+                            {fq.formal_number} · {fq.client_name ?? "Cliente"}
+                          </p>
+                          <p className="text-[#74777f] text-[11px] font-[var(--font-inter)]">
+                            {fq.total_plates ?? 0} placas · {fq.payment_condition === "cartao" ? "Cartão" : "PIX"} · frete {fq.frete_free ? "grátis" : (fq.frete_amount ?? 0).toLocaleString("pt-BR", { style: "currency", currency: "BRL", maximumFractionDigits: 0 })} · {(fq.total_amount ?? 0).toLocaleString("pt-BR", { style: "currency", currency: "BRL" })}
+                          </p>
+                        </div>
+                        <div className="flex items-center gap-2 flex-shrink-0">
+                          <a href={`/api/orcamento/${fq.slug}/pdf`} target="_blank" rel="noopener noreferrer" className="text-[#002045] text-[10px] tracking-[0.1em] uppercase font-semibold font-[var(--font-inter)] border border-[#e2e2e2] px-3 py-1.5 hover:border-[#002045] transition-colors">PDF</a>
+                          {converted ? (
+                            <span className="text-[#3b6934] text-[10px] tracking-[0.1em] uppercase font-bold font-[var(--font-inter)] bg-[#f0f9eb] px-3 py-1.5">Convertido ✓</span>
+                          ) : (
+                            <button
+                              onClick={() => convertFormalQuote(fq.slug)}
+                              disabled={convertingSlug === fq.slug}
+                              className="bg-[#3b6934] text-white text-[10px] tracking-[0.1em] uppercase font-bold font-[var(--font-inter)] px-3 py-1.5 hover:bg-[#2e5229] transition-colors disabled:opacity-50"
+                            >
+                              {convertingSlug === fq.slug ? "Convertendo…" : "Converter em pedido"}
+                            </button>
+                          )}
+                        </div>
+                      </div>
+                    );
+                  })}
+                </div>
+              </div>
+            )}
 
             {/* Stats bar */}
             {!clientsLoading && !loadingUses && !pedidosLoading && filteredClients.length > 0 && (

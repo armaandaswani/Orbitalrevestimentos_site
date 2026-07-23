@@ -32,7 +32,9 @@ alter table saved_quotes
   add column if not exists discount_amount      numeric,
   add column if not exists total_amount         numeric,
   -- Controle de envio (idempotência): um único WhatsApp de formalização.
-  add column if not exists whatsapp_sent_at     timestamptz;
+  add column if not exists whatsapp_sent_at     timestamptz,
+  -- Conversão em pedido (Fase 9): vínculo para não reprocessar/duplicar.
+  add column if not exists pedido_id            uuid;
 
 create unique index if not exists saved_quotes_formal_number_key
   on saved_quotes (formal_number) where formal_number is not null;
