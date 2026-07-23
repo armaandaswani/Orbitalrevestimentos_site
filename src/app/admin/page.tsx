@@ -520,6 +520,8 @@ export default function AdminPage() {
   const [aiDescHint, setAiDescHint] = useState("");
   const [dragMediaId, setDragMediaId] = useState<string | null>(null);
   const [dragOverMediaId, setDragOverMediaId] = useState<string | null>(null);
+  const [mediaToast, setMediaToast] = useState<{ text: string; error?: boolean } | null>(null);
+  const [settingCoverId, setSettingCoverId] = useState<string | null>(null);
   const [aiTextGenerating, setAiTextGenerating] = useState<string | null>(null); // field key being generated
 
   // ── Admin simulator ──────────────────────────────────────────────────────
@@ -1613,6 +1615,61 @@ export default function AdminPage() {
       body: JSON.stringify(body),
     });
     await fetchProjectMedia(slug);
+  }
+
+  // Autosave da categoria — muda no clique, sem exigir "Salvar". Atualização
+  // otimista + confirmação discreta; reverte e avisa se o PATCH falhar.
+  async function setMediaCategory(id: string, slug: string, category: "geral" | "antes" | "depois") {
+    const prevList = projectMediaMap[slug] ?? [];
+    const before = prevList.find((m) => m.id === id)?.category ?? "geral";
+    if (before === category) return;
+    setProjectMediaMap((prev) => ({ ...prev, [slug]: (prev[slug] ?? []).map((m) => (m.id === id ? { ...m, category } : m)) }));
+    setEditMediaDraft((d) => ({ ...d, category }));
+    try {
+      const res = await fetch(`/api/projects/media/${id}`, {
+        method: "PATCH", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ category }),
+      });
+      if (!res.ok) throw new Error();
+      setMediaToast({ text: "Categoria atualizada" });
+    } catch {
+      setProjectMediaMap((prev) => ({ ...prev, [slug]: (prev[slug] ?? []).map((m) => (m.id === id ? { ...m, category: before } : m)) }));
+      setMediaToast({ text: "Falha ao atualizar categoria", error: true });
+    }
+    setTimeout(() => setMediaToast(null), 2500);
+  }
+
+  // "Usar como capa" — troca segura: a mídia escolhida vira a capa (image_after)
+  // e a capa anterior desce para a galeria de mídias, preservando o arquivo.
+  // Nenhuma imagem é apagada; se algo falhar, a capa anterior é mantida.
+  async function useMediaAsCover(m: ProjectMedia, project: { id: string; slug: string; image_after?: string | null }) {
+    if (m.type !== "image") { setMediaToast({ text: "Apenas imagens podem ser capa", error: true }); setTimeout(() => setMediaToast(null), 2500); return; }
+    if (!confirm("Deseja utilizar esta imagem como nova capa? A capa atual será movida para a galeria.")) return;
+    setSettingCoverId(m.id);
+    const oldCover = project.image_after ?? null;
+    try {
+      // 1) promove a mídia a capa
+      const up = await fetch(`/api/projects/photos/${project.id}`, {
+        method: "PUT", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ image_after: m.url, image_before: m.url }),
+      });
+      if (!up.ok) throw new Error();
+      // 2) remove a mídia promovida da galeria
+      await fetch(`/api/projects/media/${m.id}`, { method: "DELETE" });
+      // 3) capa anterior desce para a galeria (primeira posição), preservando o arquivo
+      if (oldCover) {
+        await fetch("/api/projects/media", {
+          method: "POST", headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ project_slug: project.slug, type: "image", url: oldCover, sort_order: -1 }),
+        });
+      }
+      await fetchProjectMedia(project.slug);
+      await fetchProjects();
+      setMediaToast({ text: "Capa atualizada" });
+    } catch {
+      setMediaToast({ text: "Falha ao trocar a capa — nada foi perdido", error: true });
+    } finally {
+      setSettingCoverId(null);
+      setTimeout(() => setMediaToast(null), 2500);
+    }
   }
 
   async function reorderMedia(slug: string, fromId: string, toId: string) {
@@ -5877,13 +5934,14 @@ export default function AdminPage() {
                                             {(["geral", "antes", "depois"] as const).map((cat) => (
                                               <button
                                                 key={cat}
-                                                onClick={() => setEditMediaDraft(d => ({ ...d, category: cat }))}
-                                                className={`flex-1 text-[9px] uppercase font-bold tracking-wider py-1.5 border transition-colors ${editMediaDraft.category === cat ? "bg-[#002045] text-white border-[#002045]" : "border-[#e2e2e2] text-[#74777f] hover:border-[#002045]"}`}
+                                                onClick={() => setMediaCategory(m.id, p.slug, cat)}
+                                                className={`flex-1 text-[9px] uppercase font-bold tracking-wider py-1.5 border transition-colors ${(m.category ?? "geral") === cat ? "bg-[#002045] text-white border-[#002045]" : "border-[#e2e2e2] text-[#74777f] hover:border-[#002045]"}`}
                                               >
                                                 {cat}
                                               </button>
                                             ))}
                                           </div>
+                                          <p className="text-[8px] text-[#3b6934] font-[var(--font-inter)] mt-1">Salvo automaticamente ao selecionar.</p>
                                         </div>
                                         {/* Description */}
                                         <div className="mb-3">
@@ -5918,21 +5976,32 @@ export default function AdminPage() {
                                             className="w-full border border-[#e2e2e2] px-2 py-1.5 text-xs font-[var(--font-inter)] text-[#43474e] focus:outline-none focus:border-[#002045] resize-none"
                                           />
                                         </div>
+                                        {m.type === "image" && (
+                                          <button
+                                            onClick={() => useMediaAsCover(m, p)}
+                                            disabled={settingCoverId === m.id}
+                                            className="w-full mb-2 border border-[#3b6934] text-[#3b6934] text-[9px] uppercase font-bold tracking-wider py-1.5 hover:bg-[#3b6934] hover:text-white transition-colors disabled:opacity-50"
+                                          >
+                                            {settingCoverId === m.id ? "Trocando…" : "Usar como capa"}
+                                          </button>
+                                        )}
                                         <div className="flex gap-2">
                                           <button
                                             onClick={async () => {
-                                              await patchProjectMedia(m.id, p.slug, { category: editMediaDraft.category, description: editMediaDraft.description || null });
+                                              await patchProjectMedia(m.id, p.slug, { description: editMediaDraft.description || null });
+                                              setMediaToast({ text: "Descrição salva" });
+                                              setTimeout(() => setMediaToast(null), 2500);
                                               setEditingMediaId(null);
                                             }}
                                             className="flex-1 bg-[#002045] text-white text-[9px] uppercase font-bold tracking-wider py-1.5 hover:bg-[#1a365d] transition-colors"
                                           >
-                                            Salvar
+                                            Salvar descrição
                                           </button>
                                           <button
                                             onClick={() => setEditingMediaId(null)}
                                             className="flex-1 border border-[#e2e2e2] text-[#74777f] text-[9px] uppercase font-bold tracking-wider py-1.5 hover:border-[#002045] transition-colors"
                                           >
-                                            Cancelar
+                                            Fechar
                                           </button>
                                         </div>
                                       </div>
@@ -7032,6 +7101,13 @@ ALTER TABLE project_media ADD COLUMN IF NOT EXISTS description TEXT;`}
 
         </main>
       </div>
+
+      {/* Toast discreto (autosave de mídia: categoria, capa, descrição) */}
+      {mediaToast && (
+        <div className={`fixed bottom-5 left-1/2 -translate-x-1/2 z-[200] px-4 py-2.5 text-xs font-semibold font-[var(--font-inter)] shadow-lg ${mediaToast.error ? "bg-[#cc0000] text-white" : "bg-[#002045] text-white"}`}>
+          {mediaToast.text}
+        </div>
+      )}
     </div>
   );
 }
