@@ -605,6 +605,87 @@ function SimuladorInner() {
     }, 50);
   }
 
+  // ── Multi-space edit/remove (Resumo) ──────────────────────────────────────
+  // The "current" (unsaved, live editor) ambiente and each saved ambiente must
+  // offer the SAME actions. These helpers make the current space snapshot-able
+  // and a saved space loadable back into the editor, so any row can be edited
+  // or removed with identical controls.
+  function currentSpaceToSaved(): SavedSpace {
+    return {
+      key: `space-${Date.now()}`,
+      label: ambienteName.trim() || selectedSpace!.label,
+      productName: selectedProduct!.name,
+      productCode: selectedProduct!.code,
+      imagePath: selectedProduct!.image_path ?? "",
+      linha: selectedProduct!.linha,
+      dimLabel: dimMode === "lxa" && width && height ? `${width}m × ${height}m` : `${m2.toFixed(2)} m²`,
+      m2,
+      plates,
+      pricePerPlate,
+      materialTotal: orbMaterialTotal,
+      materialDiscounted: orbMaterialDiscounted,
+      moTotal: orbMOTotal,
+      total: orbTotal,
+      viability: selectedSpace!.viability === "complex" ? "complex" : "simple",
+      ...currentMeasurement(),
+    };
+  }
+
+  function loadSavedIntoEditor(sp: SavedSpace) {
+    const prod = products.find((p) => p.code === sp.productCode);
+    if (prod) { setSelectedLine(prod.linha); setSelectedProduct(prod); }
+    const canonical = SPACES.find((s) => s.label.toLowerCase() === sp.label.trim().toLowerCase());
+    if (canonical) { setSelectedSpace(canonical); setShowCustomInput(false); setCustomSpaceText(""); }
+    else { setSelectedSpace({ id: "__custom__", label: sp.label, viability: sp.viability }); setCustomSpaceText(sp.label); setShowCustomInput(true); }
+    setAmbienteName(sp.label);
+    setPlatesOverride(null);
+    if (sp.measurementType === "dimensions" && sp.width != null && sp.height != null) {
+      setWidth(String(sp.width)); setHeight(String(sp.height)); setSqmInput(""); setDimMode("lxa");
+    } else if (sp.measurementType === "square_meters" && sp.squareMeters != null) {
+      setSqmInput(String(sp.squareMeters)); setWidth(""); setHeight(""); setDimMode("m2");
+    } else {
+      setSqmInput(sp.m2 ? String(sp.m2) : ""); setWidth(""); setHeight(""); setDimMode("m2");
+    }
+  }
+
+  // Edit a SAVED ambiente: park the current editor space into that saved slot so
+  // it isn't lost, load the chosen ambiente into the editor, and return to the
+  // dimensions step. Order is preserved (the edited one becomes the live space).
+  function editSavedSpace(i: number) {
+    const target = savedSpaces[i];
+    if (!target) return;
+    const parked = currentSpaceToSaved();
+    setSavedSpaces((prev) => prev.map((s, idx) => (idx === i ? parked : s)));
+    loadSavedIntoEditor(target);
+    setResumeIdx(null);
+    setShowResult(false);
+    goToStep(3);
+  }
+
+  // Edit the CURRENT (live) ambiente — it's already loaded; just reopen dims.
+  function editCurrentSpace() {
+    setShowResult(false);
+    goToStep(3);
+  }
+
+  function removeSavedSpace(i: number) {
+    if (!confirm("Remover este ambiente da simulação?")) return;
+    setSavedSpaces((prev) => prev.filter((_, idx) => idx !== i));
+    setResumeIdx((prev) => (prev === null ? null : prev === i ? null : prev > i ? prev - 1 : prev));
+  }
+
+  // Remove the CURRENT (live) ambiente: promote the last saved ambiente into the
+  // editor and drop it from the saved list, so the live row disappears and totals
+  // recalc. (Only reachable when at least one saved ambiente exists.)
+  function removeCurrentSpace() {
+    if (savedSpaces.length === 0) return;
+    if (!confirm("Remover este ambiente da simulação?")) return;
+    const last = savedSpaces[savedSpaces.length - 1];
+    loadSavedIntoEditor(last);
+    setSavedSpaces((prev) => prev.slice(0, -1));
+    setResumeIdx(null);
+  }
+
   function showResults() {
     setShowResult(true);
     setStep(5); // stepper now ends at "Resultado" (Ver no ambiente is opt-in)
@@ -2709,9 +2790,18 @@ function SimuladorInner() {
                               : <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="#b0b0b0" strokeWidth="2"><path d="M6 9l6 6 6-6"/></svg>
                             }
                             <button
-                              onClick={e => { e.stopPropagation(); setSavedSpaces(prev => prev.filter((_, idx) => idx !== i)); if (resumeIdx === i) setResumeIdx(null); }}
-                              className="text-[#cc0000] hover:text-[#ff0000] text-[10px] font-bold font-[var(--font-inter)] transition-colors"
+                              onClick={e => { e.stopPropagation(); editSavedSpace(i); }}
+                              className="w-8 h-8 flex items-center justify-center text-[#43474e] hover:text-[#002045] hover:bg-[#eef2fb] transition-colors"
+                              title="Editar ambiente"
+                              aria-label={`Editar ${sp.label}`}
+                            >
+                              <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><path d="M12 20h9M16.5 3.5a2.12 2.12 0 0 1 3 3L7 19l-4 1 1-4Z"/></svg>
+                            </button>
+                            <button
+                              onClick={e => { e.stopPropagation(); removeSavedSpace(i); }}
+                              className="w-8 h-8 flex items-center justify-center text-[#cc0000] hover:text-white hover:bg-[#cc0000] text-sm font-bold font-[var(--font-inter)] transition-colors"
                               title="Remover ambiente"
+                              aria-label={`Remover ${sp.label}`}
                             >✕</button>
                           </div>
                         </div>
@@ -2733,12 +2823,26 @@ function SimuladorInner() {
                               <p className="text-[#74777f] text-[10px] font-[var(--font-inter)]">{selectedProduct.name} · {dimMode === "lxa" && width && height ? `${width}m × ${height}m` : `${m2.toFixed(2)} m²`} · {plates} placas</p>
                             </div>
                           </div>
-                          <div className="flex items-center gap-2 flex-shrink-0">
+                          <div className="flex items-center gap-3 flex-shrink-0">
                             <span className="text-[#002045] text-sm font-semibold font-[var(--font-inter)]">{fmt(orbMaterialDiscounted)}</span>
                             {isSelected
                               ? <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="#002045" strokeWidth="2.5"><path d="M18 15l-6-6-6 6"/></svg>
                               : <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="#b0b0b0" strokeWidth="2"><path d="M6 9l6 6 6-6"/></svg>
                             }
+                            <button
+                              onClick={e => { e.stopPropagation(); editCurrentSpace(); }}
+                              className="w-8 h-8 flex items-center justify-center text-[#43474e] hover:text-[#002045] hover:bg-[#eef2fb] transition-colors"
+                              title="Editar ambiente"
+                              aria-label={`Editar ${selectedSpace.label}`}
+                            >
+                              <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><path d="M12 20h9M16.5 3.5a2.12 2.12 0 0 1 3 3L7 19l-4 1 1-4Z"/></svg>
+                            </button>
+                            <button
+                              onClick={e => { e.stopPropagation(); removeCurrentSpace(); }}
+                              className="w-8 h-8 flex items-center justify-center text-[#cc0000] hover:text-white hover:bg-[#cc0000] text-sm font-bold font-[var(--font-inter)] transition-colors"
+                              title="Remover ambiente"
+                              aria-label={`Remover ${selectedSpace.label}`}
+                            >✕</button>
                           </div>
                         </div>
                       );
