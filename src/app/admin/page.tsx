@@ -556,6 +556,11 @@ export default function AdminPage() {
   const [pricingEdits, setPricingEdits] = useState<Record<string, { special: string; public_: string }>>({});
   const [pricingSaving, setPricingSaving] = useState<Record<string, boolean>>({});
   const [pricingMsg, setPricingMsg] = useState<Record<string, string>>({});
+  // Regras comerciais do fluxo público de orçamento (Cola PU, frete, desconto,
+  // parcelamento, instalação, validade) — /api/admin/orcamento-config.
+  const [orcCfg, setOrcCfg] = useState<Record<string, unknown> | null>(null);
+  const [orcCfgSaving, setOrcCfgSaving] = useState(false);
+  const [orcCfgMsg, setOrcCfgMsg] = useState("");
 
   // Same static list as the public projetos page — kept in sync manually
   const STATIC_RENDERS = [
@@ -831,6 +836,12 @@ export default function AdminPage() {
           setPricingEdits(edits);
           setPricingLoaded(true);
         })
+        .catch(() => {});
+    }
+    if (tab === "precos" && authed && !orcCfg) {
+      fetch("/api/admin/orcamento-config")
+        .then((r) => (r.ok ? r.json() : null))
+        .then((c) => { if (c) setOrcCfg(c); })
         .catch(() => {});
     }
   // eslint-disable-next-line react-hooks/exhaustive-deps
@@ -1759,6 +1770,31 @@ export default function AdminPage() {
       setPricingMsg((prev) => ({ ...prev, [linha]: "Erro ao salvar." }));
     }
     setTimeout(() => setPricingMsg((prev) => ({ ...prev, [linha]: "" })), 4000);
+  }
+
+  function setOrcCfgField(key: string, value: unknown) {
+    setOrcCfg((prev) => ({ ...(prev ?? {}), [key]: value }));
+  }
+
+  async function saveOrcCfg() {
+    if (!orcCfg) return;
+    setOrcCfgSaving(true);
+    setOrcCfgMsg("");
+    try {
+      const res = await fetch("/api/admin/orcamento-config", {
+        method: "PUT",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(orcCfg),
+      });
+      const data = await res.json().catch(() => null);
+      if (res.ok && data) { setOrcCfg(data); setOrcCfgMsg("Salvo ✓"); }
+      else setOrcCfgMsg(data?.error ?? "Erro ao salvar.");
+    } catch {
+      setOrcCfgMsg("Erro de rede.");
+    } finally {
+      setOrcCfgSaving(false);
+      setTimeout(() => setOrcCfgMsg(""), 4000);
+    }
   }
 
   async function importStaticRender(render: { slug: string; title: string; product_code: string; image_path: string }, idx: number) {
@@ -6823,6 +6859,93 @@ ALTER TABLE project_media ADD COLUMN IF NOT EXISTS description TEXT;`}
                     <li>· Email enviado quando a tabela especial é ativada para um parceiro</li>
                     <li>· O preço especial é usado nos cálculos de orçamento gerados pelo parceiro</li>
                   </ul>
+                </div>
+
+                {/* Regras comerciais do fluxo de orçamento (motor central) */}
+                <div className="bg-white border border-[#e2e2e2] p-6 mt-8">
+                  <h3 className="font-[var(--font-noto-serif)] text-[#002045] text-lg font-normal mb-1">Regras do orçamento público</h3>
+                  <p className="text-[#74777f] text-xs font-[var(--font-inter)] mb-5 leading-relaxed">
+                    Cola PU, frete, desconto à vista, validade e instalação. Aplicadas em tempo real no site, no PDF e no WhatsApp.
+                  </p>
+                  {!orcCfg ? (
+                    <p className="text-[#74777f] text-sm font-[var(--font-inter)]">Carregando…</p>
+                  ) : (
+                    <div className="space-y-5">
+                      {([
+                        ["colaFactorPerPlate", "Cola PU — tubos por placa", "1.5", 0.1],
+                        ["freteFreeMinPlates", "Frete grátis a partir de (placas)", "5", 1],
+                        ["freteBase", "Frete-base estimado (R$)", "150", 1],
+                        ["discountPct", "Desconto à vista (%)", "3", 0.5],
+                        ["discountMinPlates", "Desconto a partir de (placas)", "2", 1],
+                        ["quoteValidityDays", "Validade do orçamento (dias)", "7", 1],
+                      ] as Array<[string, string, string, number]>).reduce<React.ReactNode[][]>((rows, item, i) => {
+                        if (i % 2 === 0) rows.push([]);
+                        rows[rows.length - 1].push(
+                          <div key={item[0]}>
+                            <label className="block text-[10px] tracking-[0.12em] uppercase font-bold font-[var(--font-inter)] text-[#74777f] mb-1.5">{item[1]}</label>
+                            <input
+                              type="number" step={item[3]} min={0}
+                              value={String(orcCfg[item[0]] ?? item[2])}
+                              onChange={(e) => setOrcCfgField(item[0], parseFloat(e.target.value))}
+                              className="w-full border border-[#e2e2e2] px-3 py-2 text-sm font-[var(--font-inter)] text-[#002045] font-bold focus:outline-none focus:border-[#002045]"
+                            />
+                          </div>
+                        );
+                        return rows;
+                      }, []).map((pair, i) => (
+                        <div key={i} className="grid grid-cols-2 gap-4">{pair}</div>
+                      ))}
+
+                      <div>
+                        <label className="block text-[10px] tracking-[0.12em] uppercase font-bold font-[var(--font-inter)] text-[#74777f] mb-1.5">Escopo do desconto</label>
+                        <select
+                          value={String(orcCfg.discountScope ?? "placas")}
+                          onChange={(e) => setOrcCfgField("discountScope", e.target.value)}
+                          className="w-full border border-[#e2e2e2] px-3 py-2 text-sm font-[var(--font-inter)] text-[#002045] focus:outline-none focus:border-[#002045]"
+                        >
+                          <option value="placas">Somente placas</option>
+                          <option value="placas_cola">Placas + Cola PU</option>
+                          <option value="subtotal">Subtotal dos produtos</option>
+                        </select>
+                        <p className="text-[#a0a3a8] text-[10px] font-[var(--font-inter)] mt-1">O frete nunca recebe desconto.</p>
+                      </div>
+
+                      <div className="grid grid-cols-2 gap-4">
+                        <div>
+                          <label className="block text-[10px] tracking-[0.12em] uppercase font-bold font-[var(--font-inter)] text-[#74777f] mb-1.5">Empresa instaladora</label>
+                          <input value={String(orcCfg.installerName ?? "")} onChange={(e) => setOrcCfgField("installerName", e.target.value)} className="w-full border border-[#e2e2e2] px-3 py-2 text-sm font-[var(--font-inter)] text-[#002045] focus:outline-none focus:border-[#002045]" />
+                        </div>
+                        <div>
+                          <label className="block text-[10px] tracking-[0.12em] uppercase font-bold font-[var(--font-inter)] text-[#74777f] mb-1.5">Telefone da instaladora</label>
+                          <input value={String(orcCfg.installerPhone ?? "")} onChange={(e) => setOrcCfgField("installerPhone", e.target.value)} className="w-full border border-[#e2e2e2] px-3 py-2 text-sm font-[var(--font-inter)] text-[#002045] focus:outline-none focus:border-[#002045]" />
+                        </div>
+                      </div>
+
+                      <label className="flex items-center gap-2 cursor-pointer">
+                        <input type="checkbox" checked={orcCfg.leadMessageEnabled !== false} onChange={(e) => setOrcCfgField("leadMessageEnabled", e.target.checked)} />
+                        <span className="text-[#43474e] text-sm font-[var(--font-inter)]">Enviar mensagem de recuperação de simulação ao lead</span>
+                      </label>
+
+                      <div className="bg-[#f7f8fa] border border-[#e2e2e2] px-4 py-2.5">
+                        <p className="text-[#74777f] text-[11px] font-[var(--font-inter)] leading-relaxed">
+                          Parcelamento sem juros (faixas): 2–4 → 3x · 5–7 → 4x · 8–12 → 6x · 13+ → 10x. Uma placa não recebe promoção automática.
+                        </p>
+                      </div>
+
+                      <div className="flex items-center gap-4">
+                        <button
+                          disabled={orcCfgSaving}
+                          onClick={saveOrcCfg}
+                          className="bg-[#002045] text-white text-[10px] uppercase tracking-widest font-bold font-[var(--font-inter)] px-6 py-2.5 hover:bg-[#1a365d] transition-colors disabled:opacity-40"
+                        >
+                          {orcCfgSaving ? "Salvando…" : "Salvar regras"}
+                        </button>
+                        {orcCfgMsg && (
+                          <p className={`text-sm font-[var(--font-inter)] ${orcCfgMsg.startsWith("Erro") ? "text-red-500" : "text-[#2e7d32]"}`}>{orcCfgMsg}</p>
+                        )}
+                      </div>
+                    </div>
+                  )}
                 </div>
               </div>
             )}
