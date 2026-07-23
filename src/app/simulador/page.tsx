@@ -7,6 +7,7 @@ import Link from "next/link";
 import MdfComparison, { COMPARISON_OPTIONS } from "@/components/MdfComparison";
 import VisualizadorWizard, { type SimPrefill } from "@/components/VisualizadorWizard";
 import { panelGrid } from "@/lib/render-prompt";
+import type { OrcamentoBreakdown } from "@/lib/orcamento-pricing";
 
 const WA_BASE = "https://wa.me/5592988150149?text=";
 // Werk Engenharia — terceirizado de instalação. Mão de obra é apenas
@@ -315,6 +316,28 @@ function SimuladorInner() {
   const produtoParamAppliedRef = useRef(false);
   const [simSubmitting, setSimSubmitting] = useState(false);
   const [simSubmitted, setSimSubmitted] = useState(false);
+  // Authoritative investment breakdown (placas + Cola PU + frete + pagamento)
+  // from the central engine via /api/orcamento/pricing.
+  const [pricing, setPricing] = useState<OrcamentoBreakdown | null>(null);
+  const [selectedPayment, setSelectedPayment] = useState<"pix" | "cartao" | null>(null);
+  // Formalization flow (address + CEP → PDF via WhatsApp). Opened by the primary
+  // CTA on the result page. See handleFormalize.
+  const [formalizeOpen, setFormalizeOpen] = useState(false);
+  const [savedQuoteSlug, setSavedQuoteSlug] = useState<string | null>(null);
+  const [fzZip, setFzZip] = useState("");
+  const [fzStreet, setFzStreet] = useState("");
+  const [fzNumber, setFzNumber] = useState("");
+  const [fzComplement, setFzComplement] = useState("");
+  const [fzNeighborhood, setFzNeighborhood] = useState("");
+  const [fzCity, setFzCity] = useState("");
+  const [fzState, setFzState] = useState("");
+  const [fzCondo, setFzCondo] = useState("");
+  const [fzNotes, setFzNotes] = useState("");
+  const [fzCepLoading, setFzCepLoading] = useState(false);
+  const [fzCepError, setFzCepError] = useState("");
+  const [fzSubmitting, setFzSubmitting] = useState(false);
+  const [fzResult, setFzResult] = useState<{ formalNumber: string; pdfUrl: string; whatsappOk: boolean; emailOk: boolean } | null>(null);
+  const [fzError, setFzError] = useState("");
   const [quoteShareUrl, setQuoteShareUrl] = useState<string | null>(null);
   const [quoteUrlCopied, setQuoteUrlCopied] = useState(false);
   const [partnerSimId, setPartnerSimId] = useState<string | null>(null);
@@ -594,6 +617,87 @@ function SimuladorInner() {
       }, 50);
     }
   }, [showResult]);
+
+  // Pull the authoritative composition (placas + Cola PU + frete + pagamento)
+  // from the central engine whenever the result is shown / the project changes.
+  useEffect(() => {
+    if (!showResult) { setPricing(null); return; }
+    const gPlates = savedSpaces.reduce((s, sp) => s + sp.plates, 0) + plates;
+    const gSubtotal = savedSpaces.reduce((s, sp) => s + sp.materialDiscounted, 0) + orbMaterialDiscounted;
+    if (gPlates <= 0) return;
+    const blended = gSubtotal / gPlates; // effective per-placa (post partner-coupon)
+    let cancelled = false;
+    fetch("/api/orcamento/pricing", {
+      method: "POST", headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ plates: gPlates, pricePerPlate: blended }),
+    })
+      .then((r) => (r.ok ? r.json() : null))
+      .then((b: OrcamentoBreakdown | null) => {
+        if (cancelled || !b) return;
+        setPricing(b);
+        setSelectedPayment((prev) =>
+          prev && b.paymentOptions.some((o) => o.id === prev)
+            ? prev
+            : (b.paymentOptions.find((o) => o.id === "pix") ? "pix" : (b.paymentOptions[0]?.id ?? null))
+        );
+      })
+      .catch(() => {});
+    return () => { cancelled = true; };
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [showResult, plates, savedSpaces, orbMaterialDiscounted]);
+
+  // CEP → endereço (ViaCEP). Preenche rua/bairro/cidade/UF sem apagar o que já
+  // foi digitado manualmente; falha de rede nunca bloqueia o preenchimento manual.
+  async function lookupCep(rawCep: string) {
+    const digits = rawCep.replace(/\D/g, "");
+    if (digits.length !== 8) return;
+    setFzCepLoading(true);
+    setFzCepError("");
+    try {
+      const res = await fetch(`https://viacep.com.br/ws/${digits}/json/`);
+      const data = await res.json().catch(() => null);
+      if (!data || data.erro) { setFzCepError("CEP não encontrado. Preencha manualmente."); return; }
+      if (data.logradouro) setFzStreet((prev) => prev || data.logradouro);
+      if (data.bairro) setFzNeighborhood((prev) => prev || data.bairro);
+      if (data.localidade) setFzCity((prev) => prev || data.localidade);
+      if (data.uf) setFzState((prev) => prev || data.uf);
+    } catch {
+      setFzCepError("Não foi possível consultar o CEP. Preencha manualmente.");
+    } finally {
+      setFzCepLoading(false);
+    }
+  }
+
+  async function submitFormalize() {
+    if (!savedQuoteSlug) { setFzError("Salve a simulação antes de formalizar."); return; }
+    if (!fzStreet.trim() || !fzNumber.trim() || !fzCity.trim()) {
+      setFzError("Informe rua, número e cidade.");
+      return;
+    }
+    setFzSubmitting(true);
+    setFzError("");
+    try {
+      const res = await fetch("/api/orcamento/formalize", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          slug: savedQuoteSlug,
+          payment_condition: selectedPayment ?? "pix",
+          address: {
+            zip: fzZip, street: fzStreet, number: fzNumber, complement: fzComplement,
+            neighborhood: fzNeighborhood, city: fzCity, state: fzState, condo: fzCondo, notes: fzNotes,
+          },
+        }),
+      });
+      const data = await res.json().catch(() => null);
+      if (!res.ok || !data?.ok) { setFzError(data?.error ?? "Falha ao gerar o orçamento."); return; }
+      setFzResult({ formalNumber: data.formalNumber, pdfUrl: data.pdfUrl, whatsappOk: data.whatsappOk, emailOk: data.emailOk });
+    } catch (e) {
+      setFzError(e instanceof Error ? e.message : "Erro de rede.");
+    } finally {
+      setFzSubmitting(false);
+    }
+  }
 
   useEffect(() => {
     if (selectedSpace && step === 1) {
@@ -1183,6 +1287,7 @@ function SimuladorInner() {
           quoteSlug = qData.slug ?? editSlug ?? null;
           if (quoteSlug) {
             setQuoteShareUrl(`${siteUrl}/orcamento/${quoteSlug}`);
+            setSavedQuoteSlug(quoteSlug);
           }
         }
       } catch { /* non-fatal */ }
@@ -2723,6 +2828,162 @@ function SimuladorInner() {
               );
               })()}
 
+              {/* ── Composição do investimento (motor central) ─────────────────
+                  Placas / Cola PU / Frete / Desconto / Total em linhas separadas,
+                  seguido de cards de condição de pagamento selecionáveis. Tudo vem
+                  de `pricing` (POST /api/orcamento/pricing) — fonte única. */}
+              {pricing && (
+                <div className="bg-white border border-[#e2e2e2] border-t-0 px-5 sm:px-8 py-6">
+                  <p className="text-[#43474e] text-[10px] tracking-[0.15em] uppercase font-bold font-[var(--font-inter)] mb-4">
+                    Composição do investimento
+                  </p>
+
+                  {pricing.warnings.length > 0 && (
+                    <div className="mb-4 bg-[#fffbea] border border-[#e6c84a] px-4 py-2.5">
+                      {pricing.warnings.map((w, i) => (
+                        <p key={i} className="text-[#6b5000] text-[11px] font-[var(--font-inter)]">{w}</p>
+                      ))}
+                    </div>
+                  )}
+
+                  <div className="border border-[#e2e2e2] divide-y divide-[#f0f0f0]">
+                    {/* Placas */}
+                    <div className="flex items-start justify-between px-4 py-3">
+                      <div className="min-w-0">
+                        <p className="text-[#002045] text-sm font-semibold font-[var(--font-inter)]">Placas PFB</p>
+                        <p className="text-[#74777f] text-[11px] font-[var(--font-inter)]">
+                          {pricing.plates} × {fmt(pricing.pricePerPlate)}
+                        </p>
+                      </div>
+                      <span className="text-[#002045] text-sm font-semibold font-[var(--font-inter)] flex-shrink-0">{fmt(pricing.platesSubtotal)}</span>
+                    </div>
+
+                    {/* Cola PU */}
+                    {pricing.colaAvailable && pricing.colaTubos > 0 && (
+                      <div className="flex items-start justify-between px-4 py-3">
+                        <div className="min-w-0">
+                          <p className="text-[#002045] text-sm font-semibold font-[var(--font-inter)]">Cola PU recomendada</p>
+                          <p className="text-[#74777f] text-[11px] font-[var(--font-inter)]">
+                            {pricing.colaTubos} tubo{pricing.colaTubos !== 1 ? "s" : ""} × {fmt(pricing.colaUnitPrice)}
+                          </p>
+                          <p className="text-[#74777f] text-[10px] font-[var(--font-inter)] mt-0.5 leading-snug">
+                            ~1,5 tubo por placa para uma fixação mais segura e durável no clima de Manaus.
+                          </p>
+                        </div>
+                        <span className="text-[#002045] text-sm font-semibold font-[var(--font-inter)] flex-shrink-0">{fmt(pricing.colaSubtotal)}</span>
+                      </div>
+                    )}
+
+                    {/* Frete */}
+                    <div className="flex items-start justify-between px-4 py-3">
+                      <div className="min-w-0">
+                        <p className="text-[#002045] text-sm font-semibold font-[var(--font-inter)]">Frete</p>
+                        <p className="text-[#74777f] text-[11px] font-[var(--font-inter)]">
+                          {pricing.frete.free
+                            ? "Grátis para este orçamento (≥ 5 placas)"
+                            : pricing.frete.estimated
+                              ? "Estimado — confirmado pelo CEP na formalização"
+                              : "Confirmado pelo CEP"}
+                        </p>
+                      </div>
+                      <span className={`text-sm font-semibold font-[var(--font-inter)] flex-shrink-0 ${pricing.frete.free ? "text-[#3b6934]" : "text-[#002045]"}`}>
+                        {pricing.frete.free ? "Grátis" : fmt(pricing.frete.value)}
+                      </span>
+                    </div>
+
+                    {/* Desconto à vista (só quando aplicável) */}
+                    {pricing.discount.eligible && pricing.discount.amount > 0 && (
+                      <div className="flex items-start justify-between px-4 py-3 bg-[#f0f9eb]">
+                        <div className="min-w-0">
+                          <p className="text-[#3b6934] text-sm font-semibold font-[var(--font-inter)]">Desconto à vista</p>
+                          <p className="text-[#3b6934]/80 text-[11px] font-[var(--font-inter)]">
+                            {pricing.discount.pct}% no PIX ou espécie (sobre as placas)
+                          </p>
+                        </div>
+                        <span className="text-[#3b6934] text-sm font-semibold font-[var(--font-inter)] flex-shrink-0">− {fmt(pricing.discount.amount)}</span>
+                      </div>
+                    )}
+                  </div>
+
+                  {/* Condições de pagamento — cards selecionáveis */}
+                  {pricing.paymentOptions.length > 0 && (
+                    <div className="mt-5">
+                      <p className="text-[#43474e] text-[10px] tracking-[0.15em] uppercase font-bold font-[var(--font-inter)] mb-3">
+                        Condições de pagamento
+                      </p>
+                      <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                        {pricing.paymentOptions.map((opt) => {
+                          const active = selectedPayment === opt.id;
+                          return (
+                            <button
+                              key={opt.id}
+                              type="button"
+                              onClick={() => setSelectedPayment(opt.id)}
+                              aria-pressed={active}
+                              className={`text-left px-4 py-3 border transition-colors ${active ? "border-[#002045] bg-[#eef2fb] ring-1 ring-[#002045]" : "border-[#e2e2e2] bg-white hover:border-[#86a0cd]"}`}
+                            >
+                              <div className="flex items-center justify-between gap-2">
+                                <span className="text-[#002045] text-sm font-bold font-[var(--font-inter)]">{opt.label}</span>
+                                <span className={`flex-shrink-0 w-4 h-4 rounded-full border-2 flex items-center justify-center ${active ? "border-[#002045] bg-[#002045]" : "border-[#c4c4c4]"}`}>
+                                  {active && <svg width="8" height="8" viewBox="0 0 24 24" fill="none" stroke="white" strokeWidth="4"><path d="M20 6L9 17l-5-5"/></svg>}
+                                </span>
+                              </div>
+                              {opt.id === "pix" ? (
+                                <p className="text-[#3b6934] text-[11px] font-semibold font-[var(--font-inter)] mt-1">
+                                  {opt.discountPct}% de desconto · economize {fmt(opt.discountAmount ?? 0)}
+                                </p>
+                              ) : (
+                                <p className="text-[#74777f] text-[11px] font-[var(--font-inter)] mt-1">
+                                  até {opt.installments}x de {fmt(opt.installmentValue ?? 0)} sem juros
+                                </p>
+                              )}
+                              <p className="text-[#002045] text-base font-bold font-[var(--font-noto-serif)] mt-1">{fmt(opt.total)}</p>
+                            </button>
+                          );
+                        })}
+                      </div>
+                      {grandPlates < 2 && (
+                        <p className="text-[#74777f] text-[11px] font-[var(--font-inter)] mt-2">
+                          Condições especiais de pagamento disponíveis a partir de 2 placas.
+                        </p>
+                      )}
+                    </div>
+                  )}
+
+                  {/* Total conforme condição selecionada */}
+                  {(() => {
+                    const sel = pricing.paymentOptions.find((o) => o.id === selectedPayment) ?? pricing.paymentOptions[0];
+                    const total = sel?.total ?? pricing.totalFull;
+                    return (
+                      <div className="mt-5 flex items-center justify-between bg-[#002045] px-5 py-4">
+                        <div>
+                          <p className="text-white/60 text-[10px] tracking-[0.12em] uppercase font-bold font-[var(--font-inter)]">
+                            Total {sel ? `· ${sel.label}` : ""}
+                          </p>
+                          {sel?.id === "cartao" && sel.installments && (
+                            <p className="text-[#86a0cd] text-[11px] font-[var(--font-inter)] mt-0.5">{sel.installments}x de {fmt(sel.installmentValue ?? 0)} sem juros</p>
+                          )}
+                        </div>
+                        <span className="text-white text-2xl font-bold font-[var(--font-noto-serif)]">{fmt(total)}</span>
+                      </div>
+                    );
+                  })()}
+
+                  {/* CTA principal — formalização */}
+                  <button
+                    type="button"
+                    onClick={() => setFormalizeOpen(true)}
+                    className="mt-4 w-full bg-[#3b6934] hover:bg-[#2e5229] text-white text-sm tracking-[0.08em] uppercase font-bold font-[var(--font-inter)] px-6 py-4 transition-colors flex items-center justify-center gap-2"
+                  >
+                    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><path d="M14 2v6h6M16 13H8M16 17H8M10 9H8"/></svg>
+                    Receber orçamento formalizado em PDF
+                  </button>
+                  <p className="text-[#74777f] text-[11px] font-[var(--font-inter)] text-center mt-2">
+                    Informe o endereço de entrega e receba o documento completo pelo WhatsApp.
+                  </p>
+                </div>
+              )}
+
               {/* PFB Attribute strip — 4 cards on mobile (2×2), 6 cards on desktop */}
               <div className="bg-white border border-[#e2e2e2] border-t-0 px-5 sm:px-8 py-5">
                 {/* Mobile: 4 combined cards in 2×2 grid */}
@@ -3193,6 +3454,156 @@ function SimuladorInner() {
                 style={{ maxHeight: "85vh" }}
               />
             </div>
+          </div>
+        </div>
+      )}
+
+      {/* ── Formalização do orçamento ─────────────────────────────────────────
+          Confirmação de dados + endereço (CEP autofill) → PDF via WhatsApp. */}
+      {formalizeOpen && (
+        <div
+          className="fixed inset-0 z-[100] bg-black/60 flex items-end sm:items-center justify-center p-0 sm:p-4"
+          onClick={() => { if (!fzSubmitting) setFormalizeOpen(false); }}
+        >
+          <div
+            className="bg-white w-full sm:max-w-lg max-h-[92vh] overflow-y-auto"
+            onClick={(e) => e.stopPropagation()}
+          >
+            <div className="sticky top-0 bg-[#002045] px-5 py-4 flex items-center justify-between z-10">
+              <p className="text-white font-[var(--font-noto-serif)] text-base">
+                {fzResult ? "Orçamento formalizado" : "Receber orçamento formalizado"}
+              </p>
+              <button
+                onClick={() => { if (!fzSubmitting) setFormalizeOpen(false); }}
+                className="text-white/70 hover:text-white transition-colors"
+                aria-label="Fechar"
+              >
+                <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><path d="M18 6L6 18M6 6l12 12"/></svg>
+              </button>
+            </div>
+
+            {fzResult ? (
+              <div className="px-5 py-6 space-y-4">
+                <div className="flex items-center gap-3">
+                  <span className="flex-shrink-0 w-10 h-10 rounded-full bg-[#f0f9eb] flex items-center justify-center">
+                    <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#3b6934" strokeWidth="2.5"><path d="M20 6L9 17l-5-5"/></svg>
+                  </span>
+                  <div>
+                    <p className="text-[#002045] text-sm font-bold font-[var(--font-inter)]">Orçamento enviado com sucesso.</p>
+                    <p className="text-[#74777f] text-[12px] font-[var(--font-inter)]">Nº {fzResult.formalNumber}</p>
+                  </div>
+                </div>
+                <p className="text-[#43474e] text-[13px] font-[var(--font-inter)] leading-relaxed">
+                  {fzResult.whatsappOk
+                    ? `Enviamos o PDF para o seu WhatsApp${clientPhone ? ` final ${clientPhone.replace(/\D/g, "").slice(-4)}` : ""}.`
+                    : "Seu orçamento foi gerado. O PDF está disponível no botão abaixo."}
+                  {fzResult.emailOk && clientEmail ? ` Também enviamos uma cópia para ${clientEmail}.` : ""}
+                </p>
+                <div className="flex flex-col gap-2">
+                  <a
+                    href={fzResult.pdfUrl}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="w-full text-center bg-[#002045] hover:bg-[#1a365d] text-white text-xs tracking-[0.1em] uppercase font-bold font-[var(--font-inter)] px-5 py-3 transition-colors"
+                  >
+                    Visualizar / baixar PDF
+                  </a>
+                  <button
+                    onClick={() => { setFzResult(null); void submitFormalize(); }}
+                    disabled={fzSubmitting}
+                    className="w-full text-center border border-[#e2e2e2] text-[#002045] text-xs tracking-[0.1em] uppercase font-semibold font-[var(--font-inter)] px-5 py-3 hover:border-[#002045] transition-colors disabled:opacity-50"
+                  >
+                    {fzSubmitting ? "Reenviando…" : "Reenviar"}
+                  </button>
+                </div>
+                <div className="bg-[#f7f8fa] border border-[#e2e2e2] px-4 py-3">
+                  <p className="text-[#43474e] text-[11px] font-[var(--font-inter)] leading-relaxed">
+                    A Orbital não realiza instalação. Caso precise, fale diretamente com a empresa especializada indicada.
+                  </p>
+                </div>
+              </div>
+            ) : (
+              <div className="px-5 py-5 space-y-5">
+                {/* Parte 1 — confirmação dos dados */}
+                <div>
+                  <p className="text-[#43474e] text-[10px] tracking-[0.15em] uppercase font-bold font-[var(--font-inter)] mb-3">Confirme seus dados</p>
+                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                    <input value={clientName} onChange={(e) => setClientName(e.target.value)} placeholder="Nome completo" className="border border-[#e2e2e2] px-3 py-2 text-sm font-[var(--font-inter)] text-[#002045] focus:outline-none focus:border-[#002045]" />
+                    <input value={clientPhone} onChange={(e) => setClientPhone(e.target.value)} placeholder="WhatsApp" className="border border-[#e2e2e2] px-3 py-2 text-sm font-[var(--font-inter)] text-[#002045] focus:outline-none focus:border-[#002045]" />
+                    <input value={clientEmail} onChange={(e) => setClientEmail(e.target.value)} placeholder="E-mail" className="sm:col-span-2 border border-[#e2e2e2] px-3 py-2 text-sm font-[var(--font-inter)] text-[#002045] focus:outline-none focus:border-[#002045]" />
+                  </div>
+                  {pricing && pricing.paymentOptions.length > 0 && (
+                    <div className="mt-3">
+                      <p className="text-[#74777f] text-[11px] font-[var(--font-inter)] mb-1.5">Condição de pagamento</p>
+                      <div className="flex flex-wrap gap-2">
+                        {pricing.paymentOptions.map((opt) => (
+                          <button
+                            key={opt.id}
+                            type="button"
+                            onClick={() => setSelectedPayment(opt.id)}
+                            className={`px-3 py-1.5 text-[12px] font-semibold font-[var(--font-inter)] border transition-colors ${selectedPayment === opt.id ? "border-[#002045] bg-[#eef2fb] text-[#002045]" : "border-[#e2e2e2] text-[#74777f] hover:border-[#86a0cd]"}`}
+                          >
+                            {opt.label} · {fmt(opt.total)}
+                          </button>
+                        ))}
+                      </div>
+                    </div>
+                  )}
+                </div>
+
+                {/* Parte 2 — endereço de entrega */}
+                <div>
+                  <p className="text-[#43474e] text-[10px] tracking-[0.15em] uppercase font-bold font-[var(--font-inter)] mb-3">Endereço de entrega</p>
+                  <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
+                    <div className="sm:col-span-1">
+                      <input
+                        value={fzZip}
+                        onChange={(e) => { setFzZip(e.target.value); }}
+                        onBlur={(e) => void lookupCep(e.target.value)}
+                        placeholder="CEP"
+                        inputMode="numeric"
+                        className="w-full border border-[#e2e2e2] px-3 py-2 text-sm font-[var(--font-inter)] text-[#002045] focus:outline-none focus:border-[#002045]"
+                      />
+                      {fzCepLoading && <p className="text-[#74777f] text-[10px] font-[var(--font-inter)] mt-1">Consultando CEP…</p>}
+                      {fzCepError && <p className="text-[#a07a00] text-[10px] font-[var(--font-inter)] mt-1">{fzCepError}</p>}
+                    </div>
+                    <input value={fzStreet} onChange={(e) => setFzStreet(e.target.value)} placeholder="Rua / Avenida" className="sm:col-span-2 border border-[#e2e2e2] px-3 py-2 text-sm font-[var(--font-inter)] text-[#002045] focus:outline-none focus:border-[#002045]" />
+                    <input value={fzNumber} onChange={(e) => setFzNumber(e.target.value)} placeholder="Número *" className="border border-[#e2e2e2] px-3 py-2 text-sm font-[var(--font-inter)] text-[#002045] focus:outline-none focus:border-[#002045]" />
+                    <input value={fzComplement} onChange={(e) => setFzComplement(e.target.value)} placeholder="Complemento" className="border border-[#e2e2e2] px-3 py-2 text-sm font-[var(--font-inter)] text-[#002045] focus:outline-none focus:border-[#002045]" />
+                    <input value={fzNeighborhood} onChange={(e) => setFzNeighborhood(e.target.value)} placeholder="Bairro" className="border border-[#e2e2e2] px-3 py-2 text-sm font-[var(--font-inter)] text-[#002045] focus:outline-none focus:border-[#002045]" />
+                    <input value={fzCity} onChange={(e) => setFzCity(e.target.value)} placeholder="Cidade" className="sm:col-span-2 border border-[#e2e2e2] px-3 py-2 text-sm font-[var(--font-inter)] text-[#002045] focus:outline-none focus:border-[#002045]" />
+                    <input value={fzState} onChange={(e) => setFzState(e.target.value)} placeholder="UF" maxLength={2} className="border border-[#e2e2e2] px-3 py-2 text-sm font-[var(--font-inter)] text-[#002045] uppercase focus:outline-none focus:border-[#002045]" />
+                    <input value={fzCondo} onChange={(e) => setFzCondo(e.target.value)} placeholder="Condomínio (opcional)" className="sm:col-span-3 border border-[#e2e2e2] px-3 py-2 text-sm font-[var(--font-inter)] text-[#002045] focus:outline-none focus:border-[#002045]" />
+                    <input value={fzNotes} onChange={(e) => setFzNotes(e.target.value)} placeholder="Observações de entrega (opcional)" className="sm:col-span-3 border border-[#e2e2e2] px-3 py-2 text-sm font-[var(--font-inter)] text-[#002045] focus:outline-none focus:border-[#002045]" />
+                  </div>
+                </div>
+
+                {pricing && (
+                  <div className="bg-[#f7f8fa] border border-[#e2e2e2] px-4 py-3 text-[12px] font-[var(--font-inter)] text-[#43474e] space-y-0.5">
+                    <div className="flex justify-between"><span>{pricing.plates} placa{pricing.plates !== 1 ? "s" : ""}{pricing.colaAvailable && pricing.colaTubos > 0 ? ` · ${pricing.colaTubos} tubos Cola PU` : ""}</span><span>{fmt(pricing.platesSubtotal + pricing.colaSubtotal)}</span></div>
+                    <div className="flex justify-between"><span>Frete</span><span>{pricing.frete.free ? "Grátis" : fmt(pricing.frete.value)}</span></div>
+                    {(() => { const s = pricing.paymentOptions.find((o) => o.id === selectedPayment) ?? pricing.paymentOptions[0]; return (
+                      <div className="flex justify-between pt-1 mt-1 border-t border-[#e2e2e2] font-bold text-[#002045]"><span>Total {s ? `· ${s.label}` : ""}</span><span>{fmt(s?.total ?? pricing.totalFull)}</span></div>
+                    ); })()}
+                  </div>
+                )}
+
+                <p className="text-[#74777f] text-[11px] font-[var(--font-inter)] leading-relaxed">
+                  A instalação não está incluída neste orçamento — a Orbital fornece apenas o material.
+                </p>
+
+                {fzError && <p className="text-[#cc0000] text-[12px] font-[var(--font-inter)]">{fzError}</p>}
+
+                <button
+                  type="button"
+                  onClick={() => void submitFormalize()}
+                  disabled={fzSubmitting}
+                  className="w-full bg-[#3b6934] hover:bg-[#2e5229] text-white text-sm tracking-[0.08em] uppercase font-bold font-[var(--font-inter)] px-6 py-4 transition-colors disabled:opacity-60"
+                >
+                  {fzSubmitting ? "Gerando…" : "Gerar e enviar orçamento"}
+                </button>
+              </div>
+            )}
           </div>
         </div>
       )}

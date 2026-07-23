@@ -25,6 +25,8 @@ const nextConfig: NextConfig = {
   // Force them into the function bundle for the only route that generates PDFs.
   outputFileTracingIncludes: {
     "/api/admin/pedidos/**": ["./node_modules/pdfkit/js/data/**/*"],
+    // Formal quote PDF (public funnel) generates PDFs the same way.
+    "/api/orcamento/**": ["./node_modules/pdfkit/js/data/**/*"],
   },
 };
 
