@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { supabaseAdmin } from "@/lib/supabase";
-import { computeOrcamento, DEFAULT_CONFIG } from "@/lib/orcamento-pricing";
+import { computeOrcamento } from "@/lib/orcamento-pricing";
+import { loadOrcamentoConfig } from "@/lib/orcamento-server";
 
 // POST /api/orcamento/pricing — the AUTHORITATIVE orçamento breakdown. The
 // public simulador shows a preview but confirms totals here so placas, Cola PU,
@@ -18,8 +19,8 @@ export async function POST(req: NextRequest) {
   // producing a wrong total.
   let colaUnitPrice = 0;
   let colaAvailable = false;
+  const db = supabaseAdmin();
   try {
-    const db = supabaseAdmin();
     const { data } = await db
       .from("products")
       .select("price, is_active, stock_on_hand")
@@ -33,9 +34,10 @@ export async function POST(req: NextRequest) {
     // DB unreachable → Cola PU flagged unavailable; totals still computed for placas+frete.
   }
 
+  const { config } = await loadOrcamentoConfig(db);
   const breakdown = computeOrcamento(
     { plates, pricePerPlate, colaUnitPrice, colaAvailable, freteZoneValue },
-    DEFAULT_CONFIG
+    config
   );
 
   return NextResponse.json(breakdown);

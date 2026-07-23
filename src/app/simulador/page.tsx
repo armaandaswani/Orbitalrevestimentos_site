@@ -2599,7 +2599,7 @@ function SimuladorInner() {
                       <path d="M20 6L9 17l-5-5" />
                     </svg>
                     <p className="text-[#3b6934] text-xs font-[var(--font-inter)]">
-                      Orçamento enviado para <strong>{clientEmail}</strong>. Você receberá acompanhamento por e-mail.
+                      <strong>Sua simulação foi salva.</strong> Enviamos uma confirmação para <strong>{clientEmail}</strong> e você poderá continuar este orçamento depois. Para receber o orçamento formalizado em PDF, use o botão abaixo.
                     </p>
                   </div>
                   {quoteShareUrl && (

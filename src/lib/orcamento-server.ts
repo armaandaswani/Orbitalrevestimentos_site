@@ -4,7 +4,64 @@
 // ever re-implemented in a route.
 
 import type { SupabaseClient } from "@supabase/supabase-js";
-import { computeOrcamento, DEFAULT_CONFIG, type OrcamentoBreakdown } from "@/lib/orcamento-pricing";
+import { computeOrcamento, DEFAULT_CONFIG, type OrcamentoBreakdown, type OrcamentoConfig } from "@/lib/orcamento-pricing";
+
+// Admin-editable extras (installer + quote validity + automations) stored in the
+// same orcamento_settings.config JSONB alongside the engine numbers.
+export interface OrcamentoExtras {
+  installerName: string;
+  installerPhone: string;
+  installerWhatsappBase: string;
+  quoteValidityDays: number;
+  leadMessageEnabled: boolean;
+}
+
+export const DEFAULT_EXTRAS: OrcamentoExtras = {
+  installerName: "Werk Engenharia",
+  installerPhone: "(92) 99397-4821",
+  installerWhatsappBase: "https://wa.me/5592993974821?text=",
+  quoteValidityDays: 7,
+  leadMessageEnabled: true,
+};
+
+// Load the admin config (orcamento_settings singleton) and merge onto the code
+// defaults. Any missing key/row/table falls back to DEFAULT_CONFIG/DEFAULT_EXTRAS,
+// so the engine keeps working before migration 044 runs.
+export async function loadOrcamentoConfig(
+  db: SupabaseClient
+): Promise<{ config: OrcamentoConfig; extras: OrcamentoExtras }> {
+  try {
+    const { data } = await db.from("orcamento_settings").select("config").eq("id", 1).maybeSingle();
+    const raw = (data?.config ?? {}) as Partial<OrcamentoConfig & OrcamentoExtras> & { installmentTiers?: OrcamentoConfig["installmentTiers"] };
+    const config: OrcamentoConfig = {
+      colaFactorPerPlate: num(raw.colaFactorPerPlate, DEFAULT_CONFIG.colaFactorPerPlate),
+      freteFreeMinPlates: num(raw.freteFreeMinPlates, DEFAULT_CONFIG.freteFreeMinPlates),
+      freteBase: num(raw.freteBase, DEFAULT_CONFIG.freteBase),
+      discountPct: num(raw.discountPct, DEFAULT_CONFIG.discountPct),
+      discountMinPlates: num(raw.discountMinPlates, DEFAULT_CONFIG.discountMinPlates),
+      discountScope: raw.discountScope ?? DEFAULT_CONFIG.discountScope,
+      installmentTiers: Array.isArray(raw.installmentTiers) && raw.installmentTiers.length ? raw.installmentTiers : DEFAULT_CONFIG.installmentTiers,
+    };
+    const extras: OrcamentoExtras = {
+      installerName: str(raw.installerName, DEFAULT_EXTRAS.installerName),
+      installerPhone: str(raw.installerPhone, DEFAULT_EXTRAS.installerPhone),
+      installerWhatsappBase: str(raw.installerWhatsappBase, DEFAULT_EXTRAS.installerWhatsappBase),
+      quoteValidityDays: num(raw.quoteValidityDays, DEFAULT_EXTRAS.quoteValidityDays),
+      leadMessageEnabled: typeof raw.leadMessageEnabled === "boolean" ? raw.leadMessageEnabled : DEFAULT_EXTRAS.leadMessageEnabled,
+    };
+    return { config, extras };
+  } catch {
+    return { config: DEFAULT_CONFIG, extras: DEFAULT_EXTRAS };
+  }
+}
+
+function num(v: unknown, fallback: number): number {
+  const n = Number(v);
+  return Number.isFinite(n) && n >= 0 ? n : fallback;
+}
+function str(v: unknown, fallback: string): string {
+  return typeof v === "string" && v.trim() ? v.trim() : fallback;
+}
 
 // Cola PU unit price + availability from the product catalog (SKU ORB-PU).
 export async function fetchColaPrice(db: SupabaseClient): Promise<{ colaUnitPrice: number; colaAvailable: boolean }> {
@@ -43,9 +100,10 @@ export async function breakdownForQuote(
     Number(quote.material_total) || 0;
   const pricePerPlate = plates > 0 ? subtotal / plates : 0;
   const { colaUnitPrice, colaAvailable } = await fetchColaPrice(db);
+  const { config } = await loadOrcamentoConfig(db);
   return computeOrcamento(
     { plates, pricePerPlate, colaUnitPrice, colaAvailable, freteZoneValue },
-    DEFAULT_CONFIG
+    config
   );
 }
 
