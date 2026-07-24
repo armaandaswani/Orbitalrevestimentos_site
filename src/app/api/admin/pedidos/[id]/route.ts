@@ -260,6 +260,10 @@ const EDITABLE = new Set([
   "lead_id",
   "partner_commission_paid_at",
   "sales_rep_commission_paid_at",
+  "partner_commission_cancelled_at",
+  "partner_commission_cancel_reason",
+  "sales_rep_commission_cancelled_at",
+  "sales_rep_commission_cancel_reason",
   "price_tier",
 ]);
 
@@ -366,6 +370,8 @@ export async function PATCH(
     delete patch.delivered_at;
     delete patch.payment_status;
     for (const col of OPTIONAL_DOCUMENT_COLUMNS) delete patch[col];
+    // Colunas de cancelamento de comissão (migração 050) podem não existir ainda.
+    for (const col of ["partner_commission_cancelled_at", "partner_commission_cancel_reason", "sales_rep_commission_cancelled_at", "sales_rep_commission_cancel_reason"]) delete patch[col];
     ({ data, error } = await db.from("pedidos").update(patch).eq("id", id).select().single());
   }
 

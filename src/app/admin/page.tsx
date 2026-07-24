@@ -214,6 +214,11 @@ export default function AdminPage() {
   // Mobile nav drawer (hamburger). Desktop sidebar is always visible.
   const [navOpen, setNavOpen] = useState(false);
   const [commissionFilter, setCommissionFilter] = useState<"a_pagar" | "pago" | "tudo">("a_pagar");
+  // Cancelamento de comissão A pagar
+  const [cancelCommTarget, setCancelCommTarget] = useState<{ id: string; source: "coupon" | "pedido"; partnerName: string; repName: string; partnerAmount: number; repAmount: number; partnerEligible: boolean; repEligible: boolean } | null>(null);
+  const [cancelWhich, setCancelWhich] = useState<{ partner: boolean; rep: boolean }>({ partner: false, rep: false });
+  const [cancelReason, setCancelReason] = useState("");
+  const [cancelSubmitting, setCancelSubmitting] = useState(false);
 
   // Cross-tab handoff for the Lead → Order conversion flow: no context/store,
   // just parent-owned prefill/focus state passed as props (same shape as the
@@ -2593,9 +2598,13 @@ export default function AdminPage() {
     partnerName: string;
     partnerAmount: number;
     partnerPaidAt: string | null;
+    partnerCancelledAt: string | null;
+    partnerCancelReason: string | null;
     repName: string;
     repAmount: number;
     repPaidAt: string | null;
+    repCancelledAt: string | null;
+    repCancelReason: string | null;
   }
 
   const commissionRows = useMemo<CommissionRow[]>(() => {
@@ -2611,12 +2620,16 @@ export default function AdminPage() {
         partnerName: partners.find((p) => p.coupon_code === u.coupon_code)?.name ?? u.coupon_code ?? "Orbital",
         partnerAmount: u.commission_owed ?? 0,
         partnerPaidAt: u.partner_commission_paid_at,
+        partnerCancelledAt: (u as { partner_commission_cancelled_at?: string | null }).partner_commission_cancelled_at ?? null,
+        partnerCancelReason: (u as { partner_commission_cancel_reason?: string | null }).partner_commission_cancel_reason ?? null,
         repName:
           (u.sales_rep_referral_code ? salesReps.find((r) => r.referral_code === u.sales_rep_referral_code)?.name : null) ??
           u.sales_rep_referral_code ??
           "—",
         repAmount: u.sales_rep_commission_owed ?? 0,
         repPaidAt: u.rep_commission_paid_at,
+        repCancelledAt: (u as { rep_commission_cancelled_at?: string | null }).rep_commission_cancelled_at ?? null,
+        repCancelReason: (u as { rep_commission_cancel_reason?: string | null }).rep_commission_cancel_reason ?? null,
       }));
 
     const fromPedidos: CommissionRow[] = pedidos
@@ -2631,9 +2644,13 @@ export default function AdminPage() {
         partnerName: (p.partner_id ? partners.find((p2) => p2.id === p.partner_id)?.name : null) ?? p.partner_name ?? "Orbital",
         partnerAmount: p.partner_commission_amount ?? 0,
         partnerPaidAt: p.partner_commission_paid_at,
+        partnerCancelledAt: (p as { partner_commission_cancelled_at?: string | null }).partner_commission_cancelled_at ?? null,
+        partnerCancelReason: (p as { partner_commission_cancel_reason?: string | null }).partner_commission_cancel_reason ?? null,
         repName: (p.sales_rep_id ? salesReps.find((r) => r.id === p.sales_rep_id)?.name : null) ?? "—",
         repAmount: p.sales_rep_commission_amount ?? 0,
         repPaidAt: p.sales_rep_commission_paid_at,
+        repCancelledAt: (p as { sales_rep_commission_cancelled_at?: string | null }).sales_rep_commission_cancelled_at ?? null,
+        repCancelReason: (p as { sales_rep_commission_cancel_reason?: string | null }).sales_rep_commission_cancel_reason ?? null,
       }));
 
     return [...fromCoupons, ...fromPedidos].sort(
@@ -2650,6 +2667,49 @@ export default function AdminPage() {
       body: JSON.stringify({ [field]: value }),
     });
     if (res.ok) setPedidos((prev) => prev.map((p) => (p.id === pedidoId ? { ...p, [field]: value } : p)));
+  }
+
+  function openCancelCommission(r: CommissionRow) {
+    // Só o que está A PAGAR (não pago, não cancelado) pode ser cancelado.
+    const partnerEligible = !!r.partnerAmount && !r.partnerPaidAt && !r.partnerCancelledAt;
+    const repEligible = !!r.repAmount && !r.repPaidAt && !r.repCancelledAt;
+    if (!partnerEligible && !repEligible) return;
+    setCancelCommTarget({ id: r.id, source: r.source, partnerName: r.partnerName, repName: r.repName, partnerAmount: r.partnerAmount, repAmount: r.repAmount, partnerEligible, repEligible });
+    setCancelWhich({ partner: partnerEligible, rep: repEligible });
+    setCancelReason("");
+  }
+
+  async function submitCancelCommission() {
+    const t = cancelCommTarget;
+    if (!t) return;
+    const doPartner = t.partnerEligible && cancelWhich.partner;
+    const doRep = t.repEligible && cancelWhich.rep;
+    if (!doPartner && !doRep) return;
+    const now = new Date().toISOString();
+    const reason = cancelReason.trim() || null;
+    setCancelSubmitting(true);
+    try {
+      if (t.source === "coupon") {
+        const body: Record<string, unknown> = {};
+        if (doPartner) { body.partner_commission_cancelled_at = now; body.partner_commission_cancel_reason = reason; }
+        if (doRep) { body.rep_commission_cancelled_at = now; body.rep_commission_cancel_reason = reason; }
+        const res = await fetch(`/api/coupons/use/${t.id}`, { method: "PATCH", headers: { "Content-Type": "application/json" }, body: JSON.stringify(body) });
+        if (!res.ok) throw new Error();
+        setUses((prev) => prev.map((u) => (u.id === t.id ? { ...u, ...body } : u)));
+      } else {
+        const body: Record<string, unknown> = {};
+        if (doPartner) { body.partner_commission_cancelled_at = now; body.partner_commission_cancel_reason = reason; }
+        if (doRep) { body.sales_rep_commission_cancelled_at = now; body.sales_rep_commission_cancel_reason = reason; }
+        const res = await fetch(`/api/admin/pedidos/${t.id}`, { method: "PATCH", headers: { "Content-Type": "application/json" }, body: JSON.stringify(body) });
+        if (!res.ok) throw new Error();
+        setPedidos((prev) => prev.map((p) => (p.id === t.id ? { ...p, ...body } : p)));
+      }
+      setCancelCommTarget(null);
+    } catch {
+      alert("Falha ao cancelar a comissão. Verifique se a migração 050 foi aplicada.");
+    } finally {
+      setCancelSubmitting(false);
+    }
   }
 
   const filteredClients = useMemo(() => {
@@ -5013,8 +5073,8 @@ export default function AdminPage() {
         {tab === "commissions" && (
           <div>
             {(() => {
-              const totalUnpaidPartner = commissionRows.filter(r => !r.partnerPaidAt && r.partnerAmount).reduce((a, r) => a + r.partnerAmount, 0);
-              const totalUnpaidRep = commissionRows.filter(r => r.repAmount && !r.repPaidAt).reduce((a, r) => a + r.repAmount, 0);
+              const totalUnpaidPartner = commissionRows.filter(r => !r.partnerPaidAt && !r.partnerCancelledAt && r.partnerAmount).reduce((a, r) => a + r.partnerAmount, 0);
+              const totalUnpaidRep = commissionRows.filter(r => r.repAmount && !r.repPaidAt && !r.repCancelledAt).reduce((a, r) => a + r.repAmount, 0);
               const thisMonth = new Date();
               const monthStart = new Date(thisMonth.getFullYear(), thisMonth.getMonth(), 1).toISOString();
               const paidThisMonth = commissionRows
@@ -5026,8 +5086,11 @@ export default function AdminPage() {
                   return a + sum;
                 }, 0);
 
-              const pendingRows = commissionRows.filter(r => !r.partnerPaidAt || (r.repAmount && !r.repPaidAt));
-              const paidRows = commissionRows.filter(r => r.partnerPaidAt && (!r.repAmount || r.repPaidAt));
+              // "A pagar" = tem alguma comissão pendente (não paga E não cancelada).
+              const partnerPending = (r: CommissionRow) => !!r.partnerAmount && !r.partnerPaidAt && !r.partnerCancelledAt;
+              const repPending = (r: CommissionRow) => !!r.repAmount && !r.repPaidAt && !r.repCancelledAt;
+              const pendingRows = commissionRows.filter(r => partnerPending(r) || repPending(r));
+              const paidRows = commissionRows.filter(r => !partnerPending(r) && !repPending(r));
 
               const displayRows = commissionFilter === "a_pagar" ? pendingRows : commissionFilter === "pago" ? paidRows : commissionRows;
 
@@ -5086,7 +5149,11 @@ export default function AdminPage() {
                             <td className="px-4 py-3 text-xs text-[#43474e]">{r.productName || "—"}</td>
                             <td className="px-4 py-3 text-xs font-semibold text-[#002045]">{r.partnerAmount ? fmt(r.partnerAmount) : "—"}</td>
                             <td className="px-4 py-3">
-                              {r.partnerPaidAt ? (
+                              {r.partnerCancelledAt ? (
+                                <span className="inline-block bg-gray-200 text-gray-600 px-2 py-0.5 text-[10px] font-bold tracking-wide" title={r.partnerCancelReason ? `Motivo: ${r.partnerCancelReason}` : undefined}>
+                                  Cancelada {new Date(r.partnerCancelledAt).toLocaleDateString("pt-BR")}
+                                </span>
+                              ) : r.partnerPaidAt ? (
                                 <span className="inline-block bg-green-100 text-green-800 px-2 py-0.5 text-[10px] font-bold tracking-wide">
                                   ✓ Pago {new Date(r.partnerPaidAt).toLocaleDateString("pt-BR")}
                                 </span>
@@ -5100,7 +5167,11 @@ export default function AdminPage() {
                             <td className="px-4 py-3 text-xs font-semibold text-[#1a365d]">{r.repAmount ? fmt(r.repAmount) : "—"}</td>
                             <td className="px-4 py-3">
                               {!r.repAmount ? <span className="text-[#ccc]">—</span> :
-                               r.repPaidAt ? (
+                               r.repCancelledAt ? (
+                                <span className="inline-block bg-gray-200 text-gray-600 px-2 py-0.5 text-[10px] font-bold tracking-wide" title={r.repCancelReason ? `Motivo: ${r.repCancelReason}` : undefined}>
+                                  Cancelada {new Date(r.repCancelledAt).toLocaleDateString("pt-BR")}
+                                </span>
+                              ) : r.repPaidAt ? (
                                 <span className="inline-block bg-green-100 text-green-800 px-2 py-0.5 text-[10px] font-bold tracking-wide">
                                   ✓ Pago {new Date(r.repPaidAt).toLocaleDateString("pt-BR")}
                                 </span>
@@ -5112,6 +5183,9 @@ export default function AdminPage() {
                               )}
                             </td>
                             <td className="px-4 py-3 text-right whitespace-nowrap">
+                              {((!!r.partnerAmount && !r.partnerPaidAt && !r.partnerCancelledAt) || (!!r.repAmount && !r.repPaidAt && !r.repCancelledAt)) && (
+                                <button onClick={() => openCancelCommission(r)} className="text-[10px] text-[#cc0000] font-bold hover:underline mr-3">Cancelar comissão</button>
+                              )}
                               {r.source === "pedido" && (
                                 <button onClick={() => { setPedidoFocusId(r.id); setTab("pedidos"); }} className="text-[10px] text-[#3b6934] font-bold hover:underline">Ver pedido →</button>
                               )}
@@ -7484,6 +7558,58 @@ ALTER TABLE project_media ADD COLUMN IF NOT EXISTS description TEXT;`}
 
         </main>
       </div>
+
+      {/* Cancelar comissão A pagar */}
+      {cancelCommTarget && (
+        <div className="fixed inset-0 z-[300] bg-black/60 flex items-center justify-center p-4" onClick={() => { if (!cancelSubmitting) setCancelCommTarget(null); }}>
+          <div className="bg-white w-full max-w-md" onClick={(e) => e.stopPropagation()}>
+            <div className="bg-[#cc0000] px-5 py-3">
+              <p className="text-white font-[var(--font-noto-serif)] text-base">Cancelar comissão</p>
+            </div>
+            <div className="px-5 py-5 space-y-4">
+              <p className="text-[#43474e] text-[13px] font-[var(--font-inter)] leading-relaxed">
+                Cancela apenas a comissão gerada — <strong>não</strong> exclui o orçamento, pedido, cliente ou projeto. Comissões já pagas não podem ser canceladas aqui.
+              </p>
+              <div className="space-y-2">
+                {cancelCommTarget.partnerEligible && (
+                  <label className="flex items-center justify-between gap-3 border border-[#e2e2e2] px-3 py-2 cursor-pointer">
+                    <span className="flex items-center gap-2 text-sm font-[var(--font-inter)] text-[#002045]">
+                      <input type="checkbox" checked={cancelWhich.partner} onChange={(e) => setCancelWhich((w) => ({ ...w, partner: e.target.checked }))} />
+                      Parceiro — {cancelCommTarget.partnerName}
+                    </span>
+                    <span className="text-sm font-semibold text-[#002045]">{fmt(cancelCommTarget.partnerAmount)}</span>
+                  </label>
+                )}
+                {cancelCommTarget.repEligible && (
+                  <label className="flex items-center justify-between gap-3 border border-[#e2e2e2] px-3 py-2 cursor-pointer">
+                    <span className="flex items-center gap-2 text-sm font-[var(--font-inter)] text-[#002045]">
+                      <input type="checkbox" checked={cancelWhich.rep} onChange={(e) => setCancelWhich((w) => ({ ...w, rep: e.target.checked }))} />
+                      Representante — {cancelCommTarget.repName}
+                    </span>
+                    <span className="text-sm font-semibold text-[#1a365d]">{fmt(cancelCommTarget.repAmount)}</span>
+                  </label>
+                )}
+              </div>
+              <div>
+                <label className="block text-[10px] tracking-[0.12em] uppercase font-bold font-[var(--font-inter)] text-[#74777f] mb-1">Motivo do cancelamento</label>
+                <textarea value={cancelReason} onChange={(e) => setCancelReason(e.target.value)} rows={2} placeholder="Ex.: status marcado por engano / cliente não aprovou o projeto" className="w-full border border-[#e2e2e2] px-3 py-2 text-sm font-[var(--font-inter)] text-[#43474e] focus:outline-none focus:border-[#002045] resize-none" />
+              </div>
+              <div className="flex gap-2">
+                <button
+                  onClick={() => { if (confirm("Confirmar o cancelamento das comissões selecionadas? Elas sairão de 'A pagar' e ficarão no histórico como Canceladas.")) void submitCancelCommission(); }}
+                  disabled={cancelSubmitting || (!cancelWhich.partner && !cancelWhich.rep)}
+                  className="flex-1 bg-[#cc0000] text-white text-xs tracking-[0.1em] uppercase font-bold font-[var(--font-inter)] py-2.5 hover:bg-[#a30000] transition-colors disabled:opacity-50"
+                >
+                  {cancelSubmitting ? "Cancelando…" : "Cancelar comissão"}
+                </button>
+                <button onClick={() => setCancelCommTarget(null)} disabled={cancelSubmitting} className="flex-1 border border-[#e2e2e2] text-[#43474e] text-xs tracking-[0.1em] uppercase font-bold font-[var(--font-inter)] py-2.5 hover:border-[#002045] transition-colors disabled:opacity-50">
+                  Voltar
+                </button>
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
 
       {/* Recorte 1:1 da imagem de capa/antes do projeto */}
       {coverCrop && (

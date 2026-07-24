@@ -30,6 +30,11 @@ export async function PATCH(
   if (body.next_followup_at !== undefined) updatePayload.next_followup_at = body.next_followup_at;
   if (body.partner_commission_paid_at !== undefined) updatePayload.partner_commission_paid_at = body.partner_commission_paid_at;
   if (body.rep_commission_paid_at !== undefined) updatePayload.rep_commission_paid_at = body.rep_commission_paid_at;
+  // Cancelamento de comissão (migração 050)
+  if (body.partner_commission_cancelled_at !== undefined) updatePayload.partner_commission_cancelled_at = body.partner_commission_cancelled_at;
+  if (body.partner_commission_cancel_reason !== undefined) updatePayload.partner_commission_cancel_reason = body.partner_commission_cancel_reason;
+  if (body.rep_commission_cancelled_at !== undefined) updatePayload.rep_commission_cancelled_at = body.rep_commission_cancelled_at;
+  if (body.rep_commission_cancel_reason !== undefined) updatePayload.rep_commission_cancel_reason = body.rep_commission_cancel_reason;
 
   // When concluding a sale, lock in sales_rep commission if not yet set
   if (body.sale_status === "concluido") {
@@ -60,12 +65,19 @@ export async function PATCH(
     }
   }
 
-  const { data, error } = await db
+  let { data, error } = await db
     .from("coupon_uses")
     .update(updatePayload)
     .eq("id", id)
     .select()
     .single();
+
+  // Colunas de cancelamento de comissão (migração 050) podem não existir ainda.
+  const { isMissingColumn } = await import("@/lib/db-compat");
+  if (isMissingColumn(error)) {
+    for (const c of ["partner_commission_cancelled_at", "partner_commission_cancel_reason", "rep_commission_cancelled_at", "rep_commission_cancel_reason"]) delete updatePayload[c];
+    ({ data, error } = await db.from("coupon_uses").update(updatePayload).eq("id", id).select().single());
+  }
 
   if (error) return NextResponse.json({ error: error.message }, { status: 500 });
 
