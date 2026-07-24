@@ -90,9 +90,19 @@ interface SalesRep {
 
 interface ProductImage { id:string; product_id:string; image_path:string; sort_order:number; }
 interface DbProduct { id:string; code:string; name:string; linha:"Classic"|"Brilliance"|"Elegance"; finish:string; price:number; price_per_m2:number; description:string; image_path:string; is_active:boolean; sort_order:number; created_at:string; product_images?: ProductImage[]; render_finish_description?: string | null; render_panel_width_m?: number | null; render_panel_height_m?: number | null; render_context_image_path?: string | null; render_texture_path?: string | null; render_extra_notes?: string | null; }
-interface DbPhotoProject { id:string; slug:string; title:string; product_code:string; categories:string[]; image_after:string; image_before:string; note:string; is_active:boolean; sort_order:number; }
+interface DbPhotoProject { id:string; slug:string; title:string; product_code:string; short_description?:string; categories:string[]; image_after:string; image_before:string; note:string; is_active:boolean; sort_order:number; }
 interface DbRenderProject { id:string; slug:string; title:string; product_code:string; image_path:string; is_active:boolean; sort_order:number; }
 interface ProjectMedia { id:string; project_slug:string; type:"image"|"video"; url:string; caption:string|null; description:string|null; category:"antes"|"depois"|"geral"; sort_order:number; }
+
+// Slug técnico gerado a partir do nome do projeto ("Showroom Parque 10" →
+// "showroom-parque-10"). Acentos removidos, minúsculas, hífens.
+function slugify(s: string): string {
+  return s
+    .normalize("NFD").replace(/[̀-ͯ]/g, "")
+    .toLowerCase().trim()
+    .replace(/[^a-z0-9]+/g, "-")
+    .replace(/^-+|-+$/g, "");
+}
 
 interface SpaceBreakdownItem {
   spaceName?: string;
@@ -487,6 +497,8 @@ export default function AdminPage() {
   const [productImageSubstituting, setProductImageSubstituting] = useState<string | null>(null); // product id being substituted from list
   const [productImageDims, setProductImageDims] = useState<Record<string, {w: number, h: number}>>({});
   const [galleryImages, setGalleryImages] = useState<ProductImage[]>([]);
+  const [dragGalleryId, setDragGalleryId] = useState<string | null>(null);
+  const [dragOverGalleryId, setDragOverGalleryId] = useState<string | null>(null);
   const [galleryUploading, setGalleryUploading] = useState(false);
   const [galleryUploadProgress, setGalleryUploadProgress] = useState<{done: number; total: number} | null>(null);
   const productTabFormRef = useRef<HTMLDivElement>(null);
@@ -507,7 +519,10 @@ export default function AdminPage() {
   const [editingRenderId, setEditingRenderId] = useState<string|null>(null);
   const [renderImporting, setRenderImporting] = useState<string | null>(null); // slug being imported
   const [renderImportingAll, setRenderImportingAll] = useState(false);
-  const [photoForm, setPhotoForm] = useState({ slug:"", title:"", product_code:"", categories:[] as string[], image_after:"", image_before:"", note:"", is_active:true, sort_order:0 });
+  const [photoForm, setPhotoForm] = useState({ slug:"", title:"", product_code:"", short_description:"", categories:[] as string[], image_after:"", image_before:"", note:"", is_active:true, sort_order:0 });
+  const [slugTouched, setSlugTouched] = useState(false);
+  const [photoAdvancedOpen, setPhotoAdvancedOpen] = useState(false);
+  const [productPickerQuery, setProductPickerQuery] = useState("");
   const [renderForm, setRenderForm] = useState({ slug:"", title:"", product_code:"", image_path:"", is_active:true, sort_order:0 });
   const [projectMediaMap, setProjectMediaMap] = useState<Record<string, ProjectMedia[]>>({});
   const [expandedMediaSlug, setExpandedMediaSlug] = useState<string | null>(null);
@@ -869,7 +884,7 @@ export default function AdminPage() {
     }
   }, [tab, authed, fetchClients, fetchUses, fetchPedidos]);
 
-  useEffect(() => { if ((tab === "produtos" || tab === "simulador") && authed) fetchDbProducts(); }, [tab, authed, fetchDbProducts]);
+  useEffect(() => { if ((tab === "produtos" || tab === "simulador" || tab === "projetos") && authed) fetchDbProducts(); }, [tab, authed, fetchDbProducts]);
   useEffect(() => { if (tab === "projetos" && authed) fetchProjects(); }, [tab, authed, fetchProjects]);
   useEffect(() => { if (tab === "visualizacoes" && authed) fetchVizRenders(); }, [tab, authed, fetchVizRenders]);
   useEffect(() => {
@@ -1476,27 +1491,60 @@ export default function AdminPage() {
     ]);
   }
 
+  // Drag-and-drop da galeria de produto: move a imagem `fromId` para a posição de
+  // `toId`, reindexa e persiste todas as sort_order alteradas. (As setas seguem
+  // disponíveis como acessibilidade.)
+  async function reorderGalleryImages(fromId: string, toId: string) {
+    if (fromId === toId) return;
+    const items = [...galleryImages].sort((a, b) => a.sort_order - b.sort_order);
+    const fromIdx = items.findIndex((i) => i.id === fromId);
+    const toIdx = items.findIndex((i) => i.id === toId);
+    if (fromIdx === -1 || toIdx === -1) return;
+    const [moved] = items.splice(fromIdx, 1);
+    items.splice(toIdx, 0, moved);
+    const reindexed = items.map((img, i) => ({ ...img, sort_order: i }));
+    const before = new Map(galleryImages.map((i) => [i.id, i.sort_order]));
+    setGalleryImages(reindexed);
+    await Promise.all(
+      reindexed
+        .filter((img) => before.get(img.id) !== img.sort_order)
+        .map((img) =>
+          fetch(`/api/products/images/${img.id}`, {
+            method: "PATCH",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({ sort_order: img.sort_order }),
+          })
+        )
+    );
+  }
+
   // ── Photo Project CRUD ───────────────────
   async function handlePhotoSubmit(e: React.FormEvent) {
     e.preventDefault();
+    // Slug é técnico e agora fica em "avançado" — garanta que sempre exista,
+    // derivando do nome quando o usuário não editou manualmente.
+    const ensuredSlug = photoForm.slug.trim() || slugify(photoForm.title);
+    if (ensuredSlug !== photoForm.slug) setPhotoForm((prev) => ({ ...prev, slug: ensuredSlug }));
+    const formToSend = { ...photoForm, slug: ensuredSlug };
     let res: Response;
     if (editingPhotoId) {
       res = await fetch(`/api/projects/photos/${editingPhotoId}`, {
         method: "PUT",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify(photoForm),
+        body: JSON.stringify(formToSend),
       });
     } else {
       res = await fetch("/api/projects/photos", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify(photoForm),
+        body: JSON.stringify(formToSend),
       });
     }
     if (res.ok) {
       setShowPhotoForm(false);
       setEditingPhotoId(null);
-      setPhotoForm({ slug:"", title:"", product_code:"", categories:[], image_after:"", image_before:"", note:"", is_active:true, sort_order:0 });
+      setPhotoForm({ slug:"", title:"", product_code:"", short_description:"", categories:[], image_after:"", image_before:"", note:"", is_active:true, sort_order:0 });
+      setSlugTouched(false); setProductPickerQuery(""); setPhotoAdvancedOpen(false);
       fetchProjects();
     }
   }
@@ -1509,7 +1557,8 @@ export default function AdminPage() {
 
   function startEditPhoto(p: DbPhotoProject) {
     setEditingPhotoId(p.id);
-    setPhotoForm({ slug: p.slug, title: p.title, product_code: p.product_code, categories: p.categories, image_after: p.image_after, image_before: p.image_before, note: p.note, is_active: p.is_active, sort_order: p.sort_order });
+    setPhotoForm({ slug: p.slug, title: p.title, product_code: p.product_code, short_description: p.short_description ?? "", categories: p.categories, image_after: p.image_after, image_before: p.image_before, note: p.note, is_active: p.is_active, sort_order: p.sort_order });
+    setSlugTouched(true); setProductPickerQuery(""); setPhotoAdvancedOpen(false);
     setShowPhotoForm(true);
     setTimeout(() => photoTabFormRef.current?.scrollIntoView({ behavior: "smooth", block: "start" }), 50);
   }
@@ -5193,8 +5242,16 @@ export default function AdminPage() {
                       ) : (
                         <div className="grid grid-cols-3 sm:grid-cols-4 lg:grid-cols-6 gap-2">
                           {[...galleryImages].sort((a, b) => a.sort_order - b.sort_order).map((img, idx, sorted) => (
-                            <div key={img.id} className="relative group aspect-square bg-[#f0f0f0] overflow-hidden">
-                              <img src={img.image_path} alt="" className="w-full h-full object-cover" />
+                            <div
+                              key={img.id}
+                              draggable
+                              onDragStart={() => setDragGalleryId(img.id)}
+                              onDragEnd={() => { setDragGalleryId(null); setDragOverGalleryId(null); }}
+                              onDragOver={(e) => { e.preventDefault(); if (dragOverGalleryId !== img.id) setDragOverGalleryId(img.id); }}
+                              onDrop={(e) => { e.preventDefault(); if (dragGalleryId && dragGalleryId !== img.id) reorderGalleryImages(dragGalleryId, img.id); setDragGalleryId(null); setDragOverGalleryId(null); }}
+                              className={`relative group aspect-square bg-[#f0f0f0] overflow-hidden cursor-grab active:cursor-grabbing transition-all ${dragGalleryId === img.id ? "opacity-30" : "opacity-100"} ${dragOverGalleryId === img.id && dragGalleryId !== img.id ? "ring-2 ring-[#002045] ring-offset-1" : ""}`}
+                            >
+                              <img src={img.image_path} alt="" draggable={false} className="w-full h-full object-cover" />
                               <div className="absolute inset-0 bg-black/0 group-hover:bg-black/50 transition-colors flex flex-col items-center justify-center gap-1 opacity-0 group-hover:opacity-100">
                                 {/* Reorder row */}
                                 <div className="flex gap-1 w-[80%]">
@@ -5253,7 +5310,7 @@ export default function AdminPage() {
                         </div>
                       )}
                       <p className="text-[#b0b0b0] text-[10px] font-[var(--font-inter)] mt-2">
-                        Passe o mouse sobre uma foto para reordenar (← →), definir como capa ou remover. O número indica a posição na galeria.
+                        Arraste as fotos para reordenar (ou use ← → ao passar o mouse), definir como capa ou remover. O número indica a posição na galeria.
                       </p>
                     </div>
                   )}
@@ -5628,7 +5685,8 @@ export default function AdminPage() {
                 <button
                   onClick={() => {
                     setEditingPhotoId(null);
-                    setPhotoForm({ slug:"", title:"", product_code:"", categories:[], image_after:"", image_before:"", note:"", is_active:true, sort_order:0 });
+                    setPhotoForm({ slug:"", title:"", product_code:"", short_description:"", categories:[], image_after:"", image_before:"", note:"", is_active:true, sort_order:0 });
+                    setSlugTouched(false); setProductPickerQuery(""); setPhotoAdvancedOpen(false);
                     setShowPhotoForm(true);
                     setTimeout(() => photoTabFormRef.current?.scrollIntoView({ behavior: "smooth", block: "start" }), 50);
                   }}
@@ -5644,27 +5702,87 @@ export default function AdminPage() {
                     {editingPhotoId ? "Editar Foto" : "Nova Foto Real"}
                   </h4>
                   <form onSubmit={handlePhotoSubmit}>
-                    <div className="grid grid-cols-2 sm:grid-cols-3 gap-4 mb-4">
+                    {/* Informações principais */}
+                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 mb-4">
                       <div>
-                        <label className={labelCls}>Slug *</label>
-                        <input required type="text" value={photoForm.slug} onChange={(e) => setPhotoForm({...photoForm, slug: e.target.value})} className={inputCls} placeholder="lavabo1" />
+                        <label className={labelCls}>Nome do projeto *</label>
+                        <input required type="text" value={photoForm.title}
+                          onChange={(e) => { const title = e.target.value; setPhotoForm((prev) => ({ ...prev, title, slug: slugTouched ? prev.slug : slugify(title) })); }}
+                          className={inputCls} placeholder="Showroom Parque 10" />
                       </div>
                       <div>
-                        <label className={labelCls}>Título *</label>
-                        <input required type="text" value={photoForm.title} onChange={(e) => setPhotoForm({...photoForm, title: e.target.value})} className={inputCls} placeholder="Lavabo" />
+                        <label className={labelCls}>Descrição curta</label>
+                        <input type="text" value={photoForm.short_description} onChange={(e) => setPhotoForm({...photoForm, short_description: e.target.value})} className={inputCls} placeholder="Breve descrição do projeto (opcional)" />
                       </div>
-                      <div>
-                        <label className={labelCls}>Código do produto</label>
-                        <input type="text" value={photoForm.product_code} onChange={(e) => setPhotoForm({...photoForm, product_code: e.target.value})} className={inputCls} placeholder="ORB-004 · Louro Freijó" />
-                      </div>
+                    </div>
+
+                    {/* Produto utilizado — seletor conectado ao catálogo */}
+                    <div className="mb-4">
+                      <label className={labelCls}>Produto utilizado</label>
+                      {photoForm.product_code ? (
+                        (() => {
+                          const sel = dbProducts.find((p) => p.code === photoForm.product_code);
+                          return (
+                            <div className="flex items-center gap-3 border border-[#e2e2e2] px-3 py-2">
+                              {sel?.image_path && <img src={sel.image_path} className="w-9 h-9 object-cover border border-[#e2e2e2]" alt="" />}
+                              <div className="flex-1 min-w-0">
+                                <p className="text-[#002045] text-sm font-semibold font-[var(--font-inter)] truncate">{sel ? `${sel.code} — ${sel.name}` : photoForm.product_code}</p>
+                                {sel ? <p className="text-[#74777f] text-[11px] font-[var(--font-inter)]">Linha {sel.linha}</p> : <p className="text-amber-700 text-[11px] font-[var(--font-inter)]">Código fora do catálogo atual</p>}
+                              </div>
+                              <button type="button" onClick={() => { setPhotoForm({...photoForm, product_code: ""}); setProductPickerQuery(""); }} className="text-[#cc0000] hover:text-white hover:bg-[#cc0000] w-7 h-7 flex items-center justify-center text-sm font-bold transition-colors" aria-label="Remover produto">✕</button>
+                            </div>
+                          );
+                        })()
+                      ) : (
+                        <div className="relative">
+                          <input type="text" value={productPickerQuery} onChange={(e) => setProductPickerQuery(e.target.value)} className={inputCls} placeholder="Buscar por código ou nome do modelo…" />
+                          {productPickerQuery.trim() && (() => {
+                            const q = productPickerQuery.trim().toLowerCase();
+                            const matches = dbProducts.filter((p) => p.code.toLowerCase().includes(q) || p.name.toLowerCase().includes(q)).slice(0, 12);
+                            return (
+                              <div className="absolute z-20 left-0 right-0 mt-1 max-h-60 overflow-y-auto bg-white border border-[#e2e2e2] shadow-lg">
+                                {matches.length > 0 ? matches.map((p) => (
+                                  <button key={p.id} type="button" onClick={() => { setPhotoForm((prev) => ({ ...prev, product_code: p.code })); setProductPickerQuery(""); }} className="w-full flex items-center gap-3 px-3 py-2 hover:bg-[#eef2fb] text-left border-b border-[#f0f0f0] last:border-b-0">
+                                    {p.image_path && <img src={p.image_path} className="w-8 h-8 object-cover border border-[#e2e2e2]" alt="" />}
+                                    <span className="min-w-0">
+                                      <span className="text-[#002045] text-sm font-semibold font-[var(--font-inter)] block truncate">{p.code} — {p.name}</span>
+                                      <span className="text-[#74777f] text-[11px] font-[var(--font-inter)]">Linha {p.linha}</span>
+                                    </span>
+                                  </button>
+                                )) : (
+                                  <p className="px-3 py-2 text-[#74777f] text-xs font-[var(--font-inter)]">Nenhum produto encontrado no catálogo.</p>
+                                )}
+                              </div>
+                            );
+                          })()}
+                          <p className="text-[#a0a3a8] text-[10px] font-[var(--font-inter)] mt-1">Selecione do catálogo — evita códigos inexistentes.</p>
+                        </div>
+                      )}
+                    </div>
+
+                    {/* Nota + avançado */}
+                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 mb-2">
                       <div>
                         <label className={labelCls}>Nota</label>
                         <input type="text" value={photoForm.note} onChange={(e) => setPhotoForm({...photoForm, note: e.target.value})} className={inputCls} placeholder="Área úmida" />
                       </div>
-                      <div>
-                        <label className={labelCls}>Sort Order</label>
-                        <input type="number" min="0" value={photoForm.sort_order} onChange={(e) => setPhotoForm({...photoForm, sort_order: parseInt(e.target.value) || 0})} className={inputCls} />
-                      </div>
+                    </div>
+                    <div className="mb-4">
+                      <button type="button" onClick={() => setPhotoAdvancedOpen((o) => !o)} className="text-[10px] tracking-[0.12em] uppercase font-bold font-[var(--font-inter)] text-[#74777f] hover:text-[#002045] transition-colors">
+                        {photoAdvancedOpen ? "▾" : "▸"} Configurações avançadas
+                      </button>
+                      {photoAdvancedOpen && (
+                        <div className="grid grid-cols-2 gap-4 mt-2">
+                          <div>
+                            <label className={labelCls}>Slug (gerado do nome)</label>
+                            <input type="text" value={photoForm.slug} onChange={(e) => { setSlugTouched(true); setPhotoForm({...photoForm, slug: e.target.value}); }} className={inputCls} placeholder="showroom-parque-10" />
+                          </div>
+                          <div>
+                            <label className={labelCls}>Ordem de exibição</label>
+                            <input type="number" min="0" value={photoForm.sort_order} onChange={(e) => setPhotoForm({...photoForm, sort_order: parseInt(e.target.value) || 0})} className={inputCls} />
+                          </div>
+                        </div>
+                      )}
                     </div>
                     <div className="mb-4">
                       <label className={labelCls}>Categorias</label>

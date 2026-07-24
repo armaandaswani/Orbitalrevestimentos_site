@@ -18,13 +18,12 @@ export async function PUT(
   const { id } = await params;
   const body = await req.json();
   const sb = supabaseAdmin();
-  const { data, error } = await sb
-    .from("project_photos")
-    .update(body)
-    .eq("id", id)
-    .select()
-    .single();
-
+  let { data, error } = await sb.from("project_photos").update(body).eq("id", id).select().single();
+  // Retrocompat: coluna nova (short_description / migração 045) ausente → retenta sem ela.
+  if (error && /column .* does not exist/i.test(error.message) && body && typeof body === "object" && "short_description" in body) {
+    const { short_description: _omit, ...rest } = body as Record<string, unknown>;
+    ({ data, error } = await sb.from("project_photos").update(rest).eq("id", id).select().single());
+  }
   if (error) {
     return NextResponse.json({ error: error.message }, { status: 500 });
   }

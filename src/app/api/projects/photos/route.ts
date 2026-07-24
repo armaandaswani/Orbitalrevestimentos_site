@@ -28,12 +28,13 @@ export async function POST(req: NextRequest) {
 
   const body = await req.json();
   const sb = supabaseAdmin();
-  const { data, error } = await sb
-    .from("project_photos")
-    .insert(body)
-    .select()
-    .single();
-
+  let { data, error } = await sb.from("project_photos").insert(body).select().single();
+  // Retrocompat: coluna nova (ex. short_description / migração 045) ainda não
+  // aplicada → tenta novamente sem ela em vez de falhar o cadastro.
+  if (error && /column .* does not exist/i.test(error.message) && body && typeof body === "object" && "short_description" in body) {
+    const { short_description: _omit, ...rest } = body as Record<string, unknown>;
+    ({ data, error } = await sb.from("project_photos").insert(rest).select().single());
+  }
   if (error) {
     return NextResponse.json({ error: error.message }, { status: 500 });
   }
