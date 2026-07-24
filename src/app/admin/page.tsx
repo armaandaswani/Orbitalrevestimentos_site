@@ -1555,6 +1555,23 @@ export default function AdminPage() {
     fetchProjects();
   }
 
+  async function duplicatePhoto(id: string, title: string) {
+    if (!confirm(`Duplicar "${title}"? A cópia é criada como rascunho (inativa).`)) return;
+    const res = await fetch(`/api/projects/photos/${id}/duplicate`, { method: "POST" });
+    if (res.ok) { await fetchProjects(); alert("Projeto duplicado como rascunho."); }
+    else { const d = await res.json().catch(() => null); alert(d?.error ?? "Falha ao duplicar."); }
+  }
+
+  async function togglePhotoActive(p: DbPhotoProject) {
+    const next = !p.is_active;
+    setDbPhotoProjects((prev) => prev.map((x) => (x.id === p.id ? { ...x, is_active: next } : x)));
+    const res = await fetch(`/api/projects/photos/${p.id}`, {
+      method: "PUT", headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ ...p, is_active: next }),
+    });
+    if (!res.ok) { setDbPhotoProjects((prev) => prev.map((x) => (x.id === p.id ? { ...x, is_active: p.is_active } : x))); }
+  }
+
   function startEditPhoto(p: DbPhotoProject) {
     setEditingPhotoId(p.id);
     setPhotoForm({ slug: p.slug, title: p.title, product_code: p.product_code, short_description: p.short_description ?? "", categories: p.categories, image_after: p.image_after, image_before: p.image_before, note: p.note, is_active: p.is_active, sort_order: p.sort_order });
@@ -5956,8 +5973,11 @@ export default function AdminPage() {
                         <div className="p-4 flex gap-4">
                           {p.image_after && <img src={p.image_after} alt={p.title} className="w-20 h-24 object-cover flex-shrink-0 border border-[#e2e2e2]" />}
                           <div className="flex-1 min-w-0">
-                            <p className="font-semibold text-[#002045] font-[var(--font-inter)] text-sm">{p.title}</p>
-                            <p className="text-xs text-[#3b6934] font-[var(--font-inter)] mt-0.5">{p.product_code}</p>
+                            <div className="flex items-center gap-2 flex-wrap">
+                              <p className="font-semibold text-[#002045] font-[var(--font-inter)] text-sm">{p.title}</p>
+                              <span className={`px-1.5 py-0.5 text-[9px] font-bold tracking-wider ${p.is_active ? "bg-green-100 text-green-800" : "bg-amber-100 text-amber-800"}`}>{p.is_active ? "Publicado" : "Rascunho"}</span>
+                            </div>
+                            <p className="text-xs text-[#3b6934] font-[var(--font-inter)] mt-0.5">{p.product_code}{p.short_description ? ` · ${p.short_description}` : ""}</p>
                             <div className="flex flex-wrap gap-1 mt-1">
                               {p.categories.map((c) => (
                                 <span key={c} className="bg-[#eef2f8] text-[#002045] px-1.5 py-0.5 text-[9px] font-bold tracking-wider">{c}</span>
@@ -5975,6 +5995,10 @@ export default function AdminPage() {
                               >
                                 {isMediaOpen ? "▲ Mídias" : `▼ Mídias${media.length ? ` (${media.length})` : ""}`}
                               </button>
+                              <button onClick={() => togglePhotoActive(p)} className={`text-[10px] tracking-[0.08em] uppercase font-bold font-[var(--font-inter)] px-3 py-1.5 border transition-colors ${p.is_active ? "border-[#e2e2e2] text-[#74777f] hover:border-[#002045] hover:text-[#002045]" : "border-[#3b6934] text-[#3b6934] hover:bg-[#3b6934] hover:text-white"}`}>
+                                {p.is_active ? "Despublicar" : "Publicar"}
+                              </button>
+                              <button onClick={() => duplicatePhoto(p.id, p.title)} className="text-[10px] tracking-[0.08em] uppercase font-bold font-[var(--font-inter)] px-3 py-1.5 border border-[#e2e2e2] text-[#43474e] hover:border-[#002045] hover:text-[#002045] transition-colors">Duplicar</button>
                               <button onClick={() => deletePhoto(p.id, p.title)} className="text-[10px] tracking-[0.08em] uppercase font-bold font-[var(--font-inter)] px-3 py-1.5 border border-red-300 text-red-600 hover:bg-red-50 transition-colors">Excluir</button>
                             </div>
                           </div>
