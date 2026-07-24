@@ -7,6 +7,7 @@ import RemindersTab from "./RemindersTab";
 import PedidosTab, { type QuoteOption } from "./PedidosTab";
 import RepOversightTab from "./RepOversightTab";
 import EstoqueTab from "./EstoqueTab";
+import SquareCropper from "@/components/SquareCropper";
 import FinanceiroTab from "./FinanceiroTab";
 import DashboardTab, { type OverviewData } from "./DashboardTab";
 import CustosTab from "./CustosTab";
@@ -523,6 +524,8 @@ export default function AdminPage() {
   const [slugTouched, setSlugTouched] = useState(false);
   const [photoAdvancedOpen, setPhotoAdvancedOpen] = useState(false);
   const [productPickerQuery, setProductPickerQuery] = useState("");
+  // Recorte 1:1 da imagem de capa/antes do projeto (SquareCropper).
+  const [coverCrop, setCoverCrop] = useState<{ file: File; target: "image_after" | "image_before" } | null>(null);
   const [renderForm, setRenderForm] = useState({ slug:"", title:"", product_code:"", image_path:"", is_active:true, sort_order:0 });
   const [projectMediaMap, setProjectMediaMap] = useState<Record<string, ProjectMedia[]>>({});
   const [expandedMediaSlug, setExpandedMediaSlug] = useState<string | null>(null);
@@ -1553,6 +1556,16 @@ export default function AdminPage() {
     if (!confirm(`Excluir projeto "${title}"?`)) return;
     await fetch(`/api/projects/photos/${id}`, { method: "DELETE" });
     fetchProjects();
+  }
+
+  // Recebe o blob 1:1 do cropper, envia ao storage e grava na capa/antes.
+  async function handleCroppedCover(blob: Blob) {
+    if (!coverCrop) return;
+    const target = coverCrop.target;
+    const file = new File([blob], `projeto-${Date.now()}.jpg`, { type: "image/jpeg" });
+    const url = await uploadDirect(file, "projetos");
+    if (url) setPhotoForm((prev) => ({ ...prev, [target]: url }));
+    setCoverCrop(null);
   }
 
   async function duplicatePhoto(id: string, title: string) {
@@ -5900,14 +5913,10 @@ export default function AdminPage() {
                               ↓ Download
                             </a>
                             <label className="flex-1 text-center text-[10px] tracking-[0.08em] uppercase font-bold font-[var(--font-inter)] px-3 py-2 border-r border-[#e2e2e2] bg-[#002045] text-white hover:bg-[#1a365d] transition-colors cursor-pointer">
-                              {projectImageUploading ? "Enviando…" : "Substituir"}
-                              <input type="file" accept="image/*" className="hidden" onChange={async (e) => {
+                              Substituir
+                              <input type="file" accept="image/*" className="hidden" onChange={(e) => {
                                 const file = e.target.files?.[0];
-                                if (!file) return;
-                                setProjectImageUploading(true);
-                                const url = await uploadDirect(file, "projetos");
-                                setProjectImageUploading(false);
-                                if (url) setPhotoForm((prev) => ({...prev, image_after: url}));
+                                if (file) setCoverCrop({ file, target: "image_after" });
                                 e.target.value = "";
                               }} />
                             </label>
@@ -5921,14 +5930,10 @@ export default function AdminPage() {
                         <div className="flex gap-3 items-start">
                           <input required type="text" value={photoForm.image_after} onChange={(e) => setPhotoForm({...photoForm, image_after: e.target.value})} className={inputCls} placeholder="/images/projetos/..." />
                           <label className="flex-shrink-0 cursor-pointer bg-[#f0f0f0] border border-[#e2e2e2] px-4 py-2.5 text-xs font-bold font-[var(--font-inter)] text-[#002045] hover:bg-[#e8e8e8] transition-colors whitespace-nowrap">
-                            {projectImageUploading ? "Enviando..." : "Upload"}
-                            <input type="file" accept="image/*" className="hidden" onChange={async (e) => {
+                            Upload
+                            <input type="file" accept="image/*" className="hidden" onChange={(e) => {
                               const file = e.target.files?.[0];
-                              if (!file) return;
-                              setProjectImageUploading(true);
-                              const url = await uploadDirect(file, "projetos");
-                              setProjectImageUploading(false);
-                              if (url) setPhotoForm((prev) => ({...prev, image_after: url}));
+                              if (file) setCoverCrop({ file, target: "image_after" });
                               e.target.value = "";
                             }} />
                           </label>
@@ -5946,14 +5951,10 @@ export default function AdminPage() {
                               ↓ Download
                             </a>
                             <label className="flex-1 text-center text-[10px] tracking-[0.08em] uppercase font-bold font-[var(--font-inter)] px-3 py-2 border-r border-[#e2e2e2] bg-[#002045] text-white hover:bg-[#1a365d] transition-colors cursor-pointer">
-                              {projectImageUploading ? "Enviando…" : "Substituir"}
-                              <input type="file" accept="image/*" className="hidden" onChange={async (e) => {
+                              Substituir
+                              <input type="file" accept="image/*" className="hidden" onChange={(e) => {
                                 const file = e.target.files?.[0];
-                                if (!file) return;
-                                setProjectImageUploading(true);
-                                const url = await uploadDirect(file, "projetos");
-                                setProjectImageUploading(false);
-                                if (url) setPhotoForm((prev) => ({...prev, image_before: url}));
+                                if (file) setCoverCrop({ file, target: "image_before" });
                                 e.target.value = "";
                               }} />
                             </label>
@@ -5967,14 +5968,10 @@ export default function AdminPage() {
                         <div className="flex gap-3 items-start">
                           <input type="text" value={photoForm.image_before} onChange={(e) => setPhotoForm({...photoForm, image_before: e.target.value})} className={inputCls} placeholder="/images/projetos/..." />
                           <label className="flex-shrink-0 cursor-pointer bg-[#f0f0f0] border border-[#e2e2e2] px-4 py-2.5 text-xs font-bold font-[var(--font-inter)] text-[#002045] hover:bg-[#e8e8e8] transition-colors whitespace-nowrap">
-                            {projectImageUploading ? "Enviando..." : "Upload"}
-                            <input type="file" accept="image/*" className="hidden" onChange={async (e) => {
+                            Upload
+                            <input type="file" accept="image/*" className="hidden" onChange={(e) => {
                               const file = e.target.files?.[0];
-                              if (!file) return;
-                              setProjectImageUploading(true);
-                              const url = await uploadDirect(file, "projetos");
-                              setProjectImageUploading(false);
-                              if (url) setPhotoForm((prev) => ({...prev, image_before: url}));
+                              if (file) setCoverCrop({ file, target: "image_before" });
                               e.target.value = "";
                             }} />
                           </label>
@@ -7285,6 +7282,15 @@ ALTER TABLE project_media ADD COLUMN IF NOT EXISTS description TEXT;`}
 
         </main>
       </div>
+
+      {/* Recorte 1:1 da imagem de capa/antes do projeto */}
+      {coverCrop && (
+        <SquareCropper
+          file={coverCrop.file}
+          onCancel={() => setCoverCrop(null)}
+          onCropped={handleCroppedCover}
+        />
+      )}
 
       {/* Toast discreto (autosave de mídia: categoria, capa, descrição) */}
       {mediaToast && (
