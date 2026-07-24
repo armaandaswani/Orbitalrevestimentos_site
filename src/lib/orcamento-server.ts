@@ -14,6 +14,12 @@ export interface OrcamentoExtras {
   installerWhatsappBase: string;
   quoteValidityDays: number;
   leadMessageEnabled: boolean;
+  // Régua do orçamento formalizado (§33) — separada do lead.
+  followupEnabled: boolean;
+  followup1Hours: number;   // 1º acompanhamento após N horas da formalização
+  followup2Hours: number;   // último acompanhamento após N horas
+  followup1Message: string; // {nome} {numero} são interpolados
+  followup2Message: string;
 }
 
 export const DEFAULT_EXTRAS: OrcamentoExtras = {
@@ -22,6 +28,11 @@ export const DEFAULT_EXTRAS: OrcamentoExtras = {
   installerWhatsappBase: "https://wa.me/5592993974821?text=",
   quoteValidityDays: 7,
   leadMessageEnabled: true,
+  followupEnabled: false,
+  followup1Hours: 24,
+  followup2Hours: 72,
+  followup1Message: "Olá, {nome}. Passando para saber se ficou alguma dúvida sobre o orçamento {numero} da Orbital. Posso ajudar a ajustar medidas, acabamento ou pagamento — é só responder aqui.",
+  followup2Message: "Olá, {nome}. Seu orçamento {numero} da Orbital continua disponível. Se quiser seguir com o pedido ou revisar qualquer detalhe, estou à disposição.",
 };
 
 // Load the admin config (orcamento_settings singleton) and merge onto the code
@@ -48,6 +59,11 @@ export async function loadOrcamentoConfig(
       installerWhatsappBase: str(raw.installerWhatsappBase, DEFAULT_EXTRAS.installerWhatsappBase),
       quoteValidityDays: num(raw.quoteValidityDays, DEFAULT_EXTRAS.quoteValidityDays),
       leadMessageEnabled: typeof raw.leadMessageEnabled === "boolean" ? raw.leadMessageEnabled : DEFAULT_EXTRAS.leadMessageEnabled,
+      followupEnabled: typeof raw.followupEnabled === "boolean" ? raw.followupEnabled : DEFAULT_EXTRAS.followupEnabled,
+      followup1Hours: num(raw.followup1Hours, DEFAULT_EXTRAS.followup1Hours),
+      followup2Hours: num(raw.followup2Hours, DEFAULT_EXTRAS.followup2Hours),
+      followup1Message: str(raw.followup1Message, DEFAULT_EXTRAS.followup1Message),
+      followup2Message: str(raw.followup2Message, DEFAULT_EXTRAS.followup2Message),
     };
     return { config, extras };
   } catch {

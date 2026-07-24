@@ -43,6 +43,10 @@
     {
       "path": "/api/cron/rep-auto-followups",
       "schedule": "0 12 * * *"
+    },
+    {
+      "path": "/api/cron/orcamento-followups",
+      "schedule": "0 14 * * *"
     }
   ]
 }

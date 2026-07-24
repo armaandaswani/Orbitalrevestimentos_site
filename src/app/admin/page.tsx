@@ -7306,6 +7306,29 @@ ALTER TABLE project_media ADD COLUMN IF NOT EXISTS description TEXT;`}
                         <span className="text-[#43474e] text-sm font-[var(--font-inter)]">Enviar mensagem de recuperação de simulação ao lead</span>
                       </label>
 
+                      {/* Follow-ups do orçamento formalizado (§33) */}
+                      <div className="border border-[#e2e2e2] p-3">
+                        <label className="flex items-center gap-2 cursor-pointer mb-2">
+                          <input type="checkbox" checked={orcCfg.followupEnabled === true} onChange={(e) => setOrcCfgField("followupEnabled", e.target.checked)} />
+                          <span className="text-[#43474e] text-sm font-[var(--font-inter)] font-semibold">Acompanhar orçamentos formalizados por WhatsApp</span>
+                        </label>
+                        <div className="grid grid-cols-2 gap-3 mb-2">
+                          <div>
+                            <label className="block text-[10px] tracking-[0.12em] uppercase font-bold font-[var(--font-inter)] text-[#74777f] mb-1">1º após (horas)</label>
+                            <input type="number" min={1} value={String(orcCfg.followup1Hours ?? 24)} onChange={(e) => setOrcCfgField("followup1Hours", parseInt(e.target.value) || 0)} className="w-full border border-[#e2e2e2] px-3 py-2 text-sm font-[var(--font-inter)] text-[#002045] focus:outline-none focus:border-[#002045]" />
+                          </div>
+                          <div>
+                            <label className="block text-[10px] tracking-[0.12em] uppercase font-bold font-[var(--font-inter)] text-[#74777f] mb-1">Último após (horas)</label>
+                            <input type="number" min={1} value={String(orcCfg.followup2Hours ?? 72)} onChange={(e) => setOrcCfgField("followup2Hours", parseInt(e.target.value) || 0)} className="w-full border border-[#e2e2e2] px-3 py-2 text-sm font-[var(--font-inter)] text-[#002045] focus:outline-none focus:border-[#002045]" />
+                          </div>
+                        </div>
+                        <label className="block text-[10px] tracking-[0.12em] uppercase font-bold font-[var(--font-inter)] text-[#74777f] mb-1">Mensagem 1 <span className="normal-case text-[#a0a3a8]">({'{nome}'}, {'{numero}'})</span></label>
+                        <textarea value={String(orcCfg.followup1Message ?? "")} onChange={(e) => setOrcCfgField("followup1Message", e.target.value)} rows={2} className="w-full border border-[#e2e2e2] px-3 py-2 text-sm font-[var(--font-inter)] text-[#43474e] focus:outline-none focus:border-[#002045] resize-none mb-2" />
+                        <label className="block text-[10px] tracking-[0.12em] uppercase font-bold font-[var(--font-inter)] text-[#74777f] mb-1">Mensagem 2</label>
+                        <textarea value={String(orcCfg.followup2Message ?? "")} onChange={(e) => setOrcCfgField("followup2Message", e.target.value)} rows={2} className="w-full border border-[#e2e2e2] px-3 py-2 text-sm font-[var(--font-inter)] text-[#43474e] focus:outline-none focus:border-[#002045]" />
+                        <p className="text-[#a0a3a8] text-[10px] font-[var(--font-inter)] mt-1">Para ao converter em pedido, ao expirar, no opt-out, ou após os 2 envios. Máx. 1 por dia.</p>
+                      </div>
+
                       <div className="bg-[#f7f8fa] border border-[#e2e2e2] px-4 py-2.5">
                         <p className="text-[#74777f] text-[11px] font-[var(--font-inter)] leading-relaxed">
                           Parcelamento sem juros (faixas): 2–4 → 3x · 5–7 → 4x · 8–12 → 6x · 13+ → 10x. Uma placa não recebe promoção automática.
