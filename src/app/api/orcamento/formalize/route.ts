@@ -95,20 +95,33 @@ export async function POST(req: NextRequest) {
   if (!alreadySent) {
     const phone = normalizePhone((q.client_phone as string) || null);
     if (phone && smclickConfigured()) {
-      // ONE objective message — never split across several.
+      // Condição de pagamento — sem "undefinedx". 1 placa não tem parcelamento
+      // automático → mostra à vista, sem inventar parcelas.
+      const paymentLine =
+        sel?.id === "pix" ? `À vista (PIX ou espécie) — ${sel.discountPct}% de desconto`
+        : sel?.id === "cartao" && sel.installments ? `Cartão — até ${sel.installments}x sem juros`
+        : "À vista";
+      // UMA mensagem só, profissional, com negrito (*…*) e emojis pontuais.
+      const firstName = (clientName || "").trim().split(/\s+/)[0] || "tudo bem";
       const message = [
-        `Olá, ${clientName || "tudo bem"}. Seu orçamento formalizado da Orbital foi gerado.`,
-        `Nº ${formalNumber}`,
-        `Produto: ${productLabel}`,
-        `Quantidade: ${breakdown.plates} placa${breakdown.plates !== 1 ? "s" : ""}`,
-        breakdown.colaAvailable && breakdown.colaTubos > 0 ? `Cola PU: ${breakdown.colaTubos} tubos` : null,
-        `Pagamento: ${sel?.id === "pix" ? `PIX/espécie (${sel.discountPct}% de desconto)` : `cartão até ${sel?.installments}x sem juros`}`,
-        `Frete: ${breakdown.frete.free ? "grátis" : fmtBRL(breakdown.frete.value)}`,
-        `Total: ${fmtBRL(total)}`,
-        `Documento completo (PDF): ${pdfUrl}`,
-        `A Orbital não realiza instalação. Caso precise, fale diretamente com a empresa especializada indicada (${INSTALLER.name}, ${INSTALLER.phone}).`,
-        `Para ajustar medidas, acabamento ou pagamento, responda a esta mensagem.`,
-      ].filter(Boolean).join("\n");
+        `Olá, ${firstName}! 🎉`,
+        ``,
+        `Seu *orçamento formalizado* da Orbital está pronto.`,
+        ``,
+        `📄 Nº *${formalNumber}*`,
+        `🧱 ${productLabel} — *${breakdown.plates} placa${breakdown.plates !== 1 ? "s" : ""}*`,
+        breakdown.colaAvailable && breakdown.colaTubos > 0 ? `🧴 Cola PU: ${breakdown.colaTubos} tubo${breakdown.colaTubos !== 1 ? "s" : ""}` : null,
+        `🚚 Frete: ${breakdown.frete.free ? "*grátis* ✅" : fmtBRL(breakdown.frete.value)}`,
+        `💳 ${paymentLine}`,
+        `💰 *Total: ${fmtBRL(total)}*`,
+        ``,
+        `📎 Documento completo (PDF):`,
+        pdfUrl,
+        ``,
+        `🛠️ A instalação não está inclusa no valor. Se precisar, indicamos a *${INSTALLER.name}* (${INSTALLER.phone}).`,
+        ``,
+        `É só responder por aqui para ajustar medidas, acabamento ou pagamento. 😊`,
+      ].filter((l) => l !== null).join("\n");
       const res = await sendText(phone, message);
       whatsappOk = res.ok;
       if (res.ok) {
