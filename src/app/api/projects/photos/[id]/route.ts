@@ -1,5 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { supabaseAdmin } from "@/lib/supabase";
+import { stripOptionalPhotoCols } from "../route";
+import { isMissingColumn } from "@/lib/db-compat";
 
 import { isAdminRequest } from "@/lib/admin-auth";
 
@@ -19,10 +21,9 @@ export async function PUT(
   const body = await req.json();
   const sb = supabaseAdmin();
   let { data, error } = await sb.from("project_photos").update(body).eq("id", id).select().single();
-  // Retrocompat: coluna nova (short_description / migração 045) ausente → retenta sem ela.
-  if (error && /column .* does not exist/i.test(error.message) && body && typeof body === "object" && "short_description" in body) {
-    const { short_description: _omit, ...rest } = body as Record<string, unknown>;
-    ({ data, error } = await sb.from("project_photos").update(rest).eq("id", id).select().single());
+  // Retrocompat: colunas novas (migrações 045/047) ausentes → retenta sem elas.
+  if (isMissingColumn(error)) {
+    ({ data, error } = await sb.from("project_photos").update(stripOptionalPhotoCols(body)).eq("id", id).select().single());
   }
   if (error) {
     return NextResponse.json({ error: error.message }, { status: 500 });

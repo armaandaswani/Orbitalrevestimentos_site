@@ -3,6 +3,7 @@ import Image from "next/image";
 import Link from "next/link";
 import ScrollReveal from "@/components/ScrollReveal";
 import AnimatedStat from "@/components/AnimatedStat";
+import HomeProjectsGrid from "@/components/HomeProjectsGrid";
 
 export const metadata: Metadata = {
   title: "Orbital Revestimentos — Instalado em horas. Admirado por anos.",
@@ -582,33 +583,12 @@ export default function Home() {
               </Link>
             </ScrollReveal>
             <div className="lg:col-span-7">
-              <div className="grid grid-cols-2 gap-3">
-                {[
-                  { src: "/images/catalogue/lavabo-real.jpeg", label: "Lavabo" },
-                  { src: "/images/catalogue/projeto-escritorio-depois.jpeg", label: "Comercial — Restaurante" },
-                  { src: "/images/catalogue/projeto-varanda.jpeg", label: "Banheiro" },
-                  { src: "/images/catalogue/page13_img5_924x1629.jpeg", label: "Escritório" },
-                ].map(({ src, label }, i) => (
-                  <ScrollReveal key={label} delay={i * 80} direction="up">
-                    <div className="relative aspect-square sm:aspect-[4/5] overflow-hidden group">
-                      <Image
-                        src={src}
-                        alt={label}
-                        fill
-                        className="object-cover transition-transform duration-700 group-hover:scale-[1.06]"
-                      />
-                      <div className="hidden sm:block absolute inset-0 bg-gradient-to-t from-black/60 via-black/10 to-transparent group-hover:from-black/40 transition-all duration-500" />
-                      <div className="hidden sm:block absolute inset-x-0 bottom-0 p-3 translate-y-1 group-hover:translate-y-0 transition-transform duration-400">
-                        <p className="text-white text-xs tracking-[0.1em] uppercase font-semibold font-[var(--font-inter)]">
-                          {label}
-                        </p>
-                        <div className="h-px bg-white/50 mt-1.5 scale-x-0 group-hover:scale-x-100 transition-transform duration-500 origin-left" />
-                      </div>
-                    </div>
-                    <p className="sm:hidden text-white/50 text-[9px] tracking-[0.1em] uppercase font-[var(--font-inter)] mt-1.5 leading-tight">{label}</p>
-                  </ScrollReveal>
-                ))}
-              </div>
+              <HomeProjectsGrid fallback={[
+                { src: "/images/catalogue/lavabo-real.jpeg", label: "Lavabo" },
+                { src: "/images/catalogue/projeto-escritorio-depois.jpeg", label: "Comercial — Restaurante" },
+                { src: "/images/catalogue/projeto-varanda.jpeg", label: "Banheiro" },
+                { src: "/images/catalogue/page13_img5_924x1629.jpeg", label: "Escritório" },
+              ]} />
             </div>
           </div>
         </div>

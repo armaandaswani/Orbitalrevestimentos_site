@@ -4,6 +4,7 @@ import { breakdownForQuote, formalNumberFor } from "@/lib/orcamento-server";
 import { generateQuotePdf, quotePdfFilename, COMPANY, INSTALLER, type QuoteSpace } from "@/lib/orcamento-pdf";
 import { normalizePhone, sendText, smclickConfigured } from "@/lib/smclick";
 import { getResend } from "@/lib/resend";
+import { isMissingColumn } from "@/lib/db-compat";
 
 export const runtime = "nodejs";
 
@@ -71,7 +72,7 @@ export async function POST(req: NextRequest) {
     total_amount: total,
   };
   let { error: upErr } = await db.from("saved_quotes").update(patch).eq("slug", slug);
-  if (upErr && /column .* does not exist/i.test(upErr.message)) {
+  if (isMissingColumn(upErr)) {
     // 043 not applied yet — persist only the guaranteed-existing client_* columns.
     ({ error: upErr } = await db.from("saved_quotes")
       .update({ client_name: q.client_name, client_email: q.client_email, client_phone: q.client_phone })

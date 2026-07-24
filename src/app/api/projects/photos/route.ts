@@ -2,9 +2,20 @@ import { NextRequest, NextResponse } from "next/server";
 import { supabaseAdmin } from "@/lib/supabase";
 
 import { isAdminRequest } from "@/lib/admin-auth";
+import { isMissingColumn } from "@/lib/db-compat";
 
 function checkAuth(req: NextRequest): boolean {
   return isAdminRequest(req);
+}
+
+// Colunas opcionais adicionadas por migrações recentes (045/047). Quando o banco
+// ainda não as tem, removemos do payload e reenviamos, para não quebrar o salvar.
+const OPTIONAL_PHOTO_COLS = ["short_description", "is_featured", "show_on_home", "is_new", "feature_order", "content_type"];
+export function stripOptionalPhotoCols(body: unknown): Record<string, unknown> {
+  if (!body || typeof body !== "object") return {};
+  const out = { ...(body as Record<string, unknown>) };
+  for (const c of OPTIONAL_PHOTO_COLS) delete out[c];
+  return out;
 }
 
 export async function GET() {
@@ -29,11 +40,10 @@ export async function POST(req: NextRequest) {
   const body = await req.json();
   const sb = supabaseAdmin();
   let { data, error } = await sb.from("project_photos").insert(body).select().single();
-  // Retrocompat: coluna nova (ex. short_description / migração 045) ainda não
-  // aplicada → tenta novamente sem ela em vez de falhar o cadastro.
-  if (error && /column .* does not exist/i.test(error.message) && body && typeof body === "object" && "short_description" in body) {
-    const { short_description: _omit, ...rest } = body as Record<string, unknown>;
-    ({ data, error } = await sb.from("project_photos").insert(rest).select().single());
+  // Retrocompat: colunas novas (migrações 045/047) ainda não aplicadas → tenta de
+  // novo sem elas em vez de falhar o cadastro.
+  if (isMissingColumn(error)) {
+    ({ data, error } = await sb.from("project_photos").insert(stripOptionalPhotoCols(body)).select().single());
   }
   if (error) {
     return NextResponse.json({ error: error.message }, { status: 500 });

@@ -16,6 +16,9 @@ interface Project {
   image_after: string;
   image_before?: string;
   note?: string;
+  is_featured?: boolean;
+  is_new?: boolean;
+  feature_order?: number;
 }
 
 interface Render {
@@ -473,6 +476,11 @@ function ProjectCard({ project, onOpen }: { project: Project; onOpen: (p: Projec
           />
         )}
 
+        {/* Selo "Novo" — controlado pelo painel */}
+        {project.is_new && (
+          <span className="absolute top-3 left-3 z-10 bg-[#3b6934] text-white text-[9px] tracking-[0.18em] uppercase font-bold font-[var(--font-inter)] px-2.5 py-1">Novo</span>
+        )}
+
         {/* Hover overlay — gallery cue */}
         <div className="absolute inset-0 bg-black/0 group-hover:bg-black/35 transition-colors duration-300 flex items-center justify-center">
           <div className="opacity-0 group-hover:opacity-100 transition-opacity duration-300 flex flex-col items-center gap-1.5">
@@ -646,10 +654,17 @@ export default function ProjetosPage() {
       .catch(() => setRenders([]));
   }, []);
 
-  const filtered =
+  const filtered = (
     activeFilter === "todos"
       ? projects
-      : projects.filter((p) => p.categories.includes(activeFilter));
+      : projects.filter((p) => p.categories.includes(activeFilter))
+  )
+    // Destaques primeiro (por feature_order), depois o restante.
+    .slice()
+    .sort((a, b) => {
+      if (!!a.is_featured !== !!b.is_featured) return a.is_featured ? -1 : 1;
+      return (a.feature_order ?? 0) - (b.feature_order ?? 0);
+    });
 
   // Merge DB renders with static fallback — DB rows take priority, deduplicated by slug
   const dbSlugs = new Set(renders.map((r) => r.slug));

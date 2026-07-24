@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from "next/server";
 import { supabaseAdmin } from "@/lib/supabase";
 
 import { isAdminRequest } from "@/lib/admin-auth";
+import { isMissingColumn } from "@/lib/db-compat";
 
 function checkAuth(req: NextRequest): boolean {
   return isAdminRequest(req);
@@ -44,7 +45,7 @@ export async function POST(req: NextRequest) {
   const sb = supabaseAdmin();
   let { data, error } = await sb.from("products").insert(body).select().single();
   // Retrocompat: coluna show_in_catalog (migração 046) ausente → retenta sem ela.
-  if (error && /column .* does not exist/i.test(error.message) && body && typeof body === "object" && "show_in_catalog" in body) {
+  if (isMissingColumn(error) && body && typeof body === "object" && "show_in_catalog" in body) {
     const { show_in_catalog: _omit, ...rest } = body as Record<string, unknown>;
     ({ data, error } = await sb.from("products").insert(rest).select().single());
   }

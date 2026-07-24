@@ -90,7 +90,7 @@ interface SalesRep {
 
 interface ProductImage { id:string; product_id:string; image_path:string; sort_order:number; }
 interface DbProduct { id:string; code:string; name:string; linha:"Classic"|"Brilliance"|"Elegance"; finish:string; price:number; price_per_m2:number; description:string; image_path:string; is_active:boolean; show_in_catalog?:boolean; sort_order:number; created_at:string; product_images?: ProductImage[]; render_finish_description?: string | null; render_panel_width_m?: number | null; render_panel_height_m?: number | null; render_context_image_path?: string | null; render_texture_path?: string | null; render_extra_notes?: string | null; }
-interface DbPhotoProject { id:string; slug:string; title:string; product_code:string; short_description?:string; categories:string[]; image_after:string; image_before:string; note:string; is_active:boolean; sort_order:number; }
+interface DbPhotoProject { id:string; slug:string; title:string; product_code:string; short_description?:string; categories:string[]; image_after:string; image_before:string; note:string; is_active:boolean; is_featured?:boolean; show_on_home?:boolean; is_new?:boolean; feature_order?:number; content_type?:string|null; sort_order:number; }
 interface DbRenderProject { id:string; slug:string; title:string; product_code:string; image_path:string; is_active:boolean; sort_order:number; }
 interface ProjectMedia { id:string; project_slug:string; type:"image"|"video"; url:string; caption:string|null; description:string|null; category:"antes"|"depois"|"geral"; sort_order:number; }
 
@@ -519,7 +519,7 @@ export default function AdminPage() {
   const [editingRenderId, setEditingRenderId] = useState<string|null>(null);
   const [renderImporting, setRenderImporting] = useState<string | null>(null); // slug being imported
   const [renderImportingAll, setRenderImportingAll] = useState(false);
-  const [photoForm, setPhotoForm] = useState({ slug:"", title:"", product_code:"", short_description:"", categories:[] as string[], image_after:"", image_before:"", note:"", is_active:true, sort_order:0 });
+  const [photoForm, setPhotoForm] = useState({ slug:"", title:"", product_code:"", short_description:"", categories:[] as string[], image_after:"", image_before:"", note:"", is_active:true, is_featured:false, show_on_home:false, is_new:false, feature_order:0, content_type:"", sort_order:0 });
   const [slugTouched, setSlugTouched] = useState(false);
   const [photoAdvancedOpen, setPhotoAdvancedOpen] = useState(false);
   const [productPickerQuery, setProductPickerQuery] = useState("");
@@ -1543,7 +1543,7 @@ export default function AdminPage() {
     if (res.ok) {
       setShowPhotoForm(false);
       setEditingPhotoId(null);
-      setPhotoForm({ slug:"", title:"", product_code:"", short_description:"", categories:[], image_after:"", image_before:"", note:"", is_active:true, sort_order:0 });
+      setPhotoForm({ slug:"", title:"", product_code:"", short_description:"", categories:[], image_after:"", image_before:"", note:"", is_active:true, is_featured:false, show_on_home:false, is_new:false, feature_order:0, content_type:"", sort_order:0 });
       setSlugTouched(false); setProductPickerQuery(""); setPhotoAdvancedOpen(false);
       fetchProjects();
     }
@@ -1574,7 +1574,7 @@ export default function AdminPage() {
 
   function startEditPhoto(p: DbPhotoProject) {
     setEditingPhotoId(p.id);
-    setPhotoForm({ slug: p.slug, title: p.title, product_code: p.product_code, short_description: p.short_description ?? "", categories: p.categories, image_after: p.image_after, image_before: p.image_before, note: p.note, is_active: p.is_active, sort_order: p.sort_order });
+    setPhotoForm({ slug: p.slug, title: p.title, product_code: p.product_code, short_description: p.short_description ?? "", categories: p.categories, image_after: p.image_after, image_before: p.image_before, note: p.note, is_active: p.is_active, is_featured: p.is_featured ?? false, show_on_home: p.show_on_home ?? false, is_new: p.is_new ?? false, feature_order: p.feature_order ?? 0, content_type: p.content_type ?? "", sort_order: p.sort_order });
     setSlugTouched(true); setProductPickerQuery(""); setPhotoAdvancedOpen(false);
     setShowPhotoForm(true);
     setTimeout(() => photoTabFormRef.current?.scrollIntoView({ behavior: "smooth", block: "start" }), 50);
@@ -5710,7 +5710,7 @@ export default function AdminPage() {
                 <button
                   onClick={() => {
                     setEditingPhotoId(null);
-                    setPhotoForm({ slug:"", title:"", product_code:"", short_description:"", categories:[], image_after:"", image_before:"", note:"", is_active:true, sort_order:0 });
+                    setPhotoForm({ slug:"", title:"", product_code:"", short_description:"", categories:[], image_after:"", image_before:"", note:"", is_active:true, is_featured:false, show_on_home:false, is_new:false, feature_order:0, content_type:"", sort_order:0 });
                     setSlugTouched(false); setProductPickerQuery(""); setPhotoAdvancedOpen(false);
                     setShowPhotoForm(true);
                     setTimeout(() => photoTabFormRef.current?.scrollIntoView({ behavior: "smooth", block: "start" }), 50);
@@ -5855,6 +5855,40 @@ export default function AdminPage() {
                         </button>
                       </div>
                     </div>
+                    {/* Exibição no site — destaques controlados pelo painel */}
+                    <div className="mb-4 border border-[#e2e2e2] p-4">
+                      <p className="text-[10px] tracking-[0.12em] uppercase font-bold font-[var(--font-inter)] text-[#74777f] mb-3">Exibição no site</p>
+                      <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                        <label className="flex items-center gap-2 cursor-pointer text-sm font-[var(--font-inter)] text-[#43474e]">
+                          <input type="checkbox" checked={photoForm.is_featured} onChange={(e) => setPhotoForm({...photoForm, is_featured: e.target.checked})} className="w-4 h-4" />
+                          Destacar na página de Projetos
+                        </label>
+                        <label className="flex items-center gap-2 cursor-pointer text-sm font-[var(--font-inter)] text-[#43474e]">
+                          <input type="checkbox" checked={photoForm.show_on_home} onChange={(e) => setPhotoForm({...photoForm, show_on_home: e.target.checked})} className="w-4 h-4" />
+                          Exibir na página inicial
+                        </label>
+                        <label className="flex items-center gap-2 cursor-pointer text-sm font-[var(--font-inter)] text-[#43474e]">
+                          <input type="checkbox" checked={photoForm.is_new} onChange={(e) => setPhotoForm({...photoForm, is_new: e.target.checked})} className="w-4 h-4" />
+                          Marcar como &quot;Novo&quot;
+                        </label>
+                        <div className="flex items-center gap-2">
+                          <label className="text-sm font-[var(--font-inter)] text-[#43474e] whitespace-nowrap">Ordem do destaque</label>
+                          <input type="number" min="0" value={photoForm.feature_order} onChange={(e) => setPhotoForm({...photoForm, feature_order: parseInt(e.target.value) || 0})} className="border border-[#e2e2e2] px-2 py-1 text-sm font-[var(--font-inter)] text-[#002045] w-20 focus:outline-none focus:border-[#002045]" />
+                        </div>
+                      </div>
+                      <div className="mt-3">
+                        <label className={labelCls}>Tipo de conteúdo</label>
+                        <select value={photoForm.content_type ?? ""} onChange={(e) => setPhotoForm({...photoForm, content_type: e.target.value})} className={inputCls}>
+                          <option value="">—</option>
+                          <option value="antes_depois">Antes e depois</option>
+                          <option value="concluido">Projeto concluído</option>
+                          <option value="exposicao">Ambiente em exposição</option>
+                          <option value="showroom">Showroom</option>
+                          <option value="inspiracao">Inspiração</option>
+                        </select>
+                      </div>
+                    </div>
+
                     <div className="mb-4">
                       <label className={labelCls}>Imagem Depois *</label>
                       {photoForm.image_after ? (

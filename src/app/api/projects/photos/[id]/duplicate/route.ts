@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { supabaseAdmin } from "@/lib/supabase";
 import { isAdminRequest } from "@/lib/admin-auth";
+import { isMissingColumn } from "@/lib/db-compat";
 
 // POST /api/projects/photos/[id]/duplicate — clona um projeto como RASCUNHO
 // (is_active=false), com novo slug e as mesmas mídias. Não toca no original.
@@ -32,9 +33,9 @@ export async function POST(req: NextRequest, { params }: { params: Promise<{ id:
     is_active: false,
   };
   let { data: created, error: insErr } = await sb.from("project_photos").insert(copyRow).select().single();
-  if (insErr && /column .* does not exist/i.test(insErr.message)) {
+  if (isMissingColumn(insErr)) {
     // Retrocompat: remove colunas que a migração ainda não criou.
-    delete copyRow.short_description;
+    for (const c of ["short_description", "is_featured", "show_on_home", "is_new", "feature_order", "content_type"]) delete copyRow[c];
     ({ data: created, error: insErr } = await sb.from("project_photos").insert(copyRow).select().single());
   }
   if (insErr || !created) return NextResponse.json({ error: insErr?.message ?? "Falha ao duplicar." }, { status: 500 });
