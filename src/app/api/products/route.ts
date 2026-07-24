@@ -24,7 +24,15 @@ export async function GET(req: NextRequest) {
   if (error) {
     return NextResponse.json({ error: error.message }, { status: 500 });
   }
-  return NextResponse.json(data);
+  // Public callers only see catalog-visible products. A support SKU (e.g. Cola PU
+  // ORB-PU) stays is_active=true so the orçamento engine still prices it, but
+  // show_in_catalog=false keeps it off the public catalog and simulador model
+  // list. Filtered in JS so a pre-migration DB (column absent → undefined) simply
+  // shows everything, as before. Admins (?all=true) see all products.
+  const rows = !includeInactive && Array.isArray(data)
+    ? (data as Array<{ show_in_catalog?: boolean }>).filter((p) => p.show_in_catalog !== false)
+    : data;
+  return NextResponse.json(rows);
 }
 
 export async function POST(req: NextRequest) {
@@ -34,12 +42,12 @@ export async function POST(req: NextRequest) {
 
   const body = await req.json();
   const sb = supabaseAdmin();
-  const { data, error } = await sb
-    .from("products")
-    .insert(body)
-    .select()
-    .single();
-
+  let { data, error } = await sb.from("products").insert(body).select().single();
+  // Retrocompat: coluna show_in_catalog (migração 046) ausente → retenta sem ela.
+  if (error && /column .* does not exist/i.test(error.message) && body && typeof body === "object" && "show_in_catalog" in body) {
+    const { show_in_catalog: _omit, ...rest } = body as Record<string, unknown>;
+    ({ data, error } = await sb.from("products").insert(rest).select().single());
+  }
   if (error) {
     return NextResponse.json({ error: error.message }, { status: 500 });
   }
