@@ -112,6 +112,26 @@ export async function POST(req: NextRequest) {
     // ignore — use default
   }
 
+  // Showrooms de parceiros com convite ativo → o assistente pode convidar o
+  // cliente a visitar, com endereço. Best-effort (tabela ausente = ignora).
+  try {
+    const sb = supabaseAdmin();
+    const { data: invites } = await sb
+      .from("project_categories")
+      .select("label, address, maps_url")
+      .eq("active", true).eq("is_showroom", true).eq("invite_enabled", true);
+    const rows = (invites ?? []).filter((c) => (c as { address?: string }).address);
+    if (rows.length > 0) {
+      const list = rows.map((c) => {
+        const r = c as { label: string; address?: string; maps_url?: string };
+        return `- ${r.label}: ${r.address}${r.maps_url ? ` (mapa: ${r.maps_url})` : ""}`;
+      }).join("\n");
+      systemPrompt += `\n\nSHOWROOMS PARCEIROS — quando fizer sentido, convide o cliente a conhecer o PFB Orbital ao vivo nestes showrooms, informando o endereço:\n${list}`;
+    }
+  } catch {
+    // ignore
+  }
+
   const res = await fetch(`${apiBase}/chat/completions`, {
     method: "POST",
     headers: {

@@ -29,6 +29,17 @@ interface Render {
   image_path: string;
 }
 
+interface ProjCatMeta {
+  slug: string;
+  label: string;
+  parent_slug: string | null;
+  sort_order: number;
+  is_showroom: boolean;
+  address: string | null;
+  maps_url: string | null;
+  invite_enabled: boolean;
+}
+
 type MediaCategory = "antes" | "depois" | "geral";
 
 interface ProjectMedia {
@@ -594,6 +605,7 @@ function SectionHeader({ label, desc, light = false }: { label: string; desc: st
 // ─── Page ─────────────────────────────────────────────────────────────────────
 export default function ProjetosPage() {
   const [activeFilter, setActiveFilter] = useState<Category>("todos");
+  const [cats, setCats] = useState<ProjCatMeta[]>([]);
   const [projects, setProjects] = useState<Project[]>([]);
   const [renders, setRenders] = useState<Render[]>([]);
 
@@ -653,7 +665,14 @@ export default function ProjetosPage() {
       .then((r) => r.json())
       .then((data) => setRenders(Array.isArray(data) ? data : []))
       .catch(() => setRenders([]));
+    fetch("/api/project-categories")
+      .then((r) => (r.ok ? r.json() : []))
+      .then((data) => setCats(Array.isArray(data) ? data : []))
+      .catch(() => setCats([]));
   }, []);
+
+  // Convites de showroom (parceiros) — endereços a exibir + AI. Só os ativados.
+  const showroomInvites = cats.filter((c) => c.is_showroom && c.invite_enabled && (c.address || c.maps_url));
 
   const filtered = (
     activeFilter === "todos"
@@ -867,14 +886,36 @@ export default function ProjetosPage() {
                     </div>
                   </div>
                 ))}
-                {rest.length > 0 && (
+                {(rest.length > 0 || showroomInvites.length > 0) && (
                   <div key="__outros">
                     <SectionHeader label="Showrooms & outros" desc="Ambientes em exposição e demais projetos" />
-                    <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 gap-1">
-                      {rest.map((project) => (
-                        <ProjectCard key={project.id} project={project} onOpen={openLightbox} />
-                      ))}
-                    </div>
+                    {showroomInvites.length > 0 && (
+                      <div className="bg-[#002045] text-white px-6 py-6 mb-4">
+                        <p className="text-[10px] tracking-[0.2em] uppercase font-bold font-[var(--font-inter)] text-[#86a0cd] mb-1">Visite nossos showrooms</p>
+                        <p className="font-[var(--font-noto-serif)] text-xl mb-4">Veja o PFB Orbital ao vivo — venha nos visitar.</p>
+                        <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                          {showroomInvites.map((s) => (
+                            <div key={s.slug} className="border border-white/15 px-4 py-3">
+                              <p className="text-white font-semibold font-[var(--font-inter)] text-sm">{s.label}</p>
+                              {s.address && <p className="text-white/70 text-[13px] font-[var(--font-inter)] mt-0.5 leading-snug">{s.address}</p>}
+                              {s.maps_url && (
+                                <a href={s.maps_url} target="_blank" rel="noopener noreferrer" className="inline-flex items-center gap-1 text-[#86a0cd] hover:text-white text-[11px] tracking-[0.1em] uppercase font-bold font-[var(--font-inter)] mt-2 transition-colors">
+                                  Ver no mapa
+                                  <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><path d="M5 12h14M12 5l7 7-7 7"/></svg>
+                                </a>
+                              )}
+                            </div>
+                          ))}
+                        </div>
+                      </div>
+                    )}
+                    {rest.length > 0 && (
+                      <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 gap-1">
+                        {rest.map((project) => (
+                          <ProjectCard key={project.id} project={project} onOpen={openLightbox} />
+                        ))}
+                      </div>
+                    )}
                   </div>
                 )}
               </div>

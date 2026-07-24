@@ -627,6 +627,10 @@ export default function AdminPage() {
   const BASE_CATEGORIES = ["residencial", "comercial", "umido", "nautico"];
   const [customCategories, setCustomCategories] = useState<string[]>([]);
   const [newCatInput, setNewCatInput] = useState("");
+  // Metadados de categorias (ordem, subcategoria, showroom/endereço) — tabela project_categories.
+  interface ProjCat { id:string; slug:string; label:string; parent_slug:string|null; sort_order:number; is_showroom:boolean; address:string|null; maps_url:string|null; invite_enabled:boolean; active:boolean; }
+  const [projCats, setProjCats] = useState<ProjCat[]>([]);
+  const [catsSeeded, setCatsSeeded] = useState(false);
 
   useEffect(() => {
     try {
@@ -655,6 +659,62 @@ export default function AdminPage() {
 
   function removeCustomCategory(name: string) {
     saveCustomCategories(customCategories.filter((c) => c !== name));
+  }
+
+  function humanizeCat(slug: string): string {
+    return slug.replace(/---|--/g, " · ").replace(/-/g, " ").replace(/\b\w/g, (c) => c.toUpperCase());
+  }
+
+  async function fetchProjCats() {
+    const res = await fetch("/api/admin/project-categories");
+    if (res.ok) { const d = await res.json(); if (Array.isArray(d)) setProjCats(d); }
+  }
+
+  // Semeia a tabela com os slugs em uso (base + projetos) que ainda não têm metadados.
+  async function seedProjCats(slugsInUse: string[], existing: ProjCat[]) {
+    const have = new Set(existing.map((c) => c.slug));
+    const seed = slugsInUse.filter((s) => !have.has(s)).map((s) => ({ slug: s, label: humanizeCat(s) }));
+    if (seed.length === 0) return;
+    const res = await fetch("/api/admin/project-categories", {
+      method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ seed }),
+    });
+    if (res.ok) { const d = await res.json(); if (Array.isArray(d)) setProjCats(d); }
+  }
+
+  async function patchProjCat(id: string, patch: Partial<ProjCat>) {
+    setProjCats((prev) => prev.map((c) => (c.id === id ? { ...c, ...patch } : c)));
+    await fetch(`/api/admin/project-categories/${id}`, {
+      method: "PATCH", headers: { "Content-Type": "application/json" }, body: JSON.stringify(patch),
+    }).catch(() => {});
+  }
+
+  async function moveProjCat(id: string, dir: -1 | 1) {
+    const ordered = [...projCats].sort((a, b) => a.sort_order - b.sort_order);
+    const i = ordered.findIndex((c) => c.id === id);
+    const j = i + dir;
+    if (i < 0 || j < 0 || j >= ordered.length) return;
+    [ordered[i], ordered[j]] = [ordered[j], ordered[i]];
+    const reindexed = ordered.map((c, idx) => ({ ...c, sort_order: idx }));
+    setProjCats(reindexed);
+    await fetch("/api/admin/project-categories", {
+      method: "POST", headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ reorder: reindexed.map((c) => ({ id: c.id, sort_order: c.sort_order })) }),
+    }).catch(() => {});
+  }
+
+  async function deleteProjCat(id: string) {
+    if (!confirm("Remover esta categoria dos metadados? (os projetos não são alterados)")) return;
+    setProjCats((prev) => prev.filter((c) => c.id !== id));
+    await fetch(`/api/admin/project-categories/${id}`, { method: "DELETE" }).catch(() => {});
+  }
+
+  async function addProjCatFromInput(raw: string) {
+    const slug = raw.trim().toLowerCase().replace(/\s+/g, "-");
+    if (!slug || projCats.some((c) => c.slug === slug)) return;
+    const res = await fetch("/api/admin/project-categories", {
+      method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ slug, label: humanizeCat(slug) }),
+    });
+    if (res.ok) { const c = await res.json(); setProjCats((prev) => [...prev, c]); }
   }
 
   const supabaseConfigured = !!process.env.NEXT_PUBLIC_SUPABASE_URL;
@@ -899,6 +959,15 @@ export default function AdminPage() {
 
   useEffect(() => { if ((tab === "produtos" || tab === "simulador" || tab === "projetos") && authed) fetchDbProducts(); }, [tab, authed, fetchDbProducts]);
   useEffect(() => { if (tab === "projetos" && authed) fetchProjects(); }, [tab, authed, fetchProjects]);
+  useEffect(() => { if (tab === "projetos" && authed) fetchProjCats(); }, [tab, authed]);
+  // Semeia os metadados de categoria assim que os projetos carregam (uma vez).
+  useEffect(() => {
+    if (tab === "projetos" && authed && !catsSeeded && (dbPhotoProjects?.length ?? 0) >= 0) {
+      const slugs = Array.from(new Set([...BASE_CATEGORIES, ...customCategories, ...((dbPhotoProjects ?? []).flatMap((p) => p.categories ?? []))]));
+      if (slugs.length > 0) { setCatsSeeded(true); seedProjCats(slugs, projCats); }
+    }
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [tab, authed, dbPhotoProjects, catsSeeded]);
   useEffect(() => { if (tab === "visualizacoes" && authed) fetchVizRenders(); }, [tab, authed, fetchVizRenders]);
   useEffect(() => {
     if (tab === "projetos" && authed && mediaMigrated === null) {
@@ -5710,62 +5779,61 @@ export default function AdminPage() {
         {/* ═══ PROJETOS TAB ═══ */}
         {tab === "projetos" && (
           <div>
-            {/* ── Categories management panel ── */}
+            {/* ── Categories management panel (ordem, subcategorias, showroom) ── */}
             <div className="bg-white border border-[#e2e2e2] p-4 mb-8">
               <p className="font-[var(--font-inter)] text-[10px] tracking-[0.15em] uppercase font-bold text-[#002045] mb-3">Categorias de Projetos</p>
-              <div className="flex flex-wrap gap-2 mb-3">
-                {allCategories.map((cat) => {
-                  const isBase = BASE_CATEGORIES.includes(cat);
-                  const isFromProject = !isBase && !customCategories.includes(cat);
-                  return (
-                    <span
-                      key={cat}
-                      className={`inline-flex items-center gap-1.5 px-2.5 py-1 text-[11px] font-bold font-[var(--font-inter)] tracking-wide ${isBase ? "bg-[#eef2f8] text-[#002045]" : "bg-[#f0f5ec] text-[#3b6934]"}`}
-                    >
-                      {cat}
-                      {isBase && <span className="text-[9px] font-normal text-[#74777f] tracking-normal">base</span>}
-                      {isFromProject && <span className="text-[9px] font-normal text-[#74777f] tracking-normal">via projeto</span>}
-                      {!isBase && !isFromProject && (
-                        <button
-                          type="button"
-                          onClick={() => removeCustomCategory(cat)}
-                          title="Remover categoria"
-                          className="text-[#74777f] hover:text-red-600 transition-colors leading-none ml-0.5"
-                        >
-                          ×
-                        </button>
-                      )}
-                    </span>
-                  );
-                })}
-              </div>
-              {/* Quick-add a standalone category */}
+              <p className="text-[#74777f] text-[11px] font-[var(--font-inter)] mb-3">Reordene com ↑↓ (a ordem vale no site). Marque uma subcategoria escolhendo o &ldquo;pai&rdquo;. Para showrooms de parceiros, ative o endereço e o convite.</p>
+
+              {projCats.length === 0 ? (
+                <p className="text-[#b0b0b0] text-xs font-[var(--font-inter)] mb-3">Carregando categorias… (rode a migração 049 se estiver vazio)</p>
+              ) : (
+                <div className="border border-[#e2e2e2] divide-y divide-[#f0f0f0] mb-3">
+                  {[...projCats].sort((a, b) => a.sort_order - b.sort_order).map((c, idx, arr) => {
+                    const parents = arr.filter((p) => !p.parent_slug && p.slug !== c.slug);
+                    return (
+                      <div key={c.id} className="px-3 py-2.5" style={{ paddingLeft: c.parent_slug ? 28 : 12 }}>
+                        <div className="flex flex-wrap items-center gap-2">
+                          <div className="flex flex-col">
+                            <button onClick={() => moveProjCat(c.id, -1)} disabled={idx === 0} className="text-[#74777f] hover:text-[#002045] disabled:opacity-25 leading-none text-xs">▲</button>
+                            <button onClick={() => moveProjCat(c.id, 1)} disabled={idx === arr.length - 1} className="text-[#74777f] hover:text-[#002045] disabled:opacity-25 leading-none text-xs">▼</button>
+                          </div>
+                          <input value={c.label} onChange={(e) => patchProjCat(c.id, { label: e.target.value })} className="flex-1 min-w-[120px] border border-[#e2e2e2] px-2 py-1 text-sm font-[var(--font-inter)] text-[#002045] font-semibold focus:outline-none focus:border-[#002045]" />
+                          <span className="text-[#a0a3a8] text-[10px] font-[var(--font-inter)]">{c.slug}</span>
+                          <select value={c.parent_slug ?? ""} onChange={(e) => patchProjCat(c.id, { parent_slug: e.target.value || null })} className="border border-[#e2e2e2] px-2 py-1 text-xs font-[var(--font-inter)] text-[#43474e] focus:outline-none focus:border-[#002045]">
+                            <option value="">— principal —</option>
+                            {parents.map((p) => <option key={p.slug} value={p.slug}>sub de: {p.label}</option>)}
+                          </select>
+                          <label className="flex items-center gap-1 text-[11px] font-[var(--font-inter)] text-[#43474e] cursor-pointer">
+                            <input type="checkbox" checked={c.is_showroom} onChange={(e) => patchProjCat(c.id, { is_showroom: e.target.checked })} /> showroom
+                          </label>
+                          <button onClick={() => deleteProjCat(c.id)} className="text-[#cc0000] hover:text-white hover:bg-[#cc0000] w-6 h-6 flex items-center justify-center text-sm font-bold transition-colors" aria-label="Remover">✕</button>
+                        </div>
+                        {c.is_showroom && (
+                          <div className="mt-2 grid grid-cols-1 sm:grid-cols-2 gap-2">
+                            <input value={c.address ?? ""} onChange={(e) => patchProjCat(c.id, { address: e.target.value })} placeholder="Endereço do showroom" className="border border-[#e2e2e2] px-2 py-1.5 text-sm font-[var(--font-inter)] text-[#002045] focus:outline-none focus:border-[#002045]" />
+                            <input value={c.maps_url ?? ""} onChange={(e) => patchProjCat(c.id, { maps_url: e.target.value })} placeholder="Link do Google Maps (opcional)" className="border border-[#e2e2e2] px-2 py-1.5 text-sm font-[var(--font-inter)] text-[#002045] focus:outline-none focus:border-[#002045]" />
+                            <label className="flex items-center gap-2 text-[12px] font-[var(--font-inter)] text-[#43474e] cursor-pointer sm:col-span-2">
+                              <input type="checkbox" checked={c.invite_enabled} onChange={(e) => patchProjCat(c.id, { invite_enabled: e.target.checked })} /> Convidar o cliente a visitar este showroom (no site e no chat de IA)
+                            </label>
+                          </div>
+                        )}
+                      </div>
+                    );
+                  })}
+                </div>
+              )}
+
               <div className="flex gap-2 items-center">
                 <input
-                  type="text"
-                  value={newCatInput}
-                  onChange={(e) => setNewCatInput(e.target.value)}
-                  onKeyDown={(e) => {
-                    if (e.key === "Enter") {
-                      e.preventDefault();
-                      addNewCategory(newCatInput);
-                      setNewCatInput("");
-                    }
-                  }}
+                  type="text" value={newCatInput} onChange={(e) => setNewCatInput(e.target.value)}
+                  onKeyDown={(e) => { if (e.key === "Enter") { e.preventDefault(); addProjCatFromInput(newCatInput); addNewCategory(newCatInput); setNewCatInput(""); } }}
                   className="border border-[#e2e2e2] px-3 py-1.5 text-sm font-[var(--font-inter)] text-[#43474e] focus:outline-none focus:border-[#002045] w-48"
                   placeholder="nova categoria..."
                 />
-                <button
-                  type="button"
-                  onClick={() => { addNewCategory(newCatInput); setNewCatInput(""); }}
-                  className="px-3 py-1.5 bg-[#002045] text-white text-[10px] tracking-[0.08em] uppercase font-bold font-[var(--font-inter)] hover:bg-[#1a365d] transition-colors whitespace-nowrap"
-                >
+                <button type="button" onClick={() => { addProjCatFromInput(newCatInput); addNewCategory(newCatInput); setNewCatInput(""); }} className="px-3 py-1.5 bg-[#002045] text-white text-[10px] tracking-[0.08em] uppercase font-bold font-[var(--font-inter)] hover:bg-[#1a365d] transition-colors whitespace-nowrap">
                   + Criar
                 </button>
               </div>
-              <p className="text-[#b0b0b0] text-[10px] font-[var(--font-inter)] mt-2">
-                Categorias &ldquo;base&rdquo; são fixas. Categorias &ldquo;via projeto&rdquo; existem pois já estão em uso — para removê-las edite os projetos que as usam. Categorias criadas aqui aparecem imediatamente nos formulários.
-              </p>
             </div>
 
             {/* Section 1: Fotos Reais */}
