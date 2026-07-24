@@ -8,6 +8,7 @@ import MdfComparison, { COMPARISON_OPTIONS } from "@/components/MdfComparison";
 import VisualizadorWizard, { type SimPrefill } from "@/components/VisualizadorWizard";
 import { panelGrid } from "@/lib/render-prompt";
 import type { OrcamentoBreakdown } from "@/lib/orcamento-pricing";
+import { trackFunnel } from "@/lib/funnel";
 
 const WA_BASE = "https://wa.me/5592988150149?text=";
 // Werk Engenharia — terceirizado de instalação. Mão de obra é apenas
@@ -693,10 +694,12 @@ function SimuladorInner() {
 
   useEffect(() => {
     if (showResult) {
+      trackFunnel("resultado_visualizado", { plates: grandPlates });
       setTimeout(() => {
         resultsRef.current?.scrollIntoView({ behavior: "smooth", block: "start" });
       }, 50);
     }
+  // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [showResult]);
 
   // Pull the authoritative composition (placas + Cola PU + frete + pagamento)
@@ -773,6 +776,7 @@ function SimuladorInner() {
       const data = await res.json().catch(() => null);
       if (!res.ok || !data?.ok) { setFzError(data?.error ?? "Falha ao gerar o orçamento."); return; }
       setFzResult({ formalNumber: data.formalNumber, pdfUrl: data.pdfUrl, whatsappOk: data.whatsappOk, emailOk: data.emailOk });
+      trackFunnel("formalizacao_gerada", { plates: grandPlates });
     } catch (e) {
       setFzError(e instanceof Error ? e.message : "Erro de rede.");
     } finally {
@@ -1477,6 +1481,7 @@ function SimuladorInner() {
       setSimSubmitting(false);
     }
 
+    trackFunnel("lead_capturado", { plates: grandPlates, product: selectedProduct?.code ?? null });
     showResults();
   }
 
@@ -2692,6 +2697,7 @@ function SimuladorInner() {
                       <button
                         onClick={() => {
                           navigator.clipboard.writeText(quoteShareUrl);
+                          trackFunnel("link_copiado");
                           setQuoteUrlCopied(true);
                           setTimeout(() => setQuoteUrlCopied(false), 2500);
                         }}
@@ -3022,7 +3028,7 @@ function SimuladorInner() {
                             <button
                               key={opt.id}
                               type="button"
-                              onClick={() => setSelectedPayment(opt.id)}
+                              onClick={() => { setSelectedPayment(opt.id); trackFunnel("pagamento_selecionado", { id: opt.id }); }}
                               aria-pressed={active}
                               className={`text-left px-4 py-3 border transition-colors ${active ? "border-[#002045] bg-[#eef2fb] ring-1 ring-[#002045]" : "border-[#e2e2e2] bg-white hover:border-[#86a0cd]"}`}
                             >
@@ -3076,7 +3082,7 @@ function SimuladorInner() {
                   {/* CTA principal — formalização */}
                   <button
                     type="button"
-                    onClick={() => setFormalizeOpen(true)}
+                    onClick={() => { setFormalizeOpen(true); trackFunnel("cta_formalizacao_clicado"); trackFunnel("formalizacao_iniciada"); }}
                     className="mt-4 w-full bg-[#3b6934] hover:bg-[#2e5229] text-white text-sm tracking-[0.08em] uppercase font-bold font-[var(--font-inter)] px-6 py-4 transition-colors flex items-center justify-center gap-2"
                   >
                     <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><path d="M14 2v6h6M16 13H8M16 17H8M10 9H8"/></svg>
@@ -3644,7 +3650,7 @@ function SimuladorInner() {
                           <button
                             key={opt.id}
                             type="button"
-                            onClick={() => setSelectedPayment(opt.id)}
+                            onClick={() => { setSelectedPayment(opt.id); trackFunnel("pagamento_selecionado", { id: opt.id }); }}
                             className={`px-3 py-1.5 text-[12px] font-semibold font-[var(--font-inter)] border transition-colors ${selectedPayment === opt.id ? "border-[#002045] bg-[#eef2fb] text-[#002045]" : "border-[#e2e2e2] text-[#74777f] hover:border-[#86a0cd]"}`}
                           >
                             {opt.label} · {fmt(opt.total)}
