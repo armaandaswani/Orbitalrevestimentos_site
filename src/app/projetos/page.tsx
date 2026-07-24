@@ -5,7 +5,7 @@ import Image from "next/image";
 import Link from "next/link";
 
 // ─── Types ────────────────────────────────────────────────────────────────────
-type Category = "todos" | "residencial" | "comercial" | "umido" | "nautico";
+type Category = "todos" | "residencial" | "comercial" | "umido" | "nautico" | "showroom";
 
 interface Project {
   id: string;
@@ -448,6 +448,7 @@ const FILTERS: { key: Category; label: string }[] = [
   { key: "residencial", label: "Residencial"  },
   { key: "comercial",   label: "Comercial"    },
   { key: "umido",       label: "Áreas Úmidas" },
+  { key: "showroom",    label: "Showroom"     },
   { key: "nautico",     label: "Náutico"      },
 ];
 
@@ -837,15 +838,26 @@ export default function ProjetosPage() {
             </div>
           </div>
 
-          {/* Todos: sections with storytelling order */}
-          {activeFilter === "todos" ? (
-            <div className="space-y-16">
-              {GALLERY_SECTIONS.map((section) => {
-                const sectionProjects = section.slugs
-                  .map((slug) => projects.find((p) => p.slug === slug))
-                  .filter(Boolean) as Project[];
-                const displayProjects = sectionProjects.length > 0 ? sectionProjects : projects.filter((p) => p.categories.includes(section.key));
-                return (
+          {/* Todos: sections with storytelling order + catch-all */}
+          {activeFilter === "todos" ? (() => {
+            const shown = new Set<string>();
+            const blocks = GALLERY_SECTIONS.map((section) => {
+              const sectionProjects = section.slugs
+                .map((slug) => projects.find((p) => p.slug === slug))
+                .filter(Boolean) as Project[];
+              const displayProjects = sectionProjects.length > 0 ? sectionProjects : projects.filter((p) => p.categories.includes(section.key));
+              displayProjects.forEach((p) => shown.add(p.id));
+              return { section, displayProjects };
+            });
+            // Qualquer projeto publicado que não caiu em nenhuma seção (ex.:
+            // Showrooms) aparece aqui — nunca fica invisível no site.
+            const rest = projects
+              .filter((p) => !shown.has(p.id))
+              .slice()
+              .sort((a, b) => (!!a.is_featured !== !!b.is_featured ? (a.is_featured ? -1 : 1) : (a.feature_order ?? 0) - (b.feature_order ?? 0)));
+            return (
+              <div className="space-y-16">
+                {blocks.map(({ section, displayProjects }) => displayProjects.length > 0 && (
                   <div key={section.key}>
                     <SectionHeader label={section.label} desc={section.desc} />
                     <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 gap-1">
@@ -854,10 +866,20 @@ export default function ProjetosPage() {
                       ))}
                     </div>
                   </div>
-                );
-              })}
-            </div>
-          ) : (
+                ))}
+                {rest.length > 0 && (
+                  <div key="__outros">
+                    <SectionHeader label="Showrooms & outros" desc="Ambientes em exposição e demais projetos" />
+                    <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 gap-1">
+                      {rest.map((project) => (
+                        <ProjectCard key={project.id} project={project} onOpen={openLightbox} />
+                      ))}
+                    </div>
+                  </div>
+                )}
+              </div>
+            );
+          })() : (
             /* Filtered: flat grid */
             <>
               {filtered.length === 0 ? (

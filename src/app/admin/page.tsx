@@ -1736,9 +1736,9 @@ export default function AdminPage() {
     setSettingCoverId(m.id);
     const oldCover = project.image_after ?? null;
     try {
-      // 1) promove a mídia a capa
+      // 1) promove a mídia a capa (só image_after; NÃO mexe na imagem "antes")
       const up = await fetch(`/api/projects/photos/${project.id}`, {
-        method: "PUT", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ image_after: m.url, image_before: m.url }),
+        method: "PUT", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ image_after: m.url }),
       });
       if (!up.ok) throw new Error();
       // 2) remove a mídia promovida da galeria
