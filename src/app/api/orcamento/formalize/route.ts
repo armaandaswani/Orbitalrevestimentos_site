@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
 import { supabaseAdmin } from "@/lib/supabase";
-import { breakdownForQuote, formalNumberFor } from "@/lib/orcamento-server";
+import { breakdownForQuote, formalNumberFor, freteValueForCep } from "@/lib/orcamento-server";
 import { generateQuotePdf, quotePdfFilename, COMPANY, INSTALLER, type QuoteSpace } from "@/lib/orcamento-pdf";
 import { normalizePhone, sendText, smclickConfigured } from "@/lib/smclick";
 import { getResend } from "@/lib/resend";
@@ -34,7 +34,6 @@ export async function POST(req: NextRequest) {
   }
 
   const paymentId = body?.payment_condition === "cartao" ? "cartao" : "pix";
-  const freteZoneValue = typeof body?.freteZoneValue === "number" ? (body.freteZoneValue as number) : null;
 
   const db = supabaseAdmin();
   const { data: quote, error } = await db.from("saved_quotes").select("*").eq("slug", slug).maybeSingle();
@@ -42,7 +41,11 @@ export async function POST(req: NextRequest) {
   if (!quote) return NextResponse.json({ error: "Orçamento não encontrado." }, { status: 404 });
   const q = quote as Record<string, unknown>;
 
-  // Server-authoritative breakdown (frete confirmed by the CEP zone when known).
+  // Frete confirmado pela zona do CEP informado (senão o frete-base do motor).
+  // Para ≥5 placas o motor mantém frete grátis, independentemente da zona.
+  const freteZoneValue = await freteValueForCep(db, zip);
+
+  // Server-authoritative breakdown.
   const breakdown = await breakdownForQuote(db, q, freteZoneValue);
   const sel = breakdown.paymentOptions.find((o) => o.id === paymentId) ?? breakdown.paymentOptions[0];
   const total = sel?.total ?? breakdown.totalFull;

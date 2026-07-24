@@ -590,6 +590,12 @@ export default function AdminPage() {
   const [orcCfg, setOrcCfg] = useState<Record<string, unknown> | null>(null);
   const [orcCfgSaving, setOrcCfgSaving] = useState(false);
   const [orcCfgMsg, setOrcCfgMsg] = useState("");
+  // Zonas de frete por CEP (frete_zones).
+  interface FreteZone { id:string; name:string; neighborhoods:string|null; cep_start:string|null; cep_end:string|null; cep_list:string|null; value:number; priority:number; active:boolean; notes:string|null; }
+  const [freteZones, setFreteZones] = useState<FreteZone[]>([]);
+  const [newZone, setNewZone] = useState({ name:"", cep_start:"", cep_end:"", cep_list:"", value:"150", neighborhoods:"" });
+  const [zoneSaving, setZoneSaving] = useState(false);
+  const [cepTest, setCepTest] = useState("");
 
   // Same static list as the public projetos page — kept in sync manually
   const STATIC_RENDERS = [
@@ -871,6 +877,10 @@ export default function AdminPage() {
       fetch("/api/admin/orcamento-config")
         .then((r) => (r.ok ? r.json() : null))
         .then((c) => { if (c) setOrcCfg(c); })
+        .catch(() => {});
+      fetch("/api/admin/frete-zones")
+        .then((r) => (r.ok ? r.json() : []))
+        .then((z) => { if (Array.isArray(z)) setFreteZones(z); })
         .catch(() => {});
     }
   // eslint-disable-next-line react-hooks/exhaustive-deps
@@ -1947,6 +1957,48 @@ export default function AdminPage() {
       setOrcCfgSaving(false);
       setTimeout(() => setOrcCfgMsg(""), 4000);
     }
+  }
+
+  async function addFreteZone() {
+    if (!newZone.name.trim()) return;
+    setZoneSaving(true);
+    try {
+      const res = await fetch("/api/admin/frete-zones", {
+        method: "POST", headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ ...newZone, value: parseFloat(newZone.value) || 0 }),
+      });
+      if (res.ok) {
+        const z = await res.json();
+        setFreteZones((prev) => [...prev, z].sort((a, b) => a.priority - b.priority));
+        setNewZone({ name:"", cep_start:"", cep_end:"", cep_list:"", value:"150", neighborhoods:"" });
+      }
+    } finally { setZoneSaving(false); }
+  }
+
+  async function patchFreteZone(id: string, patch: Partial<FreteZone>) {
+    setFreteZones((prev) => prev.map((z) => (z.id === id ? { ...z, ...patch } : z)));
+    await fetch(`/api/admin/frete-zones/${id}`, {
+      method: "PATCH", headers: { "Content-Type": "application/json" }, body: JSON.stringify(patch),
+    }).catch(() => {});
+  }
+
+  async function deleteFreteZone(id: string) {
+    if (!confirm("Remover esta zona de frete?")) return;
+    setFreteZones((prev) => prev.filter((z) => z.id !== id));
+    await fetch(`/api/admin/frete-zones/${id}`, { method: "DELETE" }).catch(() => {});
+  }
+
+  // Testa qual zona um CEP casaria (mesma lógica do servidor, no cliente).
+  function zoneForCep(cep: string): FreteZone | null {
+    const d = cep.replace(/\D/g, "");
+    if (d.length < 8) return null;
+    for (const z of [...freteZones].filter((z) => z.active).sort((a, b) => a.priority - b.priority)) {
+      const s = (z.cep_start ?? "").replace(/\D/g, ""), e = (z.cep_end ?? "").replace(/\D/g, "");
+      if (s && e && d >= s && d <= e) return z;
+      const list = (z.cep_list ?? "").split(/[\s,;\n]+/).map((c) => c.replace(/\D/g, "")).filter(Boolean);
+      if (list.includes(d)) return z;
+    }
+    return null;
   }
 
   async function convertFormalQuote(slug: string) {
@@ -7274,6 +7326,65 @@ ALTER TABLE project_media ADD COLUMN IF NOT EXISTS description TEXT;`}
                       </div>
                     </div>
                   )}
+                </div>
+
+                {/* Zonas de frete por CEP */}
+                <div className="bg-white border border-[#e2e2e2] p-6 mt-8">
+                  <h3 className="font-[var(--font-noto-serif)] text-[#002045] text-lg font-normal mb-1">Zonas de frete por CEP</h3>
+                  <p className="text-[#74777f] text-xs font-[var(--font-inter)] mb-5 leading-relaxed">
+                    Sem nenhuma zona, o frete usa o valor-base. Na formalização, o CEP do cliente define o valor. ≥ 5 placas mantém frete grátis.
+                  </p>
+
+                  {freteZones.length > 0 && (
+                    <div className="border border-[#e2e2e2] divide-y divide-[#f0f0f0] mb-4">
+                      {freteZones.map((z) => (
+                        <div key={z.id} className="flex flex-wrap items-center gap-3 px-3 py-2.5">
+                          <div className="min-w-0 flex-1">
+                            <p className="text-[#002045] text-sm font-semibold font-[var(--font-inter)]">{z.name}</p>
+                            <p className="text-[#74777f] text-[11px] font-[var(--font-inter)]">
+                              {z.cep_start && z.cep_end ? `${z.cep_start}–${z.cep_end}` : ""}{z.cep_list ? ` · lista: ${z.cep_list.slice(0, 40)}` : ""}{z.neighborhoods ? ` · ${z.neighborhoods}` : ""}
+                            </p>
+                          </div>
+                          <div className="flex items-center gap-1">
+                            <span className="text-[#74777f] text-xs">R$</span>
+                            <input type="number" min="0" defaultValue={z.value} onBlur={(e) => { const v = parseFloat(e.target.value) || 0; if (v !== z.value) patchFreteZone(z.id, { value: v }); }} className="w-20 border border-[#e2e2e2] px-2 py-1 text-sm font-[var(--font-inter)] text-[#002045] focus:outline-none focus:border-[#002045]" />
+                          </div>
+                          <label className="flex items-center gap-1 text-[11px] font-[var(--font-inter)] text-[#43474e] cursor-pointer">
+                            <input type="checkbox" checked={z.active} onChange={(e) => patchFreteZone(z.id, { active: e.target.checked })} /> ativa
+                          </label>
+                          <button onClick={() => deleteFreteZone(z.id)} className="text-[#cc0000] hover:text-white hover:bg-[#cc0000] w-7 h-7 flex items-center justify-center text-sm font-bold transition-colors" aria-label="Remover zona">✕</button>
+                        </div>
+                      ))}
+                    </div>
+                  )}
+
+                  {/* Add zone */}
+                  <div className="bg-[#f7f8fa] border border-[#e2e2e2] p-3">
+                    <p className="text-[10px] tracking-[0.12em] uppercase font-bold font-[var(--font-inter)] text-[#74777f] mb-2">Nova zona</p>
+                    <div className="grid grid-cols-2 sm:grid-cols-4 gap-2">
+                      <input value={newZone.name} onChange={(e) => setNewZone({...newZone, name: e.target.value})} placeholder="Nome (ex. Centro)" className="col-span-2 sm:col-span-1 border border-[#e2e2e2] px-2 py-1.5 text-sm font-[var(--font-inter)] text-[#002045] focus:outline-none focus:border-[#002045]" />
+                      <input value={newZone.cep_start} onChange={(e) => setNewZone({...newZone, cep_start: e.target.value})} placeholder="CEP inicial" inputMode="numeric" className="border border-[#e2e2e2] px-2 py-1.5 text-sm font-[var(--font-inter)] text-[#002045] focus:outline-none focus:border-[#002045]" />
+                      <input value={newZone.cep_end} onChange={(e) => setNewZone({...newZone, cep_end: e.target.value})} placeholder="CEP final" inputMode="numeric" className="border border-[#e2e2e2] px-2 py-1.5 text-sm font-[var(--font-inter)] text-[#002045] focus:outline-none focus:border-[#002045]" />
+                      <div className="flex items-center gap-1">
+                        <span className="text-[#74777f] text-xs">R$</span>
+                        <input value={newZone.value} onChange={(e) => setNewZone({...newZone, value: e.target.value})} placeholder="150" inputMode="decimal" className="w-full border border-[#e2e2e2] px-2 py-1.5 text-sm font-[var(--font-inter)] text-[#002045] focus:outline-none focus:border-[#002045]" />
+                      </div>
+                    </div>
+                    <input value={newZone.neighborhoods} onChange={(e) => setNewZone({...newZone, neighborhoods: e.target.value})} placeholder="Bairros (opcional, referência)" className="w-full mt-2 border border-[#e2e2e2] px-2 py-1.5 text-sm font-[var(--font-inter)] text-[#002045] focus:outline-none focus:border-[#002045]" />
+                    <button onClick={addFreteZone} disabled={zoneSaving || !newZone.name.trim()} className="mt-2 bg-[#002045] text-white text-[10px] uppercase tracking-widest font-bold font-[var(--font-inter)] px-5 py-2 hover:bg-[#1a365d] transition-colors disabled:opacity-40">
+                      {zoneSaving ? "Salvando…" : "Adicionar zona"}
+                    </button>
+                  </div>
+
+                  {/* CEP tester */}
+                  <div className="mt-4 flex flex-wrap items-center gap-2">
+                    <span className="text-[10px] tracking-[0.12em] uppercase font-bold font-[var(--font-inter)] text-[#74777f]">Testar CEP</span>
+                    <input value={cepTest} onChange={(e) => setCepTest(e.target.value)} placeholder="69010-000" inputMode="numeric" className="border border-[#e2e2e2] px-2 py-1.5 text-sm font-[var(--font-inter)] text-[#002045] w-36 focus:outline-none focus:border-[#002045]" />
+                    {cepTest.replace(/\D/g, "").length >= 8 && (() => {
+                      const z = zoneForCep(cepTest);
+                      return <span className={`text-xs font-semibold font-[var(--font-inter)] ${z ? "text-[#3b6934]" : "text-[#74777f]"}`}>{z ? `${z.name} — R$ ${z.value}` : "Sem zona → frete-base"}</span>;
+                    })()}
+                  </div>
                 </div>
               </div>
             )}

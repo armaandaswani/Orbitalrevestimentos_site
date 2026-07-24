@@ -107,6 +107,29 @@ export async function breakdownForQuote(
   );
 }
 
+// Valor de frete para um CEP, segundo as zonas cadastradas (frete_zones). Casa
+// por faixa (cep_start..cep_end) ou por lista (cep_list, separada por vírgula/
+// espaço/linha). Menor `priority` vence. Retorna null quando nenhuma zona casa —
+// aí o motor usa o frete-base. Nunca lança (tabela ausente → null).
+export async function freteValueForCep(db: SupabaseClient, cep: string | null | undefined): Promise<number | null> {
+  const digits = (cep ?? "").replace(/\D/g, "");
+  if (digits.length < 8) return null;
+  try {
+    const { data } = await db.from("frete_zones").select("*").eq("active", true).order("priority", { ascending: true });
+    if (!Array.isArray(data)) return null;
+    for (const z of data as Array<Record<string, unknown>>) {
+      const start = String(z.cep_start ?? "").replace(/\D/g, "");
+      const end = String(z.cep_end ?? "").replace(/\D/g, "");
+      if (start && end && digits >= start && digits <= end) return Number(z.value) || 0;
+      const list = String(z.cep_list ?? "").split(/[\s,;\n]+/).map((c) => c.replace(/\D/g, "")).filter(Boolean);
+      if (list.includes(digits)) return Number(z.value) || 0;
+    }
+  } catch {
+    // tabela ausente / DB indisponível → cai no frete-base.
+  }
+  return null;
+}
+
 // Legible formal number: ORC-<MMYY>-<4 chars of slug/uuid>. Deterministic per
 // quote so re-generating the PDF keeps the same number.
 export function formalNumberFor(slug: string, createdAt?: string | null): string {
