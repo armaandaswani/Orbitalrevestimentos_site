@@ -3065,8 +3065,8 @@ function SimuladorInner() {
                     const sel = pricing.paymentOptions.find((o) => o.id === selectedPayment) ?? pricing.paymentOptions[0];
                     const total = sel?.total ?? pricing.totalFull;
                     return (
-                      <div className="mt-5 flex items-center justify-between bg-[#002045] px-5 py-4">
-                        <div>
+                      <div className="mt-5 flex items-center justify-between gap-3 bg-[#002045] px-4 sm:px-5 py-4">
+                        <div className="min-w-0">
                           <p className="text-white/60 text-[10px] tracking-[0.12em] uppercase font-bold font-[var(--font-inter)]">
                             Total {sel ? `· ${sel.label}` : ""}
                           </p>
@@ -3074,7 +3074,7 @@ function SimuladorInner() {
                             <p className="text-[#86a0cd] text-[11px] font-[var(--font-inter)] mt-0.5">{sel.installments}x de {fmt(sel.installmentValue ?? 0)} sem juros</p>
                           )}
                         </div>
-                        <span className="text-white text-2xl font-bold font-[var(--font-noto-serif)]">{fmt(total)}</span>
+                        <span className="text-white text-xl sm:text-2xl font-bold font-[var(--font-noto-serif)] whitespace-nowrap flex-shrink-0">{fmt(total)}</span>
                       </div>
                     );
                   })()}
