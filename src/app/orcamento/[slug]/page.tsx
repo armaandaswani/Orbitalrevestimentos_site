@@ -36,6 +36,8 @@ interface SavedQuote {
   material_total: number | null;
   material_discounted: number | null;
   client_name: string | null;
+  client_email: string | null;
+  client_phone: string | null;
   expires_at: string;
   created_at: string;
 }
@@ -73,6 +75,25 @@ export default function OrcamentoPage({ params }: { params: Promise<{ slug: stri
   const [copied, setCopied] = useState(false);
   const [showMoInfo, setShowMoInfo] = useState(false);
   const [pricing, setPricing] = useState<import("@/lib/orcamento-pricing").OrcamentoBreakdown | null>(null);
+  const [selectedPayment, setSelectedPayment] = useState<"pix" | "cartao" | null>(null);
+  const [showAllConditions, setShowAllConditions] = useState(false);
+  // Fluxo de formalização (mesma ideia do simulador): confere dados + endereço → PDF.
+  const [fzOpen, setFzOpen] = useState(false);
+  const [fzName, setFzName] = useState("");
+  const [fzPhone, setFzPhone] = useState("");
+  const [fzEmail, setFzEmail] = useState("");
+  const [fzZip, setFzZip] = useState("");
+  const [fzStreet, setFzStreet] = useState("");
+  const [fzNumber, setFzNumber] = useState("");
+  const [fzComplement, setFzComplement] = useState("");
+  const [fzNeighborhood, setFzNeighborhood] = useState("");
+  const [fzCity, setFzCity] = useState("");
+  const [fzState, setFzState] = useState("");
+  const [fzCepLoading, setFzCepLoading] = useState(false);
+  const [fzCepError, setFzCepError] = useState("");
+  const [fzSubmitting, setFzSubmitting] = useState(false);
+  const [fzResult, setFzResult] = useState<{ formalNumber: string; pdfUrl: string; whatsappOk: boolean; emailOk: boolean } | null>(null);
+  const [fzError, setFzError] = useState("");
   const heroRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
@@ -88,6 +109,9 @@ export default function OrcamentoPage({ params }: { params: Promise<{ slug: stri
         if (new Date(data.expires_at) < new Date()) { setExpired(true); setLoading(false); return; }
         setQuote(data);
         setLoading(false);
+        setFzName(data.client_name ?? "");
+        setFzPhone(data.client_phone ?? "");
+        setFzEmail(data.client_email ?? "");
         // Composição autoritativa (placas + Cola PU + frete + pagamento) do motor.
         const plates = data.total_plates ?? (data.spaces ?? []).reduce((s: number, sp) => s + (sp.plates || 0), 0);
         const subtotal = data.material_discounted ?? data.material_total ?? 0;
@@ -95,11 +119,55 @@ export default function OrcamentoPage({ params }: { params: Promise<{ slug: stri
           fetch("/api/orcamento/pricing", {
             method: "POST", headers: { "Content-Type": "application/json" },
             body: JSON.stringify({ plates, pricePerPlate: subtotal / plates }),
-          }).then((r) => (r.ok ? r.json() : null)).then((b) => { if (b) setPricing(b); }).catch(() => {});
+          }).then((r) => (r.ok ? r.json() : null)).then((b) => {
+            if (b) { setPricing(b); setSelectedPayment(b.paymentOptions.find((o: { id: string }) => o.id === "pix") ? "pix" : (b.paymentOptions[0]?.id ?? null)); }
+          }).catch(() => {});
         }
       })
       .catch(() => { setNotFound(true); setLoading(false); });
   }, [slug]);
+
+  async function lookupCep(raw: string) {
+    const digits = raw.replace(/\D/g, "");
+    if (digits.length !== 8) return;
+    setFzCepLoading(true); setFzCepError("");
+    try {
+      const res = await fetch(`https://viacep.com.br/ws/${digits}/json/`);
+      const data = await res.json().catch(() => null);
+      if (!data || data.erro) { setFzCepError("CEP não encontrado. Preencha manualmente."); return; }
+      if (data.logradouro) setFzStreet((p) => p || data.logradouro);
+      if (data.bairro) setFzNeighborhood((p) => p || data.bairro);
+      if (data.localidade) setFzCity((p) => p || data.localidade);
+      if (data.uf) setFzState((p) => p || data.uf);
+    } catch { setFzCepError("Não foi possível consultar o CEP. Preencha manualmente."); }
+    finally { setFzCepLoading(false); }
+  }
+
+  async function submitFormalize() {
+    if (!slug) return;
+    if (!fzStreet.trim() || !fzNumber.trim() || !fzCity.trim()) { setFzError("Informe rua, número e cidade."); return; }
+    setFzSubmitting(true); setFzError("");
+    try {
+      // Persiste dados do cliente se editados (o formalize lê do banco por slug).
+      if (quote && (fzName !== (quote.client_name ?? "") || fzPhone !== (quote.client_phone ?? "") || fzEmail !== (quote.client_email ?? ""))) {
+        await fetch(`/api/quotes/${slug}`, {
+          method: "PATCH", headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ client_name: fzName || null, client_phone: fzPhone || null, client_email: fzEmail || null }),
+        }).catch(() => {});
+      }
+      const res = await fetch("/api/orcamento/formalize", {
+        method: "POST", headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          slug, payment_condition: selectedPayment ?? "pix",
+          address: { zip: fzZip, street: fzStreet, number: fzNumber, complement: fzComplement, neighborhood: fzNeighborhood, city: fzCity, state: fzState },
+        }),
+      });
+      const data = await res.json().catch(() => null);
+      if (!res.ok || !data?.ok) { setFzError(data?.error ?? "Falha ao gerar o orçamento."); return; }
+      setFzResult({ formalNumber: data.formalNumber, pdfUrl: data.pdfUrl, whatsappOk: data.whatsappOk, emailOk: data.emailOk });
+    } catch (e) { setFzError(e instanceof Error ? e.message : "Erro de rede."); }
+    finally { setFzSubmitting(false); }
+  }
 
   if (loading) {
     return (
@@ -369,6 +437,74 @@ export default function OrcamentoPage({ params }: { params: Promise<{ slug: stri
           </div>
         </div>
 
+        {/* Condições de pagamento — calculadas pela quantidade de placas */}
+        {pricing && (
+          <div className="mb-6">
+            <p className="text-[#43474e] text-[10px] tracking-[0.15em] uppercase font-bold font-[var(--font-inter)] mb-3">Condições de pagamento</p>
+            {pricing.paymentOptions.length > 0 ? (
+              <>
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                  {pricing.paymentOptions.map((opt) => {
+                    const active = selectedPayment === opt.id;
+                    return (
+                      <button
+                        key={opt.id}
+                        type="button"
+                        onClick={() => setSelectedPayment(opt.id)}
+                        aria-pressed={active}
+                        className={`text-left px-4 py-3.5 border transition-colors ${active ? "border-[#002045] bg-[#eef2fb] ring-1 ring-[#002045]" : "border-[#e2e2e2] bg-white hover:border-[#86a0cd]"}`}
+                      >
+                        <div className="flex items-center justify-between gap-2 mb-1.5">
+                          <span className="text-[#43474e] text-[11px] tracking-[0.06em] uppercase font-bold font-[var(--font-inter)]">{opt.label}</span>
+                          <span className={`flex-shrink-0 w-4 h-4 rounded-full border-2 flex items-center justify-center ${active ? "border-[#002045] bg-[#002045]" : "border-[#c4c4c4]"}`}>
+                            {active && <svg width="8" height="8" viewBox="0 0 24 24" fill="none" stroke="white" strokeWidth="4"><path d="M20 6L9 17l-5-5"/></svg>}
+                          </span>
+                        </div>
+                        {opt.id === "cartao" ? (
+                          <>
+                            <p className="text-[#002045] text-xl sm:text-2xl font-bold font-[var(--font-noto-serif)] leading-none">{opt.installments}x de {fmt(opt.installmentValue ?? 0)}</p>
+                            <p className="text-[#74777f] text-[11px] font-[var(--font-inter)] mt-1.5">sem juros · total {fmt(opt.total)}</p>
+                          </>
+                        ) : (
+                          <>
+                            <p className="text-[#002045] text-xl sm:text-2xl font-bold font-[var(--font-noto-serif)] leading-none">{fmt(opt.total)}</p>
+                            <p className="text-[#3b6934] text-[11px] font-semibold font-[var(--font-inter)] mt-1.5">à vista · {opt.discountPct}% off (economize {fmt(opt.discountAmount ?? 0)})</p>
+                          </>
+                        )}
+                      </button>
+                    );
+                  })}
+                </div>
+                <button type="button" onClick={() => setShowAllConditions((v) => !v)} className="mt-2 text-[#002045] text-[11px] font-semibold font-[var(--font-inter)] underline">
+                  {showAllConditions ? "Ocultar" : "Ver todas as condições"}
+                </button>
+                {showAllConditions && (
+                  <ul className="mt-2 text-[#74777f] text-[11px] font-[var(--font-inter)] space-y-0.5 leading-relaxed">
+                    <li>• À vista (PIX ou espécie): 3% de desconto — a partir de 2 placas</li>
+                    <li>• 2 a 4 placas: até 3x sem juros</li>
+                    <li>• 5 a 7 placas: até 4x sem juros</li>
+                    <li>• 8 a 12 placas: até 6x sem juros</li>
+                    <li>• 13 placas ou mais: até 10x sem juros</li>
+                  </ul>
+                )}
+              </>
+            ) : (
+              <p className="text-[#74777f] text-[13px] font-[var(--font-inter)]">Condições especiais de pagamento disponíveis a partir de 2 placas. Fale com a gente para as condições desta compra.</p>
+            )}
+
+            {/* Botão secundário — solicitar PDF formalizado */}
+            <button
+              type="button"
+              onClick={() => { setFzResult(null); setFzError(""); setFzOpen(true); }}
+              className="mt-4 w-full border-2 border-[#002045] text-[#002045] text-xs tracking-[0.08em] uppercase font-bold font-[var(--font-inter)] px-6 py-3.5 hover:bg-[#002045] hover:text-white transition-colors flex items-center justify-center gap-2"
+            >
+              <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><path d="M14 2v6h6M16 13H8M16 17H8M10 9H8"/></svg>
+              Solicitar orçamento formal em PDF
+            </button>
+            <p className="text-[#74777f] text-[11px] font-[var(--font-inter)] text-center mt-1.5">Receba o orçamento formal completo pelo WhatsApp.</p>
+          </div>
+        )}
+
         {/* Mão de obra — same collapsible box as the simulador's own result
             step, so a client returning via this saved link later (not just
             right after the quote was made) can still see the installation
@@ -585,6 +721,82 @@ export default function OrcamentoPage({ params }: { params: Promise<{ slug: stri
           </p>
         </div>
       </div>
+
+      {/* Formalização — confere dados + endereço → PDF via WhatsApp */}
+      {fzOpen && (
+        <div className="fixed inset-0 z-[100] bg-black/60 flex items-end sm:items-center justify-center p-0 sm:p-4" onClick={() => { if (!fzSubmitting) setFzOpen(false); }}>
+          <div className="bg-white w-full sm:max-w-lg max-h-[92vh] overflow-y-auto" onClick={(e) => e.stopPropagation()}>
+            <div className="sticky top-0 bg-[#002045] px-5 py-4 flex items-center justify-between z-10">
+              <p className="text-white font-[var(--font-noto-serif)] text-base">{fzResult ? "Orçamento formalizado" : "Solicitar orçamento formal"}</p>
+              <button onClick={() => { if (!fzSubmitting) setFzOpen(false); }} className="text-white/70 hover:text-white" aria-label="Fechar">
+                <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><path d="M18 6L6 18M6 6l12 12"/></svg>
+              </button>
+            </div>
+            {fzResult ? (
+              <div className="px-5 py-6 space-y-4">
+                <div className="flex items-center gap-3">
+                  <span className="flex-shrink-0 w-10 h-10 rounded-full bg-[#f0f9eb] flex items-center justify-center">
+                    <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#3b6934" strokeWidth="2.5"><path d="M20 6L9 17l-5-5"/></svg>
+                  </span>
+                  <div>
+                    <p className="text-[#002045] text-sm font-bold font-[var(--font-inter)]">Orçamento enviado com sucesso.</p>
+                    <p className="text-[#74777f] text-[12px] font-[var(--font-inter)]">Nº {fzResult.formalNumber}</p>
+                  </div>
+                </div>
+                <p className="text-[#43474e] text-[13px] font-[var(--font-inter)] leading-relaxed">
+                  {fzResult.whatsappOk ? `Enviamos o PDF para o seu WhatsApp${fzPhone ? ` final ${fzPhone.replace(/\D/g, "").slice(-4)}` : ""}.` : "Seu orçamento foi gerado. O PDF está disponível abaixo."}
+                  {fzResult.emailOk && fzEmail ? ` Também enviamos uma cópia para ${fzEmail}.` : ""}
+                </p>
+                <a href={fzResult.pdfUrl} target="_blank" rel="noopener noreferrer" className="block w-full text-center bg-[#002045] hover:bg-[#1a365d] text-white text-xs tracking-[0.1em] uppercase font-bold font-[var(--font-inter)] px-5 py-3 transition-colors">Visualizar / baixar PDF</a>
+                <button onClick={() => { setFzResult(null); void submitFormalize(); }} disabled={fzSubmitting} className="w-full text-center border border-[#e2e2e2] text-[#002045] text-xs tracking-[0.1em] uppercase font-semibold font-[var(--font-inter)] px-5 py-3 hover:border-[#002045] transition-colors disabled:opacity-50">{fzSubmitting ? "Reenviando…" : "Reenviar"}</button>
+              </div>
+            ) : (
+              <div className="px-5 py-5 space-y-5">
+                <div>
+                  <p className="text-[#43474e] text-[10px] tracking-[0.15em] uppercase font-bold font-[var(--font-inter)] mb-3">Confirme seus dados</p>
+                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                    <input value={fzName} onChange={(e) => setFzName(e.target.value)} placeholder="Nome completo" className="border border-[#e2e2e2] px-3 py-2 text-sm font-[var(--font-inter)] text-[#002045] focus:outline-none focus:border-[#002045]" />
+                    <input value={fzPhone} onChange={(e) => setFzPhone(e.target.value)} placeholder="WhatsApp" className="border border-[#e2e2e2] px-3 py-2 text-sm font-[var(--font-inter)] text-[#002045] focus:outline-none focus:border-[#002045]" />
+                    <input value={fzEmail} onChange={(e) => setFzEmail(e.target.value)} placeholder="E-mail" className="sm:col-span-2 border border-[#e2e2e2] px-3 py-2 text-sm font-[var(--font-inter)] text-[#002045] focus:outline-none focus:border-[#002045]" />
+                  </div>
+                  {pricing && pricing.paymentOptions.length > 0 && (
+                    <div className="mt-3">
+                      <p className="text-[#74777f] text-[11px] font-[var(--font-inter)] mb-1.5">Condição de pagamento</p>
+                      <div className="flex flex-wrap gap-2">
+                        {pricing.paymentOptions.map((opt) => (
+                          <button key={opt.id} type="button" onClick={() => setSelectedPayment(opt.id)} className={`px-3 py-1.5 text-[12px] font-semibold font-[var(--font-inter)] border transition-colors ${selectedPayment === opt.id ? "border-[#002045] bg-[#eef2fb] text-[#002045]" : "border-[#e2e2e2] text-[#74777f] hover:border-[#86a0cd]"}`}>
+                            {opt.label} · {fmt(opt.total)}
+                          </button>
+                        ))}
+                      </div>
+                    </div>
+                  )}
+                </div>
+                <div>
+                  <p className="text-[#43474e] text-[10px] tracking-[0.15em] uppercase font-bold font-[var(--font-inter)] mb-3">Endereço de entrega</p>
+                  <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
+                    <div className="sm:col-span-1">
+                      <input value={fzZip} onChange={(e) => setFzZip(e.target.value)} onBlur={(e) => void lookupCep(e.target.value)} placeholder="CEP" inputMode="numeric" className="w-full border border-[#e2e2e2] px-3 py-2 text-sm font-[var(--font-inter)] text-[#002045] focus:outline-none focus:border-[#002045]" />
+                      {fzCepLoading && <p className="text-[#74777f] text-[10px] font-[var(--font-inter)] mt-1">Consultando…</p>}
+                      {fzCepError && <p className="text-[#a07a00] text-[10px] font-[var(--font-inter)] mt-1">{fzCepError}</p>}
+                    </div>
+                    <input value={fzStreet} onChange={(e) => setFzStreet(e.target.value)} placeholder="Rua / Avenida" className="sm:col-span-2 border border-[#e2e2e2] px-3 py-2 text-sm font-[var(--font-inter)] text-[#002045] focus:outline-none focus:border-[#002045]" />
+                    <input value={fzNumber} onChange={(e) => setFzNumber(e.target.value)} placeholder="Número *" className="border border-[#e2e2e2] px-3 py-2 text-sm font-[var(--font-inter)] text-[#002045] focus:outline-none focus:border-[#002045]" />
+                    <input value={fzComplement} onChange={(e) => setFzComplement(e.target.value)} placeholder="Complemento" className="border border-[#e2e2e2] px-3 py-2 text-sm font-[var(--font-inter)] text-[#002045] focus:outline-none focus:border-[#002045]" />
+                    <input value={fzNeighborhood} onChange={(e) => setFzNeighborhood(e.target.value)} placeholder="Bairro" className="border border-[#e2e2e2] px-3 py-2 text-sm font-[var(--font-inter)] text-[#002045] focus:outline-none focus:border-[#002045]" />
+                    <input value={fzCity} onChange={(e) => setFzCity(e.target.value)} placeholder="Cidade" className="sm:col-span-2 border border-[#e2e2e2] px-3 py-2 text-sm font-[var(--font-inter)] text-[#002045] focus:outline-none focus:border-[#002045]" />
+                    <input value={fzState} onChange={(e) => setFzState(e.target.value)} placeholder="UF" maxLength={2} className="border border-[#e2e2e2] px-3 py-2 text-sm font-[var(--font-inter)] text-[#002045] uppercase focus:outline-none focus:border-[#002045]" />
+                  </div>
+                </div>
+                {fzError && <p className="text-[#cc0000] text-[12px] font-[var(--font-inter)]">{fzError}</p>}
+                <button type="button" onClick={() => void submitFormalize()} disabled={fzSubmitting} className="w-full bg-[#3b6934] hover:bg-[#2e5229] text-white text-sm tracking-[0.08em] uppercase font-bold font-[var(--font-inter)] px-6 py-4 transition-colors disabled:opacity-60">
+                  {fzSubmitting ? "Gerando…" : "Gerar e enviar orçamento"}
+                </button>
+              </div>
+            )}
+          </div>
+        </div>
+      )}
     </div>
   );
 }

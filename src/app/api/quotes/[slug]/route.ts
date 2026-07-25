@@ -45,20 +45,22 @@ export async function PATCH(
   }
 
   const db = supabaseAdmin();
-  const patch: Record<string, unknown> = {
-    partner_id: body.partner_id ?? null,
-    partner_name: body.partner_name ?? null,
-    coupon_code: body.coupon_code ?? null,
-    spaces: body.spaces ?? [],
-    total_plates: body.total_plates ?? null,
-    total_area_m2: body.total_area_m2 ?? null,
-    material_total: body.material_total ?? null,
-    material_discounted: body.material_discounted ?? null,
-    expires_at: new Date(Date.now() + 7 * 24 * 60 * 60 * 1000).toISOString(),
-    client_name: body.client_name ?? null,
-    client_email: body.client_email ?? null,
-    client_phone: body.client_phone ?? null,
-  };
+  // PATCH parcial: só atualiza os campos presentes no corpo. Assim uma edição
+  // completa (fluxo "Editar orçamento") altera tudo, mas uma atualização só de
+  // contato (ex.: confirmar dados antes de formalizar) NÃO apaga spaces/totais.
+  const patch: Record<string, unknown> = {};
+  if ("partner_id" in body) patch.partner_id = body.partner_id ?? null;
+  if ("partner_name" in body) patch.partner_name = body.partner_name ?? null;
+  if ("coupon_code" in body) patch.coupon_code = body.coupon_code ?? null;
+  if ("total_plates" in body) patch.total_plates = body.total_plates ?? null;
+  if ("total_area_m2" in body) patch.total_area_m2 = body.total_area_m2 ?? null;
+  if ("material_total" in body) patch.material_total = body.material_total ?? null;
+  if ("material_discounted" in body) patch.material_discounted = body.material_discounted ?? null;
+  if ("client_name" in body) patch.client_name = body.client_name ?? null;
+  if ("client_email" in body) patch.client_email = body.client_email ?? null;
+  if ("client_phone" in body) patch.client_phone = body.client_phone ?? null;
+  // Só uma edição de conteúdo (spaces) renova a validade de 7 dias.
+  if ("spaces" in body) { patch.spaces = body.spaces ?? []; patch.expires_at = new Date(Date.now() + 7 * 24 * 60 * 60 * 1000).toISOString(); }
 
   let { data, error } = await db.from("saved_quotes").update(patch).eq("slug", slug).select("slug").single();
   if (error && /client_(name|email|phone)/.test(error.message)) {
