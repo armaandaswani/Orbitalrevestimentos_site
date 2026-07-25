@@ -2724,9 +2724,7 @@ function SimuladorInner() {
                   <circle cx="12" cy="12" r="10"/><path d="M12 8v4m0 4h.01"/>
                 </svg>
                 <p className="text-[#6b5000] text-xs font-[var(--font-inter)] leading-relaxed">
-                  <strong>Simulação para referência apenas.</strong> Os valores abaixo são estimativas de investimento.
-                  A Orbital vende exclusivamente o material — não realizamos instalação.
-                  O valor de mão de obra é uma estimativa de mercado.
+                  <strong>Instalação não inclusa.</strong> Este orçamento cobre apenas o material. Caso deseje, podemos indicar instaladores habilitados.
                 </p>
               </div>
 
@@ -3030,24 +3028,29 @@ function SimuladorInner() {
                               type="button"
                               onClick={() => { setSelectedPayment(opt.id); trackFunnel("pagamento_selecionado", { id: opt.id }); }}
                               aria-pressed={active}
-                              className={`text-left px-4 py-3 border transition-colors ${active ? "border-[#002045] bg-[#eef2fb] ring-1 ring-[#002045]" : "border-[#e2e2e2] bg-white hover:border-[#86a0cd]"}`}
+                              className={`text-left px-4 py-3.5 border transition-colors ${active ? "border-[#002045] bg-[#eef2fb] ring-1 ring-[#002045]" : "border-[#e2e2e2] bg-white hover:border-[#86a0cd]"}`}
                             >
-                              <div className="flex items-center justify-between gap-2">
-                                <span className="text-[#002045] text-sm font-bold font-[var(--font-inter)]">{opt.label}</span>
+                              <div className="flex items-center justify-between gap-2 mb-1.5">
+                                <span className="text-[#43474e] text-[11px] tracking-[0.06em] uppercase font-bold font-[var(--font-inter)]">{opt.label}</span>
                                 <span className={`flex-shrink-0 w-4 h-4 rounded-full border-2 flex items-center justify-center ${active ? "border-[#002045] bg-[#002045]" : "border-[#c4c4c4]"}`}>
                                   {active && <svg width="8" height="8" viewBox="0 0 24 24" fill="none" stroke="white" strokeWidth="4"><path d="M20 6L9 17l-5-5"/></svg>}
                                 </span>
                               </div>
-                              {opt.id === "pix" ? (
-                                <p className="text-[#3b6934] text-[11px] font-semibold font-[var(--font-inter)] mt-1">
-                                  {opt.discountPct}% de desconto · economize {fmt(opt.discountAmount ?? 0)}
-                                </p>
+                              {opt.id === "cartao" ? (
+                                <>
+                                  {/* Hero: valor da parcela */}
+                                  <p className="text-[#002045] text-xl sm:text-2xl font-bold font-[var(--font-noto-serif)] leading-none">
+                                    {opt.installments}x de {fmt(opt.installmentValue ?? 0)}
+                                  </p>
+                                  <p className="text-[#74777f] text-[11px] font-[var(--font-inter)] mt-1.5">sem juros · total {fmt(opt.total)}</p>
+                                </>
                               ) : (
-                                <p className="text-[#74777f] text-[11px] font-[var(--font-inter)] mt-1">
-                                  até {opt.installments}x de {fmt(opt.installmentValue ?? 0)} sem juros
-                                </p>
+                                <>
+                                  {/* Hero: valor à vista */}
+                                  <p className="text-[#002045] text-xl sm:text-2xl font-bold font-[var(--font-noto-serif)] leading-none">{fmt(opt.total)}</p>
+                                  <p className="text-[#3b6934] text-[11px] font-semibold font-[var(--font-inter)] mt-1.5">à vista · {opt.discountPct}% de desconto (economize {fmt(opt.discountAmount ?? 0)})</p>
+                                </>
                               )}
-                              <p className="text-[#002045] text-base font-bold font-[var(--font-noto-serif)] mt-1">{fmt(opt.total)}</p>
                             </button>
                           );
                         })}
@@ -3059,25 +3062,6 @@ function SimuladorInner() {
                       )}
                     </div>
                   )}
-
-                  {/* Total conforme condição selecionada */}
-                  {(() => {
-                    const sel = pricing.paymentOptions.find((o) => o.id === selectedPayment) ?? pricing.paymentOptions[0];
-                    const total = sel?.total ?? pricing.totalFull;
-                    return (
-                      <div className="mt-5 flex items-center justify-between gap-3 bg-[#002045] px-4 sm:px-5 py-4">
-                        <div className="min-w-0">
-                          <p className="text-white/60 text-[10px] tracking-[0.12em] uppercase font-bold font-[var(--font-inter)]">
-                            Total {sel ? `· ${sel.label}` : ""}
-                          </p>
-                          {sel?.id === "cartao" && sel.installments && (
-                            <p className="text-[#86a0cd] text-[11px] font-[var(--font-inter)] mt-0.5">{sel.installments}x de {fmt(sel.installmentValue ?? 0)} sem juros</p>
-                          )}
-                        </div>
-                        <span className="text-white text-xl sm:text-2xl font-bold font-[var(--font-noto-serif)] whitespace-nowrap flex-shrink-0">{fmt(total)}</span>
-                      </div>
-                    );
-                  })()}
 
                   {/* CTA principal — formalização */}
                   <button
