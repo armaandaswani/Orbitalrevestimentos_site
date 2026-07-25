@@ -2941,10 +2941,8 @@ function SimuladorInner() {
                   seguido de cards de condição de pagamento selecionáveis. Tudo vem
                   de `pricing` (POST /api/orcamento/pricing) — fonte única. */}
               {pricing && (
-                <div className="bg-white border border-[#e2e2e2] border-t-0 px-5 sm:px-8 py-6">
-                  <p className="text-[#43474e] text-[10px] tracking-[0.15em] uppercase font-bold font-[var(--font-inter)] mb-4">
-                    Composição do investimento
-                  </p>
+                <div className="bg-[#002045] border border-[#2d4f7f] border-t-0 px-5 sm:px-8 py-6 text-white">
+                  <p className="text-[#86a0cd] text-[10px] tracking-[0.18em] uppercase font-bold font-[var(--font-inter)] mb-4">Resumo do investimento</p>
 
                   {pricing.warnings.length > 0 && (
                     <div className="mb-4 bg-[#fffbea] border border-[#e6c84a] px-4 py-2.5">
@@ -2954,71 +2952,46 @@ function SimuladorInner() {
                     </div>
                   )}
 
-                  <div className="border border-[#e2e2e2] divide-y divide-[#f0f0f0]">
-                    {/* Placas */}
-                    <div className="flex items-start justify-between px-4 py-3">
+                  {/* Composição — linhas compactas */}
+                  <div className="space-y-2.5">
+                    <div className="flex items-start justify-between gap-3">
                       <div className="min-w-0">
-                        <p className="text-[#002045] text-sm font-semibold font-[var(--font-inter)]">Placas PFB</p>
-                        <p className="text-[#74777f] text-[11px] font-[var(--font-inter)]">
-                          {pricing.plates} × {fmt(pricing.pricePerPlate)}
-                        </p>
+                        <p className="text-white text-[13px] font-semibold font-[var(--font-inter)]">Placas PFB</p>
+                        <p className="text-[#86a0cd] text-[11px] font-[var(--font-inter)]">{pricing.plates} × {fmt(pricing.pricePerPlate)}</p>
                       </div>
-                      <span className="text-[#002045] text-sm font-semibold font-[var(--font-inter)] flex-shrink-0">{fmt(pricing.platesSubtotal)}</span>
+                      <span className="text-white text-[13px] font-semibold font-[var(--font-inter)] flex-shrink-0">{fmt(pricing.platesSubtotal)}</span>
                     </div>
-
-                    {/* Cola PU */}
                     {pricing.colaAvailable && pricing.colaTubos > 0 && (
-                      <div className="flex items-start justify-between px-4 py-3">
+                      <div className="flex items-start justify-between gap-3">
                         <div className="min-w-0">
-                          <p className="text-[#002045] text-sm font-semibold font-[var(--font-inter)]">Cola PU recomendada</p>
-                          <p className="text-[#74777f] text-[11px] font-[var(--font-inter)]">
-                            {pricing.colaTubos} tubo{pricing.colaTubos !== 1 ? "s" : ""} × {fmt(pricing.colaUnitPrice)}
-                          </p>
-                          <p className="text-[#74777f] text-[10px] font-[var(--font-inter)] mt-0.5 leading-snug">
-                            ~1,5 tubo por placa para uma fixação mais segura e durável no clima de Manaus.
-                          </p>
+                          <p className="text-white text-[13px] font-semibold font-[var(--font-inter)]">Cola PU</p>
+                          <p className="text-[#86a0cd] text-[11px] font-[var(--font-inter)]">{pricing.colaTubos} tubo{pricing.colaTubos !== 1 ? "s" : ""} · ~1,5 por placa (clima de Manaus)</p>
                         </div>
-                        <span className="text-[#002045] text-sm font-semibold font-[var(--font-inter)] flex-shrink-0">{fmt(pricing.colaSubtotal)}</span>
+                        <span className="text-white text-[13px] font-semibold font-[var(--font-inter)] flex-shrink-0">{fmt(pricing.colaSubtotal)}</span>
                       </div>
                     )}
-
-                    {/* Frete */}
-                    <div className="flex items-start justify-between px-4 py-3">
+                    <div className="flex items-start justify-between gap-3">
                       <div className="min-w-0">
-                        <p className="text-[#002045] text-sm font-semibold font-[var(--font-inter)]">Frete</p>
-                        <p className="text-[#74777f] text-[11px] font-[var(--font-inter)]">
-                          {pricing.frete.free
-                            ? "Grátis para este orçamento (≥ 5 placas)"
-                            : pricing.frete.estimated
-                              ? "Estimado — confirmado pelo CEP na formalização"
-                              : "Confirmado pelo CEP"}
-                        </p>
+                        <p className="text-white text-[13px] font-semibold font-[var(--font-inter)]">Frete</p>
+                        <p className="text-[#86a0cd] text-[11px] font-[var(--font-inter)]">{pricing.frete.free ? "Grátis (≥ 5 placas)" : pricing.frete.estimated ? "Estimado — confirmado pelo CEP" : "Confirmado pelo CEP"}</p>
                       </div>
-                      <span className={`text-sm font-semibold font-[var(--font-inter)] flex-shrink-0 ${pricing.frete.free ? "text-[#3b6934]" : "text-[#002045]"}`}>
-                        {pricing.frete.free ? "Grátis" : fmt(pricing.frete.value)}
-                      </span>
+                      <span className={`text-[13px] font-semibold font-[var(--font-inter)] flex-shrink-0 ${pricing.frete.free ? "text-[#5eead4]" : "text-white"}`}>{pricing.frete.free ? "Grátis" : fmt(pricing.frete.value)}</span>
                     </div>
-
-                    {/* Desconto à vista (só quando aplicável) */}
                     {pricing.discount.eligible && pricing.discount.amount > 0 && (
-                      <div className="flex items-start justify-between px-4 py-3 bg-[#f0f9eb]">
+                      <div className="flex items-start justify-between gap-3">
                         <div className="min-w-0">
-                          <p className="text-[#3b6934] text-sm font-semibold font-[var(--font-inter)]">Desconto à vista</p>
-                          <p className="text-[#3b6934]/80 text-[11px] font-[var(--font-inter)]">
-                            {pricing.discount.pct}% no PIX ou espécie (sobre as placas)
-                          </p>
+                          <p className="text-[#5eead4] text-[13px] font-semibold font-[var(--font-inter)]">Desconto à vista</p>
+                          <p className="text-[#5eead4]/70 text-[11px] font-[var(--font-inter)]">{pricing.discount.pct}% no PIX ou espécie</p>
                         </div>
-                        <span className="text-[#3b6934] text-sm font-semibold font-[var(--font-inter)] flex-shrink-0">− {fmt(pricing.discount.amount)}</span>
+                        <span className="text-[#5eead4] text-[13px] font-semibold font-[var(--font-inter)] flex-shrink-0">− {fmt(pricing.discount.amount)}</span>
                       </div>
                     )}
                   </div>
 
-                  {/* Condições de pagamento — cards selecionáveis */}
+                  {/* Condições de pagamento — parcela em destaque */}
                   {pricing.paymentOptions.length > 0 && (
-                    <div className="mt-5">
-                      <p className="text-[#43474e] text-[10px] tracking-[0.15em] uppercase font-bold font-[var(--font-inter)] mb-3">
-                        Condições de pagamento
-                      </p>
+                    <div className="mt-5 pt-5 border-t border-white/15">
+                      <p className="text-[#86a0cd] text-[10px] tracking-[0.18em] uppercase font-bold font-[var(--font-inter)] mb-3">Condições de pagamento</p>
                       <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
                         {pricing.paymentOptions.map((opt) => {
                           const active = selectedPayment === opt.id;
@@ -3028,27 +3001,23 @@ function SimuladorInner() {
                               type="button"
                               onClick={() => { setSelectedPayment(opt.id); trackFunnel("pagamento_selecionado", { id: opt.id }); }}
                               aria-pressed={active}
-                              className={`text-left px-4 py-3.5 border transition-colors ${active ? "border-[#002045] bg-[#eef2fb] ring-1 ring-[#002045]" : "border-[#e2e2e2] bg-white hover:border-[#86a0cd]"}`}
+                              className={`text-left px-4 py-3.5 border transition-colors ${active ? "border-white bg-white" : "border-white/25 bg-white/[0.06] hover:border-white/60"}`}
                             >
                               <div className="flex items-center justify-between gap-2 mb-1.5">
-                                <span className="text-[#43474e] text-[11px] tracking-[0.06em] uppercase font-bold font-[var(--font-inter)]">{opt.label}</span>
-                                <span className={`flex-shrink-0 w-4 h-4 rounded-full border-2 flex items-center justify-center ${active ? "border-[#002045] bg-[#002045]" : "border-[#c4c4c4]"}`}>
+                                <span className={`text-[11px] tracking-[0.06em] uppercase font-bold font-[var(--font-inter)] ${active ? "text-[#43474e]" : "text-[#86a0cd]"}`}>{opt.label}</span>
+                                <span className={`flex-shrink-0 w-4 h-4 rounded-full border-2 flex items-center justify-center ${active ? "border-[#002045] bg-[#002045]" : "border-white/50"}`}>
                                   {active && <svg width="8" height="8" viewBox="0 0 24 24" fill="none" stroke="white" strokeWidth="4"><path d="M20 6L9 17l-5-5"/></svg>}
                                 </span>
                               </div>
                               {opt.id === "cartao" ? (
                                 <>
-                                  {/* Hero: valor da parcela */}
-                                  <p className="text-[#002045] text-xl sm:text-2xl font-bold font-[var(--font-noto-serif)] leading-none">
-                                    {opt.installments}x de {fmt(opt.installmentValue ?? 0)}
-                                  </p>
-                                  <p className="text-[#74777f] text-[11px] font-[var(--font-inter)] mt-1.5">sem juros · total {fmt(opt.total)}</p>
+                                  <p className={`text-xl sm:text-2xl font-bold font-[var(--font-noto-serif)] leading-none ${active ? "text-[#002045]" : "text-white"}`}>{opt.installments}x de {fmt(opt.installmentValue ?? 0)}</p>
+                                  <p className={`text-[11px] font-[var(--font-inter)] mt-1.5 ${active ? "text-[#74777f]" : "text-[#86a0cd]"}`}>sem juros · total {fmt(opt.total)}</p>
                                 </>
                               ) : (
                                 <>
-                                  {/* Hero: valor à vista */}
-                                  <p className="text-[#002045] text-xl sm:text-2xl font-bold font-[var(--font-noto-serif)] leading-none">{fmt(opt.total)}</p>
-                                  <p className="text-[#3b6934] text-[11px] font-semibold font-[var(--font-inter)] mt-1.5">à vista · {opt.discountPct}% de desconto (economize {fmt(opt.discountAmount ?? 0)})</p>
+                                  <p className={`text-xl sm:text-2xl font-bold font-[var(--font-noto-serif)] leading-none ${active ? "text-[#002045]" : "text-white"}`}>{fmt(opt.total)}</p>
+                                  <p className={`text-[11px] font-semibold font-[var(--font-inter)] mt-1.5 ${active ? "text-[#3b6934]" : "text-[#5eead4]"}`}>à vista · {opt.discountPct}% off (economize {fmt(opt.discountAmount ?? 0)})</p>
                                 </>
                               )}
                             </button>
@@ -3056,24 +3025,22 @@ function SimuladorInner() {
                         })}
                       </div>
                       {grandPlates < 2 && (
-                        <p className="text-[#74777f] text-[11px] font-[var(--font-inter)] mt-2">
-                          Condições especiais de pagamento disponíveis a partir de 2 placas.
-                        </p>
+                        <p className="text-[#86a0cd] text-[11px] font-[var(--font-inter)] mt-2">Condições especiais de pagamento a partir de 2 placas.</p>
                       )}
                     </div>
                   )}
 
-                  {/* CTA principal — formalização */}
+                  {/* CTA principal — formalização (integrado ao bloco) */}
                   <button
                     type="button"
                     onClick={() => { setFormalizeOpen(true); trackFunnel("cta_formalizacao_clicado"); trackFunnel("formalizacao_iniciada"); }}
-                    className="mt-4 w-full bg-[#3b6934] hover:bg-[#2e5229] text-white text-sm tracking-[0.08em] uppercase font-bold font-[var(--font-inter)] px-6 py-4 transition-colors flex items-center justify-center gap-2"
+                    className="mt-5 w-full bg-[#3b6934] hover:bg-[#2e5229] text-white text-sm tracking-[0.08em] uppercase font-bold font-[var(--font-inter)] px-6 py-4 transition-colors flex items-center justify-center gap-2"
                   >
                     <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><path d="M14 2v6h6M16 13H8M16 17H8M10 9H8"/></svg>
                     Receber orçamento formalizado em PDF
                   </button>
-                  <p className="text-[#74777f] text-[11px] font-[var(--font-inter)] text-center mt-2">
-                    Informe o endereço de entrega e receba o documento completo pelo WhatsApp.
+                  <p className="text-[#86a0cd] text-[11px] font-[var(--font-inter)] text-center mt-2">
+                    Receba o orçamento completo pelo WhatsApp — é só informar o endereço de entrega.
                   </p>
                 </div>
               )}
