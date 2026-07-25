@@ -70,6 +70,7 @@ export default function OrcamentoPage({ params }: { params: Promise<{ slug: stri
   const [expired, setExpired] = useState(false);
   const [copied, setCopied] = useState(false);
   const [showMoInfo, setShowMoInfo] = useState(false);
+  const [pricing, setPricing] = useState<import("@/lib/orcamento-pricing").OrcamentoBreakdown | null>(null);
   const heroRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
@@ -85,6 +86,15 @@ export default function OrcamentoPage({ params }: { params: Promise<{ slug: stri
         if (new Date(data.expires_at) < new Date()) { setExpired(true); setLoading(false); return; }
         setQuote(data);
         setLoading(false);
+        // Composição autoritativa (placas + Cola PU + frete + pagamento) do motor.
+        const plates = data.total_plates ?? (data.spaces ?? []).reduce((s: number, sp) => s + (sp.plates || 0), 0);
+        const subtotal = data.material_discounted ?? data.material_total ?? 0;
+        if (plates > 0) {
+          fetch("/api/orcamento/pricing", {
+            method: "POST", headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({ plates, pricePerPlate: subtotal / plates }),
+          }).then((r) => (r.ok ? r.json() : null)).then((b) => { if (b) setPricing(b); }).catch(() => {});
+        }
       })
       .catch(() => { setNotFound(true); setLoading(false); });
   }, [slug]);
@@ -304,15 +314,34 @@ export default function OrcamentoPage({ params }: { params: Promise<{ slug: stri
           })}
         </div>
 
-        {/* Total */}
+        {/* Total + composição (placas · Cola PU · frete) */}
         <div className="bg-[#002045] p-6 sm:p-8 mb-6">
+          {/* Composição do investimento */}
+          {pricing && (
+            <div className="mb-5 border-b border-white/15 pb-4 space-y-2">
+              <div className="flex items-center justify-between text-[13px] font-[var(--font-inter)]">
+                <span className="text-[#86a0cd]">Placas ({pricing.plates})</span>
+                <span className="text-white font-semibold">{fmt(pricing.platesSubtotal)}</span>
+              </div>
+              {pricing.colaAvailable && pricing.colaTubos > 0 && (
+                <div className="flex items-center justify-between text-[13px] font-[var(--font-inter)]">
+                  <span className="text-[#86a0cd]">Cola PU ({pricing.colaTubos} tubo{pricing.colaTubos !== 1 ? "s" : ""})</span>
+                  <span className="text-white font-semibold">{fmt(pricing.colaSubtotal)}</span>
+                </div>
+              )}
+              <div className="flex items-center justify-between text-[13px] font-[var(--font-inter)]">
+                <span className="text-[#86a0cd]">Frete</span>
+                <span className={`font-semibold ${pricing.frete.free ? "text-[#5eead4]" : "text-white"}`}>{pricing.frete.free ? "Grátis" : fmt(pricing.frete.value)}{pricing.frete.estimated && !pricing.frete.free ? "*" : ""}</span>
+              </div>
+            </div>
+          )}
           <div className="flex items-end justify-between gap-4">
             <div>
               <p className="text-[#86a0cd] text-[10px] tracking-[0.2em] uppercase font-[var(--font-inter)] mb-1">
                 {isDiscounted && quote.coupon_code ? `Com cupom ${quote.coupon_code}` : "Total do projeto"}
               </p>
               <p className="font-[var(--font-noto-serif)] text-white text-3xl sm:text-4xl font-normal">
-                {fmt(finalValue)}
+                {fmt(pricing ? pricing.totalFull : finalValue)}
               </p>
               {isDiscounted && (
                 <p className="text-[#86a0cd] text-xs font-[var(--font-inter)] mt-1 line-through">
@@ -329,7 +358,8 @@ export default function OrcamentoPage({ params }: { params: Promise<{ slug: stri
           </div>
           <div className="border-t border-white/15 mt-4 pt-3">
             <p className="text-white text-xs font-bold font-[var(--font-inter)]">
-              ⚠ Este valor é apenas do material.
+              {pricing ? "Inclui placas, Cola PU e frete estimado." : "⚠ Este valor é apenas do material."}
+              {pricing?.frete.estimated && !pricing?.frete.free ? " (*frete estimado — confirmado pelo CEP na formalização)" : ""}
             </p>
             <p className="text-[#86a0cd] text-[10px] font-[var(--font-inter)] mt-1 leading-relaxed">
               A instalação não está incluída e é contratada separadamente, por conta do cliente (a Orbital pode indicar instaladores habilitados — veja abaixo).
