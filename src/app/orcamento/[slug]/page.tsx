@@ -76,7 +76,6 @@ export default function OrcamentoPage({ params }: { params: Promise<{ slug: stri
   const [showMoInfo, setShowMoInfo] = useState(false);
   const [pricing, setPricing] = useState<import("@/lib/orcamento-pricing").OrcamentoBreakdown | null>(null);
   const [selectedPayment, setSelectedPayment] = useState<"pix" | "cartao" | null>(null);
-  const [showAllConditions, setShowAllConditions] = useState(false);
   // Fluxo de formalização (mesma ideia do simulador): confere dados + endereço → PDF.
   const [fzOpen, setFzOpen] = useState(false);
   const [fzName, setFzName] = useState("");
@@ -215,14 +214,14 @@ export default function OrcamentoPage({ params }: { params: Promise<{ slug: stri
 
   const waMessage = encodeURIComponent(
     [
-      `Olá! Vi o orçamento Orbital enviado por ${quote.partner_name ?? "um parceiro"} e tenho interesse em avançar com o projeto.`,
+      `Olá! Tenho interesse em avançar com o meu orçamento Orbital.`,
       ``,
       `Referência: orbitalrevestimentos.com.br/orcamento/${quote.slug}`,
       ``,
       `Ambientes:`,
       ...(quote.spaces ?? []).map((sp) => `• ${sp.spaceName} — ${sp.productName} (${sp.plates} ${sp.plates === 1 ? "placa" : "placas"})`),
       ``,
-      `Total: ${fmt(finalValue)}`,
+      `Total: ${fmt(pricing ? pricing.totalFull : finalValue)}`,
     ].join("\n")
   );
   // The referring partner often coordinates the project/installation directly
@@ -475,18 +474,6 @@ export default function OrcamentoPage({ params }: { params: Promise<{ slug: stri
                     );
                   })}
                 </div>
-                <button type="button" onClick={() => setShowAllConditions((v) => !v)} className="mt-2 text-[#002045] text-[11px] font-semibold font-[var(--font-inter)] underline">
-                  {showAllConditions ? "Ocultar" : "Ver todas as condições"}
-                </button>
-                {showAllConditions && (
-                  <ul className="mt-2 text-[#74777f] text-[11px] font-[var(--font-inter)] space-y-0.5 leading-relaxed">
-                    <li>• À vista (PIX ou espécie): 3% de desconto — a partir de 2 placas</li>
-                    <li>• 2 a 4 placas: até 3x sem juros</li>
-                    <li>• 5 a 7 placas: até 4x sem juros</li>
-                    <li>• 8 a 12 placas: até 6x sem juros</li>
-                    <li>• 13 placas ou mais: até 10x sem juros</li>
-                  </ul>
-                )}
               </>
             ) : (
               <p className="text-[#74777f] text-[13px] font-[var(--font-inter)]">Condições especiais de pagamento disponíveis a partir de 2 placas. Fale com a gente para as condições desta compra.</p>
