@@ -3,6 +3,7 @@
 import React, { useEffect, useState, useRef } from "react";
 import Image from "next/image";
 import MdfComparison from "@/components/MdfComparison";
+import { firstName } from "@/lib/name";
 
 interface QuoteSpace {
   spaceName: string;
@@ -34,6 +35,7 @@ interface SavedQuote {
   total_area_m2: number | null;
   material_total: number | null;
   material_discounted: number | null;
+  client_name: string | null;
   expires_at: string;
   created_at: string;
 }
@@ -231,7 +233,7 @@ export default function OrcamentoPage({ params }: { params: Promise<{ slug: stri
         <div className="max-w-3xl mx-auto">
           <p className="text-[#86a0cd] text-[10px] tracking-[0.2em] uppercase font-[var(--font-inter)] mb-2">Orçamento personalizado</p>
           <h1 className="font-[var(--font-noto-serif)] text-white text-3xl sm:text-4xl font-normal leading-tight mb-4">
-            Seu projeto em PFB
+            {firstName(quote.client_name) ? `${firstName(quote.client_name)}, seu projeto em Fibra de Bambu:` : "Seu projeto em Fibra de Bambu:"}
           </h1>
           {quote.partner_name && (
             <p className="text-[#86a0cd] text-sm font-[var(--font-inter)]">
@@ -485,23 +487,75 @@ export default function OrcamentoPage({ params }: { params: Promise<{ slug: stri
           </button>
         </div>
 
-        {/* Product info strip */}
+        {/* Por que escolher a Fibra de Bambu — mobile-first, foco em benefício */}
         <div className="border-t border-[#e2e2e2] pt-8">
-          <p className="text-[#74777f] text-[10px] tracking-[0.2em] uppercase font-[var(--font-inter)] mb-4">Por que PFB Orbital?</p>
-          <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
+          <h2 className="font-[var(--font-noto-serif)] text-[#002045] text-xl sm:text-2xl font-normal leading-snug mb-2">
+            Por que escolher a Fibra de Bambu da Orbital?
+          </h2>
+          <p className="text-[#5b5f68] text-[13px] sm:text-sm font-[var(--font-inter)] leading-relaxed mb-5 max-w-xl">
+            Um revestimento desenvolvido para unir resistência, instalação rápida e acabamento premium — inclusive no clima quente e úmido de Manaus.
+          </p>
+          <div className="grid grid-cols-2 gap-3 sm:gap-4">
             {[
-              { icon: "💧", label: "Absorção 0,2%", sub: "vs 35% do MDF" },
-              { icon: "🛡️", label: "10+ anos", sub: "de durabilidade" },
-              { icon: "✅", label: "ART/CREA", sub: "aprovado" },
-              { icon: "⚡", label: "2–3 horas", sub: "por cômodo" },
-            ].map((item) => (
-              <div key={item.label} className="bg-white border border-[#e2e2e2] p-3 text-center">
-                <p className="text-lg mb-1">{item.icon}</p>
-                <p className="text-[#002045] text-xs font-bold font-[var(--font-inter)]">{item.label}</p>
-                <p className="text-[#74777f] text-[10px] font-[var(--font-inter)]">{item.sub}</p>
+              {
+                title: "Resistente à água e à umidade",
+                benefit: "Não estufa nem deforma",
+                desc: "Pode ser usada em cozinhas, lavabos e banheiros, seguindo a instalação correta.",
+                icon: <path d="M12 3s6 6.5 6 11a6 6 0 0 1-12 0c0-4.5 6-11 6-11Z" />,
+              },
+              {
+                title: "Instalação rápida, sem quebra-quebra",
+                benefit: "Ambientes renovados em poucas horas",
+                desc: "Aplicada sobre diversas superfícies, reduz sujeira, entulho e tempo de obra.",
+                icon: <path d="M13 2 4 14h7l-1 8 9-12h-7l1-8Z" />,
+              },
+              {
+                title: "Acabamento premium, menos emendas",
+                benefit: "Placas de 1,20 × 2,90 m",
+                desc: "O grande formato cobre quase toda a parede — resultado contínuo e sofisticado.",
+                icon: <><rect x="3" y="3" width="18" height="18" rx="1" /><path d="M3 9h18M9 3v18" /></>,
+              },
+              {
+                title: "Ideal para o clima de Manaus",
+                benefit: "Resistente à umidade, mofo e cupins",
+                desc: "Mais adequada a regiões quentes e úmidas do que materiais que absorvem água.",
+                icon: <><circle cx="12" cy="12" r="4" /><path d="M12 2v2M12 20v2M4.9 4.9l1.4 1.4M17.7 17.7l1.4 1.4M2 12h2M20 12h2M4.9 19.1l1.4-1.4M17.7 6.3l1.4-1.4" /></>,
+              },
+            ].map((b) => (
+              <div key={b.title} className="bg-white border border-[#e2e2e2] p-3.5 sm:p-4 flex flex-col">
+                <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="#002045" strokeWidth="1.6" strokeLinecap="round" strokeLinejoin="round" className="mb-2.5 flex-shrink-0">{b.icon}</svg>
+                <p className="text-[#002045] text-[13px] sm:text-sm font-bold font-[var(--font-inter)] leading-tight">{b.title}</p>
+                <p className="text-[#3b6934] text-[11px] sm:text-xs font-semibold font-[var(--font-inter)] mt-1">{b.benefit}</p>
+                <p className="text-[#74777f] text-[11px] font-[var(--font-inter)] leading-snug mt-1.5">{b.desc}</p>
               </div>
             ))}
           </div>
+
+          {/* Benefícios complementares — lista compacta expansível (sem cards pesados) */}
+          <details className="mt-4 group">
+            <summary className="cursor-pointer list-none flex items-center gap-1.5 text-[#002045] text-[11px] tracking-[0.08em] uppercase font-bold font-[var(--font-inter)]">
+              <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" className="transition-transform group-open:rotate-90"><path d="M9 18l6-6-6-6" /></svg>
+              Mais benefícios
+            </summary>
+            <ul className="mt-3 grid grid-cols-1 sm:grid-cols-2 gap-x-6 gap-y-1.5">
+              {[
+                "Não propaga chamas",
+                "Leve e fácil de transportar",
+                "Instalação com pouca sujeira",
+                "Recorte simples",
+                "Aplicação em paredes, tetos e portas",
+                "Acabamento fotorrealista",
+                "Menor necessidade de manutenção",
+                "Transformação rápida, sem reforma convencional",
+                "Pronta entrega em Manaus",
+              ].map((t) => (
+                <li key={t} className="flex items-start gap-2 text-[#43474e] text-[12px] font-[var(--font-inter)]">
+                  <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="#3b6934" strokeWidth="2.5" className="mt-0.5 flex-shrink-0"><path d="M20 6L9 17l-5-5" /></svg>
+                  {t}
+                </li>
+              ))}
+            </ul>
+          </details>
         </div>
 
         {/* Technical comparison — same table shown at the end of the simulador
@@ -510,7 +564,7 @@ export default function OrcamentoPage({ params }: { params: Promise<{ slug: stri
         <div className="bg-white border border-[#e2e2e2] mt-8">
           <div className="px-6 lg:px-8 pt-6 pb-2 border-b border-[#e2e2e2]">
             <p className="text-[#43474e] text-[10px] tracking-[0.15em] uppercase font-bold font-[var(--font-inter)] mb-0.5">
-              PFB Orbital vs. outros materiais
+              Fibra de Bambu Orbital vs. outros materiais
             </p>
             <p className="text-[#74777f] text-xs font-[var(--font-inter)]">
               Selecione o material para comparar tecnicamente

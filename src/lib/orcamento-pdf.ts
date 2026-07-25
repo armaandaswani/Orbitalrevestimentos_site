@@ -9,6 +9,7 @@ import PDFDocument from "pdfkit";
 import { existsSync } from "fs";
 import path from "path";
 import type { OrcamentoBreakdown } from "@/lib/orcamento-pricing";
+import { firstName } from "@/lib/name";
 
 export const COMPANY = {
   name: "Orbital Materiais de Construção LTDA",
@@ -111,7 +112,12 @@ export function generateQuotePdf(input: QuotePdfInput): Promise<Buffer> {
   doc.text(`No.: ${formalNumber}`, 410, metaY + 34, { width: 140, align: "right" });
   if (input.couponCode) doc.text(`Parceiro: ${input.couponCode}`, 410, metaY + 51, { width: 140, align: "right" });
 
-  doc.y = Math.max(doc.y, 216);
+  // Título personalizado com o primeiro nome do cliente (mesma regra do site).
+  const fn = firstName(clientName);
+  doc.y = Math.max(doc.y, 210);
+  doc.font("Helvetica-Bold").fontSize(13).fillColor("#002045")
+    .text(fn ? `${fn}, seu projeto em Fibra de Bambu` : "Seu projeto em Fibra de Bambu", 42, doc.y, { width: 511 });
+  doc.y += 6;
   doc.rect(42, doc.y, 511, 22).fill("#002045");
   doc.fillColor("#fff").font("Helvetica").fontSize(14).text(`ORÇAMENTO FORMALIZADO No. ${formalNumber}`, 42, doc.y + 5, { width: 511, align: "center" });
   doc.y += 42;

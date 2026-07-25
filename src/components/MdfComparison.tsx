@@ -152,8 +152,28 @@ export default function MdfComparison({ selected: externalSelected, onSelect, al
         ))}
       </div>
 
-      {/* 2-column table — always fits on screen */}
-      <div className="w-full">
+      {/* Mobile-first: cada critério em um bloco (Fibra de Bambu primeiro). */}
+      <div className="md:hidden space-y-3">
+        {rows.map((row) => {
+          const competitor = row[selected];
+          return (
+            <div key={row.attr} className="border border-[#e2e2e2]">
+              <p className="bg-[#f7f8fa] px-3 py-2 text-[11px] tracking-[0.08em] uppercase font-bold font-[var(--font-inter)] text-[#43474e]">{row.attr}</p>
+              <div className="px-3 py-2.5 bg-[#f3f9f3] border-t border-[#e2e2e2]">
+                <p className="text-[9px] tracking-[0.12em] uppercase font-bold font-[var(--font-inter)] text-[#3b6934] mb-0.5">Fibra de Bambu Orbital</p>
+                <p className="text-[13px] font-semibold text-[#002045] font-[var(--font-inter)] leading-snug">{row.pfb}</p>
+              </div>
+              <div className="px-3 py-2.5 border-t border-[#e2e2e2]">
+                <p className="text-[9px] tracking-[0.12em] uppercase font-bold font-[var(--font-inter)] text-[#a0a3a8] mb-0.5">{option.label}</p>
+                <p className="text-[13px] text-[#74777f] font-[var(--font-inter)] leading-snug">{competitor}</p>
+              </div>
+            </div>
+          );
+        })}
+      </div>
+
+      {/* Desktop: tabela em 3 colunas */}
+      <div className="hidden md:block w-full">
         <table className="w-full border-collapse">
           <thead>
             <tr className="border-b-2 border-[#e2e2e2]">
@@ -161,7 +181,7 @@ export default function MdfComparison({ selected: externalSelected, onSelect, al
                 Critério
               </th>
               <th className="text-left py-4 px-3 font-[var(--font-noto-serif)] text-[#002045] text-base lg:text-lg font-normal w-[32%]">
-                PFB Orbital
+                Fibra de Bambu Orbital
               </th>
               <th className="text-left py-4 px-3 font-[var(--font-noto-serif)] text-[#74777f] text-base lg:text-lg font-normal w-[32%]">
                 {option.label}
