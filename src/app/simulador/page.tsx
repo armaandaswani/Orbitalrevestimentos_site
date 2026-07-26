@@ -3042,6 +3042,25 @@ function SimuladorInner() {
                   <p className="text-[#86a0cd] text-[11px] font-[var(--font-inter)] text-center mt-2">
                     Receba o orçamento completo pelo WhatsApp — é só informar o endereço de entrega.
                   </p>
+
+                  {/* Instalação — sobe para dentro do bloco principal (accordion) */}
+                  <div className="bg-[#a1d494] mt-5">
+                    <button type="button" onClick={() => setShowMoInfo((v) => !v)} className="w-full flex items-center justify-between gap-3 px-4 py-3.5 text-left">
+                      <span className="text-[#002045] text-sm font-bold font-[var(--font-inter)]">Precisa de instalação? <span className="font-normal">(opcional, não incluso)</span></span>
+                      <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#002045" strokeWidth="2.5" className={`flex-shrink-0 transition-transform duration-200 ${showMoInfo ? "rotate-180" : ""}`}><path d="M6 9l6 6 6-6" /></svg>
+                    </button>
+                    {showMoInfo && (
+                      <div className="bg-[#0a1f3d] px-4 py-4 space-y-3">
+                        <p className="text-white/70 text-[11px] font-[var(--font-inter)] leading-relaxed">
+                          A Orbital fornece o painel — não realizamos instalação, e este orçamento cobre apenas o material. Quando precisar, indicamos uma empresa terceirizada especializada, que já aplicou os painéis Orbital em diversos projetos. O custo da instalação varia por projeto; fale direto com o responsável para um orçamento.
+                        </p>
+                        <a href={`${WERK_ENGENHARIA_WA_BASE}${encodeURIComponent(werkssonMsg)}`} target="_blank" rel="noopener noreferrer" className="inline-flex items-center gap-2 bg-[#25d366] text-white text-xs tracking-[0.1em] uppercase font-bold font-[var(--font-inter)] px-5 py-2.5 hover:brightness-95 transition">
+                          <svg width="13" height="13" viewBox="0 0 24 24" fill="currentColor"><path d="M17.472 14.382c-.297-.149-1.758-.867-2.03-.967-.273-.099-.471-.148-.67.15-.197.297-.767.966-.94 1.164-.173.199-.347.223-.644.075-.297-.15-1.255-.463-2.39-1.475-.883-.788-1.48-1.761-1.653-2.059-.173-.297-.018-.458.13-.606.134-.133.298-.347.446-.52.149-.174.198-.298.298-.497.099-.198.05-.371-.025-.52-.075-.149-.669-1.612-.916-2.207-.242-.579-.487-.5-.669-.51-.173-.008-.371-.01-.57-.01-.198 0-.52.074-.792.372-.272.297-1.04 1.016-1.04 2.479 0 1.462 1.065 2.875 1.213 3.074.149.198 2.096 3.2 5.077 4.487.709.306 1.262.489 1.694.625.712.227 1.36.195 1.871.118.571-.085 1.758-.719 2.006-1.413.248-.694.248-1.289.173-1.413-.074-.124-.272-.198-.57-.347m-5.421 7.403h-.004a9.87 9.87 0 01-5.031-1.378l-.361-.214-3.741.982.998-3.648-.235-.374a9.86 9.86 0 01-1.51-5.26c.001-5.45 4.436-9.884 9.888-9.884 2.64 0 5.122 1.03 6.988 2.898a9.825 9.825 0 012.893 6.994c-.003 5.45-4.437 9.884-9.885 9.884m8.413-18.297A11.815 11.815 0 0012.05 0C5.495 0 .16 5.335.157 11.892c0 2.096.547 4.142 1.588 5.945L.057 24l6.305-1.654a11.882 11.882 0 005.683 1.448h.005c6.554 0 11.89-5.335 11.893-11.893a11.821 11.821 0 00-3.48-8.413z" /></svg>
+                          Falar sobre instalação no WhatsApp
+                        </a>
+                      </div>
+                    )}
+                  </div>
                 </div>
               )}
 
@@ -3179,124 +3198,6 @@ function SimuladorInner() {
                 </div>
               </div>
 
-              {/* Cost breakdown */}
-              <div>
-                <div className="bg-[#002045] px-6 sm:px-8 py-8 border border-[#2d4f7f]">
-                  <p className="text-[#a1d494] text-[9px] tracking-[0.2em] uppercase font-bold font-[var(--font-inter)] mb-5">
-                    PFB Orbital — Estimativa de investimento
-                  </p>
-                  <div className="space-y-3 mb-6">
-                    {savedSpaces.length > 0 && (
-                      <>
-                        {savedSpaces.map((sp, i) => (
-                          <div key={sp.key} className="flex items-center justify-between text-sm font-[var(--font-inter)] gap-4 pb-2 border-b border-white/10">
-                            <span className="text-white/55">
-                              <span className="block text-white/80 text-xs font-semibold">{sp.label}</span>
-                              {sp.plates} placa{sp.plates !== 1 ? "s" : ""} · {sp.productCode}
-                              {couponData && sp.materialDiscounted < sp.materialTotal && (
-                                <span className="block text-[#a1d494] text-[10px] mt-0.5">- desconto (cupom)</span>
-                              )}
-                            </span>
-                            <span className="text-white font-semibold flex-shrink-0">{fmt(sp.materialDiscounted)}</span>
-                          </div>
-                        ))}
-                        <div className="flex items-center justify-between text-sm font-[var(--font-inter)] gap-4 pb-2 border-b border-white/10">
-                          <span className="text-white/55">
-                            <span className="block text-white/80 text-xs font-semibold">{selectedSpace.label}</span>
-                            {plates} placa{plates !== 1 ? "s" : ""} · {selectedProduct.code}
-                            {discountAmount > 0 && <span className="block text-[#a1d494] text-[10px] mt-0.5">- desconto (cupom)</span>}
-                          </span>
-                          <span className="text-white font-semibold flex-shrink-0">{fmt(orbMaterialDiscounted)}</span>
-                        </div>
-                        <div className="flex items-center justify-between text-sm font-[var(--font-inter)] gap-4">
-                          <span className="text-white/55">Subtotal material — {grandPlates} placas</span>
-                          <span className="text-white font-semibold flex-shrink-0">{fmt(grandMaterialDiscounted)}</span>
-                        </div>
-                      </>
-                    )}
-                    {savedSpaces.length === 0 && (
-                      <div className="flex items-start justify-between text-sm font-[var(--font-inter)] gap-4">
-                        <span className="text-white/55">
-                          Material ({plates} placa{plates !== 1 ? "s" : ""} × {pricePerPlate.toLocaleString("pt-BR")})
-                          <span className="block text-white/30 text-[10px] mt-0.5">2,9m × 1,2m × 5mm por placa</span>
-                          {discountAmount > 0 && (
-                            <span className="block text-[#a1d494] text-[10px] mt-0.5">
-                              - desconto (cupom)
-                            </span>
-                          )}
-                        </span>
-                        <span className="text-white font-semibold flex-shrink-0">{fmt(orbMaterialDiscounted)}</span>
-                      </div>
-                    )}
-                    <div className="flex items-start justify-between text-sm font-[var(--font-inter)] gap-4">
-                      <span className="text-white/55">Acabamento / pintura</span>
-                      <span className="text-[#a1d494] font-semibold flex-shrink-0">Não necessário</span>
-                    </div>
-                    <div className="border-t border-white/15 pt-3 flex items-center justify-between">
-                      <span className="text-white text-sm font-bold font-[var(--font-inter)]">Total — material</span>
-                      <span className="text-white text-2xl font-[var(--font-noto-serif)]">{fmt(savedSpaces.length > 0 ? grandMaterialDiscounted : orbMaterialDiscounted)}</span>
-                    </div>
-                  </div>
-
-                  {/* Mão de obra — not part of the price above; the Orbital quote is
-                      material only. Closed by default, no price shown: it's only an
-                      estimate that can change, and showing a fixed number here is what
-                      led clients to think Orbital charges for installation. Styled to
-                      stand out (bright card on the dark panel) since a low-contrast
-                      row was getting missed entirely. */}
-                  <div className="bg-[#a1d494] mb-3">
-                    <button
-                      type="button"
-                      onClick={() => setShowMoInfo((v) => !v)}
-                      className="w-full flex items-center justify-between gap-3 px-4 py-3.5 text-left"
-                    >
-                      <span className="text-[#002045] text-sm font-bold font-[var(--font-inter)]">
-                        Precisa de instalação? <span className="font-normal">(opcional, não incluso)</span>
-                      </span>
-                      <svg
-                        width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#002045" strokeWidth="2.5"
-                        className={`flex-shrink-0 transition-transform duration-200 ${showMoInfo ? "rotate-180" : ""}`}
-                      >
-                        <path d="M6 9l6 6 6-6" />
-                      </svg>
-                    </button>
-                    {showMoInfo && (
-                      <div className="bg-[#0a1f3d] px-4 py-4 space-y-3">
-                        <p className="text-white/70 text-[11px] font-[var(--font-inter)] leading-relaxed">
-                          Orbital é fornecedora do painel — não realizamos instalação e o valor acima é só do material.
-                          Quem indicamos para instalações é uma empresa terceirizada que detém equipes especializadas e
-                          que já aplicou os painéis Orbital em diversos projetos e conhece bem o produto. O custo da
-                          instalação varia por projeto, então não temos um preço fixo para mostrar aqui — fale direto
-                          com o responsável para um orçamento.
-                        </p>
-                        <a
-                          href={`${WERK_ENGENHARIA_WA_BASE}${encodeURIComponent(werkssonMsg)}`}
-                          target="_blank"
-                          rel="noopener noreferrer"
-                          className="inline-flex items-center gap-2 bg-[#25d366] text-white text-xs tracking-[0.1em] uppercase font-bold font-[var(--font-inter)] px-5 py-2.5 hover:brightness-95 transition"
-                        >
-                          <svg width="13" height="13" viewBox="0 0 24 24" fill="currentColor">
-                            <path d="M17.472 14.382c-.297-.149-1.758-.867-2.03-.967-.273-.099-.471-.148-.67.15-.197.297-.767.966-.94 1.164-.173.199-.347.223-.644.075-.297-.15-1.255-.463-2.39-1.475-.883-.788-1.48-1.761-1.653-2.059-.173-.297-.018-.458.13-.606.134-.133.298-.347.446-.52.149-.174.198-.298.298-.497.099-.198.05-.371-.025-.52-.075-.149-.669-1.612-.916-2.207-.242-.579-.487-.5-.669-.51-.173-.008-.371-.01-.57-.01-.198 0-.52.074-.792.372-.272.297-1.04 1.016-1.04 2.479 0 1.462 1.065 2.875 1.213 3.074.149.198 2.096 3.2 5.077 4.487.709.306 1.262.489 1.694.625.712.227 1.36.195 1.871.118.571-.085 1.758-.719 2.006-1.413.248-.694.248-1.289.173-1.413-.074-.124-.272-.198-.57-.347m-5.421 7.403h-.004a9.87 9.87 0 01-5.031-1.378l-.361-.214-3.741.982.998-3.648-.235-.374a9.86 9.86 0 01-1.51-5.26c.001-5.45 4.436-9.884 9.888-9.884 2.64 0 5.122 1.03 6.988 2.898a9.825 9.825 0 012.893 6.994c-.003 5.45-4.437 9.884-9.885 9.884m8.413-18.297A11.815 11.815 0 0012.05 0C5.495 0 .16 5.335.157 11.892c0 2.096.547 4.142 1.588 5.945L.057 24l6.305-1.654a11.882 11.882 0 005.683 1.448h.005c6.554 0 11.89-5.335 11.893-11.893a11.821 11.821 0 00-3.48-8.413z" />
-                          </svg>
-                          Falar sobre instalação no WhatsApp
-                        </a>
-                      </div>
-                    )}
-                  </div>
-                  <div className="bg-[#3b6934]/30 border border-[#3b6934]/50 px-4 py-3 mb-3">
-                    <p className="text-[#a1d494] text-xs font-semibold font-[var(--font-inter)]">10+ anos sem trocar.</p>
-                    <p className="text-[#a1d494]/70 text-[11px] font-[var(--font-inter)] mt-0.5 leading-relaxed">
-                      Instala uma vez. Impermeável, anti-mofo e resistente ao clima de Manaus.
-                    </p>
-                  </div>
-                  <div className="border border-white/10 bg-white/5 px-4 py-3">
-                    <p className="text-white/70 text-[10px] font-semibold font-[var(--font-inter)] mb-0.5">A Orbital não realiza instalação.</p>
-                    <p className="text-white/45 text-[10px] font-[var(--font-inter)] leading-relaxed">
-                      Trabalhamos apenas com o fornecimento das placas. Quando necessário, podemos indicar empresas terceirizadas que já têm conhecimento sobre a aplicação do material.
-                    </p>
-                  </div>
-                </div>
-              </div>
               {/* Technical comparison — always visible */}
               {(() => {
                 const allowedKeys: ("mdf" | "papel" | "forro" | "teto" | "tinta")[] = [
