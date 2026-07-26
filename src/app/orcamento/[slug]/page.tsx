@@ -45,6 +45,10 @@ interface SavedQuote {
 function fmt(n: number) {
   return n.toLocaleString("pt-BR", { style: "currency", currency: "BRL", maximumFractionDigits: 0 });
 }
+// Parcela com centavos exatos (R$ 512,67, nunca arredondar para 513).
+function fmtParcela(n: number) {
+  return n.toLocaleString("pt-BR", { style: "currency", currency: "BRL", minimumFractionDigits: 2, maximumFractionDigits: 2 });
+}
 
 function fmtDec(n: number) {
   return n.toLocaleString("pt-BR", { maximumFractionDigits: 1 });
@@ -461,7 +465,7 @@ export default function OrcamentoPage({ params }: { params: Promise<{ slug: stri
                         </div>
                         {opt.id === "cartao" ? (
                           <>
-                            <p className="text-[#002045] text-xl sm:text-2xl font-bold font-[var(--font-noto-serif)] leading-none">{opt.installments}x de {fmt(opt.installmentValue ?? 0)}</p>
+                            <p className="text-[#002045] text-xl sm:text-2xl font-bold font-[var(--font-noto-serif)] leading-none">{opt.installments}x de {fmtParcela(opt.installmentValue ?? 0)}</p>
                             <p className="text-[#74777f] text-[11px] font-[var(--font-inter)] mt-1.5">sem juros · total {fmt(opt.total)}</p>
                           </>
                         ) : (

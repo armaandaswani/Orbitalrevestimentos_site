@@ -87,6 +87,13 @@ function fmt(n: number) {
     maximumFractionDigits: 0,
   });
 }
+// Valores comerciais com R$; parcela com centavos exatos (512,67, nunca 513).
+function fmtBRL(n: number) {
+  return "R$ " + n.toLocaleString("pt-BR", { minimumFractionDigits: 0, maximumFractionDigits: 0 });
+}
+function fmtParcela(n: number) {
+  return "R$ " + n.toLocaleString("pt-BR", { minimumFractionDigits: 2, maximumFractionDigits: 2 });
+}
 
 type ProductLine = "Classic" | "Brilliance" | "Elegance";
 type SpaceViability = "simple" | "complex" | "no";
@@ -2959,7 +2966,7 @@ function SimuladorInner() {
                         <p className="text-white text-[13px] font-semibold font-[var(--font-inter)]">Placas PFB</p>
                         <p className="text-[#86a0cd] text-[11px] font-[var(--font-inter)]">{pricing.plates} × {fmt(pricing.pricePerPlate)}</p>
                       </div>
-                      <span className="text-white text-[13px] font-semibold font-[var(--font-inter)] flex-shrink-0">{fmt(pricing.platesSubtotal)}</span>
+                      <span className="text-white text-[13px] font-semibold font-[var(--font-inter)] flex-shrink-0">{fmtBRL(pricing.platesSubtotal)}</span>
                     </div>
                     {pricing.colaAvailable && pricing.colaTubos > 0 && (
                       <div className="flex items-start justify-between gap-3">
@@ -2967,7 +2974,7 @@ function SimuladorInner() {
                           <p className="text-white text-[13px] font-semibold font-[var(--font-inter)]">Cola PU</p>
                           <p className="text-[#86a0cd] text-[11px] font-[var(--font-inter)]">{pricing.colaTubos} tubo{pricing.colaTubos !== 1 ? "s" : ""} · ~1,5 por placa (clima de Manaus)</p>
                         </div>
-                        <span className="text-white text-[13px] font-semibold font-[var(--font-inter)] flex-shrink-0">{fmt(pricing.colaSubtotal)}</span>
+                        <span className="text-white text-[13px] font-semibold font-[var(--font-inter)] flex-shrink-0">{fmtBRL(pricing.colaSubtotal)}</span>
                       </div>
                     )}
                     <div className="flex items-start justify-between gap-3">
@@ -2975,7 +2982,7 @@ function SimuladorInner() {
                         <p className="text-white text-[13px] font-semibold font-[var(--font-inter)]">Frete</p>
                         <p className="text-[#86a0cd] text-[11px] font-[var(--font-inter)]">{pricing.frete.free ? "Grátis (≥ 5 placas)" : pricing.frete.estimated ? "Estimado — confirmado pelo CEP" : "Confirmado pelo CEP"}</p>
                       </div>
-                      <span className={`text-[13px] font-semibold font-[var(--font-inter)] flex-shrink-0 ${pricing.frete.free ? "text-[#5eead4]" : "text-white"}`}>{pricing.frete.free ? "Grátis" : fmt(pricing.frete.value)}</span>
+                      <span className={`text-[13px] font-semibold font-[var(--font-inter)] flex-shrink-0 ${pricing.frete.free ? "text-[#5eead4]" : "text-white"}`}>{pricing.frete.free ? "Grátis" : fmtBRL(pricing.frete.value)}</span>
                     </div>
                     {pricing.discount.eligible && pricing.discount.amount > 0 && (
                       <div className="flex items-start justify-between gap-3">
@@ -2983,7 +2990,7 @@ function SimuladorInner() {
                           <p className="text-[#5eead4] text-[13px] font-semibold font-[var(--font-inter)]">Desconto à vista</p>
                           <p className="text-[#5eead4]/70 text-[11px] font-[var(--font-inter)]">{pricing.discount.pct}% no PIX ou espécie</p>
                         </div>
-                        <span className="text-[#5eead4] text-[13px] font-semibold font-[var(--font-inter)] flex-shrink-0">− {fmt(pricing.discount.amount)}</span>
+                        <span className="text-[#5eead4] text-[13px] font-semibold font-[var(--font-inter)] flex-shrink-0">− {fmtBRL(pricing.discount.amount)}</span>
                       </div>
                     )}
                   </div>
@@ -3011,13 +3018,13 @@ function SimuladorInner() {
                               </div>
                               {opt.id === "cartao" ? (
                                 <>
-                                  <p className={`text-xl sm:text-2xl font-bold font-[var(--font-noto-serif)] leading-none ${active ? "text-[#002045]" : "text-white"}`}>{opt.installments}x de {fmt(opt.installmentValue ?? 0)}</p>
-                                  <p className={`text-[11px] font-[var(--font-inter)] mt-1.5 ${active ? "text-[#74777f]" : "text-[#86a0cd]"}`}>sem juros · total {fmt(opt.total)}</p>
+                                  <p className={`text-xl sm:text-2xl font-bold font-[var(--font-noto-serif)] leading-none ${active ? "text-[#002045]" : "text-white"}`}>{opt.installments}x de {fmtParcela(opt.installmentValue ?? 0)}</p>
+                                  <p className={`text-[11px] font-[var(--font-inter)] mt-1.5 ${active ? "text-[#74777f]" : "text-[#86a0cd]"}`}>sem juros · total {fmtBRL(opt.total)}</p>
                                 </>
                               ) : (
                                 <>
-                                  <p className={`text-xl sm:text-2xl font-bold font-[var(--font-noto-serif)] leading-none ${active ? "text-[#002045]" : "text-white"}`}>{fmt(opt.total)}</p>
-                                  <p className={`text-[11px] font-semibold font-[var(--font-inter)] mt-1.5 ${active ? "text-[#3b6934]" : "text-[#5eead4]"}`}>à vista · {opt.discountPct}% off (economize {fmt(opt.discountAmount ?? 0)})</p>
+                                  <p className={`text-xl sm:text-2xl font-bold font-[var(--font-noto-serif)] leading-none ${active ? "text-[#002045]" : "text-white"}`}>{fmtBRL(opt.total)}</p>
+                                  <p className={`text-[11px] font-semibold font-[var(--font-inter)] mt-1.5 ${active ? "text-[#3b6934]" : "text-[#5eead4]"}`}>à vista · {opt.discountPct}% off (economize {fmtBRL(opt.discountAmount ?? 0)})</p>
                                 </>
                               )}
                             </button>
@@ -3543,7 +3550,7 @@ function SimuladorInner() {
                 {pricing && (
                   <div className="bg-[#f7f8fa] border border-[#e2e2e2] px-4 py-3 text-[12px] font-[var(--font-inter)] text-[#43474e] space-y-0.5">
                     <div className="flex justify-between"><span>{pricing.plates} placa{pricing.plates !== 1 ? "s" : ""}{pricing.colaAvailable && pricing.colaTubos > 0 ? ` · ${pricing.colaTubos} tubos Cola PU` : ""}</span><span>{fmt(pricing.platesSubtotal + pricing.colaSubtotal)}</span></div>
-                    <div className="flex justify-between"><span>Frete</span><span>{pricing.frete.free ? "Grátis" : fmt(pricing.frete.value)}</span></div>
+                    <div className="flex justify-between"><span>Frete</span><span>{pricing.frete.free ? "Grátis" : fmtBRL(pricing.frete.value)}</span></div>
                     {(() => { const s = pricing.paymentOptions.find((o) => o.id === selectedPayment) ?? pricing.paymentOptions[0]; return (
                       <div className="flex justify-between pt-1 mt-1 border-t border-[#e2e2e2] font-bold text-[#002045]"><span>Total {s ? `· ${s.label}` : ""}</span><span>{fmt(s?.total ?? pricing.totalFull)}</span></div>
                     ); })()}
