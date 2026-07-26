@@ -97,6 +97,7 @@ export default function OrcamentoPage({ params }: { params: Promise<{ slug: stri
   const [fzSubmitting, setFzSubmitting] = useState(false);
   const [fzResult, setFzResult] = useState<{ formalNumber: string; pdfUrl: string; whatsappOk: boolean; emailOk: boolean } | null>(null);
   const [fzError, setFzError] = useState("");
+  const [fzEditData, setFzEditData] = useState(false);
   const heroRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
@@ -726,65 +727,137 @@ export default function OrcamentoPage({ params }: { params: Promise<{ slug: stri
             {fzResult ? (
               <div className="px-5 py-6 space-y-4">
                 <div className="flex items-center gap-3">
-                  <span className="flex-shrink-0 w-10 h-10 rounded-full bg-[#f0f9eb] flex items-center justify-center">
-                    <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#3b6934" strokeWidth="2.5"><path d="M20 6L9 17l-5-5"/></svg>
+                  <span className="flex-shrink-0 w-11 h-11 rounded-full bg-[#f0f9eb] flex items-center justify-center">
+                    <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="#3b6934" strokeWidth="2.5"><path d="M20 6L9 17l-5-5"/></svg>
                   </span>
                   <div>
-                    <p className="text-[#002045] text-sm font-bold font-[var(--font-inter)]">Orçamento enviado com sucesso.</p>
+                    <p className="text-[#002045] text-base font-bold font-[var(--font-noto-serif)]">Seu orçamento está pronto</p>
                     <p className="text-[#74777f] text-[12px] font-[var(--font-inter)]">Nº {fzResult.formalNumber}</p>
                   </div>
                 </div>
                 <p className="text-[#43474e] text-[13px] font-[var(--font-inter)] leading-relaxed">
-                  {fzResult.whatsappOk ? `Enviamos o PDF para o seu WhatsApp${fzPhone ? ` final ${fzPhone.replace(/\D/g, "").slice(-4)}` : ""}.` : "Seu orçamento foi gerado. O PDF está disponível abaixo."}
+                  {fzResult.whatsappOk ? `Enviamos o documento para o seu WhatsApp${fzPhone ? ` final ${fzPhone.replace(/\D/g, "").slice(-4)}` : ""}.` : "Seu orçamento foi gerado. Você pode visualizá-lo agora."}
                   {fzResult.emailOk && fzEmail ? ` Também enviamos uma cópia para ${fzEmail}.` : ""}
                 </p>
-                <a href={fzResult.pdfUrl} target="_blank" rel="noopener noreferrer" className="block w-full text-center bg-[#002045] hover:bg-[#1a365d] text-white text-xs tracking-[0.1em] uppercase font-bold font-[var(--font-inter)] px-5 py-3 transition-colors">Visualizar / baixar PDF</a>
-                <button onClick={() => { setFzResult(null); void submitFormalize(); }} disabled={fzSubmitting} className="w-full text-center border border-[#e2e2e2] text-[#002045] text-xs tracking-[0.1em] uppercase font-semibold font-[var(--font-inter)] px-5 py-3 hover:border-[#002045] transition-colors disabled:opacity-50">{fzSubmitting ? "Reenviando…" : "Reenviar"}</button>
+                <a href={fzResult.pdfUrl} target="_blank" rel="noopener noreferrer" className="block w-full text-center bg-[#002045] hover:bg-[#1a365d] text-white text-xs tracking-[0.1em] uppercase font-bold font-[var(--font-inter)] px-5 py-3.5 transition-colors">Visualizar PDF</a>
+                <a href={`https://wa.me/5592988150149?text=${waMessage}`} target="_blank" rel="noopener noreferrer" className="flex items-center justify-center gap-2 w-full text-center bg-[#25d366] text-white text-xs tracking-[0.1em] uppercase font-bold font-[var(--font-inter)] px-5 py-3.5 hover:brightness-95 transition">
+                  <svg width="14" height="14" viewBox="0 0 24 24" fill="currentColor"><path d="M17.472 14.382c-.297-.149-1.758-.867-2.03-.967-.273-.099-.471-.148-.67.15-.197.297-.767.966-.94 1.164-.173.199-.347.223-.644.075-.297-.15-1.255-.463-2.39-1.475-.883-.788-1.48-1.761-1.653-2.059-.173-.297-.018-.458.13-.606.134-.133.298-.347.446-.52.149-.174.198-.298.298-.497.099-.198.05-.371-.025-.52-.075-.149-.669-1.612-.916-2.207-.242-.579-.487-.5-.669-.51-.173-.008-.371-.01-.57-.01-.198 0-.52.074-.792.372-.272.297-1.04 1.016-1.04 2.479 0 1.462 1.065 2.875 1.213 3.074.149.198 2.096 3.2 5.077 4.487.709.306 1.262.489 1.694.625.712.227 1.36.195 1.871.118.571-.085 1.758-.719 2.006-1.413.248-.694.248-1.289.173-1.413z"/></svg>
+                  Avançar com este projeto
+                </a>
+                <button onClick={() => setFzOpen(false)} className="w-full text-center text-[#74777f] text-xs tracking-[0.1em] uppercase font-semibold font-[var(--font-inter)] px-5 py-2 hover:text-[#002045] transition-colors">Voltar ao orçamento</button>
               </div>
-            ) : (
+            ) : (() => {
+              const cepDigits = fzZip.replace(/\D/g, "").length;
+              const showAddrFields = cepDigits >= 8 || !!(fzStreet || fzNumber);
+              const sp0 = quote.spaces?.[0];
+              const sel = pricing?.paymentOptions.find((o) => o.id === selectedPayment) ?? pricing?.paymentOptions[0];
+              const totalPlates = quote.total_plates ?? (quote.spaces ?? []).reduce((s, x) => s + (x.plates || 0), 0);
+              return (
               <div className="px-5 py-5 space-y-5">
                 <div>
-                  <p className="text-[#43474e] text-[10px] tracking-[0.15em] uppercase font-bold font-[var(--font-inter)] mb-3">Confirme seus dados</p>
-                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
-                    <input value={fzName} onChange={(e) => setFzName(e.target.value)} placeholder="Nome completo" className="border border-[#e2e2e2] px-3 py-2 text-sm font-[var(--font-inter)] text-[#002045] focus:outline-none focus:border-[#002045]" />
-                    <input value={fzPhone} onChange={(e) => setFzPhone(e.target.value)} placeholder="WhatsApp" className="border border-[#e2e2e2] px-3 py-2 text-sm font-[var(--font-inter)] text-[#002045] focus:outline-none focus:border-[#002045]" />
-                    <input value={fzEmail} onChange={(e) => setFzEmail(e.target.value)} placeholder="E-mail" className="sm:col-span-2 border border-[#e2e2e2] px-3 py-2 text-sm font-[var(--font-inter)] text-[#002045] focus:outline-none focus:border-[#002045]" />
+                  <p className="text-[#002045] text-base font-bold font-[var(--font-noto-serif)]">Formalize seu orçamento</p>
+                  <p className="text-[#74777f] text-[12px] font-[var(--font-inter)] mt-0.5">Confirme os dados abaixo para receber sua proposta completa pelo WhatsApp.</p>
+                  <div className="flex items-center gap-1.5 mt-3 text-[9px] tracking-[0.1em] uppercase font-bold font-[var(--font-inter)] text-[#74777f]">
+                    <span className="text-[#002045]">1 Pagamento</span><span className="text-[#c4c4c4]">→</span>
+                    <span className={showAddrFields ? "text-[#002045]" : ""}>2 Entrega</span><span className="text-[#c4c4c4]">→</span>
+                    <span>3 Confirmação</span>
                   </div>
-                  {pricing && pricing.paymentOptions.length > 0 && (
-                    <div className="mt-3">
-                      <p className="text-[#74777f] text-[11px] font-[var(--font-inter)] mb-1.5">Condição de pagamento</p>
-                      <div className="flex flex-wrap gap-2">
-                        {pricing.paymentOptions.map((opt) => (
-                          <button key={opt.id} type="button" onClick={() => setSelectedPayment(opt.id)} className={`px-3 py-1.5 text-[12px] font-semibold font-[var(--font-inter)] border transition-colors ${selectedPayment === opt.id ? "border-[#002045] bg-[#eef2fb] text-[#002045]" : "border-[#e2e2e2] text-[#74777f] hover:border-[#86a0cd]"}`}>
-                            {opt.label} · {fmt(opt.total)}
+                </div>
+
+                {/* Resumo visual do projeto */}
+                {sp0 && (
+                  <div className="flex items-center gap-3 border border-[#e2e2e2] p-3">
+                    {sp0.productImg && <img src={sp0.productImg} alt={sp0.productName} className="w-14 h-14 object-cover flex-shrink-0 border border-[#e2e2e2]" />}
+                    <div className="min-w-0 flex-1">
+                      <p className="text-[#002045] text-sm font-semibold font-[var(--font-inter)] truncate">{sp0.productName} — {sp0.productCode}</p>
+                      <p className="text-[#74777f] text-[11px] font-[var(--font-inter)]">{totalPlates} placa{totalPlates !== 1 ? "s" : ""}{quote.total_area_m2 ? ` · ${fmtDec(quote.total_area_m2)} m²` : ""}{quote.spaces && quote.spaces.length > 1 ? ` · ${quote.spaces.length} ambientes` : ""}</p>
+                      {sel && <p className="text-[#3b6934] text-[11px] font-semibold font-[var(--font-inter)] mt-0.5">{sel.id === "cartao" ? `${sel.installments}x de ${fmtParcela(sel.installmentValue ?? 0)} sem juros` : `${fmt(sel.total)} à vista`}</p>}
+                    </div>
+                  </div>
+                )}
+
+                {/* Seus dados — card compacto + editar */}
+                <div className="border border-[#e2e2e2] p-3">
+                  <div className="flex items-start justify-between gap-2">
+                    <div className="min-w-0">
+                      <p className="text-[#74777f] text-[9px] tracking-[0.12em] uppercase font-bold font-[var(--font-inter)] mb-1">Seus dados</p>
+                      {fzEditData ? (
+                        <div className="space-y-2">
+                          <input value={fzName} onChange={(e) => setFzName(e.target.value)} placeholder="Nome completo" className="w-full border border-[#e2e2e2] px-2.5 py-1.5 text-sm font-[var(--font-inter)] text-[#002045] focus:outline-none focus:border-[#002045]" />
+                          <input value={fzPhone} onChange={(e) => setFzPhone(e.target.value)} placeholder="WhatsApp" className="w-full border border-[#e2e2e2] px-2.5 py-1.5 text-sm font-[var(--font-inter)] text-[#002045] focus:outline-none focus:border-[#002045]" />
+                          <input value={fzEmail} onChange={(e) => setFzEmail(e.target.value)} placeholder="E-mail" className="w-full border border-[#e2e2e2] px-2.5 py-1.5 text-sm font-[var(--font-inter)] text-[#002045] focus:outline-none focus:border-[#002045]" />
+                        </div>
+                      ) : (
+                        <>
+                          <p className="text-[#002045] text-sm font-semibold font-[var(--font-inter)] truncate">{fzName || "—"}</p>
+                          <p className="text-[#74777f] text-[12px] font-[var(--font-inter)]">{fzPhone}{fzEmail ? ` · ${fzEmail}` : ""}</p>
+                        </>
+                      )}
+                    </div>
+                    <button type="button" onClick={() => setFzEditData((v) => !v)} className="flex-shrink-0 text-[#002045] text-[11px] font-semibold font-[var(--font-inter)] underline">{fzEditData ? "Pronto" : "Editar"}</button>
+                  </div>
+                </div>
+
+                {/* Condição de pagamento — parcela em destaque + badge */}
+                {pricing && pricing.paymentOptions.length > 0 && (
+                  <div>
+                    <p className="text-[#43474e] text-[10px] tracking-[0.15em] uppercase font-bold font-[var(--font-inter)] mb-2">Condição de pagamento</p>
+                    <div className="grid grid-cols-1 gap-2">
+                      {pricing.paymentOptions.map((opt) => {
+                        const active = selectedPayment === opt.id;
+                        return (
+                          <button key={opt.id} type="button" onClick={() => setSelectedPayment(opt.id)} aria-pressed={active}
+                            className={`text-left px-4 py-3 border transition-colors flex items-center justify-between gap-3 ${active ? "border-[#002045] bg-[#eef2fb] ring-1 ring-[#002045]" : "border-[#e2e2e2] bg-white hover:border-[#86a0cd]"}`}>
+                            <div className="min-w-0">
+                              <div className="flex items-center gap-2 mb-0.5">
+                                <span className="text-[#43474e] text-[10px] tracking-[0.06em] uppercase font-bold font-[var(--font-inter)]">{opt.label}</span>
+                                <span className={`text-[8px] tracking-[0.08em] uppercase font-bold px-1.5 py-0.5 ${opt.id === "pix" ? "bg-[#e6f4ea] text-[#3b6934]" : "bg-[#eef2fb] text-[#002045]"}`}>{opt.id === "pix" ? "Maior economia" : "Maior facilidade"}</span>
+                              </div>
+                              {opt.id === "cartao" ? (
+                                <><p className="text-[#002045] text-lg font-bold font-[var(--font-noto-serif)] leading-none">{opt.installments}x de {fmtParcela(opt.installmentValue ?? 0)}</p><p className="text-[#74777f] text-[11px] font-[var(--font-inter)] mt-1">sem juros · total {fmt(opt.total)}</p></>
+                              ) : (
+                                <><p className="text-[#002045] text-lg font-bold font-[var(--font-noto-serif)] leading-none">{fmt(opt.total)}</p><p className="text-[#3b6934] text-[11px] font-semibold font-[var(--font-inter)] mt-1">à vista · {opt.discountPct}% off (economize {fmt(opt.discountAmount ?? 0)})</p></>
+                              )}
+                            </div>
+                            <span className={`flex-shrink-0 w-4 h-4 rounded-full border-2 flex items-center justify-center ${active ? "border-[#002045] bg-[#002045]" : "border-[#c4c4c4]"}`}>{active && <svg width="8" height="8" viewBox="0 0 24 24" fill="none" stroke="white" strokeWidth="4"><path d="M20 6L9 17l-5-5"/></svg>}</span>
                           </button>
-                        ))}
-                      </div>
+                        );
+                      })}
+                    </div>
+                  </div>
+                )}
+
+                {/* Endereço — CEP primeiro, resto aparece depois */}
+                <div>
+                  <p className="text-[#43474e] text-[10px] tracking-[0.15em] uppercase font-bold font-[var(--font-inter)] mb-1">Endereço de entrega</p>
+                  <p className="text-[#74777f] text-[11px] font-[var(--font-inter)] mb-2.5">Informe o CEP para confirmarmos o frete e incluirmos os dados na proposta.</p>
+                  <div className="relative">
+                    <input value={fzZip} onChange={(e) => { setFzZip(e.target.value); if (e.target.value.replace(/\D/g, "").length === 8) void lookupCep(e.target.value); }} onBlur={(e) => void lookupCep(e.target.value)} placeholder="CEP" inputMode="numeric" className="w-full border border-[#e2e2e2] px-3 py-2 text-sm font-[var(--font-inter)] text-[#002045] focus:outline-none focus:border-[#002045]" />
+                    {fzCepLoading && <p className="text-[#74777f] text-[10px] font-[var(--font-inter)] mt-1">Consultando CEP…</p>}
+                    {fzCepError && <p className="text-[#a07a00] text-[10px] font-[var(--font-inter)] mt-1">{fzCepError}</p>}
+                  </div>
+                  {showAddrFields && (
+                    <div className="grid grid-cols-1 sm:grid-cols-3 gap-3 mt-3">
+                      <input value={fzStreet} onChange={(e) => setFzStreet(e.target.value)} placeholder="Rua / Avenida" className="sm:col-span-2 border border-[#e2e2e2] px-3 py-2 text-sm font-[var(--font-inter)] text-[#002045] focus:outline-none focus:border-[#002045]" />
+                      <input value={fzNumber} onChange={(e) => setFzNumber(e.target.value)} placeholder="Número *" className="border border-[#e2e2e2] px-3 py-2 text-sm font-[var(--font-inter)] text-[#002045] focus:outline-none focus:border-[#002045]" />
+                      <input value={fzComplement} onChange={(e) => setFzComplement(e.target.value)} placeholder="Complemento" className="border border-[#e2e2e2] px-3 py-2 text-sm font-[var(--font-inter)] text-[#002045] focus:outline-none focus:border-[#002045]" />
+                      <input value={fzNeighborhood} onChange={(e) => setFzNeighborhood(e.target.value)} placeholder="Bairro" className="border border-[#e2e2e2] px-3 py-2 text-sm font-[var(--font-inter)] text-[#002045] focus:outline-none focus:border-[#002045]" />
+                      <input value={fzCity} onChange={(e) => setFzCity(e.target.value)} placeholder="Cidade" className="border border-[#e2e2e2] px-3 py-2 text-sm font-[var(--font-inter)] text-[#002045] focus:outline-none focus:border-[#002045]" />
+                      <input value={fzState} onChange={(e) => setFzState(e.target.value)} placeholder="UF" maxLength={2} className="border border-[#e2e2e2] px-3 py-2 text-sm font-[var(--font-inter)] text-[#002045] uppercase focus:outline-none focus:border-[#002045]" />
                     </div>
                   )}
                 </div>
-                <div>
-                  <p className="text-[#43474e] text-[10px] tracking-[0.15em] uppercase font-bold font-[var(--font-inter)] mb-3">Endereço de entrega</p>
-                  <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
-                    <div className="sm:col-span-1">
-                      <input value={fzZip} onChange={(e) => setFzZip(e.target.value)} onBlur={(e) => void lookupCep(e.target.value)} placeholder="CEP" inputMode="numeric" className="w-full border border-[#e2e2e2] px-3 py-2 text-sm font-[var(--font-inter)] text-[#002045] focus:outline-none focus:border-[#002045]" />
-                      {fzCepLoading && <p className="text-[#74777f] text-[10px] font-[var(--font-inter)] mt-1">Consultando…</p>}
-                      {fzCepError && <p className="text-[#a07a00] text-[10px] font-[var(--font-inter)] mt-1">{fzCepError}</p>}
-                    </div>
-                    <input value={fzStreet} onChange={(e) => setFzStreet(e.target.value)} placeholder="Rua / Avenida" className="sm:col-span-2 border border-[#e2e2e2] px-3 py-2 text-sm font-[var(--font-inter)] text-[#002045] focus:outline-none focus:border-[#002045]" />
-                    <input value={fzNumber} onChange={(e) => setFzNumber(e.target.value)} placeholder="Número *" className="border border-[#e2e2e2] px-3 py-2 text-sm font-[var(--font-inter)] text-[#002045] focus:outline-none focus:border-[#002045]" />
-                    <input value={fzComplement} onChange={(e) => setFzComplement(e.target.value)} placeholder="Complemento" className="border border-[#e2e2e2] px-3 py-2 text-sm font-[var(--font-inter)] text-[#002045] focus:outline-none focus:border-[#002045]" />
-                    <input value={fzNeighborhood} onChange={(e) => setFzNeighborhood(e.target.value)} placeholder="Bairro" className="border border-[#e2e2e2] px-3 py-2 text-sm font-[var(--font-inter)] text-[#002045] focus:outline-none focus:border-[#002045]" />
-                    <input value={fzCity} onChange={(e) => setFzCity(e.target.value)} placeholder="Cidade" className="sm:col-span-2 border border-[#e2e2e2] px-3 py-2 text-sm font-[var(--font-inter)] text-[#002045] focus:outline-none focus:border-[#002045]" />
-                    <input value={fzState} onChange={(e) => setFzState(e.target.value)} placeholder="UF" maxLength={2} className="border border-[#e2e2e2] px-3 py-2 text-sm font-[var(--font-inter)] text-[#002045] uppercase focus:outline-none focus:border-[#002045]" />
-                  </div>
-                </div>
+
                 {fzError && <p className="text-[#cc0000] text-[12px] font-[var(--font-inter)]">{fzError}</p>}
-                <button type="button" onClick={() => void submitFormalize()} disabled={fzSubmitting} className="w-full bg-[#3b6934] hover:bg-[#2e5229] text-white text-sm tracking-[0.08em] uppercase font-bold font-[var(--font-inter)] px-6 py-4 transition-colors disabled:opacity-60">
-                  {fzSubmitting ? "Gerando…" : "Gerar e enviar orçamento"}
-                </button>
+                <div>
+                  <button type="button" onClick={() => void submitFormalize()} disabled={fzSubmitting} className="w-full bg-[#3b6934] hover:bg-[#2e5229] text-white text-sm tracking-[0.08em] uppercase font-bold font-[var(--font-inter)] px-6 py-4 transition-colors disabled:opacity-60">
+                    {fzSubmitting ? "Gerando…" : "Gerar meu orçamento formal"}
+                  </button>
+                  <p className="text-[#74777f] text-[11px] font-[var(--font-inter)] text-center mt-2">O PDF é gerado com os valores, condições e dados deste projeto e enviado pelo WhatsApp.</p>
+                </div>
               </div>
-            )}
+              );
+            })()}
           </div>
         </div>
       )}
