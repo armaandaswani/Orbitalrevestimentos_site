@@ -88,39 +88,46 @@ export function generateQuotePdf(input: QuotePdfInput): Promise<Buffer> {
 
   doc.moveTo(42, 118).lineTo(553, 118).strokeColor("#d8d8d8").stroke();
 
-  // Cliente + endereço
-  doc.y = 132;
-  doc.font("Helvetica").fontSize(14).fillColor("#555").text("Dados do Cliente");
-  doc.moveTo(42, doc.y + 2).lineTo(390, doc.y + 2).strokeColor("#d8d8d8").stroke();
+  // Duas colunas independentes (cliente à esquerda, meta à direita). Cada coluna
+  // controla seu próprio Y; o conteúdo seguinte começa abaixo da MAIS BAIXA, sem
+  // sobreposição.
+  const colTop = 132;
+  // Coluna esquerda — Dados do cliente
+  doc.y = colTop; doc.x = 42;
+  doc.font("Helvetica").fontSize(12).fillColor("#555").text("Dados do Cliente", 42, colTop, { width: 300 });
+  doc.moveTo(42, doc.y + 2).lineTo(300, doc.y + 2).strokeColor("#d8d8d8").stroke();
   doc.moveDown(0.5);
-  doc.font("Helvetica-Bold").fontSize(10).fillColor("#1a1c1c").text(clientName || "Cliente");
-  doc.font("Helvetica").fontSize(10);
-  if (input.clientEmail) doc.text(input.clientEmail);
-  if (input.clientPhone) doc.text(input.clientPhone);
+  doc.font("Helvetica-Bold").fontSize(10).fillColor("#1a1c1c").text(clientName || "Cliente", 42, doc.y, { width: 300 });
+  doc.font("Helvetica").fontSize(9.5).fillColor("#333");
+  if (input.clientPhone) doc.text(input.clientPhone, 42, doc.y, { width: 300 });
+  if (input.clientEmail) doc.text(input.clientEmail, 42, doc.y, { width: 300 });
   const a = input.address;
   if (a) {
     const l1 = [a.street, a.number].filter(Boolean).join(", ");
     const l2 = [a.complement, a.condo].filter(Boolean).join(" · ");
     const l3 = [a.neighborhood, a.city && a.state ? `${a.city}/${a.state}` : a.city || a.state, a.zip].filter(Boolean).join(" - ");
-    for (const line of [l1, l2, l3].filter(Boolean)) doc.text(String(line));
+    for (const line of [l1, l2, l3].filter(Boolean)) doc.text(String(line), 42, doc.y, { width: 300 });
   }
+  const clientBottom = doc.y;
 
-  const metaY = 138;
-  doc.font("Helvetica").fontSize(10).fillColor("#333");
-  doc.text(`Data: ${fmtDate(input.createdAt)}`, 410, metaY, { width: 140, align: "right" });
-  doc.text(`Validade: ${fmtDate(input.validUntil)}`, 410, metaY + 17, { width: 140, align: "right" });
-  doc.text(`No.: ${formalNumber}`, 410, metaY + 34, { width: 140, align: "right" });
-  if (input.couponCode) doc.text(`Parceiro: ${input.couponCode}`, 410, metaY + 51, { width: 140, align: "right" });
+  // Coluna direita — metadados
+  let metaY = colTop;
+  doc.font("Helvetica").fontSize(9.5).fillColor("#333");
+  doc.text(`Data: ${fmtDate(input.createdAt)}`, 380, metaY, { width: 171, align: "right" }); metaY += 15;
+  doc.text(`Validade: ${fmtDate(input.validUntil)}`, 380, metaY, { width: 171, align: "right" }); metaY += 15;
+  doc.text(`Nº: ${formalNumber}`, 380, metaY, { width: 171, align: "right" }); metaY += 15;
+  if (input.couponCode) { doc.text(`Parceiro: ${input.couponCode}`, 380, metaY, { width: 171, align: "right" }); metaY += 15; }
 
-  // Título personalizado com o primeiro nome do cliente (mesma regra do site).
+  // Título personalizado + faixa, abaixo das duas colunas.
   const fn = firstName(clientName);
-  doc.y = Math.max(doc.y, 210);
+  doc.y = Math.max(clientBottom, metaY) + 16;
+  doc.x = 42;
   doc.font("Helvetica-Bold").fontSize(13).fillColor("#002045")
     .text(fn ? `${fn}, seu projeto em Fibra de Bambu` : "Seu projeto em Fibra de Bambu", 42, doc.y, { width: 511 });
-  doc.y += 6;
+  doc.y += 8;
   doc.rect(42, doc.y, 511, 22).fill("#002045");
-  doc.fillColor("#fff").font("Helvetica").fontSize(14).text(`ORÇAMENTO FORMALIZADO No. ${formalNumber}`, 42, doc.y + 5, { width: 511, align: "center" });
-  doc.y += 42;
+  doc.fillColor("#fff").font("Helvetica").fontSize(12).text(`ORÇAMENTO FORMALIZADO Nº ${formalNumber}`, 42, doc.y + 6, { width: 511, align: "center" });
+  doc.y += 40;
 
   // Tabela de produtos (placas por ambiente)
   doc.fillColor("#555").fontSize(14).text("Material");
@@ -173,41 +180,38 @@ export function generateQuotePdf(input: QuotePdfInput): Promise<Buffer> {
     doc.y += 6;
   }
 
-  // Totais
+  // Totais — coluna direita, linhas sequenciais e alinhadas (label esq / valor dir).
   const sel = breakdown.paymentOptions.find((o) => o.id === paymentId) ?? breakdown.paymentOptions[0];
   const grandTotal = sel?.total ?? breakdown.totalFull;
-  ensureSpace(doc, 140);
-  doc.x = 360;
-  doc.font("Helvetica").fontSize(10).fillColor("#333");
-  doc.text("Subtotal placas", 340, doc.y, { width: 100 });
-  doc.font("Helvetica-Bold").text(fmtBRL(breakdown.platesSubtotal), 450, doc.y - 12, { width: 103, align: "right" });
-  if (breakdown.colaAvailable && breakdown.colaSubtotal > 0) {
-    doc.moveDown(0.5);
-    doc.font("Helvetica").text("Cola PU", 340, doc.y, { width: 100 });
-    doc.font("Helvetica-Bold").text(fmtBRL(breakdown.colaSubtotal), 450, doc.y - 12, { width: 103, align: "right" });
-  }
-  doc.moveDown(0.5);
-  doc.font("Helvetica").text("Frete", 340, doc.y, { width: 100 });
-  doc.font("Helvetica-Bold").text(breakdown.frete.free ? "Grátis" : fmtBRL(breakdown.frete.value), 450, doc.y - 12, { width: 103, align: "right" });
-  if (sel?.id === "pix" && sel.discountAmount) {
-    doc.moveDown(0.5);
-    doc.font("Helvetica").fillColor("#3b6934").text(`Desconto à vista (${sel.discountPct}%)`, 340, doc.y, { width: 100 });
-    doc.font("Helvetica-Bold").fillColor("#3b6934").text(`- ${fmtBRL(sel.discountAmount)}`, 450, doc.y - 12, { width: 103, align: "right" });
-    doc.fillColor("#333");
-  }
-  doc.moveDown(0.8);
-  doc.moveTo(340, doc.y).lineTo(553, doc.y).strokeColor("#d8d8d8").stroke();
-  doc.moveDown(0.5);
-  doc.font("Helvetica-Bold").fontSize(13).fillColor("#002045").text("Total", 340, doc.y, { width: 100 });
-  doc.text(fmtBRL(grandTotal), 450, doc.y - 16, { width: 103, align: "right" });
+  ensureSpace(doc, 130);
+  doc.y += 6;
+  const totLabelX = 330, totValX = 430, totValW = 123;
+  const totRow = (label: string, value: string, color = "#333") => {
+    const yy = doc.y;
+    doc.font("Helvetica").fontSize(10).fillColor(color).text(label, totLabelX, yy, { width: 90 });
+    doc.font("Helvetica-Bold").fontSize(10).fillColor(color).text(value, totValX, yy, { width: totValW, align: "right" });
+    doc.y = yy + 16;
+  };
+  totRow("Subtotal placas", fmtBRL(breakdown.platesSubtotal));
+  if (breakdown.colaAvailable && breakdown.colaSubtotal > 0) totRow("Cola PU", fmtBRL(breakdown.colaSubtotal));
+  totRow("Frete", breakdown.frete.free ? "Grátis" : fmtBRL(breakdown.frete.value));
+  if (sel?.id === "pix" && sel.discountAmount) totRow(`Desconto à vista (${sel.discountPct}%)`, `- ${fmtBRL(sel.discountAmount)}`, "#3b6934");
+  doc.moveTo(totLabelX, doc.y + 2).lineTo(553, doc.y + 2).strokeColor("#d8d8d8").stroke();
+  doc.y += 8;
+  const totY = doc.y;
+  doc.font("Helvetica-Bold").fontSize(13).fillColor("#002045").text("Total", totLabelX, totY, { width: 90 });
+  doc.font("Helvetica-Bold").fontSize(13).fillColor("#002045").text(fmtBRL(grandTotal), totValX, totY, { width: totValW, align: "right" });
+  doc.y = totY + 18;
   if (sel?.id === "cartao" && sel.installments) {
-    doc.font("Helvetica").fontSize(9).fillColor("#555").text(`${sel.installments}x de ${fmtBRL(sel.installmentValue ?? 0)} sem juros`, 340, doc.y + 2, { width: 213, align: "right" });
+    doc.font("Helvetica").fontSize(9).fillColor("#555").text(`${sel.installments}x de ${fmtBRL(sel.installmentValue ?? 0)} sem juros`, totLabelX, doc.y, { width: totValX + totValW - totLabelX, align: "right" });
+    doc.y += 14;
   }
 
-  // Condição escolhida
+  // Condição escolhida — volta a coluna para a esquerda (o total ficou à direita).
+  doc.x = 42;
+  doc.y += 24;
   ensureSpace(doc, 60);
-  doc.moveDown(2);
-  doc.font("Helvetica").fontSize(12).fillColor("#555").text("Condição de pagamento");
+  doc.font("Helvetica").fontSize(12).fillColor("#555").text("Condição de pagamento", 42, doc.y, { width: 511 });
   doc.moveTo(42, doc.y + 2).lineTo(553, doc.y + 2).strokeColor("#d8d8d8").stroke();
   doc.moveDown(0.6);
   doc.font("Helvetica").fontSize(9.5).fillColor("#1a1c1c").text(
@@ -216,31 +220,32 @@ export function generateQuotePdf(input: QuotePdfInput): Promise<Buffer> {
       : sel
         ? `Cartão de crédito — até ${sel.installments}x de ${fmtBRL(sel.installmentValue ?? 0)} sem juros. Total ${fmtBRL(sel.total)}.`
         : "A combinar.",
-    { width: 511 }
+    42, doc.y, { width: 511 }
   );
 
   // Instalação (secundário, nunca item financeiro)
+  doc.x = 42;
+  doc.y += 18;
   ensureSpace(doc, 80);
-  doc.moveDown(1.2);
-  doc.font("Helvetica").fontSize(12).fillColor("#555").text("Instalação");
+  doc.font("Helvetica").fontSize(12).fillColor("#555").text("Instalação", 42, doc.y, { width: 511 });
   doc.moveTo(42, doc.y + 2).lineTo(553, doc.y + 2).strokeColor("#d8d8d8").stroke();
   doc.moveDown(0.6);
   doc.font("Helvetica").fontSize(8.5).fillColor("#555").text(
     `A Orbital não realiza serviços de instalação, e a mão de obra não está incluída neste orçamento. ` +
     `Caso necessite, o cliente poderá entrar em contato diretamente com a empresa especializada indicada, ` +
     `${INSTALLER.name} (${INSTALLER.phone}). Valores, prazos e disponibilidade são definidos pelo prestador.`,
-    { width: 511, lineGap: 1 }
+    42, doc.y, { width: 511, lineGap: 1 }
   );
 
-  // Rodapé
-  ensureSpace(doc, 60);
-  doc.moveDown(2);
-  doc.font("Helvetica").fontSize(8).fillColor("#777").text("*** Não é válido como documento fiscal ***", 42, doc.y, { width: 511, align: "center" });
+  // Rodapé — nota inline (sem ensureSpace que empurraria para uma 2ª página).
+  doc.moveDown(1.5);
+  doc.font("Helvetica").fontSize(8).fillColor("#777").text("*** Não é válido como documento fiscal ***", 42, doc.y, { width: 511, align: "center", lineBreak: false });
 
+  // Numeração — dentro da área imprimível (evita criar página fantasma).
   const range = doc.bufferedPageRange();
   for (let i = range.start; i < range.start + range.count; i++) {
     doc.switchToPage(i);
-    doc.font("Helvetica").fontSize(8).fillColor("#777").text(`Página ${i + 1} de ${range.count}`, 42, 810, { width: 511, align: "center" });
+    doc.font("Helvetica").fontSize(8).fillColor("#777").text(`Página ${i + 1} de ${range.count}`, 42, 788, { width: 511, align: "center", lineBreak: false });
   }
 
   doc.end();
