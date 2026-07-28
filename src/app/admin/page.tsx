@@ -5889,14 +5889,20 @@ export default function AdminPage() {
                 campos duplicados. Agora vive em /admin/projetos/organizacao. */}
             <div className="bg-white border border-[#e2e2e2] px-4 sm:px-5 py-4 mb-8 flex flex-wrap items-center justify-between gap-3">
               <div className="min-w-0">
-                <p className="font-[var(--font-inter)] text-sm font-bold text-[#002045]">Categorias e Showrooms</p>
+                <p className="font-[var(--font-inter)] text-sm font-bold text-[#002045]">Módulo de Projetos</p>
                 <p className="text-[#74777f] text-[12px] font-[var(--font-inter)] mt-0.5">
-                  Ordem das seções do site, showrooms parceiros e características do ambiente.
+                  A lista com filtros, os rascunhos e o gerenciamento de categorias e showrooms
+                  moram em telas próprias. Esta aba fica com o cadastro até o editor novo entrar.
                 </p>
               </div>
-              <a href="/admin/projetos/organizacao" className="bg-[#002045] text-white text-xs tracking-[0.12em] uppercase font-bold font-[var(--font-inter)] px-4 py-2.5 hover:bg-[#1a365d] transition-colors whitespace-nowrap">
-                Organizar →
-              </a>
+              <div className="flex flex-wrap gap-2">
+                <a href="/admin/projetos/organizacao" className="border border-[#002045] text-[#002045] text-xs tracking-[0.12em] uppercase font-bold font-[var(--font-inter)] px-4 py-2.5 hover:bg-[#002045] hover:text-white transition-colors whitespace-nowrap">
+                  Categorias e Showrooms
+                </a>
+                <a href="/admin/projetos" className="bg-[#002045] text-white text-xs tracking-[0.12em] uppercase font-bold font-[var(--font-inter)] px-4 py-2.5 hover:bg-[#1a365d] transition-colors whitespace-nowrap">
+                  Ver lista →
+                </a>
+              </div>
             </div>
 
             {/* Section 1: Fotos Reais */}

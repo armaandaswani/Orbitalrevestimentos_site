@@ -159,7 +159,7 @@ export default function OrganizacaoPage() {
   return (
     <AdminShell
       active="projetos"
-      breadcrumb={[{ label: "Projetos", href: "/admin?tab=projetos" }, { label: "Categorias e Showrooms" }]}
+      breadcrumb={[{ label: "Projetos", href: "/admin/projetos" }, { label: "Categorias e Showrooms" }]}
       title="Categorias e Showrooms"
     >
       {saved && (
@@ -255,7 +255,7 @@ export default function OrganizacaoPage() {
                         <button onClick={() => setEditing(editing === s.id ? null : s.id)} className={btnGhost}>
                           {editing === s.id ? "Fechar" : "Editar"}
                         </button>
-                        <Link href={`/admin?tab=projetos&showroom=${s.id}`} className={btnGhost}>Ver projetos</Link>
+                        <Link href={`/admin/projetos?showroom=${s.id}`} className={btnGhost}>Ver projetos</Link>
                       </div>
                     </div>
 

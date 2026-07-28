@@ -79,7 +79,7 @@ export default function AdminShell({
                   return (
                     <Link
                       key={t}
-                      href={`/admin?tab=${t}`}
+                      href={t === "projetos" ? "/admin/projetos" : `/admin?tab=${t}`}
                       className={`group flex items-center gap-2.5 px-3 py-2 text-xs font-[var(--font-inter)] rounded-md text-left transition-colors ${isActive ? "bg-[#002045] text-white font-bold" : "text-[#43474e] hover:bg-[#eef0f3]"}`}
                     >
                       <NavIcon id={t} className={isActive ? "text-white" : "text-[#a0a3a8] group-hover:text-[#43474e]"} />
@@ -115,7 +115,7 @@ export default function AdminShell({
           </div>
 
           {/* Atalho de volta no mobile, onde a barra lateral não aparece. */}
-          <Link href="/admin?tab=projetos" className="md:hidden inline-flex items-center gap-1.5 mb-4 text-[11px] tracking-[0.1em] uppercase font-bold font-[var(--font-inter)] text-[#74777f] hover:text-[#002045] transition-colors">
+          <Link href="/admin/projetos" className="md:hidden inline-flex items-center gap-1.5 mb-4 text-[11px] tracking-[0.1em] uppercase font-bold font-[var(--font-inter)] text-[#74777f] hover:text-[#002045] transition-colors">
             ‹ Projetos
           </Link>
 
