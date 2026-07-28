@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect, useCallback } from "react";
+import { useState, useEffect, useCallback, useRef } from "react";
 import Image from "next/image";
 import Link from "next/link";
 import {
@@ -11,6 +11,20 @@ import {
   type GalleryMediaRow,
   type MediaCategory,
 } from "@/lib/project-gallery";
+import { COVER_ASPECT, coverStyle } from "@/lib/cover-crop";
+
+/**
+ * A qual seção o projeto pertence.
+ *
+ * primary_category (migração 053) é a resposta certa. O array antigo continua
+ * valendo de reserva para qualquer registro que ainda não tenha passado pela
+ * migração — assim nenhum projeto some do site durante a virada.
+ */
+function sectionSlugs(p: Project): string[] {
+  const primary = (p.primary_category ?? "").trim();
+  if (primary) return [primary];
+  return p.categories ?? [];
+}
 
 // ─── Types ────────────────────────────────────────────────────────────────────
 // Slug da categoria, ou "todos". Deixou de ser uma união fechada porque as
@@ -31,6 +45,21 @@ interface Project {
   feature_order?: number;
   /** Classificação explícita da capa (migração 051). Ausente → "depois". */
   cover_category?: string | null;
+  /** Migração 053 — categoria única + parceiro + recorte da capa. */
+  primary_category?: string | null;
+  showroom_id?: string | null;
+  tags?: string[] | null;
+  cover_focus_x?: number | null;
+  cover_focus_y?: number | null;
+  cover_zoom?: number | null;
+}
+
+interface PartnerShowroom {
+  id: string; slug: string; name: string;
+  address: string | null; maps_url: string | null; description: string | null;
+  logo_url: string | null; cover_url: string | null;
+  ambient_count: number; display_cover: string | null;
+  display_focus_x: number; display_focus_y: number; display_zoom: number;
 }
 
 interface Render {
@@ -486,18 +515,20 @@ function ProjectCard({ project, onOpen }: { project: Project; onOpen: (p: Projec
       className="bg-white flex flex-col cursor-pointer group"
       onClick={() => onOpen(project, showBefore && project.image_before ? project.image_before : project.image_after)}
     >
-      {/* Image */}
-      <div className="relative w-full aspect-[3/4] overflow-hidden">
+      {/* Image — 4:5, a mesma proporção do enquadrador do painel. O recorte
+          (foco + zoom) vem do projeto, então o card sai igual à prévia. */}
+      <div className="relative w-full overflow-hidden" style={{ aspectRatio: COVER_ASPECT }}>
         <img
           src={project.image_after}
           alt={`${project.title} — depois`}
-          className={`absolute inset-0 w-full h-full object-cover transition-all duration-500 group-hover:scale-[1.03] ${hasBA && showBefore ? "opacity-0" : "opacity-100"}`}
+          className={`absolute inset-0 w-full h-full transition-opacity duration-500 ${hasBA && showBefore ? "opacity-0" : "opacity-100"}`}
+          style={coverStyle(project.cover_focus_x, project.cover_focus_y, project.cover_zoom)}
         />
         {hasBA && project.image_before && (
           <img
             src={project.image_before}
             alt={`${project.title} — antes`}
-            className={`absolute inset-0 w-full h-full object-cover transition-all duration-500 group-hover:scale-[1.03] ${showBefore ? "opacity-100" : "opacity-0"}`}
+            className={`absolute inset-0 w-full h-full object-cover transition-opacity duration-500 ${showBefore ? "opacity-100" : "opacity-0"}`}
           />
         )}
 
@@ -615,6 +646,46 @@ function SectionHeader({ label, desc, light = false }: { label: string; desc: st
   );
 }
 
+/** Slug da categoria que agrupa os showrooms parceiros. */
+const SHOWROOM_CAT = "showroom";
+
+// Cartão de um showroom parceiro. Endereço e contagem vêm do parceiro, não de
+// cada ambiente — é ele que leva para a página onde os ambientes estão juntos.
+function PartnerCard({ s }: { s: PartnerShowroom }) {
+  return (
+    <Link href={`/projetos/showroom/${s.slug}`} className="bg-white border border-[#e2e2e2] flex flex-col group hover:border-[#002045] transition-colors">
+      <div className="relative w-full overflow-hidden bg-[#f0f0f0]" style={{ aspectRatio: "16 / 10" }}>
+        {s.display_cover ? (
+          // eslint-disable-next-line @next/next/no-img-element
+          <img
+            src={s.display_cover}
+            alt={s.name}
+            className="absolute inset-0 w-full h-full transition-transform duration-500 group-hover:scale-[1.03]"
+            style={coverStyle(s.display_focus_x, s.display_focus_y, s.display_zoom)}
+          />
+        ) : (
+          <div className="w-full h-full flex items-center justify-center text-[#c4c6ca] text-xs font-[var(--font-inter)]">
+            {s.name}
+          </div>
+        )}
+      </div>
+      <div className="px-5 py-4 flex-1 flex flex-col">
+        <p className="font-[var(--font-noto-serif)] text-[#002045] text-xl">{s.name}</p>
+        {s.address && (
+          <p className="text-[#74777f] text-[12px] font-[var(--font-inter)] mt-1.5 leading-snug">{s.address}</p>
+        )}
+        <p className="text-[#a0a3a8] text-[11px] font-[var(--font-inter)] mt-2">
+          {s.ambient_count} {s.ambient_count === 1 ? "ambiente" : "ambientes"}
+        </p>
+        <span className="inline-flex items-center gap-1.5 text-[#002045] text-[10px] tracking-[0.12em] uppercase font-bold font-[var(--font-inter)] mt-4">
+          Conhecer showroom
+          <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><path d="M5 12h14M12 5l7 7-7 7" /></svg>
+        </span>
+      </div>
+    </Link>
+  );
+}
+
 // Cartão de convite: aparece na seção da própria categoria de showroom.
 function ShowroomInvites({ invites }: { invites: ProjCatMeta[] }) {
   return (
@@ -643,6 +714,7 @@ function ShowroomInvites({ invites }: { invites: ProjCatMeta[] }) {
 export default function ProjetosPage() {
   const [activeFilter, setActiveFilter] = useState<Category>("todos");
   const [cats, setCats] = useState<ProjCatMeta[]>([]);
+  const [partners, setPartners] = useState<PartnerShowroom[]>([]);
   const [projects, setProjects] = useState<Project[]>([]);
   const [renders, setRenders] = useState<Render[]>([]);
 
@@ -697,7 +769,27 @@ export default function ProjetosPage() {
       .then((r) => (r.ok ? r.json() : []))
       .then((data) => setCats(Array.isArray(data) ? data : []))
       .catch(() => setCats([]));
+    fetch("/api/project-showrooms")
+      .then((r) => (r.ok ? r.json() : []))
+      .then((data) => setPartners(Array.isArray(data) ? data : []))
+      .catch(() => setPartners([]));
   }, []);
+
+  // Chegando da página de um showroom (?projeto=<id>): abre direto a galeria
+  // daquele ambiente, uma vez só.
+  const deepLinked = useRef(false);
+  useEffect(() => {
+    if (deepLinked.current || projects.length === 0) return;
+    const want = new URLSearchParams(window.location.search).get("projeto");
+    if (!want) return;
+    const target = projects.find((p) => p.id === want || p.slug === want);
+    if (!target) return;
+    deepLinked.current = true;
+    // Fora do ciclo de render do efeito: openLightbox faz várias escritas de
+    // estado e o React reclama de cascata se elas partirem daqui direto.
+    const t = setTimeout(() => openLightbox(target), 0);
+    return () => clearTimeout(t);
+  }, [projects, openLightbox]);
 
   // Ordem oficial das categorias: a que o painel grava em sort_order.
   const orderedCats = resolveCats(cats);
@@ -713,7 +805,7 @@ export default function ProjetosPage() {
   const filtered = (
     activeFilter === "todos"
       ? projects
-      : projects.filter((p) => p.categories.includes(activeFilter))
+      : projects.filter((p) => sectionSlugs(p).includes(activeFilter))
   )
     // Destaques primeiro (por feature_order), depois o restante.
     .slice()
@@ -902,11 +994,15 @@ export default function ProjetosPage() {
             const shown = new Set<string>();
             const blocks = orderedCats.map((cat) => {
               const displayProjects = projects
-                .filter((p) => !shown.has(p.id) && p.categories.includes(cat.slug))
+                .filter((p) => !shown.has(p.id) && sectionSlugs(p).includes(cat.slug))
                 .sort(byFeatured);
               displayProjects.forEach((p) => shown.add(p.id));
               const invite = cat.is_showroom && cat.invite_enabled && (cat.address || cat.maps_url) ? cat : null;
-              return { cat, displayProjects, invite };
+              // A seção de showrooms não lista ambientes soltos: lista os
+              // parceiros. Cada um leva para a própria página, onde os ambientes
+              // aparecem juntos e o endereço é o do parceiro.
+              const isPartnerSection = cat.slug === SHOWROOM_CAT && partners.length > 0;
+              return { cat, displayProjects, invite, isPartnerSection };
             });
 
             // Projetos sem categoria (ou com um slug que não existe mais na tabela)
@@ -917,15 +1013,21 @@ export default function ProjetosPage() {
 
             return (
               <div className="space-y-16">
-                {blocks.map(({ cat, displayProjects, invite }) => displayProjects.length > 0 && (
+                {blocks.map(({ cat, displayProjects, invite, isPartnerSection }) => (displayProjects.length > 0 || isPartnerSection) && (
                   <div key={cat.slug}>
                     <SectionHeader label={cat.label} desc={cat.description ?? ""} />
                     {invite && <ShowroomInvites invites={[invite]} />}
-                    <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 gap-1">
-                      {displayProjects.map((project) => (
-                        <ProjectCard key={project.id} project={project} onOpen={openLightbox} />
-                      ))}
-                    </div>
+                    {isPartnerSection ? (
+                      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
+                        {partners.map((s) => <PartnerCard key={s.id} s={s} />)}
+                      </div>
+                    ) : (
+                      <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 gap-1">
+                        {displayProjects.map((project) => (
+                          <ProjectCard key={project.id} project={project} onOpen={openLightbox} />
+                        ))}
+                      </div>
+                    )}
                   </div>
                 ))}
                 {(rest.length > 0 || orphanInvites.length > 0) && (
@@ -946,7 +1048,11 @@ export default function ProjetosPage() {
           })() : (
             /* Filtered: flat grid */
             <>
-              {filtered.length === 0 ? (
+              {activeFilter === SHOWROOM_CAT && partners.length > 0 ? (
+                <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
+                  {partners.map((s) => <PartnerCard key={s.id} s={s} />)}
+                </div>
+              ) : filtered.length === 0 ? (
                 <p className="text-center text-[#74777f] text-sm font-[var(--font-inter)] py-20">
                   Nenhum projeto nesta categoria.
                 </p>

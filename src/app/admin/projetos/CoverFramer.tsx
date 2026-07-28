@@ -1,6 +1,11 @@
 "use client";
 
 import { useCallback, useRef, useState } from "react";
+import { COVER_ASPECT, coverStyle } from "@/lib/cover-crop";
+
+// Reexportados para quem já importa daqui; a conta em si vive em @/lib/cover-crop,
+// compartilhada com o card do site.
+export { COVER_ASPECT, coverStyle };
 
 /**
  * Enquadramento da capa no formato 4:5 — a mesma proporção do card do site.
@@ -10,18 +15,6 @@ import { useCallback, useRef, useState } from "react";
  * se vê aqui é o que sai lá. A imagem original continua intacta e é ela que a
  * galeria abre, na resolução cheia.
  */
-
-export const COVER_ASPECT = "4 / 5";
-
-/** Estilo do recorte — usado aqui e no card, para não divergirem. */
-export function coverStyle(focusX: number, focusY: number, zoom: number): React.CSSProperties {
-  return {
-    objectFit: "cover",
-    objectPosition: `${focusX * 100}% ${focusY * 100}%`,
-    transform: `scale(${zoom})`,
-    transformOrigin: `${focusX * 100}% ${focusY * 100}%`,
-  };
-}
 
 const clamp01 = (n: number) => Math.min(1, Math.max(0, n));
 

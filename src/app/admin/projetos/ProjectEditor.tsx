@@ -378,7 +378,9 @@ export default function ProjectEditor({ id }: { id: string }) {
                 <div>
                   <label className={labelCls}>Categoria principal *</label>
                   <select value={p.primary_category ?? ""} onChange={(e) => {
-                    const v = e.target.value;
+                    // Grave null, nunca "": string vazia passava pelas checagens
+                    // de "tem categoria?" e o projeto ficava publicado sem seção.
+                    const v = e.target.value || null;
                     set({ primary_category: v, ...(v === SHOWROOM_SLUG ? {} : { showroom_id: null }) });
                   }} className={inputCls}>
                     <option value="">— selecione —</option>
