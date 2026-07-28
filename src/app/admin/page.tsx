@@ -637,7 +637,7 @@ export default function AdminPage() {
   const BASE_CATEGORIES = ["residencial", "comercial", "umido", "nautico"];
   const [newCatInput, setNewCatInput] = useState("");
   // Metadados de categorias (ordem, subcategoria, showroom/endereço) — tabela project_categories.
-  interface ProjCat { id:string; slug:string; label:string; parent_slug:string|null; sort_order:number; is_showroom:boolean; address:string|null; maps_url:string|null; invite_enabled:boolean; active:boolean; }
+  interface ProjCat { id:string; slug:string; label:string; description:string|null; parent_slug:string|null; sort_order:number; is_showroom:boolean; address:string|null; maps_url:string|null; invite_enabled:boolean; active:boolean; }
   const [projCats, setProjCats] = useState<ProjCat[]>([]);
   const [catsSeeded, setCatsSeeded] = useState(false);
 
@@ -5924,6 +5924,12 @@ export default function AdminPage() {
                           </label>
                           <button onClick={() => deleteProjCat(c.id)} className="text-[#cc0000] hover:text-white hover:bg-[#cc0000] w-6 h-6 flex items-center justify-center text-sm font-bold transition-colors" aria-label="Remover">✕</button>
                         </div>
+                        <input
+                          value={c.description ?? ""}
+                          onChange={(e) => patchProjCat(c.id, { description: e.target.value })}
+                          placeholder="Subtítulo da seção no site (ex.: Restaurantes, escritórios e espaços de uso coletivo)"
+                          className="mt-1.5 w-full border border-[#e2e2e2] px-2 py-1 text-xs font-[var(--font-inter)] text-[#43474e] focus:outline-none focus:border-[#002045]"
+                        />
                         {c.is_showroom && (
                           <div className="mt-2 grid grid-cols-1 sm:grid-cols-2 gap-2">
                             <input value={c.address ?? ""} onChange={(e) => patchProjCat(c.id, { address: e.target.value })} placeholder="Endereço do showroom" className="border border-[#e2e2e2] px-2 py-1.5 text-sm font-[var(--font-inter)] text-[#002045] focus:outline-none focus:border-[#002045]" />

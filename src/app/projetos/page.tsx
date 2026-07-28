@@ -13,7 +13,9 @@ import {
 } from "@/lib/project-gallery";
 
 // ─── Types ────────────────────────────────────────────────────────────────────
-type Category = "todos" | "residencial" | "comercial" | "umido" | "nautico" | "showroom";
+// Slug da categoria, ou "todos". Deixou de ser uma união fechada porque as
+// categorias agora são criadas pelo painel — o código não conhece a lista.
+type Category = string;
 
 interface Project {
   id: string;
@@ -42,6 +44,8 @@ interface Render {
 interface ProjCatMeta {
   slug: string;
   label: string;
+  /** Subtítulo da seção na galeria (migração 052). Ausente → seção sem subtítulo. */
+  description?: string | null;
   parent_slug: string | null;
   sort_order: number;
   is_showroom: boolean;
@@ -433,36 +437,42 @@ const STATIC_RENDERS: Render[] = [
   { id: "s19", slug: "orb015-banheiro",            title: "Banheiro",                   product_code: "ORB-015", image_path: "/images/renders/orb015-banheiro.png" },
 ];
 
-// Gallery sections — storytelling order (slug-based)
-const GALLERY_SECTIONS = [
-  {
-    key: "comercial",
-    label: "Comercial",
-    desc: "Restaurantes, escritórios e espaços de uso coletivo",
-    slugs: ["restaurante", "hall", "escritorio"],
-  },
-  {
-    key: "residencial",
-    label: "Residencial · Áreas Úmidas",
-    desc: "Lavabos, banheiros e cozinhas transformados sem obra",
-    slugs: ["lavabo1", "lavabo2", "lavabo3", "lavabo4", "cozinha"],
-  },
-  {
-    key: "nautico",
-    label: "Náutico",
-    desc: "Revestimento homologado para embarcações",
-    slugs: ["nautico1", "nautico2", "nautico3", "nautico4"],
-  },
-];
+// A ordem das seções e dos filtros vem de project_categories.sort_order — é o
+// que os botões ↑↓ do painel gravam.
+//
+// Rótulo e subtítulo das categorias originais, para o site não empobrecer na
+// janela entre este deploy e a migração 052 (que grava estes mesmos valores no
+// banco). O que estiver preenchido no banco SEMPRE vence: assim que a 052 rodar,
+// ou assim que alguém editar o texto no painel, este mapa deixa de ter efeito.
+const SEED_CAT_TEXT: Record<string, { label: string; description: string }> = {
+  residencial: { label: "Residencial",  description: "Ambientes residenciais revestidos sem obra" },
+  comercial:   { label: "Comercial",    description: "Restaurantes, escritórios e espaços de uso coletivo" },
+  umido:       { label: "Áreas Úmidas", description: "Lavabos, banheiros e cozinhas — sem inchar, sem mofar" },
+  showroom:    { label: "Showroom",     description: "Ambientes em exposição — visite e veja de perto" },
+  nautico:     { label: "Náutico",      description: "Revestimento homologado para embarcações" },
+};
 
-const FILTERS: { key: Category; label: string }[] = [
-  { key: "todos",       label: "Todos"        },
-  { key: "residencial", label: "Residencial"  },
-  { key: "comercial",   label: "Comercial"    },
-  { key: "umido",       label: "Áreas Úmidas" },
-  { key: "showroom",    label: "Showroom"     },
-  { key: "nautico",     label: "Náutico"      },
-];
+/** Ordem das categorias do banco; o mapa acima só preenche o que faltar. */
+function resolveCats(cats: ProjCatMeta[]): ProjCatMeta[] {
+  const rows = cats.length > 0
+    ? cats
+    : Object.entries(SEED_CAT_TEXT).map(([slug, t], i) => ({
+        slug, label: t.label, description: t.description, parent_slug: null,
+        sort_order: i, is_showroom: false, address: null, maps_url: null, invite_enabled: false,
+      }));
+  return rows
+    .map((c) => {
+      const seed = SEED_CAT_TEXT[c.slug];
+      if (!seed) return c;
+      // Rótulo do banco vence, exceto quando ainda é o slug cru gerado pelo seed
+      // automático (ex.: "Umido" antes da 052) — aí o texto com acento é melhor.
+      const label = c.label && c.label.toLowerCase() !== c.slug.toLowerCase() ? c.label : seed.label;
+      return { ...c, label, description: c.description || seed.description };
+    })
+    // Empate em sort_order (dado antigo) não pode deixar a ordem das seções
+    // variando entre carregamentos — o slug desempata.
+    .sort((a, b) => a.sort_order - b.sort_order || a.slug.localeCompare(b.slug));
+}
 
 // ─── Project card — portrait aspect ───────────────────────────────────────────
 function ProjectCard({ project, onOpen }: { project: Project; onOpen: (p: Project, startUrl?: string) => void }) {
@@ -605,6 +615,30 @@ function SectionHeader({ label, desc, light = false }: { label: string; desc: st
   );
 }
 
+// Cartão de convite: aparece na seção da própria categoria de showroom.
+function ShowroomInvites({ invites }: { invites: ProjCatMeta[] }) {
+  return (
+    <div className="bg-[#002045] text-white px-6 py-6 mb-4">
+      <p className="text-[10px] tracking-[0.2em] uppercase font-bold font-[var(--font-inter)] text-[#86a0cd] mb-1">Visite nossos showrooms</p>
+      <p className="font-[var(--font-noto-serif)] text-xl mb-4">Veja o PFB Orbital ao vivo — venha nos visitar.</p>
+      <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+        {invites.map((s) => (
+          <div key={s.slug} className="border border-white/15 px-4 py-3">
+            <p className="text-white font-semibold font-[var(--font-inter)] text-sm">{s.label}</p>
+            {s.address && <p className="text-white/70 text-[13px] font-[var(--font-inter)] mt-0.5 leading-snug">{s.address}</p>}
+            {s.maps_url && (
+              <a href={s.maps_url} target="_blank" rel="noopener noreferrer" className="inline-flex items-center gap-1 text-[#86a0cd] hover:text-white text-[11px] tracking-[0.1em] uppercase font-bold font-[var(--font-inter)] mt-2 transition-colors">
+                Ver no mapa
+                <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><path d="M5 12h14M12 5l7 7-7 7"/></svg>
+              </a>
+            )}
+          </div>
+        ))}
+      </div>
+    </div>
+  );
+}
+
 // ─── Page ─────────────────────────────────────────────────────────────────────
 export default function ProjetosPage() {
   const [activeFilter, setActiveFilter] = useState<Category>("todos");
@@ -664,6 +698,14 @@ export default function ProjetosPage() {
       .then((data) => setCats(Array.isArray(data) ? data : []))
       .catch(() => setCats([]));
   }, []);
+
+  // Ordem oficial das categorias: a que o painel grava em sort_order.
+  const orderedCats = resolveCats(cats);
+
+  const FILTERS: { key: Category; label: string }[] = [
+    { key: "todos", label: "Todos" },
+    ...orderedCats.map((c) => ({ key: c.slug, label: c.label })),
+  ];
 
   // Convites de showroom (parceiros) — endereços a exibir + AI. Só os ativados.
   const showroomInvites = cats.filter((c) => c.is_showroom && c.invite_enabled && (c.address || c.maps_url));
@@ -849,28 +891,36 @@ export default function ProjetosPage() {
             </div>
           </div>
 
-          {/* Todos: sections with storytelling order + catch-all */}
+          {/* Todos: uma seção por categoria, na ordem definida no painel */}
           {activeFilter === "todos" ? (() => {
+            const byFeatured = (a: Project, b: Project) =>
+              !!a.is_featured !== !!b.is_featured ? (a.is_featured ? -1 : 1) : (a.feature_order ?? 0) - (b.feature_order ?? 0);
+
+            // Cada projeto entra na PRIMEIRA categoria em que se encaixa, seguindo
+            // a ordem do painel — por isso nada aparece duas vezes, e subir uma
+            // categoria também traz para ela os projetos que dividem marcação.
             const shown = new Set<string>();
-            const blocks = GALLERY_SECTIONS.map((section) => {
-              const sectionProjects = section.slugs
-                .map((slug) => projects.find((p) => p.slug === slug))
-                .filter(Boolean) as Project[];
-              const displayProjects = sectionProjects.length > 0 ? sectionProjects : projects.filter((p) => p.categories.includes(section.key));
+            const blocks = orderedCats.map((cat) => {
+              const displayProjects = projects
+                .filter((p) => !shown.has(p.id) && p.categories.includes(cat.slug))
+                .sort(byFeatured);
               displayProjects.forEach((p) => shown.add(p.id));
-              return { section, displayProjects };
+              const invite = cat.is_showroom && cat.invite_enabled && (cat.address || cat.maps_url) ? cat : null;
+              return { cat, displayProjects, invite };
             });
-            // Qualquer projeto publicado que não caiu em nenhuma seção (ex.:
-            // Showrooms) aparece aqui — nunca fica invisível no site.
-            const rest = projects
-              .filter((p) => !shown.has(p.id))
-              .slice()
-              .sort((a, b) => (!!a.is_featured !== !!b.is_featured ? (a.is_featured ? -1 : 1) : (a.feature_order ?? 0) - (b.feature_order ?? 0)));
+
+            // Projetos sem categoria (ou com um slug que não existe mais na tabela)
+            // caem aqui — nunca ficam invisíveis no site.
+            const rest = projects.filter((p) => !shown.has(p.id)).slice().sort(byFeatured);
+            // Convites de showroom cuja categoria não rendeu seção própria.
+            const orphanInvites = showroomInvites.filter((s) => !blocks.some((b) => b.invite?.slug === s.slug && b.displayProjects.length > 0));
+
             return (
               <div className="space-y-16">
-                {blocks.map(({ section, displayProjects }) => displayProjects.length > 0 && (
-                  <div key={section.key}>
-                    <SectionHeader label={section.label} desc={section.desc} />
+                {blocks.map(({ cat, displayProjects, invite }) => displayProjects.length > 0 && (
+                  <div key={cat.slug}>
+                    <SectionHeader label={cat.label} desc={cat.description ?? ""} />
+                    {invite && <ShowroomInvites invites={[invite]} />}
                     <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 gap-1">
                       {displayProjects.map((project) => (
                         <ProjectCard key={project.id} project={project} onOpen={openLightbox} />
@@ -878,29 +928,10 @@ export default function ProjetosPage() {
                     </div>
                   </div>
                 ))}
-                {(rest.length > 0 || showroomInvites.length > 0) && (
+                {(rest.length > 0 || orphanInvites.length > 0) && (
                   <div key="__outros">
-                    <SectionHeader label="Showrooms & outros" desc="Ambientes em exposição e demais projetos" />
-                    {showroomInvites.length > 0 && (
-                      <div className="bg-[#002045] text-white px-6 py-6 mb-4">
-                        <p className="text-[10px] tracking-[0.2em] uppercase font-bold font-[var(--font-inter)] text-[#86a0cd] mb-1">Visite nossos showrooms</p>
-                        <p className="font-[var(--font-noto-serif)] text-xl mb-4">Veja o PFB Orbital ao vivo — venha nos visitar.</p>
-                        <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-                          {showroomInvites.map((s) => (
-                            <div key={s.slug} className="border border-white/15 px-4 py-3">
-                              <p className="text-white font-semibold font-[var(--font-inter)] text-sm">{s.label}</p>
-                              {s.address && <p className="text-white/70 text-[13px] font-[var(--font-inter)] mt-0.5 leading-snug">{s.address}</p>}
-                              {s.maps_url && (
-                                <a href={s.maps_url} target="_blank" rel="noopener noreferrer" className="inline-flex items-center gap-1 text-[#86a0cd] hover:text-white text-[11px] tracking-[0.1em] uppercase font-bold font-[var(--font-inter)] mt-2 transition-colors">
-                                  Ver no mapa
-                                  <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><path d="M5 12h14M12 5l7 7-7 7"/></svg>
-                                </a>
-                              )}
-                            </div>
-                          ))}
-                        </div>
-                      </div>
-                    )}
+                    <SectionHeader label="Outros projetos" desc="Demais ambientes executados" />
+                    {orphanInvites.length > 0 && <ShowroomInvites invites={orphanInvites} />}
                     {rest.length > 0 && (
                       <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 gap-1">
                         {rest.map((project) => (
