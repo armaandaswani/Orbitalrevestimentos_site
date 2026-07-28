@@ -13,7 +13,7 @@ import DashboardTab, { type OverviewData } from "./DashboardTab";
 import CustosTab from "./CustosTab";
 import ComprasTab from "./ComprasTab";
 import RelatoriosTab from "./RelatoriosTab";
-import { inputCls, labelCls, NavIcon, type AdminTab } from "./ui";
+import { inputCls, labelCls, NavIcon, NAV_GROUPS, NAV_LABELS, type AdminTab } from "./ui";
 import {
   composePrompt,
   finishDescription,
@@ -29,27 +29,9 @@ import {
 // management dashboards → marketing content → working tools → set-and-forget
 // configuration. `custos`/`compras`/`relatorios` are new modules (built in
 // the redesign's later phases; they mount as placeholders until then).
-const NAV_LABELS: Record<AdminTab, string> = {
-  dashboard: "Hoje", lembretes: "Lembretes",
-  leads: "Leads / CRM", orcamentos: "Orçamentos", pedidos: "Pedidos",
-  partners: "Parceiros", representantes: "Representantes", commissions: "Comissões",
-  produtos: "Produtos", estoque: "Estoque", compras: "Compras & Importação",
-  financeiro: "Financeiro (P&L)", custos: "Custos & Margens", relatorios: "Relatórios",
-  campaigns: "Campanhas", projetos: "Projetos", midia: "Mídia",
-  simulador: "Simulador", visualizacoes: "Visualizações",
-  precos: "Tabela de Preços", drip: "Réguas de E-mail", chat: "Chat IA",
-};
-
-const NAV_GROUPS: ReadonlyArray<{ group: string; items: ReadonlyArray<AdminTab> }> = [
-  { group: "Início", items: ["dashboard", "lembretes"] },
-  { group: "Jornada do Cliente", items: ["leads", "orcamentos", "pedidos"] },
-  { group: "Rede de Vendas", items: ["partners", "representantes", "commissions"] },
-  { group: "Produtos & Estoque", items: ["produtos", "estoque", "compras"] },
-  { group: "Gestão & Finanças", items: ["financeiro", "custos", "relatorios"] },
-  { group: "Marketing", items: ["campaigns", "projetos", "midia"] },
-  { group: "Ferramentas", items: ["simulador", "visualizacoes"] },
-  { group: "Configurações", items: ["precos", "drip", "chat"] },
-];
+// NAV_LABELS/NAV_GROUPS vivem em ui.tsx desde que o módulo de Projetos ganhou
+// rotas próprias (/admin/projetos/...): a barra lateral precisa ser a mesma
+// dentro e fora desta página.
 
 interface Partner {
   id: string;
@@ -211,6 +193,13 @@ export default function AdminPage() {
   const [pw, setPw] = useState("");
   const [pwError, setPwError] = useState("");
   const [tab, setTab] = useState<AdminTab>("dashboard");
+
+  // Voltar de uma rota própria (ex.: /admin/projetos/organizacao) precisa cair
+  // na aba certa — a barra lateral de lá aponta para /admin?tab=<aba>.
+  useEffect(() => {
+    const t = new URLSearchParams(window.location.search).get("tab");
+    if (t && (NAV_GROUPS.some((g) => g.items.includes(t as AdminTab)))) setTab(t as AdminTab);
+  }, []);
   // Mobile nav drawer (hamburger). Desktop sidebar is always visible.
   const [navOpen, setNavOpen] = useState(false);
   const [commissionFilter, setCommissionFilter] = useState<"a_pagar" | "pago" | "tudo">("a_pagar");
@@ -5895,67 +5884,19 @@ export default function AdminPage() {
         {/* ═══ PROJETOS TAB ═══ */}
         {tab === "projetos" && (
           <div>
-            {/* ── Categories management panel (ordem, subcategorias, showroom) ── */}
-            <div className="bg-white border border-[#e2e2e2] p-4 mb-8">
-              <p className="font-[var(--font-inter)] text-[10px] tracking-[0.15em] uppercase font-bold text-[#002045] mb-3">Categorias de Projetos</p>
-              <p className="text-[#74777f] text-[11px] font-[var(--font-inter)] mb-3">Reordene com ↑↓ (a ordem vale no site). Marque uma subcategoria escolhendo o &ldquo;pai&rdquo;. Para showrooms de parceiros, ative o endereço e o convite.</p>
-
-              {projCats.length === 0 ? (
-                <p className="text-[#b0b0b0] text-xs font-[var(--font-inter)] mb-3">Carregando categorias… (rode a migração 049 se estiver vazio)</p>
-              ) : (
-                <div className="border border-[#e2e2e2] divide-y divide-[#f0f0f0] mb-3">
-                  {[...projCats].sort((a, b) => a.sort_order - b.sort_order).map((c, idx, arr) => {
-                    const parents = arr.filter((p) => !p.parent_slug && p.slug !== c.slug);
-                    return (
-                      <div key={c.id} className="px-3 py-2.5" style={{ paddingLeft: c.parent_slug ? 28 : 12 }}>
-                        <div className="flex flex-wrap items-center gap-2">
-                          <div className="flex flex-col">
-                            <button onClick={() => moveProjCat(c.id, -1)} disabled={idx === 0} className="text-[#74777f] hover:text-[#002045] disabled:opacity-25 leading-none text-xs">▲</button>
-                            <button onClick={() => moveProjCat(c.id, 1)} disabled={idx === arr.length - 1} className="text-[#74777f] hover:text-[#002045] disabled:opacity-25 leading-none text-xs">▼</button>
-                          </div>
-                          <input value={c.label} onChange={(e) => patchProjCat(c.id, { label: e.target.value })} className="flex-1 min-w-[120px] border border-[#e2e2e2] px-2 py-1 text-sm font-[var(--font-inter)] text-[#002045] font-semibold focus:outline-none focus:border-[#002045]" />
-                          <span className="text-[#a0a3a8] text-[10px] font-[var(--font-inter)]">{c.slug}</span>
-                          <select value={c.parent_slug ?? ""} onChange={(e) => patchProjCat(c.id, { parent_slug: e.target.value || null })} className="border border-[#e2e2e2] px-2 py-1 text-xs font-[var(--font-inter)] text-[#43474e] focus:outline-none focus:border-[#002045]">
-                            <option value="">— principal —</option>
-                            {parents.map((p) => <option key={p.slug} value={p.slug}>sub de: {p.label}</option>)}
-                          </select>
-                          <label className="flex items-center gap-1 text-[11px] font-[var(--font-inter)] text-[#43474e] cursor-pointer">
-                            <input type="checkbox" checked={c.is_showroom} onChange={(e) => patchProjCat(c.id, { is_showroom: e.target.checked })} /> showroom
-                          </label>
-                          <button onClick={() => deleteProjCat(c.id)} className="text-[#cc0000] hover:text-white hover:bg-[#cc0000] w-6 h-6 flex items-center justify-center text-sm font-bold transition-colors" aria-label="Remover">✕</button>
-                        </div>
-                        <input
-                          value={c.description ?? ""}
-                          onChange={(e) => patchProjCat(c.id, { description: e.target.value })}
-                          placeholder="Subtítulo da seção no site (ex.: Restaurantes, escritórios e espaços de uso coletivo)"
-                          className="mt-1.5 w-full border border-[#e2e2e2] px-2 py-1 text-xs font-[var(--font-inter)] text-[#43474e] focus:outline-none focus:border-[#002045]"
-                        />
-                        {c.is_showroom && (
-                          <div className="mt-2 grid grid-cols-1 sm:grid-cols-2 gap-2">
-                            <input value={c.address ?? ""} onChange={(e) => patchProjCat(c.id, { address: e.target.value })} placeholder="Endereço do showroom" className="border border-[#e2e2e2] px-2 py-1.5 text-sm font-[var(--font-inter)] text-[#002045] focus:outline-none focus:border-[#002045]" />
-                            <input value={c.maps_url ?? ""} onChange={(e) => patchProjCat(c.id, { maps_url: e.target.value })} placeholder="Link do Google Maps (opcional)" className="border border-[#e2e2e2] px-2 py-1.5 text-sm font-[var(--font-inter)] text-[#002045] focus:outline-none focus:border-[#002045]" />
-                            <label className="flex items-center gap-2 text-[12px] font-[var(--font-inter)] text-[#43474e] cursor-pointer sm:col-span-2">
-                              <input type="checkbox" checked={c.invite_enabled} onChange={(e) => patchProjCat(c.id, { invite_enabled: e.target.checked })} /> Convidar o cliente a visitar este showroom (no site e no chat de IA)
-                            </label>
-                          </div>
-                        )}
-                      </div>
-                    );
-                  })}
-                </div>
-              )}
-
-              <div className="flex gap-2 items-center">
-                <input
-                  type="text" value={newCatInput} onChange={(e) => setNewCatInput(e.target.value)}
-                  onKeyDown={(e) => { if (e.key === "Enter") { e.preventDefault(); addProjCatFromInput(newCatInput); setNewCatInput(""); } }}
-                  className="border border-[#e2e2e2] px-3 py-1.5 text-sm font-[var(--font-inter)] text-[#43474e] focus:outline-none focus:border-[#002045] w-48"
-                  placeholder="nova categoria..."
-                />
-                <button type="button" onClick={() => { addProjCatFromInput(newCatInput); setNewCatInput(""); }} className="px-3 py-1.5 bg-[#002045] text-white text-[10px] tracking-[0.08em] uppercase font-bold font-[var(--font-inter)] hover:bg-[#1a365d] transition-colors whitespace-nowrap">
-                  + Criar
-                </button>
+            {/* O gerenciamento de categorias saiu daqui: misturar "organizar a
+                navegação do site" com "cadastrar um projeto" era a causa dos
+                campos duplicados. Agora vive em /admin/projetos/organizacao. */}
+            <div className="bg-white border border-[#e2e2e2] px-4 sm:px-5 py-4 mb-8 flex flex-wrap items-center justify-between gap-3">
+              <div className="min-w-0">
+                <p className="font-[var(--font-inter)] text-sm font-bold text-[#002045]">Categorias e Showrooms</p>
+                <p className="text-[#74777f] text-[12px] font-[var(--font-inter)] mt-0.5">
+                  Ordem das seções do site, showrooms parceiros e características do ambiente.
+                </p>
               </div>
+              <a href="/admin/projetos/organizacao" className="bg-[#002045] text-white text-xs tracking-[0.12em] uppercase font-bold font-[var(--font-inter)] px-4 py-2.5 hover:bg-[#1a365d] transition-colors whitespace-nowrap">
+                Organizar →
+              </a>
             </div>
 
             {/* Section 1: Fotos Reais */}

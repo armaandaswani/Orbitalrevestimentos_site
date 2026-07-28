@@ -22,6 +22,31 @@ export type AdminTab =
   | "simulador" | "visualizacoes"
   | "precos" | "drip" | "chat";
 
+// ─── Navegação lateral ───────────────────────────────────────────────────────
+// Aqui (e não em page.tsx) porque o módulo de Projetos tem rotas próprias
+// (/admin/projetos/...) e a barra lateral precisa ser idêntica nas duas.
+export const NAV_LABELS: Record<AdminTab, string> = {
+  dashboard: "Hoje", lembretes: "Lembretes",
+  leads: "Leads / CRM", orcamentos: "Orçamentos", pedidos: "Pedidos",
+  partners: "Parceiros", representantes: "Representantes", commissions: "Comissões",
+  produtos: "Produtos", estoque: "Estoque", compras: "Compras & Importação",
+  financeiro: "Financeiro (P&L)", custos: "Custos & Margens", relatorios: "Relatórios",
+  campaigns: "Campanhas", projetos: "Projetos", midia: "Mídia",
+  simulador: "Simulador", visualizacoes: "Visualizações",
+  precos: "Tabela de Preços", drip: "Réguas de E-mail", chat: "Chat IA",
+};
+
+export const NAV_GROUPS: ReadonlyArray<{ group: string; items: ReadonlyArray<AdminTab> }> = [
+  { group: "Início", items: ["dashboard", "lembretes"] },
+  { group: "Jornada do Cliente", items: ["leads", "orcamentos", "pedidos"] },
+  { group: "Rede de Vendas", items: ["partners", "representantes", "commissions"] },
+  { group: "Produtos & Estoque", items: ["produtos", "estoque", "compras"] },
+  { group: "Gestão & Finanças", items: ["financeiro", "custos", "relatorios"] },
+  { group: "Marketing", items: ["campaigns", "projetos", "midia"] },
+  { group: "Ferramentas", items: ["simulador", "visualizacoes"] },
+  { group: "Configurações", items: ["precos", "drip", "chat"] },
+];
+
 // ─── className constants ─────────────────────────────────────────────────────
 export const inputCls =
   "w-full border border-[#e2e2e2] px-4 py-2.5 text-sm font-[var(--font-inter)] text-[#002045] focus:outline-none focus:border-[#002045]";
