@@ -8,9 +8,10 @@ function checkAuth(req: NextRequest): boolean {
   return isAdminRequest(req);
 }
 
-// Colunas opcionais adicionadas por migrações recentes (045/047). Quando o banco
-// ainda não as tem, removemos do payload e reenviamos, para não quebrar o salvar.
-const OPTIONAL_PHOTO_COLS = ["short_description", "is_featured", "show_on_home", "is_new", "feature_order", "content_type"];
+// Colunas opcionais adicionadas por migrações recentes (045/047/051). Quando o
+// banco ainda não as tem, removemos do payload e reenviamos, para não quebrar o
+// salvar.
+const OPTIONAL_PHOTO_COLS = ["short_description", "is_featured", "show_on_home", "is_new", "feature_order", "content_type", "cover_category"];
 export function stripOptionalPhotoCols(body: unknown): Record<string, unknown> {
   if (!body || typeof body !== "object") return {};
   const out = { ...(body as Record<string, unknown>) };

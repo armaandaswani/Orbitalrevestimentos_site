@@ -41,10 +41,18 @@ export async function DELETE(
 
   const { id } = await params;
   const sb = supabaseAdmin();
-  const { error } = await sb.from("project_photos").delete().eq("id", id);
 
+  // Remove junto as mídias do projeto — sem isso elas viravam órfãs em
+  // project_media (foi o que aconteceu com o slug "Lavabo-copia").
+  const { data: proj } = await sb.from("project_photos").select("slug").eq("id", id).maybeSingle();
+
+  const { error } = await sb.from("project_photos").delete().eq("id", id);
   if (error) {
     return NextResponse.json({ error: error.message }, { status: 500 });
   }
+
+  const slug = (proj as { slug?: string } | null)?.slug;
+  if (slug) await sb.from("project_media").delete().eq("project_slug", slug);
+
   return NextResponse.json({ success: true });
 }

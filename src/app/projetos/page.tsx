@@ -1,8 +1,16 @@
 "use client";
 
-import { useState, useEffect, useCallback, useRef } from "react";
+import { useState, useEffect, useCallback } from "react";
 import Image from "next/image";
 import Link from "next/link";
+import {
+  buildGalleryItems,
+  filterGalleryItems,
+  type GalleryFilter,
+  type GalleryItem,
+  type GalleryMediaRow,
+  type MediaCategory,
+} from "@/lib/project-gallery";
 
 // ─── Types ────────────────────────────────────────────────────────────────────
 type Category = "todos" | "residencial" | "comercial" | "umido" | "nautico" | "showroom";
@@ -19,6 +27,8 @@ interface Project {
   is_featured?: boolean;
   is_new?: boolean;
   feature_order?: number;
+  /** Classificação explícita da capa (migração 051). Ausente → "depois". */
+  cover_category?: string | null;
 }
 
 interface Render {
@@ -40,52 +50,13 @@ interface ProjCatMeta {
   invite_enabled: boolean;
 }
 
-type MediaCategory = "antes" | "depois" | "geral";
-
-interface ProjectMedia {
-  id: string;
-  project_slug: string;
-  type: "image" | "video";
-  url: string;
-  caption: string | null;
-  description: string | null;
-  category: MediaCategory;
-  sort_order: number;
-}
-
-interface LightboxItem {
-  kind: "image" | "video";
-  url: string;
-  label?: string;
-  description?: string;
-  category: MediaCategory;
-}
-
-function buildLightboxItems(project: Project, extra: ProjectMedia[]): LightboxItem[] {
-  const items: LightboxItem[] = [
-    { kind: "image", url: project.image_after, label: "Depois", category: "depois" },
-  ];
-  if (project.image_before)
-    items.push({ kind: "image", url: project.image_before, label: "Antes", category: "antes" });
-  for (const m of extra) {
-    items.push({
-      kind: m.type,
-      url: m.url,
-      label: m.caption ?? undefined,
-      description: m.description ?? undefined,
-      category: m.category ?? "geral",
-    });
-  }
-  return items;
-}
-
-function isDirectVideo(url: string) {
-  return /\.(mp4|webm|mov)(\?|$)/i.test(url);
-}
+// A montagem da galeria (capa + antes legada + mídias, sem duplicatas) vive em
+// @/lib/project-gallery — mesma função exercitada pelo script de verificação.
+type LightboxItem = GalleryItem;
 
 // ─── Lightbox ─────────────────────────────────────────────────────────────────
 type ViewMode = "carousel" | "grid" | "split";
-type LightboxFilter = "all" | MediaCategory;
+type LightboxFilter = GalleryFilter;
 
 function CategoryPill({ cat }: { cat: MediaCategory }) {
   if (cat === "antes")
@@ -109,8 +80,6 @@ function ProjectLightbox({
   loading,
   idx,
   onClose,
-  onPrev,
-  onNext,
   onDotClick,
 }: {
   project: Project;
@@ -118,8 +87,6 @@ function ProjectLightbox({
   loading: boolean;
   idx: number;
   onClose: () => void;
-  onPrev: () => void;
-  onNext: () => void;
   onDotClick: (i: number) => void;
 }) {
   const [viewMode, setViewMode] = useState<ViewMode>("carousel");
@@ -130,14 +97,48 @@ function ProjectLightbox({
   const hasVideos = items.some((i) => i.kind === "video");
   const canSplit  = hasAntes && hasDepois;
 
-  const visibleItems =
-    filter === "all" ? items :
-    filter === ("video" as LightboxFilter) ? items.filter((i) => i.kind === "video") :
-    items.filter((i) => i.category === filter);
+  const visibleItems = filterGalleryItems(items, filter);
 
   // keep carousel idx in bounds when filter changes
   const safeIdx = Math.min(idx, Math.max(visibleItems.length - 1, 0));
   const current = visibleItems[safeIdx];
+
+  // Ao trocar de filtro, tenta manter a MESMA foto aberta; se ela não pertence
+  // ao novo filtro, volta para a primeira (nunca fica em índice inválido).
+  const changeFilter = (next: LightboxFilter) => {
+    const currentUrl = visibleItems[safeIdx]?.url;
+    const nextList = filterGalleryItems(items, next);
+    const keep = currentUrl ? nextList.findIndex((i) => i.url === currentUrl) : -1;
+    setFilter(next);
+    setViewMode("carousel");
+    onDotClick(keep >= 0 ? keep : 0);
+  };
+
+  const filterTabs: LightboxFilter[] = [
+    "all",
+    ...(hasAntes ? (["antes"] as LightboxFilter[]) : []),
+    ...(hasDepois ? (["depois"] as LightboxFilter[]) : []),
+    ...(hasVideos ? (["video"] as LightboxFilter[]) : []),
+  ];
+  const filterLabel = (f: LightboxFilter) =>
+    f === "all" ? "Todas" : f === "video" ? "Vídeos" : f === "geral" ? "Geral" : f.charAt(0).toUpperCase() + f.slice(1);
+
+  // Navegação relativa ao FILTRO ativo (antes dava a volta pelo total, saltando
+  // para itens que o filtro tinha escondido).
+  const total = visibleItems.length;
+  const goPrev = () => { if (total) onDotClick((safeIdx - 1 + total) % total); };
+  const goNext = () => { if (total) onDotClick((safeIdx + 1) % total); };
+
+  // Teclado — dentro do lightbox para respeitar o filtro ativo.
+  useEffect(() => {
+    const handler = (e: KeyboardEvent) => {
+      if (e.key === "Escape") onClose();
+      if (e.key === "ArrowLeft") goPrev();
+      if (e.key === "ArrowRight") goNext();
+    };
+    window.addEventListener("keydown", handler);
+    return () => window.removeEventListener("keydown", handler);
+  });
 
   // Split-mode images
   const antesImg  = items.find((i) => i.category === "antes" && i.kind === "image");
@@ -163,13 +164,13 @@ function ProjectLightbox({
           {/* Filter tabs */}
           {(hasAntes || hasDepois || hasVideos) && (
             <div className="hidden sm:flex items-center gap-1 bg-white/5 border border-white/10 p-0.5">
-              {(["all", ...(hasAntes ? ["antes"] : []), ...(hasDepois ? ["depois"] : []), ...(hasVideos ? ["video"] : [])] as (LightboxFilter | "video")[]).map((f) => (
+              {filterTabs.map((f) => (
                 <button
                   key={f}
-                  onClick={() => { setFilter(f as LightboxFilter); setViewMode("carousel"); }}
+                  onClick={() => changeFilter(f)}
                   className={`text-[9px] tracking-[0.12em] uppercase font-bold font-[var(--font-inter)] px-3 py-1.5 transition-colors ${filter === f ? "bg-white text-[#0a0f1a]" : "text-white/40 hover:text-white/80"}`}
                 >
-                  {f === "all" ? "Todas" : f === "geral" ? "Geral" : f.charAt(0).toUpperCase() + f.slice(1)}
+                  {filterLabel(f)}
                 </button>
               ))}
             </div>
@@ -214,13 +215,13 @@ function ProjectLightbox({
       {/* Mobile filter bar */}
       {(hasAntes || hasDepois || hasVideos) && (
         <div className="flex sm:hidden items-center gap-1 px-5 py-2 border-b border-white/8 flex-shrink-0 overflow-x-auto" onClick={(e) => e.stopPropagation()}>
-          {(["all", ...(hasAntes ? ["antes"] : []), ...(hasDepois ? ["depois"] : []), ...(hasVideos ? ["video"] : [])] as (LightboxFilter | "video")[]).map((f) => (
+          {filterTabs.map((f) => (
             <button
               key={f}
-              onClick={() => { setFilter(f as LightboxFilter); setViewMode("carousel"); }}
+              onClick={() => changeFilter(f)}
               className={`flex-shrink-0 text-[9px] tracking-[0.12em] uppercase font-bold font-[var(--font-inter)] px-3 py-1.5 border transition-colors ${filter === f ? "bg-white text-[#0a0f1a] border-white" : "border-white/20 text-white/50 hover:text-white/80"}`}
             >
-              {f === "all" ? "Todas" : f === "geral" ? "Geral" : f.charAt(0).toUpperCase() + f.slice(1)}
+              {filterLabel(f)}
             </button>
           ))}
         </div>
@@ -355,13 +356,13 @@ function ProjectLightbox({
               {visibleItems.length > 1 && (
                 <>
                   <button
-                    onClick={onPrev}
+                    onClick={goPrev}
                     className="absolute left-2 top-1/2 -translate-y-1/2 w-10 h-10 flex items-center justify-center bg-black/40 hover:bg-black/70 text-white transition-colors"
                   >
                     <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><path d="M15 18l-6-6 6-6"/></svg>
                   </button>
                   <button
-                    onClick={onNext}
+                    onClick={goNext}
                     className="absolute right-2 top-1/2 -translate-y-1/2 w-10 h-10 flex items-center justify-center bg-black/40 hover:bg-black/70 text-white transition-colors"
                   >
                     <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><path d="M9 18l6-6-6-6"/></svg>
@@ -464,14 +465,16 @@ const FILTERS: { key: Category; label: string }[] = [
 ];
 
 // ─── Project card — portrait aspect ───────────────────────────────────────────
-function ProjectCard({ project, onOpen }: { project: Project; onOpen: (p: Project) => void }) {
+function ProjectCard({ project, onOpen }: { project: Project; onOpen: (p: Project, startUrl?: string) => void }) {
   const [showBefore, setShowBefore] = useState(false);
-  const hasBA = !!project.image_before;
+  // O toggle só existe quando há MESMO duas imagens distintas. image_before
+  // igual à capa (dado legado) não vira um falso "antes".
+  const hasBA = !!project.image_before && project.image_before !== project.image_after;
 
   return (
     <div
       className="bg-white flex flex-col cursor-pointer group"
-      onClick={() => onOpen(project)}
+      onClick={() => onOpen(project, showBefore && project.image_before ? project.image_before : project.image_after)}
     >
       {/* Image */}
       <div className="relative w-full aspect-[3/4] overflow-hidden">
@@ -615,40 +618,31 @@ export default function ProjetosPage() {
   const [lightboxIdx, setLightboxIdx] = useState(0);
   const [lightboxLoading, setLightboxLoading] = useState(false);
 
-  const openLightbox = useCallback(async (project: Project) => {
+  const openLightbox = useCallback(async (project: Project, startUrl?: string) => {
     setLightboxProject(project);
     setLightboxIdx(0);
     setLightboxLoading(true);
-    setLightboxItems(buildLightboxItems(project, []));
+    const base = buildGalleryItems(project, []);
+    setLightboxItems(base);
+    // Abrir por uma foto específica (ex.: card no modo "Antes") começa nela.
+    if (startUrl) {
+      const at = base.findIndex((i) => i.url === startUrl);
+      if (at >= 0) setLightboxIdx(at);
+    }
     try {
-      const res = await fetch(`/api/projects/media?slug=${project.slug}`);
-      const extra: ProjectMedia[] = res.ok ? await res.json() : [];
-      setLightboxItems(buildLightboxItems(project, extra));
+      const res = await fetch(`/api/projects/media?slug=${encodeURIComponent(project.slug)}`);
+      const extra: GalleryMediaRow[] = res.ok ? await res.json() : [];
+      const full = buildGalleryItems(project, Array.isArray(extra) ? extra : []);
+      setLightboxItems(full);
+      if (startUrl) {
+        const at = full.findIndex((i) => i.url === startUrl);
+        if (at >= 0) setLightboxIdx(at);
+      }
     } catch { /* show what we have */ }
     setLightboxLoading(false);
   }, []);
 
   const closeLightbox = useCallback(() => setLightboxProject(null), []);
-
-  const lightboxPrev = useCallback(() =>
-    setLightboxIdx((i) => (i - 1 + lightboxItems.length) % lightboxItems.length),
-  [lightboxItems.length]);
-
-  const lightboxNext = useCallback(() =>
-    setLightboxIdx((i) => (i + 1) % lightboxItems.length),
-  [lightboxItems.length]);
-
-  // Keyboard navigation
-  useEffect(() => {
-    if (!lightboxProject) return;
-    const handler = (e: KeyboardEvent) => {
-      if (e.key === "Escape") closeLightbox();
-      if (e.key === "ArrowLeft") lightboxPrev();
-      if (e.key === "ArrowRight") lightboxNext();
-    };
-    window.addEventListener("keydown", handler);
-    return () => window.removeEventListener("keydown", handler);
-  }, [lightboxProject, closeLightbox, lightboxPrev, lightboxNext]);
 
   // Prevent body scroll when lightbox open
   useEffect(() => {
@@ -704,8 +698,6 @@ export default function ProjetosPage() {
           loading={lightboxLoading}
           idx={lightboxIdx}
           onClose={closeLightbox}
-          onPrev={lightboxPrev}
-          onNext={lightboxNext}
           onDotClick={setLightboxIdx}
         />
       )}

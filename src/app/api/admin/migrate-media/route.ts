@@ -17,15 +17,14 @@ export async function GET(req: NextRequest) {
   // Try to select the new columns — if they don't exist, Supabase returns a column-not-found error
   const { data, error } = await sb
     .from("project_media")
-    .select("id, category, description")
+    .select("id, category, description, is_cover")
     .limit(1);
 
   return NextResponse.json({
     migrated: !error,
     error: error?.message ?? null,
-    sql: `-- Run this in the Supabase SQL editor (Dashboard → SQL Editor → New query):
-ALTER TABLE project_media ADD COLUMN IF NOT EXISTS category TEXT NOT NULL DEFAULT 'geral';
-ALTER TABLE project_media ADD COLUMN IF NOT EXISTS description TEXT;`,
+    sql: `-- Rode a migração 051 no Supabase (Dashboard → SQL Editor → New query).
+-- Arquivo: supabase/migrations/051_project_media_classification.sql`,
   });
 }
 

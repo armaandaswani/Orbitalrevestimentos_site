@@ -91,9 +91,9 @@ interface SalesRep {
 
 interface ProductImage { id:string; product_id:string; image_path:string; sort_order:number; }
 interface DbProduct { id:string; code:string; name:string; linha:"Classic"|"Brilliance"|"Elegance"; finish:string; price:number; price_per_m2:number; description:string; image_path:string; is_active:boolean; show_in_catalog?:boolean; sort_order:number; created_at:string; product_images?: ProductImage[]; render_finish_description?: string | null; render_panel_width_m?: number | null; render_panel_height_m?: number | null; render_context_image_path?: string | null; render_texture_path?: string | null; render_extra_notes?: string | null; }
-interface DbPhotoProject { id:string; slug:string; title:string; product_code:string; short_description?:string; categories:string[]; image_after:string; image_before:string; note:string; is_active:boolean; is_featured?:boolean; show_on_home?:boolean; is_new?:boolean; feature_order?:number; content_type?:string|null; sort_order:number; }
+interface DbPhotoProject { id:string; slug:string; title:string; product_code:string; short_description?:string; categories:string[]; image_after:string; image_before:string; note:string; is_active:boolean; is_featured?:boolean; show_on_home?:boolean; is_new?:boolean; feature_order?:number; content_type?:string|null; cover_category?:string|null; sort_order:number; }
 interface DbRenderProject { id:string; slug:string; title:string; product_code:string; image_path:string; is_active:boolean; sort_order:number; }
-interface ProjectMedia { id:string; project_slug:string; type:"image"|"video"; url:string; caption:string|null; description:string|null; category:"antes"|"depois"|"geral"; sort_order:number; }
+interface ProjectMedia { id:string; project_slug:string; type:"image"|"video"; url:string; caption:string|null; description:string|null; category:"antes"|"depois"|"geral"; is_cover?:boolean; sort_order:number; }
 
 // Slug técnico gerado a partir do nome do projeto ("Showroom Parque 10" →
 // "showroom-parque-10"). Acentos removidos, minúsculas, hífens.
@@ -525,7 +525,7 @@ export default function AdminPage() {
   const [editingRenderId, setEditingRenderId] = useState<string|null>(null);
   const [renderImporting, setRenderImporting] = useState<string | null>(null); // slug being imported
   const [renderImportingAll, setRenderImportingAll] = useState(false);
-  const [photoForm, setPhotoForm] = useState({ slug:"", title:"", product_code:"", short_description:"", categories:[] as string[], image_after:"", image_before:"", note:"", is_active:true, is_featured:false, show_on_home:false, is_new:false, feature_order:0, content_type:"", sort_order:0 });
+  const [photoForm, setPhotoForm] = useState({ slug:"", title:"", product_code:"", short_description:"", categories:[] as string[], image_after:"", image_before:"", note:"", is_active:true, is_featured:false, show_on_home:false, is_new:false, feature_order:0, content_type:"", cover_category:"depois", sort_order:0 });
   const [slugTouched, setSlugTouched] = useState(false);
   const [photoAdvancedOpen, setPhotoAdvancedOpen] = useState(false);
   const [productPickerQuery, setProductPickerQuery] = useState("");
@@ -545,6 +545,8 @@ export default function AdminPage() {
   const [dragOverMediaId, setDragOverMediaId] = useState<string | null>(null);
   const [mediaToast, setMediaToast] = useState<{ text: string; error?: boolean } | null>(null);
   const [settingCoverId, setSettingCoverId] = useState<string | null>(null);
+  // Classificação aplicada às próximas fotos enviadas para a galeria.
+  const [uploadCategory, setUploadCategory] = useState<"antes" | "depois">("depois");
   const [aiTextGenerating, setAiTextGenerating] = useState<string | null>(null); // field key being generated
 
   // ── Admin simulator ──────────────────────────────────────────────────────
@@ -628,43 +630,47 @@ export default function AdminPage() {
   const renderTabFormRef = useRef<HTMLDivElement>(null);
   const [projectImageUploading, setProjectImageUploading] = useState(false);
 
-  // Dynamic project categories (persisted in localStorage)
+  // Categorias de projeto. A fonte de verdade é a tabela project_categories
+  // (migração 049) — BASE_CATEGORIES é só o fallback de quando a tabela ainda
+  // não existe. Nada de localStorage: era isso que fazia uma categoria criada
+  // no gerenciador nunca chegar ao editor de projetos.
   const BASE_CATEGORIES = ["residencial", "comercial", "umido", "nautico"];
-  const [customCategories, setCustomCategories] = useState<string[]>([]);
   const [newCatInput, setNewCatInput] = useState("");
   // Metadados de categorias (ordem, subcategoria, showroom/endereço) — tabela project_categories.
   interface ProjCat { id:string; slug:string; label:string; parent_slug:string|null; sort_order:number; is_showroom:boolean; address:string|null; maps_url:string|null; invite_enabled:boolean; active:boolean; }
   const [projCats, setProjCats] = useState<ProjCat[]>([]);
   const [catsSeeded, setCatsSeeded] = useState(false);
 
-  useEffect(() => {
-    try {
-      const stored = localStorage.getItem("orbital_custom_cats");
-      if (stored) setCustomCategories(JSON.parse(stored));
-    } catch { /* ignore */ }
-  }, []);
-
+  // Categorias oferecidas no editor de projetos.
+  //
+  // BUG CORRIGIDO: esta lista era montada de BASE_CATEGORIES (hardcoded) +
+  // localStorage + categorias já em uso — nunca lia a tabela project_categories.
+  // Por isso uma categoria criada no gerenciador (que grava no banco) aparecia
+  // na lista de categorias mas NÃO no editor do projeto.
+  //
+  // Agora a tabela é a fonte de verdade: categorias ATIVAS ficam disponíveis, e
+  // qualquer slug legado já vinculado a um projeto continua aparecendo (marcado)
+  // para que nenhum vínculo se perca silenciosamente.
   const allCategories = useMemo(() => {
+    const active = projCats.filter((c) => c.active !== false).map((c) => c.slug);
     const fromProjects = (dbPhotoProjects ?? []).flatMap((p) => p.categories ?? []);
-    return Array.from(new Set([...BASE_CATEGORIES, ...customCategories, ...fromProjects])).sort();
+    const base = projCats.length > 0 ? [] : BASE_CATEGORIES; // fallback pré-migração 049
+    return Array.from(new Set([...base, ...active, ...fromProjects]));
   // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [dbPhotoProjects, customCategories]);
+  }, [dbPhotoProjects, projCats]);
 
-  function saveCustomCategories(list: string[]) {
-    setCustomCategories(list);
-    try { localStorage.setItem("orbital_custom_cats", JSON.stringify(list)); } catch { /* ignore */ }
-  }
+  /** Rótulo legível de uma categoria (usa o label do banco quando existir). */
+  const catLabel = useCallback((slug: string) => {
+    const meta = projCats.find((c) => c.slug === slug);
+    return meta?.label || humanizeCat(slug);
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [projCats]);
 
-  function addNewCategory(raw: string) {
-    const name = raw.trim().toLowerCase().replace(/\s+/g, "-");
-    if (!name || allCategories.includes(name)) return name;
-    saveCustomCategories([...customCategories, name]);
-    return name;
-  }
-
-  function removeCustomCategory(name: string) {
-    saveCustomCategories(customCategories.filter((c) => c !== name));
-  }
+  /** Categorias inativas que um projeto ainda usa — mostradas com aviso. */
+  const isInactiveCat = useCallback((slug: string) => {
+    const meta = projCats.find((c) => c.slug === slug);
+    return !!meta && meta.active === false;
+  }, [projCats]);
 
   function humanizeCat(slug: string): string {
     return slug.replace(/---|--/g, " · ").replace(/-/g, " ").replace(/\b\w/g, (c) => c.toUpperCase());
@@ -713,13 +719,31 @@ export default function AdminPage() {
     await fetch(`/api/admin/project-categories/${id}`, { method: "DELETE" }).catch(() => {});
   }
 
-  async function addProjCatFromInput(raw: string) {
-    const slug = raw.trim().toLowerCase().replace(/\s+/g, "-");
-    if (!slug || projCats.some((c) => c.slug === slug)) return;
+  /** Cria a categoria no banco e devolve o slug — disponível NA HORA em todo o
+   *  painel (gerenciador e editor de projetos leem o mesmo estado projCats). */
+  async function addProjCatFromInput(raw: string): Promise<string | null> {
+    const slug = slugify(raw);
+    if (!slug) return null;
+    if (projCats.some((c) => c.slug === slug)) return slug; // já existe
     const res = await fetch("/api/admin/project-categories", {
-      method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ slug, label: humanizeCat(slug) }),
+      method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ slug, label: raw.trim() || humanizeCat(slug) }),
     });
-    if (res.ok) { const c = await res.json(); setProjCats((prev) => [...prev, c]); }
+    if (!res.ok) {
+      const d = await res.json().catch(() => null);
+      alert(d?.error ?? "Falha ao criar a categoria.");
+      return null;
+    }
+    const c = await res.json();
+    setProjCats((prev) => [...prev, c]);
+    return slug;
+  }
+
+  /** Cria a categoria digitada no editor e já a marca neste projeto. */
+  async function createAndSelectCategory() {
+    const slug = await addProjCatFromInput(newCatInput);
+    setNewCatInput("");
+    if (!slug) return;
+    setPhotoForm((prev) => prev.categories.includes(slug) ? prev : { ...prev, categories: [...prev.categories, slug] });
   }
 
   const supabaseConfigured = !!process.env.NEXT_PUBLIC_SUPABASE_URL;
@@ -968,7 +992,7 @@ export default function AdminPage() {
   // Semeia os metadados de categoria assim que os projetos carregam (uma vez).
   useEffect(() => {
     if (tab === "projetos" && authed && !catsSeeded && (dbPhotoProjects?.length ?? 0) >= 0) {
-      const slugs = Array.from(new Set([...BASE_CATEGORIES, ...customCategories, ...((dbPhotoProjects ?? []).flatMap((p) => p.categories ?? []))]));
+      const slugs = Array.from(new Set([...BASE_CATEGORIES, ...((dbPhotoProjects ?? []).flatMap((p) => p.categories ?? []))]));
       if (slugs.length > 0) { setCatsSeeded(true); seedProjCats(slugs, projCats); }
     }
   // eslint-disable-next-line react-hooks/exhaustive-deps
@@ -1630,7 +1654,7 @@ export default function AdminPage() {
     if (res.ok) {
       setShowPhotoForm(false);
       setEditingPhotoId(null);
-      setPhotoForm({ slug:"", title:"", product_code:"", short_description:"", categories:[], image_after:"", image_before:"", note:"", is_active:true, is_featured:false, show_on_home:false, is_new:false, feature_order:0, content_type:"", sort_order:0 });
+      setPhotoForm({ slug:"", title:"", product_code:"", short_description:"", categories:[], image_after:"", image_before:"", note:"", is_active:true, is_featured:false, show_on_home:false, is_new:false, feature_order:0, content_type:"", cover_category:"depois", sort_order:0 });
       setSlugTouched(false); setProductPickerQuery(""); setPhotoAdvancedOpen(false);
       fetchProjects();
     }
@@ -1671,7 +1695,7 @@ export default function AdminPage() {
 
   function startEditPhoto(p: DbPhotoProject) {
     setEditingPhotoId(p.id);
-    setPhotoForm({ slug: p.slug, title: p.title, product_code: p.product_code, short_description: p.short_description ?? "", categories: p.categories, image_after: p.image_after, image_before: p.image_before, note: p.note, is_active: p.is_active, is_featured: p.is_featured ?? false, show_on_home: p.show_on_home ?? false, is_new: p.is_new ?? false, feature_order: p.feature_order ?? 0, content_type: p.content_type ?? "", sort_order: p.sort_order });
+    setPhotoForm({ slug: p.slug, title: p.title, product_code: p.product_code, short_description: p.short_description ?? "", categories: p.categories, image_after: p.image_after, image_before: p.image_before, note: p.note, is_active: p.is_active, is_featured: p.is_featured ?? false, show_on_home: p.show_on_home ?? false, is_new: p.is_new ?? false, feature_order: p.feature_order ?? 0, content_type: p.content_type ?? "", cover_category: p.cover_category === "antes" ? "antes" : "depois", sort_order: p.sort_order });
     setSlugTouched(true); setProductPickerQuery(""); setPhotoAdvancedOpen(false);
     setShowPhotoForm(true);
     setTimeout(() => photoTabFormRef.current?.scrollIntoView({ behavior: "smooth", block: "start" }), 50);
@@ -1724,6 +1748,8 @@ export default function AdminPage() {
     }
   }
 
+  // As fotos entram já classificadas com o que estiver selecionado ao lado do
+  // botão "+ Fotos" — evita a galeria encher de mídia "sem classificação".
   async function addProjectMediaImage(slug: string, file: File) {
     setMediaUploading(true);
     const url = await uploadDirect(file, "projetos");
@@ -1732,7 +1758,7 @@ export default function AdminPage() {
       await fetch("/api/projects/media", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ project_slug: slug, type: "image", url, sort_order: existing.length }),
+        body: JSON.stringify({ project_slug: slug, type: "image", url, category: uploadCategory, sort_order: existing.length }),
       });
       await fetchProjectMedia(slug);
     }
@@ -1806,22 +1832,38 @@ export default function AdminPage() {
   // Nenhuma imagem é apagada; se algo falhar, a capa anterior é mantida.
   async function useMediaAsCover(m: ProjectMedia, project: { id: string; slug: string; image_after?: string | null }) {
     if (m.type !== "image") { setMediaToast({ text: "Apenas imagens podem ser capa", error: true }); setTimeout(() => setMediaToast(null), 2500); return; }
-    if (!confirm("Deseja utilizar esta imagem como nova capa? A capa atual será movida para a galeria.")) return;
+    if (!confirm("Definir esta imagem como capa? A capa atual continua na galeria.")) return;
     setSettingCoverId(m.id);
     const oldCover = project.image_after ?? null;
+    const list = projectMediaMap[project.slug] ?? [];
+    // A classificação da mídia vira a classificação da capa — nada é inferido.
+    const newCoverCategory = m.category === "antes" ? "antes" : "depois";
     try {
-      // 1) promove a mídia a capa (só image_after; NÃO mexe na imagem "antes")
+      // 1) libera a marca de capa da mídia antiga (índice único: uma capa por
+      //    projeto). Ela CONTINUA na galeria — nenhum arquivo é apagado.
+      const prevCoverRow = list.find((x) => x.is_cover && x.id !== m.id);
+      if (prevCoverRow) {
+        await fetch(`/api/projects/media/${prevCoverRow.id}`, {
+          method: "PATCH", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ is_cover: false }),
+        });
+      }
+      // 2) a mídia escolhida passa a ser a capa (continua na galeria)
+      await fetch(`/api/projects/media/${m.id}`, {
+        method: "PATCH", headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ is_cover: true, category: newCoverCategory, sort_order: -1000 }),
+      });
+      // 3) espelha a capa em project_photos (o que cards, home e PDF leem)
       const up = await fetch(`/api/projects/photos/${project.id}`, {
-        method: "PUT", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ image_after: m.url }),
+        method: "PUT", headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ image_after: m.url, cover_category: newCoverCategory }),
       });
       if (!up.ok) throw new Error();
-      // 2) remove a mídia promovida da galeria
-      await fetch(`/api/projects/media/${m.id}`, { method: "DELETE" });
-      // 3) capa anterior desce para a galeria (primeira posição), preservando o arquivo
-      if (oldCover) {
+      // 4) rede de segurança: se a capa anterior não tinha linha na galeria
+      //    (base ainda sem a migração 051), cria uma agora para não se perder.
+      if (oldCover && oldCover !== m.url && !list.some((x) => x.url === oldCover)) {
         await fetch("/api/projects/media", {
           method: "POST", headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({ project_slug: project.slug, type: "image", url: oldCover, sort_order: -1 }),
+          body: JSON.stringify({ project_slug: project.slug, type: "image", url: oldCover, category: "depois", sort_order: -999 }),
         });
       }
       await fetchProjectMedia(project.slug);
@@ -5900,11 +5942,11 @@ export default function AdminPage() {
               <div className="flex gap-2 items-center">
                 <input
                   type="text" value={newCatInput} onChange={(e) => setNewCatInput(e.target.value)}
-                  onKeyDown={(e) => { if (e.key === "Enter") { e.preventDefault(); addProjCatFromInput(newCatInput); addNewCategory(newCatInput); setNewCatInput(""); } }}
+                  onKeyDown={(e) => { if (e.key === "Enter") { e.preventDefault(); addProjCatFromInput(newCatInput); setNewCatInput(""); } }}
                   className="border border-[#e2e2e2] px-3 py-1.5 text-sm font-[var(--font-inter)] text-[#43474e] focus:outline-none focus:border-[#002045] w-48"
                   placeholder="nova categoria..."
                 />
-                <button type="button" onClick={() => { addProjCatFromInput(newCatInput); addNewCategory(newCatInput); setNewCatInput(""); }} className="px-3 py-1.5 bg-[#002045] text-white text-[10px] tracking-[0.08em] uppercase font-bold font-[var(--font-inter)] hover:bg-[#1a365d] transition-colors whitespace-nowrap">
+                <button type="button" onClick={() => { addProjCatFromInput(newCatInput); setNewCatInput(""); }} className="px-3 py-1.5 bg-[#002045] text-white text-[10px] tracking-[0.08em] uppercase font-bold font-[var(--font-inter)] hover:bg-[#1a365d] transition-colors whitespace-nowrap">
                   + Criar
                 </button>
               </div>
@@ -5917,7 +5959,7 @@ export default function AdminPage() {
                 <button
                   onClick={() => {
                     setEditingPhotoId(null);
-                    setPhotoForm({ slug:"", title:"", product_code:"", short_description:"", categories:[], image_after:"", image_before:"", note:"", is_active:true, is_featured:false, show_on_home:false, is_new:false, feature_order:0, content_type:"", sort_order:0 });
+                    setPhotoForm({ slug:"", title:"", product_code:"", short_description:"", categories:[], image_after:"", image_before:"", note:"", is_active:true, is_featured:false, show_on_home:false, is_new:false, feature_order:0, content_type:"", cover_category:"depois", sort_order:0 });
                     setSlugTouched(false); setProductPickerQuery(""); setPhotoAdvancedOpen(false);
                     setShowPhotoForm(true);
                     setTimeout(() => photoTabFormRef.current?.scrollIntoView({ behavior: "smooth", block: "start" }), 50);
@@ -6018,44 +6060,42 @@ export default function AdminPage() {
                     </div>
                     <div className="mb-4">
                       <label className={labelCls}>Categorias</label>
-                      <div className="flex flex-wrap gap-3 mb-2">
-                        {allCategories.map((cat) => (
-                          <label key={cat} className="flex items-center gap-1.5 text-sm font-[var(--font-inter)] text-[#43474e] cursor-pointer">
-                            <input type="checkbox" checked={photoForm.categories.includes(cat)} onChange={(e) => {
-                              setPhotoForm({...photoForm, categories: e.target.checked ? [...photoForm.categories, cat] : photoForm.categories.filter(c => c !== cat)});
-                            }} className="w-4 h-4" />
-                            {cat}
-                          </label>
-                        ))}
-                      </div>
-                      {/* Inline: add a brand-new category */}
+                      {allCategories.length === 0 ? (
+                        <p className="text-[#74777f] text-xs font-[var(--font-inter)] mb-2">Nenhuma categoria cadastrada — crie uma abaixo.</p>
+                      ) : (
+                        <div className="flex flex-wrap gap-x-4 gap-y-2 mb-2">
+                          {allCategories.map((cat) => {
+                            const checked = photoForm.categories.includes(cat);
+                            const inactive = isInactiveCat(cat);
+                            // Categoria inativa só aparece se este projeto já a usa —
+                            // o vínculo antigo nunca some sozinho.
+                            if (inactive && !checked) return null;
+                            return (
+                              <label key={cat} className="flex items-center gap-1.5 text-sm font-[var(--font-inter)] text-[#43474e] cursor-pointer">
+                                <input type="checkbox" checked={checked} onChange={(e) => {
+                                  setPhotoForm({...photoForm, categories: e.target.checked ? [...photoForm.categories, cat] : photoForm.categories.filter(c => c !== cat)});
+                                }} className="w-4 h-4" />
+                                {catLabel(cat)}
+                                {inactive && <span className="text-[9px] uppercase tracking-wider font-bold text-amber-700 bg-amber-50 border border-amber-200 px-1">inativa</span>}
+                              </label>
+                            );
+                          })}
+                        </div>
+                      )}
+                      {/* Criar categoria aqui mesmo — grava em project_categories e
+                          já fica disponível em todo o painel e no site. */}
                       <div className="flex gap-2 items-center">
                         <input
                           type="text"
                           value={newCatInput}
                           onChange={(e) => setNewCatInput(e.target.value)}
-                          onKeyDown={(e) => {
-                            if (e.key === "Enter") {
-                              e.preventDefault();
-                              const name = addNewCategory(newCatInput);
-                              if (name && !photoForm.categories.includes(name)) {
-                                setPhotoForm(prev => ({ ...prev, categories: [...prev.categories, name] }));
-                              }
-                              setNewCatInput("");
-                            }
-                          }}
+                          onKeyDown={(e) => { if (e.key === "Enter") { e.preventDefault(); createAndSelectCategory(); } }}
                           className="border border-[#e2e2e2] px-3 py-1.5 text-sm font-[var(--font-inter)] text-[#43474e] focus:outline-none focus:border-[#002045] w-44"
                           placeholder="nova categoria..."
                         />
                         <button
                           type="button"
-                          onClick={() => {
-                            const name = addNewCategory(newCatInput);
-                            if (name && !photoForm.categories.includes(name)) {
-                              setPhotoForm(prev => ({ ...prev, categories: [...prev.categories, name] }));
-                            }
-                            setNewCatInput("");
-                          }}
+                          onClick={createAndSelectCategory}
                           className="px-3 py-1.5 bg-[#002045] text-white text-[10px] tracking-[0.08em] uppercase font-bold font-[var(--font-inter)] hover:bg-[#1a365d] transition-colors whitespace-nowrap"
                         >
                           + Criar
@@ -6097,7 +6137,23 @@ export default function AdminPage() {
                     </div>
 
                     <div className="mb-4">
-                      <label className={labelCls}>Imagem Depois *</label>
+                      <label className={labelCls}>Capa do projeto *</label>
+                      {/* Classificação EXPLÍCITA da capa. Antes disso o site
+                          inferia pela posição do campo e uma capa podia acabar
+                          exibida como "Antes". Nova capa nasce "Depois". */}
+                      <div className="flex items-center gap-2 mb-2 flex-wrap">
+                        <span className="text-[10px] tracking-[0.1em] uppercase font-bold font-[var(--font-inter)] text-[#74777f]">Classificação da capa</span>
+                        {(["depois", "antes"] as const).map((c) => (
+                          <button
+                            key={c} type="button"
+                            onClick={() => setPhotoForm({ ...photoForm, cover_category: c })}
+                            className={`text-[10px] tracking-[0.08em] uppercase font-bold font-[var(--font-inter)] px-3 py-1.5 border transition-colors ${photoForm.cover_category === c ? (c === "antes" ? "bg-amber-500 text-white border-amber-500" : "bg-[#3b6934] text-white border-[#3b6934]") : "border-[#e2e2e2] text-[#74777f] hover:border-[#002045]"}`}
+                          >
+                            {c === "antes" ? "Antes" : "Depois"}
+                          </button>
+                        ))}
+                        <span className="text-[10px] text-[#a0a3a8] font-[var(--font-inter)]">É esta a etiqueta e o filtro em que a capa aparece no site.</span>
+                      </div>
                       {photoForm.image_after ? (
                         <div className="border border-[#e2e2e2]">
                           <img src={photoForm.image_after} alt="Imagem Depois" className="w-full max-h-48 object-cover" />
@@ -6135,7 +6191,12 @@ export default function AdminPage() {
                       )}
                     </div>
                     <div className="mb-4">
-                      <label className={labelCls}>Imagem Antes <span className="font-normal text-[#b0b0b0]">(opcional)</span></label>
+                      <label className={labelCls}>Imagem Antes <span className="font-normal text-[#b0b0b0]">(opcional — comparativo antes × depois)</span></label>
+                      {photoForm.image_before && photoForm.image_before === photoForm.image_after && (
+                        <p className="text-[11px] text-amber-800 bg-amber-50 border border-amber-200 px-2 py-1.5 mb-2 font-[var(--font-inter)]">
+                          Esta imagem é idêntica à capa — o site a ignora para não mostrar a mesma foto como “Antes” e “Depois”. Envie outra foto ou remova.
+                        </p>
+                      )}
                       {photoForm.image_before ? (
                         <div className="border border-[#e2e2e2]">
                           <img src={photoForm.image_before} alt="Imagem Antes" className="w-full max-h-48 object-cover" />
@@ -6172,9 +6233,26 @@ export default function AdminPage() {
                         </div>
                       )}
                     </div>
-                    <div className="mb-6 flex items-center gap-2">
-                      <input type="checkbox" id="photo-active" checked={photoForm.is_active} onChange={(e) => setPhotoForm({...photoForm, is_active: e.target.checked})} className="w-4 h-4" />
-                      <label htmlFor="photo-active" className="text-sm font-[var(--font-inter)] text-[#43474e]">Projeto ativo</label>
+                    {/* Situação — fonte ÚNICA do estado público. Substitui o
+                        antigo checkbox "Projeto ativo", que duplicava (e podia
+                        contradizer) o selo "Publicado" e o botão Despublicar. */}
+                    <div className="mb-6">
+                      <label className={labelCls}>Situação</label>
+                      <div className="flex gap-2 flex-wrap">
+                        {([
+                          { v: false, t: "Rascunho",  d: "Salvo, invisível no site" },
+                          { v: true,  t: "Publicado", d: "Visível no site" },
+                        ] as const).map((s) => (
+                          <button
+                            key={s.t} type="button"
+                            onClick={() => setPhotoForm({ ...photoForm, is_active: s.v })}
+                            className={`text-left px-3 py-2 border transition-colors ${photoForm.is_active === s.v ? "bg-[#002045] text-white border-[#002045]" : "border-[#e2e2e2] text-[#74777f] hover:border-[#002045]"}`}
+                          >
+                            <span className="block text-[10px] tracking-[0.1em] uppercase font-bold font-[var(--font-inter)]">{s.t}</span>
+                            <span className={`block text-[10px] font-[var(--font-inter)] ${photoForm.is_active === s.v ? "text-white/70" : "text-[#a0a3a8]"}`}>{s.d}</span>
+                          </button>
+                        ))}
+                      </div>
                     </div>
                     <div className="flex gap-3">
                       <button type="submit" className="bg-[#002045] text-white text-xs tracking-[0.1em] uppercase font-bold font-[var(--font-inter)] px-6 py-2.5 hover:bg-[#1a365d] transition-colors">Salvar</button>
@@ -6196,7 +6274,14 @@ export default function AdminPage() {
                     return (
                       <div key={p.id} className="bg-white border border-[#e2e2e2] flex flex-col">
                         <div className="p-4 flex gap-4">
-                          {p.image_after && <img src={p.image_after} alt={p.title} className="w-20 h-24 object-cover flex-shrink-0 border border-[#e2e2e2]" />}
+                          {p.image_after && (
+                            <div className="relative w-20 h-24 flex-shrink-0">
+                              <img src={p.image_after} alt={p.title} className="w-full h-full object-cover border border-[#e2e2e2]" />
+                              <span className={`absolute bottom-0 left-0 right-0 text-[7px] tracking-[0.08em] uppercase font-bold text-center py-px ${p.cover_category === "antes" ? "bg-amber-500 text-white" : "bg-[#3b6934] text-white"}`}>
+                                Capa · {p.cover_category === "antes" ? "Antes" : "Depois"}
+                              </span>
+                            </div>
+                          )}
                           <div className="flex-1 min-w-0">
                             <div className="flex items-center gap-2 flex-wrap">
                               <p className="font-semibold text-[#002045] font-[var(--font-inter)] text-sm">{p.title}</p>
@@ -6205,7 +6290,7 @@ export default function AdminPage() {
                             <p className="text-xs text-[#3b6934] font-[var(--font-inter)] mt-0.5">{p.product_code}{p.short_description ? ` · ${p.short_description}` : ""}</p>
                             <div className="flex flex-wrap gap-1 mt-1">
                               {p.categories.map((c) => (
-                                <span key={c} className="bg-[#eef2f8] text-[#002045] px-1.5 py-0.5 text-[9px] font-bold tracking-wider">{c}</span>
+                                <span key={c} className="bg-[#eef2f8] text-[#002045] px-1.5 py-0.5 text-[9px] font-bold tracking-wider">{catLabel(c)}</span>
                               ))}
                             </div>
                             <div className="flex gap-2 mt-3 flex-wrap">
@@ -6236,7 +6321,7 @@ export default function AdminPage() {
                               <p className="text-[10px] tracking-[0.12em] uppercase font-bold text-[#002045] font-[var(--font-inter)]">Mídia adicional da obra</p>
                               {mediaMigrated === false && (
                                 <span className="text-[9px] text-amber-700 bg-amber-50 border border-amber-200 px-2 py-1 font-[var(--font-inter)]">
-                                  ⚠ Execute a migração SQL no Supabase para habilitar categoria e descrição
+                                  ⚠ Execute a migração 051 no Supabase para habilitar classificação, capa e descrição
                                 </span>
                               )}
                             </div>
@@ -6255,7 +6340,7 @@ export default function AdminPage() {
                                     className={`relative group cursor-grab active:cursor-grabbing transition-opacity ${dragMediaId === m.id ? "opacity-30" : "opacity-100"} ${dragOverMediaId === m.id && dragMediaId !== m.id ? "ring-2 ring-[#002045]" : ""}`}
                                   >
                                     {/* Thumbnail */}
-                                    <div className="relative w-20 h-20">
+                                    <div className="relative w-24 h-24">
                                       {m.type === "image" ? (
                                         <img src={m.url} alt={m.caption ?? ""} className="w-full h-full object-cover border border-[#e2e2e2]" />
                                       ) : (
@@ -6276,10 +6361,16 @@ export default function AdminPage() {
                                       {m.type === "video" && (
                                         <span className="absolute bottom-0.5 left-0.5 text-[7px] text-white/70 font-bold tracking-wide">VÍD</span>
                                       )}
-                                      {/* Category badge */}
-                                      {mediaMigrated && m.category && m.category !== "geral" && (
-                                        <span className={`absolute bottom-0.5 right-0.5 text-[7px] font-bold px-1 ${m.category === "antes" ? "bg-amber-500 text-white" : "bg-[#3b6934] text-white"}`}>
-                                          {m.category === "antes" ? "A" : "D"}
+                                      {/* Etiqueta legível — antes eram letras "A"/"D" sem legenda */}
+                                      {mediaMigrated && (
+                                        <span className={`absolute bottom-0.5 right-0.5 text-[7px] tracking-[0.08em] uppercase font-bold px-1 py-px ${m.category === "antes" ? "bg-amber-500 text-white" : m.category === "depois" ? "bg-[#3b6934] text-white" : "bg-[#74777f] text-white"}`}>
+                                          {m.category === "antes" ? "Antes" : m.category === "depois" ? "Depois" : "Sem class."}
+                                        </span>
+                                      )}
+                                      {/* Selo de capa */}
+                                      {m.is_cover && (
+                                        <span className="absolute bottom-0.5 left-0.5 text-[7px] tracking-[0.08em] uppercase font-bold px-1 py-px bg-[#002045] text-white">
+                                          Capa
                                         </span>
                                       )}
                                       {/* Edit overlay */}
@@ -6297,6 +6388,34 @@ export default function AdminPage() {
                                         </button>
                                       )}
                                     </div>
+
+                                    {/* Controles visíveis — classificar e definir capa sem
+                                        precisar abrir o popover de edição. */}
+                                    {mediaMigrated && (
+                                      <div className="w-24 mt-1 flex flex-col gap-1">
+                                        <div className="flex">
+                                          {(["antes", "depois"] as const).map((c) => (
+                                            <button
+                                              key={c} type="button"
+                                              onClick={(e) => { e.stopPropagation(); setMediaCategory(m.id, p.slug, c); }}
+                                              className={`flex-1 text-[8px] tracking-[0.05em] uppercase font-bold font-[var(--font-inter)] py-1 border transition-colors ${m.category === c ? (c === "antes" ? "bg-amber-500 text-white border-amber-500" : "bg-[#3b6934] text-white border-[#3b6934]") : "border-[#e2e2e2] bg-white text-[#74777f] hover:border-[#002045]"}`}
+                                            >
+                                              {c === "antes" ? "Antes" : "Depois"}
+                                            </button>
+                                          ))}
+                                        </div>
+                                        {m.type === "image" && !m.is_cover && (
+                                          <button
+                                            type="button"
+                                            onClick={(e) => { e.stopPropagation(); useMediaAsCover(m, p); }}
+                                            disabled={settingCoverId === m.id}
+                                            className="text-[8px] tracking-[0.05em] uppercase font-bold font-[var(--font-inter)] py-1 border border-[#002045] bg-white text-[#002045] hover:bg-[#002045] hover:text-white transition-colors disabled:opacity-50"
+                                          >
+                                            {settingCoverId === m.id ? "Trocando…" : "Definir capa"}
+                                          </button>
+                                        )}
+                                      </div>
+                                    )}
 
                                     {/* Inline edit popover */}
                                     {editingMediaId === m.id && (
@@ -6386,6 +6505,20 @@ export default function AdminPage() {
                               </div>
                             )}
 
+                            {/* Classificação aplicada às próximas fotos enviadas */}
+                            {mediaMigrated && (
+                              <div className="flex items-center gap-2 flex-wrap mb-2">
+                                <span className="text-[9px] tracking-[0.1em] uppercase font-bold font-[var(--font-inter)] text-[#74777f]">Enviar novas fotos como</span>
+                                {(["depois", "antes"] as const).map((c) => (
+                                  <button key={c} type="button" onClick={() => setUploadCategory(c)}
+                                    className={`text-[9px] tracking-[0.05em] uppercase font-bold font-[var(--font-inter)] px-2.5 py-1 border transition-colors ${uploadCategory === c ? (c === "antes" ? "bg-amber-500 text-white border-amber-500" : "bg-[#3b6934] text-white border-[#3b6934]") : "border-[#e2e2e2] bg-white text-[#74777f] hover:border-[#002045]"}`}>
+                                    {c === "antes" ? "Antes" : "Depois"}
+                                  </button>
+                                ))}
+                                <span className="text-[9px] text-[#a0a3a8] font-[var(--font-inter)]">Dá para trocar depois em cada foto.</span>
+                              </div>
+                            )}
+
                             {/* Add image + video file */}
                             <div className="flex flex-wrap gap-3">
                               <label className={`relative cursor-pointer text-[10px] tracking-[0.1em] uppercase font-bold font-[var(--font-inter)] px-4 py-2 border border-[#002045] text-[#002045] hover:bg-[#002045] hover:text-white transition-colors whitespace-nowrap ${mediaUploading ? "opacity-50 pointer-events-none" : ""}`}>
@@ -6434,8 +6567,9 @@ export default function AdminPage() {
                               <details className="mt-3">
                                 <summary className="text-[9px] text-amber-700 cursor-pointer font-[var(--font-inter)] font-semibold">Ver SQL da migração ▸</summary>
                                 <pre className="mt-2 text-[8px] bg-amber-50 border border-amber-200 p-2 text-amber-800 overflow-x-auto font-mono leading-relaxed whitespace-pre-wrap">
-{`ALTER TABLE project_media ADD COLUMN IF NOT EXISTS category TEXT NOT NULL DEFAULT 'geral';
-ALTER TABLE project_media ADD COLUMN IF NOT EXISTS description TEXT;`}
+{`-- Rode a migração 051 no Supabase (SQL Editor → New query):
+-- supabase/migrations/051_project_media_classification.sql
+-- Ela normaliza antes/depois, cria is_cover e corrige os dados legados.`}
                                 </pre>
                                 <p className="text-[9px] text-[#74777f] font-[var(--font-inter)] mt-1">Cole no Supabase Dashboard → SQL Editor → New query → Run.</p>
                               </details>

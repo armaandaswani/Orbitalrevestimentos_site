@@ -35,7 +35,7 @@ export async function POST(req: NextRequest, { params }: { params: Promise<{ id:
   let { data: created, error: insErr } = await sb.from("project_photos").insert(copyRow).select().single();
   if (isMissingColumn(insErr)) {
     // Retrocompat: remove colunas que a migração ainda não criou.
-    for (const c of ["short_description", "is_featured", "show_on_home", "is_new", "feature_order", "content_type"]) delete copyRow[c];
+    for (const c of ["short_description", "is_featured", "show_on_home", "is_new", "feature_order", "content_type", "cover_category"]) delete copyRow[c];
     ({ data: created, error: insErr } = await sb.from("project_photos").insert(copyRow).select().single());
   }
   if (insErr || !created) return NextResponse.json({ error: insErr?.message ?? "Falha ao duplicar." }, { status: 500 });
