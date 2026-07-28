@@ -120,7 +120,7 @@ export default function ProjetosListPage() {
       action={
         <div className="flex flex-wrap gap-2">
           <Link href="/admin/projetos/organizacao" className={btnGhost}>Categorias e Showrooms</Link>
-          <Link href="/admin?tab=projetos" className={btnPrimary}>+ Novo projeto</Link>
+          <Link href="/admin/projetos/novo" className={btnPrimary}>+ Novo projeto</Link>
         </div>
       }
     >
@@ -216,7 +216,7 @@ export default function ProjetosListPage() {
               </div>
 
               <div className="flex flex-wrap gap-1.5 sm:flex-col sm:w-32 shrink-0">
-                <Link href="/admin?tab=projetos" className="flex-1 text-center border border-[#002045] text-[#002045] text-[10px] tracking-[0.08em] uppercase font-bold font-[var(--font-inter)] px-2 py-1.5 hover:bg-[#002045] hover:text-white transition-colors">
+                <Link href={`/admin/projetos/${r.id}`} className="flex-1 text-center border border-[#002045] text-[#002045] text-[10px] tracking-[0.08em] uppercase font-bold font-[var(--font-inter)] px-2 py-1.5 hover:bg-[#002045] hover:text-white transition-colors">
                   Editar
                 </Link>
                 <button onClick={() => togglePublish(r)} disabled={busy === r.id}

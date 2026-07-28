@@ -83,6 +83,40 @@ export async function GET(req: NextRequest) {
   return NextResponse.json({ pending_migration: pendingMigration, rows: out });
 }
 
+/**
+ * POST /api/admin/projects — cria o rascunho silencioso.
+ *
+ * O editor chama isto ao abrir "novo projeto", ANTES de qualquer salvamento
+ * manual, para que as mídias já tenham a que se vincular. Sem isso o usuário
+ * teria de salvar primeiro e voltar para subir as fotos — que era exatamente a
+ * queixa.
+ */
+export async function POST(req: NextRequest) {
+  if (!isAdminRequest(req)) return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+  const db = supabaseAdmin();
+
+  const stamp = Date.now().toString(36);
+  const row: Record<string, unknown> = {
+    slug: `rascunho-${stamp}`,
+    title: "",
+    product_code: "",
+    categories: [],
+    image_after: "",
+    image_before: "",
+    note: "",
+    is_active: false,
+    sort_order: 999,
+  };
+
+  let { data, error } = await db.from("project_photos").insert(row).select().single();
+  if (isMissingColumn(error)) {
+    delete row.categories;
+    ({ data, error } = await db.from("project_photos").insert(row).select().single());
+  }
+  if (error) return NextResponse.json({ error: error.message }, { status: 500 });
+  return NextResponse.json(data, { status: 201 });
+}
+
 // PATCH /api/admin/projects — publicar/despublicar em lote ou individual.
 export async function PATCH(req: NextRequest) {
   if (!isAdminRequest(req)) return NextResponse.json({ error: "Unauthorized" }, { status: 401 });

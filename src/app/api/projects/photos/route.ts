@@ -11,7 +11,12 @@ function checkAuth(req: NextRequest): boolean {
 // Colunas opcionais adicionadas por migrações recentes (045/047/051). Quando o
 // banco ainda não as tem, removemos do payload e reenviamos, para não quebrar o
 // salvar.
-const OPTIONAL_PHOTO_COLS = ["short_description", "is_featured", "show_on_home", "is_new", "feature_order", "content_type", "cover_category"];
+const OPTIONAL_PHOTO_COLS = [
+  "short_description", "is_featured", "show_on_home", "is_new", "feature_order", "content_type", "cover_category",
+  // migração 053
+  "primary_category", "showroom_id", "tags", "needs_review", "review_reason",
+  "cover_focus_x", "cover_focus_y", "cover_zoom",
+];
 export function stripOptionalPhotoCols(body: unknown): Record<string, unknown> {
   if (!body || typeof body !== "object") return {};
   const out = { ...(body as Record<string, unknown>) };
