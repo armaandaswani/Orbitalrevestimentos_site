@@ -116,43 +116,72 @@ export default function ProjectEditor({ id }: { id: string }) {
   }, [persist]);
 
   // ── Mídias ─────────────────────────────────────────────────────────────────
+  /**
+   * Upload direto para o Supabase, via URL assinada.
+   *
+   * NÃO passe o arquivo por uma rota Next: em produção a Vercel corta o corpo da
+   * requisição em ~4,5 MB e qualquer foto de celular estoura isso. Aqui só a
+   * assinatura passa pelo servidor; os bytes vão do navegador para o storage.
+   *
+   * Toda falha é mostrada na tela. A versão anterior engolia os erros e os
+   * arquivos simplesmente sumiam, sem nunca ter entrado.
+   */
   const uploadFiles = useCallback(async (files: FileList | File[]) => {
     if (!p) return;
     const list = Array.from(files);
+    setErr(null);
     setUploading(list.length);
     let order = media.length;
+    const failed: string[] = [];
+
     for (const f of list) {
-      const fd = new FormData();
-      fd.append("file", f);
-      fd.append("folder", `projetos/${p.slug}`);
-      const up = await fetch("/api/admin/upload", { method: "POST", body: fd }).then((r) => (r.ok ? r.json() : null)).catch(() => null);
-      if (!up?.url) { setUploading((n) => n - 1); continue; }
-      const isVideo = f.type.startsWith("video/");
-      const created = await fetch("/api/projects/media", {
-        method: "POST", headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
-          project_slug: p.slug, type: isVideo ? "video" : "image", url: up.url,
-          category: "geral", sort_order: order++,
-        }),
-      }).then((r) => (r.ok ? r.json() : null)).catch(() => null);
-      if (created) setMedia((prev) => [...prev, created]);
-      setUploading((n) => n - 1);
+      try {
+        const sign = await fetch("/api/admin/upload-sign", {
+          method: "POST", headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ folder: `projetos/${p.slug}`, filename: f.name, contentType: f.type }),
+        });
+        if (!sign.ok) throw new Error(`assinatura falhou (${sign.status}): ${await sign.text()}`);
+        const { signedUrl, publicUrl } = await sign.json();
+
+        const put = await fetch(signedUrl, { method: "PUT", headers: { "Content-Type": f.type }, body: f });
+        if (!put.ok) throw new Error(`envio falhou (${put.status}): ${await put.text()}`);
+
+        const res = await fetch("/api/projects/media", {
+          method: "POST", headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({
+            project_slug: p.slug, type: f.type.startsWith("video/") ? "video" : "image",
+            url: publicUrl, category: "geral", sort_order: order++,
+          }),
+        });
+        if (!res.ok) throw new Error(`registro falhou (${res.status}): ${await res.text()}`);
+
+        const created = await res.json();
+        setMedia((prev) => [...prev, created]);
+      } catch (e) {
+        failed.push(`${f.name}: ${e instanceof Error ? e.message : "erro desconhecido"}`);
+      } finally {
+        setUploading((n) => Math.max(0, n - 1));
+      }
     }
+
     setUploading(0);
+    if (failed.length > 0) setErr(`Não foi possível enviar ${failed.length} arquivo(s). ${failed.join(" · ")}`);
   }, [p, media.length]);
 
   const patchMedia = useCallback(async (mid: string, patch: Partial<Media>) => {
     setMedia((prev) => prev.map((m) => (m.id === mid ? { ...m, ...patch } : m)));
-    await fetch(`/api/projects/media/${mid}`, {
+    const res = await fetch(`/api/projects/media/${mid}`, {
       method: "PATCH", headers: { "Content-Type": "application/json" }, body: JSON.stringify(patch),
-    }).catch(() => {});
+    }).catch(() => null);
+    if (!res || !res.ok) setErr("A alteração da mídia não foi gravada. Recarregue para ver o estado real.");
   }, []);
 
   const removeMedia = useCallback(async (m: Media) => {
     if (m.is_cover) { setErr("Esta é a capa. Escolha outra capa antes de removê-la."); return; }
     if (!confirm("Remover esta mídia do projeto?")) return;
     setMedia((prev) => prev.filter((x) => x.id !== m.id));
-    await fetch(`/api/projects/media/${m.id}`, { method: "DELETE" }).catch(() => {});
+    const res = await fetch(`/api/projects/media/${m.id}`, { method: "DELETE" }).catch(() => null);
+    if (!res || !res.ok) setErr("A mídia não foi removida no servidor. Recarregue para ver o estado real.");
   }, []);
 
   /**
