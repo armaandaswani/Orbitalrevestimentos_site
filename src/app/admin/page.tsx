@@ -450,6 +450,8 @@ export default function AdminPage() {
   const [clientsExporting, setClientsExporting] = useState(false);
   const [clientSearch, setClientSearch] = useState("");
   const [clientStatusFilter, setClientStatusFilter] = useState<string>("all");
+  const [clientSortKey, setClientSortKey] = useState<"data" | "cliente" | "valor">("data");
+  const [clientSortDir, setClientSortDir] = useState<"asc" | "desc">("desc");
   const [clientPartnerFilter, setClientPartnerFilter] = useState<string>("all");
   const [deletingClientId, setDeletingClientId] = useState<string | null>(null);
   // Orçamentos formais gerados pelo site público (saved_quotes) + conversão.
@@ -2764,8 +2766,22 @@ export default function AdminPage() {
         }
       }
       return true;
+    })
+    // Ordenação — a lista chega do banco por data desc; daqui em diante quem
+    // manda é o seletor. Ordenar por valor é o que responde "quais são os
+    // orçamentos grandes", que a ordem cronológica esconde.
+    .slice()
+    .sort((a, b) => {
+      const dir = clientSortDir === "asc" ? 1 : -1;
+      if (clientSortKey === "valor") return ((a.total ?? 0) - (b.total ?? 0)) * dir;
+      if (clientSortKey === "cliente") {
+        return (a.client_name ?? "").localeCompare(b.client_name ?? "", "pt-BR") * dir;
+      }
+      const ta = new Date(a.created_at ?? 0).getTime();
+      const tb = new Date(b.created_at ?? 0).getTime();
+      return (ta - tb) * dir;
     });
-  }, [enrichedClients, clientSearch, clientPartnerFilter, clientStatusFilter]);
+  }, [enrichedClients, clientSearch, clientPartnerFilter, clientStatusFilter, clientSortKey, clientSortDir]);
 
   const orcamentosStats = useMemo(() => {
     const getStatus = (c: typeof filteredClients[0]) => c.sale_status ?? c.couponUse?.sale_status ?? "em_orcamento";
@@ -4463,6 +4479,23 @@ export default function AdminPage() {
                     <option key={p.id} value={p.coupon_code}>{p.name}</option>
                   ))}
                 </select>
+                {/* Ordenação — a ordem cronológica esconde os orçamentos grandes. */}
+                <select
+                  value={`${clientSortKey}:${clientSortDir}`}
+                  onChange={(e) => {
+                    const [k, d] = e.target.value.split(":");
+                    setClientSortKey(k as "data" | "cliente" | "valor");
+                    setClientSortDir(d as "asc" | "desc");
+                  }}
+                  className="border border-[#e2e2e2] px-3 py-2 text-sm font-[var(--font-inter)] text-[#002045] focus:outline-none focus:border-[#002045]"
+                >
+                  <option value="data:desc">Mais recentes</option>
+                  <option value="data:asc">Mais antigos</option>
+                  <option value="valor:desc">Maior valor</option>
+                  <option value="valor:asc">Menor valor</option>
+                  <option value="cliente:asc">Cliente (A–Z)</option>
+                  <option value="cliente:desc">Cliente (Z–A)</option>
+                </select>
               </div>
             </div>
 
@@ -4510,7 +4543,7 @@ export default function AdminPage() {
             )}
 
             {/* Stats bar */}
-            {!clientsLoading && !loadingUses && !pedidosLoading && filteredClients.length > 0 && (
+            {!clientsLoading && filteredClients.length > 0 && (
               <div className="grid grid-cols-2 sm:grid-cols-5 gap-3 mb-5">
                 {[
                   { label: "Total", value: filteredClients.length, sub: "orçamentos" },
@@ -4528,8 +4561,12 @@ export default function AdminPage() {
               </div>
             )}
 
-            {clientsLoading || loadingUses || pedidosLoading ? (
-              <p className="text-[#74777f] text-sm font-[var(--font-inter)]">Carregando...</p>
+            {/* A tabela espera SÓ os orçamentos. Cupons e pedidos enriquecem as
+                linhas (status, conversão) e chegam depois — prender a tabela aos
+                três fazia um endpoint lento esconder criar, excluir e ordenar,
+                como se tivessem sumido. */}
+            {clientsLoading ? (
+              <p className="text-[#74777f] text-sm font-[var(--font-inter)]">Carregando orçamentos...</p>
             ) : filteredClients.length === 0 && (clientsError || usesError || pedidosError) ? (
               // Nothing loaded from EITHER source and at least one fetch failed —
               // this is a real error, not "no orders". Block with a retry.
