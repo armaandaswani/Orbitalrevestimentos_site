@@ -3,6 +3,7 @@ import { supabaseAdmin } from "@/lib/supabase";
 
 import { isAdminRequest } from "@/lib/admin-auth";
 import { isMissingColumn } from "@/lib/db-compat";
+import { SUPPORT_PRODUCT_SKUS } from "@/lib/orcamento-materials";
 
 function checkAuth(req: NextRequest): boolean {
   return isAdminRequest(req);
@@ -30,12 +31,12 @@ export async function GET(req: NextRequest) {
   // adiciona a cola automaticamente: ceil(1,5 × placas) tubos), mas NUNCA aparece
   // no catálogo público nem como "modelo" no simulador. Excluímos por:
   //   - show_in_catalog=false (mecanismo geral, quando a migração 046 rodar), e
-  //   - código de produtos de suporte (ORB-PU) — garante o comportamento MESMO
-  //     sem a migração, filtrando em JS. Admins (?all=true) veem tudo.
-  const SUPPORT_SKUS = ["ORB-PU"];
+  //   - código de produtos de suporte (ORB-PU, colas de contato, espuma) —
+  //     garante o comportamento MESMO sem a migração, filtrando em JS.
+  //     Admins (?all=true) veem tudo.
   const rows = !includeInactive && Array.isArray(data)
     ? (data as Array<{ show_in_catalog?: boolean; code?: string }>).filter(
-        (p) => p.show_in_catalog !== false && !SUPPORT_SKUS.includes(String(p.code)))
+        (p) => p.show_in_catalog !== false && !(SUPPORT_PRODUCT_SKUS as readonly string[]).includes(String(p.code)))
     : data;
   return NextResponse.json(rows);
 }
