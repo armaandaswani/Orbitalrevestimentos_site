@@ -11,9 +11,11 @@ import {
   DEFAULT_MATERIALS_CONFIG as CFG,
   adhesiveLitersFor,
   applicationReasonLabel,
+  applyMaterialOverrides,
   checkMaterialStock,
   chooseAdhesivePackages,
   foamTubesFor,
+  materialsSignature,
   planMaterials,
   planMaterialsForSpaces,
   pu40TubesFor,
@@ -207,6 +209,50 @@ console.log("\n── Orçamento com espaços de tipos diferentes ──");
   check("lista vazia → nenhum material", planMaterialsForSpaces([], PRICES).lines.length === 0);
   check("tipo desconhecido é ignorado, não quebra",
     planMaterialsForSpaces([{ applicationType: "piso" as never, panels: 5 }], PRICES).lines.length === 0);
+}
+
+console.log("\n── §9 Ajuste manual do administrador ──");
+{
+  const spaces = [{ applicationType: "teto" as const, panels: 10 }];
+  const plan = planMaterialsForSpaces(spaces, PRICES);
+  const sig = materialsSignature(spaces);
+  const qty = (ls: typeof plan.lines, code: string) => ls.find((l) => l.code === code)?.quantity ?? 0;
+
+  check("cálculo dá 8 tubos de espuma", qty(plan.lines, "ORB-ESP") === 8);
+
+  // Ajuste preservado enquanto placas e tipo não mudam.
+  const ov = { signature: sig, quantities: { "ORB-ESP": 6 } };
+  const a1 = applyMaterialOverrides(plan.lines, ov, sig);
+  check("ajuste manual para 6 é preservado", qty(a1.lines, "ORB-ESP") === 6 && !a1.discarded);
+  check("linha ajustada é sinalizada", a1.overriddenCodes.includes("ORB-ESP"));
+
+  // Mudou a quantidade de placas → assinatura muda → recalcula e avisa.
+  const spaces2 = [{ applicationType: "teto" as const, panels: 20 }];
+  const plan2 = planMaterialsForSpaces(spaces2, PRICES);
+  const a2 = applyMaterialOverrides(plan2.lines, ov, materialsSignature(spaces2));
+  check("mudou placas → ajuste descartado", a2.discarded && qty(a2.lines, "ORB-ESP") === 15);
+
+  // Mudou o tipo de aplicação → idem.
+  const spaces3 = [{ applicationType: "forro" as const, panels: 10 }];
+  const a3 = applyMaterialOverrides(plan.lines, ov, materialsSignature(spaces3));
+  check("mudou tipo → ajuste descartado", a3.discarded);
+
+  // Remoção manual e acréscimo manual.
+  const rem = applyMaterialOverrides(plan.lines, { signature: sig, quantities: { "ORB-ESP": 0 } }, sig);
+  check("quantidade 0 remove a linha", !rem.lines.some((l) => l.code === "ORB-ESP"));
+  const add = applyMaterialOverrides(plan.lines, { signature: sig, quantities: { "ORB-CC14": 1 } }, sig);
+  check("SKU fora do plano pode ser acrescentado", qty(add.lines, "ORB-CC14") === 1);
+  check("acréscimo manual é rotulado como tal",
+    add.lines.find((l) => l.code === "ORB-CC14")?.technical === "Acrescentado manualmente");
+
+  // Sem ajuste, nada muda.
+  const none = applyMaterialOverrides(plan.lines, null, sig);
+  check("sem ajuste → plano intacto", none.lines.length === plan.lines.length && !none.discarded);
+
+  // A assinatura não pode depender da ORDEM dos espaços.
+  const sigA = materialsSignature([{ applicationType: "parede", panels: 3 }, { applicationType: "teto", panels: 7 }]);
+  const sigB = materialsSignature([{ applicationType: "teto", panels: 7 }, { applicationType: "parede", panels: 3 }]);
+  check("assinatura ignora a ordem dos espaços", sigA === sigB, `${sigA} vs ${sigB}`);
 }
 
 console.log(`\n${fail === 0 ? "✅" : "❌"}  ${pass} passaram, ${fail} falharam\n`);

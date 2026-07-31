@@ -10,8 +10,8 @@ export const runtime = "nodejs";
 export async function GET(req: NextRequest) {
   if (!isAdminRequest(req)) return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
   const db = supabaseAdmin();
-  const { config, extras } = await loadOrcamentoConfig(db);
-  return NextResponse.json({ ...config, ...extras });
+  const { config, extras, materialsConfig } = await loadOrcamentoConfig(db);
+  return NextResponse.json({ ...config, ...extras, ...materialsConfig });
 }
 
 // PUT /api/admin/orcamento-config — persist the full config JSONB (singleton).
@@ -21,12 +21,18 @@ export async function PUT(req: NextRequest) {
   if (!body || typeof body !== "object") return NextResponse.json({ error: "Corpo inválido." }, { status: 400 });
 
   const db = supabaseAdmin();
+  // MESCLA sobre o que já está gravado, não substitui. Duas telas editam este
+  // mesmo JSON (condições comerciais e materiais de instalação); substituir
+  // faria uma apagar as chaves da outra sem ninguém perceber.
+  const { data: current } = await db.from("orcamento_settings").select("config").eq("id", 1).maybeSingle();
+  const merged = { ...((current?.config as Record<string, unknown>) ?? {}), ...body };
+
   const { error } = await db
     .from("orcamento_settings")
-    .upsert({ id: 1, config: body, updated_at: new Date().toISOString() }, { onConflict: "id" });
+    .upsert({ id: 1, config: merged, updated_at: new Date().toISOString() }, { onConflict: "id" });
   if (error) return NextResponse.json({ error: error.message }, { status: 500 });
 
   // Return the normalized, merged view so the client reflects fallbacks.
-  const { config, extras } = await loadOrcamentoConfig(db);
-  return NextResponse.json({ ...config, ...extras });
+  const { config, extras, materialsConfig } = await loadOrcamentoConfig(db);
+  return NextResponse.json({ ...config, ...extras, ...materialsConfig });
 }

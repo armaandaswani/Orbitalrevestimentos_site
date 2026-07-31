@@ -44,6 +44,7 @@ export async function POST(req: NextRequest) {
     {
       plates, pricePerPlate, colaUnitPrice, colaAvailable, freteZoneValue,
       spaces, materialPrices: prices, materialStock: stock, materialNames: names, materialUnits: units, materialsConfig,
+      materialOverrides: body?.materialOverrides ?? null,
     },
     config
   );

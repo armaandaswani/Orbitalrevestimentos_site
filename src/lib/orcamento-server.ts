@@ -9,6 +9,7 @@ import {
   DEFAULT_MATERIALS_CONFIG,
   SUPPORT_PRODUCT_SKUS,
   type ApplicationType,
+  type MaterialOverrides,
   type MaterialsConfig,
   type SpaceApplication,
 } from "@/lib/orcamento-materials";
@@ -157,6 +158,8 @@ export interface QuoteLike {
   material_discounted?: number | null;
   material_total?: number | null;
   spaces?: Array<{ plates?: number; total?: number; applicationType?: string | null }> | null;
+  /** Ajuste manual dos materiais (migração 055). Ausente = cálculo automático. */
+  material_overrides?: MaterialOverrides | null;
 }
 
 /** Tipos de aplicação dos espaços salvos. Espaço sem tipo conta como parede. */
@@ -201,6 +204,7 @@ export async function breakdownForQuote(
       plates, pricePerPlate, colaUnitPrice, colaAvailable, freteZoneValue,
       spaces: spaceApplicationsFrom(quote.spaces, plates),
       materialPrices: prices, materialStock: stock, materialNames: names, materialUnits: units, materialsConfig,
+      materialOverrides: quote.material_overrides ?? null,
     },
     config
   );

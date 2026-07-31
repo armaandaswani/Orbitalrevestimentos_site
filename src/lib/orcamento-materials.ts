@@ -363,6 +363,86 @@ export function planMaterials(
   return planMaterialsForSpaces([{ applicationType, panels }], prices, cfg);
 }
 
+/**
+ * Ajustes manuais do administrador sobre as quantidades calculadas.
+ *
+ * A assinatura guarda o estado (placas + tipos) de quando o ajuste foi feito.
+ * Mudou o número de placas ou o tipo de aplicação, a assinatura deixa de bater e
+ * o cálculo volta a mandar — é o que o §9 pede, e evita o pior caso: um ajuste
+ * feito para 10 placas continuar valendo depois de virar 60.
+ */
+export interface MaterialOverrides {
+  signature: string;
+  /** SKU → quantidade escolhida à mão. 0 remove a linha do orçamento. */
+  quantities: Record<string, number>;
+}
+
+/** Estado que invalida um ajuste manual quando muda. */
+export function materialsSignature(spaces: SpaceApplication[]): string {
+  return [...(spaces ?? [])]
+    .filter((s) => (s?.panels ?? 0) > 0)
+    .map((s) => `${s.applicationType}:${Math.floor(s.panels)}`)
+    .sort()
+    .join("|");
+}
+
+export interface AppliedOverrides {
+  lines: MaterialLine[];
+  /** true quando havia ajuste manual e ele foi descartado por mudança. */
+  discarded: boolean;
+  /** SKUs cuja quantidade veio do ajuste manual. */
+  overriddenCodes: string[];
+}
+
+/**
+ * Aplica os ajustes manuais sobre as linhas calculadas.
+ *
+ * Um SKU que não estava no plano pode ser acrescentado à mão (o §9 permite);
+ * quantidade 0 remove. Nada disso altera o cálculo técnico — ele continua
+ * disponível para comparação.
+ */
+export function applyMaterialOverrides(
+  lines: MaterialLine[],
+  overrides: MaterialOverrides | null | undefined,
+  currentSignature: string,
+  cfg: MaterialsConfig = DEFAULT_MATERIALS_CONFIG,
+): AppliedOverrides {
+  if (!overrides || !overrides.quantities || Object.keys(overrides.quantities).length === 0) {
+    return { lines, discarded: false, overriddenCodes: [] };
+  }
+  if (overrides.signature !== currentSignature) {
+    return { lines, discarded: true, overriddenCodes: [] };
+  }
+
+  const overriddenCodes: string[] = [];
+  const out: MaterialLine[] = [];
+  for (const l of lines) {
+    const q = overrides.quantities[l.code];
+    if (q === undefined) { out.push(l); continue; }
+    overriddenCodes.push(l.code);
+    if (q > 0) out.push({ ...l, quantity: Math.floor(q) });
+    // q === 0 → removido de propósito, não entra.
+  }
+
+  // Itens acrescentados à mão que o cálculo não previa.
+  const known = new Set(lines.map((l) => l.code));
+  const pkgByCode = new Map(cfg.adhesivePackages.map((p) => [p.code, p]));
+  for (const [code, q] of Object.entries(overrides.quantities)) {
+    if (known.has(code) || q <= 0) continue;
+    const pkg = pkgByCode.get(code);
+    overriddenCodes.push(code);
+    out.push({
+      code, quantity: Math.floor(q),
+      unit: pkg ? "lata" : "tubo",
+      packageLabel: pkg?.label,
+      reason: "parede", reasons: [],
+      technical: "Acrescentado manualmente",
+    });
+  }
+
+  return { lines: out, discarded: false, overriddenCodes };
+}
+
 export interface StockCheck {
   code: string;
   required: number;

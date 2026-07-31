@@ -4408,6 +4408,20 @@ export default function AdminPage() {
         {/* ═══ ORÇAMENTOS TAB (merged Clientes + Histórico) ═══ */}
         {tab === "orcamentos" && (
           <div>
+            {/* Materiais de instalação — regras do cálculo automático (PU-40 na
+                parede; cola de contato + espuma no teto/forro). */}
+            <div className="bg-white border border-[#e2e2e2] px-4 sm:px-5 py-4 mb-6 flex flex-wrap items-center justify-between gap-3">
+              <div className="min-w-0">
+                <p className="font-[var(--font-inter)] text-sm font-bold text-[#002045]">Materiais de instalação</p>
+                <p className="text-[#74777f] text-[12px] font-[var(--font-inter)] mt-0.5">
+                  Consumo por placa, embalagens de cola e quais aplicações disparam cada regra.
+                </p>
+              </div>
+              <a href="/admin/orcamentos/materiais" className="border border-[#002045] text-[#002045] text-xs tracking-[0.12em] uppercase font-bold font-[var(--font-inter)] px-4 py-2.5 hover:bg-[#002045] hover:text-white transition-colors whitespace-nowrap">
+                Parâmetros do cálculo
+              </a>
+            </div>
+
             {/* Header + filters */}
             <div className="flex flex-col gap-4 mb-6">
               <div className="flex flex-wrap items-center justify-between gap-3">
@@ -4475,6 +4489,7 @@ export default function AdminPage() {
                         </div>
                         <div className="flex items-center gap-2 flex-shrink-0">
                           <a href={`/api/orcamento/${fq.slug}/pdf`} target="_blank" rel="noopener noreferrer" className="text-[#002045] text-[10px] tracking-[0.1em] uppercase font-semibold font-[var(--font-inter)] border border-[#e2e2e2] px-3 py-1.5 hover:border-[#002045] transition-colors">PDF</a>
+                          <a href={`/admin/orcamentos/${fq.slug}`} className="text-[#002045] text-[10px] tracking-[0.1em] uppercase font-semibold font-[var(--font-inter)] border border-[#e2e2e2] px-3 py-1.5 hover:border-[#002045] transition-colors">Materiais</a>
                           {converted ? (
                             <span className="text-[#3b6934] text-[10px] tracking-[0.1em] uppercase font-bold font-[var(--font-inter)] bg-[#f0f9eb] px-3 py-1.5">Convertido ✓</span>
                           ) : (

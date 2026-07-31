@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
 import { supabaseAdmin } from "@/lib/supabase";
+import { isMissingColumn } from "@/lib/db-compat";
 
 export async function GET(
   _req: NextRequest,
@@ -59,12 +60,20 @@ export async function PATCH(
   if ("client_name" in body) patch.client_name = body.client_name ?? null;
   if ("client_email" in body) patch.client_email = body.client_email ?? null;
   if ("client_phone" in body) patch.client_phone = body.client_phone ?? null;
+  // Ajuste manual dos materiais de instalação (§9). null limpa o ajuste.
+  if ("material_overrides" in body) patch.material_overrides = body.material_overrides ?? null;
   // Só uma edição de conteúdo (spaces) renova a validade de 7 dias.
   if ("spaces" in body) { patch.spaces = body.spaces ?? []; patch.expires_at = new Date(Date.now() + 7 * 24 * 60 * 60 * 1000).toISOString(); }
 
   let { data, error } = await db.from("saved_quotes").update(patch).eq("slug", slug).select("slug").single();
   if (error && /client_(name|email|phone)/.test(error.message)) {
     delete patch.client_name; delete patch.client_email; delete patch.client_phone;
+    ({ data, error } = await db.from("saved_quotes").update(patch).eq("slug", slug).select("slug").single());
+  }
+  // Retrocompat: material_overrides só existe a partir da migração 055. Sem a
+  // coluna, o ajuste manual não é gravado — mas o resto do PATCH não pode falhar.
+  if (isMissingColumn(error) && "material_overrides" in patch) {
+    delete patch.material_overrides;
     ({ data, error } = await db.from("saved_quotes").update(patch).eq("slug", slug).select("slug").single());
   }
 

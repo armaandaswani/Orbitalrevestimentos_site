@@ -14,10 +14,13 @@
 
 import {
   DEFAULT_MATERIALS_CONFIG,
+  applyMaterialOverrides,
   checkMaterialStock,
+  materialsSignature,
   planMaterialsForSpaces,
   type MaterialLine,
   type MaterialsConfig,
+  type MaterialOverrides,
   type MaterialsPlan,
   type SpaceApplication,
   type StockCheck,
@@ -108,6 +111,8 @@ export interface OrcamentoInput {
   /** Unidade de venda por SKU, quando o cadastro tiver uma diferente do padrão. */
   materialUnits?: Record<string, string>;
   materialsConfig?: MaterialsConfig;
+  /** Ajustes manuais do administrador sobre as quantidades calculadas. */
+  materialOverrides?: MaterialOverrides | null;
 }
 
 export interface PaymentOption {
@@ -138,9 +143,11 @@ export interface OrcamentoBreakdown {
    * Materiais de instalação calculados automaticamente, PU-40 incluído. Cada
    * linha traz preço unitário, total e o tipo de aplicação que a gerou.
    */
-  materials: Array<MaterialLine & { name: string; unitPrice: number; total: number }>;
+  materials: Array<MaterialLine & { name: string; unitPrice: number; total: number; overridden: boolean }>;
   materialsSubtotal: number;
   materialsPlan: MaterialsPlan;
+  /** Assinatura de placas+tipos: um ajuste manual só vale enquanto ela não mudar. */
+  materialsSignature: string;
   /** Faltas de estoque — avisos, sem mexer na quantidade técnica. */
   stockChecks: StockCheck[];
 
@@ -188,7 +195,15 @@ export function computeOrcamento(input: OrcamentoInput, cfg: OrcamentoConfig = D
   const materialsPlan = planMaterialsForSpaces(spaces, prices, matCfg);
   warnings.push(...materialsPlan.warnings);
 
-  const materials = materialsPlan.lines.map((l) => {
+  // Ajustes manuais do administrador — valem até as placas ou o tipo mudarem.
+  const signature = materialsSignature(spaces);
+  const applied = applyMaterialOverrides(materialsPlan.lines, input.materialOverrides, signature, matCfg);
+  if (applied.discarded) {
+    warnings.push("As quantidades ajustadas manualmente foram recalculadas: o número de placas ou o tipo de aplicação mudou.");
+  }
+  const overridden = new Set(applied.overriddenCodes);
+
+  const materials = applied.lines.map((l) => {
     const unitPrice = Math.max(0, prices[l.code] ?? 0);
     return {
       ...l,
@@ -197,10 +212,13 @@ export function computeOrcamento(input: OrcamentoInput, cfg: OrcamentoConfig = D
       unit: input.materialUnits?.[l.code] ?? l.unit,
       unitPrice,
       total: round2(l.quantity * unitPrice),
+      // Marca a linha que veio de ajuste manual, para a interface distinguir.
+      overridden: overridden.has(l.code),
     };
   });
   const materialsSubtotal = round2(materials.reduce((s, l) => s + l.total, 0));
-  const stockChecks = checkMaterialStock(materialsPlan.lines, input.materialStock ?? {});
+  // Estoque confere o que VAI no orçamento (já com ajuste manual), não o plano.
+  const stockChecks = checkMaterialStock(applied.lines, input.materialStock ?? {});
 
   for (const s of stockChecks) {
     if (!s.sufficient) {
@@ -261,7 +279,7 @@ export function computeOrcamento(input: OrcamentoInput, cfg: OrcamentoConfig = D
   return {
     plates, pricePerPlate, platesSubtotal,
     colaTubos, colaUnitPrice, colaSubtotal, colaAvailable,
-    materials, materialsSubtotal, materialsPlan, stockChecks,
+    materials, materialsSubtotal, materialsPlan, stockChecks, materialsSignature: signature,
     frete,
     baseTotal,
     discount: { eligible: discountEligible, pct: cfg.discountPct, amount: discountAmount, scope: cfg.discountScope },
