@@ -12,6 +12,7 @@ import {
   type MediaCategory,
 } from "@/lib/project-gallery";
 import { COVER_ASPECT, coverStyle } from "@/lib/cover-crop";
+import { videoHostLabel, videoThumbnail } from "@/lib/video-link";
 
 /**
  * A qual seção o projeto pertence.
@@ -315,8 +316,19 @@ function ProjectLightbox({
                       className="w-full h-full object-cover transition-transform duration-300 group-hover:scale-105"
                     />
                   ) : (
-                    <div className="w-full h-full flex items-center justify-center bg-[#0a1628]">
-                      <svg width="28" height="28" viewBox="0 0 24 24" fill="white" opacity=".6"><path d="M8 5v14l11-7z"/></svg>
+                    // Vídeo por link: quando dá para derivar a miniatura (YouTube),
+                    // mostra a capa real em vez de um quadrado preto.
+                    <div className="w-full h-full relative bg-[#0a1628]">
+                      {videoThumbnail(item.url) && (
+                        <img
+                          src={videoThumbnail(item.url)!}
+                          alt=""
+                          className="absolute inset-0 w-full h-full object-cover opacity-70 transition-transform duration-300 group-hover:scale-105"
+                        />
+                      )}
+                      <div className="absolute inset-0 flex items-center justify-center">
+                        <svg width="28" height="28" viewBox="0 0 24 24" fill="white" opacity=".85"><path d="M8 5v14l11-7z"/></svg>
+                      </div>
                     </div>
                   )}
                   {/* Hover overlay */}
@@ -381,7 +393,9 @@ function ProjectLightbox({
                     Assistir ao vídeo
                     <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><path d="M18 13v6a2 2 0 01-2 2H5a2 2 0 01-2-2V8a2 2 0 012-2h6M15 3h6v6M10 14L21 3"/></svg>
                   </a>
-                  <p className="text-white/25 text-[9px] font-[var(--font-inter)]">Abre em nova aba</p>
+                  <p className="text-white/25 text-[9px] font-[var(--font-inter)]">
+                    Abre em nova aba{current.url ? ` · ${videoHostLabel(current.url)}` : ""}
+                  </p>
                 </div>
               ) : null}
 

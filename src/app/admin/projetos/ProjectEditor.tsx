@@ -6,6 +6,7 @@ import Link from "next/link";
 import AdminShell from "../AdminShell";
 import { inputCls, labelCls } from "../ui";
 import CoverFramer, { COVER_ASPECT, coverStyle } from "./CoverFramer";
+import { isUsableVideoUrl, videoHostLabel, videoThumbnail } from "@/lib/video-link";
 
 /**
  * Editor de projeto — criação e edição na mesma tela.
@@ -57,6 +58,7 @@ export default function ProjectEditor({ id }: { id: string }) {
   const [err, setErr] = useState<string | null>(null);
   const [showPreview, setShowPreview] = useState(false);
   const [dragId, setDragId] = useState<string | null>(null);
+  const [videoUrl, setVideoUrl] = useState("");
   const fileRef = useRef<HTMLInputElement>(null);
 
   // ── Carga ──────────────────────────────────────────────────────────────────
@@ -167,6 +169,36 @@ export default function ProjectEditor({ id }: { id: string }) {
     setUploading(0);
     if (failed.length > 0) setErr(`Não foi possível enviar ${failed.length} arquivo(s). ${failed.join(" · ")}`);
   }, [p, media.length]);
+
+  /**
+   * Vídeo por link (YouTube, Vimeo, Drive).
+   *
+   * Vídeo longo não cabe no storage do site — entra como endereço. A galeria
+   * abre o link numa aba nova, sem incorporar o player.
+   */
+  const addVideoUrl = useCallback(async () => {
+    if (!p) return;
+    const url = videoUrl.trim();
+    if (!isUsableVideoUrl(url)) {
+      setErr("Cole um endereço completo, começando com https:// (YouTube, Vimeo, Drive…).");
+      return;
+    }
+    setErr(null);
+    const res = await fetch("/api/projects/media", {
+      method: "POST", headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({
+        project_slug: p.slug, type: "video", url,
+        category: "geral", sort_order: media.length,
+      }),
+    }).catch(() => null);
+    if (!res || !res.ok) {
+      setErr(`Não foi possível adicionar o vídeo${res ? ` (${res.status})` : ""}.`);
+      return;
+    }
+    const created = await res.json();
+    setMedia((prev) => [...prev, created]);
+    setVideoUrl("");
+  }, [p, media.length, videoUrl]);
 
   const patchMedia = useCallback(async (mid: string, patch: Partial<Media>) => {
     setMedia((prev) => prev.map((m) => (m.id === mid ? { ...m, ...patch } : m)));
@@ -517,6 +549,27 @@ export default function ProjectEditor({ id }: { id: string }) {
                 )}
               </div>
 
+              {/* Vídeo por link — o que não cabe no storage entra por aqui. */}
+              <div>
+                <label className={labelCls}>Vídeo por link</label>
+                <div className="flex flex-col sm:flex-row gap-2">
+                  <input
+                    value={videoUrl}
+                    onChange={(e) => setVideoUrl(e.target.value)}
+                    onKeyDown={(e) => { if (e.key === "Enter") { e.preventDefault(); addVideoUrl(); } }}
+                    placeholder="Cole o link do vídeo (YouTube, Instagram, Vimeo, Drive…)"
+                    className={inputCls}
+                  />
+                  <button type="button" onClick={addVideoUrl} disabled={!videoUrl.trim()}
+                    className="bg-[#002045] text-white text-xs tracking-[0.12em] uppercase font-bold font-[var(--font-inter)] px-4 py-2.5 hover:bg-[#1a365d] transition-colors disabled:opacity-40 whitespace-nowrap">
+                    + Vídeo
+                  </button>
+                </div>
+                <p className="text-[#a0a3a8] text-[11px] font-[var(--font-inter)] mt-1.5">
+                  Para vídeos longos, que não cabem como arquivo. No site a galeria abre o link numa aba nova.
+                </p>
+              </div>
+
               {/* Galeria */}
               {sorted.length === 0 ? (
                 <p className="text-[#a0a3a8] text-sm font-[var(--font-inter)]">Nenhuma mídia ainda.</p>
@@ -531,7 +584,20 @@ export default function ProjectEditor({ id }: { id: string }) {
                     >
                       <div className="relative bg-[#f0f0f0]" style={{ aspectRatio: COVER_ASPECT }}>
                         {m.type === "video" ? (
-                          <div className="w-full h-full flex items-center justify-center text-[#74777f] text-[11px] font-[var(--font-inter)]">vídeo</div>
+                          <>
+                            {videoThumbnail(m.url) ? (
+                              // eslint-disable-next-line @next/next/no-img-element
+                              <img src={videoThumbnail(m.url)!} alt="" className="absolute inset-0 w-full h-full object-cover" />
+                            ) : (
+                              <div className="absolute inset-0 bg-[#0a1628]" />
+                            )}
+                            <div className="absolute inset-0 flex items-center justify-center">
+                              <svg width="26" height="26" viewBox="0 0 24 24" fill="white" opacity=".85"><path d="M8 5v14l11-7z" /></svg>
+                            </div>
+                            <span className="absolute bottom-1 left-1 bg-black/70 text-white text-[8px] tracking-[0.1em] uppercase font-bold px-1.5 py-0.5">
+                              {videoHostLabel(m.url)}
+                            </span>
+                          </>
                         ) : (
                           // eslint-disable-next-line @next/next/no-img-element
                           <img src={m.url} alt="" className="absolute inset-0 w-full h-full object-cover" />
