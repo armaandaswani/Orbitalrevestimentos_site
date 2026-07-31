@@ -10,10 +10,12 @@
 import {
   DEFAULT_MATERIALS_CONFIG as CFG,
   adhesiveLitersFor,
+  applicationReasonLabel,
   checkMaterialStock,
   chooseAdhesivePackages,
   foamTubesFor,
   planMaterials,
+  planMaterialsForSpaces,
   pu40TubesFor,
 } from "../src/lib/orcamento-materials.ts";
 
@@ -162,6 +164,49 @@ console.log("\n── Casos-limite ──");
     chooseAdhesivePackages(adhesiveLitersFor(3), P26, PRICES).suppliedLiters === 2.6);
   check("104 placas (26 L) → cobre sem faltar",
     chooseAdhesivePackages(adhesiveLitersFor(104), P26, PRICES).suppliedLiters >= 26);
+}
+
+console.log("\n── Orçamento com espaços de tipos diferentes ──");
+{
+  // O spec assume um tipo por orçamento; aqui o cliente escolhe por espaço, e um
+  // orçamento pode misturar. Estes casos não estão no spec e são os que quebram.
+  const misto = planMaterialsForSpaces(
+    [{ applicationType: "parede", panels: 10 }, { applicationType: "teto", panels: 10 }],
+    PRICES,
+  );
+  const q = (code: string) => misto.lines.find((l) => l.code === code)?.quantity ?? 0;
+  check("parede+teto → PU-40 só sobre as placas de parede", q("ORB-PU") === 15, String(q("ORB-PU")));
+  check("parede+teto → espuma só sobre as placas de teto", q("ORB-ESP") === 8, String(q("ORB-ESP")));
+  check("parede+teto → cola sobre 2,5 L (só o teto)", misto.adhesiveLiters === 2.5, String(misto.adhesiveLiters));
+
+  // Teto e forro dividem as mesmas latas: otimizar por espaço compraria a mais.
+  const juntos = planMaterialsForSpaces(
+    [{ applicationType: "teto", panels: 6 }, { applicationType: "forro", panels: 5 }],
+    PRICES,
+  );
+  const separados =
+    chooseAdhesivePackages(adhesiveLitersFor(6), P26, PRICES).packages.reduce((s, p) => s + p.quantity, 0) +
+    chooseAdhesivePackages(adhesiveLitersFor(5), P26, PRICES).packages.reduce((s, p) => s + p.quantity, 0);
+  const somados = juntos.adhesivePlan!.packages.reduce((s, p) => s + p.quantity, 0);
+  check("teto+forro somam na mesma cola (11 placas = 2,75 L)", juntos.adhesiveLiters === 2.75, String(juntos.adhesiveLiters));
+  check("somar compra menos lata que otimizar por espaço", somados <= separados, `${somados} vs ${separados}`);
+  check("espuma soma teto+forro: ceil(11 × 0,75) = 9",
+    juntos.lines.find((l) => l.code === "ORB-ESP")?.quantity === 9,
+    String(juntos.lines.find((l) => l.code === "ORB-ESP")?.quantity));
+  check("linha aponta os dois tipos que a geraram",
+    applicationReasonLabel(juntos.lines[0].reasons) === "teto e forro",
+    applicationReasonLabel(juntos.lines[0].reasons));
+
+  // Só parede → nada de cola/espuma. Só teto → nada de PU-40.
+  const soParede = planMaterialsForSpaces([{ applicationType: "parede", panels: 7 }], PRICES);
+  check("só parede → nenhuma linha de teto/forro",
+    !soParede.lines.some((l) => l.code.startsWith("ORB-CC") || l.code === "ORB-ESP"));
+  const soTeto = planMaterialsForSpaces([{ applicationType: "teto", panels: 7 }], PRICES);
+  check("só teto → nenhuma linha de PU-40", !soTeto.lines.some((l) => l.code === "ORB-PU"));
+
+  check("lista vazia → nenhum material", planMaterialsForSpaces([], PRICES).lines.length === 0);
+  check("tipo desconhecido é ignorado, não quebra",
+    planMaterialsForSpaces([{ applicationType: "piso" as never, panels: 5 }], PRICES).lines.length === 0);
 }
 
 console.log(`\n${fail === 0 ? "✅" : "❌"}  ${pass} passaram, ${fail} falharam\n`);

@@ -212,47 +212,80 @@ export interface MaterialLine {
   packageLabel?: string;
   /** Tipo de aplicação que disparou o cálculo — vai para o orçamento. */
   reason: ApplicationType;
+  /**
+   * Todos os tipos que contribuíram. Um orçamento com teto E forro soma as duas
+   * áreas na mesma embalagem, então a linha nasce de mais de um tipo.
+   */
+  reasons: ApplicationType[];
   /** Consumo técnico, para a interface administrativa. */
   technical: string;
 }
 
-export interface MaterialsPlan {
+/** Um espaço do orçamento com seu tipo de aplicação. */
+export interface SpaceApplication {
   applicationType: ApplicationType;
   panels: number;
+}
+
+export function applicationReasonLabel(reasons: ApplicationType[]): string {
+  const uniq = [...new Set(reasons)];
+  if (uniq.length === 0) return "";
+  if (uniq.length === 1) return APPLICATION_LABELS[uniq[0]];
+  const labels = uniq.map((r) => APPLICATION_LABELS[r].toLowerCase());
+  return `${labels.slice(0, -1).join(", ")} e ${labels[labels.length - 1]}`;
+}
+
+export interface MaterialsPlan {
+  /** Placas por tipo de aplicação, já somadas. */
+  panelsByType: Record<ApplicationType, number>;
+  panels: number;
   lines: MaterialLine[];
-  /** Volume técnico de cola de contato; 0 em parede. */
+  /** Placas que caem na regra do PU-40. */
+  pu40Panels: number;
+  /** Placas que caem na regra de cola + espuma. */
+  adhesivePanels: number;
+  /** Volume técnico de cola de contato; 0 quando não há teto/forro. */
   adhesiveLiters: number;
   adhesivePlan: AdhesivePlan | null;
   warnings: string[];
 }
 
 /**
- * Materiais de instalação para um tipo de aplicação.
+ * Materiais de instalação para os espaços de um orçamento.
  *
- * Devolve SEMPRE o conjunto completo do tipo pedido — quem troca de tipo
- * substitui o plano inteiro, e é isso que impede sobrar material do tipo
- * anterior dentro do orçamento.
+ * As placas são somadas POR REGRA, não por espaço: dois tetos e um forro no
+ * mesmo orçamento compartilham as mesmas latas de cola, e otimizar a embalagem
+ * espaço a espaço compraria lata sobrando à toa.
+ *
+ * Devolve SEMPRE o conjunto completo — quem recalcula substitui o plano inteiro,
+ * e é isso que impede sobrar material de um tipo que não existe mais.
  */
-export function planMaterials(
-  applicationType: ApplicationType,
-  panels: number,
+export function planMaterialsForSpaces(
+  spaces: SpaceApplication[],
   prices: Record<string, number> = {},
   cfg: MaterialsConfig = DEFAULT_MATERIALS_CONFIG,
 ): MaterialsPlan {
-  const n = Math.max(0, Math.floor(panels || 0));
+  const panelsByType: Record<ApplicationType, number> = { parede: 0, teto: 0, forro: 0 };
+  for (const s of spaces ?? []) {
+    const n = Math.max(0, Math.floor(s?.panels || 0));
+    if (n > 0 && s.applicationType in panelsByType) panelsByType[s.applicationType] += n;
+  }
+
+  const pu40Panels = cfg.pu40AppliesTo.reduce((sum, t) => sum + panelsByType[t], 0);
+  const adhesivePanels = cfg.adhesiveAppliesTo.reduce((sum, t) => sum + panelsByType[t], 0);
+  const adhesiveReasons = cfg.adhesiveAppliesTo.filter((t) => panelsByType[t] > 0);
+  const pu40Reasons = cfg.pu40AppliesTo.filter((t) => panelsByType[t] > 0);
+
   const lines: MaterialLine[] = [];
   const warnings: string[] = [];
 
-  if (n === 0) {
-    return { applicationType, panels: 0, lines, adhesiveLiters: 0, adhesivePlan: null, warnings };
-  }
-
-  if (cfg.pu40AppliesTo.includes(applicationType)) {
-    const tubes = pu40TubesFor(n, cfg);
+  if (pu40Panels > 0) {
+    const tubes = pu40TubesFor(pu40Panels, cfg);
     if (tubes > 0) {
       lines.push({
-        code: cfg.pu40Code, unit: "tubo", quantity: tubes, reason: applicationType,
-        technical: `${cfg.pu40TubesPerPanel} tubo(s) por placa × ${n} placa(s)`,
+        code: cfg.pu40Code, unit: "tubo", quantity: tubes,
+        reason: pu40Reasons[0] ?? "parede", reasons: pu40Reasons,
+        technical: `${cfg.pu40TubesPerPanel} tubo(s) por placa × ${pu40Panels} placa(s)`,
       });
     }
   }
@@ -260,32 +293,46 @@ export function planMaterials(
   let adhesiveLiters = 0;
   let adhesivePlan: AdhesivePlan | null = null;
 
-  if (cfg.adhesiveAppliesTo.includes(applicationType)) {
-    adhesiveLiters = adhesiveLitersFor(n, cfg);
+  if (adhesivePanels > 0) {
+    adhesiveLiters = adhesiveLitersFor(adhesivePanels, cfg);
     adhesivePlan = chooseAdhesivePackages(adhesiveLiters, cfg.adhesivePackages, prices);
-    if (adhesivePlan.packages.length === 0 && adhesiveLiters > 0) {
+    if (adhesivePlan.packages.length === 0) {
       warnings.push("Nenhuma embalagem de cola de contato cadastrada — cola não incluída.");
-    }
-    if (!adhesivePlan.pricesKnown && adhesivePlan.packages.length > 0) {
+    } else if (!adhesivePlan.pricesKnown) {
       warnings.push("Embalagem de cola sem preço cadastrado — escolhida pela menor sobra, não pelo menor custo.");
     }
     for (const p of adhesivePlan.packages) {
       lines.push({
-        code: p.code, unit: "lata", quantity: p.quantity, packageLabel: p.label, reason: applicationType,
-        technical: `${cfg.adhesiveLitersPerPanel} L por placa × ${n} placa(s) = ${adhesiveLiters} L`,
+        code: p.code, unit: "lata", quantity: p.quantity, packageLabel: p.label,
+        reason: adhesiveReasons[0] ?? "teto", reasons: adhesiveReasons,
+        technical: `${cfg.adhesiveLitersPerPanel} L por placa × ${adhesivePanels} placa(s) = ${adhesiveLiters} L`,
       });
     }
 
-    const foam = foamTubesFor(n, cfg);
+    const foam = foamTubesFor(adhesivePanels, cfg);
     if (foam > 0) {
       lines.push({
-        code: cfg.foamCode, unit: "tubo", quantity: foam, reason: applicationType,
-        technical: `${cfg.foamTubesPerPanel} tubo(s) por placa × ${n} placa(s)`,
+        code: cfg.foamCode, unit: "tubo", quantity: foam,
+        reason: adhesiveReasons[0] ?? "teto", reasons: adhesiveReasons,
+        technical: `${cfg.foamTubesPerPanel} tubo(s) por placa × ${adhesivePanels} placa(s)`,
       });
     }
   }
 
-  return { applicationType, panels: n, lines, adhesiveLiters, adhesivePlan, warnings };
+  return {
+    panelsByType, panels: pu40Panels + adhesivePanels,
+    lines, pu40Panels, adhesivePanels, adhesiveLiters, adhesivePlan, warnings,
+  };
+}
+
+/** Atalho para um tipo só — o caso do orçamento com um único tipo de aplicação. */
+export function planMaterials(
+  applicationType: ApplicationType,
+  panels: number,
+  prices: Record<string, number> = {},
+  cfg: MaterialsConfig = DEFAULT_MATERIALS_CONFIG,
+): MaterialsPlan {
+  return planMaterialsForSpaces([{ applicationType, panels }], prices, cfg);
 }
 
 export interface StockCheck {

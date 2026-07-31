@@ -5,6 +5,13 @@
 
 import type { SupabaseClient } from "@supabase/supabase-js";
 import { computeOrcamento, DEFAULT_CONFIG, type OrcamentoBreakdown, type OrcamentoConfig } from "@/lib/orcamento-pricing";
+import {
+  DEFAULT_MATERIALS_CONFIG,
+  SUPPORT_PRODUCT_SKUS,
+  type ApplicationType,
+  type MaterialsConfig,
+  type SpaceApplication,
+} from "@/lib/orcamento-materials";
 
 // Admin-editable extras (installer + quote validity + automations) stored in the
 // same orcamento_settings.config JSONB alongside the engine numbers.
@@ -40,7 +47,7 @@ export const DEFAULT_EXTRAS: OrcamentoExtras = {
 // so the engine keeps working before migration 044 runs.
 export async function loadOrcamentoConfig(
   db: SupabaseClient
-): Promise<{ config: OrcamentoConfig; extras: OrcamentoExtras }> {
+): Promise<{ config: OrcamentoConfig; extras: OrcamentoExtras; materialsConfig: MaterialsConfig }> {
   try {
     const { data } = await db.from("orcamento_settings").select("config").eq("id", 1).maybeSingle();
     const raw = (data?.config ?? {}) as Partial<OrcamentoConfig & OrcamentoExtras> & { installmentTiers?: OrcamentoConfig["installmentTiers"] };
@@ -65,9 +72,9 @@ export async function loadOrcamentoConfig(
       followup1Message: str(raw.followup1Message, DEFAULT_EXTRAS.followup1Message),
       followup2Message: str(raw.followup2Message, DEFAULT_EXTRAS.followup2Message),
     };
-    return { config, extras };
+    return { config, extras, materialsConfig: materialsConfigFrom(raw as Record<string, unknown>) };
   } catch {
-    return { config: DEFAULT_CONFIG, extras: DEFAULT_EXTRAS };
+    return { config: DEFAULT_CONFIG, extras: DEFAULT_EXTRAS, materialsConfig: DEFAULT_MATERIALS_CONFIG };
   }
 }
 
@@ -77,6 +84,54 @@ function num(v: unknown, fallback: number): number {
 }
 function str(v: unknown, fallback: string): string {
   return typeof v === "string" && v.trim() ? v.trim() : fallback;
+}
+
+/**
+ * Preço de venda e estoque de TODOS os SKUs internos de instalação.
+ *
+ * Uma consulta só, para o motor não decidir a embalagem de cola com preço
+ * faltando — sem o preço de uma delas a escolha cai no critério de menor sobra.
+ * SKU ausente do catálogo simplesmente não entra no mapa (preço 0 → sem preço).
+ */
+export async function fetchMaterialPrices(
+  db: SupabaseClient
+): Promise<{ prices: Record<string, number>; stock: Record<string, number> }> {
+  const prices: Record<string, number> = {};
+  const stock: Record<string, number> = {};
+  try {
+    const { data } = await db
+      .from("products")
+      .select("code, price, is_active, stock_on_hand, stock_reserved")
+      .in("code", SUPPORT_PRODUCT_SKUS as readonly string[]);
+    for (const row of (data ?? []) as Array<Record<string, unknown>>) {
+      const code = String(row.code);
+      if (row.is_active === false) continue; // inativo → sem preço, o motor avisa
+      prices[code] = Number(row.price) || 0;
+      // Disponível = em mãos menos o já reservado por outros pedidos.
+      stock[code] = Math.max(0, (Number(row.stock_on_hand) || 0) - (Number(row.stock_reserved) || 0));
+    }
+  } catch {
+    // DB indisponível → mapas vazios; o motor sinaliza e o total sai sem material.
+  }
+  return { prices, stock };
+}
+
+/** Configuração dos materiais, mesclando o que o painel gravou sobre os padrões. */
+export function materialsConfigFrom(raw: Record<string, unknown> | null | undefined): MaterialsConfig {
+  const r = raw ?? {};
+  const pkgs = Array.isArray(r.adhesivePackages) ? (r.adhesivePackages as MaterialsConfig["adhesivePackages"]) : null;
+  const appTypes = (v: unknown, fallback: ApplicationType[]): ApplicationType[] =>
+    Array.isArray(v) && v.length ? (v as ApplicationType[]) : fallback;
+  return {
+    pu40TubesPerPanel: num(r.pu40TubesPerPanel, DEFAULT_MATERIALS_CONFIG.pu40TubesPerPanel),
+    adhesiveLitersPerPanel: num(r.adhesiveLitersPerPanel, DEFAULT_MATERIALS_CONFIG.adhesiveLitersPerPanel),
+    foamTubesPerPanel: num(r.foamTubesPerPanel, DEFAULT_MATERIALS_CONFIG.foamTubesPerPanel),
+    adhesivePackages: pkgs && pkgs.length ? pkgs : DEFAULT_MATERIALS_CONFIG.adhesivePackages,
+    foamCode: str(r.foamCode, DEFAULT_MATERIALS_CONFIG.foamCode),
+    pu40Code: str(r.pu40Code, DEFAULT_MATERIALS_CONFIG.pu40Code),
+    pu40AppliesTo: appTypes(r.pu40AppliesTo, DEFAULT_MATERIALS_CONFIG.pu40AppliesTo),
+    adhesiveAppliesTo: appTypes(r.adhesiveAppliesTo, DEFAULT_MATERIALS_CONFIG.adhesiveAppliesTo),
+  };
 }
 
 // Cola PU unit price + availability from the product catalog (SKU ORB-PU).
@@ -97,7 +152,26 @@ export interface QuoteLike {
   total_plates?: number | null;
   material_discounted?: number | null;
   material_total?: number | null;
-  spaces?: Array<{ plates?: number; total?: number }> | null;
+  spaces?: Array<{ plates?: number; total?: number; applicationType?: string | null }> | null;
+}
+
+/** Tipos de aplicação dos espaços salvos. Espaço sem tipo conta como parede. */
+export function spaceApplicationsFrom(
+  spaces: QuoteLike["spaces"],
+  fallbackPlates: number,
+): SpaceApplication[] {
+  const list = Array.isArray(spaces) ? spaces : [];
+  const out: SpaceApplication[] = [];
+  for (const s of list) {
+    const panels = Number(s?.plates) || 0;
+    if (panels <= 0) continue;
+    const t = String(s?.applicationType ?? "").toLowerCase();
+    // Orçamento salvo antes do campo existir → parede, que é o que ele já era.
+    const applicationType: ApplicationType = t === "teto" || t === "forro" ? t : "parede";
+    out.push({ applicationType, panels });
+  }
+  if (out.length === 0 && fallbackPlates > 0) out.push({ applicationType: "parede", panels: fallbackPlates });
+  return out;
 }
 
 // Derive plates + blended price-per-plate from a saved quote, then run the engine.
@@ -116,9 +190,14 @@ export async function breakdownForQuote(
     Number(quote.material_total) || 0;
   const pricePerPlate = plates > 0 ? subtotal / plates : 0;
   const { colaUnitPrice, colaAvailable } = await fetchColaPrice(db);
-  const { config } = await loadOrcamentoConfig(db);
+  const { config, materialsConfig } = await loadOrcamentoConfig(db);
+  const { prices, stock } = await fetchMaterialPrices(db);
   return computeOrcamento(
-    { plates, pricePerPlate, colaUnitPrice, colaAvailable, freteZoneValue },
+    {
+      plates, pricePerPlate, colaUnitPrice, colaAvailable, freteZoneValue,
+      spaces: spaceApplicationsFrom(quote.spaces, plates),
+      materialPrices: prices, materialStock: stock, materialsConfig,
+    },
     config
   );
 }
