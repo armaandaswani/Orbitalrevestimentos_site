@@ -227,6 +227,20 @@ export interface SpaceApplication {
   panels: number;
 }
 
+/**
+ * Palpite do tipo de aplicação a partir do nome do espaço.
+ *
+ * Só um PADRÃO, para o cliente não ter de responder de novo o que ele já disse
+ * ao escolher "Teto". Quem decide de fato é o seletor — este palpite nunca
+ * sobrepõe uma escolha explícita.
+ */
+export function guessApplicationType(spaceName: string): ApplicationType {
+  const s = (spaceName ?? "").toLowerCase();
+  if (/forro/.test(s)) return "forro";
+  if (/teto|tecto|laje|plafon|ceiling/.test(s)) return "teto";
+  return "parede";
+}
+
 export function applicationReasonLabel(reasons: ApplicationType[]): string {
   const uniq = [...new Set(reasons)];
   if (uniq.length === 0) return "";

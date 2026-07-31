@@ -8,6 +8,11 @@ import MdfComparison, { COMPARISON_OPTIONS } from "@/components/MdfComparison";
 import VisualizadorWizard, { type SimPrefill } from "@/components/VisualizadorWizard";
 import { panelGrid } from "@/lib/render-prompt";
 import type { OrcamentoBreakdown } from "@/lib/orcamento-pricing";
+import {
+  APPLICATION_LABELS,
+  guessApplicationType,
+  type ApplicationType,
+} from "@/lib/orcamento-materials";
 import { trackFunnel } from "@/lib/funnel";
 
 const WA_BASE = "https://wa.me/5592988150149?text=";
@@ -154,6 +159,9 @@ interface SavedSpace {
   width: number | null;
   height: number | null;
   squareMeters: number | null;
+  // Decide os materiais de instalação: parede → PU-40; teto/forro → cola de
+  // contato + espuma. Nasce do nome do espaço e o cliente pode corrigir.
+  applicationType: ApplicationType;
 }
 
 const LINE_INFO: Record<ProductLine, { finish: string; price: number; cover: string }> = {
@@ -166,6 +174,7 @@ const LINE_INFO: Record<ProductLine, { finish: string; price: number; cover: str
 const SPACES: Space[] = [
   { id: "parede",     label: "Parede",             viability: "simple" },
   { id: "teto",       label: "Teto",               viability: "simple" },
+  { id: "forro",      label: "Forro",              viability: "simple" },
   { id: "sala",       label: "Sala",               viability: "simple" },
   { id: "quarto",     label: "Quarto",             viability: "simple" },
   { id: "escritorio", label: "Escritório",         viability: "simple" },
@@ -296,6 +305,10 @@ function SimuladorInner() {
 
   const [step, setStep] = useState<1 | 2 | 3 | 4 | 5>(1);
   const [selectedSpace, setSelectedSpace] = useState<Space | null>(null);
+  // Escolha explícita do tipo de aplicação, amarrada ao espaço em que foi feita.
+  // Guardar o espaço junto faz a escolha expirar sozinha quando o cliente troca
+  // de ambiente — sem isso, marcar "Teto" numa sala contaminaria o próximo.
+  const [appTypeOverride, setAppTypeOverride] = useState<{ forSpace: string; type: ApplicationType } | null>(null);
   const [customSpaceText, setCustomSpaceText] = useState("");
   const [showCustomInput, setShowCustomInput] = useState(false);
   const [selectedLine, setSelectedLine] = useState<ProductLine | null>(null);
@@ -420,6 +433,14 @@ function SimuladorInner() {
       : 0;
 
   const isComplex = selectedSpace?.viability === "complex";
+
+  // Tipo de aplicação do espaço ativo: escolha explícita do cliente, senão o
+  // palpite pelo nome ("Teto" → teto). Muda quais materiais entram no orçamento.
+  const activeSpaceName = showCustomInput ? customSpaceText : (selectedSpace?.label ?? "");
+  const activeAppType: ApplicationType =
+    appTypeOverride && appTypeOverride.forSpace === activeSpaceName
+      ? appTypeOverride.type
+      : guessApplicationType(activeSpaceName);
 
   // The client's measurement method + raw values as entered right now — stored on
   // the space/quote so a later edit restores exactly this (L×A stays L×A).
@@ -636,6 +657,7 @@ function SimuladorInner() {
       total: orbTotal,
       viability: selectedSpace!.viability === "complex" ? "complex" : "simple",
       ...currentMeasurement(),
+      applicationType: activeAppType,
     };
   }
 
@@ -720,7 +742,16 @@ function SimuladorInner() {
     let cancelled = false;
     fetch("/api/orcamento/pricing", {
       method: "POST", headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ plates: gPlates, pricePerPlate: blended }),
+      // Os espaços vão com o tipo de aplicação: é o que decide se o orçamento
+      // leva PU-40 (parede) ou cola de contato + espuma (teto/forro).
+      body: JSON.stringify({
+        plates: gPlates,
+        pricePerPlate: blended,
+        spaces: [
+          ...savedSpaces.map((sp) => ({ plates: sp.plates, applicationType: sp.applicationType })),
+          ...(plates > 0 ? [{ plates, applicationType: activeAppType }] : []),
+        ],
+      }),
     })
       .then((r) => (r.ok ? r.json() : null))
       .then((b: OrcamentoBreakdown | null) => {
@@ -735,7 +766,7 @@ function SimuladorInner() {
       .catch(() => {});
     return () => { cancelled = true; };
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [showResult, plates, savedSpaces, orbMaterialDiscounted]);
+  }, [showResult, plates, savedSpaces, orbMaterialDiscounted, activeAppType]);
 
   // CEP → endereço (ViaCEP). Preenche rua/bairro/cidade/UF sem apagar o que já
   // foi digitado manualmente; falha de rede nunca bloqueia o preenchimento manual.
@@ -1010,6 +1041,7 @@ function SimuladorInner() {
         width: hasDims ? (sp.w as number) : null,
         height: hasDims ? (sp.h as number) : null,
         squareMeters: measurementType === "square_meters" ? areaM2 : (hasDims ? areaM2 : null),
+        applicationType: guessApplicationType(sp.spaceName),
       };
     });
 
@@ -1163,6 +1195,7 @@ function SimuladorInner() {
       total: orbTotal,
       viability: selectedSpace.viability === "complex" ? "complex" : "simple",
       ...currentMeasurement(),
+      applicationType: activeAppType,
     }]);
     // Reset space/product/dims but keep client info and coupon
     setSelectedSpace(null);
@@ -1337,6 +1370,8 @@ function SimuladorInner() {
             width: sp.width ?? null,
             height: sp.height ?? null,
             squareMeters: sp.squareMeters ?? sp.m2 ?? null,
+            // Decide os materiais de instalação deste espaço no recálculo.
+            applicationType: sp.applicationType ?? guessApplicationType(sp.label),
           })),
           ...(selectedProduct && selectedSpace ? [{
             spaceName: selectedSpace.label,
@@ -1353,6 +1388,7 @@ function SimuladorInner() {
             width: cur.width,
             height: cur.height,
             squareMeters: cur.squareMeters,
+            applicationType: activeAppType,
           }] : []),
         ];
         const quoteBody = JSON.stringify({
@@ -1840,6 +1876,38 @@ function SimuladorInner() {
                 </div>
               )}
 
+              {/* Tipo de aplicação — decide os materiais de instalação do
+                  orçamento. Vem pré-marcado pelo nome do espaço; o cliente só
+                  mexe se o palpite estiver errado. */}
+              {selectedSpace && selectedSpace.viability !== "no" && (
+                <div className="mb-6">
+                  <label className="block text-[10px] tracking-[0.12em] uppercase font-bold font-[var(--font-inter)] text-[#74777f] mb-1.5">
+                    Onde a placa será aplicada?
+                  </label>
+                  <div className="flex flex-wrap gap-2">
+                    {(["parede", "teto", "forro"] as ApplicationType[]).map((t) => (
+                      <button
+                        key={t}
+                        type="button"
+                        onClick={() => setAppTypeOverride({ forSpace: activeSpaceName, type: t })}
+                        className={`px-5 py-2.5 text-xs tracking-[0.1em] uppercase font-bold font-[var(--font-inter)] border transition-colors ${
+                          activeAppType === t
+                            ? "bg-[#002045] text-white border-[#002045]"
+                            : "bg-white text-[#43474e] border-[#e2e2e2] hover:border-[#002045] hover:text-[#002045]"
+                        }`}
+                      >
+                        {APPLICATION_LABELS[t]}
+                      </button>
+                    ))}
+                  </div>
+                  <p className="text-[#74777f] text-[11px] font-[var(--font-inter)] mt-1.5">
+                    {activeAppType === "parede"
+                      ? "Parede usa cola PU-40."
+                      : "Teto e forro usam cola de contato e espuma expansiva, em vez da PU-40."}
+                  </p>
+                </div>
+              )}
+
               {/* Optional ambiente name — shown when a viable space is selected */}
               {selectedSpace && selectedSpace.viability !== "no" && (
                 <div className="mb-6">
@@ -2193,6 +2261,7 @@ function SimuladorInner() {
                       total: orbTotal,
                       viability: selectedSpace!.viability === "complex" ? "complex" : "simple",
                       ...currentMeasurement(),
+                      applicationType: activeAppType,
                     }]);
                     setSelectedSpace(null);
                     setAmbienteName("");
