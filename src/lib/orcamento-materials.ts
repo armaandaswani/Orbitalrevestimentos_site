@@ -241,6 +241,20 @@ export function guessApplicationType(spaceName: string): ApplicationType {
   return "parede";
 }
 
+/**
+ * Nome da linha para exibição.
+ *
+ * Só acrescenta a embalagem quando o nome cadastrado ainda não a traz — senão
+ * sai "Cola de Contato — 2,6 L — 2,6 L", que foi o que aconteceu.
+ */
+export function materialDisplayName(m: { name?: string; code: string; packageLabel?: string }): string {
+  const base = (m.name ?? m.code).trim();
+  const pkg = (m.packageLabel ?? "").trim();
+  if (!pkg) return base;
+  const norm = (s: string) => s.toLowerCase().replace(/[\s.,]/g, "");
+  return norm(base).includes(norm(pkg)) ? base : `${base} — ${pkg}`;
+}
+
 export function applicationReasonLabel(reasons: ApplicationType[]): string {
   const uniq = [...new Set(reasons)];
   if (uniq.length === 0) return "";

@@ -39,11 +39,11 @@ export async function POST(req: NextRequest) {
   }
 
   const { config, materialsConfig } = await loadOrcamentoConfig(db);
-  const { prices, stock } = await fetchMaterialPrices(db);
+  const { prices, stock, names, units } = await fetchMaterialPrices(db);
   const breakdown = computeOrcamento(
     {
       plates, pricePerPlate, colaUnitPrice, colaAvailable, freteZoneValue,
-      spaces, materialPrices: prices, materialStock: stock, materialsConfig,
+      spaces, materialPrices: prices, materialStock: stock, materialNames: names, materialUnits: units, materialsConfig,
     },
     config
   );

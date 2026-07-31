@@ -103,6 +103,10 @@ export interface OrcamentoInput {
   materialPrices?: Record<string, number>;
   /** Estoque disponível por SKU — só gera aviso, nunca altera a quantidade. */
   materialStock?: Record<string, number>;
+  /** Nome comercial por SKU, para o orçamento não exibir código cru. */
+  materialNames?: Record<string, string>;
+  /** Unidade de venda por SKU, quando o cadastro tiver uma diferente do padrão. */
+  materialUnits?: Record<string, string>;
   materialsConfig?: MaterialsConfig;
 }
 
@@ -134,7 +138,7 @@ export interface OrcamentoBreakdown {
    * Materiais de instalação calculados automaticamente, PU-40 incluído. Cada
    * linha traz preço unitário, total e o tipo de aplicação que a gerou.
    */
-  materials: Array<MaterialLine & { unitPrice: number; total: number }>;
+  materials: Array<MaterialLine & { name: string; unitPrice: number; total: number }>;
   materialsSubtotal: number;
   materialsPlan: MaterialsPlan;
   /** Faltas de estoque — avisos, sem mexer na quantidade técnica. */
@@ -186,7 +190,14 @@ export function computeOrcamento(input: OrcamentoInput, cfg: OrcamentoConfig = D
 
   const materials = materialsPlan.lines.map((l) => {
     const unitPrice = Math.max(0, prices[l.code] ?? 0);
-    return { ...l, unitPrice, total: round2(l.quantity * unitPrice) };
+    return {
+      ...l,
+      // Sem cadastro, o código é o último recurso — melhor que linha em branco.
+      name: input.materialNames?.[l.code] ?? l.code,
+      unit: input.materialUnits?.[l.code] ?? l.unit,
+      unitPrice,
+      total: round2(l.quantity * unitPrice),
+    };
   });
   const materialsSubtotal = round2(materials.reduce((s, l) => s + l.total, 0));
   const stockChecks = checkMaterialStock(materialsPlan.lines, input.materialStock ?? {});

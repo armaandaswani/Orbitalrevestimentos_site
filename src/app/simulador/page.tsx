@@ -10,6 +10,8 @@ import { panelGrid } from "@/lib/render-prompt";
 import type { OrcamentoBreakdown } from "@/lib/orcamento-pricing";
 import {
   APPLICATION_LABELS,
+  applicationReasonLabel,
+  materialDisplayName,
   guessApplicationType,
   type ApplicationType,
 } from "@/lib/orcamento-materials";
@@ -3037,15 +3039,25 @@ function SimuladorInner() {
                       </div>
                       <span className="text-white text-[13px] font-semibold font-[var(--font-inter)] flex-shrink-0">{fmtBRL(pricing.platesSubtotal)}</span>
                     </div>
-                    {pricing.colaAvailable && pricing.colaTubos > 0 && (
-                      <div className="flex items-start justify-between gap-3">
+                    {/* Materiais de instalação — a lista depende do tipo de
+                        aplicação de cada espaço (parede → PU-40; teto/forro →
+                        cola de contato + espuma). */}
+                    {(pricing.materials ?? []).filter((m) => m.quantity > 0).map((m) => (
+                      <div key={m.code} className="flex items-start justify-between gap-3">
                         <div className="min-w-0">
-                          <p className="text-white text-[13px] font-semibold font-[var(--font-inter)]">Cola PU</p>
-                          <p className="text-[#86a0cd] text-[11px] font-[var(--font-inter)]">{pricing.colaTubos} tubo{pricing.colaTubos !== 1 ? "s" : ""} · ~1,5 por placa (clima de Manaus)</p>
+                          <p className="text-white text-[13px] font-semibold font-[var(--font-inter)]">
+                            {materialDisplayName(m)}
+                          </p>
+                          <p className="text-[#86a0cd] text-[11px] font-[var(--font-inter)]">
+                            {m.quantity} {m.unit}{m.quantity !== 1 ? "s" : ""}
+                            {" · "}calculado automaticamente para {applicationReasonLabel(m.reasons).toLowerCase()}
+                          </p>
                         </div>
-                        <span className="text-white text-[13px] font-semibold font-[var(--font-inter)] flex-shrink-0">{fmtBRL(pricing.colaSubtotal)}</span>
+                        <span className="text-white text-[13px] font-semibold font-[var(--font-inter)] flex-shrink-0">
+                          {m.unitPrice > 0 ? fmtBRL(m.total) : "—"}
+                        </span>
                       </div>
-                    )}
+                    ))}
                     <div className="flex items-start justify-between gap-3">
                       <div className="min-w-0">
                         <p className="text-white text-[13px] font-semibold font-[var(--font-inter)]">Frete</p>
@@ -3618,7 +3630,13 @@ function SimuladorInner() {
 
                 {pricing && (
                   <div className="bg-[#f7f8fa] border border-[#e2e2e2] px-4 py-3 text-[12px] font-[var(--font-inter)] text-[#43474e] space-y-0.5">
-                    <div className="flex justify-between"><span>{pricing.plates} placa{pricing.plates !== 1 ? "s" : ""}{pricing.colaAvailable && pricing.colaTubos > 0 ? ` · ${pricing.colaTubos} tubos Cola PU` : ""}</span><span>{fmt(pricing.platesSubtotal + pricing.colaSubtotal)}</span></div>
+                    <div className="flex justify-between">
+                      <span>
+                        {pricing.plates} placa{pricing.plates !== 1 ? "s" : ""}
+                        {(pricing.materials ?? []).filter((m) => m.quantity > 0).map((m) => ` · ${m.quantity} ${m.unit}${m.quantity !== 1 ? "s" : ""} ${m.name}`).join("")}
+                      </span>
+                      <span>{fmt(pricing.platesSubtotal + (pricing.materialsSubtotal ?? 0))}</span>
+                    </div>
                     <div className="flex justify-between"><span>Frete</span><span>{pricing.frete.free ? "Grátis" : fmtBRL(pricing.frete.value)}</span></div>
                     {(() => { const s = pricing.paymentOptions.find((o) => o.id === selectedPayment) ?? pricing.paymentOptions[0]; return (
                       <div className="flex justify-between pt-1 mt-1 border-t border-[#e2e2e2] font-bold text-[#002045]"><span>Total {s ? `· ${s.label}` : ""}</span><span>{fmt(s?.total ?? pricing.totalFull)}</span></div>

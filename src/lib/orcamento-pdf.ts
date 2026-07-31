@@ -10,6 +10,7 @@ import { existsSync } from "fs";
 import path from "path";
 import type { OrcamentoBreakdown } from "@/lib/orcamento-pricing";
 import { firstName } from "@/lib/name";
+import { applicationReasonLabel, materialDisplayName } from "@/lib/orcamento-materials";
 
 export const COMPANY = {
   name: "Orbital Materiais de Construção LTDA",
@@ -164,17 +165,23 @@ export function generateQuotePdf(input: QuotePdfInput): Promise<Buffer> {
     doc.y += 6;
   }
 
-  // Cola PU (item separado)
-  if (breakdown.colaAvailable && breakdown.colaTubos > 0) {
+  // Materiais de instalação — um item por linha. Quais entram depende do tipo de
+  // aplicação de cada espaço: parede leva PU-40; teto e forro, cola de contato e
+  // espuma. O cliente vê só unidades inteiras vendáveis.
+  for (const m of (breakdown.materials ?? [])) {
+    if (m.quantity <= 0) continue;
     ensureSpace(doc, 34);
     const y = doc.y;
-    doc.font("Helvetica-Bold").fontSize(9).fillColor("#1a1c1c").text("Cola PU recomendada", cols.name, y, { width: 268 });
-    doc.font("Helvetica").fontSize(7.5).fillColor("#777").text("~1,5 tubo por placa — fixação segura no clima de Manaus", cols.name, y + 11, { width: 268 });
+    const title = materialDisplayName(m);
+    const unitLabel = m.unit.charAt(0).toUpperCase() + m.unit.slice(1);
+    doc.font("Helvetica-Bold").fontSize(9).fillColor("#1a1c1c").text(title, cols.name, y, { width: 268 });
+    doc.font("Helvetica").fontSize(7.5).fillColor("#777")
+      .text(`Calculado automaticamente para ${applicationReasonLabel(m.reasons).toLowerCase()}`, cols.name, y + 11, { width: 268 });
     doc.font("Helvetica").fontSize(9).fillColor("#1a1c1c")
-      .text(String(breakdown.colaTubos), cols.qty, y, { width: 44, align: "right" })
-      .text("Tubo", cols.unit, y, { width: 44, align: "right" })
-      .text(fmtBRL(breakdown.colaUnitPrice), cols.price, y, { width: 58, align: "right" })
-      .text(fmtBRL(breakdown.colaSubtotal), cols.total, y, { width: 53, align: "right" });
+      .text(String(m.quantity), cols.qty, y, { width: 44, align: "right" })
+      .text(unitLabel, cols.unit, y, { width: 44, align: "right" })
+      .text(m.unitPrice > 0 ? fmtBRL(m.unitPrice) : "—", cols.price, y, { width: 58, align: "right" })
+      .text(m.unitPrice > 0 ? fmtBRL(m.total) : "—", cols.total, y, { width: 53, align: "right" });
     doc.y = y + 26;
     doc.moveTo(42, doc.y).lineTo(553, doc.y).strokeColor("#eeeeee").stroke();
     doc.y += 6;

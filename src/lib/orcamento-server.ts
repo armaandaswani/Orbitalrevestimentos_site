@@ -95,13 +95,15 @@ function str(v: unknown, fallback: string): string {
  */
 export async function fetchMaterialPrices(
   db: SupabaseClient
-): Promise<{ prices: Record<string, number>; stock: Record<string, number> }> {
+): Promise<{ prices: Record<string, number>; stock: Record<string, number>; names: Record<string, string>; units: Record<string, string> }> {
   const prices: Record<string, number> = {};
   const stock: Record<string, number> = {};
+  const names: Record<string, string> = {};
+  const units: Record<string, string> = {};
   try {
     const { data } = await db
       .from("products")
-      .select("code, price, is_active, stock_on_hand, stock_reserved")
+      .select("code, name, price, is_active, stock_on_hand, stock_reserved, sale_unit")
       .in("code", SUPPORT_PRODUCT_SKUS as readonly string[]);
     for (const row of (data ?? []) as Array<Record<string, unknown>>) {
       const code = String(row.code);
@@ -109,11 +111,13 @@ export async function fetchMaterialPrices(
       prices[code] = Number(row.price) || 0;
       // Disponível = em mãos menos o já reservado por outros pedidos.
       stock[code] = Math.max(0, (Number(row.stock_on_hand) || 0) - (Number(row.stock_reserved) || 0));
+      if (row.name) names[code] = String(row.name);
+      if (row.sale_unit) units[code] = String(row.sale_unit);
     }
   } catch {
     // DB indisponível → mapas vazios; o motor sinaliza e o total sai sem material.
   }
-  return { prices, stock };
+  return { prices, stock, names, units };
 }
 
 /** Configuração dos materiais, mesclando o que o painel gravou sobre os padrões. */
@@ -191,12 +195,12 @@ export async function breakdownForQuote(
   const pricePerPlate = plates > 0 ? subtotal / plates : 0;
   const { colaUnitPrice, colaAvailable } = await fetchColaPrice(db);
   const { config, materialsConfig } = await loadOrcamentoConfig(db);
-  const { prices, stock } = await fetchMaterialPrices(db);
+  const { prices, stock, names, units } = await fetchMaterialPrices(db);
   return computeOrcamento(
     {
       plates, pricePerPlate, colaUnitPrice, colaAvailable, freteZoneValue,
       spaces: spaceApplicationsFrom(quote.spaces, plates),
-      materialPrices: prices, materialStock: stock, materialsConfig,
+      materialPrices: prices, materialStock: stock, materialNames: names, materialUnits: units, materialsConfig,
     },
     config
   );

@@ -4,6 +4,7 @@ import React, { useEffect, useState, useRef } from "react";
 import Image from "next/image";
 import MdfComparison from "@/components/MdfComparison";
 import { firstName } from "@/lib/name";
+import { applicationReasonLabel, materialDisplayName } from "@/lib/orcamento-materials";
 
 interface QuoteSpace {
   spaceName: string;
@@ -23,6 +24,8 @@ interface QuoteSpace {
   width?: number | null;
   height?: number | null;
   squareMeters?: number | null;
+  // Decide os materiais de instalação. Orçamento antigo não tem → parede.
+  applicationType?: "parede" | "teto" | "forro" | null;
 }
 
 interface SavedQuote {
@@ -122,7 +125,13 @@ export default function OrcamentoPage({ params }: { params: Promise<{ slug: stri
         if (plates > 0) {
           fetch("/api/orcamento/pricing", {
             method: "POST", headers: { "Content-Type": "application/json" },
-            body: JSON.stringify({ plates, pricePerPlate: subtotal / plates }),
+            // Os espaços salvos vão com o tipo de aplicação — sem isto um
+            // orçamento de teto voltaria a mostrar PU-40 nesta página.
+            body: JSON.stringify({
+              plates,
+              pricePerPlate: subtotal / plates,
+              spaces: (data.spaces ?? []).map((sp) => ({ plates: sp.plates, applicationType: sp.applicationType })),
+            }),
           }).then((r) => (r.ok ? r.json() : null)).then((b) => {
             if (b) { setPricing(b); setSelectedPayment(b.paymentOptions.find((o: { id: string }) => o.id === "pix") ? "pix" : (b.paymentOptions[0]?.id ?? null)); }
           }).catch(() => {});
@@ -397,12 +406,19 @@ export default function OrcamentoPage({ params }: { params: Promise<{ slug: stri
                 <span className="text-[#86a0cd]">Placas ({pricing.plates})</span>
                 <span className="text-white font-semibold">{fmt(pricing.platesSubtotal)}</span>
               </div>
-              {pricing.colaAvailable && pricing.colaTubos > 0 && (
-                <div className="flex items-center justify-between text-[13px] font-[var(--font-inter)]">
-                  <span className="text-[#86a0cd]">Cola PU ({pricing.colaTubos} tubo{pricing.colaTubos !== 1 ? "s" : ""})</span>
-                  <span className="text-white font-semibold">{fmt(pricing.colaSubtotal)}</span>
+              {/* Materiais de instalação calculados automaticamente. A lista
+                  depende do tipo de aplicação de cada espaço. */}
+              {(pricing.materials ?? []).filter((m) => m.quantity > 0).map((m) => (
+                <div key={m.code} className="flex items-start justify-between gap-3 text-[13px] font-[var(--font-inter)]">
+                  <span className="text-[#86a0cd] min-w-0">
+                    {materialDisplayName(m)} ({m.quantity} {m.unit}{m.quantity !== 1 ? "s" : ""})
+                    <span className="block text-[#86a0cd]/60 text-[11px]">
+                      Calculado automaticamente para {applicationReasonLabel(m.reasons).toLowerCase()}
+                    </span>
+                  </span>
+                  <span className="text-white font-semibold flex-shrink-0">{m.unitPrice > 0 ? fmt(m.total) : "—"}</span>
                 </div>
-              )}
+              ))}
               <div className="flex items-center justify-between text-[13px] font-[var(--font-inter)]">
                 <span className="text-[#86a0cd]">Frete</span>
                 <span className={`font-semibold ${pricing.frete.free ? "text-[#5eead4]" : "text-white"}`}>{pricing.frete.free ? "Grátis" : fmt(pricing.frete.value)}{pricing.frete.estimated && !pricing.frete.free ? "*" : ""}</span>
