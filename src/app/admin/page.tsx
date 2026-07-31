@@ -1,6 +1,7 @@
 "use client";
 
 import React, { useState, useEffect, useCallback, useMemo, useRef } from "react";
+import Link from "next/link";
 import { SITE_ASSET_MANIFEST } from "@/lib/assets";
 import LeadsTab, { type Lead } from "./LeadsTab";
 import RemindersTab from "./RemindersTab";
@@ -452,6 +453,9 @@ export default function AdminPage() {
   const [clientStatusFilter, setClientStatusFilter] = useState<string>("all");
   const [clientSortKey, setClientSortKey] = useState<"data" | "cliente" | "valor">("data");
   const [clientSortDir, setClientSortDir] = useState<"asc" | "desc">("desc");
+  const [clientGroupMode, setClientGroupMode] = useState<"situacao" | "semana" | "mes" | "ano">("situacao");
+  // Concluídos e cancelados nascem recolhidos: são histórico, não fila de trabalho.
+  const [collapsedGroups, setCollapsedGroups] = useState<Record<string, boolean>>({ concluido: true, cancelado: true });
   const [clientPartnerFilter, setClientPartnerFilter] = useState<string>("all");
   const [deletingClientId, setDeletingClientId] = useState<string | null>(null);
   // Orçamentos formais gerados pelo site público (saved_quotes) + conversão.
@@ -2787,11 +2791,78 @@ export default function AdminPage() {
     const getStatus = (c: typeof filteredClients[0]) => c.sale_status ?? c.couponUse?.sale_status ?? "em_orcamento";
     const emAberto = filteredClients.filter((c) => getStatus(c) === "em_orcamento").length;
     const concluidos = filteredClients.filter((c) => getStatus(c) === "concluido").length;
-    const totalReceita = filteredClients.reduce((sum, c) => sum + (c.total ?? 0), 0);
+    // Receita POTENCIAL é o que ainda pode entrar: concluído já entrou e
+    // cancelado não entra mais. Somar tudo inflava o número e tirava dele
+    // qualquer utilidade para decidir onde investir esforço.
+    const totalReceita = filteredClients
+      .filter((c) => getStatus(c) === "em_orcamento")
+      .reduce((sum, c) => sum + (c.total ?? 0), 0);
     const comParceiro = filteredClients.filter((c) => !!c.couponUse).length;
     const dripAtivos = filteredClients.filter((c) => c.status === "active").length;
     return { emAberto, concluidos, totalReceita, comParceiro, dripAtivos };
   }, [filteredClients]);
+
+  /**
+   * Agrupamento da lista de orçamentos.
+   *
+   * Mostrar 105 linhas seguidas não é gerenciável: o que está em aberto com a
+   * régua rodando exige ação hoje; o que esfriou exige outra; concluído e
+   * cancelado são histórico. Separar por situação (ou por período) é o que
+   * permite olhar um grupo de cada vez.
+   */
+  const orcamentoGroups = useMemo(() => {
+    const statusOf = (c: typeof filteredClients[0]) => c.sale_status ?? c.couponUse?.sale_status ?? "em_orcamento";
+
+    if (clientGroupMode === "situacao") {
+      const buckets: Array<{ key: string; label: string; hint: string; rows: typeof filteredClients }> = [
+        { key: "aberto_drip", label: "Em aberto · régua ativa", hint: "recebendo e-mails da régua — acompanhe", rows: [] },
+        { key: "frios", label: "Frios", hint: "em aberto, mas a régua já terminou", rows: [] },
+        { key: "concluido", label: "Concluídos", hint: "viraram venda", rows: [] },
+        { key: "cancelado", label: "Cancelados", hint: "encerrados sem venda", rows: [] },
+      ];
+      const byKey = Object.fromEntries(buckets.map((b) => [b.key, b]));
+      for (const c of filteredClients) {
+        const st = statusOf(c);
+        if (st === "concluido") byKey.concluido.rows.push(c);
+        else if (st === "cancelado") byKey.cancelado.rows.push(c);
+        else if (c.status === "active") byKey.aberto_drip.rows.push(c);
+        else byKey.frios.rows.push(c);
+      }
+      return buckets.filter((b) => b.rows.length > 0);
+    }
+
+    // Período — rotula pela data de criação.
+    const label = (iso: string): { key: string; label: string } => {
+      const d = new Date(iso);
+      if (Number.isNaN(d.getTime())) return { key: "sem-data", label: "Sem data" };
+      const y = d.getFullYear();
+      if (clientGroupMode === "ano") return { key: `${y}`, label: `${y}` };
+      if (clientGroupMode === "mes") {
+        const m = String(d.getMonth() + 1).padStart(2, "0");
+        return { key: `${y}-${m}`, label: d.toLocaleDateString("pt-BR", { month: "long", year: "numeric" }) };
+      }
+      // Semana começando na segunda-feira.
+      const monday = new Date(d);
+      monday.setHours(0, 0, 0, 0);
+      monday.setDate(monday.getDate() - ((monday.getDay() + 6) % 7));
+      const sunday = new Date(monday);
+      sunday.setDate(sunday.getDate() + 6);
+      const fmtD = (x: Date) => x.toLocaleDateString("pt-BR", { day: "2-digit", month: "2-digit" });
+      return { key: monday.toISOString().slice(0, 10), label: `Semana de ${fmtD(monday)} a ${fmtD(sunday)}` };
+    };
+
+    const map = new Map<string, { key: string; label: string; hint: string; rows: typeof filteredClients }>();
+    for (const c of filteredClients) {
+      const { key, label: lbl } = label(c.created_at);
+      if (!map.has(key)) map.set(key, { key, label: lbl, hint: "", rows: [] });
+      map.get(key)!.rows.push(c);
+    }
+    // Mais recente primeiro; "sem-data" por último.
+    return [...map.values()].sort((a, b) => (a.key === "sem-data" ? 1 : b.key === "sem-data" ? -1 : b.key.localeCompare(a.key)));
+  }, [filteredClients, clientGroupMode]);
+
+  const toggleGroup = (key: string) =>
+    setCollapsedGroups((cur) => ({ ...cur, [key]: !cur[key] }));
 
   function nextEmailLabel(next_email_at: string): string {
     const ms = new Date(next_email_at).getTime() - Date.now();
@@ -4433,9 +4504,9 @@ export default function AdminPage() {
                   Consumo por placa, embalagens de cola e quais aplicações disparam cada regra.
                 </p>
               </div>
-              <a href="/admin/orcamentos/materiais" className="border border-[#002045] text-[#002045] text-xs tracking-[0.12em] uppercase font-bold font-[var(--font-inter)] px-4 py-2.5 hover:bg-[#002045] hover:text-white transition-colors whitespace-nowrap">
+              <Link href="/admin/orcamentos/materiais" className="border border-[#002045] text-[#002045] text-xs tracking-[0.12em] uppercase font-bold font-[var(--font-inter)] px-4 py-2.5 hover:bg-[#002045] hover:text-white transition-colors whitespace-nowrap">
                 Parâmetros do cálculo
-              </a>
+              </Link>
             </div>
 
             {/* Header + filters */}
@@ -4449,6 +4520,10 @@ export default function AdminPage() {
                     </span>
                   )}
                 </div>
+                <div className="flex flex-wrap gap-2">
+                <Link href="/admin/orcamentos/novo" className="bg-[#002045] text-white text-xs tracking-[0.12em] uppercase font-bold font-[var(--font-inter)] px-5 py-2.5 hover:bg-[#1a365d] transition-colors whitespace-nowrap">
+                  + Novo orçamento
+                </Link>
                 <button
                   onClick={exportClients}
                   disabled={clientsExporting}
@@ -4456,6 +4531,7 @@ export default function AdminPage() {
                 >
                   {clientsExporting ? "Exportando..." : "Exportar CSV"}
                 </button>
+                </div>
               </div>
               {/* Filters */}
               <div className="flex flex-wrap items-center gap-3">
@@ -4495,6 +4571,17 @@ export default function AdminPage() {
                   <option value="valor:asc">Menor valor</option>
                   <option value="cliente:asc">Cliente (A–Z)</option>
                   <option value="cliente:desc">Cliente (Z–A)</option>
+                </select>
+                {/* Agrupar — 105 linhas seguidas não se gerencia. */}
+                <select
+                  value={clientGroupMode}
+                  onChange={(e) => setClientGroupMode(e.target.value as "situacao" | "semana" | "mes" | "ano")}
+                  className="border border-[#e2e2e2] px-3 py-2 text-sm font-[var(--font-inter)] text-[#002045] focus:outline-none focus:border-[#002045]"
+                >
+                  <option value="situacao">Agrupar por situação</option>
+                  <option value="semana">Agrupar por semana</option>
+                  <option value="mes">Agrupar por mês</option>
+                  <option value="ano">Agrupar por ano</option>
                 </select>
               </div>
             </div>
@@ -4549,7 +4636,7 @@ export default function AdminPage() {
                   { label: "Total", value: filteredClients.length, sub: "orçamentos" },
                   { label: "Em aberto", value: orcamentosStats.emAberto, sub: "em orçamento" },
                   { label: "Concluídos", value: orcamentosStats.concluidos, sub: "finalizados" },
-                  { label: "Receita pot.", value: orcamentosStats.totalReceita.toLocaleString("pt-BR", { style: "currency", currency: "BRL", maximumFractionDigits: 0 }), sub: "sem descontos" },
+                  { label: "Receita pot.", value: orcamentosStats.totalReceita.toLocaleString("pt-BR", { style: "currency", currency: "BRL", maximumFractionDigits: 0 }), sub: "só os em aberto" },
                   { label: "Drip ativo", value: orcamentosStats.dripAtivos, sub: `de ${filteredClients.length}` },
                 ].map((s) => (
                   <div key={s.label} className="bg-white border border-[#e2e2e2] px-4 py-3">
@@ -4627,7 +4714,21 @@ export default function AdminPage() {
                       </tr>
                     </thead>
                     <tbody>
-                      {filteredClients.map((c) => {
+                      {orcamentoGroups.flatMap((g) => [
+                        <tr key={`h-${g.key}`} className="bg-[#f5f5f3] border-y border-[#e2e2e2]">
+                          <td colSpan={8} className="px-4 py-2">
+                            <button onClick={() => toggleGroup(g.key)} className="flex items-center gap-2 text-left w-full">
+                              <span className="text-[#74777f] text-[10px] w-3">{collapsedGroups[g.key] ? "▶" : "▼"}</span>
+                              <span className="text-[11px] tracking-[0.08em] uppercase font-bold text-[#002045]">{g.label}</span>
+                              <span className="text-[10px] font-bold text-[#74777f] bg-white border border-[#e2e2e2] px-1.5 py-0.5">{g.rows.length}</span>
+                              {g.hint && <span className="text-[10px] text-[#a0a3a8] font-normal normal-case">{g.hint}</span>}
+                              <span className="ml-auto text-[10px] text-[#74777f]">
+                                {g.rows.reduce((s, r) => s + (r.total ?? 0), 0).toLocaleString("pt-BR", { style: "currency", currency: "BRL", maximumFractionDigits: 0 })}
+                              </span>
+                            </button>
+                          </td>
+                        </tr>,
+                        ...(collapsedGroups[g.key] ? [] : g.rows.map((c) => {
                         const cu = c.couponUse;
                         const saleStatus = c.sale_status ?? cu?.sale_status ?? "em_orcamento";
                         const stMeta = STATUS_LABELS[saleStatus] ?? STATUS_LABELS.em_orcamento;
@@ -4735,14 +4836,22 @@ export default function AdminPage() {
                             </td>
                           </tr>
                         );
-                      })}
+                      })),
+                      ])}
                     </tbody>
                   </table>
                 </div>
 
                 {/* Mobile cards */}
                 <div className="sm:hidden space-y-3">
-                  {filteredClients.map((c) => {
+                  {orcamentoGroups.flatMap((g) => [
+                    <button key={`mh-${g.key}`} onClick={() => toggleGroup(g.key)}
+                      className="w-full flex items-center gap-2 bg-[#f5f5f3] border border-[#e2e2e2] px-3 py-2 text-left">
+                      <span className="text-[#74777f] text-[10px] w-3">{collapsedGroups[g.key] ? "▶" : "▼"}</span>
+                      <span className="text-[11px] tracking-[0.08em] uppercase font-bold text-[#002045]">{g.label}</span>
+                      <span className="text-[10px] font-bold text-[#74777f] bg-white border border-[#e2e2e2] px-1.5 py-0.5">{g.rows.length}</span>
+                    </button>,
+                    ...(collapsedGroups[g.key] ? [] : g.rows.map((c) => {
                     const cu = c.couponUse;
                     const saleStatus = c.sale_status ?? cu?.sale_status ?? "em_orcamento";
                     const stMeta = STATUS_LABELS[saleStatus] ?? STATUS_LABELS.em_orcamento;
@@ -4826,7 +4935,8 @@ export default function AdminPage() {
                         })()}
                       </div>
                     );
-                  })}
+                  })),
+                  ])}
                 </div>
               </>
             )}
@@ -5948,12 +6058,12 @@ export default function AdminPage() {
                 </p>
               </div>
               <div className="flex flex-wrap gap-2">
-                <a href="/admin/projetos/organizacao" className="border border-[#002045] text-[#002045] text-xs tracking-[0.12em] uppercase font-bold font-[var(--font-inter)] px-4 py-2.5 hover:bg-[#002045] hover:text-white transition-colors whitespace-nowrap">
+                <Link href="/admin/projetos/organizacao" className="border border-[#002045] text-[#002045] text-xs tracking-[0.12em] uppercase font-bold font-[var(--font-inter)] px-4 py-2.5 hover:bg-[#002045] hover:text-white transition-colors whitespace-nowrap">
                   Categorias e Showrooms
-                </a>
-                <a href="/admin/projetos" className="bg-[#002045] text-white text-xs tracking-[0.12em] uppercase font-bold font-[var(--font-inter)] px-4 py-2.5 hover:bg-[#1a365d] transition-colors whitespace-nowrap">
+                </Link>
+                <Link href="/admin/projetos" className="bg-[#002045] text-white text-xs tracking-[0.12em] uppercase font-bold font-[var(--font-inter)] px-4 py-2.5 hover:bg-[#1a365d] transition-colors whitespace-nowrap">
                   Ver lista →
-                </a>
+                </Link>
               </div>
             </div>
 
