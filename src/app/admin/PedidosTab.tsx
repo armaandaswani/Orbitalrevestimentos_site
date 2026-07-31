@@ -1,7 +1,7 @@
 "use client";
 
 import React, { useState, useEffect, useCallback, useMemo, useRef } from "react";
-import { DEFAULT_PANEL_WIDTH_M, DEFAULT_PANEL_HEIGHT_M } from "@/lib/render-prompt";
+import { DEFAULT_PANEL_WIDTH_M, DEFAULT_PANEL_HEIGHT_M, panelGrid } from "@/lib/render-prompt";
 import type { Lead } from "./LeadsTab";
 
 // ─── Types ──────────────────────────────────────────────────────────────────
@@ -295,6 +295,11 @@ export default function PedidosTab({
   // whether that helper is expanded for that row).
   const [areaCalcOpen, setAreaCalcOpen] = useState<Record<number, boolean>>({});
   const [areaCalcValue, setAreaCalcValue] = useState<Record<number, string>>({});
+  // Medir por largura × altura ou por m² — os dois modos do simulador, para o
+  // admin que pula o orçamento e cria o pedido direto obter a MESMA contagem.
+  const [areaCalcMode, setAreaCalcMode] = useState<Record<number, "lxa" | "m2">>({});
+  const [areaCalcW, setAreaCalcW] = useState<Record<number, string>>({});
+  const [areaCalcH, setAreaCalcH] = useState<Record<number, string>>({});
 
   // Reusable presets ("cadastrar") for Condição de pagamento and custom Forma
   // de pagamento, so the admin doesn't retype the same wording every order.
@@ -359,6 +364,21 @@ export default function PedidosTab({
     const h = Number(prod?.render_panel_height_m) || DEFAULT_PANEL_HEIGHT_M;
     return w * h;
   }, []);
+
+  /**
+   * Placas para uma parede de largura × altura.
+   *
+   * Usa panelGrid — a MESMA função do simulador. Dividir área por área da placa
+   * conta menos: uma parede de 3,00 × 2,50 m tem 7,5 m² (≈ 2,2 placas por área),
+   * mas o recorte real exige 3. O admin que cria o pedido direto precisa da
+   * contagem do orçamento, não de uma aproximação diferente.
+   */
+  const platesForDimensions = useCallback((prod: StockProduct | undefined, widthM: number, heightM: number): number => {
+    if (!Number.isFinite(widthM) || !Number.isFinite(heightM) || widthM <= 0 || heightM <= 0) return 0;
+    const pw = Number(prod?.render_panel_width_m) || DEFAULT_PANEL_WIDTH_M;
+    const ph = Number(prod?.render_panel_height_m) || DEFAULT_PANEL_HEIGHT_M;
+    return panelGrid(widthM, heightM, pw, ph).count;
+  }, []);
   const [partners, setPartners] = useState<PartnerOption[]>([]);
   const [salesReps, setSalesReps] = useState<SalesRepOption[]>([]);
   const [quoteImportOpen, setQuoteImportOpen] = useState(false);
@@ -367,14 +387,25 @@ export default function PedidosTab({
   const [quoteImportError, setQuoteImportError] = useState("");
 
   const [stockLoaded, setStockLoaded] = useState(false);
-  useEffect(() => {
-    // Best-effort: if migration 023 isn't applied the picker just stays empty.
+  // O erro precisa ser guardado: sem ele, uma falha ao carregar os produtos
+  // fazia o bloco de itens (modelo, placas, atacado/varejo) sumir inteiro e o
+  // modal ficava só com os campos livres, sem explicação nenhuma.
+  const [stockError, setStockError] = useState<string | null>(null);
+
+  const loadStockProducts = useCallback(() =>
     fetch("/api/admin/stock")
-      .then((r) => (r.ok ? r.json() : null))
-      .then((j) => { if (j?.products) setStockProducts(j.products); })
-      .catch(() => {})
-      .finally(() => setStockLoaded(true));
-  }, []);
+      .then(async (res) => {
+        const j = await res.json().catch(() => null);
+        if (res.status === 401) { setStockError("Sessão de admin expirada — entre novamente."); return; }
+        if (!res.ok) { setStockError(j?.error ?? `Falha ao carregar os produtos (HTTP ${res.status}).`); return; }
+        setStockError(null);
+        setStockProducts(Array.isArray(j?.products) ? j.products : []);
+      })
+      .catch(() => setStockError("Sem conexão com o servidor."))
+      .finally(() => setStockLoaded(true))
+  , []);
+
+  useEffect(() => { loadStockProducts(); }, [loadStockProducts]);
 
   // Preços tab's rate card (special_price = atacado, public_price = varejo),
   // keyed by linha — used by itemPricing to price items when a pedido is
@@ -1554,6 +1585,28 @@ export default function PedidosTab({
               {/* Stock-aware line items (model + plate qty). Reserves/baixa de
                   estoque; the editable quantity here — not a freeform m² box —
                   drives both the estimated area and the total automatically. */}
+              {/* Nunca esconder este bloco: ele É o pedido. Se os produtos não
+                  carregarem, dizemos por quê e oferecemos recarregar — antes
+                  ele sumia inteiro e o modal parecia ter perdido a função. */}
+              {stockProducts.length === 0 && (
+                <div className="border border-amber-300 bg-amber-50 px-3 py-3">
+                  <p className="text-amber-900 text-xs font-bold font-[var(--font-inter)]">
+                    {stockError ? "Não foi possível carregar os produtos" : stockLoaded ? "Nenhum produto cadastrado" : "Carregando produtos…"}
+                  </p>
+                  {stockError && <p className="text-amber-800 text-[11px] font-[var(--font-inter)] mt-1 break-words">{stockError}</p>}
+                  {stockLoaded && (
+                    <p className="text-amber-800 text-[11px] font-[var(--font-inter)] mt-1">
+                      Sem eles não dá para escolher modelo, quantidade de placas nem preço de atacado/varejo.
+                    </p>
+                  )}
+                  {stockLoaded && (
+                    <button type="button" onClick={loadStockProducts}
+                      className="mt-2 border border-amber-400 text-amber-900 px-3 py-1.5 text-[10px] tracking-[0.1em] uppercase font-bold font-[var(--font-inter)] hover:bg-amber-100 transition-colors">
+                      Tentar novamente
+                    </button>
+                  )}
+                </div>
+              )}
               {stockProducts.length > 0 && (
                 <div className="border border-[#e2e2e2] rounded-sm p-3">
                   <p className="text-[10px] tracking-[0.12em] uppercase font-bold font-[var(--font-inter)] text-[#74777f] mb-2">
@@ -1587,11 +1640,18 @@ export default function PedidosTab({
                       const over = prod && it.plates > prod.available;
                       const calcOpen = !!areaCalcOpen[idx];
                       const calcM2 = areaCalcValue[idx] ?? "";
+                      const calcMode = areaCalcMode[idx] ?? "lxa";
+                      const num = (s: string) => Number(String(s ?? "").replace(",", "."));
+                      const calcW = num(areaCalcW[idx] ?? "");
+                      const calcH = num(areaCalcH[idx] ?? "");
+                      // Prévia ao vivo: o admin vê quantas placas sairão ANTES de
+                      // aplicar, e continua livre para digitar outro número depois.
+                      const suggestedPlates = calcMode === "lxa"
+                        ? platesForDimensions(prod, calcW, calcH)
+                        : (num(calcM2) > 0 && prod ? Math.max(1, Math.ceil(num(calcM2) / panelAreaM2(prod))) : 0);
                       const applyAreaCalc = () => {
-                        const desired = Number(String(calcM2).replace(",", "."));
-                        if (!prod || !Number.isFinite(desired) || desired <= 0) return;
-                        const suggested = Math.max(1, Math.ceil(desired / panelAreaM2(prod)));
-                        setItems((cur) => cur.map((x, i) => i === idx ? { ...x, plates: suggested } : x));
+                        if (!prod || suggestedPlates <= 0) return;
+                        setItems((cur) => cur.map((x, i) => i === idx ? { ...x, plates: suggestedPlates } : x));
                         setAreaCalcOpen((cur) => ({ ...cur, [idx]: false }));
                       };
                       return (
@@ -1655,18 +1715,51 @@ export default function PedidosTab({
                             </div>
                           )}
                           {calcOpen && prod && (
-                            <div className="flex items-center gap-2 mt-2 bg-[#fafafa] border border-[#f0f0f0] px-2 py-1.5">
-                              <input type="number" min="0" step="0.01" value={calcM2} autoFocus
-                                onChange={(e) => setAreaCalcValue((cur) => ({ ...cur, [idx]: e.target.value }))}
-                                placeholder="m² desejado"
-                                className="w-28 border border-[#e2e2e2] px-2 py-1 text-xs font-[var(--font-inter)] text-[#002045] focus:outline-none focus:border-[#002045]" />
-                              <span className="text-[10px] text-[#74777f] font-[var(--font-inter)]">
-                                ({panelAreaM2(prod).toFixed(2)} m²/placa)
-                              </span>
-                              <button type="button" onClick={applyAreaCalc}
-                                className="bg-[#002045] text-white text-[10px] font-bold font-[var(--font-inter)] px-3 py-1.5 hover:bg-[#1a365d]">
-                                → placas
-                              </button>
+                            <div className="mt-2 bg-[#fafafa] border border-[#f0f0f0] px-2 py-2 space-y-2">
+                              <div className="flex flex-wrap items-center gap-1.5">
+                                {([["lxa", "Largura × altura"], ["m2", "Metros quadrados"]] as const).map(([m, label]) => (
+                                  <button key={m} type="button"
+                                    onClick={() => setAreaCalcMode((cur) => ({ ...cur, [idx]: m }))}
+                                    className={`text-[10px] tracking-[0.06em] uppercase font-bold font-[var(--font-inter)] px-2.5 py-1 border transition-colors ${
+                                      calcMode === m ? "bg-[#002045] text-white border-[#002045]" : "text-[#74777f] border-[#e2e2e2] hover:border-[#002045]"
+                                    }`}>
+                                    {label}
+                                  </button>
+                                ))}
+                              </div>
+
+                              <div className="flex flex-wrap items-center gap-2">
+                                {calcMode === "lxa" ? (
+                                  <>
+                                    <input type="number" min="0" step="0.01" value={areaCalcW[idx] ?? ""} autoFocus
+                                      onChange={(e) => setAreaCalcW((cur) => ({ ...cur, [idx]: e.target.value }))}
+                                      placeholder="largura (m)"
+                                      className="w-28 border border-[#e2e2e2] px-2 py-1 text-xs font-[var(--font-inter)] text-[#002045] focus:outline-none focus:border-[#002045]" />
+                                    <span className="text-[10px] text-[#74777f]">×</span>
+                                    <input type="number" min="0" step="0.01" value={areaCalcH[idx] ?? ""}
+                                      onChange={(e) => setAreaCalcH((cur) => ({ ...cur, [idx]: e.target.value }))}
+                                      placeholder="altura (m)"
+                                      className="w-28 border border-[#e2e2e2] px-2 py-1 text-xs font-[var(--font-inter)] text-[#002045] focus:outline-none focus:border-[#002045]" />
+                                  </>
+                                ) : (
+                                  <input type="number" min="0" step="0.01" value={calcM2} autoFocus
+                                    onChange={(e) => setAreaCalcValue((cur) => ({ ...cur, [idx]: e.target.value }))}
+                                    placeholder="m² desejado"
+                                    className="w-28 border border-[#e2e2e2] px-2 py-1 text-xs font-[var(--font-inter)] text-[#002045] focus:outline-none focus:border-[#002045]" />
+                                )}
+                                <button type="button" onClick={applyAreaCalc} disabled={suggestedPlates <= 0}
+                                  className="bg-[#002045] text-white text-[10px] font-bold font-[var(--font-inter)] px-3 py-1.5 hover:bg-[#1a365d] disabled:opacity-40">
+                                  → {suggestedPlates > 0 ? `${suggestedPlates} ${unit}${suggestedPlates !== 1 ? "s" : ""}` : "placas"}
+                                </button>
+                              </div>
+
+                              <p className="text-[10px] text-[#74777f] font-[var(--font-inter)]">
+                                Placa de {(Number(prod.render_panel_width_m) || DEFAULT_PANEL_WIDTH_M).toFixed(2)} × {(Number(prod.render_panel_height_m) || DEFAULT_PANEL_HEIGHT_M).toFixed(2)} m ({panelAreaM2(prod).toFixed(2)} m²).
+                                {calcMode === "lxa"
+                                  ? " Mesmo cálculo do orçamento — considera o recorte real, não só a área."
+                                  : " Pela área; para o recorte real use largura × altura."}
+                                {" A quantidade continua editável depois."}
+                              </p>
                             </div>
                           )}
                         </div>
