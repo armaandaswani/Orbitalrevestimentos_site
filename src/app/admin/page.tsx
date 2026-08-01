@@ -3,6 +3,7 @@
 import React, { useState, useEffect, useCallback, useMemo, useRef } from "react";
 import Link from "next/link";
 import { SITE_ASSET_MANIFEST } from "@/lib/assets";
+import { productQrUrl, productUrl } from "@/lib/product-link";
 import LeadsTab, { type Lead } from "./LeadsTab";
 import RemindersTab from "./RemindersTab";
 import PedidosTab, { type QuoteOption } from "./PedidosTab";
@@ -501,6 +502,7 @@ export default function AdminPage() {
   const [dragGalleryId, setDragGalleryId] = useState<string | null>(null);
   const [dragOverGalleryId, setDragOverGalleryId] = useState<string | null>(null);
   const [galleryUploading, setGalleryUploading] = useState(false);
+  const [qrCopied, setQrCopied] = useState(false);
   const [galleryZipping, setGalleryZipping] = useState(false);
   const [galleryZipError, setGalleryZipError] = useState<string | null>(null);
   const [galleryUploadProgress, setGalleryUploadProgress] = useState<{done: number; total: number} | null>(null);
@@ -1507,6 +1509,40 @@ export default function AdminPage() {
     setGalleryImages(p.product_images ?? []);
     setShowProductForm(true);
     setTimeout(() => productTabFormRef.current?.scrollIntoView({ behavior: "smooth", block: "start" }), 50);
+  }
+
+  /**
+   * Abre a etiqueta pronta para impressão numa janela própria.
+   *
+   * Uma janela dedicada em vez de imprimir a página: o painel inteiro sairia na
+   * folha. Aqui sai só o QR, o código e o nome — o que vai colado na amostra.
+   */
+  function printProductQr(code: string, name: string) {
+    const w = window.open("", "_blank", "width=420,height=560");
+    if (!w) return; // bloqueador de pop-up — os botões de download seguem valendo
+    const safe = (s: string) => s.replace(/[<>&"]/g, (c) => ({ "<": "&lt;", ">": "&gt;", "&": "&amp;", '"': "&quot;" }[c] as string));
+    w.document.write(`<!doctype html><html lang="pt-BR"><head><meta charset="utf-8">
+<title>QR ${safe(code)}</title>
+<style>
+  @page { margin: 12mm; }
+  body { font-family: system-ui, -apple-system, sans-serif; text-align: center; margin: 0; padding: 24px; color: #002045; }
+  img { width: 62mm; height: 62mm; display: block; margin: 0 auto 10px; }
+  .code { font-size: 15px; font-weight: 700; letter-spacing: .12em; }
+  .name { font-size: 13px; color: #43474e; margin-top: 2px; }
+  .brand { font-size: 10px; letter-spacing: .2em; text-transform: uppercase; color: #74777f; margin-top: 12px; }
+</style></head><body>
+<img src="${productQrUrl(code, "png", 1024)}" alt="QR ${safe(code)}">
+<div class="code">${safe(code.toUpperCase())}</div>
+<div class="name">${safe(name || "")}</div>
+<div class="brand">Orbital Revestimentos</div>
+<script>
+  // Só imprime depois que a imagem carrega — senão a folha sai em branco.
+  var i = document.images[0];
+  if (i.complete) window.print();
+  else { i.onload = function () { window.print(); }; i.onerror = function () { document.body.innerHTML = '<p>Não foi possível carregar o QR Code.</p>'; }; }
+<\/script>
+</body></html>`);
+    w.document.close();
   }
 
   /**
@@ -5674,6 +5710,89 @@ export default function AdminPage() {
                       </div>
                     )}
                   </div>
+                  {/* QR Code do modelo — só faz sentido para produto já salvo,
+                      porque o código permanente é o que o QR carrega. */}
+                  {editingProductId && productForm.code.trim() && (
+                    <div className="mb-6 border border-[#e2e2e2] p-4">
+                      <p className="font-[var(--font-inter)] text-[10px] tracking-[0.15em] uppercase font-bold text-[#74777f] mb-1">
+                        QR Code do modelo
+                      </p>
+                      <p className="text-[#74777f] text-[11px] font-[var(--font-inter)] mb-3">
+                        Aponta para o código <strong>{productForm.code.toUpperCase()}</strong>, não para o nome — renomear o
+                        modelo, mudar o preço ou trocar as fotos não invalida código já impresso.
+                      </p>
+
+                      {productForm.is_active === false ? (
+                        <p className="text-amber-800 text-[12px] font-[var(--font-inter)] bg-amber-50 border border-amber-200 px-3 py-2">
+                          Modelo inativo — o QR Code não é gerado enquanto ele estiver fora do catálogo,
+                          para não circular um código que abre uma página vazia.
+                        </p>
+                      ) : (
+                        <div className="flex flex-col sm:flex-row gap-4">
+                          {/* eslint-disable-next-line @next/next/no-img-element */}
+                          <img
+                            src={productQrUrl(productForm.code, "svg", 512)}
+                            alt={`QR Code de ${productForm.code}`}
+                            className="w-36 h-36 border border-[#e2e2e2] bg-white shrink-0"
+                          />
+                          <div className="flex-1 min-w-0 space-y-2">
+                            <div className="flex items-center gap-2">
+                              <input
+                                readOnly
+                                value={productUrl(productForm.code)}
+                                onFocus={(e) => e.currentTarget.select()}
+                                className="flex-1 min-w-0 border border-[#e2e2e2] px-2 py-1.5 text-[12px] font-[var(--font-inter)] text-[#43474e] bg-[#fafafa] focus:outline-none focus:border-[#002045]"
+                              />
+                              <button
+                                type="button"
+                                onClick={async () => {
+                                  try {
+                                    await navigator.clipboard.writeText(productUrl(productForm.code));
+                                    setQrCopied(true);
+                                    setTimeout(() => setQrCopied(false), 2000);
+                                  } catch { /* o campo fica selecionável para copiar à mão */ }
+                                }}
+                                className="border border-[#002045] text-[#002045] text-[10px] tracking-[0.08em] uppercase font-bold font-[var(--font-inter)] px-3 py-1.5 hover:bg-[#002045] hover:text-white transition-colors whitespace-nowrap"
+                              >
+                                {qrCopied ? "Copiado" : "Copiar link"}
+                              </button>
+                            </div>
+
+                            <div className="flex flex-wrap gap-2">
+                              <a
+                                href={`${productQrUrl(productForm.code, "png", 2048)}&download=1`}
+                                download={`qr-${productForm.code.toLowerCase()}.png`}
+                                className="border border-[#e2e2e2] text-[#43474e] text-[10px] tracking-[0.08em] uppercase font-bold font-[var(--font-inter)] px-3 py-1.5 hover:border-[#002045] hover:text-[#002045] transition-colors"
+                              >
+                                Baixar PNG (2048px)
+                              </a>
+                              <a
+                                href={productQrUrl(productForm.code, "svg")}
+                                download={`qr-${productForm.code.toLowerCase()}.svg`}
+                                className="border border-[#e2e2e2] text-[#43474e] text-[10px] tracking-[0.08em] uppercase font-bold font-[var(--font-inter)] px-3 py-1.5 hover:border-[#002045] hover:text-[#002045] transition-colors"
+                              >
+                                Baixar SVG (impressão)
+                              </a>
+                              <button
+                                type="button"
+                                onClick={() => printProductQr(productForm.code, productForm.name)}
+                                className="border border-[#e2e2e2] text-[#43474e] text-[10px] tracking-[0.08em] uppercase font-bold font-[var(--font-inter)] px-3 py-1.5 hover:border-[#002045] hover:text-[#002045] transition-colors"
+                              >
+                                Imprimir etiqueta
+                              </button>
+                            </div>
+
+                            <p className="text-[#a0a3a8] text-[11px] font-[var(--font-inter)]">
+                              SVG para gráfica (escala sem perder nitidez); PNG para uso rápido em
+                              catálogo e etiqueta. Correção de erro em nível Q — o código ainda lê com
+                              parte da superfície suja ou riscada.
+                            </p>
+                          </div>
+                        </div>
+                      )}
+                    </div>
+                  )}
+
                   {/* Gallery — only available when editing an existing product */}
                   {editingProductId && (
                     <div className="mb-6 border border-[#e2e2e2] p-4">

@@ -1,7 +1,8 @@
 "use client";
 
 import Link from "next/link";
-import { useState, useEffect, useCallback } from "react";
+import { useState, useEffect, useCallback, useRef } from "react";
+import { normalizeProductCode, productPath, productQrUrl, productUrl } from "@/lib/product-link";
 
 const CATALOGUE_URL =
   "https://drive.google.com/file/d/1zhm5MgKGSDRThqk8FqqwfX-WijI7K-iD/view?usp=drive_link";
@@ -101,6 +102,12 @@ export default function ProdutosPage() {
   const [selected, setSelected] = useState<Product | null>(null);
   const [imgIdx, setImgIdx] = useState(0);
   const [touchStartX, setTouchStartX] = useState<number | null>(null);
+  const [showQr, setShowQr] = useState(false);
+  const [copied, setCopied] = useState(false);
+  // Modelo pedido pela URL que não existe (ou saiu do catálogo) — o visitante
+  // precisa entender por que caiu no catálogo geral em vez de num modelo.
+  const [missingModel, setMissingModel] = useState<string | null>(null);
+  const deepLinked = useRef(false);
 
   useEffect(() => {
     fetch("/api/products")
@@ -118,14 +125,34 @@ export default function ProdutosPage() {
   const selectedIndex = selected ? filtered.findIndex((p) => p.code === selected.code) : -1;
   const images = selected ? allImages(selected) : [];
 
-  function open(product: Product) {
+  /**
+   * Abrir/fechar reflete o modelo na URL (?modelo=orb-003).
+   *
+   * É isso que faz o QR Code funcionar, o link compartilhado abrir no modelo
+   * certo e o "voltar" do navegador devolver ao catálogo em vez de sair do site.
+   * pushState/replaceState em vez de router: trocar a rota remontaria a página e
+   * perderia a lista já carregada.
+   */
+  const syncUrl = useCallback((product: Product | null, mode: "push" | "replace" = "push") => {
+    if (typeof window === "undefined") return;
+    const url = product ? productPath(product.code) : "/produtos";
+    if (window.location.pathname + window.location.search === url) return;
+    window.history[mode === "push" ? "pushState" : "replaceState"]({ modelo: product?.code ?? null }, "", url);
+  }, []);
+
+  const open = useCallback((product: Product, opts?: { silent?: boolean }) => {
     setSelected(product);
     setImgIdx(0);
-  }
-  function close() {
+    setShowQr(false);
+    if (!opts?.silent) syncUrl(product);
+  }, [syncUrl]);
+
+  const close = useCallback((opts?: { silent?: boolean }) => {
     setSelected(null);
     setImgIdx(0);
-  }
+    setShowQr(false);
+    if (!opts?.silent) syncUrl(null);
+  }, [syncUrl]);
 
   const goNextProduct = useCallback(() => {
     if (selectedIndex < filtered.length - 1) open(filtered[selectedIndex + 1]);
@@ -134,6 +161,38 @@ export default function ProdutosPage() {
   const goPrevProduct = useCallback(() => {
     if (selectedIndex > 0) open(filtered[selectedIndex - 1]);
   }, [selectedIndex, filtered]); // eslint-disable-line react-hooks/exhaustive-deps
+
+  /**
+   * Chegada por link/QR: abre o modelo pedido assim que a lista carrega.
+   *
+   * Roda uma vez só — depois disso quem manda é o usuário. Um código que não
+   * existe mais (produto inativo ou excluído) não vira página quebrada: fica no
+   * catálogo com um aviso.
+   */
+  useEffect(() => {
+    if (deepLinked.current || products.length === 0) return;
+    const wanted = normalizeProductCode(new URLSearchParams(window.location.search).get("modelo") ?? "");
+    if (!wanted) { deepLinked.current = true; return; }
+    deepLinked.current = true;
+    const match = products.find((p) => normalizeProductCode(p.code) === wanted);
+    const t = setTimeout(() => {
+      if (match) open(match, { silent: true });   // a URL já está correta
+      else setMissingModel(wanted.toUpperCase());
+    }, 0);
+    return () => clearTimeout(t);
+  }, [products, open]);
+
+  /** Voltar/avançar do navegador navega entre catálogo e modelo. */
+  useEffect(() => {
+    const onPop = () => {
+      const wanted = normalizeProductCode(new URLSearchParams(window.location.search).get("modelo") ?? "");
+      const match = wanted ? products.find((p) => normalizeProductCode(p.code) === wanted) : null;
+      if (match) open(match, { silent: true });
+      else close({ silent: true });
+    };
+    window.addEventListener("popstate", onPop);
+    return () => window.removeEventListener("popstate", onPop);
+  }, [products, open, close]);
 
   useEffect(() => {
     if (!selected) return;
@@ -167,7 +226,7 @@ export default function ProdutosPage() {
         return (
           <div
             className="fixed inset-0 z-[100] flex items-stretch lg:items-center bg-black/80 backdrop-blur-sm"
-            onClick={close}
+            onClick={() => close()}
           >
             {/* Prev product arrow — desktop only */}
             {selectedIndex > 0 && (
@@ -196,7 +255,7 @@ export default function ProdutosPage() {
             >
               {/* Close */}
               <button
-                onClick={close}
+                onClick={() => close()}
                 className="absolute top-3 right-3 z-30 text-white/80 hover:text-white bg-black/50 hover:bg-black/70 rounded-full w-9 h-9 flex items-center justify-center transition-colors"
                 aria-label="Fechar"
               >
@@ -401,7 +460,7 @@ export default function ProdutosPage() {
                 <div className="sticky bottom-0 p-4 lg:p-6 bg-white border-t border-[#e8e8e8] space-y-2">
                   <Link
                     href={simulatorUrl}
-                    onClick={close}
+                    onClick={() => close()}
                     className="w-full inline-flex items-center justify-center gap-2 bg-[#002045] text-white text-xs tracking-[0.12em] uppercase font-bold font-[var(--font-inter)] px-6 py-4 hover:bg-[#003070] transition-colors"
                   >
                     <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5">
@@ -440,12 +499,83 @@ export default function ProdutosPage() {
                     </svg>
                     Baixar textura
                   </button>
+
+                  {/* Compartilhar — discreto de propósito: é um link de texto,
+                      não um terceiro botão competindo com o CTA principal. */}
+                  <div className="flex items-center justify-center gap-4 pt-1">
+                    <button
+                      type="button"
+                      onClick={() => setShowQr((v) => !v)}
+                      className="text-[#74777f] text-[11px] font-[var(--font-inter)] hover:text-[#002045] transition-colors inline-flex items-center gap-1.5"
+                    >
+                      <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                        <rect x="3" y="3" width="7" height="7" rx="1" /><rect x="14" y="3" width="7" height="7" rx="1" />
+                        <rect x="3" y="14" width="7" height="7" rx="1" /><path d="M14 14h3v3h-3zM18 18h3v3h-3z" />
+                      </svg>
+                      {showQr ? "Ocultar QR Code" : "Ver QR Code"}
+                    </button>
+                    <span className="text-[#e2e2e2]">|</span>
+                    <button
+                      type="button"
+                      onClick={async () => {
+                        const link = productUrl(selected.code);
+                        // No celular, o menu nativo é o caminho esperado; no
+                        // desktop cai para a área de transferência.
+                        if (navigator.share) {
+                          try { await navigator.share({ title: `${selected.name} — Orbital`, url: link }); return; } catch { /* cancelado */ }
+                        }
+                        try {
+                          await navigator.clipboard.writeText(link);
+                          setCopied(true);
+                          setTimeout(() => setCopied(false), 2000);
+                        } catch { window.prompt("Copie o link do modelo:", link); }
+                      }}
+                      className="text-[#74777f] text-[11px] font-[var(--font-inter)] hover:text-[#002045] transition-colors inline-flex items-center gap-1.5"
+                    >
+                      <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                        <path d="M10 13a5 5 0 007 0l3-3a5 5 0 00-7-7l-1 1M14 11a5 5 0 00-7 0l-3 3a5 5 0 007 7l1-1" />
+                      </svg>
+                      {copied ? "Link copiado" : "Compartilhar modelo"}
+                    </button>
+                  </div>
+
+                  {showQr && (
+                    <div className="pt-2 flex flex-col items-center">
+                      {/* eslint-disable-next-line @next/next/no-img-element */}
+                      <img
+                        src={productQrUrl(selected.code, "svg", 512)}
+                        alt={`QR Code do modelo ${selected.name} (${selected.code})`}
+                        className="w-40 h-40 border border-[#e8e8e8]"
+                      />
+                      <p className="text-[#74777f] text-[10px] font-[var(--font-inter)] mt-2 text-center">
+                        Aponte a câmera para abrir este modelo · {selected.code}
+                      </p>
+                    </div>
+                  )}
                 </div>
               </div>
             </div>
           </div>
         );
       })()}
+
+      {/* QR/link de um modelo que saiu do catálogo — em vez de página quebrada,
+          o visitante fica no catálogo sabendo o que aconteceu. */}
+      {missingModel && (
+        <div className="bg-[#fdf6e7] border-b border-[#f0e0b8]">
+          <div className="max-w-[1280px] mx-auto px-4 lg:px-16 py-3 flex flex-wrap items-center justify-between gap-3">
+            <p className="text-[#7a5c00] text-[13px] font-[var(--font-inter)]">
+              O modelo <strong>{missingModel}</strong> não está mais disponível no catálogo. Veja abaixo os acabamentos atuais.
+            </p>
+            <button
+              onClick={() => setMissingModel(null)}
+              className="text-[#7a5c00] text-[11px] tracking-[0.1em] uppercase font-bold font-[var(--font-inter)] hover:underline"
+            >
+              Fechar
+            </button>
+          </div>
+        </div>
+      )}
 
       {/* Page Header */}
       <section className="bg-[#002045] text-white py-10 lg:py-24">
