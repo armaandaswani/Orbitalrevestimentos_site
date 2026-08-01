@@ -2,6 +2,8 @@ import { NextRequest, NextResponse } from "next/server";
 import { isAdminRequest, ADMIN_COOKIE } from "@/lib/admin-auth";
 import { supabaseAdmin } from "@/lib/supabase";
 import { breakdownForQuote } from "@/lib/orcamento-server";
+import { reservedByActiveOrders } from "@/lib/stock";
+import { findPlateShortages, isSupportSku } from "@/lib/plate-stock";
 
 export const runtime = "nodejs";
 
@@ -50,6 +52,29 @@ export async function POST(req: NextRequest, { params }: { params: Promise<{ slu
   if (colaProd && breakdown.colaAvailable && breakdown.colaTubos > 0) {
     items.push({ product_id: colaProd.id, plates: breakdown.colaTubos, unit_price: breakdown.colaUnitPrice || null });
   }
+
+  /**
+   * Revalida a disponibilidade AGORA (§5).
+   *
+   * O orçamento pode ter sido feito semanas atrás e o estoque mudou desde então.
+   * Não bloqueia a conversão — quem decide vender com reposição é a equipe — mas
+   * a resposta leva a falta para o painel avisar em vez de o pedido nascer
+   * silenciosamente sem placa. Só PLACAS: material de apoio não entra.
+   */
+  const reservedNow = await reservedByActiveOrders(db);
+  const { data: stockRows } = await db.from("products").select("id, code, name, stock_on_hand");
+  const availableByCode: Record<string, number> = {};
+  for (const r of (stockRows ?? []) as Array<Record<string, unknown>>) {
+    const code = String(r.code ?? "").toUpperCase();
+    if (!code || isSupportSku(code)) continue;
+    availableByCode[code] = Math.max(0, (Number(r.stock_on_hand) || 0) - (reservedNow[String(r.id)] ?? 0));
+  }
+  const shortages = findPlateShortages(
+    spaces
+      .filter((sp) => sp.productCode && Number(sp.plates) > 0)
+      .map((sp) => ({ code: sp.productCode as string, name: sp.productName, requested: Math.round(Number(sp.plates)) })),
+    availableByCode,
+  );
 
   const sel = breakdown.paymentOptions.find((o) => o.id === q.payment_condition) ?? breakdown.paymentOptions[0];
   const paymentTerms = sel?.id === "pix"
@@ -104,5 +129,6 @@ export async function POST(req: NextRequest, { params }: { params: Promise<{ slu
   // Link the quote → pedido and mark stage. Best-effort (won't fail conversion).
   await db.from("saved_quotes").update({ stage: "pedido", pedido_id: created.id }).eq("slug", slug).then(() => {}, () => {});
 
-  return NextResponse.json({ ok: true, pedidoId: created.id });
+  // A reserva só passa a existir a partir daqui — foi o POST acima que a criou.
+  return NextResponse.json({ ok: true, pedidoId: created.id, stockShortages: shortages });
 }

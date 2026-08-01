@@ -422,6 +422,24 @@ export async function DELETE(
   if (!id) return NextResponse.json({ error: "Missing id" }, { status: 400 });
 
   const db = supabaseAdmin();
+
+  // Libera a reserva ANTES de apagar. Sem isto, excluir um pedido reservado
+  // deixava as placas presas no contador para sempre — os itens somem junto com
+  // o pedido e não sobra nada que possa devolvê-las. Foi assim que 17 placas
+  // ficaram fantasmas em ORB-002 e ORB-006.
+  const { data: pedido } = await db
+    .from("pedidos")
+    .select("stock_state")
+    .eq("id", id)
+    .maybeSingle();
+  const state = (pedido as { stock_state?: string } | null)?.stock_state ?? "none";
+  if (state === "reserved") {
+    await transitionOrderStock(db, id, "reserved", "released", "admin");
+  } else if (state === "consumed") {
+    // Já saiu do estoque físico; apagar sem devolver perderia as placas.
+    await transitionOrderStock(db, id, "consumed", "returned", "admin");
+  }
+
   const { error } = await db.from("pedidos").delete().eq("id", id);
   if (error) return NextResponse.json({ error: error.message }, { status: 500 });
   return NextResponse.json({ ok: true });

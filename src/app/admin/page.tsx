@@ -2206,7 +2206,19 @@ export default function AdminPage() {
       if (res.ok && data?.pedidoId) {
         setFormalQuotes((prev) => prev.map((q) => (q.slug === slug ? { ...q, stage: "pedido", pedido_id: data.pedidoId } : q)));
         fetchPedidos();
-        alert("Pedido criado com sucesso a partir do orçamento.");
+        // O estoque é revalidado na conversão: o orçamento pode ser antigo e as
+        // placas já terem saído. O pedido é criado de qualquer forma — quem
+        // decide vender com reposição é a equipe — mas a falta é dita na hora.
+        const falta = Array.isArray(data.stockShortages) ? data.stockShortages : [];
+        if (falta.length > 0) {
+          const linhas = falta
+            .map((f: { name: string; code: string; requested: number; available: number }) =>
+              `• ${f.name} (${f.code}): ${f.requested} no pedido, ${f.available} disponível(is)`)
+            .join("\n");
+          alert(`Pedido criado — mas o estoque mudou desde o orçamento:\n\n${linhas}\n\nAs quantidades foram mantidas. Confirme a reposição com o cliente.`);
+        } else {
+          alert("Pedido criado com sucesso a partir do orçamento.");
+        }
       } else {
         alert(data?.error ?? "Falha ao converter em pedido.");
       }

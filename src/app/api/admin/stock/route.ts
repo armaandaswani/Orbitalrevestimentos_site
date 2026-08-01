@@ -2,7 +2,7 @@ import { NextRequest, NextResponse } from "next/server";
 import { isAdminRequest } from "@/lib/admin-auth";
 import { isMissingColumn } from "@/lib/db-compat";
 import { supabaseAdmin } from "@/lib/supabase";
-import { applyStockMovement, deltasForKind, type ManualExitType, type MovementKind } from "@/lib/stock";
+import { applyStockMovement, deltasForKind, reservedByActiveOrders, type ManualExitType, type MovementKind } from "@/lib/stock";
 
 const MIGRATION_HINT = "Recurso indisponível — rode a migração 023 (estoque) no Supabase.";
 const MANUAL_EXIT_TYPES = new Set(["sale", "loss", "sample", "internal"]);
@@ -36,13 +36,24 @@ export async function GET(req: NextRequest) {
   if (error && isMissingStock(error)) return NextResponse.json({ error: MIGRATION_HINT }, { status: 503 });
   if (error) return NextResponse.json({ error: error.message }, { status: 500 });
 
+  // Reserva DERIVADA dos pedidos ativos — a definição que vale. O contador
+  // products.stock_reserved vira referência: quando os dois divergem, é porque
+  // uma reserva ficou presa (pedido excluído, item editado depois de reservado),
+  // e o painel precisa mostrar isso em vez de esconder placas.
+  const derived = await reservedByActiveOrders(sb);
+
   const rows = (data ?? []).map((p) => {
     const onHand = Number(p.stock_on_hand ?? 0);
-    const reserved = Number(p.stock_reserved ?? 0);
+    const counter = Number(p.stock_reserved ?? 0);
+    const reserved = derived[String(p.id)] ?? 0;
     const reorderPoint = Number(p.reorder_point ?? 0);
     return {
       ...p,
       sale_unit: typeof p.sale_unit === "string" && p.sale_unit.trim() ? p.sale_unit : "placa",
+      stock_reserved: reserved,
+      /** O que o contador antigo dizia — só para o painel apontar a diferença. */
+      reserved_counter: counter,
+      reserved_drift: counter - reserved,
       available: Math.max(0, onHand - reserved),
       stock_value: p.cost_price ? onHand * Number(p.cost_price) : 0,
       low: reorderPoint > 0 && onHand - reserved <= reorderPoint,

@@ -113,6 +113,55 @@ export async function applyStockMovement(
 }
 
 /**
+ * Status de pedido que SEGURAM placas.
+ *
+ * "entregue" fica de fora de propósito: a saída física já baixou o estoque, e
+ * contar como reserva também descontaria a mesma placa duas vezes. "cancelado"
+ * também não segura nada.
+ */
+export const ACTIVE_ORDER_STATUSES = ["em_producao", "pronto"] as const;
+
+/**
+ * Placas reservadas por produto, DERIVADAS dos pedidos ativos.
+ *
+ * O contador products.stock_reserved é um cache alimentado pelo ledger, e ele
+ * deriva: uma reserva sem release correspondente (pedido excluído, item editado
+ * depois de reservado) fica presa para sempre e some da disponibilidade sem que
+ * ninguém veja. Orçamento nenhum entra aqui — orçamento não reserva.
+ *
+ * Esta é a definição que vale para "disponível": estoque físico − isto.
+ */
+export async function reservedByActiveOrders(
+  db: SupabaseClient
+): Promise<Record<string, number>> {
+  const out: Record<string, number> = {};
+  try {
+    const { data: pedidos } = await db
+      .from("pedidos")
+      .select("id")
+      .in("status", ACTIVE_ORDER_STATUSES as unknown as string[]);
+    const ids = (pedidos ?? []).map((p) => (p as { id: string }).id);
+    if (ids.length === 0) return out;
+
+    const { data: items } = await db
+      .from("pedido_items")
+      .select("product_id, plates")
+      .in("pedido_id", ids);
+
+    for (const it of (items ?? []) as Array<{ product_id: string | null; plates: number | null }>) {
+      if (!it.product_id) continue;
+      const qty = Number(it.plates) || 0;
+      if (qty <= 0) continue;
+      out[it.product_id] = (out[it.product_id] ?? 0) + qty;
+    }
+  } catch {
+    // Tabela ausente / DB indisponível → sem reservas conhecidas. O chamador cai
+    // no contador, que é o comportamento anterior.
+  }
+  return out;
+}
+
+/**
  * Move an order's reserved/consumed stock from one phase to another, idempotently,
  * based on the order's current stock_state and its line items. Returns the new
  * stock_state to persist on the pedido (or null when nothing changed).
