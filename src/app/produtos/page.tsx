@@ -101,7 +101,8 @@ export default function ProdutosPage() {
   const [loadingProducts, setLoadingProducts] = useState(true);
   const [selected, setSelected] = useState<Product | null>(null);
   const [imgIdx, setImgIdx] = useState(0);
-  const [touchStartX, setTouchStartX] = useState<number | null>(null);
+  // Guarda X e Y: o gesto só troca a foto quando é horizontal de verdade.
+  const [touchStart, setTouchStart] = useState<{ x: number; y: number } | null>(null);
   const [showQr, setShowQr] = useState(false);
   const [copied, setCopied] = useState(false);
   // Modelo pedido pela URL que não existe (ou saiu do catálogo) — o visitante
@@ -209,12 +210,38 @@ export default function ProdutosPage() {
       }
     };
     window.addEventListener("keydown", handler);
-    document.body.style.overflow = "hidden";
-    return () => {
-      window.removeEventListener("keydown", handler);
-      document.body.style.overflow = "";
-    };
+    return () => window.removeEventListener("keydown", handler);
   }, [selected, imgIdx, goNextProduct, goPrevProduct]); // eslint-disable-line react-hooks/exhaustive-deps
+
+  /**
+   * Trava o catálogo ao fundo sem perder onde o visitante estava.
+   *
+   * `overflow: hidden` no body NÃO segura o Safari do iPhone — a página
+   * continuava rolando atrás do modal. `position: fixed` segura, mas zera o
+   * scroll; por isso guardamos a posição e a devolvemos ao fechar.
+   *
+   * Efeito SEPARADO e dependente só de "tem produto aberto?": junto com o
+   * teclado ele re-executaria a cada troca de imagem, e o travar/destravar
+   * repetido produziria justamente o salto de posição que queremos evitar.
+   */
+  const hasSelection = !!selected;
+  useEffect(() => {
+    if (!hasSelection) return;
+    const y = window.scrollY;
+    const body = document.body;
+    const prev = { position: body.style.position, top: body.style.top, width: body.style.width, overflow: body.style.overflow };
+    body.style.position = "fixed";
+    body.style.top = `-${y}px`;
+    body.style.width = "100%";
+    body.style.overflow = "hidden";
+    return () => {
+      body.style.position = prev.position;
+      body.style.top = prev.top;
+      body.style.width = prev.width;
+      body.style.overflow = prev.overflow;
+      window.scrollTo(0, y);
+    };
+  }, [hasSelection]);
 
   return (
     <div className="pt-20">
@@ -249,8 +276,13 @@ export default function ProdutosPage() {
             )}
 
             {/* Modal card — full screen on mobile, centered card on desktop */}
+            {/* No MOBILE este é o ÚNICO container com rolagem vertical: a
+                galeria, o conteúdo e as ações rolam juntos, como uma página. No
+                desktop volta a ser um card de altura fixa com a coluna de
+                conteúdo rolando por dentro.
+                overscroll-contain impede que o gesto "vaze" para o catálogo. */}
             <div
-              className="relative w-full h-[100dvh] lg:h-auto lg:m-auto lg:max-w-5xl lg:max-h-[96dvh] flex flex-col lg:flex-row overflow-hidden shadow-2xl"
+              className="relative w-full h-[100dvh] overflow-y-auto overscroll-contain lg:h-auto lg:m-auto lg:max-w-5xl lg:max-h-[96dvh] lg:overflow-hidden flex flex-col lg:flex-row shadow-2xl"
               onClick={(e) => e.stopPropagation()}
             >
               {/* Close */}
@@ -265,17 +297,23 @@ export default function ProdutosPage() {
               {/* ── Top / Left: Image gallery ── */}
               <div className="flex-shrink-0 w-full lg:w-[52%] flex flex-col bg-[#0d0d0d]">
                 {/* Main image — 44dvh on mobile, flex-1 on desktop */}
+                {/* Proporção fixa no mobile em vez de 44dvh: com a barra dinâmica
+                    do Safari, uma altura em dvh muda enquanto se rola e empurra o
+                    texto — era um dos "saltos de posição". */}
                 <div
-                  className="relative h-[44dvh] lg:h-auto lg:flex-1 overflow-hidden"
-                  onTouchStart={(e) => setTouchStartX(e.touches[0].clientX)}
+                  className="relative w-full aspect-[4/3] lg:aspect-auto lg:h-auto lg:flex-1 overflow-hidden"
+                  onTouchStart={(e) => setTouchStart({ x: e.touches[0].clientX, y: e.touches[0].clientY })}
                   onTouchEnd={(e) => {
-                    if (touchStartX === null) return;
-                    const delta = e.changedTouches[0].clientX - touchStartX;
-                    if (Math.abs(delta) > 45) {
-                      if (delta < 0 && imgIdx < images.length - 1) setImgIdx(i => i + 1);
-                      else if (delta > 0 && imgIdx > 0) setImgIdx(i => i - 1);
+                    if (!touchStart) return;
+                    const dx = e.changedTouches[0].clientX - touchStart.x;
+                    const dy = e.changedTouches[0].clientY - touchStart.y;
+                    // Só troca a foto num gesto claramente HORIZONTAL. Sem esta
+                    // checagem, uma rolagem na diagonal trocava a imagem sozinha.
+                    if (Math.abs(dx) > 45 && Math.abs(dx) > Math.abs(dy) * 1.5) {
+                      if (dx < 0 && imgIdx < images.length - 1) setImgIdx(i => i + 1);
+                      else if (dx > 0 && imgIdx > 0) setImgIdx(i => i - 1);
                     }
-                    setTouchStartX(null);
+                    setTouchStart(null);
                   }}
                 >
                   {/* Blurred background fill */}
@@ -357,7 +395,13 @@ export default function ProdutosPage() {
               </div>
 
               {/* ── Bottom / Right: Product info ── */}
-              <div className="flex-1 min-h-0 bg-white flex flex-col overflow-y-auto">
+              {/* Sem rolagem própria no mobile: quem rola é o modal inteiro. No
+                  desktop volta a ser a coluna que rola dentro do card. */}
+              {/* min-h-[100dvh] no mobile: a galeria só consegue sair INTEIRA da tela
+                  se houver ao menos uma tela de conteúdo abaixo dela. Sem isso, um
+                  produto de texto curto deixava uma faixa da galeria presa no topo
+                  mesmo no fim da rolagem. */}
+              <div className="flex-1 min-h-[100dvh] bg-white flex flex-col lg:min-h-0 lg:overflow-y-auto">
                 <div className="p-6 lg:p-8 flex flex-col gap-5 flex-1">
 
                   {/* Breadcrumb + badges */}
@@ -457,7 +501,14 @@ export default function ProdutosPage() {
                 </div>
 
                 {/* CTA — pinned to bottom */}
-                <div className="sticky bottom-0 p-4 lg:p-6 bg-white border-t border-[#e8e8e8] space-y-2">
+                {/* Ações no fluxo normal no mobile (depois das informações e do
+                      preço), sticky só no desktop. A barra fixa antiga comia a
+                      tela e escondia especificações. O padding inferior respeita
+                      a área segura do iPhone. */}
+                <div
+                  className="p-4 lg:p-6 bg-white border-t border-[#e8e8e8] space-y-2 lg:sticky lg:bottom-0"
+                  style={{ paddingBottom: "calc(1.5rem + env(safe-area-inset-bottom))" }}
+                >
                   <Link
                     href={simulatorUrl}
                     onClick={() => close()}
