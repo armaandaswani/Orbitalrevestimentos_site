@@ -164,7 +164,10 @@ export interface OrcamentoBreakdown {
   totalFull: number;
 
   paymentOptions: PaymentOption[];
+  /** Avisos que podem ser mostrados ao cliente. */
   warnings: string[];
+  /** Avisos da operação — nunca exibir no site público. */
+  adminWarnings: string[];
   config: OrcamentoConfig;
 }
 
@@ -174,6 +177,14 @@ export function computeOrcamento(input: OrcamentoInput, cfg: OrcamentoConfig = D
   const plates = Math.max(0, Math.floor(input.plates || 0));
   const pricePerPlate = Math.max(0, input.pricePerPlate || 0);
   const warnings: string[] = [];
+  /**
+   * Avisos que NÃO devem chegar ao cliente.
+   *
+   * Falta de estoque dos materiais de instalação, embalagem sem preço, ajuste
+   * manual recalculado: são assuntos da operação. O cliente só precisa saber de
+   * estoque das PLACAS — e disso cuida o simulador, com a mensagem própria.
+   */
+  const adminWarnings: string[] = [];
 
   const platesSubtotal = round2(plates * pricePerPlate);
 
@@ -193,13 +204,13 @@ export function computeOrcamento(input: OrcamentoInput, cfg: OrcamentoConfig = D
   }
 
   const materialsPlan = planMaterialsForSpaces(spaces, prices, matCfg);
-  warnings.push(...materialsPlan.warnings);
+  adminWarnings.push(...materialsPlan.warnings);
 
   // Ajustes manuais do administrador — valem até as placas ou o tipo mudarem.
   const signature = materialsSignature(spaces);
   const applied = applyMaterialOverrides(materialsPlan.lines, input.materialOverrides, signature, matCfg);
   if (applied.discarded) {
-    warnings.push("As quantidades ajustadas manualmente foram recalculadas: o número de placas ou o tipo de aplicação mudou.");
+    adminWarnings.push("As quantidades ajustadas manualmente foram recalculadas: o número de placas ou o tipo de aplicação mudou.");
   }
   const overridden = new Set(applied.overriddenCodes);
 
@@ -222,7 +233,7 @@ export function computeOrcamento(input: OrcamentoInput, cfg: OrcamentoConfig = D
 
   for (const s of stockChecks) {
     if (!s.sufficient) {
-      warnings.push(`Estoque insuficiente de ${s.code}: necessário ${s.required}, disponível ${s.available}, faltam ${s.missing}.`);
+      adminWarnings.push(`Estoque insuficiente de ${s.code}: necessário ${s.required}, disponível ${s.available}, faltam ${s.missing}.`);
     }
   }
 
@@ -231,7 +242,7 @@ export function computeOrcamento(input: OrcamentoInput, cfg: OrcamentoConfig = D
   const colaTubos = pu40Line?.quantity ?? 0;
   const colaAvailable = input.colaAvailable !== false && (prices[matCfg.pu40Code] ?? 0) > 0;
   if (materialsPlan.pu40Panels > 0 && !colaAvailable) {
-    warnings.push("Cola PU indisponível ou sem preço configurado — não incluída no total.");
+    adminWarnings.push("Cola PU indisponível ou sem preço configurado — não incluída no total.");
   }
   const colaUnitPrice = colaAvailable ? (prices[matCfg.pu40Code] ?? 0) : 0;
   const colaSubtotal = round2(colaTubos * colaUnitPrice);
@@ -284,6 +295,6 @@ export function computeOrcamento(input: OrcamentoInput, cfg: OrcamentoConfig = D
     baseTotal,
     discount: { eligible: discountEligible, pct: cfg.discountPct, amount: discountAmount, scope: cfg.discountScope },
     totalAVista, totalFull,
-    paymentOptions, warnings, config: cfg,
+    paymentOptions, warnings, adminWarnings, config: cfg,
   };
 }

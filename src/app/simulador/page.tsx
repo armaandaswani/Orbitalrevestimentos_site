@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useState, useRef, useEffect, Suspense } from "react";
+import React, { useState, useRef, useEffect, useMemo, Suspense } from "react";
 import { useSearchParams } from "next/navigation";
 import Image from "next/image";
 import Link from "next/link";
@@ -8,6 +8,7 @@ import MdfComparison, { COMPARISON_OPTIONS } from "@/components/MdfComparison";
 import VisualizadorWizard, { type SimPrefill } from "@/components/VisualizadorWizard";
 import { panelGrid } from "@/lib/render-prompt";
 import type { OrcamentoBreakdown } from "@/lib/orcamento-pricing";
+import { findPlateShortages, shortageMessage, type PlateShortage } from "@/lib/plate-stock";
 import {
   APPLICATION_LABELS,
   applicationReasonLabel,
@@ -117,6 +118,8 @@ interface Product {
   image_path: string;
   is_active: boolean;
   sort_order: number;
+  /** Placas disponíveis (em mãos − reservadas), vindo de /api/products. */
+  available?: number;
 }
 
 interface Space {
@@ -435,6 +438,39 @@ function SimuladorInner() {
       : 0;
 
   const isComplex = selectedSpace?.viability === "complex";
+
+  /**
+   * Estoque das PLACAS, em tempo real.
+   *
+   * Conta o espaço em edição junto com os já salvos — o mesmo modelo em dois
+   * ambientes soma, e é essa soma que precisa caber no estoque. Só modelos de
+   * revestimento: PU-40, cola de contato e espuma têm estoque no painel, mas
+   * disponibilidade deles é assunto da operação, não do cliente.
+   *
+   * A quantidade pedida NUNCA é reduzida — o aviso apenas sinaliza.
+   */
+  const availableByCode = useMemo(() => {
+    const m: Record<string, number> = {};
+    for (const p of products) {
+      if (typeof p.available === "number") m[p.code.toUpperCase()] = p.available;
+    }
+    return m;
+  }, [products]);
+
+  const plateShortages: PlateShortage[] = useMemo(() => {
+    const requests = [
+      ...savedSpaces.map((sp) => ({ code: sp.productCode, name: sp.productName, requested: sp.plates })),
+      ...(selectedProduct && plates > 0
+        ? [{ code: selectedProduct.code, name: selectedProduct.name, requested: plates }]
+        : []),
+    ];
+    return findPlateShortages(requests, availableByCode);
+  }, [savedSpaces, selectedProduct, plates, availableByCode]);
+
+  /** Falta do modelo em edição agora — para o aviso aparecer ao digitar. */
+  const activeShortage = selectedProduct
+    ? plateShortages.find((s) => s.code === selectedProduct.code.toUpperCase()) ?? null
+    : null;
 
   // Tipo de aplicação do espaço ativo: escolha explícita do cliente, senão o
   // palpite pelo nome ("Teto" → teto). Muda quais materiais entram no orçamento.
@@ -2401,6 +2437,24 @@ function SimuladorInner() {
                 </p>
               )}
 
+              {/* Estoque das placas — aparece assim que a quantidade passa do
+                  disponível. A quantidade digitada NÃO é alterada: quem confirma
+                  prazo de reposição ou atendimento parcial é a equipe. */}
+              {activeShortage && (
+                <div className="mb-5 border border-[#e0b23c] bg-[#fdf6e3] px-4 py-3">
+                  <p className="text-[#8a5a12] text-sm font-[var(--font-inter)] font-semibold">
+                    Estoque abaixo do solicitado — {selectedProduct?.name}
+                  </p>
+                  <p className="text-[#8a5a12] text-xs font-[var(--font-inter)] mt-0.5">
+                    {shortageMessage(activeShortage)}
+                  </p>
+                  <p className="text-[#8a5a12]/80 text-[11px] font-[var(--font-inter)] mt-1.5">
+                    Sua quantidade foi mantida. Podemos confirmar prazo de reposição ou atendimento
+                    parcial ao finalizar o orçamento.
+                  </p>
+                </div>
+              )}
+
               {/* Sanity check: warn on likely typos before letting the client proceed */}
               {measurementWarning && (
                 <div className="mb-5 border border-[#e0b23c] bg-[#fdf6e3] px-4 py-3">
@@ -3022,6 +3076,28 @@ function SimuladorInner() {
                 <div className="bg-[#002045] border border-[#2d4f7f] border-t-0 px-5 sm:px-8 py-6 text-white">
                   <p className="text-[#86a0cd] text-[10px] tracking-[0.18em] uppercase font-bold font-[var(--font-inter)] mb-4">Resumo do investimento</p>
 
+                  {/* Estoque das placas no resumo — um bloco por modelo, para o
+                      cliente ver exatamente qual acabamento está curto. */}
+                  {plateShortages.length > 0 && (
+                    <div className="mb-4 bg-[#fffbea] border border-[#e6c84a] px-4 py-3 space-y-2">
+                      <p className="text-[#6b5000] text-[11px] font-[var(--font-inter)] font-bold uppercase tracking-[0.1em]">
+                        Disponibilidade de estoque
+                      </p>
+                      {plateShortages.map((s) => (
+                        <div key={s.code}>
+                          <p className="text-[#6b5000] text-[12px] font-[var(--font-inter)] font-semibold">
+                            {s.name} ({s.code}) — {s.requested} solicitada{s.requested !== 1 ? "s" : ""}
+                          </p>
+                          <p className="text-[#6b5000] text-[11px] font-[var(--font-inter)]">{shortageMessage(s)}</p>
+                        </div>
+                      ))}
+                      <p className="text-[#6b5000]/80 text-[11px] font-[var(--font-inter)]">
+                        As quantidades do seu projeto foram mantidas. Ao enviar, confirmamos prazo de
+                        reposição ou a possibilidade de atendimento parcial.
+                      </p>
+                    </div>
+                  )}
+
                   {pricing.warnings.length > 0 && (
                     <div className="mb-4 bg-[#fffbea] border border-[#e6c84a] px-4 py-2.5">
                       {pricing.warnings.map((w, i) => (
@@ -3641,6 +3717,26 @@ function SimuladorInner() {
                     {(() => { const s = pricing.paymentOptions.find((o) => o.id === selectedPayment) ?? pricing.paymentOptions[0]; return (
                       <div className="flex justify-between pt-1 mt-1 border-t border-[#e2e2e2] font-bold text-[#002045]"><span>Total {s ? `· ${s.label}` : ""}</span><span>{fmt(s?.total ?? pricing.totalFull)}</span></div>
                     ); })()}
+                  </div>
+                )}
+
+                {/* Último ponto antes do envio: o cliente não pode gerar o
+                    orçamento sem ter visto a indisponibilidade. Avisa, não bloqueia. */}
+                {plateShortages.length > 0 && (
+                  <div className="bg-[#fdf6e3] border border-[#e0b23c] px-4 py-3 space-y-1.5">
+                    <p className="text-[#8a5a12] text-[12px] font-[var(--font-inter)] font-bold">
+                      Antes de enviar: estoque abaixo do solicitado
+                    </p>
+                    {plateShortages.map((s) => (
+                      <p key={s.code} className="text-[#8a5a12] text-[11px] font-[var(--font-inter)]">
+                        <strong>{s.name}</strong> — {s.requested} solicitada{s.requested !== 1 ? "s" : ""},{" "}
+                        {s.available} disponíve{s.available === 1 ? "l" : "is"} no momento.
+                      </p>
+                    ))}
+                    <p className="text-[#8a5a12]/80 text-[11px] font-[var(--font-inter)]">
+                      Você pode enviar assim mesmo — nossa equipe confirma prazo de reposição ou
+                      atendimento parcial no retorno.
+                    </p>
                   </div>
                 )}
 

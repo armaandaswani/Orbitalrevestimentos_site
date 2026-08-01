@@ -34,10 +34,37 @@ export async function GET(req: NextRequest) {
   //   - código de produtos de suporte (ORB-PU, colas de contato, espuma) —
   //     garante o comportamento MESMO sem a migração, filtrando em JS.
   //     Admins (?all=true) veem tudo.
-  const rows = !includeInactive && Array.isArray(data)
-    ? (data as Array<{ show_in_catalog?: boolean; code?: string }>).filter(
-        (p) => p.show_in_catalog !== false && !(SUPPORT_PRODUCT_SKUS as readonly string[]).includes(String(p.code)))
-    : data;
+  if (includeInactive || !Array.isArray(data)) return NextResponse.json(data);
+
+  const visible = (data as Array<Record<string, unknown>>).filter(
+    (p) => p.show_in_catalog !== false && !(SUPPORT_PRODUCT_SKUS as readonly string[]).includes(String(p.code)));
+
+  // Campos que NUNCA podem sair para o público: custo de compra e composição de
+  // importação. O select "*" os trazia junto, e qualquer visitante conseguia ler
+  // a margem de cada modelo. Em vez de lista de bloqueio, devolvemos só o que a
+  // vitrine precisa — assim uma coluna nova de custo não vaza por esquecimento.
+  const rows = visible.map((p) => ({
+    id: p.id,
+    code: p.code,
+    name: p.name,
+    linha: p.linha,
+    finish: p.finish,
+    price: p.price,
+    price_per_m2: p.price_per_m2,
+    description: p.description,
+    image_path: p.image_path,
+    is_active: p.is_active,
+    sort_order: p.sort_order,
+    product_images: p.product_images,
+    render_texture_path: p.render_texture_path,
+    render_panel_width_m: p.render_panel_width_m,
+    render_panel_height_m: p.render_panel_height_m,
+    // Disponível para venda = em mãos menos o já reservado. É o número que o
+    // simulador usa para avisar o cliente quando o pedido passa do estoque;
+    // stock_on_hand/stock_reserved crus ficam de fora.
+    available: Math.max(0, (Number(p.stock_on_hand) || 0) - (Number(p.stock_reserved) || 0)),
+  }));
+
   return NextResponse.json(rows);
 }
 

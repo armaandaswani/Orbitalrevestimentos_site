@@ -239,9 +239,9 @@ export default function OrcamentoMateriaisPage({ params }: { params: Promise<{ s
             </>
           )}
 
-          {(pricing?.warnings ?? []).length > 0 && (
+          {[...(pricing?.warnings ?? []), ...(pricing?.adminWarnings ?? [])].length > 0 && (
             <ul className="mt-4 space-y-1">
-              {pricing!.warnings.map((w, i) => (
+              {[...pricing!.warnings, ...pricing!.adminWarnings].map((w, i) => (
                 <li key={i} className="text-[12px] font-[var(--font-inter)] text-amber-800">• {w}</li>
               ))}
             </ul>

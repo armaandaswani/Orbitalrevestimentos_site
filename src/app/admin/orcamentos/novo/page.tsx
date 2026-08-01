@@ -376,7 +376,7 @@ export default function NovoOrcamentoPage() {
                 </>
               )}
 
-              {(breakdown?.warnings ?? []).map((w, i) => (
+              {[...(breakdown?.warnings ?? []), ...(breakdown?.adminWarnings ?? [])].map((w, i) => (
                 <p key={i} className="text-[12px] text-amber-800">• {w}</p>
               ))}
             </div>
