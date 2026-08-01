@@ -501,6 +501,8 @@ export default function AdminPage() {
   const [dragGalleryId, setDragGalleryId] = useState<string | null>(null);
   const [dragOverGalleryId, setDragOverGalleryId] = useState<string | null>(null);
   const [galleryUploading, setGalleryUploading] = useState(false);
+  const [galleryZipping, setGalleryZipping] = useState(false);
+  const [galleryZipError, setGalleryZipError] = useState<string | null>(null);
   const [galleryUploadProgress, setGalleryUploadProgress] = useState<{done: number; total: number} | null>(null);
   const productTabFormRef = useRef<HTMLDivElement>(null);
 
@@ -1505,6 +1507,53 @@ export default function AdminPage() {
     setGalleryImages(p.product_images ?? []);
     setShowProductForm(true);
     setTimeout(() => productTabFormRef.current?.scrollIntoView({ behavior: "smooth", block: "start" }), 50);
+  }
+
+  /**
+   * Baixa todas as fotos do modelo num único .zip.
+   *
+   * O servidor monta o pacote (o navegador não pode ler o storage direto sem
+   * CORS, e disparar 17 downloads seguidos é bloqueado como pop-up). Aqui só
+   * recebemos o blob e o entregamos com o nome que o servidor definiu.
+   */
+  async function downloadAllProductImages() {
+    if (!editingProductId) return;
+    setGalleryZipping(true);
+    setGalleryZipError(null);
+    try {
+      const res = await fetch(`/api/admin/products/${editingProductId}/images-zip`);
+      if (!res.ok) {
+        const j = await res.json().catch(() => null);
+        setGalleryZipError(
+          res.status === 401 ? "Sessão de admin expirada — entre novamente."
+            : j?.error ?? `Não foi possível gerar o pacote (HTTP ${res.status}).`
+        );
+        return;
+      }
+      // O servidor informa se alguma foto ficou de fora, para não entregar um
+      // pacote incompleto em silêncio.
+      const falhas = Number(res.headers.get("X-Orbital-Falhas") ?? 0);
+      const total = Number(res.headers.get("X-Orbital-Total") ?? 0);
+
+      const nameFromServer = /filename="([^"]+)"/.exec(res.headers.get("Content-Disposition") ?? "")?.[1];
+      const blob = await res.blob();
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement("a");
+      a.href = url;
+      a.download = nameFromServer || "fotos.zip";
+      document.body.appendChild(a);
+      a.click();
+      a.remove();
+      URL.revokeObjectURL(url);
+
+      if (falhas > 0) {
+        setGalleryZipError(`${total} foto(s) baixada(s); ${falhas} não puderam ser lidas do storage e ficaram de fora.`);
+      }
+    } catch {
+      setGalleryZipError("Falha de rede ao gerar o pacote.");
+    } finally {
+      setGalleryZipping(false);
+    }
   }
 
   async function addGalleryImages(files: FileList) {
@@ -5635,6 +5684,29 @@ export default function AdminPage() {
                             ({galleryImages.length} foto{galleryImages.length !== 1 ? "s" : ""})
                           </span>
                         </label>
+                        <div className="flex items-center gap-2">
+                        {/* Baixar tudo — o pacote sai com a capa primeiro e a
+                            galeria na ordem do painel, para não haver retrabalho
+                            de renomear foto a foto. */}
+                        <button
+                          type="button"
+                          onClick={downloadAllProductImages}
+                          disabled={galleryZipping}
+                          className="border border-[#002045] text-[#002045] text-[10px] tracking-[0.1em] uppercase font-bold font-[var(--font-inter)] px-4 py-2 hover:bg-[#002045] hover:text-white transition-colors whitespace-nowrap flex items-center gap-1.5 disabled:opacity-50"
+                          title="Baixar todas as fotos deste modelo em um .zip"
+                        >
+                          {galleryZipping ? (
+                            <>
+                              <svg className="animate-spin" width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5"><path d="M12 2v4M12 18v4M4.93 4.93l2.83 2.83M16.24 16.24l2.83 2.83M2 12h4M18 12h4M4.93 19.07l2.83-2.83M16.24 7.76l2.83-2.83"/></svg>
+                              Compactando…
+                            </>
+                          ) : (
+                            <>
+                              <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5"><path d="M12 19V5M5 12l7 7 7-7"/></svg>
+                              Baixar todas
+                            </>
+                          )}
+                        </button>
                         <label className="cursor-pointer bg-[#002045] text-white text-[10px] tracking-[0.1em] uppercase font-bold font-[var(--font-inter)] px-4 py-2 hover:bg-[#1a365d] transition-colors whitespace-nowrap flex items-center gap-1.5">
                           {galleryUploading ? (
                             <>
@@ -5652,7 +5724,11 @@ export default function AdminPage() {
                             e.target.value = "";
                           }} />
                         </label>
+                        </div>
                       </div>
+                      {galleryZipError && (
+                        <p className="text-red-700 text-[11px] font-[var(--font-inter)] mb-2">{galleryZipError}</p>
+                      )}
                       {galleryImages.length === 0 ? (
                         <p className="text-[#b0b0b0] text-xs font-[var(--font-inter)] text-center py-4">
                           Nenhuma imagem adicional. Adicione fotos de ambientes, detalhes e texturas.
