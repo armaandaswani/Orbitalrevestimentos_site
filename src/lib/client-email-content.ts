@@ -28,6 +28,22 @@ export const STEP_DELAYS_DAYS: Record<number, number> = {
 
 export const TOTAL_STEPS = 7;
 
+/**
+ * Passos DESLIGADOS — não são enviados a ninguém.
+ *
+ * Vale acima de tudo: do conteúdo em código E do que estiver gravado em
+ * email_campaign_steps. Apagar a linha do banco não bastaria, porque o envio cai
+ * no conteúdo padrão daqui.
+ *
+ * 4 — "veja o que {{total}} realmente compra": mostrava o custo por m² do
+ *     projeto (R$ 295) logo acima da frase "revestimentos convencionais custam
+ *     entre R$ 80 e R$ 250/m²", ou seja, apresentava o PFB como a opção mais
+ *     cara. Isso contraria a regra de posicionamento do produto (AGENTS.md), que
+ *     é comparar por CUSTO TOTAL DE APLICAÇÃO e nunca por preço de superfície.
+ *     Também trazia "custo por dia: R$ 1", que banaliza a compra.
+ */
+export const DISABLED_STEPS = new Set<number>([4]);
+
 export interface EmailParams {
   clientName: string;
   space: string | null;
@@ -151,7 +167,7 @@ function quoteCard(p: EmailParams) {
     <p style="margin:0 0 16px;color:rgba(255,255,255,0.45);font-size:10px;letter-spacing:0.2em;text-transform:uppercase;font-family:Arial,sans-serif;">SEU ORÇAMENTO</p>
     <table width="100%" cellpadding="0" cellspacing="0">
       ${p.space ? `<tr><td style="color:rgba(255,255,255,0.55);font-size:12px;padding-bottom:8px;font-family:Arial,sans-serif;">Ambiente</td><td style="color:#ffffff;font-size:12px;font-weight:700;text-align:right;padding-bottom:8px;font-family:Arial,sans-serif;">${p.space}</td></tr>` : ""}
-      <tr><td style="color:rgba(255,255,255,0.55);font-size:12px;padding-bottom:8px;font-family:Arial,sans-serif;">Modelo</td><td style="color:#ffffff;font-size:12px;font-weight:700;text-align:right;padding-bottom:8px;font-family:Arial,sans-serif;">${p.model} · ${finish}</td></tr>
+      <tr><td style="color:rgba(255,255,255,0.55);font-size:12px;padding-bottom:8px;font-family:Arial,sans-serif;">Modelo</td><td style="color:#ffffff;font-size:12px;font-weight:700;text-align:right;padding-bottom:8px;font-family:Arial,sans-serif;">${finish && finish !== p.model ? `${p.model} · ${finish}` : p.model}</td></tr>
       <tr><td style="color:rgba(255,255,255,0.55);font-size:12px;padding-bottom:8px;font-family:Arial,sans-serif;">Quantidade</td><td style="color:#ffffff;font-size:12px;font-weight:700;text-align:right;padding-bottom:8px;font-family:Arial,sans-serif;">${p.plates} placa${p.plates !== 1 ? "s" : ""}</td></tr>
       <tr><td style="color:rgba(255,255,255,0.55);font-size:12px;padding-bottom:16px;font-family:Arial,sans-serif;">Área coberta</td><td style="color:#ffffff;font-size:12px;font-weight:700;text-align:right;padding-bottom:16px;font-family:Arial,sans-serif;">${fmtArea(p.area)} m²</td></tr>
       <tr><td colspan="2" style="border-top:1px solid rgba(255,255,255,0.12);padding-top:16px;"></td></tr>

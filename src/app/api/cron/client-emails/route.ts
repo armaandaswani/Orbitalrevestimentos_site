@@ -1,7 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { supabaseAdmin } from "@/lib/supabase";
 import { getResend } from "@/lib/resend";
-import { generateClientEmailFromTemplate, STEP_DELAYS_DAYS, TOTAL_STEPS } from "@/lib/client-email-content";
+import { generateClientEmailFromTemplate, DISABLED_STEPS, STEP_DELAYS_DAYS, TOTAL_STEPS } from "@/lib/client-email-content";
 
 export async function GET(req: NextRequest) {
   const cronSecret = process.env.CRON_SECRET;
@@ -32,6 +32,7 @@ export async function GET(req: NextRequest) {
   for (const t of dripTemplates ?? []) templateByStep[t.step_number] = t;
 
   let sent = 0;
+  let skipped = 0;
   const resend = getResend();
 
   for (const seq of seqs ?? []) {
@@ -43,6 +44,25 @@ export async function GET(req: NextRequest) {
         .from("client_email_sequences")
         .update({ status: "completed", next_email_at: null })
         .eq("id", seq.id);
+      continue;
+    }
+
+    // Passo desligado: avança sem enviar nada. Fica ANTES de montar o e-mail
+    // para não haver caminho em que ele seja gerado e disparado por engano.
+    if (DISABLED_STEPS.has(nextStep)) {
+      const skipDelay = STEP_DELAYS_DAYS[nextStep + 1];
+      const isLastAfterSkip = nextStep >= TOTAL_STEPS;
+      await db
+        .from("client_email_sequences")
+        .update({
+          current_step: nextStep,
+          next_email_at: !isLastAfterSkip && skipDelay
+            ? new Date(Date.now() + skipDelay * 24 * 60 * 60 * 1000).toISOString()
+            : null,
+          status: isLastAfterSkip ? "completed" : "active",
+        })
+        .eq("id", seq.id);
+      skipped++;
       continue;
     }
 
@@ -88,5 +108,5 @@ export async function GET(req: NextRequest) {
     }
   }
 
-  return NextResponse.json({ sent, checked: (seqs ?? []).length });
+  return NextResponse.json({ sent, skipped, checked: (seqs ?? []).length });
 }
