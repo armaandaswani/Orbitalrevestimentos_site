@@ -230,6 +230,30 @@ export function generateQuotePdf(input: QuotePdfInput): Promise<Buffer> {
     42, doc.y, { width: 511 }
   );
 
+  // ── O que este valor cobre ──────────────────────────────────────────────
+  // Faixa destacada logo ABAIXO do total, em negrito. A ressalva existia só no
+  // bloco "Instalação" mais abaixo, em 8,5pt cinza — o menor texto da página —
+  // e uma arquiteta leu o total como se já incluísse a aplicação. O ponto de
+  // confusão é o número; é ao lado dele que o esclarecimento precisa estar.
+  doc.x = 42;
+  doc.y += 16;
+  ensureSpace(doc, 62);
+  {
+    const boxY = doc.y;
+    const boxH = 40;
+    doc.rect(42, boxY, 511, boxH).fill("#f4f1ea");
+    doc.rect(42, boxY, 3, boxH).fill("#002045");
+    doc.font("Helvetica-Bold").fontSize(9.5).fillColor("#002045").text(
+      "Este orçamento cobre apenas o material. A Orbital é fornecedora de revestimentos e não",
+      54, boxY + 9, { width: 487, lineBreak: false },
+    );
+    doc.font("Helvetica-Bold").fontSize(9.5).fillColor("#002045").text(
+      "executa instalação — mão de obra e serviços de aplicação não estão incluídos no valor acima.",
+      54, boxY + 22, { width: 487, lineBreak: false },
+    );
+    doc.y = boxY + boxH;
+  }
+
   // Instalação (secundário, nunca item financeiro)
   doc.x = 42;
   doc.y += 18;
@@ -238,9 +262,9 @@ export function generateQuotePdf(input: QuotePdfInput): Promise<Buffer> {
   doc.moveTo(42, doc.y + 2).lineTo(553, doc.y + 2).strokeColor("#d8d8d8").stroke();
   doc.moveDown(0.6);
   doc.font("Helvetica").fontSize(8.5).fillColor("#555").text(
-    `A Orbital não realiza serviços de instalação, e a mão de obra não está incluída neste orçamento. ` +
-    `Caso necessite, o cliente poderá entrar em contato diretamente com a empresa especializada indicada, ` +
-    `${INSTALLER.name} (${INSTALLER.phone}). Valores, prazos e disponibilidade são definidos pelo prestador.`,
+    `Caso necessite de aplicação, o cliente poderá entrar em contato diretamente com a empresa ` +
+    `especializada indicada, ${INSTALLER.name} (${INSTALLER.phone}). A contratação é feita entre o ` +
+    `cliente e o prestador; valores, prazos e disponibilidade são definidos por ele.`,
     42, doc.y, { width: 511, lineGap: 1 }
   );
 
