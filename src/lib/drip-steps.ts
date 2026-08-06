@@ -21,7 +21,13 @@
 
 export interface DripStep {
   step_number: number;
-  /** Dias de espera DEPOIS deste passo até o próximo. */
+  /**
+   * Dias de espera desde o PASSO ANTERIOR até este.
+   *
+   * É a leitura que o painel já usava ("+N dias após o anterior"). Antes este
+   * campo significava o contrário — a espera DEPOIS do passo — e a tela mostrava
+   * o intervalo de 30 dias no passo 6 em vez de no 7.
+   */
   delay_days: number;
   description: string;
   subject: string;
@@ -59,7 +65,7 @@ export const DRIP_STEPS: DripStep[] = [
   // ── Dia 0 ──────────────────────────────────────────────────────────────────
   {
     step_number: 1,
-    delay_days: 4,
+    delay_days: 0,
     description: "Confirmação do orçamento",
     subject: "Seu orçamento Orbital — {{spaceLabel}}",
     body_html: `
@@ -69,6 +75,7 @@ ${P("Obrigado pelo interesse na Orbital. Abaixo está o detalhamento do seu proj
 {{quoteLink}}
 {{productImages}}
 ${P("Trabalhamos com <strong>PFB — Placa de Fibra de Bambu</strong>: um revestimento de grande formato, produzido a partir de fibra de bambu renovável, com pronta-entrega em Manaus.")}
+${P("<strong>Este orçamento cobre apenas o material.</strong> A Orbital é fornecedora de revestimentos e não executa instalação — mão de obra e serviços de aplicação não estão incluídos no valor acima. Se precisar, indicamos uma empresa especializada.")}
 ${P("Nos próximos dias enviaremos o essencial sobre o material — composição, comportamento em ambientes úmidos e como é a aplicação. Sem pressa e sem insistência.")}
 ${CTA("Falar com um consultor")}
 ${QUIET("Se preferir tratar diretamente, basta responder a este e-mail.")}
@@ -78,7 +85,7 @@ ${QUIET("Se preferir tratar diretamente, basta responder a este e-mail.")}
   // ── Dia 4 ──────────────────────────────────────────────────────────────────
   {
     step_number: 2,
-    delay_days: 6,
+    delay_days: 4,
     description: "O material e o formato",
     subject: "{{firstName}}, sobre o material do seu projeto",
     body_html: `
@@ -99,7 +106,7 @@ ${CTA("Ver disponibilidade")}
   // ── Dia 10 ─────────────────────────────────────────────────────────────────
   {
     step_number: 3,
-    delay_days: 7,
+    delay_days: 6,
     description: "Durabilidade e comportamento em Manaus",
     subject: "{{firstName}}, como o PFB se comporta na umidade de Manaus",
     body_html: `
@@ -121,7 +128,7 @@ ${CTA("Conversar sobre o projeto")}
   // ── Dia 17 ─────────────────────────────────────────────────────────────────
   {
     step_number: 4,
-    delay_days: 6,
+    delay_days: 7,
     description: "A instalação e o que ela dispensa",
     subject: "{{firstName}}, a obra que o seu projeto não vai precisar",
     body_html: `
@@ -142,7 +149,7 @@ ${CTA("Falar com um consultor")}
   // ── Dia 23 ─────────────────────────────────────────────────────────────────
   {
     step_number: 5,
-    delay_days: 7,
+    delay_days: 6,
     description: "Pronta-entrega e disponibilidade",
     subject: "{{firstName}}, sobre a disponibilidade do {{model}}",
     body_html: `
@@ -159,7 +166,7 @@ ${QUIET("Se preferir outro acabamento, temos {{plates}} placas configuradas no s
   // ── Dia 30 ─────────────────────────────────────────────────────────────────
   {
     step_number: 6,
-    delay_days: 30,
+    delay_days: 7,
     description: "Onde o PFB já está aplicado",
     subject: "{{firstName}}, onde o PFB Orbital já está instalado",
     body_html: `
@@ -175,7 +182,7 @@ ${QUIET("Seu projeto: {{plates}} placa(s) de {{model}} para {{spacePara}}, cobri
   // ── Dia 60 ─────────────────────────────────────────────────────────────────
   {
     step_number: 7,
-    delay_days: 0,
+    delay_days: 30,
     description: "Encerramento cordial",
     subject: "{{firstName}}, seu projeto continua registrado conosco",
     body_html: `
@@ -189,17 +196,23 @@ ${QUIET("Obrigado pelo tempo que dedicou a conhecer a Orbital.")}
   },
 ];
 
-/** Dias de espera DEPOIS de cada passo — derivado da própria régua. */
+/**
+ * Espera APÓS o passo N — formato que o motor de envio consome.
+ *
+ * Derivado: é o delay_days do passo N+1, porque na régua o campo conta desde o
+ * passo anterior. Manter a conversão aqui evita que o cron e o painel discordem.
+ */
 export const DRIP_DELAYS: Record<number, number> = Object.fromEntries(
-  DRIP_STEPS.filter((s) => s.delay_days > 0).map((s) => [s.step_number, s.delay_days]),
+  DRIP_STEPS.slice(0, -1)
+    .map((s, i) => [s.step_number, DRIP_STEPS[i + 1].delay_days])
+    .filter(([, d]) => (d as number) > 0),
 );
 
 /** Dia em que cada passo é enviado, contado da criação do orçamento. */
 export function dripSchedule(): Array<{ step: number; day: number; subject: string }> {
   let day = 0;
   return DRIP_STEPS.map((s) => {
-    const at = day;
     day += s.delay_days;
-    return { step: s.step_number, day: at, subject: s.subject };
+    return { step: s.step_number, day, subject: s.subject };
   });
 }

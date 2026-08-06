@@ -1344,8 +1344,8 @@ export default function AdminPage() {
     partnerName: "Ana Lima",
     waLink: "#",
     quoteCard: `<table width="100%" cellpadding="0" cellspacing="0" style="background:#002045;margin:24px 0;"><tr><td style="padding:24px 28px;"><p style="margin:0 0 8px;color:rgba(255,255,255,0.45);font-size:10px;letter-spacing:0.2em;text-transform:uppercase;font-family:Arial,sans-serif;">SEU ORÇAMENTO</p><p style="margin:0;color:#ffffff;font-size:22px;font-weight:700;font-family:Arial,sans-serif;">R$ 4.472</p></td></tr></table>`,
-    perM2: "R$ 161",
-    perDay: "R$ 1",
+    quoteLink: "[link do orçamento]",
+    productImages: "[fotos do modelo]",
   };
 
   function interpolateSample(template: string): string {
@@ -5212,7 +5212,9 @@ export default function AdminPage() {
             </div>
             <p className="text-[10px] tracking-[0.1em] text-[#74777f] font-[var(--font-inter)] mb-6 bg-white border border-[#e2e2e2] px-4 py-3">
               Variáveis disponíveis:{" "}
-              {["{{firstName}}", "{{clientName}}", "{{spaceLabel}}", "{{model}}", "{{finish}}", "{{plates}}", "{{area}}", "{{total}}", "{{partnerFirst}}", "{{partnerName}}", "{{waLink}}", "{{quoteCard}}", "{{perM2}}", "{{perDay}}"].join(", ")}
+              {/* perM2/perDay saíram: expunham preço por m², o que apresentava o PFB como
+                   a opção mais cara. quoteLink e productImages entraram no lugar. */}
+              {["{{firstName}}", "{{clientName}}", "{{spaceLabel}}", "{{model}}", "{{finish}}", "{{plates}}", "{{area}}", "{{total}}", "{{partnerFirst}}", "{{partnerName}}", "{{waLink}}", "{{quoteCard}}", "{{quoteLink}}", "{{productImages}}"].join(", ")}
             </p>
 
             {dripLoading ? (
