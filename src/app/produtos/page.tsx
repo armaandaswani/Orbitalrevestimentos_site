@@ -1,6 +1,7 @@
 "use client";
 
 import Link from "next/link";
+import Image from "next/image";
 import { useState, useEffect, useCallback, useRef } from "react";
 import { normalizeProductCode, productPath, productQrUrl, productUrl } from "@/lib/product-link";
 
@@ -317,19 +318,27 @@ export default function ProdutosPage() {
                   }}
                 >
                   {/* Blurred background fill */}
-                  <img
+                  {/* Fundo borrado: 64px basta — está desfocado e a 40% de
+                      opacidade. Antes baixava o arquivo original inteiro. */}
+                  <Image
                     key={"bg-" + images[imgIdx]}
                     src={images[imgIdx] ?? selected.image_path}
                     alt=""
                     aria-hidden
-                    className="absolute inset-0 w-full h-full object-cover scale-110 blur-xl opacity-40 select-none pointer-events-none"
+                    fill
+                    sizes="64px"
+                    quality={30}
+                    className="object-cover scale-110 blur-xl opacity-40 select-none pointer-events-none"
                   />
                   {/* Sharp foreground image */}
-                  <img
+                  <Image
                     key={images[imgIdx]}
                     src={images[imgIdx] ?? selected.image_path}
                     alt={selected.name}
-                    className="absolute inset-0 w-full h-full object-contain z-10"
+                    fill
+                    sizes="(max-width: 1024px) 100vw, 55vw"
+                    priority
+                    className="object-contain z-10"
                   />
                   {/* Swipe hint on mobile — fades in only when there are multiple images */}
                   {images.length > 1 && (
@@ -387,7 +396,7 @@ export default function ProdutosPage() {
                           i === imgIdx ? "border-white opacity-100" : "border-transparent opacity-40 hover:opacity-70"
                         }`}
                       >
-                        <img src={url} alt="" className="w-full h-full object-cover" />
+                        <Image src={url} alt="" fill sizes="56px" className="object-cover" />
                       </button>
                     ))}
                   </div>
@@ -731,10 +740,15 @@ export default function ProdutosPage() {
                 >
                   {/* Image */}
                   <div className="relative aspect-[4/5] overflow-hidden bg-[#eeeeee] mb-3 lg:mb-5 shadow-sm group-hover:shadow-lg transition-shadow duration-500">
-                    <img
+                    {/* next/image: a Vercel redimensiona e serve em WebP pela
+                        própria CDN. Antes eram 14 arquivos originais (23,9 MB)
+                        baixados do Supabase a cada visita ao catálogo. */}
+                    <Image
                       src={product.image_path}
                       alt={`${product.name} — Linha ${product.linha}`}
-                      className="absolute inset-0 w-full h-full object-cover transition-transform duration-700 ease-out group-hover:scale-[1.05]"
+                      fill
+                      sizes="(max-width: 640px) 50vw, (max-width: 1024px) 33vw, 25vw"
+                      className="object-cover transition-transform duration-700 ease-out group-hover:scale-[1.05]"
                     />
                     {/* Hover overlay */}
                     <div className="absolute inset-0 bg-black/0 group-hover:bg-black/25 transition-colors duration-300 flex items-center justify-center">

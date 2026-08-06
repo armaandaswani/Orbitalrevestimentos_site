@@ -310,10 +310,12 @@ function ProjectLightbox({
                   className="relative aspect-square group overflow-hidden bg-black/30 focus:outline-none"
                 >
                   {item.kind === "image" ? (
-                    <img
+                    <Image
                       src={item.url}
                       alt={item.label ?? ""}
-                      className="w-full h-full object-cover transition-transform duration-300 group-hover:scale-105"
+                      fill
+                      sizes="(max-width: 640px) 50vw, 25vw"
+                      className="object-cover transition-transform duration-300 group-hover:scale-105"
                     />
                   ) : (
                     // Vídeo por link: quando dá para derivar a miniatura (YouTube),
@@ -532,17 +534,23 @@ function ProjectCard({ project, onOpen }: { project: Project; onOpen: (p: Projec
       {/* Image — 4:5, a mesma proporção do enquadrador do painel. O recorte
           (foco + zoom) vem do projeto, então o card sai igual à prévia. */}
       <div className="relative w-full overflow-hidden" style={{ aspectRatio: COVER_ASPECT }}>
-        <img
+        {/* next/image: a Vercel redimensiona e serve pela própria CDN. Estes
+            cartões carregam em TODA visita — antes eram os arquivos originais. */}
+        <Image
           src={project.image_after}
           alt={`${project.title} — depois`}
-          className={`absolute inset-0 w-full h-full transition-opacity duration-500 ${hasBA && showBefore ? "opacity-0" : "opacity-100"}`}
+          fill
+          sizes="(max-width: 640px) 50vw, (max-width: 1024px) 33vw, 25vw"
+          className={`transition-opacity duration-500 ${hasBA && showBefore ? "opacity-0" : "opacity-100"}`}
           style={coverStyle(project.cover_focus_x, project.cover_focus_y, project.cover_zoom)}
         />
         {hasBA && project.image_before && (
-          <img
+          <Image
             src={project.image_before}
             alt={`${project.title} — antes`}
-            className={`absolute inset-0 w-full h-full object-cover transition-opacity duration-500 ${showBefore ? "opacity-100" : "opacity-0"}`}
+            fill
+            sizes="(max-width: 640px) 50vw, (max-width: 1024px) 33vw, 25vw"
+            className={`object-cover transition-opacity duration-500 ${showBefore ? "opacity-100" : "opacity-0"}`}
           />
         )}
 

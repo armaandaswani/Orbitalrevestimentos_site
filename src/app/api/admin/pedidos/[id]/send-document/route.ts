@@ -285,6 +285,30 @@ async function generatePedidoPdf(input: {
   doc.font("Helvetica-Bold").fontSize(13).text("Total", 360, doc.y, { width: 80 });
   doc.text(fmtBRL(total), 450, doc.y - 16, { width: 103, align: "right" });
 
+  // ── O que este valor cobre ──────────────────────────────────────────────
+  // Faixa em negrito logo abaixo do total. Este documento não trazia NENHUMA
+  // ressalva de instalação — o texto jurídico longo vive na página de termos,
+  // que o cliente não recebe junto. Uma arquiteta leu o total como se já
+  // incluísse a aplicação; o esclarecimento precisa estar ao lado do número.
+  doc.x = 42;
+  doc.moveDown(1.6);
+  ensureSpace(doc, 62);
+  {
+    const boxY = doc.y;
+    const boxH = 40;
+    doc.rect(42, boxY, 511, boxH).fill("#f4f1ea");
+    doc.rect(42, boxY, 3, boxH).fill("#002045");
+    doc.font("Helvetica-Bold").fontSize(9.5).fillColor("#002045").text(
+      "Este orçamento contempla apenas o fornecimento do material descrito acima. A Orbital",
+      54, boxY + 9, { width: 487, lineBreak: false },
+    );
+    doc.text(
+      "não executa instalação — mão de obra e serviços de aplicação não estão incluídos.",
+      54, boxY + 22, { width: 487, lineBreak: false },
+    );
+    doc.y = boxY + boxH;
+  }
+
   ensureSpace(doc, 92);
   doc.moveDown(2);
   const commercialY = doc.y;
