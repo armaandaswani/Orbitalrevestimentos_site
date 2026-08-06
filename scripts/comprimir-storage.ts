@@ -1,9 +1,10 @@
 /**
  * Recomprime as imagens já existentes no storage.
  *
- *   node scripts/comprimir-storage.ts              # SIMULAÇÃO — não escreve nada
- *   node scripts/comprimir-storage.ts --aplicar    # aplica de verdade
- *   node scripts/comprimir-storage.ts --aplicar --sem-backup
+ *   node scripts/comprimir-storage.ts                          # SIMULAÇÃO
+ *   node scripts/comprimir-storage.ts --aplicar --backup ~/dir # aplica guardando originais
+ *   node scripts/comprimir-storage.ts --aplicar                # aplica sem guardar nada
+ *   node scripts/comprimir-storage.ts --amostra 5              # simula só 5 arquivos
  *
  * Por que existe: as fotos foram subidas cruas, direto da câmera (8064×6048, até
  * 14,29 MB). São 287 arquivos acima de 1 MB somando ~1.045 MB, servidos assim
@@ -14,16 +15,34 @@
  * orientação EXIF. A URL pública NÃO muda — o arquivo é sobrescrito no mesmo
  * caminho, então nada no banco precisa ser atualizado e nenhum link quebra.
  *
- * Segurança: por padrão copia o original para o prefixo `_originais/` ANTES de
- * sobrescrever. Passe --sem-backup para pular (o storage já está no limite, e a
- * cópia ocupa espaço enquanto existir).
+ * Segurança: --backup <dir> grava o original em disco ANTES de sobrescrever.
+ * O backup vai para o disco local e não para o próprio bucket — o storage já
+ * está acima da cota, e uma cópia lá dobraria justamente o que queremos reduzir.
+ * Sem --backup, o original é perdido.
+ *
+ * Cada arquivo é baixado UMA vez: o mesmo buffer serve para o backup e para a
+ * compressão. Download é egress, e a conta está estourada — não dá para baixar
+ * duas vezes. Por isso também existe --amostra, para conferir o resultado em
+ * poucos arquivos antes de gastar banda com os 297.
  */
 import fs from "node:fs";
+import path from "node:path";
 import sharp from "sharp";
 import { createClient } from "@supabase/supabase-js";
 
 const APLICAR = process.argv.includes("--aplicar");
-const SEM_BACKUP = process.argv.includes("--sem-backup");
+const BACKUP_DIR = (() => {
+  const i = process.argv.indexOf("--backup");
+  return i >= 0 ? process.argv[i + 1]?.replace(/^~/, process.env.HOME ?? "~") : undefined;
+})();
+const AMOSTRA = (() => {
+  const i = process.argv.indexOf("--amostra");
+  return i >= 0 ? Number(process.argv[i + 1]) : undefined;
+})();
+
+if (APLICAR && !BACKUP_DIR) {
+  console.log("\n  AVISO: sem --backup <dir>, os originais serão perdidos.\n");
+}
 const BUCKET = "site-images";
 const MAX_SIDE = 2400;
 const QUALITY = 82;
@@ -53,11 +72,14 @@ async function listar(prefix = "", acc: Array<{ path: string; size: number; mime
 }
 
 const todos = await listar();
-const alvos = todos.filter((f) => f.size >= MIN_BYTES && /^image\/(jpeg|jpg|png|webp)$/i.test(f.mime));
+let alvos = todos.filter((f) => f.size >= MIN_BYTES && /^image\/(jpeg|jpg|png|webp)$/i.test(f.mime));
+const total = alvos.length;
+if (AMOSTRA) alvos = alvos.slice(0, AMOSTRA);
 
 console.log(`\nModo: ${APLICAR ? "APLICAR (escreve no storage)" : "SIMULAÇÃO (não escreve nada)"}`);
-console.log(`Backup dos originais: ${APLICAR && !SEM_BACKUP ? "sim, em _originais/" : "não"}`);
-console.log(`\n${todos.length} arquivos no bucket · ${alvos.length} candidatos (≥ ${mb(MIN_BYTES)} MB)\n`);
+console.log(`Backup dos originais: ${BACKUP_DIR ?? "NÃO — originais serão perdidos"}`);
+console.log(`\n${todos.length} arquivos no bucket · ${total} candidatos (≥ ${mb(MIN_BYTES)} MB)`);
+console.log(AMOSTRA ? `Processando amostra de ${alvos.length}.\n` : "");
 
 let antes = 0, depois = 0, ok = 0, pulados = 0, erros = 0;
 
@@ -67,11 +89,20 @@ for (const [i, f] of alvos.entries()) {
     if (error || !blob) { erros++; console.log(`  ✗ ${f.path} — download: ${error?.message}`); continue; }
     const buf = Buffer.from(await blob.arrayBuffer());
 
-    const out = await sharp(buf)
+    // Imagem com transparência NÃO pode virar JPEG — o JPEG não tem canal alfa
+    // e o fundo transparente vira preto. Nesses casos sai WebP, que comprime
+    // tão bem quanto e preserva o alfa. 180 dos 297 arquivos são PNG.
+    const meta = await sharp(buf).metadata();
+    const comAlfa = meta.hasAlpha === true;
+    const mimeSaida = comAlfa ? "image/webp" : "image/jpeg";
+
+    const base = sharp(buf)
       .rotate() // aplica a orientação EXIF antes de descartar os metadados
-      .resize({ width: MAX_SIDE, height: MAX_SIDE, fit: "inside", withoutEnlargement: true })
-      .jpeg({ quality: QUALITY, mozjpeg: true })
-      .toBuffer();
+      .resize({ width: MAX_SIDE, height: MAX_SIDE, fit: "inside", withoutEnlargement: true });
+    const out = await (comAlfa
+      ? base.webp({ quality: QUALITY })
+      : base.jpeg({ quality: QUALITY, mozjpeg: true })
+    ).toBuffer();
 
     if (out.length >= buf.length) {
       pulados++;
@@ -89,16 +120,23 @@ for (const [i, f] of alvos.entries()) {
 
     if (!APLICAR) continue;
 
-    if (!SEM_BACKUP) {
-      const up = await db.storage.from(BUCKET).upload(`_originais/${f.path}`, buf, {
-        contentType: f.mime, upsert: true,
-      });
-      if (up.error) { erros++; console.log(`      ✗ backup falhou: ${up.error.message} — NÃO sobrescrevi`); continue; }
+    // Grava o original em disco ANTES de sobrescrever. Se isto falhar, não
+    // sobrescreve — perder a foto original é pior que continuar acima da cota.
+    if (BACKUP_DIR) {
+      try {
+        const destino = path.join(BACKUP_DIR, f.path);
+        fs.mkdirSync(path.dirname(destino), { recursive: true });
+        fs.writeFileSync(destino, buf);
+      } catch (e) {
+        erros++;
+        console.log(`      ✗ backup falhou: ${e instanceof Error ? e.message : "erro"} — NÃO sobrescrevi`);
+        continue;
+      }
     }
 
     // Sobrescreve no MESMO caminho: a URL pública continua válida.
     const rep = await db.storage.from(BUCKET).upload(f.path, out, {
-      contentType: "image/jpeg", upsert: true,
+      contentType: mimeSaida, upsert: true,
     });
     if (rep.error) { erros++; console.log(`      ✗ gravação falhou: ${rep.error.message}`); }
   } catch (e) {

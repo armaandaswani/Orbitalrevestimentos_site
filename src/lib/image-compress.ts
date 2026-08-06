@@ -62,17 +62,25 @@ export async function compressImage(file: File, opts: CompressOptions = {}): Pro
     ctx.drawImage(bitmap, 0, 0, w, h);
     bitmap.close?.();
 
+    // PNG e WebP podem ter fundo transparente, e JPEG não tem canal alfa — um
+    // logo salvo como JPEG sai com fundo PRETO. Nesses formatos a saída é WebP,
+    // que comprime igual e preserva a transparência.
+    const podeTerAlfa = /^image\/(png|webp)$/i.test(file.type);
+    const saida = podeTerAlfa ? "image/webp" : "image/jpeg";
+
     const blob = await new Promise<Blob | null>((resolve) =>
-      canvas.toBlob(resolve, "image/jpeg", quality),
+      canvas.toBlob(resolve, saida, quality),
     );
-    if (!blob) return file;
+    // Se o navegador não souber gerar o formato pedido, toBlob devolve PNG.
+    // Aí é melhor ficar com o original do que subir um PNG gigante.
+    if (!blob || blob.type !== saida) return file;
 
     // Se a "compressão" engordou o arquivo (acontece com PNG de poucas cores),
     // fica com o original.
     if (blob.size >= file.size) return file;
 
-    const nome = file.name.replace(/\.[a-z0-9]+$/i, "") + ".jpg";
-    return new File([blob], nome, { type: "image/jpeg", lastModified: Date.now() });
+    const nome = file.name.replace(/\.[a-z0-9]+$/i, "") + (podeTerAlfa ? ".webp" : ".jpg");
+    return new File([blob], nome, { type: saida, lastModified: Date.now() });
   } catch {
     return file;
   }
