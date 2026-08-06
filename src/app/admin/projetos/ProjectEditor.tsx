@@ -7,6 +7,7 @@ import AdminShell from "../AdminShell";
 import { inputCls, labelCls } from "../ui";
 import CoverFramer, { COVER_ASPECT, coverStyle } from "./CoverFramer";
 import { isUsableVideoUrl, videoHostLabel, videoThumbnail } from "@/lib/video-link";
+import { compressImage } from "@/lib/image-compress";
 
 /**
  * Editor de projeto — criação e edição na mesma tela.
@@ -136,8 +137,12 @@ export default function ProjectEditor({ id }: { id: string }) {
     let order = media.length;
     const failed: string[] = [];
 
-    for (const f of list) {
+    for (const original of list) {
       try {
+        // Comprime antes de subir — ver @/lib/image-compress. Sem isto a foto de
+        // câmera vai crua para o storage e depois é servida crua ao visitante.
+        const f = await compressImage(original);
+
         const sign = await fetch("/api/admin/upload-sign", {
           method: "POST", headers: { "Content-Type": "application/json" },
           body: JSON.stringify({ folder: `projetos/${p.slug}`, filename: f.name, contentType: f.type }),
@@ -160,7 +165,7 @@ export default function ProjectEditor({ id }: { id: string }) {
         const created = await res.json();
         setMedia((prev) => [...prev, created]);
       } catch (e) {
-        failed.push(`${f.name}: ${e instanceof Error ? e.message : "erro desconhecido"}`);
+        failed.push(`${original.name}: ${e instanceof Error ? e.message : "erro desconhecido"}`);
       } finally {
         setUploading((n) => Math.max(0, n - 1));
       }

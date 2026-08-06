@@ -4,6 +4,7 @@ import React, { useState, useEffect, useCallback, useMemo, useRef } from "react"
 import Link from "next/link";
 import { SITE_ASSET_MANIFEST } from "@/lib/assets";
 import { productQrUrl, productUrl } from "@/lib/product-link";
+import { compressImage } from "@/lib/image-compress";
 import LeadsTab, { type Lead } from "./LeadsTab";
 import RemindersTab from "./RemindersTab";
 import PedidosTab, { type QuoteOption } from "./PedidosTab";
@@ -1406,7 +1407,12 @@ export default function AdminPage() {
 
   // ── Image upload helper ──────────────────
   /** Upload a single file directly to Supabase (no Next.js size limit). */
-  async function uploadDirect(file: File, folder: string): Promise<string | null> {
+  async function uploadDirect(original: File, folder: string): Promise<string | null> {
+    // Comprime ANTES de subir. Foto de câmera (8064×6048, até 14 MB) era enviada
+    // e servida crua ao visitante — 287 arquivos assim consumiram 15,9 GB de
+    // banda num mês. 2400px/q82 mantém a nitidez e corta ~96% do peso.
+    const file = await compressImage(original);
+
     // Step 1: get a signed upload URL from our API (tiny JSON request, no file bytes)
     const signRes = await fetch("/api/admin/upload-sign", {
       method: "POST",
