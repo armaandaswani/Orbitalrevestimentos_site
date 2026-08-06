@@ -1428,9 +1428,13 @@ export default function AdminPage() {
     const { signedUrl, publicUrl } = await signRes.json();
 
     // Step 2: PUT the raw file bytes directly to Supabase — bypasses Next.js entirely
+    // cache-control de 1 ano: o caminho leva timestamp e nunca é reescrito com
+    // conteúdo diferente, então o arquivo é imutável na prática. Com o padrão de
+    // 1 hora, quem volta no dia seguinte rebaixa o catálogo inteiro — e cada
+    // rebaixa conta no medidor de egress do Supabase.
     const uploadRes = await fetch(signedUrl, {
       method: "PUT",
-      headers: { "Content-Type": file.type },
+      headers: { "Content-Type": file.type, "Cache-Control": "max-age=31536000" },
       body: file,
     });
     if (!uploadRes.ok) {

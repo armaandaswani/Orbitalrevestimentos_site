@@ -150,7 +150,12 @@ export default function ProjectEditor({ id }: { id: string }) {
         if (!sign.ok) throw new Error(`assinatura falhou (${sign.status}): ${await sign.text()}`);
         const { signedUrl, publicUrl } = await sign.json();
 
-        const put = await fetch(signedUrl, { method: "PUT", headers: { "Content-Type": f.type }, body: f });
+        // cache de 1 ano — o caminho tem timestamp, o arquivo é imutável na prática
+        const put = await fetch(signedUrl, {
+          method: "PUT",
+          headers: { "Content-Type": f.type, "Cache-Control": "max-age=31536000" },
+          body: f,
+        });
         if (!put.ok) throw new Error(`envio falhou (${put.status}): ${await put.text()}`);
 
         const res = await fetch("/api/projects/media", {
