@@ -588,6 +588,14 @@ export default function PedidoDocumentoPage({ params }: { params: Promise<{ id: 
           </div>
         </section>
 
+        {/* Uma arquiteta entendeu que o orçamento incluía a instalação. Fica logo
+            abaixo do Total, que é onde o cliente para de ler. */}
+        <p className="doc-escopo">
+          Este {docType === "orcamento" ? "orçamento" : "documento"} contempla apenas o fornecimento
+          do material descrito acima. A Orbital não executa instalação — mão de obra e serviços de
+          aplicação não estão incluídos.
+        </p>
+
         <section className="doc-commercial">
           <div>
             <p className="doc-section-label">Formas de pagamento</p>
@@ -687,6 +695,19 @@ export default function PedidoDocumentoPage({ params }: { params: Promise<{ id: 
         .doc-totals > div { width: 230px; }
         .doc-totals p { display: flex; justify-content: space-between; margin: 0 0 7px; gap: 20px; }
         .doc-total { font-size: 13px; font-weight: 700; border-top: 1px solid #d8d8d8; padding-top: 7px; }
+        .doc-escopo {
+          font-weight: 700;
+          font-size: 10.5px;
+          line-height: 1.45;
+          color: #002045;
+          background: #f4f1ea;
+          border-left: 3px solid #002045;
+          padding: 9px 12px;
+          margin: 0 0 20px;
+          /* o navegador tira fundos na impressão por padrão */
+          -webkit-print-color-adjust: exact;
+          print-color-adjust: exact;
+        }
         .doc-commercial {
           display: grid;
           grid-template-columns: repeat(3, 1fr);
