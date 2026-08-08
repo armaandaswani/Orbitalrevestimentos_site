@@ -392,7 +392,12 @@ export default function ProdutosPage() {
                       <button
                         key={url + i}
                         onClick={() => setImgIdx(i)}
-                        className={`flex-shrink-0 w-10 h-10 lg:w-14 lg:h-14 border-2 overflow-hidden transition-all ${
+                        /* `relative` é obrigatório: Image com `fill` é absolute e
+                           precisa deste botão como bloco de contenção. Sem ele a
+                           miniatura escapava até o contêiner do modal e cobria a
+                           tela inteira — e o overflow-hidden daqui não cortava,
+                           porque um elemento static não clipa filho absolute. */
+                        className={`relative flex-shrink-0 w-10 h-10 lg:w-14 lg:h-14 border-2 overflow-hidden transition-all ${
                           i === imgIdx ? "border-white opacity-100" : "border-transparent opacity-40 hover:opacity-70"
                         }`}
                       >
