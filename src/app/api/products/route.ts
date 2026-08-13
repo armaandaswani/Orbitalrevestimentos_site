@@ -5,6 +5,7 @@ import { isAdminRequest } from "@/lib/admin-auth";
 import { isMissingColumn } from "@/lib/db-compat";
 import { SUPPORT_PRODUCT_SKUS } from "@/lib/orcamento-materials";
 import { reservedByActiveOrders } from "@/lib/stock";
+import { CACHE_CATALOGO, SEM_CACHE } from "@/lib/api-cache";
 
 function checkAuth(req: NextRequest): boolean {
   return isAdminRequest(req);
@@ -15,7 +16,15 @@ export async function GET(req: NextRequest) {
   // Public callers get only active products. The admin can pass ?all=true to
   // also see inactive ones (so they can manage/reactivate them) — gated on the
   // admin session so the public site never exposes inactive products.
-  const includeInactive = new URL(req.url).searchParams.get("all") === "true" && isAdminRequest(req);
+  const pediuTudo = new URL(req.url).searchParams.get("all") === "true";
+  const includeInactive = pediuTudo && isAdminRequest(req);
+
+  // Cache na edge só quando a resposta é a mesma para qualquer visitante.
+  // `?all=true` devolve conteúdo diferente conforme haja sessão de admin ou
+  // não — e como a edge guarda por URL, uma resposta cacheada seria entregue ao
+  // outro tipo de chamador. Por isso o corte é em `pediuTudo`, e não em
+  // `includeInactive`: basta a intenção de pedir tudo para não cachear nada.
+  const cache = pediuTudo ? SEM_CACHE : CACHE_CATALOGO;
 
   let query = sb
     .from("products")
@@ -35,7 +44,8 @@ export async function GET(req: NextRequest) {
   //   - código de produtos de suporte (ORB-PU, colas de contato, espuma) —
   //     garante o comportamento MESMO sem a migração, filtrando em JS.
   //     Admins (?all=true) veem tudo.
-  if (includeInactive || !Array.isArray(data)) return NextResponse.json(data);
+  if (includeInactive || !Array.isArray(data))
+    return NextResponse.json(data, { headers: { "Cache-Control": cache } });
 
   // Reserva DERIVADA dos pedidos ativos, não o contador products.stock_reserved.
   // Orçamento não reserva nada: o que segura placa é pedido em produção ou
@@ -72,7 +82,7 @@ export async function GET(req: NextRequest) {
     available: Math.max(0, (Number(p.stock_on_hand) || 0) - (reserved[String(p.id)] ?? 0)),
   }));
 
-  return NextResponse.json(rows);
+  return NextResponse.json(rows, { headers: { "Cache-Control": cache } });
 }
 
 export async function POST(req: NextRequest) {

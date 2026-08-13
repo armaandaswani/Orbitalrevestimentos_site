@@ -3,6 +3,7 @@ import { supabaseAdmin } from "@/lib/supabase";
 
 import { isAdminRequest } from "@/lib/admin-auth";
 import { isMissingColumn } from "@/lib/db-compat";
+import { CACHE_CONTEUDO } from "@/lib/api-cache";
 
 function checkAuth(req: NextRequest): boolean {
   return isAdminRequest(req);
@@ -35,7 +36,8 @@ export async function GET() {
   if (error) {
     return NextResponse.json({ error: error.message }, { status: 500 });
   }
-  return NextResponse.json(data);
+  // Conteúdo igual para todo visitante — pode ficar na edge.
+  return NextResponse.json(data, { headers: { "Cache-Control": CACHE_CONTEUDO } });
 }
 
 export async function POST(req: NextRequest) {
