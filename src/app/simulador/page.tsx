@@ -264,7 +264,7 @@ const faqs = [
   },
   {
     q: "E em tetos?",
-    a: "Sim. A placa pesa apenas 3,5 kg/m², facilitando a fixação. Recomendamos cola de contato de alta aderência.",
+    a: "Sim. A placa pesa apenas 3,2 kg/m², facilitando a fixação. Recomendamos cola de contato de alta aderência.",
   },
   {
     q: "Qual o prazo de entrega?",

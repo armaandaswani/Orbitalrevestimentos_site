@@ -16,7 +16,7 @@ const SECTIONS = [
       { label: "Largura",           value: "1,20 m" },
       { label: "Espessura",         value: "5 mm" },
       { label: "Área por placa",    value: "3,48 m²" },
-      { label: "Peso por placa",    value: "≈ 12,2 kg" },
+      { label: "Peso por placa",    value: "≈ 11 kg" },
       { label: "Número de camadas", value: "5 camadas" },
     ],
   },
@@ -30,8 +30,8 @@ const SECTIONS = [
     ),
     rows: [
       { label: "Resistência à flexão",  value: "72,3 MPa" },
-      { label: "Densidade",             value: "682 kg/m³" },
-      { label: "Peso por m²",           value: "3,5 kg/m²" },
+      { label: "Densidade",             value: "550 kg/m³" },
+      { label: "Peso por m²",           value: "3,2 kg/m²" },
       { label: "Módulo de elasticidade",value: "Alta rigidez longitudinal" },
     ],
   },
@@ -59,7 +59,7 @@ const SECTIONS = [
     ),
     rows: [
       { label: "Vida útil estimada",     value: "10+ anos no clima amazônico" },
-      { label: "Ciclos térmicos",        value: "Testado de –10°C a +80°C sem deformação" },
+      { label: "Ciclos térmicos",        value: "Testado de –10°C a +55°C sem deformação" },
       { label: "Resistência a fungos",   value: "Anti-mofo — bambu não é substrato fúngico" },
       { label: "Resistência a pragas",   value: "Anti-cupim — fibra processada sem atração" },
       { label: "Resistência UV",         value: "Film protetora UV na camada superficial" },
@@ -179,6 +179,20 @@ export default function FichaTecnicaAccordion() {
                 </div>
               </div>
             ))}
+          </div>
+
+          {/* Tolerância de lote. Fica no rodapé, e não colada numa linha da
+              tabela, porque vale para peso E densidade — que estão em seções
+              diferentes. */}
+          <div className="border-t border-[#1a365d] px-5 py-3 flex items-start gap-2">
+            <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="#86a0cd" strokeWidth="2" className="flex-shrink-0 mt-[1px]">
+              <polyline points="7 8 3 12 7 16" />
+              <polyline points="17 8 21 12 17 16" />
+              <line x1="3" y1="12" x2="21" y2="12" />
+            </svg>
+            <p className="text-[#86a0cd] text-[9px] font-[var(--font-inter)] leading-relaxed">
+              Peso e densidade admitem tolerância de ±10% — o bambu é fibra natural e cada lote varia. Padrão em materiais de fibra vegetal.
+            </p>
           </div>
 
           {/* Footer note */}

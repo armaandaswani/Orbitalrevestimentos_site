@@ -35,7 +35,7 @@ const faqs = [
   },
   {
     q: "Quais são os diferenciais técnicos do PFB Orbital?",
-    a: "O PFB é construído em 5 camadas — do núcleo de fibra de bambu até a film protetora UV — certificadas em laboratório com ART de Engenheiro Civil. Absorve apenas 0,2% de umidade em 48h de imersão total, pesa 3,5 kg/m², não propaga chamas e é anti-mofo e anti-cupim por natureza. Um cômodo fica instalado em 2 a 3 horas, sem obra e sem poeira.",
+    a: "O PFB é construído em 5 camadas — do núcleo de fibra de bambu até a film protetora UV — certificadas em laboratório com ART de Engenheiro Civil. Absorve apenas 0,2% de umidade em 48h de imersão total, pesa 3,2 kg/m², não propaga chamas e é anti-mofo e anti-cupim por natureza. Um cômodo fica instalado em 2 a 3 horas, sem obra e sem poeira.",
   },
   {
     q: "O PFB é uma solução permanente ou temporária?",
@@ -43,7 +43,7 @@ const faqs = [
   },
   {
     q: "O PFB serve para revestimento de forro (teto)?",
-    a: "Sim. O PFB é leve (3,5 kg/m²) e aprovado para aplicação em teto com ART de Engenheiro Civil. Já foi instalado como forro em residências, restaurantes, escritórios e embarcações náuticas em Manaus — com acabamento arquitetônico que transforma qualquer ambiente.",
+    a: "Sim. O PFB é leve (3,2 kg/m²) e aprovado para aplicação em teto com ART de Engenheiro Civil. Já foi instalado como forro em residências, restaurantes, escritórios e embarcações náuticas em Manaus — com acabamento arquitetônico que transforma qualquer ambiente.",
   },
   {
     q: "Onde comprar o revestimento PFB em Manaus?",

@@ -823,7 +823,7 @@ export default function ProdutosPage() {
               { label: "Dimensão", value: "1,2m × 2,9m" },
               { label: "Área por placa", value: "3,48 m²" },
               { label: "Espessura", value: "5 mm" },
-              { label: "Peso", value: "3,5 kg/m²" },
+              { label: "Peso", value: "3,2 kg/m²" },
             ].map(({ label, value }) => (
               <div key={label}>
                 <p className="text-white font-[var(--font-noto-serif)] text-2xl font-normal mb-1">

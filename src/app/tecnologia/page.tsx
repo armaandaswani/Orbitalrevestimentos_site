@@ -44,8 +44,8 @@ const layers = [
 const specs = [
   { value: "72,3", unit: "MPa", label: "Resistência à flexão", note: "Resistência certificada em laboratório" },
   { value: "0,2%", unit: "", label: "Inchamento (48h imerso)", note: "Praticamente impermeável" },
-  { value: "682", unit: "kg/m³", label: "Densidade", note: "Alta resistência estrutural" },
-  { value: "3,5", unit: "kg/m²", label: "Peso", note: "Ultra-leve para instalação ágil" },
+  { value: "550", unit: "kg/m³", label: "Densidade", note: "Alta resistência estrutural" },
+  { value: "3,2", unit: "kg/m²", label: "Peso", note: "Ultra-leve para instalação ágil" },
   { value: "0,5%", unit: "", label: "Teor de umidade", note: "Estável no clima amazônico" },
 ];
 
@@ -140,7 +140,7 @@ export default async function TecnologiaPage() {
                   1,2m × 2,9m × 5mm
                 </p>
                 <p className="text-white/60 text-sm font-[var(--font-inter)]">
-                  3,48 m² por placa · 3,5 kg/m²
+                  3,48 m² por placa · 3,2 kg/m²
                 </p>
               </div>
             </div>
@@ -282,7 +282,7 @@ export default async function TecnologiaPage() {
                 },
                 {
                   title: "Resistente a ciclos térmicos",
-                  desc: "Testado em congelamento e aquecimento até 80°C sem deformação relevante.",
+                  desc: "Testado em congelamento e aquecimento até 55°C sem deformação relevante.",
                   icon: (
                     <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5">
                       <path d="M14 14.76V3.5a2.5 2.5 0 00-5 0v11.26a4.5 4.5 0 105 0z" />

@@ -244,7 +244,7 @@ export default function GuiaMdfManaus() {
               { label: "Durabilidade em Manaus", pfb: "10+ anos",               mdf: "2–3 anos" },
               { label: "Resistência ao mofo",    pfb: "Anti-mofo por natureza", mdf: "Suscetível" },
               { label: "Instalação",             pfb: "2–3h por cômodo",        mdf: "Dias (obra pesada)" },
-              { label: "Peso",                   pfb: "3,5 kg/m²",              mdf: "11 kg/m²" },
+              { label: "Peso",                   pfb: "3,2 kg/m²",              mdf: "11 kg/m²" },
               { label: "Uso em áreas úmidas",    pfb: "Aprovado com laudo",     mdf: "Não recomendado" },
             ].map(({ label, pfb, mdf }) => (
               <div key={label} className="grid grid-cols-3 gap-4 border-b border-[#eeeeee] pb-3">
