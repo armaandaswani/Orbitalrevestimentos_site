@@ -43,7 +43,7 @@ const layers = [
 
 const specs = [
   { value: "72,3", unit: "MPa", label: "Resistência à flexão", note: "Resistência certificada em laboratório" },
-  { value: "0,2%", unit: "", label: "Inchamento (48h imerso)", note: "Praticamente impermeável" },
+  { value: "0,2%", unit: "", label: "Inchamento (48h)", note: "Praticamente impermeável" },
   { value: "550", unit: "kg/m³", label: "Densidade", note: "Alta resistência estrutural" },
   { value: "3,2", unit: "kg/m²", label: "Peso", note: "Ultra-leve para instalação ágil" },
   { value: "0,5%", unit: "", label: "Teor de umidade", note: "Estável no clima amazônico" },
@@ -181,6 +181,11 @@ export default async function TecnologiaPage() {
               </div>
             ))}
           </div>
+          {/* A tolerância também vive no rodapé da ficha, mas a ficha abre
+              fechada — quem só passa o olho vê estes cinco números e mais nada. */}
+          <p className="text-[#86a0cd]/70 text-[9px] lg:text-[10px] font-[var(--font-inter)] mt-4 lg:mt-5">
+            Peso e densidade admitem tolerância de ±10% — o bambu é fibra natural e cada lote varia.
+          </p>
         </div>
       </section>
 
@@ -282,7 +287,7 @@ export default async function TecnologiaPage() {
                 },
                 {
                   title: "Resistente a ciclos térmicos",
-                  desc: "Testado em congelamento e aquecimento até 55°C sem deformação relevante.",
+                  desc: "Faixa testada de –10°C a +120°C. Para uso interno, sem exposição solar contínua.",
                   icon: (
                     <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5">
                       <path d="M14 14.76V3.5a2.5 2.5 0 00-5 0v11.26a4.5 4.5 0 105 0z" />
