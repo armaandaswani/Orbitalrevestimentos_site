@@ -286,8 +286,8 @@ export default async function TecnologiaPage() {
                   ),
                 },
                 {
-                  title: "Resistente a ciclos térmicos",
-                  desc: "Faixa testada de –10°C a +120°C. Para uso interno, sem exposição solar contínua.",
+                  title: "Testado em ciclos térmicos",
+                  desc: "Submetido em ensaio a ciclos de –10°C a +120°C. Validado para uso interno apenas. Uma vez que calor contínuo acima de 55°C pode gerar ondulações.",
                   icon: (
                     <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5">
                       <path d="M14 14.76V3.5a2.5 2.5 0 00-5 0v11.26a4.5 4.5 0 105 0z" />
