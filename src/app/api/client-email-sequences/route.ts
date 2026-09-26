@@ -11,8 +11,9 @@ import {
   ownerNewOrcamentoMessage,
   productEducationMessage,
 } from "@/lib/smclick-messages";
+import { EMAIL_EMPRESA } from "@/lib/email-destinos";
 
-const ADMIN_EMAIL = "armaandaswani19@gmail.com";
+const ADMIN_EMAIL = EMAIL_EMPRESA;
 
 function fmtBRL(n: number) {
   return n.toLocaleString("pt-BR", { style: "currency", currency: "BRL", maximumFractionDigits: 0 });
@@ -208,7 +209,7 @@ export async function POST(req: NextRequest) {
     const fmt = (n: number | null) => (Number(n) || 0).toLocaleString("pt-BR", { style: "currency", currency: "BRL", maximumFractionDigits: 0 });
     await getResend().emails.send({
       from: "Orbital Revestimentos <noreply@orbitalrevestimentos.com.br>",
-      to: "orbitalrevestimentos@gmail.com",
+      to: EMAIL_EMPRESA,
       subject: `Novo orçamento — ${client_name} (${fmt(ownerAlert.total)})`,
       text: [
         `Novo orçamento pelo site:`,

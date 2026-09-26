@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from "next/server";
 import { supabaseAdmin } from "@/lib/supabase";
 import { getResend } from "@/lib/resend";
 import { upsertLeadFromSource } from "@/lib/leads";
+import { EMAIL_EMPRESA } from "@/lib/email-destinos";
 
 function fmtBRL(n: number) {
   return n.toLocaleString("pt-BR", { style: "currency", currency: "BRL", maximumFractionDigits: 0 });
@@ -139,6 +140,26 @@ async function sendNewBudgetEmails(opts: {
       html: repHtml,
     });
   }
+
+  // Cópia para a empresa. Antes o uso de cupom só avisava parceiro e
+  // representante — a Orbital não ficava sabendo por e-mail. Envio próprio, e
+  // não cópia oculta de um dos outros: ele sai mesmo sem parceiro ou sem rep.
+  const origem = opts.directSale
+    ? `Venda direta de ${opts.repEmails.map((r) => r.name).join(", ") || "representante"}`
+    : `Parceiro ${opts.partnerName}${opts.repEmails.length ? ` · representante ${opts.repEmails.map((r) => r.name).join(", ")}` : ""}`;
+  const { error: erroEmpresa } = await resend.emails.send({
+    from: "Orbital Revestimentos <noreply@orbitalrevestimentos.com.br>",
+    to: EMAIL_EMPRESA,
+    subject: `🧾 Cupom ${opts.couponCode} usado — ${opts.clientName}`,
+    html: `<div style="font-family:Arial,sans-serif;max-width:560px;margin:0 auto;padding:24px;color:#43474e">
+      <p style="margin:0 0 4px;font-size:11px;letter-spacing:0.2em;text-transform:uppercase;color:#74777f">Novo orçamento com cupom</p>
+      <p style="margin:0 0 12px;font-size:20px;color:#002045;font-family:Georgia,serif">${origem}</p>
+      <p style="margin:0;font-size:13px">Cupom <strong>${opts.couponCode}</strong></p>
+      ${detailsHtml}
+    </div>`,
+  });
+  // O Resend não lança exceção quando recusa um envio — devolve { error }.
+  if (erroEmpresa) console.error("[email] aviso de cupom para a empresa falhou:", erroEmpresa);
 }
 
 export async function GET(req: NextRequest) {

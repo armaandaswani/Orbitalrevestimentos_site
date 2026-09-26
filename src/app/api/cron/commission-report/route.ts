@@ -7,8 +7,9 @@
 import { NextRequest, NextResponse } from "next/server";
 import { supabaseAdmin } from "@/lib/supabase";
 import { getResend } from "@/lib/resend";
+import { EMAIL_EMPRESA } from "@/lib/email-destinos";
 
-const ADMIN_EMAIL = "armaandaswani19@gmail.com";
+const ADMIN_EMAIL = EMAIL_EMPRESA;
 
 function fmt(n: number) {
   return n.toLocaleString("pt-BR", {

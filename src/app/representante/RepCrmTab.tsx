@@ -228,7 +228,9 @@ function ScheduleMeeting({
       setLocation("");
     } else {
       const j = await res.json().catch(() => null);
-      setMsg(j?.error || "Não foi possível agendar.");
+      setMsg(res.status === 401
+        ? "Sua sessão expirou. Saia e entre de novo — a reunião NÃO foi agendada."
+        : j?.error || "Não foi possível agendar.");
     }
   }
 
@@ -322,12 +324,28 @@ export default function RepCrmTab({
   const [view, setView] = useState<"list" | "board">("list");
   const [draggingId, setDraggingId] = useState<string | null>(null);
 
+  // Falha de gravação visível. Antes, quase toda gravação que falhava sumia em
+  // silêncio — e a mudança otimista ficava na tela como se tivesse salvado.
+  // Caso típico: a sessão de 7 dias expira com a aba aberta, e tudo passa a
+  // voltar 401 sem que a representante perceba.
+  const [falha, setFalha] = useState<string | null>(null);
+  const avisarFalha = useCallback((res: Response | null) => {
+    setFalha(
+      res?.status === 401
+        ? "Sua sessão expirou. Saia e entre de novo — a última alteração NÃO foi salva."
+        : "Não foi possível salvar. Verifique a conexão e tente de novo — a alteração NÃO foi gravada.",
+    );
+  }, []);
+  /** fetch que devolve null em vez de lançar quando a rede cai. */
+  const req = (url: string, init?: RequestInit) => fetch(url, init).catch(() => null);
+
   const fetchCrm = useCallback(async () => {
     setLoading(true);
-    const res = await fetch(`/api/representante/crm?sales_rep_id=${encodeURIComponent(salesRepId)}`);
-    if (res.ok) setRows(await res.json());
+    const res = await fetch(`/api/representante/crm?sales_rep_id=${encodeURIComponent(salesRepId)}`).catch(() => null);
+    if (res?.ok) setRows(await res.json());
+    else if (res?.status === 401) avisarFalha(res);
     setLoading(false);
-  }, [salesRepId]);
+  }, [salesRepId, avisarFalha]);
 
   useEffect(() => {
     fetchCrm();
@@ -336,23 +354,22 @@ export default function RepCrmTab({
   async function addPartner() {
     if (!addPartnerId) return;
     setAdding(true);
-    const res = await fetch("/api/representante/crm", {
+    const res = await req("/api/representante/crm", {
       method: "POST",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({ sales_rep_id: salesRepId, partner_id: addPartnerId }),
     });
     setAdding(false);
-    if (res.ok) {
-      setAddPartnerId("");
-      setAddMode("none");
-      fetchCrm();
-    }
+    if (!res?.ok) { avisarFalha(res); return; }
+    setAddPartnerId("");
+    setAddMode("none");
+    fetchCrm();
   }
 
   async function addProspect() {
     if (!prospectName.trim()) return;
     setAdding(true);
-    const res = await fetch("/api/representante/crm", {
+    const res = await req("/api/representante/crm", {
       method: "POST",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({
@@ -363,16 +380,19 @@ export default function RepCrmTab({
       }),
     });
     setAdding(false);
-    if (res.ok) {
-      setProspectName("");
-      setProspectPhone("");
-      setProspectEmail("");
-      setAddMode("none");
-      fetchCrm();
-    }
+    if (!res?.ok) { avisarFalha(res); return; }
+    setProspectName("");
+    setProspectPhone("");
+    setProspectEmail("");
+    setAddMode("none");
+    fetchCrm();
   }
 
   async function patchRow(id: string, patch: Partial<CrmRow>) {
+    // Cópia da linha antes da mudança otimista: se o servidor recusar, é ela que
+    // volta. Recarregar do servidor não bastava — com a sessão expirada a
+    // recarga também falha, e a mudança ficava na tela como se salva.
+    const anterior = rows.find((r) => r.id === id);
     setRows((cur) =>
       cur.map((r) => {
         if (r.id !== id) return r;
@@ -384,13 +404,15 @@ export default function RepCrmTab({
         return next;
       })
     );
-    const res = await fetch(`/api/representante/crm/${id}`, {
+    const res = await req(`/api/representante/crm/${id}`, {
       method: "PATCH",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify(patch),
     });
-    if (!res.ok) fetchCrm();
-    else {
+    if (!res?.ok) {
+      if (anterior) setRows((cur) => cur.map((r) => (r.id === id ? anterior : r)));
+      avisarFalha(res);
+    } else {
       const updated = await res.json();
       setRows((cur) => cur.map((r) => (r.id === id ? { ...r, ...updated, partner: r.partner, is_prospect: r.is_prospect } : r)));
     }
@@ -398,8 +420,10 @@ export default function RepCrmTab({
 
   async function removeRow(id: string) {
     if (!confirm("Remover esta relação do seu CRM? O histórico de notas será apagado.")) return;
+    const anterior = rows;
     setRows((cur) => cur.filter((r) => r.id !== id));
-    await fetch(`/api/representante/crm/${id}`, { method: "DELETE" }).catch(() => {});
+    const res = await req(`/api/representante/crm/${id}`, { method: "DELETE" });
+    if (!res?.ok) { setRows(anterior); avisarFalha(res); }
   }
 
   async function toggleExpand(id: string) {
@@ -423,17 +447,16 @@ export default function RepCrmTab({
 
   async function addNote(id: string) {
     if (!noteDraft.trim()) return;
-    const res = await fetch(`/api/representante/crm/${id}/notes`, {
+    const res = await req(`/api/representante/crm/${id}/notes`, {
       method: "POST",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({ body: noteDraft.trim() }),
     });
-    if (res.ok) {
-      const note = await res.json();
-      setNotesByCrmId((cur) => ({ ...cur, [id]: [note, ...(cur[id] ?? [])] }));
-      setNoteDraft("");
-      patchRow(id, { last_followup_at: new Date().toISOString() } as Partial<CrmRow>);
-    }
+    if (!res?.ok) { avisarFalha(res); return; }
+    const note = await res.json();
+    setNotesByCrmId((cur) => ({ ...cur, [id]: [note, ...(cur[id] ?? [])] }));
+    setNoteDraft("");
+    patchRow(id, { last_followup_at: new Date().toISOString() } as Partial<CrmRow>);
   }
 
   function snoozeReminder(id: string, days: number) {
@@ -591,6 +614,14 @@ export default function RepCrmTab({
 
   return (
     <div className="space-y-5">
+      {falha && (
+        <div role="alert" className="sticky top-2 z-20 flex items-start justify-between gap-3 border border-red-300 bg-red-50 px-4 py-3">
+          <p className="text-red-800 text-sm font-[var(--font-inter)] leading-relaxed">{falha}</p>
+          <button type="button" onClick={() => setFalha(null)} className="text-red-700 text-xs font-bold uppercase tracking-wider flex-shrink-0" aria-label="Fechar aviso">
+            Fechar
+          </button>
+        </div>
+      )}
       <div className="flex flex-col lg:flex-row lg:items-start lg:justify-between gap-4">
         <div>
           <p className="text-[#74777f] text-[10px] tracking-[0.16em] uppercase font-bold font-[var(--font-inter)] mb-1">

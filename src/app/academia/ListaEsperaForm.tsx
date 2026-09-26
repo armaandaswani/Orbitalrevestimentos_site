@@ -198,9 +198,9 @@ export default function ListaEsperaForm() {
       <button
         type="submit"
         disabled={loading}
-        className="w-full bg-[#002045] text-white text-xs tracking-[0.15em] uppercase font-bold font-[var(--font-inter)] px-8 py-4 hover:bg-[#1a365d] transition-colors disabled:opacity-50"
+        className="w-full bg-[#3b6934] text-white text-xs tracking-[0.15em] uppercase font-bold font-[var(--font-inter)] px-8 py-4 hover:bg-[#2f5529] transition-colors disabled:opacity-50"
       >
-        {loading ? "Enviando…" : "Quero entrar na lista de espera"}
+        {loading ? "Enviando…" : "Quero entrar na lista"}
       </button>
       <p className="text-[#74777f] text-[11px] font-[var(--font-inter)] text-center mt-3 leading-relaxed">
         {/* "Cadastro gratuito", e não "sem custo": logo abaixo de um botão sobre o

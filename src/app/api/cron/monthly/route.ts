@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
 import { supabaseAdmin } from "@/lib/supabase";
+import { EMAIL_EMPRESA } from "@/lib/email-destinos";
 
 const MONTHS_PT = ["Janeiro","Fevereiro","Março","Abril","Maio","Junho","Julho","Agosto","Setembro","Outubro","Novembro","Dezembro"];
 
@@ -72,7 +73,7 @@ export async function GET(req: NextRequest) {
 
   const { getResend } = await import("@/lib/resend");
   const resend = getResend();
-  const adminEmail = "armaandaswani19@gmail.com";
+  const adminEmail = EMAIL_EMPRESA;
 
   const topValueRows = topByValue.map(([code, s], i) =>
     `<tr><td style="padding:8px;border-bottom:1px solid #eee;font-weight:600;color:#002045">${i + 1}°</td><td style="padding:8px;border-bottom:1px solid #eee">${getPartnerName(code)}</td><td style="padding:8px;border-bottom:1px solid #eee;font-weight:600;text-align:right">${fmt(s.total)}</td></tr>`

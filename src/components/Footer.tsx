@@ -72,9 +72,13 @@ export default function Footer() {
               <Link href="/parcerias" className="hover:text-white transition-colors">Marceneiros</Link>
               <Link href="/parcerias" className="hover:text-white transition-colors">Engenheiros</Link>
               <Link href="/parcerias" className="hover:text-white transition-colors">Revendedores</Link>
+              <Link href="/parcerias" className="hover:text-white transition-colors">Aplicadores e Instaladores</Link>
               <div className="mt-3 pt-3 border-t border-[#333640] flex flex-col gap-2">
                 <Link href="/parceiro" className="hover:text-white transition-colors font-medium text-white/80">
                   Portal do Parceiro →
+                </Link>
+                <Link href="/academia" className="hover:text-white transition-colors font-medium text-white/80">
+                  Academia Orbital →
                 </Link>
               </div>
             </div>

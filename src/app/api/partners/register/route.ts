@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { supabaseAdmin } from "@/lib/supabase";
 import { hashPassword } from "@/lib/admin-auth";
+import { EMAIL_EMPRESA } from "@/lib/email-destinos";
 
 export async function POST(req: NextRequest) {
   const body = await req.json();
@@ -118,7 +119,7 @@ export async function POST(req: NextRequest) {
   try {
     const { getResend } = await import("@/lib/resend");
     const resend = getResend();
-    await resend.emails.send({
+    const envio = await resend.emails.send({
       from: "Orbital Revestimentos <noreply@orbitalrevestimentos.com.br>",
       to: email,
       subject: "Recebemos o seu cadastro — Orbital Revestimentos",
@@ -136,6 +137,8 @@ export async function POST(req: NextRequest) {
         </div>
       `,
     });
+    // O Resend não lança exceção quando recusa — devolve { error }.
+    if (envio.error) console.error("[email] confirmação para o parceiro falhou:", envio.error);
   } catch (e) {
     console.error("[email] partner confirmation failed:", e);
   }
@@ -150,9 +153,9 @@ export async function POST(req: NextRequest) {
     );
     const waLink = `https://wa.me/5592988150149?text=${waText}`;
 
-    await resend.emails.send({
+    const envio = await resend.emails.send({
       from: "Orbital Revestimentos <noreply@orbitalrevestimentos.com.br>",
-      to: "armaandaswani19@gmail.com",
+      to: EMAIL_EMPRESA,
       subject: `Novo parceiro aguardando aprovação: ${name}`,
       html: `
         <div style="font-family:sans-serif;max-width:520px;margin:0 auto;padding:32px 24px;color:#1a1a1a">
@@ -192,6 +195,8 @@ export async function POST(req: NextRequest) {
         </div>
       `,
     });
+    // O Resend não lança exceção quando recusa — devolve { error }.
+    if (envio.error) console.error("[email] aviso de novo parceiro para a empresa falhou:", envio.error);
   } catch (e) {
     console.error("[email] admin notification failed:", e);
   }
@@ -201,7 +206,7 @@ export async function POST(req: NextRequest) {
     try {
       const { getResend } = await import("@/lib/resend");
       const resend = getResend();
-      await resend.emails.send({
+      const envio = await resend.emails.send({
         from: "Orbital Revestimentos <noreply@orbitalrevestimentos.com.br>",
         to: salesRep.email,
         subject: `Novo parceiro cadastrado: ${name}`,
@@ -232,6 +237,8 @@ export async function POST(req: NextRequest) {
           </div>
         `,
       });
+      // O Resend não lança exceção quando recusa — devolve { error }.
+      if (envio.error) console.error("[email] aviso para o representante falhou:", envio.error);
     } catch (e) {
       console.error("[email] sales rep notification failed:", e);
     }

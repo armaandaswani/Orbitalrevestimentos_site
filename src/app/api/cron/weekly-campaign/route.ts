@@ -28,8 +28,9 @@ import {
   generateCampaignContent,
   getNextCampaignRotation,
 } from "@/lib/email-campaign-content";
+import { EMAIL_EMPRESA } from "@/lib/email-destinos";
 
-const ADMIN_EMAIL = "armaandaswani19@gmail.com";
+const ADMIN_EMAIL = EMAIL_EMPRESA;
 
 export async function GET(req: NextRequest) {
   const cronSecret = process.env.CRON_SECRET;

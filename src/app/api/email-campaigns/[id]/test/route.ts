@@ -2,8 +2,9 @@ import { NextRequest, NextResponse } from "next/server";
 import { isAdminRequest } from "@/lib/admin-auth";
 import { supabaseAdmin } from "@/lib/supabase";
 import { getResend } from "@/lib/resend";
+import { EMAIL_EMPRESA } from "@/lib/email-destinos";
 
-const ADMIN_EMAIL = "armaandaswani19@gmail.com";
+const ADMIN_EMAIL = EMAIL_EMPRESA;
 
 export async function POST(
   req: NextRequest,

@@ -9,7 +9,7 @@ const CATALOGUE_URL =
   "https://drive.google.com/file/d/1zhm5MgKGSDRThqk8FqqwfX-WijI7K-iD/view?usp=drive_link";
 const WA_BASE = "https://wa.me/5592988150149?text=";
 
-type SegmentKey = "arquitetos" | "marceneiros" | "engenheiros" | "revendedores";
+type SegmentKey = "arquitetos" | "marceneiros" | "engenheiros" | "revendedores" | "aplicadores";
 type Segment = {
   key: SegmentKey;
   label: string;
@@ -25,6 +25,14 @@ type Segment = {
   waText: string;
   stat: { value: string; label: string };
   ctaLabel: string;
+  /**
+   * Destino do botão principal. Sem ele, o botão abre o WhatsApp com waText.
+   * Aplicadores usam a lista de espera da Academia: todo CTA do curso leva ao
+   * formulário, e o WhatsApp vira o botão secundário.
+   */
+  ctaHref?: string;
+  /** Chamada curta para a Academia Orbital, com link. Aparece também no celular. */
+  academia?: string;
   highlight: string;
 };
 
@@ -83,6 +91,7 @@ const segments: Segment[] = [
     waText: "Olá! Sou marceneiro e vim pela aba de Marceneiros no site. Gostaria de saber sobre as condições de parceria e preço diferenciado para compra direta do PFB Orbital.",
     stat: { value: "2–3h", label: "instalação por cômodo" },
     ctaLabel: "Quero instalar PFB Orbital",
+    academia: "Aprenda o passo a passo da instalação e seja Instalador Certificado Orbital.",
     highlight: "Marceneiros parceiros têm acesso a condições exclusivas e tabela diferenciada para compra direta.",
   },
   {
@@ -140,6 +149,35 @@ const segments: Segment[] = [
     ctaLabel: "Quero ser revendedor",
     highlight: "Revendedores cadastrados têm acesso a condições exclusivas e estoque garantido.",
   },
+  {
+    key: "aplicadores",
+    label: "Aplicadores & Instaladores",
+    short: "Aplicadores",
+    icon: (
+      <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5">
+        <path d="M3 17L17 3l4 4L7 21z" />
+        <path d="M7 13l2 2M10 10l2 2M13 7l2 2" />
+      </svg>
+    ),
+    badge: "Academia Orbital · Em desenvolvimento",
+    tagline: "Especialização técnica em PFB, no padrão Orbital.",
+    headline: "Aprenda a instalar PFB no padrão Orbital.",
+    body: "A Orbital está estruturando a Academia Orbital: um treinamento técnico, passo a passo, para aplicadores que querem instalar Painéis de Fibra de Bambu (PFB) corretamente e se tornar Instaladores Certificados Orbital.",
+    benefits: [
+      { title: "Academia Orbital", desc: "Treinamento técnico completo, do preparo da superfície ao acabamento. Em desenvolvimento — entre na lista de espera para ser avisado na abertura." },
+      { title: "Instalador Certificado Orbital", desc: "Ao concluir o treinamento e o processo de certificação, você pode se tornar um Instalador Certificado Orbital." },
+      { title: "Manual técnico de instalação", desc: "Material detalhado com o processo de aplicação do PFB, passo a passo." },
+      { title: "Instalação limpa e ágil", desc: "Cola PU nas paredes e cola de contato nos tetos. Um cômodo em 2 a 3 horas, sem obra e sem poeira." },
+      { title: "Material de apoio e suporte", desc: "Conteúdo no Instagram (@orbitalrevestimentos) e atendimento direto via WhatsApp para dúvidas de aplicação." },
+      { title: "Relacionamento direto com a Orbital", desc: "Após a certificação, o instalador pode manter relacionamento direto com a Orbital para aquisição do PFB." },
+    ],
+    image: "/images/academia/lavabo-consultorio-inteiro.jpg",
+    waText: "Olá! Sou aplicador/instalador e vim pela aba de Aplicadores no site. Quero saber mais sobre a instalação do PFB Orbital e a Academia Orbital.",
+    stat: { value: "11 kg", label: "por placa · leve de manusear" },
+    ctaLabel: "Entrar na lista de espera",
+    ctaHref: "/academia#lista-de-espera",
+    highlight: "O cadastro na lista de espera da Academia Orbital é gratuito.",
+  },
 ];
 
 const sharedStats = [
@@ -195,12 +233,12 @@ export default function ParceriasPage() {
           </div>
 
           {/* Segment preview cards */}
-          <div className="grid grid-cols-2 lg:grid-cols-4 gap-3 lg:gap-4">
+          <div className="grid grid-cols-2 lg:grid-cols-5 gap-3 lg:gap-4">
             {segments.map(({ key, label, icon, tagline }) => (
               <button
                 key={key}
                 onClick={() => handleTabClick(key)}
-                className={`text-left p-4 lg:p-6 border transition-all duration-200 group ${
+                className={`text-left p-4 lg:p-6 border transition-all duration-200 group last:col-span-2 lg:last:col-span-1 ${
                   active === key
                     ? "border-white bg-white/10"
                     : "border-white/15 hover:border-white/40 hover:bg-white/5"
@@ -229,19 +267,24 @@ export default function ParceriasPage() {
       {/* ── Sticky segment switcher ───────────── */}
       <div className="sticky top-20 z-40 bg-white border-b border-[#e2e2e2] shadow-[0_1px_0_0_rgba(0,0,0,0.04)]">
         <div className="max-w-[1280px] mx-auto px-4 lg:px-16">
-          <div className="flex gap-0 overflow-x-auto">
+          {/* Grade até 1024px (3 colunas no celular, 5 no tablet): com 5 perfis a
+              barra horizontal passava de 750px numa tela de 343px e a aba nova
+              ficava fora da tela, só alcançável rolando para o lado. */}
+          <div className="grid grid-cols-3 sm:grid-cols-5 lg:flex gap-0 lg:overflow-x-auto">
             {segments.map(({ key, label, short }) => (
               <button
                 key={key}
                 onClick={() => handleTabClick(key)}
-                className={`flex-shrink-0 px-6 py-5 border-b-2 text-xs tracking-[0.12em] uppercase font-bold font-[var(--font-inter)] transition-all duration-200 whitespace-nowrap ${
+                className={`lg:flex-shrink-0 px-1 lg:px-6 py-3 lg:py-5 border-b-2 text-[10px] lg:text-xs tracking-[0.08em] lg:tracking-[0.12em] uppercase font-bold font-[var(--font-inter)] transition-all duration-200 whitespace-nowrap text-center ${
                   active === key
                     ? "border-[#002045] text-[#002045]"
                     : "border-transparent text-[#74777f] hover:text-[#002045]"
                 }`}
               >
-                <span className="hidden sm:inline">{label}</span>
-                <span className="sm:hidden">{short}</span>
+                {/* Nomes longos só a partir de 1280px: abaixo disso "Aplicadores &
+                    Instaladores" empurrava a última aba para fora da tela. */}
+                <span className="hidden xl:inline">{label}</span>
+                <span className="xl:hidden">{short}</span>
               </button>
             ))}
           </div>
@@ -289,36 +332,71 @@ export default function ParceriasPage() {
                 <div className="hidden lg:block border-l-2 border-[#3b6934] pl-4 mb-10">
                   <p className="text-[#a1d494] text-xs font-[var(--font-inter)] italic leading-relaxed">{seg.highlight}</p>
                 </div>
+                {seg.academia && (
+                  <Link
+                    href="/academia"
+                    className="group flex items-center justify-between gap-4 border border-white/20 hover:border-[#a1d494] px-5 py-4 mb-6 lg:mb-10 transition-colors"
+                  >
+                    <span>
+                      <span className="block text-[#a1d494] text-[10px] tracking-[0.18em] uppercase font-bold font-[var(--font-inter)] mb-1">
+                        Academia Orbital
+                      </span>
+                      <span className="block text-white text-sm font-[var(--font-inter)] leading-snug">{seg.academia}</span>
+                    </span>
+                    <span aria-hidden className="text-[#a1d494] text-lg group-hover:translate-x-1 transition-transform">→</span>
+                  </Link>
+                )}
                 <div className="flex flex-wrap gap-3">
-                  <a
-                    href={`${WA_BASE}${encodeURIComponent(seg.waText)}`}
-                    target="_blank"
-                    rel="noopener noreferrer"
-                    className="inline-flex items-center gap-2.5 bg-white text-[#002045] text-xs tracking-[0.12em] uppercase font-bold font-[var(--font-inter)] px-7 py-4 hover:bg-[#f3f3f3] transition-colors"
-                  >
-                    <svg width="15" height="15" viewBox="0 0 24 24" fill="currentColor">
-                      <path d="M17.472 14.382c-.297-.149-1.758-.867-2.03-.967-.273-.099-.471-.148-.67.15-.197.297-.767.966-.94 1.164-.173.199-.347.223-.644.075-.297-.15-1.255-.463-2.39-1.475-.883-.788-1.48-1.761-1.653-2.059-.173-.297-.018-.458.13-.606.134-.133.298-.347.446-.52.149-.174.198-.298.298-.497.099-.198.05-.371-.025-.52-.075-.149-.669-1.612-.916-2.207-.242-.579-.487-.5-.669-.51-.173-.008-.371-.01-.57-.01-.198 0-.52.074-.792.372-.272.297-1.04 1.016-1.04 2.479 0 1.462 1.065 2.875 1.213 3.074.149.198 2.096 3.2 5.077 4.487.709.306 1.262.489 1.694.625.712.227 1.36.195 1.871.118.571-.085 1.758-.719 2.006-1.413.248-.694.248-1.289.173-1.413-.074-.124-.272-.198-.57-.347m-5.421 7.403h-.004a9.87 9.87 0 01-5.031-1.378l-.361-.214-3.741.982.998-3.648-.235-.374a9.86 9.86 0 01-1.51-5.26c.001-5.45 4.436-9.884 9.888-9.884 2.64 0 5.122 1.03 6.988 2.898a9.825 9.825 0 012.893 6.994c-.003 5.45-4.437 9.884-9.885 9.884m8.413-18.297A11.815 11.815 0 0012.05 0C5.495 0 .16 5.335.157 11.892c0 2.096.547 4.142 1.588 5.945L.057 24l6.305-1.654a11.882 11.882 0 005.683 1.448h.005c6.554 0 11.89-5.335 11.893-11.893a11.821 11.821 0 00-3.48-8.413z" />
-                    </svg>
-                    {seg.ctaLabel}
-                  </a>
-                  <a
-                    href={CATALOGUE_URL}
-                    target="_blank"
-                    rel="noopener noreferrer"
-                    className="inline-flex items-center gap-2 border border-white/30 text-white text-xs tracking-[0.12em] uppercase font-bold font-[var(--font-inter)] px-7 py-4 hover:border-white transition-colors"
-                  >
-                    <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-                      <path d="M21 15v4a2 2 0 01-2 2H5a2 2 0 01-2-2v-4M7 10l5 5 5-5M12 15V3" />
-                    </svg>
-                    Baixar Catálogo PDF
-                  </a>
+                  {seg.ctaHref ? (
+                    <>
+                      <Link
+                        href={seg.ctaHref}
+                        className="inline-flex items-center gap-2 bg-white text-[#002045] text-xs tracking-[0.12em] uppercase font-bold font-[var(--font-inter)] px-7 py-4 hover:bg-[#f3f3f3] transition-colors"
+                      >
+                        {seg.ctaLabel} <span aria-hidden>→</span>
+                      </Link>
+                      <a
+                        href={`${WA_BASE}${encodeURIComponent(seg.waText)}`}
+                        target="_blank"
+                        rel="noopener noreferrer"
+                        className="inline-flex items-center gap-2 border border-white/30 text-white text-xs tracking-[0.12em] uppercase font-bold font-[var(--font-inter)] px-7 py-4 hover:border-white transition-colors"
+                      >
+                        Falar no WhatsApp
+                      </a>
+                    </>
+                  ) : (
+                    <>
+                      <a
+                        href={`${WA_BASE}${encodeURIComponent(seg.waText)}`}
+                        target="_blank"
+                        rel="noopener noreferrer"
+                        className="inline-flex items-center gap-2.5 bg-white text-[#002045] text-xs tracking-[0.12em] uppercase font-bold font-[var(--font-inter)] px-7 py-4 hover:bg-[#f3f3f3] transition-colors"
+                      >
+                        <svg width="15" height="15" viewBox="0 0 24 24" fill="currentColor">
+                          <path d="M17.472 14.382c-.297-.149-1.758-.867-2.03-.967-.273-.099-.471-.148-.67.15-.197.297-.767.966-.94 1.164-.173.199-.347.223-.644.075-.297-.15-1.255-.463-2.39-1.475-.883-.788-1.48-1.761-1.653-2.059-.173-.297-.018-.458.13-.606.134-.133.298-.347.446-.52.149-.174.198-.298.298-.497.099-.198.05-.371-.025-.52-.075-.149-.669-1.612-.916-2.207-.242-.579-.487-.5-.669-.51-.173-.008-.371-.01-.57-.01-.198 0-.52.074-.792.372-.272.297-1.04 1.016-1.04 2.479 0 1.462 1.065 2.875 1.213 3.074.149.198 2.096 3.2 5.077 4.487.709.306 1.262.489 1.694.625.712.227 1.36.195 1.871.118.571-.085 1.758-.719 2.006-1.413.248-.694.248-1.289.173-1.413-.074-.124-.272-.198-.57-.347m-5.421 7.403h-.004a9.87 9.87 0 01-5.031-1.378l-.361-.214-3.741.982.998-3.648-.235-.374a9.86 9.86 0 01-1.51-5.26c.001-5.45 4.436-9.884 9.888-9.884 2.64 0 5.122 1.03 6.988 2.898a9.825 9.825 0 012.893 6.994c-.003 5.45-4.437 9.884-9.885 9.884m8.413-18.297A11.815 11.815 0 0012.05 0C5.495 0 .16 5.335.157 11.892c0 2.096.547 4.142 1.588 5.945L.057 24l6.305-1.654a11.882 11.882 0 005.683 1.448h.005c6.554 0 11.89-5.335 11.893-11.893a11.821 11.821 0 00-3.48-8.413z" />
+                        </svg>
+                        {seg.ctaLabel}
+                      </a>
+                      <a
+                        href={CATALOGUE_URL}
+                        target="_blank"
+                        rel="noopener noreferrer"
+                        className="inline-flex items-center gap-2 border border-white/30 text-white text-xs tracking-[0.12em] uppercase font-bold font-[var(--font-inter)] px-7 py-4 hover:border-white transition-colors"
+                      >
+                        <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                          <path d="M21 15v4a2 2 0 01-2 2H5a2 2 0 01-2-2v-4M7 10l5 5 5-5M12 15V3" />
+                        </svg>
+                        Baixar Catálogo PDF
+                      </a>
+                    </>
+                  )}
                 </div>
               </div>
             </div>
 
             {/* Right — image + floating stat */}
             <div className="lg:w-[48%] relative min-h-[220px] lg:min-h-[620px]">
-              <Image src={seg.image} alt={`PFB Orbital — ${seg.label}`} fill className="object-cover" />
+              <Image src={seg.image} alt={`PFB Orbital — ${seg.label}`} fill sizes="(min-width: 1024px) 48vw, 100vw" className="object-cover" />
               <div className="absolute inset-0 bg-gradient-to-t from-[#001530]/40 to-transparent" />
               <div className="absolute bottom-8 right-8 bg-white/96 px-6 py-5 shadow-xl">
                 <p className="font-[var(--font-noto-serif)] text-[#002045] text-3xl font-normal leading-none mb-1">{seg.stat.value}</p>

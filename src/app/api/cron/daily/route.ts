@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
 import { supabaseAdmin } from "@/lib/supabase";
+import { EMAIL_EMPRESA } from "@/lib/email-destinos";
 
 export async function GET(req: NextRequest) {
   const secret = process.env.CRON_SECRET;
@@ -45,7 +46,7 @@ export async function GET(req: NextRequest) {
 
       await resend.emails.send({
         from: "Orbital Revestimentos <noreply@orbitalrevestimentos.com.br>",
-        to: "armaandaswani19@gmail.com",
+        to: EMAIL_EMPRESA,
         subject: `🎂 Aniversário hoje: ${partner.name}`,
         html: `
           <div style="font-family:sans-serif;max-width:520px;margin:0 auto;padding:32px 24px;color:#1a1a1a">

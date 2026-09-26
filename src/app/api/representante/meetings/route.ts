@@ -5,9 +5,10 @@ import { supabaseAdmin } from "@/lib/supabase";
 import { isMissingTable } from "@/lib/db-compat";
 import { smclickConfigured, normalizePhone, sendText, adminWhatsappPhone } from "@/lib/smclick";
 import { meetingInviteMessage, adminMeetingAlertMessage } from "@/lib/smclick-messages";
+import { EMAIL_EMPRESA } from "@/lib/email-destinos";
 
 const MIGRATION_HINT = "Recurso indisponível — rode a migração 019 (rep_meetings) no Supabase.";
-const ORBITAL_MEETING_EMAIL = "orbitalrevestimentos@gmail.com";
+const ORBITAL_MEETING_EMAIL = EMAIL_EMPRESA;
 
 interface Invitee { name: string; phone: string; email: string }
 interface EmailRecipient extends Invitee { role: "partner" | "rep" | "admin" }
