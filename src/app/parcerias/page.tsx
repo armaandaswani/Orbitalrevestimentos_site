@@ -66,7 +66,7 @@ const segments: Segment[] = [
         <path d="M14.7 6.3a1 1 0 000 1.4l1.6 1.6a1 1 0 001.4 0l3.77-3.77a6 6 0 01-7.94 7.94l-6.91 6.91a2.12 2.12 0 01-3-3l6.91-6.91a6 6 0 017.94-7.94l-3.76 3.76z" />
       </svg>
     ),
-    badge: "Treinamento de instalação gratuito",
+    badge: "Manual técnico de instalação",
     tagline: "Mais projetos por mês. Processo mais simples. Resultado premium.",
     headline: "Quem instala rápido, fecha mais contratos.",
     body: "Um cômodo em 2–3h. Mais projetos por mês sem aumentar equipe, sem poeira, sem equipamento pesado. O volume é o seu ganho.",
@@ -76,7 +76,7 @@ const segments: Segment[] = [
       { title: "Obra limpa em qualquer ambiente", desc: "Sem serra circular, sem poeira tóxica. Ideal para clínicas, escritórios ocupados, residências com crianças — sem interditar o espaço." },
       { title: "Material que surpreende o cliente", desc: "O acabamento fotorrealístico em mármore ou madeira entrega uma aparência que o cliente não espera — e que dura anos sem deteriorar." },
       { title: "Preço diferenciado para compra direta", desc: "Marceneiros parceiros têm acesso a tabela especial para comprar as placas e embutir o material nos seus próprios projetos." },
-      { title: "Suporte direto do fabricante", desc: "Dúvida de instalação? Atendimento direto via WhatsApp — sem intermediários, sem demora." },
+      { title: "Suporte técnico completo", desc: "Manual técnico detalhado, material de apoio no Instagram (@orbitalrevestimentos) e atendimento direto via WhatsApp. Em desenvolvimento: a Academia Orbital, com o passo a passo completo da instalação." },
     ],
     pricingCallout: "Compra direta disponível: marceneiros parceiros têm acesso a tabela de preços diferenciada para comprar as placas e embutir o material nos seus projetos — sem intermediários.",
     image: "/images/catalogue/projeto-escritorio-depois.jpeg",

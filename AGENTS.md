@@ -10,8 +10,9 @@ Applies to ALL content: the site, the chat AI (`DEFAULT_SYSTEM_PROMPT`), emails
 (`src/lib/*-email-content.ts`), commercial materials, and any PFB-vs-other-material
 comparison.
 
-- **PFB = Placa de Fibra de Bambu.** Spell out the full form the first time it
-  appears in any piece of content.
+- **PFB = Painel de Fibra de Bambu** (preferred — it is what the physical product
+  label says). "Placa de Fibra de Bambu" is also accepted. Spell out the full
+  form the first time it appears in any piece of content.
 - **NEVER** state, admit, or imply the PFB is "more expensive" / "custa mais" than
   MDF (or anything) — not even to justify it with durability or "ciclo de vida".
   That framing creates an objection and works against the sale.

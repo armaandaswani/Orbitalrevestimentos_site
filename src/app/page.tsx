@@ -699,6 +699,48 @@ export default function Home() {
         </div>
       </section>
 
+      {/* Academia Orbital — chamada curta. O curso ainda está em desenvolvimento:
+          aqui só se apresenta e leva à lista de espera. Nada de preço ou data. */}
+      <section className="py-10 lg:py-16 bg-[#f9f9f9] border-t border-[#eeeeee]">
+        <div className="max-w-[1280px] mx-auto px-4 lg:px-16">
+          <ScrollReveal direction="up">
+            <div className="flex flex-col lg:flex-row lg:items-end lg:justify-between gap-6 lg:gap-16">
+              <div className="lg:flex-1 max-w-2xl">
+                <div className="flex flex-wrap items-center gap-x-3 gap-y-2 mb-3">
+                  <p className="text-[#74777f] text-xs tracking-[0.2em] uppercase font-semibold font-[var(--font-inter)]">
+                    Academia Orbital
+                  </p>
+                  <span className="border border-[#c4c6cf] text-[#74777f] text-[9px] tracking-[0.18em] uppercase font-bold font-[var(--font-inter)] px-2 py-0.5">
+                    Em desenvolvimento
+                  </span>
+                </div>
+                <h2 className="font-serif text-[#002045] text-2xl lg:text-4xl font-normal leading-tight mb-3">
+                  Capacitação técnica para instalar PFB no padrão Orbital.
+                </h2>
+                <p className="text-[#43474e] text-sm lg:text-base font-[var(--font-inter)] leading-relaxed">
+                  Treinamento técnico para aplicadores, do preparo ao acabamento, para formar Instaladores
+                  Certificados Orbital. Entre na lista de espera para saber quando abrir.
+                </p>
+              </div>
+              <div className="flex flex-col sm:flex-row lg:flex-col gap-3 flex-shrink-0">
+                <Link
+                  href="/academia#lista-de-espera"
+                  className="w-full sm:w-auto inline-flex items-center justify-center whitespace-nowrap bg-[#002045] text-white text-xs tracking-[0.12em] uppercase font-bold font-[var(--font-inter)] px-8 py-4 hover:bg-[#1a365d] transition-colors"
+                >
+                  Entrar na lista de espera
+                </Link>
+                <Link
+                  href="/academia"
+                  className="w-full sm:w-auto inline-flex items-center justify-center whitespace-nowrap border border-[#c4c6cf] text-[#002045] text-xs tracking-[0.12em] uppercase font-bold font-[var(--font-inter)] px-8 py-4 hover:border-[#002045] transition-colors"
+                >
+                  Conhecer a Academia
+                </Link>
+              </div>
+            </div>
+          </ScrollReveal>
+        </div>
+      </section>
+
       {/* CTA WhatsApp */}
       <section className="py-10 lg:py-20 bg-[#002045]">
         <div className="max-w-[1280px] mx-auto px-4 lg:px-16 text-center">

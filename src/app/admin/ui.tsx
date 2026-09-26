@@ -18,7 +18,7 @@ export type AdminTab =
   | "partners" | "representantes" | "commissions"
   | "produtos" | "estoque" | "compras"
   | "financeiro" | "custos" | "relatorios"
-  | "campaigns" | "projetos" | "midia"
+  | "campaigns" | "projetos" | "midia" | "academia"
   | "simulador" | "visualizacoes"
   | "precos" | "drip" | "chat";
 
@@ -31,7 +31,7 @@ export const NAV_LABELS: Record<AdminTab, string> = {
   partners: "Parceiros", representantes: "Representantes", commissions: "Comissões",
   produtos: "Produtos", estoque: "Estoque", compras: "Compras & Importação",
   financeiro: "Financeiro (P&L)", custos: "Custos & Margens", relatorios: "Relatórios",
-  campaigns: "Campanhas", projetos: "Projetos", midia: "Mídia",
+  campaigns: "Campanhas", projetos: "Projetos", midia: "Mídia", academia: "Academia",
   simulador: "Simulador", visualizacoes: "Visualizações",
   precos: "Tabela de Preços", drip: "Réguas de E-mail", chat: "Chat IA",
 };
@@ -42,7 +42,7 @@ export const NAV_GROUPS: ReadonlyArray<{ group: string; items: ReadonlyArray<Adm
   { group: "Rede de Vendas", items: ["partners", "representantes", "commissions"] },
   { group: "Produtos & Estoque", items: ["produtos", "estoque", "compras"] },
   { group: "Gestão & Finanças", items: ["financeiro", "custos", "relatorios"] },
-  { group: "Marketing", items: ["campaigns", "projetos", "midia"] },
+  { group: "Marketing", items: ["campaigns", "projetos", "midia", "academia"] },
   { group: "Ferramentas", items: ["simulador", "visualizacoes"] },
   { group: "Configurações", items: ["precos", "drip", "chat"] },
 ];
@@ -252,6 +252,7 @@ const ICON_PATHS: Record<AdminTab, React.ReactNode> = {
   campaigns: (<><polygon points="11 5 6 9 2 9 2 15 6 15 11 19 11 5" /><path d="M19.07 4.93a10 10 0 0 1 0 14.14" /><path d="M15.54 8.46a5 5 0 0 1 0 7.07" /></>),
   projetos: (<path d="M22 19a2 2 0 0 1-2 2H4a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h5l2 3h9a2 2 0 0 1 2 2z" />),
   midia: (<><rect x="3" y="3" width="18" height="18" rx="2" /><circle cx="8.5" cy="8.5" r="1.5" /><polyline points="21 15 16 10 5 21" /></>),
+  academia: (<><path d="M22 10L12 5 2 10l10 5 10-5z" /><path d="M6 12v5c3 3 9 3 12 0v-5" /><line x1="22" y1="10" x2="22" y2="16" /></>),
   simulador: (<><line x1="4" y1="21" x2="4" y2="14" /><line x1="4" y1="10" x2="4" y2="3" /><line x1="12" y1="21" x2="12" y2="12" /><line x1="12" y1="8" x2="12" y2="3" /><line x1="20" y1="21" x2="20" y2="16" /><line x1="20" y1="12" x2="20" y2="3" /><line x1="1" y1="14" x2="7" y2="14" /><line x1="9" y1="8" x2="15" y2="8" /><line x1="17" y1="16" x2="23" y2="16" /></>),
   visualizacoes: (<><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z" /><circle cx="12" cy="12" r="3" /></>),
   precos: (<><path d="M20.59 13.41l-7.17 7.17a2 2 0 0 1-2.83 0L2 12V2h10l8.59 8.59a2 2 0 0 1 0 2.83z" /><line x1="7" y1="7" x2="7.01" y2="7" /></>),
