@@ -88,7 +88,7 @@ export default function ListaEsperaForm() {
           Pronto. Você está na lista.
         </p>
         <p className="text-[#43474e] text-sm lg:text-base font-[var(--font-inter)] leading-relaxed max-w-md">
-          Seu lugar na lista prioritária da Academia Orbital está garantido. Quando o curso abrir, você é
+          Seu lugar na lista de espera da Academia Orbital está garantido. Quando o curso abrir, você é
           avisado primeiro.
         </p>
       </div>

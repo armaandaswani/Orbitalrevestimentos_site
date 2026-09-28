@@ -7,7 +7,7 @@ import AntesDepois from "./AntesDepois";
 import CtaFixo from "./CtaFixo";
 
 /**
- * Academia Orbital — lista prioritária.
+ * Academia Orbital — lista de espera.
  *
  * Campanha dentro da marca: tipografia condensada, verde-lima na conversão.
  * Público: aplicador, instalador e marceneiro, no celular. Eles não leem
@@ -33,11 +33,11 @@ const URL_PAGINA = "https://orbitalrevestimentos.com.br/academia";
 export const metadata: Metadata = {
   title: "Academia Orbital — Aprenda a instalar PFB",
   description:
-    "Aprenda a instalar o Painel de Fibra de Bambu (PFB), do corte ao acabamento, e conquiste a Certificação Orbital. Para aplicadores, instaladores e marceneiros. Entre na lista prioritária.",
+    "Aprenda a instalar o Painel de Fibra de Bambu (PFB), do corte ao acabamento, e conquiste a Certificação Orbital. Para aplicadores, instaladores e marceneiros. Entre na lista de espera.",
   alternates: { canonical: URL_PAGINA },
   openGraph: {
     title: "Academia Orbital — Aprenda a instalar PFB",
-    description: "Um novo serviço para o seu portfólio. Entre na lista prioritária e seja avisado primeiro.",
+    description: "Um novo serviço para o seu portfólio. Entre na lista de espera e seja avisado primeiro.",
     url: URL_PAGINA,
   },
 };
@@ -138,7 +138,7 @@ export default function AcademiaPage() {
 
           <div id="lista-de-espera" className="scroll-mt-24">
             <p className={`${D} text-2xl lg:text-[28px] leading-none font-bold uppercase mb-4`}>
-              Entre na <span style={{ color: LIMA }}>lista prioritária</span>
+              Entre na <span style={{ color: LIMA }}>lista de espera</span>
             </p>
             <ListaEsperaForm />
           </div>
@@ -189,9 +189,9 @@ export default function AcademiaPage() {
       <section className="bg-[#00142b] py-24 lg:py-36">
         <ScrollReveal direction="up" className="max-w-[1280px] mx-auto px-4 lg:px-16">
           <p className={`${D} text-white text-[34px] leading-none sm:text-5xl lg:text-[64px] font-bold uppercase`}>
-            PFB não é o futuro.
+            PFB não é mais o futuro.
             <br />
-            <span style={{ color: LIMA }}>Já está sendo instalado.</span>
+            <span style={{ color: LIMA }}>Já é o presente!</span>
           </p>
         </ScrollReveal>
       </section>

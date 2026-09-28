@@ -719,7 +719,7 @@ export default function Home() {
                 </h2>
                 <p className="text-[#43474e] text-sm lg:text-base font-[var(--font-inter)] leading-relaxed">
                   Treinamento técnico para aplicadores, do preparo ao acabamento, para formar Instaladores
-                  Certificados Orbital. Entre na lista prioritária e saiba primeiro quando abrir.
+                  Certificados Orbital. Entre na lista de espera e saiba primeiro quando abrir.
                 </p>
               </div>
               <div className="flex flex-col sm:flex-row lg:flex-col gap-3 flex-shrink-0">
@@ -727,7 +727,7 @@ export default function Home() {
                   href="/academia#lista-de-espera"
                   className="w-full sm:w-auto inline-flex items-center justify-center whitespace-nowrap bg-[#002045] text-white text-xs tracking-[0.12em] uppercase font-bold font-[var(--font-inter)] px-8 py-4 hover:bg-[#1a365d] transition-colors"
                 >
-                  Entrar na lista prioritária
+                  Entrar na lista de espera
                 </Link>
                 <Link
                   href="/academia"
