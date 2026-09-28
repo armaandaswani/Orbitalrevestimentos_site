@@ -6,7 +6,7 @@ import { ATUACOES, EXPERIENCIAS, FOCOS } from "@/lib/academia-waitlist";
 const labelCls =
   "block text-[10px] tracking-[0.15em] uppercase font-bold font-[var(--font-inter)] text-[#74777f] mb-2";
 const inputCls =
-  "w-full border border-[#e2e2e2] bg-white px-4 py-3 text-sm font-[var(--font-inter)] text-[#002045] focus:outline-none focus:border-[#002045] placeholder-[#b0b4bc]";
+  "w-full border border-[#e2e2e2] bg-white px-4 py-3.5 text-base sm:text-sm font-[var(--font-inter)] text-[#002045] focus:outline-none focus:border-[#002045] placeholder-[#b0b4bc]";
 /** Mesma caixa dos inputs, com a seta desenhada — o select nativo destoa do resto. */
 const selectCls = `${inputCls} appearance-none bg-[url('data:image/svg+xml;utf8,<svg xmlns=%22http://www.w3.org/2000/svg%22 width=%2212%22 height=%2212%22 viewBox=%220 0 24 24%22 fill=%22none%22 stroke=%22%2374777f%22 stroke-width=%222%22><path d=%22M6 9l6 6 6-6%22/></svg>')] bg-no-repeat bg-[position:right_1rem_center] pr-10`;
 
@@ -84,12 +84,12 @@ export default function ListaEsperaForm() {
             <polyline points="20 6 9 17 4 12" />
           </svg>
         </div>
-        <p className="font-serif text-[#002045] text-2xl lg:text-3xl font-normal mb-3">
-          Cadastro realizado.
+        <p className="text-[#002045] text-2xl lg:text-3xl font-extrabold uppercase tracking-tight font-[var(--font-inter)] mb-3">
+          Pronto. Você está na lista.
         </p>
         <p className="text-[#43474e] text-sm lg:text-base font-[var(--font-inter)] leading-relaxed max-w-md">
-          Você agora faz parte da lista de espera da Academia Orbital. Quando tivermos novidades sobre a
-          abertura do treinamento, entraremos em contato.
+          Seu lugar na lista prioritária da Academia Orbital está garantido. Quando o curso abrir, você é
+          avisado primeiro.
         </p>
       </div>
     );
@@ -198,14 +198,14 @@ export default function ListaEsperaForm() {
       <button
         type="submit"
         disabled={loading}
-        className="w-full bg-[#3b6934] text-white text-xs tracking-[0.15em] uppercase font-bold font-[var(--font-inter)] px-8 py-4 hover:bg-[#2f5529] transition-colors disabled:opacity-50"
+        className="w-full min-h-14 bg-[#3b6934] text-white text-sm tracking-[0.06em] sm:tracking-[0.12em] uppercase font-extrabold font-[var(--font-inter)] px-4 sm:px-6 py-4 hover:bg-[#2f5529] transition-colors disabled:opacity-50"
       >
-        {loading ? "Enviando…" : "Quero entrar na lista"}
+        {loading ? "Enviando…" : "Quero meu lugar na lista →"}
       </button>
       <p className="text-[#74777f] text-[11px] font-[var(--font-inter)] text-center mt-3 leading-relaxed">
-        {/* "Cadastro gratuito", e não "sem custo": logo abaixo de um botão sobre o
-            curso, "sem custo" seria lido como preço do treinamento — que não existe. */}
-        Cadastro gratuito. Usamos seus dados apenas para avisar sobre a abertura da Academia Orbital.
+        {/* "Cadastro gratuito", e não "sem custo" ou "curso grátis": o curso não é
+            gratuito — gratuita é só a lista. */}
+        Cadastro gratuito. Sem compromisso.
       </p>
     </form>
   );

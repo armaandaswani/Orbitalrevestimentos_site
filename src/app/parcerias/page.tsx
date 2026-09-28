@@ -164,7 +164,7 @@ const segments: Segment[] = [
     headline: "Aprenda a instalar PFB no padrão Orbital.",
     body: "A Orbital está estruturando a Academia Orbital: um treinamento técnico, passo a passo, para aplicadores que querem instalar Painéis de Fibra de Bambu (PFB) corretamente e se tornar Instaladores Certificados Orbital.",
     benefits: [
-      { title: "Academia Orbital", desc: "Treinamento técnico completo, do preparo da superfície ao acabamento. Em desenvolvimento — entre na lista de espera para ser avisado na abertura." },
+      { title: "Academia Orbital", desc: "Treinamento técnico completo, do preparo da superfície ao acabamento. Em desenvolvimento — entre na lista prioritária para ser avisado primeiro." },
       { title: "Instalador Certificado Orbital", desc: "Ao concluir o treinamento e o processo de certificação, você pode se tornar um Instalador Certificado Orbital." },
       { title: "Manual técnico de instalação", desc: "Material detalhado com o processo de aplicação do PFB, passo a passo." },
       { title: "Instalação limpa e ágil", desc: "Cola PU nas paredes e cola de contato nos tetos. Um cômodo em 2 a 3 horas, sem obra e sem poeira." },
@@ -174,9 +174,9 @@ const segments: Segment[] = [
     image: "/images/academia/lavabo-consultorio-inteiro.jpg",
     waText: "Olá! Sou aplicador/instalador e vim pela aba de Aplicadores no site. Quero saber mais sobre a instalação do PFB Orbital e a Academia Orbital.",
     stat: { value: "11 kg", label: "por placa · leve de manusear" },
-    ctaLabel: "Entrar na lista de espera",
+    ctaLabel: "Entrar na lista prioritária",
     ctaHref: "/academia#lista-de-espera",
-    highlight: "O cadastro na lista de espera da Academia Orbital é gratuito.",
+    highlight: "O cadastro na lista prioritária da Academia Orbital é gratuito.",
   },
 ];
 

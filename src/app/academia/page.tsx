@@ -1,64 +1,84 @@
 import type { Metadata } from "next";
 import Image from "next/image";
+import { Barlow_Condensed } from "next/font/google";
 import ScrollReveal from "@/components/ScrollReveal";
 import ListaEsperaForm from "./ListaEsperaForm";
+import AntesDepois from "./AntesDepois";
+import CtaFixo from "./CtaFixo";
 
 /**
- * Academia Orbital — lista de espera.
+ * Academia Orbital — lista prioritária.
  *
- * O curso AINDA NÃO EXISTE. Esta página só capta interesse. Por isso não há
- * preço, duração, número de aulas, data, vagas nem nenhum CTA que sugira
- * compra ou inscrição aberta — e nada disso deve ser acrescentado sem que a
- * Orbital defina. Todo CTA leva ao formulário (#lista-de-espera).
+ * Campanha dentro da marca: tipografia condensada, verde-lima na conversão.
+ * Público: aplicador, instalador e marceneiro, no celular. Eles não leem
+ * parágrafo — cada seção é UM título curto e UMA prova visual, com espaço em
+ * volta. Versões anteriores foram reprovadas por excesso de texto; antes de
+ * acrescentar uma frase aqui, tire outra.
  *
- * Público: aplicador, instalador e marceneiro, lendo no celular entre um
- * serviço e outro. A primeira versão tinha ~700 palavras em tom de relatório
- * e foi reprovada por isso. Regra desta: frase curta, "você", número no lugar
- * de parágrafo, e a prova (antes/depois de um serviço real) logo no topo.
- * Impacto vem de escala e contraste — nada de neon, dourado ou selo falso.
+ * O formulário é o centro da página e fica no topo; todo botão volta para ele.
+ *
+ * O curso AINDA NÃO EXISTE: nada de preço, duração, número de aulas, data,
+ * vagas, contador ou "inscrições abertas". O curso não é gratuito; gratuita é
+ * só a lista.
+ *
+ * Fotos: só obras reais da Orbital. Os "depois" em PNG de /images/projetos são
+ * imagens geradas e não entram aqui.
  */
+
+const display = Barlow_Condensed({ subsets: ["latin"], weight: ["600", "700", "800"], display: "swap" });
+const D = display.className;
 
 const URL_PAGINA = "https://orbitalrevestimentos.com.br/academia";
 
 export const metadata: Metadata = {
   title: "Academia Orbital — Aprenda a instalar PFB",
   description:
-    "Curso prático de instalação do Painel de Fibra de Bambu (PFB), do corte ao acabamento. Para aplicadores, instaladores e marceneiros. Entre na lista de espera.",
+    "Aprenda a instalar o Painel de Fibra de Bambu (PFB), do corte ao acabamento, e conquiste a Certificação Orbital. Para aplicadores, instaladores e marceneiros. Entre na lista prioritária.",
   alternates: { canonical: URL_PAGINA },
   openGraph: {
-    title: "Academia Orbital — Seja Instalador Certificado Orbital",
-    description:
-      "Curso prático de instalação de PFB, do corte ao acabamento. Entre na lista e seja avisado quando abrir.",
+    title: "Academia Orbital — Aprenda a instalar PFB",
+    description: "Um novo serviço para o seu portfólio. Entre na lista prioritária e seja avisado primeiro.",
     url: URL_PAGINA,
   },
 };
 
-const DESTAQUES = [
-  { t: "Passo a passo", d: "do corte ao acabamento" },
-  { t: "Certificado", d: "Instalador Orbital" },
-  { t: "Compra direta", d: "com a Orbital, depois de certificado" },
+const LIMA = "#a8e05f";
+
+const BENEFICIOS = ["Mais rapidez", "Menos retrabalho", "Novo serviço", "Certificação Orbital"];
+
+const PARES = [
+  {
+    rotulo: "Lavabo de consultório",
+    par: {
+      antes: "/images/academia/lavabo-consultorio-antes.jpg",
+      depois: "/images/academia/lavabo-consultorio-depois.jpg",
+      altAntes: "Lavabo de consultório antes: forro aberto e parede com faixa de pastilha",
+      altDepois: "O mesmo lavabo depois, com PFB acabamento mármore e forro amadeirado",
+    },
+  },
+  {
+    rotulo: "Banheiro com box",
+    par: {
+      antes: "/images/academia/banheiro-box-antes.jpg",
+      depois: "/images/academia/banheiro-box-depois.jpg",
+      altAntes: "Banheiro antes: azulejo branco e painel fotográfico na parede",
+      altDepois: "O mesmo banheiro depois, com paredes claras e forro amadeirado em PFB",
+    },
+  },
 ];
 
-const NUMEROS = [
-  { v: "2–3h", d: "para instalar um cômodo" },
-  { v: "11 kg", d: "por placa — leve na parede e no teto" },
-  { v: "Sem obra", d: "sem quebra-quebra e sem poeira" },
+const APLICACOES = [
+  { t: "Paredes", src: "/images/academia/escadaria-residencial.jpg", alt: "Parede de escadaria revestida com PFB acabamento madeira" },
+  { t: "Tetos e forros", src: "/images/academia/aplic-teto.jpg", alt: "Parede e teto revestidos com PFB acabamento mármore escuro" },
+  { t: "Portas", src: "/images/academia/aplic-porta.jpg", alt: "Porta revestida com PFB, alinhada à parede de mármore" },
+  { t: "Curvas", src: "/images/academia/aplic-curva.jpg", alt: "Balcão curvo de quiosque revestido com PFB acabamento madeira" },
+  { t: "Colunas", src: "/images/academia/aplic-coluna.jpg", alt: "Coluna revestida com PFB acabamento mármore claro" },
+  { t: "Áreas molhadas", src: "/images/academia/aplic-area-molhada.jpg", alt: "Box de banheiro com paredes e forro em PFB" },
 ];
 
-const ETAPAS = [
-  { n: "01", t: "Preparar e medir", d: "Superfície, medição e paginação." },
-  { n: "02", t: "Cortar e colar", d: "Corte, manuseio, colagem e fixação." },
-  { n: "03", t: "Acabar sem erro", d: "Emendas, acabamento e os erros que mais acontecem." },
-];
+const NIVEIS = ["Preparar", "Cortar", "Fixar", "Acabar", "Aplicar"];
 
-const APLICACOES = ["Parede", "Teto e forro", "Porta", "Superfície curva", "Área molhada"];
-
-const FAQ = [
-  { q: "O curso já abriu?", a: "Ainda não. Está em preparação. Quem está na lista é avisado primeiro." },
-  { q: "É para quem?", a: "Aplicadores, instaladores e marceneiros que querem instalar PFB do jeito certo." },
-  { q: "Tem certificado?", a: "Sim. Quem concluir o curso e a certificação vira Instalador Certificado Orbital." },
-  { q: "Paga para entrar na lista?", a: "Não. A lista é grátis e serve só para avisar você quando o curso abrir." },
-];
+const ETAPAS_CERT = ["Treinamento", "Conclusão", "Certificação", "Instalador Orbital"];
 
 const breadcrumbSchema = {
   "@context": "https://schema.org",
@@ -69,250 +89,219 @@ const breadcrumbSchema = {
   ],
 };
 
-const faqSchema = {
-  "@context": "https://schema.org",
-  "@type": "FAQPage",
-  mainEntity: FAQ.map(({ q, a }) => ({
-    "@type": "Question",
-    name: q,
-    acceptedAnswer: { "@type": "Answer", text: a },
-  })),
-};
-
-/**
- * Botão verde da Academia. O verde é o da marca (está no logo) — é a energia
- * que a versão da Hotmart tinha, sem o neon. Todo CTA leva ao formulário.
- */
-function Cta({ texto = "Quero entrar na lista", largo = false }: { texto?: string; largo?: boolean }) {
+/** Todo botão volta para o formulário no topo. Alto: é tocado com o polegar. */
+function Cta({ texto, tom = "lima" }: { texto: string; tom?: "lima" | "navy" | "verde" }) {
+  const cor = {
+    lima: "bg-[#a8e05f] text-[#00142b] hover:bg-[#bdf07a]",
+    navy: "bg-[#00142b] text-white hover:bg-[#002045]",
+    verde: "bg-[#3b6934] text-white hover:bg-[#2f5529]",
+  }[tom];
   return (
     <a
       href="#lista-de-espera"
-      className={`${largo ? "w-full sm:w-auto" : ""} inline-flex items-center justify-center gap-2 bg-[#3b6934] text-white text-xs tracking-[0.12em] uppercase font-bold font-[var(--font-inter)] px-9 py-4 hover:bg-[#2f5529] transition-colors`}
+      className={`group w-full sm:w-auto inline-flex items-center justify-center gap-3 min-h-14 px-6 sm:px-8 py-4 text-sm tracking-[0.08em] sm:tracking-[0.12em] uppercase font-extrabold font-[var(--font-inter)] transition-colors ${cor}`}
     >
-      {texto} <span aria-hidden>→</span>
+      {texto}
+      <span aria-hidden className="transition-transform duration-300 group-hover:translate-x-1.5">→</span>
     </a>
   );
 }
 
-/** Antes e depois do mesmo canto do mesmo serviço — a prova, em vez de texto. */
-function AntesDepois() {
-  return (
-    <figure>
-      <div className="grid grid-cols-2 gap-2">
-        {[
-          { src: "/images/academia/lavabo-consultorio-antes.jpg", r: "Antes", alt: "Lavabo de consultório antes: forro aberto e parede com faixa de pastilha" },
-          { src: "/images/academia/lavabo-consultorio-depois.jpg", r: "Depois", alt: "O mesmo lavabo depois, revestido com PFB acabamento mármore" },
-        ].map(({ src, r, alt }) => (
-          <div key={r} className="relative aspect-[3/4] overflow-hidden">
-            <Image src={src} alt={alt} fill sizes="(min-width: 1024px) 240px, 50vw" className="object-cover" />
-            <span
-              className={`absolute top-2 left-2 text-[10px] tracking-[0.15em] uppercase font-bold font-[var(--font-inter)] px-2 py-1 ${
-                r === "Depois" ? "bg-[#3b6934] text-white" : "bg-black/60 text-white"
-              }`}
-            >
-              {r}
-            </span>
-          </div>
-        ))}
-      </div>
-      <figcaption className="text-white/50 text-xs font-[var(--font-inter)] mt-2.5">
-        Lavabo de consultório, antes e depois do PFB.
-      </figcaption>
-    </figure>
-  );
-}
+const H2 = `${D} text-[34px] leading-none sm:text-5xl lg:text-[60px] lg:leading-[0.98] font-bold uppercase`;
 
 export default function AcademiaPage() {
   return (
-    <div className="pt-20">
+    <div className="pt-20 bg-[#00142b]">
       <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: JSON.stringify(breadcrumbSchema) }} />
-      <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: JSON.stringify(faqSchema) }} />
 
-      {/* ── Topo: promessa, botão e a prova ── */}
-      <section className="bg-[#002045] text-white relative overflow-hidden">
-        <div
-          className="absolute inset-0 opacity-[0.04]"
-          style={{
-            backgroundImage:
-              "repeating-linear-gradient(0deg, transparent, transparent 39px, rgba(255,255,255,0.5) 39px, rgba(255,255,255,0.5) 40px), repeating-linear-gradient(90deg, transparent, transparent 39px, rgba(255,255,255,0.5) 39px, rgba(255,255,255,0.5) 40px)",
-          }}
-        />
-        <div className="relative max-w-[1280px] mx-auto px-4 lg:px-16 py-10 lg:py-20 grid lg:grid-cols-[1.15fr_1fr] gap-10 lg:gap-16 items-center">
-          <div>
-            <div className="flex flex-wrap items-center gap-3 mb-6">
-              <p className="text-[#a1d494] text-xs tracking-[0.2em] uppercase font-semibold font-[var(--font-inter)]">
+      {/* ── Topo: promessa + formulário ── */}
+      <section id="academia-topo" className="bg-[#00142b] text-white">
+        <div className="max-w-[1280px] mx-auto px-4 lg:px-16 pt-10 pb-14 lg:py-20 lg:grid lg:grid-cols-[1fr_1.05fr] lg:gap-16 lg:items-center">
+          <div className="mb-10 lg:mb-0">
+            <div className="flex flex-wrap items-center gap-2.5 mb-6">
+              <span className="text-[11px] tracking-[0.22em] uppercase font-bold font-[var(--font-inter)]" style={{ color: LIMA }}>
                 Academia Orbital
-              </p>
-              <span className="border border-[#86a0cd]/40 text-[#86a0cd] text-[9px] tracking-[0.18em] uppercase font-bold font-[var(--font-inter)] px-2.5 py-1">
+              </span>
+              <span className="border border-white/25 text-white/70 text-[10px] tracking-[0.18em] uppercase font-bold font-[var(--font-inter)] px-2 py-0.5">
                 Em preparação
               </span>
             </div>
-            <h1 className="font-serif text-[40px] leading-[1.05] sm:text-5xl lg:text-[64px] lg:leading-[1.02] font-normal tracking-[-0.02em] mb-5">
+            <h1 className={`${D} text-[40px] leading-[0.98] sm:text-6xl lg:text-[64px] xl:text-[70px] lg:leading-[0.95] font-extrabold uppercase mb-6`}>
               Aprenda a instalar PFB.
               <br />
-              <em className="text-[#86a0cd]">Seja Instalador Certificado Orbital.</em>
+              <span style={{ color: LIMA }}>Ganhe um novo serviço.</span>
             </h1>
-            <p className="text-white/75 text-base lg:text-lg font-[var(--font-inter)] leading-relaxed max-w-lg mb-8">
-              Curso prático do Painel de Fibra de Bambu (PFB), do corte ao acabamento. Para aplicadores,
-              instaladores e marceneiros.
+            <p className="text-white/70 text-base lg:text-lg font-[var(--font-inter)] leading-relaxed max-w-md">
+              Curso prático do Painel de Fibra de Bambu (PFB), do corte ao acabamento. Com Certificação Orbital.
             </p>
-            <Cta largo />
-            <p className="text-white/50 text-xs font-[var(--font-inter)] mt-3">
-              O curso ainda não abriu. Entrar na lista é grátis — você é avisado primeiro.
-            </p>
-
-            <dl className="grid grid-cols-3 gap-3 border-t border-white/15 mt-9 pt-6 max-w-lg">
-              {DESTAQUES.map(({ t, d }) => (
-                <div key={t}>
-                  <dt className="text-white text-sm font-bold font-[var(--font-inter)] leading-tight">{t}</dt>
-                  <dd className="text-white/50 text-[11px] font-[var(--font-inter)] leading-snug mt-1">{d}</dd>
-                </div>
-              ))}
-            </dl>
           </div>
 
-          <div className="w-full max-w-md mx-auto lg:max-w-none">
-            <AntesDepois />
+          <div id="lista-de-espera" className="scroll-mt-24">
+            <p className={`${D} text-2xl lg:text-[28px] leading-none font-bold uppercase mb-4`}>
+              Entre na <span style={{ color: LIMA }}>lista prioritária</span>
+            </p>
+            <ListaEsperaForm />
           </div>
         </div>
       </section>
 
-      {/* ── Por que PFB: número, não parágrafo ── */}
-      <section className="bg-white py-12 lg:py-20 border-b border-[#eeeeee]">
-        <div className="max-w-[1280px] mx-auto px-4 lg:px-16">
-          <p className="text-[#74777f] text-xs tracking-[0.2em] uppercase font-semibold font-[var(--font-inter)] mb-3">
-            Por que PFB
+      {/* ── Faixa: os quatro ganhos, em quatro palavras ── */}
+      <section className="bg-[#a8e05f] text-[#00142b]" aria-label="O que você ganha">
+        <ul className="max-w-[1280px] mx-auto grid grid-cols-2 lg:grid-cols-4">
+          {BENEFICIOS.map((b, i) => (
+            <li
+              key={b}
+              className={`px-4 lg:px-8 py-5 lg:py-6 border-[#00142b]/15 ${i % 2 === 0 ? "border-r" : ""} ${i < 2 ? "border-b lg:border-b-0" : ""} lg:border-r lg:last:border-r-0`}
+            >
+              <span className={`${D} block text-xl lg:text-[26px] leading-none font-bold uppercase`}>{b}</span>
+            </li>
+          ))}
+        </ul>
+      </section>
+
+      {/* ── A prova ── */}
+      <section className="bg-[#f2f1ec] text-[#00142b] py-20 lg:py-32">
+        <div className="max-w-[1080px] mx-auto px-4 lg:px-16">
+          <ScrollReveal direction="up">
+            <h2 className={`${H2} mb-12 lg:mb-16`}>
+              Você vai aprender
+              <br />
+              <span className="text-[#3b6934]">a fazer isso.</span>
+            </h2>
+          </ScrollReveal>
+          <div className="space-y-16 lg:space-y-24">
+            {PARES.map(({ rotulo, par }) => (
+              <ScrollReveal key={rotulo} direction="up">
+                <div className="md:max-w-[820px]">
+                  <AntesDepois par={par} rotulo={rotulo} />
+                </div>
+                <p className={`${D} text-xl lg:text-2xl font-bold uppercase mt-4`}>{rotulo}</p>
+              </ScrollReveal>
+            ))}
+          </div>
+          <div className="mt-14 lg:mt-20">
+            <Cta texto="Quero entrar na lista" tom="verde" />
+          </div>
+        </div>
+      </section>
+
+      {/* ── Uma frase, e só ── */}
+      <section className="bg-[#00142b] py-24 lg:py-36">
+        <ScrollReveal direction="up" className="max-w-[1280px] mx-auto px-4 lg:px-16">
+          <p className={`${D} text-white text-[34px] leading-none sm:text-5xl lg:text-[64px] font-bold uppercase`}>
+            PFB não é o futuro.
+            <br />
+            <span style={{ color: LIMA }}>Já está sendo instalado.</span>
           </p>
-          <h2 className="font-serif text-[#002045] text-3xl lg:text-5xl font-normal mb-10">
-            Rápido, leve e limpo de instalar.
-          </h2>
-          <div className="grid grid-cols-1 sm:grid-cols-3 gap-6 sm:gap-0 sm:divide-x sm:divide-[#e2e2e2]">
-            {NUMEROS.map(({ v, d }, i) => (
-              <ScrollReveal key={v} direction="up" delay={i * 80} className="sm:px-8 first:sm:pl-0">
-                <p className="font-serif text-[#002045] text-5xl lg:text-6xl font-normal leading-none mb-2">{v}</p>
-                <p className="text-[#43474e] text-sm font-[var(--font-inter)]">{d}</p>
+        </ScrollReveal>
+      </section>
+
+      {/* ── Onde aplica: foto e uma palavra ── */}
+      <section className="bg-white text-[#00142b] py-20 lg:py-32">
+        <div className="max-w-[1280px] mx-auto px-4 lg:px-16">
+          <ScrollReveal direction="up">
+            <h2 className={`${H2} mb-12 lg:mb-16`}>
+              Não é <span className="text-[#3b6934]">só parede.</span>
+            </h2>
+          </ScrollReveal>
+          <div className="grid grid-cols-2 lg:grid-cols-3 gap-2 lg:gap-4">
+            {APLICACOES.map(({ t, src, alt }, i) => (
+              <ScrollReveal key={t} direction="up" delay={(i % 3) * 80}>
+                <figure className="group relative aspect-[3/4] overflow-hidden bg-[#00142b]">
+                  <Image
+                    src={src}
+                    alt={alt}
+                    fill
+                    sizes="(min-width: 1024px) 400px, 50vw"
+                    className="object-cover transition-transform duration-700 lg:group-hover:scale-105"
+                  />
+                  <div className="absolute inset-0 bg-gradient-to-t from-[#00142b]/80 via-transparent to-transparent" />
+                  <figcaption className={`${D} absolute left-3 bottom-3 lg:left-5 lg:bottom-5 text-white text-xl lg:text-2xl leading-none font-bold uppercase`}>
+                    {t}
+                  </figcaption>
+                </figure>
               </ScrollReveal>
             ))}
           </div>
         </div>
       </section>
 
-      {/* ── O que você aprende: 3 etapas + onde aplicar ── */}
-      <section className="bg-[#f5f5f3] py-12 lg:py-20">
-        <div className="max-w-[1280px] mx-auto px-4 lg:px-16 grid lg:grid-cols-[1.4fr_1fr] gap-10 lg:gap-16 items-center">
-          <div>
-            <p className="text-[#74777f] text-xs tracking-[0.2em] uppercase font-semibold font-[var(--font-inter)] mb-3">
-              No curso
-            </p>
-            <h2 className="font-serif text-[#002045] text-3xl lg:text-5xl font-normal mb-8">
-              Do primeiro corte ao acabamento.
-            </h2>
-            <ol className="space-y-5 mb-8">
-              {ETAPAS.map(({ n, t, d }) => (
-                <li key={n} className="flex gap-5 items-baseline border-t border-[#dcdcd8] pt-5">
-                  <span className="font-serif text-[#3b6934] text-3xl leading-none w-10 flex-shrink-0">{n}</span>
-                  <div>
-                    <h3 className="font-serif text-[#002045] text-xl lg:text-2xl font-normal leading-tight">{t}</h3>
-                    <p className="text-[#43474e] text-sm font-[var(--font-inter)] mt-1">{d}</p>
-                  </div>
-                </li>
-              ))}
-            </ol>
-            <p className="text-[#74777f] text-[11px] tracking-[0.15em] uppercase font-bold font-[var(--font-inter)] mb-3">
-              Onde aplicar
-            </p>
-            <ul className="flex flex-wrap gap-2">
-              {APLICACOES.map((a) => (
-                <li key={a} className="bg-white border border-[#dcdcd8] text-[#002045] text-sm font-[var(--font-inter)] px-3 py-1.5">
-                  {a}
-                </li>
-              ))}
-            </ul>
-          </div>
-          <ScrollReveal direction="up" className="w-full max-w-sm mx-auto lg:max-w-none">
-            <figure>
-              <div className="relative aspect-square overflow-hidden">
-                <Image
-                  src="/images/academia/escadaria-residencial.jpg"
-                  alt="Escadaria residencial com parede revestida em PFB acabamento madeira"
-                  fill
-                  sizes="(min-width: 1024px) 400px, 384px"
-                  className="object-cover"
-                />
-              </div>
-              <figcaption className="text-[#74777f] text-xs font-[var(--font-inter)] mt-2.5">
-                Escadaria residencial com PFB.
-              </figcaption>
-            </figure>
-          </ScrollReveal>
-        </div>
-      </section>
-
-      {/* ── Certificado ── */}
-      <section className="bg-[#002045] text-white py-14 lg:py-24">
-        <div className="max-w-[1280px] mx-auto px-4 lg:px-16 flex flex-col lg:flex-row lg:items-end lg:justify-between gap-8">
-          <ScrollReveal direction="up" className="max-w-2xl">
-            <p className="text-[#a1d494] text-xs tracking-[0.2em] uppercase font-semibold font-[var(--font-inter)] mb-4">
-              Certificado
-            </p>
-            <h2 className="font-serif text-4xl lg:text-6xl font-normal leading-[1.05] mb-6">
-              Instalador Certificado <em className="text-[#86a0cd]">Orbital</em>
-            </h2>
-            <p className="text-white/75 text-base lg:text-lg font-[var(--font-inter)] leading-relaxed">
-              Termine o curso, conclua a certificação e mostre ao seu cliente que você instala no padrão
-              Orbital. Depois de certificado, você compra PFB direto com a Orbital.
-            </p>
-          </ScrollReveal>
-          <div className="flex-shrink-0">
-            <Cta largo />
-          </div>
-        </div>
-      </section>
-
-      {/* ── Lista de espera ── */}
-      <section id="lista-de-espera" className="scroll-mt-20 py-12 lg:py-20 bg-[#f5f5f3]">
-        <div className="max-w-[1280px] mx-auto px-4 lg:px-16 grid lg:grid-cols-[1fr_1.5fr] gap-8 lg:gap-16 items-start">
-          <div>
-            <p className="text-[#74777f] text-xs tracking-[0.2em] uppercase font-semibold font-[var(--font-inter)] mb-3">
-              Lista de espera
-            </p>
-            <h2 className="font-serif text-[#002045] text-3xl lg:text-5xl font-normal leading-tight mb-4">
-              Entre na lista.
-            </h2>
-            <p className="text-[#43474e] text-base font-[var(--font-inter)] leading-relaxed">
-              O curso ainda não abriu. Deixe seu WhatsApp e avisamos você quando abrir.
-            </p>
-          </div>
-          <ListaEsperaForm />
-        </div>
-      </section>
-
-      {/* ── Dúvidas ── */}
-      <section className="py-12 lg:py-20 bg-white">
+      {/* ── O que aprende: cinco palavras, em escada ── */}
+      <section className="bg-[#00142b] text-white py-20 lg:py-32">
         <div className="max-w-[1280px] mx-auto px-4 lg:px-16">
-          <h2 className="font-serif text-[#002045] text-2xl lg:text-4xl font-normal mb-8">Dúvidas</h2>
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-x-16 gap-y-6">
-            {FAQ.map(({ q, a }) => (
-              <div key={q} className="border-t border-[#eeeeee] pt-5">
-                <h3 className="font-serif text-[#002045] text-lg font-normal mb-1.5">{q}</h3>
-                <p className="text-[#43474e] text-sm font-[var(--font-inter)] leading-relaxed">{a}</p>
-              </div>
+          <ScrollReveal direction="up">
+            <h2 className={`${H2} mb-12 lg:mb-20`}>
+              Do corte
+              <br />
+              <span style={{ color: LIMA }}>ao acabamento.</span>
+            </h2>
+          </ScrollReveal>
+          <ol className="grid grid-cols-1 lg:grid-cols-5 gap-2 lg:gap-3 lg:items-end">
+            {NIVEIS.map((t, i) => (
+              <li key={t} style={{ ["--degrau" as string]: `${i * 36}px` }} className="lg:mb-[var(--degrau)]">
+                <ScrollReveal direction="up" delay={i * 90}>
+                  <div className="border border-white/15 px-5 py-4 lg:p-6 flex items-center gap-5 lg:block">
+                    <span className={`${D} text-4xl lg:text-5xl leading-none font-extrabold text-transparent [-webkit-text-stroke:1.5px_#a8e05f] w-12 lg:w-auto shrink-0`}>
+                      0{i + 1}
+                    </span>
+                    <span className={`${D} block text-2xl lg:text-[28px] leading-none font-bold uppercase lg:mt-8`}>{t}</span>
+                  </div>
+                </ScrollReveal>
+              </li>
             ))}
-          </div>
+          </ol>
         </div>
       </section>
 
-      {/* ── Fechamento ── */}
-      <section className="py-14 lg:py-24 bg-[#002045] text-white">
-        <div className="max-w-[760px] mx-auto px-4 lg:px-8 text-center">
+      {/* ── Certificação ── */}
+      <section className="bg-black text-white py-20 lg:py-32">
+        <div className="max-w-[1280px] mx-auto px-4 lg:px-16">
           <ScrollReveal direction="up">
-            <h2 className="font-serif text-white text-3xl lg:text-5xl font-normal leading-tight mb-8">
-              O próximo Instalador Certificado Orbital pode ser você.
+            <p className="text-[11px] lg:text-xs tracking-[0.22em] uppercase font-bold font-[var(--font-inter)] mb-5" style={{ color: LIMA }}>
+              Não é só um curso
+            </p>
+            <h2 className={`${H2} mb-12 lg:mb-16`}>
+              Saia
+              <br />
+              <span style={{ color: LIMA }}>Instalador Certificado Orbital.</span>
             </h2>
-            <Cta largo />
           </ScrollReveal>
+
+          <ol className="grid grid-cols-2 lg:grid-cols-4 gap-2 lg:gap-3 mb-10 lg:mb-12">
+            {ETAPAS_CERT.map((e, i) => {
+              const ultima = i === ETAPAS_CERT.length - 1;
+              return (
+                <li
+                  key={e}
+                  className={`p-4 lg:p-6 border ${ultima ? "border-[#a8e05f] bg-[#a8e05f] text-[#00142b]" : "border-white/20"}`}
+                >
+                  <span className={`block text-[11px] font-bold font-[var(--font-inter)] mb-2 ${ultima ? "opacity-70" : "text-white/40"}`}>
+                    {i + 1}
+                  </span>
+                  <span className={`${D} block text-xl lg:text-[26px] leading-none font-bold uppercase`}>{e}</span>
+                </li>
+              );
+            })}
+          </ol>
+
+          <p className="text-white/70 text-base lg:text-lg font-[var(--font-inter)] mb-10 lg:mb-12">
+            Certificado, você compra PFB direto com a Orbital.
+          </p>
+          <Cta texto="Quero fazer parte" />
         </div>
       </section>
+
+      {/* ── Fechamento: volta para o formulário ── */}
+      <section className="bg-[#a8e05f] text-[#00142b] pt-20 pb-32 md:pb-24 lg:py-28">
+        <div className="max-w-[1280px] mx-auto px-4 lg:px-16 lg:flex lg:items-end lg:justify-between gap-10">
+          <p className={`${D} text-[34px] leading-none sm:text-5xl lg:text-[56px] font-bold uppercase mb-10 lg:mb-0 max-w-3xl`}>
+            Quando as portas abrirem, você vai querer estar aqui.
+          </p>
+          <Cta texto="Quero meu lugar na lista" tom="navy" />
+        </div>
+      </section>
+
+      <CtaFixo />
     </div>
   );
 }
