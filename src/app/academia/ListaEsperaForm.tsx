@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useRef, useState } from "react";
 import { ATUACOES, EXPERIENCIAS, FOCOS } from "@/lib/academia-waitlist";
 
 const labelCls =
@@ -37,6 +37,13 @@ export default function ListaEsperaForm() {
   // encolhia para o cartão de sucesso fora da tela e a pessoa ficava sem saber
   // se tinha dado certo. `canais` = onde a confirmação foi de fato aceita.
   const [confirmacao, setConfirmacao] = useState<{ nome: string; whatsapp: boolean; email: boolean } | null>(null);
+  const cartaoRef = useRef<HTMLDivElement>(null);
+  // Fechou a confirmação → leva a pessoa até o cartão "Você está na lista",
+  // em vez de deixá-lo fora da tela.
+  function fecharConfirmacao() {
+    setConfirmacao(null);
+    requestAnimationFrame(() => cartaoRef.current?.scrollIntoView({ behavior: "smooth", block: "center" }));
+  }
 
   const set = (campo: keyof typeof VAZIO) => (e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement>) =>
     setForm((f) => ({ ...f, [campo]: e.target.value }));
@@ -94,7 +101,7 @@ export default function ListaEsperaForm() {
         <div
           className="fixed inset-0 z-[100] bg-[#002045]/85 flex items-center justify-center p-4"
           role="dialog" aria-modal="true" aria-labelledby="ae-conf-titulo"
-          onKeyDown={(e) => { if (e.key === "Escape") setConfirmacao(null); }}
+          onKeyDown={(e) => { if (e.key === "Escape") fecharConfirmacao(); }}
         >
           <div className="bg-white w-full max-w-md px-6 py-10 sm:px-10 text-center">
             <div className="w-16 h-16 bg-[#002045] flex items-center justify-center mx-auto mb-6">
@@ -112,7 +119,7 @@ export default function ListaEsperaForm() {
               {canais ? `Enviamos a confirmação ${canais}. ` : ""}Quando o curso abrir, você é avisado primeiro.
             </p>
             <button
-              type="button" autoFocus onClick={() => setConfirmacao(null)}
+              type="button" autoFocus onClick={fecharConfirmacao}
               className="w-full min-h-14 bg-[#a8e05f] text-[#002045] text-sm tracking-[0.12em] uppercase font-extrabold font-[var(--font-inter)] px-6 py-4 hover:bg-[#97cf4f] transition-colors"
             >
               Fechar
@@ -120,7 +127,7 @@ export default function ListaEsperaForm() {
           </div>
         </div>
       )}
-      <div className="bg-white border border-[#e2e2e2] px-6 py-10 lg:px-10 lg:py-14" role="status" aria-live="polite">
+      <div ref={cartaoRef} className="bg-white border border-[#e2e2e2] px-6 py-10 lg:px-10 lg:py-14 scroll-mt-24" role="status" aria-live="polite">
         <div className="w-11 h-11 bg-[#002045] flex items-center justify-center mb-6">
           <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#a1d494" strokeWidth="2.5" aria-hidden>
             <polyline points="20 6 9 17 4 12" />
