@@ -3,6 +3,7 @@
 import React, { useState, useEffect, useCallback, useMemo, useRef } from "react";
 import { DEFAULT_PANEL_WIDTH_M, DEFAULT_PANEL_HEIGHT_M, panelGrid } from "@/lib/render-prompt";
 import type { Lead } from "./LeadsTab";
+import { DEFAULT_CONFIG, maxInstallmentsForPlates, type OrcamentoConfig } from "@/lib/orcamento-pricing";
 
 // ─── Types ──────────────────────────────────────────────────────────────────
 export type PedidoStatus = "em_producao" | "pronto" | "entregue" | "cancelado";
@@ -74,6 +75,35 @@ const PAYMENT_ORDER: PaymentStatus[] = ["pendente", "parcial", "pago"];
 // as presets). "Dinheiro" kept for backward-compat with older orders.
 const PAYMENT_METHODS = ["Pix", "Cartão de Crédito", "Cartão de Débito", "Espécie", "Cheque", "Boleto", "Transferência Bancária", "Dinheiro"] as const;
 const DEFAULT_PAYMENT_TERMS = "PIX ou dinheiro à vista";
+// Formas já marcadas num pedido novo — as que a Orbital aceita no dia a dia.
+const DEFAULT_PAYMENT_METHODS = ["Pix", "Cartão de Crédito", "Cartão de Débito", "Espécie"];
+
+// CPF válido pelos dígitos verificadores (não consulta nada fora do sistema).
+function isValidCpf(digits: string): boolean {
+  if (!/^\d{11}$/.test(digits) || /^(\d)\1{10}$/.test(digits)) return false;
+  for (const len of [9, 10]) {
+    let sum = 0;
+    for (let i = 0; i < len; i++) sum += Number(digits[i]) * (len + 1 - i);
+    const check = ((sum * 10) % 11) % 10;
+    if (check !== Number(digits[len])) return false;
+  }
+  return true;
+}
+
+// Condição de pagamento pelas MESMAS regras do orçamento do site
+// (lib/orcamento-pricing + Configurações do orçamento no admin): desconto à
+// vista a partir de N placas e parcelamento sem juros por faixa de placas.
+// null quando ainda não há placas no pedido.
+function autoPaymentTerms(plates: number, cfg: OrcamentoConfig): string | null {
+  if (plates <= 0) return null;
+  const lines: string[] = [];
+  if (cfg.discountPct > 0 && plates >= cfg.discountMinPlates) {
+    lines.push(`${String(cfg.discountPct).replace(".", ",")}% de desconto à vista (Pix, Espécie ou Transferência)`);
+  }
+  const maxInst = maxInstallmentsForPlates(plates, cfg);
+  if (maxInst >= 2) lines.push(`${maxInst}x sem juros no cartão de crédito`);
+  return lines.length ? lines.join("\n") : "Pagamento à vista";
+}
 const DEFAULT_DOCUMENT_NOTES =
   `CLÁUSULAS CONTRATUAIS - DISPOSIÇÕES GERAIS
 ORBITAL REVESTIMENTOS
@@ -183,7 +213,9 @@ function deliveryBadge(iso: string | null | undefined): { label: string; cls: st
 }
 
 // Draft used by the create/edit modal.
-type PedidoDraft = Partial<Pedido> & { _isNew?: boolean };
+// _termsTouched: o admin mexeu na condição de pagamento → parar de recalcular
+// sozinho. Fica só no rascunho (não vai para a API).
+type PedidoDraft = Partial<Pedido> & { _isNew?: boolean; _termsTouched?: boolean };
 
 function cleanDraftOtherCosts(costs: PedidoOtherCost[] | null | undefined) {
   return (costs ?? [])
@@ -288,6 +320,23 @@ export default function PedidosTab({
   // wiping a real order's stock-reserved line items — if the items fetch
   // failed (network blip, expired session) when opening the edit modal.
   const [itemsReady, setItemsReady] = useState(false);
+  // Regras comerciais do orçamento (desconto à vista, parcelas por placas),
+  // as mesmas que o cliente vê no simulador. Padrão do código até carregar.
+  const [orcCfg, setOrcCfg] = useState<OrcamentoConfig>(DEFAULT_CONFIG);
+  useEffect(() => {
+    fetch("/api/admin/orcamento-config")
+      .then((r) => (r.ok ? r.json() : null))
+      .then((c) => {
+        if (!c) return;
+        setOrcCfg({
+          ...DEFAULT_CONFIG,
+          discountPct: Number(c.discountPct ?? DEFAULT_CONFIG.discountPct),
+          discountMinPlates: Number(c.discountMinPlates ?? DEFAULT_CONFIG.discountMinPlates),
+          installmentTiers: Array.isArray(c.installmentTiers) && c.installmentTiers.length ? c.installmentTiers : DEFAULT_CONFIG.installmentTiers,
+        });
+      })
+      .catch(() => {});
+  }, []);
   // Wizard step for the create/edit modal (1 Cliente · 2 Itens · 3 Comercial ·
   // 4 Revisar/Enviar). Reset to 1 whenever a different order opens.
   const [formStep, setFormStep] = useState(1);
@@ -594,6 +643,19 @@ export default function PedidosTab({
     return { total, cost, areaM2, grossProfit: total - cost, missingPrice, missingCost };
   }, [items, stockProducts, panelAreaM2, effectiveUnitPrice]);
 
+  // Placas do pedido (itens vendidos por placa) → base das regras de pagamento.
+  const orderPlates = useMemo(() => {
+    let n = 0;
+    for (const item of items) {
+      if (!item.product_id || !item.plates) continue;
+      const product = stockProducts.find((p) => p.id === item.product_id);
+      if (!product || (product.sale_unit && !/placa/i.test(product.sale_unit))) continue;
+      n += item.plates;
+    }
+    return n;
+  }, [items, stockProducts]);
+  const autoTerms = useMemo(() => autoPaymentTerms(orderPlates, orcCfg), [orderPlates, orcCfg]);
+
   // Value + estimated area follow the items live: whenever the quantity of
   // panels changes, the total and m² recompute automatically — no manual
   // "use this total" step.
@@ -610,10 +672,13 @@ export default function PedidosTab({
         area_m2: Math.round(itemPricing.areaM2 * 100) / 100,
         partner_commission_amount: moneyFromPct(Number(d.partner_commission_pct) || 0, net),
         sales_rep_commission_amount: moneyFromPct(Number(d.sales_rep_commission_pct) || 0, net),
+        // Pedido novo: a condição acompanha a quantidade de placas até o admin
+        // editar o texto à mão.
+        ...(d._isNew && !d._termsTouched && autoTerms ? { payment_terms: autoTerms } : {}),
       };
     });
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [itemPricing.total, itemPricing.areaM2, items, draft?.discount_amount]);
+  }, [itemPricing.total, itemPricing.areaM2, items, draft?.discount_amount, autoTerms]);
 
   // Reset to the first step whenever a different order opens (new vs an edit of
   // a specific id) — not on every keystroke, so the deps are stable identifiers.
@@ -757,12 +822,29 @@ export default function PedidosTab({
   async function lookupCnpj() {
     if (!draft) return;
     const cnpj = String(draft.client_document ?? "").replace(/\D/g, "");
+    // CPF: não existe consulta pública de CPF — valida, formata e guarda.
+    if (cnpj.length === 11) {
+      if (!isValidCpf(cnpj)) {
+        setCnpjMsg({ doc: draft.client_document ?? "", error: "CPF inválido. Confira os números." });
+        return;
+      }
+      const cpf = cnpj.replace(/^(\d{3})(\d{3})(\d{3})(\d{2})$/, "$1.$2.$3-$4");
+      setDraft((d) => d && { ...d, client_document: cpf });
+      setCnpjMsg({ doc: cpf, info: "CPF válido e guardado no pedido. Não existe consulta pública de CPF: nome e endereço ficam como você preencher." });
+      return;
+    }
     if (cnpj.length !== 14) {
-      setCnpjMsg({ doc: draft.client_document ?? "", error: "Digite um CNPJ com 14 números." });
+      setCnpjMsg({ doc: draft.client_document ?? "", error: "Digite um CPF (11 números) ou CNPJ (14 números)." });
       return;
     }
     setCnpjLoading(true);
     setCnpjMsg(null);
+    // E-mail: a BrasilAPI não devolve; a publica.cnpj.ws traz o da Receita.
+    // Busca em paralelo e, se falhar, segue sem e-mail.
+    const emailPromise: Promise<string> = fetch(`https://publica.cnpj.ws/cnpj/${cnpj}`)
+      .then((r) => (r.ok ? r.json() : null))
+      .then((j) => String(j?.estabelecimento?.email ?? "").trim().toLowerCase())
+      .catch(() => "");
     try {
       const res = await fetch(`https://brasilapi.com.br/api/cnpj/v1/${cnpj}`);
       const data = await res.json().catch(() => null);
@@ -777,12 +859,13 @@ export default function PedidosTab({
       const phone = String(data.ddd_telefone_1 ?? "").replace(/\D/g, "");
       const phoneFmt = /^[1-9]\d{9,10}$/.test(phone) ? phone.replace(/^(\d{2})(\d{4,5})(\d{4})$/, "($1) $2-$3") : "";
       const formatted = cnpj.replace(/^(\d{2})(\d{3})(\d{3})(\d{4})(\d{2})$/, "$1.$2.$3/$4-$5");
+      const receitaEmail = (await emailPromise) || (data.email ? String(data.email).toLowerCase() : "");
       // Atualização funcional: não perde o que foi digitado durante a busca.
       setDraft((d) => d && {
         ...d,
         client_document: formatted,
         client_name: data.razao_social || d.client_name || "",
-        client_email: d.client_email || (data.email ? String(data.email).toLowerCase() : "") || null,
+        client_email: d.client_email || receitaEmail || null,
         client_phone: d.client_phone || phoneFmt || null,
         client_zip: zip.length === 8 ? zip.replace(/^(\d{5})(\d{3})$/, "$1-$2") : d.client_zip ?? "",
         client_address: address || d.client_address || "",
@@ -795,7 +878,11 @@ export default function PedidosTab({
       setCnpjMsg({
         doc: formatted,
         error: situacao && situacao !== "ATIVA" ? `Atenção: CNPJ com situação ${situacao} na Receita.` : undefined,
-        info: data.nome_fantasia ? `Dados preenchidos. Nome fantasia: ${data.nome_fantasia}` : "Dados preenchidos.",
+        info: [
+          "Dados preenchidos.",
+          data.nome_fantasia ? `Nome fantasia: ${data.nome_fantasia}.` : "",
+          receitaEmail && !draft.client_email ? "E-mail da Receita (às vezes é o do contador, confira)." : "",
+        ].filter(Boolean).join(" "),
       });
     } catch {
       setCnpjMsg({ doc: draft.client_document ?? "", error: "Não foi possível buscar o CNPJ agora." });
@@ -952,7 +1039,7 @@ export default function PedidosTab({
       total,
       status: "em_producao",
       payment_status: "pendente",
-      payment_methods: ["Pix"],
+      payment_methods: DEFAULT_PAYMENT_METHODS,
       payment_terms: DEFAULT_PAYMENT_TERMS,
       freight_is_revenue: false,
       other_costs: [],
@@ -1013,7 +1100,7 @@ export default function PedidosTab({
       total,
       status: "em_producao",
       payment_status: "pendente",
-      payment_methods: ["Pix"],
+      payment_methods: DEFAULT_PAYMENT_METHODS,
       payment_terms: DEFAULT_PAYMENT_TERMS,
       freight_is_revenue: false,
       other_costs: [],
@@ -1264,7 +1351,7 @@ export default function PedidosTab({
               Importar orçamento
             </button>
             <button
-              onClick={() => { setItems(stockProducts.length > 0 ? [{ product_id: "", plates: 1 }] : []); setItemsReady(true); setDraft({ _isNew: true, status: "em_producao", payment_status: "pendente", payment_methods: ["Pix"], payment_terms: DEFAULT_PAYMENT_TERMS, freight_is_revenue: false, other_costs: [], quote_valid_until: plusDays(7), price_tier: "varejo" }); }}
+              onClick={() => { setItems(stockProducts.length > 0 ? [{ product_id: "", plates: 1 }] : []); setItemsReady(true); setDraft({ _isNew: true, status: "em_producao", payment_status: "pendente", payment_methods: DEFAULT_PAYMENT_METHODS, payment_terms: DEFAULT_PAYMENT_TERMS, freight_is_revenue: false, other_costs: [], quote_valid_until: plusDays(7), price_tier: "varejo" }); }}
               className="bg-[#002045] text-white text-xs tracking-[0.12em] uppercase font-bold font-[var(--font-inter)] px-5 py-2.5 hover:bg-[#1a365d] transition-colors"
             >
               + Novo pedido
@@ -1612,7 +1699,7 @@ export default function PedidosTab({
                   </div>
                   {cnpjShown?.error && <p className="text-red-600 text-[10px] font-[var(--font-inter)] mt-1">{cnpjShown.error}</p>}
                   {cnpjShown?.info && <p className="text-[#3b6934] text-[10px] font-[var(--font-inter)] mt-1 break-words">{cnpjShown.info}</p>}
-                  {!cnpjShown && <p className="text-[#74777f] text-[10px] font-[var(--font-inter)] mt-1">Com CNPJ, a busca preenche nome e endereço. CPF é só guardado.</p>}
+                  {!cnpjShown && <p className="text-[#74777f] text-[10px] font-[var(--font-inter)] mt-1">Com CNPJ, a busca preenche nome, e-mail e endereço. CPF é validado e guardado.</p>}
                 </Field>
                 <div className="grid grid-cols-2 gap-3">
                   <Field label="CEP">
@@ -2230,7 +2317,20 @@ export default function PedidosTab({
                   </div>
                 </Field>
                 <Field label="Condição de pagamento">
-                  <textarea className={`${inputCls} min-h-[72px]`} value={draft.payment_terms ?? ""} onChange={(e) => setDraft({ ...draft, payment_terms: e.target.value })} placeholder={`${DEFAULT_PAYMENT_TERMS}\n(uma condição por linha — clique nas predefinições abaixo para adicionar)`} />
+                  <textarea className={`${inputCls} min-h-[72px]`} value={draft.payment_terms ?? ""} onChange={(e) => setDraft({ ...draft, payment_terms: e.target.value, _termsTouched: true })} placeholder={`${DEFAULT_PAYMENT_TERMS}\n(uma condição por linha — clique nas predefinições abaixo para adicionar)`} />
+                  {autoTerms && (
+                    (draft.payment_terms ?? "").trim() === autoTerms ? (
+                      <p className="text-[#3b6934] text-[10px] font-[var(--font-inter)] mt-1">
+                        Pelas regras do orçamento para {orderPlates} {orderPlates === 1 ? "placa" : "placas"}.
+                      </p>
+                    ) : (
+                      <button type="button"
+                        onClick={() => setDraft({ ...draft, payment_terms: autoTerms, _termsTouched: false })}
+                        className="mt-1 text-left text-[10px] font-bold font-[var(--font-inter)] text-[#3b6934] hover:underline">
+                        ↺ Usar a regra do orçamento para {orderPlates} {orderPlates === 1 ? "placa" : "placas"}: {autoTerms.replace(/\n/g, " · ")}
+                      </button>
+                    )
+                  )}
                   {paymentTermsPresets.length > 0 && (
                     <div className="flex flex-wrap gap-1.5 mt-2">
                       {paymentTermsPresets.map((p) => {
@@ -2244,7 +2344,7 @@ export default function PedidosTab({
                             <button type="button"
                               onClick={() => {
                                 const next = selected ? lines.filter((l) => l !== p.label) : [...lines, p.label];
-                                setDraft({ ...draft, payment_terms: next.join("\n") });
+                                setDraft({ ...draft, payment_terms: next.join("\n"), _termsTouched: true });
                               }}
                               className="hover:underline text-left">
                               {selected ? "✓ " : "+ "}{p.label}
