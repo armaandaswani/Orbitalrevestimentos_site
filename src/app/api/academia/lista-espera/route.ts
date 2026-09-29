@@ -1,5 +1,6 @@
-import { NextRequest, NextResponse } from "next/server";
+import { NextRequest, NextResponse, after } from "next/server";
 import { supabaseAdmin } from "@/lib/supabase";
+import { avisarEmpresa, enviarConfirmacao } from "@/lib/academia-notify";
 import { isMissingColumn, isMissingTable } from "@/lib/db-compat";
 import { ATUACOES, EXPERIENCIAS, FOCOS, digitos, valido } from "@/lib/academia-waitlist";
 
@@ -12,7 +13,13 @@ import { ATUACOES, EXPERIENCIAS, FOCOS, digitos, valido } from "@/lib/academia-w
  * Prioridade de contato definida pela Orbital: WhatsApp e nome obrigatórios,
  * e-mail opcional. Cidade, atuação, foco principal e tempo de profissão
  * qualificam o inscrito e também são obrigatórios.
+ *
+ * Depois de gravar: confirmação no WhatsApp (e no e-mail, se informado) para
+ * o inscrito — a resposta diz quais canais aceitaram, para a tela não prometer
+ * o que não foi enviado — e alerta para a Orbital, depois da resposta.
  */
+
+export const maxDuration = 30;
 
 /** Corta espaços e limita o tamanho — texto livre de formulário público. */
 function limpo(v: unknown, max: number): string {
@@ -64,7 +71,8 @@ export async function POST(req: NextRequest) {
     return NextResponse.json({ error: "Selecione seu tempo de profissão." }, { status: 400 });
   }
 
-  const { error } = await supabaseAdmin().from("academy_waitlist").insert({
+  const db = supabaseAdmin();
+  const { data: criado, error } = await db.from("academy_waitlist").insert({
     name,
     phone,
     email: email || null,
@@ -75,12 +83,14 @@ export async function POST(req: NextRequest) {
     main_focus_other: focus === "outro" ? focusOther || null : null,
     years_experience: years,
     source: source || null,
-  });
+  }).select("id").single();
 
   if (error) {
     // Mesmo WhatsApp (ou e-mail) de novo: a pessoa já está na lista. Responder
     // sucesso evita que alguém use o formulário para descobrir quem está inscrito.
-    if (error.code === "23505") return NextResponse.json({ ok: true });
+    // Não reenvia mensagem: senão o formulário viraria um jeito de disparar
+    // WhatsApp repetido para o número de outra pessoa.
+    if (error.code === "23505") return NextResponse.json({ ok: true, whatsapp: false, email: false });
 
     // Migration 056 não aplicada (ou aplicada só na versão antiga, sem as
     // colunas novas). NÃO fingir sucesso — o cadastro seria perdido.
@@ -99,5 +109,32 @@ export async function POST(req: NextRequest) {
     );
   }
 
-  return NextResponse.json({ ok: true });
+  const inscrito = {
+    name, phone, email: email || null, city,
+    role, role_other: roleOther || null,
+    main_focus: focus, main_focus_other: focusOther || null,
+    years_experience: years, source: source || null,
+  };
+
+  // Confirmação para o inscrito, com teto de tempo: a tela não pode ficar
+  // "enviando" se o WhatsApp demorar. Estourou → a tela só não cita os canais.
+  const enviado = await Promise.race([
+    enviarConfirmacao(inscrito),
+    new Promise<{ whatsapp: boolean; email: boolean }>((r) => setTimeout(() => r({ whatsapp: false, email: false }), 12000)),
+  ]);
+
+  after(async () => {
+    // Registra o que chegou (migration 058; sem ela, só não grava).
+    const agora = new Date().toISOString();
+    const marcas: Record<string, string> = {};
+    if (enviado.whatsapp) marcas.confirmation_whatsapp_at = agora;
+    if (enviado.email) marcas.confirmation_email_at = agora;
+    if (criado?.id && Object.keys(marcas).length) {
+      await db.from("academy_waitlist").update(marcas).eq("id", criado.id);
+    }
+    const { count } = await db.from("academy_waitlist").select("id", { count: "exact", head: true });
+    await avisarEmpresa(inscrito, count ?? null);
+  });
+
+  return NextResponse.json({ ok: true, whatsapp: enviado.whatsapp, email: enviado.email });
 }

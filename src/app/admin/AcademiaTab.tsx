@@ -6,15 +6,16 @@ import {
   btnGhost, btnPrimary, cardCls, inputCls, tdCls, thCls,
 } from "./ui";
 import {
-  ATUACOES, EXPERIENCIAS, FOCOS, digitos, rotulo, type Inscricao,
+  ATUACOES, EXPERIENCIAS, FOCOS, LANCAMENTO_ASSUNTO_PADRAO, LANCAMENTO_TEXTO_PADRAO,
+  digitos, rotulo, type Inscricao,
 } from "@/lib/academia-waitlist";
 
 /**
  * Lista de espera da Academia Orbital (vem de /academia).
  *
- * Só leitura + exportação. O curso ainda não existe: isto é a base de contatos
- * para avisar quando abrir. WhatsApp é o canal principal, por isso cada linha
- * tem o atalho direto para a conversa.
+ * Leitura, exportação e o aviso de lançamento. O curso ainda não existe: isto
+ * é a base de contatos para avisar quando abrir. WhatsApp é o canal principal,
+ * por isso cada linha tem o atalho direto para a conversa.
  */
 
 const DIA = 24 * 60 * 60 * 1000;
@@ -50,6 +51,93 @@ function WhatsLink({ phone }: { phone: string }) {
   );
 }
 
+/** O que já foi enviado para a pessoa (migration 058). */
+function Avisos({ r }: { r: Inscricao }) {
+  const conf = [r.confirmation_whatsapp_at && "WhatsApp", r.confirmation_email_at && "e-mail"].filter(Boolean).join(" + ");
+  const lanc = [r.launch_whatsapp_at && "WhatsApp", r.launch_email_at && "e-mail"].filter(Boolean).join(" + ");
+  return (
+    <span className="text-[11px] font-[var(--font-inter)] leading-snug">
+      <span className={conf ? "text-[#1f7a3d]" : "text-[#b0b4bc]"}>Confirmação: {conf || "—"}</span>
+      {r.launch_notified_at && (
+        <span className={`block ${lanc ? "text-[#1f7a3d]" : "text-[#b3261e]"}`}>Lançamento: {lanc || "não entregue"}</span>
+      )}
+    </span>
+  );
+}
+
+/**
+ * Aviso de lançamento: texto editável, teste para a Orbital e envio em lotes
+ * para quem ainda não foi avisado (a API devolve quantos faltam).
+ */
+function AvisoLancamento({ pendentes, aoTerminar }: { pendentes: number; aoTerminar: () => void }) {
+  const [assunto, setAssunto] = useState(LANCAMENTO_ASSUNTO_PADRAO);
+  const [texto, setTexto] = useState(LANCAMENTO_TEXTO_PADRAO);
+  const [status, setStatus] = useState("");
+  const [enviando, setEnviando] = useState(false);
+
+  async function chamar(teste: boolean) {
+    const res = await fetch("/api/admin/academia/lancamento", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ texto, assunto, teste }),
+    });
+    const json = await res.json().catch(() => ({}));
+    if (!res.ok) throw new Error(json.error || `Erro ${res.status}`);
+    return json;
+  }
+
+  async function testar() {
+    setEnviando(true);
+    setStatus("Enviando teste…");
+    try {
+      const r = await chamar(true);
+      setStatus(`Teste: WhatsApp ${r.whatsapp ? "enviado" : "NÃO enviado"} · e-mail ${r.email ? "enviado" : "NÃO enviado"} (para a Orbital).`);
+    } catch (e) {
+      setStatus(e instanceof Error ? e.message : "Falha no teste.");
+    } finally {
+      setEnviando(false);
+    }
+  }
+
+  async function enviarTodos() {
+    if (!window.confirm(`Enviar este aviso por WhatsApp e e-mail para ${pendentes} inscrito(s) que ainda não foram avisados? Não dá para desfazer.`)) return;
+    setEnviando(true);
+    let whats = 0, mail = 0, sem = 0, feitos = 0;
+    try {
+      for (let volta = 0; volta < 500; volta++) {
+        const r = await chamar(false);
+        feitos += r.processados; whats += r.whatsapp; mail += r.email; sem += r.semEntrega;
+        setStatus(`Enviando… ${feitos} avisados, faltam ${r.faltam}.`);
+        if (!r.processados || !r.faltam) break;
+      }
+      setStatus(`Pronto: ${feitos} avisados · ${whats} por WhatsApp · ${mail} por e-mail${sem ? ` · ${sem} sem entrega` : ""}.`);
+    } catch (e) {
+      setStatus(`${e instanceof Error ? e.message : "Falha no envio."} ${feitos ? `(${feitos} já avisados — pode continuar, ninguém recebe duas vezes.)` : ""}`);
+    } finally {
+      setEnviando(false);
+      aoTerminar();
+    }
+  }
+
+  return (
+    <div className={`${cardCls} p-4 mb-6 space-y-3`}>
+      <p className="text-[#002045] text-sm font-bold font-[var(--font-inter)]">Aviso de lançamento</p>
+      <p className="text-[#74777f] text-xs font-[var(--font-inter)]">
+        Vai por WhatsApp e, para quem informou, por e-mail. {"{nome}"} vira o primeiro nome. Quem já foi avisado não recebe de novo.
+      </p>
+      <input value={assunto} onChange={(e) => setAssunto(e.target.value)} className={inputCls} aria-label="Assunto do e-mail" placeholder="Assunto do e-mail" />
+      <textarea value={texto} onChange={(e) => setTexto(e.target.value)} className={`${inputCls} min-h-[180px]`} aria-label="Mensagem" />
+      <div className="flex flex-col sm:flex-row gap-2">
+        <button type="button" onClick={testar} disabled={enviando} className={`${btnGhost} w-full sm:w-auto`}>Enviar teste para a Orbital</button>
+        <button type="button" onClick={enviarTodos} disabled={enviando || pendentes === 0} className={`${btnPrimary} w-full sm:w-auto`}>
+          {pendentes ? `Enviar para ${pendentes} inscrito(s)` : "Todos já avisados"}
+        </button>
+      </div>
+      {status && <p className="text-[#43474e] text-xs font-[var(--font-inter)]" role="status">{status}</p>}
+    </div>
+  );
+}
+
 type Carga = { lista: Inscricao[]; erro: "" | "migration" | "falha"; em: number };
 
 /** Só busca — não toca em estado. Quem aplica o resultado é o componente. */
@@ -74,6 +162,7 @@ export default function AcademiaTab() {
   // Instante do carregamento: "últimos 7 dias" conta a partir dele, e não de um
   // Date.now() durante a renderização (que a tornaria impura).
   const [carregadoEm, setCarregadoEm] = useState(0);
+  const [avisoAberto, setAvisoAberto] = useState(false);
 
   const aplicar = useCallback((c: Carga) => {
     setLista(c.lista);
@@ -113,7 +202,8 @@ export default function AcademiaTab() {
     const cont = new Map<string, number>();
     for (const r of l) if (r.main_focus) cont.set(r.main_focus, (cont.get(r.main_focus) ?? 0) + 1);
     const topo = [...cont.entries()].sort((a, b) => b[1] - a[1])[0];
-    return { total: l.length, semana, comEmail, topoFoco: topo ? `${rotulo(FOCOS, topo[0])} (${topo[1]})` : "—" };
+    const pendentes = l.filter((r) => !r.launch_notified_at).length;
+    return { total: l.length, semana, comEmail, pendentes, topoFoco: topo ? `${rotulo(FOCOS, topo[0])} (${topo[1]})` : "—" };
   }, [lista, carregadoEm]);
 
   const filtrando = !!(busca || fAtuacao || fFoco);
@@ -126,6 +216,9 @@ export default function AcademiaTab() {
         actions={
           <>
             <a href="/academia" target="_blank" rel="noopener noreferrer" className={btnGhost}>Ver página</a>
+            <button type="button" onClick={() => setAvisoAberto((v) => !v)} className={btnGhost} disabled={!lista?.length}>
+              {avisoAberto ? "Fechar aviso" : "Avisar lançamento"}
+            </button>
             <a
               href="/api/admin/academia/export"
               className={`${btnPrimary} ${!lista?.length ? "pointer-events-none opacity-50" : ""}`}
@@ -158,6 +251,10 @@ export default function AcademiaTab() {
             <KpiCard label="Com e-mail" value={resumo.comEmail} hint={resumo.total ? `${Math.round((resumo.comEmail / resumo.total) * 100)}% da lista` : undefined} />
             <KpiCard label="Foco mais comum" value={<span className="text-base sm:text-lg">{resumo.topoFoco}</span>} />
           </div>
+
+          {avisoAberto && resumo.total > 0 && (
+            <AvisoLancamento pendentes={resumo.pendentes} aoTerminar={() => buscarLista().then(aplicar)} />
+          )}
 
           {resumo.total === 0 ? (
             <EmptyState
@@ -210,6 +307,7 @@ export default function AcademiaTab() {
                           <Field label="Atuação">{atuacao(r)}</Field>
                           <Field label="Foco">{foco(r) || "—"}</Field>
                           <Field label="Profissão">{rotulo(EXPERIENCIAS, r.years_experience) || "—"}</Field>
+                          <Avisos r={r} />
                         </div>
                       </div>
                     ))}
@@ -227,6 +325,7 @@ export default function AcademiaTab() {
                         <th className={thCls}>Atuação</th>
                         <th className={thCls}>Principal foco</th>
                         <th className={thCls}>Profissão</th>
+                        <th className={thCls}>Avisos</th>
                       </tr>
                     </thead>
                     <tbody>
@@ -240,6 +339,7 @@ export default function AcademiaTab() {
                           <td className={tdCls}>{atuacao(r)}</td>
                           <td className={tdCls}>{foco(r) || "—"}</td>
                           <td className={`${tdCls} whitespace-nowrap`}>{rotulo(EXPERIENCIAS, r.years_experience) || "—"}</td>
+                          <td className={`${tdCls} whitespace-nowrap`}><Avisos r={r} /></td>
                         </tr>
                       ))}
                     </tbody>

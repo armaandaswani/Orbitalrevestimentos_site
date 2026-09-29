@@ -33,6 +33,10 @@ export default function ListaEsperaForm() {
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState("");
   const [done, setDone] = useState(false);
+  // Tela de confirmação por cima de tudo: sem ela, no celular o formulário
+  // encolhia para o cartão de sucesso fora da tela e a pessoa ficava sem saber
+  // se tinha dado certo. `canais` = onde a confirmação foi de fato aceita.
+  const [confirmacao, setConfirmacao] = useState<{ nome: string; whatsapp: boolean; email: boolean } | null>(null);
 
   const set = (campo: keyof typeof VAZIO) => (e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement>) =>
     setForm((f) => ({ ...f, [campo]: e.target.value }));
@@ -68,6 +72,7 @@ export default function ListaEsperaForm() {
         setError(json.error || "Não foi possível concluir o cadastro. Tente novamente.");
         return;
       }
+      setConfirmacao({ nome: form.name.trim().split(/\s+/)[0] || "", whatsapp: json.whatsapp === true, email: json.email === true });
       setDone(true);
     } catch {
       setError("Sem conexão. Verifique a internet e tente novamente.");
@@ -77,7 +82,44 @@ export default function ListaEsperaForm() {
   }
 
   if (done) {
+    const canais = confirmacao
+      ? confirmacao.whatsapp && confirmacao.email ? "para o seu WhatsApp e o seu e-mail"
+        : confirmacao.whatsapp ? "para o seu WhatsApp"
+        : confirmacao.email ? "para o seu e-mail"
+        : ""
+      : "";
     return (
+      <>
+      {confirmacao && (
+        <div
+          className="fixed inset-0 z-[100] bg-[#002045]/85 flex items-center justify-center p-4"
+          role="dialog" aria-modal="true" aria-labelledby="ae-conf-titulo"
+          onKeyDown={(e) => { if (e.key === "Escape") setConfirmacao(null); }}
+        >
+          <div className="bg-white w-full max-w-md px-6 py-10 sm:px-10 text-center">
+            <div className="w-16 h-16 bg-[#002045] flex items-center justify-center mx-auto mb-6">
+              <svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="#a8e05f" strokeWidth="3" aria-hidden>
+                <polyline points="20 6 9 17 4 12" />
+              </svg>
+            </div>
+            <p id="ae-conf-titulo" className="text-[#002045] text-2xl sm:text-3xl font-extrabold uppercase tracking-tight font-[var(--font-inter)] mb-3">
+              Inscrição confirmada{confirmacao.nome ? `, ${confirmacao.nome}` : ""}!
+            </p>
+            <p className="text-[#43474e] text-base font-[var(--font-inter)] leading-relaxed mb-2">
+              Você está na lista de espera da Academia Orbital.
+            </p>
+            <p className="text-[#43474e] text-base font-[var(--font-inter)] leading-relaxed mb-8">
+              {canais ? `Enviamos a confirmação ${canais}. ` : ""}Quando o curso abrir, você é avisado primeiro.
+            </p>
+            <button
+              type="button" autoFocus onClick={() => setConfirmacao(null)}
+              className="w-full min-h-14 bg-[#a8e05f] text-[#002045] text-sm tracking-[0.12em] uppercase font-extrabold font-[var(--font-inter)] px-6 py-4 hover:bg-[#97cf4f] transition-colors"
+            >
+              Fechar
+            </button>
+          </div>
+        </div>
+      )}
       <div className="bg-white border border-[#e2e2e2] px-6 py-10 lg:px-10 lg:py-14" role="status" aria-live="polite">
         <div className="w-11 h-11 bg-[#002045] flex items-center justify-center mb-6">
           <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#a1d494" strokeWidth="2.5" aria-hidden>
@@ -92,6 +134,7 @@ export default function ListaEsperaForm() {
           avisado primeiro.
         </p>
       </div>
+      </>
     );
   }
 

@@ -67,7 +67,31 @@ export interface Inscricao {
   years_experience: string | null;
   source: string | null;
   created_at: string;
+  // Migration 058 — ausentes antes dela rodar.
+  confirmation_whatsapp_at?: string | null;
+  confirmation_email_at?: string | null;
+  launch_notified_at?: string | null;
+  launch_whatsapp_at?: string | null;
+  launch_email_at?: string | null;
 }
+
+export const URL_ACADEMIA = "https://orbitalrevestimentos.com.br/academia";
+
+/**
+ * Aviso de lançamento — ponto de partida que o admin edita antes de enviar.
+ * {nome} vira o primeiro nome de cada inscrito. Sem preço, data ou vagas
+ * aqui: isso o admin escreve quando o curso existir de fato.
+ */
+export const LANCAMENTO_ASSUNTO_PADRAO = "A Academia Orbital abriu";
+export const LANCAMENTO_TEXTO_PADRAO = [
+  "Olá, {nome}! 🎉",
+  "",
+  "A *Academia Orbital* abriu. Como você está na lista de espera, está recebendo o aviso primeiro.",
+  "",
+  `Veja como participar: ${URL_ACADEMIA}`,
+  "",
+  "Orbital Revestimentos",
+].join("\n");
 
 /** Só os dígitos — é por eles que o WhatsApp identifica a pessoa. */
 export function digitos(phone: string): string {
