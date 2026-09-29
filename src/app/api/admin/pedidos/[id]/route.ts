@@ -8,6 +8,7 @@ type PartnerLite = { id: string; name: string; coupon_code: string };
 type SalesRepLite = { id: string; name: string; referral_code: string };
 
 const OPTIONAL_DOCUMENT_COLUMNS = [
+  "client_document",
   "client_zip",
   "client_address",
   "client_address_complement",
@@ -237,6 +238,7 @@ const EDITABLE = new Set([
   "notes",
   "expected_delivery_at",
   "delivered_at",
+  "client_document",
   "client_zip",
   "client_address",
   "client_address_complement",
@@ -363,6 +365,13 @@ export async function PATCH(
   } catch { /* column missing — skip */ }
 
   let { data, error } = await db.from("pedidos").update(patch).eq("id", id).select().single();
+
+  // Migração 057 (client_document) ainda não rodou: tenta de novo só sem ela,
+  // antes do fallback amplo que descarta todas as colunas de documento.
+  if (error && isMissingColumn(error) && "client_document" in patch) {
+    delete patch.client_document;
+    ({ data, error } = await db.from("pedidos").update(patch).eq("id", id).select().single());
+  }
 
   // delivered_at / payment_status may be from a newer schema than what ran —
   // retry without the optional columns rather than failing the edit.

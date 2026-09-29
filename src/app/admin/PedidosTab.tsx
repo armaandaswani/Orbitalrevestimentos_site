@@ -28,6 +28,7 @@ export interface Pedido {
   notes: string | null;
   expected_delivery_at: string | null;
   delivered_at: string | null;
+  client_document: string | null;
   client_zip: string | null;
   client_address: string | null;
   client_address_complement: string | null;
@@ -268,6 +269,10 @@ export default function PedidosTab({
   const [saving, setSaving] = useState(false);
   const [cepLoading, setCepLoading] = useState(false);
   const [cepError, setCepError] = useState("");
+  const [cnpjLoading, setCnpjLoading] = useState(false);
+  // Mensagem da busca de CNPJ, presa ao documento buscado: ao abrir outro
+  // pedido (outro CNPJ) ela some sozinha.
+  const [cnpjMsg, setCnpjMsg] = useState<{ doc: string; error?: string; info?: string } | null>(null);
 
   // Stock-aware line items for the create form (model + plate qty).
   type StockProduct = { id: string; name: string; code: string | null; linha: string | null; price: number | null; cost_price: number | null; sale_unit: string | null; available: number; stock_on_hand: number; render_panel_width_m?: number | string | null; render_panel_height_m?: number | string | null };
@@ -746,6 +751,59 @@ export default function PedidosTab({
     }
   }
 
+  // Busca o CNPJ na BrasilAPI (dados públicos da Receita) e preenche nome,
+  // endereço e cidade — como a busca de CEP. E-mail e telefone só entram se
+  // estiverem vazios, para não trocar o contato da pessoa pelo da empresa.
+  async function lookupCnpj() {
+    if (!draft) return;
+    const cnpj = String(draft.client_document ?? "").replace(/\D/g, "");
+    if (cnpj.length !== 14) {
+      setCnpjMsg({ doc: draft.client_document ?? "", error: "Digite um CNPJ com 14 números." });
+      return;
+    }
+    setCnpjLoading(true);
+    setCnpjMsg(null);
+    try {
+      const res = await fetch(`https://brasilapi.com.br/api/cnpj/v1/${cnpj}`);
+      const data = await res.json().catch(() => null);
+      if (!res.ok || !data?.cnpj) {
+        setCnpjMsg({ doc: draft.client_document ?? "", error: res.status === 404 ? "CNPJ não encontrado." : "Não foi possível buscar o CNPJ agora." });
+        return;
+      }
+      const street = [data.descricao_tipo_de_logradouro, data.logradouro].filter(Boolean).join(" ");
+      const address = [street, data.numero].filter(Boolean).join(", ");
+      const complement = [data.complemento, data.bairro].map((x: unknown) => String(x ?? "").trim()).filter(Boolean).join(" · ");
+      const zip = String(data.cep ?? "").replace(/\D/g, "");
+      const phone = String(data.ddd_telefone_1 ?? "").replace(/\D/g, "");
+      const phoneFmt = /^[1-9]\d{9,10}$/.test(phone) ? phone.replace(/^(\d{2})(\d{4,5})(\d{4})$/, "($1) $2-$3") : "";
+      const formatted = cnpj.replace(/^(\d{2})(\d{3})(\d{3})(\d{4})(\d{2})$/, "$1.$2.$3/$4-$5");
+      // Atualização funcional: não perde o que foi digitado durante a busca.
+      setDraft((d) => d && {
+        ...d,
+        client_document: formatted,
+        client_name: data.razao_social || d.client_name || "",
+        client_email: d.client_email || (data.email ? String(data.email).toLowerCase() : "") || null,
+        client_phone: d.client_phone || phoneFmt || null,
+        client_zip: zip.length === 8 ? zip.replace(/^(\d{5})(\d{3})$/, "$1-$2") : d.client_zip ?? "",
+        client_address: address || d.client_address || "",
+        client_address_complement: complement || d.client_address_complement || "",
+        client_city: data.municipio || d.client_city || "",
+        client_state: data.uf || d.client_state || "",
+      });
+      setCepError("");
+      const situacao = String(data.descricao_situacao_cadastral ?? "").toUpperCase();
+      setCnpjMsg({
+        doc: formatted,
+        error: situacao && situacao !== "ATIVA" ? `Atenção: CNPJ com situação ${situacao} na Receita.` : undefined,
+        info: data.nome_fantasia ? `Dados preenchidos. Nome fantasia: ${data.nome_fantasia}` : "Dados preenchidos.",
+      });
+    } catch {
+      setCnpjMsg({ doc: draft.client_document ?? "", error: "Não foi possível buscar o CNPJ agora." });
+    } finally {
+      setCnpjLoading(false);
+    }
+  }
+
   function openDocument(id: string, tipo: "orcamento" | "pedido" | "nota" | "recibo") {
     window.open(`/admin/pedidos/${id}/documento?tipo=${tipo}`, "_blank", "noopener,noreferrer");
   }
@@ -1117,6 +1175,7 @@ export default function PedidosTab({
       payment_status: d.payment_status ?? "pendente",
       notes: d.notes ?? null,
       expected_delivery_at: d.expected_delivery_at ?? null,
+      client_document: d.client_document ?? null,
       client_zip: d.client_zip ?? null,
       client_address: d.client_address ?? null,
       client_address_complement: d.client_address_complement ?? null,
@@ -1180,6 +1239,8 @@ export default function PedidosTab({
       setSaving(false);
     }
   }
+
+  const cnpjShown = draft && cnpjMsg && cnpjMsg.doc === (draft.client_document ?? "") ? cnpjMsg : null;
 
   // ── Render ────────────────────────────────────────────────────────────────
   return (
@@ -1530,6 +1591,29 @@ export default function PedidosTab({
               </div>
               <div className="border border-[#e2e2e2] p-3 space-y-3">
                 <p className="text-[10px] tracking-[0.12em] uppercase font-bold font-[var(--font-inter)] text-[#74777f]">Dados do cliente no documento</p>
+                <Field label="CNPJ / CPF">
+                  <div className="flex gap-2">
+                    <input
+                      className={inputCls}
+                      inputMode="numeric"
+                      value={draft.client_document ?? ""}
+                      onChange={(e) => { setCnpjMsg(null); setDraft({ ...draft, client_document: e.target.value }); }}
+                      onKeyDown={(e) => { if (e.key === "Enter") { e.preventDefault(); lookupCnpj(); } }}
+                      placeholder="00.000.000/0000-00"
+                    />
+                    <button
+                      type="button"
+                      onClick={lookupCnpj}
+                      disabled={cnpjLoading}
+                      className="shrink-0 border border-[#002045] text-[#002045] disabled:opacity-50 px-3 text-[10px] uppercase tracking-[0.08em] font-bold font-[var(--font-inter)] hover:bg-[#eef2f8]"
+                    >
+                      {cnpjLoading ? "..." : "Buscar"}
+                    </button>
+                  </div>
+                  {cnpjShown?.error && <p className="text-red-600 text-[10px] font-[var(--font-inter)] mt-1">{cnpjShown.error}</p>}
+                  {cnpjShown?.info && <p className="text-[#3b6934] text-[10px] font-[var(--font-inter)] mt-1 break-words">{cnpjShown.info}</p>}
+                  {!cnpjShown && <p className="text-[#74777f] text-[10px] font-[var(--font-inter)] mt-1">Com CNPJ, a busca preenche nome e endereço. CPF é só guardado.</p>}
+                </Field>
                 <div className="grid grid-cols-2 gap-3">
                   <Field label="CEP">
                     <div className="flex gap-2">

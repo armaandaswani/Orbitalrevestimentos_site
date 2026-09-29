@@ -9,6 +9,7 @@ type PartnerLite = { id: string; name: string; coupon_code: string };
 type SalesRepLite = { id: string; name: string; referral_code: string };
 
 const DOCUMENT_COLUMNS = [
+  "client_document",
   "client_zip",
   "client_address",
   "client_address_complement",
@@ -205,6 +206,7 @@ export async function POST(req: NextRequest) {
     payment_status: body.payment_status ?? "pendente",
     notes: body.notes ?? null,
     expected_delivery_at: body.expected_delivery_at ?? null,
+    client_document: cleanText(body.client_document),
     client_zip: cleanText(body.client_zip),
     client_address: cleanText(body.client_address),
     client_address_complement: cleanText(body.client_address_complement),
@@ -229,6 +231,12 @@ export async function POST(req: NextRequest) {
   };
 
   let { data, error } = await db.from("pedidos").insert(payload).select().single();
+  // Migração 057 (client_document) ainda não rodou: tenta de novo só sem ela,
+  // para não perder endereço e comissões junto.
+  if (error && isMissingColumn(error)) {
+    delete payload.client_document;
+    ({ data, error } = await db.from("pedidos").insert(payload).select().single());
+  }
   if (error && isMissingColumn(error)) {
     for (const col of DOCUMENT_COLUMNS) delete payload[col];
     ({ data, error } = await db.from("pedidos").insert(payload).select().single());

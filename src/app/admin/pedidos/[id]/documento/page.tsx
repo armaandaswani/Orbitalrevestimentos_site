@@ -29,6 +29,7 @@ interface PedidoDocument {
   total: number | null;
   notes: string | null;
   created_at: string;
+  client_document?: string | null;
   client_zip: string | null;
   client_address: string | null;
   client_address_complement: string | null;
@@ -155,6 +156,13 @@ function itemUnitInfo(it: PedidoItem): { short: string; detail: string } {
     return { short, detail: `Placa ${fmtM(h)} m × ${fmtM(w)} m × 5 mm` };
   }
   return { short, detail: short };
+}
+
+function documentLine(doc: string | null | undefined) {
+  const digits = String(doc ?? "").replace(/\D/g, "");
+  if (!digits) return null;
+  const label = digits.length === 14 ? "CNPJ" : digits.length === 11 ? "CPF" : "CNPJ/CPF";
+  return `${label}: ${String(doc).trim()}`;
 }
 
 function addressLines(pedido: PedidoDocument) {
@@ -481,6 +489,7 @@ export default function PedidoDocumentoPage({ params }: { params: Promise<{ id: 
           <div>
             <p className="doc-section-label">Dados do Cliente</p>
             <p className="doc-strong">{pedido.client_name}</p>
+            {documentLine(pedido.client_document) && <p>{documentLine(pedido.client_document)}</p>}
             {pedido.client_email && <p>{pedido.client_email}</p>}
             {pedido.client_phone && <p>{pedido.client_phone}</p>}
             {customerAddress.map((line) => <p key={line}>{line}</p>)}

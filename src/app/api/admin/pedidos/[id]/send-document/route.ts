@@ -188,6 +188,11 @@ async function generatePedidoPdf(input: {
   doc.moveDown(0.5);
   doc.font("Helvetica-Bold").fontSize(10).fillColor("#1a1c1c").text(String(pedido.client_name ?? "Cliente"));
   doc.font("Helvetica").fontSize(10);
+  const clientDoc = String(pedido.client_document ?? "").trim();
+  if (clientDoc) {
+    const digits = clientDoc.replace(/\D/g, "");
+    doc.text(`${digits.length === 14 ? "CNPJ" : digits.length === 11 ? "CPF" : "CNPJ/CPF"}: ${clientDoc}`);
+  }
   if (pedido.client_email) doc.text(String(pedido.client_email));
   if (pedido.client_phone) doc.text(String(pedido.client_phone));
   for (const line of [
