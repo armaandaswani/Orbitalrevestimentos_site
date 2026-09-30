@@ -14,10 +14,9 @@ const navLinks = [
   { href: "/projetos", label: "Projetos" },
   { href: "/parcerias", label: "Parcerias" },
   { href: "/visualizador", label: "Simulador" },
-  // "Orçamentos" leva ao catálogo: lá cada modelo tem "Entrar em contato",
-  // que manda o cliente ao consultor no WhatsApp. O orçamento instantâneo
-  // (/simulador) segue no ar, só fora da navegação.
-  { href: "/produtos", label: "Orçamentos", semDestaque: true },
+  // Sem "Orçamentos": o cliente escolhe o produto e fala com um consultor
+  // dentro dele. O orçamento instantâneo (/simulador) segue no ar, só fora
+  // da navegação.
 ];
 
 export default function Navbar() {
@@ -40,9 +39,8 @@ export default function Navbar() {
 
         {/* Desktop Nav — center third */}
         <nav className="hidden md:flex items-center justify-center gap-6">
-          {navLinks.map(({ href, label, semDestaque }) => {
-            // "Orçamentos" também aponta para /produtos: só "Produtos" fica sublinhado.
-            const active = pathname === href && !semDestaque;
+          {navLinks.map(({ href, label }) => {
+            const active = pathname === href;
             return (
               <Link
                 key={label}
@@ -103,13 +101,13 @@ export default function Navbar() {
       {/* Mobile Menu */}
       {mobileOpen && (
         <div className="md:hidden bg-white border-t border-[#e8e8e8] px-8 py-6 flex flex-col gap-5">
-          {navLinks.map(({ href, label, semDestaque }) => (
+          {navLinks.map(({ href, label }) => (
             <Link
               key={label}
               href={href}
               onClick={() => setMobileOpen(false)}
               className={`text-xs tracking-[0.1em] uppercase font-semibold font-[var(--font-inter)] ${
-                pathname === href && !semDestaque ? "text-[#002045]" : "text-[#74777f]"
+                pathname === href ? "text-[#002045]" : "text-[#74777f]"
               }`}
             >
               {label}
