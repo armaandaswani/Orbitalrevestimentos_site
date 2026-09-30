@@ -3,7 +3,6 @@
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { useState } from "react";
-import { abrirContato } from "@/lib/contato";
 
 const CATALOGUE_URL =
   "https://drive.google.com/file/d/1zhm5MgKGSDRThqk8FqqwfX-WijI7K-iD/view?usp=drive_link";
@@ -15,8 +14,10 @@ const navLinks = [
   { href: "/projetos", label: "Projetos" },
   { href: "/parcerias", label: "Parcerias" },
   { href: "/visualizador", label: "Simulador" },
-  // "Orçamentos" (/simulador) saiu do menu: a página continua funcionando,
-  // mas o cliente agora fala com um consultor pelo botão "Contato".
+  // "Orçamentos" leva ao catálogo: lá cada modelo tem "Entrar em contato",
+  // que manda o cliente ao consultor no WhatsApp. O orçamento instantâneo
+  // (/simulador) segue no ar, só fora da navegação.
+  { href: "/produtos", label: "Orçamentos", semDestaque: true },
 ];
 
 export default function Navbar() {
@@ -39,11 +40,12 @@ export default function Navbar() {
 
         {/* Desktop Nav — center third */}
         <nav className="hidden md:flex items-center justify-center gap-6">
-          {navLinks.map(({ href, label }) => {
-            const active = pathname === href;
+          {navLinks.map(({ href, label, semDestaque }) => {
+            // "Orçamentos" também aponta para /produtos: só "Produtos" fica sublinhado.
+            const active = pathname === href && !semDestaque;
             return (
               <Link
-                key={href}
+                key={label}
                 href={href}
                 className={`text-xs tracking-[0.1em] uppercase font-semibold font-[var(--font-inter)] transition-colors duration-200 pb-0.5 ${
                   active
@@ -55,13 +57,6 @@ export default function Navbar() {
               </Link>
             );
           })}
-          <button
-            type="button"
-            onClick={() => abrirContato()}
-            className="text-xs tracking-[0.1em] uppercase font-semibold font-[var(--font-inter)] transition-colors duration-200 pb-0.5 text-[#74777f] hover:text-[#002045]"
-          >
-            Contato
-          </button>
         </nav>
 
         {/* Right CTAs — right third */}
@@ -108,25 +103,18 @@ export default function Navbar() {
       {/* Mobile Menu */}
       {mobileOpen && (
         <div className="md:hidden bg-white border-t border-[#e8e8e8] px-8 py-6 flex flex-col gap-5">
-          {navLinks.map(({ href, label }) => (
+          {navLinks.map(({ href, label, semDestaque }) => (
             <Link
-              key={href}
+              key={label}
               href={href}
               onClick={() => setMobileOpen(false)}
               className={`text-xs tracking-[0.1em] uppercase font-semibold font-[var(--font-inter)] ${
-                pathname === href ? "text-[#002045]" : "text-[#74777f]"
+                pathname === href && !semDestaque ? "text-[#002045]" : "text-[#74777f]"
               }`}
             >
               {label}
             </Link>
           ))}
-          <button
-            type="button"
-            onClick={() => { setMobileOpen(false); abrirContato(); }}
-            className="text-left text-xs tracking-[0.1em] uppercase font-semibold font-[var(--font-inter)] text-[#74777f]"
-          >
-            Contato
-          </button>
           <Link
             href="/parceiro"
             onClick={() => setMobileOpen(false)}

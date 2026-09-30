@@ -43,6 +43,7 @@ export default function Footer() {
                 { href: "/tecnologia", label: "Tecnologia PFB" },
                 { href: "/projetos", label: "Projetos" },
                 { href: "/parcerias", label: "Parcerias" },
+                { href: "/produtos", label: "Orçamentos" },
                 { href: "/visualizador", label: "Simulador" },
                 { href: "/sobre", label: "Sobre a Orbital" },
                 { href: "/guias/revestimento-parede-manaus", label: "Guia: Revestimento Manaus" },
@@ -50,7 +51,7 @@ export default function Footer() {
                 { href: "/guias/quanto-custa-revestimento-manaus", label: "Preços de Revestimento" },
               ].map(({ href, label }) => (
                 <Link
-                  key={href}
+                  key={label}
                   href={href}
                   className="text-sm text-[#9c9faa] hover:text-white transition-colors font-[var(--font-inter)]"
                 >
