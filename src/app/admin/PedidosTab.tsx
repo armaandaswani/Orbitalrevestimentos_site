@@ -149,7 +149,7 @@ A instalação total ou parcial do produto implica aceitação definitiva, irret
 CLÁUSULA 8ª - DO USO, INSUMOS, GARANTIAS E EXCLUSÕES
 A ORBITAL não garante desempenho, durabilidade ou aparência estética quando o produto for utilizado:
 * fora das recomendações técnicas;
-* em ambientes não indicados, como tampos de bancada, áreas externas e semi-externas e pisos;
+* em ambientes não indicados, como tampos de bancada, pisos, fachadas, áreas externas e semi-externas, bordas de piscina e áreas molhadas externas, saunas e salas de vapor, churrasqueiras, lareiras e coifas, e superfícies sujeitas a impacto ou atrito constante;
 * em áreas sujeitas a calor contínuo acima de 55 °C;
 * sob condições extremas de calor, umidade excessiva ou exposição solar direta contínua;
 * mediante instalação inadequada ou preparo incorreto da base;

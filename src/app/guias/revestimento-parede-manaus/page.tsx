@@ -52,7 +52,7 @@ const breadcrumbSchema = {
 const ambientes = [
   { nome: "Sala de estar", desc: "Painel de destaque ou revestimento completo. O mármore polido da linha Brilliance cria ambientes de alto padrão sem obra.", img: "/images/catalogue/aplicacao-sala.jpeg", alt: "Sala revestida com PFB Orbital Brilliance em Manaus" },
   { nome: "Escritório e clínica", desc: "Instalação a seco sem fechar o espaço. Revestimento profissional em um único dia, sem interditar o ambiente.", img: "/images/projetos/escritorio-depois.jpeg", alt: "Escritório revestido com PFB Orbital em Manaus" },
-  { nome: "Cozinha e lavabo", desc: "Impermeável, anti-gordura, anti-mofo. Indicado para toda a parede da cozinha, inclusive próximo ao fogão.", img: "/images/projetos/cozinha-depois.png", alt: "Cozinha revestida com PFB Orbital em Manaus" },
+  { nome: "Cozinha e lavabo", desc: "Impermeável, anti-gordura, anti-mofo. Indicado para paredes de cozinha, inclusive roda-bancas e roda-pias.", img: "/images/projetos/cozinha-depois.png", alt: "Cozinha revestida com PFB Orbital em Manaus" },
   { nome: "Restaurante e comercial", desc: "Acabamento que impressiona clientes e dura anos. Sem manutenção, sem deterioração no clima amazônico.", img: "/images/projetos/restaurante-depois.jpeg", alt: "Restaurante revestido com PFB Orbital Elegance em Manaus" },
 ];
 
