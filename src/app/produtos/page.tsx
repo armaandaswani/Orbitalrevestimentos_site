@@ -43,13 +43,11 @@ const linhas: { key: Linha; label: string; desc: string }[] = [
 
 const LINHA_INFO: Record<"Classic" | "Brilliance" | "Elegance", {
   material: string;
-  tagline: string;
   differentials: { icon: string; text: string }[];
   color: string;
 }> = {
   Classic: {
     material: "1,2 × 2,9m - 5mm · Acabamento Fosco",
-    tagline: "Sofisticação atemporal com textura fosca anti-reflexo. A escolha mais versátil do catálogo.",
     differentials: [
       { icon: "◼", text: "Acabamento fosco anti-reflexo — elegância discreta em qualquer iluminação" },
       { icon: "◼", text: "Absorção de apenas 0,2% em 48h — indicado para banheiros, lavabos e áreas úmidas" },
@@ -60,7 +58,6 @@ const LINHA_INFO: Record<"Classic" | "Brilliance" | "Elegance", {
   },
   Brilliance: {
     material: "1,2 × 2,9m - 5mm · Acabamento Polido",
-    tagline: "Superfície espelhada que replica mármore importado. Presença visual máxima.",
     differentials: [
       { icon: "◆", text: "Acabamento polido espelhado — efeito mármore de luxo sem o custo" },
       { icon: "◆", text: "Reflexo de luz natural amplifica ambientes e cria sensação de amplitude" },
@@ -71,7 +68,6 @@ const LINHA_INFO: Record<"Classic" | "Brilliance" | "Elegance", {
   },
   Elegance: {
     material: "1,2 × 2,9m - 5mm · Textura Madeira",
-    tagline: "Calor e naturalidade da madeira sem nenhuma de suas desvantagens.",
     differentials: [
       { icon: "▲", text: "Textura tátil realista — aparência e sensação de madeira natural" },
       { icon: "▲", text: "Zero manutenção — sem verniz, sem lixamento, sem deterioração" },
@@ -461,11 +457,6 @@ export default function ProdutosPage() {
                       Falar com consultor
                     </ContatoCta>
                   </div>
-
-                  {/* Tagline */}
-                  <p className="text-[#43474e] text-sm font-[var(--font-inter)] leading-relaxed italic border-l-2 border-[#002045]/20 pl-3">
-                    {info.tagline}
-                  </p>
 
                   {/* Description */}
                   {selected.description && (
