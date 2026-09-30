@@ -3,9 +3,9 @@ import Image from "next/image";
 import Link from "next/link";
 import ScrollReveal from "@/components/ScrollReveal";
 import AnimatedStat from "@/components/AnimatedStat";
+import ContatoCta from "@/components/ContatoCta";
 
 const BASE_URL = "https://orbitalrevestimentos.com.br";
-const WA = (msg: string) => `https://wa.me/5592988150149?text=${encodeURIComponent(msg)}`;
 
 export const metadata: Metadata = {
   title: "Revestimento para Banheiro em Manaus — O Que Realmente Funciona",
@@ -85,7 +85,7 @@ const faqSchema = {
       name: "Quanto custa revestir um banheiro em Manaus?",
       acceptedAnswer: {
         "@type": "Answer",
-        text: "O custo depende da metragem. Uma placa PFB Orbital (1,2m × 2,9m = 3,48m²) custa entre R$ 559 e R$ 649. Um banheiro pequeno de 6m² usa aproximadamente 2 placas — total de R$ 1.118 a R$ 1.298 de material. Use o simulador em orbitalrevestimentos.com.br/simulador para um orçamento exato.",
+        text: "O custo depende da metragem. Uma placa PFB Orbital (1,2m × 2,9m = 3,48m²) custa entre R$ 559 e R$ 649. Um banheiro pequeno de 6m² usa aproximadamente 2 placas — total de R$ 1.118 a R$ 1.298 de material. Fale com um consultor da Orbital pelo WhatsApp para um orçamento exato.",
       },
     },
   ],
@@ -120,7 +120,7 @@ const faqs = [
   { q: "Qual o melhor revestimento para banheiro em Manaus?", a: "O PFB Orbital (Placa Flexível de Bambu). Absorve apenas 0,2% de umidade em 48h — 175× menos que o MDF. Anti-mofo, impermeável e instalado sem demolição em 2–3 horas." },
   { q: "Posso revestir o banheiro sem demolição?", a: "Sim. O PFB é colado diretamente sobre a parede existente com cola PU 40, sem quebra, sem poeira, sem interditar o banheiro. Funciona sobre reboco, tinta, cerâmica." },
   { q: "O PFB aguenta umidade do box e ducha?", a: "Sim. Testado em imersão total por 48h com apenas 0,2% de absorção — aprovado pelo INMETRO. Com laudo de Engenheiro Civil (ART nº AM20260593657) para uso em áreas úmidas." },
-  { q: "Quanto custa revestir um banheiro em Manaus?", a: "Um banheiro pequeno de 6m² usa aproximadamente 2 placas — R$ 1.118 a R$ 1.298 de material. Use o simulador gratuito para calcular o seu ambiente exato." },
+  { q: "Quanto custa revestir um banheiro em Manaus?", a: "Um banheiro pequeno de 6m² usa aproximadamente 2 placas — R$ 1.118 a R$ 1.298 de material. Fale com um consultor da Orbital para o orçamento do seu ambiente." },
 ];
 
 export default function GuiaBanheiroManaus() {
@@ -282,7 +282,7 @@ export default function GuiaBanheiroManaus() {
                 ))}
               </ul>
               <div className="mt-8 flex flex-col sm:flex-row gap-3">
-                <Link href="/simulador" className="bg-[#002045] text-white text-xs tracking-[0.1em] uppercase font-bold font-[var(--font-inter)] px-7 py-3.5 hover:bg-[#1a365d] transition-colors text-center">Simular Orçamento</Link>
+                <ContatoCta className="bg-[#002045] text-white text-xs tracking-[0.1em] uppercase font-bold font-[var(--font-inter)] px-7 py-3.5 hover:bg-[#1a365d] transition-colors text-center">Falar com um consultor</ContatoCta>
                 <Link href="/produtos" className="border border-[#002045] text-[#002045] text-xs tracking-[0.1em] uppercase font-bold font-[var(--font-inter)] px-7 py-3.5 hover:bg-[#002045] hover:text-white transition-colors text-center">Ver Acabamentos</Link>
               </div>
             </ScrollReveal>
@@ -384,15 +384,15 @@ export default function GuiaBanheiroManaus() {
         <div className="relative z-10 max-w-[1280px] mx-auto px-6 lg:px-16 py-24 lg:py-32 flex flex-col lg:flex-row items-start lg:items-center justify-between gap-8">
           <div className="max-w-xl">
             <h2 className="font-[var(--font-noto-serif)] text-white text-3xl lg:text-5xl font-normal leading-tight mb-4">
-              Simule o custo do seu banheiro agora.
+              Receba o orçamento do seu banheiro.
             </h2>
             <p className="text-white/60 font-[var(--font-inter)]">
-              Coloque as dimensões e receba o orçamento completo — material e mão de obra estimada.
+              Fale com um consultor da Orbital pelo WhatsApp e receba o orçamento completo — material e instalação.
             </p>
           </div>
           <div className="flex flex-col sm:flex-row gap-3 flex-shrink-0">
-            <Link href="/simulador" className="bg-white text-[#002045] text-xs tracking-[0.12em] uppercase font-bold font-[var(--font-inter)] px-10 py-4 hover:bg-[#f3f3f3] transition-colors text-center">Simular Grátis</Link>
-            <a href={WA("Olá, tenho interesse no revestimento para banheiro. Podem me ajudar?")} target="_blank" rel="noopener noreferrer" className="border border-white/50 text-white text-xs tracking-[0.12em] uppercase font-bold font-[var(--font-inter)] px-10 py-4 hover:bg-white/10 transition-colors text-center">Falar no WhatsApp</a>
+            <ContatoCta className="bg-white text-[#002045] text-xs tracking-[0.12em] uppercase font-bold font-[var(--font-inter)] px-10 py-4 hover:bg-[#f3f3f3] transition-colors text-center">Falar com um consultor</ContatoCta>
+            <Link href="/produtos" className="border border-white/50 text-white text-xs tracking-[0.12em] uppercase font-bold font-[var(--font-inter)] px-10 py-4 hover:bg-white/10 transition-colors text-center">Ver acabamentos</Link>
           </div>
         </div>
       </section>

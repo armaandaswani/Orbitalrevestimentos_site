@@ -1,9 +1,9 @@
 "use client";
 
-import Link from "next/link";
 import Image from "next/image";
 import { useState, useEffect, useCallback, useRef } from "react";
 import { normalizeProductCode, productPath, productQrUrl, productUrl } from "@/lib/product-link";
+import ContatoCta from "@/components/ContatoCta";
 
 const CATALOGUE_URL =
   "https://drive.google.com/file/d/1zhm5MgKGSDRThqk8FqqwfX-WijI7K-iD/view?usp=drive_link";
@@ -250,7 +250,6 @@ export default function ProdutosPage() {
       {/* ── Product Detail Modal ── */}
       {selected && (() => {
         const info = LINHA_INFO[selected.linha];
-        const simulatorUrl = `/simulador?produto=${encodeURIComponent(selected.code)}`;
         return (
           <div
             className="fixed inset-0 z-[100] flex items-stretch lg:items-center bg-black/80 backdrop-blur-sm"
@@ -523,16 +522,18 @@ export default function ProdutosPage() {
                   className="p-4 lg:p-6 bg-white border-t border-[#e8e8e8] space-y-2 lg:sticky lg:bottom-0"
                   style={{ paddingBottom: "calc(1.5rem + env(safe-area-inset-bottom))" }}
                 >
-                  <Link
-                    href={simulatorUrl}
-                    onClick={() => close()}
+                  {/* Pivô: em vez do orçamento instantâneo (/simulador, que segue
+                      no ar mas fora da navegação), o cliente fala com um
+                      consultor pelo WhatsApp já dizendo qual revestimento quer. */}
+                  <ContatoCta
+                    produtos={[{ code: selected.code, name: selected.name, linha: selected.linha }]}
                     className="w-full inline-flex items-center justify-center gap-2 bg-[#002045] text-white text-xs tracking-[0.12em] uppercase font-bold font-[var(--font-inter)] px-6 py-4 hover:bg-[#003070] transition-colors"
                   >
-                    <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5">
-                      <path d="M9 7H6a2 2 0 00-2 2v9a2 2 0 002 2h9a2 2 0 002-2v-3M13 3h8m0 0v8m0-8L11 13"/>
+                    <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2" aria-hidden>
+                      <path d="M21 11.5a8.38 8.38 0 01-.9 3.8 8.5 8.5 0 01-7.6 4.7 8.38 8.38 0 01-3.8-.9L3 21l1.9-5.7a8.38 8.38 0 01-.9-3.8 8.5 8.5 0 014.7-7.6 8.38 8.38 0 013.8-.9h.5a8.48 8.48 0 018 8v.5z"/>
                     </svg>
-                    Simular investimento
-                  </Link>
+                    Entrar em contato
+                  </ContatoCta>
                   {/* Download the currently-shown texture. Fetches the blob so the
                       cross-origin Supabase URL actually downloads (the `download`
                       attribute is ignored cross-origin); falls back to opening it. */}
@@ -656,12 +657,11 @@ export default function ProdutosPage() {
             estética arquitetônica para projetos exigentes em Manaus.
           </p>
           <div className="flex flex-col sm:flex-row flex-wrap gap-3 lg:gap-4">
-            <Link
-              href="/simulador"
+            <ContatoCta
               className="w-full sm:w-auto inline-flex items-center justify-center gap-2 bg-white text-[#002045] text-xs tracking-[0.12em] uppercase font-bold font-[var(--font-inter)] px-7 py-3.5 hover:bg-[#f3f3f3] transition-colors"
             >
-              Simulação de Orçamento
-            </Link>
+              Falar com um consultor
+            </ContatoCta>
             <a
               href={CATALOGUE_URL}
               target="_blank"

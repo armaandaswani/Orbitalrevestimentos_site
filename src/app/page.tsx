@@ -4,6 +4,7 @@ import Link from "next/link";
 import ScrollReveal from "@/components/ScrollReveal";
 import AnimatedStat from "@/components/AnimatedStat";
 import HomeProjectsGrid from "@/components/HomeProjectsGrid";
+import ContatoCta from "@/components/ContatoCta";
 
 export const metadata: Metadata = {
   title: "Orbital Revestimentos — Instalado em horas. Admirado por anos.",
@@ -204,12 +205,11 @@ export default function Home() {
             >
               Ver Acabamentos
             </Link>
-            <Link
-              href="/simulador"
+            <ContatoCta
               className="w-full sm:w-auto inline-flex items-center justify-center gap-2 border border-white/60 text-white text-xs tracking-[0.12em] uppercase font-bold font-[var(--font-inter)] px-8 py-4 hover:bg-white/10 transition-colors"
             >
-              Simulação de Orçamento
-            </Link>
+              Falar com um consultor
+            </ContatoCta>
           </div>
         </div>
       </section>
@@ -233,37 +233,35 @@ export default function Home() {
         </div>
       </section>
 
-      {/* Simulador Teaser — surfaced on the homepage so mobile users who don't
-          explore the nav menu can still find it. */}
+      {/* Atendimento — antes era o teaser do orçamento instantâneo (/simulador,
+          que segue no ar mas fora da navegação). Agora leva ao consultor. */}
       <section className="py-12 lg:py-28 bg-white border-b border-[#eeeeee]">
         <div className="max-w-[1280px] mx-auto px-4 lg:px-16">
           <div className="grid grid-cols-1 lg:grid-cols-12 gap-10 lg:gap-16 items-center">
             <ScrollReveal className="lg:col-span-6" direction="left">
               <p className="text-[#74777f] text-xs tracking-[0.2em] uppercase font-semibold font-[var(--font-inter)] mb-5">
-                Simulador de Investimento
+                Atendimento personalizado
               </p>
               <h2 className="font-[var(--font-noto-serif)] text-[#002045] text-2xl lg:text-[40px] font-normal leading-[1.2] mb-6">
-                Simule seu orçamento em segundos.
+                Escolha o acabamento. A gente cuida do resto.
               </h2>
               <p className="text-[#43474e] text-base font-[var(--font-inter)] leading-relaxed mb-8 max-w-md">
-                Escolha o acabamento, informe a área do seu espaço e veja na hora
-                quanto você investe — e quanto economiza em relação ao MDF ao
-                longo de 10 anos.
+                Fale direto com um consultor da Orbital pelo WhatsApp. Ele monta
+                o orçamento completo do seu projeto, do material à instalação.
               </p>
-              <Link
-                href="/simulador"
+              <ContatoCta
                 className="inline-flex items-center justify-center gap-2 bg-[#002045] text-white text-xs tracking-[0.12em] uppercase font-bold font-[var(--font-inter)] px-8 py-4 hover:bg-[#1a365d] transition-colors"
               >
-                Simular meu orçamento
+                Falar com um consultor
                 <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
                   <path d="M5 12h14M12 5l7 7-7 7" />
                 </svg>
-              </Link>
+              </ContatoCta>
             </ScrollReveal>
             <ScrollReveal className="lg:col-span-6" direction="right" delay={100}>
-              {/* Fanned swatch stack — real finishes, no numbers. Ties directly
-                  into the simulator's first step (choosing a finish). */}
-              <Link href="/simulador" className="group relative block h-[300px] sm:h-[380px] lg:h-[440px]">
+              {/* Fanned swatch stack — real finishes, no numbers. Leva ao
+                  catálogo, onde o cliente escolhe o acabamento. */}
+              <Link href="/produtos" className="group relative block h-[300px] sm:h-[380px] lg:h-[440px]">
                 <div className="absolute inset-0 flex items-center justify-center">
                   {[
                     { img: "/images/catalogue/classic-bege-travertino-orb001.jpeg", rot: -18, x: -84 },
@@ -756,15 +754,14 @@ export default function Home() {
             Baixe o catálogo ou entre em contato diretamente.
           </p>
           <div className="flex flex-col sm:flex-row flex-wrap justify-center gap-3 lg:gap-4">
-            <Link
-              href="/simulador"
+            <ContatoCta
               className="w-full sm:w-auto inline-flex items-center justify-center gap-2 border border-white/40 text-white text-xs tracking-[0.12em] uppercase font-bold font-[var(--font-inter)] px-8 py-4 hover:bg-white/10 transition-colors"
             >
               <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-                <path d="M9 7h6M9 12h6M9 17h4M5 3h14a2 2 0 012 2v14a2 2 0 01-2 2H5a2 2 0 01-2-2V5a2 2 0 012-2z" />
+                <path d="M21 11.5a8.38 8.38 0 01-.9 3.8 8.5 8.5 0 01-7.6 4.7 8.38 8.38 0 01-3.8-.9L3 21l1.9-5.7a8.38 8.38 0 01-.9-3.8 8.5 8.5 0 014.7-7.6 8.38 8.38 0 013.8-.9h.5a8.48 8.48 0 018 8v.5z" />
               </svg>
-              Simular Orçamento
-            </Link>
+              Falar com um consultor
+            </ContatoCta>
             <Link
               href="/produtos"
               className="w-full sm:w-auto text-center border border-white/40 text-white text-xs tracking-[0.12em] uppercase font-bold font-[var(--font-inter)] px-8 py-4 hover:bg-white/10 transition-colors"

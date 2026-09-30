@@ -3,9 +3,9 @@ import Image from "next/image";
 import Link from "next/link";
 import ScrollReveal from "@/components/ScrollReveal";
 import AnimatedStat from "@/components/AnimatedStat";
+import ContatoCta from "@/components/ContatoCta";
 
 const BASE_URL = "https://orbitalrevestimentos.com.br";
-const WA = (msg: string) => `https://wa.me/5592988150149?text=${encodeURIComponent(msg)}`;
 
 export const metadata: Metadata = {
   title: "Revestimento de Parede em Manaus — Guia Completo 2026",
@@ -199,7 +199,7 @@ export default function GuiaParedeManaus() {
                 ))}
               </ul>
               <div className="mt-8 flex flex-col sm:flex-row gap-3">
-                <Link href="/simulador" className="bg-[#002045] text-white text-xs tracking-[0.1em] uppercase font-bold font-[var(--font-inter)] px-7 py-3.5 hover:bg-[#1a365d] transition-colors text-center">Simular Orçamento</Link>
+                <ContatoCta className="bg-[#002045] text-white text-xs tracking-[0.1em] uppercase font-bold font-[var(--font-inter)] px-7 py-3.5 hover:bg-[#1a365d] transition-colors text-center">Falar com um consultor</ContatoCta>
                 <Link href="/produtos" className="border border-[#002045] text-[#002045] text-xs tracking-[0.1em] uppercase font-bold font-[var(--font-inter)] px-7 py-3.5 hover:bg-[#002045] hover:text-white transition-colors text-center">Ver Acabamentos</Link>
               </div>
             </ScrollReveal>
@@ -256,12 +256,12 @@ export default function GuiaParedeManaus() {
         </div>
         <div className="relative z-10 max-w-[1280px] mx-auto px-6 lg:px-16 py-24 lg:py-32 flex flex-col lg:flex-row items-start lg:items-center justify-between gap-8">
           <div className="max-w-xl">
-            <h2 className="font-[var(--font-noto-serif)] text-white text-3xl lg:text-5xl font-normal leading-tight mb-4">Simule o custo do seu ambiente agora.</h2>
-            <p className="text-white/60 font-[var(--font-inter)]">Coloque as dimensões e receba o orçamento completo — material e mão de obra estimada.</p>
+            <h2 className="font-[var(--font-noto-serif)] text-white text-3xl lg:text-5xl font-normal leading-tight mb-4">Receba o orçamento do seu ambiente.</h2>
+            <p className="text-white/60 font-[var(--font-inter)]">Fale com um consultor da Orbital pelo WhatsApp e receba o orçamento completo — material e instalação.</p>
           </div>
           <div className="flex flex-col sm:flex-row gap-3 flex-shrink-0">
-            <Link href="/simulador" className="bg-white text-[#002045] text-xs tracking-[0.12em] uppercase font-bold font-[var(--font-inter)] px-10 py-4 hover:bg-[#f3f3f3] transition-colors text-center">Simular Grátis</Link>
-            <a href={WA("Olá, gostaria de um orçamento de revestimento para minha parede.")} target="_blank" rel="noopener noreferrer" className="border border-white/50 text-white text-xs tracking-[0.12em] uppercase font-bold font-[var(--font-inter)] px-10 py-4 hover:bg-white/10 transition-colors text-center">Falar no WhatsApp</a>
+            <ContatoCta className="bg-white text-[#002045] text-xs tracking-[0.12em] uppercase font-bold font-[var(--font-inter)] px-10 py-4 hover:bg-[#f3f3f3] transition-colors text-center">Falar com um consultor</ContatoCta>
+            <Link href="/produtos" className="border border-white/50 text-white text-xs tracking-[0.12em] uppercase font-bold font-[var(--font-inter)] px-10 py-4 hover:bg-white/10 transition-colors text-center">Ver acabamentos</Link>
           </div>
         </div>
       </section>

@@ -38,14 +38,15 @@ PÁGINAS REAIS DO SITE (use SOMENTE estas ao referenciar):
 - / → Página inicial
 - /produtos → Catálogo de produtos (linhas Classic, Brilliance, Elegance)
 - /projetos → Projetos e obras realizadas com o PFB (galeria)
-- /simulador → Simulador de preços (calcula quantas placas e o custo total por ambiente)
 - /tecnologia → Tecnologia e testes técnicos do PFB (resistência, certificações)
 - /parcerias → Programa de parceiros (arquitetos, designers, revendedores)
-- /contato → Contato e localização do showroom
+- /contato → Falar com um consultor (abre uma aba rápida e leva ao WhatsApp da Orbital)
+
+ORÇAMENTO: o site NÃO gera mais orçamento automático. Todo orçamento é feito por um consultor pelo WhatsApp. Para orçamento, indique o consultor [PAGE: /contato] ou o WhatsApp (92) 98815-0149.
 
 COMO REFERENCIAR PÁGINAS NO SITE:
 - Quando sugerir que o cliente acesse uma página, inclua a tag [PAGE: /caminho] logo após a frase.
-- Exemplo: "Você pode calcular o custo pelo nosso Simulador. [PAGE: /simulador]"
+- Exemplo: "Um consultor monta o orçamento do seu ambiente pelo WhatsApp. [PAGE: /contato]"
 - Exemplo: "Veja os projetos realizados na nossa galeria. [PAGE: /projetos]"
 - NUNCA invente páginas, abas ou seções que não existam na lista acima.
 - Não existe "aba de Instalação", "seção de Guias" ou qualquer outra página além das listadas.
@@ -83,9 +84,9 @@ EXEMPLOS DO QUE NÃO FAZER (ruim):
 - "Nosso showroom fica em Manaus. Para visitar, é necessário agendar previamente pelo WhatsApp, disponível no site..."
 
 EXEMPLOS DO QUE FAZER (bom):
-- "Use o simulador para calcular exatamente quantas placas você precisa. [PAGE: /simulador]"
+- "Um consultor calcula quantas placas você precisa e monta o orçamento. [PAGE: /contato]"
 - "Showroom no centro de Manaus — só por agendamento: (92) 98815-0149."
-- "Classic custa R$ 559/placa, Brilliance R$ 589, Elegance R$ 649. Quer simular o total? [PAGE: /simulador]"`;
+- "Classic custa R$ 559/placa, Brilliance R$ 589, Elegance R$ 649. Quer o orçamento do seu ambiente? [PAGE: /contato]"`;
 
 
 export async function POST(req: NextRequest) {

@@ -3,14 +3,14 @@ import Image from "next/image";
 import Link from "next/link";
 import ScrollReveal from "@/components/ScrollReveal";
 import AnimatedStat from "@/components/AnimatedStat";
+import ContatoCta from "@/components/ContatoCta";
 
 const BASE_URL = "https://orbitalrevestimentos.com.br";
-const WA = (msg: string) => `https://wa.me/5592988150149?text=${encodeURIComponent(msg)}`;
 
 export const metadata: Metadata = {
   title: "Quanto Custa Revestir uma Parede em Manaus? Preços 2026",
   description:
-    "Preços reais de revestimento de parede em Manaus em 2026: material, mão de obra e comparativo entre PFB, azulejo, MDF e papel de parede. Simule seu orçamento grátis.",
+    "Preços reais de revestimento de parede em Manaus em 2026: material, mão de obra e comparativo entre PFB, azulejo, MDF e papel de parede. Peça seu orçamento pelo WhatsApp.",
   keywords: [
     "quanto custa revestimento parede Manaus",
     "preço revestimento parede Manaus",
@@ -68,7 +68,7 @@ const faqSchema = {
       name: "Qual o preço do PFB Orbital em Manaus?",
       acceptedAnswer: {
         "@type": "Answer",
-        text: "O PFB Orbital custa: Linha Classic R$ 559/placa, Linha Brilliance R$ 589/placa, Linha Elegance R$ 649/placa. Cada placa mede 1,2m × 2,9m e cobre 3,48m². Use o simulador gratuito em orbitalrevestimentos.com.br/simulador para calcular o custo exato do seu ambiente.",
+        text: "O PFB Orbital custa: Linha Classic R$ 559/placa, Linha Brilliance R$ 589/placa, Linha Elegance R$ 649/placa. Cada placa mede 1,2m × 2,9m e cobre 3,48m². Fale com um consultor da Orbital pelo WhatsApp para o orçamento exato do seu ambiente.",
       },
     },
     {
@@ -126,7 +126,7 @@ const comparativoCusto = [
 
 const faqs = [
   { q: "Quanto custa revestir uma parede em Manaus?", a: "Com PFB Orbital, material de R$ 559 a R$ 649 por placa (3,48m²). Uma sala de 20m² usa aproximadamente 6 placas — R$ 3.354 a R$ 3.894 de material. Com mão de obra estimada: R$ 3.654 a R$ 4.374." },
-  { q: "Qual o preço do PFB Orbital por m²?", a: "Linha Classic: R$ 161/m² · Linha Brilliance: R$ 169/m² · Linha Elegance: R$ 187/m². Cada placa cobre 3,48m² — use o simulador para calcular o custo exato do seu ambiente." },
+  { q: "Qual o preço do PFB Orbital por m²?", a: "Linha Classic: R$ 161/m² · Linha Brilliance: R$ 169/m² · Linha Elegance: R$ 187/m². Cada placa cobre 3,48m² — fale com um consultor para o orçamento exato do seu ambiente." },
   { q: "PFB é mais barato que azulejo em Manaus?", a: "O material tem custo similar ao azulejo de qualidade, mas a mão de obra é 3–5× mais barata (2–3h vs. 1–3 dias). No custo total da reforma — material + mão de obra + obras — o PFB geralmente sai mais barato." },
   { q: "Tem financiamento disponível?", a: "Sim. A Orbital disponibiliza condições de pagamento parcelado. Entre em contato via WhatsApp (92) 98815-0149 para verificar as opções para o seu projeto." },
 ];
@@ -173,7 +173,7 @@ export default function GuiaCustoManaus() {
             <em>Preços Reais 2026</em>
           </h1>
           <p className="text-white/70 text-base lg:text-lg font-[var(--font-inter)] leading-relaxed max-w-2xl">
-            Tabelas de preço por placa e por m², custo estimado por ambiente, comparativo entre materiais e simulador de orçamento gratuito.
+            Tabelas de preço por placa e por m², custo estimado por ambiente, comparativo entre materiais e orçamento com um consultor.
           </p>
         </div>
       </section>
@@ -214,9 +214,9 @@ export default function GuiaCustoManaus() {
                   <p className="text-[#3b6934] font-semibold font-[var(--font-inter)] text-sm mb-3">= R$ {Math.round(l.preco / 3.48)}/m²</p>
                   <p className="text-[#74777f] font-[var(--font-inter)] text-xs">{l.detalhe}</p>
                 </div>
-                <Link href="/simulador" className="mt-6 text-[#002045] text-xs tracking-[0.1em] uppercase font-semibold font-[var(--font-inter)] border-b border-[#002045] pb-0.5 self-start hover:text-[#3b6934] hover:border-[#3b6934] transition-colors">
-                  Simular com esta linha →
-                </Link>
+                <ContatoCta produtos={[{ linha: l.linha }]} className="mt-6 text-[#002045] text-xs tracking-[0.1em] uppercase font-semibold font-[var(--font-inter)] border-b border-[#002045] pb-0.5 self-start hover:text-[#3b6934] hover:border-[#3b6934] transition-colors">
+                  Quero esta linha →
+                </ContatoCta>
               </ScrollReveal>
             ))}
           </div>
@@ -265,13 +265,12 @@ export default function GuiaCustoManaus() {
                 </table>
               </div>
               <p className="text-[#74777f] text-xs font-[var(--font-inter)] mt-3">
-                Valores estimados. Use o{" "}
-                <Link href="/simulador" className="text-[#002045] underline">simulador gratuito</Link>{" "}
-                para cálculo exato com suas dimensões reais.
+                Valores estimados. Para o cálculo exato com suas dimensões reais,{" "}
+                <ContatoCta className="text-[#002045] underline">fale com um consultor</ContatoCta>.
               </p>
-              <Link href="/simulador" className="mt-6 inline-block bg-[#002045] text-white text-xs tracking-[0.1em] uppercase font-bold font-[var(--font-inter)] px-7 py-3.5 hover:bg-[#1a365d] transition-colors">
-                Simular Orçamento Grátis
-              </Link>
+              <ContatoCta className="mt-6 inline-block bg-[#002045] text-white text-xs tracking-[0.1em] uppercase font-bold font-[var(--font-inter)] px-7 py-3.5 hover:bg-[#1a365d] transition-colors">
+                Pedir meu orçamento
+              </ContatoCta>
             </ScrollReveal>
           </div>
         </div>
@@ -371,15 +370,15 @@ export default function GuiaCustoManaus() {
         <div className="relative z-10 max-w-[1280px] mx-auto px-6 lg:px-16 py-24 lg:py-32 flex flex-col lg:flex-row items-start lg:items-center justify-between gap-8">
           <div className="max-w-xl">
             <h2 className="font-[var(--font-noto-serif)] text-white text-3xl lg:text-5xl font-normal leading-tight mb-4">
-              Calcule o custo exato do seu projeto.
+              Receba o orçamento exato do seu projeto.
             </h2>
             <p className="text-white/60 font-[var(--font-inter)]">
-              Simulador gratuito: insira as dimensões e receba orçamento de material + mão de obra estimada.
+              Fale com um consultor da Orbital pelo WhatsApp e receba o orçamento de material e instalação.
             </p>
           </div>
           <div className="flex flex-col sm:flex-row gap-3 flex-shrink-0">
-            <Link href="/simulador" className="bg-white text-[#002045] text-xs tracking-[0.12em] uppercase font-bold font-[var(--font-inter)] px-10 py-4 hover:bg-[#f3f3f3] transition-colors text-center">Simular Grátis</Link>
-            <a href={WA("Olá, gostaria de um orçamento de revestimento para meu projeto.")} target="_blank" rel="noopener noreferrer" className="border border-white/50 text-white text-xs tracking-[0.12em] uppercase font-bold font-[var(--font-inter)] px-10 py-4 hover:bg-white/10 transition-colors text-center">Pedir Orçamento</a>
+            <ContatoCta className="bg-white text-[#002045] text-xs tracking-[0.12em] uppercase font-bold font-[var(--font-inter)] px-10 py-4 hover:bg-[#f3f3f3] transition-colors text-center">Falar com um consultor</ContatoCta>
+            <Link href="/produtos" className="border border-white/50 text-white text-xs tracking-[0.12em] uppercase font-bold font-[var(--font-inter)] px-10 py-4 hover:bg-white/10 transition-colors text-center">Ver acabamentos</Link>
           </div>
         </div>
       </section>

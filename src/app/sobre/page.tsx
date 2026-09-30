@@ -3,9 +3,9 @@ import Image from "next/image";
 import Link from "next/link";
 import ScrollReveal from "@/components/ScrollReveal";
 import AnimatedStat from "@/components/AnimatedStat";
+import ContatoCta from "@/components/ContatoCta";
 
 const BASE_URL = "https://orbitalrevestimentos.com.br";
-const WA = (msg: string) => `https://wa.me/5592988150149?text=${encodeURIComponent(msg)}`;
 
 export const metadata: Metadata = {
   title: "Sobre a Orbital Revestimentos — Manaus, AM",
@@ -339,8 +339,8 @@ export default function SobrePage() {
             </p>
           </div>
           <div className="flex flex-col sm:flex-row gap-3 flex-shrink-0">
-            <Link href="/simulador" className="bg-white text-[#002045] text-xs tracking-[0.12em] uppercase font-bold font-[var(--font-inter)] px-10 py-4 hover:bg-[#f3f3f3] transition-colors text-center">Simular Orçamento</Link>
-            <a href={WA("Olá, gostaria de falar com a equipe Orbital Revestimentos.")} target="_blank" rel="noopener noreferrer" className="border border-white/50 text-white text-xs tracking-[0.12em] uppercase font-bold font-[var(--font-inter)] px-10 py-4 hover:bg-white/10 transition-colors text-center">Falar no WhatsApp</a>
+            <ContatoCta className="bg-white text-[#002045] text-xs tracking-[0.12em] uppercase font-bold font-[var(--font-inter)] px-10 py-4 hover:bg-[#f3f3f3] transition-colors text-center">Falar com um consultor</ContatoCta>
+            <Link href="/produtos" className="border border-white/50 text-white text-xs tracking-[0.12em] uppercase font-bold font-[var(--font-inter)] px-10 py-4 hover:bg-white/10 transition-colors text-center">Ver acabamentos</Link>
           </div>
         </div>
       </section>

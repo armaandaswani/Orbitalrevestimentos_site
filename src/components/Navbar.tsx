@@ -3,6 +3,7 @@
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { useState } from "react";
+import { abrirContato } from "@/lib/contato";
 
 const CATALOGUE_URL =
   "https://drive.google.com/file/d/1zhm5MgKGSDRThqk8FqqwfX-WijI7K-iD/view?usp=drive_link";
@@ -14,7 +15,8 @@ const navLinks = [
   { href: "/projetos", label: "Projetos" },
   { href: "/parcerias", label: "Parcerias" },
   { href: "/visualizador", label: "Simulador" },
-  { href: "/simulador", label: "Orçamentos" },
+  // "Orçamentos" (/simulador) saiu do menu: a página continua funcionando,
+  // mas o cliente agora fala com um consultor pelo botão "Contato".
 ];
 
 export default function Navbar() {
@@ -53,6 +55,13 @@ export default function Navbar() {
               </Link>
             );
           })}
+          <button
+            type="button"
+            onClick={() => abrirContato()}
+            className="text-xs tracking-[0.1em] uppercase font-semibold font-[var(--font-inter)] transition-colors duration-200 pb-0.5 text-[#74777f] hover:text-[#002045]"
+          >
+            Contato
+          </button>
         </nav>
 
         {/* Right CTAs — right third */}
@@ -111,6 +120,13 @@ export default function Navbar() {
               {label}
             </Link>
           ))}
+          <button
+            type="button"
+            onClick={() => { setMobileOpen(false); abrirContato(); }}
+            className="text-left text-xs tracking-[0.1em] uppercase font-semibold font-[var(--font-inter)] text-[#74777f]"
+          >
+            Contato
+          </button>
           <Link
             href="/parceiro"
             onClick={() => setMobileOpen(false)}

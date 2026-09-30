@@ -22,12 +22,11 @@ const QUICK_CHIPS = [
 ];
 
 const PAGE_LABELS: Record<string, string> = {
-  "/simulador":  "Abrir Simulador",
   "/produtos":   "Ver Produtos",
   "/projetos":   "Ver Projetos",
   "/tecnologia": "Ver Tecnologia",
   "/parcerias":  "Programa de Parcerias",
-  "/contato":    "Ir para Contato",
+  "/contato":    "Falar com um consultor",
 };
 
 function shouldShowWa(text: string) {

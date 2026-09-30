@@ -6,6 +6,7 @@ import Navbar from "@/components/Navbar";
 import Footer from "@/components/Footer";
 import ChatWidget from "@/components/ChatWidget";
 import SiteChrome from "@/components/SiteChrome";
+import ContatoSheet from "@/components/ContatoSheet";
 import { SpeedInsights } from "@vercel/speed-insights/next";
 import { Analytics } from "@vercel/analytics/next";
 
@@ -299,6 +300,7 @@ export default function RootLayout({
         <SiteChrome>
           <Footer />
           <ChatWidget />
+          <ContatoSheet />
         </SiteChrome>
         <SpeedInsights />
         <Analytics />

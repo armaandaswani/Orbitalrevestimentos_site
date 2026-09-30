@@ -2,6 +2,7 @@
 
 import React, { useState, useRef, useEffect, useCallback, useMemo } from "react";
 import { applicationAreaFor, DEFAULT_PANEL_WIDTH_M, DEFAULT_PANEL_HEIGHT_M } from "@/lib/render-prompt";
+import { ORCAMENTO_INSTANTANEO_VISIVEL, abrirContato } from "@/lib/contato";
 import {
   type Quad,
   panelLayout,
@@ -1599,6 +1600,17 @@ export default function VisualizadorWizard({
   const quoteReady = allAmbientes.length > 0 && missingDimsCount <= 1;
   const simuladorHref = quoteReady ? buildSimuladorUrl(allAmbientes) : "/simulador";
 
+  // Pivô: com o orçamento instantâneo escondido, o fim do Visualizador abre a
+  // aba do consultor já com os acabamentos escolhidos e a metragem medida.
+  const falarComConsultor = useCallback(() => {
+    const vistos = new Set<string>();
+    const produtos = allAmbientes
+      .filter((a) => (a.productCode || a.productName) && !vistos.has(a.productCode || a.productName) && vistos.add(a.productCode || a.productName))
+      .map((a) => ({ code: a.productCode || null, name: a.productName || null }));
+    const m2 = allAmbientes.reduce((t, a) => t + (a.width && a.height ? a.width * a.height : 0), 0);
+    abrirContato(produtos, m2 > 0 ? { metragem: "sim", metragemM2: m2.toFixed(1).replace(".0", "").replace(".", ",") } : {});
+  }, [allAmbientes]);
+
   const goToSimulador = useCallback(async () => {
     if (proceeding) return;
     setProceeding(true);
@@ -1721,8 +1733,27 @@ export default function VisualizadorWizard({
           />
         )}
 
-        {/* Standalone: continue to simulador panel */}
-        {!embeddedMode && allAmbientes.length > 0 && (step === "result" || savedAmbientes.length > 0) && (
+        {/* Standalone: falar com um consultor (orçamento instantâneo escondido) */}
+        {!ORCAMENTO_INSTANTANEO_VISIVEL && !embeddedMode && allAmbientes.length > 0 && (step === "result" || savedAmbientes.length > 0) && (
+          <div className="mt-10 border border-[#e2e2e2] rounded-sm p-5 sm:p-6 bg-[#fbfbfa]">
+            <p className="text-[10px] tracking-[0.18em] uppercase font-bold font-[var(--font-inter)] text-[#002045] mb-1">
+              Gostou do resultado?
+            </p>
+            <p className="text-[#74777f] text-xs font-[var(--font-inter)] mb-4">
+              Fale com um consultor da Orbital. Ele já recebe os acabamentos que você escolheu.
+            </p>
+            <button
+              type="button"
+              onClick={falarComConsultor}
+              className="w-full sm:w-auto inline-flex items-center justify-center gap-2 bg-[#002045] text-white text-xs tracking-[0.12em] uppercase font-bold font-[var(--font-inter)] px-7 py-3.5 hover:bg-[#1a365d] transition-colors"
+            >
+              Falar com um consultor
+            </button>
+          </div>
+        )}
+
+        {/* Standalone: continue to simulador panel (escondido pelo pivô — ver ORCAMENTO_INSTANTANEO_VISIVEL) */}
+        {ORCAMENTO_INSTANTANEO_VISIVEL && !embeddedMode && allAmbientes.length > 0 && (step === "result" || savedAmbientes.length > 0) && (
           <div className="mt-10 border border-[#e2e2e2] rounded-sm p-5 sm:p-6 bg-[#fbfbfa]">
             <p className="text-[10px] tracking-[0.18em] uppercase font-bold font-[var(--font-inter)] text-[#002045] mb-1">
               Continuar para o orçamento
