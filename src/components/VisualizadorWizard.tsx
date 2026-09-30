@@ -1606,9 +1606,19 @@ export default function VisualizadorWizard({
     const vistos = new Set<string>();
     const produtos = allAmbientes
       .filter((a) => (a.productCode || a.productName) && !vistos.has(a.productCode || a.productName) && vistos.add(a.productCode || a.productName))
-      .map((a) => ({ code: a.productCode || null, name: a.productName || null }));
-    const m2 = allAmbientes.reduce((t, a) => t + (a.width && a.height ? a.width * a.height : 0), 0);
-    abrirContato(produtos, m2 > 0 ? { metragem: "sim", metragemM2: m2.toFixed(1).replace(".0", "").replace(".", ",") } : {});
+      .map((a) => ({ code: a.productCode || null, name: a.productName || null, image: a.productImage || null }));
+    // Medidas do Visualizador: uma área → preenche largura e altura; várias →
+    // vão listadas para o consultor ("Sala: 3 × 2,6 m").
+    const br = (n: number) => n.toLocaleString("pt-BR", { maximumFractionDigits: 2 });
+    const medidas = allAmbientes.filter((a) => a.width && a.height);
+    abrirContato(
+      produtos,
+      medidas.length === 1
+        ? { largura: br(medidas[0].width!), altura: br(medidas[0].height!) }
+        : medidas.length > 1
+        ? { areasDetalhe: medidas.map((a) => `${a.local}: ${br(a.width!)} × ${br(a.height!)} m`) }
+        : {},
+    );
   }, [allAmbientes]);
 
   const goToSimulador = useCallback(async () => {

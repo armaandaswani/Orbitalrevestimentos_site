@@ -526,7 +526,7 @@ export default function ProdutosPage() {
                       no ar mas fora da navegação), o cliente fala com um
                       consultor pelo WhatsApp já dizendo qual revestimento quer. */}
                   <ContatoCta
-                    produtos={[{ code: selected.code, name: selected.name, linha: selected.linha }]}
+                    produtos={[{ code: selected.code, name: selected.name, linha: selected.linha, image: selected.image_path }]}
                     className="w-full inline-flex items-center justify-center gap-2 bg-[#002045] text-white text-xs tracking-[0.12em] uppercase font-bold font-[var(--font-inter)] px-6 py-4 hover:bg-[#003070] transition-colors"
                   >
                     <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2" aria-hidden>

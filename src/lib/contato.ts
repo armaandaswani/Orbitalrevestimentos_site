@@ -1,9 +1,10 @@
 /**
  * "Entrar em contato" — o caminho do cliente depois do pivô.
  *
- * O orçamento instantâneo saiu do site: quem se interessa por um revestimento
- * responde 4 perguntas rápidas (todas opcionais) e cai no WhatsApp da Orbital
- * com uma mensagem organizada, para o consultor já saber de onde partir.
+ * O orçamento instantâneo saiu da navegação: quem se interessa por um
+ * revestimento informa perfil, estágio da obra e cidade (obrigatórios), nome e
+ * medidas (opcionais), e cai no WhatsApp da Orbital com uma mensagem
+ * organizada, para o consultor já saber de onde partir.
  *
  * Sem import nenhum: roda no navegador (aba de contato, botões) e pode ser
  * usado no servidor.
@@ -23,38 +24,45 @@ export interface ProdutoContato {
   code?: string | null;
   name?: string | null;
   linha?: string | null;
+  /** Miniatura mostrada na aba (não vai para a mensagem). */
+  image?: string | null;
 }
 
+export const PERFIS = [
+  { value: "proprietario", label: "Sou proprietário" },
+  { value: "arquiteto", label: "Sou arquiteto" },
+] as const;
+
 export const ETAPAS = [
-  { value: "planejando", label: "Planejando" },
-  { value: "inicio", label: "Início da obra" },
-  { value: "final", label: "Fase final" },
-  { value: "outro", label: "Outro" },
+  { value: "inicial", label: "Inicial" },
+  { value: "final", label: "Final" },
+  { value: "ideacao", label: "Em ideação" },
 ] as const;
 
-export const ARQUITETO = [
-  { value: "sim", label: "Sim" },
-  { value: "nao", label: "Não" },
-  { value: "sou", label: "Sou arquiteto(a)" },
-] as const;
-
-export const CONHECE = [
-  { value: "sim", label: "Sim" },
-  { value: "nao", label: "Ainda não" },
-] as const;
-
-export const METRAGEM = [
-  { value: "sim", label: "Sim" },
-  { value: "nao", label: "Ainda não" },
+export const CIDADES = [
+  { value: "manaus", label: "Manaus" },
+  { value: "outra", label: "Outra" },
 ] as const;
 
 export interface RespostasContato {
+  perfil?: string;
+  nome?: string;
   etapa?: string;
-  arquiteto?: string;
-  arquitetoNome?: string;
-  conhece?: string;
-  metragem?: string;
-  metragemM2?: string;
+  largura?: string;
+  altura?: string;
+  cidade?: string;
+  cidadeOutra?: string;
+  /** Várias áreas medidas no Visualizador ("Sala: 3 × 2,6 m"). */
+  areasDetalhe?: string[];
+}
+
+/** O que falta para enviar: perfil, etapa e cidade (com o nome, se "Outra"). */
+export function pendenciasContato(r: RespostasContato): Array<"perfil" | "etapa" | "cidade"> {
+  const faltam: Array<"perfil" | "etapa" | "cidade"> = [];
+  if (!r.perfil) faltam.push("perfil");
+  if (!r.etapa) faltam.push("etapa");
+  if (!r.cidade || (r.cidade === "outra" && !r.cidadeOutra?.trim())) faltam.push("cidade");
+  return faltam;
 }
 
 function rotulo(lista: ReadonlyArray<{ value: string; label: string }>, v?: string): string {
@@ -70,8 +78,27 @@ function nomeProduto(p: ProdutoContato): string {
   return p.linha ? `${base} · Linha ${p.linha}` : base;
 }
 
+function numero(v?: string): number | null {
+  const n = parseFloat(String(v ?? "").replace(",", "."));
+  return Number.isFinite(n) && n > 0 ? n : null;
+}
+
+function fmt(n: number): string {
+  return n.toLocaleString("pt-BR", { maximumFractionDigits: 2 });
+}
+
+/** "3 m × 2,6 m (7,8 m²)" quando as duas medidas vieram; senão a que veio. */
+export function areaTexto(r: RespostasContato): string {
+  const l = numero(r.largura);
+  const a = numero(r.altura);
+  if (l && a) return `${fmt(l)} m × ${fmt(a)} m (${fmt(Math.round(l * a * 100) / 100)} m²)`;
+  if (l) return `largura ${fmt(l)} m`;
+  if (a) return `altura ${fmt(a)} m`;
+  return "";
+}
+
 /**
- * Mensagem do WhatsApp. Só entra o que o cliente respondeu — nenhuma linha
+ * Mensagem do WhatsApp. Só entra o que o cliente informou — nenhuma linha
  * vazia ou "não informado" para o consultor decifrar.
  */
 export function mensagemContato(produtos: ProdutoContato[], r: RespostasContato): string {
@@ -83,30 +110,23 @@ export function mensagemContato(produtos: ProdutoContato[], r: RespostasContato)
   } else if (itens.length > 1) {
     linhas.push("Olá! Vim pelo site da Orbital e tenho interesse nestes revestimentos:", ...itens.map((i) => `• *${i}*`));
   } else {
-    linhas.push("Olá! Vim pelo site da Orbital e quero falar com um consultor.");
+    linhas.push("Olá! Vim pelo site da Orbital e gostaria de um atendimento.");
   }
 
-  const projeto: string[] = [];
+  const dados: string[] = [];
+  const nome = r.nome?.trim();
+  if (nome) dados.push(`• Nome: ${nome}`);
+  const perfil = r.perfil === "arquiteto" ? "Arquiteto(a)" : r.perfil === "proprietario" ? "Proprietário(a)" : "";
+  if (perfil) dados.push(`• Perfil: ${perfil}`);
   const etapa = rotulo(ETAPAS, r.etapa);
-  if (etapa) projeto.push(`• Etapa da obra: ${etapa}`);
-  if (r.arquiteto === "sim") {
-    const nome = r.arquitetoNome?.trim();
-    projeto.push(`• Arquiteto: sim${nome ? ` (${nome})` : ""}`);
-  } else if (r.arquiteto === "nao") {
-    projeto.push("• Arquiteto: não tenho");
-  } else if (r.arquiteto === "sou") {
-    projeto.push("• Sou arquiteto(a)");
-  }
-  if (r.conhece === "sim") projeto.push("• Já conheço as placas");
-  else if (r.conhece === "nao") projeto.push("• Ainda não conheço as placas");
-  if (r.metragem === "sim") {
-    const m2 = r.metragemM2?.trim().replace(/\s*m²?$/i, "");
-    projeto.push(`• Metragem: ${m2 ? `${m2} m²` : "já tenho"}`);
-  } else if (r.metragem === "nao") {
-    projeto.push("• Metragem: ainda não tenho");
-  }
+  if (etapa) dados.push(`• Estágio da obra: ${etapa}`);
+  const area = areaTexto(r);
+  if (area) dados.push(`• Área: ${area}`);
+  if (r.areasDetalhe?.length) dados.push(`• Áreas simuladas: ${r.areasDetalhe.join("; ")}`);
+  const cidade = r.cidade === "outra" ? r.cidadeOutra?.trim() : rotulo(CIDADES, r.cidade);
+  if (cidade) dados.push(`• Cidade: ${cidade}`);
 
-  if (projeto.length) linhas.push("", "*Sobre o meu projeto*", ...projeto);
+  if (dados.length) linhas.push("", "*Sobre o projeto*", ...dados);
   return linhas.join("\n");
 }
 
