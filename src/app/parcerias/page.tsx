@@ -110,14 +110,14 @@ const segments: Segment[] = [
     body: "ART de Engenharia Civil assinada, CREA registrado, ficha técnica com dados de resistência, umidade e fogo. Especifique com base em dados reais — sem improvisar em aprovações técnicas.",
     benefits: [
       { title: "ART nº AM20260593657", desc: "Assinada por Eng. Civil Werksson Sousa — CREA 042030134-8-D. Disponível para projetos que exigem laudo técnico de engenharia." },
-      { title: "22 MPa de resistência à flexão", desc: "Conforme o relatório técnico da WERK. Dados completos disponíveis na ficha técnica." },
+      { title: "72,3 MPa de resistência à flexão", desc: "Mais de 3× a resistência do MDF convencional (17–22 MPa). Dados disponíveis na ficha técnica." },
       { title: "Inchamento de 0,2% em 48h", desc: "Testado em ciclos de imersão, congelamento e aquecimento. Aprovado para banheiros, cozinhas e áreas úmidas." },
       { title: "Anti-mofo · Anti-cupim · Não propaga chamas", desc: "Indicado para clínicas, ambientes hospitalares e projetos com requisitos de segurança contra incêndio." },
       { title: "Aprovado para projetos navais", desc: "Utilizado em embarcações registradas. Resistência à umidade e salinidade documentada em ensaios." },
     ],
     image: "/images/catalogue/projeto-hall.jpeg",
     waText: "Olá! Sou engenheiro e vim pela aba de Engenheiros no site. Gostaria de acessar a documentação técnica e as condições de parceria Orbital.",
-    stat: { value: "22 MPa", label: "resistência à flexão" },
+    stat: { value: "72,3 MPa", label: "resistência à flexão" },
     ctaLabel: "Solicitar documentação técnica",
     highlight: "Engenheiros parceiros têm acesso a condições exclusivas e documentação técnica completa.",
   },
@@ -183,7 +183,7 @@ const segments: Segment[] = [
 const sharedStats = [
   { value: "15", unit: "acabamentos", label: "Em estoque em Manaus" },
   { value: "3,48", unit: "m²", label: "Por placa · 1,2m × 2,9m" },
-  { value: "22", unit: "MPa", label: "Resistência à flexão" },
+  { value: "72,3", unit: "MPa", label: "Resistência à flexão" },
   { value: "0,2%", unit: "", label: "Absorção de água (48h)" },
 ];
 
