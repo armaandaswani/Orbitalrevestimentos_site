@@ -42,7 +42,7 @@ const layers = [
 ];
 
 const specs = [
-  { value: "72,3", unit: "MPa", label: "Resistência à flexão", note: "Resistência certificada em laboratório" },
+  { value: "22", unit: "MPa", label: "Resistência à flexão", note: "Conforme relatório técnico WERK" },
   { value: "0,2%", unit: "", label: "Inchamento (48h)", note: "Praticamente impermeável" },
   { value: "550", unit: "kg/m³", label: "Densidade", note: "Alta resistência estrutural" },
   { value: "3,2", unit: "kg/m²", label: "Peso", note: "Ultra-leve para instalação ágil" },

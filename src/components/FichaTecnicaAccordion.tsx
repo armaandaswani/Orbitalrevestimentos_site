@@ -29,7 +29,7 @@ const SECTIONS = [
       </svg>
     ),
     rows: [
-      { label: "Resistência à flexão",  value: "72,3 MPa" },
+      { label: "Resistência à flexão",  value: "22 MPa" },
       { label: "Densidade",             value: "550 kg/m³" },
       { label: "Peso por m²",           value: "3,2 kg/m²" },
       { label: "Módulo de elasticidade",value: "Alta rigidez longitudinal" },

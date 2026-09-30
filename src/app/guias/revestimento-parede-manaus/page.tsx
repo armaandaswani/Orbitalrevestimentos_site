@@ -59,7 +59,7 @@ const ambientes = [
 const stats = [
   { value: "0,2%", label: "absorção de umidade" },
   { value: "15", label: "acabamentos disponíveis" },
-  { value: "72,3", label: "MPa resistência" },
+  { value: "22", label: "MPa resistência" },
   { value: "2–3h", label: "instalação por cômodo" },
 ];
 
