@@ -4,7 +4,8 @@
  * O orçamento instantâneo saiu da navegação: quem se interessa por um
  * revestimento informa perfil, estágio da obra e cidade (obrigatórios), nome e
  * medidas (opcionais), e cai no WhatsApp da Orbital com uma mensagem
- * organizada, para o consultor já saber de onde partir.
+ * organizada, para o consultor já saber de onde partir. Cada envio também
+ * fica registrado (POST /api/contato → tabela site_contatos + lead no CRM).
  *
  * Sem import nenhum: roda no navegador (aba de contato, botões) e pode ser
  * usado no servidor.
@@ -46,6 +47,7 @@ export const CIDADES = [
 
 export interface RespostasContato {
   perfil?: string;
+  whatsapp?: string;
   nome?: string;
   etapa?: string;
   largura?: string;
@@ -56,10 +58,28 @@ export interface RespostasContato {
   areasDetalhe?: string[];
 }
 
-/** O que falta para enviar: perfil, etapa e cidade (com o nome, se "Outra"). */
-export function pendenciasContato(r: RespostasContato): Array<"perfil" | "etapa" | "cidade"> {
-  const faltam: Array<"perfil" | "etapa" | "cidade"> = [];
+export type CampoObrigatorio = "perfil" | "whatsapp" | "etapa" | "cidade";
+
+/** (92) 9 0000-0000 — só formata o que foi digitado, nunca bloqueia. */
+export function mascaraWhatsapp(raw: string): string {
+  const d = raw.replace(/\D/g, "").slice(0, 11);
+  if (d.length <= 2) return d.length ? `(${d}` : "";
+  if (d.length <= 3) return `(${d.slice(0, 2)}) ${d.slice(2)}`;
+  if (d.length <= 7) return `(${d.slice(0, 2)}) ${d.slice(2, 3)} ${d.slice(3)}`;
+  return `(${d.slice(0, 2)}) ${d.slice(2, 3)} ${d.slice(3, 7)}-${d.slice(7)}`;
+}
+
+/** WhatsApp com DDD: 10 ou 11 dígitos. */
+export function whatsappValido(v?: string): boolean {
+  const d = String(v ?? "").replace(/\D/g, "");
+  return d.length === 10 || d.length === 11;
+}
+
+/** O que falta para enviar: perfil, WhatsApp, etapa e cidade (com o nome, se "Outra"). */
+export function pendenciasContato(r: RespostasContato): CampoObrigatorio[] {
+  const faltam: CampoObrigatorio[] = [];
   if (!r.perfil) faltam.push("perfil");
+  if (!whatsappValido(r.whatsapp)) faltam.push("whatsapp");
   if (!r.etapa) faltam.push("etapa");
   if (!r.cidade || (r.cidade === "outra" && !r.cidadeOutra?.trim())) faltam.push("cidade");
   return faltam;
@@ -70,7 +90,7 @@ function rotulo(lista: ReadonlyArray<{ value: string; label: string }>, v?: stri
 }
 
 /** Nome do revestimento como o consultor reconhece: "Nome (CÓDIGO) · Linha". */
-function nomeProduto(p: ProdutoContato): string {
+export function nomeProduto(p: ProdutoContato): string {
   const nome = p.name?.trim();
   const code = p.code?.trim();
   const base = nome && code ? `${nome} (${code})` : nome || code || "";
@@ -78,7 +98,7 @@ function nomeProduto(p: ProdutoContato): string {
   return p.linha ? `${base} · Linha ${p.linha}` : base;
 }
 
-function numero(v?: string): number | null {
+export function numero(v?: string): number | null {
   const n = parseFloat(String(v ?? "").replace(",", "."));
   return Number.isFinite(n) && n > 0 ? n : null;
 }

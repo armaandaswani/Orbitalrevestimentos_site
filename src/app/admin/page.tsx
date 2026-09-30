@@ -11,6 +11,7 @@ import PedidosTab, { type QuoteOption } from "./PedidosTab";
 import RepOversightTab from "./RepOversightTab";
 import EstoqueTab from "./EstoqueTab";
 import AcademiaTab from "./AcademiaTab";
+import ContatosTab from "./ContatosTab";
 import SquareCropper from "@/components/SquareCropper";
 import FinanceiroTab from "./FinanceiroTab";
 import DashboardTab, { type OverviewData } from "./DashboardTab";
@@ -5073,6 +5074,7 @@ export default function AdminPage() {
         {tab === "estoque" && authed && <EstoqueTab />}
         {tab === "financeiro" && authed && <FinanceiroTab />}
         {tab === "academia" && authed && <AcademiaTab />}
+        {tab === "contatos" && authed && <ContatosTab />}
 
         {/* New modules — placeholders until their redesign phases land, so the
             final navigation structure ships (and is navigable) from day one. */}

@@ -3,26 +3,29 @@
 import { useEffect, useState } from "react";
 import {
   CIDADES, ETAPAS, EVENTO_CONTATO, PERFIS,
-  areaTexto, linkWhatsappContato, pendenciasContato,
-  type ProdutoContato, type RespostasContato,
+  areaTexto, linkWhatsappContato, mascaraWhatsapp, pendenciasContato,
+  type CampoObrigatorio, type ProdutoContato, type RespostasContato,
 } from "@/lib/contato";
 
 /**
  * Aba "Solicitar atendimento" — abre de qualquer página (abrirContato) e
  * também por ?contato na URL.
  *
- * Obrigatórios (asterisco): perfil, estágio da obra e cidade. Nome e medidas
+ * Obrigatórios (asterisco): perfil, WhatsApp, estágio da obra e cidade. Nome e medidas
  * são opcionais, sem dizer isso — só não têm asterisco. Visual contido, da
  * marca: serifa no título, rótulos pequenos em caixa alta, seletores
  * segmentados e linhas finas.
  */
 
 type Opcao = { readonly value: string; readonly label: string };
-type Campo = "perfil" | "etapa" | "cidade";
 
 const rotuloCls = "block text-[10px] tracking-[0.18em] uppercase font-semibold font-[var(--font-inter)] text-[#5b5e66] mb-2.5";
-const campoCls =
-  "w-full bg-transparent border-0 border-b border-[#cfd2d6] px-0 py-2 text-[15px] font-[var(--font-inter)] text-[#002045] placeholder-[#b4b7bd] focus:outline-none focus:border-[#002045] transition-colors rounded-none";
+// Cor da linha fora da base: com as duas cores na mesma classe, a de erro
+// perdia para a padrão e o campo obrigatório não ficava vermelho.
+const campoBase =
+  "w-full bg-transparent border-0 border-b px-0 py-2 text-[15px] font-[var(--font-inter)] text-[#002045] placeholder-[#b4b7bd] focus:outline-none focus:border-[#002045] transition-colors rounded-none";
+const campoCls = `${campoBase} border-[#cfd2d6]`;
+const campoErroCls = `${campoBase} border-[#b3261e]`;
 
 function Obrigatorio() {
   return <span className="text-[#b3261e] ml-0.5" aria-hidden>*</span>;
@@ -71,6 +74,8 @@ export default function ContatoSheet() {
   const [r, setR] = useState<RespostasContato>({});
   // Erros só aparecem depois da primeira tentativa de envio.
   const [tentou, setTentou] = useState(false);
+  // Campo-isca anti-robô: fora da tela, só robô preenche.
+  const [isca, setIsca] = useState("");
 
   useEffect(() => {
     function abrir(e: Event) {
@@ -107,7 +112,7 @@ export default function ContatoSheet() {
 
   const set = (campo: keyof RespostasContato) => (v: string) => setR((x) => ({ ...x, [campo]: v }));
   const faltam = pendenciasContato(r);
-  const erro = (c: Campo) => tentou && faltam.includes(c);
+  const erro = (c: CampoObrigatorio) => tentou && faltam.includes(c);
   const area = areaTexto(r);
   const medida = (v: string) => v.replace(/[^\d.,]/g, "").slice(0, 6);
   const principal = produtos[0];
@@ -174,6 +179,21 @@ export default function ContatoSheet() {
           />
 
           <label className="block">
+            <span className={rotuloCls}>WhatsApp<Obrigatorio /></span>
+            <input
+              value={r.whatsapp ?? ""}
+              onChange={(e) => set("whatsapp")(mascaraWhatsapp(e.target.value))}
+              type="tel"
+              inputMode="tel"
+              autoComplete="tel"
+              placeholder="(92) 9 0000-0000"
+              aria-required
+              aria-invalid={erro("whatsapp")}
+              className={erro("whatsapp") ? campoErroCls : campoCls}
+            />
+          </label>
+
+          <label className="block">
             <span className={rotuloCls}>Nome</span>
             <input
               value={r.nome ?? ""}
@@ -238,10 +258,15 @@ export default function ContatoSheet() {
                 placeholder="Qual cidade?"
                 aria-label="Qual cidade?"
                 aria-invalid={erro("cidade")}
-                className={`${campoCls} mt-3 ${erro("cidade") ? "border-[#b3261e]" : ""}`}
+                className={`${erro("cidade") ? campoErroCls : campoCls} mt-3`}
               />
             )}
           </div>
+        </div>
+
+        {/* Campo-isca anti-robô. Fora da tela e fora da ordem de tabulação. */}
+        <div aria-hidden className="absolute -left-[10000px] w-px h-px overflow-hidden">
+          <input tabIndex={-1} autoComplete="off" value={isca} onChange={(e) => setIsca(e.target.value)} />
         </div>
 
         {/* Envio */}
@@ -260,6 +285,16 @@ export default function ContatoSheet() {
             rel="noopener noreferrer"
             onClick={(e) => {
               if (faltam.length) { e.preventDefault(); setTentou(true); return; }
+              // Registra (site_contatos + CRM) sem segurar o WhatsApp: keepalive
+              // deixa a requisição terminar mesmo com a aba indo para o WhatsApp.
+              try {
+                fetch("/api/contato", {
+                  method: "POST",
+                  headers: { "Content-Type": "application/json" },
+                  body: JSON.stringify({ respostas: r, produtos, pagina: window.location.pathname, website: isca }),
+                  keepalive: true,
+                }).catch(() => {});
+              } catch {}
               setAberto(false);
             }}
             className="group w-full min-h-[52px] inline-flex items-center justify-center gap-3 bg-[#002045] text-white text-[11px] tracking-[0.2em] uppercase font-semibold font-[var(--font-inter)] px-6 hover:bg-[#0a2d5c] transition-colors"
