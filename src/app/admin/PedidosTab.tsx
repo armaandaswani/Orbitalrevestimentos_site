@@ -7,7 +7,9 @@ import { DEFAULT_CONFIG, maxInstallmentsForPlates, type OrcamentoConfig } from "
 
 // ─── Types ──────────────────────────────────────────────────────────────────
 export type PedidoStatus = "em_producao" | "pronto" | "entregue" | "cancelado";
-export type PaymentStatus = "pendente" | "parcial" | "pago";
+export type PaymentStatus = "pendente" | "parcial" | "pago" | "boleto";
+/** Parcela de boleto (migration 060). vencimento em AAAA-MM-DD. */
+export type Boleto = { vencimento: string; valor: number; pago: boolean };
 
 type PedidoOtherCost = { label?: string | null; amount?: number | null };
 
@@ -51,6 +53,7 @@ export interface Pedido {
   sales_rep_commission_amount: number | null;
   coupon_use_id: string | null;
   price_tier: "varejo" | "atacado";
+  boletos?: Boleto[] | null;
   created_at: string;
   updated_at: string;
 }
@@ -68,8 +71,106 @@ const PAYMENT_META: Record<PaymentStatus, { label: string; cls: string }> = {
   pendente: { label: "Pendente", cls: "bg-red-100 text-red-800" },
   parcial: { label: "Parcial", cls: "bg-amber-100 text-amber-800" },
   pago: { label: "Pago", cls: "bg-green-100 text-green-800" },
+  boleto: { label: "Boleto", cls: "bg-blue-100 text-blue-800" },
 };
-const PAYMENT_ORDER: PaymentStatus[] = ["pendente", "parcial", "pago"];
+const PAYMENT_ORDER: PaymentStatus[] = ["pendente", "parcial", "pago", "boleto"];
+
+// ─── Boletos ──────────────────────────────────────────────────────────────────
+/** Soma n meses a uma data AAAA-MM-DD; dia 31 vira o último dia do mês curto. */
+function addMonthsISO(iso: string, n: number): string {
+  const [y, m, d] = iso.split("-").map(Number);
+  const alvo = new Date(Date.UTC(y, m - 1 + n, 1));
+  const ultimo = new Date(Date.UTC(alvo.getUTCFullYear(), alvo.getUTCMonth() + 1, 0)).getUTCDate();
+  alvo.setUTCDate(Math.min(d, ultimo));
+  return alvo.toISOString().slice(0, 10);
+}
+
+/**
+ * Parcelas a partir da quantidade e do 1º vencimento: um mês a mais em cada, e
+ * o total dividido em partes iguais (a última absorve os centavos).
+ */
+function gerarBoletos(qtd: number, primeiro: string, total: number): Boleto[] {
+  const n = Math.max(1, Math.min(36, Math.round(qtd) || 1));
+  const parte = Math.floor((total / n) * 100) / 100;
+  return Array.from({ length: n }, (_, i) => ({
+    vencimento: addMonthsISO(primeiro, i),
+    valor: i === n - 1 ? Math.round((total - parte * (n - 1)) * 100) / 100 : parte,
+    pago: false,
+  }));
+}
+
+function dataBR(iso: string): string {
+  const [y, m, d] = iso.split("-");
+  return `${d}/${m}/${y}`;
+}
+
+/** "Boletos: 1/3 pagos · próximo 15/10/2026" */
+function resumoBoletos(bs: Boleto[]): string {
+  const pagos = bs.filter((b) => b.pago).length;
+  const prox = bs.filter((b) => !b.pago).sort((a, b) => a.vencimento.localeCompare(b.vencimento))[0];
+  return `Boletos: ${pagos}/${bs.length} pagos${prox ? ` · próximo ${dataBR(prox.vencimento)}` : ""}`;
+}
+
+/** Quantidade + 1º vencimento geram as parcelas; cada uma é editável. */
+function BoletosEditor({ boletos, total, onChange }: { boletos: Boleto[]; total: number; onChange: (b: Boleto[]) => void }) {
+  const primeiro = boletos[0]?.vencimento ?? plusDays(30);
+  const campo = "w-full border border-[#e2e2e2] px-2.5 py-2 text-sm font-[var(--font-inter)] text-[#002045] focus:outline-none focus:border-[#002045]";
+  const somaParcelas = Math.round(boletos.reduce((a, b) => a + (Number(b.valor) || 0), 0) * 100) / 100;
+  const diferenca = Math.round((total - somaParcelas) * 100) / 100;
+  return (
+    <div className="border border-[#e2e2e2] p-3 space-y-3">
+      <div className="grid grid-cols-2 gap-3">
+        <label className="block">
+          <span className="block text-[10px] tracking-[0.1em] uppercase font-bold font-[var(--font-inter)] text-[#74777f] mb-1">Quantos boletos</span>
+          <input
+            type="number" min={1} max={36} inputMode="numeric"
+            value={boletos.length || 1}
+            onChange={(e) => onChange(gerarBoletos(Number(e.target.value), primeiro, total))}
+            className={campo}
+          />
+        </label>
+        <label className="block">
+          <span className="block text-[10px] tracking-[0.1em] uppercase font-bold font-[var(--font-inter)] text-[#74777f] mb-1">1º vencimento</span>
+          <input
+            type="date"
+            value={primeiro}
+            onChange={(e) => e.target.value && onChange(gerarBoletos(boletos.length || 1, e.target.value, total))}
+            className={campo}
+          />
+        </label>
+      </div>
+      <p className="text-[10px] text-[#74777f] font-[var(--font-inter)]">
+        Os demais vencem um mês depois do anterior. Dá para ajustar data e valor de cada um.
+      </p>
+      <div className="space-y-2">
+        {boletos.map((b, i) => (
+          <div key={i} className="grid grid-cols-[auto_1fr_1fr_auto] items-center gap-2">
+            <span className="text-[11px] font-bold text-[#74777f] font-[var(--font-inter)] w-6">{i + 1}ª</span>
+            <input
+              type="date" value={b.vencimento} aria-label={`Vencimento do boleto ${i + 1}`}
+              onChange={(e) => e.target.value && onChange(boletos.map((x, k) => (k === i ? { ...x, vencimento: e.target.value } : x)))}
+              className={`${campo} min-w-0`}
+            />
+            <input
+              type="number" min={0} step="0.01" inputMode="decimal" value={b.valor} aria-label={`Valor do boleto ${i + 1}`}
+              onChange={(e) => onChange(boletos.map((x, k) => (k === i ? { ...x, valor: Number(e.target.value) || 0 } : x)))}
+              className={`${campo} min-w-0`}
+            />
+            <label className="flex items-center gap-1 text-[11px] font-[var(--font-inter)] text-[#43474e] whitespace-nowrap">
+              <input type="checkbox" checked={b.pago} onChange={(e) => onChange(boletos.map((x, k) => (k === i ? { ...x, pago: e.target.checked } : x)))} />
+              Pago
+            </label>
+          </div>
+        ))}
+      </div>
+      {Math.abs(diferenca) >= 0.01 && (
+        <p className="text-[11px] text-amber-700 font-[var(--font-inter)]">
+          A soma dos boletos ({fmtBRL(somaParcelas)}) está {diferenca > 0 ? "abaixo" : "acima"} do total do pedido ({fmtBRL(total)}) em {fmtBRL(Math.abs(diferenca))}.
+        </p>
+      )}
+    </div>
+  );
+}
 // Formas de pagamento = the MEANS the client pays with (kept separate from
 // "condições", which are the commercial rules — discount/parcelamento — managed
 // as presets). "Dinheiro" kept for backward-compat with older orders.
@@ -599,9 +700,12 @@ export default function PedidosTab({
     const entregues = filtered.filter((p) => p.status === "entregue").length;
     // Money still owed across non-cancelled orders that aren't fully paid.
     // Net of any discount given — the discount reduces what the client owes.
+    // Boleto: conta só as parcelas ainda não pagas.
     const aReceber = filtered
       .filter((p) => p.status !== "cancelado" && p.payment_status !== "pago")
-      .reduce((a, p) => a + Math.max(0, (p.total ?? 0) - (p.discount_amount ?? 0)), 0);
+      .reduce((a, p) => a + (p.payment_status === "boleto" && p.boletos?.length
+        ? p.boletos.filter((b) => !b.pago).reduce((s, b) => s + (Number(b.valor) || 0), 0)
+        : Math.max(0, (p.total ?? 0) - (p.discount_amount ?? 0))), 0);
     const atrasados = ativos.filter(
       (p) => p.expected_delivery_at && new Date(p.expected_delivery_at).getTime() < Date.now()
     ).length;
@@ -1147,6 +1251,67 @@ export default function PedidosTab({
     // from before the /api/admin/stock fetch resolved.
   }, [stockProducts]);
 
+  // Duplicar: abre um pedido NOVO com cliente, itens e condições comerciais do
+  // original. Zera o que é da vida daquele pedido: status, pagamento, boletos,
+  // entrega, comissões pagas, cupom e vínculo com lead.
+  const openDuplicate = useCallback(async (p: Pedido) => {
+    setItems([]);
+    setItemsReady(false);
+    setAreaCalcOpen({});
+    setAreaCalcValue({});
+    const copia: PedidoDraft = { ...p };
+    for (const k of ["id", "created_at", "updated_at", "delivered_at", "coupon_use_id", "boletos"] as const) delete copia[k];
+    for (const k of ["lead_id", "stock_state", "partner_commission_paid_at", "sales_rep_commission_paid_at",
+      "partner_commission_cancelled_at", "partner_commission_cancel_reason",
+      "sales_rep_commission_cancelled_at", "sales_rep_commission_cancel_reason"]) delete (copia as Record<string, unknown>)[k];
+    setDraft({
+      ...copia,
+      _isNew: true,
+      // Mantém a condição de pagamento copiada (não recalcular pelas placas).
+      _termsTouched: true,
+      status: "em_producao",
+      payment_status: "pendente",
+      quote_valid_until: plusDays(7),
+      expected_delivery_at: null,
+    });
+    try {
+      const res = await fetch(`/api/admin/pedidos/${p.id}`);
+      const full = res.ok ? await res.json().catch(() => null) : null;
+      const rows = Array.isArray(full?.items) ? full.items : [];
+      const mapped: OrderItem[] = rows
+        .filter((it: { product_id?: string; plates?: number }) => it.product_id && Number(it.plates) > 0)
+        .map((it: { product_id?: string; plates?: number; unit_price?: number | null }) => ({
+          product_id: it.product_id as string,
+          plates: Math.round(Number(it.plates)),
+          unit_price: it.unit_price == null ? null : Number(it.unit_price),
+        }));
+      setItems(mapped.length > 0 ? mapped : (stockProducts.length > 0 ? [{ product_id: "", plates: 1 }] : []));
+    } catch {
+      setItems(stockProducts.length > 0 ? [{ product_id: "", plates: 1 }] : []);
+    }
+    // Pedido novo: os itens do formulário são a verdade, mesmo sem a cópia.
+    setItemsReady(true);
+  }, [stockProducts]);
+
+  /** Seletor de pagamento do cartão: "Boleto" abre a janela das parcelas. */
+  function mudarPagamento(p: Pedido, v: PaymentStatus) {
+    if (v === "boleto") {
+      const total = Math.max(0, (p.total ?? 0) - (p.discount_amount ?? 0));
+      setBoletoDraft(p.boletos?.length ? p.boletos : gerarBoletos(1, plusDays(30).slice(0, 10), total));
+      setBoletoPedido(p);
+      return;
+    }
+    patchPedido(p.id, { payment_status: v });
+  }
+
+  function salvarBoletos() {
+    if (!boletoPedido) return;
+    // Todas pagas → o pedido vira "Pago" (as parcelas ficam guardadas).
+    const todasPagas = boletoDraft.length > 0 && boletoDraft.every((b) => b.pago);
+    patchPedido(boletoPedido.id, { payment_status: todasPagas ? "pago" : "boleto", boletos: boletoDraft });
+    setBoletoPedido(null);
+  }
+
   // ── Mutations ────────────────────────────────────────────────────────────────
   async function patchPedido(id: string, patch: Partial<Pedido> & { items?: OrderItem[] }) {
     // optimistic
@@ -1181,6 +1346,9 @@ export default function PedidosTab({
   // name/WhatsApp/e-mail and wants to push the updated link again, without walking
   // through the whole review/send step. Uses the saved order data.
   const [resendingId, setResendingId] = useState<string | null>(null);
+  // Janela de boletos aberta a partir do seletor de pagamento do cartão.
+  const [boletoPedido, setBoletoPedido] = useState<Pedido | null>(null);
+  const [boletoDraft, setBoletoDraft] = useState<Boleto[]>([]);
   // Re-send by the explicitly chosen channel(s). Shows the exact destination
   // (number/e-mail) in the confirm so a wrong/edited number is caught before it
   // goes out. Uses the SAVED order data — save the editor first if you changed it.
@@ -1261,6 +1429,7 @@ export default function PedidosTab({
       total: d.total ?? null,
       status: d.status ?? "em_producao",
       payment_status: d.payment_status ?? "pendente",
+      boletos: d.payment_status === "boleto" || d.boletos?.length ? d.boletos ?? null : null,
       notes: d.notes ?? null,
       expected_delivery_at: d.expected_delivery_at ?? null,
       client_document: d.client_document ?? null,
@@ -1498,13 +1667,18 @@ export default function PedidosTab({
                       <td className="px-4 py-3">
                         <select
                           value={p.payment_status}
-                          onChange={(e) => patchPedido(p.id, { payment_status: e.target.value as PaymentStatus })}
-                          className={`text-[10px] font-bold font-[var(--font-inter)] border-0 px-2 py-1 cursor-pointer focus:outline-none ${PAYMENT_META[p.payment_status].cls}`}
+                          onChange={(e) => mudarPagamento(p, e.target.value as PaymentStatus)}
+                          className={`text-[10px] font-bold font-[var(--font-inter)] border-0 px-2 py-1 cursor-pointer focus:outline-none ${PAYMENT_META[p.payment_status]?.cls ?? ""}`}
                         >
                           {PAYMENT_ORDER.map((s) => (
                             <option key={s} value={s}>{PAYMENT_META[s].label}</option>
                           ))}
                         </select>
+                        {!!p.boletos?.length && (
+                          <button type="button" onClick={() => { setBoletoDraft(p.boletos!); setBoletoPedido(p); }} className="block mt-1 text-[9px] text-[#1e5fb4] hover:underline text-left">
+                            {resumoBoletos(p.boletos)}
+                          </button>
+                        )}
                       </td>
                       <td className="px-4 py-3">
                         <p className="text-xs text-[#002045] font-semibold">{fmtBRL(Math.max(0, (p.total ?? 0) - (p.discount_amount ?? 0)))}</p>
@@ -1523,7 +1697,7 @@ export default function PedidosTab({
                       </td>
                       <td className="px-4 py-3 text-right">
                         <RowActions p={p} resending={resendingId === p.id}
-                          onEdit={() => openEdit(p)} onResend={(ch) => resendToClient(p, ch)}
+                          onEdit={() => openEdit(p)} onDuplicate={() => openDuplicate(p)} onResend={(ch) => resendToClient(p, ch)}
                           onDocument={(t) => openDocument(p.id, t)} onDelete={() => deletePedido(p.id)} />
                       </td>
                     </tr>
@@ -1564,14 +1738,19 @@ export default function PedidosTab({
                     </select>
                     <select
                       value={p.payment_status}
-                      onChange={(e) => patchPedido(p.id, { payment_status: e.target.value as PaymentStatus })}
-                      className={`text-[10px] font-bold border-0 px-2 py-1 ${PAYMENT_META[p.payment_status].cls}`}
+                      onChange={(e) => mudarPagamento(p, e.target.value as PaymentStatus)}
+                      className={`text-[10px] font-bold border-0 px-2 py-1 ${PAYMENT_META[p.payment_status]?.cls ?? ""}`}
                     >
                       {PAYMENT_ORDER.map((s) => (
                         <option key={s} value={s}>{PAYMENT_META[s].label}</option>
                       ))}
                     </select>
                   </div>
+                  {!!p.boletos?.length && (
+                    <button type="button" onClick={() => { setBoletoDraft(p.boletos!); setBoletoPedido(p); }} className="block mt-2 text-[11px] text-[#1e5fb4] hover:underline text-left">
+                      {resumoBoletos(p.boletos)}
+                    </button>
+                  )}
                   {p.status === "entregue" ? (
                     <p className="text-[10px] text-[#3b6934] mt-2">Entregue {fmtDate(p.delivered_at)}</p>
                   ) : db ? (
@@ -1579,7 +1758,7 @@ export default function PedidosTab({
                   ) : null}
                   <div className="mt-3 pt-3 border-t border-[#f0f0f0]">
                     <RowActions p={p} resending={resendingId === p.id}
-                      onEdit={() => openEdit(p)} onResend={(ch) => resendToClient(p, ch)}
+                      onEdit={() => openEdit(p)} onDuplicate={() => openDuplicate(p)} onResend={(ch) => resendToClient(p, ch)}
                       onDocument={(t) => openDocument(p.id, t)} onDelete={() => deletePedido(p.id)} />
                   </div>
                 </div>
@@ -1587,6 +1766,36 @@ export default function PedidosTab({
             })}
           </div>
         </>
+      )}
+
+      {boletoPedido && (
+        <div className="fixed inset-0 z-50 flex items-end sm:items-center justify-center bg-black/40 sm:p-4" onClick={() => setBoletoPedido(null)}>
+          <div className="bg-white w-full sm:max-w-lg max-h-[90vh] overflow-y-auto" onClick={(e) => e.stopPropagation()}>
+            <div className="bg-[#002045] px-5 py-4 flex items-start justify-between gap-3 sticky top-0 z-10">
+              <div className="min-w-0">
+                <p className="text-white font-serif text-lg leading-tight">Pagamento em boleto</p>
+                <p className="text-white/60 text-xs font-[var(--font-inter)] truncate">
+                  {boletoPedido.client_name} · {fmtBRL(Math.max(0, (boletoPedido.total ?? 0) - (boletoPedido.discount_amount ?? 0)))}
+                </p>
+              </div>
+              <button onClick={() => setBoletoPedido(null)} className="text-white/60 hover:text-white text-xl leading-none">×</button>
+            </div>
+            <div className="p-4 sm:p-5">
+              <BoletosEditor
+                boletos={boletoDraft}
+                total={Math.max(0, (boletoPedido.total ?? 0) - (boletoPedido.discount_amount ?? 0))}
+                onChange={setBoletoDraft}
+              />
+              <p className="text-[10px] text-[#74777f] font-[var(--font-inter)] mt-3">
+                Quando todos estiverem marcados como pagos, o pedido passa para &quot;Pago&quot;.
+              </p>
+            </div>
+            <div className="sticky bottom-0 bg-white border-t border-[#f0f0f0] px-4 sm:px-5 py-3 flex flex-col-reverse sm:flex-row sm:justify-end gap-2">
+              <button type="button" onClick={() => setBoletoPedido(null)} className="w-full sm:w-auto px-4 py-2.5 text-xs font-bold uppercase tracking-wider border border-[#e2e2e2] text-[#43474e]">Cancelar</button>
+              <button type="button" onClick={salvarBoletos} className="w-full sm:w-auto px-4 py-2.5 text-xs font-bold uppercase tracking-wider bg-[#002045] text-white hover:bg-[#1a365d]">Salvar boletos</button>
+            </div>
+          </div>
+        </div>
       )}
 
       {quoteImportOpen && (
@@ -2399,13 +2608,28 @@ export default function PedidosTab({
                   </select>
                 </Field>
                 <Field label="Pagamento">
-                  <select className={inputCls} value={draft.payment_status ?? "pendente"} onChange={(e) => setDraft({ ...draft, payment_status: e.target.value as PaymentStatus })}>
+                  <select
+                    className={inputCls}
+                    value={draft.payment_status ?? "pendente"}
+                    onChange={(e) => {
+                      const v = e.target.value as PaymentStatus;
+                      setDraft({
+                        ...draft,
+                        payment_status: v,
+                        // Boleto sem parcelas ainda: começa com 1, vencendo em 30 dias.
+                        boletos: v === "boleto" && !draft.boletos?.length ? gerarBoletos(1, plusDays(30).slice(0, 10), netTotal) : draft.boletos,
+                      });
+                    }}
+                  >
                     {PAYMENT_ORDER.map((s) => (
                       <option key={s} value={s}>{PAYMENT_META[s].label}</option>
                     ))}
                   </select>
                 </Field>
               </div>
+              {draft.payment_status === "boleto" && (
+                <BoletosEditor boletos={draft.boletos ?? []} total={netTotal} onChange={(b) => setDraft({ ...draft, boletos: b })} />
+              )}
               <Field label="Previsão de entrega">
                 <input
                   type="datetime-local"
@@ -2579,10 +2803,11 @@ function SearchSelect({
 // pushed the row off-screen). Reenviar exposes an explicit channel choice
 // (WhatsApp / E-mail / Ambos), each showing the exact destination so a wrong
 // number is caught before it goes out.
-function RowActions({ p, resending, onEdit, onResend, onDocument, onDelete }: {
+function RowActions({ p, resending, onEdit, onDuplicate, onResend, onDocument, onDelete }: {
   p: Pedido;
   resending: boolean;
   onEdit: () => void;
+  onDuplicate: () => void;
   onResend: (channels: Array<"whatsapp" | "email">) => void;
   onDocument: (tipo: "orcamento" | "pedido" | "nota" | "recibo") => void;
   onDelete: () => void;
@@ -2615,6 +2840,7 @@ function RowActions({ p, resending, onEdit, onResend, onDocument, onDelete }: {
       {open && (
         <div className="absolute left-0 sm:left-auto sm:right-0 z-30 mt-1 w-56 max-w-[calc(100vw-2.5rem)] bg-white border border-[#e2e2e2] shadow-lg py-1 font-[var(--font-inter)]">
           <button onClick={() => { close(); onEdit(); }} className={`${item} text-[#002045] font-semibold`}>Editar</button>
+          <button onClick={() => { close(); onDuplicate(); }} className={`${item} text-[#002045]`}>Duplicar</button>
 
           <div className={label}>Reenviar ao cliente</div>
           <button disabled={!hasWa} onClick={() => { close(); onResend(["whatsapp"]); }} className={`${item} text-[#3b6934] disabled:text-[#c9c9c9] disabled:hover:bg-white`}>WhatsApp{hasWa ? ` · ${p.client_phone}` : " — sem número"}</button>

@@ -9,6 +9,7 @@ type PartnerLite = { id: string; name: string; coupon_code: string };
 type SalesRepLite = { id: string; name: string; referral_code: string };
 
 const DOCUMENT_COLUMNS = [
+  "boletos",
   "client_document",
   "client_zip",
   "client_address",
@@ -42,6 +43,20 @@ function cleanText(v: unknown): string | null {
 function cleanMoney(v: unknown): number {
   const n = Number(v);
   return Number.isFinite(n) && n >= 0 ? n : 0;
+}
+
+/** Parcelas de boleto: data ISO (AAAA-MM-DD), valor ≥ 0 e pago. Até 36. */
+function cleanBoletos(v: unknown): Array<{ vencimento: string; valor: number; pago: boolean }> | null {
+  if (!Array.isArray(v)) return null;
+  const rows = v
+    .map((b) => ({
+      vencimento: String((b as { vencimento?: unknown })?.vencimento ?? "").slice(0, 10),
+      valor: cleanMoney((b as { valor?: unknown })?.valor),
+      pago: (b as { pago?: unknown })?.pago === true,
+    }))
+    .filter((b) => /^\d{4}-\d{2}-\d{2}$/.test(b.vencimento))
+    .slice(0, 36);
+  return rows.length ? rows : null;
 }
 
 function cleanOtherCosts(v: unknown): Array<{ label: string; amount: number }> {
@@ -207,6 +222,7 @@ export async function POST(req: NextRequest) {
     notes: body.notes ?? null,
     expected_delivery_at: body.expected_delivery_at ?? null,
     client_document: cleanText(body.client_document),
+    boletos: cleanBoletos(body.boletos),
     client_zip: cleanText(body.client_zip),
     client_address: cleanText(body.client_address),
     client_address_complement: cleanText(body.client_address_complement),
@@ -231,10 +247,11 @@ export async function POST(req: NextRequest) {
   };
 
   let { data, error } = await db.from("pedidos").insert(payload).select().single();
-  // Migração 057 (client_document) ainda não rodou: tenta de novo só sem ela,
-  // para não perder endereço e comissões junto.
+  // Migrações 057 (client_document) / 060 (boletos) ainda não rodaram: tenta
+  // de novo só sem elas, para não perder endereço e comissões junto.
   if (error && isMissingColumn(error)) {
     delete payload.client_document;
+    delete payload.boletos;
     ({ data, error } = await db.from("pedidos").insert(payload).select().single());
   }
   if (error && isMissingColumn(error)) {

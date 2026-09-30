@@ -8,6 +8,7 @@ type PartnerLite = { id: string; name: string; coupon_code: string };
 type SalesRepLite = { id: string; name: string; referral_code: string };
 
 const OPTIONAL_DOCUMENT_COLUMNS = [
+  "boletos",
   "client_document",
   "client_zip",
   "client_address",
@@ -43,6 +44,20 @@ function cleanMoney(v: unknown): number {
 
 function cleanText(v: unknown): string | null {
   return typeof v === "string" && v.trim() ? v.trim() : null;
+}
+
+/** Parcelas de boleto: data ISO (AAAA-MM-DD), valor ≥ 0 e pago. Até 36. */
+function cleanBoletos(v: unknown): Array<{ vencimento: string; valor: number; pago: boolean }> | null {
+  if (!Array.isArray(v)) return null;
+  const rows = v
+    .map((b) => ({
+      vencimento: String((b as { vencimento?: unknown })?.vencimento ?? "").slice(0, 10),
+      valor: cleanMoney((b as { valor?: unknown })?.valor),
+      pago: (b as { pago?: unknown })?.pago === true,
+    }))
+    .filter((b) => /^\d{4}-\d{2}-\d{2}$/.test(b.vencimento))
+    .slice(0, 36);
+  return rows.length ? rows : null;
 }
 
 function cleanOtherCosts(v: unknown): Array<{ label: string; amount: number }> {
@@ -238,6 +253,7 @@ const EDITABLE = new Set([
   "notes",
   "expected_delivery_at",
   "delivered_at",
+  "boletos",
   "client_document",
   "client_zip",
   "client_address",
@@ -338,6 +354,7 @@ export async function PATCH(
     else if (k === "freight_is_revenue") patch[k] = v === true;
     else if (k === "show_legal_terms") patch[k] = v !== false;
     else if (k === "other_costs") patch[k] = cleanOtherCosts(v);
+    else if (k === "boletos") patch[k] = cleanBoletos(v);
     else patch[k] = v;
   }
 
@@ -366,10 +383,12 @@ export async function PATCH(
 
   let { data, error } = await db.from("pedidos").update(patch).eq("id", id).select().single();
 
-  // Migração 057 (client_document) ainda não rodou: tenta de novo só sem ela,
-  // antes do fallback amplo que descarta todas as colunas de documento.
-  if (error && isMissingColumn(error) && "client_document" in patch) {
+  // Migrações 057 (client_document) / 060 (boletos) ainda não rodaram: tenta
+  // de novo só sem elas, antes do fallback amplo que descarta todas as colunas
+  // de documento.
+  if (error && isMissingColumn(error) && ("client_document" in patch || "boletos" in patch)) {
     delete patch.client_document;
+    delete patch.boletos;
     ({ data, error } = await db.from("pedidos").update(patch).eq("id", id).select().single());
   }
 
