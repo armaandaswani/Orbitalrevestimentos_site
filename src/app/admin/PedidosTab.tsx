@@ -1630,7 +1630,7 @@ export default function PedidosTab({
               </colgroup>
               <thead>
                 <tr className="border-b border-[#e2e2e2]">
-                  {["Data", "Cliente", "Produção", "Pagamento", "Valor", "Entrega", ""].map((h) => (
+                  {["Criado em", "Cliente", "Produção", "Pagamento", "Valor", "Entrega", ""].map((h) => (
                     <th key={h} className="text-left px-4 py-3 text-[10px] tracking-[0.1em] uppercase font-bold text-[#74777f]">{h}</th>
                   ))}
                 </tr>
@@ -1729,6 +1729,7 @@ export default function PedidosTab({
                       {(p.product_name || p.space) && (
                         <p className="text-[10px] text-[#b0b0b0] mt-0.5 truncate">{[p.space, p.product_name].filter(Boolean).join(" · ")}</p>
                       )}
+                      <p className="text-[10px] text-[#74777f] mt-0.5">Criado em {fmtDate(p.created_at)}</p>
                     </div>
                     <div className="text-right shrink-0">
                       <span className="text-xs text-[#002045] font-semibold">{fmtBRL(Math.max(0, (p.total ?? 0) - (p.discount_amount ?? 0)))}</span>
