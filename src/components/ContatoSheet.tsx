@@ -1,9 +1,10 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
+import { flushSync } from "react-dom";
 import {
   CIDADES, ETAPAS, EVENTO_CONTATO, PERFIS,
-  areaTexto, linkWhatsappContato, mascaraWhatsapp, pendenciasContato,
+  areaTexto, linkWhatsappContato, mascaraWhatsapp, pendenciasContato, whatsappValido,
   type CampoObrigatorio, type ProdutoContato, type RespostasContato,
 } from "@/lib/contato";
 
@@ -15,13 +16,52 @@ import {
  * são opcionais, sem dizer isso — só não têm asterisco. Visual da marca:
  * fundo azul-marinho, contornos no verde da logo, texto branco, cantos
  * arredondados e serifa no título.
+ *
+ * Guiada: cada resposta leva à próxima pergunta ainda vazia (foco no campo de
+ * texto, ou rolagem até o seletor), e a pergunta da vez fica com o rótulo em
+ * verde. "Outra" cidade já abre o campo com o cursor nele.
  */
 
 type Opcao = { readonly value: string; readonly label: string };
 
 // Paleta: azul-marinho da marca (#002045) no fundo, verde da logo (#a1d494)
 // nos contornos e na opção marcada, texto branco.
-const rotuloCls = "block text-[10px] tracking-[0.18em] uppercase font-semibold font-[var(--font-inter)] text-white/70 mb-2.5";
+const rotuloBase = "block text-[10px] tracking-[0.18em] uppercase font-semibold font-[var(--font-inter)] mb-2.5 transition-colors duration-300";
+/** Rótulo da pergunta da vez em verde; as demais em branco suave. */
+const rotuloCls = (daVez?: boolean) => `${rotuloBase} ${daVez ? "text-[#a1d494]" : "text-white/70"}`;
+
+/** Ordem das perguntas; "enviar" é o botão. */
+const PASSOS = ["perfil", "whatsapp", "nome", "etapa", "largura", "altura", "cidade", "enviar"] as const;
+type Passo = (typeof PASSOS)[number] | "cidadeOutra";
+
+function respondido(p: Passo, r: RespostasContato): boolean {
+  switch (p) {
+    case "perfil": return !!r.perfil;
+    case "whatsapp": return whatsappValido(r.whatsapp);
+    case "nome": return !!r.nome?.trim();
+    case "etapa": return !!r.etapa;
+    case "largura": return !!r.largura;
+    case "altura": return !!r.altura;
+    case "cidade": return !!r.cidade && (r.cidade !== "outra" || !!r.cidadeOutra?.trim());
+    default: return false;
+  }
+}
+
+/**
+ * Próxima pergunta depois de `atual`: a primeira ainda vazia adiante; se não
+ * houver, a primeira obrigatória que ficou para trás; senão, o botão.
+ */
+function proximoPasso(atual: Passo, r: RespostasContato): Passo {
+  const base = atual === "cidadeOutra" ? "cidade" : atual;
+  const i = PASSOS.indexOf(base as (typeof PASSOS)[number]);
+  for (const p of PASSOS.slice(i + 1)) {
+    if (p === "enviar") break;
+    if (!respondido(p, r)) return p;
+  }
+  const faltando = (["perfil", "whatsapp", "etapa", "cidade"] as const).find((p) => !respondido(p, r));
+  if (faltando) return faltando === "cidade" && r.cidade === "outra" ? "cidadeOutra" : faltando;
+  return "enviar";
+}
 // Cor da linha fora da base: com as duas cores na mesma classe, a de erro
 // perdia para a padrão e o campo obrigatório não ficava vermelho.
 const campoBase =
@@ -34,14 +74,15 @@ function Obrigatorio() {
 }
 
 function Segmentado({
-  id, rotulo, opcoes, valor, onChange, obrigatorio, erro,
+  id, rotulo, opcoes, valor, onChange, obrigatorio, erro, daVez, secaoRef,
 }: {
   id: string; rotulo: string; opcoes: readonly Opcao[]; valor?: string;
   onChange: (v: string) => void; obrigatorio?: boolean; erro?: boolean;
+  daVez?: boolean; secaoRef?: (el: HTMLDivElement | null) => void;
 }) {
   return (
-    <div role="radiogroup" aria-labelledby={`${id}-rotulo`} aria-required={obrigatorio}>
-      <span id={`${id}-rotulo`} className={rotuloCls}>
+    <div ref={secaoRef} role="radiogroup" aria-labelledby={`${id}-rotulo`} aria-required={obrigatorio} className="scroll-my-28">
+      <span id={`${id}-rotulo`} className={rotuloCls(daVez)}>
         {rotulo}{obrigatorio && <Obrigatorio />}
       </span>
       <div className="grid gap-2" style={{ gridTemplateColumns: `repeat(${opcoes.length}, minmax(0, 1fr))` }}>
@@ -77,6 +118,12 @@ export default function ContatoSheet() {
   const [tentou, setTentou] = useState(false);
   // Campo-isca anti-robô: fora da tela, só robô preenche.
   const [isca, setIsca] = useState("");
+  // Pergunta da vez (rótulo verde) e realce breve do botão quando tudo está pronto.
+  const [passo, setPasso] = useState<Passo>("perfil");
+  const [realceEnvio, setRealceEnvio] = useState(false);
+  const secoes = useRef<Partial<Record<Passo, HTMLElement | null>>>({});
+  const campos = useRef<Partial<Record<Passo, HTMLInputElement | null>>>({});
+  const envioRef = useRef<HTMLAnchorElement | null>(null);
 
   useEffect(() => {
     function abrir(e: Event) {
@@ -84,6 +131,7 @@ export default function ContatoSheet() {
       setProdutos(detail?.produtos ?? []);
       setR(detail?.inicial ?? {});
       setTentou(false);
+      setPasso("perfil");
       setAberto(true);
     }
     window.addEventListener(EVENTO_CONTATO, abrir);
@@ -112,6 +160,41 @@ export default function ContatoSheet() {
   if (!aberto) return null;
 
   const set = (campo: keyof RespostasContato) => (v: string) => setR((x) => ({ ...x, [campo]: v }));
+
+  /** Leva à pergunta `p`: foca o campo de texto (abre o teclado) ou rola até o seletor. */
+  function irPara(p: Passo) {
+    setPasso(p);
+    if (p === "enviar") {
+      envioRef.current?.focus({ preventScroll: true });
+      setRealceEnvio(true);
+      setTimeout(() => setRealceEnvio(false), 1400);
+      return;
+    }
+    const campo = campos.current[p];
+    campo?.focus({ preventScroll: true });
+    (secoes.current[p] ?? campo)?.scrollIntoView({ behavior: "smooth", block: "center" });
+  }
+
+  /** Resposta de um seletor: grava e segue para a próxima pergunta vazia. */
+  function responder(campo: "perfil" | "etapa" | "cidade", v: string) {
+    const novo = { ...r, [campo]: v };
+    if (campo === "cidade" && v === "outra") {
+      // Renderiza o campo "Qual cidade?" na hora, ainda dentro do toque, para
+      // o foco abrir o teclado também no iPhone.
+      flushSync(() => setR(novo));
+      irPara("cidadeOutra");
+      return;
+    }
+    setR(novo);
+    irPara(proximoPasso(campo, novo));
+  }
+
+  /** Enter nos campos de texto também avança. */
+  function aoEnter(e: React.KeyboardEvent<HTMLInputElement>, p: Passo) {
+    if (e.key !== "Enter") return;
+    e.preventDefault();
+    irPara(proximoPasso(p, r));
+  }
   const faltam = pendenciasContato(r);
   const erro = (c: CampoObrigatorio) => tentou && faltam.includes(c);
   const area = areaTexto(r);
@@ -176,14 +259,25 @@ export default function ContatoSheet() {
         <div className="px-6 sm:px-8 py-6 space-y-7">
           <Segmentado
             id="ct-perfil" rotulo="Perfil" opcoes={PERFIS} valor={r.perfil}
-            onChange={set("perfil")} obrigatorio erro={erro("perfil")}
+            onChange={(v) => responder("perfil", v)} obrigatorio erro={erro("perfil")}
+            daVez={passo === "perfil"} secaoRef={(el) => { secoes.current.perfil = el; }}
           />
 
-          <label className="block">
-            <span className={rotuloCls}>WhatsApp<Obrigatorio /></span>
+          <label className="block scroll-my-28">
+            <span className={rotuloCls(passo === "whatsapp")}>WhatsApp<Obrigatorio /></span>
             <input
+              ref={(el) => { campos.current.whatsapp = el; }}
               value={r.whatsapp ?? ""}
-              onChange={(e) => set("whatsapp")(mascaraWhatsapp(e.target.value))}
+              onChange={(e) => {
+                const v = mascaraWhatsapp(e.target.value);
+                const novo = { ...r, whatsapp: v };
+                setR(novo);
+                // Celular completo (11 dígitos): segue sozinho para a próxima.
+                if (v.replace(/\D/g, "").length === 11 && (r.whatsapp ?? "").replace(/\D/g, "").length < 11) irPara(proximoPasso("whatsapp", novo));
+              }}
+              onFocus={() => setPasso("whatsapp")}
+              onKeyDown={(e) => aoEnter(e, "whatsapp")}
+              enterKeyHint="next"
               type="tel"
               inputMode="tel"
               autoComplete="tel"
@@ -194,11 +288,15 @@ export default function ContatoSheet() {
             />
           </label>
 
-          <label className="block">
-            <span className={rotuloCls}>Nome</span>
+          <label className="block scroll-my-28">
+            <span className={rotuloCls(passo === "nome")}>Nome</span>
             <input
+              ref={(el) => { campos.current.nome = el; }}
               value={r.nome ?? ""}
               onChange={(e) => set("nome")(e.target.value.slice(0, 80))}
+              onFocus={() => setPasso("nome")}
+              onKeyDown={(e) => aoEnter(e, "nome")}
+              enterKeyHint="next"
               autoComplete="name"
               placeholder="Como podemos te chamar"
               className={campoCls}
@@ -207,15 +305,20 @@ export default function ContatoSheet() {
 
           <Segmentado
             id="ct-etapa" rotulo="Estágio da obra" opcoes={ETAPAS} valor={r.etapa}
-            onChange={set("etapa")} obrigatorio erro={erro("etapa")}
+            onChange={(v) => responder("etapa", v)} obrigatorio erro={erro("etapa")}
+            daVez={passo === "etapa"} secaoRef={(el) => { secoes.current.etapa = el; }}
           />
 
-          <div>
-            <span className={rotuloCls}>Largura &amp; altura da área</span>
+          <div ref={(el) => { secoes.current.largura = el; secoes.current.altura = el; }} className="scroll-my-28">
+            <span className={rotuloCls(passo === "largura" || passo === "altura")}>Largura &amp; altura da área</span>
             <div className="grid grid-cols-2 gap-3">
               <label className="relative block">
                 <span className="sr-only">Largura em metros</span>
                 <input
+                  ref={(el) => { campos.current.largura = el; }}
+                  onFocus={() => setPasso("largura")}
+                  onKeyDown={(e) => { if (e.key === "Enter") { e.preventDefault(); irPara("altura"); } }}
+                  enterKeyHint="next"
                   value={r.largura ?? ""}
                   onChange={(e) => set("largura")(medida(e.target.value))}
                   inputMode="decimal"
@@ -227,6 +330,10 @@ export default function ContatoSheet() {
               <label className="relative block">
                 <span className="sr-only">Altura em metros</span>
                 <input
+                  ref={(el) => { campos.current.altura = el; }}
+                  onFocus={() => setPasso("altura")}
+                  onKeyDown={(e) => aoEnter(e, "altura")}
+                  enterKeyHint="next"
                   value={r.altura ?? ""}
                   onChange={(e) => set("altura")(medida(e.target.value))}
                   inputMode="decimal"
@@ -249,10 +356,15 @@ export default function ContatoSheet() {
           <div>
             <Segmentado
               id="ct-cidade" rotulo="Cidade" opcoes={CIDADES} valor={r.cidade}
-              onChange={set("cidade")} obrigatorio erro={erro("cidade") && r.cidade !== "outra"}
+              onChange={(v) => responder("cidade", v)} obrigatorio erro={erro("cidade") && r.cidade !== "outra"}
+              daVez={passo === "cidade" || passo === "cidadeOutra"} secaoRef={(el) => { secoes.current.cidade = el; }}
             />
             {r.cidade === "outra" && (
               <input
+                ref={(el) => { campos.current.cidadeOutra = el; }}
+                onFocus={() => setPasso("cidadeOutra")}
+                onKeyDown={(e) => aoEnter(e, "cidadeOutra")}
+                enterKeyHint="done"
                 value={r.cidadeOutra ?? ""}
                 onChange={(e) => set("cidadeOutra")(e.target.value.slice(0, 60))}
                 autoComplete="address-level2"
@@ -281,6 +393,7 @@ export default function ContatoSheet() {
             </p>
           )}
           <a
+            ref={envioRef}
             href={linkWhatsappContato(produtos, r)}
             target="_blank"
             rel="noopener noreferrer"
@@ -298,7 +411,9 @@ export default function ContatoSheet() {
               } catch {}
               setAberto(false);
             }}
-            className="group w-full min-h-[52px] inline-flex items-center justify-center gap-3 rounded-2xl bg-[#a1d494] text-[#002045] text-[11px] tracking-[0.2em] uppercase font-bold font-[var(--font-inter)] px-6 hover:bg-[#b4dea9] transition-colors"
+            className={`group w-full min-h-[52px] inline-flex items-center justify-center gap-3 rounded-2xl bg-[#a1d494] text-[#002045] text-[11px] tracking-[0.2em] uppercase font-bold font-[var(--font-inter)] px-6 hover:bg-[#b4dea9] transition-all duration-500 focus:outline-none ${
+              realceEnvio ? "ring-4 ring-[#a1d494]/35 scale-[1.02]" : "ring-0 ring-transparent"
+            }`}
           >
             <svg width="15" height="15" viewBox="0 0 24 24" fill="currentColor" className="opacity-80" aria-hidden>
               <path d="M17.472 14.382c-.297-.149-1.758-.867-2.03-.967-.273-.099-.471-.148-.67.15-.197.297-.767.966-.94 1.164-.173.199-.347.223-.644.075-.297-.15-1.255-.463-2.39-1.475-.883-.788-1.48-1.761-1.653-2.059-.173-.297-.018-.458.13-.606.134-.133.298-.347.446-.52.149-.174.198-.298.298-.497.099-.198.05-.371-.025-.52-.075-.149-.669-1.612-.916-2.207-.242-.579-.487-.5-.669-.51-.173-.008-.371-.01-.57-.01-.198 0-.52.074-.792.372-.272.297-1.04 1.016-1.04 2.479 0 1.462 1.065 2.875 1.213 3.074.149.198 2.096 3.2 5.077 4.487.709.306 1.262.489 1.694.625.712.227 1.36.195 1.871.118.571-.085 1.758-.719 2.006-1.413.248-.694.248-1.289.173-1.413-.074-.124-.272-.198-.57-.347m-5.421 7.403h-.004a9.87 9.87 0 01-5.031-1.378l-.361-.214-3.741.982.998-3.648-.235-.374a9.86 9.86 0 01-1.51-5.26c.001-5.45 4.436-9.884 9.888-9.884 2.64 0 5.122 1.03 6.988 2.898a9.825 9.825 0 012.893 6.994c-.003 5.45-4.437 9.884-9.885 9.884m8.413-18.297A11.815 11.815 0 0012.05 0C5.495 0 .16 5.335.157 11.892c0 2.096.547 4.142 1.588 5.945L.057 24l6.305-1.654a11.882 11.882 0 005.683 1.448h.005c6.554 0 11.89-5.335 11.893-11.893a11.821 11.821 0 00-3.48-8.413z" />
