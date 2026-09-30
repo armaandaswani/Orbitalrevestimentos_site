@@ -48,7 +48,7 @@ const LINHA_INFO: Record<"Classic" | "Brilliance" | "Elegance", {
   color: string;
 }> = {
   Classic: {
-    material: "1,2 × 2,9 m · 5 mm · Acabamento Fosco",
+    material: "1,2 × 2,9m - 5mm · Acabamento Fosco",
     tagline: "Sofisticação atemporal com textura fosca anti-reflexo. A escolha mais versátil do catálogo.",
     differentials: [
       { icon: "◼", text: "Acabamento fosco anti-reflexo — elegância discreta em qualquer iluminação" },
@@ -59,7 +59,7 @@ const LINHA_INFO: Record<"Classic" | "Brilliance" | "Elegance", {
     color: "bg-blue-50 text-blue-800 border-blue-100",
   },
   Brilliance: {
-    material: "1,2 × 2,9 m · 5 mm · Acabamento Polido",
+    material: "1,2 × 2,9m - 5mm · Acabamento Polido",
     tagline: "Superfície espelhada que replica mármore importado. Presença visual máxima.",
     differentials: [
       { icon: "◆", text: "Acabamento polido espelhado — efeito mármore de luxo sem o custo" },
@@ -70,7 +70,7 @@ const LINHA_INFO: Record<"Classic" | "Brilliance" | "Elegance", {
     color: "bg-purple-50 text-purple-800 border-purple-100",
   },
   Elegance: {
-    material: "1,2 × 2,9 m · 5 mm · Textura Madeira",
+    material: "1,2 × 2,9m - 5mm · Textura Madeira",
     tagline: "Calor e naturalidade da madeira sem nenhuma de suas desvantagens.",
     differentials: [
       { icon: "▲", text: "Textura tátil realista — aparência e sensação de madeira natural" },
