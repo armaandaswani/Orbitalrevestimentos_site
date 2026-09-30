@@ -1251,47 +1251,56 @@ export default function PedidosTab({
     // from before the /api/admin/stock fetch resolved.
   }, [stockProducts]);
 
-  // Duplicar: abre um pedido NOVO com cliente, itens e condições comerciais do
-  // original. Zera o que é da vida daquele pedido: status, pagamento, boletos,
-  // entrega, comissões pagas, cupom e vínculo com lead.
-  const openDuplicate = useCallback(async (p: Pedido) => {
-    setItems([]);
-    setItemsReady(false);
-    setAreaCalcOpen({});
-    setAreaCalcValue({});
-    const copia: PedidoDraft = { ...p };
-    for (const k of ["id", "created_at", "updated_at", "delivered_at", "coupon_use_id", "boletos"] as const) delete copia[k];
-    for (const k of ["lead_id", "stock_state", "partner_commission_paid_at", "sales_rep_commission_paid_at",
-      "partner_commission_cancelled_at", "partner_commission_cancel_reason",
-      "sales_rep_commission_cancelled_at", "sales_rep_commission_cancel_reason"]) delete (copia as Record<string, unknown>)[k];
-    setDraft({
-      ...copia,
-      _isNew: true,
-      // Mantém a condição de pagamento copiada (não recalcular pelas placas).
-      _termsTouched: true,
-      status: "em_producao",
-      payment_status: "pendente",
-      quote_valid_until: plusDays(7),
-      expected_delivery_at: null,
-    });
+  // Duplicar: cria na hora um pedido NOVO com cliente, itens e condições
+  // comerciais do original e abre a cópia para ajustes. Antes só abria um
+  // formulário "Novo pedido" que ainda precisava passar pelos 4 passos — e
+  // parecia que nada tinha acontecido. Zera o que é da vida daquele pedido:
+  // status, pagamento, boletos, entrega, cupom e vínculo com lead.
+  const [duplicandoId, setDuplicandoId] = useState<string | null>(null);
+  async function duplicarPedido(p: Pedido) {
+    if (duplicandoId) return;
+    if (!window.confirm(`Duplicar o pedido de ${p.client_name}? Uma cópia nova será criada com os mesmos itens.`)) return;
+    setDuplicandoId(p.id);
     try {
       const res = await fetch(`/api/admin/pedidos/${p.id}`);
       const full = res.ok ? await res.json().catch(() => null) : null;
       const rows = Array.isArray(full?.items) ? full.items : [];
-      const mapped: OrderItem[] = rows
+      const itens = rows
         .filter((it: { product_id?: string; plates?: number }) => it.product_id && Number(it.plates) > 0)
         .map((it: { product_id?: string; plates?: number; unit_price?: number | null }) => ({
           product_id: it.product_id as string,
           plates: Math.round(Number(it.plates)),
           unit_price: it.unit_price == null ? null : Number(it.unit_price),
         }));
-      setItems(mapped.length > 0 ? mapped : (stockProducts.length > 0 ? [{ product_id: "", plates: 1 }] : []));
+      const base: PedidoDraft = { ...(full ?? p) };
+      const { payload } = buildDraftPayload({
+        ...base,
+        status: "em_producao",
+        payment_status: "pendente",
+        boletos: null,
+        expected_delivery_at: null,
+        quote_valid_until: plusDays(7),
+        coupon_use_id: null,
+        lead_id: null,
+      });
+      const criar = await fetch("/api/admin/pedidos", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ ...payload, items: itens }),
+      });
+      const created = await criar.json().catch(() => null);
+      if (!criar.ok || !created?.id) {
+        alert(`Não foi possível duplicar: ${created?.error ?? criar.status}`);
+        return;
+      }
+      setPedidos((prev) => [created as Pedido, ...prev]);
+      openEdit(created as Pedido);
     } catch {
-      setItems(stockProducts.length > 0 ? [{ product_id: "", plates: 1 }] : []);
+      alert("Não foi possível duplicar agora. Verifique a conexão e tente de novo.");
+    } finally {
+      setDuplicandoId(null);
     }
-    // Pedido novo: os itens do formulário são a verdade, mesmo sem a cópia.
-    setItemsReady(true);
-  }, [stockProducts]);
+  }
 
   /** Seletor de pagamento do cartão: "Boleto" abre a janela das parcelas. */
   function mudarPagamento(p: Pedido, v: PaymentStatus) {
@@ -1697,7 +1706,7 @@ export default function PedidosTab({
                       </td>
                       <td className="px-4 py-3 text-right">
                         <RowActions p={p} resending={resendingId === p.id}
-                          onEdit={() => openEdit(p)} onDuplicate={() => openDuplicate(p)} onResend={(ch) => resendToClient(p, ch)}
+                          onEdit={() => openEdit(p)} onDuplicate={() => duplicarPedido(p)} onResend={(ch) => resendToClient(p, ch)}
                           onDocument={(t) => openDocument(p.id, t)} onDelete={() => deletePedido(p.id)} />
                       </td>
                     </tr>
@@ -1758,7 +1767,7 @@ export default function PedidosTab({
                   ) : null}
                   <div className="mt-3 pt-3 border-t border-[#f0f0f0]">
                     <RowActions p={p} resending={resendingId === p.id}
-                      onEdit={() => openEdit(p)} onDuplicate={() => openDuplicate(p)} onResend={(ch) => resendToClient(p, ch)}
+                      onEdit={() => openEdit(p)} onDuplicate={() => duplicarPedido(p)} onResend={(ch) => resendToClient(p, ch)}
                       onDocument={(t) => openDocument(p.id, t)} onDelete={() => deletePedido(p.id)} />
                   </div>
                 </div>
