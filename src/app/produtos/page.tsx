@@ -34,16 +34,6 @@ interface Product {
   render_texture_path?: string | null;
 }
 
-/**
- * "Acabamento fosco" a partir do cadastro (finish). Sem finish, usa o fim do
- * texto da linha ("Acabamento Fosco", "Textura Madeira").
- */
-function acabamentoTexto(finish: string | null | undefined, material: string): string {
-  const f = finish?.trim();
-  if (!f) return material.split("·").pop()?.trim() ?? "";
-  return /^(acabamento|textura)/i.test(f) ? f : `Acabamento ${f.toLowerCase()}`;
-}
-
 const linhas: { key: Linha; label: string; desc: string }[] = [
   { key: "todos", label: "Todos", desc: "15 acabamentos" },
   { key: "Classic", label: "Classic", desc: "Mármore Fosco · 559/placa" },
@@ -58,7 +48,7 @@ const LINHA_INFO: Record<"Classic" | "Brilliance" | "Elegance", {
   color: string;
 }> = {
   Classic: {
-    material: "Polímero de Alta Densidade · Acabamento Fosco",
+    material: "1,2 × 2,9 m · 5 mm · Acabamento Fosco",
     tagline: "Sofisticação atemporal com textura fosca anti-reflexo. A escolha mais versátil do catálogo.",
     differentials: [
       { icon: "◼", text: "Acabamento fosco anti-reflexo — elegância discreta em qualquer iluminação" },
@@ -69,7 +59,7 @@ const LINHA_INFO: Record<"Classic" | "Brilliance" | "Elegance", {
     color: "bg-blue-50 text-blue-800 border-blue-100",
   },
   Brilliance: {
-    material: "Polímero de Alta Densidade · Acabamento Polido",
+    material: "1,2 × 2,9 m · 5 mm · Acabamento Polido",
     tagline: "Superfície espelhada que replica mármore importado. Presença visual máxima.",
     differentials: [
       { icon: "◆", text: "Acabamento polido espelhado — efeito mármore de luxo sem o custo" },
@@ -80,7 +70,7 @@ const LINHA_INFO: Record<"Classic" | "Brilliance" | "Elegance", {
     color: "bg-purple-50 text-purple-800 border-purple-100",
   },
   Elegance: {
-    material: "Polímero de Alta Densidade · Textura Madeira",
+    material: "1,2 × 2,9 m · 5 mm · Textura Madeira",
     tagline: "Calor e naturalidade da madeira sem nenhuma de suas desvantagens.",
     differentials: [
       { icon: "▲", text: "Textura tátil realista — aparência e sensação de madeira natural" },
@@ -438,38 +428,37 @@ export default function ProdutosPage() {
                     </span>
                   </div>
 
-                  {/* Nome com o preço discreto ao lado; embaixo a placa e o
-                      acabamento; e então o consultor, em largura total. O
-                      botão fica logo abaixo da foto: no celular ele não pode
-                      depender de rolar até o fim. O cliente fala com o
-                      consultor pelo WhatsApp já dizendo qual revestimento quer
-                      (o orçamento instantâneo, /simulador, segue no ar mas fora
-                      da navegação). */}
+                  {/* Name */}
                   <div>
-                    <div className="flex items-start justify-between gap-4">
-                      <h2 className="font-[var(--font-noto-serif)] text-[#002045] text-2xl lg:text-3xl font-normal leading-tight min-w-0">
-                        {selected.name}
-                      </h2>
-                      <div className="text-right flex-shrink-0 pt-1">
-                        <p className="text-[#1a365d] text-sm font-semibold font-[var(--font-inter)] whitespace-nowrap leading-tight">
-                          {selected.price.toLocaleString("pt-BR")}<span className="text-[#74777f] font-normal">/placa</span>
-                        </p>
-                        <p className="text-[#a0a3a9] text-[11px] font-[var(--font-inter)] whitespace-nowrap mt-0.5">
-                          {selected.price_per_m2}/m²
-                        </p>
-                      </div>
+                    <h2 className="font-[var(--font-noto-serif)] text-[#002045] text-2xl lg:text-3xl font-normal leading-tight mb-1">
+                      {selected.name}
+                    </h2>
+                    <p className="text-[#74777f] text-xs font-[var(--font-inter)]">{info.material}</p>
+                  </div>
+
+                  {/* Preço + consultor lado a lado, logo abaixo do nome: no
+                      celular o botão ficava lá embaixo e o cliente não achava
+                      sem rolar. O cliente fala com o consultor pelo WhatsApp já
+                      dizendo qual revestimento quer (o orçamento instantâneo,
+                      /simulador, segue no ar mas fora da navegação). */}
+                  <div className="flex items-center justify-between gap-3 border-y border-[#e8e8e8] py-3">
+                    <div className="min-w-0">
+                      <p className="text-[#1a365d] text-xl lg:text-2xl font-semibold font-[var(--font-inter)] leading-tight whitespace-nowrap">
+                        {selected.price.toLocaleString("pt-BR")}
+                        <span className="text-xs lg:text-sm text-[#74777f] font-normal ml-1">/placa</span>
+                      </p>
+                      <p className="text-[#74777f] text-[11px] lg:text-xs font-[var(--font-inter)] mt-0.5 whitespace-nowrap">
+                        {selected.price_per_m2}/m²
+                      </p>
                     </div>
-                    <p className="text-[#74777f] text-xs font-[var(--font-inter)] mt-1">
-                      {["1,2 × 2,9 m (3,48 m²)", "5 mm", acabamentoTexto(selected.finish, info.material)].filter(Boolean).join(" · ")}
-                    </p>
                     <ContatoCta
                       produtos={[{ code: selected.code, name: selected.name, linha: selected.linha, image: selected.image_path }]}
-                      className="mt-4 w-full inline-flex items-center justify-center gap-2 bg-[#002045] text-white text-xs tracking-[0.12em] uppercase font-bold font-[var(--font-inter)] px-6 py-3.5 hover:bg-[#003070] transition-colors"
+                      className="flex-shrink-0 inline-flex items-center justify-center gap-2 bg-[#002045] text-white text-[11px] tracking-[0.1em] uppercase font-bold font-[var(--font-inter)] px-4 lg:px-5 py-3 hover:bg-[#003070] transition-colors whitespace-nowrap"
                     >
                       <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2" aria-hidden>
                         <path d="M21 11.5a8.38 8.38 0 01-.9 3.8 8.5 8.5 0 01-7.6 4.7 8.38 8.38 0 01-3.8-.9L3 21l1.9-5.7a8.38 8.38 0 01-.9-3.8 8.5 8.5 0 014.7-7.6 8.38 8.38 0 013.8-.9h.5a8.48 8.48 0 018 8v.5z"/>
                       </svg>
-                      Falar com um consultor
+                      Falar com consultor
                     </ContatoCta>
                   </div>
 
@@ -485,8 +474,19 @@ export default function ProdutosPage() {
                     </p>
                   )}
 
-                  {/* Medidas da placa ficam na linha abaixo do nome (a faixa
-                      com espessura/dimensão/área repetia a mesma informação). */}
+                  {/* Specs bar */}
+                  <div className="grid grid-cols-3 gap-0 border border-[#e8e8e8]">
+                    {[
+                      { label: "Espessura", value: "5 mm" },
+                      { label: "Dimensão", value: "1,2 × 2,9m" },
+                      { label: "Área/placa", value: "3,48 m²" },
+                    ].map(({ label, value }, i) => (
+                      <div key={label} className={`px-3 py-2.5 text-center ${i < 2 ? "border-r border-[#e8e8e8]" : ""}`}>
+                        <p className="font-[var(--font-noto-serif)] text-[#002045] text-sm font-normal">{value}</p>
+                        <p className="text-[#74777f] text-[9px] tracking-[0.12em] uppercase font-semibold font-[var(--font-inter)] mt-0.5">{label}</p>
+                      </div>
+                    ))}
+                  </div>
 
                   {/* Attribute cards — same style as simulator strip */}
                   <div>
