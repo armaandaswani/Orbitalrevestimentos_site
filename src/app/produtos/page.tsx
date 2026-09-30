@@ -460,7 +460,7 @@ export default function ProdutosPage() {
                       </div>
                     </div>
                     <p className="text-[#74777f] text-xs font-[var(--font-inter)] mt-1">
-                      {["1,2 × 2,9 m", "5 mm", acabamentoTexto(selected.finish, info.material)].filter(Boolean).join(" · ")}
+                      {["1,2 × 2,9 m (3,48 m²)", "5 mm", acabamentoTexto(selected.finish, info.material)].filter(Boolean).join(" · ")}
                     </p>
                     <ContatoCta
                       produtos={[{ code: selected.code, name: selected.name, linha: selected.linha, image: selected.image_path }]}
@@ -485,19 +485,8 @@ export default function ProdutosPage() {
                     </p>
                   )}
 
-                  {/* Specs bar */}
-                  <div className="grid grid-cols-3 gap-0 border border-[#e8e8e8]">
-                    {[
-                      { label: "Espessura", value: "5 mm" },
-                      { label: "Dimensão", value: "1,2 × 2,9m" },
-                      { label: "Área/placa", value: "3,48 m²" },
-                    ].map(({ label, value }, i) => (
-                      <div key={label} className={`px-3 py-2.5 text-center ${i < 2 ? "border-r border-[#e8e8e8]" : ""}`}>
-                        <p className="font-[var(--font-noto-serif)] text-[#002045] text-sm font-normal">{value}</p>
-                        <p className="text-[#74777f] text-[9px] tracking-[0.12em] uppercase font-semibold font-[var(--font-inter)] mt-0.5">{label}</p>
-                      </div>
-                    ))}
-                  </div>
+                  {/* Medidas da placa ficam na linha abaixo do nome (a faixa
+                      com espessura/dimensão/área repetia a mesma informação). */}
 
                   {/* Attribute cards — same style as simulator strip */}
                   <div>
