@@ -6,6 +6,9 @@ import ARTAccordion from "@/components/ARTAccordion";
 import FichaTecnicaAccordion from "@/components/FichaTecnicaAccordion";
 import { getAssetOverrides, resolveAsset } from "@/lib/assets";
 
+// Arquivo novo a cada revisão do manual (cache de 1 ano nos arquivos públicos).
+const MANUAL_URL = "/documentos/manual-tecnico-instalacao-pfb-2026-09-29.pdf";
+
 export const metadata: Metadata = {
   title: "PFB Orbital — Tecnologia, Performance e Ficha Técnica | Revestimento Manaus",
   description:
@@ -186,6 +189,41 @@ export default async function TecnologiaPage() {
           <p className="text-[#86a0cd]/70 text-[9px] lg:text-[10px] font-[var(--font-inter)] mt-4 lg:mt-5">
             Peso e densidade admitem tolerância de ±10% — o bambu é fibra natural e cada lote varia.
           </p>
+
+          {/* Manual técnico: fica logo abaixo da ART e dos números — é o
+              documento que as condições de venda citam para a instalação. */}
+          <a
+            href={MANUAL_URL}
+            target="_blank"
+            rel="noopener noreferrer"
+            className="mt-6 lg:mt-8 flex items-center justify-between gap-4 border border-[#1a365d] px-5 py-4 hover:bg-[#1a365d]/40 transition-colors group"
+          >
+            <div className="flex items-center gap-3 min-w-0">
+              <div className="flex-shrink-0 w-8 h-8 bg-[#1a365d] flex items-center justify-center">
+                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="#a1d494" strokeWidth="2" aria-hidden="true">
+                  <path d="M14 2H6a2 2 0 00-2 2v16a2 2 0 002 2h12a2 2 0 002-2V8z" />
+                  <path d="M14 2v6h6M8 13h8M8 17h5" />
+                </svg>
+              </div>
+              <div className="min-w-0">
+                <p className="text-[#a1d494] text-[9px] tracking-[0.2em] uppercase font-bold font-[var(--font-inter)]">
+                  Orbital + Werk Engenharia
+                </p>
+                <p className="text-white text-sm font-semibold font-[var(--font-inter)] mt-0.5">
+                  Manual Técnico de Instalação
+                </p>
+                <p className="text-[#86a0cd] text-[11px] font-[var(--font-inter)] mt-0.5">
+                  Paredes, portas, banheiros, box, curvas, forros e tetos · PDF
+                </p>
+              </div>
+            </div>
+            <span className="flex-shrink-0 inline-flex items-center gap-1.5 text-[10px] tracking-[0.12em] uppercase font-bold font-[var(--font-inter)] text-white border border-[#86a0cd]/50 group-hover:border-white px-3 py-2 transition-colors">
+              <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" aria-hidden="true">
+                <path d="M21 15v4a2 2 0 01-2 2H5a2 2 0 01-2-2v-4M7 10l5 5 5-5M12 15V3" />
+              </svg>
+              Abrir
+            </span>
+          </a>
         </div>
       </section>
 
@@ -516,7 +554,11 @@ export default async function TecnologiaPage() {
             ))}
           </div>
           <p className="text-[#9c9faa] text-sm font-[var(--font-inter)] italic mt-8">
-            Somos fornecedores diretos — não fazemos instalação.
+            Somos fornecedores diretos — não fazemos instalação. O passo a passo completo está no{" "}
+            <a href={MANUAL_URL} target="_blank" rel="noopener noreferrer" className="text-white underline not-italic">
+              Manual Técnico de Instalação
+            </a>
+            .
           </p>
         </div>
       </section>
