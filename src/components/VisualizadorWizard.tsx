@@ -510,13 +510,54 @@ async function compositeMaskedRegion(baseDataUrl: string, sourceDataUrl: string,
   return out.toDataURL("image/jpeg", 0.92);
 }
 
+// True when the detected surface mask covers most of the zone's 4-corner quad —
+// a flat wall whose detection only has holes (stains, putty, outlets). Then the
+// quad is the better target: straight edges, no "torn" patches. When something
+// big stands in front of the wall (sofa, cabinet), coverage drops and the
+// detailed mask is kept so the object isn't painted over. Measured: holes only
+// ≈ 1.00 (the overlay cleanup already closes them), a small object in front ≈
+// 0.96, a sofa ≈ 0.87 — so only a near-complete wall switches to the quad.
+async function maskFillsQuad(z: Zone, threshold = 0.97): Promise<boolean> {
+  const cov = await maskQuadCoverage(z);
+  console.info(`[viz] cobertura da detecção dentro dos cantos: ${cov.toFixed(2)}`);
+  return cov >= threshold;
+}
+
+async function maskQuadCoverage(z: Zone): Promise<number> {
+  if (!z.quad || !z.maskUrl) return 0;
+  const W = 240, H = 240;
+  const [sam, quad] = await Promise.all([buildStencil(z, W, H, false), buildStencil(z, W, H, true)]);
+  if (!sam || !quad) return 0;
+  const a = sam.getContext("2d")!.getImageData(0, 0, W, H).data;
+  const b = quad.getContext("2d")!.getImageData(0, 0, W, H).data;
+  let inQuad = 0, both = 0;
+  for (let i = 3; i < b.length; i += 4) {
+    if (b[i] > 128) { inQuad++; if (a[i] > 128) both++; }
+  }
+  return inQuad > 0 ? both / inQuad : 0;
+}
+
+// Fits the model's whole output to the photo's pixel size. Same aspect → plain
+// scale; a different aspect → centred "cover" crop, never a stretch.
+async function fitToBase(sourceDataUrl: string, w: number, h: number): Promise<string> {
+  const im = await loadImage(sourceDataUrl);
+  const sw = im.naturalWidth, sh = im.naturalHeight;
+  const c = document.createElement("canvas");
+  c.width = w; c.height = h;
+  const ctx = c.getContext("2d")!;
+  const scale = Math.max(w / sw, h / sh);
+  const dw = sw * scale, dh = sh * scale;
+  ctx.drawImage(im, (w - dw) / 2, (h - dh) / 2, dw, dh);
+  return c.toDataURL("image/jpeg", 0.92);
+}
+
 // Builds a clean white-on-black binary mask (PNG data URL) at w×h from the
 // zone's spatial descriptor, to hand to the render API so Gemini paints only
 // the real surface under the white region — following its true perspective and
 // keeping foreground objects on top. Returns null for text-only zones (no
 // spatial info), so the render falls back to the text/rect prompt as before.
-async function buildMaskDataUrl(z: Zone, w: number, h: number): Promise<string | null> {
-  const stencil = await buildStencil(z, w, h); // opaque inside / transparent outside
+async function buildMaskDataUrl(z: Zone, w: number, h: number, preferQuad = false): Promise<string | null> {
+  const stencil = await buildStencil(z, w, h, preferQuad); // opaque inside / transparent outside
   if (!stencil) return null;
   const c = document.createElement("canvas");
   c.width = w;
@@ -1445,9 +1486,24 @@ export default function VisualizadorWizard({
         // Hand Gemini the zone's exact mask (when it has one) so it paints only
         // the real surface, follows its perspective, and keeps foreground
         // objects on top — far more reliable than the bounding rect alone.
+        // Corners the client set by hand win. Otherwise, when the detection is a
+        // flat wall with only holes (stains, putty, outlets), use 4 corners taken
+        // from the detected shape itself — not the axis-aligned box, which on an
+        // angled wall would also cover part of the ceiling or floor.
         let maskImage: string | null = null;
+        let preferQuad = false;
+        let zMask: Zone = z;
         if (dims && dims.w > 0 && dims.h > 0) {
-          try { maskImage = await buildMaskDataUrl(z, dims.w, dims.h); } catch { maskImage = null; }
+          try {
+            if (z.quadConfirmed && z.quad) {
+              preferQuad = true;
+            } else if (z.maskUrl) {
+              const q = await quadFromMaskUrl(z.maskUrl);
+              const zq: Zone | null = q ? { ...z, quad: q } : null;
+              if (zq && await maskFillsQuad(zq)) { zMask = zq; preferQuad = true; }
+            }
+            maskImage = await buildMaskDataUrl(zMask, dims.w, dims.h, preferQuad);
+          } catch { maskImage = null; }
         }
         const reqBody = JSON.stringify({
           photo: base, productId: prod.id, referenceUrl: prod.render_texture_path?.trim() || prod.image_path,
@@ -1483,8 +1539,19 @@ export default function VisualizadorWizard({
           await new Promise((r) => setTimeout(r, 1500));
         }
         if (!json || !json.image) throw new Error(lastErr);
+        if (zs.length === 1) {
+          // One area: keep the model's whole, coherent edit. Cutting it back into
+          // the original by the mask is what produced torn edges and the
+          // "stepped floor" whenever the model's framing drifted a few pixels.
+          try {
+            composite = dims ? await fitToBase(json.image, dims.w, dims.h) : json.image;
+          } catch {
+            composite = json.image;
+          }
+          continue;
+        }
         try {
-          composite = await compositeMaskedRegion(composite, json.image, z);
+          composite = await compositeMaskedRegion(composite, json.image, zMask, preferQuad);
         } catch {
           composite = json.image; // compositing failed — fall back rather than failing the whole render
         }
