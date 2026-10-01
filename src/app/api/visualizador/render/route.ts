@@ -20,8 +20,9 @@ import { OpenAIImageError, openaiConfigured, openaiEditImage } from "@/lib/opena
 // composed from a fixed scaffold + those fields. Otherwise it falls back to
 // the legacy per-line (matte/polished/wood) prompt so existing products keep
 // rendering during rollout.
-// GPT Image at high quality can take over a minute.
-export const maxDuration = 300;
+// Plan limit is 60 s (300 broke the deploy). GPT Image runs at "medium" by
+// default to fit; raise OPENAI_IMAGE_QUALITY only with a longer limit.
+export const maxDuration = 60;
 
 const GEMINI_BASE = "https://generativelanguage.googleapis.com/v1beta";
 const MODEL = process.env.GEMINI_IMAGE_MODEL || "gemini-2.5-flash-image";

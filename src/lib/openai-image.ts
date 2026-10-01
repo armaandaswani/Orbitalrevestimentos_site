@@ -66,7 +66,7 @@ export async function openaiEditImage(input: {
   const models = [process.env.OPENAI_IMAGE_MODEL?.trim(), ...DEFAULT_MODELS].filter(
     (m, i, a): m is string => !!m && a.indexOf(m) === i
   );
-  const quality = process.env.OPENAI_IMAGE_QUALITY?.trim() || "high";
+  const quality = process.env.OPENAI_IMAGE_QUALITY?.trim() || "medium";
   const sizes = [sizeFor(pw, ph), "auto"];
 
   let lastErr: OpenAIImageError | null = null;
