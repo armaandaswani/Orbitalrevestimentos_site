@@ -35,7 +35,7 @@ Por serem fabricados em lotes, os produtos podem apresentar variações de tonal
 Imagens, vídeos, renders, simulações e catálogos têm caráter ilustrativo e não garantem identidade absoluta de textura, cor, brilho, escala ou acabamento.
 
 CLÁUSULA 6ª – DAS INDICAÇÕES DE USO
-Os produtos não são indicados para: tampos de bancada, pisos, fachadas, áreas externas, bordas de piscina e áreas molhadas externas, saunas e salas de vapor, churrasqueiras, lareiras e coifas, superfícies sujeitas a impacto ou atrito constante, e locais com calor contínuo acima de 55 °C ou exposição solar direta contínua.
+Os produtos não são indicados para: tampos de bancada, pisos, fachadas, áreas externas e semiexternas, bordas de piscina e áreas molhadas externas, saunas e salas de vapor, churrasqueiras, lareiras e coifas, superfícies sujeitas a impacto ou atrito constante, e locais com calor contínuo acima de 55 °C ou exposição solar direta contínua.
 A ORBITAL não garante desempenho, durabilidade ou aparência quando o produto for utilizado nesses locais, fora das recomendações técnicas ou do Manual Técnico de Instalação, sobre base mal preparada, ou em caso de uso indevido, manutenção inadequada ou alterações posteriores.
 O consumo de cola PU e demais insumos é estimado e pode variar conforme a superfície, a técnica e a execução, não gerando direito a complementação ou ressarcimento.
 
