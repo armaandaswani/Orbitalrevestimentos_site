@@ -1457,6 +1457,7 @@ export default function VisualizadorWizard({
           applicationArea: areaForZone(z),
           rect: z.rect ?? undefined,
           maskImage: maskImage ?? undefined,
+          aspect: dims && dims.h > 0 ? dims.w / dims.h : undefined,
         });
         // The image generator occasionally returns a transient capacity error
         // (the "error the first time, worked the second" case). Auto-retry once

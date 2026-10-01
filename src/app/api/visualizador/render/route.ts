@@ -111,6 +111,8 @@ export async function POST(req: NextRequest) {
     // only add lighting/shadows, never re-apply or change the material. Anything
     // else (or absent) = the legacy generative "apply the panel" path (fallback).
     mode?: "apply" | "relight";
+    // Photo width/height ratio, so the model returns the same framing.
+    aspect?: number;
   };
   try {
     body = await req.json();
@@ -144,9 +146,10 @@ export async function POST(req: NextRequest) {
   const toAbsolute = (url: string) =>
     /^https?:\/\//.test(url) ? url : new URL(url, req.nextUrl.origin).toString();
 
-  // Relight uses only photo(1)+texture(2)+mask(3); the in-ambience context image
-  // is for the legacy apply path and would shift the part numbering, so skip it.
-  const contextImagePath = (!isRelight && usePerModel) ? product?.render_context_image_path?.trim() || null : null;
+  // The in-ambience context image is NOT sent anymore: even told not to, the
+  // model copied that room's objects (sink, round mirror, countertop) onto the
+  // client's empty wall. The flat texture/catalogue reference is enough.
+  const contextImagePath: string | null = null;
 
   // Optional binary mask supplied by the client (data URL). Parsed defensively:
   // a malformed mask must never break a render — we just fall back to the rect.
@@ -232,17 +235,33 @@ export async function POST(req: NextRequest) {
     parts.push({ inline_data: { mime_type: contextImage.mime, data: contextImage.data } });
   }
 
-  const payload = {
+  // Ask for the photo's own aspect ratio: a different framing makes the output
+  // shift against the original when it is cut back in by the mask (the
+  // "stepped floor" / torn edge). Nearest ratio the model supports.
+  const RATIOS: Array<[string, number]> = [
+    ["1:1", 1], ["2:3", 2 / 3], ["3:2", 3 / 2], ["3:4", 3 / 4], ["4:3", 4 / 3],
+    ["4:5", 4 / 5], ["5:4", 5 / 4], ["9:16", 9 / 16], ["16:9", 16 / 9], ["21:9", 21 / 9],
+  ];
+  const aspect = typeof body.aspect === "number" && isFinite(body.aspect) && body.aspect > 0.2 && body.aspect < 5 ? body.aspect : null;
+  const aspectRatio = aspect
+    ? RATIOS.reduce((best, r) => (Math.abs(Math.log(r[1] / aspect)) < Math.abs(Math.log(best[1] / aspect)) ? r : best))[0]
+    : null;
+
+  const payloadFor = (withRatio: boolean) => ({
     contents: [{ role: "user", parts }],
-    generationConfig: { responseModalities: ["IMAGE"] },
-  };
+    generationConfig: {
+      responseModalities: ["IMAGE"],
+      ...(withRatio && aspectRatio ? { imageConfig: { aspectRatio } } : {}),
+    },
+  });
 
   // Retry on transient Gemini failures — 503 (overloaded), 429 (rate) and 500
   // (sporadic server error), which are the usual "worked the second time"
   // cases. Exponential-ish backoff between attempts.
   const RETRYABLE = new Set([429, 500, 503]);
   let res: Response | null = null;
-  const bodyStr = JSON.stringify(payload);
+  let withRatio = !!aspectRatio;
+  let bodyStr = JSON.stringify(payloadFor(withRatio));
   const url = `${GEMINI_BASE}/models/${MODEL}:generateContent?key=${apiKey}`;
   for (let attempt = 0; attempt < 3; attempt++) {
     try {
@@ -251,6 +270,14 @@ export async function POST(req: NextRequest) {
         headers: { "Content-Type": "application/json" },
         body: bodyStr,
       });
+      // A model/version that doesn't accept imageConfig answers 400: retry once
+      // without it instead of failing the render.
+      if (res.status === 400 && withRatio) {
+        console.warn("[render] imageConfig recusado; repetindo sem proporção:", (await res.clone().text()).slice(0, 300));
+        withRatio = false;
+        bodyStr = JSON.stringify(payloadFor(false));
+        continue;
+      }
       if (!RETRYABLE.has(res.status)) break;
       if (attempt < 2) await new Promise((r) => setTimeout(r, 1200 * (attempt + 1)));
     } catch {
