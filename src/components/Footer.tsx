@@ -12,7 +12,7 @@ export default function Footer() {
               ORBITAL
             </div>
             <p className="text-[#9c9faa] text-sm leading-relaxed mb-2 font-[var(--font-inter)]">
-              Fornecedor exclusivo de Placas Flexíveis de Bambu (PFB) em Manaus, Amazonas.
+              Fornecedor exclusivo de Painel de Fibra de Bambu (PFB) em Manaus, Amazonas.
             </p>
             <p className="text-[#9c9faa] text-sm leading-relaxed mb-6 font-[var(--font-inter)]">
               Revestimento de parede e forro de teto eco-premium — alternativa superior ao MDF,
@@ -121,7 +121,13 @@ export default function Footer() {
             <p className="text-xs text-[#9c9faa] font-[var(--font-inter)] italic">
               Revestimento de parede e forro · PFB · Alternativa ao MDF em Manaus
             </p>
-            <div className="flex items-center gap-4 md:border-l md:border-[#333640] md:pl-5">
+            <div className="flex flex-wrap items-center gap-x-4 gap-y-2 md:border-l md:border-[#333640] md:pl-5">
+              <Link href="/privacidade" className="text-[10px] text-[#9c9faa] hover:text-white transition-colors font-[var(--font-inter)] tracking-[0.08em] uppercase">
+                Privacidade
+              </Link>
+              <Link href="/termos" className="text-[10px] text-[#9c9faa] hover:text-white transition-colors font-[var(--font-inter)] tracking-[0.08em] uppercase">
+                Termos de Uso
+              </Link>
               <Link href="/representante" className="text-[10px] text-[#555860] hover:text-[#9c9faa] transition-colors font-[var(--font-inter)] tracking-[0.08em] uppercase">
                 Representante
               </Link>

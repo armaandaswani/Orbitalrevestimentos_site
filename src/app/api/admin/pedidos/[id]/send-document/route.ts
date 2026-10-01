@@ -6,6 +6,7 @@ import { isAdminRequest } from "@/lib/admin-auth";
 import { getResend } from "@/lib/resend";
 import { normalizePhone, sendText, smclickConfigured } from "@/lib/smclick";
 import { supabaseAdmin } from "@/lib/supabase";
+import { CLAUSULAS_PADRAO } from "@/lib/clausulas-pedido";
 
 export const runtime = "nodejs";
 
@@ -331,7 +332,11 @@ async function generatePedidoPdf(input: {
   });
   doc.y = commercialY + 72;
 
-  const notes = String(pedido.document_notes ?? "").trim();
+  // Mesma regra da tela do documento: texto próprio do pedido vence; sem ele,
+  // Pedido/Nota/Recibo levam as cláusulas padrão (Orçamento não leva).
+  const notes = pedido.show_legal_terms === false
+    ? ""
+    : String(pedido.document_notes ?? "").trim() || (docType !== "orcamento" ? CLAUSULAS_PADRAO : "");
   if (notes) {
     ensureSpace(doc, 120);
     doc.font("Helvetica").fontSize(12).fillColor("#555").text("Condições");
