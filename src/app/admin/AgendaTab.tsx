@@ -5,6 +5,7 @@ import {
   EmptyState, KpiCard, PageHeader, Spinner, StatusBadge,
   btnGhost, btnPrimary, cardCls, inputCls,
 } from "./ui";
+import EmailDiagnostico from "./EmailDiagnostico";
 
 /**
  * Agenda — reuniões de todos os representantes + agenda pessoal do admin, num
@@ -321,6 +322,7 @@ export default function AgendaTab() {
             <KpiCard label="Aviso falhou" value={resumo.falhas} tone={resumo.falhas ? "bad" : "default"} />
           </div>
 
+          <EmailDiagnostico />
           <AssinarGoogle />
 
           <div className="flex flex-col sm:flex-row gap-3 mb-5">
