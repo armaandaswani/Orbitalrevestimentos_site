@@ -7,7 +7,7 @@ import FichaTecnicaAccordion from "@/components/FichaTecnicaAccordion";
 import { getAssetOverrides, resolveAsset } from "@/lib/assets";
 
 // Arquivo novo a cada revisão do manual (cache de 1 ano nos arquivos públicos).
-const MANUAL_URL = "/documentos/manual-tecnico-instalacao-pfb-2026-09-29.pdf";
+const MANUAL_URL = "/documentos/manual-tecnico-instalacao-pfb-2026-10-01.pdf";
 
 export const metadata: Metadata = {
   title: "PFB Orbital — Tecnologia, Performance e Ficha Técnica | Revestimento Manaus",

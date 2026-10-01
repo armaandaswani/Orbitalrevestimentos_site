@@ -5,74 +5,54 @@
  * esse texto prevalece sobre este padrão.
  */
 export const CLAUSULAS_PADRAO =
-  `CLÁUSULAS CONTRATUAIS - DISPOSIÇÕES GERAIS
+  `CONDIÇÕES GERAIS DE VENDA
 ORBITAL REVESTIMENTOS
 
-CLÁUSULA 1ª - DA NATUREZA DO FORNECIMENTO E LIMITAÇÃO DE ATUAÇÃO
-A ORBITAL atua exclusivamente como fornecedora de revestimentos decorativos, não executando, não projetando, não acompanhando, não supervisionando, não fiscalizando e não se responsabilizando por obras, instalações, medições, preparo de base, compatibilizações técnicas, desempenho final ou resultado estético do ambiente.
-Os produtos fornecidos não possuem caráter estrutural e não se equiparam a pedra natural, madeira maciça ou materiais construtivos tradicionais, sendo destinados exclusivamente a fins decorativos.
+CLÁUSULA 1ª – DO FORNECIMENTO
+A ORBITAL fornece revestimentos decorativos para paredes e forros, sem função estrutural.
+Não fazem parte do fornecimento a instalação, o projeto, a medição, o preparo da superfície, as compatibilizações técnicas e o acompanhamento da obra, que são de responsabilidade do COMPRADOR e dos profissionais por ele contratados.
+O COMPRADOR declara ter sido informado sobre as características do produto, as indicações de uso descritas nestas condições e a disponibilidade do Manual Técnico de Instalação no site da ORBITAL.
 
-CLÁUSULA 2ª - DA INSTALAÇÃO, SERVIÇOS TERCEIRIZADOS E AUSÊNCIA DE RESPONSABILIDADE SOLIDÁRIA
-A ORBITAL disponibiliza ao COMPRADOR o Manual Técnico de Instalação, com o passo a passo detalhado sobre como instalar os produtos, no site orbitalrevestimentos.com.br/tecnologia, e o envia sempre que solicitado.
-A ORBITAL não exige nem solicita que a instalação seja realizada por qualquer profissional específico. A instalação constitui serviço de terceiros, executado por profissional independente, livremente escolhido e contratado pelo COMPRADOR, sem qualquer vínculo contratual, societário, trabalhista ou de representação com a ORBITAL.
-Caso o COMPRADOR solicite contatos de instaladores que já executaram serviços para clientes da ORBITAL, o repasse desses contatos terá caráter meramente facilitador, não constituindo indicação técnica, credenciamento, preposição ou recomendação de qualidade, e não implicando solidariedade, corresponsabilidade, garantia de resultado ou assunção de riscos pela ORBITAL quanto à qualidade, ao prazo, ao preço ou à execução do serviço. O mesmo se aplica a transportadores e demais prestadores de serviço.
-O valor da mão de obra é orçado, contratado, cobrado e recebido diretamente pelo profissional escolhido, não integrando, sob nenhuma hipótese, o preço dos produtos fornecidos pela ORBITAL, sendo o COMPRADOR integralmente responsável pela escolha, contratação e fiscalização do prestador.
+CLÁUSULA 2ª – DA INSTALAÇÃO
+A ORBITAL disponibiliza o Manual Técnico de Instalação, com o passo a passo detalhado sobre como instalar os produtos, no site orbitalrevestimentos.com.br/tecnologia, e o envia ao COMPRADOR sempre que solicitado. Cabe ao COMPRADOR e ao profissional por ele contratado consultar e seguir o Manual.
+A ORBITAL não exige nem solicita que a instalação seja feita por profissional específico. A instalação é serviço de terceiro, executado por profissional de livre escolha do COMPRADOR, por ele contratado, fiscalizado e pago diretamente, sem vínculo contratual, societário, trabalhista ou de representação com a ORBITAL. O valor da mão de obra não integra o preço dos produtos.
+Caso o COMPRADOR solicite contatos de instaladores que já executaram serviços para clientes da ORBITAL, o repasse tem caráter meramente facilitador, não constituindo indicação técnica, credenciamento ou recomendação, e não torna a ORBITAL responsável, solidária ou subsidiariamente, pela qualidade, prazo, preço ou execução do serviço. O mesmo se aplica a transportadores e demais prestadores de serviço.
+O preparo da superfície (limpeza, regularização, nivelamento, prumo, impermeabilização e tratamento de umidade) é responsabilidade do COMPRADOR ou do profissional por ele contratado. A ORBITAL não responde por descolamentos, deformações, fissuras, manchas, infiltrações ou empenamentos decorrentes de preparo inadequado da base, instalação incorreta ou aplicação fora das recomendações do Manual Técnico.
 
-CLÁUSULA 3ª - DO PREPARO DA BASE, CONDIÇÕES DE APLICAÇÃO E RESPONSABILIDADE TÉCNICA
-A avaliação da superfície, incluindo, mas não se limitando a, limpeza, regularização, nivelamento, impermeabilização, correção de prumo, tratamento contra umidade e demais preparos necessários à aplicação, são de responsabilidade exclusiva do COMPRADOR ou do profissional por ele contratado.
-A ORBITAL não se responsabiliza por falhas, desprendimentos, deformações, fissuras, manchas, infiltrações, empenamentos, perdas estéticas ou danos de qualquer natureza decorrentes de:
-* preparo inadequado da base;
-* instalação incorreta;
-* aplicação fora das recomendações técnicas;
-* incompatibilidade do produto com o local escolhido.
+CLÁUSULA 3ª – DO PAGAMENTO E DA CONFIRMAÇÃO DO PEDIDO
+A entrega ou retirada dos produtos é liberada após o pagamento integral à vista ou a aprovação formal do parcelamento do valor total do pedido.
+Descontos para pagamento via PIX ou espécie aplicam-se somente aos produtos fornecidos pela ORBITAL, não abrangendo serviços de terceiros.
+Com a confirmação do pedido, o material é reservado e retirado do estoque disponível em favor do COMPRADOR. Por isso, após a confirmação, não são admitidos cancelamento, desistência, troca, devolução, inclusive de sobras de material, ou alteração da forma de entrega, ressalvados exclusivamente os casos previstos em lei.
 
-CLÁUSULA 4ª - DAS CONDIÇÕES DE PAGAMENTO, LIBERAÇÃO E IRREVERSIBILIDADE DO PEDIDO
-A liberação para entrega ou retirada dos produtos ocorrerá somente mediante: I - pagamento integral à vista; ou II - aprovação formal do parcelamento do valor total do pedido.
-Após a aprovação do pedido de venda, não será admitido cancelamento, desistência, troca, devolução ou alteração da forma de entrega, nos termos aplicáveis a produtos comercializados sob encomenda.
-Eventuais descontos concedidos para pagamento via PIX ou espécie aplicam-se exclusivamente aos produtos fornecidos pela ORBITAL, não abrangendo serviços terceirizados.
+CLÁUSULA 4ª – DA ENTREGA E DA CONFERÊNCIA
+No recebimento, compete ao COMPRADOR: I – conferir quantidade, modelo e especificação dos produtos; II – verificar defeitos aparentes, como riscos, trincas, quebras, empenos, manchas ou divergências; III – registrar imediatamente qualquer inconformidade no comprovante de entrega, com registro fotográfico.
+A ausência de ressalvas no ato do recebimento caracteriza aceitação plena dos produtos quanto à quantidade e ao estado aparente. Com a entrega, encerra-se a responsabilidade da ORBITAL pelo transporte e pela integridade física dos produtos.
+Na retirada no depósito, o transporte e eventuais danos ocorridos durante ele são de responsabilidade do COMPRADOR.
+Se a entrega não puder ser realizada por ausência do COMPRADOR, informações incorretas ou impedimentos alheios à ORBITAL, poderá ser cobrada nova taxa de entrega.
 
-CLÁUSULA 5ª - DA ENTREGA, RETIRADA, CONFERÊNCIA E ENCERRAMENTO DA RESPONSABILIDADE
-A responsabilidade da ORBITAL encerra-se no ato da entrega, mediante conferência da integridade dos produtos e sua aceitação pelo COMPRADOR.
-No recebimento, compete exclusivamente ao COMPRADOR: I - conferir quantidade, tipo e especificação dos produtos; II - verificar defeitos aparentes, tais como riscos, trincas, quebras, empeno, oxidação, amassados ou divergências; III - registrar imediatamente qualquer inconformidade no documento da transportadora, com registros fotográficos.
-A ausência de ressalvas caracteriza aceitação plena e definitiva dos produtos.
-Na hipótese de retirada em depósito, a ORBITAL não se responsabiliza por danos ocorridos durante o transporte, assumindo o COMPRADOR integral responsabilidade após a retirada, observados os limites do Código de Defesa do Consumidor.
-Caso a entrega não seja realizada por ausência do COMPRADOR, informações incorretas ou impedimentos alheios à ORBITAL, poderá ser cobrada nova taxa de entrega.
+CLÁUSULA 5ª – DAS CARACTERÍSTICAS DO PRODUTO
+Por serem fabricados em lotes, os produtos podem apresentar variações de tonalidade, textura e pequenas variações dimensionais entre lotes, dentro das tolerâncias de fabricação, o que não caracteriza defeito. Para um mesmo ambiente, recomenda-se utilizar placas do mesmo lote.
+Imagens, vídeos, renders, simulações e catálogos têm caráter ilustrativo e não garantem identidade absoluta de textura, cor, brilho, escala ou acabamento.
 
-CLÁUSULA 6ª - DAS CARACTERÍSTICAS DOS PRODUTOS, VARIAÇÕES E TOLERÂNCIAS
-Os produtos podem apresentar variações dimensionais milimétricas, bem como variações técnicas, visuais e de tonalidade entre lotes distintos, dentro das tolerâncias permitidas pelas normas da ABNT, não caracterizando defeito.
-Produtos classificados como Classe Comercial (C) não serão considerados desconformes quando os aspectos estiverem dentro dos padrões dessa classificação.
-Imagens, vídeos, renders, catálogos e materiais promocionais possuem caráter meramente ilustrativo, não constituindo garantia de identidade absoluta de textura, cor, brilho, escala ou acabamento.
+CLÁUSULA 6ª – DAS INDICAÇÕES DE USO
+Os produtos não são indicados para: tampos de bancada, pisos, fachadas, áreas externas, bordas de piscina e áreas molhadas externas, saunas e salas de vapor, churrasqueiras, lareiras e coifas, superfícies sujeitas a impacto ou atrito constante, e locais com calor contínuo acima de 55 °C ou exposição solar direta contínua.
+A ORBITAL não garante desempenho, durabilidade ou aparência quando o produto for utilizado nesses locais, fora das recomendações técnicas ou do Manual Técnico de Instalação, sobre base mal preparada, ou em caso de uso indevido, manutenção inadequada ou alterações posteriores.
+O consumo de cola PU e demais insumos é estimado e pode variar conforme a superfície, a técnica e a execução, não gerando direito a complementação ou ressarcimento.
 
-CLÁUSULA 7ª - DA VEDAÇÃO À INSTALAÇÃO DE PRODUTOS COM DEFEITO E ACEITAÇÃO TÁCITA
-Produtos com defeitos aparentes não devem ser instalados.
-A instalação total ou parcial do produto implica aceitação definitiva, irretratável e integral, inclusive quanto a características visuais, dimensionais e de acabamento, afastando qualquer alegação posterior de vício aparente ou expectativa frustrada.
+CLÁUSULA 7ª – DA GARANTIA
+A ORBITAL assegura ao COMPRADOR a garantia legal prevista no Código de Defesa do Consumidor contra vícios de fabricação.
+Produtos com defeito aparente não devem ser instalados. Defeitos aparentes devem ser comunicados por escrito antes da instalação ou de qualquer intervenção no produto; defeitos não aparentes, assim que identificados, dentro do prazo legal. A comunicação deve conter fotos e descrição do ocorrido, e o COMPRADOR deve permitir a análise técnica do material pela ORBITAL.
+Confirmado o vício de fabricação, a ORBITAL substituirá o produto por outro em perfeitas condições ou adotará outra solução prevista em lei.
+A instalação, total ou parcial, caracteriza aceitação definitiva do produto quanto a defeitos aparentes e a características visuais, dimensionais e de acabamento, permanecendo a garantia legal para vícios de fabricação não aparentes no recebimento.
+A garantia não cobre falhas ou danos decorrentes de instalação, preparo da base, transporte após a entrega, uso fora das indicações de uso, intervenção de terceiros ou causas alheias à fabricação.
 
-CLÁUSULA 8ª - DO USO, INSUMOS, GARANTIAS E EXCLUSÕES
-A ORBITAL não garante desempenho, durabilidade ou aparência estética quando o produto for utilizado:
-* fora das recomendações técnicas;
-* em ambientes não indicados, como tampos de bancada, pisos, fachadas, áreas externas e semi-externas, bordas de piscina e áreas molhadas externas, saunas e salas de vapor, churrasqueiras, lareiras e coifas, e superfícies sujeitas a impacto ou atrito constante;
-* em áreas sujeitas a calor contínuo acima de 55 °C;
-* sob condições extremas de calor, umidade excessiva ou exposição solar direta contínua;
-* mediante instalação inadequada ou preparo incorreto da base;
-* em caso de uso indevido, manutenção inadequada ou alterações posteriores.
-O consumo de insumos, incluindo cola PU, é estimativo, podendo variar conforme superfície, técnica e execução, não gerando direito a complementação ou ressarcimento.
+CLÁUSULA 8ª – DAS EXPECTATIVAS E DA LIMITAÇÃO DE RESPONSABILIDADE
+A escolha do produto, da cor, do acabamento, da paginação e do local de aplicação é do COMPRADOR, com base nas informações técnicas e visuais fornecidas pela ORBITAL.
+A ORBITAL não confere garantia de resultado estético, decorativo ou de satisfação pessoal. Insatisfação decorrente de gosto pessoal, expectativa subjetiva, alteração de projeto ou arrependimento posterior não caracteriza vício do produto e não gera direito a troca, devolução, abatimento ou reembolso.
+A ORBITAL não responde por atos, omissões ou falhas de terceiros contratados pelo COMPRADOR, como instaladores, transportadoras, arquitetos e designers.
+Nos limites permitidos pela lei, a responsabilidade da ORBITAL limita-se ao valor dos produtos fornecidos e não abrange danos indiretos, lucros cessantes, atrasos, paralisações ou custos adicionais de obra.
+Somente as informações registradas por escrito nos documentos oficiais da ORBITAL têm validade, não a vinculando a promessas verbais, interpretações subjetivas ou comunicações informais.
 
-CLÁUSULA 9ª - DA LIMITAÇÃO DE RESPONSABILIDADE E EXPECTATIVA DO COMPRADOR
-A ORBITAL não se responsabiliza por:
-* atrasos de obra;
-* custos adicionais;
-* paralisações;
-* danos indiretos;
-* lucros cessantes;
-* danos morais;
-* insatisfação decorrente de gosto pessoal, expectativa subjetiva, alteração de projeto ou arrependimento posterior.
-A ORBITAL não responde por atos, omissões, falhas técnicas ou danos causados por terceiros, incluindo instaladores, transportadoras, arquitetos, designers ou quaisquer profissionais contratados pelo COMPRADOR.
-A ORBITAL não confere garantia de resultado estético, decorativo ou de satisfação pessoal. A escolha do produto, da cor, do acabamento, da paginação e do local de aplicação é feita pelo COMPRADOR, com base nas informações técnicas e visuais disponibilizadas pela ORBITAL. Insatisfação de ordem subjetiva com o resultado não caracteriza vício do produto e não gera direito a troca, devolução, abatimento ou reembolso.
-Somente informações prestadas por escrito em documentos oficiais da ORBITAL possuem validade jurídica, não vinculando a empresa a promessas verbais, interpretações subjetivas ou comunicações informais.
-
-CLÁUSULA 10ª - DA GARANTIA LEGAL E DIREITOS DO COMPRADOR
-A ORBITAL assegura ao COMPRADOR a garantia legal prevista no Código de Defesa do Consumidor, aplicável exclusivamente a vícios de fabricação que tornem o produto impróprio ou inadequado ao uso a que se destina, ou que lhe diminuam o valor.
-Caso seja constatado defeito de fabricação, devidamente comunicado dentro do prazo legal e antes da instalação ou de qualquer intervenção no produto, a ORBITAL compromete-se a analisar o material e, sendo confirmada a responsabilidade, adotar as medidas cabíveis, tais como substituição do produto por outro em perfeitas condições, correção do defeito quando tecnicamente possível ou outra solução prevista em lei, sempre em conformidade com o Código de Defesa do Consumidor.
-Para fins de garantia, o COMPRADOR deverá comunicar a ORBITAL por escrito, preferencialmente com registros fotográficos e descrição do ocorrido, tão logo identifique eventual vício, colaborando para uma análise técnica adequada.
-Esta garantia tem por finalidade assegurar a qualidade do produto fornecido, não abrangendo falhas, danos ou prejuízos decorrentes de instalação, preparo inadequado da base, transporte após a entrega, uso fora das recomendações técnicas, intervenção de terceiros ou condições alheias ao processo de fabricação.
-A instalação total ou parcial do produto caracteriza aceitação quanto a eventuais vícios aparentes, nos termos do Código de Defesa do Consumidor, permanecendo resguardado ao COMPRADOR o direito à garantia legal exclusivamente em relação a vícios de fabricação não aparentes no momento do recebimento.`;
+CLÁUSULA 9ª – DAS DISPOSIÇÕES FINAIS
+A aprovação do pedido, a assinatura deste documento ou o pagamento, total ou parcial, caracterizam a ciência e a concordância do COMPRADOR com estas condições.
+Fica eleito o foro da comarca de Manaus/AM para dirimir questões relativas a este pedido, ressalvado ao consumidor o direito de optar pelo foro de seu domicílio.`;
