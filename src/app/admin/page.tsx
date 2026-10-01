@@ -21,8 +21,7 @@ import ComprasTab from "./ComprasTab";
 import RelatoriosTab from "./RelatoriosTab";
 import { inputCls, labelCls, NavIcon, NAV_GROUPS, NAV_LABELS, type AdminTab } from "./ui";
 import {
-  composePrompt,
-  finishDescription,
+  composeOpenAIPrompt,
   DEFAULT_PANEL_WIDTH_M,
   DEFAULT_PANEL_HEIGHT_M,
   panelGrid,
@@ -6066,20 +6065,18 @@ export default function AdminPage() {
                         </span>
                       </summary>
                       <pre className="mt-2 bg-[#f7f7f5] border border-[#e2e2e2] p-3 text-[11px] leading-relaxed text-[#43474e] whitespace-pre-wrap font-mono max-h-64 overflow-y-auto">
-{composePrompt({
-  finishText:
-    productForm.render_finish_description.trim() ||
-    finishDescription(
-      productForm.linha === "Brilliance" ? "polished" : productForm.linha === "Elegance" ? "wood" : "matte"
-    ),
+{composeOpenAIPrompt({
+  finish: productForm.linha === "Brilliance" ? "polished" : productForm.linha === "Elegance" ? "wood" : "matte",
+  productNotes: productForm.render_finish_description.trim() || null,
+  extraNotes: productForm.render_finish_description.trim() ? productForm.render_extra_notes : null,
   panelWidthM: productForm.render_panel_width_m > 0 ? productForm.render_panel_width_m : DEFAULT_PANEL_WIDTH_M,
   panelHeightM: productForm.render_panel_height_m > 0 ? productForm.render_panel_height_m : DEFAULT_PANEL_HEIGHT_M,
-  extraNotes: productForm.render_finish_description.trim() ? productForm.render_extra_notes : null,
-  hasContextImage: !!(productForm.render_finish_description.trim() && productForm.render_context_image_path.trim()),
+  hasMask: true,
+  referenceIsTexture: !!productForm.render_texture_path.trim(),
 })}
                       </pre>
                       <p className="text-[#b0b0b0] text-[10px] font-[var(--font-inter)] mt-1">
-                        Atualiza em tempo real conforme você edita os campos acima. A foto da parede do cliente entra como primeira imagem e a foto do produto como segunda.
+                        Atualiza em tempo real conforme você edita os campos acima. Enviado ao gerador da OpenAI: a foto do cliente entra como primeira imagem e a textura plana do modelo como segunda (sem textura, vai a foto do catálogo). O acabamento sai da linha: Brilliance = polido, Classic = fosco, Elegance = madeira fosca texturizada.
                       </p>
                     </details>
                   </div>

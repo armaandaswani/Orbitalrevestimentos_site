@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { supabaseAdmin } from "@/lib/supabase";
 import {
+  composeOpenAIPrompt,
   composePrompt,
   composeRelightPrompt,
   finishDescription,
@@ -8,6 +9,7 @@ import {
   DEFAULT_PANEL_HEIGHT_M,
   type FinishKind,
 } from "@/lib/render-prompt";
+import { OpenAIImageError, openaiConfigured, openaiEditImage } from "@/lib/openai-image";
 
 // Gemini image generation ("nano-banana"): takes the client's wall photo +
 // the chosen PFB panel reference image and renders the panel applied to that
@@ -18,7 +20,8 @@ import {
 // composed from a fixed scaffold + those fields. Otherwise it falls back to
 // the legacy per-line (matte/polished/wood) prompt so existing products keep
 // rendering during rollout.
-export const maxDuration = 60;
+// GPT Image at high quality can take over a minute.
+export const maxDuration = 300;
 
 const GEMINI_BASE = "https://generativelanguage.googleapis.com/v1beta";
 const MODEL = process.env.GEMINI_IMAGE_MODEL || "gemini-2.5-flash-image";
@@ -81,7 +84,7 @@ export async function POST(req: NextRequest) {
   // Prefer a dedicated var; fall back to FREE_LLM_API_KEY only for back-compat.
   const apiKey =
     process.env.GEMINI_API_KEY || process.env.GOOGLE_API_KEY || process.env.FREE_LLM_API_KEY;
-  if (!apiKey) {
+  if (!apiKey && !openaiConfigured()) {
     return NextResponse.json(
       { error: "Serviço de visualização não configurado no servidor." },
       { status: 503 }
@@ -198,6 +201,51 @@ export async function POST(req: NextRequest) {
     if (x !== null && y !== null && w !== null && h !== null && w > 0.02 && h > 0.02) {
       rect = { x, y, w: Math.min(w, 1 - x), h: Math.min(h, 1 - y) };
     }
+  }
+
+  // ── OpenAI (GPT Image) — main path ─────────────────────────────────────────
+  // The model's FLAT texture is the material reference (catalogue photo only
+  // when a model has no texture yet) and the finish is spelled out per line.
+  // Gemini below stays only as a fallback while OPENAI_API_KEY isn't set.
+  if (openaiConfigured() && !isRelight) {
+    const lineFinish: FinishKind =
+      product?.linha === "Brilliance" ? "polished" : product?.linha === "Elegance" ? "wood" : product?.linha === "Classic" ? "matte" : finish;
+    const openaiPrompt = composeOpenAIPrompt({
+      finish: lineFinish,
+      productNotes: finishText,
+      extraNotes: usePerModel ? product?.render_extra_notes : null,
+      panelWidthM: toPositiveNumber(product?.render_panel_width_m, DEFAULT_PANEL_WIDTH_M),
+      panelHeightM: toPositiveNumber(product?.render_panel_height_m, DEFAULT_PANEL_HEIGHT_M),
+      hasMask: !!maskInline,
+      applicationArea,
+      wallWidthM: hasWallDims ? wallW : null,
+      wallHeightM: hasWallDims ? wallH : null,
+      referenceIsTexture: usingFlatTexture,
+    });
+    if (!usingFlatTexture) console.warn("[render/openai] modelo sem textura plana; usando a foto do catálogo:", productId);
+    try {
+      const out = await openaiEditImage({
+        photo: Buffer.from(wall.data, "base64"),
+        texture: { data: Buffer.from(reference.data, "base64"), mime: reference.mime },
+        mask: maskInline ? Buffer.from(maskInline.data, "base64") : null,
+        prompt: openaiPrompt,
+      });
+      return NextResponse.json({ image: out.image, engine: "openai", model: out.model });
+    } catch (e) {
+      const err = e instanceof OpenAIImageError ? e : new OpenAIImageError("Não foi possível gerar a visualização.", 502, String(e));
+      const busy = err.status === 429 || err.status >= 500;
+      return NextResponse.json(
+        {
+          error: busy ? "O gerador de imagem está ocupado. Aguarde alguns segundos e tente novamente." : err.message,
+          detail: err.detail,
+        },
+        { status: err.status === 400 ? 400 : 502 }
+      );
+    }
+  }
+
+  if (!apiKey) {
+    return NextResponse.json({ error: "Serviço de visualização não configurado no servidor." }, { status: 503 });
   }
 
   const prompt = isRelight

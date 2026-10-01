@@ -376,3 +376,83 @@ export function composeRelightPrompt(opts: {
   ];
   return lines.filter(Boolean).join("\n");
 }
+
+// ── OpenAI (GPT Image) ───────────────────────────────────────────────────────
+// Prompt for the OpenAI image-edit path. Images: 1 = the client's photo (the
+// one being edited; the mask, when sent, applies to it), 2 = the FLAT texture
+// swatch of the model. The finish is spelled out per line, because a flat
+// texture alone doesn't tell the model how the surface catches light.
+
+export const FINISH_RULES: Record<FinishKind, { label: string; rule: string }> = {
+  polished: {
+    label: "Polido (alto brilho)",
+    rule:
+      "POLISHED, high-gloss finish: a smooth, glassy surface with crisp reflections of the room's lights and windows and bright specular highlights, like polished marble. The reflections follow the room's real light sources.",
+  },
+  matte: {
+    label: "Fosco",
+    rule:
+      "MATTE finish: no gloss at all — no reflections, no specular highlights, no shine. A soft, even, velvety surface like honed stone. Light falls on it evenly.",
+  },
+  wood: {
+    label: "Madeira fosca texturizada",
+    rule:
+      "MATTE TEXTURED WOOD finish: natural wood grain with a fine, tactile texture that follows the grain, completely matte — no gloss, no shine, no reflections, never a lacquered or varnished look. The grain runs vertically along each sheet.",
+  },
+};
+
+export function composeOpenAIPrompt(opts: {
+  finish: FinishKind;
+  // Per-model description written in the admin (optional): extra detail on
+  // pattern/colour. The finish rule above still applies.
+  productNotes?: string | null;
+  extraNotes?: string | null;
+  panelWidthM: number;
+  panelHeightM: number;
+  hasMask: boolean;
+  applicationArea?: string | null;
+  wallWidthM?: number | null;
+  wallHeightM?: number | null;
+  // False when no flat texture exists and the catalogue photo is sent instead.
+  referenceIsTexture: boolean;
+}): string {
+  const area = opts.applicationArea?.trim();
+  const target = opts.hasMask
+    ? "the surface inside the transparent (masked) area of the first image"
+    : area
+      ? area
+      : "the main wall facing the camera (the largest uninterrupted wall surface in the photo)";
+  const fmt = (n: number) => n.toFixed(2).replace(/\.?0+$/, "");
+  const pw = fmt(opts.panelWidthM), ph = fmt(opts.panelHeightM);
+
+  const lines: string[] = [
+    "Photorealistic interior edit. The FIRST image is a real photo of the client's room. Show exactly how it looks after the wall panels below are installed — nothing else changes.",
+    "",
+    `WHERE: clad ${target}${opts.hasMask && area ? ` (${area})` : ""}. Cover that whole surface edge to edge, following its real perspective, corners and edges. Stop cleanly at the ceiling, at the baseboard / floor line and at adjacent walls.`,
+    "",
+    opts.referenceIsTexture
+      ? "MATERIAL: the SECOND image is a flat, straight-on texture swatch of the exact panel. Reproduce THAT pattern and colour faithfully — same tones, same grain or veining, same contrast. Do not invent a different material or a generic look-alike."
+      : "MATERIAL: the SECOND image shows the exact panel product. Reproduce its pattern and colour faithfully — same tones, same grain or veining. Ignore its background and lighting.",
+    `FINISH: ${FINISH_RULES[opts.finish].rule}`,
+  ];
+  if (opts.productNotes?.trim()) lines.push(`Product details: ${opts.productNotes.trim()}`);
+  if (opts.extraNotes?.trim()) lines.push(`Notes: ${opts.extraNotes.trim()}`);
+
+  lines.push(
+    "",
+    `FORMAT AND SCALE: large-format sheets, ${pw} m wide × ${ph} m tall, installed vertically side by side with very fine, barely visible butt joints — no grout, no frames, no trim strips, no wainscot. Keep the pattern at real-world scale: one sheet is ${pw} m wide (use doors ≈ 2.1 m tall and outlets/switches as size references).`,
+  );
+  const w = opts.wallWidthM ?? 0, h = opts.wallHeightM ?? 0;
+  if (w > 0 && h > 0) {
+    const g = panelGrid(w, h, opts.panelWidthM, opts.panelHeightM);
+    lines.push(`The surface measures about ${fmt(w)} m wide × ${fmt(h)} m tall, so it takes about ${g.cols} sheet${g.cols > 1 ? "s" : ""} side by side.`);
+  }
+
+  lines.push(
+    "",
+    "KEEP EVERYTHING ELSE IDENTICAL: same camera position, angle, framing and perspective; same floor, ceiling, crown/plaster details, baseboards, doors, windows, other walls, furniture and people; same room lighting and colour balance. Outlets and switches on the clad wall stay visible, cut neatly into the panels.",
+    "Do NOT add anything (no furniture, sink, vanity, mirror, shelves, lamps, plants or decor) and do not remove anything except the old wall finish being covered. If the room is empty or under construction, it stays that way — only the clad surface changes.",
+    "The new surface receives the room's existing light and shadows. The result must look like a real photograph taken after installation, not a render.",
+  );
+  return lines.join("\n");
+}
