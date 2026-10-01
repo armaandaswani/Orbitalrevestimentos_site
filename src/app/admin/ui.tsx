@@ -13,7 +13,7 @@ import React from "react";
 // ─── Tab union ───────────────────────────────────────────────────────────────
 // Central so page.tsx / new modules never re-declare the literal list.
 export type AdminTab =
-  | "dashboard" | "lembretes"
+  | "dashboard" | "agenda" | "lembretes"
   | "leads" | "contatos" | "orcamentos" | "pedidos"
   | "partners" | "representantes" | "commissions"
   | "produtos" | "estoque" | "compras"
@@ -26,7 +26,7 @@ export type AdminTab =
 // Aqui (e não em page.tsx) porque o módulo de Projetos tem rotas próprias
 // (/admin/projetos/...) e a barra lateral precisa ser idêntica nas duas.
 export const NAV_LABELS: Record<AdminTab, string> = {
-  dashboard: "Hoje", lembretes: "Lembretes",
+  dashboard: "Hoje", agenda: "Agenda", lembretes: "Lembretes",
   leads: "Leads / CRM", contatos: "Contatos do site", orcamentos: "Orçamentos", pedidos: "Pedidos",
   partners: "Parceiros", representantes: "Representantes", commissions: "Comissões",
   produtos: "Produtos", estoque: "Estoque", compras: "Compras & Importação",
@@ -37,7 +37,7 @@ export const NAV_LABELS: Record<AdminTab, string> = {
 };
 
 export const NAV_GROUPS: ReadonlyArray<{ group: string; items: ReadonlyArray<AdminTab> }> = [
-  { group: "Início", items: ["dashboard", "lembretes"] },
+  { group: "Início", items: ["dashboard", "agenda", "lembretes"] },
   { group: "Jornada do Cliente", items: ["leads", "contatos", "orcamentos", "pedidos"] },
   { group: "Rede de Vendas", items: ["partners", "representantes", "commissions"] },
   { group: "Produtos & Estoque", items: ["produtos", "estoque", "compras"] },
@@ -236,6 +236,7 @@ export function Spinner() {
 // ─── Nav icons (Feather-style inline strokes) ────────────────────────────────
 const ICON_PATHS: Record<AdminTab, React.ReactNode> = {
   dashboard: (<><path d="M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z" /><polyline points="9 22 9 12 15 12 15 22" /></>),
+  agenda: (<><rect x="3" y="4" width="18" height="18" rx="2" /><line x1="16" y1="2" x2="16" y2="6" /><line x1="8" y1="2" x2="8" y2="6" /><line x1="3" y1="10" x2="21" y2="10" /><path d="M8 14h.01M12 14h.01M16 14h.01M8 18h.01M12 18h.01" /></>),
   lembretes: (<><path d="M18 8A6 6 0 0 0 6 8c0 7-3 9-3 9h18s-3-2-3-9" /><path d="M13.73 21a2 2 0 0 1-3.46 0" /></>),
   leads: (<><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2" /><circle cx="9" cy="7" r="4" /><path d="M23 21v-2a4 4 0 0 0-3-3.87" /><path d="M16 3.13a4 4 0 0 1 0 7.75" /></>),
   contatos: (<><path d="M21 11.5a8.38 8.38 0 0 1-.9 3.8 8.5 8.5 0 0 1-7.6 4.7 8.38 8.38 0 0 1-3.8-.9L3 21l1.9-5.7a8.38 8.38 0 0 1-.9-3.8 8.5 8.5 0 0 1 4.7-7.6 8.38 8.38 0 0 1 3.8-.9h.5a8.48 8.48 0 0 1 8 8v.5z" /><line x1="8" y1="10" x2="16" y2="10" /><line x1="8" y1="14" x2="13" y2="14" /></>),

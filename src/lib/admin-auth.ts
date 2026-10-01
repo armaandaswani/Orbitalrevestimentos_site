@@ -59,6 +59,29 @@ export function verifySessionToken(token: string | undefined | null): boolean {
   return Number.isFinite(exp) && Date.now() < exp;
 }
 
+// ---------------------------------------------------------------------------
+// Link da agenda (iCal) — assinatura no Google Calendar, que não envia cookie.
+// Token fixo derivado do segredo de sessão; trocar o sufixo "v1" invalida
+// links antigos se um dia vazarem.
+// ---------------------------------------------------------------------------
+
+const AGENDA_FEED_SCOPE = "agenda-feed:v1";
+
+export function agendaFeedToken(): string {
+  return sign(AGENDA_FEED_SCOPE);
+}
+
+export function verifyAgendaFeedToken(token: string | undefined | null): boolean {
+  if (!token) return false;
+  let expected: string;
+  try {
+    expected = agendaFeedToken();
+  } catch {
+    return false;
+  }
+  return safeEqual(Buffer.from(token), Buffer.from(expected));
+}
+
 /** True when the request carries a valid admin session cookie. */
 export function isAdminRequest(req: NextRequest): boolean {
   return verifySessionToken(req.cookies.get(ADMIN_COOKIE)?.value);

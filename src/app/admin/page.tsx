@@ -7,6 +7,7 @@ import { productQrUrl, productUrl } from "@/lib/product-link";
 import { compressImage } from "@/lib/image-compress";
 import LeadsTab, { type Lead } from "./LeadsTab";
 import RemindersTab from "./RemindersTab";
+import AgendaTab from "./AgendaTab";
 import PedidosTab, { type QuoteOption } from "./PedidosTab";
 import RepOversightTab from "./RepOversightTab";
 import EstoqueTab from "./EstoqueTab";
@@ -5082,6 +5083,7 @@ export default function AdminPage() {
         {tab === "compras" && authed && <ComprasTab />}
         {tab === "relatorios" && authed && <RelatoriosTab />}
 
+        {tab === "agenda" && authed && <AgendaTab />}
         {tab === "lembretes" && authed && <RemindersTab />}
 
         {/* ═══ VISUALIZAÇÕES TAB ═══ */}

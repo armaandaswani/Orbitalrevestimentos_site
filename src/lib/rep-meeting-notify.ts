@@ -26,6 +26,16 @@ export interface MeetingRow {
 // the .ics METHOD (REQUEST adds/updates the event, CANCEL removes it).
 export type NotifyKind = "new" | "reschedule" | "cancel";
 
+/** Resultado do último aviso, salvo em rep_meetings.notify_log e mostrado na Agenda do admin. */
+export interface NotifyLog {
+  at: string;
+  kind: NotifyKind;
+  emails: { to: string; role: "partner" | "rep" | "admin"; ok: boolean; error?: string }[];
+  whatsapp_admin: boolean | null;
+}
+
+const sleep = (ms: number) => new Promise((r) => setTimeout(r, ms));
+
 function addMinutes(iso: string, minutes: number) {
   return new Date(new Date(iso).getTime() + minutes * 60_000);
 }
@@ -178,6 +188,11 @@ export async function notifyMeeting(
 
     const calendar = calendarLinks(meeting, repName);
     const emailRecipients: EmailRecipient[] = [];
+    const log: NotifyLog = { at: new Date().toISOString(), kind, emails: [], whatsapp_admin: null };
+
+    // Admin primeiro: é o aviso de que a Orbital depende para acompanhar a agenda.
+    addEmailRecipient(emailRecipients, { role: "admin", name: "Admin Orbital", phone: "", email: ORBITAL_MEETING_EMAIL });
+    addEmailRecipient(emailRecipients, { role: "rep", name: repName || "Representante Orbital", phone: "", email: repEmail || "" });
 
     for (const inv of invitees) {
       const msg = prefix + meetingInviteMessage({ inviteeName: inv.name, title: meeting.title, whenLabel, location: meeting.location, repName });
@@ -188,49 +203,65 @@ export async function notifyMeeting(
       addEmailRecipient(emailRecipients, { role: "partner", name: inv.name, phone: inv.phone, email: inv.email });
     }
 
-    addEmailRecipient(emailRecipients, { role: "rep", name: repName || "Representante Orbital", phone: "", email: repEmail || "" });
-    addEmailRecipient(emailRecipients, { role: "admin", name: "Admin Orbital", phone: "", email: ORBITAL_MEETING_EMAIL });
-
-    if (resend) {
-      for (const recipient of emailRecipients) {
+    if (!resend) {
+      for (const r of emailRecipients) log.emails.push({ to: r.email, role: r.role, ok: false, error: "RESEND_API_KEY ausente" });
+    } else {
+      for (const [i, recipient] of emailRecipients.entries()) {
+        // Espaça os envios: o limite padrão do Resend é baixo por segundo.
+        if (i > 0) await sleep(600);
         const googlePreferred = isGoogleEmail(recipient.email);
         const inviteeName = recipient.role === "partner" ? recipient.name : recipient.role === "rep" ? (repName || recipient.name) : "Admin Orbital";
         const msg = prefix + meetingInviteMessage({ inviteeName, title: meeting.title, whenLabel, location: meeting.location, repName });
-        await resend.emails
-          .send({
-            from: "Orbital Revestimentos <noreply@orbitalrevestimentos.com.br>",
-            to: recipient.email,
-            subject,
-            text: `${msg}\n\n${kind === "cancel"
-              ? "O arquivo .ics anexado remove esta reunião do seu calendário."
-              : googlePreferred
-                ? `Adicionar ao Google Calendar: ${calendar.google}\n\nTambém anexamos um arquivo .ics para outros calendários.`
-                : "Anexamos um arquivo .ics para adicionar esta reunião ao seu calendário."}`,
-            html: meetingEmailHtml({ message: msg, googleCalendarUrl: calendar.google, googlePreferred, cancelled: kind === "cancel" }),
-            attachments: [
-              { filename: kind === "cancel" ? "cancelamento-orbital.ics" : "reuniao-orbital.ics", content: Buffer.from(makeIcs(meeting, recipient, repName, method, sequence)).toString("base64") },
-            ],
-          })
-          .catch(() => {});
+        const payload = {
+          from: "Orbital Revestimentos <noreply@orbitalrevestimentos.com.br>",
+          to: recipient.email,
+          subject,
+          text: `${msg}\n\n${kind === "cancel"
+            ? "O arquivo .ics anexado remove esta reunião do seu calendário."
+            : googlePreferred
+              ? `Adicionar ao Google Calendar: ${calendar.google}\n\nTambém anexamos um arquivo .ics para outros calendários.`
+              : "Anexamos um arquivo .ics para adicionar esta reunião ao seu calendário."}`,
+          html: meetingEmailHtml({ message: msg, googleCalendarUrl: calendar.google, googlePreferred, cancelled: kind === "cancel" }),
+          attachments: [
+            {
+              filename: kind === "cancel" ? "cancelamento-orbital.ics" : "reuniao-orbital.ics",
+              content: Buffer.from(makeIcs(meeting, recipient, repName, method, sequence)).toString("base64"),
+              contentType: `text/calendar; charset=utf-8; method=${method}`,
+            },
+          ],
+        };
+        let result = await resend.emails.send(payload).catch((e: unknown) => ({ data: null, error: { name: "exception", message: e instanceof Error ? e.message : String(e) } }));
+        if (result.error && result.error.name === "rate_limit_exceeded") {
+          await sleep(1500);
+          result = await resend.emails.send(payload).catch((e: unknown) => ({ data: null, error: { name: "exception", message: e instanceof Error ? e.message : String(e) } }));
+        }
+        if (result.error) {
+          console.error("[rep-meetings] e-mail não enviado", { meeting: meeting.id, role: recipient.role, to: recipient.email, error: result.error.name, message: result.error.message });
+          log.emails.push({ to: recipient.email, role: recipient.role, ok: false, error: `${result.error.name}: ${result.error.message}` });
+        } else {
+          log.emails.push({ to: recipient.email, role: recipient.role, ok: true });
+        }
       }
     }
 
     if (smclickConfigured()) {
       const adminTel = adminWhatsappPhone();
       if (adminTel) {
-        await sendText(
+        log.whatsapp_admin = await sendText(
           adminTel,
           prefix + adminMeetingAlertMessage({
             repName, title: meeting.title, whenLabel, location: meeting.location,
             inviteeNames: invitees.map((i) => i.name).filter(Boolean),
           })
-        ).catch(() => {});
+        ).then((r) => r.ok, () => false);
       }
     }
 
     if (kind === "new") {
       await db.from("rep_meetings").update({ invitees_notified_at: new Date().toISOString() }).eq("id", meeting.id);
     }
+    // Registro do último aviso (migração 061). Sem a coluna, o update falha e é ignorado.
+    await db.from("rep_meetings").update({ notify_log: log }).eq("id", meeting.id).then(() => {}, () => {});
   } catch (e) {
     console.error("[rep-meetings] notify failed", e instanceof Error ? e.message : e);
   }

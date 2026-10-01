@@ -1,4 +1,4 @@
-import { NextRequest, NextResponse } from "next/server";
+import { NextRequest, NextResponse, after } from "next/server";
 import { isAdminRequest, repIdFromRequest } from "@/lib/admin-auth";
 import { supabaseAdmin } from "@/lib/supabase";
 import { notifyMeeting, type MeetingRow, type NotifyKind } from "@/lib/rep-meeting-notify";
@@ -67,7 +67,7 @@ export async function PATCH(
     let kind: NotifyKind | null = null;
     if ("status" in body && body.status === "cancelled") kind = "cancel";
     else if ("scheduled_at" in body) kind = "reschedule";
-    if (kind) await notifyMeeting(db, data as MeetingRow, kind);
+    if (kind) after(() => notifyMeeting(db, data as MeetingRow, kind));
   }
 
   return NextResponse.json(data);
