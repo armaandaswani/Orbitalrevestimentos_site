@@ -70,8 +70,8 @@ const secoes: SecaoLegal[] = [
           garantia legal prevista no Código de Defesa do Consumidor.
         </p>
         <p>
-          Cada pedido acompanha o Manual Técnico de Instalação, com o passo a passo detalhado. A instalação é
-          feita pelo profissional de livre escolha do cliente.
+          A Orbital disponibiliza o Manual Técnico de Instalação, com o passo a passo detalhado, e o envia ao
+          cliente sempre que solicitado. A instalação é feita pelo profissional de livre escolha do cliente.
         </p>
       </>
     ),
