@@ -203,7 +203,7 @@ export default function Home() {
               href="/produtos"
               className="w-full sm:w-auto text-center bg-white text-[#002045] text-xs tracking-[0.12em] uppercase font-bold font-[var(--font-inter)] px-8 py-4 hover:bg-[#f3f3f3] transition-colors"
             >
-              Ver Acabamentos
+              Ver o catálogo
             </Link>
             <ContatoCta
               className="w-full sm:w-auto inline-flex items-center justify-center gap-2 border border-white/60 text-white text-xs tracking-[0.12em] uppercase font-bold font-[var(--font-inter)] px-8 py-4 hover:bg-white/10 transition-colors"
