@@ -61,7 +61,7 @@ const faqSchema = {
       name: "Qual o melhor revestimento para banheiro em Manaus?",
       acceptedAnswer: {
         "@type": "Answer",
-        text: "O PFB (Placa Flexível de Bambu) da Orbital Revestimentos é a melhor opção para banheiros em Manaus. Absorve apenas 0,2% de umidade em 48 horas (contra 35% do MDF), é anti-mofo, impermeável e instalado sem demolição em 2–3 horas.",
+        text: "O PFB (Painel Flexível Fibra de Bambu) da Orbital Revestimentos é a melhor opção para banheiros em Manaus. Absorve apenas 0,2% de umidade em 48 horas (contra 35% do MDF), é anti-mofo, impermeável e instalado sem demolição em 2–3 horas.",
       },
     },
     {
@@ -117,7 +117,7 @@ const comparativo = [
 ];
 
 const faqs = [
-  { q: "Qual o melhor revestimento para banheiro em Manaus?", a: "O PFB Orbital (Placa Flexível de Bambu). Absorve apenas 0,2% de umidade em 48h — 175× menos que o MDF. Anti-mofo, impermeável e instalado sem demolição em 2–3 horas." },
+  { q: "Qual o melhor revestimento para banheiro em Manaus?", a: "O PFB Orbital (Painel Flexível Fibra de Bambu). Absorve apenas 0,2% de umidade em 48h — 175× menos que o MDF. Anti-mofo, impermeável e instalado sem demolição em 2–3 horas." },
   { q: "Posso revestir o banheiro sem demolição?", a: "Sim. O PFB é colado diretamente sobre a parede existente com cola PU 40, sem quebra, sem poeira, sem interditar o banheiro. Funciona sobre reboco, tinta, cerâmica." },
   { q: "O PFB aguenta umidade do box e ducha?", a: "Sim. Testado em imersão total por 48h com apenas 0,2% de absorção — aprovado pelo INMETRO. Com laudo de Engenheiro Civil (ART nº AM20260593657) para uso em áreas úmidas." },
   { q: "Quanto custa revestir um banheiro em Manaus?", a: "Um banheiro pequeno de 6m² usa aproximadamente 2 placas — R$ 1.118 a R$ 1.298 de material. Fale com um consultor da Orbital para o orçamento do seu ambiente." },

@@ -31,7 +31,7 @@ export async function POST(req: NextRequest) {
   const userPrompt = `${categoryHint}${hintLine}
 
 Analise a imagem e escreva uma legenda curta (máximo 2 frases, até 120 caracteres) para o portfólio online.
-- Destaque o material (painel de fibra de bambu) e o efeito visual
+- Destaque o material (Painel Flexível Fibra de Bambu) e o efeito visual
 - Linguagem elegante, objetiva e técnica
 - Não mencione "Orbital" nem "PFB" — foque no resultado visual e no ambiente
 - Responda SOMENTE com a legenda, sem aspas, sem prefixo`;

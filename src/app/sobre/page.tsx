@@ -36,7 +36,7 @@ const organizationSchema = {
   name: "Orbital Revestimentos",
   url: BASE_URL,
   logo: `${BASE_URL}/images/logo.png`,
-  description: "Referência em revestimentos inovadores na Amazônia. Fornecedora exclusiva de Placas Flexíveis de Bambu (PFB) em Manaus — tecnicamente validados, estoque local, pronta-entrega.",
+  description: "Referência em revestimentos inovadores na Amazônia. Fornecedora exclusiva de Painéis Flexíveis Fibra de Bambu (PFB) em Manaus — tecnicamente validados, estoque local, pronta-entrega.",
   foundingLocation: { "@type": "Place", name: "Manaus, AM, Brasil" },
   telephone: "+55-92-98815-0149",
   email: "orbital.revestimentos@gmail.com",

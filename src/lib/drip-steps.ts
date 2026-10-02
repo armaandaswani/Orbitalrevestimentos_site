@@ -8,7 +8,7 @@
  *
  * ── Posicionamento (AGENTS.md, permanente) ────────────────────────────────
  * Nenhum e-mail expõe preço por m² nem compara preço de superfície. A defesa do
- * PFB (Placa de Fibra de Bambu) é por CUSTO TOTAL DE APLICAÇÃO e pelos
+ * PFB (Painel Flexível Fibra de Bambu) é por CUSTO TOTAL DE APLICAÇÃO e pelos
  * diferenciais: durabilidade, baixa absorção, instalação a seco, dispensa de
  * preparo/estrutura/marcenaria. Foi o erro do e-mail antigo, que mostrava
  * R$ 295/m² acima de "convencionais custam R$ 80 a R$ 250/m²".
@@ -74,7 +74,7 @@ ${P("Obrigado pelo interesse na Orbital. Abaixo está o detalhamento do seu proj
 {{quoteCard}}
 {{quoteLink}}
 {{productImages}}
-${P("Trabalhamos com <strong>PFB — Placa de Fibra de Bambu</strong>: um revestimento de grande formato, produzido a partir de fibra de bambu renovável, com pronta-entrega em Manaus.")}
+${P("Trabalhamos com <strong>PFB — Painel Flexível Fibra de Bambu</strong>: um revestimento de grande formato, produzido a partir de fibra de bambu renovável, com pronta-entrega em Manaus.")}
 ${P("<strong>Este orçamento cobre apenas o material.</strong> A Orbital é fornecedora de revestimentos e não executa instalação — mão de obra e serviços de aplicação não estão incluídos no valor acima. Se precisar, indicamos uma empresa especializada.")}
 ${P("Nos próximos dias enviaremos o essencial sobre o material — composição, comportamento em ambientes úmidos e como é a aplicação. Sem pressa e sem insistência.")}
 ${CTA("Falar com um consultor")}
@@ -89,7 +89,7 @@ ${QUIET("Se preferir tratar diretamente, basta responder a este e-mail.")}
     description: "O material e o formato",
     subject: "{{firstName}}, sobre o material do seu projeto",
     body_html: `
-${H("O que é a Placa de Fibra de Bambu.")}
+${H("O que é o Painel Flexível Fibra de Bambu.")}
 ${P("A PFB é composta por fibra de bambu — matéria-prima renovável, de crescimento rápido — prensada em placas de grande formato. É o mesmo material que a Orbital fornece para showrooms, escritórios e residências em Manaus.")}
 ${SPECS(
   SPEC("Dimensão da placa", "2,90 × 1,20 m") +

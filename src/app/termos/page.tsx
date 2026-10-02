@@ -15,7 +15,7 @@ const secoes: SecaoLegal[] = [
     titulo: "Sobre o site",
     corpo: (
       <p>
-        Este site apresenta os produtos da Orbital Revestimentos, como o Painel de Fibra de Bambu (PFB), além de
+        Este site apresenta os produtos da Orbital Revestimentos, como o Painel Flexível Fibra de Bambu (PFB), além de
         projetos realizados, conteúdos técnicos, o simulador de ambientes e os canais de atendimento. Ao usar o
         site, você concorda com estes Termos de Uso.
       </p>

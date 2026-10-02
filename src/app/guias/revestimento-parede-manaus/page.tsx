@@ -34,7 +34,7 @@ const articleSchema = {
 const faqSchema = {
   "@context": "https://schema.org", "@type": "FAQPage",
   mainEntity: [
-    { "@type": "Question", name: "Qual o melhor revestimento de parede para Manaus?", acceptedAnswer: { "@type": "Answer", text: "O PFB Orbital (Placa Flexível de Bambu) é o melhor revestimento de parede para o clima de Manaus. Absorve apenas 0,2% de umidade em 48h, é anti-mofo, anti-cupim, impermeável e instala em 2–3 horas sem obra. Disponível em 15 acabamentos." } },
+    { "@type": "Question", name: "Qual o melhor revestimento de parede para Manaus?", acceptedAnswer: { "@type": "Answer", text: "O PFB Orbital (Painel Flexível Fibra de Bambu) é o melhor revestimento de parede para o clima de Manaus. Absorve apenas 0,2% de umidade em 48h, é anti-mofo, anti-cupim, impermeável e instala em 2–3 horas sem obra. Disponível em 15 acabamentos." } },
     { "@type": "Question", name: "Quanto tempo leva para revestir uma parede em Manaus?", acceptedAnswer: { "@type": "Answer", text: "Com PFB Orbital, uma parede de cômodo padrão leva 2 a 3 horas. Não há demolição, não há espera de cura." } },
     { "@type": "Question", name: "Posso revestir parede sem obra em Manaus?", acceptedAnswer: { "@type": "Answer", text: "Sim. O PFB Orbital é colado diretamente sobre a parede existente com cola PU 40. Sem quebra, sem poeira, sem obra pesada." } },
   ],
@@ -64,7 +64,7 @@ const stats = [
 ];
 
 const faqs = [
-  { q: "Qual o melhor revestimento de parede para Manaus?", a: "O PFB Orbital (Placa Flexível de Bambu). Absorve apenas 0,2% de umidade em 48h — 175× menos que o MDF. Anti-mofo, anti-cupim, impermeável. Instala em 2–3 horas sem obra. 15 acabamentos disponíveis em Manaus." },
+  { q: "Qual o melhor revestimento de parede para Manaus?", a: "O PFB Orbital (Painel Flexível Fibra de Bambu). Absorve apenas 0,2% de umidade em 48h — 175× menos que o MDF. Anti-mofo, anti-cupim, impermeável. Instala em 2–3 horas sem obra. 15 acabamentos disponíveis em Manaus." },
   { q: "Posso revestir parede sem demolição?", a: "Sim. O PFB é colado diretamente sobre qualquer parede existente — reboco, tinta, cerâmica — com cola PU 40. Sem quebra, sem poeira, sem espera de cura. Ideal para residências e escritórios ocupados." },
   { q: "Quanto tempo leva para instalar?", a: "Um cômodo padrão leva 2 a 3 horas. A placa mede 1,2m × 2,9m e cobre 3,48m² por peça — com poucas emendas e instalação muito mais rápida que azulejo ou cerâmica." },
   { q: "Funciona em banheiro e cozinha?", a: "Sim. O PFB foi testado em imersão total por 48h com absorção de apenas 0,2%. Aprovado para uso em banheiros, lavabos, box, ducha e cozinha — com laudo de Engenheiro Civil (ART nº AM20260593657)." },
@@ -183,7 +183,7 @@ export default function GuiaParedeManaus() {
                 Feito para o clima da Amazônia.
               </h2>
               <p className="text-[#43474e] font-[var(--font-inter)] leading-relaxed mb-8">
-                O PFB (Placa Flexível de Bambu) combina resistência técnica extrema com acabamento arquitetônico de alto padrão. 5 camadas, 1,2m × 2,9m, 5mm — cobre 3,48m² por placa.
+                O PFB (Painel Flexível Fibra de Bambu) combina resistência técnica extrema com acabamento arquitetônico de alto padrão. 5 camadas, 1,2m × 2,9m, 5mm — cobre 3,48m² por placa.
               </p>
               <ul className="space-y-4">
                 {[

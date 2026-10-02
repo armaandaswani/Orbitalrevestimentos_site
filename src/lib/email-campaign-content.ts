@@ -217,7 +217,7 @@ const CONTENT: Record<
     ctaPath: "/",
     body: `
       <p style="font-size:26px;line-height:1.2;color:#002045;font-weight:700;margin:0 0 16px;">PFB vs. MDF: a comparação que fecha a decisão.</p>
-      <p style="font-size:15px;line-height:1.7;color:#43474e;margin:16px 0;">A <strong>Placa de Fibra de Bambu (PFB)</strong> entrega mais desempenho, mais durabilidade e uma aplicação muito mais eficiente. Compare o <strong>custo total da aplicação</strong> — não só o preço da chapa — e mostre os números antes que a concorrência apareça.</p>
+      <p style="font-size:15px;line-height:1.7;color:#43474e;margin:16px 0;">O <strong>Painel Flexível Fibra de Bambu (PFB)</strong> entrega mais desempenho, mais durabilidade e uma aplicação muito mais eficiente. Compare o <strong>custo total da aplicação</strong> — não só o preço da chapa — e mostre os números antes que a concorrência apareça.</p>
       <div style="background:#eef2f8;border-left:3px solid #002045;padding:14px 18px;margin:20px 0;">
         <table width="100%" cellpadding="0" cellspacing="0" style="font-family:Arial,sans-serif;font-size:12px;">
           <tr>

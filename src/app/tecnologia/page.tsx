@@ -12,9 +12,9 @@ const MANUAL_URL = "/documentos/manual-tecnico-instalacao-pfb-2026-10-01.pdf";
 export const metadata: Metadata = {
   title: "PFB Orbital — Tecnologia, Performance e Ficha Técnica | Revestimento Manaus",
   description:
-    "A tecnologia por trás das Placas Flexíveis de Bambu: 5 camadas, dados de laboratório, ART de Engenheiro Civil. Impermeável, anti-mofo, instalado em 2–3 horas. Revestimento premium para o Amazonas.",
+    "A tecnologia por trás dos Painéis Flexíveis Fibra de Bambu: 5 camadas, dados de laboratório, ART de Engenheiro Civil. Impermeável, anti-mofo, instalado em 2–3 horas. Revestimento premium para o Amazonas.",
   keywords: [
-    "placa flexível de bambu tecnologia",
+    "painel flexível fibra de bambu tecnologia",
     "PFB ficha técnica",
     "revestimento impermeável Manaus",
     "revestimento anti-mofo Manaus",
@@ -25,7 +25,7 @@ export const metadata: Metadata = {
     "PFB Orbital performance",
     "revestimento com ART engenheiro civil",
     "revestimento sustentável Manaus",
-    "placa flexível de bambu Amazonas",
+    "painel flexível fibra de bambu Amazonas",
   ],
   alternates: { canonical: "https://orbitalrevestimentos.com.br/tecnologia" },
   openGraph: {
@@ -71,7 +71,7 @@ export default async function TecnologiaPage() {
       <section className="bg-[#002045] text-white py-14 lg:py-32">
         <div className="max-w-[1280px] mx-auto px-4 lg:px-16">
           <p className="text-[#86a0cd] text-xs tracking-[0.2em] uppercase font-semibold font-[var(--font-inter)] mb-4">
-            PFB · Placas Flexíveis de Bambu
+            PFB · Painéis Flexíveis Fibra de Bambu
           </p>
           <h1 className="font-[var(--font-noto-serif)] text-2xl lg:text-5xl font-normal tracking-[-0.02em] leading-tight mb-5 max-w-3xl">
             Performance &amp; Tecnologia

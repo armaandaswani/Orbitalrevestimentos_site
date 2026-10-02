@@ -94,7 +94,7 @@ export function mensagemConfirmacao(nome: string, temEmail: boolean): string {
     "",
     "Sua inscrição na *lista de espera da Academia Orbital* está confirmada.",
     "",
-    `O curso de instalação do PFB (Painel de Fibra de Bambu) está em preparação. Quando abrir, você recebe o aviso primeiro, aqui no WhatsApp${temEmail ? " e no seu e-mail" : ""}.`,
+    `O curso de instalação do PFB (Painel Flexível Fibra de Bambu) está em preparação. Quando abrir, você recebe o aviso primeiro, aqui no WhatsApp${temEmail ? " e no seu e-mail" : ""}.`,
     "",
     "Orbital Revestimentos",
   ].join("\n");

@@ -75,7 +75,7 @@ const faqSchema = {
       name: "Qual é a melhor alternativa ao MDF em Manaus?",
       acceptedAnswer: {
         "@type": "Answer",
-        text: "O PFB (Placa Flexível de Bambu) da Orbital Revestimentos. Com absorção de apenas 0,2% de umidade em 48 horas, é impermeável, anti-mofo, anti-cupim e não propaga chamas. Instalado em 2–3 horas por cômodo, com ART de Engenheiro Civil.",
+        text: "O PFB (Painel Flexível Fibra de Bambu) da Orbital Revestimentos. Com absorção de apenas 0,2% de umidade em 48 horas, é impermeável, anti-mofo, anti-cupim e não propaga chamas. Instalado em 2–3 horas por cômodo, com ART de Engenheiro Civil.",
       },
     },
     {
@@ -231,7 +231,7 @@ export default function GuiaMdfManaus() {
             Qual é a melhor alternativa ao MDF para revestimento em Manaus?
           </h2>
           <p className="text-[#43474e] text-base font-[var(--font-inter)] leading-relaxed mb-6">
-            O <strong className="text-[#002045]">PFB (Placa Flexível de Bambu)</strong> da Orbital Revestimentos é a
+            O <strong className="text-[#002045]">PFB (Painel Flexível Fibra de Bambu)</strong> da Orbital Revestimentos é a
             alternativa permanente ao MDF desenvolvida especificamente para
             climas úmidos. Com substrato de fibra de bambu e acabamento
             fotorrealista de pedra ou madeira, combina performance técnica

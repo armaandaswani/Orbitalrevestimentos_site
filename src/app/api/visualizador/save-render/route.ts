@@ -66,13 +66,22 @@ async function maybeSendRenderWhatsapp(
     const url = imgs[imgs.length - 1]?.url;
     if (!url) return;
 
-    const caption =
+    // Texto salvo no momento do render (modelos escolhidos) + o link da imagem
+    // gerada logo abaixo. Linhas com link de catálogo (versão anterior da
+    // mensagem) são descartadas para não sair link duplicado.
+    const base = (
       (row.summary && row.summary.trim()) ||
-      visualizadorRenderMessage(imgs.map((i) => ({ local: i.local, productName: i.productName, productCode: i.productCode })));
+      visualizadorRenderMessage(imgs.map((i) => ({ local: i.local, productName: i.productName, productCode: i.productCode })))
+    )
+      .split("\n")
+      .filter((l) => !/\/produtos(\?|$)/.test(l.trim()))
+      .join("\n")
+      .trimEnd();
+    const caption = `${base}\n${url}`;
 
-    // Message 1 — the render. Image with caption; fall back to text + link.
+    // Message 1 — the render. Image with caption (link included); fall back to text.
     let r = await sendImage(tel, url, caption);
-    if (!r.ok) r = await sendText(tel, `${caption}\n\nSua simulação: ${url}`);
+    if (!r.ok) r = await sendText(tel, caption);
     if (!r.ok) {
       console.error("[save-render] whatsapp render send failed", r.error);
       return; // don't stamp/send msg 2 if the render itself didn't go out

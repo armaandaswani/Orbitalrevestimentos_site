@@ -9,7 +9,7 @@ import ContatoCta from "@/components/ContatoCta";
 export const metadata: Metadata = {
   title: "Orbital Revestimentos — Instalado em horas. Admirado por anos.",
   description:
-    "Placas Flexíveis de Bambu (PFB) eco-premium para transformar paredes e tetos em Manaus. Melhor que MDF e papel de parede — sem obra, sem poeira. 3 linhas, 15 acabamentos, pronta-entrega.",
+    "Painéis Flexíveis Fibra de Bambu (PFB) eco-premium para transformar paredes e tetos em Manaus. Melhor que MDF e papel de parede — sem obra, sem poeira. 3 linhas, 15 acabamentos, pronta-entrega.",
   alternates: { canonical: "https://orbitalrevestimentos.com.br" },
   keywords: [
     "Orbital Revestimentos",
@@ -17,14 +17,14 @@ export const metadata: Metadata = {
     "revestimento de forro Manaus",
     "melhor que MDF",
     "alternativa papel de parede",
-    "PFB placa flexível de bambu",
+    "PFB painel flexível fibra de bambu",
     "revestimento sem obra Manaus",
     "decoração interiores Manaus",
   ],
   openGraph: {
     title: "Orbital Revestimentos — Instalado em horas. Admirado por anos.",
     description:
-      "Placas Flexíveis de Bambu (PFB) eco-premium para paredes e tetos em Manaus. Melhor que MDF e papel de parede. Sem obra, sem poeira. Pronta-entrega.",
+      "Painéis Flexíveis Fibra de Bambu (PFB) eco-premium para paredes e tetos em Manaus. Melhor que MDF e papel de parede. Sem obra, sem poeira. Pronta-entrega.",
     url: "https://orbitalrevestimentos.com.br",
   },
 };
@@ -32,7 +32,7 @@ export const metadata: Metadata = {
 const faqs = [
   {
     q: "O que é o PFB Orbital?",
-    a: "PFB significa Painel Flexível de Bambu — um revestimento eco-premium com substrato de fibra de bambu e acabamento fotorrealista de pedra ou madeira. Instalado diretamente sobre a parede ou forro existente, sem demolição ou obra pesada. Desenvolvido especialmente para o clima úmido do Amazonas.",
+    a: "PFB significa Painel Flexível Fibra de Bambu — um revestimento eco-premium com substrato de fibra de bambu e acabamento fotorrealista de pedra ou madeira. Instalado diretamente sobre a parede ou forro existente, sem demolição ou obra pesada. Desenvolvido especialmente para o clima úmido do Amazonas.",
   },
   {
     q: "Quais são os diferenciais técnicos do PFB Orbital?",
@@ -60,7 +60,7 @@ const faqs = [
   },
   {
     q: "Qual o melhor revestimento de parede para o clima úmido de Manaus?",
-    a: "O PFB (Placa Flexível de Bambu) é o revestimento indicado para o clima amazônico. Desenvolvido para ambientes com umidade relativa acima de 80%, absorve apenas 0,2% de umidade, não empena, não descola e mantém a integridade visual e estrutural por mais de 10 anos. Aprovado em laboratório com ART de Engenheiro Civil — disponível em pronta-entrega em Manaus.",
+    a: "O PFB (Painel Flexível Fibra de Bambu) é o revestimento indicado para o clima amazônico. Desenvolvido para ambientes com umidade relativa acima de 80%, absorve apenas 0,2% de umidade, não empena, não descola e mantém a integridade visual e estrutural por mais de 10 anos. Aprovado em laboratório com ART de Engenheiro Civil — disponível em pronta-entrega em Manaus.",
   },
   {
     q: "O PFB é impermeável? Pode ser instalado em banheiro ou lavabo?",
@@ -366,7 +366,7 @@ export default function Home() {
                 acabamentos de nível internacional a cada projeto.
               </p>
               <p className="text-white/70 text-base font-[var(--font-inter)] leading-relaxed mb-10">
-                Nossa tecnologia PFB (Placas Flexíveis de Bambu) é homologada
+                Nossa tecnologia PFB (Painéis Flexíveis Fibra de Bambu) é homologada
                 por Eng. Civil com ART e aprovada para ambientes úmidos,
                 tetos e projetos navais.
               </p>

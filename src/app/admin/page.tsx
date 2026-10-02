@@ -4457,7 +4457,7 @@ export default function AdminPage() {
                                         disabled={aiTextGenerating === "campaignBody"}
                                         onClick={() => generateAiText(
                                           "campaignBody",
-                                          "Você é um redator de e-mail marketing premium para a Orbital Revestimentos, empresa de revestimentos PFB (painel de fibra de bambu) em Manaus.",
+                                          "Você é um redator de e-mail marketing premium para a Orbital Revestimentos, empresa de revestimentos PFB (Painel Flexível Fibra de Bambu) em Manaus.",
                                           `Escreva o corpo de um e-mail marketing para a campanha cujo título é: "${campaignVisualHeadline || "campanha Orbital"}". O e-mail deve ter 3 parágrafos curtos, tom elegante e persuasivo, destacando os benefícios do PFB para o clima de Manaus. Cada parágrafo em uma linha separada. Sem saudação nem assinatura.`,
                                           setCampaignVisualBody
                                         )}
@@ -5628,7 +5628,7 @@ export default function AdminPage() {
                         disabled={aiTextGenerating === "productDesc"}
                         onClick={() => generateAiText(
                           "productDesc",
-                          "Você é um redator de catálogo de revestimentos premium para a Orbital Revestimentos, empresa especializada em PFB (painel de fibra de bambu) em Manaus.",
+                          "Você é um redator de catálogo de revestimentos premium para a Orbital Revestimentos, empresa especializada em PFB (Painel Flexível Fibra de Bambu) em Manaus.",
                           `Escreva uma descrição de produto elegante e técnica (máximo 2 frases, 150 caracteres) para o produto "${productForm.name || "PFB Orbital"}" (código ${productForm.code || "N/A"}). Destaque o acabamento visual e a durabilidade. Responda SOMENTE com a descrição, sem aspas.`,
                           (text) => setProductForm(f => ({ ...f, description: text }))
                         )}

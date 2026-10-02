@@ -10,9 +10,12 @@ Applies to ALL content: the site, the chat AI (`DEFAULT_SYSTEM_PROMPT`), emails
 (`src/lib/*-email-content.ts`), commercial materials, and any PFB-vs-other-material
 comparison.
 
-- **PFB = Painel de Fibra de Bambu** (preferred — it is what the physical product
-  label says). "Placa de Fibra de Bambu" is also accepted. Spell out the full
-  form the first time it appears in any piece of content.
+- **PFB = Painel Flexível Fibra de Bambu** — the official product name, chosen by
+  the owner (Oct 2026). Plural: "Painéis Flexíveis Fibra de Bambu". It is masculine
+  ("o Painel", "dos Painéis"). Do not use "Placa Flexível de Bambu", "Placa de
+  Fibra de Bambu" or "Painel de Fibra de Bambu" for the product name anymore
+  ("placa" stays fine as the generic word for one sheet: "R$ 559/placa").
+  Spell out the full form the first time it appears in any piece of content.
 - **NEVER** state, admit, or imply the PFB is "more expensive" / "custa mais" than
   MDF (or anything) — not even to justify it with durability or "ciclo de vida".
   That framing creates an objection and works against the sale.

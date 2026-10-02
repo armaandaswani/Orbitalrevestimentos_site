@@ -1,4 +1,3 @@
-import { SITE_URL, productUrl } from "./product-link";
 /**
  * PT-BR WhatsApp message builders for the SM Click automations.
  *
@@ -40,14 +39,10 @@ export function visualizadorRenderMessage(items: VisualizadorItem[]): string {
       lines.push(`• ${prod}${local}`);
     }
   }
-  // Link direto para o modelo no catálogo (o mesmo do QR Code), um por modelo.
-  const codes = [...new Set(parts.map((it) => it.productCode?.trim()).filter((c): c is string => !!c))];
-  if (codes.length > 0) {
-    lines.push("", `Gostou do resultado? Veja mais projetos ${codes.length > 1 ? "deles" : "dele"}! ✨`);
-    for (const c of codes) lines.push(productUrl(c));
-  } else {
-    lines.push("", `Gostou do resultado? Veja mais projetos no catálogo! ✨`, `${SITE_URL}/produtos`);
-  }
+  // O link da imagem gerada entra logo abaixo desta linha, no envio
+  // (save-render), porque só existe depois do upload.
+  const n = new Set(parts.map((it) => it.productCode?.trim() || it.productName?.trim()).filter(Boolean)).size;
+  lines.push("", `Gostou do resultado? Veja mais projetos ${n > 1 ? "deles" : "dele"}! ✨`);
   return lines.join("\n");
 }
 

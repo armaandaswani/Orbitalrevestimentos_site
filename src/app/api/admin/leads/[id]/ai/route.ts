@@ -22,7 +22,7 @@ const PT_STATUS: Record<string, string> = {
   perdido: "Perdido",
 };
 
-const SYSTEM_PROMPT = `Você é o assistente de CRM interno da Orbital Revestimentos (Manaus), especializada em PFB (Painel de Fibra de Bambu), revestimento premium de parede e teto. Você ajuda a equipe comercial a fechar vendas.
+const SYSTEM_PROMPT = `Você é o assistente de CRM interno da Orbital Revestimentos (Manaus), especializada em PFB (Painel Flexível Fibra de Bambu), revestimento premium de parede e teto. Você ajuda a equipe comercial a fechar vendas.
 
 Linhas e preços: Classic (Mármore Fosco) R$ 559/placa, Brilliance (Mármore Polido) R$ 589, Elegance (Madeira Texturizada) R$ 649. Cada placa cobre 3,48m². Contato/WhatsApp: (92) 98815-0149.
 

@@ -12,7 +12,7 @@ export default function Footer() {
               ORBITAL
             </div>
             <p className="text-[#9c9faa] text-sm leading-relaxed mb-2 font-[var(--font-inter)]">
-              Fornecedor exclusivo de Painel de Fibra de Bambu (PFB) em Manaus, Amazonas.
+              Fornecedor exclusivo de Painel Flexível Fibra de Bambu (PFB) em Manaus, Amazonas.
             </p>
             <p className="text-[#9c9faa] text-sm leading-relaxed mb-6 font-[var(--font-inter)]">
               Revestimento de parede e forro de teto eco-premium — alternativa superior ao MDF,
