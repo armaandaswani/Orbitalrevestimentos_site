@@ -5,6 +5,7 @@ import Image from "next/image";
 import MdfComparison from "@/components/MdfComparison";
 import { firstName } from "@/lib/name";
 import { applicationReasonLabel, materialDisplayName } from "@/lib/orcamento-materials";
+import { QUOTE_VALIDITY_DAYS } from "@/lib/orcamento-pricing";
 
 interface QuoteSpace {
   spaceName: string;
@@ -212,7 +213,7 @@ export default function OrcamentoPage({ params }: { params: Promise<{ slug: stri
       <div className="min-h-screen bg-[#f0efec] flex items-center justify-center px-6">
         <div className="text-center max-w-sm">
           <p className="font-[var(--font-noto-serif)] text-[#002045] text-2xl mb-3">Orçamento expirado</p>
-          <p className="text-[#74777f] text-sm font-[var(--font-inter)] leading-relaxed mb-6">Este orçamento tinha validade de 7 dias e já expirou. Peça um novo orçamento atualizado.</p>
+          <p className="text-[#74777f] text-sm font-[var(--font-inter)] leading-relaxed mb-6">Este orçamento tinha validade de {QUOTE_VALIDITY_DAYS} dias e já expirou. Peça um novo orçamento atualizado.</p>
           <a href="https://wa.me/559288150149" className="inline-block bg-[#002045] text-white text-xs tracking-[0.12em] uppercase font-bold font-[var(--font-inter)] px-6 py-3">
             Solicitar novo orçamento
           </a>

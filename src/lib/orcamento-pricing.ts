@@ -46,6 +46,9 @@ export interface OrcamentoConfig {
 
 // Business rules as given (2026). Change here (or later via admin config) — never
 // fork these numbers into a component.
+/** Validade de todo orçamento: 10 dias a partir da data em que foi gerado. Valor único para site, admin, PDF e WhatsApp. */
+export const QUOTE_VALIDITY_DAYS = 10;
+
 export const DEFAULT_CONFIG: OrcamentoConfig = {
   colaFactorPerPlate: 1.5,
   freteFreeMinPlates: 5,

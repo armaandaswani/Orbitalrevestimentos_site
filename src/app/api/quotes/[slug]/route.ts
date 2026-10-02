@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { supabaseAdmin } from "@/lib/supabase";
 import { isMissingColumn } from "@/lib/db-compat";
+import { QUOTE_VALIDITY_DAYS } from "@/lib/orcamento-pricing";
 
 export async function GET(
   _req: NextRequest,
@@ -34,7 +35,7 @@ export async function GET(
 
 /** PATCH /api/quotes/[slug] — update a saved quote IN PLACE (used by "Editar
  *  este orçamento" so the client's existing link reflects their edits instead
- *  of a brand-new orçamento being created). Refreshes the 7-day validity. */
+ *  of a brand-new orçamento being created). Refreshes the validity (QUOTE_VALIDITY_DAYS). */
 export async function PATCH(
   req: NextRequest,
   { params }: { params: Promise<{ slug: string }> }
@@ -62,8 +63,8 @@ export async function PATCH(
   if ("client_phone" in body) patch.client_phone = body.client_phone ?? null;
   // Ajuste manual dos materiais de instalação (§9). null limpa o ajuste.
   if ("material_overrides" in body) patch.material_overrides = body.material_overrides ?? null;
-  // Só uma edição de conteúdo (spaces) renova a validade de 7 dias.
-  if ("spaces" in body) { patch.spaces = body.spaces ?? []; patch.expires_at = new Date(Date.now() + 7 * 24 * 60 * 60 * 1000).toISOString(); }
+  // Só uma edição de conteúdo (spaces) gera o orçamento de novo e renova a validade.
+  if ("spaces" in body) { patch.spaces = body.spaces ?? []; patch.expires_at = new Date(Date.now() + QUOTE_VALIDITY_DAYS * 24 * 60 * 60 * 1000).toISOString(); }
 
   let { data, error } = await db.from("saved_quotes").update(patch).eq("slug", slug).select("slug").single();
   if (error && /client_(name|email|phone)/.test(error.message)) {

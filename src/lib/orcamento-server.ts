@@ -4,7 +4,7 @@
 // ever re-implemented in a route.
 
 import type { SupabaseClient } from "@supabase/supabase-js";
-import { computeOrcamento, DEFAULT_CONFIG, type OrcamentoBreakdown, type OrcamentoConfig } from "@/lib/orcamento-pricing";
+import { computeOrcamento, DEFAULT_CONFIG, QUOTE_VALIDITY_DAYS, type OrcamentoBreakdown, type OrcamentoConfig } from "@/lib/orcamento-pricing";
 import { reservedByActiveOrders } from "@/lib/stock";
 import {
   DEFAULT_MATERIALS_CONFIG,
@@ -35,7 +35,7 @@ export const DEFAULT_EXTRAS: OrcamentoExtras = {
   installerName: "Werk Engenharia",
   installerPhone: "(92) 99397-4821",
   installerWhatsappBase: "https://wa.me/5592993974821?text=",
-  quoteValidityDays: 7,
+  quoteValidityDays: QUOTE_VALIDITY_DAYS,
   leadMessageEnabled: true,
   followupEnabled: false,
   followup1Hours: 24,
@@ -66,7 +66,7 @@ export async function loadOrcamentoConfig(
       installerName: str(raw.installerName, DEFAULT_EXTRAS.installerName),
       installerPhone: str(raw.installerPhone, DEFAULT_EXTRAS.installerPhone),
       installerWhatsappBase: str(raw.installerWhatsappBase, DEFAULT_EXTRAS.installerWhatsappBase),
-      quoteValidityDays: num(raw.quoteValidityDays, DEFAULT_EXTRAS.quoteValidityDays),
+      quoteValidityDays: QUOTE_VALIDITY_DAYS, // fixa: 10 dias para todo orçamento
       leadMessageEnabled: typeof raw.leadMessageEnabled === "boolean" ? raw.leadMessageEnabled : DEFAULT_EXTRAS.leadMessageEnabled,
       followupEnabled: typeof raw.followupEnabled === "boolean" ? raw.followupEnabled : DEFAULT_EXTRAS.followupEnabled,
       followup1Hours: num(raw.followup1Hours, DEFAULT_EXTRAS.followup1Hours),

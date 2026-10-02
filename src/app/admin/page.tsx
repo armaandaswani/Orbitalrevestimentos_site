@@ -7870,7 +7870,6 @@ export default function AdminPage() {
                         ["freteBase", "Frete-base estimado (R$)", "150", 1],
                         ["discountPct", "Desconto à vista (%)", "3", 0.5],
                         ["discountMinPlates", "Desconto a partir de (placas)", "2", 1],
-                        ["quoteValidityDays", "Validade do orçamento (dias)", "7", 1],
                       ] as Array<[string, string, string, number]>).reduce<React.ReactNode[][]>((rows, item, i) => {
                         if (i % 2 === 0) rows.push([]);
                         rows[rows.length - 1].push(

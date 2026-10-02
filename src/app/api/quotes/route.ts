@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
 import { supabaseAdmin } from "@/lib/supabase";
+import { QUOTE_VALIDITY_DAYS } from "@/lib/orcamento-pricing";
 
 function generateSlug(length = 8): string {
   const chars = "abcdefghjkmnpqrstuvwxyz23456789"; // no confusable chars
@@ -20,7 +21,7 @@ export async function POST(req: NextRequest) {
     slug = generateSlug();
   }
 
-  const expiresAt = new Date(Date.now() + 7 * 24 * 60 * 60 * 1000).toISOString();
+  const expiresAt = new Date(Date.now() + QUOTE_VALIDITY_DAYS * 24 * 60 * 60 * 1000).toISOString();
 
   const row: Record<string, unknown> = {
     slug,

@@ -3,7 +3,7 @@
 import React, { useState, useEffect, useCallback, useMemo, useRef } from "react";
 import { DEFAULT_PANEL_WIDTH_M, DEFAULT_PANEL_HEIGHT_M, panelGrid } from "@/lib/render-prompt";
 import type { Lead } from "./LeadsTab";
-import { DEFAULT_CONFIG, maxInstallmentsForPlates, type OrcamentoConfig } from "@/lib/orcamento-pricing";
+import { DEFAULT_CONFIG, QUOTE_VALIDITY_DAYS, maxInstallmentsForPlates, type OrcamentoConfig } from "@/lib/orcamento-pricing";
 import { CLAUSULAS_PADRAO } from "@/lib/clausulas-pedido";
 
 // ─── Types ──────────────────────────────────────────────────────────────────
@@ -227,10 +227,13 @@ function toDateInput(iso: string | null | undefined): string {
   if (!iso) return "";
   return iso.slice(0, 10);
 }
+// Data LOCAL (não UTC): depois das 20h em Manaus o UTC já é o dia seguinte e
+// a validade ganhava um dia a mais.
 function plusDays(days: number): string {
   const d = new Date();
   d.setDate(d.getDate() + days);
-  return d.toISOString().slice(0, 10);
+  const p = (n: number) => String(n).padStart(2, "0");
+  return `${d.getFullYear()}-${p(d.getMonth() + 1)}-${p(d.getDate())}`;
 }
 
 /** Relative delivery badge: overdue / hoje / future date. Suppressed once delivered. */
@@ -1080,7 +1083,7 @@ export default function PedidosTab({
       payment_terms: DEFAULT_PAYMENT_TERMS,
       freight_is_revenue: false,
       other_costs: [],
-      quote_valid_until: plusDays(7),
+      quote_valid_until: plusDays(QUOTE_VALIDITY_DAYS),
       price_tier: "varejo",
       // Leave document_notes UNSET — the documento page already falls back to
       // the legal boilerplate for Pedido/Nota on its own; pre-seeding it here
@@ -1141,7 +1144,7 @@ export default function PedidosTab({
       payment_terms: DEFAULT_PAYMENT_TERMS,
       freight_is_revenue: false,
       other_costs: [],
-      quote_valid_until: plusDays(7),
+      quote_valid_until: plusDays(QUOTE_VALIDITY_DAYS),
       price_tier: "varejo",
       partner_commission_pct: partnerPct,
       partner_commission_amount: partner?.commission_type === "fixed" ? Number(partner.commission_value) || 0 : moneyFromPct(partnerPct, Number(total) || 0),
@@ -1211,7 +1214,7 @@ export default function PedidosTab({
         payment_status: "pendente",
         boletos: null,
         expected_delivery_at: null,
-        quote_valid_until: plusDays(7),
+        quote_valid_until: plusDays(QUOTE_VALIDITY_DAYS),
         coupon_use_id: null,
         lead_id: null,
       });
@@ -1462,7 +1465,7 @@ export default function PedidosTab({
               Importar orçamento
             </button>
             <button
-              onClick={() => { setItems(stockProducts.length > 0 ? [{ product_id: "", plates: 1 }] : []); setItemsReady(true); setDraft({ _isNew: true, status: "em_producao", payment_status: "pendente", payment_methods: DEFAULT_PAYMENT_METHODS, payment_terms: DEFAULT_PAYMENT_TERMS, freight_is_revenue: false, other_costs: [], quote_valid_until: plusDays(7), price_tier: "varejo" }); }}
+              onClick={() => { setItems(stockProducts.length > 0 ? [{ product_id: "", plates: 1 }] : []); setItemsReady(true); setDraft({ _isNew: true, status: "em_producao", payment_status: "pendente", payment_methods: DEFAULT_PAYMENT_METHODS, payment_terms: DEFAULT_PAYMENT_TERMS, freight_is_revenue: false, other_costs: [], quote_valid_until: plusDays(QUOTE_VALIDITY_DAYS), price_tier: "varejo" }); }}
               className="bg-[#002045] text-white text-xs tracking-[0.12em] uppercase font-bold font-[var(--font-inter)] px-5 py-2.5 hover:bg-[#1a365d] transition-colors"
             >
               + Novo pedido
