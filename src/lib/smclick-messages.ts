@@ -1,3 +1,4 @@
+import { SITE_URL, productUrl } from "./product-link";
 /**
  * PT-BR WhatsApp message builders for the SM Click automations.
  *
@@ -29,14 +30,9 @@ export interface VisualizadorItem {
  */
 export function visualizadorRenderMessage(items: VisualizadorItem[]): string {
   const parts = items.filter((it) => it && (it.productName || it.local));
-  const lines: string[] = [];
-  if (parts.length === 0) {
-    lines.push("Olá! 🎨 Aqui está a sua visualização das *placas flexíveis de bambu* da Orbital.");
-  } else {
-    lines.push(
-      "Olá! 🎨 Aqui está a sua visualização das *placas flexíveis de bambu* da Orbital — veja os acabamentos que você escolheu:",
-      ""
-    );
+  const lines: string[] = ["Olá! Aqui está sua simulação do PFB da Orbital 🎨"];
+  if (parts.length > 0) {
+    lines.push("");
     for (const it of parts) {
       const code = it.productCode ? ` (${it.productCode})` : "";
       const prod = it.productName ? `*${it.productName}*${code}` : "Acabamento escolhido";
@@ -44,10 +40,14 @@ export function visualizadorRenderMessage(items: VisualizadorItem[]): string {
       lines.push(`• ${prod}${local}`);
     }
   }
-  lines.push(
-    "",
-    "Gostou do resultado? No nosso site você também consegue gerar uma simulação de orçamento instantânea! ✨"
-  );
+  // Link direto para o modelo no catálogo (o mesmo do QR Code), um por modelo.
+  const codes = [...new Set(parts.map((it) => it.productCode?.trim()).filter((c): c is string => !!c))];
+  if (codes.length > 0) {
+    lines.push("", `Gostou do resultado? Veja mais projetos ${codes.length > 1 ? "deles" : "dele"}! ✨`);
+    for (const c of codes) lines.push(productUrl(c));
+  } else {
+    lines.push("", `Gostou do resultado? Veja mais projetos no catálogo! ✨`, `${SITE_URL}/produtos`);
+  }
   return lines.join("\n");
 }
 
@@ -58,12 +58,14 @@ export function visualizadorRenderMessage(items: VisualizadorItem[]): string {
  */
 export function productEducationMessage(): string {
   return [
-    "Os painéis Fibra de Bambu são uma forma prática de transformar o ambiente com acabamento sofisticado, sem obra pesada. E tem durabilidade comprovada no clima amazônico! 🌳",
+    "Descubra o *Painel Flexível Fibra de Bambu*",
     "",
     "💧 Resistente à água, mofo e umidade",
+    "🐜 Resistente a cupins",
     "🔥 Não propaga chamas",
     "⚡ Aplicação rápida e limpa",
     "🚚 Pronta entrega em Manaus",
+    "🌳 Ecológico",
   ].join("\n");
 }
 

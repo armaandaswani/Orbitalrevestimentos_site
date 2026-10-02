@@ -72,7 +72,7 @@ async function maybeSendRenderWhatsapp(
 
     // Message 1 — the render. Image with caption; fall back to text + link.
     let r = await sendImage(tel, url, caption);
-    if (!r.ok) r = await sendText(tel, `${caption}\n\n${url}`);
+    if (!r.ok) r = await sendText(tel, `${caption}\n\nSua simulação: ${url}`);
     if (!r.ok) {
       console.error("[save-render] whatsapp render send failed", r.error);
       return; // don't stamp/send msg 2 if the render itself didn't go out
