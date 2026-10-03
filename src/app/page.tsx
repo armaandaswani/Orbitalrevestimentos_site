@@ -205,11 +205,12 @@ export default function Home() {
             >
               Ver o catálogo
             </Link>
-            <ContatoCta
+            <Link
+              href="/tecnologia"
               className="w-full sm:w-auto inline-flex items-center justify-center gap-2 border border-white/60 text-white text-xs tracking-[0.12em] uppercase font-bold font-[var(--font-inter)] px-8 py-4 hover:bg-white/10 transition-colors"
             >
-              Falar com um consultor
-            </ContatoCta>
+              Conhecer mais
+            </Link>
           </div>
         </div>
       </section>

@@ -7,7 +7,7 @@ import FichaTecnicaAccordion from "@/components/FichaTecnicaAccordion";
 import { getAssetOverrides, resolveAsset } from "@/lib/assets";
 
 // Arquivo novo a cada revisão do manual (cache de 1 ano nos arquivos públicos).
-const MANUAL_URL = "/documentos/manual-tecnico-instalacao-pfb-2026-10-01.pdf";
+const MANUAL_URL = "/documentos/manual-tecnico-instalacao-pfb-2026-10-03.pdf";
 
 export const metadata: Metadata = {
   title: "PFB Orbital — Tecnologia, Performance e Ficha Técnica | Revestimento Manaus",
@@ -325,7 +325,7 @@ export default async function TecnologiaPage() {
                 },
                 {
                   title: "Testado em ciclos térmicos",
-                  desc: "Submetido em ensaio a ciclos de –10°C a +120°C. Validado para uso interno apenas. Uma vez que calor contínuo acima de 55°C pode gerar ondulações.",
+                  desc: "Submetido em ensaio a ciclos de –10°C a +120°C. Validado para uso interno — acima de 50°C de calor contínuo pode ondular.",
                   icon: (
                     <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5">
                       <path d="M14 14.76V3.5a2.5 2.5 0 00-5 0v11.26a4.5 4.5 0 105 0z" />

@@ -16,7 +16,7 @@ ONDE USAR:
 - Indicado para ambientes internos secos e úmidos: salas, quartos, escritórios, corredores, comércio, clínicas, forros e tetos, portas, curvas e colunas
 - Banheiros e interior do box: pode receber água diretamente, desde que a base esteja impermeabilizada e a vedação seja contínua nas juntas, cantos, bordas e recortes. O painel é acabamento — não substitui a impermeabilização
 - Cozinha: indicado para as paredes, inclusive roda-bancas e roda-pias
-- NÃO indicado para: piso, tampo de bancada, fachadas, áreas externas e semiexternas, bordas de piscina e áreas molhadas externas, saunas e salas de vapor, churrasqueiras, lareiras e coifas, superfícies com impacto ou atrito constante, locais com calor contínuo acima de 55 °C ou sol direto contínuo
+- NÃO indicado para: piso, tampo de bancada, fachadas, áreas externas e semiexternas, bordas de piscina e áreas molhadas externas, saunas e salas de vapor, churrasqueiras, lareiras e coifas, superfícies com impacto ou atrito constante, locais com calor contínuo acima de 50 °C ou sol direto contínuo
 
 INSTALAÇÃO:
 - A Orbital é fornecedora: NÃO faz a instalação. O cliente contrata o profissional de sua livre escolha (marceneiro, instalador, gesseiro); a Orbital não exige nenhum profissional específico

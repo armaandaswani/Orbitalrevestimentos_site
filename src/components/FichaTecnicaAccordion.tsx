@@ -61,7 +61,7 @@ const SECTIONS = [
       { label: "Vida útil estimada",     value: "10+ anos no clima amazônico" },
       { label: "Ciclos térmicos",        value: "Testado de –10°C a +120°C" },
       { label: "Contato térmico breve", value: "Até 100°C sem impacto estrutural" },
-      { label: "Calor contínuo",        value: "Acima de 55°C pode ondular — uso interno" },
+      { label: "Calor contínuo",        value: "Validado para uso interno — acima de 50°C pode ondular" },
       { label: "Resistência a fungos",   value: "Anti-mofo — bambu não é substrato fúngico" },
       { label: "Resistência a pragas",   value: "Anti-cupim — fibra processada sem atração" },
       { label: "Resistência UV",         value: "Film protetora UV na camada superficial" },
@@ -184,7 +184,7 @@ export default function FichaTecnicaAccordion() {
           </div>
 
           {/* Calor contínuo ≠ contato breve: a faixa testada (120°C) e o limite
-              de uso (55°C sob sol) são coisas diferentes, e ler só a primeira
+              de uso (50°C contínuos) são coisas diferentes, e ler só a primeira
               leva a aplicar o painel onde ele vai ondular. */}
           <div className="border-t border-[#1a365d] px-5 py-3 flex items-start gap-2">
             <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="#86a0cd" strokeWidth="2" className="flex-shrink-0 mt-[1px]">
@@ -192,7 +192,7 @@ export default function FichaTecnicaAccordion() {
               <circle cx="12" cy="12" r="3" />
             </svg>
             <p className="text-[#86a0cd] text-[9px] font-[var(--font-inter)] leading-relaxed">
-              Painéis para ambiente interno. O aquecimento contínuo — sol direto ou indireto — acima de 55°C pode gerar leve ondulação, conforme o local e a aplicação.
+              Validado para uso interno. O aquecimento contínuo — sol direto ou indireto — acima de 50°C pode gerar leve ondulação, conforme o local e a aplicação.
             </p>
           </div>
 
