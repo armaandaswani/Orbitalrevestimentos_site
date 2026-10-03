@@ -1,7 +1,7 @@
 import type { SupabaseClient } from "@supabase/supabase-js";
 import { smclickConfigured, normalizePhone, sendText, adminWhatsappPhone } from "@/lib/smclick";
 import { meetingInviteMessage, adminMeetingAlertMessage } from "@/lib/smclick-messages";
-import { EMAIL_EMPRESA } from "./email-destinos";
+import { EMAIL_EMPRESA, WHATSAPP_EMPRESA } from "./email-destinos";
 
 // Shared rep-meeting invite/notification logic. Used when a meeting is created
 // (POST) AND when it's rescheduled or cancelled (PATCH), so the calendar invite
@@ -32,6 +32,8 @@ export interface NotifyLog {
   kind: NotifyKind;
   emails: { to: string; role: "partner" | "rep" | "admin"; ok: boolean; error?: string }[];
   whatsapp_admin: boolean | null;
+  /** WhatsApp da empresa (WHATSAPP_EMPRESA); ausente em registros antigos. */
+  whatsapp_empresa?: boolean | null;
 }
 
 const sleep = (ms: number) => new Promise((r) => setTimeout(r, ms));
@@ -188,7 +190,7 @@ export async function notifyMeeting(
 
     const calendar = calendarLinks(meeting, repName);
     const emailRecipients: EmailRecipient[] = [];
-    const log: NotifyLog = { at: new Date().toISOString(), kind, emails: [], whatsapp_admin: null };
+    const log: NotifyLog = { at: new Date().toISOString(), kind, emails: [], whatsapp_admin: null, whatsapp_empresa: null };
 
     // Admin primeiro: é o aviso de que a Orbital depende para acompanhar a agenda.
     addEmailRecipient(emailRecipients, { role: "admin", name: "Admin Orbital", phone: "", email: ORBITAL_MEETING_EMAIL });
@@ -245,15 +247,18 @@ export async function notifyMeeting(
     }
 
     if (smclickConfigured()) {
+      const alert = prefix + adminMeetingAlertMessage({
+        repName, title: meeting.title, whenLabel, location: meeting.location,
+        inviteeNames: invitees.map((i) => i.name).filter(Boolean),
+      });
       const adminTel = adminWhatsappPhone();
       if (adminTel) {
-        log.whatsapp_admin = await sendText(
-          adminTel,
-          prefix + adminMeetingAlertMessage({
-            repName, title: meeting.title, whenLabel, location: meeting.location,
-            inviteeNames: invitees.map((i) => i.name).filter(Boolean),
-          })
-        ).then((r) => r.ok, () => false);
+        log.whatsapp_admin = await sendText(adminTel, alert).then((r) => r.ok, () => false);
+      }
+      // Confirmação também no WhatsApp da empresa (sem repetir se for o mesmo número).
+      const empresaTel = normalizePhone(WHATSAPP_EMPRESA);
+      if (empresaTel && empresaTel !== adminTel) {
+        log.whatsapp_empresa = await sendText(empresaTel, alert).then((r) => r.ok, () => false);
       }
     }
 

@@ -233,10 +233,14 @@ export async function GET(req: NextRequest) {
       });
     }
 
+    const receivedMap = await receiptsFor(db, "rep", salesRepCode, allUses.map((u) => u.id as string));
+
     return NextResponse.json(
       allUses.map((u) => ({
         ...u,
         partner_name: nameMap[u.coupon_code as string] || null,
+        // "Dar baixa": quando ESTE representante confirmou que recebeu (migração 062).
+        rep_commission_received_at: receivedMap[u.id as string] ?? null,
         // Override with this rep's specific commission if available
         sales_rep_commission_owed:
           commissionByUseId[u.id as string] !== undefined
@@ -252,7 +256,50 @@ export async function GET(req: NextRequest) {
 
   const { data, error } = await query;
   if (error) return NextResponse.json({ error: error.message }, { status: 500 });
-  return NextResponse.json(data);
+  if (!couponCode) {
+    // Lista completa (admin): anexa as baixas do parceiro e do representante principal.
+    const rows = (data ?? []) as Record<string, unknown>[];
+    const { data: rec, error: recErr } = await db.from("commission_receipts").select("coupon_use_id, party, party_code, received_at");
+    if (recErr || !rec?.length) return NextResponse.json(rows);
+    const key = (id: unknown, party: string, code: unknown) => `${id}|${party}|${String(code ?? "").toUpperCase()}`;
+    const map = new Map<string, string>();
+    for (const r of rec as { coupon_use_id: string; party: string; party_code: string; received_at: string }[]) {
+      map.set(key(r.coupon_use_id, r.party, r.party_code), r.received_at);
+    }
+    return NextResponse.json(
+      rows.map((u) => ({
+        ...u,
+        partner_commission_received_at: map.get(key(u.id, "partner", u.coupon_code)) ?? null,
+        rep_commission_received_at: map.get(key(u.id, "rep", u.sales_rep_referral_code)) ?? null,
+      }))
+    );
+  }
+
+  const rows = (data ?? []) as Record<string, unknown>[];
+  const receivedMap = await receiptsFor(db, "partner", couponCode, rows.map((u) => u.id as string));
+  return NextResponse.json(rows.map((u) => ({ ...u, partner_commission_received_at: receivedMap[u.id as string] ?? null })));
+}
+
+/** coupon_use_id → received_at das baixas deste beneficiário. Sem a tabela (062), vazio. */
+async function receiptsFor(
+  db: ReturnType<typeof supabaseAdmin>,
+  party: "partner" | "rep",
+  code: string,
+  useIds: string[]
+): Promise<Record<string, string>> {
+  const out: Record<string, string> = {};
+  if (useIds.length === 0) return out;
+  const { data, error } = await db
+    .from("commission_receipts")
+    .select("coupon_use_id, received_at")
+    .eq("party", party)
+    .eq("party_code", code.toUpperCase());
+  if (error) return out; // tabela ainda não criada → sem baixas
+  const wanted = new Set(useIds);
+  for (const r of (data ?? []) as { coupon_use_id: string; received_at: string }[]) {
+    if (wanted.has(r.coupon_use_id)) out[r.coupon_use_id] = r.received_at;
+  }
+  return out;
 }
 
 export async function POST(req: NextRequest) {

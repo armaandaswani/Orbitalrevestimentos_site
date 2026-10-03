@@ -1,6 +1,14 @@
 "use client";
 
 import React, { useState, useEffect, useCallback, useMemo } from "react";
+import {
+  CamposNovoParceiro,
+  NOVO_PARCEIRO_VAZIO,
+  canaisEnviados,
+  convidarParceiro,
+  validarNovoParceiro,
+  type NovoParceiro,
+} from "./ConvidarParceiro";
 
 interface Invitee {
   name: string;
@@ -28,6 +36,8 @@ interface PartnerOption {
 
 const WEEKDAYS = ["Dom", "Seg", "Ter", "Qua", "Qui", "Sex", "Sáb"];
 const EMPTY_INVITEE: Invitee = { name: "", phone: "", email: "" };
+// Opção do select "Parceiro" que abre o cadastro de um parceiro novo.
+const NOVO = "__novo";
 
 function dayKey(d: Date) {
   return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, "0")}-${String(d.getDate()).padStart(2, "0")}`;
@@ -42,9 +52,12 @@ function isoFromDateAndTime(dateStr: string, timeStr: string) {
 export default function RepAgendaTab({
   salesRepId,
   linkedPartners,
+  onPartnersChanged,
 }: {
   salesRepId: string;
   linkedPartners: PartnerOption[];
+  /** Recarrega "Meus parceiros" depois de cadastrar um parceiro novo. */
+  onPartnersChanged?: () => void;
 }) {
   const [meetings, setMeetings] = useState<Meeting[]>([]);
   const [loading, setLoading] = useState(false);
@@ -65,6 +78,8 @@ export default function RepAgendaTab({
   const [fInvitees, setFInvitees] = useState<Invitee[]>([{ ...EMPTY_INVITEE }]);
   const [saving, setSaving] = useState(false);
   const [formError, setFormError] = useState("");
+  const [novoParceiro, setNovoParceiro] = useState<NovoParceiro>({ ...NOVO_PARCEIRO_VAZIO });
+  const [aviso, setAviso] = useState("");
 
   const fetchMeetings = useCallback(async () => {
     setLoading(true);
@@ -88,6 +103,7 @@ export default function RepAgendaTab({
     setFNotes("");
     setFInvitees([{ ...EMPTY_INVITEE }]);
     setFormError("");
+    setNovoParceiro({ ...NOVO_PARCEIRO_VAZIO });
   }
 
   function openCreateForm(prefillDate?: Date) {
@@ -117,13 +133,42 @@ export default function RepAgendaTab({
       setFormError("Título e data são obrigatórios.");
       return;
     }
+    if (fPartnerId === NOVO) {
+      const invalido = validarNovoParceiro(novoParceiro);
+      if (invalido) {
+        setFormError(invalido);
+        return;
+      }
+    }
     setSaving(true);
     setFormError("");
+    setAviso("");
 
-    const invitees = fInvitees.filter((i) => i.name.trim());
+    let invitees = fInvitees.filter((i) => i.name.trim());
+    let partnerId = fPartnerId;
+    let avisoConvite = "";
+    if (fPartnerId === NOVO) {
+      // Cadastra o parceiro e manda o convite antes de criar a reunião.
+      const r = await convidarParceiro(novoParceiro);
+      if (!r.ok) {
+        setSaving(false);
+        if (r.partner_id) setFPartnerId(r.partner_id);
+        setFormError(r.error);
+        return;
+      }
+      partnerId = r.partner_id;
+      setFPartnerId(r.partner_id);
+      avisoConvite = `${r.reenviado ? "Convite reenviado" : "Convite do portal enviado"} para ${r.name} ${canaisEnviados(r.enviado)}.`;
+      onPartnersChanged?.();
+      // O parceiro também recebe o convite da reunião.
+      const email = novoParceiro.email.trim().toLowerCase();
+      if (!invitees.some((i) => i.email.trim().toLowerCase() === email)) {
+        invitees = [...invitees, { name: novoParceiro.name.trim(), phone: novoParceiro.phone.trim(), email }];
+      }
+    }
     const payload = {
       sales_rep_id: salesRepId,
-      partner_id: fPartnerId || null,
+      partner_id: partnerId || null,
       title: fTitle.trim(),
       scheduled_at: isoFromDateAndTime(fDate, fTime),
       duration_minutes: fDuration,
@@ -143,11 +188,12 @@ export default function RepAgendaTab({
     setSaving(false);
     if (!res.ok) {
       const j = await res.json().catch(() => null);
-      setFormError(j?.error || "Erro ao salvar reunião.");
+      setFormError([avisoConvite, j?.error || "Erro ao salvar reunião."].filter(Boolean).join(" "));
       return;
     }
     setFormOpen(false);
     resetForm();
+    setAviso(avisoConvite);
     fetchMeetings();
   }
 
@@ -208,8 +254,12 @@ export default function RepAgendaTab({
         </button>
       </div>
 
+      {aviso && !formOpen && (
+        <p className="mb-6 text-sm text-green-700 font-[var(--font-inter)]">✓ Reunião criada. {aviso}</p>
+      )}
+
       {formOpen && (
-        <form onSubmit={handleSubmit} className="bg-white border border-[#e2e2e2] px-6 py-5 mb-8 space-y-4">
+        <form onSubmit={handleSubmit} className="bg-white border border-[#e2e2e2] px-4 sm:px-6 py-5 mb-8 space-y-4">
           <p className="text-[10px] tracking-[0.15em] uppercase font-bold font-[var(--font-inter)] text-[#74777f]">
             {editingId ? "Editar reunião" : "Nova reunião"}
           </p>
@@ -227,6 +277,7 @@ export default function RepAgendaTab({
                 {linkedPartners.map((p) => (
                   <option key={p.id} value={p.id}>{p.name}</option>
                 ))}
+                <option value={NOVO}>+ Cadastrar novo parceiro…</option>
               </select>
             </div>
             <div>
@@ -234,6 +285,15 @@ export default function RepAgendaTab({
               <input value={fLocation} onChange={(e) => setFLocation(e.target.value)} placeholder="Ex: Escritório do parceiro"
                 className="w-full border border-[#e2e2e2] px-3 py-2.5 text-sm font-[var(--font-inter)] text-[#002045] focus:outline-none focus:border-[#002045]" />
             </div>
+            {fPartnerId === NOVO && (
+              <div className="sm:col-span-2 bg-[#f5f5f3] border border-[#e2e2e2] px-4 py-4 space-y-3">
+                <p className="text-xs text-[#43474e] font-[var(--font-inter)]">
+                  Ao criar a reunião, o parceiro é cadastrado e recebe por e-mail e WhatsApp o link para aceitar,
+                  criar a senha e entrar no portal. Ele também recebe o convite da reunião.
+                </p>
+                <CamposNovoParceiro value={novoParceiro} onChange={setNovoParceiro} />
+              </div>
+            )}
             <div>
               <label className="block text-[10px] tracking-[0.15em] uppercase font-bold font-[var(--font-inter)] text-[#74777f] mb-1.5">Data *</label>
               <input required type="date" value={fDate} onChange={(e) => setFDate(e.target.value)}
@@ -257,15 +317,15 @@ export default function RepAgendaTab({
             <label className="block text-[10px] tracking-[0.15em] uppercase font-bold font-[var(--font-inter)] text-[#74777f] mb-1.5">Convidados</label>
             <div className="space-y-2">
               {fInvitees.map((inv, i) => (
-                <div key={i} className="flex gap-2">
+                <div key={i} className="grid grid-cols-[1fr_auto] sm:flex gap-2 border-b border-[#f0f0f0] pb-2 sm:border-0 sm:pb-0">
                   <input value={inv.name} onChange={(e) => setFInvitees((cur) => cur.map((x, j) => j === i ? { ...x, name: e.target.value } : x))}
-                    placeholder="Nome" className="flex-1 border border-[#e2e2e2] px-3 py-2 text-sm font-[var(--font-inter)] text-[#002045] focus:outline-none focus:border-[#002045]" />
+                    placeholder="Nome" className="min-w-0 sm:flex-1 border border-[#e2e2e2] px-3 py-2 text-sm font-[var(--font-inter)] text-[#002045] focus:outline-none focus:border-[#002045]" />
                   <input value={inv.phone} onChange={(e) => setFInvitees((cur) => cur.map((x, j) => j === i ? { ...x, phone: e.target.value } : x))}
-                    placeholder="Telefone" className="w-36 border border-[#e2e2e2] px-3 py-2 text-sm font-[var(--font-inter)] text-[#002045] focus:outline-none focus:border-[#002045]" />
+                    placeholder="Telefone" type="tel" className="col-start-1 min-w-0 w-full sm:w-36 border border-[#e2e2e2] px-3 py-2 text-sm font-[var(--font-inter)] text-[#002045] focus:outline-none focus:border-[#002045]" />
                   <input value={inv.email} onChange={(e) => setFInvitees((cur) => cur.map((x, j) => j === i ? { ...x, email: e.target.value } : x))}
-                    placeholder="E-mail" className="w-44 border border-[#e2e2e2] px-3 py-2 text-sm font-[var(--font-inter)] text-[#002045] focus:outline-none focus:border-[#002045]" />
+                    placeholder="E-mail" type="email" className="col-start-1 min-w-0 w-full sm:w-44 border border-[#e2e2e2] px-3 py-2 text-sm font-[var(--font-inter)] text-[#002045] focus:outline-none focus:border-[#002045]" />
                   <button type="button" onClick={() => setFInvitees((cur) => cur.filter((_, j) => j !== i))}
-                    className="text-[#74777f] hover:text-red-600 px-2" aria-label="Remover convidado">✕</button>
+                    className="col-start-2 row-start-1 text-[#74777f] hover:text-red-600 px-2" aria-label="Remover convidado">✕</button>
                 </div>
               ))}
             </div>

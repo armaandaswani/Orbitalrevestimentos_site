@@ -1,6 +1,7 @@
 "use client";
 
 import React, { useState, useEffect, useRef, useCallback } from "react";
+import ComissoesLista, { type ComissaoItem } from "@/components/ComissoesLista";
 import Image from "next/image";
 
 interface PartnerInfo {
@@ -32,6 +33,8 @@ interface CouponUse {
   sale_status: "em_orcamento" | "concluido" | "cancelado" | null;
   created_at: string;
   partner_commission_paid_at: string | null;
+  partner_commission_cancelled_at?: string | null;
+  partner_commission_received_at?: string | null;
 }
 
 function fmt(n: number) {
@@ -44,7 +47,7 @@ const STATUS_LABELS: Record<string, { label: string; cls: string }> = {
   cancelado:    { label: "Cancelado",    cls: "bg-red-100 text-red-700"      },
 };
 
-type LoginView = "login" | "forgot" | "reset";
+type LoginView = "login" | "forgot" | "reset" | "invite";
 
 const PROFESSIONS = [
   "Arquiteto e Urbanista",
@@ -111,6 +114,15 @@ export default function ParceiroPage() {
   const [resetLoading, setResetLoading] = useState(false);
   const [resetSuccess, setResetSuccess] = useState(false);
   const [resetError, setResetError] = useState("");
+
+  // ── Convite da representante (?convite=TOKEN) ─────────────────────────────
+  const [inviteToken, setInviteToken] = useState("");
+  const [inviteInfo, setInviteInfo] = useState<{ name: string; rep_name: string | null } | null>(null);
+  const [invitePassword, setInvitePassword] = useState("");
+  const [inviteConfirm, setInviteConfirm] = useState("");
+  const [inviteAgree, setInviteAgree] = useState(false);
+  const [inviteLoading, setInviteLoading] = useState(false);
+  const [inviteError, setInviteError] = useState("");
 
   // ── Dashboard state ────────────────────────────────────────────────────────
   const [partner, setPartner] = useState<PartnerInfo | null>(null);
@@ -243,6 +255,23 @@ export default function ParceiroPage() {
 
   // ── On mount: restore session from localStorage + check ?reset=TOKEN ──────
   useEffect(() => {
+    const params = new URLSearchParams(window.location.search);
+
+    // ?convite=TOKEN → tela de aceite (não restaura outra sessão salva neste aparelho)
+    const convite = params.get("convite");
+    if (convite) {
+      setInviteToken(convite);
+      setLoginView("invite");
+      fetch(`/api/parceiro/convite?token=${encodeURIComponent(convite)}`)
+        .then(async (r) => {
+          const j = await r.json().catch(() => null);
+          if (r.ok && j) setInviteInfo({ name: j.name, rep_name: j.rep_name ?? null });
+          else setInviteError(j?.error || "Convite inválido ou expirado.");
+        })
+        .catch(() => setInviteError("Sem conexão. Recarregue a página."));
+      return;
+    }
+
     // Restore saved session if still valid
     try {
       const raw = localStorage.getItem(SESSION_KEY);
@@ -258,8 +287,6 @@ export default function ParceiroPage() {
     } catch {
       localStorage.removeItem(SESSION_KEY);
     }
-
-    const params = new URLSearchParams(window.location.search);
 
     // ?rep=CODE → redirect to registration form on /parcerias
     const rep = params.get("rep");
@@ -417,6 +444,40 @@ export default function ParceiroPage() {
     setForgotMessage(json.message || "Se o email estiver correto, você receberá as instruções em breve.");
   }
 
+  async function handleAcceptInvite(e: React.FormEvent) {
+    e.preventDefault();
+    setInviteError("");
+    if (invitePassword.length < 8) {
+      setInviteError("A senha deve ter pelo menos 8 caracteres.");
+      return;
+    }
+    if (invitePassword !== inviteConfirm) {
+      setInviteError("As senhas não coincidem.");
+      return;
+    }
+    if (!inviteAgree) {
+      setInviteError("Para continuar, aceite os Termos de Uso e a Política de Privacidade.");
+      return;
+    }
+    setInviteLoading(true);
+    const res = await fetch("/api/parceiro/convite", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ token: inviteToken, password: invitePassword }),
+    }).catch(() => null);
+    const json = res ? await res.json().catch(() => null) : null;
+    setInviteLoading(false);
+    if (!res || !res.ok || !json) {
+      setInviteError(json?.error || "Não foi possível ativar. Tente de novo.");
+      return;
+    }
+    window.history.replaceState({}, "", window.location.pathname);
+    const partnerData = json as PartnerInfo;
+    setPartner(partnerData);
+    fetchUses(partnerData.coupon_code);
+    localStorage.setItem(SESSION_KEY, JSON.stringify({ partner: partnerData, savedAt: Date.now() }));
+  }
+
   async function handleResetPassword(e: React.FormEvent) {
     e.preventDefault();
     setResetError("");
@@ -547,6 +608,85 @@ export default function ParceiroPage() {
     return (
       <div className="min-h-screen bg-[#f5f5f3] flex items-center justify-center px-4">
         <div className="bg-white border border-[#e2e2e2] p-10 w-full max-w-sm">
+
+          {/* ── Convite view ── */}
+          {loginView === "invite" && (
+            <>
+              <div className="mb-6">
+                <p className="text-[#002045] font-[var(--font-noto-serif)] text-2xl font-normal mb-1">
+                  {inviteInfo ? `Olá, ${inviteInfo.name.split(" ")[0]}!` : "Convite de parceiro"}
+                </p>
+                <p className="text-[#74777f] text-sm font-[var(--font-inter)]">
+                  {inviteInfo
+                    ? `${inviteInfo.rep_name ? `${inviteInfo.rep_name} convidou você` : "Você foi convidado"} para ser Parceiro Orbital. Crie sua senha para entrar no portal.`
+                    : "Orbital Revestimentos"}
+                </p>
+              </div>
+              {!inviteInfo ? (
+                <div className="space-y-4">
+                  <p className={`text-sm font-[var(--font-inter)] ${inviteError ? "text-red-600" : "text-[#74777f]"}`}>
+                    {inviteError || "Carregando convite..."}
+                  </p>
+                  {inviteError && (
+                    <button
+                      onClick={() => { setLoginView("login"); window.history.replaceState({}, "", window.location.pathname); }}
+                      className="text-[#002045] text-xs font-[var(--font-inter)] underline underline-offset-2"
+                    >
+                      Ir para o login
+                    </button>
+                  )}
+                </div>
+              ) : (
+                <form onSubmit={handleAcceptInvite} className="space-y-4">
+                  <div>
+                    <label className="block text-[10px] tracking-[0.15em] uppercase font-bold font-[var(--font-inter)] text-[#74777f] mb-2">
+                      Crie sua senha
+                    </label>
+                    <input
+                      required
+                      type="password"
+                      autoComplete="new-password"
+                      value={invitePassword}
+                      onChange={(e) => setInvitePassword(e.target.value)}
+                      placeholder="Mínimo 8 caracteres"
+                      className="w-full border border-[#e2e2e2] px-4 py-3 text-sm font-[var(--font-inter)] text-[#002045] focus:outline-none focus:border-[#002045]"
+                      autoFocus
+                    />
+                  </div>
+                  <div>
+                    <label className="block text-[10px] tracking-[0.15em] uppercase font-bold font-[var(--font-inter)] text-[#74777f] mb-2">
+                      Confirme a senha
+                    </label>
+                    <input
+                      required
+                      type="password"
+                      autoComplete="new-password"
+                      value={inviteConfirm}
+                      onChange={(e) => setInviteConfirm(e.target.value)}
+                      className="w-full border border-[#e2e2e2] px-4 py-3 text-sm font-[var(--font-inter)] text-[#002045] focus:outline-none focus:border-[#002045]"
+                    />
+                  </div>
+                  <label className="flex items-start gap-2 text-xs text-[#43474e] font-[var(--font-inter)] leading-relaxed">
+                    <input type="checkbox" checked={inviteAgree} onChange={(e) => setInviteAgree(e.target.checked)} className="mt-0.5 accent-[#002045]" />
+                    <span>
+                      Aceito o convite e concordo com os{" "}
+                      <a href="/termos" target="_blank" rel="noopener noreferrer" className="underline underline-offset-2 text-[#002045]">Termos de Uso</a>{" "}
+                      e a{" "}
+                      <a href="/privacidade" target="_blank" rel="noopener noreferrer" className="underline underline-offset-2 text-[#002045]">Política de Privacidade</a>.
+                    </span>
+                  </label>
+                  {inviteError && <p className="text-red-600 text-sm font-[var(--font-inter)]">{inviteError}</p>}
+                  <button
+                    type="submit"
+                    disabled={inviteLoading}
+                    className="w-full bg-[#002045] text-white text-xs tracking-[0.12em] uppercase font-bold font-[var(--font-inter)] px-6 py-3 hover:bg-[#1a365d] transition-colors disabled:opacity-50"
+                  >
+                    {inviteLoading ? "Ativando..." : "Aceitar e entrar no portal"}
+                  </button>
+                </form>
+              )}
+            </>
+          )}
 
           {/* ── Reset password view ── */}
           {loginView === "reset" && (
@@ -1289,57 +1429,28 @@ export default function ParceiroPage() {
       {/* ── Comissões tab ── */}
       {portalTab === "commissions" && (
         <div className="max-w-5xl mx-auto px-4 sm:px-8 py-8">
-          {/* Summary */}
-          <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 mb-8">
-            <div className="bg-white border border-[#e2e2e2] px-6 py-5">
-              <p className="text-[#74777f] text-[10px] tracking-[0.15em] uppercase font-bold font-[var(--font-inter)] mb-1">Comissão confirmada</p>
-              <p className="font-[var(--font-noto-serif)] text-green-700 text-3xl font-normal">{fmt(totalCommission)}</p>
-              <p className="text-[#74777f] text-xs font-[var(--font-inter)] mt-1">em {concludedUses.length} venda{concludedUses.length !== 1 ? "s" : ""} concluída{concludedUses.length !== 1 ? "s" : ""}</p>
-            </div>
-            <div className="bg-white border border-[#e2e2e2] px-6 py-5">
-              <p className="text-[#74777f] text-[10px] tracking-[0.15em] uppercase font-bold font-[var(--font-inter)] mb-1">Comissão pendente</p>
-              <p className="font-[var(--font-noto-serif)] text-amber-600 text-3xl font-normal">{fmt(pendingCommission)}</p>
-              <p className="text-[#74777f] text-xs font-[var(--font-inter)] mt-1">aguardando conclusão das vendas</p>
-            </div>
-          </div>
-
-          {/* Commission card list — no table, no horizontal scroll */}
-          <h2 className="font-[var(--font-noto-serif)] text-[#002045] text-xl font-normal mb-4">Detalhamento</h2>
-          {uses.filter(u => u.sale_status !== "cancelado" && u.commission_owed != null).length === 0 ? (
-            <div className="bg-white border border-[#e2e2e2] px-6 py-10 text-center">
-              <p className="text-[#74777f] text-sm font-[var(--font-inter)]">Nenhuma comissão registrada ainda.</p>
-            </div>
-          ) : (
-            <div className="bg-white border border-[#e2e2e2] divide-y divide-[#f0f0f0]">
-              {uses.filter(u => u.sale_status !== "cancelado" && u.commission_owed != null).map(u => {
-                const st = u.sale_status || "em_orcamento";
-                const isPaid = !!u.partner_commission_paid_at;
-                return (
-                  <div key={u.id} className="px-5 py-4 flex items-start justify-between gap-4">
-                    <div className="flex-1 min-w-0">
-                      <p className="text-[#002045] text-sm font-semibold font-[var(--font-inter)] leading-tight">{u.product_name || "—"}</p>
-                      <p className="text-[#74777f] text-xs font-[var(--font-inter)] mt-0.5">{u.architect_name || "—"} · {u.space || "—"} · {new Date(u.created_at).toLocaleDateString("pt-BR")}</p>
-                    </div>
-                    <div className="flex-shrink-0 text-right">
-                      <p className={`text-base font-bold font-[var(--font-noto-serif)] ${st === "concluido" ? "text-green-700" : "text-amber-600"}`}>
-                        {fmt(u.commission_owed!)}
-                      </p>
-                      {st === "concluido" ? (
-                        isPaid
-                          ? <span className="inline-block mt-1 bg-green-100 text-green-800 px-2 py-0.5 text-[10px] font-bold tracking-wide">✓ Pago</span>
-                          : <span className="inline-block mt-1 bg-yellow-100 text-yellow-800 px-2 py-0.5 text-[10px] font-bold tracking-wide">A receber</span>
-                      ) : (
-                        <span className="inline-block mt-1 bg-yellow-50 text-yellow-700 px-2 py-0.5 text-[10px] font-bold tracking-wide">Pendente</span>
-                      )}
-                    </div>
-                  </div>
-                );
-              })}
-            </div>
-          )}
-          <p className="text-[#74777f] text-[10px] font-[var(--font-inter)] mt-4">
-            O status de pagamento é atualizado pela Orbital após confirmação da transferência.
-          </p>
+          <ComissoesLista
+            party="partner"
+            fmt={fmt}
+            items={uses
+              .filter((u) => u.commission_owed != null)
+              .map((u): ComissaoItem => ({
+                id: u.id,
+                amount: u.commission_owed || 0,
+                createdAt: u.created_at,
+                saleStatus: u.sale_status,
+                paidAt: u.partner_commission_paid_at,
+                receivedAt: u.partner_commission_received_at ?? null,
+                cancelledAt: u.partner_commission_cancelled_at ?? null,
+                partnerName: null,
+                clientName: u.architect_name,
+                product: u.product_name,
+                space: u.space,
+              }))}
+            onReceivedChange={(id, receivedAt, paidAt) =>
+              setUses((cur) => cur.map((u) => (u.id === id ? { ...u, partner_commission_received_at: receivedAt, partner_commission_paid_at: paidAt } : u)))
+            }
+          />
         </div>
       )}
 

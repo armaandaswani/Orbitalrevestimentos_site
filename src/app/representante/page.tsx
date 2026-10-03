@@ -4,6 +4,8 @@ import React, { useState, useMemo, useEffect, useRef } from "react";
 import RepAgendaTab from "./RepAgendaTab";
 import RepCrmTab from "./RepCrmTab";
 import RepMeetingPrompts from "./RepMeetingPrompts";
+import ConvidarParceiro from "./ConvidarParceiro";
+import ComissoesLista, { type ComissaoItem } from "@/components/ComissoesLista";
 
 interface SalesRepInfo {
   id: string;
@@ -19,6 +21,7 @@ interface LinkedPartner {
   name: string;
   profession: string | null;
   status: "active" | "inactive" | "pending";
+  is_self_registered?: boolean | null;
   coupon_code: string;
   created_at: string;
   total_sales: number;
@@ -45,6 +48,8 @@ interface CouponUse {
   sale_status: "em_orcamento" | "concluido" | "cancelado" | null;
   created_at: string;
   rep_commission_paid_at: string | null;
+  rep_commission_cancelled_at?: string | null;
+  rep_commission_received_at?: string | null;
 }
 
 function fmt(n: number) {
@@ -56,6 +61,24 @@ const STATUS_LABELS: Record<string, { label: string; cls: string }> = {
   concluido:    { label: "Concluído",    cls: "bg-green-100 text-green-800"  },
   cancelado:    { label: "Cancelado",    cls: "bg-red-100 text-red-700"      },
 };
+
+const DAY_MS = 24 * 60 * 60 * 1000;
+
+/** Sem venda nos últimos 30 dias (ou nunca vendeu). */
+function partnerIsIdle(p: LinkedPartner) {
+  return p.sales_count === 0 || !p.last_sale_at || Date.now() - new Date(p.last_sale_at).getTime() > 30 * DAY_MS;
+}
+
+/** Status do parceiro para a representante: convite ainda não aceito aparece como "Convite enviado". */
+function partnerStatusBadge(p: LinkedPartner): { label: string; cls: string } {
+  if (p.status === "active") return { label: "Ativo", cls: "bg-green-100 text-green-800" };
+  if (p.status === "pending") {
+    return p.is_self_registered === false
+      ? { label: "Convite enviado", cls: "bg-blue-50 text-[#002045]" }
+      : { label: "Pendente", cls: "bg-yellow-100 text-yellow-800" };
+  }
+  return { label: "Inativo", cls: "bg-gray-100 text-gray-600" };
+}
 
 export default function RepresentantePage() {
   const [loginEmail, setLoginEmail] = useState("");
@@ -201,8 +224,34 @@ export default function RepresentantePage() {
   const [repTab, setRepTab] = useState<"overview" | "commissions" | "partners" | "agenda" | "crm">("overview");
   const [linkedPartners, setLinkedPartners] = useState<LinkedPartner[]>([]);
   const [partnersLoading, setPartnersLoading] = useState(false);
+  const [partnerSearch, setPartnerSearch] = useState("");
+  const [partnerStatusFilter, setPartnerStatusFilter] = useState<"all" | "active" | "pending" | "inactive" | "idle">("all");
+  const [partnerSort, setPartnerSort] = useState<"total" | "name" | "count" | "last_sale" | "newest">("total");
   const [copied, setCopied] = useState(false);
   const [historyFilter, setHistoryFilter] = useState("");
+
+  // "Meus parceiros": busca, filtro e ordem (padrão: maior total gerado).
+  const partnersView = useMemo(() => {
+    const q = partnerSearch.trim().toLowerCase().normalize("NFD").replace(/[\u0300-\u036f]/g, "");
+    const list = linkedPartners.filter((p) => {
+      if (partnerStatusFilter === "idle" ? !partnerIsIdle(p) : partnerStatusFilter !== "all" && p.status !== partnerStatusFilter) return false;
+      if (!q) return true;
+      return [p.name, p.coupon_code, p.profession || ""].some((t) =>
+        t.toLowerCase().normalize("NFD").replace(/[\u0300-\u036f]/g, "").includes(q)
+      );
+    });
+    const byName = (a: LinkedPartner, b: LinkedPartner) => a.name.localeCompare(b.name, "pt-BR", { sensitivity: "base" });
+    const time = (d: string | null) => (d ? new Date(d).getTime() : 0);
+    return list.sort((a, b) => {
+      switch (partnerSort) {
+        case "name": return byName(a, b);
+        case "count": return b.sales_count - a.sales_count || b.total_sales - a.total_sales || byName(a, b);
+        case "last_sale": return time(b.last_sale_at) - time(a.last_sale_at) || byName(a, b);
+        case "newest": return time(b.created_at) - time(a.created_at);
+        default: return b.total_sales - a.total_sales || b.sales_count - a.sales_count || byName(a, b);
+      }
+    });
+  }, [linkedPartners, partnerSearch, partnerStatusFilter, partnerSort]);
 
   const partnerRanking = useMemo(() => {
     const byCode: Record<string, { total: number; count: number; values: number[]; name: string }> = {};
@@ -837,62 +886,34 @@ export default function RepresentantePage() {
         </>)}
 
         {repTab === "commissions" && (
-          <div>
-            {/* Summary */}
-            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 mb-8">
-              <div className="bg-white border border-[#e2e2e2] px-6 py-5">
-                <p className="text-[#74777f] text-[10px] tracking-[0.15em] uppercase font-bold font-[var(--font-inter)] mb-1">Comissão confirmada</p>
-                <p className="font-[var(--font-noto-serif)] text-green-700 text-3xl font-normal">{fmt(confirmedCommission)}</p>
-              </div>
-              <div className="bg-white border border-[#e2e2e2] px-6 py-5">
-                <p className="text-[#74777f] text-[10px] tracking-[0.15em] uppercase font-bold font-[var(--font-inter)] mb-1">Comissão pendente</p>
-                <p className="font-[var(--font-noto-serif)] text-amber-600 text-3xl font-normal">{fmt(pendingCommission)}</p>
-              </div>
-            </div>
-
-            {/* Card list — no table, no horizontal scroll */}
-            <h2 className="font-[var(--font-noto-serif)] text-[#002045] text-xl font-normal mb-4">Detalhamento</h2>
-            {uses.filter(u => u.sale_status !== "cancelado" && u.sales_rep_commission_owed != null).length === 0 ? (
-              <div className="bg-white border border-[#e2e2e2] px-6 py-10 text-center">
-                <p className="text-[#74777f] text-sm font-[var(--font-inter)]">Nenhuma comissão registrada ainda.</p>
-              </div>
-            ) : (
-              <div className="bg-white border border-[#e2e2e2] divide-y divide-[#f0f0f0]">
-                {uses.filter(u => u.sale_status !== "cancelado" && u.sales_rep_commission_owed != null).map(u => {
-                  const st = u.sale_status || "em_orcamento";
-                  const isPaid = !!u.rep_commission_paid_at;
-                  return (
-                    <div key={u.id} className="px-5 py-4 flex items-start justify-between gap-4">
-                      <div className="flex-1 min-w-0">
-                        <p className="text-[#002045] text-sm font-semibold font-[var(--font-inter)] leading-tight">{u.partner_name || u.coupon_code}</p>
-                        <p className="text-[#74777f] text-xs font-[var(--font-inter)] mt-0.5">{u.product_name || "—"} · {new Date(u.created_at).toLocaleDateString("pt-BR")}</p>
-                      </div>
-                      <div className="flex-shrink-0 text-right">
-                        <p className={`text-base font-bold font-[var(--font-noto-serif)] ${st === "concluido" ? "text-[#002045]" : "text-amber-600"}`}>
-                          {fmt(u.sales_rep_commission_owed!)}
-                        </p>
-                        {st === "concluido" ? (
-                          isPaid
-                            ? <span className="inline-block mt-1 bg-green-100 text-green-800 px-2 py-0.5 text-[10px] font-bold tracking-wide">✓ Pago</span>
-                            : <span className="inline-block mt-1 bg-yellow-100 text-yellow-800 px-2 py-0.5 text-[10px] font-bold tracking-wide">A receber</span>
-                        ) : (
-                          <span className="inline-block mt-1 bg-yellow-50 text-yellow-700 px-2 py-0.5 text-[10px] font-bold tracking-wide">Pendente</span>
-                        )}
-                      </div>
-                    </div>
-                  );
-                })}
-              </div>
-            )}
-            <p className="text-[#74777f] text-[10px] font-[var(--font-inter)] mt-4">
-              O status de pagamento é atualizado pela Orbital após confirmação da transferência.
-            </p>
-          </div>
+          <ComissoesLista
+            party="rep"
+            fmt={fmt}
+            items={uses
+              .filter((u) => u.sales_rep_commission_owed != null)
+              .map((u): ComissaoItem => ({
+                id: u.id,
+                amount: u.sales_rep_commission_owed || 0,
+                createdAt: u.created_at,
+                saleStatus: u.sale_status,
+                paidAt: u.rep_commission_paid_at,
+                receivedAt: u.rep_commission_received_at ?? null,
+                cancelledAt: u.rep_commission_cancelled_at ?? null,
+                partnerName: u.partner_name || u.coupon_code || null,
+                clientName: u.architect_name,
+                product: u.product_name,
+                space: u.space,
+              }))}
+            onReceivedChange={(id, receivedAt, paidAt) =>
+              setUses((cur) => cur.map((u) => (u.id === id ? { ...u, rep_commission_received_at: receivedAt, rep_commission_paid_at: paidAt } : u)))
+            }
+          />
         )}
 
         {repTab === "partners" && (
           <div>
-            {partnersLoading ? (
+            <ConvidarParceiro onConvidado={() => fetchLinkedPartners(salesRep.id)} />
+            {partnersLoading && linkedPartners.length === 0 ? (
               <p className="text-[#74777f] text-sm font-[var(--font-inter)]">Carregando parceiros...</p>
             ) : linkedPartners.length === 0 ? (
               <div className="bg-white border border-[#e2e2e2] px-6 py-10 text-center">
@@ -902,23 +923,73 @@ export default function RepresentantePage() {
               </div>
             ) : (
               <>
+                {/* Busca, filtro e ordem */}
+                <div className="grid grid-cols-1 sm:grid-cols-[1fr_auto_auto] gap-2 sm:gap-3 mb-3">
+                  <input
+                    type="search"
+                    value={partnerSearch}
+                    onChange={(e) => setPartnerSearch(e.target.value)}
+                    placeholder="Buscar por nome, cupom ou profissão"
+                    aria-label="Buscar parceiro"
+                    className="w-full min-w-0 border border-[#e2e2e2] bg-white px-3 py-2.5 text-sm font-[var(--font-inter)] text-[#002045] focus:outline-none focus:border-[#002045]"
+                  />
+                  <select
+                    value={partnerStatusFilter}
+                    onChange={(e) => setPartnerStatusFilter(e.target.value as typeof partnerStatusFilter)}
+                    aria-label="Filtrar por status"
+                    className="w-full border border-[#e2e2e2] bg-white px-3 py-2.5 text-sm font-[var(--font-inter)] text-[#002045] focus:outline-none focus:border-[#002045]"
+                  >
+                    <option value="all">Todos os status</option>
+                    <option value="active">Ativos</option>
+                    <option value="pending">Pendentes / convite enviado</option>
+                    <option value="inactive">Inativos</option>
+                    <option value="idle">Sem atividade (30 dias)</option>
+                  </select>
+                  <select
+                    value={partnerSort}
+                    onChange={(e) => setPartnerSort(e.target.value as typeof partnerSort)}
+                    aria-label="Ordenar"
+                    className="w-full border border-[#e2e2e2] bg-white px-3 py-2.5 text-sm font-[var(--font-inter)] text-[#002045] focus:outline-none focus:border-[#002045]"
+                  >
+                    <option value="total">Maior total gerado</option>
+                    <option value="name">Nome (A–Z)</option>
+                    <option value="count">Mais vendas</option>
+                    <option value="last_sale">Venda mais recente</option>
+                    <option value="newest">Cadastro mais recente</option>
+                  </select>
+                </div>
+                <p className="text-[11px] text-[#74777f] font-[var(--font-inter)] mb-3">
+                  {partnersView.length === linkedPartners.length
+                    ? `${linkedPartners.length} parceiro${linkedPartners.length === 1 ? "" : "s"}`
+                    : `${partnersView.length} de ${linkedPartners.length} parceiros`}
+                  {" · "}Total gerado:{" "}
+                  <strong className="text-[#002045]">
+                    {partnersView.reduce((a, p) => a + p.total_sales, 0).toLocaleString("pt-BR", { style: "currency", currency: "BRL", maximumFractionDigits: 0 })}
+                  </strong>
+                </p>
+
+                {partnersView.length === 0 ? (
+                  <div className="bg-white border border-[#e2e2e2] px-6 py-8 text-center">
+                    <p className="text-[#74777f] text-sm font-[var(--font-inter)]">Nenhum parceiro encontrado com esses filtros.</p>
+                  </div>
+                ) : (
+                <>
                 {/* Mobile card list — hidden on sm+ */}
                 <div className="sm:hidden bg-white border border-[#e2e2e2] divide-y divide-[#f0f0f0]">
-                  {linkedPartners.map((p) => {
-                    const statusCls = p.status === "active" ? "bg-green-100 text-green-800" : p.status === "pending" ? "bg-yellow-100 text-yellow-800" : "bg-gray-100 text-gray-600";
-                    const statusLabel = p.status === "active" ? "Ativo" : p.status === "pending" ? "Pendente" : "Inativo";
-                    const isInactive = p.sales_count === 0 || (!p.last_sale_at || Date.now() - new Date(p.last_sale_at).getTime() > 30 * 24 * 60 * 60 * 1000);
+                  {partnersView.map((p) => {
+                    const badge = partnerStatusBadge(p);
+                    const isInactive = partnerIsIdle(p);
                     return (
                       <div key={p.id} className="px-4 py-4">
                         <div className="flex items-start justify-between mb-3">
-                          <div>
-                            <p className="font-semibold text-[#002045] text-sm font-[var(--font-inter)]">{p.name}</p>
+                          <div className="min-w-0">
+                            <p className="font-semibold text-[#002045] text-sm font-[var(--font-inter)] break-words">{p.name}</p>
                             <p className="text-[#74777f] text-[10px] font-[var(--font-inter)] mt-0.5">desde {new Date(p.created_at).toLocaleDateString("pt-BR")}</p>
                           </div>
                           <div className="flex flex-col items-end gap-1 ml-2 flex-shrink-0">
-                            <div className="flex items-center gap-1">
-                              <span className={`inline-block px-2 py-0.5 text-[10px] font-bold tracking-wide ${statusCls}`}>{statusLabel}</span>
-                              {isInactive && <span className="inline-block bg-amber-100 text-amber-800 px-2 py-0.5 text-[10px] font-bold tracking-wide">Sem atividade</span>}
+                            <div className="flex items-center gap-1 flex-wrap justify-end">
+                              <span className={`inline-block px-2 py-0.5 text-[10px] font-bold tracking-wide ${badge.cls}`}>{badge.label}</span>
+                              {isInactive && p.status === "active" && <span className="inline-block bg-amber-100 text-amber-800 px-2 py-0.5 text-[10px] font-bold tracking-wide">Sem atividade</span>}
                             </div>
                             <span className="bg-[#eef2f8] text-[#002045] px-2 py-0.5 text-xs font-bold tracking-wider">{p.coupon_code}</span>
                           </div>
@@ -949,19 +1020,38 @@ export default function RepresentantePage() {
                     );
                   })}
                 </div>
-                {/* Desktop table — hidden on mobile */}
+                {/* Desktop table — hidden on mobile. Cabeçalhos com ▼ ordenam. */}
                 <div className="hidden sm:block bg-white border border-[#e2e2e2] overflow-x-auto">
                   <table className="w-full text-sm font-[var(--font-inter)]">
                     <thead>
                       <tr className="border-b border-[#e2e2e2]">
-                        {["Parceiro", "Tipo", "Status", "Cupom", "Vendas", "Total gerado", "Última venda"].map((h) => (
-                          <th key={h} className="text-left px-4 py-3 text-[10px] tracking-[0.1em] uppercase font-bold text-[#74777f] whitespace-nowrap">{h}</th>
+                        {([
+                          ["Parceiro", "name"],
+                          ["Tipo", null],
+                          ["Status", null],
+                          ["Cupom", null],
+                          ["Vendas", "count"],
+                          ["Total gerado", "total"],
+                          ["Última venda", "last_sale"],
+                        ] as const).map(([h, key]) => (
+                          <th key={h} className="text-left px-4 py-3 text-[10px] tracking-[0.1em] uppercase font-bold text-[#74777f] whitespace-nowrap">
+                            {key ? (
+                              <button
+                                type="button"
+                                onClick={() => setPartnerSort(key)}
+                                className={`uppercase tracking-[0.1em] font-bold hover:text-[#002045] ${partnerSort === key ? "text-[#002045]" : ""}`}
+                              >
+                                {h}{partnerSort === key ? (key === "name" ? " ▲" : " ▼") : ""}
+                              </button>
+                            ) : h}
+                          </th>
                         ))}
                       </tr>
                     </thead>
                     <tbody>
-                      {linkedPartners.map((p) => {
-                        const isInactive = p.sales_count === 0 || (!p.last_sale_at || Date.now() - new Date(p.last_sale_at).getTime() > 30 * 24 * 60 * 60 * 1000);
+                      {partnersView.map((p) => {
+                        const badge = partnerStatusBadge(p);
+                        const isInactive = partnerIsIdle(p);
                         return (
                         <tr key={p.id} className="border-b border-[#f0f0f0] hover:bg-[#fafafa]">
                           <td className="px-4 py-3">
@@ -973,14 +1063,8 @@ export default function RepresentantePage() {
                           </td>
                           <td className="px-4 py-3">
                             <div className="flex items-center gap-1 flex-wrap">
-                              <span className={`inline-block px-2 py-0.5 text-[10px] font-bold tracking-wide ${
-                                p.status === "active" ? "bg-green-100 text-green-800" :
-                                p.status === "pending" ? "bg-yellow-100 text-yellow-800" :
-                                "bg-gray-100 text-gray-600"
-                              }`}>
-                                {p.status === "active" ? "Ativo" : p.status === "pending" ? "Pendente" : "Inativo"}
-                              </span>
-                              {isInactive && <span className="inline-block bg-amber-100 text-amber-800 px-2 py-0.5 text-[10px] font-bold tracking-wide">Sem atividade</span>}
+                              <span className={`inline-block px-2 py-0.5 text-[10px] font-bold tracking-wide ${badge.cls}`}>{badge.label}</span>
+                              {isInactive && p.status === "active" && <span className="inline-block bg-amber-100 text-amber-800 px-2 py-0.5 text-[10px] font-bold tracking-wide">Sem atividade</span>}
                             </div>
                           </td>
                           <td className="px-4 py-3">
@@ -999,13 +1083,15 @@ export default function RepresentantePage() {
                     </tbody>
                   </table>
                 </div>
+                </>
+                )}
               </>
             )}
           </div>
         )}
 
         {repTab === "agenda" && (
-          <RepAgendaTab salesRepId={salesRep.id} linkedPartners={linkedPartners} />
+          <RepAgendaTab salesRepId={salesRep.id} linkedPartners={linkedPartners} onPartnersChanged={() => fetchLinkedPartners(salesRep.id)} />
         )}
 
         {repTab === "crm" && (

@@ -200,7 +200,7 @@ export default function OrcamentoPage({ params }: { params: Promise<{ slug: stri
         <div className="text-center max-w-sm">
           <p className="font-[var(--font-noto-serif)] text-[#002045] text-2xl mb-3">Orçamento não encontrado</p>
           <p className="text-[#74777f] text-sm font-[var(--font-inter)] leading-relaxed mb-6">Este link pode ter expirado ou ser inválido. Entre em contato com quem compartilhou o orçamento.</p>
-          <a href="https://wa.me/559288150149" className="inline-block bg-[#002045] text-white text-xs tracking-[0.12em] uppercase font-bold font-[var(--font-inter)] px-6 py-3">
+          <a href="https://wa.me/5592988150149" className="inline-block bg-[#002045] text-white text-xs tracking-[0.12em] uppercase font-bold font-[var(--font-inter)] px-6 py-3">
             Falar com a Orbital
           </a>
         </div>
@@ -214,7 +214,7 @@ export default function OrcamentoPage({ params }: { params: Promise<{ slug: stri
         <div className="text-center max-w-sm">
           <p className="font-[var(--font-noto-serif)] text-[#002045] text-2xl mb-3">Orçamento expirado</p>
           <p className="text-[#74777f] text-sm font-[var(--font-inter)] leading-relaxed mb-6">Este orçamento tinha validade de {QUOTE_VALIDITY_DAYS} dias e já expirou. Peça um novo orçamento atualizado.</p>
-          <a href="https://wa.me/559288150149" className="inline-block bg-[#002045] text-white text-xs tracking-[0.12em] uppercase font-bold font-[var(--font-inter)] px-6 py-3">
+          <a href="https://wa.me/5592988150149" className="inline-block bg-[#002045] text-white text-xs tracking-[0.12em] uppercase font-bold font-[var(--font-inter)] px-6 py-3">
             Solicitar novo orçamento
           </a>
         </div>
@@ -562,7 +562,7 @@ export default function OrcamentoPage({ params }: { params: Promise<{ slug: stri
         {/* CTAs */}
         <div className="space-y-3 mb-8">
           <a
-            href={`https://wa.me/559288150149?text=${waMessage}`}
+            href={`https://wa.me/5592988150149?text=${waMessage}`}
             target="_blank"
             rel="noopener noreferrer"
             className="flex items-center justify-center gap-3 w-full py-4 bg-[#25d366] text-white text-xs tracking-[0.12em] uppercase font-bold font-[var(--font-inter)] hover:bg-[#1ebe5d] transition-colors"

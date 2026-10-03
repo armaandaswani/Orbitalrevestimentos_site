@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from "next/server";
 import { supabaseAdmin } from "@/lib/supabase";
 import { hashPassword } from "@/lib/admin-auth";
 import { EMAIL_EMPRESA } from "@/lib/email-destinos";
+import { gerarCupomParceiro } from "@/lib/partner-coupon";
 
 export async function POST(req: NextRequest) {
   const body = await req.json();
@@ -50,28 +51,7 @@ export async function POST(req: NextRequest) {
     salesRep = data;
   }
 
-  // Generate coupon code: first word of name uppercased (letters only) + last 2 digits of year
-  const year2 = String(new Date().getFullYear()).slice(-2);
-  const firstWord = (name as string)
-    .trim()
-    .split(/\s+/)[0]
-    .toUpperCase()
-    .replace(/[^A-Z]/g, "");
-  const baseCode = `${firstWord}${year2}`;
-
-  // Find an available coupon code
-  let couponCode = baseCode;
-  let suffix = 1;
-  while (true) {
-    const { data: existing } = await db
-      .from("partners")
-      .select("id")
-      .eq("coupon_code", couponCode)
-      .maybeSingle();
-    if (!existing) break;
-    couponCode = `${baseCode}${suffix}`;
-    suffix++;
-  }
+  const couponCode = await gerarCupomParceiro(db, name as string);
 
   // Insert partner with pending status
   const { data: partner, error: insertError } = await db

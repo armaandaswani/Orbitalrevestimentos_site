@@ -41,7 +41,7 @@ export async function GET(req: NextRequest) {
   // 2. Fetch partner records
   const { data: partners, error: partnersErr } = await db
     .from("partners")
-    .select("id, name, profession, status, coupon_code, created_at")
+    .select("id, name, profession, status, is_self_registered, coupon_code, created_at")
     .in("id", partnerIds)
     .order("name", { ascending: true });
 
@@ -82,7 +82,7 @@ export async function GET(req: NextRequest) {
   return NextResponse.json(
     partners.map((p: {
       id: string; name: string; profession: string | null;
-      status: string; coupon_code: string; created_at: string;
+      status: string; is_self_registered: boolean | null; coupon_code: string; created_at: string;
     }) => ({
       ...p,
       total_sales: usesByCode[p.coupon_code]?.total ?? 0,

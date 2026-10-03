@@ -22,6 +22,7 @@ type NotifyLog = {
   kind: "new" | "reschedule" | "cancel";
   emails: { to: string; role: "partner" | "rep" | "admin"; ok: boolean; error?: string }[];
   whatsapp_admin: boolean | null;
+  whatsapp_empresa?: boolean | null;
 };
 type RepMeeting = {
   id: string;
@@ -113,6 +114,11 @@ function Avisos({ m }: { m: RepMeeting }) {
         {log.whatsapp_admin !== null && (
           <span className={log.whatsapp_admin ? "text-green-700" : "text-red-600 font-semibold"}>
             {" · "}{log.whatsapp_admin ? "✓ WhatsApp para você" : "✗ WhatsApp para você falhou"}
+          </span>
+        )}
+        {log.whatsapp_empresa != null && (
+          <span className={log.whatsapp_empresa ? "text-green-700" : "text-red-600 font-semibold"}>
+            {" · "}{log.whatsapp_empresa ? "✓ WhatsApp da empresa" : "✗ WhatsApp da empresa falhou"}
           </span>
         )}
         <span className="text-[#74777f]"> · {dataHora(log.at)}</span>

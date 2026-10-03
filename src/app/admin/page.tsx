@@ -268,9 +268,9 @@ export default function AdminPage() {
   const [approvingId, setApprovingId] = useState<string | null>(null);
   const [approvalForm, setApprovalForm] = useState({
     discount_type: "percentage" as "percentage" | "fixed",
-    discount_value: 10,
+    discount_value: 0,
     commission_type: "percentage" as "percentage" | "fixed",
-    commission_value: 5,
+    commission_value: 7,
     portal_password: "",
   });
   const [approvalLoading, setApprovalLoading] = useState(false);
@@ -397,6 +397,7 @@ export default function AdminPage() {
   // simulador-coupon quotes, and (commission fields) in the Commissions tab.
   interface PedidoLite {
     id: string;
+    coupon_use_id?: string | null;
     client_name: string;
     client_email: string | null;
     client_phone: string | null;
@@ -2746,14 +2747,22 @@ export default function AdminPage() {
     partnerPaidAt: string | null;
     partnerCancelledAt: string | null;
     partnerCancelReason: string | null;
+    /** O parceiro confirmou no portal que recebeu ("dar baixa"). */
+    partnerReceivedAt: string | null;
     repName: string;
     repAmount: number;
     repPaidAt: string | null;
     repCancelledAt: string | null;
     repCancelReason: string | null;
+    repReceivedAt: string | null;
   }
 
   const commissionRows = useMemo<CommissionRow[]>(() => {
+    // Baixa do pedido = baixa do uso de cupom vinculado a ele.
+    const receivedOf = (useId: string | null, who: "partner" | "rep") => {
+      const u = useId ? (uses.find((x) => x.id === useId) as { partner_commission_received_at?: string | null; rep_commission_received_at?: string | null } | undefined) : undefined;
+      return (who === "partner" ? u?.partner_commission_received_at : u?.rep_commission_received_at) ?? null;
+    };
     const fromCoupons: CommissionRow[] = uses
       .filter((u) => u.sale_status === "concluido")
       .map((u) => ({
@@ -2776,6 +2785,8 @@ export default function AdminPage() {
         repPaidAt: u.rep_commission_paid_at,
         repCancelledAt: (u as { rep_commission_cancelled_at?: string | null }).rep_commission_cancelled_at ?? null,
         repCancelReason: (u as { rep_commission_cancel_reason?: string | null }).rep_commission_cancel_reason ?? null,
+        partnerReceivedAt: (u as { partner_commission_received_at?: string | null }).partner_commission_received_at ?? null,
+        repReceivedAt: (u as { rep_commission_received_at?: string | null }).rep_commission_received_at ?? null,
       }));
 
     const fromPedidos: CommissionRow[] = pedidos
@@ -2797,6 +2808,8 @@ export default function AdminPage() {
         repPaidAt: p.sales_rep_commission_paid_at,
         repCancelledAt: (p as { sales_rep_commission_cancelled_at?: string | null }).sales_rep_commission_cancelled_at ?? null,
         repCancelReason: (p as { sales_rep_commission_cancel_reason?: string | null }).sales_rep_commission_cancel_reason ?? null,
+        partnerReceivedAt: receivedOf(p.coupon_use_id ?? null, "partner"),
+        repReceivedAt: receivedOf(p.coupon_use_id ?? null, "rep"),
       }));
 
     return [...fromCoupons, ...fromPedidos].sort(
@@ -3379,7 +3392,14 @@ export default function AdminPage() {
                     <div key={p.id} className="bg-white border border-yellow-200 px-6 py-5">
                       <div className="flex flex-col sm:flex-row sm:items-start sm:justify-between gap-4">
                         <div>
-                          <p className="font-semibold text-[#002045] font-[var(--font-inter)]">{p.name}</p>
+                          <p className="font-semibold text-[#002045] font-[var(--font-inter)]">
+                            {p.name}
+                            {p.is_self_registered === false && (
+                              <span className="ml-2 align-middle inline-block bg-blue-50 text-[#002045] px-2 py-0.5 text-[10px] font-bold tracking-wide">
+                                Convite da representante · ativa sozinho ao aceitar
+                              </span>
+                            )}
+                          </p>
                           <div className="flex flex-wrap gap-x-4 gap-y-0.5 mt-1">
                             {p.email && <p className="text-xs text-[#74777f] font-[var(--font-inter)]">{p.email}</p>}
                             {p.phone && <p className="text-xs text-[#74777f] font-[var(--font-inter)]">{p.phone}</p>}
@@ -3395,7 +3415,7 @@ export default function AdminPage() {
                           </p>
                         </div>
                         <div className="flex gap-2 flex-shrink-0">
-                          <button onClick={() => { setApprovingId(approvingId === p.id ? null : p.id); setApprovalForm({ discount_type: "percentage", discount_value: 10, commission_type: "percentage", commission_value: 5, portal_password: "" }); }}
+                          <button onClick={() => { setApprovingId(approvingId === p.id ? null : p.id); setApprovalForm({ discount_type: "percentage", discount_value: 0, commission_type: "percentage", commission_value: 7, portal_password: "" }); }}
                             className="bg-[#002045] text-white text-xs font-bold font-[var(--font-inter)] tracking-[0.08em] uppercase px-4 py-2 hover:bg-[#1a365d] transition-colors">
                             Aprovar
                           </button>
@@ -5463,6 +5483,7 @@ export default function AdminPage() {
                               ) : r.partnerPaidAt ? (
                                 <span className="inline-block bg-green-100 text-green-800 px-2 py-0.5 text-[10px] font-bold tracking-wide">
                                   ✓ Pago {new Date(r.partnerPaidAt).toLocaleDateString("pt-BR")}
+                                  {r.partnerReceivedAt && <span className="block font-normal">recebimento confirmado</span>}
                                 </span>
                               ) : r.partnerAmount ? (
                                 <button onClick={() => r.source === "coupon" ? markCommissionPaid(r.id, "partner") : markPedidoCommissionPaid(r.id, "partner")}
@@ -5481,6 +5502,7 @@ export default function AdminPage() {
                               ) : r.repPaidAt ? (
                                 <span className="inline-block bg-green-100 text-green-800 px-2 py-0.5 text-[10px] font-bold tracking-wide">
                                   ✓ Pago {new Date(r.repPaidAt).toLocaleDateString("pt-BR")}
+                                  {r.repReceivedAt && <span className="block font-normal">recebimento confirmado</span>}
                                 </span>
                               ) : (
                                 <button onClick={() => r.source === "coupon" ? markCommissionPaid(r.id, "rep") : markPedidoCommissionPaid(r.id, "rep")}
@@ -5524,7 +5546,7 @@ export default function AdminPage() {
                           <div className="flex items-center justify-between gap-2">
                             <span className="text-xs text-[#74777f]">Parceiro: <b className="text-[#002045]">{r.partnerAmount ? fmt(r.partnerAmount) : "—"}</b></span>
                             {r.partnerPaidAt ? (
-                              <span className="inline-block bg-green-100 text-green-800 px-2 py-0.5 text-[10px] font-bold tracking-wide">✓ Pago {new Date(r.partnerPaidAt).toLocaleDateString("pt-BR")}</span>
+                              <span className="inline-block bg-green-100 text-green-800 px-2 py-0.5 text-[10px] font-bold tracking-wide">✓ Pago {new Date(r.partnerPaidAt).toLocaleDateString("pt-BR")}{r.partnerReceivedAt ? " · confirmado" : ""}</span>
                             ) : r.partnerAmount ? (
                               <button onClick={() => r.source === "coupon" ? markCommissionPaid(r.id, "partner") : markPedidoCommissionPaid(r.id, "partner")} className="inline-block bg-yellow-100 text-yellow-800 px-2 py-0.5 text-[10px] font-bold tracking-wide hover:bg-yellow-200 transition-colors">Marcar pago</button>
                             ) : <span className="text-[#ccc] text-xs">—</span>}
@@ -5533,7 +5555,7 @@ export default function AdminPage() {
                             <span className="text-xs text-[#74777f]">Rep.: <b className="text-[#1a365d]">{r.repAmount ? fmt(r.repAmount) : "—"}</b></span>
                             {!r.repAmount ? <span className="text-[#ccc] text-xs">—</span> :
                               r.repPaidAt ? (
-                                <span className="inline-block bg-green-100 text-green-800 px-2 py-0.5 text-[10px] font-bold tracking-wide">✓ Pago {new Date(r.repPaidAt).toLocaleDateString("pt-BR")}</span>
+                                <span className="inline-block bg-green-100 text-green-800 px-2 py-0.5 text-[10px] font-bold tracking-wide">✓ Pago {new Date(r.repPaidAt).toLocaleDateString("pt-BR")}{r.repReceivedAt ? " · confirmado" : ""}</span>
                               ) : (
                                 <button onClick={() => r.source === "coupon" ? markCommissionPaid(r.id, "rep") : markPedidoCommissionPaid(r.id, "rep")} className="inline-block bg-yellow-100 text-yellow-800 px-2 py-0.5 text-[10px] font-bold tracking-wide hover:bg-yellow-200 transition-colors">Marcar pago</button>
                               )}

@@ -92,7 +92,7 @@ export async function POST(
 
         <p style="margin:0;font-size:11px;color:#74777f;font-family:Arial,sans-serif;">
           Este orçamento é válido até <strong>${expiresFormatted}</strong>. Para avançar ou tirar dúvidas, entre em contato pelo WhatsApp:
-          <a href="https://wa.me/559288150149" style="color:#002045;">(92) 98815-0149</a>.
+          <a href="https://wa.me/5592988150149" style="color:#002045;">(92) 98815-0149</a>.
         </p>
       </td></tr>
 

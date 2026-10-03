@@ -10,3 +10,9 @@
  * relatório diário, mensal nem de comissões. Mude aqui, e só aqui.
  */
 export const EMAIL_EMPRESA = "orbitalrevestimentos@gmail.com";
+
+/**
+ * WhatsApp da empresa: recebe a confirmação de cada reunião criada pela
+ * representante (além do WhatsApp do dono, em ADMIN_WHATSAPP).
+ */
+export const WHATSAPP_EMPRESA = "5592988150149";
