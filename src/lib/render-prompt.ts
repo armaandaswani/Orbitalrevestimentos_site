@@ -456,3 +456,66 @@ export function composeOpenAIPrompt(opts: {
   );
   return lines.join("\n");
 }
+
+/**
+ * Prompt do fluxo guiado por IA: UMA chamada para todas as áreas, sem máscara.
+ * Cada área chega descrita em texto (escrito pela IA de análise e revisado pelo
+ * cliente) e aponta para a textura do seu modelo (imagem 2, 3, …). Sem máscara
+ * o modelo não "apaga" o retângulo marcado: quadros e objetos na frente da
+ * parede continuam no lugar, como no ChatGPT.
+ */
+export function composeOpenAIMultiPrompt(opts: {
+  areas: Array<{
+    description: string;
+    imageNumber: number; // 2, 3, … — posição da textura no envio
+    finish: FinishKind;
+    productNotes?: string | null;
+    extraNotes?: string | null;
+    panelWidthM: number;
+    panelHeightM: number;
+    wallWidthM?: number | null;
+    wallHeightM?: number | null;
+    referenceIsTexture: boolean;
+  }>;
+  keep?: string | null;
+}): string {
+  const fmt = (n: number) => n.toFixed(2).replace(/\.?0+$/, "");
+  const ordinal = (n: number) => (n === 2 ? "SECOND" : n === 3 ? "THIRD" : n === 4 ? "FOURTH" : n === 5 ? "FIFTH" : `#${n}`);
+  const many = opts.areas.length > 1;
+  const lines: string[] = [
+    "Photorealistic interior edit. The FIRST image is a real photo of the client's room. Show exactly how this same photo looks after the wall panels are installed on the surface(s) described below — nothing else changes.",
+    "The descriptions were written in Brazilian Portuguese; follow them literally.",
+    "",
+  ];
+  opts.areas.forEach((a, i) => {
+    const pw = fmt(a.panelWidthM), ph = fmt(a.panelHeightM);
+    lines.push(
+      `${many ? `AREA ${i + 1}` : "WHERE"}: clad ${a.description.trim()}. Cover that whole surface edge to edge, following its real perspective, corners and edges, and stop cleanly at its real borders (where it meets the ceiling, the floor or baseboard, or another surface).`,
+      a.referenceIsTexture
+        ? `MATERIAL${many ? ` (area ${i + 1})` : ""}: the ${ordinal(a.imageNumber)} image is a flat, straight-on texture swatch of the exact panel. Reproduce THAT pattern and colour faithfully — same tones, same grain or veining, same contrast. Do not invent a different material.`
+        : `MATERIAL${many ? ` (area ${i + 1})` : ""}: the ${ordinal(a.imageNumber)} image shows the exact panel product. Reproduce its pattern and colour faithfully. Ignore its background and lighting.`,
+      `FINISH: ${FINISH_RULES[a.finish].rule}`,
+    );
+    if (a.productNotes?.trim()) lines.push(`Product details: ${a.productNotes.trim()}`);
+    if (a.extraNotes?.trim()) lines.push(`Notes: ${a.extraNotes.trim()}`);
+    lines.push(
+      `FORMAT AND SCALE: large-format sheets, ${pw} m × ${ph} m, laid side by side (vertical on walls) with very fine, barely visible butt joints — no grout, no frames, no trim strips, no wainscot. One sheet is ${pw} m wide (doors ≈ 2.1 m tall and outlets are size references).`,
+    );
+    const w = a.wallWidthM ?? 0, h = a.wallHeightM ?? 0;
+    if (w > 0 && h > 0) {
+      const g = panelGrid(w, h, a.panelWidthM, a.panelHeightM);
+      lines.push(`The surface measures about ${fmt(w)} m × ${fmt(h)} m, so it takes about ${g.cols} sheet${g.cols > 1 ? "s" : ""} side by side.`);
+    }
+    lines.push("");
+  });
+  const keep = opts.keep?.trim();
+  lines.push(
+    "KEEP EVERYTHING ELSE IDENTICAL: same camera position, angle, framing, crop and perspective; same floor, ceiling, baseboards, doors, windows, other walls, furniture, lighting fixtures and people; same room lighting and colour balance.",
+    "Everything that hangs on or stands in front of the clad surface — pictures and frames, TVs, shelves, mirrors, lamps, switches, outlets, plants, furniture — stays exactly where it is, unchanged, ON TOP of the new panels. Only the old wall finish behind them is replaced.",
+  );
+  if (keep) lines.push(`Must stay exactly as in the photo: ${keep}.`);
+  lines.push(
+    "Do NOT add anything and do NOT remove anything. The new surface receives the room's existing light and shadows. The result must look like a real photograph taken after installation, not a render.",
+  );
+  return lines.join("\n");
+}

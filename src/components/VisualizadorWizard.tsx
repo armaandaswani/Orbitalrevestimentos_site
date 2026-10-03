@@ -68,6 +68,13 @@ const ZONE_COLORS = ["#3b6934", "#b4791e", "#1e5fb4", "#a83279", "#2a9d8f", "#9b
 // Flip to true only to re-enable the (worse) deterministic paste.
 const DETERMINISTIC_PROJECTION = false;
 
+// Fluxo guiado por IA (out/2026): marcar é instantâneo (sem SAM2/Gemini — a
+// marcação é só uma indicação), a IA lê a foto e descreve a superfície em texto,
+// o cliente revisa e o render sai numa única chamada SEM máscara. A máscara do
+// retângulo fazia o gerador redesenhar tudo dentro dele (sumiam os quadros).
+// true = volta a detectar a superfície a cada toque (fluxo antigo, lento).
+const SURFACE_DETECTION = false;
+
 export type Rect = { x: number; y: number; w: number; h: number };
 type Poly = Array<[number, number]>;
 
@@ -103,6 +110,11 @@ export interface Zone {
   // client actively chooses — that's the "modelo escolhido" step of the guided
   // flow, and why the Gerar button no longer lights up prematurely.
   productChosen?: boolean;
+  // Marcação por toque (um ponto) em vez de retângulo desenhado.
+  point?: boolean;
+  // Último texto escrito pela IA para esta área: se instruction ainda é igual a
+  // ele, uma nova análise pode substituí-lo; se o cliente editou, fica o dele.
+  aiText?: string;
 }
 
 export interface SimPrefill {
@@ -852,7 +864,7 @@ export type VizStep = "upload" | "zones" | "result";
 const STEP_LABELS: { n: string; label: string }[] = [
   { n: "1", label: "Foto" },
   { n: "2", label: "Área" },
-  { n: "3", label: "Confirmar" },
+  { n: "3", label: "Descrição" },
   { n: "4", label: "Modelo" },
   { n: "5", label: "Resultado" },
 ];
@@ -945,7 +957,11 @@ export default function VisualizadorWizard({
   // torn. Gemini never touches the panel → it cannot hallucinate or change the
   // design; the pattern is exact and repetitive and the rest of the photo stays
   // pixel-identical. Products without a flat texture fall back to Gemini-apply.
-  const [useProjection, setUseProjection] = useState(true);
+  const [useProjection, setUseProjection] = useState(DETERMINISTIC_PROJECTION);
+  // O que deve continuar igual na foto (escrito pela IA, editável pelo cliente).
+  const [keepText, setKeepText] = useState("");
+  const aiKeepRef = useRef("");
+  const [analysis, setAnalysis] = useState<{ status: "idle" | "loading" | "done" | "error"; sig: string; error?: string }>({ status: "idle", sig: "" });
   const [progress, setProgress] = useState<{ i: number; total: number; label: string } | null>(null);
   const [result, setResult] = useState<string | null>(null);
   const [error, setError] = useState<string | null>(null);
@@ -1274,6 +1290,16 @@ export default function VisualizadorWizard({
       const id = `z-${Date.now()}`;
       const idx = zones.length;
       const pf = resolveZonePrefill(idx);
+      if (!SURFACE_DETECTION) {
+        // Instantâneo: o toque vira um alvo; a IA descobre a superfície depois.
+        setZones((prev) => [...prev, {
+          id, label: `Área ${idx + 1}`, surface: pf.surface, customLabel: pf.customLabel,
+          productId: pf.productId, productChosen: pf.chosen, polygon: null, maskUrl: null, rect: rectAroundPoint(nx, ny), manual: true,
+          point: true, instruction: "", width: pf.width, height: pf.height, detecting: false,
+        }]);
+        setActiveZoneId(id);
+        return;
+      }
       setZones((prev) => [...prev, {
         id, label: `Área ${idx + 1}`, surface: pf.surface, customLabel: pf.customLabel,
         productId: pf.productId, productChosen: pf.chosen, polygon: null, maskUrl: null, rect: null, manual: false,
@@ -1288,10 +1314,14 @@ export default function VisualizadorWizard({
 
   const redetectZone = useCallback(
     (id: string, nx: number, ny: number) => {
+      if (!SURFACE_DETECTION) {
+        updateZone(id, { rect: rectAroundPoint(nx, ny), point: true, maskUrl: null, polygon: null, quad: null });
+        return;
+      }
       const idx = zones.findIndex((z) => z.id === id);
       void detectInto(id, idx < 0 ? 0 : idx, nx, ny);
     },
-    [zones, detectInto]
+    [zones, detectInto, updateZone]
   );
 
   const onTapPhoto = useCallback(
@@ -1310,11 +1340,11 @@ export default function VisualizadorWizard({
       setZones((prev) => [...prev, {
         id, label: `Área ${idx + 1}`, surface: pf.surface, customLabel: pf.customLabel,
         productId: pf.productId, productChosen: pf.chosen, polygon: null, maskUrl: null, rect, manual: true,
-        instruction: "", width: pf.width, height: pf.height, detecting: true,
+        instruction: "", width: pf.width, height: pf.height, detecting: SURFACE_DETECTION,
       }]);
       setActiveZoneId(id);
       scrollZoneRef.current = id;
-      void detectIntoFromBox(id, idx, rect);
+      if (SURFACE_DETECTION) void detectIntoFromBox(id, idx, rect);
     },
     [zones.length, resolveZonePrefill, detectIntoFromBox]
   );
@@ -1401,6 +1431,61 @@ export default function VisualizadorWizard({
     return applicationAreaFor(z.surface, z.customLabel) ?? undefined;
   };
 
+  // ── Análise por IA (marcar → confirmar) ───────────────────────────────────
+  // Assinatura da marcação: só reanalisa quando a foto ou as áreas mudaram.
+  const marksSig = useMemo(
+    () => JSON.stringify([photoData?.length ?? 0, zones.map((z) => [z.id, z.rect, z.point ?? false, z.instruction !== z.aiText ? z.instruction : ""])]),
+    [photoData, zones]
+  );
+  const analyze = useCallback(async () => {
+    if (!photoData || zones.length === 0) return;
+    const sig = marksSig;
+    setAnalysis({ status: "loading", sig });
+    try {
+      const res = await fetch("/api/visualizador/analisar", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          photo: photoData,
+          zones: zones.map((z, i) => ({
+            id: z.id,
+            label: z.label,
+            color: ZONE_COLORS[i % ZONE_COLORS.length],
+            rect: z.rect,
+            point: !!z.point,
+            // Texto do próprio cliente (não o que a IA escreveu antes).
+            text: z.instruction.trim() && z.instruction !== z.aiText ? z.instruction.trim() : "",
+          })),
+        }),
+      });
+      const j = (await res.json().catch(() => null)) as { areas?: { id: string; descricao: string }[]; manter?: string; error?: string } | null;
+      if (!res.ok || !j?.areas) {
+        setAnalysis({ status: "error", sig, error: j?.error || "Não consegui analisar a foto agora. Descreva a área no campo de texto." });
+        return;
+      }
+      const byId = new Map(j.areas.map((a) => [a.id, a.descricao]));
+      setZones((prev) => prev.map((z) => {
+        const d = byId.get(z.id);
+        if (!d) return z;
+        const editedByClient = !!z.instruction.trim() && z.instruction !== z.aiText;
+        return editedByClient ? { ...z, aiText: d } : { ...z, instruction: d, aiText: d };
+      }));
+      if (j.manter) {
+        setKeepText((cur) => (!cur.trim() || cur === aiKeepRef.current ? j.manter! : cur));
+        aiKeepRef.current = j.manter;
+      }
+      // A assinatura muda com o texto preenchido pela IA? Não: texto igual a aiText não entra nela.
+      setAnalysis({ status: "done", sig });
+    } catch {
+      setAnalysis({ status: "error", sig, error: "Sem conexão. Descreva a área no campo de texto." });
+    }
+  }, [photoData, zones, marksSig]);
+
+  const goConfirm = useCallback(() => {
+    setZonePhase("confirm");
+    if (analysis.sig !== marksSig || analysis.status === "error") void analyze();
+  }, [analysis, marksSig, analyze]);
+
   // ── Generate ──────────────────────────────────────────────────────────────
   const generate = useCallback(async () => {
     if (!photoData) return;
@@ -1427,7 +1512,42 @@ export default function VisualizadorWizard({
       } catch { dims = null; }
     }
     try {
-      for (let i = 0; i < zs.length; i++) {
+      // Fluxo da IA: todas as áreas numa só chamada, descritas em texto, sem
+      // máscara — a foto volta inteira e igual, só com o revestimento. Se o
+      // servidor não tiver o gerador para isso (501), segue o fluxo antigo.
+      let doneInOneCall = false;
+      if (!DETERMINISTIC_PROJECTION) {
+        setProgress({ i: 1, total: 1, label: zs.length > 1 ? "as áreas" : "o revestimento" });
+        const res = await fetch("/api/visualizador/render", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({
+            photo: base,
+            aspect: dims && dims.h > 0 ? dims.w / dims.h : undefined,
+            keep: keepText.trim() || undefined,
+            areas: zs.map((z) => ({
+              productId: z.productId,
+              description: areaForZone(z) || "a parede principal, de frente para a câmera",
+              referenceUrl: productById(z.productId)?.render_texture_path?.trim() || productById(z.productId)?.image_path || undefined,
+              wallWidthM: parseDim(z.width) ?? undefined,
+              wallHeightM: parseDim(z.height) ?? undefined,
+            })),
+          }),
+        }).catch(() => null);
+        if (res && res.status !== 501) {
+          const j = (await res.json().catch(() => null)) as { image?: string; error?: string } | null;
+          if (!res.ok || !j?.image) throw new Error(j?.error || "Não foi possível gerar a visualização.");
+          try {
+            composite = dims ? await fitToBase(j.image, dims.w, dims.h) : j.image;
+          } catch {
+            composite = j.image;
+          }
+          doneInOneCall = true;
+        } else if (!res) {
+          throw new Error("Sem conexão. Tente novamente.");
+        }
+      }
+      for (let i = 0; i < zs.length && !doneInOneCall; i++) {
         const z = zs[i];
         const prod = productById(z.productId);
         if (!prod) continue;
@@ -1608,7 +1728,7 @@ export default function VisualizadorWizard({
       setProgress(null);
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [photoData, zones, productById, embeddedMode, onComplete, useProjection]);
+  }, [photoData, zones, productById, embeddedMode, onComplete, useProjection, keepText]);
 
   // ── Lead submit (standalone mode) ─────────────────────────────────────────
   const handleLeadSubmit = useCallback(() => {
@@ -1786,6 +1906,11 @@ export default function VisualizadorWizard({
             onGenerate={generate}
             useProjection={useProjection}
             setUseProjection={setUseProjection}
+            onConfirmMarks={goConfirm}
+            analysis={analysis}
+            onReanalyze={analyze}
+            keepText={keepText}
+            setKeepText={setKeepText}
           />
         )}
 
@@ -2009,6 +2134,7 @@ function ZonesStep({
   phase, setPhase, photoData, zones, activeZoneId, setActiveZoneId, onTapPhoto, onDrawRect, onAddTextZone, onConfirmQuad,
   updateZone, removeZone, retargetId, setRetargetId, anyDetecting, products, loadingProducts,
   productById, canGenerate, anyAreaMarked, simPrefills, onBack, onGenerate, useProjection,
+  onConfirmMarks, analysis, onReanalyze, keepText, setKeepText,
 }: {
   phase: "mark" | "confirm" | "model";
   setPhase: (p: "mark" | "confirm" | "model") => void;
@@ -2037,6 +2163,11 @@ function ZonesStep({
   onGenerate: () => void;
   useProjection: boolean;
   setUseProjection: (v: boolean) => void;
+  onConfirmMarks: () => void;
+  analysis: { status: "idle" | "loading" | "done" | "error"; sig: string; error?: string };
+  onReanalyze: () => void;
+  keepText: string;
+  setKeepText: (v: string) => void;
 }) {
   const [mode, setMode] = useState<ZoneMode>("tap");
 
@@ -2074,9 +2205,9 @@ function ZonesStep({
           {retargetId ? (
             <strong className="text-[#b4791e]">Toque no ponto certo da superfície para refazer a seleção.</strong>
           ) : mode === "tap" ? (
-            <><strong>Tocar:</strong> toque numa superfície (parede, teto, móvel…) e a IA marca a área sozinha.</>
+            <><strong>Tocar:</strong> toque na superfície (parede, teto, móvel…). No próximo passo a IA descreve a área inteira.</>
           ) : (
-            <><strong>Desenhar:</strong> arraste sobre a foto para desenhar a área você mesmo.</>
+            <><strong>Desenhar:</strong> arraste sobre a foto para indicar a área. Não precisa ser exato: a IA entende a superfície.</>
           )}
         </p>
 
@@ -2113,31 +2244,83 @@ function ZonesStep({
 
         <div className="mt-5 flex flex-wrap items-center gap-3">
           <button onClick={onBack} className={backBtn}>Trocar foto</button>
-          <button onClick={() => setPhase("confirm")} disabled={!anyAreaMarked} className={`${nextBtn} bg-[#002045] hover:bg-[#1a365d]`}>
-            {anyDetecting ? "Detectando área…" : anyAreaMarked ? "Confirmar área →" : "Marque uma área para continuar"}
+          <button onClick={onConfirmMarks} disabled={!anyAreaMarked} className={`${nextBtn} bg-[#002045] hover:bg-[#1a365d]`}>
+            {anyDetecting ? "Detectando área…" : anyAreaMarked ? "Continuar →" : "Marque uma área para continuar"}
           </button>
         </div>
       </div>
     );
   }
 
-  // ── Phase 3 — CONFIRM ─────────────────────────────────────────────────────
+  // ── Phase 3 — CONFIRM: a IA descreve, o cliente revisa ─────────────────────
   if (phase === "confirm") {
+    const lendo = analysis.status === "loading";
+    const semTexto = zones.some((z) => !z.instruction.trim());
+    const fieldCls = "w-full border border-[#e2e2e2] bg-white px-3 py-2.5 text-sm font-[var(--font-inter)] text-[#002045] leading-relaxed focus:outline-none focus:border-[#002045] resize-y disabled:bg-[#f5f5f3] disabled:text-[#74777f]";
     return (
       <div className="mt-6 max-w-2xl mx-auto">
-        <StepHead title="A área selecionada está correta?" subtitle="Confira a marcação. Se precisar, volte e ajuste antes de escolher o acabamento." />
+        <StepHead
+          title="Confira o que vamos fazer"
+          subtitle="A IA leu a sua foto e descreveu onde aplicar. Ajuste o texto se precisar: é ele que guia a visualização."
+        />
         <SurfaceCanvas
           photoData={photoData} zones={zones} activeZoneId={activeZoneId} setActiveZoneId={setActiveZoneId}
-          mode="tap" onTapPhoto={onTapPhoto} onDrawRect={onDrawRect} updateZone={updateZone}
-          busy={anyDetecting} retargeting={!!retargetId} onConfirmQuad={onConfirmQuad}
+          mode="tap" onTapPhoto={() => {}} onDrawRect={onDrawRect} updateZone={updateZone}
+          busy={lendo} retargeting={false} onConfirmQuad={onConfirmQuad}
         />
-        <p className="mt-3 text-[#74777f] text-xs font-[var(--font-inter)]">
-          {zones.length} {zones.length === 1 ? "área marcada" : "áreas marcadas"}. Toque na foto para adicionar outra, ou volte para ajustar.
-        </p>
+
+        {lendo && (
+          <p className="mt-4 flex items-center gap-2 text-sm text-[#002045] font-[var(--font-inter)]">
+            <span className="inline-block w-4 h-4 border-2 border-[#002045] border-t-transparent rounded-full animate-spin" />
+            A IA está analisando a foto…
+          </p>
+        )}
+        {analysis.status === "error" && (
+          <p className="mt-4 text-sm text-[#b4791e] font-[var(--font-inter)]">
+            {analysis.error}{" "}
+            <button type="button" onClick={onReanalyze} className="underline underline-offset-2 font-semibold">Tentar de novo</button>
+          </p>
+        )}
+
+        <div className="mt-4 space-y-4">
+          {zones.map((z, i) => (
+            <div key={z.id}>
+              <label htmlFor={`desc-${z.id}`} className="flex items-center gap-2 text-[10px] tracking-[0.15em] uppercase font-bold font-[var(--font-inter)] text-[#002045] mb-1.5">
+                <span className="w-3 h-3 rounded-sm flex-shrink-0" style={{ background: ZONE_COLORS[i % ZONE_COLORS.length] }} />
+                {z.label} — onde aplicar
+              </label>
+              <textarea
+                id={`desc-${z.id}`}
+                rows={2}
+                value={z.instruction}
+                disabled={lendo}
+                onChange={(e) => updateZone(z.id, { instruction: e.target.value })}
+                placeholder="Ex.: toda a parede branca da esquerda, atrás da mesa, do rodapé até o teto"
+                className={fieldCls}
+              />
+            </div>
+          ))}
+          <div>
+            <label htmlFor="keep-text" className="block text-[10px] tracking-[0.15em] uppercase font-bold font-[var(--font-inter)] text-[#002045] mb-1.5">
+              Manter igual
+            </label>
+            <textarea
+              id="keep-text"
+              rows={2}
+              value={keepText}
+              disabled={lendo}
+              onChange={(e) => setKeepText(e.target.value)}
+              placeholder="Ex.: os quadros pendurados, a mesa, as luminárias"
+              className={fieldCls}
+            />
+            <p className="mt-1 text-[11px] text-[#74777f] font-[var(--font-inter)]">O resto da foto também continua igual.</p>
+          </div>
+        </div>
+
         <div className="mt-5 flex flex-wrap items-center gap-3">
-          <button onClick={() => setPhase("mark")} className={backBtn}>← Voltar e ajustar</button>
-          <button onClick={() => setPhase("model")} className={`${nextBtn} bg-[#002045] hover:bg-[#1a365d]`}>
-            Sim, escolher modelo →
+          <button onClick={() => setPhase("mark")} className={backBtn}>← Ajustar marcação</button>
+          <button onClick={() => setPhase("model")} disabled={lendo || semTexto} className={`${nextBtn} bg-[#002045] hover:bg-[#1a365d]`}>
+            {lendo ? "Analisando…" : semTexto ? "Descreva cada área" : "Confirmar e escolher modelo →"}
           </button>
         </div>
       </div>
@@ -2267,7 +2450,9 @@ function SurfaceCanvas({
         const color = ZONE_COLORS[i % ZONE_COLORS.length];
         return (
           <button key={z.id} onClick={(e) => { e.stopPropagation(); setActiveZoneId(z.id); }}
-            style={{ left: `${z.rect.x * 100}%`, top: `${z.rect.y * 100}%`, background: color }}
+            style={z.point
+              ? { left: `calc(${(z.rect.x + z.rect.w / 2) * 100}% + 16px)`, top: `${(z.rect.y + z.rect.h / 2) * 100}%`, background: color }
+              : { left: `${z.rect.x * 100}%`, top: `${z.rect.y * 100}%`, background: color }}
             className="absolute -translate-y-1/2 text-white text-[10px] font-bold font-[var(--font-inter)] px-1.5 py-0.5 rounded-sm">
             {z.label}
           </button>
@@ -2281,6 +2466,16 @@ function SurfaceCanvas({
         const color = ZONE_COLORS[i % ZONE_COLORS.length];
         const rect = z.rect;
         const active = z.id === activeZoneId;
+        if (z.point) {
+          // Toque: um alvo no ponto — a IA descobre a superfície inteira depois.
+          return (
+            <span key={z.id} aria-hidden
+              style={{ left: `${(rect.x + rect.w / 2) * 100}%`, top: `${(rect.y + rect.h / 2) * 100}%`, borderColor: color, background: `${color}55` }}
+              className={`absolute -translate-x-1/2 -translate-y-1/2 w-7 h-7 rounded-full border-[3px] pointer-events-none shadow ${active ? "ring-2 ring-white" : ""}`}>
+              <span className="absolute left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2 w-2 h-2 rounded-full" style={{ background: color }} />
+            </span>
+          );
+        }
         return (
           <div key={z.id}
             onPointerDown={(e) => {
@@ -2543,7 +2738,7 @@ function ResultStep({
               <div className="flex items-center gap-3">
                 <div className="w-7 h-7 border-2 border-white/30 border-t-[#a1d494] rounded-full animate-spin flex-shrink-0" />
                 <p className="text-white font-[var(--font-inter)] text-sm">
-                  {progress ? `Aplicando ${progress.label} (${progress.i} de ${progress.total})…` : "Gerando…"}
+                  {progress ? (progress.total > 1 ? `Aplicando ${progress.label} (${progress.i} de ${progress.total})…` : `Aplicando ${progress.label}…`) : "Gerando…"}
                 </p>
               </div>
             )}
@@ -2578,9 +2773,9 @@ function ResultStep({
           <div className="absolute inset-0 bg-black/70 flex flex-col items-center justify-center gap-4 text-center px-6">
             <div className="w-10 h-10 border-2 border-white/30 border-t-[#a1d494] rounded-full animate-spin" />
             <p className="text-white font-[var(--font-inter)] text-sm">
-              {progress ? `Aplicando ${progress.label} (${progress.i} de ${progress.total})…` : "Gerando…"}
+              {progress ? (progress.total > 1 ? `Aplicando ${progress.label} (${progress.i} de ${progress.total})…` : `Aplicando ${progress.label}…`) : "Gerando…"}
             </p>
-            <p className="text-white/60 font-[var(--font-inter)] text-xs">Cada área leva alguns segundos.</p>
+            <p className="text-white/60 font-[var(--font-inter)] text-xs">Pode levar até 1 minuto. O resto da foto continua igual.</p>
           </div>
         )}
       </div>

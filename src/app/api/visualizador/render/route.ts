@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { supabaseAdmin } from "@/lib/supabase";
 import {
+  composeOpenAIMultiPrompt,
   composeOpenAIPrompt,
   composePrompt,
   composeRelightPrompt,
@@ -20,9 +21,9 @@ import { OpenAIImageError, openaiConfigured, openaiEditImage } from "@/lib/opena
 // composed from a fixed scaffold + those fields. Otherwise it falls back to
 // the legacy per-line (matte/polished/wood) prompt so existing products keep
 // rendering during rollout.
-// Plan limit is 60 s (300 broke the deploy). GPT Image runs at "medium" by
-// default to fit; raise OPENAI_IMAGE_QUALITY only with a longer limit.
-export const maxDuration = 60;
+// GPT Image edits often take 30–90 s; at 60 s the function was cut off and the
+// client saw an error. 300 s is accepted on this Vercel plan.
+export const maxDuration = 300;
 
 const GEMINI_BASE = "https://generativelanguage.googleapis.com/v1beta";
 const MODEL = process.env.GEMINI_IMAGE_MODEL || "gemini-2.5-flash-image";
@@ -117,12 +118,18 @@ export async function POST(req: NextRequest) {
     mode?: "apply" | "relight";
     // Photo width/height ratio, so the model returns the same framing.
     aspect?: number;
+    // AI-guided flow: every area in ONE call, described in text, no mask.
+    areas?: Array<AreaIn>;
+    // What must stay identical (written by the analysis AI, edited by the client).
+    keep?: string;
   };
   try {
     body = await req.json();
   } catch {
     return NextResponse.json({ error: "Requisição inválida." }, { status: 400 });
   }
+
+  if (Array.isArray(body.areas)) return renderAreas(req, body.photo, body.areas, body.keep);
 
   const { photo, productId } = body;
   const finish: FinishKind = body.finish ?? "matte";
@@ -227,7 +234,7 @@ export async function POST(req: NextRequest) {
     try {
       const out = await openaiEditImage({
         photo: Buffer.from(wall.data, "base64"),
-        texture: { data: Buffer.from(reference.data, "base64"), mime: reference.mime },
+        textures: [{ data: Buffer.from(reference.data, "base64"), mime: reference.mime }],
         mask: maskInline ? Buffer.from(maskInline.data, "base64") : null,
         prompt: openaiPrompt,
       });
@@ -385,4 +392,97 @@ export async function POST(req: NextRequest) {
   }
 
   return NextResponse.json({ image: `data:${outMime};base64,${outData}` });
+}
+
+// ── Fluxo guiado por IA: todas as áreas numa só chamada, sem máscara ─────────
+type AreaIn = { productId?: string; description?: string; wallWidthM?: number | string; wallHeightM?: number | string; referenceUrl?: string };
+
+// Referência enviada pelo cliente (só se o produto não carregar do banco):
+// apenas imagens do próprio site ou do storage do Supabase.
+function safeReference(url: unknown): string | null {
+  if (typeof url !== "string") return null;
+  if (/^\/images\/[\w\-./%]+$/.test(url)) return url;
+  if (/^https:\/\/[a-z0-9-]+\.supabase\.co\/storage\//i.test(url)) return url;
+  return null;
+}
+const cleanText = (v: unknown, max: number) =>
+  typeof v === "string" ? v.replace(/\s+/g, " ").trim().slice(0, max) : "";
+
+async function renderAreas(
+  req: NextRequest,
+  photo: string | undefined,
+  rawAreas: Array<AreaIn>,
+  rawKeep: unknown
+) {
+  // Sem OpenAI o cliente volta ao fluxo antigo (uma área por vez).
+  if (!openaiConfigured()) return NextResponse.json({ error: "multi-area indisponível" }, { status: 501 });
+  if (!photo) return NextResponse.json({ error: "Foto da parede obrigatória." }, { status: 400 });
+  const areas = rawAreas
+    .slice(0, 6)
+    .map((a) => ({ ...a, productId: cleanText(a.productId, 64), description: cleanText(a.description, 400) }))
+    .filter((a) => a.productId && a.description);
+  if (areas.length === 0) return NextResponse.json({ error: "Descreva onde aplicar o revestimento." }, { status: 400 });
+
+  const toAbsolute = (url: string) => (/^https?:\/\//.test(url) ? url : new URL(url, req.nextUrl.origin).toString());
+
+  // Uma textura por modelo (duas áreas com o mesmo modelo usam a mesma imagem).
+  const productIds = [...new Set(areas.map((a) => a.productId))];
+  const loaded = new Map<string, { product: RenderProduct | null; texture: { data: string; mime: string }; isTexture: boolean; imageNumber: number }>();
+  try {
+    await Promise.all(
+      productIds.map(async (id, i) => {
+        const product = await loadRenderProduct(id);
+        const ref = product?.render_texture_path?.trim() || product?.image_path || safeReference(areas.find((a) => a.productId === id)?.referenceUrl);
+        if (!ref) throw new Error("Acabamento de referência não encontrado.");
+        loaded.set(id, { product, texture: await fetchAsBase64(toAbsolute(ref)), isTexture: !!product?.render_texture_path?.trim(), imageNumber: i + 2 });
+      })
+    );
+  } catch (e) {
+    return NextResponse.json({ error: e instanceof Error ? e.message : "Falha ao preparar as imagens." }, { status: 502 });
+  }
+
+  const finishOf = (p: RenderProduct | null): FinishKind =>
+    p?.linha === "Brilliance" ? "polished" : p?.linha === "Elegance" ? "wood" : "matte";
+  const prompt = composeOpenAIMultiPrompt({
+    areas: areas.map((a) => {
+      const l = loaded.get(a.productId)!;
+      const w = toPositiveNumber(a.wallWidthM ?? null, 0), h = toPositiveNumber(a.wallHeightM ?? null, 0);
+      const dims = w > 0 && w <= 50 && h > 0 && h <= 20;
+      const perModel = !!l.product?.render_finish_description?.trim();
+      return {
+        description: a.description,
+        imageNumber: l.imageNumber,
+        finish: finishOf(l.product),
+        productNotes: l.product?.render_finish_description?.trim() || null,
+        extraNotes: perModel ? l.product?.render_extra_notes : null,
+        panelWidthM: toPositiveNumber(l.product?.render_panel_width_m, DEFAULT_PANEL_WIDTH_M),
+        panelHeightM: toPositiveNumber(l.product?.render_panel_height_m, DEFAULT_PANEL_HEIGHT_M),
+        wallWidthM: dims ? w : null,
+        wallHeightM: dims ? h : null,
+        referenceIsTexture: l.isTexture,
+      };
+    }),
+    keep: cleanText(rawKeep, 400) || null,
+  });
+
+  try {
+    const wall = parseInline(photo);
+    const out = await openaiEditImage({
+      photo: Buffer.from(wall.data, "base64"),
+      textures: productIds.map((id) => {
+        const t = loaded.get(id)!.texture;
+        return { data: Buffer.from(t.data, "base64"), mime: t.mime };
+      }),
+      mask: null,
+      prompt,
+    });
+    return NextResponse.json({ image: out.image, engine: "openai", model: out.model });
+  } catch (e) {
+    const err = e instanceof OpenAIImageError ? e : new OpenAIImageError("Não foi possível gerar a visualização.", 502, String(e));
+    const busy = err.status === 429 || err.status >= 500;
+    return NextResponse.json(
+      { error: busy ? "O gerador de imagem está ocupado. Aguarde alguns segundos e tente novamente." : err.message, detail: err.detail },
+      { status: err.status === 400 ? 400 : 502 }
+    );
+  }
 }

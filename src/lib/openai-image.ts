@@ -4,7 +4,7 @@ import sharp from "sharp";
  * OpenAI image edit (GPT Image) for the Visualizador.
  *
  * POST /v1/images/edits, multipart:
- *   image[]  1) the client's photo (PNG)  2) the model's flat texture
+ *   image[]  1) the client's photo (PNG)  2..n) the flat texture of each model
  *   mask     PNG with alpha, same size as image 1: TRANSPARENT = area to edit
  *   size     the photo's own proportions (custom WxH, multiples of 16)
  *
@@ -45,7 +45,8 @@ async function toOpenAIMask(maskPng: Buffer, w: number, h: number): Promise<Buff
 
 export async function openaiEditImage(input: {
   photo: Buffer;
-  texture: { data: Buffer; mime: string };
+  /** One flat texture per model, in the order the prompt numbers them (image 2, 3, …). */
+  textures: { data: Buffer; mime: string }[];
   mask: Buffer | null;
   prompt: string;
 }): Promise<{ image: string; model: string; size: string }> {
@@ -60,14 +61,20 @@ export async function openaiEditImage(input: {
   if (!pw || !ph) throw new OpenAIImageError("Foto inválida.", 400);
   const photoPng = await photoImg.png().toBuffer();
   const maskPng = input.mask ? await toOpenAIMask(input.mask, pw, ph) : null;
-  // Texture as PNG too (some models reject mixed formats).
-  const texturePng = await sharp(input.texture.data).png().toBuffer();
+  // Textures as PNG too (some models reject mixed formats), capped at 1024 px:
+  // a swatch carries no detail beyond that and smaller uploads are faster.
+  const texturePngs = await Promise.all(
+    input.textures.map((t) => sharp(t.data).resize(1024, 1024, { fit: "inside", withoutEnlargement: true }).png().toBuffer())
+  );
 
   const models = [process.env.OPENAI_IMAGE_MODEL?.trim(), ...DEFAULT_MODELS].filter(
     (m, i, a): m is string => !!m && a.indexOf(m) === i
   );
   const quality = process.env.OPENAI_IMAGE_QUALITY?.trim() || "medium";
   const sizes = [sizeFor(pw, ph), "auto"];
+  // input_fidelity "high" keeps the rest of the photo (frames, furniture,
+  // framing) much closer to the original. Dropped if a model rejects it.
+  let fidelity = true;
 
   let lastErr: OpenAIImageError | null = null;
   for (const model of models) {
@@ -78,12 +85,13 @@ export async function openaiEditImage(input: {
         form.append("model", model);
         form.append("prompt", input.prompt);
         form.append("image[]", new Blob([new Uint8Array(photoPng)], { type: "image/png" }), "foto.png");
-        form.append("image[]", new Blob([new Uint8Array(texturePng)], { type: "image/png" }), "textura.png");
+        texturePngs.forEach((t, i) => form.append("image[]", new Blob([new Uint8Array(t)], { type: "image/png" }), `textura-${i + 1}.png`));
         if (maskPng) form.append("mask", new Blob([new Uint8Array(maskPng)], { type: "image/png" }), "mascara.png");
         form.append("size", size);
         form.append("quality", quality);
         form.append("output_format", "jpeg");
         form.append("n", "1");
+        if (fidelity) form.append("input_fidelity", "high");
 
         let res: Response;
         try {
@@ -112,6 +120,7 @@ export async function openaiEditImage(input: {
         if (msg.includes("safety") || msg.includes("moderation")) {
           throw new OpenAIImageError("A imagem foi bloqueada pelo filtro de conteúdo. Tente outra foto.", 400, text.slice(0, 300));
         }
+        if (fidelity && msg.includes("input_fidelity")) { fidelity = false; attempt--; continue; }
         // Size rejected → try "auto"; model rejected → next model; anything else → stop.
         if (msg.includes("size") && s < sizes.length - 1) break;
         if (msg.includes("model")) { s = sizes.length; break; }
