@@ -4,7 +4,7 @@ import React, { useState, useEffect, useCallback, useMemo, useRef } from "react"
 import Link from "next/link";
 import { SITE_ASSET_MANIFEST } from "@/lib/assets";
 import { productQrUrl, productUrl } from "@/lib/product-link";
-import { compressImage } from "@/lib/image-compress";
+import { compressImage, isUnsupportedForWeb } from "@/lib/image-compress";
 import LeadsTab, { type Lead } from "./LeadsTab";
 import RemindersTab from "./RemindersTab";
 import AgendaTab from "./AgendaTab";
@@ -1415,6 +1415,10 @@ export default function AdminPage() {
     // e servida crua ao visitante — 287 arquivos assim consumiram 15,9 GB de
     // banda num mês. 2400px/q82 mantém a nitidez e corta ~96% do peso.
     const file = await compressImage(original);
+    if (isUnsupportedForWeb(file)) {
+      alert("Esta foto está em HEIC (formato do iPhone) e este navegador não consegue convertê-la. Abra o painel no Safari ou exporte a foto como JPG.");
+      return null;
+    }
 
     // Step 1: get a signed upload URL from our API (tiny JSON request, no file bytes)
     const signRes = await fetch("/api/admin/upload-sign", {

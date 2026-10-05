@@ -21,17 +21,40 @@ export interface CompressOptions {
   quality?: number;
   /** Abaixo disto não vale recomprimir (bytes). */
   skipBelow?: number;
+  /**
+   * "webp" gera arquivos ~25–35% menores que JPEG com a mesma aparência — use
+   * para o que só aparece no site (fotos de projetos). E-mail fica em JPEG:
+   * o Outlook não mostra WebP.
+   */
+  format?: "jpeg" | "webp";
 }
 
 const DEFAULTS: Required<CompressOptions> = {
   maxSide: 2400,
-  quality: 0.82,
+  // 0.86: sem diferença visível para o original numa tela, e ainda ~90% menor
+  // que a foto de câmera.
+  quality: 0.86,
   skipBelow: 300 * 1024,
+  format: "jpeg",
 };
 
-/** Formatos que sabemos recomprimir com segurança. */
+/** HEIC/HEIF (padrão do iPhone): só o Safari abre. */
+export function isHeic(file: File): boolean {
+  return /^image\/(heic|heif)$/i.test(file.type) || /\.(heic|heif)$/i.test(file.name);
+}
+
+/** Formatos que sabemos recomprimir com segurança (HEIC: se o navegador abrir). */
 function isCompressible(file: File): boolean {
-  return /^image\/(jpeg|jpg|png|webp)$/i.test(file.type);
+  return /^image\/(jpeg|jpg|png|webp)$/i.test(file.type) || isHeic(file);
+}
+
+/**
+ * true quando o arquivo, como está, não abre nos navegadores (HEIC que este
+ * navegador não conseguiu converter). O painel deve recusar com uma mensagem
+ * em vez de subir uma foto que o site não vai mostrar.
+ */
+export function isUnsupportedForWeb(file: File): boolean {
+  return isHeic(file);
 }
 
 /**
@@ -43,9 +66,10 @@ function isCompressible(file: File): boolean {
  * upload otimizado que quebra.
  */
 export async function compressImage(file: File, opts: CompressOptions = {}): Promise<File> {
-  const { maxSide, quality, skipBelow } = { ...DEFAULTS, ...opts };
+  const { maxSide, quality, skipBelow, format } = { ...DEFAULTS, ...opts };
 
-  if (!isCompressible(file) || file.size <= skipBelow) return file;
+  // HEIC sempre passa pela conversão, mesmo pequeno: como está, não abre no site.
+  if (!isCompressible(file) || (file.size <= skipBelow && !isHeic(file))) return file;
 
   try {
     const bitmap = await createImageBitmap(file);
@@ -59,6 +83,10 @@ export async function compressImage(file: File, opts: CompressOptions = {}): Pro
     canvas.height = h;
     const ctx = canvas.getContext("2d");
     if (!ctx) { bitmap.close?.(); return file; }
+    // O padrão do navegador é a redução mais rápida (e mais serrilhada); "high"
+    // mantém a nitidez ao reduzir uma foto de 8000px para 2400px.
+    ctx.imageSmoothingEnabled = true;
+    ctx.imageSmoothingQuality = "high";
     ctx.drawImage(bitmap, 0, 0, w, h);
     bitmap.close?.();
 
@@ -66,20 +94,22 @@ export async function compressImage(file: File, opts: CompressOptions = {}): Pro
     // logo salvo como JPEG sai com fundo PRETO. Nesses formatos a saída é WebP,
     // que comprime igual e preserva a transparência.
     const podeTerAlfa = /^image\/(png|webp)$/i.test(file.type);
-    const saida = podeTerAlfa ? "image/webp" : "image/jpeg";
-
-    const blob = await new Promise<Blob | null>((resolve) =>
-      canvas.toBlob(resolve, saida, quality),
-    );
-    // Se o navegador não souber gerar o formato pedido, toBlob devolve PNG.
-    // Aí é melhor ficar com o original do que subir um PNG gigante.
+    const toBlob = (tipo: string) => new Promise<Blob | null>((resolve) => canvas.toBlob(resolve, tipo, quality));
+    let saida = podeTerAlfa || format === "webp" ? "image/webp" : "image/jpeg";
+    let blob = await toBlob(saida);
+    // Navegador sem encoder WebP devolve PNG: tenta JPEG (sem alfa) antes de desistir.
+    if ((!blob || blob.type !== saida) && saida === "image/webp" && !podeTerAlfa) {
+      saida = "image/jpeg";
+      blob = await toBlob(saida);
+    }
+    // Se ainda não saiu o formato pedido, fica com o original (melhor que um PNG gigante).
     if (!blob || blob.type !== saida) return file;
 
     // Se a "compressão" engordou o arquivo (acontece com PNG de poucas cores),
-    // fica com o original.
-    if (blob.size >= file.size) return file;
+    // fica com o original — exceto HEIC, que precisa virar um formato da web.
+    if (blob.size >= file.size && !isHeic(file)) return file;
 
-    const nome = file.name.replace(/\.[a-z0-9]+$/i, "") + (podeTerAlfa ? ".webp" : ".jpg");
+    const nome = file.name.replace(/\.[a-z0-9]+$/i, "") + (saida === "image/webp" ? ".webp" : ".jpg");
     return new File([blob], nome, { type: saida, lastModified: Date.now() });
   } catch {
     return file;

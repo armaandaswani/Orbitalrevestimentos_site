@@ -7,7 +7,7 @@ import AdminShell from "../AdminShell";
 import { inputCls, labelCls } from "../ui";
 import CoverFramer, { COVER_ASPECT, coverStyle } from "./CoverFramer";
 import { isUsableVideoUrl, videoHostLabel, videoThumbnail } from "@/lib/video-link";
-import { compressImage } from "@/lib/image-compress";
+import { compressImage, compressionSummary, isUnsupportedForWeb } from "@/lib/image-compress";
 
 /**
  * Editor de projeto — criação e edição na mesma tela.
@@ -56,6 +56,8 @@ export default function ProjectEditor({ id }: { id: string }) {
   const [notFound, setNotFound] = useState(false);
   const [saveState, setSaveState] = useState<"idle" | "saving" | "saved">("idle");
   const [uploading, setUploading] = useState(0);
+  // Quanto cada foto encolheu antes de subir (mostrado abaixo do botão).
+  const [savings, setSavings] = useState<string[]>([]);
   const [err, setErr] = useState<string | null>(null);
   const [showPreview, setShowPreview] = useState(false);
   const [dragId, setDragId] = useState<string | null>(null);
@@ -134,6 +136,7 @@ export default function ProjectEditor({ id }: { id: string }) {
     const list = Array.from(files);
     setErr(null);
     setUploading(list.length);
+    setSavings([]);
     let order = media.length;
     const failed: string[] = [];
 
@@ -141,7 +144,12 @@ export default function ProjectEditor({ id }: { id: string }) {
       try {
         // Comprime antes de subir — ver @/lib/image-compress. Sem isto a foto de
         // câmera vai crua para o storage e depois é servida crua ao visitante.
-        const f = await compressImage(original);
+        const f = original.type.startsWith("video/") ? original : await compressImage(original, { format: "webp" });
+        if (!f.type.startsWith("video/") && isUnsupportedForWeb(f)) {
+          throw new Error("foto em HEIC (iPhone) que este navegador não converte. Abra o painel no Safari, ou exporte a foto como JPG.");
+        }
+        const ganho = compressionSummary(original.size, f.size);
+        if (ganho) setSavings((prev) => [...prev, `${original.name}: ${ganho}`].slice(-6));
 
         const sign = await fetch("/api/admin/upload-sign", {
           method: "POST", headers: { "Content-Type": "application/json" },
@@ -554,6 +562,12 @@ export default function ProjectEditor({ id }: { id: string }) {
                 </button>
                 <input ref={fileRef} type="file" multiple accept="image/*,video/*" className="hidden"
                   onChange={(e) => { if (e.target.files?.length) uploadFiles(e.target.files); e.target.value = ""; }} />
+                {savings.length > 0 && (
+                  <div className="mt-2 text-[11px] text-[#2f5429] font-[var(--font-inter)] space-y-0.5 break-words">
+                    <p className="font-semibold">Fotos otimizadas automaticamente:</p>
+                    {savings.map((t, i) => <p key={i}>{t}</p>)}
+                  </div>
+                )}
                 {uploading > 0 && (
                   <p className="text-[#002045] text-xs font-[var(--font-inter)] mt-2">Enviando {uploading} arquivo(s)…</p>
                 )}
