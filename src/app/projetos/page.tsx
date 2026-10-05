@@ -940,7 +940,7 @@ export default function ProjetosPage() {
     }`;
 
   const portas: { id: SecaoId; titulo: string; texto: string; img: string | null }[] = [
-    { id: "obras", titulo: "Obras realizadas", texto: `${obras.length || "—"} projetos · residencial, comercial e náutico`, img: "/images/projetos/restaurante-depois.jpeg" },
+    { id: "obras", titulo: "Obras realizadas", texto: `${obras.length || "—"} projetos · residencial, comercial e náutico`, img: "/images/projetos/lavabo1-depois.png" },
     { id: "showrooms", titulo: "Showrooms parceiros", texto: nomesShowrooms || "Ambientes decorados para visitar", img: capaShowroom },
     { id: "revenda", titulo: "Pontos de revenda", texto: "Todos os modelos em display, no tamanho real", img: null },
   ];
@@ -961,7 +961,7 @@ export default function ProjetosPage() {
       )}
 
       {/* ── Hero ────────────────────────────────────────────────────────────── */}
-      <section className="relative min-h-[460px] lg:min-h-[560px] flex items-end">
+      <section className="relative min-h-[400px] lg:min-h-[480px] flex items-end">
         <div className="absolute inset-0">
           <Image
             src="/images/projetos/restaurante-depois.jpeg"
@@ -972,7 +972,7 @@ export default function ProjetosPage() {
           />
           <div className="absolute inset-0 bg-gradient-to-t from-[#001223] via-[#001223]/75 to-[#001223]/25" />
         </div>
-        <div className="relative z-10 w-full max-w-[1280px] mx-auto px-4 lg:px-16 pt-16 pb-28 lg:pb-36 text-center md:text-left">
+        <div className="relative z-10 w-full max-w-[1280px] mx-auto px-4 lg:px-16 pt-16 pb-14 lg:pb-20 text-center md:text-left">
           <div className="inline-flex items-center gap-3 mb-5">
             <div className="w-6 h-px bg-[#a1d494]" />
             <p className="text-[#a1d494] text-[10px] sm:text-xs tracking-[0.2em] sm:tracking-[0.3em] uppercase font-semibold font-[var(--font-inter)]">
@@ -991,32 +991,44 @@ export default function ProjetosPage() {
       </section>
 
       {/* ── Portas de entrada ───────────────────────────────────────────────── */}
-      <section className="relative z-10 -mt-20 lg:-mt-24">
-        <div className="max-w-[1280px] mx-auto px-4 lg:px-16 grid grid-cols-1 sm:grid-cols-3 gap-2 sm:gap-3">
-          {portas.map((p) => (
-            <a key={p.id} href={`#${p.id}`}
-              className="group relative overflow-hidden bg-[#002045] text-white min-h-[120px] sm:min-h-[200px] flex flex-col justify-end shadow-[0_10px_30px_-12px_rgba(0,18,35,0.45)]">
-              {p.img && (
-                // eslint-disable-next-line @next/next/no-img-element
-                <img src={p.img} alt="" aria-hidden onError={(e) => { e.currentTarget.style.display = "none"; }}
-                  className="absolute inset-0 w-full h-full object-cover opacity-45 group-hover:opacity-55 group-hover:scale-[1.03] transition-all duration-500" />
-              )}
-              <div className="absolute inset-0 bg-gradient-to-t from-[#001223]/90 via-[#001223]/40 to-transparent" />
-              <div className="relative px-5 py-4 sm:py-5">
-                <p className="font-serif text-xl sm:text-2xl">{p.titulo}</p>
-                <p className="text-white/70 text-[12px] font-[var(--font-inter)] mt-1 leading-snug line-clamp-2">{p.texto}</p>
-                <span className="inline-flex items-center gap-1.5 text-[#a1d494] text-[10px] tracking-[0.15em] uppercase font-bold font-[var(--font-inter)] mt-3">
-                  Ver
-                  <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><path d="M5 12h14M12 5l7 7-7 7" /></svg>
-                </span>
-              </div>
-            </a>
-          ))}
+      {/* Fundo claro, separado da foto do topo: três escolhas claras, cada uma com a sua imagem. */}
+      <section className="bg-[#f5f5f3] py-8 lg:py-12">
+        <div className="max-w-[1280px] mx-auto px-4 lg:px-16">
+          <p className="text-[#74777f] text-[10px] tracking-[0.2em] uppercase font-bold font-[var(--font-inter)] mb-4">Por onde quer começar?</p>
+          <div className="grid grid-cols-1 sm:grid-cols-3 gap-3 lg:gap-5">
+            {portas.map((p) => (
+              <a key={p.id} href={`#${p.id}`}
+                className="group bg-white border border-[#e2e2e2] hover:border-[#002045] transition-colors flex sm:flex-col overflow-hidden">
+                <div className="relative w-28 sm:w-full flex-shrink-0 sm:aspect-[16/9] overflow-hidden bg-[#eaf3e6]">
+                  {p.img ? (
+                    // eslint-disable-next-line @next/next/no-img-element
+                    <img src={p.img} alt="" aria-hidden onError={(e) => { e.currentTarget.style.display = "none"; }}
+                      className="absolute inset-0 w-full h-full object-cover group-hover:scale-[1.03] transition-transform duration-500" />
+                  ) : (
+                    // Ponto de revenda: sem foto da loja ainda — um ícone de loja/vitrine.
+                    <div className="absolute inset-0 flex items-center justify-center text-[#3b6934]">
+                      <svg width="44" height="44" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.4" strokeLinecap="round" strokeLinejoin="round" aria-hidden>
+                        <path d="M3 9l1.5-5h15L21 9" /><path d="M3 9h18v2a3 3 0 0 1-6 0 3 3 0 0 1-6 0 3 3 0 0 1-6 0V9z" /><path d="M5 13v7h14v-7" /><path d="M10 20v-4h4v4" />
+                      </svg>
+                    </div>
+                  )}
+                </div>
+                <div className="px-4 sm:px-5 py-4 sm:py-5 flex-1 min-w-0 flex flex-col">
+                  <p className="font-serif text-[#002045] text-lg sm:text-2xl leading-tight">{p.titulo}</p>
+                  <p className="text-[#74777f] text-[12px] sm:text-[13px] font-[var(--font-inter)] mt-1 leading-snug line-clamp-2">{p.texto}</p>
+                  <span className="inline-flex items-center gap-1.5 text-[#3b6934] text-[10px] tracking-[0.15em] uppercase font-bold font-[var(--font-inter)] mt-auto pt-3">
+                    Ver
+                    <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" className="group-hover:translate-x-0.5 transition-transform"><path d="M5 12h14M12 5l7 7-7 7" /></svg>
+                  </span>
+                </div>
+              </a>
+            ))}
+          </div>
         </div>
       </section>
 
       {/* ── Menu da página (fixo ao rolar) ───────────────────────────────────── */}
-      <nav aria-label="Seções da página" className="sticky top-20 z-40 mt-8 bg-white/95 backdrop-blur-sm border-y border-[#e8e8e8]">
+      <nav aria-label="Seções da página" className="sticky top-20 z-40 bg-white/95 backdrop-blur-sm border-y border-[#e8e8e8]">
         <div className="max-w-[1280px] mx-auto px-4 lg:px-16 flex gap-1 overflow-x-auto scrollbar-none">
           {SECOES.map((x) => (
             <a key={x.id} href={`#${x.id}`}
