@@ -233,35 +233,60 @@ export default function Home() {
         </div>
       </section>
 
-      {/* Atendimento — antes era o teaser do orçamento instantâneo (/simulador,
-          que segue no ar mas fora da navegação). Agora leva ao consultor. */}
+      {/* O PFB em resumo — apresenta o produto (esquerda) e o leque de
+          acabamentos leva à aba Produtos (direita). */}
       <section className="py-12 lg:py-28 bg-white border-b border-[#eeeeee]">
         <div className="max-w-[1280px] mx-auto px-4 lg:px-16">
           <div className="grid grid-cols-1 lg:grid-cols-12 gap-10 lg:gap-16 items-center">
             <ScrollReveal className="lg:col-span-6" direction="left">
-              <p className="text-[#74777f] text-xs tracking-[0.2em] uppercase font-semibold font-[var(--font-inter)] mb-5">
-                Atendimento personalizado
+              <p className="text-[#3b6934] text-xs tracking-[0.2em] uppercase font-semibold font-[var(--font-inter)] mb-5">
+                Conheça o PFB
               </p>
-              <h2 className="font-[var(--font-noto-serif)] text-[#002045] text-2xl lg:text-[40px] font-normal leading-[1.2] mb-6">
-                Escolha o acabamento. A gente cuida do resto.
+              <h2 className="font-serif text-[#002045] text-2xl lg:text-[40px] font-normal leading-[1.2] mb-5">
+                Painel Flexível Fibra de Bambu.
               </h2>
               <p className="text-[#43474e] text-base font-[var(--font-inter)] leading-relaxed mb-8 max-w-md">
-                Fale direto com um consultor da Orbital pelo WhatsApp. Ele monta
-                o orçamento completo do seu projeto, do material à instalação.
+                Revestimento de fibra de bambu renovável para paredes e tetos — leve, flexível e feito para o clima úmido de Manaus.
               </p>
-              <ContatoCta
-                className="inline-flex items-center justify-center gap-2 bg-[#002045] text-white text-xs tracking-[0.12em] uppercase font-bold font-[var(--font-inter)] px-8 py-4 hover:bg-[#1a365d] transition-colors"
-              >
-                Falar com um consultor
-                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-                  <path d="M5 12h14M12 5l7 7-7 7" />
-                </svg>
-              </ContatoCta>
+              <ul className="grid grid-cols-1 sm:grid-cols-2 gap-x-8 gap-y-5 mb-9 max-w-xl">
+                {[
+                  { t: "Leve e flexível", d: "Cerca de 11 kg por placa de 2,90 × 1,20 m." },
+                  { t: "Resiste à umidade", d: "0,2% de absorção em 48h de imersão." },
+                  { t: "Sem mofo e sem cupim", d: "Por natureza, inclusive em áreas úmidas." },
+                  { t: "Seguro", d: "Sem formol e não propaga chamas." },
+                  { t: "Instalação rápida e limpa", d: "Sem obra pesada, sem poeira." },
+                  { t: "Paredes e tetos", d: "Um só material para o ambiente inteiro." },
+                ].map((f) => (
+                  <li key={f.t} className="flex gap-3">
+                    <span className="mt-1 w-5 h-5 flex-shrink-0 rounded-full bg-[#eaf3e6] text-[#3b6934] flex items-center justify-center" aria-hidden>
+                      <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="3"><path d="M20 6L9 17l-5-5" /></svg>
+                    </span>
+                    <span>
+                      <span className="block text-[#002045] text-sm font-semibold font-[var(--font-inter)]">{f.t}</span>
+                      <span className="block text-[#74777f] text-[13px] font-[var(--font-inter)] leading-snug mt-0.5">{f.d}</span>
+                    </span>
+                  </li>
+                ))}
+              </ul>
+              <div className="flex flex-wrap items-center gap-x-6 gap-y-3">
+                <Link
+                  href="/produtos"
+                  className="inline-flex items-center justify-center gap-2 bg-[#002045] text-white text-xs tracking-[0.12em] uppercase font-bold font-[var(--font-inter)] px-8 py-4 hover:bg-[#1a365d] transition-colors"
+                >
+                  Ver os modelos
+                  <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                    <path d="M5 12h14M12 5l7 7-7 7" />
+                  </svg>
+                </Link>
+                <Link href="/tecnologia" className="text-[#002045] text-xs tracking-[0.12em] uppercase font-bold font-[var(--font-inter)] hover:text-[#3b6934] transition-colors">
+                  Tecnologia e ficha técnica →
+                </Link>
+              </div>
             </ScrollReveal>
             <ScrollReveal className="lg:col-span-6" direction="right" delay={100}>
               {/* Fanned swatch stack — real finishes, no numbers. Leva ao
                   catálogo, onde o cliente escolhe o acabamento. */}
-              <Link href="/produtos" className="group relative block h-[300px] sm:h-[380px] lg:h-[440px]">
+              <Link href="/produtos" aria-label="Ver todos os modelos do Painel Flexível Fibra de Bambu" className="group relative block h-[300px] sm:h-[380px] lg:h-[440px]">
                 <div className="absolute inset-0 flex items-center justify-center">
                   {[
                     { img: "/images/catalogue/classic-bege-travertino-orb001.jpeg", rot: -18, x: -84 },
@@ -282,17 +307,19 @@ export default function Home() {
                     </div>
                   ))}
                 </div>
-                <div className="absolute top-0 right-0 sm:top-2 sm:right-2 bg-[#a1d494] text-[#002045] w-12 h-12 sm:w-14 sm:h-14 rounded-full flex items-center justify-center shadow-lg z-20">
-                  <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-                    <path d="M21.3 15.3a1 1 0 000-1.42L9.88 2.7a1 1 0 00-1.42 0L2.7 8.46a1 1 0 000 1.42l11.42 11.42a1 1 0 001.42 0z" />
-                    <path d="M14.5 7.5l2 2M11 11l2 2M7.5 14.5l2 2" />
-                  </svg>
-                </div>
+                {/* Convite para os modelos, embaixo do leque */}
+                <span className="absolute bottom-0 left-1/2 -translate-x-1/2 z-20 inline-flex items-center gap-2 whitespace-nowrap bg-white border border-[#e2e2e2] shadow-md px-4 py-2.5 text-[#002045] text-[10px] sm:text-[11px] tracking-[0.14em] uppercase font-bold font-[var(--font-inter)] group-hover:bg-[#002045] group-hover:text-white group-hover:border-[#002045] transition-colors">
+                  Classic · Brilliance · Elegance
+                  <span className="text-[#3b6934] group-hover:text-[#a1d494]">Ver todos →</span>
+                </span>
               </Link>
             </ScrollReveal>
           </div>
         </div>
       </section>
+
+      {/* A Visão do Arquiteto — logo depois de apresentar o PFB: quem já especifica (playlist do YouTube) */}
+      <VisaoDoArquiteto />
 
       {/* Visualizador Teaser — same reasoning as above, dedicated section. */}
       <section className="py-12 lg:py-28 bg-[#0a0f1a]">
@@ -569,9 +596,6 @@ export default function Home() {
           </div>
         </div>
       </section>
-
-      {/* A Visão do Arquiteto — validação por arquitetos de Manaus (playlist do YouTube) */}
-      <VisaoDoArquiteto />
 
       {/* Parceiros Teaser */}
       <section className="py-10 lg:py-32 bg-white border-t border-[#eeeeee]">
