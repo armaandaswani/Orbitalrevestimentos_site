@@ -238,15 +238,16 @@ export default function Home() {
       <section className="py-12 lg:py-28 bg-white border-b border-[#eeeeee]">
         <div className="max-w-[1280px] mx-auto px-4 lg:px-16">
           <div className="grid grid-cols-1 lg:grid-cols-12 gap-10 lg:gap-16 items-center">
-            <ScrollReveal className="lg:col-span-6" direction="left">
+            <ScrollReveal className="lg:col-span-7 min-w-0" direction="left">
               <p className="text-[#3b6934] text-xs tracking-[0.2em] uppercase font-semibold font-[var(--font-inter)] mb-5">
-                Conheça o PFB
+                Conheça o produto
               </p>
-              <h2 className="font-serif text-[#002045] text-2xl lg:text-[40px] font-normal leading-[1.2] mb-5">
-                Painel Flexível Fibra de Bambu.
+              {/* O nome do produto fica sempre numa linha só: o tamanho acompanha a largura. */}
+              <h2 className="font-serif text-[#002045] font-normal leading-[1.2] mb-5 whitespace-nowrap text-[clamp(15px,4.9vw,26px)] sm:text-[30px] lg:text-[clamp(26px,2.55vw,36px)]">
+                Painel Flexível Fibra de Bambu (PFB)
               </h2>
               <p className="text-[#43474e] text-base font-[var(--font-inter)] leading-relaxed mb-8 max-w-md">
-                Revestimento de fibra de bambu renovável para paredes e tetos — leve, flexível e feito para o clima úmido de Manaus.
+                Revestimento de fibra de bambu renovável para paredes e tetos internos — leve, flexível e ideal para o clima úmido de Manaus.
               </p>
               <ul className="grid grid-cols-1 sm:grid-cols-2 gap-x-8 gap-y-5 mb-9 max-w-xl">
                 {[
@@ -283,7 +284,7 @@ export default function Home() {
                 </Link>
               </div>
             </ScrollReveal>
-            <ScrollReveal className="lg:col-span-6" direction="right" delay={100}>
+            <ScrollReveal className="lg:col-span-5" direction="right" delay={100}>
               {/* Fanned swatch stack — real finishes, no numbers. Leva ao
                   catálogo, onde o cliente escolhe o acabamento. */}
               <Link href="/produtos" aria-label="Ver todos os modelos do Painel Flexível Fibra de Bambu" className="group relative block h-[300px] sm:h-[380px] lg:h-[440px]">
