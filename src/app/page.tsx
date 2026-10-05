@@ -1,4 +1,5 @@
 import type { Metadata } from "next";
+import type { ReactNode } from "react";
 import Image from "next/image";
 import Link from "next/link";
 import ScrollReveal from "@/components/ScrollReveal";
@@ -169,6 +170,84 @@ const benefits = [
   },
 ];
 
+
+// Selos do Painel Flexível Fibra de Bambu (seção "Conheça o produto") — os
+// mesmos do material comercial da Orbital, na mesma ordem e com o mesmo tom.
+const ICO = { width: 52, height: 52, viewBox: "0 0 48 48", fill: "none", stroke: "currentColor", strokeWidth: 1.8, strokeLinecap: "round" as const, strokeLinejoin: "round" as const };
+const PFB_SELOS: { t: string; d?: string; icone: ReactNode }[] = [
+  {
+    t: "Resistente à água",
+    d: "Água, umidade e mofo",
+    icone: (
+      <svg {...ICO}>
+        <path d="M24 4.5C17.5 13 11 20.5 11 29a13 13 0 0 0 26 0c0-8.5-6.5-16-13-24.5z" />
+        <path d="M17.5 29.5l4.5 4.5 8.5-9" />
+      </svg>
+    ),
+  },
+  {
+    t: "Protegido contra pragas",
+    d: "Cupins e outras pragas",
+    icone: (
+      <svg {...ICO}>
+        <circle cx="24" cy="24" r="19" />
+        <ellipse cx="24" cy="28" rx="4.5" ry="6.5" />
+        <circle cx="24" cy="18.5" r="3" />
+        <path d="M19.5 25l-5-2.5M19.5 29h-5.5M20 32.5l-4.5 3M28.5 25l5-2.5M28.5 29h5.5M28 32.5l4.5 3M22.5 16l-2-3.5M25.5 16l2-3.5" />
+        <path d="M10.6 10.6l26.8 26.8" />
+      </svg>
+    ),
+  },
+  {
+    t: "Não propaga chamas",
+    d: "Retardante de chamas",
+    icone: (
+      <svg {...ICO}>
+        <path d="M24 4.5l15 5.5V22c0 10-6.5 17.5-15 21-8.5-3.5-15-11-15-21V10z" />
+        <path d="M24 34c-4 0-6.5-2.6-6.5-6 0-3.8 3-6 4.5-9.5 1 2.6 2.4 3.6 3.5 3.8.4-1.8 1.4-3.3 2.4-4.3 1.7 2.6 2.6 5.5 2.6 7.5 0 4.6-2.8 8.5-6.5 8.5z" fill="currentColor" stroke="none" />
+      </svg>
+    ),
+  },
+  {
+    t: "Instalação rápida e prática",
+    d: "Com cola PU",
+    icone: (
+      <svg {...ICO}>
+        <rect x="12" y="12" width="24" height="12" rx="1" />
+        <path d="M36 15l9 3-9 3" />
+        <path d="M3 18h9M3 14v8" />
+        <path d="M16 24l-3.5 16H18l3.5-16M24 24l2.5 9" />
+        <text x="24" y="21.2" textAnchor="middle" fontSize="8" fontWeight="700" fill="currentColor" stroke="none" fontFamily="Arial, sans-serif">PU</text>
+      </svg>
+    ),
+  },
+  {
+    t: "Materiais ecológicos",
+    d: "Fibra de bambu renovável",
+    icone: (
+      <svg {...ICO}>
+        <path d="M38.5 16.5A16.5 16.5 0 1 0 40.5 27" />
+        <path d="M40 8.5v8h-8" />
+        <path d="M24 35V24" />
+        <path d="M24 26.5c-6 0-8.5-4-8.5-8.5 5.5 0 8.5 3 8.5 8.5zM24 24c0-5.5 3-8.5 8.5-8.5 0 4.5-2.5 8.5-8.5 8.5z" fill="currentColor" stroke="none" />
+      </svg>
+    ),
+  },
+  {
+    t: "Flexível e durável",
+    d: "Paredes e forros",
+    icone: (
+      <svg {...ICO}>
+        <path d="M7 38Q24 20 41 38" />
+        <path d="M7 43Q24 25 41 43" />
+        <path d="M7 38v5M41 38v5" />
+        <path d="M12 16Q24 6 36 16" />
+        <path d="M12 16l.5-5M12 16l5 .5M36 16l-.5-5M36 16l-5 .5" />
+      </svg>
+    ),
+  },
+];
+
 export default function Home() {
   return (
     <>
@@ -249,26 +328,34 @@ export default function Home() {
               <p className="text-[#43474e] text-base font-[var(--font-inter)] leading-relaxed mb-8 max-w-md">
                 Revestimento de fibra de bambu renovável para paredes e tetos internos — leve, flexível e ideal para o clima úmido de Manaus.
               </p>
-              <ul className="grid grid-cols-1 sm:grid-cols-2 gap-x-8 gap-y-5 mb-9 max-w-xl">
-                {[
-                  { t: "Leve e flexível", d: "Cerca de 11 kg por placa de 2,90 × 1,20 m." },
-                  { t: "Resiste à umidade", d: "0,2% de absorção em 48h de imersão." },
-                  { t: "Sem mofo e sem cupim", d: "Por natureza, inclusive em áreas úmidas." },
-                  { t: "Seguro", d: "Sem formol e não propaga chamas." },
-                  { t: "Instalação rápida e limpa", d: "Sem obra pesada, sem poeira." },
-                  { t: "Paredes e tetos", d: "Um só material para o ambiente inteiro." },
-                ].map((f) => (
-                  <li key={f.t} className="flex gap-3">
-                    <span className="mt-1 w-5 h-5 flex-shrink-0 rounded-full bg-[#eaf3e6] text-[#3b6934] flex items-center justify-center" aria-hidden>
-                      <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="3"><path d="M20 6L9 17l-5-5" /></svg>
-                    </span>
-                    <span>
-                      <span className="block text-[#002045] text-sm font-semibold font-[var(--font-inter)]">{f.t}</span>
-                      <span className="block text-[#74777f] text-[13px] font-[var(--font-inter)] leading-snug mt-0.5">{f.d}</span>
+              {/* Os mesmos selos do material da Orbital: ícone em cima, faixa azul
+                  com o nome embaixo. Sem números técnicos aqui — confundem o leigo. */}
+              <ul className="grid grid-cols-2 sm:grid-cols-3 gap-2.5 sm:gap-3 mb-3 max-w-2xl">
+                {PFB_SELOS.map((f) => (
+                  <li key={f.t} className="bg-white border border-[#e2e2e2] flex flex-col overflow-hidden">
+                    <span className="flex items-center justify-center h-24 sm:h-28 text-[#002045]" aria-hidden>{f.icone}</span>
+                    <span className="border-t-2 border-[#3b6934] bg-[#002045] px-3 py-3 text-center flex-1 flex flex-col justify-center">
+                      <span className="block text-white text-[11px] sm:text-xs tracking-[0.08em] uppercase font-bold font-[var(--font-inter)] leading-tight">{f.t}</span>
+                      {f.d && <span className="block text-white/70 text-[11px] font-[var(--font-inter)] leading-snug mt-1">{f.d}</span>}
                     </span>
                   </li>
                 ))}
               </ul>
+              {/* Medidas da placa — como no material */}
+              <dl className="grid grid-cols-2 sm:grid-cols-4 border-y border-[#e2e2e2] mb-9 max-w-2xl">
+                {[
+                  { v: "1,20 × 2,90 m", l: "Placa" },
+                  { v: "5 mm", l: "Espessura" },
+                  { v: "3,48 m²", l: "Por placa" },
+                  { v: "Parede", l: "e forro" },
+                ].map((m, i) => (
+                  <div key={m.l} className={`py-3 px-1 text-center border-[#e2e2e2] ${i % 2 ? "border-l" : ""} ${i >= 2 ? "border-t sm:border-t-0" : ""} ${i === 2 ? "sm:border-l" : ""}`}>
+                    <dt className="sr-only">{m.l}</dt>
+                    <dd className="text-[#002045] text-[13px] sm:text-sm font-bold font-[var(--font-inter)] whitespace-nowrap">{m.v}</dd>
+                    <dd className="text-[#74777f] text-[9px] sm:text-[10px] tracking-[0.15em] uppercase font-[var(--font-inter)] mt-0.5">{m.l}</dd>
+                  </div>
+                ))}
+              </dl>
               <div className="flex flex-wrap items-center gap-x-6 gap-y-3">
                 <Link
                   href="/produtos"
