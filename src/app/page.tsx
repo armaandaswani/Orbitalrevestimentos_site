@@ -179,7 +179,7 @@ const PFB_SELOS: { t: string; d: string; img: string }[] = [
   { t: "Não propaga chamas", d: "Retardante de chamas", img: "chamas" },
   { t: "Instalação rápida e prática", d: "Com cola PU", img: "pu" },
   { t: "Materiais ecológicos", d: "Fibra de bambu renovável", img: "eco" },
-  { t: "Flexível e durável", d: "Paredes e forros", img: "flex" },
+  { t: "Flexível e durável", d: "Paredes e forros internos", img: "flex" },
 ];
 
 export default function Home() {
