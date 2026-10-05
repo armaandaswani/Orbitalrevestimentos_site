@@ -59,3 +59,15 @@ export function isUsableVideoUrl(url: string): boolean {
   if (!/^https?:\/\//i.test(u)) return false;
   try { new URL(u); return true; } catch { return false; }
 }
+
+/** Formato do vídeo: vertical (Shorts, Reels, TikTok) ou horizontal. */
+export function videoIsVertical(url: string): boolean {
+  const u = url ?? "";
+  return /youtube\.com\/shorts\//i.test(u) || /instagram\.com\/(reel|reels)\//i.test(u) || /tiktok\.com\//i.test(u);
+}
+
+/** Miniatura do YouTube em alta (1280×720), com a de 480×360 como reserva. */
+export function youtubeThumbs(url: string): string[] {
+  const id = youtubeId(url ?? "");
+  return id ? [`https://i.ytimg.com/vi/${id}/maxresdefault.jpg`, `https://i.ytimg.com/vi/${id}/hqdefault.jpg`] : [];
+}

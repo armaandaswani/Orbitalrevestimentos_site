@@ -1,7 +1,7 @@
 "use client";
 
 import { useEffect, useState } from "react";
-import { videoHost, videoThumbnail } from "@/lib/video-link";
+import { videoHost, videoThumbnail, youtubeThumbs } from "@/lib/video-link";
 
 /**
  * Miniatura de um vídeo da galeria.
@@ -12,9 +12,12 @@ import { videoHost, videoThumbnail } from "@/lib/video-link";
  */
 const cache = new Map<string, string | null>();
 
-export default function VideoThumb({ url, className = "", style }: { url: string; className?: string; style?: React.CSSProperties }) {
+export default function VideoThumb({ url, className = "", style, hd = false }: { url: string; className?: string; style?: React.CSSProperties; hd?: boolean }) {
   const host = videoHost(url);
-  const direto = videoThumbnail(url);
+  // hd: miniatura grande do YouTube (1280×720); se não existir, cai na de 480×360.
+  const ytLista = hd ? youtubeThumbs(url) : [];
+  const [ytIdx, setYtIdx] = useState(0);
+  const direto = ytLista[ytIdx] ?? videoThumbnail(url);
   const precisaBuscar = !direto && host !== "arquivo" && host !== "outro";
   const [buscada, setBuscada] = useState<string | null>(() => (precisaBuscar ? cache.get(url) ?? null : null));
   const [falhou, setFalhou] = useState(false);
@@ -40,6 +43,9 @@ export default function VideoThumb({ url, className = "", style }: { url: string
   }
   const src = direto ?? buscada;
   if (!src) return null;
-  // eslint-disable-next-line @next/next/no-img-element
-  return <img src={src} alt="" className={className} style={style} onError={() => setFalhou(true)} referrerPolicy="no-referrer" />;
+  return (
+    // eslint-disable-next-line @next/next/no-img-element
+    <img src={src} alt="" className={className} style={style} referrerPolicy="no-referrer"
+      onError={() => (ytIdx < ytLista.length - 1 ? setYtIdx((i) => i + 1) : setFalhou(true))} />
+  );
 }
