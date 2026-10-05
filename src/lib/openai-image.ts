@@ -49,6 +49,12 @@ export async function openaiEditImage(input: {
   textures: { data: Buffer; mime: string }[];
   mask: Buffer | null;
   prompt: string;
+  /**
+   * Prévias enquanto gera (stream=true + partial_images), como no ChatGPT:
+   * a foto aparece borrada em poucos segundos e vai ficando nítida. Se o modelo
+   * não aceitar stream, cai na chamada normal sem prévias.
+   */
+  onPartial?: (image: string) => void;
 }): Promise<{ image: string; model: string; size: string }> {
   const key = process.env.OPENAI_API_KEY;
   if (!key) throw new OpenAIImageError("OPENAI_API_KEY não configurada.", 503);
@@ -59,8 +65,11 @@ export async function openaiEditImage(input: {
   const pw = meta.autoOrient?.width ?? meta.width ?? 0;
   const ph = meta.autoOrient?.height ?? meta.height ?? 0;
   if (!pw || !ph) throw new OpenAIImageError("Foto inválida.", 400);
-  const photoPng = await photoImg.png().toBuffer();
   const maskPng = input.mask ? await toOpenAIMask(input.mask, pw, ph) : null;
+  // PNG só quando há máscara (precisa casar formato e tamanho). Sem máscara,
+  // JPEG: ~8x menor, sobe bem mais rápido.
+  const photoBuf = maskPng ? await photoImg.png().toBuffer() : await photoImg.jpeg({ quality: 92 }).toBuffer();
+  const photoMime = maskPng ? "image/png" : "image/jpeg";
   // Textures as PNG too (some models reject mixed formats), capped at 1024 px:
   // a swatch carries no detail beyond that and smaller uploads are faster.
   const texturePngs = await Promise.all(
@@ -75,6 +84,7 @@ export async function openaiEditImage(input: {
   // input_fidelity "high" keeps the rest of the photo (frames, furniture,
   // framing) much closer to the original. Dropped if a model rejects it.
   let fidelity = true;
+  let stream = !!input.onPartial;
 
   let lastErr: OpenAIImageError | null = null;
   for (const model of models) {
@@ -84,7 +94,7 @@ export async function openaiEditImage(input: {
         const form = new FormData();
         form.append("model", model);
         form.append("prompt", input.prompt);
-        form.append("image[]", new Blob([new Uint8Array(photoPng)], { type: "image/png" }), "foto.png");
+        form.append("image[]", new Blob([new Uint8Array(photoBuf)], { type: photoMime }), maskPng ? "foto.png" : "foto.jpg");
         texturePngs.forEach((t, i) => form.append("image[]", new Blob([new Uint8Array(t)], { type: "image/png" }), `textura-${i + 1}.png`));
         if (maskPng) form.append("mask", new Blob([new Uint8Array(maskPng)], { type: "image/png" }), "mascara.png");
         form.append("size", size);
@@ -92,6 +102,7 @@ export async function openaiEditImage(input: {
         form.append("output_format", "jpeg");
         form.append("n", "1");
         if (fidelity) form.append("input_fidelity", "high");
+        if (stream) { form.append("stream", "true"); form.append("partial_images", "2"); }
 
         let res: Response;
         try {
@@ -101,13 +112,20 @@ export async function openaiEditImage(input: {
           await new Promise((r) => setTimeout(r, 1500));
           continue;
         }
+        if (res.ok && stream && (res.headers.get("content-type") || "").includes("text/event-stream")) {
+          const b64 = await readEditStream(res, input.onPartial!);
+          if (b64) return { image: toDataUrl(b64), model, size };
+          // Stream terminou sem a imagem final: tenta de novo sem stream.
+          lastErr = new OpenAIImageError("O gerador não retornou uma imagem.", 502);
+          stream = false; attempt--; continue;
+        }
         const text = await res.text();
         if (res.ok) {
           let json: { data?: Array<{ b64_json?: string }> };
           try { json = JSON.parse(text); } catch { throw new OpenAIImageError("Resposta inválida do gerador.", 502, text.slice(0, 300)); }
           const b64 = json.data?.[0]?.b64_json;
           if (!b64) throw new OpenAIImageError("O gerador não retornou uma imagem.", 502, text.slice(0, 300));
-          return { image: `data:image/jpeg;base64,${b64}`, model, size };
+          return { image: toDataUrl(b64), model, size };
         }
 
         console.error(`[render/openai] ${res.status} model=${model} size=${size}:`, text.slice(0, 600));
@@ -121,6 +139,7 @@ export async function openaiEditImage(input: {
           throw new OpenAIImageError("A imagem foi bloqueada pelo filtro de conteúdo. Tente outra foto.", 400, text.slice(0, 300));
         }
         if (fidelity && msg.includes("input_fidelity")) { fidelity = false; attempt--; continue; }
+        if (stream && (msg.includes("stream") || msg.includes("partial_images"))) { stream = false; attempt--; continue; }
         // Size rejected → try "auto"; model rejected → next model; anything else → stop.
         if (msg.includes("size") && s < sizes.length - 1) break;
         if (msg.includes("model")) { s = sizes.length; break; }
@@ -129,4 +148,53 @@ export async function openaiEditImage(input: {
     }
   }
   throw lastErr ?? new OpenAIImageError("Não foi possível gerar a visualização.", 502);
+}
+
+/** data URL com o tipo real da imagem (o gerador pode devolver JPEG ou PNG). */
+function toDataUrl(b64: string) {
+  const mime = b64.startsWith("iVBOR") ? "image/png" : b64.startsWith("UklGR") ? "image/webp" : "image/jpeg";
+  return `data:${mime};base64,${b64}`;
+}
+
+/**
+ * Lê o SSE do /images/edits com stream=true. Eventos (type):
+ *   image_edit.partial_image → { b64_json, partial_image_index }
+ *   image_edit.completed     → { b64_json }
+ * Devolve o b64 final, ou null se o stream acabar sem ele.
+ */
+async function readEditStream(res: Response, onPartial: (image: string) => void): Promise<string | null> {
+  if (!res.body) return null;
+  const reader = res.body.getReader();
+  const decoder = new TextDecoder();
+  let buf = "";
+  let final: string | null = null;
+  const handle = (block: string) => {
+    const data = block
+      .split("\n")
+      .filter((l) => l.startsWith("data:"))
+      .map((l) => l.slice(5).trimStart())
+      .join("\n");
+    if (!data || data === "[DONE]") return;
+    let ev: { type?: string; b64_json?: string; error?: { message?: string } };
+    try { ev = JSON.parse(data); } catch { return; }
+    if (ev.type?.endsWith("partial_image") && ev.b64_json) {
+      try { onPartial(toDataUrl(ev.b64_json)); } catch { /* prévia é opcional */ }
+    } else if (ev.type?.endsWith("completed") && ev.b64_json) {
+      final = ev.b64_json;
+    } else if (ev.type === "error" || ev.error) {
+      console.error("[render/openai] erro no stream:", ev.error?.message ?? data.slice(0, 300));
+    }
+  };
+  while (true) {
+    const { value, done } = await reader.read();
+    if (done) break;
+    buf += decoder.decode(value, { stream: true }).replace(/\r\n/g, "\n");
+    let i: number;
+    while ((i = buf.indexOf("\n\n")) >= 0) {
+      handle(buf.slice(0, i));
+      buf = buf.slice(i + 2);
+    }
+  }
+  if (buf.trim()) handle(buf);
+  return final;
 }

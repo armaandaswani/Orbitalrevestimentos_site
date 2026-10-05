@@ -122,6 +122,8 @@ export async function POST(req: NextRequest) {
     areas?: Array<AreaIn>;
     // What must stay identical (written by the analysis AI, edited by the client).
     keep?: string;
+    // Resposta em NDJSON com prévias ({type:"partial"} … {type:"final"}).
+    stream?: boolean;
   };
   try {
     body = await req.json();
@@ -129,7 +131,7 @@ export async function POST(req: NextRequest) {
     return NextResponse.json({ error: "Requisição inválida." }, { status: 400 });
   }
 
-  if (Array.isArray(body.areas)) return renderAreas(req, body.photo, body.areas, body.keep);
+  if (Array.isArray(body.areas)) return renderAreas(req, body.photo, body.areas, body.keep, body.stream === true);
 
   const { photo, productId } = body;
   const finish: FinishKind = body.finish ?? "matte";
@@ -412,7 +414,8 @@ async function renderAreas(
   req: NextRequest,
   photo: string | undefined,
   rawAreas: Array<AreaIn>,
-  rawKeep: unknown
+  rawKeep: unknown,
+  wantStream = false
 ) {
   // Sem OpenAI o cliente volta ao fluxo antigo (uma área por vez).
   if (!openaiConfigured()) return NextResponse.json({ error: "multi-area indisponível" }, { status: 501 });
@@ -465,9 +468,9 @@ async function renderAreas(
     keep: cleanText(rawKeep, 400) || null,
   });
 
-  try {
-    const wall = parseInline(photo);
-    const out = await openaiEditImage({
+  const wall = parseInline(photo);
+  const edit = (onPartial?: (image: string) => void) =>
+    openaiEditImage({
       photo: Buffer.from(wall.data, "base64"),
       textures: productIds.map((id) => {
         const t = loaded.get(id)!.texture;
@@ -475,14 +478,44 @@ async function renderAreas(
       }),
       mask: null,
       prompt,
+      onPartial,
     });
-    return NextResponse.json({ image: out.image, engine: "openai", model: out.model });
-  } catch (e) {
+  const errorBody = (e: unknown) => {
     const err = e instanceof OpenAIImageError ? e : new OpenAIImageError("Não foi possível gerar a visualização.", 502, String(e));
     const busy = err.status === 429 || err.status >= 500;
-    return NextResponse.json(
-      { error: busy ? "O gerador de imagem está ocupado. Aguarde alguns segundos e tente novamente." : err.message, detail: err.detail },
-      { status: err.status === 400 ? 400 : 502 }
-    );
+    return {
+      status: err.status === 400 ? 400 : 502,
+      body: { error: busy ? "O gerador de imagem está ocupado. Aguarde alguns segundos e tente novamente." : err.message, detail: err.detail },
+    };
+  };
+
+  if (!wantStream) {
+    try {
+      const out = await edit();
+      return NextResponse.json({ image: out.image, engine: "openai", model: out.model });
+    } catch (e) {
+      const { status, body } = errorBody(e);
+      return NextResponse.json(body, { status });
+    }
   }
+
+  // NDJSON: uma linha por evento. Prévias chegam em segundos; a final no fim.
+  const encoder = new TextEncoder();
+  const streamBody = new ReadableStream<Uint8Array>({
+    async start(controller) {
+      const send = (obj: unknown) => controller.enqueue(encoder.encode(JSON.stringify(obj) + "\n"));
+      try {
+        const out = await edit((image) => send({ type: "partial", image }));
+        send({ type: "final", image: out.image, model: out.model });
+      } catch (e) {
+        const { status, body } = errorBody(e);
+        send({ type: "error", status, ...body });
+      } finally {
+        controller.close();
+      }
+    },
+  });
+  return new Response(streamBody, {
+    headers: { "Content-Type": "application/x-ndjson; charset=utf-8", "Cache-Control": "no-store", "X-Accel-Buffering": "no" },
+  });
 }

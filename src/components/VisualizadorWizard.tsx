@@ -964,6 +964,8 @@ export default function VisualizadorWizard({
   const [analysis, setAnalysis] = useState<{ status: "idle" | "loading" | "done" | "error"; sig: string; error?: string }>({ status: "idle", sig: "" });
   const [progress, setProgress] = useState<{ i: number; total: number; label: string } | null>(null);
   const [result, setResult] = useState<string | null>(null);
+  // Prévia parcial do gerador enquanto a imagem final não chega.
+  const [preview, setPreview] = useState<string | null>(null);
   const [error, setError] = useState<string | null>(null);
   const [savedAmbientes, setSavedAmbientes] = useState<SavedAmbiente[]>([]);
   const [proceeding, setProceeding] = useState(false);
@@ -1494,6 +1496,7 @@ export default function VisualizadorWizard({
     setGenerating(true);
     setError(null);
     setResult(null);
+    setPreview(null);
     setStep("result");
     // Each zone is rendered against the PRISTINE photo (not the running
     // composite) and then composited in by its own mask. This guarantees zones
@@ -1525,6 +1528,7 @@ export default function VisualizadorWizard({
             photo: base,
             aspect: dims && dims.h > 0 ? dims.w / dims.h : undefined,
             keep: keepText.trim() || undefined,
+            stream: true,
             areas: zs.map((z) => ({
               productId: z.productId,
               description: areaForZone(z) || "a parede principal, de frente para a câmera",
@@ -1535,12 +1539,38 @@ export default function VisualizadorWizard({
           }),
         }).catch(() => null);
         if (res && res.status !== 501) {
-          const j = (await res.json().catch(() => null)) as { image?: string; error?: string } | null;
-          if (!res.ok || !j?.image) throw new Error(j?.error || "Não foi possível gerar a visualização.");
+          let j: { image?: string; error?: string } | null = null;
+          if (res.ok && res.body && (res.headers.get("content-type") || "").includes("ndjson")) {
+            // Stream: prévias aparecem na tela enquanto a final não chega.
+            const reader = res.body.getReader();
+            const dec = new TextDecoder();
+            let buf = "";
+            const onLine = (line: string) => {
+              if (!line.trim()) return;
+              let ev: { type?: string; image?: string; error?: string };
+              try { ev = JSON.parse(line); } catch { return; }
+              if (ev.type === "partial" && ev.image) setPreview(ev.image);
+              else if (ev.type === "final" && ev.image) j = { image: ev.image };
+              else if (ev.type === "error") j = { error: ev.error || "Não foi possível gerar a visualização." };
+            };
+            while (true) {
+              const { value, done } = await reader.read();
+              if (done) break;
+              buf += dec.decode(value, { stream: true });
+              let k: number;
+              while ((k = buf.indexOf("\n")) >= 0) { onLine(buf.slice(0, k)); buf = buf.slice(k + 1); }
+            }
+            onLine(buf);
+          } else {
+            j = (await res.json().catch(() => null)) as { image?: string; error?: string } | null;
+          }
+          const got = j as { image?: string; error?: string } | null;
+          if (!got?.image) throw new Error(got?.error || "Não foi possível gerar a visualização.");
+          const finalImage = got.image;
           try {
-            composite = dims ? await fitToBase(j.image, dims.w, dims.h) : j.image;
+            composite = dims ? await fitToBase(finalImage, dims.w, dims.h) : finalImage;
           } catch {
-            composite = j.image;
+            composite = finalImage;
           }
           doneInOneCall = true;
         } else if (!res) {
@@ -1726,6 +1756,7 @@ export default function VisualizadorWizard({
     } finally {
       setGenerating(false);
       setProgress(null);
+      setPreview(null);
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [photoData, zones, productById, embeddedMode, onComplete, useProjection, keepText]);
@@ -1918,6 +1949,7 @@ export default function VisualizadorWizard({
           <ResultStep
             photoData={photoData}
             result={result}
+            preview={preview}
             generating={generating}
             progress={progress}
             error={error}
@@ -2700,12 +2732,12 @@ function ZoneCard({ zone, index, active, retargeting, onSelect, onChange, onRemo
 }
 
 function ResultStep({
-  photoData, result, generating, progress, error,
+  photoData, result, preview, generating, progress, error,
   leadSubmitted, leadName, leadPhone, onLeadNameChange, onLeadPhoneChange, onLeadSubmit,
   onChooseModel, onAdjustArea, onRegenerate, onDownload, onAddPhoto,
   embeddedMode,
 }: {
-  photoData: string | null; result: string | null; generating: boolean;
+  photoData: string | null; result: string | null; preview?: string | null; generating: boolean;
   progress: { i: number; total: number; label: string } | null; error: string | null;
   leadSubmitted: boolean; leadName: string; leadPhone: string;
   onLeadNameChange: (v: string) => void; onLeadPhoneChange: (v: string) => void; onLeadSubmit: () => void;
@@ -2725,10 +2757,10 @@ function ResultStep({
     <div className="mt-6">
       <div className="relative bg-[#11151b] rounded-sm overflow-hidden">
         {/* eslint-disable-next-line @next/next/no-img-element */}
-        <img src={result ?? photoData ?? ""} alt={result ? "Visualização gerada" : "Sua foto"}
+        <img src={result ?? (generating ? preview : null) ?? photoData ?? ""} alt={result ? "Visualização gerada" : "Sua foto"}
           className={`block w-full h-auto${showLeadOverlay && result ? " blur-md scale-[1.02]" : ""}`} />
         <div className="pointer-events-none absolute top-3 left-3 bg-black/55 backdrop-blur-sm px-3 py-1.5 rounded-full">
-          <p className="text-white/90 text-xs font-[var(--font-inter)]">{result ? "Resultado gerado" : "Sua foto"}</p>
+          <p className="text-white/90 text-xs font-[var(--font-inter)]">{result ? "Resultado gerado" : generating && preview ? "Prévia" : "Sua foto"}</p>
         </div>
 
         {/* Standalone: lead capture overlay */}
@@ -2769,7 +2801,13 @@ function ResultStep({
         )}
 
         {/* Spinner shown when generating (standalone: after lead submitted; embedded: always) */}
-        {generating && (leadSubmitted || embeddedMode) && (
+        {generating && (leadSubmitted || embeddedMode) && (preview ? (
+          // Prévia do gerador já na tela: só um selo discreto, a imagem fica visível.
+          <div className="absolute left-3 right-3 bottom-3 sm:left-auto sm:right-4 sm:bottom-4 flex items-center gap-2.5 bg-black/70 text-white px-3.5 py-2.5 rounded-sm">
+            <div className="w-4 h-4 border-2 border-white/30 border-t-[#a1d494] rounded-full animate-spin flex-shrink-0" />
+            <p className="font-[var(--font-inter)] text-xs">Prévia — refinando os detalhes…</p>
+          </div>
+        ) : (
           <div className="absolute inset-0 bg-black/70 flex flex-col items-center justify-center gap-4 text-center px-6">
             <div className="w-10 h-10 border-2 border-white/30 border-t-[#a1d494] rounded-full animate-spin" />
             <p className="text-white font-[var(--font-inter)] text-sm">
@@ -2777,7 +2815,7 @@ function ResultStep({
             </p>
             <p className="text-white/60 font-[var(--font-inter)] text-xs">Pode levar até 1 minuto. O resto da foto continua igual.</p>
           </div>
-        )}
+        ))}
       </div>
 
       {error && <p className="mt-3 text-sm text-[#b42318] font-[var(--font-inter)]">{error}</p>}
