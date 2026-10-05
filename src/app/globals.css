@@ -146,3 +146,12 @@
 ::-webkit-scrollbar-thumb:hover {
   background: var(--color-primary-container);
 }
+
+/* Animações de entrada (ScrollReveal) deslocam elementos 26px para o lado até
+   aparecerem; sem isto a página ganhava rolagem horizontal no celular.
+   "clip" (e não "hidden") não cria contêiner de rolagem, então os menus
+   fixos com position: sticky continuam funcionando. */
+html,
+body {
+  overflow-x: clip;
+}

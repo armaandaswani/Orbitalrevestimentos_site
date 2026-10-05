@@ -5,6 +5,7 @@ import ScrollReveal from "@/components/ScrollReveal";
 import AnimatedStat from "@/components/AnimatedStat";
 import HomeProjectsGrid from "@/components/HomeProjectsGrid";
 import ContatoCta from "@/components/ContatoCta";
+import VisaoDoArquiteto from "@/components/VisaoDoArquiteto";
 
 export const metadata: Metadata = {
   title: "Orbital Revestimentos — Instalado em horas. Admirado por anos.",
@@ -82,8 +83,6 @@ const faqSchema = {
   })),
 };
 
-const CATALOGUE_URL =
-  "https://drive.google.com/file/d/1zhm5MgKGSDRThqk8FqqwfX-WijI7K-iD/view?usp=drive_link";
 const WA = (msg: string) =>
   `https://wa.me/5592988150149?text=${encodeURIComponent(msg)}`;
 
@@ -437,17 +436,6 @@ export default function Home() {
               </h2>
             </div>
             <div className="hidden md:flex items-center gap-6">
-              <a
-                href={CATALOGUE_URL}
-                target="_blank"
-                rel="noopener noreferrer"
-                className="inline-flex items-center gap-1.5 text-xs tracking-[0.1em] uppercase font-semibold font-[var(--font-inter)] text-[#74777f] hover:text-[#002045] transition-colors"
-              >
-                <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-                  <path d="M21 15v4a2 2 0 01-2 2H5a2 2 0 01-2-2v-4M7 10l5 5 5-5M12 15V3" />
-                </svg>
-                Catálogo PDF
-              </a>
               <Link
                 href="/produtos"
                 className="text-xs tracking-[0.1em] uppercase font-semibold font-[var(--font-inter)] text-[#74777f] hover:text-[#002045] transition-colors"
@@ -534,24 +522,13 @@ export default function Home() {
             ))}
           </div>
 
-          <div className="mt-10 flex flex-col sm:flex-row items-center justify-center gap-4 md:hidden">
+          <div className="mt-8 flex justify-center md:hidden">
             <Link
               href="/produtos"
-              className="inline-block text-xs tracking-[0.1em] uppercase font-semibold font-[var(--font-inter)] text-[#002045] border border-[#002045] px-8 py-3 hover:bg-[#002045] hover:text-white transition-colors"
+              className="text-xs tracking-[0.1em] uppercase font-semibold font-[var(--font-inter)] text-[#002045] hover:text-[#1a365d] transition-colors"
             >
-              Ver catálogo completo
+              Ver todos →
             </Link>
-            <a
-              href={CATALOGUE_URL}
-              target="_blank"
-              rel="noopener noreferrer"
-              className="inline-flex items-center gap-1.5 text-xs tracking-[0.1em] uppercase font-semibold font-[var(--font-inter)] text-[#74777f] hover:text-[#002045] transition-colors"
-            >
-              <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-                <path d="M21 15v4a2 2 0 01-2 2H5a2 2 0 01-2-2v-4M7 10l5 5 5-5M12 15V3" />
-              </svg>
-              Baixar Catálogo PDF
-            </a>
           </div>
         </div>
       </section>
@@ -592,6 +569,9 @@ export default function Home() {
           </div>
         </div>
       </section>
+
+      {/* A Visão do Arquiteto — validação por arquitetos de Manaus (playlist do YouTube) */}
+      <VisaoDoArquiteto />
 
       {/* Parceiros Teaser */}
       <section className="py-10 lg:py-32 bg-white border-t border-[#eeeeee]">
