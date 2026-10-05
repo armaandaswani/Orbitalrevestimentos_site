@@ -107,9 +107,19 @@ export async function POST(req: NextRequest) {
     is_active: false,
     sort_order: 999,
   };
+  // Vindo de um showroom (Organização → "+ Adicionar ambiente"): o rascunho já
+  // nasce na categoria Showroom e ligado ao parceiro.
+  const body = (await req.json().catch(() => null)) as { showroom_id?: unknown } | null;
+  if (typeof body?.showroom_id === "string" && /^[0-9a-f-]{36}$/i.test(body.showroom_id)) {
+    row.primary_category = "showroom";
+    row.showroom_id = body.showroom_id;
+    row.categories = ["showroom"];
+  }
 
   let { data, error } = await db.from("project_photos").insert(row).select().single();
   if (isMissingColumn(error)) {
+    delete row.primary_category;
+    delete row.showroom_id;
     delete row.categories;
     ({ data, error } = await db.from("project_photos").insert(row).select().single());
   }

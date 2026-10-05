@@ -4,7 +4,8 @@ import React, { useState, useEffect, useCallback, useMemo, useRef } from "react"
 import Link from "next/link";
 import { SITE_ASSET_MANIFEST } from "@/lib/assets";
 import { productQrUrl, productUrl } from "@/lib/product-link";
-import { compressImage, isUnsupportedForWeb } from "@/lib/image-compress";
+import { compressImage, isUnsupportedForWeb, type CompressOptions } from "@/lib/image-compress";
+import FotosExtras, { type FotoPendente } from "./projetos/FotosExtras";
 import LeadsTab, { type Lead } from "./LeadsTab";
 import RemindersTab from "./RemindersTab";
 import AgendaTab from "./AgendaTab";
@@ -550,6 +551,8 @@ export default function AdminPage() {
   const [settingCoverId, setSettingCoverId] = useState<string | null>(null);
   // Classificação aplicada às próximas fotos enviadas para a galeria.
   const [uploadCategory, setUploadCategory] = useState<"antes" | "depois">("depois");
+  // Fotos extras escolhidas no formulário de um projeto NOVO (gravadas ao salvar).
+  const [pendingFotos, setPendingFotos] = useState<FotoPendente[]>([]);
   const [aiTextGenerating, setAiTextGenerating] = useState<string | null>(null); // field key being generated
 
   // ── Admin simulator ──────────────────────────────────────────────────────
@@ -1410,11 +1413,11 @@ export default function AdminPage() {
 
   // ── Image upload helper ──────────────────
   /** Upload a single file directly to Supabase (no Next.js size limit). */
-  async function uploadDirect(original: File, folder: string): Promise<string | null> {
+  async function uploadDirect(original: File, folder: string, opts?: CompressOptions): Promise<string | null> {
     // Comprime ANTES de subir. Foto de câmera (8064×6048, até 14 MB) era enviada
     // e servida crua ao visitante — 287 arquivos assim consumiram 15,9 GB de
     // banda num mês. 2400px/q82 mantém a nitidez e corta ~96% do peso.
-    const file = await compressImage(original);
+    const file = await compressImage(original, opts);
     if (isUnsupportedForWeb(file)) {
       alert("Esta foto está em HEIC (formato do iPhone) e este navegador não consegue convertê-la. Abra o painel no Safari ou exporte a foto como JPG.");
       return null;
@@ -1749,6 +1752,18 @@ export default function AdminPage() {
       });
     }
     if (res.ok) {
+      // Projeto novo: grava as fotos extras escolhidas no formulário.
+      if (!editingPhotoId && pendingFotos.length > 0) {
+        const created = await res.json().catch(() => null) as { slug?: string } | null;
+        const slugFinal = created?.slug || ensuredSlug;
+        for (const [i, f] of pendingFotos.entries()) {
+          await fetch("/api/projects/media", {
+            method: "POST", headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({ project_slug: slugFinal, type: "image", url: f.url, category: f.category, sort_order: i }),
+          }).catch(() => {});
+        }
+      }
+      setPendingFotos([]);
       setShowPhotoForm(false);
       setEditingPhotoId(null);
       setPhotoForm({ slug:"", title:"", product_code:"", short_description:"", categories:[], image_after:"", image_before:"", note:"", is_active:true, is_featured:false, show_on_home:false, is_new:false, feature_order:0, content_type:"", cover_category:"depois", sort_order:0 });
@@ -6324,6 +6339,7 @@ export default function AdminPage() {
                     setEditingPhotoId(null);
                     setPhotoForm({ slug:"", title:"", product_code:"", short_description:"", categories:[], image_after:"", image_before:"", note:"", is_active:true, is_featured:false, show_on_home:false, is_new:false, feature_order:0, content_type:"", cover_category:"depois", sort_order:0 });
                     setSlugTouched(false); setProductPickerQuery(""); setPhotoAdvancedOpen(false);
+                    setPendingFotos([]);
                     setShowPhotoForm(true);
                     setTimeout(() => photoTabFormRef.current?.scrollIntoView({ behavior: "smooth", block: "start" }), 50);
                   }}
@@ -6596,6 +6612,12 @@ export default function AdminPage() {
                         </div>
                       )}
                     </div>
+                    <FotosExtras
+                      slug={editingPhotoId ? photoForm.slug || null : null}
+                      pending={pendingFotos}
+                      setPending={setPendingFotos}
+                      upload={(f) => uploadDirect(f, "projetos", { format: "webp" })}
+                    />
                     {/* Situação — fonte ÚNICA do estado público. Substitui o
                         antigo checkbox "Projeto ativo", que duplicava (e podia
                         contradizer) o selo "Publicado" e o botão Despublicar. */}
@@ -6619,7 +6641,10 @@ export default function AdminPage() {
                     </div>
                     <div className="flex gap-3">
                       <button type="submit" className="bg-[#002045] text-white text-xs tracking-[0.1em] uppercase font-bold font-[var(--font-inter)] px-6 py-2.5 hover:bg-[#1a365d] transition-colors">Salvar</button>
-                      <button type="button" onClick={() => { setShowPhotoForm(false); setEditingPhotoId(null); }} className="border border-[#e2e2e2] text-[#74777f] text-xs font-[var(--font-inter)] px-6 py-2.5 hover:border-[#002045] hover:text-[#002045] transition-colors">Cancelar</button>
+                      <button type="button" onClick={() => {
+                        if (pendingFotos.length > 0 && !confirm("Descartar as fotos extras ainda não salvas?")) return;
+                        setPendingFotos([]); setShowPhotoForm(false); setEditingPhotoId(null);
+                      }} className="border border-[#e2e2e2] text-[#74777f] text-xs font-[var(--font-inter)] px-6 py-2.5 hover:border-[#002045] hover:text-[#002045] transition-colors">Cancelar</button>
                     </div>
                   </form>
                 </div>

@@ -4,6 +4,57 @@ import { useCallback, useEffect, useState } from "react";
 import Link from "next/link";
 import AdminShell from "../../AdminShell";
 import { btnGhost, btnPrimary, inputCls, labelCls } from "../../ui";
+import { uploadAdminImage } from "@/lib/admin-upload";
+
+/** Imagem do showroom: prévia + "Enviar foto" (comprime e sobe) + remover. */
+function CampoImagem({ label, value, onChange, folder, alto = false }: {
+  label: string; value: string | null; onChange: (url: string | null) => void; folder: string; alto?: boolean;
+}) {
+  const [enviando, setEnviando] = useState(false);
+  const [erro, setErro] = useState("");
+  async function enviar(file: File | undefined) {
+    if (!file) return;
+    setErro("");
+    setEnviando(true);
+    try {
+      onChange(await uploadAdminImage(file, folder, { format: "webp" }));
+    } catch (e) {
+      setErro(e instanceof Error ? e.message : "Não foi possível enviar.");
+    } finally {
+      setEnviando(false);
+    }
+  }
+  return (
+    <div>
+      <label className={labelCls}>{label}</label>
+      {value ? (
+        <div className="border border-[#e2e2e2]">
+          {/* eslint-disable-next-line @next/next/no-img-element */}
+          <img src={value} alt="" className={`w-full ${alto ? "h-44" : "h-20"} object-cover bg-[#f5f5f3]`} />
+          <div className="flex border-t border-[#e2e2e2]">
+            <label className="flex-1 text-center text-[10px] tracking-[0.08em] uppercase font-bold font-[var(--font-inter)] px-3 py-2 bg-[#002045] text-white hover:bg-[#1a365d] cursor-pointer">
+              {enviando ? "Enviando…" : "Trocar foto"}
+              <input type="file" accept="image/*,.heic,.heif" className="hidden" disabled={enviando}
+                onChange={(e) => { void enviar(e.target.files?.[0]); e.target.value = ""; }} />
+            </label>
+            <button type="button" onClick={() => onChange(null)}
+              className="px-4 py-2 text-[10px] tracking-[0.08em] uppercase font-bold font-[var(--font-inter)] text-red-600 hover:bg-red-50">
+              Remover
+            </button>
+          </div>
+        </div>
+      ) : (
+        <label className={`flex flex-col items-center justify-center gap-1 border-2 border-dashed border-[#cdd3dd] bg-[#f9f9f7] hover:border-[#002045] cursor-pointer text-center px-4 ${alto ? "h-36" : "h-20"}`}>
+          <span className="text-[#002045] text-xs font-bold font-[var(--font-inter)]">{enviando ? "Enviando…" : "+ Enviar foto"}</span>
+          <span className="text-[#a0a3a8] text-[10px] font-[var(--font-inter)]">JPG, PNG ou HEIC · reduzida automaticamente</span>
+          <input type="file" accept="image/*,.heic,.heif" className="hidden" disabled={enviando}
+            onChange={(e) => { void enviar(e.target.files?.[0]); e.target.value = ""; }} />
+        </label>
+      )}
+      {erro && <p className="text-[11px] text-red-600 font-[var(--font-inter)] mt-1">{erro}</p>}
+    </div>
+  );
+}
 
 /**
  * Categorias e Showrooms — a tela que antes era uma caixa espremida no topo do
@@ -260,7 +311,7 @@ export default function OrganizacaoPage() {
                         <button onClick={() => setEditing(editing === s.id ? null : s.id)} className={btnGhost}>
                           {editing === s.id ? "Fechar" : "Editar"}
                         </button>
-                        <Link href={`/admin/projetos?showroom=${s.id}`} className={btnGhost}>Ver projetos</Link>
+                        <Link href={`/admin/projetos?showroom=${s.id}`} className={btnGhost}>Ver ambientes</Link>
                       </div>
                     </div>
 
@@ -287,20 +338,26 @@ export default function OrganizacaoPage() {
                           <input value={s.maps_url ?? ""} onChange={(e) => patchShowroom(s.id, { maps_url: e.target.value })}
                             placeholder="https://maps.app.goo.gl/…" className={inputCls} />
                         </div>
-                        <div>
-                          <label className={labelCls}>Logo (URL)</label>
-                          <input value={s.logo_url ?? ""} onChange={(e) => patchShowroom(s.id, { logo_url: e.target.value })}
-                            placeholder="/images/showrooms/…" className={inputCls} />
-                        </div>
+                        <CampoImagem label="Logo" value={s.logo_url} folder={`showrooms/${s.slug}`}
+                          onChange={(url) => patchShowroom(s.id, { logo_url: url ?? "" })} />
                         <div className="sm:col-span-2">
                           <label className={labelCls}>Descrição curta</label>
                           <input value={s.description ?? ""} onChange={(e) => patchShowroom(s.id, { description: e.target.value })}
                             placeholder="Aparece na página do showroom no site" className={inputCls} />
                         </div>
                         <div className="sm:col-span-2">
-                          <label className={labelCls}>Foto de capa (URL)</label>
-                          <input value={s.cover_url ?? ""} onChange={(e) => patchShowroom(s.id, { cover_url: e.target.value })}
-                            placeholder="/images/showrooms/…" className={inputCls} />
+                          <CampoImagem label="Foto de capa (aparece no cartão do site)" value={s.cover_url} folder={`showrooms/${s.slug}`} alto
+                            onChange={(url) => patchShowroom(s.id, { cover_url: url ?? "" })} />
+                          <p className="text-[11px] text-[#74777f] font-[var(--font-inter)] mt-1">
+                            Sem capa, o site usa a foto de um dos ambientes deste {s.kind === "revenda" ? "ponto de revenda" : "showroom"}.
+                          </p>
+                        </div>
+                        <div className="sm:col-span-2 bg-[#f5f5f3] border border-[#e2e2e2] px-4 py-3 flex flex-wrap items-center justify-between gap-3">
+                          <p className="text-[12px] text-[#43474e] font-[var(--font-inter)] leading-snug">
+                            <strong className="text-[#002045]">Fotos dos ambientes</strong> — cada ambiente é um projeto com várias fotos
+                            (Antes / Depois), que aparece na página deste {s.kind === "revenda" ? "ponto de revenda" : "showroom"}.
+                          </p>
+                          <Link href={`/admin/projetos/novo?showroom=${s.id}`} className={btnPrimary}>+ Adicionar ambiente com fotos</Link>
                         </div>
                         <div className="sm:col-span-2 flex flex-wrap items-center justify-between gap-3 pt-1">
                           <label className="flex items-center gap-2 text-[13px] font-[var(--font-inter)] text-[#43474e] cursor-pointer">

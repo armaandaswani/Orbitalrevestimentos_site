@@ -21,7 +21,13 @@ export default function NovoProjetoPage() {
     if (started.current) return; // StrictMode monta duas vezes; não crie dois rascunhos.
     started.current = true;
     (async () => {
-      const res = await fetch("/api/admin/projects", { method: "POST" }).catch(() => null);
+      // ?showroom=<id>: o ambiente já nasce ligado ao showroom parceiro.
+      const showroomId = new URLSearchParams(window.location.search).get("showroom");
+      const res = await fetch("/api/admin/projects", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(showroomId ? { showroom_id: showroomId } : {}),
+      }).catch(() => null);
       if (!res || !res.ok) {
         setErr(res?.status === 401 ? "Sessão expirada. Entre novamente." : "Não foi possível criar o rascunho.");
         return;
