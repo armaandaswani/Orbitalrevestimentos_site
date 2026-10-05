@@ -66,7 +66,7 @@ export async function POST(req: NextRequest) {
   const { data: lastRow } = await db.from("partner_showrooms").select("sort_order").order("sort_order", { ascending: false }).limit(1).maybeSingle();
   const sort_order = ((lastRow as { sort_order?: number } | null)?.sort_order ?? -1) + 1;
 
-  const { data, error } = await db.from("partner_showrooms").insert({
+  const row: Record<string, unknown> = {
     slug, name, sort_order,
     address: typeof body?.address === "string" ? body.address : null,
     maps_url: typeof body?.maps_url === "string" ? body.maps_url : null,
@@ -74,7 +74,14 @@ export async function POST(req: NextRequest) {
     logo_url: typeof body?.logo_url === "string" ? body.logo_url : null,
     cover_url: typeof body?.cover_url === "string" ? body.cover_url : null,
     active: body?.active !== false,
-  }).select().single();
+  };
+  // Migração 063: tipo do lugar. Sem a coluna, cria como showroom (padrão).
+  if (body?.kind === "revenda") row.kind = "revenda";
+  let { data, error } = await db.from("partner_showrooms").insert(row).select().single();
+  if (error && row.kind && /kind/i.test(error.message)) {
+    delete row.kind;
+    ({ data, error } = await db.from("partner_showrooms").insert(row).select().single());
+  }
 
   if (error) {
     if (isMissingTable(error)) return NextResponse.json({ error: "Rode a migração 053 antes de cadastrar showrooms." }, { status: 409 });

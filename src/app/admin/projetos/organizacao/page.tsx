@@ -20,6 +20,8 @@ interface Showroom {
   id: string; slug: string; name: string; address: string | null; maps_url: string | null;
   description: string | null; logo_url: string | null; cover_url: string | null;
   active: boolean; sort_order: number; project_count: number;
+  /** Migração 063: showroom parceiro ou ponto de revenda. */
+  kind?: "showroom" | "revenda" | null;
 }
 interface Tag { id: string; slug: string; label: string; sort_order: number; active: boolean }
 
@@ -223,10 +225,10 @@ export default function OrganizacaoPage() {
           {/* ── 2. Showrooms parceiros ─────────────────────────────────────── */}
           <section className="bg-white border border-[#e2e2e2]">
             <div className="px-4 sm:px-5 py-4 border-b border-[#f0f0f0]">
-              <h2 className="font-[var(--font-noto-serif)] text-[#002045] text-lg">Showrooms parceiros</h2>
+              <h2 className="font-[var(--font-noto-serif)] text-[#002045] text-lg">Showrooms parceiros e pontos de revenda</h2>
               <p className="text-[#74777f] text-[12px] font-[var(--font-inter)] mt-1">
-                Cada parceiro tem um endereço só. Os ambientes cadastrados dentro dele herdam esse endereço —
-                não é preciso repetir em cada projeto.
+                Lugares onde o cliente vê o painel ao vivo. Cada um tem um endereço só; os ambientes cadastrados
+                dentro dele herdam esse endereço. O tipo define a seção da página Projetos.
               </p>
             </div>
 
@@ -242,6 +244,9 @@ export default function OrganizacaoPage() {
                       <div className="min-w-0">
                         <p className="font-[var(--font-inter)] text-[#002045] font-bold text-sm flex items-center gap-2 flex-wrap">
                           {s.name}
+                          <span className={`text-[9px] tracking-[0.1em] uppercase font-bold px-1.5 py-0.5 ${s.kind === "revenda" ? "bg-[#eaf3e6] text-[#2f5429]" : "bg-[#eef2f8] text-[#002045]"}`}>
+                            {s.kind === "revenda" ? "Ponto de revenda" : "Showroom"}
+                          </span>
                           {!s.active && <span className="text-[9px] tracking-[0.1em] uppercase font-bold bg-[#f0f0f0] text-[#74777f] px-1.5 py-0.5">Inativo</span>}
                         </p>
                         <p className="text-[#74777f] text-xs font-[var(--font-inter)] mt-0.5">
@@ -261,9 +266,16 @@ export default function OrganizacaoPage() {
 
                     {editing === s.id && (
                       <div className="mt-4 pt-4 border-t border-[#f0f0f0] grid grid-cols-1 sm:grid-cols-2 gap-3">
-                        <div className="sm:col-span-2">
+                        <div>
                           <label className={labelCls}>Nome</label>
                           <input value={s.name} onChange={(e) => patchShowroom(s.id, { name: e.target.value })} className={inputCls} />
+                        </div>
+                        <div>
+                          <label className={labelCls}>Tipo</label>
+                          <select value={s.kind === "revenda" ? "revenda" : "showroom"} onChange={(e) => patchShowroom(s.id, { kind: e.target.value as "showroom" | "revenda" })} className={inputCls}>
+                            <option value="showroom">Showroom parceiro (ambiente decorado)</option>
+                            <option value="revenda">Ponto de revenda (modelos em display)</option>
+                          </select>
                         </div>
                         <div className="sm:col-span-2">
                           <label className={labelCls}>Endereço</label>
@@ -310,10 +322,10 @@ export default function OrganizacaoPage() {
             <div className="px-4 sm:px-5 py-4 border-t border-[#f0f0f0] flex flex-wrap gap-2">
               <input value={newShowroom} onChange={(e) => setNewShowroom(e.target.value)}
                 onKeyDown={(e) => { if (e.key === "Enter") { e.preventDefault(); createShowroom(); } }}
-                placeholder="Nome do showroom parceiro (ex.: Ornare)" disabled={pending}
+                placeholder="Nome do showroom ou revenda (ex.: Ornare)" disabled={pending}
                 className="flex-1 min-w-[200px] border border-[#e2e2e2] px-3 py-2.5 text-sm font-[var(--font-inter)] text-[#002045] focus:outline-none focus:border-[#002045] disabled:bg-[#f5f5f3]" />
               <button onClick={createShowroom} disabled={pending || !newShowroom.trim()} className={btnPrimary}>
-                + Novo showroom
+                + Adicionar
               </button>
             </div>
           </section>

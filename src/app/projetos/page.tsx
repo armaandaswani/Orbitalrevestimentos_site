@@ -58,6 +58,9 @@ interface Project {
 
 interface PartnerShowroom {
   id: string; slug: string; name: string;
+  /** Migração 063: showroom parceiro (ambiente decorado) ou ponto de revenda. */
+  kind?: "showroom" | "revenda";
+  created_at?: string | null;
   address: string | null; maps_url: string | null; description: string | null;
   logo_url: string | null; cover_url: string | null;
   ambient_count: number; display_cover: string | null;
@@ -191,7 +194,7 @@ function ProjectLightbox({
           <p className="text-[#a1d494] text-[9px] tracking-[0.2em] uppercase font-bold font-[var(--font-inter)]">
             {project.product_code}
           </p>
-          <p className="text-white font-[var(--font-noto-serif)] text-base mt-0.5">{project.title}</p>
+          <p className="text-white font-serif text-base mt-0.5">{project.title}</p>
         </div>
 
         {/* View mode + filter row */}
@@ -598,7 +601,7 @@ function ProjectCard({ project, onOpen }: { project: Project; onOpen: (p: Projec
         <p className="text-[#3b6934] text-[8px] tracking-[0.18em] uppercase font-semibold font-[var(--font-inter)] mb-1">
           {project.product_code}
         </p>
-        <h3 className="font-[var(--font-noto-serif)] text-[#002045] text-sm font-normal leading-snug">
+        <h3 className="font-serif text-[#002045] text-sm font-normal leading-snug">
           {project.title}
         </h3>
         {project.note && (
@@ -642,7 +645,7 @@ function RenderCard({ render }: { render: Render }) {
         <p className="text-[#a1d494] text-[8px] tracking-[0.18em] uppercase font-semibold font-[var(--font-inter)] mb-1">
           {render.product_code}
         </p>
-        <h3 className="font-[var(--font-noto-serif)] text-white/85 text-sm font-normal leading-snug">
+        <h3 className="font-serif text-white/85 text-sm font-normal leading-snug">
           {render.title}
         </h3>
       </div>
@@ -654,7 +657,7 @@ function RenderCard({ render }: { render: Render }) {
 function SectionHeader({ label, desc, light = false }: { label: string; desc: string; light?: boolean }) {
   return (
     <div className={`flex items-baseline gap-4 mb-5 pb-4 border-b ${light ? "border-white/15" : "border-[#e2e2e2]"}`}>
-      <h3 className={`font-[var(--font-noto-serif)] text-xl font-normal ${light ? "text-white" : "text-[#002045]"}`}>
+      <h3 className={`font-serif text-xl font-normal ${light ? "text-white" : "text-[#002045]"}`}>
         {label}
       </h3>
       <p className={`text-xs font-[var(--font-inter)] hidden sm:block ${light ? "text-white/40" : "text-[#74777f]"}`}>
@@ -667,9 +670,45 @@ function SectionHeader({ label, desc, light = false }: { label: string; desc: st
 /** Slug da categoria que agrupa os showrooms parceiros. */
 const SHOWROOM_CAT = "showroom";
 
+/** Rótulo das características (tags) que viram filtro "Tipo de ambiente". */
+const TAG_LABELS: Record<string, string> = {
+  umido: "Áreas úmidas",
+  cozinha: "Cozinha",
+  parede: "Parede",
+  teto: "Teto",
+};
+const tagLabel = (slug: string) => TAG_LABELS[slug] ?? slug.charAt(0).toUpperCase() + slug.slice(1).replace(/-/g, " ");
+
+/**
+ * Ponto de revenda que aparece enquanto a migração 063 não rodou (sem a coluna
+ * "kind" no banco, nenhum lugar vem como revenda). Assim que houver um ponto de
+ * revenda ativo no banco, esta lista deixa de ser usada.
+ */
+const REVENDA_FALLBACK: PartnerShowroom[] = [
+  {
+    id: "revenda-casa-do-eletricista", slug: "casa-do-eletricista-centro", name: "Casa do Eletricista — Centro", kind: "revenda",
+    address: null, maps_url: null, description: "Todos os modelos do Painel Flexível Fibra de Bambu em display, no tamanho real.",
+    logo_url: null, cover_url: null, ambient_count: 0, display_cover: null, display_focus_x: 0.5, display_focus_y: 0.5, display_zoom: 1,
+  },
+];
+
+/** "Novo" nos 120 dias depois do cadastro. */
+function isNew(createdAt?: string | null) {
+  if (!createdAt) return false;
+  const t = new Date(createdAt).getTime();
+  return Number.isFinite(t) && Date.now() - t < 120 * 24 * 60 * 60 * 1000;
+}
+
+/** Link "Como chegar": o do painel, ou uma busca no Google Maps pelo nome + endereço. */
+function mapsHref(s: PartnerShowroom) {
+  if (s.maps_url) return s.maps_url;
+  return `https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(`${s.name} ${s.address ?? ""} Manaus AM`.trim())}`;
+}
+
 // Cartão de um showroom parceiro. Endereço e contagem vêm do parceiro, não de
 // cada ambiente — é ele que leva para a página onde os ambientes estão juntos.
 function PartnerCard({ s }: { s: PartnerShowroom }) {
+  const novo = isNew(s.created_at);
   return (
     <Link href={`/projetos/showroom/${s.slug}`} className="bg-white border border-[#e2e2e2] flex flex-col group hover:border-[#002045] transition-colors">
       <div className="relative w-full overflow-hidden bg-[#f0f0f0]" style={{ aspectRatio: "16 / 10" }}>
@@ -682,20 +721,28 @@ function PartnerCard({ s }: { s: PartnerShowroom }) {
             style={coverStyle(s.display_focus_x, s.display_focus_y, s.display_zoom)}
           />
         ) : (
-          <div className="w-full h-full flex items-center justify-center text-[#c4c6ca] text-xs font-[var(--font-inter)]">
-            {s.name}
+          <div className="absolute inset-0 bg-[#002045] flex flex-col items-center justify-center text-center px-6">
+            <p className="font-serif text-white text-2xl">{s.name}</p>
+            <p className="text-[#a1d494] text-[10px] tracking-[0.2em] uppercase font-bold font-[var(--font-inter)] mt-2">Fotos em breve</p>
           </div>
+        )}
+        {novo && (
+          <span className="absolute top-3 left-3 bg-[#a1d494] text-[#0a2a12] text-[9px] tracking-[0.18em] uppercase font-bold font-[var(--font-inter)] px-2 py-1">
+            Novo
+          </span>
         )}
       </div>
       <div className="px-5 py-4 flex-1 flex flex-col">
-        <p className="font-[var(--font-noto-serif)] text-[#002045] text-xl">{s.name}</p>
+        <p className="font-serif text-[#002045] text-xl">{s.name}</p>
         {s.address && (
           <p className="text-[#74777f] text-[12px] font-[var(--font-inter)] mt-1.5 leading-snug">{s.address}</p>
         )}
-        <p className="text-[#a0a3a8] text-[11px] font-[var(--font-inter)] mt-2">
-          {s.ambient_count} {s.ambient_count === 1 ? "ambiente" : "ambientes"}
-        </p>
-        <span className="inline-flex items-center gap-1.5 text-[#002045] text-[10px] tracking-[0.12em] uppercase font-bold font-[var(--font-inter)] mt-4">
+        {s.ambient_count > 0 && (
+          <p className="text-[#a0a3a8] text-[11px] font-[var(--font-inter)] mt-2">
+            {s.ambient_count} {s.ambient_count === 1 ? "ambiente" : "ambientes"}
+          </p>
+        )}
+        <span className="inline-flex items-center gap-1.5 text-[#002045] text-[10px] tracking-[0.12em] uppercase font-bold font-[var(--font-inter)] mt-auto pt-4">
           Conhecer showroom
           <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><path d="M5 12h14M12 5l7 7-7 7" /></svg>
         </span>
@@ -704,37 +751,70 @@ function PartnerCard({ s }: { s: PartnerShowroom }) {
   );
 }
 
-// Cartão de convite: aparece na seção da própria categoria de showroom.
-function ShowroomInvites({ invites }: { invites: ProjCatMeta[] }) {
+// Cartão de um ponto de revenda: o que tem lá e como chegar.
+function RevendaCard({ s }: { s: PartnerShowroom }) {
   return (
-    <div className="bg-[#002045] text-white px-6 py-6 mb-4">
-      <p className="text-[10px] tracking-[0.2em] uppercase font-bold font-[var(--font-inter)] text-[#86a0cd] mb-1">Visite nossos showrooms</p>
-      <p className="font-[var(--font-noto-serif)] text-xl mb-4">Veja o PFB Orbital ao vivo — venha nos visitar.</p>
-      <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-        {invites.map((s) => (
-          <div key={s.slug} className="border border-white/15 px-4 py-3">
-            <p className="text-white font-semibold font-[var(--font-inter)] text-sm">{s.label}</p>
-            {s.address && <p className="text-white/70 text-[13px] font-[var(--font-inter)] mt-0.5 leading-snug">{s.address}</p>}
-            {s.maps_url && (
-              <a href={s.maps_url} target="_blank" rel="noopener noreferrer" className="inline-flex items-center gap-1 text-[#86a0cd] hover:text-white text-[11px] tracking-[0.1em] uppercase font-bold font-[var(--font-inter)] mt-2 transition-colors">
-                Ver no mapa
-                <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><path d="M5 12h14M12 5l7 7-7 7"/></svg>
-              </a>
-            )}
-          </div>
-        ))}
+    <div className="bg-white border border-[#e2e2e2] border-l-4 border-l-[#3b6934] flex flex-col sm:flex-row">
+      {s.display_cover && (
+        <div className="relative sm:w-[42%] flex-shrink-0 overflow-hidden bg-[#f0f0f0]" style={{ minHeight: 180 }}>
+          {/* eslint-disable-next-line @next/next/no-img-element */}
+          <img src={s.display_cover} alt={s.name} className="absolute inset-0 w-full h-full"
+            style={coverStyle(s.display_focus_x, s.display_focus_y, s.display_zoom)} />
+        </div>
+      )}
+      <div className="px-5 sm:px-7 py-5 sm:py-6 flex-1 flex flex-col">
+        <p className="text-[#3b6934] text-[10px] tracking-[0.18em] uppercase font-bold font-[var(--font-inter)]">Ponto de revenda</p>
+        <p className="font-serif text-[#002045] text-2xl mt-1">{s.name}</p>
+        {s.description && <p className="text-[#43474e] text-sm font-[var(--font-inter)] leading-relaxed mt-2">{s.description}</p>}
+        {s.address && <p className="text-[#74777f] text-[13px] font-[var(--font-inter)] mt-2 leading-snug">{s.address}</p>}
+        <div className="flex flex-wrap gap-2 mt-auto pt-5">
+          <a href={mapsHref(s)} target="_blank" rel="noopener noreferrer"
+            className="inline-flex items-center gap-2 bg-[#002045] text-white text-[10px] tracking-[0.12em] uppercase font-bold font-[var(--font-inter)] px-5 py-3 hover:bg-[#1a365d] transition-colors">
+            Como chegar
+            <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><path d="M5 12h14M12 5l7 7-7 7" /></svg>
+          </a>
+          <Link href="/produtos"
+            className="inline-flex items-center gap-2 border border-[#002045] text-[#002045] text-[10px] tracking-[0.12em] uppercase font-bold font-[var(--font-inter)] px-5 py-3 hover:bg-[#002045] hover:text-white transition-colors">
+            Ver os modelos
+          </Link>
+        </div>
       </div>
     </div>
   );
 }
 
+// Abertura de cada grande seção da página.
+function BigSectionHead({ id, eyebrow, title, desc, light = false }: { id: string; eyebrow: string; title: string; desc: string; light?: boolean }) {
+  return (
+    <div id={`${id}-titulo`} className="mb-8 lg:mb-10">
+      <div className="inline-flex items-center gap-3 mb-3">
+        <div className={`w-5 h-px ${light ? "bg-[#a1d494]" : "bg-[#3b6934]"}`} />
+        <p className={`text-xs tracking-[0.2em] uppercase font-semibold font-[var(--font-inter)] ${light ? "text-[#a1d494]" : "text-[#3b6934]"}`}>{eyebrow}</p>
+      </div>
+      <h2 className={`font-serif text-3xl lg:text-4xl font-normal ${light ? "text-white" : "text-[#002045]"}`}>{title}</h2>
+      <p className={`text-sm font-[var(--font-inter)] leading-relaxed max-w-2xl mt-2 ${light ? "text-white/55" : "text-[#74777f]"}`}>{desc}</p>
+    </div>
+  );
+}
+
+const SECOES = [
+  { id: "obras", label: "Obras" },
+  { id: "showrooms", label: "Showrooms" },
+  { id: "revenda", label: "Pontos de revenda" },
+  { id: "inspiracoes", label: "Inspirações IA" },
+] as const;
+type SecaoId = (typeof SECOES)[number]["id"];
+
 // ─── Page ─────────────────────────────────────────────────────────────────────
 export default function ProjetosPage() {
   const [activeFilter, setActiveFilter] = useState<Category>("todos");
+  const [activeTag, setActiveTag] = useState<string>("todos");
   const [cats, setCats] = useState<ProjCatMeta[]>([]);
   const [partners, setPartners] = useState<PartnerShowroom[]>([]);
+  const [partnersLoaded, setPartnersLoaded] = useState(false);
   const [projects, setProjects] = useState<Project[]>([]);
   const [renders, setRenders] = useState<Render[]>([]);
+  const [secaoAtiva, setSecaoAtiva] = useState<SecaoId>("obras");
 
   // Lightbox
   const [lightboxProject, setLightboxProject] = useState<Project | null>(null);
@@ -790,7 +870,8 @@ export default function ProjetosPage() {
     fetch("/api/project-showrooms")
       .then((r) => (r.ok ? r.json() : []))
       .then((data) => setPartners(Array.isArray(data) ? data : []))
-      .catch(() => setPartners([]));
+      .catch(() => setPartners([]))
+      .finally(() => setPartnersLoaded(true));
   }, []);
 
   // Chegando da página de um showroom (?projeto=<id>): abre direto a galeria
@@ -809,34 +890,59 @@ export default function ProjetosPage() {
     return () => clearTimeout(t);
   }, [projects, openLightbox]);
 
-  // Ordem oficial das categorias: a que o painel grava em sort_order.
-  const orderedCats = resolveCats(cats);
+  // Menu da página: marca a seção que está na tela.
+  useEffect(() => {
+    const els = SECOES.map((x) => document.getElementById(x.id)).filter((el): el is HTMLElement => !!el);
+    if (els.length === 0 || typeof IntersectionObserver === "undefined") return;
+    const obs = new IntersectionObserver(
+      (entries) => {
+        const visivel = entries.filter((e) => e.isIntersecting).sort((a, b) => a.boundingClientRect.top - b.boundingClientRect.top)[0];
+        if (visivel) setSecaoAtiva(visivel.target.id as SecaoId);
+      },
+      { rootMargin: "-140px 0px -55% 0px" }
+    );
+    els.forEach((el) => obs.observe(el));
+    return () => obs.disconnect();
+  }, [partnersLoaded]);
 
-  const FILTERS: { key: Category; label: string }[] = [
-    { key: "todos", label: "Todos" },
-    ...orderedCats.map((c) => ({ key: c.slug, label: c.label })),
-  ];
+  // ── Lugares para ver ao vivo ────────────────────────────────────────────────
+  const showrooms = partners.filter((p) => p.kind !== "revenda");
+  const revendasDb = partners.filter((p) => p.kind === "revenda");
+  const revendas = revendasDb.length > 0 ? revendasDb : partnersLoaded ? REVENDA_FALLBACK : [];
 
-  // Convites de showroom (parceiros) — endereços a exibir + AI. Só os ativados.
-  const showroomInvites = cats.filter((c) => c.is_showroom && c.invite_enabled && (c.address || c.maps_url));
-
-  const filtered = (
-    activeFilter === "todos"
-      ? projects
-      : projects.filter((p) => sectionSlugs(p).includes(activeFilter))
-  )
-    // Destaques primeiro (por feature_order), depois o restante.
-    .slice()
-    .sort((a, b) => {
-      if (!!a.is_featured !== !!b.is_featured) return a.is_featured ? -1 : 1;
-      return (a.feature_order ?? 0) - (b.feature_order ?? 0);
-    });
+  // ── Obras: categorias (sem a de showroom, que tem seção própria) + tipo ─────
+  const orderedCats = resolveCats(cats).filter((c) => c.slug !== SHOWROOM_CAT || showrooms.length === 0);
+  const temShowroomProprio = (p: Project) => showrooms.length > 0 && (sectionSlugs(p).includes(SHOWROOM_CAT) || !!p.showroom_id);
+  const obras = projects.filter((p) => !temShowroomProprio(p));
+  const tagsDisponiveis = [...new Set(obras.flatMap((p) => p.tags ?? []))].sort((a, b) => tagLabel(a).localeCompare(tagLabel(b), "pt-BR"));
+  const byFeatured = (a: Project, b: Project) =>
+    !!a.is_featured !== !!b.is_featured ? (a.is_featured ? -1 : 1) : (a.feature_order ?? 0) - (b.feature_order ?? 0);
+  const obrasFiltradas = obras
+    .filter((p) => activeFilter === "todos" || sectionSlugs(p).includes(activeFilter))
+    .filter((p) => activeTag === "todos" || (p.tags ?? []).includes(activeTag))
+    .sort(byFeatured);
+  const contaCat = (slug: string) => obras.filter((p) => sectionSlugs(p).includes(slug)).length;
 
   // Merge DB renders with static fallback — DB rows take priority, deduplicated by slug
   const dbSlugs = new Set(renders.map((r) => r.slug));
   const allRenders = [
     ...renders,
     ...STATIC_RENDERS.filter((r) => !dbSlugs.has(r.slug)),
+  ];
+
+  // Capa das portas de entrada do topo.
+  const capaShowroom = showrooms.find((s) => s.display_cover)?.display_cover ?? null;
+  const nomesShowrooms = showrooms.map((s) => s.name).join(" · ");
+
+  const chip = (on: boolean) =>
+    `px-4 py-2 text-[10px] tracking-[0.12em] uppercase font-bold font-[var(--font-inter)] transition-all whitespace-nowrap ${
+      on ? "bg-[#002045] text-white" : "bg-white border border-[#e2e2e2] text-[#74777f] hover:border-[#002045] hover:text-[#002045]"
+    }`;
+
+  const portas: { id: SecaoId; titulo: string; texto: string; img: string | null }[] = [
+    { id: "obras", titulo: "Obras realizadas", texto: `${obras.length || "—"} projetos · residencial, comercial e náutico`, img: "/images/projetos/restaurante-depois.jpeg" },
+    { id: "showrooms", titulo: "Showrooms parceiros", texto: nomesShowrooms || "Ambientes decorados para visitar", img: capaShowroom },
+    { id: "revenda", titulo: "Pontos de revenda", texto: "Todos os modelos em display, no tamanho real", img: null },
   ];
 
   return (
@@ -855,7 +961,7 @@ export default function ProjetosPage() {
       )}
 
       {/* ── Hero ────────────────────────────────────────────────────────────── */}
-      <section className="relative h-screen min-h-[640px] max-h-[960px] flex items-center lg:items-end">
+      <section className="relative min-h-[460px] lg:min-h-[560px] flex items-end">
         <div className="absolute inset-0">
           <Image
             src="/images/projetos/restaurante-depois.jpeg"
@@ -864,222 +970,138 @@ export default function ProjetosPage() {
             className="object-cover object-center"
             priority
           />
-          {/* Strong gradient — ensures eyebrow text is always readable */}
-          <div className="absolute inset-0 bg-gradient-to-t from-[#001223] via-[#001223]/70 to-[#001223]/20" />
+          <div className="absolute inset-0 bg-gradient-to-t from-[#001223] via-[#001223]/75 to-[#001223]/25" />
         </div>
-
-        <div className="relative z-10 w-full max-w-[1280px] mx-auto px-4 lg:px-16 py-16 lg:pb-36 lg:pt-0 text-center md:text-left">
-          {/* Eyebrow — separated with more breathing room */}
-          <div className="inline-flex items-center gap-3 mb-6 lg:mb-8">
+        <div className="relative z-10 w-full max-w-[1280px] mx-auto px-4 lg:px-16 pt-16 pb-28 lg:pb-36 text-center md:text-left">
+          <div className="inline-flex items-center gap-3 mb-5">
             <div className="w-6 h-px bg-[#a1d494]" />
-            <p className="text-[#a1d494] text-xs tracking-[0.3em] uppercase font-semibold font-[var(--font-inter)]">
-              Portfólio · Projetos Executados
+            <p className="text-[#a1d494] text-[10px] sm:text-xs tracking-[0.2em] sm:tracking-[0.3em] uppercase font-semibold font-[var(--font-inter)]">
+              Projetos · Showrooms · Revenda
             </p>
           </div>
-          <h1 className="font-[var(--font-noto-serif)] text-white text-3xl sm:text-5xl lg:text-[5.5rem] font-normal tracking-[-0.025em] leading-[1.02] mb-6 max-w-3xl mx-auto md:mx-0">
+          <h1 className="font-serif text-white text-3xl sm:text-5xl lg:text-[4.5rem] font-normal tracking-[-0.025em] leading-[1.04] mb-5 max-w-3xl mx-auto md:mx-0">
             <span className="sr-only">Orbital Revestimentos — projetos em Manaus. </span>
-            Espaços que viram referência.
+            Veja o PFB de perto.
           </h1>
-          <p className="text-white/55 text-base lg:text-lg font-[var(--font-inter)] leading-relaxed max-w-xl mb-10 mx-auto md:mx-0">
-            Residencial, comercial, náutico. O PFB Orbital Revestimentos transforma
-            qualquer ambiente em Manaus — sem obra pesada, sem poeira.
+          <p className="text-white/60 text-base lg:text-lg font-[var(--font-inter)] leading-relaxed max-w-xl mx-auto md:mx-0">
+            Obras entregues, ambientes decorados em empresas parceiras e pontos de revenda em Manaus.
+            Escolha por onde começar.
           </p>
-          <ContatoCta
-            className="inline-flex items-center gap-2 bg-white text-[#002045] text-xs tracking-[0.12em] uppercase font-bold font-[var(--font-inter)] px-7 py-4 hover:bg-[#f3f3f3] transition-colors"
-          >
-            Falar com um consultor
-            <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5">
-              <path d="M5 12h14M12 5l7 7-7 7" />
-            </svg>
-          </ContatoCta>
-        </div>
-
-        <div className="absolute bottom-8 left-1/2 -translate-x-1/2 flex-col items-center gap-2 z-10 pointer-events-none hidden md:flex">
-          <span className="text-white/25 text-[9px] tracking-[0.25em] uppercase font-[var(--font-inter)]">Scroll</span>
-          <div className="w-px h-10 bg-gradient-to-b from-white/25 to-transparent" />
         </div>
       </section>
 
-      {/* ── Featured antes/depois (restaurante — landscape kept intentionally) ── */}
-      <section className="bg-[#090e18] py-16 lg:py-28">
-        <div className="max-w-[1280px] mx-auto px-4 lg:px-16">
-          <div className="mb-10 lg:mb-14">
-            <div className="inline-flex items-center gap-3 mb-5">
-              <div className="w-5 h-px bg-[#a1d494]" />
-              <p className="text-[#a1d494] text-xs tracking-[0.25em] uppercase font-semibold font-[var(--font-inter)]">
-                Transformação real
-              </p>
-            </div>
-            <h2 className="font-[var(--font-noto-serif)] text-white text-3xl lg:text-5xl font-normal leading-tight">
-              A diferença é visível.
-            </h2>
-          </div>
-
-          {/* Stack on mobile, side-by-side on sm+ */}
-          <div className="grid grid-cols-1 sm:grid-cols-2 gap-1">
-            <div className="relative aspect-[4/3] overflow-hidden">
-              <Image
-                src="/images/projetos/restaurante-antes.png"
-                alt="Restaurante — antes"
-                fill
-                className="object-cover brightness-[0.82] saturate-75"
-              />
-              <div className="absolute bottom-0 inset-x-0 p-4 sm:p-6 bg-gradient-to-t from-[#090e18]/80 to-transparent">
-                <span className="text-white/55 text-[10px] tracking-[0.2em] uppercase font-bold font-[var(--font-inter)]">
-                  Antes
+      {/* ── Portas de entrada ───────────────────────────────────────────────── */}
+      <section className="relative z-10 -mt-20 lg:-mt-24">
+        <div className="max-w-[1280px] mx-auto px-4 lg:px-16 grid grid-cols-1 sm:grid-cols-3 gap-2 sm:gap-3">
+          {portas.map((p) => (
+            <a key={p.id} href={`#${p.id}`}
+              className="group relative overflow-hidden bg-[#002045] text-white min-h-[120px] sm:min-h-[200px] flex flex-col justify-end shadow-[0_10px_30px_-12px_rgba(0,18,35,0.45)]">
+              {p.img && (
+                // eslint-disable-next-line @next/next/no-img-element
+                <img src={p.img} alt="" aria-hidden onError={(e) => { e.currentTarget.style.display = "none"; }}
+                  className="absolute inset-0 w-full h-full object-cover opacity-45 group-hover:opacity-55 group-hover:scale-[1.03] transition-all duration-500" />
+              )}
+              <div className="absolute inset-0 bg-gradient-to-t from-[#001223]/90 via-[#001223]/40 to-transparent" />
+              <div className="relative px-5 py-4 sm:py-5">
+                <p className="font-serif text-xl sm:text-2xl">{p.titulo}</p>
+                <p className="text-white/70 text-[12px] font-[var(--font-inter)] mt-1 leading-snug line-clamp-2">{p.texto}</p>
+                <span className="inline-flex items-center gap-1.5 text-[#a1d494] text-[10px] tracking-[0.15em] uppercase font-bold font-[var(--font-inter)] mt-3">
+                  Ver
+                  <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><path d="M5 12h14M12 5l7 7-7 7" /></svg>
                 </span>
               </div>
-            </div>
-            <div className="relative aspect-[4/3] overflow-hidden">
-              <Image
-                src="/images/projetos/restaurante-depois.jpeg"
-                alt="Restaurante — depois"
-                fill
-                className="object-cover"
-              />
-              <div className="absolute bottom-0 inset-x-0 p-4 sm:p-6 bg-gradient-to-t from-[#090e18]/80 to-transparent">
-                <span className="text-[#a1d494] text-[10px] tracking-[0.2em] uppercase font-bold font-[var(--font-inter)]">
-                  Depois
-                </span>
-              </div>
-            </div>
-          </div>
-
-          <div className="mt-5 flex flex-col sm:flex-row sm:items-center justify-between gap-3 border-t border-white/10 pt-5">
-            <div>
-              <p className="text-[#a1d494] text-[10px] tracking-[0.15em] uppercase font-semibold font-[var(--font-inter)] mb-1">
-                ORB-002 · Imbuia · Elegance
-              </p>
-              <p className="text-white/50 text-sm font-[var(--font-inter)]">
-                Restaurante · Comercial · Manaus, AM
-              </p>
-            </div>
-            <p className="text-white/30 text-xs font-[var(--font-inter)] italic">
-              2 horas de instalação · Sem obra pesada · Sem poeira
-            </p>
-          </div>
+            </a>
+          ))}
         </div>
       </section>
 
-      {/* ── Gallery ─────────────────────────────────────────────────────────── */}
-      <section className="py-14 lg:py-28 bg-[#f5f5f3]" id="galeria">
-        <div className="max-w-[1280px] mx-auto px-4 lg:px-16">
+      {/* ── Menu da página (fixo ao rolar) ───────────────────────────────────── */}
+      <nav aria-label="Seções da página" className="sticky top-20 z-40 mt-8 bg-white/95 backdrop-blur-sm border-y border-[#e8e8e8]">
+        <div className="max-w-[1280px] mx-auto px-4 lg:px-16 flex gap-1 overflow-x-auto scrollbar-none">
+          {SECOES.map((x) => (
+            <a key={x.id} href={`#${x.id}`}
+              aria-current={secaoAtiva === x.id ? "true" : undefined}
+              className={`flex-shrink-0 px-3 sm:px-4 py-3.5 text-[10px] sm:text-[11px] tracking-[0.12em] uppercase font-bold font-[var(--font-inter)] border-b-2 -mb-px transition-colors ${
+                secaoAtiva === x.id ? "border-[#002045] text-[#002045]" : "border-transparent text-[#74777f] hover:text-[#002045]"
+              }`}>
+              {x.label}
+            </a>
+          ))}
+        </div>
+      </nav>
 
-          <div className="flex flex-col sm:flex-row sm:items-end justify-between gap-6 mb-12">
-            <div>
-              <div className="inline-flex items-center gap-3 mb-3">
-                <div className="w-5 h-px bg-[#74777f]" />
-                <p className="text-[#74777f] text-xs tracking-[0.2em] uppercase font-semibold font-[var(--font-inter)]">
-                  Galeria completa
-                </p>
-              </div>
-              <h2 className="font-[var(--font-noto-serif)] text-[#002045] text-3xl lg:text-4xl font-normal">
-                Projetos executados
-                {activeFilter !== "todos" && (
-                  <span className="text-[#74777f] text-2xl">
-                    {" "}—{" "}
-                    {FILTERS.find((f) => f.key === activeFilter)?.label}
-                  </span>
-                )}
-              </h2>
-            </div>
-            <div className="flex flex-wrap gap-2">
-              {FILTERS.map(({ key, label }) => (
-                <button
-                  key={key}
-                  onClick={() => setActiveFilter(key)}
-                  className={`px-4 py-2 text-[10px] tracking-[0.12em] uppercase font-bold font-[var(--font-inter)] transition-all ${
-                    activeFilter === key
-                      ? "bg-[#002045] text-white"
-                      : "bg-white border border-[#e2e2e2] text-[#74777f] hover:border-[#002045] hover:text-[#002045]"
-                  }`}
-                >
-                  {label}
+      {/* ── Obras ───────────────────────────────────────────────────────────── */}
+      <section id="obras" className="scroll-mt-32 py-12 lg:py-20 bg-[#f5f5f3]">
+        <div className="max-w-[1280px] mx-auto px-4 lg:px-16">
+          <BigSectionHead id="obras" eyebrow="Obras realizadas" title="Projetos executados"
+            desc="Ambientes reais revestidos com o Painel Flexível Fibra de Bambu. Filtre por categoria ou pelo tipo de ambiente." />
+
+          <div className="space-y-3 mb-8">
+            <div className="flex items-center gap-2 overflow-x-auto scrollbar-none -mx-4 px-4 sm:mx-0 sm:px-0 sm:flex-wrap">
+              <span className="text-[9px] tracking-[0.18em] uppercase font-bold font-[var(--font-inter)] text-[#a0a3a8] mr-1 flex-shrink-0">Categoria</span>
+              <button onClick={() => setActiveFilter("todos")} className={chip(activeFilter === "todos")}>Todas</button>
+              {orderedCats.filter((c) => contaCat(c.slug) > 0).map((c) => (
+                <button key={c.slug} onClick={() => setActiveFilter(c.slug)} className={chip(activeFilter === c.slug)}>
+                  {c.label} <span className="opacity-60">{contaCat(c.slug)}</span>
                 </button>
               ))}
             </div>
+            {tagsDisponiveis.length > 0 && (
+              <div className="flex items-center gap-2 overflow-x-auto scrollbar-none -mx-4 px-4 sm:mx-0 sm:px-0 sm:flex-wrap">
+                <span className="text-[9px] tracking-[0.18em] uppercase font-bold font-[var(--font-inter)] text-[#a0a3a8] mr-1 flex-shrink-0">Tipo</span>
+                <button onClick={() => setActiveTag("todos")} className={chip(activeTag === "todos")}>Todos</button>
+                {tagsDisponiveis.map((t) => (
+                  <button key={t} onClick={() => setActiveTag(t)} className={chip(activeTag === t)}>{tagLabel(t)}</button>
+                ))}
+              </div>
+            )}
           </div>
 
-          {/* Todos: uma seção por categoria, na ordem definida no painel */}
-          {activeFilter === "todos" ? (() => {
-            const byFeatured = (a: Project, b: Project) =>
-              !!a.is_featured !== !!b.is_featured ? (a.is_featured ? -1 : 1) : (a.feature_order ?? 0) - (b.feature_order ?? 0);
-
-            // Cada projeto entra na PRIMEIRA categoria em que se encaixa, seguindo
-            // a ordem do painel — por isso nada aparece duas vezes, e subir uma
-            // categoria também traz para ela os projetos que dividem marcação.
+          {activeFilter === "todos" && activeTag === "todos" ? (() => {
+            // Uma seção por categoria, na ordem do painel; cada projeto entra na
+            // PRIMEIRA categoria em que se encaixa — nada aparece duas vezes.
             const shown = new Set<string>();
             const blocks = orderedCats.map((cat) => {
-              const displayProjects = projects
-                .filter((p) => !shown.has(p.id) && sectionSlugs(p).includes(cat.slug))
-                .sort(byFeatured);
-              displayProjects.forEach((p) => shown.add(p.id));
-              const invite = cat.is_showroom && cat.invite_enabled && (cat.address || cat.maps_url) ? cat : null;
-              // A seção de showrooms não lista ambientes soltos: lista os
-              // parceiros. Cada um leva para a própria página, onde os ambientes
-              // aparecem juntos e o endereço é o do parceiro.
-              const isPartnerSection = cat.slug === SHOWROOM_CAT && partners.length > 0;
-              return { cat, displayProjects, invite, isPartnerSection };
+              const list = obras.filter((p) => !shown.has(p.id) && sectionSlugs(p).includes(cat.slug)).sort(byFeatured);
+              list.forEach((p) => shown.add(p.id));
+              return { cat, list };
             });
-
-            // Projetos sem categoria (ou com um slug que não existe mais na tabela)
-            // caem aqui — nunca ficam invisíveis no site.
-            const rest = projects.filter((p) => !shown.has(p.id)).slice().sort(byFeatured);
-            // Convites de showroom cuja categoria não rendeu seção própria.
-            const orphanInvites = showroomInvites.filter((s) => !blocks.some((b) => b.invite?.slug === s.slug && b.displayProjects.length > 0));
-
+            // Sem categoria (ou com slug que não existe mais): nunca fica invisível.
+            const rest = obras.filter((p) => !shown.has(p.id)).sort(byFeatured);
             return (
-              <div className="space-y-16">
-                {blocks.map(({ cat, displayProjects, invite, isPartnerSection }) => (displayProjects.length > 0 || isPartnerSection) && (
+              <div className="space-y-14">
+                {blocks.filter((b) => b.list.length > 0).map(({ cat, list }) => (
                   <div key={cat.slug}>
                     <SectionHeader label={cat.label} desc={cat.description ?? ""} />
-                    {invite && <ShowroomInvites invites={[invite]} />}
-                    {isPartnerSection ? (
-                      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
-                        {partners.map((s) => <PartnerCard key={s.id} s={s} />)}
-                      </div>
-                    ) : (
-                      <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 gap-1">
-                        {displayProjects.map((project) => (
-                          <ProjectCard key={project.id} project={project} onOpen={openLightbox} />
-                        ))}
-                      </div>
-                    )}
+                    <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 gap-1">
+                      {list.map((project) => <ProjectCard key={project.id} project={project} onOpen={openLightbox} />)}
+                    </div>
                   </div>
                 ))}
-                {(rest.length > 0 || orphanInvites.length > 0) && (
-                  <div key="__outros">
+                {rest.length > 0 && (
+                  <div>
                     <SectionHeader label="Outros projetos" desc="Demais ambientes executados" />
-                    {orphanInvites.length > 0 && <ShowroomInvites invites={orphanInvites} />}
-                    {rest.length > 0 && (
-                      <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 gap-1">
-                        {rest.map((project) => (
-                          <ProjectCard key={project.id} project={project} onOpen={openLightbox} />
-                        ))}
-                      </div>
-                    )}
+                    <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 gap-1">
+                      {rest.map((project) => <ProjectCard key={project.id} project={project} onOpen={openLightbox} />)}
+                    </div>
                   </div>
                 )}
               </div>
             );
-          })() : (
-            /* Filtered: flat grid */
+          })() : obrasFiltradas.length === 0 ? (
+            <div className="text-center py-16">
+              <p className="text-[#74777f] text-sm font-[var(--font-inter)]">Nenhum projeto com esses filtros.</p>
+              <button onClick={() => { setActiveFilter("todos"); setActiveTag("todos"); }}
+                className="mt-3 text-[#002045] text-xs underline underline-offset-2 font-[var(--font-inter)]">Ver todos</button>
+            </div>
+          ) : (
             <>
-              {activeFilter === SHOWROOM_CAT && partners.length > 0 ? (
-                <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
-                  {partners.map((s) => <PartnerCard key={s.id} s={s} />)}
-                </div>
-              ) : filtered.length === 0 ? (
-                <p className="text-center text-[#74777f] text-sm font-[var(--font-inter)] py-20">
-                  Nenhum projeto nesta categoria.
-                </p>
-              ) : (
-                <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 gap-1">
-                  {filtered.map((project) => (
-                    <ProjectCard key={project.id} project={project} onOpen={openLightbox} />
-                  ))}
-                </div>
-              )}
+              <p className="text-[#74777f] text-xs font-[var(--font-inter)] mb-3">
+                {obrasFiltradas.length} {obrasFiltradas.length === 1 ? "projeto" : "projetos"}
+              </p>
+              <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 gap-1">
+                {obrasFiltradas.map((project) => <ProjectCard key={project.id} project={project} onOpen={openLightbox} />)}
+              </div>
             </>
           )}
 
@@ -1089,52 +1111,99 @@ export default function ProjetosPage() {
         </div>
       </section>
 
-      {/* ── Aplicações IA ───────────────────────────────────────────────────── */}
-      <section className="py-16 lg:py-32 bg-[#0a0f1a]" id="aplicacoes">
+      {/* ── Transformação real (antes/depois em destaque) ───────────────────── */}
+      <section className="bg-[#090e18] py-14 lg:py-24">
         <div className="max-w-[1280px] mx-auto px-4 lg:px-16">
-
-          {/* Section intro */}
-          <div className="mb-16">
-            <div className="inline-flex items-center gap-3 mb-5">
+          <div className="mb-8 lg:mb-12">
+            <div className="inline-flex items-center gap-3 mb-4">
               <div className="w-5 h-px bg-[#a1d494]" />
-              <p className="text-[#a1d494] text-xs tracking-[0.3em] uppercase font-semibold font-[var(--font-inter)]">
-                Possibilidades · Visualizações IA
-              </p>
+              <p className="text-[#a1d494] text-xs tracking-[0.25em] uppercase font-semibold font-[var(--font-inter)]">Transformação real</p>
             </div>
-            <h2 className="font-[var(--font-noto-serif)] text-white text-3xl lg:text-5xl font-normal leading-tight mb-4 max-w-2xl">
-              O Orbital no seu espaço.
-            </h2>
-            <p className="text-white/45 text-sm font-[var(--font-inter)] leading-relaxed max-w-xl">
-              Visualizações geradas por inteligência artificial mostrando o potencial do PFB Orbital em diferentes ambientes e contextos de aplicação.
-            </p>
+            <h2 className="font-serif text-white text-3xl lg:text-5xl font-normal leading-tight">A diferença é visível.</h2>
           </div>
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-1">
+            <div className="relative aspect-[4/3] overflow-hidden">
+              <Image src="/images/projetos/restaurante-antes.png" alt="Restaurante — antes" fill className="object-cover brightness-[0.82] saturate-75" />
+              <div className="absolute bottom-0 inset-x-0 p-4 sm:p-6 bg-gradient-to-t from-[#090e18]/80 to-transparent">
+                <span className="text-white/55 text-[10px] tracking-[0.2em] uppercase font-bold font-[var(--font-inter)]">Antes</span>
+              </div>
+            </div>
+            <div className="relative aspect-[4/3] overflow-hidden">
+              <Image src="/images/projetos/restaurante-depois.jpeg" alt="Restaurante — depois" fill className="object-cover" />
+              <div className="absolute bottom-0 inset-x-0 p-4 sm:p-6 bg-gradient-to-t from-[#090e18]/80 to-transparent">
+                <span className="text-[#a1d494] text-[10px] tracking-[0.2em] uppercase font-bold font-[var(--font-inter)]">Depois</span>
+              </div>
+            </div>
+          </div>
+          <div className="mt-5 flex flex-col sm:flex-row sm:items-center justify-between gap-3 border-t border-white/10 pt-5">
+            <div>
+              <p className="text-[#a1d494] text-[10px] tracking-[0.15em] uppercase font-semibold font-[var(--font-inter)] mb-1">ORB-002 · Imbuia · Elegance</p>
+              <p className="text-white/50 text-sm font-[var(--font-inter)]">Restaurante · Comercial · Manaus, AM</p>
+            </div>
+            <p className="text-white/30 text-xs font-[var(--font-inter)] italic">2 horas de instalação · Sem obra pesada · Sem poeira</p>
+          </div>
+        </div>
+      </section>
 
-          {/* All renders in a single grid */}
+      {/* ── Showrooms parceiros ─────────────────────────────────────────────── */}
+      <section id="showrooms" className="scroll-mt-32 py-12 lg:py-20 bg-white">
+        <div className="max-w-[1280px] mx-auto px-4 lg:px-16">
+          <BigSectionHead id="showrooms" eyebrow="Visite e veja de perto" title="Showrooms parceiros"
+            desc="Ambientes decorados com o Painel Flexível Fibra de Bambu dentro de empresas parceiras. Veja o acabamento, a textura e a luz ao vivo." />
+          {!partnersLoaded ? (
+            <p className="text-[#74777f] text-sm font-[var(--font-inter)]">Carregando…</p>
+          ) : showrooms.length === 0 ? (
+            <p className="text-[#74777f] text-sm font-[var(--font-inter)]">Em breve.</p>
+          ) : (
+            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
+              {showrooms.map((s) => <PartnerCard key={s.id} s={s} />)}
+            </div>
+          )}
+        </div>
+      </section>
+
+      {/* ── Pontos de revenda ───────────────────────────────────────────────── */}
+      <section id="revenda" className="scroll-mt-32 py-12 lg:py-20 bg-[#f5f5f3]">
+        <div className="max-w-[1280px] mx-auto px-4 lg:px-16">
+          <BigSectionHead id="revenda" eyebrow="Compre perto de você" title="Pontos de revenda"
+            desc="Lojas parceiras com os nossos modelos em display, no tamanho real da placa, para você escolher com o painel na mão." />
+          <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
+            {revendas.map((s) => <RevendaCard key={s.id} s={s} />)}
+          </div>
+        </div>
+      </section>
+
+      {/* ── Inspirações IA ──────────────────────────────────────────────────── */}
+      <section id="inspiracoes" className="scroll-mt-32 py-14 lg:py-24 bg-[#0a0f1a]">
+        <div className="max-w-[1280px] mx-auto px-4 lg:px-16">
+          <BigSectionHead id="inspiracoes" light eyebrow="Possibilidades · Visualizações IA" title="O Orbital no seu espaço."
+            desc="Visualizações geradas por inteligência artificial mostrando o potencial do PFB em diferentes ambientes." />
           <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-5 gap-1">
-            {allRenders.map((render) => (
-              <RenderCard key={render.id} render={render} />
-            ))}
+            {allRenders.map((render) => <RenderCard key={render.id} render={render} />)}
           </div>
-
-          <p className="text-white/18 text-[10px] font-[var(--font-inter)] italic text-center mt-10">
-            Imagens geradas por inteligência artificial para fins ilustrativos.
-          </p>
+          <div className="mt-8 flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+            <p className="text-white/30 text-[10px] font-[var(--font-inter)] italic">
+              Imagens geradas por inteligência artificial para fins ilustrativos.
+            </p>
+            <Link href="/visualizador"
+              className="inline-flex items-center justify-center gap-2 border border-white/30 text-white text-[10px] tracking-[0.12em] uppercase font-bold font-[var(--font-inter)] px-5 py-3 hover:bg-white hover:text-[#002045] transition-colors">
+              Simular no meu ambiente
+              <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><path d="M5 12h14M12 5l7 7-7 7" /></svg>
+            </Link>
+          </div>
         </div>
       </section>
 
       {/* ── CTA ─────────────────────────────────────────────────────────────── */}
-      <section className="py-16 lg:py-32 bg-white">
+      <section className="py-16 lg:py-28 bg-white">
         <div className="max-w-[1280px] mx-auto px-4 lg:px-16">
           <div className="grid grid-cols-1 lg:grid-cols-2 gap-16 items-center">
-
             <div>
               <div className="inline-flex items-center gap-3 mb-6">
                 <div className="w-5 h-px bg-[#3b6934]" />
-                <p className="text-[#3b6934] text-xs tracking-[0.2em] uppercase font-semibold font-[var(--font-inter)]">
-                  Próximo projeto
-                </p>
+                <p className="text-[#3b6934] text-xs tracking-[0.2em] uppercase font-semibold font-[var(--font-inter)]">Próximo projeto</p>
               </div>
-              <h2 className="font-[var(--font-noto-serif)] text-[#002045] text-2xl lg:text-[3.25rem] font-normal leading-[1.08] tracking-[-0.02em] mb-6">
+              <h2 className="font-serif text-[#002045] text-2xl lg:text-[3.25rem] font-normal leading-[1.08] tracking-[-0.02em] mb-6">
                 Transforme o seu ambiente com o PFB!
               </h2>
               <p className="text-[#43474e] text-base font-[var(--font-inter)] leading-relaxed mb-4 max-w-md">
@@ -1142,43 +1211,23 @@ export default function ProjetosPage() {
                 orçamento completo do seu projeto. E com a nossa pronta-entrega,
                 sua obra pode começar ainda essa semana!
               </p>
-              <p className="text-[#3b6934] text-sm font-bold font-[var(--font-inter)] tracking-[0.05em] mb-10">
-                PFB: Prático, Fácil, Bonito.
-              </p>
+              <p className="text-[#3b6934] text-sm font-bold font-[var(--font-inter)] tracking-[0.05em] mb-10">PFB: Prático, Fácil, Bonito.</p>
               <div className="flex flex-col sm:flex-row flex-wrap gap-3 lg:gap-4">
-                <ContatoCta
-                  className="w-full sm:w-auto inline-flex items-center justify-center gap-2.5 bg-[#002045] text-white text-xs tracking-[0.12em] uppercase font-bold font-[var(--font-inter)] px-8 py-4 hover:bg-[#1a365d] transition-colors"
-                >
-                  <svg width="14" height="14" viewBox="0 0 24 24" fill="currentColor">
-                    <path d="M17.472 14.382c-.297-.149-1.758-.867-2.03-.967-.273-.099-.471-.148-.67.15-.197.297-.767.966-.94 1.164-.173.199-.347.223-.644.075-.297-.15-1.255-.463-2.39-1.475-.883-.788-1.48-1.761-1.653-2.059-.173-.297-.018-.458.13-.606.134-.133.298-.347.446-.52.149-.174.198-.298.298-.497.099-.198.05-.371-.025-.52-.075-.149-.669-1.612-.916-2.207-.242-.579-.487-.5-.669-.51-.173-.008-.371-.01-.57-.01-.198 0-.52.074-.792.372-.272.297-1.04 1.016-1.04 2.479 0 1.462 1.065 2.875 1.213 3.074.149.198 2.096 3.2 5.077 4.487.709.306 1.262.489 1.694.625.712.227 1.36.195 1.871.118.571-.085 1.758-.719 2.006-1.413.248-.694.248-1.289.173-1.413-.074-.124-.272-.198-.57-.347m-5.421 7.403h-.004a9.87 9.87 0 01-5.031-1.378l-.361-.214-3.741.982.998-3.648-.235-.374a9.86 9.86 0 01-1.51-5.26c.001-5.45 4.436-9.884 9.888-9.884 2.64 0 5.122 1.03 6.988 2.898a9.825 9.825 0 012.893 6.994c-.003 5.45-4.437 9.884-9.885 9.884m8.413-18.297A11.815 11.815 0 0012.05 0C5.495 0 .16 5.335.157 11.892c0 2.096.547 4.142 1.588 5.945L.057 24l6.305-1.654a11.882 11.882 0 005.683 1.448h.005c6.554 0 11.89-5.335 11.893-11.893a11.821 11.821 0 00-3.48-8.413z" />
-                  </svg>
+                <ContatoCta className="w-full sm:w-auto inline-flex items-center justify-center gap-2.5 bg-[#002045] text-white text-xs tracking-[0.12em] uppercase font-bold font-[var(--font-inter)] px-8 py-4 hover:bg-[#1a365d] transition-colors">
                   Falar com um consultor
                 </ContatoCta>
-                <Link
-                  href="/produtos"
-                  className="w-full sm:w-auto inline-flex items-center justify-center gap-2 border border-[#002045] text-[#002045] text-xs tracking-[0.12em] uppercase font-bold font-[var(--font-inter)] px-8 py-4 hover:bg-[#002045] hover:text-white transition-colors"
-                >
-                  Ver acabamentos
-                  <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5">
-                    <path d="M5 12h14M12 5l7 7-7 7" />
-                  </svg>
+                <Link href="/produtos"
+                  className="w-full sm:w-auto inline-flex items-center justify-center gap-2 border border-[#002045] text-[#002045] text-xs tracking-[0.12em] uppercase font-bold font-[var(--font-inter)] px-8 py-4 hover:bg-[#002045] hover:text-white transition-colors">
+                  Ver o catálogo
+                  <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5"><path d="M5 12h14M12 5l7 7-7 7" /></svg>
                 </Link>
               </div>
             </div>
-
-            {/* 3 portrait images — hidden on mobile, shown on lg+ */}
             <div className="hidden lg:grid grid-cols-3 gap-1">
-              <div className="relative aspect-[3/4] overflow-hidden">
-                <Image src="/images/projetos/lavabo1-depois.png" alt="Lavabo — Orbital" fill className="object-cover" />
-              </div>
-              <div className="relative aspect-[3/4] overflow-hidden">
-                <Image src="/images/projetos/hall-depois.png" alt="Hall — Orbital" fill className="object-cover" />
-              </div>
-              <div className="relative aspect-[3/4] overflow-hidden">
-                <Image src="/images/projetos/escritorio-depois.jpeg" alt="Escritório — Orbital" fill className="object-cover" />
-              </div>
+              <div className="relative aspect-[3/4] overflow-hidden"><Image src="/images/projetos/lavabo1-depois.png" alt="Lavabo — Orbital" fill className="object-cover" /></div>
+              <div className="relative aspect-[3/4] overflow-hidden"><Image src="/images/projetos/hall-depois.png" alt="Hall — Orbital" fill className="object-cover" /></div>
+              <div className="relative aspect-[3/4] overflow-hidden"><Image src="/images/projetos/escritorio-depois.jpeg" alt="Escritório — Orbital" fill className="object-cover" /></div>
             </div>
-
           </div>
         </div>
       </section>

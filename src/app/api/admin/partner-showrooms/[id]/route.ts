@@ -18,6 +18,8 @@ export async function PATCH(req: NextRequest, { params }: { params: Promise<{ id
   }
   if (patch.name === undefined) delete patch.name;
   if ("active" in body) patch.active = body.active !== false;
+  // Migração 063: showroom parceiro ou ponto de revenda.
+  if (body.kind === "showroom" || body.kind === "revenda") patch.kind = body.kind;
   if ("sort_order" in body) patch.sort_order = Number(body.sort_order) || 0;
   if (Object.keys(patch).length === 0) return NextResponse.json({ ok: true });
 

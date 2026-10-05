@@ -14,11 +14,17 @@ export const runtime = "nodejs";
 export async function GET() {
   const db = supabaseAdmin();
 
-  const { data: rows, error } = await db
+  const COLS = "id, slug, name, address, maps_url, description, logo_url, cover_url, sort_order, created_at";
+  // "kind" (migração 063) separa showroom parceiro de ponto de revenda. Antes da
+  // migração a coluna não existe: tudo sai como showroom.
+  let { data: rows, error }: { data: Record<string, unknown>[] | null; error: { message: string } | null } = await db
     .from("partner_showrooms")
-    .select("id, slug, name, address, maps_url, description, logo_url, cover_url, sort_order")
+    .select(`${COLS}, kind`)
     .eq("active", true)
     .order("sort_order", { ascending: true });
+  if (error && /kind/i.test(error.message)) {
+    ({ data: rows, error } = await db.from("partner_showrooms").select(COLS).eq("active", true).order("sort_order", { ascending: true }));
+  }
 
   if (error) {
     if (isMissingTable(error)) return NextResponse.json([]);
@@ -45,6 +51,7 @@ export async function GET() {
     const firstWithCover = mine.find((m) => String(m.image_after ?? "").trim() !== "");
     return {
       ...r,
+      kind: r.kind === "revenda" ? "revenda" : "showroom",
       ambient_count: mine.length,
       // Capa própria do parceiro; sem ela, a capa de um ambiente serve de vitrine.
       display_cover: r.cover_url || firstWithCover?.image_after || null,
