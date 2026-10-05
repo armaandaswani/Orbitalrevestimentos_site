@@ -119,7 +119,12 @@ export async function applyStockMovement(
  * contar como reserva também descontaria a mesma placa duas vezes. "cancelado"
  * também não segura nada.
  */
-export const ACTIVE_ORDER_STATUSES = ["em_producao", "pronto"] as const;
+export const ACTIVE_ORDER_STATUSES = ["em_producao", "pronto", "pendente_entrega"] as const;
+
+/** Pedido ainda segura as placas (produção, pronto ou aguardando entrega). */
+export function isActiveOrderStatus(status: string | null | undefined): boolean {
+  return (ACTIVE_ORDER_STATUSES as readonly string[]).includes(status ?? "");
+}
 
 /**
  * Placas reservadas por produto, DERIVADAS dos pedidos ativos.

@@ -2,7 +2,7 @@ import { NextRequest, NextResponse } from "next/server";
 import { isAdminRequest } from "@/lib/admin-auth";
 import { supabaseAdmin } from "@/lib/supabase";
 import { isMissingColumn } from "@/lib/db-compat";
-import { transitionOrderStock } from "@/lib/stock";
+import { isActiveOrderStatus, transitionOrderStock } from "@/lib/stock";
 
 type PartnerLite = { id: string; name: string; coupon_code: string };
 type SalesRepLite = { id: string; name: string; referral_code: string };
@@ -203,7 +203,7 @@ async function reconcileItemsAndStock(
 
   let newState = "none";
   if (clean.length > 0) {
-    if (finalStatus === "em_producao" || finalStatus === "pronto") {
+    if (isActiveOrderStatus(finalStatus)) {
       const r = await transitionOrderStock(db, pedidoId, "none", "reserved", "admin");
       if (r.ok) newState = "reserved";
     } else if (finalStatus === "entregue") {
@@ -230,7 +230,7 @@ function stockTargetFor(
   }
   // Active production states hold a reservation. Re-reserve if a previously
   // cancelled order is reactivated (or it never reserved on creation).
-  if ((newStatus === "em_producao" || newStatus === "pronto") && stockState !== "reserved" && stockState !== "consumed") {
+  if (isActiveOrderStatus(newStatus) && stockState !== "reserved" && stockState !== "consumed") {
     return "reserved";
   }
   return null;
@@ -403,6 +403,9 @@ export async function PATCH(
     ({ data, error } = await db.from("pedidos").update(patch).eq("id", id).select().single());
   }
 
+  if (error && /pedidos_status_check/.test(error.message)) {
+    return NextResponse.json({ error: "Para usar \"Pendente de entrega\", rode a migração 064 no Supabase." }, { status: 409 });
+  }
   if (error) return NextResponse.json({ error: error.message }, { status: 500 });
 
   // Editing the quantity of panels: when `items` is present, replace the
@@ -436,6 +439,9 @@ export async function PATCH(
   }
 
   if (data) await syncPedidoPortalAttribution(db, data as Record<string, unknown>);
+  if (data && ("status" in patch || "expected_delivery_at" in patch)) {
+    await syncDeliveryReminder(db, data as Record<string, unknown>);
+  }
 
   return NextResponse.json(data);
 }
@@ -471,4 +477,40 @@ export async function DELETE(
   const { error } = await db.from("pedidos").delete().eq("id", id);
   if (error) return NextResponse.json({ error: error.message }, { status: 500 });
   return NextResponse.json({ ok: true });
+}
+
+/**
+ * "Pendente de entrega" com data → um lembrete na Agenda do admin (admin_events,
+ * que também sai no calendário assinado). Um lembrete por pedido, marcado nas
+ * notas com [pedido:<id>]: mudar a data move o lembrete; sair do status cancela.
+ * Nunca falha a edição do pedido.
+ */
+async function syncDeliveryReminder(db: ReturnType<typeof supabaseAdmin>, row: Record<string, unknown>) {
+  try {
+    const tag = `[pedido:${row.id}]`;
+    const { data: existing } = await db
+      .from("admin_events")
+      .select("id")
+      .ilike("notes", `%${tag}%`)
+      .eq("status", "scheduled")
+      .limit(1)
+      .maybeSingle();
+    const when = typeof row.expected_delivery_at === "string" ? row.expected_delivery_at : null;
+    if (row.status !== "pendente_entrega" || !when) {
+      if (existing) await db.from("admin_events").update({ status: "cancelled" }).eq("id", (existing as { id: string }).id);
+      return;
+    }
+    const detalhe = [row.product_name, row.space].filter(Boolean).join(" · ");
+    const payload = {
+      title: `Entregar pedido — ${row.client_name ?? "cliente"}`,
+      scheduled_at: when,
+      duration_minutes: 30,
+      location: [row.client_address, row.client_city].filter(Boolean).join(", ") || null,
+      notes: `Pedido pendente de entrega${detalhe ? `: ${detalhe}` : ""}. ${tag}`,
+    };
+    if (existing) await db.from("admin_events").update(payload).eq("id", (existing as { id: string }).id);
+    else await db.from("admin_events").insert(payload);
+  } catch (e) {
+    console.error("[pedidos] lembrete de entrega não salvo:", e instanceof Error ? e.message : e);
+  }
 }

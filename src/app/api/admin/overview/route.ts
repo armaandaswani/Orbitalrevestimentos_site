@@ -76,7 +76,7 @@ export async function GET(req: NextRequest) {
       db
         .from("pedidos")
         .select("id, client_name, status, total, expected_delivery_at, created_at")
-        .in("status", ["em_producao", "pronto"])
+        .in("status", ["em_producao", "pronto", "pendente_entrega"])
         .order("created_at", { ascending: false })
         .limit(50),
       { data: [] as Record<string, unknown>[] } as never

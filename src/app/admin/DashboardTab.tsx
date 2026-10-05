@@ -131,7 +131,7 @@ function AttentionRow({ primary, secondary, meta, onClick }: { primary: string; 
 export default function DashboardTab({ dash, dashLoading, onRefreshDash, overview, overviewLoading, onRefreshOverview, onNavigate, onOpenLead, onOpenPedido }: DashboardTabProps) {
   const fmtK = (n: number) => (n >= 1000 ? `R$${(n / 1000).toFixed(1)}k` : fmtBRL(n));
   const STATUS_MAP: Record<string, string> = { em_orcamento: "Em orçamento", concluido: "Concluído", cancelado: "Cancelado" };
-  const PEDIDO_STATUS: Record<string, string> = { em_producao: "Em produção", pronto: "Pronto", entregue: "Entregue", cancelado: "Cancelado" };
+  const PEDIDO_STATUS: Record<string, string> = { em_producao: "Em produção", pronto: "Pronto", pendente_entrega: "Pendente de entrega", entregue: "Entregue", cancelado: "Cancelado" };
 
   const trend = dash?.monthlyTrend ?? [];
   const maxMonth = trend.length > 0 ? Math.max(...trend.map((m) => m.count), 1) : 1;

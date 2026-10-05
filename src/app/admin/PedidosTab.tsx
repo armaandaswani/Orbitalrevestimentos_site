@@ -7,7 +7,7 @@ import { DEFAULT_CONFIG, QUOTE_VALIDITY_DAYS, maxInstallmentsForPlates, type Orc
 import { CLAUSULAS_PADRAO } from "@/lib/clausulas-pedido";
 
 // ─── Types ──────────────────────────────────────────────────────────────────
-export type PedidoStatus = "em_producao" | "pronto" | "entregue" | "cancelado";
+export type PedidoStatus = "em_producao" | "pronto" | "pendente_entrega" | "entregue" | "cancelado";
 export type PaymentStatus = "pendente" | "parcial" | "pago" | "boleto";
 /** Parcela de boleto (migration 060). vencimento em AAAA-MM-DD. */
 export type Boleto = { vencimento: string; valor: number; pago: boolean };
@@ -63,10 +63,11 @@ export interface Pedido {
 const STATUS_META: Record<PedidoStatus, { label: string; cls: string }> = {
   em_producao: { label: "Em produção", cls: "bg-yellow-100 text-yellow-800" },
   pronto: { label: "Pronto", cls: "bg-blue-100 text-blue-800" },
+  pendente_entrega: { label: "Pendente de entrega", cls: "bg-orange-100 text-orange-800" },
   entregue: { label: "Entregue", cls: "bg-green-100 text-green-800" },
   cancelado: { label: "Cancelado", cls: "bg-gray-200 text-gray-600" },
 };
-const STATUS_ORDER: PedidoStatus[] = ["em_producao", "pronto", "entregue", "cancelado"];
+const STATUS_ORDER: PedidoStatus[] = ["em_producao", "pronto", "pendente_entrega", "entregue", "cancelado"];
 
 const PAYMENT_META: Record<PaymentStatus, { label: string; cls: string }> = {
   pendente: { label: "Pendente", cls: "bg-red-100 text-red-800" },
@@ -86,15 +87,52 @@ function addMonthsISO(iso: string, n: number): string {
   return alvo.toISOString().slice(0, 10);
 }
 
+/** Soma n dias a uma data AAAA-MM-DD. */
+function addDaysISO(iso: string, n: number): string {
+  const [y, m, d] = iso.split("-").map(Number);
+  return new Date(Date.UTC(y, m - 1, d + n)).toISOString().slice(0, 10);
+}
+
 /**
- * Parcelas a partir da quantidade e do 1º vencimento: um mês a mais em cada, e
- * o total dividido em partes iguais (a última absorve os centavos).
+ * Prazo dos boletos:
+ *   "mensal"   → 1º vencimento escolhido, os demais no mesmo dia dos meses seguintes
+ *   dias[]     → contados a partir de uma data base (ex.: 30/45/60 dias da compra)
+ * Com mais boletos que prazos na lista, segue o último intervalo (30/45/60 → 75, 90…).
  */
-function gerarBoletos(qtd: number, primeiro: string, total: number): Boleto[] {
+type Prazo = { tipo: "mensal" } | { tipo: "dias"; dias: number[] };
+
+const PRAZOS: { id: string; label: string; dias: number[] | null }[] = [
+  { id: "mensal", label: "Mensal (mesmo dia de cada mês)", dias: null },
+  { id: "30-60-90", label: "30 / 60 / 90 dias", dias: [30, 60, 90] },
+  { id: "30-45-60", label: "30 / 45 / 60 dias", dias: [30, 45, 60] },
+  { id: "15-30-45", label: "15 / 30 / 45 dias", dias: [15, 30, 45] },
+  { id: "28-56-84", label: "28 / 56 / 84 dias", dias: [28, 56, 84] },
+  { id: "30-60", label: "30 / 60 dias", dias: [30, 60] },
+  { id: "outro", label: "Outro (digitar os dias)", dias: null },
+];
+
+function diasDoBoleto(dias: number[], i: number): number {
+  if (i < dias.length) return dias[i];
+  const passo = dias.length >= 2 ? dias[dias.length - 1] - dias[dias.length - 2] : dias[0] || 30;
+  return dias[dias.length - 1] + passo * (i - dias.length + 1);
+}
+
+/** "30, 45 60" → [30, 45, 60] (crescente, sem repetidos, até 999 dias). */
+function parseDias(txt: string): number[] {
+  const nums = (txt.match(/\d+/g) ?? []).map(Number).filter((n) => n > 0 && n <= 999);
+  return [...new Set(nums)].sort((a, b) => a - b);
+}
+
+/**
+ * Parcelas a partir da quantidade, do prazo e da data (1º vencimento no mensal;
+ * data base nos prazos em dias). O total é dividido em partes iguais e a última
+ * absorve os centavos.
+ */
+function gerarBoletos(qtd: number, data: string, total: number, prazo: Prazo = { tipo: "mensal" }): Boleto[] {
   const n = Math.max(1, Math.min(36, Math.round(qtd) || 1));
   const parte = Math.floor((total / n) * 100) / 100;
   return Array.from({ length: n }, (_, i) => ({
-    vencimento: addMonthsISO(primeiro, i),
+    vencimento: prazo.tipo === "mensal" || prazo.dias.length === 0 ? addMonthsISO(data, i) : addDaysISO(data, diasDoBoleto(prazo.dias, i)),
     valor: i === n - 1 ? Math.round((total - parte * (n - 1)) * 100) / 100 : parte,
     pago: false,
   }));
@@ -112,36 +150,108 @@ function resumoBoletos(bs: Boleto[]): string {
   return `Boletos: ${pagos}/${bs.length} pagos${prox ? ` · próximo ${dataBR(prox.vencimento)}` : ""}`;
 }
 
-/** Quantidade + 1º vencimento geram as parcelas; cada uma é editável. */
+/** Quantidade + prazo + data geram as parcelas; cada uma continua editável. */
 function BoletosEditor({ boletos, total, onChange }: { boletos: Boleto[]; total: number; onChange: (b: Boleto[]) => void }) {
   const primeiro = boletos[0]?.vencimento ?? plusDays(30);
-  const campo = "w-full border border-[#e2e2e2] px-2.5 py-2 text-sm font-[var(--font-inter)] text-[#002045] focus:outline-none focus:border-[#002045]";
+  const campo = "w-full border border-[#e2e2e2] px-2.5 py-2 text-sm font-[var(--font-inter)] text-[#002045] focus:outline-none focus:border-[#002045] bg-white";
+  const rotulo = "block text-[10px] tracking-[0.1em] uppercase font-bold font-[var(--font-inter)] text-[#74777f] mb-1";
   const somaParcelas = Math.round(boletos.reduce((a, b) => a + (Number(b.valor) || 0), 0) * 100) / 100;
   const diferenca = Math.round((total - somaParcelas) * 100) / 100;
+
+  // A quantidade é um rascunho de texto: dá para apagar tudo e digitar outro
+  // número. Antes o campo vazio virava 1 na hora e não deixava trocar.
+  const [qtdTxt, setQtdTxt] = useState(String(boletos.length || 1));
+  const [prazoId, setPrazoId] = useState("mensal");
+  const [diasTxt, setDiasTxt] = useState("30, 60, 90");
+  // Data base dos prazos em dias (ex.: dia da compra). Padrão: hoje.
+  const [base, setBase] = useState(plusDays(0));
+
+  const prazoDe = (id: string, txt: string): Prazo => {
+    if (id === "mensal") return { tipo: "mensal" };
+    const fixo = PRAZOS.find((x) => x.id === id)?.dias;
+    return { tipo: "dias", dias: fixo ?? parseDias(txt) };
+  };
+  const qtdAtual = () => {
+    const n = parseInt(qtdTxt, 10);
+    return Number.isFinite(n) && n >= 1 ? Math.min(36, n) : boletos.length || 1;
+  };
+  const regerar = (opts: { qtd?: number; id?: string; txt?: string; data?: string }) => {
+    const id = opts.id ?? prazoId;
+    const prazo = prazoDe(id, opts.txt ?? diasTxt);
+    const data = opts.data ?? (prazo.tipo === "mensal" ? primeiro : base);
+    onChange(gerarBoletos(opts.qtd ?? qtdAtual(), data, total, prazo));
+  };
+
+  const emDias = prazoId !== "mensal";
   return (
     <div className="border border-[#e2e2e2] p-3 space-y-3">
+      <label className="block">
+        <span className={rotulo}>Prazo</span>
+        <select
+          value={prazoId}
+          onChange={(e) => {
+            const id = e.target.value;
+            setPrazoId(id);
+            // Escolher um prazo pronto já ajusta a quantidade (30/60/90 → 3 boletos).
+            const dias = id === "mensal" ? null : PRAZOS.find((x) => x.id === id)?.dias ?? parseDias(diasTxt);
+            const qtd = dias && dias.length > 0 ? dias.length : qtdAtual();
+            setQtdTxt(String(qtd));
+            regerar({ id, qtd });
+          }}
+          className={campo}
+        >
+          {PRAZOS.map((x) => <option key={x.id} value={x.id}>{x.label}</option>)}
+        </select>
+      </label>
+      {prazoId === "outro" && (
+        <label className="block">
+          <span className={rotulo}>Dias de cada boleto</span>
+          <input
+            value={diasTxt} inputMode="numeric" placeholder="Ex.: 20, 40, 60"
+            onChange={(e) => {
+              setDiasTxt(e.target.value);
+              const dias = parseDias(e.target.value);
+              if (dias.length > 0) { setQtdTxt(String(dias.length)); regerar({ txt: e.target.value, qtd: dias.length }); }
+            }}
+            className={campo}
+          />
+        </label>
+      )}
       <div className="grid grid-cols-2 gap-3">
         <label className="block">
-          <span className="block text-[10px] tracking-[0.1em] uppercase font-bold font-[var(--font-inter)] text-[#74777f] mb-1">Quantos boletos</span>
+          <span className={rotulo}>Quantos boletos</span>
           <input
-            type="number" min={1} max={36} inputMode="numeric"
-            value={boletos.length || 1}
-            onChange={(e) => onChange(gerarBoletos(Number(e.target.value), primeiro, total))}
+            type="text" inputMode="numeric" pattern="[0-9]*"
+            value={qtdTxt}
+            onChange={(e) => {
+              const txt = e.target.value.replace(/\D/g, "").slice(0, 2);
+              setQtdTxt(txt);
+              const n = parseInt(txt, 10);
+              if (Number.isFinite(n) && n >= 1) regerar({ qtd: Math.min(36, n) });
+            }}
+            onBlur={() => { if (!qtdTxt) setQtdTxt(String(boletos.length || 1)); }}
             className={campo}
           />
         </label>
         <label className="block">
-          <span className="block text-[10px] tracking-[0.1em] uppercase font-bold font-[var(--font-inter)] text-[#74777f] mb-1">1º vencimento</span>
+          <span className={rotulo}>{emDias ? "Contar a partir de" : "1º vencimento"}</span>
           <input
             type="date"
-            value={primeiro}
-            onChange={(e) => e.target.value && onChange(gerarBoletos(boletos.length || 1, e.target.value, total))}
+            value={emDias ? base : primeiro}
+            onChange={(e) => {
+              if (!e.target.value) return;
+              if (emDias) setBase(e.target.value);
+              regerar({ data: e.target.value });
+            }}
             className={campo}
           />
         </label>
       </div>
       <p className="text-[10px] text-[#74777f] font-[var(--font-inter)]">
-        Os demais vencem um mês depois do anterior. Dá para ajustar data e valor de cada um.
+        {emDias
+          ? `Vencimentos a ${boletos.map((_, i) => diasDoBoleto((prazoDe(prazoId, diasTxt) as { dias: number[] }).dias, i)).join(" / ")} dias de ${dataBR(base)}.`
+          : "Os demais vencem no mesmo dia dos meses seguintes."}{" "}
+        Dá para ajustar data e valor de cada um.
       </p>
       <div className="space-y-2">
         {boletos.map((b, i) => (
@@ -1267,6 +1377,8 @@ export default function PedidosTab({
         body: JSON.stringify(patch),
       });
       if (!res.ok) {
+        const j = await res.json().catch(() => null);
+        if (res.status === 409 && j?.error) alert(j.error);
         await fetchPedidos(); // revert to server truth
       } else {
         const updated = await res.json().catch(() => null);
@@ -1290,6 +1402,23 @@ export default function PedidosTab({
   // name/WhatsApp/e-mail and wants to push the updated link again, without walking
   // through the whole review/send step. Uses the saved order data.
   const [resendingId, setResendingId] = useState<string | null>(null);
+  // "Pendente de entrega" pede a data do lembrete (vira um evento na Agenda).
+  const [entregaPedido, setEntregaPedido] = useState<Pedido | null>(null);
+  const [entregaData, setEntregaData] = useState("");
+  function mudarStatus(p: Pedido, status: PedidoStatus) {
+    if (status === "pendente_entrega") {
+      setEntregaData(p.expected_delivery_at ? toDateInput(p.expected_delivery_at) : plusDays(1));
+      setEntregaPedido(p);
+      return;
+    }
+    patchPedido(p.id, { status });
+  }
+  function salvarEntrega() {
+    if (!entregaPedido || !entregaData) return;
+    // 9h de Manaus no dia escolhido.
+    patchPedido(entregaPedido.id, { status: "pendente_entrega", expected_delivery_at: new Date(`${entregaData}T09:00:00-04:00`).toISOString() });
+    setEntregaPedido(null);
+  }
   // Janela de boletos aberta a partir do seletor de pagamento do cartão.
   const [boletoPedido, setBoletoPedido] = useState<Pedido | null>(null);
   const [boletoDraft, setBoletoDraft] = useState<Boleto[]>([]);
@@ -1600,7 +1729,7 @@ export default function PedidosTab({
                       <td className="px-4 py-3">
                         <select
                           value={p.status}
-                          onChange={(e) => patchPedido(p.id, { status: e.target.value as PedidoStatus })}
+                          onChange={(e) => mudarStatus(p, e.target.value as PedidoStatus)}
                           className={`text-[10px] font-bold font-[var(--font-inter)] border-0 px-2 py-1 cursor-pointer focus:outline-none ${STATUS_META[p.status].cls}`}
                         >
                           {STATUS_ORDER.map((s) => (
@@ -1674,7 +1803,7 @@ export default function PedidosTab({
                   <div className="flex items-center gap-2 mt-3">
                     <select
                       value={p.status}
-                      onChange={(e) => patchPedido(p.id, { status: e.target.value as PedidoStatus })}
+                      onChange={(e) => mudarStatus(p, e.target.value as PedidoStatus)}
                       className={`text-[10px] font-bold border-0 px-2 py-1 ${STATUS_META[p.status].cls}`}
                     >
                       {STATUS_ORDER.map((s) => (
@@ -1711,6 +1840,34 @@ export default function PedidosTab({
             })}
           </div>
         </>
+      )}
+
+      {entregaPedido && (
+        <div className="fixed inset-0 z-50 flex items-end sm:items-center justify-center bg-black/40 sm:p-4" onClick={() => setEntregaPedido(null)}>
+          <div className="bg-white w-full sm:max-w-sm" onClick={(e) => e.stopPropagation()}>
+            <div className="bg-[#002045] px-5 py-4 flex items-start justify-between gap-3">
+              <div className="min-w-0">
+                <p className="text-white font-serif text-lg leading-tight">Pendente de entrega</p>
+                <p className="text-white/60 text-xs font-[var(--font-inter)] truncate">{entregaPedido.client_name}</p>
+              </div>
+              <button onClick={() => setEntregaPedido(null)} className="text-white/60 hover:text-white text-xl leading-none">×</button>
+            </div>
+            <div className="p-5 space-y-2">
+              <label className="block">
+                <span className="block text-[10px] tracking-[0.1em] uppercase font-bold font-[var(--font-inter)] text-[#74777f] mb-1">Lembrar de entregar em</span>
+                <input type="date" value={entregaData} onChange={(e) => setEntregaData(e.target.value)}
+                  className="w-full border border-[#e2e2e2] px-3 py-2.5 text-sm font-[var(--font-inter)] text-[#002045] focus:outline-none focus:border-[#002045]" />
+              </label>
+              <p className="text-[11px] text-[#74777f] font-[var(--font-inter)] leading-relaxed">
+                Entra como lembrete na sua Agenda do admin (e no calendário do celular, se você assinou a agenda), às 9h.
+              </p>
+            </div>
+            <div className="border-t border-[#f0f0f0] px-5 py-3 flex flex-col-reverse sm:flex-row sm:justify-end gap-2">
+              <button type="button" onClick={() => setEntregaPedido(null)} className="w-full sm:w-auto px-4 py-2.5 text-xs font-bold uppercase tracking-wider border border-[#e2e2e2] text-[#43474e]">Cancelar</button>
+              <button type="button" onClick={salvarEntrega} disabled={!entregaData} className="w-full sm:w-auto px-4 py-2.5 text-xs font-bold uppercase tracking-wider bg-[#002045] text-white hover:bg-[#1a365d] disabled:opacity-50">Salvar</button>
+            </div>
+          </div>
+        </div>
       )}
 
       {boletoPedido && (
