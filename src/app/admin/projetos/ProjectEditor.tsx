@@ -6,7 +6,8 @@ import Link from "next/link";
 import AdminShell from "../AdminShell";
 import { inputCls, labelCls } from "../ui";
 import CoverFramer, { COVER_ASPECT, coverStyle } from "./CoverFramer";
-import { isUsableVideoUrl, videoHostLabel, videoThumbnail } from "@/lib/video-link";
+import { isUsableVideoUrl, videoHostLabel } from "@/lib/video-link";
+import VideoThumb from "@/components/VideoThumb";
 import { compressImage, compressionSummary, isUnsupportedForWeb } from "@/lib/image-compress";
 
 /**
@@ -640,12 +641,8 @@ export default function ProjectEditor({ id }: { id: string }) {
                       <div className="relative bg-[#f0f0f0]" style={{ aspectRatio: COVER_ASPECT }}>
                         {m.type === "video" ? (
                           <>
-                            {videoThumbnail(m.url) ? (
-                              // eslint-disable-next-line @next/next/no-img-element
-                              <img src={videoThumbnail(m.url)!} alt="" className="absolute inset-0 w-full h-full object-cover" />
-                            ) : (
-                              <div className="absolute inset-0 bg-[#0a1628]" />
-                            )}
+                            <div className="absolute inset-0 bg-[#0a1628]" />
+                            <VideoThumb url={m.url} className="absolute inset-0 w-full h-full object-cover" />
                             <div className="absolute inset-0 flex items-center justify-center">
                               <svg width="26" height="26" viewBox="0 0 24 24" fill="white" opacity=".85"><path d="M8 5v14l11-7z" /></svg>
                             </div>

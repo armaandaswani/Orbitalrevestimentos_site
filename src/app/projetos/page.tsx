@@ -13,7 +13,8 @@ import {
   type MediaCategory,
 } from "@/lib/project-gallery";
 import { COVER_ASPECT, coverStyle } from "@/lib/cover-crop";
-import { videoHostLabel, videoThumbnail } from "@/lib/video-link";
+import { videoHost, videoHostLabel } from "@/lib/video-link";
+import VideoThumb from "@/components/VideoThumb";
 
 /**
  * A qual seção o projeto pertence.
@@ -183,7 +184,7 @@ function ProjectLightbox({
   const depoisImg = items.find((i) => i.category === "depois" && i.kind === "image");
 
   return (
-    <div className="fixed inset-0 z-50 bg-[#0a0f1a]/95 flex flex-col" onClick={onClose}>
+    <div className="fixed inset-0 z-[60] bg-[#0a0f1a] flex flex-col" onClick={onClose}>
 
       {/* ── Header ── */}
       <div
@@ -325,13 +326,7 @@ function ProjectLightbox({
                     // Vídeo por link: quando dá para derivar a miniatura (YouTube),
                     // mostra a capa real em vez de um quadrado preto.
                     <div className="w-full h-full relative bg-[#0a1628]">
-                      {videoThumbnail(item.url) && (
-                        <img
-                          src={videoThumbnail(item.url)!}
-                          alt=""
-                          className="absolute inset-0 w-full h-full object-cover opacity-70 transition-transform duration-300 group-hover:scale-105"
-                        />
-                      )}
+                      <VideoThumb url={item.url} className="absolute inset-0 w-full h-full object-cover opacity-70 transition-transform duration-300 group-hover:scale-105" />
                       <div className="absolute inset-0 flex items-center justify-center">
                         <svg width="28" height="28" viewBox="0 0 24 24" fill="white" opacity=".85"><path d="M8 5v14l11-7z"/></svg>
                       </div>
@@ -371,9 +366,23 @@ function ProjectLightbox({
                   className="max-h-full max-w-full object-contain select-none"
                   draggable={false}
                 />
+              ) : current?.kind === "video" && videoHost(current.url) === "arquivo" ? (
+                // Vídeo enviado ao próprio site: toca aqui mesmo.
+                <video
+                  key={current.url}
+                  src={current.url}
+                  controls
+                  playsInline
+                  preload="metadata"
+                  className="max-h-full max-w-full bg-black"
+                  onClick={(e) => e.stopPropagation()}
+                />
               ) : current?.kind === "video" ? (
-                // Always show a link/button — never try to embed
-                <div className="flex flex-col items-center justify-center gap-5 text-center px-6">
+                // Link externo (YouTube, Instagram…): miniatura de fundo + botão que
+                // abre o vídeo em nova aba — sem incorporar o player.
+                <div className="relative w-full h-full flex flex-col items-center justify-center gap-5 text-center px-6">
+                  <VideoThumb key={current.url} url={current.url} className="absolute inset-0 w-full h-full object-contain opacity-60 pointer-events-none" />
+                  <div className="relative z-10 flex flex-col items-center justify-center gap-5">
                   {/* The play circle is a link too — users tap it first out of habit */}
                   <a
                     href={current.url}
@@ -381,7 +390,7 @@ function ProjectLightbox({
                     rel="noopener noreferrer"
                     onClick={(e) => e.stopPropagation()}
                     aria-label="Assistir ao vídeo"
-                    className="w-16 h-16 rounded-full bg-white/10 border border-white/20 flex items-center justify-center hover:bg-white/20 transition-colors cursor-pointer"
+                    className="w-16 h-16 rounded-full bg-black/50 border border-white/40 flex items-center justify-center hover:bg-black/70 transition-colors cursor-pointer backdrop-blur-sm"
                   >
                     <svg width="26" height="26" viewBox="0 0 24 24" fill="white" opacity=".8"><path d="M8 5v14l11-7z"/></svg>
                   </a>
@@ -399,9 +408,10 @@ function ProjectLightbox({
                     Assistir ao vídeo
                     <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><path d="M18 13v6a2 2 0 01-2 2H5a2 2 0 01-2-2V8a2 2 0 012-2h6M15 3h6v6M10 14L21 3"/></svg>
                   </a>
-                  <p className="text-white/25 text-[9px] font-[var(--font-inter)]">
+                  <p className="text-white/70 text-[10px] font-[var(--font-inter)] bg-black/40 px-2 py-0.5">
                     Abre em nova aba{current.url ? ` · ${videoHostLabel(current.url)}` : ""}
                   </p>
+                  </div>
                 </div>
               ) : null}
 
