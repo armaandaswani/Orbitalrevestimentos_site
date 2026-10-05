@@ -31,13 +31,13 @@ interface Media {
 interface Project {
   id: string; slug: string; title: string; product_code: string; short_description?: string;
   note?: string; image_after: string; image_before?: string; cover_category?: string | null;
-  is_active: boolean; is_featured?: boolean; show_on_home?: boolean; feature_order?: number;
+  is_active: boolean; is_featured?: boolean; show_on_home?: boolean; is_new?: boolean; feature_order?: number;
   primary_category?: string | null; showroom_id?: string | null; tags?: string[];
   needs_review?: boolean; review_reason?: string | null;
   cover_focus_x?: number; cover_focus_y?: number; cover_zoom?: number;
 }
 interface Cat { slug: string; label: string; active: boolean }
-interface Showroom { id: string; name: string; address: string | null; active: boolean }
+interface Showroom { id: string; name: string; address: string | null; active: boolean; kind?: "showroom" | "revenda" | null }
 interface Tag { id: string; slug: string; label: string; active: boolean }
 interface Product { code: string; name: string; finish?: string }
 
@@ -114,10 +114,19 @@ export default function ProjectEditor({ id }: { id: string }) {
   }, [id]);
 
   /** Muda na tela na hora e grava sozinho pouco depois — nada se perde. */
+  // Alterações feitas em sequência rápida se ACUMULAM até gravar. Antes cada
+  // mudança cancelava a anterior e só a última era salva (ex.: vincular a um
+  // showroom e marcar "Novo" logo em seguida perdia o vínculo).
+  const pendingPatch = useRef<Partial<Project>>({});
   const set = useCallback((patch: Partial<Project>) => {
     setP((prev) => (prev ? { ...prev, ...patch } : prev));
+    pendingPatch.current = { ...pendingPatch.current, ...patch };
     if (saveTimer.current) clearTimeout(saveTimer.current);
-    saveTimer.current = setTimeout(() => persist(patch), 600);
+    saveTimer.current = setTimeout(() => {
+      const all = pendingPatch.current;
+      pendingPatch.current = {};
+      void persist(all);
+    }, 600);
   }, [persist]);
 
   // ── Mídias ─────────────────────────────────────────────────────────────────
@@ -271,10 +280,10 @@ export default function ProjectEditor({ id }: { id: string }) {
   const trail = useMemo(() => {
     const t = ["Projetos"];
     if (catLabel) t.push(catLabel);
-    if (isShowroom && showroom) t.push(showroom.name);
+    if (showroom) t.push(showroom.name);
     t.push(p?.title?.trim() || "Sem nome");
     return t;
-  }, [catLabel, isShowroom, showroom, p?.title]);
+  }, [catLabel, showroom, p?.title]);
 
   const sorted = [...media].sort((a, b) => a.sort_order - b.sort_order);
   const hasAntes = media.some((m) => m.category === "antes");
@@ -326,6 +335,9 @@ export default function ProjectEditor({ id }: { id: string }) {
             <span className={`absolute top-1.5 left-1.5 text-[8px] tracking-[0.15em] uppercase font-bold px-1.5 py-0.5 ${p.cover_category === "antes" ? "bg-amber-500/90 text-white" : "bg-[#3b6934]/90 text-white"}`}>
               {p.cover_category === "antes" ? "Antes" : "Depois"}
             </span>
+          )}
+          {p.is_new && (
+            <span className="absolute top-1.5 right-1.5 bg-[#3b6934] text-white text-[8px] tracking-[0.15em] uppercase font-bold px-1.5 py-0.5">Novo</span>
           )}
         </div>
         <p className="font-[var(--font-noto-serif)] text-[#002045] text-base mt-2.5">{p.title?.trim() || "Sem nome"}</p>
@@ -431,32 +443,47 @@ export default function ProjectEditor({ id }: { id: string }) {
                     // Grave null, nunca "": string vazia passava pelas checagens
                     // de "tem categoria?" e o projeto ficava publicado sem seção.
                     const v = e.target.value || null;
-                    set({ primary_category: v, ...(v === SHOWROOM_SLUG ? {} : { showroom_id: null }) });
+                    // O vínculo com showroom/revenda continua valendo em qualquer
+                    // categoria (ex.: um forro executado dentro do showroom).
+                    set({ primary_category: v });
                   }} className={inputCls}>
                     <option value="">— selecione —</option>
                     {cats.map((c) => <option key={c.slug} value={c.slug}>{c.label}</option>)}
                   </select>
                 </div>
-                {isShowroom && (
-                  <div>
-                    <label className={labelCls}>Showroom parceiro *</label>
-                    <select value={p.showroom_id ?? ""} onChange={(e) => set({ showroom_id: e.target.value || null })} className={inputCls}>
-                      <option value="">— selecione —</option>
-                      {showrooms.map((s) => <option key={s.id} value={s.id}>{s.name}</option>)}
-                    </select>
-                    {showroom?.address && (
-                      <p className="text-[#74777f] text-[11px] font-[var(--font-inter)] mt-1.5">
-                        Endereço herdado do showroom: {showroom.address}
-                      </p>
+                <div>
+                  <label className={labelCls}>
+                    {isShowroom ? "Showroom parceiro *" : "Vincular a showroom ou ponto de revenda"}
+                  </label>
+                  <select value={p.showroom_id ?? ""} onChange={(e) => set({ showroom_id: e.target.value || null })} className={inputCls}>
+                    <option value="">{isShowroom ? "— selecione —" : "Nenhum (opcional)"}</option>
+                    {showrooms.filter((s) => s.kind !== "revenda").length > 0 && (
+                      <optgroup label="Showrooms parceiros">
+                        {showrooms.filter((s) => s.kind !== "revenda").map((s) => <option key={s.id} value={s.id}>{s.name}</option>)}
+                      </optgroup>
                     )}
-                    {showrooms.length === 0 && (
-                      <p className="text-amber-800 text-[11px] font-[var(--font-inter)] mt-1.5">
-                        Nenhum parceiro cadastrado.{" "}
-                        <Link href="/admin/projetos/organizacao" className="underline font-bold">Cadastrar agora</Link>
-                      </p>
+                    {showrooms.filter((s) => s.kind === "revenda").length > 0 && (
+                      <optgroup label="Pontos de revenda">
+                        {showrooms.filter((s) => s.kind === "revenda").map((s) => <option key={s.id} value={s.id}>{s.name}</option>)}
+                      </optgroup>
                     )}
-                  </div>
-                )}
+                  </select>
+                  {showroom ? (
+                    <p className="text-[#74777f] text-[11px] font-[var(--font-inter)] mt-1.5">
+                      Aparece também na página de {showroom.name}{showroom.address ? ` · ${showroom.address}` : ""}.
+                    </p>
+                  ) : !isShowroom ? (
+                    <p className="text-[#a0a3a8] text-[11px] font-[var(--font-inter)] mt-1.5">
+                      Opcional: o projeto continua na categoria escolhida e passa a aparecer também no lugar vinculado.
+                    </p>
+                  ) : null}
+                  {showrooms.length === 0 && (
+                    <p className="text-amber-800 text-[11px] font-[var(--font-inter)] mt-1.5">
+                      Nenhum showroom ou revenda cadastrado.{" "}
+                      <Link href="/admin/projetos/organizacao" className="underline font-bold">Cadastrar agora</Link>
+                    </p>
+                  )}
+                </div>
               </div>
 
               <div className="bg-[#f5f5f3] border border-[#e2e2e2] px-3.5 py-3">
@@ -495,6 +522,10 @@ export default function ProjectEditor({ id }: { id: string }) {
                 <label className="flex items-center gap-2 text-[13px] font-[var(--font-inter)] text-[#43474e] cursor-pointer">
                   <input type="checkbox" checked={!!p.show_on_home} onChange={(e) => set({ show_on_home: e.target.checked })} />
                   Destacar na página inicial
+                </label>
+                <label className="flex items-center gap-2 text-[13px] font-[var(--font-inter)] text-[#43474e] cursor-pointer">
+                  <input type="checkbox" checked={!!p.is_new} onChange={(e) => set({ is_new: e.target.checked })} />
+                  Marcar como &ldquo;Novo&rdquo; <span className="text-[11px] text-[#a0a3a8]">(selo verde no cartão do site)</span>
                 </label>
                 {(p.is_featured || p.show_on_home) && (
                   <div className="pt-1">

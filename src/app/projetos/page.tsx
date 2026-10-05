@@ -773,10 +773,17 @@ function RevendaCard({ s }: { s: PartnerShowroom }) {
             Como chegar
             <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><path d="M5 12h14M12 5l7 7-7 7" /></svg>
           </a>
-          <Link href="/produtos"
-            className="inline-flex items-center gap-2 border border-[#002045] text-[#002045] text-[10px] tracking-[0.12em] uppercase font-bold font-[var(--font-inter)] px-5 py-3 hover:bg-[#002045] hover:text-white transition-colors">
-            Ver os modelos
-          </Link>
+          {s.ambient_count > 0 ? (
+            <Link href={`/projetos/showroom/${s.slug}`}
+              className="inline-flex items-center gap-2 border border-[#002045] text-[#002045] text-[10px] tracking-[0.12em] uppercase font-bold font-[var(--font-inter)] px-5 py-3 hover:bg-[#002045] hover:text-white transition-colors">
+              Ver projetos ({s.ambient_count})
+            </Link>
+          ) : (
+            <Link href="/produtos"
+              className="inline-flex items-center gap-2 border border-[#002045] text-[#002045] text-[10px] tracking-[0.12em] uppercase font-bold font-[var(--font-inter)] px-5 py-3 hover:bg-[#002045] hover:text-white transition-colors">
+              Ver os modelos
+            </Link>
+          )}
         </div>
       </div>
     </div>
@@ -912,7 +919,10 @@ export default function ProjetosPage() {
 
   // ── Obras: categorias (sem a de showroom, que tem seção própria) + tipo ─────
   const orderedCats = resolveCats(cats).filter((c) => c.slug !== SHOWROOM_CAT || showrooms.length === 0);
-  const temShowroomProprio = (p: Project) => showrooms.length > 0 && (sectionSlugs(p).includes(SHOWROOM_CAT) || !!p.showroom_id);
+  // Só os ambientes da categoria Showroom saem das Obras (eles vivem na página do
+  // showroom). Um projeto de outra categoria apenas VINCULADO a um showroom ou
+  // revenda continua nas Obras e aparece também na página do lugar.
+  const temShowroomProprio = (p: Project) => showrooms.length > 0 && sectionSlugs(p).includes(SHOWROOM_CAT);
   const obras = projects.filter((p) => !temShowroomProprio(p));
   const tagsDisponiveis = [...new Set(obras.flatMap((p) => p.tags ?? []))].sort((a, b) => tagLabel(a).localeCompare(tagLabel(b), "pt-BR"));
   const byFeatured = (a: Project, b: Project) =>
