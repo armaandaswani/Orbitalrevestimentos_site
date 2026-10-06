@@ -11,7 +11,17 @@
 
 export const FRETE_PADRAO = 100;
 export const FRETE_DISTANTE = 150;
-export const BAIRROS_DISTANTES = ["Ponta Negra"];
+// Bairros longe da loja (Centro). Comparação sem acento/maiúsculas e por
+// trecho ("Tarumã" também pega "Tarumã-Açu"). Uma zona cadastrada no admin
+// vence esta lista.
+export const BAIRROS_DISTANTES = [
+  // Zona Oeste
+  "Ponta Negra", "Tarumã", "Tarumã-Açu",
+  // Zona Norte
+  "Nova Cidade", "Santa Etelvina", "Monte das Oliveiras", "Lago Azul", "Colônia Terra Nova", "Cidade de Deus",
+  // Zona Leste
+  "Jorge Teixeira", "São José Operário", "Zumbi dos Palmares", "Gilberto Mestrinho", "Puraquequara", "Colônia Antônio Aleixo", "Distrito Industrial II",
+];
 
 export interface FreteZona {
   name: string;

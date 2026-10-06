@@ -27,6 +27,7 @@ import {
   DEFAULT_PANEL_HEIGHT_M,
   panelGrid,
 } from "@/lib/render-prompt";
+import { BAIRROS_DISTANTES, FRETE_DISTANTE, FRETE_PADRAO } from "@/lib/frete-pedido";
 
 // ─── Sidebar IA ───────────────────────────────────────────────────────────────
 // Ordered as the business actually flows, top to bottom: what needs attention
@@ -8021,7 +8022,7 @@ export default function AdminPage() {
                     Sem nenhuma zona, o frete usa o valor-base. Na formalização, o CEP do cliente define o valor. ≥ 5 placas mantém frete grátis.
                   </p>
                   <p className="text-[#74777f] text-xs font-[var(--font-inter)] mb-5 -mt-3 leading-relaxed">
-                    Pedidos do admin: frete automático de R$ 100 (também sem CEP) e R$ 150 em Ponta Negra. Uma zona abaixo que case pelo CEP ou pelo bairro vale no lugar. O valor sempre pode ser alterado no pedido.
+                    Pedidos do admin: frete automático de R$ {FRETE_PADRAO} (também sem CEP) e R$ {FRETE_DISTANTE} nos bairros distantes: {BAIRROS_DISTANTES.join(", ")}. Uma zona abaixo que case pelo CEP ou pelo bairro vale no lugar. O valor sempre pode ser alterado no pedido.
                   </p>
 
                   {freteZones.length > 0 && (
