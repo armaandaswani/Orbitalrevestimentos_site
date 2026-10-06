@@ -264,32 +264,32 @@ export default function Home() {
               </p>
               {/* Os mesmos selos do material da Orbital: ícone em cima, faixa azul
                   com o nome embaixo. Sem números técnicos aqui — confundem o leigo. */}
-              <ul className="grid grid-cols-2 sm:grid-cols-3 gap-2.5 sm:gap-3 mb-3 max-w-2xl">
+              <ul className="grid grid-cols-2 sm:grid-cols-3 gap-2 mb-3 max-w-[30rem]">
                 {PFB_SELOS.map((f) => (
                   <li key={f.t} className="bg-white border border-[#e2e2e2] flex flex-col overflow-hidden">
-                    <span className="flex items-center justify-center h-24 sm:h-28 px-3">
+                    <span className="flex items-center justify-center h-[68px] sm:h-[76px] px-3">
                       {/* eslint-disable-next-line @next/next/no-img-element */}
-                      <img src={`/images/selos/pfb-selo-${f.img}.svg`} alt="" width={64} height={64} loading="lazy" className="h-14 sm:h-16 w-auto max-w-[84px] object-contain" />
+                      <img src={`/images/selos/pfb-selo-${f.img}.svg`} alt="" width={64} height={64} loading="lazy" className="h-10 sm:h-11 w-auto max-w-[60px] object-contain" />
                     </span>
-                    <span className="border-t-2 border-[#3b6934] bg-[#002045] px-3 py-3 text-center flex-1 flex flex-col justify-center">
-                      <span className="block text-white text-[11px] sm:text-xs tracking-[0.08em] uppercase font-bold font-[var(--font-inter)] leading-tight">{f.t}</span>
-                      <span className="block text-white/70 text-[11px] font-[var(--font-inter)] leading-snug mt-1">{f.d}</span>
+                    <span className="border-t-2 border-[#3b6934] bg-[#002045] px-2 py-2 min-h-[50px] text-center flex-1 flex flex-col justify-center">
+                      <span className="block text-white text-[10px] tracking-[0.06em] uppercase font-bold font-[var(--font-inter)] leading-tight">{f.t}</span>
+                      <span className="block text-white/70 text-[10px] font-[var(--font-inter)] leading-snug mt-0.5">{f.d}</span>
                     </span>
                   </li>
                 ))}
               </ul>
               {/* Medidas da placa — como no material */}
-              <dl className="grid grid-cols-2 sm:grid-cols-4 border-y border-[#e2e2e2] mb-9 max-w-2xl">
+              <dl className="grid grid-cols-2 sm:grid-cols-4 border-y border-[#e2e2e2] mb-9 max-w-[30rem]">
                 {[
                   { v: "1,20 × 2,90 m", l: "Placa" },
                   { v: "5 mm", l: "Espessura" },
                   { v: "3,48 m²", l: "Por placa" },
                   { v: "Parede", l: "e forro" },
                 ].map((m, i) => (
-                  <div key={m.l} className={`py-3 px-1 text-center border-[#e2e2e2] ${i % 2 ? "border-l" : ""} ${i >= 2 ? "border-t sm:border-t-0" : ""} ${i === 2 ? "sm:border-l" : ""}`}>
+                  <div key={m.l} className={`py-2.5 px-1 text-center border-[#e2e2e2] ${i % 2 ? "border-l" : ""} ${i >= 2 ? "border-t sm:border-t-0" : ""} ${i === 2 ? "sm:border-l" : ""}`}>
                     <dt className="sr-only">{m.l}</dt>
-                    <dd className="text-[#002045] text-[13px] sm:text-sm font-bold font-[var(--font-inter)] whitespace-nowrap">{m.v}</dd>
-                    <dd className="text-[#74777f] text-[9px] sm:text-[10px] tracking-[0.15em] uppercase font-[var(--font-inter)] mt-0.5">{m.l}</dd>
+                    <dd className="text-[#002045] text-[13px] font-bold font-[var(--font-inter)] whitespace-nowrap">{m.v}</dd>
+                    <dd className="text-[#74777f] text-[9px] tracking-[0.15em] uppercase font-[var(--font-inter)] mt-0.5">{m.l}</dd>
                   </div>
                 ))}
               </dl>
