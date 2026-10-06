@@ -4,6 +4,7 @@ import Link from "next/link";
 import TecnologiaComparison from "@/components/TecnologiaComparison";
 import ARTAccordion from "@/components/ARTAccordion";
 import FichaTecnicaAccordion from "@/components/FichaTecnicaAccordion";
+import ConhecaPfb from "@/components/ConhecaPfb";
 import { getAssetOverrides, resolveAsset } from "@/lib/assets";
 
 // Arquivo novo a cada revisão do manual (cache de 1 ano nos arquivos públicos).
@@ -83,6 +84,9 @@ export default async function TecnologiaPage() {
           </p>
         </div>
       </section>
+      {/* O PFB em resumo — primeira coisa da página, igual à home. */}
+      <ConhecaPfb linkTecnologia={false} />
+
       {/* Anatomy */}
       <section className="overflow-hidden bg-white pt-0">
         <div className="flex flex-row">
@@ -349,98 +353,6 @@ export default async function TecnologiaPage() {
                 </div>
               ))}
             </div>
-          </div>
-        </div>
-      </section>
-
-      {/* Characteristics */}
-      <section className="py-10 lg:py-28 bg-[#ffffff]">
-        <div className="max-w-[1280px] mx-auto px-4 lg:px-16">
-          <p className="text-[#3b6934] text-xs tracking-[0.2em] uppercase font-semibold font-[var(--font-inter)] mb-4 text-center">
-            Atributos-chave
-          </p>
-          <h2 className="font-[var(--font-noto-serif)] text-[#002045] text-3xl lg:text-4xl font-normal mb-12 text-center">
-            O que torna o PFB único
-          </h2>
-          <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-6 gap-3 lg:gap-6">
-            {[
-              {
-                label: "Anti-mofo",
-                desc: "Resistente a fungos",
-                icon: (
-                  <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5">
-                    <path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z" />
-                    <path d="M9 12l2 2 4-4" />
-                  </svg>
-                ),
-              },
-              {
-                label: "Anti-cupim",
-                desc: "Bambu não atrai pragas",
-                icon: (
-                  <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5">
-                    <circle cx="12" cy="12" r="10" />
-                    <line x1="4.93" y1="4.93" x2="19.07" y2="19.07" />
-                  </svg>
-                ),
-              },
-              {
-                label: "Pronta-entrega",
-                desc: "Estoque em Manaus",
-                icon: (
-                  <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5">
-                    <path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0118 0z" />
-                    <circle cx="12" cy="10" r="3" />
-                  </svg>
-                ),
-              },
-              {
-                label: "Resistente à umidade",
-                desc: "0,2% absorção em 48h",
-                icon: (
-                  <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5">
-                    <path d="M12 2.69l5.66 5.66a8 8 0 11-11.31 0z" />
-                  </svg>
-                ),
-              },
-              {
-                label: "Não propaga chamas",
-                desc: "Composição sem materiais inflamáveis.",
-                icon: (
-                  <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5">
-                    <path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z" />
-                    <path d="M12 9c0 1.5-1 2.5-1.5 3.5.5.5 1 1 1.5 1s1-.5 1.5-1C13 11.5 12 10.5 12 9z" />
-                  </svg>
-                ),
-              },
-              {
-                label: "Instalação Rápida",
-                desc: "2–3h por cômodo",
-                icon: (
-                  <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5">
-                    <circle cx="12" cy="12" r="10" />
-                    <polyline points="12 6 12 12 16 14" />
-                  </svg>
-                ),
-              },
-            ].map(({ label, icon, desc }) => (
-              <div
-                key={label}
-                className="flex flex-col items-center text-center gap-2 p-3 lg:p-4 border border-[#e2e2e2] hover:border-[#1a365d] transition-colors group"
-              >
-                <div className="w-8 h-8 bg-[#f3f3f3] flex items-center justify-center text-[#1a365d] group-hover:bg-[#002045] group-hover:text-white transition-colors duration-300 flex-shrink-0">
-                  {icon}
-                </div>
-                <div>
-                  <p className="text-[#002045] text-[10px] tracking-[0.08em] uppercase font-semibold font-[var(--font-inter)] mb-0.5 leading-tight">
-                    {label}
-                  </p>
-                  <p className="text-[#74777f] text-[9px] font-[var(--font-inter)] leading-snug">
-                    {desc}
-                  </p>
-                </div>
-              </div>
-            ))}
           </div>
         </div>
       </section>
