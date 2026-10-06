@@ -596,6 +596,7 @@ export default function PedidosTab({
   }, []);
   const [partners, setPartners] = useState<PartnerOption[]>([]);
   const [salesReps, setSalesReps] = useState<SalesRepOption[]>([]);
+  const repNome = useMemo(() => new Map(salesReps.map((r) => [r.id, r.name])), [salesReps]);
   const [quoteImportOpen, setQuoteImportOpen] = useState(false);
   const [quoteOptions, setQuoteOptions] = useState<QuoteOption[]>([]);
   const [quoteImportLoading, setQuoteImportLoading] = useState(false);
@@ -760,12 +761,12 @@ export default function PedidosTab({
       if (statusFilter !== "all" && p.status !== statusFilter) return false;
       if (!passaPagamento(p)) return false;
       if (s) {
-        const hay = `${p.client_name} ${p.client_email ?? ""} ${p.client_phone ?? ""} ${p.product_name ?? ""} ${p.partner_name ?? ""}`.toLowerCase();
+        const hay = `${p.client_name} ${p.client_email ?? ""} ${p.client_phone ?? ""} ${p.product_name ?? ""} ${p.partner_name ?? ""} ${(p.sales_rep_id && repNome.get(p.sales_rep_id)) || ""}`.toLowerCase();
         if (!hay.includes(s)) return false;
       }
       return true;
     });
-  }, [pedidos, statusFilter, passaPagamento, search]);
+  }, [pedidos, statusFilter, passaPagamento, search, repNome]);
 
   const stats = useMemo(() => {
     const ativos = filtered.filter((p) => p.status === "em_producao" || p.status === "pronto");
@@ -1791,6 +1792,9 @@ export default function PedidosTab({
                       </td>
                       <td className="px-4 py-3">
                         <button onClick={() => openEdit(p)} className="font-semibold text-[#002045] text-xs truncate hover:underline text-left block max-w-full">{p.client_name}</button>
+                        {p.sales_rep_id && repNome.get(p.sales_rep_id) && (
+                          <p className="text-[10px] text-[#3b6934] truncate">Representante: {repNome.get(p.sales_rep_id)}</p>
+                        )}
                         {p.client_email && <p className="text-[10px] text-[#74777f] truncate">{p.client_email}</p>}
                         <div className="flex items-center gap-2 mt-0.5">
                           {waHref && (
@@ -1870,6 +1874,9 @@ export default function PedidosTab({
                   <div className="flex items-start justify-between gap-2">
                     <div className="min-w-0">
                       <button onClick={() => openEdit(p)} className="font-semibold text-[#002045] text-sm truncate hover:underline text-left block max-w-full">{p.client_name}</button>
+                      {p.sales_rep_id && repNome.get(p.sales_rep_id) && (
+                        <p className="text-[11px] text-[#3b6934] truncate">Representante: {repNome.get(p.sales_rep_id)}</p>
+                      )}
                       {p.client_email && <p className="text-[11px] text-[#74777f] truncate">{p.client_email}</p>}
                       {(p.product_name || p.space) && (
                         <p className="text-[10px] text-[#b0b0b0] mt-0.5 truncate">{[p.space, p.product_name].filter(Boolean).join(" · ")}</p>
