@@ -289,7 +289,7 @@ function BoletosEditor({ boletos, total, onChange }: { boletos: Boleto[]; total:
 const PAYMENT_METHODS = ["Pix", "Cartão de Crédito", "Cartão de Débito", "Espécie", "Cheque", "Boleto", "Transferência Bancária", "Dinheiro"] as const;
 const DEFAULT_PAYMENT_TERMS = "PIX ou dinheiro à vista";
 // Formas já marcadas num pedido novo — as que a Orbital aceita no dia a dia.
-const DEFAULT_PAYMENT_METHODS = ["Pix", "Cartão de Crédito", "Cartão de Débito", "Espécie"];
+const DEFAULT_PAYMENT_METHODS = ["Pix", "Cartão de Crédito", "Cartão de Débito", "Espécie", "Transferência Bancária"];
 
 // CPF válido pelos dígitos verificadores (não consulta nada fora do sistema).
 function isValidCpf(digits: string): boolean {
@@ -307,15 +307,64 @@ function isValidCpf(digits: string): boolean {
 // (lib/orcamento-pricing + Configurações do orçamento no admin): desconto à
 // vista a partir de N placas e parcelamento sem juros por faixa de placas.
 // null quando ainda não há placas no pedido.
-function autoPaymentTerms(plates: number, cfg: OrcamentoConfig): string | null {
+// Condição de pagamento × formas marcadas: o desconto à vista só vale para os
+// meios à vista marcados, e o parcelamento só existe com Cartão de Crédito.
+const MEIOS_DESCONTO: [string, string][] = [["Pix", "Pix"], ["Espécie", "Espécie"], ["Dinheiro", "Espécie"], ["Transferência Bancária", "Transferência"]];
+const FORMAS_A_VISTA = ["Pix", "Espécie", "Dinheiro", "Transferência Bancária", "Cartão de Débito"];
+const RE_DESCONTO = /desconto à vista/i;
+const RE_CARTAO = /cart[aã]o de cr[eé]dito/i;
+function listaOu(xs: string[]): string {
+  return xs.length <= 1 ? xs.join("") : `${xs.slice(0, -1).join(", ")} ou ${xs[xs.length - 1]}`;
+}
+function meiosComDesconto(methods: string[]): string[] {
+  const out: string[] = [];
+  for (const [m, nome] of MEIOS_DESCONTO) if (methods.includes(m) && !out.includes(nome)) out.push(nome);
+  return out;
+}
+function condicaoSemRegra(methods: string[]): string {
+  return methods.every((m) => FORMAS_A_VISTA.includes(m)) ? "Pagamento à vista" : `Pagamento via ${listaOu(methods)}`;
+}
+function autoPaymentTerms(plates: number, cfg: OrcamentoConfig, methods: string[]): string | null {
   if (plates <= 0) return null;
   const lines: string[] = [];
-  if (cfg.discountPct > 0 && plates >= cfg.discountMinPlates) {
-    lines.push(`${String(cfg.discountPct).replace(".", ",")}% de desconto à vista (Pix, Espécie ou Transferência)`);
+  const avista = meiosComDesconto(methods);
+  if (cfg.discountPct > 0 && plates >= cfg.discountMinPlates && avista.length) {
+    lines.push(`${String(cfg.discountPct).replace(".", ",")}% de desconto à vista (${listaOu(avista)})`);
   }
   const maxInst = maxInstallmentsForPlates(plates, cfg);
-  if (maxInst >= 2) lines.push(`${maxInst}x sem juros no cartão de crédito`);
-  return lines.length ? lines.join("\n") : "Pagamento à vista";
+  if (maxInst >= 2 && methods.includes("Cartão de Crédito")) lines.push(`${maxInst}x sem juros no cartão de crédito`);
+  return lines.length ? lines.join("\n") : condicaoSemRegra(methods);
+}
+/**
+ * Ajusta uma condição já escrita às formas marcadas, linha a linha: a linha
+ * de desconto à vista passa a citar só os meios marcados (ou sai, se nenhum
+ * estiver), as de cartão de crédito saem sem o cartão. O que saiu fica em
+ * `memo` e volta igual quando a forma é marcada de novo. Outras linhas ficam.
+ */
+function ajustarCondicao(terms: string, methods: string[], auto: string | null, memo: { desconto?: string; cartao?: string }): string {
+  const avista = meiosComDesconto(methods);
+  const credito = methods.includes("Cartão de Crédito");
+  const comMeios = (l: string) => (/\([^)]*\)/.test(l) ? l.replace(/\([^)]*\)/, `(${listaOu(avista)})`) : l);
+  const out: string[] = [];
+  for (const l of terms.split("\n").map((x) => x.trim()).filter(Boolean)) {
+    if (RE_DESCONTO.test(l)) {
+      if (avista.length) out.push(comMeios(l)); else memo.desconto = l;
+    } else if (RE_CARTAO.test(l)) {
+      if (credito) out.push(l); else memo.cartao = l;
+    } else if (!/^pagamento (à vista|via )/i.test(l) && l !== DEFAULT_PAYMENT_TERMS) {
+      out.push(l);
+    }
+  }
+  const autoLinhas = (auto ?? "").split("\n");
+  if (avista.length && !out.some((l) => RE_DESCONTO.test(l))) {
+    const base = memo.desconto ?? autoLinhas.find((l) => RE_DESCONTO.test(l));
+    if (base) out.unshift(comMeios(base));
+  }
+  if (credito && !out.some((l) => RE_CARTAO.test(l))) {
+    const base = memo.cartao ?? autoLinhas.find((l) => RE_CARTAO.test(l));
+    if (base) out.splice(out.findIndex((l) => RE_DESCONTO.test(l)) + 1, 0, base);
+  }
+  return out.length ? out.join("\n") : condicaoSemRegra(methods);
 }
 const DEFAULT_DOCUMENT_NOTES = CLAUSULAS_PADRAO;
 
@@ -834,7 +883,18 @@ export default function PedidosTab({
     }
     return n;
   }, [items, stockProducts]);
-  const autoTerms = useMemo(() => autoPaymentTerms(orderPlates, orcCfg), [orderPlates, orcCfg]);
+  const autoTerms = useMemo(() => autoPaymentTerms(orderPlates, orcCfg, draft?.payment_methods ?? ["Pix"]), [orderPlates, orcCfg, draft?.payment_methods]);
+  // Linhas de condição tiradas ao desmarcar uma forma (voltam ao remarcar).
+  const condMemo = useRef<{ desconto?: string; cartao?: string }>({});
+  // Troca as formas de pagamento e leva a condição junto.
+  function aplicarFormas(d: NonNullable<typeof draft>, methods: string[]) {
+    const nextM = methods.length ? methods : ["Pix"];
+    const novoAuto = autoPaymentTerms(orderPlates, orcCfg, nextM);
+    const terms = d._isNew && !d._termsTouched && novoAuto
+      ? novoAuto
+      : ajustarCondicao(d.payment_terms ?? "", nextM, novoAuto, condMemo.current);
+    setDraft({ ...d, payment_methods: nextM, payment_terms: terms });
+  }
 
   // Value + estimated area follow the items live: whenever the quantity of
   // panels changes, the total and m² recompute automatically — no manual
@@ -865,6 +925,7 @@ export default function PedidosTab({
   useEffect(() => {
     if (draft) {
       setFormStep(1);
+      condMemo.current = {};
       // Seed the discount calculator from the stored R$ value (value mode).
       setDiscountMode("value");
       setDiscountRaw(draft.discount_amount ? String(draft.discount_amount) : "");
@@ -2683,7 +2744,7 @@ export default function PedidosTab({
                               onChange={(e) => {
                                 const current = draft.payment_methods ?? ["Pix"];
                                 const next = e.target.checked ? [...current, method] : current.filter((m) => m !== method);
-                                setDraft({ ...draft, payment_methods: next.length ? next : ["Pix"] });
+                                aplicarFormas(draft, next);
                               }}
                             />
                             {method}
@@ -2710,7 +2771,7 @@ export default function PedidosTab({
                         if (!label) return;
                         await savePreset("payment_method", label);
                         const current = draft.payment_methods ?? ["Pix"];
-                        if (!current.includes(label)) setDraft({ ...draft, payment_methods: [...current, label] });
+                        if (!current.includes(label)) aplicarFormas(draft, [...current, label]);
                         setNewPaymentMethod("");
                       }}
                       className="border border-[#002045] text-[#002045] text-[10px] uppercase tracking-[0.08em] font-bold font-[var(--font-inter)] px-3 hover:bg-[#eef2f8]"
