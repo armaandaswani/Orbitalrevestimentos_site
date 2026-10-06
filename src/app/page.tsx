@@ -246,54 +246,46 @@ export default function Home() {
         </div>
       </section>
 
-      {/* O PFB em resumo — apresenta o produto (esquerda) e o leque de
-          acabamentos leva à aba Produtos (direita). */}
-      <section className="py-12 lg:py-28 bg-white border-b border-[#eeeeee]">
+      {/* O PFB em resumo — título centralizado; embaixo, duas colunas do mesmo
+          peso: os diferenciais (esquerda) e o leque que leva à aba Produtos. */}
+      <section className="py-12 lg:py-24 bg-white border-b border-[#eeeeee]">
         <div className="max-w-[1280px] mx-auto px-4 lg:px-16">
-          <div className="grid grid-cols-1 lg:grid-cols-12 gap-10 lg:gap-16 items-center">
-            <ScrollReveal className="lg:col-span-7 min-w-0" direction="left">
-              <p className="text-[#3b6934] text-xs tracking-[0.2em] uppercase font-semibold font-[var(--font-inter)] mb-5">
-                Conheça o produto
-              </p>
-              {/* O nome do produto fica sempre numa linha só: o tamanho acompanha a largura. */}
-              <h2 className="font-serif text-[#002045] font-normal leading-[1.2] mb-5 whitespace-nowrap text-[clamp(15px,4.9vw,26px)] sm:text-[30px] lg:text-[clamp(26px,2.55vw,36px)]">
-                Painel Flexível Fibra de Bambu (PFB)
-              </h2>
-              <p className="text-[#43474e] text-base font-[var(--font-inter)] leading-relaxed mb-8 max-w-md">
-                Revestimento de fibra de bambu renovável para paredes e tetos internos — leve, flexível e ideal para o clima úmido de Manaus.
-              </p>
-              {/* Os mesmos selos do material da Orbital: ícone em cima, faixa azul
-                  com o nome embaixo. Sem números técnicos aqui — confundem o leigo. */}
-              <ul className="grid grid-cols-2 sm:grid-cols-3 gap-2 mb-3 max-w-[30rem]">
+          <ScrollReveal className="text-center max-w-2xl mx-auto mb-10 lg:mb-14">
+            <p className="text-[#3b6934] text-xs tracking-[0.2em] uppercase font-semibold font-[var(--font-inter)] mb-4">
+              Conheça o produto
+            </p>
+            {/* O nome do produto fica sempre numa linha só: o tamanho acompanha a largura. */}
+            <h2 className="font-serif text-[#002045] font-normal leading-[1.2] mb-4 whitespace-nowrap text-[clamp(15px,4.9vw,26px)] sm:text-[30px] lg:text-[36px]">
+              Painel Flexível Fibra de Bambu (PFB)
+            </h2>
+            <p className="text-[#43474e] text-base font-[var(--font-inter)] leading-relaxed max-w-lg mx-auto">
+              Revestimento de fibra de bambu renovável para paredes e tetos internos — leve, flexível e ideal para o clima úmido de Manaus.
+            </p>
+          </ScrollReveal>
+
+          <div className="grid grid-cols-1 lg:grid-cols-2 gap-10 lg:gap-16 items-center">
+            <ScrollReveal className="min-w-0" direction="left">
+              {/* Diferenciais com os ícones do material da Orbital. Lista leve,
+                  em frases curtas — sem números técnicos, que confundem o leigo. */}
+              <ul className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-1 xl:grid-cols-2 gap-x-8 border-b border-[#ececec]">
                 {PFB_SELOS.map((f) => (
-                  <li key={f.t} className="bg-white border border-[#e2e2e2] flex flex-col overflow-hidden">
-                    <span className="flex items-center justify-center h-[68px] sm:h-[76px] px-3">
+                  <li key={f.t} className="flex items-center gap-4 py-4 border-t border-[#ececec]">
+                    <span className="flex-shrink-0 w-14 h-14 flex items-center justify-center bg-[#f3f5f8]">
                       {/* eslint-disable-next-line @next/next/no-img-element */}
-                      <img src={`/images/selos/pfb-selo-${f.img}.svg`} alt="" width={64} height={64} loading="lazy" className="h-10 sm:h-11 w-auto max-w-[60px] object-contain" />
+                      <img src={`/images/selos/pfb-selo-${f.img}.svg`} alt="" width={32} height={32} loading="lazy" className="h-9 w-9 object-contain" />
                     </span>
-                    <span className="border-t-2 border-[#3b6934] bg-[#002045] px-2 py-2 min-h-[50px] text-center flex-1 flex flex-col justify-center">
-                      <span className="block text-white text-[10px] tracking-[0.06em] uppercase font-bold font-[var(--font-inter)] leading-tight">{f.t}</span>
-                      <span className="block text-white/70 text-[10px] font-[var(--font-inter)] leading-snug mt-0.5">{f.d}</span>
+                    <span className="min-w-0">
+                      <span className="block text-[#002045] text-[15px] font-semibold font-[var(--font-inter)] leading-snug">{f.t}</span>
+                      <span className="block text-[#74777f] text-[13px] font-[var(--font-inter)] leading-snug mt-0.5">{f.d}</span>
                     </span>
                   </li>
                 ))}
               </ul>
-              {/* Medidas da placa — como no material */}
-              <dl className="grid grid-cols-2 sm:grid-cols-4 border-y border-[#e2e2e2] mb-9 max-w-[30rem]">
-                {[
-                  { v: "1,20 × 2,90 m", l: "Placa" },
-                  { v: "5 mm", l: "Espessura" },
-                  { v: "3,48 m²", l: "Por placa" },
-                  { v: "Parede", l: "e forro" },
-                ].map((m, i) => (
-                  <div key={m.l} className={`py-2.5 px-1 text-center border-[#e2e2e2] ${i % 2 ? "border-l" : ""} ${i >= 2 ? "border-t sm:border-t-0" : ""} ${i === 2 ? "sm:border-l" : ""}`}>
-                    <dt className="sr-only">{m.l}</dt>
-                    <dd className="text-[#002045] text-[13px] font-bold font-[var(--font-inter)] whitespace-nowrap">{m.v}</dd>
-                    <dd className="text-[#74777f] text-[9px] tracking-[0.15em] uppercase font-[var(--font-inter)] mt-0.5">{m.l}</dd>
-                  </div>
-                ))}
-              </dl>
-              <div className="flex flex-wrap items-center gap-x-6 gap-y-3">
+              {/* Medidas da placa */}
+              <p className="text-[#74777f] text-[13px] font-[var(--font-inter)] leading-relaxed mt-5">
+                <span className="whitespace-nowrap">Placa de <strong className="text-[#002045] font-semibold">1,20 × 2,90 m</strong></span> · <span className="whitespace-nowrap"><strong className="text-[#002045] font-semibold">5 mm</strong> de espessura</span> · <span className="whitespace-nowrap"><strong className="text-[#002045] font-semibold">3,48 m²</strong> por placa</span> · <span className="whitespace-nowrap">parede e forro</span>
+              </p>
+              <div className="flex flex-wrap items-center gap-x-6 gap-y-3 mt-8">
                 <Link
                   href="/produtos"
                   className="inline-flex items-center justify-center gap-2 bg-[#002045] text-white text-xs tracking-[0.12em] uppercase font-bold font-[var(--font-inter)] px-8 py-4 hover:bg-[#1a365d] transition-colors"
@@ -308,7 +300,7 @@ export default function Home() {
                 </Link>
               </div>
             </ScrollReveal>
-            <ScrollReveal className="lg:col-span-5" direction="right" delay={100}>
+            <ScrollReveal direction="right" delay={100}>
               {/* Fanned swatch stack — real finishes, no numbers. Leva ao
                   catálogo, onde o cliente escolhe o acabamento. */}
               <Link href="/produtos" aria-label="Ver todos os modelos do Painel Flexível Fibra de Bambu" className="group relative block h-[300px] sm:h-[380px] lg:h-[440px]">
