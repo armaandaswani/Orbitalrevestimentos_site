@@ -443,6 +443,8 @@ export default function PedidosTab({
   const [error, setError] = useState<string | null>(null);
 
   const [statusFilter, setStatusFilter] = useState<"all" | PedidoStatus>("all");
+  // Pagamento: "a_receber" = tudo que ainda não está pago.
+  const [payFilter, setPayFilter] = useState<"all" | "a_receber" | PaymentStatus>("all");
   const [search, setSearch] = useState("");
 
   const [draft, setDraft] = useState<PedidoDraft | null>(null);
@@ -732,23 +734,38 @@ export default function PedidosTab({
   }, [draft?.lead_id]);
 
   // ── Derived ────────────────────────────────────────────────────────────────
+  // Cada contador respeita o OUTRO filtro: com "Pago" marcado, os números dos
+  // status contam só os pedidos pagos (e vice-versa).
+  const passaPagamento = useCallback((p: Pedido) =>
+    payFilter === "all" || (payFilter === "a_receber" ? p.payment_status !== "pago" : p.payment_status === payFilter), [payFilter]);
   const statusCounts = useMemo(() => {
-    const c = { all: pedidos.length, em_producao: 0, pronto: 0, entregue: 0, cancelado: 0 } as Record<string, number>;
-    for (const p of pedidos) c[p.status] = (c[p.status] ?? 0) + 1;
+    const base = pedidos.filter(passaPagamento);
+    const c = { all: base.length } as Record<string, number>;
+    for (const p of base) c[p.status] = (c[p.status] ?? 0) + 1;
     return c;
-  }, [pedidos]);
+  }, [pedidos, passaPagamento]);
+  const payCounts = useMemo(() => {
+    const base = pedidos.filter((p) => statusFilter === "all" || p.status === statusFilter);
+    const c = { all: base.length, a_receber: 0 } as Record<string, number>;
+    for (const p of base) {
+      c[p.payment_status] = (c[p.payment_status] ?? 0) + 1;
+      if (p.payment_status !== "pago") c.a_receber += 1;
+    }
+    return c;
+  }, [pedidos, statusFilter]);
 
   const filtered = useMemo(() => {
     const s = search.trim().toLowerCase();
     return pedidos.filter((p) => {
       if (statusFilter !== "all" && p.status !== statusFilter) return false;
+      if (!passaPagamento(p)) return false;
       if (s) {
         const hay = `${p.client_name} ${p.client_email ?? ""} ${p.client_phone ?? ""} ${p.product_name ?? ""} ${p.partner_name ?? ""}`.toLowerCase();
         if (!hay.includes(s)) return false;
       }
       return true;
     });
-  }, [pedidos, statusFilter, search]);
+  }, [pedidos, statusFilter, passaPagamento, search]);
 
   const stats = useMemo(() => {
     const ativos = filtered.filter((p) => p.status === "em_producao" || p.status === "pronto");
@@ -1642,28 +1659,52 @@ export default function PedidosTab({
           </div>
         </div>
 
-        {/* Status segmentation */}
-        <div className="flex flex-wrap gap-2">
+        {/* Filtros: status do pedido e pagamento — todas as opções à vista. */}
+        <div className="space-y-2">
           {([
-            ["all", "Todos"],
-            ["em_producao", "Em produção"],
-            ["pronto", "Prontos"],
-            ["entregue", "Entregues"],
-            ["cancelado", "Cancelados"],
-          ] as const).map(([key, label]) => (
-            <button
-              key={key}
-              onClick={() => setStatusFilter(key)}
-              className={`px-4 py-2 text-xs font-bold font-[var(--font-inter)] tracking-wide border transition-colors ${
-                statusFilter === key
-                  ? "bg-[#002045] text-white border-[#002045]"
-                  : "bg-white text-[#74777f] border-[#e2e2e2] hover:text-[#002045]"
-              }`}
-            >
-              {label}
-              <span className="ml-2 opacity-70">{statusCounts[key] ?? 0}</span>
-            </button>
+            {
+              titulo: "Status",
+              valor: statusFilter as string,
+              set: (k: string) => setStatusFilter(k as typeof statusFilter),
+              contagem: statusCounts,
+              opcoes: [["all", "Todos"], ["em_producao", "Em produção"], ["pronto", "Prontos"], ["pendente_entrega", "Pend. entrega"], ["entregue", "Entregues"], ["cancelado", "Cancelados"]],
+            },
+            {
+              titulo: "Pagamento",
+              valor: payFilter as string,
+              set: (k: string) => setPayFilter(k as typeof payFilter),
+              contagem: payCounts,
+              opcoes: [["all", "Todos"], ["a_receber", "A receber"], ["pago", "Pagos"], ["pendente", "Pendentes"], ["parcial", "Parciais"], ["boleto", "Boleto"]],
+            },
+          ]).map((f) => (
+            <div key={f.titulo} className="flex flex-col sm:flex-row sm:items-center gap-1.5 sm:gap-3 min-w-0">
+              <span className="flex-shrink-0 sm:w-[92px] text-[10px] tracking-[0.12em] uppercase font-bold font-[var(--font-inter)] text-[#74777f]">{f.titulo}</span>
+              <div className="flex flex-wrap gap-1.5 sm:gap-2 min-w-0">
+                {f.opcoes.map(([key, label]) => (
+                  <button
+                    key={key}
+                    onClick={() => f.set(key)}
+                    className={`px-3 sm:px-3.5 py-2 text-xs font-bold font-[var(--font-inter)] tracking-wide border transition-colors whitespace-nowrap ${
+                      f.valor === key
+                        ? "bg-[#002045] text-white border-[#002045]"
+                        : "bg-white text-[#74777f] border-[#e2e2e2] hover:text-[#002045]"
+                    }`}
+                  >
+                    {label}
+                    <span className="ml-1.5 opacity-70">{f.contagem[key] ?? 0}</span>
+                  </button>
+                ))}
+              </div>
+            </div>
           ))}
+          {(statusFilter !== "all" || payFilter !== "all") && (
+            <button
+              onClick={() => { setStatusFilter("all"); setPayFilter("all"); }}
+              className="text-[11px] font-[var(--font-inter)] text-[#74777f] underline underline-offset-2 hover:text-[#002045]"
+            >
+              Limpar filtros
+            </button>
+          )}
         </div>
 
         {/* Search */}
