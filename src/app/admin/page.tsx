@@ -8020,6 +8020,9 @@ export default function AdminPage() {
                   <p className="text-[#74777f] text-xs font-[var(--font-inter)] mb-5 leading-relaxed">
                     Sem nenhuma zona, o frete usa o valor-base. Na formalização, o CEP do cliente define o valor. ≥ 5 placas mantém frete grátis.
                   </p>
+                  <p className="text-[#74777f] text-xs font-[var(--font-inter)] mb-5 -mt-3 leading-relaxed">
+                    Pedidos do admin: frete automático de R$ 100 (também sem CEP) e R$ 150 em Ponta Negra. Uma zona abaixo que case pelo CEP ou pelo bairro vale no lugar. O valor sempre pode ser alterado no pedido.
+                  </p>
 
                   {freteZones.length > 0 && (
                     <div className="border border-[#e2e2e2] divide-y divide-[#f0f0f0] mb-4">
@@ -8056,7 +8059,7 @@ export default function AdminPage() {
                         <input value={newZone.value} onChange={(e) => setNewZone({...newZone, value: e.target.value})} placeholder="150" inputMode="decimal" className="w-full border border-[#e2e2e2] px-2 py-1.5 text-sm font-[var(--font-inter)] text-[#002045] focus:outline-none focus:border-[#002045]" />
                       </div>
                     </div>
-                    <input value={newZone.neighborhoods} onChange={(e) => setNewZone({...newZone, neighborhoods: e.target.value})} placeholder="Bairros (opcional, referência)" className="w-full mt-2 border border-[#e2e2e2] px-2 py-1.5 text-sm font-[var(--font-inter)] text-[#002045] focus:outline-none focus:border-[#002045]" />
+                    <input value={newZone.neighborhoods} onChange={(e) => setNewZone({...newZone, neighborhoods: e.target.value})} placeholder="Bairros (ex. Ponta Negra, Tarumã) — também definem o frete dos pedidos" className="w-full mt-2 border border-[#e2e2e2] px-2 py-1.5 text-sm font-[var(--font-inter)] text-[#002045] focus:outline-none focus:border-[#002045]" />
                     <button onClick={addFreteZone} disabled={zoneSaving || !newZone.name.trim()} className="mt-2 bg-[#002045] text-white text-[10px] uppercase tracking-widest font-bold font-[var(--font-inter)] px-5 py-2 hover:bg-[#1a365d] transition-colors disabled:opacity-40">
                       {zoneSaving ? "Salvando…" : "Adicionar zona"}
                     </button>

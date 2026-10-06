@@ -5,6 +5,7 @@ import { DEFAULT_PANEL_WIDTH_M, DEFAULT_PANEL_HEIGHT_M, panelGrid } from "@/lib/
 import type { Lead } from "./LeadsTab";
 import { DEFAULT_CONFIG, QUOTE_VALIDITY_DAYS, maxInstallmentsForPlates, type OrcamentoConfig } from "@/lib/orcamento-pricing";
 import { CLAUSULAS_PADRAO } from "@/lib/clausulas-pedido";
+import { FRETE_PADRAO, fretePedido, type FreteZona } from "@/lib/frete-pedido";
 
 // ─── Types ──────────────────────────────────────────────────────────────────
 export type PedidoStatus = "em_producao" | "pronto" | "pendente_entrega" | "entregue" | "cancelado";
@@ -448,6 +449,17 @@ export default function PedidosTab({
   const [saving, setSaving] = useState(false);
   const [cepLoading, setCepLoading] = useState(false);
   const [cepError, setCepError] = useState("");
+  // Frete automático pelo CEP/bairro. `freteManual` = a pessoa digitou o frete
+  // neste pedido; aí a busca de CEP não troca mais o valor.
+  const [freteZonas, setFreteZonas] = useState<FreteZona[]>([]);
+  const [freteMotivo, setFreteMotivo] = useState<string | null>(null);
+  const [freteManual, setFreteManual] = useState(false);
+  useEffect(() => {
+    fetch("/api/admin/frete-zones")
+      .then((r) => (r.ok ? r.json() : []))
+      .then((z) => { if (Array.isArray(z)) setFreteZonas(z); })
+      .catch(() => {});
+  }, []);
   const [cnpjLoading, setCnpjLoading] = useState(false);
   // Mensagem da busca de CNPJ, presa ao documento buscado: ao abrir outro
   // pedido (outro CNPJ) ela some sozinha.
@@ -935,6 +947,22 @@ export default function PedidosTab({
     });
   }
 
+  // Frete sugerido para o CEP/bairro, ou null quando não deve mexer no valor:
+  // a pessoa já digitou o frete, ou o pedido salvo tem um frete fora do padrão.
+  function freteAuto(d: NonNullable<typeof draft>, cep: string, bairro?: string | null): number | null {
+    if (freteManual) return null;
+    const atual = Number(d.freight_amount) || 0;
+    const sugerido = fretePedido({ cep, bairro }, freteZonas);
+    const automaticos = new Set([0, FRETE_PADRAO, ...freteZonas.map((z) => Number(z.value) || 0), fretePedido({ bairro: "Ponta Negra" }).value]);
+    if (!d._isNew) {
+      // Pedido já salvo: só recalcula se o CEP mudou e o frete era automático.
+      const salvo = String(pedidos.find((x) => x.id === d.id)?.client_zip ?? "").replace(/\D/g, "");
+      if (salvo === cep || !automaticos.has(atual)) return null;
+    }
+    setFreteMotivo(sugerido.motivo);
+    return sugerido.value;
+  }
+
   async function lookupCep() {
     if (!draft) return;
     const cep = String(draft.client_zip ?? "").replace(/\D/g, "");
@@ -951,6 +979,7 @@ export default function PedidosTab({
         setCepError("CEP não encontrado.");
         return;
       }
+      const frete = freteAuto(draft, cep, data.bairro);
       setDraft({
         ...draft,
         client_zip: cep.replace(/^(\d{5})(\d{3})$/, "$1-$2"),
@@ -958,6 +987,7 @@ export default function PedidosTab({
         client_address_complement: draft.client_address_complement || data.bairro || "",
         client_city: data.localidade || draft.client_city || "",
         client_state: data.uf || draft.client_state || "",
+        ...(frete !== null ? { freight_amount: frete } : {}),
       });
     } catch {
       setCepError("Não foi possível buscar o CEP agora.");
@@ -1010,6 +1040,7 @@ export default function PedidosTab({
       const phoneFmt = /^[1-9]\d{9,10}$/.test(phone) ? phone.replace(/^(\d{2})(\d{4,5})(\d{4})$/, "($1) $2-$3") : "";
       const formatted = cnpj.replace(/^(\d{2})(\d{3})(\d{3})(\d{4})(\d{2})$/, "$1.$2.$3/$4-$5");
       const receitaEmail = (await emailPromise) || (data.email ? String(data.email).toLowerCase() : "");
+      const freteCnpj = zip.length === 8 ? freteAuto(draft, zip, data.bairro) : null;
       // Atualização funcional: não perde o que foi digitado durante a busca.
       setDraft((d) => d && {
         ...d,
@@ -1022,6 +1053,7 @@ export default function PedidosTab({
         client_address_complement: complement || d.client_address_complement || "",
         client_city: data.municipio || d.client_city || "",
         client_state: data.uf || d.client_state || "",
+        ...(freteCnpj !== null ? { freight_amount: freteCnpj } : {}),
       });
       setCepError("");
       const situacao = String(data.descricao_situacao_cadastral ?? "").toUpperCase();
@@ -1175,6 +1207,8 @@ export default function PedidosTab({
       : [{ product_id: product?.id ?? "", plates: platesFor(q.plates, product, q.area_m2) }];
     setItems(seededItems);
     setItemsReady(true);
+    setFreteManual(false);
+    setFreteMotivo("padrão (sem CEP)");
     setDraft({
       _isNew: true,
       client_name: q.client_name,
@@ -1191,6 +1225,7 @@ export default function PedidosTab({
       payment_status: "pendente",
       payment_methods: DEFAULT_PAYMENT_METHODS,
       payment_terms: DEFAULT_PAYMENT_TERMS,
+      freight_amount: FRETE_PADRAO,
       freight_is_revenue: false,
       other_costs: [],
       quote_valid_until: plusDays(QUOTE_VALIDITY_DAYS),
@@ -1236,6 +1271,8 @@ export default function PedidosTab({
 
     setItems([{ product_id: product?.id ?? "", plates: 1 }]);
     setItemsReady(true);
+    setFreteManual(false);
+    setFreteMotivo("padrão (sem CEP)");
     setDraft({
       _isNew: true,
       lead_id: lead.id,
@@ -1252,6 +1289,7 @@ export default function PedidosTab({
       payment_status: "pendente",
       payment_methods: DEFAULT_PAYMENT_METHODS,
       payment_terms: DEFAULT_PAYMENT_TERMS,
+      freight_amount: FRETE_PADRAO,
       freight_is_revenue: false,
       other_costs: [],
       quote_valid_until: plusDays(QUOTE_VALIDITY_DAYS),
@@ -1271,6 +1309,8 @@ export default function PedidosTab({
     setItemsReady(false);
     setAreaCalcOpen({});
     setAreaCalcValue({});
+    setFreteManual(false);
+    setFreteMotivo(null);
     setDraft({ ...p });
     try {
       const res = await fetch(`/api/admin/pedidos/${p.id}`);
@@ -1594,7 +1634,7 @@ export default function PedidosTab({
               Importar orçamento
             </button>
             <button
-              onClick={() => { setItems(stockProducts.length > 0 ? [{ product_id: "", plates: 1 }] : []); setItemsReady(true); setDraft({ _isNew: true, status: "em_producao", payment_status: "pendente", payment_methods: DEFAULT_PAYMENT_METHODS, payment_terms: DEFAULT_PAYMENT_TERMS, freight_is_revenue: false, other_costs: [], quote_valid_until: plusDays(QUOTE_VALIDITY_DAYS), price_tier: "varejo" }); }}
+              onClick={() => { setItems(stockProducts.length > 0 ? [{ product_id: "", plates: 1 }] : []); setItemsReady(true); setDraft({ _isNew: true, status: "em_producao", payment_status: "pendente", payment_methods: DEFAULT_PAYMENT_METHODS, payment_terms: DEFAULT_PAYMENT_TERMS, freight_amount: FRETE_PADRAO, freight_is_revenue: false, other_costs: [], quote_valid_until: plusDays(QUOTE_VALIDITY_DAYS), price_tier: "varejo" }); setFreteManual(false); setFreteMotivo("padrão (sem CEP)"); }}
               className="bg-[#002045] text-white text-xs tracking-[0.12em] uppercase font-bold font-[var(--font-inter)] px-5 py-2.5 hover:bg-[#1a365d] transition-colors"
             >
               + Novo pedido
@@ -2013,7 +2053,7 @@ export default function PedidosTab({
                   {cnpjShown?.info && <p className="text-[#3b6934] text-[10px] font-[var(--font-inter)] mt-1 break-words">{cnpjShown.info}</p>}
                   {!cnpjShown && <p className="text-[#74777f] text-[10px] font-[var(--font-inter)] mt-1">Com CNPJ, a busca preenche nome, e-mail e endereço. CPF é validado e guardado.</p>}
                 </Field>
-                <div className="grid grid-cols-2 gap-3">
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
                   <Field label="CEP">
                     <div className="flex gap-2">
                       <input
@@ -2485,8 +2525,11 @@ export default function PedidosTab({
                     min="0"
                     className={inputCls}
                     value={draft.freight_amount ?? ""}
-                    onChange={(e) => setDraft({ ...draft, freight_amount: e.target.value === "" ? 0 : Number(e.target.value) })}
+                    onChange={(e) => { setFreteManual(true); setFreteMotivo(null); setDraft({ ...draft, freight_amount: e.target.value === "" ? 0 : Number(e.target.value) }); }}
                   />
+                  {freteMotivo && !freteManual && (
+                    <p className="text-[#3b6934] text-[10px] font-[var(--font-inter)] mt-1">Automático: {freteMotivo}. Pode alterar.</p>
+                  )}
                 </Field>
                 <label className="border border-[#e2e2e2] px-3 py-2 flex items-center gap-2 min-h-[42px] mt-5">
                   <input
