@@ -100,6 +100,9 @@ export default function ProdutosPage() {
   const [imgIdx, setImgIdx] = useState(0);
   // Guarda X e Y: o gesto só troca a foto quando é horizontal de verdade.
   const [touchStart, setTouchStart] = useState<{ x: number; y: number } | null>(null);
+  // Foto ampliada em tela cheia (toque na foto da galeria).
+  const [zoom, setZoom] = useState(false);
+  const zoomTouch = useRef<{ x: number; y: number } | null>(null);
   const [showQr, setShowQr] = useState(false);
   const [copied, setCopied] = useState(false);
   // Modelo pedido pela URL que não existe (ou saiu do catálogo) — o visitante
@@ -142,6 +145,7 @@ export default function ProdutosPage() {
     setSelected(product);
     setImgIdx(0);
     setShowQr(false);
+    setZoom(false);
     if (!opts?.silent) syncUrl(product);
   }, [syncUrl]);
 
@@ -149,6 +153,7 @@ export default function ProdutosPage() {
     setSelected(null);
     setImgIdx(0);
     setShowQr(false);
+    setZoom(false);
     if (!opts?.silent) syncUrl(null);
   }, [syncUrl]);
 
@@ -195,9 +200,16 @@ export default function ProdutosPage() {
   useEffect(() => {
     if (!selected) return;
     const handler = (e: KeyboardEvent) => {
+      const imgs = allImages(selected);
+      // Ampliada: Esc só fecha a ampliação e as setas ficam nas fotos.
+      if (zoom) {
+        if (e.key === "Escape") setZoom(false);
+        if (e.key === "ArrowRight" && imgIdx < imgs.length - 1) setImgIdx(imgIdx + 1);
+        if (e.key === "ArrowLeft" && imgIdx > 0) setImgIdx(imgIdx - 1);
+        return;
+      }
       if (e.key === "Escape") close();
       if (e.key === "ArrowRight") {
-        const imgs = allImages(selected);
         if (imgIdx < imgs.length - 1) setImgIdx(imgIdx + 1);
         else goNextProduct();
       }
@@ -208,7 +220,7 @@ export default function ProdutosPage() {
     };
     window.addEventListener("keydown", handler);
     return () => window.removeEventListener("keydown", handler);
-  }, [selected, imgIdx, goNextProduct, goPrevProduct]); // eslint-disable-line react-hooks/exhaustive-deps
+  }, [selected, imgIdx, zoom, goNextProduct, goPrevProduct]); // eslint-disable-line react-hooks/exhaustive-deps
 
   /**
    * Trava o catálogo ao fundo sem perder onde o visitante estava.
@@ -242,6 +254,79 @@ export default function ProdutosPage() {
 
   return (
     <div className="pt-20">
+
+      {/* ── Foto ampliada (tela cheia) ── */}
+      {selected && zoom && (() => {
+        const n = images.length;
+        const prev = () => setImgIdx((i) => Math.max(0, i - 1));
+        const next = () => setImgIdx((i) => Math.min(n - 1, i + 1));
+        return (
+          <div
+            className="fixed inset-0 z-[120] bg-black flex items-center justify-center select-none"
+            role="dialog"
+            aria-modal="true"
+            aria-label={`Foto ${imgIdx + 1} de ${n} — ${selected.name}`}
+            onClick={() => setZoom(false)}
+            onTouchStart={(e) => { zoomTouch.current = { x: e.touches[0].clientX, y: e.touches[0].clientY }; }}
+            onTouchEnd={(e) => {
+              const t = zoomTouch.current;
+              zoomTouch.current = null;
+              if (!t) return;
+              const dx = e.changedTouches[0].clientX - t.x;
+              const dy = e.changedTouches[0].clientY - t.y;
+              if (Math.abs(dx) > 45 && Math.abs(dx) > Math.abs(dy) * 1.5) {
+                if (dx < 0) next(); else prev();
+              }
+            }}
+          >
+            <div className="relative w-full h-[100dvh]" onClick={(e) => e.stopPropagation()}>
+              <Image
+                key={"zoom-" + images[imgIdx]}
+                src={images[imgIdx] ?? selected.image_path}
+                alt={selected.name}
+                fill
+                sizes="100vw"
+                quality={90}
+                priority
+                className="object-contain"
+              />
+            </div>
+            <button
+              type="button"
+              onClick={(e) => { e.stopPropagation(); setZoom(false); }}
+              className="absolute top-4 right-4 z-10 bg-white/15 hover:bg-white/30 text-white rounded-full w-11 h-11 flex items-center justify-center transition-colors"
+              aria-label="Fechar foto ampliada"
+            >
+              <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5"><path d="M18 6L6 18M6 6l12 12"/></svg>
+            </button>
+            {n > 1 && (
+              <span className="absolute top-6 left-1/2 -translate-x-1/2 z-10 text-white/80 text-xs tracking-[0.15em] font-[var(--font-inter)]">
+                {imgIdx + 1} / {n}
+              </span>
+            )}
+            {imgIdx > 0 && (
+              <button
+                type="button"
+                onClick={(e) => { e.stopPropagation(); prev(); }}
+                className="absolute left-3 top-1/2 -translate-y-1/2 z-10 bg-white/15 hover:bg-white/30 text-white rounded-full w-11 h-11 flex items-center justify-center transition-colors"
+                aria-label="Foto anterior"
+              >
+                <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5"><path d="M15 18l-6-6 6-6"/></svg>
+              </button>
+            )}
+            {imgIdx < n - 1 && (
+              <button
+                type="button"
+                onClick={(e) => { e.stopPropagation(); next(); }}
+                className="absolute right-3 top-1/2 -translate-y-1/2 z-10 bg-white/15 hover:bg-white/30 text-white rounded-full w-11 h-11 flex items-center justify-center transition-colors"
+                aria-label="Próxima foto"
+              >
+                <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5"><path d="M9 18l6-6-6-6"/></svg>
+              </button>
+            )}
+          </div>
+        );
+      })()}
 
       {/* ── Product Detail Modal ── */}
       {selected && (() => {
@@ -326,15 +411,26 @@ export default function ProdutosPage() {
                     className="object-cover scale-110 blur-xl opacity-40 select-none pointer-events-none"
                   />
                   {/* Sharp foreground image */}
-                  <Image
-                    key={images[imgIdx]}
-                    src={images[imgIdx] ?? selected.image_path}
-                    alt={selected.name}
-                    fill
-                    sizes="(max-width: 1024px) 100vw, 55vw"
-                    priority
-                    className="object-contain z-10"
-                  />
+                  <button
+                    type="button"
+                    onClick={() => setZoom(true)}
+                    className="absolute inset-0 z-10 cursor-zoom-in"
+                    aria-label="Ampliar foto"
+                  >
+                    <Image
+                      key={images[imgIdx]}
+                      src={images[imgIdx] ?? selected.image_path}
+                      alt={selected.name}
+                      fill
+                      sizes="(max-width: 1024px) 100vw, 55vw"
+                      priority
+                      className="object-contain"
+                    />
+                  </button>
+                  {/* Dica de ampliar */}
+                  <span className="absolute top-3 left-3 z-20 pointer-events-none bg-black/50 text-white rounded-full w-8 h-8 flex items-center justify-center" aria-hidden>
+                    <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round"><path d="M15 3h6v6M9 21H3v-6M21 3l-7 7M3 21l7-7"/></svg>
+                  </span>
                   {/* Swipe hint on mobile — fades in only when there are multiple images */}
                   {images.length > 1 && (
                     <div className="absolute inset-x-0 bottom-8 flex items-center justify-between px-3 z-20 pointer-events-none lg:hidden">
