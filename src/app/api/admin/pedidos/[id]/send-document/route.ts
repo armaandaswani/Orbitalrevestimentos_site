@@ -7,6 +7,7 @@ import { getResend } from "@/lib/resend";
 import { normalizePhone, sendText, smclickConfigured } from "@/lib/smclick";
 import { supabaseAdmin } from "@/lib/supabase";
 import { CLAUSULAS_PADRAO } from "@/lib/clausulas-pedido";
+import { datasDoDocumento, fmtDia } from "@/lib/documento-datas";
 
 export const runtime = "nodejs";
 
@@ -50,10 +51,6 @@ function fmtBRL(n: number) {
   return n.toLocaleString("pt-BR", { style: "currency", currency: "BRL", minimumFractionDigits: 2, maximumFractionDigits: 2 });
 }
 
-function fmtDate(s: string | null | undefined) {
-  if (!s) return "-";
-  return new Date(s).toLocaleDateString("pt-BR");
-}
 
 function fmtMeters(n: number) {
   return n.toFixed(2).replace(".", ",");
@@ -204,8 +201,10 @@ async function generatePedidoPdf(input: {
 
   const metaY = 138;
   doc.font("Helvetica").fontSize(10).fillColor("#333");
-  doc.text(`Data: ${fmtDate(pedido.created_at as string)}`, 410, metaY, { width: 140, align: "right" });
-  if (docType === "orcamento") doc.text(`Validade: ${fmtDate(pedido.quote_valid_until as string | null)}`, 410, metaY + 17, { width: 140, align: "right" });
+  // Orçamento e Pedido de Venda: data de hoje e validade contada de hoje.
+  const datas = datasDoDocumento(pedido.created_at as string | null, pedido.quote_valid_until as string | null);
+  doc.text(`Data: ${docType === "orcamento" || docType === "pedido" ? datas.data : fmtDia(pedido.created_at as string | null)}`, 410, metaY, { width: 140, align: "right" });
+  if (docType === "orcamento") doc.text(`Validade: ${datas.validade}`, 410, metaY + 17, { width: 140, align: "right" });
   doc.text(`No.: ${num}`, 410, metaY + 34, { width: 140, align: "right" });
 
   doc.y = Math.max(doc.y, 216);

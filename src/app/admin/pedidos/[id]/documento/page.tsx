@@ -2,6 +2,7 @@
 
 import React, { useEffect, useMemo, useState } from "react";
 import { CLAUSULAS_PADRAO } from "@/lib/clausulas-pedido";
+import { datasDoDocumento, fmtDia } from "@/lib/documento-datas";
 
 type DocumentType = "orcamento" | "pedido" | "nota" | "recibo";
 
@@ -68,10 +69,6 @@ function fmtBRL(n: number) {
   return n.toLocaleString("pt-BR", { style: "currency", currency: "BRL", minimumFractionDigits: 2, maximumFractionDigits: 2 });
 }
 
-function fmtDate(s: string | null | undefined) {
-  if (!s) return "-";
-  return new Date(s).toLocaleDateString("pt-BR");
-}
 
 function docNumber(pedido: PedidoDocument) {
   const year = new Date(pedido.created_at).getFullYear().toString().slice(-2);
@@ -243,6 +240,7 @@ export default function PedidoDocumentoPage({ params }: { params: Promise<{ id: 
         unit_cost: null,
       }];
   const customerAddress = addressLines(pedido);
+  const datas = datasDoDocumento(pedido.created_at, pedido.quote_valid_until);
   // The long contractual boilerplate only applies to a binding sale (Pedido de
   // Venda / Nota de Venda) — an Orçamento is just a price quote and shouldn't
   // pre-fill legal clauses. show_legal_terms is the admin's explicit override
@@ -428,8 +426,10 @@ export default function PedidoDocumentoPage({ params }: { params: Promise<{ id: 
             {customerAddress.map((line) => <p key={line}>{line}</p>)}
           </div>
           <div className="doc-meta">
-            <p><span>Data:</span> {fmtDate(pedido.created_at)}</p>
-            {docType === "orcamento" && <p><span>Validade:</span> {fmtDate(pedido.quote_valid_until)}</p>}
+            {/* Orçamento e Pedido de Venda saem com a data de hoje (e a validade
+                contada a partir de hoje); Nota e Recibo mantêm a data do pedido. */}
+            <p><span>Data:</span> {docType === "orcamento" || docType === "pedido" ? datas.data : fmtDia(pedido.created_at)}</p>
+            {docType === "orcamento" && <p><span>Validade:</span> {datas.validade}</p>}
             <p><span>Nº:</span> {docNumber(pedido)}</p>
           </div>
         </section>
