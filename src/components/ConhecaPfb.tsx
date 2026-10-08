@@ -60,8 +60,10 @@ export default function ConhecaPfb({ linkTecnologia = true }: { linkTecnologia?:
           <ScrollReveal className="flex flex-col" direction="right" delay={100}>
             {/* Fanned swatch stack — real finishes, no numbers. Leva ao
                 catálogo, onde o cliente escolhe o acabamento. */}
-            <Link href="/produtos" aria-label="Ver todos os modelos do Painel Flexível Fibra de Bambu" className="group relative block h-[320px] sm:h-[380px] lg:h-auto lg:flex-1 lg:min-h-[420px]">
-              <div className="absolute inset-0 flex items-center justify-center">
+            <Link href="/produtos" aria-label="Ver todos os modelos do Painel Flexível Fibra de Bambu" className="group relative flex flex-col items-center justify-center h-[340px] sm:h-[400px] lg:h-auto lg:flex-1 lg:min-h-[420px] lg:-translate-y-3">
+              {/* Leque + selo formam um bloco só, centralizado na coluna —
+                  assim o leque fica na altura do meio da grade ao lado. */}
+              <div className="relative w-full h-[230px] sm:h-[280px] lg:h-[310px] flex items-center justify-center">
                 {[
                   { img: "/images/catalogue/classic-bege-travertino-orb001.jpeg", rot: -18, x: -84 },
                   { img: "/images/catalogue/brilliance-bronze-armani-orb005.jpeg", rot: -9, x: -42 },
@@ -82,7 +84,7 @@ export default function ConhecaPfb({ linkTecnologia = true }: { linkTecnologia?:
                 ))}
               </div>
               {/* Convite para os modelos, embaixo do leque */}
-              <span className="absolute bottom-0 left-1/2 -translate-x-1/2 z-20 inline-flex items-center gap-2 whitespace-nowrap bg-white border border-[#e2e2e2] shadow-md px-4 py-2.5 text-[#002045] text-[10px] sm:text-[11px] tracking-[0.14em] uppercase font-bold font-[var(--font-inter)] group-hover:bg-[#002045] group-hover:text-white group-hover:border-[#002045] transition-colors">
+              <span className="relative mt-6 z-20 inline-flex items-center gap-2 whitespace-nowrap bg-white border border-[#e2e2e2] shadow-md px-4 py-2.5 text-[#002045] text-[10px] sm:text-[11px] tracking-[0.14em] uppercase font-bold font-[var(--font-inter)] group-hover:bg-[#002045] group-hover:text-white group-hover:border-[#002045] transition-colors">
                 Classic · Brilliance · Elegance
                 <span className="text-[#3b6934] group-hover:text-[#a1d494]">Ver todos →</span>
               </span>
