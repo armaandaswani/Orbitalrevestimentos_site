@@ -28,6 +28,7 @@ import {
   panelGrid,
 } from "@/lib/render-prompt";
 import { BAIRROS_DISTANTES, FRETE_DISTANTE, FRETE_PADRAO } from "@/lib/frete-pedido";
+import ComunicadoMetropolitano from "./ComunicadoMetropolitano";
 
 // ─── Sidebar IA ───────────────────────────────────────────────────────────────
 // Ordered as the business actually flows, top to bottom: what needs attention
@@ -4324,6 +4325,7 @@ export default function AdminPage() {
         {/* ═══ CAMPAIGNS TAB ═══ */}
         {tab === "campaigns" && (
           <div>
+            <ComunicadoMetropolitano />
             <div className="flex items-center justify-between mb-6">
               <h2 className="font-serif text-[#0B1F45] text-xl font-normal">
                 Campanhas de E-mail
