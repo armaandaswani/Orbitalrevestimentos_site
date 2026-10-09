@@ -42,7 +42,7 @@ export function conviteEmailHtml(i: { nome: string; repNome: string | null; link
   const quem = i.repNome ? `${esc(i.repNome)}, da Orbital Revestimentos,` : "A Orbital Revestimentos";
   return `
     ${emailTopo(520)}<div style="font-family:Montserrat,Arial,sans-serif;max-width:520px;margin:0 auto;padding:32px 24px;color:#0D1830;line-height:1.55">
-      <h2 style="font-size:22px;margin:0 0 12px;color:#0B1F45;font-weight:300;font-family:Noto Serif Display,Georgia,serif">Olá, ${first}!</h2>
+      <h2 style="font-size:22px;margin:0 0 12px;color:#0B1F45;font-weight:700;font-family:Noto Serif Display,Georgia,serif">Olá, ${first}!</h2>
       <p style="color:#43474e;margin:0 0 20px">${quem} cadastrou você como <strong>Parceiro Orbital</strong>.</p>
       <p style="color:#43474e;margin:0 0 24px">Para ativar seu acesso, aceite o convite e crie sua senha. No portal você acompanha suas indicações e comissões.</p>
       <p style="margin:0 0 24px">

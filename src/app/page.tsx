@@ -175,7 +175,7 @@ export default function Home() {
   return (
     <>
       {/* Hero */}
-      <section className="relative h-screen min-h-[620px] max-h-[900px] flex items-center lg:items-end">
+      <section className="relative h-screen min-h-[620px] max-h-[900px] flex items-center">
         <div className="absolute inset-0">
           <Image
             src="/images/catalogue/hero-cover.png"
@@ -186,7 +186,8 @@ export default function Home() {
           />
           <div className="absolute inset-0 bg-gradient-to-t from-[#0B1F45]/90 via-[#0B1F45]/60 to-[#0B1F45]/20 lg:bg-gradient-to-r lg:from-[#0B1F45]/85 lg:via-[#0B1F45]/50 lg:to-transparent" />
         </div>
-        <div className="relative z-10 w-full max-w-[1280px] mx-auto px-4 lg:px-16 py-16 lg:pb-28 lg:pt-0">
+        {/* pt-20 = altura da navbar fixa: o bloco fica no meio da parte visível. */}
+        <div className="relative z-10 w-full max-w-[1280px] mx-auto px-4 lg:px-16 pt-20">
           <p className="text-[#B4BBC8] text-xs tracking-[0.2em] uppercase font-semibold mb-5">
             Orbital Revestimentos · Manaus, AM
           </p>

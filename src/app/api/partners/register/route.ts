@@ -106,7 +106,7 @@ export async function POST(req: NextRequest) {
       subject: "Recebemos o seu cadastro — Orbital Revestimentos",
       html: `
         ${emailTopo(520)}<div style="font-family:Montserrat,Arial,sans-serif;max-width:520px;margin:0 auto;padding:32px 24px;color:#0D1830">
-          <h2 style="font-size:22px;margin-bottom:8px;color:#0B1F45;font-family:Noto Serif Display,Georgia,serif;font-weight:300">Cadastro recebido!</h2>
+          <h2 style="font-size:22px;margin-bottom:8px;color:#0B1F45;font-family:Noto Serif Display,Georgia,serif;font-weight:700">Cadastro recebido!</h2>
           <p style="color:#555;margin-bottom:20px">Olá, ${name}. Recebemos o seu cadastro como parceiro Orbital e ele está em análise pela nossa equipe.</p>
           <div style="background:#F6F5F2;border-left:4px solid #0B1F45;padding:16px 20px;margin-bottom:24px">
             <p style="margin:0;font-size:14px;color:#0B1F45;font-weight:600">O que acontece agora?</p>
@@ -140,7 +140,7 @@ export async function POST(req: NextRequest) {
       subject: `Novo parceiro aguardando aprovação: ${name}`,
       html: `
         ${emailTopo(520)}<div style="font-family:Montserrat,Arial,sans-serif;max-width:520px;margin:0 auto;padding:32px 24px;color:#0D1830">
-          <h2 style="font-size:22px;margin-bottom:8px;color:#0B1F45;font-family:Noto Serif Display,Georgia,serif;font-weight:300">Novo parceiro aguardando aprovação</h2>
+          <h2 style="font-size:22px;margin-bottom:8px;color:#0B1F45;font-family:Noto Serif Display,Georgia,serif;font-weight:700">Novo parceiro aguardando aprovação</h2>
           <p style="color:#555;margin-bottom:24px">Um novo parceiro se cadastrou e aguarda aprovação no portal.</p>
           <table style="width:100%;border-collapse:collapse;margin-bottom:24px">
             <tr>
@@ -193,7 +193,7 @@ export async function POST(req: NextRequest) {
         subject: `Novo parceiro cadastrado: ${name}`,
         html: `
           ${emailTopo(520)}<div style="font-family:Montserrat,Arial,sans-serif;max-width:520px;margin:0 auto;padding:32px 24px;color:#0D1830">
-            <h2 style="font-size:22px;margin-bottom:8px;color:#0B1F45;font-family:Noto Serif Display,Georgia,serif;font-weight:300">Novo parceiro indicado por você!</h2>
+            <h2 style="font-size:22px;margin-bottom:8px;color:#0B1F45;font-family:Noto Serif Display,Georgia,serif;font-weight:700">Novo parceiro indicado por você!</h2>
             <p style="color:#555;margin-bottom:24px">Olá, ${salesRep.name}. Um novo parceiro se cadastrou usando seu código de indicação <strong>${salesRep.referral_code}</strong> e aguarda aprovação.</p>
             <table style="width:100%;border-collapse:collapse;margin-bottom:24px">
               <tr>

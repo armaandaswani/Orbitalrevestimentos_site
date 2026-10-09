@@ -147,7 +147,7 @@ export async function GET(req: NextRequest) {
           <td style="background:#0B1F45;padding:28px 32px;">
             ${emailLogo(150, 18)}
             <p style="margin:0 0 4px;font-size:11px;letter-spacing:0.2em;text-transform:uppercase;color:#B4BBC8;font-family:Montserrat,Arial,sans-serif;">Relatório Semanal</p>
-            <p style="margin:0;font-size:22px;color:#ffffff;font-family:Noto Serif Display,Georgia,serif;font-weight:300;">Comissões — ${new Date().toLocaleDateString("pt-BR", { day: "numeric", month: "long", year: "numeric" })}</p>
+            <p style="margin:0;font-size:22px;color:#ffffff;font-family:Noto Serif Display,Georgia,serif;font-weight:700;">Comissões — ${new Date().toLocaleDateString("pt-BR", { day: "numeric", month: "long", year: "numeric" })}</p>
           </td>
         </tr>
       </table>
@@ -164,15 +164,15 @@ export async function GET(req: NextRequest) {
               <tr>
                 <td width="33%" style="padding-right:12px;">
                   <p style="margin:0 0 4px;font-size:9px;letter-spacing:0.15em;text-transform:uppercase;color:#74777f;font-weight:700;font-family:Montserrat,Arial,sans-serif;">A PAGAR — PARCEIROS</p>
-                  <p style="margin:0;font-size:24px;color:#0B1F45;font-family:Noto Serif Display,Georgia,serif;">${fmt(totalUnpaidPartner)}</p>
+                  <p style="margin:0;font-size:24px;color:#0B1F45;font-family:Noto Serif Display,Georgia,serif;font-weight:700">${fmt(totalUnpaidPartner)}</p>
                 </td>
                 <td width="33%" style="padding-right:12px;border-left:1px solid #e2e2e2;padding-left:12px;">
                   <p style="margin:0 0 4px;font-size:9px;letter-spacing:0.15em;text-transform:uppercase;color:#74777f;font-weight:700;font-family:Montserrat,Arial,sans-serif;">A PAGAR — REPRESENTANTES</p>
-                  <p style="margin:0;font-size:24px;color:#2347A0;font-family:Noto Serif Display,Georgia,serif;">${fmt(totalUnpaidRep)}</p>
+                  <p style="margin:0;font-size:24px;color:#2347A0;font-family:Noto Serif Display,Georgia,serif;font-weight:700">${fmt(totalUnpaidRep)}</p>
                 </td>
                 <td width="33%" style="border-left:1px solid #e2e2e2;padding-left:12px;">
                   <p style="margin:0 0 4px;font-size:9px;letter-spacing:0.15em;text-transform:uppercase;color:#74777f;font-weight:700;font-family:Montserrat,Arial,sans-serif;">PAGO ESTA SEMANA</p>
-                  <p style="margin:0;font-size:24px;color:#166534;font-family:Noto Serif Display,Georgia,serif;">${fmt(paidThisWeekPartner + paidThisWeekRep)}</p>
+                  <p style="margin:0;font-size:24px;color:#166534;font-family:Noto Serif Display,Georgia,serif;font-weight:700">${fmt(paidThisWeekPartner + paidThisWeekRep)}</p>
                 </td>
               </tr>
             </table>

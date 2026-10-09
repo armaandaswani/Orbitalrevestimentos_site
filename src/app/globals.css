@@ -79,11 +79,12 @@
   }
 }
 
-/* Manual da marca: títulos em Noto Serif Display LIGHT (e Light Italic).
-   Fora de @layer de propósito: vence os font-bold/semibold herdados das
-   classes, sem precisar caçar cada título. Títulos em Montserrat usam font-sans. */
+/* Títulos em Noto Serif Display SEMPRE em negrito (o manual pede Light, mas o
+   dono decidiu: Light fica ruim de ler). Fora de @layer de propósito: vence os
+   font-light/normal das classes, sem caçar cada título. Títulos em Montserrat
+   usam font-sans. */
 :is(h1, h2, h3, h4, h5, h6, .font-serif):not(.font-sans) {
-  font-weight: 300;
+  font-weight: 700;
 }
 
 /* ── Animations ─────────────────────────────────────── */

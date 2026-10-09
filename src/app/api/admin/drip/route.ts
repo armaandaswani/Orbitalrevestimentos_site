@@ -13,8 +13,8 @@ const TRANSACTIONAL_STEPS = [
     description: "Enviado ao concluir (venda fechada)",
     subject: "Bem-vindo à família Orbital, {{firstName}}!",
     body_html: `
-<p style="font-size:26px;color:#0B1F45;font-weight:300;margin:0 0 6px;font-family:Noto Serif Display,Georgia,serif;">{{firstName}},</p>
-<p style="font-size:26px;color:#0B1F45;font-weight:300;margin:0 0 24px;font-family:Noto Serif Display,Georgia,serif;">você fez a escolha certa.</p>
+<p style="font-size:26px;color:#0B1F45;font-weight:700;margin:0 0 6px;font-family:Noto Serif Display,Georgia,serif;">{{firstName}},</p>
+<p style="font-size:26px;color:#0B1F45;font-weight:700;margin:0 0 24px;font-family:Noto Serif Display,Georgia,serif;">você fez a escolha certa.</p>
 <p style="color:#43474e;font-size:14px;line-height:1.8;margin:0 0 20px;font-family:Montserrat,Arial,sans-serif;">Estamos muito felizes em recebê-lo como cliente Orbital. Seu projeto para {{spaceLabel}} com os painéis <strong>{{model}} · {{finish}}</strong> vai ficar extraordinário — e você vai entender exatamente o porquê quando vir o resultado final.</p>
 <table width="100%" cellpadding="0" cellspacing="0" style="background:#f0f9eb;border-left:3px solid #36A35C;margin:24px 0;">
   <tr><td style="padding:24px 28px;">
@@ -50,7 +50,7 @@ const TRANSACTIONAL_STEPS = [
     description: "Enviado ao cancelar",
     subject: "Obrigado por considerar a Orbital, {{firstName}}",
     body_html: `
-<p style="font-size:20px;color:#0B1F45;font-weight:300;margin:0 0 24px;font-family:Noto Serif Display,Georgia,serif;">Obrigado, {{firstName}}.</p>
+<p style="font-size:20px;color:#0B1F45;font-weight:700;margin:0 0 24px;font-family:Noto Serif Display,Georgia,serif;">Obrigado, {{firstName}}.</p>
 <p style="color:#43474e;font-size:14px;line-height:1.8;margin:0 0 20px;font-family:Montserrat,Arial,sans-serif;">Sabemos que o momento certo para um projeto nem sempre é agora — e isso é completamente válido. Ficamos felizes que você tenha dedicado tempo para conhecer os painéis Orbital e simular um orçamento para {{spaceLabel}}.</p>
 <p style="color:#43474e;font-size:14px;line-height:1.8;margin:0 0 24px;font-family:Montserrat,Arial,sans-serif;">Não vamos te mandar mais mensagens sobre este projeto. Mas queremos deixar uma coisa registrada:</p>
 <table width="100%" cellpadding="0" cellspacing="0" style="background:#0B1F45;margin:24px 0;">

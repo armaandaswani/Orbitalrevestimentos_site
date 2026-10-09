@@ -288,8 +288,8 @@ export function generateClientEmail(
       html: wrap(
         `Você fez a escolha certa. Agora é só aproveitar o resultado.`,
         `
-<p style="font-size:26px;color:#0B1F45;font-weight:300;margin:0 0 6px;font-family:Noto Serif Display,Georgia,serif;">${first},</p>
-<p style="font-size:24px;color:#0B1F45;font-weight:300;margin:0 0 24px;font-family:Noto Serif Display,Georgia,serif;">você fez a escolha certa.</p>
+<p style="font-size:26px;color:#0B1F45;font-weight:700;margin:0 0 6px;font-family:Noto Serif Display,Georgia,serif;">${first},</p>
+<p style="font-size:24px;color:#0B1F45;font-weight:700;margin:0 0 24px;font-family:Noto Serif Display,Georgia,serif;">você fez a escolha certa.</p>
 <p style="color:#43474e;font-size:14px;line-height:1.8;margin:0 0 20px;font-family:Montserrat,Arial,sans-serif;">
   ${fmtArea(p.area)} m² de <strong>${p.model} · ${finish}</strong> para ${spacePara}. Esse ambiente vai ter uma vida completamente diferente do que você está acostumado.
 </p>
@@ -325,7 +325,7 @@ ${cta(`Falar com ${partnerFirst}`, wa)}
       html: wrap(
         `Sem pressão, sem julgamento. Quando o momento chegar, a gente retoma de onde paramos.`,
         `
-<p style="font-size:20px;color:#0B1F45;font-weight:300;margin:0 0 24px;font-family:Noto Serif Display,Georgia,serif;">Entendemos, ${first}.</p>
+<p style="font-size:20px;color:#0B1F45;font-weight:700;margin:0 0 24px;font-family:Noto Serif Display,Georgia,serif;">Entendemos, ${first}.</p>
 <p style="color:#43474e;font-size:14px;line-height:1.8;margin:0 0 20px;font-family:Montserrat,Arial,sans-serif;">
   O momento certo para um projeto nem sempre é agora — e isso é completamente válido. Não vamos te mandar mais mensagens sobre este orçamento.
 </p>

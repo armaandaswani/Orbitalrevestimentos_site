@@ -131,7 +131,7 @@ export async function GET(req: NextRequest) {
       <tr><td style="background:#0B1F45;padding:28px 32px;">
         ${emailLogo(150, 18)}
         <p style="margin:0 0 4px;font-size:11px;letter-spacing:0.2em;text-transform:uppercase;color:#B4BBC8;font-family:Montserrat,Arial,sans-serif;">Lembrete Semanal</p>
-        <p style="margin:0;font-size:22px;color:#ffffff;font-family:Noto Serif Display,Georgia,serif;font-weight:300;">Você tem ${uses.length} orçamento${uses.length > 1 ? "s" : ""} em aberto</p>
+        <p style="margin:0;font-size:22px;color:#ffffff;font-family:Noto Serif Display,Georgia,serif;font-weight:700;">Você tem ${uses.length} orçamento${uses.length > 1 ? "s" : ""} em aberto</p>
       </td></tr>
       <tr><td style="background:#ffffff;border:1px solid #e2e2e2;border-top:0;padding:24px 32px;">
         <p style="margin:0 0 20px;font-size:14px;color:#43474e;font-family:Montserrat,Arial,sans-serif;">Olá, <strong>${partner.name}</strong> — estes orçamentos ainda estão em aberto. Entre em contato com os clientes para garantir que os projetos avancem.</p>

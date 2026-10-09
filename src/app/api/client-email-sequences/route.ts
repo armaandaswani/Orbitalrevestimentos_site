@@ -310,7 +310,7 @@ export async function POST(req: NextRequest) {
     <table width="560" cellpadding="0" cellspacing="0" style="background:#ffffff;max-width:560px;width:100%;">
       <tr><td style="background:#0B1F45;padding:20px 28px;">
         ${emailLogo(140, 14)}
-        <p style="margin:6px 0 0;color:#ffffff;font-size:20px;font-weight:300;font-family:Noto Serif Display,Georgia,serif;">Seu ambiente, transformado</p>
+        <p style="margin:6px 0 0;color:#ffffff;font-size:20px;font-weight:700;font-family:Noto Serif Display,Georgia,serif;">Seu ambiente, transformado</p>
       </td></tr>
       <tr><td style="padding:28px;">
         <p style="margin:0 0 18px;color:#0B1F45;font-size:14px;line-height:1.6;font-family:Montserrat,Arial,sans-serif;">${firstName}, aqui está a simulação que você gerou no nosso Visualizador. É só uma prévia — na instalação real o acabamento fica ainda melhor.</p>
@@ -432,7 +432,7 @@ export async function POST(req: NextRequest) {
       <!-- Header -->
       <tr><td style="background:#0B1F45;padding:20px 28px;">
         ${emailLogo(140, 14)}
-        <p style="margin:6px 0 0;color:#ffffff;font-size:20px;font-weight:300;font-family:Noto Serif Display,Georgia,serif;">Novo orçamento recebido</p>
+        <p style="margin:6px 0 0;color:#ffffff;font-size:20px;font-weight:700;font-family:Noto Serif Display,Georgia,serif;">Novo orçamento recebido</p>
       </td></tr>
 
       <!-- Body -->

@@ -11,7 +11,7 @@ import { SpeedInsights } from "@vercel/speed-insights/next";
 import { Analytics } from "@vercel/analytics/next";
 
 // Manual da marca: Montserrat (logo, rótulos e textos) e Noto Serif Display
-// Light / Light Italic (títulos e frases de impacto).
+// (títulos e frases de impacto).
 const montserrat = Montserrat({
   subsets: ["latin"],
   weight: ["400", "500", "600", "700", "800"],
@@ -19,9 +19,11 @@ const montserrat = Montserrat({
   display: "swap",
 });
 
+// Títulos em NEGRITO (700), por decisão do dono: o Light do manual ficava
+// ruim de ler no site.
 const notoSerifDisplay = Noto_Serif_Display({
   subsets: ["latin"],
-  weight: ["300"],
+  weight: ["700"],
   style: ["normal", "italic"],
   variable: "--font-noto-serif-display",
   display: "swap",

@@ -38,7 +38,7 @@ export async function POST(
 
   const spacesHtml = spaces.map((sp) => `
     <tr>
-      <td style="padding:8px 0;border-bottom:1px solid #EFEDE8;font-size:13px;color:#0B1F45;font-family:Noto Serif Display,Georgia,serif;">${sp.spaceName}</td>
+      <td style="padding:8px 0;border-bottom:1px solid #EFEDE8;font-size:13px;color:#0B1F45;font-family:Noto Serif Display,Georgia,serif;font-weight:700">${sp.spaceName}</td>
       <td style="padding:8px 0;border-bottom:1px solid #EFEDE8;font-size:12px;color:#43474e;font-family:Montserrat,Arial,sans-serif;">${sp.productName}</td>
       <td style="padding:8px 0;border-bottom:1px solid #EFEDE8;font-size:12px;color:#43474e;font-family:Montserrat,Arial,sans-serif;text-align:right;">${sp.plates} placa${sp.plates !== 1 ? "s" : ""}</td>
       <td style="padding:8px 0;border-bottom:1px solid #EFEDE8;font-size:13px;color:#0B1F45;font-weight:700;font-family:Montserrat,Arial,sans-serif;text-align:right;">${fmt(sp.total)}</td>
@@ -54,7 +54,7 @@ export async function POST(
       <tr><td style="background:#0B1F45;padding:28px 32px;">
         ${emailLogo(150, 18)}
         <p style="margin:0 0 4px;font-size:11px;letter-spacing:0.2em;text-transform:uppercase;color:#B4BBC8;font-family:Montserrat,Arial,sans-serif;">Orçamento exclusivo</p>
-        <p style="margin:0;font-size:24px;color:#ffffff;font-family:Noto Serif Display,Georgia,serif;font-weight:300;">Seu projeto em PFB Orbital</p>
+        <p style="margin:0;font-size:24px;color:#ffffff;font-family:Noto Serif Display,Georgia,serif;font-weight:700;">Seu projeto em PFB Orbital</p>
       </td></tr>
 
       <!-- Body -->
@@ -81,7 +81,7 @@ export async function POST(
           <tr>
             <td style="padding:16px 20px;">
               <p style="margin:0 0 2px;font-size:10px;letter-spacing:0.18em;text-transform:uppercase;color:#B4BBC8;font-family:Montserrat,Arial,sans-serif;">Total do projeto${quote.coupon_code ? ` — cupom ${quote.coupon_code}` : ""}</p>
-              <p style="margin:0;font-size:28px;color:#ffffff;font-family:Noto Serif Display,Georgia,serif;font-weight:300;">${fmt(finalValue)}</p>
+              <p style="margin:0;font-size:28px;color:#ffffff;font-family:Noto Serif Display,Georgia,serif;font-weight:700;">${fmt(finalValue)}</p>
             </td>
           </tr>
         </table>

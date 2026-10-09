@@ -59,7 +59,7 @@ function emailHtml(titulo: string, corpo: string): string {
       <div style="background:#0B1F45;padding:20px 24px">
         ${emailLogo(140, 14)}
         <p style="margin:0;color:#36A35C;font-size:11px;letter-spacing:0.15em;text-transform:uppercase;font-weight:bold">Academia Orbital</p>
-        <p style="margin:6px 0 0 0;color:#ffffff;font-size:20px;font-weight:300;font-family:Noto Serif Display,Georgia,serif">${esc(titulo)}</p>
+        <p style="margin:6px 0 0 0;color:#ffffff;font-size:20px;font-weight:700;font-family:Noto Serif Display,Georgia,serif">${esc(titulo)}</p>
       </div>
       <div style="padding:24px">${corpo}</div>
     </div>`;

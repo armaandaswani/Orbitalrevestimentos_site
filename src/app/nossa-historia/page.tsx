@@ -9,9 +9,10 @@ import ContatoCta from "@/components/ContatoCta";
  * dois sócios / duas cores, a órbita, qualidade sob controle e o que vem a
  * seguir. O texto segue o manual; não invente fatos novos aqui.
  *
- * Os sócios: cada um é uma cor do símbolo. Nome e foto só aparecem quando
- * preenchidos em SOCIOS (foto em public/images/team, sempre com nome de
- * arquivo novo — as imagens ficam 1 ano em cache).
+ * As duas cores (CORES) NÃO dizem qual sócio é qual — decisão do dono: os
+ * cartões de cor ficam sem nome, e os sócios aparecem à parte (SOCIOS), sem
+ * ligação com azul ou verde. Fotos em public/images/team, sempre com nome de
+ * arquivo novo (as imagens ficam 1 ano em cache); sem foto, mostra as iniciais.
  */
 
 const BASE_URL = "https://orbitalrevestimentos.com.br";
@@ -28,25 +29,24 @@ export const metadata: Metadata = {
   },
 };
 
-type Socio = { cor: string; hex: string; papel: string; texto: string; nome: string | null; foto: string | null };
-
-const SOCIOS: Socio[] = [
+const CORES = [
   {
     cor: "Azul",
     hex: "#2347A0",
     papel: "O sócio pé no chão.",
     texto: "Solidez, método e segurança em cada decisão.",
-    nome: null,
-    foto: null,
   },
   {
     cor: "Verde",
     hex: "#36A35C",
     papel: "O sócio jovial e inovador.",
     texto: "O olhar para o novo e a coragem de fazer diferente.",
-    nome: null,
-    foto: null,
   },
+];
+
+const SOCIOS: { nome: string; cargo: string; foto: string | null }[] = [
+  { nome: "Armaan Daswani", cargo: "Sócio-fundador", foto: "/images/team/armaan-daswani-2026.jpg" },
+  { nome: "Junior Hemnani", cargo: "Sócio-fundador", foto: null },
 ];
 
 const PILARES = [
@@ -103,20 +103,14 @@ export default function NossaHistoriaPage() {
             </p>
           </ScrollReveal>
           <div className="grid md:grid-cols-2 gap-6">
-            {SOCIOS.map((s) => (
+            {CORES.map((s) => (
               <ScrollReveal key={s.cor}>
                 <article className="h-full bg-white border border-[#e2e2e2] flex flex-col sm:flex-row">
                   <div className="h-1.5 sm:h-auto sm:w-1.5 shrink-0" style={{ backgroundColor: s.hex }} />
-                  {s.foto && (
-                    <div className="relative w-full sm:w-44 aspect-[4/5] sm:aspect-auto shrink-0 bg-[#EFEDE8]">
-                      <Image src={s.foto} alt={s.nome ?? `Sócio ${s.cor}`} fill sizes="(min-width: 640px) 176px, 100vw" className="object-cover" />
-                    </div>
-                  )}
                   <div className="p-7 lg:p-9">
                     <p className="text-xs tracking-[0.2em] uppercase font-bold mb-4" style={{ color: s.hex === "#36A35C" ? "#1F7A44" : s.hex }}>
                       {s.cor}
                     </p>
-                    {s.nome && <p className="text-[#0B1F45] text-lg font-semibold mb-2">{s.nome}</p>}
                     <p className="font-serif text-[#0B1F45] text-2xl lg:text-3xl leading-snug mb-3">{s.papel}</p>
                     <p className="text-[#43474e] leading-relaxed">{s.texto}</p>
                   </div>
@@ -129,6 +123,32 @@ export default function NossaHistoriaPage() {
               Juntas, as duas faixas formam uma só esfera: o equilíbrio entre segurança e inovação.
             </p>
           </ScrollReveal>
+
+          {/* Os sócios — sem dizer quem é azul e quem é verde. */}
+          <div className="mt-16 lg:mt-20 pt-12 lg:pt-16 border-t border-[#e2e2e2]">
+            <p className={EYEBROW}>Os sócios</p>
+            <div className="grid grid-cols-2 gap-4 sm:gap-6 max-w-2xl">
+              {SOCIOS.map((s) => (
+                <ScrollReveal key={s.nome}>
+                  <figure>
+                    <div className="relative aspect-[4/5] bg-[#EFEDE8] overflow-hidden">
+                      {s.foto ? (
+                        <Image src={s.foto} alt={s.nome} fill sizes="(min-width: 640px) 330px, 45vw" className="object-cover object-top" />
+                      ) : (
+                        <span className="absolute inset-0 flex items-center justify-center font-serif text-[#0B1F45]/40 text-5xl sm:text-6xl" aria-hidden>
+                          {s.nome.split(" ").map((p) => p[0]).join("")}
+                        </span>
+                      )}
+                    </div>
+                    <figcaption className="mt-4">
+                      <p className="text-[#0B1F45] text-sm sm:text-base font-semibold">{s.nome}</p>
+                      <p className="text-[#74777f] text-xs sm:text-sm">{s.cargo}</p>
+                    </figcaption>
+                  </figure>
+                </ScrollReveal>
+              ))}
+            </div>
+          </div>
         </div>
       </section>
 

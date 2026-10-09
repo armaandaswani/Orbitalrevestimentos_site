@@ -90,7 +90,7 @@ export function generatePartnerWelcomeEmail(p: PartnerWelcomeParams): { subject:
       `
 <!-- Greeting -->
 <p style="font-size:28px;color:#0B1F45;font-weight:700;margin:0 0 4px;font-family:Noto Serif Display,Georgia,serif;line-height:1.2;">É um prazer</p>
-<p style="font-size:28px;color:#0B1F45;font-weight:300;margin:0 0 28px;font-family:Noto Serif Display,Georgia,serif;line-height:1.2;">tê-lo conosco, ${first}.</p>
+<p style="font-size:28px;color:#0B1F45;font-weight:700;margin:0 0 28px;font-family:Noto Serif Display,Georgia,serif;line-height:1.2;">tê-lo conosco, ${first}.</p>
 
 <p style="color:#43474e;font-size:14px;line-height:1.85;margin:0 0 8px;font-family:Montserrat,Arial,sans-serif;">Seu cadastro como parceiro Orbital foi aprovado. A partir de agora, você tem acesso a todas as ferramentas do programa — e este e-mail reúne o essencial para começar.</p>
 
@@ -227,7 +227,7 @@ export function generatePartnerSpecialTableEmail(p: PartnerSpecialTableParams): 
 
 <!-- Greeting -->
 <p style="font-size:28px;color:#0B1F45;font-weight:700;margin:0 0 4px;font-family:Noto Serif Display,Georgia,serif;line-height:1.2;">${first},</p>
-<p style="font-size:28px;color:#0B1F45;font-weight:300;margin:0 0 28px;font-family:Noto Serif Display,Georgia,serif;line-height:1.2;">sua tabela especial está ativa.</p>
+<p style="font-size:28px;color:#0B1F45;font-weight:700;margin:0 0 28px;font-family:Noto Serif Display,Georgia,serif;line-height:1.2;">sua tabela especial está ativa.</p>
 
 <p style="color:#43474e;font-size:14px;line-height:1.85;margin:0 0 8px;font-family:Montserrat,Arial,sans-serif;">A partir de agora, você tem acesso a condições de preço diferenciadas — reservadas para parceiros que trabalham com volume ou projetos recorrentes. Essas condições aparecem na nova aba <strong>Tabela Especial ★</strong> no seu portal.</p>
 

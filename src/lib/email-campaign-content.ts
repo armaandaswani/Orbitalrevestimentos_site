@@ -27,8 +27,13 @@ function buildEmail(
         <!-- HEADER -->
         <tr>
           <td style="background:#0B1F45;padding:28px 36px;">
-            ${emailLogo(160, 12)}
-            <p style="margin:0;color:rgba(255,255,255,0.6);font-size:10px;letter-spacing:0.2em;text-transform:uppercase;font-weight:600;font-family:Montserrat,Arial,sans-serif;">Portal do Parceiro</p>
+            <!-- Logo à esquerda, "Portal do Parceiro" à direita (simétrico) -->
+            <table width="100%" cellpadding="0" cellspacing="0" role="presentation">
+              <tr>
+                <td valign="middle">${emailLogo(160)}</td>
+                <td valign="middle" align="right" style="color:rgba(255,255,255,0.7);font-size:10px;letter-spacing:0.2em;text-transform:uppercase;font-weight:600;font-family:Montserrat,Arial,sans-serif;white-space:nowrap;">Portal do Parceiro</td>
+              </tr>
+            </table>
           </td>
         </tr>
 
@@ -82,7 +87,7 @@ const CONTENT: Record<
     ctaText: "Ver PFB Classic no site",
     ctaPath: "/",
     body: `
-      <p style="font-family:Noto Serif Display,Georgia,serif;font-size:28px;line-height:1.2;color:#0B1F45;font-weight:300;margin:0 0 16px;">PFB Classic &mdash; Mármore Fosco</p>
+      <p style="font-family:Noto Serif Display,Georgia,serif;font-size:28px;line-height:1.2;color:#0B1F45;font-weight:700;margin:0 0 16px;">PFB Classic &mdash; Mármore Fosco</p>
       <p style="font-size:15px;line-height:1.7;color:#43474e;margin:16px 0;">O revestimento mais vendido da Orbital chega ao seu cliente com a estética do mármore fosco sem nenhuma das dores de cabeça do mármore natural.</p>
       <div style="background:#F6F5F2;border-left:3px solid #36A35C;padding:14px 18px;margin:20px 0;">
         <p style="margin:0;font-size:14px;color:#0B1F45;font-weight:700;">3,48 m² por placa &nbsp;·&nbsp; Instalação em 2&ndash;3 horas &nbsp;·&nbsp; Preço público: R$ 559/placa</p>
@@ -97,7 +102,7 @@ const CONTENT: Record<
     ctaText: "Ver PFB Brilliance",
     ctaPath: "/",
     body: `
-      <p style="font-family:Noto Serif Display,Georgia,serif;font-size:28px;line-height:1.2;color:#0B1F45;font-weight:300;margin:0 0 16px;">PFB Brilliance &mdash; Mármore Polido</p>
+      <p style="font-family:Noto Serif Display,Georgia,serif;font-size:28px;line-height:1.2;color:#0B1F45;font-weight:700;margin:0 0 16px;">PFB Brilliance &mdash; Mármore Polido</p>
       <p style="font-size:15px;line-height:1.7;color:#43474e;margin:16px 0;">Quando o projeto exige aquele acabamento polido de alto padrão, o Brilliance entrega sem comprometer a praticidade.</p>
       <div style="background:#F6F5F2;border-left:3px solid #36A35C;padding:14px 18px;margin:20px 0;">
         <p style="margin:0;font-size:14px;color:#0B1F45;font-weight:700;">Superfície polida premium &nbsp;·&nbsp; Preço público: R$ 589/placa &nbsp;·&nbsp; 0,2% de absorção</p>
@@ -112,7 +117,7 @@ const CONTENT: Record<
     ctaText: "Ver PFB Elegance",
     ctaPath: "/",
     body: `
-      <p style="font-family:Noto Serif Display,Georgia,serif;font-size:28px;line-height:1.2;color:#0B1F45;font-weight:300;margin:0 0 16px;">PFB Elegance &mdash; Madeira Texturizada</p>
+      <p style="font-family:Noto Serif Display,Georgia,serif;font-size:28px;line-height:1.2;color:#0B1F45;font-weight:700;margin:0 0 16px;">PFB Elegance &mdash; Madeira Texturizada</p>
       <p style="font-size:15px;line-height:1.7;color:#43474e;margin:16px 0;">O aconchego da madeira com a durabilidade do bambu comprimido. O Elegance transforma qualquer ambiente em refúgio.</p>
       <div style="background:#F6F5F2;border-left:3px solid #36A35C;padding:14px 18px;margin:20px 0;">
         <p style="margin:0;font-size:14px;color:#0B1F45;font-weight:700;">Textura amadeirada natural &nbsp;·&nbsp; Preço público: R$ 649/placa &nbsp;·&nbsp; Base de bambu renovável</p>
@@ -127,10 +132,10 @@ const CONTENT: Record<
     ctaText: "Compartilhe seu cupom",
     ctaPath: "/",
     body: `
-      <p style="font-family:Noto Serif Display,Georgia,serif;font-size:28px;line-height:1.2;color:#0B1F45;font-weight:300;margin:0 0 16px;">O problema que todo arquiteto em Manaus conhece.</p>
+      <p style="font-family:Noto Serif Display,Georgia,serif;font-size:28px;line-height:1.2;color:#0B1F45;font-weight:700;margin:0 0 16px;">O problema que todo arquiteto em Manaus conhece.</p>
       <p style="font-size:15px;line-height:1.7;color:#43474e;margin:16px 0;">MDF absorve até 35% de umidade. Papel de parede descola em meses. Gesso umedece e forma bolor. No clima amazônico, a maioria dos revestimentos simplesmente não foi projetada para sobreviver.</p>
       <div style="background:#F6F5F2;border-left:3px solid #36A35C;padding:14px 18px;margin:20px 0;">
-        <p style="margin:0 0 6px;font-size:22px;color:#0B1F45;font-weight:300;font-family:Noto Serif Display,Georgia,serif">0,2%</p>
+        <p style="margin:0 0 6px;font-size:22px;color:#0B1F45;font-weight:700;font-family:Noto Serif Display,Georgia,serif">0,2%</p>
         <p style="margin:0;font-size:13px;color:#74777f;">Taxa de absorção de umidade do PFB Orbital &mdash; impermeável por natureza.</p>
       </div>
       <p style="font-size:15px;line-height:1.7;color:#43474e;margin:16px 0;">O PFB é fabricado com bambu comprimido e resina termofixada, criando uma barreira natural contra a umidade. Não incha. Não descola. Não apodrece.</p>
@@ -143,7 +148,7 @@ const CONTENT: Record<
     ctaText: "Simule um orçamento",
     ctaPath: "/",
     body: `
-      <p style="font-family:Noto Serif Display,Georgia,serif;font-size:28px;line-height:1.2;color:#0B1F45;font-weight:300;margin:0 0 16px;">Obra tradicional: dias de poeira e barulho.</p>
+      <p style="font-family:Noto Serif Display,Georgia,serif;font-size:28px;line-height:1.2;color:#0B1F45;font-weight:700;margin:0 0 16px;">Obra tradicional: dias de poeira e barulho.</p>
       <p style="font-size:15px;line-height:1.7;color:#43474e;margin:16px 0;">Azulejo, gesso e alvenaria exigem mão de obra especializada, prazo de cura, sujeira e às vezes até ART estrutural. Para quem mora no imóvel, é um pesadelo.</p>
       <div style="background:#F6F5F2;border-left:3px solid #36A35C;padding:14px 18px;margin:20px 0;">
         <p style="margin:0;font-size:14px;color:#0B1F45;font-weight:700;">PFB: instalação em 2&ndash;3 horas por cômodo &nbsp;·&nbsp; Sem obra molhada &nbsp;·&nbsp; Sem barulho excessivo &nbsp;·&nbsp; Sem ART para paredes</p>
@@ -158,7 +163,7 @@ const CONTENT: Record<
     ctaText: "Ver certificações",
     ctaPath: "/",
     body: `
-      <p style="font-family:Noto Serif Display,Georgia,serif;font-size:28px;line-height:1.2;color:#0B1F45;font-weight:300;margin:0 0 16px;">Segurança que vai além da estética.</p>
+      <p style="font-family:Noto Serif Display,Georgia,serif;font-size:28px;line-height:1.2;color:#0B1F45;font-weight:700;margin:0 0 16px;">Segurança que vai além da estética.</p>
       <p style="font-size:15px;line-height:1.7;color:#43474e;margin:16px 0;">Projetos comerciais e condomínios exigem materiais com resistência ao fogo comprovada. PVC e papel de parede propagam chamas. MDF carboniza rapidamente. O PFB não.</p>
       <div style="background:#F6F5F2;border-left:3px solid #36A35C;padding:14px 18px;margin:20px 0;">
         <p style="margin:0 0 8px;font-size:14px;color:#0B1F45;font-weight:700;">Certificação técnica:</p>
@@ -173,7 +178,7 @@ const CONTENT: Record<
     ctaText: "Conheça a tecnologia PFB",
     ctaPath: "/",
     body: `
-      <p style="font-family:Noto Serif Display,Georgia,serif;font-size:28px;line-height:1.2;color:#0B1F45;font-weight:300;margin:0 0 16px;">Sustentabilidade que você pode mostrar no projeto.</p>
+      <p style="font-family:Noto Serif Display,Georgia,serif;font-size:28px;line-height:1.2;color:#0B1F45;font-weight:700;margin:0 0 16px;">Sustentabilidade que você pode mostrar no projeto.</p>
       <p style="font-size:15px;line-height:1.7;color:#43474e;margin:16px 0;">Em 2026, clientes corporativos e incorporadoras exigem ESG. O bambu do PFB cresce de 5 a 7 vezes mais rápido que madeiras convencionais, é 100% renovável e não contém formaldeído.</p>
       <div style="background:#F6F5F2;border-left:3px solid #36A35C;padding:14px 18px;margin:20px 0;">
         <p style="margin:0;font-size:14px;color:#0B1F45;font-weight:700;">Sem formaldeído &nbsp;·&nbsp; Base renovável &nbsp;·&nbsp; Reciclável &nbsp;·&nbsp; Pegada de carbono reduzida vs. MDF</p>
@@ -187,7 +192,7 @@ const CONTENT: Record<
     ctaText: "Dúvidas? Fale com a gente",
     ctaPath: "/",
     body: `
-      <p style="font-family:Noto Serif Display,Georgia,serif;font-size:28px;line-height:1.2;color:#0B1F45;font-weight:300;margin:0 0 16px;">Guia prático de aplicação do PFB.</p>
+      <p style="font-family:Noto Serif Display,Georgia,serif;font-size:28px;line-height:1.2;color:#0B1F45;font-weight:700;margin:0 0 16px;">Guia prático de aplicação do PFB.</p>
       <p style="font-size:15px;line-height:1.7;color:#43474e;margin:16px 0;">Para especificar com segurança e evitar retrabalho, aqui está o resumo definitivo de onde o PFB pode e não pode ser aplicado.</p>
       <div style="background:#F6F5F2;border-left:3px solid #36A35C;padding:14px 18px;margin:20px 0;">
         <p style="margin:0 0 8px;font-size:13px;color:#0B1F45;font-weight:700;">&#10003; PODE:</p>
@@ -204,7 +209,7 @@ const CONTENT: Record<
     ctaText: "Ver seu painel de comissões",
     ctaPath: "/parceiro",
     body: `
-      <p style="font-family:Noto Serif Display,Georgia,serif;font-size:28px;line-height:1.2;color:#0B1F45;font-weight:300;margin:0 0 16px;">Mais indicações, mais comissão. Veja como.</p>
+      <p style="font-family:Noto Serif Display,Georgia,serif;font-size:28px;line-height:1.2;color:#0B1F45;font-weight:700;margin:0 0 16px;">Mais indicações, mais comissão. Veja como.</p>
       <p style="font-size:15px;line-height:1.7;color:#43474e;margin:16px 0;">Cada vez que um cliente seu usa seu cupom no simulador da Orbital, você gera uma comissão. Quanto mais projetos, mais você ganha &mdash; sem teto.</p>
       <div style="background:#F6F5F2;border-left:3px solid #36A35C;padding:14px 18px;margin:20px 0;">
         <p style="margin:0 0 6px;font-size:14px;color:#0B1F45;font-weight:700;">Perfis de cliente com maior conversão:</p>
@@ -219,7 +224,7 @@ const CONTENT: Record<
     ctaText: "Compare no site",
     ctaPath: "/",
     body: `
-      <p style="font-family:Noto Serif Display,Georgia,serif;font-size:28px;line-height:1.2;color:#0B1F45;font-weight:300;margin:0 0 16px;">PFB vs. MDF: a comparação que fecha a decisão.</p>
+      <p style="font-family:Noto Serif Display,Georgia,serif;font-size:28px;line-height:1.2;color:#0B1F45;font-weight:700;margin:0 0 16px;">PFB vs. MDF: a comparação que fecha a decisão.</p>
       <p style="font-size:15px;line-height:1.7;color:#43474e;margin:16px 0;">O <strong>Painel Flexível Fibra de Bambu (PFB)</strong> entrega mais desempenho, mais durabilidade e uma aplicação muito mais eficiente. Compare o <strong>custo total da aplicação</strong> — não só o preço da chapa — e mostre os números antes que a concorrência apareça.</p>
       <div style="background:#F6F5F2;border-left:3px solid #36A35C;padding:14px 18px;margin:20px 0;">
         <table width="100%" cellpadding="0" cellspacing="0" style="font-family:Montserrat,Arial,sans-serif;font-size:12px;">

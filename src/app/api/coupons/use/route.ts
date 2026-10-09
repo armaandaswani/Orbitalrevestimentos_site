@@ -90,7 +90,7 @@ async function sendNewBudgetEmails(opts: {
       <tr><td style="background:#0B1F45;padding:28px 32px;">
         ${emailLogo(150, 18)}
         <p style="margin:0 0 4px;font-size:11px;letter-spacing:0.2em;text-transform:uppercase;color:#B4BBC8;font-family:Montserrat,Arial,sans-serif;">Novo Orçamento</p>
-        <p style="margin:0;font-size:22px;color:#ffffff;font-family:Noto Serif Display,Georgia,serif;font-weight:300;">Seu cupom foi utilizado!</p>
+        <p style="margin:0;font-size:22px;color:#ffffff;font-family:Noto Serif Display,Georgia,serif;font-weight:700;">Seu cupom foi utilizado!</p>
       </td></tr>
       <tr><td style="background:#ffffff;border:1px solid #e2e2e2;border-top:0;padding:28px 32px;">
         <p style="margin:0 0 16px;font-size:14px;color:#43474e;font-family:Montserrat,Arial,sans-serif;">Olá, <strong>${opts.partnerName}</strong> — um cliente usou o seu cupom <strong>${opts.couponCode}</strong> e gerou um orçamento.</p>
@@ -122,7 +122,7 @@ async function sendNewBudgetEmails(opts: {
     <table cellpadding="0" cellspacing="0" style="max-width:560px;width:100%;">
       <tr><td style="background:#2347A0;padding:28px 32px;">
         <p style="margin:0 0 4px;font-size:11px;letter-spacing:0.2em;text-transform:uppercase;color:#B4BBC8;font-family:Montserrat,Arial,sans-serif;">Novo Orçamento</p>
-        <p style="margin:0;font-size:22px;color:#ffffff;font-family:Noto Serif Display,Georgia,serif;font-weight:300;">${opts.directSale ? "Sua venda direta foi registrada" : `Orçamento gerado via parceiro ${opts.partnerName}`}</p>
+        <p style="margin:0;font-size:22px;color:#ffffff;font-family:Noto Serif Display,Georgia,serif;font-weight:700;">${opts.directSale ? "Sua venda direta foi registrada" : `Orçamento gerado via parceiro ${opts.partnerName}`}</p>
       </td></tr>
       <tr><td style="background:#ffffff;border:1px solid #e2e2e2;border-top:0;padding:28px 32px;">
         <p style="margin:0 0 16px;font-size:14px;color:#43474e;font-family:Montserrat,Arial,sans-serif;">${opts.directSale ? `Olá, <strong>${rep.name}</strong> — sua venda direta foi registrada e sua comissão será calculada sobre o valor com desconto.` : `Olá, <strong>${rep.name}</strong> — um dos seus parceiros (<strong>${opts.partnerName}</strong>) gerou um novo orçamento.`}</p>
@@ -155,7 +155,7 @@ async function sendNewBudgetEmails(opts: {
     subject: `🧾 Cupom ${opts.couponCode} usado — ${opts.clientName}`,
     html: `<div style="font-family:Montserrat,Arial,sans-serif;max-width:560px;margin:0 auto;padding:24px;color:#43474e">
       <p style="margin:0 0 4px;font-size:11px;letter-spacing:0.2em;text-transform:uppercase;color:#74777f">Novo orçamento com cupom</p>
-      <p style="margin:0 0 12px;font-size:20px;color:#0B1F45;font-family:Noto Serif Display,Georgia,serif">${origem}</p>
+      <p style="margin:0 0 12px;font-size:20px;color:#0B1F45;font-family:Noto Serif Display,Georgia,serif;font-weight:700">${origem}</p>
       <p style="margin:0;font-size:13px">Cupom <strong>${opts.couponCode}</strong></p>
       ${detailsHtml}
     </div>`,

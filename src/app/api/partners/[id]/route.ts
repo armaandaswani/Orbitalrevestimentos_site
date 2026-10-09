@@ -195,7 +195,7 @@ export async function PUT(
             subject: "Seus dados de acesso foram atualizados — Orbital Revestimentos",
             html: `
               ${emailTopo(520)}<div style="font-family:Montserrat,Arial,sans-serif;max-width:520px;margin:0 auto;padding:32px 24px;color:#0D1830">
-                <h2 style="font-size:20px;margin-bottom:8px;color:#0B1F45;font-family:Noto Serif Display,Georgia,serif;font-weight:300">Dados de acesso atualizados</h2>
+                <h2 style="font-size:20px;margin-bottom:8px;color:#0B1F45;font-family:Noto Serif Display,Georgia,serif;font-weight:700">Dados de acesso atualizados</h2>
                 <p style="color:#555;margin-bottom:24px">Olá, ${data.name}. Seus dados de acesso no portal Orbital foram atualizados por nossa equipe.</p>
                 <table style="width:100%;border-collapse:collapse;margin-bottom:24px">
                   <tr><td style="padding:8px 0;border-bottom:1px solid #eee;color:#555;font-size:14px">Cupom</td><td style="padding:8px 0;border-bottom:1px solid #eee;font-weight:600;font-size:14px;text-align:right;letter-spacing:0.1em">${data.coupon_code}</td></tr>
