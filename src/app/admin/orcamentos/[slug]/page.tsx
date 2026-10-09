@@ -117,7 +117,7 @@ export default function OrcamentoMateriaisPage({ params }: { params: Promise<{ s
   if (!quote) {
     return (
       <AdminShell active="orcamentos" breadcrumb={[{ label: "Orçamentos", href: "/admin?tab=orcamentos" }]} title="Orçamento não encontrado">
-        <Link href="/admin?tab=orcamentos" className="text-[#002045] underline text-sm font-[var(--font-inter)]">Voltar</Link>
+        <Link href="/admin?tab=orcamentos" className="text-[#0B1F45] underline text-sm">Voltar</Link>
       </AdminShell>
     );
   }
@@ -133,14 +133,14 @@ export default function OrcamentoMateriaisPage({ params }: { params: Promise<{ s
       title={quote.client_name || "Orçamento"}
       action={<Link href="/admin/orcamentos/materiais" className={btnGhost}>Parâmetros do cálculo</Link>}
     >
-      {err && <div className="mb-4 bg-red-50 border border-red-200 text-red-700 px-4 py-2.5 text-sm font-[var(--font-inter)]">{err}</div>}
-      {msg && <div className="mb-4 bg-[#eef5ec] border border-[#cfe3ca] text-[#2c5226] px-4 py-2.5 text-sm font-[var(--font-inter)]">{msg}</div>}
+      {err && <div className="mb-4 bg-red-50 border border-red-200 text-red-700 px-4 py-2.5 text-sm">{err}</div>}
+      {msg && <div className="mb-4 bg-[#eef5ec] border border-[#cfe3ca] text-[#1F7A44] px-4 py-2.5 text-sm">{msg}</div>}
 
       {/* ── Espaços ─────────────────────────────────────────────────────────── */}
       <section className={sec}>
         <div className={secHead}>
-          <h2 className="font-[var(--font-noto-serif)] text-[#002045] text-lg">Tipo de aplicação por espaço</h2>
-          <p className="text-[#74777f] text-[12px] font-[var(--font-inter)] mt-0.5">
+          <h2 className="font-serif text-[#0B1F45] text-lg">Tipo de aplicação por espaço</h2>
+          <p className="text-[#74777f] text-[12px] mt-0.5">
             Parede leva cola PU-40. Teto e forro levam cola de contato e espuma expansiva.
           </p>
         </div>
@@ -148,15 +148,15 @@ export default function OrcamentoMateriaisPage({ params }: { params: Promise<{ s
           {(quote.spaces ?? []).map((sp, i) => (
             <div key={i} className="flex flex-wrap items-center justify-between gap-3 border-b border-[#f0f0f0] pb-3 last:border-0 last:pb-0">
               <div className="min-w-0">
-                <p className="font-[var(--font-inter)] text-[#002045] text-sm font-semibold">{sp.spaceName || `Espaço ${i + 1}`}</p>
-                <p className="text-[#74777f] text-[11px] font-[var(--font-inter)]">{sp.plates ?? 0} placa(s)</p>
+                <p className="text-[#0B1F45] text-sm font-semibold">{sp.spaceName || `Espaço ${i + 1}`}</p>
+                <p className="text-[#74777f] text-[11px]">{sp.plates ?? 0} placa(s)</p>
               </div>
               <div className="flex flex-wrap gap-1.5">
                 {APP_TYPES.map((t) => {
                   const on = (sp.applicationType ?? "parede") === t;
                   return (
                     <button key={t} type="button" disabled={busy} onClick={() => setSpaceType(i, t)}
-                      className={`text-[11px] tracking-[0.06em] uppercase font-bold font-[var(--font-inter)] px-3 py-1.5 border transition-colors disabled:opacity-50 ${on ? "bg-[#002045] text-white border-[#002045]" : "bg-white text-[#43474e] border-[#e2e2e2] hover:border-[#002045]"}`}>
+                      className={`text-[11px] tracking-[0.06em] uppercase font-bold px-3 py-1.5 border transition-colors disabled:opacity-50 ${on ? "bg-[#0B1F45] text-white border-[#0B1F45]" : "bg-white text-[#43474e] border-[#e2e2e2] hover:border-[#0B1F45]"}`}>
                       {APPLICATION_LABELS[t]}
                     </button>
                   );
@@ -165,7 +165,7 @@ export default function OrcamentoMateriaisPage({ params }: { params: Promise<{ s
             </div>
           ))}
           {(quote.spaces ?? []).length === 0 && (
-            <p className="text-[#a0a3a8] text-sm font-[var(--font-inter)]">Este orçamento não tem espaços salvos.</p>
+            <p className="text-[#a0a3a8] text-sm">Este orçamento não tem espaços salvos.</p>
           )}
         </div>
       </section>
@@ -173,14 +173,14 @@ export default function OrcamentoMateriaisPage({ params }: { params: Promise<{ s
       {/* ── Materiais ───────────────────────────────────────────────────────── */}
       <section className={sec}>
         <div className={secHead}>
-          <h2 className="font-[var(--font-noto-serif)] text-[#002045] text-lg">Materiais calculados</h2>
-          <p className="text-[#74777f] text-[12px] font-[var(--font-inter)] mt-0.5">
+          <h2 className="font-serif text-[#0B1F45] text-lg">Materiais calculados</h2>
+          <p className="text-[#74777f] text-[12px] mt-0.5">
             Ajuste a quantidade quando o projeto exigir exceção técnica. Zero remove o item.
           </p>
         </div>
         <div className="p-4 sm:p-5">
           {!pricing || pricing.materials.length === 0 ? (
-            <p className="text-[#a0a3a8] text-sm font-[var(--font-inter)]">Nenhum material calculado.</p>
+            <p className="text-[#a0a3a8] text-sm">Nenhum material calculado.</p>
           ) : (
             <>
               <div className="space-y-3">
@@ -190,31 +190,31 @@ export default function OrcamentoMateriaisPage({ params }: { params: Promise<{ s
                     <div key={m.code} className="border-b border-[#f0f0f0] pb-3 last:border-0 last:pb-0">
                       <div className="flex flex-wrap items-start justify-between gap-3">
                         <div className="min-w-0">
-                          <p className="font-[var(--font-inter)] text-[#002045] text-sm font-semibold">
+                          <p className="text-[#0B1F45] text-sm font-semibold">
                             {materialDisplayName(m)}
                             {m.overridden && (
                               <span className="ml-2 text-[9px] tracking-[0.1em] uppercase font-bold px-1.5 py-0.5 bg-amber-100 text-amber-900">Ajustado à mão</span>
                             )}
                           </p>
-                          <p className="text-[#74777f] text-[11px] font-[var(--font-inter)]">
+                          <p className="text-[#74777f] text-[11px]">
                             Calculado automaticamente para {applicationReasonLabel(m.reasons).toLowerCase() || "—"} · {m.technical}
                           </p>
-                          <p className="text-[#a0a3a8] text-[11px] font-[var(--font-inter)]">
+                          <p className="text-[#a0a3a8] text-[11px]">
                             {m.unitPrice > 0 ? `R$ ${m.unitPrice} por ${m.unit} · total R$ ${m.total}` : "sem preço cadastrado"}
                           </p>
                         </div>
                         <div className="flex items-center gap-2">
-                          <label className="text-[10px] tracking-[0.1em] uppercase font-bold font-[var(--font-inter)] text-[#74777f]">
+                          <label className="text-[10px] tracking-[0.1em] uppercase font-bold text-[#74777f]">
                             {m.unit}s
                           </label>
                           <input type="number" min="0" step="1"
                             value={draft[m.code] ?? m.quantity}
                             onChange={(e) => setDraft((d) => ({ ...d, [m.code]: Math.max(0, Number(e.target.value) || 0) }))}
-                            className="w-20 border border-[#e2e2e2] px-2 py-1.5 text-sm font-[var(--font-inter)] text-[#002045] focus:outline-none focus:border-[#002045]" />
+                            className="w-20 border border-[#e2e2e2] px-2 py-1.5 text-sm text-[#0B1F45] focus:outline-none focus:border-[#0B1F45]" />
                         </div>
                       </div>
                       {stock && !stock.sufficient && (
-                        <p className="mt-1.5 text-[12px] font-[var(--font-inter)] text-amber-800 bg-amber-50 border border-amber-200 px-2.5 py-1.5">
+                        <p className="mt-1.5 text-[12px] text-amber-800 bg-amber-50 border border-amber-200 px-2.5 py-1.5">
                           Estoque insuficiente — necessário {stock.required}, disponível {stock.available}, faltam {stock.missing}.
                           A quantidade técnica não foi reduzida.
                         </p>
@@ -231,7 +231,7 @@ export default function OrcamentoMateriaisPage({ params }: { params: Promise<{ s
                 )}
               </div>
               {hasOverride && (
-                <p className="text-[#74777f] text-[11px] font-[var(--font-inter)] mt-2">
+                <p className="text-[#74777f] text-[11px] mt-2">
                   Há ajuste manual salvo. Ele é descartado automaticamente se o número de placas ou o
                   tipo de aplicação mudar — o painel avisa quando isso acontecer.
                 </p>
@@ -242,7 +242,7 @@ export default function OrcamentoMateriaisPage({ params }: { params: Promise<{ s
           {[...(pricing?.warnings ?? []), ...(pricing?.adminWarnings ?? [])].length > 0 && (
             <ul className="mt-4 space-y-1">
               {[...pricing!.warnings, ...pricing!.adminWarnings].map((w, i) => (
-                <li key={i} className="text-[12px] font-[var(--font-inter)] text-amber-800">• {w}</li>
+                <li key={i} className="text-[12px] text-amber-800">• {w}</li>
               ))}
             </ul>
           )}

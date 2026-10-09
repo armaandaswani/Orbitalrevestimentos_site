@@ -8,6 +8,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { supabaseAdmin } from "@/lib/supabase";
 import { getResend } from "@/lib/resend";
+import { EMAIL_FONTES_LINK, emailLogo } from "@/lib/email-marca";
 
 function fmtBRL(n: number) {
   return n.toLocaleString("pt-BR", { style: "currency", currency: "BRL", maximumFractionDigits: 0 });
@@ -111,39 +112,40 @@ export async function GET(req: NextRequest) {
       const clientEmail = client?.email ?? "—";
       const value = u.material_discounted ?? u.material_total ?? 0;
       return `
-        <tr style="border-bottom:1px solid #f0efec;">
-          <td style="padding:10px 12px;font-size:12px;color:#002045;font-weight:600;font-family:Arial,sans-serif;">${clientName}</td>
-          <td style="padding:10px 12px;font-size:12px;color:#43474e;font-family:Arial,sans-serif;"><a href="mailto:${clientEmail}" style="color:#002045;">${clientEmail}</a></td>
-          <td style="padding:10px 12px;font-size:12px;color:#43474e;font-family:Arial,sans-serif;">${u.product_name ?? "—"}</td>
-          <td style="padding:10px 12px;font-size:12px;font-weight:700;color:#002045;font-family:Georgia,serif;">${value ? fmtBRL(value) : "—"}</td>
-          <td style="padding:10px 12px;font-size:11px;color:#74777f;font-family:Arial,sans-serif;">${fmtDate(u.created_at)}</td>
+        <tr style="border-bottom:1px solid #EFEDE8;">
+          <td style="padding:10px 12px;font-size:12px;color:#0B1F45;font-weight:600;font-family:Montserrat,Arial,sans-serif;">${clientName}</td>
+          <td style="padding:10px 12px;font-size:12px;color:#43474e;font-family:Montserrat,Arial,sans-serif;"><a href="mailto:${clientEmail}" style="color:#0B1F45;">${clientEmail}</a></td>
+          <td style="padding:10px 12px;font-size:12px;color:#43474e;font-family:Montserrat,Arial,sans-serif;">${u.product_name ?? "—"}</td>
+          <td style="padding:10px 12px;font-size:12px;font-weight:700;color:#0B1F45;font-family:Noto Serif Display,Georgia,serif;">${value ? fmtBRL(value) : "—"}</td>
+          <td style="padding:10px 12px;font-size:11px;color:#74777f;font-family:Montserrat,Arial,sans-serif;">${fmtDate(u.created_at)}</td>
           <td style="padding:10px 12px;">
-            <span style="background:#fef3c7;color:#92400e;padding:2px 8px;border-radius:4px;font-size:10px;font-weight:700;font-family:Arial,sans-serif;">${statusLabel(u.sale_status)}</span>
+            <span style="background:#fef3c7;color:#92400e;padding:2px 8px;border-radius:4px;font-size:10px;font-weight:700;font-family:Montserrat,Arial,sans-serif;">${statusLabel(u.sale_status)}</span>
           </td>
         </tr>`;
     }).join("");
 
-    const html = `<!DOCTYPE html><html lang="pt-BR"><head><meta charset="utf-8"></head>
-<body style="margin:0;padding:0;background:#f0efec;font-family:Arial,Helvetica,sans-serif;">
+    const html = `<!DOCTYPE html><html lang="pt-BR"><head><meta charset="utf-8">${EMAIL_FONTES_LINK}</head>
+<body style="margin:0;padding:0;background:#EFEDE8;font-family:Montserrat,Arial,Helvetica,sans-serif;">
   <table width="100%" cellpadding="0" cellspacing="0"><tr><td align="center" style="padding:32px 16px 0;">
     <table cellpadding="0" cellspacing="0" style="max-width:640px;width:100%;">
-      <tr><td style="background:#002045;padding:28px 32px;">
-        <p style="margin:0 0 4px;font-size:11px;letter-spacing:0.2em;text-transform:uppercase;color:#86a0cd;font-family:Arial,sans-serif;">Lembrete Semanal</p>
-        <p style="margin:0;font-size:22px;color:#ffffff;font-family:Georgia,serif;font-weight:400;">Você tem ${uses.length} orçamento${uses.length > 1 ? "s" : ""} em aberto</p>
+      <tr><td style="background:#0B1F45;padding:28px 32px;">
+        ${emailLogo(150, 18)}
+        <p style="margin:0 0 4px;font-size:11px;letter-spacing:0.2em;text-transform:uppercase;color:#B4BBC8;font-family:Montserrat,Arial,sans-serif;">Lembrete Semanal</p>
+        <p style="margin:0;font-size:22px;color:#ffffff;font-family:Noto Serif Display,Georgia,serif;font-weight:300;">Você tem ${uses.length} orçamento${uses.length > 1 ? "s" : ""} em aberto</p>
       </td></tr>
       <tr><td style="background:#ffffff;border:1px solid #e2e2e2;border-top:0;padding:24px 32px;">
-        <p style="margin:0 0 20px;font-size:14px;color:#43474e;font-family:Arial,sans-serif;">Olá, <strong>${partner.name}</strong> — estes orçamentos ainda estão em aberto. Entre em contato com os clientes para garantir que os projetos avancem.</p>
+        <p style="margin:0 0 20px;font-size:14px;color:#43474e;font-family:Montserrat,Arial,sans-serif;">Olá, <strong>${partner.name}</strong> — estes orçamentos ainda estão em aberto. Entre em contato com os clientes para garantir que os projetos avancem.</p>
         <table width="100%" cellpadding="0" cellspacing="0" style="border-collapse:collapse;">
           <thead>
-            <tr style="border-bottom:2px solid #e2e2e2;background:#fafafa;">
-              ${["Cliente","E-mail","Produto","Valor","Data","Status"].map(h => `<th style="text-align:left;padding:8px 12px;font-size:9px;letter-spacing:0.12em;text-transform:uppercase;color:#74777f;font-weight:700;font-family:Arial,sans-serif;white-space:nowrap;">${h}</th>`).join("")}
+            <tr style="border-bottom:2px solid #e2e2e2;background:#F6F5F2;">
+              ${["Cliente","E-mail","Produto","Valor","Data","Status"].map(h => `<th style="text-align:left;padding:8px 12px;font-size:9px;letter-spacing:0.12em;text-transform:uppercase;color:#74777f;font-weight:700;font-family:Montserrat,Arial,sans-serif;white-space:nowrap;">${h}</th>`).join("")}
             </tr>
           </thead>
           <tbody>${rowsHtml}</tbody>
         </table>
       </td></tr>
-      <tr><td style="background:#f0efec;border:1px solid #e2e2e2;border-top:0;padding:20px 32px;text-align:center;">
-        <a href="${siteUrl}/parceiro" style="display:inline-block;background:#002045;color:#ffffff;text-decoration:none;padding:10px 24px;font-size:11px;letter-spacing:0.12em;text-transform:uppercase;font-weight:700;font-family:Arial,sans-serif;">Ver meu portal →</a>
+      <tr><td style="background:#EFEDE8;border:1px solid #e2e2e2;border-top:0;padding:20px 32px;text-align:center;">
+        <a href="${siteUrl}/parceiro" style="display:inline-block;background:#0B1F45;color:#ffffff;text-decoration:none;padding:10px 24px;font-size:11px;letter-spacing:0.12em;text-transform:uppercase;font-weight:700;font-family:Montserrat,Arial,sans-serif;">Ver meu portal →</a>
       </td></tr>
     </table>
   </td></tr></table>

@@ -49,8 +49,8 @@ export async function GET(req: NextRequest) {
         to: EMAIL_EMPRESA,
         subject: `🎂 Aniversário hoje: ${partner.name}`,
         html: `
-          <div style="font-family:sans-serif;max-width:520px;margin:0 auto;padding:32px 24px;color:#1a1a1a">
-            <h2 style="font-size:20px;margin-bottom:4px;color:#002045">🎂 Aniversário hoje</h2>
+          <div style="font-family:Montserrat,Arial,sans-serif;max-width:520px;margin:0 auto;padding:32px 24px;color:#0D1830">
+            <h2 style="font-size:20px;margin-bottom:4px;color:#0B1F45;font-family:Noto Serif Display,Georgia,serif;font-weight:300">🎂 Aniversário hoje</h2>
             <p style="color:#555;margin-bottom:20px;font-size:14px">Um parceiro faz aniversário hoje!</p>
             <table style="width:100%;border-collapse:collapse;margin-bottom:20px">
               <tr><td style="padding:8px 0;border-bottom:1px solid #eee;color:#555;font-size:14px">Nome</td><td style="padding:8px 0;border-bottom:1px solid #eee;font-weight:600;font-size:14px;text-align:right">${partner.name}</td></tr>

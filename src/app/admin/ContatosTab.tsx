@@ -153,10 +153,10 @@ export default function ContatosTab() {
                 </select>
               </div>
 
-              <p className="text-[#74777f] text-xs font-[var(--font-inter)] mb-3">
+              <p className="text-[#74777f] text-xs mb-3">
                 {filtrando ? `${filtrada.length} de ${resumo.total} contatos` : `${resumo.total} contatos`}
                 {filtrando && (
-                  <button type="button" onClick={() => { setBusca(""); setFPerfil(""); setFEtapa(""); }} className="ml-3 underline hover:text-[#002045]">
+                  <button type="button" onClick={() => { setBusca(""); setFPerfil(""); setFEtapa(""); }} className="ml-3 underline hover:text-[#0B1F45]">
                     limpar filtros
                   </button>
                 )}
@@ -171,8 +171,8 @@ export default function ContatosTab() {
                     {filtrada.map((c) => (
                       <div key={c.id} className={`${cardCls} p-4`}>
                         <div className="flex items-start justify-between gap-3 mb-2">
-                          <p className="font-serif text-[#002045] text-base leading-tight min-w-0 break-words">{c.name || "Sem nome"}</p>
-                          <span className="text-[#74777f] text-[11px] font-[var(--font-inter)] flex-shrink-0">{dataCurta(c.created_at)}</span>
+                          <p className="font-serif text-[#0B1F45] text-base leading-tight min-w-0 break-words">{c.name || "Sem nome"}</p>
+                          <span className="text-[#74777f] text-[11px] flex-shrink-0">{dataCurta(c.created_at)}</span>
                         </div>
                         <div className="flex flex-col gap-1 text-xs">
                           <WhatsLink phone={c.phone} />
@@ -202,9 +202,9 @@ export default function ContatosTab() {
                     </thead>
                     <tbody>
                       {filtrada.map((c) => (
-                        <tr key={c.id} className="border-b border-[#f0f0f0] last:border-0 hover:bg-[#fafafa]">
+                        <tr key={c.id} className="border-b border-[#f0f0f0] last:border-0 hover:bg-[#F6F5F2]">
                           <td className={`${tdCls} whitespace-nowrap text-[#74777f]`}>{dataCurta(c.created_at)}</td>
-                          <td className={`${tdCls} text-[#002045] font-semibold`}>{c.name || <span className="text-[#b0b4bc] font-normal">—</span>}</td>
+                          <td className={`${tdCls} text-[#0B1F45] font-semibold`}>{c.name || <span className="text-[#b0b4bc] font-normal">—</span>}</td>
                           <td className={tdCls}><WhatsLink phone={c.phone} /></td>
                           <td className={`${tdCls} whitespace-nowrap`}>{PERFIL_ROTULO[c.perfil] ?? c.perfil}</td>
                           <td className={`${tdCls} whitespace-nowrap`}>{ETAPA_ROTULO[c.etapa] ?? c.etapa}</td>

@@ -40,12 +40,12 @@ export default function NovoProjetoPage() {
   return (
     <AdminShell breadcrumb={[{ label: "Projetos", href: "/admin/projetos" }]} title="Novo projeto">
       {err ? (
-        <div className="bg-red-50 border border-red-200 text-red-700 px-4 py-3 text-sm font-[var(--font-inter)]">
+        <div className="bg-red-50 border border-red-200 text-red-700 px-4 py-3 text-sm">
           {err}{" "}
           <Link href="/admin/projetos" className="underline font-bold">Voltar para a lista</Link>
         </div>
       ) : (
-        <p className="text-[#74777f] text-sm font-[var(--font-inter)]">Preparando o rascunho…</p>
+        <p className="text-[#74777f] text-sm">Preparando o rascunho…</p>
       )}
     </AdminShell>
   );

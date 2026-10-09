@@ -227,7 +227,7 @@ export default function RepMeetingPrompts({
 
   if (!loaded || pastDue.length === 0) return null;
 
-  const btn = "text-[11px] font-bold font-[var(--font-inter)] px-3 py-2 border transition-colors disabled:opacity-50";
+  const btn = "text-[11px] font-bold px-3 py-2 border transition-colors disabled:opacity-50";
 
   return (
     <div className="mb-6 space-y-3">
@@ -241,10 +241,10 @@ export default function RepMeetingPrompts({
             <div className="flex items-start gap-2">
               <span className="text-amber-500 text-lg leading-none mt-0.5" aria-hidden>⏰</span>
               <div className="min-w-0 flex-1">
-                <p className="text-[#43331a] text-sm font-semibold font-[var(--font-inter)]">
+                <p className="text-[#43331a] text-sm font-semibold">
                   Reunião com {name} — {fmtWhen(m.scheduled_at)}
                 </p>
-                <p className="text-[#8a6d3b] text-xs font-[var(--font-inter)] mt-0.5">
+                <p className="text-[#8a6d3b] text-xs mt-0.5">
                   Já passou. O que aconteceu?{!linked && " (reunião sem contato no CRM)"}
                 </p>
               </div>
@@ -253,39 +253,39 @@ export default function RepMeetingPrompts({
             {/* Quick actions */}
             <div className="flex flex-wrap gap-2 mt-3">
               <button disabled={busy} onClick={() => { setResultText(""); setFollowupDays(7); setExpanded(exp === "aconteceu" ? null : { id: m.id, mode: "aconteceu" }); }}
-                className={`${btn} bg-[#2f5429] text-white border-[#2f5429] hover:bg-[#264321]`}>Aconteceu</button>
+                className={`${btn} bg-[#1F7A44] text-white border-[#1F7A44] hover:bg-[#264321]`}>Aconteceu</button>
               <button disabled={busy} onClick={() => doNaoAconteceu(m)}
                 className={`${btn} bg-white text-[#8a6d3b] border-amber-300 hover:bg-amber-100`}>Não aconteceu</button>
               <button disabled={busy} onClick={() => { setRescheduleAt(toLocalInput(daysFromNow(1))); setExpanded(exp === "reagendar" ? null : { id: m.id, mode: "reagendar" }); }}
-                className={`${btn} bg-white text-[#002045] border-[#002045] hover:bg-[#eef2f8]`}>Reagendar</button>
+                className={`${btn} bg-white text-[#0B1F45] border-[#0B1F45] hover:bg-[#eef2f8]`}>Reagendar</button>
               <button disabled={busy} onClick={() => doNaoCompareceu(m)}
                 className={`${btn} bg-white text-[#8a6d3b] border-amber-300 hover:bg-amber-100`}>Não compareceu</button>
               <button disabled={busy} onClick={() => { setResultText(""); setExpanded(exp === "outro" ? null : { id: m.id, mode: "outro" }); }}
-                className={`${btn} bg-white text-[#74777f] border-[#e2e2e2] hover:bg-[#f5f5f3]`}>Outro resultado</button>
+                className={`${btn} bg-white text-[#74777f] border-[#e2e2e2] hover:bg-[#EFEDE8]`}>Outro resultado</button>
             </div>
 
             {/* Inline: Aconteceu — result + follow-up */}
             {exp === "aconteceu" && (
               <div className="mt-3 bg-white border border-amber-200 p-3 space-y-3">
                 <label className="block">
-                  <span className="block text-[10px] uppercase tracking-wider font-bold text-[#74777f] mb-1 font-[var(--font-inter)]">O que rolou / próximo passo</span>
+                  <span className="block text-[10px] uppercase tracking-wider font-bold text-[#74777f] mb-1">O que rolou / próximo passo</span>
                   <textarea value={resultText} onChange={(e) => setResultText(e.target.value)} rows={2}
                     placeholder="Ex: apresentei a linha, cliente pediu orçamento para 2 ambientes…"
-                    className="w-full border border-[#e2e2e2] px-3 py-2 text-sm font-[var(--font-inter)] text-[#002045] focus:outline-none focus:border-[#002045]" />
+                    className="w-full border border-[#e2e2e2] px-3 py-2 text-sm text-[#0B1F45] focus:outline-none focus:border-[#0B1F45]" />
                 </label>
                 <div className="flex flex-wrap items-center gap-2">
-                  <span className="text-[11px] text-[#74777f] font-[var(--font-inter)]">Lembrar de novo em</span>
+                  <span className="text-[11px] text-[#74777f]">Lembrar de novo em</span>
                   {[2, 7, 14, 30].map((d) => (
                     <button key={d} onClick={() => setFollowupDays(d)}
-                      className={`text-[11px] font-bold px-2.5 py-1 border ${followupDays === d ? "bg-[#002045] text-white border-[#002045]" : "text-[#74777f] border-[#e2e2e2] hover:border-[#002045]"}`}>{d}d</button>
+                      className={`text-[11px] font-bold px-2.5 py-1 border ${followupDays === d ? "bg-[#0B1F45] text-white border-[#0B1F45]" : "text-[#74777f] border-[#e2e2e2] hover:border-[#0B1F45]"}`}>{d}d</button>
                   ))}
                 </div>
                 <div className="flex gap-2">
                   <button disabled={busy} onClick={() => doAconteceu(m)}
-                    className="text-xs font-bold font-[var(--font-inter)] px-4 py-2 bg-[#2f5429] text-white hover:bg-[#264321] disabled:opacity-50">
+                    className="text-xs font-bold px-4 py-2 bg-[#1F7A44] text-white hover:bg-[#264321] disabled:opacity-50">
                     {busy ? "Salvando…" : linked ? "Registrar e avançar funil" : "Registrar"}
                   </button>
-                  <button disabled={busy} onClick={resetForm} className="text-xs font-[var(--font-inter)] px-3 py-2 text-[#74777f] hover:text-[#002045]">Cancelar</button>
+                  <button disabled={busy} onClick={resetForm} className="text-xs px-3 py-2 text-[#74777f] hover:text-[#0B1F45]">Cancelar</button>
                 </div>
               </div>
             )}
@@ -294,17 +294,17 @@ export default function RepMeetingPrompts({
             {exp === "reagendar" && (
               <div className="mt-3 bg-white border border-amber-200 p-3 space-y-3">
                 <label className="block">
-                  <span className="block text-[10px] uppercase tracking-wider font-bold text-[#74777f] mb-1 font-[var(--font-inter)]">Nova data e hora</span>
+                  <span className="block text-[10px] uppercase tracking-wider font-bold text-[#74777f] mb-1">Nova data e hora</span>
                   <input type="datetime-local" value={rescheduleAt} onChange={(e) => setRescheduleAt(e.target.value)}
-                    className="w-full sm:w-auto border border-[#e2e2e2] px-3 py-2 text-sm font-[var(--font-inter)] text-[#002045] focus:outline-none focus:border-[#002045]" />
+                    className="w-full sm:w-auto border border-[#e2e2e2] px-3 py-2 text-sm text-[#0B1F45] focus:outline-none focus:border-[#0B1F45]" />
                 </label>
-                <p className="text-[11px] text-[#74777f] font-[var(--font-inter)]">O convite de calendário é reenviado aos participantes.</p>
+                <p className="text-[11px] text-[#74777f]">O convite de calendário é reenviado aos participantes.</p>
                 <div className="flex gap-2">
                   <button disabled={busy || !rescheduleAt} onClick={() => doReagendar(m)}
-                    className="text-xs font-bold font-[var(--font-inter)] px-4 py-2 bg-[#002045] text-white hover:bg-[#1a365d] disabled:opacity-50">
+                    className="text-xs font-bold px-4 py-2 bg-[#0B1F45] text-white hover:bg-[#2347A0] disabled:opacity-50">
                     {busy ? "Remarcando…" : "Remarcar"}
                   </button>
-                  <button disabled={busy} onClick={resetForm} className="text-xs font-[var(--font-inter)] px-3 py-2 text-[#74777f] hover:text-[#002045]">Cancelar</button>
+                  <button disabled={busy} onClick={resetForm} className="text-xs px-3 py-2 text-[#74777f] hover:text-[#0B1F45]">Cancelar</button>
                 </div>
               </div>
             )}
@@ -313,16 +313,16 @@ export default function RepMeetingPrompts({
             {exp === "outro" && (
               <div className="mt-3 bg-white border border-amber-200 p-3 space-y-3">
                 <label className="block">
-                  <span className="block text-[10px] uppercase tracking-wider font-bold text-[#74777f] mb-1 font-[var(--font-inter)]">Descreva o resultado</span>
+                  <span className="block text-[10px] uppercase tracking-wider font-bold text-[#74777f] mb-1">Descreva o resultado</span>
                   <textarea value={resultText} onChange={(e) => setResultText(e.target.value)} rows={2}
-                    className="w-full border border-[#e2e2e2] px-3 py-2 text-sm font-[var(--font-inter)] text-[#002045] focus:outline-none focus:border-[#002045]" />
+                    className="w-full border border-[#e2e2e2] px-3 py-2 text-sm text-[#0B1F45] focus:outline-none focus:border-[#0B1F45]" />
                 </label>
                 <div className="flex gap-2">
                   <button disabled={busy || !resultText.trim()} onClick={() => doOutro(m)}
-                    className="text-xs font-bold font-[var(--font-inter)] px-4 py-2 bg-[#002045] text-white hover:bg-[#1a365d] disabled:opacity-50">
+                    className="text-xs font-bold px-4 py-2 bg-[#0B1F45] text-white hover:bg-[#2347A0] disabled:opacity-50">
                     {busy ? "Salvando…" : "Registrar"}
                   </button>
-                  <button disabled={busy} onClick={resetForm} className="text-xs font-[var(--font-inter)] px-3 py-2 text-[#74777f] hover:text-[#002045]">Cancelar</button>
+                  <button disabled={busy} onClick={resetForm} className="text-xs px-3 py-2 text-[#74777f] hover:text-[#0B1F45]">Cancelar</button>
                 </div>
               </div>
             )}

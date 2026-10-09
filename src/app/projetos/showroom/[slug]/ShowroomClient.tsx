@@ -42,14 +42,14 @@ export default function ShowroomClient({ slug }: { slug: string }) {
   }, [slug]);
 
   if (loading) {
-    return <div className="pt-32 pb-32 text-center text-[#74777f] text-sm font-[var(--font-inter)]">Carregando…</div>;
+    return <div className="pt-32 pb-32 text-center text-[#74777f] text-sm">Carregando…</div>;
   }
 
   if (!sr) {
     return (
       <div className="pt-32 pb-32 max-w-4xl mx-auto px-6 text-center">
-        <h1 className="font-[var(--font-noto-serif)] text-[#002045] text-3xl mb-3">Showroom não encontrado</h1>
-        <Link href="/projetos" className="text-[#002045] underline text-sm font-[var(--font-inter)]">
+        <h1 className="font-serif text-[#0B1F45] text-3xl mb-3">Showroom não encontrado</h1>
+        <Link href="/projetos" className="text-[#0B1F45] underline text-sm">
           Ver todos os projetos
         </Link>
       </div>
@@ -59,7 +59,7 @@ export default function ShowroomClient({ slug }: { slug: string }) {
   return (
     <div className="pt-20">
       <section className="max-w-[1400px] mx-auto px-6 lg:px-10 py-12 lg:py-16">
-        <Link href="/projetos" className="inline-flex items-center gap-1.5 text-[11px] tracking-[0.15em] uppercase font-bold font-[var(--font-inter)] text-[#74777f] hover:text-[#002045] transition-colors mb-6">
+        <Link href="/projetos" className="inline-flex items-center gap-1.5 text-[11px] tracking-[0.15em] uppercase font-bold text-[#74777f] hover:text-[#0B1F45] transition-colors mb-6">
           ‹ Projetos
         </Link>
 
@@ -76,29 +76,29 @@ export default function ShowroomClient({ slug }: { slug: string }) {
           )}
 
           <div className="flex-1 min-w-0">
-            <p className="text-[#74777f] text-[11px] tracking-[0.2em] uppercase font-bold font-[var(--font-inter)] mb-2">
+            <p className="text-[#74777f] text-[11px] tracking-[0.2em] uppercase font-bold mb-2">
               Showroom parceiro
             </p>
-            <h1 className="font-[var(--font-noto-serif)] text-[#002045] text-4xl lg:text-5xl font-normal">{sr.name}</h1>
+            <h1 className="font-serif text-[#0B1F45] text-4xl lg:text-5xl font-normal">{sr.name}</h1>
 
             {sr.description && (
-              <p className="text-[#43474e] text-base font-[var(--font-inter)] mt-4 max-w-2xl leading-relaxed">{sr.description}</p>
+              <p className="text-[#43474e] text-base mt-4 max-w-2xl leading-relaxed">{sr.description}</p>
             )}
 
             {sr.address && (
-              <p className="text-[#43474e] text-sm font-[var(--font-inter)] mt-5">{sr.address}</p>
+              <p className="text-[#43474e] text-sm mt-5">{sr.address}</p>
             )}
 
             <div className="flex flex-wrap gap-3 mt-5">
               {sr.maps_url && (
                 <a href={sr.maps_url} target="_blank" rel="noopener noreferrer"
-                  className="inline-flex items-center gap-2 bg-[#002045] text-white text-[11px] tracking-[0.12em] uppercase font-bold font-[var(--font-inter)] px-5 py-3 hover:bg-[#1a365d] transition-colors">
+                  className="inline-flex items-center gap-2 bg-[#0B1F45] text-white text-[11px] tracking-[0.12em] uppercase font-bold px-5 py-3 hover:bg-[#2347A0] transition-colors">
                   Ver no mapa
                   <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><path d="M5 12h14M12 5l7 7-7 7" /></svg>
                 </a>
               )}
               <Link href="/contato"
-                className="inline-flex items-center border border-[#002045] text-[#002045] text-[11px] tracking-[0.12em] uppercase font-bold font-[var(--font-inter)] px-5 py-3 hover:bg-[#002045] hover:text-white transition-colors">
+                className="inline-flex items-center border border-[#0B1F45] text-[#0B1F45] text-[11px] tracking-[0.12em] uppercase font-bold px-5 py-3 hover:bg-[#0B1F45] hover:text-white transition-colors">
                 Falar com a Orbital
               </Link>
             </div>
@@ -108,14 +108,14 @@ export default function ShowroomClient({ slug }: { slug: string }) {
 
       <section className="max-w-[1400px] mx-auto px-6 lg:px-10 pb-24">
         <div className="flex items-baseline gap-4 mb-5 pb-4 border-b border-[#e2e2e2]">
-          <h2 className="font-[var(--font-noto-serif)] text-[#002045] text-xl font-normal">Ambientes com Orbital</h2>
-          <p className="text-xs font-[var(--font-inter)] text-[#74777f]">
+          <h2 className="font-serif text-[#0B1F45] text-xl font-normal">Ambientes com Orbital</h2>
+          <p className="text-xs text-[#74777f]">
             {ambients.length} {ambients.length === 1 ? "ambiente" : "ambientes"} neste showroom
           </p>
         </div>
 
         {ambients.length === 0 ? (
-          <p className="text-[#74777f] text-sm font-[var(--font-inter)] py-12 text-center">
+          <p className="text-[#74777f] text-sm py-12 text-center">
             Nenhum ambiente publicado neste showroom ainda.
           </p>
         ) : (
@@ -131,8 +131,8 @@ export default function ShowroomClient({ slug }: { slug: string }) {
                     style={coverStyle(a.cover_focus_x, a.cover_focus_y, a.cover_zoom)} />
                 </div>
                 <div className="px-3 py-3">
-                  <p className="font-[var(--font-noto-serif)] text-[#002045] text-base">{a.title}</p>
-                  <p className="text-[#74777f] text-[11px] font-[var(--font-inter)] mt-0.5">
+                  <p className="font-serif text-[#0B1F45] text-base">{a.title}</p>
+                  <p className="text-[#74777f] text-[11px] mt-0.5">
                     {a.product_code}{a.short_description ? ` · ${a.short_description}` : ""}
                   </p>
                 </div>

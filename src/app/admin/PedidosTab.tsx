@@ -154,8 +154,8 @@ function resumoBoletos(bs: Boleto[]): string {
 /** Quantidade + prazo + data geram as parcelas; cada uma continua editável. */
 function BoletosEditor({ boletos, total, onChange }: { boletos: Boleto[]; total: number; onChange: (b: Boleto[]) => void }) {
   const primeiro = boletos[0]?.vencimento ?? plusDays(30);
-  const campo = "w-full border border-[#e2e2e2] px-2.5 py-2 text-sm font-[var(--font-inter)] text-[#002045] focus:outline-none focus:border-[#002045] bg-white";
-  const rotulo = "block text-[10px] tracking-[0.1em] uppercase font-bold font-[var(--font-inter)] text-[#74777f] mb-1";
+  const campo = "w-full border border-[#e2e2e2] px-2.5 py-2 text-sm text-[#0B1F45] focus:outline-none focus:border-[#0B1F45] bg-white";
+  const rotulo = "block text-[10px] tracking-[0.1em] uppercase font-bold text-[#74777f] mb-1";
   const somaParcelas = Math.round(boletos.reduce((a, b) => a + (Number(b.valor) || 0), 0) * 100) / 100;
   const diferenca = Math.round((total - somaParcelas) * 100) / 100;
 
@@ -248,7 +248,7 @@ function BoletosEditor({ boletos, total, onChange }: { boletos: Boleto[]; total:
           />
         </label>
       </div>
-      <p className="text-[10px] text-[#74777f] font-[var(--font-inter)]">
+      <p className="text-[10px] text-[#74777f]">
         {emDias
           ? `Vencimentos a ${boletos.map((_, i) => diasDoBoleto((prazoDe(prazoId, diasTxt) as { dias: number[] }).dias, i)).join(" / ")} dias de ${dataBR(base)}.`
           : "Os demais vencem no mesmo dia dos meses seguintes."}{" "}
@@ -257,7 +257,7 @@ function BoletosEditor({ boletos, total, onChange }: { boletos: Boleto[]; total:
       <div className="space-y-2">
         {boletos.map((b, i) => (
           <div key={i} className="grid grid-cols-[auto_1fr_1fr_auto] items-center gap-2">
-            <span className="text-[11px] font-bold text-[#74777f] font-[var(--font-inter)] w-6">{i + 1}ª</span>
+            <span className="text-[11px] font-bold text-[#74777f] w-6">{i + 1}ª</span>
             <input
               type="date" value={b.vencimento} aria-label={`Vencimento do boleto ${i + 1}`}
               onChange={(e) => e.target.value && onChange(boletos.map((x, k) => (k === i ? { ...x, vencimento: e.target.value } : x)))}
@@ -268,7 +268,7 @@ function BoletosEditor({ boletos, total, onChange }: { boletos: Boleto[]; total:
               onChange={(e) => onChange(boletos.map((x, k) => (k === i ? { ...x, valor: Number(e.target.value) || 0 } : x)))}
               className={`${campo} min-w-0`}
             />
-            <label className="flex items-center gap-1 text-[11px] font-[var(--font-inter)] text-[#43474e] whitespace-nowrap">
+            <label className="flex items-center gap-1 text-[11px] text-[#43474e] whitespace-nowrap">
               <input type="checkbox" checked={b.pago} onChange={(e) => onChange(boletos.map((x, k) => (k === i ? { ...x, pago: e.target.checked } : x)))} />
               Pago
             </label>
@@ -276,7 +276,7 @@ function BoletosEditor({ boletos, total, onChange }: { boletos: Boleto[]; total:
         ))}
       </div>
       {Math.abs(diferenca) >= 0.01 && (
-        <p className="text-[11px] text-amber-700 font-[var(--font-inter)]">
+        <p className="text-[11px] text-amber-700">
           A soma dos boletos ({fmtBRL(somaParcelas)}) está {diferenca > 0 ? "abaixo" : "acima"} do total do pedido ({fmtBRL(total)}) em {fmtBRL(Math.abs(diferenca))}.
         </p>
       )}
@@ -1698,9 +1698,9 @@ export default function PedidosTab({
       <div className="flex flex-col gap-4 mb-6">
         <div className="flex flex-wrap items-center justify-between gap-3">
           <div className="flex items-center gap-3">
-            <h2 className="font-[var(--font-noto-serif)] text-[#002045] text-xl font-normal">Pedidos / Produção</h2>
+            <h2 className="font-serif text-[#0B1F45] text-xl font-normal">Pedidos / Produção</h2>
             {!loading && (
-              <span className="bg-[#eef2f8] text-[#002045] text-[10px] font-bold font-[var(--font-inter)] tracking-wider px-2 py-0.5">
+              <span className="bg-[#eef2f8] text-[#0B1F45] text-[10px] font-bold tracking-wider px-2 py-0.5">
                 {filtered.length}
               </span>
             )}
@@ -1708,13 +1708,13 @@ export default function PedidosTab({
           <div className="flex flex-wrap gap-2">
             <button
               onClick={openQuoteImport}
-              className="border border-[#002045] text-[#002045] bg-white text-xs tracking-[0.12em] uppercase font-bold font-[var(--font-inter)] px-5 py-2.5 hover:bg-[#eef2f8] transition-colors"
+              className="border border-[#0B1F45] text-[#0B1F45] bg-white text-xs tracking-[0.12em] uppercase font-bold px-5 py-2.5 hover:bg-[#eef2f8] transition-colors"
             >
               Importar orçamento
             </button>
             <button
               onClick={() => { setItems(stockProducts.length > 0 ? [{ product_id: "", plates: 1 }] : []); setItemsReady(true); setDraft({ _isNew: true, status: "em_producao", payment_status: "pendente", payment_methods: DEFAULT_PAYMENT_METHODS, payment_terms: DEFAULT_PAYMENT_TERMS, freight_amount: FRETE_PADRAO, freight_is_revenue: false, other_costs: [], quote_valid_until: plusDays(QUOTE_VALIDITY_DAYS), price_tier: "varejo" }); setFreteManual(false); setFreteMotivo("padrão (sem CEP)"); }}
-              className="bg-[#002045] text-white text-xs tracking-[0.12em] uppercase font-bold font-[var(--font-inter)] px-5 py-2.5 hover:bg-[#1a365d] transition-colors"
+              className="bg-[#0B1F45] text-white text-xs tracking-[0.12em] uppercase font-bold px-5 py-2.5 hover:bg-[#2347A0] transition-colors"
             >
               + Novo pedido
             </button>
@@ -1740,16 +1740,16 @@ export default function PedidosTab({
             },
           ]).map((f) => (
             <div key={f.titulo} className="flex flex-col sm:flex-row sm:items-center gap-1.5 sm:gap-3 min-w-0">
-              <span className="flex-shrink-0 sm:w-[92px] text-[10px] tracking-[0.12em] uppercase font-bold font-[var(--font-inter)] text-[#74777f]">{f.titulo}</span>
+              <span className="flex-shrink-0 sm:w-[92px] text-[10px] tracking-[0.12em] uppercase font-bold text-[#74777f]">{f.titulo}</span>
               <div className="flex flex-wrap gap-1.5 sm:gap-2 min-w-0">
                 {f.opcoes.map(([key, label]) => (
                   <button
                     key={key}
                     onClick={() => f.set(key)}
-                    className={`px-3 sm:px-3.5 py-2 text-xs font-bold font-[var(--font-inter)] tracking-wide border transition-colors whitespace-nowrap ${
+                    className={`px-3 sm:px-3.5 py-2 text-xs font-bold tracking-wide border transition-colors whitespace-nowrap ${
                       f.valor === key
-                        ? "bg-[#002045] text-white border-[#002045]"
-                        : "bg-white text-[#74777f] border-[#e2e2e2] hover:text-[#002045]"
+                        ? "bg-[#0B1F45] text-white border-[#0B1F45]"
+                        : "bg-white text-[#74777f] border-[#e2e2e2] hover:text-[#0B1F45]"
                     }`}
                   >
                     {label}
@@ -1762,7 +1762,7 @@ export default function PedidosTab({
           {(statusFilter !== "all" || payFilter !== "all") && (
             <button
               onClick={() => { setStatusFilter("all"); setPayFilter("all"); }}
-              className="text-[11px] font-[var(--font-inter)] text-[#74777f] underline underline-offset-2 hover:text-[#002045]"
+              className="text-[11px] text-[#74777f] underline underline-offset-2 hover:text-[#0B1F45]"
             >
               Limpar filtros
             </button>
@@ -1776,7 +1776,7 @@ export default function PedidosTab({
             placeholder="Buscar por cliente, e-mail, telefone, produto…"
             value={search}
             onChange={(e) => setSearch(e.target.value)}
-            className="w-full sm:w-auto border border-[#e2e2e2] px-3 py-2 text-sm font-[var(--font-inter)] text-[#002045] focus:outline-none focus:border-[#002045] sm:min-w-[280px]"
+            className="w-full sm:w-auto border border-[#e2e2e2] px-3 py-2 text-sm text-[#0B1F45] focus:outline-none focus:border-[#0B1F45] sm:min-w-[280px]"
           />
         </div>
       </div>
@@ -1792,30 +1792,30 @@ export default function PedidosTab({
             { label: "Atrasados", value: stats.atrasados, sub: "prazo vencido" },
           ].map((s) => (
             <div key={s.label} className="bg-white border border-[#e2e2e2] px-4 py-3">
-              <p className="text-[9px] tracking-[0.1em] uppercase font-bold font-[var(--font-inter)] text-[#74777f]">{s.label}</p>
-              <p className="text-lg font-semibold font-[var(--font-noto-serif)] text-[#002045] mt-0.5 leading-none">{s.value}</p>
-              <p className="text-[9px] text-[#b0b0b0] font-[var(--font-inter)] mt-0.5">{s.sub}</p>
+              <p className="text-[9px] tracking-[0.1em] uppercase font-bold text-[#74777f]">{s.label}</p>
+              <p className="text-lg font-semibold font-serif text-[#0B1F45] mt-0.5 leading-none">{s.value}</p>
+              <p className="text-[9px] text-[#b0b0b0] mt-0.5">{s.sub}</p>
             </div>
           ))}
         </div>
       )}
 
       {loading ? (
-        <p className="text-[#74777f] text-sm font-[var(--font-inter)]">Carregando...</p>
+        <p className="text-[#74777f] text-sm">Carregando...</p>
       ) : error ? (
         <div className="bg-red-50 border border-red-200 px-6 py-8 text-center">
-          <p className="text-red-800 text-sm font-semibold font-[var(--font-inter)]">Não foi possível carregar os pedidos</p>
-          <p className="text-red-700 text-xs font-[var(--font-inter)] mt-1 break-words">{error}</p>
+          <p className="text-red-800 text-sm font-semibold">Não foi possível carregar os pedidos</p>
+          <p className="text-red-700 text-xs mt-1 break-words">{error}</p>
           <button
             onClick={fetchPedidos}
-            className="mt-4 inline-block border border-red-300 text-red-800 px-4 py-2 text-[10px] tracking-[0.12em] uppercase font-bold font-[var(--font-inter)] hover:bg-red-100 transition-colors"
+            className="mt-4 inline-block border border-red-300 text-red-800 px-4 py-2 text-[10px] tracking-[0.12em] uppercase font-bold hover:bg-red-100 transition-colors"
           >
             Tentar novamente
           </button>
         </div>
       ) : filtered.length === 0 ? (
         <div className="bg-white border border-[#e2e2e2] px-6 py-12 text-center">
-          <p className="text-[#74777f] text-sm font-[var(--font-inter)]">
+          <p className="text-[#74777f] text-sm">
             {pedidos.length === 0
               ? "Nenhum pedido ainda. Crie um pedido ao fechar uma venda para acompanhar produção e entrega."
               : "Nenhum pedido corresponde aos filtros."}
@@ -1825,7 +1825,7 @@ export default function PedidosTab({
         <>
           {/* Desktop table */}
           <div className="hidden sm:block bg-white border border-[#e2e2e2]">
-            <table className="w-full text-sm font-[var(--font-inter)] table-fixed">
+            <table className="w-full text-sm table-fixed">
               <colgroup>
                 <col style={{ width: "9%" }} />
                 <col style={{ width: "24%" }} />
@@ -1847,19 +1847,19 @@ export default function PedidosTab({
                   const db = deliveryBadge(p.expected_delivery_at);
                   const waHref = p.client_phone ? `https://wa.me/55${p.client_phone.replace(/\D/g, "")}` : null;
                   return (
-                    <tr key={p.id} className="border-b border-[#f0f0f0] hover:bg-[#fafafa] align-top">
+                    <tr key={p.id} className="border-b border-[#f0f0f0] hover:bg-[#F6F5F2] align-top">
                       <td className="px-4 py-3">
                         <p className="text-xs text-[#74777f]">{fmtDate(p.created_at)}</p>
                       </td>
                       <td className="px-4 py-3">
-                        <button onClick={() => openEdit(p)} className="font-semibold text-[#002045] text-xs truncate hover:underline text-left block max-w-full">{p.client_name}</button>
+                        <button onClick={() => openEdit(p)} className="font-semibold text-[#0B1F45] text-xs truncate hover:underline text-left block max-w-full">{p.client_name}</button>
                         {p.sales_rep_id && repNome.get(p.sales_rep_id) && (
-                          <p className="text-[10px] text-[#3b6934] truncate">Representante: {repNome.get(p.sales_rep_id)}</p>
+                          <p className="text-[10px] text-[#1F7A44] truncate">Representante: {repNome.get(p.sales_rep_id)}</p>
                         )}
                         {p.client_email && <p className="text-[10px] text-[#74777f] truncate">{p.client_email}</p>}
                         <div className="flex items-center gap-2 mt-0.5">
                           {waHref && (
-                            <a href={waHref} target="_blank" rel="noopener noreferrer" className="text-[9px] text-[#3b6934] font-bold hover:underline">
+                            <a href={waHref} target="_blank" rel="noopener noreferrer" className="text-[9px] text-[#1F7A44] font-bold hover:underline">
                               WhatsApp
                             </a>
                           )}
@@ -1876,7 +1876,7 @@ export default function PedidosTab({
                         <select
                           value={p.status}
                           onChange={(e) => mudarStatus(p, e.target.value as PedidoStatus)}
-                          className={`text-[10px] font-bold font-[var(--font-inter)] border-0 px-2 py-1 cursor-pointer focus:outline-none ${STATUS_META[p.status].cls}`}
+                          className={`text-[10px] font-bold border-0 px-2 py-1 cursor-pointer focus:outline-none ${STATUS_META[p.status].cls}`}
                         >
                           {STATUS_ORDER.map((s) => (
                             <option key={s} value={s}>{STATUS_META[s].label}</option>
@@ -1887,27 +1887,27 @@ export default function PedidosTab({
                         <select
                           value={p.payment_status}
                           onChange={(e) => mudarPagamento(p, e.target.value as PaymentStatus)}
-                          className={`text-[10px] font-bold font-[var(--font-inter)] border-0 px-2 py-1 cursor-pointer focus:outline-none ${PAYMENT_META[p.payment_status]?.cls ?? ""}`}
+                          className={`text-[10px] font-bold border-0 px-2 py-1 cursor-pointer focus:outline-none ${PAYMENT_META[p.payment_status]?.cls ?? ""}`}
                         >
                           {PAYMENT_ORDER.map((s) => (
                             <option key={s} value={s}>{PAYMENT_META[s].label}</option>
                           ))}
                         </select>
                         {!!p.boletos?.length && (
-                          <button type="button" onClick={() => { setBoletoDraft(p.boletos!); setBoletoPedido(p); }} className="block mt-1 text-[9px] text-[#1e5fb4] hover:underline text-left">
+                          <button type="button" onClick={() => { setBoletoDraft(p.boletos!); setBoletoPedido(p); }} className="block mt-1 text-[9px] text-[#2F5FD0] hover:underline text-left">
                             {resumoBoletos(p.boletos)}
                           </button>
                         )}
                       </td>
                       <td className="px-4 py-3">
-                        <p className="text-xs text-[#002045] font-semibold">{fmtBRL(Math.max(0, (p.total ?? 0) - (p.discount_amount ?? 0)))}</p>
+                        <p className="text-xs text-[#0B1F45] font-semibold">{fmtBRL(Math.max(0, (p.total ?? 0) - (p.discount_amount ?? 0)))}</p>
                         {(p.discount_amount ?? 0) > 0 && (
                           <p className="text-[9px] text-[#74777f] mt-0.5">bruto {fmtBRL(p.total)} · desc. {fmtBRL(p.discount_amount ?? 0)}</p>
                         )}
                       </td>
                       <td className="px-4 py-3">
                         {p.status === "entregue" ? (
-                          <p className="text-[10px] text-[#3b6934]">Entregue {fmtDate(p.delivered_at)}</p>
+                          <p className="text-[10px] text-[#1F7A44]">Entregue {fmtDate(p.delivered_at)}</p>
                         ) : db ? (
                           <p className={`text-[10px] ${db.cls}`}>{db.label}</p>
                         ) : (
@@ -1934,9 +1934,9 @@ export default function PedidosTab({
                 <div key={p.id} className="bg-white border border-[#e2e2e2] p-4">
                   <div className="flex items-start justify-between gap-2">
                     <div className="min-w-0">
-                      <button onClick={() => openEdit(p)} className="font-semibold text-[#002045] text-sm truncate hover:underline text-left block max-w-full">{p.client_name}</button>
+                      <button onClick={() => openEdit(p)} className="font-semibold text-[#0B1F45] text-sm truncate hover:underline text-left block max-w-full">{p.client_name}</button>
                       {p.sales_rep_id && repNome.get(p.sales_rep_id) && (
-                        <p className="text-[11px] text-[#3b6934] truncate">Representante: {repNome.get(p.sales_rep_id)}</p>
+                        <p className="text-[11px] text-[#1F7A44] truncate">Representante: {repNome.get(p.sales_rep_id)}</p>
                       )}
                       {p.client_email && <p className="text-[11px] text-[#74777f] truncate">{p.client_email}</p>}
                       {(p.product_name || p.space) && (
@@ -1945,7 +1945,7 @@ export default function PedidosTab({
                       <p className="text-[10px] text-[#74777f] mt-0.5">Criado em {fmtDate(p.created_at)}</p>
                     </div>
                     <div className="text-right shrink-0">
-                      <span className="text-xs text-[#002045] font-semibold">{fmtBRL(Math.max(0, (p.total ?? 0) - (p.discount_amount ?? 0)))}</span>
+                      <span className="text-xs text-[#0B1F45] font-semibold">{fmtBRL(Math.max(0, (p.total ?? 0) - (p.discount_amount ?? 0)))}</span>
                       {(p.discount_amount ?? 0) > 0 && <p className="text-[9px] text-[#74777f]">desc. {fmtBRL(p.discount_amount ?? 0)}</p>}
                     </div>
                   </div>
@@ -1970,12 +1970,12 @@ export default function PedidosTab({
                     </select>
                   </div>
                   {!!p.boletos?.length && (
-                    <button type="button" onClick={() => { setBoletoDraft(p.boletos!); setBoletoPedido(p); }} className="block mt-2 text-[11px] text-[#1e5fb4] hover:underline text-left">
+                    <button type="button" onClick={() => { setBoletoDraft(p.boletos!); setBoletoPedido(p); }} className="block mt-2 text-[11px] text-[#2F5FD0] hover:underline text-left">
                       {resumoBoletos(p.boletos)}
                     </button>
                   )}
                   {p.status === "entregue" ? (
-                    <p className="text-[10px] text-[#3b6934] mt-2">Entregue {fmtDate(p.delivered_at)}</p>
+                    <p className="text-[10px] text-[#1F7A44] mt-2">Entregue {fmtDate(p.delivered_at)}</p>
                   ) : db ? (
                     <p className={`text-[10px] mt-2 ${db.cls}`}>📦 {db.label}</p>
                   ) : null}
@@ -1994,26 +1994,26 @@ export default function PedidosTab({
       {entregaPedido && (
         <div className="fixed inset-0 z-50 flex items-end sm:items-center justify-center bg-black/40 sm:p-4" onClick={() => setEntregaPedido(null)}>
           <div className="bg-white w-full sm:max-w-sm" onClick={(e) => e.stopPropagation()}>
-            <div className="bg-[#002045] px-5 py-4 flex items-start justify-between gap-3">
+            <div className="bg-[#0B1F45] px-5 py-4 flex items-start justify-between gap-3">
               <div className="min-w-0">
                 <p className="text-white font-serif text-lg leading-tight">Pendente de entrega</p>
-                <p className="text-white/60 text-xs font-[var(--font-inter)] truncate">{entregaPedido.client_name}</p>
+                <p className="text-white/60 text-xs truncate">{entregaPedido.client_name}</p>
               </div>
               <button onClick={() => setEntregaPedido(null)} className="text-white/60 hover:text-white text-xl leading-none">×</button>
             </div>
             <div className="p-5 space-y-2">
               <label className="block">
-                <span className="block text-[10px] tracking-[0.1em] uppercase font-bold font-[var(--font-inter)] text-[#74777f] mb-1">Lembrar de entregar em</span>
+                <span className="block text-[10px] tracking-[0.1em] uppercase font-bold text-[#74777f] mb-1">Lembrar de entregar em</span>
                 <input type="date" value={entregaData} onChange={(e) => setEntregaData(e.target.value)}
-                  className="w-full border border-[#e2e2e2] px-3 py-2.5 text-sm font-[var(--font-inter)] text-[#002045] focus:outline-none focus:border-[#002045]" />
+                  className="w-full border border-[#e2e2e2] px-3 py-2.5 text-sm text-[#0B1F45] focus:outline-none focus:border-[#0B1F45]" />
               </label>
-              <p className="text-[11px] text-[#74777f] font-[var(--font-inter)] leading-relaxed">
+              <p className="text-[11px] text-[#74777f] leading-relaxed">
                 Entra como lembrete na sua Agenda do admin (e no calendário do celular, se você assinou a agenda), às 9h.
               </p>
             </div>
             <div className="border-t border-[#f0f0f0] px-5 py-3 flex flex-col-reverse sm:flex-row sm:justify-end gap-2">
               <button type="button" onClick={() => setEntregaPedido(null)} className="w-full sm:w-auto px-4 py-2.5 text-xs font-bold uppercase tracking-wider border border-[#e2e2e2] text-[#43474e]">Cancelar</button>
-              <button type="button" onClick={salvarEntrega} disabled={!entregaData} className="w-full sm:w-auto px-4 py-2.5 text-xs font-bold uppercase tracking-wider bg-[#002045] text-white hover:bg-[#1a365d] disabled:opacity-50">Salvar</button>
+              <button type="button" onClick={salvarEntrega} disabled={!entregaData} className="w-full sm:w-auto px-4 py-2.5 text-xs font-bold uppercase tracking-wider bg-[#0B1F45] text-white hover:bg-[#2347A0] disabled:opacity-50">Salvar</button>
             </div>
           </div>
         </div>
@@ -2022,10 +2022,10 @@ export default function PedidosTab({
       {boletoPedido && (
         <div className="fixed inset-0 z-50 flex items-end sm:items-center justify-center bg-black/40 sm:p-4" onClick={() => setBoletoPedido(null)}>
           <div className="bg-white w-full sm:max-w-lg max-h-[90vh] overflow-y-auto" onClick={(e) => e.stopPropagation()}>
-            <div className="bg-[#002045] px-5 py-4 flex items-start justify-between gap-3 sticky top-0 z-10">
+            <div className="bg-[#0B1F45] px-5 py-4 flex items-start justify-between gap-3 sticky top-0 z-10">
               <div className="min-w-0">
                 <p className="text-white font-serif text-lg leading-tight">Pagamento em boleto</p>
-                <p className="text-white/60 text-xs font-[var(--font-inter)] truncate">
+                <p className="text-white/60 text-xs truncate">
                   {boletoPedido.client_name} · {fmtBRL(Math.max(0, (boletoPedido.total ?? 0) - (boletoPedido.discount_amount ?? 0)))}
                 </p>
               </div>
@@ -2037,13 +2037,13 @@ export default function PedidosTab({
                 total={Math.max(0, (boletoPedido.total ?? 0) - (boletoPedido.discount_amount ?? 0))}
                 onChange={setBoletoDraft}
               />
-              <p className="text-[10px] text-[#74777f] font-[var(--font-inter)] mt-3">
+              <p className="text-[10px] text-[#74777f] mt-3">
                 Quando todos estiverem marcados como pagos, o pedido passa para &quot;Pago&quot;.
               </p>
             </div>
             <div className="sticky bottom-0 bg-white border-t border-[#f0f0f0] px-4 sm:px-5 py-3 flex flex-col-reverse sm:flex-row sm:justify-end gap-2">
               <button type="button" onClick={() => setBoletoPedido(null)} className="w-full sm:w-auto px-4 py-2.5 text-xs font-bold uppercase tracking-wider border border-[#e2e2e2] text-[#43474e]">Cancelar</button>
-              <button type="button" onClick={salvarBoletos} className="w-full sm:w-auto px-4 py-2.5 text-xs font-bold uppercase tracking-wider bg-[#002045] text-white hover:bg-[#1a365d]">Salvar boletos</button>
+              <button type="button" onClick={salvarBoletos} className="w-full sm:w-auto px-4 py-2.5 text-xs font-bold uppercase tracking-wider bg-[#0B1F45] text-white hover:bg-[#2347A0]">Salvar boletos</button>
             </div>
           </div>
         </div>
@@ -2052,39 +2052,39 @@ export default function PedidosTab({
       {quoteImportOpen && (
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 p-4" onClick={() => setQuoteImportOpen(false)}>
           <div className="bg-white w-full max-w-3xl max-h-[86vh] overflow-y-auto" onClick={(e) => e.stopPropagation()}>
-            <div className="bg-[#002045] px-6 py-4 flex items-center justify-between sticky top-0">
-              <p className="text-white font-[var(--font-noto-serif)] text-lg">Importar orçamento para pedido</p>
+            <div className="bg-[#0B1F45] px-6 py-4 flex items-center justify-between sticky top-0">
+              <p className="text-white font-serif text-lg">Importar orçamento para pedido</p>
               <button onClick={() => setQuoteImportOpen(false)} className="text-white/60 hover:text-white text-xl leading-none">×</button>
             </div>
             <div className="p-6">
               {quoteImportLoading ? (
-                <p className="text-sm text-[#74777f] font-[var(--font-inter)]">Carregando orçamentos...</p>
+                <p className="text-sm text-[#74777f]">Carregando orçamentos...</p>
               ) : quoteImportError ? (
-                <p className="text-sm text-red-700 font-[var(--font-inter)]">{quoteImportError}</p>
+                <p className="text-sm text-red-700">{quoteImportError}</p>
               ) : quoteOptions.length === 0 ? (
-                <p className="text-sm text-[#74777f] font-[var(--font-inter)]">Nenhum orçamento encontrado para importar.</p>
+                <p className="text-sm text-[#74777f]">Nenhum orçamento encontrado para importar.</p>
               ) : (
                 <div className="space-y-2">
                   {quoteOptions.map((q) => (
                     <button
                       key={q.id}
                       onClick={() => startDraftFromQuote(q)}
-                      className="w-full text-left border border-[#e2e2e2] bg-white px-4 py-3 hover:border-[#002045] hover:bg-[#fafafa] transition-colors"
+                      className="w-full text-left border border-[#e2e2e2] bg-white px-4 py-3 hover:border-[#0B1F45] hover:bg-[#F6F5F2] transition-colors"
                     >
                       <div className="flex flex-wrap items-start justify-between gap-3">
                         <div className="min-w-0">
-                          <p className="text-sm font-bold text-[#002045] font-[var(--font-inter)]">{q.client_name}</p>
-                          <p className="text-xs text-[#74777f] font-[var(--font-inter)] truncate">
+                          <p className="text-sm font-bold text-[#0B1F45]">{q.client_name}</p>
+                          <p className="text-xs text-[#74777f] truncate">
                             {[q.client_email, q.client_phone, q.space, q.product_name].filter(Boolean).join(" · ")}
                           </p>
-                          <p className="text-[10px] text-[#74777f] font-[var(--font-inter)] mt-1">
+                          <p className="text-[10px] text-[#74777f] mt-1">
                             {q.partner_name ? `Parceiro: ${q.partner_name}` : "Sem parceiro identificado"}
                             {q.coupon_code ? ` · Cupom ${q.coupon_code}` : ""}
                           </p>
                         </div>
                         <div className="text-right shrink-0">
-                          <p className="text-sm font-bold text-[#002045] font-[var(--font-inter)]">{fmtBRL(q.total)}</p>
-                          <p className="text-[10px] text-[#74777f] font-[var(--font-inter)]">{fmtDate(q.created_at)}</p>
+                          <p className="text-sm font-bold text-[#0B1F45]">{fmtBRL(q.total)}</p>
+                          <p className="text-[10px] text-[#74777f]">{fmtDate(q.created_at)}</p>
                         </div>
                       </div>
                     </button>
@@ -2104,8 +2104,8 @@ export default function PedidosTab({
       {draft && (
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 p-4">
           <div className="bg-white w-full max-w-lg max-h-[90vh] overflow-y-auto">
-            <div className="bg-[#002045] px-6 py-4 flex items-center justify-between sticky top-0">
-              <p className="text-white font-[var(--font-noto-serif)] text-lg">{draft._isNew ? "Novo pedido" : "Editar pedido"}</p>
+            <div className="bg-[#0B1F45] px-6 py-4 flex items-center justify-between sticky top-0">
+              <p className="text-white font-serif text-lg">{draft._isNew ? "Novo pedido" : "Editar pedido"}</p>
               <button onClick={() => !saving && setDraft(null)} className="text-white/60 hover:text-white text-xl leading-none">×</button>
             </div>
             {/* Wizard progress */}
@@ -2115,8 +2115,8 @@ export default function PedidosTab({
                   key={n}
                   type="button"
                   onClick={() => setFormStep(n)}
-                  className={`flex-1 text-[9px] tracking-[0.08em] uppercase font-bold font-[var(--font-inter)] py-1.5 border-b-2 transition-colors ${
-                    formStep === n ? "border-[#002045] text-[#002045]" : formStep > n ? "border-[#3b6934] text-[#3b6934]" : "border-[#e2e2e2] text-[#b0b0b0]"
+                  className={`flex-1 text-[9px] tracking-[0.08em] uppercase font-bold py-1.5 border-b-2 transition-colors ${
+                    formStep === n ? "border-[#0B1F45] text-[#0B1F45]" : formStep > n ? "border-[#36A35C] text-[#1F7A44]" : "border-[#e2e2e2] text-[#b0b0b0]"
                   }`}
                 >
                   {n}. {label}
@@ -2138,7 +2138,7 @@ export default function PedidosTab({
                 </Field>
               </div>
               <div className="border border-[#e2e2e2] p-3 space-y-3">
-                <p className="text-[10px] tracking-[0.12em] uppercase font-bold font-[var(--font-inter)] text-[#74777f]">Dados do cliente no documento</p>
+                <p className="text-[10px] tracking-[0.12em] uppercase font-bold text-[#74777f]">Dados do cliente no documento</p>
                 <Field label="CNPJ / CPF">
                   <div className="flex gap-2">
                     <input
@@ -2153,14 +2153,14 @@ export default function PedidosTab({
                       type="button"
                       onClick={lookupCnpj}
                       disabled={cnpjLoading}
-                      className="shrink-0 border border-[#002045] text-[#002045] disabled:opacity-50 px-3 text-[10px] uppercase tracking-[0.08em] font-bold font-[var(--font-inter)] hover:bg-[#eef2f8]"
+                      className="shrink-0 border border-[#0B1F45] text-[#0B1F45] disabled:opacity-50 px-3 text-[10px] uppercase tracking-[0.08em] font-bold hover:bg-[#eef2f8]"
                     >
                       {cnpjLoading ? "..." : "Buscar"}
                     </button>
                   </div>
-                  {cnpjShown?.error && <p className="text-red-600 text-[10px] font-[var(--font-inter)] mt-1">{cnpjShown.error}</p>}
-                  {cnpjShown?.info && <p className="text-[#3b6934] text-[10px] font-[var(--font-inter)] mt-1 break-words">{cnpjShown.info}</p>}
-                  {!cnpjShown && <p className="text-[#74777f] text-[10px] font-[var(--font-inter)] mt-1">Com CNPJ, a busca preenche nome, e-mail e endereço. CPF é validado e guardado.</p>}
+                  {cnpjShown?.error && <p className="text-red-600 text-[10px] mt-1">{cnpjShown.error}</p>}
+                  {cnpjShown?.info && <p className="text-[#1F7A44] text-[10px] mt-1 break-words">{cnpjShown.info}</p>}
+                  {!cnpjShown && <p className="text-[#74777f] text-[10px] mt-1">Com CNPJ, a busca preenche nome, e-mail e endereço. CPF é validado e guardado.</p>}
                 </Field>
                 <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
                   <Field label="CEP">
@@ -2179,12 +2179,12 @@ export default function PedidosTab({
                         type="button"
                         onClick={lookupCep}
                         disabled={cepLoading}
-                        className="border border-[#002045] text-[#002045] disabled:opacity-50 px-3 text-[10px] uppercase tracking-[0.08em] font-bold font-[var(--font-inter)] hover:bg-[#eef2f8]"
+                        className="border border-[#0B1F45] text-[#0B1F45] disabled:opacity-50 px-3 text-[10px] uppercase tracking-[0.08em] font-bold hover:bg-[#eef2f8]"
                       >
                         {cepLoading ? "..." : "Buscar"}
                       </button>
                     </div>
-                    {cepError && <p className="text-red-600 text-[10px] font-[var(--font-inter)] mt-1">{cepError}</p>}
+                    {cepError && <p className="text-red-600 text-[10px] mt-1">{cepError}</p>}
                   </Field>
                   <Field label="Cidade / UF">
                     <div className="grid grid-cols-[1fr_64px] gap-2">
@@ -2222,18 +2222,18 @@ export default function PedidosTab({
                   ele sumia inteiro e o modal parecia ter perdido a função. */}
               {stockProducts.length === 0 && (
                 <div className="border border-amber-300 bg-amber-50 px-3 py-3">
-                  <p className="text-amber-900 text-xs font-bold font-[var(--font-inter)]">
+                  <p className="text-amber-900 text-xs font-bold">
                     {stockError ? "Não foi possível carregar os produtos" : stockLoaded ? "Nenhum produto cadastrado" : "Carregando produtos…"}
                   </p>
-                  {stockError && <p className="text-amber-800 text-[11px] font-[var(--font-inter)] mt-1 break-words">{stockError}</p>}
+                  {stockError && <p className="text-amber-800 text-[11px] mt-1 break-words">{stockError}</p>}
                   {stockLoaded && (
-                    <p className="text-amber-800 text-[11px] font-[var(--font-inter)] mt-1">
+                    <p className="text-amber-800 text-[11px] mt-1">
                       Sem eles não dá para escolher modelo, quantidade de placas nem preço de atacado/varejo.
                     </p>
                   )}
                   {stockLoaded && (
                     <button type="button" onClick={loadStockProducts}
-                      className="mt-2 border border-amber-400 text-amber-900 px-3 py-1.5 text-[10px] tracking-[0.1em] uppercase font-bold font-[var(--font-inter)] hover:bg-amber-100 transition-colors">
+                      className="mt-2 border border-amber-400 text-amber-900 px-3 py-1.5 text-[10px] tracking-[0.1em] uppercase font-bold hover:bg-amber-100 transition-colors">
                       Tentar novamente
                     </button>
                   )}
@@ -2241,7 +2241,7 @@ export default function PedidosTab({
               )}
               {stockProducts.length > 0 && (
                 <div className="border border-[#e2e2e2] rounded-sm p-3">
-                  <p className="text-[10px] tracking-[0.12em] uppercase font-bold font-[var(--font-inter)] text-[#74777f] mb-2">
+                  <p className="text-[10px] tracking-[0.12em] uppercase font-bold text-[#74777f] mb-2">
                     Itens do pedido — quantidade de placas
                   </p>
                   <div className="flex items-center gap-2 mb-3">
@@ -2250,17 +2250,17 @@ export default function PedidosTab({
                         key={val}
                         type="button"
                         onClick={() => setDraft({ ...draft, price_tier: val })}
-                        className={`text-[10px] tracking-[0.08em] uppercase font-bold font-[var(--font-inter)] px-3 py-1.5 border transition-colors ${
+                        className={`text-[10px] tracking-[0.08em] uppercase font-bold px-3 py-1.5 border transition-colors ${
                           (draft.price_tier ?? "varejo") === val
-                            ? "bg-[#002045] text-white border-[#002045]"
-                            : "text-[#74777f] border-[#e2e2e2] hover:border-[#002045] hover:text-[#002045]"
+                            ? "bg-[#0B1F45] text-white border-[#0B1F45]"
+                            : "text-[#74777f] border-[#e2e2e2] hover:border-[#0B1F45] hover:text-[#0B1F45]"
                         }`}
                       >
                         {label}
                       </button>
                     ))}
                     {draft.price_tier === "atacado" && (
-                      <span className="text-[10px] text-[#74777f] font-[var(--font-inter)]">
+                      <span className="text-[10px] text-[#74777f]">
                         Usa o preço especial da linha (aba Preços)
                       </span>
                     )}
@@ -2304,7 +2304,7 @@ export default function PedidosTab({
                             <input type="number" min="1" value={it.plates || ""} placeholder="Qtd."
                               onChange={(e) => setItems((cur) => cur.map((x, i) => i === idx ? { ...x, plates: Number(e.target.value) } : x))}
                               className={`${inputCls} rounded-none`} />
-                            <span className="border border-l-0 border-[#e2e2e2] px-2 flex items-center text-[10px] font-bold text-[#74777f] bg-[#fafafa] min-w-[52px] justify-center">
+                            <span className="border border-l-0 border-[#e2e2e2] px-2 flex items-center text-[10px] font-bold text-[#74777f] bg-[#F6F5F2] min-w-[52px] justify-center">
                               {unit}
                             </span>
                           </div>
@@ -2312,8 +2312,8 @@ export default function PedidosTab({
                             className="text-[#b42318] text-lg leading-none px-1" title="Remover">×</button>
                           </div>
                           {prod && (
-                            <div className="flex flex-wrap items-center gap-x-4 gap-y-1 mt-2 text-[10px] font-[var(--font-inter)] text-[#74777f]">
-                              <span className="font-semibold text-[#002045]">{prod.name}{prod.code ? ` · ${prod.code}` : ""}</span>
+                            <div className="flex flex-wrap items-center gap-x-4 gap-y-1 mt-2 text-[10px] text-[#74777f]">
+                              <span className="font-semibold text-[#0B1F45]">{prod.name}{prod.code ? ` · ${prod.code}` : ""}</span>
                               <span>{prod.available} {unit} disponíveis</span>
                               <span className="flex items-center gap-1">
                                 Venda/{unit}: R$
@@ -2324,15 +2324,15 @@ export default function PedidosTab({
                                     const v = e.target.value;
                                     setItems((cur) => cur.map((x, i) => i === idx ? { ...x, unit_price: v === "" ? null : Number(v) } : x));
                                   }}
-                                  className="w-20 border border-[#e2e2e2] px-1.5 py-0.5 text-[10px] text-right text-[#002045] focus:outline-none focus:border-[#002045]"
+                                  className="w-20 border border-[#e2e2e2] px-1.5 py-0.5 text-[10px] text-right text-[#0B1F45] focus:outline-none focus:border-[#0B1F45]"
                                   title="Preço por placa desta linha — edite para ajustar manualmente"
                                 />
                                 {it.unit_price != null ? (
                                   <button type="button" title="Voltar ao preço da tabela"
                                     onClick={() => setItems((cur) => cur.map((x, i) => i === idx ? { ...x, unit_price: null } : x))}
-                                    className="text-[#1e5fb4] font-bold hover:underline">padrão</button>
+                                    className="text-[#2F5FD0] font-bold hover:underline">padrão</button>
                                 ) : draft.price_tier === "atacado" ? (
-                                  <span className="text-[#3b6934] font-bold">(atacado)</span>
+                                  <span className="text-[#1F7A44] font-bold">(atacado)</span>
                                 ) : (
                                   <span className="text-[#9aa3b3]">(varejo)</span>
                                 )}
@@ -2341,19 +2341,19 @@ export default function PedidosTab({
                               <span>≈ {(it.plates * panelAreaM2(prod)).toFixed(2)} m²</span>
                               {over && <span className="text-amber-700 font-bold">Acima do disponível — pode comprar mais para repor; o pedido pode ser criado normalmente</span>}
                               <button type="button" onClick={() => setAreaCalcOpen((cur) => ({ ...cur, [idx]: !cur[idx] }))}
-                                className="text-[#1e5fb4] font-bold hover:underline">
+                                className="text-[#2F5FD0] font-bold hover:underline">
                                 Calcular pela área
                               </button>
                             </div>
                           )}
                           {calcOpen && prod && (
-                            <div className="mt-2 bg-[#fafafa] border border-[#f0f0f0] px-2 py-2 space-y-2">
+                            <div className="mt-2 bg-[#F6F5F2] border border-[#f0f0f0] px-2 py-2 space-y-2">
                               <div className="flex flex-wrap items-center gap-1.5">
                                 {([["lxa", "Largura × altura"], ["m2", "Metros quadrados"]] as const).map(([m, label]) => (
                                   <button key={m} type="button"
                                     onClick={() => setAreaCalcMode((cur) => ({ ...cur, [idx]: m }))}
-                                    className={`text-[10px] tracking-[0.06em] uppercase font-bold font-[var(--font-inter)] px-2.5 py-1 border transition-colors ${
-                                      calcMode === m ? "bg-[#002045] text-white border-[#002045]" : "text-[#74777f] border-[#e2e2e2] hover:border-[#002045]"
+                                    className={`text-[10px] tracking-[0.06em] uppercase font-bold px-2.5 py-1 border transition-colors ${
+                                      calcMode === m ? "bg-[#0B1F45] text-white border-[#0B1F45]" : "text-[#74777f] border-[#e2e2e2] hover:border-[#0B1F45]"
                                     }`}>
                                     {label}
                                   </button>
@@ -2366,26 +2366,26 @@ export default function PedidosTab({
                                     <input type="number" min="0" step="0.01" value={areaCalcW[idx] ?? ""} autoFocus
                                       onChange={(e) => setAreaCalcW((cur) => ({ ...cur, [idx]: e.target.value }))}
                                       placeholder="largura (m)"
-                                      className="w-28 border border-[#e2e2e2] px-2 py-1 text-xs font-[var(--font-inter)] text-[#002045] focus:outline-none focus:border-[#002045]" />
+                                      className="w-28 border border-[#e2e2e2] px-2 py-1 text-xs text-[#0B1F45] focus:outline-none focus:border-[#0B1F45]" />
                                     <span className="text-[10px] text-[#74777f]">×</span>
                                     <input type="number" min="0" step="0.01" value={areaCalcH[idx] ?? ""}
                                       onChange={(e) => setAreaCalcH((cur) => ({ ...cur, [idx]: e.target.value }))}
                                       placeholder="altura (m)"
-                                      className="w-28 border border-[#e2e2e2] px-2 py-1 text-xs font-[var(--font-inter)] text-[#002045] focus:outline-none focus:border-[#002045]" />
+                                      className="w-28 border border-[#e2e2e2] px-2 py-1 text-xs text-[#0B1F45] focus:outline-none focus:border-[#0B1F45]" />
                                   </>
                                 ) : (
                                   <input type="number" min="0" step="0.01" value={calcM2} autoFocus
                                     onChange={(e) => setAreaCalcValue((cur) => ({ ...cur, [idx]: e.target.value }))}
                                     placeholder="m² desejado"
-                                    className="w-28 border border-[#e2e2e2] px-2 py-1 text-xs font-[var(--font-inter)] text-[#002045] focus:outline-none focus:border-[#002045]" />
+                                    className="w-28 border border-[#e2e2e2] px-2 py-1 text-xs text-[#0B1F45] focus:outline-none focus:border-[#0B1F45]" />
                                 )}
                                 <button type="button" onClick={applyAreaCalc} disabled={suggestedPlates <= 0}
-                                  className="bg-[#002045] text-white text-[10px] font-bold font-[var(--font-inter)] px-3 py-1.5 hover:bg-[#1a365d] disabled:opacity-40">
+                                  className="bg-[#0B1F45] text-white text-[10px] font-bold px-3 py-1.5 hover:bg-[#2347A0] disabled:opacity-40">
                                   → {suggestedPlates > 0 ? `${suggestedPlates} ${unit}${suggestedPlates !== 1 ? "s" : ""}` : "placas"}
                                 </button>
                               </div>
 
-                              <p className="text-[10px] text-[#74777f] font-[var(--font-inter)]">
+                              <p className="text-[10px] text-[#74777f]">
                                 Placa de {(Number(prod.render_panel_width_m) || DEFAULT_PANEL_WIDTH_M).toFixed(2)} × {(Number(prod.render_panel_height_m) || DEFAULT_PANEL_HEIGHT_M).toFixed(2)} m ({panelAreaM2(prod).toFixed(2)} m²).
                                 {calcMode === "lxa"
                                   ? " Mesmo cálculo do orçamento — considera o recorte real, não só a área."
@@ -2399,36 +2399,36 @@ export default function PedidosTab({
                     })}
                   </div>
                   <button onClick={() => setItems((cur) => [...cur, { product_id: "", plates: 1 }])}
-                    className="mt-2 text-[11px] font-bold font-[var(--font-inter)] text-[#002045] hover:underline">
+                    className="mt-2 text-[11px] font-bold text-[#0B1F45] hover:underline">
                     + Adicionar modelo
                   </button>
                   {items.some((it) => it.product_id && it.plates > 0) && (
                     <div className="mt-3 border-t border-[#f0f0f0] pt-3">
                       <div className="flex flex-wrap items-center justify-between gap-2">
                         <div>
-                          <p className="text-[10px] tracking-[0.12em] uppercase font-bold font-[var(--font-inter)] text-[#74777f]">Total calculado pelos itens</p>
-                          <p className="text-sm font-semibold font-[var(--font-inter)] text-[#002045]">
+                          <p className="text-[10px] tracking-[0.12em] uppercase font-bold text-[#74777f]">Total calculado pelos itens</p>
+                          <p className="text-sm font-semibold text-[#0B1F45]">
                             {itemPricing.total > 0 ? fmtBRL(itemPricing.total) : "Defina preço de venda no Estoque"}
                           </p>
                           {itemPricing.total > 0 && discountAmount > 0 && (
-                            <p className="text-[11px] font-[var(--font-inter)] mt-0.5">
+                            <p className="text-[11px] mt-0.5">
                               <span className="text-[#b42318]">− Desconto {fmtBRL(discountAmount)}</span>
-                              <span className="text-[#002045] font-bold ml-2">A receber (líquido): {fmtBRL(Math.max(0, itemPricing.total - discountAmount))}</span>
+                              <span className="text-[#0B1F45] font-bold ml-2">A receber (líquido): {fmtBRL(Math.max(0, itemPricing.total - discountAmount))}</span>
                             </p>
                           )}
-                          <p className="text-[10px] text-[#74777f] font-[var(--font-inter)]">
+                          <p className="text-[10px] text-[#74777f]">
                             ≈ {itemPricing.areaM2.toFixed(2)} m² no total
                             {itemPricing.total > 0 && !itemPricing.missingCost ? ` · Margem bruta estimada: ${fmtBRL(Math.max(0, itemPricing.total - discountAmount) - itemPricing.cost)}` : ""}
                           </p>
                         </div>
                       </div>
                       {(itemPricing.missingPrice || itemPricing.missingCost) && (
-                        <p className="text-amber-700 text-[10px] font-[var(--font-inter)] mt-2">
+                        <p className="text-amber-700 text-[10px] mt-2">
                           {itemPricing.missingPrice ? "Há modelo sem preço de venda. " : ""}
                           {itemPricing.missingCost ? "Há modelo sem custo para margem." : ""}
                         </p>
                       )}
-                      <p className="text-[#74777f] text-[10px] font-[var(--font-inter)] mt-2">
+                      <p className="text-[#74777f] text-[10px] mt-2">
                         {(draft.status ?? "em_producao") === "entregue"
                           ? "Estoque será baixado (pedido entregue)."
                           : "Estoque será reservado enquanto o pedido estiver em produção."}
@@ -2475,13 +2475,13 @@ export default function PedidosTab({
               {formStep === 3 && (
               <div className="space-y-4">
               <div className="border border-[#e2e2e2] p-3 space-y-3">
-                <p className="text-[10px] tracking-[0.12em] uppercase font-bold font-[var(--font-inter)] text-[#74777f]">Vínculos comerciais e comissões</p>
+                <p className="text-[10px] tracking-[0.12em] uppercase font-bold text-[#74777f]">Vínculos comerciais e comissões</p>
                 {draft.lead_id && (
                   <button
                     type="button"
                     onClick={() => onViewLead?.(draft.lead_id as string)}
                     disabled={!onViewLead}
-                    className="text-left text-xs font-[var(--font-inter)] text-[#002045] underline decoration-dotted disabled:no-underline disabled:cursor-default"
+                    className="text-left text-xs text-[#0B1F45] underline decoration-dotted disabled:no-underline disabled:cursor-default"
                   >
                     Lead de origem: {originLeadName ?? "carregando…"}
                   </button>
@@ -2514,7 +2514,7 @@ export default function PedidosTab({
                   <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
                     {selectedPartner && (
                       <div className="border border-[#f0f0f0] p-3">
-                        <p className="text-[10px] uppercase tracking-[0.1em] font-bold text-[#002045] mb-2">Repasse parceiro</p>
+                        <p className="text-[10px] uppercase tracking-[0.1em] font-bold text-[#0B1F45] mb-2">Repasse parceiro</p>
                         <div className="grid grid-cols-2 gap-2">
                           <Field label="% do pedido">
                             <input
@@ -2547,7 +2547,7 @@ export default function PedidosTab({
                     )}
                     {selectedRep && (
                       <div className="border border-[#f0f0f0] p-3">
-                        <p className="text-[10px] uppercase tracking-[0.1em] font-bold text-[#002045] mb-2">Comissão representante</p>
+                        <p className="text-[10px] uppercase tracking-[0.1em] font-bold text-[#0B1F45] mb-2">Comissão representante</p>
                         <div className="grid grid-cols-2 gap-2">
                           <Field label="% do pedido">
                             <input
@@ -2588,8 +2588,8 @@ export default function PedidosTab({
                       key={m}
                       type="button"
                       onClick={() => switchDiscountMode(m)}
-                      className={`flex-1 text-[10px] tracking-[0.06em] uppercase font-bold font-[var(--font-inter)] px-2 py-1.5 border transition-colors ${
-                        discountMode === m ? "bg-[#002045] text-white border-[#002045]" : "text-[#74777f] border-[#e2e2e2] hover:border-[#002045] hover:text-[#002045]"
+                      className={`flex-1 text-[10px] tracking-[0.06em] uppercase font-bold px-2 py-1.5 border transition-colors ${
+                        discountMode === m ? "bg-[#0B1F45] text-white border-[#0B1F45]" : "text-[#74777f] border-[#e2e2e2] hover:border-[#0B1F45] hover:text-[#0B1F45]"
                       }`}
                     >
                       {l}
@@ -2607,10 +2607,10 @@ export default function PedidosTab({
                   placeholder={discountMode === "percent" ? "% do total dos produtos" : discountMode === "final" ? "total final desejado (R$)" : "valor do desconto (R$)"}
                 />
                 {grossTotal > 0 && (
-                  <div className="mt-2 bg-[#f7f8fa] border border-[#eef0f3] px-3 py-2 text-xs font-[var(--font-inter)]">
+                  <div className="mt-2 bg-[#f7f8fa] border border-[#eef0f3] px-3 py-2 text-xs">
                     <div className="flex items-center justify-between">
                       <span className="text-[#74777f]">Total dos produtos</span>
-                      <span className={discountAmount > 0 ? "text-[#74777f] line-through" : "text-[#002045] font-semibold"}>{fmtBRL(grossTotal)}</span>
+                      <span className={discountAmount > 0 ? "text-[#74777f] line-through" : "text-[#0B1F45] font-semibold"}>{fmtBRL(grossTotal)}</span>
                     </div>
                     {discountAmount > 0 && (
                       <>
@@ -2619,8 +2619,8 @@ export default function PedidosTab({
                           <span className="text-[#b42318]">− {fmtBRL(discountAmount)}</span>
                         </div>
                         <div className="flex items-center justify-between mt-1 pt-1 border-t border-[#e6e8ec]">
-                          <span className="text-[#002045] font-bold">Novo total (a receber)</span>
-                          <span className="text-[#002045] font-bold">{fmtBRL(netTotal)}</span>
+                          <span className="text-[#0B1F45] font-bold">Novo total (a receber)</span>
+                          <span className="text-[#0B1F45] font-bold">{fmtBRL(netTotal)}</span>
                         </div>
                       </>
                     )}
@@ -2637,7 +2637,7 @@ export default function PedidosTab({
                     onChange={(e) => { setFreteManual(true); setFreteMotivo(null); setDraft({ ...draft, freight_amount: e.target.value === "" ? 0 : Number(e.target.value) }); }}
                   />
                   {freteMotivo && !freteManual && (
-                    <p className="text-[#3b6934] text-[10px] font-[var(--font-inter)] mt-1">Automático: {freteMotivo}. Pode alterar.</p>
+                    <p className="text-[#1F7A44] text-[10px] mt-1">Automático: {freteMotivo}. Pode alterar.</p>
                   )}
                 </Field>
                 <label className="border border-[#e2e2e2] px-3 py-2 flex items-center gap-2 min-h-[42px] mt-5">
@@ -2646,25 +2646,25 @@ export default function PedidosTab({
                     checked={draft.freight_is_revenue === true}
                     onChange={(e) => setDraft({ ...draft, freight_is_revenue: e.target.checked })}
                   />
-                  <span className="text-xs font-[var(--font-inter)] text-[#43474e]">Frete entra como receita</span>
+                  <span className="text-xs text-[#43474e]">Frete entra como receita</span>
                 </label>
               </div>
               <div className="border border-[#e2e2e2] p-3 space-y-3">
                 <div className="flex items-center justify-between gap-3">
                   <div>
-                    <p className="text-[10px] tracking-[0.12em] uppercase font-bold font-[var(--font-inter)] text-[#74777f]">Custos extras do pedido</p>
-                    <p className="text-[11px] text-[#74777f] font-[var(--font-inter)] mt-1">Mão de obra, perdas, embalagens ou custos internos que reduzem a margem.</p>
+                    <p className="text-[10px] tracking-[0.12em] uppercase font-bold text-[#74777f]">Custos extras do pedido</p>
+                    <p className="text-[11px] text-[#74777f] mt-1">Mão de obra, perdas, embalagens ou custos internos que reduzem a margem.</p>
                   </div>
                   <button
                     type="button"
                     onClick={() => setDraft({ ...draft, other_costs: [...(draft.other_costs ?? []), { label: "", amount: 0 }] })}
-                    className="border border-[#002045] px-3 py-1.5 text-[10px] uppercase tracking-[0.08em] font-bold text-[#002045] hover:bg-[#eef2f8] whitespace-nowrap"
+                    className="border border-[#0B1F45] px-3 py-1.5 text-[10px] uppercase tracking-[0.08em] font-bold text-[#0B1F45] hover:bg-[#eef2f8] whitespace-nowrap"
                   >
                     + Custo
                   </button>
                 </div>
                 {(draft.other_costs ?? []).length === 0 ? (
-                  <p className="text-xs text-[#9aa3b3] font-[var(--font-inter)]">Nenhum custo extra cadastrado para este pedido.</p>
+                  <p className="text-xs text-[#9aa3b3]">Nenhum custo extra cadastrado para este pedido.</p>
                 ) : (
                   <div className="space-y-2">
                     {(draft.other_costs ?? []).map((cost, index) => {
@@ -2709,7 +2709,7 @@ export default function PedidosTab({
               </div>
               <div className="border border-[#e2e2e2] p-3 space-y-3">
                 <div className="flex flex-wrap items-center justify-between gap-2">
-                  <p className="text-[10px] tracking-[0.12em] uppercase font-bold font-[var(--font-inter)] text-[#74777f]">Documento comercial</p>
+                  <p className="text-[10px] tracking-[0.12em] uppercase font-bold text-[#74777f]">Documento comercial</p>
                   {draft.id && (
                     <div className="flex flex-wrap gap-2">
                       {(["orcamento", "pedido", "nota", "recibo"] as const).map((tipo) => (
@@ -2721,7 +2721,7 @@ export default function PedidosTab({
                           key={tipo}
                           type="button"
                           onClick={(e) => { e.preventDefault(); e.stopPropagation(); openDocument(draft.id as string, tipo); }}
-                          className="border border-[#e2e2e2] px-2 py-1 text-[9px] uppercase tracking-[0.08em] font-bold text-[#002045] hover:border-[#002045]"
+                          className="border border-[#e2e2e2] px-2 py-1 text-[9px] uppercase tracking-[0.08em] font-bold text-[#0B1F45] hover:border-[#0B1F45]"
                         >
                           {tipo === "orcamento" ? "Orçamento" : tipo === "pedido" ? "Pedido" : tipo === "nota" ? "Nota" : "Recibo"}
                         </button>
@@ -2737,7 +2737,7 @@ export default function PedidosTab({
                       const preset = isCustom ? paymentMethodPresets.find((p) => p.label === method) : null;
                       return (
                         <div key={method} className="flex items-center gap-1">
-                          <label className="flex items-center gap-2 text-xs font-[var(--font-inter)] text-[#43474e]">
+                          <label className="flex items-center gap-2 text-xs text-[#43474e]">
                             <input
                               type="checkbox"
                               checked={selected}
@@ -2752,7 +2752,7 @@ export default function PedidosTab({
                           {preset && (
                             <>
                               <button type="button" onClick={() => renamePreset(preset.id, preset.label, "payment_method")} title="Renomear esta forma"
-                                className="text-[#b0b0b0] hover:text-[#002045] text-[10px] leading-none">✎</button>
+                                className="text-[#b0b0b0] hover:text-[#0B1F45] text-[10px] leading-none">✎</button>
                               <button type="button" onClick={() => deletePreset(preset.id)} title="Remover esta forma cadastrada"
                                 className="text-[#b0b0b0] hover:text-[#b42318] text-[10px] leading-none">×</button>
                             </>
@@ -2774,7 +2774,7 @@ export default function PedidosTab({
                         if (!current.includes(label)) aplicarFormas(draft, [...current, label]);
                         setNewPaymentMethod("");
                       }}
-                      className="border border-[#002045] text-[#002045] text-[10px] uppercase tracking-[0.08em] font-bold font-[var(--font-inter)] px-3 hover:bg-[#eef2f8]"
+                      className="border border-[#0B1F45] text-[#0B1F45] text-[10px] uppercase tracking-[0.08em] font-bold px-3 hover:bg-[#eef2f8]"
                     >
                       + Cadastrar
                     </button>
@@ -2784,13 +2784,13 @@ export default function PedidosTab({
                   <textarea className={`${inputCls} min-h-[72px]`} value={draft.payment_terms ?? ""} onChange={(e) => setDraft({ ...draft, payment_terms: e.target.value, _termsTouched: true })} placeholder={`${DEFAULT_PAYMENT_TERMS}\n(uma condição por linha — clique nas predefinições abaixo para adicionar)`} />
                   {autoTerms && (
                     (draft.payment_terms ?? "").trim() === autoTerms ? (
-                      <p className="text-[#3b6934] text-[10px] font-[var(--font-inter)] mt-1">
+                      <p className="text-[#1F7A44] text-[10px] mt-1">
                         Pelas regras do orçamento para {orderPlates} {orderPlates === 1 ? "placa" : "placas"}.
                       </p>
                     ) : (
                       <button type="button"
                         onClick={() => setDraft({ ...draft, payment_terms: autoTerms, _termsTouched: false })}
-                        className="mt-1 text-left text-[10px] font-bold font-[var(--font-inter)] text-[#3b6934] hover:underline">
+                        className="mt-1 text-left text-[10px] font-bold text-[#1F7A44] hover:underline">
                         ↺ Usar a regra do orçamento para {orderPlates} {orderPlates === 1 ? "placa" : "placas"}: {autoTerms.replace(/\n/g, " · ")}
                       </button>
                     )
@@ -2804,7 +2804,7 @@ export default function PedidosTab({
                         const lines = (draft.payment_terms ?? "").split("\n").map((s) => s.trim()).filter(Boolean);
                         const selected = lines.includes(p.label);
                         return (
-                          <span key={p.id} className={`inline-flex items-center gap-1 text-[10px] font-[var(--font-inter)] pl-2 pr-1 py-1 ${selected ? "bg-[#002045] text-white" : "bg-[#f0f0f0] text-[#43474e]"}`}>
+                          <span key={p.id} className={`inline-flex items-center gap-1 text-[10px] pl-2 pr-1 py-1 ${selected ? "bg-[#0B1F45] text-white" : "bg-[#f0f0f0] text-[#43474e]"}`}>
                             <button type="button"
                               onClick={() => {
                                 const next = selected ? lines.filter((l) => l !== p.label) : [...lines, p.label];
@@ -2814,7 +2814,7 @@ export default function PedidosTab({
                               {selected ? "✓ " : "+ "}{p.label}
                             </button>
                             <button type="button" onClick={() => renamePreset(p.id, p.label, "payment_terms")} title="Renomear esta condição"
-                              className={`px-1 ${selected ? "text-white/70 hover:text-white" : "text-[#b0b0b0] hover:text-[#002045]"}`}>✎</button>
+                              className={`px-1 ${selected ? "text-white/70 hover:text-white" : "text-[#b0b0b0] hover:text-[#0B1F45]"}`}>✎</button>
                             <button type="button" onClick={() => deletePreset(p.id)} title="Remover esta predefinição"
                               className={`px-1 ${selected ? "text-white/70 hover:text-white" : "text-[#b0b0b0] hover:text-[#b42318]"}`}>×</button>
                           </span>
@@ -2825,7 +2825,7 @@ export default function PedidosTab({
                   <button type="button"
                     onClick={() => savePreset("payment_terms", (draft.payment_terms ?? "").split("\n").map((s) => s.trim()).filter(Boolean).pop() || "")}
                     disabled={!draft.payment_terms?.trim()}
-                    className="mt-2 text-[10px] font-bold font-[var(--font-inter)] text-[#002045] hover:underline disabled:opacity-40 disabled:cursor-default"
+                    className="mt-2 text-[10px] font-bold text-[#0B1F45] hover:underline disabled:opacity-40 disabled:cursor-default"
                   >
                     + Cadastrar a última linha como predefinição
                   </button>
@@ -2840,11 +2840,11 @@ export default function PedidosTab({
                 </div>
                 <Field label="Observações do documento">
                   <textarea className={`${inputCls} min-h-[120px]`} value={draft.document_notes ?? ""} onChange={(e) => setDraft({ ...draft, document_notes: e.target.value })} placeholder={DEFAULT_DOCUMENT_NOTES} />
-                  <p className="text-[#b0b0b0] text-[10px] font-[var(--font-inter)] mt-1">
+                  <p className="text-[#b0b0b0] text-[10px] mt-1">
                     Se vazio, Pedido de Venda e Nota de Venda usam as cláusulas padrão; Orçamento não mostra cláusula nenhuma por padrão.
                   </p>
                 </Field>
-                <label className="flex items-center gap-2 text-xs font-[var(--font-inter)] text-[#43474e]">
+                <label className="flex items-center gap-2 text-xs text-[#43474e]">
                   <input
                     type="checkbox"
                     checked={draft.show_legal_terms !== false}
@@ -2902,30 +2902,30 @@ export default function PedidosTab({
               <div className="space-y-4">
                 {/* Resumo */}
                 <div className="border border-[#e2e2e2] p-4 space-y-3">
-                  <p className="text-[10px] tracking-[0.12em] uppercase font-bold font-[var(--font-inter)] text-[#74777f]">Revisão do pedido</p>
+                  <p className="text-[10px] tracking-[0.12em] uppercase font-bold text-[#74777f]">Revisão do pedido</p>
                   <div>
-                    <p className="text-sm font-semibold text-[#002045] font-[var(--font-inter)]">{draft.client_name || "—"}</p>
-                    <p className="text-[11px] text-[#74777f] font-[var(--font-inter)]">{[draft.client_email, draft.client_phone].filter(Boolean).join(" · ") || "sem contato"}</p>
+                    <p className="text-sm font-semibold text-[#0B1F45]">{draft.client_name || "—"}</p>
+                    <p className="text-[11px] text-[#74777f]">{[draft.client_email, draft.client_phone].filter(Boolean).join(" · ") || "sem contato"}</p>
                   </div>
                   <div className="border-t border-[#f0f0f0] pt-2 space-y-1">
                     {items.filter((it) => it.product_id && it.plates > 0).map((it, i) => {
                       const p = stockProducts.find((x) => x.id === it.product_id);
                       const u = p ? effectiveUnitPrice(it, p) : null;
                       return (
-                        <div key={i} className="flex justify-between text-xs font-[var(--font-inter)]">
+                        <div key={i} className="flex justify-between text-xs">
                           <span className="text-[#43474e]">{p?.name ?? "—"} × {it.plates}</span>
-                          <span className="text-[#002045]">{u != null ? fmtBRL(u * it.plates) : "—"}</span>
+                          <span className="text-[#0B1F45]">{u != null ? fmtBRL(u * it.plates) : "—"}</span>
                         </div>
                       );
                     })}
                     {items.filter((it) => it.product_id && it.plates > 0).length === 0 && (
-                      <p className="text-[11px] text-[#b42318] font-[var(--font-inter)]">Nenhum item adicionado (volte à etapa Itens).</p>
+                      <p className="text-[11px] text-[#b42318]">Nenhum item adicionado (volte à etapa Itens).</p>
                     )}
                   </div>
-                  <div className="border-t border-[#f0f0f0] pt-2 space-y-1 text-xs font-[var(--font-inter)]">
+                  <div className="border-t border-[#f0f0f0] pt-2 space-y-1 text-xs">
                     <div className="flex justify-between"><span className="text-[#74777f]">Bruto</span><span className="text-[#43474e]">{fmtBRL(grossTotal)}</span></div>
                     {discountAmount > 0 && <div className="flex justify-between"><span className="text-[#b42318]">Desconto</span><span className="text-[#b42318]">− {fmtBRL(discountAmount)}</span></div>}
-                    <div className="flex justify-between font-bold text-[#002045]"><span>A receber</span><span>{fmtBRL(netTotal)}</span></div>
+                    <div className="flex justify-between font-bold text-[#0B1F45]"><span>A receber</span><span>{fmtBRL(netTotal)}</span></div>
                     {selectedPartner && <div className="flex justify-between"><span className="text-[#74777f]">Comissão parceiro</span><span className="text-[#43474e]">{fmtBRL(Number(draft.partner_commission_amount) || 0)}</span></div>}
                     {selectedRep && <div className="flex justify-between"><span className="text-[#74777f]">Comissão representante</span><span className="text-[#43474e]">{fmtBRL(Number(draft.sales_rep_commission_amount) || 0)}</span></div>}
                   </div>
@@ -2933,30 +2933,30 @@ export default function PedidosTab({
 
                 {/* Enviar ao cliente */}
                 <div className="border border-[#e2e2e2] p-4 space-y-3">
-                  <p className="text-[10px] tracking-[0.12em] uppercase font-bold font-[var(--font-inter)] text-[#74777f]">Enviar ao cliente</p>
+                  <p className="text-[10px] tracking-[0.12em] uppercase font-bold text-[#74777f]">Enviar ao cliente</p>
                   {!draft.id ? (
-                    <p className="text-xs text-[#74777f] font-[var(--font-inter)]">Crie o pedido primeiro (botão abaixo) para revisar a prévia e enviar o documento ao cliente.</p>
+                    <p className="text-xs text-[#74777f]">Crie o pedido primeiro (botão abaixo) para revisar a prévia e enviar o documento ao cliente.</p>
                   ) : (
                     <>
                       <div className="flex flex-wrap gap-2">
                         {([["orcamento", "Orçamento"], ["pedido", "Pedido de venda"], ["nota", "Nota de venda"]] as const).map(([v, l]) => (
                           <button key={v} type="button" onClick={() => setSendDoc((s) => ({ ...s, tipo: v, done: null }))}
-                            className={`text-[10px] uppercase tracking-[0.08em] font-bold font-[var(--font-inter)] px-3 py-1.5 border transition-colors ${sendDoc.tipo === v ? "bg-[#002045] text-white border-[#002045]" : "text-[#74777f] border-[#e2e2e2] hover:border-[#002045]"}`}>
+                            className={`text-[10px] uppercase tracking-[0.08em] font-bold px-3 py-1.5 border transition-colors ${sendDoc.tipo === v ? "bg-[#0B1F45] text-white border-[#0B1F45]" : "text-[#74777f] border-[#e2e2e2] hover:border-[#0B1F45]"}`}>
                             {l}
                           </button>
                         ))}
                       </div>
-                      <button type="button" onClick={() => openDocument(draft.id as string, sendDoc.tipo)} className="text-[11px] font-bold font-[var(--font-inter)] text-[#1e5fb4] hover:underline">Ver prévia →</button>
+                      <button type="button" onClick={() => openDocument(draft.id as string, sendDoc.tipo)} className="text-[11px] font-bold text-[#2F5FD0] hover:underline">Ver prévia →</button>
                       <div className="flex flex-col gap-1.5">
-                        <label className="flex items-center gap-2 text-xs font-[var(--font-inter)] text-[#43474e]"><input type="checkbox" checked={sendDoc.email} disabled={!draft.client_email} onChange={(e) => setSendDoc((s) => ({ ...s, email: e.target.checked }))} /> E-mail {draft.client_email ? `(${draft.client_email})` : "— sem e-mail"}</label>
-                        <label className="flex items-center gap-2 text-xs font-[var(--font-inter)] text-[#43474e]"><input type="checkbox" checked={sendDoc.whatsapp} disabled={!draft.client_phone} onChange={(e) => setSendDoc((s) => ({ ...s, whatsapp: e.target.checked }))} /> WhatsApp {draft.client_phone ? `(${draft.client_phone})` : "— sem telefone"}</label>
+                        <label className="flex items-center gap-2 text-xs text-[#43474e]"><input type="checkbox" checked={sendDoc.email} disabled={!draft.client_email} onChange={(e) => setSendDoc((s) => ({ ...s, email: e.target.checked }))} /> E-mail {draft.client_email ? `(${draft.client_email})` : "— sem e-mail"}</label>
+                        <label className="flex items-center gap-2 text-xs text-[#43474e]"><input type="checkbox" checked={sendDoc.whatsapp} disabled={!draft.client_phone} onChange={(e) => setSendDoc((s) => ({ ...s, whatsapp: e.target.checked }))} /> WhatsApp {draft.client_phone ? `(${draft.client_phone})` : "— sem telefone"}</label>
                       </div>
-                      <p className="text-[10px] text-[#a0a3a8] font-[var(--font-inter)]">Uma mensagem objetiva por canal: o link do documento no WhatsApp e o PDF por e-mail.</p>
+                      <p className="text-[10px] text-[#a0a3a8]">Uma mensagem objetiva por canal: o link do documento no WhatsApp e o PDF por e-mail.</p>
                       <button type="button" onClick={sendToClient} disabled={sendDoc.busy || (!sendDoc.email && !sendDoc.whatsapp)}
-                        className="bg-[#3b6934] text-white px-4 py-2 text-xs font-bold uppercase tracking-wider hover:bg-[#2f5429] disabled:opacity-50">
+                        className="bg-[#36A35C] text-[#0B1F45] px-4 py-2 text-xs font-bold uppercase tracking-wider hover:bg-[#4BB571] disabled:opacity-50">
                         {sendDoc.busy ? "Enviando…" : "Enviar ao cliente"}
                       </button>
-                      {sendDoc.done && <p className="text-[11px] text-[#2f5429] font-semibold font-[var(--font-inter)]">{sendDoc.done}</p>}
+                      {sendDoc.done && <p className="text-[11px] text-[#1F7A44] font-semibold">{sendDoc.done}</p>}
                     </>
                   )}
                 </div>
@@ -2964,17 +2964,17 @@ export default function PedidosTab({
               )}
             </div>
             <div className="px-6 py-4 border-t border-[#e2e2e2] flex items-center justify-between gap-3 sticky bottom-0 bg-white">
-              <button onClick={() => !saving && setDraft(null)} className="px-4 py-2 text-xs font-bold uppercase tracking-wider text-[#74777f] hover:text-[#002045]">Cancelar</button>
+              <button onClick={() => !saving && setDraft(null)} className="px-4 py-2 text-xs font-bold uppercase tracking-wider text-[#74777f] hover:text-[#0B1F45]">Cancelar</button>
               <div className="flex items-center gap-2">
                 {formStep > 1 && (
-                  <button type="button" onClick={() => setFormStep((s) => Math.max(1, s - 1))} className="px-4 py-2 text-xs font-bold uppercase tracking-wider border border-[#e2e2e2] text-[#43474e] hover:border-[#002045]">← Voltar</button>
+                  <button type="button" onClick={() => setFormStep((s) => Math.max(1, s - 1))} className="px-4 py-2 text-xs font-bold uppercase tracking-wider border border-[#e2e2e2] text-[#43474e] hover:border-[#0B1F45]">← Voltar</button>
                 )}
                 {formStep < 4 ? (
                   <button type="button" onClick={() => setFormStep((s) => Math.min(4, s + 1))} disabled={formStep === 1 && !draft.client_name?.trim()}
-                    className="bg-[#002045] text-white px-5 py-2 text-xs font-bold uppercase tracking-wider hover:bg-[#1a365d] disabled:opacity-50">Próximo →</button>
+                    className="bg-[#0B1F45] text-white px-5 py-2 text-xs font-bold uppercase tracking-wider hover:bg-[#2347A0] disabled:opacity-50">Próximo →</button>
                 ) : (
                   <button onClick={saveDraft} disabled={saving || !draft.client_name?.trim()}
-                    className="bg-[#002045] text-white px-5 py-2 text-xs font-bold uppercase tracking-wider hover:bg-[#1a365d] disabled:opacity-50">
+                    className="bg-[#0B1F45] text-white px-5 py-2 text-xs font-bold uppercase tracking-wider hover:bg-[#2347A0] disabled:opacity-50">
                     {saving ? "Salvando..." : draft._isNew ? "Criar pedido" : "Salvar"}
                   </button>
                 )}
@@ -2988,12 +2988,12 @@ export default function PedidosTab({
 }
 
 const inputCls =
-  "w-full border border-[#e2e2e2] px-3 py-2 text-sm font-[var(--font-inter)] text-[#002045] focus:outline-none focus:border-[#002045]";
+  "w-full border border-[#e2e2e2] px-3 py-2 text-sm text-[#0B1F45] focus:outline-none focus:border-[#0B1F45]";
 
 function Field({ label, children }: { label: string; children: React.ReactNode }) {
   return (
     <label className="block">
-      <span className="block text-[10px] tracking-[0.1em] uppercase font-bold font-[var(--font-inter)] text-[#74777f] mb-1">{label}</span>
+      <span className="block text-[10px] tracking-[0.1em] uppercase font-bold text-[#74777f] mb-1">{label}</span>
       {children}
     </label>
   );
@@ -3034,18 +3034,18 @@ function SearchSelect({
       {open && (
         <div className="absolute z-30 mt-1 left-0 right-0 bg-white border border-[#e2e2e2] shadow-lg max-h-72 overflow-y-auto">
           <input autoFocus value={q} onChange={(e) => setQ(e.target.value)} placeholder="Buscar por nome ou código…"
-            className="sticky top-0 w-full border-b border-[#e2e2e2] px-3 py-2 text-sm font-[var(--font-inter)] text-[#002045] focus:outline-none bg-white" />
+            className="sticky top-0 w-full border-b border-[#e2e2e2] px-3 py-2 text-sm text-[#0B1F45] focus:outline-none bg-white" />
           {emptyOption && (
             <button type="button" onClick={() => { onChange(emptyOption.id); setOpen(false); setQ(""); }}
-              className="block w-full text-left px-3 py-2 text-sm font-[var(--font-inter)] text-[#74777f] hover:bg-[#f5f5f3]">{emptyOption.label}</button>
+              className="block w-full text-left px-3 py-2 text-sm text-[#74777f] hover:bg-[#EFEDE8]">{emptyOption.label}</button>
           )}
           {filtered.map((o) => (
             <button key={o.id} type="button" onClick={() => { onChange(o.id); setOpen(false); setQ(""); }}
-              className={`block w-full text-left px-3 py-2 text-sm font-[var(--font-inter)] hover:bg-[#f5f5f3] ${o.id === value ? "bg-[#eef2f8] text-[#002045] font-semibold" : "text-[#002045]"}`}>
+              className={`block w-full text-left px-3 py-2 text-sm hover:bg-[#EFEDE8] ${o.id === value ? "bg-[#eef2f8] text-[#0B1F45] font-semibold" : "text-[#0B1F45]"}`}>
               {o.label}{o.hint ? <span className="block text-[10px] text-[#74777f] font-normal">{o.hint}</span> : null}
             </button>
           ))}
-          {filtered.length === 0 && <p className="px-3 py-3 text-xs text-[#74777f] font-[var(--font-inter)]">Nada encontrado.</p>}
+          {filtered.length === 0 && <p className="px-3 py-3 text-xs text-[#74777f]">Nada encontrado.</p>}
         </div>
       )}
     </div>
@@ -3080,32 +3080,32 @@ function RowActions({ p, resending, onEdit, onDuplicate, onResend, onDocument, o
   const hasWa = !!p.client_phone;
   const hasEmail = !!p.client_email;
   const item = "block w-full text-left px-3 py-1.5 text-xs hover:bg-[#f7f7f7] break-words";
-  const label = "px-3 pt-2 pb-1 text-[9px] uppercase tracking-wider text-[#b0b0b0] font-[var(--font-inter)]";
+  const label = "px-3 pt-2 pb-1 text-[9px] uppercase tracking-wider text-[#b0b0b0]";
   return (
     <div className="relative inline-block text-left" ref={ref}>
       <button
         type="button"
         onClick={() => setOpen((o) => !o)}
         disabled={resending}
-        className="text-xs font-bold text-[#002045] px-3 py-1.5 border border-[#e2e2e2] hover:bg-[#f7f7f7] disabled:opacity-50 whitespace-nowrap"
+        className="text-xs font-bold text-[#0B1F45] px-3 py-1.5 border border-[#e2e2e2] hover:bg-[#f7f7f7] disabled:opacity-50 whitespace-nowrap"
       >
         {resending ? "Enviando…" : "Ações ▾"}
       </button>
       {open && (
-        <div className="absolute left-0 sm:left-auto sm:right-0 z-30 mt-1 w-56 max-w-[calc(100vw-2.5rem)] bg-white border border-[#e2e2e2] shadow-lg py-1 font-[var(--font-inter)]">
-          <button onClick={() => { close(); onEdit(); }} className={`${item} text-[#002045] font-semibold`}>Editar</button>
-          <button onClick={() => { close(); onDuplicate(); }} className={`${item} text-[#002045]`}>Duplicar</button>
+        <div className="absolute left-0 sm:left-auto sm:right-0 z-30 mt-1 w-56 max-w-[calc(100vw-2.5rem)] bg-white border border-[#e2e2e2] shadow-lg py-1">
+          <button onClick={() => { close(); onEdit(); }} className={`${item} text-[#0B1F45] font-semibold`}>Editar</button>
+          <button onClick={() => { close(); onDuplicate(); }} className={`${item} text-[#0B1F45]`}>Duplicar</button>
 
           <div className={label}>Reenviar ao cliente</div>
-          <button disabled={!hasWa} onClick={() => { close(); onResend(["whatsapp"]); }} className={`${item} text-[#3b6934] disabled:text-[#c9c9c9] disabled:hover:bg-white`}>WhatsApp{hasWa ? ` · ${p.client_phone}` : " — sem número"}</button>
-          <button disabled={!hasEmail} onClick={() => { close(); onResend(["email"]); }} className={`${item} text-[#3b6934] disabled:text-[#c9c9c9] disabled:hover:bg-white`}>E-mail{hasEmail ? ` · ${p.client_email}` : " — sem e-mail"}</button>
-          <button disabled={!hasWa || !hasEmail} onClick={() => { close(); onResend(["whatsapp", "email"]); }} className={`${item} text-[#3b6934] disabled:text-[#c9c9c9] disabled:hover:bg-white`}>Ambos</button>
+          <button disabled={!hasWa} onClick={() => { close(); onResend(["whatsapp"]); }} className={`${item} text-[#1F7A44] disabled:text-[#c9c9c9] disabled:hover:bg-white`}>WhatsApp{hasWa ? ` · ${p.client_phone}` : " — sem número"}</button>
+          <button disabled={!hasEmail} onClick={() => { close(); onResend(["email"]); }} className={`${item} text-[#1F7A44] disabled:text-[#c9c9c9] disabled:hover:bg-white`}>E-mail{hasEmail ? ` · ${p.client_email}` : " — sem e-mail"}</button>
+          <button disabled={!hasWa || !hasEmail} onClick={() => { close(); onResend(["whatsapp", "email"]); }} className={`${item} text-[#1F7A44] disabled:text-[#c9c9c9] disabled:hover:bg-white`}>Ambos</button>
 
           <div className={label}>Documento (PDF)</div>
-          <button onClick={() => { close(); onDocument("orcamento"); }} className={`${item} text-[#1e5fb4]`}>Orçamento</button>
-          <button onClick={() => { close(); onDocument("pedido"); }} className={`${item} text-[#1e5fb4]`}>Pedido de venda</button>
-          <button onClick={() => { close(); onDocument("nota"); }} className={`${item} text-[#1e5fb4]`}>Nota de venda</button>
-          <button onClick={() => { close(); onDocument("recibo"); }} className={`${item} text-[#1e5fb4]`}>Recibo</button>
+          <button onClick={() => { close(); onDocument("orcamento"); }} className={`${item} text-[#2F5FD0]`}>Orçamento</button>
+          <button onClick={() => { close(); onDocument("pedido"); }} className={`${item} text-[#2F5FD0]`}>Pedido de venda</button>
+          <button onClick={() => { close(); onDocument("nota"); }} className={`${item} text-[#2F5FD0]`}>Nota de venda</button>
+          <button onClick={() => { close(); onDocument("recibo"); }} className={`${item} text-[#2F5FD0]`}>Recibo</button>
 
           <div className="border-t border-[#f0f0f0] mt-1 pt-1">
             <button onClick={() => { close(); onDelete(); }} className={`${item} text-red-600 hover:bg-red-50`}>Excluir</button>

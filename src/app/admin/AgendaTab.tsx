@@ -107,7 +107,7 @@ function Avisos({ m }: { m: RepMeeting }) {
     const admin = log.emails.find((x) => x.role === "admin");
     const falhas = log.emails.filter((x) => !x.ok);
     return (
-      <div className="text-[11px] font-[var(--font-inter)] leading-relaxed">
+      <div className="text-[11px] leading-relaxed">
         <span className={admin?.ok ? "text-green-700" : "text-red-600 font-semibold"}>
           {admin?.ok ? "✓ E-mail para a Orbital enviado" : "✗ E-mail para a Orbital não saiu"}
         </span>
@@ -134,12 +134,12 @@ function Avisos({ m }: { m: RepMeeting }) {
   }
   if (m.invitees_notified_at) {
     return (
-      <p className="text-[11px] text-[#74777f] font-[var(--font-inter)]">
+      <p className="text-[11px] text-[#74777f]">
         Avisos disparados em {dataHora(m.invitees_notified_at)} (sem confirmação de entrega: reunião anterior à correção).
       </p>
     );
   }
-  return <p className="text-[11px] text-amber-700 font-[var(--font-inter)]">Nenhum aviso registrado para esta reunião.</p>;
+  return <p className="text-[11px] text-amber-700">Nenhum aviso registrado para esta reunião.</p>;
 }
 
 function CartaoReuniao({ m }: { m: RepMeeting }) {
@@ -149,20 +149,20 @@ function CartaoReuniao({ m }: { m: RepMeeting }) {
     <div className={`${cardCls} p-4 ${m.status === "cancelled" ? "opacity-60" : ""}`}>
       <div className="flex items-start gap-3">
         <div className="w-14 flex-shrink-0">
-          <p className="font-[var(--font-noto-serif)] text-[#002045] text-lg leading-none">{hora(m.scheduled_at)}</p>
-          <p className="text-[#74777f] text-[10px] font-[var(--font-inter)] mt-1">{m.duration_minutes || 60} min</p>
+          <p className="font-serif text-[#0B1F45] text-lg leading-none">{hora(m.scheduled_at)}</p>
+          <p className="text-[#74777f] text-[10px] mt-1">{m.duration_minutes || 60} min</p>
         </div>
         <div className="min-w-0 flex-1">
           <div className="flex flex-wrap items-center gap-2 mb-1">
             <StatusBadge tone={st.tone}>{st.label}</StatusBadge>
-            <span className="text-[11px] font-semibold text-[#3b6934] font-[var(--font-inter)]">{m.sales_rep_name ?? "Representante"}</span>
+            <span className="text-[11px] font-semibold text-[#1F7A44]">{m.sales_rep_name ?? "Representante"}</span>
           </div>
-          <p className={`text-[#002045] text-sm font-semibold font-[var(--font-inter)] break-words ${m.status === "cancelled" ? "line-through" : ""}`}>{m.title}</p>
-          {m.location && <p className="text-[#43474e] text-xs font-[var(--font-inter)] mt-0.5 break-words">📍 {m.location}</p>}
+          <p className={`text-[#0B1F45] text-sm font-semibold break-words ${m.status === "cancelled" ? "line-through" : ""}`}>{m.title}</p>
+          {m.location && <p className="text-[#43474e] text-xs mt-0.5 break-words">📍 {m.location}</p>}
           {convidados.length > 0 && (
             <div className="mt-2 flex flex-col gap-0.5">
               {convidados.map((c, i) => (
-                <p key={i} className="text-xs font-[var(--font-inter)] text-[#43474e] break-words">
+                <p key={i} className="text-xs text-[#43474e] break-words">
                   {c.name}
                   {c.phone && (
                     <>
@@ -175,7 +175,7 @@ function CartaoReuniao({ m }: { m: RepMeeting }) {
               ))}
             </div>
           )}
-          {m.notes && <p className="text-[#74777f] text-xs font-[var(--font-inter)] mt-2 whitespace-pre-line break-words">{m.notes}</p>}
+          {m.notes && <p className="text-[#74777f] text-xs mt-2 whitespace-pre-line break-words">{m.notes}</p>}
           <div className="mt-2 pt-2 border-t border-[#f0f0f0]">
             <Avisos m={m} />
           </div>
@@ -187,17 +187,17 @@ function CartaoReuniao({ m }: { m: RepMeeting }) {
 
 function CartaoEvento({ e }: { e: AdminEvent }) {
   return (
-    <div className={`${cardCls} p-4 border-l-4 border-l-[#a1d494]`}>
+    <div className={`${cardCls} p-4 border-l-4 border-l-[#36A35C]`}>
       <div className="flex items-start gap-3">
         <div className="w-14 flex-shrink-0">
-          <p className="font-[var(--font-noto-serif)] text-[#002045] text-lg leading-none">{hora(e.scheduled_at)}</p>
-          <p className="text-[#74777f] text-[10px] font-[var(--font-inter)] mt-1">{e.duration_minutes || 60} min</p>
+          <p className="font-serif text-[#0B1F45] text-lg leading-none">{hora(e.scheduled_at)}</p>
+          <p className="text-[#74777f] text-[10px] mt-1">{e.duration_minutes || 60} min</p>
         </div>
         <div className="min-w-0 flex-1">
-          <p className="text-[11px] font-semibold text-[#74777f] font-[var(--font-inter)] mb-1">Minha agenda</p>
-          <p className="text-[#002045] text-sm font-semibold font-[var(--font-inter)] break-words">{e.title}</p>
-          {e.location && <p className="text-[#43474e] text-xs font-[var(--font-inter)] mt-0.5 break-words">📍 {e.location}</p>}
-          {e.notes && <p className="text-[#74777f] text-xs font-[var(--font-inter)] mt-1 whitespace-pre-line break-words">{e.notes}</p>}
+          <p className="text-[11px] font-semibold text-[#74777f] mb-1">Minha agenda</p>
+          <p className="text-[#0B1F45] text-sm font-semibold break-words">{e.title}</p>
+          {e.location && <p className="text-[#43474e] text-xs mt-0.5 break-words">📍 {e.location}</p>}
+          {e.notes && <p className="text-[#74777f] text-xs mt-1 whitespace-pre-line break-words">{e.notes}</p>}
         </div>
       </div>
     </div>
@@ -228,8 +228,8 @@ function AssinarGoogle() {
     <div className={`${cardCls} p-4 mb-6`}>
       <div className="flex flex-wrap items-center justify-between gap-3">
         <div className="min-w-0">
-          <p className="text-[#002045] text-sm font-semibold font-[var(--font-inter)]">Ver esta agenda no Google Calendar</p>
-          <p className="text-[#74777f] text-xs font-[var(--font-inter)] mt-0.5">Assine uma vez na conta orbitalrevestimentos@gmail.com e as reuniões dos representantes aparecem lá sozinhas.</p>
+          <p className="text-[#0B1F45] text-sm font-semibold">Ver esta agenda no Google Calendar</p>
+          <p className="text-[#74777f] text-xs mt-0.5">Assine uma vez na conta orbitalrevestimentos@gmail.com e as reuniões dos representantes aparecem lá sozinhas.</p>
         </div>
         {!aberto && <button type="button" onClick={mostrar} className={btnGhost}>Mostrar link</button>}
       </div>
@@ -239,12 +239,12 @@ function AssinarGoogle() {
             <input readOnly value={url || "Carregando…"} onFocus={(ev) => ev.currentTarget.select()} className={`${inputCls} w-full font-mono text-[11px]`} aria-label="Link da agenda" />
             <button type="button" onClick={copiar} disabled={!url} className={`${btnPrimary} w-full sm:w-auto whitespace-nowrap`}>{copiado ? "Copiado ✓" : "Copiar link"}</button>
           </div>
-          <ol className="mt-3 text-xs text-[#43474e] font-[var(--font-inter)] list-decimal pl-5 space-y-1">
+          <ol className="mt-3 text-xs text-[#43474e] list-decimal pl-5 space-y-1">
             <li>No computador, abra o Google Agenda com a conta orbitalrevestimentos@gmail.com.</li>
             <li>Na lateral, em <strong>Outras agendas</strong>, clique em <strong>+</strong> e depois em <strong>Do URL</strong>.</li>
             <li>Cole o link e clique em <strong>Adicionar agenda</strong>. Ela aparece também no celular.</li>
           </ol>
-          <p className="mt-2 text-[11px] text-[#74777f] font-[var(--font-inter)]">O Google atualiza agendas assinadas de tempos em tempos (pode levar algumas horas). Para ver na hora, use esta aba. O link é secreto: não compartilhe.</p>
+          <p className="mt-2 text-[11px] text-[#74777f]">O Google atualiza agendas assinadas de tempos em tempos (pode levar algumas horas). Para ver na hora, use esta aba. O link é secreto: não compartilhe.</p>
         </div>
       )}
     </div>
@@ -345,7 +345,7 @@ export default function AgendaTab() {
                   role="tab"
                   aria-selected={periodo === p}
                   onClick={() => setPeriodo(p)}
-                  className={`flex-1 sm:flex-none px-4 py-2 text-xs font-bold font-[var(--font-inter)] tracking-wide ${periodo === p ? "bg-[#002045] text-white" : "bg-white text-[#43474e] hover:bg-[#f5f5f3]"}`}
+                  className={`flex-1 sm:flex-none px-4 py-2 text-xs font-bold tracking-wide ${periodo === p ? "bg-[#0B1F45] text-white" : "bg-white text-[#43474e] hover:bg-[#EFEDE8]"}`}
                 >
                   {p === "proximas" ? "Próximas" : "Anteriores (60 dias)"}
                 </button>
@@ -362,7 +362,7 @@ export default function AgendaTab() {
             <div className="space-y-6">
               {grupos.map(([k, itens]) => (
                 <section key={k}>
-                  <p className="text-[10px] tracking-[0.15em] uppercase font-bold font-[var(--font-inter)] text-[#002045] mb-2">
+                  <p className="text-[10px] tracking-[0.15em] uppercase font-bold text-[#0B1F45] mb-2">
                     {diaRotulo(new Date(itens[0].at).toISOString(), carga.agora)}
                   </p>
                   <div className="space-y-2">

@@ -69,15 +69,15 @@ export default async function TecnologiaPage() {
     <div className="pt-20">
       <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: JSON.stringify(breadcrumbSchema) }} />
       {/* Hero */}
-      <section className="bg-[#002045] text-white py-14 lg:py-32">
+      <section className="bg-[#0B1F45] text-white py-14 lg:py-32">
         <div className="max-w-[1280px] mx-auto px-4 lg:px-16">
-          <p className="text-[#86a0cd] text-xs tracking-[0.2em] uppercase font-semibold font-[var(--font-inter)] mb-4">
+          <p className="text-[#B4BBC8] text-xs tracking-[0.2em] uppercase font-semibold mb-4">
             PFB · Painéis Flexíveis Fibra de Bambu
           </p>
-          <h1 className="font-[var(--font-noto-serif)] text-2xl lg:text-5xl font-normal tracking-[-0.02em] leading-tight mb-5 max-w-3xl">
+          <h1 className="font-serif text-2xl lg:text-5xl font-normal tracking-[-0.02em] leading-tight mb-5 max-w-3xl">
             Performance &amp; Tecnologia
           </h1>
-          <p className="text-white/70 text-base font-[var(--font-inter)] leading-relaxed max-w-2xl">
+          <p className="text-white/70 text-base leading-relaxed max-w-2xl">
             A intersecção entre materiais naturais e engenharia avançada.
             Cada dado apresentado aqui é extraído de ficha técnica
             — não de marketing.
@@ -106,15 +106,15 @@ export default async function TecnologiaPage() {
           </div>
 
           {/* Right — content panel */}
-          <div className="w-[62%] bg-[#f9f9f9] px-3 lg:px-16 xl:px-20 py-4 lg:py-24 flex items-center">
+          <div className="w-[62%] bg-[#F6F5F2] px-3 lg:px-16 xl:px-20 py-4 lg:py-24 flex items-center">
             <div className="w-full max-w-2xl">
-              <p className="text-[#3b6934] text-xs tracking-[0.2em] uppercase font-semibold font-[var(--font-inter)] mb-5">
+              <p className="text-[#2347A0] text-xs tracking-[0.2em] uppercase font-semibold mb-5">
                 Anatomia da Placa
               </p>
-              <h2 className="font-[var(--font-noto-serif)] text-[#002045] text-lg lg:text-4xl font-normal mb-4">
+              <h2 className="font-serif text-[#0B1F45] text-lg lg:text-4xl font-normal mb-4">
                 5 camadas. 5mm de espessura total.
               </h2>
-              <p className="hidden lg:block text-[#43474e] text-base font-[var(--font-inter)] leading-relaxed mb-8">
+              <p className="hidden lg:block text-[#43474e] text-base leading-relaxed mb-8">
                 O PFB não é um simples laminado. Cada camada tem uma função
                 estrutural específica — da proteção UV superficial ao núcleo
                 de bambu que garante resistência e sustentabilidade.
@@ -123,30 +123,30 @@ export default async function TecnologiaPage() {
                 {layers.map(({ name, desc }, i) => (
                   <div
                     key={name}
-                    className="bg-white border border-[#e2e2e2] p-2 lg:p-4 flex gap-2 lg:gap-4 items-start hover:border-[#1a365d] transition-colors"
+                    className="bg-white border border-[#e2e2e2] p-2 lg:p-4 flex gap-2 lg:gap-4 items-start hover:border-[#2347A0] transition-colors"
                   >
-                    <div className="flex-shrink-0 w-5 h-5 lg:w-7 lg:h-7 bg-[#002045] text-white flex items-center justify-center text-xs font-bold font-[var(--font-inter)]">
+                    <div className="flex-shrink-0 w-5 h-5 lg:w-7 lg:h-7 bg-[#0B1F45] text-white flex items-center justify-center text-xs font-bold">
                       {i + 1}
                     </div>
                     <div>
-                      <p className="text-[#002045] font-semibold text-[10px] lg:text-sm font-[var(--font-inter)] mb-0.5">
+                      <p className="text-[#0B1F45] font-semibold text-[10px] lg:text-sm mb-0.5">
                         {name}
                       </p>
-                      <p className="hidden lg:block text-[#43474e] text-xs font-[var(--font-inter)] leading-relaxed">
+                      <p className="hidden lg:block text-[#43474e] text-xs leading-relaxed">
                         {desc}
                       </p>
                     </div>
                   </div>
                 ))}
               </div>
-              <div className="hidden lg:block p-5 bg-[#002045] text-white">
-                <p className="text-[#86a0cd] text-[10px] tracking-[0.15em] uppercase font-bold font-[var(--font-inter)] mb-2">
+              <div className="hidden lg:block p-5 bg-[#0B1F45] text-white">
+                <p className="text-[#B4BBC8] text-[10px] tracking-[0.15em] uppercase font-bold mb-2">
                   Dimensões
                 </p>
-                <p className="font-[var(--font-noto-serif)] text-white text-2xl font-normal mb-1">
+                <p className="font-serif text-white text-2xl font-normal mb-1">
                   1,2m × 2,9m × 5mm
                 </p>
-                <p className="text-white/60 text-sm font-[var(--font-inter)]">
+                <p className="text-white/60 text-sm">
                   3,48 m² por placa · 3,2 kg/m²
                 </p>
               </div>
@@ -156,13 +156,13 @@ export default async function TecnologiaPage() {
       </section>
 
       {/* Lab Specs */}
-      <section className="py-10 lg:py-20 bg-[#002045] text-white">
+      <section className="py-10 lg:py-20 bg-[#0B1F45] text-white">
         <div className="max-w-[1280px] mx-auto px-4 lg:px-16">
           <div className="mb-6 lg:mb-10">
-            <p className="text-[#86a0cd] text-xs tracking-[0.2em] uppercase font-semibold font-[var(--font-inter)] mb-2">
+            <p className="text-[#B4BBC8] text-xs tracking-[0.2em] uppercase font-semibold mb-2">
               Ficha técnica
             </p>
-            <h2 className="font-[var(--font-noto-serif)] text-white text-xl lg:text-3xl font-normal mb-1.5">
+            <h2 className="font-serif text-white text-xl lg:text-3xl font-normal mb-1.5">
               Desempenho comprovado
             </h2>
             <ARTAccordion />
@@ -170,18 +170,18 @@ export default async function TecnologiaPage() {
           </div>
           <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-5 gap-3 lg:gap-6">
             {specs.map(({ value, unit, label, note }) => (
-              <div key={label} className="border-l-2 border-[#1a365d] pl-3 lg:pl-5">
-                <p className="font-[var(--font-noto-serif)] text-xl lg:text-4xl text-white font-normal mb-0.5">
+              <div key={label} className="border-l-2 border-[#2347A0] pl-3 lg:pl-5">
+                <p className="font-serif text-xl lg:text-4xl text-white font-normal mb-0.5">
                   {value}
                   {unit && (
-                    <span className="text-sm lg:text-xl text-[#86a0cd] ml-1">{unit}</span>
+                    <span className="text-sm lg:text-xl text-[#B4BBC8] ml-1">{unit}</span>
                   )}
                 </p>
-                <p className="text-[#86a0cd] text-[9px] lg:text-xs tracking-[0.1em] uppercase font-semibold font-[var(--font-inter)] mb-0.5">
+                <p className="text-[#B4BBC8] text-[9px] lg:text-xs tracking-[0.1em] uppercase font-semibold mb-0.5">
                   {label}
                 </p>
                 {note && (
-                  <p className="text-[#a1d494] text-[9px] lg:text-[10px] font-[var(--font-inter)]">
+                  <p className="text-[#36A35C] text-[9px] lg:text-[10px]">
                     {note}
                   </p>
                 )}
@@ -190,7 +190,7 @@ export default async function TecnologiaPage() {
           </div>
           {/* A tolerância também vive no rodapé da ficha, mas a ficha abre
               fechada — quem só passa o olho vê estes cinco números e mais nada. */}
-          <p className="text-[#86a0cd]/70 text-[9px] lg:text-[10px] font-[var(--font-inter)] mt-4 lg:mt-5">
+          <p className="text-[#B4BBC8]/70 text-[9px] lg:text-[10px] mt-4 lg:mt-5">
             Peso e densidade admitem tolerância de ±10% — o bambu é fibra natural e cada lote varia.
           </p>
 
@@ -200,28 +200,28 @@ export default async function TecnologiaPage() {
             href={MANUAL_URL}
             target="_blank"
             rel="noopener noreferrer"
-            className="mt-6 lg:mt-8 flex items-center justify-between gap-4 border border-[#1a365d] px-5 py-4 hover:bg-[#1a365d]/40 transition-colors group"
+            className="mt-6 lg:mt-8 flex items-center justify-between gap-4 border border-[#2347A0] px-5 py-4 hover:bg-[#2347A0]/40 transition-colors group"
           >
             <div className="flex items-center gap-3 min-w-0">
-              <div className="flex-shrink-0 w-8 h-8 bg-[#1a365d] flex items-center justify-center">
-                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="#a1d494" strokeWidth="2" aria-hidden="true">
+              <div className="flex-shrink-0 w-8 h-8 bg-[#2347A0] flex items-center justify-center">
+                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="#36A35C" strokeWidth="2" aria-hidden="true">
                   <path d="M14 2H6a2 2 0 00-2 2v16a2 2 0 002 2h12a2 2 0 002-2V8z" />
                   <path d="M14 2v6h6M8 13h8M8 17h5" />
                 </svg>
               </div>
               <div className="min-w-0">
-                <p className="text-[#a1d494] text-[9px] tracking-[0.2em] uppercase font-bold font-[var(--font-inter)]">
+                <p className="text-[#36A35C] text-[9px] tracking-[0.2em] uppercase font-bold">
                   Orbital + Werk Engenharia
                 </p>
-                <p className="text-white text-sm font-semibold font-[var(--font-inter)] mt-0.5">
+                <p className="text-white text-sm font-semibold mt-0.5">
                   Manual Técnico de Instalação
                 </p>
-                <p className="text-[#86a0cd] text-[11px] font-[var(--font-inter)] mt-0.5">
+                <p className="text-[#B4BBC8] text-[11px] mt-0.5">
                   Paredes, portas, banheiros, box, curvas, forros e tetos · PDF
                 </p>
               </div>
             </div>
-            <span className="flex-shrink-0 inline-flex items-center gap-1.5 text-[10px] tracking-[0.12em] uppercase font-bold font-[var(--font-inter)] text-white border border-[#86a0cd]/50 group-hover:border-white px-3 py-2 transition-colors">
+            <span className="flex-shrink-0 inline-flex items-center gap-1.5 text-[10px] tracking-[0.12em] uppercase font-bold text-white border border-[#B4BBC8]/50 group-hover:border-white px-3 py-2 transition-colors">
               <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" aria-hidden="true">
                 <path d="M21 15v4a2 2 0 01-2 2H5a2 2 0 01-2-2v-4M7 10l5 5 5-5M12 15V3" />
               </svg>
@@ -232,16 +232,16 @@ export default async function TecnologiaPage() {
       </section>
 
       {/* PFB × MDF — Water Test Photos */}
-      <section className="py-10 lg:py-28 bg-[#1e212a] text-white">
+      <section className="py-10 lg:py-28 bg-[#0B1F45] text-white">
         <div className="max-w-[1280px] mx-auto px-4 lg:px-16">
           <div className="mb-8">
-            <p className="text-[#a1d494] text-xs tracking-[0.2em] uppercase font-semibold font-[var(--font-inter)] mb-3">
+            <p className="text-[#36A35C] text-xs tracking-[0.2em] uppercase font-semibold mb-3">
               PFB — Teste de Resistência à Água
             </p>
-            <h2 className="font-[var(--font-noto-serif)] text-white text-xl lg:text-4xl font-normal mb-3">
+            <h2 className="font-serif text-white text-xl lg:text-4xl font-normal mb-3">
               O PFB é resistente à água? SIM!
             </h2>
-            <p className="text-white/50 text-sm font-[var(--font-inter)] leading-relaxed max-w-xl">
+            <p className="text-white/50 text-sm leading-relaxed max-w-xl">
               Uma placa PFB foi submersa por 48 horas em laboratório. Resultado: 0,2% de absorção — saindo intacta, sem deformação, sem descolar.
             </p>
           </div>
@@ -260,45 +260,45 @@ export default async function TecnologiaPage() {
                     fill
                     className="object-cover object-top transition-transform duration-700 group-hover:scale-[1.02]"
                   />
-                  <div className="absolute top-3 left-3 bg-white text-[#1e212a] text-sm font-bold font-[var(--font-inter)] px-3 py-1.5 tracking-[0.05em]">
+                  <div className="absolute top-3 left-3 bg-white text-[#0D1830] text-sm font-bold px-3 py-1.5 tracking-[0.05em]">
                     {time}
                   </div>
                 </div>
-                <p className="text-white font-semibold text-xs lg:text-sm font-[var(--font-inter)] mb-1 min-h-[2.5rem] lg:min-h-[1.5rem]">{label}</p>
-                <p className="text-white/50 text-[10px] lg:text-xs font-[var(--font-inter)] leading-relaxed">{note}</p>
+                <p className="text-white font-semibold text-xs lg:text-sm mb-1 min-h-[2.5rem] lg:min-h-[1.5rem]">{label}</p>
+                <p className="text-white/50 text-[10px] lg:text-xs leading-relaxed">{note}</p>
               </div>
             ))}
           </div>
 
           <div className="grid grid-cols-2 gap-3">
-            <div className="bg-[#002045] border border-[#1a365d] p-4 lg:p-6">
-              <p className="text-[#a1d494] text-[9px] lg:text-[10px] tracking-[0.15em] uppercase font-bold font-[var(--font-inter)] mb-2">Absorção · 48h imerso</p>
-              <p className="font-[var(--font-noto-serif)] text-white text-2xl lg:text-4xl font-normal mb-1">0,2%</p>
-              <p className="text-white/60 text-[11px] lg:text-sm font-[var(--font-inter)] leading-snug">de inchamento — praticamente impermeável</p>
+            <div className="bg-[#0B1F45] border border-[#2347A0] p-4 lg:p-6">
+              <p className="text-[#36A35C] text-[9px] lg:text-[10px] tracking-[0.15em] uppercase font-bold mb-2">Absorção · 48h imerso</p>
+              <p className="font-serif text-white text-2xl lg:text-4xl font-normal mb-1">0,2%</p>
+              <p className="text-white/60 text-[11px] lg:text-sm leading-snug">de inchamento — praticamente impermeável</p>
             </div>
-            <div className="bg-[#002045] border border-[#1a365d] p-4 lg:p-6">
-              <p className="text-[#a1d494] text-[9px] lg:text-[10px] tracking-[0.15em] uppercase font-bold font-[var(--font-inter)] mb-2">Vida útil no Amazonas</p>
-              <p className="font-[var(--font-noto-serif)] text-white text-2xl lg:text-4xl font-normal mb-1">10+</p>
-              <p className="text-white/60 text-[11px] lg:text-sm font-[var(--font-inter)] leading-snug">anos no clima úmido de Manaus</p>
+            <div className="bg-[#0B1F45] border border-[#2347A0] p-4 lg:p-6">
+              <p className="text-[#36A35C] text-[9px] lg:text-[10px] tracking-[0.15em] uppercase font-bold mb-2">Vida útil no Amazonas</p>
+              <p className="font-serif text-white text-2xl lg:text-4xl font-normal mb-1">10+</p>
+              <p className="text-white/60 text-[11px] lg:text-sm leading-snug">anos no clima úmido de Manaus</p>
             </div>
           </div>
         </div>
       </section>
 
       {/* Manaus Climate */}
-      <section className="py-10 lg:py-24 bg-[#1a365d] text-white">
+      <section className="py-10 lg:py-24 bg-[#0B1F45] text-white">
         <div className="max-w-[1280px] mx-auto px-4 lg:px-16">
           <div className="grid grid-cols-1 lg:grid-cols-2 gap-12 items-center">
             <div>
-              <p className="text-[#a1d494] text-xs tracking-[0.2em] uppercase font-semibold font-[var(--font-inter)] mb-4">
+              <p className="text-[#36A35C] text-xs tracking-[0.2em] uppercase font-semibold mb-4">
                 Desenvolvido para o Amazonas
               </p>
-              <h2 className="font-[var(--font-noto-serif)] text-white text-3xl font-normal mb-6">
+              <h2 className="font-serif text-white text-3xl font-normal mb-6">
                 O PFB foi feito para o clima de Manaus.
                 <br />
-                <span className="italic text-[#86a0cd]">E os dados provam isso.</span>
+                <span className="italic text-[#B4BBC8]">E os dados provam isso.</span>
               </h2>
-              <p className="text-white/70 text-base font-[var(--font-inter)] leading-relaxed">
+              <p className="text-white/70 text-base leading-relaxed">
                 Manaus registra umidade relativa média superior a 80% ao longo
                 do ano. O PFB foi desenvolvido para esse ambiente: absorve
                 apenas 0,2% de umidade, não empena, não descola e mantém a
@@ -346,10 +346,10 @@ export default async function TecnologiaPage() {
                   ),
                 },
               ].map(({ icon, title, desc }) => (
-                <div key={title} className="bg-[#002045] p-3 lg:p-5">
-                  <div className="text-[#86a0cd] mb-1 lg:mb-3">{icon}</div>
-                  <p className="text-white font-semibold text-xs lg:text-sm font-[var(--font-inter)] mb-2">{title}</p>
-                  <p className="text-white/55 text-[10px] lg:text-xs font-[var(--font-inter)] leading-relaxed">{desc}</p>
+                <div key={title} className="bg-[#0B1F45] p-3 lg:p-5">
+                  <div className="text-[#B4BBC8] mb-1 lg:mb-3">{icon}</div>
+                  <p className="text-white font-semibold text-xs lg:text-sm mb-2">{title}</p>
+                  <p className="text-white/55 text-[10px] lg:text-xs leading-relaxed">{desc}</p>
                 </div>
               ))}
             </div>
@@ -358,15 +358,15 @@ export default async function TecnologiaPage() {
       </section>
 
       {/* Comparison Table — PFB vs alternatives (accordion) */}
-      <section className="py-12 lg:py-28 bg-[#f9f9f9]">
+      <section className="py-12 lg:py-28 bg-[#F6F5F2]">
         <div className="max-w-[1280px] mx-auto px-4 lg:px-16">
-          <p className="text-[#74777f] text-xs tracking-[0.2em] uppercase font-semibold font-[var(--font-inter)] mb-4">
+          <p className="text-[#74777f] text-xs tracking-[0.2em] uppercase font-semibold mb-4">
             Dados técnicos independentes
           </p>
-          <h2 className="font-[var(--font-noto-serif)] text-[#002045] text-3xl lg:text-4xl font-normal mb-3">
+          <h2 className="font-serif text-[#0B1F45] text-3xl lg:text-4xl font-normal mb-3">
             PFB Orbital — desempenho em 10 critérios técnicos
           </h2>
-          <p className="text-[#43474e] text-sm font-[var(--font-inter)] mb-10 max-w-2xl">
+          <p className="text-[#43474e] text-sm mb-10 max-w-2xl">
             Avaliações com base em ficha técnica e condições reais de uso no clima do Amazonas. ART de Engenheiro Civil.
           </p>
           <TecnologiaComparison />
@@ -378,14 +378,14 @@ export default async function TecnologiaPage() {
         <div className="max-w-[1280px] mx-auto px-4 lg:px-16">
           <div className="grid grid-cols-1 lg:grid-cols-2 gap-16 items-center">
             <div>
-              <p className="text-[#3b6934] text-xs tracking-[0.2em] uppercase font-semibold font-[var(--font-inter)] mb-4">
+              <p className="text-[#2347A0] text-xs tracking-[0.2em] uppercase font-semibold mb-4">
                 Impacto ambiental
               </p>
-              <h2 className="font-[var(--font-noto-serif)] text-[#002045] text-3xl lg:text-4xl font-normal mb-6">
+              <h2 className="font-serif text-[#0B1F45] text-3xl lg:text-4xl font-normal mb-6">
                 Bambu cresce em meses.<br />
                 <span className="italic">Uma árvore leva décadas.</span>
               </h2>
-              <p className="text-[#43474e] text-base font-[var(--font-inter)] leading-relaxed mb-6">
+              <p className="text-[#43474e] text-base leading-relaxed mb-6">
                 O bambu é uma das plantas de crescimento mais rápido do mundo —
                 rebrota após o corte sem necessidade de replantio. O PFB Orbital
                 não contém formol nem compostos orgânicos voláteis: é inodoro,
@@ -399,10 +399,10 @@ export default async function TecnologiaPage() {
                   { label: "Substrato biodegradável", desc: "Núcleo de fibra natural ao final da vida útil." },
                 ].map(({ label, desc }) => (
                   <div key={label} className="flex gap-4">
-                    <div className="w-1.5 h-1.5 rounded-full bg-[#3b6934] mt-2 flex-shrink-0" />
+                    <div className="w-1.5 h-1.5 rounded-full bg-[#36A35C] mt-2 flex-shrink-0" />
                     <div>
-                      <span className="text-[#002045] font-semibold text-sm font-[var(--font-inter)]">{label} — </span>
-                      <span className="text-[#43474e] text-sm font-[var(--font-inter)]">{desc}</span>
+                      <span className="text-[#0B1F45] font-semibold text-sm">{label} — </span>
+                      <span className="text-[#43474e] text-sm">{desc}</span>
                     </div>
                   </div>
                 ))}
@@ -417,11 +417,11 @@ export default async function TecnologiaPage() {
                   className="object-cover"
                 />
               </div>
-              <div className="border-l-2 border-[#3b6934] px-5 py-3 mt-0 bg-[#f3f9f3]">
-                <p className="text-[#3b6934] text-[10px] tracking-[0.15em] uppercase font-bold font-[var(--font-inter)] mb-1">
+              <div className="border-l-2 border-[#36A35C] px-5 py-3 mt-0 bg-[#f3f9f3]">
+                <p className="text-[#2347A0] text-[10px] tracking-[0.15em] uppercase font-bold mb-1">
                   Material ecológico
                 </p>
-                <p className="text-[#43474e] text-sm font-[var(--font-inter)]">
+                <p className="text-[#43474e] text-sm">
                   Bambu renovável · Sem formol · Inodoro
                 </p>
               </div>
@@ -431,9 +431,9 @@ export default async function TecnologiaPage() {
       </section>
 
       {/* Installation Notes */}
-      <section className="py-12 lg:py-20 bg-[#1e212a] text-white">
+      <section className="py-12 lg:py-20 bg-[#0B1F45] text-white">
         <div className="max-w-[1280px] mx-auto px-4 lg:px-16">
-          <h2 className="font-[var(--font-noto-serif)] text-white text-2xl font-normal mb-8">
+          <h2 className="font-serif text-white text-2xl font-normal mb-8">
             Notas de Instalação
           </h2>
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
@@ -456,16 +456,16 @@ export default async function TecnologiaPage() {
               },
             ].map(({ title, desc }) => (
               <div key={title} className="border-l border-[#333640] pl-5">
-                <p className="text-white font-semibold text-sm font-[var(--font-inter)] mb-2">
+                <p className="text-white font-semibold text-sm mb-2">
                   {title}
                 </p>
-                <p className="text-[#9c9faa] text-sm font-[var(--font-inter)] leading-relaxed">
+                <p className="text-[#9c9faa] text-sm leading-relaxed">
                   {desc}
                 </p>
               </div>
             ))}
           </div>
-          <p className="text-[#9c9faa] text-sm font-[var(--font-inter)] italic mt-8">
+          <p className="text-[#9c9faa] text-sm italic mt-8">
             Somos fornecedores diretos — não fazemos instalação. O passo a passo completo está no{" "}
             <a href={MANUAL_URL} target="_blank" rel="noopener noreferrer" className="text-white underline not-italic">
               Manual Técnico de Instalação
@@ -476,12 +476,12 @@ export default async function TecnologiaPage() {
       </section>
 
       {/* CTA */}
-      <section className="py-12 lg:py-16 bg-[#f9f9f9] border-t border-[#eeeeee] text-center">
+      <section className="py-12 lg:py-16 bg-[#F6F5F2] border-t border-[#eeeeee] text-center">
         <div className="max-w-[600px] mx-auto px-4 lg:px-8">
-          <h3 className="font-[var(--font-noto-serif)] text-[#002045] text-2xl font-normal mb-4">
+          <h3 className="font-serif text-[#0B1F45] text-2xl font-normal mb-4">
             Pronto para especificar?
           </h3>
-          <p className="text-[#43474e] text-base font-[var(--font-inter)] mb-8">
+          <p className="text-[#43474e] text-base mb-8">
             Solicite a ficha técnica completa (ART/CREA)
             e suporte para arquitetos e designers.
           </p>
@@ -490,13 +490,13 @@ export default async function TecnologiaPage() {
               href="https://wa.me/5592988150149?text=Olá! Gostaria de solicitar a ficha técnica completa do PFB Orbital."
               target="_blank"
               rel="noopener noreferrer"
-              className="w-full sm:w-auto text-center bg-[#1a365d] text-white text-xs tracking-[0.12em] uppercase font-bold font-[var(--font-inter)] px-8 py-4 hover:bg-[#002045] transition-colors"
+              className="w-full sm:w-auto text-center bg-[#0B1F45] text-white text-xs tracking-[0.12em] uppercase font-bold px-8 py-4 hover:bg-[#2347A0] transition-colors"
             >
               Falar com Especialista
             </a>
             <Link
               href="/produtos"
-              className="w-full sm:w-auto text-center border border-[#002045] text-[#002045] text-xs tracking-[0.12em] uppercase font-bold font-[var(--font-inter)] px-8 py-4 hover:bg-[#002045] hover:text-white transition-colors"
+              className="w-full sm:w-auto text-center border border-[#0B1F45] text-[#0B1F45] text-xs tracking-[0.12em] uppercase font-bold px-8 py-4 hover:bg-[#0B1F45] hover:text-white transition-colors"
             >
               Ver Catálogo
             </Link>

@@ -1,5 +1,6 @@
 import type { SupabaseClient } from "@supabase/supabase-js";
 import { smclickConfigured, normalizePhone, sendText } from "@/lib/smclick";
+import { emailTopo } from "@/lib/email-marca";
 
 /**
  * Convite de parceiro feito pela representante: o parceiro é cadastrado como
@@ -40,15 +41,15 @@ export function conviteEmailHtml(i: { nome: string; repNome: string | null; link
   const first = esc(i.nome.trim().split(/\s+/)[0] || i.nome);
   const quem = i.repNome ? `${esc(i.repNome)}, da Orbital Revestimentos,` : "A Orbital Revestimentos";
   return `
-    <div style="font-family:Inter,Arial,sans-serif;max-width:520px;margin:0 auto;padding:32px 24px;color:#1a1c1c;line-height:1.55">
-      <h2 style="font-size:22px;margin:0 0 12px;color:#002045;font-weight:normal">Olá, ${first}!</h2>
+    ${emailTopo(520)}<div style="font-family:Montserrat,Arial,sans-serif;max-width:520px;margin:0 auto;padding:32px 24px;color:#0D1830;line-height:1.55">
+      <h2 style="font-size:22px;margin:0 0 12px;color:#0B1F45;font-weight:300;font-family:Noto Serif Display,Georgia,serif">Olá, ${first}!</h2>
       <p style="color:#43474e;margin:0 0 20px">${quem} cadastrou você como <strong>Parceiro Orbital</strong>.</p>
       <p style="color:#43474e;margin:0 0 24px">Para ativar seu acesso, aceite o convite e crie sua senha. No portal você acompanha suas indicações e comissões.</p>
       <p style="margin:0 0 24px">
-        <a href="${i.link}" style="background:#002045;color:#ffffff;text-decoration:none;padding:12px 22px;font-size:14px;font-weight:700;display:inline-block">Aceitar convite</a>
+        <a href="${i.link}" style="background:#0B1F45;color:#ffffff;text-decoration:none;padding:12px 22px;font-size:14px;font-weight:700;display:inline-block">Aceitar convite</a>
       </p>
       <p style="font-size:12px;color:#74777f;margin:0 0 8px">O link vale por ${CONVITE_VALIDADE_DIAS} dias. Se não esperava este convite, ignore este e-mail.</p>
-      <p style="font-size:12px;color:#74777f;margin:0">Ou copie o link no navegador:<br><a href="${i.link}" style="color:#002045;word-break:break-all">${i.link}</a></p>
+      <p style="font-size:12px;color:#74777f;margin:0">Ou copie o link no navegador:<br><a href="${i.link}" style="color:#0B1F45;word-break:break-all">${i.link}</a></p>
     </div>`;
 }
 

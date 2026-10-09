@@ -5,7 +5,7 @@ import React from "react";
 // ─── Orbital Admin design system ─────────────────────────────────────────────
 // Single source for the visual vocabulary that every admin tab previously
 // hand-rolled inline (same colors/typography — codified, not reinvented):
-//   navy #002045 · hover #1a365d · borders #e2e2e2/#f0f0f0 · bg #f5f5f3
+//   navy #0B1F45 · hover #2347A0 · borders #e2e2e2/#f0f0f0 · bg #F6F5F2
 //   serif headings var(--font-noto-serif) · sans UI var(--font-inter)
 // Rule of thumb: className CONSTANTS for things call-sites extend/concatenate
 // (inputs, buttons, table cells); COMPONENTS for repeated structure.
@@ -49,21 +49,21 @@ export const NAV_GROUPS: ReadonlyArray<{ group: string; items: ReadonlyArray<Adm
 
 // ─── className constants ─────────────────────────────────────────────────────
 export const inputCls =
-  "w-full border border-[#e2e2e2] px-4 py-2.5 text-sm font-[var(--font-inter)] text-[#002045] focus:outline-none focus:border-[#002045]";
+  "w-full border border-[#e2e2e2] px-4 py-2.5 text-sm text-[#0B1F45] focus:outline-none focus:border-[#0B1F45]";
 export const labelCls =
-  "block text-[10px] tracking-[0.15em] uppercase font-bold font-[var(--font-inter)] text-[#74777f] mb-2";
+  "block text-[10px] tracking-[0.15em] uppercase font-bold text-[#74777f] mb-2";
 export const btnPrimary =
-  "bg-[#002045] text-white text-xs tracking-[0.12em] uppercase font-bold font-[var(--font-inter)] px-4 py-2.5 hover:bg-[#1a365d] transition-colors disabled:opacity-50";
+  "bg-[#0B1F45] text-white text-xs tracking-[0.12em] uppercase font-bold px-4 py-2.5 hover:bg-[#2347A0] transition-colors disabled:opacity-50";
 export const btnSecondary =
-  "border border-[#002045] text-[#002045] text-xs tracking-[0.12em] uppercase font-bold font-[var(--font-inter)] px-4 py-2.5 hover:bg-[#002045] hover:text-white transition-colors disabled:opacity-50";
+  "border border-[#0B1F45] text-[#0B1F45] text-xs tracking-[0.12em] uppercase font-bold px-4 py-2.5 hover:bg-[#0B1F45] hover:text-white transition-colors disabled:opacity-50";
 export const btnGhost =
-  "border border-[#e2e2e2] text-[#43474e] text-xs tracking-[0.12em] uppercase font-bold font-[var(--font-inter)] px-4 py-2.5 hover:border-[#002045] hover:text-[#002045] transition-colors disabled:opacity-50";
+  "border border-[#e2e2e2] text-[#43474e] text-xs tracking-[0.12em] uppercase font-bold px-4 py-2.5 hover:border-[#0B1F45] hover:text-[#0B1F45] transition-colors disabled:opacity-50";
 export const btnDanger =
-  "border border-red-200 text-red-700 text-xs tracking-[0.12em] uppercase font-bold font-[var(--font-inter)] px-4 py-2.5 hover:bg-red-50 hover:border-red-400 transition-colors disabled:opacity-50";
+  "border border-red-200 text-red-700 text-xs tracking-[0.12em] uppercase font-bold px-4 py-2.5 hover:bg-red-50 hover:border-red-400 transition-colors disabled:opacity-50";
 export const cardCls = "bg-white border border-[#e2e2e2] rounded-lg";
 export const thCls =
-  "text-left px-4 py-3 text-[10px] tracking-[0.12em] uppercase font-bold font-[var(--font-inter)] text-[#74777f] whitespace-nowrap border-b border-[#e2e2e2]";
-export const tdCls = "px-4 py-3 text-xs font-[var(--font-inter)] text-[#43474e]";
+  "text-left px-4 py-3 text-[10px] tracking-[0.12em] uppercase font-bold text-[#74777f] whitespace-nowrap border-b border-[#e2e2e2]";
+export const tdCls = "px-4 py-3 text-xs text-[#43474e]";
 
 export function fmtBRL(n: number | null | undefined): string {
   return (Number(n) || 0).toLocaleString("pt-BR", { style: "currency", currency: "BRL", maximumFractionDigits: 0 });
@@ -98,7 +98,7 @@ export function Card({
 
 // ─── KPI card ────────────────────────────────────────────────────────────────
 const KPI_TONES = {
-  default: "border-l-[#002045]",
+  default: "border-l-[#0B1F45]",
   good: "border-l-green-600",
   warn: "border-l-amber-500",
   bad: "border-l-red-500",
@@ -119,14 +119,14 @@ export function KpiCard({
 }) {
   const inner = (
     <>
-      <p className="text-[#74777f] text-[10px] tracking-[0.15em] uppercase font-bold font-[var(--font-inter)] mb-1.5">{label}</p>
-      <p className="font-[var(--font-noto-serif)] text-[#002045] text-2xl sm:text-3xl font-normal leading-none">{value}</p>
-      {hint && <p className="text-[#74777f] text-[11px] font-[var(--font-inter)] mt-1.5">{hint}</p>}
+      <p className="text-[#74777f] text-[10px] tracking-[0.15em] uppercase font-bold mb-1.5">{label}</p>
+      <p className="font-serif text-[#0B1F45] text-2xl sm:text-3xl font-normal leading-none">{value}</p>
+      {hint && <p className="text-[#74777f] text-[11px] mt-1.5">{hint}</p>}
     </>
   );
   const cls = `${cardCls} border-l-4 ${KPI_TONES[tone]} p-5 min-w-0 text-left`;
   return onClick ? (
-    <button type="button" onClick={onClick} className={`${cls} w-full hover:border-[#002045] transition-colors cursor-pointer`}>
+    <button type="button" onClick={onClick} className={`${cls} w-full hover:border-[#0B1F45] transition-colors cursor-pointer`}>
       {inner}
     </button>
   ) : (
@@ -147,8 +147,8 @@ export function PageHeader({
   return (
     <div className="flex flex-wrap items-end justify-between gap-4 pb-4 mb-6 border-b border-[#e2e2e2]">
       <div className="min-w-0">
-        <h1 className="font-[var(--font-noto-serif)] text-[#002045] text-2xl font-normal leading-tight">{title}</h1>
-        {subtitle && <p className="text-[#74777f] text-xs font-[var(--font-inter)] mt-1">{subtitle}</p>}
+        <h1 className="font-serif text-[#0B1F45] text-2xl font-normal leading-tight">{title}</h1>
+        {subtitle && <p className="text-[#74777f] text-xs mt-1">{subtitle}</p>}
       </div>
       {actions && <div className="flex flex-wrap items-center gap-2">{actions}</div>}
     </div>
@@ -158,7 +158,7 @@ export function PageHeader({
 // ─── Section label ───────────────────────────────────────────────────────────
 export function SectionLabel({ children }: { children: React.ReactNode }) {
   return (
-    <p className="text-[10px] tracking-[0.15em] uppercase font-bold font-[var(--font-inter)] text-[#002045]">{children}</p>
+    <p className="text-[10px] tracking-[0.15em] uppercase font-bold text-[#0B1F45]">{children}</p>
   );
 }
 
@@ -167,9 +167,9 @@ const BADGE_TONES = {
   green: "bg-green-100 text-green-800",
   yellow: "bg-yellow-100 text-yellow-800",
   red: "bg-red-100 text-red-700",
-  blue: "bg-[#eef2f8] text-[#002045]",
+  blue: "bg-[#eef2f8] text-[#0B1F45]",
   gray: "bg-gray-100 text-gray-600",
-  navy: "bg-[#002045] text-white",
+  navy: "bg-[#0B1F45] text-white",
 } as const;
 
 export function StatusBadge({
@@ -180,7 +180,7 @@ export function StatusBadge({
   children: React.ReactNode;
 }) {
   return (
-    <span className={`inline-block px-2 py-0.5 text-[10px] font-bold font-[var(--font-inter)] tracking-wide rounded-sm ${BADGE_TONES[tone]}`}>
+    <span className={`inline-block px-2 py-0.5 text-[10px] font-bold tracking-wide rounded-sm ${BADGE_TONES[tone]}`}>
       {children}
     </span>
   );
@@ -198,8 +198,8 @@ export function EmptyState({
 }) {
   return (
     <div className={`${cardCls} px-6 py-14 text-center`}>
-      <p className="font-[var(--font-noto-serif)] text-[#002045] text-lg">{title}</p>
-      {hint && <p className="text-[#74777f] text-xs font-[var(--font-inter)] mt-2 max-w-md mx-auto leading-relaxed">{hint}</p>}
+      <p className="font-serif text-[#0B1F45] text-lg">{title}</p>
+      {hint && <p className="text-[#74777f] text-xs mt-2 max-w-md mx-auto leading-relaxed">{hint}</p>}
       {action && <div className="mt-5 flex justify-center">{action}</div>}
     </div>
   );
@@ -212,7 +212,7 @@ export function EmptyState({
 export function TableShell({ children, className = "" }: { children: React.ReactNode; className?: string }) {
   return (
     <div className={`${cardCls} overflow-x-auto ${className}`}>
-      <table className="w-full text-sm font-[var(--font-inter)]">{children}</table>
+      <table className="w-full text-sm">{children}</table>
     </div>
   );
 }
@@ -220,7 +220,7 @@ export function TableShell({ children, className = "" }: { children: React.React
 // ─── Field (mobile-card label/value pair) ────────────────────────────────────
 export function Field({ label, children }: { label: string; children: React.ReactNode }) {
   return (
-    <span className="text-xs font-[var(--font-inter)] text-[#43474e]">
+    <span className="text-xs text-[#43474e]">
       <span className="text-[#74777f]">{label}:</span> {children}
     </span>
   );
@@ -229,7 +229,7 @@ export function Field({ label, children }: { label: string; children: React.Reac
 // ─── Spinner ─────────────────────────────────────────────────────────────────
 export function Spinner() {
   return (
-    <span className="inline-block w-4 h-4 border-2 border-[#e2e2e2] border-t-[#002045] rounded-full animate-spin align-middle" />
+    <span className="inline-block w-4 h-4 border-2 border-[#e2e2e2] border-t-[#0B1F45] rounded-full animate-spin align-middle" />
   );
 }
 

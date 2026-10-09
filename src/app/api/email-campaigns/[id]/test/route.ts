@@ -61,16 +61,16 @@ export async function POST(
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>[TESTE] ${campaign.subject}</title>
 </head>
-<body style="margin:0;padding:0;background:#f0efec;font-family:Arial,Helvetica,sans-serif;">
+<body style="margin:0;padding:0;background:#EFEDE8;font-family:Montserrat,Arial,Helvetica,sans-serif;">
   <table width="100%" cellpadding="0" cellspacing="0" style="background:#fef3c7;border-bottom:2px solid #f59e0b;">
     <tr><td align="center" style="padding:16px 24px;">
       <table cellpadding="0" cellspacing="0" style="max-width:580px;width:100%;">
         <tr>
           <td>
-            <p style="margin:0 0 8px;font-size:13px;font-weight:700;color:#78350f;font-family:Arial,sans-serif;">&#9888; CAMPANHA AGUARDANDO APROVAÇÃO &#8212; Enviada para ${partnerCount ?? 0} parceiros ativos se aprovada</p>
+            <p style="margin:0 0 8px;font-size:13px;font-weight:700;color:#78350f;font-family:Montserrat,Arial,sans-serif;">&#9888; CAMPANHA AGUARDANDO APROVAÇÃO &#8212; Enviada para ${partnerCount ?? 0} parceiros ativos se aprovada</p>
             <div>
-              <a href="${approveUrl}" style="display:inline-block;background:#15803d;color:#ffffff;text-decoration:none;padding:10px 20px;font-size:11px;letter-spacing:0.1em;text-transform:uppercase;font-weight:700;font-family:Arial,sans-serif;margin-right:8px;">&#10003; Aprovar e Enviar</a>
-              <a href="${siteUrl}/admin" style="display:inline-block;background:#002045;color:#ffffff;text-decoration:none;padding:10px 20px;font-size:11px;letter-spacing:0.1em;text-transform:uppercase;font-weight:700;font-family:Arial,sans-serif;">Ver no painel admin</a>
+              <a href="${approveUrl}" style="display:inline-block;background:#15803d;color:#ffffff;text-decoration:none;padding:10px 20px;font-size:11px;letter-spacing:0.1em;text-transform:uppercase;font-weight:700;font-family:Montserrat,Arial,sans-serif;margin-right:8px;">&#10003; Aprovar e Enviar</a>
+              <a href="${siteUrl}/admin" style="display:inline-block;background:#0B1F45;color:#ffffff;text-decoration:none;padding:10px 20px;font-size:11px;letter-spacing:0.1em;text-transform:uppercase;font-weight:700;font-family:Montserrat,Arial,sans-serif;">Ver no painel admin</a>
             </div>
           </td>
         </tr>

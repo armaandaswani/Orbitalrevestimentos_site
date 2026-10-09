@@ -46,7 +46,7 @@ function quando(iso: string) {
 /** Leitura do diagnóstico em linguagem direta: o problema e o que fazer. */
 function Conclusao({ d }: { d: Diag }) {
   const caixa = (tone: "red" | "green" | "amber", titulo: string, texto: React.ReactNode) => (
-    <div className={`mt-3 p-3 rounded-md text-xs font-[var(--font-inter)] leading-relaxed ${tone === "red" ? "bg-red-50 text-red-800" : tone === "green" ? "bg-green-50 text-green-800" : "bg-amber-50 text-amber-800"}`}>
+    <div className={`mt-3 p-3 rounded-md text-xs leading-relaxed ${tone === "red" ? "bg-red-50 text-red-800" : tone === "green" ? "bg-green-50 text-green-800" : "bg-amber-50 text-amber-800"}`}>
       <p className="font-bold mb-1">{titulo}</p>
       <div>{texto}</div>
     </div>
@@ -120,8 +120,8 @@ export default function EmailDiagnostico() {
     <div className={`${cardCls} p-4 mb-6`}>
       <div className="flex flex-wrap items-center justify-between gap-3">
         <div className="min-w-0">
-          <p className="text-[#002045] text-sm font-semibold font-[var(--font-inter)]">Diagnóstico dos avisos por e-mail</p>
-          <p className="text-[#74777f] text-xs font-[var(--font-inter)] mt-0.5">Mostra o que aconteceu com os últimos e-mails do site para a caixa da empresa.</p>
+          <p className="text-[#0B1F45] text-sm font-semibold">Diagnóstico dos avisos por e-mail</p>
+          <p className="text-[#74777f] text-xs mt-0.5">Mostra o que aconteceu com os últimos e-mails do site para a caixa da empresa.</p>
         </div>
         <div className="flex flex-col sm:flex-row gap-2 w-full sm:w-auto">
           <button type="button" onClick={verificar} disabled={carregando} className={`${btnGhost} w-full sm:w-auto`}>{carregando ? "Verificando…" : "Verificar"}</button>
@@ -130,7 +130,7 @@ export default function EmailDiagnostico() {
       </div>
 
       {teste && (
-        <div className={`mt-3 p-3 rounded-md text-xs font-[var(--font-inter)] ${teste.ok ? "bg-green-50 text-green-800" : "bg-red-50 text-red-800"}`}>
+        <div className={`mt-3 p-3 rounded-md text-xs ${teste.ok ? "bg-green-50 text-green-800" : "bg-red-50 text-red-800"}`}>
           {teste.ok
             ? <>O Resend aceitou o e-mail de teste para {teste.destino}. Confira a caixa de entrada (e o Spam) em 1 a 2 minutos, depois clique em Verificar para ver se foi entregue ou bloqueado.</>
             : <><strong>O Resend recusou o envio:</strong> <span className="break-words">{teste.erro}</span></>}
@@ -142,15 +142,15 @@ export default function EmailDiagnostico() {
           <Conclusao d={d} />
           {(d.para_empresa?.length ?? 0) > 0 && (
             <div className="mt-3">
-              <p className="text-[10px] tracking-[0.15em] uppercase font-bold font-[var(--font-inter)] text-[#74777f] mb-2">Últimos e-mails para {d.destino}</p>
+              <p className="text-[10px] tracking-[0.15em] uppercase font-bold text-[#74777f] mb-2">Últimos e-mails para {d.destino}</p>
               <ul className="divide-y divide-[#f0f0f0]">
                 {d.para_empresa!.map((e) => {
                   const ev = EVENTO[e.last_event] ?? { label: e.last_event, tone: "gray" as const };
                   return (
                     <li key={e.id} className="py-2 flex items-start justify-between gap-3">
                       <div className="min-w-0">
-                        <p className="text-xs text-[#002045] font-[var(--font-inter)] break-words">{e.subject}</p>
-                        <p className="text-[11px] text-[#74777f] font-[var(--font-inter)]">{quando(e.created_at)}</p>
+                        <p className="text-xs text-[#0B1F45] break-words">{e.subject}</p>
+                        <p className="text-[11px] text-[#74777f]">{quando(e.created_at)}</p>
                       </div>
                       <span className="flex-shrink-0"><StatusBadge tone={ev.tone}>{ev.label}</StatusBadge></span>
                     </li>
@@ -160,7 +160,7 @@ export default function EmailDiagnostico() {
             </div>
           )}
           {d.contagem && Object.keys(d.contagem).length > 0 && (
-            <p className="mt-2 text-[11px] text-[#74777f] font-[var(--font-inter)]">
+            <p className="mt-2 text-[11px] text-[#74777f]">
               Últimos {d.total_recentes} e-mails do site (todos os destinos):{" "}
               {Object.entries(d.contagem).map(([k, n]) => `${EVENTO[k]?.label ?? k}: ${n}`).join(" · ")}
               {d.ultimo_envio ? ` · último em ${quando(d.ultimo_envio)}` : ""}

@@ -25,30 +25,41 @@ export default function Navbar() {
 
   return (
     <header className="fixed top-0 w-full z-50 bg-white/95 backdrop-blur-sm border-b border-[#e8e8e8] shadow-[0_1px_0_0_rgba(0,0,0,0.04)]">
-      <div className="grid grid-cols-[auto_1fr_auto] items-center h-20 px-8 lg:px-16 max-w-[1280px] mx-auto gap-x-8">
+      <div className="grid grid-cols-[auto_1fr_auto] items-center h-20 px-6 lg:px-12 xl:px-16 max-w-[1280px] mx-auto gap-x-6 lg:gap-x-8">
         {/* Logo — left third */}
         <div className="flex items-center">
           <Link
             href="/"
             onClick={() => window.scrollTo({ top: 0, behavior: "smooth" })}
-            className="text-xl font-bold tracking-[0.22em] text-[#002045] font-[var(--font-noto-serif)]"
+            aria-label="Orbital Revestimentos — início"
+            className="block shrink-0 py-2.5"
           >
-            ORBITAL
+            {/* Assinatura horizontal oficial (manual da marca). 40px de altura =
+                128px de largura, acima do mínimo de 120px; o py-2.5 é a área de
+                proteção (¼ da altura do globo). */}
+            {/* eslint-disable-next-line @next/next/no-img-element */}
+            <img
+              src="/images/brand/orbital-assinatura.svg"
+              alt="Orbital Revestimentos"
+              width={128}
+              height={40}
+              className="h-10 w-auto max-w-none"
+            />
           </Link>
         </div>
 
         {/* Desktop Nav — center third */}
-        <nav className="hidden md:flex items-center justify-center gap-6">
+        <nav className="hidden lg:flex items-center justify-center gap-4 xl:gap-6">
           {navLinks.map(({ href, label }) => {
             const active = pathname === href;
             return (
               <Link
                 key={label}
                 href={href}
-                className={`text-xs tracking-[0.1em] uppercase font-semibold font-[var(--font-inter)] transition-colors duration-200 pb-0.5 ${
+                className={`text-[11px] xl:text-xs tracking-[0.08em] xl:tracking-[0.1em] uppercase font-semibold whitespace-nowrap transition-colors duration-200 pb-0.5 ${
                   active
-                    ? "text-[#002045] border-b border-[#002045]"
-                    : "text-[#74777f] hover:text-[#002045]"
+                    ? "text-[#0B1F45] border-b border-[#0B1F45]"
+                    : "text-[#74777f] hover:text-[#0B1F45]"
                 }`}
               >
                 {label}
@@ -58,10 +69,10 @@ export default function Navbar() {
         </nav>
 
         {/* Right CTAs — right third */}
-        <div className="hidden md:flex items-center justify-end gap-3">
+        <div className="hidden lg:flex items-center justify-end gap-3">
           <Link
             href="/parceiro"
-            className="text-xs tracking-[0.08em] uppercase font-semibold font-[var(--font-inter)] text-[#74777f] hover:text-[#002045] transition-colors border border-[#e2e2e2] hover:border-[#002045] px-4 py-2"
+            className="hidden xl:inline-block whitespace-nowrap text-xs tracking-[0.08em] uppercase font-semibold text-[#74777f] hover:text-[#0B1F45] transition-colors border border-[#e2e2e2] hover:border-[#0B1F45] px-4 py-2"
           >
             Portal Parceiro
           </Link>
@@ -69,7 +80,7 @@ export default function Navbar() {
             href={CATALOGUE_URL}
             target="_blank"
             rel="noopener noreferrer"
-            className="inline-flex items-center gap-1.5 text-xs tracking-[0.1em] uppercase font-semibold font-[var(--font-inter)] bg-[#1a365d] text-white px-5 py-2.5 hover:bg-[#002045] transition-colors duration-200"
+            className="inline-flex items-center gap-1.5 whitespace-nowrap text-[11px] xl:text-xs tracking-[0.08em] xl:tracking-[0.1em] uppercase font-semibold bg-[#0B1F45] text-white px-4 xl:px-5 py-2.5 hover:bg-[#2347A0] transition-colors duration-200"
           >
             <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
               <path d="M21 15v4a2 2 0 01-2 2H5a2 2 0 01-2-2v-4M7 10l5 5 5-5M12 15V3" />
@@ -79,9 +90,9 @@ export default function Navbar() {
         </div>
 
         {/* Mobile Hamburger — right third on mobile */}
-        <div className="md:hidden flex justify-end">
+        <div className="lg:hidden flex justify-end">
           <button
-            className="p-2 text-[#002045]"
+            className="p-2 text-[#0B1F45]"
             onClick={() => setMobileOpen(!mobileOpen)}
             aria-label="Menu"
           >
@@ -100,14 +111,14 @@ export default function Navbar() {
 
       {/* Mobile Menu */}
       {mobileOpen && (
-        <div className="md:hidden bg-white border-t border-[#e8e8e8] px-8 py-6 flex flex-col gap-5">
+        <div className="lg:hidden bg-white border-t border-[#e8e8e8] px-8 py-6 flex flex-col gap-5">
           {navLinks.map(({ href, label }) => (
             <Link
               key={label}
               href={href}
               onClick={() => setMobileOpen(false)}
-              className={`text-xs tracking-[0.1em] uppercase font-semibold font-[var(--font-inter)] ${
-                pathname === href ? "text-[#002045]" : "text-[#74777f]"
+              className={`text-xs tracking-[0.1em] uppercase font-semibold ${
+                pathname === href ? "text-[#0B1F45]" : "text-[#74777f]"
               }`}
             >
               {label}
@@ -116,7 +127,7 @@ export default function Navbar() {
           <Link
             href="/parceiro"
             onClick={() => setMobileOpen(false)}
-            className="text-xs tracking-[0.08em] uppercase font-semibold font-[var(--font-inter)] text-[#74777f] border border-[#e2e2e2] px-4 py-2.5 self-start"
+            className="text-xs tracking-[0.08em] uppercase font-semibold text-[#74777f] border border-[#e2e2e2] px-4 py-2.5 self-start"
           >
             Portal Parceiro
           </Link>
@@ -124,7 +135,7 @@ export default function Navbar() {
             href={CATALOGUE_URL}
             target="_blank"
             rel="noopener noreferrer"
-            className="self-start inline-flex items-center gap-1.5 text-xs tracking-[0.1em] uppercase font-semibold font-[var(--font-inter)] bg-[#1a365d] text-white px-5 py-2.5 mt-2"
+            className="self-start inline-flex items-center gap-1.5 text-xs tracking-[0.1em] uppercase font-semibold bg-[#0B1F45] text-white px-5 py-2.5 mt-2"
           >
             <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
               <path d="M21 15v4a2 2 0 01-2 2H5a2 2 0 01-2-2v-4M7 10l5 5 5-5M12 15V3" />

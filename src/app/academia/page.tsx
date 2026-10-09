@@ -1,6 +1,5 @@
 import type { Metadata } from "next";
 import Image from "next/image";
-import { Barlow_Condensed } from "next/font/google";
 import ScrollReveal from "@/components/ScrollReveal";
 import ListaEsperaForm from "./ListaEsperaForm";
 import AntesDepois from "./AntesDepois";
@@ -9,7 +8,8 @@ import CtaFixo from "./CtaFixo";
 /**
  * Academia Orbital — lista de espera.
  *
- * Campanha dentro da marca: tipografia condensada, verde-lima na conversão.
+ * Campanha dentro da marca: Montserrat ExtraBold em caixa alta nos títulos,
+ * Verde Bambu (#36A35C, com texto azul-tinta) na conversão.
  * Público: aplicador, instalador e marceneiro, no celular. Eles não leem
  * parágrafo — cada seção é UM título curto e UMA prova visual, com espaço em
  * volta. Versões anteriores foram reprovadas por excesso de texto; antes de
@@ -25,8 +25,9 @@ import CtaFixo from "./CtaFixo";
  * imagens geradas e não entram aqui.
  */
 
-const display = Barlow_Condensed({ subsets: ["latin"], weight: ["600", "700", "800"], display: "swap" });
-const D = display.className;
+// Títulos da campanha: Montserrat (font-sans) — o manual reserva a Noto Serif
+// Display para títulos editoriais; aqui o tom é de campanha, em caixa alta.
+const D = "font-sans tracking-[-0.01em]";
 
 const URL_PAGINA = "https://orbitalrevestimentos.com.br/academia";
 
@@ -42,7 +43,7 @@ export const metadata: Metadata = {
   },
 };
 
-const LIMA = "#a8e05f";
+const LIMA = "#36A35C"; // Verde Bambu
 
 const BENEFICIOS = ["Mais rapidez", "Menos retrabalho", "Novo serviço", "Certificação Orbital"];
 
@@ -92,14 +93,14 @@ const breadcrumbSchema = {
 /** Todo botão volta para o formulário no topo. Alto: é tocado com o polegar. */
 function Cta({ texto, tom = "lima" }: { texto: string; tom?: "lima" | "navy" | "verde" }) {
   const cor = {
-    lima: "bg-[#a8e05f] text-[#00142b] hover:bg-[#bdf07a]",
-    navy: "bg-[#00142b] text-white hover:bg-[#002045]",
-    verde: "bg-[#3b6934] text-white hover:bg-[#2f5529]",
+    lima: "bg-[#36A35C] text-[#0D1830] hover:bg-[#4BB571]",
+    navy: "bg-[#0B1F45] text-white hover:bg-[#2347A0]",
+    verde: "bg-[#36A35C] text-[#0B1F45] hover:bg-[#4BB571]",
   }[tom];
   return (
     <a
       href="#lista-de-espera"
-      className={`group w-full sm:w-auto inline-flex items-center justify-center gap-3 min-h-14 px-6 sm:px-8 py-4 text-sm tracking-[0.08em] sm:tracking-[0.12em] uppercase font-extrabold font-[var(--font-inter)] transition-colors ${cor}`}
+      className={`group w-full sm:w-auto inline-flex items-center justify-center gap-3 min-h-14 px-6 sm:px-8 py-4 text-sm tracking-[0.08em] sm:tracking-[0.12em] uppercase font-extrabold transition-colors ${cor}`}
     >
       {texto}
       <span aria-hidden className="transition-transform duration-300 group-hover:translate-x-1.5">→</span>
@@ -107,31 +108,31 @@ function Cta({ texto, tom = "lima" }: { texto: string; tom?: "lima" | "navy" | "
   );
 }
 
-const H2 = `${D} text-[34px] leading-none sm:text-5xl lg:text-[60px] lg:leading-[0.98] font-bold uppercase`;
+const H2 = `${D} text-[27px] leading-[1.05] sm:text-[40px] lg:text-[50px] lg:leading-[1.02] font-extrabold uppercase`;
 
 export default function AcademiaPage() {
   return (
-    <div className="pt-20 bg-[#00142b]">
+    <div className="pt-20 bg-[#0B1F45]">
       <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: JSON.stringify(breadcrumbSchema) }} />
 
       {/* ── Topo: promessa + formulário ── */}
-      <section id="academia-topo" className="bg-[#00142b] text-white">
+      <section id="academia-topo" className="bg-[#0B1F45] text-white">
         <div className="max-w-[1280px] mx-auto px-4 lg:px-16 pt-10 pb-14 lg:py-20 lg:grid lg:grid-cols-[1fr_1.05fr] lg:gap-16 lg:items-center">
           <div className="mb-10 lg:mb-0">
             <div className="flex flex-wrap items-center gap-2.5 mb-6">
-              <span className="text-[11px] tracking-[0.22em] uppercase font-bold font-[var(--font-inter)]" style={{ color: LIMA }}>
+              <span className="text-[11px] tracking-[0.22em] uppercase font-bold" style={{ color: LIMA }}>
                 Academia Orbital
               </span>
-              <span className="border border-white/25 text-white/70 text-[10px] tracking-[0.18em] uppercase font-bold font-[var(--font-inter)] px-2 py-0.5">
+              <span className="border border-white/25 text-white/70 text-[10px] tracking-[0.18em] uppercase font-bold px-2 py-0.5">
                 Em preparação
               </span>
             </div>
-            <h1 className={`${D} text-[40px] leading-[0.98] sm:text-6xl lg:text-[64px] xl:text-[70px] lg:leading-[0.95] font-extrabold uppercase mb-6`}>
+            <h1 className={`${D} text-[30px] leading-[1.05] sm:text-5xl lg:text-[52px] xl:text-[58px] lg:leading-[1.02] font-extrabold uppercase mb-6`}>
               Aprenda a instalar PFB.
               <br />
               <span style={{ color: LIMA }}>Ganhe um novo serviço.</span>
             </h1>
-            <p className="text-white/70 text-base lg:text-lg font-[var(--font-inter)] leading-relaxed max-w-md">
+            <p className="text-white/70 text-base lg:text-lg leading-relaxed max-w-md">
               Curso prático do Painel Flexível Fibra de Bambu (PFB), do corte ao acabamento. Com Certificação Orbital.
             </p>
           </div>
@@ -146,12 +147,12 @@ export default function AcademiaPage() {
       </section>
 
       {/* ── Faixa: os quatro ganhos, em quatro palavras ── */}
-      <section className="bg-[#a8e05f] text-[#00142b]" aria-label="O que você ganha">
+      <section className="bg-[#F6F5F2] text-[#0D1830] border-b border-[#e2e2e2]" aria-label="O que você ganha">
         <ul className="max-w-[1280px] mx-auto grid grid-cols-2 lg:grid-cols-4">
           {BENEFICIOS.map((b, i) => (
             <li
               key={b}
-              className={`px-4 lg:px-8 py-5 lg:py-6 border-[#00142b]/15 ${i % 2 === 0 ? "border-r" : ""} ${i < 2 ? "border-b lg:border-b-0" : ""} lg:border-r lg:last:border-r-0`}
+              className={`px-4 lg:px-8 py-5 lg:py-6 border-[#0D1830]/15 ${i % 2 === 0 ? "border-r" : ""} ${i < 2 ? "border-b lg:border-b-0" : ""} lg:border-r lg:last:border-r-0`}
             >
               <span className={`${D} block text-xl lg:text-[26px] leading-none font-bold uppercase`}>{b}</span>
             </li>
@@ -160,13 +161,13 @@ export default function AcademiaPage() {
       </section>
 
       {/* ── A prova ── */}
-      <section className="bg-[#f2f1ec] text-[#00142b] py-20 lg:py-32">
+      <section className="bg-white text-[#0D1830] py-20 lg:py-32">
         <div className="max-w-[1080px] mx-auto px-4 lg:px-16">
           <ScrollReveal direction="up">
             <h2 className={`${H2} mb-12 lg:mb-16`}>
               Você vai aprender
               <br />
-              <span className="text-[#3b6934]">a fazer isso.</span>
+              <span className="text-[#1F7A44]">a fazer isso.</span>
             </h2>
           </ScrollReveal>
           <div className="space-y-16 lg:space-y-24">
@@ -186,9 +187,9 @@ export default function AcademiaPage() {
       </section>
 
       {/* ── Uma frase, e só ── */}
-      <section className="bg-[#00142b] py-24 lg:py-36">
+      <section className="bg-[#0B1F45] py-24 lg:py-36">
         <ScrollReveal direction="up" className="max-w-[1280px] mx-auto px-4 lg:px-16">
-          <p className={`${D} text-white text-[34px] leading-none sm:text-5xl lg:text-[64px] font-bold uppercase`}>
+          <p className={`${D} text-white text-[27px] leading-[1.05] sm:text-[40px] lg:text-[52px] font-extrabold uppercase`}>
             PFB não é mais o futuro.
             <br />
             <span style={{ color: LIMA }}>Já é o presente!</span>
@@ -197,17 +198,17 @@ export default function AcademiaPage() {
       </section>
 
       {/* ── Onde aplica: foto e uma palavra ── */}
-      <section className="bg-white text-[#00142b] py-20 lg:py-32">
+      <section className="bg-white text-[#0D1830] py-20 lg:py-32">
         <div className="max-w-[1280px] mx-auto px-4 lg:px-16">
           <ScrollReveal direction="up">
             <h2 className={`${H2} mb-12 lg:mb-16`}>
-              Não é <span className="text-[#3b6934]">só parede.</span>
+              Não é <span className="text-[#1F7A44]">só parede.</span>
             </h2>
           </ScrollReveal>
           <div className="grid grid-cols-2 lg:grid-cols-3 gap-2 lg:gap-4">
             {APLICACOES.map(({ t, src, alt }, i) => (
               <ScrollReveal key={t} direction="up" delay={(i % 3) * 80}>
-                <figure className="group relative aspect-[3/4] overflow-hidden bg-[#00142b]">
+                <figure className="group relative aspect-[3/4] overflow-hidden bg-[#0B1F45]">
                   <Image
                     src={src}
                     alt={alt}
@@ -215,7 +216,7 @@ export default function AcademiaPage() {
                     sizes="(min-width: 1024px) 400px, 50vw"
                     className="object-cover transition-transform duration-700 lg:group-hover:scale-105"
                   />
-                  <div className="absolute inset-0 bg-gradient-to-t from-[#00142b]/80 via-transparent to-transparent" />
+                  <div className="absolute inset-0 bg-gradient-to-t from-[#0B1F45]/80 via-transparent to-transparent" />
                   <figcaption className={`${D} absolute left-3 bottom-3 lg:left-5 lg:bottom-5 text-white text-xl lg:text-2xl leading-none font-bold uppercase`}>
                     {t}
                   </figcaption>
@@ -227,7 +228,7 @@ export default function AcademiaPage() {
       </section>
 
       {/* ── O que aprende: cinco palavras, em escada ── */}
-      <section className="bg-[#00142b] text-white py-20 lg:py-32">
+      <section className="bg-[#0B1F45] text-white py-20 lg:py-32">
         <div className="max-w-[1280px] mx-auto px-4 lg:px-16">
           <ScrollReveal direction="up">
             <h2 className={`${H2} mb-12 lg:mb-20`}>
@@ -241,7 +242,7 @@ export default function AcademiaPage() {
               <li key={t} style={{ ["--degrau" as string]: `${i * 36}px` }} className="lg:mb-[var(--degrau)]">
                 <ScrollReveal direction="up" delay={i * 90}>
                   <div className="border border-white/15 px-5 py-4 lg:p-6 flex items-center gap-5 lg:block">
-                    <span className={`${D} text-4xl lg:text-5xl leading-none font-extrabold text-transparent [-webkit-text-stroke:1.5px_#a8e05f] w-12 lg:w-auto shrink-0`}>
+                    <span className={`${D} text-4xl lg:text-5xl leading-none font-extrabold text-transparent [-webkit-text-stroke:1.5px_#36A35C] w-12 lg:w-auto shrink-0`}>
                       0{i + 1}
                     </span>
                     <span className={`${D} block text-2xl lg:text-[28px] leading-none font-bold uppercase lg:mt-8`}>{t}</span>
@@ -254,10 +255,10 @@ export default function AcademiaPage() {
       </section>
 
       {/* ── Certificação ── */}
-      <section className="bg-black text-white py-20 lg:py-32">
+      <section className="bg-[#0B1F45] text-white border-t border-white/10 py-20 lg:py-32">
         <div className="max-w-[1280px] mx-auto px-4 lg:px-16">
           <ScrollReveal direction="up">
-            <p className="text-[11px] lg:text-xs tracking-[0.22em] uppercase font-bold font-[var(--font-inter)] mb-5" style={{ color: LIMA }}>
+            <p className="text-[11px] lg:text-xs tracking-[0.22em] uppercase font-bold mb-5" style={{ color: LIMA }}>
               Não é só um curso
             </p>
             <h2 className={`${H2} mb-12 lg:mb-16`}>
@@ -273,9 +274,9 @@ export default function AcademiaPage() {
               return (
                 <li
                   key={e}
-                  className={`p-4 lg:p-6 border ${ultima ? "border-[#a8e05f] bg-[#a8e05f] text-[#00142b]" : "border-white/20"}`}
+                  className={`p-4 lg:p-6 border ${ultima ? "border-[#36A35C] bg-[#36A35C] text-[#0D1830]" : "border-white/20"}`}
                 >
-                  <span className={`block text-[11px] font-bold font-[var(--font-inter)] mb-2 ${ultima ? "opacity-70" : "text-white/40"}`}>
+                  <span className={`block text-[11px] font-bold mb-2 ${ultima ? "opacity-70" : "text-white/40"}`}>
                     {i + 1}
                   </span>
                   <span className={`${D} block text-xl lg:text-[26px] leading-none font-bold uppercase`}>{e}</span>
@@ -284,7 +285,7 @@ export default function AcademiaPage() {
             })}
           </ol>
 
-          <p className="text-white/70 text-base lg:text-lg font-[var(--font-inter)] mb-10 lg:mb-12">
+          <p className="text-white/70 text-base lg:text-lg mb-10 lg:mb-12">
             Certificado, você compra PFB direto com a Orbital.
           </p>
           <Cta texto="Quero fazer parte" />
@@ -292,9 +293,9 @@ export default function AcademiaPage() {
       </section>
 
       {/* ── Fechamento: volta para o formulário ── */}
-      <section className="bg-[#a8e05f] text-[#00142b] pt-20 pb-32 md:pb-24 lg:py-28">
+      <section className="bg-[#F6F5F2] text-[#0D1830] pt-20 pb-32 md:pb-24 lg:py-28">
         <div className="max-w-[1280px] mx-auto px-4 lg:px-16 lg:flex lg:items-end lg:justify-between gap-10">
-          <p className={`${D} text-[34px] leading-none sm:text-5xl lg:text-[56px] font-bold uppercase mb-10 lg:mb-0 max-w-3xl`}>
+          <p className={`${D} text-[27px] leading-[1.05] sm:text-[40px] lg:text-[46px] font-extrabold uppercase mb-10 lg:mb-0 max-w-3xl`}>
             Quando as portas abrirem, você vai querer estar aqui.
           </p>
           <Cta texto="Quero meu lugar na lista" tom="navy" />

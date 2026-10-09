@@ -60,8 +60,8 @@ function semNome(s: string) {
 }
 
 const selectCls =
-  "w-full min-w-0 border border-[#e2e2e2] bg-white px-3 py-2.5 text-sm font-[var(--font-inter)] text-[#002045] focus:outline-none focus:border-[#002045]";
-const labelCls = "block text-[9px] tracking-[0.15em] uppercase font-bold font-[var(--font-inter)] text-[#74777f] mb-1";
+  "w-full min-w-0 border border-[#e2e2e2] bg-white px-3 py-2.5 text-sm text-[#0B1F45] focus:outline-none focus:border-[#0B1F45]";
+const labelCls = "block text-[9px] tracking-[0.15em] uppercase font-bold text-[#74777f] mb-1";
 
 export default function ComissoesLista({
   items,
@@ -257,18 +257,18 @@ export default function ComissoesLista({
       {/* Resumo do que está filtrado */}
       <div className="grid grid-cols-1 sm:grid-cols-3 gap-3 sm:gap-4 mb-6">
         <div className="bg-white border border-[#e2e2e2] px-5 py-4">
-          <p className="text-[#74777f] text-[10px] tracking-[0.15em] uppercase font-bold font-[var(--font-inter)] mb-1">Recebido</p>
+          <p className="text-[#74777f] text-[10px] tracking-[0.15em] uppercase font-bold mb-1">Recebido</p>
           <p className="font-serif text-green-700 text-2xl sm:text-3xl font-normal">{fmt(resumo.recebido)}</p>
         </div>
         <div className="bg-white border border-[#e2e2e2] px-5 py-4">
-          <p className="text-[#74777f] text-[10px] tracking-[0.15em] uppercase font-bold font-[var(--font-inter)] mb-1">A receber</p>
-          <p className="font-serif text-[#002045] text-2xl sm:text-3xl font-normal">{fmt(resumo.aReceber)}</p>
-          <p className="text-[#74777f] text-[11px] font-[var(--font-inter)] mt-1">vendas concluídas</p>
+          <p className="text-[#74777f] text-[10px] tracking-[0.15em] uppercase font-bold mb-1">A receber</p>
+          <p className="font-serif text-[#0B1F45] text-2xl sm:text-3xl font-normal">{fmt(resumo.aReceber)}</p>
+          <p className="text-[#74777f] text-[11px] mt-1">vendas concluídas</p>
         </div>
         <div className="bg-white border border-[#e2e2e2] px-5 py-4">
-          <p className="text-[#74777f] text-[10px] tracking-[0.15em] uppercase font-bold font-[var(--font-inter)] mb-1">Em andamento</p>
+          <p className="text-[#74777f] text-[10px] tracking-[0.15em] uppercase font-bold mb-1">Em andamento</p>
           <p className="font-serif text-amber-600 text-2xl sm:text-3xl font-normal">{fmt(resumo.andamento)}</p>
-          <p className="text-[#74777f] text-[11px] font-[var(--font-inter)] mt-1">vendas ainda não concluídas</p>
+          <p className="text-[#74777f] text-[11px] mt-1">vendas ainda não concluídas</p>
         </div>
       </div>
 
@@ -351,7 +351,7 @@ export default function ComissoesLista({
           </div>
         </div>
         <div className="flex flex-wrap items-center justify-between gap-2 pt-1">
-          <p className="text-[11px] text-[#74777f] font-[var(--font-inter)]">
+          <p className="text-[11px] text-[#74777f]">
             {filtradas.length} comiss{filtradas.length === 1 ? "ão" : "ões"} · {fmt(resumo.total)}
             {temFiltro && (
               <>
@@ -359,7 +359,7 @@ export default function ComissoesLista({
                 <button
                   type="button"
                   onClick={() => { setPeriodo("all"); setStatus("all"); setBusca(""); }}
-                  className="underline underline-offset-2 hover:text-[#002045]"
+                  className="underline underline-offset-2 hover:text-[#0B1F45]"
                 >
                   limpar filtros
                 </button>
@@ -371,7 +371,7 @@ export default function ComissoesLista({
               type="button"
               onClick={darBaixaEmTodas}
               disabled={busy.size > 0}
-              className="border border-[#002045] text-[#002045] text-[10px] tracking-[0.1em] uppercase font-bold font-[var(--font-inter)] px-3 py-2 hover:bg-[#002045] hover:text-white transition-colors disabled:opacity-50"
+              className="border border-[#0B1F45] text-[#0B1F45] text-[10px] tracking-[0.1em] uppercase font-bold px-3 py-2 hover:bg-[#0B1F45] hover:text-white transition-colors disabled:opacity-50"
             >
               Dar baixa nas {resumo.abertas.length} a receber
             </button>
@@ -379,11 +379,11 @@ export default function ComissoesLista({
         </div>
       </div>
 
-      {erro && <p className="text-red-600 text-sm font-[var(--font-inter)] mb-3">{erro}</p>}
+      {erro && <p className="text-red-600 text-sm mb-3">{erro}</p>}
 
       {filtradas.length === 0 ? (
         <div className="bg-white border border-[#e2e2e2] px-6 py-10 text-center">
-          <p className="text-[#74777f] text-sm font-[var(--font-inter)]">
+          <p className="text-[#74777f] text-sm">
             {items.length === 0 ? "Nenhuma comissão registrada ainda." : "Nenhuma comissão com esses filtros."}
           </p>
         </div>
@@ -396,11 +396,11 @@ export default function ComissoesLista({
               <div key={g.key}>
                 {g.label && (
                   <div className="flex flex-wrap items-baseline justify-between gap-x-3 gap-y-0.5 mb-2 px-1">
-                    <p className="text-[#002045] text-sm font-semibold font-[var(--font-inter)]">
+                    <p className="text-[#0B1F45] text-sm font-semibold">
                       {g.label} <span className="text-[#74777f] font-normal">· {g.items.length}</span>
                     </p>
-                    <p className="text-xs font-[var(--font-inter)] text-[#43474e]">
-                      <strong className="text-[#002045]">{fmt(total)}</strong>
+                    <p className="text-xs text-[#43474e]">
+                      <strong className="text-[#0B1F45]">{fmt(total)}</strong>
                       {recebido > 0 && <span className="text-green-700"> · recebido {fmt(recebido)}</span>}
                     </p>
                   </div>
@@ -417,21 +417,21 @@ export default function ComissoesLista({
                     return (
                       <div key={c.id} className="px-4 sm:px-5 py-4 flex items-start justify-between gap-3">
                         <div className="flex-1 min-w-0">
-                          <p className="text-[#002045] text-sm font-semibold font-[var(--font-inter)] leading-tight break-words">{titulo}</p>
-                          <p className="text-[#74777f] text-xs font-[var(--font-inter)] mt-0.5 break-words">
+                          <p className="text-[#0B1F45] text-sm font-semibold leading-tight break-words">{titulo}</p>
+                          <p className="text-[#74777f] text-xs mt-0.5 break-words">
                             {detalhe ? `${detalhe} · ` : ""}venda em {ddmmyyyy(new Date(c.createdAt))}
                           </p>
                           {s === "recebido" && c.receivedAt && (
-                            <p className="text-green-700 text-xs font-[var(--font-inter)] mt-1">
+                            <p className="text-green-700 text-xs mt-1">
                               Recebido em {ddmmyyyy(new Date(c.receivedAt))} ·{" "}
-                              <button type="button" disabled={ocupado} onClick={() => desfazer(c)} className="underline underline-offset-2 text-[#74777f] hover:text-[#002045] disabled:opacity-50">
+                              <button type="button" disabled={ocupado} onClick={() => desfazer(c)} className="underline underline-offset-2 text-[#74777f] hover:text-[#0B1F45] disabled:opacity-50">
                                 desfazer
                               </button>
                             </p>
                           )}
                         </div>
                         <div className="flex-shrink-0 text-right">
-                          <p className={`text-base font-bold font-serif ${s === "cancelada" ? "text-[#b0b0b0] line-through" : s === "pendente" ? "text-amber-600" : s === "recebido" ? "text-green-700" : "text-[#002045]"}`}>
+                          <p className={`text-base font-bold font-serif ${s === "cancelada" ? "text-[#b0b0b0] line-through" : s === "pendente" ? "text-amber-600" : s === "recebido" ? "text-green-700" : "text-[#0B1F45]"}`}>
                             {fmt(c.amount)}
                           </p>
                           <span className={`inline-block mt-1 px-2 py-0.5 text-[10px] font-bold tracking-wide ${SITUACAO[s].cls}`}>{SITUACAO[s].label}</span>
@@ -441,7 +441,7 @@ export default function ComissoesLista({
                                 type="button"
                                 disabled={ocupado}
                                 onClick={() => darBaixa(c)}
-                                className="bg-[#002045] text-white text-[10px] tracking-[0.08em] uppercase font-bold font-[var(--font-inter)] px-3 py-1.5 hover:bg-[#1a365d] transition-colors disabled:opacity-50 whitespace-nowrap"
+                                className="bg-[#0B1F45] text-white text-[10px] tracking-[0.08em] uppercase font-bold px-3 py-1.5 hover:bg-[#2347A0] transition-colors disabled:opacity-50 whitespace-nowrap"
                               >
                                 {ocupado ? "Salvando..." : "Dar baixa"}
                               </button>
@@ -457,7 +457,7 @@ export default function ComissoesLista({
           })}
         </div>
       )}
-      <p className="text-[#74777f] text-[11px] font-[var(--font-inter)] mt-4 leading-relaxed">
+      <p className="text-[#74777f] text-[11px] mt-4 leading-relaxed">
         &ldquo;Dar baixa&rdquo; confirma que você recebeu a comissão. &ldquo;✓ Pago&rdquo; é quando a Orbital marcou a
         transferência e falta a sua confirmação. Só vendas concluídas podem receber baixa.
       </p>

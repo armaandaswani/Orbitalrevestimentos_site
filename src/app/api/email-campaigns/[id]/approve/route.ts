@@ -11,12 +11,12 @@ function htmlPage(title: string, body: string): Response {
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>${title}</title>
   <style>
-    body { margin: 0; padding: 0; background: #f5f5f3; font-family: Arial, Helvetica, sans-serif; display: flex; align-items: center; justify-content: center; min-height: 100vh; }
+    body { margin: 0; padding: 0; background: #F6F5F2; font-family:Montserrat,Arial,Helvetica,sans-serif; display: flex; align-items: center; justify-content: center; min-height: 100vh; }
     .card { background: #fff; border: 1px solid #e2e2e2; padding: 48px 56px; max-width: 520px; text-align: center; }
-    h1 { color: #002045; font-size: 22px; margin: 0 0 12px; }
+    h1 { color: #0B1F45; font-size: 22px; margin: 0 0 12px; }
     p { color: #43474e; font-size: 14px; line-height: 1.7; margin: 0 0 8px; }
     .note { color: #74777f; font-size: 12px; margin-top: 20px; }
-    a { color: #002045; }
+    a { color: #0B1F45; }
   </style>
 </head>
 <body>

@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { supabaseAdmin } from "@/lib/supabase";
 import { getResend } from "@/lib/resend";
+import { emailTopo } from "@/lib/email-marca";
 
 const GENERIC_RESPONSE = {
   message: "Se o email estiver correto, você receberá as instruções em breve.",
@@ -58,7 +59,7 @@ export async function POST(req: NextRequest) {
       to: partner.email,
       subject: "Redefinição de senha — Orbital Revestimentos",
       html: `
-        <div style="font-family: Arial, sans-serif; max-width: 480px; margin: 0 auto; color: #002045;">
+        ${emailTopo(480)}<div style="font-family:Montserrat,Arial,sans-serif; max-width: 480px; margin: 0 auto; color: #0B1F45;">
           <p style="font-size: 16px;">Olá, ${partner.name}!</p>
           <p style="font-size: 14px; color: #43474e;">
             Recebemos uma solicitação para redefinir a senha do seu portal de parceiro.
@@ -66,7 +67,7 @@ export async function POST(req: NextRequest) {
           <p style="margin: 24px 0;">
             <a
               href="${resetLink}"
-              style="background-color: #002045; color: #ffffff; text-decoration: none; padding: 12px 24px; font-size: 14px; display: inline-block;"
+              style="background-color: #0B1F45; color: #ffffff; text-decoration: none; padding: 12px 24px; font-size: 14px; display: inline-block;"
             >
               Redefinir Senha
             </a>
@@ -76,7 +77,7 @@ export async function POST(req: NextRequest) {
           </p>
           <p style="font-size: 12px; color: #74777f;">
             Ou copie e cole o link abaixo no seu navegador:<br/>
-            <a href="${resetLink}" style="color: #002045;">${resetLink}</a>
+            <a href="${resetLink}" style="color: #0B1F45;">${resetLink}</a>
           </p>
         </div>
       `,

@@ -36,30 +36,30 @@ export interface DripStep {
 
 // ── Blocos reutilizados ──────────────────────────────────────────────────────
 const P = (t: string) =>
-  `<p style="color:#43474e;font-size:14px;line-height:1.85;margin:0 0 18px;font-family:Arial,sans-serif;">${t}</p>`;
+  `<p style="color:#43474e;font-size:14px;line-height:1.85;margin:0 0 18px;font-family:Montserrat,Arial,sans-serif;">${t}</p>`;
 
 const H = (t: string) =>
-  `<p style="font-size:19px;color:#002045;font-weight:700;margin:0 0 22px;line-height:1.4;font-family:Arial,sans-serif;">${t}</p>`;
+  `<p style="font-size:19px;color:#0B1F45;font-weight:700;margin:0 0 22px;line-height:1.4;font-family:Montserrat,Arial,sans-serif;">${t}</p>`;
 
 const CTA = (label: string) => `
 <table cellpadding="0" cellspacing="0" style="margin:30px 0 6px;">
-  <tr><td style="background:#002045;">
-    <a href="{{waLink}}" style="display:inline-block;padding:16px 34px;color:#ffffff;text-decoration:none;font-size:11px;font-weight:700;letter-spacing:0.14em;text-transform:uppercase;font-family:Arial,sans-serif;">${label}</a>
+  <tr><td style="background:#0B1F45;">
+    <a href="{{waLink}}" style="display:inline-block;padding:16px 34px;color:#ffffff;text-decoration:none;font-size:11px;font-weight:700;letter-spacing:0.14em;text-transform:uppercase;font-family:Montserrat,Arial,sans-serif;">${label}</a>
   </td></tr>
 </table>`;
 
 /** Linha de dado técnico — sóbria, sem ícone nem exclamação. */
 const SPEC = (label: string, value: string) => `
   <tr>
-    <td style="padding:14px 0;border-bottom:1px solid #ececec;color:#74777f;font-size:12px;font-family:Arial,sans-serif;vertical-align:top;width:42%;">${label}</td>
-    <td style="padding:14px 0;border-bottom:1px solid #ececec;color:#002045;font-size:13px;font-family:Arial,sans-serif;font-weight:700;">${value}</td>
+    <td style="padding:14px 0;border-bottom:1px solid #ececec;color:#74777f;font-size:12px;font-family:Montserrat,Arial,sans-serif;vertical-align:top;width:42%;">${label}</td>
+    <td style="padding:14px 0;border-bottom:1px solid #ececec;color:#0B1F45;font-size:13px;font-family:Montserrat,Arial,sans-serif;font-weight:700;">${value}</td>
   </tr>`;
 
 const SPECS = (rows: string) =>
   `<table width="100%" cellpadding="0" cellspacing="0" style="margin:8px 0 26px;">${rows}</table>`;
 
 const QUIET = (t: string) =>
-  `<p style="color:#74777f;font-size:12px;line-height:1.7;margin:22px 0 0;font-family:Arial,sans-serif;">${t}</p>`;
+  `<p style="color:#74777f;font-size:12px;line-height:1.7;margin:22px 0 0;font-family:Montserrat,Arial,sans-serif;">${t}</p>`;
 
 export const DRIP_STEPS: DripStep[] = [
   // ── Dia 0 ──────────────────────────────────────────────────────────────────

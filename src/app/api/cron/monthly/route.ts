@@ -76,17 +76,17 @@ export async function GET(req: NextRequest) {
   const adminEmail = EMAIL_EMPRESA;
 
   const topValueRows = topByValue.map(([code, s], i) =>
-    `<tr><td style="padding:8px;border-bottom:1px solid #eee;font-weight:600;color:#002045">${i + 1}°</td><td style="padding:8px;border-bottom:1px solid #eee">${getPartnerName(code)}</td><td style="padding:8px;border-bottom:1px solid #eee;font-weight:600;text-align:right">${fmt(s.total)}</td></tr>`
+    `<tr><td style="padding:8px;border-bottom:1px solid #eee;font-weight:600;color:#0B1F45">${i + 1}°</td><td style="padding:8px;border-bottom:1px solid #eee">${getPartnerName(code)}</td><td style="padding:8px;border-bottom:1px solid #eee;font-weight:600;text-align:right">${fmt(s.total)}</td></tr>`
   ).join("") || '<tr><td colspan="3" style="padding:12px;text-align:center;color:#74777f">Nenhuma venda</td></tr>';
 
   const topCountRows = topByCount.map(([code, s], i) =>
-    `<tr><td style="padding:8px;border-bottom:1px solid #eee;font-weight:600;color:#002045">${i + 1}°</td><td style="padding:8px;border-bottom:1px solid #eee">${getPartnerName(code)}</td><td style="padding:8px;border-bottom:1px solid #eee;text-align:center">${s.count}</td><td style="padding:8px;border-bottom:1px solid #eee;text-align:right">${fmt(medianOf(s.values))}</td></tr>`
+    `<tr><td style="padding:8px;border-bottom:1px solid #eee;font-weight:600;color:#0B1F45">${i + 1}°</td><td style="padding:8px;border-bottom:1px solid #eee">${getPartnerName(code)}</td><td style="padding:8px;border-bottom:1px solid #eee;text-align:center">${s.count}</td><td style="padding:8px;border-bottom:1px solid #eee;text-align:right">${fmt(medianOf(s.values))}</td></tr>`
   ).join("") || '<tr><td colspan="4" style="padding:12px;text-align:center;color:#74777f">Nenhuma venda</td></tr>';
 
   const bdayRows = birthdaysThisMonth.map((p: { birthday: string; name: string; email: string | null; phone: string | null }) => {
     const d = new Date(p.birthday);
     const age = new Date().getFullYear() - d.getUTCFullYear();
-    return `<tr><td style="padding:8px;border-bottom:1px solid #eee;font-weight:600;color:#002045">${String(d.getUTCDate()).padStart(2,"0")}/${String(d.getUTCMonth()+1).padStart(2,"0")}</td><td style="padding:8px;border-bottom:1px solid #eee">${p.name}</td><td style="padding:8px;border-bottom:1px solid #eee;color:#002045;font-weight:600">${age} anos</td><td style="padding:8px;border-bottom:1px solid #eee;color:#555">${p.email || "—"}</td><td style="padding:8px;border-bottom:1px solid #eee;color:#555">${p.phone || "—"}</td></tr>`;
+    return `<tr><td style="padding:8px;border-bottom:1px solid #eee;font-weight:600;color:#0B1F45">${String(d.getUTCDate()).padStart(2,"0")}/${String(d.getUTCMonth()+1).padStart(2,"0")}</td><td style="padding:8px;border-bottom:1px solid #eee">${p.name}</td><td style="padding:8px;border-bottom:1px solid #eee;color:#0B1F45;font-weight:600">${age} anos</td><td style="padding:8px;border-bottom:1px solid #eee;color:#555">${p.email || "—"}</td><td style="padding:8px;border-bottom:1px solid #eee;color:#555">${p.phone || "—"}</td></tr>`;
   }).join("") || '<tr><td colspan="5" style="padding:12px;text-align:center;color:#74777f">Nenhum aniversariante</td></tr>';
 
   // Send monthly summary
@@ -94,19 +94,19 @@ export async function GET(req: NextRequest) {
     from: "Orbital Revestimentos <noreply@orbitalrevestimentos.com.br>",
     to: adminEmail,
     subject: `Orbital — Resumo de ${lastMonthName} ${lastMonthDate.getFullYear()}`,
-    html: `<div style="font-family:sans-serif;max-width:600px;margin:0 auto;padding:32px 24px;color:#1a1a1a">
-      <h2 style="font-size:22px;margin-bottom:4px;color:#002045">Resumo de ${lastMonthName} ${lastMonthDate.getFullYear()}</h2>
+    html: `<div style="font-family:Montserrat,Arial,sans-serif;max-width:600px;margin:0 auto;padding:32px 24px;color:#0D1830">
+      <h2 style="font-size:22px;margin-bottom:4px;color:#0B1F45;font-family:Noto Serif Display,Georgia,serif;font-weight:300">Resumo de ${lastMonthName} ${lastMonthDate.getFullYear()}</h2>
       <p style="color:#555;margin-bottom:24px;font-size:14px">Desempenho da rede de parceiros no mês passado.</p>
       <div style="display:flex;gap:12px;flex-wrap:wrap;margin-bottom:28px">
         ${[["Total vendido",fmt(totalValue)],["Com. parceiros",fmt(totalCommission)],["Com. representantes",fmt(totalRepCommission)],["Vendas",String(allSales.length)]].map(([l,v]) =>
-          `<div style="background:#f5f5f3;border:1px solid #e2e2e2;padding:14px 18px;flex:1;min-width:130px"><p style="margin:0 0 4px;font-size:11px;text-transform:uppercase;letter-spacing:0.08em;color:#74777f">${l}</p><p style="margin:0;font-size:22px;font-weight:bold;color:#002045">${v}</p></div>`
+          `<div style="background:#F6F5F2;border:1px solid #e2e2e2;padding:14px 18px;flex:1;min-width:130px"><p style="margin:0 0 4px;font-size:11px;text-transform:uppercase;letter-spacing:0.08em;color:#74777f">${l}</p><p style="margin:0;font-size:22px;font-weight:bold;color:#0B1F45">${v}</p></div>`
         ).join("")}
       </div>
-      <h3 style="font-size:15px;margin-bottom:8px;color:#002045">Ranking por valor total</h3>
-      <table style="width:100%;border-collapse:collapse;margin-bottom:24px"><thead><tr style="background:#f5f5f3"><th style="padding:8px;text-align:left;font-size:10px;text-transform:uppercase;color:#74777f">#</th><th style="padding:8px;text-align:left;font-size:10px;text-transform:uppercase;color:#74777f">Parceiro</th><th style="padding:8px;text-align:right;font-size:10px;text-transform:uppercase;color:#74777f">Total</th></tr></thead><tbody>${topValueRows}</tbody></table>
-      <h3 style="font-size:15px;margin-bottom:8px;color:#002045">Ranking por volume (ticket médio)</h3>
-      <table style="width:100%;border-collapse:collapse;margin-bottom:32px"><thead><tr style="background:#f5f5f3"><th style="padding:8px;text-align:left;font-size:10px;text-transform:uppercase;color:#74777f">#</th><th style="padding:8px;text-align:left;font-size:10px;text-transform:uppercase;color:#74777f">Parceiro</th><th style="padding:8px;text-align:center;font-size:10px;text-transform:uppercase;color:#74777f">Usos</th><th style="padding:8px;text-align:right;font-size:10px;text-transform:uppercase;color:#74777f">Ticket médio</th></tr></thead><tbody>${topCountRows}</tbody></table>
-      <a href="https://orbitalrevestimentos.com.br/admin" style="display:inline-block;background:#002045;color:#fff;text-decoration:none;padding:12px 24px;font-size:14px;font-weight:600">Ver painel admin</a>
+      <h3 style="font-size:15px;margin-bottom:8px;color:#0B1F45">Ranking por valor total</h3>
+      <table style="width:100%;border-collapse:collapse;margin-bottom:24px"><thead><tr style="background:#F6F5F2"><th style="padding:8px;text-align:left;font-size:10px;text-transform:uppercase;color:#74777f">#</th><th style="padding:8px;text-align:left;font-size:10px;text-transform:uppercase;color:#74777f">Parceiro</th><th style="padding:8px;text-align:right;font-size:10px;text-transform:uppercase;color:#74777f">Total</th></tr></thead><tbody>${topValueRows}</tbody></table>
+      <h3 style="font-size:15px;margin-bottom:8px;color:#0B1F45">Ranking por volume (ticket médio)</h3>
+      <table style="width:100%;border-collapse:collapse;margin-bottom:32px"><thead><tr style="background:#F6F5F2"><th style="padding:8px;text-align:left;font-size:10px;text-transform:uppercase;color:#74777f">#</th><th style="padding:8px;text-align:left;font-size:10px;text-transform:uppercase;color:#74777f">Parceiro</th><th style="padding:8px;text-align:center;font-size:10px;text-transform:uppercase;color:#74777f">Usos</th><th style="padding:8px;text-align:right;font-size:10px;text-transform:uppercase;color:#74777f">Ticket médio</th></tr></thead><tbody>${topCountRows}</tbody></table>
+      <a href="https://orbitalrevestimentos.com.br/admin" style="display:inline-block;background:#0B1F45;color:#fff;text-decoration:none;padding:12px 24px;font-size:14px;font-weight:600">Ver painel admin</a>
       <p style="color:#888;font-size:12px;margin-top:32px">Orbital Revestimentos · Sistema automático</p>
     </div>`,
   });
@@ -116,10 +116,10 @@ export async function GET(req: NextRequest) {
     from: "Orbital Revestimentos <noreply@orbitalrevestimentos.com.br>",
     to: adminEmail,
     subject: `Orbital — Aniversariantes de ${thisMonthName}`,
-    html: `<div style="font-family:sans-serif;max-width:560px;margin:0 auto;padding:32px 24px;color:#1a1a1a">
-      <h2 style="font-size:22px;margin-bottom:4px;color:#002045">🎂 Aniversariantes de ${thisMonthName}</h2>
+    html: `<div style="font-family:Montserrat,Arial,sans-serif;max-width:560px;margin:0 auto;padding:32px 24px;color:#0D1830">
+      <h2 style="font-size:22px;margin-bottom:4px;color:#0B1F45;font-family:Noto Serif Display,Georgia,serif;font-weight:300">🎂 Aniversariantes de ${thisMonthName}</h2>
       <p style="color:#555;margin-bottom:20px;font-size:14px">${birthdaysThisMonth.length} parceiro${birthdaysThisMonth.length !== 1 ? "s fazem" : " faz"} aniversário este mês.</p>
-      <table style="width:100%;border-collapse:collapse;margin-bottom:24px"><thead><tr style="background:#f5f5f3"><th style="padding:8px;text-align:left;font-size:10px;text-transform:uppercase;color:#74777f">Data</th><th style="padding:8px;text-align:left;font-size:10px;text-transform:uppercase;color:#74777f">Nome</th><th style="padding:8px;text-align:left;font-size:10px;text-transform:uppercase;color:#74777f">Idade</th><th style="padding:8px;text-align:left;font-size:10px;text-transform:uppercase;color:#74777f">Email</th><th style="padding:8px;text-align:left;font-size:10px;text-transform:uppercase;color:#74777f">Telefone</th></tr></thead><tbody>${bdayRows}</tbody></table>
+      <table style="width:100%;border-collapse:collapse;margin-bottom:24px"><thead><tr style="background:#F6F5F2"><th style="padding:8px;text-align:left;font-size:10px;text-transform:uppercase;color:#74777f">Data</th><th style="padding:8px;text-align:left;font-size:10px;text-transform:uppercase;color:#74777f">Nome</th><th style="padding:8px;text-align:left;font-size:10px;text-transform:uppercase;color:#74777f">Idade</th><th style="padding:8px;text-align:left;font-size:10px;text-transform:uppercase;color:#74777f">Email</th><th style="padding:8px;text-align:left;font-size:10px;text-transform:uppercase;color:#74777f">Telefone</th></tr></thead><tbody>${bdayRows}</tbody></table>
       <p style="color:#888;font-size:12px;margin-top:24px">Orbital Revestimentos · Sistema automático</p>
     </div>`,
   });

@@ -13,35 +13,35 @@ const TRANSACTIONAL_STEPS = [
     description: "Enviado ao concluir (venda fechada)",
     subject: "Bem-vindo à família Orbital, {{firstName}}!",
     body_html: `
-<p style="font-size:26px;color:#002045;font-weight:700;margin:0 0 6px;font-family:Arial,sans-serif;">{{firstName}},</p>
-<p style="font-size:26px;color:#002045;font-weight:300;margin:0 0 24px;font-family:Arial,sans-serif;">você fez a escolha certa.</p>
-<p style="color:#43474e;font-size:14px;line-height:1.8;margin:0 0 20px;font-family:Arial,sans-serif;">Estamos muito felizes em recebê-lo como cliente Orbital. Seu projeto para {{spaceLabel}} com os painéis <strong>{{model}} · {{finish}}</strong> vai ficar extraordinário — e você vai entender exatamente o porquê quando vir o resultado final.</p>
-<table width="100%" cellpadding="0" cellspacing="0" style="background:#f0f9eb;border-left:3px solid #3b6934;margin:24px 0;">
+<p style="font-size:26px;color:#0B1F45;font-weight:300;margin:0 0 6px;font-family:Noto Serif Display,Georgia,serif;">{{firstName}},</p>
+<p style="font-size:26px;color:#0B1F45;font-weight:300;margin:0 0 24px;font-family:Noto Serif Display,Georgia,serif;">você fez a escolha certa.</p>
+<p style="color:#43474e;font-size:14px;line-height:1.8;margin:0 0 20px;font-family:Montserrat,Arial,sans-serif;">Estamos muito felizes em recebê-lo como cliente Orbital. Seu projeto para {{spaceLabel}} com os painéis <strong>{{model}} · {{finish}}</strong> vai ficar extraordinário — e você vai entender exatamente o porquê quando vir o resultado final.</p>
+<table width="100%" cellpadding="0" cellspacing="0" style="background:#f0f9eb;border-left:3px solid #36A35C;margin:24px 0;">
   <tr><td style="padding:24px 28px;">
-    <p style="margin:0 0 16px;color:#3b6934;font-size:11px;font-weight:700;text-transform:uppercase;letter-spacing:0.1em;font-family:Arial,sans-serif;">O que acontece agora:</p>
-    <p style="margin:0 0 10px;color:#43474e;font-size:13px;line-height:1.6;font-family:Arial,sans-serif;"><strong style="color:#002045;">1.</strong> Um consultor Orbital vai confirmar todos os detalhes do pedido com você</p>
-    <p style="margin:0 0 10px;color:#43474e;font-size:13px;line-height:1.6;font-family:Arial,sans-serif;"><strong style="color:#002045;">2.</strong> Verificação de disponibilidade de estoque e prazo estimado</p>
-    <p style="margin:0 0 10px;color:#43474e;font-size:13px;line-height:1.6;font-family:Arial,sans-serif;"><strong style="color:#002045;">3.</strong> Agendamento da retirada ou logística no depósito Orbital</p>
-    <p style="margin:0 0 10px;color:#43474e;font-size:13px;line-height:1.6;font-family:Arial,sans-serif;"><strong style="color:#002045;">4.</strong> Instalação — podemos indicar profissionais parceiros em Manaus</p>
+    <p style="margin:0 0 16px;color:#36A35C;font-size:11px;font-weight:700;text-transform:uppercase;letter-spacing:0.1em;font-family:Montserrat,Arial,sans-serif;">O que acontece agora:</p>
+    <p style="margin:0 0 10px;color:#43474e;font-size:13px;line-height:1.6;font-family:Montserrat,Arial,sans-serif;"><strong style="color:#0B1F45;">1.</strong> Um consultor Orbital vai confirmar todos os detalhes do pedido com você</p>
+    <p style="margin:0 0 10px;color:#43474e;font-size:13px;line-height:1.6;font-family:Montserrat,Arial,sans-serif;"><strong style="color:#0B1F45;">2.</strong> Verificação de disponibilidade de estoque e prazo estimado</p>
+    <p style="margin:0 0 10px;color:#43474e;font-size:13px;line-height:1.6;font-family:Montserrat,Arial,sans-serif;"><strong style="color:#0B1F45;">3.</strong> Agendamento da retirada ou logística no depósito Orbital</p>
+    <p style="margin:0 0 10px;color:#43474e;font-size:13px;line-height:1.6;font-family:Montserrat,Arial,sans-serif;"><strong style="color:#0B1F45;">4.</strong> Instalação — podemos indicar profissionais parceiros em Manaus</p>
   </td></tr>
 </table>
-<table width="100%" cellpadding="0" cellspacing="0" style="background:#f5f5f3;margin:24px 0;">
+<table width="100%" cellpadding="0" cellspacing="0" style="background:#F6F5F2;margin:24px 0;">
   <tr><td style="padding:20px 24px;">
-    <p style="margin:0 0 12px;color:#002045;font-size:12px;font-weight:700;font-family:Arial,sans-serif;">Cuidado simples que preserva seus painéis por décadas:</p>
-    <p style="margin:0 0 6px;color:#74777f;font-size:13px;font-family:Arial,sans-serif;">· Pano úmido com detergente neutro — semanal</p>
-    <p style="margin:0 0 6px;color:#74777f;font-size:13px;font-family:Arial,sans-serif;">· Sem produtos abrasivos, ácidos ou solventes</p>
-    <p style="margin:0 0 6px;color:#74777f;font-size:13px;font-family:Arial,sans-serif;">· Nenhuma manutenção especial necessária além da limpeza regular</p>
+    <p style="margin:0 0 12px;color:#0B1F45;font-size:12px;font-weight:700;font-family:Montserrat,Arial,sans-serif;">Cuidado simples que preserva seus painéis por décadas:</p>
+    <p style="margin:0 0 6px;color:#74777f;font-size:13px;font-family:Montserrat,Arial,sans-serif;">· Pano úmido com detergente neutro — semanal</p>
+    <p style="margin:0 0 6px;color:#74777f;font-size:13px;font-family:Montserrat,Arial,sans-serif;">· Sem produtos abrasivos, ácidos ou solventes</p>
+    <p style="margin:0 0 6px;color:#74777f;font-size:13px;font-family:Montserrat,Arial,sans-serif;">· Nenhuma manutenção especial necessária além da limpeza regular</p>
   </td></tr>
 </table>
-<p style="color:#43474e;font-size:14px;line-height:1.8;margin:0 0 4px;font-family:Arial,sans-serif;">Qualquer dúvida durante o processo — instalação, logística, especificações — fale com um consultor Orbital:</p>
+<p style="color:#43474e;font-size:14px;line-height:1.8;margin:0 0 4px;font-family:Montserrat,Arial,sans-serif;">Qualquer dúvida durante o processo — instalação, logística, especificações — fale com um consultor Orbital:</p>
 <table cellpadding="0" cellspacing="0" style="margin:28px 0;">
   <tr>
-    <td style="background:#002045;padding:0;">
-      <a href="{{waLink}}" style="display:inline-block;padding:16px 32px;color:#ffffff;text-decoration:none;font-size:12px;font-weight:700;letter-spacing:0.12em;text-transform:uppercase;font-family:Arial,sans-serif;">Falar com um consultor</a>
+    <td style="background:#0B1F45;padding:0;">
+      <a href="{{waLink}}" style="display:inline-block;padding:16px 32px;color:#ffffff;text-decoration:none;font-size:12px;font-weight:700;letter-spacing:0.12em;text-transform:uppercase;font-family:Montserrat,Arial,sans-serif;">Falar com um consultor</a>
     </td>
   </tr>
 </table>
-<p style="color:#74777f;font-size:13px;line-height:1.7;font-family:Arial,sans-serif;font-style:italic;">Obrigado por escolher a Orbital, {{firstName}}. Cada painel que instalamos é um projeto em que acreditamos.</p>
+<p style="color:#74777f;font-size:13px;line-height:1.7;font-family:Montserrat,Arial,sans-serif;font-style:italic;">Obrigado por escolher a Orbital, {{firstName}}. Cada painel que instalamos é um projeto em que acreditamos.</p>
 `,
   },
   {
@@ -50,27 +50,27 @@ const TRANSACTIONAL_STEPS = [
     description: "Enviado ao cancelar",
     subject: "Obrigado por considerar a Orbital, {{firstName}}",
     body_html: `
-<p style="font-size:20px;color:#002045;font-weight:700;margin:0 0 24px;font-family:Arial,sans-serif;">Obrigado, {{firstName}}.</p>
-<p style="color:#43474e;font-size:14px;line-height:1.8;margin:0 0 20px;font-family:Arial,sans-serif;">Sabemos que o momento certo para um projeto nem sempre é agora — e isso é completamente válido. Ficamos felizes que você tenha dedicado tempo para conhecer os painéis Orbital e simular um orçamento para {{spaceLabel}}.</p>
-<p style="color:#43474e;font-size:14px;line-height:1.8;margin:0 0 24px;font-family:Arial,sans-serif;">Não vamos te mandar mais mensagens sobre este projeto. Mas queremos deixar uma coisa registrada:</p>
-<table width="100%" cellpadding="0" cellspacing="0" style="background:#002045;margin:24px 0;">
+<p style="font-size:20px;color:#0B1F45;font-weight:300;margin:0 0 24px;font-family:Noto Serif Display,Georgia,serif;">Obrigado, {{firstName}}.</p>
+<p style="color:#43474e;font-size:14px;line-height:1.8;margin:0 0 20px;font-family:Montserrat,Arial,sans-serif;">Sabemos que o momento certo para um projeto nem sempre é agora — e isso é completamente válido. Ficamos felizes que você tenha dedicado tempo para conhecer os painéis Orbital e simular um orçamento para {{spaceLabel}}.</p>
+<p style="color:#43474e;font-size:14px;line-height:1.8;margin:0 0 24px;font-family:Montserrat,Arial,sans-serif;">Não vamos te mandar mais mensagens sobre este projeto. Mas queremos deixar uma coisa registrada:</p>
+<table width="100%" cellpadding="0" cellspacing="0" style="background:#0B1F45;margin:24px 0;">
   <tr><td style="padding:28px;">
-    <p style="margin:0 0 16px;color:rgba(255,255,255,0.5);font-size:10px;letter-spacing:0.2em;text-transform:uppercase;font-family:Arial,sans-serif;">O que fica guardado para você:</p>
-    <p style="margin:0 0 8px;color:rgba(255,255,255,0.8);font-size:13px;font-family:Arial,sans-serif;">· Modelo {{model}} · {{finish}}</p>
-    <p style="margin:0 0 8px;color:rgba(255,255,255,0.8);font-size:13px;font-family:Arial,sans-serif;">· {{plates}} painel(is) · {{area}} de {{spaceLabel}}</p>
-    <p style="margin:0 0 16px;color:rgba(255,255,255,0.8);font-size:13px;font-family:Arial,sans-serif;">· Referência: {{total}}</p>
-    <p style="margin:0;color:rgba(255,255,255,0.55);font-size:12px;font-family:Arial,sans-serif;line-height:1.6;">Quando o momento chegar — seja em semanas ou meses — nossa equipe estará disponível para retomar exatamente de onde paramos. Sem precisar recalcular tudo do zero.</p>
+    <p style="margin:0 0 16px;color:rgba(255,255,255,0.5);font-size:10px;letter-spacing:0.2em;text-transform:uppercase;font-family:Montserrat,Arial,sans-serif;">O que fica guardado para você:</p>
+    <p style="margin:0 0 8px;color:rgba(255,255,255,0.8);font-size:13px;font-family:Montserrat,Arial,sans-serif;">· Modelo {{model}} · {{finish}}</p>
+    <p style="margin:0 0 8px;color:rgba(255,255,255,0.8);font-size:13px;font-family:Montserrat,Arial,sans-serif;">· {{plates}} painel(is) · {{area}} de {{spaceLabel}}</p>
+    <p style="margin:0 0 16px;color:rgba(255,255,255,0.8);font-size:13px;font-family:Montserrat,Arial,sans-serif;">· Referência: {{total}}</p>
+    <p style="margin:0;color:rgba(255,255,255,0.55);font-size:12px;font-family:Montserrat,Arial,sans-serif;line-height:1.6;">Quando o momento chegar — seja em semanas ou meses — nossa equipe estará disponível para retomar exatamente de onde paramos. Sem precisar recalcular tudo do zero.</p>
   </td></tr>
 </table>
-<p style="color:#43474e;font-size:14px;line-height:1.8;margin:0 0 20px;font-family:Arial,sans-serif;">Nenhuma pressão, nenhum julgamento. Quando estiver pronto, é só falar.</p>
+<p style="color:#43474e;font-size:14px;line-height:1.8;margin:0 0 20px;font-family:Montserrat,Arial,sans-serif;">Nenhuma pressão, nenhum julgamento. Quando estiver pronto, é só falar.</p>
 <table cellpadding="0" cellspacing="0" style="margin:28px 0;">
   <tr>
-    <td style="background:#002045;padding:0;">
-      <a href="{{waLink}}" style="display:inline-block;padding:16px 32px;color:#ffffff;text-decoration:none;font-size:12px;font-weight:700;letter-spacing:0.12em;text-transform:uppercase;font-family:Arial,sans-serif;">Falar com um consultor quando estiver pronto</a>
+    <td style="background:#0B1F45;padding:0;">
+      <a href="{{waLink}}" style="display:inline-block;padding:16px 32px;color:#ffffff;text-decoration:none;font-size:12px;font-weight:700;letter-spacing:0.12em;text-transform:uppercase;font-family:Montserrat,Arial,sans-serif;">Falar com um consultor quando estiver pronto</a>
     </td>
   </tr>
 </table>
-<p style="color:#74777f;font-size:12px;line-height:1.7;font-family:Arial,sans-serif;">Esta é a última mensagem que enviaremos sobre este orçamento. Obrigado pela atenção — foi um prazer.</p>
+<p style="color:#74777f;font-size:12px;line-height:1.7;font-family:Montserrat,Arial,sans-serif;">Esta é a última mensagem que enviaremos sobre este orçamento. Obrigado pela atenção — foi um prazer.</p>
 `,
   },
 ];

@@ -207,26 +207,26 @@ export default function ParceriasPage() {
     <div className="pt-20">
 
       {/* ── Hero ─────────────────────────────── */}
-      <section className="bg-[#002045] text-white py-10 lg:py-28 relative overflow-hidden">
+      <section className="bg-[#0B1F45] text-white py-10 lg:py-28 relative overflow-hidden">
         <div className="absolute inset-0 opacity-[0.04]" style={{
           backgroundImage: "repeating-linear-gradient(0deg, transparent, transparent 39px, rgba(255,255,255,0.5) 39px, rgba(255,255,255,0.5) 40px), repeating-linear-gradient(90deg, transparent, transparent 39px, rgba(255,255,255,0.5) 39px, rgba(255,255,255,0.5) 40px)"
         }} />
         <div className="relative max-w-[1280px] mx-auto px-4 lg:px-16">
           <div className="max-w-3xl mb-10 lg:mb-12">
-            <p className="text-[#a1d494] text-xs tracking-[0.2em] uppercase font-semibold font-[var(--font-inter)] mb-5">
+            <p className="text-[#36A35C] text-xs tracking-[0.2em] uppercase font-semibold mb-5">
               Orbital Revestimentos · Programa de Parceiros · Manaus
             </p>
-            <h1 className="font-[var(--font-noto-serif)] text-3xl lg:text-6xl font-normal tracking-[-0.02em] leading-tight mb-6">
+            <h1 className="font-serif text-3xl lg:text-6xl font-normal tracking-[-0.02em] leading-tight mb-6">
               Para cada profissional,
               <br />
-              <em className="text-[#86a0cd]">uma proposta única.</em>
+              <em className="text-[#B4BBC8]">uma proposta única.</em>
             </h1>
-            <p className="text-white/65 text-lg font-[var(--font-inter)] leading-relaxed max-w-2xl mb-8">
+            <p className="text-white/65 text-lg leading-relaxed max-w-2xl mb-8">
               Selecione o seu perfil e veja as condições exclusivas da Orbital Revestimentos para você.
             </p>
             <button
               onClick={() => scrollTo(registerRef)}
-              className="inline-flex items-center gap-2 border border-white/30 text-white text-xs tracking-[0.12em] uppercase font-bold font-[var(--font-inter)] px-6 py-3 hover:bg-white/10 transition-colors"
+              className="inline-flex items-center gap-2 border border-white/30 text-white text-xs tracking-[0.12em] uppercase font-bold px-6 py-3 hover:bg-white/10 transition-colors"
             >
               Já tenho código de indicação →
             </button>
@@ -244,13 +244,13 @@ export default function ParceriasPage() {
                     : "border-white/15 hover:border-white/40 hover:bg-white/5"
                 }`}
               >
-                <div className={`mb-2 lg:mb-3 transition-colors duration-200 ${active === key ? "text-[#a1d494]" : "text-white/50 group-hover:text-white/80"}`}>
+                <div className={`mb-2 lg:mb-3 transition-colors duration-200 ${active === key ? "text-[#36A35C]" : "text-white/50 group-hover:text-white/80"}`}>
                   {icon}
                 </div>
-                <p className="text-white text-xs tracking-[0.12em] uppercase font-bold font-[var(--font-inter)] mb-1">
+                <p className="text-white text-xs tracking-[0.12em] uppercase font-bold mb-1">
                   {label}
                 </p>
-                <p className="text-white/50 text-xs font-[var(--font-inter)] leading-relaxed hidden sm:block">
+                <p className="text-white/50 text-xs leading-relaxed hidden sm:block">
                   {tagline}
                 </p>
               </button>
@@ -275,10 +275,10 @@ export default function ParceriasPage() {
               <button
                 key={key}
                 onClick={() => handleTabClick(key)}
-                className={`lg:flex-shrink-0 px-1 lg:px-6 py-3 lg:py-5 border-b-2 text-[10px] lg:text-xs tracking-[0.08em] lg:tracking-[0.12em] uppercase font-bold font-[var(--font-inter)] transition-all duration-200 whitespace-nowrap text-center ${
+                className={`lg:flex-shrink-0 px-1 lg:px-6 py-3 lg:py-5 border-b-2 text-[10px] lg:text-xs tracking-[0.08em] lg:tracking-[0.12em] uppercase font-bold transition-all duration-200 whitespace-nowrap text-center ${
                   active === key
-                    ? "border-[#002045] text-[#002045]"
-                    : "border-transparent text-[#74777f] hover:text-[#002045]"
+                    ? "border-[#0B1F45] text-[#0B1F45]"
+                    : "border-transparent text-[#74777f] hover:text-[#0B1F45]"
                 }`}
               >
                 {/* Nomes longos só a partir de 1280px: abaixo disso "Aplicadores &
@@ -296,54 +296,54 @@ export default function ParceriasPage() {
         <section key={active} className="overflow-hidden animate-fade-in">
           <div className="flex flex-col lg:flex-row min-h-[620px]">
             {/* Left — dark text column */}
-            <div className="lg:w-[52%] bg-[#002045] px-4 lg:px-14 xl:px-20 py-8 lg:py-24 flex flex-col justify-center">
+            <div className="lg:w-[52%] bg-[#0B1F45] px-4 lg:px-14 xl:px-20 py-8 lg:py-24 flex flex-col justify-center">
               <div className="max-w-[560px]">
-                <span className="inline-block bg-[#3b6934] text-white text-[9px] tracking-[0.18em] uppercase font-bold font-[var(--font-inter)] px-3 py-1.5 mb-6">
+                <span className="inline-block bg-[#36A35C] text-[#0B1F45] text-[9px] tracking-[0.18em] uppercase font-bold px-3 py-1.5 mb-6">
                   {seg.badge}
                 </span>
-                <p className="text-[#86a0cd] text-xs tracking-[0.18em] uppercase font-semibold font-[var(--font-inter)] mb-4">
+                <p className="text-[#B4BBC8] text-xs tracking-[0.18em] uppercase font-semibold mb-4">
                   {seg.tagline}
                 </p>
-                <h2 className="font-[var(--font-noto-serif)] text-white text-[32px] lg:text-[40px] font-normal leading-[1.2] mb-6">
+                <h2 className="font-serif text-white text-[32px] lg:text-[40px] font-normal leading-[1.2] mb-6">
                   {seg.headline}
                 </h2>
-                <p className="hidden lg:block text-white/60 text-base font-[var(--font-inter)] leading-relaxed mb-10">
+                <p className="hidden lg:block text-white/60 text-base leading-relaxed mb-10">
                   {seg.body}
                 </p>
                 <ul className="space-y-2 lg:space-y-5 mb-6 lg:mb-10">
                   {seg.benefits.map(({ title, desc }) => (
                     <li key={title} className="flex gap-2 lg:gap-4">
-                      <span className="flex-shrink-0 mt-1.5 w-1.5 h-1.5 rounded-full bg-[#a1d494]" />
+                      <span className="flex-shrink-0 mt-1.5 w-1.5 h-1.5 rounded-full bg-[#36A35C]" />
                       <div>
-                        <p className="text-white text-xs lg:text-sm font-semibold font-[var(--font-inter)] mb-0.5">{title}</p>
-                        <p className="hidden lg:block text-white/50 text-xs font-[var(--font-inter)] leading-relaxed">{desc}</p>
+                        <p className="text-white text-xs lg:text-sm font-semibold mb-0.5">{title}</p>
+                        <p className="hidden lg:block text-white/50 text-xs leading-relaxed">{desc}</p>
                       </div>
                     </li>
                   ))}
                 </ul>
                 {seg.pricingCallout && (
-                  <div className="hidden lg:flex bg-[#0d2d1a] border border-[#3b6934] px-5 py-4 mb-6 gap-3 items-start">
-                    <svg className="flex-shrink-0 mt-0.5 text-[#a1d494]" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                  <div className="hidden lg:flex bg-[#0d2d1a] border border-[#36A35C] px-5 py-4 mb-6 gap-3 items-start">
+                    <svg className="flex-shrink-0 mt-0.5 text-[#36A35C]" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
                       <path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm1 15h-2v-6h2v6zm0-8h-2V7h2v2z" strokeLinejoin="round" />
                     </svg>
-                    <p className="text-[#a1d494] text-xs font-[var(--font-inter)] leading-relaxed">{seg.pricingCallout}</p>
+                    <p className="text-[#36A35C] text-xs leading-relaxed">{seg.pricingCallout}</p>
                   </div>
                 )}
-                <div className="hidden lg:block border-l-2 border-[#3b6934] pl-4 mb-10">
-                  <p className="text-[#a1d494] text-xs font-[var(--font-inter)] italic leading-relaxed">{seg.highlight}</p>
+                <div className="hidden lg:block border-l-2 border-[#36A35C] pl-4 mb-10">
+                  <p className="text-[#36A35C] text-xs italic leading-relaxed">{seg.highlight}</p>
                 </div>
                 {seg.academia && (
                   <Link
                     href="/academia"
-                    className="group flex items-center justify-between gap-4 border border-white/20 hover:border-[#a1d494] px-5 py-4 mb-6 lg:mb-10 transition-colors"
+                    className="group flex items-center justify-between gap-4 border border-white/20 hover:border-[#36A35C] px-5 py-4 mb-6 lg:mb-10 transition-colors"
                   >
                     <span>
-                      <span className="block text-[#a1d494] text-[10px] tracking-[0.18em] uppercase font-bold font-[var(--font-inter)] mb-1">
+                      <span className="block text-[#36A35C] text-[10px] tracking-[0.18em] uppercase font-bold mb-1">
                         Academia Orbital
                       </span>
-                      <span className="block text-white text-sm font-[var(--font-inter)] leading-snug">{seg.academia}</span>
+                      <span className="block text-white text-sm leading-snug">{seg.academia}</span>
                     </span>
-                    <span aria-hidden className="text-[#a1d494] text-lg group-hover:translate-x-1 transition-transform">→</span>
+                    <span aria-hidden className="text-[#36A35C] text-lg group-hover:translate-x-1 transition-transform">→</span>
                   </Link>
                 )}
                 <div className="flex flex-wrap gap-3">
@@ -351,7 +351,7 @@ export default function ParceriasPage() {
                     <>
                       <Link
                         href={seg.ctaHref}
-                        className="inline-flex items-center gap-2 bg-white text-[#002045] text-xs tracking-[0.12em] uppercase font-bold font-[var(--font-inter)] px-7 py-4 hover:bg-[#f3f3f3] transition-colors"
+                        className="inline-flex items-center gap-2 bg-white text-[#0B1F45] text-xs tracking-[0.12em] uppercase font-bold px-7 py-4 hover:bg-[#f3f3f3] transition-colors"
                       >
                         {seg.ctaLabel} <span aria-hidden>→</span>
                       </Link>
@@ -359,7 +359,7 @@ export default function ParceriasPage() {
                         href={`${WA_BASE}${encodeURIComponent(seg.waText)}`}
                         target="_blank"
                         rel="noopener noreferrer"
-                        className="inline-flex items-center gap-2 border border-white/30 text-white text-xs tracking-[0.12em] uppercase font-bold font-[var(--font-inter)] px-7 py-4 hover:border-white transition-colors"
+                        className="inline-flex items-center gap-2 border border-white/30 text-white text-xs tracking-[0.12em] uppercase font-bold px-7 py-4 hover:border-white transition-colors"
                       >
                         Falar no WhatsApp
                       </a>
@@ -370,7 +370,7 @@ export default function ParceriasPage() {
                         href={`${WA_BASE}${encodeURIComponent(seg.waText)}`}
                         target="_blank"
                         rel="noopener noreferrer"
-                        className="inline-flex items-center gap-2.5 bg-white text-[#002045] text-xs tracking-[0.12em] uppercase font-bold font-[var(--font-inter)] px-7 py-4 hover:bg-[#f3f3f3] transition-colors"
+                        className="inline-flex items-center gap-2.5 bg-white text-[#0B1F45] text-xs tracking-[0.12em] uppercase font-bold px-7 py-4 hover:bg-[#f3f3f3] transition-colors"
                       >
                         <svg width="15" height="15" viewBox="0 0 24 24" fill="currentColor">
                           <path d="M17.472 14.382c-.297-.149-1.758-.867-2.03-.967-.273-.099-.471-.148-.67.15-.197.297-.767.966-.94 1.164-.173.199-.347.223-.644.075-.297-.15-1.255-.463-2.39-1.475-.883-.788-1.48-1.761-1.653-2.059-.173-.297-.018-.458.13-.606.134-.133.298-.347.446-.52.149-.174.198-.298.298-.497.099-.198.05-.371-.025-.52-.075-.149-.669-1.612-.916-2.207-.242-.579-.487-.5-.669-.51-.173-.008-.371-.01-.57-.01-.198 0-.52.074-.792.372-.272.297-1.04 1.016-1.04 2.479 0 1.462 1.065 2.875 1.213 3.074.149.198 2.096 3.2 5.077 4.487.709.306 1.262.489 1.694.625.712.227 1.36.195 1.871.118.571-.085 1.758-.719 2.006-1.413.248-.694.248-1.289.173-1.413-.074-.124-.272-.198-.57-.347m-5.421 7.403h-.004a9.87 9.87 0 01-5.031-1.378l-.361-.214-3.741.982.998-3.648-.235-.374a9.86 9.86 0 01-1.51-5.26c.001-5.45 4.436-9.884 9.888-9.884 2.64 0 5.122 1.03 6.988 2.898a9.825 9.825 0 012.893 6.994c-.003 5.45-4.437 9.884-9.885 9.884m8.413-18.297A11.815 11.815 0 0012.05 0C5.495 0 .16 5.335.157 11.892c0 2.096.547 4.142 1.588 5.945L.057 24l6.305-1.654a11.882 11.882 0 005.683 1.448h.005c6.554 0 11.89-5.335 11.893-11.893a11.821 11.821 0 00-3.48-8.413z" />
@@ -381,7 +381,7 @@ export default function ParceriasPage() {
                         href={CATALOGUE_URL}
                         target="_blank"
                         rel="noopener noreferrer"
-                        className="inline-flex items-center gap-2 border border-white/30 text-white text-xs tracking-[0.12em] uppercase font-bold font-[var(--font-inter)] px-7 py-4 hover:border-white transition-colors"
+                        className="inline-flex items-center gap-2 border border-white/30 text-white text-xs tracking-[0.12em] uppercase font-bold px-7 py-4 hover:border-white transition-colors"
                       >
                         <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
                           <path d="M21 15v4a2 2 0 01-2 2H5a2 2 0 01-2-2v-4M7 10l5 5 5-5M12 15V3" />
@@ -397,10 +397,10 @@ export default function ParceriasPage() {
             {/* Right — image + floating stat */}
             <div className="lg:w-[48%] relative min-h-[220px] lg:min-h-[620px]">
               <Image src={seg.image} alt={`PFB Orbital — ${seg.label}`} fill sizes="(min-width: 1024px) 48vw, 100vw" className="object-cover" />
-              <div className="absolute inset-0 bg-gradient-to-t from-[#001530]/40 to-transparent" />
+              <div className="absolute inset-0 bg-gradient-to-t from-[#0B1F45]/40 to-transparent" />
               <div className="absolute bottom-8 right-8 bg-white/96 px-6 py-5 shadow-xl">
-                <p className="font-[var(--font-noto-serif)] text-[#002045] text-3xl font-normal leading-none mb-1">{seg.stat.value}</p>
-                <p className="text-[#74777f] text-[10px] tracking-[0.15em] uppercase font-semibold font-[var(--font-inter)]">{seg.stat.label}</p>
+                <p className="font-serif text-[#0B1F45] text-3xl font-normal leading-none mb-1">{seg.stat.value}</p>
+                <p className="text-[#74777f] text-[10px] tracking-[0.15em] uppercase font-semibold">{seg.stat.label}</p>
               </div>
             </div>
           </div>
@@ -408,15 +408,15 @@ export default function ParceriasPage() {
       </div>
 
       {/* ── Shared stats ─────────────────────── */}
-      <div className="bg-[#1a365d] py-10">
+      <div className="bg-[#0B1F45] py-10">
         <div className="max-w-[1280px] mx-auto px-4 lg:px-16">
           <div className="grid grid-cols-2 md:grid-cols-4 gap-6 text-center">
             {sharedStats.map(({ value, unit, label }) => (
               <div key={label}>
-                <p className="font-[var(--font-noto-serif)] text-white text-3xl font-normal mb-0.5">
-                  {value}{unit && <span className="text-lg text-[#86a0cd] ml-1">{unit}</span>}
+                <p className="font-serif text-white text-3xl font-normal mb-0.5">
+                  {value}{unit && <span className="text-lg text-[#B4BBC8] ml-1">{unit}</span>}
                 </p>
-                <p className="text-[#86a0cd] text-xs tracking-[0.1em] uppercase font-semibold font-[var(--font-inter)]">{label}</p>
+                <p className="text-[#B4BBC8] text-xs tracking-[0.1em] uppercase font-semibold">{label}</p>
               </div>
             ))}
           </div>
@@ -424,23 +424,23 @@ export default function ParceriasPage() {
       </div>
 
       {/* ── Longevity argument ────────────────── */}
-      <section className="py-8 lg:py-24 bg-[#f9f9f9]">
+      <section className="py-8 lg:py-24 bg-[#F6F5F2]">
         <div className="max-w-[1280px] mx-auto px-4 lg:px-16">
           <ScrollReveal direction="up">
             <div className="mb-12">
-              <p className="text-[#74777f] text-xs tracking-[0.2em] uppercase font-semibold font-[var(--font-inter)] mb-3">Longevidade</p>
-              <h2 className="font-[var(--font-noto-serif)] text-[#002045] text-3xl lg:text-4xl font-normal max-w-2xl">O projeto que envelhece bem fala por você.</h2>
+              <p className="text-[#74777f] text-xs tracking-[0.2em] uppercase font-semibold mb-3">Longevidade</p>
+              <h2 className="font-serif text-[#0B1F45] text-3xl lg:text-4xl font-normal max-w-2xl">O projeto que envelhece bem fala por você.</h2>
             </div>
           </ScrollReveal>
           <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
             <ScrollReveal direction="up" delay={0}>
               <div className="bg-white border border-[#e2e2e2] p-4 lg:p-8 h-full">
-                <p className="text-[#74777f] text-xs tracking-[0.1em] uppercase font-semibold font-[var(--font-inter)] mb-4">MDF em clima amazônico</p>
-                <p className="font-[var(--font-noto-serif)] text-[#74777f] text-xl lg:text-3xl font-normal mb-3 leading-tight">2–3 anos e já mostra desgaste.</p>
-                <p className="text-[#74777f] text-sm font-[var(--font-inter)] leading-relaxed mb-5">Com umidade acima de 80% o ano todo, o MDF absorve água continuamente. O resultado aparece cedo.</p>
+                <p className="text-[#74777f] text-xs tracking-[0.1em] uppercase font-semibold mb-4">MDF em clima amazônico</p>
+                <p className="font-serif text-[#74777f] text-xl lg:text-3xl font-normal mb-3 leading-tight">2–3 anos e já mostra desgaste.</p>
+                <p className="text-[#74777f] text-sm leading-relaxed mb-5">Com umidade acima de 80% o ano todo, o MDF absorve água continuamente. O resultado aparece cedo.</p>
                 <ul className="space-y-2">
                   {["Incha, empena e descola das paredes","Manchas de umidade e mofo visíveis","Pintura e laminado perdem aderência","O projeto entregue com esmero parece negligenciado","O cliente lembra quem especificou o material"].map((item) => (
-                    <li key={item} className="text-[#74777f] text-xs font-[var(--font-inter)] flex gap-2 leading-relaxed">
+                    <li key={item} className="text-[#74777f] text-xs flex gap-2 leading-relaxed">
                       <span className="flex-shrink-0 mt-0.5">—</span> {item}
                     </li>
                   ))}
@@ -448,15 +448,15 @@ export default function ParceriasPage() {
               </div>
             </ScrollReveal>
             <ScrollReveal direction="up" delay={100}>
-              <div className="bg-[#002045] p-4 lg:p-8 relative overflow-hidden h-full">
-                <div className="absolute top-3 right-3 bg-[#3b6934] text-white text-[9px] tracking-[0.1em] uppercase font-bold font-[var(--font-inter)] px-2.5 py-1">PFB Orbital</div>
-                <p className="text-[#86a0cd] text-xs tracking-[0.1em] uppercase font-semibold font-[var(--font-inter)] mb-4">Aparência preservada por anos</p>
-                <p className="font-[var(--font-noto-serif)] text-white text-xl lg:text-3xl font-normal mb-3 leading-tight">O visual que saiu da obra, anos depois.</p>
-                <p className="text-white/60 text-sm font-[var(--font-inter)] leading-relaxed mb-5">Impermeável, anti-mofo e resistente a ciclos térmicos extremos. O acabamento não deteriora.</p>
+              <div className="bg-[#0B1F45] p-4 lg:p-8 relative overflow-hidden h-full">
+                <div className="absolute top-3 right-3 bg-[#36A35C] text-[#0B1F45] text-[9px] tracking-[0.1em] uppercase font-bold px-2.5 py-1">PFB Orbital</div>
+                <p className="text-[#B4BBC8] text-xs tracking-[0.1em] uppercase font-semibold mb-4">Aparência preservada por anos</p>
+                <p className="font-serif text-white text-xl lg:text-3xl font-normal mb-3 leading-tight">O visual que saiu da obra, anos depois.</p>
+                <p className="text-white/60 text-sm leading-relaxed mb-5">Impermeável, anti-mofo e resistente a ciclos térmicos extremos. O acabamento não deteriora.</p>
                 <ul className="space-y-2">
                   {["Inchamento máximo de 0,2% em 48h de imersão","Veios do mármore permanecem nítidos","Textura da madeira intacta ao longo do tempo","Sem descolar, sem manchar, sem empenar","O cliente mostra o projeto com orgulho a visitas"].map((item) => (
-                    <li key={item} className="text-white/80 text-xs font-[var(--font-inter)] flex gap-2 leading-relaxed">
-                      <span className="text-[#a1d494] flex-shrink-0 mt-0.5">✓</span> {item}
+                    <li key={item} className="text-white/80 text-xs flex gap-2 leading-relaxed">
+                      <span className="text-[#36A35C] flex-shrink-0 mt-0.5">✓</span> {item}
                     </li>
                   ))}
                 </ul>
@@ -465,16 +465,16 @@ export default function ParceriasPage() {
             <ScrollReveal direction="up" delay={200}>
               <div className="bg-white border border-[#e2e2e2] p-4 lg:p-8 flex flex-col justify-between h-full">
                 <div>
-                  <p className="text-[#74777f] text-xs tracking-[0.1em] uppercase font-semibold font-[var(--font-inter)] mb-4">O impacto na sua reputação</p>
-                  <p className="font-[var(--font-noto-serif)] text-[#002045] text-lg lg:text-2xl font-normal mb-5 leading-snug">"Um ambiente bem executado é o seu melhor portfólio vivo."</p>
-                  <p className="text-[#43474e] text-sm font-[var(--font-inter)] leading-relaxed mb-4">Cada projeto entregue com PFB Orbital continua impecável anos depois — e continua atraindo novos clientes para você.</p>
-                  <p className="text-[#43474e] text-sm font-[var(--font-inter)] leading-relaxed mb-8">Especificar o material certo não é só uma escolha técnica. É uma decisão de proteção da sua imagem profissional.</p>
+                  <p className="text-[#74777f] text-xs tracking-[0.1em] uppercase font-semibold mb-4">O impacto na sua reputação</p>
+                  <p className="font-serif text-[#0B1F45] text-lg lg:text-2xl font-normal mb-5 leading-snug">"Um ambiente bem executado é o seu melhor portfólio vivo."</p>
+                  <p className="text-[#43474e] text-sm leading-relaxed mb-4">Cada projeto entregue com PFB Orbital continua impecável anos depois — e continua atraindo novos clientes para você.</p>
+                  <p className="text-[#43474e] text-sm leading-relaxed mb-8">Especificar o material certo não é só uma escolha técnica. É uma decisão de proteção da sua imagem profissional.</p>
                 </div>
                 <a
                   href={`${WA_BASE}${encodeURIComponent("Olá! Tenho interesse em conhecer o PFB Orbital para os meus projetos.")}`}
                   target="_blank"
                   rel="noopener noreferrer"
-                  className="inline-block bg-[#002045] text-white text-xs tracking-[0.12em] uppercase font-bold font-[var(--font-inter)] px-6 py-3 text-center hover:bg-[#1a365d] transition-colors"
+                  className="inline-block bg-[#0B1F45] text-white text-xs tracking-[0.12em] uppercase font-bold px-6 py-3 text-center hover:bg-[#2347A0] transition-colors"
                 >
                   Quero conhecer o PFB Orbital
                 </a>
@@ -485,12 +485,12 @@ export default function ParceriasPage() {
       </section>
 
       {/* ── Final CTA ─────────────────────────── */}
-      <section className="py-16 lg:py-24 bg-[#1e212a] text-white">
+      <section className="py-16 lg:py-24 bg-[#0B1F45] text-white">
         <div className="max-w-[760px] mx-auto px-4 lg:px-8 text-center">
           <ScrollReveal direction="up">
-            <p className="text-[#9c9faa] text-xs tracking-[0.2em] uppercase font-semibold font-[var(--font-inter)] mb-5">Condições exclusivas para profissionais</p>
-            <h2 className="font-[var(--font-noto-serif)] text-white text-4xl lg:text-5xl font-normal mb-6">Pronto para fazer parte da rede Orbital?</h2>
-            <p className="text-white/55 text-base font-[var(--font-inter)] leading-relaxed mb-10">
+            <p className="text-[#9c9faa] text-xs tracking-[0.2em] uppercase font-semibold mb-5">Condições exclusivas para profissionais</p>
+            <h2 className="font-serif text-white text-4xl lg:text-5xl font-normal mb-6">Pronto para fazer parte da rede Orbital?</h2>
+            <p className="text-white/55 text-base leading-relaxed mb-10">
               Tabela diferenciada, amostras gratuitas, suporte técnico e estoque pronto em Manaus. Entre em contato e receba sua proposta.
             </p>
             <div className="flex flex-col sm:flex-row flex-wrap justify-center gap-3 lg:gap-4">
@@ -498,7 +498,7 @@ export default function ParceriasPage() {
                 href={`${WA_BASE}${encodeURIComponent("Olá! Sou profissional e quero conhecer as condições de parceria Orbital.")}`}
                 target="_blank"
                 rel="noopener noreferrer"
-                className="w-full sm:w-auto inline-flex items-center justify-center gap-2.5 bg-white text-[#1e212a] text-xs tracking-[0.12em] uppercase font-bold font-[var(--font-inter)] px-9 py-4 hover:bg-[#f3f3f3] transition-colors"
+                className="w-full sm:w-auto inline-flex items-center justify-center gap-2.5 bg-white text-[#0D1830] text-xs tracking-[0.12em] uppercase font-bold px-9 py-4 hover:bg-[#f3f3f3] transition-colors"
               >
                 <svg width="15" height="15" viewBox="0 0 24 24" fill="currentColor">
                   <path d="M17.472 14.382c-.297-.149-1.758-.867-2.03-.967-.273-.099-.471-.148-.67.15-.197.297-.767.966-.94 1.164-.173.199-.347.223-.644.075-.297-.15-1.255-.463-2.39-1.475-.883-.788-1.48-1.761-1.653-2.059-.173-.297-.018-.458.13-.606.134-.133.298-.347.446-.52.149-.174.198-.298.298-.497.099-.198.05-.371-.025-.52-.075-.149-.669-1.612-.916-2.207-.242-.579-.487-.5-.669-.51-.173-.008-.371-.01-.57-.01-.198 0-.52.074-.792.372-.272.297-1.04 1.016-1.04 2.479 0 1.462 1.065 2.875 1.213 3.074.149.198 2.096 3.2 5.077 4.487.709.306 1.262.489 1.694.625.712.227 1.36.195 1.871.118.571-.085 1.758-.719 2.006-1.413.248-.694.248-1.289.173-1.413-.074-.124-.272-.198-.57-.347m-5.421 7.403h-.004a9.87 9.87 0 01-5.031-1.378l-.361-.214-3.741.982.998-3.648-.235-.374a9.86 9.86 0 01-1.51-5.26c.001-5.45 4.436-9.884 9.888-9.884 2.64 0 5.122 1.03 6.988 2.898a9.825 9.825 0 012.893 6.994c-.003 5.45-4.437 9.884-9.885 9.884m8.413-18.297A11.815 11.815 0 0012.05 0C5.495 0 .16 5.335.157 11.892c0 2.096.547 4.142 1.588 5.945L.057 24l6.305-1.654a11.882 11.882 0 005.683 1.448h.005c6.554 0 11.89-5.335 11.893-11.893a11.821 11.821 0 00-3.48-8.413z" />
@@ -509,14 +509,14 @@ export default function ParceriasPage() {
                 href={CATALOGUE_URL}
                 target="_blank"
                 rel="noopener noreferrer"
-                className="w-full sm:w-auto inline-flex items-center justify-center gap-2 border border-white/25 text-white text-xs tracking-[0.12em] uppercase font-bold font-[var(--font-inter)] px-9 py-4 hover:border-white transition-colors"
+                className="w-full sm:w-auto inline-flex items-center justify-center gap-2 border border-white/25 text-white text-xs tracking-[0.12em] uppercase font-bold px-9 py-4 hover:border-white transition-colors"
               >
                 <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
                   <path d="M21 15v4a2 2 0 01-2 2H5a2 2 0 01-2-2v-4M7 10l5 5 5-5M12 15V3" />
                 </svg>
                 Baixar Catálogo PDF
               </a>
-              <Link href="/produtos" className="w-full sm:w-auto text-center border border-white/25 text-white text-xs tracking-[0.12em] uppercase font-bold font-[var(--font-inter)] px-9 py-4 hover:border-white transition-colors">
+              <Link href="/produtos" className="w-full sm:w-auto text-center border border-white/25 text-white text-xs tracking-[0.12em] uppercase font-bold px-9 py-4 hover:border-white transition-colors">
                 Ver catálogo online
               </Link>
             </div>
@@ -524,8 +524,8 @@ export default function ParceriasPage() {
         </div>
       </section>
 
-      <div className="bg-[#f9f9f9] border-t border-[#eeeeee] py-5 text-center">
-        <p className="text-[#74777f] text-xs font-[var(--font-inter)] italic">
+      <div className="bg-[#F6F5F2] border-t border-[#eeeeee] py-5 text-center">
+        <p className="text-[#74777f] text-xs italic">
           Orbital · Catálogo 2026 · Dados sujeitos a alteração sem aviso prévio. Somos fornecedores diretos — não fazemos instalação.
         </p>
       </div>
@@ -593,19 +593,19 @@ function SelfRegisterSection({ onScrollToSegments }: { onScrollToSegments: () =>
   }, [form]);
 
   return (
-    <section className="py-10 lg:py-16 bg-[#f5f5f3] border-b border-[#e2e2e2]">
+    <section className="py-10 lg:py-16 bg-[#F6F5F2] border-b border-[#e2e2e2]">
       <div className="max-w-[1280px] mx-auto px-4 lg:px-16">
         <div className="flex flex-col lg:flex-row gap-12 lg:gap-20 items-start">
 
           {/* Left — explanation */}
           <div className="lg:w-[38%] lg:pt-2 flex-shrink-0">
-            <p className="text-[#74777f] text-[10px] tracking-[0.2em] uppercase font-semibold font-[var(--font-inter)] mb-3">
+            <p className="text-[#74777f] text-[10px] tracking-[0.2em] uppercase font-semibold mb-3">
               Já é parceiro?
             </p>
-            <h2 className="font-[var(--font-noto-serif)] text-[#002045] text-3xl font-normal leading-tight mb-4">
+            <h2 className="font-serif text-[#0B1F45] text-3xl font-normal leading-tight mb-4">
               Cadastre-se e receba seu cupom personalizado.
             </h2>
-            <p className="text-[#74777f] text-sm font-[var(--font-inter)] leading-relaxed mb-6">
+            <p className="text-[#74777f] text-sm leading-relaxed mb-6">
               Crie sua conta, receba seu cupom personalizado e acesse seu portal de parceiro.
             </p>
             <div className="space-y-3">
@@ -615,14 +615,14 @@ function SelfRegisterSection({ onScrollToSegments }: { onScrollToSegments: () =>
                 { n: "3", t: "Acesse o portal e acompanhe tudo" },
               ].map(({ n, t }) => (
                 <div key={n} className="flex items-start gap-3">
-                  <span className="flex-shrink-0 w-6 h-6 rounded-full bg-[#002045] text-white text-[10px] font-bold font-[var(--font-inter)] flex items-center justify-center mt-0.5">{n}</span>
-                  <p className="text-[#43474e] text-sm font-[var(--font-inter)] leading-relaxed">{t}</p>
+                  <span className="flex-shrink-0 w-6 h-6 rounded-full bg-[#0B1F45] text-white text-[10px] font-bold flex items-center justify-center mt-0.5">{n}</span>
+                  <p className="text-[#43474e] text-sm leading-relaxed">{t}</p>
                 </div>
               ))}
             </div>
             <button
               onClick={onScrollToSegments}
-              className="mt-8 text-[#002045] text-xs font-semibold font-[var(--font-inter)] tracking-[0.08em] uppercase underline underline-offset-4 hover:text-[#1a365d] transition-colors"
+              className="mt-8 text-[#0B1F45] text-xs font-semibold tracking-[0.08em] uppercase underline underline-offset-4 hover:text-[#2347A0] transition-colors"
             >
               Ver benefícios por perfil ↓
             </button>
@@ -635,54 +635,54 @@ function SelfRegisterSection({ onScrollToSegments }: { onScrollToSegments: () =>
                 <div className="w-12 h-12 bg-green-100 rounded-full flex items-center justify-center mx-auto mb-5">
                   <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="#16a34a" strokeWidth="2.5"><polyline points="20 6 9 17 4 12"/></svg>
                 </div>
-                <p className="font-[var(--font-noto-serif)] text-[#002045] text-2xl font-normal mb-2">
+                <p className="font-serif text-[#0B1F45] text-2xl font-normal mb-2">
                   Cadastro recebido!
                 </p>
-                <p className="text-[#43474e] text-sm font-[var(--font-inter)] leading-relaxed mb-4">
+                <p className="text-[#43474e] text-sm leading-relaxed mb-4">
                   Olá, <strong>{success.name.split(" ")[0]}</strong>. Seu cupom reservado é{" "}
-                  <strong className="text-[#002045] tracking-widest font-mono text-base">{success.coupon_code}</strong>.
+                  <strong className="text-[#0B1F45] tracking-widest font-mono text-base">{success.coupon_code}</strong>.
                 </p>
-                <p className="text-[#74777f] text-xs font-[var(--font-inter)]">
+                <p className="text-[#74777f] text-xs">
                   Nossa equipe ativa seu cadastro em até 24h. Você receberá uma confirmação por email.
                 </p>
               </div>
             ) : (
               <form onSubmit={handleSubmit} className="bg-white border border-[#e2e2e2] p-5 lg:p-8">
-                <p className="font-[var(--font-noto-serif)] text-[#002045] text-xl font-normal mb-6">Criar conta de parceiro</p>
+                <p className="font-serif text-[#0B1F45] text-xl font-normal mb-6">Criar conta de parceiro</p>
                 <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 mb-4">
                   <div>
-                    <label className="block text-[10px] tracking-[0.15em] uppercase font-bold font-[var(--font-inter)] text-[#74777f] mb-2">Nome completo *</label>
+                    <label className="block text-[10px] tracking-[0.15em] uppercase font-bold text-[#74777f] mb-2">Nome completo *</label>
                     <input
                       required
                       value={form.name}
                       onChange={(e) => setForm({ ...form, name: e.target.value })}
-                      className="w-full border border-[#e2e2e2] px-4 py-3 text-sm font-[var(--font-inter)] text-[#002045] focus:outline-none focus:border-[#002045] placeholder-[#b0b4bc]"
+                      className="w-full border border-[#e2e2e2] px-4 py-3 text-sm text-[#0B1F45] focus:outline-none focus:border-[#0B1F45] placeholder-[#b0b4bc]"
                       placeholder="Seu nome"
                     />
                   </div>
                   <div>
-                    <label className="block text-[10px] tracking-[0.15em] uppercase font-bold font-[var(--font-inter)] text-[#74777f] mb-2">Email *</label>
+                    <label className="block text-[10px] tracking-[0.15em] uppercase font-bold text-[#74777f] mb-2">Email *</label>
                     <input
                       required
                       type="email"
                       value={form.email}
                       onChange={(e) => setForm({ ...form, email: e.target.value })}
-                      className="w-full border border-[#e2e2e2] px-4 py-3 text-sm font-[var(--font-inter)] text-[#002045] focus:outline-none focus:border-[#002045] placeholder-[#b0b4bc]"
+                      className="w-full border border-[#e2e2e2] px-4 py-3 text-sm text-[#0B1F45] focus:outline-none focus:border-[#0B1F45] placeholder-[#b0b4bc]"
                       placeholder="seu@email.com"
                     />
                   </div>
                   <div>
-                    <label className="block text-[10px] tracking-[0.15em] uppercase font-bold font-[var(--font-inter)] text-[#74777f] mb-2">WhatsApp *</label>
+                    <label className="block text-[10px] tracking-[0.15em] uppercase font-bold text-[#74777f] mb-2">WhatsApp *</label>
                     <input
                       required
                       value={form.phone}
                       onChange={(e) => setForm({ ...form, phone: e.target.value })}
-                      className="w-full border border-[#e2e2e2] px-4 py-3 text-sm font-[var(--font-inter)] text-[#002045] focus:outline-none focus:border-[#002045] placeholder-[#b0b4bc]"
+                      className="w-full border border-[#e2e2e2] px-4 py-3 text-sm text-[#0B1F45] focus:outline-none focus:border-[#0B1F45] placeholder-[#b0b4bc]"
                       placeholder="(92) 9 0000-0000"
                     />
                   </div>
                   <div>
-                    <label className="block text-[10px] tracking-[0.15em] uppercase font-bold font-[var(--font-inter)] text-[#74777f] mb-2">Data de Nascimento *</label>
+                    <label className="block text-[10px] tracking-[0.15em] uppercase font-bold text-[#74777f] mb-2">Data de Nascimento *</label>
                     <input
                       required
                       type="text"
@@ -690,12 +690,12 @@ function SelfRegisterSection({ onScrollToSegments }: { onScrollToSegments: () =>
                       value={form.birthday}
                       onChange={(e) => handleBdayChange(e.target.value)}
                       maxLength={10}
-                      className="w-full border border-[#e2e2e2] px-4 py-3 text-sm font-[var(--font-inter)] text-[#002045] focus:outline-none focus:border-[#002045]"
+                      className="w-full border border-[#e2e2e2] px-4 py-3 text-sm text-[#0B1F45] focus:outline-none focus:border-[#0B1F45]"
                     />
                   </div>
                   <div>
                     <div className="flex items-center justify-between mb-2">
-                      <label className="text-[10px] tracking-[0.15em] uppercase font-bold font-[var(--font-inter)] text-[#74777f]">
+                      <label className="text-[10px] tracking-[0.15em] uppercase font-bold text-[#74777f]">
                         Código de indicação {noReferral ? "" : "*"}
                       </label>
                       {/* Hide "Não tenho código" when code is locked from URL */}
@@ -708,9 +708,9 @@ function SelfRegisterSection({ onScrollToSegments }: { onScrollToSegments: () =>
                               setNoReferral(e.target.checked);
                               if (e.target.checked) setForm(f => ({ ...f, referral_code: "" }));
                             }}
-                            className="w-3.5 h-3.5 accent-[#002045] cursor-pointer"
+                            className="w-3.5 h-3.5 accent-[#0B1F45] cursor-pointer"
                           />
-                          <span className="text-[9px] text-[#74777f] font-[var(--font-inter)] whitespace-nowrap">Não tenho código</span>
+                          <span className="text-[9px] text-[#74777f] whitespace-nowrap">Não tenho código</span>
                         </label>
                       )}
                     </div>
@@ -720,44 +720,44 @@ function SelfRegisterSection({ onScrollToSegments }: { onScrollToSegments: () =>
                         disabled={noReferral || !!lockedRepCode}
                         value={noReferral ? "" : form.referral_code}
                         onChange={(e) => setForm({ ...form, referral_code: e.target.value.toUpperCase() })}
-                        className={`w-full border px-4 py-3 text-sm font-[var(--font-inter)] focus:outline-none uppercase tracking-widest transition-colors ${
+                        className={`w-full border px-4 py-3 text-sm focus:outline-none uppercase tracking-widest transition-colors ${
                           noReferral
-                            ? "border-[#e2e2e2] bg-[#f5f5f3] text-[#b0b4bc] cursor-not-allowed"
+                            ? "border-[#e2e2e2] bg-[#F6F5F2] text-[#b0b4bc] cursor-not-allowed"
                             : lockedRepCode
-                            ? "border-[#3b6934] bg-[#f0f5ec] text-[#3b6934] cursor-not-allowed font-bold"
-                            : "border-[#e2e2e2] text-[#002045] focus:border-[#002045] placeholder-[#b0b4bc]"
+                            ? "border-[#36A35C] bg-[#f0f5ec] text-[#2347A0] cursor-not-allowed font-bold"
+                            : "border-[#e2e2e2] text-[#0B1F45] focus:border-[#0B1F45] placeholder-[#b0b4bc]"
                         }`}
                         placeholder={noReferral ? "Sem código de indicação" : "EX: REP_JOAO"}
                       />
                       {lockedRepCode && (
-                        <span className="absolute right-3 top-1/2 -translate-y-1/2 text-[9px] font-bold tracking-wide text-[#3b6934] bg-[#dcf0d8] px-1.5 py-0.5">
+                        <span className="absolute right-3 top-1/2 -translate-y-1/2 text-[9px] font-bold tracking-wide text-[#1F7A44] bg-[#dcf0d8] px-1.5 py-0.5">
                           ✓ Validado
                         </span>
                       )}
                     </div>
                     {lockedRepCode && (
-                      <p className="text-[9px] text-[#3b6934] font-[var(--font-inter)] mt-1">
+                      <p className="text-[9px] text-[#1F7A44] mt-1">
                         Código do seu consultor Orbital aplicado automaticamente.
                       </p>
                     )}
                   </div>
                 </div>
                 <div className="mb-5">
-                  <label className="block text-[10px] tracking-[0.15em] uppercase font-bold font-[var(--font-inter)] text-[#74777f] mb-2">Senha para seu portal *</label>
+                  <label className="block text-[10px] tracking-[0.15em] uppercase font-bold text-[#74777f] mb-2">Senha para seu portal *</label>
                   <div className="relative">
                     <input
                       required
                       type={showPassword ? "text" : "password"}
                       value={form.portal_password}
                       onChange={(e) => setForm({ ...form, portal_password: e.target.value })}
-                      className="w-full border border-[#e2e2e2] px-4 py-3 pr-12 text-sm font-[var(--font-inter)] text-[#002045] focus:outline-none focus:border-[#002045] placeholder-[#b0b4bc]"
+                      className="w-full border border-[#e2e2e2] px-4 py-3 pr-12 text-sm text-[#0B1F45] focus:outline-none focus:border-[#0B1F45] placeholder-[#b0b4bc]"
                       placeholder="Mínimo 8 caracteres"
                       minLength={8}
                     />
                     <button
                       type="button"
                       onClick={() => setShowPassword((v) => !v)}
-                      className="absolute right-3 top-1/2 -translate-y-1/2 text-[#b0b4bc] hover:text-[#002045] transition-colors p-1"
+                      className="absolute right-3 top-1/2 -translate-y-1/2 text-[#b0b4bc] hover:text-[#0B1F45] transition-colors p-1"
                       aria-label={showPassword ? "Ocultar senha" : "Mostrar senha"}
                     >
                       {showPassword ? (
@@ -775,15 +775,15 @@ function SelfRegisterSection({ onScrollToSegments }: { onScrollToSegments: () =>
                     </button>
                   </div>
                 </div>
-                {error && <p className="text-red-600 text-sm font-[var(--font-inter)] mb-4">{error}</p>}
+                {error && <p className="text-red-600 text-sm mb-4">{error}</p>}
                 <button
                   type="submit"
                   disabled={loading}
-                  className="w-full bg-[#002045] text-white text-xs tracking-[0.15em] uppercase font-bold font-[var(--font-inter)] px-8 py-4 hover:bg-[#1a365d] transition-colors disabled:opacity-50"
+                  className="w-full bg-[#0B1F45] text-white text-xs tracking-[0.15em] uppercase font-bold px-8 py-4 hover:bg-[#2347A0] transition-colors disabled:opacity-50"
                 >
                   {loading ? "Enviando..." : "Solicitar cadastro"}
                 </button>
-                <p className="text-[#74777f] text-[11px] font-[var(--font-inter)] text-center mt-3">
+                <p className="text-[#74777f] text-[11px] text-center mt-3">
                   Aprovação em até 24h · Cupom gerado automaticamente
                 </p>
               </form>

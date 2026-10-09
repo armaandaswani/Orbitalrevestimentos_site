@@ -196,8 +196,8 @@ export default function NovoOrcamentoPage() {
     return (
       <AdminShell active="orcamentos" breadcrumb={[{ label: "Orçamentos", href: "/admin?tab=orcamentos" }, { label: "Novo" }]} title="Orçamento criado">
         <div className="bg-[#eef5ec] border border-[#cfe3ca] px-5 py-5">
-          <p className="text-[#2c5226] font-[var(--font-inter)] text-sm font-bold mb-2">Pronto — o link do cliente já existe.</p>
-          <p className="text-[#43474e] text-sm font-[var(--font-inter)] mb-4 break-all">/orcamento/{created}</p>
+          <p className="text-[#1F7A44] text-sm font-bold mb-2">Pronto — o link do cliente já existe.</p>
+          <p className="text-[#43474e] text-sm mb-4 break-all">/orcamento/{created}</p>
           <div className="flex flex-wrap gap-2">
             <a href={`/orcamento/${created}`} target="_blank" rel="noopener noreferrer" className={btnPrimary}>Abrir orçamento</a>
             <Link href={`/admin/orcamentos/${created}`} className={btnGhost}>Materiais de instalação</Link>
@@ -217,16 +217,16 @@ export default function NovoOrcamentoPage() {
       title="Novo orçamento"
       action={<button onClick={save} disabled={!ready || saving} className={btnPrimary}>{saving ? "Criando…" : "Criar orçamento"}</button>}
     >
-      {err && <div className="mb-4 bg-red-50 border border-red-200 text-red-700 px-4 py-2.5 text-sm font-[var(--font-inter)]">{err}</div>}
+      {err && <div className="mb-4 bg-red-50 border border-red-200 text-red-700 px-4 py-2.5 text-sm">{err}</div>}
 
-      <p className="text-[#74777f] text-[13px] font-[var(--font-inter)] mb-6 max-w-3xl">
+      <p className="text-[#74777f] text-[13px] mb-6 max-w-3xl">
         Informe as medidas: o sistema calcula as placas pela mesma conta do simulador, aplica o preço
         de tabela e monta os materiais de instalação. Qualquer quantidade pode ser corrigida à mão.
       </p>
 
       {/* ── Cliente ─────────────────────────────────────────────────────────── */}
       <section className={sec}>
-        <div className={secHead}><h2 className="font-[var(--font-noto-serif)] text-[#002045] text-lg">1 · Cliente</h2></div>
+        <div className={secHead}><h2 className="font-serif text-[#0B1F45] text-lg">1 · Cliente</h2></div>
         <div className="p-4 sm:p-5 grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
           <div><label className={labelCls}>Nome *</label><input value={clientName} onChange={(e) => setClientName(e.target.value)} className={inputCls} /></div>
           <div><label className={labelCls}>E-mail</label><input value={clientEmail} onChange={(e) => setClientEmail(e.target.value)} className={inputCls} /></div>
@@ -244,16 +244,16 @@ export default function NovoOrcamentoPage() {
       {/* ── Ambientes ───────────────────────────────────────────────────────── */}
       <section className={sec}>
         <div className={secHead}>
-          <h2 className="font-[var(--font-noto-serif)] text-[#002045] text-lg">2 · Ambientes</h2>
+          <h2 className="font-serif text-[#0B1F45] text-lg">2 · Ambientes</h2>
           <div className="flex flex-wrap items-center gap-2 mt-2">
-            <span className="text-[10px] tracking-[0.12em] uppercase font-bold font-[var(--font-inter)] text-[#74777f]">Tabela de preço:</span>
+            <span className="text-[10px] tracking-[0.12em] uppercase font-bold text-[#74777f]">Tabela de preço:</span>
             {(["varejo", "atacado"] as const).map((t) => (
               <button key={t} type="button" onClick={() => setTier(t)}
-                className={`text-[10px] tracking-[0.08em] uppercase font-bold font-[var(--font-inter)] px-3 py-1.5 border transition-colors ${tier === t ? "bg-[#002045] text-white border-[#002045]" : "text-[#74777f] border-[#e2e2e2] hover:border-[#002045]"}`}>
+                className={`text-[10px] tracking-[0.08em] uppercase font-bold px-3 py-1.5 border transition-colors ${tier === t ? "bg-[#0B1F45] text-white border-[#0B1F45]" : "text-[#74777f] border-[#e2e2e2] hover:border-[#0B1F45]"}`}>
                 {t}
               </button>
             ))}
-            {tier === "atacado" && <span className="text-[10px] text-[#74777f] font-[var(--font-inter)]">Usa o preço especial da linha (aba Preços)</span>}
+            {tier === "atacado" && <span className="text-[10px] text-[#74777f]">Usa o preço especial da linha (aba Preços)</span>}
           </div>
         </div>
 
@@ -283,7 +283,7 @@ export default function NovoOrcamentoPage() {
                     <div className="flex gap-1.5">
                       {(["parede", "teto", "forro"] as ApplicationType[]).map((t) => (
                         <button key={t} type="button" onClick={() => setRow(r.key, { applicationType: t })}
-                          className={`flex-1 text-[10px] tracking-[0.06em] uppercase font-bold font-[var(--font-inter)] px-2 py-2.5 border transition-colors ${r.applicationType === t ? "bg-[#002045] text-white border-[#002045]" : "text-[#43474e] border-[#e2e2e2] hover:border-[#002045]"}`}>
+                          className={`flex-1 text-[10px] tracking-[0.06em] uppercase font-bold px-2 py-2.5 border transition-colors ${r.applicationType === t ? "bg-[#0B1F45] text-white border-[#0B1F45]" : "text-[#43474e] border-[#e2e2e2] hover:border-[#0B1F45]"}`}>
                           {APPLICATION_LABELS[t]}
                         </button>
                       ))}
@@ -295,7 +295,7 @@ export default function NovoOrcamentoPage() {
                   <div className="flex gap-1.5">
                     {([["lxa", "Largura × altura"], ["m2", "m²"]] as const).map(([m, label]) => (
                       <button key={m} type="button" onClick={() => setRow(r.key, { mode: m, platesOverride: null })}
-                        className={`text-[10px] tracking-[0.06em] uppercase font-bold font-[var(--font-inter)] px-2.5 py-2 border transition-colors ${r.mode === m ? "bg-[#002045] text-white border-[#002045]" : "text-[#74777f] border-[#e2e2e2] hover:border-[#002045]"}`}>
+                        className={`text-[10px] tracking-[0.06em] uppercase font-bold px-2.5 py-2 border transition-colors ${r.mode === m ? "bg-[#0B1F45] text-white border-[#0B1F45]" : "text-[#74777f] border-[#e2e2e2] hover:border-[#0B1F45]"}`}>
                         {label}
                       </button>
                     ))}
@@ -303,24 +303,24 @@ export default function NovoOrcamentoPage() {
                   {r.mode === "lxa" ? (
                     <>
                       <input type="number" min="0" step="0.01" value={r.width} onChange={(e) => setRow(r.key, { width: e.target.value, platesOverride: null })}
-                        placeholder="largura (m)" className="w-28 border border-[#e2e2e2] px-2 py-2 text-sm font-[var(--font-inter)] text-[#002045] focus:outline-none focus:border-[#002045]" />
+                        placeholder="largura (m)" className="w-28 border border-[#e2e2e2] px-2 py-2 text-sm text-[#0B1F45] focus:outline-none focus:border-[#0B1F45]" />
                       <span className="text-[#74777f] pb-2">×</span>
                       <input type="number" min="0" step="0.01" value={r.height} onChange={(e) => setRow(r.key, { height: e.target.value, platesOverride: null })}
-                        placeholder="altura (m)" className="w-28 border border-[#e2e2e2] px-2 py-2 text-sm font-[var(--font-inter)] text-[#002045] focus:outline-none focus:border-[#002045]" />
+                        placeholder="altura (m)" className="w-28 border border-[#e2e2e2] px-2 py-2 text-sm text-[#0B1F45] focus:outline-none focus:border-[#0B1F45]" />
                     </>
                   ) : (
                     <input type="number" min="0" step="0.01" value={r.sqm} onChange={(e) => setRow(r.key, { sqm: e.target.value, platesOverride: null })}
-                      placeholder="m²" className="w-28 border border-[#e2e2e2] px-2 py-2 text-sm font-[var(--font-inter)] text-[#002045] focus:outline-none focus:border-[#002045]" />
+                      placeholder="m²" className="w-28 border border-[#e2e2e2] px-2 py-2 text-sm text-[#0B1F45] focus:outline-none focus:border-[#0B1F45]" />
                   )}
 
                   <div className="flex items-center gap-1.5">
-                    <label className="text-[10px] tracking-[0.1em] uppercase font-bold font-[var(--font-inter)] text-[#74777f]">Placas</label>
+                    <label className="text-[10px] tracking-[0.1em] uppercase font-bold text-[#74777f]">Placas</label>
                     <input type="number" min="0" step="1" value={plates || ""}
                       onChange={(e) => setRow(r.key, { platesOverride: Math.max(0, Number(e.target.value) || 0) })}
-                      className="w-20 border border-[#e2e2e2] px-2 py-2 text-sm font-[var(--font-inter)] text-[#002045] focus:outline-none focus:border-[#002045]" />
+                      className="w-20 border border-[#e2e2e2] px-2 py-2 text-sm text-[#0B1F45] focus:outline-none focus:border-[#0B1F45]" />
                     {!auto && (
                       <button type="button" onClick={() => setRow(r.key, { platesOverride: null })}
-                        className="text-[10px] font-bold font-[var(--font-inter)] text-[#1e5fb4] hover:underline">auto</button>
+                        className="text-[10px] font-bold text-[#2F5FD0] hover:underline">auto</button>
                     )}
                   </div>
 
@@ -329,8 +329,8 @@ export default function NovoOrcamentoPage() {
                 </div>
 
                 {prod && plates > 0 && (
-                  <p className="text-[11px] font-[var(--font-inter)] text-[#74777f]">
-                    {plates} placa{plates !== 1 ? "s" : ""} × {fmt(price)} = <strong className="text-[#002045]">{fmt(plates * price)}</strong>
+                  <p className="text-[11px] text-[#74777f]">
+                    {plates} placa{plates !== 1 ? "s" : ""} × {fmt(price)} = <strong className="text-[#0B1F45]">{fmt(plates * price)}</strong>
                     {" · "}≈ {areaOf(r).toFixed(2)} m²
                     {auto ? " · calculado pelas medidas" : " · quantidade fixada à mão"}
                     {price <= 0 && <span className="text-amber-700"> · modelo sem preço cadastrado</span>}
@@ -341,7 +341,7 @@ export default function NovoOrcamentoPage() {
           })}
 
           <button type="button" onClick={() => setRows((cur) => [...cur, newRow()])}
-            className="text-[11px] font-bold font-[var(--font-inter)] text-[#002045] hover:underline">
+            className="text-[11px] font-bold text-[#0B1F45] hover:underline">
             + Adicionar ambiente
           </button>
         </div>
@@ -349,13 +349,13 @@ export default function NovoOrcamentoPage() {
 
       {/* ── Resumo ──────────────────────────────────────────────────────────── */}
       <section className={sec}>
-        <div className={secHead}><h2 className="font-[var(--font-noto-serif)] text-[#002045] text-lg">3 · Resumo</h2></div>
+        <div className={secHead}><h2 className="font-serif text-[#0B1F45] text-lg">3 · Resumo</h2></div>
         <div className="p-4 sm:p-5">
           {totals.plates === 0 ? (
-            <p className="text-[#a0a3a8] text-sm font-[var(--font-inter)]">Informe ao menos um ambiente com modelo e medidas.</p>
+            <p className="text-[#a0a3a8] text-sm">Informe ao menos um ambiente com modelo e medidas.</p>
           ) : (
-            <div className="space-y-2 text-[13px] font-[var(--font-inter)]">
-              <div className="flex justify-between"><span className="text-[#43474e]">{totals.plates} placa(s) · {totals.area.toFixed(2)} m²</span><span className="text-[#002045] font-semibold">{fmt(totals.material)}</span></div>
+            <div className="space-y-2 text-[13px]">
+              <div className="flex justify-between"><span className="text-[#43474e]">{totals.plates} placa(s) · {totals.area.toFixed(2)} m²</span><span className="text-[#0B1F45] font-semibold">{fmt(totals.material)}</span></div>
 
               {(breakdown?.materials ?? []).filter((m) => m.quantity > 0).map((m) => (
                 <div key={m.code} className="flex justify-between">
@@ -363,15 +363,15 @@ export default function NovoOrcamentoPage() {
                     {materialDisplayName(m)} — {m.quantity} {m.unit}{m.quantity !== 1 ? "s" : ""}
                     <span className="text-[#a0a3a8]"> · auto para {applicationReasonLabel(m.reasons).toLowerCase()}</span>
                   </span>
-                  <span className="text-[#002045]">{m.unitPrice > 0 ? fmt(m.total) : "—"}</span>
+                  <span className="text-[#0B1F45]">{m.unitPrice > 0 ? fmt(m.total) : "—"}</span>
                 </div>
               ))}
 
               {breakdown && (
                 <>
-                  <div className="flex justify-between"><span className="text-[#43474e]">Frete</span><span className="text-[#002045]">{breakdown.frete.free ? "Grátis" : fmt(breakdown.frete.value)}</span></div>
+                  <div className="flex justify-between"><span className="text-[#43474e]">Frete</span><span className="text-[#0B1F45]">{breakdown.frete.free ? "Grátis" : fmt(breakdown.frete.value)}</span></div>
                   <div className="flex justify-between border-t border-[#e2e2e2] pt-2 mt-2 font-bold">
-                    <span className="text-[#002045]">Total</span><span className="text-[#002045]">{fmt(breakdown.totalFull)}</span>
+                    <span className="text-[#0B1F45]">Total</span><span className="text-[#0B1F45]">{fmt(breakdown.totalFull)}</span>
                   </div>
                 </>
               )}
@@ -387,7 +387,7 @@ export default function NovoOrcamentoPage() {
       <div className="flex flex-wrap gap-2">
         <button onClick={save} disabled={!ready || saving} className={btnPrimary}>{saving ? "Criando…" : "Criar orçamento"}</button>
         <Link href="/admin?tab=orcamentos" className={btnGhost}>Cancelar</Link>
-        {!ready && <p className="text-[#74777f] text-[12px] font-[var(--font-inter)] self-center">Falta o nome do cliente e ao menos um ambiente com modelo e medidas.</p>}
+        {!ready && <p className="text-[#74777f] text-[12px] self-center">Falta o nome do cliente e ao menos um ambiente com modelo e medidas.</p>}
       </div>
     </AdminShell>
   );

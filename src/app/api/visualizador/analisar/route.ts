@@ -43,7 +43,7 @@ export async function POST(req: NextRequest) {
   const zones = (Array.isArray(body?.zones) ? (body!.zones as ZoneIn[]) : []).slice(0, 6).map((z, i) => ({
     id: str(z.id, 40) || `z${i + 1}`,
     n: i + 1,
-    color: /^#[0-9a-f]{6}$/i.test(str(z.color, 7)) ? str(z.color, 7) : "#3b6934",
+    color: /^#[0-9a-f]{6}$/i.test(str(z.color, 7)) ? str(z.color, 7) : "#36A35C",
     rect: z.rect ? { x: num01(z.rect.x), y: num01(z.rect.y), w: num01(z.rect.w), h: num01(z.rect.h) } : null,
     point: z.point === true,
     text: str(z.text, 300),

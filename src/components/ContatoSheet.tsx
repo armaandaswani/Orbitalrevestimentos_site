@@ -24,11 +24,11 @@ import {
 
 type Opcao = { readonly value: string; readonly label: string };
 
-// Paleta: azul-marinho da marca (#002045) no fundo, verde da logo (#a1d494)
+// Paleta: azul-marinho da marca (#0B1F45) no fundo, verde da logo (#36A35C)
 // nos contornos e na opção marcada, texto branco.
-const rotuloBase = "block text-[10px] tracking-[0.18em] uppercase font-semibold font-[var(--font-inter)] mb-2.5 transition-colors duration-300";
+const rotuloBase = "block text-[10px] tracking-[0.18em] uppercase font-semibold mb-2.5 transition-colors duration-300";
 /** Rótulo da pergunta da vez em verde; as demais em branco suave. */
-const rotuloCls = (daVez?: boolean) => `${rotuloBase} ${daVez ? "text-[#a1d494]" : "text-white/70"}`;
+const rotuloCls = (daVez?: boolean) => `${rotuloBase} ${daVez ? "text-[#36A35C]" : "text-white/70"}`;
 
 /** Ordem das perguntas; "enviar" é o botão. */
 const PASSOS = ["perfil", "whatsapp", "nome", "etapa", "largura", "altura", "cidade", "enviar"] as const;
@@ -65,8 +65,8 @@ function proximoPasso(atual: Passo, r: RespostasContato): Passo {
 // Cor da linha fora da base: com as duas cores na mesma classe, a de erro
 // perdia para a padrão e o campo obrigatório não ficava vermelho.
 const campoBase =
-  "w-full rounded-xl border bg-white/[0.04] px-4 py-3 text-[15px] font-[var(--font-inter)] text-white placeholder-white/35 focus:outline-none focus:border-[#a1d494] focus:bg-white/[0.07] transition-colors";
-const campoCls = `${campoBase} border-[#a1d494]/45`;
+  "w-full rounded-xl border bg-white/[0.04] px-4 py-3 text-[15px] text-white placeholder-white/35 focus:outline-none focus:border-[#36A35C] focus:bg-white/[0.07] transition-colors";
+const campoCls = `${campoBase} border-[#36A35C]/45`;
 const campoErroCls = `${campoBase} border-[#ff7a7a]`;
 
 function Obrigatorio() {
@@ -95,10 +95,10 @@ function Segmentado({
               role="radio"
               aria-checked={ativo}
               onClick={() => onChange(o.value)}
-              className={`min-h-11 px-2 rounded-xl border text-[13px] font-[var(--font-inter)] tracking-[0.01em] transition-colors ${
+              className={`min-h-11 px-2 rounded-xl border text-[13px] tracking-[0.01em] transition-colors ${
                 ativo
-                  ? "bg-[#a1d494] border-[#a1d494] text-[#002045] font-semibold"
-                  : `bg-transparent text-white hover:bg-white/[0.06] ${erro ? "border-[#ff7a7a]" : "border-[#a1d494]/45 hover:border-[#a1d494]"}`
+                  ? "bg-[#36A35C] border-[#36A35C] text-[#0B1F45] font-semibold"
+                  : `bg-transparent text-white hover:bg-white/[0.06] ${erro ? "border-[#ff7a7a]" : "border-[#36A35C]/45 hover:border-[#36A35C]"}`
               }`}
             >
               {o.label}
@@ -210,14 +210,14 @@ export default function ContatoSheet() {
       aria-labelledby="contato-titulo"
     >
       <div
-        className="bg-[#002045] text-white w-full sm:max-w-[460px] max-h-[94dvh] overflow-y-auto overscroll-contain rounded-t-3xl sm:rounded-3xl ring-1 ring-white/10 shadow-[0_30px_90px_-20px_rgba(0,0,0,0.6)]"
+        className="bg-[#0B1F45] text-white w-full sm:max-w-[460px] max-h-[94dvh] overflow-y-auto overscroll-contain rounded-t-3xl sm:rounded-3xl ring-1 ring-white/10 shadow-[0_30px_90px_-20px_rgba(0,0,0,0.6)]"
         onClick={(e) => e.stopPropagation()}
       >
         {/* Cabeçalho */}
-        <div className="sticky top-0 z-10 bg-[#002045] px-6 sm:px-8 pt-6 pb-5 border-b border-white/10">
+        <div className="sticky top-0 z-10 bg-[#0B1F45] px-6 sm:px-8 pt-6 pb-5 border-b border-white/10">
           <div className="flex items-start justify-between gap-6">
             <div>
-              <p className="text-[10px] tracking-[0.24em] uppercase font-semibold font-[var(--font-inter)] text-[#a1d494] mb-2">
+              <p className="text-[10px] tracking-[0.24em] uppercase font-semibold text-[#36A35C] mb-2">
                 Orbital · Atendimento
               </p>
               <p id="contato-titulo" className="font-serif text-white text-[26px] leading-[1.1] tracking-[-0.01em]">
@@ -237,17 +237,17 @@ export default function ContatoSheet() {
           </div>
 
           {principal && (principal.name || principal.code) && (
-            <div className="mt-5 flex items-center gap-3 rounded-2xl border border-[#a1d494]/30 bg-white/[0.04] p-2.5 pr-4">
+            <div className="mt-5 flex items-center gap-3 rounded-2xl border border-[#36A35C]/30 bg-white/[0.04] p-2.5 pr-4">
               {principal.image && (
                 // eslint-disable-next-line @next/next/no-img-element
                 <img src={principal.image} alt="" className="w-11 h-11 object-cover rounded-xl flex-shrink-0" />
               )}
               <div className="min-w-0">
-                <p className="text-white text-sm font-[var(--font-inter)] truncate">
+                <p className="text-white text-sm truncate">
                   {principal.name || principal.code}
                   {produtos.length > 1 && <span className="text-white/55"> e mais {produtos.length - 1}</span>}
                 </p>
-                <p className="text-white/55 text-[11px] tracking-[0.08em] uppercase font-[var(--font-inter)] truncate">
+                <p className="text-white/55 text-[11px] tracking-[0.08em] uppercase truncate">
                   {[principal.linha && `Linha ${principal.linha}`, principal.name && principal.code].filter(Boolean).join(" · ")}
                 </p>
               </div>
@@ -325,7 +325,7 @@ export default function ContatoSheet() {
                   placeholder="Largura"
                   className={`${campoCls} pr-9`}
                 />
-                <span className="absolute right-4 top-1/2 -translate-y-1/2 text-white/45 text-sm font-[var(--font-inter)] pointer-events-none">m</span>
+                <span className="absolute right-4 top-1/2 -translate-y-1/2 text-white/45 text-sm pointer-events-none">m</span>
               </label>
               <label className="relative block">
                 <span className="sr-only">Altura em metros</span>
@@ -340,14 +340,14 @@ export default function ContatoSheet() {
                   placeholder="Altura"
                   className={`${campoCls} pr-9`}
                 />
-                <span className="absolute right-4 top-1/2 -translate-y-1/2 text-white/45 text-sm font-[var(--font-inter)] pointer-events-none">m</span>
+                <span className="absolute right-4 top-1/2 -translate-y-1/2 text-white/45 text-sm pointer-events-none">m</span>
               </label>
             </div>
             {area.includes("m²") && (
-              <p className="mt-2 text-[#a1d494]/80 text-xs font-[var(--font-inter)]">{area.slice(area.indexOf("(") + 1, -1)} de área</p>
+              <p className="mt-2 text-[#36A35C]/80 text-xs">{area.slice(area.indexOf("(") + 1, -1)} de área</p>
             )}
             {!!r.areasDetalhe?.length && (
-              <p className="mt-2 text-white/55 text-xs font-[var(--font-inter)] leading-relaxed">
+              <p className="mt-2 text-white/55 text-xs leading-relaxed">
                 Do Visualizador: {r.areasDetalhe.join(" · ")}
               </p>
             )}
@@ -384,11 +384,11 @@ export default function ContatoSheet() {
 
         {/* Envio */}
         <div
-          className="sticky bottom-0 bg-[#002045] px-6 sm:px-8 pt-4 border-t border-white/10"
+          className="sticky bottom-0 bg-[#0B1F45] px-6 sm:px-8 pt-4 border-t border-white/10"
           style={{ paddingBottom: "calc(1.25rem + env(safe-area-inset-bottom))" }}
         >
           {tentou && faltam.length > 0 && (
-            <p className="text-[#ff8a8a] text-xs font-[var(--font-inter)] mb-3" role="alert">
+            <p className="text-[#ff8a8a] text-xs mb-3" role="alert">
               Preencha os campos marcados com *.
             </p>
           )}
@@ -411,8 +411,8 @@ export default function ContatoSheet() {
               } catch {}
               setAberto(false);
             }}
-            className={`group w-full min-h-[52px] inline-flex items-center justify-center gap-3 rounded-2xl bg-[#a1d494] text-[#002045] text-[11px] tracking-[0.2em] uppercase font-bold font-[var(--font-inter)] px-6 hover:bg-[#b4dea9] transition-all duration-500 focus:outline-none ${
-              realceEnvio ? "ring-4 ring-[#a1d494]/35 scale-[1.02]" : "ring-0 ring-transparent"
+            className={`group w-full min-h-[52px] inline-flex items-center justify-center gap-3 rounded-2xl bg-[#36A35C] text-[#0B1F45] text-[11px] tracking-[0.2em] uppercase font-bold px-6 hover:bg-[#b4dea9] transition-all duration-500 focus:outline-none ${
+              realceEnvio ? "ring-4 ring-[#36A35C]/35 scale-[1.02]" : "ring-0 ring-transparent"
             }`}
           >
             <svg width="15" height="15" viewBox="0 0 24 24" fill="currentColor" className="opacity-80" aria-hidden>
@@ -423,7 +423,7 @@ export default function ContatoSheet() {
               <path d="M5 12h14M13 6l6 6-6 6" />
             </svg>
           </a>
-          <p className="text-white/45 text-[11px] font-[var(--font-inter)] text-center mt-3 tracking-[0.02em]">
+          <p className="text-white/45 text-[11px] text-center mt-3 tracking-[0.02em]">
             Você será atendido por um consultor da Orbital.
           </p>
         </div>

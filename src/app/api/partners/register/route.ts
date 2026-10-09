@@ -3,6 +3,7 @@ import { supabaseAdmin } from "@/lib/supabase";
 import { hashPassword } from "@/lib/admin-auth";
 import { EMAIL_EMPRESA } from "@/lib/email-destinos";
 import { gerarCupomParceiro } from "@/lib/partner-coupon";
+import { emailTopo } from "@/lib/email-marca";
 
 export async function POST(req: NextRequest) {
   const body = await req.json();
@@ -104,15 +105,15 @@ export async function POST(req: NextRequest) {
       to: email,
       subject: "Recebemos o seu cadastro — Orbital Revestimentos",
       html: `
-        <div style="font-family:sans-serif;max-width:520px;margin:0 auto;padding:32px 24px;color:#1a1a1a">
-          <h2 style="font-size:22px;margin-bottom:8px;color:#002045">Cadastro recebido!</h2>
+        ${emailTopo(520)}<div style="font-family:Montserrat,Arial,sans-serif;max-width:520px;margin:0 auto;padding:32px 24px;color:#0D1830">
+          <h2 style="font-size:22px;margin-bottom:8px;color:#0B1F45;font-family:Noto Serif Display,Georgia,serif;font-weight:300">Cadastro recebido!</h2>
           <p style="color:#555;margin-bottom:20px">Olá, ${name}. Recebemos o seu cadastro como parceiro Orbital e ele está em análise pela nossa equipe.</p>
-          <div style="background:#f5f5f3;border-left:4px solid #002045;padding:16px 20px;margin-bottom:24px">
-            <p style="margin:0;font-size:14px;color:#002045;font-weight:600">O que acontece agora?</p>
+          <div style="background:#F6F5F2;border-left:4px solid #0B1F45;padding:16px 20px;margin-bottom:24px">
+            <p style="margin:0;font-size:14px;color:#0B1F45;font-weight:600">O que acontece agora?</p>
             <p style="margin:8px 0 0;font-size:13px;color:#555">Nossa equipe irá revisar o seu cadastro e, uma vez aprovado, você receberá um e-mail com todas as informações para acessar o portal de parceiro.</p>
           </div>
           <p style="color:#888;font-size:13px;margin-bottom:4px">Dúvidas? Entre em contato pelo WhatsApp:</p>
-          <a href="https://wa.me/5592988150149" style="color:#002045;font-weight:600;font-size:13px">+55 (92) 98815-0149</a>
+          <a href="https://wa.me/5592988150149" style="color:#0B1F45;font-weight:600;font-size:13px">+55 (92) 98815-0149</a>
           <p style="color:#888;font-size:12px;margin-top:32px;border-top:1px solid #eee;padding-top:16px">Orbital Revestimentos · Manaus, AM</p>
         </div>
       `,
@@ -138,8 +139,8 @@ export async function POST(req: NextRequest) {
       to: EMAIL_EMPRESA,
       subject: `Novo parceiro aguardando aprovação: ${name}`,
       html: `
-        <div style="font-family:sans-serif;max-width:520px;margin:0 auto;padding:32px 24px;color:#1a1a1a">
-          <h2 style="font-size:22px;margin-bottom:8px;color:#002045">Novo parceiro aguardando aprovação</h2>
+        ${emailTopo(520)}<div style="font-family:Montserrat,Arial,sans-serif;max-width:520px;margin:0 auto;padding:32px 24px;color:#0D1830">
+          <h2 style="font-size:22px;margin-bottom:8px;color:#0B1F45;font-family:Noto Serif Display,Georgia,serif;font-weight:300">Novo parceiro aguardando aprovação</h2>
           <p style="color:#555;margin-bottom:24px">Um novo parceiro se cadastrou e aguarda aprovação no portal.</p>
           <table style="width:100%;border-collapse:collapse;margin-bottom:24px">
             <tr>
@@ -164,7 +165,7 @@ export async function POST(req: NextRequest) {
             </tr>
           </table>
           <div style="display:flex;gap:12px;flex-wrap:wrap">
-            <a href="https://orbitalrevestimentos.com.br/admin" style="display:inline-block;background:#002045;color:#fff;text-decoration:none;padding:12px 24px;font-size:14px;font-weight:600">
+            <a href="https://orbitalrevestimentos.com.br/admin" style="display:inline-block;background:#0B1F45;color:#fff;text-decoration:none;padding:12px 24px;font-size:14px;font-weight:600">
               Acessar Painel Admin
             </a>
             <a href="${waLink}" style="display:inline-block;background:#25D366;color:#fff;text-decoration:none;padding:12px 24px;font-size:14px;font-weight:600">
@@ -191,8 +192,8 @@ export async function POST(req: NextRequest) {
         to: salesRep.email,
         subject: `Novo parceiro cadastrado: ${name}`,
         html: `
-          <div style="font-family:sans-serif;max-width:520px;margin:0 auto;padding:32px 24px;color:#1a1a1a">
-            <h2 style="font-size:22px;margin-bottom:8px;color:#002045">Novo parceiro indicado por você!</h2>
+          ${emailTopo(520)}<div style="font-family:Montserrat,Arial,sans-serif;max-width:520px;margin:0 auto;padding:32px 24px;color:#0D1830">
+            <h2 style="font-size:22px;margin-bottom:8px;color:#0B1F45;font-family:Noto Serif Display,Georgia,serif;font-weight:300">Novo parceiro indicado por você!</h2>
             <p style="color:#555;margin-bottom:24px">Olá, ${salesRep.name}. Um novo parceiro se cadastrou usando seu código de indicação <strong>${salesRep.referral_code}</strong> e aguarda aprovação.</p>
             <table style="width:100%;border-collapse:collapse;margin-bottom:24px">
               <tr>

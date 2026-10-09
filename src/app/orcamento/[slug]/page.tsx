@@ -185,10 +185,10 @@ export default function OrcamentoPage({ params }: { params: Promise<{ slug: stri
 
   if (loading) {
     return (
-      <div className="min-h-screen bg-[#f0efec] flex items-center justify-center">
+      <div className="min-h-screen bg-[#EFEDE8] flex items-center justify-center">
         <div className="flex flex-col items-center gap-4">
-          <div className="w-8 h-8 border-2 border-[#002045] border-t-transparent rounded-full animate-spin" />
-          <p className="text-[#74777f] text-xs tracking-[0.15em] uppercase font-[var(--font-inter)]">Carregando orçamento…</p>
+          <div className="w-8 h-8 border-2 border-[#0B1F45] border-t-transparent rounded-full animate-spin" />
+          <p className="text-[#74777f] text-xs tracking-[0.15em] uppercase">Carregando orçamento…</p>
         </div>
       </div>
     );
@@ -196,11 +196,11 @@ export default function OrcamentoPage({ params }: { params: Promise<{ slug: stri
 
   if (notFound || !quote) {
     return (
-      <div className="min-h-screen bg-[#f0efec] flex items-center justify-center px-6">
+      <div className="min-h-screen bg-[#EFEDE8] flex items-center justify-center px-6">
         <div className="text-center max-w-sm">
-          <p className="font-[var(--font-noto-serif)] text-[#002045] text-2xl mb-3">Orçamento não encontrado</p>
-          <p className="text-[#74777f] text-sm font-[var(--font-inter)] leading-relaxed mb-6">Este link pode ter expirado ou ser inválido. Entre em contato com quem compartilhou o orçamento.</p>
-          <a href="https://wa.me/5592988150149" className="inline-block bg-[#002045] text-white text-xs tracking-[0.12em] uppercase font-bold font-[var(--font-inter)] px-6 py-3">
+          <p className="font-serif text-[#0B1F45] text-2xl mb-3">Orçamento não encontrado</p>
+          <p className="text-[#74777f] text-sm leading-relaxed mb-6">Este link pode ter expirado ou ser inválido. Entre em contato com quem compartilhou o orçamento.</p>
+          <a href="https://wa.me/5592988150149" className="inline-block bg-[#0B1F45] text-white text-xs tracking-[0.12em] uppercase font-bold px-6 py-3">
             Falar com a Orbital
           </a>
         </div>
@@ -210,11 +210,11 @@ export default function OrcamentoPage({ params }: { params: Promise<{ slug: stri
 
   if (expired) {
     return (
-      <div className="min-h-screen bg-[#f0efec] flex items-center justify-center px-6">
+      <div className="min-h-screen bg-[#EFEDE8] flex items-center justify-center px-6">
         <div className="text-center max-w-sm">
-          <p className="font-[var(--font-noto-serif)] text-[#002045] text-2xl mb-3">Orçamento expirado</p>
-          <p className="text-[#74777f] text-sm font-[var(--font-inter)] leading-relaxed mb-6">Este orçamento tinha validade de {QUOTE_VALIDITY_DAYS} dias e já expirou. Peça um novo orçamento atualizado.</p>
-          <a href="https://wa.me/5592988150149" className="inline-block bg-[#002045] text-white text-xs tracking-[0.12em] uppercase font-bold font-[var(--font-inter)] px-6 py-3">
+          <p className="font-serif text-[#0B1F45] text-2xl mb-3">Orçamento expirado</p>
+          <p className="text-[#74777f] text-sm leading-relaxed mb-6">Este orçamento tinha validade de {QUOTE_VALIDITY_DAYS} dias e já expirou. Peça um novo orçamento atualizado.</p>
+          <a href="https://wa.me/5592988150149" className="inline-block bg-[#0B1F45] text-white text-xs tracking-[0.12em] uppercase font-bold px-6 py-3">
             Solicitar novo orçamento
           </a>
         </div>
@@ -298,27 +298,27 @@ export default function OrcamentoPage({ params }: { params: Promise<{ slug: stri
   const editUrl = editUrlWith();
 
   return (
-    <div className="min-h-screen bg-[#f0efec]">
+    <div className="min-h-screen bg-[#EFEDE8]">
 
       {/* Header */}
-      <header className="bg-[#002045] px-6 sm:px-10 py-5 flex items-center justify-between">
+      <header className="bg-[#0B1F45] px-6 sm:px-10 py-5 flex items-center justify-between">
         <div className="flex items-center gap-3">
-          <Image src="/images/logo.png" alt="Orbital" width={100} height={28} className="brightness-0 invert" />
+          <Image src="/images/brand/orbital-assinatura-negativo.svg" alt="Orbital Revestimentos" width={128} height={40} className="h-10 w-auto" />
         </div>
-        <p className="text-[#86a0cd] text-[10px] tracking-[0.18em] uppercase font-[var(--font-inter)] hidden sm:block">
+        <p className="text-[#B4BBC8] text-[10px] tracking-[0.18em] uppercase hidden sm:block">
           Revestimentos Premium · Manaus
         </p>
       </header>
 
       {/* Hero */}
-      <div ref={heroRef} className="bg-[#002045] px-6 sm:px-10 pb-12 pt-2">
+      <div ref={heroRef} className="bg-[#0B1F45] px-6 sm:px-10 pb-12 pt-2">
         <div className="max-w-3xl mx-auto">
-          <p className="text-[#86a0cd] text-[10px] tracking-[0.2em] uppercase font-[var(--font-inter)] mb-2">Orçamento personalizado</p>
-          <h1 className="font-[var(--font-noto-serif)] text-white text-3xl sm:text-4xl font-normal leading-tight mb-4">
+          <p className="text-[#B4BBC8] text-[10px] tracking-[0.2em] uppercase mb-2">Orçamento personalizado</p>
+          <h1 className="font-serif text-white text-3xl sm:text-4xl font-normal leading-tight mb-4">
             {firstName(quote.client_name) ? `${firstName(quote.client_name)}, seu projeto em Fibra de Bambu:` : "Seu projeto em Fibra de Bambu:"}
           </h1>
           {quote.partner_name && (
-            <p className="text-[#86a0cd] text-sm font-[var(--font-inter)]">
+            <p className="text-[#B4BBC8] text-sm">
               Elaborado por <span className="text-white font-medium">{quote.partner_name}</span>
             </p>
           )}
@@ -332,7 +332,7 @@ export default function OrcamentoPage({ params }: { params: Promise<{ slug: stri
         <div className="bg-white border border-[#e2e2e2] p-5 sm:p-7 mb-6 flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
           <div className="flex items-center gap-3">
             <div className={`w-2 h-2 rounded-full flex-shrink-0 ${days <= 1 ? "bg-red-400" : days <= 3 ? "bg-yellow-400" : "bg-green-400"}`} />
-            <p className="text-[#43474e] text-sm font-[var(--font-inter)]">
+            <p className="text-[#43474e] text-sm">
               {days === 0
                 ? "Expira hoje"
                 : days === 1
@@ -343,10 +343,10 @@ export default function OrcamentoPage({ params }: { params: Promise<{ slug: stri
               </span>
             </p>
           </div>
-          <div className="flex items-center gap-6 text-xs font-[var(--font-inter)] text-[#74777f]">
-            <span><span className="text-[#002045] font-bold text-base">{(quote.total_plates ?? 0)}</span> placas</span>
-            <span><span className="text-[#002045] font-bold text-base">{fmtDec(quote.total_area_m2 ?? 0)}</span> m²</span>
-            <span><span className="text-[#002045] font-bold text-base">{quote.spaces?.length ?? 0}</span> {quote.spaces?.length === 1 ? "ambiente" : "ambientes"}</span>
+          <div className="flex items-center gap-6 text-xs text-[#74777f]">
+            <span><span className="text-[#0B1F45] font-bold text-base">{(quote.total_plates ?? 0)}</span> placas</span>
+            <span><span className="text-[#0B1F45] font-bold text-base">{fmtDec(quote.total_area_m2 ?? 0)}</span> m²</span>
+            <span><span className="text-[#0B1F45] font-bold text-base">{quote.spaces?.length ?? 0}</span> {quote.spaces?.length === 1 ? "ambiente" : "ambientes"}</span>
           </div>
         </div>
 
@@ -371,14 +371,14 @@ export default function OrcamentoPage({ params }: { params: Promise<{ slug: stri
                   <div className="flex-1 p-4 sm:p-5">
                     <div className="flex items-start justify-between gap-2 mb-2">
                       <div>
-                        <p className="text-[#002045] font-[var(--font-noto-serif)] text-base sm:text-lg font-normal leading-snug">{sp.spaceName}</p>
-                        <p className="text-[#43474e] text-xs font-[var(--font-inter)] mt-0.5">{sp.productName}</p>
+                        <p className="text-[#0B1F45] font-serif text-base sm:text-lg font-normal leading-snug">{sp.spaceName}</p>
+                        <p className="text-[#43474e] text-xs mt-0.5">{sp.productName}</p>
                       </div>
-                      <span className={`text-[9px] tracking-[0.15em] uppercase font-bold font-[var(--font-inter)] px-2 py-1 flex-shrink-0 ${lc.bg} ${lc.text}`}>
+                      <span className={`text-[9px] tracking-[0.15em] uppercase font-bold px-2 py-1 flex-shrink-0 ${lc.bg} ${lc.text}`}>
                         {sp.linha}
                       </span>
                     </div>
-                    <div className="flex items-center gap-4 text-xs text-[#74777f] font-[var(--font-inter)] flex-wrap">
+                    <div className="flex items-center gap-4 text-xs text-[#74777f] flex-wrap">
                       {sp.dimLabel && sp.dimLabel.includes("×") && (
                         <>
                           <span>{sp.dimLabel}</span>
@@ -389,7 +389,7 @@ export default function OrcamentoPage({ params }: { params: Promise<{ slug: stri
                       <span>·</span>
                       <span>{sp.plates} {sp.plates === 1 ? "placa" : "placas"}</span>
                       <span>·</span>
-                      <span className="text-[#002045] font-semibold text-sm">{fmt(sp.total)}</span>
+                      <span className="text-[#0B1F45] font-semibold text-sm">{fmt(sp.total)}</span>
                     </div>
                   </div>
                 </div>
@@ -399,60 +399,60 @@ export default function OrcamentoPage({ params }: { params: Promise<{ slug: stri
         </div>
 
         {/* Total + composição (placas · Cola PU · frete) */}
-        <div className="bg-[#002045] p-6 sm:p-8 mb-6">
+        <div className="bg-[#0B1F45] p-6 sm:p-8 mb-6">
           {/* Composição do investimento */}
           {pricing && (
             <div className="mb-5 border-b border-white/15 pb-4 space-y-2">
-              <div className="flex items-center justify-between text-[13px] font-[var(--font-inter)]">
-                <span className="text-[#86a0cd]">Placas ({pricing.plates})</span>
+              <div className="flex items-center justify-between text-[13px]">
+                <span className="text-[#B4BBC8]">Placas ({pricing.plates})</span>
                 <span className="text-white font-semibold">{fmt(pricing.platesSubtotal)}</span>
               </div>
               {/* Materiais de instalação calculados automaticamente. A lista
                   depende do tipo de aplicação de cada espaço. */}
               {(pricing.materials ?? []).filter((m) => m.quantity > 0).map((m) => (
-                <div key={m.code} className="flex items-start justify-between gap-3 text-[13px] font-[var(--font-inter)]">
-                  <span className="text-[#86a0cd] min-w-0">
+                <div key={m.code} className="flex items-start justify-between gap-3 text-[13px]">
+                  <span className="text-[#B4BBC8] min-w-0">
                     {materialDisplayName(m)} ({m.quantity} {m.unit}{m.quantity !== 1 ? "s" : ""})
-                    <span className="block text-[#86a0cd]/60 text-[11px]">
+                    <span className="block text-[#B4BBC8]/60 text-[11px]">
                       Calculado automaticamente para {applicationReasonLabel(m.reasons).toLowerCase()}
                     </span>
                   </span>
                   <span className="text-white font-semibold flex-shrink-0">{m.unitPrice > 0 ? fmt(m.total) : "—"}</span>
                 </div>
               ))}
-              <div className="flex items-center justify-between text-[13px] font-[var(--font-inter)]">
-                <span className="text-[#86a0cd]">Frete</span>
+              <div className="flex items-center justify-between text-[13px]">
+                <span className="text-[#B4BBC8]">Frete</span>
                 <span className={`font-semibold ${pricing.frete.free ? "text-[#5eead4]" : "text-white"}`}>{pricing.frete.free ? "Grátis" : fmt(pricing.frete.value)}{pricing.frete.estimated && !pricing.frete.free ? "*" : ""}</span>
               </div>
             </div>
           )}
           <div className="flex items-end justify-between gap-4">
             <div>
-              <p className="text-[#86a0cd] text-[10px] tracking-[0.2em] uppercase font-[var(--font-inter)] mb-1">
+              <p className="text-[#B4BBC8] text-[10px] tracking-[0.2em] uppercase mb-1">
                 {isDiscounted && quote.coupon_code ? `Com cupom ${quote.coupon_code}` : "Total do projeto"}
               </p>
-              <p className="font-[var(--font-noto-serif)] text-white text-3xl sm:text-4xl font-normal">
+              <p className="font-serif text-white text-3xl sm:text-4xl font-normal">
                 {fmt(pricing ? pricing.totalFull : finalValue)}
               </p>
               {isDiscounted && (
-                <p className="text-[#86a0cd] text-xs font-[var(--font-inter)] mt-1 line-through">
+                <p className="text-[#B4BBC8] text-xs mt-1 line-through">
                   {fmt(quote.material_total ?? 0)}
                 </p>
               )}
             </div>
             {isDiscounted && savings > 0 && (
               <div className="text-right">
-                <p className="text-[#5eead4] text-[10px] tracking-[0.15em] uppercase font-[var(--font-inter)] mb-0.5">Economia</p>
-                <p className="text-[#5eead4] font-[var(--font-noto-serif)] text-xl font-normal">{fmt(savings)}</p>
+                <p className="text-[#5eead4] text-[10px] tracking-[0.15em] uppercase mb-0.5">Economia</p>
+                <p className="text-[#5eead4] font-serif text-xl font-normal">{fmt(savings)}</p>
               </div>
             )}
           </div>
           <div className="border-t border-white/15 mt-4 pt-3">
-            <p className="text-white text-xs font-bold font-[var(--font-inter)]">
+            <p className="text-white text-xs font-bold">
               {pricing ? "Inclui placas, Cola PU e frete estimado." : "⚠ Este valor é apenas do material."}
               {pricing?.frete.estimated && !pricing?.frete.free ? " (*frete estimado — confirmado pelo CEP na formalização)" : ""}
             </p>
-            <p className="text-[#86a0cd] text-[10px] font-[var(--font-inter)] mt-1 leading-relaxed">
+            <p className="text-[#B4BBC8] text-[10px] mt-1 leading-relaxed">
               A instalação não está incluída e é contratada separadamente, por conta do cliente (a Orbital pode indicar instaladores habilitados — veja abaixo).
             </p>
           </div>
@@ -461,7 +461,7 @@ export default function OrcamentoPage({ params }: { params: Promise<{ slug: stri
         {/* Condições de pagamento — calculadas pela quantidade de placas */}
         {pricing && (
           <div className="mb-6">
-            <p className="text-[#43474e] text-[10px] tracking-[0.15em] uppercase font-bold font-[var(--font-inter)] mb-3">Condições de pagamento</p>
+            <p className="text-[#43474e] text-[10px] tracking-[0.15em] uppercase font-bold mb-3">Condições de pagamento</p>
             {pricing.paymentOptions.length > 0 ? (
               <>
                 <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
@@ -473,23 +473,23 @@ export default function OrcamentoPage({ params }: { params: Promise<{ slug: stri
                         type="button"
                         onClick={() => setSelectedPayment(opt.id)}
                         aria-pressed={active}
-                        className={`text-left px-4 py-3.5 border transition-colors ${active ? "border-[#002045] bg-[#eef2fb] ring-1 ring-[#002045]" : "border-[#e2e2e2] bg-white hover:border-[#86a0cd]"}`}
+                        className={`text-left px-4 py-3.5 border transition-colors ${active ? "border-[#0B1F45] bg-[#eef2fb] ring-1 ring-[#0B1F45]" : "border-[#e2e2e2] bg-white hover:border-[#B4BBC8]"}`}
                       >
                         <div className="flex items-center justify-between gap-2 mb-1.5">
-                          <span className="text-[#43474e] text-[11px] tracking-[0.06em] uppercase font-bold font-[var(--font-inter)]">{opt.label}</span>
-                          <span className={`flex-shrink-0 w-4 h-4 rounded-full border-2 flex items-center justify-center ${active ? "border-[#002045] bg-[#002045]" : "border-[#c4c4c4]"}`}>
+                          <span className="text-[#43474e] text-[11px] tracking-[0.06em] uppercase font-bold">{opt.label}</span>
+                          <span className={`flex-shrink-0 w-4 h-4 rounded-full border-2 flex items-center justify-center ${active ? "border-[#0B1F45] bg-[#0B1F45]" : "border-[#c4c4c4]"}`}>
                             {active && <svg width="8" height="8" viewBox="0 0 24 24" fill="none" stroke="white" strokeWidth="4"><path d="M20 6L9 17l-5-5"/></svg>}
                           </span>
                         </div>
                         {opt.id === "cartao" ? (
                           <>
-                            <p className="text-[#002045] text-xl sm:text-2xl font-bold font-[var(--font-noto-serif)] leading-none">{opt.installments}x de {fmtParcela(opt.installmentValue ?? 0)}</p>
-                            <p className="text-[#74777f] text-[11px] font-[var(--font-inter)] mt-1.5">sem juros · total {fmt(opt.total)}</p>
+                            <p className="text-[#0B1F45] text-xl sm:text-2xl font-bold font-serif leading-none">{opt.installments}x de {fmtParcela(opt.installmentValue ?? 0)}</p>
+                            <p className="text-[#74777f] text-[11px] mt-1.5">sem juros · total {fmt(opt.total)}</p>
                           </>
                         ) : (
                           <>
-                            <p className="text-[#002045] text-xl sm:text-2xl font-bold font-[var(--font-noto-serif)] leading-none">{fmt(opt.total)}</p>
-                            <p className="text-[#3b6934] text-[11px] font-semibold font-[var(--font-inter)] mt-1.5">à vista · {opt.discountPct}% off (economize {fmt(opt.discountAmount ?? 0)})</p>
+                            <p className="text-[#0B1F45] text-xl sm:text-2xl font-bold font-serif leading-none">{fmt(opt.total)}</p>
+                            <p className="text-[#1F7A44] text-[11px] font-semibold mt-1.5">à vista · {opt.discountPct}% off (economize {fmt(opt.discountAmount ?? 0)})</p>
                           </>
                         )}
                       </button>
@@ -498,19 +498,19 @@ export default function OrcamentoPage({ params }: { params: Promise<{ slug: stri
                 </div>
               </>
             ) : (
-              <p className="text-[#74777f] text-[13px] font-[var(--font-inter)]">Condições especiais de pagamento disponíveis a partir de 2 placas. Fale com a gente para as condições desta compra.</p>
+              <p className="text-[#74777f] text-[13px]">Condições especiais de pagamento disponíveis a partir de 2 placas. Fale com a gente para as condições desta compra.</p>
             )}
 
             {/* Botão secundário — solicitar PDF formalizado */}
             <button
               type="button"
               onClick={() => { setFzResult(null); setFzError(""); setFzOpen(true); }}
-              className="mt-4 w-full border-2 border-[#002045] text-[#002045] text-xs tracking-[0.08em] uppercase font-bold font-[var(--font-inter)] px-6 py-3.5 hover:bg-[#002045] hover:text-white transition-colors flex items-center justify-center gap-2"
+              className="mt-4 w-full border-2 border-[#0B1F45] text-[#0B1F45] text-xs tracking-[0.08em] uppercase font-bold px-6 py-3.5 hover:bg-[#0B1F45] hover:text-white transition-colors flex items-center justify-center gap-2"
             >
               <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><path d="M14 2v6h6M16 13H8M16 17H8M10 9H8"/></svg>
               Solicitar orçamento formal em PDF
             </button>
-            <p className="text-[#74777f] text-[11px] font-[var(--font-inter)] text-center mt-1.5">Receba o orçamento formal completo pelo WhatsApp.</p>
+            <p className="text-[#74777f] text-[11px] text-center mt-1.5">Receba o orçamento formal completo pelo WhatsApp.</p>
           </div>
         )}
 
@@ -519,17 +519,17 @@ export default function OrcamentoPage({ params }: { params: Promise<{ slug: stri
             right after the quote was made) can still see the installation
             explainer and reach the installation partner. Closed by default,
             no fixed price shown (varies per project). */}
-        <div className="bg-[#a1d494] mb-6">
+        <div className="bg-[#36A35C] mb-6">
           <button
             type="button"
             onClick={() => setShowMoInfo((v) => !v)}
             className="w-full flex items-center justify-between gap-3 px-4 py-3.5 text-left"
           >
-            <span className="text-[#002045] text-sm font-bold font-[var(--font-inter)]">
+            <span className="text-[#0B1F45] text-sm font-bold">
               Precisa de instalação? <span className="font-normal">(opcional, não incluso)</span>
             </span>
             <svg
-              width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#002045" strokeWidth="2.5"
+              width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#0B1F45" strokeWidth="2.5"
               className={`flex-shrink-0 transition-transform duration-200 ${showMoInfo ? "rotate-180" : ""}`}
             >
               <path d="M6 9l6 6 6-6" />
@@ -537,7 +537,7 @@ export default function OrcamentoPage({ params }: { params: Promise<{ slug: stri
           </button>
           {showMoInfo && (
             <div className="bg-[#0a1f3d] px-4 py-4 space-y-3">
-              <p className="text-white/70 text-[11px] font-[var(--font-inter)] leading-relaxed">
+              <p className="text-white/70 text-[11px] leading-relaxed">
                 Orbital é fornecedora do painel — não realizamos instalação e o valor acima é só do material.
                 Quem indicamos para instalações é uma empresa terceirizada que detém equipes especializadas e
                 que já aplicou os painéis Orbital em diversos projetos e conhece bem o produto. O custo da
@@ -548,7 +548,7 @@ export default function OrcamentoPage({ params }: { params: Promise<{ slug: stri
                 href={`${WERK_ENGENHARIA_WA_BASE}${werkssonMsg}`}
                 target="_blank"
                 rel="noopener noreferrer"
-                className="inline-flex items-center gap-2 bg-[#25d366] text-white text-xs tracking-[0.1em] uppercase font-bold font-[var(--font-inter)] px-5 py-2.5 hover:brightness-95 transition"
+                className="inline-flex items-center gap-2 bg-[#25d366] text-white text-xs tracking-[0.1em] uppercase font-bold px-5 py-2.5 hover:brightness-95 transition"
               >
                 <svg width="13" height="13" viewBox="0 0 24 24" fill="currentColor">
                   <path d="M17.472 14.382c-.297-.149-1.758-.867-2.03-.967-.273-.099-.471-.148-.67.15-.197.297-.767.966-.94 1.164-.173.199-.347.223-.644.075-.297-.15-1.255-.463-2.39-1.475-.883-.788-1.48-1.761-1.653-2.059-.173-.297-.018-.458.13-.606.134-.133.298-.347.446-.52.149-.174.198-.298.298-.497.099-.198.05-.371-.025-.52-.075-.149-.669-1.612-.916-2.207-.242-.579-.487-.5-.669-.51-.173-.008-.371-.01-.57-.01-.198 0-.52.074-.792.372-.272.297-1.04 1.016-1.04 2.479 0 1.462 1.065 2.875 1.213 3.074.149.198 2.096 3.2 5.077 4.487.709.306 1.262.489 1.694.625.712.227 1.36.195 1.871.118.571-.085 1.758-.719 2.006-1.413.248-.694.248-1.289.173-1.413-.074-.124-.272-.198-.57-.347m-5.421 7.403h-.004a9.87 9.87 0 01-5.031-1.378l-.361-.214-3.741.982.998-3.648-.235-.374a9.86 9.86 0 01-1.51-5.26c.001-5.45 4.436-9.884 9.888-9.884 2.64 0 5.122 1.03 6.988 2.898a9.825 9.825 0 012.893 6.994c-.003 5.45-4.437 9.884-9.885 9.884m8.413-18.297A11.815 11.815 0 0012.05 0C5.495 0 .16 5.335.157 11.892c0 2.096.547 4.142 1.588 5.945L.057 24l6.305-1.654a11.882 11.882 0 005.683 1.448h.005c6.554 0 11.89-5.335 11.893-11.893a11.821 11.821 0 00-3.48-8.413z" />
@@ -565,7 +565,7 @@ export default function OrcamentoPage({ params }: { params: Promise<{ slug: stri
             href={`https://wa.me/5592988150149?text=${waMessage}`}
             target="_blank"
             rel="noopener noreferrer"
-            className="flex items-center justify-center gap-3 w-full py-4 bg-[#25d366] text-white text-xs tracking-[0.12em] uppercase font-bold font-[var(--font-inter)] hover:bg-[#1ebe5d] transition-colors"
+            className="flex items-center justify-center gap-3 w-full py-4 bg-[#25d366] text-white text-xs tracking-[0.12em] uppercase font-bold hover:bg-[#1ebe5d] transition-colors"
           >
             <svg width="16" height="16" viewBox="0 0 24 24" fill="currentColor">
               <path d="M17.472 14.382c-.297-.149-1.758-.867-2.03-.967-.273-.099-.471-.148-.67.15-.197.297-.767.966-.94 1.164-.173.199-.347.223-.644.075-.297-.15-1.255-.463-2.39-1.475-.883-.788-1.48-1.761-1.653-2.059-.173-.297-.018-.458.13-.606.134-.133.298-.347.446-.52.149-.174.198-.298.298-.497.099-.198.05-.371-.025-.52-.075-.149-.669-1.612-.916-2.207-.242-.579-.487-.5-.669-.51-.173-.008-.371-.01-.57-.01-.198 0-.52.074-.792.372-.272.297-1.04 1.016-1.04 2.479 0 1.462 1.065 2.875 1.213 3.074.149.198 2.096 3.2 5.077 4.487.709.306 1.262.489 1.694.625.712.227 1.36.195 1.871.118.571-.085 1.758-.719 2.006-1.413.248-.694.248-1.289.173-1.413-.074-.124-.272-.198-.57-.347m-5.421 7.403h-.004a9.87 9.87 0 01-5.031-1.378l-.361-.214-3.741.982.998-3.648-.235-.374a9.86 9.86 0 01-1.51-5.26c.001-5.45 4.436-9.884 9.888-9.884 2.64 0 5.122 1.03 6.988 2.898a9.825 9.825 0 012.893 6.994c-.003 5.45-4.437 9.884-9.885 9.884m8.413-18.297A11.815 11.815 0 0012.05 0C5.495 0 .16 5.335.157 11.892c0 2.096.547 4.142 1.588 5.945L.057 24l6.305-1.654a11.882 11.882 0 005.683 1.448h.005c6.554 0 11.89-5.335 11.893-11.893a11.821 11.821 0 00-3.48-8.413z"/>
@@ -578,7 +578,7 @@ export default function OrcamentoPage({ params }: { params: Promise<{ slug: stri
               href={`https://wa.me/${partnerWaPhone}?text=${partnerWaMessage}`}
               target="_blank"
               rel="noopener noreferrer"
-              className="flex items-center justify-center gap-3 w-full py-4 border border-[#002045] text-[#002045] text-xs tracking-[0.12em] uppercase font-bold font-[var(--font-inter)] hover:bg-[#002045] hover:text-white transition-colors"
+              className="flex items-center justify-center gap-3 w-full py-4 border border-[#0B1F45] text-[#0B1F45] text-xs tracking-[0.12em] uppercase font-bold hover:bg-[#0B1F45] hover:text-white transition-colors"
             >
               <svg width="16" height="16" viewBox="0 0 24 24" fill="currentColor">
                 <path d="M17.472 14.382c-.297-.149-1.758-.867-2.03-.967-.273-.099-.471-.148-.67.15-.197.297-.767.966-.94 1.164-.173.199-.347.223-.644.075-.297-.15-1.255-.463-2.39-1.475-.883-.788-1.48-1.761-1.653-2.059-.173-.297-.018-.458.13-.606.134-.133.298-.347.446-.52.149-.174.198-.298.298-.497.099-.198.05-.371-.025-.52-.075-.149-.669-1.612-.916-2.207-.242-.579-.487-.5-.669-.51-.173-.008-.371-.01-.57-.01-.198 0-.52.074-.792.372-.272.297-1.04 1.016-1.04 2.479 0 1.462 1.065 2.875 1.213 3.074.149.198 2.096 3.2 5.077 4.487.709.306 1.262.489 1.694.625.712.227 1.36.195 1.871.118.571-.085 1.758-.719 2.006-1.413.248-.694.248-1.289.173-1.413-.074-.124-.272-.198-.57-.347m-5.421 7.403h-.004a9.87 9.87 0 01-5.031-1.378l-.361-.214-3.741.982.998-3.648-.235-.374a9.86 9.86 0 01-1.51-5.26c.001-5.45 4.436-9.884 9.888-9.884 2.64 0 5.122 1.03 6.988 2.898a9.825 9.825 0 012.893 6.994c-.003 5.45-4.437 9.884-9.885 9.884m8.413-18.297A11.815 11.815 0 0012.05 0C5.495 0 .16 5.335.157 11.892c0 2.096.547 4.142 1.588 5.945L.057 24l6.305-1.654a11.882 11.882 0 005.683 1.448h.005c6.554 0 11.89-5.335 11.893-11.893a11.821 11.821 0 00-3.48-8.413z"/>
@@ -589,18 +589,18 @@ export default function OrcamentoPage({ params }: { params: Promise<{ slug: stri
 
           {editUrl && (
             <div className="border border-[#e2e2e2] p-4">
-              <p className="text-[#002045] text-xs tracking-[0.12em] uppercase font-bold font-[var(--font-inter)] mb-1">Editar este orçamento</p>
-              <p className="text-[#74777f] text-xs font-[var(--font-inter)] mb-3">Seus dados já estão salvos — é só ajustar o que quiser. As alterações atualizam este mesmo orçamento.</p>
+              <p className="text-[#0B1F45] text-xs tracking-[0.12em] uppercase font-bold mb-1">Editar este orçamento</p>
+              <p className="text-[#74777f] text-xs mb-3">Seus dados já estão salvos — é só ajustar o que quiser. As alterações atualizam este mesmo orçamento.</p>
               <div className="grid gap-2">
-                <a href={editUrlWith("dimensoes")!} className="flex items-center gap-2.5 w-full px-3 py-2.5 border border-[#e2e2e2] text-[#43474e] text-sm font-[var(--font-inter)] hover:border-[#002045] hover:text-[#002045] transition-colors">
+                <a href={editUrlWith("dimensoes")!} className="flex items-center gap-2.5 w-full px-3 py-2.5 border border-[#e2e2e2] text-[#43474e] text-sm hover:border-[#0B1F45] hover:text-[#0B1F45] transition-colors">
                   <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><path d="M21 3L3 21M9 3H3v6M21 15v6h-6"/></svg>
                   Ajustar dimensões (largura / altura)
                 </a>
-                <a href={editUrlWith("modelo")!} className="flex items-center gap-2.5 w-full px-3 py-2.5 border border-[#e2e2e2] text-[#43474e] text-sm font-[var(--font-inter)] hover:border-[#002045] hover:text-[#002045] transition-colors">
+                <a href={editUrlWith("modelo")!} className="flex items-center gap-2.5 w-full px-3 py-2.5 border border-[#e2e2e2] text-[#43474e] text-sm hover:border-[#0B1F45] hover:text-[#0B1F45] transition-colors">
                   <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><rect x="3" y="3" width="7" height="7"/><rect x="14" y="3" width="7" height="7"/><rect x="14" y="14" width="7" height="7"/><rect x="3" y="14" width="7" height="7"/></svg>
                   Trocar o modelo do revestimento
                 </a>
-                <a href={editUrl} className="flex items-center gap-2.5 w-full px-3 py-2.5 border border-[#e2e2e2] text-[#43474e] text-sm font-[var(--font-inter)] hover:border-[#002045] hover:text-[#002045] transition-colors">
+                <a href={editUrl} className="flex items-center gap-2.5 w-full px-3 py-2.5 border border-[#e2e2e2] text-[#43474e] text-sm hover:border-[#0B1F45] hover:text-[#0B1F45] transition-colors">
                   <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><path d="M12 5v14M5 12h14"/></svg>
                   Adicionar ambiente / revisar tudo
                 </a>
@@ -616,7 +616,7 @@ export default function OrcamentoPage({ params }: { params: Promise<{ slug: stri
                 setTimeout(() => setCopied(false), 2000);
               });
             }}
-            className="flex items-center justify-center gap-2 w-full py-3 border border-[#002045] text-[#002045] text-xs tracking-[0.12em] uppercase font-bold font-[var(--font-inter)] hover:bg-[#002045] hover:text-white transition-colors"
+            className="flex items-center justify-center gap-2 w-full py-3 border border-[#0B1F45] text-[#0B1F45] text-xs tracking-[0.12em] uppercase font-bold hover:bg-[#0B1F45] hover:text-white transition-colors"
           >
             {copied ? (
               <>
@@ -634,10 +634,10 @@ export default function OrcamentoPage({ params }: { params: Promise<{ slug: stri
 
         {/* Por que escolher a Fibra de Bambu — mobile-first, foco em benefício */}
         <div className="border-t border-[#e2e2e2] pt-8">
-          <h2 className="font-[var(--font-noto-serif)] text-[#002045] text-xl sm:text-2xl font-normal leading-snug mb-2">
+          <h2 className="font-serif text-[#0B1F45] text-xl sm:text-2xl font-normal leading-snug mb-2">
             Por que escolher a Fibra de Bambu da Orbital?
           </h2>
-          <p className="text-[#5b5f68] text-[13px] sm:text-sm font-[var(--font-inter)] leading-relaxed mb-5 max-w-xl">
+          <p className="text-[#5b5f68] text-[13px] sm:text-sm leading-relaxed mb-5 max-w-xl">
             Um revestimento desenvolvido para unir resistência, instalação rápida e acabamento premium — inclusive no clima quente e úmido de Manaus.
           </p>
           <div className="grid grid-cols-2 gap-3 sm:gap-4">
@@ -668,17 +668,17 @@ export default function OrcamentoPage({ params }: { params: Promise<{ slug: stri
               },
             ].map((b) => (
               <div key={b.title} className="bg-white border border-[#e2e2e2] p-3.5 sm:p-4 flex flex-col">
-                <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="#002045" strokeWidth="1.6" strokeLinecap="round" strokeLinejoin="round" className="mb-2.5 flex-shrink-0">{b.icon}</svg>
-                <p className="text-[#002045] text-[13px] sm:text-sm font-bold font-[var(--font-inter)] leading-tight">{b.title}</p>
-                <p className="text-[#3b6934] text-[11px] sm:text-xs font-semibold font-[var(--font-inter)] mt-1">{b.benefit}</p>
-                <p className="text-[#74777f] text-[11px] font-[var(--font-inter)] leading-snug mt-1.5">{b.desc}</p>
+                <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="#0B1F45" strokeWidth="1.6" strokeLinecap="round" strokeLinejoin="round" className="mb-2.5 flex-shrink-0">{b.icon}</svg>
+                <p className="text-[#0B1F45] text-[13px] sm:text-sm font-bold leading-tight">{b.title}</p>
+                <p className="text-[#1F7A44] text-[11px] sm:text-xs font-semibold mt-1">{b.benefit}</p>
+                <p className="text-[#74777f] text-[11px] leading-snug mt-1.5">{b.desc}</p>
               </div>
             ))}
           </div>
 
           {/* Benefícios complementares — lista compacta expansível (sem cards pesados) */}
           <details className="mt-4 group">
-            <summary className="cursor-pointer list-none flex items-center gap-1.5 text-[#002045] text-[11px] tracking-[0.08em] uppercase font-bold font-[var(--font-inter)]">
+            <summary className="cursor-pointer list-none flex items-center gap-1.5 text-[#0B1F45] text-[11px] tracking-[0.08em] uppercase font-bold">
               <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" className="transition-transform group-open:rotate-90"><path d="M9 18l6-6-6-6" /></svg>
               Mais benefícios
             </summary>
@@ -694,8 +694,8 @@ export default function OrcamentoPage({ params }: { params: Promise<{ slug: stri
                 "Transformação rápida, sem reforma convencional",
                 "Pronta entrega em Manaus",
               ].map((t) => (
-                <li key={t} className="flex items-start gap-2 text-[#43474e] text-[12px] font-[var(--font-inter)]">
-                  <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="#3b6934" strokeWidth="2.5" className="mt-0.5 flex-shrink-0"><path d="M20 6L9 17l-5-5" /></svg>
+                <li key={t} className="flex items-start gap-2 text-[#43474e] text-[12px]">
+                  <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="#36A35C" strokeWidth="2.5" className="mt-0.5 flex-shrink-0"><path d="M20 6L9 17l-5-5" /></svg>
                   {t}
                 </li>
               ))}
@@ -708,10 +708,10 @@ export default function OrcamentoPage({ params }: { params: Promise<{ slug: stri
             to see how PFB stacks up against MDF/papel/forro/tinta. */}
         <div className="bg-white border border-[#e2e2e2] mt-8">
           <div className="px-6 lg:px-8 pt-6 pb-2 border-b border-[#e2e2e2]">
-            <p className="text-[#43474e] text-[10px] tracking-[0.15em] uppercase font-bold font-[var(--font-inter)] mb-0.5">
+            <p className="text-[#43474e] text-[10px] tracking-[0.15em] uppercase font-bold mb-0.5">
               Fibra de Bambu Orbital vs. outros materiais
             </p>
-            <p className="text-[#74777f] text-xs font-[var(--font-inter)]">
+            <p className="text-[#74777f] text-xs">
               Selecione o material para comparar tecnicamente
             </p>
           </div>
@@ -722,10 +722,10 @@ export default function OrcamentoPage({ params }: { params: Promise<{ slug: stri
 
         {/* Footer */}
         <div className="mt-10 pt-6 border-t border-[#e2e2e2] text-center">
-          <p className="text-[#74777f] text-[10px] font-[var(--font-inter)]">
+          <p className="text-[#74777f] text-[10px]">
             Orbital Revestimentos · Manaus, AM · WhatsApp (92) 98815-0149
           </p>
-          <p className="text-[#b0b0b0] text-[10px] font-[var(--font-inter)] mt-1">
+          <p className="text-[#b0b0b0] text-[10px] mt-1">
             Orçamento gerado em {new Date(quote.created_at).toLocaleDateString("pt-BR")} · Ref. {quote.slug}
           </p>
         </div>
@@ -735,8 +735,8 @@ export default function OrcamentoPage({ params }: { params: Promise<{ slug: stri
       {fzOpen && (
         <div className="fixed inset-0 z-[100] bg-black/60 flex items-end sm:items-center justify-center p-0 sm:p-4" onClick={() => { if (!fzSubmitting) setFzOpen(false); }}>
           <div className="bg-white w-full sm:max-w-lg max-h-[92vh] overflow-y-auto" onClick={(e) => e.stopPropagation()}>
-            <div className="sticky top-0 bg-[#002045] px-5 py-4 flex items-center justify-between z-10">
-              <p className="text-white font-[var(--font-noto-serif)] text-base">{fzResult ? "Orçamento formalizado" : "Solicitar orçamento formal"}</p>
+            <div className="sticky top-0 bg-[#0B1F45] px-5 py-4 flex items-center justify-between z-10">
+              <p className="text-white font-serif text-base">{fzResult ? "Orçamento formalizado" : "Solicitar orçamento formal"}</p>
               <button onClick={() => { if (!fzSubmitting) setFzOpen(false); }} className="text-white/70 hover:text-white" aria-label="Fechar">
                 <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><path d="M18 6L6 18M6 6l12 12"/></svg>
               </button>
@@ -745,23 +745,23 @@ export default function OrcamentoPage({ params }: { params: Promise<{ slug: stri
               <div className="px-5 py-6 space-y-4">
                 <div className="flex items-center gap-3">
                   <span className="flex-shrink-0 w-11 h-11 rounded-full bg-[#f0f9eb] flex items-center justify-center">
-                    <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="#3b6934" strokeWidth="2.5"><path d="M20 6L9 17l-5-5"/></svg>
+                    <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="#36A35C" strokeWidth="2.5"><path d="M20 6L9 17l-5-5"/></svg>
                   </span>
                   <div>
-                    <p className="text-[#002045] text-base font-bold font-[var(--font-noto-serif)]">Seu orçamento está pronto</p>
-                    <p className="text-[#74777f] text-[12px] font-[var(--font-inter)]">Nº {fzResult.formalNumber}</p>
+                    <p className="text-[#0B1F45] text-base font-bold font-serif">Seu orçamento está pronto</p>
+                    <p className="text-[#74777f] text-[12px]">Nº {fzResult.formalNumber}</p>
                   </div>
                 </div>
-                <p className="text-[#43474e] text-[13px] font-[var(--font-inter)] leading-relaxed">
+                <p className="text-[#43474e] text-[13px] leading-relaxed">
                   {fzResult.whatsappOk ? `Enviamos o documento para o seu WhatsApp${fzPhone ? ` final ${fzPhone.replace(/\D/g, "").slice(-4)}` : ""}.` : "Seu orçamento foi gerado. Você pode visualizá-lo agora."}
                   {fzResult.emailOk && fzEmail ? ` Também enviamos uma cópia para ${fzEmail}.` : ""}
                 </p>
-                <a href={fzResult.pdfUrl} target="_blank" rel="noopener noreferrer" className="block w-full text-center bg-[#002045] hover:bg-[#1a365d] text-white text-xs tracking-[0.1em] uppercase font-bold font-[var(--font-inter)] px-5 py-3.5 transition-colors">Visualizar PDF</a>
-                <a href={`https://wa.me/5592988150149?text=${waMessage}`} target="_blank" rel="noopener noreferrer" className="flex items-center justify-center gap-2 w-full text-center bg-[#25d366] text-white text-xs tracking-[0.1em] uppercase font-bold font-[var(--font-inter)] px-5 py-3.5 hover:brightness-95 transition">
+                <a href={fzResult.pdfUrl} target="_blank" rel="noopener noreferrer" className="block w-full text-center bg-[#0B1F45] hover:bg-[#2347A0] text-white text-xs tracking-[0.1em] uppercase font-bold px-5 py-3.5 transition-colors">Visualizar PDF</a>
+                <a href={`https://wa.me/5592988150149?text=${waMessage}`} target="_blank" rel="noopener noreferrer" className="flex items-center justify-center gap-2 w-full text-center bg-[#25d366] text-white text-xs tracking-[0.1em] uppercase font-bold px-5 py-3.5 hover:brightness-95 transition">
                   <svg width="14" height="14" viewBox="0 0 24 24" fill="currentColor"><path d="M17.472 14.382c-.297-.149-1.758-.867-2.03-.967-.273-.099-.471-.148-.67.15-.197.297-.767.966-.94 1.164-.173.199-.347.223-.644.075-.297-.15-1.255-.463-2.39-1.475-.883-.788-1.48-1.761-1.653-2.059-.173-.297-.018-.458.13-.606.134-.133.298-.347.446-.52.149-.174.198-.298.298-.497.099-.198.05-.371-.025-.52-.075-.149-.669-1.612-.916-2.207-.242-.579-.487-.5-.669-.51-.173-.008-.371-.01-.57-.01-.198 0-.52.074-.792.372-.272.297-1.04 1.016-1.04 2.479 0 1.462 1.065 2.875 1.213 3.074.149.198 2.096 3.2 5.077 4.487.709.306 1.262.489 1.694.625.712.227 1.36.195 1.871.118.571-.085 1.758-.719 2.006-1.413.248-.694.248-1.289.173-1.413z"/></svg>
                   Avançar com este projeto
                 </a>
-                <button onClick={() => setFzOpen(false)} className="w-full text-center text-[#74777f] text-xs tracking-[0.1em] uppercase font-semibold font-[var(--font-inter)] px-5 py-2 hover:text-[#002045] transition-colors">Voltar ao orçamento</button>
+                <button onClick={() => setFzOpen(false)} className="w-full text-center text-[#74777f] text-xs tracking-[0.1em] uppercase font-semibold px-5 py-2 hover:text-[#0B1F45] transition-colors">Voltar ao orçamento</button>
               </div>
             ) : (() => {
               const cepDigits = fzZip.replace(/\D/g, "").length;
@@ -772,11 +772,11 @@ export default function OrcamentoPage({ params }: { params: Promise<{ slug: stri
               return (
               <div className="px-5 py-5 space-y-5">
                 <div>
-                  <p className="text-[#002045] text-base font-bold font-[var(--font-noto-serif)]">Formalize seu orçamento</p>
-                  <p className="text-[#74777f] text-[12px] font-[var(--font-inter)] mt-0.5">Confirme os dados abaixo para receber sua proposta completa pelo WhatsApp.</p>
-                  <div className="flex items-center gap-1.5 mt-3 text-[9px] tracking-[0.1em] uppercase font-bold font-[var(--font-inter)] text-[#74777f]">
-                    <span className="text-[#002045]">1 Pagamento</span><span className="text-[#c4c4c4]">→</span>
-                    <span className={showAddrFields ? "text-[#002045]" : ""}>2 Entrega</span><span className="text-[#c4c4c4]">→</span>
+                  <p className="text-[#0B1F45] text-base font-bold font-serif">Formalize seu orçamento</p>
+                  <p className="text-[#74777f] text-[12px] mt-0.5">Confirme os dados abaixo para receber sua proposta completa pelo WhatsApp.</p>
+                  <div className="flex items-center gap-1.5 mt-3 text-[9px] tracking-[0.1em] uppercase font-bold text-[#74777f]">
+                    <span className="text-[#0B1F45]">1 Pagamento</span><span className="text-[#c4c4c4]">→</span>
+                    <span className={showAddrFields ? "text-[#0B1F45]" : ""}>2 Entrega</span><span className="text-[#c4c4c4]">→</span>
                     <span>3 Confirmação</span>
                   </div>
                 </div>
@@ -786,9 +786,9 @@ export default function OrcamentoPage({ params }: { params: Promise<{ slug: stri
                   <div className="flex items-center gap-3 border border-[#e2e2e2] p-3">
                     {sp0.productImg && <img src={sp0.productImg} alt={sp0.productName} className="w-14 h-14 object-cover flex-shrink-0 border border-[#e2e2e2]" />}
                     <div className="min-w-0 flex-1">
-                      <p className="text-[#002045] text-sm font-semibold font-[var(--font-inter)] truncate">{sp0.productName} — {sp0.productCode}</p>
-                      <p className="text-[#74777f] text-[11px] font-[var(--font-inter)]">{totalPlates} placa{totalPlates !== 1 ? "s" : ""}{quote.total_area_m2 ? ` · ${fmtDec(quote.total_area_m2)} m²` : ""}{quote.spaces && quote.spaces.length > 1 ? ` · ${quote.spaces.length} ambientes` : ""}</p>
-                      {sel && <p className="text-[#3b6934] text-[11px] font-semibold font-[var(--font-inter)] mt-0.5">{sel.id === "cartao" ? `${sel.installments}x de ${fmtParcela(sel.installmentValue ?? 0)} sem juros` : `${fmt(sel.total)} à vista`}</p>}
+                      <p className="text-[#0B1F45] text-sm font-semibold truncate">{sp0.productName} — {sp0.productCode}</p>
+                      <p className="text-[#74777f] text-[11px]">{totalPlates} placa{totalPlates !== 1 ? "s" : ""}{quote.total_area_m2 ? ` · ${fmtDec(quote.total_area_m2)} m²` : ""}{quote.spaces && quote.spaces.length > 1 ? ` · ${quote.spaces.length} ambientes` : ""}</p>
+                      {sel && <p className="text-[#1F7A44] text-[11px] font-semibold mt-0.5">{sel.id === "cartao" ? `${sel.installments}x de ${fmtParcela(sel.installmentValue ?? 0)} sem juros` : `${fmt(sel.total)} à vista`}</p>}
                     </div>
                   </div>
                 )}
@@ -797,46 +797,46 @@ export default function OrcamentoPage({ params }: { params: Promise<{ slug: stri
                 <div className="border border-[#e2e2e2] p-3">
                   <div className="flex items-start justify-between gap-2">
                     <div className="min-w-0">
-                      <p className="text-[#74777f] text-[9px] tracking-[0.12em] uppercase font-bold font-[var(--font-inter)] mb-1">Seus dados</p>
+                      <p className="text-[#74777f] text-[9px] tracking-[0.12em] uppercase font-bold mb-1">Seus dados</p>
                       {fzEditData ? (
                         <div className="space-y-2">
-                          <input value={fzName} onChange={(e) => setFzName(e.target.value)} placeholder="Nome completo" className="w-full border border-[#e2e2e2] px-2.5 py-1.5 text-sm font-[var(--font-inter)] text-[#002045] focus:outline-none focus:border-[#002045]" />
-                          <input value={fzPhone} onChange={(e) => setFzPhone(e.target.value)} placeholder="WhatsApp" className="w-full border border-[#e2e2e2] px-2.5 py-1.5 text-sm font-[var(--font-inter)] text-[#002045] focus:outline-none focus:border-[#002045]" />
-                          <input value={fzEmail} onChange={(e) => setFzEmail(e.target.value)} placeholder="E-mail" className="w-full border border-[#e2e2e2] px-2.5 py-1.5 text-sm font-[var(--font-inter)] text-[#002045] focus:outline-none focus:border-[#002045]" />
+                          <input value={fzName} onChange={(e) => setFzName(e.target.value)} placeholder="Nome completo" className="w-full border border-[#e2e2e2] px-2.5 py-1.5 text-sm text-[#0B1F45] focus:outline-none focus:border-[#0B1F45]" />
+                          <input value={fzPhone} onChange={(e) => setFzPhone(e.target.value)} placeholder="WhatsApp" className="w-full border border-[#e2e2e2] px-2.5 py-1.5 text-sm text-[#0B1F45] focus:outline-none focus:border-[#0B1F45]" />
+                          <input value={fzEmail} onChange={(e) => setFzEmail(e.target.value)} placeholder="E-mail" className="w-full border border-[#e2e2e2] px-2.5 py-1.5 text-sm text-[#0B1F45] focus:outline-none focus:border-[#0B1F45]" />
                         </div>
                       ) : (
                         <>
-                          <p className="text-[#002045] text-sm font-semibold font-[var(--font-inter)] truncate">{fzName || "—"}</p>
-                          <p className="text-[#74777f] text-[12px] font-[var(--font-inter)]">{fzPhone}{fzEmail ? ` · ${fzEmail}` : ""}</p>
+                          <p className="text-[#0B1F45] text-sm font-semibold truncate">{fzName || "—"}</p>
+                          <p className="text-[#74777f] text-[12px]">{fzPhone}{fzEmail ? ` · ${fzEmail}` : ""}</p>
                         </>
                       )}
                     </div>
-                    <button type="button" onClick={() => setFzEditData((v) => !v)} className="flex-shrink-0 text-[#002045] text-[11px] font-semibold font-[var(--font-inter)] underline">{fzEditData ? "Pronto" : "Editar"}</button>
+                    <button type="button" onClick={() => setFzEditData((v) => !v)} className="flex-shrink-0 text-[#0B1F45] text-[11px] font-semibold underline">{fzEditData ? "Pronto" : "Editar"}</button>
                   </div>
                 </div>
 
                 {/* Condição de pagamento — parcela em destaque + badge */}
                 {pricing && pricing.paymentOptions.length > 0 && (
                   <div>
-                    <p className="text-[#43474e] text-[10px] tracking-[0.15em] uppercase font-bold font-[var(--font-inter)] mb-2">Condição de pagamento</p>
+                    <p className="text-[#43474e] text-[10px] tracking-[0.15em] uppercase font-bold mb-2">Condição de pagamento</p>
                     <div className="grid grid-cols-1 gap-2">
                       {pricing.paymentOptions.map((opt) => {
                         const active = selectedPayment === opt.id;
                         return (
                           <button key={opt.id} type="button" onClick={() => setSelectedPayment(opt.id)} aria-pressed={active}
-                            className={`text-left px-4 py-3 border transition-colors flex items-center justify-between gap-3 ${active ? "border-[#002045] bg-[#eef2fb] ring-1 ring-[#002045]" : "border-[#e2e2e2] bg-white hover:border-[#86a0cd]"}`}>
+                            className={`text-left px-4 py-3 border transition-colors flex items-center justify-between gap-3 ${active ? "border-[#0B1F45] bg-[#eef2fb] ring-1 ring-[#0B1F45]" : "border-[#e2e2e2] bg-white hover:border-[#B4BBC8]"}`}>
                             <div className="min-w-0">
                               <div className="flex items-center gap-2 mb-0.5">
-                                <span className="text-[#43474e] text-[10px] tracking-[0.06em] uppercase font-bold font-[var(--font-inter)]">{opt.label}</span>
-                                <span className={`text-[8px] tracking-[0.08em] uppercase font-bold px-1.5 py-0.5 ${opt.id === "pix" ? "bg-[#e6f4ea] text-[#3b6934]" : "bg-[#eef2fb] text-[#002045]"}`}>{opt.id === "pix" ? "Maior economia" : "Maior facilidade"}</span>
+                                <span className="text-[#43474e] text-[10px] tracking-[0.06em] uppercase font-bold">{opt.label}</span>
+                                <span className={`text-[8px] tracking-[0.08em] uppercase font-bold px-1.5 py-0.5 ${opt.id === "pix" ? "bg-[#e6f4ea] text-[#2347A0]" : "bg-[#eef2fb] text-[#0B1F45]"}`}>{opt.id === "pix" ? "Maior economia" : "Maior facilidade"}</span>
                               </div>
                               {opt.id === "cartao" ? (
-                                <><p className="text-[#002045] text-lg font-bold font-[var(--font-noto-serif)] leading-none">{opt.installments}x de {fmtParcela(opt.installmentValue ?? 0)}</p><p className="text-[#74777f] text-[11px] font-[var(--font-inter)] mt-1">sem juros · total {fmt(opt.total)}</p></>
+                                <><p className="text-[#0B1F45] text-lg font-bold font-serif leading-none">{opt.installments}x de {fmtParcela(opt.installmentValue ?? 0)}</p><p className="text-[#74777f] text-[11px] mt-1">sem juros · total {fmt(opt.total)}</p></>
                               ) : (
-                                <><p className="text-[#002045] text-lg font-bold font-[var(--font-noto-serif)] leading-none">{fmt(opt.total)}</p><p className="text-[#3b6934] text-[11px] font-semibold font-[var(--font-inter)] mt-1">à vista · {opt.discountPct}% off (economize {fmt(opt.discountAmount ?? 0)})</p></>
+                                <><p className="text-[#0B1F45] text-lg font-bold font-serif leading-none">{fmt(opt.total)}</p><p className="text-[#1F7A44] text-[11px] font-semibold mt-1">à vista · {opt.discountPct}% off (economize {fmt(opt.discountAmount ?? 0)})</p></>
                               )}
                             </div>
-                            <span className={`flex-shrink-0 w-4 h-4 rounded-full border-2 flex items-center justify-center ${active ? "border-[#002045] bg-[#002045]" : "border-[#c4c4c4]"}`}>{active && <svg width="8" height="8" viewBox="0 0 24 24" fill="none" stroke="white" strokeWidth="4"><path d="M20 6L9 17l-5-5"/></svg>}</span>
+                            <span className={`flex-shrink-0 w-4 h-4 rounded-full border-2 flex items-center justify-center ${active ? "border-[#0B1F45] bg-[#0B1F45]" : "border-[#c4c4c4]"}`}>{active && <svg width="8" height="8" viewBox="0 0 24 24" fill="none" stroke="white" strokeWidth="4"><path d="M20 6L9 17l-5-5"/></svg>}</span>
                           </button>
                         );
                       })}
@@ -846,31 +846,31 @@ export default function OrcamentoPage({ params }: { params: Promise<{ slug: stri
 
                 {/* Endereço — CEP primeiro, resto aparece depois */}
                 <div>
-                  <p className="text-[#43474e] text-[10px] tracking-[0.15em] uppercase font-bold font-[var(--font-inter)] mb-1">Endereço de entrega</p>
-                  <p className="text-[#74777f] text-[11px] font-[var(--font-inter)] mb-2.5">Informe o CEP para confirmarmos o frete e incluirmos os dados na proposta.</p>
+                  <p className="text-[#43474e] text-[10px] tracking-[0.15em] uppercase font-bold mb-1">Endereço de entrega</p>
+                  <p className="text-[#74777f] text-[11px] mb-2.5">Informe o CEP para confirmarmos o frete e incluirmos os dados na proposta.</p>
                   <div className="relative">
-                    <input value={fzZip} onChange={(e) => { setFzZip(e.target.value); if (e.target.value.replace(/\D/g, "").length === 8) void lookupCep(e.target.value); }} onBlur={(e) => void lookupCep(e.target.value)} placeholder="CEP" inputMode="numeric" className="w-full border border-[#e2e2e2] px-3 py-2 text-sm font-[var(--font-inter)] text-[#002045] focus:outline-none focus:border-[#002045]" />
-                    {fzCepLoading && <p className="text-[#74777f] text-[10px] font-[var(--font-inter)] mt-1">Consultando CEP…</p>}
-                    {fzCepError && <p className="text-[#a07a00] text-[10px] font-[var(--font-inter)] mt-1">{fzCepError}</p>}
+                    <input value={fzZip} onChange={(e) => { setFzZip(e.target.value); if (e.target.value.replace(/\D/g, "").length === 8) void lookupCep(e.target.value); }} onBlur={(e) => void lookupCep(e.target.value)} placeholder="CEP" inputMode="numeric" className="w-full border border-[#e2e2e2] px-3 py-2 text-sm text-[#0B1F45] focus:outline-none focus:border-[#0B1F45]" />
+                    {fzCepLoading && <p className="text-[#74777f] text-[10px] mt-1">Consultando CEP…</p>}
+                    {fzCepError && <p className="text-[#a07a00] text-[10px] mt-1">{fzCepError}</p>}
                   </div>
                   {showAddrFields && (
                     <div className="grid grid-cols-1 sm:grid-cols-3 gap-3 mt-3">
-                      <input value={fzStreet} onChange={(e) => setFzStreet(e.target.value)} placeholder="Rua / Avenida" className="sm:col-span-2 border border-[#e2e2e2] px-3 py-2 text-sm font-[var(--font-inter)] text-[#002045] focus:outline-none focus:border-[#002045]" />
-                      <input value={fzNumber} onChange={(e) => setFzNumber(e.target.value)} placeholder="Número *" className="border border-[#e2e2e2] px-3 py-2 text-sm font-[var(--font-inter)] text-[#002045] focus:outline-none focus:border-[#002045]" />
-                      <input value={fzComplement} onChange={(e) => setFzComplement(e.target.value)} placeholder="Complemento" className="border border-[#e2e2e2] px-3 py-2 text-sm font-[var(--font-inter)] text-[#002045] focus:outline-none focus:border-[#002045]" />
-                      <input value={fzNeighborhood} onChange={(e) => setFzNeighborhood(e.target.value)} placeholder="Bairro" className="border border-[#e2e2e2] px-3 py-2 text-sm font-[var(--font-inter)] text-[#002045] focus:outline-none focus:border-[#002045]" />
-                      <input value={fzCity} onChange={(e) => setFzCity(e.target.value)} placeholder="Cidade" className="border border-[#e2e2e2] px-3 py-2 text-sm font-[var(--font-inter)] text-[#002045] focus:outline-none focus:border-[#002045]" />
-                      <input value={fzState} onChange={(e) => setFzState(e.target.value)} placeholder="UF" maxLength={2} className="border border-[#e2e2e2] px-3 py-2 text-sm font-[var(--font-inter)] text-[#002045] uppercase focus:outline-none focus:border-[#002045]" />
+                      <input value={fzStreet} onChange={(e) => setFzStreet(e.target.value)} placeholder="Rua / Avenida" className="sm:col-span-2 border border-[#e2e2e2] px-3 py-2 text-sm text-[#0B1F45] focus:outline-none focus:border-[#0B1F45]" />
+                      <input value={fzNumber} onChange={(e) => setFzNumber(e.target.value)} placeholder="Número *" className="border border-[#e2e2e2] px-3 py-2 text-sm text-[#0B1F45] focus:outline-none focus:border-[#0B1F45]" />
+                      <input value={fzComplement} onChange={(e) => setFzComplement(e.target.value)} placeholder="Complemento" className="border border-[#e2e2e2] px-3 py-2 text-sm text-[#0B1F45] focus:outline-none focus:border-[#0B1F45]" />
+                      <input value={fzNeighborhood} onChange={(e) => setFzNeighborhood(e.target.value)} placeholder="Bairro" className="border border-[#e2e2e2] px-3 py-2 text-sm text-[#0B1F45] focus:outline-none focus:border-[#0B1F45]" />
+                      <input value={fzCity} onChange={(e) => setFzCity(e.target.value)} placeholder="Cidade" className="border border-[#e2e2e2] px-3 py-2 text-sm text-[#0B1F45] focus:outline-none focus:border-[#0B1F45]" />
+                      <input value={fzState} onChange={(e) => setFzState(e.target.value)} placeholder="UF" maxLength={2} className="border border-[#e2e2e2] px-3 py-2 text-sm text-[#0B1F45] uppercase focus:outline-none focus:border-[#0B1F45]" />
                     </div>
                   )}
                 </div>
 
-                {fzError && <p className="text-[#cc0000] text-[12px] font-[var(--font-inter)]">{fzError}</p>}
+                {fzError && <p className="text-[#cc0000] text-[12px]">{fzError}</p>}
                 <div>
-                  <button type="button" onClick={() => void submitFormalize()} disabled={fzSubmitting} className="w-full bg-[#3b6934] hover:bg-[#2e5229] text-white text-sm tracking-[0.08em] uppercase font-bold font-[var(--font-inter)] px-6 py-4 transition-colors disabled:opacity-60">
+                  <button type="button" onClick={() => void submitFormalize()} disabled={fzSubmitting} className="w-full bg-[#36A35C] hover:bg-[#4BB571] text-[#0B1F45] text-sm tracking-[0.08em] uppercase font-bold px-6 py-4 transition-colors disabled:opacity-60">
                     {fzSubmitting ? "Gerando…" : "Gerar meu orçamento formal"}
                   </button>
-                  <p className="text-[#74777f] text-[11px] font-[var(--font-inter)] text-center mt-2">O PDF é gerado com os valores, condições e dados deste projeto e enviado pelo WhatsApp.</p>
+                  <p className="text-[#74777f] text-[11px] text-center mt-2">O PDF é gerado com os valores, condições e dados deste projeto e enviado pelo WhatsApp.</p>
                 </div>
               </div>
               );

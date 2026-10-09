@@ -33,7 +33,7 @@ export default function CtaFixo() {
       href="#lista-de-espera"
       aria-hidden={!mostrar}
       tabIndex={mostrar ? 0 : -1}
-      className={`md:hidden fixed bottom-6 left-4 right-[92px] z-40 h-14 flex items-center justify-center gap-2 bg-[#a8e05f] text-[#00142b] text-sm tracking-[0.14em] uppercase font-extrabold font-[var(--font-inter)] shadow-[0_8px_24px_rgba(0,20,43,0.35)] transition-all duration-300 ${
+      className={`md:hidden fixed bottom-6 left-4 right-[92px] z-40 h-14 flex items-center justify-center gap-2 bg-[#36A35C] text-[#0D1830] text-sm tracking-[0.14em] uppercase font-extrabold shadow-[0_8px_24px_rgba(0,20,43,0.35)] transition-all duration-300 ${
         mostrar ? "translate-y-0 opacity-100" : "translate-y-24 opacity-0 pointer-events-none"
       }`}
     >

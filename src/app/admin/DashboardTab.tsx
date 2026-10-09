@@ -83,25 +83,25 @@ function AttentionCard({
         ? "bg-red-100 text-red-700"
         : tone === "warn"
           ? "bg-yellow-100 text-yellow-800"
-          : "bg-[#eef2f8] text-[#002045]";
+          : "bg-[#eef2f8] text-[#0B1F45]";
   return (
     <div className={`${cardCls} flex flex-col min-w-0`}>
       <div className="flex items-center justify-between gap-2 px-5 py-3.5 border-b border-[#f0f0f0]">
         <SectionLabel>{title}</SectionLabel>
-        <span className={`text-[10px] font-bold font-[var(--font-inter)] px-2 py-0.5 rounded-full ${badgeCls}`}>
+        <span className={`text-[10px] font-bold px-2 py-0.5 rounded-full ${badgeCls}`}>
           {count === 0 ? "Em dia" : count}
         </span>
       </div>
       <div className="flex-1 px-5 py-3">
         {count === 0 ? (
-          <p className="text-[#a0a3a8] text-xs font-[var(--font-inter)] py-2">{emptyLabel}</p>
+          <p className="text-[#a0a3a8] text-xs py-2">{emptyLabel}</p>
         ) : (
-          <div className="divide-y divide-[#f7f7f5]">{children}</div>
+          <div className="divide-y divide-[#F6F5F2]">{children}</div>
         )}
       </div>
       <button
         onClick={onCta}
-        className="text-left px-5 py-2.5 border-t border-[#f0f0f0] text-[10px] tracking-[0.12em] uppercase font-bold font-[var(--font-inter)] text-[#74777f] hover:text-[#002045] transition-colors"
+        className="text-left px-5 py-2.5 border-t border-[#f0f0f0] text-[10px] tracking-[0.12em] uppercase font-bold text-[#74777f] hover:text-[#0B1F45] transition-colors"
       >
         {ctaLabel} →
       </button>
@@ -113,14 +113,14 @@ function AttentionRow({ primary, secondary, meta, onClick }: { primary: string; 
   const inner = (
     <>
       <div className="flex-1 min-w-0">
-        <p className="text-xs font-[var(--font-inter)] text-[#002045] truncate">{primary}</p>
-        {secondary && <p className="text-[10px] font-[var(--font-inter)] text-[#74777f] truncate">{secondary}</p>}
+        <p className="text-xs text-[#0B1F45] truncate">{primary}</p>
+        {secondary && <p className="text-[10px] text-[#74777f] truncate">{secondary}</p>}
       </div>
-      {meta && <span className="text-[10px] font-bold font-[var(--font-inter)] text-[#43474e] flex-shrink-0">{meta}</span>}
+      {meta && <span className="text-[10px] font-bold text-[#43474e] flex-shrink-0">{meta}</span>}
     </>
   );
   return onClick ? (
-    <button onClick={onClick} className="w-full flex items-center gap-3 py-2 text-left hover:bg-[#fafafa] transition-colors">
+    <button onClick={onClick} className="w-full flex items-center gap-3 py-2 text-left hover:bg-[#F6F5F2] transition-colors">
       {inner}
     </button>
   ) : (
@@ -141,8 +141,8 @@ export default function DashboardTab({ dash, dashLoading, onRefreshDash, overvie
       {/* ── Header ── */}
       <div className="flex flex-wrap items-end justify-between gap-4 pb-3 border-b border-[#e2e2e2]">
         <div>
-          <h1 className="font-[var(--font-noto-serif)] text-[#002045] text-2xl font-normal leading-tight">Hoje</h1>
-          <p className="text-[#74777f] text-xs font-[var(--font-inter)] mt-1 capitalize">
+          <h1 className="font-serif text-[#0B1F45] text-2xl font-normal leading-tight">Hoje</h1>
+          <p className="text-[#74777f] text-xs mt-1 capitalize">
             {new Date().toLocaleDateString("pt-BR", { weekday: "long", day: "numeric", month: "long", year: "numeric" })}
           </p>
         </div>
@@ -156,7 +156,7 @@ export default function DashboardTab({ dash, dashLoading, onRefreshDash, overvie
       {/* ── Atenção agora ── */}
       <div>
         <div className="flex items-center justify-between mb-3">
-          <h2 className="font-[var(--font-noto-serif)] text-[#002045] text-lg font-normal">Atenção agora</h2>
+          <h2 className="font-serif text-[#0B1F45] text-lg font-normal">Atenção agora</h2>
           {overviewLoading && <Spinner />}
         </div>
         {overview ? (
@@ -237,7 +237,7 @@ export default function DashboardTab({ dash, dashLoading, onRefreshDash, overvie
         ) : (
           <div className={`${cardCls} px-6 py-10 flex items-center justify-center gap-3`}>
             <Spinner />
-            <p className="text-[#74777f] text-xs tracking-[0.15em] uppercase font-[var(--font-inter)]">Carregando visão geral…</p>
+            <p className="text-[#74777f] text-xs tracking-[0.15em] uppercase">Carregando visão geral…</p>
           </div>
         )}
       </div>
@@ -246,8 +246,8 @@ export default function DashboardTab({ dash, dashLoading, onRefreshDash, overvie
       {dashLoading || !dash ? (
         <div className="flex items-center justify-center py-16">
           <div className="flex flex-col items-center gap-4">
-            <div className="w-8 h-8 border-2 border-[#002045] border-t-transparent rounded-full animate-spin" />
-            <p className="text-[#74777f] text-xs tracking-[0.15em] uppercase font-[var(--font-inter)]">Carregando métricas…</p>
+            <div className="w-8 h-8 border-2 border-[#0B1F45] border-t-transparent rounded-full animate-spin" />
+            <p className="text-[#74777f] text-xs tracking-[0.15em] uppercase">Carregando métricas…</p>
           </div>
         </div>
       ) : (
@@ -271,17 +271,17 @@ export default function DashboardTab({ dash, dashLoading, onRefreshDash, overvie
                 ].map((s) => (
                   <div key={s.label}>
                     <div className="flex justify-between items-center mb-1">
-                      <span className="text-xs font-[var(--font-inter)] text-[#43474e]">{s.label}</span>
-                      <span className="text-xs font-bold font-[var(--font-inter)] text-[#002045]">{s.value}</span>
+                      <span className="text-xs text-[#43474e]">{s.label}</span>
+                      <span className="text-xs font-bold text-[#0B1F45]">{s.value}</span>
                     </div>
-                    <div className="h-1.5 bg-[#f0efec] rounded-full overflow-hidden">
+                    <div className="h-1.5 bg-[#EFEDE8] rounded-full overflow-hidden">
                       <div className={`h-full ${s.color} rounded-full transition-all`} style={{ width: `${s.total > 0 ? Math.round((s.value / s.total) * 100) : 0}%` }} />
                     </div>
                   </div>
                 ))}
-                <div className="pt-2 border-t border-[#f0efec] flex items-center justify-between">
-                  <span className="text-xs font-[var(--font-inter)] text-[#74777f]">Taxa de conversão</span>
-                  <span className="text-sm font-bold font-[var(--font-inter)] text-[#002045]">{dash.conversionRate}%</span>
+                <div className="pt-2 border-t border-[#EFEDE8] flex items-center justify-between">
+                  <span className="text-xs text-[#74777f]">Taxa de conversão</span>
+                  <span className="text-sm font-bold text-[#0B1F45]">{dash.conversionRate}%</span>
                 </div>
               </div>
             </Card>
@@ -289,18 +289,18 @@ export default function DashboardTab({ dash, dashLoading, onRefreshDash, overvie
             <Card title="Parceiros & comissões">
               <div className="space-y-4">
                 <div className="flex justify-between items-center">
-                  <span className="text-xs font-[var(--font-inter)] text-[#74777f]">Parceiros ativos</span>
-                  <span className="font-[var(--font-noto-serif)] text-2xl text-[#002045]">{dash.parceirosAtivos}</span>
+                  <span className="text-xs text-[#74777f]">Parceiros ativos</span>
+                  <span className="font-serif text-2xl text-[#0B1F45]">{dash.parceirosAtivos}</span>
                 </div>
                 {dash.parceirosPendentes > 0 && (
                   <div className="flex justify-between items-center">
-                    <span className="text-xs font-[var(--font-inter)] text-[#74777f]">Aguardando aprovação</span>
-                    <span className="text-sm font-bold font-[var(--font-inter)] text-yellow-600">{dash.parceirosPendentes}</span>
+                    <span className="text-xs text-[#74777f]">Aguardando aprovação</span>
+                    <span className="text-sm font-bold text-yellow-600">{dash.parceirosPendentes}</span>
                   </div>
                 )}
-                <div className="pt-3 border-t border-[#f0efec]">
-                  <p className="text-[#74777f] text-[10px] uppercase tracking-widest font-[var(--font-inter)] mb-1">Comissões a pagar</p>
-                  <p className="font-[var(--font-noto-serif)] text-[#002045] text-2xl">{fmtBRL(dash.comissaoPendente)}</p>
+                <div className="pt-3 border-t border-[#EFEDE8]">
+                  <p className="text-[#74777f] text-[10px] uppercase tracking-widest mb-1">Comissões a pagar</p>
+                  <p className="font-serif text-[#0B1F45] text-2xl">{fmtBRL(dash.comissaoPendente)}</p>
                 </div>
                 <button onClick={() => onNavigate("commissions")} className={`${btnSecondary} w-full text-center`}>
                   Ver comissões →
@@ -311,14 +311,14 @@ export default function DashboardTab({ dash, dashLoading, onRefreshDash, overvie
             <Card title="Produtos mais orçados">
               <div className="space-y-2.5">
                 {(dash.topProducts ?? []).length === 0 ? (
-                  <p className="text-[#74777f] text-xs font-[var(--font-inter)]">Nenhum dado disponível.</p>
+                  <p className="text-[#74777f] text-xs">Nenhum dado disponível.</p>
                 ) : (dash.topProducts ?? []).map((p, i) => (
                   <div key={p.name} className="flex items-center gap-3">
-                    <span className="text-[#74777f] text-[10px] font-[var(--font-inter)] w-4 text-right">{i + 1}</span>
+                    <span className="text-[#74777f] text-[10px] w-4 text-right">{i + 1}</span>
                     <div className="flex-1 min-w-0">
-                      <p className="text-xs font-[var(--font-inter)] text-[#43474e] truncate">{p.name}</p>
+                      <p className="text-xs text-[#43474e] truncate">{p.name}</p>
                     </div>
-                    <span className="text-xs font-bold font-[var(--font-inter)] text-[#002045]">{p.count}×</span>
+                    <span className="text-xs font-bold text-[#0B1F45]">{p.count}×</span>
                   </div>
                 ))}
               </div>
@@ -335,11 +335,11 @@ export default function DashboardTab({ dash, dashLoading, onRefreshDash, overvie
                 const pct = maxMonth > 0 ? Math.round((m.count / maxMonth) * 100) : 0;
                 return (
                   <div key={m.month} className="flex-1 flex flex-col items-center gap-1.5">
-                    <span className="text-[#002045] text-[10px] font-bold font-[var(--font-inter)]">{m.count > 0 ? m.count : ""}</span>
-                    <div className="w-full bg-[#f0efec] rounded-sm overflow-hidden" style={{ height: "80px" }}>
-                      <div className="w-full bg-[#002045] rounded-sm transition-all duration-500" style={{ height: `${pct}%`, marginTop: `${100 - pct}%` }} />
+                    <span className="text-[#0B1F45] text-[10px] font-bold">{m.count > 0 ? m.count : ""}</span>
+                    <div className="w-full bg-[#EFEDE8] rounded-sm overflow-hidden" style={{ height: "80px" }}>
+                      <div className="w-full bg-[#0B1F45] rounded-sm transition-all duration-500" style={{ height: `${pct}%`, marginTop: `${100 - pct}%` }} />
                     </div>
-                    <span className="text-[#74777f] text-[9px] font-[var(--font-inter)]">{label}</span>
+                    <span className="text-[#74777f] text-[9px]">{label}</span>
                   </div>
                 );
               })}
@@ -351,28 +351,28 @@ export default function DashboardTab({ dash, dashLoading, onRefreshDash, overvie
             title="Atividade recente"
             padded={false}
             action={
-              <button onClick={() => onNavigate("orcamentos")} className="text-[10px] tracking-widest uppercase font-bold font-[var(--font-inter)] text-[#74777f] hover:text-[#002045] transition-colors">
+              <button onClick={() => onNavigate("orcamentos")} className="text-[10px] tracking-widest uppercase font-bold text-[#74777f] hover:text-[#0B1F45] transition-colors">
                 Ver todos →
               </button>
             }
           >
-            <div className="divide-y divide-[#f0efec]">
+            <div className="divide-y divide-[#EFEDE8]">
               {(dash.recentActivity ?? []).length === 0 ? (
-                <p className="px-6 py-4 text-xs text-[#74777f] font-[var(--font-inter)]">Nenhuma atividade recente.</p>
+                <p className="px-6 py-4 text-xs text-[#74777f]">Nenhuma atividade recente.</p>
               ) : (dash.recentActivity ?? []).map((a) => {
                 const statusCls = a.sale_status === "concluido" ? "text-green-600" : a.sale_status === "cancelado" ? "text-red-500" : "text-yellow-600";
                 return (
-                  <div key={a.id} className="px-6 py-3 flex items-center gap-4 hover:bg-[#fafafa] transition-colors">
-                    <div className="w-1.5 h-1.5 rounded-full bg-[#002045] flex-shrink-0" />
+                  <div key={a.id} className="px-6 py-3 flex items-center gap-4 hover:bg-[#F6F5F2] transition-colors">
+                    <div className="w-1.5 h-1.5 rounded-full bg-[#0B1F45] flex-shrink-0" />
                     <div className="flex-1 min-w-0">
-                      <p className="text-xs font-[var(--font-inter)] text-[#002045] truncate">{a.architect_name ?? "—"} · {a.product_name ?? "—"}</p>
-                      <p className="text-[10px] font-[var(--font-inter)] text-[#74777f]">{a.space ?? "—"} · {a.coupon_code}</p>
+                      <p className="text-xs text-[#0B1F45] truncate">{a.architect_name ?? "—"} · {a.product_name ?? "—"}</p>
+                      <p className="text-[10px] text-[#74777f]">{a.space ?? "—"} · {a.coupon_code}</p>
                     </div>
                     <div className="text-right flex-shrink-0">
-                      <p className="text-xs font-bold font-[var(--font-inter)] text-[#002045]">{a.material_discounted ? fmtBRL(a.material_discounted) : "—"}</p>
-                      <p className={`text-[10px] font-[var(--font-inter)] ${statusCls}`}>{STATUS_MAP[a.sale_status ?? ""] ?? "Em orçamento"}</p>
+                      <p className="text-xs font-bold text-[#0B1F45]">{a.material_discounted ? fmtBRL(a.material_discounted) : "—"}</p>
+                      <p className={`text-[10px] ${statusCls}`}>{STATUS_MAP[a.sale_status ?? ""] ?? "Em orçamento"}</p>
                     </div>
-                    <p className="text-[10px] font-[var(--font-inter)] text-[#b0b0b0] flex-shrink-0 hidden sm:block">
+                    <p className="text-[10px] text-[#b0b0b0] flex-shrink-0 hidden sm:block">
                       {new Date(a.created_at).toLocaleDateString("pt-BR")}
                     </p>
                   </div>
@@ -385,7 +385,7 @@ export default function DashboardTab({ dash, dashLoading, onRefreshDash, overvie
           <div className="text-right">
             <button
               onClick={() => { onRefreshDash(); onRefreshOverview(); }}
-              className="text-[10px] tracking-widest uppercase font-bold font-[var(--font-inter)] text-[#74777f] hover:text-[#002045] transition-colors"
+              className="text-[10px] tracking-widest uppercase font-bold text-[#74777f] hover:text-[#0B1F45] transition-colors"
             >
               ↺ Atualizar dados
             </button>

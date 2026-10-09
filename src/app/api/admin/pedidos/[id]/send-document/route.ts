@@ -8,6 +8,7 @@ import { normalizePhone, sendText, smclickConfigured } from "@/lib/smclick";
 import { supabaseAdmin } from "@/lib/supabase";
 import { CLAUSULAS_PADRAO } from "@/lib/clausulas-pedido";
 import { datasDoDocumento, fmtDia } from "@/lib/documento-datas";
+import { emailTopo } from "@/lib/email-marca";
 
 export const runtime = "nodejs";
 
@@ -169,9 +170,9 @@ async function generatePedidoPdf(input: {
 
   const num = docNumber(pedido);
   const label = DOC_LABEL[docType];
-  const logoPath = path.join(process.cwd(), "public/images/logo.png");
+  const logoPath = path.join(process.cwd(), "public/images/brand/orbital-simbolo.png");
 
-  if (existsSync(logoPath)) doc.image(logoPath, 42, 42, { width: 58 });
+  if (existsSync(logoPath)) doc.image(logoPath, 42, 44, { width: 50 });
   doc.font("Helvetica-Bold").fontSize(14).text(COMPANY.name, 118, 44);
   doc.font("Helvetica").fontSize(10)
     .text(COMPANY.cnpj, 118)
@@ -184,7 +185,7 @@ async function generatePedidoPdf(input: {
   doc.font("Helvetica").fontSize(14).fillColor("#555").text("Dados do Cliente");
   doc.moveTo(42, doc.y + 2).lineTo(390, doc.y + 2).strokeColor("#d8d8d8").stroke();
   doc.moveDown(0.5);
-  doc.font("Helvetica-Bold").fontSize(10).fillColor("#1a1c1c").text(String(pedido.client_name ?? "Cliente"));
+  doc.font("Helvetica-Bold").fontSize(10).fillColor("#0D1830").text(String(pedido.client_name ?? "Cliente"));
   doc.font("Helvetica").fontSize(10);
   const clientDoc = String(pedido.client_document ?? "").trim();
   if (clientDoc) {
@@ -218,7 +219,7 @@ async function generatePedidoPdf(input: {
   const tableTop = doc.y;
   const cols = { name: 42, qty: 318, unit: 382, price: 430, total: 500 };
   doc.rect(42, tableTop, 511, 20).fill("#e1e1e1");
-  doc.fillColor("#1a1c1c").font("Helvetica").fontSize(9)
+  doc.fillColor("#0D1830").font("Helvetica").fontSize(9)
     .text("Nome", cols.name, tableTop + 6)
     .text("Qtd.", cols.qty, tableTop + 6, { width: 44, align: "right" })
     .text("Un.", cols.unit, tableTop + 6, { width: 44, align: "right" })
@@ -238,11 +239,11 @@ async function generatePedidoPdf(input: {
     const code = item.product_code ? String(item.product_code) : null;
     // Name + a sub-line identifying the item: "Modelo: ORB-004 · Placa 2,90 m …"
     const subParts = [code ? `Modelo: ${code}` : null, unitDetail].filter(Boolean).join("  ·  ");
-    doc.font("Helvetica-Bold").fontSize(9).fillColor("#1a1c1c")
+    doc.font("Helvetica-Bold").fontSize(9).fillColor("#0D1830")
       .text(String(item.product_name ?? "Produto Orbital"), cols.name, y, { width: 268 });
     doc.font("Helvetica").fontSize(7.5).fillColor("#777")
       .text(subParts, cols.name, y + 11, { width: 268 });
-    doc.font("Helvetica").fontSize(9).fillColor("#1a1c1c")
+    doc.font("Helvetica").fontSize(9).fillColor("#0D1830")
       .text(String(qty), cols.qty, y, { width: 44, align: "right" })
       .text(unitShort, cols.unit, y, { width: 44, align: "right" })
       .text(fmtBRL(unitPrice), cols.price, y, { width: 58, align: "right" })
@@ -302,8 +303,8 @@ async function generatePedidoPdf(input: {
     const boxY = doc.y;
     const boxH = 40;
     doc.rect(42, boxY, 511, boxH).fill("#f4f1ea");
-    doc.rect(42, boxY, 3, boxH).fill("#002045");
-    doc.font("Helvetica-Bold").fontSize(9.5).fillColor("#002045").text(
+    doc.rect(42, boxY, 3, boxH).fill("#0B1F45");
+    doc.font("Helvetica-Bold").fontSize(9.5).fillColor("#0B1F45").text(
       "Este orçamento contempla apenas o fornecimento do material descrito acima. A Orbital",
       54, boxY + 9, { width: 487, lineBreak: false },
     );
@@ -327,7 +328,7 @@ async function generatePedidoPdf(input: {
     const x = 42 + i * 170;
     doc.font("Helvetica").fontSize(12).fillColor("#555").text(title, x, commercialY, { width: blockWidth });
     doc.moveTo(x, commercialY + 16).lineTo(x + blockWidth, commercialY + 16).strokeColor("#d8d8d8").stroke();
-    doc.font("Helvetica").fontSize(9).fillColor("#1a1c1c").text(value, x, commercialY + 22, { width: blockWidth });
+    doc.font("Helvetica").fontSize(9).fillColor("#0D1830").text(value, x, commercialY + 22, { width: blockWidth });
   });
   doc.y = commercialY + 72;
 
@@ -398,11 +399,11 @@ export async function POST(req: NextRequest, { params }: { params: Promise<{ id:
         cc: COMPANY.email,
         subject: `${label} nº ${number} — ${pedido.client_name ?? "Cliente"}`,
         html: `
-          <div style="font-family:Arial,sans-serif;max-width:560px;margin:0 auto;padding:28px;color:#1a1c1c">
-            <h2 style="margin:0 0 8px;color:#002045">${label} nº ${number}</h2>
+          ${emailTopo(560)}<div style="font-family:Montserrat,Arial,sans-serif;max-width:560px;margin:0 auto;padding:28px;color:#0D1830">
+            <h2 style="margin:0 0 8px;color:#0B1F45">${label} nº ${number}</h2>
             <p style="line-height:1.6;color:#43474e">Olá, ${pedido.client_name ?? "cliente"}. Segue em anexo o ${label.toLowerCase()} nº ${number} da Orbital Revestimentos.</p>
-            <p style="font-size:18px;color:#002045;font-weight:700">Total: ${fmtBRL(total)}</p>
-            ${documentUrl ? `<p style="font-size:12px;color:#74777f">Documento revisado internamente: <a href="${documentUrl}" style="color:#002045">${documentUrl}</a></p>` : ""}
+            <p style="font-size:18px;color:#0B1F45;font-weight:700">Total: ${fmtBRL(total)}</p>
+            ${documentUrl ? `<p style="font-size:12px;color:#74777f">Documento revisado internamente: <a href="${documentUrl}" style="color:#0B1F45">${documentUrl}</a></p>` : ""}
             <p style="font-size:12px;color:#74777f;margin-top:24px">Orbital Revestimentos · Manaus, AM</p>
           </div>
         `,

@@ -100,13 +100,13 @@ type LightboxFilter = GalleryFilter;
 function CategoryPill({ cat }: { cat: MediaCategory }) {
   if (cat === "antes")
     return (
-      <span className="text-[8px] tracking-[0.15em] uppercase font-bold font-[var(--font-inter)] px-2 py-0.5 bg-amber-500/20 text-amber-300 border border-amber-500/30">
+      <span className="text-[8px] tracking-[0.15em] uppercase font-bold px-2 py-0.5 bg-amber-500/20 text-amber-300 border border-amber-500/30">
         Antes
       </span>
     );
   if (cat === "depois")
     return (
-      <span className="text-[8px] tracking-[0.15em] uppercase font-bold font-[var(--font-inter)] px-2 py-0.5 bg-[#3b6934]/30 text-[#a1d494] border border-[#3b6934]/40">
+      <span className="text-[8px] tracking-[0.15em] uppercase font-bold px-2 py-0.5 bg-[#36A35C]/30 text-[#36A35C] border border-[#36A35C]/40">
         Depois
       </span>
     );
@@ -184,7 +184,7 @@ function ProjectLightbox({
   const depoisImg = items.find((i) => i.category === "depois" && i.kind === "image");
 
   return (
-    <div className="fixed inset-0 z-[60] bg-[#0a0f1a] flex flex-col" onClick={onClose}>
+    <div className="fixed inset-0 z-[60] bg-[#0B1F45] flex flex-col" onClick={onClose}>
 
       {/* ── Header ── */}
       <div
@@ -192,7 +192,7 @@ function ProjectLightbox({
         onClick={(e) => e.stopPropagation()}
       >
         <div>
-          <p className="text-[#a1d494] text-[9px] tracking-[0.2em] uppercase font-bold font-[var(--font-inter)]">
+          <p className="text-[#36A35C] text-[9px] tracking-[0.2em] uppercase font-bold">
             {project.product_code}
           </p>
           <p className="text-white font-serif text-base mt-0.5">{project.title}</p>
@@ -207,7 +207,7 @@ function ProjectLightbox({
                 <button
                   key={f}
                   onClick={() => changeFilter(f)}
-                  className={`text-[9px] tracking-[0.12em] uppercase font-bold font-[var(--font-inter)] px-3 py-1.5 transition-colors ${filter === f ? "bg-white text-[#0a0f1a]" : "text-white/40 hover:text-white/80"}`}
+                  className={`text-[9px] tracking-[0.12em] uppercase font-bold px-3 py-1.5 transition-colors ${filter === f ? "bg-white text-[#0D1830]" : "text-white/40 hover:text-white/80"}`}
                 >
                   {filterLabel(f)}
                 </button>
@@ -222,7 +222,7 @@ function ProjectLightbox({
               <button
                 title="Carrossel"
                 onClick={() => setViewMode("carousel")}
-                className={`w-7 h-7 flex items-center justify-center transition-colors ${viewMode === "carousel" ? "bg-white text-[#0a0f1a]" : "text-white/40 hover:text-white/80"}`}
+                className={`w-7 h-7 flex items-center justify-center transition-colors ${viewMode === "carousel" ? "bg-white text-[#0D1830]" : "text-white/40 hover:text-white/80"}`}
               >
                 <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><rect x="2" y="4" width="20" height="16" rx="1"/><path d="M8 12h8M12 8v8"/></svg>
               </button>
@@ -230,7 +230,7 @@ function ProjectLightbox({
               <button
                 title="Galeria"
                 onClick={() => setViewMode("grid")}
-                className={`w-7 h-7 flex items-center justify-center transition-colors ${viewMode === "grid" ? "bg-white text-[#0a0f1a]" : "text-white/40 hover:text-white/80"}`}
+                className={`w-7 h-7 flex items-center justify-center transition-colors ${viewMode === "grid" ? "bg-white text-[#0D1830]" : "text-white/40 hover:text-white/80"}`}
               >
                 <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><rect x="3" y="3" width="7" height="7"/><rect x="14" y="3" width="7" height="7"/><rect x="3" y="14" width="7" height="7"/><rect x="14" y="14" width="7" height="7"/></svg>
               </button>
@@ -239,7 +239,7 @@ function ProjectLightbox({
                 <button
                   title="Antes × Depois"
                   onClick={() => setViewMode("split")}
-                  className={`w-7 h-7 flex items-center justify-center transition-colors ${viewMode === "split" ? "bg-white text-[#0a0f1a]" : "text-white/40 hover:text-white/80"}`}
+                  className={`w-7 h-7 flex items-center justify-center transition-colors ${viewMode === "split" ? "bg-white text-[#0D1830]" : "text-white/40 hover:text-white/80"}`}
                 >
                   <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><rect x="2" y="4" width="9" height="16" rx="1"/><rect x="13" y="4" width="9" height="16" rx="1"/></svg>
                 </button>
@@ -258,7 +258,7 @@ function ProjectLightbox({
             <button
               key={f}
               onClick={() => changeFilter(f)}
-              className={`flex-shrink-0 text-[9px] tracking-[0.12em] uppercase font-bold font-[var(--font-inter)] px-3 py-1.5 border transition-colors ${filter === f ? "bg-white text-[#0a0f1a] border-white" : "border-white/20 text-white/50 hover:text-white/80"}`}
+              className={`flex-shrink-0 text-[9px] tracking-[0.12em] uppercase font-bold px-3 py-1.5 border transition-colors ${filter === f ? "bg-white text-[#0D1830] border-white" : "border-white/20 text-white/50 hover:text-white/80"}`}
             >
               {filterLabel(f)}
             </button>
@@ -295,7 +295,7 @@ function ProjectLightbox({
                   <div className="flex-shrink-0 px-4 py-2.5 bg-black/60 border-t border-white/8 flex items-start gap-2.5">
                     <CategoryPill cat={item.category} />
                     {item.description && (
-                      <p className="text-white/60 text-[10px] font-[var(--font-inter)] leading-relaxed">{item.description}</p>
+                      <p className="text-white/60 text-[10px] leading-relaxed">{item.description}</p>
                     )}
                   </div>
                 </div>
@@ -337,14 +337,14 @@ function ProjectLightbox({
                     <div className="opacity-0 group-hover:opacity-100 transition-opacity flex flex-col gap-1 w-full">
                       {item.category !== "geral" && <CategoryPill cat={item.category} />}
                       {item.description && (
-                        <p className="text-white/80 text-[9px] font-[var(--font-inter)] leading-tight line-clamp-2">{item.description}</p>
+                        <p className="text-white/80 text-[9px] leading-tight line-clamp-2">{item.description}</p>
                       )}
                     </div>
                   </div>
                   {/* Video badge */}
                   {item.kind === "video" && (
                     <div className="absolute top-2 right-2 bg-black/60 px-1.5 py-0.5">
-                      <span className="text-white/60 text-[7px] tracking-[0.2em] uppercase font-bold font-[var(--font-inter)]">VÍD</span>
+                      <span className="text-white/60 text-[7px] tracking-[0.2em] uppercase font-bold">VÍD</span>
                     </div>
                   )}
                 </button>
@@ -400,18 +400,18 @@ function ProjectLightbox({
                         <svg width="26" height="26" viewBox="0 0 24 24" fill="white"><path d="M8 5v14l11-7z" /></svg>
                       </span>
                     </span>
-                    <span className="absolute left-3 bottom-3 bg-black/60 text-white text-[9px] tracking-[0.15em] uppercase font-bold font-[var(--font-inter)] px-2 py-1">
+                    <span className="absolute left-3 bottom-3 bg-black/60 text-white text-[9px] tracking-[0.15em] uppercase font-bold px-2 py-1">
                       {videoHostLabel(current.url)}
                     </span>
                   </a>
                   {current.description && (
-                    <p className="text-white/70 text-sm font-[var(--font-inter)] max-w-md text-center leading-relaxed">{current.description}</p>
+                    <p className="text-white/70 text-sm max-w-md text-center leading-relaxed">{current.description}</p>
                   )}
                   <a
                     href={current.url}
                     target="_blank"
                     rel="noopener noreferrer"
-                    className="inline-flex items-center gap-2.5 bg-white text-[#0a0f1a] text-xs tracking-[0.1em] uppercase font-bold font-[var(--font-inter)] px-6 py-3 hover:bg-white/90 transition-colors"
+                    className="inline-flex items-center gap-2.5 bg-white text-[#0D1830] text-xs tracking-[0.1em] uppercase font-bold px-6 py-3 hover:bg-white/90 transition-colors"
                   >
                     Assistir ao vídeo
                     <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><path d="M18 13v6a2 2 0 01-2 2H5a2 2 0 01-2-2V8a2 2 0 012-2h6M15 3h6v6M10 14L21 3"/></svg>
@@ -443,7 +443,7 @@ function ProjectLightbox({
               <div className="flex-shrink-0 px-5 py-2 border-t border-white/8 flex items-center gap-3">
                 {current?.category && current.category !== "geral" && <CategoryPill cat={current.category} />}
                 {current?.description && (
-                  <p className="text-white/55 text-xs font-[var(--font-inter)] leading-relaxed">{current.description}</p>
+                  <p className="text-white/55 text-xs leading-relaxed">{current.description}</p>
                 )}
               </div>
             )}
@@ -458,7 +458,7 @@ function ProjectLightbox({
                     className={`transition-all rounded-full ${i === safeIdx ? "w-5 h-1.5 bg-white" : "w-1.5 h-1.5 bg-white/25 hover:bg-white/55"}`}
                   />
                 ))}
-                <span className="text-white/35 text-[10px] font-[var(--font-inter)] ml-3">
+                <span className="text-white/35 text-[10px] ml-3">
                   {safeIdx + 1} / {visibleItems.length}
                 </span>
               </div>
@@ -569,7 +569,7 @@ function ProjectCard({ project, onOpen }: { project: Project; onOpen: (p: Projec
 
         {/* Selo "Novo" — controlado pelo painel */}
         {project.is_new && (
-          <span className="absolute top-3 left-3 z-10 bg-[#3b6934] text-white text-[9px] tracking-[0.18em] uppercase font-bold font-[var(--font-inter)] px-2.5 py-1">Novo</span>
+          <span className="absolute top-3 left-3 z-10 bg-[#36A35C] text-[#0B1F45] text-[9px] tracking-[0.18em] uppercase font-bold px-2.5 py-1">Novo</span>
         )}
 
         {/* Hover overlay — gallery cue */}
@@ -579,7 +579,7 @@ function ProjectCard({ project, onOpen }: { project: Project; onOpen: (p: Projec
               <rect x="3" y="3" width="7" height="7" rx="1"/><rect x="14" y="3" width="7" height="7" rx="1"/>
               <rect x="3" y="14" width="7" height="7" rx="1"/><rect x="14" y="14" width="7" height="7" rx="1"/>
             </svg>
-            <span className="text-white text-[9px] tracking-[0.2em] uppercase font-bold font-[var(--font-inter)]">Ver galeria</span>
+            <span className="text-white text-[9px] tracking-[0.2em] uppercase font-bold">Ver galeria</span>
           </div>
         </div>
 
@@ -591,7 +591,7 @@ function ProjectCard({ project, onOpen }: { project: Project; onOpen: (p: Projec
           >
             <button
               onClick={() => setShowBefore(true)}
-              className={`text-[9px] tracking-[0.1em] uppercase font-bold font-[var(--font-inter)] px-3.5 py-2 transition-colors duration-150 ${
+              className={`text-[9px] tracking-[0.1em] uppercase font-bold px-3.5 py-2 transition-colors duration-150 ${
                 showBefore ? "bg-white text-[#111]" : "text-white/55 hover:text-white"
               }`}
             >
@@ -600,7 +600,7 @@ function ProjectCard({ project, onOpen }: { project: Project; onOpen: (p: Projec
             <span className="w-px bg-white/25" />
             <button
               onClick={() => setShowBefore(false)}
-              className={`text-[9px] tracking-[0.1em] uppercase font-bold font-[var(--font-inter)] px-3.5 py-2 transition-colors duration-150 ${
+              className={`text-[9px] tracking-[0.1em] uppercase font-bold px-3.5 py-2 transition-colors duration-150 ${
                 !showBefore ? "bg-white text-[#111]" : "text-white/55 hover:text-white"
               }`}
             >
@@ -612,18 +612,18 @@ function ProjectCard({ project, onOpen }: { project: Project; onOpen: (p: Projec
 
       {/* Caption below image */}
       <div className="px-3 pt-2.5 pb-3 border-t border-[#efefef]">
-        <p className="text-[#3b6934] text-[8px] tracking-[0.18em] uppercase font-semibold font-[var(--font-inter)] mb-1">
+        <p className="text-[#2347A0] text-[8px] tracking-[0.18em] uppercase font-semibold mb-1">
           {project.product_code}
         </p>
-        <h3 className="font-serif text-[#002045] text-sm font-normal leading-snug">
+        <h3 className="font-serif text-[#0B1F45] text-sm font-normal leading-snug">
           {project.title}
         </h3>
         {project.note && (
-          <p className="text-[#9e9e9e] text-[9px] font-[var(--font-inter)] tracking-[0.04em] uppercase mt-1">
+          <p className="text-[#9e9e9e] text-[9px] tracking-[0.04em] uppercase mt-1">
             {project.note}
           </p>
         )}
-        <p className="text-[#74777f] text-[8px] font-[var(--font-inter)] mt-1.5 flex items-center gap-1">
+        <p className="text-[#74777f] text-[8px] mt-1.5 flex items-center gap-1">
           <svg width="9" height="9" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
             <rect x="3" y="3" width="7" height="7" rx="1"/><rect x="14" y="3" width="7" height="7" rx="1"/>
             <rect x="3" y="14" width="7" height="7" rx="1"/><rect x="14" y="14" width="7" height="7" rx="1"/>
@@ -648,7 +648,7 @@ function RenderCard({ render }: { render: Render }) {
         />
         {/* IA badge — small, unobtrusive */}
         <div className="absolute top-3 left-3 px-2 py-0.5 border border-white/20 bg-black/40 backdrop-blur-sm">
-          <span className="text-white/55 text-[7px] tracking-[0.25em] uppercase font-bold font-[var(--font-inter)]">
+          <span className="text-white/55 text-[7px] tracking-[0.25em] uppercase font-bold">
             IA
           </span>
         </div>
@@ -656,7 +656,7 @@ function RenderCard({ render }: { render: Render }) {
 
       {/* Caption below image */}
       <div className="px-3 pt-2.5 pb-3 border-t border-white/8">
-        <p className="text-[#a1d494] text-[8px] tracking-[0.18em] uppercase font-semibold font-[var(--font-inter)] mb-1">
+        <p className="text-[#36A35C] text-[8px] tracking-[0.18em] uppercase font-semibold mb-1">
           {render.product_code}
         </p>
         <h3 className="font-serif text-white/85 text-sm font-normal leading-snug">
@@ -671,10 +671,10 @@ function RenderCard({ render }: { render: Render }) {
 function SectionHeader({ label, desc, light = false }: { label: string; desc: string; light?: boolean }) {
   return (
     <div className={`flex items-baseline gap-4 mb-5 pb-4 border-b ${light ? "border-white/15" : "border-[#e2e2e2]"}`}>
-      <h3 className={`font-serif text-xl font-normal ${light ? "text-white" : "text-[#002045]"}`}>
+      <h3 className={`font-serif text-xl font-normal ${light ? "text-white" : "text-[#0B1F45]"}`}>
         {label}
       </h3>
-      <p className={`text-xs font-[var(--font-inter)] hidden sm:block ${light ? "text-white/40" : "text-[#74777f]"}`}>
+      <p className={`text-xs hidden sm:block ${light ? "text-white/40" : "text-[#74777f]"}`}>
         {desc}
       </p>
     </div>
@@ -724,7 +724,7 @@ function mapsHref(s: PartnerShowroom) {
 function PartnerCard({ s }: { s: PartnerShowroom }) {
   const novo = isNew(s.created_at);
   return (
-    <Link href={`/projetos/showroom/${s.slug}`} className="bg-white border border-[#e2e2e2] flex flex-col group hover:border-[#002045] transition-colors">
+    <Link href={`/projetos/showroom/${s.slug}`} className="bg-white border border-[#e2e2e2] flex flex-col group hover:border-[#0B1F45] transition-colors">
       <div className="relative w-full overflow-hidden bg-[#f0f0f0]" style={{ aspectRatio: "16 / 10" }}>
         {s.display_cover ? (
           // eslint-disable-next-line @next/next/no-img-element
@@ -735,28 +735,28 @@ function PartnerCard({ s }: { s: PartnerShowroom }) {
             style={coverStyle(s.display_focus_x, s.display_focus_y, s.display_zoom)}
           />
         ) : (
-          <div className="absolute inset-0 bg-[#002045] flex flex-col items-center justify-center text-center px-6">
+          <div className="absolute inset-0 bg-[#0B1F45] flex flex-col items-center justify-center text-center px-6">
             <p className="font-serif text-white text-2xl">{s.name}</p>
-            <p className="text-[#a1d494] text-[10px] tracking-[0.2em] uppercase font-bold font-[var(--font-inter)] mt-2">Fotos em breve</p>
+            <p className="text-[#36A35C] text-[10px] tracking-[0.2em] uppercase font-bold mt-2">Fotos em breve</p>
           </div>
         )}
         {novo && (
-          <span className="absolute top-3 left-3 bg-[#a1d494] text-[#0a2a12] text-[9px] tracking-[0.18em] uppercase font-bold font-[var(--font-inter)] px-2 py-1">
+          <span className="absolute top-3 left-3 bg-[#36A35C] text-[#0a2a12] text-[9px] tracking-[0.18em] uppercase font-bold px-2 py-1">
             Novo
           </span>
         )}
       </div>
       <div className="px-5 py-4 flex-1 flex flex-col">
-        <p className="font-serif text-[#002045] text-xl">{s.name}</p>
+        <p className="font-serif text-[#0B1F45] text-xl">{s.name}</p>
         {s.address && (
-          <p className="text-[#74777f] text-[12px] font-[var(--font-inter)] mt-1.5 leading-snug">{s.address}</p>
+          <p className="text-[#74777f] text-[12px] mt-1.5 leading-snug">{s.address}</p>
         )}
         {s.ambient_count > 0 && (
-          <p className="text-[#a0a3a8] text-[11px] font-[var(--font-inter)] mt-2">
+          <p className="text-[#a0a3a8] text-[11px] mt-2">
             {s.ambient_count} {s.ambient_count === 1 ? "ambiente" : "ambientes"}
           </p>
         )}
-        <span className="inline-flex items-center gap-1.5 text-[#002045] text-[10px] tracking-[0.12em] uppercase font-bold font-[var(--font-inter)] mt-auto pt-4">
+        <span className="inline-flex items-center gap-1.5 text-[#0B1F45] text-[10px] tracking-[0.12em] uppercase font-bold mt-auto pt-4">
           Conhecer showroom
           <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><path d="M5 12h14M12 5l7 7-7 7" /></svg>
         </span>
@@ -768,7 +768,7 @@ function PartnerCard({ s }: { s: PartnerShowroom }) {
 // Cartão de um ponto de revenda: o que tem lá e como chegar.
 function RevendaCard({ s }: { s: PartnerShowroom }) {
   return (
-    <div className="bg-white border border-[#e2e2e2] border-l-4 border-l-[#3b6934] flex flex-col sm:flex-row">
+    <div className="bg-white border border-[#e2e2e2] border-l-4 border-l-[#36A35C] flex flex-col sm:flex-row">
       {s.display_cover && (
         <div className="relative sm:w-[42%] flex-shrink-0 overflow-hidden bg-[#f0f0f0]" style={{ minHeight: 180 }}>
           {/* eslint-disable-next-line @next/next/no-img-element */}
@@ -777,24 +777,24 @@ function RevendaCard({ s }: { s: PartnerShowroom }) {
         </div>
       )}
       <div className="px-5 sm:px-7 py-5 sm:py-6 flex-1 flex flex-col">
-        <p className="text-[#3b6934] text-[10px] tracking-[0.18em] uppercase font-bold font-[var(--font-inter)]">Ponto de revenda</p>
-        <p className="font-serif text-[#002045] text-2xl mt-1">{s.name}</p>
-        {s.description && <p className="text-[#43474e] text-sm font-[var(--font-inter)] leading-relaxed mt-2">{s.description}</p>}
-        {s.address && <p className="text-[#74777f] text-[13px] font-[var(--font-inter)] mt-2 leading-snug">{s.address}</p>}
+        <p className="text-[#2347A0] text-[10px] tracking-[0.18em] uppercase font-bold">Ponto de revenda</p>
+        <p className="font-serif text-[#0B1F45] text-2xl mt-1">{s.name}</p>
+        {s.description && <p className="text-[#43474e] text-sm leading-relaxed mt-2">{s.description}</p>}
+        {s.address && <p className="text-[#74777f] text-[13px] mt-2 leading-snug">{s.address}</p>}
         <div className="flex flex-wrap gap-2 mt-auto pt-5">
           <a href={mapsHref(s)} target="_blank" rel="noopener noreferrer"
-            className="inline-flex items-center gap-2 bg-[#002045] text-white text-[10px] tracking-[0.12em] uppercase font-bold font-[var(--font-inter)] px-5 py-3 hover:bg-[#1a365d] transition-colors">
+            className="inline-flex items-center gap-2 bg-[#0B1F45] text-white text-[10px] tracking-[0.12em] uppercase font-bold px-5 py-3 hover:bg-[#2347A0] transition-colors">
             Como chegar
             <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><path d="M5 12h14M12 5l7 7-7 7" /></svg>
           </a>
           {s.ambient_count > 0 ? (
             <Link href={`/projetos/showroom/${s.slug}`}
-              className="inline-flex items-center gap-2 border border-[#002045] text-[#002045] text-[10px] tracking-[0.12em] uppercase font-bold font-[var(--font-inter)] px-5 py-3 hover:bg-[#002045] hover:text-white transition-colors">
+              className="inline-flex items-center gap-2 border border-[#0B1F45] text-[#0B1F45] text-[10px] tracking-[0.12em] uppercase font-bold px-5 py-3 hover:bg-[#0B1F45] hover:text-white transition-colors">
               Ver projetos ({s.ambient_count})
             </Link>
           ) : (
             <Link href="/produtos"
-              className="inline-flex items-center gap-2 border border-[#002045] text-[#002045] text-[10px] tracking-[0.12em] uppercase font-bold font-[var(--font-inter)] px-5 py-3 hover:bg-[#002045] hover:text-white transition-colors">
+              className="inline-flex items-center gap-2 border border-[#0B1F45] text-[#0B1F45] text-[10px] tracking-[0.12em] uppercase font-bold px-5 py-3 hover:bg-[#0B1F45] hover:text-white transition-colors">
               Ver os modelos
             </Link>
           )}
@@ -809,11 +809,11 @@ function BigSectionHead({ id, eyebrow, title, desc, light = false }: { id: strin
   return (
     <div id={`${id}-titulo`} className="mb-8 lg:mb-10">
       <div className="inline-flex items-center gap-3 mb-3">
-        <div className={`w-5 h-px ${light ? "bg-[#a1d494]" : "bg-[#3b6934]"}`} />
-        <p className={`text-xs tracking-[0.2em] uppercase font-semibold font-[var(--font-inter)] ${light ? "text-[#a1d494]" : "text-[#3b6934]"}`}>{eyebrow}</p>
+        <div className={`w-5 h-px ${light ? "bg-[#36A35C]" : "bg-[#36A35C]"}`} />
+        <p className={`text-xs tracking-[0.2em] uppercase font-semibold ${light ? "text-[#36A35C]" : "text-[#2347A0]"}`}>{eyebrow}</p>
       </div>
-      <h2 className={`font-serif text-3xl lg:text-4xl font-normal ${light ? "text-white" : "text-[#002045]"}`}>{title}</h2>
-      <p className={`text-sm font-[var(--font-inter)] leading-relaxed max-w-2xl mt-2 ${light ? "text-white/55" : "text-[#74777f]"}`}>{desc}</p>
+      <h2 className={`font-serif text-3xl lg:text-4xl font-normal ${light ? "text-white" : "text-[#0B1F45]"}`}>{title}</h2>
+      <p className={`text-sm leading-relaxed max-w-2xl mt-2 ${light ? "text-white/55" : "text-[#74777f]"}`}>{desc}</p>
     </div>
   );
 }
@@ -959,8 +959,8 @@ export default function ProjetosPage() {
   const nomesShowrooms = showrooms.map((s) => s.name).join(" · ");
 
   const chip = (on: boolean) =>
-    `px-4 py-2 text-[10px] tracking-[0.12em] uppercase font-bold font-[var(--font-inter)] transition-all whitespace-nowrap ${
-      on ? "bg-[#002045] text-white" : "bg-white border border-[#e2e2e2] text-[#74777f] hover:border-[#002045] hover:text-[#002045]"
+    `px-4 py-2 text-[10px] tracking-[0.12em] uppercase font-bold transition-all whitespace-nowrap ${
+      on ? "bg-[#0B1F45] text-white" : "bg-white border border-[#e2e2e2] text-[#74777f] hover:border-[#0B1F45] hover:text-[#0B1F45]"
     }`;
 
   const portas: { id: SecaoId; titulo: string; texto: string; img: string | null }[] = [
@@ -998,8 +998,8 @@ export default function ProjetosPage() {
         </div>
         <div className="relative z-10 w-full max-w-[1280px] mx-auto px-4 lg:px-16 pt-16 pb-14 lg:pb-20 text-center md:text-left">
           <div className="inline-flex items-center gap-3 mb-5">
-            <div className="w-6 h-px bg-[#a1d494]" />
-            <p className="text-[#a1d494] text-[10px] sm:text-xs tracking-[0.2em] sm:tracking-[0.3em] uppercase font-semibold font-[var(--font-inter)]">
+            <div className="w-6 h-px bg-[#36A35C]" />
+            <p className="text-[#36A35C] text-[10px] sm:text-xs tracking-[0.2em] sm:tracking-[0.3em] uppercase font-semibold">
               Projetos · Showrooms · Revenda
             </p>
           </div>
@@ -1007,7 +1007,7 @@ export default function ProjetosPage() {
             <span className="sr-only">Orbital Revestimentos — projetos em Manaus. </span>
             Veja o PFB de perto.
           </h1>
-          <p className="text-white/60 text-base lg:text-lg font-[var(--font-inter)] leading-relaxed max-w-xl mx-auto md:mx-0">
+          <p className="text-white/60 text-base lg:text-lg leading-relaxed max-w-xl mx-auto md:mx-0">
             Obras entregues, ambientes decorados em empresas parceiras e pontos de revenda em Manaus.
             Escolha por onde começar.
           </p>
@@ -1016,13 +1016,13 @@ export default function ProjetosPage() {
 
       {/* ── Portas de entrada ───────────────────────────────────────────────── */}
       {/* Fundo claro, separado da foto do topo: três escolhas claras, cada uma com a sua imagem. */}
-      <section className="bg-[#f5f5f3] py-8 lg:py-12">
+      <section className="bg-[#F6F5F2] py-8 lg:py-12">
         <div className="max-w-[1280px] mx-auto px-4 lg:px-16">
-          <p className="text-[#74777f] text-[10px] tracking-[0.2em] uppercase font-bold font-[var(--font-inter)] mb-4">Por onde quer começar?</p>
+          <p className="text-[#74777f] text-[10px] tracking-[0.2em] uppercase font-bold mb-4">Por onde quer começar?</p>
           <div className="grid grid-cols-1 sm:grid-cols-3 gap-3 lg:gap-5">
             {portas.map((p) => (
               <a key={p.id} href={`#${p.id}`}
-                className="group bg-white border border-[#e2e2e2] hover:border-[#002045] transition-colors flex sm:flex-col overflow-hidden">
+                className="group bg-white border border-[#e2e2e2] hover:border-[#0B1F45] transition-colors flex sm:flex-col overflow-hidden">
                 <div className="relative w-28 sm:w-full flex-shrink-0 sm:aspect-[16/9] overflow-hidden bg-[#eaf3e6]">
                   {p.img ? (
                     // eslint-disable-next-line @next/next/no-img-element
@@ -1030,7 +1030,7 @@ export default function ProjetosPage() {
                       className="absolute inset-0 w-full h-full object-cover group-hover:scale-[1.03] transition-transform duration-500" />
                   ) : (
                     // Ponto de revenda: sem foto da loja ainda — um ícone de loja/vitrine.
-                    <div className="absolute inset-0 flex items-center justify-center text-[#3b6934]">
+                    <div className="absolute inset-0 flex items-center justify-center text-[#1F7A44]">
                       <svg width="44" height="44" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.4" strokeLinecap="round" strokeLinejoin="round" aria-hidden>
                         <path d="M3 9l1.5-5h15L21 9" /><path d="M3 9h18v2a3 3 0 0 1-6 0 3 3 0 0 1-6 0 3 3 0 0 1-6 0V9z" /><path d="M5 13v7h14v-7" /><path d="M10 20v-4h4v4" />
                       </svg>
@@ -1038,9 +1038,9 @@ export default function ProjetosPage() {
                   )}
                 </div>
                 <div className="px-4 sm:px-5 py-4 sm:py-5 flex-1 min-w-0 flex flex-col">
-                  <p className="font-serif text-[#002045] text-lg sm:text-2xl leading-tight">{p.titulo}</p>
-                  <p className="text-[#74777f] text-[12px] sm:text-[13px] font-[var(--font-inter)] mt-1 leading-snug line-clamp-2">{p.texto}</p>
-                  <span className="inline-flex items-center gap-1.5 text-[#3b6934] text-[10px] tracking-[0.15em] uppercase font-bold font-[var(--font-inter)] mt-auto pt-3">
+                  <p className="font-serif text-[#0B1F45] text-lg sm:text-2xl leading-tight">{p.titulo}</p>
+                  <p className="text-[#74777f] text-[12px] sm:text-[13px] mt-1 leading-snug line-clamp-2">{p.texto}</p>
+                  <span className="inline-flex items-center gap-1.5 text-[#2347A0] text-[10px] tracking-[0.15em] uppercase font-bold mt-auto pt-3">
                     Ver
                     <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" className="group-hover:translate-x-0.5 transition-transform"><path d="M5 12h14M12 5l7 7-7 7" /></svg>
                   </span>
@@ -1057,8 +1057,8 @@ export default function ProjetosPage() {
           {SECOES.map((x) => (
             <a key={x.id} href={`#${x.id}`}
               aria-current={secaoAtiva === x.id ? "true" : undefined}
-              className={`flex-shrink-0 px-3 sm:px-4 py-3.5 text-[10px] sm:text-[11px] tracking-[0.12em] uppercase font-bold font-[var(--font-inter)] border-b-2 -mb-px transition-colors ${
-                secaoAtiva === x.id ? "border-[#002045] text-[#002045]" : "border-transparent text-[#74777f] hover:text-[#002045]"
+              className={`flex-shrink-0 px-3 sm:px-4 py-3.5 text-[10px] sm:text-[11px] tracking-[0.12em] uppercase font-bold border-b-2 -mb-px transition-colors ${
+                secaoAtiva === x.id ? "border-[#0B1F45] text-[#0B1F45]" : "border-transparent text-[#74777f] hover:text-[#0B1F45]"
               }`}>
               {x.label}
             </a>
@@ -1067,14 +1067,14 @@ export default function ProjetosPage() {
       </nav>
 
       {/* ── Obras ───────────────────────────────────────────────────────────── */}
-      <section id="obras" className="scroll-mt-32 py-12 lg:py-20 bg-[#f5f5f3]">
+      <section id="obras" className="scroll-mt-32 py-12 lg:py-20 bg-[#F6F5F2]">
         <div className="max-w-[1280px] mx-auto px-4 lg:px-16">
           <BigSectionHead id="obras" eyebrow="Obras realizadas" title="Projetos executados"
             desc="Ambientes reais revestidos com o Painel Flexível Fibra de Bambu. Filtre por categoria ou pelo tipo de ambiente." />
 
           <div className="space-y-3 mb-8">
             <div className="flex items-center gap-2 overflow-x-auto scrollbar-none -mx-4 px-4 sm:mx-0 sm:px-0 sm:flex-wrap">
-              <span className="text-[9px] tracking-[0.18em] uppercase font-bold font-[var(--font-inter)] text-[#a0a3a8] mr-1 flex-shrink-0">Categoria</span>
+              <span className="text-[9px] tracking-[0.18em] uppercase font-bold text-[#a0a3a8] mr-1 flex-shrink-0">Categoria</span>
               <button onClick={() => setActiveFilter("todos")} className={chip(activeFilter === "todos")}>Todas</button>
               {orderedCats.filter((c) => contaCat(c.slug) > 0).map((c) => (
                 <button key={c.slug} onClick={() => setActiveFilter(c.slug)} className={chip(activeFilter === c.slug)}>
@@ -1084,7 +1084,7 @@ export default function ProjetosPage() {
             </div>
             {tagsDisponiveis.length > 0 && (
               <div className="flex items-center gap-2 overflow-x-auto scrollbar-none -mx-4 px-4 sm:mx-0 sm:px-0 sm:flex-wrap">
-                <span className="text-[9px] tracking-[0.18em] uppercase font-bold font-[var(--font-inter)] text-[#a0a3a8] mr-1 flex-shrink-0">Tipo</span>
+                <span className="text-[9px] tracking-[0.18em] uppercase font-bold text-[#a0a3a8] mr-1 flex-shrink-0">Tipo</span>
                 <button onClick={() => setActiveTag("todos")} className={chip(activeTag === "todos")}>Todos</button>
                 {tagsDisponiveis.map((t) => (
                   <button key={t} onClick={() => setActiveTag(t)} className={chip(activeTag === t)}>{tagLabel(t)}</button>
@@ -1126,13 +1126,13 @@ export default function ProjetosPage() {
             );
           })() : obrasFiltradas.length === 0 ? (
             <div className="text-center py-16">
-              <p className="text-[#74777f] text-sm font-[var(--font-inter)]">Nenhum projeto com esses filtros.</p>
+              <p className="text-[#74777f] text-sm">Nenhum projeto com esses filtros.</p>
               <button onClick={() => { setActiveFilter("todos"); setActiveTag("todos"); }}
-                className="mt-3 text-[#002045] text-xs underline underline-offset-2 font-[var(--font-inter)]">Ver todos</button>
+                className="mt-3 text-[#0B1F45] text-xs underline underline-offset-2">Ver todos</button>
             </div>
           ) : (
             <>
-              <p className="text-[#74777f] text-xs font-[var(--font-inter)] mb-3">
+              <p className="text-[#74777f] text-xs mb-3">
                 {obrasFiltradas.length} {obrasFiltradas.length === 1 ? "projeto" : "projetos"}
               </p>
               <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 gap-1">
@@ -1141,7 +1141,7 @@ export default function ProjetosPage() {
             </>
           )}
 
-          <p className="text-[#b8b8b8] text-[10px] font-[var(--font-inter)] italic text-center mt-10">
+          <p className="text-[#b8b8b8] text-[10px] italic text-center mt-10">
             Imagens reais de projetos executados. Orbital não realiza instalação; somos fornecedores diretos.
           </p>
         </div>
@@ -1152,8 +1152,8 @@ export default function ProjetosPage() {
         <div className="max-w-[1280px] mx-auto px-4 lg:px-16">
           <div className="mb-8 lg:mb-12">
             <div className="inline-flex items-center gap-3 mb-4">
-              <div className="w-5 h-px bg-[#a1d494]" />
-              <p className="text-[#a1d494] text-xs tracking-[0.25em] uppercase font-semibold font-[var(--font-inter)]">Transformação real</p>
+              <div className="w-5 h-px bg-[#36A35C]" />
+              <p className="text-[#36A35C] text-xs tracking-[0.25em] uppercase font-semibold">Transformação real</p>
             </div>
             <h2 className="font-serif text-white text-3xl lg:text-5xl font-normal leading-tight">A diferença é visível.</h2>
           </div>
@@ -1161,22 +1161,22 @@ export default function ProjetosPage() {
             <div className="relative aspect-[4/3] overflow-hidden">
               <Image src="/images/projetos/restaurante-antes.png" alt="Restaurante — antes" fill className="object-cover brightness-[0.82] saturate-75" />
               <div className="absolute bottom-0 inset-x-0 p-4 sm:p-6 bg-gradient-to-t from-[#090e18]/80 to-transparent">
-                <span className="text-white/55 text-[10px] tracking-[0.2em] uppercase font-bold font-[var(--font-inter)]">Antes</span>
+                <span className="text-white/55 text-[10px] tracking-[0.2em] uppercase font-bold">Antes</span>
               </div>
             </div>
             <div className="relative aspect-[4/3] overflow-hidden">
               <Image src="/images/projetos/restaurante-depois.jpeg" alt="Restaurante — depois" fill className="object-cover" />
               <div className="absolute bottom-0 inset-x-0 p-4 sm:p-6 bg-gradient-to-t from-[#090e18]/80 to-transparent">
-                <span className="text-[#a1d494] text-[10px] tracking-[0.2em] uppercase font-bold font-[var(--font-inter)]">Depois</span>
+                <span className="text-[#36A35C] text-[10px] tracking-[0.2em] uppercase font-bold">Depois</span>
               </div>
             </div>
           </div>
           <div className="mt-5 flex flex-col sm:flex-row sm:items-center justify-between gap-3 border-t border-white/10 pt-5">
             <div>
-              <p className="text-[#a1d494] text-[10px] tracking-[0.15em] uppercase font-semibold font-[var(--font-inter)] mb-1">ORB-002 · Imbuia · Elegance</p>
-              <p className="text-white/50 text-sm font-[var(--font-inter)]">Restaurante · Comercial · Manaus, AM</p>
+              <p className="text-[#36A35C] text-[10px] tracking-[0.15em] uppercase font-semibold mb-1">ORB-002 · Imbuia · Elegance</p>
+              <p className="text-white/50 text-sm">Restaurante · Comercial · Manaus, AM</p>
             </div>
-            <p className="text-white/30 text-xs font-[var(--font-inter)] italic">2 horas de instalação · Sem obra pesada · Sem poeira</p>
+            <p className="text-white/30 text-xs italic">2 horas de instalação · Sem obra pesada · Sem poeira</p>
           </div>
         </div>
       </section>
@@ -1187,9 +1187,9 @@ export default function ProjetosPage() {
           <BigSectionHead id="showrooms" eyebrow="Visite e veja de perto" title="Showrooms parceiros"
             desc="Ambientes decorados com o Painel Flexível Fibra de Bambu dentro de empresas parceiras. Veja o acabamento, a textura e a luz ao vivo." />
           {!partnersLoaded ? (
-            <p className="text-[#74777f] text-sm font-[var(--font-inter)]">Carregando…</p>
+            <p className="text-[#74777f] text-sm">Carregando…</p>
           ) : showrooms.length === 0 ? (
-            <p className="text-[#74777f] text-sm font-[var(--font-inter)]">Em breve.</p>
+            <p className="text-[#74777f] text-sm">Em breve.</p>
           ) : (
             <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
               {showrooms.map((s) => <PartnerCard key={s.id} s={s} />)}
@@ -1199,7 +1199,7 @@ export default function ProjetosPage() {
       </section>
 
       {/* ── Pontos de revenda ───────────────────────────────────────────────── */}
-      <section id="revenda" className="scroll-mt-32 py-12 lg:py-20 bg-[#f5f5f3]">
+      <section id="revenda" className="scroll-mt-32 py-12 lg:py-20 bg-[#F6F5F2]">
         <div className="max-w-[1280px] mx-auto px-4 lg:px-16">
           <BigSectionHead id="revenda" eyebrow="Compre perto de você" title="Pontos de revenda"
             desc="Lojas parceiras com os nossos modelos em display, no tamanho real da placa, para você escolher com o painel na mão." />
@@ -1210,7 +1210,7 @@ export default function ProjetosPage() {
       </section>
 
       {/* ── Inspirações IA ──────────────────────────────────────────────────── */}
-      <section id="inspiracoes" className="scroll-mt-32 py-14 lg:py-24 bg-[#0a0f1a]">
+      <section id="inspiracoes" className="scroll-mt-32 py-14 lg:py-24 bg-[#0B1F45]">
         <div className="max-w-[1280px] mx-auto px-4 lg:px-16">
           <BigSectionHead id="inspiracoes" light eyebrow="Possibilidades · Visualizações IA" title="O Orbital no seu espaço."
             desc="Visualizações geradas por inteligência artificial mostrando o potencial do PFB em diferentes ambientes." />
@@ -1218,11 +1218,11 @@ export default function ProjetosPage() {
             {allRenders.map((render) => <RenderCard key={render.id} render={render} />)}
           </div>
           <div className="mt-8 flex flex-col sm:flex-row sm:items-center justify-between gap-4">
-            <p className="text-white/30 text-[10px] font-[var(--font-inter)] italic">
+            <p className="text-white/30 text-[10px] italic">
               Imagens geradas por inteligência artificial para fins ilustrativos.
             </p>
             <Link href="/visualizador"
-              className="inline-flex items-center justify-center gap-2 border border-white/30 text-white text-[10px] tracking-[0.12em] uppercase font-bold font-[var(--font-inter)] px-5 py-3 hover:bg-white hover:text-[#002045] transition-colors">
+              className="inline-flex items-center justify-center gap-2 border border-white/30 text-white text-[10px] tracking-[0.12em] uppercase font-bold px-5 py-3 hover:bg-white hover:text-[#0B1F45] transition-colors">
               Simular no meu ambiente
               <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><path d="M5 12h14M12 5l7 7-7 7" /></svg>
             </Link>
@@ -1236,24 +1236,24 @@ export default function ProjetosPage() {
           <div className="grid grid-cols-1 lg:grid-cols-2 gap-16 items-center">
             <div>
               <div className="inline-flex items-center gap-3 mb-6">
-                <div className="w-5 h-px bg-[#3b6934]" />
-                <p className="text-[#3b6934] text-xs tracking-[0.2em] uppercase font-semibold font-[var(--font-inter)]">Próximo projeto</p>
+                <div className="w-5 h-px bg-[#36A35C]" />
+                <p className="text-[#2347A0] text-xs tracking-[0.2em] uppercase font-semibold">Próximo projeto</p>
               </div>
-              <h2 className="font-serif text-[#002045] text-2xl lg:text-[3.25rem] font-normal leading-[1.08] tracking-[-0.02em] mb-6">
+              <h2 className="font-serif text-[#0B1F45] text-2xl lg:text-[3.25rem] font-normal leading-[1.08] tracking-[-0.02em] mb-6">
                 Transforme o seu ambiente com o PFB!
               </h2>
-              <p className="text-[#43474e] text-base font-[var(--font-inter)] leading-relaxed mb-4 max-w-md">
+              <p className="text-[#43474e] text-base leading-relaxed mb-4 max-w-md">
                 Escolha o acabamento, fale com um consultor e receba o
                 orçamento completo do seu projeto. E com a nossa pronta-entrega,
                 sua obra pode começar ainda essa semana!
               </p>
-              <p className="text-[#3b6934] text-sm font-bold font-[var(--font-inter)] tracking-[0.05em] mb-10">PFB: Prático, Fácil, Bonito.</p>
+              <p className="text-[#1F7A44] text-sm font-bold tracking-[0.05em] mb-10">PFB: Prático, Fácil, Bonito.</p>
               <div className="flex flex-col sm:flex-row flex-wrap gap-3 lg:gap-4">
-                <ContatoCta className="w-full sm:w-auto inline-flex items-center justify-center gap-2.5 bg-[#002045] text-white text-xs tracking-[0.12em] uppercase font-bold font-[var(--font-inter)] px-8 py-4 hover:bg-[#1a365d] transition-colors">
+                <ContatoCta className="w-full sm:w-auto inline-flex items-center justify-center gap-2.5 bg-[#0B1F45] text-white text-xs tracking-[0.12em] uppercase font-bold px-8 py-4 hover:bg-[#2347A0] transition-colors">
                   Falar com um consultor
                 </ContatoCta>
                 <Link href="/produtos"
-                  className="w-full sm:w-auto inline-flex items-center justify-center gap-2 border border-[#002045] text-[#002045] text-xs tracking-[0.12em] uppercase font-bold font-[var(--font-inter)] px-8 py-4 hover:bg-[#002045] hover:text-white transition-colors">
+                  className="w-full sm:w-auto inline-flex items-center justify-center gap-2 border border-[#0B1F45] text-[#0B1F45] text-xs tracking-[0.12em] uppercase font-bold px-8 py-4 hover:bg-[#0B1F45] hover:text-white transition-colors">
                   Ver o catálogo
                   <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5"><path d="M5 12h14M12 5l7 7-7 7" /></svg>
                 </Link>
@@ -1269,8 +1269,8 @@ export default function ProjetosPage() {
       </section>
 
       {/* ── Bottom note ─────────────────────────────────────────────────────── */}
-      <div className="bg-[#f9f9f9] border-t border-[#eeeeee] py-5 text-center">
-        <p className="text-[#74777f] text-xs font-[var(--font-inter)] italic">
+      <div className="bg-[#F6F5F2] border-t border-[#eeeeee] py-5 text-center">
+        <p className="text-[#74777f] text-xs italic">
           Orbital · Manaus, AM · Somos fornecedores diretos — não realizamos instalação.
         </p>
       </div>

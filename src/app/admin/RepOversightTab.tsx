@@ -410,11 +410,11 @@ export default function RepOversightTab({ reps }: { reps: RepOption[] }) {
     <div className="mb-10">
       {/* Rep scope filter — drives the funnel, kanban and agenda below. */}
       <div className="flex flex-wrap items-center gap-2 mb-5">
-        <span className="text-[10px] tracking-[0.15em] uppercase font-bold font-[var(--font-inter)] text-[#74777f]">Representante</span>
+        <span className="text-[10px] tracking-[0.15em] uppercase font-bold text-[#74777f]">Representante</span>
         <select
           value={repFilter}
           onChange={(e) => setRepFilter(e.target.value)}
-          className="w-full sm:w-auto border border-[#d7dbe3] px-3 py-2 text-xs font-[var(--font-inter)] text-[#002045] focus:outline-none focus:border-[#002045] sm:min-w-[200px]"
+          className="w-full sm:w-auto border border-[#d7dbe3] px-3 py-2 text-xs text-[#0B1F45] focus:outline-none focus:border-[#0B1F45] sm:min-w-[200px]"
         >
           <option value="all">Todos os representantes</option>
           {reps.map((r) => (
@@ -424,7 +424,7 @@ export default function RepOversightTab({ reps }: { reps: RepOption[] }) {
         {repFilter !== "all" && (
           <button
             onClick={() => setRepFilter("all")}
-            className="text-[10px] tracking-[0.1em] uppercase font-bold font-[var(--font-inter)] text-[#1e5fb4] hover:underline"
+            className="text-[10px] tracking-[0.1em] uppercase font-bold text-[#2F5FD0] hover:underline"
           >
             limpar
           </button>
@@ -432,11 +432,11 @@ export default function RepOversightTab({ reps }: { reps: RepOption[] }) {
       </div>
 
       {/* Team funnel */}
-      <h3 className="font-[var(--font-inter)] text-[10px] tracking-[0.2em] uppercase font-bold text-[#002045] mb-3">
+      <h3 className="text-[10px] tracking-[0.2em] uppercase font-bold text-[#0B1F45] mb-3">
         {repName ? `Funil — ${repName}` : "Funil da equipe — todos os representantes"}
       </h3>
       {allLoading ? (
-        <p className="text-[#74777f] text-sm font-[var(--font-inter)] mb-8">Carregando...</p>
+        <p className="text-[#74777f] text-sm mb-8">Carregando...</p>
       ) : (
         <div className="bg-white border border-[#e2e2e2] px-5 py-4 mb-8">
           <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-6 gap-4">
@@ -449,9 +449,9 @@ export default function RepOversightTab({ reps }: { reps: RepOption[] }) {
               { label: "Parados 30d+", value: String(team.stalled), sub: team.stalled > 0 ? "precisam atenção" : "tudo em dia" },
             ].map((m) => (
               <div key={m.label}>
-                <p className="text-[#74777f] text-[9px] uppercase tracking-wider font-bold font-[var(--font-inter)]">{m.label}</p>
-                <p className="text-[#002045] text-lg font-[var(--font-noto-serif)] mt-0.5">{m.value}</p>
-                {m.sub && <p className="text-[#b0b0b0] text-[10px] font-[var(--font-inter)]">{m.sub}</p>}
+                <p className="text-[#74777f] text-[9px] uppercase tracking-wider font-bold">{m.label}</p>
+                <p className="text-[#0B1F45] text-lg font-serif mt-0.5">{m.value}</p>
+                {m.sub && <p className="text-[#b0b0b0] text-[10px]">{m.sub}</p>}
               </div>
             ))}
           </div>
@@ -462,10 +462,10 @@ export default function RepOversightTab({ reps }: { reps: RepOption[] }) {
       <div className="mb-8">
         <div className="flex flex-col lg:flex-row lg:items-end lg:justify-between gap-3 mb-3">
           <div>
-            <h3 className="font-[var(--font-inter)] text-[10px] tracking-[0.2em] uppercase font-bold text-[#002045]">
+            <h3 className="text-[10px] tracking-[0.2em] uppercase font-bold text-[#0B1F45]">
               Kanban unificado — leads + representantes
             </h3>
-            <p className="text-[#74777f] text-sm font-[var(--font-inter)] mt-1">
+            <p className="text-[#74777f] text-sm mt-1">
               Arraste cards para atualizar o estágio no CRM correto.
             </p>
           </div>
@@ -474,16 +474,16 @@ export default function RepOversightTab({ reps }: { reps: RepOption[] }) {
               value={unifiedSearch}
               onChange={(e) => setUnifiedSearch(e.target.value)}
               placeholder="Buscar no funil..."
-              className="w-full sm:w-auto border border-[#d7dbe3] px-3 py-2 text-xs font-[var(--font-inter)] text-[#002045] focus:outline-none focus:border-[#002045] sm:min-w-[220px]"
+              className="w-full sm:w-auto border border-[#d7dbe3] px-3 py-2 text-xs text-[#0B1F45] focus:outline-none focus:border-[#0B1F45] sm:min-w-[220px]"
             />
             {(["all", "lead", "rep"] as const).map((kind) => (
               <button
                 key={kind}
                 onClick={() => setUnifiedKind(kind)}
-                className={`text-[10px] tracking-[0.1em] uppercase font-bold font-[var(--font-inter)] px-3 py-2 border ${
+                className={`text-[10px] tracking-[0.1em] uppercase font-bold px-3 py-2 border ${
                   unifiedKind === kind
-                    ? "bg-[#002045] text-white border-[#002045]"
-                    : "bg-white text-[#74777f] border-[#d7dbe3] hover:border-[#002045] hover:text-[#002045]"
+                    ? "bg-[#0B1F45] text-white border-[#0B1F45]"
+                    : "bg-white text-[#74777f] border-[#d7dbe3] hover:border-[#0B1F45] hover:text-[#0B1F45]"
                 }`}
               >
                 {kind === "all" ? "Todos" : kind === "lead" ? "Leads" : "Reps"}
@@ -500,15 +500,15 @@ export default function RepOversightTab({ reps }: { reps: RepOption[] }) {
             { label: "Valor", value: fmtBRL(unifiedStats.value), sub: "potencial + gerado" },
           ].map((s) => (
             <div key={s.label} className="bg-white border border-[#e2e2e2] px-4 py-3">
-              <p className="text-[9px] tracking-[0.1em] uppercase font-bold font-[var(--font-inter)] text-[#74777f]">{s.label}</p>
-              <p className="text-[#002045] text-base font-semibold font-[var(--font-noto-serif)] mt-0.5">{s.value}</p>
-              <p className="text-[#b0b0b0] text-[9px] font-[var(--font-inter)]">{s.sub}</p>
+              <p className="text-[9px] tracking-[0.1em] uppercase font-bold text-[#74777f]">{s.label}</p>
+              <p className="text-[#0B1F45] text-base font-semibold font-serif mt-0.5">{s.value}</p>
+              <p className="text-[#b0b0b0] text-[9px]">{s.sub}</p>
             </div>
           ))}
         </div>
 
         {leadsLoading || allLoading ? (
-          <p className="text-[#74777f] text-sm font-[var(--font-inter)]">Carregando funil...</p>
+          <p className="text-[#74777f] text-sm">Carregando funil...</p>
         ) : (
           <div className="flex flex-col md:flex-row gap-3 md:overflow-x-auto pb-3">
             {UNIFIED_COLUMNS.map((column) => {
@@ -523,12 +523,12 @@ export default function RepOversightTab({ reps }: { reps: RepOption[] }) {
                 >
                   <div className="px-3 py-2.5 border-b border-[#e2e2e2] bg-white">
                     <div className="flex items-center justify-between gap-2">
-                      <p className="text-[#002045] text-[11px] tracking-[0.08em] uppercase font-bold font-[var(--font-inter)]">{column.label}</p>
-                      <span className="text-[#74777f] text-[11px] font-bold font-[var(--font-inter)]">{cards.length}</span>
+                      <p className="text-[#0B1F45] text-[11px] tracking-[0.08em] uppercase font-bold">{column.label}</p>
+                      <span className="text-[#74777f] text-[11px] font-bold">{cards.length}</span>
                     </div>
                     <div className="flex items-center justify-between gap-2 mt-0.5">
-                      <p className="text-[#74777f] text-[10px] font-[var(--font-inter)]">{column.hint}</p>
-                      {columnValue > 0 && <p className="text-[#2f5429] text-[10px] font-semibold font-[var(--font-inter)]">{fmtBRL(columnValue)}</p>}
+                      <p className="text-[#74777f] text-[10px]">{column.hint}</p>
+                      {columnValue > 0 && <p className="text-[#1F7A44] text-[10px] font-semibold">{fmtBRL(columnValue)}</p>}
                     </div>
                   </div>
                   <div className="p-2 space-y-2 md:min-h-[220px]">
@@ -544,20 +544,20 @@ export default function RepOversightTab({ reps }: { reps: RepOption[] }) {
                       >
                         <div className="flex items-start justify-between gap-2">
                           <div className="min-w-0">
-                            <p className="text-[#002045] text-xs font-semibold font-[var(--font-inter)] truncate">{card.title}</p>
-                            <p className="text-[#74777f] text-[10px] font-[var(--font-inter)] truncate">{card.owner}</p>
+                            <p className="text-[#0B1F45] text-xs font-semibold truncate">{card.title}</p>
+                            <p className="text-[#74777f] text-[10px] truncate">{card.owner}</p>
                           </div>
                           <span className={`shrink-0 text-[8px] tracking-[0.08em] uppercase font-bold px-1.5 py-0.5 ${
-                            card.type === "lead" ? "bg-[#eef2f8] text-[#002045]" : "bg-[#eafaf0] text-[#2f5429]"
+                            card.type === "lead" ? "bg-[#eef2f8] text-[#0B1F45]" : "bg-[#eafaf0] text-[#1F7A44]"
                           }`}>
                             {card.type === "lead" ? "Lead" : "Rep"}
                           </span>
                         </div>
-                        <p className="text-[#74777f] text-[10px] font-[var(--font-inter)] mt-1">{card.meta}</p>
-                        {card.detail && <p className="text-[#43474e] text-[10px] font-[var(--font-inter)] mt-1 truncate">{card.detail}</p>}
+                        <p className="text-[#74777f] text-[10px] mt-1">{card.meta}</p>
+                        {card.detail && <p className="text-[#43474e] text-[10px] mt-1 truncate">{card.detail}</p>}
                         <div className="flex items-center justify-between gap-2 mt-2">
-                          <span className="text-[#2f5429] text-[10px] font-semibold font-[var(--font-inter)]">{card.value > 0 ? fmtBRL(card.value) : "—"}</span>
-                          <span className="text-[#74777f] text-[10px] font-[var(--font-inter)]">{card.nextReminderAt ? fmtDate(card.nextReminderAt) : ""}</span>
+                          <span className="text-[#1F7A44] text-[10px] font-semibold">{card.value > 0 ? fmtBRL(card.value) : "—"}</span>
+                          <span className="text-[#74777f] text-[10px]">{card.nextReminderAt ? fmtDate(card.nextReminderAt) : ""}</span>
                         </div>
                         {card.badges.length > 0 && (
                           <div className="flex flex-wrap gap-1 mt-2">
@@ -574,7 +574,7 @@ export default function RepOversightTab({ reps }: { reps: RepOption[] }) {
                                 const row = allRows.find((r) => r.id === card.id);
                                 if (row) setEditingRow(row);
                               }}
-                              className="text-[10px] font-bold font-[var(--font-inter)] text-[#1e5fb4] hover:underline"
+                              className="text-[10px] font-bold text-[#2F5FD0] hover:underline"
                             >
                               Abrir / editar →
                             </button>
@@ -583,7 +583,7 @@ export default function RepOversightTab({ reps }: { reps: RepOption[] }) {
                       </div>
                     ))}
                     {cards.length === 0 && (
-                      <p className="text-[#b0b0b0] text-[10px] font-[var(--font-inter)] text-center py-8">Sem cards</p>
+                      <p className="text-[#b0b0b0] text-[10px] text-center py-8">Sem cards</p>
                     )}
                   </div>
                 </div>
@@ -594,20 +594,20 @@ export default function RepOversightTab({ reps }: { reps: RepOption[] }) {
       </div>
 
       {/* Upcoming meetings */}
-      <h3 className="font-[var(--font-inter)] text-[10px] tracking-[0.2em] uppercase font-bold text-[#002045] mb-3">
+      <h3 className="text-[10px] tracking-[0.2em] uppercase font-bold text-[#0B1F45] mb-3">
         {repName ? `Agenda — ${repName}` : "Agenda dos representantes"} · próximos 14 dias
       </h3>
       {meetingsLoading ? (
-        <p className="text-[#74777f] text-sm font-[var(--font-inter)]">Carregando...</p>
+        <p className="text-[#74777f] text-sm">Carregando...</p>
       ) : upcoming.length === 0 ? (
         <div className="bg-white border border-[#e2e2e2] px-5 py-6 text-center mb-8">
-          <p className="text-[#74777f] text-sm font-[var(--font-inter)]">Nenhuma reunião agendada nos próximos 14 dias.</p>
+          <p className="text-[#74777f] text-sm">Nenhuma reunião agendada nos próximos 14 dias.</p>
         </div>
       ) : (
         <>
         {/* Desktop table */}
         <div className="hidden md:block bg-white border border-[#e2e2e2] mb-8">
-          <table className="w-full text-sm font-[var(--font-inter)]">
+          <table className="w-full text-sm">
             <thead>
               <tr className="border-b border-[#e2e2e2]">
                 {["Quando", "Representante", "Reunião", ""].map((h, i) => (
@@ -619,19 +619,19 @@ export default function RepOversightTab({ reps }: { reps: RepOption[] }) {
               {upcoming.map((m) => (
                 <tr key={m.id} className="border-b border-[#f0f0f0]">
                   <td className="px-4 py-2.5 text-xs text-[#43474e] whitespace-nowrap">{fmtDateTime(m.scheduled_at)}</td>
-                  <td className="px-4 py-2.5 text-xs font-semibold text-[#002045]">{m.sales_rep_name ?? "—"}</td>
+                  <td className="px-4 py-2.5 text-xs font-semibold text-[#0B1F45]">{m.sales_rep_name ?? "—"}</td>
                   <td className="px-4 py-2.5 text-xs text-[#43474e]">{m.title}</td>
                   <td className="px-4 py-2.5 text-right whitespace-nowrap">
                     {reschedulingId === m.id ? (
                       <span className="inline-flex items-center gap-1">
                         <input type="datetime-local" value={rescheduleValue} onChange={(e) => setRescheduleValue(e.target.value)}
-                          className="border border-[#e2e2e2] px-1.5 py-1 text-[11px] text-[#002045] focus:outline-none focus:border-[#002045]" />
-                        <button onClick={() => submitReschedule(m.id)} className="text-[10px] font-bold text-[#2f5429] hover:underline">OK</button>
+                          className="border border-[#e2e2e2] px-1.5 py-1 text-[11px] text-[#0B1F45] focus:outline-none focus:border-[#0B1F45]" />
+                        <button onClick={() => submitReschedule(m.id)} className="text-[10px] font-bold text-[#1F7A44] hover:underline">OK</button>
                         <button onClick={() => { setReschedulingId(null); setRescheduleValue(""); }} className="text-[10px] text-[#74777f] hover:underline">×</button>
                       </span>
                     ) : (
                       <span className="inline-flex items-center gap-3">
-                        <button onClick={() => { setReschedulingId(m.id); setRescheduleValue(m.scheduled_at.slice(0, 16)); }} className="text-[10px] font-bold text-[#1e5fb4] hover:underline">Remarcar</button>
+                        <button onClick={() => { setReschedulingId(m.id); setRescheduleValue(m.scheduled_at.slice(0, 16)); }} className="text-[10px] font-bold text-[#2F5FD0] hover:underline">Remarcar</button>
                         <button onClick={() => cancelMeeting(m)} className="text-[10px] font-bold text-[#b42318] hover:underline">Cancelar</button>
                       </span>
                     )}
@@ -646,20 +646,20 @@ export default function RepOversightTab({ reps }: { reps: RepOption[] }) {
           {upcoming.map((m) => (
             <div key={m.id} className="bg-white border border-[#e2e2e2] p-4">
               <div className="flex items-center justify-between gap-2 mb-1">
-                <span className="text-sm font-semibold text-[#002045] truncate">{m.sales_rep_name ?? "—"}</span>
+                <span className="text-sm font-semibold text-[#0B1F45] truncate">{m.sales_rep_name ?? "—"}</span>
                 <span className="text-[11px] text-[#74777f] whitespace-nowrap flex-shrink-0">{fmtDateTime(m.scheduled_at)}</span>
               </div>
-              <p className="text-xs text-[#43474e] font-[var(--font-inter)]">{m.title}</p>
+              <p className="text-xs text-[#43474e]">{m.title}</p>
               {reschedulingId === m.id ? (
                 <div className="flex items-center gap-2 mt-2 pt-2 border-t border-[#f0f0f0]">
                   <input type="datetime-local" value={rescheduleValue} onChange={(e) => setRescheduleValue(e.target.value)}
-                    className="border border-[#e2e2e2] px-2 py-1 text-[11px] text-[#002045] focus:outline-none focus:border-[#002045] flex-1" />
-                  <button onClick={() => submitReschedule(m.id)} className="text-[11px] font-bold text-[#2f5429]">OK</button>
+                    className="border border-[#e2e2e2] px-2 py-1 text-[11px] text-[#0B1F45] focus:outline-none focus:border-[#0B1F45] flex-1" />
+                  <button onClick={() => submitReschedule(m.id)} className="text-[11px] font-bold text-[#1F7A44]">OK</button>
                   <button onClick={() => { setReschedulingId(null); setRescheduleValue(""); }} className="text-[11px] text-[#74777f]">×</button>
                 </div>
               ) : (
                 <div className="flex gap-4 mt-2 pt-2 border-t border-[#f0f0f0]">
-                  <button onClick={() => { setReschedulingId(m.id); setRescheduleValue(m.scheduled_at.slice(0, 16)); }} className="text-[11px] font-bold text-[#1e5fb4]">Remarcar</button>
+                  <button onClick={() => { setReschedulingId(m.id); setRescheduleValue(m.scheduled_at.slice(0, 16)); }} className="text-[11px] font-bold text-[#2F5FD0]">Remarcar</button>
                   <button onClick={() => cancelMeeting(m)} className="text-[11px] font-bold text-[#b42318]">Cancelar</button>
                 </div>
               )}
@@ -671,47 +671,47 @@ export default function RepOversightTab({ reps }: { reps: RepOption[] }) {
 
       {/* Minha agenda — the admin's own personal calendar (separate from reps) */}
       <div className="flex items-center justify-between gap-2 mb-3">
-        <h3 className="font-[var(--font-inter)] text-[10px] tracking-[0.2em] uppercase font-bold text-[#002045]">
+        <h3 className="text-[10px] tracking-[0.2em] uppercase font-bold text-[#0B1F45]">
           Minha agenda — próximos 30 dias
         </h3>
-        <button onClick={() => setAddingEvent((v) => !v)} className="text-[10px] tracking-[0.1em] uppercase font-bold font-[var(--font-inter)] text-[#1e5fb4] hover:underline">
+        <button onClick={() => setAddingEvent((v) => !v)} className="text-[10px] tracking-[0.1em] uppercase font-bold text-[#2F5FD0] hover:underline">
           {addingEvent ? "Fechar" : "+ Novo evento"}
         </button>
       </div>
       {addingEvent && (
         <div className="bg-white border border-[#e2e2e2] p-3 mb-3 grid grid-cols-1 sm:grid-cols-[1fr_180px_1fr_auto] gap-2 items-center">
           <input value={eventForm.title} onChange={(e) => setEventForm({ ...eventForm, title: e.target.value })} placeholder="Título do evento"
-            className="border border-[#e2e2e2] px-3 py-2 text-sm font-[var(--font-inter)] text-[#002045] focus:outline-none focus:border-[#002045]" />
+            className="border border-[#e2e2e2] px-3 py-2 text-sm text-[#0B1F45] focus:outline-none focus:border-[#0B1F45]" />
           <input type="datetime-local" value={eventForm.when} onChange={(e) => setEventForm({ ...eventForm, when: e.target.value })}
-            className="border border-[#e2e2e2] px-2 py-2 text-sm font-[var(--font-inter)] text-[#002045] focus:outline-none focus:border-[#002045]" />
+            className="border border-[#e2e2e2] px-2 py-2 text-sm text-[#0B1F45] focus:outline-none focus:border-[#0B1F45]" />
           <input value={eventForm.location} onChange={(e) => setEventForm({ ...eventForm, location: e.target.value })} placeholder="Local (opcional)"
-            className="border border-[#e2e2e2] px-3 py-2 text-sm font-[var(--font-inter)] text-[#002045] focus:outline-none focus:border-[#002045]" />
+            className="border border-[#e2e2e2] px-3 py-2 text-sm text-[#0B1F45] focus:outline-none focus:border-[#0B1F45]" />
           <button onClick={createEvent} disabled={!eventForm.title.trim() || !eventForm.when}
-            className="bg-[#002045] text-white text-xs tracking-[0.1em] uppercase font-bold font-[var(--font-inter)] px-4 py-2 hover:bg-[#1a365d] disabled:opacity-50 whitespace-nowrap">Salvar</button>
+            className="bg-[#0B1F45] text-white text-xs tracking-[0.1em] uppercase font-bold px-4 py-2 hover:bg-[#2347A0] disabled:opacity-50 whitespace-nowrap">Salvar</button>
         </div>
       )}
       {myEvents.length === 0 ? (
         <div className="bg-white border border-[#e2e2e2] px-5 py-6 text-center mb-8">
-          <p className="text-[#74777f] text-sm font-[var(--font-inter)]">Nenhum evento pessoal nos próximos 30 dias.</p>
+          <p className="text-[#74777f] text-sm">Nenhum evento pessoal nos próximos 30 dias.</p>
         </div>
       ) : (
         <div className="bg-white border border-[#e2e2e2] divide-y divide-[#f0f0f0] mb-8">
           {myEvents.map((ev) => (
             <div key={ev.id} className="flex items-center justify-between gap-3 px-4 py-2.5">
               <div className="min-w-0">
-                <p className="text-sm font-semibold text-[#002045] font-[var(--font-inter)] truncate">{ev.title}</p>
-                <p className="text-[11px] text-[#74777f] font-[var(--font-inter)]">{fmtDateTime(ev.scheduled_at)}{ev.location ? ` · ${ev.location}` : ""}</p>
+                <p className="text-sm font-semibold text-[#0B1F45] truncate">{ev.title}</p>
+                <p className="text-[11px] text-[#74777f]">{fmtDateTime(ev.scheduled_at)}{ev.location ? ` · ${ev.location}` : ""}</p>
               </div>
               {evtRescheduleId === ev.id ? (
                 <span className="inline-flex items-center gap-1 shrink-0">
                   <input type="datetime-local" value={evtRescheduleValue} onChange={(e) => setEvtRescheduleValue(e.target.value)}
-                    className="border border-[#e2e2e2] px-1.5 py-1 text-[11px] text-[#002045] focus:outline-none focus:border-[#002045]" />
-                  <button onClick={() => { if (evtRescheduleValue) { patchEvent(ev.id, { scheduled_at: new Date(evtRescheduleValue).toISOString() }); setEvtRescheduleId(null); } }} className="text-[10px] font-bold text-[#2f5429]">OK</button>
+                    className="border border-[#e2e2e2] px-1.5 py-1 text-[11px] text-[#0B1F45] focus:outline-none focus:border-[#0B1F45]" />
+                  <button onClick={() => { if (evtRescheduleValue) { patchEvent(ev.id, { scheduled_at: new Date(evtRescheduleValue).toISOString() }); setEvtRescheduleId(null); } }} className="text-[10px] font-bold text-[#1F7A44]">OK</button>
                   <button onClick={() => setEvtRescheduleId(null)} className="text-[10px] text-[#74777f]">×</button>
                 </span>
               ) : (
                 <span className="inline-flex items-center gap-3 shrink-0">
-                  <button onClick={() => { setEvtRescheduleId(ev.id); setEvtRescheduleValue(ev.scheduled_at.slice(0, 16)); }} className="text-[10px] font-bold text-[#1e5fb4] hover:underline">Remarcar</button>
+                  <button onClick={() => { setEvtRescheduleId(ev.id); setEvtRescheduleValue(ev.scheduled_at.slice(0, 16)); }} className="text-[10px] font-bold text-[#2F5FD0] hover:underline">Remarcar</button>
                   <button onClick={() => deleteEvent(ev.id)} className="text-[10px] font-bold text-[#b42318] hover:underline">Excluir</button>
                 </span>
               )}
@@ -721,7 +721,7 @@ export default function RepOversightTab({ reps }: { reps: RepOption[] }) {
       )}
 
       {/* Per-rep editable pipeline */}
-      <h3 className="font-[var(--font-inter)] text-[10px] tracking-[0.2em] uppercase font-bold text-[#002045] mb-3">
+      <h3 className="text-[10px] tracking-[0.2em] uppercase font-bold text-[#0B1F45] mb-3">
         Pipeline por representante — visualizar e editar
       </h3>
       <div className="bg-white border border-[#e2e2e2] divide-y divide-[#f0f0f0]">
@@ -732,16 +732,16 @@ export default function RepOversightTab({ reps }: { reps: RepOption[] }) {
             <div key={rep.id}>
               <button
                 onClick={() => toggleRep(rep.id)}
-                className="w-full flex items-center justify-between px-5 py-3 text-left hover:bg-[#fafafa] transition-colors"
+                className="w-full flex items-center justify-between px-5 py-3 text-left hover:bg-[#F6F5F2] transition-colors"
               >
-                <span className="text-sm font-semibold text-[#002045] font-[var(--font-inter)]">{rep.name}</span>
-                <span className="text-[10px] text-[#74777f] font-[var(--font-inter)]">
+                <span className="text-sm font-semibold text-[#0B1F45]">{rep.name}</span>
+                <span className="text-[10px] text-[#74777f]">
                   {s ? `${s.count} relaç${s.count !== 1 ? "ões" : "ão"} · ${s.active} ativo${s.active !== 1 ? "s" : ""} · ${fmtBRL(s.value)}` : "—"}
                   <span className="ml-2">{expanded ? "▲" : "▼"}</span>
                 </span>
               </button>
               {expanded && (
-                <div className="border-t border-[#f0f0f0] px-5 py-5 bg-[#fafafa]">
+                <div className="border-t border-[#f0f0f0] px-5 py-5 bg-[#F6F5F2]">
                   <RepCrmTab salesRepId={rep.id} linkedPartners={partnersByRep[rep.id] ?? []} />
                 </div>
               )}
@@ -808,47 +808,47 @@ function RepContactEditor({
   return (
     <div className="fixed inset-0 z-50 bg-black/40 flex items-start sm:items-center justify-center p-4 overflow-y-auto" onClick={onClose}>
       <div className="bg-white w-full max-w-md border border-[#e2e2e2] shadow-xl" onClick={(e) => e.stopPropagation()}>
-        <div className="flex items-center justify-between px-5 py-3 border-b border-[#e2e2e2] bg-[#002045]">
+        <div className="flex items-center justify-between px-5 py-3 border-b border-[#e2e2e2] bg-[#0B1F45]">
           <div className="min-w-0">
-            <p className="text-white text-sm font-semibold font-[var(--font-inter)] truncate">{label}</p>
-            <p className="text-[#a9b6c8] text-[10px] font-[var(--font-inter)]">{row.sales_rep_name || "Representante"} · CRM</p>
+            <p className="text-white text-sm font-semibold truncate">{label}</p>
+            <p className="text-[#a9b6c8] text-[10px]">{row.sales_rep_name || "Representante"} · CRM</p>
           </div>
           <button onClick={onClose} className="text-white/80 hover:text-white text-lg leading-none">×</button>
         </div>
         <div className="p-5 space-y-4">
           {isProspect && (
             <div>
-              <label className="block text-[10px] tracking-[0.15em] uppercase font-bold font-[var(--font-inter)] text-[#74777f] mb-1">Nome do contato</label>
+              <label className="block text-[10px] tracking-[0.15em] uppercase font-bold text-[#74777f] mb-1">Nome do contato</label>
               <input value={prospectName} onChange={(e) => setProspectName(e.target.value)}
-                className="w-full border border-[#e2e2e2] px-3 py-2 text-sm font-[var(--font-inter)] text-[#002045] focus:outline-none focus:border-[#002045]" />
+                className="w-full border border-[#e2e2e2] px-3 py-2 text-sm text-[#0B1F45] focus:outline-none focus:border-[#0B1F45]" />
             </div>
           )}
           <div>
-            <label className="block text-[10px] tracking-[0.15em] uppercase font-bold font-[var(--font-inter)] text-[#74777f] mb-1">Estágio</label>
+            <label className="block text-[10px] tracking-[0.15em] uppercase font-bold text-[#74777f] mb-1">Estágio</label>
             <select value={stage} onChange={(e) => setStage(e.target.value)}
-              className="w-full border border-[#e2e2e2] px-3 py-2 text-sm font-[var(--font-inter)] text-[#002045] focus:outline-none focus:border-[#002045]">
+              className="w-full border border-[#e2e2e2] px-3 py-2 text-sm text-[#0B1F45] focus:outline-none focus:border-[#0B1F45]">
               {STAGE_OPTIONS.map((o) => <option key={o.value} value={o.value}>{o.label}</option>)}
             </select>
           </div>
           <div className="grid grid-cols-2 gap-3">
             <div>
-              <label className="block text-[10px] tracking-[0.15em] uppercase font-bold font-[var(--font-inter)] text-[#74777f] mb-1">Próximo follow-up</label>
+              <label className="block text-[10px] tracking-[0.15em] uppercase font-bold text-[#74777f] mb-1">Próximo follow-up</label>
               <input type="date" value={reminder} onChange={(e) => setReminder(e.target.value)}
-                className="w-full border border-[#e2e2e2] px-3 py-2 text-sm font-[var(--font-inter)] text-[#002045] focus:outline-none focus:border-[#002045]" />
+                className="w-full border border-[#e2e2e2] px-3 py-2 text-sm text-[#0B1F45] focus:outline-none focus:border-[#0B1F45]" />
             </div>
             <div>
-              <label className="block text-[10px] tracking-[0.15em] uppercase font-bold font-[var(--font-inter)] text-[#74777f] mb-1">Valor gerado (R$)</label>
+              <label className="block text-[10px] tracking-[0.15em] uppercase font-bold text-[#74777f] mb-1">Valor gerado (R$)</label>
               <input type="number" min="0" value={value} onChange={(e) => setValue(e.target.value)}
-                className="w-full border border-[#e2e2e2] px-3 py-2 text-sm font-[var(--font-inter)] text-[#002045] focus:outline-none focus:border-[#002045]" />
+                className="w-full border border-[#e2e2e2] px-3 py-2 text-sm text-[#0B1F45] focus:outline-none focus:border-[#0B1F45]" />
             </div>
           </div>
-          <p className="text-[10px] text-[#74777f] font-[var(--font-inter)]">
+          <p className="text-[10px] text-[#74777f]">
             Para gerenciar reuniões, notas e etapas detalhadas, abra o pipeline do representante abaixo.
           </p>
         </div>
         <div className="flex justify-end gap-2 px-5 py-3 border-t border-[#e2e2e2]">
-          <button onClick={onClose} className="text-[#74777f] text-xs tracking-[0.1em] uppercase font-bold font-[var(--font-inter)] px-4 py-2 border border-[#e2e2e2] hover:border-[#74777f]">Cancelar</button>
-          <button onClick={submit} disabled={saving} className="bg-[#002045] text-white text-xs tracking-[0.1em] uppercase font-bold font-[var(--font-inter)] px-5 py-2 hover:bg-[#1a365d] disabled:opacity-50">{saving ? "Salvando…" : "Salvar"}</button>
+          <button onClick={onClose} className="text-[#74777f] text-xs tracking-[0.1em] uppercase font-bold px-4 py-2 border border-[#e2e2e2] hover:border-[#74777f]">Cancelar</button>
+          <button onClick={submit} disabled={saving} className="bg-[#0B1F45] text-white text-xs tracking-[0.1em] uppercase font-bold px-5 py-2 hover:bg-[#2347A0] disabled:opacity-50">{saving ? "Salvando…" : "Salvar"}</button>
         </div>
       </div>
     </div>

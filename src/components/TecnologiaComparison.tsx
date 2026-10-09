@@ -11,26 +11,26 @@ export default function TecnologiaComparison() {
       {/* Accordion trigger */}
       <button
         onClick={() => setOpen(!open)}
-        className="w-full flex items-center justify-between bg-white border border-[#e2e2e2] px-6 py-5 text-left group hover:border-[#002045] transition-colors"
+        className="w-full flex items-center justify-between bg-white border border-[#e2e2e2] px-6 py-5 text-left group hover:border-[#0B1F45] transition-colors"
         aria-expanded={open}
       >
         <div>
-          <p className="text-[#002045] text-sm font-bold font-[var(--font-inter)] tracking-[0.04em] mb-0.5 group-hover:text-[#1a365d]">
+          <p className="text-[#0B1F45] text-sm font-bold tracking-[0.04em] mb-0.5 group-hover:text-[#2347A0]">
             {open ? "Ocultar relatório técnico" : "Ver relatório técnico completo — PFB vs. concorrentes"}
           </p>
-          <p className="text-[#74777f] text-xs font-[var(--font-inter)]">
+          <p className="text-[#74777f] text-xs">
             {open
               ? "ART nº AM20260593657 · Eng. Civil Werksson Sousa · CREA 042030134-8-D"
               : "10 critérios · umidade, durabilidade, mofo, fogo, instalação e mais"}
           </p>
         </div>
-        <div className="flex-shrink-0 ml-6 w-8 h-8 border border-[#e2e2e2] group-hover:border-[#002045] flex items-center justify-center transition-colors">
+        <div className="flex-shrink-0 ml-6 w-8 h-8 border border-[#e2e2e2] group-hover:border-[#0B1F45] flex items-center justify-center transition-colors">
           <svg
             width="14"
             height="14"
             viewBox="0 0 24 24"
             fill="none"
-            stroke="#002045"
+            stroke="#0B1F45"
             strokeWidth="2.5"
             className={`transition-transform duration-300 ${open ? "rotate-180" : ""}`}
           >

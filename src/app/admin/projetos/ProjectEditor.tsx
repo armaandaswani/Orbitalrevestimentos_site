@@ -308,19 +308,19 @@ export default function ProjectEditor({ id }: { id: string }) {
   if (notFound || !p) {
     return (
       <AdminShell breadcrumb={[{ label: "Projetos", href: "/admin/projetos" }]} title="Projeto não encontrado">
-        <Link href="/admin/projetos" className="text-[#002045] underline text-sm font-[var(--font-inter)]">Voltar para a lista</Link>
+        <Link href="/admin/projetos" className="text-[#0B1F45] underline text-sm">Voltar para a lista</Link>
       </AdminShell>
     );
   }
 
   const secCls = "bg-white border border-[#e2e2e2]";
   const secHead = "px-4 sm:px-5 py-3.5 border-b border-[#f0f0f0]";
-  const secTitle = "font-[var(--font-noto-serif)] text-[#002045] text-lg";
-  const secHint = "text-[#74777f] text-[12px] font-[var(--font-inter)] mt-0.5";
+  const secTitle = "font-serif text-[#0B1F45] text-lg";
+  const secHint = "text-[#74777f] text-[12px] mt-0.5";
 
   const preview = (
     <div className="bg-white border border-[#e2e2e2] p-4">
-      <p className="text-[10px] tracking-[0.15em] uppercase font-bold font-[var(--font-inter)] text-[#74777f] mb-3">
+      <p className="text-[10px] tracking-[0.15em] uppercase font-bold text-[#74777f] mb-3">
         Como aparecerá no site
       </p>
       <div className="w-full max-w-[200px] mx-auto">
@@ -330,30 +330,30 @@ export default function ProjectEditor({ id }: { id: string }) {
             <img src={p.image_after} alt="" className="absolute inset-0 w-full h-full"
               style={coverStyle(p.cover_focus_x ?? 0.5, p.cover_focus_y ?? 0.5, p.cover_zoom ?? 1)} />
           ) : (
-            <div className="w-full h-full flex items-center justify-center text-[#c4c6ca] text-[11px] font-[var(--font-inter)]">sem capa</div>
+            <div className="w-full h-full flex items-center justify-center text-[#c4c6ca] text-[11px]">sem capa</div>
           )}
           {(p.cover_category === "antes" || p.cover_category === "depois") && (
-            <span className={`absolute top-1.5 left-1.5 text-[8px] tracking-[0.15em] uppercase font-bold px-1.5 py-0.5 ${p.cover_category === "antes" ? "bg-amber-500/90 text-white" : "bg-[#3b6934]/90 text-white"}`}>
+            <span className={`absolute top-1.5 left-1.5 text-[8px] tracking-[0.15em] uppercase font-bold px-1.5 py-0.5 ${p.cover_category === "antes" ? "bg-amber-500/90 text-[#0B1F45]" : "bg-[#36A35C]/90 text-[#0B1F45]"}`}>
               {p.cover_category === "antes" ? "Antes" : "Depois"}
             </span>
           )}
           {p.is_new && (
-            <span className="absolute top-1.5 right-1.5 bg-[#3b6934] text-white text-[8px] tracking-[0.15em] uppercase font-bold px-1.5 py-0.5">Novo</span>
+            <span className="absolute top-1.5 right-1.5 bg-[#36A35C] text-[#0B1F45] text-[8px] tracking-[0.15em] uppercase font-bold px-1.5 py-0.5">Novo</span>
           )}
         </div>
-        <p className="font-[var(--font-noto-serif)] text-[#002045] text-base mt-2.5">{p.title?.trim() || "Sem nome"}</p>
-        <p className="text-[#74777f] text-[11px] font-[var(--font-inter)]">
+        <p className="font-serif text-[#0B1F45] text-base mt-2.5">{p.title?.trim() || "Sem nome"}</p>
+        <p className="text-[#74777f] text-[11px]">
           {p.product_code || "sem produto"}{catLabel ? ` · ${catLabel}` : ""}
         </p>
         {isShowroom && showroom && (
-          <p className="text-[#74777f] text-[11px] font-[var(--font-inter)] mt-0.5">{showroom.name}</p>
+          <p className="text-[#74777f] text-[11px] mt-0.5">{showroom.name}</p>
         )}
       </div>
       <div className="mt-4 pt-3 border-t border-[#f0f0f0] space-y-1.5">
-        <p className="text-[11px] font-[var(--font-inter)] text-[#43474e] break-words">
+        <p className="text-[11px] text-[#43474e] break-words">
           <span className="text-[#a0a3a8]">Caminho: </span>{trail.join(" › ")}
         </p>
-        <p className="text-[11px] font-[var(--font-inter)] text-[#43474e]">
+        <p className="text-[11px] text-[#43474e]">
           <span className="text-[#a0a3a8]">Galeria: </span>{galleryState}
         </p>
       </div>
@@ -365,7 +365,7 @@ export default function ProjectEditor({ id }: { id: string }) {
       breadcrumb={[{ label: "Projetos", href: "/admin/projetos" }, { label: p.title?.trim() || "Novo projeto" }]}
       title={p.title?.trim() || "Novo projeto"}
       action={
-        <span className={`text-[11px] font-[var(--font-inter)] px-2.5 py-1 ${p.is_active ? "bg-[#eef5ec] text-[#2c5226]" : "bg-[#f0f0f0] text-[#74777f]"}`}>
+        <span className={`text-[11px] px-2.5 py-1 ${p.is_active ? "bg-[#eef5ec] text-[#1F7A44]" : "bg-[#f0f0f0] text-[#74777f]"}`}>
           {p.is_active ? "Publicado" : "Rascunho"}
           {saveState === "saving" && " · salvando…"}
           {saveState === "saved" && " · salvo"}
@@ -373,13 +373,13 @@ export default function ProjectEditor({ id }: { id: string }) {
       }
     >
       {err && (
-        <div className="mb-4 bg-red-50 border border-red-200 text-red-700 px-4 py-2.5 text-sm font-[var(--font-inter)] flex items-start justify-between gap-3">
+        <div className="mb-4 bg-red-50 border border-red-200 text-red-700 px-4 py-2.5 text-sm flex items-start justify-between gap-3">
           <span>{err}</span>
           <button onClick={() => setErr(null)} className="font-bold shrink-0">✕</button>
         </div>
       )}
       {p.needs_review && (
-        <div className="mb-4 bg-amber-50 border border-amber-300 px-4 py-3 text-sm font-[var(--font-inter)] text-amber-900">
+        <div className="mb-4 bg-amber-50 border border-amber-300 px-4 py-3 text-sm text-amber-900">
           <strong className="font-bold">Revisão necessária.</strong> {p.review_reason}{" "}
           <button onClick={() => set({ needs_review: false, review_reason: null })} className="underline font-bold">
             Está correto, remover o aviso
@@ -389,7 +389,7 @@ export default function ProjectEditor({ id }: { id: string }) {
 
       {/* Prévia recolhível no mobile. */}
       <button onClick={() => setShowPreview((v) => !v)}
-        className="lg:hidden w-full mb-4 border border-[#e2e2e2] bg-white px-4 py-2.5 text-[11px] tracking-[0.1em] uppercase font-bold font-[var(--font-inter)] text-[#002045]">
+        className="lg:hidden w-full mb-4 border border-[#e2e2e2] bg-white px-4 py-2.5 text-[11px] tracking-[0.1em] uppercase font-bold text-[#0B1F45]">
         {showPreview ? "Ocultar prévia" : "Ver como aparecerá no site"}
       </button>
       {showPreview && <div className="lg:hidden mb-6">{preview}</div>}
@@ -470,16 +470,16 @@ export default function ProjectEditor({ id }: { id: string }) {
                     )}
                   </select>
                   {showroom ? (
-                    <p className="text-[#74777f] text-[11px] font-[var(--font-inter)] mt-1.5">
+                    <p className="text-[#74777f] text-[11px] mt-1.5">
                       Aparece também na página de {showroom.name}{showroom.address ? ` · ${showroom.address}` : ""}.
                     </p>
                   ) : !isShowroom ? (
-                    <p className="text-[#a0a3a8] text-[11px] font-[var(--font-inter)] mt-1.5">
+                    <p className="text-[#a0a3a8] text-[11px] mt-1.5">
                       Opcional: o projeto continua na categoria escolhida e passa a aparecer também no lugar vinculado.
                     </p>
                   ) : null}
                   {showrooms.length === 0 && (
-                    <p className="text-amber-800 text-[11px] font-[var(--font-inter)] mt-1.5">
+                    <p className="text-amber-800 text-[11px] mt-1.5">
                       Nenhum showroom ou revenda cadastrado.{" "}
                       <Link href="/admin/projetos/organizacao" className="underline font-bold">Cadastrar agora</Link>
                     </p>
@@ -487,11 +487,11 @@ export default function ProjectEditor({ id }: { id: string }) {
                 </div>
               </div>
 
-              <div className="bg-[#f5f5f3] border border-[#e2e2e2] px-3.5 py-3">
-                <p className="text-[10px] tracking-[0.15em] uppercase font-bold font-[var(--font-inter)] text-[#74777f] mb-1">
+              <div className="bg-[#F6F5F2] border border-[#e2e2e2] px-3.5 py-3">
+                <p className="text-[10px] tracking-[0.15em] uppercase font-bold text-[#74777f] mb-1">
                   Este projeto aparecerá em
                 </p>
-                <p className="font-[var(--font-inter)] text-[#002045] text-sm break-words">{trail.join(" › ")}</p>
+                <p className="text-[#0B1F45] text-sm break-words">{trail.join(" › ")}</p>
               </div>
 
               {tags.length > 0 && (
@@ -503,28 +503,28 @@ export default function ProjectEditor({ id }: { id: string }) {
                       return (
                         <button key={t.id} type="button"
                           onClick={() => set({ tags: on ? (p.tags ?? []).filter((s) => s !== t.slug) : [...(p.tags ?? []), t.slug] })}
-                          className={`text-[11px] font-[var(--font-inter)] px-2.5 py-1 border transition-colors ${on ? "bg-[#002045] text-white border-[#002045]" : "bg-white text-[#43474e] border-[#e2e2e2] hover:border-[#002045]"}`}>
+                          className={`text-[11px] px-2.5 py-1 border transition-colors ${on ? "bg-[#0B1F45] text-white border-[#0B1F45]" : "bg-white text-[#43474e] border-[#e2e2e2] hover:border-[#0B1F45]"}`}>
                           {t.label}
                         </button>
                       );
                     })}
                   </div>
-                  <p className="text-[#a0a3a8] text-[11px] font-[var(--font-inter)] mt-1.5">
+                  <p className="text-[#a0a3a8] text-[11px] mt-1.5">
                     Descrevem o ambiente. Não mudam onde ele aparece.
                   </p>
                 </div>
               )}
 
               <div className="pt-1 space-y-2 border-t border-[#f0f0f0]">
-                <label className="flex items-center gap-2 text-[13px] font-[var(--font-inter)] text-[#43474e] cursor-pointer pt-3">
+                <label className="flex items-center gap-2 text-[13px] text-[#43474e] cursor-pointer pt-3">
                   <input type="checkbox" checked={!!p.is_featured} onChange={(e) => set({ is_featured: e.target.checked })} />
                   Destacar na página de Projetos
                 </label>
-                <label className="flex items-center gap-2 text-[13px] font-[var(--font-inter)] text-[#43474e] cursor-pointer">
+                <label className="flex items-center gap-2 text-[13px] text-[#43474e] cursor-pointer">
                   <input type="checkbox" checked={!!p.show_on_home} onChange={(e) => set({ show_on_home: e.target.checked })} />
                   Destacar na página inicial
                 </label>
-                <label className="flex items-center gap-2 text-[13px] font-[var(--font-inter)] text-[#43474e] cursor-pointer">
+                <label className="flex items-center gap-2 text-[13px] text-[#43474e] cursor-pointer">
                   <input type="checkbox" checked={!!p.is_new} onChange={(e) => set({ is_new: e.target.checked })} />
                   Marcar como &ldquo;Novo&rdquo; <span className="text-[11px] text-[#a0a3a8]">(selo verde no cartão do site)</span>
                 </label>
@@ -533,7 +533,7 @@ export default function ProjectEditor({ id }: { id: string }) {
                     <label className={labelCls}>Ordem do destaque</label>
                     <input type="number" value={p.feature_order ?? 0}
                       onChange={(e) => set({ feature_order: Number(e.target.value) || 0 })}
-                      className="border border-[#e2e2e2] px-3 py-2 text-sm font-[var(--font-inter)] text-[#002045] focus:outline-none focus:border-[#002045] w-28" />
+                      className="border border-[#e2e2e2] px-3 py-2 text-sm text-[#0B1F45] focus:outline-none focus:border-[#0B1F45] w-28" />
                   </div>
                 )}
               </div>
@@ -567,12 +567,12 @@ export default function ProjectEditor({ id }: { id: string }) {
                   <div className="flex gap-1.5">
                     {(["geral", "antes", "depois"] as MediaCat[]).map((c) => (
                       <button key={c} type="button" onClick={() => set({ cover_category: c })}
-                        className={`text-[11px] tracking-[0.06em] uppercase font-bold font-[var(--font-inter)] px-3 py-1.5 border transition-colors ${p.cover_category === c ? "bg-[#002045] text-white border-[#002045]" : "bg-white text-[#43474e] border-[#e2e2e2] hover:border-[#002045]"}`}>
+                        className={`text-[11px] tracking-[0.06em] uppercase font-bold px-3 py-1.5 border transition-colors ${p.cover_category === c ? "bg-[#0B1F45] text-white border-[#0B1F45]" : "bg-white text-[#43474e] border-[#e2e2e2] hover:border-[#0B1F45]"}`}>
                         {c}
                       </button>
                     ))}
                   </div>
-                  <p className="text-[#a0a3a8] text-[11px] font-[var(--font-inter)] mt-2 leading-snug">
+                  <p className="text-[#a0a3a8] text-[11px] mt-2 leading-snug">
                     É esta etiqueta que aparece no site e decide em qual filtro a capa entra.
                     Ser capa não muda a classificação de uma foto.
                   </p>
@@ -583,25 +583,25 @@ export default function ProjectEditor({ id }: { id: string }) {
               <div
                 onDragOver={(e) => e.preventDefault()}
                 onDrop={(e) => { e.preventDefault(); if (e.dataTransfer.files?.length) uploadFiles(e.dataTransfer.files); }}
-                className="border border-dashed border-[#d4d6da] bg-[#fafafa] px-4 py-6 text-center"
+                className="border border-dashed border-[#d4d6da] bg-[#F6F5F2] px-4 py-6 text-center"
               >
-                <p className="text-[#74777f] text-sm font-[var(--font-inter)]">
+                <p className="text-[#74777f] text-sm">
                   Arraste fotos e vídeos aqui, ou
                 </p>
                 <button type="button" onClick={() => fileRef.current?.click()}
-                  className="mt-2 bg-[#002045] text-white text-xs tracking-[0.12em] uppercase font-bold font-[var(--font-inter)] px-4 py-2.5 hover:bg-[#1a365d] transition-colors">
+                  className="mt-2 bg-[#0B1F45] text-white text-xs tracking-[0.12em] uppercase font-bold px-4 py-2.5 hover:bg-[#2347A0] transition-colors">
                   Escolher arquivos
                 </button>
                 <input ref={fileRef} type="file" multiple accept="image/*,video/*" className="hidden"
                   onChange={(e) => { if (e.target.files?.length) uploadFiles(e.target.files); e.target.value = ""; }} />
                 {savings.length > 0 && (
-                  <div className="mt-2 text-[11px] text-[#2f5429] font-[var(--font-inter)] space-y-0.5 break-words">
+                  <div className="mt-2 text-[11px] text-[#1F7A44] space-y-0.5 break-words">
                     <p className="font-semibold">Fotos otimizadas automaticamente:</p>
                     {savings.map((t, i) => <p key={i}>{t}</p>)}
                   </div>
                 )}
                 {uploading > 0 && (
-                  <p className="text-[#002045] text-xs font-[var(--font-inter)] mt-2">Enviando {uploading} arquivo(s)…</p>
+                  <p className="text-[#0B1F45] text-xs mt-2">Enviando {uploading} arquivo(s)…</p>
                 )}
               </div>
 
@@ -617,18 +617,18 @@ export default function ProjectEditor({ id }: { id: string }) {
                     className={inputCls}
                   />
                   <button type="button" onClick={addVideoUrl} disabled={!videoUrl.trim()}
-                    className="bg-[#002045] text-white text-xs tracking-[0.12em] uppercase font-bold font-[var(--font-inter)] px-4 py-2.5 hover:bg-[#1a365d] transition-colors disabled:opacity-40 whitespace-nowrap">
+                    className="bg-[#0B1F45] text-white text-xs tracking-[0.12em] uppercase font-bold px-4 py-2.5 hover:bg-[#2347A0] transition-colors disabled:opacity-40 whitespace-nowrap">
                     + Vídeo
                   </button>
                 </div>
-                <p className="text-[#a0a3a8] text-[11px] font-[var(--font-inter)] mt-1.5">
+                <p className="text-[#a0a3a8] text-[11px] mt-1.5">
                   Para vídeos longos, que não cabem como arquivo. No site a galeria abre o link numa aba nova.
                 </p>
               </div>
 
               {/* Galeria */}
               {sorted.length === 0 ? (
-                <p className="text-[#a0a3a8] text-sm font-[var(--font-inter)]">Nenhuma mídia ainda.</p>
+                <p className="text-[#a0a3a8] text-sm">Nenhuma mídia ainda.</p>
               ) : (
                 <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 gap-3">
                   {sorted.map((m) => (
@@ -636,7 +636,7 @@ export default function ProjectEditor({ id }: { id: string }) {
                       onDragStart={() => setDragId(m.id)}
                       onDragOver={(e) => e.preventDefault()}
                       onDrop={(e) => { e.preventDefault(); if (dragId && dragId !== m.id) reorder(dragId, m.id); setDragId(null); }}
-                      className={`border ${m.is_cover ? "border-[#002045]" : "border-[#e2e2e2]"} bg-white`}
+                      className={`border ${m.is_cover ? "border-[#0B1F45]" : "border-[#e2e2e2]"} bg-white`}
                     >
                       <div className="relative bg-[#f0f0f0]" style={{ aspectRatio: COVER_ASPECT }}>
                         {m.type === "video" ? (
@@ -655,24 +655,24 @@ export default function ProjectEditor({ id }: { id: string }) {
                           <img src={m.url} alt="" className="absolute inset-0 w-full h-full object-cover" />
                         )}
                         {m.is_cover && (
-                          <span className="absolute top-1 left-1 bg-[#002045] text-white text-[8px] tracking-[0.12em] uppercase font-bold px-1.5 py-0.5">Capa</span>
+                          <span className="absolute top-1 left-1 bg-[#0B1F45] text-white text-[8px] tracking-[0.12em] uppercase font-bold px-1.5 py-0.5">Capa</span>
                         )}
                       </div>
                       <div className="p-2 space-y-1.5">
                         <select value={m.category} onChange={(e) => patchMedia(m.id, { category: e.target.value as MediaCat })}
-                          className="w-full border border-[#e2e2e2] px-1.5 py-1 text-[11px] font-[var(--font-inter)] text-[#43474e] bg-white focus:outline-none focus:border-[#002045]">
+                          className="w-full border border-[#e2e2e2] px-1.5 py-1 text-[11px] text-[#43474e] bg-white focus:outline-none focus:border-[#0B1F45]">
                           <option value="geral">Geral</option>
                           <option value="antes">Antes</option>
                           <option value="depois">Depois</option>
                         </select>
                         {m.type === "image" && !m.is_cover && (
                           <button type="button" onClick={() => setAsCover(m)}
-                            className="w-full border border-[#e2e2e2] text-[#43474e] text-[10px] tracking-[0.06em] uppercase font-bold font-[var(--font-inter)] py-1 hover:border-[#002045] hover:text-[#002045] transition-colors">
+                            className="w-full border border-[#e2e2e2] text-[#43474e] text-[10px] tracking-[0.06em] uppercase font-bold py-1 hover:border-[#0B1F45] hover:text-[#0B1F45] transition-colors">
                             Definir capa
                           </button>
                         )}
                         <button type="button" onClick={() => removeMedia(m)}
-                          className="w-full border border-red-200 text-red-700 text-[10px] tracking-[0.06em] uppercase font-bold font-[var(--font-inter)] py-1 hover:bg-red-50 transition-colors">
+                          className="w-full border border-red-200 text-red-700 text-[10px] tracking-[0.06em] uppercase font-bold py-1 hover:bg-red-50 transition-colors">
                           Remover
                         </button>
                       </div>
@@ -680,7 +680,7 @@ export default function ProjectEditor({ id }: { id: string }) {
                   ))}
                 </div>
               )}
-              <p className="text-[#a0a3a8] text-[11px] font-[var(--font-inter)]">
+              <p className="text-[#a0a3a8] text-[11px]">
                 Arraste as miniaturas para reordenar.
               </p>
             </div>
@@ -693,31 +693,31 @@ export default function ProjectEditor({ id }: { id: string }) {
             </div>
             <div className="p-4 sm:p-5">
               {blocked ? (
-                <p className="text-amber-800 text-[13px] font-[var(--font-inter)] mb-3">
+                <p className="text-amber-800 text-[13px] mb-3">
                   Falta para publicar: {blocked}
                 </p>
               ) : (
-                <p className="text-[#2c5226] text-[13px] font-[var(--font-inter)] mb-3">
+                <p className="text-[#1F7A44] text-[13px] mb-3">
                   Tudo pronto — este projeto pode ir ao ar.
                 </p>
               )}
               <div className="flex flex-wrap gap-2">
                 <button type="button" disabled={!!blocked}
                   onClick={() => { set({ is_active: true }); router.push("/admin/projetos"); }}
-                  className="bg-[#002045] text-white text-xs tracking-[0.12em] uppercase font-bold font-[var(--font-inter)] px-4 py-2.5 hover:bg-[#1a365d] transition-colors disabled:opacity-40">
+                  className="bg-[#0B1F45] text-white text-xs tracking-[0.12em] uppercase font-bold px-4 py-2.5 hover:bg-[#2347A0] transition-colors disabled:opacity-40">
                   {p.is_active ? "Manter publicado" : "Publicar projeto"}
                 </button>
                 <button type="button"
                   onClick={() => { set({ is_active: false }); router.push("/admin/projetos"); }}
-                  className="border border-[#002045] text-[#002045] text-xs tracking-[0.12em] uppercase font-bold font-[var(--font-inter)] px-4 py-2.5 hover:bg-[#002045] hover:text-white transition-colors">
+                  className="border border-[#0B1F45] text-[#0B1F45] text-xs tracking-[0.12em] uppercase font-bold px-4 py-2.5 hover:bg-[#0B1F45] hover:text-white transition-colors">
                   Salvar como rascunho
                 </button>
                 <Link href="/admin/projetos"
-                  className="border border-[#e2e2e2] text-[#43474e] text-xs tracking-[0.12em] uppercase font-bold font-[var(--font-inter)] px-4 py-2.5 hover:border-[#002045] hover:text-[#002045] transition-colors">
+                  className="border border-[#e2e2e2] text-[#43474e] text-xs tracking-[0.12em] uppercase font-bold px-4 py-2.5 hover:border-[#0B1F45] hover:text-[#0B1F45] transition-colors">
                   Cancelar
                 </Link>
               </div>
-              <p className="text-[#a0a3a8] text-[11px] font-[var(--font-inter)] mt-3">
+              <p className="text-[#a0a3a8] text-[11px] mt-3">
                 Suas alterações são gravadas sozinhas enquanto você edita — &ldquo;Cancelar&rdquo; volta para a lista, não desfaz.
               </p>
             </div>

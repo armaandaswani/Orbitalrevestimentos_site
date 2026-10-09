@@ -44,7 +44,7 @@ const articleSchema = {
   publisher: {
     "@type": "Organization",
     name: "Orbital Revestimentos",
-    logo: { "@type": "ImageObject", url: `${BASE_URL}/images/logo.png` },
+    logo: { "@type": "ImageObject", url: `${BASE_URL}/images/brand/orbital-simbolo.png` },
   },
   datePublished: "2026-01-01",
   dateModified: "2026-06-01",
@@ -140,37 +140,37 @@ export default function GuiaBanheiroManaus() {
             className="object-cover object-center"
             priority
           />
-          <div className="absolute inset-0 bg-gradient-to-t from-[#001530]/95 via-[#001530]/55 to-[#001530]/10" />
+          <div className="absolute inset-0 bg-gradient-to-t from-[#0B1F45]/95 via-[#0B1F45]/55 to-[#0B1F45]/10" />
         </div>
         <div className="relative z-10 w-full max-w-[1280px] mx-auto px-6 lg:px-16 pb-14 lg:pb-24">
-          <nav className="text-[#86a0cd] text-xs font-[var(--font-inter)] mb-6 flex items-center gap-2">
+          <nav className="text-[#B4BBC8] text-xs mb-6 flex items-center gap-2">
             <Link href="/" className="hover:text-white transition-colors">Home</Link>
             <span>/</span>
             <span className="text-white/60">Guias</span>
             <span>/</span>
             <span className="text-white">Revestimento para Banheiro em Manaus</span>
           </nav>
-          <p className="text-[#a1d494] text-xs tracking-[0.2em] uppercase font-semibold font-[var(--font-inter)] mb-4">
+          <p className="text-[#36A35C] text-xs tracking-[0.2em] uppercase font-semibold mb-4">
             Orbital Revestimentos · Guia Técnico · Manaus
           </p>
-          <h1 className="font-[var(--font-noto-serif)] text-white text-4xl sm:text-5xl lg:text-6xl font-normal leading-tight tracking-[-0.02em] mb-6 max-w-3xl">
+          <h1 className="font-serif text-white text-4xl sm:text-5xl lg:text-6xl font-normal leading-tight tracking-[-0.02em] mb-6 max-w-3xl">
             Revestimento para Banheiro em Manaus:<br />
             <em>O Que Realmente Funciona</em>
           </h1>
-          <p className="text-white/70 text-base lg:text-lg font-[var(--font-inter)] leading-relaxed max-w-2xl">
+          <p className="text-white/70 text-base lg:text-lg leading-relaxed max-w-2xl">
             Banheiro úmido, clima quente, umidade acima de 80% o ano todo. A maioria dos materiais deteriora em 1–3 anos. Veja o que funciona de verdade.
           </p>
         </div>
       </section>
 
       {/* ── Stats bar ── */}
-      <section className="bg-[#002045] border-b border-[#1a365d]">
+      <section className="bg-[#0B1F45] border-b border-[#2347A0]">
         <div className="max-w-[1280px] mx-auto px-6 lg:px-16 py-6">
           <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
             {stats.map(({ value, label }) => (
               <div key={label} className="flex flex-col items-center text-center py-3">
-                <AnimatedStat value={value} className="text-white font-[var(--font-noto-serif)] text-2xl font-normal mb-0.5" />
-                <span className="text-[#86a0cd] text-[10px] tracking-[0.15em] uppercase font-semibold font-[var(--font-inter)]">{label}</span>
+                <AnimatedStat value={value} className="text-white font-serif text-2xl font-normal mb-0.5" />
+                <span className="text-[#B4BBC8] text-[10px] tracking-[0.15em] uppercase font-semibold">{label}</span>
               </div>
             ))}
           </div>
@@ -180,13 +180,13 @@ export default function GuiaBanheiroManaus() {
       {/* ── Desafio do banheiro em Manaus ── */}
       <section className="overflow-hidden bg-white">
         <div className="flex flex-col lg:flex-row min-h-[520px]">
-          <div className="lg:w-1/2 bg-[#002045] px-6 lg:px-16 py-16 lg:py-28 flex items-center">
+          <div className="lg:w-1/2 bg-[#0B1F45] px-6 lg:px-16 py-16 lg:py-28 flex items-center">
             <ScrollReveal className="max-w-lg">
-              <p className="text-[#86a0cd] text-xs tracking-[0.2em] uppercase font-semibold font-[var(--font-inter)] mb-5">O desafio amazônico</p>
-              <h2 className="font-[var(--font-noto-serif)] text-white text-3xl lg:text-4xl font-normal leading-tight mb-6">
+              <p className="text-[#B4BBC8] text-xs tracking-[0.2em] uppercase font-semibold mb-5">O desafio amazônico</p>
+              <h2 className="font-serif text-white text-3xl lg:text-4xl font-normal leading-tight mb-6">
                 Por que o banheiro em Manaus é o ambiente mais difícil.
               </h2>
-              <p className="text-white/65 font-[var(--font-inter)] leading-relaxed mb-6">
+              <p className="text-white/65 leading-relaxed mb-6">
                 Manaus tem umidade relativa acima de 80% o ano inteiro. Em um banheiro — com vapor constante, água no box e temperatura elevada — qualquer material poroso ou sensível à umidade vai deteriorar muito mais rápido do que em outras cidades.
               </p>
               <ul className="space-y-3">
@@ -196,7 +196,7 @@ export default function GuiaBanheiroManaus() {
                   "Rejunte de cerâmica acumula mofo mesmo com limpeza",
                   "Forro PVC amarela e não aceita repintura",
                 ].map(item => (
-                  <li key={item} className="flex items-center gap-3 text-white/55 font-[var(--font-inter)] text-sm">
+                  <li key={item} className="flex items-center gap-3 text-white/55 text-sm">
                     <span className="text-red-400 font-bold flex-shrink-0">✗</span>{item}
                   </li>
                 ))}
@@ -215,11 +215,11 @@ export default function GuiaBanheiroManaus() {
       </section>
 
       {/* ── Antes e Depois ── */}
-      <section className="bg-[#f5f5f3] py-20 lg:py-28">
+      <section className="bg-[#F6F5F2] py-20 lg:py-28">
         <div className="max-w-[1280px] mx-auto px-6 lg:px-16">
           <ScrollReveal>
-            <p className="text-[#3b6934] text-xs tracking-[0.2em] uppercase font-semibold font-[var(--font-inter)] mb-3">Transformação real</p>
-            <h2 className="font-[var(--font-noto-serif)] text-[#002045] text-3xl lg:text-4xl font-normal leading-tight mb-12 max-w-2xl">
+            <p className="text-[#2347A0] text-xs tracking-[0.2em] uppercase font-semibold mb-3">Transformação real</p>
+            <h2 className="font-serif text-[#0B1F45] text-3xl lg:text-4xl font-normal leading-tight mb-12 max-w-2xl">
               Lavabos e banheiros revestidos com PFB Orbital em Manaus.
             </h2>
           </ScrollReveal>
@@ -235,8 +235,8 @@ export default function GuiaBanheiroManaus() {
                   <Image src={item.after} alt={item.label} fill className="object-cover object-top transition-transform duration-700 hover:scale-105" />
                 </div>
                 <div className="bg-white p-4">
-                  <p className="text-[#002045] font-semibold font-[var(--font-inter)] text-sm">{item.label}</p>
-                  <p className="text-[#74777f] font-[var(--font-inter)] text-xs mt-1">Instalado em Manaus · sem obra</p>
+                  <p className="text-[#0B1F45] font-semibold text-sm">{item.label}</p>
+                  <p className="text-[#74777f] text-xs mt-1">Instalado em Manaus · sem obra</p>
                 </div>
               </ScrollReveal>
             ))}
@@ -255,13 +255,13 @@ export default function GuiaBanheiroManaus() {
               className="object-cover"
             />
           </div>
-          <div className="lg:w-1/2 bg-[#f9f9f7] px-6 lg:px-16 py-16 lg:py-28 flex items-center">
+          <div className="lg:w-1/2 bg-[#F6F5F2] px-6 lg:px-16 py-16 lg:py-28 flex items-center">
             <ScrollReveal className="max-w-lg">
-              <p className="text-[#3b6934] text-xs tracking-[0.2em] uppercase font-semibold font-[var(--font-inter)] mb-5">PFB Orbital</p>
-              <h2 className="font-[var(--font-noto-serif)] text-[#002045] text-3xl lg:text-4xl font-normal leading-tight mb-6">
+              <p className="text-[#2347A0] text-xs tracking-[0.2em] uppercase font-semibold mb-5">PFB Orbital</p>
+              <h2 className="font-serif text-[#0B1F45] text-3xl lg:text-4xl font-normal leading-tight mb-6">
                 Aprovado para áreas úmidas pelo INMETRO.
               </h2>
-              <p className="text-[#43474e] font-[var(--font-inter)] leading-relaxed mb-8">
+              <p className="text-[#43474e] leading-relaxed mb-8">
                 O PFB foi testado em imersão total por 48 horas. Resultado: absorção de apenas <strong>0,2%</strong> — 175× menos que o MDF. A estrutura de bambu comprimido não oferece substrato para crescimento de mofo.
               </p>
               <ul className="space-y-4">
@@ -273,17 +273,17 @@ export default function GuiaBanheiroManaus() {
                   { t: "Laudo técnico", d: "ART nº AM20260593657 — Eng. Civil CREA registrado" },
                 ].map(item => (
                   <li key={item.t} className="flex items-start gap-3">
-                    <span className="text-[#3b6934] font-bold flex-shrink-0 mt-0.5">✓</span>
-                    <div className="font-[var(--font-inter)] text-sm">
-                      <strong className="text-[#002045]">{item.t}</strong>
+                    <span className="text-[#1F7A44] font-bold flex-shrink-0 mt-0.5">✓</span>
+                    <div className="text-sm">
+                      <strong className="text-[#0B1F45]">{item.t}</strong>
                       <span className="text-[#74777f]"> — {item.d}</span>
                     </div>
                   </li>
                 ))}
               </ul>
               <div className="mt-8 flex flex-col sm:flex-row gap-3">
-                <ContatoCta className="bg-[#002045] text-white text-xs tracking-[0.1em] uppercase font-bold font-[var(--font-inter)] px-7 py-3.5 hover:bg-[#1a365d] transition-colors text-center">Falar com um consultor</ContatoCta>
-                <Link href="/produtos" className="border border-[#002045] text-[#002045] text-xs tracking-[0.1em] uppercase font-bold font-[var(--font-inter)] px-7 py-3.5 hover:bg-[#002045] hover:text-white transition-colors text-center">Ver Acabamentos</Link>
+                <ContatoCta className="bg-[#0B1F45] text-white text-xs tracking-[0.1em] uppercase font-bold px-7 py-3.5 hover:bg-[#2347A0] transition-colors text-center">Falar com um consultor</ContatoCta>
+                <Link href="/produtos" className="border border-[#0B1F45] text-[#0B1F45] text-xs tracking-[0.1em] uppercase font-bold px-7 py-3.5 hover:bg-[#0B1F45] hover:text-white transition-colors text-center">Ver Acabamentos</Link>
               </div>
             </ScrollReveal>
           </div>
@@ -291,19 +291,19 @@ export default function GuiaBanheiroManaus() {
       </section>
 
       {/* ── Comparativo ── */}
-      <section className="bg-[#f5f5f3] py-20 lg:py-28">
+      <section className="bg-[#F6F5F2] py-20 lg:py-28">
         <div className="max-w-[1280px] mx-auto px-6 lg:px-16">
           <ScrollReveal>
-            <p className="text-[#3b6934] text-xs tracking-[0.2em] uppercase font-semibold font-[var(--font-inter)] mb-3">Comparativo técnico</p>
-            <h2 className="font-[var(--font-noto-serif)] text-[#002045] text-3xl lg:text-4xl font-normal leading-tight mb-10 max-w-2xl">
+            <p className="text-[#2347A0] text-xs tracking-[0.2em] uppercase font-semibold mb-3">Comparativo técnico</p>
+            <h2 className="font-serif text-[#0B1F45] text-3xl lg:text-4xl font-normal leading-tight mb-10 max-w-2xl">
               Materiais para banheiro em Manaus: qual aguenta o clima?
             </h2>
           </ScrollReveal>
           <ScrollReveal delay={100}>
             <div className="overflow-x-auto">
-              <table className="w-full text-sm font-[var(--font-inter)] border-collapse bg-white">
+              <table className="w-full text-sm border-collapse bg-white">
                 <thead>
-                  <tr className="bg-[#002045] text-white">
+                  <tr className="bg-[#0B1F45] text-white">
                     <th className="px-4 py-3 text-left font-semibold">Material</th>
                     <th className="px-4 py-3 text-center font-semibold">Absorção</th>
                     <th className="px-4 py-3 text-center font-semibold">Durabilidade</th>
@@ -315,8 +315,8 @@ export default function GuiaBanheiroManaus() {
                 <tbody>
                   {comparativo.map((row) => (
                     <tr key={row.material} className={row.destaque ? "bg-[#f0f6ee]" : "border-b border-[#f0f0f0]"}>
-                      <td className="px-4 py-3 font-semibold text-[#002045]">
-                        {row.destaque && <span className="text-[#3b6934] mr-1">★</span>}
+                      <td className="px-4 py-3 font-semibold text-[#0B1F45]">
+                        {row.destaque && <span className="text-[#1F7A44] mr-1">★</span>}
                         {row.material}
                       </td>
                       <td className="px-4 py-3 text-center text-[#43474e]">{row.umidade}</td>
@@ -328,18 +328,18 @@ export default function GuiaBanheiroManaus() {
                   ))}
                 </tbody>
               </table>
-              <p className="text-[#74777f] text-xs font-[var(--font-inter)] mt-2">* Azulejo impermeável, mas rejunte acumula mofo sem manutenção periódica.</p>
+              <p className="text-[#74777f] text-xs mt-2">* Azulejo impermeável, mas rejunte acumula mofo sem manutenção periódica.</p>
             </div>
           </ScrollReveal>
         </div>
       </section>
 
       {/* ── FAQ ── */}
-      <section className="bg-[#002045] py-20 lg:py-28">
+      <section className="bg-[#0B1F45] py-20 lg:py-28">
         <div className="max-w-[1280px] mx-auto px-6 lg:px-16">
           <ScrollReveal>
-            <p className="text-[#a1d494] text-xs tracking-[0.2em] uppercase font-semibold font-[var(--font-inter)] mb-3">Perguntas frequentes</p>
-            <h2 className="font-[var(--font-noto-serif)] text-white text-3xl lg:text-4xl font-normal leading-tight mb-12 max-w-2xl">
+            <p className="text-[#36A35C] text-xs tracking-[0.2em] uppercase font-semibold mb-3">Perguntas frequentes</p>
+            <h2 className="font-serif text-white text-3xl lg:text-4xl font-normal leading-tight mb-12 max-w-2xl">
               Tudo sobre revestimento para banheiro em Manaus.
             </h2>
           </ScrollReveal>
@@ -347,8 +347,8 @@ export default function GuiaBanheiroManaus() {
             {faqs.map((faq, i) => (
               <ScrollReveal key={faq.q} delay={i * 60}>
                 <div className="border border-white/10 p-6 h-full">
-                  <h3 className="font-semibold text-white font-[var(--font-inter)] mb-3 text-sm">{faq.q}</h3>
-                  <p className="text-white/55 font-[var(--font-inter)] text-sm leading-relaxed">{faq.a}</p>
+                  <h3 className="font-semibold text-white mb-3 text-sm">{faq.q}</h3>
+                  <p className="text-white/55 text-sm leading-relaxed">{faq.a}</p>
                 </div>
               </ScrollReveal>
             ))}
@@ -359,16 +359,16 @@ export default function GuiaBanheiroManaus() {
       {/* ── Guias relacionados ── */}
       <section className="bg-white py-16 lg:py-20">
         <div className="max-w-[1280px] mx-auto px-6 lg:px-16">
-          <h3 className="font-[var(--font-noto-serif)] text-[#002045] text-xl font-normal mb-8">Leia também</h3>
+          <h3 className="font-serif text-[#0B1F45] text-xl font-normal mb-8">Leia também</h3>
           <div className="grid grid-cols-1 sm:grid-cols-3 gap-0 border border-[#e2e2e2]">
             {[
               { href: "/guias/mdf-manaus", label: "Por que o MDF não dura em Manaus", tag: "Guia técnico" },
               { href: "/guias/revestimento-parede-manaus", label: "Revestimento de parede em Manaus: guia completo", tag: "Guia" },
               { href: "/guias/quanto-custa-revestimento-manaus", label: "Quanto custa revestir em Manaus", tag: "Preços 2026" },
             ].map((link, i) => (
-              <Link key={link.href} href={link.href} className={`p-6 hover:bg-[#f5f5f3] transition-colors ${i < 2 ? "border-b sm:border-b-0 sm:border-r border-[#e2e2e2]" : ""}`}>
-                <p className="text-[#74777f] text-[10px] uppercase tracking-wider font-[var(--font-inter)] mb-2">{link.tag}</p>
-                <p className="text-[#002045] font-semibold font-[var(--font-inter)] text-sm leading-snug">{link.label} →</p>
+              <Link key={link.href} href={link.href} className={`p-6 hover:bg-[#EFEDE8] transition-colors ${i < 2 ? "border-b sm:border-b-0 sm:border-r border-[#e2e2e2]" : ""}`}>
+                <p className="text-[#74777f] text-[10px] uppercase tracking-wider mb-2">{link.tag}</p>
+                <p className="text-[#0B1F45] font-semibold text-sm leading-snug">{link.label} →</p>
               </Link>
             ))}
           </div>
@@ -379,20 +379,20 @@ export default function GuiaBanheiroManaus() {
       <section className="relative overflow-hidden">
         <div className="absolute inset-0">
           <Image src="/images/catalogue/aplicacao-sala.jpeg" alt="Ambiente revestido com PFB Orbital em Manaus" fill className="object-cover" />
-          <div className="absolute inset-0 bg-[#001530]/85" />
+          <div className="absolute inset-0 bg-[#0B1F45]/85" />
         </div>
         <div className="relative z-10 max-w-[1280px] mx-auto px-6 lg:px-16 py-24 lg:py-32 flex flex-col lg:flex-row items-start lg:items-center justify-between gap-8">
           <div className="max-w-xl">
-            <h2 className="font-[var(--font-noto-serif)] text-white text-3xl lg:text-5xl font-normal leading-tight mb-4">
+            <h2 className="font-serif text-white text-3xl lg:text-5xl font-normal leading-tight mb-4">
               Receba o orçamento do seu banheiro.
             </h2>
-            <p className="text-white/60 font-[var(--font-inter)]">
+            <p className="text-white/60">
               Fale com um consultor da Orbital pelo WhatsApp e receba o orçamento completo — material e instalação.
             </p>
           </div>
           <div className="flex flex-col sm:flex-row gap-3 flex-shrink-0">
-            <ContatoCta className="bg-white text-[#002045] text-xs tracking-[0.12em] uppercase font-bold font-[var(--font-inter)] px-10 py-4 hover:bg-[#f3f3f3] transition-colors text-center">Falar com um consultor</ContatoCta>
-            <Link href="/produtos" className="border border-white/50 text-white text-xs tracking-[0.12em] uppercase font-bold font-[var(--font-inter)] px-10 py-4 hover:bg-white/10 transition-colors text-center">Ver acabamentos</Link>
+            <ContatoCta className="bg-white text-[#0B1F45] text-xs tracking-[0.12em] uppercase font-bold px-10 py-4 hover:bg-[#f3f3f3] transition-colors text-center">Falar com um consultor</ContatoCta>
+            <Link href="/produtos" className="border border-white/50 text-white text-xs tracking-[0.12em] uppercase font-bold px-10 py-4 hover:bg-white/10 transition-colors text-center">Ver acabamentos</Link>
           </div>
         </div>
       </section>

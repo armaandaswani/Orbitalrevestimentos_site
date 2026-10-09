@@ -52,7 +52,7 @@ export const VIZ_SPACES: { id: string; label: string }[] = [
   { id: "box", label: "Box / Ducha" },
 ];
 
-const ZONE_COLORS = ["#3b6934", "#b4791e", "#1e5fb4", "#a83279", "#2a9d8f", "#9b2226"];
+const ZONE_COLORS = ["#36A35C", "#b4791e", "#2F5FD0", "#a83279", "#2a9d8f", "#9b2226"];
 
 // ── Render engine ────────────────────────────────────────────────────────────
 // PRODUCTION path = Gemini generative "apply the panel" (see /api/visualizador/
@@ -1971,16 +1971,16 @@ export default function VisualizadorWizard({
         {/* Standalone: falar com um consultor (orçamento instantâneo escondido) */}
         {!ORCAMENTO_INSTANTANEO_VISIVEL && !embeddedMode && allAmbientes.length > 0 && (step === "result" || savedAmbientes.length > 0) && (
           <div className="mt-10 border border-[#e2e2e2] rounded-sm p-5 sm:p-6 bg-[#fbfbfa]">
-            <p className="text-[10px] tracking-[0.18em] uppercase font-bold font-[var(--font-inter)] text-[#002045] mb-1">
+            <p className="text-[10px] tracking-[0.18em] uppercase font-bold text-[#0B1F45] mb-1">
               Gostou do resultado?
             </p>
-            <p className="text-[#74777f] text-xs font-[var(--font-inter)] mb-4">
+            <p className="text-[#74777f] text-xs mb-4">
               Fale com um consultor da Orbital. Ele já recebe os acabamentos que você escolheu.
             </p>
             <button
               type="button"
               onClick={falarComConsultor}
-              className="w-full sm:w-auto inline-flex items-center justify-center gap-2 bg-[#002045] text-white text-xs tracking-[0.12em] uppercase font-bold font-[var(--font-inter)] px-7 py-3.5 hover:bg-[#1a365d] transition-colors"
+              className="w-full sm:w-auto inline-flex items-center justify-center gap-2 bg-[#0B1F45] text-white text-xs tracking-[0.12em] uppercase font-bold px-7 py-3.5 hover:bg-[#2347A0] transition-colors"
             >
               Falar com um consultor
             </button>
@@ -1990,10 +1990,10 @@ export default function VisualizadorWizard({
         {/* Standalone: continue to simulador panel (escondido pelo pivô — ver ORCAMENTO_INSTANTANEO_VISIVEL) */}
         {ORCAMENTO_INSTANTANEO_VISIVEL && !embeddedMode && allAmbientes.length > 0 && (step === "result" || savedAmbientes.length > 0) && (
           <div className="mt-10 border border-[#e2e2e2] rounded-sm p-5 sm:p-6 bg-[#fbfbfa]">
-            <p className="text-[10px] tracking-[0.18em] uppercase font-bold font-[var(--font-inter)] text-[#002045] mb-1">
+            <p className="text-[10px] tracking-[0.18em] uppercase font-bold text-[#0B1F45] mb-1">
               Continuar para o orçamento
             </p>
-            <p className="text-[#74777f] text-xs font-[var(--font-inter)] mb-4">
+            <p className="text-[#74777f] text-xs mb-4">
               {allAmbientes.length} {allAmbientes.length === 1 ? "área" : "áreas"} pronta{allAmbientes.length === 1 ? "" : "s"} para o orçamento.
             </p>
             <div className="flex flex-col sm:flex-row sm:items-center gap-3">
@@ -2002,7 +2002,7 @@ export default function VisualizadorWizard({
                   type="button"
                   onClick={goToSimulador}
                   disabled={proceeding}
-                  className="inline-flex items-center justify-center gap-2 bg-[#002045] text-white text-xs tracking-[0.12em] uppercase font-bold font-[var(--font-inter)] px-7 py-3.5 hover:bg-[#1a365d] transition-colors disabled:opacity-70 disabled:cursor-wait"
+                  className="inline-flex items-center justify-center gap-2 bg-[#0B1F45] text-white text-xs tracking-[0.12em] uppercase font-bold px-7 py-3.5 hover:bg-[#2347A0] transition-colors disabled:opacity-70 disabled:cursor-wait"
                 >
                   <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
                     <rect x="4" y="2" width="16" height="20" rx="2" /><path d="M8 6h8M8 10h8M8 14h4" />
@@ -2010,11 +2010,11 @@ export default function VisualizadorWizard({
                   {proceeding ? "Preparando…" : "Simular orçamento"}
                 </button>
               ) : (
-                <span className="inline-flex items-center justify-center gap-2 bg-[#e8e8e6] text-[#a0a3a9] text-xs tracking-[0.12em] uppercase font-bold font-[var(--font-inter)] px-7 py-3.5 cursor-not-allowed">
+                <span className="inline-flex items-center justify-center gap-2 bg-[#e8e8e6] text-[#a0a3a9] text-xs tracking-[0.12em] uppercase font-bold px-7 py-3.5 cursor-not-allowed">
                   Simular orçamento
                 </span>
               )}
-              <p className="text-[#74777f] text-xs font-[var(--font-inter)] leading-relaxed">
+              <p className="text-[#74777f] text-xs leading-relaxed">
                 {!leadSubmitted
                   ? "Visualize o resultado para continuar."
                   : quoteReady
@@ -2041,15 +2041,15 @@ function WizStepper({ activeIndex }: { activeIndex: number }) {
         return (
           <li key={s.n} className="flex items-center gap-1.5 sm:gap-3 flex-1 last:flex-none min-w-0">
             <div className="flex items-center gap-2 min-w-0">
-              <span className={`flex-shrink-0 w-7 h-7 rounded-full text-xs font-bold font-[var(--font-inter)] flex items-center justify-center ${active ? "bg-[#002045] text-white" : done ? "bg-[#3b6934] text-white" : "bg-[#e8e8e6] text-[#a0a3a9]"}`}>
+              <span className={`flex-shrink-0 w-7 h-7 rounded-full text-xs font-bold flex items-center justify-center ${active ? "bg-[#0B1F45] text-[#0B1F45]" : done ? "bg-[#36A35C] text-[#0B1F45]" : "bg-[#e8e8e6] text-[#a0a3a9]"}`}>
                 {done ? "✓" : s.n}
               </span>
               {/* On mobile only the current step's label shows — keeps 5 steps on one row */}
-              <span className={`text-[11px] sm:text-xs font-[var(--font-inter)] truncate ${active ? "text-[#002045] font-bold inline" : "text-[#74777f] hidden sm:inline"}`}>
+              <span className={`text-[11px] sm:text-xs truncate ${active ? "text-[#0B1F45] font-bold inline" : "text-[#74777f] hidden sm:inline"}`}>
                 {s.label}
               </span>
             </div>
-            {i < STEP_LABELS.length - 1 && <span className={`hidden sm:block flex-1 h-[2px] ${done ? "bg-[#3b6934]" : "bg-[#e8e8e6]"}`} />}
+            {i < STEP_LABELS.length - 1 && <span className={`hidden sm:block flex-1 h-[2px] ${done ? "bg-[#36A35C]" : "bg-[#e8e8e6]"}`} />}
           </li>
         );
       })}
@@ -2094,26 +2094,26 @@ function UploadStep({
           onDragOver={(e) => { e.preventDefault(); setDragOver(true); }}
           onDragLeave={() => setDragOver(false)}
           onDrop={(e) => { e.preventDefault(); setDragOver(false); handleFile(e.dataTransfer.files?.[0]); }}
-          className={`cursor-pointer border-2 border-dashed rounded-sm flex flex-col items-center justify-center text-center px-6 py-20 transition-colors ${dragOver ? "border-[#3b6934] bg-[#f3f8f1]" : "border-[#cdd3dd] bg-[#f9f9f7] hover:border-[#002045]"}`}
+          className={`cursor-pointer border-2 border-dashed rounded-sm flex flex-col items-center justify-center text-center px-6 py-20 transition-colors ${dragOver ? "border-[#36A35C] bg-[#f3f8f1]" : "border-[#cdd3dd] bg-[#F6F5F2] hover:border-[#0B1F45]"}`}
         >
-          <svg width="46" height="46" viewBox="0 0 24 24" fill="none" stroke="#002045" strokeWidth="1.3" className="mb-4">
+          <svg width="46" height="46" viewBox="0 0 24 24" fill="none" stroke="#0B1F45" strokeWidth="1.3" className="mb-4">
             <path d="M21 15v4a2 2 0 01-2 2H5a2 2 0 01-2-2v-4" />
             <path d="M17 8l-5-5-5 5" />
             <path d="M12 3v12" />
           </svg>
-          <p className="font-[var(--font-noto-serif)] text-[#002045] text-xl mb-1">
+          <p className="font-serif text-[#0B1F45] text-xl mb-1">
             {hasBanked ? "Envie a foto do próximo ambiente" : "Envie uma foto do seu ambiente"}
           </p>
-          <p className="text-[#74777f] text-sm font-[var(--font-inter)]">Clique para escolher ou arraste a imagem aqui</p>
-          <p className="text-[#a0a3a9] text-xs font-[var(--font-inter)] mt-3">JPG ou PNG · foto de frente e bem iluminada funciona melhor</p>
+          <p className="text-[#74777f] text-sm">Clique para escolher ou arraste a imagem aqui</p>
+          <p className="text-[#a0a3a9] text-xs mt-3">JPG ou PNG · foto de frente e bem iluminada funciona melhor</p>
         </div>
-        {error && <p className="mt-3 text-sm text-[#b42318] font-[var(--font-inter)]">{error}</p>}
+        {error && <p className="mt-3 text-sm text-[#b42318]">{error}</p>}
         {simBanner && (
           <div className="mt-4 border border-[#bcd0e8] bg-[#f5f8fc] px-4 py-3">
-            <p className="text-[10px] tracking-[0.15em] uppercase font-bold font-[var(--font-inter)] text-[#002045] mb-0.5">
+            <p className="text-[10px] tracking-[0.15em] uppercase font-bold text-[#0B1F45] mb-0.5">
               {embeddedMode ? "Produto selecionado" : "Vindo do Simulador"}
             </p>
-            <p className="text-[#43474e] text-sm font-[var(--font-inter)]">
+            <p className="text-[#43474e] text-sm">
               {simBanner}.{" "}
               {(simPrefills?.length ?? 0) > 1
                 ? "Os modelos serão pré-selecionados conforme você adiciona as áreas."
@@ -2127,7 +2127,7 @@ function UploadStep({
           <div className="mt-6 flex justify-end">
             <button
               onClick={onSkip}
-              className="flex items-center gap-1.5 text-xs tracking-[0.1em] uppercase font-semibold font-[var(--font-inter)] text-[#74777f] hover:text-[#002045] transition-colors"
+              className="flex items-center gap-1.5 text-xs tracking-[0.1em] uppercase font-semibold text-[#74777f] hover:text-[#0B1F45] transition-colors"
             >
               Pular esta etapa
               <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5">
@@ -2139,7 +2139,7 @@ function UploadStep({
       </div>
 
       <div>
-        <p className="text-[10px] tracking-[0.18em] uppercase font-bold font-[var(--font-inter)] text-[#3b6934] mb-4">Como funciona</p>
+        <p className="text-[10px] tracking-[0.18em] uppercase font-bold text-[#2347A0] mb-4">Como funciona</p>
         <ol className="space-y-5">
           {[
             { n: "1", t: "Envie a foto", d: "Use uma foto bem iluminada e de frente para o ambiente." },
@@ -2147,10 +2147,10 @@ function UploadStep({
             { n: "3", t: "Gere e veja", d: embeddedMode ? "A IA aplica cada modelo na sua área — resultado em segundos." : "A IA aplica cada modelo na sua área — e tudo vai pronto para o orçamento." },
           ].map((s) => (
             <li key={s.n} className="flex gap-4">
-              <span className="flex-shrink-0 w-8 h-8 rounded-full bg-[#002045] text-white text-sm font-bold font-[var(--font-inter)] flex items-center justify-center">{s.n}</span>
+              <span className="flex-shrink-0 w-8 h-8 rounded-full bg-[#0B1F45] text-white text-sm font-bold flex items-center justify-center">{s.n}</span>
               <div>
-                <p className="font-[var(--font-inter)] font-semibold text-[#002045] text-sm">{s.t}</p>
-                <p className="font-[var(--font-inter)] text-[#74777f] text-sm leading-relaxed">{s.d}</p>
+                <p className="font-semibold text-[#0B1F45] text-sm">{s.t}</p>
+                <p className="text-[#74777f] text-sm leading-relaxed">{s.d}</p>
               </div>
             </li>
           ))}
@@ -2203,8 +2203,8 @@ function ZonesStep({
 }) {
   const [mode, setMode] = useState<ZoneMode>("tap");
 
-  const backBtn = "inline-flex items-center gap-2 border border-[#e2e2e2] text-[#43474e] text-xs tracking-[0.12em] uppercase font-bold font-[var(--font-inter)] px-5 py-3 hover:border-[#002045] transition-colors";
-  const nextBtn = "flex-1 min-w-[180px] inline-flex items-center justify-center gap-2 text-white text-xs tracking-[0.12em] uppercase font-bold font-[var(--font-inter)] px-6 py-3.5 transition-colors disabled:opacity-50 disabled:cursor-not-allowed";
+  const backBtn = "inline-flex items-center gap-2 border border-[#e2e2e2] text-[#43474e] text-xs tracking-[0.12em] uppercase font-bold px-5 py-3 hover:border-[#0B1F45] transition-colors";
+  const nextBtn = "flex-1 min-w-[180px] inline-flex items-center justify-center gap-2 text-xs tracking-[0.12em] uppercase font-bold px-6 py-3.5 transition-colors disabled:opacity-50 disabled:cursor-not-allowed";
 
   // ── Phase 2 — MARK ────────────────────────────────────────────────────────
   if (phase === "mark") {
@@ -2212,17 +2212,17 @@ function ZonesStep({
       <div className="mt-6 max-w-2xl mx-auto">
         <StepHead title="Marque a área" subtitle="Toque na imagem ou desenhe sobre a área onde deseja aplicar o revestimento." />
         <div className="mb-3 flex flex-wrap items-center gap-2">
-          <span className="text-[10px] tracking-[0.15em] uppercase font-bold font-[var(--font-inter)] text-[#74777f] mr-1">Como marcar:</span>
+          <span className="text-[10px] tracking-[0.15em] uppercase font-bold text-[#74777f] mr-1">Como marcar:</span>
           <div className="inline-flex border border-[#e2e2e2] rounded-sm overflow-hidden">
             {([{ id: "tap" as const, label: "Tocar" }, { id: "draw" as const, label: "Desenhar" }]).map((m) => (
               <button key={m.id} onClick={() => { setMode(m.id); setRetargetId(null); }}
-                className={`px-3.5 py-2 text-[11px] font-bold font-[var(--font-inter)] transition-colors ${mode === m.id ? "bg-[#002045] text-white" : "text-[#74777f] hover:text-[#002045]"}`}>
+                className={`px-3.5 py-2 text-[11px] font-bold transition-colors ${mode === m.id ? "bg-[#0B1F45] text-white" : "text-[#74777f] hover:text-[#0B1F45]"}`}>
                 {m.label}
               </button>
             ))}
           </div>
           <button onClick={onAddTextZone}
-            className="inline-flex items-center gap-1 px-3 py-2 text-[11px] font-bold font-[var(--font-inter)] text-[#3b6934] border border-[#bcd8b4] rounded-sm hover:bg-[#f3f8f1] transition-colors">
+            className="inline-flex items-center gap-1 px-3 py-2 text-[11px] font-bold text-[#1F7A44] border border-[#bcd8b4] rounded-sm hover:bg-[#f3f8f1] transition-colors">
             <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5"><path d="M12 5v14M5 12h14" /></svg>
             Descrever em texto
           </button>
@@ -2233,7 +2233,7 @@ function ZonesStep({
           mode={mode} onTapPhoto={onTapPhoto} onDrawRect={onDrawRect} updateZone={updateZone}
           busy={anyDetecting} retargeting={!!retargetId} onConfirmQuad={onConfirmQuad}
         />
-        <p className="mt-3 text-[#74777f] text-xs font-[var(--font-inter)] leading-relaxed">
+        <p className="mt-3 text-[#74777f] text-xs leading-relaxed">
           {retargetId ? (
             <strong className="text-[#b4791e]">Toque no ponto certo da superfície para refazer a seleção.</strong>
           ) : mode === "tap" ? (
@@ -2246,18 +2246,18 @@ function ZonesStep({
         {/* Compact list of marked areas — rename/remove only, no model picker yet */}
         {zones.length > 0 && (
           <div className="mt-4 space-y-1.5">
-            <p className="text-[10px] tracking-[0.18em] uppercase font-bold font-[var(--font-inter)] text-[#002045]">Áreas marcadas ({zones.length})</p>
+            <p className="text-[10px] tracking-[0.18em] uppercase font-bold text-[#0B1F45]">Áreas marcadas ({zones.length})</p>
             {zones.map((z, i) => (
-              <div key={z.id} className={`flex items-center gap-2 border px-3 py-2 rounded-sm ${activeZoneId === z.id ? "border-[#002045]" : "border-[#e2e2e2]"}`}>
+              <div key={z.id} className={`flex items-center gap-2 border px-3 py-2 rounded-sm ${activeZoneId === z.id ? "border-[#0B1F45]" : "border-[#e2e2e2]"}`}>
                 <span className="w-3 h-3 rounded-sm flex-shrink-0" style={{ background: ZONE_COLORS[i % ZONE_COLORS.length] }} />
-                <span className="text-sm font-semibold text-[#002045] font-[var(--font-inter)] truncate flex-1">{z.label}</span>
-                <span className="text-[10px] font-[var(--font-inter)] flex-shrink-0">
+                <span className="text-sm font-semibold text-[#0B1F45] truncate flex-1">{z.label}</span>
+                <span className="text-[10px] flex-shrink-0">
                   {z.detecting ? <span className="text-[#74777f]">detectando…</span>
-                    : (z.maskUrl || z.polygon || z.rect) ? <span className="text-[#2f5429]">área ✓</span>
+                    : (z.maskUrl || z.polygon || z.rect) ? <span className="text-[#1F7A44]">área ✓</span>
                     : <span className="text-[#b4791e]">descrever</span>}
                 </span>
                 <button onClick={() => { setMode("tap"); setRetargetId(retargetId === z.id ? null : z.id); }}
-                  className="text-[10px] font-bold font-[var(--font-inter)] text-[#1e5fb4] hover:underline flex-shrink-0">Refazer</button>
+                  className="text-[10px] font-bold text-[#2F5FD0] hover:underline flex-shrink-0">Refazer</button>
                 <button onClick={() => removeZone(z.id)} title="Remover" className="text-[#b42318] hover:text-[#7a1610] flex-shrink-0">
                   <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><path d="M3 6h18M8 6V4h8v2M19 6l-1 14H6L5 6" /></svg>
                 </button>
@@ -2267,8 +2267,8 @@ function ZonesStep({
         )}
         {zones.length === 0 && simPrefills && simPrefills.length > 0 && (
           <div className="mt-4 border border-[#bcd0e8] bg-[#f5f8fc] px-3 py-2.5">
-            <p className="text-[10px] tracking-[0.15em] uppercase font-bold font-[var(--font-inter)] text-[#002045] mb-0.5">Simulador</p>
-            <p className="text-[#43474e] text-xs font-[var(--font-inter)]">
+            <p className="text-[10px] tracking-[0.15em] uppercase font-bold text-[#0B1F45] mb-0.5">Simulador</p>
+            <p className="text-[#43474e] text-xs">
               {simPrefills.length === 1 ? "Marque uma área — o modelo do Simulador será pré-selecionado." : `${simPrefills.length} modelos aguardando. Marque cada área na ordem.`}
             </p>
           </div>
@@ -2276,7 +2276,7 @@ function ZonesStep({
 
         <div className="mt-5 flex flex-wrap items-center gap-3">
           <button onClick={onBack} className={backBtn}>Trocar foto</button>
-          <button onClick={onConfirmMarks} disabled={!anyAreaMarked} className={`${nextBtn} bg-[#002045] hover:bg-[#1a365d]`}>
+          <button onClick={onConfirmMarks} disabled={!anyAreaMarked} className={`${nextBtn} bg-[#0B1F45] text-white hover:bg-[#2347A0]`}>
             {anyDetecting ? "Detectando área…" : anyAreaMarked ? "Continuar →" : "Marque uma área para continuar"}
           </button>
         </div>
@@ -2288,7 +2288,7 @@ function ZonesStep({
   if (phase === "confirm") {
     const lendo = analysis.status === "loading";
     const semTexto = zones.some((z) => !z.instruction.trim());
-    const fieldCls = "w-full border border-[#e2e2e2] bg-white px-3 py-2.5 text-sm font-[var(--font-inter)] text-[#002045] leading-relaxed focus:outline-none focus:border-[#002045] resize-y disabled:bg-[#f5f5f3] disabled:text-[#74777f]";
+    const fieldCls = "w-full border border-[#e2e2e2] bg-white px-3 py-2.5 text-sm text-[#0B1F45] leading-relaxed focus:outline-none focus:border-[#0B1F45] resize-y disabled:bg-[#F6F5F2] disabled:text-[#74777f]";
     return (
       <div className="mt-6 max-w-2xl mx-auto">
         <StepHead
@@ -2302,13 +2302,13 @@ function ZonesStep({
         />
 
         {lendo && (
-          <p className="mt-4 flex items-center gap-2 text-sm text-[#002045] font-[var(--font-inter)]">
-            <span className="inline-block w-4 h-4 border-2 border-[#002045] border-t-transparent rounded-full animate-spin" />
+          <p className="mt-4 flex items-center gap-2 text-sm text-[#0B1F45]">
+            <span className="inline-block w-4 h-4 border-2 border-[#0B1F45] border-t-transparent rounded-full animate-spin" />
             A IA está analisando a foto…
           </p>
         )}
         {analysis.status === "error" && (
-          <p className="mt-4 text-sm text-[#b4791e] font-[var(--font-inter)]">
+          <p className="mt-4 text-sm text-[#b4791e]">
             {analysis.error}{" "}
             <button type="button" onClick={onReanalyze} className="underline underline-offset-2 font-semibold">Tentar de novo</button>
           </p>
@@ -2317,7 +2317,7 @@ function ZonesStep({
         <div className="mt-4 space-y-4">
           {zones.map((z, i) => (
             <div key={z.id}>
-              <label htmlFor={`desc-${z.id}`} className="flex items-center gap-2 text-[10px] tracking-[0.15em] uppercase font-bold font-[var(--font-inter)] text-[#002045] mb-1.5">
+              <label htmlFor={`desc-${z.id}`} className="flex items-center gap-2 text-[10px] tracking-[0.15em] uppercase font-bold text-[#0B1F45] mb-1.5">
                 <span className="w-3 h-3 rounded-sm flex-shrink-0" style={{ background: ZONE_COLORS[i % ZONE_COLORS.length] }} />
                 {z.label} — onde aplicar
               </label>
@@ -2333,7 +2333,7 @@ function ZonesStep({
             </div>
           ))}
           <div>
-            <label htmlFor="keep-text" className="block text-[10px] tracking-[0.15em] uppercase font-bold font-[var(--font-inter)] text-[#002045] mb-1.5">
+            <label htmlFor="keep-text" className="block text-[10px] tracking-[0.15em] uppercase font-bold text-[#0B1F45] mb-1.5">
               Manter igual
             </label>
             <textarea
@@ -2345,13 +2345,13 @@ function ZonesStep({
               placeholder="Ex.: os quadros pendurados, a mesa, as luminárias"
               className={fieldCls}
             />
-            <p className="mt-1 text-[11px] text-[#74777f] font-[var(--font-inter)]">O resto da foto também continua igual.</p>
+            <p className="mt-1 text-[11px] text-[#74777f]">O resto da foto também continua igual.</p>
           </div>
         </div>
 
         <div className="mt-5 flex flex-wrap items-center gap-3">
           <button onClick={() => setPhase("mark")} className={backBtn}>← Ajustar marcação</button>
-          <button onClick={() => setPhase("model")} disabled={lendo || semTexto} className={`${nextBtn} bg-[#002045] hover:bg-[#1a365d]`}>
+          <button onClick={() => setPhase("model")} disabled={lendo || semTexto} className={`${nextBtn} bg-[#0B1F45] text-white hover:bg-[#2347A0]`}>
             {lendo ? "Analisando…" : semTexto ? "Descreva cada área" : "Confirmar e escolher modelo →"}
           </button>
         </div>
@@ -2375,13 +2375,13 @@ function ZonesStep({
       </div>
       <div className="mt-5 flex flex-wrap items-center gap-3">
         <button onClick={() => setPhase("mark")} className={backBtn}>← Ajustar área</button>
-        <button onClick={onGenerate} disabled={!canGenerate} className={`${nextBtn} bg-[#3b6934] hover:bg-[#2f5429]`}>
+        <button onClick={onGenerate} disabled={!canGenerate} className={`${nextBtn} bg-[#36A35C] text-[#0B1F45] hover:bg-[#4BB571]`}>
           <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><path d="M5 3v4M3 5h4M6 17v4m-2-2h4M13 3l2.5 6.5L22 12l-6.5 2.5L13 21l-2.5-6.5L4 12l6.5-2.5z" /></svg>
           Gerar visualização
         </button>
       </div>
       {!canGenerate && (
-        <p className="mt-2 text-[11px] text-[#b4791e] font-[var(--font-inter)] text-center">
+        <p className="mt-2 text-[11px] text-[#b4791e] text-center">
           Escolha um acabamento em cada área para gerar.
         </p>
       )}
@@ -2393,8 +2393,8 @@ function ZonesStep({
 function StepHead({ title, subtitle }: { title: string; subtitle: string }) {
   return (
     <div className="mb-4">
-      <h2 className="font-[var(--font-noto-serif)] text-[#002045] text-xl sm:text-2xl leading-tight">{title}</h2>
-      <p className="text-[#74777f] text-sm font-[var(--font-inter)] mt-1">{subtitle}</p>
+      <h2 className="font-serif text-[#0B1F45] text-xl sm:text-2xl leading-tight">{title}</h2>
+      <p className="text-[#74777f] text-sm mt-1">{subtitle}</p>
     </div>
   );
 }
@@ -2485,7 +2485,7 @@ function SurfaceCanvas({
             style={z.point
               ? { left: `calc(${(z.rect.x + z.rect.w / 2) * 100}% + 16px)`, top: `${(z.rect.y + z.rect.h / 2) * 100}%`, background: color }
               : { left: `${z.rect.x * 100}%`, top: `${z.rect.y * 100}%`, background: color }}
-            className="absolute -translate-y-1/2 text-white text-[10px] font-bold font-[var(--font-inter)] px-1.5 py-0.5 rounded-sm">
+            className="absolute -translate-y-1/2 text-white text-[10px] font-bold px-1.5 py-0.5 rounded-sm">
             {z.label}
           </button>
         );
@@ -2556,7 +2556,7 @@ function SurfaceCanvas({
               onPointerDown={(e) => e.stopPropagation()}
               onClick={(e) => { e.stopPropagation(); updateZone(az.id, { quadConfirmed: false }); }}
               style={{ left: `${cx * 100}%`, top: `${cy * 100}%` }}
-              className="absolute -translate-x-1/2 -translate-y-1/2 bg-black/70 hover:bg-black/85 text-white text-[10px] font-bold font-[var(--font-inter)] px-3 py-1.5 rounded-full whitespace-nowrap shadow-md">
+              className="absolute -translate-x-1/2 -translate-y-1/2 bg-black/70 hover:bg-black/85 text-white text-[10px] font-bold px-3 py-1.5 rounded-full whitespace-nowrap shadow-md">
               ✎ Editar cantos
             </button>
           );
@@ -2581,7 +2581,7 @@ function SurfaceCanvas({
                 onClick={(e) => e.stopPropagation()}
                 style={{ left: `${x * 100}%`, top: `${y * 100}%` }}
                 className="absolute -translate-x-1/2 -translate-y-1/2 w-10 h-10 flex items-center justify-center cursor-grab active:cursor-grabbing touch-none">
-                <span className="w-5 h-5 rounded-full bg-white border-2 border-[#002045] shadow-md" />
+                <span className="w-5 h-5 rounded-full bg-white border-2 border-[#0B1F45] shadow-md" />
               </span>
             ))}
             {/* Confirm button at the quad centre — re-runs SAM2, then hides handles. */}
@@ -2589,10 +2589,10 @@ function SurfaceCanvas({
               onPointerDown={(e) => e.stopPropagation()}
               onClick={(e) => { e.stopPropagation(); onConfirmQuad(az.id); }}
               style={{ left: `${cx * 100}%`, top: `${cy * 100}%` }}
-              className="absolute -translate-x-1/2 -translate-y-1/2 bg-[#3b6934] hover:bg-[#2f5429] text-white text-[11px] font-bold font-[var(--font-inter)] px-4 py-2 rounded-full whitespace-nowrap shadow-lg">
+              className="absolute -translate-x-1/2 -translate-y-1/2 bg-[#36A35C] hover:bg-[#4BB571] text-[#0B1F45] text-[11px] font-bold px-4 py-2 rounded-full whitespace-nowrap shadow-lg">
               ✓ Atualizar pontos
             </button>
-            <div className="absolute bottom-2 left-1/2 -translate-x-1/2 bg-black/70 text-white text-[10px] font-[var(--font-inter)] px-3 py-1 rounded-full pointer-events-none whitespace-nowrap">
+            <div className="absolute bottom-2 left-1/2 -translate-x-1/2 bg-black/70 text-white text-[10px] px-3 py-1 rounded-full pointer-events-none whitespace-nowrap">
               Arraste os 4 cantos e toque em “Atualizar pontos”
             </div>
           </>
@@ -2605,8 +2605,8 @@ function SurfaceCanvas({
       {busy && (
         <div className="absolute inset-0 bg-black/40 flex items-center justify-center pointer-events-none">
           <div className="flex items-center gap-2 bg-black/70 px-4 py-2 rounded-full">
-            <div className="w-4 h-4 border-2 border-white/30 border-t-[#a1d494] rounded-full animate-spin" />
-            <span className="text-white text-xs font-[var(--font-inter)]">Detectando superfície…</span>
+            <div className="w-4 h-4 border-2 border-white/30 border-t-[#36A35C] rounded-full animate-spin" />
+            <span className="text-white text-xs">Detectando superfície…</span>
           </div>
         </div>
       )}
@@ -2628,29 +2628,29 @@ function ZoneCard({ zone, index, active, retargeting, onSelect, onChange, onRemo
 
   return (
     <div id={`zone-${zone.id}`} onClick={onSelect}
-      className={`scroll-mt-24 bg-white border rounded-sm p-4 cursor-pointer transition-colors ${active ? "border-[#002045] shadow-sm" : "border-[#e2e2e2] hover:border-[#86a0cd]"}`}>
+      className={`scroll-mt-24 bg-white border rounded-sm p-4 cursor-pointer transition-colors ${active ? "border-[#0B1F45] shadow-sm" : "border-[#e2e2e2] hover:border-[#B4BBC8]"}`}>
       <div className="flex items-center justify-between mb-3">
         <div className="flex items-center gap-2 min-w-0">
           <span className="w-3 h-3 rounded-sm flex-shrink-0" style={{ background: color }} />
           <input value={zone.label} onClick={(e) => e.stopPropagation()} onChange={(e) => onChange({ label: e.target.value })}
-            className="text-sm font-semibold text-[#002045] font-[var(--font-inter)] bg-transparent border-b border-transparent focus:border-[#e2e2e2] focus:outline-none min-w-0 w-28" />
+            className="text-sm font-semibold text-[#0B1F45] bg-transparent border-b border-transparent focus:border-[#e2e2e2] focus:outline-none min-w-0 w-28" />
         </div>
         <button onClick={(e) => { e.stopPropagation(); onRemove(); }} title="Remover área" className="text-[#b42318] hover:text-[#7a1610]">
           <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><path d="M3 6h18M8 6V4h8v2M19 6l-1 14H6L5 6" /></svg>
         </button>
       </div>
       <div className="flex items-center justify-between mb-2">
-        <p className="text-[10px] font-[var(--font-inter)]">
+        <p className="text-[10px]">
           {zone.detecting ? <span className="text-[#74777f]">Detectando superfície…</span>
             : zone.detectFailed ? <span className="text-[#b42318]">Ajuste manual pelos 4 pontos</span>
-            : (zone.polygon || zone.maskUrl) && zone.detectEngine === "fal" ? <span className="text-[#2f5429]">Superfície detectada (SAM2) ✓</span>
+            : (zone.polygon || zone.maskUrl) && zone.detectEngine === "fal" ? <span className="text-[#1F7A44]">Superfície detectada (SAM2) ✓</span>
             : (zone.polygon || zone.maskUrl) && zone.detectEngine === "gemini" ? <span className="text-[#b4791e]">Contorno aproximado (SAM2 indisponível)</span>
-            : zone.polygon || zone.maskUrl ? <span className="text-[#2f5429]">Superfície detectada ✓</span>
-            : zone.manual && zone.rect ? <span className="text-[#2f5429]">Área desenhada ✓</span>
+            : zone.polygon || zone.maskUrl ? <span className="text-[#1F7A44]">Superfície detectada ✓</span>
+            : zone.manual && zone.rect ? <span className="text-[#1F7A44]">Área desenhada ✓</span>
             : <span className="text-[#b4791e]">Descreva o local em texto abaixo</span>}
         </p>
         <button onClick={(e) => { e.stopPropagation(); onRetarget(); }}
-          className={`text-[10px] font-bold font-[var(--font-inter)] ${retargeting ? "text-[#b4791e]" : "text-[#1e5fb4] hover:underline"}`}>
+          className={`text-[10px] font-bold ${retargeting ? "text-[#b4791e]" : "text-[#2F5FD0] hover:underline"}`}>
           {retargeting ? "Toque na foto…" : "Refazer seleção"}
         </button>
       </div>
@@ -2658,49 +2658,49 @@ function ZoneCard({ zone, index, active, retargeting, onSelect, onChange, onRemo
       {prod && (
         <div className="flex items-center justify-between mb-2 -mt-0.5">
           {DETERMINISTIC_PROJECTION && prod.render_texture_path?.trim() ? (
-            <span className="text-[10px] font-bold font-[var(--font-inter)] text-[#2f5429]">● Textura exata</span>
+            <span className="text-[10px] font-bold text-[#1F7A44]">● Textura exata</span>
           ) : prod.render_texture_path?.trim() ? (
-            <span className="text-[10px] font-bold font-[var(--font-inter)] text-[#b4791e]">● IA com referência</span>
+            <span className="text-[10px] font-bold text-[#b4791e]">● IA com referência</span>
           ) : (
-            <span className="text-[10px] font-[var(--font-inter)] text-[#74777f]">○ IA com foto de referência</span>
+            <span className="text-[10px] text-[#74777f]">○ IA com foto de referência</span>
           )}
           {prod.render_texture_path?.trim() && zone.quad && (
             <button onClick={(e) => { e.stopPropagation(); onChange({ quad: null }); }}
-              className="text-[10px] font-bold font-[var(--font-inter)] text-[#1e5fb4] hover:underline">
+              className="text-[10px] font-bold text-[#2F5FD0] hover:underline">
               Redefinir cantos
             </button>
           )}
         </div>
       )}
-      <label className="block text-[10px] tracking-[0.15em] uppercase font-bold font-[var(--font-inter)] text-[#74777f] mb-1">Tipo de superfície</label>
+      <label className="block text-[10px] tracking-[0.15em] uppercase font-bold text-[#74777f] mb-1">Tipo de superfície</label>
       <select value={zone.surface} onClick={(e) => e.stopPropagation()} onChange={(e) => onChange({ surface: e.target.value })}
-        className="w-full border border-[#e2e2e2] px-2.5 py-2 text-sm font-[var(--font-inter)] text-[#002045] bg-white focus:outline-none focus:border-[#002045] mb-2">
+        className="w-full border border-[#e2e2e2] px-2.5 py-2 text-sm text-[#0B1F45] bg-white focus:outline-none focus:border-[#0B1F45] mb-2">
         {VIZ_SPACES.map((s) => <option key={s.id} value={s.id}>{s.label}</option>)}
         <option value="__custom__">Outro…</option>
       </select>
       {zone.surface === "__custom__" && (
         <input value={zone.customLabel} onClick={(e) => e.stopPropagation()} onChange={(e) => onChange({ customLabel: e.target.value })}
-          placeholder="ex: parede atrás da TV" className="w-full border border-[#e2e2e2] px-2.5 py-2 text-sm font-[var(--font-inter)] text-[#002045] focus:outline-none focus:border-[#002045] mb-2" />
+          placeholder="ex: parede atrás da TV" className="w-full border border-[#e2e2e2] px-2.5 py-2 text-sm text-[#0B1F45] focus:outline-none focus:border-[#0B1F45] mb-2" />
       )}
-      <label className="block text-[10px] tracking-[0.15em] uppercase font-bold font-[var(--font-inter)] text-[#74777f] mb-1 mt-1">
+      <label className="block text-[10px] tracking-[0.15em] uppercase font-bold text-[#74777f] mb-1 mt-1">
         Onde aplicar <span className="normal-case font-normal">(opcional)</span>
       </label>
       <textarea value={zone.instruction} onClick={(e) => e.stopPropagation()} onChange={(e) => onChange({ instruction: e.target.value })}
         rows={2} placeholder="ex: nas paredes cinza ao fundo, atrás do sofá"
-        className="w-full border border-[#e2e2e2] px-2.5 py-2 text-sm font-[var(--font-inter)] text-[#002045] focus:outline-none focus:border-[#002045] mb-1 resize-none" />
-      <label className="block text-[10px] tracking-[0.15em] uppercase font-bold font-[var(--font-inter)] text-[#74777f] mb-1 mt-1">
+        className="w-full border border-[#e2e2e2] px-2.5 py-2 text-sm text-[#0B1F45] focus:outline-none focus:border-[#0B1F45] mb-1 resize-none" />
+      <label className="block text-[10px] tracking-[0.15em] uppercase font-bold text-[#74777f] mb-1 mt-1">
         Acabamento {prod ? `· ${prod.name}` : ""}
       </label>
       <div className="flex flex-wrap gap-1 mb-2" onClick={(e) => e.stopPropagation()}>
         {(["Todas", ...LINE_ORDER] as const).map((l) => (
           <button key={l} onClick={() => setLineFilter(l)}
-            className={`px-2 py-0.5 text-[10px] font-semibold font-[var(--font-inter)] rounded-full transition-colors ${lineFilter === l ? "bg-[#002045] text-white" : "bg-[#f0f0ee] text-[#74777f] hover:text-[#002045]"}`}>
+            className={`px-2 py-0.5 text-[10px] font-semibold rounded-full transition-colors ${lineFilter === l ? "bg-[#0B1F45] text-white" : "bg-[#f0f0ee] text-[#74777f] hover:text-[#0B1F45]"}`}>
             {l}
           </button>
         ))}
       </div>
       {loadingProducts ? (
-        <p className="text-[#74777f] text-xs font-[var(--font-inter)] py-3 text-center">Carregando…</p>
+        <p className="text-[#74777f] text-xs py-3 text-center">Carregando…</p>
       ) : (
         <div className="grid grid-cols-4 gap-1.5 max-h-[180px] overflow-y-auto pr-1" onClick={(e) => e.stopPropagation()}>
           {list.map((p) => {
@@ -2710,22 +2710,22 @@ function ZoneCard({ zone, index, active, retargeting, onSelect, onChange, onRemo
             const sel = !!zone.productChosen && zone.productId === p.id;
             return (
               <button key={p.id} onClick={() => onChange({ productId: p.id, productChosen: true })} title={p.name} className="group text-left">
-                <span style={{ aspectRatio: "1 / 1" }} className={`relative block w-full overflow-hidden rounded-sm border-2 ${sel ? "border-[#3b6934]" : "border-[#e8e8e6] group-hover:border-[#86a0cd]"}`}>
+                <span style={{ aspectRatio: "1 / 1" }} className={`relative block w-full overflow-hidden rounded-sm border-2 ${sel ? "border-[#36A35C]" : "border-[#e8e8e6] group-hover:border-[#B4BBC8]"}`}>
                   {/* eslint-disable-next-line @next/next/no-img-element */}
                   <img src={p.image_path} alt={p.name} className="absolute inset-0 w-full h-full object-cover scale-[1.35]" loading="lazy" />
-                  {sel && <span className="absolute top-0.5 right-0.5 w-4 h-4 rounded-full bg-[#3b6934] text-white text-[9px] flex items-center justify-center">✓</span>}
+                  {sel && <span className="absolute top-0.5 right-0.5 w-4 h-4 rounded-full bg-[#36A35C] text-[#0B1F45] text-[9px] flex items-center justify-center">✓</span>}
                 </span>
               </button>
             );
           })}
         </div>
       )}
-      <label className="block text-[10px] tracking-[0.15em] uppercase font-bold font-[var(--font-inter)] text-[#74777f] mb-1 mt-3">
+      <label className="block text-[10px] tracking-[0.15em] uppercase font-bold text-[#74777f] mb-1 mt-3">
         Medidas <span className="normal-case font-normal">(opcional)</span>
       </label>
       <div className="grid grid-cols-2 gap-2" onClick={(e) => e.stopPropagation()}>
-        <input inputMode="decimal" value={zone.width} onChange={(e) => onChange({ width: sanitizeDim(e.target.value) })} placeholder="Largura (m)" className="w-full border border-[#e2e2e2] px-2.5 py-2 text-sm font-[var(--font-inter)] text-[#002045] focus:outline-none focus:border-[#002045]" />
-        <input inputMode="decimal" value={zone.height} onChange={(e) => onChange({ height: sanitizeDim(e.target.value) })} placeholder="Altura (m)" className="w-full border border-[#e2e2e2] px-2.5 py-2 text-sm font-[var(--font-inter)] text-[#002045] focus:outline-none focus:border-[#002045]" />
+        <input inputMode="decimal" value={zone.width} onChange={(e) => onChange({ width: sanitizeDim(e.target.value) })} placeholder="Largura (m)" className="w-full border border-[#e2e2e2] px-2.5 py-2 text-sm text-[#0B1F45] focus:outline-none focus:border-[#0B1F45]" />
+        <input inputMode="decimal" value={zone.height} onChange={(e) => onChange({ height: sanitizeDim(e.target.value) })} placeholder="Altura (m)" className="w-full border border-[#e2e2e2] px-2.5 py-2 text-sm text-[#0B1F45] focus:outline-none focus:border-[#0B1F45]" />
       </div>
     </div>
   );
@@ -2760,7 +2760,7 @@ function ResultStep({
         <img src={result ?? (generating ? preview : null) ?? photoData ?? ""} alt={result ? "Visualização gerada" : "Sua foto"}
           className={`block w-full h-auto${showLeadOverlay && result ? " blur-md scale-[1.02]" : ""}`} />
         <div className="pointer-events-none absolute top-3 left-3 bg-black/55 backdrop-blur-sm px-3 py-1.5 rounded-full">
-          <p className="text-white/90 text-xs font-[var(--font-inter)]">{result ? "Resultado gerado" : generating && preview ? "Prévia" : "Sua foto"}</p>
+          <p className="text-white/90 text-xs">{result ? "Resultado gerado" : generating && preview ? "Prévia" : "Sua foto"}</p>
         </div>
 
         {/* Standalone: lead capture overlay */}
@@ -2768,32 +2768,32 @@ function ResultStep({
           <div className="absolute inset-0 bg-black/70 flex flex-col items-center justify-center gap-5 px-4 py-8">
             {generating && (
               <div className="flex items-center gap-3">
-                <div className="w-7 h-7 border-2 border-white/30 border-t-[#a1d494] rounded-full animate-spin flex-shrink-0" />
-                <p className="text-white font-[var(--font-inter)] text-sm">
+                <div className="w-7 h-7 border-2 border-white/30 border-t-[#36A35C] rounded-full animate-spin flex-shrink-0" />
+                <p className="text-white text-sm">
                   {progress ? (progress.total > 1 ? `Aplicando ${progress.label} (${progress.i} de ${progress.total})…` : `Aplicando ${progress.label}…`) : "Gerando…"}
                 </p>
               </div>
             )}
             <div className="bg-white w-full max-w-xs px-5 py-5">
               {resultReady ? (
-                <><p className="font-[var(--font-noto-serif)] text-[#002045] text-lg leading-snug mb-1">Sua visualização está pronta!</p>
-                  <p className="text-[#74777f] text-sm font-[var(--font-inter)] mb-4">Informe seus dados para ver o resultado.</p></>
+                <><p className="font-serif text-[#0B1F45] text-lg leading-snug mb-1">Sua visualização está pronta!</p>
+                  <p className="text-[#74777f] text-sm mb-4">Informe seus dados para ver o resultado.</p></>
               ) : (
-                <><p className="text-[10px] tracking-[0.18em] uppercase font-bold font-[var(--font-inter)] text-[#002045] mb-1">Enquanto geramos sua visualização</p>
-                  <p className="text-[#74777f] text-xs font-[var(--font-inter)] mb-4">Informe seus dados para receber o resultado.</p></>
+                <><p className="text-[10px] tracking-[0.18em] uppercase font-bold text-[#0B1F45] mb-1">Enquanto geramos sua visualização</p>
+                  <p className="text-[#74777f] text-xs mb-4">Informe seus dados para receber o resultado.</p></>
               )}
               <div className="flex flex-col gap-2.5 mb-4">
                 <input value={leadName} onChange={(e) => onLeadNameChange(e.target.value)} placeholder="Seu nome completo"
-                  className="border border-[#e2e2e2] px-3 py-2.5 text-sm font-[var(--font-inter)] text-[#002045] focus:outline-none focus:border-[#002045] bg-white w-full" />
+                  className="border border-[#e2e2e2] px-3 py-2.5 text-sm text-[#0B1F45] focus:outline-none focus:border-[#0B1F45] bg-white w-full" />
                 <input value={leadPhone} onChange={(e) => onLeadPhoneChange(e.target.value)} placeholder="WhatsApp (92) 99999-9999"
-                  inputMode="tel" className="border border-[#e2e2e2] px-3 py-2.5 text-sm font-[var(--font-inter)] text-[#002045] focus:outline-none focus:border-[#002045] bg-white w-full"
+                  inputMode="tel" className="border border-[#e2e2e2] px-3 py-2.5 text-sm text-[#0B1F45] focus:outline-none focus:border-[#0B1F45] bg-white w-full"
                   onKeyDown={(e) => { if (e.key === "Enter" && leadReady) onLeadSubmit(); }} />
                 {phoneDigits > 0 && !phoneValid && (
-                  <p className="text-[#b4791e] text-[11px] font-[var(--font-inter)]">Informe um WhatsApp válido com DDD.</p>
+                  <p className="text-[#b4791e] text-[11px]">Informe um WhatsApp válido com DDD.</p>
                 )}
               </div>
               <button onClick={onLeadSubmit} disabled={!leadReady}
-                className="w-full inline-flex items-center justify-center bg-[#002045] text-white text-xs tracking-[0.12em] uppercase font-bold font-[var(--font-inter)] px-5 py-3 hover:bg-[#1a365d] transition-colors disabled:opacity-40 disabled:cursor-not-allowed">
+                className="w-full inline-flex items-center justify-center bg-[#0B1F45] text-white text-xs tracking-[0.12em] uppercase font-bold px-5 py-3 hover:bg-[#2347A0] transition-colors disabled:opacity-40 disabled:cursor-not-allowed">
                 {resultReady ? "Ver resultado →" : "Salvar e aguardar →"}
               </button>
             </div>
@@ -2804,21 +2804,21 @@ function ResultStep({
         {generating && (leadSubmitted || embeddedMode) && (preview ? (
           // Prévia do gerador já na tela: só um selo discreto, a imagem fica visível.
           <div className="absolute left-3 right-3 bottom-3 sm:left-auto sm:right-4 sm:bottom-4 flex items-center gap-2.5 bg-black/70 text-white px-3.5 py-2.5 rounded-sm">
-            <div className="w-4 h-4 border-2 border-white/30 border-t-[#a1d494] rounded-full animate-spin flex-shrink-0" />
-            <p className="font-[var(--font-inter)] text-xs">Prévia — refinando os detalhes…</p>
+            <div className="w-4 h-4 border-2 border-white/30 border-t-[#36A35C] rounded-full animate-spin flex-shrink-0" />
+            <p className="text-xs">Prévia — refinando os detalhes…</p>
           </div>
         ) : (
           <div className="absolute inset-0 bg-black/70 flex flex-col items-center justify-center gap-4 text-center px-6">
-            <div className="w-10 h-10 border-2 border-white/30 border-t-[#a1d494] rounded-full animate-spin" />
-            <p className="text-white font-[var(--font-inter)] text-sm">
+            <div className="w-10 h-10 border-2 border-white/30 border-t-[#36A35C] rounded-full animate-spin" />
+            <p className="text-white text-sm">
               {progress ? (progress.total > 1 ? `Aplicando ${progress.label} (${progress.i} de ${progress.total})…` : `Aplicando ${progress.label}…`) : "Gerando…"}
             </p>
-            <p className="text-white/60 font-[var(--font-inter)] text-xs">Pode levar até 1 minuto. O resto da foto continua igual.</p>
+            <p className="text-white/60 text-xs">Pode levar até 1 minuto. O resto da foto continua igual.</p>
           </div>
         ))}
       </div>
 
-      {error && <p className="mt-3 text-sm text-[#b42318] font-[var(--font-inter)]">{error}</p>}
+      {error && <p className="mt-3 text-sm text-[#b42318]">{error}</p>}
 
       {/* Clear, named next actions — so the client knows exactly what each does
           (the old "Editar dados/áreas" was ambiguous about swapping the model). */}
@@ -2826,22 +2826,22 @@ function ResultStep({
         <div className="mt-4 space-y-3">
           {/* Primary — the most common change after seeing the render */}
           <button onClick={onChooseModel}
-            className="w-full sm:w-auto inline-flex items-center justify-center gap-2 bg-[#3b6934] text-white text-xs tracking-[0.12em] uppercase font-bold font-[var(--font-inter)] px-6 py-3.5 hover:bg-[#2f5429] transition-colors">
+            className="w-full sm:w-auto inline-flex items-center justify-center gap-2 bg-[#36A35C] text-[#0B1F45] text-xs tracking-[0.12em] uppercase font-bold px-6 py-3.5 hover:bg-[#4BB571] transition-colors">
             <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><path d="M3 3h7v7H3zM14 3h7v7h-7zM14 14h7v7h-7zM3 14h7v7H3z" /></svg>
             Escolher outro modelo
           </button>
           <div className="flex flex-wrap gap-2.5">
-            <button onClick={onAdjustArea} className="inline-flex items-center gap-2 border border-[#e2e2e2] text-[#43474e] text-xs tracking-[0.1em] uppercase font-bold font-[var(--font-inter)] px-4 py-2.5 hover:border-[#002045] transition-colors">
+            <button onClick={onAdjustArea} className="inline-flex items-center gap-2 border border-[#e2e2e2] text-[#43474e] text-xs tracking-[0.1em] uppercase font-bold px-4 py-2.5 hover:border-[#0B1F45] transition-colors">
               Ajustar área
             </button>
-            <button onClick={onAddPhoto} className="inline-flex items-center gap-2 border border-[#e2e2e2] text-[#43474e] text-xs tracking-[0.1em] uppercase font-bold font-[var(--font-inter)] px-4 py-2.5 hover:border-[#002045] transition-colors">
+            <button onClick={onAddPhoto} className="inline-flex items-center gap-2 border border-[#e2e2e2] text-[#43474e] text-xs tracking-[0.1em] uppercase font-bold px-4 py-2.5 hover:border-[#0B1F45] transition-colors">
               Enviar outra foto
             </button>
-            <button onClick={onDownload} className="inline-flex items-center gap-2 border border-[#e2e2e2] text-[#43474e] text-xs tracking-[0.1em] uppercase font-bold font-[var(--font-inter)] px-4 py-2.5 hover:border-[#002045] transition-colors">
+            <button onClick={onDownload} className="inline-flex items-center gap-2 border border-[#e2e2e2] text-[#43474e] text-xs tracking-[0.1em] uppercase font-bold px-4 py-2.5 hover:border-[#0B1F45] transition-colors">
               <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><path d="M21 15v4a2 2 0 01-2 2H5a2 2 0 01-2-2v-4M7 10l5 5 5-5M12 15V3" /></svg>
               Salvar imagem
             </button>
-            <button onClick={onRegenerate} className="inline-flex items-center gap-2 border border-[#e2e2e2] text-[#74777f] text-xs tracking-[0.1em] uppercase font-bold font-[var(--font-inter)] px-4 py-2.5 hover:border-[#002045] transition-colors">
+            <button onClick={onRegenerate} className="inline-flex items-center gap-2 border border-[#e2e2e2] text-[#74777f] text-xs tracking-[0.1em] uppercase font-bold px-4 py-2.5 hover:border-[#0B1F45] transition-colors">
               Gerar novamente
             </button>
           </div>
@@ -2851,19 +2851,19 @@ function ResultStep({
       {/* Error (no result) — recovery actions */}
       {!generating && !result && !!error && (
         <div className="mt-4 flex flex-wrap gap-2.5">
-          <button onClick={onRegenerate} className="inline-flex items-center gap-2 bg-[#002045] text-white text-xs tracking-[0.12em] uppercase font-bold font-[var(--font-inter)] px-6 py-3 hover:bg-[#1a365d] transition-colors">
+          <button onClick={onRegenerate} className="inline-flex items-center gap-2 bg-[#0B1F45] text-white text-xs tracking-[0.12em] uppercase font-bold px-6 py-3 hover:bg-[#2347A0] transition-colors">
             Tentar novamente
           </button>
-          <button onClick={onAdjustArea} className="inline-flex items-center gap-2 border border-[#e2e2e2] text-[#43474e] text-xs tracking-[0.1em] uppercase font-bold font-[var(--font-inter)] px-4 py-2.5 hover:border-[#002045] transition-colors">
+          <button onClick={onAdjustArea} className="inline-flex items-center gap-2 border border-[#e2e2e2] text-[#43474e] text-xs tracking-[0.1em] uppercase font-bold px-4 py-2.5 hover:border-[#0B1F45] transition-colors">
             Ajustar área
           </button>
-          <button onClick={onChooseModel} className="inline-flex items-center gap-2 border border-[#e2e2e2] text-[#43474e] text-xs tracking-[0.1em] uppercase font-bold font-[var(--font-inter)] px-4 py-2.5 hover:border-[#002045] transition-colors">
+          <button onClick={onChooseModel} className="inline-flex items-center gap-2 border border-[#e2e2e2] text-[#43474e] text-xs tracking-[0.1em] uppercase font-bold px-4 py-2.5 hover:border-[#0B1F45] transition-colors">
             Escolher outro modelo
           </button>
         </div>
       )}
 
-      <p className="mt-3 text-[#a0a3a9] text-xs font-[var(--font-inter)]">A imagem gerada é uma simulação e pode diferir do resultado real.</p>
+      <p className="mt-3 text-[#a0a3a9] text-xs">A imagem gerada é uma simulação e pode diferir do resultado real.</p>
     </div>
   );
 }

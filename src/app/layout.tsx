@@ -1,5 +1,5 @@
 import type { Metadata } from "next";
-import { Inter, Noto_Serif } from "next/font/google";
+import { Montserrat, Noto_Serif_Display } from "next/font/google";
 import "./globals.css";
 import Script from "next/script";
 import Navbar from "@/components/Navbar";
@@ -10,17 +10,20 @@ import ContatoSheet from "@/components/ContatoSheet";
 import { SpeedInsights } from "@vercel/speed-insights/next";
 import { Analytics } from "@vercel/analytics/next";
 
-const inter = Inter({
+// Manual da marca: Montserrat (logo, rótulos e textos) e Noto Serif Display
+// Light / Light Italic (títulos e frases de impacto).
+const montserrat = Montserrat({
   subsets: ["latin"],
-  variable: "--font-inter",
+  weight: ["400", "500", "600", "700", "800"],
+  variable: "--font-montserrat",
   display: "swap",
 });
 
-const notoSerif = Noto_Serif({
+const notoSerifDisplay = Noto_Serif_Display({
   subsets: ["latin"],
-  weight: ["400", "500", "700"],
+  weight: ["300"],
   style: ["normal", "italic"],
-  variable: "--font-noto-serif",
+  variable: "--font-noto-serif-display",
   display: "swap",
 });
 
@@ -202,7 +205,7 @@ const jsonLdSchemas = [
     "@type": "Organization",
     name: "Orbital Revestimentos",
     url: BASE_URL,
-    logo: `${BASE_URL}/images/logo.png`,
+    logo: `${BASE_URL}/images/brand/orbital-simbolo.png`,
     description:
       "Importadora especializada em revestimentos eco-premium de Painéis Flexíveis Fibra de Bambu (PFB) para paredes e forros. Manaus, Amazonas.",
     foundingLocation: "Manaus, AM, Brasil",
@@ -248,7 +251,7 @@ export default function RootLayout({
   children: React.ReactNode;
 }) {
   return (
-    <html lang="pt-BR" className={`${inter.variable} ${notoSerif.variable}`}>
+    <html lang="pt-BR" className={`${montserrat.variable} ${notoSerifDisplay.variable}`}>
       <head>
         <Script
           strategy="afterInteractive"
@@ -285,7 +288,7 @@ export default function RootLayout({
           />
         </noscript>
       </head>
-      <body className="min-h-screen flex flex-col bg-[#f9f9f9] text-[#1a1c1c] antialiased font-[var(--font-inter)]">
+      <body className="min-h-screen flex flex-col bg-[#F6F5F2] text-[#0D1830] antialiased">
         {jsonLdSchemas.map((schema, i) => (
           <script
             key={i}

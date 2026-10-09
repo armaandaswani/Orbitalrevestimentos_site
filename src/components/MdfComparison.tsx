@@ -141,10 +141,10 @@ export default function MdfComparison({ selected: externalSelected, onSelect, al
           <button
             key={o.key}
             onClick={() => setSelected(o.key as RowKey)}
-            className={`text-[11px] tracking-[0.06em] uppercase font-semibold font-[var(--font-inter)] px-4 py-2 border transition-colors duration-200 ${
+            className={`text-[11px] tracking-[0.06em] uppercase font-semibold px-4 py-2 border transition-colors duration-200 ${
               selected === o.key
-                ? "bg-[#002045] text-white border-[#002045]"
-                : "bg-white text-[#74777f] border-[#e2e2e2] hover:border-[#002045] hover:text-[#002045]"
+                ? "bg-[#0B1F45] text-white border-[#0B1F45]"
+                : "bg-white text-[#74777f] border-[#e2e2e2] hover:border-[#0B1F45] hover:text-[#0B1F45]"
             }`}
           >
             {o.label}
@@ -158,14 +158,14 @@ export default function MdfComparison({ selected: externalSelected, onSelect, al
           const competitor = row[selected];
           return (
             <div key={row.attr} className="border border-[#e2e2e2]">
-              <p className="bg-[#f7f8fa] px-3 py-2 text-[11px] tracking-[0.08em] uppercase font-bold font-[var(--font-inter)] text-[#43474e]">{row.attr}</p>
+              <p className="bg-[#f7f8fa] px-3 py-2 text-[11px] tracking-[0.08em] uppercase font-bold text-[#43474e]">{row.attr}</p>
               <div className="px-3 py-2.5 bg-[#f3f9f3] border-t border-[#e2e2e2]">
-                <p className="text-[9px] tracking-[0.12em] uppercase font-bold font-[var(--font-inter)] text-[#3b6934] mb-0.5">Fibra de Bambu Orbital</p>
-                <p className="text-[13px] font-semibold text-[#002045] font-[var(--font-inter)] leading-snug">{row.pfb}</p>
+                <p className="text-[9px] tracking-[0.12em] uppercase font-bold text-[#2347A0] mb-0.5">Fibra de Bambu Orbital</p>
+                <p className="text-[13px] font-semibold text-[#0B1F45] leading-snug">{row.pfb}</p>
               </div>
               <div className="px-3 py-2.5 border-t border-[#e2e2e2]">
-                <p className="text-[9px] tracking-[0.12em] uppercase font-bold font-[var(--font-inter)] text-[#a0a3a8] mb-0.5">{option.label}</p>
-                <p className="text-[13px] text-[#74777f] font-[var(--font-inter)] leading-snug">{competitor}</p>
+                <p className="text-[9px] tracking-[0.12em] uppercase font-bold text-[#a0a3a8] mb-0.5">{option.label}</p>
+                <p className="text-[13px] text-[#74777f] leading-snug">{competitor}</p>
               </div>
             </div>
           );
@@ -177,13 +177,13 @@ export default function MdfComparison({ selected: externalSelected, onSelect, al
         <table className="w-full border-collapse">
           <thead>
             <tr className="border-b-2 border-[#e2e2e2]">
-              <th className="text-left py-4 px-3 text-xs tracking-[0.1em] uppercase font-semibold font-[var(--font-inter)] text-[#74777f] w-[36%]">
+              <th className="text-left py-4 px-3 text-xs tracking-[0.1em] uppercase font-semibold text-[#74777f] w-[36%]">
                 Critério
               </th>
-              <th className="text-left py-4 px-3 font-[var(--font-noto-serif)] text-[#002045] text-base lg:text-lg font-normal w-[32%]">
+              <th className="text-left py-4 px-3 font-serif text-[#0B1F45] text-base lg:text-lg font-normal w-[32%]">
                 Fibra de Bambu Orbital
               </th>
-              <th className="text-left py-4 px-3 font-[var(--font-noto-serif)] text-[#74777f] text-base lg:text-lg font-normal w-[32%]">
+              <th className="text-left py-4 px-3 font-serif text-[#74777f] text-base lg:text-lg font-normal w-[32%]">
                 {option.label}
               </th>
             </tr>
@@ -198,13 +198,13 @@ export default function MdfComparison({ selected: externalSelected, onSelect, al
                     row.highlight ? "bg-[#f3f9f3]" : "hover:bg-[#f3f3f3]"
                   }`}
                 >
-                  <td className="py-3 px-3 text-xs sm:text-sm font-medium font-[var(--font-inter)] text-[#1a1c1c]">
+                  <td className="py-3 px-3 text-xs sm:text-sm font-medium text-[#0D1830]">
                     {row.attr}
                   </td>
-                  <td className="py-3 px-3 text-xs sm:text-sm font-semibold text-[#002045] font-[var(--font-inter)]">
+                  <td className="py-3 px-3 text-xs sm:text-sm font-semibold text-[#0B1F45]">
                     {row.pfb}
                   </td>
-                  <td className="py-3 px-3 text-xs sm:text-sm text-[#74777f] font-[var(--font-inter)]">
+                  <td className="py-3 px-3 text-xs sm:text-sm text-[#74777f]">
                     {competitor}
                   </td>
                 </tr>
@@ -214,7 +214,7 @@ export default function MdfComparison({ selected: externalSelected, onSelect, al
         </table>
       </div>
 
-      <p className="text-[#74777f] text-xs font-[var(--font-inter)] italic mt-5">
+      <p className="text-[#74777f] text-xs italic mt-5">
         ART nº AM20260593657 · Eng. Civil Werksson Sousa, CREA 042030134-8-D. Dados sujeitos a alteração sem aviso prévio.
       </p>
     </div>

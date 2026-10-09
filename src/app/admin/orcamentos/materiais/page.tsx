@@ -79,7 +79,7 @@ export default function MateriaisConfigPage() {
   }
 
   if (!cfg) {
-    return <AdminShell active="orcamentos" breadcrumb={[{ label: "Orçamentos" }]} title="Materiais de instalação"><p className="text-[#74777f] text-sm font-[var(--font-inter)]">Carregando…</p></AdminShell>;
+    return <AdminShell active="orcamentos" breadcrumb={[{ label: "Orçamentos" }]} title="Materiais de instalação"><p className="text-[#74777f] text-sm">Carregando…</p></AdminShell>;
   }
 
   const byCode = new Map(products.map((p) => [p.code, p]));
@@ -95,10 +95,10 @@ export default function MateriaisConfigPage() {
       title="Materiais de instalação"
       action={<button onClick={save} disabled={saving} className={btnPrimary}>{saving ? "Salvando…" : "Salvar parâmetros"}</button>}
     >
-      {err && <div className="mb-4 bg-red-50 border border-red-200 text-red-700 px-4 py-2.5 text-sm font-[var(--font-inter)]">{err}</div>}
-      {msg && <div className="mb-4 bg-[#eef5ec] border border-[#cfe3ca] text-[#2c5226] px-4 py-2.5 text-sm font-[var(--font-inter)]">{msg}</div>}
+      {err && <div className="mb-4 bg-red-50 border border-red-200 text-red-700 px-4 py-2.5 text-sm">{err}</div>}
+      {msg && <div className="mb-4 bg-[#eef5ec] border border-[#cfe3ca] text-[#1F7A44] px-4 py-2.5 text-sm">{msg}</div>}
 
-      <p className="text-[#74777f] text-[13px] font-[var(--font-inter)] mb-6 max-w-3xl">
+      <p className="text-[#74777f] text-[13px] mb-6 max-w-3xl">
         O orçamento calcula sozinho os materiais de instalação a partir do tipo de aplicação de cada
         espaço. Aqui ficam as <strong>regras</strong>. Preço, estoque e nome de cada material são
         editados no cadastro do produto.
@@ -107,26 +107,26 @@ export default function MateriaisConfigPage() {
       {/* ── Consumo ─────────────────────────────────────────────────────────── */}
       <section className={sec}>
         <div className={secHead}>
-          <h2 className="font-[var(--font-noto-serif)] text-[#002045] text-lg">Consumo por placa</h2>
+          <h2 className="font-serif text-[#0B1F45] text-lg">Consumo por placa</h2>
         </div>
         <div className="p-4 sm:p-5 grid grid-cols-1 sm:grid-cols-3 gap-4">
           <div>
             <label className={labelCls}>Cola PU-40 (tubos por placa)</label>
             <input type="number" step="0.05" min="0" value={cfg.pu40TubesPerPanel}
               onChange={(e) => set({ pu40TubesPerPanel: Number(e.target.value) || 0 })} className={inputCls} />
-            <p className="text-[#a0a3a8] text-[11px] font-[var(--font-inter)] mt-1">Arredondado para cima. Padrão: 1,5.</p>
+            <p className="text-[#a0a3a8] text-[11px] mt-1">Arredondado para cima. Padrão: 1,5.</p>
           </div>
           <div>
             <label className={labelCls}>Cola de contato (litros por placa)</label>
             <input type="number" step="0.01" min="0" value={cfg.adhesiveLitersPerPanel}
               onChange={(e) => set({ adhesiveLitersPerPanel: Number(e.target.value) || 0 })} className={inputCls} />
-            <p className="text-[#a0a3a8] text-[11px] font-[var(--font-inter)] mt-1">Vira embalagens inteiras. Padrão: 0,25.</p>
+            <p className="text-[#a0a3a8] text-[11px] mt-1">Vira embalagens inteiras. Padrão: 0,25.</p>
           </div>
           <div>
             <label className={labelCls}>Espuma expansiva (tubos por placa)</label>
             <input type="number" step="0.05" min="0" value={cfg.foamTubesPerPanel}
               onChange={(e) => set({ foamTubesPerPanel: Number(e.target.value) || 0 })} className={inputCls} />
-            <p className="text-[#a0a3a8] text-[11px] font-[var(--font-inter)] mt-1">Arredondado para cima. Padrão: 0,75.</p>
+            <p className="text-[#a0a3a8] text-[11px] mt-1">Arredondado para cima. Padrão: 0,75.</p>
           </div>
         </div>
       </section>
@@ -134,8 +134,8 @@ export default function MateriaisConfigPage() {
       {/* ── Quais aplicações disparam cada regra ────────────────────────────── */}
       <section className={sec}>
         <div className={secHead}>
-          <h2 className="font-[var(--font-noto-serif)] text-[#002045] text-lg">Quando cada material entra</h2>
-          <p className="text-[#74777f] text-[12px] font-[var(--font-inter)] mt-0.5">
+          <h2 className="font-serif text-[#0B1F45] text-lg">Quando cada material entra</h2>
+          <p className="text-[#74777f] text-[12px] mt-0.5">
             Um tipo de aplicação em nenhuma das listas não recebe material automático.
           </p>
         </div>
@@ -148,7 +148,7 @@ export default function MateriaisConfigPage() {
                   const on = cfg[key].includes(t);
                   return (
                     <button key={t} type="button" onClick={() => toggleApp(key, t)}
-                      className={`text-[11px] tracking-[0.06em] uppercase font-bold font-[var(--font-inter)] px-3 py-1.5 border transition-colors ${on ? "bg-[#002045] text-white border-[#002045]" : "bg-white text-[#43474e] border-[#e2e2e2] hover:border-[#002045]"}`}>
+                      className={`text-[11px] tracking-[0.06em] uppercase font-bold px-3 py-1.5 border transition-colors ${on ? "bg-[#0B1F45] text-white border-[#0B1F45]" : "bg-white text-[#43474e] border-[#e2e2e2] hover:border-[#0B1F45]"}`}>
                       {APPLICATION_LABELS[t]}
                     </button>
                   );
@@ -162,8 +162,8 @@ export default function MateriaisConfigPage() {
       {/* ── Embalagens de cola ──────────────────────────────────────────────── */}
       <section className={sec}>
         <div className={secHead}>
-          <h2 className="font-[var(--font-noto-serif)] text-[#002045] text-lg">Embalagens de cola de contato</h2>
-          <p className="text-[#74777f] text-[12px] font-[var(--font-inter)] mt-0.5">
+          <h2 className="font-serif text-[#0B1F45] text-lg">Embalagens de cola de contato</h2>
+          <p className="text-[#74777f] text-[12px] mt-0.5">
             O sistema calcula o volume real e compara as combinações: nunca fecha com cola a menos,
             e entre as que servem escolhe a mais barata.
           </p>
@@ -187,7 +187,7 @@ export default function MateriaisConfigPage() {
                 <label className={labelCls}>Rótulo no orçamento</label>
                 <input value={p.label} onChange={(e) => setPkg(i, { label: e.target.value })} className={inputCls} />
               </div>
-              <div className="text-[12px] font-[var(--font-inter)] text-[#43474e] pb-2.5">
+              <div className="text-[12px] text-[#43474e] pb-2.5">
                 {byCode.get(p.code)
                   ? (byCode.get(p.code)!.price > 0
                       ? `R$ ${byCode.get(p.code)!.price} · rende ${(p.liters / (cfg.adhesiveLitersPerPanel || 1)).toFixed(1)} placas`
@@ -198,7 +198,7 @@ export default function MateriaisConfigPage() {
           ))}
           <button type="button"
             onClick={() => set({ adhesivePackages: [...cfg.adhesivePackages, { code: "", liters: 0, label: "" }] })}
-            className="text-[11px] tracking-[0.08em] uppercase font-bold font-[var(--font-inter)] text-[#002045] hover:underline">
+            className="text-[11px] tracking-[0.08em] uppercase font-bold text-[#0B1F45] hover:underline">
             + Adicionar embalagem
           </button>
         </div>
@@ -207,8 +207,8 @@ export default function MateriaisConfigPage() {
       {/* ── Situação dos produtos ───────────────────────────────────────────── */}
       <section className={sec}>
         <div className={secHead}>
-          <h2 className="font-[var(--font-noto-serif)] text-[#002045] text-lg">Produtos usados no cálculo</h2>
-          <p className="text-[#74777f] text-[12px] font-[var(--font-inter)] mt-0.5">
+          <h2 className="font-serif text-[#0B1F45] text-lg">Produtos usados no cálculo</h2>
+          <p className="text-[#74777f] text-[12px] mt-0.5">
             Sem preço cadastrado, a escolha da embalagem passa a ser pela menor sobra em vez do menor custo.
           </p>
         </div>
@@ -219,16 +219,16 @@ export default function MateriaisConfigPage() {
             return (
               <div key={code} className="flex flex-wrap items-center justify-between gap-2 border-b border-[#f0f0f0] pb-2 last:border-0 last:pb-0">
                 <div className="min-w-0">
-                  <p className="font-[var(--font-inter)] text-[#002045] text-sm font-semibold">{p?.name ?? code}</p>
-                  <p className="text-[#74777f] text-[11px] font-[var(--font-inter)]">
+                  <p className="text-[#0B1F45] text-sm font-semibold">{p?.name ?? code}</p>
+                  <p className="text-[#74777f] text-[11px]">
                     {code}{p?.sale_unit ? ` · ${p.sale_unit}` : ""} · estoque disponível {disp}
                   </p>
                 </div>
                 <div className="flex items-center gap-3">
-                  <span className={`text-[12px] font-[var(--font-inter)] font-semibold ${p && p.price > 0 ? "text-[#002045]" : "text-amber-700"}`}>
+                  <span className={`text-[12px] font-semibold ${p && p.price > 0 ? "text-[#0B1F45]" : "text-amber-700"}`}>
                     {p ? (p.price > 0 ? `R$ ${p.price}` : "sem preço") : "não cadastrado"}
                   </span>
-                  <Link href="/admin?tab=produtos" className="text-[10px] tracking-[0.08em] uppercase font-bold font-[var(--font-inter)] text-[#74777f] hover:text-[#002045]">
+                  <Link href="/admin?tab=produtos" className="text-[10px] tracking-[0.08em] uppercase font-bold text-[#74777f] hover:text-[#0B1F45]">
                     Editar
                   </Link>
                 </div>

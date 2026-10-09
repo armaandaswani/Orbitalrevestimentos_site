@@ -606,17 +606,17 @@ export default function ParceiroPage() {
   // ── Auth screens ──────────────────────────────────────────────────────────
   if (!partner) {
     return (
-      <div className="min-h-screen bg-[#f5f5f3] flex items-center justify-center px-4">
+      <div className="min-h-screen bg-[#F6F5F2] flex items-center justify-center px-4">
         <div className="bg-white border border-[#e2e2e2] p-10 w-full max-w-sm">
 
           {/* ── Convite view ── */}
           {loginView === "invite" && (
             <>
               <div className="mb-6">
-                <p className="text-[#002045] font-[var(--font-noto-serif)] text-2xl font-normal mb-1">
+                <p className="text-[#0B1F45] font-serif text-2xl font-normal mb-1">
                   {inviteInfo ? `Olá, ${inviteInfo.name.split(" ")[0]}!` : "Convite de parceiro"}
                 </p>
-                <p className="text-[#74777f] text-sm font-[var(--font-inter)]">
+                <p className="text-[#74777f] text-sm">
                   {inviteInfo
                     ? `${inviteInfo.rep_name ? `${inviteInfo.rep_name} convidou você` : "Você foi convidado"} para ser Parceiro Orbital. Crie sua senha para entrar no portal.`
                     : "Orbital Revestimentos"}
@@ -624,13 +624,13 @@ export default function ParceiroPage() {
               </div>
               {!inviteInfo ? (
                 <div className="space-y-4">
-                  <p className={`text-sm font-[var(--font-inter)] ${inviteError ? "text-red-600" : "text-[#74777f]"}`}>
+                  <p className={`text-sm ${inviteError ? "text-red-600" : "text-[#74777f]"}`}>
                     {inviteError || "Carregando convite..."}
                   </p>
                   {inviteError && (
                     <button
                       onClick={() => { setLoginView("login"); window.history.replaceState({}, "", window.location.pathname); }}
-                      className="text-[#002045] text-xs font-[var(--font-inter)] underline underline-offset-2"
+                      className="text-[#0B1F45] text-xs underline underline-offset-2"
                     >
                       Ir para o login
                     </button>
@@ -639,7 +639,7 @@ export default function ParceiroPage() {
               ) : (
                 <form onSubmit={handleAcceptInvite} className="space-y-4">
                   <div>
-                    <label className="block text-[10px] tracking-[0.15em] uppercase font-bold font-[var(--font-inter)] text-[#74777f] mb-2">
+                    <label className="block text-[10px] tracking-[0.15em] uppercase font-bold text-[#74777f] mb-2">
                       Crie sua senha
                     </label>
                     <input
@@ -649,12 +649,12 @@ export default function ParceiroPage() {
                       value={invitePassword}
                       onChange={(e) => setInvitePassword(e.target.value)}
                       placeholder="Mínimo 8 caracteres"
-                      className="w-full border border-[#e2e2e2] px-4 py-3 text-sm font-[var(--font-inter)] text-[#002045] focus:outline-none focus:border-[#002045]"
+                      className="w-full border border-[#e2e2e2] px-4 py-3 text-sm text-[#0B1F45] focus:outline-none focus:border-[#0B1F45]"
                       autoFocus
                     />
                   </div>
                   <div>
-                    <label className="block text-[10px] tracking-[0.15em] uppercase font-bold font-[var(--font-inter)] text-[#74777f] mb-2">
+                    <label className="block text-[10px] tracking-[0.15em] uppercase font-bold text-[#74777f] mb-2">
                       Confirme a senha
                     </label>
                     <input
@@ -663,23 +663,23 @@ export default function ParceiroPage() {
                       autoComplete="new-password"
                       value={inviteConfirm}
                       onChange={(e) => setInviteConfirm(e.target.value)}
-                      className="w-full border border-[#e2e2e2] px-4 py-3 text-sm font-[var(--font-inter)] text-[#002045] focus:outline-none focus:border-[#002045]"
+                      className="w-full border border-[#e2e2e2] px-4 py-3 text-sm text-[#0B1F45] focus:outline-none focus:border-[#0B1F45]"
                     />
                   </div>
-                  <label className="flex items-start gap-2 text-xs text-[#43474e] font-[var(--font-inter)] leading-relaxed">
-                    <input type="checkbox" checked={inviteAgree} onChange={(e) => setInviteAgree(e.target.checked)} className="mt-0.5 accent-[#002045]" />
+                  <label className="flex items-start gap-2 text-xs text-[#43474e] leading-relaxed">
+                    <input type="checkbox" checked={inviteAgree} onChange={(e) => setInviteAgree(e.target.checked)} className="mt-0.5 accent-[#0B1F45]" />
                     <span>
                       Aceito o convite e concordo com os{" "}
-                      <a href="/termos" target="_blank" rel="noopener noreferrer" className="underline underline-offset-2 text-[#002045]">Termos de Uso</a>{" "}
+                      <a href="/termos" target="_blank" rel="noopener noreferrer" className="underline underline-offset-2 text-[#0B1F45]">Termos de Uso</a>{" "}
                       e a{" "}
-                      <a href="/privacidade" target="_blank" rel="noopener noreferrer" className="underline underline-offset-2 text-[#002045]">Política de Privacidade</a>.
+                      <a href="/privacidade" target="_blank" rel="noopener noreferrer" className="underline underline-offset-2 text-[#0B1F45]">Política de Privacidade</a>.
                     </span>
                   </label>
-                  {inviteError && <p className="text-red-600 text-sm font-[var(--font-inter)]">{inviteError}</p>}
+                  {inviteError && <p className="text-red-600 text-sm">{inviteError}</p>}
                   <button
                     type="submit"
                     disabled={inviteLoading}
-                    className="w-full bg-[#002045] text-white text-xs tracking-[0.12em] uppercase font-bold font-[var(--font-inter)] px-6 py-3 hover:bg-[#1a365d] transition-colors disabled:opacity-50"
+                    className="w-full bg-[#0B1F45] text-white text-xs tracking-[0.12em] uppercase font-bold px-6 py-3 hover:bg-[#2347A0] transition-colors disabled:opacity-50"
                   >
                     {inviteLoading ? "Ativando..." : "Aceitar e entrar no portal"}
                   </button>
@@ -692,22 +692,22 @@ export default function ParceiroPage() {
           {loginView === "reset" && (
             <>
               <div className="mb-6">
-                <p className="text-[#002045] font-[var(--font-noto-serif)] text-2xl font-normal mb-1">
+                <p className="text-[#0B1F45] font-serif text-2xl font-normal mb-1">
                   Redefinir Senha
                 </p>
-                <p className="text-[#74777f] text-sm font-[var(--font-inter)]">
+                <p className="text-[#74777f] text-sm">
                   Orbital Revestimentos
                 </p>
               </div>
 
               {resetSuccess ? (
                 <div className="space-y-4">
-                  <p className="text-green-700 text-sm font-[var(--font-inter)]">
+                  <p className="text-green-700 text-sm">
                     Senha redefinida com sucesso! Faça login.
                   </p>
                   <button
                     onClick={() => { setLoginView("login"); setResetSuccess(false); }}
-                    className="text-[#002045] text-xs font-[var(--font-inter)] underline underline-offset-2"
+                    className="text-[#0B1F45] text-xs underline underline-offset-2"
                   >
                     Voltar ao login
                   </button>
@@ -715,7 +715,7 @@ export default function ParceiroPage() {
               ) : (
                 <form onSubmit={handleResetPassword} className="space-y-4">
                   <div>
-                    <label className="block text-[10px] tracking-[0.15em] uppercase font-bold font-[var(--font-inter)] text-[#74777f] mb-2">
+                    <label className="block text-[10px] tracking-[0.15em] uppercase font-bold text-[#74777f] mb-2">
                       Nova Senha
                     </label>
                     <div className="relative">
@@ -724,7 +724,7 @@ export default function ParceiroPage() {
                         type={showResetPw ? "text" : "password"}
                         value={resetNewPassword}
                         onChange={(e) => setResetNewPassword(e.target.value)}
-                        className="w-full border border-[#e2e2e2] px-4 py-3 pr-10 text-sm font-[var(--font-inter)] text-[#002045] focus:outline-none focus:border-[#002045]"
+                        className="w-full border border-[#e2e2e2] px-4 py-3 pr-10 text-sm text-[#0B1F45] focus:outline-none focus:border-[#0B1F45]"
                         autoFocus
                       />
                       <button
@@ -732,7 +732,7 @@ export default function ParceiroPage() {
                         tabIndex={-1}
                         aria-label={showResetPw ? "Ocultar senha" : "Mostrar senha"}
                         onClick={() => setShowResetPw((v) => !v)}
-                        className="absolute right-3 top-1/2 -translate-y-1/2 text-[#74777f] hover:text-[#002045] transition-colors"
+                        className="absolute right-3 top-1/2 -translate-y-1/2 text-[#74777f] hover:text-[#0B1F45] transition-colors"
                       >
                         {showResetPw ? (
                           <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><path d="M17.94 17.94A10.07 10.07 0 0112 20c-7 0-11-8-11-8a18.45 18.45 0 015.06-5.94M9.9 4.24A9.12 9.12 0 0112 4c7 0 11 8 11 8a18.5 18.5 0 01-2.16 3.19m-6.72-1.07a3 3 0 11-4.24-4.24"/><line x1="1" y1="1" x2="23" y2="23"/></svg>
@@ -743,7 +743,7 @@ export default function ParceiroPage() {
                     </div>
                   </div>
                   <div>
-                    <label className="block text-[10px] tracking-[0.15em] uppercase font-bold font-[var(--font-inter)] text-[#74777f] mb-2">
+                    <label className="block text-[10px] tracking-[0.15em] uppercase font-bold text-[#74777f] mb-2">
                       Confirmar Nova Senha
                     </label>
                     <div className="relative">
@@ -752,14 +752,14 @@ export default function ParceiroPage() {
                         type={showResetConfirm ? "text" : "password"}
                         value={resetConfirmPassword}
                         onChange={(e) => setResetConfirmPassword(e.target.value)}
-                        className="w-full border border-[#e2e2e2] px-4 py-3 pr-10 text-sm font-[var(--font-inter)] text-[#002045] focus:outline-none focus:border-[#002045]"
+                        className="w-full border border-[#e2e2e2] px-4 py-3 pr-10 text-sm text-[#0B1F45] focus:outline-none focus:border-[#0B1F45]"
                       />
                       <button
                         type="button"
                         tabIndex={-1}
                         aria-label={showResetConfirm ? "Ocultar senha" : "Mostrar senha"}
                         onClick={() => setShowResetConfirm((v) => !v)}
-                        className="absolute right-3 top-1/2 -translate-y-1/2 text-[#74777f] hover:text-[#002045] transition-colors"
+                        className="absolute right-3 top-1/2 -translate-y-1/2 text-[#74777f] hover:text-[#0B1F45] transition-colors"
                       >
                         {showResetConfirm ? (
                           <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><path d="M17.94 17.94A10.07 10.07 0 0112 20c-7 0-11-8-11-8a18.45 18.45 0 015.06-5.94M9.9 4.24A9.12 9.12 0 0112 4c7 0 11 8 11 8a18.5 18.5 0 01-2.16 3.19m-6.72-1.07a3 3 0 11-4.24-4.24"/><line x1="1" y1="1" x2="23" y2="23"/></svg>
@@ -770,19 +770,19 @@ export default function ParceiroPage() {
                     </div>
                   </div>
                   {resetError && (
-                    <p className="text-red-600 text-sm font-[var(--font-inter)]">{resetError}</p>
+                    <p className="text-red-600 text-sm">{resetError}</p>
                   )}
                   <button
                     type="submit"
                     disabled={resetLoading}
-                    className="w-full bg-[#002045] text-white text-xs tracking-[0.12em] uppercase font-bold font-[var(--font-inter)] px-6 py-3 hover:bg-[#1a365d] transition-colors disabled:opacity-50"
+                    className="w-full bg-[#0B1F45] text-white text-xs tracking-[0.12em] uppercase font-bold px-6 py-3 hover:bg-[#2347A0] transition-colors disabled:opacity-50"
                   >
                     {resetLoading ? "Redefinindo..." : "Redefinir Senha"}
                   </button>
                   <button
                     type="button"
                     onClick={() => setLoginView("login")}
-                    className="w-full text-center text-[#74777f] text-xs font-[var(--font-inter)] underline underline-offset-2 mt-1"
+                    className="w-full text-center text-[#74777f] text-xs underline underline-offset-2 mt-1"
                   >
                     Voltar ao login
                   </button>
@@ -795,20 +795,20 @@ export default function ParceiroPage() {
           {loginView === "forgot" && (
             <>
               <div className="mb-6">
-                <p className="text-[#002045] font-[var(--font-noto-serif)] text-2xl font-normal mb-1">
+                <p className="text-[#0B1F45] font-serif text-2xl font-normal mb-1">
                   Esqueci minha senha
                 </p>
-                <p className="text-[#74777f] text-sm font-[var(--font-inter)]">
+                <p className="text-[#74777f] text-sm">
                   Orbital Revestimentos
                 </p>
               </div>
 
               {forgotMessage ? (
                 <div className="space-y-4">
-                  <p className="text-green-700 text-sm font-[var(--font-inter)]">{forgotMessage}</p>
+                  <p className="text-green-700 text-sm">{forgotMessage}</p>
                   <button
                     onClick={() => { setLoginView("login"); setForgotMessage(""); setForgotEmail(""); }}
-                    className="text-[#002045] text-xs font-[var(--font-inter)] underline underline-offset-2"
+                    className="text-[#0B1F45] text-xs underline underline-offset-2"
                   >
                     Voltar ao login
                   </button>
@@ -816,7 +816,7 @@ export default function ParceiroPage() {
               ) : (
                 <form onSubmit={handleForgotPassword} className="space-y-4">
                   <div>
-                    <label className="block text-[10px] tracking-[0.15em] uppercase font-bold font-[var(--font-inter)] text-[#74777f] mb-2">
+                    <label className="block text-[10px] tracking-[0.15em] uppercase font-bold text-[#74777f] mb-2">
                       E-mail cadastrado
                     </label>
                     <input
@@ -824,25 +824,25 @@ export default function ParceiroPage() {
                       type="email"
                       value={forgotEmail}
                       onChange={(e) => setForgotEmail(e.target.value)}
-                      className="w-full border border-[#e2e2e2] px-4 py-3 text-sm font-[var(--font-inter)] text-[#002045] focus:outline-none focus:border-[#002045]"
+                      className="w-full border border-[#e2e2e2] px-4 py-3 text-sm text-[#0B1F45] focus:outline-none focus:border-[#0B1F45]"
                       placeholder="seu@email.com"
                       autoFocus
                     />
                   </div>
                   {forgotError && (
-                    <p className="text-red-600 text-sm font-[var(--font-inter)]">{forgotError}</p>
+                    <p className="text-red-600 text-sm">{forgotError}</p>
                   )}
                   <button
                     type="submit"
                     disabled={forgotLoading}
-                    className="w-full bg-[#002045] text-white text-xs tracking-[0.12em] uppercase font-bold font-[var(--font-inter)] px-6 py-3 hover:bg-[#1a365d] transition-colors disabled:opacity-50"
+                    className="w-full bg-[#0B1F45] text-white text-xs tracking-[0.12em] uppercase font-bold px-6 py-3 hover:bg-[#2347A0] transition-colors disabled:opacity-50"
                   >
                     {forgotLoading ? "Enviando..." : "Enviar instruções"}
                   </button>
                   <button
                     type="button"
                     onClick={() => { setLoginView("login"); setForgotError(""); }}
-                    className="w-full text-center text-[#74777f] text-xs font-[var(--font-inter)] underline underline-offset-2 mt-1"
+                    className="w-full text-center text-[#74777f] text-xs underline underline-offset-2 mt-1"
                   >
                     Voltar ao login
                   </button>
@@ -855,16 +855,16 @@ export default function ParceiroPage() {
           {loginView === "login" && (
             <>
               <div className="mb-6">
-                <p className="text-[#002045] font-[var(--font-noto-serif)] text-2xl font-normal mb-1">
+                <p className="text-[#0B1F45] font-serif text-2xl font-normal mb-1">
                   Portal do Parceiro
                 </p>
-                <p className="text-[#74777f] text-sm font-[var(--font-inter)]">
+                <p className="text-[#74777f] text-sm">
                   Orbital Revestimentos
                 </p>
               </div>
               <form onSubmit={handleLogin} className="space-y-4">
                 <div>
-                  <label className="block text-[10px] tracking-[0.15em] uppercase font-bold font-[var(--font-inter)] text-[#74777f] mb-2">
+                  <label className="block text-[10px] tracking-[0.15em] uppercase font-bold text-[#74777f] mb-2">
                     E-mail
                   </label>
                   <input
@@ -872,14 +872,14 @@ export default function ParceiroPage() {
                     type="email"
                     value={loginEmail}
                     onChange={(e) => setLoginEmail(e.target.value)}
-                    className="w-full border border-[#e2e2e2] px-4 py-3 text-sm font-[var(--font-inter)] text-[#002045] focus:outline-none focus:border-[#002045]"
+                    className="w-full border border-[#e2e2e2] px-4 py-3 text-sm text-[#0B1F45] focus:outline-none focus:border-[#0B1F45]"
                     placeholder="seu@email.com"
                     autoComplete="email"
                     autoFocus
                   />
                 </div>
                 <div>
-                  <label className="block text-[10px] tracking-[0.15em] uppercase font-bold font-[var(--font-inter)] text-[#74777f] mb-2">
+                  <label className="block text-[10px] tracking-[0.15em] uppercase font-bold text-[#74777f] mb-2">
                     Senha
                   </label>
                   <div className="relative">
@@ -888,7 +888,7 @@ export default function ParceiroPage() {
                       type={showLoginPw ? "text" : "password"}
                       value={password}
                       onChange={(e) => setPassword(e.target.value)}
-                      className="w-full border border-[#e2e2e2] px-4 py-3 pr-10 text-sm font-[var(--font-inter)] text-[#002045] focus:outline-none focus:border-[#002045]"
+                      className="w-full border border-[#e2e2e2] px-4 py-3 pr-10 text-sm text-[#0B1F45] focus:outline-none focus:border-[#0B1F45]"
                       autoComplete="current-password"
                     />
                     <button
@@ -896,7 +896,7 @@ export default function ParceiroPage() {
                       tabIndex={-1}
                       aria-label={showLoginPw ? "Ocultar senha" : "Mostrar senha"}
                       onClick={() => setShowLoginPw((v) => !v)}
-                      className="absolute right-3 top-1/2 -translate-y-1/2 text-[#74777f] hover:text-[#002045] transition-colors"
+                      className="absolute right-3 top-1/2 -translate-y-1/2 text-[#74777f] hover:text-[#0B1F45] transition-colors"
                     >
                       {showLoginPw ? (
                         <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><path d="M17.94 17.94A10.07 10.07 0 0112 20c-7 0-11-8-11-8a18.45 18.45 0 015.06-5.94M9.9 4.24A9.12 9.12 0 0112 4c7 0 11 8 11 8a18.5 18.5 0 01-2.16 3.19m-6.72-1.07a3 3 0 11-4.24-4.24"/><line x1="1" y1="1" x2="23" y2="23"/></svg>
@@ -907,12 +907,12 @@ export default function ParceiroPage() {
                   </div>
                 </div>
                 {loginError && (
-                  <p className="text-red-600 text-sm font-[var(--font-inter)]">{loginError}</p>
+                  <p className="text-red-600 text-sm">{loginError}</p>
                 )}
                 <button
                   type="submit"
                   disabled={loginLoading}
-                  className="w-full bg-[#002045] text-white text-xs tracking-[0.12em] uppercase font-bold font-[var(--font-inter)] px-6 py-3 hover:bg-[#1a365d] transition-colors disabled:opacity-50"
+                  className="w-full bg-[#0B1F45] text-white text-xs tracking-[0.12em] uppercase font-bold px-6 py-3 hover:bg-[#2347A0] transition-colors disabled:opacity-50"
                 >
                   {loginLoading ? "Entrando..." : "Entrar"}
                 </button>
@@ -921,13 +921,13 @@ export default function ParceiroPage() {
                 <button
                   type="button"
                   onClick={() => { setLoginView("forgot"); setLoginError(""); }}
-                  className="text-[#74777f] text-xs font-[var(--font-inter)] underline underline-offset-2 hover:text-[#002045] transition-colors"
+                  className="text-[#74777f] text-xs underline underline-offset-2 hover:text-[#0B1F45] transition-colors"
                 >
                   Esqueci minha senha
                 </button>
                 <a
                   href="/representante"
-                  className="text-[#74777f] text-xs font-[var(--font-inter)] hover:text-[#002045] transition-colors"
+                  className="text-[#74777f] text-xs hover:text-[#0B1F45] transition-colors"
                 >
                   É representante comercial?{" "}
                   <span className="underline underline-offset-2">Acesse aqui</span>
@@ -944,26 +944,26 @@ export default function ParceiroPage() {
   // ── Profession gate ────────────────────────────────────────────────────────
   if (!partner.profession) {
     return (
-      <div className="min-h-screen bg-[#f5f5f3] flex items-center justify-center px-4">
+      <div className="min-h-screen bg-[#F6F5F2] flex items-center justify-center px-4">
         <div className="bg-white border border-[#e2e2e2] p-10 w-full max-w-sm">
           <div className="mb-6">
-            <p className="text-[#002045] font-[var(--font-noto-serif)] text-2xl font-normal mb-1">
+            <p className="text-[#0B1F45] font-serif text-2xl font-normal mb-1">
               Complete seu cadastro
             </p>
-            <p className="text-[#74777f] text-sm font-[var(--font-inter)]">
+            <p className="text-[#74777f] text-sm">
               Olá, {partner.name}. Para continuar, precisamos saber sua profissão.
             </p>
           </div>
           <form onSubmit={handleProfessionSubmit} className="space-y-4">
             <div>
-              <label className="block text-[10px] tracking-[0.15em] uppercase font-bold font-[var(--font-inter)] text-[#74777f] mb-2">
+              <label className="block text-[10px] tracking-[0.15em] uppercase font-bold text-[#74777f] mb-2">
                 Profissão *
               </label>
               <select
                 required
                 value={profInput}
                 onChange={(e) => { setProfInput(e.target.value); if (e.target.value !== "Outro") setProfOther(""); }}
-                className="w-full border border-[#e2e2e2] px-4 py-3 text-sm font-[var(--font-inter)] text-[#002045] focus:outline-none focus:border-[#002045]"
+                className="w-full border border-[#e2e2e2] px-4 py-3 text-sm text-[#0B1F45] focus:outline-none focus:border-[#0B1F45]"
               >
                 <option value="">— Selecionar —</option>
                 {PROFESSIONS.map((prof) => (
@@ -978,17 +978,17 @@ export default function ParceiroPage() {
                   value={profOther}
                   onChange={(e) => setProfOther(e.target.value)}
                   placeholder="Especifique sua profissão"
-                  className="w-full border border-[#e2e2e2] px-4 py-3 text-sm font-[var(--font-inter)] text-[#002045] focus:outline-none focus:border-[#002045] mt-2"
+                  className="w-full border border-[#e2e2e2] px-4 py-3 text-sm text-[#0B1F45] focus:outline-none focus:border-[#0B1F45] mt-2"
                 />
               )}
             </div>
             {profError && (
-              <p className="text-red-600 text-sm font-[var(--font-inter)]">{profError}</p>
+              <p className="text-red-600 text-sm">{profError}</p>
             )}
             <button
               type="submit"
               disabled={profLoading}
-              className="w-full bg-[#002045] text-white text-xs tracking-[0.12em] uppercase font-bold font-[var(--font-inter)] px-6 py-3 hover:bg-[#1a365d] transition-colors disabled:opacity-50"
+              className="w-full bg-[#0B1F45] text-white text-xs tracking-[0.12em] uppercase font-bold px-6 py-3 hover:bg-[#2347A0] transition-colors disabled:opacity-50"
             >
               {profLoading ? "Salvando..." : "Confirmar e entrar"}
             </button>
@@ -1000,20 +1000,20 @@ export default function ParceiroPage() {
 
   // ── Dashboard ──────────────────────────────────────────────────────────────
   return (
-    <div className="min-h-screen bg-[#f5f5f3] pt-20">
+    <div className="min-h-screen bg-[#F6F5F2] pt-20">
       {/* Header */}
-      <div className="bg-[#002045] px-6 py-5 flex items-center justify-between">
+      <div className="bg-[#0B1F45] px-6 py-5 flex items-center justify-between">
         <div>
-          <p className="text-white font-[var(--font-noto-serif)] text-lg leading-tight">
+          <p className="text-white font-serif text-lg leading-tight">
             Olá, {partner.name}
           </p>
-          <p className="text-white/60 text-xs font-[var(--font-inter)] tracking-wider mt-0.5">
+          <p className="text-white/60 text-xs tracking-wider mt-0.5">
             Cupom: <strong className="text-white">{partner.coupon_code}</strong>
           </p>
         </div>
         <button
           onClick={() => { fetch("/api/parceiro/auth", { method: "DELETE" }).catch(() => {}); setPartner(null); setUses([]); setLoginEmail(""); setPassword(""); setCpSuccess(""); setPortalTab("portal"); localStorage.removeItem(SESSION_KEY); }}
-          className="text-white/60 hover:text-white text-xs font-[var(--font-inter)] uppercase tracking-widest transition-colors"
+          className="text-white/60 hover:text-white text-xs uppercase tracking-widest transition-colors"
         >
           Sair
         </button>
@@ -1035,7 +1035,7 @@ export default function ParceiroPage() {
                   setPortalTab(t.key);
                   if (t.key === "portal") markPortalVisited();
                 }}
-                className={`relative flex-shrink-0 px-3 sm:px-6 py-3 text-[10px] sm:text-xs tracking-[0.08em] sm:tracking-[0.1em] uppercase font-bold font-[var(--font-inter)] transition-colors border-b-2 -mb-px whitespace-nowrap ${portalTab === t.key ? "border-[#002045] text-[#002045]" : "border-transparent text-[#74777f] hover:text-[#002045]"}`}
+                className={`relative flex-shrink-0 px-3 sm:px-6 py-3 text-[10px] sm:text-xs tracking-[0.08em] sm:tracking-[0.1em] uppercase font-bold transition-colors border-b-2 -mb-px whitespace-nowrap ${portalTab === t.key ? "border-[#0B1F45] text-[#0B1F45]" : "border-transparent text-[#74777f] hover:text-[#0B1F45]"}`}
               >
                 {t.label}
                 {t.key === "portal" && hasNewUses && (
@@ -1067,15 +1067,15 @@ export default function ParceiroPage() {
                 {/* KPI grid */}
                 <div className="grid grid-cols-2 sm:grid-cols-4 gap-3 mb-3">
                   {[
-                    { label: "Orçamentos", value: total.toString(), sub: `${concluidos} concluídos`, color: "border-l-[#002045]" },
+                    { label: "Orçamentos", value: total.toString(), sub: `${concluidos} concluídos`, color: "border-l-[#0B1F45]" },
                     { label: "Valor orçado", value: fmtBRL(totalValor), sub: `${emOrcamento} em andamento`, color: "border-l-[#4a7cc7]" },
                     { label: "Comissão pendente", value: fmtBRL(commPendente), sub: "a receber", color: "border-l-[#f59e0b]" },
                     { label: "Taxa de conversão", value: `${convRate}%`, sub: fmtBRL(commPaga) + " recebido", color: "border-l-[#10b981]" },
                   ].map((card) => (
                     <div key={card.label} className={`bg-white border border-[#e2e2e2] border-l-4 ${card.color} p-4`}>
-                      <p className="text-[#74777f] text-[9px] tracking-[0.15em] uppercase font-[var(--font-inter)] mb-1.5">{card.label}</p>
-                      <p className="font-[var(--font-noto-serif)] text-[#002045] text-xl font-normal leading-tight">{card.value}</p>
-                      <p className="text-[#74777f] text-[10px] font-[var(--font-inter)] mt-1">{card.sub}</p>
+                      <p className="text-[#74777f] text-[9px] tracking-[0.15em] uppercase mb-1.5">{card.label}</p>
+                      <p className="font-serif text-[#0B1F45] text-xl font-normal leading-tight">{card.value}</p>
+                      <p className="text-[#74777f] text-[10px] mt-1">{card.sub}</p>
                     </div>
                   ))}
                 </div>
@@ -1084,23 +1084,23 @@ export default function ParceiroPage() {
                 <div className="grid grid-cols-2 gap-3 mb-3">
                   <button
                     onClick={() => setPortalTab("commissions")}
-                    className="bg-white border border-[#e2e2e2] border-l-4 border-l-[#f59e0b] p-4 text-left hover:border-[#002045] transition-colors group"
+                    className="bg-white border border-[#e2e2e2] border-l-4 border-l-[#f59e0b] p-4 text-left hover:border-[#0B1F45] transition-colors group"
                   >
-                    <p className="text-[#74777f] text-[9px] tracking-[0.15em] uppercase font-[var(--font-inter)] mb-1.5">Em orçamento</p>
-                    <p className="font-[var(--font-noto-serif)] text-[#002045] text-xl font-normal leading-tight">{emOrcamento}</p>
-                    <p className="text-[#74777f] text-[10px] font-[var(--font-inter)] mt-1 group-hover:text-[#002045] transition-colors">
+                    <p className="text-[#74777f] text-[9px] tracking-[0.15em] uppercase mb-1.5">Em orçamento</p>
+                    <p className="font-serif text-[#0B1F45] text-xl font-normal leading-tight">{emOrcamento}</p>
+                    <p className="text-[#74777f] text-[10px] mt-1 group-hover:text-[#0B1F45] transition-colors">
                       {emOrcamento === 1 ? "pedido aguardando decisão" : "pedidos aguardando decisão"} →
                     </p>
                   </button>
                   <button
                     onClick={openEspecAnteriores}
-                    className="bg-white border border-[#e2e2e2] border-l-4 border-l-[#6366f1] p-4 text-left hover:border-[#002045] transition-colors group"
+                    className="bg-white border border-[#e2e2e2] border-l-4 border-l-[#6366f1] p-4 text-left hover:border-[#0B1F45] transition-colors group"
                   >
-                    <p className="text-[#74777f] text-[9px] tracking-[0.15em] uppercase font-[var(--font-inter)] mb-1.5">Especificações pendentes</p>
-                    <p className="font-[var(--font-noto-serif)] text-[#002045] text-xl font-normal leading-tight">
+                    <p className="text-[#74777f] text-[9px] tracking-[0.15em] uppercase mb-1.5">Especificações pendentes</p>
+                    <p className="font-serif text-[#0B1F45] text-xl font-normal leading-tight">
                       {pendingSimsCount ?? "—"}
                     </p>
-                    <p className="text-[#74777f] text-[10px] font-[var(--font-inter)] mt-1 group-hover:text-[#002045] transition-colors">
+                    <p className="text-[#74777f] text-[10px] mt-1 group-hover:text-[#0B1F45] transition-colors">
                       {pendingSimsCount === 1 ? "link ainda não convertido" : "links ainda não convertidos"} →
                     </p>
                   </button>
@@ -1108,28 +1108,28 @@ export default function ParceiroPage() {
 
                 {/* Recent activity strip */}
                 <div className="bg-white border border-[#e2e2e2]">
-                  <div className="px-5 py-3 border-b border-[#f0efec] flex items-center justify-between">
-                    <p className="text-[10px] tracking-[0.15em] uppercase font-bold font-[var(--font-inter)] text-[#002045]">Últimas atividades</p>
-                    <button onClick={() => setPortalTab("commissions")} className="text-[10px] tracking-widest uppercase font-bold font-[var(--font-inter)] text-[#74777f] hover:text-[#002045] transition-colors">
+                  <div className="px-5 py-3 border-b border-[#EFEDE8] flex items-center justify-between">
+                    <p className="text-[10px] tracking-[0.15em] uppercase font-bold text-[#0B1F45]">Últimas atividades</p>
+                    <button onClick={() => setPortalTab("commissions")} className="text-[10px] tracking-widest uppercase font-bold text-[#74777f] hover:text-[#0B1F45] transition-colors">
                       Ver todas →
                     </button>
                   </div>
-                  <div className="divide-y divide-[#f0efec]">
+                  <div className="divide-y divide-[#EFEDE8]">
                     {uses.slice(0, 4).map((u) => {
                       const statusCls = u.sale_status === "concluido" ? "text-green-600" : u.sale_status === "cancelado" ? "text-red-500" : "text-yellow-600";
                       const statusLabel = u.sale_status === "concluido" ? "Concluído" : u.sale_status === "cancelado" ? "Cancelado" : "Em orçamento";
                       return (
                         <div key={u.id} className="px-5 py-3 flex items-center gap-3">
-                          <div className="w-1.5 h-1.5 rounded-full bg-[#002045] flex-shrink-0" />
+                          <div className="w-1.5 h-1.5 rounded-full bg-[#0B1F45] flex-shrink-0" />
                           <div className="flex-1 min-w-0">
-                            <p className="text-xs font-[var(--font-inter)] text-[#002045] truncate">{u.architect_name ?? "—"}</p>
-                            <p className="text-[10px] font-[var(--font-inter)] text-[#74777f]">{u.product_name ?? "—"}{u.space ? ` · ${u.space}` : ""}</p>
+                            <p className="text-xs text-[#0B1F45] truncate">{u.architect_name ?? "—"}</p>
+                            <p className="text-[10px] text-[#74777f]">{u.product_name ?? "—"}{u.space ? ` · ${u.space}` : ""}</p>
                           </div>
                           <div className="text-right flex-shrink-0">
-                            <p className="text-xs font-bold font-[var(--font-inter)] text-[#002045]">{u.material_discounted ? fmtBRL(u.material_discounted) : "—"}</p>
-                            <p className={`text-[10px] font-[var(--font-inter)] ${statusCls}`}>{statusLabel}</p>
+                            <p className="text-xs font-bold text-[#0B1F45]">{u.material_discounted ? fmtBRL(u.material_discounted) : "—"}</p>
+                            <p className={`text-[10px] ${statusCls}`}>{statusLabel}</p>
                           </div>
-                          <p className="text-[10px] text-[#b0b0b0] font-[var(--font-inter)] flex-shrink-0 hidden sm:block">{new Date(u.created_at).toLocaleDateString("pt-BR")}</p>
+                          <p className="text-[10px] text-[#b0b0b0] flex-shrink-0 hidden sm:block">{new Date(u.created_at).toLocaleDateString("pt-BR")}</p>
                         </div>
                       );
                     })}
@@ -1141,16 +1141,16 @@ export default function ParceiroPage() {
 
           {/* Partner info card */}
           <div className="bg-white border border-[#e2e2e2] px-6 py-5 mb-4">
-            <p className="text-[#74777f] text-[10px] tracking-[0.15em] uppercase font-bold font-[var(--font-inter)] mb-3">
+            <p className="text-[#74777f] text-[10px] tracking-[0.15em] uppercase font-bold mb-3">
               Seu cupom
             </p>
             <div className="flex flex-col sm:flex-row sm:items-center gap-4">
               <div>
-                <span className="bg-[#eef2f8] text-[#002045] px-4 py-2 text-xl font-bold tracking-[0.2em] font-[var(--font-inter)]">
+                <span className="bg-[#eef2f8] text-[#0B1F45] px-4 py-2 text-xl font-bold tracking-[0.2em]">
                   {partner.coupon_code}
                 </span>
               </div>
-              <div className="text-sm font-[var(--font-inter)] text-[#43474e]">
+              <div className="text-sm text-[#43474e]">
                 <p>Compartilhe seu cupom com clientes para aplicar o desconto automaticamente.</p>
               </div>
             </div>
@@ -1164,8 +1164,8 @@ export default function ParceiroPage() {
           {/* Referral link */}
           <div className="bg-white border border-[#e2e2e2] px-5 py-4 mb-4 flex flex-col sm:flex-row sm:items-center gap-3">
             <div className="flex-1 min-w-0">
-              <p className="text-[#74777f] text-[9px] tracking-[0.15em] uppercase font-bold font-[var(--font-inter)] mb-1">Seu link de indicação</p>
-              <p className="text-[#43474e] text-xs font-[var(--font-inter)] truncate">
+              <p className="text-[#74777f] text-[9px] tracking-[0.15em] uppercase font-bold mb-1">Seu link de indicação</p>
+              <p className="text-[#43474e] text-xs truncate">
                 orbitalrevestimentos.com.br/simulador?cupom={partner.coupon_code}
               </p>
             </div>
@@ -1175,7 +1175,7 @@ export default function ParceiroPage() {
                 setCopied(true);
                 setTimeout(() => setCopied(false), 2000);
               }}
-              className={`flex-shrink-0 text-xs tracking-[0.1em] uppercase font-bold font-[var(--font-inter)] px-4 py-2 transition-colors ${copied ? "bg-green-600 text-white" : "bg-[#002045] text-white hover:bg-[#1a365d]"}`}
+              className={`flex-shrink-0 text-xs tracking-[0.1em] uppercase font-bold px-4 py-2 transition-colors ${copied ? "bg-green-600 text-white" : "bg-[#0B1F45] text-white hover:bg-[#2347A0]"}`}
             >
               {copied ? "Copiado! ✓" : "Copiar link"}
             </button>
@@ -1193,7 +1193,7 @@ export default function ParceiroPage() {
                 setCpNew("");
                 setCpConfirm("");
               }}
-              className="flex items-center gap-2 text-[#002045] text-xs tracking-[0.1em] uppercase font-bold font-[var(--font-inter)] hover:opacity-70 transition-opacity"
+              className="flex items-center gap-2 text-[#0B1F45] text-xs tracking-[0.1em] uppercase font-bold hover:opacity-70 transition-opacity"
             >
               <span>{showChangePassword ? "▲" : "▼"}</span>
               Alterar Senha
@@ -1202,7 +1202,7 @@ export default function ParceiroPage() {
             {showChangePassword && (
               <form onSubmit={handleChangePassword} className="mt-4 space-y-3 max-w-sm">
                 <div>
-                  <label className="block text-[10px] tracking-[0.15em] uppercase font-bold font-[var(--font-inter)] text-[#74777f] mb-1.5">
+                  <label className="block text-[10px] tracking-[0.15em] uppercase font-bold text-[#74777f] mb-1.5">
                     Senha Atual
                   </label>
                   <div className="relative">
@@ -1211,7 +1211,7 @@ export default function ParceiroPage() {
                       type={showCpCurrent ? "text" : "password"}
                       value={cpCurrent}
                       onChange={(e) => setCpCurrent(e.target.value)}
-                      className="w-full border border-[#e2e2e2] px-4 py-2.5 pr-10 text-sm font-[var(--font-inter)] text-[#002045] focus:outline-none focus:border-[#002045]"
+                      className="w-full border border-[#e2e2e2] px-4 py-2.5 pr-10 text-sm text-[#0B1F45] focus:outline-none focus:border-[#0B1F45]"
                       autoFocus
                     />
                     <button
@@ -1219,7 +1219,7 @@ export default function ParceiroPage() {
                       tabIndex={-1}
                       aria-label={showCpCurrent ? "Ocultar senha" : "Mostrar senha"}
                       onClick={() => setShowCpCurrent((v) => !v)}
-                      className="absolute right-3 top-1/2 -translate-y-1/2 text-[#74777f] hover:text-[#002045] transition-colors"
+                      className="absolute right-3 top-1/2 -translate-y-1/2 text-[#74777f] hover:text-[#0B1F45] transition-colors"
                     >
                       {showCpCurrent ? (
                         <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><path d="M17.94 17.94A10.07 10.07 0 0112 20c-7 0-11-8-11-8a18.45 18.45 0 015.06-5.94M9.9 4.24A9.12 9.12 0 0112 4c7 0 11 8 11 8a18.5 18.5 0 01-2.16 3.19m-6.72-1.07a3 3 0 11-4.24-4.24"/><line x1="1" y1="1" x2="23" y2="23"/></svg>
@@ -1230,7 +1230,7 @@ export default function ParceiroPage() {
                   </div>
                 </div>
                 <div>
-                  <label className="block text-[10px] tracking-[0.15em] uppercase font-bold font-[var(--font-inter)] text-[#74777f] mb-1.5">
+                  <label className="block text-[10px] tracking-[0.15em] uppercase font-bold text-[#74777f] mb-1.5">
                     Nova Senha
                   </label>
                   <div className="relative">
@@ -1239,14 +1239,14 @@ export default function ParceiroPage() {
                       type={showCpNew ? "text" : "password"}
                       value={cpNew}
                       onChange={(e) => setCpNew(e.target.value)}
-                      className="w-full border border-[#e2e2e2] px-4 py-2.5 pr-10 text-sm font-[var(--font-inter)] text-[#002045] focus:outline-none focus:border-[#002045]"
+                      className="w-full border border-[#e2e2e2] px-4 py-2.5 pr-10 text-sm text-[#0B1F45] focus:outline-none focus:border-[#0B1F45]"
                     />
                     <button
                       type="button"
                       tabIndex={-1}
                       aria-label={showCpNew ? "Ocultar senha" : "Mostrar senha"}
                       onClick={() => setShowCpNew((v) => !v)}
-                      className="absolute right-3 top-1/2 -translate-y-1/2 text-[#74777f] hover:text-[#002045] transition-colors"
+                      className="absolute right-3 top-1/2 -translate-y-1/2 text-[#74777f] hover:text-[#0B1F45] transition-colors"
                     >
                       {showCpNew ? (
                         <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><path d="M17.94 17.94A10.07 10.07 0 0112 20c-7 0-11-8-11-8a18.45 18.45 0 015.06-5.94M9.9 4.24A9.12 9.12 0 0112 4c7 0 11 8 11 8a18.5 18.5 0 01-2.16 3.19m-6.72-1.07a3 3 0 11-4.24-4.24"/><line x1="1" y1="1" x2="23" y2="23"/></svg>
@@ -1257,7 +1257,7 @@ export default function ParceiroPage() {
                   </div>
                 </div>
                 <div>
-                  <label className="block text-[10px] tracking-[0.15em] uppercase font-bold font-[var(--font-inter)] text-[#74777f] mb-1.5">
+                  <label className="block text-[10px] tracking-[0.15em] uppercase font-bold text-[#74777f] mb-1.5">
                     Confirmar Nova Senha
                   </label>
                   <div className="relative">
@@ -1266,14 +1266,14 @@ export default function ParceiroPage() {
                       type={showCpConfirm ? "text" : "password"}
                       value={cpConfirm}
                       onChange={(e) => setCpConfirm(e.target.value)}
-                      className="w-full border border-[#e2e2e2] px-4 py-2.5 pr-10 text-sm font-[var(--font-inter)] text-[#002045] focus:outline-none focus:border-[#002045]"
+                      className="w-full border border-[#e2e2e2] px-4 py-2.5 pr-10 text-sm text-[#0B1F45] focus:outline-none focus:border-[#0B1F45]"
                     />
                     <button
                       type="button"
                       tabIndex={-1}
                       aria-label={showCpConfirm ? "Ocultar senha" : "Mostrar senha"}
                       onClick={() => setShowCpConfirm((v) => !v)}
-                      className="absolute right-3 top-1/2 -translate-y-1/2 text-[#74777f] hover:text-[#002045] transition-colors"
+                      className="absolute right-3 top-1/2 -translate-y-1/2 text-[#74777f] hover:text-[#0B1F45] transition-colors"
                     >
                       {showCpConfirm ? (
                         <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><path d="M17.94 17.94A10.07 10.07 0 0112 20c-7 0-11-8-11-8a18.45 18.45 0 015.06-5.94M9.9 4.24A9.12 9.12 0 0112 4c7 0 11 8 11 8a18.5 18.5 0 01-2.16 3.19m-6.72-1.07a3 3 0 11-4.24-4.24"/><line x1="1" y1="1" x2="23" y2="23"/></svg>
@@ -1284,12 +1284,12 @@ export default function ParceiroPage() {
                   </div>
                 </div>
                 {cpError && (
-                  <p className="text-red-600 text-sm font-[var(--font-inter)]">{cpError}</p>
+                  <p className="text-red-600 text-sm">{cpError}</p>
                 )}
                 <button
                   type="submit"
                   disabled={cpLoading}
-                  className="bg-[#002045] text-white text-xs tracking-[0.12em] uppercase font-bold font-[var(--font-inter)] px-6 py-2.5 hover:bg-[#1a365d] transition-colors disabled:opacity-50"
+                  className="bg-[#0B1F45] text-white text-xs tracking-[0.12em] uppercase font-bold px-6 py-2.5 hover:bg-[#2347A0] transition-colors disabled:opacity-50"
                 >
                   {cpLoading ? "Salvando..." : "Salvar"}
                 </button>
@@ -1297,44 +1297,44 @@ export default function ParceiroPage() {
             )}
 
             {cpSuccess && !showChangePassword && (
-              <p className="mt-3 text-green-700 text-sm font-[var(--font-inter)]">{cpSuccess}</p>
+              <p className="mt-3 text-green-700 text-sm">{cpSuccess}</p>
             )}
           </div>
 
           {/* Summary cards */}
           <div className="grid grid-cols-2 sm:grid-cols-4 gap-3 mb-6">
             <div className="bg-white border border-[#e2e2e2] px-4 py-4">
-              <p className="text-[#74777f] text-[9px] tracking-[0.15em] uppercase font-bold font-[var(--font-inter)] mb-1">Em orçamento</p>
-              <p className="font-[var(--font-noto-serif)] text-yellow-700 text-2xl font-normal">
+              <p className="text-[#74777f] text-[9px] tracking-[0.15em] uppercase font-bold mb-1">Em orçamento</p>
+              <p className="font-serif text-yellow-700 text-2xl font-normal">
                 {uses.filter((u) => u.sale_status === "em_orcamento" || u.sale_status === null).length}
               </p>
             </div>
             <div className="bg-white border border-[#e2e2e2] px-4 py-4">
-              <p className="text-[#74777f] text-[9px] tracking-[0.15em] uppercase font-bold font-[var(--font-inter)] mb-1">Vendas concluídas</p>
-              <p className="font-[var(--font-noto-serif)] text-[#002045] text-2xl font-normal">
+              <p className="text-[#74777f] text-[9px] tracking-[0.15em] uppercase font-bold mb-1">Vendas concluídas</p>
+              <p className="font-serif text-[#0B1F45] text-2xl font-normal">
                 {uses.filter((u) => u.sale_status === "concluido").length}
               </p>
             </div>
             <div className="bg-white border border-[#e2e2e2] px-4 py-4">
-              <p className="text-[#74777f] text-[9px] tracking-[0.15em] uppercase font-bold font-[var(--font-inter)] mb-1">Comissão confirmada</p>
-              <p className="font-[var(--font-noto-serif)] text-green-700 text-2xl font-normal">{fmt(totalCommission)}</p>
+              <p className="text-[#74777f] text-[9px] tracking-[0.15em] uppercase font-bold mb-1">Comissão confirmada</p>
+              <p className="font-serif text-green-700 text-2xl font-normal">{fmt(totalCommission)}</p>
             </div>
             <div className="bg-white border border-[#e2e2e2] px-4 py-4">
-              <p className="text-[#74777f] text-[9px] tracking-[0.15em] uppercase font-bold font-[var(--font-inter)] mb-1">Comissão pendente</p>
-              <p className="font-[var(--font-noto-serif)] text-amber-600 text-2xl font-normal">{fmt(pendingCommission)}</p>
+              <p className="text-[#74777f] text-[9px] tracking-[0.15em] uppercase font-bold mb-1">Comissão pendente</p>
+              <p className="font-serif text-amber-600 text-2xl font-normal">{fmt(pendingCommission)}</p>
             </div>
           </div>
 
           {/* Usage history */}
-          <h2 className="font-[var(--font-noto-serif)] text-[#002045] text-xl font-normal mb-4">
+          <h2 className="font-serif text-[#0B1F45] text-xl font-normal mb-4">
             Histórico de usos
           </h2>
 
           {usesLoading ? (
-            <p className="text-[#74777f] text-sm font-[var(--font-inter)]">Carregando...</p>
+            <p className="text-[#74777f] text-sm">Carregando...</p>
           ) : uses.length === 0 ? (
             <div className="bg-white border border-[#e2e2e2] px-6 py-10 text-center">
-              <p className="text-[#74777f] text-sm font-[var(--font-inter)]">
+              <p className="text-[#74777f] text-sm">
                 Nenhum uso registrado ainda. Compartilhe seu cupom com clientes!
               </p>
             </div>
@@ -1349,7 +1349,7 @@ export default function ParceiroPage() {
                     <div key={u.id} className="px-4 py-4">
                       <div className="flex items-start justify-between mb-3">
                         <div>
-                          <p className="font-semibold text-[#002045] text-sm font-[var(--font-inter)]">{u.product_name || "—"}</p>
+                          <p className="font-semibold text-[#0B1F45] text-sm">{u.product_name || "—"}</p>
                           {u.product_code && <p className="text-[#74777f] text-xs mt-0.5">{u.product_code}</p>}
                         </div>
                         <span className={`inline-flex items-center gap-1 px-2 py-0.5 text-[10px] font-bold tracking-wide rounded-full flex-shrink-0 ml-2 ${stMeta.cls}`}>
@@ -1359,20 +1359,20 @@ export default function ParceiroPage() {
                       </div>
                       <div className="grid grid-cols-2 gap-x-6 gap-y-2">
                         <div>
-                          <p className="text-[#74777f] text-[9px] uppercase tracking-wider font-bold font-[var(--font-inter)]">Data</p>
-                          <p className="text-[#43474e] text-xs font-[var(--font-inter)] mt-0.5">{new Date(u.created_at).toLocaleDateString("pt-BR")}</p>
+                          <p className="text-[#74777f] text-[9px] uppercase tracking-wider font-bold">Data</p>
+                          <p className="text-[#43474e] text-xs mt-0.5">{new Date(u.created_at).toLocaleDateString("pt-BR")}</p>
                         </div>
                         <div>
-                          <p className="text-[#74777f] text-[9px] uppercase tracking-wider font-bold font-[var(--font-inter)]">Cliente</p>
-                          <p className="text-[#43474e] text-xs font-[var(--font-inter)] mt-0.5">{u.architect_name || "—"}</p>
+                          <p className="text-[#74777f] text-[9px] uppercase tracking-wider font-bold">Cliente</p>
+                          <p className="text-[#43474e] text-xs mt-0.5">{u.architect_name || "—"}</p>
                         </div>
                         <div>
-                          <p className="text-[#74777f] text-[9px] uppercase tracking-wider font-bold font-[var(--font-inter)]">Espaço</p>
-                          <p className="text-[#43474e] text-xs font-[var(--font-inter)] mt-0.5">{u.space || "—"}</p>
+                          <p className="text-[#74777f] text-[9px] uppercase tracking-wider font-bold">Espaço</p>
+                          <p className="text-[#43474e] text-xs mt-0.5">{u.space || "—"}</p>
                         </div>
                         <div>
-                          <p className="text-[#74777f] text-[9px] uppercase tracking-wider font-bold font-[var(--font-inter)]">Placas</p>
-                          <p className="text-[#43474e] text-xs font-[var(--font-inter)] mt-0.5">{String(u.plates ?? "—")}</p>
+                          <p className="text-[#74777f] text-[9px] uppercase tracking-wider font-bold">Placas</p>
+                          <p className="text-[#43474e] text-xs mt-0.5">{String(u.plates ?? "—")}</p>
                         </div>
                       </div>
                     </div>
@@ -1381,7 +1381,7 @@ export default function ParceiroPage() {
               </div>
               {/* Desktop table — hidden on mobile */}
               <div className="hidden sm:block bg-white border border-[#e2e2e2] overflow-x-auto">
-                <table className="w-full text-sm font-[var(--font-inter)]">
+                <table className="w-full text-sm">
                   <thead>
                     <tr className="border-b border-[#e2e2e2]">
                       {["Data", "Cliente", "Produto", "Espaço", "Placas", "Status"].map((h) => (
@@ -1396,7 +1396,7 @@ export default function ParceiroPage() {
                       const st = u.sale_status || "em_orcamento";
                       const stMeta = STATUS_LABELS[st] || STATUS_LABELS.em_orcamento;
                       return (
-                        <tr key={u.id} className="border-b border-[#f0f0f0] hover:bg-[#fafafa]">
+                        <tr key={u.id} className="border-b border-[#f0f0f0] hover:bg-[#F6F5F2]">
                           <td className="px-4 py-3 text-xs text-[#43474e] whitespace-nowrap">
                             {new Date(u.created_at).toLocaleDateString("pt-BR")}
                           </td>
@@ -1465,7 +1465,7 @@ export default function ParceiroPage() {
               <button
                 key={s.key}
                 onClick={() => { setEspecTab(s.key); if (s.key === "anteriores") loadSimulations(); }}
-                className={`px-4 py-2.5 text-xs font-bold font-[var(--font-inter)] transition-colors ${especTab === s.key ? "bg-[#002045] text-white" : "text-[#74777f] hover:text-[#002045]"}`}
+                className={`px-4 py-2.5 text-xs font-bold transition-colors ${especTab === s.key ? "bg-[#0B1F45] text-white" : "text-[#74777f] hover:text-[#0B1F45]"}`}
               >
                 {s.label}
               </button>
@@ -1556,8 +1556,8 @@ export default function ParceiroPage() {
         return (
           <div className="max-w-3xl mx-auto px-4 sm:px-8 py-8">
             <div className="mb-6">
-              <h2 className="font-[var(--font-noto-serif)] text-[#002045] text-2xl font-normal mb-2">Simulador para clientes</h2>
-              <p className="text-[#43474e] text-sm font-[var(--font-inter)] leading-relaxed">
+              <h2 className="font-serif text-[#0B1F45] text-2xl font-normal mb-2">Simulador para clientes</h2>
+              <p className="text-[#43474e] text-sm leading-relaxed">
                 Configure um ou mais ambientes, gere o link e envie ao seu cliente. O cupom <strong>{partner.coupon_code}</strong> é aplicado automaticamente.
               </p>
             </div>
@@ -1574,13 +1574,13 @@ export default function ParceiroPage() {
                   const mat = pl * cp;
                   return (
                     <div key={s.key} className="flex items-center gap-3 px-4 py-3">
-                      <span className="w-6 h-6 rounded-full bg-[#3b6934] text-white text-[10px] font-bold font-[var(--font-inter)] flex items-center justify-center flex-shrink-0">{i + 1}</span>
+                      <span className="w-6 h-6 rounded-full bg-[#36A35C] text-[#0B1F45] text-[10px] font-bold flex items-center justify-center flex-shrink-0">{i + 1}</span>
                       {prod && <img src={prod.img} alt={prod.name} className="w-10 h-10 object-cover flex-shrink-0 border border-[#e2e2e2]" />}
                       <div className="flex-1 min-w-0">
-                        <p className="text-[#002045] text-sm font-semibold font-[var(--font-inter)]">{s.spaceName}</p>
-                        <p className="text-[#74777f] text-[10px] font-[var(--font-inter)]">{prod?.name ?? s.productCode} · {wn}m × {hn}m · {pl} pl.</p>
+                        <p className="text-[#0B1F45] text-sm font-semibold">{s.spaceName}</p>
+                        <p className="text-[#74777f] text-[10px]">{prod?.name ?? s.productCode} · {wn}m × {hn}m · {pl} pl.</p>
                       </div>
-                      <p className="text-[#002045] text-sm font-semibold font-[var(--font-inter)] flex-shrink-0">{fmtParceiro(mat)}</p>
+                      <p className="text-[#0B1F45] text-sm font-semibold flex-shrink-0">{fmtParceiro(mat)}</p>
                       <button onClick={() => { setPSimSpaces(prev => prev.filter((_, idx) => idx !== i)); setPSimLink(""); }} className="text-red-400 hover:text-red-600 flex-shrink-0 ml-1">
                         <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5"><path d="M18 6L6 18M6 6l12 12"/></svg>
                       </button>
@@ -1592,7 +1592,7 @@ export default function ParceiroPage() {
 
             {/* New space card */}
             <div className="bg-white border border-[#e2e2e2] p-4 sm:p-6 space-y-6">
-              <p className="text-[#002045] text-[10px] tracking-[0.15em] uppercase font-bold font-[var(--font-inter)]">
+              <p className="text-[#0B1F45] text-[10px] tracking-[0.15em] uppercase font-bold">
                 {pSimSpaces.length === 0 ? "1 — Escolha o espaço" : `Ambiente ${pSimSpaces.length + 1} — Escolha o espaço`}
               </p>
 
@@ -1603,31 +1603,31 @@ export default function ParceiroPage() {
                     setPSimSpaceName(space.label); setPSimAmbienteName(""); setPSimShowCustom(false); setPSimCustomText("");
                     setTimeout(() => document.getElementById("psim-products")?.scrollIntoView({ behavior: "smooth", block: "nearest" }), 60);
                   }}
-                    className={`px-3 py-2.5 min-h-[44px] border text-xs font-semibold font-[var(--font-inter)] transition-all text-left ${
+                    className={`px-3 py-2.5 min-h-[44px] border text-xs font-semibold transition-all text-left ${
                       pSimSpaceName === space.label && !pSimShowCustom
-                        ? "border-[#002045] bg-[#002045] text-white"
-                        : "border-[#e2e2e2] text-[#43474e] hover:border-[#002045] hover:text-[#002045]"
+                        ? "border-[#0B1F45] bg-[#0B1F45] text-white"
+                        : "border-[#e2e2e2] text-[#43474e] hover:border-[#0B1F45] hover:text-[#0B1F45]"
                     }`}>{space.label}</button>
                 ))}
                 <button onClick={() => {
                   setPSimShowCustom(true); setPSimSpaceName("");
                   setTimeout(() => document.getElementById("psim-products")?.scrollIntoView({ behavior: "smooth", block: "nearest" }), 60);
                 }}
-                  className={`px-3 py-2.5 min-h-[44px] border text-xs font-semibold font-[var(--font-inter)] transition-all text-left ${
-                    pSimShowCustom ? "border-[#002045] bg-[#002045] text-white" : "border-dashed border-[#c8c8c8] text-[#74777f] hover:border-[#002045] hover:text-[#002045]"
+                  className={`px-3 py-2.5 min-h-[44px] border text-xs font-semibold transition-all text-left ${
+                    pSimShowCustom ? "border-[#0B1F45] bg-[#0B1F45] text-white" : "border-dashed border-[#c8c8c8] text-[#74777f] hover:border-[#0B1F45] hover:text-[#0B1F45]"
                   }`}>+ Outro</button>
               </div>
               {pSimShowCustom && (
                 <input autoFocus type="text" value={pSimCustomText}
                   onChange={e => { setPSimCustomText(e.target.value); setPSimSpaceName(e.target.value); }}
                   placeholder="Descreva o espaço — ex: varanda interna, garagem, hall…"
-                  className="w-full border border-[#002045] px-4 py-3 text-sm font-[var(--font-inter)] text-[#002045] focus:outline-none" />
+                  className="w-full border border-[#0B1F45] px-4 py-3 text-sm text-[#0B1F45] focus:outline-none" />
               )}
 
               {/* Optional environment label (visible once a space type is chosen) */}
               {pSimSpaceName && !pSimShowCustom && (
                 <div>
-                  <label className="block text-[10px] tracking-[0.15em] uppercase font-bold font-[var(--font-inter)] text-[#74777f] mb-2">
+                  <label className="block text-[10px] tracking-[0.15em] uppercase font-bold text-[#74777f] mb-2">
                     Nome do ambiente <span className="normal-case tracking-normal font-normal">(opcional)</span>
                   </label>
                   <input
@@ -1635,14 +1635,14 @@ export default function ParceiroPage() {
                     value={pSimAmbienteName}
                     onChange={e => setPSimAmbienteName(e.target.value)}
                     placeholder={`Ex: ${pSimSpaceName} da Sala, ${pSimSpaceName} Principal…`}
-                    className="w-full border border-[#e2e2e2] px-4 py-2.5 text-sm font-[var(--font-inter)] text-[#002045] focus:outline-none focus:border-[#002045]"
+                    className="w-full border border-[#e2e2e2] px-4 py-2.5 text-sm text-[#0B1F45] focus:outline-none focus:border-[#0B1F45]"
                   />
                 </div>
               )}
 
               {/* Product line + cards */}
               <div id="psim-products" className="scroll-mt-20">
-                <p className="text-[#002045] text-[10px] tracking-[0.15em] uppercase font-bold font-[var(--font-inter)] mb-3">2 — Escolha o modelo</p>
+                <p className="text-[#0B1F45] text-[10px] tracking-[0.15em] uppercase font-bold mb-3">2 — Escolha o modelo</p>
                 <div className="grid grid-cols-3 gap-3 mb-4">
                   {(["Classic","Brilliance","Elegance"] as const).map(linha => {
                     const info = PSim_LINE_INFO[linha];
@@ -1652,11 +1652,11 @@ export default function ParceiroPage() {
                         setPSimSelectedLine(linha); setPSimProductCode("");
                         setTimeout(() => document.getElementById("psim-product-cards")?.scrollIntoView({ behavior: "smooth", block: "nearest" }), 60);
                       }}
-                        className={`border text-left p-4 transition-all relative ${active ? "border-[#002045] bg-[#eef2fb]" : "border-[#e2e2e2] hover:border-[#002045] bg-[#fafafa]"}`}>
-                        {active && <div className="absolute top-2 right-2 w-4 h-4 bg-[#002045] flex items-center justify-center"><svg width="8" height="8" viewBox="0 0 24 24" fill="none" stroke="white" strokeWidth="3"><path d="M20 6L9 17l-5-5"/></svg></div>}
-                        <p className="text-[#002045] text-sm font-bold font-[var(--font-inter)] mb-0.5">{linha}</p>
-                        <p className="text-[10px] tracking-[0.12em] uppercase font-bold font-[var(--font-inter)] text-[#3b6934] mb-2">{info.finish}</p>
-                        <p className="text-[#002045] text-xs font-bold font-[var(--font-inter)]">
+                        className={`border text-left p-4 transition-all relative ${active ? "border-[#0B1F45] bg-[#eef2fb]" : "border-[#e2e2e2] hover:border-[#0B1F45] bg-[#F6F5F2]"}`}>
+                        {active && <div className="absolute top-2 right-2 w-4 h-4 bg-[#0B1F45] flex items-center justify-center"><svg width="8" height="8" viewBox="0 0 24 24" fill="none" stroke="white" strokeWidth="3"><path d="M20 6L9 17l-5-5"/></svg></div>}
+                        <p className="text-[#0B1F45] text-sm font-bold mb-0.5">{linha}</p>
+                        <p className="text-[10px] tracking-[0.12em] uppercase font-bold text-[#1F7A44] mb-2">{info.finish}</p>
+                        <p className="text-[#0B1F45] text-xs font-bold">
                           R$ {info.price.toLocaleString("pt-BR")}
                           <span className="font-normal text-[#9e9e9e]">/placa</span>
                         </p>
@@ -1667,7 +1667,7 @@ export default function ParceiroPage() {
 
                 {pSimSelectedLine && (
                   <div id="psim-product-cards" className="scroll-mt-20">
-                    <p className="text-[#43474e] text-[10px] tracking-[0.15em] uppercase font-bold font-[var(--font-inter)] mb-3">Acabamentos {pSimSelectedLine}</p>
+                    <p className="text-[#43474e] text-[10px] tracking-[0.15em] uppercase font-bold mb-3">Acabamentos {pSimSelectedLine}</p>
                     <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 gap-2">
                       {SPECIAL_PRODUCTS.filter(p => p.linha === pSimSelectedLine).map(product => {
                         const active = pSimProductCode === product.code;
@@ -1676,15 +1676,15 @@ export default function ParceiroPage() {
                             setPSimProductCode(product.code);
                             setTimeout(() => document.getElementById("psim-dims")?.scrollIntoView({ behavior: "smooth", block: "nearest" }), 60);
                           }}
-                            className={`border overflow-hidden cursor-pointer transition-all ${active ? "border-[#002045]" : "border-[#e2e2e2] hover:border-[#002045]"}`}>
-                            <div className="relative w-full bg-[#f7f7f5]" style={{ aspectRatio: "812/988" }}>
+                            className={`border overflow-hidden cursor-pointer transition-all ${active ? "border-[#0B1F45]" : "border-[#e2e2e2] hover:border-[#0B1F45]"}`}>
+                            <div className="relative w-full bg-[#F6F5F2]" style={{ aspectRatio: "812/988" }}>
                               <img src={product.img} alt={product.name} className="absolute inset-0 w-full h-full object-contain" />
-                              {active && <div className="absolute inset-0 bg-[#002045]/10" />}
-                              {active && <div className="absolute top-1.5 right-1.5 w-5 h-5 bg-white shadow flex items-center justify-center"><svg width="9" height="9" viewBox="0 0 24 24" fill="none" stroke="#002045" strokeWidth="3"><path d="M20 6L9 17l-5-5"/></svg></div>}
+                              {active && <div className="absolute inset-0 bg-[#0B1F45]/10" />}
+                              {active && <div className="absolute top-1.5 right-1.5 w-5 h-5 bg-white shadow flex items-center justify-center"><svg width="9" height="9" viewBox="0 0 24 24" fill="none" stroke="#0B1F45" strokeWidth="3"><path d="M20 6L9 17l-5-5"/></svg></div>}
                             </div>
                             <div className="p-1.5">
-                              <p className={`text-[10px] font-bold font-[var(--font-inter)] leading-tight ${active ? "text-[#002045]" : "text-[#43474e]"}`}>{product.name}</p>
-                              <p className="text-[9px] text-[#9e9e9e] font-[var(--font-inter)]">{product.code}</p>
+                              <p className={`text-[10px] font-bold leading-tight ${active ? "text-[#0B1F45]" : "text-[#43474e]"}`}>{product.name}</p>
+                              <p className="text-[9px] text-[#9e9e9e]">{product.code}</p>
                             </div>
                           </div>
                         );
@@ -1696,17 +1696,17 @@ export default function ParceiroPage() {
 
               {/* Dimensions */}
               <div id="psim-dims" className="scroll-mt-20">
-                <p className="text-[#002045] text-[10px] tracking-[0.15em] uppercase font-bold font-[var(--font-inter)] mb-3">3 — Dimensões</p>
+                <p className="text-[#0B1F45] text-[10px] tracking-[0.15em] uppercase font-bold mb-3">3 — Dimensões</p>
                 <div className="grid grid-cols-2 gap-4">
                   <div>
-                    <label className="block text-[10px] tracking-[0.15em] uppercase font-bold font-[var(--font-inter)] text-[#74777f] mb-2">Largura (m)</label>
+                    <label className="block text-[10px] tracking-[0.15em] uppercase font-bold text-[#74777f] mb-2">Largura (m)</label>
                     <input type="number" min="0" step="0.01" value={pSimW} onChange={e => setPSimW(e.target.value)} placeholder="Ex: 6.10"
-                      className="w-full border border-[#e2e2e2] px-4 py-2.5 text-sm font-[var(--font-inter)] text-[#002045] focus:outline-none focus:border-[#002045]" />
+                      className="w-full border border-[#e2e2e2] px-4 py-2.5 text-sm text-[#0B1F45] focus:outline-none focus:border-[#0B1F45]" />
                   </div>
                   <div>
-                    <label className="block text-[10px] tracking-[0.15em] uppercase font-bold font-[var(--font-inter)] text-[#74777f] mb-2">Altura (m)</label>
+                    <label className="block text-[10px] tracking-[0.15em] uppercase font-bold text-[#74777f] mb-2">Altura (m)</label>
                     <input type="number" min="0" step="0.01" value={pSimH} onChange={e => setPSimH(e.target.value)} placeholder="Ex: 5.16"
-                      className="w-full border border-[#e2e2e2] px-4 py-2.5 text-sm font-[var(--font-inter)] text-[#002045] focus:outline-none focus:border-[#002045]" />
+                      className="w-full border border-[#e2e2e2] px-4 py-2.5 text-sm text-[#0B1F45] focus:outline-none focus:border-[#0B1F45]" />
                   </div>
                 </div>
               </div>
@@ -1717,22 +1717,22 @@ export default function ParceiroPage() {
                   <div className="flex items-center gap-4 mb-3">
                     <img src={pProd.img} alt={pProd.name} className="w-12 h-12 object-cover border border-[#e2e2e2]" />
                     <div>
-                      <p className="text-[#002045] text-sm font-bold font-[var(--font-inter)]">{pProd.name}</p>
-                      <p className="text-[#74777f] text-[10px] font-[var(--font-inter)]">{pSimAmbienteName || pSimSpaceName} · {pProd.code}</p>
+                      <p className="text-[#0B1F45] text-sm font-bold">{pProd.name}</p>
+                      <p className="text-[#74777f] text-[10px]">{pSimAmbienteName || pSimSpaceName} · {pProd.code}</p>
                     </div>
                   </div>
                   <div className="grid grid-cols-3 gap-4 border-t border-[#dce8f5] pt-3">
                     <div>
-                      <p className="text-[#74777f] text-[9px] uppercase tracking-widest font-bold font-[var(--font-inter)]">Área</p>
-                      <p className="text-[#002045] text-sm font-semibold font-[var(--font-inter)]">{pArea.toFixed(2)} m²</p>
+                      <p className="text-[#74777f] text-[9px] uppercase tracking-widest font-bold">Área</p>
+                      <p className="text-[#0B1F45] text-sm font-semibold">{pArea.toFixed(2)} m²</p>
                     </div>
                     <div>
-                      <p className="text-[#74777f] text-[9px] uppercase tracking-widest font-bold font-[var(--font-inter)]">Placas</p>
-                      <p className="text-[#002045] text-sm font-semibold font-[var(--font-inter)]">{pPlates}</p>
+                      <p className="text-[#74777f] text-[9px] uppercase tracking-widest font-bold">Placas</p>
+                      <p className="text-[#0B1F45] text-sm font-semibold">{pPlates}</p>
                     </div>
                     <div>
-                      <p className="text-[#74777f] text-[9px] uppercase tracking-widest font-bold font-[var(--font-inter)]">Material</p>
-                      <p className="text-[#002045] text-sm font-semibold font-[var(--font-inter)]">{fmtParceiro(pMaterial)}</p>
+                      <p className="text-[#74777f] text-[9px] uppercase tracking-widest font-bold">Material</p>
+                      <p className="text-[#0B1F45] text-sm font-semibold">{fmtParceiro(pMaterial)}</p>
                     </div>
                   </div>
                 </div>
@@ -1744,18 +1744,18 @@ export default function ParceiroPage() {
                 setPSimSpaceName(""); setPSimAmbienteName(""); setPSimProductCode(""); setPSimW(""); setPSimH(""); setPSimLink("");
                 setPSimSelectedLine(null); setPSimShowCustom(false); setPSimCustomText("");
               }}
-                className="w-full py-2.5 text-xs tracking-[0.12em] uppercase font-bold font-[var(--font-inter)] border border-[#002045] text-[#002045] hover:bg-[#f0f4fa] transition-colors disabled:opacity-40">
+                className="w-full py-2.5 text-xs tracking-[0.12em] uppercase font-bold border border-[#0B1F45] text-[#0B1F45] hover:bg-[#f0f4fa] transition-colors disabled:opacity-40">
                 <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" className="inline mr-1.5 mb-0.5"><path d="M12 5v14M5 12h14"/></svg>
                 Salvar e adicionar outro ambiente
               </button>
 
               {pAllSpaces.length > 1 && (
-                <div className="bg-[#002045] px-5 py-4 flex items-center justify-between">
+                <div className="bg-[#0B1F45] px-5 py-4 flex items-center justify-between">
                   <div>
-                    <p className="text-white/60 text-[9px] uppercase tracking-widest font-bold font-[var(--font-inter)]">Total do projeto</p>
-                    <p className="text-white/60 text-[10px] font-[var(--font-inter)]">{pAllSpaces.length} ambientes · {pGrandPlates} placas</p>
+                    <p className="text-white/60 text-[9px] uppercase tracking-widest font-bold">Total do projeto</p>
+                    <p className="text-white/60 text-[10px]">{pAllSpaces.length} ambientes · {pGrandPlates} placas</p>
                   </div>
-                  <p className="text-white text-xl font-[var(--font-noto-serif)]">{fmtParceiro(pGrandMaterial)}</p>
+                  <p className="text-white text-xl font-serif">{fmtParceiro(pGrandMaterial)}</p>
                 </div>
               )}
 
@@ -1806,7 +1806,7 @@ export default function ParceiroPage() {
                   setTimeout(() => document.getElementById("psim-link")?.scrollIntoView({ behavior: "smooth", block: "nearest" }), 80);
                 }
               }}
-                className="w-full py-3 text-xs tracking-[0.12em] uppercase font-bold font-[var(--font-inter)] bg-[#002045] text-white hover:bg-[#1a365d] transition-colors disabled:opacity-40">
+                className="w-full py-3 text-xs tracking-[0.12em] uppercase font-bold bg-[#0B1F45] text-white hover:bg-[#2347A0] transition-colors disabled:opacity-40">
                 {pSimGenerating ? "Gerando..." : "Gerar link para o cliente"}
               </button>
             </div>
@@ -1815,21 +1815,21 @@ export default function ParceiroPage() {
             <div id="psim-link" />
             {pSimLink && (
               <div className="mt-6 bg-white border border-[#e2e2e2] p-6 space-y-4">
-                <p className="text-[#002045] text-[10px] tracking-[0.15em] uppercase font-bold font-[var(--font-inter)]">Link gerado</p>
+                <p className="text-[#0B1F45] text-[10px] tracking-[0.15em] uppercase font-bold">Link gerado</p>
                 <div className="flex gap-2">
                   <input readOnly value={pSimLink} onClick={e => (e.target as HTMLInputElement).select()}
-                    className="flex-1 border border-[#e2e2e2] px-3 py-2 text-xs font-[var(--font-inter)] text-[#43474e] bg-[#fafafa] focus:outline-none" />
+                    className="flex-1 border border-[#e2e2e2] px-3 py-2 text-xs text-[#43474e] bg-[#F6F5F2] focus:outline-none" />
                   <button onClick={() => { navigator.clipboard.writeText(pSimLink); setPSimLinkCopied(true); setTimeout(() => setPSimLinkCopied(false), 2000); }}
-                    className="px-4 py-2 text-[10px] tracking-[0.1em] uppercase font-bold font-[var(--font-inter)] border border-[#002045] text-[#002045] hover:bg-[#002045] hover:text-white transition-colors whitespace-nowrap">
+                    className="px-4 py-2 text-[10px] tracking-[0.1em] uppercase font-bold border border-[#0B1F45] text-[#0B1F45] hover:bg-[#0B1F45] hover:text-white transition-colors whitespace-nowrap">
                     {pSimLinkCopied ? "Copiado ✓" : "Copiar"}
                   </button>
                 </div>
                 <a href={`https://wa.me/?text=${pWaText}`} target="_blank" rel="noopener noreferrer"
-                  className="inline-flex items-center gap-2.5 bg-[#25d366] text-white text-xs tracking-[0.12em] uppercase font-bold font-[var(--font-inter)] px-5 py-3 hover:bg-[#1ebe5d] transition-colors">
+                  className="inline-flex items-center gap-2.5 bg-[#25d366] text-white text-xs tracking-[0.12em] uppercase font-bold px-5 py-3 hover:bg-[#1ebe5d] transition-colors">
                   <svg width="14" height="14" viewBox="0 0 24 24" fill="currentColor"><path d="M17.472 14.382c-.297-.149-1.758-.867-2.03-.967-.273-.099-.471-.148-.67.15-.197.297-.767.966-.94 1.164-.173.199-.347.223-.644.075-.297-.15-1.255-.463-2.39-1.475-.883-.788-1.48-1.761-1.653-2.059-.173-.297-.018-.458.13-.606.134-.133.298-.347.446-.52.149-.174.198-.298.298-.497.099-.198.05-.371-.025-.52-.075-.149-.669-1.612-.916-2.207-.242-.579-.487-.5-.669-.51-.173-.008-.371-.01-.57-.01-.198 0-.52.074-.792.372-.272.297-1.04 1.016-1.04 2.479 0 1.462 1.065 2.875 1.213 3.074.149.198 2.096 3.2 5.077 4.487.709.306 1.262.489 1.694.625.712.227 1.36.195 1.871.118.571-.085 1.758-.719 2.006-1.413.248-.694.248-1.289.173-1.413-.074-.124-.272-.198-.57-.347m-5.421 7.403h-.004a9.87 9.87 0 01-5.031-1.378l-.361-.214-3.741.982.998-3.648-.235-.374a9.86 9.86 0 01-1.51-5.26c.001-5.45 4.436-9.884 9.888-9.884 2.64 0 5.122 1.03 6.988 2.898a9.825 9.825 0 012.893 6.994c-.003 5.45-4.437 9.884-9.885 9.884m8.413-18.297A11.815 11.815 0 0012.05 0C5.495 0 .16 5.335.157 11.892c0 2.096.547 4.142 1.588 5.945L.057 24l6.305-1.654a11.882 11.882 0 005.683 1.448h.005c6.554 0 11.89-5.335 11.893-11.893a11.821 11.821 0 00-3.48-8.413z"/></svg>
                   Enviar link por WhatsApp
                 </a>
-                <p className="text-[#b0b4bb] text-[10px] font-[var(--font-inter)]">
+                <p className="text-[#b0b4bb] text-[10px]">
                   {pAllSpaces.length > 1 ? `${pAllSpaces.length} ambientes pré-configurados. O cliente só preenche nome, e-mail e WhatsApp.` : `Espaço e produto pré-configurados com seu cupom.`}
                 </p>
               </div>
@@ -1843,8 +1843,8 @@ export default function ParceiroPage() {
         <div className="max-w-3xl mx-auto px-4 sm:px-8 py-8">
           <div className="mb-6 flex items-end justify-between gap-4">
             <div>
-              <h2 className="font-[var(--font-noto-serif)] text-[#002045] text-2xl font-normal mb-1">Especificações anteriores</h2>
-              <p className="text-[#74777f] text-sm font-[var(--font-inter)]">Especificações que você enviou a clientes e seu status de conversão.</p>
+              <h2 className="font-serif text-[#0B1F45] text-2xl font-normal mb-1">Especificações anteriores</h2>
+              <p className="text-[#74777f] text-sm">Especificações que você enviou a clientes e seu status de conversão.</p>
             </div>
             <button
               onClick={() => {
@@ -1855,20 +1855,20 @@ export default function ParceiroPage() {
                   .catch(() => {})
                   .finally(() => setSimulationsLoading(false));
               }}
-              className="flex-shrink-0 text-[10px] tracking-[0.1em] uppercase font-bold font-[var(--font-inter)] text-[#74777f] hover:text-[#002045] transition-colors"
+              className="flex-shrink-0 text-[10px] tracking-[0.1em] uppercase font-bold text-[#74777f] hover:text-[#0B1F45] transition-colors"
             >
               ↺ Atualizar
             </button>
           </div>
 
           {simulationsLoading && (
-            <div className="py-12 text-center text-[#74777f] text-sm font-[var(--font-inter)]">Carregando…</div>
+            <div className="py-12 text-center text-[#74777f] text-sm">Carregando…</div>
           )}
 
           {!simulationsLoading && simulations.length === 0 && (
             <div className="py-12 text-center border border-dashed border-[#e2e2e2]">
-              <p className="text-[#74777f] text-sm font-[var(--font-inter)]">Nenhuma especificação ainda.</p>
-              <button onClick={() => setEspecTab("nova")} className="text-[#002045] text-xs font-bold font-[var(--font-inter)] mt-1 hover:underline">Criar nova especificação →</button>
+              <p className="text-[#74777f] text-sm">Nenhuma especificação ainda.</p>
+              <button onClick={() => setEspecTab("nova")} className="text-[#0B1F45] text-xs font-bold mt-1 hover:underline">Criar nova especificação →</button>
             </div>
           )}
 
@@ -1887,20 +1887,20 @@ export default function ParceiroPage() {
                   <div key={sim.id} className="px-5 py-4 bg-white">
                     {/* Header row */}
                     <div className="flex items-start gap-3 mb-3">
-                      <span className={`flex-shrink-0 mt-0.5 inline-flex items-center px-2 py-0.5 text-[9px] tracking-[0.12em] uppercase font-bold font-[var(--font-inter)] ${
+                      <span className={`flex-shrink-0 mt-0.5 inline-flex items-center px-2 py-0.5 text-[9px] tracking-[0.12em] uppercase font-bold ${
                         isConverted
-                          ? "bg-[#f0f9eb] text-[#3b6934]"
+                          ? "bg-[#f0f9eb] text-[#1F7A44]"
                           : "bg-[#fff8e1] text-[#a07a00]"
                       }`}>
                         {isConverted ? "✓ Convertida" : "Pendente"}
                       </span>
                       <div className="flex-1 min-w-0">
-                        <p className="text-[#74777f] text-[10px] font-[var(--font-inter)]">
+                        <p className="text-[#74777f] text-[10px]">
                           Gerada em {dateStr}
-                          {convertedStr && <span className="ml-2 text-[#3b6934]">· Convertida em {convertedStr}</span>}
+                          {convertedStr && <span className="ml-2 text-[#1F7A44]">· Convertida em {convertedStr}</span>}
                         </p>
                       </div>
-                      <p className="flex-shrink-0 text-[#002045] text-sm font-bold font-[var(--font-inter)]">
+                      <p className="flex-shrink-0 text-[#0B1F45] text-sm font-bold">
                         R$ {fmtVal(sim.material_discounted)}
                       </p>
                     </div>
@@ -1910,9 +1910,9 @@ export default function ParceiroPage() {
                       <div className="mb-3 space-y-1">
                         {spaces.map((sp, i) => (
                           <div key={i} className="flex items-baseline gap-2">
-                            <span className="w-4 h-4 rounded-full bg-[#e8edf5] text-[#002045] text-[9px] font-bold font-[var(--font-inter)] flex items-center justify-center flex-shrink-0">{i + 1}</span>
-                            <p className="text-[#002045] text-xs font-semibold font-[var(--font-inter)]">{sp.spaceName}</p>
-                            <p className="text-[#74777f] text-[10px] font-[var(--font-inter)]">{sp.productName} · {sp.plates} placa{sp.plates !== 1 ? "s" : ""}</p>
+                            <span className="w-4 h-4 rounded-full bg-[#e8edf5] text-[#0B1F45] text-[9px] font-bold flex items-center justify-center flex-shrink-0">{i + 1}</span>
+                            <p className="text-[#0B1F45] text-xs font-semibold">{sp.spaceName}</p>
+                            <p className="text-[#74777f] text-[10px]">{sp.productName} · {sp.plates} placa{sp.plates !== 1 ? "s" : ""}</p>
                           </div>
                         ))}
                       </div>
@@ -1927,10 +1927,10 @@ export default function ParceiroPage() {
                             setSimLinkCopied(sim.id);
                             setTimeout(() => setSimLinkCopied(null), 2000);
                           }}
-                          className={`flex items-center gap-1.5 px-3 py-1.5 text-[10px] tracking-[0.08em] uppercase font-bold font-[var(--font-inter)] border transition-colors ${
+                          className={`flex items-center gap-1.5 px-3 py-1.5 text-[10px] tracking-[0.08em] uppercase font-bold border transition-colors ${
                             simLinkCopied === sim.id
-                              ? "border-[#3b6934] bg-[#3b6934] text-white"
-                              : "border-[#002045] text-[#002045] hover:bg-[#002045] hover:text-white"
+                              ? "border-[#36A35C] bg-[#36A35C] text-[#0B1F45]"
+                              : "border-[#0B1F45] text-[#0B1F45] hover:bg-[#0B1F45] hover:text-white"
                           }`}
                         >
                           {simLinkCopied === sim.id ? (
@@ -1951,7 +1951,7 @@ export default function ParceiroPage() {
                           } catch { /* non-fatal */ }
                           finally { setDeletingSimId(null); }
                         }}
-                        className="flex items-center gap-1.5 px-3 py-1.5 text-[10px] tracking-[0.08em] uppercase font-bold font-[var(--font-inter)] border border-[#e2e2e2] text-[#c0392b] hover:border-[#c0392b] hover:bg-[#fff5f5] transition-colors disabled:opacity-40"
+                        className="flex items-center gap-1.5 px-3 py-1.5 text-[10px] tracking-[0.08em] uppercase font-bold border border-[#e2e2e2] text-[#c0392b] hover:border-[#c0392b] hover:bg-[#fff5f5] transition-colors disabled:opacity-40"
                       >
                         <svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><polyline points="3 6 5 6 21 6"/><path d="M19 6l-1 14a2 2 0 0 1-2 2H8a2 2 0 0 1-2-2L5 6"/><path d="M10 11v6M14 11v6"/><path d="M9 6V4a1 1 0 0 1 1-1h4a1 1 0 0 1 1 1v2"/></svg>
                         {deletingSimId === sim.id ? "Apagando…" : "Apagar"}
@@ -1970,18 +1970,18 @@ export default function ParceiroPage() {
         <div className="max-w-5xl mx-auto px-4 sm:px-8 py-8">
 
           {/* Exclusive header */}
-          <div className="bg-[#002045] px-6 py-5 mb-8">
-            <p className="text-[#a1d494] text-[9px] tracking-[0.2em] uppercase font-bold font-[var(--font-inter)] mb-1">
+          <div className="bg-[#0B1F45] px-6 py-5 mb-8">
+            <p className="text-[#36A35C] text-[9px] tracking-[0.2em] uppercase font-bold mb-1">
               Acesso exclusivo
             </p>
-            <p className="text-white font-[var(--font-noto-serif)] text-xl font-normal">
+            <p className="text-white font-serif text-xl font-normal">
               Condições especiais para {partner.name.split(" ")[0]}
             </p>
           </div>
 
           {/* Price table */}
           <div className="mb-4">
-            <h2 className="font-[var(--font-noto-serif)] text-[#002045] text-xl font-normal mb-4">
+            <h2 className="font-serif text-[#0B1F45] text-xl font-normal mb-4">
               Tabela de Preços — Compra Direta
             </h2>
             <div className="bg-white border border-[#e2e2e2] overflow-hidden">
@@ -1991,25 +1991,25 @@ export default function ParceiroPage() {
                 return (
                 <div key={row.linha} className={`flex items-center justify-between px-6 py-4 ${i < 2 ? "border-b border-[#f0f0f0]" : ""}`}>
                   <div>
-                    <p className="font-semibold text-[#002045] font-[var(--font-inter)]">{row.linha}</p>
-                    <p className="text-[#74777f] text-xs font-[var(--font-inter)]">{row.finish}</p>
+                    <p className="font-semibold text-[#0B1F45]">{row.linha}</p>
+                    <p className="text-[#74777f] text-xs">{row.finish}</p>
                   </div>
                   <div className="text-right">
-                    <p className="text-[#002045] font-bold text-lg font-[var(--font-noto-serif)]">{row.special}/placa</p>
-                    <p className="text-[#74777f] text-xs font-[var(--font-inter)]">Ref. público: <span className="line-through">{row.normal}</span></p>
+                    <p className="text-[#0B1F45] font-bold text-lg font-serif">{row.special}/placa</p>
+                    <p className="text-[#74777f] text-xs">Ref. público: <span className="line-through">{row.normal}</span></p>
                   </div>
                 </div>
               ); })}
             </div>
-            <p className="text-[#74777f] text-xs font-[var(--font-inter)] mt-2">Placa: 2,9m × 1,2m × 5mm · 3,48 m² por placa</p>
+            <p className="text-[#74777f] text-xs mt-2">Placa: 2,9m × 1,2m × 5mm · 3,48 m² por placa</p>
           </div>
 
           {/* Important notes */}
           <div className="bg-[#fffbea] border border-[#e6c84a] px-5 py-4 mb-8">
-            <p className="text-[#6b5000] text-[10px] tracking-[0.15em] uppercase font-bold font-[var(--font-inter)] mb-2">
+            <p className="text-[#6b5000] text-[10px] tracking-[0.15em] uppercase font-bold mb-2">
               Observações importantes
             </p>
-            <ul className="text-[#6b5000] text-xs font-[var(--font-inter)] space-y-1 leading-relaxed">
+            <ul className="text-[#6b5000] text-xs space-y-1 leading-relaxed">
               <li>· Material apenas — sem entrega inclusa</li>
               <li>· Retirada no depósito da Orbital</li>
               <li>· Não repassar como tabela pública</li>
@@ -2020,11 +2020,11 @@ export default function ParceiroPage() {
           {/* Quote simulator */}
           <div className="bg-white border border-[#e2e2e2] p-6 sm:p-8">
             <div className="flex items-center justify-between mb-6">
-              <h2 className="font-[var(--font-noto-serif)] text-[#002045] text-xl font-normal">
+              <h2 className="font-serif text-[#0B1F45] text-xl font-normal">
                 Simulador de Orçamento
               </h2>
               {sqSavedSpaces.length > 0 && (
-                <span className="bg-[#002045] text-white text-[10px] font-bold font-[var(--font-inter)] tracking-wider px-2 py-0.5">
+                <span className="bg-[#0B1F45] text-white text-[10px] font-bold tracking-wider px-2 py-0.5">
                   {sqSavedSpaces.length} ambiente{sqSavedSpaces.length !== 1 ? "s" : ""} salvo{sqSavedSpaces.length !== 1 ? "s" : ""}
                 </span>
               )}
@@ -2035,12 +2035,12 @@ export default function ParceiroPage() {
               <div className="border border-[#e2e2e2] mb-6 divide-y divide-[#f0f0f0]">
                 {sqSavedSpaces.map((sp, i) => (
                   <div key={sp.key} className="flex items-center gap-3 px-4 py-3">
-                    <span className="w-6 h-6 rounded-full bg-[#3b6934] text-white text-[10px] font-bold font-[var(--font-inter)] flex items-center justify-center flex-shrink-0">{i + 1}</span>
+                    <span className="w-6 h-6 rounded-full bg-[#36A35C] text-[#0B1F45] text-[10px] font-bold flex items-center justify-center flex-shrink-0">{i + 1}</span>
                     <div className="flex-1 min-w-0">
-                      <p className="text-[#002045] text-sm font-semibold font-[var(--font-inter)]">{sp.spaceName || sp.product.name}</p>
-                      <p className="text-[#74777f] text-[10px] font-[var(--font-inter)]">{sp.product.name} · {sp.plates} placa{sp.plates !== 1 ? "s" : ""} · {sp.area.toFixed(2)} m²</p>
+                      <p className="text-[#0B1F45] text-sm font-semibold">{sp.spaceName || sp.product.name}</p>
+                      <p className="text-[#74777f] text-[10px]">{sp.product.name} · {sp.plates} placa{sp.plates !== 1 ? "s" : ""} · {sp.area.toFixed(2)} m²</p>
                     </div>
-                    <p className="text-[#002045] text-sm font-semibold font-[var(--font-inter)] flex-shrink-0">{sp.total.toLocaleString("pt-BR", { style: "decimal", maximumFractionDigits: 0 })}</p>
+                    <p className="text-[#0B1F45] text-sm font-semibold flex-shrink-0">{sp.total.toLocaleString("pt-BR", { style: "decimal", maximumFractionDigits: 0 })}</p>
                     <button onClick={() => setSqSavedSpaces(prev => prev.filter((_, idx) => idx !== i))} className="text-red-400 hover:text-red-600 flex-shrink-0 ml-1">
                       <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5"><path d="M18 6L6 18M6 6l12 12"/></svg>
                     </button>
@@ -2051,22 +2051,22 @@ export default function ParceiroPage() {
 
             {/* Space name input */}
             <div className="mb-5">
-              <label className="block text-[10px] tracking-[0.15em] uppercase font-bold font-[var(--font-inter)] text-[#74777f] mb-2">
+              <label className="block text-[10px] tracking-[0.15em] uppercase font-bold text-[#74777f] mb-2">
                 {sqSavedSpaces.length === 0 ? "Nome do ambiente (opcional)" : `Ambiente ${sqSavedSpaces.length + 1} — nome`}
               </label>
               <input type="text" value={sqSpaceName} onChange={e => setSqSpaceName(e.target.value)} placeholder="Ex: Sala, Quarto, Garagem…"
-                className="w-full border border-[#e2e2e2] px-4 py-2.5 text-sm font-[var(--font-inter)] text-[#002045] focus:outline-none focus:border-[#002045]" />
+                className="w-full border border-[#e2e2e2] px-4 py-2.5 text-sm text-[#0B1F45] focus:outline-none focus:border-[#0B1F45]" />
             </div>
 
             {/* Line cards */}
             <div className="mb-6">
-              <label className="block text-[10px] tracking-[0.15em] uppercase font-bold font-[var(--font-inter)] text-[#74777f] mb-3">
+              <label className="block text-[10px] tracking-[0.15em] uppercase font-bold text-[#74777f] mb-3">
                 Linha *
               </label>
               <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
                 {(["Classic", "Brilliance", "Elegance"] as const).map((key) => {
                   const finish = { Classic: "Mármore Fosco", Brilliance: "Mármore Polido", Elegance: "Madeira Texturizada" }[key];
-                  const bg = { Classic: "bg-[#f0eeeb]", Brilliance: "bg-[#e8ecf0]", Elegance: "bg-[#ede8e0]" }[key];
+                  const bg = { Classic: "bg-[#EFEDE8]", Brilliance: "bg-[#e8ecf0]", Elegance: "bg-[#ede8e0]" }[key];
                   const price = linePricing[key]?.special_price ?? 0;
                   const m = { key, finish, bg, price };
                   return (
@@ -2080,14 +2080,14 @@ export default function ParceiroPage() {
                     }}
                     className={`text-left p-4 border-2 transition-all ${
                       sqLinha === m.key
-                        ? "border-[#002045] bg-[#eef2f8]"
-                        : "border-[#e2e2e2] bg-white hover:border-[#002045]/40"
+                        ? "border-[#0B1F45] bg-[#eef2f8]"
+                        : "border-[#e2e2e2] bg-white hover:border-[#0B1F45]/40"
                     }`}
                   >
                     <div className={`w-full h-7 mb-3 ${m.bg}`} />
-                    <p className="font-bold text-[#002045] text-sm font-[var(--font-inter)]">{m.key}</p>
-                    <p className="text-[#74777f] text-xs font-[var(--font-inter)]">{m.finish}</p>
-                    <p className="text-[#002045] font-bold text-sm font-[var(--font-inter)] mt-1.5">{m.price}/placa</p>
+                    <p className="font-bold text-[#0B1F45] text-sm">{m.key}</p>
+                    <p className="text-[#74777f] text-xs">{m.finish}</p>
+                    <p className="text-[#0B1F45] font-bold text-sm mt-1.5">{m.price}/placa</p>
                   </button>
                 ); })}
               </div>
@@ -2096,7 +2096,7 @@ export default function ParceiroPage() {
             {/* Product selection grid — shown once a line is chosen */}
             {sqLinha && (
               <div ref={sqProductSectionRef} className="mb-6 scroll-mt-24">
-                <p className="text-[#43474e] text-[10px] tracking-[0.15em] uppercase font-bold font-[var(--font-inter)] mb-4">
+                <p className="text-[#43474e] text-[10px] tracking-[0.15em] uppercase font-bold mb-4">
                   Acabamentos {sqLinha}
                 </p>
                 <div className="grid grid-cols-3 sm:grid-cols-4 md:grid-cols-5 gap-2 sm:gap-3 min-[400px]:grid-cols-4">
@@ -2106,7 +2106,7 @@ export default function ParceiroPage() {
                       <div
                         key={product.code}
                         className={`border overflow-hidden transition-all ${
-                          active ? "border-[#002045]" : "border-[#e2e2e2] hover:border-[#1a365d]"
+                          active ? "border-[#0B1F45]" : "border-[#e2e2e2] hover:border-[#2347A0]"
                         }`}
                       >
                         <button
@@ -2115,7 +2115,7 @@ export default function ParceiroPage() {
                             setSqSelectedProduct(product);
                             setTimeout(() => sqCalcSectionRef.current?.scrollIntoView({ behavior: "smooth", block: "nearest" }), 80);
                           }}
-                          className="relative w-full overflow-hidden bg-[#f7f7f5] block"
+                          className="relative w-full overflow-hidden bg-[#F6F5F2] block"
                         >
                           <div className="relative w-full" style={{ aspectRatio: "812/988" }}>
                             <Image
@@ -2125,10 +2125,10 @@ export default function ParceiroPage() {
                               className="object-contain"
                             />
                           </div>
-                          {active && <div className="absolute inset-0 bg-[#002045]/10" />}
+                          {active && <div className="absolute inset-0 bg-[#0B1F45]/10" />}
                           {active && (
                             <div className="absolute top-2 right-2 w-5 h-5 bg-white flex items-center justify-center shadow-sm">
-                              <svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="#002045" strokeWidth="3">
+                              <svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="#0B1F45" strokeWidth="3">
                                 <path d="M20 6L9 17l-5-5" />
                               </svg>
                             </div>
@@ -2142,10 +2142,10 @@ export default function ParceiroPage() {
                           }}
                           className="p-2 w-full text-left"
                         >
-                          <p className={`text-[10px] font-bold font-[var(--font-inter)] leading-tight ${active ? "text-[#002045]" : "text-[#43474e]"}`}>
+                          <p className={`text-[10px] font-bold leading-tight ${active ? "text-[#0B1F45]" : "text-[#43474e]"}`}>
                             {product.name}
                           </p>
-                          <p className="text-[9px] text-[#9e9e9e] font-[var(--font-inter)] mt-0.5">{product.code}</p>
+                          <p className="text-[9px] text-[#9e9e9e] mt-0.5">{product.code}</p>
                         </button>
                       </div>
                     );
@@ -2159,7 +2159,7 @@ export default function ParceiroPage() {
 
             {/* Calculation mode toggle */}
             <div className="mb-5">
-              <label className="block text-[10px] tracking-[0.15em] uppercase font-bold font-[var(--font-inter)] text-[#74777f] mb-2">
+              <label className="block text-[10px] tracking-[0.15em] uppercase font-bold text-[#74777f] mb-2">
                 Calcular por
               </label>
               <div className="flex border border-[#e2e2e2] w-fit overflow-hidden">
@@ -2172,10 +2172,10 @@ export default function ParceiroPage() {
                     key={m.key}
                     type="button"
                     onClick={() => setSqMode(m.key)}
-                    className={`px-4 py-2 text-xs font-bold font-[var(--font-inter)] transition-colors whitespace-nowrap ${
+                    className={`px-4 py-2 text-xs font-bold transition-colors whitespace-nowrap ${
                       sqMode === m.key
-                        ? "bg-[#002045] text-white"
-                        : "bg-white text-[#74777f] hover:bg-[#f5f5f3]"
+                        ? "bg-[#0B1F45] text-white"
+                        : "bg-white text-[#74777f] hover:bg-[#EFEDE8]"
                     }`}
                   >
                     {m.label}
@@ -2189,7 +2189,7 @@ export default function ParceiroPage() {
               {sqMode === "dimensions" && (
                 <div className="grid grid-cols-2 gap-4">
                   <div>
-                    <label className="block text-[10px] tracking-[0.15em] uppercase font-bold font-[var(--font-inter)] text-[#74777f] mb-2">
+                    <label className="block text-[10px] tracking-[0.15em] uppercase font-bold text-[#74777f] mb-2">
                       Largura (m) *
                     </label>
                     <input
@@ -2200,11 +2200,11 @@ export default function ParceiroPage() {
                       onChange={(e) => setSqWidth(e.target.value.replace(",", "."))}
                       onBlur={() => { if (sqWidth) sqHeightRef.current?.focus(); }}
                       placeholder="ex: 4.5"
-                      className="w-full border border-[#e2e2e2] px-4 py-2.5 text-sm font-[var(--font-inter)] text-[#002045] focus:outline-none focus:border-[#002045]"
+                      className="w-full border border-[#e2e2e2] px-4 py-2.5 text-sm text-[#0B1F45] focus:outline-none focus:border-[#0B1F45]"
                     />
                   </div>
                   <div>
-                    <label className="block text-[10px] tracking-[0.15em] uppercase font-bold font-[var(--font-inter)] text-[#74777f] mb-2">
+                    <label className="block text-[10px] tracking-[0.15em] uppercase font-bold text-[#74777f] mb-2">
                       Altura (m) *
                     </label>
                     <input
@@ -2214,11 +2214,11 @@ export default function ParceiroPage() {
                       value={sqHeight}
                       onChange={(e) => setSqHeight(e.target.value.replace(",", "."))}
                       placeholder="ex: 2.8"
-                      className="w-full border border-[#e2e2e2] px-4 py-2.5 text-sm font-[var(--font-inter)] text-[#002045] focus:outline-none focus:border-[#002045]"
+                      className="w-full border border-[#e2e2e2] px-4 py-2.5 text-sm text-[#0B1F45] focus:outline-none focus:border-[#0B1F45]"
                     />
                   </div>
                   {sqWidth && sqHeight && sqAreaCalc > 0 && (
-                    <p className="col-span-2 text-[#74777f] text-xs font-[var(--font-inter)]">
+                    <p className="col-span-2 text-[#74777f] text-xs">
                       Área: {sqAreaCalc.toFixed(2)} m² → {sqQtyNum} placa{sqQtyNum !== 1 ? "s" : ""} necessária{sqQtyNum !== 1 ? "s" : ""}
                     </p>
                   )}
@@ -2226,7 +2226,7 @@ export default function ParceiroPage() {
               )}
               {sqMode === "m2" && (
                 <div>
-                  <label className="block text-[10px] tracking-[0.15em] uppercase font-bold font-[var(--font-inter)] text-[#74777f] mb-2">
+                  <label className="block text-[10px] tracking-[0.15em] uppercase font-bold text-[#74777f] mb-2">
                     Área total (m²) *
                   </label>
                   <input
@@ -2236,10 +2236,10 @@ export default function ParceiroPage() {
                     value={sqM2Input}
                     onChange={(e) => setSqM2Input(e.target.value.replace(",", "."))}
                     placeholder="ex: 12.6"
-                    className="w-full border border-[#e2e2e2] px-4 py-2.5 text-sm font-[var(--font-inter)] text-[#002045] focus:outline-none focus:border-[#002045]"
+                    className="w-full border border-[#e2e2e2] px-4 py-2.5 text-sm text-[#0B1F45] focus:outline-none focus:border-[#0B1F45]"
                   />
                   {sqM2Input && sqAreaCalc > 0 && (
-                    <p className="text-[#74777f] text-xs font-[var(--font-inter)] mt-2">
+                    <p className="text-[#74777f] text-xs mt-2">
                       {sqAreaCalc.toFixed(2)} m² → {sqQtyNum} placa{sqQtyNum !== 1 ? "s" : ""} necessária{sqQtyNum !== 1 ? "s" : ""}
                     </p>
                   )}
@@ -2247,7 +2247,7 @@ export default function ParceiroPage() {
               )}
               {sqMode === "plates" && (
                 <div>
-                  <label className="block text-[10px] tracking-[0.15em] uppercase font-bold font-[var(--font-inter)] text-[#74777f] mb-2">
+                  <label className="block text-[10px] tracking-[0.15em] uppercase font-bold text-[#74777f] mb-2">
                     Número de placas *
                   </label>
                   <input
@@ -2257,10 +2257,10 @@ export default function ParceiroPage() {
                     value={sqQty}
                     onChange={(e) => setSqQty(e.target.value.replace(/\D/g, ""))}
                     placeholder="ex: 10"
-                    className="w-full border border-[#e2e2e2] px-4 py-2.5 text-sm font-[var(--font-inter)] text-[#002045] focus:outline-none focus:border-[#002045]"
+                    className="w-full border border-[#e2e2e2] px-4 py-2.5 text-sm text-[#0B1F45] focus:outline-none focus:border-[#0B1F45]"
                   />
                   {sqQtyNum > 0 && (
-                    <p className="text-[#74777f] text-xs font-[var(--font-inter)] mt-2">
+                    <p className="text-[#74777f] text-xs mt-2">
                       Cobre aproximadamente {(sqQtyNum * PLATE_M2).toFixed(2)} m²
                     </p>
                   )}
@@ -2274,43 +2274,43 @@ export default function ParceiroPage() {
             {sqLinha && sqQtyNum > 0 && (
               <div className="border-t border-[#e2e2e2] pt-6">
                 {/* Current space summary card */}
-                <div className="bg-[#002045] px-6 py-6 mb-4">
-                  <p className="text-[#a1d494] text-[9px] tracking-[0.2em] uppercase font-bold font-[var(--font-inter)] mb-4">
+                <div className="bg-[#0B1F45] px-6 py-6 mb-4">
+                  <p className="text-[#36A35C] text-[9px] tracking-[0.2em] uppercase font-bold mb-4">
                     {sqSavedSpaces.length > 0 ? `Ambiente ${sqSavedSpaces.length + 1}` : "Resumo do orçamento"}
                   </p>
                   <div className="grid grid-cols-2 gap-4 mb-4">
                     <div>
-                      <p className="text-white/50 text-[10px] font-[var(--font-inter)] mb-0.5">Linha</p>
-                      <p className="text-white font-semibold font-[var(--font-inter)]">{sqLinha}</p>
+                      <p className="text-white/50 text-[10px] mb-0.5">Linha</p>
+                      <p className="text-white font-semibold">{sqLinha}</p>
                     </div>
                     {sqSelectedProduct && (
                       <div>
-                        <p className="text-white/50 text-[10px] font-[var(--font-inter)] mb-0.5">Produto</p>
-                        <p className="text-white font-semibold font-[var(--font-inter)] text-sm leading-tight">{sqSelectedProduct.name}</p>
-                        <p className="text-white/50 text-[10px] font-[var(--font-inter)]">{sqSelectedProduct.code}</p>
+                        <p className="text-white/50 text-[10px] mb-0.5">Produto</p>
+                        <p className="text-white font-semibold text-sm leading-tight">{sqSelectedProduct.name}</p>
+                        <p className="text-white/50 text-[10px]">{sqSelectedProduct.code}</p>
                       </div>
                     )}
                     <div>
-                      <p className="text-white/50 text-[10px] font-[var(--font-inter)] mb-0.5">Qtd. de placas</p>
-                      <p className="text-white font-semibold font-[var(--font-inter)]">{sqQtyNum} placa{sqQtyNum !== 1 ? "s" : ""}</p>
+                      <p className="text-white/50 text-[10px] mb-0.5">Qtd. de placas</p>
+                      <p className="text-white font-semibold">{sqQtyNum} placa{sqQtyNum !== 1 ? "s" : ""}</p>
                     </div>
                     <div>
-                      <p className="text-white/50 text-[10px] font-[var(--font-inter)] mb-0.5">Área coberta</p>
-                      <p className="text-white font-semibold font-[var(--font-inter)]">{sqArea.toFixed(2)} m²</p>
+                      <p className="text-white/50 text-[10px] mb-0.5">Área coberta</p>
+                      <p className="text-white font-semibold">{sqArea.toFixed(2)} m²</p>
                     </div>
                     <div>
-                      <p className="text-white/50 text-[10px] font-[var(--font-inter)] mb-0.5">Valor unitário</p>
-                      <p className="text-white font-semibold font-[var(--font-inter)]">{sqSpecialPrice}/placa</p>
+                      <p className="text-white/50 text-[10px] mb-0.5">Valor unitário</p>
+                      <p className="text-white font-semibold">{sqSpecialPrice}/placa</p>
                     </div>
                   </div>
                   <div className="border-t border-white/15 pt-4">
                     <div className="flex items-center justify-between">
-                      <span className="text-white font-bold font-[var(--font-inter)]">Total do material</span>
-                      <span className="text-white text-2xl font-[var(--font-noto-serif)]">{fmt(sqTotal)}</span>
+                      <span className="text-white font-bold">Total do material</span>
+                      <span className="text-white text-2xl font-serif">{fmt(sqTotal)}</span>
                     </div>
                   </div>
                   <div className="bg-white/10 border border-white/20 px-4 py-3 mt-4">
-                    <p className="text-white/70 text-[11px] font-[var(--font-inter)] leading-relaxed">
+                    <p className="text-white/70 text-[11px] leading-relaxed">
                       Retirada no depósito · Sem entrega inclusa · Sujeito a estoque
                     </p>
                   </div>
@@ -2331,7 +2331,7 @@ export default function ParceiroPage() {
                     setSqSpaceName(""); setSqLinha(""); setSqSelectedProduct(null);
                     setSqMode("dimensions"); setSqWidth(""); setSqHeight(""); setSqM2Input(""); setSqQty("");
                   }}
-                  className="w-full mb-4 py-2.5 text-xs tracking-[0.12em] uppercase font-bold font-[var(--font-inter)] border border-[#002045] text-[#002045] hover:bg-[#f0f4fa] transition-colors"
+                  className="w-full mb-4 py-2.5 text-xs tracking-[0.12em] uppercase font-bold border border-[#0B1F45] text-[#0B1F45] hover:bg-[#f0f4fa] transition-colors"
                 >
                   <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" className="inline mr-1.5 mb-0.5"><path d="M12 5v14M5 12h14"/></svg>
                   Salvar e adicionar outro ambiente
@@ -2339,25 +2339,25 @@ export default function ParceiroPage() {
 
                 {/* Grand total across all saved + current */}
                 {sqSavedSpaces.length > 0 && (
-                  <div className="bg-[#002045] px-6 py-5 mb-6">
-                    <p className="text-[#a1d494] text-[9px] tracking-[0.2em] uppercase font-bold font-[var(--font-inter)] mb-3">
+                  <div className="bg-[#0B1F45] px-6 py-5 mb-6">
+                    <p className="text-[#36A35C] text-[9px] tracking-[0.2em] uppercase font-bold mb-3">
                       Total do projeto — {sqSavedSpaces.length + 1} ambientes
                     </p>
                     <div className="space-y-1.5 mb-4">
                       {sqSavedSpaces.map((sp, i) => (
-                        <div key={sp.key} className="flex items-center justify-between text-sm font-[var(--font-inter)]">
+                        <div key={sp.key} className="flex items-center justify-between text-sm">
                           <span className="text-white/70">{i + 1}. {sp.spaceName} — {sp.plates} pl.</span>
                           <span className="text-white font-semibold">{fmt(sp.total)}</span>
                         </div>
                       ))}
-                      <div className="flex items-center justify-between text-sm font-[var(--font-inter)]">
+                      <div className="flex items-center justify-between text-sm">
                         <span className="text-white/70">{sqSavedSpaces.length + 1}. {sqSpaceName.trim() || (sqSelectedProduct?.name ?? "")} — {sqQtyNum} pl.</span>
                         <span className="text-white font-semibold">{fmt(sqTotal)}</span>
                       </div>
                     </div>
                     <div className="border-t border-white/20 pt-4 flex items-center justify-between">
-                      <span className="text-white font-bold font-[var(--font-inter)]">Total geral</span>
-                      <span className="text-white text-2xl font-[var(--font-noto-serif)]">{fmt(sqSavedSpaces.reduce((s, sp) => s + sp.total, 0) + sqTotal)}</span>
+                      <span className="text-white font-bold">Total geral</span>
+                      <span className="text-white text-2xl font-serif">{fmt(sqSavedSpaces.reduce((s, sp) => s + sp.total, 0) + sqTotal)}</span>
                     </div>
                   </div>
                 )}
@@ -2365,7 +2365,7 @@ export default function ParceiroPage() {
                 {/* Margin/advantage section */}
                 <button
                   onClick={() => setSqShowMargin(!sqShowMargin)}
-                  className="flex items-center gap-2 text-[#3b6934] text-xs tracking-[0.1em] uppercase font-bold font-[var(--font-inter)] mb-4 hover:text-[#002045] transition-colors"
+                  className="flex items-center gap-2 text-[#1F7A44] text-xs tracking-[0.1em] uppercase font-bold mb-4 hover:text-[#0B1F45] transition-colors"
                 >
                   <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"
                     className={`transition-transform duration-200 ${sqShowMargin ? "rotate-180" : ""}`}>
@@ -2375,8 +2375,8 @@ export default function ParceiroPage() {
                 </button>
 
                 {sqShowMargin && (
-                  <div className="bg-[#f0f9eb] border border-[#3b6934]/30 px-6 py-5">
-                    <p className="text-[#3b6934] text-[10px] tracking-[0.15em] uppercase font-bold font-[var(--font-inter)] mb-4">
+                  <div className="bg-[#f0f9eb] border border-[#36A35C]/30 px-6 py-5">
+                    <p className="text-[#1F7A44] text-[10px] tracking-[0.15em] uppercase font-bold mb-4">
                       Sua condição especial neste orçamento
                     </p>
                     {sqSavedSpaces.length > 0 ? (
@@ -2386,15 +2386,15 @@ export default function ParceiroPage() {
                           const specialPr = SPECIAL_PRICES[sp.product?.linha ?? sqLinha];
                           const savings = sp.plates * (normalPr - specialPr);
                           return (
-                            <div key={sp.key} className="flex items-center justify-between text-xs font-[var(--font-inter)]">
+                            <div key={sp.key} className="flex items-center justify-between text-xs">
                               <span className="text-[#43474e]">{i + 1}. {sp.spaceName} — economia</span>
-                              <span className="text-[#3b6934] font-bold">{fmt(savings)}</span>
+                              <span className="text-[#1F7A44] font-bold">{fmt(savings)}</span>
                             </div>
                           );
                         })}
-                        <div className="border-t border-[#3b6934]/20 pt-2 flex items-center justify-between">
-                          <span className="text-[#3b6934] font-bold font-[var(--font-inter)] text-sm">Economia total estimada</span>
-                          <span className="text-[#3b6934] font-bold text-lg font-[var(--font-noto-serif)]">
+                        <div className="border-t border-[#36A35C]/20 pt-2 flex items-center justify-between">
+                          <span className="text-[#1F7A44] font-bold text-sm">Economia total estimada</span>
+                          <span className="text-[#1F7A44] font-bold text-lg font-serif">
                             {fmt([...sqSavedSpaces, { product: sqSelectedProduct!, plates: sqQtyNum, total: sqTotal, key: "cur", spaceName: "", area: 0 }]
                               .reduce((s, sp) => s + sp.plates * (NORMAL_PRICES[sp.product?.linha ?? sqLinha] - SPECIAL_PRICES[sp.product?.linha ?? sqLinha]), 0))}
                           </span>
@@ -2402,21 +2402,21 @@ export default function ParceiroPage() {
                       </div>
                     ) : (
                       <div className="space-y-3">
-                        <div className="flex items-center justify-between text-sm font-[var(--font-inter)]">
+                        <div className="flex items-center justify-between text-sm">
                           <span className="text-[#43474e]">Sua condição — {sqQtyNum} placa{sqQtyNum !== 1 ? "s" : ""} × {sqSpecialPrice}</span>
-                          <span className="text-[#002045] font-bold">{fmt(sqTotal)}</span>
+                          <span className="text-[#0B1F45] font-bold">{fmt(sqTotal)}</span>
                         </div>
-                        <div className="flex items-center justify-between text-sm font-[var(--font-inter)]">
+                        <div className="flex items-center justify-between text-sm">
                           <span className="text-[#74777f]">Referência tabela normal — × {sqNormalPrice}</span>
                           <span className="text-[#74777f]">{fmt(sqQtyNum * sqNormalPrice)}</span>
                         </div>
-                        <div className="border-t border-[#3b6934]/20 pt-3 flex items-center justify-between">
-                          <span className="text-[#3b6934] font-bold font-[var(--font-inter)] text-sm">Economia operacional estimada</span>
-                          <span className="text-[#3b6934] font-bold text-lg font-[var(--font-noto-serif)]">{fmt(sqTotalSavings)}</span>
+                        <div className="border-t border-[#36A35C]/20 pt-3 flex items-center justify-between">
+                          <span className="text-[#1F7A44] font-bold text-sm">Economia operacional estimada</span>
+                          <span className="text-[#1F7A44] font-bold text-lg font-serif">{fmt(sqTotalSavings)}</span>
                         </div>
                       </div>
                     )}
-                    <p className="text-[#74777f] text-[10px] font-[var(--font-inter)] mt-4 leading-relaxed">
+                    <p className="text-[#74777f] text-[10px] mt-4 leading-relaxed">
                       Esta é a diferença entre sua condição especial de parceiro e a tabela de referência. Não deve ser comunicada como margem ao cliente final.
                     </p>
                   </div>
@@ -2440,7 +2440,7 @@ export default function ParceiroPage() {
                   )}`}
                   target="_blank"
                   rel="noopener noreferrer"
-                  className="mt-6 w-full flex items-center justify-center gap-3 bg-[#25d366] hover:bg-[#1ebe5d] text-white text-xs tracking-[0.12em] uppercase font-bold font-[var(--font-inter)] px-6 py-4 transition-colors"
+                  className="mt-6 w-full flex items-center justify-center gap-3 bg-[#25d366] hover:bg-[#1ebe5d] text-white text-xs tracking-[0.12em] uppercase font-bold px-6 py-4 transition-colors"
                 >
                   <svg width="18" height="18" viewBox="0 0 24 24" fill="currentColor">
                     <path d="M17.472 14.382c-.297-.149-1.758-.867-2.03-.967-.273-.099-.471-.148-.67.15-.197.297-.767.966-.94 1.164-.173.199-.347.223-.644.075-.297-.15-1.255-.463-2.39-1.475-.883-.788-1.48-1.761-1.653-2.059-.173-.297-.018-.458.13-.606.134-.133.298-.347.446-.52.149-.174.198-.298.298-.497.099-.198.05-.371-.025-.52-.075-.149-.669-1.612-.916-2.207-.242-.579-.487-.5-.669-.51-.173-.008-.371-.01-.57-.01-.198 0-.52.074-.792.372-.272.297-1.04 1.016-1.04 2.479 0 1.462 1.065 2.875 1.213 3.074.149.198 2.096 3.2 5.077 4.487.709.306 1.262.489 1.694.625.712.227 1.36.195 1.871.118.571-.085 1.758-.719 2.006-1.413.248-.694.248-1.289.173-1.413-.074-.124-.272-.198-.57-.347m-5.421 7.403h-.004a9.87 9.87 0 01-5.031-1.378l-.361-.214-3.741.982.998-3.648-.235-.374a9.86 9.86 0 01-1.51-5.26c.001-5.45 4.436-9.884 9.888-9.884 2.64 0 5.122 1.03 6.988 2.898a9.825 9.825 0 012.893 6.994c-.003 5.45-4.437 9.884-9.885 9.884m8.413-18.297A11.815 11.815 0 0012.05 0C5.495 0 .16 5.335.157 11.892c0 2.096.547 4.142 1.588 5.945L.057 24l6.305-1.654a11.882 11.882 0 005.683 1.448h.005c6.554 0 11.89-5.335 11.893-11.893a11.821 11.821 0 00-3.48-8.413z" />
@@ -2499,22 +2499,22 @@ function RepasseCard({ partner, onSaved }: { partner: PartnerInfo; onSaved: (dis
 
   return (
     <div className="bg-white border border-[#e2e2e2] px-6 py-5 mb-4">
-      <p className="text-[#74777f] text-[10px] tracking-[0.15em] uppercase font-bold font-[var(--font-inter)] mb-1">
+      <p className="text-[#74777f] text-[10px] tracking-[0.15em] uppercase font-bold mb-1">
         Seu repasse
       </p>
-      <p className="text-[#43474e] text-sm font-[var(--font-inter)] mb-5">
-        Você tem <strong className="text-[#002045]">{pool}%</strong> da venda para dividir entre a sua comissão e o desconto do cliente.
+      <p className="text-[#43474e] text-sm mb-5">
+        Você tem <strong className="text-[#0B1F45]">{pool}%</strong> da venda para dividir entre a sua comissão e o desconto do cliente.
         Arraste para ajustar — salva sozinho.
       </p>
 
       <div className="flex items-end justify-between mb-2">
         <div>
-          <p className="text-[#74777f] text-[10px] tracking-[0.12em] uppercase font-bold font-[var(--font-inter)]">Sua comissão</p>
-          <p className="text-[#3b6934] text-2xl font-bold font-[var(--font-inter)] leading-none mt-1">{comm}%</p>
+          <p className="text-[#74777f] text-[10px] tracking-[0.12em] uppercase font-bold">Sua comissão</p>
+          <p className="text-[#1F7A44] text-2xl font-bold leading-none mt-1">{comm}%</p>
         </div>
         <div className="text-right">
-          <p className="text-[#74777f] text-[10px] tracking-[0.12em] uppercase font-bold font-[var(--font-inter)]">Desconto ao cliente</p>
-          <p className="text-[#002045] text-2xl font-bold font-[var(--font-inter)] leading-none mt-1">{disc}%</p>
+          <p className="text-[#74777f] text-[10px] tracking-[0.12em] uppercase font-bold">Desconto ao cliente</p>
+          <p className="text-[#0B1F45] text-2xl font-bold leading-none mt-1">{disc}%</p>
         </div>
       </div>
 
@@ -2525,15 +2525,15 @@ function RepasseCard({ partner, onSaved }: { partner: PartnerInfo; onSaved: (dis
         step={0.5}
         value={disc}
         onChange={(e) => onSlide(parseFloat(e.target.value) || 0)}
-        className="w-full accent-[#002045] cursor-pointer"
+        className="w-full accent-[#0B1F45] cursor-pointer"
         aria-label="Distribuição do repasse entre comissão e desconto"
       />
-      <div className="flex justify-between text-[10px] text-[#9aa3b3] font-[var(--font-inter)] mt-1">
+      <div className="flex justify-between text-[10px] text-[#9aa3b3] mt-1">
         <span>Tudo como comissão</span>
         <span>Tudo como desconto</span>
       </div>
 
-      <p className={`text-xs font-[var(--font-inter)] mt-3 ${status === "error" ? "text-red-600 font-bold" : "text-[#74777f]"}`}>
+      <p className={`text-xs mt-3 ${status === "error" ? "text-red-600 font-bold" : "text-[#74777f]"}`}>
         {status === "saving" ? "Salvando…" : status === "saved" ? "✓ Salvo automaticamente" : status === "error" ? "Erro ao salvar — tente de novo." : "As mudanças são salvas automaticamente."}
       </p>
     </div>

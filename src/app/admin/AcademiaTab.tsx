@@ -56,7 +56,7 @@ function Avisos({ r }: { r: Inscricao }) {
   const conf = [r.confirmation_whatsapp_at && "WhatsApp", r.confirmation_email_at && "e-mail"].filter(Boolean).join(" + ");
   const lanc = [r.launch_whatsapp_at && "WhatsApp", r.launch_email_at && "e-mail"].filter(Boolean).join(" + ");
   return (
-    <span className="text-[11px] font-[var(--font-inter)] leading-snug">
+    <span className="text-[11px] leading-snug">
       <span className={conf ? "text-[#1f7a3d]" : "text-[#b0b4bc]"}>Confirmação: {conf || "—"}</span>
       {r.launch_notified_at && (
         <span className={`block ${lanc ? "text-[#1f7a3d]" : "text-[#b3261e]"}`}>Lançamento: {lanc || "não entregue"}</span>
@@ -121,8 +121,8 @@ function AvisoLancamento({ pendentes, aoTerminar }: { pendentes: number; aoTermi
 
   return (
     <div className={`${cardCls} p-4 mb-6 space-y-3`}>
-      <p className="text-[#002045] text-sm font-bold font-[var(--font-inter)]">Aviso de lançamento</p>
-      <p className="text-[#74777f] text-xs font-[var(--font-inter)]">
+      <p className="text-[#0B1F45] text-sm font-bold">Aviso de lançamento</p>
+      <p className="text-[#74777f] text-xs">
         Vai por WhatsApp e, para quem informou, por e-mail. {"{nome}"} vira o primeiro nome. Quem já foi avisado não recebe de novo.
       </p>
       <input value={assunto} onChange={(e) => setAssunto(e.target.value)} className={inputCls} aria-label="Assunto do e-mail" placeholder="Assunto do e-mail" />
@@ -133,7 +133,7 @@ function AvisoLancamento({ pendentes, aoTerminar }: { pendentes: number; aoTermi
           {pendentes ? `Enviar para ${pendentes} inscrito(s)` : "Todos já avisados"}
         </button>
       </div>
-      {status && <p className="text-[#43474e] text-xs font-[var(--font-inter)]" role="status">{status}</p>}
+      {status && <p className="text-[#43474e] text-xs" role="status">{status}</p>}
     </div>
   );
 }
@@ -279,10 +279,10 @@ export default function AcademiaTab() {
                 </select>
               </div>
 
-              <p className="text-[#74777f] text-xs font-[var(--font-inter)] mb-3">
+              <p className="text-[#74777f] text-xs mb-3">
                 {filtrando ? `${filtrada.length} de ${resumo.total} inscritos` : `${resumo.total} inscritos`}
                 {filtrando && (
-                  <button type="button" onClick={() => { setBusca(""); setFAtuacao(""); setFFoco(""); }} className="ml-3 underline hover:text-[#002045]">
+                  <button type="button" onClick={() => { setBusca(""); setFAtuacao(""); setFFoco(""); }} className="ml-3 underline hover:text-[#0B1F45]">
                     limpar filtros
                   </button>
                 )}
@@ -297,12 +297,12 @@ export default function AcademiaTab() {
                     {filtrada.map((r) => (
                       <div key={r.id} className={`${cardCls} p-4`}>
                         <div className="flex items-start justify-between gap-3 mb-2">
-                          <p className="font-serif text-[#002045] text-base leading-tight min-w-0 break-words">{r.name}</p>
-                          <span className="text-[#74777f] text-[11px] font-[var(--font-inter)] flex-shrink-0">{dataCurta(r.created_at)}</span>
+                          <p className="font-serif text-[#0B1F45] text-base leading-tight min-w-0 break-words">{r.name}</p>
+                          <span className="text-[#74777f] text-[11px] flex-shrink-0">{dataCurta(r.created_at)}</span>
                         </div>
                         <div className="flex flex-col gap-1 text-xs">
                           <WhatsLink phone={r.phone} />
-                          {r.email && <span className="text-[#43474e] font-[var(--font-inter)] break-all">{r.email}</span>}
+                          {r.email && <span className="text-[#43474e] break-all">{r.email}</span>}
                           <Field label="Cidade">{r.city || "—"}</Field>
                           <Field label="Atuação">{atuacao(r)}</Field>
                           <Field label="Foco">{foco(r) || "—"}</Field>
@@ -330,9 +330,9 @@ export default function AcademiaTab() {
                     </thead>
                     <tbody>
                       {filtrada.map((r) => (
-                        <tr key={r.id} className="border-b border-[#f0f0f0] last:border-0 hover:bg-[#fafafa]">
+                        <tr key={r.id} className="border-b border-[#f0f0f0] last:border-0 hover:bg-[#F6F5F2]">
                           <td className={`${tdCls} whitespace-nowrap text-[#74777f]`}>{dataCurta(r.created_at)}</td>
-                          <td className={`${tdCls} text-[#002045] font-semibold`}>{r.name}</td>
+                          <td className={`${tdCls} text-[#0B1F45] font-semibold`}>{r.name}</td>
                           <td className={tdCls}><WhatsLink phone={r.phone} /></td>
                           <td className={`${tdCls} break-all`}>{r.email || <span className="text-[#b0b4bc]">—</span>}</td>
                           <td className={tdCls}>{r.city || "—"}</td>

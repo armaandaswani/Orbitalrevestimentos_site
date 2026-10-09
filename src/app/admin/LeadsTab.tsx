@@ -82,7 +82,7 @@ const STATUS_ORDER: LeadStatus[] = [
 ];
 
 const SOURCE_META: Record<LeadSource, { label: string; cls: string }> = {
-  website: { label: "Site", cls: "bg-[#eef2f8] text-[#002045]" },
+  website: { label: "Site", cls: "bg-[#eef2f8] text-[#0B1F45]" },
   partner: { label: "Parceiro", cls: "bg-green-100 text-green-800" },
   manual: { label: "Manual", cls: "bg-amber-100 text-amber-800" },
   whatsapp: { label: "WhatsApp", cls: "bg-emerald-100 text-emerald-800" },
@@ -406,9 +406,9 @@ export default function LeadsTab({
       <div className="flex flex-col gap-4 mb-6">
         <div className="flex flex-wrap items-center justify-between gap-3">
           <div className="flex items-center gap-3">
-            <h2 className="font-[var(--font-noto-serif)] text-[#002045] text-xl font-normal">Leads / CRM</h2>
+            <h2 className="font-serif text-[#0B1F45] text-xl font-normal">Leads / CRM</h2>
             {!loading && (
-              <span className="bg-[#eef2f8] text-[#002045] text-[10px] font-bold font-[var(--font-inter)] tracking-wider px-2 py-0.5">
+              <span className="bg-[#eef2f8] text-[#0B1F45] text-[10px] font-bold tracking-wider px-2 py-0.5">
                 {filtered.length}
               </span>
             )}
@@ -418,13 +418,13 @@ export default function LeadsTab({
               onClick={bulkSync}
               disabled={syncing}
               title="Envia os leads ainda não sincronizados para o SM Click como contatos do WhatsApp"
-              className="border border-[#25d366] text-[#128c3e] text-xs tracking-[0.1em] uppercase font-bold font-[var(--font-inter)] px-4 py-2.5 hover:bg-[#eafaf0] transition-colors disabled:opacity-50"
+              className="border border-[#25d366] text-[#128c3e] text-xs tracking-[0.1em] uppercase font-bold px-4 py-2.5 hover:bg-[#eafaf0] transition-colors disabled:opacity-50"
             >
               {syncing ? "Sincronizando…" : "↗ Sincronizar SM Click"}
             </button>
             <button
               onClick={() => setDraft({ _isNew: true, status: "novo" })}
-              className="bg-[#002045] text-white text-xs tracking-[0.12em] uppercase font-bold font-[var(--font-inter)] px-5 py-2.5 hover:bg-[#1a365d] transition-colors"
+              className="bg-[#0B1F45] text-white text-xs tracking-[0.12em] uppercase font-bold px-5 py-2.5 hover:bg-[#2347A0] transition-colors"
             >
               + Novo lead
             </button>
@@ -435,8 +435,8 @@ export default function LeadsTab({
           <div
             className={
               /falha|Erro/i.test(syncResult)
-                ? "bg-[#fdedeb] border border-[#f3b7ad] text-[#b3261e] text-xs font-[var(--font-inter)] px-4 py-2 flex items-center justify-between gap-3"
-                : "bg-[#eafaf0] border border-[#bce7cd] text-[#128c3e] text-xs font-[var(--font-inter)] px-4 py-2 flex items-center justify-between gap-3"
+                ? "bg-[#fdedeb] border border-[#f3b7ad] text-[#b3261e] text-xs px-4 py-2 flex items-center justify-between gap-3"
+                : "bg-[#eafaf0] border border-[#bce7cd] text-[#128c3e] text-xs px-4 py-2 flex items-center justify-between gap-3"
             }
           >
             <span className="break-all">{syncResult}</span>
@@ -456,10 +456,10 @@ export default function LeadsTab({
             <button
               key={key}
               onClick={() => setSourceFilter(key)}
-              className={`px-4 py-2 text-xs font-bold font-[var(--font-inter)] tracking-wide border transition-colors ${
+              className={`px-4 py-2 text-xs font-bold tracking-wide border transition-colors ${
                 sourceFilter === key
-                  ? "bg-[#002045] text-white border-[#002045]"
-                  : "bg-white text-[#74777f] border-[#e2e2e2] hover:text-[#002045]"
+                  ? "bg-[#0B1F45] text-white border-[#0B1F45]"
+                  : "bg-white text-[#74777f] border-[#e2e2e2] hover:text-[#0B1F45]"
               }`}
             >
               {label}
@@ -475,12 +475,12 @@ export default function LeadsTab({
             placeholder="Buscar por nome, e-mail, telefone…"
             value={search}
             onChange={(e) => setSearch(e.target.value)}
-            className="w-full sm:w-auto border border-[#e2e2e2] px-3 py-2 text-sm font-[var(--font-inter)] text-[#002045] focus:outline-none focus:border-[#002045] sm:min-w-[240px]"
+            className="w-full sm:w-auto border border-[#e2e2e2] px-3 py-2 text-sm text-[#0B1F45] focus:outline-none focus:border-[#0B1F45] sm:min-w-[240px]"
           />
           <select
             value={statusFilter}
             onChange={(e) => setStatusFilter(e.target.value as "all" | LeadStatus)}
-            className="border border-[#e2e2e2] px-3 py-2 text-sm font-[var(--font-inter)] text-[#002045] focus:outline-none focus:border-[#002045]"
+            className="border border-[#e2e2e2] px-3 py-2 text-sm text-[#0B1F45] focus:outline-none focus:border-[#0B1F45]"
           >
             <option value="all">Todos os estágios</option>
             {STATUS_ORDER.map((s) => (
@@ -501,30 +501,30 @@ export default function LeadsTab({
             { label: "Lembretes", value: stats.lembretes, sub: "vencidos/hoje" },
           ].map((s) => (
             <div key={s.label} className="bg-white border border-[#e2e2e2] px-4 py-3">
-              <p className="text-[9px] tracking-[0.1em] uppercase font-bold font-[var(--font-inter)] text-[#74777f]">{s.label}</p>
-              <p className="text-lg font-semibold font-[var(--font-noto-serif)] text-[#002045] mt-0.5 leading-none">{s.value}</p>
-              <p className="text-[9px] text-[#b0b0b0] font-[var(--font-inter)] mt-0.5">{s.sub}</p>
+              <p className="text-[9px] tracking-[0.1em] uppercase font-bold text-[#74777f]">{s.label}</p>
+              <p className="text-lg font-semibold font-serif text-[#0B1F45] mt-0.5 leading-none">{s.value}</p>
+              <p className="text-[9px] text-[#b0b0b0] mt-0.5">{s.sub}</p>
             </div>
           ))}
         </div>
       )}
 
       {loading ? (
-        <p className="text-[#74777f] text-sm font-[var(--font-inter)]">Carregando...</p>
+        <p className="text-[#74777f] text-sm">Carregando...</p>
       ) : error ? (
         <div className="bg-red-50 border border-red-200 px-6 py-8 text-center">
-          <p className="text-red-800 text-sm font-semibold font-[var(--font-inter)]">Não foi possível carregar os leads</p>
-          <p className="text-red-700 text-xs font-[var(--font-inter)] mt-1 break-words">{error}</p>
+          <p className="text-red-800 text-sm font-semibold">Não foi possível carregar os leads</p>
+          <p className="text-red-700 text-xs mt-1 break-words">{error}</p>
           <button
             onClick={fetchLeads}
-            className="mt-4 inline-block border border-red-300 text-red-800 px-4 py-2 text-[10px] tracking-[0.12em] uppercase font-bold font-[var(--font-inter)] hover:bg-red-100 transition-colors"
+            className="mt-4 inline-block border border-red-300 text-red-800 px-4 py-2 text-[10px] tracking-[0.12em] uppercase font-bold hover:bg-red-100 transition-colors"
           >
             Tentar novamente
           </button>
         </div>
       ) : filtered.length === 0 ? (
         <div className="bg-white border border-[#e2e2e2] px-6 py-12 text-center">
-          <p className="text-[#74777f] text-sm font-[var(--font-inter)]">
+          <p className="text-[#74777f] text-sm">
             {leads.length === 0
               ? "Nenhum lead ainda. Novos orçamentos do site e de parceiros aparecem aqui automaticamente, ou adicione um manualmente."
               : "Nenhum lead corresponde aos filtros."}
@@ -534,7 +534,7 @@ export default function LeadsTab({
         <>
           {/* Desktop table */}
           <div className="hidden sm:block bg-white border border-[#e2e2e2]">
-            <table className="w-full text-sm font-[var(--font-inter)] table-fixed">
+            <table className="w-full text-sm table-fixed">
               <colgroup>
                 <col style={{ width: "9%" }} />
                 <col style={{ width: "22%" }} />
@@ -557,16 +557,16 @@ export default function LeadsTab({
                   const rb = reminderBadge(l.next_reminder_at);
                   const waHref = l.phone ? `https://wa.me/55${l.phone.replace(/\D/g, "")}` : null;
                   return (
-                    <tr key={l.id} className="border-b border-[#f0f0f0] hover:bg-[#fafafa] align-top">
+                    <tr key={l.id} className="border-b border-[#f0f0f0] hover:bg-[#F6F5F2] align-top">
                       <td className="px-4 py-3">
                         <p className="text-xs text-[#74777f]">{fmtDate(l.created_at)}</p>
                       </td>
                       <td className="px-4 py-3">
-                        <button onClick={() => setDetailLead(l)} className="font-semibold text-[#002045] text-xs truncate hover:underline text-left block max-w-full">{l.name}</button>
+                        <button onClick={() => setDetailLead(l)} className="font-semibold text-[#0B1F45] text-xs truncate hover:underline text-left block max-w-full">{l.name}</button>
                         {l.email && <p className="text-[10px] text-[#74777f] truncate">{l.email}</p>}
                         <div className="flex items-center gap-2 mt-0.5">
                           {waHref && (
-                            <a href={waHref} target="_blank" rel="noopener noreferrer" className="text-[9px] text-[#3b6934] font-bold hover:underline">
+                            <a href={waHref} target="_blank" rel="noopener noreferrer" className="text-[9px] text-[#1F7A44] font-bold hover:underline">
                               WhatsApp
                             </a>
                           )}
@@ -576,7 +576,7 @@ export default function LeadsTab({
                           <p className="text-[9px] text-[#b0b0b0] mt-0.5 truncate">{[l.space, l.product_name].filter(Boolean).join(" · ")}</p>
                         )}
                         {l.last_contacted_at && (
-                          <p className="text-[9px] text-[#3b6934] mt-0.5">Último contato: {fmtDate(l.last_contacted_at)}</p>
+                          <p className="text-[9px] text-[#1F7A44] mt-0.5">Último contato: {fmtDate(l.last_contacted_at)}</p>
                         )}
                       </td>
                       <td className="px-4 py-3">
@@ -586,7 +586,7 @@ export default function LeadsTab({
                         <select
                           value={l.status}
                           onChange={(e) => patchLead(l.id, { status: e.target.value as LeadStatus })}
-                          className={`text-[10px] font-bold font-[var(--font-inter)] border-0 px-2 py-1 cursor-pointer focus:outline-none ${STATUS_META[l.status].cls}`}
+                          className={`text-[10px] font-bold border-0 px-2 py-1 cursor-pointer focus:outline-none ${STATUS_META[l.status].cls}`}
                         >
                           {STATUS_ORDER.map((s) => (
                             <option key={s} value={s}>{STATUS_META[s].label}</option>
@@ -594,7 +594,7 @@ export default function LeadsTab({
                         </select>
                       </td>
                       <td className="px-4 py-3">
-                        <p className="text-xs text-[#002045] font-semibold">{fmtBRL(l.estimated_value)}</p>
+                        <p className="text-xs text-[#0B1F45] font-semibold">{fmtBRL(l.estimated_value)}</p>
                       </td>
                       <td className="px-4 py-3">
                         {rb ? (
@@ -614,12 +614,12 @@ export default function LeadsTab({
                             WhatsApp
                           </button>
                         )}
-                        <button onClick={() => setDetailLead(l)} className="text-[10px] text-[#002045] font-bold hover:underline mr-3">Detalhes</button>
-                        <button onClick={() => setDraft({ ...l })} className="text-[10px] text-[#002045] font-bold hover:underline mr-3">Editar</button>
+                        <button onClick={() => setDetailLead(l)} className="text-[10px] text-[#0B1F45] font-bold hover:underline mr-3">Detalhes</button>
+                        <button onClick={() => setDraft({ ...l })} className="text-[10px] text-[#0B1F45] font-bold hover:underline mr-3">Editar</button>
                         {l.pedido_id ? (
-                          <button onClick={() => onViewPedido?.(l.pedido_id as string)} className="text-[10px] text-[#3b6934] font-bold hover:underline mr-3">Ver pedido →</button>
+                          <button onClick={() => onViewPedido?.(l.pedido_id as string)} className="text-[10px] text-[#1F7A44] font-bold hover:underline mr-3">Ver pedido →</button>
                         ) : l.status === "ganho" && onConvertToPedido ? (
-                          <button onClick={() => onConvertToPedido(l)} className="text-[10px] text-[#3b6934] font-bold hover:underline mr-3">Converter em Pedido</button>
+                          <button onClick={() => onConvertToPedido(l)} className="text-[10px] text-[#1F7A44] font-bold hover:underline mr-3">Converter em Pedido</button>
                         ) : null}
                         <button onClick={() => deleteLead(l.id)} className="text-[10px] text-red-600 font-bold hover:underline">Excluir</button>
                       </td>
@@ -639,7 +639,7 @@ export default function LeadsTab({
                 <div key={l.id} className="bg-white border border-[#e2e2e2] p-4">
                   <div className="flex items-start justify-between gap-2">
                     <div className="min-w-0">
-                      <button onClick={() => setDetailLead(l)} className="font-semibold text-[#002045] text-sm truncate hover:underline text-left block max-w-full">{l.name}</button>
+                      <button onClick={() => setDetailLead(l)} className="font-semibold text-[#0B1F45] text-sm truncate hover:underline text-left block max-w-full">{l.name}</button>
                       {l.email && <p className="text-[11px] text-[#74777f] truncate">{l.email}</p>}
                     </div>
                     <span className={`shrink-0 text-[9px] font-bold px-2 py-0.5 ${sm.cls}`}>{sm.label}</span>
@@ -654,22 +654,22 @@ export default function LeadsTab({
                         <option key={s} value={s}>{STATUS_META[s].label}</option>
                       ))}
                     </select>
-                    <span className="text-xs text-[#002045] font-semibold">{fmtBRL(l.estimated_value)}</span>
+                    <span className="text-xs text-[#0B1F45] font-semibold">{fmtBRL(l.estimated_value)}</span>
                   </div>
                   {rb && <p className={`text-[10px] mt-2 ${rb.cls}`}>⏰ {rb.label}</p>}
                   {l.last_contacted_at && (
-                    <p className="text-[10px] text-[#3b6934] mt-1">Último contato: {fmtDate(l.last_contacted_at)}</p>
+                    <p className="text-[10px] text-[#1F7A44] mt-1">Último contato: {fmtDate(l.last_contacted_at)}</p>
                   )}
                   <div className="flex gap-4 mt-3 pt-3 border-t border-[#f0f0f0]">
                     {l.phone && (
                       <button onClick={() => { setWaLead(l); setWaMessage(""); setWaError(null); }} className="text-[10px] text-[#128c3e] font-bold">WhatsApp</button>
                     )}
-                    <button onClick={() => setDetailLead(l)} className="text-[10px] text-[#002045] font-bold">Detalhes</button>
-                    <button onClick={() => setDraft({ ...l })} className="text-[10px] text-[#002045] font-bold">Editar</button>
+                    <button onClick={() => setDetailLead(l)} className="text-[10px] text-[#0B1F45] font-bold">Detalhes</button>
+                    <button onClick={() => setDraft({ ...l })} className="text-[10px] text-[#0B1F45] font-bold">Editar</button>
                     {l.pedido_id ? (
-                      <button onClick={() => onViewPedido?.(l.pedido_id as string)} className="text-[10px] text-[#3b6934] font-bold">Ver pedido →</button>
+                      <button onClick={() => onViewPedido?.(l.pedido_id as string)} className="text-[10px] text-[#1F7A44] font-bold">Ver pedido →</button>
                     ) : l.status === "ganho" && onConvertToPedido ? (
-                      <button onClick={() => onConvertToPedido(l)} className="text-[10px] text-[#3b6934] font-bold">Converter</button>
+                      <button onClick={() => onConvertToPedido(l)} className="text-[10px] text-[#1F7A44] font-bold">Converter</button>
                     ) : null}
                     <button onClick={() => deleteLead(l.id)} className="text-[10px] text-red-600 font-bold">Excluir</button>
                   </div>
@@ -701,12 +701,12 @@ export default function LeadsTab({
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 p-4" onClick={() => !waSending && setWaLead(null)}>
           <div className="bg-white w-full max-w-md" onClick={(e) => e.stopPropagation()}>
             <div className="bg-[#128c3e] px-6 py-4 flex items-center justify-between">
-              <p className="text-white font-[var(--font-noto-serif)] text-lg">Enviar WhatsApp</p>
+              <p className="text-white font-serif text-lg">Enviar WhatsApp</p>
               <button onClick={() => !waSending && setWaLead(null)} className="text-white/70 hover:text-white text-xl leading-none">×</button>
             </div>
             <div className="p-6 space-y-3">
-              <p className="text-xs text-[#74777f] font-[var(--font-inter)]">
-                Para <span className="font-bold text-[#002045]">{waLead.name}</span>
+              <p className="text-xs text-[#74777f]">
+                Para <span className="font-bold text-[#0B1F45]">{waLead.name}</span>
                 {waLead.phone ? ` · ${waLead.phone}` : ""}
               </p>
               <textarea
@@ -716,13 +716,13 @@ export default function LeadsTab({
                 placeholder="Digite a mensagem…"
                 autoFocus
               />
-              {waError && <p className="text-xs text-red-700 font-[var(--font-inter)] break-words">{waError}</p>}
-              <p className="text-[10px] text-[#b0b0b0] font-[var(--font-inter)]">
+              {waError && <p className="text-xs text-red-700 break-words">{waError}</p>}
+              <p className="text-[10px] text-[#b0b0b0]">
                 Enviado pela instância configurada no SM Click. Mensagens fora da janela de 24h podem exigir um template aprovado.
               </p>
             </div>
             <div className="px-6 py-4 border-t border-[#e2e2e2] flex justify-end gap-3">
-              <button onClick={() => !waSending && setWaLead(null)} className="px-4 py-2 text-xs font-bold uppercase tracking-wider text-[#74777f] hover:text-[#002045]">Cancelar</button>
+              <button onClick={() => !waSending && setWaLead(null)} className="px-4 py-2 text-xs font-bold uppercase tracking-wider text-[#74777f] hover:text-[#0B1F45]">Cancelar</button>
               <button
                 onClick={sendWhatsApp}
                 disabled={waSending || !waMessage.trim()}
@@ -739,13 +739,13 @@ export default function LeadsTab({
       {draft && (
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 p-4" onClick={() => !saving && setDraft(null)}>
           <div className="bg-white w-full max-w-lg max-h-[90vh] overflow-y-auto" onClick={(e) => e.stopPropagation()}>
-            <div className="bg-[#002045] px-6 py-4 flex items-center justify-between sticky top-0">
-              <p className="text-white font-[var(--font-noto-serif)] text-lg">{draft._isNew ? "Novo lead" : "Editar lead"}</p>
+            <div className="bg-[#0B1F45] px-6 py-4 flex items-center justify-between sticky top-0">
+              <p className="text-white font-serif text-lg">{draft._isNew ? "Novo lead" : "Editar lead"}</p>
               <button onClick={() => !saving && setDraft(null)} className="text-white/60 hover:text-white text-xl leading-none">×</button>
             </div>
             <div className="p-6 space-y-4">
               {!draft._isNew && draft.source && (
-                <p className="text-[10px] text-[#74777f] font-[var(--font-inter)]">
+                <p className="text-[10px] text-[#74777f]">
                   Origem: <span className={`font-bold px-1.5 py-0.5 ${SOURCE_META[draft.source].cls}`}>{SOURCE_META[draft.source].label}</span>
                   {draft.partner_name ? ` · via ${draft.partner_name}` : ""}
                 </p>
@@ -813,11 +813,11 @@ export default function LeadsTab({
                     type="button"
                     onClick={suggestTiming}
                     disabled={timingBusy}
-                    className="border border-purple-300 text-purple-800 text-[10px] tracking-[0.08em] uppercase font-bold font-[var(--font-inter)] px-3 py-1.5 hover:bg-purple-50 transition-colors disabled:opacity-50"
+                    className="border border-purple-300 text-purple-800 text-[10px] tracking-[0.08em] uppercase font-bold px-3 py-1.5 hover:bg-purple-50 transition-colors disabled:opacity-50"
                   >
                     {timingBusy ? "Consultando IA…" : "✨ Sugerir melhor data (IA)"}
                   </button>
-                  {timingHint && <p className="text-[11px] text-[#43474e] font-[var(--font-inter)] mt-1.5 leading-relaxed">{timingHint}</p>}
+                  {timingHint && <p className="text-[11px] text-[#43474e] mt-1.5 leading-relaxed">{timingHint}</p>}
                 </div>
               )}
               <Field label="Nota do lembrete">
@@ -828,11 +828,11 @@ export default function LeadsTab({
               </Field>
             </div>
             <div className="px-6 py-4 border-t border-[#e2e2e2] flex justify-end gap-3 sticky bottom-0 bg-white">
-              <button onClick={() => !saving && setDraft(null)} className="px-4 py-2 text-xs font-bold uppercase tracking-wider text-[#74777f] hover:text-[#002045]">Cancelar</button>
+              <button onClick={() => !saving && setDraft(null)} className="px-4 py-2 text-xs font-bold uppercase tracking-wider text-[#74777f] hover:text-[#0B1F45]">Cancelar</button>
               <button
                 onClick={saveDraft}
                 disabled={saving || !draft.name?.trim()}
-                className="bg-[#002045] text-white px-5 py-2 text-xs font-bold uppercase tracking-wider hover:bg-[#1a365d] disabled:opacity-50"
+                className="bg-[#0B1F45] text-white px-5 py-2 text-xs font-bold uppercase tracking-wider hover:bg-[#2347A0] disabled:opacity-50"
               >
                 {saving ? "Salvando..." : draft._isNew ? "Criar lead" : "Salvar"}
               </button>
@@ -845,12 +845,12 @@ export default function LeadsTab({
 }
 
 const inputCls =
-  "w-full border border-[#e2e2e2] px-3 py-2 text-sm font-[var(--font-inter)] text-[#002045] focus:outline-none focus:border-[#002045]";
+  "w-full border border-[#e2e2e2] px-3 py-2 text-sm text-[#0B1F45] focus:outline-none focus:border-[#0B1F45]";
 
 function Field({ label, children }: { label: string; children: React.ReactNode }) {
   return (
     <label className="block">
-      <span className="block text-[10px] tracking-[0.1em] uppercase font-bold font-[var(--font-inter)] text-[#74777f] mb-1">{label}</span>
+      <span className="block text-[10px] tracking-[0.1em] uppercase font-bold text-[#74777f] mb-1">{label}</span>
       {children}
     </label>
   );
@@ -858,7 +858,7 @@ function Field({ label, children }: { label: string; children: React.ReactNode }
 
 // ─── CRM detail drawer ────────────────────────────────────────────────────────
 const NOTE_KIND_META: Record<LeadNoteKind, { label: string; icon: string; cls: string }> = {
-  note: { label: "Nota", icon: "•", cls: "bg-[#eef2f8] text-[#002045]" },
+  note: { label: "Nota", icon: "•", cls: "bg-[#eef2f8] text-[#0B1F45]" },
   call: { label: "Ligação", icon: "📞", cls: "bg-blue-100 text-blue-800" },
   message: { label: "Mensagem", icon: "💬", cls: "bg-emerald-100 text-emerald-800" },
   meeting: { label: "Reunião", icon: "🤝", cls: "bg-amber-100 text-amber-800" },
@@ -1032,14 +1032,14 @@ function LeadDetailDrawer({
   return (
     <div className="fixed inset-0 z-50 flex justify-end bg-black/40" onClick={onClose}>
       <div
-        className="bg-[#f7f7f5] w-full max-w-xl h-full overflow-y-auto shadow-xl"
+        className="bg-[#F6F5F2] w-full max-w-xl h-full overflow-y-auto shadow-xl"
         onClick={(e) => e.stopPropagation()}
       >
         {/* Header */}
-        <div className="bg-[#002045] px-6 py-5 sticky top-0 z-10">
+        <div className="bg-[#0B1F45] px-6 py-5 sticky top-0 z-10">
           <div className="flex items-start justify-between gap-3">
             <div className="min-w-0">
-              <p className="text-white font-[var(--font-noto-serif)] text-xl leading-tight truncate">{lead.name}</p>
+              <p className="text-white font-serif text-xl leading-tight truncate">{lead.name}</p>
               <div className="flex flex-wrap items-center gap-2 mt-1.5">
                 <span className={`text-[9px] font-bold px-2 py-0.5 ${sm.cls}`}>{sm.label}</span>
                 <span className={`text-[9px] font-bold px-2 py-0.5 ${STATUS_META[lead.status].cls}`}>{STATUS_META[lead.status].label}</span>
@@ -1078,7 +1078,7 @@ function LeadDetailDrawer({
           <section className="bg-white border border-[#e2e2e2]">
             <div className="px-4 py-3 border-b border-[#e2e2e2] flex items-center gap-2">
               <span className="text-purple-700">✨</span>
-              <h3 className="text-[11px] tracking-[0.1em] uppercase font-bold font-[var(--font-inter)] text-[#002045]">Assistente IA</h3>
+              <h3 className="text-[11px] tracking-[0.1em] uppercase font-bold text-[#0B1F45]">Assistente IA</h3>
             </div>
             <div className="p-4 space-y-3">
               <div className="flex flex-wrap gap-2">
@@ -1091,7 +1091,7 @@ function LeadDetailDrawer({
                     key={action}
                     onClick={() => runAi(action)}
                     disabled={aiBusy !== null}
-                    className="border border-purple-300 text-purple-800 text-[10px] tracking-[0.08em] uppercase font-bold font-[var(--font-inter)] px-3 py-2 hover:bg-purple-50 transition-colors disabled:opacity-50"
+                    className="border border-purple-300 text-purple-800 text-[10px] tracking-[0.08em] uppercase font-bold px-3 py-2 hover:bg-purple-50 transition-colors disabled:opacity-50"
                   >
                     {aiBusy === action ? "Gerando…" : label}
                   </button>
@@ -1100,16 +1100,16 @@ function LeadDetailDrawer({
               {lead.ai_summary && !aiText && (
                 <div className="bg-purple-50 border border-purple-100 p-3">
                   <p className="text-[9px] tracking-[0.1em] uppercase font-bold text-purple-700 mb-1">Resumo salvo · {fmtDate(lead.ai_summary_at)}</p>
-                  <p className="text-xs text-[#43474e] font-[var(--font-inter)] whitespace-pre-wrap leading-relaxed">{lead.ai_summary}</p>
+                  <p className="text-xs text-[#43474e] whitespace-pre-wrap leading-relaxed">{lead.ai_summary}</p>
                 </div>
               )}
-              {aiError && <p className="text-xs text-red-700 font-[var(--font-inter)]">{aiError}</p>}
+              {aiError && <p className="text-xs text-red-700">{aiError}</p>}
               {aiText && (
                 <div className="bg-purple-50 border border-purple-100 p-3 space-y-2">
                   <p className="text-[9px] tracking-[0.1em] uppercase font-bold text-purple-700">
                     {aiAction === "summary" ? "Resumo" : aiAction === "followup" ? "Mensagem de follow-up" : "Próximos passos"}
                   </p>
-                  <p className="text-xs text-[#43474e] font-[var(--font-inter)] whitespace-pre-wrap leading-relaxed">{aiText}</p>
+                  <p className="text-xs text-[#43474e] whitespace-pre-wrap leading-relaxed">{aiText}</p>
                   <div className="flex flex-wrap gap-3 pt-1">
                     <button onClick={() => navigator.clipboard?.writeText(aiText)} className="text-[10px] text-purple-800 font-bold hover:underline">Copiar</button>
                     <button onClick={saveAiToTimeline} className="text-[10px] text-purple-800 font-bold hover:underline">Salvar no histórico</button>
@@ -1119,7 +1119,7 @@ function LeadDetailDrawer({
                   </div>
                 </div>
               )}
-              <p className="text-[9px] text-[#b0b0b0] font-[var(--font-inter)]">
+              <p className="text-[9px] text-[#b0b0b0]">
                 A IA usa apenas os dados deste cliente (perfil, histórico e dados adicionais).
               </p>
             </div>
@@ -1128,7 +1128,7 @@ function LeadDetailDrawer({
           {/* Custom data points */}
           <section className="bg-white border border-[#e2e2e2]">
             <div className="px-4 py-3 border-b border-[#e2e2e2]">
-              <h3 className="text-[11px] tracking-[0.1em] uppercase font-bold font-[var(--font-inter)] text-[#002045]">Dados adicionais</h3>
+              <h3 className="text-[11px] tracking-[0.1em] uppercase font-bold text-[#0B1F45]">Dados adicionais</h3>
             </div>
             <div className="p-4 space-y-3">
               {points.length > 0 ? (
@@ -1137,14 +1137,14 @@ function LeadDetailDrawer({
                     <div key={p.id} className="flex items-center justify-between gap-3 border-b border-[#f0f0f0] pb-1.5 group">
                       <div className="min-w-0">
                         <p className="text-[9px] tracking-[0.08em] uppercase font-bold text-[#74777f]">{p.label}</p>
-                        <p className="text-sm text-[#002045] font-[var(--font-inter)] break-words">{p.value || "—"}</p>
+                        <p className="text-sm text-[#0B1F45] break-words">{p.value || "—"}</p>
                       </div>
                       <button onClick={() => deletePoint(p.id)} className="text-[10px] text-red-500 opacity-0 group-hover:opacity-100 hover:underline shrink-0">remover</button>
                     </div>
                   ))}
                 </div>
               ) : (
-                <p className="text-xs text-[#b0b0b0] font-[var(--font-inter)]">Nenhum dado adicional. Adicione campos personalizados (ex: metragem, arquiteto, prazo de obra).</p>
+                <p className="text-xs text-[#b0b0b0]">Nenhum dado adicional. Adicione campos personalizados (ex: metragem, arquiteto, prazo de obra).</p>
               )}
               <div className="flex gap-2 pt-1">
                 <input
@@ -1163,7 +1163,7 @@ function LeadDetailDrawer({
                 <button
                   onClick={addPoint}
                   disabled={!dpLabel.trim() || savingDp}
-                  className="bg-[#002045] text-white text-[10px] font-bold uppercase tracking-wider px-3 hover:bg-[#1a365d] disabled:opacity-50 shrink-0"
+                  className="bg-[#0B1F45] text-white text-[10px] font-bold uppercase tracking-wider px-3 hover:bg-[#2347A0] disabled:opacity-50 shrink-0"
                 >
                   +
                 </button>
@@ -1174,7 +1174,7 @@ function LeadDetailDrawer({
           {/* Activity timeline */}
           <section className="bg-white border border-[#e2e2e2]">
             <div className="px-4 py-3 border-b border-[#e2e2e2]">
-              <h3 className="text-[11px] tracking-[0.1em] uppercase font-bold font-[var(--font-inter)] text-[#002045]">Histórico de interações</h3>
+              <h3 className="text-[11px] tracking-[0.1em] uppercase font-bold text-[#0B1F45]">Histórico de interações</h3>
             </div>
             <div className="p-4 space-y-4">
               {/* Add note */}
@@ -1185,7 +1185,7 @@ function LeadDetailDrawer({
                       key={k}
                       onClick={() => setNoteKind(k)}
                       className={`text-[10px] font-bold px-2 py-1 border transition-colors ${
-                        noteKind === k ? "border-[#002045] bg-[#002045] text-white" : "border-[#e2e2e2] text-[#74777f] hover:text-[#002045]"
+                        noteKind === k ? "border-[#0B1F45] bg-[#0B1F45] text-white" : "border-[#e2e2e2] text-[#74777f] hover:text-[#0B1F45]"
                       }`}
                     >
                       {NOTE_KIND_META[k].label}
@@ -1202,7 +1202,7 @@ function LeadDetailDrawer({
                   <button
                     onClick={addNote}
                     disabled={!noteBody.trim() || savingNote}
-                    className="bg-[#002045] text-white text-[10px] font-bold uppercase tracking-wider px-4 py-2 hover:bg-[#1a365d] disabled:opacity-50"
+                    className="bg-[#0B1F45] text-white text-[10px] font-bold uppercase tracking-wider px-4 py-2 hover:bg-[#2347A0] disabled:opacity-50"
                   >
                     {savingNote ? "Registrando…" : "Registrar"}
                   </button>
@@ -1211,9 +1211,9 @@ function LeadDetailDrawer({
 
               {/* Timeline list */}
               {loading ? (
-                <p className="text-xs text-[#74777f] font-[var(--font-inter)]">Carregando…</p>
+                <p className="text-xs text-[#74777f]">Carregando…</p>
               ) : notes.length === 0 ? (
-                <p className="text-xs text-[#b0b0b0] font-[var(--font-inter)]">Nenhuma interação registrada ainda.</p>
+                <p className="text-xs text-[#b0b0b0]">Nenhuma interação registrada ainda.</p>
               ) : (
                 <ul className="space-y-3">
                   {notes.map((n) => {
@@ -1231,7 +1231,7 @@ function LeadDetailDrawer({
                               <button onClick={() => deleteNote(n.id)} className="text-[10px] text-red-500 opacity-0 group-hover:opacity-100 hover:underline">×</button>
                             </div>
                           </div>
-                          <p className="text-sm text-[#43474e] font-[var(--font-inter)] whitespace-pre-wrap leading-relaxed mt-0.5">{n.body}</p>
+                          <p className="text-sm text-[#43474e] whitespace-pre-wrap leading-relaxed mt-0.5">{n.body}</p>
                         </div>
                       </li>
                     );
@@ -1249,8 +1249,8 @@ function LeadDetailDrawer({
 function SnapItem({ label, value }: { label: string; value: React.ReactNode }) {
   return (
     <div className="bg-white border border-[#e2e2e2] px-3 py-2">
-      <p className="text-[9px] tracking-[0.1em] uppercase font-bold font-[var(--font-inter)] text-[#74777f]">{label}</p>
-      <p className="text-sm text-[#002045] font-[var(--font-inter)] mt-0.5 break-words">{value}</p>
+      <p className="text-[9px] tracking-[0.1em] uppercase font-bold text-[#74777f]">{label}</p>
+      <p className="text-sm text-[#0B1F45] mt-0.5 break-words">{value}</p>
     </div>
   );
 }

@@ -14,6 +14,7 @@ import { adminWhatsappPhone, normalizePhone, sendText, smclickConfigured } from 
 import { getResend } from "@/lib/resend";
 import { EMAIL_EMPRESA } from "@/lib/email-destinos";
 import { ATUACOES, EXPERIENCIAS, FOCOS, rotulo } from "@/lib/academia-waitlist";
+import { emailLogo } from "@/lib/email-marca";
 
 const FROM = "Orbital Revestimentos <noreply@orbitalrevestimentos.com.br>";
 
@@ -45,7 +46,7 @@ function textoParaHtml(texto: string): string {
     .map((par) => {
       const html = esc(par)
         .replace(/\*([^*\n]+)\*/g, "<strong>$1</strong>")
-        .replace(/(https?:\/\/[^\s<]+)/g, '<a href="$1" style="color:#002045">$1</a>')
+        .replace(/(https?:\/\/[^\s<]+)/g, '<a href="$1" style="color:#0B1F45">$1</a>')
         .replace(/\n/g, "<br>");
       return `<p style="margin:0 0 16px 0;line-height:1.6;color:#43474e">${html}</p>`;
     })
@@ -54,10 +55,11 @@ function textoParaHtml(texto: string): string {
 
 function emailHtml(titulo: string, corpo: string): string {
   return `
-    <div style="font-family:Arial,sans-serif;max-width:520px;margin:0 auto;background:#ffffff">
-      <div style="background:#002045;padding:20px 24px">
-        <p style="margin:0;color:#a8e05f;font-size:11px;letter-spacing:0.15em;text-transform:uppercase;font-weight:bold">Academia Orbital</p>
-        <p style="margin:6px 0 0 0;color:#ffffff;font-size:20px;font-weight:bold">${esc(titulo)}</p>
+    <div style="font-family:Montserrat,Arial,sans-serif;max-width:520px;margin:0 auto;background:#ffffff">
+      <div style="background:#0B1F45;padding:20px 24px">
+        ${emailLogo(140, 14)}
+        <p style="margin:0;color:#36A35C;font-size:11px;letter-spacing:0.15em;text-transform:uppercase;font-weight:bold">Academia Orbital</p>
+        <p style="margin:6px 0 0 0;color:#ffffff;font-size:20px;font-weight:300;font-family:Noto Serif Display,Georgia,serif">${esc(titulo)}</p>
       </div>
       <div style="padding:24px">${corpo}</div>
     </div>`;
@@ -137,12 +139,12 @@ export async function avisarEmpresa(p: InscritoAviso, total: number | null): Pro
   ].join("\n");
 
   const tabela = linhas
-    .map(([k, v]) => `<tr><td style="padding:6px 12px 6px 0;color:#74777f;font-size:13px;white-space:nowrap">${esc(k)}</td><td style="padding:6px 0;color:#002045;font-size:13px">${esc(v)}</td></tr>`)
+    .map(([k, v]) => `<tr><td style="padding:6px 12px 6px 0;color:#74777f;font-size:13px;white-space:nowrap">${esc(k)}</td><td style="padding:6px 0;color:#0B1F45;font-size:13px">${esc(v)}</td></tr>`)
     .join("");
   const html = emailHtml(
     "Nova inscrição na lista de espera",
     `<table style="border-collapse:collapse">${tabela}</table>${totalTxt ? `<p style="margin:16px 0 0 0;color:#43474e;font-size:13px">${esc(totalTxt)}</p>` : ""}
-     <p style="margin:16px 0 0 0;font-size:13px"><a href="https://orbitalrevestimentos.com.br/admin" style="color:#002045">Ver a lista no admin</a></p>`,
+     <p style="margin:16px 0 0 0;font-size:13px"><a href="https://orbitalrevestimentos.com.br/admin" style="color:#0B1F45">Ver a lista no admin</a></p>`,
   );
 
   const admin = adminWhatsappPhone();

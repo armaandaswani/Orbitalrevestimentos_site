@@ -39,7 +39,7 @@ export default function HomeProjectsGrid({ fallback }: { fallback: Item[] }) {
             <Image src={src} alt={label} fill className="object-cover transition-transform duration-700 group-hover:scale-[1.06]" />
             <div className="hidden sm:block absolute inset-0 bg-gradient-to-t from-black/60 via-black/10 to-transparent group-hover:from-black/40 transition-all duration-500" />
             <div className="hidden sm:block absolute inset-x-0 bottom-0 p-3 translate-y-1 group-hover:translate-y-0 transition-transform duration-400">
-              <p className="text-white text-xs tracking-[0.1em] uppercase font-semibold font-[var(--font-inter)]">{label}</p>
+              <p className="text-white text-xs tracking-[0.1em] uppercase font-semibold">{label}</p>
               <div className="h-px bg-white/50 mt-1.5 scale-x-0 group-hover:scale-x-100 transition-transform duration-500 origin-left" />
             </div>
           </div>
@@ -47,7 +47,7 @@ export default function HomeProjectsGrid({ fallback }: { fallback: Item[] }) {
         return (
           <ScrollReveal key={`${label}-${i}`} delay={i * 80} direction="up">
             {slug ? <Link href="/projetos" className="block">{inner}</Link> : inner}
-            <p className="sm:hidden text-white/50 text-[9px] tracking-[0.1em] uppercase font-[var(--font-inter)] mt-1.5 leading-tight">{label}</p>
+            <p className="sm:hidden text-white/50 text-[9px] tracking-[0.1em] uppercase mt-1.5 leading-tight">{label}</p>
           </ScrollReveal>
         );
       })}

@@ -108,17 +108,17 @@ export default function FichaTecnicaAccordion() {
   const [open, setOpen] = useState(false);
 
   return (
-    <div className="mt-3 border border-[#1a365d] overflow-hidden">
+    <div className="mt-3 border border-[#2347A0] overflow-hidden">
       {/* Trigger */}
       <button
         onClick={() => setOpen(!open)}
-        className="w-full flex items-center justify-between px-5 py-4 text-left hover:bg-[#1a365d]/40 transition-colors group"
+        className="w-full flex items-center justify-between px-5 py-4 text-left hover:bg-[#2347A0]/40 transition-colors group"
         aria-expanded={open}
       >
         <div className="flex items-center gap-3">
           {/* Doc icon */}
-          <div className="flex-shrink-0 w-8 h-8 bg-[#1a365d] flex items-center justify-center">
-            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="#86a0cd" strokeWidth="2">
+          <div className="flex-shrink-0 w-8 h-8 bg-[#2347A0] flex items-center justify-center">
+            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="#B4BBC8" strokeWidth="2">
               <path d="M14 2H6a2 2 0 00-2 2v16a2 2 0 002 2h12a2 2 0 002-2V8z" />
               <polyline points="14 2 14 8 20 8" />
               <line x1="16" y1="13" x2="8" y2="13" />
@@ -127,16 +127,16 @@ export default function FichaTecnicaAccordion() {
             </svg>
           </div>
           <div>
-            <p className="text-[#86a0cd] text-[9px] tracking-[0.2em] uppercase font-bold font-[var(--font-inter)]">
+            <p className="text-[#B4BBC8] text-[9px] tracking-[0.2em] uppercase font-bold">
               Especificações Completas
             </p>
-            <p className="text-white text-sm font-semibold font-[var(--font-inter)] mt-0.5">
+            <p className="text-white text-sm font-semibold mt-0.5">
               Ficha Técnica Detalhada — PFB Orbital
             </p>
           </div>
         </div>
         <svg
-          width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#86a0cd" strokeWidth="2"
+          width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#B4BBC8" strokeWidth="2"
           className={`flex-shrink-0 ml-4 transition-transform duration-300 ${open ? "rotate-180" : ""}`}
         >
           <path d="M6 9l6 6 6-6" />
@@ -145,16 +145,16 @@ export default function FichaTecnicaAccordion() {
 
       {/* Expanded content */}
       {open && (
-        <div className="border-t border-[#1a365d] bg-[#0a1628]">
-          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 divide-y sm:divide-y-0 sm:divide-x divide-[#1a365d]">
+        <div className="border-t border-[#2347A0] bg-[#0a1628]">
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 divide-y sm:divide-y-0 sm:divide-x divide-[#2347A0]">
             {SECTIONS.map((section) => (
               <div key={section.heading} className="px-5 py-5">
                 {/* Section header */}
                 <div className="flex items-center gap-2 mb-3">
-                  <div className="w-5 h-5 bg-[#1a365d] flex items-center justify-center text-[#86a0cd] flex-shrink-0">
+                  <div className="w-5 h-5 bg-[#2347A0] flex items-center justify-center text-[#B4BBC8] flex-shrink-0">
                     {section.icon}
                   </div>
-                  <p className="text-[#86a0cd] text-[9px] tracking-[0.18em] uppercase font-bold font-[var(--font-inter)]">
+                  <p className="text-[#B4BBC8] text-[9px] tracking-[0.18em] uppercase font-bold">
                     {section.heading}
                   </p>
                 </div>
@@ -162,13 +162,13 @@ export default function FichaTecnicaAccordion() {
                 <div className="space-y-2">
                   {section.rows.map(({ label, value }) => (
                     <div key={label} className="flex items-start justify-between gap-3">
-                      <span className="text-white/50 text-[10px] font-[var(--font-inter)] leading-snug shrink-0 max-w-[48%]">
+                      <span className="text-white/50 text-[10px] leading-snug shrink-0 max-w-[48%]">
                         {label}
                       </span>
                       <span
-                        className={`text-[10px] font-[var(--font-inter)] leading-snug text-right font-medium ${
+                        className={`text-[10px] leading-snug text-right font-medium ${
                           value.startsWith("✓")
-                            ? "text-[#a1d494]"
+                            ? "text-[#36A35C]"
                             : value.startsWith("✗")
                             ? "text-[#f08080]"
                             : "text-white"
@@ -186,12 +186,12 @@ export default function FichaTecnicaAccordion() {
           {/* Calor contínuo ≠ contato breve: a faixa testada (120°C) e o limite
               de uso (50°C contínuos) são coisas diferentes, e ler só a primeira
               leva a aplicar o painel onde ele vai ondular. */}
-          <div className="border-t border-[#1a365d] px-5 py-3 flex items-start gap-2">
-            <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="#86a0cd" strokeWidth="2" className="flex-shrink-0 mt-[1px]">
+          <div className="border-t border-[#2347A0] px-5 py-3 flex items-start gap-2">
+            <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="#B4BBC8" strokeWidth="2" className="flex-shrink-0 mt-[1px]">
               <path d="M12 2v6M12 16v6M2 12h6M16 12h6" />
               <circle cx="12" cy="12" r="3" />
             </svg>
-            <p className="text-[#86a0cd] text-[9px] font-[var(--font-inter)] leading-relaxed">
+            <p className="text-[#B4BBC8] text-[9px] leading-relaxed">
               Validado para uso interno. O aquecimento contínuo — sol direto ou indireto — acima de 50°C pode gerar leve ondulação, conforme o local e a aplicação.
             </p>
           </div>
@@ -199,25 +199,25 @@ export default function FichaTecnicaAccordion() {
           {/* Tolerância de lote. Fica no rodapé, e não colada numa linha da
               tabela, porque vale para peso E densidade — que estão em seções
               diferentes. */}
-          <div className="border-t border-[#1a365d] px-5 py-3 flex items-start gap-2">
-            <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="#86a0cd" strokeWidth="2" className="flex-shrink-0 mt-[1px]">
+          <div className="border-t border-[#2347A0] px-5 py-3 flex items-start gap-2">
+            <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="#B4BBC8" strokeWidth="2" className="flex-shrink-0 mt-[1px]">
               <polyline points="7 8 3 12 7 16" />
               <polyline points="17 8 21 12 17 16" />
               <line x1="3" y1="12" x2="21" y2="12" />
             </svg>
-            <p className="text-[#86a0cd] text-[9px] font-[var(--font-inter)] leading-relaxed">
+            <p className="text-[#B4BBC8] text-[9px] leading-relaxed">
               Peso e densidade admitem tolerância de ±10% — o bambu é fibra natural e cada lote varia. Padrão em materiais de fibra vegetal.
             </p>
           </div>
 
           {/* Footer note */}
-          <div className="border-t border-[#1a365d] px-5 py-3 flex items-center gap-2">
-            <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="#86a0cd" strokeWidth="2">
+          <div className="border-t border-[#2347A0] px-5 py-3 flex items-center gap-2">
+            <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="#B4BBC8" strokeWidth="2">
               <circle cx="12" cy="12" r="10" />
               <line x1="12" y1="8" x2="12" y2="12" />
               <line x1="12" y1="16" x2="12.01" y2="16" />
             </svg>
-            <p className="text-[#86a0cd] text-[9px] font-[var(--font-inter)]">
+            <p className="text-[#B4BBC8] text-[9px]">
               Dados extraídos de ficha técnica laboratorial e ART nº AM20260593657 · CREA 042030134-8-D
             </p>
           </div>

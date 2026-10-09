@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { isAdminRequest, partnerIdFromRequest, hashPassword, verifyPassword } from "@/lib/admin-auth";
 import { supabaseAdmin } from "@/lib/supabase";
+import { emailTopo } from "@/lib/email-marca";
 
 // Fields a logged-in partner may update on their own record — profile basics
 // plus how they split their commission pool between a client discount and their
@@ -193,14 +194,14 @@ export async function PUT(
             to: recipientEmail,
             subject: "Seus dados de acesso foram atualizados — Orbital Revestimentos",
             html: `
-              <div style="font-family:sans-serif;max-width:520px;margin:0 auto;padding:32px 24px;color:#1a1a1a">
-                <h2 style="font-size:20px;margin-bottom:8px;color:#002045">Dados de acesso atualizados</h2>
+              ${emailTopo(520)}<div style="font-family:Montserrat,Arial,sans-serif;max-width:520px;margin:0 auto;padding:32px 24px;color:#0D1830">
+                <h2 style="font-size:20px;margin-bottom:8px;color:#0B1F45;font-family:Noto Serif Display,Georgia,serif;font-weight:300">Dados de acesso atualizados</h2>
                 <p style="color:#555;margin-bottom:24px">Olá, ${data.name}. Seus dados de acesso no portal Orbital foram atualizados por nossa equipe.</p>
                 <table style="width:100%;border-collapse:collapse;margin-bottom:24px">
                   <tr><td style="padding:8px 0;border-bottom:1px solid #eee;color:#555;font-size:14px">Cupom</td><td style="padding:8px 0;border-bottom:1px solid #eee;font-weight:600;font-size:14px;text-align:right;letter-spacing:0.1em">${data.coupon_code}</td></tr>
                   ${changes.join("")}
                 </table>
-                <a href="${siteUrl}/parceiro" style="display:inline-block;background:#002045;color:#fff;text-decoration:none;padding:12px 24px;font-size:14px;font-weight:600;margin-bottom:24px">
+                <a href="${siteUrl}/parceiro" style="display:inline-block;background:#0B1F45;color:#fff;text-decoration:none;padding:12px 24px;font-size:14px;font-weight:600;margin-bottom:24px">
                   Acessar meu portal
                 </a>
                 <p style="color:#888;font-size:12px;margin-top:24px">Se você não reconhece essa alteração, entre em contato conosco pelo WhatsApp.</p>

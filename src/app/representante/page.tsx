@@ -74,7 +74,7 @@ function partnerStatusBadge(p: LinkedPartner): { label: string; cls: string } {
   if (p.status === "active") return { label: "Ativo", cls: "bg-green-100 text-green-800" };
   if (p.status === "pending") {
     return p.is_self_registered === false
-      ? { label: "Convite enviado", cls: "bg-blue-50 text-[#002045]" }
+      ? { label: "Convite enviado", cls: "bg-blue-50 text-[#0B1F45]" }
       : { label: "Pendente", cls: "bg-yellow-100 text-yellow-800" };
   }
   return { label: "Inativo", cls: "bg-gray-100 text-gray-600" };
@@ -278,19 +278,19 @@ export default function RepresentantePage() {
   // Birthday gate — shown after login if birthday is missing
   if (salesRep && !salesRep.birthday) {
     return (
-      <div className="min-h-screen bg-[#f5f5f3] pt-20 flex items-center justify-center px-4">
+      <div className="min-h-screen bg-[#F6F5F2] pt-20 flex items-center justify-center px-4">
         <div className="bg-white border border-[#e2e2e2] p-10 w-full max-w-sm">
           <div className="mb-6">
-            <p className="text-[#002045] font-[var(--font-noto-serif)] text-2xl font-normal mb-1">
+            <p className="text-[#0B1F45] font-serif text-2xl font-normal mb-1">
               Complete seu cadastro
             </p>
-            <p className="text-[#74777f] text-sm font-[var(--font-inter)]">
+            <p className="text-[#74777f] text-sm">
               Olá, {salesRep.name}. Para continuar, precisamos da sua data de nascimento.
             </p>
           </div>
           <form onSubmit={handleSaveBirthday} className="space-y-4">
             <div>
-              <label className="block text-[10px] tracking-[0.15em] uppercase font-bold font-[var(--font-inter)] text-[#74777f] mb-2">
+              <label className="block text-[10px] tracking-[0.15em] uppercase font-bold text-[#74777f] mb-2">
                 Data de Nascimento *
               </label>
               <input
@@ -300,16 +300,16 @@ export default function RepresentantePage() {
                 value={bdayInput}
                 onChange={(e) => handleBdayChange(e.target.value)}
                 maxLength={10}
-                className="w-full border border-[#e2e2e2] px-4 py-3 text-sm font-[var(--font-inter)] text-[#002045] focus:outline-none focus:border-[#002045]"
+                className="w-full border border-[#e2e2e2] px-4 py-3 text-sm text-[#0B1F45] focus:outline-none focus:border-[#0B1F45]"
               />
             </div>
             {bdayError && (
-              <p className="text-red-600 text-sm font-[var(--font-inter)]">{bdayError}</p>
+              <p className="text-red-600 text-sm">{bdayError}</p>
             )}
             <button
               type="submit"
               disabled={bdayLoading}
-              className="w-full bg-[#002045] text-white text-xs tracking-[0.12em] uppercase font-bold font-[var(--font-inter)] px-6 py-3 hover:bg-[#1a365d] transition-colors disabled:opacity-50"
+              className="w-full bg-[#0B1F45] text-white text-xs tracking-[0.12em] uppercase font-bold px-6 py-3 hover:bg-[#2347A0] transition-colors disabled:opacity-50"
             >
               {bdayLoading ? "Salvando..." : "Confirmar e entrar"}
             </button>
@@ -321,19 +321,19 @@ export default function RepresentantePage() {
 
   if (!salesRep) {
     return (
-      <div className="min-h-screen bg-[#f5f5f3] pt-20 flex items-center justify-center px-4">
+      <div className="min-h-screen bg-[#F6F5F2] pt-20 flex items-center justify-center px-4">
         <div className="bg-white border border-[#e2e2e2] p-10 w-full max-w-sm">
           <div className="mb-6">
-            <p className="text-[#002045] font-[var(--font-noto-serif)] text-2xl font-normal mb-1">
+            <p className="text-[#0B1F45] font-serif text-2xl font-normal mb-1">
               Portal do Representante
             </p>
-            <p className="text-[#74777f] text-sm font-[var(--font-inter)]">
+            <p className="text-[#74777f] text-sm">
               Orbital Revestimentos
             </p>
           </div>
           <form onSubmit={handleLogin} className="space-y-4">
             <div>
-              <label className="block text-[10px] tracking-[0.15em] uppercase font-bold font-[var(--font-inter)] text-[#74777f] mb-2">
+              <label className="block text-[10px] tracking-[0.15em] uppercase font-bold text-[#74777f] mb-2">
                 E-mail
               </label>
               <input
@@ -341,14 +341,14 @@ export default function RepresentantePage() {
                 type="email"
                 value={loginEmail}
                 onChange={(e) => setLoginEmail(e.target.value)}
-                className="w-full border border-[#e2e2e2] px-4 py-3 text-sm font-[var(--font-inter)] text-[#002045] focus:outline-none focus:border-[#002045]"
+                className="w-full border border-[#e2e2e2] px-4 py-3 text-sm text-[#0B1F45] focus:outline-none focus:border-[#0B1F45]"
                 placeholder="seu@email.com"
                 autoComplete="email"
                 autoFocus
               />
             </div>
             <div>
-              <label className="block text-[10px] tracking-[0.15em] uppercase font-bold font-[var(--font-inter)] text-[#74777f] mb-2">
+              <label className="block text-[10px] tracking-[0.15em] uppercase font-bold text-[#74777f] mb-2">
                 Senha
               </label>
               <div className="relative">
@@ -357,7 +357,7 @@ export default function RepresentantePage() {
                   type={showLoginPw ? "text" : "password"}
                   value={password}
                   onChange={(e) => setPassword(e.target.value)}
-                  className="w-full border border-[#e2e2e2] px-4 py-3 pr-10 text-sm font-[var(--font-inter)] text-[#002045] focus:outline-none focus:border-[#002045]"
+                  className="w-full border border-[#e2e2e2] px-4 py-3 pr-10 text-sm text-[#0B1F45] focus:outline-none focus:border-[#0B1F45]"
                   autoComplete="current-password"
                 />
                 <button
@@ -365,7 +365,7 @@ export default function RepresentantePage() {
                   tabIndex={-1}
                   aria-label={showLoginPw ? "Ocultar senha" : "Mostrar senha"}
                   onClick={() => setShowLoginPw((v) => !v)}
-                  className="absolute right-3 top-1/2 -translate-y-1/2 text-[#74777f] hover:text-[#002045] transition-colors"
+                  className="absolute right-3 top-1/2 -translate-y-1/2 text-[#74777f] hover:text-[#0B1F45] transition-colors"
                 >
                   {showLoginPw ? (
                     <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><path d="M17.94 17.94A10.07 10.07 0 0112 20c-7 0-11-8-11-8a18.45 18.45 0 015.06-5.94M9.9 4.24A9.12 9.12 0 0112 4c7 0 11 8 11 8a18.5 18.5 0 01-2.16 3.19m-6.72-1.07a3 3 0 11-4.24-4.24"/><line x1="1" y1="1" x2="23" y2="23"/></svg>
@@ -376,12 +376,12 @@ export default function RepresentantePage() {
               </div>
             </div>
             {loginError && (
-              <p className="text-red-600 text-sm font-[var(--font-inter)]">{loginError}</p>
+              <p className="text-red-600 text-sm">{loginError}</p>
             )}
             <button
               type="submit"
               disabled={loginLoading}
-              className="w-full bg-[#002045] text-white text-xs tracking-[0.12em] uppercase font-bold font-[var(--font-inter)] px-6 py-3 hover:bg-[#1a365d] transition-colors disabled:opacity-50"
+              className="w-full bg-[#0B1F45] text-white text-xs tracking-[0.12em] uppercase font-bold px-6 py-3 hover:bg-[#2347A0] transition-colors disabled:opacity-50"
             >
               {loginLoading ? "Entrando..." : "Entrar"}
             </button>
@@ -389,7 +389,7 @@ export default function RepresentantePage() {
           <div className="mt-4 text-center">
             <a
               href="/parceiro"
-              className="text-[#74777f] text-xs font-[var(--font-inter)] hover:text-[#002045] transition-colors"
+              className="text-[#74777f] text-xs hover:text-[#0B1F45] transition-colors"
             >
               É parceiro?{" "}
               <span className="underline underline-offset-2">Acesse aqui</span>
@@ -401,20 +401,20 @@ export default function RepresentantePage() {
   }
 
   return (
-    <div className="min-h-screen bg-[#f5f5f3] pt-20">
+    <div className="min-h-screen bg-[#F6F5F2] pt-20">
       {/* Header */}
-      <div className="bg-[#002045] px-6 py-5 flex items-center justify-between">
+      <div className="bg-[#0B1F45] px-6 py-5 flex items-center justify-between">
         <div>
-          <p className="text-white font-[var(--font-noto-serif)] text-lg leading-tight">
+          <p className="text-white font-serif text-lg leading-tight">
             Olá, {salesRep.name}
           </p>
-          <p className="text-white/60 text-xs font-[var(--font-inter)] tracking-wider mt-0.5">
+          <p className="text-white/60 text-xs tracking-wider mt-0.5">
             Código: <strong className="text-white">{salesRep.referral_code}</strong>
           </p>
         </div>
         <button
           onClick={() => { fetch("/api/representante/auth", { method: "DELETE" }).catch(() => {}); setSalesRep(null); setUses([]); setLoginEmail(""); setPassword(""); setLinkedPartners([]); setRepTab("overview"); }}
-          className="text-white/60 hover:text-white text-xs font-[var(--font-inter)] uppercase tracking-widest transition-colors"
+          className="text-white/60 hover:text-white text-xs uppercase tracking-widest transition-colors"
         >
           Sair
         </button>
@@ -427,10 +427,10 @@ export default function RepresentantePage() {
           return (
             <div className="bg-white border border-[#e2e2e2] px-6 py-4 mb-6 flex flex-col sm:flex-row sm:items-center gap-3">
               <div className="flex-1 min-w-0">
-                <p className="text-[#74777f] text-[10px] tracking-[0.15em] uppercase font-bold font-[var(--font-inter)] mb-1">
+                <p className="text-[#74777f] text-[10px] tracking-[0.15em] uppercase font-bold mb-1">
                   Seu link de indicação
                 </p>
-                <p className="text-[#002045] text-sm font-[var(--font-inter)] truncate">{referralUrl}</p>
+                <p className="text-[#0B1F45] text-sm truncate">{referralUrl}</p>
               </div>
               <button
                 onClick={() => {
@@ -438,7 +438,7 @@ export default function RepresentantePage() {
                   setCopied(true);
                   setTimeout(() => setCopied(false), 2000);
                 }}
-                className="flex-shrink-0 bg-[#002045] text-white text-xs tracking-[0.1em] uppercase font-bold font-[var(--font-inter)] px-5 py-2.5 hover:bg-[#1a365d] transition-colors"
+                className="flex-shrink-0 bg-[#0B1F45] text-white text-xs tracking-[0.1em] uppercase font-bold px-5 py-2.5 hover:bg-[#2347A0] transition-colors"
               >
                 {copied ? "Copiado!" : "Copiar link"}
               </button>
@@ -461,10 +461,10 @@ export default function RepresentantePage() {
             <button
               key={t.key}
               onClick={() => setRepTab(t.key)}
-              className={`px-5 py-3 text-xs tracking-[0.1em] uppercase font-bold font-[var(--font-inter)] border-b-2 transition-colors -mb-px ${
+              className={`px-5 py-3 text-xs tracking-[0.1em] uppercase font-bold border-b-2 transition-colors -mb-px ${
                 repTab === t.key
-                  ? "border-[#002045] text-[#002045]"
-                  : "border-transparent text-[#74777f] hover:text-[#002045]"
+                  ? "border-[#0B1F45] text-[#0B1F45]"
+                  : "border-transparent text-[#74777f] hover:text-[#0B1F45]"
               }`}
             >
               {t.label}
@@ -476,34 +476,34 @@ export default function RepresentantePage() {
         {/* Summary cards — 4-card grid */}
         <div className="grid grid-cols-2 sm:grid-cols-4 gap-4 mb-8">
           <div className="bg-white border border-[#e2e2e2] px-6 py-5">
-            <p className="text-[#74777f] text-[10px] tracking-[0.15em] uppercase font-bold font-[var(--font-inter)] mb-1">
+            <p className="text-[#74777f] text-[10px] tracking-[0.15em] uppercase font-bold mb-1">
               Parceiros indicados
             </p>
-            <p className="font-[var(--font-noto-serif)] text-[#002045] text-3xl font-normal">
+            <p className="font-serif text-[#0B1F45] text-3xl font-normal">
               {uniquePartners}
             </p>
           </div>
           <div className="bg-white border border-[#e2e2e2] px-6 py-5">
-            <p className="text-[#74777f] text-[10px] tracking-[0.15em] uppercase font-bold font-[var(--font-inter)] mb-1">
+            <p className="text-[#74777f] text-[10px] tracking-[0.15em] uppercase font-bold mb-1">
               Vendas concluídas
             </p>
-            <p className="font-[var(--font-noto-serif)] text-[#002045] text-3xl font-normal">
+            <p className="font-serif text-[#0B1F45] text-3xl font-normal">
               {uses.filter((u) => u.sale_status === "concluido").length}
             </p>
           </div>
           <div className="bg-white border border-[#e2e2e2] px-6 py-5">
-            <p className="text-[#74777f] text-[10px] tracking-[0.15em] uppercase font-bold font-[var(--font-inter)] mb-1">
+            <p className="text-[#74777f] text-[10px] tracking-[0.15em] uppercase font-bold mb-1">
               Comissão confirmada
             </p>
-            <p className="font-[var(--font-noto-serif)] text-green-700 text-2xl font-normal">
+            <p className="font-serif text-green-700 text-2xl font-normal">
               {fmt(confirmedCommission)}
             </p>
           </div>
           <div className="bg-white border border-[#e2e2e2] px-6 py-5">
-            <p className="text-[#74777f] text-[10px] tracking-[0.15em] uppercase font-bold font-[var(--font-inter)] mb-1">
+            <p className="text-[#74777f] text-[10px] tracking-[0.15em] uppercase font-bold mb-1">
               Comissão pendente
             </p>
-            <p className="font-[var(--font-noto-serif)] text-amber-600 text-2xl font-normal">
+            <p className="font-serif text-amber-600 text-2xl font-normal">
               {fmt(pendingCommission)}
             </p>
           </div>
@@ -532,7 +532,7 @@ export default function RepresentantePage() {
           const maxVal = Math.max(...months.map((m) => totals[m.key]), 1);
           return (
             <div className="bg-white border border-[#e2e2e2] px-6 py-5 mb-8">
-              <p className="text-[#74777f] text-[10px] tracking-[0.15em] uppercase font-bold font-[var(--font-inter)] mb-4">
+              <p className="text-[#74777f] text-[10px] tracking-[0.15em] uppercase font-bold mb-4">
                 Comissão confirmada — últimos 6 meses
               </p>
               <div className="flex items-end gap-3 h-16">
@@ -544,14 +544,14 @@ export default function RepresentantePage() {
                       <div
                         className="w-full rounded-sm"
                         style={{
-                          backgroundColor: "#002045",
+                          backgroundColor: "#0B1F45",
                           height: `${Math.max(heightPct, val > 0 ? 4 : 2)}%`,
                           minHeight: "2px",
                           opacity: val > 0 ? 1 : 0.15,
                         }}
                         title={fmt(val)}
                       />
-                      <span className="text-[#74777f] text-[10px] font-[var(--font-inter)]">{m.label}</span>
+                      <span className="text-[#74777f] text-[10px]">{m.label}</span>
                     </div>
                   );
                 })}
@@ -566,7 +566,7 @@ export default function RepresentantePage() {
             onClick={() => { setCpOpen(!cpOpen); setCpError(""); setCpSuccess(false); }}
             className="w-full flex items-center justify-between px-6 py-4 text-left"
           >
-            <span className="text-[10px] tracking-[0.15em] uppercase font-bold font-[var(--font-inter)] text-[#74777f]">
+            <span className="text-[10px] tracking-[0.15em] uppercase font-bold text-[#74777f]">
               Alterar Senha
             </span>
             <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="#74777f" strokeWidth="2"
@@ -577,25 +577,25 @@ export default function RepresentantePage() {
           {cpOpen && (
             <div className="border-t border-[#e2e2e2] px-6 py-5">
               {cpSuccess ? (
-                <p className="text-green-600 text-sm font-[var(--font-inter)]">Senha alterada com sucesso.</p>
+                <p className="text-green-600 text-sm">Senha alterada com sucesso.</p>
               ) : (
                 <form onSubmit={handleChangePassword} className="space-y-3 max-w-sm">
                   <div>
-                    <label className="block text-[10px] tracking-[0.15em] uppercase font-bold font-[var(--font-inter)] text-[#74777f] mb-1">Senha atual</label>
+                    <label className="block text-[10px] tracking-[0.15em] uppercase font-bold text-[#74777f] mb-1">Senha atual</label>
                     <div className="relative">
                       <input
                         required
                         type={showCpCurrent ? "text" : "password"}
                         value={cpCurrent}
                         onChange={(e) => setCpCurrent(e.target.value)}
-                        className="w-full border border-[#e2e2e2] px-3 py-2.5 pr-10 text-sm font-[var(--font-inter)] text-[#002045] focus:outline-none focus:border-[#002045]"
+                        className="w-full border border-[#e2e2e2] px-3 py-2.5 pr-10 text-sm text-[#0B1F45] focus:outline-none focus:border-[#0B1F45]"
                       />
                       <button
                         type="button"
                         tabIndex={-1}
                         aria-label={showCpCurrent ? "Ocultar senha" : "Mostrar senha"}
                         onClick={() => setShowCpCurrent((v) => !v)}
-                        className="absolute right-3 top-1/2 -translate-y-1/2 text-[#74777f] hover:text-[#002045] transition-colors"
+                        className="absolute right-3 top-1/2 -translate-y-1/2 text-[#74777f] hover:text-[#0B1F45] transition-colors"
                       >
                         {showCpCurrent ? (
                           <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><path d="M17.94 17.94A10.07 10.07 0 0112 20c-7 0-11-8-11-8a18.45 18.45 0 015.06-5.94M9.9 4.24A9.12 9.12 0 0112 4c7 0 11 8 11 8a18.5 18.5 0 01-2.16 3.19m-6.72-1.07a3 3 0 11-4.24-4.24"/><line x1="1" y1="1" x2="23" y2="23"/></svg>
@@ -606,21 +606,21 @@ export default function RepresentantePage() {
                     </div>
                   </div>
                   <div>
-                    <label className="block text-[10px] tracking-[0.15em] uppercase font-bold font-[var(--font-inter)] text-[#74777f] mb-1">Nova senha</label>
+                    <label className="block text-[10px] tracking-[0.15em] uppercase font-bold text-[#74777f] mb-1">Nova senha</label>
                     <div className="relative">
                       <input
                         required
                         type={showCpNew ? "text" : "password"}
                         value={cpNew}
                         onChange={(e) => setCpNew(e.target.value)}
-                        className="w-full border border-[#e2e2e2] px-3 py-2.5 pr-10 text-sm font-[var(--font-inter)] text-[#002045] focus:outline-none focus:border-[#002045]"
+                        className="w-full border border-[#e2e2e2] px-3 py-2.5 pr-10 text-sm text-[#0B1F45] focus:outline-none focus:border-[#0B1F45]"
                       />
                       <button
                         type="button"
                         tabIndex={-1}
                         aria-label={showCpNew ? "Ocultar senha" : "Mostrar senha"}
                         onClick={() => setShowCpNew((v) => !v)}
-                        className="absolute right-3 top-1/2 -translate-y-1/2 text-[#74777f] hover:text-[#002045] transition-colors"
+                        className="absolute right-3 top-1/2 -translate-y-1/2 text-[#74777f] hover:text-[#0B1F45] transition-colors"
                       >
                         {showCpNew ? (
                           <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><path d="M17.94 17.94A10.07 10.07 0 0112 20c-7 0-11-8-11-8a18.45 18.45 0 015.06-5.94M9.9 4.24A9.12 9.12 0 0112 4c7 0 11 8 11 8a18.5 18.5 0 01-2.16 3.19m-6.72-1.07a3 3 0 11-4.24-4.24"/><line x1="1" y1="1" x2="23" y2="23"/></svg>
@@ -631,21 +631,21 @@ export default function RepresentantePage() {
                     </div>
                   </div>
                   <div>
-                    <label className="block text-[10px] tracking-[0.15em] uppercase font-bold font-[var(--font-inter)] text-[#74777f] mb-1">Confirmar nova senha</label>
+                    <label className="block text-[10px] tracking-[0.15em] uppercase font-bold text-[#74777f] mb-1">Confirmar nova senha</label>
                     <div className="relative">
                       <input
                         required
                         type={showCpConfirm ? "text" : "password"}
                         value={cpConfirm}
                         onChange={(e) => setCpConfirm(e.target.value)}
-                        className="w-full border border-[#e2e2e2] px-3 py-2.5 pr-10 text-sm font-[var(--font-inter)] text-[#002045] focus:outline-none focus:border-[#002045]"
+                        className="w-full border border-[#e2e2e2] px-3 py-2.5 pr-10 text-sm text-[#0B1F45] focus:outline-none focus:border-[#0B1F45]"
                       />
                       <button
                         type="button"
                         tabIndex={-1}
                         aria-label={showCpConfirm ? "Ocultar senha" : "Mostrar senha"}
                         onClick={() => setShowCpConfirm((v) => !v)}
-                        className="absolute right-3 top-1/2 -translate-y-1/2 text-[#74777f] hover:text-[#002045] transition-colors"
+                        className="absolute right-3 top-1/2 -translate-y-1/2 text-[#74777f] hover:text-[#0B1F45] transition-colors"
                       >
                         {showCpConfirm ? (
                           <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><path d="M17.94 17.94A10.07 10.07 0 0112 20c-7 0-11-8-11-8a18.45 18.45 0 015.06-5.94M9.9 4.24A9.12 9.12 0 0112 4c7 0 11 8 11 8a18.5 18.5 0 01-2.16 3.19m-6.72-1.07a3 3 0 11-4.24-4.24"/><line x1="1" y1="1" x2="23" y2="23"/></svg>
@@ -655,11 +655,11 @@ export default function RepresentantePage() {
                       </button>
                     </div>
                   </div>
-                  {cpError && <p className="text-red-600 text-xs font-[var(--font-inter)]">{cpError}</p>}
+                  {cpError && <p className="text-red-600 text-xs">{cpError}</p>}
                   <button
                     type="submit"
                     disabled={cpLoading}
-                    className="bg-[#002045] text-white text-xs tracking-[0.12em] uppercase font-bold font-[var(--font-inter)] px-6 py-2.5 hover:bg-[#1a365d] transition-colors disabled:opacity-50"
+                    className="bg-[#0B1F45] text-white text-xs tracking-[0.12em] uppercase font-bold px-6 py-2.5 hover:bg-[#2347A0] transition-colors disabled:opacity-50"
                   >
                     {cpLoading ? "Salvando..." : "Salvar nova senha"}
                   </button>
@@ -673,7 +673,7 @@ export default function RepresentantePage() {
         {partnerRanking.length > 0 && (
           <div className="mb-8">
             <div className="flex flex-wrap items-center justify-between gap-3 mb-3">
-              <h2 className="font-[var(--font-noto-serif)] text-[#002045] text-xl font-normal">
+              <h2 className="font-serif text-[#0B1F45] text-xl font-normal">
                 Ranking de Parceiros
               </h2>
               <div className="flex items-center gap-2">
@@ -681,7 +681,7 @@ export default function RepresentantePage() {
                   <button
                     key={s}
                     onClick={() => setPartnerRankSort(s)}
-                    className={`text-[10px] tracking-[0.08em] uppercase font-bold font-[var(--font-inter)] px-3 py-1.5 border transition-colors ${partnerRankSort === s ? "bg-[#002045] text-white border-[#002045]" : "text-[#74777f] border-[#e2e2e2] hover:border-[#002045] hover:text-[#002045]"}`}
+                    className={`text-[10px] tracking-[0.08em] uppercase font-bold px-3 py-1.5 border transition-colors ${partnerRankSort === s ? "bg-[#0B1F45] text-white border-[#0B1F45]" : "text-[#74777f] border-[#e2e2e2] hover:border-[#0B1F45] hover:text-[#0B1F45]"}`}
                   >
                     {s === "total" ? "Valor" : s === "count" ? "Qtd." : "Ticket Médio"}
                   </button>
@@ -694,23 +694,23 @@ export default function RepresentantePage() {
                 <div key={p.code} className="px-4 py-4">
                   <div className="flex items-center justify-between mb-2">
                     <div className="flex items-center gap-2">
-                      <span className="font-bold text-[#002045] text-base font-[var(--font-noto-serif)]">{i + 1}°</span>
-                      <span className="font-semibold text-[#002045] text-sm font-[var(--font-inter)]">{p.name}</span>
+                      <span className="font-bold text-[#0B1F45] text-base font-serif">{i + 1}°</span>
+                      <span className="font-semibold text-[#0B1F45] text-sm">{p.name}</span>
                     </div>
-                    <span className="bg-[#eef2f8] text-[#002045] px-2 py-0.5 text-xs font-bold tracking-wider">{p.code}</span>
+                    <span className="bg-[#eef2f8] text-[#0B1F45] px-2 py-0.5 text-xs font-bold tracking-wider">{p.code}</span>
                   </div>
                   <div className="grid grid-cols-3 gap-x-4 gap-y-2">
                     <div>
-                      <p className="text-[#74777f] text-[9px] uppercase tracking-wider font-bold font-[var(--font-inter)]">Total</p>
-                      <p className="text-green-700 text-xs font-semibold font-[var(--font-inter)] mt-0.5">{fmt(p.total)}</p>
+                      <p className="text-[#74777f] text-[9px] uppercase tracking-wider font-bold">Total</p>
+                      <p className="text-green-700 text-xs font-semibold mt-0.5">{fmt(p.total)}</p>
                     </div>
                     <div>
-                      <p className="text-[#74777f] text-[9px] uppercase tracking-wider font-bold font-[var(--font-inter)]">Vendas</p>
-                      <p className="text-[#43474e] text-xs font-[var(--font-inter)] mt-0.5">{p.count}</p>
+                      <p className="text-[#74777f] text-[9px] uppercase tracking-wider font-bold">Vendas</p>
+                      <p className="text-[#43474e] text-xs mt-0.5">{p.count}</p>
                     </div>
                     <div>
-                      <p className="text-[#74777f] text-[9px] uppercase tracking-wider font-bold font-[var(--font-inter)]">Ticket Médio</p>
-                      <p className="text-[#43474e] text-xs font-[var(--font-inter)] mt-0.5">{p.median > 0 ? fmt(p.median) : "—"}</p>
+                      <p className="text-[#74777f] text-[9px] uppercase tracking-wider font-bold">Ticket Médio</p>
+                      <p className="text-[#43474e] text-xs mt-0.5">{p.median > 0 ? fmt(p.median) : "—"}</p>
                     </div>
                   </div>
                 </div>
@@ -718,7 +718,7 @@ export default function RepresentantePage() {
             </div>
             {/* Desktop table — hidden on mobile */}
             <div className="hidden sm:block bg-white border border-[#e2e2e2] overflow-x-auto">
-              <table className="w-full text-sm font-[var(--font-inter)]">
+              <table className="w-full text-sm">
                 <thead>
                   <tr className="border-b border-[#e2e2e2]">
                     {["#", "Parceiro", "Cupom", "Total gerado", "Vendas", "Ticket médio"].map((h) => (
@@ -728,10 +728,10 @@ export default function RepresentantePage() {
                 </thead>
                 <tbody>
                   {partnerRanking.map((p, i) => (
-                    <tr key={p.code} className="border-b border-[#f0f0f0] hover:bg-[#fafafa]">
-                      <td className="px-5 py-3 font-bold text-[#002045]">{i + 1}°</td>
-                      <td className="px-5 py-3 font-semibold text-[#002045]">{p.name}</td>
-                      <td className="px-5 py-3"><span className="bg-[#eef2f8] text-[#002045] px-2 py-0.5 text-xs font-bold tracking-wider">{p.code}</span></td>
+                    <tr key={p.code} className="border-b border-[#f0f0f0] hover:bg-[#F6F5F2]">
+                      <td className="px-5 py-3 font-bold text-[#0B1F45]">{i + 1}°</td>
+                      <td className="px-5 py-3 font-semibold text-[#0B1F45]">{p.name}</td>
+                      <td className="px-5 py-3"><span className="bg-[#eef2f8] text-[#0B1F45] px-2 py-0.5 text-xs font-bold tracking-wider">{p.code}</span></td>
                       <td className="px-5 py-3 font-semibold text-green-700">{fmt(p.total)}</td>
                       <td className="px-5 py-3 text-[#43474e]">{p.count}</td>
                       <td className="px-5 py-3 text-[#43474e]">{p.median > 0 ? fmt(p.median) : "—"}</td>
@@ -745,15 +745,15 @@ export default function RepresentantePage() {
 
         {/* Usage history */}
         <div className="flex items-center gap-3 mb-4">
-          <h2 className="font-[var(--font-noto-serif)] text-[#002045] text-xl font-normal">
+          <h2 className="font-serif text-[#0B1F45] text-xl font-normal">
             Histórico de vendas
           </h2>
         </div>
         {uses.length > 0 && (
           <div className="flex items-center gap-3 mb-4">
-            <label className="text-[10px] tracking-[0.15em] uppercase font-bold font-[var(--font-inter)] text-[#74777f] whitespace-nowrap">Parceiro:</label>
+            <label className="text-[10px] tracking-[0.15em] uppercase font-bold text-[#74777f] whitespace-nowrap">Parceiro:</label>
             <select value={historyFilter} onChange={e => setHistoryFilter(e.target.value)}
-              className="border border-[#e2e2e2] px-3 py-1.5 text-xs font-[var(--font-inter)] text-[#002045] focus:outline-none focus:border-[#002045]">
+              className="border border-[#e2e2e2] px-3 py-1.5 text-xs text-[#0B1F45] focus:outline-none focus:border-[#0B1F45]">
               <option value="">Todos</option>
               {[...new Map(uses.map(u => [u.coupon_code, u.partner_name || u.coupon_code])).entries()].map(([code, name]) => (
                 <option key={code} value={code}>{name} ({code})</option>
@@ -765,10 +765,10 @@ export default function RepresentantePage() {
         {(() => {
           const filteredHistoryUses = historyFilter ? uses.filter(u => u.coupon_code === historyFilter) : uses;
           return usesLoading ? (
-          <p className="text-[#74777f] text-sm font-[var(--font-inter)]">Carregando...</p>
+          <p className="text-[#74777f] text-sm">Carregando...</p>
         ) : uses.length === 0 ? (
           <div className="bg-white border border-[#e2e2e2] px-6 py-10 text-center">
-            <p className="text-[#74777f] text-sm font-[var(--font-inter)]">
+            <p className="text-[#74777f] text-sm">
               Nenhuma venda registrada ainda. Indique parceiros para começar!
             </p>
           </div>
@@ -783,8 +783,8 @@ export default function RepresentantePage() {
                   <div key={u.id} className="px-4 py-4">
                     <div className="flex items-start justify-between mb-3">
                       <div>
-                        <p className="font-semibold text-[#002045] text-sm font-[var(--font-inter)]">{u.partner_name || "—"}</p>
-                        <p className="text-[#74777f] text-xs font-bold tracking-wider font-[var(--font-inter)] mt-0.5">{u.coupon_code || "—"}</p>
+                        <p className="font-semibold text-[#0B1F45] text-sm">{u.partner_name || "—"}</p>
+                        <p className="text-[#74777f] text-xs font-bold tracking-wider mt-0.5">{u.coupon_code || "—"}</p>
                       </div>
                       <span className={`inline-flex items-center gap-1 px-2 py-0.5 text-[10px] font-bold tracking-wide rounded-full flex-shrink-0 ml-2 ${stMeta.cls}`}>
                         <span className={`w-1.5 h-1.5 rounded-full ${st === "concluido" ? "bg-green-600" : st === "cancelado" ? "bg-red-500" : "bg-yellow-500"}`} />
@@ -793,21 +793,21 @@ export default function RepresentantePage() {
                     </div>
                     <div className="grid grid-cols-2 gap-x-6 gap-y-2">
                       <div>
-                        <p className="text-[#74777f] text-[9px] uppercase tracking-wider font-bold font-[var(--font-inter)]">Data</p>
-                        <p className="text-[#43474e] text-xs font-[var(--font-inter)] mt-0.5">{new Date(u.created_at).toLocaleDateString("pt-BR")}</p>
+                        <p className="text-[#74777f] text-[9px] uppercase tracking-wider font-bold">Data</p>
+                        <p className="text-[#43474e] text-xs mt-0.5">{new Date(u.created_at).toLocaleDateString("pt-BR")}</p>
                       </div>
                       <div>
-                        <p className="text-[#74777f] text-[9px] uppercase tracking-wider font-bold font-[var(--font-inter)]">Espaço</p>
-                        <p className="text-[#43474e] text-xs font-[var(--font-inter)] mt-0.5">{u.space || "—"}</p>
+                        <p className="text-[#74777f] text-[9px] uppercase tracking-wider font-bold">Espaço</p>
+                        <p className="text-[#43474e] text-xs mt-0.5">{u.space || "—"}</p>
                       </div>
                       <div>
-                        <p className="text-[#74777f] text-[9px] uppercase tracking-wider font-bold font-[var(--font-inter)]">Placas</p>
-                        <p className="text-[#43474e] text-xs font-[var(--font-inter)] mt-0.5">{String(u.plates ?? "—")}</p>
+                        <p className="text-[#74777f] text-[9px] uppercase tracking-wider font-bold">Placas</p>
+                        <p className="text-[#43474e] text-xs mt-0.5">{String(u.plates ?? "—")}</p>
                       </div>
                       {st !== "cancelado" && u.sales_rep_commission_owed != null && (
                         <div>
-                          <p className="text-[#74777f] text-[9px] uppercase tracking-wider font-bold font-[var(--font-inter)]">Sua Comissão</p>
-                          <p className={`text-xs font-semibold mt-0.5 ${st === "concluido" ? "text-[#002045]" : "text-yellow-700"}`}>
+                          <p className="text-[#74777f] text-[9px] uppercase tracking-wider font-bold">Sua Comissão</p>
+                          <p className={`text-xs font-semibold mt-0.5 ${st === "concluido" ? "text-[#0B1F45]" : "text-yellow-700"}`}>
                             {fmt(u.sales_rep_commission_owed)}{st !== "concluido" ? " (pend.)" : ""}
                           </p>
                         </div>
@@ -819,7 +819,7 @@ export default function RepresentantePage() {
             </div>
             {/* Desktop table — hidden on mobile */}
             <div className="hidden sm:block bg-white border border-[#e2e2e2] overflow-x-auto">
-              <table className="w-full text-sm font-[var(--font-inter)]">
+              <table className="w-full text-sm">
                 <thead>
                   <tr className="border-b border-[#e2e2e2]">
                     {[
@@ -845,11 +845,11 @@ export default function RepresentantePage() {
                     const st = u.sale_status || "em_orcamento";
                     const stMeta = STATUS_LABELS[st] || STATUS_LABELS.em_orcamento;
                     return (
-                      <tr key={u.id} className="border-b border-[#f0f0f0] hover:bg-[#fafafa]">
+                      <tr key={u.id} className="border-b border-[#f0f0f0] hover:bg-[#F6F5F2]">
                         <td className="px-4 py-3 text-xs text-[#43474e] whitespace-nowrap">
                           {new Date(u.created_at).toLocaleDateString("pt-BR")}
                         </td>
-                        <td className="px-4 py-3 text-xs font-bold tracking-wider text-[#002045]">
+                        <td className="px-4 py-3 text-xs font-bold tracking-wider text-[#0B1F45]">
                           {u.coupon_code || "—"}
                         </td>
                         <td className="px-4 py-3 text-xs text-[#43474e]">
@@ -861,7 +861,7 @@ export default function RepresentantePage() {
                           {st === "cancelado"
                             ? <span className="text-[#74777f] font-normal">—</span>
                             : st === "concluido" && u.sales_rep_commission_owed != null
-                            ? <span className="text-[#002045]">{fmt(u.sales_rep_commission_owed)}</span>
+                            ? <span className="text-[#0B1F45]">{fmt(u.sales_rep_commission_owed)}</span>
                             : u.sales_rep_commission_owed != null
                             ? <span className="text-yellow-700">{fmt(u.sales_rep_commission_owed)} (pend.)</span>
                             : "—"}
@@ -914,10 +914,10 @@ export default function RepresentantePage() {
           <div>
             <ConvidarParceiro onConvidado={() => fetchLinkedPartners(salesRep.id)} />
             {partnersLoading && linkedPartners.length === 0 ? (
-              <p className="text-[#74777f] text-sm font-[var(--font-inter)]">Carregando parceiros...</p>
+              <p className="text-[#74777f] text-sm">Carregando parceiros...</p>
             ) : linkedPartners.length === 0 ? (
               <div className="bg-white border border-[#e2e2e2] px-6 py-10 text-center">
-                <p className="text-[#74777f] text-sm font-[var(--font-inter)]">
+                <p className="text-[#74777f] text-sm">
                   Nenhum parceiro vinculado ainda.
                 </p>
               </div>
@@ -931,13 +931,13 @@ export default function RepresentantePage() {
                     onChange={(e) => setPartnerSearch(e.target.value)}
                     placeholder="Buscar por nome, cupom ou profissão"
                     aria-label="Buscar parceiro"
-                    className="w-full min-w-0 border border-[#e2e2e2] bg-white px-3 py-2.5 text-sm font-[var(--font-inter)] text-[#002045] focus:outline-none focus:border-[#002045]"
+                    className="w-full min-w-0 border border-[#e2e2e2] bg-white px-3 py-2.5 text-sm text-[#0B1F45] focus:outline-none focus:border-[#0B1F45]"
                   />
                   <select
                     value={partnerStatusFilter}
                     onChange={(e) => setPartnerStatusFilter(e.target.value as typeof partnerStatusFilter)}
                     aria-label="Filtrar por status"
-                    className="w-full border border-[#e2e2e2] bg-white px-3 py-2.5 text-sm font-[var(--font-inter)] text-[#002045] focus:outline-none focus:border-[#002045]"
+                    className="w-full border border-[#e2e2e2] bg-white px-3 py-2.5 text-sm text-[#0B1F45] focus:outline-none focus:border-[#0B1F45]"
                   >
                     <option value="all">Todos os status</option>
                     <option value="active">Ativos</option>
@@ -949,7 +949,7 @@ export default function RepresentantePage() {
                     value={partnerSort}
                     onChange={(e) => setPartnerSort(e.target.value as typeof partnerSort)}
                     aria-label="Ordenar"
-                    className="w-full border border-[#e2e2e2] bg-white px-3 py-2.5 text-sm font-[var(--font-inter)] text-[#002045] focus:outline-none focus:border-[#002045]"
+                    className="w-full border border-[#e2e2e2] bg-white px-3 py-2.5 text-sm text-[#0B1F45] focus:outline-none focus:border-[#0B1F45]"
                   >
                     <option value="total">Maior total gerado</option>
                     <option value="name">Nome (A–Z)</option>
@@ -958,19 +958,19 @@ export default function RepresentantePage() {
                     <option value="newest">Cadastro mais recente</option>
                   </select>
                 </div>
-                <p className="text-[11px] text-[#74777f] font-[var(--font-inter)] mb-3">
+                <p className="text-[11px] text-[#74777f] mb-3">
                   {partnersView.length === linkedPartners.length
                     ? `${linkedPartners.length} parceiro${linkedPartners.length === 1 ? "" : "s"}`
                     : `${partnersView.length} de ${linkedPartners.length} parceiros`}
                   {" · "}Total gerado:{" "}
-                  <strong className="text-[#002045]">
+                  <strong className="text-[#0B1F45]">
                     {partnersView.reduce((a, p) => a + p.total_sales, 0).toLocaleString("pt-BR", { style: "currency", currency: "BRL", maximumFractionDigits: 0 })}
                   </strong>
                 </p>
 
                 {partnersView.length === 0 ? (
                   <div className="bg-white border border-[#e2e2e2] px-6 py-8 text-center">
-                    <p className="text-[#74777f] text-sm font-[var(--font-inter)]">Nenhum parceiro encontrado com esses filtros.</p>
+                    <p className="text-[#74777f] text-sm">Nenhum parceiro encontrado com esses filtros.</p>
                   </div>
                 ) : (
                 <>
@@ -983,35 +983,35 @@ export default function RepresentantePage() {
                       <div key={p.id} className="px-4 py-4">
                         <div className="flex items-start justify-between mb-3">
                           <div className="min-w-0">
-                            <p className="font-semibold text-[#002045] text-sm font-[var(--font-inter)] break-words">{p.name}</p>
-                            <p className="text-[#74777f] text-[10px] font-[var(--font-inter)] mt-0.5">desde {new Date(p.created_at).toLocaleDateString("pt-BR")}</p>
+                            <p className="font-semibold text-[#0B1F45] text-sm break-words">{p.name}</p>
+                            <p className="text-[#74777f] text-[10px] mt-0.5">desde {new Date(p.created_at).toLocaleDateString("pt-BR")}</p>
                           </div>
                           <div className="flex flex-col items-end gap-1 ml-2 flex-shrink-0">
                             <div className="flex items-center gap-1 flex-wrap justify-end">
                               <span className={`inline-block px-2 py-0.5 text-[10px] font-bold tracking-wide ${badge.cls}`}>{badge.label}</span>
                               {isInactive && p.status === "active" && <span className="inline-block bg-amber-100 text-amber-800 px-2 py-0.5 text-[10px] font-bold tracking-wide">Sem atividade</span>}
                             </div>
-                            <span className="bg-[#eef2f8] text-[#002045] px-2 py-0.5 text-xs font-bold tracking-wider">{p.coupon_code}</span>
+                            <span className="bg-[#eef2f8] text-[#0B1F45] px-2 py-0.5 text-xs font-bold tracking-wider">{p.coupon_code}</span>
                           </div>
                         </div>
                         <div className="grid grid-cols-2 gap-x-6 gap-y-2">
                           <div>
-                            <p className="text-[#74777f] text-[9px] uppercase tracking-wider font-bold font-[var(--font-inter)]">Profissão</p>
-                            <p className="text-[#43474e] text-xs font-[var(--font-inter)] mt-0.5">{p.profession || "—"}</p>
+                            <p className="text-[#74777f] text-[9px] uppercase tracking-wider font-bold">Profissão</p>
+                            <p className="text-[#43474e] text-xs mt-0.5">{p.profession || "—"}</p>
                           </div>
                           <div>
-                            <p className="text-[#74777f] text-[9px] uppercase tracking-wider font-bold font-[var(--font-inter)]">Vendas</p>
-                            <p className="text-[#43474e] text-xs font-[var(--font-inter)] mt-0.5">{p.sales_count}</p>
+                            <p className="text-[#74777f] text-[9px] uppercase tracking-wider font-bold">Vendas</p>
+                            <p className="text-[#43474e] text-xs mt-0.5">{p.sales_count}</p>
                           </div>
                           <div>
-                            <p className="text-[#74777f] text-[9px] uppercase tracking-wider font-bold font-[var(--font-inter)]">Total gerado</p>
-                            <p className="text-[#002045] text-xs font-semibold font-[var(--font-inter)] mt-0.5">
+                            <p className="text-[#74777f] text-[9px] uppercase tracking-wider font-bold">Total gerado</p>
+                            <p className="text-[#0B1F45] text-xs font-semibold mt-0.5">
                               {p.total_sales > 0 ? p.total_sales.toLocaleString("pt-BR", { style: "currency", currency: "BRL", maximumFractionDigits: 0 }) : "—"}
                             </p>
                           </div>
                           <div>
-                            <p className="text-[#74777f] text-[9px] uppercase tracking-wider font-bold font-[var(--font-inter)]">Última venda</p>
-                            <p className="text-[#43474e] text-xs font-[var(--font-inter)] mt-0.5">
+                            <p className="text-[#74777f] text-[9px] uppercase tracking-wider font-bold">Última venda</p>
+                            <p className="text-[#43474e] text-xs mt-0.5">
                               {p.last_sale_at ? new Date(p.last_sale_at).toLocaleDateString("pt-BR") : <span className="italic text-[#b0b0b0]">Sem vendas</span>}
                             </p>
                           </div>
@@ -1022,7 +1022,7 @@ export default function RepresentantePage() {
                 </div>
                 {/* Desktop table — hidden on mobile. Cabeçalhos com ▼ ordenam. */}
                 <div className="hidden sm:block bg-white border border-[#e2e2e2] overflow-x-auto">
-                  <table className="w-full text-sm font-[var(--font-inter)]">
+                  <table className="w-full text-sm">
                     <thead>
                       <tr className="border-b border-[#e2e2e2]">
                         {([
@@ -1039,7 +1039,7 @@ export default function RepresentantePage() {
                               <button
                                 type="button"
                                 onClick={() => setPartnerSort(key)}
-                                className={`uppercase tracking-[0.1em] font-bold hover:text-[#002045] ${partnerSort === key ? "text-[#002045]" : ""}`}
+                                className={`uppercase tracking-[0.1em] font-bold hover:text-[#0B1F45] ${partnerSort === key ? "text-[#0B1F45]" : ""}`}
                               >
                                 {h}{partnerSort === key ? (key === "name" ? " ▲" : " ▼") : ""}
                               </button>
@@ -1053,9 +1053,9 @@ export default function RepresentantePage() {
                         const badge = partnerStatusBadge(p);
                         const isInactive = partnerIsIdle(p);
                         return (
-                        <tr key={p.id} className="border-b border-[#f0f0f0] hover:bg-[#fafafa]">
+                        <tr key={p.id} className="border-b border-[#f0f0f0] hover:bg-[#F6F5F2]">
                           <td className="px-4 py-3">
-                            <p className="font-semibold text-[#002045]">{p.name}</p>
+                            <p className="font-semibold text-[#0B1F45]">{p.name}</p>
                             <p className="text-[10px] text-[#74777f]">desde {new Date(p.created_at).toLocaleDateString("pt-BR")}</p>
                           </td>
                           <td className="px-4 py-3 text-xs text-[#43474e]">
@@ -1068,10 +1068,10 @@ export default function RepresentantePage() {
                             </div>
                           </td>
                           <td className="px-4 py-3">
-                            <span className="bg-[#eef2f8] text-[#002045] px-2 py-0.5 text-xs font-bold tracking-wider">{p.coupon_code}</span>
+                            <span className="bg-[#eef2f8] text-[#0B1F45] px-2 py-0.5 text-xs font-bold tracking-wider">{p.coupon_code}</span>
                           </td>
                           <td className="px-4 py-3 text-xs text-[#43474e]">{p.sales_count}</td>
-                          <td className="px-4 py-3 text-xs font-semibold text-[#002045]">
+                          <td className="px-4 py-3 text-xs font-semibold text-[#0B1F45]">
                             {p.total_sales > 0 ? p.total_sales.toLocaleString("pt-BR", { style: "currency", currency: "BRL", maximumFractionDigits: 0 }) : "—"}
                           </td>
                           <td className="px-4 py-3 text-xs text-[#43474e] whitespace-nowrap">

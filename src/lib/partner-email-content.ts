@@ -1,3 +1,5 @@
+import { EMAIL_FONTES_LINK, emailLogo } from "@/lib/email-marca";
+
 // Partner email templates for Orbital Revestimentos
 // Two emails:
 //   1. generatePartnerWelcomeEmail   — sent on partner registration/approval
@@ -12,46 +14,45 @@ function cta(label: string, url: string) {
   return `
 <table cellpadding="0" cellspacing="0" style="margin:32px 0;">
   <tr>
-    <td style="background:#002045;">
-      <a href="${url}" style="display:inline-block;padding:17px 36px;color:#ffffff;text-decoration:none;font-size:11px;font-weight:700;letter-spacing:0.15em;text-transform:uppercase;font-family:Arial,sans-serif;">${label}</a>
+    <td style="background:#0B1F45;">
+      <a href="${url}" style="display:inline-block;padding:17px 36px;color:#ffffff;text-decoration:none;font-size:11px;font-weight:700;letter-spacing:0.15em;text-transform:uppercase;font-family:Montserrat,Arial,sans-serif;">${label}</a>
     </td>
   </tr>
 </table>`;
 }
 
 function sectionLabel(text: string) {
-  return `<p style="margin:36px 0 14px;color:#74777f;font-size:10px;letter-spacing:0.22em;text-transform:uppercase;font-family:Arial,sans-serif;border-bottom:1px solid #e2e2e2;padding-bottom:12px;">${text}</p>`;
+  return `<p style="margin:36px 0 14px;color:#74777f;font-size:10px;letter-spacing:0.22em;text-transform:uppercase;font-family:Montserrat,Arial,sans-serif;border-bottom:1px solid #e2e2e2;padding-bottom:12px;">${text}</p>`;
 }
 
 function wrap(preheader: string, body: string) {
   return `<!DOCTYPE html>
 <html lang="pt-BR">
 <head>
-<meta charset="UTF-8">
+<meta charset="UTF-8">${EMAIL_FONTES_LINK}
 <meta name="viewport" content="width=device-width,initial-scale=1">
 <title>Orbital Revestimentos</title>
 </head>
-<body style="margin:0;padding:0;background:#f0eeeb;">
+<body style="margin:0;padding:0;background:#EFEDE8;">
 <!-- preheader -->
-<div style="display:none;max-height:0;overflow:hidden;mso-hide:all;font-size:1px;color:#f0eeeb;">${preheader}&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;</div>
-<table width="100%" cellpadding="0" cellspacing="0" style="background:#f0eeeb;padding:40px 16px;">
+<div style="display:none;max-height:0;overflow:hidden;mso-hide:all;font-size:1px;color:#EFEDE8;">${preheader}&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;</div>
+<table width="100%" cellpadding="0" cellspacing="0" style="background:#EFEDE8;padding:40px 16px;">
   <tr><td align="center">
     <table width="580" cellpadding="0" cellspacing="0" style="background:#ffffff;max-width:580px;width:100%;">
 
       <!-- Header -->
-      <tr><td style="background:#002045;padding:30px 40px 28px;">
-        <p style="margin:0;color:#ffffff;font-size:17px;font-weight:700;letter-spacing:0.18em;text-transform:uppercase;font-family:Arial,sans-serif;">ORBITAL</p>
-        <p style="margin:5px 0 0;color:rgba(255,255,255,0.4);font-size:10px;letter-spacing:0.22em;text-transform:uppercase;font-family:Arial,sans-serif;">Revestimentos · Manaus</p>
+      <tr><td style="background:#0B1F45;padding:30px 40px 28px;">
+        ${emailLogo(160)}
       </td></tr>
 
       <!-- Body -->
       <tr><td style="padding:44px 40px 40px;">${body}</td></tr>
 
       <!-- Footer -->
-      <tr><td style="background:#f5f5f3;padding:24px 40px;border-top:1px solid #e2e2e2;">
-        <p style="margin:0;color:#74777f;font-size:11px;line-height:1.8;font-family:Arial,sans-serif;">
+      <tr><td style="background:#F6F5F2;padding:24px 40px;border-top:1px solid #e2e2e2;">
+        <p style="margin:0;color:#74777f;font-size:11px;line-height:1.8;font-family:Montserrat,Arial,sans-serif;">
           Orbital Revestimentos · Manaus, Amazonas<br>
-          Dúvidas? <a href="https://wa.me/${WA_PHONE}" style="color:#002045;text-decoration:underline;">WhatsApp (92) 98815-0149</a> · <a href="${PORTAL_URL}" style="color:#002045;text-decoration:underline;">Portal do parceiro</a>
+          Dúvidas? <a href="https://wa.me/${WA_PHONE}" style="color:#0B1F45;text-decoration:underline;">WhatsApp (92) 98815-0149</a> · <a href="${PORTAL_URL}" style="color:#0B1F45;text-decoration:underline;">Portal do parceiro</a>
         </p>
       </td></tr>
 
@@ -88,29 +89,29 @@ export function generatePartnerWelcomeEmail(p: PartnerWelcomeParams): { subject:
       `Seu cadastro como parceiro Orbital foi aprovado. Veja tudo o que está disponível para você.`,
       `
 <!-- Greeting -->
-<p style="font-size:28px;color:#002045;font-weight:700;margin:0 0 4px;font-family:Georgia,serif;line-height:1.2;">É um prazer</p>
-<p style="font-size:28px;color:#002045;font-weight:300;margin:0 0 28px;font-family:Georgia,serif;line-height:1.2;">tê-lo conosco, ${first}.</p>
+<p style="font-size:28px;color:#0B1F45;font-weight:700;margin:0 0 4px;font-family:Noto Serif Display,Georgia,serif;line-height:1.2;">É um prazer</p>
+<p style="font-size:28px;color:#0B1F45;font-weight:300;margin:0 0 28px;font-family:Noto Serif Display,Georgia,serif;line-height:1.2;">tê-lo conosco, ${first}.</p>
 
-<p style="color:#43474e;font-size:14px;line-height:1.85;margin:0 0 8px;font-family:Arial,sans-serif;">Seu cadastro como parceiro Orbital foi aprovado. A partir de agora, você tem acesso a todas as ferramentas do programa — e este e-mail reúne o essencial para começar.</p>
+<p style="color:#43474e;font-size:14px;line-height:1.85;margin:0 0 8px;font-family:Montserrat,Arial,sans-serif;">Seu cadastro como parceiro Orbital foi aprovado. A partir de agora, você tem acesso a todas as ferramentas do programa — e este e-mail reúne o essencial para começar.</p>
 
 ${sectionLabel(p.discountLabel ? "Seu cupom de desconto" : "Seu cupom exclusivo")}
 
 <!-- Coupon block -->
-<table width="100%" cellpadding="0" cellspacing="0" style="background:#002045;margin:0 0 12px;">
+<table width="100%" cellpadding="0" cellspacing="0" style="background:#0B1F45;margin:0 0 12px;">
   <tr><td style="padding:28px 32px;">
-    <p style="margin:0 0 6px;color:rgba(255,255,255,0.45);font-size:10px;letter-spacing:0.22em;text-transform:uppercase;font-family:Arial,sans-serif;">Seu código exclusivo</p>
-    <p style="margin:0 0 20px;color:#ffffff;font-size:32px;font-weight:700;letter-spacing:0.28em;font-family:Arial,sans-serif;">${p.couponCode}</p>
+    <p style="margin:0 0 6px;color:rgba(255,255,255,0.45);font-size:10px;letter-spacing:0.22em;text-transform:uppercase;font-family:Montserrat,Arial,sans-serif;">Seu código exclusivo</p>
+    <p style="margin:0 0 20px;color:#ffffff;font-size:32px;font-weight:700;letter-spacing:0.28em;font-family:Montserrat,Arial,sans-serif;">${p.couponCode}</p>
     <table width="100%" cellpadding="0" cellspacing="0">
       <tr>
         ${p.discountLabel ? `<td style="width:50%;padding-right:12px;border-right:1px solid rgba(255,255,255,0.12);">
-          <p style="margin:0 0 4px;color:rgba(255,255,255,0.4);font-size:9px;letter-spacing:0.18em;text-transform:uppercase;font-family:Arial,sans-serif;">Desconto para o cliente</p>
-          <p style="margin:0;color:#a1d494;font-size:16px;font-weight:700;font-family:Arial,sans-serif;">${p.discountLabel}</p>
-          <p style="margin:2px 0 0;color:rgba(255,255,255,0.35);font-size:10px;font-family:Arial,sans-serif;">sobre o material</p>
+          <p style="margin:0 0 4px;color:rgba(255,255,255,0.4);font-size:9px;letter-spacing:0.18em;text-transform:uppercase;font-family:Montserrat,Arial,sans-serif;">Desconto para o cliente</p>
+          <p style="margin:0;color:#36A35C;font-size:16px;font-weight:700;font-family:Montserrat,Arial,sans-serif;">${p.discountLabel}</p>
+          <p style="margin:2px 0 0;color:rgba(255,255,255,0.35);font-size:10px;font-family:Montserrat,Arial,sans-serif;">sobre o material</p>
         </td>
         <td style="width:50%;padding-left:20px;">` : `<td style="width:100%;">`}
-          <p style="margin:0 0 4px;color:rgba(255,255,255,0.4);font-size:9px;letter-spacing:0.18em;text-transform:uppercase;font-family:Arial,sans-serif;">Sua bonificação prevista</p>
-          <p style="margin:0;color:#a1d494;font-size:16px;font-weight:700;font-family:Arial,sans-serif;">${p.bonusLabel}</p>
-          <p style="margin:2px 0 0;color:rgba(255,255,255,0.35);font-size:10px;font-family:Arial,sans-serif;">por venda concluída</p>
+          <p style="margin:0 0 4px;color:rgba(255,255,255,0.4);font-size:9px;letter-spacing:0.18em;text-transform:uppercase;font-family:Montserrat,Arial,sans-serif;">Sua bonificação prevista</p>
+          <p style="margin:0;color:#36A35C;font-size:16px;font-weight:700;font-family:Montserrat,Arial,sans-serif;">${p.bonusLabel}</p>
+          <p style="margin:2px 0 0;color:rgba(255,255,255,0.35);font-size:10px;font-family:Montserrat,Arial,sans-serif;">por venda concluída</p>
         </td>
       </tr>
     </table>
@@ -120,21 +121,21 @@ ${p.portalPassword ? `
 <!-- Credentials block -->
 <table width="100%" cellpadding="0" cellspacing="0" style="border:1px solid #e2e2e2;margin:12px 0 16px;">
   <tr><td style="padding:16px 20px;border-bottom:1px solid #f0f0f0;">
-    <p style="margin:0 0 4px;color:#74777f;font-size:10px;letter-spacing:0.18em;text-transform:uppercase;font-family:Arial,sans-serif;">Seu login</p>
-    <p style="margin:0;color:#002045;font-size:14px;font-weight:700;letter-spacing:0.12em;font-family:Arial,sans-serif;">${p.couponCode}</p>
+    <p style="margin:0 0 4px;color:#74777f;font-size:10px;letter-spacing:0.18em;text-transform:uppercase;font-family:Montserrat,Arial,sans-serif;">Seu login</p>
+    <p style="margin:0;color:#0B1F45;font-size:14px;font-weight:700;letter-spacing:0.12em;font-family:Montserrat,Arial,sans-serif;">${p.couponCode}</p>
   </td></tr>
   <tr><td style="padding:16px 20px;">
-    <p style="margin:0 0 4px;color:#74777f;font-size:10px;letter-spacing:0.18em;text-transform:uppercase;font-family:Arial,sans-serif;">Senha inicial</p>
-    <p style="margin:0;color:#002045;font-size:14px;font-weight:700;letter-spacing:0.08em;font-family:Arial,monospace;">${p.portalPassword}</p>
-    <p style="margin:4px 0 0;color:#b0b0b0;font-size:10px;font-family:Arial,sans-serif;">Recomendamos alterar após o primeiro acesso.</p>
+    <p style="margin:0 0 4px;color:#74777f;font-size:10px;letter-spacing:0.18em;text-transform:uppercase;font-family:Montserrat,Arial,sans-serif;">Senha inicial</p>
+    <p style="margin:0;color:#0B1F45;font-size:14px;font-weight:700;letter-spacing:0.08em;font-family:Arial,monospace;">${p.portalPassword}</p>
+    <p style="margin:4px 0 0;color:#b0b0b0;font-size:10px;font-family:Montserrat,Arial,sans-serif;">Recomendamos alterar após o primeiro acesso.</p>
   </td></tr>
 </table>
 ` : ""}
-<p style="color:#74777f;font-size:12px;line-height:1.7;margin:0 0 8px;font-family:Arial,sans-serif;">Compartilhe seu cupom com clientes para ${p.discountLabel ? "aplicar o desconto automaticamente" : "vincular a venda a você automaticamente"} — ou use o simulador abaixo para gerar um link já configurado.</p>
+<p style="color:#74777f;font-size:12px;line-height:1.7;margin:0 0 8px;font-family:Montserrat,Arial,sans-serif;">Compartilhe seu cupom com clientes para ${p.discountLabel ? "aplicar o desconto automaticamente" : "vincular a venda a você automaticamente"} — ou use o simulador abaixo para gerar um link já configurado.</p>
 
 ${sectionLabel("O simulador de orçamento")}
 
-<p style="color:#43474e;font-size:14px;line-height:1.85;margin:0 0 20px;font-family:Arial,sans-serif;">Acesse a aba <strong>Simular</strong> no seu portal para montar uma proposta visual completa em três passos: escolha o espaço, o acabamento e informe a área.</p>
+<p style="color:#43474e;font-size:14px;line-height:1.85;margin:0 0 20px;font-family:Montserrat,Arial,sans-serif;">Acesse a aba <strong>Simular</strong> no seu portal para montar uma proposta visual completa em três passos: escolha o espaço, o acabamento e informe a área.</p>
 
 <!-- Feature list -->
 <table width="100%" cellpadding="0" cellspacing="0" style="margin:0 0 20px;">
@@ -147,11 +148,11 @@ ${sectionLabel("O simulador de orçamento")}
     <td style="padding:14px 0;border-bottom:1px solid #f0f0f0;vertical-align:top;">
       <table cellpadding="0" cellspacing="0"><tr>
         <td style="width:20px;padding-top:1px;vertical-align:top;">
-          <div style="width:5px;height:5px;background:#3b6934;margin-top:5px;"></div>
+          <div style="width:5px;height:5px;background:#36A35C;margin-top:5px;"></div>
         </td>
         <td>
-          <p style="margin:0 0 4px;color:#002045;font-size:13px;font-weight:700;font-family:Arial,sans-serif;">${title}</p>
-          <p style="margin:0;color:#74777f;font-size:12px;line-height:1.7;font-family:Arial,sans-serif;">${desc}</p>
+          <p style="margin:0 0 4px;color:#0B1F45;font-size:13px;font-weight:700;font-family:Montserrat,Arial,sans-serif;">${title}</p>
+          <p style="margin:0;color:#74777f;font-size:12px;line-height:1.7;font-family:Montserrat,Arial,sans-serif;">${desc}</p>
         </td>
       </tr></table>
     </td>
@@ -160,28 +161,28 @@ ${sectionLabel("O simulador de orçamento")}
 
 ${sectionLabel("Bonificação prevista")}
 
-<p style="color:#43474e;font-size:14px;line-height:1.85;margin:0 0 20px;font-family:Arial,sans-serif;">Na aba <strong>Bonificações</strong> do portal, você acompanha em tempo real o histórico de simulações realizadas com seu cupom, o status de cada pedido e os valores de bonificação confirmados ou pendentes.</p>
+<p style="color:#43474e;font-size:14px;line-height:1.85;margin:0 0 20px;font-family:Montserrat,Arial,sans-serif;">Na aba <strong>Bonificações</strong> do portal, você acompanha em tempo real o histórico de simulações realizadas com seu cupom, o status de cada pedido e os valores de bonificação confirmados ou pendentes.</p>
 
 <!-- Bonus info card -->
-<table width="100%" cellpadding="0" cellspacing="0" style="background:#f5f5f3;border-left:3px solid #3b6934;margin:0 0 20px;">
+<table width="100%" cellpadding="0" cellspacing="0" style="background:#F6F5F2;border-left:3px solid #36A35C;margin:0 0 20px;">
   <tr><td style="padding:18px 20px;">
-    <p style="margin:0 0 6px;color:#002045;font-size:13px;font-weight:700;font-family:Arial,sans-serif;">Como funciona</p>
-    <p style="margin:0;color:#43474e;font-size:12px;line-height:1.75;font-family:Arial,sans-serif;">A bonificação é calculada sobre o valor do material com desconto, na venda de cada projeto. O status muda para <em>confirmado</em> quando a Orbital registra a venda como concluída. O pagamento é realizado conforme combinarmos diretamente.</p>
+    <p style="margin:0 0 6px;color:#0B1F45;font-size:13px;font-weight:700;font-family:Montserrat,Arial,sans-serif;">Como funciona</p>
+    <p style="margin:0;color:#43474e;font-size:12px;line-height:1.75;font-family:Montserrat,Arial,sans-serif;">A bonificação é calculada sobre o valor do material com desconto, na venda de cada projeto. O status muda para <em>confirmado</em> quando a Orbital registra a venda como concluída. O pagamento é realizado conforme combinarmos diretamente.</p>
   </td></tr>
 </table>
 
 ${sectionLabel("Acesse seu portal")}
 
-<p style="color:#43474e;font-size:14px;line-height:1.85;margin:0 0 4px;font-family:Arial,sans-serif;">Tudo em um lugar: seu cupom, simulador, histórico de bonificações e configurações de conta.</p>
+<p style="color:#43474e;font-size:14px;line-height:1.85;margin:0 0 4px;font-family:Montserrat,Arial,sans-serif;">Tudo em um lugar: seu cupom, simulador, histórico de bonificações e configurações de conta.</p>
 
 ${cta("Acessar portal do parceiro", PORTAL_URL)}
 
-<p style="color:#74777f;font-size:12px;line-height:1.7;margin:0;font-family:Arial,sans-serif;">Use o e-mail cadastrado e a senha definida no momento do registro. Em caso de dúvidas, o próprio portal oferece a opção de redefinir sua senha.</p>
+<p style="color:#74777f;font-size:12px;line-height:1.7;margin:0;font-family:Montserrat,Arial,sans-serif;">Use o e-mail cadastrado e a senha definida no momento do registro. Em caso de dúvidas, o próprio portal oferece a opção de redefinir sua senha.</p>
 
 <table width="100%" cellpadding="0" cellspacing="0" style="margin:36px 0 0;border-top:1px solid #e2e2e2;padding-top:28px;">
   <tr><td>
-    <p style="margin:0 0 4px;color:#74777f;font-size:12px;line-height:1.7;font-family:Arial,sans-serif;">Com apreço,</p>
-    <p style="margin:0;color:#002045;font-size:13px;font-weight:700;font-family:Arial,sans-serif;">Orbital Revestimentos</p>
+    <p style="margin:0 0 4px;color:#74777f;font-size:12px;line-height:1.7;font-family:Montserrat,Arial,sans-serif;">Com apreço,</p>
+    <p style="margin:0;color:#0B1F45;font-size:13px;font-weight:700;font-family:Montserrat,Arial,sans-serif;">Orbital Revestimentos</p>
   </td></tr>
 </table>
 `
@@ -218,48 +219,48 @@ export function generatePartnerSpecialTableEmail(p: PartnerSpecialTableParams): 
 <!-- Badge -->
 <table cellpadding="0" cellspacing="0" style="margin:0 0 28px;">
   <tr>
-    <td style="background:#002045;padding:7px 14px;">
-      <p style="margin:0;color:#a1d494;font-size:10px;font-weight:700;letter-spacing:0.2em;text-transform:uppercase;font-family:Arial,sans-serif;">★ Acesso exclusivo</p>
+    <td style="background:#0B1F45;padding:7px 14px;">
+      <p style="margin:0;color:#36A35C;font-size:10px;font-weight:700;letter-spacing:0.2em;text-transform:uppercase;font-family:Montserrat,Arial,sans-serif;">★ Acesso exclusivo</p>
     </td>
   </tr>
 </table>
 
 <!-- Greeting -->
-<p style="font-size:28px;color:#002045;font-weight:700;margin:0 0 4px;font-family:Georgia,serif;line-height:1.2;">${first},</p>
-<p style="font-size:28px;color:#002045;font-weight:300;margin:0 0 28px;font-family:Georgia,serif;line-height:1.2;">sua tabela especial está ativa.</p>
+<p style="font-size:28px;color:#0B1F45;font-weight:700;margin:0 0 4px;font-family:Noto Serif Display,Georgia,serif;line-height:1.2;">${first},</p>
+<p style="font-size:28px;color:#0B1F45;font-weight:300;margin:0 0 28px;font-family:Noto Serif Display,Georgia,serif;line-height:1.2;">sua tabela especial está ativa.</p>
 
-<p style="color:#43474e;font-size:14px;line-height:1.85;margin:0 0 8px;font-family:Arial,sans-serif;">A partir de agora, você tem acesso a condições de preço diferenciadas — reservadas para parceiros que trabalham com volume ou projetos recorrentes. Essas condições aparecem na nova aba <strong>Tabela Especial ★</strong> no seu portal.</p>
+<p style="color:#43474e;font-size:14px;line-height:1.85;margin:0 0 8px;font-family:Montserrat,Arial,sans-serif;">A partir de agora, você tem acesso a condições de preço diferenciadas — reservadas para parceiros que trabalham com volume ou projetos recorrentes. Essas condições aparecem na nova aba <strong>Tabela Especial ★</strong> no seu portal.</p>
 
 ${sectionLabel("Preços exclusivos por linha")}
 
 <!-- Price table -->
 <table width="100%" cellpadding="0" cellspacing="0" style="margin:0 0 12px;border:1px solid #e2e2e2;">
-  <tr style="background:#f5f5f3;">
-    <td style="padding:12px 16px;color:#74777f;font-size:10px;font-weight:700;letter-spacing:0.15em;text-transform:uppercase;font-family:Arial,sans-serif;">Linha</td>
-    <td style="padding:12px 16px;color:#74777f;font-size:10px;font-weight:700;letter-spacing:0.15em;text-transform:uppercase;font-family:Arial,sans-serif;text-align:center;">Preço especial</td>
-    <td style="padding:12px 16px;color:#74777f;font-size:10px;font-weight:700;letter-spacing:0.15em;text-transform:uppercase;font-family:Arial,sans-serif;text-align:center;">Preço público</td>
-    <td style="padding:12px 16px;color:#74777f;font-size:10px;font-weight:700;letter-spacing:0.15em;text-transform:uppercase;font-family:Arial,sans-serif;text-align:right;">Diferença / placa</td>
+  <tr style="background:#F6F5F2;">
+    <td style="padding:12px 16px;color:#74777f;font-size:10px;font-weight:700;letter-spacing:0.15em;text-transform:uppercase;font-family:Montserrat,Arial,sans-serif;">Linha</td>
+    <td style="padding:12px 16px;color:#74777f;font-size:10px;font-weight:700;letter-spacing:0.15em;text-transform:uppercase;font-family:Montserrat,Arial,sans-serif;text-align:center;">Preço especial</td>
+    <td style="padding:12px 16px;color:#74777f;font-size:10px;font-weight:700;letter-spacing:0.15em;text-transform:uppercase;font-family:Montserrat,Arial,sans-serif;text-align:center;">Preço público</td>
+    <td style="padding:12px 16px;color:#74777f;font-size:10px;font-weight:700;letter-spacing:0.15em;text-transform:uppercase;font-family:Montserrat,Arial,sans-serif;text-align:right;">Diferença / placa</td>
   </tr>
   ${prices.map((row, i) => `
   <tr style="border-top:1px solid #e2e2e2;${i % 2 === 1 ? "background:#fafaf8;" : ""}">
     <td style="padding:16px 16px 14px;">
-      <p style="margin:0 0 2px;color:#002045;font-size:13px;font-weight:700;font-family:Arial,sans-serif;">${row.linha}</p>
-      <p style="margin:0;color:#74777f;font-size:11px;font-family:Arial,sans-serif;">${row.finish}</p>
+      <p style="margin:0 0 2px;color:#0B1F45;font-size:13px;font-weight:700;font-family:Montserrat,Arial,sans-serif;">${row.linha}</p>
+      <p style="margin:0;color:#74777f;font-size:11px;font-family:Montserrat,Arial,sans-serif;">${row.finish}</p>
     </td>
     <td style="padding:16px;text-align:center;">
-      <p style="margin:0;color:#3b6934;font-size:16px;font-weight:700;font-family:Arial,sans-serif;">${row.special}</p>
-      <p style="margin:2px 0 0;color:#74777f;font-size:10px;font-family:Arial,sans-serif;">por placa</p>
+      <p style="margin:0;color:#36A35C;font-size:16px;font-weight:700;font-family:Montserrat,Arial,sans-serif;">${row.special}</p>
+      <p style="margin:2px 0 0;color:#74777f;font-size:10px;font-family:Montserrat,Arial,sans-serif;">por placa</p>
     </td>
     <td style="padding:16px;text-align:center;">
-      <p style="margin:0;color:#b0b0b0;font-size:13px;text-decoration:line-through;font-family:Arial,sans-serif;">${row.public_}</p>
+      <p style="margin:0;color:#b0b0b0;font-size:13px;text-decoration:line-through;font-family:Montserrat,Arial,sans-serif;">${row.public_}</p>
     </td>
     <td style="padding:16px;text-align:right;">
-      <p style="margin:0;color:#002045;font-size:13px;font-weight:700;font-family:Arial,sans-serif;">${row.savings}</p>
+      <p style="margin:0;color:#0B1F45;font-size:13px;font-weight:700;font-family:Montserrat,Arial,sans-serif;">${row.savings}</p>
     </td>
   </tr>`).join("")}
-  <tr style="border-top:2px solid #e2e2e2;background:#f5f5f3;">
+  <tr style="border-top:2px solid #e2e2e2;background:#F6F5F2;">
     <td colspan="4" style="padding:12px 16px;">
-      <p style="margin:0;color:#74777f;font-size:11px;font-family:Arial,sans-serif;">Cada placa cobre 3,48 m² · Dimensões: 2,9 m × 1,2 m × 5 mm</p>
+      <p style="margin:0;color:#74777f;font-size:11px;font-family:Montserrat,Arial,sans-serif;">Cada placa cobre 3,48 m² · Dimensões: 2,9 m × 1,2 m × 5 mm</p>
     </td>
   </tr>
 </table>
@@ -277,13 +278,13 @@ ${sectionLabel("Como usar no portal")}
     <td style="padding:14px 0;border-bottom:1px solid #f0f0f0;vertical-align:top;">
       <table cellpadding="0" cellspacing="0"><tr>
         <td style="width:28px;padding-top:1px;vertical-align:top;">
-          <div style="width:18px;height:18px;background:#002045;display:inline-block;">
-            <p style="margin:0;text-align:center;color:#ffffff;font-size:10px;font-weight:700;line-height:18px;font-family:Arial,sans-serif;">${i + 1}</p>
+          <div style="width:18px;height:18px;background:#0B1F45;display:inline-block;">
+            <p style="margin:0;text-align:center;color:#ffffff;font-size:10px;font-weight:700;line-height:18px;font-family:Montserrat,Arial,sans-serif;">${i + 1}</p>
           </div>
         </td>
         <td>
-          <p style="margin:0 0 4px;color:#002045;font-size:13px;font-weight:700;font-family:Arial,sans-serif;">${title}</p>
-          <p style="margin:0;color:#74777f;font-size:12px;line-height:1.7;font-family:Arial,sans-serif;">${desc}</p>
+          <p style="margin:0 0 4px;color:#0B1F45;font-size:13px;font-weight:700;font-family:Montserrat,Arial,sans-serif;">${title}</p>
+          <p style="margin:0;color:#74777f;font-size:12px;line-height:1.7;font-family:Montserrat,Arial,sans-serif;">${desc}</p>
         </td>
       </tr></table>
     </td>
@@ -293,8 +294,8 @@ ${sectionLabel("Como usar no portal")}
 <!-- Important notice -->
 <table width="100%" cellpadding="0" cellspacing="0" style="background:#fffbea;border:1px solid #e6c84a;margin:0 0 28px;">
   <tr><td style="padding:18px 20px;">
-    <p style="margin:0 0 6px;color:#7a5400;font-size:12px;font-weight:700;font-family:Arial,sans-serif;">Uso interno</p>
-    <p style="margin:0;color:#6b5000;font-size:12px;line-height:1.75;font-family:Arial,sans-serif;">Esta tabela destina-se à elaboração de propostas para os seus clientes. Os preços especiais são exclusivos para parceiros e não devem ser divulgados publicamente.</p>
+    <p style="margin:0 0 6px;color:#7a5400;font-size:12px;font-weight:700;font-family:Montserrat,Arial,sans-serif;">Uso interno</p>
+    <p style="margin:0;color:#6b5000;font-size:12px;line-height:1.75;font-family:Montserrat,Arial,sans-serif;">Esta tabela destina-se à elaboração de propostas para os seus clientes. Os preços especiais são exclusivos para parceiros e não devem ser divulgados publicamente.</p>
   </td></tr>
 </table>
 
@@ -302,8 +303,8 @@ ${cta("Acessar portal do parceiro", PORTAL_URL)}
 
 <table width="100%" cellpadding="0" cellspacing="0" style="margin:36px 0 0;border-top:1px solid #e2e2e2;padding-top:28px;">
   <tr><td>
-    <p style="margin:0 0 4px;color:#74777f;font-size:12px;line-height:1.7;font-family:Arial,sans-serif;">Com apreço,</p>
-    <p style="margin:0;color:#002045;font-size:13px;font-weight:700;font-family:Arial,sans-serif;">Orbital Revestimentos</p>
+    <p style="margin:0 0 4px;color:#74777f;font-size:12px;line-height:1.7;font-family:Montserrat,Arial,sans-serif;">Com apreço,</p>
+    <p style="margin:0;color:#0B1F45;font-size:13px;font-weight:700;font-family:Montserrat,Arial,sans-serif;">Orbital Revestimentos</p>
   </td></tr>
 </table>
 `

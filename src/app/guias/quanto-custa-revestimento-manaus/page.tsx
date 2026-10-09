@@ -44,7 +44,7 @@ const articleSchema = {
   publisher: {
     "@type": "Organization",
     name: "Orbital Revestimentos",
-    logo: { "@type": "ImageObject", url: `${BASE_URL}/images/logo.png` },
+    logo: { "@type": "ImageObject", url: `${BASE_URL}/images/brand/orbital-simbolo.png` },
   },
   datePublished: "2026-01-01",
   dateModified: "2026-06-01",
@@ -155,37 +155,37 @@ export default function GuiaCustoManaus() {
             className="object-cover object-center"
             priority
           />
-          <div className="absolute inset-0 bg-gradient-to-t from-[#001530]/95 via-[#001530]/55 to-[#001530]/10" />
+          <div className="absolute inset-0 bg-gradient-to-t from-[#0B1F45]/95 via-[#0B1F45]/55 to-[#0B1F45]/10" />
         </div>
         <div className="relative z-10 w-full max-w-[1280px] mx-auto px-6 lg:px-16 pb-14 lg:pb-24">
-          <nav className="text-[#86a0cd] text-xs font-[var(--font-inter)] mb-6 flex items-center gap-2">
+          <nav className="text-[#B4BBC8] text-xs mb-6 flex items-center gap-2">
             <Link href="/" className="hover:text-white transition-colors">Home</Link>
             <span>/</span>
             <span className="text-white/60">Guias</span>
             <span>/</span>
             <span className="text-white">Quanto Custa Revestimento em Manaus</span>
           </nav>
-          <p className="text-[#a1d494] text-xs tracking-[0.2em] uppercase font-semibold font-[var(--font-inter)] mb-4">
+          <p className="text-[#36A35C] text-xs tracking-[0.2em] uppercase font-semibold mb-4">
             Orbital Revestimentos · Preços 2026 · Manaus
           </p>
-          <h1 className="font-[var(--font-noto-serif)] text-white text-4xl sm:text-5xl lg:text-6xl font-normal leading-tight tracking-[-0.02em] mb-6 max-w-3xl">
+          <h1 className="font-serif text-white text-4xl sm:text-5xl lg:text-6xl font-normal leading-tight tracking-[-0.02em] mb-6 max-w-3xl">
             Quanto Custa Revestir uma Parede em Manaus?<br />
             <em>Preços Reais 2026</em>
           </h1>
-          <p className="text-white/70 text-base lg:text-lg font-[var(--font-inter)] leading-relaxed max-w-2xl">
+          <p className="text-white/70 text-base lg:text-lg leading-relaxed max-w-2xl">
             Tabelas de preço por placa e por m², custo estimado por ambiente, comparativo entre materiais e orçamento com um consultor.
           </p>
         </div>
       </section>
 
       {/* ── Stats bar ── */}
-      <section className="bg-[#002045] border-b border-[#1a365d]">
+      <section className="bg-[#0B1F45] border-b border-[#2347A0]">
         <div className="max-w-[1280px] mx-auto px-6 lg:px-16 py-6">
           <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
             {stats.map(({ value, label }) => (
               <div key={label} className="flex flex-col items-center text-center py-3">
-                <AnimatedStat value={value} className="text-white font-[var(--font-noto-serif)] text-2xl font-normal mb-0.5" />
-                <span className="text-[#86a0cd] text-[10px] tracking-[0.15em] uppercase font-semibold font-[var(--font-inter)]">{label}</span>
+                <AnimatedStat value={value} className="text-white font-serif text-2xl font-normal mb-0.5" />
+                <span className="text-[#B4BBC8] text-[10px] tracking-[0.15em] uppercase font-semibold">{label}</span>
               </div>
             ))}
           </div>
@@ -196,25 +196,25 @@ export default function GuiaCustoManaus() {
       <section className="bg-white py-20 lg:py-28">
         <div className="max-w-[1280px] mx-auto px-6 lg:px-16">
           <ScrollReveal>
-            <p className="text-[#3b6934] text-xs tracking-[0.2em] uppercase font-semibold font-[var(--font-inter)] mb-3">Preço do PFB Orbital em Manaus</p>
-            <h2 className="font-[var(--font-noto-serif)] text-[#002045] text-3xl lg:text-4xl font-normal leading-tight mb-4 max-w-2xl">
+            <p className="text-[#2347A0] text-xs tracking-[0.2em] uppercase font-semibold mb-3">Preço do PFB Orbital em Manaus</p>
+            <h2 className="font-serif text-[#0B1F45] text-3xl lg:text-4xl font-normal leading-tight mb-4 max-w-2xl">
               Cada placa mede 1,2m × 2,9m = 3,48m². Pronta-entrega em Manaus.
             </h2>
-            <p className="text-[#74777f] font-[var(--font-inter)] mb-10 text-sm">Mão de obra estimada: R$ 50–80 por placa, via instalador parceiro.</p>
+            <p className="text-[#74777f] mb-10 text-sm">Mão de obra estimada: R$ 50–80 por placa, via instalador parceiro.</p>
           </ScrollReveal>
           <div className="grid grid-cols-1 sm:grid-cols-3 gap-0 border border-[#e2e2e2]">
             {linhas.map((l, i) => (
               <ScrollReveal key={l.linha} delay={i * 80} className={`p-8 flex flex-col justify-between ${i < 2 ? "border-b sm:border-b-0 sm:border-r border-[#e2e2e2]" : ""}`}>
                 <div>
-                  <p className="text-[#74777f] text-[10px] uppercase tracking-wider font-[var(--font-inter)] mb-2">{l.acabamentos}</p>
-                  <h3 className="font-[var(--font-noto-serif)] text-[#002045] text-xl font-normal mb-2">{l.linha}</h3>
-                  <p className="font-[var(--font-noto-serif)] text-[#002045] text-4xl font-normal mb-1">
+                  <p className="text-[#74777f] text-[10px] uppercase tracking-wider mb-2">{l.acabamentos}</p>
+                  <h3 className="font-serif text-[#0B1F45] text-xl font-normal mb-2">{l.linha}</h3>
+                  <p className="font-serif text-[#0B1F45] text-4xl font-normal mb-1">
                     R$ {l.preco}<span className="text-base text-[#74777f]">/placa</span>
                   </p>
-                  <p className="text-[#3b6934] font-semibold font-[var(--font-inter)] text-sm mb-3">= R$ {Math.round(l.preco / 3.48)}/m²</p>
-                  <p className="text-[#74777f] font-[var(--font-inter)] text-xs">{l.detalhe}</p>
+                  <p className="text-[#1F7A44] font-semibold text-sm mb-3">= R$ {Math.round(l.preco / 3.48)}/m²</p>
+                  <p className="text-[#74777f] text-xs">{l.detalhe}</p>
                 </div>
-                <ContatoCta produtos={[{ linha: l.linha }]} className="mt-6 text-[#002045] text-xs tracking-[0.1em] uppercase font-semibold font-[var(--font-inter)] border-b border-[#002045] pb-0.5 self-start hover:text-[#3b6934] hover:border-[#3b6934] transition-colors">
+                <ContatoCta produtos={[{ linha: l.linha }]} className="mt-6 text-[#0B1F45] text-xs tracking-[0.1em] uppercase font-semibold border-b border-[#0B1F45] pb-0.5 self-start hover:text-[#1F7A44] hover:border-[#36A35C] transition-colors">
                   Quero esta linha →
                 </ContatoCta>
               </ScrollReveal>
@@ -224,7 +224,7 @@ export default function GuiaCustoManaus() {
       </section>
 
       {/* ── Custo por ambiente (split) ── */}
-      <section className="overflow-hidden bg-[#f5f5f3]">
+      <section className="overflow-hidden bg-[#F6F5F2]">
         <div className="flex flex-col lg:flex-row min-h-[560px]">
           <div className="lg:w-1/2 relative min-h-[380px]">
             <Image
@@ -236,27 +236,27 @@ export default function GuiaCustoManaus() {
           </div>
           <div className="lg:w-1/2 bg-white px-6 lg:px-16 py-16 lg:py-28 flex items-start">
             <ScrollReveal className="w-full">
-              <p className="text-[#3b6934] text-xs tracking-[0.2em] uppercase font-semibold font-[var(--font-inter)] mb-5">Custo estimado por ambiente</p>
-              <h2 className="font-[var(--font-noto-serif)] text-[#002045] text-2xl lg:text-3xl font-normal leading-tight mb-6">
+              <p className="text-[#2347A0] text-xs tracking-[0.2em] uppercase font-semibold mb-5">Custo estimado por ambiente</p>
+              <h2 className="font-serif text-[#0B1F45] text-2xl lg:text-3xl font-normal leading-tight mb-6">
                 Quanto custa revestir cada cômodo?
               </h2>
               <div className="overflow-x-auto">
-                <table className="w-full text-sm font-[var(--font-inter)] border-collapse">
+                <table className="w-full text-sm border-collapse">
                   <thead>
-                    <tr className="border-b-2 border-[#002045]">
-                      <th className="py-2 text-left text-[#002045] font-semibold text-xs">Ambiente</th>
-                      <th className="py-2 text-center text-[#002045] font-semibold text-xs">m²</th>
-                      <th className="py-2 text-center text-[#002045] font-semibold text-xs">Placas</th>
-                      <th className="py-2 text-right text-[#002045] font-semibold text-xs">Total c/ MO</th>
+                    <tr className="border-b-2 border-[#0B1F45]">
+                      <th className="py-2 text-left text-[#0B1F45] font-semibold text-xs">Ambiente</th>
+                      <th className="py-2 text-center text-[#0B1F45] font-semibold text-xs">m²</th>
+                      <th className="py-2 text-center text-[#0B1F45] font-semibold text-xs">Placas</th>
+                      <th className="py-2 text-right text-[#0B1F45] font-semibold text-xs">Total c/ MO</th>
                     </tr>
                   </thead>
                   <tbody>
                     {ambientesCusto.map((a, i) => (
-                      <tr key={a.nome} className={`border-b border-[#f0f0f0] ${i % 2 === 0 ? "" : "bg-[#fafafa]"}`}>
-                        <td className="py-2.5 font-semibold text-[#002045] text-xs">{a.nome}</td>
+                      <tr key={a.nome} className={`border-b border-[#f0f0f0] ${i % 2 === 0 ? "" : "bg-[#F6F5F2]"}`}>
+                        <td className="py-2.5 font-semibold text-[#0B1F45] text-xs">{a.nome}</td>
                         <td className="py-2.5 text-center text-[#74777f] text-xs">{a.m2}</td>
                         <td className="py-2.5 text-center text-[#74777f] text-xs">{a.placas}</td>
-                        <td className="py-2.5 text-right font-semibold text-[#002045] text-xs whitespace-nowrap">
+                        <td className="py-2.5 text-right font-semibold text-[#0B1F45] text-xs whitespace-nowrap">
                           {fmt(a.matMin + a.moMin)}–{fmt(a.matMax + a.moMax)}
                         </td>
                       </tr>
@@ -264,11 +264,11 @@ export default function GuiaCustoManaus() {
                   </tbody>
                 </table>
               </div>
-              <p className="text-[#74777f] text-xs font-[var(--font-inter)] mt-3">
+              <p className="text-[#74777f] text-xs mt-3">
                 Valores estimados. Para o cálculo exato com suas dimensões reais,{" "}
-                <ContatoCta className="text-[#002045] underline">fale com um consultor</ContatoCta>.
+                <ContatoCta className="text-[#0B1F45] underline">fale com um consultor</ContatoCta>.
               </p>
-              <ContatoCta className="mt-6 inline-block bg-[#002045] text-white text-xs tracking-[0.1em] uppercase font-bold font-[var(--font-inter)] px-7 py-3.5 hover:bg-[#1a365d] transition-colors">
+              <ContatoCta className="mt-6 inline-block bg-[#0B1F45] text-white text-xs tracking-[0.1em] uppercase font-bold px-7 py-3.5 hover:bg-[#2347A0] transition-colors">
                 Pedir meu orçamento
               </ContatoCta>
             </ScrollReveal>
@@ -280,19 +280,19 @@ export default function GuiaCustoManaus() {
       <section className="bg-white py-20 lg:py-28">
         <div className="max-w-[1280px] mx-auto px-6 lg:px-16">
           <ScrollReveal>
-            <p className="text-[#3b6934] text-xs tracking-[0.2em] uppercase font-semibold font-[var(--font-inter)] mb-3">Custo total em 10 anos</p>
-            <h2 className="font-[var(--font-noto-serif)] text-[#002045] text-3xl lg:text-4xl font-normal leading-tight mb-4 max-w-2xl">
+            <p className="text-[#2347A0] text-xs tracking-[0.2em] uppercase font-semibold mb-3">Custo total em 10 anos</p>
+            <h2 className="font-serif text-[#0B1F45] text-3xl lg:text-4xl font-normal leading-tight mb-4 max-w-2xl">
               Qual revestimento realmente sai mais barato em Manaus?
             </h2>
-            <p className="text-[#43474e] font-[var(--font-inter)] mb-10 max-w-2xl">
+            <p className="text-[#43474e] mb-10 max-w-2xl">
               Em Manaus, materiais que parecem baratos inicialmente custam muito mais ao longo do tempo porque precisam ser trocados em 1–3 anos. O MDF pode ser trocado 3 a 5 vezes em 10 anos.
             </p>
           </ScrollReveal>
           <ScrollReveal delay={100}>
             <div className="overflow-x-auto">
-              <table className="w-full text-sm font-[var(--font-inter)] border-collapse">
+              <table className="w-full text-sm border-collapse">
                 <thead>
-                  <tr className="bg-[#002045] text-white">
+                  <tr className="bg-[#0B1F45] text-white">
                     <th className="px-4 py-3 text-left font-semibold">Material</th>
                     <th className="px-4 py-3 text-center font-semibold">Preço/m²</th>
                     <th className="px-4 py-3 text-center font-semibold">Mão de obra</th>
@@ -302,14 +302,14 @@ export default function GuiaCustoManaus() {
                 </thead>
                 <tbody>
                   {comparativoCusto.map((row, i) => (
-                    <tr key={row.material} className={row.destaque ? "bg-[#f0f6ee]" : i % 2 === 0 ? "bg-[#fafafa]" : "bg-white"}>
-                      <td className="px-4 py-3 font-semibold text-[#002045]">
-                        {row.destaque && <span className="text-[#3b6934] mr-1">★</span>}
+                    <tr key={row.material} className={row.destaque ? "bg-[#f0f6ee]" : i % 2 === 0 ? "bg-[#F6F5F2]" : "bg-white"}>
+                      <td className="px-4 py-3 font-semibold text-[#0B1F45]">
+                        {row.destaque && <span className="text-[#1F7A44] mr-1">★</span>}
                         {row.material}
                       </td>
                       <td className="px-4 py-3 text-center text-[#43474e]">{row.precoM2}</td>
                       <td className="px-4 py-3 text-center text-[#43474e]">{row.maoObra}</td>
-                      <td className="px-4 py-3 text-center font-semibold text-[#002045]">{row.total10anos}</td>
+                      <td className="px-4 py-3 text-center font-semibold text-[#0B1F45]">{row.total10anos}</td>
                       <td className="px-4 py-3 text-[#74777f] text-xs">{row.obs}</td>
                     </tr>
                   ))}
@@ -321,11 +321,11 @@ export default function GuiaCustoManaus() {
       </section>
 
       {/* ── FAQ ── */}
-      <section className="bg-[#002045] py-20 lg:py-28">
+      <section className="bg-[#0B1F45] py-20 lg:py-28">
         <div className="max-w-[1280px] mx-auto px-6 lg:px-16">
           <ScrollReveal>
-            <p className="text-[#a1d494] text-xs tracking-[0.2em] uppercase font-semibold font-[var(--font-inter)] mb-3">Perguntas frequentes</p>
-            <h2 className="font-[var(--font-noto-serif)] text-white text-3xl lg:text-4xl font-normal leading-tight mb-12 max-w-2xl">
+            <p className="text-[#36A35C] text-xs tracking-[0.2em] uppercase font-semibold mb-3">Perguntas frequentes</p>
+            <h2 className="font-serif text-white text-3xl lg:text-4xl font-normal leading-tight mb-12 max-w-2xl">
               Tudo sobre preços de revestimento em Manaus.
             </h2>
           </ScrollReveal>
@@ -333,8 +333,8 @@ export default function GuiaCustoManaus() {
             {faqs.map((faq, i) => (
               <ScrollReveal key={faq.q} delay={i * 60}>
                 <div className="border border-white/10 p-6 h-full">
-                  <h3 className="font-semibold text-white font-[var(--font-inter)] mb-3 text-sm">{faq.q}</h3>
-                  <p className="text-white/55 font-[var(--font-inter)] text-sm leading-relaxed">{faq.a}</p>
+                  <h3 className="font-semibold text-white mb-3 text-sm">{faq.q}</h3>
+                  <p className="text-white/55 text-sm leading-relaxed">{faq.a}</p>
                 </div>
               </ScrollReveal>
             ))}
@@ -345,16 +345,16 @@ export default function GuiaCustoManaus() {
       {/* ── Guias relacionados ── */}
       <section className="bg-white py-16 lg:py-20">
         <div className="max-w-[1280px] mx-auto px-6 lg:px-16">
-          <h3 className="font-[var(--font-noto-serif)] text-[#002045] text-xl font-normal mb-8">Leia também</h3>
+          <h3 className="font-serif text-[#0B1F45] text-xl font-normal mb-8">Leia também</h3>
           <div className="grid grid-cols-1 sm:grid-cols-3 gap-0 border border-[#e2e2e2]">
             {[
               { href: "/guias/mdf-manaus", label: "Por que o MDF não dura em Manaus", tag: "Guia técnico" },
               { href: "/guias/revestimento-banheiro-manaus", label: "Revestimento para banheiro em Manaus", tag: "Guia" },
               { href: "/guias/revestimento-parede-manaus", label: "Guia completo de revestimento de parede em Manaus", tag: "Guia" },
             ].map((link, i) => (
-              <Link key={link.href} href={link.href} className={`p-6 hover:bg-[#f5f5f3] transition-colors ${i < 2 ? "border-b sm:border-b-0 sm:border-r border-[#e2e2e2]" : ""}`}>
-                <p className="text-[#74777f] text-[10px] uppercase tracking-wider font-[var(--font-inter)] mb-2">{link.tag}</p>
-                <p className="text-[#002045] font-semibold font-[var(--font-inter)] text-sm leading-snug">{link.label} →</p>
+              <Link key={link.href} href={link.href} className={`p-6 hover:bg-[#EFEDE8] transition-colors ${i < 2 ? "border-b sm:border-b-0 sm:border-r border-[#e2e2e2]" : ""}`}>
+                <p className="text-[#74777f] text-[10px] uppercase tracking-wider mb-2">{link.tag}</p>
+                <p className="text-[#0B1F45] font-semibold text-sm leading-snug">{link.label} →</p>
               </Link>
             ))}
           </div>
@@ -365,20 +365,20 @@ export default function GuiaCustoManaus() {
       <section className="relative overflow-hidden">
         <div className="absolute inset-0">
           <Image src="/images/catalogue/aplicacao-cozinha.jpeg" alt="Ambiente revestido com PFB Orbital em Manaus" fill className="object-cover" />
-          <div className="absolute inset-0 bg-[#001530]/85" />
+          <div className="absolute inset-0 bg-[#0B1F45]/85" />
         </div>
         <div className="relative z-10 max-w-[1280px] mx-auto px-6 lg:px-16 py-24 lg:py-32 flex flex-col lg:flex-row items-start lg:items-center justify-between gap-8">
           <div className="max-w-xl">
-            <h2 className="font-[var(--font-noto-serif)] text-white text-3xl lg:text-5xl font-normal leading-tight mb-4">
+            <h2 className="font-serif text-white text-3xl lg:text-5xl font-normal leading-tight mb-4">
               Receba o orçamento exato do seu projeto.
             </h2>
-            <p className="text-white/60 font-[var(--font-inter)]">
+            <p className="text-white/60">
               Fale com um consultor da Orbital pelo WhatsApp e receba o orçamento de material e instalação.
             </p>
           </div>
           <div className="flex flex-col sm:flex-row gap-3 flex-shrink-0">
-            <ContatoCta className="bg-white text-[#002045] text-xs tracking-[0.12em] uppercase font-bold font-[var(--font-inter)] px-10 py-4 hover:bg-[#f3f3f3] transition-colors text-center">Falar com um consultor</ContatoCta>
-            <Link href="/produtos" className="border border-white/50 text-white text-xs tracking-[0.12em] uppercase font-bold font-[var(--font-inter)] px-10 py-4 hover:bg-white/10 transition-colors text-center">Ver acabamentos</Link>
+            <ContatoCta className="bg-white text-[#0B1F45] text-xs tracking-[0.12em] uppercase font-bold px-10 py-4 hover:bg-[#f3f3f3] transition-colors text-center">Falar com um consultor</ContatoCta>
+            <Link href="/produtos" className="border border-white/50 text-white text-xs tracking-[0.12em] uppercase font-bold px-10 py-4 hover:bg-white/10 transition-colors text-center">Ver acabamentos</Link>
           </div>
         </div>
       </section>

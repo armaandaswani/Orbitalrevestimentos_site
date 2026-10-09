@@ -245,34 +245,34 @@ export default function RepAgendaTab({
   return (
     <div>
       <div className="flex flex-wrap items-center justify-between gap-3 mb-6">
-        <h2 className="font-[var(--font-noto-serif)] text-[#002045] text-xl font-normal">Agenda</h2>
+        <h2 className="font-serif text-[#0B1F45] text-xl font-normal">Agenda</h2>
         <button
           onClick={() => (formOpen && !editingId ? setFormOpen(false) : openCreateForm())}
-          className="bg-[#002045] text-white text-xs tracking-[0.1em] uppercase font-bold font-[var(--font-inter)] px-5 py-2.5 hover:bg-[#1a365d] transition-colors"
+          className="bg-[#0B1F45] text-white text-xs tracking-[0.1em] uppercase font-bold px-5 py-2.5 hover:bg-[#2347A0] transition-colors"
         >
           {formOpen && !editingId ? "Cancelar" : "+ Nova reunião"}
         </button>
       </div>
 
       {aviso && !formOpen && (
-        <p className="mb-6 text-sm text-green-700 font-[var(--font-inter)]">✓ Reunião criada. {aviso}</p>
+        <p className="mb-6 text-sm text-green-700">✓ Reunião criada. {aviso}</p>
       )}
 
       {formOpen && (
         <form onSubmit={handleSubmit} className="bg-white border border-[#e2e2e2] px-4 sm:px-6 py-5 mb-8 space-y-4">
-          <p className="text-[10px] tracking-[0.15em] uppercase font-bold font-[var(--font-inter)] text-[#74777f]">
+          <p className="text-[10px] tracking-[0.15em] uppercase font-bold text-[#74777f]">
             {editingId ? "Editar reunião" : "Nova reunião"}
           </p>
           <div className="grid sm:grid-cols-2 gap-4">
             <div className="sm:col-span-2">
-              <label className="block text-[10px] tracking-[0.15em] uppercase font-bold font-[var(--font-inter)] text-[#74777f] mb-1.5">Título *</label>
+              <label className="block text-[10px] tracking-[0.15em] uppercase font-bold text-[#74777f] mb-1.5">Título *</label>
               <input value={fTitle} onChange={(e) => setFTitle(e.target.value)} placeholder="Ex: Apresentação Orbital — Studio Arq."
-                className="w-full border border-[#e2e2e2] px-3 py-2.5 text-sm font-[var(--font-inter)] text-[#002045] focus:outline-none focus:border-[#002045]" />
+                className="w-full border border-[#e2e2e2] px-3 py-2.5 text-sm text-[#0B1F45] focus:outline-none focus:border-[#0B1F45]" />
             </div>
             <div>
-              <label className="block text-[10px] tracking-[0.15em] uppercase font-bold font-[var(--font-inter)] text-[#74777f] mb-1.5">Parceiro (opcional)</label>
+              <label className="block text-[10px] tracking-[0.15em] uppercase font-bold text-[#74777f] mb-1.5">Parceiro (opcional)</label>
               <select value={fPartnerId} onChange={(e) => setFPartnerId(e.target.value)}
-                className="w-full border border-[#e2e2e2] px-3 py-2.5 text-sm font-[var(--font-inter)] text-[#002045] focus:outline-none focus:border-[#002045]">
+                className="w-full border border-[#e2e2e2] px-3 py-2.5 text-sm text-[#0B1F45] focus:outline-none focus:border-[#0B1F45]">
                 <option value="">Nenhum</option>
                 {linkedPartners.map((p) => (
                   <option key={p.id} value={p.id}>{p.name}</option>
@@ -281,13 +281,13 @@ export default function RepAgendaTab({
               </select>
             </div>
             <div>
-              <label className="block text-[10px] tracking-[0.15em] uppercase font-bold font-[var(--font-inter)] text-[#74777f] mb-1.5">Local</label>
+              <label className="block text-[10px] tracking-[0.15em] uppercase font-bold text-[#74777f] mb-1.5">Local</label>
               <input value={fLocation} onChange={(e) => setFLocation(e.target.value)} placeholder="Ex: Escritório do parceiro"
-                className="w-full border border-[#e2e2e2] px-3 py-2.5 text-sm font-[var(--font-inter)] text-[#002045] focus:outline-none focus:border-[#002045]" />
+                className="w-full border border-[#e2e2e2] px-3 py-2.5 text-sm text-[#0B1F45] focus:outline-none focus:border-[#0B1F45]" />
             </div>
             {fPartnerId === NOVO && (
-              <div className="sm:col-span-2 bg-[#f5f5f3] border border-[#e2e2e2] px-4 py-4 space-y-3">
-                <p className="text-xs text-[#43474e] font-[var(--font-inter)]">
+              <div className="sm:col-span-2 bg-[#F6F5F2] border border-[#e2e2e2] px-4 py-4 space-y-3">
+                <p className="text-xs text-[#43474e]">
                   Ao criar a reunião, o parceiro é cadastrado e recebe por e-mail e WhatsApp o link para aceitar,
                   criar a senha e entrar no portal. Ele também recebe o convite da reunião.
                 </p>
@@ -295,61 +295,61 @@ export default function RepAgendaTab({
               </div>
             )}
             <div>
-              <label className="block text-[10px] tracking-[0.15em] uppercase font-bold font-[var(--font-inter)] text-[#74777f] mb-1.5">Data *</label>
+              <label className="block text-[10px] tracking-[0.15em] uppercase font-bold text-[#74777f] mb-1.5">Data *</label>
               <input required type="date" value={fDate} onChange={(e) => setFDate(e.target.value)}
-                className="w-full border border-[#e2e2e2] px-3 py-2.5 text-sm font-[var(--font-inter)] text-[#002045] focus:outline-none focus:border-[#002045]" />
+                className="w-full border border-[#e2e2e2] px-3 py-2.5 text-sm text-[#0B1F45] focus:outline-none focus:border-[#0B1F45]" />
             </div>
             <div className="flex gap-3">
               <div className="flex-1">
-                <label className="block text-[10px] tracking-[0.15em] uppercase font-bold font-[var(--font-inter)] text-[#74777f] mb-1.5">Hora</label>
+                <label className="block text-[10px] tracking-[0.15em] uppercase font-bold text-[#74777f] mb-1.5">Hora</label>
                 <input type="time" value={fTime} onChange={(e) => setFTime(e.target.value)}
-                  className="w-full border border-[#e2e2e2] px-3 py-2.5 text-sm font-[var(--font-inter)] text-[#002045] focus:outline-none focus:border-[#002045]" />
+                  className="w-full border border-[#e2e2e2] px-3 py-2.5 text-sm text-[#0B1F45] focus:outline-none focus:border-[#0B1F45]" />
               </div>
               <div className="w-28">
-                <label className="block text-[10px] tracking-[0.15em] uppercase font-bold font-[var(--font-inter)] text-[#74777f] mb-1.5">Min.</label>
+                <label className="block text-[10px] tracking-[0.15em] uppercase font-bold text-[#74777f] mb-1.5">Min.</label>
                 <input type="number" min={15} step={15} value={fDuration} onChange={(e) => setFDuration(Number(e.target.value) || 60)}
-                  className="w-full border border-[#e2e2e2] px-3 py-2.5 text-sm font-[var(--font-inter)] text-[#002045] focus:outline-none focus:border-[#002045]" />
+                  className="w-full border border-[#e2e2e2] px-3 py-2.5 text-sm text-[#0B1F45] focus:outline-none focus:border-[#0B1F45]" />
               </div>
             </div>
           </div>
 
           <div>
-            <label className="block text-[10px] tracking-[0.15em] uppercase font-bold font-[var(--font-inter)] text-[#74777f] mb-1.5">Convidados</label>
+            <label className="block text-[10px] tracking-[0.15em] uppercase font-bold text-[#74777f] mb-1.5">Convidados</label>
             <div className="space-y-2">
               {fInvitees.map((inv, i) => (
                 <div key={i} className="grid grid-cols-[1fr_auto] sm:flex gap-2 border-b border-[#f0f0f0] pb-2 sm:border-0 sm:pb-0">
                   <input value={inv.name} onChange={(e) => setFInvitees((cur) => cur.map((x, j) => j === i ? { ...x, name: e.target.value } : x))}
-                    placeholder="Nome" className="min-w-0 sm:flex-1 border border-[#e2e2e2] px-3 py-2 text-sm font-[var(--font-inter)] text-[#002045] focus:outline-none focus:border-[#002045]" />
+                    placeholder="Nome" className="min-w-0 sm:flex-1 border border-[#e2e2e2] px-3 py-2 text-sm text-[#0B1F45] focus:outline-none focus:border-[#0B1F45]" />
                   <input value={inv.phone} onChange={(e) => setFInvitees((cur) => cur.map((x, j) => j === i ? { ...x, phone: e.target.value } : x))}
-                    placeholder="Telefone" type="tel" className="col-start-1 min-w-0 w-full sm:w-36 border border-[#e2e2e2] px-3 py-2 text-sm font-[var(--font-inter)] text-[#002045] focus:outline-none focus:border-[#002045]" />
+                    placeholder="Telefone" type="tel" className="col-start-1 min-w-0 w-full sm:w-36 border border-[#e2e2e2] px-3 py-2 text-sm text-[#0B1F45] focus:outline-none focus:border-[#0B1F45]" />
                   <input value={inv.email} onChange={(e) => setFInvitees((cur) => cur.map((x, j) => j === i ? { ...x, email: e.target.value } : x))}
-                    placeholder="E-mail" type="email" className="col-start-1 min-w-0 w-full sm:w-44 border border-[#e2e2e2] px-3 py-2 text-sm font-[var(--font-inter)] text-[#002045] focus:outline-none focus:border-[#002045]" />
+                    placeholder="E-mail" type="email" className="col-start-1 min-w-0 w-full sm:w-44 border border-[#e2e2e2] px-3 py-2 text-sm text-[#0B1F45] focus:outline-none focus:border-[#0B1F45]" />
                   <button type="button" onClick={() => setFInvitees((cur) => cur.filter((_, j) => j !== i))}
                     className="col-start-2 row-start-1 text-[#74777f] hover:text-red-600 px-2" aria-label="Remover convidado">✕</button>
                 </div>
               ))}
             </div>
             <button type="button" onClick={() => setFInvitees((cur) => [...cur, { ...EMPTY_INVITEE }])}
-              className="mt-2 text-[11px] text-[#002045] font-bold font-[var(--font-inter)] hover:underline">
+              className="mt-2 text-[11px] text-[#0B1F45] font-bold hover:underline">
               + Adicionar convidado
             </button>
           </div>
 
           <div>
-            <label className="block text-[10px] tracking-[0.15em] uppercase font-bold font-[var(--font-inter)] text-[#74777f] mb-1.5">Notas</label>
+            <label className="block text-[10px] tracking-[0.15em] uppercase font-bold text-[#74777f] mb-1.5">Notas</label>
             <textarea value={fNotes} onChange={(e) => setFNotes(e.target.value)} rows={2}
-              className="w-full border border-[#e2e2e2] px-3 py-2.5 text-sm font-[var(--font-inter)] text-[#002045] focus:outline-none focus:border-[#002045]" />
+              className="w-full border border-[#e2e2e2] px-3 py-2.5 text-sm text-[#0B1F45] focus:outline-none focus:border-[#0B1F45]" />
           </div>
 
-          {formError && <p className="text-red-600 text-xs font-[var(--font-inter)]">{formError}</p>}
+          {formError && <p className="text-red-600 text-xs">{formError}</p>}
 
           <div className="flex items-center gap-3">
             <button type="submit" disabled={saving}
-              className="bg-[#002045] text-white text-xs tracking-[0.12em] uppercase font-bold font-[var(--font-inter)] px-6 py-2.5 hover:bg-[#1a365d] transition-colors disabled:opacity-50">
+              className="bg-[#0B1F45] text-white text-xs tracking-[0.12em] uppercase font-bold px-6 py-2.5 hover:bg-[#2347A0] transition-colors disabled:opacity-50">
               {saving ? "Salvando..." : editingId ? "Salvar alterações" : "Criar reunião"}
             </button>
             <button type="button" onClick={() => { setFormOpen(false); resetForm(); }}
-              className="text-[#74777f] text-xs font-[var(--font-inter)] hover:text-[#002045]">
+              className="text-[#74777f] text-xs hover:text-[#0B1F45]">
               Cancelar
             </button>
           </div>
@@ -360,21 +360,21 @@ export default function RepAgendaTab({
       <div className="bg-white border border-[#e2e2e2] mb-8">
         <div className="flex items-center justify-between px-5 py-3 border-b border-[#e2e2e2]">
           <button onClick={() => setViewMonth((d) => new Date(d.getFullYear(), d.getMonth() - 1, 1))}
-            className="text-[#74777f] hover:text-[#002045] px-2 py-1">‹</button>
-          <p className="font-[var(--font-noto-serif)] text-[#002045] text-sm font-normal capitalize">
+            className="text-[#74777f] hover:text-[#0B1F45] px-2 py-1">‹</button>
+          <p className="font-serif text-[#0B1F45] text-sm font-normal capitalize">
             {viewMonth.toLocaleDateString("pt-BR", { month: "long", year: "numeric" })}
           </p>
           <button onClick={() => setViewMonth((d) => new Date(d.getFullYear(), d.getMonth() + 1, 1))}
-            className="text-[#74777f] hover:text-[#002045] px-2 py-1">›</button>
+            className="text-[#74777f] hover:text-[#0B1F45] px-2 py-1">›</button>
         </div>
         <div className="grid grid-cols-7 border-b border-[#f0f0f0]">
           {WEEKDAYS.map((w) => (
-            <div key={w} className="text-center text-[9px] tracking-wider uppercase font-bold text-[#74777f] font-[var(--font-inter)] py-2">{w}</div>
+            <div key={w} className="text-center text-[9px] tracking-wider uppercase font-bold text-[#74777f] py-2">{w}</div>
           ))}
         </div>
         <div className="grid grid-cols-7">
           {gridCells.map((d, i) => {
-            if (!d) return <div key={i} className="border-b border-r border-[#f5f5f3] min-h-[64px] sm:min-h-[80px]" />;
+            if (!d) return <div key={i} className="border-b border-r border-[#F6F5F2] min-h-[64px] sm:min-h-[80px]" />;
             const key = dayKey(d);
             const dayMeetings = meetingsByDay.get(key) ?? [];
             const isToday = key === todayKey;
@@ -382,21 +382,21 @@ export default function RepAgendaTab({
               <button
                 key={i}
                 onClick={() => openCreateForm(d)}
-                className={`text-left border-b border-r border-[#f5f5f3] min-h-[64px] sm:min-h-[80px] px-1.5 py-1 hover:bg-[#fafafa] transition-colors ${isToday ? "bg-[#eef2f8]" : ""}`}
+                className={`text-left border-b border-r border-[#F6F5F2] min-h-[64px] sm:min-h-[80px] px-1.5 py-1 hover:bg-[#F6F5F2] transition-colors ${isToday ? "bg-[#eef2f8]" : ""}`}
               >
-                <span className={`text-[11px] font-[var(--font-inter)] ${isToday ? "font-bold text-[#002045]" : "text-[#74777f]"}`}>{d.getDate()}</span>
+                <span className={`text-[11px] ${isToday ? "font-bold text-[#0B1F45]" : "text-[#74777f]"}`}>{d.getDate()}</span>
                 <div className="mt-1 space-y-0.5">
                   {dayMeetings.slice(0, 2).map((m) => (
                     <div
                       key={m.id}
                       onClick={(e) => { e.stopPropagation(); openEditForm(m); }}
-                      className={`text-[9px] px-1 py-0.5 truncate font-[var(--font-inter)] ${m.status === "completed" ? "bg-green-100 text-green-800" : "bg-[#002045] text-white"}`}
+                      className={`text-[9px] px-1 py-0.5 truncate ${m.status === "completed" ? "bg-green-100 text-green-800" : "bg-[#0B1F45] text-white"}`}
                     >
                       {m.title}
                     </div>
                   ))}
                   {dayMeetings.length > 2 && (
-                    <p className="text-[8px] text-[#74777f] font-[var(--font-inter)]">+{dayMeetings.length - 2}</p>
+                    <p className="text-[8px] text-[#74777f]">+{dayMeetings.length - 2}</p>
                   )}
                 </div>
               </button>
@@ -406,33 +406,33 @@ export default function RepAgendaTab({
       </div>
 
       {/* Upcoming list */}
-      <h3 className="font-[var(--font-noto-serif)] text-[#002045] text-lg font-normal mb-3">Próximas reuniões</h3>
+      <h3 className="font-serif text-[#0B1F45] text-lg font-normal mb-3">Próximas reuniões</h3>
       {loading ? (
-        <p className="text-[#74777f] text-sm font-[var(--font-inter)]">Carregando...</p>
+        <p className="text-[#74777f] text-sm">Carregando...</p>
       ) : upcoming.length === 0 ? (
         <div className="bg-white border border-[#e2e2e2] px-6 py-8 text-center">
-          <p className="text-[#74777f] text-sm font-[var(--font-inter)]">Nenhuma reunião agendada.</p>
+          <p className="text-[#74777f] text-sm">Nenhuma reunião agendada.</p>
         </div>
       ) : (
         <div className="bg-white border border-[#e2e2e2] divide-y divide-[#f0f0f0]">
           {upcoming.map((m) => (
             <div key={m.id} className="px-5 py-4 flex flex-wrap items-start justify-between gap-3">
               <div className="min-w-0">
-                <p className="text-[#002045] text-sm font-semibold font-[var(--font-inter)]">{m.title}</p>
-                <p className="text-[#74777f] text-xs font-[var(--font-inter)] mt-0.5">
+                <p className="text-[#0B1F45] text-sm font-semibold">{m.title}</p>
+                <p className="text-[#74777f] text-xs mt-0.5">
                   {fmtDateTime(m.scheduled_at)} · {m.duration_minutes}min
                   {partnerName(m.partner_id) ? ` · ${partnerName(m.partner_id)}` : ""}
                   {m.location ? ` · ${m.location}` : ""}
                 </p>
                 {m.invitees.length > 0 && (
-                  <p className="text-[#b0b0b0] text-[11px] font-[var(--font-inter)] mt-0.5">
+                  <p className="text-[#b0b0b0] text-[11px] mt-0.5">
                     Convidados: {m.invitees.map((i) => i.name).join(", ")}
                   </p>
                 )}
               </div>
               <div className="flex items-center gap-2 flex-shrink-0">
-                <button onClick={() => openEditForm(m)} className="text-[10px] text-[#74777f] font-bold border border-[#e2e2e2] px-2 py-1 hover:border-[#002045] hover:text-[#002045]">Editar</button>
-                <button onClick={() => setStatus(m.id, "completed")} className="text-[10px] text-[#002045] font-bold border border-[#e2e2e2] px-2 py-1 hover:border-[#002045]">✓ Concluir</button>
+                <button onClick={() => openEditForm(m)} className="text-[10px] text-[#74777f] font-bold border border-[#e2e2e2] px-2 py-1 hover:border-[#0B1F45] hover:text-[#0B1F45]">Editar</button>
+                <button onClick={() => setStatus(m.id, "completed")} className="text-[10px] text-[#0B1F45] font-bold border border-[#e2e2e2] px-2 py-1 hover:border-[#0B1F45]">✓ Concluir</button>
                 <button onClick={() => setStatus(m.id, "cancelled")} className="text-[10px] text-red-700 font-bold border border-red-200 px-2 py-1 hover:bg-red-50">Cancelar</button>
               </div>
             </div>

@@ -4,9 +4,9 @@ import { useRef, useState } from "react";
 import { ATUACOES, EXPERIENCIAS, FOCOS } from "@/lib/academia-waitlist";
 
 const labelCls =
-  "block text-[10px] tracking-[0.15em] uppercase font-bold font-[var(--font-inter)] text-[#74777f] mb-2";
+  "block text-[10px] tracking-[0.15em] uppercase font-bold text-[#74777f] mb-2";
 const inputCls =
-  "w-full border border-[#e2e2e2] bg-white px-4 py-3.5 text-base sm:text-sm font-[var(--font-inter)] text-[#002045] focus:outline-none focus:border-[#002045] placeholder-[#b0b4bc]";
+  "w-full border border-[#e2e2e2] bg-white px-4 py-3.5 text-base sm:text-sm text-[#0B1F45] focus:outline-none focus:border-[#0B1F45] placeholder-[#b0b4bc]";
 /** Mesma caixa dos inputs, com a seta desenhada — o select nativo destoa do resto. */
 const selectCls = `${inputCls} appearance-none bg-[url('data:image/svg+xml;utf8,<svg xmlns=%22http://www.w3.org/2000/svg%22 width=%2212%22 height=%2212%22 viewBox=%220 0 24 24%22 fill=%22none%22 stroke=%22%2374777f%22 stroke-width=%222%22><path d=%22M6 9l6 6 6-6%22/></svg>')] bg-no-repeat bg-[position:right_1rem_center] pr-10`;
 
@@ -99,28 +99,28 @@ export default function ListaEsperaForm() {
       <>
       {confirmacao && (
         <div
-          className="fixed inset-0 z-[100] bg-[#002045]/85 flex items-center justify-center p-4"
+          className="fixed inset-0 z-[100] bg-[#0B1F45]/85 flex items-center justify-center p-4"
           role="dialog" aria-modal="true" aria-labelledby="ae-conf-titulo"
           onKeyDown={(e) => { if (e.key === "Escape") fecharConfirmacao(); }}
         >
           <div className="bg-white w-full max-w-md px-6 py-10 sm:px-10 text-center">
-            <div className="w-16 h-16 bg-[#002045] flex items-center justify-center mx-auto mb-6">
-              <svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="#a8e05f" strokeWidth="3" aria-hidden>
+            <div className="w-16 h-16 bg-[#0B1F45] flex items-center justify-center mx-auto mb-6">
+              <svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="#36A35C" strokeWidth="3" aria-hidden>
                 <polyline points="20 6 9 17 4 12" />
               </svg>
             </div>
-            <p id="ae-conf-titulo" className="text-[#002045] text-2xl sm:text-3xl font-extrabold uppercase tracking-tight font-[var(--font-inter)] mb-3">
+            <p id="ae-conf-titulo" className="text-[#0B1F45] text-2xl sm:text-3xl font-extrabold uppercase tracking-tight mb-3">
               Inscrição confirmada{confirmacao.nome ? `, ${confirmacao.nome}` : ""}!
             </p>
-            <p className="text-[#43474e] text-base font-[var(--font-inter)] leading-relaxed mb-2">
+            <p className="text-[#43474e] text-base leading-relaxed mb-2">
               Você está na lista de espera da Academia Orbital.
             </p>
-            <p className="text-[#43474e] text-base font-[var(--font-inter)] leading-relaxed mb-8">
+            <p className="text-[#43474e] text-base leading-relaxed mb-8">
               {canais ? `Enviamos a confirmação ${canais}. ` : ""}Quando o curso abrir, você é avisado primeiro.
             </p>
             <button
               type="button" autoFocus onClick={fecharConfirmacao}
-              className="w-full min-h-14 bg-[#a8e05f] text-[#002045] text-sm tracking-[0.12em] uppercase font-extrabold font-[var(--font-inter)] px-6 py-4 hover:bg-[#97cf4f] transition-colors"
+              className="w-full min-h-14 bg-[#36A35C] text-[#0B1F45] text-sm tracking-[0.12em] uppercase font-extrabold px-6 py-4 hover:bg-[#97cf4f] transition-colors"
             >
               Fechar
             </button>
@@ -128,15 +128,15 @@ export default function ListaEsperaForm() {
         </div>
       )}
       <div ref={cartaoRef} className="bg-white border border-[#e2e2e2] px-6 py-10 lg:px-10 lg:py-14 scroll-mt-24" role="status" aria-live="polite">
-        <div className="w-11 h-11 bg-[#002045] flex items-center justify-center mb-6">
-          <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#a1d494" strokeWidth="2.5" aria-hidden>
+        <div className="w-11 h-11 bg-[#0B1F45] flex items-center justify-center mb-6">
+          <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#36A35C" strokeWidth="2.5" aria-hidden>
             <polyline points="20 6 9 17 4 12" />
           </svg>
         </div>
-        <p className="text-[#002045] text-2xl lg:text-3xl font-extrabold uppercase tracking-tight font-[var(--font-inter)] mb-3">
+        <p className="text-[#0B1F45] text-2xl lg:text-3xl font-extrabold uppercase tracking-tight mb-3">
           Pronto. Você está na lista.
         </p>
-        <p className="text-[#43474e] text-sm lg:text-base font-[var(--font-inter)] leading-relaxed max-w-md">
+        <p className="text-[#43474e] text-sm lg:text-base leading-relaxed max-w-md">
           Seu lugar na lista de espera da Academia Orbital está garantido. Quando o curso abrir, você é
           avisado primeiro.
         </p>
@@ -191,7 +191,7 @@ export default function ListaEsperaForm() {
             className={`${selectCls} ${form.role ? "" : "text-[#b0b4bc]"}`}
           >
             <option value="" disabled>Selecione</option>
-            {ATUACOES.map((o) => <option key={o.value} value={o.value} className="text-[#002045]">{o.label}</option>)}
+            {ATUACOES.map((o) => <option key={o.value} value={o.value} className="text-[#0B1F45]">{o.label}</option>)}
           </select>
         </div>
         <div>
@@ -201,7 +201,7 @@ export default function ListaEsperaForm() {
             className={`${selectCls} ${form.years_experience ? "" : "text-[#b0b4bc]"}`}
           >
             <option value="" disabled>Selecione</option>
-            {EXPERIENCIAS.map((o) => <option key={o.value} value={o.value} className="text-[#002045]">{o.label}</option>)}
+            {EXPERIENCIAS.map((o) => <option key={o.value} value={o.value} className="text-[#0B1F45]">{o.label}</option>)}
           </select>
         </div>
         {form.role === "outro" && (
@@ -221,7 +221,7 @@ export default function ListaEsperaForm() {
             className={`${selectCls} ${form.main_focus ? "" : "text-[#b0b4bc]"}`}
           >
             <option value="" disabled>Selecione seu principal foco</option>
-            {FOCOS.map((o) => <option key={o.value} value={o.value} className="text-[#002045]">{o.label}</option>)}
+            {FOCOS.map((o) => <option key={o.value} value={o.value} className="text-[#0B1F45]">{o.label}</option>)}
           </select>
         </div>
         {form.main_focus === "outro" && (
@@ -242,17 +242,17 @@ export default function ListaEsperaForm() {
       </div>
 
       {error && (
-        <p className="text-[#b3261e] text-sm font-[var(--font-inter)] mb-4" role="alert">{error}</p>
+        <p className="text-[#b3261e] text-sm mb-4" role="alert">{error}</p>
       )}
 
       <button
         type="submit"
         disabled={loading}
-        className="w-full min-h-14 bg-[#3b6934] text-white text-sm tracking-[0.06em] sm:tracking-[0.12em] uppercase font-extrabold font-[var(--font-inter)] px-4 sm:px-6 py-4 hover:bg-[#2f5529] transition-colors disabled:opacity-50"
+        className="w-full min-h-14 bg-[#36A35C] text-[#0B1F45] text-sm tracking-[0.06em] sm:tracking-[0.12em] uppercase font-extrabold px-4 sm:px-6 py-4 hover:bg-[#4BB571] transition-colors disabled:opacity-50"
       >
         {loading ? "Enviando…" : "Quero meu lugar na lista →"}
       </button>
-      <p className="text-[#74777f] text-[11px] font-[var(--font-inter)] text-center mt-3 leading-relaxed">
+      <p className="text-[#74777f] text-[11px] text-center mt-3 leading-relaxed">
         {/* "Cadastro gratuito", e não "sem custo" ou "curso grátis": o curso não é
             gratuito — gratuita é só a lista. */}
         Cadastro gratuito. Sem compromisso.

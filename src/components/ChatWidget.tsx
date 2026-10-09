@@ -135,7 +135,7 @@ function parseBotText(raw: string): { nodes: React.ReactNode; pageLinks: string[
       flushNumbered();
       bulletBuffer.push(
         <li key={i} className="flex gap-1.5 items-start">
-          <span className="text-[#3b6934] font-bold flex-shrink-0 mt-0.5 text-[10px]">•</span>
+          <span className="text-[#1F7A44] font-bold flex-shrink-0 mt-0.5 text-[10px]">•</span>
           <span>{renderInline(bulletMatch[1])}</span>
         </li>
       );
@@ -148,7 +148,7 @@ function parseBotText(raw: string): { nodes: React.ReactNode; pageLinks: string[
       flushBullets();
       numberedBuffer.push(
         <li key={i} className="flex gap-1.5 items-start">
-          <span className="text-[#002045] font-semibold flex-shrink-0 min-w-[14px]">{numMatch[1]}.</span>
+          <span className="text-[#0B1F45] font-semibold flex-shrink-0 min-w-[14px]">{numMatch[1]}.</span>
           <span>{renderInline(numMatch[2])}</span>
         </li>
       );
@@ -234,10 +234,10 @@ export default function ChatWidget() {
           style={{ maxHeight: "520px" }}
         >
           {/* Header */}
-          <div className="bg-[#002045] px-5 py-4 flex items-center justify-between flex-shrink-0">
+          <div className="bg-[#0B1F45] px-5 py-4 flex items-center justify-between flex-shrink-0">
             <div>
-              <p className="text-white text-sm font-bold tracking-[0.15em] font-[var(--font-noto-serif)]">ORBITAL</p>
-              <p className="text-[#86a0cd] text-[10px] tracking-[0.12em] uppercase font-[var(--font-inter)] mt-0.5">Assistente IA</p>
+              <p className="text-white text-sm font-bold tracking-[0.15em] font-serif">ORBITAL</p>
+              <p className="text-[#B4BBC8] text-[10px] tracking-[0.12em] uppercase mt-0.5">Assistente IA</p>
             </div>
             <button onClick={() => setOpen(false)} className="text-white/50 hover:text-white transition-colors p-1" aria-label="Fechar chat">
               <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
@@ -252,7 +252,7 @@ export default function ChatWidget() {
               if (msg.from === "user") {
                 return (
                   <div key={i} className="flex justify-end">
-                    <div className="max-w-[84%] px-4 py-2.5 text-sm font-[var(--font-inter)] leading-relaxed bg-[#002045] text-white">
+                    <div className="max-w-[84%] px-4 py-2.5 text-sm leading-relaxed bg-[#0B1F45] text-white">
                       {msg.text}
                     </div>
                   </div>
@@ -263,7 +263,7 @@ export default function ChatWidget() {
 
               return (
                 <div key={i} className="flex justify-start">
-                  <div className="max-w-[84%] px-4 py-2.5 text-sm font-[var(--font-inter)] leading-relaxed bg-[#f3f5f8] text-[#1a1c1c]">
+                  <div className="max-w-[84%] px-4 py-2.5 text-sm leading-relaxed bg-[#f3f5f8] text-[#0D1830]">
 
                     {/* Rendered markdown */}
                     <div className="space-y-0.5">{nodes}</div>
@@ -275,7 +275,7 @@ export default function ChatWidget() {
                           <Link
                             key={href}
                             href={href}
-                            className="inline-flex items-center gap-1.5 text-[10px] tracking-[0.1em] uppercase font-bold bg-[#002045] text-white px-3 py-2 hover:bg-[#1a365d] transition-colors w-fit"
+                            className="inline-flex items-center gap-1.5 text-[10px] tracking-[0.1em] uppercase font-bold bg-[#0B1F45] text-white px-3 py-2 hover:bg-[#2347A0] transition-colors w-fit"
                           >
                             {PAGE_LABELS[href]}
                             <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5">
@@ -290,7 +290,7 @@ export default function ChatWidget() {
                     {msg.linkCta && !pageLinks.includes(msg.linkCta.href) && (
                       <Link
                         href={msg.linkCta.href}
-                        className="inline-flex items-center gap-1.5 mt-3 text-[10px] tracking-[0.1em] uppercase font-bold bg-[#3b6934] text-white px-3 py-2 hover:bg-[#2d5228] transition-colors w-fit"
+                        className="inline-flex items-center gap-1.5 mt-3 text-[10px] tracking-[0.1em] uppercase font-bold bg-[#36A35C] text-[#0B1F45] px-3 py-2 hover:bg-[#4BB571] transition-colors w-fit"
                       >
                         {msg.linkCta.label}
                         <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5">
@@ -304,7 +304,7 @@ export default function ChatWidget() {
                         href={`${WA_BASE}${encodeURIComponent("Olá! Vim pelo site e gostaria de mais informações sobre o PFB Orbital.")}`}
                         target="_blank"
                         rel="noopener noreferrer"
-                        className="flex items-center gap-1.5 mt-3 text-[10px] tracking-[0.1em] uppercase font-bold bg-[#3b6934] text-white px-3 py-2 hover:bg-[#2d5228] transition-colors w-fit"
+                        className="flex items-center gap-1.5 mt-3 text-[10px] tracking-[0.1em] uppercase font-bold bg-[#36A35C] text-[#0B1F45] px-3 py-2 hover:bg-[#4BB571] transition-colors w-fit"
                       >
                         <WaIcon />
                         Falar no WhatsApp
@@ -323,7 +323,7 @@ export default function ChatWidget() {
                   <button
                     key={label}
                     onClick={() => handleChip(prompt, label)}
-                    className="text-[10px] tracking-[0.08em] uppercase font-bold font-[var(--font-inter)] border border-[#3b6934] text-[#3b6934] px-3 py-1.5 hover:bg-[#3b6934] hover:text-white transition-colors"
+                    className="text-[10px] tracking-[0.08em] uppercase font-bold border border-[#36A35C] text-[#2347A0] px-3 py-1.5 hover:bg-[#36A35C] hover:text-[#0B1F45] transition-colors"
                   >
                     {label}
                   </button>
@@ -343,12 +343,12 @@ export default function ChatWidget() {
               onKeyDown={handleKeyDown}
               placeholder="Digite sua pergunta..."
               disabled={typing}
-              className="flex-1 text-sm font-[var(--font-inter)] text-[#1a1c1c] placeholder-[#b0b0b0] border border-[#e2e2e2] px-3 py-2 focus:outline-none focus:border-[#002045] transition-colors disabled:opacity-50"
+              className="flex-1 text-sm text-[#0D1830] placeholder-[#b0b0b0] border border-[#e2e2e2] px-3 py-2 focus:outline-none focus:border-[#0B1F45] transition-colors disabled:opacity-50"
             />
             <button
               onClick={() => input.trim() && !typing && sendMessage(input.trim())}
               disabled={!input.trim() || typing}
-              className="w-10 h-10 bg-[#002045] text-white flex items-center justify-center hover:bg-[#1a365d] transition-colors disabled:opacity-30 disabled:cursor-not-allowed flex-shrink-0"
+              className="w-10 h-10 bg-[#0B1F45] text-white flex items-center justify-center hover:bg-[#2347A0] transition-colors disabled:opacity-30 disabled:cursor-not-allowed flex-shrink-0"
               aria-label="Enviar"
             >
               <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5">
@@ -362,7 +362,7 @@ export default function ChatWidget() {
       {/* Floating toggle button */}
       <button
         onClick={() => setOpen((o) => !o)}
-        className="w-14 h-14 bg-[#3b6934] text-white flex items-center justify-center shadow-lg hover:bg-[#2d5228] transition-colors"
+        className="w-14 h-14 bg-[#36A35C] text-[#0B1F45] flex items-center justify-center shadow-lg hover:bg-[#4BB571] transition-colors"
         aria-label={open ? "Fechar chat" : "Abrir chat"}
       >
         {open ? (

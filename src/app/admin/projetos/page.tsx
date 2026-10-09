@@ -110,7 +110,7 @@ export default function ProjetosListPage() {
     setBusy(null);
   }
 
-  const selCls = "border border-[#e2e2e2] px-3 py-2 text-xs font-[var(--font-inter)] text-[#43474e] bg-white focus:outline-none focus:border-[#002045] w-full";
+  const selCls = "border border-[#e2e2e2] px-3 py-2 text-xs text-[#43474e] bg-white focus:outline-none focus:border-[#0B1F45] w-full";
 
   return (
     <AdminShell
@@ -125,7 +125,7 @@ export default function ProjetosListPage() {
       }
     >
       {pending && (
-        <div className="mb-6 bg-amber-50 border border-amber-300 px-4 py-3 text-sm font-[var(--font-inter)] text-amber-900">
+        <div className="mb-6 bg-amber-50 border border-amber-300 px-4 py-3 text-sm text-amber-900">
           <strong className="font-bold">Migração 053 pendente.</strong> Categoria principal, showroom parceiro e
           &ldquo;Revisão necessária&rdquo; só aparecem depois de rodá-la.
         </div>
@@ -133,7 +133,7 @@ export default function ProjetosListPage() {
       {reviewCount > 0 && (
         <button
           onClick={() => setStatus(status === "revisao" ? "todos" : "revisao")}
-          className="w-full text-left mb-6 bg-amber-50 border border-amber-300 px-4 py-3 text-sm font-[var(--font-inter)] text-amber-900 hover:bg-amber-100 transition-colors"
+          className="w-full text-left mb-6 bg-amber-50 border border-amber-300 px-4 py-3 text-sm text-amber-900 hover:bg-amber-100 transition-colors"
         >
           <strong className="font-bold">{reviewCount} projeto(s) precisam de revisão.</strong>{" "}
           A migração não conseguiu determinar onde eles aparecem no site.{" "}
@@ -145,7 +145,7 @@ export default function ProjetosListPage() {
       <div className="bg-white border border-[#e2e2e2] p-3 sm:p-4 mb-6 grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-5 gap-2">
         <input
           value={q} onChange={(e) => setQ(e.target.value)} placeholder="Buscar por nome…"
-          className="border border-[#e2e2e2] px-3 py-2 text-sm font-[var(--font-inter)] text-[#002045] focus:outline-none focus:border-[#002045] w-full lg:col-span-1"
+          className="border border-[#e2e2e2] px-3 py-2 text-sm text-[#0B1F45] focus:outline-none focus:border-[#0B1F45] w-full lg:col-span-1"
         />
         <select value={status} onChange={(e) => setStatus(e.target.value as StatusFilter)} className={selCls}>
           <option value="todos">Todos os status</option>
@@ -167,14 +167,14 @@ export default function ProjetosListPage() {
         </select>
       </div>
 
-      <p className="text-[#74777f] text-xs font-[var(--font-inter)] mb-3">
+      <p className="text-[#74777f] text-xs mb-3">
         {loading ? "Carregando…" : `${filtered.length} de ${rows.length} projeto(s)`}
       </p>
 
       {/* ── Lista ───────────────────────────────────────────────────────────── */}
       {!loading && filtered.length === 0 ? (
         <div className="bg-white border border-[#e2e2e2] px-4 py-10 text-center">
-          <p className="text-[#74777f] text-sm font-[var(--font-inter)]">Nenhum projeto encontrado com esses filtros.</p>
+          <p className="text-[#74777f] text-sm">Nenhum projeto encontrado com esses filtros.</p>
         </div>
       ) : (
         <div className="space-y-2">
@@ -190,14 +190,14 @@ export default function ProjetosListPage() {
                     style={{ objectPosition: `${(r.cover_focus_x ?? 0.5) * 100}% ${(r.cover_focus_y ?? 0.5) * 100}%` }}
                   />
                 ) : (
-                  <div className="w-full h-full flex items-center justify-center text-[#c4c6ca] text-[10px] font-[var(--font-inter)]">sem capa</div>
+                  <div className="w-full h-full flex items-center justify-center text-[#c4c6ca] text-[10px]">sem capa</div>
                 )}
               </div>
 
               <div className="flex-1 min-w-0">
                 <div className="flex flex-wrap items-center gap-2">
-                  <p className="font-[var(--font-inter)] text-[#002045] font-bold text-sm">{r.title}</p>
-                  <span className={`text-[9px] tracking-[0.1em] uppercase font-bold px-1.5 py-0.5 ${r.is_active ? "bg-[#eef5ec] text-[#2c5226]" : "bg-[#f0f0f0] text-[#74777f]"}`}>
+                  <p className="text-[#0B1F45] font-bold text-sm">{r.title}</p>
+                  <span className={`text-[9px] tracking-[0.1em] uppercase font-bold px-1.5 py-0.5 ${r.is_active ? "bg-[#eef5ec] text-[#1F7A44]" : "bg-[#f0f0f0] text-[#74777f]"}`}>
                     {r.is_active ? "Publicado" : "Rascunho"}
                   </span>
                   {r.needs_review && (
@@ -205,30 +205,30 @@ export default function ProjetosListPage() {
                   )}
                 </div>
 
-                <p className="text-[#74777f] text-[11px] font-[var(--font-inter)] mt-1 break-words">{r.site_path}</p>
+                <p className="text-[#74777f] text-[11px] mt-1 break-words">{r.site_path}</p>
                 {r.needs_review && r.review_reason && (
-                  <p className="text-amber-800 text-[11px] font-[var(--font-inter)] mt-1">{r.review_reason}</p>
+                  <p className="text-amber-800 text-[11px] mt-1">{r.review_reason}</p>
                 )}
-                <p className="text-[#a0a3a8] text-[11px] font-[var(--font-inter)] mt-1">
+                <p className="text-[#a0a3a8] text-[11px] mt-1">
                   {r.product_code || "sem produto"} · {r.media_count} {r.media_count === 1 ? "mídia" : "mídias"}
                   {r.tags.length > 0 && ` · ${r.tags.join(", ")}`}
                 </p>
               </div>
 
               <div className="flex flex-wrap gap-1.5 sm:flex-col sm:w-32 shrink-0">
-                <Link href={`/admin/projetos/${r.id}`} className="flex-1 text-center border border-[#002045] text-[#002045] text-[10px] tracking-[0.08em] uppercase font-bold font-[var(--font-inter)] px-2 py-1.5 hover:bg-[#002045] hover:text-white transition-colors">
+                <Link href={`/admin/projetos/${r.id}`} className="flex-1 text-center border border-[#0B1F45] text-[#0B1F45] text-[10px] tracking-[0.08em] uppercase font-bold px-2 py-1.5 hover:bg-[#0B1F45] hover:text-white transition-colors">
                   Editar
                 </Link>
                 <button onClick={() => togglePublish(r)} disabled={busy === r.id}
-                  className="flex-1 border border-[#e2e2e2] text-[#43474e] text-[10px] tracking-[0.08em] uppercase font-bold font-[var(--font-inter)] px-2 py-1.5 hover:border-[#002045] hover:text-[#002045] transition-colors disabled:opacity-50">
+                  className="flex-1 border border-[#e2e2e2] text-[#43474e] text-[10px] tracking-[0.08em] uppercase font-bold px-2 py-1.5 hover:border-[#0B1F45] hover:text-[#0B1F45] transition-colors disabled:opacity-50">
                   {r.is_active ? "Despublicar" : "Publicar"}
                 </button>
                 <button onClick={() => duplicate(r)} disabled={busy === r.id}
-                  className="flex-1 border border-[#e2e2e2] text-[#43474e] text-[10px] tracking-[0.08em] uppercase font-bold font-[var(--font-inter)] px-2 py-1.5 hover:border-[#002045] hover:text-[#002045] transition-colors disabled:opacity-50">
+                  className="flex-1 border border-[#e2e2e2] text-[#43474e] text-[10px] tracking-[0.08em] uppercase font-bold px-2 py-1.5 hover:border-[#0B1F45] hover:text-[#0B1F45] transition-colors disabled:opacity-50">
                   Duplicar
                 </button>
                 <button onClick={() => remove(r)} disabled={busy === r.id}
-                  className="flex-1 border border-red-200 text-red-700 text-[10px] tracking-[0.08em] uppercase font-bold font-[var(--font-inter)] px-2 py-1.5 hover:bg-red-50 hover:border-red-400 transition-colors disabled:opacity-50">
+                  className="flex-1 border border-red-200 text-red-700 text-[10px] tracking-[0.08em] uppercase font-bold px-2 py-1.5 hover:bg-red-50 hover:border-red-400 transition-colors disabled:opacity-50">
                   Excluir
                 </button>
               </div>

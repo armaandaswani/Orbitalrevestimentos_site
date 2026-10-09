@@ -193,9 +193,9 @@ export default function ComprasTab() {
         actions={<button onClick={() => openNew()} className={btnPrimary}>+ Novo pedido de compra</button>}
       />
 
-      {error && <div className="mb-4 bg-red-50 border border-red-200 px-4 py-3 text-red-700 text-xs font-[var(--font-inter)]">{error}</div>}
+      {error && <div className="mb-4 bg-red-50 border border-red-200 px-4 py-3 text-red-700 text-xs">{error}</div>}
       {migrationMissing && (
-        <div className="mb-6 bg-yellow-50 border border-yellow-300 px-4 py-3 text-yellow-900 text-xs font-[var(--font-inter)]">
+        <div className="mb-6 bg-yellow-50 border border-yellow-300 px-4 py-3 text-yellow-900 text-xs">
           Rode a migração <b>039</b> (compras/importação) no Supabase para salvar fornecedores e pedidos de compra.
         </div>
       )}
@@ -204,12 +204,12 @@ export default function ComprasTab() {
       <div className="grid grid-cols-1 sm:grid-cols-3 gap-4 mb-6">
         <KpiCard label="Dólar (USD → BRL)" value={fxLabel(fx.usd_brl)} hint={fx.stale ? "cotação indisponível — informe manual" : `fonte: ${fx.source}`} tone={fx.usd_brl ? "default" : "warn"} />
         <KpiCard label="Yuan / RMB (CNY → BRL)" value={fxLabel(fx.cny_brl)} hint={fx.cny_usd ? `1 USD ≈ ${(1 / fx.cny_usd).toFixed(2)} RMB` : "—"} tone={fx.cny_brl ? "default" : "warn"} />
-        <div className={`${cardCls} border-l-4 border-l-[#002045] p-5 flex flex-col justify-between`}>
+        <div className={`${cardCls} border-l-4 border-l-[#0B1F45] p-5 flex flex-col justify-between`}>
           <div>
-            <p className="text-[#74777f] text-[10px] tracking-[0.15em] uppercase font-bold font-[var(--font-inter)] mb-1.5">Cotações</p>
-            <p className="text-xs text-[#43474e] font-[var(--font-inter)]">{fx.updated_at ? `Atualizado ${new Date(fx.updated_at).toLocaleString("pt-BR")}` : "—"}</p>
+            <p className="text-[#74777f] text-[10px] tracking-[0.15em] uppercase font-bold mb-1.5">Cotações</p>
+            <p className="text-xs text-[#43474e]">{fx.updated_at ? `Atualizado ${new Date(fx.updated_at).toLocaleString("pt-BR")}` : "—"}</p>
           </div>
-          <button onClick={fetchFx} className="text-[10px] tracking-widest uppercase font-bold font-[var(--font-inter)] text-[#74777f] hover:text-[#002045] transition-colors text-left mt-2">↺ Atualizar cotação</button>
+          <button onClick={fetchFx} className="text-[10px] tracking-widest uppercase font-bold text-[#74777f] hover:text-[#0B1F45] transition-colors text-left mt-2">↺ Atualizar cotação</button>
         </div>
       </div>
 
@@ -218,12 +218,12 @@ export default function ComprasTab() {
         action={lowStock.length > 0 ? (
           <button
             onClick={() => openNew(lowStock.map((p) => ({ product_id: p.id, product_name: p.name, qty: Math.max(1, p.reorder_point * 2 - p.available), unit_price: null, unit_currency: "USD" as Currency })))}
-            className="text-[10px] tracking-[0.1em] uppercase font-bold font-[var(--font-inter)] text-[#3b6934] hover:underline"
+            className="text-[10px] tracking-[0.1em] uppercase font-bold text-[#1F7A44] hover:underline"
           >Gerar pedido com todos →</button>
         ) : undefined}
       >
         {lowStock.length === 0 ? (
-          <p className="px-5 py-6 text-xs text-[#74777f] font-[var(--font-inter)]">Todos os produtos estão acima do estoque mínimo. 🎉</p>
+          <p className="px-5 py-6 text-xs text-[#74777f]">Todos os produtos estão acima do estoque mínimo. 🎉</p>
         ) : (
           <div className="divide-y divide-[#f0f0f0]">
             {lowStock.map((p) => {
@@ -231,13 +231,13 @@ export default function ComprasTab() {
               return (
                 <div key={p.id} className="px-5 py-3 flex items-center gap-4">
                   <div className="flex-1 min-w-0">
-                    <p className="text-xs font-semibold text-[#002045] truncate">{p.name}</p>
+                    <p className="text-xs font-semibold text-[#0B1F45] truncate">{p.name}</p>
                     <p className="text-[10px] text-[#74777f]">{p.code} · {p.available} disp. · mín {p.reorder_point}</p>
                   </div>
-                  <span className="text-xs text-[#43474e] font-[var(--font-inter)]">sugestão: <b>{suggest}</b></span>
+                  <span className="text-xs text-[#43474e]">sugestão: <b>{suggest}</b></span>
                   <button
                     onClick={() => openNew([{ product_id: p.id, product_name: p.name, qty: suggest, unit_price: null, unit_currency: "USD" }])}
-                    className="text-[10px] tracking-[0.1em] uppercase font-bold font-[var(--font-inter)] text-[#3b6934] hover:underline flex-shrink-0"
+                    className="text-[10px] tracking-[0.1em] uppercase font-bold text-[#1F7A44] hover:underline flex-shrink-0"
                   >Comprar →</button>
                 </div>
               );
@@ -249,7 +249,7 @@ export default function ComprasTab() {
       {/* ── Purchase orders ── */}
       <Card title={`Pedidos de compra (${pos.length})`} padded={false}>
         {pos.length === 0 ? (
-          <p className="px-5 py-8 text-center text-xs text-[#74777f] font-[var(--font-inter)]">Nenhum pedido de compra. Crie um a partir de uma sugestão ou do botão acima.</p>
+          <p className="px-5 py-8 text-center text-xs text-[#74777f]">Nenhum pedido de compra. Crie um a partir de uma sugestão ou do botão acima.</p>
         ) : (
           <div className="divide-y divide-[#f0f0f0]">
             {pos.map((po) => {
@@ -264,7 +264,7 @@ export default function ComprasTab() {
                 <div key={po.id} className="px-5 py-3.5 flex flex-wrap items-center gap-3">
                   <div className="flex-1 min-w-0">
                     <div className="flex items-center gap-2">
-                      <p className="text-xs font-semibold text-[#002045] truncate">{po.reference || "PO sem referência"}</p>
+                      <p className="text-xs font-semibold text-[#0B1F45] truncate">{po.reference || "PO sem referência"}</p>
                       <StatusBadge tone={meta.tone}>{meta.label}</StatusBadge>
                     </div>
                     <p className="text-[10px] text-[#74777f]">
@@ -272,13 +272,13 @@ export default function ComprasTab() {
                     </p>
                   </div>
                   <div className="text-right">
-                    <p className="text-xs font-bold text-[#002045]">{fmtBRL(totals.grandTotalBRL)}</p>
+                    <p className="text-xs font-bold text-[#0B1F45]">{fmtBRL(totals.grandTotalBRL)}</p>
                     <p className="text-[9px] text-[#74777f]">custo total estimado</p>
                   </div>
                   <div className="flex items-center gap-3 flex-shrink-0">
-                    <button onClick={() => openEdit(po)} className="text-[10px] text-[#002045] font-bold hover:underline">Abrir</button>
+                    <button onClick={() => openEdit(po)} className="text-[10px] text-[#0B1F45] font-bold hover:underline">Abrir</button>
                     {po.status !== "received" && po.status !== "cancelled" && (
-                      <button onClick={() => receive(po, true)} className="text-[10px] text-[#3b6934] font-bold hover:underline">Receber →</button>
+                      <button onClick={() => receive(po, true)} className="text-[10px] text-[#1F7A44] font-bold hover:underline">Receber →</button>
                     )}
                     <button onClick={() => delPo(po)} className="text-[10px] text-red-500 font-bold hover:underline">Excluir</button>
                   </div>
@@ -293,8 +293,8 @@ export default function ComprasTab() {
       {draft && (
         <div className="fixed inset-0 z-50 flex items-start justify-center bg-black/40 p-4 overflow-y-auto">
           <div className="bg-white w-full max-w-4xl my-6" onClick={(e) => e.stopPropagation()}>
-            <div className="bg-[#002045] px-6 py-4 flex items-center justify-between sticky top-0 z-10">
-              <p className="text-white font-[var(--font-noto-serif)] text-lg">{draft._isNew ? "Novo pedido de compra" : (draft.reference || "Pedido de compra")}</p>
+            <div className="bg-[#0B1F45] px-6 py-4 flex items-center justify-between sticky top-0 z-10">
+              <p className="text-white font-serif text-lg">{draft._isNew ? "Novo pedido de compra" : (draft.reference || "Pedido de compra")}</p>
               <button onClick={() => setDraft(null)} className="text-white/70 hover:text-white text-2xl leading-none">×</button>
             </div>
             <div className="p-6 space-y-5">
@@ -328,7 +328,7 @@ export default function ComprasTab() {
                   <div><label className={labelCls}>ICMS %</label><input type="number" className={inputCls} value={draft.icms_rate != null ? draft.icms_rate * 100 : ""} onChange={(e) => setField("icms_rate", e.target.value === "" ? null : Number(e.target.value) / 100)} /></div>
                   <div><label className={labelCls}>FTI %</label><input type="number" className={inputCls} value={draft.fti_rate != null ? draft.fti_rate * 100 : ""} onChange={(e) => setField("fti_rate", e.target.value === "" ? null : Number(e.target.value) / 100)} /></div>
                 </div>
-                <button type="button" onClick={() => setDraft((d) => (d ? { ...d, fx_usd_brl: fx.usd_brl, fx_cny_brl: fx.cny_brl } : d))} className="text-[10px] tracking-widest uppercase font-bold font-[var(--font-inter)] text-[#3b6934] hover:underline mt-2">↺ Usar cotação ao vivo (USD {fxLabel(fx.usd_brl)} · RMB {fxLabel(fx.cny_brl)})</button>
+                <button type="button" onClick={() => setDraft((d) => (d ? { ...d, fx_usd_brl: fx.usd_brl, fx_cny_brl: fx.cny_brl } : d))} className="text-[10px] tracking-widest uppercase font-bold text-[#1F7A44] hover:underline mt-2">↺ Usar cotação ao vivo (USD {fxLabel(fx.usd_brl)} · RMB {fxLabel(fx.cny_brl)})</button>
               </div>
 
               {/* Items */}
@@ -360,7 +360,7 @@ export default function ComprasTab() {
                     );
                   })}
                 </div>
-                <button type="button" onClick={addItem} className="text-[10px] tracking-widest uppercase font-bold font-[var(--font-inter)] text-[#002045] hover:underline mt-2">+ Adicionar item</button>
+                <button type="button" onClick={addItem} className="text-[10px] tracking-widest uppercase font-bold text-[#0B1F45] hover:underline mt-2">+ Adicionar item</button>
               </div>
 
               {/* Shipment costs */}
@@ -378,9 +378,9 @@ export default function ComprasTab() {
 
               {/* Live cost summary */}
               {preview && (
-                <div className="bg-[#002045] p-5 text-white">
-                  <p className="text-[10px] tracking-[0.15em] uppercase font-bold font-[var(--font-inter)] text-[#86a0cd] mb-3">Custo de importação estimado (BRL)</p>
-                  <div className="grid grid-cols-2 sm:grid-cols-3 gap-x-6 gap-y-2 text-sm font-[var(--font-inter)]">
+                <div className="bg-[#0B1F45] p-5 text-white">
+                  <p className="text-[10px] tracking-[0.15em] uppercase font-bold text-[#B4BBC8] mb-3">Custo de importação estimado (BRL)</p>
+                  <div className="grid grid-cols-2 sm:grid-cols-3 gap-x-6 gap-y-2 text-sm">
                     <div className="flex justify-between"><span className="text-white/60">FOB (produtos)</span><span>{fmtBRL(preview.fobTotalBRL)}</span></div>
                     <div className="flex justify-between"><span className="text-white/60">Frete</span><span>{fmtBRL(preview.freightBRL)}</span></div>
                     <div className="flex justify-between"><span className="text-white/60">ICMS</span><span>{fmtBRL(preview.icmsBRL)}</span></div>
@@ -388,7 +388,7 @@ export default function ComprasTab() {
                     <div className="flex justify-between"><span className="text-white/60">Despesas</span><span>{fmtBRL(preview.otherBRL)}</span></div>
                     <div className="flex justify-between border-t border-white/15 pt-2 mt-1 sm:col-span-3">
                       <span className="font-bold">Custo total</span>
-                      <span className="font-[var(--font-noto-serif)] text-xl">{fmtBRL(preview.grandTotalBRL)}</span>
+                      <span className="font-serif text-xl">{fmtBRL(preview.grandTotalBRL)}</span>
                     </div>
                   </div>
                 </div>
@@ -398,9 +398,9 @@ export default function ComprasTab() {
               <div className="flex flex-wrap items-center justify-between gap-3 pt-2">
                 {!draft._isNew && draft.id && (
                   <div className="flex items-center gap-2">
-                    <span className="text-[10px] text-[#74777f] uppercase tracking-wider font-bold font-[var(--font-inter)]">Status:</span>
+                    <span className="text-[10px] text-[#74777f] uppercase tracking-wider font-bold">Status:</span>
                     {STATUS_FLOW.map((s) => (
-                      <button key={s} onClick={() => draft.id && setStatus(draft as PO, s)} className={`text-[10px] font-bold px-2.5 py-1 border transition-colors ${draft.status === s ? "bg-[#002045] text-white border-[#002045]" : "text-[#74777f] border-[#e2e2e2] hover:border-[#002045]"}`}>{PO_STATUS[s].label}</button>
+                      <button key={s} onClick={() => draft.id && setStatus(draft as PO, s)} className={`text-[10px] font-bold px-2.5 py-1 border transition-colors ${draft.status === s ? "bg-[#0B1F45] text-white border-[#0B1F45]" : "text-[#74777f] border-[#e2e2e2] hover:border-[#0B1F45]"}`}>{PO_STATUS[s].label}</button>
                     ))}
                   </div>
                 )}

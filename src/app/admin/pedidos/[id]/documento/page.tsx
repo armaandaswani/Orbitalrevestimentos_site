@@ -316,7 +316,7 @@ export default function PedidoDocumentoPage({ params }: { params: Promise<{ id: 
       <div className="document-actions max-w-[980px] mx-auto mb-4 flex flex-wrap items-center justify-between gap-3">
         <div>
           <p className="text-[10px] uppercase tracking-[0.18em] font-bold text-[#74777f]">Documento comercial</p>
-          <h1 className="font-[var(--font-noto-serif)] text-2xl text-[#002045]">{DOC_LABEL[docType]} {docNumber(pedido)}</h1>
+          <h1 className="font-serif text-2xl text-[#0B1F45]">{DOC_LABEL[docType]} {docNumber(pedido)}</h1>
         </div>
         <div className="document-toolbar flex flex-wrap gap-2 items-center">
           {!readOnly && (
@@ -324,31 +324,31 @@ export default function PedidoDocumentoPage({ params }: { params: Promise<{ id: 
               <select
                 value={docType}
                 onChange={(e) => setDocType(e.target.value as DocumentType)}
-                className="border border-[#d8d5cf] bg-white px-3 py-2 text-xs font-bold uppercase tracking-[0.08em] text-[#002045]"
+                className="border border-[#d8d5cf] bg-white px-3 py-2 text-xs font-bold uppercase tracking-[0.08em] text-[#0B1F45]"
               >
                 <option value="orcamento">Orçamento</option>
                 <option value="pedido">Pedido de Venda</option>
                 <option value="nota">Nota de Venda</option>
                 <option value="recibo">Recibo</option>
               </select>
-              <label className="border border-[#d8d5cf] bg-white px-3 py-2 text-xs font-bold uppercase tracking-[0.08em] text-[#002045] flex items-center gap-2">
+              <label className="border border-[#d8d5cf] bg-white px-3 py-2 text-xs font-bold uppercase tracking-[0.08em] text-[#0B1F45] flex items-center gap-2">
                 <input type="checkbox" checked={includeImages} onChange={(e) => setIncludeImages(e.target.checked)} />
                 Imagens
               </label>
-              <label className="border border-[#d8d5cf] bg-white px-3 py-2 text-xs font-bold uppercase tracking-[0.08em] text-[#002045] flex items-center gap-2">
+              <label className="border border-[#d8d5cf] bg-white px-3 py-2 text-xs font-bold uppercase tracking-[0.08em] text-[#0B1F45] flex items-center gap-2">
                 <input type="checkbox" checked={includeDescriptions} onChange={(e) => setIncludeDescriptions(e.target.checked)} />
                 Descrições
               </label>
-              <a href="/admin" className="border border-[#d8d5cf] bg-white px-4 py-2 text-xs font-bold uppercase tracking-[0.1em] text-[#002045]">Voltar</a>
+              <a href="/admin" className="border border-[#d8d5cf] bg-white px-4 py-2 text-xs font-bold uppercase tracking-[0.1em] text-[#0B1F45]">Voltar</a>
             </>
           )}
-          <button onClick={() => window.print()} className="bg-[#002045] text-white px-5 py-2 text-xs font-bold uppercase tracking-[0.1em]">Imprimir / PDF</button>
+          <button onClick={() => window.print()} className="bg-[#0B1F45] text-white px-5 py-2 text-xs font-bold uppercase tracking-[0.1em]">Imprimir / PDF</button>
           {!readOnly && (
             <>
               <button
                 onClick={() => sendDocument("email")}
                 disabled={sending != null || !pedido.client_email}
-                className="border border-[#002045] bg-white text-[#002045] disabled:opacity-40 px-4 py-2 text-xs font-bold uppercase tracking-[0.1em]"
+                className="border border-[#0B1F45] bg-white text-[#0B1F45] disabled:opacity-40 px-4 py-2 text-xs font-bold uppercase tracking-[0.1em]"
               >
                 {sending === "email" ? "Enviando..." : "Enviar e-mail"}
               </button>
@@ -380,19 +380,19 @@ export default function PedidoDocumentoPage({ params }: { params: Promise<{ id: 
           onChange={(e) => { setNotesDraft(e.target.value); setNotesSaved(false); }}
           rows={4}
           placeholder={docType === "orcamento" ? "ex: validade da proposta, observações para o cliente…" : "Deixe em branco para usar o texto padrão de cláusulas contratuais."}
-          className="w-full border border-[#d8d5cf] px-3 py-2 text-xs font-[var(--font-inter)] text-[#1a1c1c] focus:outline-none focus:border-[#002045] resize-y"
+          className="w-full border border-[#d8d5cf] px-3 py-2 text-xs text-[#0D1830] focus:outline-none focus:border-[#0B1F45] resize-y"
         />
         <div className="flex items-center gap-3 mt-2">
           <button
             onClick={saveNotes}
             disabled={savingNotes}
-            className="bg-[#002045] text-white disabled:opacity-50 px-4 py-2 text-xs font-bold uppercase tracking-[0.1em]"
+            className="bg-[#0B1F45] text-white disabled:opacity-50 px-4 py-2 text-xs font-bold uppercase tracking-[0.1em]"
           >
             {savingNotes ? "Salvando..." : "Salvar texto"}
           </button>
           {notesSaved && <span className="text-[11px] font-bold text-[#2e7d32]">Salvo.</span>}
         </div>
-        <label className="flex items-center gap-2 text-xs font-[var(--font-inter)] text-[#43474e] mt-3 pt-3 border-t border-[#f0f0f0]">
+        <label className="flex items-center gap-2 text-xs text-[#43474e] mt-3 pt-3 border-t border-[#f0f0f0]">
           <input
             type="checkbox"
             checked={legalTermsEnabled}
@@ -403,10 +403,10 @@ export default function PedidoDocumentoPage({ params }: { params: Promise<{ id: 
       </div>
       )}
 
-      <article className="document-page mx-auto bg-white text-[#1a1c1c] shadow-sm">
+      <article className="document-page mx-auto bg-white text-[#0D1830] shadow-sm">
         <section className="doc-header">
           {/* eslint-disable-next-line @next/next/no-img-element */}
-          <img src="/images/logo.png" alt="Orbital" className="doc-logo" />
+          <img src="/images/brand/orbital-simbolo.png" alt="Orbital" className="doc-logo" />
           <div>
             <h2>{COMPANY.name}</h2>
             <p>{COMPANY.cnpj}</p>
@@ -590,7 +590,7 @@ export default function PedidoDocumentoPage({ params }: { params: Promise<{ id: 
           align-items: start;
           margin-bottom: 18px;
         }
-        .doc-logo { width: 58px; height: auto; }
+        .doc-logo { width: 50px; height: auto; }
         .doc-header h2 { font-size: 15px; margin: 0 0 2px; font-weight: 700; }
         .doc-header p { margin: 0; }
         .doc-email { text-align: right; font-size: 10px; }
@@ -641,9 +641,9 @@ export default function PedidoDocumentoPage({ params }: { params: Promise<{ id: 
           font-weight: 700;
           font-size: 10.5px;
           line-height: 1.45;
-          color: #002045;
+          color: #0B1F45;
           background: #f4f1ea;
-          border-left: 3px solid #002045;
+          border-left: 3px solid #0B1F45;
           padding: 9px 12px;
           margin: 0 0 20px;
           /* o navegador tira fundos na impressão por padrão */
@@ -663,7 +663,7 @@ export default function PedidoDocumentoPage({ params }: { params: Promise<{ id: 
         .doc-product-card img { width: 72px; height: 72px; object-fit: cover; display: block; }
         .doc-product-card p, .doc-product-textonly p { margin: 0; color: #555; font-size: 9.5px; }
         .doc-product-textonly { padding: 8px 0; page-break-inside: avoid; }
-        .doc-product-name { color: #1a1c1c !important; font-weight: 700; font-size: 10.5px !important; margin-bottom: 3px !important; }
+        .doc-product-name { color: #0D1830 !important; font-weight: 700; font-size: 10.5px !important; margin-bottom: 3px !important; }
         .doc-notes { margin-top: 8px; page-break-inside: auto; }
         .doc-order-notes { white-space: pre-wrap; margin: 0 0 12px; }
         .doc-contract { white-space: pre-wrap; margin: 0; font-size: 9.5px; color: #555; }

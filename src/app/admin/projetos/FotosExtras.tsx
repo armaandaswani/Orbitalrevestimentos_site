@@ -18,9 +18,9 @@ export interface FotoPendente { url: string; category: Categoria }
 interface Midia { id: string; url: string; type: "image" | "video"; category: Categoria; is_cover?: boolean; sort_order: number }
 
 const CATS: { v: Categoria; label: string; on: string }[] = [
-  { v: "depois", label: "Depois", on: "bg-[#3b6934] text-white border-[#3b6934]" },
+  { v: "depois", label: "Depois", on: "bg-[#36A35C] text-[#0B1F45] border-[#36A35C]" },
   { v: "antes", label: "Antes", on: "bg-amber-500 text-white border-amber-500" },
-  { v: "geral", label: "Geral", on: "bg-[#002045] text-white border-[#002045]" },
+  { v: "geral", label: "Geral", on: "bg-[#0B1F45] text-white border-[#0B1F45]" },
 ];
 
 function Classificar({ value, onChange }: { value: Categoria; onChange: (c: Categoria) => void }) {
@@ -28,7 +28,7 @@ function Classificar({ value, onChange }: { value: Categoria; onChange: (c: Cate
     <div className="flex">
       {CATS.map((c) => (
         <button key={c.v} type="button" onClick={() => onChange(c.v)}
-          className={`flex-1 text-[8px] tracking-[0.06em] uppercase font-bold font-[var(--font-inter)] px-1 py-1 border -ml-px first:ml-0 transition-colors ${value === c.v ? c.on : "border-[#e2e2e2] text-[#74777f] bg-white hover:text-[#002045]"}`}>
+          className={`flex-1 text-[8px] tracking-[0.06em] uppercase font-bold px-1 py-1 border -ml-px first:ml-0 transition-colors ${value === c.v ? c.on : "border-[#e2e2e2] text-[#74777f] bg-white hover:text-[#0B1F45]"}`}>
           {c.label}
         </button>
       ))}
@@ -121,15 +121,15 @@ export default function FotosExtras({
 
   return (
     <div className="mb-4">
-      <label className="block text-[10px] tracking-[0.15em] uppercase font-bold font-[var(--font-inter)] text-[#74777f] mb-2">
+      <label className="block text-[10px] tracking-[0.15em] uppercase font-bold text-[#74777f] mb-2">
         Mais fotos do projeto <span className="font-normal normal-case tracking-normal text-[#b0b0b0]">(opcional — quantas quiser)</span>
       </label>
 
       <div className="flex flex-wrap items-center gap-2 mb-3">
-        <span className="text-[10px] tracking-[0.1em] uppercase font-bold font-[var(--font-inter)] text-[#74777f]">Novas fotos entram como</span>
+        <span className="text-[10px] tracking-[0.1em] uppercase font-bold text-[#74777f]">Novas fotos entram como</span>
         <div className="w-44"><Classificar value={novaCategoria} onChange={setNovaCategoria} /></div>
         <button type="button" disabled={!!enviando} onClick={() => inputRef.current?.click()}
-          className="bg-[#002045] text-white text-[10px] tracking-[0.1em] uppercase font-bold font-[var(--font-inter)] px-4 py-2 hover:bg-[#1a365d] transition-colors disabled:opacity-50">
+          className="bg-[#0B1F45] text-white text-[10px] tracking-[0.1em] uppercase font-bold px-4 py-2 hover:bg-[#2347A0] transition-colors disabled:opacity-50">
           {enviando ? `Enviando ${enviando.feito + 1} de ${enviando.total}…` : "+ Adicionar fotos"}
         </button>
         <input ref={inputRef} type="file" accept="image/*,.heic,.heif" multiple className="hidden"
@@ -144,7 +144,7 @@ export default function FotosExtras({
                 {/* eslint-disable-next-line @next/next/no-img-element */}
                 <img src={it.url} alt="" className="absolute inset-0 w-full h-full object-cover" />
                 {it.capa ? (
-                  <span className="absolute top-0 left-0 bg-[#002045] text-white text-[8px] font-bold uppercase tracking-wider px-1.5 py-0.5">Capa</span>
+                  <span className="absolute top-0 left-0 bg-[#0B1F45] text-white text-[8px] font-bold uppercase tracking-wider px-1.5 py-0.5">Capa</span>
                 ) : (
                   <button type="button" title="Remover"
                     onClick={() => (it.mid ? remover(it.mid) : setPending((prev) => prev.filter((_, k) => k !== it.idx)))}
@@ -157,14 +157,14 @@ export default function FotosExtras({
           ))}
         </div>
       ) : (
-        <p className="text-[11px] text-[#a0a3a8] font-[var(--font-inter)]">
+        <p className="text-[11px] text-[#a0a3a8]">
           Nenhuma foto extra ainda. Elas aparecem na galeria do projeto no site, com o filtro Antes / Depois.
         </p>
       )}
       {!slug && pending.length > 0 && (
-        <p className="text-[11px] text-[#74777f] font-[var(--font-inter)] mt-2">Estas fotos entram no projeto quando você clicar em Salvar.</p>
+        <p className="text-[11px] text-[#74777f] mt-2">Estas fotos entram no projeto quando você clicar em Salvar.</p>
       )}
-      {erro && <p className="text-[11px] text-red-600 font-[var(--font-inter)] mt-2 break-words">{erro}</p>}
+      {erro && <p className="text-[11px] text-red-600 mt-2 break-words">{erro}</p>}
     </div>
   );
 }

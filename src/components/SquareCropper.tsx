@@ -81,8 +81,8 @@ export default function SquareCropper({
   return (
     <div className="fixed inset-0 z-[300] bg-black/70 flex items-center justify-center p-4" onClick={onCancel}>
       <div className="bg-white w-full max-w-sm p-5" onClick={(e) => e.stopPropagation()}>
-        <p className="text-[#002045] font-[var(--font-noto-serif)] text-base mb-1">Ajustar enquadramento (1:1)</p>
-        <p className="text-[#74777f] text-[11px] font-[var(--font-inter)] mb-3">Arraste para reposicionar e use o controle para ampliar. A foto não é distorcida.</p>
+        <p className="text-[#0B1F45] font-serif text-base mb-1">Ajustar enquadramento (1:1)</p>
+        <p className="text-[#74777f] text-[11px] mb-3">Arraste para reposicionar e use o controle para ampliar. A foto não é distorcida.</p>
         <div
           ref={boxRef}
           className="relative mx-auto overflow-hidden bg-[#f0f0f0] cursor-grab active:cursor-grabbing touch-none select-none"
@@ -108,10 +108,10 @@ export default function SquareCropper({
           <input type="range" min={1} max={3} step={0.01} value={zoom} onChange={(e) => setZoom(parseFloat(e.target.value))} className="flex-1" />
         </div>
         <div className="flex gap-2 mt-4">
-          <button onClick={confirm} disabled={busy || !nat} className="flex-1 bg-[#002045] text-white text-xs tracking-[0.1em] uppercase font-bold font-[var(--font-inter)] py-2.5 hover:bg-[#1a365d] transition-colors disabled:opacity-50">
+          <button onClick={confirm} disabled={busy || !nat} className="flex-1 bg-[#0B1F45] text-white text-xs tracking-[0.1em] uppercase font-bold py-2.5 hover:bg-[#2347A0] transition-colors disabled:opacity-50">
             {busy ? "Processando…" : "Aplicar recorte"}
           </button>
-          <button onClick={onCancel} disabled={busy} className="flex-1 border border-[#e2e2e2] text-[#43474e] text-xs tracking-[0.1em] uppercase font-bold font-[var(--font-inter)] py-2.5 hover:border-[#002045] transition-colors disabled:opacity-50">
+          <button onClick={onCancel} disabled={busy} className="flex-1 border border-[#e2e2e2] text-[#43474e] text-xs tracking-[0.1em] uppercase font-bold py-2.5 hover:border-[#0B1F45] transition-colors disabled:opacity-50">
             Cancelar
           </button>
         </div>

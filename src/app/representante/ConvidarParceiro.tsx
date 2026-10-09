@@ -38,8 +38,8 @@ export function canaisEnviados(e: { email: boolean; whatsapp: boolean }) {
   return "— mas o e-mail e o WhatsApp não saíram; avise a Orbital";
 }
 
-const labelCls = "block text-[10px] tracking-[0.15em] uppercase font-bold font-[var(--font-inter)] text-[#74777f] mb-1.5";
-const inputCls = "w-full border border-[#e2e2e2] px-3 py-2.5 text-sm font-[var(--font-inter)] text-[#002045] focus:outline-none focus:border-[#002045] bg-white";
+const labelCls = "block text-[10px] tracking-[0.15em] uppercase font-bold text-[#74777f] mb-1.5";
+const inputCls = "w-full border border-[#e2e2e2] px-3 py-2.5 text-sm text-[#0B1F45] focus:outline-none focus:border-[#0B1F45] bg-white";
 
 /** Campos nome / e-mail / WhatsApp do parceiro novo. */
 export function CamposNovoParceiro({ value, onChange }: { value: NovoParceiro; onChange: (v: NovoParceiro) => void }) {
@@ -97,32 +97,32 @@ export default function ConvidarParceiro({ onConvidado }: { onConvidado?: () => 
         <button
           type="button"
           onClick={() => { setAberto(true); setAviso(""); setErro(""); }}
-          className="bg-[#002045] text-white text-xs tracking-[0.1em] uppercase font-bold font-[var(--font-inter)] px-5 py-2.5 hover:bg-[#1a365d] transition-colors"
+          className="bg-[#0B1F45] text-white text-xs tracking-[0.1em] uppercase font-bold px-5 py-2.5 hover:bg-[#2347A0] transition-colors"
         >
           + Convidar parceiro
         </button>
       ) : (
         <form onSubmit={enviar} className="bg-white border border-[#e2e2e2] px-4 sm:px-6 py-5 space-y-4">
           <div>
-            <p className="text-[10px] tracking-[0.15em] uppercase font-bold font-[var(--font-inter)] text-[#74777f]">Convidar parceiro</p>
-            <p className="text-xs text-[#74777f] font-[var(--font-inter)] mt-1">
+            <p className="text-[10px] tracking-[0.15em] uppercase font-bold text-[#74777f]">Convidar parceiro</p>
+            <p className="text-xs text-[#74777f] mt-1">
               Ele recebe o link por e-mail e WhatsApp, aceita, cria a senha e já entra no portal.
             </p>
           </div>
           <CamposNovoParceiro value={dados} onChange={setDados} />
-          {erro && <p className="text-red-600 text-sm font-[var(--font-inter)]">{erro}</p>}
+          {erro && <p className="text-red-600 text-sm">{erro}</p>}
           <div className="flex flex-wrap gap-3 items-center">
             <button type="submit" disabled={enviando}
-              className="bg-[#002045] text-white text-xs tracking-[0.1em] uppercase font-bold font-[var(--font-inter)] px-5 py-2.5 hover:bg-[#1a365d] transition-colors disabled:opacity-50">
+              className="bg-[#0B1F45] text-white text-xs tracking-[0.1em] uppercase font-bold px-5 py-2.5 hover:bg-[#2347A0] transition-colors disabled:opacity-50">
               {enviando ? "Enviando..." : "Cadastrar e enviar convite"}
             </button>
-            <button type="button" onClick={() => setAberto(false)} className="text-[#74777f] text-sm font-[var(--font-inter)] hover:text-[#002045]">
+            <button type="button" onClick={() => setAberto(false)} className="text-[#74777f] text-sm hover:text-[#0B1F45]">
               Cancelar
             </button>
           </div>
         </form>
       )}
-      {aviso && <p className="mt-3 text-sm text-green-700 font-[var(--font-inter)]">✓ {aviso}</p>}
+      {aviso && <p className="mt-3 text-sm text-green-700">✓ {aviso}</p>}
     </div>
   );
 }

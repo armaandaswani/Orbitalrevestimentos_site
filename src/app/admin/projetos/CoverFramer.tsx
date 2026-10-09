@@ -57,7 +57,7 @@ export default function CoverFramer({
   if (!url) {
     return (
       <div className="w-full max-w-[240px] bg-[#f0f0f0] border border-dashed border-[#d4d6da] flex items-center justify-center" style={{ aspectRatio: COVER_ASPECT }}>
-        <p className="text-[#a0a3a8] text-[11px] font-[var(--font-inter)] text-center px-4">
+        <p className="text-[#a0a3a8] text-[11px] text-center px-4">
           Escolha uma imagem da galeria como capa
         </p>
       </div>
@@ -86,30 +86,30 @@ export default function CoverFramer({
       </div>
 
       <label className="block mt-3">
-        <span className="text-[10px] tracking-[0.15em] uppercase font-bold font-[var(--font-inter)] text-[#74777f]">
+        <span className="text-[10px] tracking-[0.15em] uppercase font-bold text-[#74777f]">
           Aproximar — {zoom.toFixed(2)}×
         </span>
         <input
           type="range" min={1} max={2} step={0.01} value={zoom}
           onChange={(e) => onChange({ focusX, focusY, zoom: Number(e.target.value) })}
-          className="w-full mt-1.5 accent-[#002045]"
+          className="w-full mt-1.5 accent-[#0B1F45]"
         />
       </label>
 
       <div className="flex items-center justify-between gap-2 mt-1">
-        <p className="text-[#74777f] text-[11px] font-[var(--font-inter)]">
+        <p className="text-[#74777f] text-[11px]">
           Arraste a imagem para reposicionar.
         </p>
         <button
           type="button"
           onClick={() => onChange({ focusX: 0.5, focusY: 0.5, zoom: 1 })}
-          className="text-[10px] tracking-[0.08em] uppercase font-bold font-[var(--font-inter)] text-[#74777f] hover:text-[#002045] transition-colors whitespace-nowrap"
+          className="text-[10px] tracking-[0.08em] uppercase font-bold text-[#74777f] hover:text-[#0B1F45] transition-colors whitespace-nowrap"
         >
           Centralizar
         </button>
       </div>
 
-      <p className="text-[#a0a3a8] text-[10px] font-[var(--font-inter)] mt-2 leading-snug">
+      <p className="text-[#a0a3a8] text-[10px] mt-2 leading-snug">
         Prévia exata de como a capa aparecerá no site. O recorte vale só para o card —
         na galeria a foto abre inteira, no tamanho original.
       </p>

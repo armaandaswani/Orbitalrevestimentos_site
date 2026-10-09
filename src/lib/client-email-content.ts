@@ -9,6 +9,7 @@
 // Calendário atual (dias desde a simulação): 0, 4, 10, 17, 23, 30 e 60.
 
 import { DRIP_DELAYS, DRIP_STEPS } from "@/lib/drip-steps";
+import { EMAIL_FONTES_LINK, emailLogo } from "@/lib/email-marca";
 
 const WA_PHONE = "5592988150149";
 
@@ -138,8 +139,8 @@ function cta(label: string, url: string) {
   return `
 <table cellpadding="0" cellspacing="0" style="margin:28px 0;">
   <tr>
-    <td style="background:#002045;padding:0;">
-      <a href="${url}" style="display:inline-block;padding:16px 32px;color:#ffffff;text-decoration:none;font-size:12px;font-weight:700;letter-spacing:0.12em;text-transform:uppercase;font-family:Arial,sans-serif;">${label}</a>
+    <td style="background:#0B1F45;padding:0;">
+      <a href="${url}" style="display:inline-block;padding:16px 32px;color:#ffffff;text-decoration:none;font-size:12px;font-weight:700;letter-spacing:0.12em;text-transform:uppercase;font-family:Montserrat,Arial,sans-serif;">${label}</a>
     </td>
   </tr>
 </table>`;
@@ -148,16 +149,16 @@ function cta(label: string, url: string) {
 function quoteCard(p: EmailParams) {
   const finish = FINISH[p.model] || p.model;
   return `
-<table width="100%" cellpadding="0" cellspacing="0" style="background:#002045;margin:24px 0;">
+<table width="100%" cellpadding="0" cellspacing="0" style="background:#0B1F45;margin:24px 0;">
   <tr><td style="padding:24px 28px;">
-    <p style="margin:0 0 16px;color:rgba(255,255,255,0.45);font-size:10px;letter-spacing:0.2em;text-transform:uppercase;font-family:Arial,sans-serif;">SEU ORÇAMENTO</p>
+    <p style="margin:0 0 16px;color:rgba(255,255,255,0.45);font-size:10px;letter-spacing:0.2em;text-transform:uppercase;font-family:Montserrat,Arial,sans-serif;">SEU ORÇAMENTO</p>
     <table width="100%" cellpadding="0" cellspacing="0">
-      ${p.space ? `<tr><td style="color:rgba(255,255,255,0.55);font-size:12px;padding-bottom:8px;font-family:Arial,sans-serif;">Ambiente</td><td style="color:#ffffff;font-size:12px;font-weight:700;text-align:right;padding-bottom:8px;font-family:Arial,sans-serif;">${p.space}</td></tr>` : ""}
-      <tr><td style="color:rgba(255,255,255,0.55);font-size:12px;padding-bottom:8px;font-family:Arial,sans-serif;">Modelo</td><td style="color:#ffffff;font-size:12px;font-weight:700;text-align:right;padding-bottom:8px;font-family:Arial,sans-serif;">${finish && finish !== p.model ? `${p.model} · ${finish}` : p.model}</td></tr>
-      <tr><td style="color:rgba(255,255,255,0.55);font-size:12px;padding-bottom:8px;font-family:Arial,sans-serif;">Quantidade</td><td style="color:#ffffff;font-size:12px;font-weight:700;text-align:right;padding-bottom:8px;font-family:Arial,sans-serif;">${p.plates} placa${p.plates !== 1 ? "s" : ""}</td></tr>
-      <tr><td style="color:rgba(255,255,255,0.55);font-size:12px;padding-bottom:16px;font-family:Arial,sans-serif;">Área coberta</td><td style="color:#ffffff;font-size:12px;font-weight:700;text-align:right;padding-bottom:16px;font-family:Arial,sans-serif;">${fmtArea(p.area)} m²</td></tr>
+      ${p.space ? `<tr><td style="color:rgba(255,255,255,0.55);font-size:12px;padding-bottom:8px;font-family:Montserrat,Arial,sans-serif;">Ambiente</td><td style="color:#ffffff;font-size:12px;font-weight:700;text-align:right;padding-bottom:8px;font-family:Montserrat,Arial,sans-serif;">${p.space}</td></tr>` : ""}
+      <tr><td style="color:rgba(255,255,255,0.55);font-size:12px;padding-bottom:8px;font-family:Montserrat,Arial,sans-serif;">Modelo</td><td style="color:#ffffff;font-size:12px;font-weight:700;text-align:right;padding-bottom:8px;font-family:Montserrat,Arial,sans-serif;">${finish && finish !== p.model ? `${p.model} · ${finish}` : p.model}</td></tr>
+      <tr><td style="color:rgba(255,255,255,0.55);font-size:12px;padding-bottom:8px;font-family:Montserrat,Arial,sans-serif;">Quantidade</td><td style="color:#ffffff;font-size:12px;font-weight:700;text-align:right;padding-bottom:8px;font-family:Montserrat,Arial,sans-serif;">${p.plates} placa${p.plates !== 1 ? "s" : ""}</td></tr>
+      <tr><td style="color:rgba(255,255,255,0.55);font-size:12px;padding-bottom:16px;font-family:Montserrat,Arial,sans-serif;">Área coberta</td><td style="color:#ffffff;font-size:12px;font-weight:700;text-align:right;padding-bottom:16px;font-family:Montserrat,Arial,sans-serif;">${fmtArea(p.area)} m²</td></tr>
       <tr><td colspan="2" style="border-top:1px solid rgba(255,255,255,0.12);padding-top:16px;"></td></tr>
-      <tr><td style="color:#ffffff;font-size:15px;font-weight:700;font-family:Arial,sans-serif;padding-top:4px;">Total do material</td><td style="color:#ffffff;font-size:22px;font-weight:700;text-align:right;font-family:Arial,sans-serif;padding-top:4px;">${fmtBRL(p.total)}</td></tr>
+      <tr><td style="color:#ffffff;font-size:15px;font-weight:700;font-family:Montserrat,Arial,sans-serif;padding-top:4px;">Total do material</td><td style="color:#ffffff;font-size:22px;font-weight:700;text-align:right;font-family:Montserrat,Arial,sans-serif;padding-top:4px;">${fmtBRL(p.total)}</td></tr>
     </table>
   </td></tr>
 </table>`;
@@ -167,28 +168,27 @@ function wrap(preheader: string, body: string) {
   return `<!DOCTYPE html>
 <html lang="pt-BR">
 <head>
-<meta charset="UTF-8">
+<meta charset="UTF-8">${EMAIL_FONTES_LINK}
 <meta name="viewport" content="width=device-width,initial-scale=1">
 <title>Orbital Revestimentos</title>
 </head>
-<body style="margin:0;padding:0;background:#f0eeeb;">
+<body style="margin:0;padding:0;background:#EFEDE8;">
 <!-- preheader -->
-<div style="display:none;max-height:0;overflow:hidden;mso-hide:all;font-size:1px;color:#f0eeeb;">${preheader}&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;</div>
-<table width="100%" cellpadding="0" cellspacing="0" style="background:#f0eeeb;padding:40px 16px;">
+<div style="display:none;max-height:0;overflow:hidden;mso-hide:all;font-size:1px;color:#EFEDE8;">${preheader}&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;</div>
+<table width="100%" cellpadding="0" cellspacing="0" style="background:#EFEDE8;padding:40px 16px;">
   <tr><td align="center">
     <table width="580" cellpadding="0" cellspacing="0" style="background:#ffffff;max-width:580px;width:100%;">
       <!-- Header -->
-      <tr><td style="background:#002045;padding:28px 36px;">
-        <p style="margin:0;color:#ffffff;font-size:18px;font-weight:700;letter-spacing:0.15em;text-transform:uppercase;font-family:Arial,sans-serif;">ORBITAL</p>
-        <p style="margin:6px 0 0;color:rgba(255,255,255,0.45);font-size:10px;letter-spacing:0.2em;text-transform:uppercase;font-family:Arial,sans-serif;">Revestimentos · Manaus</p>
+      <tr><td style="background:#0B1F45;padding:28px 36px;">
+        ${emailLogo(160)}
       </td></tr>
       <!-- Body -->
       <tr><td style="padding:40px 36px;">${body}</td></tr>
       <!-- Footer -->
-      <tr><td style="background:#f5f5f3;padding:24px 36px;border-top:1px solid #e2e2e2;">
-        <p style="margin:0;color:#74777f;font-size:11px;line-height:1.7;font-family:Arial,sans-serif;">
+      <tr><td style="background:#F6F5F2;padding:24px 36px;border-top:1px solid #e2e2e2;">
+        <p style="margin:0;color:#74777f;font-size:11px;line-height:1.7;font-family:Montserrat,Arial,sans-serif;">
           Orbital Revestimentos · Manaus, Amazonas<br>
-          Dúvidas? <a href="https://wa.me/${WA_PHONE}" style="color:#002045;text-decoration:underline;">WhatsApp (92) 98815-0149</a><br>
+          Dúvidas? <a href="https://wa.me/${WA_PHONE}" style="color:#0B1F45;text-decoration:underline;">WhatsApp (92) 98815-0149</a><br>
           <span style="color:#b0b0b0;">Você recebe esta mensagem porque solicitou um orçamento Orbital.</span>
         </p>
       </td></tr>
@@ -239,9 +239,9 @@ function quoteLinkBlock(p: EmailParams): string {
   return `
 <table cellpadding="0" cellspacing="0" width="100%" style="margin:22px 0;border:1px solid #e2e2e2;">
   <tr><td style="padding:18px 22px;">
-    <p style="margin:0 0 6px;font-size:10px;letter-spacing:0.18em;text-transform:uppercase;color:#74777f;font-family:Arial,sans-serif;">Orçamento completo</p>
-    <p style="margin:0 0 12px;font-size:13px;color:#43474e;font-family:Arial,sans-serif;line-height:1.6;">Fotos, especificações e o detalhamento do projeto.</p>
-    <a href="${p.quoteUrl}" style="display:inline-block;background:#002045;color:#ffffff;text-decoration:none;padding:13px 26px;font-size:11px;font-weight:700;letter-spacing:0.12em;text-transform:uppercase;font-family:Arial,sans-serif;">Abrir orçamento</a>
+    <p style="margin:0 0 6px;font-size:10px;letter-spacing:0.18em;text-transform:uppercase;color:#74777f;font-family:Montserrat,Arial,sans-serif;">Orçamento completo</p>
+    <p style="margin:0 0 12px;font-size:13px;color:#43474e;font-family:Montserrat,Arial,sans-serif;line-height:1.6;">Fotos, especificações e o detalhamento do projeto.</p>
+    <a href="${p.quoteUrl}" style="display:inline-block;background:#0B1F45;color:#ffffff;text-decoration:none;padding:13px 26px;font-size:11px;font-weight:700;letter-spacing:0.12em;text-transform:uppercase;font-family:Montserrat,Arial,sans-serif;">Abrir orçamento</a>
   </td></tr>
 </table>`;
 }
@@ -288,31 +288,31 @@ export function generateClientEmail(
       html: wrap(
         `Você fez a escolha certa. Agora é só aproveitar o resultado.`,
         `
-<p style="font-size:26px;color:#002045;font-weight:700;margin:0 0 6px;font-family:Arial,sans-serif;">${first},</p>
-<p style="font-size:24px;color:#002045;font-weight:300;margin:0 0 24px;font-family:Arial,sans-serif;">você fez a escolha certa.</p>
-<p style="color:#43474e;font-size:14px;line-height:1.8;margin:0 0 20px;font-family:Arial,sans-serif;">
+<p style="font-size:26px;color:#0B1F45;font-weight:300;margin:0 0 6px;font-family:Noto Serif Display,Georgia,serif;">${first},</p>
+<p style="font-size:24px;color:#0B1F45;font-weight:300;margin:0 0 24px;font-family:Noto Serif Display,Georgia,serif;">você fez a escolha certa.</p>
+<p style="color:#43474e;font-size:14px;line-height:1.8;margin:0 0 20px;font-family:Montserrat,Arial,sans-serif;">
   ${fmtArea(p.area)} m² de <strong>${p.model} · ${finish}</strong> para ${spacePara}. Esse ambiente vai ter uma vida completamente diferente do que você está acostumado.
 </p>
-<table width="100%" cellpadding="0" cellspacing="0" style="background:#f0f9eb;border-left:3px solid #3b6934;margin:24px 0;">
+<table width="100%" cellpadding="0" cellspacing="0" style="background:#f0f9eb;border-left:3px solid #36A35C;margin:24px 0;">
   <tr><td style="padding:24px 28px;">
-    <p style="margin:0 0 16px;color:#3b6934;font-size:11px;font-weight:700;text-transform:uppercase;letter-spacing:0.1em;font-family:Arial,sans-serif;">O que acontece agora:</p>
+    <p style="margin:0 0 16px;color:#36A35C;font-size:11px;font-weight:700;text-transform:uppercase;letter-spacing:0.1em;font-family:Montserrat,Arial,sans-serif;">O que acontece agora:</p>
     ${[
       partnerFirst + " vai confirmar todos os detalhes do pedido com você",
       "Verificação de estoque e prazo de retirada",
       "Agendamento da retirada no depósito da Orbital em Manaus",
       "Precisando de instalador? A Orbital pode indicar profissionais habilitados",
-    ].map((item, i) => `<p style="margin:0 0 10px;color:#43474e;font-size:13px;line-height:1.6;font-family:Arial,sans-serif;"><strong style="color:#002045;">${i + 1}.</strong> ${item}</p>`).join("")}
+    ].map((item, i) => `<p style="margin:0 0 10px;color:#43474e;font-size:13px;line-height:1.6;font-family:Montserrat,Arial,sans-serif;"><strong style="color:#0B1F45;">${i + 1}.</strong> ${item}</p>`).join("")}
   </td></tr>
 </table>
-<table width="100%" cellpadding="0" cellspacing="0" style="background:#f5f5f3;margin:24px 0;">
+<table width="100%" cellpadding="0" cellspacing="0" style="background:#F6F5F2;margin:24px 0;">
   <tr><td style="padding:20px 24px;">
-    <p style="margin:0 0 12px;color:#002045;font-size:12px;font-weight:700;font-family:Arial,sans-serif;">Para os seus painéis durarem décadas:</p>
-    ${["Pano úmido com detergente neutro — isso é tudo o que precisa", "Sem produtos abrasivos, sem esponjas de aço, sem ácidos", "Sem manutenção especial, sem retoque, sem rejuntamento periódico"].map(i => `<p style="margin:0 0 6px;color:#74777f;font-size:13px;font-family:Arial,sans-serif;">· ${i}</p>`).join("")}
+    <p style="margin:0 0 12px;color:#0B1F45;font-size:12px;font-weight:700;font-family:Montserrat,Arial,sans-serif;">Para os seus painéis durarem décadas:</p>
+    ${["Pano úmido com detergente neutro — isso é tudo o que precisa", "Sem produtos abrasivos, sem esponjas de aço, sem ácidos", "Sem manutenção especial, sem retoque, sem rejuntamento periódico"].map(i => `<p style="margin:0 0 6px;color:#74777f;font-size:13px;font-family:Montserrat,Arial,sans-serif;">· ${i}</p>`).join("")}
   </td></tr>
 </table>
-<p style="color:#43474e;font-size:14px;line-height:1.8;margin:0 0 4px;font-family:Arial,sans-serif;">Dúvidas durante o processo — fala com ${partnerFirst}:</p>
+<p style="color:#43474e;font-size:14px;line-height:1.8;margin:0 0 4px;font-family:Montserrat,Arial,sans-serif;">Dúvidas durante o processo — fala com ${partnerFirst}:</p>
 ${cta(`Falar com ${partnerFirst}`, wa)}
-<p style="color:#74777f;font-size:13px;line-height:1.7;font-family:Arial,sans-serif;font-style:italic;">Obrigado pela confiança, ${first}. Cada projeto é um que acreditamos.</p>
+<p style="color:#74777f;font-size:13px;line-height:1.7;font-family:Montserrat,Arial,sans-serif;font-style:italic;">Obrigado pela confiança, ${first}. Cada projeto é um que acreditamos.</p>
 `
       ),
     };
@@ -325,24 +325,24 @@ ${cta(`Falar com ${partnerFirst}`, wa)}
       html: wrap(
         `Sem pressão, sem julgamento. Quando o momento chegar, a gente retoma de onde paramos.`,
         `
-<p style="font-size:20px;color:#002045;font-weight:700;margin:0 0 24px;font-family:Arial,sans-serif;">Entendemos, ${first}.</p>
-<p style="color:#43474e;font-size:14px;line-height:1.8;margin:0 0 20px;font-family:Arial,sans-serif;">
+<p style="font-size:20px;color:#0B1F45;font-weight:300;margin:0 0 24px;font-family:Noto Serif Display,Georgia,serif;">Entendemos, ${first}.</p>
+<p style="color:#43474e;font-size:14px;line-height:1.8;margin:0 0 20px;font-family:Montserrat,Arial,sans-serif;">
   O momento certo para um projeto nem sempre é agora — e isso é completamente válido. Não vamos te mandar mais mensagens sobre este orçamento.
 </p>
-<table width="100%" cellpadding="0" cellspacing="0" style="background:#002045;margin:24px 0;">
+<table width="100%" cellpadding="0" cellspacing="0" style="background:#0B1F45;margin:24px 0;">
   <tr><td style="padding:28px;">
-    <p style="margin:0 0 16px;color:rgba(255,255,255,0.5);font-size:10px;letter-spacing:0.2em;text-transform:uppercase;font-family:Arial,sans-serif;">Seu orçamento fica guardado:</p>
-    <p style="margin:0 0 8px;color:rgba(255,255,255,0.8);font-size:13px;font-family:Arial,sans-serif;">· ${p.model} · ${finish}</p>
-    <p style="margin:0 0 8px;color:rgba(255,255,255,0.8);font-size:13px;font-family:Arial,sans-serif;">· ${p.plates} painel${p.plates !== 1 ? "is" : ""} · ${fmtArea(p.area)} m² para ${spacePara}</p>
-    <p style="margin:0 0 20px;color:rgba(255,255,255,0.8);font-size:13px;font-family:Arial,sans-serif;">· Referência: ${fmtBRL(p.total)}</p>
-    <p style="margin:0;color:rgba(255,255,255,0.55);font-size:12px;font-family:Arial,sans-serif;line-height:1.6;">
+    <p style="margin:0 0 16px;color:rgba(255,255,255,0.5);font-size:10px;letter-spacing:0.2em;text-transform:uppercase;font-family:Montserrat,Arial,sans-serif;">Seu orçamento fica guardado:</p>
+    <p style="margin:0 0 8px;color:rgba(255,255,255,0.8);font-size:13px;font-family:Montserrat,Arial,sans-serif;">· ${p.model} · ${finish}</p>
+    <p style="margin:0 0 8px;color:rgba(255,255,255,0.8);font-size:13px;font-family:Montserrat,Arial,sans-serif;">· ${p.plates} painel${p.plates !== 1 ? "is" : ""} · ${fmtArea(p.area)} m² para ${spacePara}</p>
+    <p style="margin:0 0 20px;color:rgba(255,255,255,0.8);font-size:13px;font-family:Montserrat,Arial,sans-serif;">· Referência: ${fmtBRL(p.total)}</p>
+    <p style="margin:0;color:rgba(255,255,255,0.55);font-size:12px;font-family:Montserrat,Arial,sans-serif;line-height:1.6;">
       Quando o momento chegar — em semanas ou em meses — ${partnerFirst} retoma tudo exatamente de onde paramos. Sem recalcular, sem começar do zero.
     </p>
   </td></tr>
 </table>
-<p style="color:#43474e;font-size:14px;line-height:1.8;margin:0 0 4px;font-family:Arial,sans-serif;">Quando estiver pronto, é só falar:</p>
+<p style="color:#43474e;font-size:14px;line-height:1.8;margin:0 0 4px;font-family:Montserrat,Arial,sans-serif;">Quando estiver pronto, é só falar:</p>
 ${cta(`Falar com ${partnerFirst}`, wa)}
-<p style="color:#74777f;font-size:12px;line-height:1.7;font-family:Arial,sans-serif;">Esta é a última mensagem sobre este orçamento. Obrigado pela atenção, ${first}.</p>
+<p style="color:#74777f;font-size:12px;line-height:1.7;font-family:Montserrat,Arial,sans-serif;">Esta é a última mensagem sobre este orçamento. Obrigado pela atenção, ${first}.</p>
 `
       ),
     };

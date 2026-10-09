@@ -31,7 +31,7 @@ type Bucket = "overdue" | "today" | "upcoming";
 const BUCKET_META: Record<Bucket, { label: string; cls: string; accent: string }> = {
   overdue: { label: "Atrasados", cls: "text-red-700", accent: "border-l-red-500" },
   today: { label: "Hoje", cls: "text-amber-700", accent: "border-l-amber-500" },
-  upcoming: { label: "Próximos", cls: "text-[#002045]", accent: "border-l-[#002045]" },
+  upcoming: { label: "Próximos", cls: "text-[#0B1F45]", accent: "border-l-[#0B1F45]" },
 };
 
 function bucketOf(iso: string): Bucket {
@@ -136,21 +136,21 @@ export default function RemindersTab() {
       {/* Header */}
       <div className="flex flex-wrap items-center justify-between gap-3 mb-6">
         <div className="flex items-center gap-3">
-          <h2 className="font-[var(--font-noto-serif)] text-[#002045] text-xl font-normal">Lembretes</h2>
+          <h2 className="font-serif text-[#0B1F45] text-xl font-normal">Lembretes</h2>
           {!loading && (
-            <span className="bg-[#eef2f8] text-[#002045] text-[10px] font-bold font-[var(--font-inter)] tracking-wider px-2 py-0.5">
+            <span className="bg-[#eef2f8] text-[#0B1F45] text-[10px] font-bold tracking-wider px-2 py-0.5">
               {actionable} a fazer
             </span>
           )}
         </div>
         <div className="flex items-center gap-3">
-          <label className="flex items-center gap-2 text-[11px] text-[#74777f] font-[var(--font-inter)] cursor-pointer">
+          <label className="flex items-center gap-2 text-[11px] text-[#74777f] cursor-pointer">
             <input type="checkbox" checked={hideUpcoming} onChange={(e) => setHideUpcoming(e.target.checked)} />
             Só pendentes
           </label>
           <button
             onClick={fetchReminders}
-            className="border border-[#e2e2e2] text-[#43474e] text-[10px] tracking-[0.1em] uppercase font-bold font-[var(--font-inter)] px-4 py-2.5 hover:border-[#002045] hover:text-[#002045] transition-colors"
+            className="border border-[#e2e2e2] text-[#43474e] text-[10px] tracking-[0.1em] uppercase font-bold px-4 py-2.5 hover:border-[#0B1F45] hover:text-[#0B1F45] transition-colors"
           >
             Atualizar
           </button>
@@ -158,16 +158,16 @@ export default function RemindersTab() {
       </div>
 
       {loading ? (
-        <p className="text-[#74777f] text-sm font-[var(--font-inter)]">Carregando…</p>
+        <p className="text-[#74777f] text-sm">Carregando…</p>
       ) : error ? (
         <div className="bg-red-50 border border-red-200 px-6 py-8 text-center">
-          <p className="text-red-800 text-sm font-semibold font-[var(--font-inter)]">Não foi possível carregar os lembretes</p>
-          <p className="text-red-700 text-xs font-[var(--font-inter)] mt-1 break-words">{error}</p>
-          <button onClick={fetchReminders} className="mt-4 inline-block border border-red-300 text-red-800 px-4 py-2 text-[10px] tracking-[0.12em] uppercase font-bold font-[var(--font-inter)] hover:bg-red-100">Tentar novamente</button>
+          <p className="text-red-800 text-sm font-semibold">Não foi possível carregar os lembretes</p>
+          <p className="text-red-700 text-xs mt-1 break-words">{error}</p>
+          <button onClick={fetchReminders} className="mt-4 inline-block border border-red-300 text-red-800 px-4 py-2 text-[10px] tracking-[0.12em] uppercase font-bold hover:bg-red-100">Tentar novamente</button>
         </div>
       ) : total === 0 ? (
         <div className="bg-white border border-[#e2e2e2] px-6 py-12 text-center">
-          <p className="text-[#74777f] text-sm font-[var(--font-inter)]">Nenhum lembrete agendado. Defina lembretes nos leads do CRM para acompanhá-los aqui.</p>
+          <p className="text-[#74777f] text-sm">Nenhum lembrete agendado. Defina lembretes nos leads do CRM para acompanhá-los aqui.</p>
         </div>
       ) : (
         <div className="space-y-8">
@@ -178,7 +178,7 @@ export default function RemindersTab() {
             return (
               <section key={b}>
                 <div className="flex items-center gap-2 mb-3">
-                  <h3 className={`text-[11px] tracking-[0.12em] uppercase font-bold font-[var(--font-inter)] ${meta.cls}`}>{meta.label}</h3>
+                  <h3 className={`text-[11px] tracking-[0.12em] uppercase font-bold ${meta.cls}`}>{meta.label}</h3>
                   <span className="text-[10px] text-[#b0b0b0] font-bold">{list.length}</span>
                 </div>
                 <div className="space-y-2">
@@ -187,8 +187,8 @@ export default function RemindersTab() {
                       <div className="flex flex-wrap items-start justify-between gap-3">
                         <div className="min-w-0">
                           <div className="flex items-center gap-2 flex-wrap">
-                            <p className="font-semibold text-[#002045] text-sm">{l.name}</p>
-                            <span className="text-[9px] font-bold px-1.5 py-0.5 bg-[#eef2f8] text-[#002045]">{STATUS_LABEL[l.status]}</span>
+                            <p className="font-semibold text-[#0B1F45] text-sm">{l.name}</p>
+                            <span className="text-[9px] font-bold px-1.5 py-0.5 bg-[#eef2f8] text-[#0B1F45]">{STATUS_LABEL[l.status]}</span>
                             {l.reminder_recur && l.reminder_recur !== "none" && (
                               <span className="text-[9px] font-bold px-1.5 py-0.5 bg-purple-100 text-purple-800">↻ {RECUR_META[l.reminder_recur as ReminderRecur]}</span>
                             )}
@@ -220,7 +220,7 @@ export default function RemindersTab() {
                           <button
                             onClick={() => complete(l.id)}
                             title="Concluir lembrete"
-                            className="text-[10px] text-[#002045] font-bold border border-[#e2e2e2] px-2 py-1 hover:border-[#002045]"
+                            className="text-[10px] text-[#0B1F45] font-bold border border-[#e2e2e2] px-2 py-1 hover:border-[#0B1F45]"
                           >
                             ✓ Concluir
                           </button>
@@ -251,7 +251,7 @@ function SnoozeMenu({ onSnooze }: { onSnooze: (days: number) => void }) {
       <button
         onClick={() => setOpen((o) => !o)}
         onBlur={() => setTimeout(() => setOpen(false), 150)}
-        className="text-[10px] text-[#74777f] font-bold border border-[#e2e2e2] px-2 py-1 hover:border-[#002045] hover:text-[#002045]"
+        className="text-[10px] text-[#74777f] font-bold border border-[#e2e2e2] px-2 py-1 hover:border-[#0B1F45] hover:text-[#0B1F45]"
       >
         Adiar ▾
       </button>

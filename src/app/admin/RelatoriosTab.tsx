@@ -102,7 +102,7 @@ export default function RelatoriosTab() {
               <button
                 key={p.key}
                 onClick={() => setPeriod(p.key)}
-                className={`text-[10px] tracking-[0.1em] uppercase font-bold font-[var(--font-inter)] px-4 py-2 border transition-colors ${period === p.key ? "bg-[#002045] text-white border-[#002045]" : "text-[#74777f] border-[#e2e2e2] hover:border-[#002045] hover:text-[#002045]"}`}
+                className={`text-[10px] tracking-[0.1em] uppercase font-bold px-4 py-2 border transition-colors ${period === p.key ? "bg-[#0B1F45] text-white border-[#0B1F45]" : "text-[#74777f] border-[#e2e2e2] hover:border-[#0B1F45] hover:text-[#0B1F45]"}`}
               >
                 {p.label}
               </button>
@@ -133,9 +133,9 @@ export default function RelatoriosTab() {
                 const h = Math.round((m.revenue / maxMonthRev) * 100);
                 return (
                   <div key={m.month} className="flex-1 flex flex-col items-center justify-end h-full min-w-0" title={`${monthLabel(m.month)} · ${fmtBRL(m.revenue)} receita · ${fmtBRL(m.profit)} lucro · ${m.orders} pedido(s)`}>
-                    <span className="text-[9px] text-[#74777f] font-[var(--font-inter)] mb-1 whitespace-nowrap">{m.revenue > 0 ? fmtBRL(m.revenue) : ""}</span>
+                    <span className="text-[9px] text-[#74777f] mb-1 whitespace-nowrap">{m.revenue > 0 ? fmtBRL(m.revenue) : ""}</span>
                     <div className="w-full bg-[#eef2f8] relative" style={{ height: `${Math.max(h, m.revenue > 0 ? 4 : 0)}%` }}>
-                      <div className="absolute inset-x-0 bottom-0 bg-[#002045]" style={{ height: `${m.revenue > 0 ? Math.max(0, Math.round((m.profit / m.revenue) * 100)) : 0}%` }} />
+                      <div className="absolute inset-x-0 bottom-0 bg-[#0B1F45]" style={{ height: `${m.revenue > 0 ? Math.max(0, Math.round((m.profit / m.revenue) * 100)) : 0}%` }} />
                     </div>
                   </div>
                 );
@@ -143,10 +143,10 @@ export default function RelatoriosTab() {
             </div>
             <div className="flex gap-2">
               {data.by_month.map((m) => (
-                <span key={m.month} className="flex-1 text-center text-[9px] text-[#74777f] font-[var(--font-inter)] whitespace-nowrap min-w-0 overflow-hidden">{monthLabel(m.month)}</span>
+                <span key={m.month} className="flex-1 text-center text-[9px] text-[#74777f] whitespace-nowrap min-w-0 overflow-hidden">{monthLabel(m.month)}</span>
               ))}
             </div>
-            <p className="text-[11px] text-[#74777f] font-[var(--font-inter)] mt-3">Barra clara = receita · faixa escura = proporção de lucro. Passe o mouse para ver os valores.</p>
+            <p className="text-[11px] text-[#74777f] mt-3">Barra clara = receita · faixa escura = proporção de lucro. Passe o mouse para ver os valores.</p>
           </Card>
 
           {/* Rentabilidade por produto */}
@@ -156,15 +156,15 @@ export default function RelatoriosTab() {
               {data.by_product.map((p, i) => (
                 <div key={p.product_id ?? `n${i}`} className="p-4">
                   <div className="flex items-start justify-between gap-2">
-                    <p className="text-sm font-semibold text-[#002045] min-w-0">
+                    <p className="text-sm font-semibold text-[#0B1F45] min-w-0">
                       <span className="text-[10px] text-[#b0b0b0] font-bold mr-2">{i + 1}</span>{p.name}
                     </p>
                     <StatusBadge tone={marginTone(p.margin)}>{p.margin}%</StatusBadge>
                   </div>
                   <div className="grid grid-cols-3 gap-2 mt-3">
-                    <div><p className="text-[9px] uppercase tracking-wider font-bold text-[#74777f]">Receita</p><p className="text-xs text-[#002045]">{fmtBRL(p.revenue)}</p></div>
+                    <div><p className="text-[9px] uppercase tracking-wider font-bold text-[#74777f]">Receita</p><p className="text-xs text-[#0B1F45]">{fmtBRL(p.revenue)}</p></div>
                     <div><p className="text-[9px] uppercase tracking-wider font-bold text-[#74777f]">Custo</p><p className="text-xs text-[#74777f]">{fmtBRL(p.cost)}</p></div>
-                    <div><p className="text-[9px] uppercase tracking-wider font-bold text-[#74777f]">Lucro</p><p className={`text-xs font-bold ${p.profit < 0 ? "text-red-600" : "text-[#002045]"}`}>{fmtBRL(p.profit)}</p></div>
+                    <div><p className="text-[9px] uppercase tracking-wider font-bold text-[#74777f]">Lucro</p><p className={`text-xs font-bold ${p.profit < 0 ? "text-red-600" : "text-[#0B1F45]"}`}>{fmtBRL(p.profit)}</p></div>
                   </div>
                   <p className="text-[10px] text-[#74777f] mt-2">{p.units} unid. · {p.orders} pedido{p.orders !== 1 ? "s" : ""}</p>
                 </div>
@@ -172,7 +172,7 @@ export default function RelatoriosTab() {
             </div>
             {/* Desktop: table */}
             <div className="hidden md:block overflow-x-auto">
-              <table className="w-full text-sm font-[var(--font-inter)]">
+              <table className="w-full text-sm">
                 <thead>
                   <tr>
                     {["Produto", "Unid.", "Pedidos", "Receita", "Custo", "Lucro", "Margem"].map((h) => (
@@ -182,41 +182,41 @@ export default function RelatoriosTab() {
                 </thead>
                 <tbody>
                   {data.by_product.map((p, i) => (
-                    <tr key={p.product_id ?? `n${i}`} className="border-b border-[#f0f0f0] hover:bg-[#fafafa]">
+                    <tr key={p.product_id ?? `n${i}`} className="border-b border-[#f0f0f0] hover:bg-[#F6F5F2]">
                       <td className="px-4 py-2.5">
                         <span className="text-[10px] text-[#b0b0b0] font-bold mr-2">{i + 1}</span>
-                        <span className="text-xs font-semibold text-[#002045]">{p.name}</span>
+                        <span className="text-xs font-semibold text-[#0B1F45]">{p.name}</span>
                       </td>
                       <td className="px-3 py-2.5 text-right text-xs text-[#43474e] whitespace-nowrap">{p.units}</td>
                       <td className="px-3 py-2.5 text-right text-xs text-[#43474e] whitespace-nowrap">{p.orders}</td>
-                      <td className="px-3 py-2.5 text-right text-xs text-[#002045] whitespace-nowrap">{fmtBRL(p.revenue)}</td>
+                      <td className="px-3 py-2.5 text-right text-xs text-[#0B1F45] whitespace-nowrap">{fmtBRL(p.revenue)}</td>
                       <td className="px-3 py-2.5 text-right text-xs text-[#74777f] whitespace-nowrap">{fmtBRL(p.cost)}</td>
-                      <td className={`px-3 py-2.5 text-right text-xs font-bold whitespace-nowrap ${p.profit < 0 ? "text-red-600" : "text-[#002045]"}`}>{fmtBRL(p.profit)}</td>
+                      <td className={`px-3 py-2.5 text-right text-xs font-bold whitespace-nowrap ${p.profit < 0 ? "text-red-600" : "text-[#0B1F45]"}`}>{fmtBRL(p.profit)}</td>
                       <td className="px-3 py-2.5 text-right whitespace-nowrap"><StatusBadge tone={marginTone(p.margin)}>{p.margin}%</StatusBadge></td>
                     </tr>
                   ))}
                 </tbody>
               </table>
             </div>
-            <p className="px-4 py-3 text-[11px] text-[#74777f] font-[var(--font-inter)] border-t border-[#f0f0f0]">Receita e custo por item de pedido entregue (antes de descontos e frete no nível do pedido).</p>
+            <p className="px-4 py-3 text-[11px] text-[#74777f] border-t border-[#f0f0f0]">Receita e custo por item de pedido entregue (antes de descontos e frete no nível do pedido).</p>
           </Card>
 
           {/* Parceiro + Representante lado a lado */}
           <div className="grid lg:grid-cols-2 gap-6">
             <Card title="Vendas por parceiro" padded={false}>
               {data.by_partner.length === 0 ? (
-                <p className="px-5 py-6 text-xs text-[#74777f] font-[var(--font-inter)]">Sem vendas atribuídas a parceiros no período.</p>
+                <p className="px-5 py-6 text-xs text-[#74777f]">Sem vendas atribuídas a parceiros no período.</p>
               ) : (
-                <table className="w-full text-sm font-[var(--font-inter)]">
+                <table className="w-full text-sm">
                   <thead>
                     <tr>{["Parceiro", "Pedidos", "Receita", "Margem"].map((h) => (<th key={h} className={`${thCls} ${h !== "Parceiro" ? "text-right" : ""}`}>{h}</th>))}</tr>
                   </thead>
                   <tbody>
                     {data.by_partner.map((r, i) => (
-                      <tr key={`${r.name}${i}`} className="border-b border-[#f0f0f0] hover:bg-[#fafafa]">
-                        <td className="px-4 py-2.5 text-xs font-semibold text-[#002045]">{r.name}</td>
+                      <tr key={`${r.name}${i}`} className="border-b border-[#f0f0f0] hover:bg-[#F6F5F2]">
+                        <td className="px-4 py-2.5 text-xs font-semibold text-[#0B1F45]">{r.name}</td>
                         <td className="px-3 py-2.5 text-right text-xs text-[#43474e]">{r.orders}</td>
-                        <td className="px-3 py-2.5 text-right text-xs text-[#002045] whitespace-nowrap">{fmtBRL(r.revenue)}</td>
+                        <td className="px-3 py-2.5 text-right text-xs text-[#0B1F45] whitespace-nowrap">{fmtBRL(r.revenue)}</td>
                         <td className="px-3 py-2.5 text-right whitespace-nowrap"><StatusBadge tone={marginTone(r.margin)}>{r.margin}%</StatusBadge></td>
                       </tr>
                     ))}
@@ -226,18 +226,18 @@ export default function RelatoriosTab() {
             </Card>
             <Card title="Vendas por representante" padded={false}>
               {data.by_rep.length === 0 ? (
-                <p className="px-5 py-6 text-xs text-[#74777f] font-[var(--font-inter)]">Sem vendas atribuídas a representantes no período.</p>
+                <p className="px-5 py-6 text-xs text-[#74777f]">Sem vendas atribuídas a representantes no período.</p>
               ) : (
-                <table className="w-full text-sm font-[var(--font-inter)]">
+                <table className="w-full text-sm">
                   <thead>
                     <tr>{["Representante", "Pedidos", "Receita", "Margem"].map((h) => (<th key={h} className={`${thCls} ${h !== "Representante" ? "text-right" : ""}`}>{h}</th>))}</tr>
                   </thead>
                   <tbody>
                     {data.by_rep.map((r, i) => (
-                      <tr key={`${r.name}${i}`} className="border-b border-[#f0f0f0] hover:bg-[#fafafa]">
-                        <td className="px-4 py-2.5 text-xs font-semibold text-[#002045]">{r.name}</td>
+                      <tr key={`${r.name}${i}`} className="border-b border-[#f0f0f0] hover:bg-[#F6F5F2]">
+                        <td className="px-4 py-2.5 text-xs font-semibold text-[#0B1F45]">{r.name}</td>
                         <td className="px-3 py-2.5 text-right text-xs text-[#43474e]">{r.orders}</td>
-                        <td className="px-3 py-2.5 text-right text-xs text-[#002045] whitespace-nowrap">{fmtBRL(r.revenue)}</td>
+                        <td className="px-3 py-2.5 text-right text-xs text-[#0B1F45] whitespace-nowrap">{fmtBRL(r.revenue)}</td>
                         <td className="px-3 py-2.5 text-right whitespace-nowrap"><StatusBadge tone={marginTone(r.margin)}>{r.margin}%</StatusBadge></td>
                       </tr>
                     ))}
@@ -250,7 +250,7 @@ export default function RelatoriosTab() {
           {/* Giro de estoque */}
           <Card title={`Giro de estoque — consumo dos últimos ${data.range.velocity_days} dias`} padded={false}>
             {data.velocity.length === 0 ? (
-              <p className="px-5 py-6 text-xs text-[#74777f] font-[var(--font-inter)]">Sem dados de estoque para calcular o giro.</p>
+              <p className="px-5 py-6 text-xs text-[#74777f]">Sem dados de estoque para calcular o giro.</p>
             ) : (
               <>
               {/* Mobile: card per product */}
@@ -263,7 +263,7 @@ export default function RelatoriosTab() {
                     <div key={v.product_id} className="p-4">
                       <div className="flex items-start justify-between gap-2">
                         <div className="min-w-0">
-                          <p className="text-sm font-semibold text-[#002045] truncate">{v.name}</p>
+                          <p className="text-sm font-semibold text-[#0B1F45] truncate">{v.name}</p>
                           {v.code && <p className="text-[10px] text-[#74777f]">{v.code}</p>}
                         </div>
                         <StatusBadge tone={tone}>{label}</StatusBadge>
@@ -279,7 +279,7 @@ export default function RelatoriosTab() {
               </div>
               {/* Desktop: table */}
               <div className="hidden md:block overflow-x-auto">
-                <table className="w-full text-sm font-[var(--font-inter)]">
+                <table className="w-full text-sm">
                   <thead>
                     <tr>
                       {["Produto", "Em estoque", "Consumo/dia", "Saiu no período", "Acaba em"].map((h) => (
@@ -293,9 +293,9 @@ export default function RelatoriosTab() {
                       const tone = d == null ? "gray" : d <= 14 ? "red" : d <= 45 ? "yellow" : "green";
                       const label = d == null ? "sem giro" : d <= 0 ? "esgotado" : `${d} dias`;
                       return (
-                        <tr key={v.product_id} className="border-b border-[#f0f0f0] hover:bg-[#fafafa]">
+                        <tr key={v.product_id} className="border-b border-[#f0f0f0] hover:bg-[#F6F5F2]">
                           <td className="px-4 py-2.5">
-                            <p className="text-xs font-semibold text-[#002045]">{v.name}</p>
+                            <p className="text-xs font-semibold text-[#0B1F45]">{v.name}</p>
                             {v.code && <p className="text-[10px] text-[#74777f]">{v.code}</p>}
                           </td>
                           <td className="px-3 py-2.5 text-right text-xs text-[#43474e] whitespace-nowrap">{v.on_hand} {v.unit}</td>
@@ -310,7 +310,7 @@ export default function RelatoriosTab() {
               </div>
               </>
             )}
-            <p className="px-4 py-3 text-[11px] text-[#74777f] font-[var(--font-inter)] border-t border-[#f0f0f0]">Consumo/dia = saídas (vendas + baixas) ÷ {data.range.velocity_days} dias. &quot;Acaba em&quot; projeta o estoque atual nesse ritmo. Produtos parados aparecem como &quot;sem giro&quot;.</p>
+            <p className="px-4 py-3 text-[11px] text-[#74777f] border-t border-[#f0f0f0]">Consumo/dia = saídas (vendas + baixas) ÷ {data.range.velocity_days} dias. &quot;Acaba em&quot; projeta o estoque atual nesse ritmo. Produtos parados aparecem como &quot;sem giro&quot;.</p>
           </Card>
         </div>
       )}

@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from "next/server";
 import { isAdminRequest, hashPassword } from "@/lib/admin-auth";
 import { supabaseAdmin } from "@/lib/supabase";
 import { isMissingTable } from "@/lib/db-compat";
+import { emailTopo } from "@/lib/email-marca";
 
 export async function GET(req: NextRequest) {
   if (!isAdminRequest(req)) return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
@@ -127,14 +128,14 @@ export async function POST(req: NextRequest) {
           to: email as string,
           subject: `Orbital — crie sua senha de acesso`,
           html: `
-            <div style="font-family:sans-serif;max-width:520px;margin:0 auto;padding:32px 24px;color:#1a1a1a">
-              <h2 style="font-size:22px;margin-bottom:8px">Olá, ${name}!</h2>
+            ${emailTopo(520)}<div style="font-family:Montserrat,Arial,sans-serif;max-width:520px;margin:0 auto;padding:32px 24px;color:#0D1830">
+              <h2 style="font-size:22px;margin-bottom:8px;font-family:Noto Serif Display,Georgia,serif;font-weight:300">Olá, ${name}!</h2>
               <p style="color:#555;margin-bottom:24px">Sua conta como parceiro da <strong>Orbital Revestimentos</strong> foi criada. Clique no botão abaixo para criar sua senha de acesso.</p>
-              <div style="background:#f5f5f3;border:1px solid #e2e2e2;padding:20px 24px;margin-bottom:24px">
+              <div style="background:#F6F5F2;border:1px solid #e2e2e2;padding:20px 24px;margin-bottom:24px">
                 <p style="margin:0 0 4px 0;font-size:11px;text-transform:uppercase;letter-spacing:0.12em;color:#74777f">Seu código de cupom</p>
-                <p style="margin:0;font-size:26px;font-weight:bold;letter-spacing:0.15em;color:#002045">${(coupon_code as string).toUpperCase()}</p>
+                <p style="margin:0;font-size:26px;font-weight:bold;letter-spacing:0.15em;color:#0B1F45">${(coupon_code as string).toUpperCase()}</p>
               </div>
-              <a href="${resetUrl}" style="display:inline-block;background:#002045;color:#fff;text-decoration:none;padding:14px 28px;font-size:14px;font-weight:600;letter-spacing:0.05em;margin-bottom:20px">
+              <a href="${resetUrl}" style="display:inline-block;background:#0B1F45;color:#fff;text-decoration:none;padding:14px 28px;font-size:14px;font-weight:600;letter-spacing:0.05em;margin-bottom:20px">
                 Criar minha senha →
               </a>
               <p style="color:#888;font-size:12px">Este link expira em 48 horas.</p>

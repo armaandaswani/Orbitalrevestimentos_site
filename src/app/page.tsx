@@ -184,31 +184,31 @@ export default function Home() {
             className="object-cover object-center"
             priority
           />
-          <div className="absolute inset-0 bg-gradient-to-t from-[#001530]/90 via-[#001530]/60 to-[#001530]/20 lg:bg-gradient-to-r lg:from-[#001530]/85 lg:via-[#001530]/50 lg:to-transparent" />
+          <div className="absolute inset-0 bg-gradient-to-t from-[#0B1F45]/90 via-[#0B1F45]/60 to-[#0B1F45]/20 lg:bg-gradient-to-r lg:from-[#0B1F45]/85 lg:via-[#0B1F45]/50 lg:to-transparent" />
         </div>
         <div className="relative z-10 w-full max-w-[1280px] mx-auto px-4 lg:px-16 py-16 lg:pb-28 lg:pt-0">
-          <p className="text-[#86a0cd] text-xs tracking-[0.2em] uppercase font-semibold font-[var(--font-inter)] mb-5">
+          <p className="text-[#B4BBC8] text-xs tracking-[0.2em] uppercase font-semibold mb-5">
             Orbital Revestimentos · Manaus, AM
           </p>
-          <h1 className="font-[var(--font-noto-serif)] text-white text-3xl lg:text-7xl font-normal leading-[1.1] tracking-[-0.02em] mb-6 max-w-3xl">
+          <h1 className="font-serif text-white text-3xl lg:text-7xl font-normal leading-[1.1] tracking-[-0.02em] mb-6 max-w-3xl">
             <span className="sr-only">Orbital Revestimentos — revestimento de parede e teto em Manaus. </span>
             Instalado em horas.<br />
             <em>Admirado por anos.</em>
           </h1>
-          <p className="text-white/80 text-base lg:text-lg font-[var(--font-inter)] font-normal leading-relaxed mb-8 lg:mb-10 max-w-xl">
+          <p className="text-white/80 text-base lg:text-lg font-normal leading-relaxed mb-8 lg:mb-10 max-w-xl">
             Revestimentos eco-premium da Orbital que transformam paredes e tetos
             em Manaus com acabamento arquitetônico — sem obra, sem espera.
           </p>
           <div className="flex flex-col sm:flex-row flex-wrap gap-3 lg:gap-4">
             <Link
               href="/produtos"
-              className="w-full sm:w-auto text-center bg-white text-[#002045] text-xs tracking-[0.12em] uppercase font-bold font-[var(--font-inter)] px-8 py-4 hover:bg-[#f3f3f3] transition-colors"
+              className="w-full sm:w-auto text-center bg-white text-[#0B1F45] text-xs tracking-[0.12em] uppercase font-bold px-8 py-4 hover:bg-[#f3f3f3] transition-colors"
             >
               Ver o catálogo
             </Link>
             <Link
               href="/tecnologia"
-              className="w-full sm:w-auto inline-flex items-center justify-center gap-2 border border-white/60 text-white text-xs tracking-[0.12em] uppercase font-bold font-[var(--font-inter)] px-8 py-4 hover:bg-white/10 transition-colors"
+              className="w-full sm:w-auto inline-flex items-center justify-center gap-2 border border-white/60 text-white text-xs tracking-[0.12em] uppercase font-bold px-8 py-4 hover:bg-white/10 transition-colors"
             >
               Conhecer mais
             </Link>
@@ -217,16 +217,16 @@ export default function Home() {
       </section>
 
       {/* Stats Bar */}
-      <section className="bg-[#002045] border-b border-[#1a365d]">
+      <section className="bg-[#0B1F45] border-b border-[#2347A0]">
         <div className="max-w-[1280px] mx-auto px-4 lg:px-16 py-6">
           <div className="grid grid-cols-3 md:grid-cols-6 gap-4">
             {stats.map(({ value, label }) => (
               <div key={label} className="flex flex-col items-center text-center py-2">
                 <AnimatedStat
                   value={value}
-                  className="text-white font-[var(--font-noto-serif)] text-lg font-normal mb-0.5"
+                  className="text-white font-serif text-lg font-normal mb-0.5"
                 />
-                <span className="text-[#86a0cd] text-[10px] tracking-[0.15em] uppercase font-semibold font-[var(--font-inter)]">
+                <span className="text-[#B4BBC8] text-[10px] tracking-[0.15em] uppercase font-semibold">
                   {label}
                 </span>
               </div>
@@ -241,7 +241,7 @@ export default function Home() {
       <VisaoDoArquiteto />
 
       {/* Visualizador Teaser — same reasoning as above, dedicated section. */}
-      <section className="py-12 lg:py-28 bg-[#0a0f1a]">
+      <section className="py-12 lg:py-28 bg-[#0B1F45]">
         <div className="max-w-[1280px] mx-auto px-4 lg:px-16">
           <div className="grid grid-cols-1 lg:grid-cols-12 gap-10 lg:gap-16 items-center">
             <ScrollReveal className="lg:col-span-5 lg:order-1" direction="left">
@@ -256,11 +256,11 @@ export default function Home() {
                     className="object-cover transition-transform duration-700 group-hover:scale-[1.04]"
                   />
                   <div className="absolute inset-0 bg-gradient-to-t from-black/45 via-transparent to-transparent" />
-                  <span className="absolute bottom-3 left-3 bg-black/55 text-white text-[9px] tracking-[0.15em] uppercase font-bold font-[var(--font-inter)] px-3 py-1.5">
+                  <span className="absolute bottom-3 left-3 bg-black/55 text-white text-[9px] tracking-[0.15em] uppercase font-bold px-3 py-1.5">
                     Gerado por IA
                   </span>
                 </div>
-                <div className="absolute -top-4 -right-4 sm:-top-5 sm:-right-5 bg-white text-[#002045] w-14 h-14 sm:w-16 sm:h-16 rounded-full flex items-center justify-center shadow-xl">
+                <div className="absolute -top-4 -right-4 sm:-top-5 sm:-right-5 bg-white text-[#0B1F45] w-14 h-14 sm:w-16 sm:h-16 rounded-full flex items-center justify-center shadow-xl">
                   <svg width="26" height="26" viewBox="0 0 24 24" fill="currentColor">
                     <path d="M12 2l1.5 5.5L19 9l-5.5 1.5L12 16l-1.5-5.5L5 9l5.5-1.5z" />
                     <path d="M19.5 14l.7 1.9 1.9.7-1.9.7-.7 1.9-.7-1.9-1.9-.7 1.9-.7z" opacity="0.65" />
@@ -269,19 +269,19 @@ export default function Home() {
               </Link>
             </ScrollReveal>
             <ScrollReveal className="lg:col-span-7 lg:order-2" direction="right" delay={100}>
-              <p className="text-[#a1d494] text-xs tracking-[0.2em] uppercase font-semibold font-[var(--font-inter)] mb-5">
+              <p className="text-[#36A35C] text-xs tracking-[0.2em] uppercase font-semibold mb-5">
                 Visualizador com IA
               </p>
-              <h2 className="font-[var(--font-noto-serif)] text-white text-2xl lg:text-[40px] font-normal leading-[1.2] mb-6">
+              <h2 className="font-serif text-white text-2xl lg:text-[40px] font-normal leading-[1.2] mb-6">
                 Veja como fica no seu ambiente.
               </h2>
-              <p className="text-white/65 text-base font-[var(--font-inter)] leading-relaxed mb-8 max-w-md">
+              <p className="text-white/65 text-base leading-relaxed mb-8 max-w-md">
                 Envie uma foto do seu espaço e a inteligência artificial aplica
                 o acabamento escolhido na hora — antes de você decidir.
               </p>
               <Link
                 href="/visualizador"
-                className="inline-flex items-center justify-center gap-2 bg-white text-[#002045] text-xs tracking-[0.12em] uppercase font-bold font-[var(--font-inter)] px-8 py-4 hover:bg-[#f3f3f3] transition-colors"
+                className="inline-flex items-center justify-center gap-2 bg-white text-[#0B1F45] text-xs tracking-[0.12em] uppercase font-bold px-8 py-4 hover:bg-[#f3f3f3] transition-colors"
               >
                 Ver no meu ambiente
                 <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
@@ -297,28 +297,28 @@ export default function Home() {
       <section className="overflow-hidden bg-white">
         <div className="flex flex-col lg:flex-row">
           {/* Left — dark text panel */}
-          <div className="lg:w-[54%] bg-[#002045] px-4 lg:px-20 py-10 lg:py-32 flex items-center">
+          <div className="lg:w-[54%] bg-[#0B1F45] px-4 lg:px-20 py-10 lg:py-32 flex items-center">
             <div className="max-w-[520px]">
-              <p className="text-[#86a0cd] text-xs tracking-[0.2em] uppercase font-semibold font-[var(--font-inter)] mb-5">
+              <p className="text-[#B4BBC8] text-xs tracking-[0.2em] uppercase font-semibold mb-5">
                 Sobre a Orbital
               </p>
-              <h2 className="font-[var(--font-noto-serif)] text-white text-4xl lg:text-[42px] font-normal leading-[1.25] mb-6">
+              <h2 className="font-serif text-white text-4xl lg:text-[42px] font-normal leading-[1.25] mb-6">
                 A fundação da excelência sustentável.
               </h2>
-              <p className="text-white/70 text-base font-[var(--font-inter)] leading-relaxed mb-5">
+              <p className="text-white/70 text-base leading-relaxed mb-5">
                 A Orbital é uma importadora especializada em revestimentos eco-premium,
                 selecionando materiais que combinam desempenho técnico inigualável
                 com estética arquitetônica apurada. Com sede em Manaus, levamos
                 acabamentos de nível internacional a cada projeto.
               </p>
-              <p className="text-white/70 text-base font-[var(--font-inter)] leading-relaxed mb-10">
+              <p className="text-white/70 text-base leading-relaxed mb-10">
                 Nossa tecnologia PFB (Painéis Flexíveis Fibra de Bambu) é homologada
                 por Eng. Civil com ART e aprovada para ambientes úmidos,
                 tetos e projetos navais.
               </p>
               <Link
                 href="/tecnologia"
-                className="inline-flex items-center gap-2 text-white text-xs tracking-[0.1em] uppercase font-bold font-[var(--font-inter)] border-b border-white/40 pb-0.5 hover:border-white transition-colors"
+                className="inline-flex items-center gap-2 text-white text-xs tracking-[0.1em] uppercase font-bold border-b border-white/40 pb-0.5 hover:border-white transition-colors"
               >
                 Ver tecnologia PFB
                 <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
@@ -353,13 +353,13 @@ export default function Home() {
             {benefits.map(({ icon, title, desc }, i) => (
               <ScrollReveal key={title} delay={i * 100} direction="up">
                 <div className="flex flex-col gap-4 group">
-                  <div className="text-[#1a365d] w-10 h-10 flex items-center justify-center border border-[#e2e2e2] group-hover:bg-[#002045] group-hover:text-white group-hover:border-[#002045] transition-colors duration-300">
+                  <div className="text-[#2347A0] w-10 h-10 flex items-center justify-center border border-[#e2e2e2] group-hover:bg-[#0B1F45] group-hover:text-white group-hover:border-[#0B1F45] transition-colors duration-300">
                     {icon}
                   </div>
-                  <h3 className="font-[var(--font-noto-serif)] text-[#002045] text-lg font-medium leading-snug">
+                  <h3 className="font-serif text-[#0B1F45] text-lg font-medium leading-snug">
                     {title}
                   </h3>
-                  <p className="text-[#43474e] text-sm font-[var(--font-inter)] leading-relaxed">
+                  <p className="text-[#43474e] text-sm leading-relaxed">
                     {desc}
                   </p>
                 </div>
@@ -370,21 +370,21 @@ export default function Home() {
       </section>
 
       {/* Featured Lines */}
-      <section className="py-12 lg:py-32 bg-[#f9f9f9]">
+      <section className="py-12 lg:py-32 bg-[#F6F5F2]">
         <div className="max-w-[1280px] mx-auto px-4 lg:px-16">
           <div className="flex items-end justify-between mb-8 lg:mb-14 pb-4 border-b border-[#e2e2e2]">
             <div>
-              <p className="text-[#74777f] text-xs tracking-[0.2em] uppercase font-semibold font-[var(--font-inter)] mb-2">
+              <p className="text-[#74777f] text-xs tracking-[0.2em] uppercase font-semibold mb-2">
                 Coleções
               </p>
-              <h2 className="font-[var(--font-noto-serif)] text-[#002045] text-2xl lg:text-4xl font-normal">
+              <h2 className="font-serif text-[#0B1F45] text-2xl lg:text-4xl font-normal">
                 Linhas em Destaque
               </h2>
             </div>
             <div className="hidden md:flex items-center gap-6">
               <Link
                 href="/produtos"
-                className="text-xs tracking-[0.1em] uppercase font-semibold font-[var(--font-inter)] text-[#74777f] hover:text-[#002045] transition-colors"
+                className="text-xs tracking-[0.1em] uppercase font-semibold text-[#74777f] hover:text-[#0B1F45] transition-colors"
               >
                 Ver todos →
               </Link>
@@ -404,14 +404,14 @@ export default function Home() {
                       className="object-cover transition-transform duration-700 ease-out group-hover:scale-[1.05]"
                     />
                     <div className="absolute top-2 left-2">
-                      <span className="bg-[#002045] text-white text-[8px] tracking-[0.08em] uppercase font-semibold font-[var(--font-inter)] px-1.5 py-1 leading-none">
+                      <span className="bg-[#0B1F45] text-white text-[8px] tracking-[0.08em] uppercase font-semibold px-1.5 py-1 leading-none">
                         {name}
                       </span>
                     </div>
                   </div>
-                  <p className="text-[#74777f] text-[9px] tracking-[0.08em] uppercase font-semibold font-[var(--font-inter)] leading-tight truncate">{code}</p>
-                  <p className="font-[var(--font-noto-serif)] text-[#002045] text-[11px] font-medium leading-snug">{subtitle}</p>
-                  <p className="text-[#1a365d] text-[10px] font-semibold font-[var(--font-inter)]">{price}</p>
+                  <p className="text-[#74777f] text-[9px] tracking-[0.08em] uppercase font-semibold leading-tight truncate">{code}</p>
+                  <p className="font-serif text-[#0B1F45] text-[11px] font-medium leading-snug">{subtitle}</p>
+                  <p className="text-[#2347A0] text-[10px] font-semibold">{price}</p>
                 </Link>
               </div>
             ))}
@@ -431,26 +431,26 @@ export default function Home() {
                       />
                       <div className="absolute inset-0 bg-gradient-to-tr from-transparent via-white/10 to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-500" />
                       <div className="absolute top-4 left-4">
-                        <span className="bg-[#002045] text-white text-[10px] tracking-[0.15em] uppercase font-semibold font-[var(--font-inter)] px-3 py-1.5">
+                        <span className="bg-[#0B1F45] text-white text-[10px] tracking-[0.15em] uppercase font-semibold px-3 py-1.5">
                           {name}
                         </span>
                       </div>
                       <div className="absolute bottom-0 inset-x-0 h-1 bg-white scale-x-0 group-hover:scale-x-100 transition-transform duration-500 origin-left" />
                     </div>
                     <div className="space-y-1.5 mb-4">
-                      <p className="text-[#74777f] text-[10px] tracking-[0.15em] uppercase font-semibold font-[var(--font-inter)]">
+                      <p className="text-[#74777f] text-[10px] tracking-[0.15em] uppercase font-semibold">
                         {code}
                       </p>
-                      <h3 className="font-[var(--font-noto-serif)] text-[#002045] text-xl font-medium group-hover:text-[#1a365d] transition-colors">
+                      <h3 className="font-serif text-[#0B1F45] text-xl font-medium group-hover:text-[#2347A0] transition-colors">
                         {name} — {subtitle}
                       </h3>
-                      <p className="text-[#43474e] text-sm font-[var(--font-inter)] leading-relaxed">
+                      <p className="text-[#43474e] text-sm leading-relaxed">
                         {desc}
                       </p>
-                      <p className="text-[#1a365d] text-sm font-semibold font-[var(--font-inter)] pt-1">
+                      <p className="text-[#2347A0] text-sm font-semibold pt-1">
                         {price}
                       </p>
-                      <p className="text-[#b0b4bb] text-[10px] tracking-[0.08em] font-[var(--font-inter)]">
+                      <p className="text-[#b0b4bb] text-[10px] tracking-[0.08em]">
                         2,9m × 1,2m × 5mm
                       </p>
                     </div>
@@ -459,7 +459,7 @@ export default function Home() {
                     href={WA(waMsg)}
                     target="_blank"
                     rel="noopener noreferrer"
-                    className="inline-block text-[10px] tracking-[0.12em] uppercase font-bold font-[var(--font-inter)] border border-[#002045] text-[#002045] px-5 py-2 hover:bg-[#002045] hover:text-white transition-colors"
+                    className="inline-block text-[10px] tracking-[0.12em] uppercase font-bold border border-[#0B1F45] text-[#0B1F45] px-5 py-2 hover:bg-[#0B1F45] hover:text-white transition-colors"
                   >
                     Tirar dúvidas →
                   </a>
@@ -471,7 +471,7 @@ export default function Home() {
           <div className="mt-8 flex justify-center md:hidden">
             <Link
               href="/produtos"
-              className="text-xs tracking-[0.1em] uppercase font-semibold font-[var(--font-inter)] text-[#002045] hover:text-[#1a365d] transition-colors"
+              className="text-xs tracking-[0.1em] uppercase font-semibold text-[#0B1F45] hover:text-[#2347A0] transition-colors"
             >
               Ver todos →
             </Link>
@@ -480,23 +480,23 @@ export default function Home() {
       </section>
 
       {/* Projects Teaser */}
-      <section className="py-10 lg:py-32 bg-[#1e212a] text-white">
+      <section className="py-10 lg:py-32 bg-[#0B1F45] text-white">
         <div className="max-w-[1280px] mx-auto px-4 lg:px-16">
           <div className="grid grid-cols-1 lg:grid-cols-12 gap-10 lg:gap-12 items-center mb-10 lg:mb-14">
             <ScrollReveal className="lg:col-span-5" direction="left">
-              <p className="text-[#a1d494] text-xs tracking-[0.2em] uppercase font-semibold font-[var(--font-inter)] mb-5">
+              <p className="text-[#36A35C] text-xs tracking-[0.2em] uppercase font-semibold mb-5">
                 Projetos Concluídos
               </p>
-              <h2 className="font-[var(--font-noto-serif)] text-white text-2xl lg:text-[36px] font-normal leading-[1.25] mb-6">
+              <h2 className="font-serif text-white text-2xl lg:text-[36px] font-normal leading-[1.25] mb-6">
                 Obras que falam por si.
               </h2>
-              <p className="text-[#9c9faa] text-base font-[var(--font-inter)] leading-relaxed mb-8">
+              <p className="text-[#9c9faa] text-base leading-relaxed mb-8">
                 Restaurantes, escritórios, residências, ambientes náuticos —
                 veja como o PFB Orbital transforma cada espaço em poucas horas.
               </p>
               <Link
                 href="/projetos"
-                className="inline-flex items-center gap-2 text-white text-xs tracking-[0.1em] uppercase font-bold font-[var(--font-inter)] border-b border-white pb-0.5 hover:opacity-70 transition-opacity"
+                className="inline-flex items-center gap-2 text-white text-xs tracking-[0.1em] uppercase font-bold border-b border-white pb-0.5 hover:opacity-70 transition-opacity"
               >
                 Ver todos os projetos
                 <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
@@ -521,16 +521,16 @@ export default function Home() {
         <div className="max-w-[1280px] mx-auto px-4 lg:px-16">
           <div className="flex items-end justify-between mb-10 lg:mb-14 pb-4 border-b border-[#e2e2e2]">
             <div>
-              <p className="text-[#74777f] text-xs tracking-[0.2em] uppercase font-semibold font-[var(--font-inter)] mb-2">
+              <p className="text-[#74777f] text-xs tracking-[0.2em] uppercase font-semibold mb-2">
                 Para Profissionais
               </p>
-              <h2 className="font-[var(--font-noto-serif)] text-[#002045] text-2xl lg:text-4xl font-normal">
+              <h2 className="font-serif text-[#0B1F45] text-2xl lg:text-4xl font-normal">
                 Feito para quem entrega resultados.
               </h2>
             </div>
             <Link
               href="/parcerias"
-              className="hidden md:inline text-xs tracking-[0.1em] uppercase font-semibold font-[var(--font-inter)] text-[#74777f] hover:text-[#002045] transition-colors"
+              className="hidden md:inline text-xs tracking-[0.1em] uppercase font-semibold text-[#74777f] hover:text-[#0B1F45] transition-colors"
             >
               Ver programa de parceiros →
             </Link>
@@ -588,14 +588,14 @@ export default function Home() {
               },
             ].map(({ label, tagline, icon, waMsg, href }, i) => (
               <ScrollReveal key={label} delay={i * 80} direction="up">
-                <div className="border border-[#e2e2e2] p-4 lg:p-7 hover:border-[#002045] transition-colors group h-full flex flex-col">
-                  <div className="text-[#1a365d] w-10 h-10 flex items-center justify-center border border-[#e2e2e2] group-hover:bg-[#002045] group-hover:text-white group-hover:border-[#002045] transition-colors duration-300 mb-5">
+                <div className="border border-[#e2e2e2] p-4 lg:p-7 hover:border-[#0B1F45] transition-colors group h-full flex flex-col">
+                  <div className="text-[#2347A0] w-10 h-10 flex items-center justify-center border border-[#e2e2e2] group-hover:bg-[#0B1F45] group-hover:text-white group-hover:border-[#0B1F45] transition-colors duration-300 mb-5">
                     {icon}
                   </div>
-                  <h3 className="font-[var(--font-noto-serif)] text-[#002045] text-lg font-medium mb-2">
+                  <h3 className="font-serif text-[#0B1F45] text-lg font-medium mb-2">
                     {label}
                   </h3>
-                  <p className="text-[#43474e] text-sm font-[var(--font-inter)] leading-relaxed mb-6 flex-1">
+                  <p className="text-[#43474e] text-sm leading-relaxed mb-6 flex-1">
                     {tagline}
                   </p>
                   <div className="flex flex-col gap-2">
@@ -603,13 +603,13 @@ export default function Home() {
                       href={WA(waMsg)}
                       target="_blank"
                       rel="noopener noreferrer"
-                      className="inline-block text-[10px] tracking-[0.12em] uppercase font-bold font-[var(--font-inter)] bg-[#002045] text-white px-4 py-2.5 text-center hover:bg-[#1a365d] transition-colors"
+                      className="inline-block text-[10px] tracking-[0.12em] uppercase font-bold bg-[#0B1F45] text-white px-4 py-2.5 text-center hover:bg-[#2347A0] transition-colors"
                     >
                       Falar no WhatsApp
                     </a>
                     <Link
                       href={href}
-                      className="inline-block text-[10px] tracking-[0.12em] uppercase font-bold font-[var(--font-inter)] border border-[#e2e2e2] text-[#74777f] px-4 py-2.5 text-center hover:border-[#002045] hover:text-[#002045] transition-colors"
+                      className="inline-block text-[10px] tracking-[0.12em] uppercase font-bold border border-[#e2e2e2] text-[#74777f] px-4 py-2.5 text-center hover:border-[#0B1F45] hover:text-[#0B1F45] transition-colors"
                     >
                       Ver benefícios
                     </Link>
@@ -623,23 +623,23 @@ export default function Home() {
 
       {/* Academia Orbital — chamada curta. O curso ainda está em desenvolvimento:
           aqui só se apresenta e leva à lista de espera. Nada de preço ou data. */}
-      <section className="py-10 lg:py-16 bg-[#f9f9f9] border-t border-[#eeeeee]">
+      <section className="py-10 lg:py-16 bg-[#F6F5F2] border-t border-[#eeeeee]">
         <div className="max-w-[1280px] mx-auto px-4 lg:px-16">
           <ScrollReveal direction="up">
             <div className="flex flex-col lg:flex-row lg:items-end lg:justify-between gap-6 lg:gap-16">
               <div className="lg:flex-1 max-w-2xl">
                 <div className="flex flex-wrap items-center gap-x-3 gap-y-2 mb-3">
-                  <p className="text-[#74777f] text-xs tracking-[0.2em] uppercase font-semibold font-[var(--font-inter)]">
+                  <p className="text-[#74777f] text-xs tracking-[0.2em] uppercase font-semibold">
                     Academia Orbital
                   </p>
-                  <span className="border border-[#c4c6cf] text-[#74777f] text-[9px] tracking-[0.18em] uppercase font-bold font-[var(--font-inter)] px-2 py-0.5">
+                  <span className="border border-[#c4c6cf] text-[#74777f] text-[9px] tracking-[0.18em] uppercase font-bold px-2 py-0.5">
                     Em desenvolvimento
                   </span>
                 </div>
-                <h2 className="font-serif text-[#002045] text-2xl lg:text-4xl font-normal leading-tight mb-3">
+                <h2 className="font-serif text-[#0B1F45] text-2xl lg:text-4xl font-normal leading-tight mb-3">
                   Capacitação técnica para instalar PFB no padrão Orbital.
                 </h2>
-                <p className="text-[#43474e] text-sm lg:text-base font-[var(--font-inter)] leading-relaxed">
+                <p className="text-[#43474e] text-sm lg:text-base leading-relaxed">
                   Treinamento técnico para aplicadores, do preparo ao acabamento, para formar Instaladores
                   Certificados Orbital. Entre na lista de espera e saiba primeiro quando abrir.
                 </p>
@@ -647,13 +647,13 @@ export default function Home() {
               <div className="flex flex-col sm:flex-row lg:flex-col gap-3 flex-shrink-0">
                 <Link
                   href="/academia#lista-de-espera"
-                  className="w-full sm:w-auto inline-flex items-center justify-center whitespace-nowrap bg-[#002045] text-white text-xs tracking-[0.12em] uppercase font-bold font-[var(--font-inter)] px-8 py-4 hover:bg-[#1a365d] transition-colors"
+                  className="w-full sm:w-auto inline-flex items-center justify-center whitespace-nowrap bg-[#0B1F45] text-white text-xs tracking-[0.12em] uppercase font-bold px-8 py-4 hover:bg-[#2347A0] transition-colors"
                 >
                   Entrar na lista de espera
                 </Link>
                 <Link
                   href="/academia"
-                  className="w-full sm:w-auto inline-flex items-center justify-center whitespace-nowrap border border-[#c4c6cf] text-[#002045] text-xs tracking-[0.12em] uppercase font-bold font-[var(--font-inter)] px-8 py-4 hover:border-[#002045] transition-colors"
+                  className="w-full sm:w-auto inline-flex items-center justify-center whitespace-nowrap border border-[#c4c6cf] text-[#0B1F45] text-xs tracking-[0.12em] uppercase font-bold px-8 py-4 hover:border-[#0B1F45] transition-colors"
                 >
                   Conhecer a Academia
                 </Link>
@@ -664,22 +664,22 @@ export default function Home() {
       </section>
 
       {/* CTA WhatsApp */}
-      <section className="py-10 lg:py-20 bg-[#002045]">
+      <section className="py-10 lg:py-20 bg-[#0B1F45]">
         <div className="max-w-[1280px] mx-auto px-4 lg:px-16 text-center">
           <ScrollReveal direction="none">
-          <p className="text-[#86a0cd] text-xs tracking-[0.2em] uppercase font-semibold font-[var(--font-inter)] mb-4">
+          <p className="text-[#B4BBC8] text-xs tracking-[0.2em] uppercase font-semibold mb-4">
             Pronto para transformar seu espaço?
           </p>
-          <h2 className="font-[var(--font-noto-serif)] text-white text-3xl lg:text-5xl font-normal mb-6">
+          <h2 className="font-serif text-white text-3xl lg:text-5xl font-normal mb-6">
             Fale com a Orbital.
           </h2>
-          <p className="text-white/70 text-base font-[var(--font-inter)] mb-10 max-w-lg mx-auto">
+          <p className="text-white/70 text-base mb-10 max-w-lg mx-auto">
             3 linhas exclusivas, 15 acabamentos e entrega imediata em Manaus.
             Baixe o catálogo ou entre em contato diretamente.
           </p>
           <div className="flex flex-col sm:flex-row flex-wrap justify-center gap-3 lg:gap-4">
             <ContatoCta
-              className="w-full sm:w-auto inline-flex items-center justify-center gap-2 border border-white/40 text-white text-xs tracking-[0.12em] uppercase font-bold font-[var(--font-inter)] px-8 py-4 hover:bg-white/10 transition-colors"
+              className="w-full sm:w-auto inline-flex items-center justify-center gap-2 border border-white/40 text-white text-xs tracking-[0.12em] uppercase font-bold px-8 py-4 hover:bg-white/10 transition-colors"
             >
               <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
                 <path d="M21 11.5a8.38 8.38 0 01-.9 3.8 8.5 8.5 0 01-7.6 4.7 8.38 8.38 0 01-3.8-.9L3 21l1.9-5.7a8.38 8.38 0 01-.9-3.8 8.5 8.5 0 014.7-7.6 8.38 8.38 0 013.8-.9h.5a8.48 8.48 0 018 8v.5z" />
@@ -688,7 +688,7 @@ export default function Home() {
             </ContatoCta>
             <Link
               href="/produtos"
-              className="w-full sm:w-auto text-center border border-white/40 text-white text-xs tracking-[0.12em] uppercase font-bold font-[var(--font-inter)] px-8 py-4 hover:bg-white/10 transition-colors"
+              className="w-full sm:w-auto text-center border border-white/40 text-white text-xs tracking-[0.12em] uppercase font-bold px-8 py-4 hover:bg-white/10 transition-colors"
             >
               Ver Catálogo Online
             </Link>
@@ -705,20 +705,20 @@ export default function Home() {
         />
         <div className="max-w-[1280px] mx-auto px-4 lg:px-16">
           <div className="mb-6 lg:mb-12">
-            <p className="text-[#74777f] text-xs tracking-[0.2em] uppercase font-semibold font-[var(--font-inter)] mb-2">
+            <p className="text-[#74777f] text-xs tracking-[0.2em] uppercase font-semibold mb-2">
               Dúvidas Frequentes
             </p>
-            <h2 className="font-[var(--font-noto-serif)] text-[#002045] text-2xl lg:text-4xl font-normal">
+            <h2 className="font-serif text-[#0B1F45] text-2xl lg:text-4xl font-normal">
               Perguntas e Respostas
             </h2>
           </div>
           <div className="grid grid-cols-1 md:grid-cols-2 gap-x-16 gap-y-5 lg:gap-y-10">
             {faqs.map(({ q, a }) => (
               <div key={q} className="border-t border-[#eeeeee] pt-4 lg:pt-6">
-                <h3 className="font-[var(--font-noto-serif)] text-[#002045] text-base lg:text-lg font-normal mb-2">
+                <h3 className="font-serif text-[#0B1F45] text-base lg:text-lg font-normal mb-2">
                   {q}
                 </h3>
-                <p className="text-[#43474e] text-sm font-[var(--font-inter)] leading-relaxed">
+                <p className="text-[#43474e] text-sm leading-relaxed">
                   {a}
                 </p>
               </div>
@@ -728,8 +728,8 @@ export default function Home() {
       </section>
 
       {/* Disclaimer */}
-      <div className="bg-[#f9f9f9] border-t border-[#eeeeee] py-5 text-center">
-        <p className="text-[#74777f] text-xs font-[var(--font-inter)] italic">
+      <div className="bg-[#F6F5F2] border-t border-[#eeeeee] py-5 text-center">
+        <p className="text-[#74777f] text-xs italic">
           Imagens ilustrativas — cores podem variar. Recomendamos uma visita ao nosso showroom.
         </p>
       </div>

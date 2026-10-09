@@ -237,7 +237,7 @@ function ScheduleMeeting({
   if (!open) {
     return (
       <button onClick={() => setOpen(true)}
-        className="mb-4 inline-flex items-center gap-1.5 text-[11px] tracking-[0.08em] uppercase font-bold font-[var(--font-inter)] text-[#002045] border border-[#002045] px-3 py-2 hover:bg-[#002045] hover:text-white transition-colors">
+        className="mb-4 inline-flex items-center gap-1.5 text-[11px] tracking-[0.08em] uppercase font-bold text-[#0B1F45] border border-[#0B1F45] px-3 py-2 hover:bg-[#0B1F45] hover:text-white transition-colors">
         📅 Agendar reunião
       </button>
     );
@@ -247,15 +247,15 @@ function ScheduleMeeting({
     <div className="mb-4 bg-white border border-[#e2e2e2] px-3 py-3">
       <div className="grid grid-cols-1 sm:grid-cols-2 gap-2 mb-2">
         <input value={title} onChange={(e) => setTitle(e.target.value)} placeholder="Título"
-          className="border border-[#e2e2e2] px-2 py-1.5 text-xs font-[var(--font-inter)] text-[#002045] focus:outline-none focus:border-[#002045]" />
+          className="border border-[#e2e2e2] px-2 py-1.5 text-xs text-[#0B1F45] focus:outline-none focus:border-[#0B1F45]" />
         <input type="datetime-local" value={when} onChange={(e) => setWhen(e.target.value)}
-          className="border border-[#e2e2e2] px-2 py-1.5 text-xs font-[var(--font-inter)] text-[#002045] focus:outline-none focus:border-[#002045]" />
+          className="border border-[#e2e2e2] px-2 py-1.5 text-xs text-[#0B1F45] focus:outline-none focus:border-[#0B1F45]" />
         <input value={location} onChange={(e) => setLocation(e.target.value)} placeholder="Local (opcional)"
-          className="sm:col-span-2 border border-[#e2e2e2] px-2 py-1.5 text-xs font-[var(--font-inter)] text-[#002045] focus:outline-none focus:border-[#002045]" />
+          className="sm:col-span-2 border border-[#e2e2e2] px-2 py-1.5 text-xs text-[#0B1F45] focus:outline-none focus:border-[#0B1F45]" />
         <input type="email" value={inviteEmail} onChange={(e) => setInviteEmail(e.target.value)} inputMode="email" placeholder="E-mail para convite/calendário"
-          className="sm:col-span-2 border border-[#e2e2e2] px-2 py-1.5 text-xs font-[var(--font-inter)] text-[#002045] focus:outline-none focus:border-[#002045]" />
+          className="sm:col-span-2 border border-[#e2e2e2] px-2 py-1.5 text-xs text-[#0B1F45] focus:outline-none focus:border-[#0B1F45]" />
       </div>
-      <div className="text-[#74777f] text-[10px] font-[var(--font-inter)] mb-2 space-y-1">
+      <div className="text-[#74777f] text-[10px] mb-2 space-y-1">
         <p>
           {hasContact
             ? `${row.partner.name} será notificado${invitePhone ? " por WhatsApp" : ""}${invitePhone && cleanEmail ? " e" : ""}${cleanEmail ? " por e-mail" : ""}.`
@@ -267,13 +267,13 @@ function ScheduleMeeting({
           </p>
         )}
       </div>
-      {msg && <p className="text-red-600 text-[11px] font-[var(--font-inter)] mb-2">{msg}</p>}
+      {msg && <p className="text-red-600 text-[11px] mb-2">{msg}</p>}
       <div className="flex items-center gap-2">
         <button onClick={submit} disabled={!when || busy}
-          className="bg-[#002045] text-white text-xs font-bold font-[var(--font-inter)] px-4 py-2 hover:bg-[#1a365d] disabled:opacity-50">
+          className="bg-[#0B1F45] text-white text-xs font-bold px-4 py-2 hover:bg-[#2347A0] disabled:opacity-50">
           {busy ? "Agendando…" : hasContact ? "Agendar e convidar" : "Agendar"}
         </button>
-        <button onClick={() => setOpen(false)} className="text-[#74777f] text-xs font-[var(--font-inter)] px-2 py-2 hover:text-[#002045]">Cancelar</button>
+        <button onClick={() => setOpen(false)} className="text-[#74777f] text-xs px-2 py-2 hover:text-[#0B1F45]">Cancelar</button>
       </div>
     </div>
   );
@@ -283,12 +283,12 @@ function ScheduleMeeting({
 function DateField({ label, value, onChange }: { label: string; value: string | null; onChange: (iso: string | null) => void }) {
   return (
     <div>
-      <p className="text-[#74777f] text-[9px] uppercase tracking-wider font-bold font-[var(--font-inter)]">{label}</p>
+      <p className="text-[#74777f] text-[9px] uppercase tracking-wider font-bold">{label}</p>
       <input
         type="date"
         value={toDateInput(value)}
         onChange={(e) => onChange(fromDateInput(e.target.value))}
-        className="mt-0.5 w-full bg-transparent text-[#43474e] text-xs font-[var(--font-inter)] border-b border-transparent hover:border-[#e2e2e2] focus:border-[#002045] focus:outline-none cursor-pointer"
+        className="mt-0.5 w-full bg-transparent text-[#43474e] text-xs border-b border-transparent hover:border-[#e2e2e2] focus:border-[#0B1F45] focus:outline-none cursor-pointer"
       />
     </div>
   );
@@ -616,7 +616,7 @@ export default function RepCrmTab({
     <div className="space-y-5">
       {falha && (
         <div role="alert" className="sticky top-2 z-20 flex items-start justify-between gap-3 border border-red-300 bg-red-50 px-4 py-3">
-          <p className="text-red-800 text-sm font-[var(--font-inter)] leading-relaxed">{falha}</p>
+          <p className="text-red-800 text-sm leading-relaxed">{falha}</p>
           <button type="button" onClick={() => setFalha(null)} className="text-red-700 text-xs font-bold uppercase tracking-wider flex-shrink-0" aria-label="Fechar aviso">
             Fechar
           </button>
@@ -624,13 +624,13 @@ export default function RepCrmTab({
       )}
       <div className="flex flex-col lg:flex-row lg:items-start lg:justify-between gap-4">
         <div>
-          <p className="text-[#74777f] text-[10px] tracking-[0.16em] uppercase font-bold font-[var(--font-inter)] mb-1">
+          <p className="text-[#74777f] text-[10px] tracking-[0.16em] uppercase font-bold mb-1">
             CRM de relacionamento
           </p>
-          <h2 className="font-[var(--font-noto-serif)] text-[#002045] text-2xl font-normal">
+          <h2 className="font-serif text-[#0B1F45] text-2xl font-normal">
             Quem precisa de atenção agora?
           </h2>
-          <p className="text-[#74777f] text-sm font-[var(--font-inter)] mt-1">
+          <p className="text-[#74777f] text-sm mt-1">
             Priorize follow-ups, avance estágio e registre a próxima conversa sem procurar em mil campos.
           </p>
         </div>
@@ -638,12 +638,12 @@ export default function RepCrmTab({
           {addMode === "none" && (
             <>
               <button onClick={() => setAddMode("prospect")}
-                className="border border-[#002045] text-[#002045] text-xs tracking-[0.08em] uppercase font-bold font-[var(--font-inter)] px-4 py-2.5 hover:bg-[#002045] hover:text-white transition-colors">
+                className="border border-[#0B1F45] text-[#0B1F45] text-xs tracking-[0.08em] uppercase font-bold px-4 py-2.5 hover:bg-[#0B1F45] hover:text-white transition-colors">
                 Novo prospecto
               </button>
               {untrackedPartners.length > 0 && (
                 <button onClick={() => setAddMode("partner")}
-                  className="bg-[#002045] text-white text-xs tracking-[0.08em] uppercase font-bold font-[var(--font-inter)] px-4 py-2.5 hover:bg-[#1a365d] transition-colors">
+                  className="bg-[#0B1F45] text-white text-xs tracking-[0.08em] uppercase font-bold px-4 py-2.5 hover:bg-[#2347A0] transition-colors">
                   Adicionar parceiro
                 </button>
               )}
@@ -656,11 +656,11 @@ export default function RepCrmTab({
       {addMode === "partner" && (
         <div className="bg-white border border-[#d7dbe3] px-4 py-4 flex flex-col md:flex-row md:items-end gap-3">
           <div className="flex-1 min-w-[220px]">
-            <label className="block text-[#74777f] text-[10px] tracking-[0.12em] uppercase font-bold font-[var(--font-inter)] mb-1.5">
+            <label className="block text-[#74777f] text-[10px] tracking-[0.12em] uppercase font-bold mb-1.5">
               Parceiro vinculado
             </label>
           <select value={addPartnerId} onChange={(e) => setAddPartnerId(e.target.value)}
-            className="w-full border border-[#d7dbe3] px-3 py-2.5 text-sm font-[var(--font-inter)] text-[#002045] focus:outline-none focus:border-[#002045]">
+            className="w-full border border-[#d7dbe3] px-3 py-2.5 text-sm text-[#0B1F45] focus:outline-none focus:border-[#0B1F45]">
             <option value="">Selecione um parceiro vinculado...</option>
             {untrackedPartners.map((p) => (
               <option key={p.id} value={p.id}>{p.name}</option>
@@ -668,11 +668,11 @@ export default function RepCrmTab({
           </select>
           </div>
           <button onClick={addPartner} disabled={!addPartnerId || adding}
-            className="bg-[#002045] text-white text-xs font-bold font-[var(--font-inter)] px-5 py-3 hover:bg-[#1a365d] disabled:opacity-50">
+            className="bg-[#0B1F45] text-white text-xs font-bold px-5 py-3 hover:bg-[#2347A0] disabled:opacity-50">
             Adicionar
           </button>
           <button onClick={() => { setAddMode("none"); setAddPartnerId(""); }}
-            className="text-[#74777f] text-xs font-[var(--font-inter)] px-2 py-3 hover:text-[#002045]">Cancelar</button>
+            className="text-[#74777f] text-xs px-2 py-3 hover:text-[#0B1F45]">Cancelar</button>
         </div>
       )}
 
@@ -680,35 +680,35 @@ export default function RepCrmTab({
       {addMode === "prospect" && (
         <div className="bg-white border border-[#d7dbe3] px-4 py-4 grid grid-cols-1 md:grid-cols-[1fr_200px_240px_auto_auto] gap-3 md:items-end">
           <div>
-            <label className="block text-[#74777f] text-[10px] tracking-[0.12em] uppercase font-bold font-[var(--font-inter)] mb-1.5">
+            <label className="block text-[#74777f] text-[10px] tracking-[0.12em] uppercase font-bold mb-1.5">
               Nome do prospecto
             </label>
           <input value={prospectName} onChange={(e) => setProspectName(e.target.value)} autoFocus
             placeholder="Nome do prospecto"
-            className="w-full border border-[#d7dbe3] px-3 py-2.5 text-sm font-[var(--font-inter)] text-[#002045] focus:outline-none focus:border-[#002045]" />
+            className="w-full border border-[#d7dbe3] px-3 py-2.5 text-sm text-[#0B1F45] focus:outline-none focus:border-[#0B1F45]" />
           </div>
           <div>
-            <label className="block text-[#74777f] text-[10px] tracking-[0.12em] uppercase font-bold font-[var(--font-inter)] mb-1.5">
+            <label className="block text-[#74777f] text-[10px] tracking-[0.12em] uppercase font-bold mb-1.5">
               WhatsApp
             </label>
           <input value={prospectPhone} onChange={(e) => setProspectPhone(e.target.value)} inputMode="tel"
             placeholder="WhatsApp (opcional)"
-            className="w-full border border-[#d7dbe3] px-3 py-2.5 text-sm font-[var(--font-inter)] text-[#002045] focus:outline-none focus:border-[#002045]" />
+            className="w-full border border-[#d7dbe3] px-3 py-2.5 text-sm text-[#0B1F45] focus:outline-none focus:border-[#0B1F45]" />
           </div>
           <div>
-            <label className="block text-[#74777f] text-[10px] tracking-[0.12em] uppercase font-bold font-[var(--font-inter)] mb-1.5">
+            <label className="block text-[#74777f] text-[10px] tracking-[0.12em] uppercase font-bold mb-1.5">
               E-mail
             </label>
           <input type="email" value={prospectEmail} onChange={(e) => setProspectEmail(e.target.value)} inputMode="email"
             placeholder="E-mail (opcional)"
-            className="w-full border border-[#d7dbe3] px-3 py-2.5 text-sm font-[var(--font-inter)] text-[#002045] focus:outline-none focus:border-[#002045]" />
+            className="w-full border border-[#d7dbe3] px-3 py-2.5 text-sm text-[#0B1F45] focus:outline-none focus:border-[#0B1F45]" />
           </div>
           <button onClick={addProspect} disabled={!prospectName.trim() || adding}
-            className="bg-[#002045] text-white text-xs font-bold font-[var(--font-inter)] px-5 py-3 hover:bg-[#1a365d] disabled:opacity-50">
+            className="bg-[#0B1F45] text-white text-xs font-bold px-5 py-3 hover:bg-[#2347A0] disabled:opacity-50">
             Adicionar
           </button>
           <button onClick={() => { setAddMode("none"); setProspectName(""); setProspectPhone(""); setProspectEmail(""); }}
-            className="text-[#74777f] text-xs font-[var(--font-inter)] px-2 py-3 hover:text-[#002045]">Cancelar</button>
+            className="text-[#74777f] text-xs px-2 py-3 hover:text-[#0B1F45]">Cancelar</button>
         </div>
       )}
 
@@ -721,9 +721,9 @@ export default function RepCrmTab({
               { label: "Valor gerado", value: fmtBRL(metrics.value), sub: `${metrics.projects} projeto${metrics.projects !== 1 ? "s" : ""}` },
             ].map((m) => (
               <div key={m.label} className="bg-white border border-[#e2e2e2] px-4 py-3">
-                <p className="text-[#74777f] text-[9px] uppercase tracking-wider font-bold font-[var(--font-inter)]">{m.label}</p>
-                <p className="text-[#002045] text-lg font-[var(--font-noto-serif)] mt-0.5">{m.value}</p>
-                <p className="text-[#b0b0b0] text-[10px] font-[var(--font-inter)]">{m.sub}</p>
+                <p className="text-[#74777f] text-[9px] uppercase tracking-wider font-bold">{m.label}</p>
+                <p className="text-[#0B1F45] text-lg font-serif mt-0.5">{m.value}</p>
+                <p className="text-[#b0b0b0] text-[10px]">{m.sub}</p>
               </div>
             ))}
         </div>
@@ -733,10 +733,10 @@ export default function RepCrmTab({
         <div className="bg-[#fffaf2] border border-[#ead8bd] px-4 py-4">
           <div className="flex items-center justify-between gap-3 mb-3">
             <div>
-              <p className="text-[#8a5a12] text-[10px] tracking-[0.14em] uppercase font-bold font-[var(--font-inter)]">
+              <p className="text-[#8a5a12] text-[10px] tracking-[0.14em] uppercase font-bold">
                 Atenção agora
               </p>
-              <p className="text-[#5f3f0f] text-sm font-[var(--font-inter)]">
+              <p className="text-[#5f3f0f] text-sm">
                 Comece por estes contatos antes de navegar o restante do pipeline.
               </p>
             </div>
@@ -751,8 +751,8 @@ export default function RepCrmTab({
                   <button onClick={() => toggleExpand(r.id)} className="w-full text-left">
                     <div className="flex items-start justify-between gap-3">
                       <div className="min-w-0">
-                        <p className="text-[#002045] text-sm font-semibold font-[var(--font-inter)] truncate">{r.partner.name}</p>
-                        <p className="text-[#74777f] text-xs font-[var(--font-inter)] mt-0.5">{action.detail}</p>
+                        <p className="text-[#0B1F45] text-sm font-semibold truncate">{r.partner.name}</p>
+                        <p className="text-[#74777f] text-xs mt-0.5">{action.detail}</p>
                       </div>
                       <span className={`shrink-0 text-[10px] font-bold px-2 py-1 ${
                         action.tone === "urgent" ? "bg-red-100 text-red-700" :
@@ -768,15 +768,15 @@ export default function RepCrmTab({
                     {hasReminder && (
                       <>
                         <button disabled={busy} onClick={() => quickSnooze(r.id, 2)}
-                          className="text-[11px] font-bold font-[var(--font-inter)] px-2.5 py-1 border border-[#d7dbe3] text-[#74777f] hover:border-[#002045] hover:text-[#002045] disabled:opacity-50">Adiar 2d</button>
+                          className="text-[11px] font-bold px-2.5 py-1 border border-[#d7dbe3] text-[#74777f] hover:border-[#0B1F45] hover:text-[#0B1F45] disabled:opacity-50">Adiar 2d</button>
                         <button disabled={busy} onClick={() => quickSnooze(r.id, 7)}
-                          className="text-[11px] font-bold font-[var(--font-inter)] px-2.5 py-1 border border-[#d7dbe3] text-[#74777f] hover:border-[#002045] hover:text-[#002045] disabled:opacity-50">Adiar 7d</button>
+                          className="text-[11px] font-bold px-2.5 py-1 border border-[#d7dbe3] text-[#74777f] hover:border-[#0B1F45] hover:text-[#0B1F45] disabled:opacity-50">Adiar 7d</button>
                         <button disabled={busy} onClick={() => clearFollowup(r.id)}
-                          className="text-[11px] font-bold font-[var(--font-inter)] px-2.5 py-1 border border-[#3b6934] text-[#3b6934] hover:bg-[#eafaf0] disabled:opacity-50">Concluído</button>
+                          className="text-[11px] font-bold px-2.5 py-1 border border-[#36A35C] text-[#1F7A44] hover:bg-[#eafaf0] disabled:opacity-50">Concluído</button>
                       </>
                     )}
                     <button onClick={() => toggleExpand(r.id)}
-                      className="text-[11px] font-bold font-[var(--font-inter)] px-2.5 py-1 border border-[#002045] text-[#002045] hover:bg-[#eef2f8] ml-auto">Abrir</button>
+                      className="text-[11px] font-bold px-2.5 py-1 border border-[#0B1F45] text-[#0B1F45] hover:bg-[#eef2f8] ml-auto">Abrir</button>
                   </div>
                 </div>
               );
@@ -789,33 +789,33 @@ export default function RepCrmTab({
         <div className="bg-white border border-[#e2e2e2] px-4 py-4">
           <div className="grid grid-cols-1 lg:grid-cols-[1fr_auto] gap-3 lg:items-end">
             <div>
-              <label className="block text-[#74777f] text-[10px] tracking-[0.12em] uppercase font-bold font-[var(--font-inter)] mb-1.5">
+              <label className="block text-[#74777f] text-[10px] tracking-[0.12em] uppercase font-bold mb-1.5">
                 Buscar relacionamento
               </label>
           <input value={search} onChange={(e) => setSearch(e.target.value)} placeholder="Buscar por nome…"
-            className="w-full border border-[#d7dbe3] px-3 py-2.5 text-sm font-[var(--font-inter)] text-[#002045] focus:outline-none focus:border-[#002045]" />
+            className="w-full border border-[#d7dbe3] px-3 py-2.5 text-sm text-[#0B1F45] focus:outline-none focus:border-[#0B1F45]" />
             </div>
             <div className="flex flex-wrap gap-2">
           <select value={stageFilter} onChange={(e) => setStageFilter(e.target.value as Stage | "all")}
-            className="border border-[#d7dbe3] px-2 py-2.5 text-xs font-[var(--font-inter)] text-[#002045] focus:outline-none focus:border-[#002045]">
+            className="border border-[#d7dbe3] px-2 py-2.5 text-xs text-[#0B1F45] focus:outline-none focus:border-[#0B1F45]">
             <option value="all">Todos os estágios</option>
             {STAGE_ORDER.map((s) => <option key={s} value={s}>{STAGE_META[s].label}</option>)}
           </select>
           <select value={sortKey} onChange={(e) => setSortKey(e.target.value as SortKey)}
-            className="border border-[#d7dbe3] px-2 py-2.5 text-xs font-[var(--font-inter)] text-[#002045] focus:outline-none focus:border-[#002045]">
+            className="border border-[#d7dbe3] px-2 py-2.5 text-xs text-[#0B1F45] focus:outline-none focus:border-[#0B1F45]">
             <option value="activity">Atividade recente</option>
             <option value="overdue">Follow-up mais próximo</option>
             <option value="value">Maior valor gerado</option>
             <option value="name">Nome (A–Z)</option>
           </select>
               {hasFilters && (
-                <button onClick={clearFilters} className="text-[#74777f] text-xs font-bold font-[var(--font-inter)] px-3 py-2 hover:text-[#002045]">
+                <button onClick={clearFilters} className="text-[#74777f] text-xs font-bold px-3 py-2 hover:text-[#0B1F45]">
                   Limpar
                 </button>
               )}
               {(["list", "board"] as const).map((v) => (
                 <button key={v} onClick={() => setView(v)}
-                  className={`text-[11px] tracking-[0.08em] uppercase font-bold font-[var(--font-inter)] px-4 py-2 border ${view === v ? "bg-[#002045] text-white border-[#002045]" : "bg-white text-[#74777f] border-[#d7dbe3] hover:border-[#002045] hover:text-[#002045]"}`}>
+                  className={`text-[11px] tracking-[0.08em] uppercase font-bold px-4 py-2 border ${view === v ? "bg-[#0B1F45] text-white border-[#0B1F45]" : "bg-white text-[#74777f] border-[#d7dbe3] hover:border-[#0B1F45] hover:text-[#0B1F45]"}`}>
                   {v === "list" ? "Lista de ação" : "Kanban do pipeline"}
                 </button>
               ))}
@@ -825,10 +825,10 @@ export default function RepCrmTab({
       )}
 
       {loading ? (
-        <p className="text-[#74777f] text-sm font-[var(--font-inter)]">Carregando...</p>
+        <p className="text-[#74777f] text-sm">Carregando...</p>
       ) : rows.length === 0 ? (
         <div className="bg-white border border-[#e2e2e2] px-6 py-10 text-center">
-          <p className="text-[#74777f] text-sm font-[var(--font-inter)]">
+          <p className="text-[#74777f] text-sm">
             Nenhum parceiro no seu CRM ainda. Adicione um parceiro vinculado ou um prospecto acima para começar.
           </p>
         </div>
@@ -836,16 +836,16 @@ export default function RepCrmTab({
         <div>
         <div className="flex flex-col lg:flex-row lg:items-end lg:justify-between gap-2 mb-3">
           <div>
-            <p className="text-[#74777f] text-[10px] tracking-[0.14em] uppercase font-bold font-[var(--font-inter)]">
+            <p className="text-[#74777f] text-[10px] tracking-[0.14em] uppercase font-bold">
               Kanban do pipeline
             </p>
-            <p className="text-[#74777f] text-sm font-[var(--font-inter)]">
+            <p className="text-[#74777f] text-sm">
               Arraste contatos entre estágios para atualizar o relacionamento.
             </p>
           </div>
           <button
             onClick={() => setView("list")}
-            className="self-start lg:self-auto text-[#002045] text-xs font-bold font-[var(--font-inter)] border border-[#002045] px-3 py-2 hover:bg-[#002045] hover:text-white"
+            className="self-start lg:self-auto text-[#0B1F45] text-xs font-bold border border-[#0B1F45] px-3 py-2 hover:bg-[#0B1F45] hover:text-white"
           >
             Voltar para lista
           </button>
@@ -862,7 +862,7 @@ export default function RepCrmTab({
                 className="w-full md:w-[280px] md:flex-shrink-0 bg-[#f4f5f7] border border-[#e8e8e8] rounded-sm">
                 <div className="px-3 py-2 border-b border-[#e2e2e2] flex items-center justify-between">
                   <span className={`text-[10px] font-bold px-1.5 py-0.5 ${STAGE_META[stage].cls}`}>{STAGE_META[stage].label}</span>
-                  <span className="text-[#74777f] text-[11px] font-bold font-[var(--font-inter)]">{colRows.length}</span>
+                  <span className="text-[#74777f] text-[11px] font-bold">{colRows.length}</span>
                 </div>
                 <div className="p-2 space-y-2 min-h-[80px]">
                   {colRows.map((r) => (
@@ -871,14 +871,14 @@ export default function RepCrmTab({
                       onDragEnd={() => setDraggingId(null)}
                       className={`bg-white border border-[#e2e2e2] px-3 py-2 cursor-grab active:cursor-grabbing ${draggingId === r.id ? "opacity-50" : ""}`}>
                       <div className="flex items-center gap-1.5 flex-wrap">
-                        <p className="text-[#002045] text-xs font-semibold font-[var(--font-inter)]">{r.partner.name}</p>
+                        <p className="text-[#0B1F45] text-xs font-semibold">{r.partner.name}</p>
                         {r.is_prospect && <span className="text-[8px] font-bold px-1 py-0.5 bg-[#fde9cf] text-[#8a5a12]">Prosp.</span>}
                       </div>
                       {r.total_generated > 0 && (
-                        <p className="text-[#2f5429] text-[11px] font-semibold font-[var(--font-inter)] mt-1">{fmtBRL(r.total_generated)}</p>
+                        <p className="text-[#1F7A44] text-[11px] font-semibold mt-1">{fmtBRL(r.total_generated)}</p>
                       )}
                       {r.next_reminder_at && (
-                        <p className="text-[#74777f] text-[10px] font-[var(--font-inter)] mt-0.5">⏰ {fmtDate(r.next_reminder_at)}</p>
+                        <p className="text-[#74777f] text-[10px] mt-0.5">⏰ {fmtDate(r.next_reminder_at)}</p>
                       )}
                       <div className="flex flex-wrap gap-1 mt-2">
                         {(r.specified_count || 0) > 0 && (
@@ -894,14 +894,14 @@ export default function RepCrmTab({
                       <div className="flex justify-end mt-2 pt-2 border-t border-[#f0f0f0]">
                         <button
                           onClick={(e) => { e.stopPropagation(); setView("list"); setExpandedId(r.id); setTimeout(() => document.getElementById(`crm-row-${r.id}`)?.scrollIntoView({ behavior: "smooth", block: "center" }), 60); }}
-                          className="text-[10px] font-bold font-[var(--font-inter)] text-[#1e5fb4] hover:underline"
+                          className="text-[10px] font-bold text-[#2F5FD0] hover:underline"
                         >
                           Abrir / editar →
                         </button>
                       </div>
                     </div>
                   ))}
-                  {colRows.length === 0 && <p className="text-[#b0b0b0] text-[10px] font-[var(--font-inter)] text-center py-3">—</p>}
+                  {colRows.length === 0 && <p className="text-[#b0b0b0] text-[10px] text-center py-3">—</p>}
                 </div>
               </div>
             );
@@ -909,7 +909,7 @@ export default function RepCrmTab({
         </div>
         </div>
       ) : visibleRows.length === 0 ? (
-        <p className="text-[#74777f] text-sm font-[var(--font-inter)]">Nenhum resultado para o filtro atual.</p>
+        <p className="text-[#74777f] text-sm">Nenhum resultado para o filtro atual.</p>
       ) : (
         <div className="space-y-3">
           {visibleRows.map((r) => {
@@ -919,67 +919,67 @@ export default function RepCrmTab({
             const stalled = staleDays(r);
             const followupDraft = followupDrafts[r.id] || draftFromRow(r);
             return (
-              <div key={r.id} id={`crm-row-${r.id}`} className={`bg-white border ${expanded ? "border-[#002045]" : "border-[#e2e2e2]"}`}>
+              <div key={r.id} id={`crm-row-${r.id}`} className={`bg-white border ${expanded ? "border-[#0B1F45]" : "border-[#e2e2e2]"}`}>
                 <div className="px-4 py-4">
                   <div className="grid grid-cols-1 lg:grid-cols-[minmax(0,1fr)_190px_160px_auto] gap-4 lg:items-center">
                     <div className="flex items-start gap-3 min-w-0">
-                      <div className="w-10 h-10 shrink-0 bg-[#edf1f6] text-[#002045] flex items-center justify-center text-xs font-bold font-[var(--font-inter)]">
+                      <div className="w-10 h-10 shrink-0 bg-[#edf1f6] text-[#0B1F45] flex items-center justify-center text-xs font-bold">
                         {initials(r.partner.name) || "?"}
                       </div>
                       <div className="min-w-0">
                         <div className="flex items-center gap-2 flex-wrap">
-                          <p className="text-[#002045] text-base font-semibold font-[var(--font-inter)] truncate">{r.partner.name}</p>
+                          <p className="text-[#0B1F45] text-base font-semibold truncate">{r.partner.name}</p>
                           {r.is_prospect && <span className="text-[9px] font-bold px-1.5 py-0.5 bg-[#fde9cf] text-[#8a5a12]">Prospecto</span>}
                           {stalled && <span className="text-[9px] font-bold px-1.5 py-0.5 bg-red-50 text-red-600">Parado {stalled}d</span>}
                         </div>
-                        <p className="text-[#74777f] text-xs font-[var(--font-inter)] mt-0.5">
+                        <p className="text-[#74777f] text-xs mt-0.5">
                           {[r.partner.profession, r.partner.phone, r.partner.email].filter(Boolean).join(" · ") || "Sem profissão/telefone/e-mail cadastrado"}
                         </p>
                       </div>
                     </div>
 
                     <div>
-                      <p className="text-[#74777f] text-[9px] uppercase tracking-wider font-bold font-[var(--font-inter)] mb-1">
+                      <p className="text-[#74777f] text-[9px] uppercase tracking-wider font-bold mb-1">
                         Estágio
                       </p>
                       <select value={r.stage} onChange={(e) => patchRow(r.id, { stage: e.target.value as Stage })}
-                        className="w-full border border-[#d7dbe3] px-2 py-2 text-xs font-[var(--font-inter)] text-[#002045] focus:outline-none focus:border-[#002045]">
+                        className="w-full border border-[#d7dbe3] px-2 py-2 text-xs text-[#0B1F45] focus:outline-none focus:border-[#0B1F45]">
                         {STAGE_ORDER.map((s) => <option key={s} value={s}>{STAGE_META[s].label}</option>)}
                       </select>
                     </div>
 
                     <div>
-                      <p className="text-[#74777f] text-[9px] uppercase tracking-wider font-bold font-[var(--font-inter)] mb-1">
+                      <p className="text-[#74777f] text-[9px] uppercase tracking-wider font-bold mb-1">
                         Próxima ação
                       </p>
-                      <p className={`text-xs font-semibold font-[var(--font-inter)] ${
+                      <p className={`text-xs font-semibold ${
                         action.tone === "urgent" ? "text-red-700" :
                         action.tone === "today" ? "text-amber-800" :
-                        "text-[#002045]"
+                        "text-[#0B1F45]"
                       }`}>
                         {action.label}
                       </p>
-                      <p className="text-[#74777f] text-[11px] font-[var(--font-inter)] mt-0.5 line-clamp-2">
+                      <p className="text-[#74777f] text-[11px] mt-0.5 line-clamp-2">
                         {action.detail}
                       </p>
                     </div>
 
                     <div className="flex flex-wrap lg:justify-end items-center gap-2">
                       <div className="text-left lg:text-right mr-auto lg:mr-2">
-                        <p className="text-[#74777f] text-[9px] uppercase tracking-wider font-bold font-[var(--font-inter)]">Gerado</p>
-                        <p className="text-[#002045] text-xs font-semibold font-[var(--font-inter)]">
+                        <p className="text-[#74777f] text-[9px] uppercase tracking-wider font-bold">Gerado</p>
+                        <p className="text-[#0B1F45] text-xs font-semibold">
                           {r.total_generated > 0 ? fmtBRL(r.total_generated) : "—"}
                         </p>
                       </div>
                       <button
                         onClick={() => snoozeReminder(r.id, 1)}
-                        className="border border-[#d7dbe3] text-[#002045] text-[11px] font-bold font-[var(--font-inter)] px-3 py-2 hover:border-[#002045]"
+                        className="border border-[#d7dbe3] text-[#0B1F45] text-[11px] font-bold px-3 py-2 hover:border-[#0B1F45]"
                       >
                         Amanhã
                       </button>
                       <button
                         onClick={() => toggleExpand(r.id)}
-                        className="bg-[#002045] text-white text-[11px] font-bold font-[var(--font-inter)] px-3 py-2 hover:bg-[#1a365d]"
+                        className="bg-[#0B1F45] text-white text-[11px] font-bold px-3 py-2 hover:bg-[#2347A0]"
                       >
                         {expanded ? "Fechar" : "Detalhes"}
                       </button>
@@ -988,7 +988,7 @@ export default function RepCrmTab({
                 </div>
 
                 {expanded && (
-                  <div className="border-t border-[#e2e2e2] px-5 py-4 bg-[#fafafa]">
+                  <div className="border-t border-[#e2e2e2] px-5 py-4 bg-[#F6F5F2]">
                     <div className="flex flex-wrap items-center justify-between gap-3 mb-4">
                       <div className="flex items-center gap-2 flex-wrap">
                         <span className={`text-[9px] font-bold px-1.5 py-0.5 ${stageMeta.cls}`}>{stageMeta.label}</span>
@@ -1005,18 +1005,18 @@ export default function RepCrmTab({
                     {r.is_prospect && (
                       <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-2 mb-4">
                         <input defaultValue={r.prospect_name ?? ""} onBlur={(e) => { const v = e.target.value.trim(); if (v && v !== r.prospect_name) patchRow(r.id, { prospect_name: v } as Partial<CrmRow>); }}
-                          placeholder="Nome" className="border border-[#e2e2e2] px-2 py-2 text-xs font-[var(--font-inter)] text-[#002045] bg-white focus:outline-none focus:border-[#002045]" />
+                          placeholder="Nome" className="border border-[#e2e2e2] px-2 py-2 text-xs text-[#0B1F45] bg-white focus:outline-none focus:border-[#0B1F45]" />
                         <input defaultValue={r.prospect_phone ?? ""} onBlur={(e) => patchRow(r.id, { prospect_phone: e.target.value.trim() || null } as Partial<CrmRow>)}
-                          placeholder="WhatsApp" className="border border-[#e2e2e2] px-2 py-2 text-xs font-[var(--font-inter)] text-[#002045] bg-white focus:outline-none focus:border-[#002045]" />
+                          placeholder="WhatsApp" className="border border-[#e2e2e2] px-2 py-2 text-xs text-[#0B1F45] bg-white focus:outline-none focus:border-[#0B1F45]" />
                         <input type="email" defaultValue={r.prospect_email ?? ""} onBlur={(e) => patchRow(r.id, { prospect_email: e.target.value.trim() || null } as Partial<CrmRow>)}
-                          placeholder="E-mail" className="border border-[#e2e2e2] px-2 py-2 text-xs font-[var(--font-inter)] text-[#002045] bg-white focus:outline-none focus:border-[#002045]" />
+                          placeholder="E-mail" className="border border-[#e2e2e2] px-2 py-2 text-xs text-[#0B1F45] bg-white focus:outline-none focus:border-[#0B1F45]" />
                         <input defaultValue={r.prospect_profession ?? ""} onBlur={(e) => patchRow(r.id, { prospect_profession: e.target.value.trim() || null } as Partial<CrmRow>)}
-                          placeholder="Profissão" className="border border-[#e2e2e2] px-2 py-2 text-xs font-[var(--font-inter)] text-[#002045] bg-white focus:outline-none focus:border-[#002045]" />
+                          placeholder="Profissão" className="border border-[#e2e2e2] px-2 py-2 text-xs text-[#0B1F45] bg-white focus:outline-none focus:border-[#0B1F45]" />
                       </div>
                     )}
 
                     <div className="bg-white border border-[#e2e2e2] px-3 py-3 mb-4">
-                      <p className="text-[#74777f] text-[9px] uppercase tracking-wider font-bold font-[var(--font-inter)] mb-3">
+                      <p className="text-[#74777f] text-[9px] uppercase tracking-wider font-bold mb-3">
                         Datas principais
                       </p>
                     <div className="grid grid-cols-2 lg:grid-cols-4 gap-x-4 gap-y-3">
@@ -1032,9 +1032,9 @@ export default function RepCrmTab({
 
                     <div className="grid grid-cols-1 lg:grid-cols-3 gap-3 mb-4">
                       <div className="bg-white border border-[#e2e2e2] px-3 py-3">
-                        <p className="text-[#74777f] text-[9px] uppercase tracking-wider font-bold font-[var(--font-inter)] mb-3">Mostruário</p>
+                        <p className="text-[#74777f] text-[9px] uppercase tracking-wider font-bold mb-3">Mostruário</p>
                         <div className="space-y-2">
-                          <label className="flex items-center gap-2 text-xs font-[var(--font-inter)] text-[#43474e] cursor-pointer">
+                          <label className="flex items-center gap-2 text-xs text-[#43474e] cursor-pointer">
                             <input
                               type="checkbox"
                               checked={!!r.mostruario_sent}
@@ -1045,7 +1045,7 @@ export default function RepCrmTab({
                             />
                             Enviado
                           </label>
-                          <label className="flex items-center gap-2 text-xs font-[var(--font-inter)] text-[#43474e] cursor-pointer">
+                          <label className="flex items-center gap-2 text-xs text-[#43474e] cursor-pointer">
                             <input
                               type="checkbox"
                               checked={!!r.mostruario_received}
@@ -1060,8 +1060,8 @@ export default function RepCrmTab({
                       </div>
 
                       <div className="bg-white border border-[#e2e2e2] px-3 py-3">
-                        <p className="text-[#74777f] text-[9px] uppercase tracking-wider font-bold font-[var(--font-inter)] mb-3">Especificações</p>
-                        <label className="flex items-center gap-2 text-xs font-[var(--font-inter)] text-[#43474e] cursor-pointer mb-2">
+                        <p className="text-[#74777f] text-[9px] uppercase tracking-wider font-bold mb-3">Especificações</p>
+                        <label className="flex items-center gap-2 text-xs text-[#43474e] cursor-pointer mb-2">
                           <input
                             type="checkbox"
                             checked={!!r.has_specified || (r.specified_count || 0) > 0}
@@ -1085,14 +1085,14 @@ export default function RepCrmTab({
                               last_specified_at: count > 0 ? (r.last_specified_at || new Date().toISOString()) : null,
                             });
                           }}
-                          className="w-full border border-[#e2e2e2] px-2 py-2 text-xs font-[var(--font-inter)] text-[#002045] focus:outline-none focus:border-[#002045]"
+                          className="w-full border border-[#e2e2e2] px-2 py-2 text-xs text-[#0B1F45] focus:outline-none focus:border-[#0B1F45]"
                           placeholder="Quantas vezes?"
                         />
                       </div>
 
                       <div className="bg-white border border-[#e2e2e2] px-3 py-3">
-                        <p className="text-[#74777f] text-[9px] uppercase tracking-wider font-bold font-[var(--font-inter)] mb-3">Projetos</p>
-                        <label className="flex items-center gap-2 text-xs font-[var(--font-inter)] text-[#43474e] cursor-pointer mb-2">
+                        <p className="text-[#74777f] text-[9px] uppercase tracking-wider font-bold mb-3">Projetos</p>
+                        <label className="flex items-center gap-2 text-xs text-[#43474e] cursor-pointer mb-2">
                           <input
                             type="checkbox"
                             checked={!!r.project_added || (r.project_added_count || 0) > 0}
@@ -1116,10 +1116,10 @@ export default function RepCrmTab({
                               project_added_at: count > 0 ? (r.project_added_at || new Date().toISOString()) : null,
                             });
                           }}
-                          className="w-full border border-[#e2e2e2] px-2 py-2 text-xs font-[var(--font-inter)] text-[#002045] focus:outline-none focus:border-[#002045]"
+                          className="w-full border border-[#e2e2e2] px-2 py-2 text-xs text-[#0B1F45] focus:outline-none focus:border-[#0B1F45]"
                           placeholder="Quantos projetos?"
                         />
-                        <p className="text-[#b0b0b0] text-[10px] font-[var(--font-inter)] mt-2">
+                        <p className="text-[#b0b0b0] text-[10px] mt-2">
                           Orçamentos registrados: {r.projects_count || 0}
                         </p>
                       </div>
@@ -1128,15 +1128,15 @@ export default function RepCrmTab({
                     <div className="mb-4 bg-white border border-[#e2e2e2] px-3 py-3">
                       <div className="flex flex-wrap items-start justify-between gap-2 mb-3">
                         <div>
-                          <p className="text-[#74777f] text-[9px] uppercase tracking-wider font-bold font-[var(--font-inter)]">
+                          <p className="text-[#74777f] text-[9px] uppercase tracking-wider font-bold">
                             Próximo follow-up
                           </p>
-                          <p className="text-[#74777f] text-[11px] font-[var(--font-inter)] mt-0.5">
+                          <p className="text-[#74777f] text-[11px] mt-0.5">
                             Escolha data, hora e mensagem; depois clique em salvar.
                           </p>
                         </div>
                         {r.next_reminder_at && (
-                          <p className="text-[#002045] text-[11px] font-semibold font-[var(--font-inter)]">
+                          <p className="text-[#0B1F45] text-[11px] font-semibold">
                             Salvo: {fmtDateTime(r.next_reminder_at)}
                           </p>
                         )}
@@ -1144,43 +1144,43 @@ export default function RepCrmTab({
 
                       <div className="grid grid-cols-1 sm:grid-cols-[1fr_120px_150px] lg:grid-cols-[180px_120px_150px_1fr_auto] gap-2">
                         <div>
-                          <label className="block text-[9px] tracking-wider uppercase font-bold font-[var(--font-inter)] text-[#74777f] mb-1">Data</label>
+                          <label className="block text-[9px] tracking-wider uppercase font-bold text-[#74777f] mb-1">Data</label>
                           <input
                             type="date"
                             value={followupDraft.date}
                             onChange={(e) => updateFollowupDraft(r.id, { date: e.target.value })}
-                            className="w-full border border-[#e2e2e2] px-2 py-2 text-xs font-[var(--font-inter)] text-[#002045] focus:outline-none focus:border-[#002045]"
+                            className="w-full border border-[#e2e2e2] px-2 py-2 text-xs text-[#0B1F45] focus:outline-none focus:border-[#0B1F45]"
                           />
                         </div>
                         <div>
-                          <label className="block text-[9px] tracking-wider uppercase font-bold font-[var(--font-inter)] text-[#74777f] mb-1">Hora</label>
+                          <label className="block text-[9px] tracking-wider uppercase font-bold text-[#74777f] mb-1">Hora</label>
                           <input
                             type="time"
                             value={followupDraft.time}
                             onChange={(e) => updateFollowupDraft(r.id, { time: e.target.value })}
-                            className="w-full border border-[#e2e2e2] px-2 py-2 text-xs font-[var(--font-inter)] text-[#002045] focus:outline-none focus:border-[#002045]"
+                            className="w-full border border-[#e2e2e2] px-2 py-2 text-xs text-[#0B1F45] focus:outline-none focus:border-[#0B1F45]"
                           />
                         </div>
                         <div>
-                          <label className="block text-[9px] tracking-wider uppercase font-bold font-[var(--font-inter)] text-[#74777f] mb-1">Repetição</label>
+                          <label className="block text-[9px] tracking-wider uppercase font-bold text-[#74777f] mb-1">Repetição</label>
                           <select value={followupDraft.reminder_recur} onChange={(e) => updateFollowupDraft(r.id, { reminder_recur: e.target.value as Recur })}
-                            className="w-full border border-[#e2e2e2] px-2 py-2 text-xs font-[var(--font-inter)] text-[#002045] focus:outline-none focus:border-[#002045]">
+                            className="w-full border border-[#e2e2e2] px-2 py-2 text-xs text-[#0B1F45] focus:outline-none focus:border-[#0B1F45]">
                             {(Object.keys(RECUR_META) as Recur[]).map((k) => <option key={k} value={k}>{RECUR_META[k]}</option>)}
                           </select>
                         </div>
                         <div>
-                          <label className="block text-[9px] tracking-wider uppercase font-bold font-[var(--font-inter)] text-[#74777f] mb-1">Nota interna</label>
+                          <label className="block text-[9px] tracking-wider uppercase font-bold text-[#74777f] mb-1">Nota interna</label>
                           <input
                             value={followupDraft.reminder_note}
                             onChange={(e) => updateFollowupDraft(r.id, { reminder_note: e.target.value })}
                             placeholder="Ex: enviar proposta, cobrar retorno..."
-                            className="w-full border border-[#e2e2e2] px-2 py-2 text-xs font-[var(--font-inter)] text-[#002045] focus:outline-none focus:border-[#002045]"
+                            className="w-full border border-[#e2e2e2] px-2 py-2 text-xs text-[#0B1F45] focus:outline-none focus:border-[#0B1F45]"
                           />
                         </div>
                         <div className="flex gap-1 items-end">
                           {[1, 7].map((d) => (
                             <button key={d} onClick={() => snoozeReminder(r.id, d)}
-                              className="text-[10px] text-[#74777f] font-bold border border-[#e2e2e2] px-2 py-2 hover:border-[#002045] hover:text-[#002045]">
+                              className="text-[10px] text-[#74777f] font-bold border border-[#e2e2e2] px-2 py-2 hover:border-[#0B1F45] hover:text-[#0B1F45]">
                               +{d}d
                             </button>
                           ))}
@@ -1188,29 +1188,29 @@ export default function RepCrmTab({
                       </div>
 
                       <div className="mt-3 pt-3 border-t border-[#f0f0f0] grid grid-cols-1 lg:grid-cols-[260px_1fr] gap-3 items-start">
-                        <label className="flex items-start gap-2 text-xs font-[var(--font-inter)] text-[#43474e] leading-5">
+                        <label className="flex items-start gap-2 text-xs text-[#43474e] leading-5">
                           <input
                             type="checkbox"
                             checked={followupDraft.auto_followup_enabled}
                             onChange={(e) => updateFollowupDraft(r.id, { auto_followup_enabled: e.target.checked })}
-                            className="mt-1 h-3.5 w-3.5 accent-[#002045]"
+                            className="mt-1 h-3.5 w-3.5 accent-[#0B1F45]"
                           />
                           Enviar WhatsApp automático
                         </label>
                         <div>
-                          <label className="block text-[9px] tracking-wider uppercase font-bold font-[var(--font-inter)] text-[#74777f] mb-1">Mensagem para o parceiro</label>
+                          <label className="block text-[9px] tracking-wider uppercase font-bold text-[#74777f] mb-1">Mensagem para o parceiro</label>
                           <textarea
                             value={followupDraft.auto_followup_message}
                             onChange={(e) => updateFollowupDraft(r.id, { auto_followup_message: e.target.value })}
                             placeholder="Oi, {nome}. Tudo bem? Passando para dar sequência ao nosso contato..."
                             rows={3}
-                            className="w-full border border-[#e2e2e2] px-2 py-2 text-xs font-[var(--font-inter)] text-[#002045] focus:outline-none focus:border-[#002045] resize-y min-h-[76px]"
+                            className="w-full border border-[#e2e2e2] px-2 py-2 text-xs text-[#0B1F45] focus:outline-none focus:border-[#0B1F45] resize-y min-h-[76px]"
                           />
-                          <p className="text-[#74777f] text-[10px] font-[var(--font-inter)] mt-1">
+                          <p className="text-[#74777f] text-[10px] mt-1">
                             Use {"{nome}"} para preencher automaticamente o primeiro nome do parceiro.
                           </p>
                           {r.auto_followup_sent_at && (
-                            <p className="text-[#74777f] text-[10px] font-[var(--font-inter)] mt-1">
+                            <p className="text-[#74777f] text-[10px] mt-1">
                               Último envio automático: {fmtDateTime(r.auto_followup_sent_at)}
                             </p>
                           )}
@@ -1221,7 +1221,7 @@ export default function RepCrmTab({
                         <button
                           type="button"
                           onClick={() => clearFollowup(r.id)}
-                          className="text-[#74777f] text-[11px] font-bold font-[var(--font-inter)] px-3 py-2 hover:text-[#002045]"
+                          className="text-[#74777f] text-[11px] font-bold px-3 py-2 hover:text-[#0B1F45]"
                         >
                           Limpar follow-up
                         </button>
@@ -1229,7 +1229,7 @@ export default function RepCrmTab({
                           type="button"
                           onClick={() => saveFollowup(r.id)}
                           disabled={savingFollowupId === r.id}
-                          className="bg-[#002045] text-white text-[11px] tracking-[0.08em] uppercase font-bold font-[var(--font-inter)] px-4 py-2 hover:bg-[#1a365d] disabled:opacity-50"
+                          className="bg-[#0B1F45] text-white text-[11px] tracking-[0.08em] uppercase font-bold px-4 py-2 hover:bg-[#2347A0] disabled:opacity-50"
                         >
                           {savingFollowupId === r.id ? "Salvando..." : "Aplicar e salvar"}
                         </button>
@@ -1251,20 +1251,20 @@ export default function RepCrmTab({
                         onChange={(e) => setNoteDraft(e.target.value)}
                         onKeyDown={(e) => { if (e.key === "Enter") addNote(r.id); }}
                         placeholder="Registrar uma interação ou anotação..."
-                        className="flex-1 border border-[#e2e2e2] px-3 py-2 text-xs font-[var(--font-inter)] text-[#002045] bg-white focus:outline-none focus:border-[#002045]"
+                        className="flex-1 border border-[#e2e2e2] px-3 py-2 text-xs text-[#0B1F45] bg-white focus:outline-none focus:border-[#0B1F45]"
                       />
-                      <button onClick={() => addNote(r.id)} className="bg-[#002045] text-white text-xs font-bold font-[var(--font-inter)] px-4 py-2 hover:bg-[#1a365d]">
+                      <button onClick={() => addNote(r.id)} className="bg-[#0B1F45] text-white text-xs font-bold px-4 py-2 hover:bg-[#2347A0]">
                         Adicionar
                       </button>
                     </div>
                     {(notesByCrmId[r.id] ?? []).length === 0 ? (
-                      <p className="text-[#74777f] text-xs font-[var(--font-inter)]">Nenhuma nota ainda.</p>
+                      <p className="text-[#74777f] text-xs">Nenhuma nota ainda.</p>
                     ) : (
                       <div className="space-y-2">
                         {(notesByCrmId[r.id] ?? []).map((n) => (
                           <div key={n.id} className="bg-white border border-[#f0f0f0] px-3 py-2">
-                            <p className="text-[#43474e] text-xs font-[var(--font-inter)]">{n.body}</p>
-                            <p className="text-[#b0b0b0] text-[10px] font-[var(--font-inter)] mt-1">{fmtDateTime(n.created_at)}</p>
+                            <p className="text-[#43474e] text-xs">{n.body}</p>
+                            <p className="text-[#b0b0b0] text-[10px] mt-1">{fmtDateTime(n.created_at)}</p>
                           </div>
                         ))}
                       </div>

@@ -30,28 +30,28 @@ function CampoImagem({ label, value, onChange, folder, alto = false }: {
       {value ? (
         <div className="border border-[#e2e2e2]">
           {/* eslint-disable-next-line @next/next/no-img-element */}
-          <img src={value} alt="" className={`w-full ${alto ? "h-44" : "h-20"} object-cover bg-[#f5f5f3]`} />
+          <img src={value} alt="" className={`w-full ${alto ? "h-44" : "h-20"} object-cover bg-[#F6F5F2]`} />
           <div className="flex border-t border-[#e2e2e2]">
-            <label className="flex-1 text-center text-[10px] tracking-[0.08em] uppercase font-bold font-[var(--font-inter)] px-3 py-2 bg-[#002045] text-white hover:bg-[#1a365d] cursor-pointer">
+            <label className="flex-1 text-center text-[10px] tracking-[0.08em] uppercase font-bold px-3 py-2 bg-[#0B1F45] text-white hover:bg-[#2347A0] cursor-pointer">
               {enviando ? "Enviando…" : "Trocar foto"}
               <input type="file" accept="image/*,.heic,.heif" className="hidden" disabled={enviando}
                 onChange={(e) => { void enviar(e.target.files?.[0]); e.target.value = ""; }} />
             </label>
             <button type="button" onClick={() => onChange(null)}
-              className="px-4 py-2 text-[10px] tracking-[0.08em] uppercase font-bold font-[var(--font-inter)] text-red-600 hover:bg-red-50">
+              className="px-4 py-2 text-[10px] tracking-[0.08em] uppercase font-bold text-red-600 hover:bg-red-50">
               Remover
             </button>
           </div>
         </div>
       ) : (
-        <label className={`flex flex-col items-center justify-center gap-1 border-2 border-dashed border-[#cdd3dd] bg-[#f9f9f7] hover:border-[#002045] cursor-pointer text-center px-4 ${alto ? "h-36" : "h-20"}`}>
-          <span className="text-[#002045] text-xs font-bold font-[var(--font-inter)]">{enviando ? "Enviando…" : "+ Enviar foto"}</span>
-          <span className="text-[#a0a3a8] text-[10px] font-[var(--font-inter)]">JPG, PNG ou HEIC · reduzida automaticamente</span>
+        <label className={`flex flex-col items-center justify-center gap-1 border-2 border-dashed border-[#cdd3dd] bg-[#F6F5F2] hover:border-[#0B1F45] cursor-pointer text-center px-4 ${alto ? "h-36" : "h-20"}`}>
+          <span className="text-[#0B1F45] text-xs font-bold">{enviando ? "Enviando…" : "+ Enviar foto"}</span>
+          <span className="text-[#a0a3a8] text-[10px]">JPG, PNG ou HEIC · reduzida automaticamente</span>
           <input type="file" accept="image/*,.heic,.heif" className="hidden" disabled={enviando}
             onChange={(e) => { void enviar(e.target.files?.[0]); e.target.value = ""; }} />
         </label>
       )}
-      {erro && <p className="text-[11px] text-red-600 font-[var(--font-inter)] mt-1">{erro}</p>}
+      {erro && <p className="text-[11px] text-red-600 mt-1">{erro}</p>}
     </div>
   );
 }
@@ -216,16 +216,16 @@ export default function OrganizacaoPage() {
       title="Categorias e Showrooms"
     >
       {saved && (
-        <div className="mb-4 bg-[#eef5ec] border border-[#3b6934]/25 text-[#2c5226] px-4 py-2.5 text-sm font-[var(--font-inter)]">{saved}</div>
+        <div className="mb-4 bg-[#eef5ec] border border-[#36A35C]/25 text-[#1F7A44] px-4 py-2.5 text-sm">{saved}</div>
       )}
       {err && (
-        <div className="mb-4 bg-red-50 border border-red-200 text-red-700 px-4 py-2.5 text-sm font-[var(--font-inter)] flex items-start justify-between gap-3">
+        <div className="mb-4 bg-red-50 border border-red-200 text-red-700 px-4 py-2.5 text-sm flex items-start justify-between gap-3">
           <span>{err}</span>
           <button onClick={() => setErr(null)} className="font-bold shrink-0">✕</button>
         </div>
       )}
       {pending && (
-        <div className="mb-6 bg-amber-50 border border-amber-300 px-4 py-3 text-sm font-[var(--font-inter)] text-amber-900">
+        <div className="mb-6 bg-amber-50 border border-amber-300 px-4 py-3 text-sm text-amber-900">
           <strong className="font-bold">Migração 053 pendente.</strong> As tabelas de showrooms parceiros e características
           ainda não existem no banco. Rode <code className="bg-amber-100 px-1">053_projects_showrooms_architecture.sql</code> no
           Supabase para habilitar esta tela.
@@ -233,15 +233,15 @@ export default function OrganizacaoPage() {
       )}
 
       {loading ? (
-        <p className="text-[#74777f] text-sm font-[var(--font-inter)]">Carregando…</p>
+        <p className="text-[#74777f] text-sm">Carregando…</p>
       ) : (
         <div className="space-y-8">
 
           {/* ── 1. Categorias principais ───────────────────────────────────── */}
           <section className="bg-white border border-[#e2e2e2]">
             <div className="px-4 sm:px-5 py-4 border-b border-[#f0f0f0]">
-              <h2 className="font-[var(--font-noto-serif)] text-[#002045] text-lg">Categorias principais</h2>
-              <p className="text-[#74777f] text-[12px] font-[var(--font-inter)] mt-1">
+              <h2 className="font-serif text-[#0B1F45] text-lg">Categorias principais</h2>
+              <p className="text-[#74777f] text-[12px] mt-1">
                 São as seções da página de Projetos, nesta ordem. Todo projeto pertence a exatamente uma.
               </p>
             </div>
@@ -250,16 +250,16 @@ export default function OrganizacaoPage() {
                 <div key={c.id} className="px-4 sm:px-5 py-3.5 flex gap-3">
                   <div className="flex flex-col pt-1 shrink-0">
                     <button onClick={() => moveCat(c.id, -1)} disabled={idx === 0}
-                      className="text-[#74777f] hover:text-[#002045] disabled:opacity-20 leading-none text-sm" aria-label="Subir">▲</button>
+                      className="text-[#74777f] hover:text-[#0B1F45] disabled:opacity-20 leading-none text-sm" aria-label="Subir">▲</button>
                     <button onClick={() => moveCat(c.id, 1)} disabled={idx === activeCats.length - 1}
-                      className="text-[#74777f] hover:text-[#002045] disabled:opacity-20 leading-none text-sm" aria-label="Descer">▼</button>
+                      className="text-[#74777f] hover:text-[#0B1F45] disabled:opacity-20 leading-none text-sm" aria-label="Descer">▼</button>
                   </div>
                   <div className="flex-1 min-w-0 space-y-2">
                     <input value={c.label} onChange={(e) => patchCat(c.id, { label: e.target.value })}
-                      className="w-full border border-[#e2e2e2] px-3 py-2 text-sm font-[var(--font-inter)] text-[#002045] font-semibold focus:outline-none focus:border-[#002045]" />
+                      className="w-full border border-[#e2e2e2] px-3 py-2 text-sm text-[#0B1F45] font-semibold focus:outline-none focus:border-[#0B1F45]" />
                     <input value={c.description ?? ""} onChange={(e) => patchCat(c.id, { description: e.target.value })}
                       placeholder="Subtítulo da seção no site (opcional)"
-                      className="w-full border border-[#e2e2e2] px-3 py-1.5 text-xs font-[var(--font-inter)] text-[#43474e] focus:outline-none focus:border-[#002045]" />
+                      className="w-full border border-[#e2e2e2] px-3 py-1.5 text-xs text-[#43474e] focus:outline-none focus:border-[#0B1F45]" />
                   </div>
                 </div>
               ))}
@@ -268,7 +268,7 @@ export default function OrganizacaoPage() {
               <input value={newCat} onChange={(e) => setNewCat(e.target.value)}
                 onKeyDown={(e) => { if (e.key === "Enter") { e.preventDefault(); createCat(); } }}
                 placeholder="Nova categoria principal (ex.: Corporativo)"
-                className="flex-1 min-w-[200px] border border-[#e2e2e2] px-3 py-2.5 text-sm font-[var(--font-inter)] text-[#002045] focus:outline-none focus:border-[#002045]" />
+                className="flex-1 min-w-[200px] border border-[#e2e2e2] px-3 py-2.5 text-sm text-[#0B1F45] focus:outline-none focus:border-[#0B1F45]" />
               <button onClick={createCat} disabled={!newCat.trim()} className={btnPrimary}>+ Criar</button>
             </div>
           </section>
@@ -276,15 +276,15 @@ export default function OrganizacaoPage() {
           {/* ── 2. Showrooms parceiros ─────────────────────────────────────── */}
           <section className="bg-white border border-[#e2e2e2]">
             <div className="px-4 sm:px-5 py-4 border-b border-[#f0f0f0]">
-              <h2 className="font-[var(--font-noto-serif)] text-[#002045] text-lg">Showrooms parceiros e pontos de revenda</h2>
-              <p className="text-[#74777f] text-[12px] font-[var(--font-inter)] mt-1">
+              <h2 className="font-serif text-[#0B1F45] text-lg">Showrooms parceiros e pontos de revenda</h2>
+              <p className="text-[#74777f] text-[12px] mt-1">
                 Lugares onde o cliente vê o painel ao vivo. Cada um tem um endereço só; os ambientes cadastrados
                 dentro dele herdam esse endereço. O tipo define a seção da página Projetos.
               </p>
             </div>
 
             {showrooms.length === 0 ? (
-              <p className="px-4 sm:px-5 py-6 text-[#a0a3a8] text-sm font-[var(--font-inter)]">
+              <p className="px-4 sm:px-5 py-6 text-[#a0a3a8] text-sm">
                 Nenhum showroom parceiro cadastrado ainda.
               </p>
             ) : (
@@ -293,17 +293,17 @@ export default function OrganizacaoPage() {
                   <div key={s.id} className="px-4 sm:px-5 py-4">
                     <div className="flex flex-wrap items-start justify-between gap-3">
                       <div className="min-w-0">
-                        <p className="font-[var(--font-inter)] text-[#002045] font-bold text-sm flex items-center gap-2 flex-wrap">
+                        <p className="text-[#0B1F45] font-bold text-sm flex items-center gap-2 flex-wrap">
                           {s.name}
-                          <span className={`text-[9px] tracking-[0.1em] uppercase font-bold px-1.5 py-0.5 ${s.kind === "revenda" ? "bg-[#eaf3e6] text-[#2f5429]" : "bg-[#eef2f8] text-[#002045]"}`}>
+                          <span className={`text-[9px] tracking-[0.1em] uppercase font-bold px-1.5 py-0.5 ${s.kind === "revenda" ? "bg-[#eaf3e6] text-[#1F7A44]" : "bg-[#eef2f8] text-[#0B1F45]"}`}>
                             {s.kind === "revenda" ? "Ponto de revenda" : "Showroom"}
                           </span>
                           {!s.active && <span className="text-[9px] tracking-[0.1em] uppercase font-bold bg-[#f0f0f0] text-[#74777f] px-1.5 py-0.5">Inativo</span>}
                         </p>
-                        <p className="text-[#74777f] text-xs font-[var(--font-inter)] mt-0.5">
+                        <p className="text-[#74777f] text-xs mt-0.5">
                           {s.address || <span className="text-[#c4c6ca]">Sem endereço cadastrado</span>}
                         </p>
-                        <p className="text-[#74777f] text-xs font-[var(--font-inter)] mt-0.5">
+                        <p className="text-[#74777f] text-xs mt-0.5">
                           {s.project_count} {s.project_count === 1 ? "ambiente" : "ambientes"}
                         </p>
                       </div>
@@ -348,24 +348,24 @@ export default function OrganizacaoPage() {
                         <div className="sm:col-span-2">
                           <CampoImagem label="Foto de capa (aparece no cartão do site)" value={s.cover_url} folder={`showrooms/${s.slug}`} alto
                             onChange={(url) => patchShowroom(s.id, { cover_url: url ?? "" })} />
-                          <p className="text-[11px] text-[#74777f] font-[var(--font-inter)] mt-1">
+                          <p className="text-[11px] text-[#74777f] mt-1">
                             Sem capa, o site usa a foto de um dos ambientes deste {s.kind === "revenda" ? "ponto de revenda" : "showroom"}.
                           </p>
                         </div>
-                        <div className="sm:col-span-2 bg-[#f5f5f3] border border-[#e2e2e2] px-4 py-3 flex flex-wrap items-center justify-between gap-3">
-                          <p className="text-[12px] text-[#43474e] font-[var(--font-inter)] leading-snug">
-                            <strong className="text-[#002045]">Fotos dos ambientes</strong> — cada ambiente é um projeto com várias fotos
+                        <div className="sm:col-span-2 bg-[#F6F5F2] border border-[#e2e2e2] px-4 py-3 flex flex-wrap items-center justify-between gap-3">
+                          <p className="text-[12px] text-[#43474e] leading-snug">
+                            <strong className="text-[#0B1F45]">Fotos dos ambientes</strong> — cada ambiente é um projeto com várias fotos
                             (Antes / Depois), que aparece na página deste {s.kind === "revenda" ? "ponto de revenda" : "showroom"}.
                           </p>
                           <Link href={`/admin/projetos/novo?showroom=${s.id}`} className={btnPrimary}>+ Adicionar ambiente com fotos</Link>
                         </div>
                         <div className="sm:col-span-2 flex flex-wrap items-center justify-between gap-3 pt-1">
-                          <label className="flex items-center gap-2 text-[13px] font-[var(--font-inter)] text-[#43474e] cursor-pointer">
+                          <label className="flex items-center gap-2 text-[13px] text-[#43474e] cursor-pointer">
                             <input type="checkbox" checked={s.active} onChange={(e) => patchShowroom(s.id, { active: e.target.checked })} />
                             Ativo (visível no site)
                           </label>
                           <button onClick={() => removeShowroom(s)}
-                            className="border border-red-200 text-red-700 text-xs tracking-[0.12em] uppercase font-bold font-[var(--font-inter)] px-4 py-2.5 hover:bg-red-50 hover:border-red-400 transition-colors">
+                            className="border border-red-200 text-red-700 text-xs tracking-[0.12em] uppercase font-bold px-4 py-2.5 hover:bg-red-50 hover:border-red-400 transition-colors">
                             Remover
                           </button>
                         </div>
@@ -380,7 +380,7 @@ export default function OrganizacaoPage() {
               <input value={newShowroom} onChange={(e) => setNewShowroom(e.target.value)}
                 onKeyDown={(e) => { if (e.key === "Enter") { e.preventDefault(); createShowroom(); } }}
                 placeholder="Nome do showroom ou revenda (ex.: Ornare)" disabled={pending}
-                className="flex-1 min-w-[200px] border border-[#e2e2e2] px-3 py-2.5 text-sm font-[var(--font-inter)] text-[#002045] focus:outline-none focus:border-[#002045] disabled:bg-[#f5f5f3]" />
+                className="flex-1 min-w-[200px] border border-[#e2e2e2] px-3 py-2.5 text-sm text-[#0B1F45] focus:outline-none focus:border-[#0B1F45] disabled:bg-[#F6F5F2]" />
               <button onClick={createShowroom} disabled={pending || !newShowroom.trim()} className={btnPrimary}>
                 + Adicionar
               </button>
@@ -390,22 +390,22 @@ export default function OrganizacaoPage() {
           {/* ── 3. Características ─────────────────────────────────────────── */}
           <section className="bg-white border border-[#e2e2e2]">
             <div className="px-4 sm:px-5 py-4 border-b border-[#f0f0f0]">
-              <h2 className="font-[var(--font-noto-serif)] text-[#002045] text-lg">Características do ambiente</h2>
-              <p className="text-[#74777f] text-[12px] font-[var(--font-inter)] mt-1">
+              <h2 className="font-serif text-[#0B1F45] text-lg">Características do ambiente</h2>
+              <p className="text-[#74777f] text-[12px] mt-1">
                 &ldquo;Área úmida&rdquo;, &ldquo;cozinha&rdquo;, &ldquo;teto&rdquo;. Descrevem o projeto sem virar item de menu —
                 por isso não competem com as categorias principais.
               </p>
             </div>
 
             {tags.length === 0 ? (
-              <p className="px-4 sm:px-5 py-6 text-[#a0a3a8] text-sm font-[var(--font-inter)]">Nenhuma característica cadastrada.</p>
+              <p className="px-4 sm:px-5 py-6 text-[#a0a3a8] text-sm">Nenhuma característica cadastrada.</p>
             ) : (
               <div className="divide-y divide-[#f0f0f0]">
                 {tags.map((t) => (
                   <div key={t.id} className="px-4 sm:px-5 py-3 flex flex-wrap items-center gap-3">
                     <input value={t.label} onChange={(e) => patchTag(t.id, { label: e.target.value })}
-                      className="flex-1 min-w-[160px] border border-[#e2e2e2] px-3 py-2 text-sm font-[var(--font-inter)] text-[#002045] focus:outline-none focus:border-[#002045]" />
-                    <label className="flex items-center gap-2 text-[12px] font-[var(--font-inter)] text-[#43474e] cursor-pointer">
+                      className="flex-1 min-w-[160px] border border-[#e2e2e2] px-3 py-2 text-sm text-[#0B1F45] focus:outline-none focus:border-[#0B1F45]" />
+                    <label className="flex items-center gap-2 text-[12px] text-[#43474e] cursor-pointer">
                       <input type="checkbox" checked={t.active} onChange={(e) => patchTag(t.id, { active: e.target.checked })} />
                       Ativa
                     </label>
@@ -420,7 +420,7 @@ export default function OrganizacaoPage() {
               <input value={newTag} onChange={(e) => setNewTag(e.target.value)}
                 onKeyDown={(e) => { if (e.key === "Enter") { e.preventDefault(); createTag(); } }}
                 placeholder="Nova característica (ex.: Área úmida)" disabled={pending}
-                className="flex-1 min-w-[200px] border border-[#e2e2e2] px-3 py-2.5 text-sm font-[var(--font-inter)] text-[#002045] focus:outline-none focus:border-[#002045] disabled:bg-[#f5f5f3]" />
+                className="flex-1 min-w-[200px] border border-[#e2e2e2] px-3 py-2.5 text-sm text-[#0B1F45] focus:outline-none focus:border-[#0B1F45] disabled:bg-[#F6F5F2]" />
               <button onClick={createTag} disabled={pending || !newTag.trim()} className={btnPrimary}>+ Criar</button>
             </div>
           </section>

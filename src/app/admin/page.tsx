@@ -1194,7 +1194,7 @@ export default function AdminPage() {
       : "";
 
     const ctaHtml = b.ctaText
-      ? `<table cellpadding="0" cellspacing="0" style="margin-top:28px;"><tr><td style="background:#002045;"><a href="${b.ctaUrl}" style="display:block;padding:14px 32px;color:#ffffff;font-size:11px;font-weight:700;letter-spacing:0.15em;text-transform:uppercase;text-decoration:none;font-family:Arial,Helvetica,sans-serif;">${b.ctaText} →</a></td></tr></table>`
+      ? `<table cellpadding="0" cellspacing="0" style="margin-top:28px;"><tr><td style="background:#0B1F45;"><a href="${b.ctaUrl}" style="display:block;padding:14px 32px;color:#ffffff;font-size:11px;font-weight:700;letter-spacing:0.15em;text-transform:uppercase;text-decoration:none;font-family:Arial,Helvetica,sans-serif;">${b.ctaText} →</a></td></tr></table>`
       : "";
 
     return `<!DOCTYPE html>
@@ -1204,21 +1204,21 @@ export default function AdminPage() {
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>${b.headline}</title>
 </head>
-<body style="margin:0;padding:0;background:#f0efec;font-family:Arial,Helvetica,sans-serif;">
-  <table width="100%" cellpadding="0" cellspacing="0" style="background:#f0efec;">
+<body style="margin:0;padding:0;background:#EFEDE8;font-family:Arial,Helvetica,sans-serif;">
+  <table width="100%" cellpadding="0" cellspacing="0" style="background:#EFEDE8;">
     <tr><td align="center" style="padding:32px 16px;">
       <table width="100%" cellpadding="0" cellspacing="0" style="max-width:580px;background:#ffffff;">
-        <tr><td style="background:#002045;padding:24px 36px;">
+        <tr><td style="background:#0B1F45;padding:24px 36px;">
           <p style="margin:0;color:#ffffff;font-size:10px;letter-spacing:0.25em;text-transform:uppercase;font-weight:700;font-family:Arial,Helvetica,sans-serif;">ORBITAL REVESTIMENTOS</p>
         </td></tr>
         ${imageSection}
         <tr><td style="padding:40px 36px 32px;">
           ${subheadlineHtml}
-          <h1 style="margin:0 0 24px 0;color:#002045;font-size:26px;font-weight:400;line-height:1.3;font-family:Georgia,'Times New Roman',serif;">${b.headline}</h1>
+          <h1 style="margin:0 0 24px 0;color:#0B1F45;font-size:26px;font-weight:400;line-height:1.3;font-family:Georgia,'Times New Roman',serif;">${b.headline}</h1>
           ${bodyHtml}
           ${ctaHtml}
         </td></tr>
-        <tr><td style="background:#f0efec;border-top:1px solid #e2e2e2;padding:20px 36px;text-align:center;">
+        <tr><td style="background:#EFEDE8;border-top:1px solid #e2e2e2;padding:20px 36px;text-align:center;">
           <p style="margin:0;color:#9e9e9e;font-size:10px;font-family:Arial,Helvetica,sans-serif;">Orbital Revestimentos · São Paulo, SP · <a href="{{unsubscribeUrl}}" style="color:#9e9e9e;text-decoration:underline;">Descadastrar</a></p>
         </td></tr>
       </table>
@@ -1351,7 +1351,7 @@ export default function AdminPage() {
     partnerFirst: "Ana",
     partnerName: "Ana Lima",
     waLink: "#",
-    quoteCard: `<table width="100%" cellpadding="0" cellspacing="0" style="background:#002045;margin:24px 0;"><tr><td style="padding:24px 28px;"><p style="margin:0 0 8px;color:rgba(255,255,255,0.45);font-size:10px;letter-spacing:0.2em;text-transform:uppercase;font-family:Arial,sans-serif;">SEU ORÇAMENTO</p><p style="margin:0;color:#ffffff;font-size:22px;font-weight:700;font-family:Arial,sans-serif;">R$ 4.472</p></td></tr></table>`,
+    quoteCard: `<table width="100%" cellpadding="0" cellspacing="0" style="background:#0B1F45;margin:24px 0;"><tr><td style="padding:24px 28px;"><p style="margin:0 0 8px;color:rgba(255,255,255,0.45);font-size:10px;letter-spacing:0.2em;text-transform:uppercase;font-family:Arial,sans-serif;">SEU ORÇAMENTO</p><p style="margin:0;color:#ffffff;font-size:22px;font-weight:700;font-family:Arial,sans-serif;">R$ 4.472</p></td></tr></table>`,
     quoteLink: "[link do orçamento]",
     productImages: "[fotos do modelo]",
   };
@@ -1546,7 +1546,7 @@ export default function AdminPage() {
 <title>QR ${safe(code)}</title>
 <style>
   @page { margin: 12mm; }
-  body { font-family: system-ui, -apple-system, sans-serif; text-align: center; margin: 0; padding: 24px; color: #002045; }
+  body { font-family: system-ui, -apple-system, sans-serif; text-align: center; margin: 0; padding: 24px; color: #0B1F45; }
   img { width: 62mm; height: 62mm; display: block; margin: 0 auto 10px; }
   .code { font-size: 15px; font-weight: 700; letter-spacing: .12em; }
   .name { font-size: 13px; color: #43474e; margin-top: 2px; }
@@ -3024,9 +3024,9 @@ export default function AdminPage() {
 
   if (!authed) {
     return (
-      <div className="min-h-screen bg-[#f5f5f3] flex items-center justify-center px-4">
+      <div className="min-h-screen bg-[#F6F5F2] flex items-center justify-center px-4">
         <div className="bg-white border border-[#e2e2e2] p-10 w-full max-w-sm">
-          <p className="text-[#002045] font-[var(--font-noto-serif)] text-2xl font-normal mb-6">Orbital Admin</p>
+          <p className="text-[#0B1F45] font-serif text-2xl font-normal mb-6">Orbital Admin</p>
           <form onSubmit={handleLogin} className="space-y-4">
             <div>
               <label className={labelCls}>Senha</label>
@@ -3037,7 +3037,7 @@ export default function AdminPage() {
                   tabIndex={-1}
                   aria-label={showAdminPw ? "Ocultar senha" : "Mostrar senha"}
                   onClick={() => setShowAdminPw((v) => !v)}
-                  className="absolute right-3 top-1/2 -translate-y-1/2 text-[#74777f] hover:text-[#002045] transition-colors"
+                  className="absolute right-3 top-1/2 -translate-y-1/2 text-[#74777f] hover:text-[#0B1F45] transition-colors"
                 >
                   {showAdminPw ? (
                     <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><path d="M17.94 17.94A10.07 10.07 0 0112 20c-7 0-11-8-11-8a18.45 18.45 0 015.06-5.94M9.9 4.24A9.12 9.12 0 0112 4c7 0 11 8 11 8a18.5 18.5 0 01-2.16 3.19m-6.72-1.07a3 3 0 11-4.24-4.24"/><line x1="1" y1="1" x2="23" y2="23"/></svg>
@@ -3047,8 +3047,8 @@ export default function AdminPage() {
                 </button>
               </div>
             </div>
-            {pwError && <p className="text-red-600 text-sm font-[var(--font-inter)]">{pwError}</p>}
-            <button type="submit" className="w-full bg-[#002045] text-white text-xs tracking-[0.12em] uppercase font-bold font-[var(--font-inter)] px-6 py-3 hover:bg-[#1a365d] transition-colors">
+            {pwError && <p className="text-red-600 text-sm">{pwError}</p>}
+            <button type="submit" className="w-full bg-[#0B1F45] text-white text-xs tracking-[0.12em] uppercase font-bold px-6 py-3 hover:bg-[#2347A0] transition-colors">
               Entrar
             </button>
           </form>
@@ -3058,17 +3058,17 @@ export default function AdminPage() {
   }
 
   return (
-    <div className="min-h-screen bg-[#f5f5f3]">
+    <div className="min-h-screen bg-[#F6F5F2]">
       {/* Follow-up modal */}
       {followUpModalOpen && followUps.length > 0 && (
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 p-4">
           <div className="bg-white w-full max-w-lg max-h-[80vh] overflow-y-auto shadow-2xl">
-            <div className="bg-[#002045] px-6 py-4 flex items-center justify-between">
+            <div className="bg-[#0B1F45] px-6 py-4 flex items-center justify-between">
               <div>
-                <p className="text-white font-[var(--font-noto-serif)] text-lg">Acompanhamento de orçamentos</p>
-                <p className="text-white/60 text-xs font-[var(--font-inter)] mt-0.5">{followUps.length} orçamento{followUps.length !== 1 ? "s" : ""} aguardando retorno</p>
+                <p className="text-white font-serif text-lg">Acompanhamento de orçamentos</p>
+                <p className="text-white/60 text-xs mt-0.5">{followUps.length} orçamento{followUps.length !== 1 ? "s" : ""} aguardando retorno</p>
               </div>
-              <button onClick={() => setFollowUpModalOpen(false)} className="text-white/60 hover:text-white text-xs font-[var(--font-inter)] uppercase tracking-widest">
+              <button onClick={() => setFollowUpModalOpen(false)} className="text-white/60 hover:text-white text-xs uppercase tracking-widest">
                 Adiar tudo
               </button>
             </div>
@@ -3077,63 +3077,63 @@ export default function AdminPage() {
                 <div key={f.id} className="px-6 py-5">
                   <div className="flex items-start justify-between mb-3">
                     <div>
-                      <p className="font-semibold text-[#002045] text-sm font-[var(--font-inter)]">{f.partner_name || f.coupon_code}</p>
-                      <p className="text-[#74777f] text-xs font-[var(--font-inter)] mt-0.5">
+                      <p className="font-semibold text-[#0B1F45] text-sm">{f.partner_name || f.coupon_code}</p>
+                      <p className="text-[#74777f] text-xs mt-0.5">
                         {f.space || f.product_name || "—"} · {new Date(f.created_at).toLocaleDateString("pt-BR")}
                       </p>
                       {f.material_discounted != null && (
-                        <p className="text-[#002045] text-xs font-semibold font-[var(--font-inter)] mt-0.5">
+                        <p className="text-[#0B1F45] text-xs font-semibold mt-0.5">
                           {f.material_discounted.toLocaleString("pt-BR", { style: "currency", currency: "BRL", maximumFractionDigits: 0 })}
                         </p>
                       )}
                     </div>
-                    <span className="text-[10px] text-[#74777f] font-[var(--font-inter)] bg-yellow-50 px-2 py-0.5 border border-yellow-200 ml-2 flex-shrink-0">
+                    <span className="text-[10px] text-[#74777f] bg-yellow-50 px-2 py-0.5 border border-yellow-200 ml-2 flex-shrink-0">
                       {Math.floor((Date.now() - new Date(f.created_at).getTime()) / 86400000)}d atrás
                     </span>
                   </div>
                   {snoozeInputId === f.id ? (
                     <div className="flex items-center gap-2 mt-2">
-                      <span className="text-xs text-[#74777f] font-[var(--font-inter)]">Lembrar em</span>
+                      <span className="text-xs text-[#74777f]">Lembrar em</span>
                       <input
                         type="number"
                         min="1"
                         max="30"
                         value={snoozeDays}
                         onChange={(e) => setSnoozeDays(e.target.value)}
-                        className="w-14 border border-[#e2e2e2] px-2 py-1 text-sm text-center font-[var(--font-inter)] focus:outline-none focus:border-[#002045]"
+                        className="w-14 border border-[#e2e2e2] px-2 py-1 text-sm text-center focus:outline-none focus:border-[#0B1F45]"
                       />
-                      <span className="text-xs text-[#74777f] font-[var(--font-inter)]">dias</span>
+                      <span className="text-xs text-[#74777f]">dias</span>
                       <button
                         onClick={() => snoozeFollowUp(f.id, parseInt(snoozeDays) || 2)}
-                        className="bg-[#002045] text-white text-[10px] tracking-wider uppercase font-bold font-[var(--font-inter)] px-3 py-1.5"
+                        className="bg-[#0B1F45] text-white text-[10px] tracking-wider uppercase font-bold px-3 py-1.5"
                       >
                         OK
                       </button>
-                      <button onClick={() => setSnoozeInputId(null)} className="text-[#74777f] text-xs font-[var(--font-inter)] underline">Cancelar</button>
+                      <button onClick={() => setSnoozeInputId(null)} className="text-[#74777f] text-xs underline">Cancelar</button>
                     </div>
                   ) : (
                     <div className="flex flex-wrap gap-2 mt-2">
                       <button
                         onClick={() => resolveFollowUp(f.id, "concluido")}
-                        className="bg-green-600 text-white text-[10px] tracking-wider uppercase font-bold font-[var(--font-inter)] px-3 py-1.5 hover:bg-green-700"
+                        className="bg-green-600 text-white text-[10px] tracking-wider uppercase font-bold px-3 py-1.5 hover:bg-green-700"
                       >
                         Concluído
                       </button>
                       <button
                         onClick={() => resolveFollowUp(f.id, "cancelado")}
-                        className="bg-red-100 text-red-700 text-[10px] tracking-wider uppercase font-bold font-[var(--font-inter)] px-3 py-1.5 hover:bg-red-200"
+                        className="bg-red-100 text-red-700 text-[10px] tracking-wider uppercase font-bold px-3 py-1.5 hover:bg-red-200"
                       >
                         Cancelado
                       </button>
                       <button
                         onClick={() => snoozeFollowUp(f.id, 2)}
-                        className="border border-[#e2e2e2] text-[#74777f] text-[10px] tracking-wider uppercase font-bold font-[var(--font-inter)] px-3 py-1.5 hover:border-[#002045] hover:text-[#002045]"
+                        className="border border-[#e2e2e2] text-[#74777f] text-[10px] tracking-wider uppercase font-bold px-3 py-1.5 hover:border-[#0B1F45] hover:text-[#0B1F45]"
                       >
                         +2 dias
                       </button>
                       <button
                         onClick={() => { setSnoozeInputId(f.id); setSnoozeDays("2"); }}
-                        className="border border-[#e2e2e2] text-[#74777f] text-[10px] tracking-wider uppercase font-bold font-[var(--font-inter)] px-3 py-1.5 hover:border-[#002045] hover:text-[#002045]"
+                        className="border border-[#e2e2e2] text-[#74777f] text-[10px] tracking-wider uppercase font-bold px-3 py-1.5 hover:border-[#0B1F45] hover:text-[#0B1F45]"
                       >
                         Outro prazo
                       </button>
@@ -3145,11 +3145,11 @@ export default function AdminPage() {
           </div>
         </div>
       )}
-      <div className="bg-[#002045] px-8 py-5 flex items-center justify-between">
+      <div className="bg-[#0B1F45] px-8 py-5 flex items-center justify-between">
         <div className="flex items-center gap-4">
-          <p className="text-white font-[var(--font-noto-serif)] text-xl">Orbital Admin</p>
+          <p className="text-white font-serif text-xl">Orbital Admin</p>
           {pendingPartners.length > 0 && (
-            <span className="bg-yellow-400 text-yellow-900 text-[10px] font-bold font-[var(--font-inter)] px-2 py-0.5 tracking-wider">
+            <span className="bg-yellow-400 text-yellow-900 text-[10px] font-bold px-2 py-0.5 tracking-wider">
               {pendingPartners.length} PENDENTE{pendingPartners.length > 1 ? "S" : ""}
             </span>
           )}
@@ -3157,31 +3157,31 @@ export default function AdminPage() {
         <div className="flex items-center gap-4">
           <button
             onClick={() => { setCpOpen(!cpOpen); setCpError(""); setCpSuccess(false); }}
-            className="text-white/60 hover:text-white text-xs font-[var(--font-inter)] uppercase tracking-widest transition-colors"
+            className="text-white/60 hover:text-white text-xs uppercase tracking-widest transition-colors"
           >
             Alterar senha
           </button>
-          <button onClick={() => { fetch("/api/admin/login", { method: "DELETE" }).finally(() => setAuthed(false)); }} className="text-white/60 hover:text-white text-xs font-[var(--font-inter)] uppercase tracking-widest transition-colors">
+          <button onClick={() => { fetch("/api/admin/login", { method: "DELETE" }).finally(() => setAuthed(false)); }} className="text-white/60 hover:text-white text-xs uppercase tracking-widest transition-colors">
             Sair
           </button>
         </div>
       </div>
 
       {cpOpen && (
-        <div className="bg-[#001530] border-b border-[#1a365d] px-8 py-5">
+        <div className="bg-[#0B1F45] border-b border-[#2347A0] px-8 py-5">
           {cpSuccess ? (
-            <p className="text-green-400 text-sm font-[var(--font-inter)]">Senha alterada com sucesso.</p>
+            <p className="text-green-400 text-sm">Senha alterada com sucesso.</p>
           ) : (
             <form onSubmit={handleAdminChangePassword} className="flex flex-wrap items-end gap-4">
               <div>
-                <label className="block text-[10px] tracking-[0.15em] uppercase font-bold font-[var(--font-inter)] text-white/50 mb-1">Senha atual</label>
+                <label className="block text-[10px] tracking-[0.15em] uppercase font-bold text-white/50 mb-1">Senha atual</label>
                 <div className="relative">
                   <input
                     required
                     type={showCpCurrent ? "text" : "password"}
                     value={cpCurrent}
                     onChange={(e) => setCpCurrent(e.target.value)}
-                    className="border border-[#1a365d] bg-[#002045] text-white px-3 py-2 pr-9 text-sm font-[var(--font-inter)] focus:outline-none focus:border-white/40 w-44"
+                    className="border border-[#2347A0] bg-[#0B1F45] text-white px-3 py-2 pr-9 text-sm focus:outline-none focus:border-white/40 w-44"
                   />
                   <button
                     type="button"
@@ -3199,14 +3199,14 @@ export default function AdminPage() {
                 </div>
               </div>
               <div>
-                <label className="block text-[10px] tracking-[0.15em] uppercase font-bold font-[var(--font-inter)] text-white/50 mb-1">Nova senha</label>
+                <label className="block text-[10px] tracking-[0.15em] uppercase font-bold text-white/50 mb-1">Nova senha</label>
                 <div className="relative">
                   <input
                     required
                     type={showCpNew ? "text" : "password"}
                     value={cpNew}
                     onChange={(e) => setCpNew(e.target.value)}
-                    className="border border-[#1a365d] bg-[#002045] text-white px-3 py-2 pr-9 text-sm font-[var(--font-inter)] focus:outline-none focus:border-white/40 w-44"
+                    className="border border-[#2347A0] bg-[#0B1F45] text-white px-3 py-2 pr-9 text-sm focus:outline-none focus:border-white/40 w-44"
                   />
                   <button
                     type="button"
@@ -3224,14 +3224,14 @@ export default function AdminPage() {
                 </div>
               </div>
               <div>
-                <label className="block text-[10px] tracking-[0.15em] uppercase font-bold font-[var(--font-inter)] text-white/50 mb-1">Confirmar nova senha</label>
+                <label className="block text-[10px] tracking-[0.15em] uppercase font-bold text-white/50 mb-1">Confirmar nova senha</label>
                 <div className="relative">
                   <input
                     required
                     type={showCpConfirm ? "text" : "password"}
                     value={cpConfirm}
                     onChange={(e) => setCpConfirm(e.target.value)}
-                    className="border border-[#1a365d] bg-[#002045] text-white px-3 py-2 pr-9 text-sm font-[var(--font-inter)] focus:outline-none focus:border-white/40 w-44"
+                    className="border border-[#2347A0] bg-[#0B1F45] text-white px-3 py-2 pr-9 text-sm focus:outline-none focus:border-white/40 w-44"
                   />
                   <button
                     type="button"
@@ -3249,19 +3249,19 @@ export default function AdminPage() {
                 </div>
               </div>
               <div className="flex flex-col gap-1">
-                {cpError && <p className="text-red-400 text-xs font-[var(--font-inter)]">{cpError}</p>}
+                {cpError && <p className="text-red-400 text-xs">{cpError}</p>}
                 <div className="flex gap-2">
                   <button
                     type="submit"
                     disabled={cpLoading}
-                    className="bg-white text-[#002045] text-xs tracking-[0.12em] uppercase font-bold font-[var(--font-inter)] px-5 py-2 hover:bg-white/90 transition-colors disabled:opacity-50"
+                    className="bg-white text-[#0B1F45] text-xs tracking-[0.12em] uppercase font-bold px-5 py-2 hover:bg-white/90 transition-colors disabled:opacity-50"
                   >
                     {cpLoading ? "Salvando..." : "Salvar"}
                   </button>
                   <button
                     type="button"
                     onClick={() => setCpOpen(false)}
-                    className="text-white/50 text-xs font-[var(--font-inter)] px-4 py-2 border border-white/20 hover:border-white/40 transition-colors"
+                    className="text-white/50 text-xs px-4 py-2 border border-white/20 hover:border-white/40 transition-colors"
                   >
                     Cancelar
                   </button>
@@ -3274,7 +3274,7 @@ export default function AdminPage() {
 
       {!supabaseConfigured && (
         <div className="max-w-4xl mx-auto px-8 pt-10">
-          <div className="bg-yellow-50 border border-yellow-300 px-6 py-5 text-yellow-900 text-sm font-[var(--font-inter)]">
+          <div className="bg-yellow-50 border border-yellow-300 px-6 py-5 text-yellow-900 text-sm">
             Configure as variáveis de ambiente do Supabase para usar o painel admin.
           </div>
         </div>
@@ -3283,13 +3283,13 @@ export default function AdminPage() {
       {/* ═══ MOBILE TOP BAR ═══ */}
       <div className="md:hidden sticky top-0 z-40 bg-white border-b border-[#e2e2e2] px-4 py-3 flex items-center justify-between gap-3">
         <div className="min-w-0">
-          <p className="font-[var(--font-noto-serif)] text-[#002045] text-base leading-none">Orbital Admin</p>
-          <p className="text-[9px] tracking-[0.18em] uppercase font-bold font-[var(--font-inter)] text-[#a0a3a8] mt-1 truncate">{NAV_LABELS[tab]}</p>
+          <p className="font-serif text-[#0B1F45] text-base leading-none">Orbital Admin</p>
+          <p className="text-[9px] tracking-[0.18em] uppercase font-bold text-[#a0a3a8] mt-1 truncate">{NAV_LABELS[tab]}</p>
         </div>
         <button
           onClick={() => setNavOpen(true)}
           aria-label="Abrir menu"
-          className="flex-shrink-0 border border-[#e2e2e2] rounded-md p-2 text-[#002045] hover:border-[#002045] transition-colors"
+          className="flex-shrink-0 border border-[#e2e2e2] rounded-md p-2 text-[#0B1F45] hover:border-[#0B1F45] transition-colors"
         >
           <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round"><line x1="3" y1="6" x2="21" y2="6" /><line x1="3" y1="12" x2="21" y2="12" /><line x1="3" y1="18" x2="21" y2="18" /></svg>
         </button>
@@ -3302,14 +3302,14 @@ export default function AdminPage() {
           <div className="absolute inset-y-0 left-0 w-72 max-w-[85vw] bg-white shadow-xl overflow-y-auto p-4 flex flex-col gap-5">
             <div className="flex items-center justify-between pb-3 border-b border-[#e2e2e2]">
               <div>
-                <p className="font-[var(--font-noto-serif)] text-[#002045] text-lg leading-none">Orbital</p>
-                <p className="text-[9px] tracking-[0.22em] uppercase font-bold font-[var(--font-inter)] text-[#a0a3a8] mt-1.5">Sistema Interno</p>
+                <p className="font-serif text-[#0B1F45] text-lg leading-none">Orbital</p>
+                <p className="text-[9px] tracking-[0.22em] uppercase font-bold text-[#a0a3a8] mt-1.5">Sistema Interno</p>
               </div>
-              <button onClick={() => setNavOpen(false)} aria-label="Fechar menu" className="text-[#74777f] hover:text-[#002045] text-2xl leading-none px-1">×</button>
+              <button onClick={() => setNavOpen(false)} aria-label="Fechar menu" className="text-[#74777f] hover:text-[#0B1F45] text-2xl leading-none px-1">×</button>
             </div>
             {NAV_GROUPS.map((sec) => (
               <div key={sec.group}>
-                <p className="text-[9px] tracking-[0.2em] uppercase font-bold font-[var(--font-inter)] text-[#a0a3a8] px-3 mb-1.5">{sec.group}</p>
+                <p className="text-[9px] tracking-[0.2em] uppercase font-bold text-[#a0a3a8] px-3 mb-1.5">{sec.group}</p>
                 <div className="flex flex-col gap-0.5">
                   {sec.items.map((t) => {
                     const active = tab === t;
@@ -3318,7 +3318,7 @@ export default function AdminPage() {
                       <button
                         key={t}
                         onClick={() => { setTab(t); setNavOpen(false); }}
-                        className={`flex items-center gap-2.5 px-3 py-2.5 text-sm font-[var(--font-inter)] rounded-md text-left transition-colors ${active ? "bg-[#002045] text-white font-bold" : "text-[#43474e] hover:bg-[#eef0f3]"}`}
+                        className={`flex items-center gap-2.5 px-3 py-2.5 text-sm rounded-md text-left transition-colors ${active ? "bg-[#0B1F45] text-white font-bold" : "text-[#43474e] hover:bg-[#eef0f3]"}`}
                       >
                         <NavIcon id={t} className={active ? "text-white" : "text-[#a0a3a8]"} />
                         <span className="truncate flex-1">{NAV_LABELS[t]}</span>
@@ -3340,15 +3340,15 @@ export default function AdminPage() {
         <aside className="hidden md:flex w-56 flex-shrink-0 md:sticky md:top-6 flex-col gap-5 max-h-[calc(100vh-3rem)] overflow-y-auto pr-1">
           {/* Brand */}
           <div className="px-3 pb-3 mb-1 border-b border-[#e2e2e2] flex items-center gap-2.5">
-            <span className="w-8 h-8 rounded-lg bg-[#002045] text-white flex items-center justify-center font-[var(--font-noto-serif)] text-base flex-shrink-0">O</span>
+            <span className="w-8 h-8 rounded-lg bg-[#0B1F45] text-white flex items-center justify-center font-serif text-base flex-shrink-0">O</span>
             <div className="min-w-0">
-              <p className="font-[var(--font-noto-serif)] text-[#002045] text-lg leading-none">Orbital</p>
-              <p className="text-[9px] tracking-[0.22em] uppercase font-bold font-[var(--font-inter)] text-[#a0a3a8] mt-1">Sistema Interno</p>
+              <p className="font-serif text-[#0B1F45] text-lg leading-none">Orbital</p>
+              <p className="text-[9px] tracking-[0.22em] uppercase font-bold text-[#a0a3a8] mt-1">Sistema Interno</p>
             </div>
           </div>
           {NAV_GROUPS.map((sec) => (
             <div key={sec.group}>
-              <p className="text-[9px] tracking-[0.2em] uppercase font-bold font-[var(--font-inter)] text-[#a0a3a8] px-3 mb-1.5">{sec.group}</p>
+              <p className="text-[9px] tracking-[0.2em] uppercase font-bold text-[#a0a3a8] px-3 mb-1.5">{sec.group}</p>
               <div className="flex flex-col gap-0.5">
                 {sec.items.map((t) => {
                   const active = tab === t;
@@ -3357,7 +3357,7 @@ export default function AdminPage() {
                     <button
                       key={t}
                       onClick={() => setTab(t)}
-                      className={`group flex items-center gap-2.5 px-3 py-2 text-xs font-[var(--font-inter)] rounded-md text-left transition-colors ${active ? "bg-[#002045] text-white font-bold" : "text-[#43474e] hover:bg-[#eef0f3]"}`}
+                      className={`group flex items-center gap-2.5 px-3 py-2 text-xs rounded-md text-left transition-colors ${active ? "bg-[#0B1F45] text-white font-bold" : "text-[#43474e] hover:bg-[#eef0f3]"}`}
                     >
                       <NavIcon id={t} className={active ? "text-white" : "text-[#a0a3a8] group-hover:text-[#43474e]"} />
                       <span className="truncate flex-1">{NAV_LABELS[t]}</span>
@@ -3403,7 +3403,7 @@ export default function AdminPage() {
             {/* Pending approvals */}
             {pendingPartners.length > 0 && (
               <div className="mb-8">
-                <h3 className="font-[var(--font-inter)] text-[10px] tracking-[0.2em] uppercase font-bold text-yellow-700 mb-3 flex items-center gap-2">
+                <h3 className="text-[10px] tracking-[0.2em] uppercase font-bold text-yellow-700 mb-3 flex items-center gap-2">
                   <span className="w-2 h-2 rounded-full bg-yellow-400 animate-pulse inline-block" />
                   Aguardando aprovação ({pendingPartners.length})
                 </h3>
@@ -3412,34 +3412,34 @@ export default function AdminPage() {
                     <div key={p.id} className="bg-white border border-yellow-200 px-6 py-5">
                       <div className="flex flex-col sm:flex-row sm:items-start sm:justify-between gap-4">
                         <div>
-                          <p className="font-semibold text-[#002045] font-[var(--font-inter)]">
+                          <p className="font-semibold text-[#0B1F45]">
                             {p.name}
                             {p.is_self_registered === false && (
-                              <span className="ml-2 align-middle inline-block bg-blue-50 text-[#002045] px-2 py-0.5 text-[10px] font-bold tracking-wide">
+                              <span className="ml-2 align-middle inline-block bg-blue-50 text-[#0B1F45] px-2 py-0.5 text-[10px] font-bold tracking-wide">
                                 Convite da representante · ativa sozinho ao aceitar
                               </span>
                             )}
                           </p>
                           <div className="flex flex-wrap gap-x-4 gap-y-0.5 mt-1">
-                            {p.email && <p className="text-xs text-[#74777f] font-[var(--font-inter)]">{p.email}</p>}
-                            {p.phone && <p className="text-xs text-[#74777f] font-[var(--font-inter)]">{p.phone}</p>}
+                            {p.email && <p className="text-xs text-[#74777f]">{p.email}</p>}
+                            {p.phone && <p className="text-xs text-[#74777f]">{p.phone}</p>}
                             {p.sales_rep_referral_code && (
-                              <p className="text-xs text-[#002045] font-[var(--font-inter)]">
+                              <p className="text-xs text-[#0B1F45]">
                                 Rep: <strong>{p.sales_rep_referral_code}</strong>
                               </p>
                             )}
                           </div>
-                          <p className="text-xs text-[#74777f] font-[var(--font-inter)] mt-0.5">
-                            Cupom gerado: <span className="font-bold text-[#002045] tracking-wider">{p.coupon_code}</span> ·{" "}
+                          <p className="text-xs text-[#74777f] mt-0.5">
+                            Cupom gerado: <span className="font-bold text-[#0B1F45] tracking-wider">{p.coupon_code}</span> ·{" "}
                             {new Date(p.created_at).toLocaleDateString("pt-BR")}
                           </p>
                         </div>
                         <div className="flex gap-2 flex-shrink-0">
                           <button onClick={() => { setApprovingId(approvingId === p.id ? null : p.id); setApprovalForm({ discount_type: "percentage", discount_value: 0, commission_type: "percentage", commission_value: 7, portal_password: "" }); }}
-                            className="bg-[#002045] text-white text-xs font-bold font-[var(--font-inter)] tracking-[0.08em] uppercase px-4 py-2 hover:bg-[#1a365d] transition-colors">
+                            className="bg-[#0B1F45] text-white text-xs font-bold tracking-[0.08em] uppercase px-4 py-2 hover:bg-[#2347A0] transition-colors">
                             Aprovar
                           </button>
-                          <button onClick={() => rejectPartner(p)} className="border border-red-300 text-red-600 text-xs font-bold font-[var(--font-inter)] tracking-[0.08em] uppercase px-4 py-2 hover:bg-red-50 transition-colors">
+                          <button onClick={() => rejectPartner(p)} className="border border-red-300 text-red-600 text-xs font-bold tracking-[0.08em] uppercase px-4 py-2 hover:bg-red-50 transition-colors">
                             Rejeitar
                           </button>
                         </div>
@@ -3447,7 +3447,7 @@ export default function AdminPage() {
                       {/* Approval form */}
                       {approvingId === p.id && (
                         <div className="mt-4 pt-4 border-t border-yellow-100">
-                          <p className="text-[10px] tracking-[0.15em] uppercase font-bold font-[var(--font-inter)] text-[#74777f] mb-3">Definir condições para aprovação</p>
+                          <p className="text-[10px] tracking-[0.15em] uppercase font-bold text-[#74777f] mb-3">Definir condições para aprovação</p>
                           <div className="grid grid-cols-2 sm:grid-cols-4 gap-3 mb-3">
                             <div>
                               <label className={labelCls}>Tipo desconto</label>
@@ -3481,7 +3481,7 @@ export default function AdminPage() {
                                 tabIndex={-1}
                                 aria-label={showApprovalPw ? "Ocultar senha" : "Mostrar senha"}
                                 onClick={() => setShowApprovalPw((v) => !v)}
-                                className="absolute right-3 top-1/2 -translate-y-1/2 text-[#74777f] hover:text-[#002045] transition-colors"
+                                className="absolute right-3 top-1/2 -translate-y-1/2 text-[#74777f] hover:text-[#0B1F45] transition-colors"
                               >
                                 {showApprovalPw ? (
                                   <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><path d="M17.94 17.94A10.07 10.07 0 0112 20c-7 0-11-8-11-8a18.45 18.45 0 015.06-5.94M9.9 4.24A9.12 9.12 0 0112 4c7 0 11 8 11 8a18.5 18.5 0 01-2.16 3.19m-6.72-1.07a3 3 0 11-4.24-4.24"/><line x1="1" y1="1" x2="23" y2="23"/></svg>
@@ -3493,10 +3493,10 @@ export default function AdminPage() {
                           </div>
                           <div className="flex gap-2">
                             <button onClick={() => approvePartner(p)} disabled={approvalLoading}
-                              className="bg-green-700 text-white text-xs font-bold font-[var(--font-inter)] tracking-[0.08em] uppercase px-5 py-2 hover:bg-green-800 transition-colors disabled:opacity-50">
+                              className="bg-green-700 text-white text-xs font-bold tracking-[0.08em] uppercase px-5 py-2 hover:bg-green-800 transition-colors disabled:opacity-50">
                               {approvalLoading ? "Aprovando..." : "Confirmar aprovação"}
                             </button>
-                            <button onClick={() => setApprovingId(null)} className="text-[#74777f] text-xs font-bold font-[var(--font-inter)] px-4 py-2 border border-[#e2e2e2] hover:border-[#74777f] transition-colors">
+                            <button onClick={() => setApprovingId(null)} className="text-[#74777f] text-xs font-bold px-4 py-2 border border-[#e2e2e2] hover:border-[#74777f] transition-colors">
                               Cancelar
                             </button>
                           </div>
@@ -3511,7 +3511,7 @@ export default function AdminPage() {
             {/* Birthdays this month */}
             {upcomingBirthdays.length > 0 && (
               <div className="mb-8">
-                <h3 className="font-[var(--font-inter)] text-[10px] tracking-[0.2em] uppercase font-bold text-[#002045] mb-3 flex items-center gap-2">
+                <h3 className="text-[10px] tracking-[0.2em] uppercase font-bold text-[#0B1F45] mb-3 flex items-center gap-2">
                   🎂 Aniversários em {new Date().toLocaleString("pt-BR", { month: "long" })}
                 </h3>
                 <div className="flex flex-wrap gap-3">
@@ -3522,8 +3522,8 @@ export default function AdminPage() {
                     const isToday = bday.getUTCDate() === now.getDate() && bday.getUTCMonth() === now.getMonth();
                     const age = now.getFullYear() - bday.getUTCFullYear();
                     return (
-                      <div key={p.id} className={`px-4 py-3 border text-sm font-[var(--font-inter)] ${isToday ? "border-yellow-300 bg-yellow-50" : "border-[#e2e2e2] bg-white"}`}>
-                        <span className="font-bold text-[#002045]">{day < 10 ? `0${day}` : day}</span>
+                      <div key={p.id} className={`px-4 py-3 border text-sm ${isToday ? "border-yellow-300 bg-yellow-50" : "border-[#e2e2e2] bg-white"}`}>
+                        <span className="font-bold text-[#0B1F45]">{day < 10 ? `0${day}` : day}</span>
                         <span className="text-[#74777f] text-xs ml-1">— {p.name}</span>
                         <span className="text-[#74777f] text-xs ml-1">({age} anos)</span>
                         {isToday && <span className="ml-2 text-yellow-700 text-xs font-bold">HOJE!</span>}
@@ -3546,18 +3546,18 @@ export default function AdminPage() {
               return (
                 <div className="mb-8">
                   <div className="flex flex-wrap items-center justify-between gap-3 mb-3">
-                    <h3 className="font-[var(--font-inter)] text-[10px] tracking-[0.2em] uppercase font-bold text-[#002045]">
+                    <h3 className="text-[10px] tracking-[0.2em] uppercase font-bold text-[#0B1F45]">
                       Ranking de Parceiros — vendas concluídas
                     </h3>
                     <div className="flex flex-wrap items-center gap-2">
                       {salesReps.length > 0 && (
-                        <select value={pRankRep} onChange={(e) => setPRankRep(e.target.value)} className="border border-[#e2e2e2] px-3 py-1.5 text-xs font-[var(--font-inter)] text-[#002045] focus:outline-none focus:border-[#002045]">
+                        <select value={pRankRep} onChange={(e) => setPRankRep(e.target.value)} className="border border-[#e2e2e2] px-3 py-1.5 text-xs text-[#0B1F45] focus:outline-none focus:border-[#0B1F45]">
                           <option value="all">Todos os representantes</option>
                           {salesReps.map((r) => <option key={r.id} value={r.referral_code}>{r.name}</option>)}
                         </select>
                       )}
                       {(["total", "count", "median"] as const).map((s) => (
-                        <button key={s} onClick={() => setPRankSort(s)} className={`text-[10px] tracking-[0.08em] uppercase font-bold font-[var(--font-inter)] px-3 py-1.5 border transition-colors ${pRankSort === s ? "bg-[#002045] text-white border-[#002045]" : "text-[#74777f] border-[#e2e2e2] hover:border-[#002045] hover:text-[#002045]"}`}>
+                        <button key={s} onClick={() => setPRankSort(s)} className={`text-[10px] tracking-[0.08em] uppercase font-bold px-3 py-1.5 border transition-colors ${pRankSort === s ? "bg-[#0B1F45] text-white border-[#0B1F45]" : "text-[#74777f] border-[#e2e2e2] hover:border-[#0B1F45] hover:text-[#0B1F45]"}`}>
                           {s === "total" ? "Valor" : s === "count" ? "Qtd." : "Ticket Médio"}
                         </button>
                       ))}
@@ -3565,7 +3565,7 @@ export default function AdminPage() {
                   </div>
                   {/* Desktop table */}
                   <div className="hidden md:block bg-white border border-[#e2e2e2]">
-                    <table className="w-full text-sm font-[var(--font-inter)]">
+                    <table className="w-full text-sm">
                       <thead>
                         <tr className="border-b border-[#e2e2e2]">
                           {["#", "Parceiro", "Cupom", "Rep.", "Total vendido", "Vendas", "Ticket médio"].map((h) => (
@@ -3580,10 +3580,10 @@ export default function AdminPage() {
                           const p = activePartners.find((ap) => ap.coupon_code === r.code);
                           const rep = p?.sales_rep_referral_code ? salesReps.find((sr) => sr.referral_code === p.sales_rep_referral_code) : null;
                           return (
-                            <tr key={r.code} className="border-b border-[#f0f0f0] hover:bg-[#fafafa]">
-                              <td className="px-5 py-3 font-bold text-[#002045]">{i + 1}°</td>
-                              <td className="px-5 py-3 font-semibold text-[#002045]">{r.name}</td>
-                              <td className="px-5 py-3"><span className="bg-[#eef2f8] text-[#002045] px-2 py-0.5 text-xs font-bold tracking-wider">{r.code}</span></td>
+                            <tr key={r.code} className="border-b border-[#f0f0f0] hover:bg-[#F6F5F2]">
+                              <td className="px-5 py-3 font-bold text-[#0B1F45]">{i + 1}°</td>
+                              <td className="px-5 py-3 font-semibold text-[#0B1F45]">{r.name}</td>
+                              <td className="px-5 py-3"><span className="bg-[#eef2f8] text-[#0B1F45] px-2 py-0.5 text-xs font-bold tracking-wider">{r.code}</span></td>
                               <td className="px-5 py-3 text-xs text-[#74777f]">{rep ? rep.name : "—"}</td>
                               <td className="px-5 py-3 font-semibold text-green-700">{fmt(r.total)}</td>
                               <td className="px-5 py-3 text-[#43474e]">{r.count}</td>
@@ -3597,7 +3597,7 @@ export default function AdminPage() {
                   {/* Mobile cards */}
                   <div className="md:hidden space-y-2">
                     {sorted.length === 0 ? (
-                      <div className="bg-white border border-[#e2e2e2] px-4 py-6 text-center text-[#74777f] text-sm font-[var(--font-inter)]">Nenhuma venda concluída registrada ainda.</div>
+                      <div className="bg-white border border-[#e2e2e2] px-4 py-6 text-center text-[#74777f] text-sm">Nenhuma venda concluída registrada ainda.</div>
                     ) : sorted.map((r, i) => {
                       const p = activePartners.find((ap) => ap.coupon_code === r.code);
                       const rep = p?.sales_rep_referral_code ? salesReps.find((sr) => sr.referral_code === p.sales_rep_referral_code) : null;
@@ -3605,12 +3605,12 @@ export default function AdminPage() {
                         <div key={r.code} className="bg-white border border-[#e2e2e2] p-4">
                           <div className="flex items-center justify-between gap-2 mb-2.5">
                             <div className="flex items-center gap-2 min-w-0">
-                              <span className="font-bold text-[#002045] flex-shrink-0">{i + 1}°</span>
-                              <span className="font-semibold text-[#002045] truncate">{r.name}</span>
+                              <span className="font-bold text-[#0B1F45] flex-shrink-0">{i + 1}°</span>
+                              <span className="font-semibold text-[#0B1F45] truncate">{r.name}</span>
                             </div>
-                            <span className="bg-[#eef2f8] text-[#002045] px-2 py-0.5 text-xs font-bold tracking-wider flex-shrink-0">{r.code}</span>
+                            <span className="bg-[#eef2f8] text-[#0B1F45] px-2 py-0.5 text-xs font-bold tracking-wider flex-shrink-0">{r.code}</span>
                           </div>
-                          <div className="grid grid-cols-2 gap-x-4 gap-y-1.5 text-xs font-[var(--font-inter)]">
+                          <div className="grid grid-cols-2 gap-x-4 gap-y-1.5 text-xs">
                             <span className="text-[#74777f]">Total vendido</span><span className="text-right font-semibold text-green-700">{fmt(r.total)}</span>
                             <span className="text-[#74777f]">Vendas</span><span className="text-right text-[#43474e]">{r.count}</span>
                             <span className="text-[#74777f]">Ticket médio</span><span className="text-right text-[#43474e]">{r.median > 0 ? fmt(r.median) : "—"}</span>
@@ -3627,8 +3627,8 @@ export default function AdminPage() {
             {/* Active partners */}
             <div className="flex flex-col sm:flex-row sm:items-center gap-3 mb-6">
               <div className="flex items-center gap-3 flex-1 min-w-0">
-                <h2 className="font-[var(--font-noto-serif)] text-[#002045] text-xl font-normal flex-shrink-0">Parceiros</h2>
-                <span className="bg-[#eef2f8] text-[#002045] text-[11px] font-bold font-[var(--font-inter)] px-2 py-0.5 flex-shrink-0">
+                <h2 className="font-serif text-[#0B1F45] text-xl font-normal flex-shrink-0">Parceiros</h2>
+                <span className="bg-[#eef2f8] text-[#0B1F45] text-[11px] font-bold px-2 py-0.5 flex-shrink-0">
                   {partners.filter(p => p.status !== "pending").length}
                 </span>
                 <input
@@ -3636,10 +3636,10 @@ export default function AdminPage() {
                   value={partnerSearch}
                   onChange={(e) => setPartnerSearch(e.target.value)}
                   placeholder="Filtrar por nome, email ou cupom…"
-                  className="flex-1 min-w-0 border border-[#e2e2e2] px-3 py-2 text-sm font-[var(--font-inter)] text-[#002045] focus:outline-none focus:border-[#002045] placeholder-[#b0b4bc]"
+                  className="flex-1 min-w-0 border border-[#e2e2e2] px-3 py-2 text-sm text-[#0B1F45] focus:outline-none focus:border-[#0B1F45] placeholder-[#b0b4bc]"
                 />
               </div>
-              <button onClick={startCreatePartner} className="flex-shrink-0 bg-[#002045] text-white text-xs tracking-[0.1em] uppercase font-bold font-[var(--font-inter)] px-5 py-2.5 hover:bg-[#1a365d] transition-colors">
+              <button onClick={startCreatePartner} className="flex-shrink-0 bg-[#0B1F45] text-white text-xs tracking-[0.1em] uppercase font-bold px-5 py-2.5 hover:bg-[#2347A0] transition-colors">
                 + Novo Parceiro
               </button>
             </div>
@@ -3647,13 +3647,13 @@ export default function AdminPage() {
             {newlyCreatedPartner && !showPartnerForm && (
               <div className="bg-green-50 border border-green-200 px-6 py-4 mb-6 flex flex-col sm:flex-row sm:items-center gap-3">
                 <div className="flex-1">
-                  <p className="text-green-900 text-sm font-[var(--font-inter)] font-semibold mb-0.5">Parceiro criado!</p>
-                  <p className="text-green-700 text-xs font-[var(--font-inter)]">
+                  <p className="text-green-900 text-sm font-semibold mb-0.5">Parceiro criado!</p>
+                  <p className="text-green-700 text-xs">
                     Cupom: <strong>{newlyCreatedPartner.coupon_code}</strong>
                   </p>
                 </div>
                 <a href={buildWALink(newlyCreatedPartner)} target="_blank" rel="noopener noreferrer"
-                  className="inline-flex items-center gap-2 bg-[#25d366] text-white text-xs tracking-[0.08em] uppercase font-bold font-[var(--font-inter)] px-4 py-2.5 hover:bg-[#1db954] transition-colors whitespace-nowrap">
+                  className="inline-flex items-center gap-2 bg-[#25d366] text-white text-xs tracking-[0.08em] uppercase font-bold px-4 py-2.5 hover:bg-[#1db954] transition-colors whitespace-nowrap">
                   <svg width="14" height="14" viewBox="0 0 24 24" fill="currentColor"><path d="M17.472 14.382c-.297-.149-1.758-.867-2.03-.967-.273-.099-.471-.148-.67.15-.197.297-.767.966-.94 1.164-.173.199-.347.223-.644.075-.297-.15-1.255-.463-2.39-1.475-.883-.788-1.48-1.761-1.653-2.059-.173-.297-.018-.458.13-.606.134-.133.298-.347.446-.52.149-.174.198-.298.298-.497.099-.198.05-.371-.025-.52-.075-.149-.669-1.612-.916-2.207-.242-.579-.487-.5-.669-.51-.173-.008-.371-.01-.57-.01-.198 0-.52.074-.792.372-.272.297-1.04 1.016-1.04 2.479 0 1.462 1.065 2.875 1.213 3.074.149.198 2.096 3.2 5.077 4.487.709.306 1.262.489 1.694.625.712.227 1.36.195 1.871.118.571-.085 1.758-.719 2.006-1.413.248-.694.248-1.289.173-1.413-.074-.124-.272-.198-.57-.347m-5.421 7.403h-.004a9.87 9.87 0 01-5.031-1.378l-.361-.214-3.741.982.998-3.648-.235-.374a9.86 9.86 0 01-1.51-5.26c.001-5.45 4.436-9.884 9.888-9.884 2.64 0 5.122 1.03 6.988 2.898a9.825 9.825 0 012.893 6.994c-.003 5.45-4.437 9.884-9.885 9.884m8.413-18.297A11.815 11.815 0 0012.05 0C5.495 0 .16 5.335.157 11.892c0 2.096.547 4.142 1.588 5.945L.057 24l6.305-1.654a11.882 11.882 0 005.683 1.448h.005c6.554 0 11.89-5.335 11.893-11.893a11.821 11.821 0 00-3.48-8.413z"/></svg>
                   Enviar via WhatsApp
                 </a>
@@ -3662,7 +3662,7 @@ export default function AdminPage() {
 
             {showPartnerForm && (
               <div ref={partnerFormRef} className="bg-white border border-[#e2e2e2] p-8 mb-6">
-                <h3 className="font-[var(--font-noto-serif)] text-[#002045] text-lg font-normal mb-6">{editingPartnerId ? "Editar Parceiro" : "Novo Parceiro"}</h3>
+                <h3 className="font-serif text-[#0B1F45] text-lg font-normal mb-6">{editingPartnerId ? "Editar Parceiro" : "Novo Parceiro"}</h3>
                 <form onSubmit={handlePartnerSubmit}>
                   <div className="grid grid-cols-1 sm:grid-cols-2 gap-5 mb-6">
                     <div><label className={labelCls}>Nome *</label><input required value={partnerForm.name} onChange={(e) => setPartnerForm({ ...partnerForm, name: e.target.value })} className={inputCls} /></div>
@@ -3692,7 +3692,7 @@ export default function AdminPage() {
                         const rem = (partnerForm.commission_pool_pct || 0) - alloc;
                         const over = rem < -0.001;
                         return (
-                          <p className={`text-[11px] font-[var(--font-inter)] mt-1 ${over ? "text-red-600 font-bold" : "text-[#74777f]"}`}>
+                          <p className={`text-[11px] mt-1 ${over ? "text-red-600 font-bold" : "text-[#74777f]"}`}>
                             {partnerForm.discount_value || 0}% cliente · {partnerForm.commission_value || 0}% parceiro · {over ? `excede o repasse em ${Math.abs(Math.round(rem * 100) / 100)}%` : `${Math.round(rem * 100) / 100}% ainda disponível`}
                           </p>
                         );
@@ -3707,7 +3707,7 @@ export default function AdminPage() {
                           tabIndex={-1}
                           aria-label={showPartnerPw ? "Ocultar senha" : "Mostrar senha"}
                           onClick={() => setShowPartnerPw((v) => !v)}
-                          className="absolute right-3 top-1/2 -translate-y-1/2 text-[#74777f] hover:text-[#002045] transition-colors"
+                          className="absolute right-3 top-1/2 -translate-y-1/2 text-[#74777f] hover:text-[#0B1F45] transition-colors"
                         >
                           {showPartnerPw ? (
                             <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><path d="M17.94 17.94A10.07 10.07 0 0112 20c-7 0-11-8-11-8a18.45 18.45 0 015.06-5.94M9.9 4.24A9.12 9.12 0 0112 4c7 0 11 8 11 8a18.5 18.5 0 01-2.16 3.19m-6.72-1.07a3 3 0 11-4.24-4.24"/><line x1="1" y1="1" x2="23" y2="23"/></svg>
@@ -3754,13 +3754,13 @@ export default function AdminPage() {
                         type="checkbox"
                         checked={!!partnerForm.has_special_table}
                         onChange={(e) => setPartnerForm({ ...partnerForm, has_special_table: e.target.checked })}
-                        className="w-4 h-4 accent-[#002045]"
+                        className="w-4 h-4 accent-[#0B1F45]"
                       />
-                      <span className="text-sm font-[var(--font-inter)] text-[#002045]">
+                      <span className="text-sm text-[#0B1F45]">
                         Permitir acesso à Tabela Especial de Compra Direta
                       </span>
                     </label>
-                    <p className="text-xs text-[#74777f] font-[var(--font-inter)] mt-2 ml-7">
+                    <p className="text-xs text-[#74777f] mt-2 ml-7">
                       Ativa uma aba exclusiva no portal do parceiro com preços e simulador de compra direta.
                     </p>
                   </div>
@@ -3768,26 +3768,26 @@ export default function AdminPage() {
                     <div className="border border-[#e2e2e2] p-5 mb-5">
                       <p className={labelCls + " mb-4"}>Representantes Comerciais vinculados</p>
                       {partnerRepsLoading ? (
-                        <p className="text-[#74777f] text-xs font-[var(--font-inter)]">Carregando...</p>
+                        <p className="text-[#74777f] text-xs">Carregando...</p>
                       ) : (
                         <>
                           {partnerLinkedReps.length === 0 ? (
-                            <p className="text-[#74777f] text-xs font-[var(--font-inter)] italic mb-3">Nenhum representante vinculado.</p>
+                            <p className="text-[#74777f] text-xs italic mb-3">Nenhum representante vinculado.</p>
                           ) : (
                             <div className="space-y-2 mb-3">
                               {partnerLinkedReps.map((lr) => {
                                 const rep = lr.sales_reps;
                                 return (
-                                  <div key={lr.id} className="flex items-center justify-between bg-[#f9f9f9] border border-[#e2e2e2] px-3 py-2">
+                                  <div key={lr.id} className="flex items-center justify-between bg-[#F6F5F2] border border-[#e2e2e2] px-3 py-2">
                                     <div>
-                                      <span className="text-sm font-semibold text-[#002045] font-[var(--font-inter)]">{rep.name}</span>
-                                      <span className="text-xs text-[#74777f] font-[var(--font-inter)] ml-2">{rep.referral_code}</span>
-                                      <span className="text-xs text-[#74777f] font-[var(--font-inter)] ml-2">· Comissão: {rep.commission_type === "percentage" ? `${rep.commission_value}%` : `R$ ${rep.commission_value}`}</span>
+                                      <span className="text-sm font-semibold text-[#0B1F45]">{rep.name}</span>
+                                      <span className="text-xs text-[#74777f] ml-2">{rep.referral_code}</span>
+                                      <span className="text-xs text-[#74777f] ml-2">· Comissão: {rep.commission_type === "percentage" ? `${rep.commission_value}%` : `R$ ${rep.commission_value}`}</span>
                                     </div>
                                     <button
                                       type="button"
                                       onClick={() => removeRepFromPartner(rep.id)}
-                                      className="text-red-500 text-xs font-semibold hover:text-red-700 font-[var(--font-inter)] ml-4 flex-shrink-0"
+                                      className="text-red-500 text-xs font-semibold hover:text-red-700 ml-4 flex-shrink-0"
                                     >
                                       Remover
                                     </button>
@@ -3813,22 +3813,22 @@ export default function AdminPage() {
                               type="button"
                               onClick={addRepToPartner}
                               disabled={!addingRepId}
-                              className="bg-[#002045] text-white text-xs tracking-[0.1em] uppercase font-bold font-[var(--font-inter)] px-4 py-2.5 hover:bg-[#1a365d] transition-colors disabled:opacity-40 whitespace-nowrap flex-shrink-0"
+                              className="bg-[#0B1F45] text-white text-xs tracking-[0.1em] uppercase font-bold px-4 py-2.5 hover:bg-[#2347A0] transition-colors disabled:opacity-40 whitespace-nowrap flex-shrink-0"
                             >
                               Vincular
                             </button>
                           </div>
-                          {repLinkError && <p className="text-red-600 text-xs font-[var(--font-inter)] mt-1">{repLinkError}</p>}
+                          {repLinkError && <p className="text-red-600 text-xs mt-1">{repLinkError}</p>}
                         </>
                       )}
                     </div>
                   )}
-                  {partnerFormError && <p className="text-red-600 text-sm font-[var(--font-inter)] mb-4">{partnerFormError}</p>}
+                  {partnerFormError && <p className="text-red-600 text-sm mb-4">{partnerFormError}</p>}
                   <div className="flex gap-3">
-                    <button type="submit" disabled={partnerFormLoading} className="bg-[#002045] text-white text-xs tracking-[0.1em] uppercase font-bold font-[var(--font-inter)] px-6 py-2.5 hover:bg-[#1a365d] transition-colors disabled:opacity-50">
+                    <button type="submit" disabled={partnerFormLoading} className="bg-[#0B1F45] text-white text-xs tracking-[0.1em] uppercase font-bold px-6 py-2.5 hover:bg-[#2347A0] transition-colors disabled:opacity-50">
                       {partnerFormLoading ? "Salvando..." : "Salvar"}
                     </button>
-                    <button type="button" onClick={() => { setShowPartnerForm(false); setPartnerLinkedReps([]); setAddingRepId(""); setRepLinkError(""); }} className="text-[#74777f] text-xs tracking-[0.1em] uppercase font-bold font-[var(--font-inter)] px-6 py-2.5 border border-[#e2e2e2] hover:border-[#74777f] transition-colors">
+                    <button type="button" onClick={() => { setShowPartnerForm(false); setPartnerLinkedReps([]); setAddingRepId(""); setRepLinkError(""); }} className="text-[#74777f] text-xs tracking-[0.1em] uppercase font-bold px-6 py-2.5 border border-[#e2e2e2] hover:border-[#74777f] transition-colors">
                       Cancelar
                     </button>
                   </div>
@@ -3836,10 +3836,10 @@ export default function AdminPage() {
               </div>
             )}
 
-            {loadingPartners ? <p className="text-[#74777f] text-sm font-[var(--font-inter)]">Carregando...</p> : (
+            {loadingPartners ? <p className="text-[#74777f] text-sm">Carregando...</p> : (
               <>
               <div className="hidden md:block bg-white border border-[#e2e2e2]">
-                <table className="w-full text-sm font-[var(--font-inter)]">
+                <table className="w-full text-sm">
                   <thead>
                     <tr className="border-b border-[#e2e2e2]">
                       {["Nome", "Cupom", "Profissão", "Desconto", "Comissão", "Rep", "Senha Portal", "Status", "Tab. Especial", "Ações"].map((h) => (
@@ -3852,9 +3852,9 @@ export default function AdminPage() {
                       <tr><td colSpan={10} className="px-5 py-8 text-center text-[#74777f]">{partnerSearch.trim() ? "Nenhum parceiro encontrado para essa busca." : "Nenhum parceiro cadastrado."}</td></tr>
                     ) : (
                       activePartners.map((p) => (
-                        <tr key={p.id} className="border-b border-[#f0f0f0] hover:bg-[#fafafa]">
-                          <td className="px-5 py-4"><p className="font-semibold text-[#002045]">{p.name}</p>{p.email && <p className="text-xs text-[#74777f]">{p.email}</p>}</td>
-                          <td className="px-5 py-4"><span className="bg-[#eef2f8] text-[#002045] px-2 py-1 text-xs font-bold tracking-wider">{p.coupon_code}</span></td>
+                        <tr key={p.id} className="border-b border-[#f0f0f0] hover:bg-[#F6F5F2]">
+                          <td className="px-5 py-4"><p className="font-semibold text-[#0B1F45]">{p.name}</p>{p.email && <p className="text-xs text-[#74777f]">{p.email}</p>}</td>
+                          <td className="px-5 py-4"><span className="bg-[#eef2f8] text-[#0B1F45] px-2 py-1 text-xs font-bold tracking-wider">{p.coupon_code}</span></td>
                           <td className="px-5 py-4 text-xs text-[#43474e]">{p.profession || <span className="italic text-[#74777f]">—</span>}</td>
                           <td className="px-5 py-4 text-[#43474e]">{p.discount_type === "percentage" ? `${p.discount_value}%` : fmt(p.discount_value)}</td>
                           <td className="px-5 py-4 text-[#43474e]">
@@ -3875,18 +3875,18 @@ export default function AdminPage() {
                                 return (
                                   <span>
                                     {junctionReps.map((r) => (
-                                      <span key={r.referral_code} className="block font-semibold text-[#002045]" title={`Cód. captação: ${r.referral_code}`}>{r.name}</span>
+                                      <span key={r.referral_code} className="block font-semibold text-[#0B1F45]" title={`Cód. captação: ${r.referral_code}`}>{r.name}</span>
                                     ))}
                                   </span>
                                 );
                               }
                               if (p.sales_rep_referral_code) {
                                 const r = salesReps.find((r) => r.referral_code === p.sales_rep_referral_code);
-                                return r ? <span className="font-semibold text-[#002045]">{r.name}</span> : <span>{p.sales_rep_referral_code}</span>;
+                                return r ? <span className="font-semibold text-[#0B1F45]">{r.name}</span> : <span>{p.sales_rep_referral_code}</span>;
                               }
                               return <span>—</span>;
                             })()}
-                            <span className="block text-[9px] text-[#b0b0b0] font-[var(--font-inter)] mt-0.5">cód. captação</span>
+                            <span className="block text-[9px] text-[#b0b0b0] mt-0.5">cód. captação</span>
                           </td>
                           <td className="px-5 py-4 text-xs text-[#74777f]">{p.has_portal_password ? <span className="text-green-700 font-semibold">Definida</span> : <span className="italic">—</span>}</td>
                           <td className="px-5 py-4">
@@ -3898,16 +3898,16 @@ export default function AdminPage() {
                             <button
                               onClick={() => toggleSpecialTable(p)}
                               title={p.has_special_table ? "Desativar tabela especial" : "Ativar tabela especial"}
-                              className={`relative inline-flex h-5 w-9 flex-shrink-0 cursor-pointer rounded-full border-2 border-transparent transition-colors duration-200 focus:outline-none ${p.has_special_table ? "bg-[#002045]" : "bg-[#d1d5db]"}`}
+                              className={`relative inline-flex h-5 w-9 flex-shrink-0 cursor-pointer rounded-full border-2 border-transparent transition-colors duration-200 focus:outline-none ${p.has_special_table ? "bg-[#0B1F45]" : "bg-[#d1d5db]"}`}
                             >
                               <span className={`inline-block h-4 w-4 transform rounded-full bg-white shadow transition duration-200 ${p.has_special_table ? "translate-x-4" : "translate-x-0"}`} />
                             </button>
                           </td>
                           <td className="px-5 py-4">
                             <div className="flex gap-2 flex-wrap">
-                              <button onClick={() => startEditPartner(p)} className="text-[#1a365d] text-xs font-semibold hover:text-[#002045]">Editar</button>
+                              <button onClick={() => startEditPartner(p)} className="text-[#2347A0] text-xs font-semibold hover:text-[#0B1F45]">Editar</button>
                               <span className="text-[#e2e2e2]">|</span>
-                              <button onClick={() => togglePartnerStatus(p)} className="text-[#74777f] text-xs font-semibold hover:text-[#002045]">{p.status === "active" ? "Desativar" : "Ativar"}</button>
+                              <button onClick={() => togglePartnerStatus(p)} className="text-[#74777f] text-xs font-semibold hover:text-[#0B1F45]">{p.status === "active" ? "Desativar" : "Ativar"}</button>
                               <span className="text-[#e2e2e2]">|</span>
                               <button onClick={() => deletePartner(p)} className="text-red-500 text-xs font-semibold hover:text-red-700">Excluir</button>
                             </div>
@@ -3921,7 +3921,7 @@ export default function AdminPage() {
               {/* Mobile cards */}
               <div className="md:hidden space-y-2">
                 {activePartners.length === 0 ? (
-                  <div className="bg-white border border-[#e2e2e2] px-4 py-6 text-center text-[#74777f] text-sm font-[var(--font-inter)]">{partnerSearch.trim() ? "Nenhum parceiro encontrado para essa busca." : "Nenhum parceiro cadastrado."}</div>
+                  <div className="bg-white border border-[#e2e2e2] px-4 py-6 text-center text-[#74777f] text-sm">{partnerSearch.trim() ? "Nenhum parceiro encontrado para essa busca." : "Nenhum parceiro cadastrado."}</div>
                 ) : activePartners.map((p) => {
                   const junctionReps = (p.partner_sales_reps ?? []).map((psr) => psr.sales_reps).filter(Boolean) as Array<{ name: string; referral_code: string }>;
                   const repName = junctionReps.length > 0
@@ -3933,12 +3933,12 @@ export default function AdminPage() {
                     <div key={p.id} className="bg-white border border-[#e2e2e2] p-4">
                       <div className="flex items-start justify-between gap-2 mb-2.5">
                         <div className="min-w-0">
-                          <p className="font-semibold text-[#002045]">{p.name}</p>
+                          <p className="font-semibold text-[#0B1F45]">{p.name}</p>
                           {p.email && <p className="text-xs text-[#74777f] truncate">{p.email}</p>}
                         </div>
-                        <span className="bg-[#eef2f8] text-[#002045] px-2 py-0.5 text-xs font-bold tracking-wider flex-shrink-0">{p.coupon_code}</span>
+                        <span className="bg-[#eef2f8] text-[#0B1F45] px-2 py-0.5 text-xs font-bold tracking-wider flex-shrink-0">{p.coupon_code}</span>
                       </div>
-                      <div className="grid grid-cols-2 gap-x-4 gap-y-1.5 text-xs font-[var(--font-inter)] mb-3">
+                      <div className="grid grid-cols-2 gap-x-4 gap-y-1.5 text-xs mb-3">
                         <span className="text-[#74777f]">Profissão</span><span className="text-right text-[#43474e]">{p.profession || "—"}</span>
                         <span className="text-[#74777f]">Desconto</span><span className="text-right text-[#43474e]">{p.discount_type === "percentage" ? `${p.discount_value}%` : fmt(p.discount_value)}</span>
                         <span className="text-[#74777f]">Comissão</span>
@@ -3956,16 +3956,16 @@ export default function AdminPage() {
                           <button
                             onClick={() => toggleSpecialTable(p)}
                             title={p.has_special_table ? "Desativar tabela especial" : "Ativar tabela especial"}
-                            className={`relative inline-flex h-5 w-9 flex-shrink-0 cursor-pointer rounded-full border-2 border-transparent transition-colors duration-200 focus:outline-none ${p.has_special_table ? "bg-[#002045]" : "bg-[#d1d5db]"}`}
+                            className={`relative inline-flex h-5 w-9 flex-shrink-0 cursor-pointer rounded-full border-2 border-transparent transition-colors duration-200 focus:outline-none ${p.has_special_table ? "bg-[#0B1F45]" : "bg-[#d1d5db]"}`}
                           >
                             <span className={`inline-block h-4 w-4 transform rounded-full bg-white shadow transition duration-200 ${p.has_special_table ? "translate-x-4" : "translate-x-0"}`} />
                           </button>
                           <span className="text-[11px] text-[#74777f]">Tab. Especial</span>
                         </label>
                         <div className="flex gap-2 flex-wrap justify-end">
-                          <button onClick={() => startEditPartner(p)} className="text-[#1a365d] text-xs font-semibold hover:text-[#002045]">Editar</button>
+                          <button onClick={() => startEditPartner(p)} className="text-[#2347A0] text-xs font-semibold hover:text-[#0B1F45]">Editar</button>
                           <span className="text-[#e2e2e2]">|</span>
-                          <button onClick={() => togglePartnerStatus(p)} className="text-[#74777f] text-xs font-semibold hover:text-[#002045]">{p.status === "active" ? "Desativar" : "Ativar"}</button>
+                          <button onClick={() => togglePartnerStatus(p)} className="text-[#74777f] text-xs font-semibold hover:text-[#0B1F45]">{p.status === "active" ? "Desativar" : "Ativar"}</button>
                           <span className="text-[#e2e2e2]">|</span>
                           <button onClick={() => deletePartner(p)} className="text-red-500 text-xs font-semibold hover:text-red-700">Excluir</button>
                         </div>
@@ -3985,7 +3985,7 @@ export default function AdminPage() {
             {/* Rep birthdays this month */}
             {upcomingRepBirthdays.length > 0 && (
               <div className="mb-8">
-                <h3 className="font-[var(--font-inter)] text-[10px] tracking-[0.2em] uppercase font-bold text-[#002045] mb-3 flex items-center gap-2">
+                <h3 className="text-[10px] tracking-[0.2em] uppercase font-bold text-[#0B1F45] mb-3 flex items-center gap-2">
                   🎂 Aniversários em {new Date().toLocaleString("pt-BR", { month: "long" })}
                 </h3>
                 <div className="flex flex-wrap gap-3">
@@ -3996,8 +3996,8 @@ export default function AdminPage() {
                     const isToday = bday.getUTCDate() === now.getDate() && bday.getUTCMonth() === now.getMonth();
                     const age = now.getFullYear() - bday.getUTCFullYear();
                     return (
-                      <div key={r.id} className={`px-4 py-3 border text-sm font-[var(--font-inter)] ${isToday ? "border-yellow-300 bg-yellow-50" : "border-[#e2e2e2] bg-white"}`}>
-                        <span className="font-bold text-[#002045]">{day < 10 ? `0${day}` : day}</span>
+                      <div key={r.id} className={`px-4 py-3 border text-sm ${isToday ? "border-yellow-300 bg-yellow-50" : "border-[#e2e2e2] bg-white"}`}>
+                        <span className="font-bold text-[#0B1F45]">{day < 10 ? `0${day}` : day}</span>
                         <span className="text-[#74777f] text-xs ml-1">— {r.name}</span>
                         <span className="text-[#74777f] text-xs ml-1">({age} anos)</span>
                         {isToday && <span className="ml-2 text-yellow-700 text-xs font-bold">HOJE!</span>}
@@ -4011,7 +4011,7 @@ export default function AdminPage() {
             {/* Rep ranking */}
             <div className="mb-8">
               <div className="flex flex-wrap items-center justify-between gap-3 mb-3">
-                <h3 className="font-[var(--font-inter)] text-[10px] tracking-[0.2em] uppercase font-bold text-[#002045]">
+                <h3 className="text-[10px] tracking-[0.2em] uppercase font-bold text-[#0B1F45]">
                   Ranking de Representantes — vendas concluídas
                 </h3>
                 <div className="flex items-center gap-2">
@@ -4019,7 +4019,7 @@ export default function AdminPage() {
                     <button
                       key={s}
                       onClick={() => setRepRankSort(s)}
-                      className={`text-[10px] tracking-[0.08em] uppercase font-bold font-[var(--font-inter)] px-3 py-1.5 border transition-colors ${repRankSort === s ? "bg-[#002045] text-white border-[#002045]" : "text-[#74777f] border-[#e2e2e2] hover:border-[#002045] hover:text-[#002045]"}`}
+                      className={`text-[10px] tracking-[0.08em] uppercase font-bold px-3 py-1.5 border transition-colors ${repRankSort === s ? "bg-[#0B1F45] text-white border-[#0B1F45]" : "text-[#74777f] border-[#e2e2e2] hover:border-[#0B1F45] hover:text-[#0B1F45]"}`}
                     >
                       {s === "total" ? "Valor" : s === "count" ? "Qtd." : "Ticket Médio"}
                     </button>
@@ -4028,7 +4028,7 @@ export default function AdminPage() {
               </div>
               {/* Desktop table */}
               <div className="hidden md:block bg-white border border-[#e2e2e2]">
-                <table className="w-full text-sm font-[var(--font-inter)]">
+                <table className="w-full text-sm">
                   <thead>
                     <tr className="border-b border-[#e2e2e2]">
                       {["#", "Representante", "Código", "Parceiros", "Total gerado", "Vendas", "Ticket médio"].map((h) => (
@@ -4040,10 +4040,10 @@ export default function AdminPage() {
                     {repRanking.length === 0 ? (
                       <tr><td colSpan={7} className="px-5 py-8 text-center text-[#74777f] text-sm">Nenhuma venda concluída registrada ainda.</td></tr>
                     ) : repRanking.map((r, i) => (
-                      <tr key={r.code} className="border-b border-[#f0f0f0] hover:bg-[#fafafa]">
-                        <td className="px-5 py-3 font-bold text-[#002045]">{i + 1}°</td>
-                        <td className="px-5 py-3 font-semibold text-[#002045]">{r.name}</td>
-                        <td className="px-5 py-3"><span className="bg-[#eef2f8] text-[#002045] px-2 py-0.5 text-xs font-bold tracking-wider">{r.code}</span></td>
+                      <tr key={r.code} className="border-b border-[#f0f0f0] hover:bg-[#F6F5F2]">
+                        <td className="px-5 py-3 font-bold text-[#0B1F45]">{i + 1}°</td>
+                        <td className="px-5 py-3 font-semibold text-[#0B1F45]">{r.name}</td>
+                        <td className="px-5 py-3"><span className="bg-[#eef2f8] text-[#0B1F45] px-2 py-0.5 text-xs font-bold tracking-wider">{r.code}</span></td>
                         <td className="px-5 py-3 text-[#43474e]">{r.partnerCount}</td>
                         <td className="px-5 py-3 font-semibold text-green-700">{fmt(r.total)}</td>
                         <td className="px-5 py-3 text-[#43474e]">{r.count}</td>
@@ -4056,17 +4056,17 @@ export default function AdminPage() {
               {/* Mobile cards */}
               <div className="md:hidden space-y-2">
                 {repRanking.length === 0 ? (
-                  <div className="bg-white border border-[#e2e2e2] px-4 py-6 text-center text-[#74777f] text-sm font-[var(--font-inter)]">Nenhuma venda concluída registrada ainda.</div>
+                  <div className="bg-white border border-[#e2e2e2] px-4 py-6 text-center text-[#74777f] text-sm">Nenhuma venda concluída registrada ainda.</div>
                 ) : repRanking.map((r, i) => (
                   <div key={r.code} className="bg-white border border-[#e2e2e2] p-4">
                     <div className="flex items-center justify-between gap-2 mb-2.5">
                       <div className="flex items-center gap-2 min-w-0">
-                        <span className="font-bold text-[#002045] flex-shrink-0">{i + 1}°</span>
-                        <span className="font-semibold text-[#002045] truncate">{r.name}</span>
+                        <span className="font-bold text-[#0B1F45] flex-shrink-0">{i + 1}°</span>
+                        <span className="font-semibold text-[#0B1F45] truncate">{r.name}</span>
                       </div>
-                      <span className="bg-[#eef2f8] text-[#002045] px-2 py-0.5 text-xs font-bold tracking-wider flex-shrink-0">{r.code}</span>
+                      <span className="bg-[#eef2f8] text-[#0B1F45] px-2 py-0.5 text-xs font-bold tracking-wider flex-shrink-0">{r.code}</span>
                     </div>
-                    <div className="grid grid-cols-2 gap-x-4 gap-y-1.5 text-xs font-[var(--font-inter)]">
+                    <div className="grid grid-cols-2 gap-x-4 gap-y-1.5 text-xs">
                       <span className="text-[#74777f]">Total gerado</span><span className="text-right font-semibold text-green-700">{fmt(r.total)}</span>
                       <span className="text-[#74777f]">Vendas</span><span className="text-right text-[#43474e]">{r.count}</span>
                       <span className="text-[#74777f]">Ticket médio</span><span className="text-right text-[#43474e]">{r.median > 0 ? fmt(r.median) : "—"}</span>
@@ -4080,22 +4080,22 @@ export default function AdminPage() {
             <RepOversightTab reps={salesReps.map((r) => ({ id: r.id, name: r.name }))} />
 
             <div className="flex items-center justify-between mb-6">
-              <h2 className="font-[var(--font-noto-serif)] text-[#002045] text-xl font-normal">Representantes Comerciais</h2>
-              <button onClick={startCreateRep} className="bg-[#002045] text-white text-xs tracking-[0.1em] uppercase font-bold font-[var(--font-inter)] px-5 py-2.5 hover:bg-[#1a365d] transition-colors">
+              <h2 className="font-serif text-[#0B1F45] text-xl font-normal">Representantes Comerciais</h2>
+              <button onClick={startCreateRep} className="bg-[#0B1F45] text-white text-xs tracking-[0.1em] uppercase font-bold px-5 py-2.5 hover:bg-[#2347A0] transition-colors">
                 + Novo Representante
               </button>
             </div>
 
             {showRepForm && (
               <div ref={repFormRef} className="bg-white border border-[#e2e2e2] p-8 mb-6">
-                <h3 className="font-[var(--font-noto-serif)] text-[#002045] text-lg font-normal mb-6">{editingRepId ? "Editar Representante" : "Novo Representante"}</h3>
+                <h3 className="font-serif text-[#0B1F45] text-lg font-normal mb-6">{editingRepId ? "Editar Representante" : "Novo Representante"}</h3>
                 <form onSubmit={handleRepSubmit}>
                   <div className="grid grid-cols-1 sm:grid-cols-2 gap-5 mb-6">
                     <div><label className={labelCls}>Nome *</label><input required value={repForm.name} onChange={(e) => setRepForm({ ...repForm, name: e.target.value })} className={inputCls} /></div>
                     <div>
                       <label className={labelCls}>Código de Referência *</label>
                       <input required value={repForm.referral_code} onChange={(e) => setRepForm({ ...repForm, referral_code: e.target.value.toUpperCase() })} className={inputCls + " uppercase"} placeholder="ex: REP_JOAO" />
-                      <p className="text-[10px] text-[#74777f] font-[var(--font-inter)] mt-1">Parceiros usam este código ao se cadastrar</p>
+                      <p className="text-[10px] text-[#74777f] mt-1">Parceiros usam este código ao se cadastrar</p>
                     </div>
                     <div><label className={labelCls}>Email</label><input value={repForm.email} onChange={(e) => setRepForm({ ...repForm, email: e.target.value })} type="email" className={inputCls} /></div>
                     <div><label className={labelCls}>Telefone</label><input value={repForm.phone} onChange={(e) => setRepForm({ ...repForm, phone: e.target.value })} className={inputCls} /></div>
@@ -4116,7 +4116,7 @@ export default function AdminPage() {
                           tabIndex={-1}
                           aria-label={showRepPw ? "Ocultar senha" : "Mostrar senha"}
                           onClick={() => setShowRepPw((v) => !v)}
-                          className="absolute right-3 top-1/2 -translate-y-1/2 text-[#74777f] hover:text-[#002045] transition-colors"
+                          className="absolute right-3 top-1/2 -translate-y-1/2 text-[#74777f] hover:text-[#0B1F45] transition-colors"
                         >
                           {showRepPw ? (
                             <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><path d="M17.94 17.94A10.07 10.07 0 0112 20c-7 0-11-8-11-8a18.45 18.45 0 015.06-5.94M9.9 4.24A9.12 9.12 0 0112 4c7 0 11 8 11 8a18.5 18.5 0 01-2.16 3.19m-6.72-1.07a3 3 0 11-4.24-4.24"/><line x1="1" y1="1" x2="23" y2="23"/></svg>
@@ -4135,12 +4135,12 @@ export default function AdminPage() {
                       </div>
                     )}
                   </div>
-                  {repFormError && <p className="text-red-600 text-sm font-[var(--font-inter)] mb-4">{repFormError}</p>}
+                  {repFormError && <p className="text-red-600 text-sm mb-4">{repFormError}</p>}
                   <div className="flex gap-3">
-                    <button type="submit" disabled={repFormLoading} className="bg-[#002045] text-white text-xs tracking-[0.1em] uppercase font-bold font-[var(--font-inter)] px-6 py-2.5 hover:bg-[#1a365d] transition-colors disabled:opacity-50">
+                    <button type="submit" disabled={repFormLoading} className="bg-[#0B1F45] text-white text-xs tracking-[0.1em] uppercase font-bold px-6 py-2.5 hover:bg-[#2347A0] transition-colors disabled:opacity-50">
                       {repFormLoading ? "Salvando..." : "Salvar"}
                     </button>
-                    <button type="button" onClick={() => setShowRepForm(false)} className="text-[#74777f] text-xs tracking-[0.1em] uppercase font-bold font-[var(--font-inter)] px-6 py-2.5 border border-[#e2e2e2] hover:border-[#74777f] transition-colors">
+                    <button type="button" onClick={() => setShowRepForm(false)} className="text-[#74777f] text-xs tracking-[0.1em] uppercase font-bold px-6 py-2.5 border border-[#e2e2e2] hover:border-[#74777f] transition-colors">
                       Cancelar
                     </button>
                   </div>
@@ -4148,10 +4148,10 @@ export default function AdminPage() {
               </div>
             )}
 
-            {loadingReps ? <p className="text-[#74777f] text-sm font-[var(--font-inter)]">Carregando...</p> : (
+            {loadingReps ? <p className="text-[#74777f] text-sm">Carregando...</p> : (
               <>
               <div className="hidden md:block bg-white border border-[#e2e2e2]">
-                <table className="w-full text-sm font-[var(--font-inter)]">
+                <table className="w-full text-sm">
                   <thead>
                     <tr className="border-b border-[#e2e2e2]">
                       {["Nome", "Código Ref.", "Comissão", "Parceiros", "Senha Portal", "Status", "Ações"].map((h) => (
@@ -4175,14 +4175,14 @@ export default function AdminPage() {
                         });
                         return (
                           <React.Fragment key={r.id}>
-                            <tr className={`border-b border-[#f0f0f0] hover:bg-[#fafafa] ${isExpanded ? "bg-[#f8fafc]" : ""}`}>
-                              <td className="px-5 py-4"><p className="font-semibold text-[#002045]">{r.name}</p>{r.email && <p className="text-xs text-[#74777f]">{r.email}</p>}</td>
-                              <td className="px-5 py-4"><span className="bg-[#eef2f8] text-[#002045] px-2 py-1 text-xs font-bold tracking-wider">{r.referral_code}</span></td>
+                            <tr className={`border-b border-[#f0f0f0] hover:bg-[#F6F5F2] ${isExpanded ? "bg-[#f8fafc]" : ""}`}>
+                              <td className="px-5 py-4"><p className="font-semibold text-[#0B1F45]">{r.name}</p>{r.email && <p className="text-xs text-[#74777f]">{r.email}</p>}</td>
+                              <td className="px-5 py-4"><span className="bg-[#eef2f8] text-[#0B1F45] px-2 py-1 text-xs font-bold tracking-wider">{r.referral_code}</span></td>
                               <td className="px-5 py-4 text-[#43474e]">{r.commission_type === "percentage" ? `${r.commission_value}%` : fmt(r.commission_value)} <span className="text-xs text-[#74777f]">da venda</span></td>
                               <td className="px-5 py-4">
                                 <button
                                   onClick={() => setExpandedRepId(isExpanded ? null : r.id)}
-                                  className={`font-semibold text-sm transition-colors ${repPartnerCount > 0 ? "text-[#002045] hover:text-[#1a56db] underline decoration-dotted" : "text-[#43474e]"}`}
+                                  className={`font-semibold text-sm transition-colors ${repPartnerCount > 0 ? "text-[#0B1F45] hover:text-[#1a56db] underline decoration-dotted" : "text-[#43474e]"}`}
                                 >
                                   {repPartnerCount}
                                   {repPartnerCount > 0 && (
@@ -4198,9 +4198,9 @@ export default function AdminPage() {
                               </td>
                               <td className="px-5 py-4">
                                 <div className="flex gap-2">
-                                  <button onClick={() => startEditRep(r)} className="text-[#1a365d] text-xs font-semibold hover:text-[#002045]">Editar</button>
+                                  <button onClick={() => startEditRep(r)} className="text-[#2347A0] text-xs font-semibold hover:text-[#0B1F45]">Editar</button>
                                   <span className="text-[#e2e2e2]">|</span>
-                                  <button onClick={() => toggleRepStatus(r)} className="text-[#74777f] text-xs font-semibold hover:text-[#002045]">{r.status === "active" ? "Desativar" : "Ativar"}</button>
+                                  <button onClick={() => toggleRepStatus(r)} className="text-[#74777f] text-xs font-semibold hover:text-[#0B1F45]">{r.status === "active" ? "Desativar" : "Ativar"}</button>
                                   <span className="text-[#e2e2e2]">|</span>
                                   <button onClick={() => deleteRep(r)} className="text-red-500 text-xs font-semibold hover:text-red-700">Excluir</button>
                                 </div>
@@ -4210,13 +4210,13 @@ export default function AdminPage() {
                               <tr>
                                 <td colSpan={7} className="p-0 border-b border-[#e2e2e2]">
                                   <div className="bg-[#f0f4fa] px-6 py-4">
-                                    <p className="text-[10px] tracking-[0.2em] uppercase font-bold text-[#002045] font-[var(--font-inter)] mb-3">
+                                    <p className="text-[10px] tracking-[0.2em] uppercase font-bold text-[#0B1F45] mb-3">
                                       Parceiros de {r.name}
                                     </p>
                                     {repPartners.length === 0 ? (
-                                      <p className="text-sm text-[#74777f] font-[var(--font-inter)] italic">Nenhum parceiro vinculado a este representante.</p>
+                                      <p className="text-sm text-[#74777f] italic">Nenhum parceiro vinculado a este representante.</p>
                                     ) : (
-                                      <table className="w-full text-xs font-[var(--font-inter)] bg-white border border-[#e2e2e2]">
+                                      <table className="w-full text-xs bg-white border border-[#e2e2e2]">
                                         <thead>
                                           <tr className="border-b border-[#e2e2e2]">
                                             {["Nome", "Email", "Telefone", "Cupom", "Status", "Cadastro"].map((h) => (
@@ -4226,11 +4226,11 @@ export default function AdminPage() {
                                         </thead>
                                         <tbody>
                                           {repPartners.map((p) => (
-                                            <tr key={p.id} className="border-b border-[#f0f0f0] hover:bg-[#fafafa]">
-                                              <td className="px-4 py-2.5 font-semibold text-[#002045]">{p.name}</td>
+                                            <tr key={p.id} className="border-b border-[#f0f0f0] hover:bg-[#F6F5F2]">
+                                              <td className="px-4 py-2.5 font-semibold text-[#0B1F45]">{p.name}</td>
                                               <td className="px-4 py-2.5 text-[#43474e]">{p.email || <span className="italic text-[#74777f]">—</span>}</td>
                                               <td className="px-4 py-2.5 text-[#43474e]">{p.phone || <span className="italic text-[#74777f]">—</span>}</td>
-                                              <td className="px-4 py-2.5"><span className="bg-[#eef2f8] text-[#002045] px-1.5 py-0.5 font-bold tracking-wider">{p.coupon_code}</span></td>
+                                              <td className="px-4 py-2.5"><span className="bg-[#eef2f8] text-[#0B1F45] px-1.5 py-0.5 font-bold tracking-wider">{p.coupon_code}</span></td>
                                               <td className="px-4 py-2.5">
                                                 <span className={`px-1.5 py-0.5 text-[9px] font-bold tracking-wider ${p.status === "active" ? "bg-green-100 text-green-800" : p.status === "pending" ? "bg-yellow-100 text-yellow-800" : "bg-gray-100 text-gray-600"}`}>
                                                   {p.status === "active" ? "Ativo" : p.status === "pending" ? "Pendente" : "Inativo"}
@@ -4256,7 +4256,7 @@ export default function AdminPage() {
               {/* Mobile cards */}
               <div className="md:hidden space-y-2">
                 {salesReps.length === 0 ? (
-                  <div className="bg-white border border-[#e2e2e2] px-4 py-6 text-center text-[#74777f] text-sm font-[var(--font-inter)]">Nenhum representante cadastrado.</div>
+                  <div className="bg-white border border-[#e2e2e2] px-4 py-6 text-center text-[#74777f] text-sm">Nenhum representante cadastrado.</div>
                 ) : salesReps.map((r) => {
                   const legacyRepCount = partners.filter((p) => p.sales_rep_referral_code === r.referral_code).length;
                   const repPartnerCount = Math.max(legacyRepCount, junctionPartnerCounts[r.id] || 0);
@@ -4270,12 +4270,12 @@ export default function AdminPage() {
                     <div key={r.id} className="bg-white border border-[#e2e2e2] p-4">
                       <div className="flex items-start justify-between gap-2 mb-2.5">
                         <div className="min-w-0">
-                          <p className="font-semibold text-[#002045]">{r.name}</p>
+                          <p className="font-semibold text-[#0B1F45]">{r.name}</p>
                           {r.email && <p className="text-xs text-[#74777f] truncate">{r.email}</p>}
                         </div>
-                        <span className="bg-[#eef2f8] text-[#002045] px-2 py-0.5 text-xs font-bold tracking-wider flex-shrink-0">{r.referral_code}</span>
+                        <span className="bg-[#eef2f8] text-[#0B1F45] px-2 py-0.5 text-xs font-bold tracking-wider flex-shrink-0">{r.referral_code}</span>
                       </div>
-                      <div className="grid grid-cols-2 gap-x-4 gap-y-1.5 text-xs font-[var(--font-inter)] mb-3">
+                      <div className="grid grid-cols-2 gap-x-4 gap-y-1.5 text-xs mb-3">
                         <span className="text-[#74777f]">Comissão</span><span className="text-right text-[#43474e]">{r.commission_type === "percentage" ? `${r.commission_value}%` : fmt(r.commission_value)} da venda</span>
                         <span className="text-[#74777f]">Senha Portal</span><span className="text-right">{r.has_portal_password ? <span className="text-green-700 font-semibold">Definida</span> : <span className="text-[#74777f] italic">—</span>}</span>
                         <span className="text-[#74777f]">Status</span><span className="text-right"><span className={`px-2 py-0.5 text-[10px] font-bold tracking-wider ${r.status === "active" ? "bg-green-100 text-green-800" : "bg-gray-100 text-gray-600"}`}>{r.status === "active" ? "Ativo" : "Inativo"}</span></span>
@@ -4283,7 +4283,7 @@ export default function AdminPage() {
                         <span className="text-right">
                           <button
                             onClick={() => setExpandedRepId(isExpanded ? null : r.id)}
-                            className={`font-semibold text-sm transition-colors ${repPartnerCount > 0 ? "text-[#002045] underline decoration-dotted" : "text-[#43474e]"}`}
+                            className={`font-semibold text-sm transition-colors ${repPartnerCount > 0 ? "text-[#0B1F45] underline decoration-dotted" : "text-[#43474e]"}`}
                           >
                             {repPartnerCount}{repPartnerCount > 0 && <span className="ml-1 text-[10px] font-normal no-underline">{isExpanded ? "▲" : "▼"}</span>}
                           </button>
@@ -4291,14 +4291,14 @@ export default function AdminPage() {
                       </div>
                       {isExpanded && (
                         <div className="bg-[#f0f4fa] -mx-4 px-4 py-3 mb-3 space-y-2">
-                          <p className="text-[10px] tracking-[0.2em] uppercase font-bold text-[#002045] font-[var(--font-inter)]">Parceiros de {r.name}</p>
+                          <p className="text-[10px] tracking-[0.2em] uppercase font-bold text-[#0B1F45]">Parceiros de {r.name}</p>
                           {repPartners.length === 0 ? (
-                            <p className="text-xs text-[#74777f] font-[var(--font-inter)] italic">Nenhum parceiro vinculado.</p>
+                            <p className="text-xs text-[#74777f] italic">Nenhum parceiro vinculado.</p>
                           ) : repPartners.map((p) => (
                             <div key={p.id} className="bg-white border border-[#e2e2e2] px-3 py-2">
                               <div className="flex items-center justify-between gap-2">
-                                <span className="text-xs font-semibold text-[#002045] truncate">{p.name}</span>
-                                <span className="bg-[#eef2f8] text-[#002045] px-1.5 py-0.5 text-[10px] font-bold tracking-wider flex-shrink-0">{p.coupon_code}</span>
+                                <span className="text-xs font-semibold text-[#0B1F45] truncate">{p.name}</span>
+                                <span className="bg-[#eef2f8] text-[#0B1F45] px-1.5 py-0.5 text-[10px] font-bold tracking-wider flex-shrink-0">{p.coupon_code}</span>
                               </div>
                               {(p.email || p.phone) && <p className="text-[11px] text-[#74777f] mt-0.5 truncate">{[p.email, p.phone].filter(Boolean).join(" · ")}</p>}
                             </div>
@@ -4306,9 +4306,9 @@ export default function AdminPage() {
                         </div>
                       )}
                       <div className="flex gap-2 justify-end pt-2.5 border-t border-[#f0f0f0]">
-                        <button onClick={() => startEditRep(r)} className="text-[#1a365d] text-xs font-semibold hover:text-[#002045]">Editar</button>
+                        <button onClick={() => startEditRep(r)} className="text-[#2347A0] text-xs font-semibold hover:text-[#0B1F45]">Editar</button>
                         <span className="text-[#e2e2e2]">|</span>
-                        <button onClick={() => toggleRepStatus(r)} className="text-[#74777f] text-xs font-semibold hover:text-[#002045]">{r.status === "active" ? "Desativar" : "Ativar"}</button>
+                        <button onClick={() => toggleRepStatus(r)} className="text-[#74777f] text-xs font-semibold hover:text-[#0B1F45]">{r.status === "active" ? "Desativar" : "Ativar"}</button>
                         <span className="text-[#e2e2e2]">|</span>
                         <button onClick={() => deleteRep(r)} className="text-red-500 text-xs font-semibold hover:text-red-700">Excluir</button>
                       </div>
@@ -4325,24 +4325,24 @@ export default function AdminPage() {
         {tab === "campaigns" && (
           <div>
             <div className="flex items-center justify-between mb-6">
-              <h2 className="font-[var(--font-noto-serif)] text-[#002045] text-xl font-normal">
+              <h2 className="font-serif text-[#0B1F45] text-xl font-normal">
                 Campanhas de E-mail
               </h2>
               <button
                 onClick={generateCampaign}
                 disabled={campaignGenerating}
-                className="bg-[#002045] text-white text-xs tracking-[0.12em] uppercase font-bold font-[var(--font-inter)] px-5 py-2.5 hover:bg-[#1a365d] transition-colors disabled:opacity-50"
+                className="bg-[#0B1F45] text-white text-xs tracking-[0.12em] uppercase font-bold px-5 py-2.5 hover:bg-[#2347A0] transition-colors disabled:opacity-50"
               >
                 {campaignGenerating ? "Gerando..." : "+ Gerar Próxima Campanha"}
               </button>
             </div>
 
             {campaignsLoading ? (
-              <p className="text-[#74777f] text-sm font-[var(--font-inter)]">Carregando...</p>
+              <p className="text-[#74777f] text-sm">Carregando...</p>
             ) : campaigns.length === 0 ? (
               <div className="bg-white border border-[#e2e2e2] px-6 py-12 text-center">
-                <p className="text-[#74777f] text-sm font-[var(--font-inter)]">Nenhuma campanha criada ainda.</p>
-                <p className="text-[#74777f] text-xs font-[var(--font-inter)] mt-1">Clique em &ldquo;Gerar Próxima Campanha&rdquo; para começar.</p>
+                <p className="text-[#74777f] text-sm">Nenhuma campanha criada ainda.</p>
+                <p className="text-[#74777f] text-xs mt-1">Clique em &ldquo;Gerar Próxima Campanha&rdquo; para começar.</p>
               </div>
             ) : (
               <div className="space-y-3">
@@ -4357,13 +4357,13 @@ export default function AdminPage() {
                       <div className="px-6 py-4 flex items-center gap-4">
                         <div className="flex-1 min-w-0">
                           <div className="flex items-center gap-2 mb-1">
-                            <span className="text-[9px] uppercase tracking-widest font-bold text-[#74777f] font-[var(--font-inter)]">
+                            <span className="text-[9px] uppercase tracking-widest font-bold text-[#74777f]">
                               {c.campaign_type === 'product' ? 'Produto' : 'Educacional'} · {c.campaign_subtype}
                             </span>
                             <span className={`px-2 py-0.5 text-[9px] font-bold tracking-wide rounded-full ${statusCls}`}>{statusLabel}</span>
                           </div>
-                          <p className="font-semibold text-[#002045] text-sm font-[var(--font-inter)] truncate">{c.subject}</p>
-                          <p className="text-[#74777f] text-xs font-[var(--font-inter)] mt-0.5">
+                          <p className="font-semibold text-[#0B1F45] text-sm truncate">{c.subject}</p>
+                          <p className="text-[#74777f] text-xs mt-0.5">
                             {new Date(c.created_at).toLocaleDateString('pt-BR', { day: '2-digit', month: 'short', year: 'numeric' })}
                             {c.sent_at && ` · ${c.recipient_count ?? 0} destinatários`}
                           </p>
@@ -4374,14 +4374,14 @@ export default function AdminPage() {
                               <button
                                 onClick={() => sendCampaignTest(c.id)}
                                 disabled={campaignTestSending === c.id}
-                                className="text-xs font-[var(--font-inter)] text-[#002045] border border-[#002045] px-3 py-1.5 hover:bg-[#002045] hover:text-white transition-colors disabled:opacity-50"
+                                className="text-xs text-[#0B1F45] border border-[#0B1F45] px-3 py-1.5 hover:bg-[#0B1F45] hover:text-white transition-colors disabled:opacity-50"
                               >
                                 {campaignTestSending === c.id ? "..." : "Reenviar Teste"}
                               </button>
                               <button
                                 onClick={() => approveCampaign(c.id, c.approve_token)}
                                 disabled={campaignApproving === c.id}
-                                className="text-xs font-[var(--font-inter)] bg-green-700 text-white px-3 py-1.5 hover:bg-green-800 transition-colors disabled:opacity-50"
+                                className="text-xs bg-green-700 text-white px-3 py-1.5 hover:bg-green-800 transition-colors disabled:opacity-50"
                               >
                                 {campaignApproving === c.id ? "Enviando..." : "✓ Aprovar & Enviar"}
                               </button>
@@ -4403,7 +4403,7 @@ export default function AdminPage() {
                           </button>
                           <button
                             onClick={() => setExpandedCampaignId(isExpanded ? null : c.id)}
-                            className="text-[#74777f] hover:text-[#002045] transition-colors p-1"
+                            className="text-[#74777f] hover:text-[#0B1F45] transition-colors p-1"
                           >
                             <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"
                               className={`transition-transform ${isExpanded ? 'rotate-180' : ''}`}>
@@ -4420,11 +4420,11 @@ export default function AdminPage() {
                             <div className="space-y-5">
                               {/* Mode toggle */}
                               <div className="flex items-center gap-3">
-                                <span className="text-[10px] uppercase tracking-[0.15em] font-bold font-[var(--font-inter)] text-[#74777f]">Editor</span>
+                                <span className="text-[10px] uppercase tracking-[0.15em] font-bold text-[#74777f]">Editor</span>
                                 <div className="flex border border-[#e2e2e2] overflow-hidden">
                                   {(["visual", "html"] as const).map((m) => (
                                     <button key={m} type="button" onClick={() => setCampaignEditMode(m)}
-                                      className={`px-4 py-1.5 text-xs font-bold font-[var(--font-inter)] transition-colors ${campaignEditMode === m ? "bg-[#002045] text-white" : "bg-white text-[#74777f] hover:bg-[#f5f5f3]"}`}>
+                                      className={`px-4 py-1.5 text-xs font-bold transition-colors ${campaignEditMode === m ? "bg-[#0B1F45] text-white" : "bg-white text-[#74777f] hover:bg-[#EFEDE8]"}`}>
                                       {m === "visual" ? "Visual" : "HTML"}
                                     </button>
                                   ))}
@@ -4433,9 +4433,9 @@ export default function AdminPage() {
 
                               {/* Subject — always shown */}
                               <div>
-                                <label className="block text-[10px] uppercase tracking-[0.15em] font-bold font-[var(--font-inter)] text-[#74777f] mb-2">Assunto do e-mail</label>
+                                <label className="block text-[10px] uppercase tracking-[0.15em] font-bold text-[#74777f] mb-2">Assunto do e-mail</label>
                                 <input value={campaignEditSubject} onChange={(e) => setCampaignEditSubject(e.target.value)}
-                                  className="w-full border border-[#e2e2e2] px-3 py-2.5 text-sm font-[var(--font-inter)] text-[#002045] focus:outline-none focus:border-[#002045]" />
+                                  className="w-full border border-[#e2e2e2] px-3 py-2.5 text-sm text-[#0B1F45] focus:outline-none focus:border-[#0B1F45]" />
                               </div>
 
                               {campaignEditMode === "visual" ? (
@@ -4443,10 +4443,10 @@ export default function AdminPage() {
                                   {/* AI assistant — product-grounded edit/add */}
                                   <div className="border border-[#cdd8e6] bg-[#eef2f8] p-4">
                                     <div className="flex items-center gap-2 mb-2">
-                                      <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="#002045" strokeWidth="2.5"><path d="M12 2l2.4 7.4H22l-6.2 4.5 2.4 7.4L12 17l-6.2 4.3 2.4-7.4L2 9.4h7.6z"/></svg>
-                                      <span className="text-[10px] uppercase tracking-[0.15em] font-bold font-[var(--font-inter)] text-[#002045]">Assistente IA</span>
+                                      <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="#0B1F45" strokeWidth="2.5"><path d="M12 2l2.4 7.4H22l-6.2 4.5 2.4 7.4L12 17l-6.2 4.3 2.4-7.4L2 9.4h7.6z"/></svg>
+                                      <span className="text-[10px] uppercase tracking-[0.15em] font-bold text-[#0B1F45]">Assistente IA</span>
                                     </div>
-                                    <p className="text-xs text-[#5b6470] font-[var(--font-inter)] mb-3 leading-relaxed">
+                                    <p className="text-xs text-[#5b6470] mb-3 leading-relaxed">
                                       Peça para alterar ou adicionar conteúdo — ex: &ldquo;deixe o texto mais curto&rdquo;, &ldquo;adicione um parágrafo sobre resistência à umidade&rdquo;, &ldquo;reescreva o título de forma mais elegante&rdquo;. A IA usa apenas dados reais do produto Orbital e não inventa informações.
                                     </p>
                                     <textarea
@@ -4454,13 +4454,13 @@ export default function AdminPage() {
                                       onChange={(e) => setCampaignAiInstruction(e.target.value)}
                                       rows={2}
                                       placeholder="O que você quer alterar ou adicionar?"
-                                      className="w-full border border-[#cdd8e6] bg-white px-3 py-2.5 text-sm font-[var(--font-inter)] text-[#002045] focus:outline-none focus:border-[#002045] resize-y"
+                                      className="w-full border border-[#cdd8e6] bg-white px-3 py-2.5 text-sm text-[#0B1F45] focus:outline-none focus:border-[#0B1F45] resize-y"
                                     />
                                     <button
                                       type="button"
                                       onClick={runCampaignAiEdit}
                                       disabled={campaignAiEditing || !campaignAiInstruction.trim()}
-                                      className="mt-2 inline-flex items-center gap-2 bg-[#002045] text-white text-[10px] tracking-[0.12em] uppercase font-bold font-[var(--font-inter)] px-4 py-2 hover:bg-[#1a365d] transition-colors disabled:opacity-40"
+                                      className="mt-2 inline-flex items-center gap-2 bg-[#0B1F45] text-white text-[10px] tracking-[0.12em] uppercase font-bold px-4 py-2 hover:bg-[#2347A0] transition-colors disabled:opacity-40"
                                     >
                                       {campaignAiEditing ? (
                                         <svg className="animate-spin" width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="3"><path d="M12 2v4M12 18v4M4.93 4.93l2.83 2.83M16.24 16.24l2.83 2.83M2 12h4M18 12h4M4.93 19.07l2.83-2.83M16.24 7.76l2.83-2.83"/></svg>
@@ -4471,26 +4471,26 @@ export default function AdminPage() {
 
                                   {/* Subheadline */}
                                   <div>
-                                    <label className="block text-[10px] uppercase tracking-[0.15em] font-bold font-[var(--font-inter)] text-[#74777f] mb-1">
+                                    <label className="block text-[10px] uppercase tracking-[0.15em] font-bold text-[#74777f] mb-1">
                                       Etiqueta / Categoria <span className="text-[#9e9e9e] normal-case tracking-normal font-normal">— opcional, aparece acima do título</span>
                                     </label>
                                     <input value={campaignVisualSubheadline} onChange={(e) => setCampaignVisualSubheadline(e.target.value)}
                                       placeholder="ex: Nova coleção · Produto destaque"
-                                      className="w-full border border-[#e2e2e2] px-3 py-2.5 text-sm font-[var(--font-inter)] text-[#002045] focus:outline-none focus:border-[#002045]" />
+                                      className="w-full border border-[#e2e2e2] px-3 py-2.5 text-sm text-[#0B1F45] focus:outline-none focus:border-[#0B1F45]" />
                                   </div>
 
                                   {/* Headline */}
                                   <div>
-                                    <label className="block text-[10px] uppercase tracking-[0.15em] font-bold font-[var(--font-inter)] text-[#74777f] mb-1">Título principal *</label>
+                                    <label className="block text-[10px] uppercase tracking-[0.15em] font-bold text-[#74777f] mb-1">Título principal *</label>
                                     <input value={campaignVisualHeadline} onChange={(e) => setCampaignVisualHeadline(e.target.value)}
                                       placeholder="ex: Uma placa. Dez anos. Zero manutenção."
-                                      className="w-full border border-[#e2e2e2] px-3 py-2.5 text-sm font-[var(--font-inter)] text-[#002045] focus:outline-none focus:border-[#002045]" />
+                                      className="w-full border border-[#e2e2e2] px-3 py-2.5 text-sm text-[#0B1F45] focus:outline-none focus:border-[#0B1F45]" />
                                   </div>
 
                                   {/* Body */}
                                   <div>
                                     <div className="flex items-center justify-between mb-1">
-                                      <label className="block text-[10px] uppercase tracking-[0.15em] font-bold font-[var(--font-inter)] text-[#74777f]">
+                                      <label className="block text-[10px] uppercase tracking-[0.15em] font-bold text-[#74777f]">
                                         Texto do e-mail <span className="text-[#9e9e9e] normal-case tracking-normal font-normal">— cada linha vira um parágrafo</span>
                                       </label>
                                       <button
@@ -4501,7 +4501,7 @@ export default function AdminPage() {
                                           `Escreva o corpo de um e-mail marketing para a campanha cujo título é: "${campaignVisualHeadline || "campanha Orbital"}". O e-mail deve ter 3 parágrafos curtos, tom elegante e persuasivo, destacando os benefícios do PFB para o clima de Manaus. Cada parágrafo em uma linha separada. Sem saudação nem assinatura.`,
                                           setCampaignVisualBody
                                         )}
-                                        className="flex items-center gap-1 text-[8px] tracking-wide uppercase font-bold font-[var(--font-inter)] text-[#002045] border border-[#002045] px-2 py-0.5 hover:bg-[#002045] hover:text-white transition-colors disabled:opacity-40"
+                                        className="flex items-center gap-1 text-[8px] tracking-wide uppercase font-bold text-[#0B1F45] border border-[#0B1F45] px-2 py-0.5 hover:bg-[#0B1F45] hover:text-white transition-colors disabled:opacity-40"
                                       >
                                         {aiTextGenerating === "campaignBody" ? (
                                           <svg className="animate-spin" width="8" height="8" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="3"><path d="M12 2v4M12 18v4M4.93 4.93l2.83 2.83M16.24 16.24l2.83 2.83M2 12h4M18 12h4M4.93 19.07l2.83-2.83M16.24 7.76l2.83-2.83"/></svg>
@@ -4513,12 +4513,12 @@ export default function AdminPage() {
                                     </div>
                                     <textarea value={campaignVisualBody} onChange={(e) => setCampaignVisualBody(e.target.value)}
                                       rows={6} placeholder={"Escreva aqui o conteúdo do e-mail...\n\nVocê pode usar várias linhas — cada linha se torna um parágrafo separado."}
-                                      className="w-full border border-[#e2e2e2] px-3 py-2.5 text-sm font-[var(--font-inter)] text-[#002045] focus:outline-none focus:border-[#002045] resize-y" />
+                                      className="w-full border border-[#e2e2e2] px-3 py-2.5 text-sm text-[#0B1F45] focus:outline-none focus:border-[#0B1F45] resize-y" />
                                   </div>
 
                                   {/* Image upload */}
                                   <div>
-                                    <label className="block text-[10px] uppercase tracking-[0.15em] font-bold font-[var(--font-inter)] text-[#74777f] mb-2">
+                                    <label className="block text-[10px] uppercase tracking-[0.15em] font-bold text-[#74777f] mb-2">
                                       Foto <span className="text-[#9e9e9e] normal-case tracking-normal font-normal">— opcional, aparece em destaque no e-mail</span>
                                     </label>
                                     {campaignVisualImageUrl ? (
@@ -4526,29 +4526,29 @@ export default function AdminPage() {
                                         <img src={campaignVisualImageUrl} alt="preview" className="w-full max-h-48 object-cover" />
                                         <div className="flex border-t border-[#e2e2e2]">
                                           <a href={campaignVisualImageUrl} download target="_blank" rel="noopener noreferrer"
-                                            className="flex-1 text-center text-[10px] tracking-[0.08em] uppercase font-bold font-[var(--font-inter)] px-3 py-2 border-r border-[#e2e2e2] text-[#1a365d] hover:bg-[#eef2f8] transition-colors">
+                                            className="flex-1 text-center text-[10px] tracking-[0.08em] uppercase font-bold px-3 py-2 border-r border-[#e2e2e2] text-[#2347A0] hover:bg-[#eef2f8] transition-colors">
                                             ↓ Download
                                           </a>
-                                          <label className="flex-1 text-center text-[10px] tracking-[0.08em] uppercase font-bold font-[var(--font-inter)] px-3 py-2 border-r border-[#e2e2e2] bg-[#002045] text-white hover:bg-[#1a365d] transition-colors cursor-pointer">
+                                          <label className="flex-1 text-center text-[10px] tracking-[0.08em] uppercase font-bold px-3 py-2 border-r border-[#e2e2e2] bg-[#0B1F45] text-white hover:bg-[#2347A0] transition-colors cursor-pointer">
                                             {campaignImageUploading ? "Enviando…" : "Substituir"}
                                             <input type="file" accept="image/*" className="hidden"
                                               onChange={(e) => { const f = e.target.files?.[0]; if (f) handleCampaignImageUpload(f); e.currentTarget.value = ""; }} />
                                           </label>
                                           <button type="button" onClick={() => setCampaignVisualImageUrl("")}
-                                            className="px-3 py-2 text-[10px] tracking-[0.08em] uppercase font-bold font-[var(--font-inter)] text-red-600 hover:bg-red-50 transition-colors">
+                                            className="px-3 py-2 text-[10px] tracking-[0.08em] uppercase font-bold text-red-600 hover:bg-red-50 transition-colors">
                                             Remover
                                           </button>
                                         </div>
                                       </div>
                                     ) : (
-                                      <label className={`flex flex-col items-center justify-center gap-2 border-2 border-dashed border-[#e2e2e2] px-6 py-8 cursor-pointer hover:border-[#002045]/40 transition-colors ${campaignImageUploading ? "opacity-50 pointer-events-none" : ""}`}>
+                                      <label className={`flex flex-col items-center justify-center gap-2 border-2 border-dashed border-[#e2e2e2] px-6 py-8 cursor-pointer hover:border-[#0B1F45]/40 transition-colors ${campaignImageUploading ? "opacity-50 pointer-events-none" : ""}`}>
                                         <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="#74777f" strokeWidth="1.5">
                                           <path d="M21 15v4a2 2 0 01-2 2H5a2 2 0 01-2-2v-4M17 8l-5-5-5 5M12 3v12"/>
                                         </svg>
-                                        <span className="text-sm font-[var(--font-inter)] text-[#74777f]">
+                                        <span className="text-sm text-[#74777f]">
                                           {campaignImageUploading ? "Enviando..." : "Clique para selecionar ou arraste uma foto"}
                                         </span>
-                                        <span className="text-[10px] text-[#9e9e9e] font-[var(--font-inter)]">JPG, PNG ou WebP · máx. 5 MB</span>
+                                        <span className="text-[10px] text-[#9e9e9e]">JPG, PNG ou WebP · máx. 5 MB</span>
                                         <input type="file" accept="image/*" className="hidden"
                                           onChange={(e) => { const f = e.target.files?.[0]; if (f) handleCampaignImageUpload(f); }} />
                                       </label>
@@ -4558,41 +4558,41 @@ export default function AdminPage() {
                                   {/* CTA button */}
                                   <div className="grid grid-cols-2 gap-4">
                                     <div>
-                                      <label className="block text-[10px] uppercase tracking-[0.15em] font-bold font-[var(--font-inter)] text-[#74777f] mb-1">
+                                      <label className="block text-[10px] uppercase tracking-[0.15em] font-bold text-[#74777f] mb-1">
                                         Texto do botão <span className="text-[#9e9e9e] normal-case tracking-normal font-normal">— opcional</span>
                                       </label>
                                       <input value={campaignVisualCtaText} onChange={(e) => setCampaignVisualCtaText(e.target.value)}
                                         placeholder="Ver no site"
-                                        className="w-full border border-[#e2e2e2] px-3 py-2.5 text-sm font-[var(--font-inter)] text-[#002045] focus:outline-none focus:border-[#002045]" />
+                                        className="w-full border border-[#e2e2e2] px-3 py-2.5 text-sm text-[#0B1F45] focus:outline-none focus:border-[#0B1F45]" />
                                     </div>
                                     <div>
-                                      <label className="block text-[10px] uppercase tracking-[0.15em] font-bold font-[var(--font-inter)] text-[#74777f] mb-1">Link do botão</label>
+                                      <label className="block text-[10px] uppercase tracking-[0.15em] font-bold text-[#74777f] mb-1">Link do botão</label>
                                       <input value={campaignVisualCtaUrl} onChange={(e) => setCampaignVisualCtaUrl(e.target.value)}
                                         placeholder="https://orbitalrevestimentos.com.br"
-                                        className="w-full border border-[#e2e2e2] px-3 py-2.5 text-sm font-[var(--font-inter)] text-[#002045] focus:outline-none focus:border-[#002045]" />
+                                        className="w-full border border-[#e2e2e2] px-3 py-2.5 text-sm text-[#0B1F45] focus:outline-none focus:border-[#0B1F45]" />
                                     </div>
                                   </div>
                                 </div>
                               ) : (
                                 <div>
-                                  <label className="block text-[10px] uppercase tracking-[0.15em] font-bold font-[var(--font-inter)] text-[#74777f] mb-2">HTML do Email</label>
+                                  <label className="block text-[10px] uppercase tracking-[0.15em] font-bold text-[#74777f] mb-2">HTML do Email</label>
                                   <textarea value={campaignEditBody} onChange={(e) => setCampaignEditBody(e.target.value)}
-                                    rows={20} className="w-full border border-[#e2e2e2] px-3 py-2.5 text-xs font-mono text-[#002045] focus:outline-none focus:border-[#002045] resize-y" />
+                                    rows={20} className="w-full border border-[#e2e2e2] px-3 py-2.5 text-xs font-mono text-[#0B1F45] focus:outline-none focus:border-[#0B1F45] resize-y" />
                                 </div>
                               )}
 
                               {/* Action buttons */}
                               <div className="flex gap-3 pt-1">
                                 <button onClick={() => saveCampaignEdit(c.id)} disabled={campaignEditSaving}
-                                  className="bg-[#002045] text-white text-xs tracking-[0.1em] uppercase font-bold font-[var(--font-inter)] px-5 py-2.5 hover:bg-[#1a365d] disabled:opacity-50">
+                                  className="bg-[#0B1F45] text-white text-xs tracking-[0.1em] uppercase font-bold px-5 py-2.5 hover:bg-[#2347A0] disabled:opacity-50">
                                   {campaignEditSaving ? "Salvando..." : "Salvar"}
                                 </button>
                                 <button onClick={() => { saveCampaignEdit(c.id).then(() => sendCampaignTest(c.id)); }}
-                                  className="border border-[#002045] text-[#002045] text-xs tracking-[0.1em] uppercase font-bold font-[var(--font-inter)] px-5 py-2.5 hover:bg-[#002045] hover:text-white transition-colors">
+                                  className="border border-[#0B1F45] text-[#0B1F45] text-xs tracking-[0.1em] uppercase font-bold px-5 py-2.5 hover:bg-[#0B1F45] hover:text-white transition-colors">
                                   Salvar + Reenviar Teste
                                 </button>
                                 <button onClick={() => setEditingCampaignId(null)}
-                                  className="text-[#74777f] text-xs font-[var(--font-inter)] underline">
+                                  className="text-[#74777f] text-xs underline">
                                   Cancelar
                                 </button>
                               </div>
@@ -4600,7 +4600,7 @@ export default function AdminPage() {
                           ) : (
                             <div>
                               <div className="flex justify-between items-center mb-3">
-                                <p className="text-[10px] uppercase tracking-[0.15em] font-bold font-[var(--font-inter)] text-[#74777f]">Preview do Email</p>
+                                <p className="text-[10px] uppercase tracking-[0.15em] font-bold text-[#74777f]">Preview do Email</p>
                                 {c.status !== 'sent' && (
                                   <button
                                     onClick={() => {
@@ -4619,14 +4619,14 @@ export default function AdminPage() {
                                       setCampaignVisualCtaText(blocks.ctaText || "Ver no site");
                                       setCampaignVisualCtaUrl(blocks.ctaUrl || "https://orbitalrevestimentos.com.br");
                                     }}
-                                    className="text-xs text-[#002045] font-[var(--font-inter)] underline"
+                                    className="text-xs text-[#0B1F45] underline"
                                   >
                                     Editar
                                   </button>
                                 )}
                               </div>
                               <div
-                                className="border border-[#e2e2e2] bg-[#f5f5f3] p-2"
+                                className="border border-[#e2e2e2] bg-[#F6F5F2] p-2"
                                 dangerouslySetInnerHTML={{ __html: c.html_body }}
                               />
                             </div>
@@ -4648,12 +4648,12 @@ export default function AdminPage() {
                 parede; cola de contato + espuma no teto/forro). */}
             <div className="bg-white border border-[#e2e2e2] px-4 sm:px-5 py-4 mb-6 flex flex-wrap items-center justify-between gap-3">
               <div className="min-w-0">
-                <p className="font-[var(--font-inter)] text-sm font-bold text-[#002045]">Materiais de instalação</p>
-                <p className="text-[#74777f] text-[12px] font-[var(--font-inter)] mt-0.5">
+                <p className="text-sm font-bold text-[#0B1F45]">Materiais de instalação</p>
+                <p className="text-[#74777f] text-[12px] mt-0.5">
                   Consumo por placa, embalagens de cola e quais aplicações disparam cada regra.
                 </p>
               </div>
-              <Link href="/admin/orcamentos/materiais" className="border border-[#002045] text-[#002045] text-xs tracking-[0.12em] uppercase font-bold font-[var(--font-inter)] px-4 py-2.5 hover:bg-[#002045] hover:text-white transition-colors whitespace-nowrap">
+              <Link href="/admin/orcamentos/materiais" className="border border-[#0B1F45] text-[#0B1F45] text-xs tracking-[0.12em] uppercase font-bold px-4 py-2.5 hover:bg-[#0B1F45] hover:text-white transition-colors whitespace-nowrap">
                 Parâmetros do cálculo
               </Link>
             </div>
@@ -4662,21 +4662,21 @@ export default function AdminPage() {
             <div className="flex flex-col gap-4 mb-6">
               <div className="flex flex-wrap items-center justify-between gap-3">
                 <div className="flex items-center gap-3">
-                  <h2 className="font-[var(--font-noto-serif)] text-[#002045] text-xl font-normal">Orçamentos</h2>
+                  <h2 className="font-serif text-[#0B1F45] text-xl font-normal">Orçamentos</h2>
                   {!clientsLoading && (
-                    <span className="bg-[#eef2f8] text-[#002045] text-[10px] font-bold font-[var(--font-inter)] tracking-wider px-2 py-0.5">
+                    <span className="bg-[#eef2f8] text-[#0B1F45] text-[10px] font-bold tracking-wider px-2 py-0.5">
                       {filteredClients.length}
                     </span>
                   )}
                 </div>
                 <div className="flex flex-wrap gap-2">
-                <Link href="/admin/orcamentos/novo" className="bg-[#002045] text-white text-xs tracking-[0.12em] uppercase font-bold font-[var(--font-inter)] px-5 py-2.5 hover:bg-[#1a365d] transition-colors whitespace-nowrap">
+                <Link href="/admin/orcamentos/novo" className="bg-[#0B1F45] text-white text-xs tracking-[0.12em] uppercase font-bold px-5 py-2.5 hover:bg-[#2347A0] transition-colors whitespace-nowrap">
                   + Novo orçamento
                 </Link>
                 <button
                   onClick={exportClients}
                   disabled={clientsExporting}
-                  className="bg-[#002045] text-white text-xs tracking-[0.12em] uppercase font-bold font-[var(--font-inter)] px-5 py-2.5 hover:bg-[#1a365d] transition-colors disabled:opacity-50"
+                  className="bg-[#0B1F45] text-white text-xs tracking-[0.12em] uppercase font-bold px-5 py-2.5 hover:bg-[#2347A0] transition-colors disabled:opacity-50"
                 >
                   {clientsExporting ? "Exportando..." : "Exportar CSV"}
                 </button>
@@ -4689,16 +4689,16 @@ export default function AdminPage() {
                   placeholder="Buscar por nome ou e-mail…"
                   value={clientSearch}
                   onChange={(e) => setClientSearch(e.target.value)}
-                  className="w-full sm:w-auto border border-[#e2e2e2] px-3 py-2 text-sm font-[var(--font-inter)] text-[#002045] focus:outline-none focus:border-[#002045] sm:min-w-[220px]"
+                  className="w-full sm:w-auto border border-[#e2e2e2] px-3 py-2 text-sm text-[#0B1F45] focus:outline-none focus:border-[#0B1F45] sm:min-w-[220px]"
                 />
-                <select value={clientStatusFilter} onChange={(e) => setClientStatusFilter(e.target.value)} className="border border-[#e2e2e2] px-3 py-2 text-sm font-[var(--font-inter)] text-[#002045] focus:outline-none focus:border-[#002045]">
+                <select value={clientStatusFilter} onChange={(e) => setClientStatusFilter(e.target.value)} className="border border-[#e2e2e2] px-3 py-2 text-sm text-[#0B1F45] focus:outline-none focus:border-[#0B1F45]">
                   <option value="all">Todos os status</option>
                   <option value="em_orcamento">Em orçamento</option>
                   <option value="concluido">Concluído</option>
                   <option value="cancelado">Cancelado</option>
                   <option value="sem_cupom">Sem cupom</option>
                 </select>
-                <select value={clientPartnerFilter} onChange={(e) => setClientPartnerFilter(e.target.value)} className="border border-[#e2e2e2] px-3 py-2 text-sm font-[var(--font-inter)] text-[#002045] focus:outline-none focus:border-[#002045]">
+                <select value={clientPartnerFilter} onChange={(e) => setClientPartnerFilter(e.target.value)} className="border border-[#e2e2e2] px-3 py-2 text-sm text-[#0B1F45] focus:outline-none focus:border-[#0B1F45]">
                   <option value="all">Todos os parceiros</option>
                   {partners.filter((p) => p.status === "active").map((p) => (
                     <option key={p.id} value={p.coupon_code}>{p.name}</option>
@@ -4712,7 +4712,7 @@ export default function AdminPage() {
                     setClientSortKey(k as "data" | "cliente" | "valor");
                     setClientSortDir(d as "asc" | "desc");
                   }}
-                  className="border border-[#e2e2e2] px-3 py-2 text-sm font-[var(--font-inter)] text-[#002045] focus:outline-none focus:border-[#002045]"
+                  className="border border-[#e2e2e2] px-3 py-2 text-sm text-[#0B1F45] focus:outline-none focus:border-[#0B1F45]"
                 >
                   <option value="data:desc">Mais recentes</option>
                   <option value="data:asc">Mais antigos</option>
@@ -4725,7 +4725,7 @@ export default function AdminPage() {
                 <select
                   value={clientGroupMode}
                   onChange={(e) => setClientGroupMode(e.target.value as "situacao" | "semana" | "mes" | "ano")}
-                  className="border border-[#e2e2e2] px-3 py-2 text-sm font-[var(--font-inter)] text-[#002045] focus:outline-none focus:border-[#002045]"
+                  className="border border-[#e2e2e2] px-3 py-2 text-sm text-[#0B1F45] focus:outline-none focus:border-[#0B1F45]"
                 >
                   <option value="situacao">Agrupar por situação</option>
                   <option value="semana">Agrupar por semana</option>
@@ -4737,9 +4737,9 @@ export default function AdminPage() {
 
             {/* Orçamentos formalizados pelo site — convertíveis em pedido sem redigitar */}
             {formalQuotes.length > 0 && (
-              <div className="bg-white border border-[#002045]/20 mb-5">
-                <div className="bg-[#002045] px-4 py-2.5">
-                  <p className="text-white text-[10px] tracking-[0.15em] uppercase font-bold font-[var(--font-inter)]">
+              <div className="bg-white border border-[#0B1F45]/20 mb-5">
+                <div className="bg-[#0B1F45] px-4 py-2.5">
+                  <p className="text-white text-[10px] tracking-[0.15em] uppercase font-bold">
                     Orçamentos formalizados no site ({formalQuotes.length})
                   </p>
                 </div>
@@ -4749,23 +4749,23 @@ export default function AdminPage() {
                     return (
                       <div key={fq.slug} className="flex flex-wrap items-center justify-between gap-3 px-4 py-3">
                         <div className="min-w-0">
-                          <p className="text-[#002045] text-sm font-semibold font-[var(--font-inter)]">
+                          <p className="text-[#0B1F45] text-sm font-semibold">
                             {fq.formal_number} · {fq.client_name ?? "Cliente"}
                           </p>
-                          <p className="text-[#74777f] text-[11px] font-[var(--font-inter)]">
+                          <p className="text-[#74777f] text-[11px]">
                             {fq.total_plates ?? 0} placas · {fq.payment_condition === "cartao" ? "Cartão" : "PIX"} · frete {fq.frete_free ? "grátis" : (fq.frete_amount ?? 0).toLocaleString("pt-BR", { style: "currency", currency: "BRL", maximumFractionDigits: 0 })} · {(fq.total_amount ?? 0).toLocaleString("pt-BR", { style: "currency", currency: "BRL" })}
                           </p>
                         </div>
                         <div className="flex items-center gap-2 flex-shrink-0">
-                          <a href={`/api/orcamento/${fq.slug}/pdf`} target="_blank" rel="noopener noreferrer" className="text-[#002045] text-[10px] tracking-[0.1em] uppercase font-semibold font-[var(--font-inter)] border border-[#e2e2e2] px-3 py-1.5 hover:border-[#002045] transition-colors">PDF</a>
-                          <a href={`/admin/orcamentos/${fq.slug}`} className="text-[#002045] text-[10px] tracking-[0.1em] uppercase font-semibold font-[var(--font-inter)] border border-[#e2e2e2] px-3 py-1.5 hover:border-[#002045] transition-colors">Materiais</a>
+                          <a href={`/api/orcamento/${fq.slug}/pdf`} target="_blank" rel="noopener noreferrer" className="text-[#0B1F45] text-[10px] tracking-[0.1em] uppercase font-semibold border border-[#e2e2e2] px-3 py-1.5 hover:border-[#0B1F45] transition-colors">PDF</a>
+                          <a href={`/admin/orcamentos/${fq.slug}`} className="text-[#0B1F45] text-[10px] tracking-[0.1em] uppercase font-semibold border border-[#e2e2e2] px-3 py-1.5 hover:border-[#0B1F45] transition-colors">Materiais</a>
                           {converted ? (
-                            <span className="text-[#3b6934] text-[10px] tracking-[0.1em] uppercase font-bold font-[var(--font-inter)] bg-[#f0f9eb] px-3 py-1.5">Convertido ✓</span>
+                            <span className="text-[#1F7A44] text-[10px] tracking-[0.1em] uppercase font-bold bg-[#f0f9eb] px-3 py-1.5">Convertido ✓</span>
                           ) : (
                             <button
                               onClick={() => convertFormalQuote(fq.slug)}
                               disabled={convertingSlug === fq.slug}
-                              className="bg-[#3b6934] text-white text-[10px] tracking-[0.1em] uppercase font-bold font-[var(--font-inter)] px-3 py-1.5 hover:bg-[#2e5229] transition-colors disabled:opacity-50"
+                              className="bg-[#36A35C] text-[#0B1F45] text-[10px] tracking-[0.1em] uppercase font-bold px-3 py-1.5 hover:bg-[#4BB571] transition-colors disabled:opacity-50"
                             >
                               {convertingSlug === fq.slug ? "Convertendo…" : "Converter em pedido"}
                             </button>
@@ -4789,9 +4789,9 @@ export default function AdminPage() {
                   { label: "Drip ativo", value: orcamentosStats.dripAtivos, sub: `de ${filteredClients.length}` },
                 ].map((s) => (
                   <div key={s.label} className="bg-white border border-[#e2e2e2] px-4 py-3">
-                    <p className="text-[9px] tracking-[0.1em] uppercase font-bold font-[var(--font-inter)] text-[#74777f]">{s.label}</p>
-                    <p className="text-lg font-semibold font-[var(--font-noto-serif)] text-[#002045] mt-0.5 leading-none">{s.value}</p>
-                    <p className="text-[9px] text-[#b0b0b0] font-[var(--font-inter)] mt-0.5">{s.sub}</p>
+                    <p className="text-[9px] tracking-[0.1em] uppercase font-bold text-[#74777f]">{s.label}</p>
+                    <p className="text-lg font-semibold font-serif text-[#0B1F45] mt-0.5 leading-none">{s.value}</p>
+                    <p className="text-[9px] text-[#b0b0b0] mt-0.5">{s.sub}</p>
                   </div>
                 ))}
               </div>
@@ -4802,25 +4802,25 @@ export default function AdminPage() {
                 três fazia um endpoint lento esconder criar, excluir e ordenar,
                 como se tivessem sumido. */}
             {clientsLoading ? (
-              <p className="text-[#74777f] text-sm font-[var(--font-inter)]">Carregando orçamentos...</p>
+              <p className="text-[#74777f] text-sm">Carregando orçamentos...</p>
             ) : filteredClients.length === 0 && (clientsError || usesError || pedidosError) ? (
               // Nothing loaded from EITHER source and at least one fetch failed —
               // this is a real error, not "no orders". Block with a retry.
               <div className="bg-red-50 border border-red-200 px-6 py-8 text-center">
-                <p className="text-red-800 text-sm font-semibold font-[var(--font-inter)]">Não foi possível carregar os orçamentos</p>
-                {clientsError && <p className="text-red-700 text-xs font-[var(--font-inter)] mt-1 break-words">{clientsError}</p>}
-                {usesError && <p className="text-red-700 text-xs font-[var(--font-inter)] mt-1 break-words">{usesError}</p>}
-                {pedidosError && <p className="text-red-700 text-xs font-[var(--font-inter)] mt-1 break-words">{pedidosError}</p>}
+                <p className="text-red-800 text-sm font-semibold">Não foi possível carregar os orçamentos</p>
+                {clientsError && <p className="text-red-700 text-xs mt-1 break-words">{clientsError}</p>}
+                {usesError && <p className="text-red-700 text-xs mt-1 break-words">{usesError}</p>}
+                {pedidosError && <p className="text-red-700 text-xs mt-1 break-words">{pedidosError}</p>}
                 <button
                   onClick={() => { setClientsError(null); setUsesError(null); setPedidosError(null); fetchClients(); fetchUses(); fetchPedidos(); }}
-                  className="mt-4 inline-block border border-red-300 text-red-800 px-4 py-2 text-[10px] tracking-[0.12em] uppercase font-bold font-[var(--font-inter)] hover:bg-red-100 transition-colors"
+                  className="mt-4 inline-block border border-red-300 text-red-800 px-4 py-2 text-[10px] tracking-[0.12em] uppercase font-bold hover:bg-red-100 transition-colors"
                 >
                   Tentar novamente
                 </button>
               </div>
             ) : filteredClients.length === 0 ? (
               <div className="bg-white border border-[#e2e2e2] px-6 py-12 text-center">
-                <p className="text-[#74777f] text-sm font-[var(--font-inter)]">Nenhum orçamento encontrado.</p>
+                <p className="text-[#74777f] text-sm">Nenhum orçamento encontrado.</p>
               </div>
             ) : (
               <>
@@ -4829,14 +4829,14 @@ export default function AdminPage() {
                 {(clientsError || usesError || pedidosError) && (
                   <div className="bg-amber-50 border border-amber-200 px-4 py-3 mb-3 flex items-start justify-between gap-3">
                     <div>
-                      <p className="text-amber-800 text-xs font-semibold font-[var(--font-inter)]">Alguns dados podem estar incompletos</p>
-                      {clientsError && <p className="text-amber-700 text-[11px] font-[var(--font-inter)] mt-0.5 break-words">{clientsError}</p>}
-                      {usesError && <p className="text-amber-700 text-[11px] font-[var(--font-inter)] mt-0.5 break-words">{usesError}</p>}
-                      {pedidosError && <p className="text-amber-700 text-[11px] font-[var(--font-inter)] mt-0.5 break-words">{pedidosError}</p>}
+                      <p className="text-amber-800 text-xs font-semibold">Alguns dados podem estar incompletos</p>
+                      {clientsError && <p className="text-amber-700 text-[11px] mt-0.5 break-words">{clientsError}</p>}
+                      {usesError && <p className="text-amber-700 text-[11px] mt-0.5 break-words">{usesError}</p>}
+                      {pedidosError && <p className="text-amber-700 text-[11px] mt-0.5 break-words">{pedidosError}</p>}
                     </div>
                     <button
                       onClick={() => { setClientsError(null); setUsesError(null); setPedidosError(null); fetchClients(); fetchUses(); fetchPedidos(); }}
-                      className="shrink-0 border border-amber-300 text-amber-800 px-3 py-1.5 text-[10px] tracking-[0.12em] uppercase font-bold font-[var(--font-inter)] hover:bg-amber-100 transition-colors"
+                      className="shrink-0 border border-amber-300 text-amber-800 px-3 py-1.5 text-[10px] tracking-[0.12em] uppercase font-bold hover:bg-amber-100 transition-colors"
                     >
                       Recarregar
                     </button>
@@ -4844,7 +4844,7 @@ export default function AdminPage() {
                 )}
                 {/* Desktop table — 8 cols, no overflow-x */}
                 <div className="hidden sm:block bg-white border border-[#e2e2e2]">
-                  <table className="w-full text-sm font-[var(--font-inter)] table-fixed">
+                  <table className="w-full text-sm table-fixed">
                     <colgroup>
                       <col style={{width:"9%"}} />
                       <col style={{width:"20%"}} />
@@ -4864,11 +4864,11 @@ export default function AdminPage() {
                     </thead>
                     <tbody>
                       {orcamentoGroups.flatMap((g) => [
-                        <tr key={`h-${g.key}`} className="bg-[#f5f5f3] border-y border-[#e2e2e2]">
+                        <tr key={`h-${g.key}`} className="bg-[#F6F5F2] border-y border-[#e2e2e2]">
                           <td colSpan={8} className="px-4 py-2">
                             <button onClick={() => toggleGroup(g.key)} className="flex items-center gap-2 text-left w-full">
                               <span className="text-[#74777f] text-[10px] w-3">{collapsedGroups[g.key] ? "▶" : "▼"}</span>
-                              <span className="text-[11px] tracking-[0.08em] uppercase font-bold text-[#002045]">{g.label}</span>
+                              <span className="text-[11px] tracking-[0.08em] uppercase font-bold text-[#0B1F45]">{g.label}</span>
                               <span className="text-[10px] font-bold text-[#74777f] bg-white border border-[#e2e2e2] px-1.5 py-0.5">{g.rows.length}</span>
                               {g.hint && <span className="text-[10px] text-[#a0a3a8] font-normal normal-case">{g.hint}</span>}
                               <span className="ml-auto text-[10px] text-[#74777f]">
@@ -4884,7 +4884,7 @@ export default function AdminPage() {
                         const age = ageBadge(c.created_at, c.status);
                         const waHref = c.client_phone ? `https://wa.me/55${c.client_phone.replace(/\D/g, "")}` : null;
                         return (
-                          <tr key={c.id} className="border-b border-[#f0f0f0] hover:bg-[#fafafa]">
+                          <tr key={c.id} className="border-b border-[#f0f0f0] hover:bg-[#F6F5F2]">
                             {/* Data + age */}
                             <td className="px-4 py-3">
                               <p className="text-xs text-[#74777f]">{new Date(c.created_at).toLocaleDateString("pt-BR")}</p>
@@ -4893,10 +4893,10 @@ export default function AdminPage() {
                             </td>
                             {/* Cliente + WA */}
                             <td className="px-4 py-3">
-                              <p className="font-semibold text-[#002045] text-xs truncate">
+                              <p className="font-semibold text-[#0B1F45] text-xs truncate">
                                 {c.client_name}
                                 {c._isPedido ? (
-                                  <span className="ml-1.5 align-middle text-[8px] bg-[#002045] text-white px-1.5 py-0.5 font-bold tracking-wider rounded-sm">PEDIDO</span>
+                                  <span className="ml-1.5 align-middle text-[8px] bg-[#0B1F45] text-white px-1.5 py-0.5 font-bold tracking-wider rounded-sm">PEDIDO</span>
                                 ) : (
                                   <span className="ml-1.5 align-middle text-[8px] bg-[#eef2f8] text-[#43474e] px-1.5 py-0.5 font-bold tracking-wider rounded-sm">ORÇAMENTO</span>
                                 )}
@@ -4904,7 +4904,7 @@ export default function AdminPage() {
                               <p className="text-[10px] text-[#74777f] truncate">{c.client_email}</p>
                               {waHref && (
                                 <a href={waHref} target="_blank" rel="noopener noreferrer"
-                                  className="inline-flex items-center gap-1 text-[9px] text-[#3b6934] font-bold hover:underline mt-0.5">
+                                  className="inline-flex items-center gap-1 text-[9px] text-[#1F7A44] font-bold hover:underline mt-0.5">
                                   <svg width="9" height="9" viewBox="0 0 24 24" fill="currentColor"><path d="M17.472 14.382c-.297-.149-1.758-.867-2.03-.967-.273-.099-.471-.148-.67.15-.197.297-.767.966-.94 1.164-.173.199-.347.223-.644.075-.297-.15-1.255-.463-2.39-1.475-.883-.788-1.48-1.761-1.653-2.059-.173-.297-.018-.458.13-.606.134-.133.298-.347.446-.52.149-.174.198-.298.298-.497.099-.198.05-.371-.025-.52-.075-.149-.669-1.612-.916-2.207-.242-.579-.487-.5-.669-.51-.173-.008-.371-.01-.57-.01-.198 0-.52.074-.792.372-.272.297-1.04 1.016-1.04 2.479 0 1.462 1.065 2.875 1.213 3.074.149.198 2.096 3.2 5.077 4.487.709.306 1.262.489 1.694.625.712.227 1.36.195 1.871.118.571-.085 1.758-.719 2.006-1.413.248-.694.248-1.289.173-1.413-.074-.124-.272-.198-.57-.347z"/><path d="M11.5 0C5.149 0 0 5.149 0 11.5c0 2.115.576 4.092 1.578 5.779L.057 23l5.88-1.542A11.45 11.45 0 0011.5 23C17.851 23 23 17.851 23 11.5S17.851 0 11.5 0zm0 21.077a9.555 9.555 0 01-4.87-1.335l-.35-.208-3.63.952.969-3.542-.228-.363A9.533 9.533 0 011.923 11.5C1.923 6.193 6.193 1.923 11.5 1.923S21.077 6.193 21.077 11.5 16.807 21.077 11.5 21.077z"/></svg>
                                   WA
                                 </a>
@@ -4917,7 +4917,7 @@ export default function AdminPage() {
                               {c.area_m2 != null && <p className="text-[9px] text-[#b0b0b0]">{Number(c.area_m2).toFixed(1)} m²</p>}
                             </td>
                             {/* Total */}
-                            <td className="px-4 py-3 text-xs font-semibold text-[#002045] whitespace-nowrap">
+                            <td className="px-4 py-3 text-xs font-semibold text-[#0B1F45] whitespace-nowrap">
                               {c.total != null ? c.total.toLocaleString("pt-BR", { style: "currency", currency: "BRL", maximumFractionDigits: 0 }) : "—"}
                             </td>
                             {/* Parceiro */}
@@ -4925,7 +4925,7 @@ export default function AdminPage() {
                               {cu ? (
                                 <div>
                                   <p className="truncate">{c.partner_name}</p>
-                                  <span className="text-[10px] bg-[#eef2f8] text-[#002045] px-1.5 py-0.5 font-bold tracking-wider">{cu.coupon_code}</span>
+                                  <span className="text-[10px] bg-[#eef2f8] text-[#0B1F45] px-1.5 py-0.5 font-bold tracking-wider">{cu.coupon_code}</span>
                                 </div>
                               ) : (
                                 <span className="text-[#74777f] italic text-[10px]">Sem cupom</span>
@@ -4936,7 +4936,7 @@ export default function AdminPage() {
                               <select
                                 value={saleStatus}
                                 onChange={(e) => updateSaleStatus(c.id, cu?.id ?? null, e.target.value, c._isStandaloneUse, c._isPedido)}
-                                className={`text-[10px] font-bold tracking-wide px-2 py-1 border-0 cursor-pointer focus:outline-none focus:ring-1 focus:ring-[#002045] w-full ${stMeta.cls}`}
+                                className={`text-[10px] font-bold tracking-wide px-2 py-1 border-0 cursor-pointer focus:outline-none focus:ring-1 focus:ring-[#0B1F45] w-full ${stMeta.cls}`}
                               >
                                 <option value="em_orcamento">Em orçamento</option>
                                 <option value="concluido">Concluído</option>
@@ -4948,12 +4948,12 @@ export default function AdminPage() {
                               {/* 7 progress dots */}
                               <div className="flex gap-[3px] mb-1">
                                 {Array.from({ length: DRIP_TOTAL_STEPS }, (_, i) => (
-                                  <div key={i} className={`w-[9px] h-[9px] rounded-full flex-shrink-0 ${i < c.current_step ? "bg-[#002045]" : "bg-[#e2e2e2]"}`} />
+                                  <div key={i} className={`w-[9px] h-[9px] rounded-full flex-shrink-0 ${i < c.current_step ? "bg-[#0B1F45]" : "bg-[#e2e2e2]"}`} />
                                 ))}
                               </div>
                               {/* Count + status */}
                               <div className="flex items-center gap-1.5 flex-wrap">
-                                <span className="text-[10px] font-bold text-[#002045]">{c.current_step}/{DRIP_TOTAL_STEPS}</span>
+                                <span className="text-[10px] font-bold text-[#0B1F45]">{c.current_step}/{DRIP_TOTAL_STEPS}</span>
                                 <span className={`text-[9px] font-bold px-1.5 py-0.5 ${c.status === "active" ? "bg-yellow-100 text-yellow-800" : c.status === "completed" ? "bg-green-100 text-green-800" : "bg-gray-100 text-gray-500"}`}>
                                   {c.status === "active" ? "ativo" : c.status === "completed" ? "concluído" : "parado"}
                                 </span>
@@ -4966,11 +4966,11 @@ export default function AdminPage() {
                             {/* Delete */}
                             <td className="px-3 py-3 text-right whitespace-nowrap">
                               {c._isPedido ? (
-                                <button onClick={() => { setPedidoFocusId(c.id); setTab("pedidos"); }} className="text-[10px] text-[#3b6934] font-bold hover:underline mr-3">Ver pedido →</button>
+                                <button onClick={() => { setPedidoFocusId(c.id); setTab("pedidos"); }} className="text-[10px] text-[#1F7A44] font-bold hover:underline mr-3">Ver pedido →</button>
                               ) : cu?.source_pedido_id ? (
-                                <button onClick={() => { setPedidoFocusId(cu.source_pedido_id as string); setTab("pedidos"); }} className="text-[10px] text-[#3b6934] font-bold hover:underline mr-3">Ver pedido →</button>
+                                <button onClick={() => { setPedidoFocusId(cu.source_pedido_id as string); setTab("pedidos"); }} className="text-[10px] text-[#1F7A44] font-bold hover:underline mr-3">Ver pedido →</button>
                               ) : (
-                                <button onClick={() => { setPedidoQuotePrefill(quoteOptionFromRow(c)); setTab("pedidos"); }} className="text-[10px] text-[#3b6934] font-bold hover:underline mr-3">Converter em Pedido</button>
+                                <button onClick={() => { setPedidoQuotePrefill(quoteOptionFromRow(c)); setTab("pedidos"); }} className="text-[10px] text-[#1F7A44] font-bold hover:underline mr-3">Converter em Pedido</button>
                               )}
                               <button
                                 onClick={() => deleteClient(c.id, c._isStandaloneUse, c._isPedido)}
@@ -4995,9 +4995,9 @@ export default function AdminPage() {
                 <div className="sm:hidden space-y-3">
                   {orcamentoGroups.flatMap((g) => [
                     <button key={`mh-${g.key}`} onClick={() => toggleGroup(g.key)}
-                      className="w-full flex items-center gap-2 bg-[#f5f5f3] border border-[#e2e2e2] px-3 py-2 text-left">
+                      className="w-full flex items-center gap-2 bg-[#F6F5F2] border border-[#e2e2e2] px-3 py-2 text-left">
                       <span className="text-[#74777f] text-[10px] w-3">{collapsedGroups[g.key] ? "▶" : "▼"}</span>
-                      <span className="text-[11px] tracking-[0.08em] uppercase font-bold text-[#002045]">{g.label}</span>
+                      <span className="text-[11px] tracking-[0.08em] uppercase font-bold text-[#0B1F45]">{g.label}</span>
                       <span className="text-[10px] font-bold text-[#74777f] bg-white border border-[#e2e2e2] px-1.5 py-0.5">{g.rows.length}</span>
                     </button>,
                     ...(collapsedGroups[g.key] ? [] : g.rows.map((c) => {
@@ -5010,18 +5010,18 @@ export default function AdminPage() {
                       <div key={c.id} className="bg-white border border-[#e2e2e2] px-5 py-4">
                         <div className="flex items-start justify-between mb-2">
                           <div className="flex-1 min-w-0">
-                            <p className="font-semibold text-[#002045] text-sm font-[var(--font-inter)] truncate">
+                            <p className="font-semibold text-[#0B1F45] text-sm truncate">
                               {c.client_name}
                               {c._isPedido ? (
-                                <span className="ml-1.5 align-middle text-[8px] bg-[#002045] text-white px-1.5 py-0.5 font-bold tracking-wider rounded-sm">PEDIDO</span>
+                                <span className="ml-1.5 align-middle text-[8px] bg-[#0B1F45] text-white px-1.5 py-0.5 font-bold tracking-wider rounded-sm">PEDIDO</span>
                               ) : (
                                 <span className="ml-1.5 align-middle text-[8px] bg-[#eef2f8] text-[#43474e] px-1.5 py-0.5 font-bold tracking-wider rounded-sm">ORÇAMENTO</span>
                               )}
                             </p>
-                            <p className="text-xs text-[#74777f] font-[var(--font-inter)] truncate">{c.client_email}</p>
+                            <p className="text-xs text-[#74777f] truncate">{c.client_email}</p>
                             {waHref && (
                               <a href={waHref} target="_blank" rel="noopener noreferrer"
-                                className="text-[10px] text-[#3b6934] font-bold hover:underline">WA {c.client_phone}</a>
+                                className="text-[10px] text-[#1F7A44] font-bold hover:underline">WA {c.client_phone}</a>
                             )}
                           </div>
                           <div className="flex items-center gap-2 ml-2 flex-shrink-0">
@@ -5042,14 +5042,14 @@ export default function AdminPage() {
                         {/* Drip dots */}
                         <div className="flex gap-[3px] mb-2">
                           {Array.from({ length: DRIP_TOTAL_STEPS }, (_, i) => (
-                            <div key={i} className={`w-3 h-3 rounded-full ${i < c.current_step ? "bg-[#002045]" : "bg-[#e2e2e2]"}`} />
+                            <div key={i} className={`w-3 h-3 rounded-full ${i < c.current_step ? "bg-[#0B1F45]" : "bg-[#e2e2e2]"}`} />
                           ))}
-                          <span className="text-[10px] font-bold text-[#002045] ml-1.5">{c.current_step}/{DRIP_TOTAL_STEPS}</span>
+                          <span className="text-[10px] font-bold text-[#0B1F45] ml-1.5">{c.current_step}/{DRIP_TOTAL_STEPS}</span>
                           {c.next_email_at && c.status === "active" && (
                             <span className="text-[9px] text-[#74777f] ml-1">{nextEmailLabel(c.next_email_at)}</span>
                           )}
                         </div>
-                        <div className="grid grid-cols-2 gap-x-4 gap-y-1 text-xs font-[var(--font-inter)] text-[#43474e]">
+                        <div className="grid grid-cols-2 gap-x-4 gap-y-1 text-xs text-[#43474e]">
                           <span><span className="text-[#74777f]">Espaço:</span> {c.space || "—"}</span>
                           <span><span className="text-[#74777f]">Modelo:</span> {c.model}</span>
                           <span><span className="text-[#74777f]">Total:</span> {c.total != null ? c.total.toLocaleString("pt-BR", { style: "currency", currency: "BRL", maximumFractionDigits: 0 }) : "—"}</span>
@@ -5059,11 +5059,11 @@ export default function AdminPage() {
                         </div>
                         <div className="mt-3 pt-3 border-t border-[#f0f0f0]">
                           {c._isPedido ? (
-                            <button onClick={() => { setPedidoFocusId(c.id); setTab("pedidos"); }} className="text-[10px] text-[#3b6934] font-bold">Ver pedido →</button>
+                            <button onClick={() => { setPedidoFocusId(c.id); setTab("pedidos"); }} className="text-[10px] text-[#1F7A44] font-bold">Ver pedido →</button>
                           ) : cu?.source_pedido_id ? (
-                            <button onClick={() => { setPedidoFocusId(cu.source_pedido_id as string); setTab("pedidos"); }} className="text-[10px] text-[#3b6934] font-bold">Ver pedido →</button>
+                            <button onClick={() => { setPedidoFocusId(cu.source_pedido_id as string); setTab("pedidos"); }} className="text-[10px] text-[#1F7A44] font-bold">Ver pedido →</button>
                           ) : (
-                            <button onClick={() => { setPedidoQuotePrefill(quoteOptionFromRow(c)); setTab("pedidos"); }} className="text-[10px] text-[#3b6934] font-bold">Converter em Pedido</button>
+                            <button onClick={() => { setPedidoQuotePrefill(quoteOptionFromRow(c)); setTab("pedidos"); }} className="text-[10px] text-[#1F7A44] font-bold">Converter em Pedido</button>
                           )}
                         </div>
                         {(() => {
@@ -5071,11 +5071,11 @@ export default function AdminPage() {
                           if (!imgs || imgs.length === 0) return null;
                           return (
                             <div className="mt-3 pt-3 border-t border-[#f0f0f0]">
-                              <p className="text-[10px] font-bold uppercase tracking-wide text-[#74777f] mb-1.5 font-[var(--font-inter)]">Renders do Visualizador</p>
+                              <p className="text-[10px] font-bold uppercase tracking-wide text-[#74777f] mb-1.5">Renders do Visualizador</p>
                               <div className="flex gap-2 flex-wrap">
                                 {imgs.slice(0, 6).map((r, i) => (
                                   <a key={i} href={r.url} target="_blank" rel="noopener noreferrer" title={[r.local, r.productName].filter(Boolean).join(" · ")}>
-                                    <img src={r.url} alt={r.productName ?? "Render"} className="w-16 h-16 object-cover border border-[#e2e2e2] hover:border-[#002045] transition-colors" />
+                                    <img src={r.url} alt={r.productName ?? "Render"} className="w-16 h-16 object-cover border border-[#e2e2e2] hover:border-[#0B1F45] transition-colors" />
                                   </a>
                                 ))}
                               </div>
@@ -5130,15 +5130,15 @@ export default function AdminPage() {
           <div>
             <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4 mb-6">
               <div>
-                <h2 className="font-[var(--font-noto-serif)] text-[#002045] text-xl font-normal">Visualizações geradas</h2>
-                <p className="text-[#74777f] text-xs font-[var(--font-inter)] mt-1">
+                <h2 className="font-serif text-[#0B1F45] text-xl font-normal">Visualizações geradas</h2>
+                <p className="text-[#74777f] text-xs mt-1">
                   Todas as imagens geradas pelo Visualizador Orbital, com dados de contato quando informados.
                 </p>
               </div>
               <button
                 onClick={fetchVizRenders}
                 disabled={vizRendersLoading}
-                className="inline-flex items-center gap-2 border border-[#e2e2e2] text-[#43474e] text-[11px] tracking-[0.1em] uppercase font-bold font-[var(--font-inter)] px-4 py-2.5 hover:border-[#002045] transition-colors disabled:opacity-50"
+                className="inline-flex items-center gap-2 border border-[#e2e2e2] text-[#43474e] text-[11px] tracking-[0.1em] uppercase font-bold px-4 py-2.5 hover:border-[#0B1F45] transition-colors disabled:opacity-50"
               >
                 {vizRendersLoading ? "Carregando…" : "Atualizar"}
               </button>
@@ -5152,21 +5152,21 @@ export default function AdminPage() {
                 { label: "Sem contato", value: vizRenders.filter((r) => !r.name && !r.phone).length },
               ].map((s) => (
                 <div key={s.label} className="border border-[#e2e2e2] rounded-sm p-4 bg-[#fafaf9]">
-                  <p className="text-2xl font-bold font-[var(--font-noto-serif)] text-[#002045]">{s.value}</p>
-                  <p className="text-[10px] tracking-[0.12em] uppercase font-bold font-[var(--font-inter)] text-[#74777f] mt-1">{s.label}</p>
+                  <p className="text-2xl font-bold font-serif text-[#0B1F45]">{s.value}</p>
+                  <p className="text-[10px] tracking-[0.12em] uppercase font-bold text-[#74777f] mt-1">{s.label}</p>
                 </div>
               ))}
             </div>
 
             {vizRendersLoading && (
-              <div className="flex items-center gap-3 text-[#74777f] text-sm font-[var(--font-inter)] py-12 justify-center">
-                <div className="w-5 h-5 border-2 border-[#e2e2e2] border-t-[#002045] rounded-full animate-spin" />
+              <div className="flex items-center gap-3 text-[#74777f] text-sm py-12 justify-center">
+                <div className="w-5 h-5 border-2 border-[#e2e2e2] border-t-[#0B1F45] rounded-full animate-spin" />
                 Carregando renders…
               </div>
             )}
 
             {!vizRendersLoading && vizRenders.length === 0 && (
-              <p className="text-center text-[#74777f] text-sm font-[var(--font-inter)] py-12">
+              <p className="text-center text-[#74777f] text-sm py-12">
                 Nenhuma visualização encontrada. Certifique-se de ter executado a migração SQL.
               </p>
             )}
@@ -5184,11 +5184,11 @@ export default function AdminPage() {
                         {/* Contact info */}
                         <div className="min-w-0">
                           <div className="flex items-center gap-2 flex-wrap">
-                            <p className="font-semibold text-[#002045] font-[var(--font-inter)] text-sm">
+                            <p className="font-semibold text-[#0B1F45] text-sm">
                               {r.name ?? <span className="text-[#a0a3a9] font-normal italic">Anônimo</span>}
                             </p>
                             {(r.name || r.phone) && (
-                              <span className="text-[9px] tracking-[0.15em] uppercase font-bold font-[var(--font-inter)] bg-[#e8f5e4] text-[#3b6934] px-2 py-0.5 rounded-full">Lead</span>
+                              <span className="text-[9px] tracking-[0.15em] uppercase font-bold bg-[#e8f5e4] text-[#1F7A44] px-2 py-0.5 rounded-full">Lead</span>
                             )}
                           </div>
                           {r.phone ? (
@@ -5196,7 +5196,7 @@ export default function AdminPage() {
                               href={waHref ?? "#"}
                               target="_blank"
                               rel="noopener noreferrer"
-                              className="inline-flex items-center gap-1 text-[#25d366] text-xs font-[var(--font-inter)] hover:underline mt-0.5"
+                              className="inline-flex items-center gap-1 text-[#25d366] text-xs hover:underline mt-0.5"
                             >
                               <svg width="11" height="11" viewBox="0 0 24 24" fill="currentColor">
                                 <path d="M17.472 14.382c-.297-.149-1.758-.867-2.03-.967-.273-.099-.471-.148-.67.15-.197.297-.767.966-.94 1.164-.173.199-.347.223-.644.075-.297-.15-1.255-.463-2.39-1.475-.883-.788-1.48-1.761-1.653-2.059-.173-.297-.018-.458.13-.606.134-.133.298-.347.446-.52.149-.174.198-.298.298-.497.099-.198.05-.371-.025-.52-.075-.149-.669-1.612-.916-2.207-.242-.579-.487-.5-.669-.51-.173-.008-.371-.01-.57-.01-.198 0-.52.074-.792.372-.272.297-1.04 1.016-1.04 2.479 0 1.462 1.065 2.875 1.213 3.074.149.198 2.096 3.2 5.077 4.487.709.306 1.262.489 1.694.625.712.227 1.36.195 1.871.118.571-.085 1.758-.719 2.006-1.413.248-.694.248-1.289.173-1.413-.074-.124-.272-.198-.57-.347m-5.421 7.403h-.004a9.87 9.87 0 01-5.031-1.378l-.361-.214-3.741.982.998-3.648-.235-.374a9.86 9.86 0 01-1.51-5.26c.001-5.45 4.436-9.884 9.888-9.884 2.64 0 5.122 1.03 6.988 2.898a9.825 9.825 0 012.893 6.994c-.003 5.45-4.437 9.884-9.885 9.884m8.413-18.297A11.815 11.815 0 0012.05 0C5.495 0 .16 5.335.157 11.892c0 2.096.547 4.142 1.588 5.945L.057 24l6.305-1.654a11.882 11.882 0 005.683 1.448h.005c6.554 0 11.89-5.335 11.893-11.893a11.821 11.821 0 00-3.48-8.413z" />
@@ -5204,9 +5204,9 @@ export default function AdminPage() {
                               {r.phone}
                             </a>
                           ) : (
-                            <p className="text-[#a0a3a9] text-xs font-[var(--font-inter)] italic mt-0.5">Sem WhatsApp</p>
+                            <p className="text-[#a0a3a9] text-xs italic mt-0.5">Sem WhatsApp</p>
                           )}
-                          <p className="text-[#a0a3a9] text-[11px] font-[var(--font-inter)] mt-1">{date}</p>
+                          <p className="text-[#a0a3a9] text-[11px] mt-1">{date}</p>
                         </div>
 
                         {/* Actions */}
@@ -5215,7 +5215,7 @@ export default function AdminPage() {
                             href={waHref}
                             target="_blank"
                             rel="noopener noreferrer"
-                            className="flex-shrink-0 inline-flex items-center gap-2 bg-[#25d366] text-white text-[11px] tracking-[0.1em] uppercase font-bold font-[var(--font-inter)] px-4 py-2 hover:brightness-95 transition"
+                            className="flex-shrink-0 inline-flex items-center gap-2 bg-[#25d366] text-white text-[11px] tracking-[0.1em] uppercase font-bold px-4 py-2 hover:brightness-95 transition"
                           >
                             <svg width="12" height="12" viewBox="0 0 24 24" fill="currentColor">
                               <path d="M17.472 14.382c-.297-.149-1.758-.867-2.03-.967-.273-.099-.471-.148-.67.15-.197.297-.767.966-.94 1.164-.173.199-.347.223-.644.075-.297-.15-1.255-.463-2.39-1.475-.883-.788-1.48-1.761-1.653-2.059-.173-.297-.018-.458.13-.606.134-.133.298-.347.446-.52.149-.174.198-.298.298-.497.099-.198.05-.371-.025-.52-.075-.149-.669-1.612-.916-2.207-.242-.579-.487-.5-.669-.51-.173-.008-.371-.01-.57-.01-.198 0-.52.074-.792.372-.272.297-1.04 1.016-1.04 2.479 0 1.462 1.065 2.875 1.213 3.074.149.198 2.096 3.2 5.077 4.487.709.306 1.262.489 1.694.625.712.227 1.36.195 1.871.118.571-.085 1.758-.719 2.006-1.413.248-.694.248-1.289.173-1.413-.074-.124-.272-.198-.57-.347m-5.421 7.403h-.004a9.87 9.87 0 01-5.031-1.378l-.361-.214-3.741.982.998-3.648-.235-.374a9.86 9.86 0 01-1.51-5.26c.001-5.45 4.436-9.884 9.888-9.884 2.64 0 5.122 1.03 6.988 2.898a9.825 9.825 0 012.893 6.994c-.003 5.45-4.437 9.884-9.885 9.884m8.413-18.297A11.815 11.815 0 0012.05 0C5.495 0 .16 5.335.157 11.892c0 2.096.547 4.142 1.588 5.945L.057 24l6.305-1.654a11.882 11.882 0 005.683 1.448h.005c6.554 0 11.89-5.335 11.893-11.893a11.821 11.821 0 00-3.48-8.413z" />
@@ -5234,10 +5234,10 @@ export default function AdminPage() {
                               <img
                                 src={img.url}
                                 alt={img.productName ?? "Render"}
-                                className="w-20 h-20 object-cover rounded-sm border border-[#e2e2e2] group-hover:border-[#002045] transition"
+                                className="w-20 h-20 object-cover rounded-sm border border-[#e2e2e2] group-hover:border-[#0B1F45] transition"
                               />
                               {img.productName && (
-                                <span className="absolute bottom-0 left-0 right-0 bg-black/60 text-white text-[8px] px-1 py-0.5 truncate rounded-b-sm font-[var(--font-inter)]">
+                                <span className="absolute bottom-0 left-0 right-0 bg-black/60 text-white text-[8px] px-1 py-0.5 truncate rounded-b-sm">
                                   {img.productName}
                                 </span>
                               )}
@@ -5256,16 +5256,16 @@ export default function AdminPage() {
         {tab === "drip" && (
           <div>
             <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4 mb-4">
-              <h2 className="font-[var(--font-noto-serif)] text-[#002045] text-xl font-normal">Campanha Drip de E-mail</h2>
+              <h2 className="font-serif text-[#0B1F45] text-xl font-normal">Campanha Drip de E-mail</h2>
               <button
                 onClick={seedDripSteps}
                 disabled={dripSeeding}
-                className="bg-[#002045] text-white text-xs tracking-[0.12em] uppercase font-bold font-[var(--font-inter)] px-5 py-2.5 hover:bg-[#1a365d] transition-colors disabled:opacity-50"
+                className="bg-[#0B1F45] text-white text-xs tracking-[0.12em] uppercase font-bold px-5 py-2.5 hover:bg-[#2347A0] transition-colors disabled:opacity-50"
               >
                 {dripSeeding ? "Inicializando..." : "Inicializar Padrões"}
               </button>
             </div>
-            <p className="text-[10px] tracking-[0.1em] text-[#74777f] font-[var(--font-inter)] mb-6 bg-white border border-[#e2e2e2] px-4 py-3">
+            <p className="text-[10px] tracking-[0.1em] text-[#74777f] mb-6 bg-white border border-[#e2e2e2] px-4 py-3">
               Variáveis disponíveis:{" "}
               {/* perM2/perDay saíram: expunham preço por m², o que apresentava o PFB como
                    a opção mais cara. quoteLink e productImages entraram no lugar. */}
@@ -5273,11 +5273,11 @@ export default function AdminPage() {
             </p>
 
             {dripLoading ? (
-              <p className="text-[#74777f] text-sm font-[var(--font-inter)]">Carregando...</p>
+              <p className="text-[#74777f] text-sm">Carregando...</p>
             ) : dripSteps.length === 0 ? (
               <div className="bg-white border border-[#e2e2e2] px-6 py-12 text-center">
-                <p className="text-[#74777f] text-sm font-[var(--font-inter)]">Nenhum passo configurado.</p>
-                <p className="text-[#74777f] text-xs font-[var(--font-inter)] mt-1">Clique em &ldquo;Inicializar Padrões&rdquo; para criar os 9 passos padrão.</p>
+                <p className="text-[#74777f] text-sm">Nenhum passo configurado.</p>
+                <p className="text-[#74777f] text-xs mt-1">Clique em &ldquo;Inicializar Padrões&rdquo; para criar os 9 passos padrão.</p>
               </div>
             ) : (
               <div className="space-y-3">
@@ -5290,13 +5290,13 @@ export default function AdminPage() {
                       {/* Step header row */}
                       <div className="px-6 py-4 flex items-center gap-4">
                         <div className="flex-shrink-0">
-                          <span className="bg-[#002045] text-white text-[10px] font-bold font-[var(--font-inter)] tracking-widest px-2.5 py-1">
+                          <span className="bg-[#0B1F45] text-white text-[10px] font-bold tracking-widest px-2.5 py-1">
                             {step.step_number === 99 ? "99" : step.step_number === 98 ? "98" : `0${step.step_number}`.slice(-2)}
                           </span>
                         </div>
                         <div className="flex-1 min-w-0">
-                          <p className="font-semibold text-[#002045] text-sm font-[var(--font-inter)]">{step.description}</p>
-                          <p className="text-[10px] text-[#74777f] font-[var(--font-inter)] mt-0.5">
+                          <p className="font-semibold text-[#0B1F45] text-sm">{step.description}</p>
+                          <p className="text-[10px] text-[#74777f] mt-0.5">
                             {dripDelayLabel(step)} · <span className="text-[#43474e]">{step.subject}</span>
                           </p>
                         </div>
@@ -5312,7 +5312,7 @@ export default function AdminPage() {
                                 setExpandedDripStep(step.step_number);
                               }
                             }}
-                            className="border border-[#e2e2e2] text-[#74777f] text-xs font-bold font-[var(--font-inter)] px-4 py-2 hover:border-[#002045] hover:text-[#002045] transition-colors"
+                            className="border border-[#e2e2e2] text-[#74777f] text-xs font-bold px-4 py-2 hover:border-[#0B1F45] hover:text-[#0B1F45] transition-colors"
                           >
                             {isEditing ? "Cancelar edição" : "Editar"}
                           </button>
@@ -5322,13 +5322,13 @@ export default function AdminPage() {
                               setEditingDripStep(null);
                               setExpandedDripStep(step.step_number);
                             }}
-                            className="border border-[#e2e2e2] text-[#74777f] text-xs font-bold font-[var(--font-inter)] px-4 py-2 hover:border-[#002045] hover:text-[#002045] transition-colors"
+                            className="border border-[#e2e2e2] text-[#74777f] text-xs font-bold px-4 py-2 hover:border-[#0B1F45] hover:text-[#0B1F45] transition-colors"
                           >
                             {isPreviewing ? "Fechar preview" : "Visualizar"}
                           </button>
                           <button
                             onClick={() => setExpandedDripStep(isExpanded && !isEditing && !isPreviewing ? null : step.step_number)}
-                            className="text-[#74777f] hover:text-[#002045] transition-colors p-1"
+                            className="text-[#74777f] hover:text-[#0B1F45] transition-colors p-1"
                           >
                             <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" className={`transition-transform ${isExpanded ? "rotate-180" : ""}`}>
                               <path d="M6 9l6 6 6-6" />
@@ -5368,20 +5368,20 @@ export default function AdminPage() {
                                   value={dripEditBodyHtml}
                                   onChange={(e) => setDripEditBodyHtml(e.target.value)}
                                   rows={20}
-                                  className="w-full border border-[#e2e2e2] px-3 py-2.5 font-mono text-xs text-[#002045] focus:outline-none focus:border-[#002045] resize-y font-[var(--font-inter)]"
+                                  className="w-full border border-[#e2e2e2] px-3 py-2.5 font-mono text-xs text-[#0B1F45] focus:outline-none focus:border-[#0B1F45] resize-y"
                                 />
                               </div>
                               <div className="flex gap-3">
                                 <button
                                   onClick={() => saveDripEdit(step.step_number)}
                                   disabled={dripEditSaving}
-                                  className="bg-[#002045] text-white text-xs tracking-[0.1em] uppercase font-bold font-[var(--font-inter)] px-5 py-2.5 hover:bg-[#1a365d] transition-colors disabled:opacity-50"
+                                  className="bg-[#0B1F45] text-white text-xs tracking-[0.1em] uppercase font-bold px-5 py-2.5 hover:bg-[#2347A0] transition-colors disabled:opacity-50"
                                 >
                                   {dripEditSaving ? "Salvando..." : "Salvar"}
                                 </button>
                                 <button
                                   onClick={() => { setEditingDripStep(null); setExpandedDripStep(null); }}
-                                  className="text-[#74777f] text-xs font-[var(--font-inter)] underline"
+                                  className="text-[#74777f] text-xs underline"
                                 >
                                   Cancelar
                                 </button>
@@ -5389,22 +5389,22 @@ export default function AdminPage() {
                             </div>
                           ) : isPreviewing ? (
                             <div>
-                              <p className="text-[10px] uppercase tracking-[0.15em] font-bold font-[var(--font-inter)] text-[#74777f] mb-3">
+                              <p className="text-[10px] uppercase tracking-[0.15em] font-bold text-[#74777f] mb-3">
                                 Preview com dados de exemplo
                               </p>
                               <div
-                                className="border border-[#e2e2e2] bg-[#f5f5f3] overflow-y-auto max-h-[600px]"
+                                className="border border-[#e2e2e2] bg-[#F6F5F2] overflow-y-auto max-h-[600px]"
                                 dangerouslySetInnerHTML={{
-                                  __html: `<!DOCTYPE html><html lang="pt-BR"><head><meta charset="UTF-8"></head><body style="margin:0;padding:0;background:#f0eeeb;"><table width="100%" cellpadding="0" cellspacing="0" style="background:#f0eeeb;padding:40px 16px;"><tr><td align="center"><table width="580" cellpadding="0" cellspacing="0" style="background:#ffffff;max-width:580px;width:100%;"><tr><td style="background:#002045;padding:28px 36px;"><p style="margin:0;color:#ffffff;font-size:18px;font-weight:700;letter-spacing:0.15em;text-transform:uppercase;font-family:Arial,sans-serif;">ORBITAL</p><p style="margin:6px 0 0;color:rgba(255,255,255,0.45);font-size:10px;letter-spacing:0.2em;text-transform:uppercase;font-family:Arial,sans-serif;">Revestimentos · Manaus</p></td></tr><tr><td style="padding:40px 36px;">${interpolateSample(step.body_html)}</td></tr><tr><td style="background:#f5f5f3;padding:24px 36px;border-top:1px solid #e2e2e2;"><p style="margin:0;color:#74777f;font-size:11px;line-height:1.7;font-family:Arial,sans-serif;">Orbital Revestimentos · Manaus, Amazonas</p></td></tr></table></td></tr></table></body></html>`,
+                                  __html: `<!DOCTYPE html><html lang="pt-BR"><head><meta charset="UTF-8"></head><body style="margin:0;padding:0;background:#EFEDE8;"><table width="100%" cellpadding="0" cellspacing="0" style="background:#EFEDE8;padding:40px 16px;"><tr><td align="center"><table width="580" cellpadding="0" cellspacing="0" style="background:#ffffff;max-width:580px;width:100%;"><tr><td style="background:#0B1F45;padding:28px 36px;"><p style="margin:0;color:#ffffff;font-size:18px;font-weight:700;letter-spacing:0.15em;text-transform:uppercase;font-family:Arial,sans-serif;">ORBITAL</p><p style="margin:6px 0 0;color:rgba(255,255,255,0.45);font-size:10px;letter-spacing:0.2em;text-transform:uppercase;font-family:Arial,sans-serif;">Revestimentos · Manaus</p></td></tr><tr><td style="padding:40px 36px;">${interpolateSample(step.body_html)}</td></tr><tr><td style="background:#F6F5F2;padding:24px 36px;border-top:1px solid #e2e2e2;"><p style="margin:0;color:#74777f;font-size:11px;line-height:1.7;font-family:Arial,sans-serif;">Orbital Revestimentos · Manaus, Amazonas</p></td></tr></table></td></tr></table></body></html>`,
                                 }}
                               />
                             </div>
                           ) : (
                             <div>
-                              <p className="text-[10px] uppercase tracking-[0.15em] font-bold font-[var(--font-inter)] text-[#74777f] mb-2">Assunto</p>
-                              <p className="text-sm text-[#43474e] font-[var(--font-inter)] mb-4">{step.subject}</p>
-                              <p className="text-[10px] uppercase tracking-[0.15em] font-bold font-[var(--font-inter)] text-[#74777f] mb-2">HTML (raw)</p>
-                              <pre className="text-[10px] font-mono text-[#74777f] bg-[#f5f5f3] p-4 overflow-x-auto max-h-60 border border-[#e2e2e2] whitespace-pre-wrap">{step.body_html}</pre>
+                              <p className="text-[10px] uppercase tracking-[0.15em] font-bold text-[#74777f] mb-2">Assunto</p>
+                              <p className="text-sm text-[#43474e] mb-4">{step.subject}</p>
+                              <p className="text-[10px] uppercase tracking-[0.15em] font-bold text-[#74777f] mb-2">HTML (raw)</p>
+                              <pre className="text-[10px] font-mono text-[#74777f] bg-[#F6F5F2] p-4 overflow-x-auto max-h-60 border border-[#e2e2e2] whitespace-pre-wrap">{step.body_html}</pre>
                             </div>
                           )}
                         </div>
@@ -5445,16 +5445,16 @@ export default function AdminPage() {
                 <>
                   <div className="grid grid-cols-1 sm:grid-cols-3 gap-4 mb-6">
                     <div className="bg-white border border-[#e2e2e2] px-6 py-5">
-                      <p className="text-[#74777f] text-[10px] tracking-[0.15em] uppercase font-bold font-[var(--font-inter)] mb-1">A pagar — Parceiros</p>
-                      <p className="font-[var(--font-noto-serif)] text-[#002045] text-2xl font-normal">{fmt(totalUnpaidPartner)}</p>
+                      <p className="text-[#74777f] text-[10px] tracking-[0.15em] uppercase font-bold mb-1">A pagar — Parceiros</p>
+                      <p className="font-serif text-[#0B1F45] text-2xl font-normal">{fmt(totalUnpaidPartner)}</p>
                     </div>
                     <div className="bg-white border border-[#e2e2e2] px-6 py-5">
-                      <p className="text-[#74777f] text-[10px] tracking-[0.15em] uppercase font-bold font-[var(--font-inter)] mb-1">A pagar — Representantes</p>
-                      <p className="font-[var(--font-noto-serif)] text-[#1a365d] text-2xl font-normal">{fmt(totalUnpaidRep)}</p>
+                      <p className="text-[#74777f] text-[10px] tracking-[0.15em] uppercase font-bold mb-1">A pagar — Representantes</p>
+                      <p className="font-serif text-[#2347A0] text-2xl font-normal">{fmt(totalUnpaidRep)}</p>
                     </div>
                     <div className="bg-white border border-[#e2e2e2] px-6 py-5">
-                      <p className="text-[#74777f] text-[10px] tracking-[0.15em] uppercase font-bold font-[var(--font-inter)] mb-1">Pago este mês</p>
-                      <p className="font-[var(--font-noto-serif)] text-green-700 text-2xl font-normal">{fmt(paidThisMonth)}</p>
+                      <p className="text-[#74777f] text-[10px] tracking-[0.15em] uppercase font-bold mb-1">Pago este mês</p>
+                      <p className="font-serif text-green-700 text-2xl font-normal">{fmt(paidThisMonth)}</p>
                     </div>
                   </div>
 
@@ -5462,7 +5462,7 @@ export default function AdminPage() {
                   <div className="flex gap-2 mb-4">
                     {([["a_pagar","A pagar"],["pago","Pago"],["tudo","Tudo"]] as const).map(([val, label]) => (
                       <button key={val} onClick={() => setCommissionFilter(val)}
-                        className={`text-[10px] tracking-[0.08em] uppercase font-bold font-[var(--font-inter)] px-4 py-2 border transition-colors ${commissionFilter === val ? "bg-[#002045] text-white border-[#002045]" : "text-[#74777f] border-[#e2e2e2] hover:border-[#002045] hover:text-[#002045]"}`}>
+                        className={`text-[10px] tracking-[0.08em] uppercase font-bold px-4 py-2 border transition-colors ${commissionFilter === val ? "bg-[#0B1F45] text-white border-[#0B1F45]" : "text-[#74777f] border-[#e2e2e2] hover:border-[#0B1F45] hover:text-[#0B1F45]"}`}>
                         {label}
                       </button>
                     ))}
@@ -5470,7 +5470,7 @@ export default function AdminPage() {
 
                   {/* Table — desktop */}
                   <div className="hidden md:block bg-white border border-[#e2e2e2]">
-                    <table className="w-full text-sm font-[var(--font-inter)]">
+                    <table className="w-full text-sm">
                       <thead>
                         <tr className="border-b border-[#e2e2e2]">
                           {["Data","Origem","Rep.","Produto","Com. Parceiro","Status Parceiro","Com. Rep.","Status Rep.",""].map(h => (
@@ -5482,19 +5482,19 @@ export default function AdminPage() {
                         {displayRows.length === 0 ? (
                           <tr><td colSpan={9} className="px-5 py-8 text-center text-[#74777f]">Nenhuma comissão encontrada.</td></tr>
                         ) : displayRows.map(r => (
-                          <tr key={`${r.source}:${r.id}`} className="border-b border-[#f0f0f0] hover:bg-[#fafafa]">
+                          <tr key={`${r.source}:${r.id}`} className="border-b border-[#f0f0f0] hover:bg-[#F6F5F2]">
                             <td className="px-4 py-3 text-xs text-[#43474e] whitespace-nowrap">{new Date(r.created_at).toLocaleDateString("pt-BR")}</td>
                             <td className="px-4 py-3">
                               {r.source === "pedido" ? (
-                                <span className="bg-[#002045] text-white px-2 py-0.5 text-[10px] font-bold tracking-wider rounded-sm">PEDIDO</span>
+                                <span className="bg-[#0B1F45] text-white px-2 py-0.5 text-[10px] font-bold tracking-wider rounded-sm">PEDIDO</span>
                               ) : (
-                                <span className="bg-[#eef2f8] text-[#002045] px-2 py-0.5 text-xs font-bold tracking-wider">{r.couponCode}</span>
+                                <span className="bg-[#eef2f8] text-[#0B1F45] px-2 py-0.5 text-xs font-bold tracking-wider">{r.couponCode}</span>
                               )}
                               {r.source === "pedido" && r.clientName && <p className="text-[10px] text-[#74777f] mt-0.5">{r.clientName}</p>}
                             </td>
                             <td className="px-4 py-3 text-xs text-[#74777f]">{r.repName}</td>
                             <td className="px-4 py-3 text-xs text-[#43474e]">{r.productName || "—"}</td>
-                            <td className="px-4 py-3 text-xs font-semibold text-[#002045]">{r.partnerAmount ? fmt(r.partnerAmount) : "—"}</td>
+                            <td className="px-4 py-3 text-xs font-semibold text-[#0B1F45]">{r.partnerAmount ? fmt(r.partnerAmount) : "—"}</td>
                             <td className="px-4 py-3">
                               {r.partnerCancelledAt ? (
                                 <span className="inline-block bg-gray-200 text-gray-600 px-2 py-0.5 text-[10px] font-bold tracking-wide" title={r.partnerCancelReason ? `Motivo: ${r.partnerCancelReason}` : undefined}>
@@ -5512,7 +5512,7 @@ export default function AdminPage() {
                                 </button>
                               ) : <span className="text-[#ccc]">—</span>}
                             </td>
-                            <td className="px-4 py-3 text-xs font-semibold text-[#1a365d]">{r.repAmount ? fmt(r.repAmount) : "—"}</td>
+                            <td className="px-4 py-3 text-xs font-semibold text-[#2347A0]">{r.repAmount ? fmt(r.repAmount) : "—"}</td>
                             <td className="px-4 py-3">
                               {!r.repAmount ? <span className="text-[#ccc]">—</span> :
                                r.repCancelledAt ? (
@@ -5536,7 +5536,7 @@ export default function AdminPage() {
                                 <button onClick={() => openCancelCommission(r)} className="text-[10px] text-[#cc0000] font-bold hover:underline mr-3">Cancelar comissão</button>
                               )}
                               {r.source === "pedido" && (
-                                <button onClick={() => { setPedidoFocusId(r.id); setTab("pedidos"); }} className="text-[10px] text-[#3b6934] font-bold hover:underline">Ver pedido →</button>
+                                <button onClick={() => { setPedidoFocusId(r.id); setTab("pedidos"); }} className="text-[10px] text-[#1F7A44] font-bold hover:underline">Ver pedido →</button>
                               )}
                             </td>
                           </tr>
@@ -5547,24 +5547,24 @@ export default function AdminPage() {
                   {/* Table — mobile cards */}
                   <div className="md:hidden space-y-2">
                     {displayRows.length === 0 ? (
-                      <div className="bg-white border border-[#e2e2e2] px-4 py-6 text-center text-[#74777f] text-sm font-[var(--font-inter)]">Nenhuma comissão encontrada.</div>
+                      <div className="bg-white border border-[#e2e2e2] px-4 py-6 text-center text-[#74777f] text-sm">Nenhuma comissão encontrada.</div>
                     ) : displayRows.map(r => (
                       <div key={`${r.source}:${r.id}`} className="bg-white border border-[#e2e2e2] p-4">
                         <div className="flex items-start justify-between gap-2 mb-2.5">
                           <div className="min-w-0">
                             {r.source === "pedido" ? (
-                              <span className="bg-[#002045] text-white px-2 py-0.5 text-[10px] font-bold tracking-wider rounded-sm">PEDIDO</span>
+                              <span className="bg-[#0B1F45] text-white px-2 py-0.5 text-[10px] font-bold tracking-wider rounded-sm">PEDIDO</span>
                             ) : (
-                              <span className="bg-[#eef2f8] text-[#002045] px-2 py-0.5 text-xs font-bold tracking-wider">{r.couponCode}</span>
+                              <span className="bg-[#eef2f8] text-[#0B1F45] px-2 py-0.5 text-xs font-bold tracking-wider">{r.couponCode}</span>
                             )}
-                            {r.clientName && <p className="text-xs text-[#002045] font-semibold mt-1 truncate">{r.clientName}</p>}
+                            {r.clientName && <p className="text-xs text-[#0B1F45] font-semibold mt-1 truncate">{r.clientName}</p>}
                             <p className="text-[11px] text-[#74777f] truncate">{[r.repName, r.productName].filter((x) => x && x !== "—").join(" · ") || "—"}</p>
                           </div>
                           <span className="text-[10px] text-[#74777f] whitespace-nowrap flex-shrink-0">{new Date(r.created_at).toLocaleDateString("pt-BR")}</span>
                         </div>
                         <div className="space-y-2 pt-2.5 border-t border-[#f0f0f0]">
                           <div className="flex items-center justify-between gap-2">
-                            <span className="text-xs text-[#74777f]">Parceiro: <b className="text-[#002045]">{r.partnerAmount ? fmt(r.partnerAmount) : "—"}</b></span>
+                            <span className="text-xs text-[#74777f]">Parceiro: <b className="text-[#0B1F45]">{r.partnerAmount ? fmt(r.partnerAmount) : "—"}</b></span>
                             {r.partnerPaidAt ? (
                               <span className="inline-block bg-green-100 text-green-800 px-2 py-0.5 text-[10px] font-bold tracking-wide">✓ Pago {new Date(r.partnerPaidAt).toLocaleDateString("pt-BR")}{r.partnerReceivedAt ? " · confirmado" : ""}</span>
                             ) : r.partnerAmount ? (
@@ -5572,7 +5572,7 @@ export default function AdminPage() {
                             ) : <span className="text-[#ccc] text-xs">—</span>}
                           </div>
                           <div className="flex items-center justify-between gap-2">
-                            <span className="text-xs text-[#74777f]">Rep.: <b className="text-[#1a365d]">{r.repAmount ? fmt(r.repAmount) : "—"}</b></span>
+                            <span className="text-xs text-[#74777f]">Rep.: <b className="text-[#2347A0]">{r.repAmount ? fmt(r.repAmount) : "—"}</b></span>
                             {!r.repAmount ? <span className="text-[#ccc] text-xs">—</span> :
                               r.repPaidAt ? (
                                 <span className="inline-block bg-green-100 text-green-800 px-2 py-0.5 text-[10px] font-bold tracking-wide">✓ Pago {new Date(r.repPaidAt).toLocaleDateString("pt-BR")}{r.repReceivedAt ? " · confirmado" : ""}</span>
@@ -5583,7 +5583,7 @@ export default function AdminPage() {
                         </div>
                         {r.source === "pedido" && (
                           <div className="flex justify-end pt-2.5 mt-2.5 border-t border-[#f0f0f0]">
-                            <button onClick={() => { setPedidoFocusId(r.id); setTab("pedidos"); }} className="text-[10px] text-[#3b6934] font-bold hover:underline">Ver pedido →</button>
+                            <button onClick={() => { setPedidoFocusId(r.id); setTab("pedidos"); }} className="text-[10px] text-[#1F7A44] font-bold hover:underline">Ver pedido →</button>
                           </div>
                         )}
                       </div>
@@ -5599,7 +5599,7 @@ export default function AdminPage() {
         {tab === "produtos" && (
           <div>
             <div className="flex items-center justify-between mb-6">
-              <h2 className="font-[var(--font-noto-serif)] text-[#002045] text-2xl font-normal">Produtos</h2>
+              <h2 className="font-serif text-[#0B1F45] text-2xl font-normal">Produtos</h2>
               <button
                 onClick={() => {
                   setEditingProductId(null);
@@ -5609,7 +5609,7 @@ export default function AdminPage() {
                   setShowProductForm(true);
                   setTimeout(() => productTabFormRef.current?.scrollIntoView({ behavior: "smooth", block: "start" }), 50);
                 }}
-                className="bg-[#002045] text-white text-xs tracking-[0.1em] uppercase font-bold font-[var(--font-inter)] px-5 py-2.5 hover:bg-[#1a365d] transition-colors"
+                className="bg-[#0B1F45] text-white text-xs tracking-[0.1em] uppercase font-bold px-5 py-2.5 hover:bg-[#2347A0] transition-colors"
               >
                 + Novo Produto
               </button>
@@ -5617,7 +5617,7 @@ export default function AdminPage() {
 
             {showProductForm && (
               <div ref={productTabFormRef} className="bg-white border border-[#e2e2e2] p-6 mb-8">
-                <h3 className="font-[var(--font-inter)] text-[10px] tracking-[0.15em] uppercase font-bold text-[#002045] mb-6">
+                <h3 className="text-[10px] tracking-[0.15em] uppercase font-bold text-[#0B1F45] mb-6">
                   {editingProductId ? "Editar Produto" : "Novo Produto"}
                 </h3>
                 <form onSubmit={handleProductSubmit}>
@@ -5674,7 +5674,7 @@ export default function AdminPage() {
                           `Escreva uma descrição de produto elegante e técnica (máximo 2 frases, 150 caracteres) para o produto "${productForm.name || "PFB Orbital"}" (código ${productForm.code || "N/A"}). Destaque o acabamento visual e a durabilidade. Responda SOMENTE com a descrição, sem aspas.`,
                           (text) => setProductForm(f => ({ ...f, description: text }))
                         )}
-                        className="flex items-center gap-1 text-[8px] tracking-wide uppercase font-bold font-[var(--font-inter)] text-[#002045] border border-[#002045] px-2 py-0.5 hover:bg-[#002045] hover:text-white transition-colors disabled:opacity-40"
+                        className="flex items-center gap-1 text-[8px] tracking-wide uppercase font-bold text-[#0B1F45] border border-[#0B1F45] px-2 py-0.5 hover:bg-[#0B1F45] hover:text-white transition-colors disabled:opacity-40"
                       >
                         {aiTextGenerating === "productDesc" ? (
                           <svg className="animate-spin" width="8" height="8" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="3"><path d="M12 2v4M12 18v4M4.93 4.93l2.83 2.83M16.24 16.24l2.83 2.83M2 12h4M18 12h4M4.93 19.07l2.83-2.83M16.24 7.76l2.83-2.83"/></svg>
@@ -5708,7 +5708,7 @@ export default function AdminPage() {
                               }
                             }}
                           />
-                          <div className={`absolute top-2 right-2 text-[9px] tracking-[0.1em] uppercase font-bold font-[var(--font-inter)] px-2 py-1 ${productForm.image_path.startsWith("https://") ? "bg-[#3b6934] text-white" : "bg-white/90 text-[#74777f]"}`}>
+                          <div className={`absolute top-2 right-2 text-[9px] tracking-[0.1em] uppercase font-bold px-2 py-1 ${productForm.image_path.startsWith("https://") ? "bg-[#36A35C] text-[#0B1F45]" : "bg-white/90 text-[#74777f]"}`}>
                             {productForm.image_path.startsWith("https://") ? "Substituída" : "Original"}
                           </div>
                         </div>
@@ -5716,10 +5716,10 @@ export default function AdminPage() {
                         <div className="px-4 py-3 flex flex-col gap-3">
                           {/* Dimensions */}
                           {productImageDims[productForm.image_path] && (
-                            <div className="bg-[#f9f9f9] border border-[#e2e2e2] px-3 py-2">
+                            <div className="bg-[#F6F5F2] border border-[#e2e2e2] px-3 py-2">
                               <div className="flex items-center justify-between">
-                                <span className="text-[#74777f] text-[10px] font-[var(--font-inter)]">Dimensões nativas</span>
-                                <span className="text-[#002045] text-[10px] font-bold font-[var(--font-inter)]">
+                                <span className="text-[#74777f] text-[10px]">Dimensões nativas</span>
+                                <span className="text-[#0B1F45] text-[10px] font-bold">
                                   {productImageDims[productForm.image_path].w} × {productImageDims[productForm.image_path].h} px
                                 </span>
                               </div>
@@ -5740,11 +5740,11 @@ export default function AdminPage() {
                               download
                               target="_blank"
                               rel="noopener noreferrer"
-                              className="flex-1 text-center text-[10px] tracking-[0.08em] uppercase font-bold font-[var(--font-inter)] px-3 py-2 border border-[#1a365d] text-[#1a365d] hover:bg-[#1a365d] hover:text-white transition-colors"
+                              className="flex-1 text-center text-[10px] tracking-[0.08em] uppercase font-bold px-3 py-2 border border-[#2347A0] text-[#2347A0] hover:bg-[#2347A0] hover:text-white transition-colors"
                             >
                               Download
                             </a>
-                            <label className="flex-1 text-center text-[10px] tracking-[0.08em] uppercase font-bold font-[var(--font-inter)] px-3 py-2 bg-[#002045] text-white hover:bg-[#1a365d] transition-colors cursor-pointer">
+                            <label className="flex-1 text-center text-[10px] tracking-[0.08em] uppercase font-bold px-3 py-2 bg-[#0B1F45] text-white hover:bg-[#2347A0] transition-colors cursor-pointer">
                               {productImageUploading ? "Enviando…" : "Substituir"}
                               <input type="file" accept="image/*" className="hidden" onChange={async (e) => {
                                 const file = e.target.files?.[0];
@@ -5757,7 +5757,7 @@ export default function AdminPage() {
                             <button
                               type="button"
                               onClick={() => setProductForm(prev => ({...prev, image_path: ""}))}
-                              className="px-3 py-2 border border-red-300 text-red-600 text-[10px] tracking-[0.08em] uppercase font-bold font-[var(--font-inter)] hover:bg-red-50 transition-colors"
+                              className="px-3 py-2 border border-red-300 text-red-600 text-[10px] tracking-[0.08em] uppercase font-bold hover:bg-red-50 transition-colors"
                               title="Remover imagem"
                             >
                               Remover
@@ -5769,7 +5769,7 @@ export default function AdminPage() {
                       /* Empty state — text input + upload */
                       <div className="flex gap-3 items-start">
                         <input type="text" value={productForm.image_path} onChange={(e) => setProductForm({...productForm, image_path: e.target.value})} className={inputCls} placeholder="/images/catalogue/..." />
-                        <label className="flex-shrink-0 cursor-pointer bg-[#f0f0f0] border border-[#e2e2e2] px-4 py-2.5 text-xs font-bold font-[var(--font-inter)] text-[#002045] hover:bg-[#e8e8e8] transition-colors whitespace-nowrap">
+                        <label className="flex-shrink-0 cursor-pointer bg-[#f0f0f0] border border-[#e2e2e2] px-4 py-2.5 text-xs font-bold text-[#0B1F45] hover:bg-[#e8e8e8] transition-colors whitespace-nowrap">
                           {productImageUploading ? "Enviando..." : "Upload"}
                           <input type="file" accept="image/*" className="hidden" onChange={async (e) => {
                             const file = e.target.files?.[0];
@@ -5785,16 +5785,16 @@ export default function AdminPage() {
                       porque o código permanente é o que o QR carrega. */}
                   {editingProductId && productForm.code.trim() && (
                     <div className="mb-6 border border-[#e2e2e2] p-4">
-                      <p className="font-[var(--font-inter)] text-[10px] tracking-[0.15em] uppercase font-bold text-[#74777f] mb-1">
+                      <p className="text-[10px] tracking-[0.15em] uppercase font-bold text-[#74777f] mb-1">
                         QR Code do modelo
                       </p>
-                      <p className="text-[#74777f] text-[11px] font-[var(--font-inter)] mb-3">
+                      <p className="text-[#74777f] text-[11px] mb-3">
                         Aponta para o código <strong>{productForm.code.toUpperCase()}</strong>, não para o nome — renomear o
                         modelo, mudar o preço ou trocar as fotos não invalida código já impresso.
                       </p>
 
                       {productForm.is_active === false ? (
-                        <p className="text-amber-800 text-[12px] font-[var(--font-inter)] bg-amber-50 border border-amber-200 px-3 py-2">
+                        <p className="text-amber-800 text-[12px] bg-amber-50 border border-amber-200 px-3 py-2">
                           Modelo inativo — o QR Code não é gerado enquanto ele estiver fora do catálogo,
                           para não circular um código que abre uma página vazia.
                         </p>
@@ -5812,7 +5812,7 @@ export default function AdminPage() {
                                 readOnly
                                 value={productUrl(productForm.code)}
                                 onFocus={(e) => e.currentTarget.select()}
-                                className="flex-1 min-w-0 border border-[#e2e2e2] px-2 py-1.5 text-[12px] font-[var(--font-inter)] text-[#43474e] bg-[#fafafa] focus:outline-none focus:border-[#002045]"
+                                className="flex-1 min-w-0 border border-[#e2e2e2] px-2 py-1.5 text-[12px] text-[#43474e] bg-[#F6F5F2] focus:outline-none focus:border-[#0B1F45]"
                               />
                               <button
                                 type="button"
@@ -5823,7 +5823,7 @@ export default function AdminPage() {
                                     setTimeout(() => setQrCopied(false), 2000);
                                   } catch { /* o campo fica selecionável para copiar à mão */ }
                                 }}
-                                className="border border-[#002045] text-[#002045] text-[10px] tracking-[0.08em] uppercase font-bold font-[var(--font-inter)] px-3 py-1.5 hover:bg-[#002045] hover:text-white transition-colors whitespace-nowrap"
+                                className="border border-[#0B1F45] text-[#0B1F45] text-[10px] tracking-[0.08em] uppercase font-bold px-3 py-1.5 hover:bg-[#0B1F45] hover:text-white transition-colors whitespace-nowrap"
                               >
                                 {qrCopied ? "Copiado" : "Copiar link"}
                               </button>
@@ -5833,27 +5833,27 @@ export default function AdminPage() {
                               <a
                                 href={`${productQrUrl(productForm.code, "png", 2048)}&download=1`}
                                 download={`qr-${productForm.code.toLowerCase()}.png`}
-                                className="border border-[#e2e2e2] text-[#43474e] text-[10px] tracking-[0.08em] uppercase font-bold font-[var(--font-inter)] px-3 py-1.5 hover:border-[#002045] hover:text-[#002045] transition-colors"
+                                className="border border-[#e2e2e2] text-[#43474e] text-[10px] tracking-[0.08em] uppercase font-bold px-3 py-1.5 hover:border-[#0B1F45] hover:text-[#0B1F45] transition-colors"
                               >
                                 Baixar PNG (2048px)
                               </a>
                               <a
                                 href={productQrUrl(productForm.code, "svg")}
                                 download={`qr-${productForm.code.toLowerCase()}.svg`}
-                                className="border border-[#e2e2e2] text-[#43474e] text-[10px] tracking-[0.08em] uppercase font-bold font-[var(--font-inter)] px-3 py-1.5 hover:border-[#002045] hover:text-[#002045] transition-colors"
+                                className="border border-[#e2e2e2] text-[#43474e] text-[10px] tracking-[0.08em] uppercase font-bold px-3 py-1.5 hover:border-[#0B1F45] hover:text-[#0B1F45] transition-colors"
                               >
                                 Baixar SVG (impressão)
                               </a>
                               <button
                                 type="button"
                                 onClick={() => printProductQr(productForm.code, productForm.name)}
-                                className="border border-[#e2e2e2] text-[#43474e] text-[10px] tracking-[0.08em] uppercase font-bold font-[var(--font-inter)] px-3 py-1.5 hover:border-[#002045] hover:text-[#002045] transition-colors"
+                                className="border border-[#e2e2e2] text-[#43474e] text-[10px] tracking-[0.08em] uppercase font-bold px-3 py-1.5 hover:border-[#0B1F45] hover:text-[#0B1F45] transition-colors"
                               >
                                 Imprimir etiqueta
                               </button>
                             </div>
 
-                            <p className="text-[#a0a3a8] text-[11px] font-[var(--font-inter)]">
+                            <p className="text-[#a0a3a8] text-[11px]">
                               SVG para gráfica (escala sem perder nitidez); PNG para uso rápido em
                               catálogo e etiqueta. Correção de erro em nível Q — o código ainda lê com
                               parte da superfície suja ou riscada.
@@ -5868,7 +5868,7 @@ export default function AdminPage() {
                   {editingProductId && (
                     <div className="mb-6 border border-[#e2e2e2] p-4">
                       <div className="flex items-center justify-between mb-3">
-                        <label className="font-[var(--font-inter)] text-[10px] tracking-[0.15em] uppercase font-bold text-[#74777f]">
+                        <label className="text-[10px] tracking-[0.15em] uppercase font-bold text-[#74777f]">
                           Galeria de Imagens
                           <span className="ml-2 font-normal text-[#b0b0b0] normal-case tracking-normal">
                             ({galleryImages.length} foto{galleryImages.length !== 1 ? "s" : ""})
@@ -5882,7 +5882,7 @@ export default function AdminPage() {
                           type="button"
                           onClick={downloadAllProductImages}
                           disabled={galleryZipping}
-                          className="border border-[#002045] text-[#002045] text-[10px] tracking-[0.1em] uppercase font-bold font-[var(--font-inter)] px-4 py-2 hover:bg-[#002045] hover:text-white transition-colors whitespace-nowrap flex items-center gap-1.5 disabled:opacity-50"
+                          className="border border-[#0B1F45] text-[#0B1F45] text-[10px] tracking-[0.1em] uppercase font-bold px-4 py-2 hover:bg-[#0B1F45] hover:text-white transition-colors whitespace-nowrap flex items-center gap-1.5 disabled:opacity-50"
                           title="Baixar todas as fotos deste modelo em um .zip"
                         >
                           {galleryZipping ? (
@@ -5897,7 +5897,7 @@ export default function AdminPage() {
                             </>
                           )}
                         </button>
-                        <label className="cursor-pointer bg-[#002045] text-white text-[10px] tracking-[0.1em] uppercase font-bold font-[var(--font-inter)] px-4 py-2 hover:bg-[#1a365d] transition-colors whitespace-nowrap flex items-center gap-1.5">
+                        <label className="cursor-pointer bg-[#0B1F45] text-white text-[10px] tracking-[0.1em] uppercase font-bold px-4 py-2 hover:bg-[#2347A0] transition-colors whitespace-nowrap flex items-center gap-1.5">
                           {galleryUploading ? (
                             <>
                               <svg className="animate-spin" width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5"><path d="M12 2v4M12 18v4M4.93 4.93l2.83 2.83M16.24 16.24l2.83 2.83M2 12h4M18 12h4M4.93 19.07l2.83-2.83M16.24 7.76l2.83-2.83"/></svg>
@@ -5917,10 +5917,10 @@ export default function AdminPage() {
                         </div>
                       </div>
                       {galleryZipError && (
-                        <p className="text-red-700 text-[11px] font-[var(--font-inter)] mb-2">{galleryZipError}</p>
+                        <p className="text-red-700 text-[11px] mb-2">{galleryZipError}</p>
                       )}
                       {galleryImages.length === 0 ? (
-                        <p className="text-[#b0b0b0] text-xs font-[var(--font-inter)] text-center py-4">
+                        <p className="text-[#b0b0b0] text-xs text-center py-4">
                           Nenhuma imagem adicional. Adicione fotos de ambientes, detalhes e texturas.
                         </p>
                       ) : (
@@ -5933,7 +5933,7 @@ export default function AdminPage() {
                               onDragEnd={() => { setDragGalleryId(null); setDragOverGalleryId(null); }}
                               onDragOver={(e) => { e.preventDefault(); if (dragOverGalleryId !== img.id) setDragOverGalleryId(img.id); }}
                               onDrop={(e) => { e.preventDefault(); if (dragGalleryId && dragGalleryId !== img.id) reorderGalleryImages(dragGalleryId, img.id); setDragGalleryId(null); setDragOverGalleryId(null); }}
-                              className={`relative group aspect-square bg-[#f0f0f0] overflow-hidden cursor-grab active:cursor-grabbing transition-all ${dragGalleryId === img.id ? "opacity-30" : "opacity-100"} ${dragOverGalleryId === img.id && dragGalleryId !== img.id ? "ring-2 ring-[#002045] ring-offset-1" : ""}`}
+                              className={`relative group aspect-square bg-[#f0f0f0] overflow-hidden cursor-grab active:cursor-grabbing transition-all ${dragGalleryId === img.id ? "opacity-30" : "opacity-100"} ${dragOverGalleryId === img.id && dragGalleryId !== img.id ? "ring-2 ring-[#0B1F45] ring-offset-1" : ""}`}
                             >
                               <img src={img.image_path} alt="" draggable={false} className="w-full h-full object-cover" />
                               <div className="absolute inset-0 bg-black/0 group-hover:bg-black/50 transition-colors flex flex-col items-center justify-center gap-1 opacity-0 group-hover:opacity-100">
@@ -5944,7 +5944,7 @@ export default function AdminPage() {
                                     onClick={() => moveGalleryImage(img.id, "left")}
                                     disabled={idx === 0}
                                     title="Mover para esquerda"
-                                    className="flex-1 bg-white/90 text-[#002045] text-[10px] font-bold px-1 py-1 hover:bg-white disabled:opacity-30 disabled:cursor-not-allowed transition-colors flex items-center justify-center"
+                                    className="flex-1 bg-white/90 text-[#0B1F45] text-[10px] font-bold px-1 py-1 hover:bg-white disabled:opacity-30 disabled:cursor-not-allowed transition-colors flex items-center justify-center"
                                   >
                                     ←
                                   </button>
@@ -5953,7 +5953,7 @@ export default function AdminPage() {
                                     onClick={() => moveGalleryImage(img.id, "right")}
                                     disabled={idx === sorted.length - 1}
                                     title="Mover para direita"
-                                    className="flex-1 bg-white/90 text-[#002045] text-[10px] font-bold px-1 py-1 hover:bg-white disabled:opacity-30 disabled:cursor-not-allowed transition-colors flex items-center justify-center"
+                                    className="flex-1 bg-white/90 text-[#0B1F45] text-[10px] font-bold px-1 py-1 hover:bg-white disabled:opacity-30 disabled:cursor-not-allowed transition-colors flex items-center justify-center"
                                   >
                                     →
                                   </button>
@@ -5964,7 +5964,7 @@ export default function AdminPage() {
                                   target="_blank"
                                   rel="noopener noreferrer"
                                   title="Download"
-                                  className="bg-[#1a365d] text-white text-[9px] tracking-[0.08em] uppercase font-bold font-[var(--font-inter)] px-2 py-1 hover:bg-[#002045] transition-colors w-[80%] text-center"
+                                  className="bg-[#0B1F45] text-white text-[9px] tracking-[0.08em] uppercase font-bold px-2 py-1 hover:bg-[#2347A0] transition-colors w-[80%] text-center"
                                 >
                                   ↓ Download
                                 </a>
@@ -5972,7 +5972,7 @@ export default function AdminPage() {
                                   type="button"
                                   onClick={() => setImageAsCover(img.image_path)}
                                   title="Usar como capa"
-                                  className="bg-white text-[#002045] text-[9px] tracking-[0.08em] uppercase font-bold font-[var(--font-inter)] px-2 py-1 hover:bg-[#eef2f8] transition-colors w-[80%] text-center"
+                                  className="bg-white text-[#0B1F45] text-[9px] tracking-[0.08em] uppercase font-bold px-2 py-1 hover:bg-[#eef2f8] transition-colors w-[80%] text-center"
                                 >
                                   Capa
                                 </button>
@@ -5980,20 +5980,20 @@ export default function AdminPage() {
                                   type="button"
                                   onClick={() => deleteGalleryImage(img.id)}
                                   title="Remover"
-                                  className="bg-red-600 text-white text-[9px] tracking-[0.08em] uppercase font-bold font-[var(--font-inter)] px-2 py-1 hover:bg-red-700 transition-colors w-[80%] text-center"
+                                  className="bg-red-600 text-white text-[9px] tracking-[0.08em] uppercase font-bold px-2 py-1 hover:bg-red-700 transition-colors w-[80%] text-center"
                                 >
                                   Remover
                                 </button>
                               </div>
                               {productForm.image_path === img.image_path && (
-                                <div className="absolute top-1 left-1 bg-[#002045] text-white text-[8px] font-bold tracking-wider px-1 py-0.5">CAPA</div>
+                                <div className="absolute top-1 left-1 bg-[#0B1F45] text-white text-[8px] font-bold tracking-wider px-1 py-0.5">CAPA</div>
                               )}
                               <div className="absolute bottom-1 right-1 bg-black/50 text-white text-[8px] font-bold px-1">{idx + 1}</div>
                             </div>
                           ))}
                         </div>
                       )}
-                      <p className="text-[#b0b0b0] text-[10px] font-[var(--font-inter)] mt-2">
+                      <p className="text-[#b0b0b0] text-[10px] mt-2">
                         Arraste as fotos para reordenar (ou use ← → ao passar o mouse), definir como capa ou remover. O número indica a posição na galeria.
                       </p>
                     </div>
@@ -6001,10 +6001,10 @@ export default function AdminPage() {
 
                   {/* ── Visualizador / Render — per-model prompt fields ── */}
                   <div className="mb-6 border border-[#e2e2e2] p-4">
-                    <label className="font-[var(--font-inter)] text-[10px] tracking-[0.15em] uppercase font-bold text-[#74777f] block mb-1">
+                    <label className="text-[10px] tracking-[0.15em] uppercase font-bold text-[#74777f] block mb-1">
                       Visualizador / Render
                     </label>
-                    <p className="text-[#b0b0b0] text-[10px] font-[var(--font-inter)] mb-4">
+                    <p className="text-[#b0b0b0] text-[10px] mb-4">
                       Prompt fixo deste modelo no Visualizador. Em branco, o sistema usa o texto genérico da linha ({productForm.linha === "Brilliance" ? "mármore polido" : productForm.linha === "Elegance" ? "madeira" : "mármore fosco"}).
                     </p>
                     <div className="mb-4">
@@ -6031,7 +6031,7 @@ export default function AdminPage() {
                       <label className={labelCls}>Imagem de contexto (opcional)</label>
                       <div className="flex gap-3 items-start">
                         <input type="text" value={productForm.render_context_image_path} onChange={(e) => setProductForm({...productForm, render_context_image_path: e.target.value})} className={inputCls} placeholder="Foto do painel aplicado em um ambiente real" />
-                        <label className="flex-shrink-0 cursor-pointer bg-[#f0f0f0] border border-[#e2e2e2] px-4 py-2.5 text-xs font-bold font-[var(--font-inter)] text-[#002045] hover:bg-[#e8e8e8] transition-colors whitespace-nowrap">
+                        <label className="flex-shrink-0 cursor-pointer bg-[#f0f0f0] border border-[#e2e2e2] px-4 py-2.5 text-xs font-bold text-[#0B1F45] hover:bg-[#e8e8e8] transition-colors whitespace-nowrap">
                           {productImageUploading ? "Enviando..." : "Upload"}
                           <input type="file" accept="image/*" className="hidden" onChange={async (e) => {
                             const file = e.target.files?.[0];
@@ -6046,12 +6046,12 @@ export default function AdminPage() {
                         <div className="mt-2 flex items-center gap-3">
                           {/* eslint-disable-next-line @next/next/no-img-element */}
                           <img src={productForm.render_context_image_path} alt="contexto" className="h-16 w-16 object-cover border border-[#e2e2e2]" />
-                          <button type="button" onClick={() => setProductForm(prev => ({...prev, render_context_image_path: ""}))} className="px-3 py-1.5 border border-red-300 text-red-600 text-[10px] tracking-[0.08em] uppercase font-bold font-[var(--font-inter)] hover:bg-red-50 transition-colors">
+                          <button type="button" onClick={() => setProductForm(prev => ({...prev, render_context_image_path: ""}))} className="px-3 py-1.5 border border-red-300 text-red-600 text-[10px] tracking-[0.08em] uppercase font-bold hover:bg-red-50 transition-colors">
                             Remover
                           </button>
                         </div>
                       )}
-                      <p className="text-[#b0b0b0] text-[10px] font-[var(--font-inter)] mt-1">
+                      <p className="text-[#b0b0b0] text-[10px] mt-1">
                         Se preenchida, é enviada como terceira referência para a IA ver o acabamento aplicado em contexto.
                       </p>
                     </div>
@@ -6059,7 +6059,7 @@ export default function AdminPage() {
                       <label className={labelCls}>Textura plana do painel (projeção exata)</label>
                       <div className="flex gap-3 items-start">
                         <input type="text" value={productForm.render_texture_path} onChange={(e) => setProductForm({...productForm, render_texture_path: e.target.value})} className={inputCls} placeholder="Imagem frontal e plana da placa (sem ângulo, sem brilho, sem ambiente)" />
-                        <label className="flex-shrink-0 cursor-pointer bg-[#f0f0f0] border border-[#e2e2e2] px-4 py-2.5 text-xs font-bold font-[var(--font-inter)] text-[#002045] hover:bg-[#e8e8e8] transition-colors whitespace-nowrap">
+                        <label className="flex-shrink-0 cursor-pointer bg-[#f0f0f0] border border-[#e2e2e2] px-4 py-2.5 text-xs font-bold text-[#0B1F45] hover:bg-[#e8e8e8] transition-colors whitespace-nowrap">
                           {productImageUploading ? "Enviando..." : "Upload"}
                           <input type="file" accept="image/*" className="hidden" onChange={async (e) => {
                             const file = e.target.files?.[0];
@@ -6075,15 +6075,15 @@ export default function AdminPage() {
                           {/* eslint-disable-next-line @next/next/no-img-element */}
                           <img src={productForm.render_texture_path} alt="textura" className="h-16 w-16 object-cover border border-[#e2e2e2]" />
                           <a href={productForm.render_texture_path} target="_blank" rel="noopener noreferrer" download
-                            className="px-3 py-1.5 border border-[#e2e2e2] text-[#002045] text-[10px] tracking-[0.08em] uppercase font-bold font-[var(--font-inter)] hover:bg-[#f0f0f0] transition-colors">
+                            className="px-3 py-1.5 border border-[#e2e2e2] text-[#0B1F45] text-[10px] tracking-[0.08em] uppercase font-bold hover:bg-[#f0f0f0] transition-colors">
                             Baixar
                           </a>
-                          <button type="button" onClick={() => setProductForm(prev => ({...prev, render_texture_path: ""}))} className="px-3 py-1.5 border border-red-300 text-red-600 text-[10px] tracking-[0.08em] uppercase font-bold font-[var(--font-inter)] hover:bg-red-50 transition-colors">
+                          <button type="button" onClick={() => setProductForm(prev => ({...prev, render_texture_path: ""}))} className="px-3 py-1.5 border border-red-300 text-red-600 text-[10px] tracking-[0.08em] uppercase font-bold hover:bg-red-50 transition-colors">
                             Remover
                           </button>
                         </div>
                       )}
-                      <p className="text-[#b0b0b0] text-[10px] font-[var(--font-inter)] mt-1">
+                      <p className="text-[#b0b0b0] text-[10px] mt-1">
                         Imagem retificada e sem brilho da placa, usada pela projeção exata (pixel-perfeita) do Visualizador. Diferente da foto de catálogo (em ângulo).
                       </p>
                     </div>
@@ -6100,13 +6100,13 @@ export default function AdminPage() {
 
                     {/* Live preview of the exact prompt the AI receives */}
                     <details className="group">
-                      <summary className="cursor-pointer select-none text-[10px] tracking-[0.15em] uppercase font-bold font-[var(--font-inter)] text-[#002045] hover:text-[#3b6934] transition-colors">
+                      <summary className="cursor-pointer select-none text-[10px] tracking-[0.15em] uppercase font-bold text-[#0B1F45] hover:text-[#1F7A44] transition-colors">
                         Ver prompt final enviado à IA
                         <span className="ml-2 text-[#b0b0b0] normal-case tracking-normal font-normal">
                           ({productForm.render_finish_description.trim() ? "personalizado deste modelo" : "genérico da linha " + productForm.linha})
                         </span>
                       </summary>
-                      <pre className="mt-2 bg-[#f7f7f5] border border-[#e2e2e2] p-3 text-[11px] leading-relaxed text-[#43474e] whitespace-pre-wrap font-mono max-h-64 overflow-y-auto">
+                      <pre className="mt-2 bg-[#F6F5F2] border border-[#e2e2e2] p-3 text-[11px] leading-relaxed text-[#43474e] whitespace-pre-wrap font-mono max-h-64 overflow-y-auto">
 {composeOpenAIPrompt({
   finish: productForm.linha === "Brilliance" ? "polished" : productForm.linha === "Elegance" ? "wood" : "matte",
   productNotes: productForm.render_finish_description.trim() || null,
@@ -6117,7 +6117,7 @@ export default function AdminPage() {
   referenceIsTexture: !!productForm.render_texture_path.trim(),
 })}
                       </pre>
-                      <p className="text-[#b0b0b0] text-[10px] font-[var(--font-inter)] mt-1">
+                      <p className="text-[#b0b0b0] text-[10px] mt-1">
                         Atualiza em tempo real conforme você edita os campos acima. Enviado ao gerador da OpenAI: a foto do cliente entra como primeira imagem e a textura plana do modelo como segunda (sem textura, vai a foto do catálogo). O acabamento sai da linha: Brilliance = polido, Classic = fosco, Elegance = madeira fosca texturizada.
                       </p>
                     </details>
@@ -6125,18 +6125,18 @@ export default function AdminPage() {
 
                   <div className="mb-2 flex items-center gap-2">
                     <input type="checkbox" id="prod-active" checked={productForm.is_active} onChange={(e) => setProductForm({...productForm, is_active: e.target.checked})} className="w-4 h-4" />
-                    <label htmlFor="prod-active" className="text-sm font-[var(--font-inter)] text-[#43474e]">Produto ativo <span className="text-[#74777f] text-xs">(entra nos cálculos e no orçamento)</span></label>
+                    <label htmlFor="prod-active" className="text-sm text-[#43474e]">Produto ativo <span className="text-[#74777f] text-xs">(entra nos cálculos e no orçamento)</span></label>
                   </div>
                   <div className="mb-6 flex items-center gap-2">
                     <input type="checkbox" id="prod-catalog" checked={productForm.show_in_catalog} onChange={(e) => setProductForm({...productForm, show_in_catalog: e.target.checked})} className="w-4 h-4" />
-                    <label htmlFor="prod-catalog" className="text-sm font-[var(--font-inter)] text-[#43474e]">Exibir no catálogo público <span className="text-[#74777f] text-xs">(desmarque para itens de suporte, ex. Cola PU)</span></label>
+                    <label htmlFor="prod-catalog" className="text-sm text-[#43474e]">Exibir no catálogo público <span className="text-[#74777f] text-xs">(desmarque para itens de suporte, ex. Cola PU)</span></label>
                   </div>
-                  {productFormError && <p className="text-red-600 text-xs font-[var(--font-inter)] mb-3">{productFormError}</p>}
+                  {productFormError && <p className="text-red-600 text-xs mb-3">{productFormError}</p>}
                   <div className="flex gap-3">
-                    <button type="submit" disabled={productFormLoading} className="bg-[#002045] text-white text-xs tracking-[0.1em] uppercase font-bold font-[var(--font-inter)] px-6 py-2.5 hover:bg-[#1a365d] transition-colors disabled:opacity-50">
+                    <button type="submit" disabled={productFormLoading} className="bg-[#0B1F45] text-white text-xs tracking-[0.1em] uppercase font-bold px-6 py-2.5 hover:bg-[#2347A0] transition-colors disabled:opacity-50">
                       {productFormLoading ? "Salvando..." : "Salvar"}
                     </button>
-                    <button type="button" onClick={() => { setShowProductForm(false); setEditingProductId(null); setGalleryImages([]); }} className="border border-[#e2e2e2] text-[#74777f] text-xs font-[var(--font-inter)] px-6 py-2.5 hover:border-[#002045] hover:text-[#002045] transition-colors">
+                    <button type="button" onClick={() => { setShowProductForm(false); setEditingProductId(null); setGalleryImages([]); }} className="border border-[#e2e2e2] text-[#74777f] text-xs px-6 py-2.5 hover:border-[#0B1F45] hover:text-[#0B1F45] transition-colors">
                       Cancelar
                     </button>
                   </div>
@@ -6145,11 +6145,11 @@ export default function AdminPage() {
             )}
 
             {loadingDbProducts ? (
-              <p className="text-[#74777f] text-sm font-[var(--font-inter)] py-8 text-center">Carregando...</p>
+              <p className="text-[#74777f] text-sm py-8 text-center">Carregando...</p>
             ) : (
               <>
               <div className="hidden md:block bg-white border border-[#e2e2e2]">
-                <table className="w-full text-sm font-[var(--font-inter)]">
+                <table className="w-full text-sm">
                   <thead>
                     <tr className="border-b border-[#e2e2e2]">
                       {["Imagem","Código","Nome","Linha","Preço","Status","Ações"].map(h => (
@@ -6161,7 +6161,7 @@ export default function AdminPage() {
                     {dbProducts.length === 0 ? (
                       <tr><td colSpan={7} className="px-5 py-8 text-center text-[#74777f]">Nenhum produto cadastrado. Clique em &ldquo;+ Novo Produto&rdquo; para adicionar.</td></tr>
                     ) : dbProducts.map((p) => (
-                      <tr key={p.id} className="border-b border-[#f0f0f0] hover:bg-[#fafafa]">
+                      <tr key={p.id} className="border-b border-[#f0f0f0] hover:bg-[#F6F5F2]">
                         {/* Image thumbnail with download + substitute */}
                         <td className="px-3 py-2 w-20">
                           <div className="relative group w-16 h-16 bg-[#f0f0f0] overflow-hidden flex-shrink-0">
@@ -6185,7 +6185,7 @@ export default function AdminPage() {
                                 />
                                 {/* Substituted badge */}
                                 {p.image_path.startsWith("https://") && (
-                                  <div className="absolute top-0.5 left-0.5 bg-[#3b6934] text-white text-[7px] font-bold tracking-wide px-1 py-0.5 leading-none">SUBST.</div>
+                                  <div className="absolute top-0.5 left-0.5 bg-[#36A35C] text-[#0B1F45] text-[7px] font-bold tracking-wide px-1 py-0.5 leading-none">SUBST.</div>
                                 )}
                                 {/* Hover overlay: download + substitute */}
                                 <div className="absolute inset-0 bg-black/0 group-hover:bg-black/60 transition-colors flex flex-col items-center justify-center gap-1 opacity-0 group-hover:opacity-100">
@@ -6195,14 +6195,14 @@ export default function AdminPage() {
                                     target="_blank"
                                     rel="noopener noreferrer"
                                     title="Download"
-                                    className="bg-white text-[#002045] text-[8px] font-bold tracking-wide px-2 py-1 hover:bg-[#eef2f8] transition-colors leading-none whitespace-nowrap"
+                                    className="bg-white text-[#0B1F45] text-[8px] font-bold tracking-wide px-2 py-1 hover:bg-[#eef2f8] transition-colors leading-none whitespace-nowrap"
                                     onClick={e => e.stopPropagation()}
                                   >
                                     ↓ DL
                                   </a>
                                   <label
                                     title="Substituir imagem"
-                                    className={`bg-[#002045] text-white text-[8px] font-bold tracking-wide px-2 py-1 hover:bg-[#1a365d] transition-colors leading-none whitespace-nowrap cursor-pointer ${productImageSubstituting === p.id ? "opacity-50 pointer-events-none" : ""}`}
+                                    className={`bg-[#0B1F45] text-white text-[8px] font-bold tracking-wide px-2 py-1 hover:bg-[#2347A0] transition-colors leading-none whitespace-nowrap cursor-pointer ${productImageSubstituting === p.id ? "opacity-50 pointer-events-none" : ""}`}
                                     onClick={e => e.stopPropagation()}
                                   >
                                     {productImageSubstituting === p.id ? "…" : "↑ SUB"}
@@ -6223,22 +6223,22 @@ export default function AdminPage() {
                               </>
                             ) : (
                               <div className="w-full h-full flex items-center justify-center">
-                                <span className="text-[#c0c0c0] text-[9px] font-[var(--font-inter)] text-center leading-tight px-1">sem imagem</span>
+                                <span className="text-[#c0c0c0] text-[9px] text-center leading-tight px-1">sem imagem</span>
                               </div>
                             )}
                           </div>
                           {/* Dimensions below thumbnail */}
                           {p.image_path && productImageDims[p.image_path] && (
-                            <p className="text-[9px] text-[#b0b0b0] font-[var(--font-inter)] mt-0.5 text-center leading-none">
+                            <p className="text-[9px] text-[#b0b0b0] mt-0.5 text-center leading-none">
                               {productImageDims[p.image_path].w}×{productImageDims[p.image_path].h}
                             </p>
                           )}
                         </td>
-                        <td className="px-4 py-3"><span className="bg-[#eef2f8] text-[#002045] px-2 py-0.5 text-xs font-bold tracking-wider">{p.code}</span></td>
-                        <td className="px-4 py-3 text-[#002045] font-medium">
+                        <td className="px-4 py-3"><span className="bg-[#eef2f8] text-[#0B1F45] px-2 py-0.5 text-xs font-bold tracking-wider">{p.code}</span></td>
+                        <td className="px-4 py-3 text-[#0B1F45] font-medium">
                           {p.name}
                           {(p.product_images?.length ?? 0) > 0 && (
-                            <span className="ml-2 bg-[#eef2f8] text-[#002045] text-[9px] font-bold tracking-wider px-1.5 py-0.5 align-middle">
+                            <span className="ml-2 bg-[#eef2f8] text-[#0B1F45] text-[9px] font-bold tracking-wider px-1.5 py-0.5 align-middle">
                               {p.product_images!.length} foto{p.product_images!.length !== 1 ? "s" : ""}
                             </span>
                           )}
@@ -6259,8 +6259,8 @@ export default function AdminPage() {
                         </td>
                         <td className="px-4 py-3">
                           <div className="flex gap-2">
-                            <button onClick={() => startEditProduct(p)} className="text-[10px] tracking-[0.08em] uppercase font-bold font-[var(--font-inter)] px-3 py-1.5 border border-[#002045] text-[#002045] hover:bg-[#002045] hover:text-white transition-colors">Editar</button>
-                            <button onClick={() => deleteProduct(p.id, p.name)} className="text-[10px] tracking-[0.08em] uppercase font-bold font-[var(--font-inter)] px-3 py-1.5 border border-red-300 text-red-600 hover:bg-red-50 transition-colors">Excluir</button>
+                            <button onClick={() => startEditProduct(p)} className="text-[10px] tracking-[0.08em] uppercase font-bold px-3 py-1.5 border border-[#0B1F45] text-[#0B1F45] hover:bg-[#0B1F45] hover:text-white transition-colors">Editar</button>
+                            <button onClick={() => deleteProduct(p.id, p.name)} className="text-[10px] tracking-[0.08em] uppercase font-bold px-3 py-1.5 border border-red-300 text-red-600 hover:bg-red-50 transition-colors">Excluir</button>
                           </div>
                         </td>
                       </tr>
@@ -6271,7 +6271,7 @@ export default function AdminPage() {
               {/* Mobile cards */}
               <div className="md:hidden space-y-2">
                 {dbProducts.length === 0 ? (
-                  <div className="bg-white border border-[#e2e2e2] px-4 py-6 text-center text-[#74777f] text-sm font-[var(--font-inter)]">Nenhum produto cadastrado. Toque em &ldquo;+ Novo Produto&rdquo; para adicionar.</div>
+                  <div className="bg-white border border-[#e2e2e2] px-4 py-6 text-center text-[#74777f] text-sm">Nenhum produto cadastrado. Toque em &ldquo;+ Novo Produto&rdquo; para adicionar.</div>
                 ) : dbProducts.map((p) => (
                   <div key={p.id} className="bg-white border border-[#e2e2e2] p-3 flex gap-3">
                     <div className="w-16 h-16 bg-[#f0f0f0] overflow-hidden flex-shrink-0">
@@ -6279,24 +6279,24 @@ export default function AdminPage() {
                         // eslint-disable-next-line @next/next/no-img-element
                         <img src={p.image_path} alt={p.name} className="w-full h-full object-cover" />
                       ) : (
-                        <div className="w-full h-full flex items-center justify-center"><span className="text-[#c0c0c0] text-[9px] font-[var(--font-inter)] text-center leading-tight px-1">sem imagem</span></div>
+                        <div className="w-full h-full flex items-center justify-center"><span className="text-[#c0c0c0] text-[9px] text-center leading-tight px-1">sem imagem</span></div>
                       )}
                     </div>
                     <div className="min-w-0 flex-1">
                       <div className="flex items-start justify-between gap-2">
-                        <p className="text-[#002045] font-medium text-sm min-w-0 truncate">{p.name}</p>
-                        <span className="bg-[#eef2f8] text-[#002045] px-2 py-0.5 text-[10px] font-bold tracking-wider flex-shrink-0">{p.code}</span>
+                        <p className="text-[#0B1F45] font-medium text-sm min-w-0 truncate">{p.name}</p>
+                        <span className="bg-[#eef2f8] text-[#0B1F45] px-2 py-0.5 text-[10px] font-bold tracking-wider flex-shrink-0">{p.code}</span>
                       </div>
                       <div className="flex flex-wrap items-center gap-1.5 mt-1.5">
                         <span className={`inline-block px-2 py-0.5 text-[10px] font-bold tracking-wide ${p.linha === "Classic" ? "bg-blue-100 text-blue-800" : p.linha === "Brilliance" ? "bg-purple-100 text-purple-800" : "bg-green-100 text-green-800"}`}>{p.linha}</span>
                         <span className={`inline-block px-2 py-0.5 text-[10px] font-bold tracking-wide ${p.is_active ? "bg-green-100 text-green-800" : "bg-gray-100 text-gray-500"}`}>{p.is_active ? "Ativo" : "Inativo"}</span>
                         {p.show_in_catalog === false && <span className="inline-block ml-1 px-2 py-0.5 text-[10px] font-bold tracking-wide bg-amber-100 text-amber-800">Oculto</span>}
-                        {(p.product_images?.length ?? 0) > 0 && <span className="bg-[#eef2f8] text-[#002045] text-[9px] font-bold tracking-wider px-1.5 py-0.5">{p.product_images!.length} foto{p.product_images!.length !== 1 ? "s" : ""}</span>}
+                        {(p.product_images?.length ?? 0) > 0 && <span className="bg-[#eef2f8] text-[#0B1F45] text-[9px] font-bold tracking-wider px-1.5 py-0.5">{p.product_images!.length} foto{p.product_images!.length !== 1 ? "s" : ""}</span>}
                       </div>
                       <p className="text-[#43474e] text-sm mt-1.5">R$ {p.price.toLocaleString("pt-BR")}</p>
                       <div className="flex gap-2 mt-2">
-                        <button onClick={() => startEditProduct(p)} className="text-[10px] tracking-[0.08em] uppercase font-bold font-[var(--font-inter)] px-3 py-1.5 border border-[#002045] text-[#002045] hover:bg-[#002045] hover:text-white transition-colors">Editar</button>
-                        <button onClick={() => deleteProduct(p.id, p.name)} className="text-[10px] tracking-[0.08em] uppercase font-bold font-[var(--font-inter)] px-3 py-1.5 border border-red-300 text-red-600 hover:bg-red-50 transition-colors">Excluir</button>
+                        <button onClick={() => startEditProduct(p)} className="text-[10px] tracking-[0.08em] uppercase font-bold px-3 py-1.5 border border-[#0B1F45] text-[#0B1F45] hover:bg-[#0B1F45] hover:text-white transition-colors">Editar</button>
+                        <button onClick={() => deleteProduct(p.id, p.name)} className="text-[10px] tracking-[0.08em] uppercase font-bold px-3 py-1.5 border border-red-300 text-red-600 hover:bg-red-50 transition-colors">Excluir</button>
                       </div>
                     </div>
                   </div>
@@ -6315,17 +6315,17 @@ export default function AdminPage() {
                 campos duplicados. Agora vive em /admin/projetos/organizacao. */}
             <div className="bg-white border border-[#e2e2e2] px-4 sm:px-5 py-4 mb-8 flex flex-wrap items-center justify-between gap-3">
               <div className="min-w-0">
-                <p className="font-[var(--font-inter)] text-sm font-bold text-[#002045]">Módulo de Projetos</p>
-                <p className="text-[#74777f] text-[12px] font-[var(--font-inter)] mt-0.5">
+                <p className="text-sm font-bold text-[#0B1F45]">Módulo de Projetos</p>
+                <p className="text-[#74777f] text-[12px] mt-0.5">
                   A lista com filtros, os rascunhos e o gerenciamento de categorias e showrooms
                   moram em telas próprias. Esta aba fica com o cadastro até o editor novo entrar.
                 </p>
               </div>
               <div className="flex flex-wrap gap-2">
-                <Link href="/admin/projetos/organizacao" className="border border-[#002045] text-[#002045] text-xs tracking-[0.12em] uppercase font-bold font-[var(--font-inter)] px-4 py-2.5 hover:bg-[#002045] hover:text-white transition-colors whitespace-nowrap">
+                <Link href="/admin/projetos/organizacao" className="border border-[#0B1F45] text-[#0B1F45] text-xs tracking-[0.12em] uppercase font-bold px-4 py-2.5 hover:bg-[#0B1F45] hover:text-white transition-colors whitespace-nowrap">
                   Categorias e Showrooms
                 </Link>
-                <Link href="/admin/projetos" className="bg-[#002045] text-white text-xs tracking-[0.12em] uppercase font-bold font-[var(--font-inter)] px-4 py-2.5 hover:bg-[#1a365d] transition-colors whitespace-nowrap">
+                <Link href="/admin/projetos" className="bg-[#0B1F45] text-white text-xs tracking-[0.12em] uppercase font-bold px-4 py-2.5 hover:bg-[#2347A0] transition-colors whitespace-nowrap">
                   Ver lista →
                 </Link>
               </div>
@@ -6334,7 +6334,7 @@ export default function AdminPage() {
             {/* Section 1: Fotos Reais */}
             <div className="mb-10">
               <div className="flex items-center justify-between mb-6">
-                <h3 className="font-[var(--font-noto-serif)] text-[#002045] text-xl font-normal">Fotos Reais</h3>
+                <h3 className="font-serif text-[#0B1F45] text-xl font-normal">Fotos Reais</h3>
                 <button
                   onClick={() => {
                     setEditingPhotoId(null);
@@ -6344,7 +6344,7 @@ export default function AdminPage() {
                     setShowPhotoForm(true);
                     setTimeout(() => photoTabFormRef.current?.scrollIntoView({ behavior: "smooth", block: "start" }), 50);
                   }}
-                  className="bg-[#002045] text-white text-xs tracking-[0.1em] uppercase font-bold font-[var(--font-inter)] px-5 py-2.5 hover:bg-[#1a365d] transition-colors"
+                  className="bg-[#0B1F45] text-white text-xs tracking-[0.1em] uppercase font-bold px-5 py-2.5 hover:bg-[#2347A0] transition-colors"
                 >
                   + Adicionar
                 </button>
@@ -6352,7 +6352,7 @@ export default function AdminPage() {
 
               {showPhotoForm && (
                 <div ref={photoTabFormRef} className="bg-white border border-[#e2e2e2] p-6 mb-6">
-                  <h4 className="font-[var(--font-inter)] text-[10px] tracking-[0.15em] uppercase font-bold text-[#002045] mb-5">
+                  <h4 className="text-[10px] tracking-[0.15em] uppercase font-bold text-[#0B1F45] mb-5">
                     {editingPhotoId ? "Editar Foto" : "Nova Foto Real"}
                   </h4>
                   <form onSubmit={handlePhotoSubmit}>
@@ -6380,8 +6380,8 @@ export default function AdminPage() {
                             <div className="flex items-center gap-3 border border-[#e2e2e2] px-3 py-2">
                               {sel?.image_path && <img src={sel.image_path} className="w-9 h-9 object-cover border border-[#e2e2e2]" alt="" />}
                               <div className="flex-1 min-w-0">
-                                <p className="text-[#002045] text-sm font-semibold font-[var(--font-inter)] truncate">{sel ? `${sel.code} — ${sel.name}` : photoForm.product_code}</p>
-                                {sel ? <p className="text-[#74777f] text-[11px] font-[var(--font-inter)]">Linha {sel.linha}</p> : <p className="text-amber-700 text-[11px] font-[var(--font-inter)]">Código fora do catálogo atual</p>}
+                                <p className="text-[#0B1F45] text-sm font-semibold truncate">{sel ? `${sel.code} — ${sel.name}` : photoForm.product_code}</p>
+                                {sel ? <p className="text-[#74777f] text-[11px]">Linha {sel.linha}</p> : <p className="text-amber-700 text-[11px]">Código fora do catálogo atual</p>}
                               </div>
                               <button type="button" onClick={() => { setPhotoForm({...photoForm, product_code: ""}); setProductPickerQuery(""); }} className="text-[#cc0000] hover:text-white hover:bg-[#cc0000] w-7 h-7 flex items-center justify-center text-sm font-bold transition-colors" aria-label="Remover produto">✕</button>
                             </div>
@@ -6399,17 +6399,17 @@ export default function AdminPage() {
                                   <button key={p.id} type="button" onClick={() => { setPhotoForm((prev) => ({ ...prev, product_code: p.code })); setProductPickerQuery(""); }} className="w-full flex items-center gap-3 px-3 py-2 hover:bg-[#eef2fb] text-left border-b border-[#f0f0f0] last:border-b-0">
                                     {p.image_path && <img src={p.image_path} className="w-8 h-8 object-cover border border-[#e2e2e2]" alt="" />}
                                     <span className="min-w-0">
-                                      <span className="text-[#002045] text-sm font-semibold font-[var(--font-inter)] block truncate">{p.code} — {p.name}</span>
-                                      <span className="text-[#74777f] text-[11px] font-[var(--font-inter)]">Linha {p.linha}</span>
+                                      <span className="text-[#0B1F45] text-sm font-semibold block truncate">{p.code} — {p.name}</span>
+                                      <span className="text-[#74777f] text-[11px]">Linha {p.linha}</span>
                                     </span>
                                   </button>
                                 )) : (
-                                  <p className="px-3 py-2 text-[#74777f] text-xs font-[var(--font-inter)]">Nenhum produto encontrado no catálogo.</p>
+                                  <p className="px-3 py-2 text-[#74777f] text-xs">Nenhum produto encontrado no catálogo.</p>
                                 )}
                               </div>
                             );
                           })()}
-                          <p className="text-[#a0a3a8] text-[10px] font-[var(--font-inter)] mt-1">Selecione do catálogo — evita códigos inexistentes.</p>
+                          <p className="text-[#a0a3a8] text-[10px] mt-1">Selecione do catálogo — evita códigos inexistentes.</p>
                         </div>
                       )}
                     </div>
@@ -6422,7 +6422,7 @@ export default function AdminPage() {
                       </div>
                     </div>
                     <div className="mb-4">
-                      <button type="button" onClick={() => setPhotoAdvancedOpen((o) => !o)} className="text-[10px] tracking-[0.12em] uppercase font-bold font-[var(--font-inter)] text-[#74777f] hover:text-[#002045] transition-colors">
+                      <button type="button" onClick={() => setPhotoAdvancedOpen((o) => !o)} className="text-[10px] tracking-[0.12em] uppercase font-bold text-[#74777f] hover:text-[#0B1F45] transition-colors">
                         {photoAdvancedOpen ? "▾" : "▸"} Configurações avançadas
                       </button>
                       {photoAdvancedOpen && (
@@ -6441,7 +6441,7 @@ export default function AdminPage() {
                     <div className="mb-4">
                       <label className={labelCls}>Categorias</label>
                       {allCategories.length === 0 ? (
-                        <p className="text-[#74777f] text-xs font-[var(--font-inter)] mb-2">Nenhuma categoria cadastrada — crie uma abaixo.</p>
+                        <p className="text-[#74777f] text-xs mb-2">Nenhuma categoria cadastrada — crie uma abaixo.</p>
                       ) : (
                         <div className="flex flex-wrap gap-x-4 gap-y-2 mb-2">
                           {allCategories.map((cat) => {
@@ -6451,7 +6451,7 @@ export default function AdminPage() {
                             // o vínculo antigo nunca some sozinho.
                             if (inactive && !checked) return null;
                             return (
-                              <label key={cat} className="flex items-center gap-1.5 text-sm font-[var(--font-inter)] text-[#43474e] cursor-pointer">
+                              <label key={cat} className="flex items-center gap-1.5 text-sm text-[#43474e] cursor-pointer">
                                 <input type="checkbox" checked={checked} onChange={(e) => {
                                   setPhotoForm({...photoForm, categories: e.target.checked ? [...photoForm.categories, cat] : photoForm.categories.filter(c => c !== cat)});
                                 }} className="w-4 h-4" />
@@ -6470,13 +6470,13 @@ export default function AdminPage() {
                           value={newCatInput}
                           onChange={(e) => setNewCatInput(e.target.value)}
                           onKeyDown={(e) => { if (e.key === "Enter") { e.preventDefault(); createAndSelectCategory(); } }}
-                          className="border border-[#e2e2e2] px-3 py-1.5 text-sm font-[var(--font-inter)] text-[#43474e] focus:outline-none focus:border-[#002045] w-44"
+                          className="border border-[#e2e2e2] px-3 py-1.5 text-sm text-[#43474e] focus:outline-none focus:border-[#0B1F45] w-44"
                           placeholder="nova categoria..."
                         />
                         <button
                           type="button"
                           onClick={createAndSelectCategory}
-                          className="px-3 py-1.5 bg-[#002045] text-white text-[10px] tracking-[0.08em] uppercase font-bold font-[var(--font-inter)] hover:bg-[#1a365d] transition-colors whitespace-nowrap"
+                          className="px-3 py-1.5 bg-[#0B1F45] text-white text-[10px] tracking-[0.08em] uppercase font-bold hover:bg-[#2347A0] transition-colors whitespace-nowrap"
                         >
                           + Criar
                         </button>
@@ -6484,23 +6484,23 @@ export default function AdminPage() {
                     </div>
                     {/* Exibição no site — destaques controlados pelo painel */}
                     <div className="mb-4 border border-[#e2e2e2] p-4">
-                      <p className="text-[10px] tracking-[0.12em] uppercase font-bold font-[var(--font-inter)] text-[#74777f] mb-3">Exibição no site</p>
+                      <p className="text-[10px] tracking-[0.12em] uppercase font-bold text-[#74777f] mb-3">Exibição no site</p>
                       <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
-                        <label className="flex items-center gap-2 cursor-pointer text-sm font-[var(--font-inter)] text-[#43474e]">
+                        <label className="flex items-center gap-2 cursor-pointer text-sm text-[#43474e]">
                           <input type="checkbox" checked={photoForm.is_featured} onChange={(e) => setPhotoForm({...photoForm, is_featured: e.target.checked})} className="w-4 h-4" />
                           Destacar na página de Projetos
                         </label>
-                        <label className="flex items-center gap-2 cursor-pointer text-sm font-[var(--font-inter)] text-[#43474e]">
+                        <label className="flex items-center gap-2 cursor-pointer text-sm text-[#43474e]">
                           <input type="checkbox" checked={photoForm.show_on_home} onChange={(e) => setPhotoForm({...photoForm, show_on_home: e.target.checked})} className="w-4 h-4" />
                           Exibir na página inicial
                         </label>
-                        <label className="flex items-center gap-2 cursor-pointer text-sm font-[var(--font-inter)] text-[#43474e]">
+                        <label className="flex items-center gap-2 cursor-pointer text-sm text-[#43474e]">
                           <input type="checkbox" checked={photoForm.is_new} onChange={(e) => setPhotoForm({...photoForm, is_new: e.target.checked})} className="w-4 h-4" />
                           Marcar como &quot;Novo&quot;
                         </label>
                         <div className="flex items-center gap-2">
-                          <label className="text-sm font-[var(--font-inter)] text-[#43474e] whitespace-nowrap">Ordem do destaque</label>
-                          <input type="number" min="0" value={photoForm.feature_order} onChange={(e) => setPhotoForm({...photoForm, feature_order: parseInt(e.target.value) || 0})} className="border border-[#e2e2e2] px-2 py-1 text-sm font-[var(--font-inter)] text-[#002045] w-20 focus:outline-none focus:border-[#002045]" />
+                          <label className="text-sm text-[#43474e] whitespace-nowrap">Ordem do destaque</label>
+                          <input type="number" min="0" value={photoForm.feature_order} onChange={(e) => setPhotoForm({...photoForm, feature_order: parseInt(e.target.value) || 0})} className="border border-[#e2e2e2] px-2 py-1 text-sm text-[#0B1F45] w-20 focus:outline-none focus:border-[#0B1F45]" />
                         </div>
                       </div>
                       <div className="mt-3">
@@ -6522,27 +6522,27 @@ export default function AdminPage() {
                           inferia pela posição do campo e uma capa podia acabar
                           exibida como "Antes". Nova capa nasce "Depois". */}
                       <div className="flex items-center gap-2 mb-2 flex-wrap">
-                        <span className="text-[10px] tracking-[0.1em] uppercase font-bold font-[var(--font-inter)] text-[#74777f]">Classificação da capa</span>
+                        <span className="text-[10px] tracking-[0.1em] uppercase font-bold text-[#74777f]">Classificação da capa</span>
                         {(["depois", "antes"] as const).map((c) => (
                           <button
                             key={c} type="button"
                             onClick={() => setPhotoForm({ ...photoForm, cover_category: c })}
-                            className={`text-[10px] tracking-[0.08em] uppercase font-bold font-[var(--font-inter)] px-3 py-1.5 border transition-colors ${photoForm.cover_category === c ? (c === "antes" ? "bg-amber-500 text-white border-amber-500" : "bg-[#3b6934] text-white border-[#3b6934]") : "border-[#e2e2e2] text-[#74777f] hover:border-[#002045]"}`}
+                            className={`text-[10px] tracking-[0.08em] uppercase font-bold px-3 py-1.5 border transition-colors ${photoForm.cover_category === c ? (c === "antes" ? "bg-amber-500 text-[#0B1F45] border-amber-500" : "bg-[#36A35C] text-[#0B1F45] border-[#36A35C]") : "border-[#e2e2e2] text-[#74777f] hover:border-[#0B1F45]"}`}
                           >
                             {c === "antes" ? "Antes" : "Depois"}
                           </button>
                         ))}
-                        <span className="text-[10px] text-[#a0a3a8] font-[var(--font-inter)]">É esta a etiqueta e o filtro em que a capa aparece no site.</span>
+                        <span className="text-[10px] text-[#a0a3a8]">É esta a etiqueta e o filtro em que a capa aparece no site.</span>
                       </div>
                       {photoForm.image_after ? (
                         <div className="border border-[#e2e2e2]">
                           <img src={photoForm.image_after} alt="Imagem Depois" className="w-full max-h-48 object-cover" />
                           <div className="flex border-t border-[#e2e2e2]">
                             <a href={photoForm.image_after} download target="_blank" rel="noopener noreferrer"
-                              className="flex-1 text-center text-[10px] tracking-[0.08em] uppercase font-bold font-[var(--font-inter)] px-3 py-2 border-r border-[#e2e2e2] text-[#1a365d] hover:bg-[#eef2f8] transition-colors">
+                              className="flex-1 text-center text-[10px] tracking-[0.08em] uppercase font-bold px-3 py-2 border-r border-[#e2e2e2] text-[#2347A0] hover:bg-[#eef2f8] transition-colors">
                               ↓ Download
                             </a>
-                            <label className="flex-1 text-center text-[10px] tracking-[0.08em] uppercase font-bold font-[var(--font-inter)] px-3 py-2 border-r border-[#e2e2e2] bg-[#002045] text-white hover:bg-[#1a365d] transition-colors cursor-pointer">
+                            <label className="flex-1 text-center text-[10px] tracking-[0.08em] uppercase font-bold px-3 py-2 border-r border-[#e2e2e2] bg-[#0B1F45] text-white hover:bg-[#2347A0] transition-colors cursor-pointer">
                               Substituir
                               <input type="file" accept="image/*" className="hidden" onChange={(e) => {
                                 const file = e.target.files?.[0];
@@ -6551,7 +6551,7 @@ export default function AdminPage() {
                               }} />
                             </label>
                             <button type="button" onClick={() => setPhotoForm(prev => ({...prev, image_after: ""}))}
-                              className="px-3 py-2 text-[10px] tracking-[0.08em] uppercase font-bold font-[var(--font-inter)] border-red-300 text-red-600 hover:bg-red-50 transition-colors">
+                              className="px-3 py-2 text-[10px] tracking-[0.08em] uppercase font-bold border-red-300 text-red-600 hover:bg-red-50 transition-colors">
                               Remover
                             </button>
                           </div>
@@ -6559,7 +6559,7 @@ export default function AdminPage() {
                       ) : (
                         <div className="flex gap-3 items-start">
                           <input required type="text" value={photoForm.image_after} onChange={(e) => setPhotoForm({...photoForm, image_after: e.target.value})} className={inputCls} placeholder="/images/projetos/..." />
-                          <label className="flex-shrink-0 cursor-pointer bg-[#f0f0f0] border border-[#e2e2e2] px-4 py-2.5 text-xs font-bold font-[var(--font-inter)] text-[#002045] hover:bg-[#e8e8e8] transition-colors whitespace-nowrap">
+                          <label className="flex-shrink-0 cursor-pointer bg-[#f0f0f0] border border-[#e2e2e2] px-4 py-2.5 text-xs font-bold text-[#0B1F45] hover:bg-[#e8e8e8] transition-colors whitespace-nowrap">
                             Upload
                             <input type="file" accept="image/*" className="hidden" onChange={(e) => {
                               const file = e.target.files?.[0];
@@ -6573,7 +6573,7 @@ export default function AdminPage() {
                     <div className="mb-4">
                       <label className={labelCls}>Imagem Antes <span className="font-normal text-[#b0b0b0]">(opcional — comparativo antes × depois)</span></label>
                       {photoForm.image_before && photoForm.image_before === photoForm.image_after && (
-                        <p className="text-[11px] text-amber-800 bg-amber-50 border border-amber-200 px-2 py-1.5 mb-2 font-[var(--font-inter)]">
+                        <p className="text-[11px] text-amber-800 bg-amber-50 border border-amber-200 px-2 py-1.5 mb-2">
                           Esta imagem é idêntica à capa — o site a ignora para não mostrar a mesma foto como “Antes” e “Depois”. Envie outra foto ou remova.
                         </p>
                       )}
@@ -6582,10 +6582,10 @@ export default function AdminPage() {
                           <img src={photoForm.image_before} alt="Imagem Antes" className="w-full max-h-48 object-cover" />
                           <div className="flex border-t border-[#e2e2e2]">
                             <a href={photoForm.image_before} download target="_blank" rel="noopener noreferrer"
-                              className="flex-1 text-center text-[10px] tracking-[0.08em] uppercase font-bold font-[var(--font-inter)] px-3 py-2 border-r border-[#e2e2e2] text-[#1a365d] hover:bg-[#eef2f8] transition-colors">
+                              className="flex-1 text-center text-[10px] tracking-[0.08em] uppercase font-bold px-3 py-2 border-r border-[#e2e2e2] text-[#2347A0] hover:bg-[#eef2f8] transition-colors">
                               ↓ Download
                             </a>
-                            <label className="flex-1 text-center text-[10px] tracking-[0.08em] uppercase font-bold font-[var(--font-inter)] px-3 py-2 border-r border-[#e2e2e2] bg-[#002045] text-white hover:bg-[#1a365d] transition-colors cursor-pointer">
+                            <label className="flex-1 text-center text-[10px] tracking-[0.08em] uppercase font-bold px-3 py-2 border-r border-[#e2e2e2] bg-[#0B1F45] text-white hover:bg-[#2347A0] transition-colors cursor-pointer">
                               Substituir
                               <input type="file" accept="image/*" className="hidden" onChange={(e) => {
                                 const file = e.target.files?.[0];
@@ -6594,7 +6594,7 @@ export default function AdminPage() {
                               }} />
                             </label>
                             <button type="button" onClick={() => setPhotoForm(prev => ({...prev, image_before: ""}))}
-                              className="px-3 py-2 text-[10px] tracking-[0.08em] uppercase font-bold font-[var(--font-inter)] border-red-300 text-red-600 hover:bg-red-50 transition-colors">
+                              className="px-3 py-2 text-[10px] tracking-[0.08em] uppercase font-bold border-red-300 text-red-600 hover:bg-red-50 transition-colors">
                               Remover
                             </button>
                           </div>
@@ -6602,7 +6602,7 @@ export default function AdminPage() {
                       ) : (
                         <div className="flex gap-3 items-start">
                           <input type="text" value={photoForm.image_before} onChange={(e) => setPhotoForm({...photoForm, image_before: e.target.value})} className={inputCls} placeholder="/images/projetos/..." />
-                          <label className="flex-shrink-0 cursor-pointer bg-[#f0f0f0] border border-[#e2e2e2] px-4 py-2.5 text-xs font-bold font-[var(--font-inter)] text-[#002045] hover:bg-[#e8e8e8] transition-colors whitespace-nowrap">
+                          <label className="flex-shrink-0 cursor-pointer bg-[#f0f0f0] border border-[#e2e2e2] px-4 py-2.5 text-xs font-bold text-[#0B1F45] hover:bg-[#e8e8e8] transition-colors whitespace-nowrap">
                             Upload
                             <input type="file" accept="image/*" className="hidden" onChange={(e) => {
                               const file = e.target.files?.[0];
@@ -6632,31 +6632,31 @@ export default function AdminPage() {
                           <button
                             key={s.t} type="button"
                             onClick={() => setPhotoForm({ ...photoForm, is_active: s.v })}
-                            className={`text-left px-3 py-2 border transition-colors ${photoForm.is_active === s.v ? "bg-[#002045] text-white border-[#002045]" : "border-[#e2e2e2] text-[#74777f] hover:border-[#002045]"}`}
+                            className={`text-left px-3 py-2 border transition-colors ${photoForm.is_active === s.v ? "bg-[#0B1F45] text-white border-[#0B1F45]" : "border-[#e2e2e2] text-[#74777f] hover:border-[#0B1F45]"}`}
                           >
-                            <span className="block text-[10px] tracking-[0.1em] uppercase font-bold font-[var(--font-inter)]">{s.t}</span>
-                            <span className={`block text-[10px] font-[var(--font-inter)] ${photoForm.is_active === s.v ? "text-white/70" : "text-[#a0a3a8]"}`}>{s.d}</span>
+                            <span className="block text-[10px] tracking-[0.1em] uppercase font-bold">{s.t}</span>
+                            <span className={`block text-[10px] ${photoForm.is_active === s.v ? "text-white/70" : "text-[#a0a3a8]"}`}>{s.d}</span>
                           </button>
                         ))}
                       </div>
                     </div>
                     <div className="flex gap-3">
-                      <button type="submit" className="bg-[#002045] text-white text-xs tracking-[0.1em] uppercase font-bold font-[var(--font-inter)] px-6 py-2.5 hover:bg-[#1a365d] transition-colors">Salvar</button>
+                      <button type="submit" className="bg-[#0B1F45] text-white text-xs tracking-[0.1em] uppercase font-bold px-6 py-2.5 hover:bg-[#2347A0] transition-colors">Salvar</button>
                       <button type="button" onClick={() => {
                         if (pendingFotos.length > 0 && !confirm("Descartar as fotos extras ainda não salvas?")) return;
                         setPendingFotos([]); setShowPhotoForm(false); setEditingPhotoId(null);
-                      }} className="border border-[#e2e2e2] text-[#74777f] text-xs font-[var(--font-inter)] px-6 py-2.5 hover:border-[#002045] hover:text-[#002045] transition-colors">Cancelar</button>
+                      }} className="border border-[#e2e2e2] text-[#74777f] text-xs px-6 py-2.5 hover:border-[#0B1F45] hover:text-[#0B1F45] transition-colors">Cancelar</button>
                     </div>
                   </form>
                 </div>
               )}
 
               {loadingProjects ? (
-                <p className="text-[#74777f] text-sm font-[var(--font-inter)] py-4">Carregando...</p>
+                <p className="text-[#74777f] text-sm py-4">Carregando...</p>
               ) : (
                 <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                   {dbPhotoProjects.length === 0 ? (
-                    <p className="text-[#74777f] text-sm font-[var(--font-inter)] col-span-2 py-6 text-center">Nenhuma foto cadastrada.</p>
+                    <p className="text-[#74777f] text-sm col-span-2 py-6 text-center">Nenhuma foto cadastrada.</p>
                   ) : dbPhotoProjects.map((p) => {
                     const isMediaOpen = expandedMediaSlug === p.slug;
                     const media = projectMediaMap[p.slug] ?? [];
@@ -6666,50 +6666,50 @@ export default function AdminPage() {
                           {p.image_after && (
                             <div className="relative w-20 h-24 flex-shrink-0">
                               <img src={p.image_after} alt={p.title} className="w-full h-full object-cover border border-[#e2e2e2]" />
-                              <span className={`absolute bottom-0 left-0 right-0 text-[7px] tracking-[0.08em] uppercase font-bold text-center py-px ${p.cover_category === "antes" ? "bg-amber-500 text-white" : "bg-[#3b6934] text-white"}`}>
+                              <span className={`absolute bottom-0 left-0 right-0 text-[7px] tracking-[0.08em] uppercase font-bold text-center py-px ${p.cover_category === "antes" ? "bg-amber-500 text-[#0B1F45]" : "bg-[#36A35C] text-[#0B1F45]"}`}>
                                 Capa · {p.cover_category === "antes" ? "Antes" : "Depois"}
                               </span>
                             </div>
                           )}
                           <div className="flex-1 min-w-0">
                             <div className="flex items-center gap-2 flex-wrap">
-                              <p className="font-semibold text-[#002045] font-[var(--font-inter)] text-sm">{p.title}</p>
+                              <p className="font-semibold text-[#0B1F45] text-sm">{p.title}</p>
                               <span className={`px-1.5 py-0.5 text-[9px] font-bold tracking-wider ${p.is_active ? "bg-green-100 text-green-800" : "bg-amber-100 text-amber-800"}`}>{p.is_active ? "Publicado" : "Rascunho"}</span>
                             </div>
-                            <p className="text-xs text-[#3b6934] font-[var(--font-inter)] mt-0.5">{p.product_code}{p.short_description ? ` · ${p.short_description}` : ""}</p>
+                            <p className="text-xs text-[#1F7A44] mt-0.5">{p.product_code}{p.short_description ? ` · ${p.short_description}` : ""}</p>
                             <div className="flex flex-wrap gap-1 mt-1">
                               {p.categories.map((c) => (
-                                <span key={c} className="bg-[#eef2f8] text-[#002045] px-1.5 py-0.5 text-[9px] font-bold tracking-wider">{catLabel(c)}</span>
+                                <span key={c} className="bg-[#eef2f8] text-[#0B1F45] px-1.5 py-0.5 text-[9px] font-bold tracking-wider">{catLabel(c)}</span>
                               ))}
                             </div>
                             <div className="flex gap-2 mt-3 flex-wrap">
-                              <button onClick={() => startEditPhoto(p)} className="text-[10px] tracking-[0.08em] uppercase font-bold font-[var(--font-inter)] px-3 py-1.5 border border-[#002045] text-[#002045] hover:bg-[#002045] hover:text-white transition-colors">Editar</button>
+                              <button onClick={() => startEditPhoto(p)} className="text-[10px] tracking-[0.08em] uppercase font-bold px-3 py-1.5 border border-[#0B1F45] text-[#0B1F45] hover:bg-[#0B1F45] hover:text-white transition-colors">Editar</button>
                               <button
                                 onClick={() => {
                                   if (!isMediaOpen) fetchProjectMedia(p.slug);
                                   setExpandedMediaSlug(isMediaOpen ? null : p.slug);
                                   setVideoUrlInput("");
                                 }}
-                                className={`text-[10px] tracking-[0.08em] uppercase font-bold font-[var(--font-inter)] px-3 py-1.5 border transition-colors ${isMediaOpen ? "bg-[#3b6934] text-white border-[#3b6934]" : "border-[#3b6934] text-[#3b6934] hover:bg-[#3b6934] hover:text-white"}`}
+                                className={`text-[10px] tracking-[0.08em] uppercase font-bold px-3 py-1.5 border transition-colors ${isMediaOpen ? "bg-[#36A35C] text-[#0B1F45] border-[#36A35C]" : "border-[#36A35C] text-[#1F7A44] hover:bg-[#36A35C] hover:text-[#0B1F45]"}`}
                               >
                                 {isMediaOpen ? "▲ Mídias" : `▼ Mídias${media.length ? ` (${media.length})` : ""}`}
                               </button>
-                              <button onClick={() => togglePhotoActive(p)} className={`text-[10px] tracking-[0.08em] uppercase font-bold font-[var(--font-inter)] px-3 py-1.5 border transition-colors ${p.is_active ? "border-[#e2e2e2] text-[#74777f] hover:border-[#002045] hover:text-[#002045]" : "border-[#3b6934] text-[#3b6934] hover:bg-[#3b6934] hover:text-white"}`}>
+                              <button onClick={() => togglePhotoActive(p)} className={`text-[10px] tracking-[0.08em] uppercase font-bold px-3 py-1.5 border transition-colors ${p.is_active ? "border-[#e2e2e2] text-[#74777f] hover:border-[#0B1F45] hover:text-[#0B1F45]" : "border-[#36A35C] text-[#1F7A44] hover:bg-[#36A35C] hover:text-[#0B1F45]"}`}>
                                 {p.is_active ? "Despublicar" : "Publicar"}
                               </button>
-                              <button onClick={() => duplicatePhoto(p.id, p.title)} className="text-[10px] tracking-[0.08em] uppercase font-bold font-[var(--font-inter)] px-3 py-1.5 border border-[#e2e2e2] text-[#43474e] hover:border-[#002045] hover:text-[#002045] transition-colors">Duplicar</button>
-                              <button onClick={() => deletePhoto(p.id, p.title)} className="text-[10px] tracking-[0.08em] uppercase font-bold font-[var(--font-inter)] px-3 py-1.5 border border-red-300 text-red-600 hover:bg-red-50 transition-colors">Excluir</button>
+                              <button onClick={() => duplicatePhoto(p.id, p.title)} className="text-[10px] tracking-[0.08em] uppercase font-bold px-3 py-1.5 border border-[#e2e2e2] text-[#43474e] hover:border-[#0B1F45] hover:text-[#0B1F45] transition-colors">Duplicar</button>
+                              <button onClick={() => deletePhoto(p.id, p.title)} className="text-[10px] tracking-[0.08em] uppercase font-bold px-3 py-1.5 border border-red-300 text-red-600 hover:bg-red-50 transition-colors">Excluir</button>
                             </div>
                           </div>
                         </div>
 
                         {/* ── Media panel ── */}
                         {isMediaOpen && (
-                          <div className="border-t border-[#e2e2e2] bg-[#f9f9f9] p-4">
+                          <div className="border-t border-[#e2e2e2] bg-[#F6F5F2] p-4">
                             <div className="flex items-center justify-between mb-3">
-                              <p className="text-[10px] tracking-[0.12em] uppercase font-bold text-[#002045] font-[var(--font-inter)]">Mídia adicional da obra</p>
+                              <p className="text-[10px] tracking-[0.12em] uppercase font-bold text-[#0B1F45]">Mídia adicional da obra</p>
                               {mediaMigrated === false && (
-                                <span className="text-[9px] text-amber-700 bg-amber-50 border border-amber-200 px-2 py-1 font-[var(--font-inter)]">
+                                <span className="text-[9px] text-amber-700 bg-amber-50 border border-amber-200 px-2 py-1">
                                   ⚠ Execute a migração 051 no Supabase para habilitar classificação, capa e descrição
                                 </span>
                               )}
@@ -6726,20 +6726,20 @@ export default function AdminPage() {
                                     onDragEnd={() => { setDragMediaId(null); setDragOverMediaId(null); }}
                                     onDragOver={(e) => { e.preventDefault(); setDragOverMediaId(m.id); }}
                                     onDrop={(e) => { e.preventDefault(); if (dragMediaId && dragMediaId !== m.id) reorderMedia(p.slug, dragMediaId, m.id); setDragMediaId(null); setDragOverMediaId(null); }}
-                                    className={`relative group cursor-grab active:cursor-grabbing transition-opacity ${dragMediaId === m.id ? "opacity-30" : "opacity-100"} ${dragOverMediaId === m.id && dragMediaId !== m.id ? "ring-2 ring-[#002045]" : ""}`}
+                                    className={`relative group cursor-grab active:cursor-grabbing transition-opacity ${dragMediaId === m.id ? "opacity-30" : "opacity-100"} ${dragOverMediaId === m.id && dragMediaId !== m.id ? "ring-2 ring-[#0B1F45]" : ""}`}
                                   >
                                     {/* Thumbnail */}
                                     <div className="relative w-24 h-24">
                                       {m.type === "image" ? (
                                         <img src={m.url} alt={m.caption ?? ""} className="w-full h-full object-cover border border-[#e2e2e2]" />
                                       ) : (
-                                        <div className="w-full h-full bg-[#002045] flex items-center justify-center border border-[#002045]">
+                                        <div className="w-full h-full bg-[#0B1F45] flex items-center justify-center border border-[#0B1F45]">
                                           <svg width="20" height="20" viewBox="0 0 24 24" fill="white"><path d="M8 5v14l11-7z"/></svg>
                                         </div>
                                       )}
                                       {m.type === "image" && (
                                         <a href={m.url} download target="_blank" rel="noopener noreferrer"
-                                          className="absolute top-0.5 left-0.5 w-5 h-5 bg-[#002045] text-white text-[9px] font-bold flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity"
+                                          className="absolute top-0.5 left-0.5 w-5 h-5 bg-[#0B1F45] text-white text-[9px] font-bold flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity"
                                           title="Download"
                                         >↓</a>
                                       )}
@@ -6752,13 +6752,13 @@ export default function AdminPage() {
                                       )}
                                       {/* Etiqueta legível — antes eram letras "A"/"D" sem legenda */}
                                       {mediaMigrated && (
-                                        <span className={`absolute bottom-0.5 right-0.5 text-[7px] tracking-[0.08em] uppercase font-bold px-1 py-px ${m.category === "antes" ? "bg-amber-500 text-white" : m.category === "depois" ? "bg-[#3b6934] text-white" : "bg-[#74777f] text-white"}`}>
+                                        <span className={`absolute bottom-0.5 right-0.5 text-[7px] tracking-[0.08em] uppercase font-bold px-1 py-px ${m.category === "antes" ? "bg-amber-500 text-[#0B1F45]" : m.category === "depois" ? "bg-[#36A35C] text-[#0B1F45]" : "bg-[#74777f] text-[#0B1F45]"}`}>
                                           {m.category === "antes" ? "Antes" : m.category === "depois" ? "Depois" : "Sem class."}
                                         </span>
                                       )}
                                       {/* Selo de capa */}
                                       {m.is_cover && (
-                                        <span className="absolute bottom-0.5 left-0.5 text-[7px] tracking-[0.08em] uppercase font-bold px-1 py-px bg-[#002045] text-white">
+                                        <span className="absolute bottom-0.5 left-0.5 text-[7px] tracking-[0.08em] uppercase font-bold px-1 py-px bg-[#0B1F45] text-white">
                                           Capa
                                         </span>
                                       )}
@@ -6787,7 +6787,7 @@ export default function AdminPage() {
                                             <button
                                               key={c} type="button"
                                               onClick={(e) => { e.stopPropagation(); setMediaCategory(m.id, p.slug, c); }}
-                                              className={`flex-1 text-[8px] tracking-[0.05em] uppercase font-bold font-[var(--font-inter)] py-1 border transition-colors ${m.category === c ? (c === "antes" ? "bg-amber-500 text-white border-amber-500" : "bg-[#3b6934] text-white border-[#3b6934]") : "border-[#e2e2e2] bg-white text-[#74777f] hover:border-[#002045]"}`}
+                                              className={`flex-1 text-[8px] tracking-[0.05em] uppercase font-bold py-1 border transition-colors ${m.category === c ? (c === "antes" ? "bg-amber-500 text-[#0B1F45] border-amber-500" : "bg-[#36A35C] text-[#0B1F45] border-[#36A35C]") : "border-[#e2e2e2] bg-white text-[#74777f] hover:border-[#0B1F45]"}`}
                                             >
                                               {c === "antes" ? "Antes" : "Depois"}
                                             </button>
@@ -6798,7 +6798,7 @@ export default function AdminPage() {
                                             type="button"
                                             onClick={(e) => { e.stopPropagation(); useMediaAsCover(m, p); }}
                                             disabled={settingCoverId === m.id}
-                                            className="text-[8px] tracking-[0.05em] uppercase font-bold font-[var(--font-inter)] py-1 border border-[#002045] bg-white text-[#002045] hover:bg-[#002045] hover:text-white transition-colors disabled:opacity-50"
+                                            className="text-[8px] tracking-[0.05em] uppercase font-bold py-1 border border-[#0B1F45] bg-white text-[#0B1F45] hover:bg-[#0B1F45] hover:text-white transition-colors disabled:opacity-50"
                                           >
                                             {settingCoverId === m.id ? "Trocando…" : "Definir capa"}
                                           </button>
@@ -6809,31 +6809,31 @@ export default function AdminPage() {
                                     {/* Inline edit popover */}
                                     {editingMediaId === m.id && (
                                       <div className="absolute z-10 top-full left-0 mt-1 bg-white border border-[#e2e2e2] p-3 shadow-lg w-64" onClick={(e) => e.stopPropagation()}>
-                                        <p className="text-[9px] tracking-[0.12em] uppercase font-bold text-[#002045] font-[var(--font-inter)] mb-2">Editar mídia</p>
+                                        <p className="text-[9px] tracking-[0.12em] uppercase font-bold text-[#0B1F45] mb-2">Editar mídia</p>
                                         {/* Category */}
                                         <div className="mb-2">
-                                          <label className="text-[9px] text-[#74777f] font-[var(--font-inter)] uppercase tracking-wider font-bold block mb-1">Categoria</label>
+                                          <label className="text-[9px] text-[#74777f] uppercase tracking-wider font-bold block mb-1">Categoria</label>
                                           <div className="flex gap-1">
                                             {(["geral", "antes", "depois"] as const).map((cat) => (
                                               <button
                                                 key={cat}
                                                 onClick={() => setMediaCategory(m.id, p.slug, cat)}
-                                                className={`flex-1 text-[9px] uppercase font-bold tracking-wider py-1.5 border transition-colors ${(m.category ?? "geral") === cat ? "bg-[#002045] text-white border-[#002045]" : "border-[#e2e2e2] text-[#74777f] hover:border-[#002045]"}`}
+                                                className={`flex-1 text-[9px] uppercase font-bold tracking-wider py-1.5 border transition-colors ${(m.category ?? "geral") === cat ? "bg-[#0B1F45] text-white border-[#0B1F45]" : "border-[#e2e2e2] text-[#74777f] hover:border-[#0B1F45]"}`}
                                               >
                                                 {cat}
                                               </button>
                                             ))}
                                           </div>
-                                          <p className="text-[8px] text-[#3b6934] font-[var(--font-inter)] mt-1">Salvo automaticamente ao selecionar.</p>
+                                          <p className="text-[8px] text-[#1F7A44] mt-1">Salvo automaticamente ao selecionar.</p>
                                         </div>
                                         {/* Description */}
                                         <div className="mb-3">
                                           <div className="flex items-center justify-between mb-1">
-                                            <label className="text-[9px] text-[#74777f] font-[var(--font-inter)] uppercase tracking-wider font-bold">Descrição (visível ao usuário)</label>
+                                            <label className="text-[9px] text-[#74777f] uppercase tracking-wider font-bold">Descrição (visível ao usuário)</label>
                                             <button
                                               disabled={aiDescGenerating || m.type === "video"}
                                               onClick={() => generateAiDescription(m.url)}
-                                              className="flex items-center gap-1 text-[8px] tracking-wide uppercase font-bold font-[var(--font-inter)] text-[#002045] border border-[#002045] px-2 py-0.5 hover:bg-[#002045] hover:text-white transition-colors disabled:opacity-40 disabled:cursor-not-allowed"
+                                              className="flex items-center gap-1 text-[8px] tracking-wide uppercase font-bold text-[#0B1F45] border border-[#0B1F45] px-2 py-0.5 hover:bg-[#0B1F45] hover:text-white transition-colors disabled:opacity-40 disabled:cursor-not-allowed"
                                             >
                                               {aiDescGenerating ? (
                                                 <svg className="animate-spin" width="8" height="8" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="3"><path d="M12 2v4M12 18v4M4.93 4.93l2.83 2.83M16.24 16.24l2.83 2.83M2 12h4M18 12h4M4.93 19.07l2.83-2.83M16.24 7.76l2.83-2.83"/></svg>
@@ -6849,21 +6849,21 @@ export default function AdminPage() {
                                             value={aiDescHint}
                                             onChange={e => setAiDescHint(e.target.value)}
                                             placeholder="Dica para IA: ex. foco na textura, iluminação lateral…"
-                                            className="w-full border border-dashed border-[#c8d8e8] bg-[#f5f9ff] px-2 py-1 text-[9px] font-[var(--font-inter)] text-[#43474e] focus:outline-none focus:border-[#002045] mb-1 placeholder:text-[#aab]"
+                                            className="w-full border border-dashed border-[#c8d8e8] bg-[#f5f9ff] px-2 py-1 text-[9px] text-[#43474e] focus:outline-none focus:border-[#0B1F45] mb-1 placeholder:text-[#aab]"
                                           />
                                           <textarea
                                             value={editMediaDraft.description}
                                             onChange={(e) => setEditMediaDraft(d => ({ ...d, description: e.target.value }))}
                                             rows={2}
                                             placeholder="Ex: Detalhe da textura instalada…"
-                                            className="w-full border border-[#e2e2e2] px-2 py-1.5 text-xs font-[var(--font-inter)] text-[#43474e] focus:outline-none focus:border-[#002045] resize-none"
+                                            className="w-full border border-[#e2e2e2] px-2 py-1.5 text-xs text-[#43474e] focus:outline-none focus:border-[#0B1F45] resize-none"
                                           />
                                         </div>
                                         {m.type === "image" && (
                                           <button
                                             onClick={() => useMediaAsCover(m, p)}
                                             disabled={settingCoverId === m.id}
-                                            className="w-full mb-2 border border-[#3b6934] text-[#3b6934] text-[9px] uppercase font-bold tracking-wider py-1.5 hover:bg-[#3b6934] hover:text-white transition-colors disabled:opacity-50"
+                                            className="w-full mb-2 border border-[#36A35C] text-[#1F7A44] text-[9px] uppercase font-bold tracking-wider py-1.5 hover:bg-[#36A35C] hover:text-[#0B1F45] transition-colors disabled:opacity-50"
                                           >
                                             {settingCoverId === m.id ? "Trocando…" : "Usar como capa"}
                                           </button>
@@ -6876,13 +6876,13 @@ export default function AdminPage() {
                                               setTimeout(() => setMediaToast(null), 2500);
                                               setEditingMediaId(null);
                                             }}
-                                            className="flex-1 bg-[#002045] text-white text-[9px] uppercase font-bold tracking-wider py-1.5 hover:bg-[#1a365d] transition-colors"
+                                            className="flex-1 bg-[#0B1F45] text-white text-[9px] uppercase font-bold tracking-wider py-1.5 hover:bg-[#2347A0] transition-colors"
                                           >
                                             Salvar descrição
                                           </button>
                                           <button
                                             onClick={() => setEditingMediaId(null)}
-                                            className="flex-1 border border-[#e2e2e2] text-[#74777f] text-[9px] uppercase font-bold tracking-wider py-1.5 hover:border-[#002045] transition-colors"
+                                            className="flex-1 border border-[#e2e2e2] text-[#74777f] text-[9px] uppercase font-bold tracking-wider py-1.5 hover:border-[#0B1F45] transition-colors"
                                           >
                                             Fechar
                                           </button>
@@ -6897,20 +6897,20 @@ export default function AdminPage() {
                             {/* Classificação aplicada às próximas fotos enviadas */}
                             {mediaMigrated && (
                               <div className="flex items-center gap-2 flex-wrap mb-2">
-                                <span className="text-[9px] tracking-[0.1em] uppercase font-bold font-[var(--font-inter)] text-[#74777f]">Enviar novas fotos como</span>
+                                <span className="text-[9px] tracking-[0.1em] uppercase font-bold text-[#74777f]">Enviar novas fotos como</span>
                                 {(["depois", "antes"] as const).map((c) => (
                                   <button key={c} type="button" onClick={() => setUploadCategory(c)}
-                                    className={`text-[9px] tracking-[0.05em] uppercase font-bold font-[var(--font-inter)] px-2.5 py-1 border transition-colors ${uploadCategory === c ? (c === "antes" ? "bg-amber-500 text-white border-amber-500" : "bg-[#3b6934] text-white border-[#3b6934]") : "border-[#e2e2e2] bg-white text-[#74777f] hover:border-[#002045]"}`}>
+                                    className={`text-[9px] tracking-[0.05em] uppercase font-bold px-2.5 py-1 border transition-colors ${uploadCategory === c ? (c === "antes" ? "bg-amber-500 text-[#0B1F45] border-amber-500" : "bg-[#36A35C] text-[#0B1F45] border-[#36A35C]") : "border-[#e2e2e2] bg-white text-[#74777f] hover:border-[#0B1F45]"}`}>
                                     {c === "antes" ? "Antes" : "Depois"}
                                   </button>
                                 ))}
-                                <span className="text-[9px] text-[#a0a3a8] font-[var(--font-inter)]">Dá para trocar depois em cada foto.</span>
+                                <span className="text-[9px] text-[#a0a3a8]">Dá para trocar depois em cada foto.</span>
                               </div>
                             )}
 
                             {/* Add image + video file */}
                             <div className="flex flex-wrap gap-3">
-                              <label className={`relative cursor-pointer text-[10px] tracking-[0.1em] uppercase font-bold font-[var(--font-inter)] px-4 py-2 border border-[#002045] text-[#002045] hover:bg-[#002045] hover:text-white transition-colors whitespace-nowrap ${mediaUploading ? "opacity-50 pointer-events-none" : ""}`}>
+                              <label className={`relative cursor-pointer text-[10px] tracking-[0.1em] uppercase font-bold px-4 py-2 border border-[#0B1F45] text-[#0B1F45] hover:bg-[#0B1F45] hover:text-white transition-colors whitespace-nowrap ${mediaUploading ? "opacity-50 pointer-events-none" : ""}`}>
                                 {mediaUploading ? "Enviando…" : "+ Fotos"}
                                 <input
                                   type="file" accept="image/*" multiple className="absolute inset-0 opacity-0 cursor-pointer w-full"
@@ -6922,7 +6922,7 @@ export default function AdminPage() {
                                 />
                               </label>
 
-                              <label className={`relative cursor-pointer text-[10px] tracking-[0.1em] uppercase font-bold font-[var(--font-inter)] px-4 py-2 bg-[#3b6934] text-white hover:bg-[#2d5128] transition-colors whitespace-nowrap ${mediaUploading ? "opacity-50 pointer-events-none" : ""}`}>
+                              <label className={`relative cursor-pointer text-[10px] tracking-[0.1em] uppercase font-bold px-4 py-2 bg-[#36A35C] text-[#0B1F45] hover:bg-[#4BB571] transition-colors whitespace-nowrap ${mediaUploading ? "opacity-50 pointer-events-none" : ""}`}>
                                 {mediaUploading ? "Enviando…" : "+ Vídeo (arquivo)"}
                                 <input
                                   type="file" accept="video/*,.mov,.mp4,.m4v,.webm,.avi" className="absolute inset-0 opacity-0 cursor-pointer w-full"
@@ -6942,25 +6942,25 @@ export default function AdminPage() {
                                 value={videoUrlInput}
                                 onChange={(e) => setVideoUrlInput(e.target.value)}
                                 placeholder="Ou cole URL do vídeo (YouTube, Vimeo, Drive…)"
-                                className="flex-1 border border-[#e2e2e2] px-3 py-2 text-sm font-[var(--font-inter)] text-[#43474e] focus:outline-none focus:border-[#002045]"
+                                className="flex-1 border border-[#e2e2e2] px-3 py-2 text-sm text-[#43474e] focus:outline-none focus:border-[#0B1F45]"
                               />
                               <button
                                 onClick={() => addProjectMediaVideo(p.slug, videoUrlInput)}
                                 disabled={!videoUrlInput.trim()}
-                                className="text-[10px] tracking-[0.1em] uppercase font-bold font-[var(--font-inter)] px-4 py-2 bg-[#002045] text-white hover:bg-[#1a365d] transition-colors disabled:opacity-40 whitespace-nowrap"
+                                className="text-[10px] tracking-[0.1em] uppercase font-bold px-4 py-2 bg-[#0B1F45] text-white hover:bg-[#2347A0] transition-colors disabled:opacity-40 whitespace-nowrap"
                               >
                                 + URL
                               </button>
                             </div>
                             {mediaMigrated === false && (
                               <details className="mt-3">
-                                <summary className="text-[9px] text-amber-700 cursor-pointer font-[var(--font-inter)] font-semibold">Ver SQL da migração ▸</summary>
+                                <summary className="text-[9px] text-amber-700 cursor-pointer font-semibold">Ver SQL da migração ▸</summary>
                                 <pre className="mt-2 text-[8px] bg-amber-50 border border-amber-200 p-2 text-amber-800 overflow-x-auto font-mono leading-relaxed whitespace-pre-wrap">
 {`-- Rode a migração 051 no Supabase (SQL Editor → New query):
 -- supabase/migrations/051_project_media_classification.sql
 -- Ela normaliza antes/depois, cria is_cover e corrige os dados legados.`}
                                 </pre>
-                                <p className="text-[9px] text-[#74777f] font-[var(--font-inter)] mt-1">Cole no Supabase Dashboard → SQL Editor → New query → Run.</p>
+                                <p className="text-[9px] text-[#74777f] mt-1">Cole no Supabase Dashboard → SQL Editor → New query → Run.</p>
                               </details>
                             )}
                           </div>
@@ -6977,14 +6977,14 @@ export default function AdminPage() {
             {/* Section 2: Renders / CGI */}
             <div>
               <div className="flex items-center justify-between mb-3">
-                <h3 className="font-[var(--font-noto-serif)] text-[#002045] text-xl font-normal">Renders / CGI</h3>
+                <h3 className="font-serif text-[#0B1F45] text-xl font-normal">Renders / CGI</h3>
                 <div className="flex gap-2">
                   {/* Bulk import button — only show if there are unimported statics */}
                   {STATIC_RENDERS.filter((r) => !dbRenderProjects.some((d) => d.slug === r.slug)).length > 0 && (
                     <button
                       onClick={importAllStaticRenders}
                       disabled={renderImportingAll}
-                      className="border border-[#002045] text-[#002045] text-xs tracking-[0.1em] uppercase font-bold font-[var(--font-inter)] px-4 py-2.5 hover:bg-[#002045] hover:text-white transition-colors disabled:opacity-50"
+                      className="border border-[#0B1F45] text-[#0B1F45] text-xs tracking-[0.1em] uppercase font-bold px-4 py-2.5 hover:bg-[#0B1F45] hover:text-white transition-colors disabled:opacity-50"
                     >
                       {renderImportingAll ? "Importando…" : `↓ Importar ${STATIC_RENDERS.filter((r) => !dbRenderProjects.some((d) => d.slug === r.slug)).length} estáticos`}
                     </button>
@@ -6996,19 +6996,19 @@ export default function AdminPage() {
                       setShowRenderForm(true);
                       setTimeout(() => renderTabFormRef.current?.scrollIntoView({ behavior: "smooth", block: "start" }), 50);
                     }}
-                    className="bg-[#002045] text-white text-xs tracking-[0.1em] uppercase font-bold font-[var(--font-inter)] px-5 py-2.5 hover:bg-[#1a365d] transition-colors"
+                    className="bg-[#0B1F45] text-white text-xs tracking-[0.1em] uppercase font-bold px-5 py-2.5 hover:bg-[#2347A0] transition-colors"
                   >
                     + Adicionar
                   </button>
                 </div>
               </div>
-              <p className="text-[#74777f] text-xs font-[var(--font-inter)] mb-5">
-                Renders <span className="font-bold text-[#3b6934]">gerenciados</span> sobrescrevem os estáticos no site quando têm o mesmo slug. Importe os estáticos para editá-los ou substituir as imagens.
+              <p className="text-[#74777f] text-xs mb-5">
+                Renders <span className="font-bold text-[#1F7A44]">gerenciados</span> sobrescrevem os estáticos no site quando têm o mesmo slug. Importe os estáticos para editá-los ou substituir as imagens.
               </p>
 
               {showRenderForm && (
                 <div ref={renderTabFormRef} className="bg-white border border-[#e2e2e2] p-6 mb-6">
-                  <h4 className="font-[var(--font-inter)] text-[10px] tracking-[0.15em] uppercase font-bold text-[#002045] mb-5">
+                  <h4 className="text-[10px] tracking-[0.15em] uppercase font-bold text-[#0B1F45] mb-5">
                     {editingRenderId ? "Editar Render" : "Novo Render"}
                   </h4>
                   <form onSubmit={handleRenderSubmit}>
@@ -7034,7 +7034,7 @@ export default function AdminPage() {
                       <label className={labelCls}>Imagem</label>
                       <div className="flex gap-3 items-start">
                         <input type="text" value={renderForm.image_path} onChange={(e) => setRenderForm({...renderForm, image_path: e.target.value})} className={inputCls} placeholder="/images/renders/..." />
-                        <label className="flex-shrink-0 cursor-pointer bg-[#f0f0f0] border border-[#e2e2e2] px-4 py-2.5 text-xs font-bold font-[var(--font-inter)] text-[#002045] hover:bg-[#e8e8e8] transition-colors whitespace-nowrap">
+                        <label className="flex-shrink-0 cursor-pointer bg-[#f0f0f0] border border-[#e2e2e2] px-4 py-2.5 text-xs font-bold text-[#0B1F45] hover:bg-[#e8e8e8] transition-colors whitespace-nowrap">
                           {projectImageUploading ? "Enviando..." : "Upload"}
                           <input type="file" accept="image/*" className="hidden" onChange={async (e) => {
                             const file = e.target.files?.[0];
@@ -7049,22 +7049,22 @@ export default function AdminPage() {
                     </div>
                     <div className="mb-6 flex items-center gap-2">
                       <input type="checkbox" id="render-active" checked={renderForm.is_active} onChange={(e) => setRenderForm({...renderForm, is_active: e.target.checked})} className="w-4 h-4" />
-                      <label htmlFor="render-active" className="text-sm font-[var(--font-inter)] text-[#43474e]">Render ativo</label>
+                      <label htmlFor="render-active" className="text-sm text-[#43474e]">Render ativo</label>
                     </div>
                     <div className="flex gap-3">
-                      <button type="submit" className="bg-[#002045] text-white text-xs tracking-[0.1em] uppercase font-bold font-[var(--font-inter)] px-6 py-2.5 hover:bg-[#1a365d] transition-colors">Salvar</button>
-                      <button type="button" onClick={() => { setShowRenderForm(false); setEditingRenderId(null); }} className="border border-[#e2e2e2] text-[#74777f] text-xs font-[var(--font-inter)] px-6 py-2.5 hover:border-[#002045] hover:text-[#002045] transition-colors">Cancelar</button>
+                      <button type="submit" className="bg-[#0B1F45] text-white text-xs tracking-[0.1em] uppercase font-bold px-6 py-2.5 hover:bg-[#2347A0] transition-colors">Salvar</button>
+                      <button type="button" onClick={() => { setShowRenderForm(false); setEditingRenderId(null); }} className="border border-[#e2e2e2] text-[#74777f] text-xs px-6 py-2.5 hover:border-[#0B1F45] hover:text-[#0B1F45] transition-colors">Cancelar</button>
                     </div>
                   </form>
                 </div>
               )}
 
               {loadingProjects ? (
-                <p className="text-[#74777f] text-sm font-[var(--font-inter)] py-4">Carregando...</p>
+                <p className="text-[#74777f] text-sm py-4">Carregando...</p>
               ) : (
                 <>
                 <div className="hidden md:block bg-white border border-[#e2e2e2]">
-                  <table className="w-full text-sm font-[var(--font-inter)]">
+                  <table className="w-full text-sm">
                     <thead>
                       <tr className="border-b border-[#e2e2e2]">
                         {["Imagem","Título","Código","Origem","Ações"].map(h => (
@@ -7075,31 +7075,31 @@ export default function AdminPage() {
                     <tbody>
                       {/* DB (managed) renders first */}
                       {dbRenderProjects.map((r) => (
-                        <tr key={r.id} className="border-b border-[#f0f0f0] hover:bg-[#fafafa]">
+                        <tr key={r.id} className="border-b border-[#f0f0f0] hover:bg-[#F6F5F2]">
                           <td className="px-3 py-2 w-16">
                             {r.image_path && <img src={r.image_path} alt={r.title} className="w-14 h-14 object-cover border border-[#e2e2e2]" />}
                           </td>
-                          <td className="px-4 py-3 text-[#002045] font-medium">{r.title}</td>
-                          <td className="px-4 py-3"><span className="bg-[#eef2f8] text-[#002045] px-2 py-0.5 text-xs font-bold tracking-wider">{r.product_code}</span></td>
+                          <td className="px-4 py-3 text-[#0B1F45] font-medium">{r.title}</td>
+                          <td className="px-4 py-3"><span className="bg-[#eef2f8] text-[#0B1F45] px-2 py-0.5 text-xs font-bold tracking-wider">{r.product_code}</span></td>
                           <td className="px-4 py-3">
-                            <span className="text-[9px] font-bold tracking-wide bg-[#3b6934] text-white px-2 py-0.5">GERENCIADO</span>
+                            <span className="text-[9px] font-bold tracking-wide bg-[#36A35C] text-[#0B1F45] px-2 py-0.5">GERENCIADO</span>
                           </td>
                           <td className="px-4 py-3">
                             <div className="flex gap-2">
-                              <button onClick={() => startEditRender(r)} className="text-[10px] tracking-[0.08em] uppercase font-bold font-[var(--font-inter)] px-3 py-1.5 border border-[#002045] text-[#002045] hover:bg-[#002045] hover:text-white transition-colors">Editar</button>
-                              <button onClick={() => deleteRender(r.id, r.title)} className="text-[10px] tracking-[0.08em] uppercase font-bold font-[var(--font-inter)] px-3 py-1.5 border border-red-300 text-red-600 hover:bg-red-50 transition-colors">Excluir</button>
+                              <button onClick={() => startEditRender(r)} className="text-[10px] tracking-[0.08em] uppercase font-bold px-3 py-1.5 border border-[#0B1F45] text-[#0B1F45] hover:bg-[#0B1F45] hover:text-white transition-colors">Editar</button>
+                              <button onClick={() => deleteRender(r.id, r.title)} className="text-[10px] tracking-[0.08em] uppercase font-bold px-3 py-1.5 border border-red-300 text-red-600 hover:bg-red-50 transition-colors">Excluir</button>
                             </div>
                           </td>
                         </tr>
                       ))}
                       {/* Static renders not yet in DB */}
                       {STATIC_RENDERS.filter((r) => !dbRenderProjects.some((d) => d.slug === r.slug)).map((r, idx) => (
-                        <tr key={r.slug} className="border-b border-[#f0f0f0] hover:bg-[#fafafa] opacity-70">
+                        <tr key={r.slug} className="border-b border-[#f0f0f0] hover:bg-[#F6F5F2] opacity-70">
                           <td className="px-3 py-2 w-16">
                             {/* eslint-disable-next-line @next/next/no-img-element */}
                             <img src={r.image_path} alt={r.title} className="w-14 h-14 object-cover border border-[#e2e2e2]" />
                           </td>
-                          <td className="px-4 py-3 text-[#002045]">{r.title}</td>
+                          <td className="px-4 py-3 text-[#0B1F45]">{r.title}</td>
                           <td className="px-4 py-3"><span className="bg-[#f0f0f0] text-[#74777f] px-2 py-0.5 text-xs font-bold tracking-wider">{r.product_code}</span></td>
                           <td className="px-4 py-3">
                             <span className="text-[9px] font-bold tracking-wide bg-[#eef2f8] text-[#74777f] px-2 py-0.5">ESTÁTICO</span>
@@ -7108,7 +7108,7 @@ export default function AdminPage() {
                             <button
                               onClick={() => importStaticRender(r, idx)}
                               disabled={renderImporting === r.slug}
-                              className="text-[10px] tracking-[0.08em] uppercase font-bold font-[var(--font-inter)] px-3 py-1.5 border border-[#3b6934] text-[#3b6934] hover:bg-[#3b6934] hover:text-white transition-colors disabled:opacity-50"
+                              className="text-[10px] tracking-[0.08em] uppercase font-bold px-3 py-1.5 border border-[#36A35C] text-[#1F7A44] hover:bg-[#36A35C] hover:text-[#0B1F45] transition-colors disabled:opacity-50"
                             >
                               {renderImporting === r.slug ? "…" : "↓ Importar"}
                             </button>
@@ -7131,13 +7131,13 @@ export default function AdminPage() {
                       )}
                       <div className="min-w-0 flex-1">
                         <div className="flex items-start justify-between gap-2">
-                          <p className="text-[#002045] font-medium text-sm min-w-0 truncate">{r.title}</p>
-                          <span className="text-[9px] font-bold tracking-wide bg-[#3b6934] text-white px-2 py-0.5 flex-shrink-0">GERENCIADO</span>
+                          <p className="text-[#0B1F45] font-medium text-sm min-w-0 truncate">{r.title}</p>
+                          <span className="text-[9px] font-bold tracking-wide bg-[#36A35C] text-[#0B1F45] px-2 py-0.5 flex-shrink-0">GERENCIADO</span>
                         </div>
-                        <span className="inline-block bg-[#eef2f8] text-[#002045] px-2 py-0.5 text-[10px] font-bold tracking-wider mt-1.5">{r.product_code}</span>
+                        <span className="inline-block bg-[#eef2f8] text-[#0B1F45] px-2 py-0.5 text-[10px] font-bold tracking-wider mt-1.5">{r.product_code}</span>
                         <div className="flex gap-2 mt-2">
-                          <button onClick={() => startEditRender(r)} className="text-[10px] tracking-[0.08em] uppercase font-bold font-[var(--font-inter)] px-3 py-1.5 border border-[#002045] text-[#002045] hover:bg-[#002045] hover:text-white transition-colors">Editar</button>
-                          <button onClick={() => deleteRender(r.id, r.title)} className="text-[10px] tracking-[0.08em] uppercase font-bold font-[var(--font-inter)] px-3 py-1.5 border border-red-300 text-red-600 hover:bg-red-50 transition-colors">Excluir</button>
+                          <button onClick={() => startEditRender(r)} className="text-[10px] tracking-[0.08em] uppercase font-bold px-3 py-1.5 border border-[#0B1F45] text-[#0B1F45] hover:bg-[#0B1F45] hover:text-white transition-colors">Editar</button>
+                          <button onClick={() => deleteRender(r.id, r.title)} className="text-[10px] tracking-[0.08em] uppercase font-bold px-3 py-1.5 border border-red-300 text-red-600 hover:bg-red-50 transition-colors">Excluir</button>
                         </div>
                       </div>
                     </div>
@@ -7148,18 +7148,18 @@ export default function AdminPage() {
                       <img src={r.image_path} alt={r.title} className="w-14 h-14 object-cover border border-[#e2e2e2] flex-shrink-0" />
                       <div className="min-w-0 flex-1">
                         <div className="flex items-start justify-between gap-2">
-                          <p className="text-[#002045] text-sm min-w-0 truncate">{r.title}</p>
+                          <p className="text-[#0B1F45] text-sm min-w-0 truncate">{r.title}</p>
                           <span className="text-[9px] font-bold tracking-wide bg-[#eef2f8] text-[#74777f] px-2 py-0.5 flex-shrink-0">ESTÁTICO</span>
                         </div>
                         <span className="inline-block bg-[#f0f0f0] text-[#74777f] px-2 py-0.5 text-[10px] font-bold tracking-wider mt-1.5">{r.product_code}</span>
                         <div className="mt-2">
-                          <button onClick={() => importStaticRender(r, idx)} disabled={renderImporting === r.slug} className="text-[10px] tracking-[0.08em] uppercase font-bold font-[var(--font-inter)] px-3 py-1.5 border border-[#3b6934] text-[#3b6934] hover:bg-[#3b6934] hover:text-white transition-colors disabled:opacity-50">{renderImporting === r.slug ? "…" : "↓ Importar"}</button>
+                          <button onClick={() => importStaticRender(r, idx)} disabled={renderImporting === r.slug} className="text-[10px] tracking-[0.08em] uppercase font-bold px-3 py-1.5 border border-[#36A35C] text-[#1F7A44] hover:bg-[#36A35C] hover:text-[#0B1F45] transition-colors disabled:opacity-50">{renderImporting === r.slug ? "…" : "↓ Importar"}</button>
                         </div>
                       </div>
                     </div>
                   ))}
                   {dbRenderProjects.length === 0 && (STATIC_RENDERS as readonly unknown[]).length === 0 && (
-                    <div className="bg-white border border-[#e2e2e2] px-4 py-6 text-center text-[#74777f] text-sm font-[var(--font-inter)]">Nenhum render.</div>
+                    <div className="bg-white border border-[#e2e2e2] px-4 py-6 text-center text-[#74777f] text-sm">Nenhum render.</div>
                   )}
                 </div>
                 </>
@@ -7172,15 +7172,15 @@ export default function AdminPage() {
           <div>
             <div className="flex items-center justify-between mb-6">
               <div>
-                <h2 className="font-[var(--font-inter)] text-xl font-bold text-[#002045]">Imagens do Site</h2>
-                <p className="text-[#74777f] text-sm font-[var(--font-inter)] mt-1">
+                <h2 className="text-xl font-bold text-[#0B1F45]">Imagens do Site</h2>
+                <p className="text-[#74777f] text-sm mt-1">
                   Faça download das fotos originais, veja as dimensões exatas e substitua imagens diretamente — sem precisar de um deploy.
                 </p>
               </div>
             </div>
 
             {assetLoading ? (
-              <p className="text-[#74777f] text-sm font-[var(--font-inter)] py-8">Carregando...</p>
+              <p className="text-[#74777f] text-sm py-8">Carregando...</p>
             ) : (
               <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-5">
                 {SITE_ASSET_MANIFEST.map((asset) => {
@@ -7227,7 +7227,7 @@ export default function AdminPage() {
                           className="absolute inset-0 w-full h-full object-cover object-top"
                         />
                         {/* Status badge */}
-                        <div className={`absolute top-2 right-2 text-[9px] tracking-[0.1em] uppercase font-bold font-[var(--font-inter)] px-2 py-1 ${isOverridden ? "bg-[#3b6934] text-white" : "bg-white/90 text-[#74777f]"}`}>
+                        <div className={`absolute top-2 right-2 text-[9px] tracking-[0.1em] uppercase font-bold px-2 py-1 ${isOverridden ? "bg-[#36A35C] text-[#0B1F45]" : "bg-white/90 text-[#74777f]"}`}>
                           {isOverridden ? "Substituída" : "Original"}
                         </div>
                       </div>
@@ -7235,25 +7235,25 @@ export default function AdminPage() {
                       {/* Info */}
                       <div className="px-4 pt-4 pb-3 flex-1 flex flex-col gap-3">
                         <div>
-                          <p className="text-[#002045] font-semibold text-sm font-[var(--font-inter)] leading-snug">{asset.label}</p>
-                          <p className="text-[#74777f] text-[10px] tracking-[0.08em] uppercase font-bold font-[var(--font-inter)] mt-0.5">{asset.section}</p>
+                          <p className="text-[#0B1F45] font-semibold text-sm leading-snug">{asset.label}</p>
+                          <p className="text-[#74777f] text-[10px] tracking-[0.08em] uppercase font-bold mt-0.5">{asset.section}</p>
                         </div>
 
                         {/* Dimensions */}
-                        <div className="bg-[#f9f9f9] border border-[#e2e2e2] px-3 py-2 space-y-1">
+                        <div className="bg-[#F6F5F2] border border-[#e2e2e2] px-3 py-2 space-y-1">
                           {asset.nativeW > 0 && (
                             <div className="flex items-center justify-between">
-                              <span className="text-[#74777f] text-[10px] font-[var(--font-inter)]">Tamanho do arquivo</span>
-                              <span className="text-[#002045] text-[10px] font-bold font-[var(--font-inter)]">{asset.nativeW} × {asset.nativeH} px</span>
+                              <span className="text-[#74777f] text-[10px]">Tamanho do arquivo</span>
+                              <span className="text-[#0B1F45] text-[10px] font-bold">{asset.nativeW} × {asset.nativeH} px</span>
                             </div>
                           )}
                           <div className="flex items-start justify-between gap-2">
-                            <span className="text-[#74777f] text-[10px] font-[var(--font-inter)] shrink-0">Exibição no site</span>
-                            <span className="text-[#002045] text-[10px] font-[var(--font-inter)] text-right">{asset.displayInfo}</span>
+                            <span className="text-[#74777f] text-[10px] shrink-0">Exibição no site</span>
+                            <span className="text-[#0B1F45] text-[10px] text-right">{asset.displayInfo}</span>
                           </div>
                           <div className="flex items-center justify-between">
-                            <span className="text-[#74777f] text-[10px] font-[var(--font-inter)]">Proporção ideal</span>
-                            <span className="text-[#002045] text-[10px] font-bold font-[var(--font-inter)]">
+                            <span className="text-[#74777f] text-[10px]">Proporção ideal</span>
+                            <span className="text-[#0B1F45] text-[10px] font-bold">
                               {asset.nativeW > 0 ? `${asset.nativeW}:${asset.nativeH}` : "livre"}
                             </span>
                           </div>
@@ -7267,13 +7267,13 @@ export default function AdminPage() {
                             download
                             target="_blank"
                             rel="noopener noreferrer"
-                            className="flex-1 text-center text-[10px] tracking-[0.08em] uppercase font-bold font-[var(--font-inter)] px-3 py-2 border border-[#1a365d] text-[#1a365d] hover:bg-[#1a365d] hover:text-white transition-colors"
+                            className="flex-1 text-center text-[10px] tracking-[0.08em] uppercase font-bold px-3 py-2 border border-[#2347A0] text-[#2347A0] hover:bg-[#2347A0] hover:text-white transition-colors"
                           >
                             Download
                           </a>
 
                           {/* Upload replacement */}
-                          <label className="flex-1 text-center text-[10px] tracking-[0.08em] uppercase font-bold font-[var(--font-inter)] px-3 py-2 bg-[#002045] text-white hover:bg-[#1a365d] transition-colors cursor-pointer">
+                          <label className="flex-1 text-center text-[10px] tracking-[0.08em] uppercase font-bold px-3 py-2 bg-[#0B1F45] text-white hover:bg-[#2347A0] transition-colors cursor-pointer">
                             {assetUploading === asset.key ? "Enviando…" : "Substituir"}
                             <input
                               type="file"
@@ -7290,7 +7290,7 @@ export default function AdminPage() {
                           <button
                             onClick={handleRestore}
                             disabled={assetRestoring === asset.key}
-                            className="w-full text-[10px] tracking-[0.08em] uppercase font-bold font-[var(--font-inter)] px-3 py-2 border border-red-300 text-red-600 hover:bg-red-50 transition-colors"
+                            className="w-full text-[10px] tracking-[0.08em] uppercase font-bold px-3 py-2 border border-red-300 text-red-600 hover:bg-red-50 transition-colors"
                           >
                             {assetRestoring === asset.key ? "Restaurando…" : "Restaurar imagem original"}
                           </button>
@@ -7403,8 +7403,8 @@ export default function AdminPage() {
           return (
             <div className="max-w-3xl mx-auto px-4 sm:px-8 py-8">
               <div className="mb-6">
-                <h2 className="font-[var(--font-noto-serif)] text-[#002045] text-2xl font-normal mb-2">Simulador para clientes</h2>
-                <p className="text-[#43474e] text-sm font-[var(--font-inter)] leading-relaxed">Configure um ou mais ambientes, gere o link e envie ao cliente. O link abre direto no passo de confirmação.</p>
+                <h2 className="font-serif text-[#0B1F45] text-2xl font-normal mb-2">Simulador para clientes</h2>
+                <p className="text-[#43474e] text-sm leading-relaxed">Configure um ou mais ambientes, gere o link e envie ao cliente. O link abre direto no passo de confirmação.</p>
               </div>
 
               {/* Saved spaces list */}
@@ -7417,13 +7417,13 @@ export default function AdminPage() {
                     const mat = pl * (prod?.price ?? 0);
                     return (
                       <div key={s.key} className="flex items-center gap-3 px-4 py-3">
-                        <span className="w-6 h-6 rounded-full bg-[#3b6934] text-white text-[10px] font-bold font-[var(--font-inter)] flex items-center justify-center flex-shrink-0">{i + 1}</span>
+                        <span className="w-6 h-6 rounded-full bg-[#36A35C] text-[#0B1F45] text-[10px] font-bold flex items-center justify-center flex-shrink-0">{i + 1}</span>
                         {prod && <img src={prod.image_path} alt={prod.name} className="w-10 h-10 object-cover flex-shrink-0 border border-[#e2e2e2]" />}
                         <div className="flex-1 min-w-0">
-                          <p className="text-[#002045] text-sm font-semibold font-[var(--font-inter)]">{s.spaceName}</p>
-                          <p className="text-[#74777f] text-[10px] font-[var(--font-inter)]">{prod?.name ?? s.productCode} · {wn}m × {hn}m · {pl} pl.</p>
+                          <p className="text-[#0B1F45] text-sm font-semibold">{s.spaceName}</p>
+                          <p className="text-[#74777f] text-[10px]">{prod?.name ?? s.productCode} · {wn}m × {hn}m · {pl} pl.</p>
                         </div>
-                        <p className="text-[#002045] text-sm font-semibold font-[var(--font-inter)] flex-shrink-0">{fmt(mat)}</p>
+                        <p className="text-[#0B1F45] text-sm font-semibold flex-shrink-0">{fmt(mat)}</p>
                         <button onClick={() => { setSimSpaces(prev => prev.filter((_, idx) => idx !== i)); setSimLink(""); }} className="text-red-400 hover:text-red-600 flex-shrink-0 ml-1">
                           <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5"><path d="M18 6L6 18M6 6l12 12"/></svg>
                         </button>
@@ -7435,7 +7435,7 @@ export default function AdminPage() {
 
               {/* New space card */}
               <div className="bg-white border border-[#e2e2e2] p-6 space-y-6">
-                <p className="text-[#002045] text-[10px] tracking-[0.15em] uppercase font-bold font-[var(--font-inter)]">
+                <p className="text-[#0B1F45] text-[10px] tracking-[0.15em] uppercase font-bold">
                   {simSpaces.length === 0 ? "1 — Escolha o espaço" : `Ambiente ${simSpaces.length + 1} — Escolha o espaço`}
                 </p>
 
@@ -7446,30 +7446,30 @@ export default function AdminPage() {
                       setSimSpaceName(space.label); setSimShowCustom(false); setSimCustomText("");
                       setTimeout(() => document.getElementById("sim-products")?.scrollIntoView({ behavior: "smooth", block: "start" }), 60);
                     }}
-                      className={`px-3 py-2.5 min-h-[44px] border text-xs font-semibold font-[var(--font-inter)] transition-all text-left ${
+                      className={`px-3 py-2.5 min-h-[44px] border text-xs font-semibold transition-all text-left ${
                         simSpaceName === space.label && !simShowCustom
-                          ? "border-[#002045] bg-[#002045] text-white"
-                          : "border-[#e2e2e2] text-[#43474e] hover:border-[#002045] hover:text-[#002045]"
+                          ? "border-[#0B1F45] bg-[#0B1F45] text-white"
+                          : "border-[#e2e2e2] text-[#43474e] hover:border-[#0B1F45] hover:text-[#0B1F45]"
                       }`}>{space.label}</button>
                   ))}
                   <button onClick={() => {
                     setSimShowCustom(true); setSimSpaceName("");
                     setTimeout(() => document.getElementById("sim-products")?.scrollIntoView({ behavior: "smooth", block: "start" }), 60);
                   }}
-                    className={`px-3 py-2.5 min-h-[44px] border text-xs font-semibold font-[var(--font-inter)] transition-all text-left ${
-                      simShowCustom ? "border-[#002045] bg-[#002045] text-white" : "border-dashed border-[#c8c8c8] text-[#74777f] hover:border-[#002045] hover:text-[#002045]"
+                    className={`px-3 py-2.5 min-h-[44px] border text-xs font-semibold transition-all text-left ${
+                      simShowCustom ? "border-[#0B1F45] bg-[#0B1F45] text-white" : "border-dashed border-[#c8c8c8] text-[#74777f] hover:border-[#0B1F45] hover:text-[#0B1F45]"
                     }`}>+ Outro</button>
                 </div>
                 {simShowCustom && (
                   <input autoFocus type="text" value={simCustomText}
                     onChange={e => { setSimCustomText(e.target.value); setSimSpaceName(e.target.value); }}
                     placeholder="Descreva o espaço — ex: varanda interna, garagem, hall…"
-                    className="w-full border border-[#002045] px-4 py-3 text-sm font-[var(--font-inter)] text-[#002045] focus:outline-none" />
+                    className="w-full border border-[#0B1F45] px-4 py-3 text-sm text-[#0B1F45] focus:outline-none" />
                 )}
 
                 {/* Product line + cards */}
                 <div id="sim-products">
-                  <p className="text-[#002045] text-[10px] tracking-[0.15em] uppercase font-bold font-[var(--font-inter)] mb-3">2 — Escolha o modelo</p>
+                  <p className="text-[#0B1F45] text-[10px] tracking-[0.15em] uppercase font-bold mb-3">2 — Escolha o modelo</p>
                   <div className="grid grid-cols-3 gap-3 mb-4">
                     {(["Classic","Brilliance","Elegance"] as const).map(linha => {
                       const info = LINE_INFO_SIM[linha];
@@ -7479,11 +7479,11 @@ export default function AdminPage() {
                           setSimSelectedLine(linha); setSimProductCode("");
                           setTimeout(() => document.getElementById("sim-product-cards")?.scrollIntoView({ behavior: "smooth", block: "start" }), 60);
                         }}
-                          className={`border text-left p-4 transition-all relative ${active ? "border-[#002045] bg-[#eef2fb]" : "border-[#e2e2e2] hover:border-[#002045] bg-[#fafafa]"}`}>
-                          {active && <div className="absolute top-2 right-2 w-4 h-4 bg-[#002045] flex items-center justify-center"><svg width="8" height="8" viewBox="0 0 24 24" fill="none" stroke="white" strokeWidth="3"><path d="M20 6L9 17l-5-5"/></svg></div>}
-                          <p className="text-[#002045] text-sm font-bold font-[var(--font-inter)] mb-0.5">{linha}</p>
-                          <p className="text-[10px] tracking-[0.12em] uppercase font-bold font-[var(--font-inter)] text-[#3b6934] mb-2">{info.finish}</p>
-                          <p className="text-[#002045] text-xs font-bold font-[var(--font-inter)]">R$ {info.price.toLocaleString("pt-BR")}<span className="font-normal text-[#9e9e9e]">/placa</span></p>
+                          className={`border text-left p-4 transition-all relative ${active ? "border-[#0B1F45] bg-[#eef2fb]" : "border-[#e2e2e2] hover:border-[#0B1F45] bg-[#F6F5F2]"}`}>
+                          {active && <div className="absolute top-2 right-2 w-4 h-4 bg-[#0B1F45] flex items-center justify-center"><svg width="8" height="8" viewBox="0 0 24 24" fill="none" stroke="white" strokeWidth="3"><path d="M20 6L9 17l-5-5"/></svg></div>}
+                          <p className="text-[#0B1F45] text-sm font-bold mb-0.5">{linha}</p>
+                          <p className="text-[10px] tracking-[0.12em] uppercase font-bold text-[#1F7A44] mb-2">{info.finish}</p>
+                          <p className="text-[#0B1F45] text-xs font-bold">R$ {info.price.toLocaleString("pt-BR")}<span className="font-normal text-[#9e9e9e]">/placa</span></p>
                         </button>
                       );
                     })}
@@ -7491,9 +7491,9 @@ export default function AdminPage() {
 
                   {simSelectedLine && (
                     <div id="sim-product-cards">
-                      <p className="text-[#43474e] text-[10px] tracking-[0.15em] uppercase font-bold font-[var(--font-inter)] mb-3">Acabamentos {simSelectedLine}</p>
+                      <p className="text-[#43474e] text-[10px] tracking-[0.15em] uppercase font-bold mb-3">Acabamentos {simSelectedLine}</p>
                       {loadingDbProducts ? (
-                        <div className="flex items-center justify-center py-8"><div className="w-5 h-5 border-2 border-[#002045] border-t-transparent rounded-full animate-spin" /></div>
+                        <div className="flex items-center justify-center py-8"><div className="w-5 h-5 border-2 border-[#0B1F45] border-t-transparent rounded-full animate-spin" /></div>
                       ) : (
                         <div className="grid grid-cols-3 sm:grid-cols-4 md:grid-cols-5 gap-2">
                           {dbProducts.filter(p => p.linha === simSelectedLine && p.is_active).map(product => {
@@ -7503,15 +7503,15 @@ export default function AdminPage() {
                                 setSimProductCode(product.code);
                                 setTimeout(() => document.getElementById("sim-dims")?.scrollIntoView({ behavior: "smooth", block: "start" }), 60);
                               }}
-                                className={`border overflow-hidden cursor-pointer transition-all ${active ? "border-[#002045]" : "border-[#e2e2e2] hover:border-[#002045]"}`}>
-                                <div className="relative w-full bg-[#f7f7f5]" style={{ aspectRatio: "812/988" }}>
+                                className={`border overflow-hidden cursor-pointer transition-all ${active ? "border-[#0B1F45]" : "border-[#e2e2e2] hover:border-[#0B1F45]"}`}>
+                                <div className="relative w-full bg-[#F6F5F2]" style={{ aspectRatio: "812/988" }}>
                                   <img src={product.image_path} alt={product.name} className="absolute inset-0 w-full h-full object-contain" />
-                                  {active && <div className="absolute inset-0 bg-[#002045]/10" />}
-                                  {active && <div className="absolute top-1.5 right-1.5 w-5 h-5 bg-white shadow flex items-center justify-center"><svg width="9" height="9" viewBox="0 0 24 24" fill="none" stroke="#002045" strokeWidth="3"><path d="M20 6L9 17l-5-5"/></svg></div>}
+                                  {active && <div className="absolute inset-0 bg-[#0B1F45]/10" />}
+                                  {active && <div className="absolute top-1.5 right-1.5 w-5 h-5 bg-white shadow flex items-center justify-center"><svg width="9" height="9" viewBox="0 0 24 24" fill="none" stroke="#0B1F45" strokeWidth="3"><path d="M20 6L9 17l-5-5"/></svg></div>}
                                 </div>
                                 <div className="p-1.5">
-                                  <p className={`text-[10px] font-bold font-[var(--font-inter)] leading-tight ${active ? "text-[#002045]" : "text-[#43474e]"}`}>{product.name}</p>
-                                  <p className="text-[9px] text-[#9e9e9e] font-[var(--font-inter)]">{product.code}</p>
+                                  <p className={`text-[10px] font-bold leading-tight ${active ? "text-[#0B1F45]" : "text-[#43474e]"}`}>{product.name}</p>
+                                  <p className="text-[9px] text-[#9e9e9e]">{product.code}</p>
                                 </div>
                               </div>
                             );
@@ -7524,7 +7524,7 @@ export default function AdminPage() {
 
                 {/* Dimensions */}
                 <div id="sim-dims">
-                  <p className="text-[#002045] text-[10px] tracking-[0.15em] uppercase font-bold font-[var(--font-inter)] mb-3">3 — Dimensões</p>
+                  <p className="text-[#0B1F45] text-[10px] tracking-[0.15em] uppercase font-bold mb-3">3 — Dimensões</p>
                   <div className="grid grid-cols-2 gap-4">
                     <div>
                       <label className={labelCls}>Largura (m)</label>
@@ -7543,22 +7543,22 @@ export default function AdminPage() {
                     <div className="flex items-center gap-4 mb-3">
                       <img src={simProduct.image_path} alt={simProduct.name} className="w-12 h-12 object-cover border border-[#e2e2e2]" />
                       <div>
-                        <p className="text-[#002045] text-sm font-bold font-[var(--font-inter)]">{simProduct.name}</p>
-                        <p className="text-[#74777f] text-[10px] font-[var(--font-inter)]">{simSpaceName} · {simProduct.code}</p>
+                        <p className="text-[#0B1F45] text-sm font-bold">{simProduct.name}</p>
+                        <p className="text-[#74777f] text-[10px]">{simSpaceName} · {simProduct.code}</p>
                       </div>
                     </div>
                     <div className="grid grid-cols-3 gap-4 border-t border-[#dce8f5] pt-3">
                       <div>
-                        <p className="text-[#74777f] text-[9px] uppercase tracking-widest font-bold font-[var(--font-inter)]">Área</p>
-                        <p className="text-[#002045] text-sm font-semibold font-[var(--font-inter)]">{simArea.toFixed(2)} m²</p>
+                        <p className="text-[#74777f] text-[9px] uppercase tracking-widest font-bold">Área</p>
+                        <p className="text-[#0B1F45] text-sm font-semibold">{simArea.toFixed(2)} m²</p>
                       </div>
                       <div>
-                        <p className="text-[#74777f] text-[9px] uppercase tracking-widest font-bold font-[var(--font-inter)]">Placas</p>
-                        <p className="text-[#002045] text-sm font-semibold font-[var(--font-inter)]">{simPlates}</p>
+                        <p className="text-[#74777f] text-[9px] uppercase tracking-widest font-bold">Placas</p>
+                        <p className="text-[#0B1F45] text-sm font-semibold">{simPlates}</p>
                       </div>
                       <div>
-                        <p className="text-[#74777f] text-[9px] uppercase tracking-widest font-bold font-[var(--font-inter)]">Material</p>
-                        <p className="text-[#002045] text-sm font-semibold font-[var(--font-inter)]">{fmt(simMaterial)}</p>
+                        <p className="text-[#74777f] text-[9px] uppercase tracking-widest font-bold">Material</p>
+                        <p className="text-[#0B1F45] text-sm font-semibold">{fmt(simMaterial)}</p>
                       </div>
                     </div>
                   </div>
@@ -7566,18 +7566,18 @@ export default function AdminPage() {
 
                 {/* Add another + grand total + generate */}
                 <button disabled={!canAddSpace} onClick={addCurrentSpace}
-                  className="w-full py-2.5 text-xs tracking-[0.12em] uppercase font-bold font-[var(--font-inter)] border border-[#002045] text-[#002045] hover:bg-[#f0f4fa] transition-colors disabled:opacity-40">
+                  className="w-full py-2.5 text-xs tracking-[0.12em] uppercase font-bold border border-[#0B1F45] text-[#0B1F45] hover:bg-[#f0f4fa] transition-colors disabled:opacity-40">
                   <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" className="inline mr-1.5 mb-0.5"><path d="M12 5v14M5 12h14"/></svg>
                   Salvar e adicionar outro ambiente
                 </button>
 
                 {allSpaces.length > 1 && (
-                  <div className="bg-[#002045] px-5 py-4 flex items-center justify-between">
+                  <div className="bg-[#0B1F45] px-5 py-4 flex items-center justify-between">
                     <div>
-                      <p className="text-white/60 text-[9px] uppercase tracking-widest font-bold font-[var(--font-inter)]">Total do projeto</p>
-                      <p className="text-white/60 text-[10px] font-[var(--font-inter)]">{allSpaces.length} ambientes · {grandPlatesSim} placas</p>
+                      <p className="text-white/60 text-[9px] uppercase tracking-widest font-bold">Total do projeto</p>
+                      <p className="text-white/60 text-[10px]">{allSpaces.length} ambientes · {grandPlatesSim} placas</p>
                     </div>
-                    <p className="text-white text-xl font-[var(--font-noto-serif)]">{fmt(grandMaterialSim)}</p>
+                    <p className="text-white text-xl font-serif">{fmt(grandMaterialSim)}</p>
                   </div>
                 )}
 
@@ -7585,7 +7585,7 @@ export default function AdminPage() {
                   setSimLink(buildSimLink()); setSimLinkCopied(false);
                   setTimeout(() => document.getElementById("sim-link")?.scrollIntoView({ behavior: "smooth", block: "start" }), 80);
                 }}
-                  className="w-full py-3 text-xs tracking-[0.12em] uppercase font-bold font-[var(--font-inter)] bg-[#002045] text-white hover:bg-[#1a365d] transition-colors disabled:opacity-40">
+                  className="w-full py-3 text-xs tracking-[0.12em] uppercase font-bold bg-[#0B1F45] text-white hover:bg-[#2347A0] transition-colors disabled:opacity-40">
                   Gerar link para o cliente
                 </button>
               </div>
@@ -7594,12 +7594,12 @@ export default function AdminPage() {
               <div className="mt-4 bg-white border border-[#e2e2e2] p-5">
                 <div className="flex items-center justify-between mb-3">
                   <div>
-                    <p className="text-[10px] tracking-[0.15em] uppercase font-bold font-[var(--font-inter)] text-[#002045]">Cupom de desconto</p>
-                    <p className="text-[#74777f] text-xs font-[var(--font-inter)] mt-0.5">Opcional — aplicado automaticamente no link</p>
+                    <p className="text-[10px] tracking-[0.15em] uppercase font-bold text-[#0B1F45]">Cupom de desconto</p>
+                    <p className="text-[#74777f] text-xs mt-0.5">Opcional — aplicado automaticamente no link</p>
                   </div>
                   <button
                     onClick={() => { setShowCouponCreator(v => !v); if (!showCouponCreator) fetchAdminCoupons(); }}
-                    className="text-[9px] uppercase tracking-widest font-bold font-[var(--font-inter)] text-[#002045] border border-[#002045] px-3 py-1 hover:bg-[#002045] hover:text-white transition-colors"
+                    className="text-[9px] uppercase tracking-widest font-bold text-[#0B1F45] border border-[#0B1F45] px-3 py-1 hover:bg-[#0B1F45] hover:text-white transition-colors"
                   >
                     {showCouponCreator ? "Fechar" : "+ Criar cupom"}
                   </button>
@@ -7607,10 +7607,10 @@ export default function AdminPage() {
 
                 {/* Direct sale via sales rep — uses the rep's code + admin-set discount */}
                 <div className="mb-3 border-b border-[#e2e2e2] pb-3">
-                  <label className="block text-[10px] tracking-[0.15em] uppercase font-bold font-[var(--font-inter)] text-[#74777f] mb-2">Venda direta — Representante</label>
+                  <label className="block text-[10px] tracking-[0.15em] uppercase font-bold text-[#74777f] mb-2">Venda direta — Representante</label>
                   <div className="flex gap-3">
                     <select value={simRepCode} onChange={e => setSimRepCode(e.target.value)}
-                      className="flex-1 border border-[#e2e2e2] px-4 py-2.5 text-sm font-[var(--font-inter)] text-[#002045] focus:outline-none focus:border-[#002045] bg-white">
+                      className="flex-1 border border-[#e2e2e2] px-4 py-2.5 text-sm text-[#0B1F45] focus:outline-none focus:border-[#0B1F45] bg-white">
                       <option value="">Nenhum (cupom normal)</option>
                       {salesReps.filter(r => r.status === "active").map(r => (
                         <option key={r.id} value={r.referral_code}>{r.name} ({r.referral_code})</option>
@@ -7620,43 +7620,43 @@ export default function AdminPage() {
                       <input type="number" min="0" max="50" value={simRepDiscount} onChange={e => setSimRepDiscount(e.target.value)}
                         disabled={!simRepCode}
                         placeholder="Desc. %"
-                        className="w-full border border-[#e2e2e2] px-4 py-2.5 text-sm font-[var(--font-inter)] text-[#002045] focus:outline-none focus:border-[#002045] disabled:opacity-40" />
+                        className="w-full border border-[#e2e2e2] px-4 py-2.5 text-sm text-[#0B1F45] focus:outline-none focus:border-[#0B1F45] disabled:opacity-40" />
                     </div>
                   </div>
                   {simRepCode && (
-                    <p className="text-[#74777f] text-xs font-[var(--font-inter)] mt-2">A comissão do representante será calculada sobre o valor com desconto quando o cliente preencher os dados.</p>
+                    <p className="text-[#74777f] text-xs mt-2">A comissão do representante será calculada sobre o valor com desconto quando o cliente preencher os dados.</p>
                   )}
                 </div>
 
                 <input type="text" value={simCoupon} onChange={e => setSimCoupon(e.target.value.toUpperCase())}
                   disabled={!!simRepCode}
                   placeholder={simRepCode ? "Usando código do representante" : "Ex: PARCEIRO01 ou código gerado abaixo"}
-                  className="w-full border border-[#e2e2e2] px-4 py-2.5 text-sm font-[var(--font-inter)] text-[#002045] focus:outline-none focus:border-[#002045] disabled:opacity-40" />
+                  className="w-full border border-[#e2e2e2] px-4 py-2.5 text-sm text-[#0B1F45] focus:outline-none focus:border-[#0B1F45] disabled:opacity-40" />
 
                 {/* Coupon creator panel */}
                 {showCouponCreator && (
                   <div className="mt-4 border-t border-[#e2e2e2] pt-4 space-y-3">
-                    <p className="text-[10px] tracking-[0.12em] uppercase font-bold text-[#002045] font-[var(--font-inter)]">Criar novo cupom</p>
+                    <p className="text-[10px] tracking-[0.12em] uppercase font-bold text-[#0B1F45]">Criar novo cupom</p>
 
                     <div className="flex gap-3">
                       <div className="flex-1">
-                        <label className="block text-[10px] tracking-[0.15em] uppercase font-bold font-[var(--font-inter)] text-[#74777f] mb-2">Código</label>
+                        <label className="block text-[10px] tracking-[0.15em] uppercase font-bold text-[#74777f] mb-2">Código</label>
                         <input type="text" value={newCouponCode} onChange={e => setNewCouponCode(e.target.value.toUpperCase())} placeholder="Ex: AVISTA5"
-                          className="w-full border border-[#e2e2e2] px-4 py-2.5 text-sm font-[var(--font-inter)] text-[#002045] focus:outline-none focus:border-[#002045]" />
+                          className="w-full border border-[#e2e2e2] px-4 py-2.5 text-sm text-[#0B1F45] focus:outline-none focus:border-[#0B1F45]" />
                       </div>
                       <div className="w-24">
-                        <label className="block text-[10px] tracking-[0.15em] uppercase font-bold font-[var(--font-inter)] text-[#74777f] mb-2">Desconto %</label>
+                        <label className="block text-[10px] tracking-[0.15em] uppercase font-bold text-[#74777f] mb-2">Desconto %</label>
                         <input type="number" min="1" max="50" value={newCouponPct} onChange={e => setNewCouponPct(e.target.value)}
-                          className="w-full border border-[#e2e2e2] px-4 py-2.5 text-sm font-[var(--font-inter)] text-[#002045] focus:outline-none focus:border-[#002045]" />
+                          className="w-full border border-[#e2e2e2] px-4 py-2.5 text-sm text-[#0B1F45] focus:outline-none focus:border-[#0B1F45]" />
                       </div>
                     </div>
 
                     <div>
-                      <label className="block text-[10px] tracking-[0.15em] uppercase font-bold font-[var(--font-inter)] text-[#74777f] mb-2">Tipo de pagamento</label>
+                      <label className="block text-[10px] tracking-[0.15em] uppercase font-bold text-[#74777f] mb-2">Tipo de pagamento</label>
                       <div className="flex gap-2">
                         {([["a_vista","À Vista"],["parcelado","Parcelado"],["qualquer","Qualquer"]] as const).map(([val, label]) => (
                           <button key={val} onClick={() => setNewCouponPayment(val)}
-                            className={`flex-1 text-[10px] uppercase font-bold tracking-wider py-2 border transition-colors font-[var(--font-inter)] ${newCouponPayment === val ? "bg-[#002045] text-white border-[#002045]" : "border-[#e2e2e2] text-[#74777f] hover:border-[#002045]"}`}>
+                            className={`flex-1 text-[10px] uppercase font-bold tracking-wider py-2 border transition-colors ${newCouponPayment === val ? "bg-[#0B1F45] text-white border-[#0B1F45]" : "border-[#e2e2e2] text-[#74777f] hover:border-[#0B1F45]"}`}>
                             {label}
                           </button>
                         ))}
@@ -7664,45 +7664,45 @@ export default function AdminPage() {
                     </div>
 
                     <div>
-                      <label className="block text-[10px] tracking-[0.15em] uppercase font-bold font-[var(--font-inter)] text-[#74777f] mb-2">Tipo de uso</label>
+                      <label className="block text-[10px] tracking-[0.15em] uppercase font-bold text-[#74777f] mb-2">Tipo de uso</label>
                       <div className="flex gap-2">
                         {([["single_use","Uso único"],["temporary","Temporário"]] as const).map(([val, label]) => (
                           <button key={val} onClick={() => setNewCouponUsage(val)}
-                            className={`flex-1 text-[10px] uppercase font-bold tracking-wider py-2 border transition-colors font-[var(--font-inter)] ${newCouponUsage === val ? "bg-[#002045] text-white border-[#002045]" : "border-[#e2e2e2] text-[#74777f] hover:border-[#002045]"}`}>
+                            className={`flex-1 text-[10px] uppercase font-bold tracking-wider py-2 border transition-colors ${newCouponUsage === val ? "bg-[#0B1F45] text-white border-[#0B1F45]" : "border-[#e2e2e2] text-[#74777f] hover:border-[#0B1F45]"}`}>
                             {label}
                           </button>
                         ))}
                       </div>
                       {newCouponUsage === "temporary" && (
                         <div className="mt-2">
-                          <label className="block text-[10px] tracking-[0.15em] uppercase font-bold font-[var(--font-inter)] text-[#74777f] mb-2">Válido até</label>
+                          <label className="block text-[10px] tracking-[0.15em] uppercase font-bold text-[#74777f] mb-2">Válido até</label>
                           <input type="datetime-local" value={newCouponExpiry} onChange={e => setNewCouponExpiry(e.target.value)}
-                            className="w-full border border-[#e2e2e2] px-4 py-2.5 text-sm font-[var(--font-inter)] text-[#002045] focus:outline-none focus:border-[#002045]" />
+                            className="w-full border border-[#e2e2e2] px-4 py-2.5 text-sm text-[#0B1F45] focus:outline-none focus:border-[#0B1F45]" />
                         </div>
                       )}
                     </div>
 
                     <button disabled={couponCreating || !newCouponCode.trim()} onClick={createAdminCoupon}
-                      className="w-full py-2.5 text-xs tracking-[0.12em] uppercase font-bold font-[var(--font-inter)] bg-[#002045] text-white hover:bg-[#1a365d] transition-colors disabled:opacity-40">
+                      className="w-full py-2.5 text-xs tracking-[0.12em] uppercase font-bold bg-[#0B1F45] text-white hover:bg-[#2347A0] transition-colors disabled:opacity-40">
                       {couponCreating ? "Criando…" : "Criar cupom e aplicar ao link"}
                     </button>
 
-                    {couponCreatedMsg && <p className="text-[#2e7d32] text-sm font-[var(--font-inter)]">✓ {couponCreatedMsg}</p>}
+                    {couponCreatedMsg && <p className="text-[#2e7d32] text-sm">✓ {couponCreatedMsg}</p>}
 
                     {adminCoupons.length > 0 && (
                       <div className="border-t border-[#e2e2e2] pt-3 space-y-2">
-                        <p className="text-[10px] uppercase tracking-widest font-bold text-[#74777f] font-[var(--font-inter)]">Cupons existentes</p>
+                        <p className="text-[10px] uppercase tracking-widest font-bold text-[#74777f]">Cupons existentes</p>
                         {adminCoupons.map(c => (
-                          <div key={c.id} className="flex items-center justify-between bg-[#fafafa] border border-[#e2e2e2] px-3 py-2">
+                          <div key={c.id} className="flex items-center justify-between bg-[#F6F5F2] border border-[#e2e2e2] px-3 py-2">
                             <div>
-                              <span className="text-sm font-bold text-[#002045] font-[var(--font-inter)]">{c.code}</span>
-                              <span className="text-xs text-[#74777f] font-[var(--font-inter)] ml-2">{c.discount_pct}% · {c.payment_type === "a_vista" ? "à vista" : c.payment_type === "parcelado" ? "parcelado" : "qualquer"} · {c.usage_type === "single_use" ? "uso único" : "temporário"}</span>
+                              <span className="text-sm font-bold text-[#0B1F45]">{c.code}</span>
+                              <span className="text-xs text-[#74777f] ml-2">{c.discount_pct}% · {c.payment_type === "a_vista" ? "à vista" : c.payment_type === "parcelado" ? "parcelado" : "qualquer"} · {c.usage_type === "single_use" ? "uso único" : "temporário"}</span>
                               {c.used && <span className="text-[10px] text-[#d32f2f] font-bold ml-2">USADO</span>}
                               {c.expires_at && !c.used && <span className="text-[10px] text-[#f57c00] ml-2">até {new Date(c.expires_at).toLocaleDateString("pt-BR")}</span>}
                             </div>
                             <div className="flex items-center gap-2">
                               <button onClick={() => setSimCoupon(c.code)}
-                                className="text-[10px] uppercase font-bold text-[#002045] border border-[#002045] px-2 py-1 hover:bg-[#002045] hover:text-white transition-colors font-[var(--font-inter)]">
+                                className="text-[10px] uppercase font-bold text-[#0B1F45] border border-[#0B1F45] px-2 py-1 hover:bg-[#0B1F45] hover:text-white transition-colors">
                                 Usar
                               </button>
                               <button onClick={() => deleteAdminCoupon(c.id)} className="text-[#d32f2f] hover:text-[#b71c1c]">
@@ -7721,27 +7721,27 @@ export default function AdminPage() {
               <div id="sim-link" />
               {simLink && (
                 <div className="mt-6 bg-white border border-[#e2e2e2] p-6 space-y-4">
-                  <p className="text-[#002045] text-[10px] tracking-[0.15em] uppercase font-bold font-[var(--font-inter)]">Link gerado</p>
+                  <p className="text-[#0B1F45] text-[10px] tracking-[0.15em] uppercase font-bold">Link gerado</p>
 
                   <div className="flex gap-2">
                     <input readOnly value={simLink}
-                      className="flex-1 border border-[#e2e2e2] px-3 py-2 text-xs font-[var(--font-inter)] text-[#43474e] bg-[#fafafa] focus:outline-none select-all"
+                      className="flex-1 border border-[#e2e2e2] px-3 py-2 text-xs text-[#43474e] bg-[#F6F5F2] focus:outline-none select-all"
                       onClick={e => (e.target as HTMLInputElement).select()} />
                     <button
                       onClick={() => { navigator.clipboard.writeText(simLink); setSimLinkCopied(true); setTimeout(() => setSimLinkCopied(false), 2000); }}
-                      className="px-4 py-2 text-[10px] tracking-[0.1em] uppercase font-bold font-[var(--font-inter)] border border-[#002045] text-[#002045] hover:bg-[#002045] hover:text-white transition-colors whitespace-nowrap"
+                      className="px-4 py-2 text-[10px] tracking-[0.1em] uppercase font-bold border border-[#0B1F45] text-[#0B1F45] hover:bg-[#0B1F45] hover:text-white transition-colors whitespace-nowrap"
                     >
                       {simLinkCopied ? "Copiado ✓" : "Copiar"}
                     </button>
                   </div>
 
                   <a href={`https://wa.me/5592988150149?text=${waText}`} target="_blank" rel="noopener noreferrer"
-                    className="inline-flex items-center gap-2.5 bg-[#25d366] text-white text-xs tracking-[0.12em] uppercase font-bold font-[var(--font-inter)] px-5 py-3 hover:bg-[#1ebe5d] transition-colors">
+                    className="inline-flex items-center gap-2.5 bg-[#25d366] text-white text-xs tracking-[0.12em] uppercase font-bold px-5 py-3 hover:bg-[#1ebe5d] transition-colors">
                     <svg width="14" height="14" viewBox="0 0 24 24" fill="currentColor"><path d="M17.472 14.382c-.297-.149-1.758-.867-2.03-.967-.273-.099-.471-.148-.67.15-.197.297-.767.966-.94 1.164-.173.199-.347.223-.644.075-.297-.15-1.255-.463-2.39-1.475-.883-.788-1.48-1.761-1.653-2.059-.173-.297-.018-.458.13-.606.134-.133.298-.347.446-.52.149-.174.198-.298.298-.497.099-.198.05-.371-.025-.52-.075-.149-.669-1.612-.916-2.207-.242-.579-.487-.5-.669-.51-.173-.008-.371-.01-.57-.01-.198 0-.52.074-.792.372-.272.297-1.04 1.016-1.04 2.479 0 1.462 1.065 2.875 1.213 3.074.149.198 2.096 3.2 5.077 4.487.709.306 1.262.489 1.694.625.712.227 1.36.195 1.871.118.571-.085 1.758-.719 2.006-1.413.248-.694.248-1.289.173-1.413-.074-.124-.272-.198-.57-.347m-5.421 7.403h-.004a9.87 9.87 0 01-5.031-1.378l-.361-.214-3.741.982.998-3.648-.235-.374a9.86 9.86 0 01-1.51-5.26c.001-5.45 4.436-9.884 9.888-9.884 2.64 0 5.122 1.03 6.988 2.898a9.825 9.825 0 012.893 6.994c-.003 5.45-4.437 9.884-9.885 9.884m8.413-18.297A11.815 11.815 0 0012.05 0C5.495 0 .16 5.335.157 11.892c0 2.096.547 4.142 1.588 5.945L.057 24l6.305-1.654a11.882 11.882 0 005.683 1.448h.005c6.554 0 11.89-5.335 11.893-11.893a11.821 11.821 0 00-3.48-8.413z"/></svg>
                     Enviar via WhatsApp
                   </a>
 
-                  <p className="text-[#b0b4bb] text-[10px] font-[var(--font-inter)] leading-relaxed">
+                  <p className="text-[#b0b4bb] text-[10px] leading-relaxed">
                     {allSpaces.length > 1
                       ? `O link carrega os ${allSpaces.length} ambientes pré-configurados. O cliente só precisa preencher seus dados para finalizar.`
                       : `O link abre o simulador com espaço, produto e ${allSpaces[0]?.plates ?? 0} placas já pré-configurados.`
@@ -7757,31 +7757,31 @@ export default function AdminPage() {
         {tab === "chat" && (
           <div className="max-w-3xl mx-auto px-4 sm:px-8 py-8">
             <div className="mb-6">
-              <h2 className="font-[var(--font-noto-serif)] text-[#002045] text-2xl font-normal mb-2">Chat IA — Treinamento</h2>
-              <p className="text-[#43474e] text-sm font-[var(--font-inter)] leading-relaxed">
+              <h2 className="font-serif text-[#0B1F45] text-2xl font-normal mb-2">Chat IA — Treinamento</h2>
+              <p className="text-[#43474e] text-sm leading-relaxed">
                 Este é o prompt de sistema do assistente virtual. Edite aqui para corrigir respostas erradas, adicionar novos fatos ou criar regras de comportamento. O assistente usa este texto como base de conhecimento.
               </p>
             </div>
 
             <div className="bg-white border border-[#e2e2e2] p-6 space-y-4">
               <div className="flex items-center justify-between">
-                <p className="text-[10px] tracking-[0.15em] uppercase font-bold font-[var(--font-inter)] text-[#002045]">Prompt do sistema</p>
+                <p className="text-[10px] tracking-[0.15em] uppercase font-bold text-[#0B1F45]">Prompt do sistema</p>
                 <button
                   onClick={resetChatPrompt}
-                  className="text-[9px] uppercase tracking-widest font-bold font-[var(--font-inter)] text-[#74777f] border border-[#e2e2e2] px-3 py-1 hover:border-[#002045] hover:text-[#002045] transition-colors"
+                  className="text-[9px] uppercase tracking-widest font-bold text-[#74777f] border border-[#e2e2e2] px-3 py-1 hover:border-[#0B1F45] hover:text-[#0B1F45] transition-colors"
                 >
                   ↺ Restaurar padrão
                 </button>
               </div>
 
               {!chatPromptLoaded ? (
-                <p className="text-[#74777f] text-sm font-[var(--font-inter)]">Carregando…</p>
+                <p className="text-[#74777f] text-sm">Carregando…</p>
               ) : (
                 <textarea
                   value={chatPrompt}
                   onChange={e => setChatPrompt(e.target.value)}
                   rows={28}
-                  className="w-full border border-[#e2e2e2] px-4 py-3 text-xs font-mono text-[#1a1a1a] focus:outline-none focus:border-[#002045] resize-y leading-relaxed"
+                  className="w-full border border-[#e2e2e2] px-4 py-3 text-xs font-mono text-[#0D1830] focus:outline-none focus:border-[#0B1F45] resize-y leading-relaxed"
                   spellCheck={false}
                 />
               )}
@@ -7790,20 +7790,20 @@ export default function AdminPage() {
                 <button
                   disabled={chatPromptSaving || !chatPromptLoaded}
                   onClick={saveChatPrompt}
-                  className="bg-[#002045] text-white text-[10px] uppercase tracking-widest font-bold font-[var(--font-inter)] px-6 py-2.5 hover:bg-[#1a365d] transition-colors disabled:opacity-40"
+                  className="bg-[#0B1F45] text-white text-[10px] uppercase tracking-widest font-bold px-6 py-2.5 hover:bg-[#2347A0] transition-colors disabled:opacity-40"
                 >
                   {chatPromptSaving ? "Salvando…" : "Salvar e aplicar"}
                 </button>
                 {chatPromptMsg && (
-                  <p className={`text-sm font-[var(--font-inter)] ${chatPromptMsg.startsWith("Erro") ? "text-red-500" : "text-[#2e7d32]"}`}>
+                  <p className={`text-sm ${chatPromptMsg.startsWith("Erro") ? "text-red-500" : "text-[#2e7d32]"}`}>
                     {chatPromptMsg}
                   </p>
                 )}
               </div>
 
               <div className="border-t border-[#e2e2e2] pt-4">
-                <p className="text-[10px] tracking-[0.12em] uppercase font-bold font-[var(--font-inter)] text-[#74777f] mb-2">Dicas de treinamento</p>
-                <ul className="text-[11px] font-[var(--font-inter)] text-[#43474e] space-y-1 list-disc list-inside leading-relaxed">
+                <p className="text-[10px] tracking-[0.12em] uppercase font-bold text-[#74777f] mb-2">Dicas de treinamento</p>
+                <ul className="text-[11px] text-[#43474e] space-y-1 list-disc list-inside leading-relaxed">
                   <li>Para corrigir uma resposta errada, adicione em <strong>NUNCA DIGA</strong>: ex. <em>"Nunca diga que X — a resposta correta é Y"</em></li>
                   <li>Para adicionar um novo fato, cole no bloco <strong>SOBRE O PRODUTO PFB</strong> ou crie uma nova seção</li>
                   <li>Para mudar o tom (mais formal, mais curto, etc.), edite <strong>INSTRUÇÕES DE COMPORTAMENTO</strong></li>
@@ -7818,14 +7818,14 @@ export default function AdminPage() {
         {tab === "precos" && authed && (
           <div className="max-w-2xl mx-auto px-4 sm:px-8 py-8">
             <div className="mb-6">
-              <h2 className="font-[var(--font-noto-serif)] text-[#002045] text-2xl font-normal mb-2">Tabela de Preços — Parceiros</h2>
-              <p className="text-[#43474e] text-sm font-[var(--font-inter)] leading-relaxed">
+              <h2 className="font-serif text-[#0B1F45] text-2xl font-normal mb-2">Tabela de Preços — Parceiros</h2>
+              <p className="text-[#43474e] text-sm leading-relaxed">
                 Altere os preços aqui e eles são atualizados automaticamente no portal do parceiro, nas propostas e nos emails enviados quando a tabela especial é ativada.
               </p>
             </div>
 
             {!pricingLoaded ? (
-              <p className="text-[#74777f] text-sm font-[var(--font-inter)]">Carregando…</p>
+              <p className="text-[#74777f] text-sm">Carregando…</p>
             ) : (
               <div className="space-y-4">
                 {(pricingRows.length > 0
@@ -7842,39 +7842,39 @@ export default function AdminPage() {
                     <div key={row.linha} className="bg-white border border-[#e2e2e2] p-6">
                       <div className="flex items-start justify-between mb-5">
                         <div>
-                          <p className="font-bold text-[#002045] font-[var(--font-inter)]">{row.linha}</p>
-                          <p className="text-[#74777f] text-xs font-[var(--font-inter)]">{finish}</p>
+                          <p className="font-bold text-[#0B1F45]">{row.linha}</p>
+                          <p className="text-[#74777f] text-xs">{finish}</p>
                         </div>
-                        <span className="text-[9px] tracking-[0.15em] uppercase font-bold font-[var(--font-inter)] text-[#a0a3a8] border border-[#e2e2e2] px-2 py-1">Placa 2,9×1,2m</span>
+                        <span className="text-[9px] tracking-[0.15em] uppercase font-bold text-[#a0a3a8] border border-[#e2e2e2] px-2 py-1">Placa 2,9×1,2m</span>
                       </div>
                       <div className="grid grid-cols-2 gap-4 mb-4">
                         <div>
-                          <label className="block text-[10px] tracking-[0.12em] uppercase font-bold font-[var(--font-inter)] text-[#74777f] mb-1.5">
+                          <label className="block text-[10px] tracking-[0.12em] uppercase font-bold text-[#74777f] mb-1.5">
                             Preço especial (parceiro)
                           </label>
-                          <div className="flex items-center border border-[#e2e2e2] focus-within:border-[#002045] transition-colors">
-                            <span className="text-[#74777f] text-sm font-[var(--font-inter)] pl-3 pr-1">R$</span>
+                          <div className="flex items-center border border-[#e2e2e2] focus-within:border-[#0B1F45] transition-colors">
+                            <span className="text-[#74777f] text-sm pl-3 pr-1">R$</span>
                             <input
                               type="number"
                               min={1}
                               value={edit.special}
                               onChange={(e) => setPricingEdits((prev) => ({ ...prev, [row.linha]: { ...edit, special: e.target.value } }))}
-                              className="flex-1 py-2 pr-3 text-sm font-[var(--font-inter)] text-[#002045] font-bold focus:outline-none bg-transparent"
+                              className="flex-1 py-2 pr-3 text-sm text-[#0B1F45] font-bold focus:outline-none bg-transparent"
                             />
                           </div>
                         </div>
                         <div>
-                          <label className="block text-[10px] tracking-[0.12em] uppercase font-bold font-[var(--font-inter)] text-[#74777f] mb-1.5">
+                          <label className="block text-[10px] tracking-[0.12em] uppercase font-bold text-[#74777f] mb-1.5">
                             Preço público (referência)
                           </label>
-                          <div className="flex items-center border border-[#e2e2e2] focus-within:border-[#002045] transition-colors">
-                            <span className="text-[#74777f] text-sm font-[var(--font-inter)] pl-3 pr-1">R$</span>
+                          <div className="flex items-center border border-[#e2e2e2] focus-within:border-[#0B1F45] transition-colors">
+                            <span className="text-[#74777f] text-sm pl-3 pr-1">R$</span>
                             <input
                               type="number"
                               min={1}
                               value={edit.public_}
                               onChange={(e) => setPricingEdits((prev) => ({ ...prev, [row.linha]: { ...edit, public_: e.target.value } }))}
-                              className="flex-1 py-2 pr-3 text-sm font-[var(--font-inter)] text-[#002045] focus:outline-none bg-transparent"
+                              className="flex-1 py-2 pr-3 text-sm text-[#0B1F45] focus:outline-none bg-transparent"
                             />
                           </div>
                         </div>
@@ -7883,12 +7883,12 @@ export default function AdminPage() {
                         <button
                           disabled={pricingSaving[row.linha]}
                           onClick={() => savePricing(row.linha)}
-                          className="bg-[#002045] text-white text-[10px] uppercase tracking-widest font-bold font-[var(--font-inter)] px-6 py-2.5 hover:bg-[#1a365d] transition-colors disabled:opacity-40"
+                          className="bg-[#0B1F45] text-white text-[10px] uppercase tracking-widest font-bold px-6 py-2.5 hover:bg-[#2347A0] transition-colors disabled:opacity-40"
                         >
                           {pricingSaving[row.linha] ? "Salvando…" : "Salvar"}
                         </button>
                         {pricingMsg[row.linha] && (
-                          <p className={`text-sm font-[var(--font-inter)] ${pricingMsg[row.linha].startsWith("Erro") || pricingMsg[row.linha].startsWith("Valores") ? "text-red-500" : "text-[#2e7d32]"}`}>
+                          <p className={`text-sm ${pricingMsg[row.linha].startsWith("Erro") || pricingMsg[row.linha].startsWith("Valores") ? "text-red-500" : "text-[#2e7d32]"}`}>
                             {pricingMsg[row.linha]}
                           </p>
                         )}
@@ -7898,8 +7898,8 @@ export default function AdminPage() {
                 })}
 
                 <div className="bg-[#fffbea] border border-[#e6c84a] px-5 py-4">
-                  <p className="text-[#6b5000] text-[10px] tracking-[0.15em] uppercase font-bold font-[var(--font-inter)] mb-2">Onde estes preços aparecem</p>
-                  <ul className="text-[#6b5000] text-xs font-[var(--font-inter)] space-y-1 leading-relaxed">
+                  <p className="text-[#6b5000] text-[10px] tracking-[0.15em] uppercase font-bold mb-2">Onde estes preços aparecem</p>
+                  <ul className="text-[#6b5000] text-xs space-y-1 leading-relaxed">
                     <li>· Portal do parceiro — tabela de preços e seletor de linha no simulador de orçamento</li>
                     <li>· Email enviado quando a tabela especial é ativada para um parceiro</li>
                     <li>· O preço especial é usado nos cálculos de orçamento gerados pelo parceiro</li>
@@ -7908,12 +7908,12 @@ export default function AdminPage() {
 
                 {/* Regras comerciais do fluxo de orçamento (motor central) */}
                 <div className="bg-white border border-[#e2e2e2] p-6 mt-8">
-                  <h3 className="font-[var(--font-noto-serif)] text-[#002045] text-lg font-normal mb-1">Regras do orçamento público</h3>
-                  <p className="text-[#74777f] text-xs font-[var(--font-inter)] mb-5 leading-relaxed">
+                  <h3 className="font-serif text-[#0B1F45] text-lg font-normal mb-1">Regras do orçamento público</h3>
+                  <p className="text-[#74777f] text-xs mb-5 leading-relaxed">
                     Cola PU, frete, desconto à vista, validade e instalação. Aplicadas em tempo real no site, no PDF e no WhatsApp.
                   </p>
                   {!orcCfg ? (
-                    <p className="text-[#74777f] text-sm font-[var(--font-inter)]">Carregando…</p>
+                    <p className="text-[#74777f] text-sm">Carregando…</p>
                   ) : (
                     <div className="space-y-5">
                       {([
@@ -7926,12 +7926,12 @@ export default function AdminPage() {
                         if (i % 2 === 0) rows.push([]);
                         rows[rows.length - 1].push(
                           <div key={item[0]}>
-                            <label className="block text-[10px] tracking-[0.12em] uppercase font-bold font-[var(--font-inter)] text-[#74777f] mb-1.5">{item[1]}</label>
+                            <label className="block text-[10px] tracking-[0.12em] uppercase font-bold text-[#74777f] mb-1.5">{item[1]}</label>
                             <input
                               type="number" step={item[3]} min={0}
                               value={String(orcCfg[item[0]] ?? item[2])}
                               onChange={(e) => setOrcCfgField(item[0], parseFloat(e.target.value))}
-                              className="w-full border border-[#e2e2e2] px-3 py-2 text-sm font-[var(--font-inter)] text-[#002045] font-bold focus:outline-none focus:border-[#002045]"
+                              className="w-full border border-[#e2e2e2] px-3 py-2 text-sm text-[#0B1F45] font-bold focus:outline-none focus:border-[#0B1F45]"
                             />
                           </div>
                         );
@@ -7941,60 +7941,60 @@ export default function AdminPage() {
                       ))}
 
                       <div>
-                        <label className="block text-[10px] tracking-[0.12em] uppercase font-bold font-[var(--font-inter)] text-[#74777f] mb-1.5">Escopo do desconto</label>
+                        <label className="block text-[10px] tracking-[0.12em] uppercase font-bold text-[#74777f] mb-1.5">Escopo do desconto</label>
                         <select
                           value={String(orcCfg.discountScope ?? "placas")}
                           onChange={(e) => setOrcCfgField("discountScope", e.target.value)}
-                          className="w-full border border-[#e2e2e2] px-3 py-2 text-sm font-[var(--font-inter)] text-[#002045] focus:outline-none focus:border-[#002045]"
+                          className="w-full border border-[#e2e2e2] px-3 py-2 text-sm text-[#0B1F45] focus:outline-none focus:border-[#0B1F45]"
                         >
                           <option value="placas">Somente placas</option>
                           <option value="placas_cola">Placas + Cola PU</option>
                           <option value="subtotal">Subtotal dos produtos</option>
                         </select>
-                        <p className="text-[#a0a3a8] text-[10px] font-[var(--font-inter)] mt-1">O frete nunca recebe desconto.</p>
+                        <p className="text-[#a0a3a8] text-[10px] mt-1">O frete nunca recebe desconto.</p>
                       </div>
 
                       <div className="grid grid-cols-2 gap-4">
                         <div>
-                          <label className="block text-[10px] tracking-[0.12em] uppercase font-bold font-[var(--font-inter)] text-[#74777f] mb-1.5">Empresa instaladora</label>
-                          <input value={String(orcCfg.installerName ?? "")} onChange={(e) => setOrcCfgField("installerName", e.target.value)} className="w-full border border-[#e2e2e2] px-3 py-2 text-sm font-[var(--font-inter)] text-[#002045] focus:outline-none focus:border-[#002045]" />
+                          <label className="block text-[10px] tracking-[0.12em] uppercase font-bold text-[#74777f] mb-1.5">Empresa instaladora</label>
+                          <input value={String(orcCfg.installerName ?? "")} onChange={(e) => setOrcCfgField("installerName", e.target.value)} className="w-full border border-[#e2e2e2] px-3 py-2 text-sm text-[#0B1F45] focus:outline-none focus:border-[#0B1F45]" />
                         </div>
                         <div>
-                          <label className="block text-[10px] tracking-[0.12em] uppercase font-bold font-[var(--font-inter)] text-[#74777f] mb-1.5">Telefone da instaladora</label>
-                          <input value={String(orcCfg.installerPhone ?? "")} onChange={(e) => setOrcCfgField("installerPhone", e.target.value)} className="w-full border border-[#e2e2e2] px-3 py-2 text-sm font-[var(--font-inter)] text-[#002045] focus:outline-none focus:border-[#002045]" />
+                          <label className="block text-[10px] tracking-[0.12em] uppercase font-bold text-[#74777f] mb-1.5">Telefone da instaladora</label>
+                          <input value={String(orcCfg.installerPhone ?? "")} onChange={(e) => setOrcCfgField("installerPhone", e.target.value)} className="w-full border border-[#e2e2e2] px-3 py-2 text-sm text-[#0B1F45] focus:outline-none focus:border-[#0B1F45]" />
                         </div>
                       </div>
 
                       <label className="flex items-center gap-2 cursor-pointer">
                         <input type="checkbox" checked={orcCfg.leadMessageEnabled !== false} onChange={(e) => setOrcCfgField("leadMessageEnabled", e.target.checked)} />
-                        <span className="text-[#43474e] text-sm font-[var(--font-inter)]">Enviar mensagem de recuperação de simulação ao lead</span>
+                        <span className="text-[#43474e] text-sm">Enviar mensagem de recuperação de simulação ao lead</span>
                       </label>
 
                       {/* Follow-ups do orçamento formalizado (§33) */}
                       <div className="border border-[#e2e2e2] p-3">
                         <label className="flex items-center gap-2 cursor-pointer mb-2">
                           <input type="checkbox" checked={orcCfg.followupEnabled === true} onChange={(e) => setOrcCfgField("followupEnabled", e.target.checked)} />
-                          <span className="text-[#43474e] text-sm font-[var(--font-inter)] font-semibold">Acompanhar orçamentos formalizados por WhatsApp</span>
+                          <span className="text-[#43474e] text-sm font-semibold">Acompanhar orçamentos formalizados por WhatsApp</span>
                         </label>
                         <div className="grid grid-cols-2 gap-3 mb-2">
                           <div>
-                            <label className="block text-[10px] tracking-[0.12em] uppercase font-bold font-[var(--font-inter)] text-[#74777f] mb-1">1º após (horas)</label>
-                            <input type="number" min={1} value={String(orcCfg.followup1Hours ?? 24)} onChange={(e) => setOrcCfgField("followup1Hours", parseInt(e.target.value) || 0)} className="w-full border border-[#e2e2e2] px-3 py-2 text-sm font-[var(--font-inter)] text-[#002045] focus:outline-none focus:border-[#002045]" />
+                            <label className="block text-[10px] tracking-[0.12em] uppercase font-bold text-[#74777f] mb-1">1º após (horas)</label>
+                            <input type="number" min={1} value={String(orcCfg.followup1Hours ?? 24)} onChange={(e) => setOrcCfgField("followup1Hours", parseInt(e.target.value) || 0)} className="w-full border border-[#e2e2e2] px-3 py-2 text-sm text-[#0B1F45] focus:outline-none focus:border-[#0B1F45]" />
                           </div>
                           <div>
-                            <label className="block text-[10px] tracking-[0.12em] uppercase font-bold font-[var(--font-inter)] text-[#74777f] mb-1">Último após (horas)</label>
-                            <input type="number" min={1} value={String(orcCfg.followup2Hours ?? 72)} onChange={(e) => setOrcCfgField("followup2Hours", parseInt(e.target.value) || 0)} className="w-full border border-[#e2e2e2] px-3 py-2 text-sm font-[var(--font-inter)] text-[#002045] focus:outline-none focus:border-[#002045]" />
+                            <label className="block text-[10px] tracking-[0.12em] uppercase font-bold text-[#74777f] mb-1">Último após (horas)</label>
+                            <input type="number" min={1} value={String(orcCfg.followup2Hours ?? 72)} onChange={(e) => setOrcCfgField("followup2Hours", parseInt(e.target.value) || 0)} className="w-full border border-[#e2e2e2] px-3 py-2 text-sm text-[#0B1F45] focus:outline-none focus:border-[#0B1F45]" />
                           </div>
                         </div>
-                        <label className="block text-[10px] tracking-[0.12em] uppercase font-bold font-[var(--font-inter)] text-[#74777f] mb-1">Mensagem 1 <span className="normal-case text-[#a0a3a8]">({'{nome}'}, {'{numero}'})</span></label>
-                        <textarea value={String(orcCfg.followup1Message ?? "")} onChange={(e) => setOrcCfgField("followup1Message", e.target.value)} rows={2} className="w-full border border-[#e2e2e2] px-3 py-2 text-sm font-[var(--font-inter)] text-[#43474e] focus:outline-none focus:border-[#002045] resize-none mb-2" />
-                        <label className="block text-[10px] tracking-[0.12em] uppercase font-bold font-[var(--font-inter)] text-[#74777f] mb-1">Mensagem 2</label>
-                        <textarea value={String(orcCfg.followup2Message ?? "")} onChange={(e) => setOrcCfgField("followup2Message", e.target.value)} rows={2} className="w-full border border-[#e2e2e2] px-3 py-2 text-sm font-[var(--font-inter)] text-[#43474e] focus:outline-none focus:border-[#002045]" />
-                        <p className="text-[#a0a3a8] text-[10px] font-[var(--font-inter)] mt-1">Para ao converter em pedido, ao expirar, no opt-out, ou após os 2 envios. Máx. 1 por dia.</p>
+                        <label className="block text-[10px] tracking-[0.12em] uppercase font-bold text-[#74777f] mb-1">Mensagem 1 <span className="normal-case text-[#a0a3a8]">({'{nome}'}, {'{numero}'})</span></label>
+                        <textarea value={String(orcCfg.followup1Message ?? "")} onChange={(e) => setOrcCfgField("followup1Message", e.target.value)} rows={2} className="w-full border border-[#e2e2e2] px-3 py-2 text-sm text-[#43474e] focus:outline-none focus:border-[#0B1F45] resize-none mb-2" />
+                        <label className="block text-[10px] tracking-[0.12em] uppercase font-bold text-[#74777f] mb-1">Mensagem 2</label>
+                        <textarea value={String(orcCfg.followup2Message ?? "")} onChange={(e) => setOrcCfgField("followup2Message", e.target.value)} rows={2} className="w-full border border-[#e2e2e2] px-3 py-2 text-sm text-[#43474e] focus:outline-none focus:border-[#0B1F45]" />
+                        <p className="text-[#a0a3a8] text-[10px] mt-1">Para ao converter em pedido, ao expirar, no opt-out, ou após os 2 envios. Máx. 1 por dia.</p>
                       </div>
 
                       <div className="bg-[#f7f8fa] border border-[#e2e2e2] px-4 py-2.5">
-                        <p className="text-[#74777f] text-[11px] font-[var(--font-inter)] leading-relaxed">
+                        <p className="text-[#74777f] text-[11px] leading-relaxed">
                           Parcelamento sem juros (faixas): 2–4 → 3x · 5–7 → 4x · 8–12 → 6x · 13+ → 10x. Uma placa não recebe promoção automática.
                         </p>
                       </div>
@@ -8003,12 +8003,12 @@ export default function AdminPage() {
                         <button
                           disabled={orcCfgSaving}
                           onClick={saveOrcCfg}
-                          className="bg-[#002045] text-white text-[10px] uppercase tracking-widest font-bold font-[var(--font-inter)] px-6 py-2.5 hover:bg-[#1a365d] transition-colors disabled:opacity-40"
+                          className="bg-[#0B1F45] text-white text-[10px] uppercase tracking-widest font-bold px-6 py-2.5 hover:bg-[#2347A0] transition-colors disabled:opacity-40"
                         >
                           {orcCfgSaving ? "Salvando…" : "Salvar regras"}
                         </button>
                         {orcCfgMsg && (
-                          <p className={`text-sm font-[var(--font-inter)] ${orcCfgMsg.startsWith("Erro") ? "text-red-500" : "text-[#2e7d32]"}`}>{orcCfgMsg}</p>
+                          <p className={`text-sm ${orcCfgMsg.startsWith("Erro") ? "text-red-500" : "text-[#2e7d32]"}`}>{orcCfgMsg}</p>
                         )}
                       </div>
                     </div>
@@ -8017,11 +8017,11 @@ export default function AdminPage() {
 
                 {/* Zonas de frete por CEP */}
                 <div className="bg-white border border-[#e2e2e2] p-6 mt-8">
-                  <h3 className="font-[var(--font-noto-serif)] text-[#002045] text-lg font-normal mb-1">Zonas de frete por CEP</h3>
-                  <p className="text-[#74777f] text-xs font-[var(--font-inter)] mb-5 leading-relaxed">
+                  <h3 className="font-serif text-[#0B1F45] text-lg font-normal mb-1">Zonas de frete por CEP</h3>
+                  <p className="text-[#74777f] text-xs mb-5 leading-relaxed">
                     Sem nenhuma zona, o frete usa o valor-base. Na formalização, o CEP do cliente define o valor. ≥ 5 placas mantém frete grátis.
                   </p>
-                  <p className="text-[#74777f] text-xs font-[var(--font-inter)] mb-5 -mt-3 leading-relaxed">
+                  <p className="text-[#74777f] text-xs mb-5 -mt-3 leading-relaxed">
                     Pedidos do admin: frete automático de R$ {FRETE_PADRAO} (também sem CEP) e R$ {FRETE_DISTANTE} nos bairros distantes: {BAIRROS_DISTANTES.join(", ")}. Uma zona abaixo que case pelo CEP ou pelo bairro vale no lugar. O valor sempre pode ser alterado no pedido.
                   </p>
 
@@ -8030,16 +8030,16 @@ export default function AdminPage() {
                       {freteZones.map((z) => (
                         <div key={z.id} className="flex flex-wrap items-center gap-3 px-3 py-2.5">
                           <div className="min-w-0 flex-1">
-                            <p className="text-[#002045] text-sm font-semibold font-[var(--font-inter)]">{z.name}</p>
-                            <p className="text-[#74777f] text-[11px] font-[var(--font-inter)]">
+                            <p className="text-[#0B1F45] text-sm font-semibold">{z.name}</p>
+                            <p className="text-[#74777f] text-[11px]">
                               {z.cep_start && z.cep_end ? `${z.cep_start}–${z.cep_end}` : ""}{z.cep_list ? ` · lista: ${z.cep_list.slice(0, 40)}` : ""}{z.neighborhoods ? ` · ${z.neighborhoods}` : ""}
                             </p>
                           </div>
                           <div className="flex items-center gap-1">
                             <span className="text-[#74777f] text-xs">R$</span>
-                            <input type="number" min="0" defaultValue={z.value} onBlur={(e) => { const v = parseFloat(e.target.value) || 0; if (v !== z.value) patchFreteZone(z.id, { value: v }); }} className="w-20 border border-[#e2e2e2] px-2 py-1 text-sm font-[var(--font-inter)] text-[#002045] focus:outline-none focus:border-[#002045]" />
+                            <input type="number" min="0" defaultValue={z.value} onBlur={(e) => { const v = parseFloat(e.target.value) || 0; if (v !== z.value) patchFreteZone(z.id, { value: v }); }} className="w-20 border border-[#e2e2e2] px-2 py-1 text-sm text-[#0B1F45] focus:outline-none focus:border-[#0B1F45]" />
                           </div>
-                          <label className="flex items-center gap-1 text-[11px] font-[var(--font-inter)] text-[#43474e] cursor-pointer">
+                          <label className="flex items-center gap-1 text-[11px] text-[#43474e] cursor-pointer">
                             <input type="checkbox" checked={z.active} onChange={(e) => patchFreteZone(z.id, { active: e.target.checked })} /> ativa
                           </label>
                           <button onClick={() => deleteFreteZone(z.id)} className="text-[#cc0000] hover:text-white hover:bg-[#cc0000] w-7 h-7 flex items-center justify-center text-sm font-bold transition-colors" aria-label="Remover zona">✕</button>
@@ -8050,29 +8050,29 @@ export default function AdminPage() {
 
                   {/* Add zone */}
                   <div className="bg-[#f7f8fa] border border-[#e2e2e2] p-3">
-                    <p className="text-[10px] tracking-[0.12em] uppercase font-bold font-[var(--font-inter)] text-[#74777f] mb-2">Nova zona</p>
+                    <p className="text-[10px] tracking-[0.12em] uppercase font-bold text-[#74777f] mb-2">Nova zona</p>
                     <div className="grid grid-cols-2 sm:grid-cols-4 gap-2">
-                      <input value={newZone.name} onChange={(e) => setNewZone({...newZone, name: e.target.value})} placeholder="Nome (ex. Centro)" className="col-span-2 sm:col-span-1 border border-[#e2e2e2] px-2 py-1.5 text-sm font-[var(--font-inter)] text-[#002045] focus:outline-none focus:border-[#002045]" />
-                      <input value={newZone.cep_start} onChange={(e) => setNewZone({...newZone, cep_start: e.target.value})} placeholder="CEP inicial" inputMode="numeric" className="border border-[#e2e2e2] px-2 py-1.5 text-sm font-[var(--font-inter)] text-[#002045] focus:outline-none focus:border-[#002045]" />
-                      <input value={newZone.cep_end} onChange={(e) => setNewZone({...newZone, cep_end: e.target.value})} placeholder="CEP final" inputMode="numeric" className="border border-[#e2e2e2] px-2 py-1.5 text-sm font-[var(--font-inter)] text-[#002045] focus:outline-none focus:border-[#002045]" />
+                      <input value={newZone.name} onChange={(e) => setNewZone({...newZone, name: e.target.value})} placeholder="Nome (ex. Centro)" className="col-span-2 sm:col-span-1 border border-[#e2e2e2] px-2 py-1.5 text-sm text-[#0B1F45] focus:outline-none focus:border-[#0B1F45]" />
+                      <input value={newZone.cep_start} onChange={(e) => setNewZone({...newZone, cep_start: e.target.value})} placeholder="CEP inicial" inputMode="numeric" className="border border-[#e2e2e2] px-2 py-1.5 text-sm text-[#0B1F45] focus:outline-none focus:border-[#0B1F45]" />
+                      <input value={newZone.cep_end} onChange={(e) => setNewZone({...newZone, cep_end: e.target.value})} placeholder="CEP final" inputMode="numeric" className="border border-[#e2e2e2] px-2 py-1.5 text-sm text-[#0B1F45] focus:outline-none focus:border-[#0B1F45]" />
                       <div className="flex items-center gap-1">
                         <span className="text-[#74777f] text-xs">R$</span>
-                        <input value={newZone.value} onChange={(e) => setNewZone({...newZone, value: e.target.value})} placeholder="150" inputMode="decimal" className="w-full border border-[#e2e2e2] px-2 py-1.5 text-sm font-[var(--font-inter)] text-[#002045] focus:outline-none focus:border-[#002045]" />
+                        <input value={newZone.value} onChange={(e) => setNewZone({...newZone, value: e.target.value})} placeholder="150" inputMode="decimal" className="w-full border border-[#e2e2e2] px-2 py-1.5 text-sm text-[#0B1F45] focus:outline-none focus:border-[#0B1F45]" />
                       </div>
                     </div>
-                    <input value={newZone.neighborhoods} onChange={(e) => setNewZone({...newZone, neighborhoods: e.target.value})} placeholder="Bairros (ex. Ponta Negra, Tarumã) — também definem o frete dos pedidos" className="w-full mt-2 border border-[#e2e2e2] px-2 py-1.5 text-sm font-[var(--font-inter)] text-[#002045] focus:outline-none focus:border-[#002045]" />
-                    <button onClick={addFreteZone} disabled={zoneSaving || !newZone.name.trim()} className="mt-2 bg-[#002045] text-white text-[10px] uppercase tracking-widest font-bold font-[var(--font-inter)] px-5 py-2 hover:bg-[#1a365d] transition-colors disabled:opacity-40">
+                    <input value={newZone.neighborhoods} onChange={(e) => setNewZone({...newZone, neighborhoods: e.target.value})} placeholder="Bairros (ex. Ponta Negra, Tarumã) — também definem o frete dos pedidos" className="w-full mt-2 border border-[#e2e2e2] px-2 py-1.5 text-sm text-[#0B1F45] focus:outline-none focus:border-[#0B1F45]" />
+                    <button onClick={addFreteZone} disabled={zoneSaving || !newZone.name.trim()} className="mt-2 bg-[#0B1F45] text-white text-[10px] uppercase tracking-widest font-bold px-5 py-2 hover:bg-[#2347A0] transition-colors disabled:opacity-40">
                       {zoneSaving ? "Salvando…" : "Adicionar zona"}
                     </button>
                   </div>
 
                   {/* CEP tester */}
                   <div className="mt-4 flex flex-wrap items-center gap-2">
-                    <span className="text-[10px] tracking-[0.12em] uppercase font-bold font-[var(--font-inter)] text-[#74777f]">Testar CEP</span>
-                    <input value={cepTest} onChange={(e) => setCepTest(e.target.value)} placeholder="69010-000" inputMode="numeric" className="border border-[#e2e2e2] px-2 py-1.5 text-sm font-[var(--font-inter)] text-[#002045] w-36 focus:outline-none focus:border-[#002045]" />
+                    <span className="text-[10px] tracking-[0.12em] uppercase font-bold text-[#74777f]">Testar CEP</span>
+                    <input value={cepTest} onChange={(e) => setCepTest(e.target.value)} placeholder="69010-000" inputMode="numeric" className="border border-[#e2e2e2] px-2 py-1.5 text-sm text-[#0B1F45] w-36 focus:outline-none focus:border-[#0B1F45]" />
                     {cepTest.replace(/\D/g, "").length >= 8 && (() => {
                       const z = zoneForCep(cepTest);
-                      return <span className={`text-xs font-semibold font-[var(--font-inter)] ${z ? "text-[#3b6934]" : "text-[#74777f]"}`}>{z ? `${z.name} — R$ ${z.value}` : "Sem zona → frete-base"}</span>;
+                      return <span className={`text-xs font-semibold ${z ? "text-[#1F7A44]" : "text-[#74777f]"}`}>{z ? `${z.name} — R$ ${z.value}` : "Sem zona → frete-base"}</span>;
                     })()}
                   </div>
                 </div>
@@ -8089,45 +8089,45 @@ export default function AdminPage() {
         <div className="fixed inset-0 z-[300] bg-black/60 flex items-center justify-center p-4" onClick={() => { if (!cancelSubmitting) setCancelCommTarget(null); }}>
           <div className="bg-white w-full max-w-md" onClick={(e) => e.stopPropagation()}>
             <div className="bg-[#cc0000] px-5 py-3">
-              <p className="text-white font-[var(--font-noto-serif)] text-base">Cancelar comissão</p>
+              <p className="text-white font-serif text-base">Cancelar comissão</p>
             </div>
             <div className="px-5 py-5 space-y-4">
-              <p className="text-[#43474e] text-[13px] font-[var(--font-inter)] leading-relaxed">
+              <p className="text-[#43474e] text-[13px] leading-relaxed">
                 Cancela apenas a comissão gerada — <strong>não</strong> exclui o orçamento, pedido, cliente ou projeto. Comissões já pagas não podem ser canceladas aqui.
               </p>
               <div className="space-y-2">
                 {cancelCommTarget.partnerEligible && (
                   <label className="flex items-center justify-between gap-3 border border-[#e2e2e2] px-3 py-2 cursor-pointer">
-                    <span className="flex items-center gap-2 text-sm font-[var(--font-inter)] text-[#002045]">
+                    <span className="flex items-center gap-2 text-sm text-[#0B1F45]">
                       <input type="checkbox" checked={cancelWhich.partner} onChange={(e) => setCancelWhich((w) => ({ ...w, partner: e.target.checked }))} />
                       Parceiro — {cancelCommTarget.partnerName}
                     </span>
-                    <span className="text-sm font-semibold text-[#002045]">{fmt(cancelCommTarget.partnerAmount)}</span>
+                    <span className="text-sm font-semibold text-[#0B1F45]">{fmt(cancelCommTarget.partnerAmount)}</span>
                   </label>
                 )}
                 {cancelCommTarget.repEligible && (
                   <label className="flex items-center justify-between gap-3 border border-[#e2e2e2] px-3 py-2 cursor-pointer">
-                    <span className="flex items-center gap-2 text-sm font-[var(--font-inter)] text-[#002045]">
+                    <span className="flex items-center gap-2 text-sm text-[#0B1F45]">
                       <input type="checkbox" checked={cancelWhich.rep} onChange={(e) => setCancelWhich((w) => ({ ...w, rep: e.target.checked }))} />
                       Representante — {cancelCommTarget.repName}
                     </span>
-                    <span className="text-sm font-semibold text-[#1a365d]">{fmt(cancelCommTarget.repAmount)}</span>
+                    <span className="text-sm font-semibold text-[#2347A0]">{fmt(cancelCommTarget.repAmount)}</span>
                   </label>
                 )}
               </div>
               <div>
-                <label className="block text-[10px] tracking-[0.12em] uppercase font-bold font-[var(--font-inter)] text-[#74777f] mb-1">Motivo do cancelamento</label>
-                <textarea value={cancelReason} onChange={(e) => setCancelReason(e.target.value)} rows={2} placeholder="Ex.: status marcado por engano / cliente não aprovou o projeto" className="w-full border border-[#e2e2e2] px-3 py-2 text-sm font-[var(--font-inter)] text-[#43474e] focus:outline-none focus:border-[#002045] resize-none" />
+                <label className="block text-[10px] tracking-[0.12em] uppercase font-bold text-[#74777f] mb-1">Motivo do cancelamento</label>
+                <textarea value={cancelReason} onChange={(e) => setCancelReason(e.target.value)} rows={2} placeholder="Ex.: status marcado por engano / cliente não aprovou o projeto" className="w-full border border-[#e2e2e2] px-3 py-2 text-sm text-[#43474e] focus:outline-none focus:border-[#0B1F45] resize-none" />
               </div>
               <div className="flex gap-2">
                 <button
                   onClick={() => { if (confirm("Confirmar o cancelamento das comissões selecionadas? Elas sairão de 'A pagar' e ficarão no histórico como Canceladas.")) void submitCancelCommission(); }}
                   disabled={cancelSubmitting || (!cancelWhich.partner && !cancelWhich.rep)}
-                  className="flex-1 bg-[#cc0000] text-white text-xs tracking-[0.1em] uppercase font-bold font-[var(--font-inter)] py-2.5 hover:bg-[#a30000] transition-colors disabled:opacity-50"
+                  className="flex-1 bg-[#cc0000] text-white text-xs tracking-[0.1em] uppercase font-bold py-2.5 hover:bg-[#a30000] transition-colors disabled:opacity-50"
                 >
                   {cancelSubmitting ? "Cancelando…" : "Cancelar comissão"}
                 </button>
-                <button onClick={() => setCancelCommTarget(null)} disabled={cancelSubmitting} className="flex-1 border border-[#e2e2e2] text-[#43474e] text-xs tracking-[0.1em] uppercase font-bold font-[var(--font-inter)] py-2.5 hover:border-[#002045] transition-colors disabled:opacity-50">
+                <button onClick={() => setCancelCommTarget(null)} disabled={cancelSubmitting} className="flex-1 border border-[#e2e2e2] text-[#43474e] text-xs tracking-[0.1em] uppercase font-bold py-2.5 hover:border-[#0B1F45] transition-colors disabled:opacity-50">
                   Voltar
                 </button>
               </div>
@@ -8147,7 +8147,7 @@ export default function AdminPage() {
 
       {/* Toast discreto (autosave de mídia: categoria, capa, descrição) */}
       {mediaToast && (
-        <div className={`fixed bottom-5 left-1/2 -translate-x-1/2 z-[200] px-4 py-2.5 text-xs font-semibold font-[var(--font-inter)] shadow-lg ${mediaToast.error ? "bg-[#cc0000] text-white" : "bg-[#002045] text-white"}`}>
+        <div className={`fixed bottom-5 left-1/2 -translate-x-1/2 z-[200] px-4 py-2.5 text-xs font-semibold shadow-lg ${mediaToast.error ? "bg-[#cc0000] text-white" : "bg-[#0B1F45] text-white"}`}>
           {mediaToast.text}
         </div>
       )}

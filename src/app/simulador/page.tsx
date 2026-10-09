@@ -1701,17 +1701,17 @@ function SimuladorInner() {
           this, the only signal was a tiny "Enviando…" in the corner and the page
           looked frozen. This makes it obvious the site responded and is working. */}
       {simSubmitting && (
-        <div className="fixed inset-0 z-[70] bg-[#002045]/95 backdrop-blur-sm flex flex-col items-center justify-center gap-5 text-center px-6">
-          <div className="w-12 h-12 border-2 border-white/25 border-t-[#a1d494] rounded-full animate-spin" />
+        <div className="fixed inset-0 z-[70] bg-[#0B1F45]/95 backdrop-blur-sm flex flex-col items-center justify-center gap-5 text-center px-6">
+          <div className="w-12 h-12 border-2 border-white/25 border-t-[#36A35C] rounded-full animate-spin" />
           <div>
-            <p className="text-white font-[var(--font-noto-serif)] text-2xl lg:text-3xl">Gerando seu orçamento…</p>
-            <p className="text-white/70 font-[var(--font-inter)] text-sm mt-2">Estamos preparando os detalhes do seu investimento.</p>
+            <p className="text-white font-serif text-2xl lg:text-3xl">Gerando seu orçamento…</p>
+            <p className="text-white/70 text-sm mt-2">Estamos preparando os detalhes do seu investimento.</p>
           </div>
         </div>
       )}
 
       {/* ── Hero ─────────────────────────────────────────────────────────── */}
-      <section className="bg-[#002045] text-white py-10 lg:py-32 relative overflow-hidden">
+      <section className="bg-[#0B1F45] text-white py-10 lg:py-32 relative overflow-hidden">
         <div
           className="absolute inset-0 opacity-[0.04]"
           style={{
@@ -1721,20 +1721,20 @@ function SimuladorInner() {
         />
         <div className="relative max-w-[1280px] mx-auto px-4 lg:px-16">
           <div className="max-w-3xl">
-            <p className="text-[#a1d494] text-xs tracking-[0.2em] uppercase font-semibold font-[var(--font-inter)] mb-5">
+            <p className="text-[#36A35C] text-xs tracking-[0.2em] uppercase font-semibold mb-5">
               Simulador · Orçamento
             </p>
-            <h1 className="font-[var(--font-noto-serif)] text-3xl lg:text-6xl font-normal tracking-[-0.02em] leading-tight mb-6">
+            <h1 className="font-serif text-3xl lg:text-6xl font-normal tracking-[-0.02em] leading-tight mb-6">
               Comece o seu projeto.
             </h1>
-            <p className="text-white/65 text-base lg:text-lg font-[var(--font-inter)] leading-relaxed max-w-2xl mb-8 lg:mb-10">
+            <p className="text-white/65 text-base lg:text-lg leading-relaxed max-w-2xl mb-8 lg:mb-10">
               Escolha o acabamento, informe a área e veja em segundos quanto você investe —
               e quanto economiza ao longo de 10 anos.
             </p>
             <div className="flex flex-col sm:flex-row gap-3 sm:gap-4">
               <button
                 onClick={() => stepCardRef.current?.scrollIntoView({ behavior: "smooth", block: "center" })}
-                className="inline-flex items-center justify-center gap-2 bg-white text-[#002045] text-xs tracking-[0.12em] uppercase font-bold font-[var(--font-inter)] px-7 py-4 hover:bg-[#f3f3f3] transition-colors"
+                className="inline-flex items-center justify-center gap-2 bg-white text-[#0B1F45] text-xs tracking-[0.12em] uppercase font-bold px-7 py-4 hover:bg-[#f3f3f3] transition-colors"
               >
                 Iniciar simulação
                 <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
@@ -1745,7 +1745,7 @@ function SimuladorInner() {
                 href={`${WA_BASE}${encodeURIComponent("Olá! Tenho interesse no PFB Orbital e gostaria de fazer um orçamento.")}`}
                 target="_blank"
                 rel="noopener noreferrer"
-                className="inline-flex items-center justify-center gap-2.5 border border-white/30 text-white text-xs tracking-[0.12em] uppercase font-bold font-[var(--font-inter)] px-7 py-4 hover:border-white transition-colors"
+                className="inline-flex items-center justify-center gap-2.5 border border-white/30 text-white text-xs tracking-[0.12em] uppercase font-bold px-7 py-4 hover:border-white transition-colors"
               >
                 <WaIcon />
                 Falar no WhatsApp
@@ -1756,18 +1756,18 @@ function SimuladorInner() {
       </section>
 
       {/* ── Simulator ────────────────────────────────────────────────────── */}
-      <section id="simulador" ref={simulatorRef} className="py-12 lg:py-20 bg-[#f5f5f3] scroll-mt-20">
+      <section id="simulador" ref={simulatorRef} className="py-12 lg:py-20 bg-[#F6F5F2] scroll-mt-20">
         <div className="max-w-[1060px] mx-auto px-4 sm:px-8 lg:px-16">
 
           {/* Header */}
           <div className="mb-8 lg:mb-12">
-            <p className="text-[#74777f] text-xs tracking-[0.2em] uppercase font-semibold font-[var(--font-inter)] mb-3">
+            <p className="text-[#74777f] text-xs tracking-[0.2em] uppercase font-semibold mb-3">
               Simulador de investimento
             </p>
-            <h2 className="font-[var(--font-noto-serif)] text-[#002045] text-2xl lg:text-4xl font-normal mb-3">
+            <h2 className="font-serif text-[#0B1F45] text-2xl lg:text-4xl font-normal mb-3">
               Veja o investimento necessário para transformar o seu espaço.
             </h2>
-            <p className="text-[#43474e] text-sm font-[var(--font-inter)] leading-relaxed max-w-2xl">
+            <p className="text-[#43474e] text-sm leading-relaxed max-w-2xl">
               Simule o investimento no PFB Orbital e compare com o MDF ao longo de 10 anos.
               Valores de mão de obra são estimativas de mercado.
             </p>
@@ -1783,19 +1783,19 @@ function SimuladorInner() {
                 >
                   <div className="flex items-center gap-2">
                     <div
-                      className={`w-8 h-8 flex-shrink-0 flex items-center justify-center text-xs font-bold font-[var(--font-inter)] transition-colors ${
+                      className={`w-8 h-8 flex-shrink-0 flex items-center justify-center text-xs font-bold transition-colors ${
                         step === n
-                          ? "bg-[#002045] text-white"
+                          ? "bg-[#0B1F45] text-[#0B1F45]"
                           : n < step
-                          ? "bg-[#3b6934] text-white"
+                          ? "bg-[#36A35C] text-[#0B1F45]"
                           : "bg-[#e2e2e2] text-[#74777f]"
                       }`}
                     >
                       {n < step ? "✓" : n}
                     </div>
                     <span
-                      className={`text-xs tracking-[0.1em] uppercase font-semibold font-[var(--font-inter)] hidden sm:block whitespace-nowrap ${
-                        step === n ? "text-[#002045]" : n < step ? "text-[#3b6934]" : "text-[#74777f]"
+                      className={`text-xs tracking-[0.1em] uppercase font-semibold hidden sm:block whitespace-nowrap ${
+                        step === n ? "text-[#0B1F45]" : n < step ? "text-[#2347A0]" : "text-[#74777f]"
                       }`}
                     >
                       {label}
@@ -1805,7 +1805,7 @@ function SimuladorInner() {
                 {i < STEPS.length - 1 && (
                   <div
                     className={`flex-1 h-px mx-2 min-w-[12px] max-w-[60px] ${
-                      n < step ? "bg-[#3b6934]" : "bg-[#d8d8d8]"
+                      n < step ? "bg-[#36A35C]" : "bg-[#d8d8d8]"
                     }`}
                   />
                 )}
@@ -1819,10 +1819,10 @@ function SimuladorInner() {
           {/* ── Step 1: Space ─────────────────────────────────────────────── */}
           {step === 1 && (
             <div className="bg-white border border-[#e2e2e2] p-6 lg:p-10">
-              <h3 className="font-[var(--font-noto-serif)] text-[#002045] text-xl font-normal mb-2">
+              <h3 className="font-serif text-[#0B1F45] text-xl font-normal mb-2">
                 Qual espaço você quer revestir?
               </h3>
-              <p className="text-[#74777f] text-sm font-[var(--font-inter)] mb-6">
+              <p className="text-[#74777f] text-sm mb-6">
                 Selecione o tipo de ambiente.
               </p>
 
@@ -1832,10 +1832,10 @@ function SimuladorInner() {
                   <button
                     key={space.id}
                     onClick={() => { setSelectedSpace(space); setShowCustomInput(false); setCustomSpaceText(""); setAmbienteName(""); }}
-                    className={`text-left px-3 py-3 min-h-[44px] border text-xs font-semibold font-[var(--font-inter)] transition-all ${
+                    className={`text-left px-3 py-3 min-h-[44px] border text-xs font-semibold transition-all ${
                       selectedSpace?.id === space.id && !showCustomInput
-                        ? "border-[#002045] bg-[#002045] text-white"
-                        : "border-[#e2e2e2] text-[#43474e] hover:border-[#1a365d] hover:text-[#002045]"
+                        ? "border-[#0B1F45] bg-[#0B1F45] text-white"
+                        : "border-[#e2e2e2] text-[#43474e] hover:border-[#2347A0] hover:text-[#0B1F45]"
                     }`}
                   >
                     {space.label}
@@ -1844,10 +1844,10 @@ function SimuladorInner() {
                 {/* Outro button */}
                 <button
                   onClick={() => { setShowCustomInput(true); setSelectedSpace(null); setAmbienteName(""); }}
-                  className={`text-left px-3 py-3 min-h-[44px] border text-xs font-semibold font-[var(--font-inter)] transition-all ${
+                  className={`text-left px-3 py-3 min-h-[44px] border text-xs font-semibold transition-all ${
                     showCustomInput
-                      ? "border-[#002045] bg-[#002045] text-white"
-                      : "border-dashed border-[#c8c8c8] text-[#74777f] hover:border-[#1a365d] hover:text-[#002045]"
+                      ? "border-[#0B1F45] bg-[#0B1F45] text-white"
+                      : "border-dashed border-[#c8c8c8] text-[#74777f] hover:border-[#2347A0] hover:text-[#0B1F45]"
                   }`}
                 >
                   + Outro
@@ -1865,7 +1865,7 @@ function SimuladorInner() {
                       value={customSpaceText}
                       onChange={(e) => setCustomSpaceText(e.target.value)}
                       placeholder="Descreva o espaço — ex: varanda interna, hall de entrada, iate…"
-                      className="w-full border border-[#002045] px-4 py-3 text-sm font-[var(--font-inter)] text-[#002045] focus:outline-none placeholder-[#b0b4bc]"
+                      className="w-full border border-[#0B1F45] px-4 py-3 text-sm text-[#0B1F45] focus:outline-none placeholder-[#b0b4bc]"
                     />
                     {/* internal: custom.viability used silently for pricing */}
                     {custom && null}
@@ -1879,7 +1879,7 @@ function SimuladorInner() {
                   <button
                     key={space.id}
                     onClick={() => { setSelectedSpace(space); setShowCustomInput(false); setCustomSpaceText(""); setAmbienteName(""); }}
-                    className={`text-left px-3 py-3 min-h-[44px] border text-xs font-semibold font-[var(--font-inter)] transition-all ${
+                    className={`text-left px-3 py-3 min-h-[44px] border text-xs font-semibold transition-all ${
                       selectedSpace?.id === space.id && !showCustomInput
                         ? "border-[#c0392b] bg-[#fff5f5] text-[#c0392b]"
                         : "border-[#e2e2e2] text-[#b0b0b0] hover:border-[#e0b0b0]"
@@ -1893,10 +1893,10 @@ function SimuladorInner() {
               {/* Warning for not-viable spaces (preset or custom) */}
               {selectedSpace?.viability === "no" && (
                 <div className="bg-[#fff8f0] border border-[#f0c060] px-5 py-4 mb-6">
-                  <p className="text-[#7a4000] text-sm font-semibold font-[var(--font-inter)] mb-1">
+                  <p className="text-[#7a4000] text-sm font-semibold mb-1">
                     {selectedSpace.msg}
                   </p>
-                  <p className="text-[#7a4000] text-sm font-[var(--font-inter)] mb-4">
+                  <p className="text-[#7a4000] text-sm mb-4">
                     {selectedSpace.hint}
                   </p>
                   <button
@@ -1904,7 +1904,7 @@ function SimuladorInner() {
                       const r = SPACES.find((s) => s.id === selectedSpace.redirect);
                       if (r) { setSelectedSpace(r); setShowCustomInput(false); setCustomSpaceText(""); }
                     }}
-                    className="inline-flex items-center gap-2 bg-[#002045] text-white text-xs tracking-[0.1em] uppercase font-bold font-[var(--font-inter)] px-5 py-2.5 hover:bg-[#1a365d] transition-colors"
+                    className="inline-flex items-center gap-2 bg-[#0B1F45] text-white text-xs tracking-[0.1em] uppercase font-bold px-5 py-2.5 hover:bg-[#2347A0] transition-colors"
                   >
                     Simular para {SPACES.find((s) => s.id === selectedSpace.redirect)?.label}
                     <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5">
@@ -1919,7 +1919,7 @@ function SimuladorInner() {
                   mexe se o palpite estiver errado. */}
               {selectedSpace && selectedSpace.viability !== "no" && (
                 <div className="mb-6">
-                  <label className="block text-[10px] tracking-[0.12em] uppercase font-bold font-[var(--font-inter)] text-[#74777f] mb-1.5">
+                  <label className="block text-[10px] tracking-[0.12em] uppercase font-bold text-[#74777f] mb-1.5">
                     Onde a placa será aplicada?
                   </label>
                   <div className="flex flex-wrap gap-2">
@@ -1928,17 +1928,17 @@ function SimuladorInner() {
                         key={t}
                         type="button"
                         onClick={() => setAppTypeOverride({ forSpace: activeSpaceName, type: t })}
-                        className={`px-5 py-2.5 text-xs tracking-[0.1em] uppercase font-bold font-[var(--font-inter)] border transition-colors ${
+                        className={`px-5 py-2.5 text-xs tracking-[0.1em] uppercase font-bold border transition-colors ${
                           activeAppType === t
-                            ? "bg-[#002045] text-white border-[#002045]"
-                            : "bg-white text-[#43474e] border-[#e2e2e2] hover:border-[#002045] hover:text-[#002045]"
+                            ? "bg-[#0B1F45] text-white border-[#0B1F45]"
+                            : "bg-white text-[#43474e] border-[#e2e2e2] hover:border-[#0B1F45] hover:text-[#0B1F45]"
                         }`}
                       >
                         {APPLICATION_LABELS[t]}
                       </button>
                     ))}
                   </div>
-                  <p className="text-[#74777f] text-[11px] font-[var(--font-inter)] mt-1.5">
+                  <p className="text-[#74777f] text-[11px] mt-1.5">
                     {activeAppType === "parede"
                       ? "Parede usa cola PU-40."
                       : "Teto e forro usam cola de contato e espuma expansiva, em vez da PU-40."}
@@ -1949,7 +1949,7 @@ function SimuladorInner() {
               {/* Optional ambiente name — shown when a viable space is selected */}
               {selectedSpace && selectedSpace.viability !== "no" && (
                 <div className="mb-6">
-                  <label className="block text-[10px] tracking-[0.12em] uppercase font-bold font-[var(--font-inter)] text-[#74777f] mb-1.5">
+                  <label className="block text-[10px] tracking-[0.12em] uppercase font-bold text-[#74777f] mb-1.5">
                     Nome do ambiente <span className="normal-case tracking-normal font-normal">(opcional)</span>
                   </label>
                   <input
@@ -1957,7 +1957,7 @@ function SimuladorInner() {
                     value={ambienteName}
                     onChange={(e) => setAmbienteName(e.target.value)}
                     placeholder={`Ex: Sala de Estar, Banheiro do Casal, Escritório…`}
-                    className="w-full border border-[#e2e2e2] px-4 py-3 text-sm font-[var(--font-inter)] text-[#002045] focus:outline-none focus:border-[#002045] placeholder-[#b0b4bc]"
+                    className="w-full border border-[#e2e2e2] px-4 py-3 text-sm text-[#0B1F45] focus:outline-none focus:border-[#0B1F45] placeholder-[#b0b4bc]"
                   />
                 </div>
               )}
@@ -1967,9 +1967,9 @@ function SimuladorInner() {
                   ref={nextBtnRef}
                   onClick={() => canAdvance1 && goToStep(2)}
                   disabled={!canAdvance1}
-                  className={`w-full sm:w-auto inline-flex items-center justify-center gap-2 text-xs tracking-[0.12em] uppercase font-bold font-[var(--font-inter)] px-8 py-4 transition-colors ${
+                  className={`w-full sm:w-auto inline-flex items-center justify-center gap-2 text-xs tracking-[0.12em] uppercase font-bold px-8 py-4 transition-colors ${
                     canAdvance1
-                      ? "bg-[#002045] text-white hover:bg-[#1a365d]"
+                      ? "bg-[#0B1F45] text-white hover:bg-[#2347A0]"
                       : "bg-[#e2e2e2] text-[#aaaaaa] cursor-not-allowed"
                   }`}
                 >
@@ -1985,10 +1985,10 @@ function SimuladorInner() {
           {/* ── Step 2: Model ─────────────────────────────────────────────── */}
           {step === 2 && (
             <div className="bg-white border border-[#e2e2e2] p-6 lg:p-10">
-              <h3 className="font-[var(--font-noto-serif)] text-[#002045] text-xl font-normal mb-2">
+              <h3 className="font-serif text-[#0B1F45] text-xl font-normal mb-2">
                 Qual acabamento você prefere?
               </h3>
-              <p className="text-[#74777f] text-sm font-[var(--font-inter)] mb-6">
+              <p className="text-[#74777f] text-sm mb-6">
                 Escolha a linha e o acabamento específico.
               </p>
 
@@ -2012,28 +2012,28 @@ function SimuladorInner() {
                       }}
                       className={`relative border text-left transition-all p-5 flex flex-col gap-3 ${
                         active
-                          ? "border-[#002045] bg-[#eef2fb]"
-                          : `border-[#e2e2e2] hover:border-[#1a365d] ${inactiveBg}`
+                          ? "border-[#0B1F45] bg-[#eef2fb]"
+                          : `border-[#e2e2e2] hover:border-[#2347A0] ${inactiveBg}`
                       }`}
                     >
                       {active && (
-                        <div className="absolute top-3 right-3 w-5 h-5 bg-[#002045] flex items-center justify-center">
+                        <div className="absolute top-3 right-3 w-5 h-5 bg-[#0B1F45] flex items-center justify-center">
                           <svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="white" strokeWidth="3">
                             <path d="M20 6L9 17l-5-5" />
                           </svg>
                         </div>
                       )}
                       <div>
-                        <p className="text-[#002045] text-base font-bold font-[var(--font-inter)] mb-1">{linha}</p>
-                        <p className="text-[10px] tracking-[0.15em] uppercase font-bold font-[var(--font-inter)] text-[#3b6934]">
+                        <p className="text-[#0B1F45] text-base font-bold mb-1">{linha}</p>
+                        <p className="text-[10px] tracking-[0.15em] uppercase font-bold text-[#2347A0]">
                           {info.finish}
                         </p>
                       </div>
                       <div className="border-t border-[#e8e8e8] pt-3">
-                        <p className="text-[#002045] text-sm font-bold font-[var(--font-inter)]">
+                        <p className="text-[#0B1F45] text-sm font-bold">
                           {info.price.toLocaleString("pt-BR")} / placa
                         </p>
-                        <p className="text-[#9e9e9e] text-[10px] font-[var(--font-inter)] mt-0.5">
+                        <p className="text-[#9e9e9e] text-[10px] mt-0.5">
                           2,9m × 1,2m × 5mm · 3,48 m²
                         </p>
                       </div>
@@ -2044,12 +2044,12 @@ function SimuladorInner() {
 
               {selectedLine && (
                 <div ref={productsRef} className="mb-6 scroll-mt-24">
-                  <p className="text-[#43474e] text-[10px] tracking-[0.15em] uppercase font-bold font-[var(--font-inter)] mb-4">
+                  <p className="text-[#43474e] text-[10px] tracking-[0.15em] uppercase font-bold mb-4">
                     Acabamentos {selectedLine}
                   </p>
                   {loadingProducts ? (
                     <div className="flex items-center justify-center py-10">
-                      <div className="w-6 h-6 border-2 border-[#002045] border-t-transparent rounded-full animate-spin" />
+                      <div className="w-6 h-6 border-2 border-[#0B1F45] border-t-transparent rounded-full animate-spin" />
                     </div>
                   ) : (
                   <div className="grid grid-cols-3 sm:grid-cols-4 md:grid-cols-5 gap-2 sm:gap-3 min-[400px]:grid-cols-4">
@@ -2059,12 +2059,12 @@ function SimuladorInner() {
                         <div
                           key={product.code}
                           className={`border overflow-hidden text-left transition-all ${
-                            active ? "border-[#002045]" : "border-[#e2e2e2] hover:border-[#1a365d]"
+                            active ? "border-[#0B1F45]" : "border-[#e2e2e2] hover:border-[#2347A0]"
                           }`}
                         >
                           <button
                             onClick={() => setSelectedProduct(product)}
-                            className="relative w-full overflow-hidden bg-[#f7f7f5] block"
+                            className="relative w-full overflow-hidden bg-[#F6F5F2] block"
                           >
                             <div className="relative w-full" style={{ aspectRatio: "812/988" }}>
                               <img
@@ -2073,20 +2073,20 @@ function SimuladorInner() {
                                 className="absolute inset-0 w-full h-full object-contain"
                               />
                             </div>
-                            {active && <div className="absolute inset-0 bg-[#002045]/10" />}
+                            {active && <div className="absolute inset-0 bg-[#0B1F45]/10" />}
                             {active && (
                               <div className="absolute top-2 right-2 w-5 h-5 bg-white flex items-center justify-center shadow-sm">
-                                <svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="#002045" strokeWidth="3">
+                                <svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="#0B1F45" strokeWidth="3">
                                   <path d="M20 6L9 17l-5-5" />
                                 </svg>
                               </div>
                             )}
                           </button>
                           <button onClick={() => setSelectedProduct(product)} className="p-2 w-full text-left">
-                            <p className={`text-[10px] font-bold font-[var(--font-inter)] leading-tight ${active ? "text-[#002045]" : "text-[#43474e]"}`}>
+                            <p className={`text-[10px] font-bold leading-tight ${active ? "text-[#0B1F45]" : "text-[#43474e]"}`}>
                               {product.name}
                             </p>
-                            <p className="text-[9px] text-[#9e9e9e] font-[var(--font-inter)] mt-0.5">{product.code}</p>
+                            <p className="text-[9px] text-[#9e9e9e] mt-0.5">{product.code}</p>
                           </button>
                         </div>
                       );
@@ -2099,7 +2099,7 @@ function SimuladorInner() {
               <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3 mt-6">
                 <button
                   onClick={() => goToStep(1)}
-                  className="flex items-center gap-1.5 text-xs tracking-[0.1em] uppercase font-semibold font-[var(--font-inter)] text-[#74777f] hover:text-[#002045] transition-colors"
+                  className="flex items-center gap-1.5 text-xs tracking-[0.1em] uppercase font-semibold text-[#74777f] hover:text-[#0B1F45] transition-colors"
                 >
                   <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5">
                     <path d="M19 12H5M12 5l-7 7 7 7" />
@@ -2109,9 +2109,9 @@ function SimuladorInner() {
                 <button
                   onClick={() => canAdvance2 && goToStep(3)}
                   disabled={!canAdvance2}
-                  className={`w-full sm:w-auto inline-flex items-center justify-center gap-2 text-xs tracking-[0.12em] uppercase font-bold font-[var(--font-inter)] px-8 py-4 transition-colors ${
+                  className={`w-full sm:w-auto inline-flex items-center justify-center gap-2 text-xs tracking-[0.12em] uppercase font-bold px-8 py-4 transition-colors ${
                     canAdvance2
-                      ? "bg-[#002045] text-white hover:bg-[#1a365d]"
+                      ? "bg-[#0B1F45] text-white hover:bg-[#2347A0]"
                       : "bg-[#e2e2e2] text-[#aaaaaa] cursor-not-allowed"
                   }`}
                 >
@@ -2127,13 +2127,13 @@ function SimuladorInner() {
           {/* ── Ambientes Review ── shown between step 3 and step 4 */}
           {showAmbientsReview && step === 3 && selectedSpace && selectedProduct && (
             <div ref={stepCardRef} className="bg-white border border-[#e2e2e2] p-6 lg:p-10">
-              <p className="text-[#74777f] text-[10px] tracking-[0.15em] uppercase font-bold font-[var(--font-inter)] mb-1">
+              <p className="text-[#74777f] text-[10px] tracking-[0.15em] uppercase font-bold mb-1">
                 {savedSpaces.length + 1} ambiente{savedSpaces.length + 1 !== 1 ? "s" : ""} no seu projeto
               </p>
-              <h3 className="font-[var(--font-noto-serif)] text-[#002045] text-xl font-normal mb-2">
+              <h3 className="font-serif text-[#0B1F45] text-xl font-normal mb-2">
                 Revisar ambientes
               </h3>
-              <p className="text-[#74777f] text-sm font-[var(--font-inter)] mb-6">
+              <p className="text-[#74777f] text-sm mb-6">
                 Adicione mais ambientes ou continue para preencher seus dados.
               </p>
 
@@ -2207,14 +2207,14 @@ function SimuladorInner() {
                   <div key={sp.key} className="divide-y divide-[#f0f0f0]">
                     {!isEditing ? (
                       <div className="flex items-center gap-4 px-4 py-4">
-                        <span className="w-6 h-6 rounded-full bg-[#3b6934] text-white text-[10px] font-bold font-[var(--font-inter)] flex items-center justify-center flex-shrink-0">{i + 1}</span>
+                        <span className="w-6 h-6 rounded-full bg-[#36A35C] text-[#0B1F45] text-[10px] font-bold flex items-center justify-center flex-shrink-0">{i + 1}</span>
                         <div className="flex-1 min-w-0">
-                          <p className="text-[#002045] text-sm font-semibold font-[var(--font-inter)]">{sp.label}</p>
-                          <p className="text-[#74777f] text-[11px] font-[var(--font-inter)]">
+                          <p className="text-[#0B1F45] text-sm font-semibold">{sp.label}</p>
+                          <p className="text-[#74777f] text-[11px]">
                             {sp.productName} · {sp.productCode} · {sp.dimLabel} · <strong>{sp.plates} placa{sp.plates !== 1 ? "s" : ""}</strong>
                           </p>
                         </div>
-                        <button onClick={startEdit} className="text-[#002045] hover:text-[#3b6934] flex-shrink-0 p-1" title="Editar">
+                        <button onClick={startEdit} className="text-[#0B1F45] hover:text-[#1F7A44] flex-shrink-0 p-1" title="Editar">
                           <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"/><path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"/></svg>
                         </button>
                         <button onClick={() => setSavedSpaces(prev => prev.filter((_, idx) => idx !== i))} className="text-[#cc0000] hover:text-[#ff0000] text-sm flex-shrink-0 p-1" title="Remover">✕</button>
@@ -2222,42 +2222,42 @@ function SimuladorInner() {
                     ) : (
                       <div className="px-4 py-4 bg-[#f9fbff]">
                         <div className="flex items-center gap-2 mb-3">
-                          <span className="w-6 h-6 rounded-full bg-[#3b6934] text-white text-[10px] font-bold font-[var(--font-inter)] flex items-center justify-center flex-shrink-0">{i + 1}</span>
-                          <span className="text-[#002045] text-[10px] tracking-[0.1em] uppercase font-bold font-[var(--font-inter)]">Editar ambiente</span>
+                          <span className="w-6 h-6 rounded-full bg-[#36A35C] text-[#0B1F45] text-[10px] font-bold flex items-center justify-center flex-shrink-0">{i + 1}</span>
+                          <span className="text-[#0B1F45] text-[10px] tracking-[0.1em] uppercase font-bold">Editar ambiente</span>
                         </div>
                         {/* Name */}
                         <div className="mb-3">
-                          <label className="block text-[10px] text-[#74777f] uppercase tracking-wider font-[var(--font-inter)] mb-1">Nome do ambiente</label>
+                          <label className="block text-[10px] text-[#74777f] uppercase tracking-wider mb-1">Nome do ambiente</label>
                           <input
                             type="text"
                             value={editSpaceLabel}
                             onChange={(e) => setEditSpaceLabel(e.target.value)}
-                            className="w-full border border-[#c8cdd5] px-3 py-2 text-sm font-[var(--font-inter)] text-[#002045] focus:outline-none focus:border-[#002045]"
+                            className="w-full border border-[#c8cdd5] px-3 py-2 text-sm text-[#0B1F45] focus:outline-none focus:border-[#0B1F45]"
                           />
                         </div>
                         {/* Dim mode toggle */}
                         <div className="mb-3">
-                          <label className="block text-[10px] text-[#74777f] uppercase tracking-wider font-[var(--font-inter)] mb-1">Dimensões</label>
+                          <label className="block text-[10px] text-[#74777f] uppercase tracking-wider mb-1">Dimensões</label>
                           <div className="flex gap-2 mb-2">
-                            <button type="button" onClick={() => setEditSpaceDimMode("lxa")} className={`px-3 py-1 text-[11px] font-bold font-[var(--font-inter)] border ${editSpaceDimMode === "lxa" ? "bg-[#002045] text-white border-[#002045]" : "bg-white text-[#002045] border-[#c8cdd5] hover:border-[#002045]"}`}>Larg × Alt</button>
-                            <button type="button" onClick={() => setEditSpaceDimMode("m2")} className={`px-3 py-1 text-[11px] font-bold font-[var(--font-inter)] border ${editSpaceDimMode === "m2" ? "bg-[#002045] text-white border-[#002045]" : "bg-white text-[#002045] border-[#c8cdd5] hover:border-[#002045]"}`}>m²</button>
+                            <button type="button" onClick={() => setEditSpaceDimMode("lxa")} className={`px-3 py-1 text-[11px] font-bold border ${editSpaceDimMode === "lxa" ? "bg-[#0B1F45] text-white border-[#0B1F45]" : "bg-white text-[#0B1F45] border-[#c8cdd5] hover:border-[#0B1F45]"}`}>Larg × Alt</button>
+                            <button type="button" onClick={() => setEditSpaceDimMode("m2")} className={`px-3 py-1 text-[11px] font-bold border ${editSpaceDimMode === "m2" ? "bg-[#0B1F45] text-white border-[#0B1F45]" : "bg-white text-[#0B1F45] border-[#c8cdd5] hover:border-[#0B1F45]"}`}>m²</button>
                           </div>
                           {editSpaceDimMode === "lxa" ? (
                             <div className="flex gap-2 items-center">
-                              <input type="number" min="0" step="0.1" value={editSpaceWidth} onChange={(e) => setEditSpaceWidth(e.target.value)} placeholder="Largura (m)" className="flex-1 border border-[#c8cdd5] px-3 py-2 text-sm font-[var(--font-inter)] text-[#002045] focus:outline-none focus:border-[#002045]" />
+                              <input type="number" min="0" step="0.1" value={editSpaceWidth} onChange={(e) => setEditSpaceWidth(e.target.value)} placeholder="Largura (m)" className="flex-1 border border-[#c8cdd5] px-3 py-2 text-sm text-[#0B1F45] focus:outline-none focus:border-[#0B1F45]" />
                               <span className="text-[#74777f] text-sm">×</span>
-                              <input type="number" min="0" step="0.1" value={editSpaceHeight} onChange={(e) => setEditSpaceHeight(e.target.value)} placeholder="Altura (m)" className="flex-1 border border-[#c8cdd5] px-3 py-2 text-sm font-[var(--font-inter)] text-[#002045] focus:outline-none focus:border-[#002045]" />
+                              <input type="number" min="0" step="0.1" value={editSpaceHeight} onChange={(e) => setEditSpaceHeight(e.target.value)} placeholder="Altura (m)" className="flex-1 border border-[#c8cdd5] px-3 py-2 text-sm text-[#0B1F45] focus:outline-none focus:border-[#0B1F45]" />
                             </div>
                           ) : (
-                            <input type="number" min="0" step="0.1" value={editSpaceM2} onChange={(e) => setEditSpaceM2(e.target.value)} placeholder="Área total (m²)" className="w-full border border-[#c8cdd5] px-3 py-2 text-sm font-[var(--font-inter)] text-[#002045] focus:outline-none focus:border-[#002045]" />
+                            <input type="number" min="0" step="0.1" value={editSpaceM2} onChange={(e) => setEditSpaceM2(e.target.value)} placeholder="Área total (m²)" className="w-full border border-[#c8cdd5] px-3 py-2 text-sm text-[#0B1F45] focus:outline-none focus:border-[#0B1F45]" />
                           )}
                           {editPlates > 0 && (
-                            <p className="text-[10px] text-[#3b6934] mt-1.5 font-[var(--font-inter)]">{editPlates} placa{editPlates !== 1 ? "s" : ""}</p>
+                            <p className="text-[10px] text-[#1F7A44] mt-1.5">{editPlates} placa{editPlates !== 1 ? "s" : ""}</p>
                           )}
                         </div>
                         <div className="flex gap-2">
-                          <button onClick={saveEdit} className="bg-[#002045] text-white text-[11px] tracking-[0.1em] uppercase font-bold font-[var(--font-inter)] px-4 py-2 hover:bg-[#1a365d]">Salvar</button>
-                          <button onClick={() => setEditingSpaceIdx(null)} className="border border-[#c8cdd5] text-[#43474e] text-[11px] tracking-[0.1em] uppercase font-bold font-[var(--font-inter)] px-4 py-2 hover:border-[#002045]">Cancelar</button>
+                          <button onClick={saveEdit} className="bg-[#0B1F45] text-white text-[11px] tracking-[0.1em] uppercase font-bold px-4 py-2 hover:bg-[#2347A0]">Salvar</button>
+                          <button onClick={() => setEditingSpaceIdx(null)} className="border border-[#c8cdd5] text-[#43474e] text-[11px] tracking-[0.1em] uppercase font-bold px-4 py-2 hover:border-[#0B1F45]">Cancelar</button>
                         </div>
                       </div>
                     )}
@@ -2267,10 +2267,10 @@ function SimuladorInner() {
 
                 {/* Current (pending) space */}
                 <div className="flex items-center gap-4 px-4 py-4 bg-[#f9fbff]">
-                  <span className="w-6 h-6 rounded-full bg-[#002045] text-white text-[10px] font-bold font-[var(--font-inter)] flex items-center justify-center flex-shrink-0">{savedSpaces.length + 1}</span>
+                  <span className="w-6 h-6 rounded-full bg-[#0B1F45] text-white text-[10px] font-bold flex items-center justify-center flex-shrink-0">{savedSpaces.length + 1}</span>
                   <div className="flex-1 min-w-0">
-                    <p className="text-[#002045] text-sm font-semibold font-[var(--font-inter)]">{ambienteName.trim() || selectedSpace.label}</p>
-                    <p className="text-[#74777f] text-[11px] font-[var(--font-inter)]">
+                    <p className="text-[#0B1F45] text-sm font-semibold">{ambienteName.trim() || selectedSpace.label}</p>
+                    <p className="text-[#74777f] text-[11px]">
                       {selectedProduct.name} · {selectedProduct.code}
                       {dimMode === "lxa" && width && height ? ` · ${width}m × ${height}m` : m2 > 0 ? ` · ${m2.toFixed(2)} m²` : ""}
                       {plates > 0 && ` · ${plates} placa${plates !== 1 ? "s" : ""}`}
@@ -2315,7 +2315,7 @@ function SimuladorInner() {
                     setShowAmbientsReview(false);
                     goToStep(1);
                   }}
-                  className="inline-flex items-center gap-2 text-xs tracking-[0.12em] uppercase font-bold font-[var(--font-inter)] border border-[#002045] text-[#002045] px-5 py-3 hover:bg-[#002045] hover:text-white transition-colors"
+                  className="inline-flex items-center gap-2 text-xs tracking-[0.12em] uppercase font-bold border border-[#0B1F45] text-[#0B1F45] px-5 py-3 hover:bg-[#0B1F45] hover:text-white transition-colors"
                 >
                   <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5"><path d="M12 5v14M5 12h14"/></svg>
                   Adicionar outro ambiente
@@ -2323,7 +2323,7 @@ function SimuladorInner() {
 
                 <button
                   onClick={() => { setShowAmbientsReview(false); goToStep(4); }}
-                  className="w-full sm:w-auto inline-flex items-center justify-center gap-2 text-xs tracking-[0.12em] uppercase font-bold font-[var(--font-inter)] px-8 py-4 bg-[#002045] text-white hover:bg-[#1a365d] transition-colors"
+                  className="w-full sm:w-auto inline-flex items-center justify-center gap-2 text-xs tracking-[0.12em] uppercase font-bold px-8 py-4 bg-[#0B1F45] text-white hover:bg-[#2347A0] transition-colors"
                 >
                   Continuar com meus dados
                   <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5"><path d="M5 12h14M12 5l7 7-7 7"/></svg>
@@ -2335,21 +2335,21 @@ function SimuladorInner() {
           {/* ── Step 3: Dimensions ────────────────────────────────────────── */}
           {step === 3 && !showAmbientsReview && (
             <div className="bg-white border border-[#e2e2e2] p-6 lg:p-10">
-              <h3 className="font-[var(--font-noto-serif)] text-[#002045] text-xl font-normal mb-2">
+              <h3 className="font-serif text-[#0B1F45] text-xl font-normal mb-2">
                 Qual é a área a revestir?
               </h3>
-              <p className="text-[#74777f] text-sm font-[var(--font-inter)] mb-6">
+              <p className="text-[#74777f] text-sm mb-6">
                 Informe as dimensões ou o m² total.
               </p>
 
               <div className="flex flex-wrap gap-2 mb-6">
                 {selectedSpace && (
-                  <span className="bg-[#eef2f8] text-[#1a365d] text-xs font-semibold font-[var(--font-inter)] px-3 py-1.5">
+                  <span className="bg-[#eef2f8] text-[#2347A0] text-xs font-semibold px-3 py-1.5">
                     {selectedSpace.label}
                   </span>
                 )}
                 {selectedProduct && (
-                  <span className="flex items-center gap-2 bg-[#eef2f8] text-[#1a365d] text-xs font-semibold font-[var(--font-inter)] px-3 py-1.5">
+                  <span className="flex items-center gap-2 bg-[#eef2f8] text-[#2347A0] text-xs font-semibold px-3 py-1.5">
                     <span className="relative w-4 h-4 inline-block overflow-hidden flex-shrink-0">
                       <img src={selectedProduct.image_path} alt={selectedProduct.name} className="absolute inset-0 w-full h-full object-cover" />
                     </span>
@@ -2366,10 +2366,10 @@ function SimuladorInner() {
                   <button
                     key={mode}
                     onClick={() => setDimMode(mode)}
-                    className={`flex-1 sm:flex-none px-5 py-3 text-xs tracking-[0.1em] uppercase font-bold font-[var(--font-inter)] transition-colors ${
+                    className={`flex-1 sm:flex-none px-5 py-3 text-xs tracking-[0.1em] uppercase font-bold transition-colors ${
                       dimMode === mode
-                        ? "bg-[#002045] text-white"
-                        : "text-[#74777f] hover:text-[#002045]"
+                        ? "bg-[#0B1F45] text-white"
+                        : "text-[#74777f] hover:text-[#0B1F45]"
                     }`}
                   >
                     {label}
@@ -2380,7 +2380,7 @@ function SimuladorInner() {
               {dimMode === "lxa" ? (
                 <div className="grid grid-cols-2 sm:flex sm:flex-row sm:items-end gap-4 mb-6">
                   <div>
-                    <label className="block text-[10px] tracking-[0.15em] uppercase font-bold font-[var(--font-inter)] text-[#74777f] mb-2">
+                    <label className="block text-[10px] tracking-[0.15em] uppercase font-bold text-[#74777f] mb-2">
                       Largura (m)
                     </label>
                     <input
@@ -2389,11 +2389,11 @@ function SimuladorInner() {
                       value={width}
                       onChange={(e) => setWidth(e.target.value.replace(/[^0-9.,]/g, "").replace(",", "."))}
                       placeholder="ex: 3.5"
-                      className="w-full sm:w-32 border border-[#e2e2e2] px-4 py-3 text-base font-[var(--font-inter)] text-[#002045] focus:outline-none focus:border-[#002045] transition-colors"
+                      className="w-full sm:w-32 border border-[#e2e2e2] px-4 py-3 text-base text-[#0B1F45] focus:outline-none focus:border-[#0B1F45] transition-colors"
                     />
                   </div>
                   <div>
-                    <label className="block text-[10px] tracking-[0.15em] uppercase font-bold font-[var(--font-inter)] text-[#74777f] mb-2">
+                    <label className="block text-[10px] tracking-[0.15em] uppercase font-bold text-[#74777f] mb-2">
                       Altura (m)
                     </label>
                     <input
@@ -2402,18 +2402,18 @@ function SimuladorInner() {
                       value={height}
                       onChange={(e) => setHeight(e.target.value.replace(/[^0-9.,]/g, "").replace(",", "."))}
                       placeholder="ex: 2.8"
-                      className="w-full sm:w-32 border border-[#e2e2e2] px-4 py-3 text-base font-[var(--font-inter)] text-[#002045] focus:outline-none focus:border-[#002045] transition-colors"
+                      className="w-full sm:w-32 border border-[#e2e2e2] px-4 py-3 text-base text-[#0B1F45] focus:outline-none focus:border-[#0B1F45] transition-colors"
                     />
                   </div>
                   {m2 > 0 && (
-                    <span className="col-span-2 sm:col-span-1 text-[#43474e] text-sm font-[var(--font-inter)] sm:pb-3">
-                      = <strong className="text-[#002045]">{m2.toFixed(2)} m²</strong>
+                    <span className="col-span-2 sm:col-span-1 text-[#43474e] text-sm sm:pb-3">
+                      = <strong className="text-[#0B1F45]">{m2.toFixed(2)} m²</strong>
                     </span>
                   )}
                 </div>
               ) : (
                 <div className="mb-6">
-                  <label className="block text-[10px] tracking-[0.15em] uppercase font-bold font-[var(--font-inter)] text-[#74777f] mb-2">
+                  <label className="block text-[10px] tracking-[0.15em] uppercase font-bold text-[#74777f] mb-2">
                     Área total (m²)
                   </label>
                   <input
@@ -2422,15 +2422,15 @@ function SimuladorInner() {
                     value={sqmInput}
                     onChange={(e) => setSqmInput(e.target.value.replace(/[^0-9.,]/g, "").replace(",", "."))}
                     placeholder="ex: 12"
-                    className="w-full sm:w-44 border border-[#e2e2e2] px-4 py-3 text-base font-[var(--font-inter)] text-[#002045] focus:outline-none focus:border-[#002045] transition-colors"
+                    className="w-full sm:w-44 border border-[#e2e2e2] px-4 py-3 text-base text-[#0B1F45] focus:outline-none focus:border-[#0B1F45] transition-colors"
                   />
                 </div>
               )}
 
               {m2 > 0 && (
-                <p className="text-[#43474e] text-sm font-[var(--font-inter)] mb-6">
+                <p className="text-[#43474e] text-sm mb-6">
                   Serão necessárias{" "}
-                  <strong className="text-[#002045]">
+                  <strong className="text-[#0B1F45]">
                     {plates} placa{plates !== 1 ? "s" : ""}
                   </strong>{" "}
                   de 3,48 m² cada.
@@ -2442,13 +2442,13 @@ function SimuladorInner() {
                   prazo de reposição ou atendimento parcial é a equipe. */}
               {activeShortage && (
                 <div className="mb-5 border border-[#e0b23c] bg-[#fdf6e3] px-4 py-3">
-                  <p className="text-[#8a5a12] text-sm font-[var(--font-inter)] font-semibold">
+                  <p className="text-[#8a5a12] text-sm font-semibold">
                     Estoque abaixo do solicitado — {selectedProduct?.name}
                   </p>
-                  <p className="text-[#8a5a12] text-xs font-[var(--font-inter)] mt-0.5">
+                  <p className="text-[#8a5a12] text-xs mt-0.5">
                     {shortageMessage(activeShortage)}
                   </p>
-                  <p className="text-[#8a5a12]/80 text-[11px] font-[var(--font-inter)] mt-1.5">
+                  <p className="text-[#8a5a12]/80 text-[11px] mt-1.5">
                     Sua quantidade foi mantida. Podemos confirmar prazo de reposição ou atendimento
                     parcial ao finalizar o orçamento.
                   </p>
@@ -2458,9 +2458,9 @@ function SimuladorInner() {
               {/* Sanity check: warn on likely typos before letting the client proceed */}
               {measurementWarning && (
                 <div className="mb-5 border border-[#e0b23c] bg-[#fdf6e3] px-4 py-3">
-                  <p className="text-[#8a5a12] text-sm font-[var(--font-inter)] font-semibold">⚠ Confira a medida</p>
-                  <p className="text-[#8a5a12] text-xs font-[var(--font-inter)] mt-0.5">{measurementWarning}</p>
-                  <label className="flex items-center gap-2 mt-2.5 text-[#43474e] text-xs font-[var(--font-inter)] cursor-pointer">
+                  <p className="text-[#8a5a12] text-sm font-semibold">⚠ Confira a medida</p>
+                  <p className="text-[#8a5a12] text-xs mt-0.5">{measurementWarning}</p>
+                  <label className="flex items-center gap-2 mt-2.5 text-[#43474e] text-xs cursor-pointer">
                     <input type="checkbox" checked={measureAck} onChange={(e) => setMeasureAck(e.target.checked)} />
                     Confirmo que a medida está correta
                   </label>
@@ -2470,7 +2470,7 @@ function SimuladorInner() {
               <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3">
                 <button
                   onClick={() => goToStep(2)}
-                  className="flex items-center gap-1.5 text-xs tracking-[0.1em] uppercase font-semibold font-[var(--font-inter)] text-[#74777f] hover:text-[#002045] transition-colors"
+                  className="flex items-center gap-1.5 text-xs tracking-[0.1em] uppercase font-semibold text-[#74777f] hover:text-[#0B1F45] transition-colors"
                 >
                   <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5">
                     <path d="M19 12H5M12 5l-7 7 7 7" />
@@ -2481,9 +2481,9 @@ function SimuladorInner() {
                   <button
                     onClick={() => { if (canProceedMeasure) setPartnerLinkGenerated(true); }}
                     disabled={!canProceedMeasure}
-                    className={`w-full sm:w-auto inline-flex items-center justify-center gap-2 text-xs tracking-[0.12em] uppercase font-bold font-[var(--font-inter)] px-8 py-4 transition-colors ${
+                    className={`w-full sm:w-auto inline-flex items-center justify-center gap-2 text-xs tracking-[0.12em] uppercase font-bold px-8 py-4 transition-colors ${
                       canProceedMeasure
-                        ? "bg-[#3b6934] text-white hover:bg-[#2d5228]"
+                        ? "bg-[#36A35C] text-[#0B1F45] hover:bg-[#4BB571]"
                         : "bg-[#e2e2e2] text-[#aaaaaa] cursor-not-allowed"
                     }`}
                   >
@@ -2496,9 +2496,9 @@ function SimuladorInner() {
                   <button
                     onClick={() => { if (canProceedMeasure) setShowAmbientsReview(true); }}
                     disabled={!canProceedMeasure}
-                    className={`w-full sm:w-auto inline-flex items-center justify-center gap-2 text-xs tracking-[0.12em] uppercase font-bold font-[var(--font-inter)] px-8 py-4 transition-colors ${
+                    className={`w-full sm:w-auto inline-flex items-center justify-center gap-2 text-xs tracking-[0.12em] uppercase font-bold px-8 py-4 transition-colors ${
                       canProceedMeasure
-                        ? "bg-[#002045] text-white hover:bg-[#1a365d]"
+                        ? "bg-[#0B1F45] text-white hover:bg-[#2347A0]"
                         : "bg-[#e2e2e2] text-[#aaaaaa] cursor-not-allowed"
                     }`}
                   >
@@ -2512,53 +2512,53 @@ function SimuladorInner() {
 
               {/* ── Partner link panel ── shown after "Gerar link" is clicked */}
               {partnerMode && partnerLinkGenerated && canCalculate && selectedProduct && selectedSpace && (
-                <div className="mt-6 border border-[#3b6934]/40 bg-[#f2faf0]">
-                  <div className="px-5 py-4 border-b border-[#3b6934]/20">
-                    <p className="text-[#3b6934] text-[10px] tracking-[0.15em] uppercase font-bold font-[var(--font-inter)] mb-0.5">
+                <div className="mt-6 border border-[#36A35C]/40 bg-[#f2faf0]">
+                  <div className="px-5 py-4 border-b border-[#36A35C]/20">
+                    <p className="text-[#2347A0] text-[10px] tracking-[0.15em] uppercase font-bold mb-0.5">
                       Link gerado com sucesso
                     </p>
-                    <p className="text-[#2d5228] text-sm font-[var(--font-inter)]">
+                    <p className="text-[#1F7A44] text-sm">
                       Envie este link ao cliente. Ele verá a simulação configurada por você e só precisará preencher os dados.
                     </p>
                   </div>
 
                   {/* Summary */}
-                  <div className="px-5 py-4 border-b border-[#3b6934]/20 grid grid-cols-2 sm:grid-cols-4 gap-3">
+                  <div className="px-5 py-4 border-b border-[#36A35C]/20 grid grid-cols-2 sm:grid-cols-4 gap-3">
                     <div>
-                      <p className="text-[#74777f] text-[9px] tracking-[0.12em] uppercase font-bold font-[var(--font-inter)] mb-0.5">Espaço</p>
-                      <p className="text-[#002045] text-sm font-semibold font-[var(--font-inter)]">{selectedSpace.label}</p>
+                      <p className="text-[#74777f] text-[9px] tracking-[0.12em] uppercase font-bold mb-0.5">Espaço</p>
+                      <p className="text-[#0B1F45] text-sm font-semibold">{selectedSpace.label}</p>
                     </div>
                     <div>
-                      <p className="text-[#74777f] text-[9px] tracking-[0.12em] uppercase font-bold font-[var(--font-inter)] mb-0.5">Modelo</p>
-                      <p className="text-[#002045] text-sm font-semibold font-[var(--font-inter)]">{selectedProduct.name}</p>
-                      <p className="text-[#74777f] text-[10px] font-[var(--font-inter)]">{selectedProduct.code}</p>
+                      <p className="text-[#74777f] text-[9px] tracking-[0.12em] uppercase font-bold mb-0.5">Modelo</p>
+                      <p className="text-[#0B1F45] text-sm font-semibold">{selectedProduct.name}</p>
+                      <p className="text-[#74777f] text-[10px]">{selectedProduct.code}</p>
                     </div>
                     <div>
-                      <p className="text-[#74777f] text-[9px] tracking-[0.12em] uppercase font-bold font-[var(--font-inter)] mb-0.5">Área</p>
-                      <p className="text-[#002045] text-sm font-semibold font-[var(--font-inter)]">{m2.toFixed(2)} m²</p>
-                      <p className="text-[#74777f] text-[10px] font-[var(--font-inter)]">{plates} placa{plates !== 1 ? "s" : ""}</p>
+                      <p className="text-[#74777f] text-[9px] tracking-[0.12em] uppercase font-bold mb-0.5">Área</p>
+                      <p className="text-[#0B1F45] text-sm font-semibold">{m2.toFixed(2)} m²</p>
+                      <p className="text-[#74777f] text-[10px]">{plates} placa{plates !== 1 ? "s" : ""}</p>
                     </div>
                     <div>
-                      <p className="text-[#74777f] text-[9px] tracking-[0.12em] uppercase font-bold font-[var(--font-inter)] mb-0.5">Estimativa material</p>
+                      <p className="text-[#74777f] text-[9px] tracking-[0.12em] uppercase font-bold mb-0.5">Estimativa material</p>
                       {discountAmount > 0 ? (
                         <>
-                          <p className="text-[#3b6934] text-sm font-bold font-[var(--font-inter)]">{fmt(orbMaterialDiscounted)}</p>
-                          <p className="text-[#74777f] text-[10px] font-[var(--font-inter)] line-through">{fmt(orbMaterialTotal)}</p>
+                          <p className="text-[#1F7A44] text-sm font-bold">{fmt(orbMaterialDiscounted)}</p>
+                          <p className="text-[#74777f] text-[10px] line-through">{fmt(orbMaterialTotal)}</p>
                         </>
                       ) : (
-                        <p className="text-[#002045] text-sm font-semibold font-[var(--font-inter)]">{fmt(orbMaterialTotal)}</p>
+                        <p className="text-[#0B1F45] text-sm font-semibold">{fmt(orbMaterialTotal)}</p>
                       )}
                     </div>
                   </div>
 
                   {/* Link copy */}
                   <div className="px-5 py-4">
-                    <p className="text-[#74777f] text-[10px] tracking-[0.12em] uppercase font-bold font-[var(--font-inter)] mb-2">Link do cliente</p>
+                    <p className="text-[#74777f] text-[10px] tracking-[0.12em] uppercase font-bold mb-2">Link do cliente</p>
                     <div className="flex gap-2">
                       <input
                         readOnly
                         value={buildPartnerLink()}
-                        className="flex-1 min-w-0 border border-[#3b6934]/30 bg-white px-3 py-2.5 text-xs font-[var(--font-inter)] text-[#002045] focus:outline-none select-all truncate"
+                        className="flex-1 min-w-0 border border-[#36A35C]/30 bg-white px-3 py-2.5 text-xs text-[#0B1F45] focus:outline-none select-all truncate"
                         onClick={(e) => (e.target as HTMLInputElement).select()}
                       />
                       <button
@@ -2567,16 +2567,16 @@ function SimuladorInner() {
                           setPartnerLinkCopied(true);
                           setTimeout(() => setPartnerLinkCopied(false), 2500);
                         }}
-                        className={`flex-shrink-0 px-4 py-2.5 text-xs tracking-[0.08em] uppercase font-bold font-[var(--font-inter)] transition-colors ${
+                        className={`flex-shrink-0 px-4 py-2.5 text-xs tracking-[0.08em] uppercase font-bold transition-colors ${
                           partnerLinkCopied
-                            ? "bg-[#3b6934] text-white"
-                            : "bg-[#002045] text-white hover:bg-[#1a365d]"
+                            ? "bg-[#36A35C] text-[#0B1F45]"
+                            : "bg-[#0B1F45] text-[#0B1F45] hover:bg-[#2347A0]"
                         }`}
                       >
                         {partnerLinkCopied ? "✓ Copiado!" : "Copiar link"}
                       </button>
                     </div>
-                    <p className="text-[#74777f] text-[10px] font-[var(--font-inter)] mt-2">
+                    <p className="text-[#74777f] text-[10px] mt-2">
                       {couponCode ? `Cupom ${couponCode} já incluído no link. O cliente não precisa digitar nada.` : "Selecione mais opções ou copie o link acima."}
                     </p>
                   </div>
@@ -2596,7 +2596,7 @@ function SimuladorInner() {
                   <svg className="flex-shrink-0 mt-0.5 text-[#1a5fa8]" width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
                     <circle cx="12" cy="12" r="10"/><path d="M12 8v4m0 4h.01"/>
                   </svg>
-                  <p className="text-[#1a3c6e] text-xs font-[var(--font-inter)] leading-relaxed">
+                  <p className="text-[#1a3c6e] text-xs leading-relaxed">
                     {fromQuoteEdit ? (
                       <>
                         <strong>Editando seu orçamento salvo.</strong>{" "}
@@ -2612,16 +2612,16 @@ function SimuladorInner() {
                 </div>
               )}
 
-              <h3 className="font-[var(--font-noto-serif)] text-[#002045] text-xl font-normal mb-2">
+              <h3 className="font-serif text-[#0B1F45] text-xl font-normal mb-2">
                 Para quem é este projeto?
               </h3>
-              <p className="text-[#74777f] text-sm font-[var(--font-inter)] mb-6">
+              <p className="text-[#74777f] text-sm mb-6">
                 Preencha seus dados para receber o orçamento detalhado por e-mail.
               </p>
 
               <div className="max-w-md space-y-5 mb-8">
                 <div>
-                  <label className="block text-[10px] tracking-[0.15em] uppercase font-bold font-[var(--font-inter)] text-[#74777f] mb-2">
+                  <label className="block text-[10px] tracking-[0.15em] uppercase font-bold text-[#74777f] mb-2">
                     Nome completo <span className="text-red-500">*</span>
                   </label>
                   <input
@@ -2632,11 +2632,11 @@ function SimuladorInner() {
                     onChange={(e) => setClientName(e.target.value)}
                     onKeyDown={(e) => { if (e.key === "Enter") { e.preventDefault(); (document.getElementById("contato-email-input") as HTMLInputElement)?.focus(); } }}
                     placeholder="ex: João Silva"
-                    className="w-full border border-[#e2e2e2] px-4 py-3 text-sm font-[var(--font-inter)] text-[#002045] focus:outline-none focus:border-[#002045] transition-colors"
+                    className="w-full border border-[#e2e2e2] px-4 py-3 text-sm text-[#0B1F45] focus:outline-none focus:border-[#0B1F45] transition-colors"
                   />
                 </div>
                 <div>
-                  <label className="block text-[10px] tracking-[0.15em] uppercase font-bold font-[var(--font-inter)] text-[#74777f] mb-2">
+                  <label className="block text-[10px] tracking-[0.15em] uppercase font-bold text-[#74777f] mb-2">
                     E-mail <span className="text-red-500">*</span>
                   </label>
                   <input
@@ -2647,20 +2647,20 @@ function SimuladorInner() {
                     onChange={(e) => setClientEmail(e.target.value)}
                     onKeyDown={(e) => { if (e.key === "Enter") { e.preventDefault(); (document.getElementById("contato-phone-input") as HTMLInputElement)?.focus(); } }}
                     placeholder="ex: joao@email.com"
-                    className="w-full border border-[#e2e2e2] px-4 py-3 text-sm font-[var(--font-inter)] text-[#002045] focus:outline-none focus:border-[#002045] transition-colors"
+                    className="w-full border border-[#e2e2e2] px-4 py-3 text-sm text-[#0B1F45] focus:outline-none focus:border-[#0B1F45] transition-colors"
                   />
                   {clientEmail.trim().length > 0 && !validEmail ? (
-                    <p className="text-red-500 text-[10px] font-[var(--font-inter)] mt-1.5">
+                    <p className="text-red-500 text-[10px] mt-1.5">
                       Insira um e-mail válido (ex: joao@email.com)
                     </p>
                   ) : (
-                    <p className="text-[#74777f] text-[10px] font-[var(--font-inter)] mt-1.5">
+                    <p className="text-[#74777f] text-[10px] mt-1.5">
                       Você receberá o orçamento detalhado e acompanhamento por e-mail.
                     </p>
                   )}
                 </div>
                 <div>
-                  <label className="block text-[10px] tracking-[0.15em] uppercase font-bold font-[var(--font-inter)] text-[#74777f] mb-2">
+                  <label className="block text-[10px] tracking-[0.15em] uppercase font-bold text-[#74777f] mb-2">
                     WhatsApp <span className="text-red-500">*</span>
                   </label>
                   <input
@@ -2672,9 +2672,9 @@ function SimuladorInner() {
                     onBlur={() => { void captureSession(); }}
                     placeholder="ex: 92988150149"
                     maxLength={20}
-                    className="w-full border border-[#e2e2e2] px-4 py-3 text-sm font-[var(--font-inter)] text-[#002045] focus:outline-none focus:border-[#002045] transition-colors"
+                    className="w-full border border-[#e2e2e2] px-4 py-3 text-sm text-[#0B1F45] focus:outline-none focus:border-[#0B1F45] transition-colors"
                   />
-                  <p className="text-[#74777f] text-[10px] font-[var(--font-inter)] mt-1.5">
+                  <p className="text-[#74777f] text-[10px] mt-1.5">
                     Um consultor poderá entrar em contato pelo WhatsApp.
                   </p>
                 </div>
@@ -2682,15 +2682,15 @@ function SimuladorInner() {
 
               {/* Coupon — moved from step 5 */}
               <div className="max-w-md mt-6 pt-6 border-t border-[#e2e2e2]">
-                <p className="text-[10px] tracking-[0.15em] uppercase font-bold font-[var(--font-inter)] text-[#74777f] mb-2">
+                <p className="text-[10px] tracking-[0.15em] uppercase font-bold text-[#74777f] mb-2">
                   {fromPartnerLink ? "Cupom do consultor" : "Código de parceiro (opcional)"}
                 </p>
                 {fromPartnerLink ? (
-                  <div className="flex items-center gap-3 bg-[#f0f9eb] border border-[#3b6934]/40 px-4 py-3">
-                    <svg className="flex-shrink-0 text-[#3b6934]" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5"><path d="M20 6L9 17l-5-5"/></svg>
+                  <div className="flex items-center gap-3 bg-[#f0f9eb] border border-[#36A35C]/40 px-4 py-3">
+                    <svg className="flex-shrink-0 text-[#1F7A44]" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5"><path d="M20 6L9 17l-5-5"/></svg>
                     <div>
-                      <p className="text-[#3b6934] text-sm font-bold font-[var(--font-inter)] tracking-widest">{couponCode}</p>
-                      <p className="text-[#3b6934]/80 text-[10px] font-[var(--font-inter)] mt-0.5">
+                      <p className="text-[#1F7A44] text-sm font-bold tracking-widest">{couponCode}</p>
+                      <p className="text-[#1F7A44]/80 text-[10px] mt-0.5">
                         {couponData ? "Desconto aplicado no material" : couponValidating ? "Validando cupom..." : "Cupom aplicado pelo consultor"}
                       </p>
                     </div>
@@ -2703,24 +2703,24 @@ function SimuladorInner() {
                         value={couponCode}
                         onChange={(e) => { setCouponCode(e.target.value.toUpperCase()); setCouponData(null); setCouponError(""); }}
                         placeholder="ex: ARQLIMA10"
-                        className="flex-1 border border-[#e2e2e2] px-3 py-2.5 text-sm font-[var(--font-inter)] text-[#002045] uppercase focus:outline-none focus:border-[#002045] transition-colors tracking-widest"
+                        className="flex-1 border border-[#e2e2e2] px-3 py-2.5 text-sm text-[#0B1F45] uppercase focus:outline-none focus:border-[#0B1F45] transition-colors tracking-widest"
                       />
                       {couponCode && !couponData && (
                         <button onClick={validateCoupon} disabled={couponValidating}
-                          className="px-4 py-2.5 bg-[#002045] text-white text-xs font-bold font-[var(--font-inter)] hover:bg-[#1a365d] transition-colors disabled:opacity-50 whitespace-nowrap">
+                          className="px-4 py-2.5 bg-[#0B1F45] text-white text-xs font-bold hover:bg-[#2347A0] transition-colors disabled:opacity-50 whitespace-nowrap">
                           {couponValidating ? "..." : "Validar"}
                         </button>
                       )}
                     </div>
-                    {couponError && <p className="text-red-600 text-xs font-[var(--font-inter)] mt-1.5">{couponError}</p>}
+                    {couponError && <p className="text-red-600 text-xs mt-1.5">{couponError}</p>}
                     {couponData && (
-                      <div className="mt-2 bg-[#f0f9eb] border border-[#3b6934]/30 px-3 py-2.5">
-                        <p className="text-[#3b6934] text-xs font-bold font-[var(--font-inter)]">
+                      <div className="mt-2 bg-[#f0f9eb] border border-[#36A35C]/30 px-3 py-2.5">
+                        <p className="text-[#1F7A44] text-xs font-bold">
                           ✓ Cupom <span className="tracking-widest">{couponData.coupon_code}</span> aplicado!
                         </p>
                       </div>
                     )}
-                    <p className="text-[#74777f] text-[10px] font-[var(--font-inter)] mt-1.5">Não tem código? Sem problema — avance sem ele.</p>
+                    <p className="text-[#74777f] text-[10px] mt-1.5">Não tem código? Sem problema — avance sem ele.</p>
                   </>
                 )}
               </div>
@@ -2728,7 +2728,7 @@ function SimuladorInner() {
               <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3 mt-8">
                 <button
                   onClick={() => goToStep(3)}
-                  className="flex items-center gap-1.5 text-xs tracking-[0.1em] uppercase font-semibold font-[var(--font-inter)] text-[#74777f] hover:text-[#002045] transition-colors"
+                  className="flex items-center gap-1.5 text-xs tracking-[0.1em] uppercase font-semibold text-[#74777f] hover:text-[#0B1F45] transition-colors"
                 >
                   <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5">
                     <path d="M19 12H5M12 5l-7 7 7 7" />
@@ -2738,9 +2738,9 @@ function SimuladorInner() {
                 <button
                   onClick={() => { if (canAdvance4 && !simSubmitting) void handleSubmitAndShow(); }}
                   disabled={!canAdvance4 || simSubmitting}
-                  className={`w-full sm:w-auto inline-flex items-center justify-center gap-2 text-xs tracking-[0.12em] uppercase font-bold font-[var(--font-inter)] px-8 py-4 transition-colors ${
+                  className={`w-full sm:w-auto inline-flex items-center justify-center gap-2 text-xs tracking-[0.12em] uppercase font-bold px-8 py-4 transition-colors ${
                     canAdvance4 && !simSubmitting
-                      ? "bg-[#002045] text-white hover:bg-[#1a365d]"
+                      ? "bg-[#0B1F45] text-white hover:bg-[#2347A0]"
                       : "bg-[#e2e2e2] text-[#aaaaaa] cursor-not-allowed"
                   }`}
                 >
@@ -2760,17 +2760,17 @@ function SimuladorInner() {
             <div className="bg-white border border-[#e2e2e2]">
               <div className="px-6 pt-6 lg:px-10 lg:pt-8 flex flex-col sm:flex-row sm:items-start sm:justify-between gap-4 border-b border-[#f0f0ee] pb-5">
                 <div>
-                  <h3 className="font-[var(--font-noto-serif)] text-[#002045] text-xl font-normal mb-1">
+                  <h3 className="font-serif text-[#0B1F45] text-xl font-normal mb-1">
                     Visualize no seu ambiente
                   </h3>
-                  <p className="text-[#74777f] text-sm font-[var(--font-inter)]">
+                  <p className="text-[#74777f] text-sm">
                     Opcional — envie uma foto e a IA aplica os acabamentos antes de ver a simulação.
                   </p>
                 </div>
                 <div className="flex items-center gap-3 flex-shrink-0">
                   <button
                     onClick={() => goToStep(4)}
-                    className="flex items-center gap-1.5 text-xs tracking-[0.1em] uppercase font-semibold font-[var(--font-inter)] text-[#74777f] hover:text-[#002045] transition-colors"
+                    className="flex items-center gap-1.5 text-xs tracking-[0.1em] uppercase font-semibold text-[#74777f] hover:text-[#0B1F45] transition-colors"
                   >
                     <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5">
                       <path d="M19 12H5M12 5l-7 7 7 7" />
@@ -2780,7 +2780,7 @@ function SimuladorInner() {
                   <button
                     onClick={handleSubmitAndShow}
                     disabled={simSubmitting}
-                    className="inline-flex items-center gap-1.5 text-xs tracking-[0.1em] uppercase font-semibold font-[var(--font-inter)] text-[#002045] hover:underline transition-colors disabled:opacity-50"
+                    className="inline-flex items-center gap-1.5 text-xs tracking-[0.1em] uppercase font-semibold text-[#0B1F45] hover:underline transition-colors disabled:opacity-50"
                   >
                     {simSubmitting ? "Enviando..." : "Pular etapa →"}
                   </button>
@@ -2811,20 +2811,20 @@ function SimuladorInner() {
             <div className="mt-0" ref={resultsRef}>
 
               {simSubmitted && clientEmail && (
-                <div className="bg-[#f0f9eb] border border-[#3b6934]/40 px-5 py-4 flex flex-col gap-3">
+                <div className="bg-[#f0f9eb] border border-[#36A35C]/40 px-5 py-4 flex flex-col gap-3">
                   <div className="flex gap-3 items-center">
-                    <svg className="flex-shrink-0 text-[#3b6934]" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                    <svg className="flex-shrink-0 text-[#1F7A44]" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
                       <path d="M20 6L9 17l-5-5" />
                     </svg>
-                    <p className="text-[#3b6934] text-xs font-[var(--font-inter)]">
+                    <p className="text-[#1F7A44] text-xs">
                       <strong>Sua simulação foi salva.</strong> Enviamos uma confirmação para <strong>{clientEmail}</strong> e você poderá continuar este orçamento depois. Para receber o orçamento formalizado em PDF, use o botão abaixo.
                     </p>
                   </div>
                   {quoteShareUrl && (
-                    <div className="flex flex-col sm:flex-row gap-2 sm:items-center pt-1 border-t border-[#3b6934]/20">
+                    <div className="flex flex-col sm:flex-row gap-2 sm:items-center pt-1 border-t border-[#36A35C]/20">
                       <div className="flex-1 min-w-0">
-                        <p className="text-[#3b6934] text-[10px] tracking-[0.1em] uppercase font-bold font-[var(--font-inter)] mb-1">Link para compartilhar</p>
-                        <p className="text-[#3b6934]/70 text-[11px] font-[var(--font-inter)] truncate">{quoteShareUrl}</p>
+                        <p className="text-[#2347A0] text-[10px] tracking-[0.1em] uppercase font-bold mb-1">Link para compartilhar</p>
+                        <p className="text-[#1F7A44]/70 text-[11px] truncate">{quoteShareUrl}</p>
                       </div>
                       <button
                         onClick={() => {
@@ -2833,7 +2833,7 @@ function SimuladorInner() {
                           setQuoteUrlCopied(true);
                           setTimeout(() => setQuoteUrlCopied(false), 2500);
                         }}
-                        className="flex-shrink-0 flex items-center gap-1.5 px-4 py-2 bg-[#3b6934] text-white text-[10px] tracking-[0.1em] uppercase font-bold font-[var(--font-inter)] hover:bg-[#2e5229] transition-colors"
+                        className="flex-shrink-0 flex items-center gap-1.5 px-4 py-2 bg-[#36A35C] text-[#0B1F45] text-[10px] tracking-[0.1em] uppercase font-bold hover:bg-[#4BB571] transition-colors"
                       >
                         {quoteUrlCopied ? (
                           <>
@@ -2855,36 +2855,36 @@ function SimuladorInner() {
                 <svg className="flex-shrink-0 mt-0.5 text-[#a07a00]" width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
                   <circle cx="12" cy="12" r="10"/><path d="M12 8v4m0 4h.01"/>
                 </svg>
-                <p className="text-[#6b5000] text-xs font-[var(--font-inter)] leading-relaxed">
+                <p className="text-[#6b5000] text-xs leading-relaxed">
                   <strong>Instalação não inclusa.</strong> Este orçamento cobre apenas o material. Caso deseje, podemos indicar instaladores habilitados.
                 </p>
               </div>
 
               {/* Summary bar */}
-              <div className="bg-[#002045] px-5 py-4 flex flex-wrap items-center gap-3 border border-[#2d4f7f] border-b-0">
+              <div className="bg-[#0B1F45] px-5 py-4 flex flex-wrap items-center gap-3 border border-[#2d4f7f] border-b-0">
                 <div className="flex items-center gap-3 min-w-0">
                   <div className="relative w-10 h-10 flex-shrink-0 overflow-hidden">
                     <img src={selectedProduct.image_path} alt={selectedProduct.name} className="absolute inset-0 w-full h-full object-cover" />
                   </div>
                   <div className="min-w-0">
-                    <p className="text-white text-xs font-bold font-[var(--font-inter)] truncate">{selectedProduct.name}</p>
-                    <p className="text-[#86a0cd] text-[10px] font-[var(--font-inter)] truncate">
+                    <p className="text-white text-xs font-bold truncate">{selectedProduct.name}</p>
+                    <p className="text-[#B4BBC8] text-[10px] truncate">
                       {selectedProduct.code} · {selectedProduct.linha} · {selectedSpace.label}
                     </p>
                   </div>
                 </div>
                 <div className="ml-auto flex items-center gap-4 flex-shrink-0">
                   <div className="text-right">
-                    <p className="text-[#86a0cd] text-[9px] tracking-[0.1em] uppercase font-[var(--font-inter)]">Área</p>
-                    <p className="text-white text-sm font-bold font-[var(--font-inter)]">{m2.toFixed(2)} m²</p>
+                    <p className="text-[#B4BBC8] text-[9px] tracking-[0.1em] uppercase">Área</p>
+                    <p className="text-white text-sm font-bold">{m2.toFixed(2)} m²</p>
                   </div>
                   <div className="text-right">
-                    <p className="text-[#86a0cd] text-[9px] tracking-[0.1em] uppercase font-[var(--font-inter)]">Placas</p>
-                    <p className="text-white text-sm font-bold font-[var(--font-inter)]">{plates}</p>
+                    <p className="text-[#B4BBC8] text-[9px] tracking-[0.1em] uppercase">Placas</p>
+                    <p className="text-white text-sm font-bold">{plates}</p>
                   </div>
                   <button
                     onClick={reset}
-                    className="text-[#86a0cd] hover:text-white text-[10px] tracking-[0.1em] uppercase font-semibold font-[var(--font-inter)] transition-colors border border-white/20 px-3 py-1.5 hover:border-white"
+                    className="text-[#B4BBC8] hover:text-white text-[10px] tracking-[0.1em] uppercase font-semibold transition-colors border border-white/20 px-3 py-1.5 hover:border-white"
                   >
                     Refazer
                   </button>
@@ -2894,7 +2894,7 @@ function SimuladorInner() {
               {/* Multi-space summary */}
               {savedSpaces.length > 0 && (
                 <div className="bg-white border border-[#e2e2e2] border-t-0 px-5 sm:px-8 py-6">
-                  <p className="text-[#43474e] text-[10px] tracking-[0.15em] uppercase font-bold font-[var(--font-inter)] mb-4">
+                  <p className="text-[#43474e] text-[10px] tracking-[0.15em] uppercase font-bold mb-4">
                     Todos os ambientes simulados
                   </p>
                   <div className="space-y-0 border border-[#e2e2e2]">
@@ -2903,31 +2903,31 @@ function SimuladorInner() {
                       return (
                         <div key={sp.key}
                           onClick={() => setResumeIdx(isSelected ? null : i)}
-                          className={`flex items-center justify-between px-4 py-3 border-b border-[#f0f0f0] last:border-b-0 cursor-pointer transition-colors ${isSelected ? "bg-[#eef2fb] border-l-2 border-l-[#002045]" : "hover:bg-[#fafafa]"}`}>
+                          className={`flex items-center justify-between px-4 py-3 border-b border-[#f0f0f0] last:border-b-0 cursor-pointer transition-colors ${isSelected ? "bg-[#eef2fb] border-l-2 border-l-[#0B1F45]" : "hover:bg-[#F6F5F2]"}`}>
                           <div className="flex items-center gap-3 min-w-0">
-                            <span className="text-[#86a0cd] text-[10px] font-bold font-[var(--font-inter)] w-5 flex-shrink-0">{i + 1}</span>
+                            <span className="text-[#B4BBC8] text-[10px] font-bold w-5 flex-shrink-0">{i + 1}</span>
                             {sp.imagePath && (
                               <img src={sp.imagePath} alt={sp.productName} className="w-9 h-9 object-cover flex-shrink-0 border border-[#e2e2e2]" />
                             )}
                             <div className="min-w-0">
-                              <p className="text-[#002045] text-sm font-semibold font-[var(--font-inter)] truncate">{sp.label}</p>
-                              <p className="text-[#74777f] text-[10px] font-[var(--font-inter)]">{sp.productName} · {sp.dimLabel} · {sp.plates} placas</p>
+                              <p className="text-[#0B1F45] text-sm font-semibold truncate">{sp.label}</p>
+                              <p className="text-[#74777f] text-[10px]">{sp.productName} · {sp.dimLabel} · {sp.plates} placas</p>
                             </div>
                           </div>
                           <div className="flex items-center gap-3 flex-shrink-0">
                             <div className="text-right">
                               {couponData && sp.materialDiscounted < sp.materialTotal && (
-                                <p className="text-[#74777f] text-[9px] line-through font-[var(--font-inter)]">{fmt(sp.materialTotal)}</p>
+                                <p className="text-[#74777f] text-[9px] line-through">{fmt(sp.materialTotal)}</p>
                               )}
-                              <span className={`text-sm font-semibold font-[var(--font-inter)] ${couponData && sp.materialDiscounted < sp.materialTotal ? "text-[#3b6934]" : "text-[#002045]"}`}>{fmt(sp.materialDiscounted)}</span>
+                              <span className={`text-sm font-semibold ${couponData && sp.materialDiscounted < sp.materialTotal ? "text-[#1F7A44]" : "text-[#0B1F45]"}`}>{fmt(sp.materialDiscounted)}</span>
                             </div>
                             {isSelected
-                              ? <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="#002045" strokeWidth="2.5"><path d="M18 15l-6-6-6 6"/></svg>
+                              ? <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="#0B1F45" strokeWidth="2.5"><path d="M18 15l-6-6-6 6"/></svg>
                               : <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="#b0b0b0" strokeWidth="2"><path d="M6 9l6 6 6-6"/></svg>
                             }
                             <button
                               onClick={e => { e.stopPropagation(); editSavedSpace(i); }}
-                              className="w-8 h-8 flex items-center justify-center text-[#43474e] hover:text-[#002045] hover:bg-[#eef2fb] transition-colors"
+                              className="w-8 h-8 flex items-center justify-center text-[#43474e] hover:text-[#0B1F45] hover:bg-[#eef2fb] transition-colors"
                               title="Editar ambiente"
                               aria-label={`Editar ${sp.label}`}
                             >
@@ -2935,7 +2935,7 @@ function SimuladorInner() {
                             </button>
                             <button
                               onClick={e => { e.stopPropagation(); removeSavedSpace(i); }}
-                              className="w-8 h-8 flex items-center justify-center text-[#cc0000] hover:text-white hover:bg-[#cc0000] text-sm font-bold font-[var(--font-inter)] transition-colors"
+                              className="w-8 h-8 flex items-center justify-center text-[#cc0000] hover:text-white hover:bg-[#cc0000] text-sm font-bold transition-colors"
                               title="Remover ambiente"
                               aria-label={`Remover ${sp.label}`}
                             >✕</button>
@@ -2948,26 +2948,26 @@ function SimuladorInner() {
                       const isSelected = resumeIdx === null;
                       return (
                         <div onClick={() => setResumeIdx(null)}
-                          className={`flex items-center justify-between px-4 py-3 cursor-pointer transition-colors ${isSelected ? "bg-[#eef2fb] border-l-2 border-l-[#002045]" : "bg-[#f9fbff] hover:bg-[#f0f4fa]"}`}>
+                          className={`flex items-center justify-between px-4 py-3 cursor-pointer transition-colors ${isSelected ? "bg-[#eef2fb] border-l-2 border-l-[#0B1F45]" : "bg-[#f9fbff] hover:bg-[#f0f4fa]"}`}>
                           <div className="flex items-center gap-3 min-w-0">
-                            <span className="text-[#86a0cd] text-[10px] font-bold font-[var(--font-inter)] w-5 flex-shrink-0">{savedSpaces.length + 1}</span>
+                            <span className="text-[#B4BBC8] text-[10px] font-bold w-5 flex-shrink-0">{savedSpaces.length + 1}</span>
                             {selectedProduct.image_path && (
                               <img src={selectedProduct.image_path} alt={selectedProduct.name} className="w-9 h-9 object-cover flex-shrink-0 border border-[#e2e2e2]" />
                             )}
                             <div className="min-w-0">
-                              <p className="text-[#002045] text-sm font-semibold font-[var(--font-inter)] truncate">{selectedSpace.label}</p>
-                              <p className="text-[#74777f] text-[10px] font-[var(--font-inter)]">{selectedProduct.name} · {dimMode === "lxa" && width && height ? `${width}m × ${height}m` : `${m2.toFixed(2)} m²`} · {plates} placas</p>
+                              <p className="text-[#0B1F45] text-sm font-semibold truncate">{selectedSpace.label}</p>
+                              <p className="text-[#74777f] text-[10px]">{selectedProduct.name} · {dimMode === "lxa" && width && height ? `${width}m × ${height}m` : `${m2.toFixed(2)} m²`} · {plates} placas</p>
                             </div>
                           </div>
                           <div className="flex items-center gap-3 flex-shrink-0">
-                            <span className="text-[#002045] text-sm font-semibold font-[var(--font-inter)]">{fmt(orbMaterialDiscounted)}</span>
+                            <span className="text-[#0B1F45] text-sm font-semibold">{fmt(orbMaterialDiscounted)}</span>
                             {isSelected
-                              ? <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="#002045" strokeWidth="2.5"><path d="M18 15l-6-6-6 6"/></svg>
+                              ? <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="#0B1F45" strokeWidth="2.5"><path d="M18 15l-6-6-6 6"/></svg>
                               : <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="#b0b0b0" strokeWidth="2"><path d="M6 9l6 6 6-6"/></svg>
                             }
                             <button
                               onClick={e => { e.stopPropagation(); editCurrentSpace(); }}
-                              className="w-8 h-8 flex items-center justify-center text-[#43474e] hover:text-[#002045] hover:bg-[#eef2fb] transition-colors"
+                              className="w-8 h-8 flex items-center justify-center text-[#43474e] hover:text-[#0B1F45] hover:bg-[#eef2fb] transition-colors"
                               title="Editar ambiente"
                               aria-label={`Editar ${selectedSpace.label}`}
                             >
@@ -2975,7 +2975,7 @@ function SimuladorInner() {
                             </button>
                             <button
                               onClick={e => { e.stopPropagation(); removeCurrentSpace(); }}
-                              className="w-8 h-8 flex items-center justify-center text-[#cc0000] hover:text-white hover:bg-[#cc0000] text-sm font-bold font-[var(--font-inter)] transition-colors"
+                              className="w-8 h-8 flex items-center justify-center text-[#cc0000] hover:text-white hover:bg-[#cc0000] text-sm font-bold transition-colors"
                               title="Remover ambiente"
                               aria-label={`Remover ${selectedSpace.label}`}
                             >✕</button>
@@ -2984,11 +2984,11 @@ function SimuladorInner() {
                       );
                     })()}
                     {/* Grand total row */}
-                    <div className="flex items-center justify-between px-4 py-3 bg-[#002045]">
+                    <div className="flex items-center justify-between px-4 py-3 bg-[#0B1F45]">
                       <div className="flex items-center gap-3">
-                        <span className="text-white/60 text-[10px] font-bold font-[var(--font-inter)] uppercase tracking-wider">Total — material</span>
+                        <span className="text-white/60 text-[10px] font-bold uppercase tracking-wider">Total — material</span>
                       </div>
-                      <span className="text-white text-base font-bold font-[var(--font-noto-serif)]">{fmt(grandMaterialDiscounted)}</span>
+                      <span className="text-white text-base font-bold font-serif">{fmt(grandMaterialDiscounted)}</span>
                     </div>
                   </div>
                 </div>
@@ -3014,7 +3014,7 @@ function SimuladorInner() {
                 return (
               <div className="bg-white border border-[#e2e2e2] border-t-0 px-5 sm:px-8 py-6">
                 <div className="flex items-center justify-between mb-4">
-                  <p className="text-[#43474e] text-[10px] tracking-[0.15em] uppercase font-bold font-[var(--font-inter)]">
+                  <p className="text-[#43474e] text-[10px] tracking-[0.15em] uppercase font-bold">
                     Resumo — {resumeLabel}
                   </p>
                   {resumeImg && (
@@ -3023,44 +3023,44 @@ function SimuladorInner() {
                 </div>
                 <div className="grid grid-cols-2 sm:grid-cols-3 gap-x-6 gap-y-4">
                   <div>
-                    <p className="text-[#74777f] text-[10px] tracking-[0.1em] uppercase font-semibold font-[var(--font-inter)] mb-0.5">Espaço</p>
-                    <p className="text-[#002045] text-sm font-semibold font-[var(--font-inter)]">{resumeLabel}</p>
+                    <p className="text-[#74777f] text-[10px] tracking-[0.1em] uppercase font-semibold mb-0.5">Espaço</p>
+                    <p className="text-[#0B1F45] text-sm font-semibold">{resumeLabel}</p>
                   </div>
                   <div>
-                    <p className="text-[#74777f] text-[10px] tracking-[0.1em] uppercase font-semibold font-[var(--font-inter)] mb-0.5">Acabamento</p>
-                    <p className="text-[#002045] text-sm font-semibold font-[var(--font-inter)]">{resumeProductName}</p>
-                    <p className="text-[#74777f] text-[10px] font-[var(--font-inter)]">{resumeProductCode} · {resumeLinha}</p>
+                    <p className="text-[#74777f] text-[10px] tracking-[0.1em] uppercase font-semibold mb-0.5">Acabamento</p>
+                    <p className="text-[#0B1F45] text-sm font-semibold">{resumeProductName}</p>
+                    <p className="text-[#74777f] text-[10px]">{resumeProductCode} · {resumeLinha}</p>
                   </div>
                   <div>
-                    <p className="text-[#74777f] text-[10px] tracking-[0.1em] uppercase font-semibold font-[var(--font-inter)] mb-0.5">Dimensões / Área</p>
-                    <p className="text-[#002045] text-sm font-semibold font-[var(--font-inter)]">{resumeDimLabel}</p>
-                    <p className="text-[#74777f] text-[10px] font-[var(--font-inter)]">{resumeM2.toFixed(2)} m²</p>
+                    <p className="text-[#74777f] text-[10px] tracking-[0.1em] uppercase font-semibold mb-0.5">Dimensões / Área</p>
+                    <p className="text-[#0B1F45] text-sm font-semibold">{resumeDimLabel}</p>
+                    <p className="text-[#74777f] text-[10px]">{resumeM2.toFixed(2)} m²</p>
                   </div>
                   <div>
-                    <p className="text-[#74777f] text-[10px] tracking-[0.1em] uppercase font-semibold font-[var(--font-inter)] mb-0.5">Qtd. recomendada</p>
-                    <p className="text-[#002045] text-sm font-semibold font-[var(--font-inter)]">{resumePlates} placa{resumePlates !== 1 ? "s" : ""}</p>
-                    <p className="text-[#74777f] text-[10px] font-[var(--font-inter)]">cobre ~{(resumePlates * PLATE_M2).toFixed(2)} m²</p>
+                    <p className="text-[#74777f] text-[10px] tracking-[0.1em] uppercase font-semibold mb-0.5">Qtd. recomendada</p>
+                    <p className="text-[#0B1F45] text-sm font-semibold">{resumePlates} placa{resumePlates !== 1 ? "s" : ""}</p>
+                    <p className="text-[#74777f] text-[10px]">cobre ~{(resumePlates * PLATE_M2).toFixed(2)} m²</p>
                   </div>
                   <div>
-                    <p className="text-[#74777f] text-[10px] tracking-[0.1em] uppercase font-semibold font-[var(--font-inter)] mb-0.5">Investimento em material</p>
+                    <p className="text-[#74777f] text-[10px] tracking-[0.1em] uppercase font-semibold mb-0.5">Investimento em material</p>
                     {hasDiscount ? (
                       <>
-                        <p className="text-[#74777f] text-sm line-through font-[var(--font-inter)]">{fmt(resumeTotalFull)}</p>
-                        <p className="text-[#3b6934] text-sm font-bold font-[var(--font-inter)]">{fmt(resumeTotal)}</p>
-                        <p className="text-[#3b6934] text-[10px] font-[var(--font-inter)]">cupom {couponData?.coupon_code}</p>
+                        <p className="text-[#74777f] text-sm line-through">{fmt(resumeTotalFull)}</p>
+                        <p className="text-[#1F7A44] text-sm font-bold">{fmt(resumeTotal)}</p>
+                        <p className="text-[#1F7A44] text-[10px]">cupom {couponData?.coupon_code}</p>
                       </>
                     ) : (
                       <>
-                        <p className="text-[#002045] text-sm font-semibold font-[var(--font-inter)]">{fmt(resumeTotal)}</p>
-                        <p className="text-[#74777f] text-[10px] font-[var(--font-inter)]">{resumeTotalFull > 0 ? Math.round(resumeTotalFull / resumePlates).toLocaleString("pt-BR") : "—"}/placa</p>
+                        <p className="text-[#0B1F45] text-sm font-semibold">{fmt(resumeTotal)}</p>
+                        <p className="text-[#74777f] text-[10px]">{resumeTotalFull > 0 ? Math.round(resumeTotalFull / resumePlates).toLocaleString("pt-BR") : "—"}/placa</p>
                       </>
                     )}
                   </div>
                   {clientName && (
                     <div>
-                      <p className="text-[#74777f] text-[10px] tracking-[0.1em] uppercase font-semibold font-[var(--font-inter)] mb-0.5">Cliente</p>
-                      <p className="text-[#002045] text-sm font-semibold font-[var(--font-inter)]">{clientName}</p>
-                      {clientEmail && <p className="text-[#74777f] text-[10px] font-[var(--font-inter)]">{clientEmail}</p>}
+                      <p className="text-[#74777f] text-[10px] tracking-[0.1em] uppercase font-semibold mb-0.5">Cliente</p>
+                      <p className="text-[#0B1F45] text-sm font-semibold">{clientName}</p>
+                      {clientEmail && <p className="text-[#74777f] text-[10px]">{clientEmail}</p>}
                     </div>
                   )}
                 </div>
@@ -3073,25 +3073,25 @@ function SimuladorInner() {
                   seguido de cards de condição de pagamento selecionáveis. Tudo vem
                   de `pricing` (POST /api/orcamento/pricing) — fonte única. */}
               {pricing && (
-                <div className="bg-[#002045] border border-[#2d4f7f] border-t-0 px-5 sm:px-8 py-6 text-white">
-                  <p className="text-[#86a0cd] text-[10px] tracking-[0.18em] uppercase font-bold font-[var(--font-inter)] mb-4">Resumo do investimento</p>
+                <div className="bg-[#0B1F45] border border-[#2d4f7f] border-t-0 px-5 sm:px-8 py-6 text-white">
+                  <p className="text-[#B4BBC8] text-[10px] tracking-[0.18em] uppercase font-bold mb-4">Resumo do investimento</p>
 
                   {/* Estoque das placas no resumo — um bloco por modelo, para o
                       cliente ver exatamente qual acabamento está curto. */}
                   {plateShortages.length > 0 && (
                     <div className="mb-4 bg-[#fffbea] border border-[#e6c84a] px-4 py-3 space-y-2">
-                      <p className="text-[#6b5000] text-[11px] font-[var(--font-inter)] font-bold uppercase tracking-[0.1em]">
+                      <p className="text-[#6b5000] text-[11px] font-bold uppercase tracking-[0.1em]">
                         Disponibilidade de estoque
                       </p>
                       {plateShortages.map((s) => (
                         <div key={s.code}>
-                          <p className="text-[#6b5000] text-[12px] font-[var(--font-inter)] font-semibold">
+                          <p className="text-[#6b5000] text-[12px] font-semibold">
                             {s.name} ({s.code}) — {s.requested} solicitada{s.requested !== 1 ? "s" : ""}
                           </p>
-                          <p className="text-[#6b5000] text-[11px] font-[var(--font-inter)]">{shortageMessage(s)}</p>
+                          <p className="text-[#6b5000] text-[11px]">{shortageMessage(s)}</p>
                         </div>
                       ))}
-                      <p className="text-[#6b5000]/80 text-[11px] font-[var(--font-inter)]">
+                      <p className="text-[#6b5000]/80 text-[11px]">
                         As quantidades do seu projeto foram mantidas. Ao enviar, confirmamos prazo de
                         reposição ou a possibilidade de atendimento parcial.
                       </p>
@@ -3101,7 +3101,7 @@ function SimuladorInner() {
                   {pricing.warnings.length > 0 && (
                     <div className="mb-4 bg-[#fffbea] border border-[#e6c84a] px-4 py-2.5">
                       {pricing.warnings.map((w, i) => (
-                        <p key={i} className="text-[#6b5000] text-[11px] font-[var(--font-inter)]">{w}</p>
+                        <p key={i} className="text-[#6b5000] text-[11px]">{w}</p>
                       ))}
                     </div>
                   )}
@@ -3110,10 +3110,10 @@ function SimuladorInner() {
                   <div className="space-y-2.5">
                     <div className="flex items-start justify-between gap-3">
                       <div className="min-w-0">
-                        <p className="text-white text-[13px] font-semibold font-[var(--font-inter)]">Placas PFB</p>
-                        <p className="text-[#86a0cd] text-[11px] font-[var(--font-inter)]">{pricing.plates} × {fmt(pricing.pricePerPlate)}</p>
+                        <p className="text-white text-[13px] font-semibold">Placas PFB</p>
+                        <p className="text-[#B4BBC8] text-[11px]">{pricing.plates} × {fmt(pricing.pricePerPlate)}</p>
                       </div>
-                      <span className="text-white text-[13px] font-semibold font-[var(--font-inter)] flex-shrink-0">{fmtBRL(pricing.platesSubtotal)}</span>
+                      <span className="text-white text-[13px] font-semibold flex-shrink-0">{fmtBRL(pricing.platesSubtotal)}</span>
                     </div>
                     {/* Materiais de instalação — a lista depende do tipo de
                         aplicação de cada espaço (parede → PU-40; teto/forro →
@@ -3121,33 +3121,33 @@ function SimuladorInner() {
                     {(pricing.materials ?? []).filter((m) => m.quantity > 0).map((m) => (
                       <div key={m.code} className="flex items-start justify-between gap-3">
                         <div className="min-w-0">
-                          <p className="text-white text-[13px] font-semibold font-[var(--font-inter)]">
+                          <p className="text-white text-[13px] font-semibold">
                             {materialDisplayName(m)}
                           </p>
-                          <p className="text-[#86a0cd] text-[11px] font-[var(--font-inter)]">
+                          <p className="text-[#B4BBC8] text-[11px]">
                             {m.quantity} {m.unit}{m.quantity !== 1 ? "s" : ""}
                             {" · "}calculado automaticamente para {applicationReasonLabel(m.reasons).toLowerCase()}
                           </p>
                         </div>
-                        <span className="text-white text-[13px] font-semibold font-[var(--font-inter)] flex-shrink-0">
+                        <span className="text-white text-[13px] font-semibold flex-shrink-0">
                           {m.unitPrice > 0 ? fmtBRL(m.total) : "—"}
                         </span>
                       </div>
                     ))}
                     <div className="flex items-start justify-between gap-3">
                       <div className="min-w-0">
-                        <p className="text-white text-[13px] font-semibold font-[var(--font-inter)]">Frete</p>
-                        <p className="text-[#86a0cd] text-[11px] font-[var(--font-inter)]">{pricing.frete.free ? "Grátis (≥ 5 placas)" : pricing.frete.estimated ? "Estimado — confirmado pelo CEP" : "Confirmado pelo CEP"}</p>
+                        <p className="text-white text-[13px] font-semibold">Frete</p>
+                        <p className="text-[#B4BBC8] text-[11px]">{pricing.frete.free ? "Grátis (≥ 5 placas)" : pricing.frete.estimated ? "Estimado — confirmado pelo CEP" : "Confirmado pelo CEP"}</p>
                       </div>
-                      <span className={`text-[13px] font-semibold font-[var(--font-inter)] flex-shrink-0 ${pricing.frete.free ? "text-[#5eead4]" : "text-white"}`}>{pricing.frete.free ? "Grátis" : fmtBRL(pricing.frete.value)}</span>
+                      <span className={`text-[13px] font-semibold flex-shrink-0 ${pricing.frete.free ? "text-[#5eead4]" : "text-white"}`}>{pricing.frete.free ? "Grátis" : fmtBRL(pricing.frete.value)}</span>
                     </div>
                     {pricing.discount.eligible && pricing.discount.amount > 0 && (
                       <div className="flex items-start justify-between gap-3">
                         <div className="min-w-0">
-                          <p className="text-[#5eead4] text-[13px] font-semibold font-[var(--font-inter)]">Desconto à vista</p>
-                          <p className="text-[#5eead4]/70 text-[11px] font-[var(--font-inter)]">{pricing.discount.pct}% no PIX ou espécie</p>
+                          <p className="text-[#5eead4] text-[13px] font-semibold">Desconto à vista</p>
+                          <p className="text-[#5eead4]/70 text-[11px]">{pricing.discount.pct}% no PIX ou espécie</p>
                         </div>
-                        <span className="text-[#5eead4] text-[13px] font-semibold font-[var(--font-inter)] flex-shrink-0">− {fmtBRL(pricing.discount.amount)}</span>
+                        <span className="text-[#5eead4] text-[13px] font-semibold flex-shrink-0">− {fmtBRL(pricing.discount.amount)}</span>
                       </div>
                     )}
                   </div>
@@ -3155,7 +3155,7 @@ function SimuladorInner() {
                   {/* Condições de pagamento — parcela em destaque */}
                   {pricing.paymentOptions.length > 0 && (
                     <div className="mt-5 pt-5 border-t border-white/15">
-                      <p className="text-[#86a0cd] text-[10px] tracking-[0.18em] uppercase font-bold font-[var(--font-inter)] mb-3">Condições de pagamento</p>
+                      <p className="text-[#B4BBC8] text-[10px] tracking-[0.18em] uppercase font-bold mb-3">Condições de pagamento</p>
                       <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
                         {pricing.paymentOptions.map((opt) => {
                           const active = selectedPayment === opt.id;
@@ -3168,20 +3168,20 @@ function SimuladorInner() {
                               className={`text-left px-4 py-3.5 border transition-colors ${active ? "border-white bg-white" : "border-white/25 bg-white/[0.06] hover:border-white/60"}`}
                             >
                               <div className="flex items-center justify-between gap-2 mb-1.5">
-                                <span className={`text-[11px] tracking-[0.06em] uppercase font-bold font-[var(--font-inter)] ${active ? "text-[#43474e]" : "text-[#86a0cd]"}`}>{opt.label}</span>
-                                <span className={`flex-shrink-0 w-4 h-4 rounded-full border-2 flex items-center justify-center ${active ? "border-[#002045] bg-[#002045]" : "border-white/50"}`}>
+                                <span className={`text-[11px] tracking-[0.06em] uppercase font-bold ${active ? "text-[#43474e]" : "text-[#B4BBC8]"}`}>{opt.label}</span>
+                                <span className={`flex-shrink-0 w-4 h-4 rounded-full border-2 flex items-center justify-center ${active ? "border-[#0B1F45] bg-[#0B1F45]" : "border-white/50"}`}>
                                   {active && <svg width="8" height="8" viewBox="0 0 24 24" fill="none" stroke="white" strokeWidth="4"><path d="M20 6L9 17l-5-5"/></svg>}
                                 </span>
                               </div>
                               {opt.id === "cartao" ? (
                                 <>
-                                  <p className={`text-xl sm:text-2xl font-bold font-[var(--font-noto-serif)] leading-none ${active ? "text-[#002045]" : "text-white"}`}>{opt.installments}x de {fmtParcela(opt.installmentValue ?? 0)}</p>
-                                  <p className={`text-[11px] font-[var(--font-inter)] mt-1.5 ${active ? "text-[#74777f]" : "text-[#86a0cd]"}`}>sem juros · total {fmtBRL(opt.total)}</p>
+                                  <p className={`text-xl sm:text-2xl font-bold font-serif leading-none ${active ? "text-[#0B1F45]" : "text-white"}`}>{opt.installments}x de {fmtParcela(opt.installmentValue ?? 0)}</p>
+                                  <p className={`text-[11px] mt-1.5 ${active ? "text-[#74777f]" : "text-[#B4BBC8]"}`}>sem juros · total {fmtBRL(opt.total)}</p>
                                 </>
                               ) : (
                                 <>
-                                  <p className={`text-xl sm:text-2xl font-bold font-[var(--font-noto-serif)] leading-none ${active ? "text-[#002045]" : "text-white"}`}>{fmtBRL(opt.total)}</p>
-                                  <p className={`text-[11px] font-semibold font-[var(--font-inter)] mt-1.5 ${active ? "text-[#3b6934]" : "text-[#5eead4]"}`}>à vista · {opt.discountPct}% off (economize {fmtBRL(opt.discountAmount ?? 0)})</p>
+                                  <p className={`text-xl sm:text-2xl font-bold font-serif leading-none ${active ? "text-[#0B1F45]" : "text-white"}`}>{fmtBRL(opt.total)}</p>
+                                  <p className={`text-[11px] font-semibold mt-1.5 ${active ? "text-[#1F7A44]" : "text-[#5eead4]"}`}>à vista · {opt.discountPct}% off (economize {fmtBRL(opt.discountAmount ?? 0)})</p>
                                 </>
                               )}
                             </button>
@@ -3189,7 +3189,7 @@ function SimuladorInner() {
                         })}
                       </div>
                       {grandPlates < 2 && (
-                        <p className="text-[#86a0cd] text-[11px] font-[var(--font-inter)] mt-2">Condições especiais de pagamento a partir de 2 placas.</p>
+                        <p className="text-[#B4BBC8] text-[11px] mt-2">Condições especiais de pagamento a partir de 2 placas.</p>
                       )}
                     </div>
                   )}
@@ -3198,27 +3198,27 @@ function SimuladorInner() {
                   <button
                     type="button"
                     onClick={() => { setFormalizeOpen(true); trackFunnel("cta_formalizacao_clicado"); trackFunnel("formalizacao_iniciada"); }}
-                    className="mt-5 w-full bg-[#3b6934] hover:bg-[#2e5229] text-white text-sm tracking-[0.08em] uppercase font-bold font-[var(--font-inter)] px-6 py-4 transition-colors flex items-center justify-center gap-2"
+                    className="mt-5 w-full bg-[#36A35C] hover:bg-[#4BB571] text-[#0B1F45] text-sm tracking-[0.08em] uppercase font-bold px-6 py-4 transition-colors flex items-center justify-center gap-2"
                   >
                     <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><path d="M14 2v6h6M16 13H8M16 17H8M10 9H8"/></svg>
                     Receber orçamento formalizado em PDF
                   </button>
-                  <p className="text-[#86a0cd] text-[11px] font-[var(--font-inter)] text-center mt-2">
+                  <p className="text-[#B4BBC8] text-[11px] text-center mt-2">
                     Receba o orçamento completo pelo WhatsApp — é só informar o endereço de entrega.
                   </p>
 
                   {/* Instalação — sobe para dentro do bloco principal (accordion) */}
-                  <div className="bg-[#a1d494] mt-5">
+                  <div className="bg-[#36A35C] mt-5">
                     <button type="button" onClick={() => setShowMoInfo((v) => !v)} className="w-full flex items-center justify-between gap-3 px-4 py-3.5 text-left">
-                      <span className="text-[#002045] text-sm font-bold font-[var(--font-inter)]">Precisa de instalação? <span className="font-normal">(opcional, não incluso)</span></span>
-                      <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#002045" strokeWidth="2.5" className={`flex-shrink-0 transition-transform duration-200 ${showMoInfo ? "rotate-180" : ""}`}><path d="M6 9l6 6 6-6" /></svg>
+                      <span className="text-[#0B1F45] text-sm font-bold">Precisa de instalação? <span className="font-normal">(opcional, não incluso)</span></span>
+                      <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#0B1F45" strokeWidth="2.5" className={`flex-shrink-0 transition-transform duration-200 ${showMoInfo ? "rotate-180" : ""}`}><path d="M6 9l6 6 6-6" /></svg>
                     </button>
                     {showMoInfo && (
                       <div className="bg-[#0a1f3d] px-4 py-4 space-y-3">
-                        <p className="text-white/70 text-[11px] font-[var(--font-inter)] leading-relaxed">
+                        <p className="text-white/70 text-[11px] leading-relaxed">
                           A Orbital fornece o painel — não realizamos instalação, e este orçamento cobre apenas o material. Quando precisar, indicamos uma empresa terceirizada especializada, que já aplicou os painéis Orbital em diversos projetos. O custo da instalação varia por projeto; fale direto com o responsável para um orçamento.
                         </p>
-                        <a href={`${WERK_ENGENHARIA_WA_BASE}${encodeURIComponent(werkssonMsg)}`} target="_blank" rel="noopener noreferrer" className="inline-flex items-center gap-2 bg-[#25d366] text-white text-xs tracking-[0.1em] uppercase font-bold font-[var(--font-inter)] px-5 py-2.5 hover:brightness-95 transition">
+                        <a href={`${WERK_ENGENHARIA_WA_BASE}${encodeURIComponent(werkssonMsg)}`} target="_blank" rel="noopener noreferrer" className="inline-flex items-center gap-2 bg-[#25d366] text-white text-xs tracking-[0.1em] uppercase font-bold px-5 py-2.5 hover:brightness-95 transition">
                           <svg width="13" height="13" viewBox="0 0 24 24" fill="currentColor"><path d="M17.472 14.382c-.297-.149-1.758-.867-2.03-.967-.273-.099-.471-.148-.67.15-.197.297-.767.966-.94 1.164-.173.199-.347.223-.644.075-.297-.15-1.255-.463-2.39-1.475-.883-.788-1.48-1.761-1.653-2.059-.173-.297-.018-.458.13-.606.134-.133.298-.347.446-.52.149-.174.198-.298.298-.497.099-.198.05-.371-.025-.52-.075-.149-.669-1.612-.916-2.207-.242-.579-.487-.5-.669-.51-.173-.008-.371-.01-.57-.01-.198 0-.52.074-.792.372-.272.297-1.04 1.016-1.04 2.479 0 1.462 1.065 2.875 1.213 3.074.149.198 2.096 3.2 5.077 4.487.709.306 1.262.489 1.694.625.712.227 1.36.195 1.871.118.571-.085 1.758-.719 2.006-1.413.248-.694.248-1.289.173-1.413-.074-.124-.272-.198-.57-.347m-5.421 7.403h-.004a9.87 9.87 0 01-5.031-1.378l-.361-.214-3.741.982.998-3.648-.235-.374a9.86 9.86 0 01-1.51-5.26c.001-5.45 4.436-9.884 9.888-9.884 2.64 0 5.122 1.03 6.988 2.898a9.825 9.825 0 012.893 6.994c-.003 5.45-4.437 9.884-9.885 9.884m8.413-18.297A11.815 11.815 0 0012.05 0C5.495 0 .16 5.335.157 11.892c0 2.096.547 4.142 1.588 5.945L.057 24l6.305-1.654a11.882 11.882 0 005.683 1.448h.005c6.554 0 11.89-5.335 11.893-11.893a11.821 11.821 0 00-3.48-8.413z" /></svg>
                           Falar sobre instalação no WhatsApp
                         </a>
@@ -3274,13 +3274,13 @@ function SimuladorInner() {
                       ),
                     },
                   ].map(({ label, icon, desc, labelDesc }) => (
-                    <div key={label} className="flex flex-col items-center text-center gap-1.5 p-2.5 bg-[#f9f9f9] border border-[#e2e2e2]">
-                      <div className="w-6 h-6 bg-[#f0f4f8] flex items-center justify-center text-[#002045] flex-shrink-0">
+                    <div key={label} className="flex flex-col items-center text-center gap-1.5 p-2.5 bg-[#F6F5F2] border border-[#e2e2e2]">
+                      <div className="w-6 h-6 bg-[#f0f4f8] flex items-center justify-center text-[#0B1F45] flex-shrink-0">
                         {icon}
                       </div>
                       <div>
-                        <p className="text-[#002045] text-[8px] tracking-[0.06em] uppercase font-bold font-[var(--font-inter)] leading-tight">{label}</p>
-                        <p className={labelDesc ? "text-[#002045] text-[8px] tracking-[0.06em] uppercase font-bold font-[var(--font-inter)] leading-tight" : "text-[#74777f] text-[8px] font-[var(--font-inter)] leading-snug"}>{desc}</p>
+                        <p className="text-[#0B1F45] text-[8px] tracking-[0.06em] uppercase font-bold leading-tight">{label}</p>
+                        <p className={labelDesc ? "text-[#0B1F45] text-[8px] tracking-[0.06em] uppercase font-bold leading-tight" : "text-[#74777f] text-[8px] leading-snug"}>{desc}</p>
                       </div>
                     </div>
                   ))}
@@ -3349,13 +3349,13 @@ function SimuladorInner() {
                       ),
                     },
                   ].map(({ label, icon, desc }) => (
-                    <div key={label} className="flex flex-col items-center text-center gap-1.5 p-2.5 bg-[#f9f9f9] border border-[#e2e2e2]">
-                      <div className="w-6 h-6 bg-[#f0f4f8] flex items-center justify-center text-[#002045] flex-shrink-0">
+                    <div key={label} className="flex flex-col items-center text-center gap-1.5 p-2.5 bg-[#F6F5F2] border border-[#e2e2e2]">
+                      <div className="w-6 h-6 bg-[#f0f4f8] flex items-center justify-center text-[#0B1F45] flex-shrink-0">
                         {icon}
                       </div>
                       <div>
-                        <p className="text-[#002045] text-[8px] tracking-[0.06em] uppercase font-bold font-[var(--font-inter)] leading-tight">{label}</p>
-                        <p className="text-[#74777f] text-[8px] font-[var(--font-inter)] leading-snug">{desc}</p>
+                        <p className="text-[#0B1F45] text-[8px] tracking-[0.06em] uppercase font-bold leading-tight">{label}</p>
+                        <p className="text-[#74777f] text-[8px] leading-snug">{desc}</p>
                       </div>
                     </div>
                   ))}
@@ -3374,10 +3374,10 @@ function SimuladorInner() {
                 return (
                   <div className="bg-white border border-[#e2e2e2] mt-4">
                     <div className="px-6 lg:px-8 pt-6 pb-2 border-b border-[#e2e2e2]">
-                      <p className="text-[#43474e] text-[10px] tracking-[0.15em] uppercase font-bold font-[var(--font-inter)] mb-0.5">
+                      <p className="text-[#43474e] text-[10px] tracking-[0.15em] uppercase font-bold mb-0.5">
                         PFB Orbital vs. {COMPARISON_OPTIONS.find(o => o.key === comparisonMaterial)?.label ?? "MDF"}
                       </p>
-                      <p className="text-[#74777f] text-xs font-[var(--font-inter)]">
+                      <p className="text-[#74777f] text-xs">
                         Selecione o material para comparar tecnicamente
                       </p>
                     </div>
@@ -3414,12 +3414,12 @@ function SimuladorInner() {
               },
             ].map(({ icon, title, desc }) => (
               <div key={title} className="flex gap-5">
-                <div className="flex-shrink-0 w-10 h-10 border border-white/20 flex items-center justify-center text-[#a1d494]">
+                <div className="flex-shrink-0 w-10 h-10 border border-white/20 flex items-center justify-center text-[#36A35C]">
                   {icon}
                 </div>
                 <div>
-                  <p className="text-white text-sm font-bold font-[var(--font-inter)] mb-1.5">{title}</p>
-                  <p className="text-white/50 text-sm font-[var(--font-inter)] leading-relaxed">{desc}</p>
+                  <p className="text-white text-sm font-bold mb-1.5">{title}</p>
+                  <p className="text-white/50 text-sm leading-relaxed">{desc}</p>
                 </div>
               </div>
             ))}
@@ -3428,15 +3428,15 @@ function SimuladorInner() {
       </section>
 
       {/* ── Contact + FAQ ─────────────────────────────────────────────────── */}
-      <section className="py-16 lg:py-20 bg-[#f9f9f9]">
+      <section className="py-16 lg:py-20 bg-[#F6F5F2]">
         <div className="max-w-[1280px] mx-auto px-6 lg:px-16">
           <div className="grid grid-cols-1 lg:grid-cols-12 gap-12 items-start">
 
             <div className="lg:col-span-5">
-              <p className="text-[#74777f] text-xs tracking-[0.2em] uppercase font-semibold font-[var(--font-inter)] mb-4">
+              <p className="text-[#74777f] text-xs tracking-[0.2em] uppercase font-semibold mb-4">
                 Canais de atendimento
               </p>
-              <h2 className="font-[var(--font-noto-serif)] text-[#002045] text-3xl font-normal mb-8">
+              <h2 className="font-serif text-[#0B1F45] text-3xl font-normal mb-8">
                 Fale com a Orbital.
               </h2>
               <div className="space-y-3">
@@ -3444,17 +3444,17 @@ function SimuladorInner() {
                   href={`${WA_BASE}${encodeURIComponent("Olá! Tenho interesse no PFB Orbital e gostaria de fazer um orçamento.")}`}
                   target="_blank"
                   rel="noopener noreferrer"
-                  className="flex items-start gap-5 p-5 sm:p-6 bg-white border border-[#e2e2e2] hover:border-[#1a365d] transition-colors group"
+                  className="flex items-start gap-5 p-5 sm:p-6 bg-white border border-[#e2e2e2] hover:border-[#2347A0] transition-colors group"
                 >
-                  <div className="w-12 h-12 bg-[#3b6934] flex items-center justify-center flex-shrink-0">
+                  <div className="w-12 h-12 bg-[#36A35C] flex items-center justify-center flex-shrink-0">
                     <WaIcon size={22} />
                   </div>
                   <div>
-                    <p className="text-[#002045] font-semibold text-base font-[var(--font-inter)] mb-1 group-hover:text-[#1a365d] transition-colors">
+                    <p className="text-[#0B1F45] font-semibold text-base mb-1 group-hover:text-[#2347A0] transition-colors">
                       WhatsApp
                     </p>
-                    <p className="text-[#43474e] text-sm font-[var(--font-inter)]">(92) 98815-0149</p>
-                    <p className="text-[#74777f] text-xs font-[var(--font-inter)] mt-1">
+                    <p className="text-[#43474e] text-sm">(92) 98815-0149</p>
+                    <p className="text-[#74777f] text-xs mt-1">
                       Resposta rápida · Orçamentos e dúvidas técnicas
                     </p>
                   </div>
@@ -3464,19 +3464,19 @@ function SimuladorInner() {
                   href="https://instagram.com/orbitalrevestimentos"
                   target="_blank"
                   rel="noopener noreferrer"
-                  className="flex items-start gap-5 p-5 sm:p-6 bg-white border border-[#e2e2e2] hover:border-[#1a365d] transition-colors group"
+                  className="flex items-start gap-5 p-5 sm:p-6 bg-white border border-[#e2e2e2] hover:border-[#2347A0] transition-colors group"
                 >
-                  <div className="w-12 h-12 bg-[#1a365d] flex items-center justify-center flex-shrink-0">
+                  <div className="w-12 h-12 bg-[#2347A0] flex items-center justify-center flex-shrink-0">
                     <svg width="20" height="20" viewBox="0 0 24 24" fill="white">
                       <path d="M12 2.163c3.204 0 3.584.012 4.85.07 3.252.148 4.771 1.691 4.919 4.919.058 1.265.069 1.645.069 4.849 0 3.205-.012 3.584-.069 4.849-.149 3.225-1.664 4.771-4.919 4.919-1.266.058-1.644.07-4.85.07-3.204 0-3.584-.012-4.849-.07-3.26-.149-4.771-1.699-4.919-4.92-.058-1.265-.07-1.644-.07-4.849 0-3.204.013-3.583.07-4.849.149-3.227 1.664-4.771 4.919-4.919 1.266-.057 1.645-.069 4.849-.069zm0-2.163c-3.259 0-3.667.014-4.947.072-4.358.2-6.78 2.618-6.98 6.98-.059 1.281-.073 1.689-.073 4.948 0 3.259.014 3.668.072 4.948.2 4.358 2.618 6.78 6.98 6.98 1.281.058 1.689.072 4.948.072 3.259 0 3.668-.014 4.948-.072 4.354-.2 6.782-2.618 6.979-6.98.059-1.28.073-1.689.073-4.948 0-3.259-.014-3.667-.072-4.947-.196-4.354-2.617-6.78-6.979-6.98-1.281-.059-1.69-.073-4.949-.073zm0 5.838c-3.403 0-6.162 2.759-6.162 6.162s2.759 6.163 6.162 6.163 6.162-2.759 6.162-6.163c0-3.403-2.759-6.162-6.162-6.162zm0 10.162c-2.209 0-4-1.79-4-4 0-2.209 1.791-4 4-4s4 1.791 4 4c0 2.21-1.791 4-4 4zm6.406-11.845c-.796 0-1.441.645-1.441 1.44s.645 1.44 1.441 1.44c.795 0 1.439-.645 1.439-1.44s-.644-1.44-1.439-1.44z" />
                     </svg>
                   </div>
                   <div>
-                    <p className="text-[#002045] font-semibold text-base font-[var(--font-inter)] mb-1 group-hover:text-[#1a365d] transition-colors">
+                    <p className="text-[#0B1F45] font-semibold text-base mb-1 group-hover:text-[#2347A0] transition-colors">
                       Instagram
                     </p>
-                    <p className="text-[#43474e] text-sm font-[var(--font-inter)]">@orbitalrevestimentos</p>
-                    <p className="text-[#74777f] text-xs font-[var(--font-inter)] mt-1">
+                    <p className="text-[#43474e] text-sm">@orbitalrevestimentos</p>
+                    <p className="text-[#74777f] text-xs mt-1">
                       Projetos, acabamentos e novidades
                     </p>
                   </div>
@@ -3484,19 +3484,19 @@ function SimuladorInner() {
 
                 <div className="flex items-start gap-5 p-5 sm:p-6 bg-white border border-[#e2e2e2]">
                   <div className="w-12 h-12 bg-[#e8e8e8] flex items-center justify-center flex-shrink-0">
-                    <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#002045" strokeWidth="1.5">
+                    <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#0B1F45" strokeWidth="1.5">
                       <path d="M12 2C8.13 2 5 5.13 5 9c0 5.25 7 13 7 13s7-7.75 7-13c0-3.87-3.13-7-7-7z" />
                       <circle cx="12" cy="9" r="2.5" />
                     </svg>
                   </div>
                   <div>
-                    <p className="text-[#002045] font-semibold text-base font-[var(--font-inter)] mb-1">Showroom</p>
-                    <p className="text-[#43474e] text-sm font-[var(--font-inter)]">Manaus, Amazonas</p>
+                    <p className="text-[#0B1F45] font-semibold text-base mb-1">Showroom</p>
+                    <p className="text-[#43474e] text-sm">Manaus, Amazonas</p>
                     <a
                       href={`${WA_BASE}${encodeURIComponent("Olá! Vi o site da Orbital e gostaria de agendar uma visita ao showroom.")}`}
                       target="_blank"
                       rel="noopener noreferrer"
-                      className="inline-flex items-center gap-1 text-[#1a365d] text-xs font-semibold font-[var(--font-inter)] mt-1 hover:text-[#002045] transition-colors"
+                      className="inline-flex items-center gap-1 text-[#2347A0] text-xs font-semibold mt-1 hover:text-[#0B1F45] transition-colors"
                     >
                       Agendar visita pelo WhatsApp
                       <svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5">
@@ -3511,7 +3511,7 @@ function SimuladorInner() {
                     href={CATALOGUE_URL}
                     target="_blank"
                     rel="noopener noreferrer"
-                    className="inline-flex items-center gap-1.5 text-xs tracking-[0.1em] uppercase font-bold font-[var(--font-inter)] text-[#1a365d] hover:text-[#002045] transition-colors border-b border-[#1a365d]/40 pb-0.5 hover:border-[#002045]"
+                    className="inline-flex items-center gap-1.5 text-xs tracking-[0.1em] uppercase font-bold text-[#2347A0] hover:text-[#0B1F45] transition-colors border-b border-[#2347A0]/40 pb-0.5 hover:border-[#0B1F45]"
                   >
                     <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
                       <path d="M21 15v4a2 2 0 01-2 2H5a2 2 0 01-2-2v-4M7 10l5 5 5-5M12 15V3" />
@@ -3520,7 +3520,7 @@ function SimuladorInner() {
                   </a>
                   <Link
                     href="/produtos"
-                    className="inline-flex items-center gap-1.5 text-xs tracking-[0.1em] uppercase font-bold font-[var(--font-inter)] text-[#1a365d] hover:text-[#002045] transition-colors border-b border-[#1a365d]/40 pb-0.5 hover:border-[#002045]"
+                    className="inline-flex items-center gap-1.5 text-xs tracking-[0.1em] uppercase font-bold text-[#2347A0] hover:text-[#0B1F45] transition-colors border-b border-[#2347A0]/40 pb-0.5 hover:border-[#0B1F45]"
                   >
                     Ver catálogo online
                   </Link>
@@ -3529,17 +3529,17 @@ function SimuladorInner() {
             </div>
 
             <div className="lg:col-span-7">
-              <p className="text-[#74777f] text-xs tracking-[0.2em] uppercase font-semibold font-[var(--font-inter)] mb-4">
+              <p className="text-[#74777f] text-xs tracking-[0.2em] uppercase font-semibold mb-4">
                 Dúvidas frequentes
               </p>
-              <h2 className="font-[var(--font-noto-serif)] text-[#002045] text-3xl font-normal mb-8">
+              <h2 className="font-serif text-[#0B1F45] text-3xl font-normal mb-8">
                 Perguntas respondidas.
               </h2>
               <div className="divide-y divide-[#eeeeee]">
                 {faqs.map(({ q, a }) => (
                   <div key={q} className="py-5">
-                    <h3 className="text-[#002045] text-sm font-semibold font-[var(--font-inter)] mb-2 leading-snug">{q}</h3>
-                    <p className="text-[#74777f] text-sm font-[var(--font-inter)] leading-relaxed">{a}</p>
+                    <h3 className="text-[#0B1F45] text-sm font-semibold mb-2 leading-snug">{q}</h3>
+                    <p className="text-[#74777f] text-sm leading-relaxed">{a}</p>
                   </div>
                 ))}
               </div>
@@ -3548,8 +3548,8 @@ function SimuladorInner() {
         </div>
       </section>
 
-      <div className="bg-[#f9f9f9] border-t border-[#eeeeee] py-5 text-center">
-        <p className="text-[#74777f] text-xs font-[var(--font-inter)] italic">
+      <div className="bg-[#F6F5F2] border-t border-[#eeeeee] py-5 text-center">
+        <p className="text-[#74777f] text-xs italic">
           Orbital · Manaus, AM · Fornecedores diretos — não realizamos instalação.
           Estimativas de investimento para referência; valores sujeitos a alteração.
         </p>
@@ -3595,8 +3595,8 @@ function SimuladorInner() {
             className="bg-white w-full sm:max-w-lg max-h-[92vh] overflow-y-auto"
             onClick={(e) => e.stopPropagation()}
           >
-            <div className="sticky top-0 bg-[#002045] px-5 py-4 flex items-center justify-between z-10">
-              <p className="text-white font-[var(--font-noto-serif)] text-base">
+            <div className="sticky top-0 bg-[#0B1F45] px-5 py-4 flex items-center justify-between z-10">
+              <p className="text-white font-serif text-base">
                 {fzResult ? "Orçamento formalizado" : "Receber orçamento formalizado"}
               </p>
               <button
@@ -3612,14 +3612,14 @@ function SimuladorInner() {
               <div className="px-5 py-6 space-y-4">
                 <div className="flex items-center gap-3">
                   <span className="flex-shrink-0 w-10 h-10 rounded-full bg-[#f0f9eb] flex items-center justify-center">
-                    <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#3b6934" strokeWidth="2.5"><path d="M20 6L9 17l-5-5"/></svg>
+                    <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#36A35C" strokeWidth="2.5"><path d="M20 6L9 17l-5-5"/></svg>
                   </span>
                   <div>
-                    <p className="text-[#002045] text-sm font-bold font-[var(--font-inter)]">Orçamento enviado com sucesso.</p>
-                    <p className="text-[#74777f] text-[12px] font-[var(--font-inter)]">Nº {fzResult.formalNumber}</p>
+                    <p className="text-[#0B1F45] text-sm font-bold">Orçamento enviado com sucesso.</p>
+                    <p className="text-[#74777f] text-[12px]">Nº {fzResult.formalNumber}</p>
                   </div>
                 </div>
-                <p className="text-[#43474e] text-[13px] font-[var(--font-inter)] leading-relaxed">
+                <p className="text-[#43474e] text-[13px] leading-relaxed">
                   {fzResult.whatsappOk
                     ? `Enviamos o PDF para o seu WhatsApp${clientPhone ? ` final ${clientPhone.replace(/\D/g, "").slice(-4)}` : ""}.`
                     : "Seu orçamento foi gerado. O PDF está disponível no botão abaixo."}
@@ -3630,20 +3630,20 @@ function SimuladorInner() {
                     href={fzResult.pdfUrl}
                     target="_blank"
                     rel="noopener noreferrer"
-                    className="w-full text-center bg-[#002045] hover:bg-[#1a365d] text-white text-xs tracking-[0.1em] uppercase font-bold font-[var(--font-inter)] px-5 py-3 transition-colors"
+                    className="w-full text-center bg-[#0B1F45] hover:bg-[#2347A0] text-white text-xs tracking-[0.1em] uppercase font-bold px-5 py-3 transition-colors"
                   >
                     Visualizar / baixar PDF
                   </a>
                   <button
                     onClick={() => { setFzResult(null); void submitFormalize(); }}
                     disabled={fzSubmitting}
-                    className="w-full text-center border border-[#e2e2e2] text-[#002045] text-xs tracking-[0.1em] uppercase font-semibold font-[var(--font-inter)] px-5 py-3 hover:border-[#002045] transition-colors disabled:opacity-50"
+                    className="w-full text-center border border-[#e2e2e2] text-[#0B1F45] text-xs tracking-[0.1em] uppercase font-semibold px-5 py-3 hover:border-[#0B1F45] transition-colors disabled:opacity-50"
                   >
                     {fzSubmitting ? "Reenviando…" : "Reenviar"}
                   </button>
                 </div>
                 <div className="bg-[#f7f8fa] border border-[#e2e2e2] px-4 py-3">
-                  <p className="text-[#43474e] text-[11px] font-[var(--font-inter)] leading-relaxed">
+                  <p className="text-[#43474e] text-[11px] leading-relaxed">
                     A Orbital não realiza instalação. Caso precise, fale diretamente com a empresa especializada indicada.
                   </p>
                 </div>
@@ -3652,22 +3652,22 @@ function SimuladorInner() {
               <div className="px-5 py-5 space-y-5">
                 {/* Parte 1 — confirmação dos dados */}
                 <div>
-                  <p className="text-[#43474e] text-[10px] tracking-[0.15em] uppercase font-bold font-[var(--font-inter)] mb-3">Confirme seus dados</p>
+                  <p className="text-[#43474e] text-[10px] tracking-[0.15em] uppercase font-bold mb-3">Confirme seus dados</p>
                   <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
-                    <input value={clientName} onChange={(e) => setClientName(e.target.value)} placeholder="Nome completo" className="border border-[#e2e2e2] px-3 py-2 text-sm font-[var(--font-inter)] text-[#002045] focus:outline-none focus:border-[#002045]" />
-                    <input value={clientPhone} onChange={(e) => setClientPhone(e.target.value)} placeholder="WhatsApp" className="border border-[#e2e2e2] px-3 py-2 text-sm font-[var(--font-inter)] text-[#002045] focus:outline-none focus:border-[#002045]" />
-                    <input value={clientEmail} onChange={(e) => setClientEmail(e.target.value)} placeholder="E-mail" className="sm:col-span-2 border border-[#e2e2e2] px-3 py-2 text-sm font-[var(--font-inter)] text-[#002045] focus:outline-none focus:border-[#002045]" />
+                    <input value={clientName} onChange={(e) => setClientName(e.target.value)} placeholder="Nome completo" className="border border-[#e2e2e2] px-3 py-2 text-sm text-[#0B1F45] focus:outline-none focus:border-[#0B1F45]" />
+                    <input value={clientPhone} onChange={(e) => setClientPhone(e.target.value)} placeholder="WhatsApp" className="border border-[#e2e2e2] px-3 py-2 text-sm text-[#0B1F45] focus:outline-none focus:border-[#0B1F45]" />
+                    <input value={clientEmail} onChange={(e) => setClientEmail(e.target.value)} placeholder="E-mail" className="sm:col-span-2 border border-[#e2e2e2] px-3 py-2 text-sm text-[#0B1F45] focus:outline-none focus:border-[#0B1F45]" />
                   </div>
                   {pricing && pricing.paymentOptions.length > 0 && (
                     <div className="mt-3">
-                      <p className="text-[#74777f] text-[11px] font-[var(--font-inter)] mb-1.5">Condição de pagamento</p>
+                      <p className="text-[#74777f] text-[11px] mb-1.5">Condição de pagamento</p>
                       <div className="flex flex-wrap gap-2">
                         {pricing.paymentOptions.map((opt) => (
                           <button
                             key={opt.id}
                             type="button"
                             onClick={() => { setSelectedPayment(opt.id); trackFunnel("pagamento_selecionado", { id: opt.id }); }}
-                            className={`px-3 py-1.5 text-[12px] font-semibold font-[var(--font-inter)] border transition-colors ${selectedPayment === opt.id ? "border-[#002045] bg-[#eef2fb] text-[#002045]" : "border-[#e2e2e2] text-[#74777f] hover:border-[#86a0cd]"}`}
+                            className={`px-3 py-1.5 text-[12px] font-semibold border transition-colors ${selectedPayment === opt.id ? "border-[#0B1F45] bg-[#eef2fb] text-[#0B1F45]" : "border-[#e2e2e2] text-[#74777f] hover:border-[#B4BBC8]"}`}
                           >
                             {opt.label} · {fmt(opt.total)}
                           </button>
@@ -3679,7 +3679,7 @@ function SimuladorInner() {
 
                 {/* Parte 2 — endereço de entrega */}
                 <div>
-                  <p className="text-[#43474e] text-[10px] tracking-[0.15em] uppercase font-bold font-[var(--font-inter)] mb-3">Endereço de entrega</p>
+                  <p className="text-[#43474e] text-[10px] tracking-[0.15em] uppercase font-bold mb-3">Endereço de entrega</p>
                   <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
                     <div className="sm:col-span-1">
                       <input
@@ -3688,24 +3688,24 @@ function SimuladorInner() {
                         onBlur={(e) => void lookupCep(e.target.value)}
                         placeholder="CEP"
                         inputMode="numeric"
-                        className="w-full border border-[#e2e2e2] px-3 py-2 text-sm font-[var(--font-inter)] text-[#002045] focus:outline-none focus:border-[#002045]"
+                        className="w-full border border-[#e2e2e2] px-3 py-2 text-sm text-[#0B1F45] focus:outline-none focus:border-[#0B1F45]"
                       />
-                      {fzCepLoading && <p className="text-[#74777f] text-[10px] font-[var(--font-inter)] mt-1">Consultando CEP…</p>}
-                      {fzCepError && <p className="text-[#a07a00] text-[10px] font-[var(--font-inter)] mt-1">{fzCepError}</p>}
+                      {fzCepLoading && <p className="text-[#74777f] text-[10px] mt-1">Consultando CEP…</p>}
+                      {fzCepError && <p className="text-[#a07a00] text-[10px] mt-1">{fzCepError}</p>}
                     </div>
-                    <input value={fzStreet} onChange={(e) => setFzStreet(e.target.value)} placeholder="Rua / Avenida" className="sm:col-span-2 border border-[#e2e2e2] px-3 py-2 text-sm font-[var(--font-inter)] text-[#002045] focus:outline-none focus:border-[#002045]" />
-                    <input value={fzNumber} onChange={(e) => setFzNumber(e.target.value)} placeholder="Número *" className="border border-[#e2e2e2] px-3 py-2 text-sm font-[var(--font-inter)] text-[#002045] focus:outline-none focus:border-[#002045]" />
-                    <input value={fzComplement} onChange={(e) => setFzComplement(e.target.value)} placeholder="Complemento" className="border border-[#e2e2e2] px-3 py-2 text-sm font-[var(--font-inter)] text-[#002045] focus:outline-none focus:border-[#002045]" />
-                    <input value={fzNeighborhood} onChange={(e) => setFzNeighborhood(e.target.value)} placeholder="Bairro" className="border border-[#e2e2e2] px-3 py-2 text-sm font-[var(--font-inter)] text-[#002045] focus:outline-none focus:border-[#002045]" />
-                    <input value={fzCity} onChange={(e) => setFzCity(e.target.value)} placeholder="Cidade" className="sm:col-span-2 border border-[#e2e2e2] px-3 py-2 text-sm font-[var(--font-inter)] text-[#002045] focus:outline-none focus:border-[#002045]" />
-                    <input value={fzState} onChange={(e) => setFzState(e.target.value)} placeholder="UF" maxLength={2} className="border border-[#e2e2e2] px-3 py-2 text-sm font-[var(--font-inter)] text-[#002045] uppercase focus:outline-none focus:border-[#002045]" />
-                    <input value={fzCondo} onChange={(e) => setFzCondo(e.target.value)} placeholder="Condomínio (opcional)" className="sm:col-span-3 border border-[#e2e2e2] px-3 py-2 text-sm font-[var(--font-inter)] text-[#002045] focus:outline-none focus:border-[#002045]" />
-                    <input value={fzNotes} onChange={(e) => setFzNotes(e.target.value)} placeholder="Observações de entrega (opcional)" className="sm:col-span-3 border border-[#e2e2e2] px-3 py-2 text-sm font-[var(--font-inter)] text-[#002045] focus:outline-none focus:border-[#002045]" />
+                    <input value={fzStreet} onChange={(e) => setFzStreet(e.target.value)} placeholder="Rua / Avenida" className="sm:col-span-2 border border-[#e2e2e2] px-3 py-2 text-sm text-[#0B1F45] focus:outline-none focus:border-[#0B1F45]" />
+                    <input value={fzNumber} onChange={(e) => setFzNumber(e.target.value)} placeholder="Número *" className="border border-[#e2e2e2] px-3 py-2 text-sm text-[#0B1F45] focus:outline-none focus:border-[#0B1F45]" />
+                    <input value={fzComplement} onChange={(e) => setFzComplement(e.target.value)} placeholder="Complemento" className="border border-[#e2e2e2] px-3 py-2 text-sm text-[#0B1F45] focus:outline-none focus:border-[#0B1F45]" />
+                    <input value={fzNeighborhood} onChange={(e) => setFzNeighborhood(e.target.value)} placeholder="Bairro" className="border border-[#e2e2e2] px-3 py-2 text-sm text-[#0B1F45] focus:outline-none focus:border-[#0B1F45]" />
+                    <input value={fzCity} onChange={(e) => setFzCity(e.target.value)} placeholder="Cidade" className="sm:col-span-2 border border-[#e2e2e2] px-3 py-2 text-sm text-[#0B1F45] focus:outline-none focus:border-[#0B1F45]" />
+                    <input value={fzState} onChange={(e) => setFzState(e.target.value)} placeholder="UF" maxLength={2} className="border border-[#e2e2e2] px-3 py-2 text-sm text-[#0B1F45] uppercase focus:outline-none focus:border-[#0B1F45]" />
+                    <input value={fzCondo} onChange={(e) => setFzCondo(e.target.value)} placeholder="Condomínio (opcional)" className="sm:col-span-3 border border-[#e2e2e2] px-3 py-2 text-sm text-[#0B1F45] focus:outline-none focus:border-[#0B1F45]" />
+                    <input value={fzNotes} onChange={(e) => setFzNotes(e.target.value)} placeholder="Observações de entrega (opcional)" className="sm:col-span-3 border border-[#e2e2e2] px-3 py-2 text-sm text-[#0B1F45] focus:outline-none focus:border-[#0B1F45]" />
                   </div>
                 </div>
 
                 {pricing && (
-                  <div className="bg-[#f7f8fa] border border-[#e2e2e2] px-4 py-3 text-[12px] font-[var(--font-inter)] text-[#43474e] space-y-0.5">
+                  <div className="bg-[#f7f8fa] border border-[#e2e2e2] px-4 py-3 text-[12px] text-[#43474e] space-y-0.5">
                     <div className="flex justify-between">
                       <span>
                         {pricing.plates} placa{pricing.plates !== 1 ? "s" : ""}
@@ -3715,7 +3715,7 @@ function SimuladorInner() {
                     </div>
                     <div className="flex justify-between"><span>Frete</span><span>{pricing.frete.free ? "Grátis" : fmtBRL(pricing.frete.value)}</span></div>
                     {(() => { const s = pricing.paymentOptions.find((o) => o.id === selectedPayment) ?? pricing.paymentOptions[0]; return (
-                      <div className="flex justify-between pt-1 mt-1 border-t border-[#e2e2e2] font-bold text-[#002045]"><span>Total {s ? `· ${s.label}` : ""}</span><span>{fmt(s?.total ?? pricing.totalFull)}</span></div>
+                      <div className="flex justify-between pt-1 mt-1 border-t border-[#e2e2e2] font-bold text-[#0B1F45]"><span>Total {s ? `· ${s.label}` : ""}</span><span>{fmt(s?.total ?? pricing.totalFull)}</span></div>
                     ); })()}
                   </div>
                 )}
@@ -3724,33 +3724,33 @@ function SimuladorInner() {
                     orçamento sem ter visto a indisponibilidade. Avisa, não bloqueia. */}
                 {plateShortages.length > 0 && (
                   <div className="bg-[#fdf6e3] border border-[#e0b23c] px-4 py-3 space-y-1.5">
-                    <p className="text-[#8a5a12] text-[12px] font-[var(--font-inter)] font-bold">
+                    <p className="text-[#8a5a12] text-[12px] font-bold">
                       Antes de enviar: estoque abaixo do solicitado
                     </p>
                     {plateShortages.map((s) => (
-                      <p key={s.code} className="text-[#8a5a12] text-[11px] font-[var(--font-inter)]">
+                      <p key={s.code} className="text-[#8a5a12] text-[11px]">
                         <strong>{s.name}</strong> — {s.requested} solicitada{s.requested !== 1 ? "s" : ""},{" "}
                         {s.available} disponíve{s.available === 1 ? "l" : "is"} no momento.
                       </p>
                     ))}
-                    <p className="text-[#8a5a12]/80 text-[11px] font-[var(--font-inter)]">
+                    <p className="text-[#8a5a12]/80 text-[11px]">
                       Você pode enviar assim mesmo — nossa equipe confirma prazo de reposição ou
                       atendimento parcial no retorno.
                     </p>
                   </div>
                 )}
 
-                <p className="text-[#74777f] text-[11px] font-[var(--font-inter)] leading-relaxed">
+                <p className="text-[#74777f] text-[11px] leading-relaxed">
                   A instalação não está incluída neste orçamento — a Orbital fornece apenas o material.
                 </p>
 
-                {fzError && <p className="text-[#cc0000] text-[12px] font-[var(--font-inter)]">{fzError}</p>}
+                {fzError && <p className="text-[#cc0000] text-[12px]">{fzError}</p>}
 
                 <button
                   type="button"
                   onClick={() => void submitFormalize()}
                   disabled={fzSubmitting}
-                  className="w-full bg-[#3b6934] hover:bg-[#2e5229] text-white text-sm tracking-[0.08em] uppercase font-bold font-[var(--font-inter)] px-6 py-4 transition-colors disabled:opacity-60"
+                  className="w-full bg-[#36A35C] hover:bg-[#4BB571] text-[#0B1F45] text-sm tracking-[0.08em] uppercase font-bold px-6 py-4 transition-colors disabled:opacity-60"
                 >
                   {fzSubmitting ? "Gerando…" : "Gerar e enviar orçamento"}
                 </button>

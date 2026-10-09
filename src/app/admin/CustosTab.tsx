@@ -42,7 +42,7 @@ function MoneyInput({ value, onChange, placeholder }: { value: number | null; on
       value={value ?? ""}
       placeholder={placeholder ?? "0"}
       onChange={(e) => onChange(e.target.value)}
-      className="w-full border border-[#e2e2e2] px-2 py-1.5 text-xs font-[var(--font-inter)] text-[#002045] text-right focus:outline-none focus:border-[#002045]"
+      className="w-full border border-[#e2e2e2] px-2 py-1.5 text-xs text-[#0B1F45] text-right focus:outline-none focus:border-[#0B1F45]"
     />
   );
 }
@@ -162,7 +162,7 @@ export default function CustosTab() {
               <button
                 key={v}
                 onClick={() => setView(v)}
-                className={`text-[10px] tracking-[0.1em] uppercase font-bold font-[var(--font-inter)] px-4 py-2 border transition-colors ${view === v ? "bg-[#002045] text-white border-[#002045]" : "text-[#74777f] border-[#e2e2e2] hover:border-[#002045] hover:text-[#002045]"}`}
+                className={`text-[10px] tracking-[0.1em] uppercase font-bold px-4 py-2 border transition-colors ${view === v ? "bg-[#0B1F45] text-white border-[#0B1F45]" : "text-[#74777f] border-[#e2e2e2] hover:border-[#0B1F45] hover:text-[#0B1F45]"}`}
               >
                 {v === "custos" ? "Custos" : "Margens"}
               </button>
@@ -172,7 +172,7 @@ export default function CustosTab() {
       />
 
       {migrationMissing && (
-        <div className="mb-6 bg-yellow-50 border border-yellow-300 px-4 py-3 text-yellow-900 text-xs font-[var(--font-inter)]">
+        <div className="mb-6 bg-yellow-50 border border-yellow-300 px-4 py-3 text-yellow-900 text-xs">
           Rode a migração <b>038</b> no Supabase para salvar a composição de custo (FOB, frete, impostos). Enquanto isso, só o custo final é salvo.
         </div>
       )}
@@ -196,7 +196,7 @@ export default function CustosTab() {
               const applied = num(p.cost_price) > 0 && Math.abs(num(p.cost_price) - landed) < 0.005;
               return (
                 <div key={p.id} className="p-4">
-                  <p className="text-sm font-semibold text-[#002045]">{p.name}</p>
+                  <p className="text-sm font-semibold text-[#0B1F45]">{p.name}</p>
                   <p className="text-[10px] text-[#74777f] mb-3">{[p.code, p.linha].filter(Boolean).join(" · ") || "—"}</p>
                   <div className="grid grid-cols-2 gap-3">
                     <label className="block"><span className="block text-[9px] uppercase tracking-wider font-bold text-[#74777f] mb-1">FOB</span><MoneyInput value={d.fob_cost ?? null} onChange={(v) => setField(p.id, "fob_cost", v)} /></label>
@@ -207,13 +207,13 @@ export default function CustosTab() {
                   <div className="flex items-center justify-between mt-3 pt-3 border-t border-[#f0f0f0]">
                     <div>
                       <p className="text-[9px] uppercase tracking-wider font-bold text-[#74777f]">Custo total</p>
-                      <p className="text-sm font-bold text-[#002045]">{landed > 0 ? fmtBRL(landed) : "—"}</p>
+                      <p className="text-sm font-bold text-[#0B1F45]">{landed > 0 ? fmtBRL(landed) : "—"}</p>
                       <p className="text-[10px] text-[#74777f]">atual: {num(p.cost_price) > 0 ? fmtBRL(num(p.cost_price)) : "—"}</p>
                     </div>
                     <div className="flex flex-col items-end gap-1.5">
-                      {dirty && <button onClick={() => save(p)} disabled={savingId === p.id} className="text-[11px] text-[#74777f] font-bold hover:text-[#002045]">Salvar</button>}
+                      {dirty && <button onClick={() => save(p)} disabled={savingId === p.id} className="text-[11px] text-[#74777f] font-bold hover:text-[#0B1F45]">Salvar</button>}
                       {landed > 0 && !applied ? (
-                        <button onClick={() => save(p, { cost_price: landed })} disabled={savingId === p.id} className="text-[11px] text-[#3b6934] font-bold hover:underline">Aplicar como custo →</button>
+                        <button onClick={() => save(p, { cost_price: landed })} disabled={savingId === p.id} className="text-[11px] text-[#1F7A44] font-bold hover:underline">Aplicar como custo →</button>
                       ) : applied ? (
                         <StatusBadge tone="green">custo aplicado</StatusBadge>
                       ) : null}
@@ -225,7 +225,7 @@ export default function CustosTab() {
           </div>
           {/* Desktop: table */}
           <div className="hidden md:block overflow-x-auto">
-            <table className="w-full text-sm font-[var(--font-inter)]">
+            <table className="w-full text-sm">
               <thead>
                 <tr>
                   {["Produto", "FOB", "Frete", "Imposto", "Outros", "Custo total", "Custo atual", ""].map((h) => (
@@ -240,25 +240,25 @@ export default function CustosTab() {
                   const dirty = !!drafts[p.id];
                   const applied = num(p.cost_price) > 0 && Math.abs(num(p.cost_price) - landed) < 0.005;
                   return (
-                    <tr key={p.id} className="border-b border-[#f0f0f0] hover:bg-[#fafafa] align-middle">
+                    <tr key={p.id} className="border-b border-[#f0f0f0] hover:bg-[#F6F5F2] align-middle">
                       <td className="px-4 py-2.5">
-                        <p className="text-xs font-semibold text-[#002045]">{p.name}</p>
+                        <p className="text-xs font-semibold text-[#0B1F45]">{p.name}</p>
                         <p className="text-[10px] text-[#74777f]">{[p.code, p.linha].filter(Boolean).join(" · ") || "—"}</p>
                       </td>
                       <td className="px-2 py-2.5 w-24"><MoneyInput value={d.fob_cost ?? null} onChange={(v) => setField(p.id, "fob_cost", v)} /></td>
                       <td className="px-2 py-2.5 w-24"><MoneyInput value={d.freight_cost ?? null} onChange={(v) => setField(p.id, "freight_cost", v)} /></td>
                       <td className="px-2 py-2.5 w-24"><MoneyInput value={d.duty_cost ?? null} onChange={(v) => setField(p.id, "duty_cost", v)} /></td>
                       <td className="px-2 py-2.5 w-24"><MoneyInput value={d.other_import_cost ?? null} onChange={(v) => setField(p.id, "other_import_cost", v)} /></td>
-                      <td className="px-3 py-2.5 text-right text-xs font-bold text-[#002045] whitespace-nowrap">{landed > 0 ? fmtBRL(landed) : "—"}</td>
+                      <td className="px-3 py-2.5 text-right text-xs font-bold text-[#0B1F45] whitespace-nowrap">{landed > 0 ? fmtBRL(landed) : "—"}</td>
                       <td className="px-3 py-2.5 text-right text-xs whitespace-nowrap">
                         {num(p.cost_price) > 0 ? fmtBRL(num(p.cost_price)) : <span className="text-[#b0b0b0]">—</span>}
                       </td>
                       <td className="px-3 py-2.5 text-right whitespace-nowrap">
                         {dirty && (
-                          <button onClick={() => save(p)} disabled={savingId === p.id} className="text-[10px] text-[#74777f] font-bold hover:text-[#002045] mr-3">Salvar</button>
+                          <button onClick={() => save(p)} disabled={savingId === p.id} className="text-[10px] text-[#74777f] font-bold hover:text-[#0B1F45] mr-3">Salvar</button>
                         )}
                         {landed > 0 && !applied ? (
-                          <button onClick={() => save(p, { cost_price: landed })} disabled={savingId === p.id} className="text-[10px] text-[#3b6934] font-bold hover:underline">Aplicar como custo →</button>
+                          <button onClick={() => save(p, { cost_price: landed })} disabled={savingId === p.id} className="text-[10px] text-[#1F7A44] font-bold hover:underline">Aplicar como custo →</button>
                         ) : applied ? (
                           <StatusBadge tone="green">custo aplicado</StatusBadge>
                         ) : null}
@@ -279,13 +279,13 @@ export default function CustosTab() {
                 <button
                   key={v}
                   onClick={() => setCostShock(v)}
-                  className={`text-[10px] font-bold font-[var(--font-inter)] px-3 py-1.5 border transition-colors ${costShock === v ? "bg-[#002045] text-white border-[#002045]" : "text-[#74777f] border-[#e2e2e2] hover:border-[#002045]"}`}
+                  className={`text-[10px] font-bold px-3 py-1.5 border transition-colors ${costShock === v ? "bg-[#0B1F45] text-white border-[#0B1F45]" : "text-[#74777f] border-[#e2e2e2] hover:border-[#0B1F45]"}`}
                 >
                   +{v}%
                 </button>
               ))}
             </div>
-            {costShock > 0 && <span className="text-[11px] text-[#74777f] font-[var(--font-inter)]">Custo simulado +{costShock}% (não altera nada salvo)</span>}
+            {costShock > 0 && <span className="text-[11px] text-[#74777f]">Custo simulado +{costShock}% (não altera nada salvo)</span>}
           </div>
           <Card title="Margem por produto — varejo e atacado" padded={false}>
             {/* Mobile: card per product */}
@@ -309,24 +309,24 @@ export default function CustosTab() {
                   <div key={p.id} className="p-4">
                     <div className="flex items-start justify-between gap-2">
                       <div className="min-w-0">
-                        <p className="text-sm font-semibold text-[#002045] truncate">{p.name}</p>
+                        <p className="text-sm font-semibold text-[#0B1F45] truncate">{p.name}</p>
                         <p className="text-[10px] text-[#74777f]">{[p.code, p.linha].filter(Boolean).join(" · ") || "—"}</p>
                       </div>
                       <div className="text-right shrink-0">
                         <p className="text-[9px] uppercase tracking-wider font-bold text-[#74777f]">Custo</p>
-                        <p className="text-xs text-[#002045]">{noCost ? "—" : fmtBRL(cost)}</p>
+                        <p className="text-xs text-[#0B1F45]">{noCost ? "—" : fmtBRL(cost)}</p>
                         {costShock > 0 && !noCost && <p className="text-[9px] text-[#74777f]">base {fmtBRL(baseCost)}</p>}
                       </div>
                     </div>
                     <div className="grid grid-cols-2 gap-3 mt-3">
                       <div>
                         <p className="text-[9px] uppercase tracking-wider font-bold text-[#74777f]">Varejo</p>
-                        <p className="text-xs text-[#002045] mb-1">{varejo > 0 ? fmtBRL(varejo) : "—"}</p>
+                        <p className="text-xs text-[#0B1F45] mb-1">{varejo > 0 ? fmtBRL(varejo) : "—"}</p>
                         {marginCell(varejo, mVarejo)}
                       </div>
                       <div>
                         <p className="text-[9px] uppercase tracking-wider font-bold text-[#74777f]">Atacado</p>
-                        <p className="text-xs text-[#002045] mb-1">{atacado > 0 ? fmtBRL(atacado) : "sem tabela"}</p>
+                        <p className="text-xs text-[#0B1F45] mb-1">{atacado > 0 ? fmtBRL(atacado) : "sem tabela"}</p>
                         {marginCell(atacado, mAtacado)}
                       </div>
                     </div>
@@ -336,7 +336,7 @@ export default function CustosTab() {
             </div>
             {/* Desktop: table */}
             <div className="hidden md:block overflow-x-auto">
-              <table className="w-full text-sm font-[var(--font-inter)]">
+              <table className="w-full text-sm">
                 <thead>
                   <tr>
                     {["Produto", "Custo", "Varejo", "Margem varejo", "Atacado", "Margem atacado"].map((h) => (
@@ -361,9 +361,9 @@ export default function CustosTab() {
                       return <StatusBadge tone={tone}>{m.toFixed(0)}%</StatusBadge>;
                     };
                     return (
-                      <tr key={p.id} className="border-b border-[#f0f0f0] hover:bg-[#fafafa]">
+                      <tr key={p.id} className="border-b border-[#f0f0f0] hover:bg-[#F6F5F2]">
                         <td className="px-4 py-2.5">
-                          <p className="text-xs font-semibold text-[#002045]">{p.name}</p>
+                          <p className="text-xs font-semibold text-[#0B1F45]">{p.name}</p>
                           <p className="text-[10px] text-[#74777f]">{[p.code, p.linha].filter(Boolean).join(" · ") || "—"}</p>
                         </td>
                         <td className="px-3 py-2.5 text-right text-xs whitespace-nowrap">
@@ -374,9 +374,9 @@ export default function CustosTab() {
                             </>
                           )}
                         </td>
-                        <td className="px-3 py-2.5 text-right text-xs text-[#002045] whitespace-nowrap">{varejo > 0 ? fmtBRL(varejo) : "—"}</td>
+                        <td className="px-3 py-2.5 text-right text-xs text-[#0B1F45] whitespace-nowrap">{varejo > 0 ? fmtBRL(varejo) : "—"}</td>
                         <td className="px-3 py-2.5 text-right whitespace-nowrap">{marginCell(varejo, mVarejo)}</td>
-                        <td className="px-3 py-2.5 text-right text-xs text-[#002045] whitespace-nowrap">{atacado > 0 ? fmtBRL(atacado) : <span className="text-[#b0b0b0]">sem tabela</span>}</td>
+                        <td className="px-3 py-2.5 text-right text-xs text-[#0B1F45] whitespace-nowrap">{atacado > 0 ? fmtBRL(atacado) : <span className="text-[#b0b0b0]">sem tabela</span>}</td>
                         <td className="px-3 py-2.5 text-right whitespace-nowrap">{marginCell(atacado, mAtacado)}</td>
                       </tr>
                     );
@@ -385,7 +385,7 @@ export default function CustosTab() {
               </table>
             </div>
           </Card>
-          <p className="text-[11px] text-[#74777f] font-[var(--font-inter)] mt-3">
+          <p className="text-[11px] text-[#74777f] mt-3">
             Varejo = preço do produto. Atacado = preço especial da linha (aba <b>Tabela de Preços</b>). Margem = (preço − custo) ÷ preço.
           </p>
         </>

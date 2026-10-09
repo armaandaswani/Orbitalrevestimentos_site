@@ -166,26 +166,26 @@ export default function EstoqueTab() {
           { label: "Abaixo do mínimo", value: String(lowCount), sub: lowCount > 0 ? "repor" : "ok" },
         ].map((m) => (
           <div key={m.label} className="bg-white border border-[#e2e2e2] px-4 py-3">
-            <p className="text-[#74777f] text-[9px] uppercase tracking-wider font-bold font-[var(--font-inter)]">{m.label}</p>
-            <p className="text-[#002045] text-lg font-[var(--font-noto-serif)] mt-0.5">{m.value}</p>
-            {m.sub && <p className="text-[#b0b0b0] text-[10px] font-[var(--font-inter)]">{m.sub}</p>}
+            <p className="text-[#74777f] text-[9px] uppercase tracking-wider font-bold">{m.label}</p>
+            <p className="text-[#0B1F45] text-lg font-serif mt-0.5">{m.value}</p>
+            {m.sub && <p className="text-[#b0b0b0] text-[10px]">{m.sub}</p>}
           </div>
         ))}
       </div>
 
       <div className="flex flex-wrap items-center gap-2 mb-4">
         <input value={search} onChange={(e) => setSearch(e.target.value)} placeholder="Buscar modelo…"
-          className="flex-1 min-w-[160px] border border-[#e2e2e2] px-3 py-2 text-xs font-[var(--font-inter)] text-[#002045] focus:outline-none focus:border-[#002045]" />
-        <label className="flex items-center gap-2 text-xs font-[var(--font-inter)] text-[#43474e]">
+          className="flex-1 min-w-[160px] border border-[#e2e2e2] px-3 py-2 text-xs text-[#0B1F45] focus:outline-none focus:border-[#0B1F45]" />
+        <label className="flex items-center gap-2 text-xs text-[#43474e]">
           <input type="checkbox" checked={lowOnly} onChange={(e) => setLowOnly(e.target.checked)} />
           Só abaixo do mínimo
         </label>
-        <button onClick={fetchStock} className="text-[11px] uppercase font-bold font-[var(--font-inter)] border border-[#e2e2e2] px-3 py-2 hover:border-[#002045] text-[#002045]">Atualizar</button>
+        <button onClick={fetchStock} className="text-[11px] uppercase font-bold border border-[#e2e2e2] px-3 py-2 hover:border-[#0B1F45] text-[#0B1F45]">Atualizar</button>
       </div>
 
-      {error && <p className="text-red-600 text-sm font-[var(--font-inter)] mb-4">{error}</p>}
+      {error && <p className="text-red-600 text-sm mb-4">{error}</p>}
       {loading ? (
-        <p className="text-[#74777f] text-sm font-[var(--font-inter)]">Carregando...</p>
+        <p className="text-[#74777f] text-sm">Carregando...</p>
       ) : (
         <div className="space-y-3">
           {visible.map((p) => (
@@ -200,7 +200,7 @@ export default function EstoqueTab() {
               onCancelReservation={(pedidoId) => cancelReservation(p.id, pedidoId)}
             />
           ))}
-          {visible.length === 0 && <p className="text-[#74777f] text-sm font-[var(--font-inter)]">Nenhum modelo.</p>}
+          {visible.length === 0 && <p className="text-[#74777f] text-sm">Nenhum modelo.</p>}
         </div>
       )}
     </div>
@@ -247,8 +247,8 @@ function StockRow({
         <div className="flex flex-wrap items-start justify-between gap-3">
           <div className="min-w-0">
             <div className="flex items-center gap-2 flex-wrap">
-              <span className="text-[#002045] text-sm font-semibold font-[var(--font-inter)]">{p.name}</span>
-              {p.code && <span className="text-[#74777f] text-[11px] font-[var(--font-inter)]">{p.code}</span>}
+              <span className="text-[#0B1F45] text-sm font-semibold">{p.name}</span>
+              {p.code && <span className="text-[#74777f] text-[11px]">{p.code}</span>}
               {p.low && <span className="text-[9px] font-bold px-1.5 py-0.5 bg-amber-100 text-amber-800">Abaixo do mínimo</span>}
               {!p.is_active && <span className="text-[9px] font-bold px-1.5 py-0.5 bg-gray-100 text-gray-500">Inativo</span>}
             </div>
@@ -264,7 +264,7 @@ function StockRow({
           <div className="flex items-center gap-1.5">
             {(["manual_in", "manual_out", "adjust"] as const).map((k) => (
               <button key={k} onClick={() => { setMode(mode === k ? null : k); setQty(""); setReason(""); setSaleAmount(""); setExitType("loss"); }}
-                className={`text-[10px] uppercase tracking-[0.06em] font-bold font-[var(--font-inter)] px-2.5 py-1.5 border transition-colors ${mode === k ? "bg-[#002045] text-white border-[#002045]" : "border-[#e2e2e2] text-[#002045] hover:border-[#002045]"}`}>
+                className={`text-[10px] uppercase tracking-[0.06em] font-bold px-2.5 py-1.5 border transition-colors ${mode === k ? "bg-[#0B1F45] text-white border-[#0B1F45]" : "border-[#e2e2e2] text-[#0B1F45] hover:border-[#0B1F45]"}`}>
                 {k === "manual_in" ? "+ Entrada" : k === "manual_out" ? "− Saída" : "Ajustar"}
               </button>
             ))}
@@ -272,14 +272,14 @@ function StockRow({
         </div>
 
         {mode && (
-          <div className="flex flex-wrap items-center gap-2 mt-3 bg-[#fafafa] border border-[#f0f0f0] px-3 py-2.5">
+          <div className="flex flex-wrap items-center gap-2 mt-3 bg-[#F6F5F2] border border-[#f0f0f0] px-3 py-2.5">
             <input type="number" min="0" value={qty} onChange={(e) => setQty(e.target.value)} autoFocus
               placeholder={mode === "adjust" ? "Nova contagem" : "Quantidade"}
-              className="w-28 border border-[#e2e2e2] px-2 py-1.5 text-xs font-[var(--font-inter)] text-[#002045] focus:outline-none focus:border-[#002045]" />
+              className="w-28 border border-[#e2e2e2] px-2 py-1.5 text-xs text-[#0B1F45] focus:outline-none focus:border-[#0B1F45]" />
             {mode === "manual_out" && (
               <>
                 <select value={exitType} onChange={(e) => setExitType(e.target.value as ManualExitType)}
-                  className="border border-[#e2e2e2] px-2 py-1.5 text-xs font-[var(--font-inter)] text-[#002045] focus:outline-none focus:border-[#002045]">
+                  className="border border-[#e2e2e2] px-2 py-1.5 text-xs text-[#0B1F45] focus:outline-none focus:border-[#0B1F45]">
                   <option value="sale">Venda avulsa</option>
                   <option value="loss">Perda/quebra</option>
                   <option value="sample">Amostra</option>
@@ -288,20 +288,20 @@ function StockRow({
                 {exitType === "sale" && (
                   <input type="number" min="0" step="0.01" value={saleAmount} onChange={(e) => setSaleAmount(e.target.value)}
                     placeholder={suggestedSaleAmount ? `Venda ${fmtBRL(suggestedSaleAmount)}` : "Valor da venda"}
-                    className="w-36 border border-[#e2e2e2] px-2 py-1.5 text-xs font-[var(--font-inter)] text-[#002045] focus:outline-none focus:border-[#002045]" />
+                    className="w-36 border border-[#e2e2e2] px-2 py-1.5 text-xs text-[#0B1F45] focus:outline-none focus:border-[#0B1F45]" />
                 )}
               </>
             )}
             <input value={reason} onChange={(e) => setReason(e.target.value)} placeholder="Motivo (opcional)"
-              className="flex-1 min-w-[140px] border border-[#e2e2e2] px-2 py-1.5 text-xs font-[var(--font-inter)] text-[#002045] focus:outline-none focus:border-[#002045]" />
-            <button onClick={submit} className="bg-[#002045] text-white text-xs font-bold font-[var(--font-inter)] px-4 py-1.5 hover:bg-[#1a365d]">Confirmar</button>
-            <button onClick={() => setMode(null)} className="text-[#74777f] text-xs px-2 py-1.5 hover:text-[#002045]">Cancelar</button>
+              className="flex-1 min-w-[140px] border border-[#e2e2e2] px-2 py-1.5 text-xs text-[#0B1F45] focus:outline-none focus:border-[#0B1F45]" />
+            <button onClick={submit} className="bg-[#0B1F45] text-white text-xs font-bold px-4 py-1.5 hover:bg-[#2347A0]">Confirmar</button>
+            <button onClick={() => setMode(null)} className="text-[#74777f] text-xs px-2 py-1.5 hover:text-[#0B1F45]">Cancelar</button>
           </div>
         )}
 
         {/* Pricing + reorder editing */}
         <div className="flex flex-wrap items-center gap-4 mt-3">
-          <label className="flex items-center gap-2 text-[11px] font-[var(--font-inter)] text-[#74777f]">
+          <label className="flex items-center gap-2 text-[11px] text-[#74777f]">
             Preço venda/{p.sale_unit || "placa"}
             <input type="number" min="0" step="0.01" defaultValue={p.price ?? ""} placeholder="—"
               onBlur={(e) => {
@@ -309,9 +309,9 @@ function StockRow({
                 const v = raw === "" ? null : Number(raw);
                 if ((v === null && p.price !== null) || (typeof v === "number" && Number.isFinite(v) && v !== p.price)) onPatch({ price: v });
               }}
-              className="w-28 border border-[#e2e2e2] px-2 py-1 text-xs text-[#002045] focus:outline-none focus:border-[#002045]" />
+              className="w-28 border border-[#e2e2e2] px-2 py-1 text-xs text-[#0B1F45] focus:outline-none focus:border-[#0B1F45]" />
           </label>
-          <label className="flex items-center gap-2 text-[11px] font-[var(--font-inter)] text-[#74777f]">
+          <label className="flex items-center gap-2 text-[11px] text-[#74777f]">
             Unidade venda
             {(() => {
               const cur = p.sale_unit || "placa";
@@ -331,14 +331,14 @@ function StockRow({
                     }
                     if (v !== cur) onPatch({ sale_unit: v });
                   }}
-                  className="border border-[#e2e2e2] px-2 py-1 text-xs text-[#002045] bg-white focus:outline-none focus:border-[#002045]">
+                  className="border border-[#e2e2e2] px-2 py-1 text-xs text-[#0B1F45] bg-white focus:outline-none focus:border-[#0B1F45]">
                   {opts.map((u) => <option key={u} value={u}>{u}</option>)}
                   <option value="__custom__">Outro…</option>
                 </select>
               );
             })()}
           </label>
-          <label className="flex items-center gap-2 text-[11px] font-[var(--font-inter)] text-[#74777f]">
+          <label className="flex items-center gap-2 text-[11px] text-[#74777f]">
             Custo/{p.sale_unit || "placa"}
             <input type="number" min="0" step="0.01" defaultValue={p.cost_price ?? ""} placeholder="—"
               onBlur={(e) => {
@@ -346,31 +346,31 @@ function StockRow({
                 const v = raw === "" ? null : Number(raw);
                 if ((v === null && p.cost_price !== null) || (typeof v === "number" && Number.isFinite(v) && v !== p.cost_price)) onPatch({ cost_price: v });
               }}
-              className="w-24 border border-[#e2e2e2] px-2 py-1 text-xs text-[#002045] focus:outline-none focus:border-[#002045]" />
+              className="w-24 border border-[#e2e2e2] px-2 py-1 text-xs text-[#0B1F45] focus:outline-none focus:border-[#0B1F45]" />
           </label>
-          <label className="flex items-center gap-2 text-[11px] font-[var(--font-inter)] text-[#74777f]">
+          <label className="flex items-center gap-2 text-[11px] text-[#74777f]">
             Estoque mínimo
             <input type="number" min="0" defaultValue={p.reorder_point || ""} placeholder="0"
               onBlur={(e) => { const v = Number(e.target.value || 0); if (v !== p.reorder_point) onPatch({ reorder_point: v }); }}
-              className="w-20 border border-[#e2e2e2] px-2 py-1 text-xs text-[#002045] focus:outline-none focus:border-[#002045]" />
+              className="w-20 border border-[#e2e2e2] px-2 py-1 text-xs text-[#0B1F45] focus:outline-none focus:border-[#0B1F45]" />
           </label>
-          <button onClick={onToggle} className="ml-auto text-[11px] text-[#002045] font-bold font-[var(--font-inter)] hover:underline">
+          <button onClick={onToggle} className="ml-auto text-[11px] text-[#0B1F45] font-bold hover:underline">
             {expanded ? "Ocultar movimentos ▲" : "Ver movimentos ▼"}
           </button>
         </div>
       </div>
 
       {expanded && (
-        <div className="border-t border-[#e2e2e2] px-4 py-3 bg-[#fafafa]">
+        <div className="border-t border-[#e2e2e2] px-4 py-3 bg-[#F6F5F2]">
           {!movements ? (
-            <p className="text-[#74777f] text-xs font-[var(--font-inter)]">Carregando...</p>
+            <p className="text-[#74777f] text-xs">Carregando...</p>
           ) : movements.length === 0 ? (
-            <p className="text-[#74777f] text-xs font-[var(--font-inter)]">Nenhum movimento registrado.</p>
+            <p className="text-[#74777f] text-xs">Nenhum movimento registrado.</p>
           ) : (
             <div className="space-y-1.5">
               {movements.map((m) => (
-                <div key={m.id} className="flex items-center justify-between gap-3 text-xs font-[var(--font-inter)]">
-                  <span className="text-[#002045] font-semibold w-28">{KIND_LABEL[m.kind] ?? m.kind}</span>
+                <div key={m.id} className="flex items-center justify-between gap-3 text-xs">
+                  <span className="text-[#0B1F45] font-semibold w-28">{KIND_LABEL[m.kind] ?? m.kind}</span>
                   <span className="text-[#43474e] flex-1">
                     {m.on_hand_delta !== 0 && <span className={m.on_hand_delta > 0 ? "text-green-700" : "text-red-700"}>{m.on_hand_delta > 0 ? "+" : ""}{m.on_hand_delta} estoque </span>}
                     {m.reserved_delta !== 0 && <span className="text-blue-700">{m.reserved_delta > 0 ? "+" : ""}{m.reserved_delta} reserva </span>}
@@ -407,11 +407,11 @@ function StockRow({
 }
 
 function Stat({ label, value, strong, tone }: { label: string; value: string; strong?: boolean; tone?: "ok" | "danger" }) {
-  const color = tone === "danger" ? "text-red-600" : tone === "ok" ? "text-[#2f5429]" : "text-[#002045]";
+  const color = tone === "danger" ? "text-red-600" : tone === "ok" ? "text-[#1F7A44]" : "text-[#0B1F45]";
   return (
     <div>
-      <p className="text-[#74777f] text-[9px] uppercase tracking-wider font-bold font-[var(--font-inter)]">{label}</p>
-      <p className={`${strong ? "font-semibold" : ""} ${color} text-sm font-[var(--font-inter)] mt-0.5`}>{value}</p>
+      <p className="text-[#74777f] text-[9px] uppercase tracking-wider font-bold">{label}</p>
+      <p className={`${strong ? "font-semibold" : ""} ${color} text-sm mt-0.5`}>{value}</p>
     </div>
   );
 }

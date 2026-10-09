@@ -80,9 +80,9 @@ export function generateQuotePdf(input: QuotePdfInput): Promise<Buffer> {
   doc.on("data", (c) => chunks.push(Buffer.isBuffer(c) ? c : Buffer.from(c)));
   const done = new Promise<Buffer>((resolve) => doc.on("end", () => resolve(Buffer.concat(chunks))));
 
-  const logoPath = path.join(process.cwd(), "public/images/logo.png");
-  if (existsSync(logoPath)) doc.image(logoPath, 42, 42, { width: 58 });
-  doc.font("Helvetica-Bold").fontSize(14).fillColor("#002045").text(COMPANY.name, 118, 44);
+  const logoPath = path.join(process.cwd(), "public/images/brand/orbital-simbolo.png");
+  if (existsSync(logoPath)) doc.image(logoPath, 42, 44, { width: 50 });
+  doc.font("Helvetica-Bold").fontSize(14).fillColor("#0B1F45").text(COMPANY.name, 118, 44);
   doc.font("Helvetica").fontSize(10).fillColor("#333")
     .text(COMPANY.cnpj, 118).text(COMPANY.address, 118).text(COMPANY.city, 118);
   doc.text(COMPANY.email, 385, 48, { align: "right", width: 165 });
@@ -98,7 +98,7 @@ export function generateQuotePdf(input: QuotePdfInput): Promise<Buffer> {
   doc.font("Helvetica").fontSize(12).fillColor("#555").text("Dados do Cliente", 42, colTop, { width: 300 });
   doc.moveTo(42, doc.y + 2).lineTo(300, doc.y + 2).strokeColor("#d8d8d8").stroke();
   doc.moveDown(0.5);
-  doc.font("Helvetica-Bold").fontSize(10).fillColor("#1a1c1c").text(clientName || "Cliente", 42, doc.y, { width: 300 });
+  doc.font("Helvetica-Bold").fontSize(10).fillColor("#0D1830").text(clientName || "Cliente", 42, doc.y, { width: 300 });
   doc.font("Helvetica").fontSize(9.5).fillColor("#333");
   if (input.clientPhone) doc.text(input.clientPhone, 42, doc.y, { width: 300 });
   if (input.clientEmail) doc.text(input.clientEmail, 42, doc.y, { width: 300 });
@@ -123,10 +123,10 @@ export function generateQuotePdf(input: QuotePdfInput): Promise<Buffer> {
   const fn = firstName(clientName);
   doc.y = Math.max(clientBottom, metaY) + 16;
   doc.x = 42;
-  doc.font("Helvetica-Bold").fontSize(13).fillColor("#002045")
+  doc.font("Helvetica-Bold").fontSize(13).fillColor("#0B1F45")
     .text(fn ? `${fn}, seu projeto em Fibra de Bambu` : "Seu projeto em Fibra de Bambu", 42, doc.y, { width: 511 });
   doc.y += 8;
-  doc.rect(42, doc.y, 511, 22).fill("#002045");
+  doc.rect(42, doc.y, 511, 22).fill("#0B1F45");
   doc.fillColor("#fff").font("Helvetica").fontSize(12).text(`ORÇAMENTO FORMALIZADO Nº ${formalNumber}`, 42, doc.y + 6, { width: 511, align: "center" });
   doc.y += 40;
 
@@ -137,7 +137,7 @@ export function generateQuotePdf(input: QuotePdfInput): Promise<Buffer> {
   const tableTop = doc.y;
   const cols = { name: 42, qty: 318, unit: 382, price: 430, total: 500 };
   doc.rect(42, tableTop, 511, 20).fill("#e1e1e1");
-  doc.fillColor("#1a1c1c").font("Helvetica").fontSize(9)
+  doc.fillColor("#0D1830").font("Helvetica").fontSize(9)
     .text("Ambiente / Acabamento", cols.name, tableTop + 6)
     .text("Qtd.", cols.qty, tableTop + 6, { width: 44, align: "right" })
     .text("Un.", cols.unit, tableTop + 6, { width: 44, align: "right" })
@@ -152,10 +152,10 @@ export function generateQuotePdf(input: QuotePdfInput): Promise<Buffer> {
     const unitPrice = Number(sp.pricePerPlate) || 0;
     const lineTotal = Number(sp.total) || qty * unitPrice;
     const sub = [sp.productCode ? `Modelo: ${sp.productCode}` : null, sp.linha, sp.dimLabel].filter(Boolean).join("  ·  ");
-    doc.font("Helvetica-Bold").fontSize(9).fillColor("#1a1c1c")
+    doc.font("Helvetica-Bold").fontSize(9).fillColor("#0D1830")
       .text(`${sp.spaceName ?? "Ambiente"} — ${sp.productName ?? "PFB"}`, cols.name, y, { width: 268 });
     doc.font("Helvetica").fontSize(7.5).fillColor("#777").text(sub, cols.name, y + 11, { width: 268 });
-    doc.font("Helvetica").fontSize(9).fillColor("#1a1c1c")
+    doc.font("Helvetica").fontSize(9).fillColor("#0D1830")
       .text(String(qty), cols.qty, y, { width: 44, align: "right" })
       .text("Placa", cols.unit, y, { width: 44, align: "right" })
       .text(fmtBRL(unitPrice), cols.price, y, { width: 58, align: "right" })
@@ -174,10 +174,10 @@ export function generateQuotePdf(input: QuotePdfInput): Promise<Buffer> {
     const y = doc.y;
     const title = materialDisplayName(m);
     const unitLabel = m.unit.charAt(0).toUpperCase() + m.unit.slice(1);
-    doc.font("Helvetica-Bold").fontSize(9).fillColor("#1a1c1c").text(title, cols.name, y, { width: 268 });
+    doc.font("Helvetica-Bold").fontSize(9).fillColor("#0D1830").text(title, cols.name, y, { width: 268 });
     doc.font("Helvetica").fontSize(7.5).fillColor("#777")
       .text(`Calculado automaticamente para ${applicationReasonLabel(m.reasons).toLowerCase()}`, cols.name, y + 11, { width: 268 });
-    doc.font("Helvetica").fontSize(9).fillColor("#1a1c1c")
+    doc.font("Helvetica").fontSize(9).fillColor("#0D1830")
       .text(String(m.quantity), cols.qty, y, { width: 44, align: "right" })
       .text(unitLabel, cols.unit, y, { width: 44, align: "right" })
       .text(m.unitPrice > 0 ? fmtBRL(m.unitPrice) : "—", cols.price, y, { width: 58, align: "right" })
@@ -202,12 +202,12 @@ export function generateQuotePdf(input: QuotePdfInput): Promise<Buffer> {
   totRow("Subtotal placas", fmtBRL(breakdown.platesSubtotal));
   if (breakdown.colaAvailable && breakdown.colaSubtotal > 0) totRow("Cola PU", fmtBRL(breakdown.colaSubtotal));
   totRow("Frete", breakdown.frete.free ? "Grátis" : fmtBRL(breakdown.frete.value));
-  if (sel?.id === "pix" && sel.discountAmount) totRow(`Desconto à vista (${sel.discountPct}%)`, `- ${fmtBRL(sel.discountAmount)}`, "#3b6934");
+  if (sel?.id === "pix" && sel.discountAmount) totRow(`Desconto à vista (${sel.discountPct}%)`, `- ${fmtBRL(sel.discountAmount)}`, "#36A35C");
   doc.moveTo(totLabelX, doc.y + 2).lineTo(553, doc.y + 2).strokeColor("#d8d8d8").stroke();
   doc.y += 8;
   const totY = doc.y;
-  doc.font("Helvetica-Bold").fontSize(13).fillColor("#002045").text("Total", totLabelX, totY, { width: 90 });
-  doc.font("Helvetica-Bold").fontSize(13).fillColor("#002045").text(fmtBRL(grandTotal), totValX, totY, { width: totValW, align: "right" });
+  doc.font("Helvetica-Bold").fontSize(13).fillColor("#0B1F45").text("Total", totLabelX, totY, { width: 90 });
+  doc.font("Helvetica-Bold").fontSize(13).fillColor("#0B1F45").text(fmtBRL(grandTotal), totValX, totY, { width: totValW, align: "right" });
   doc.y = totY + 18;
   if (sel?.id === "cartao" && sel.installments) {
     doc.font("Helvetica").fontSize(9).fillColor("#555").text(`${sel.installments}x de ${fmtBRL(sel.installmentValue ?? 0)} sem juros`, totLabelX, doc.y, { width: totValX + totValW - totLabelX, align: "right" });
@@ -221,7 +221,7 @@ export function generateQuotePdf(input: QuotePdfInput): Promise<Buffer> {
   doc.font("Helvetica").fontSize(12).fillColor("#555").text("Condição de pagamento", 42, doc.y, { width: 511 });
   doc.moveTo(42, doc.y + 2).lineTo(553, doc.y + 2).strokeColor("#d8d8d8").stroke();
   doc.moveDown(0.6);
-  doc.font("Helvetica").fontSize(9.5).fillColor("#1a1c1c").text(
+  doc.font("Helvetica").fontSize(9.5).fillColor("#0D1830").text(
     sel?.id === "pix"
       ? `PIX ou espécie — ${sel.discountPct}% de desconto. Total à vista ${fmtBRL(sel.total)}.`
       : sel
@@ -242,12 +242,12 @@ export function generateQuotePdf(input: QuotePdfInput): Promise<Buffer> {
     const boxY = doc.y;
     const boxH = 40;
     doc.rect(42, boxY, 511, boxH).fill("#f4f1ea");
-    doc.rect(42, boxY, 3, boxH).fill("#002045");
-    doc.font("Helvetica-Bold").fontSize(9.5).fillColor("#002045").text(
+    doc.rect(42, boxY, 3, boxH).fill("#0B1F45");
+    doc.font("Helvetica-Bold").fontSize(9.5).fillColor("#0B1F45").text(
       "Este orçamento cobre apenas o material. A Orbital é fornecedora de revestimentos e não",
       54, boxY + 9, { width: 487, lineBreak: false },
     );
-    doc.font("Helvetica-Bold").fontSize(9.5).fillColor("#002045").text(
+    doc.font("Helvetica-Bold").fontSize(9.5).fillColor("#0B1F45").text(
       "executa instalação — mão de obra e serviços de aplicação não estão incluídos no valor acima.",
       54, boxY + 22, { width: 487, lineBreak: false },
     );

@@ -125,7 +125,7 @@ function meetingEmailHtml(input: { message: string; googleCalendarUrl: string; g
     .replace(/\n/g, "<br>");
   if (input.cancelled) {
     return `
-      <div style="font-family:Inter,Arial,sans-serif;color:#1a1c1c;line-height:1.55;max-width:620px">
+      <div style="font-family:Montserrat,Arial,sans-serif;color:#0D1830;line-height:1.55;max-width:620px">
         <p>${escapedMessage}</p>
         <p style="font-size:13px;color:#74777f">O convite anexado (.ics) remove automaticamente esta reunião do seu calendário.</p>
       </div>`;
@@ -135,11 +135,11 @@ function meetingEmailHtml(input: { message: string; googleCalendarUrl: string; g
     ? "Também anexamos um arquivo .ics para Apple Calendar, Outlook e outros calendários."
     : "Como este e-mail não parece ser Gmail, anexamos um convite .ics compatível com Apple Calendar, Outlook e outros calendários.";
   return `
-    <div style="font-family:Inter,Arial,sans-serif;color:#1a1c1c;line-height:1.55;max-width:620px">
+    <div style="font-family:Montserrat,Arial,sans-serif;color:#0D1830;line-height:1.55;max-width:620px">
       <p>${escapedMessage}</p>
       ${input.googlePreferred ? `
         <p style="margin:24px 0">
-          <a href="${input.googleCalendarUrl}" style="background:#002045;color:#ffffff;text-decoration:none;padding:12px 18px;font-weight:700;display:inline-block">
+          <a href="${input.googleCalendarUrl}" style="background:#0B1F45;color:#ffffff;text-decoration:none;padding:12px 18px;font-weight:700;display:inline-block">
             ${primary}
           </a>
         </p>
