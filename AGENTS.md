@@ -16,6 +16,13 @@ comparison.
   Fibra de Bambu" or "Painel de Fibra de Bambu" for the product name anymore
   ("placa" stays fine as the generic word for one sheet: "R$ 559/placa").
   Spell out the full form the first time it appears in any piece of content.
+- **NEVER mention competitors or speak badly of other materials** (MDF, papel de
+  parede, gesso, PVC, cerâmica, etc.) in new content — emails, campaigns, site
+  copy, "quem somos" texts. Present the Orbital and the PFB only by their own
+  merits. The Orbital thesis: bring innovative materials adapted to the Amazon
+  climate, ready to resist humidity and extreme heat, that truly serve our
+  market. Write a material comparison ONLY when the owner explicitly asks for
+  one; the comparison rules below apply only in that case.
 - **NEVER** state, admit, or imply the PFB is "more expensive" / "custa mais" than
   MDF (or anything) — not even to justify it with durability or "ciclo de vida".
   That framing creates an objection and works against the sale.
