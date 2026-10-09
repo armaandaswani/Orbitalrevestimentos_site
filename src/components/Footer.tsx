@@ -128,7 +128,7 @@ export default function Footer() {
           </p>
           <div className="flex flex-col gap-3 md:flex-row md:items-center md:gap-5">
             <p className="text-xs text-[#9c9faa] italic">
-              Revestimento de parede e forro · PFB · Alternativa ao MDF em Manaus
+              Revestimento de parede e forro interno · PFB · Feito para a Amazônia
             </p>
             <div className="flex flex-wrap items-center gap-x-4 gap-y-2 md:border-l md:border-[#333640] md:pl-5">
               <Link href="/privacidade" className="text-[10px] text-[#9c9faa] hover:text-white transition-colors tracking-[0.08em] uppercase">
