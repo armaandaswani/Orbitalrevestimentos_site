@@ -294,7 +294,7 @@ export default function ComprasTab() {
         <div className="fixed inset-0 z-50 flex items-start justify-center bg-black/40 p-4 overflow-y-auto">
           <div className="bg-white w-full max-w-4xl my-6" onClick={(e) => e.stopPropagation()}>
             <div className="bg-[#0B1F45] px-6 py-4 flex items-center justify-between sticky top-0 z-10">
-              <p className="text-white font-serif text-lg">{draft._isNew ? "Novo pedido de compra" : (draft.reference || "Pedido de compra")}</p>
+              <p className="text-white text-lg">{draft._isNew ? "Novo pedido de compra" : (draft.reference || "Pedido de compra")}</p>
               <button onClick={() => setDraft(null)} className="text-white/70 hover:text-white text-2xl leading-none">×</button>
             </div>
             <div className="p-6 space-y-5">
@@ -388,7 +388,7 @@ export default function ComprasTab() {
                     <div className="flex justify-between"><span className="text-white/60">Despesas</span><span>{fmtBRL(preview.otherBRL)}</span></div>
                     <div className="flex justify-between border-t border-white/15 pt-2 mt-1 sm:col-span-3">
                       <span className="font-bold">Custo total</span>
-                      <span className="font-serif text-xl">{fmtBRL(preview.grandTotalBRL)}</span>
+                      <span className="text-xl">{fmtBRL(preview.grandTotalBRL)}</span>
                     </div>
                   </div>
                 </div>

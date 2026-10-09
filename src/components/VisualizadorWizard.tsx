@@ -2101,7 +2101,7 @@ function UploadStep({
             <path d="M17 8l-5-5-5 5" />
             <path d="M12 3v12" />
           </svg>
-          <p className="font-serif text-[#0B1F45] text-xl mb-1">
+          <p className="text-[#0B1F45] text-xl mb-1">
             {hasBanked ? "Envie a foto do próximo ambiente" : "Envie uma foto do seu ambiente"}
           </p>
           <p className="text-[#74777f] text-sm">Clique para escolher ou arraste a imagem aqui</p>
@@ -2776,7 +2776,7 @@ function ResultStep({
             )}
             <div className="bg-white w-full max-w-xs px-5 py-5">
               {resultReady ? (
-                <><p className="font-serif text-[#0B1F45] text-lg leading-snug mb-1">Sua visualização está pronta!</p>
+                <><p className="text-[#0B1F45] text-lg leading-snug mb-1">Sua visualização está pronta!</p>
                   <p className="text-[#74777f] text-sm mb-4">Informe seus dados para ver o resultado.</p></>
               ) : (
                 <><p className="text-[10px] tracking-[0.18em] uppercase font-bold text-[#0B1F45] mb-1">Enquanto geramos sua visualização</p>

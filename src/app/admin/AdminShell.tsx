@@ -49,7 +49,7 @@ export default function AdminShell({
     return (
       <div className="min-h-screen bg-[#F6F5F2] flex items-center justify-center px-6">
         <div className="bg-white border border-[#e2e2e2] px-8 py-10 text-center max-w-sm">
-          <p className="font-serif text-[#0B1F45] text-xl mb-2">Sessão encerrada</p>
+          <p className="text-[#0B1F45] text-xl mb-2">Sessão encerrada</p>
           <p className="text-[#74777f] text-sm mb-6">Entre novamente para continuar.</p>
           <Link href="/admin" className="inline-block bg-[#0B1F45] text-white text-xs tracking-[0.12em] uppercase font-bold px-5 py-2.5 hover:bg-[#2347A0] transition-colors">
             Ir para o login
@@ -64,9 +64,9 @@ export default function AdminShell({
       <div className="max-w-[1400px] mx-auto flex gap-6">
         <aside className="hidden md:flex w-56 flex-shrink-0 md:sticky md:top-6 flex-col gap-5 max-h-[calc(100vh-3rem)] overflow-y-auto pr-1">
           <div className="px-3 pb-3 mb-1 border-b border-[#e2e2e2] flex items-center gap-2.5">
-            <span className="w-8 h-8 rounded-lg bg-[#0B1F45] text-white flex items-center justify-center font-serif text-base flex-shrink-0">O</span>
+            <span className="w-8 h-8 rounded-lg bg-[#0B1F45] text-white flex items-center justify-center text-base flex-shrink-0">O</span>
             <div className="min-w-0">
-              <p className="font-serif text-[#0B1F45] text-lg leading-none">Orbital</p>
+              <p className="text-[#0B1F45] text-lg leading-none">Orbital</p>
               <p className="text-[9px] tracking-[0.22em] uppercase font-bold text-[#a0a3a8] mt-1">Sistema Interno</p>
             </div>
           </div>

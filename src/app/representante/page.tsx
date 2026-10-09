@@ -281,7 +281,7 @@ export default function RepresentantePage() {
       <div className="min-h-screen bg-[#F6F5F2] pt-20 flex items-center justify-center px-4">
         <div className="bg-white border border-[#e2e2e2] p-10 w-full max-w-sm">
           <div className="mb-6">
-            <p className="text-[#0B1F45] font-serif text-2xl font-normal mb-1">
+            <p className="text-[#0B1F45] text-2xl font-normal mb-1">
               Complete seu cadastro
             </p>
             <p className="text-[#74777f] text-sm">
@@ -324,7 +324,7 @@ export default function RepresentantePage() {
       <div className="min-h-screen bg-[#F6F5F2] pt-20 flex items-center justify-center px-4">
         <div className="bg-white border border-[#e2e2e2] p-10 w-full max-w-sm">
           <div className="mb-6">
-            <p className="text-[#0B1F45] font-serif text-2xl font-normal mb-1">
+            <p className="text-[#0B1F45] text-2xl font-normal mb-1">
               Portal do Representante
             </p>
             <p className="text-[#74777f] text-sm">
@@ -405,7 +405,7 @@ export default function RepresentantePage() {
       {/* Header */}
       <div className="bg-[#0B1F45] px-6 py-5 flex items-center justify-between">
         <div>
-          <p className="text-white font-serif text-lg leading-tight">
+          <p className="text-white text-lg leading-tight">
             Olá, {salesRep.name}
           </p>
           <p className="text-white/60 text-xs tracking-wider mt-0.5">
@@ -479,7 +479,7 @@ export default function RepresentantePage() {
             <p className="text-[#74777f] text-[10px] tracking-[0.15em] uppercase font-bold mb-1">
               Parceiros indicados
             </p>
-            <p className="font-serif text-[#0B1F45] text-3xl font-normal">
+            <p className="text-[#0B1F45] text-3xl font-normal">
               {uniquePartners}
             </p>
           </div>
@@ -487,7 +487,7 @@ export default function RepresentantePage() {
             <p className="text-[#74777f] text-[10px] tracking-[0.15em] uppercase font-bold mb-1">
               Vendas concluídas
             </p>
-            <p className="font-serif text-[#0B1F45] text-3xl font-normal">
+            <p className="text-[#0B1F45] text-3xl font-normal">
               {uses.filter((u) => u.sale_status === "concluido").length}
             </p>
           </div>
@@ -495,7 +495,7 @@ export default function RepresentantePage() {
             <p className="text-[#74777f] text-[10px] tracking-[0.15em] uppercase font-bold mb-1">
               Comissão confirmada
             </p>
-            <p className="font-serif text-green-700 text-2xl font-normal">
+            <p className="text-green-700 text-2xl font-normal">
               {fmt(confirmedCommission)}
             </p>
           </div>
@@ -503,7 +503,7 @@ export default function RepresentantePage() {
             <p className="text-[#74777f] text-[10px] tracking-[0.15em] uppercase font-bold mb-1">
               Comissão pendente
             </p>
-            <p className="font-serif text-amber-600 text-2xl font-normal">
+            <p className="text-amber-600 text-2xl font-normal">
               {fmt(pendingCommission)}
             </p>
           </div>
@@ -694,7 +694,7 @@ export default function RepresentantePage() {
                 <div key={p.code} className="px-4 py-4">
                   <div className="flex items-center justify-between mb-2">
                     <div className="flex items-center gap-2">
-                      <span className="font-bold text-[#0B1F45] text-base font-serif">{i + 1}°</span>
+                      <span className="font-bold text-[#0B1F45] text-base">{i + 1}°</span>
                       <span className="font-semibold text-[#0B1F45] text-sm">{p.name}</span>
                     </div>
                     <span className="bg-[#eef2f8] text-[#0B1F45] px-2 py-0.5 text-xs font-bold tracking-wider">{p.code}</span>

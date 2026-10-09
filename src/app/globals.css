@@ -46,8 +46,8 @@
   --color-on-error: #ffffff;
 
   /* Typography */
-  --font-serif: var(--font-noto-serif-display), Georgia, serif;
-  --font-sans: var(--font-montserrat), system-ui, sans-serif;
+  --font-serif: var(--font-noto-serif), Georgia, serif;
+  --font-sans: var(--font-inter), system-ui, sans-serif;
 
   /* Spacing */
   --spacing-gutter: 32px;
@@ -79,13 +79,6 @@
   }
 }
 
-/* Títulos em Noto Serif Display SEMPRE em negrito (o manual pede Light, mas o
-   dono decidiu: Light fica ruim de ler). Fora de @layer de propósito: vence os
-   font-light/normal das classes, sem caçar cada título. Títulos em Montserrat
-   usam font-sans. */
-:is(h1, h2, h3, h4, h5, h6, .font-serif):not(.font-sans) {
-  font-weight: 700;
-}
 
 /* ── Animations ─────────────────────────────────────── */
 

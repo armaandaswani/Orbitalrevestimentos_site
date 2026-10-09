@@ -134,7 +134,7 @@ export default function SobrePage() {
           <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
             {numeros.map(({ valor, label }) => (
               <div key={label} className="flex flex-col items-center text-center py-3">
-                <AnimatedStat value={valor} className="text-white font-serif text-2xl font-normal mb-0.5" />
+                <AnimatedStat value={valor} className="text-white text-2xl font-normal mb-0.5" />
                 <span className="text-[#B4BBC8] text-[10px] tracking-[0.15em] uppercase font-semibold">{label}</span>
               </div>
             ))}
@@ -255,7 +255,7 @@ export default function SobrePage() {
           <div className="grid grid-cols-2 lg:grid-cols-4 gap-0 border border-white/10">
             {numeros.map((n, i) => (
               <ScrollReveal key={n.label} delay={i * 80} className={`p-6 lg:p-8 ${i < 3 ? "border-b lg:border-b-0 lg:border-r border-white/10" : ""}`}>
-                <AnimatedStat value={n.valor} className="font-serif text-white text-4xl font-normal mb-2" />
+                <AnimatedStat value={n.valor} className="text-white text-4xl font-normal mb-2" />
                 <p className="text-white/80 text-sm font-semibold mb-1">{n.label}</p>
                 <p className="text-white/40 text-xs leading-relaxed">{n.desc}</p>
               </ScrollReveal>

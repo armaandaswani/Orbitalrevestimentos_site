@@ -306,7 +306,7 @@ export async function GET(req: NextRequest) {
           from: "Orbital Revestimentos <noreply@orbitalrevestimentos.com.br>",
           to: rep.email,
           subject: `Digest do dia - ${todaysMeetings.length} reuniao(oes), ${dueFollowups.length} follow-up(s)`,
-          html: `<pre style="font-family:Montserrat,Arial,sans-serif;font-size:14px;line-height:1.5;color:#0B1F45;white-space:pre-wrap;">${escapeHtml(message)}</pre>`,
+          html: `<pre style="font-family:Arial,sans-serif;font-size:14px;line-height:1.5;color:#0B1F45;white-space:pre-wrap;">${escapeHtml(message)}</pre>`,
         });
         sentVia.push("email");
       } catch {

@@ -89,8 +89,8 @@ export async function POST(req: NextRequest) {
         to: email,
         subject: `Bem-vindo à Orbital — seu acesso está pronto`,
         html: `
-          ${emailTopo(520)}<div style="font-family:Montserrat,Arial,sans-serif;max-width:520px;margin:0 auto;padding:32px 24px;color:#0D1830">
-            <h2 style="font-size:22px;margin-bottom:8px;font-family:Noto Serif Display,Georgia,serif;font-weight:700">Olá, ${name}!</h2>
+          ${emailTopo(520)}<div style="font-family:sans-serif;max-width:520px;margin:0 auto;padding:32px 24px;color:#0D1830">
+            <h2 style="font-size:22px;margin-bottom:8px">Olá, ${name}!</h2>
             <p style="color:#555;margin-bottom:24px">Você foi cadastrado como representante da <strong>Orbital Revestimentos</strong>.</p>
             <div style="background:#F6F5F2;border:1px solid #e2e2e2;padding:20px 24px;margin-bottom:16px">
               <p style="margin:0 0 4px 0;font-size:11px;text-transform:uppercase;letter-spacing:0.12em;color:#74777f">Código de indicação (login)</p>

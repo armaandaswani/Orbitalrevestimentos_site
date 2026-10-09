@@ -94,8 +94,8 @@ export async function GET(req: NextRequest) {
     from: "Orbital Revestimentos <noreply@orbitalrevestimentos.com.br>",
     to: adminEmail,
     subject: `Orbital — Resumo de ${lastMonthName} ${lastMonthDate.getFullYear()}`,
-    html: `<div style="font-family:Montserrat,Arial,sans-serif;max-width:600px;margin:0 auto;padding:32px 24px;color:#0D1830">
-      <h2 style="font-size:22px;margin-bottom:4px;color:#0B1F45;font-family:Noto Serif Display,Georgia,serif;font-weight:700">Resumo de ${lastMonthName} ${lastMonthDate.getFullYear()}</h2>
+    html: `<div style="font-family:sans-serif;max-width:600px;margin:0 auto;padding:32px 24px;color:#0D1830">
+      <h2 style="font-size:22px;margin-bottom:4px;color:#0B1F45">Resumo de ${lastMonthName} ${lastMonthDate.getFullYear()}</h2>
       <p style="color:#555;margin-bottom:24px;font-size:14px">Desempenho da rede de parceiros no mês passado.</p>
       <div style="display:flex;gap:12px;flex-wrap:wrap;margin-bottom:28px">
         ${[["Total vendido",fmt(totalValue)],["Com. parceiros",fmt(totalCommission)],["Com. representantes",fmt(totalRepCommission)],["Vendas",String(allSales.length)]].map(([l,v]) =>
@@ -116,8 +116,8 @@ export async function GET(req: NextRequest) {
     from: "Orbital Revestimentos <noreply@orbitalrevestimentos.com.br>",
     to: adminEmail,
     subject: `Orbital — Aniversariantes de ${thisMonthName}`,
-    html: `<div style="font-family:Montserrat,Arial,sans-serif;max-width:560px;margin:0 auto;padding:32px 24px;color:#0D1830">
-      <h2 style="font-size:22px;margin-bottom:4px;color:#0B1F45;font-family:Noto Serif Display,Georgia,serif;font-weight:700">🎂 Aniversariantes de ${thisMonthName}</h2>
+    html: `<div style="font-family:sans-serif;max-width:560px;margin:0 auto;padding:32px 24px;color:#0D1830">
+      <h2 style="font-size:22px;margin-bottom:4px;color:#0B1F45">🎂 Aniversariantes de ${thisMonthName}</h2>
       <p style="color:#555;margin-bottom:20px;font-size:14px">${birthdaysThisMonth.length} parceiro${birthdaysThisMonth.length !== 1 ? "s fazem" : " faz"} aniversário este mês.</p>
       <table style="width:100%;border-collapse:collapse;margin-bottom:24px"><thead><tr style="background:#F6F5F2"><th style="padding:8px;text-align:left;font-size:10px;text-transform:uppercase;color:#74777f">Data</th><th style="padding:8px;text-align:left;font-size:10px;text-transform:uppercase;color:#74777f">Nome</th><th style="padding:8px;text-align:left;font-size:10px;text-transform:uppercase;color:#74777f">Idade</th><th style="padding:8px;text-align:left;font-size:10px;text-transform:uppercase;color:#74777f">Email</th><th style="padding:8px;text-align:left;font-size:10px;text-transform:uppercase;color:#74777f">Telefone</th></tr></thead><tbody>${bdayRows}</tbody></table>
       <p style="color:#888;font-size:12px;margin-top:24px">Orbital Revestimentos · Sistema automático</p>

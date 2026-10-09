@@ -148,7 +148,7 @@ export async function POST(req: NextRequest) {
         from: "Orbital Revestimentos <noreply@orbitalrevestimentos.com.br>",
         to: email, cc: COMPANY.email,
         subject: `Orçamento formalizado nº ${formalNumber} — Orbital`,
-        html: `${emailTopo(560)}<div style="font-family:Montserrat,Arial,sans-serif;max-width:560px;margin:0 auto;padding:28px;color:#0D1830">
+        html: `${emailTopo(560)}<div style="font-family:Arial,sans-serif;max-width:560px;margin:0 auto;padding:28px;color:#0D1830">
           <h2 style="margin:0 0 8px;color:#0B1F45">Orçamento formalizado nº ${formalNumber}</h2>
           <p style="line-height:1.6;color:#43474e">Olá, ${clientName || "cliente"}. Segue em anexo o seu orçamento formalizado da Orbital Revestimentos.</p>
           <p style="font-size:18px;color:#0B1F45;font-weight:700">Total: ${fmtBRL(total)}</p>

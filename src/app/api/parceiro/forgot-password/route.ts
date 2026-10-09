@@ -59,7 +59,7 @@ export async function POST(req: NextRequest) {
       to: partner.email,
       subject: "Redefinição de senha — Orbital Revestimentos",
       html: `
-        ${emailTopo(480)}<div style="font-family:Montserrat,Arial,sans-serif; max-width: 480px; margin: 0 auto; color: #0B1F45;">
+        ${emailTopo(480)}<div style="font-family: Arial, sans-serif; max-width: 480px; margin: 0 auto; color: #0B1F45;">
           <p style="font-size: 16px;">Olá, ${partner.name}!</p>
           <p style="font-size: 14px; color: #43474e;">
             Recebemos uma solicitação para redefinir a senha do seu portal de parceiro.

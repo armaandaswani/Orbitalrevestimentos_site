@@ -156,7 +156,7 @@ export function linkWhatsappContato(produtos: ProdutoContato[], r: RespostasCont
 
 // ── Abrir a aba de contato de qualquer lugar ─────────────────────────────────
 // Evento de janela em vez de contexto React: assim um botão dentro de página
-// server-side (home, guias, sobre) abre a aba sem virar provider.
+// server-side (home, sobre) abre a aba sem virar provider.
 
 export const EVENTO_CONTATO = "orbital:contato";
 

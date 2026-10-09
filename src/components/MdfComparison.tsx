@@ -180,10 +180,10 @@ export default function MdfComparison({ selected: externalSelected, onSelect, al
               <th className="text-left py-4 px-3 text-xs tracking-[0.1em] uppercase font-semibold text-[#74777f] w-[36%]">
                 Critério
               </th>
-              <th className="text-left py-4 px-3 font-serif text-[#0B1F45] text-base lg:text-lg font-normal w-[32%]">
+              <th className="text-left py-4 px-3 text-[#0B1F45] text-base lg:text-lg font-normal w-[32%]">
                 Fibra de Bambu Orbital
               </th>
-              <th className="text-left py-4 px-3 font-serif text-[#74777f] text-base lg:text-lg font-normal w-[32%]">
+              <th className="text-left py-4 px-3 text-[#74777f] text-base lg:text-lg font-normal w-[32%]">
                 {option.label}
               </th>
             </tr>

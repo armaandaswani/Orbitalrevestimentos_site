@@ -569,7 +569,7 @@ export default function ProdutosPage() {
                       { label: "Área/placa", value: "3,48 m²" },
                     ].map(({ label, value }, i) => (
                       <div key={label} className={`px-3 py-2.5 text-center ${i < 2 ? "border-r border-[#e8e8e8]" : ""}`}>
-                        <p className="font-serif text-[#0B1F45] text-sm font-normal">{value}</p>
+                        <p className="text-[#0B1F45] text-sm font-normal">{value}</p>
                         <p className="text-[#74777f] text-[9px] tracking-[0.12em] uppercase font-semibold mt-0.5">{label}</p>
                       </div>
                     ))}
@@ -916,7 +916,7 @@ export default function ProdutosPage() {
               { label: "Peso", value: "3,2 kg/m²" },
             ].map(({ label, value }) => (
               <div key={label}>
-                <p className="text-white font-serif text-2xl font-normal mb-1">
+                <p className="text-white text-2xl font-normal mb-1">
                   {value}
                 </p>
                 <p className="text-[#B4BBC8] text-xs tracking-[0.15em] uppercase font-semibold">

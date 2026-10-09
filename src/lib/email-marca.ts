@@ -4,10 +4,8 @@
  * - Cabeçalho em azul-noite (#0B1F45) com a assinatura em NEGATIVO (texto
  *   branco, globo em Azul Vivo) — é a única versão permitida sobre fundo azul.
  *   Largura mínima da assinatura horizontal: 120px.
- * - Textos em Montserrat; títulos em Noto Serif Display em negrito
- *   (o manual pede Light; o dono decidiu negrito para facilitar a leitura). A maioria dos
- *   clientes de e-mail (Gmail, Outlook) não carrega fonte web: o link abaixo
- *   vale para Apple Mail/iOS e o resto cai no Arial/Georgia do fallback.
+ * - Fontes: Arial nos textos e Georgia nos títulos (decisão do dono: manter as
+ *   fontes antigas do site, não as do manual).
  * - E-mail não aceita SVG (o Gmail bloqueia): o logo vai em PNG.
  */
 
@@ -15,9 +13,6 @@ const SITE = "https://orbitalrevestimentos.com.br";
 
 /** Arquivo novo se o logo mudar — as imagens ficam 1 ano em cache. */
 const LOGO_NEGATIVO_PNG = `${SITE}/images/brand/orbital-assinatura-negativo-email.png`;
-
-export const EMAIL_FONTES_LINK =
-  '<link href="https://fonts.googleapis.com/css2?family=Montserrat:wght@400;600;800&family=Noto+Serif+Display:ital,wght@0,700;1,700&display=swap" rel="stylesheet">';
 
 /** Assinatura em negativo para o cabeçalho azul-noite (proporção 480×151). */
 export function emailLogo(width = 160, marginBottom = 0): string {

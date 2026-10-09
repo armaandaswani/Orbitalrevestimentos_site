@@ -167,7 +167,7 @@ export default function EstoqueTab() {
         ].map((m) => (
           <div key={m.label} className="bg-white border border-[#e2e2e2] px-4 py-3">
             <p className="text-[#74777f] text-[9px] uppercase tracking-wider font-bold">{m.label}</p>
-            <p className="text-[#0B1F45] text-lg font-serif mt-0.5">{m.value}</p>
+            <p className="text-[#0B1F45] text-lg mt-0.5">{m.value}</p>
             {m.sub && <p className="text-[#b0b0b0] text-[10px]">{m.sub}</p>}
           </div>
         ))}

@@ -1704,7 +1704,7 @@ function SimuladorInner() {
         <div className="fixed inset-0 z-[70] bg-[#0B1F45]/95 backdrop-blur-sm flex flex-col items-center justify-center gap-5 text-center px-6">
           <div className="w-12 h-12 border-2 border-white/25 border-t-[#36A35C] rounded-full animate-spin" />
           <div>
-            <p className="text-white font-serif text-2xl lg:text-3xl">Gerando seu orçamento…</p>
+            <p className="text-white text-2xl lg:text-3xl">Gerando seu orçamento…</p>
             <p className="text-white/70 text-sm mt-2">Estamos preparando os detalhes do seu investimento.</p>
           </div>
         </div>
@@ -2988,7 +2988,7 @@ function SimuladorInner() {
                       <div className="flex items-center gap-3">
                         <span className="text-white/60 text-[10px] font-bold uppercase tracking-wider">Total — material</span>
                       </div>
-                      <span className="text-white text-base font-bold font-serif">{fmt(grandMaterialDiscounted)}</span>
+                      <span className="text-white text-base font-bold">{fmt(grandMaterialDiscounted)}</span>
                     </div>
                   </div>
                 </div>
@@ -3175,12 +3175,12 @@ function SimuladorInner() {
                               </div>
                               {opt.id === "cartao" ? (
                                 <>
-                                  <p className={`text-xl sm:text-2xl font-bold font-serif leading-none ${active ? "text-[#0B1F45]" : "text-white"}`}>{opt.installments}x de {fmtParcela(opt.installmentValue ?? 0)}</p>
+                                  <p className={`text-xl sm:text-2xl font-bold leading-none ${active ? "text-[#0B1F45]" : "text-white"}`}>{opt.installments}x de {fmtParcela(opt.installmentValue ?? 0)}</p>
                                   <p className={`text-[11px] mt-1.5 ${active ? "text-[#74777f]" : "text-[#B4BBC8]"}`}>sem juros · total {fmtBRL(opt.total)}</p>
                                 </>
                               ) : (
                                 <>
-                                  <p className={`text-xl sm:text-2xl font-bold font-serif leading-none ${active ? "text-[#0B1F45]" : "text-white"}`}>{fmtBRL(opt.total)}</p>
+                                  <p className={`text-xl sm:text-2xl font-bold leading-none ${active ? "text-[#0B1F45]" : "text-white"}`}>{fmtBRL(opt.total)}</p>
                                   <p className={`text-[11px] font-semibold mt-1.5 ${active ? "text-[#1F7A44]" : "text-[#5eead4]"}`}>à vista · {opt.discountPct}% off (economize {fmtBRL(opt.discountAmount ?? 0)})</p>
                                 </>
                               )}
@@ -3596,7 +3596,7 @@ function SimuladorInner() {
             onClick={(e) => e.stopPropagation()}
           >
             <div className="sticky top-0 bg-[#0B1F45] px-5 py-4 flex items-center justify-between z-10">
-              <p className="text-white font-serif text-base">
+              <p className="text-white text-base">
                 {fzResult ? "Orçamento formalizado" : "Receber orçamento formalizado"}
               </p>
               <button

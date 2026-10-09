@@ -27,6 +27,15 @@ const nextConfig: NextConfig = {
       },
     ],
   },
+  // As guias (/guias/*) foram retiradas do site: tinham informação errada e
+  // desatualizada e não foram aprovadas. Links antigos (Google, compartilhados)
+  // caem numa página válida em vez de 404.
+  async redirects() {
+    return [
+      { source: "/guias/mdf-manaus", destination: "/tecnologia", permanent: true },
+      { source: "/guias/:slug*", destination: "/produtos", permanent: true },
+    ];
+  },
   experimental: {
     serverActions: {
       bodySizeLimit: "20mb",

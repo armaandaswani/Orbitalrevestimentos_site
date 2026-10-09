@@ -290,7 +290,7 @@ export default function DashboardTab({ dash, dashLoading, onRefreshDash, overvie
               <div className="space-y-4">
                 <div className="flex justify-between items-center">
                   <span className="text-xs text-[#74777f]">Parceiros ativos</span>
-                  <span className="font-serif text-2xl text-[#0B1F45]">{dash.parceirosAtivos}</span>
+                  <span className="text-2xl text-[#0B1F45]">{dash.parceirosAtivos}</span>
                 </div>
                 {dash.parceirosPendentes > 0 && (
                   <div className="flex justify-between items-center">
@@ -300,7 +300,7 @@ export default function DashboardTab({ dash, dashLoading, onRefreshDash, overvie
                 )}
                 <div className="pt-3 border-t border-[#EFEDE8]">
                   <p className="text-[#74777f] text-[10px] uppercase tracking-widest mb-1">Comissões a pagar</p>
-                  <p className="font-serif text-[#0B1F45] text-2xl">{fmtBRL(dash.comissaoPendente)}</p>
+                  <p className="text-[#0B1F45] text-2xl">{fmtBRL(dash.comissaoPendente)}</p>
                 </div>
                 <button onClick={() => onNavigate("commissions")} className={`${btnSecondary} w-full text-center`}>
                   Ver comissões →

@@ -1,5 +1,6 @@
 import type { Metadata } from "next";
 import Image from "next/image";
+import { Barlow_Condensed } from "next/font/google";
 import ScrollReveal from "@/components/ScrollReveal";
 import ListaEsperaForm from "./ListaEsperaForm";
 import AntesDepois from "./AntesDepois";
@@ -8,8 +9,8 @@ import CtaFixo from "./CtaFixo";
 /**
  * Academia Orbital — lista de espera.
  *
- * Campanha dentro da marca: Montserrat ExtraBold em caixa alta nos títulos,
- * Verde Bambu (#36A35C, com texto azul-tinta) na conversão.
+ * Campanha dentro da marca: tipografia condensada nos títulos, Verde Bambu
+ * (#36A35C, com texto azul-tinta) na conversão.
  * Público: aplicador, instalador e marceneiro, no celular. Eles não leem
  * parágrafo — cada seção é UM título curto e UMA prova visual, com espaço em
  * volta. Versões anteriores foram reprovadas por excesso de texto; antes de
@@ -25,9 +26,8 @@ import CtaFixo from "./CtaFixo";
  * imagens geradas e não entram aqui.
  */
 
-// Títulos da campanha: Montserrat (font-sans) — o manual reserva a Noto Serif
-// Display para títulos editoriais; aqui o tom é de campanha, em caixa alta.
-const D = "font-sans tracking-[-0.01em]";
+const display = Barlow_Condensed({ subsets: ["latin"], weight: ["600", "700", "800"], display: "swap" });
+const D = display.className;
 
 const URL_PAGINA = "https://orbitalrevestimentos.com.br/academia";
 
@@ -108,7 +108,7 @@ function Cta({ texto, tom = "lima" }: { texto: string; tom?: "lima" | "navy" | "
   );
 }
 
-const H2 = `${D} text-[27px] leading-[1.05] sm:text-[40px] lg:text-[50px] lg:leading-[1.02] font-extrabold uppercase`;
+const H2 = `${D} text-[34px] leading-none sm:text-5xl lg:text-[60px] lg:leading-[0.98] font-bold uppercase`;
 
 export default function AcademiaPage() {
   return (
@@ -127,7 +127,7 @@ export default function AcademiaPage() {
                 Em preparação
               </span>
             </div>
-            <h1 className={`${D} text-[30px] leading-[1.05] sm:text-5xl lg:text-[52px] xl:text-[58px] lg:leading-[1.02] font-extrabold uppercase mb-6`}>
+            <h1 className={`${D} text-[40px] leading-[0.98] sm:text-6xl lg:text-[64px] xl:text-[70px] lg:leading-[0.95] font-extrabold uppercase mb-6`}>
               Aprenda a instalar PFB.
               <br />
               <span style={{ color: LIMA }}>Ganhe um novo serviço.</span>
@@ -189,7 +189,7 @@ export default function AcademiaPage() {
       {/* ── Uma frase, e só ── */}
       <section className="bg-[#0B1F45] py-24 lg:py-36">
         <ScrollReveal direction="up" className="max-w-[1280px] mx-auto px-4 lg:px-16">
-          <p className={`${D} text-white text-[27px] leading-[1.05] sm:text-[40px] lg:text-[52px] font-extrabold uppercase`}>
+          <p className={`${D} text-white text-[34px] leading-none sm:text-5xl lg:text-[64px] font-bold uppercase`}>
             PFB não é mais o futuro.
             <br />
             <span style={{ color: LIMA }}>Já é o presente!</span>
@@ -295,7 +295,7 @@ export default function AcademiaPage() {
       {/* ── Fechamento: volta para o formulário ── */}
       <section className="bg-[#F6F5F2] text-[#0D1830] pt-20 pb-32 md:pb-24 lg:py-28">
         <div className="max-w-[1280px] mx-auto px-4 lg:px-16 lg:flex lg:items-end lg:justify-between gap-10">
-          <p className={`${D} text-[27px] leading-[1.05] sm:text-[40px] lg:text-[46px] font-extrabold uppercase mb-10 lg:mb-0 max-w-3xl`}>
+          <p className={`${D} text-[34px] leading-none sm:text-5xl lg:text-[56px] font-bold uppercase mb-10 lg:mb-0 max-w-3xl`}>
             Quando as portas abrirem, você vai querer estar aqui.
           </p>
           <Cta texto="Quero meu lugar na lista" tom="navy" />

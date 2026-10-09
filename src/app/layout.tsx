@@ -1,5 +1,5 @@
 import type { Metadata } from "next";
-import { Montserrat, Noto_Serif_Display } from "next/font/google";
+import { Inter, Noto_Serif } from "next/font/google";
 import "./globals.css";
 import Script from "next/script";
 import Navbar from "@/components/Navbar";
@@ -10,22 +10,17 @@ import ContatoSheet from "@/components/ContatoSheet";
 import { SpeedInsights } from "@vercel/speed-insights/next";
 import { Analytics } from "@vercel/analytics/next";
 
-// Manual da marca: Montserrat (logo, rótulos e textos) e Noto Serif Display
-// (títulos e frases de impacto).
-const montserrat = Montserrat({
+const inter = Inter({
   subsets: ["latin"],
-  weight: ["400", "500", "600", "700", "800"],
-  variable: "--font-montserrat",
+  variable: "--font-inter",
   display: "swap",
 });
 
-// Títulos em NEGRITO (700), por decisão do dono: o Light do manual ficava
-// ruim de ler no site.
-const notoSerifDisplay = Noto_Serif_Display({
+const notoSerif = Noto_Serif({
   subsets: ["latin"],
-  weight: ["700"],
+  weight: ["400", "500", "700"],
   style: ["normal", "italic"],
-  variable: "--font-noto-serif-display",
+  variable: "--font-noto-serif",
   display: "swap",
 });
 
@@ -253,7 +248,7 @@ export default function RootLayout({
   children: React.ReactNode;
 }) {
   return (
-    <html lang="pt-BR" className={`${montserrat.variable} ${notoSerifDisplay.variable}`}>
+    <html lang="pt-BR" className={`${inter.variable} ${notoSerif.variable}`}>
       <head>
         <Script
           strategy="afterInteractive"

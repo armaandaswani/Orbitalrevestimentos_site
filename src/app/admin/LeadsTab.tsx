@@ -502,7 +502,7 @@ export default function LeadsTab({
           ].map((s) => (
             <div key={s.label} className="bg-white border border-[#e2e2e2] px-4 py-3">
               <p className="text-[9px] tracking-[0.1em] uppercase font-bold text-[#74777f]">{s.label}</p>
-              <p className="text-lg font-semibold font-serif text-[#0B1F45] mt-0.5 leading-none">{s.value}</p>
+              <p className="text-lg font-semibold text-[#0B1F45] mt-0.5 leading-none">{s.value}</p>
               <p className="text-[9px] text-[#b0b0b0] mt-0.5">{s.sub}</p>
             </div>
           ))}
@@ -701,7 +701,7 @@ export default function LeadsTab({
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 p-4" onClick={() => !waSending && setWaLead(null)}>
           <div className="bg-white w-full max-w-md" onClick={(e) => e.stopPropagation()}>
             <div className="bg-[#128c3e] px-6 py-4 flex items-center justify-between">
-              <p className="text-white font-serif text-lg">Enviar WhatsApp</p>
+              <p className="text-white text-lg">Enviar WhatsApp</p>
               <button onClick={() => !waSending && setWaLead(null)} className="text-white/70 hover:text-white text-xl leading-none">×</button>
             </div>
             <div className="p-6 space-y-3">
@@ -740,7 +740,7 @@ export default function LeadsTab({
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 p-4" onClick={() => !saving && setDraft(null)}>
           <div className="bg-white w-full max-w-lg max-h-[90vh] overflow-y-auto" onClick={(e) => e.stopPropagation()}>
             <div className="bg-[#0B1F45] px-6 py-4 flex items-center justify-between sticky top-0">
-              <p className="text-white font-serif text-lg">{draft._isNew ? "Novo lead" : "Editar lead"}</p>
+              <p className="text-white text-lg">{draft._isNew ? "Novo lead" : "Editar lead"}</p>
               <button onClick={() => !saving && setDraft(null)} className="text-white/60 hover:text-white text-xl leading-none">×</button>
             </div>
             <div className="p-6 space-y-4">
@@ -1039,7 +1039,7 @@ function LeadDetailDrawer({
         <div className="bg-[#0B1F45] px-6 py-5 sticky top-0 z-10">
           <div className="flex items-start justify-between gap-3">
             <div className="min-w-0">
-              <p className="text-white font-serif text-xl leading-tight truncate">{lead.name}</p>
+              <p className="text-white text-xl leading-tight truncate">{lead.name}</p>
               <div className="flex flex-wrap items-center gap-2 mt-1.5">
                 <span className={`text-[9px] font-bold px-2 py-0.5 ${sm.cls}`}>{sm.label}</span>
                 <span className={`text-[9px] font-bold px-2 py-0.5 ${STATUS_META[lead.status].cls}`}>{STATUS_META[lead.status].label}</span>

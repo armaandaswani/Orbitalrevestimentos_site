@@ -120,7 +120,7 @@ export function KpiCard({
   const inner = (
     <>
       <p className="text-[#74777f] text-[10px] tracking-[0.15em] uppercase font-bold mb-1.5">{label}</p>
-      <p className="font-serif text-[#0B1F45] text-2xl sm:text-3xl font-normal leading-none">{value}</p>
+      <p className="text-[#0B1F45] text-2xl sm:text-3xl font-normal leading-none">{value}</p>
       {hint && <p className="text-[#74777f] text-[11px] mt-1.5">{hint}</p>}
     </>
   );
@@ -198,7 +198,7 @@ export function EmptyState({
 }) {
   return (
     <div className={`${cardCls} px-6 py-14 text-center`}>
-      <p className="font-serif text-[#0B1F45] text-lg">{title}</p>
+      <p className="text-[#0B1F45] text-lg">{title}</p>
       {hint && <p className="text-[#74777f] text-xs mt-2 max-w-md mx-auto leading-relaxed">{hint}</p>}
       {action && <div className="mt-5 flex justify-center">{action}</div>}
     </div>

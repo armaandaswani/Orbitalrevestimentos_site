@@ -29,30 +29,6 @@ export default function sitemap(): MetadataRoute.Sitemap {
       priority: 0.85,
     },
     {
-      url: `${BASE_URL}/guias/mdf-manaus`,
-      lastModified: new Date(),
-      changeFrequency: "yearly",
-      priority: 0.8,
-    },
-    {
-      url: `${BASE_URL}/guias/revestimento-banheiro-manaus`,
-      lastModified: new Date(),
-      changeFrequency: "yearly",
-      priority: 0.8,
-    },
-    {
-      url: `${BASE_URL}/guias/revestimento-parede-manaus`,
-      lastModified: new Date(),
-      changeFrequency: "yearly",
-      priority: 0.8,
-    },
-    {
-      url: `${BASE_URL}/guias/quanto-custa-revestimento-manaus`,
-      lastModified: new Date(),
-      changeFrequency: "yearly",
-      priority: 0.75,
-    },
-    {
       url: `${BASE_URL}/sobre`,
       lastModified: new Date(),
       changeFrequency: "yearly",

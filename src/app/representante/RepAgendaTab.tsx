@@ -361,7 +361,7 @@ export default function RepAgendaTab({
         <div className="flex items-center justify-between px-5 py-3 border-b border-[#e2e2e2]">
           <button onClick={() => setViewMonth((d) => new Date(d.getFullYear(), d.getMonth() - 1, 1))}
             className="text-[#74777f] hover:text-[#0B1F45] px-2 py-1">‹</button>
-          <p className="font-serif text-[#0B1F45] text-sm font-normal capitalize">
+          <p className="text-[#0B1F45] text-sm font-normal capitalize">
             {viewMonth.toLocaleDateString("pt-BR", { month: "long", year: "numeric" })}
           </p>
           <button onClick={() => setViewMonth((d) => new Date(d.getFullYear(), d.getMonth() + 1, 1))}

@@ -399,7 +399,7 @@ export default function ParceriasPage() {
               <Image src={seg.image} alt={`PFB Orbital — ${seg.label}`} fill sizes="(min-width: 1024px) 48vw, 100vw" className="object-cover" />
               <div className="absolute inset-0 bg-gradient-to-t from-[#0B1F45]/40 to-transparent" />
               <div className="absolute bottom-8 right-8 bg-white/96 px-6 py-5 shadow-xl">
-                <p className="font-serif text-[#0B1F45] text-3xl font-normal leading-none mb-1">{seg.stat.value}</p>
+                <p className="text-[#0B1F45] text-3xl font-normal leading-none mb-1">{seg.stat.value}</p>
                 <p className="text-[#74777f] text-[10px] tracking-[0.15em] uppercase font-semibold">{seg.stat.label}</p>
               </div>
             </div>
@@ -413,7 +413,7 @@ export default function ParceriasPage() {
           <div className="grid grid-cols-2 md:grid-cols-4 gap-6 text-center">
             {sharedStats.map(({ value, unit, label }) => (
               <div key={label}>
-                <p className="font-serif text-white text-3xl font-normal mb-0.5">
+                <p className="text-white text-3xl font-normal mb-0.5">
                   {value}{unit && <span className="text-lg text-[#B4BBC8] ml-1">{unit}</span>}
                 </p>
                 <p className="text-[#B4BBC8] text-xs tracking-[0.1em] uppercase font-semibold">{label}</p>
@@ -436,7 +436,7 @@ export default function ParceriasPage() {
             <ScrollReveal direction="up" delay={0}>
               <div className="bg-white border border-[#e2e2e2] p-4 lg:p-8 h-full">
                 <p className="text-[#74777f] text-xs tracking-[0.1em] uppercase font-semibold mb-4">MDF em clima amazônico</p>
-                <p className="font-serif text-[#74777f] text-xl lg:text-3xl font-normal mb-3 leading-tight">2–3 anos e já mostra desgaste.</p>
+                <p className="text-[#74777f] text-xl lg:text-3xl font-normal mb-3 leading-tight">2–3 anos e já mostra desgaste.</p>
                 <p className="text-[#74777f] text-sm leading-relaxed mb-5">Com umidade acima de 80% o ano todo, o MDF absorve água continuamente. O resultado aparece cedo.</p>
                 <ul className="space-y-2">
                   {["Incha, empena e descola das paredes","Manchas de umidade e mofo visíveis","Pintura e laminado perdem aderência","O projeto entregue com esmero parece negligenciado","O cliente lembra quem especificou o material"].map((item) => (
@@ -451,7 +451,7 @@ export default function ParceriasPage() {
               <div className="bg-[#0B1F45] p-4 lg:p-8 relative overflow-hidden h-full">
                 <div className="absolute top-3 right-3 bg-[#36A35C] text-[#0B1F45] text-[9px] tracking-[0.1em] uppercase font-bold px-2.5 py-1">PFB Orbital</div>
                 <p className="text-[#B4BBC8] text-xs tracking-[0.1em] uppercase font-semibold mb-4">Aparência preservada por anos</p>
-                <p className="font-serif text-white text-xl lg:text-3xl font-normal mb-3 leading-tight">O visual que saiu da obra, anos depois.</p>
+                <p className="text-white text-xl lg:text-3xl font-normal mb-3 leading-tight">O visual que saiu da obra, anos depois.</p>
                 <p className="text-white/60 text-sm leading-relaxed mb-5">Impermeável, anti-mofo e resistente a ciclos térmicos extremos. O acabamento não deteriora.</p>
                 <ul className="space-y-2">
                   {["Inchamento máximo de 0,2% em 48h de imersão","Veios do mármore permanecem nítidos","Textura da madeira intacta ao longo do tempo","Sem descolar, sem manchar, sem empenar","O cliente mostra o projeto com orgulho a visitas"].map((item) => (
@@ -466,7 +466,7 @@ export default function ParceriasPage() {
               <div className="bg-white border border-[#e2e2e2] p-4 lg:p-8 flex flex-col justify-between h-full">
                 <div>
                   <p className="text-[#74777f] text-xs tracking-[0.1em] uppercase font-semibold mb-4">O impacto na sua reputação</p>
-                  <p className="font-serif text-[#0B1F45] text-lg lg:text-2xl font-normal mb-5 leading-snug">"Um ambiente bem executado é o seu melhor portfólio vivo."</p>
+                  <p className="text-[#0B1F45] text-lg lg:text-2xl font-normal mb-5 leading-snug">"Um ambiente bem executado é o seu melhor portfólio vivo."</p>
                   <p className="text-[#43474e] text-sm leading-relaxed mb-4">Cada projeto entregue com PFB Orbital continua impecável anos depois — e continua atraindo novos clientes para você.</p>
                   <p className="text-[#43474e] text-sm leading-relaxed mb-8">Especificar o material certo não é só uma escolha técnica. É uma decisão de proteção da sua imagem profissional.</p>
                 </div>
@@ -635,7 +635,7 @@ function SelfRegisterSection({ onScrollToSegments }: { onScrollToSegments: () =>
                 <div className="w-12 h-12 bg-green-100 rounded-full flex items-center justify-center mx-auto mb-5">
                   <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="#16a34a" strokeWidth="2.5"><polyline points="20 6 9 17 4 12"/></svg>
                 </div>
-                <p className="font-serif text-[#0B1F45] text-2xl font-normal mb-2">
+                <p className="text-[#0B1F45] text-2xl font-normal mb-2">
                   Cadastro recebido!
                 </p>
                 <p className="text-[#43474e] text-sm leading-relaxed mb-4">
@@ -648,7 +648,7 @@ function SelfRegisterSection({ onScrollToSegments }: { onScrollToSegments: () =>
               </div>
             ) : (
               <form onSubmit={handleSubmit} className="bg-white border border-[#e2e2e2] p-5 lg:p-8">
-                <p className="font-serif text-[#0B1F45] text-xl font-normal mb-6">Criar conta de parceiro</p>
+                <p className="text-[#0B1F45] text-xl font-normal mb-6">Criar conta de parceiro</p>
                 <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 mb-4">
                   <div>
                     <label className="block text-[10px] tracking-[0.15em] uppercase font-bold text-[#74777f] mb-2">Nome completo *</label>

@@ -143,7 +143,7 @@ export default async function TecnologiaPage() {
                 <p className="text-[#B4BBC8] text-[10px] tracking-[0.15em] uppercase font-bold mb-2">
                   Dimensões
                 </p>
-                <p className="font-serif text-white text-2xl font-normal mb-1">
+                <p className="text-white text-2xl font-normal mb-1">
                   1,2m × 2,9m × 5mm
                 </p>
                 <p className="text-white/60 text-sm">
@@ -171,7 +171,7 @@ export default async function TecnologiaPage() {
           <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-5 gap-3 lg:gap-6">
             {specs.map(({ value, unit, label, note }) => (
               <div key={label} className="border-l-2 border-[#2347A0] pl-3 lg:pl-5">
-                <p className="font-serif text-xl lg:text-4xl text-white font-normal mb-0.5">
+                <p className="text-xl lg:text-4xl text-white font-normal mb-0.5">
                   {value}
                   {unit && (
                     <span className="text-sm lg:text-xl text-[#B4BBC8] ml-1">{unit}</span>
@@ -273,12 +273,12 @@ export default async function TecnologiaPage() {
           <div className="grid grid-cols-2 gap-3">
             <div className="bg-[#0B1F45] border border-[#2347A0] p-4 lg:p-6">
               <p className="text-[#36A35C] text-[9px] lg:text-[10px] tracking-[0.15em] uppercase font-bold mb-2">Absorção · 48h imerso</p>
-              <p className="font-serif text-white text-2xl lg:text-4xl font-normal mb-1">0,2%</p>
+              <p className="text-white text-2xl lg:text-4xl font-normal mb-1">0,2%</p>
               <p className="text-white/60 text-[11px] lg:text-sm leading-snug">de inchamento — praticamente impermeável</p>
             </div>
             <div className="bg-[#0B1F45] border border-[#2347A0] p-4 lg:p-6">
               <p className="text-[#36A35C] text-[9px] lg:text-[10px] tracking-[0.15em] uppercase font-bold mb-2">Vida útil no Amazonas</p>
-              <p className="font-serif text-white text-2xl lg:text-4xl font-normal mb-1">10+</p>
+              <p className="text-white text-2xl lg:text-4xl font-normal mb-1">10+</p>
               <p className="text-white/60 text-[11px] lg:text-sm leading-snug">anos no clima úmido de Manaus</p>
             </div>
           </div>

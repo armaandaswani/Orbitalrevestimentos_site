@@ -315,7 +315,7 @@ export default function ProjectEditor({ id }: { id: string }) {
 
   const secCls = "bg-white border border-[#e2e2e2]";
   const secHead = "px-4 sm:px-5 py-3.5 border-b border-[#f0f0f0]";
-  const secTitle = "font-serif text-[#0B1F45] text-lg";
+  const secTitle = "text-[#0B1F45] text-lg";
   const secHint = "text-[#74777f] text-[12px] mt-0.5";
 
   const preview = (
@@ -341,7 +341,7 @@ export default function ProjectEditor({ id }: { id: string }) {
             <span className="absolute top-1.5 right-1.5 bg-[#36A35C] text-[#0B1F45] text-[8px] tracking-[0.15em] uppercase font-bold px-1.5 py-0.5">Novo</span>
           )}
         </div>
-        <p className="font-serif text-[#0B1F45] text-base mt-2.5">{p.title?.trim() || "Sem nome"}</p>
+        <p className="text-[#0B1F45] text-base mt-2.5">{p.title?.trim() || "Sem nome"}</p>
         <p className="text-[#74777f] text-[11px]">
           {p.product_code || "sem produto"}{catLabel ? ` · ${catLabel}` : ""}
         </p>

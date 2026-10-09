@@ -162,7 +162,7 @@ export async function GET(req: NextRequest) {
           from: "Orbital Revestimentos <noreply@orbitalrevestimentos.com.br>",
           to: rep.email,
           subject: `Resumo semanal — ${due.length} follow-up${due.length !== 1 ? "s" : ""}, ${upcoming.length} reunião${upcoming.length !== 1 ? "ões" : ""}`,
-          html: `<pre style="font-family:Montserrat,Arial,sans-serif;font-size:14px;color:#0B1F45;white-space:pre-wrap;">${lines.join("\n")}</pre>`,
+          html: `<pre style="font-family:Arial,sans-serif;font-size:14px;color:#0B1F45;white-space:pre-wrap;">${lines.join("\n")}</pre>`,
         });
         sentVia.push("email");
       } catch {

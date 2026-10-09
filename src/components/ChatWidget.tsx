@@ -236,7 +236,7 @@ export default function ChatWidget() {
           {/* Header */}
           <div className="bg-[#0B1F45] px-5 py-4 flex items-center justify-between flex-shrink-0">
             <div>
-              <p className="text-white text-sm font-bold tracking-[0.15em] font-serif">ORBITAL</p>
+              <p className="text-white text-sm font-bold tracking-[0.15em]">ORBITAL</p>
               <p className="text-[#B4BBC8] text-[10px] tracking-[0.12em] uppercase mt-0.5">Assistente IA</p>
             </div>
             <button onClick={() => setOpen(false)} className="text-white/50 hover:text-white transition-colors p-1" aria-label="Fechar chat">

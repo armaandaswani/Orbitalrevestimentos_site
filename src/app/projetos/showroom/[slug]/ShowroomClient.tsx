@@ -131,7 +131,7 @@ export default function ShowroomClient({ slug }: { slug: string }) {
                     style={coverStyle(a.cover_focus_x, a.cover_focus_y, a.cover_zoom)} />
                 </div>
                 <div className="px-3 py-3">
-                  <p className="font-serif text-[#0B1F45] text-base">{a.title}</p>
+                  <p className="text-[#0B1F45] text-base">{a.title}</p>
                   <p className="text-[#74777f] text-[11px] mt-0.5">
                     {a.product_code}{a.short_description ? ` · ${a.short_description}` : ""}
                   </p>

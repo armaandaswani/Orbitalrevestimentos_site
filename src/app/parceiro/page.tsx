@@ -613,7 +613,7 @@ export default function ParceiroPage() {
           {loginView === "invite" && (
             <>
               <div className="mb-6">
-                <p className="text-[#0B1F45] font-serif text-2xl font-normal mb-1">
+                <p className="text-[#0B1F45] text-2xl font-normal mb-1">
                   {inviteInfo ? `Olá, ${inviteInfo.name.split(" ")[0]}!` : "Convite de parceiro"}
                 </p>
                 <p className="text-[#74777f] text-sm">
@@ -692,7 +692,7 @@ export default function ParceiroPage() {
           {loginView === "reset" && (
             <>
               <div className="mb-6">
-                <p className="text-[#0B1F45] font-serif text-2xl font-normal mb-1">
+                <p className="text-[#0B1F45] text-2xl font-normal mb-1">
                   Redefinir Senha
                 </p>
                 <p className="text-[#74777f] text-sm">
@@ -795,7 +795,7 @@ export default function ParceiroPage() {
           {loginView === "forgot" && (
             <>
               <div className="mb-6">
-                <p className="text-[#0B1F45] font-serif text-2xl font-normal mb-1">
+                <p className="text-[#0B1F45] text-2xl font-normal mb-1">
                   Esqueci minha senha
                 </p>
                 <p className="text-[#74777f] text-sm">
@@ -855,7 +855,7 @@ export default function ParceiroPage() {
           {loginView === "login" && (
             <>
               <div className="mb-6">
-                <p className="text-[#0B1F45] font-serif text-2xl font-normal mb-1">
+                <p className="text-[#0B1F45] text-2xl font-normal mb-1">
                   Portal do Parceiro
                 </p>
                 <p className="text-[#74777f] text-sm">
@@ -947,7 +947,7 @@ export default function ParceiroPage() {
       <div className="min-h-screen bg-[#F6F5F2] flex items-center justify-center px-4">
         <div className="bg-white border border-[#e2e2e2] p-10 w-full max-w-sm">
           <div className="mb-6">
-            <p className="text-[#0B1F45] font-serif text-2xl font-normal mb-1">
+            <p className="text-[#0B1F45] text-2xl font-normal mb-1">
               Complete seu cadastro
             </p>
             <p className="text-[#74777f] text-sm">
@@ -1004,7 +1004,7 @@ export default function ParceiroPage() {
       {/* Header */}
       <div className="bg-[#0B1F45] px-6 py-5 flex items-center justify-between">
         <div>
-          <p className="text-white font-serif text-lg leading-tight">
+          <p className="text-white text-lg leading-tight">
             Olá, {partner.name}
           </p>
           <p className="text-white/60 text-xs tracking-wider mt-0.5">
@@ -1074,7 +1074,7 @@ export default function ParceiroPage() {
                   ].map((card) => (
                     <div key={card.label} className={`bg-white border border-[#e2e2e2] border-l-4 ${card.color} p-4`}>
                       <p className="text-[#74777f] text-[9px] tracking-[0.15em] uppercase mb-1.5">{card.label}</p>
-                      <p className="font-serif text-[#0B1F45] text-xl font-normal leading-tight">{card.value}</p>
+                      <p className="text-[#0B1F45] text-xl font-normal leading-tight">{card.value}</p>
                       <p className="text-[#74777f] text-[10px] mt-1">{card.sub}</p>
                     </div>
                   ))}
@@ -1087,7 +1087,7 @@ export default function ParceiroPage() {
                     className="bg-white border border-[#e2e2e2] border-l-4 border-l-[#f59e0b] p-4 text-left hover:border-[#0B1F45] transition-colors group"
                   >
                     <p className="text-[#74777f] text-[9px] tracking-[0.15em] uppercase mb-1.5">Em orçamento</p>
-                    <p className="font-serif text-[#0B1F45] text-xl font-normal leading-tight">{emOrcamento}</p>
+                    <p className="text-[#0B1F45] text-xl font-normal leading-tight">{emOrcamento}</p>
                     <p className="text-[#74777f] text-[10px] mt-1 group-hover:text-[#0B1F45] transition-colors">
                       {emOrcamento === 1 ? "pedido aguardando decisão" : "pedidos aguardando decisão"} →
                     </p>
@@ -1097,7 +1097,7 @@ export default function ParceiroPage() {
                     className="bg-white border border-[#e2e2e2] border-l-4 border-l-[#6366f1] p-4 text-left hover:border-[#0B1F45] transition-colors group"
                   >
                     <p className="text-[#74777f] text-[9px] tracking-[0.15em] uppercase mb-1.5">Especificações pendentes</p>
-                    <p className="font-serif text-[#0B1F45] text-xl font-normal leading-tight">
+                    <p className="text-[#0B1F45] text-xl font-normal leading-tight">
                       {pendingSimsCount ?? "—"}
                     </p>
                     <p className="text-[#74777f] text-[10px] mt-1 group-hover:text-[#0B1F45] transition-colors">
@@ -1305,23 +1305,23 @@ export default function ParceiroPage() {
           <div className="grid grid-cols-2 sm:grid-cols-4 gap-3 mb-6">
             <div className="bg-white border border-[#e2e2e2] px-4 py-4">
               <p className="text-[#74777f] text-[9px] tracking-[0.15em] uppercase font-bold mb-1">Em orçamento</p>
-              <p className="font-serif text-yellow-700 text-2xl font-normal">
+              <p className="text-yellow-700 text-2xl font-normal">
                 {uses.filter((u) => u.sale_status === "em_orcamento" || u.sale_status === null).length}
               </p>
             </div>
             <div className="bg-white border border-[#e2e2e2] px-4 py-4">
               <p className="text-[#74777f] text-[9px] tracking-[0.15em] uppercase font-bold mb-1">Vendas concluídas</p>
-              <p className="font-serif text-[#0B1F45] text-2xl font-normal">
+              <p className="text-[#0B1F45] text-2xl font-normal">
                 {uses.filter((u) => u.sale_status === "concluido").length}
               </p>
             </div>
             <div className="bg-white border border-[#e2e2e2] px-4 py-4">
               <p className="text-[#74777f] text-[9px] tracking-[0.15em] uppercase font-bold mb-1">Comissão confirmada</p>
-              <p className="font-serif text-green-700 text-2xl font-normal">{fmt(totalCommission)}</p>
+              <p className="text-green-700 text-2xl font-normal">{fmt(totalCommission)}</p>
             </div>
             <div className="bg-white border border-[#e2e2e2] px-4 py-4">
               <p className="text-[#74777f] text-[9px] tracking-[0.15em] uppercase font-bold mb-1">Comissão pendente</p>
-              <p className="font-serif text-amber-600 text-2xl font-normal">{fmt(pendingCommission)}</p>
+              <p className="text-amber-600 text-2xl font-normal">{fmt(pendingCommission)}</p>
             </div>
           </div>
 
@@ -1755,7 +1755,7 @@ export default function ParceiroPage() {
                     <p className="text-white/60 text-[9px] uppercase tracking-widest font-bold">Total do projeto</p>
                     <p className="text-white/60 text-[10px]">{pAllSpaces.length} ambientes · {pGrandPlates} placas</p>
                   </div>
-                  <p className="text-white text-xl font-serif">{fmtParceiro(pGrandMaterial)}</p>
+                  <p className="text-white text-xl">{fmtParceiro(pGrandMaterial)}</p>
                 </div>
               )}
 
@@ -1974,7 +1974,7 @@ export default function ParceiroPage() {
             <p className="text-[#36A35C] text-[9px] tracking-[0.2em] uppercase font-bold mb-1">
               Acesso exclusivo
             </p>
-            <p className="text-white font-serif text-xl font-normal">
+            <p className="text-white text-xl font-normal">
               Condições especiais para {partner.name.split(" ")[0]}
             </p>
           </div>
@@ -1995,7 +1995,7 @@ export default function ParceiroPage() {
                     <p className="text-[#74777f] text-xs">{row.finish}</p>
                   </div>
                   <div className="text-right">
-                    <p className="text-[#0B1F45] font-bold text-lg font-serif">{row.special}/placa</p>
+                    <p className="text-[#0B1F45] font-bold text-lg">{row.special}/placa</p>
                     <p className="text-[#74777f] text-xs">Ref. público: <span className="line-through">{row.normal}</span></p>
                   </div>
                 </div>
@@ -2306,7 +2306,7 @@ export default function ParceiroPage() {
                   <div className="border-t border-white/15 pt-4">
                     <div className="flex items-center justify-between">
                       <span className="text-white font-bold">Total do material</span>
-                      <span className="text-white text-2xl font-serif">{fmt(sqTotal)}</span>
+                      <span className="text-white text-2xl">{fmt(sqTotal)}</span>
                     </div>
                   </div>
                   <div className="bg-white/10 border border-white/20 px-4 py-3 mt-4">
@@ -2357,7 +2357,7 @@ export default function ParceiroPage() {
                     </div>
                     <div className="border-t border-white/20 pt-4 flex items-center justify-between">
                       <span className="text-white font-bold">Total geral</span>
-                      <span className="text-white text-2xl font-serif">{fmt(sqSavedSpaces.reduce((s, sp) => s + sp.total, 0) + sqTotal)}</span>
+                      <span className="text-white text-2xl">{fmt(sqSavedSpaces.reduce((s, sp) => s + sp.total, 0) + sqTotal)}</span>
                     </div>
                   </div>
                 )}
@@ -2394,7 +2394,7 @@ export default function ParceiroPage() {
                         })}
                         <div className="border-t border-[#36A35C]/20 pt-2 flex items-center justify-between">
                           <span className="text-[#1F7A44] font-bold text-sm">Economia total estimada</span>
-                          <span className="text-[#1F7A44] font-bold text-lg font-serif">
+                          <span className="text-[#1F7A44] font-bold text-lg">
                             {fmt([...sqSavedSpaces, { product: sqSelectedProduct!, plates: sqQtyNum, total: sqTotal, key: "cur", spaceName: "", area: 0 }]
                               .reduce((s, sp) => s + sp.plates * (NORMAL_PRICES[sp.product?.linha ?? sqLinha] - SPECIAL_PRICES[sp.product?.linha ?? sqLinha]), 0))}
                           </span>
@@ -2412,7 +2412,7 @@ export default function ParceiroPage() {
                         </div>
                         <div className="border-t border-[#36A35C]/20 pt-3 flex items-center justify-between">
                           <span className="text-[#1F7A44] font-bold text-sm">Economia operacional estimada</span>
-                          <span className="text-[#1F7A44] font-bold text-lg font-serif">{fmt(sqTotalSavings)}</span>
+                          <span className="text-[#1F7A44] font-bold text-lg">{fmt(sqTotalSavings)}</span>
                         </div>
                       </div>
                     )}

@@ -149,7 +149,7 @@ function CartaoReuniao({ m }: { m: RepMeeting }) {
     <div className={`${cardCls} p-4 ${m.status === "cancelled" ? "opacity-60" : ""}`}>
       <div className="flex items-start gap-3">
         <div className="w-14 flex-shrink-0">
-          <p className="font-serif text-[#0B1F45] text-lg leading-none">{hora(m.scheduled_at)}</p>
+          <p className="text-[#0B1F45] text-lg leading-none">{hora(m.scheduled_at)}</p>
           <p className="text-[#74777f] text-[10px] mt-1">{m.duration_minutes || 60} min</p>
         </div>
         <div className="min-w-0 flex-1">
@@ -190,7 +190,7 @@ function CartaoEvento({ e }: { e: AdminEvent }) {
     <div className={`${cardCls} p-4 border-l-4 border-l-[#36A35C]`}>
       <div className="flex items-start gap-3">
         <div className="w-14 flex-shrink-0">
-          <p className="font-serif text-[#0B1F45] text-lg leading-none">{hora(e.scheduled_at)}</p>
+          <p className="text-[#0B1F45] text-lg leading-none">{hora(e.scheduled_at)}</p>
           <p className="text-[#74777f] text-[10px] mt-1">{e.duration_minutes || 60} min</p>
         </div>
         <div className="min-w-0 flex-1">

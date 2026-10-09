@@ -2,7 +2,7 @@ import { NextRequest, NextResponse } from "next/server";
 import { isAdminRequest } from "@/lib/admin-auth";
 import { supabaseAdmin } from "@/lib/supabase";
 import { getResend } from "@/lib/resend";
-import { EMAIL_FONTES_LINK, emailLogo } from "@/lib/email-marca";
+import { emailLogo } from "@/lib/email-marca";
 
 function fmt(n: number) {
   return n.toLocaleString("pt-BR", { style: "currency", currency: "BRL", maximumFractionDigits: 0 });
@@ -38,28 +38,28 @@ export async function POST(
 
   const spacesHtml = spaces.map((sp) => `
     <tr>
-      <td style="padding:8px 0;border-bottom:1px solid #EFEDE8;font-size:13px;color:#0B1F45;font-family:Noto Serif Display,Georgia,serif;font-weight:700">${sp.spaceName}</td>
-      <td style="padding:8px 0;border-bottom:1px solid #EFEDE8;font-size:12px;color:#43474e;font-family:Montserrat,Arial,sans-serif;">${sp.productName}</td>
-      <td style="padding:8px 0;border-bottom:1px solid #EFEDE8;font-size:12px;color:#43474e;font-family:Montserrat,Arial,sans-serif;text-align:right;">${sp.plates} placa${sp.plates !== 1 ? "s" : ""}</td>
-      <td style="padding:8px 0;border-bottom:1px solid #EFEDE8;font-size:13px;color:#0B1F45;font-weight:700;font-family:Montserrat,Arial,sans-serif;text-align:right;">${fmt(sp.total)}</td>
+      <td style="padding:8px 0;border-bottom:1px solid #EFEDE8;font-size:13px;color:#0B1F45;font-family:Georgia,serif;">${sp.spaceName}</td>
+      <td style="padding:8px 0;border-bottom:1px solid #EFEDE8;font-size:12px;color:#43474e;font-family:Arial,sans-serif;">${sp.productName}</td>
+      <td style="padding:8px 0;border-bottom:1px solid #EFEDE8;font-size:12px;color:#43474e;font-family:Arial,sans-serif;text-align:right;">${sp.plates} placa${sp.plates !== 1 ? "s" : ""}</td>
+      <td style="padding:8px 0;border-bottom:1px solid #EFEDE8;font-size:13px;color:#0B1F45;font-weight:700;font-family:Arial,sans-serif;text-align:right;">${fmt(sp.total)}</td>
     </tr>`).join("");
 
   const html = `<!DOCTYPE html>
-<html lang="pt-BR"><head><meta charset="utf-8">${EMAIL_FONTES_LINK}<meta name="viewport" content="width=device-width,initial-scale=1"></head>
-<body style="margin:0;padding:0;background:#EFEDE8;font-family:Montserrat,Arial,Helvetica,sans-serif;">
+<html lang="pt-BR"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"></head>
+<body style="margin:0;padding:0;background:#EFEDE8;font-family:Arial,Helvetica,sans-serif;">
   <table width="100%" cellpadding="0" cellspacing="0"><tr><td align="center" style="padding:32px 16px 0;">
     <table cellpadding="0" cellspacing="0" style="max-width:560px;width:100%;">
 
       <!-- Header -->
       <tr><td style="background:#0B1F45;padding:28px 32px;">
         ${emailLogo(150, 18)}
-        <p style="margin:0 0 4px;font-size:11px;letter-spacing:0.2em;text-transform:uppercase;color:#B4BBC8;font-family:Montserrat,Arial,sans-serif;">Orçamento exclusivo</p>
-        <p style="margin:0;font-size:24px;color:#ffffff;font-family:Noto Serif Display,Georgia,serif;font-weight:700;">Seu projeto em PFB Orbital</p>
+        <p style="margin:0 0 4px;font-size:11px;letter-spacing:0.2em;text-transform:uppercase;color:#B4BBC8;font-family:Arial,sans-serif;">Orçamento exclusivo</p>
+        <p style="margin:0;font-size:24px;color:#ffffff;font-family:Georgia,serif;font-weight:400;">Seu projeto em PFB Orbital</p>
       </td></tr>
 
       <!-- Body -->
       <tr><td style="background:#ffffff;border:1px solid #e2e2e2;border-top:0;padding:28px 32px;">
-        <p style="margin:0 0 20px;font-size:14px;color:#43474e;font-family:Montserrat,Arial,sans-serif;line-height:1.6;">
+        <p style="margin:0 0 20px;font-size:14px;color:#43474e;font-family:Arial,sans-serif;line-height:1.6;">
           ${greeting} — segue o orçamento ${preparedBy} com os produtos PFB Orbital para o seu projeto.
         </p>
 
@@ -67,10 +67,10 @@ export async function POST(
         <table cellpadding="0" cellspacing="0" width="100%" style="border-collapse:collapse;margin-bottom:20px;">
           <thead>
             <tr>
-              <th style="padding:6px 0;border-bottom:2px solid #0B1F45;font-size:10px;letter-spacing:0.15em;text-transform:uppercase;color:#74777f;font-family:Montserrat,Arial,sans-serif;text-align:left;">Ambiente</th>
-              <th style="padding:6px 0;border-bottom:2px solid #0B1F45;font-size:10px;letter-spacing:0.15em;text-transform:uppercase;color:#74777f;font-family:Montserrat,Arial,sans-serif;text-align:left;">Produto</th>
-              <th style="padding:6px 0;border-bottom:2px solid #0B1F45;font-size:10px;letter-spacing:0.15em;text-transform:uppercase;color:#74777f;font-family:Montserrat,Arial,sans-serif;text-align:right;">Qtd.</th>
-              <th style="padding:6px 0;border-bottom:2px solid #0B1F45;font-size:10px;letter-spacing:0.15em;text-transform:uppercase;color:#74777f;font-family:Montserrat,Arial,sans-serif;text-align:right;">Valor</th>
+              <th style="padding:6px 0;border-bottom:2px solid #0B1F45;font-size:10px;letter-spacing:0.15em;text-transform:uppercase;color:#74777f;font-family:Arial,sans-serif;text-align:left;">Ambiente</th>
+              <th style="padding:6px 0;border-bottom:2px solid #0B1F45;font-size:10px;letter-spacing:0.15em;text-transform:uppercase;color:#74777f;font-family:Arial,sans-serif;text-align:left;">Produto</th>
+              <th style="padding:6px 0;border-bottom:2px solid #0B1F45;font-size:10px;letter-spacing:0.15em;text-transform:uppercase;color:#74777f;font-family:Arial,sans-serif;text-align:right;">Qtd.</th>
+              <th style="padding:6px 0;border-bottom:2px solid #0B1F45;font-size:10px;letter-spacing:0.15em;text-transform:uppercase;color:#74777f;font-family:Arial,sans-serif;text-align:right;">Valor</th>
             </tr>
           </thead>
           <tbody>${spacesHtml}</tbody>
@@ -80,19 +80,19 @@ export async function POST(
         <table cellpadding="0" cellspacing="0" width="100%" style="background:#0B1F45;margin-bottom:24px;">
           <tr>
             <td style="padding:16px 20px;">
-              <p style="margin:0 0 2px;font-size:10px;letter-spacing:0.18em;text-transform:uppercase;color:#B4BBC8;font-family:Montserrat,Arial,sans-serif;">Total do projeto${quote.coupon_code ? ` — cupom ${quote.coupon_code}` : ""}</p>
-              <p style="margin:0;font-size:28px;color:#ffffff;font-family:Noto Serif Display,Georgia,serif;font-weight:700;">${fmt(finalValue)}</p>
+              <p style="margin:0 0 2px;font-size:10px;letter-spacing:0.18em;text-transform:uppercase;color:#B4BBC8;font-family:Arial,sans-serif;">Total do projeto${quote.coupon_code ? ` — cupom ${quote.coupon_code}` : ""}</p>
+              <p style="margin:0;font-size:28px;color:#ffffff;font-family:Georgia,serif;font-weight:400;">${fmt(finalValue)}</p>
             </td>
           </tr>
         </table>
 
         <!-- CTA -->
-        <p style="margin:0 0 12px;font-size:13px;color:#43474e;font-family:Montserrat,Arial,sans-serif;">Acesse o link abaixo para ver o orçamento completo com fotos dos produtos:</p>
-        <a href="${quoteUrl}" style="display:block;background:#0B1F45;color:#ffffff;text-decoration:none;text-align:center;padding:14px 24px;font-size:11px;letter-spacing:0.15em;text-transform:uppercase;font-weight:700;font-family:Montserrat,Arial,sans-serif;margin-bottom:16px;">
+        <p style="margin:0 0 12px;font-size:13px;color:#43474e;font-family:Arial,sans-serif;">Acesse o link abaixo para ver o orçamento completo com fotos dos produtos:</p>
+        <a href="${quoteUrl}" style="display:block;background:#0B1F45;color:#ffffff;text-decoration:none;text-align:center;padding:14px 24px;font-size:11px;letter-spacing:0.15em;text-transform:uppercase;font-weight:700;font-family:Arial,sans-serif;margin-bottom:16px;">
           Ver orçamento completo →
         </a>
 
-        <p style="margin:0;font-size:11px;color:#74777f;font-family:Montserrat,Arial,sans-serif;">
+        <p style="margin:0;font-size:11px;color:#74777f;font-family:Arial,sans-serif;">
           Este orçamento é válido até <strong>${expiresFormatted}</strong>. Para avançar ou tirar dúvidas, entre em contato pelo WhatsApp:
           <a href="https://wa.me/5592988150149" style="color:#0B1F45;">(92) 98815-0149</a>.
         </p>
@@ -100,7 +100,7 @@ export async function POST(
 
       <!-- Footer -->
       <tr><td style="background:#EFEDE8;border:1px solid #e2e2e2;border-top:0;padding:16px 32px;text-align:center;">
-        <p style="margin:0;font-size:11px;color:#74777f;font-family:Montserrat,Arial,sans-serif;">
+        <p style="margin:0;font-size:11px;color:#74777f;font-family:Arial,sans-serif;">
           Orbital Revestimentos · Manaus, AM ·
           <a href="https://orbitalrevestimentos.com.br" style="color:#74777f;">orbitalrevestimentos.com.br</a>
         </p>

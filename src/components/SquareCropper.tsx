@@ -81,7 +81,7 @@ export default function SquareCropper({
   return (
     <div className="fixed inset-0 z-[300] bg-black/70 flex items-center justify-center p-4" onClick={onCancel}>
       <div className="bg-white w-full max-w-sm p-5" onClick={(e) => e.stopPropagation()}>
-        <p className="text-[#0B1F45] font-serif text-base mb-1">Ajustar enquadramento (1:1)</p>
+        <p className="text-[#0B1F45] text-base mb-1">Ajustar enquadramento (1:1)</p>
         <p className="text-[#74777f] text-[11px] mb-3">Arraste para reposicionar e use o controle para ampliar. A foto não é distorcida.</p>
         <div
           ref={boxRef}

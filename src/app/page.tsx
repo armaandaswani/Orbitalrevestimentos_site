@@ -225,7 +225,7 @@ export default function Home() {
               <div key={label} className="flex flex-col items-center text-center py-2">
                 <AnimatedStat
                   value={value}
-                  className="text-white font-serif text-lg font-normal mb-0.5"
+                  className="text-white text-lg font-normal mb-0.5"
                 />
                 <span className="text-[#B4BBC8] text-[10px] tracking-[0.15em] uppercase font-semibold">
                   {label}
@@ -411,7 +411,7 @@ export default function Home() {
                     </div>
                   </div>
                   <p className="text-[#74777f] text-[9px] tracking-[0.08em] uppercase font-semibold leading-tight truncate">{code}</p>
-                  <p className="font-serif text-[#0B1F45] text-[11px] font-medium leading-snug">{subtitle}</p>
+                  <p className="text-[#0B1F45] text-[11px] font-medium leading-snug">{subtitle}</p>
                   <p className="text-[#2347A0] text-[10px] font-semibold">{price}</p>
                 </Link>
               </div>

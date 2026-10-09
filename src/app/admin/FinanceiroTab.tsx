@@ -524,7 +524,7 @@ function PnlCard({ label, value, sub, tone, subTone, big }: { label: string; val
   return (
     <div className={`bg-white border ${big ? "border-[#0B1F45] border-l-4" : "border-[#e2e2e2]"} px-4 py-3`}>
       <p className="text-[#74777f] text-[9px] uppercase tracking-wider font-bold">{label}</p>
-      <p className={`${valColor} ${big ? "text-2xl" : "text-lg"} font-serif mt-0.5`}>{value}</p>
+      <p className={`${valColor} ${big ? "text-2xl" : "text-lg"} mt-0.5`}>{value}</p>
       {sub && <p className={`text-[10px] ${subTone === "warn" ? "text-[#b4791e]" : "text-[#b0b0b0]"}`}>{sub}</p>}
     </div>
   );

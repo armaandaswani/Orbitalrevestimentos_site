@@ -399,7 +399,7 @@ export async function POST(req: NextRequest, { params }: { params: Promise<{ id:
         cc: COMPANY.email,
         subject: `${label} nº ${number} — ${pedido.client_name ?? "Cliente"}`,
         html: `
-          ${emailTopo(560)}<div style="font-family:Montserrat,Arial,sans-serif;max-width:560px;margin:0 auto;padding:28px;color:#0D1830">
+          ${emailTopo(560)}<div style="font-family:Arial,sans-serif;max-width:560px;margin:0 auto;padding:28px;color:#0D1830">
             <h2 style="margin:0 0 8px;color:#0B1F45">${label} nº ${number}</h2>
             <p style="line-height:1.6;color:#43474e">Olá, ${pedido.client_name ?? "cliente"}. Segue em anexo o ${label.toLowerCase()} nº ${number} da Orbital Revestimentos.</p>
             <p style="font-size:18px;color:#0B1F45;font-weight:700">Total: ${fmtBRL(total)}</p>

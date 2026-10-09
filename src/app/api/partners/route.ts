@@ -128,8 +128,8 @@ export async function POST(req: NextRequest) {
           to: email as string,
           subject: `Orbital — crie sua senha de acesso`,
           html: `
-            ${emailTopo(520)}<div style="font-family:Montserrat,Arial,sans-serif;max-width:520px;margin:0 auto;padding:32px 24px;color:#0D1830">
-              <h2 style="font-size:22px;margin-bottom:8px;font-family:Noto Serif Display,Georgia,serif;font-weight:700">Olá, ${name}!</h2>
+            ${emailTopo(520)}<div style="font-family:sans-serif;max-width:520px;margin:0 auto;padding:32px 24px;color:#0D1830">
+              <h2 style="font-size:22px;margin-bottom:8px">Olá, ${name}!</h2>
               <p style="color:#555;margin-bottom:24px">Sua conta como parceiro da <strong>Orbital Revestimentos</strong> foi criada. Clique no botão abaixo para criar sua senha de acesso.</p>
               <div style="background:#F6F5F2;border:1px solid #e2e2e2;padding:20px 24px;margin-bottom:24px">
                 <p style="margin:0 0 4px 0;font-size:11px;text-transform:uppercase;letter-spacing:0.12em;color:#74777f">Seu código de cupom</p>

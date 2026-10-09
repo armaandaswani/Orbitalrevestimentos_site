@@ -3026,7 +3026,7 @@ export default function AdminPage() {
     return (
       <div className="min-h-screen bg-[#F6F5F2] flex items-center justify-center px-4">
         <div className="bg-white border border-[#e2e2e2] p-10 w-full max-w-sm">
-          <p className="text-[#0B1F45] font-serif text-2xl font-normal mb-6">Orbital Admin</p>
+          <p className="text-[#0B1F45] text-2xl font-normal mb-6">Orbital Admin</p>
           <form onSubmit={handleLogin} className="space-y-4">
             <div>
               <label className={labelCls}>Senha</label>
@@ -3065,7 +3065,7 @@ export default function AdminPage() {
           <div className="bg-white w-full max-w-lg max-h-[80vh] overflow-y-auto shadow-2xl">
             <div className="bg-[#0B1F45] px-6 py-4 flex items-center justify-between">
               <div>
-                <p className="text-white font-serif text-lg">Acompanhamento de orçamentos</p>
+                <p className="text-white text-lg">Acompanhamento de orçamentos</p>
                 <p className="text-white/60 text-xs mt-0.5">{followUps.length} orçamento{followUps.length !== 1 ? "s" : ""} aguardando retorno</p>
               </div>
               <button onClick={() => setFollowUpModalOpen(false)} className="text-white/60 hover:text-white text-xs uppercase tracking-widest">
@@ -3147,7 +3147,7 @@ export default function AdminPage() {
       )}
       <div className="bg-[#0B1F45] px-8 py-5 flex items-center justify-between">
         <div className="flex items-center gap-4">
-          <p className="text-white font-serif text-xl">Orbital Admin</p>
+          <p className="text-white text-xl">Orbital Admin</p>
           {pendingPartners.length > 0 && (
             <span className="bg-yellow-400 text-yellow-900 text-[10px] font-bold px-2 py-0.5 tracking-wider">
               {pendingPartners.length} PENDENTE{pendingPartners.length > 1 ? "S" : ""}
@@ -3283,7 +3283,7 @@ export default function AdminPage() {
       {/* ═══ MOBILE TOP BAR ═══ */}
       <div className="md:hidden sticky top-0 z-40 bg-white border-b border-[#e2e2e2] px-4 py-3 flex items-center justify-between gap-3">
         <div className="min-w-0">
-          <p className="font-serif text-[#0B1F45] text-base leading-none">Orbital Admin</p>
+          <p className="text-[#0B1F45] text-base leading-none">Orbital Admin</p>
           <p className="text-[9px] tracking-[0.18em] uppercase font-bold text-[#a0a3a8] mt-1 truncate">{NAV_LABELS[tab]}</p>
         </div>
         <button
@@ -3302,7 +3302,7 @@ export default function AdminPage() {
           <div className="absolute inset-y-0 left-0 w-72 max-w-[85vw] bg-white shadow-xl overflow-y-auto p-4 flex flex-col gap-5">
             <div className="flex items-center justify-between pb-3 border-b border-[#e2e2e2]">
               <div>
-                <p className="font-serif text-[#0B1F45] text-lg leading-none">Orbital</p>
+                <p className="text-[#0B1F45] text-lg leading-none">Orbital</p>
                 <p className="text-[9px] tracking-[0.22em] uppercase font-bold text-[#a0a3a8] mt-1.5">Sistema Interno</p>
               </div>
               <button onClick={() => setNavOpen(false)} aria-label="Fechar menu" className="text-[#74777f] hover:text-[#0B1F45] text-2xl leading-none px-1">×</button>
@@ -3340,9 +3340,9 @@ export default function AdminPage() {
         <aside className="hidden md:flex w-56 flex-shrink-0 md:sticky md:top-6 flex-col gap-5 max-h-[calc(100vh-3rem)] overflow-y-auto pr-1">
           {/* Brand */}
           <div className="px-3 pb-3 mb-1 border-b border-[#e2e2e2] flex items-center gap-2.5">
-            <span className="w-8 h-8 rounded-lg bg-[#0B1F45] text-white flex items-center justify-center font-serif text-base flex-shrink-0">O</span>
+            <span className="w-8 h-8 rounded-lg bg-[#0B1F45] text-white flex items-center justify-center text-base flex-shrink-0">O</span>
             <div className="min-w-0">
-              <p className="font-serif text-[#0B1F45] text-lg leading-none">Orbital</p>
+              <p className="text-[#0B1F45] text-lg leading-none">Orbital</p>
               <p className="text-[9px] tracking-[0.22em] uppercase font-bold text-[#a0a3a8] mt-1">Sistema Interno</p>
             </div>
           </div>
@@ -4790,7 +4790,7 @@ export default function AdminPage() {
                 ].map((s) => (
                   <div key={s.label} className="bg-white border border-[#e2e2e2] px-4 py-3">
                     <p className="text-[9px] tracking-[0.1em] uppercase font-bold text-[#74777f]">{s.label}</p>
-                    <p className="text-lg font-semibold font-serif text-[#0B1F45] mt-0.5 leading-none">{s.value}</p>
+                    <p className="text-lg font-semibold text-[#0B1F45] mt-0.5 leading-none">{s.value}</p>
                     <p className="text-[9px] text-[#b0b0b0] mt-0.5">{s.sub}</p>
                   </div>
                 ))}
@@ -5152,7 +5152,7 @@ export default function AdminPage() {
                 { label: "Sem contato", value: vizRenders.filter((r) => !r.name && !r.phone).length },
               ].map((s) => (
                 <div key={s.label} className="border border-[#e2e2e2] rounded-sm p-4 bg-[#fafaf9]">
-                  <p className="text-2xl font-bold font-serif text-[#0B1F45]">{s.value}</p>
+                  <p className="text-2xl font-bold text-[#0B1F45]">{s.value}</p>
                   <p className="text-[10px] tracking-[0.12em] uppercase font-bold text-[#74777f] mt-1">{s.label}</p>
                 </div>
               ))}
@@ -5446,15 +5446,15 @@ export default function AdminPage() {
                   <div className="grid grid-cols-1 sm:grid-cols-3 gap-4 mb-6">
                     <div className="bg-white border border-[#e2e2e2] px-6 py-5">
                       <p className="text-[#74777f] text-[10px] tracking-[0.15em] uppercase font-bold mb-1">A pagar — Parceiros</p>
-                      <p className="font-serif text-[#0B1F45] text-2xl font-normal">{fmt(totalUnpaidPartner)}</p>
+                      <p className="text-[#0B1F45] text-2xl font-normal">{fmt(totalUnpaidPartner)}</p>
                     </div>
                     <div className="bg-white border border-[#e2e2e2] px-6 py-5">
                       <p className="text-[#74777f] text-[10px] tracking-[0.15em] uppercase font-bold mb-1">A pagar — Representantes</p>
-                      <p className="font-serif text-[#2347A0] text-2xl font-normal">{fmt(totalUnpaidRep)}</p>
+                      <p className="text-[#2347A0] text-2xl font-normal">{fmt(totalUnpaidRep)}</p>
                     </div>
                     <div className="bg-white border border-[#e2e2e2] px-6 py-5">
                       <p className="text-[#74777f] text-[10px] tracking-[0.15em] uppercase font-bold mb-1">Pago este mês</p>
-                      <p className="font-serif text-green-700 text-2xl font-normal">{fmt(paidThisMonth)}</p>
+                      <p className="text-green-700 text-2xl font-normal">{fmt(paidThisMonth)}</p>
                     </div>
                   </div>
 
@@ -7577,7 +7577,7 @@ export default function AdminPage() {
                       <p className="text-white/60 text-[9px] uppercase tracking-widest font-bold">Total do projeto</p>
                       <p className="text-white/60 text-[10px]">{allSpaces.length} ambientes · {grandPlatesSim} placas</p>
                     </div>
-                    <p className="text-white text-xl font-serif">{fmt(grandMaterialSim)}</p>
+                    <p className="text-white text-xl">{fmt(grandMaterialSim)}</p>
                   </div>
                 )}
 
@@ -8089,7 +8089,7 @@ export default function AdminPage() {
         <div className="fixed inset-0 z-[300] bg-black/60 flex items-center justify-center p-4" onClick={() => { if (!cancelSubmitting) setCancelCommTarget(null); }}>
           <div className="bg-white w-full max-w-md" onClick={(e) => e.stopPropagation()}>
             <div className="bg-[#cc0000] px-5 py-3">
-              <p className="text-white font-serif text-base">Cancelar comissão</p>
+              <p className="text-white text-base">Cancelar comissão</p>
             </div>
             <div className="px-5 py-5 space-y-4">
               <p className="text-[#43474e] text-[13px] leading-relaxed">

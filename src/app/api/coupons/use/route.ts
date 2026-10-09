@@ -3,7 +3,7 @@ import { supabaseAdmin } from "@/lib/supabase";
 import { getResend } from "@/lib/resend";
 import { upsertLeadFromSource } from "@/lib/leads";
 import { EMAIL_EMPRESA } from "@/lib/email-destinos";
-import { EMAIL_FONTES_LINK, emailLogo } from "@/lib/email-marca";
+import { emailLogo } from "@/lib/email-marca";
 
 function fmtBRL(n: number) {
   return n.toLocaleString("pt-BR", { style: "currency", currency: "BRL", maximumFractionDigits: 0 });
@@ -46,12 +46,12 @@ async function sendNewBudgetEmails(opts: {
   const breakdownRows = hasBreakdown ? opts.spaceBreakdown!.map((sp, i) => `
 <tr style="${i > 0 ? "border-top:1px solid #f0f0f0;" : ""}">
   <td style="padding:10px 0;vertical-align:top;">
-    <p style="margin:0 0 2px;color:#0B1F45;font-size:13px;font-weight:700;font-family:Montserrat,Arial,sans-serif;">${sp.spaceName}</p>
-    <p style="margin:0;color:#74777f;font-size:11px;font-family:Montserrat,Arial,sans-serif;">${sp.productName}${sp.dimLabel ? ` · ${sp.dimLabel}` : ""}</p>
+    <p style="margin:0 0 2px;color:#0B1F45;font-size:13px;font-weight:700;font-family:Arial,sans-serif;">${sp.spaceName}</p>
+    <p style="margin:0;color:#74777f;font-size:11px;font-family:Arial,sans-serif;">${sp.productName}${sp.dimLabel ? ` · ${sp.dimLabel}` : ""}</p>
   </td>
   <td style="padding:10px 0 10px 12px;text-align:right;vertical-align:top;white-space:nowrap;">
-    <p style="margin:0 0 2px;color:#0B1F45;font-size:13px;font-weight:700;font-family:Montserrat,Arial,sans-serif;">${fmtBRL(sp.total)}</p>
-    <p style="margin:0;color:#74777f;font-size:11px;font-family:Montserrat,Arial,sans-serif;">${sp.plates} placa${sp.plates !== 1 ? "s" : ""} · ${sp.area_m2.toFixed(1)} m²</p>
+    <p style="margin:0 0 2px;color:#0B1F45;font-size:13px;font-weight:700;font-family:Arial,sans-serif;">${fmtBRL(sp.total)}</p>
+    <p style="margin:0;color:#74777f;font-size:11px;font-family:Arial,sans-serif;">${sp.plates} placa${sp.plates !== 1 ? "s" : ""} · ${sp.area_m2.toFixed(1)} m²</p>
   </td>
 </tr>`).join("") : "";
 
@@ -59,8 +59,8 @@ async function sendNewBudgetEmails(opts: {
 <table width="100%" cellpadding="0" cellspacing="0" style="margin:16px 0 0;border-top:2px solid #0B1F45;">
   ${breakdownRows}
   <tr style="border-top:2px solid #0B1F45;">
-    <td style="padding:12px 0 4px;color:#0B1F45;font-size:13px;font-weight:700;font-family:Montserrat,Arial,sans-serif;">Total material</td>
-    <td style="padding:12px 0 4px;text-align:right;color:#0B1F45;font-size:18px;font-weight:700;font-family:Montserrat,Arial,sans-serif;white-space:nowrap;">${fmtBRL(budgetValue)}</td>
+    <td style="padding:12px 0 4px;color:#0B1F45;font-size:13px;font-weight:700;font-family:Arial,sans-serif;">Total material</td>
+    <td style="padding:12px 0 4px;text-align:right;color:#0B1F45;font-size:18px;font-weight:700;font-family:Arial,sans-serif;white-space:nowrap;">${fmtBRL(budgetValue)}</td>
   </tr>
 </table>` : "";
 
@@ -71,36 +71,36 @@ async function sendNewBudgetEmails(opts: {
 
   const detailsHtml = `
     <table cellpadding="0" cellspacing="0" width="100%" style="border-collapse:collapse;margin:16px 0;">
-      <tr><td style="padding:8px 0;border-bottom:1px solid #EFEDE8;font-size:12px;color:#74777f;font-family:Montserrat,Arial,sans-serif;width:140px;">Cliente</td><td style="padding:8px 0;border-bottom:1px solid #EFEDE8;font-size:13px;color:#0B1F45;font-weight:600;font-family:Montserrat,Arial,sans-serif;">${opts.clientName}</td></tr>
-      <tr><td style="padding:8px 0;border-bottom:1px solid #EFEDE8;font-size:12px;color:#74777f;font-family:Montserrat,Arial,sans-serif;">E-mail do cliente</td><td style="padding:8px 0;border-bottom:1px solid #EFEDE8;font-size:13px;color:#0B1F45;font-family:Montserrat,Arial,sans-serif;"><a href="mailto:${opts.clientEmail}" style="color:#0B1F45;">${opts.clientEmail}</a></td></tr>
-      ${opts.clientPhone ? `<tr><td style="padding:8px 0;border-bottom:1px solid #EFEDE8;font-size:12px;color:#74777f;font-family:Montserrat,Arial,sans-serif;">WhatsApp</td><td style="padding:8px 0;border-bottom:1px solid #EFEDE8;font-size:13px;color:#0B1F45;font-weight:700;font-family:Montserrat,Arial,sans-serif;"><a href="https://wa.me/55${String(opts.clientPhone).replace(/\D/g,"")}" style="color:#0B1F45;">${opts.clientPhone}</a></td></tr>` : ""}
-      ${!hasBreakdown && opts.space ? `<tr><td style="padding:8px 0;border-bottom:1px solid #EFEDE8;font-size:12px;color:#74777f;font-family:Montserrat,Arial,sans-serif;">Ambiente</td><td style="padding:8px 0;border-bottom:1px solid #EFEDE8;font-size:13px;color:#43474e;font-family:Montserrat,Arial,sans-serif;">${opts.space}</td></tr>` : ""}
-      ${!hasBreakdown && opts.productName ? `<tr><td style="padding:8px 0;border-bottom:1px solid #EFEDE8;font-size:12px;color:#74777f;font-family:Montserrat,Arial,sans-serif;">Produto</td><td style="padding:8px 0;border-bottom:1px solid #EFEDE8;font-size:13px;color:#43474e;font-family:Montserrat,Arial,sans-serif;">${opts.productName}</td></tr>` : ""}
-      ${!hasBreakdown && opts.areaSqm ? `<tr><td style="padding:8px 0;border-bottom:1px solid #EFEDE8;font-size:12px;color:#74777f;font-family:Montserrat,Arial,sans-serif;">Área</td><td style="padding:8px 0;border-bottom:1px solid #EFEDE8;font-size:13px;color:#43474e;font-family:Montserrat,Arial,sans-serif;">${opts.areaSqm.toFixed(1)} m² · ${opts.plates ?? "—"} placas</td></tr>` : ""}
-      ${!hasBreakdown ? `<tr><td style="padding:8px 0;font-size:12px;color:#74777f;font-family:Montserrat,Arial,sans-serif;">Valor do orçamento</td><td style="padding:8px 0;font-size:16px;color:#0B1F45;font-weight:700;font-family:Noto Serif Display,Georgia,serif;">${fmtBRL(budgetValue)}</td></tr>` : ""}
+      <tr><td style="padding:8px 0;border-bottom:1px solid #EFEDE8;font-size:12px;color:#74777f;font-family:Arial,sans-serif;width:140px;">Cliente</td><td style="padding:8px 0;border-bottom:1px solid #EFEDE8;font-size:13px;color:#0B1F45;font-weight:600;font-family:Arial,sans-serif;">${opts.clientName}</td></tr>
+      <tr><td style="padding:8px 0;border-bottom:1px solid #EFEDE8;font-size:12px;color:#74777f;font-family:Arial,sans-serif;">E-mail do cliente</td><td style="padding:8px 0;border-bottom:1px solid #EFEDE8;font-size:13px;color:#0B1F45;font-weight:600;font-family:Arial,sans-serif;"><a href="mailto:${opts.clientEmail}" style="color:#0B1F45;">${opts.clientEmail}</a></td></tr>
+      ${opts.clientPhone ? `<tr><td style="padding:8px 0;border-bottom:1px solid #EFEDE8;font-size:12px;color:#74777f;font-family:Arial,sans-serif;">WhatsApp</td><td style="padding:8px 0;border-bottom:1px solid #EFEDE8;font-size:13px;color:#0B1F45;font-weight:600;font-family:Arial,sans-serif;"><a href="https://wa.me/55${String(opts.clientPhone).replace(/\D/g,"")}" style="color:#0B1F45;">${opts.clientPhone}</a></td></tr>` : ""}
+      ${!hasBreakdown && opts.space ? `<tr><td style="padding:8px 0;border-bottom:1px solid #EFEDE8;font-size:12px;color:#74777f;font-family:Arial,sans-serif;">Ambiente</td><td style="padding:8px 0;border-bottom:1px solid #EFEDE8;font-size:13px;color:#43474e;font-family:Arial,sans-serif;">${opts.space}</td></tr>` : ""}
+      ${!hasBreakdown && opts.productName ? `<tr><td style="padding:8px 0;border-bottom:1px solid #EFEDE8;font-size:12px;color:#74777f;font-family:Arial,sans-serif;">Produto</td><td style="padding:8px 0;border-bottom:1px solid #EFEDE8;font-size:13px;color:#43474e;font-family:Arial,sans-serif;">${opts.productName}</td></tr>` : ""}
+      ${!hasBreakdown && opts.areaSqm ? `<tr><td style="padding:8px 0;border-bottom:1px solid #EFEDE8;font-size:12px;color:#74777f;font-family:Arial,sans-serif;">Área</td><td style="padding:8px 0;border-bottom:1px solid #EFEDE8;font-size:13px;color:#43474e;font-family:Arial,sans-serif;">${opts.areaSqm.toFixed(1)} m² · ${opts.plates ?? "—"} placas</td></tr>` : ""}
+      ${!hasBreakdown ? `<tr><td style="padding:8px 0;font-size:12px;color:#74777f;font-family:Arial,sans-serif;">Valor do orçamento</td><td style="padding:8px 0;font-size:16px;color:#0B1F45;font-weight:700;font-family:Georgia,serif;">${fmtBRL(budgetValue)}</td></tr>` : ""}
     </table>
     ${breakdownBlock}`;
 
   // Email to partner
   if (opts.partnerEmail) {
-    const partnerHtml = `<!DOCTYPE html><html lang="pt-BR"><head><meta charset="utf-8">${EMAIL_FONTES_LINK}</head>
-<body style="margin:0;padding:0;background:#EFEDE8;font-family:Montserrat,Arial,Helvetica,sans-serif;">
+    const partnerHtml = `<!DOCTYPE html><html lang="pt-BR"><head><meta charset="utf-8"></head>
+<body style="margin:0;padding:0;background:#EFEDE8;font-family:Arial,Helvetica,sans-serif;">
   <table width="100%" cellpadding="0" cellspacing="0"><tr><td align="center" style="padding:32px 16px 0;">
     <table cellpadding="0" cellspacing="0" style="max-width:560px;width:100%;">
       <tr><td style="background:#0B1F45;padding:28px 32px;">
         ${emailLogo(150, 18)}
-        <p style="margin:0 0 4px;font-size:11px;letter-spacing:0.2em;text-transform:uppercase;color:#B4BBC8;font-family:Montserrat,Arial,sans-serif;">Novo Orçamento</p>
-        <p style="margin:0;font-size:22px;color:#ffffff;font-family:Noto Serif Display,Georgia,serif;font-weight:700;">Seu cupom foi utilizado!</p>
+        <p style="margin:0 0 4px;font-size:11px;letter-spacing:0.2em;text-transform:uppercase;color:#B4BBC8;font-family:Arial,sans-serif;">Novo Orçamento</p>
+        <p style="margin:0;font-size:22px;color:#ffffff;font-family:Georgia,serif;font-weight:400;">Seu cupom foi utilizado!</p>
       </td></tr>
       <tr><td style="background:#ffffff;border:1px solid #e2e2e2;border-top:0;padding:28px 32px;">
-        <p style="margin:0 0 16px;font-size:14px;color:#43474e;font-family:Montserrat,Arial,sans-serif;">Olá, <strong>${opts.partnerName}</strong> — um cliente usou o seu cupom <strong>${opts.couponCode}</strong> e gerou um orçamento.</p>
+        <p style="margin:0 0 16px;font-size:14px;color:#43474e;font-family:Arial,sans-serif;">Olá, <strong>${opts.partnerName}</strong> — um cliente usou o seu cupom <strong>${opts.couponCode}</strong> e gerou um orçamento.</p>
         ${detailsHtml}
-        <p style="margin:16px 0 8px;font-size:12px;color:#74777f;font-family:Montserrat,Arial,sans-serif;">Entre em contato com o cliente para garantir que o projeto avance:</p>
-        <a href="mailto:${opts.clientEmail}" style="display:inline-block;background:#0B1F45;color:#ffffff;text-decoration:none;padding:10px 22px;font-size:11px;letter-spacing:0.12em;text-transform:uppercase;font-weight:700;font-family:Montserrat,Arial,sans-serif;margin-right:8px;">Enviar e-mail</a>
-        <a href="${waLink}" style="display:inline-block;background:#25d366;color:#ffffff;text-decoration:none;padding:10px 22px;font-size:11px;letter-spacing:0.12em;text-transform:uppercase;font-weight:700;font-family:Montserrat,Arial,sans-serif;">WhatsApp</a>
+        <p style="margin:16px 0 8px;font-size:12px;color:#74777f;font-family:Arial,sans-serif;">Entre em contato com o cliente para garantir que o projeto avance:</p>
+        <a href="mailto:${opts.clientEmail}" style="display:inline-block;background:#0B1F45;color:#ffffff;text-decoration:none;padding:10px 22px;font-size:11px;letter-spacing:0.12em;text-transform:uppercase;font-weight:700;font-family:Arial,sans-serif;margin-right:8px;">Enviar e-mail</a>
+        <a href="${waLink}" style="display:inline-block;background:#25d366;color:#ffffff;text-decoration:none;padding:10px 22px;font-size:11px;letter-spacing:0.12em;text-transform:uppercase;font-weight:700;font-family:Arial,sans-serif;">WhatsApp</a>
       </td></tr>
       <tr><td style="background:#EFEDE8;border:1px solid #e2e2e2;border-top:0;padding:16px 32px;text-align:center;">
-        <a href="${siteUrl}/parceiro" style="font-size:11px;color:#74777f;font-family:Montserrat,Arial,sans-serif;text-decoration:none;">Ver meu portal →</a>
+        <a href="${siteUrl}/parceiro" style="font-size:11px;color:#74777f;font-family:Arial,sans-serif;text-decoration:none;">Ver meu portal →</a>
       </td></tr>
     </table>
   </td></tr></table>
@@ -116,20 +116,20 @@ async function sendNewBudgetEmails(opts: {
 
   // Email to each rep
   for (const rep of opts.repEmails) {
-    const repHtml = `<!DOCTYPE html><html lang="pt-BR"><head><meta charset="utf-8">${EMAIL_FONTES_LINK}</head>
-<body style="margin:0;padding:0;background:#EFEDE8;font-family:Montserrat,Arial,Helvetica,sans-serif;">
+    const repHtml = `<!DOCTYPE html><html lang="pt-BR"><head><meta charset="utf-8"></head>
+<body style="margin:0;padding:0;background:#EFEDE8;font-family:Arial,Helvetica,sans-serif;">
   <table width="100%" cellpadding="0" cellspacing="0"><tr><td align="center" style="padding:32px 16px 0;">
     <table cellpadding="0" cellspacing="0" style="max-width:560px;width:100%;">
       <tr><td style="background:#2347A0;padding:28px 32px;">
-        <p style="margin:0 0 4px;font-size:11px;letter-spacing:0.2em;text-transform:uppercase;color:#B4BBC8;font-family:Montserrat,Arial,sans-serif;">Novo Orçamento</p>
-        <p style="margin:0;font-size:22px;color:#ffffff;font-family:Noto Serif Display,Georgia,serif;font-weight:700;">${opts.directSale ? "Sua venda direta foi registrada" : `Orçamento gerado via parceiro ${opts.partnerName}`}</p>
+        <p style="margin:0 0 4px;font-size:11px;letter-spacing:0.2em;text-transform:uppercase;color:#B4BBC8;font-family:Arial,sans-serif;">Novo Orçamento</p>
+        <p style="margin:0;font-size:22px;color:#ffffff;font-family:Georgia,serif;font-weight:400;">${opts.directSale ? "Sua venda direta foi registrada" : `Orçamento gerado via parceiro ${opts.partnerName}`}</p>
       </td></tr>
       <tr><td style="background:#ffffff;border:1px solid #e2e2e2;border-top:0;padding:28px 32px;">
-        <p style="margin:0 0 16px;font-size:14px;color:#43474e;font-family:Montserrat,Arial,sans-serif;">${opts.directSale ? `Olá, <strong>${rep.name}</strong> — sua venda direta foi registrada e sua comissão será calculada sobre o valor com desconto.` : `Olá, <strong>${rep.name}</strong> — um dos seus parceiros (<strong>${opts.partnerName}</strong>) gerou um novo orçamento.`}</p>
+        <p style="margin:0 0 16px;font-size:14px;color:#43474e;font-family:Arial,sans-serif;">${opts.directSale ? `Olá, <strong>${rep.name}</strong> — sua venda direta foi registrada e sua comissão será calculada sobre o valor com desconto.` : `Olá, <strong>${rep.name}</strong> — um dos seus parceiros (<strong>${opts.partnerName}</strong>) gerou um novo orçamento.`}</p>
         ${detailsHtml}
       </td></tr>
       <tr><td style="background:#EFEDE8;border:1px solid #e2e2e2;border-top:0;padding:16px 32px;text-align:center;">
-        <a href="${siteUrl}/representante" style="font-size:11px;color:#74777f;font-family:Montserrat,Arial,sans-serif;text-decoration:none;">Ver meu portal →</a>
+        <a href="${siteUrl}/representante" style="font-size:11px;color:#74777f;font-family:Arial,sans-serif;text-decoration:none;">Ver meu portal →</a>
       </td></tr>
     </table>
   </td></tr></table>
@@ -153,9 +153,9 @@ async function sendNewBudgetEmails(opts: {
     from: "Orbital Revestimentos <noreply@orbitalrevestimentos.com.br>",
     to: EMAIL_EMPRESA,
     subject: `🧾 Cupom ${opts.couponCode} usado — ${opts.clientName}`,
-    html: `<div style="font-family:Montserrat,Arial,sans-serif;max-width:560px;margin:0 auto;padding:24px;color:#43474e">
+    html: `<div style="font-family:Arial,sans-serif;max-width:560px;margin:0 auto;padding:24px;color:#43474e">
       <p style="margin:0 0 4px;font-size:11px;letter-spacing:0.2em;text-transform:uppercase;color:#74777f">Novo orçamento com cupom</p>
-      <p style="margin:0 0 12px;font-size:20px;color:#0B1F45;font-family:Noto Serif Display,Georgia,serif;font-weight:700">${origem}</p>
+      <p style="margin:0 0 12px;font-size:20px;color:#0B1F45;font-family:Georgia,serif">${origem}</p>
       <p style="margin:0;font-size:13px">Cupom <strong>${opts.couponCode}</strong></p>
       ${detailsHtml}
     </div>`,
