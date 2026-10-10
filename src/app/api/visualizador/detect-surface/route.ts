@@ -8,39 +8,29 @@ import { NextRequest, NextResponse } from "next/server";
 // the selected surface so the Visualizador can highlight it and confine the
 // render to it.
 //
-// Two engines, in order of preference:
-//   1. fal.ai SAM2 (if FAL_KEY is set) — true pixel-accurate mask. Returns a
-//      binary mask PNG (as a data URI via sync_mode); the client tints it.
-//      Accepts either a point prompt or a box prompt: a box tells SAM2 "the
-//      object I care about fills roughly this rectangle", which is far more
-//      likely to produce one cohesive mask of a joint-divided surface than a
-//      single point click (which can land on one sub-tile/segment).
-//   2. Gemini polygon (fallback, uses the existing Gemini key) — an approximate
-//      polygon outline. Used when FAL_KEY isn't configured or fal fails.
+// Engine: fal.ai SAM2 (FAL_KEY) — pixel-accurate mask, returned as a binary
+// mask PNG (data URI via sync_mode); the client tints it. Accepts a point or a
+// box prompt (a box makes SAM2 segment "the one object filling this
+// rectangle" instead of one sub-tile).
 //
-// Response is one of:
-//   { mask: <data-uri png>, maskWidth, maskHeight }   (fal)
-//   { polygon: [[x,y]…], rect: {x,y,w,h} }            (gemini)
-// On total failure the client falls back to the raw point/box it was given
-// (a plain rectangle for box requests — today's pre-existing behavior).
+// Sem Gemini (decisão do dono, out/2026: a IA do site é a OpenAI). Se o SAM2
+// falhar, a rota responde 422 e o cliente fica com a marcação crua.
+// Obs.: no fluxo atual do Visualizador a detecção está desligada
+// (SURFACE_DETECTION = false); a OpenAI descreve a superfície em /analisar.
+//
+// Response: { mask: <data-uri png>, maskWidth, maskHeight }
 
-// fal (até FAL_TIMEOUT_MS) + Gemini (até GEMINI_TIMEOUT_MS) cabem com folga.
-// Antes era 30 s e o fal sem limite: quando o SAM2 travava, a função era
-// cortada aos 30 s, o Gemini nunca rodava e o cliente via "nada detectado".
-export const maxDuration = 60;
+// O fal ganha um limite (antes podia travar até a função ser cortada).
+export const maxDuration = 30;
 const FAL_TIMEOUT_MS = 12_000;
-const GEMINI_TIMEOUT_MS = 30_000;
 
 // O SAM2 da fal às vezes trava na 1ª chamada (servidor "frio") e responde em
-// ~1 s na seguinte. Como a máscara dele é muito melhor que o polígono do
-// Gemini, vale UMA segunda tentativa antes de cair para o Gemini.
+// ~1 s na seguinte: vale UMA segunda tentativa.
 async function comRetentativa<T>(fn: () => Promise<T | null>): Promise<T | null> {
   return (await fn()) ?? (await fn());
 }
 
 const FAL_RUN = "https://fal.run/fal-ai/sam2/image";
-const GEMINI_BASE = "https://generativelanguage.googleapis.com/v1beta";
-const GEMINI_MODEL = process.env.GEMINI_DETECT_MODEL || "gemini-2.5-flash";
 
 function parseInline(input: string): { data: string; mime: string } | null {
   const m = input.match(/^data:([^;]+);base64,([\s\S]+)$/);
@@ -101,7 +91,7 @@ async function detectFal(
     });
     if (!res.ok) {
       // Surface WHY fal failed (401 = bad/missing key, 422 = bad prompt, etc.)
-      // instead of silently falling back to the coarse Gemini polygon.
+      // instead of failing silently.
       console.error(`[detect] fal SAM2 HTTP ${res.status}:`, (await res.text().catch(() => "")).slice(0, 300));
       return null;
     }
@@ -152,7 +142,7 @@ async function detectFalBox(
     });
     if (!res.ok) {
       // Surface WHY fal failed (401 = bad/missing key, 422 = bad prompt, etc.)
-      // instead of silently falling back to the coarse Gemini polygon.
+      // instead of failing silently.
       console.error(`[detect] fal SAM2 HTTP ${res.status}:`, (await res.text().catch(() => "")).slice(0, 300));
       return null;
     }
@@ -169,88 +159,6 @@ async function detectFalBox(
   }
 }
 
-// ── Gemini polygon fallback ──────────────────────────────────────────────────
-function parsePolygon(text: string): Array<[number, number]> | null {
-  const cleaned = text.replace(/```json/gi, "").replace(/```/g, "");
-  const tryParse = (s: string): unknown => {
-    try {
-      return JSON.parse(s);
-    } catch {
-      return null;
-    }
-  };
-  let parsed = tryParse(cleaned.trim());
-  if (!parsed) {
-    const m = cleaned.match(/\[\s*\[[\s\S]*?\]\s*\]/);
-    if (m) parsed = tryParse(m[0]);
-  }
-  const arr =
-    parsed && typeof parsed === "object" && "polygon" in (parsed as Record<string, unknown>)
-      ? (parsed as { polygon: unknown }).polygon
-      : parsed;
-  if (!Array.isArray(arr)) return null;
-  const pts: Array<[number, number]> = [];
-  for (const p of arr) {
-    if (Array.isArray(p) && p.length >= 2 && typeof p[0] === "number" && typeof p[1] === "number") {
-      pts.push([p[0], p[1]]);
-    }
-  }
-  return pts.length >= 3 ? pts : null;
-}
-
-async function detectGemini(
-  photo: { data: string; mime: string },
-  locateClause: string,
-  hint: string | null
-): Promise<{ polygon: Array<[number, number]>; rect: { x: number; y: number; w: number; h: number } } | null> {
-  const apiKey =
-    process.env.GEMINI_API_KEY || process.env.GOOGLE_API_KEY || process.env.FREE_LLM_API_KEY;
-  if (!apiKey) return null;
-  const instruction =
-    `In this image, find the single continuous flat architectural surface ` +
-    `(a wall, ceiling, door, or cabinet face${hint ? `; the client says it is: ${hint}` : ""}) ` +
-    `${locateClause} ` +
-    `Trace its outline as a polygon of 12–28 ordered points that hugs the surface's real edges. ` +
-    `If the surface is divided by grout lines, tile joints or panel seams, treat the WHOLE divided ` +
-    `area as ONE single surface and trace its outer outline — do not trace just one sub-tile. ` +
-    `Respond with ONLY JSON: {"polygon": [[x,y], ...]} using integer coordinates 0–1000. No prose.`;
-  let res: Response;
-  try {
-    res = await fetch(`${GEMINI_BASE}/models/${GEMINI_MODEL}:generateContent?key=${apiKey}`, {
-      method: "POST",
-      signal: AbortSignal.timeout(GEMINI_TIMEOUT_MS),
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({
-        contents: [
-          { role: "user", parts: [{ text: instruction }, { inline_data: { mime_type: photo.mime, data: photo.data } }] },
-        ],
-        generationConfig: { temperature: 0, responseModalities: ["TEXT"] },
-      }),
-    });
-  } catch {
-    return null;
-  }
-  if (!res.ok) return null;
-  const json = await res.json();
-  const parts: Array<{ text?: string }> = json?.candidates?.[0]?.content?.parts ?? [];
-  const poly = parsePolygon(parts.map((p) => p.text ?? "").join(" "));
-  if (!poly) return null;
-  let minX = 1, minY = 1, maxX = 0, maxY = 0;
-  const polygon = poly.map(([x, y]) => {
-    const nx = Math.min(1, Math.max(0, x / 1000));
-    const ny = Math.min(1, Math.max(0, y / 1000));
-    if (nx < minX) minX = nx;
-    if (nx > maxX) maxX = nx;
-    if (ny < minY) minY = ny;
-    if (ny > maxY) maxY = ny;
-    return [nx, ny] as [number, number];
-  });
-  const w = maxX - minX;
-  const h = maxY - minY;
-  if (!(w > 0.02 && h > 0.02)) return null;
-  return { polygon, rect: { x: minX, y: minY, w, h } };
-}
-
 export async function POST(req: NextRequest) {
   let body: {
     photo?: string;
@@ -259,9 +167,7 @@ export async function POST(req: NextRequest) {
     width?: number;
     height?: number;
     hint?: string;
-    // When true, skip fal SAM2 and go straight to the Gemini polygon. The tap
-    // client sets this on a retry when fal's point-prompt mask came back empty
-    // or degenerate, so it can still get a usable whole-surface outline.
+    // Pedido de "outro motor" (antes: Gemini). Não há outro motor: responde 422.
     skipFal?: boolean;
   };
   try {
@@ -275,7 +181,6 @@ export async function POST(req: NextRequest) {
 
   const natW = typeof body.width === "number" && body.width > 0 ? body.width : 0;
   const natH = typeof body.height === "number" && body.height > 0 ? body.height : 0;
-  const hint = typeof body.hint === "string" && body.hint.trim() ? body.hint.trim() : null;
   const useFal = !body.skipFal && !!process.env.FAL_KEY;
 
   const b = body.box;
@@ -297,13 +202,6 @@ export async function POST(req: NextRequest) {
       const fal = await comRetentativa(() => detectFalBox(body.photo!, box.x1 * natW, box.y1 * natH, box.x2 * natW, box.y2 * natH));
       if (fal) return NextResponse.json({ mask: fal.mask, maskWidth: fal.width, maskHeight: fal.height, engine: "fal" });
     }
-    const gem = await detectGemini(
-      img,
-      `that fills approximately the rectangle from (x=${Math.round(box.x1 * 1000)}, y=${Math.round(box.y1 * 1000)}) ` +
-        `to (x=${Math.round(box.x2 * 1000)}, y=${Math.round(box.y2 * 1000)}) (coordinates 0–1000, origin top-left).`,
-      hint
-    );
-    if (gem) return NextResponse.json({ ...gem, engine: "gemini" });
     return NextResponse.json({ error: "Superfície não detectada." }, { status: 422 });
   }
 
@@ -315,13 +213,6 @@ export async function POST(req: NextRequest) {
     const fal = await comRetentativa(() => detectFal(body.photo!, nx * natW, ny * natH, natW, natH));
     if (fal) return NextResponse.json({ mask: fal.mask, maskWidth: fal.width, maskHeight: fal.height });
   }
-
-  const gem = await detectGemini(
-    img,
-    `that contains the point x=${Math.round(nx * 1000)}, y=${Math.round(ny * 1000)} (coordinates 0–1000, origin top-left).`,
-    hint
-  );
-  if (gem) return NextResponse.json({ ...gem, engine: "gemini" });
 
   return NextResponse.json({ error: "Superfície não detectada." }, { status: 422 });
 }

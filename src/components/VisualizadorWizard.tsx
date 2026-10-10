@@ -1139,9 +1139,6 @@ export default function VisualizadorWizard({
         //    return an empty / pinhole / whole-image mask, which used to be
         //    accepted silently and looked like "nothing detected".
         let j = await callDetect(false);
-        // Falha/tempo esgotado na 1ª chamada (ex.: fal travado) → tenta direto o
-        // Gemini. Antes ia para o retângulo cru sem nunca tentar o Gemini.
-        if (!j) j = await callDetect(true);
         if (j && typeof j.mask === "string") {
           try {
             const { url, rect, coverage } = await maskToOverlay(j.mask, color);
@@ -1236,8 +1233,6 @@ export default function VisualizadorWizard({
 
         // 1) fal SAM2 (box prompt) — accept only if coverage is sane.
         let j = await callDetect(false);
-        // Falha/tempo esgotado → Gemini direto (antes ficava o retângulo cru).
-        if (!j) j = await callDetect(true);
         if (j && typeof j.mask === "string") {
           try {
             const { url, coverage } = await maskToOverlay(j.mask, color);
