@@ -478,6 +478,8 @@ export function composeOpenAIMultiPrompt(opts: {
     referenceIsTexture: boolean;
   }>;
   keep?: string | null;
+  /** Máscara do SAM2 enviada junto: a área transparente é exatamente onde revestir. */
+  hasMask?: boolean;
 }): string {
   const fmt = (n: number) => n.toFixed(2).replace(/\.?0+$/, "");
   const ordinal = (n: number) => (n === 2 ? "SECOND" : n === 3 ? "THIRD" : n === 4 ? "FOURTH" : n === 5 ? "FIFTH" : `#${n}`);
@@ -485,6 +487,9 @@ export function composeOpenAIMultiPrompt(opts: {
   const lines: string[] = [
     "Photorealistic interior edit. The FIRST image is a real photo of the client's room. Show exactly how this same photo looks after the wall panels are installed on the surface(s) described below — nothing else changes.",
     "The descriptions were written in Brazilian Portuguese; follow them literally.",
+    ...(opts.hasMask
+      ? ["A mask is attached: its transparent region marks EXACTLY the surface(s) to clad, detected precisely on the photo. Apply the panels only inside that region and cover all of it; everything outside the mask must stay identical to the photo."]
+      : []),
     "",
   ];
   opts.areas.forEach((a, i) => {

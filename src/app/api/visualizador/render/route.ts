@@ -131,7 +131,7 @@ export async function POST(req: NextRequest) {
     return NextResponse.json({ error: "Requisição inválida." }, { status: 400 });
   }
 
-  if (Array.isArray(body.areas)) return renderAreas(req, body.photo, body.areas, body.keep, body.stream === true);
+  if (Array.isArray(body.areas)) return renderAreas(req, body.photo, body.areas, body.keep, body.stream === true, body.maskImage);
 
   const { photo, productId } = body;
   const finish: FinishKind = body.finish ?? "matte";
@@ -415,7 +415,8 @@ async function renderAreas(
   photo: string | undefined,
   rawAreas: Array<AreaIn>,
   rawKeep: unknown,
-  wantStream = false
+  wantStream = false,
+  rawMask?: unknown
 ) {
   // Sem OpenAI o cliente volta ao fluxo antigo (uma área por vez).
   if (!openaiConfigured()) return NextResponse.json({ error: "multi-area indisponível" }, { status: 501 });
@@ -444,6 +445,11 @@ async function renderAreas(
     return NextResponse.json({ error: e instanceof Error ? e.message : "Falha ao preparar as imagens." }, { status: 502 });
   }
 
+  // Máscara das áreas detectadas pelo SAM2 (branco = revestir). Só vem quando
+  // TODAS as áreas têm recorte; senão o cliente manda só o texto.
+  const maskInline =
+    typeof rawMask === "string" && rawMask.startsWith("data:") ? parseInline(rawMask, "image/png") : null;
+
   const finishOf = (p: RenderProduct | null): FinishKind =>
     p?.linha === "Brilliance" ? "polished" : p?.linha === "Elegance" ? "wood" : "matte";
   const prompt = composeOpenAIMultiPrompt({
@@ -466,6 +472,7 @@ async function renderAreas(
       };
     }),
     keep: cleanText(rawKeep, 400) || null,
+    hasMask: !!maskInline,
   });
 
   const wall = parseInline(photo);
@@ -476,7 +483,7 @@ async function renderAreas(
         const t = loaded.get(id)!.texture;
         return { data: Buffer.from(t.data, "base64"), mime: t.mime };
       }),
-      mask: null,
+      mask: maskInline ? Buffer.from(maskInline.data, "base64") : null,
       prompt,
       onPartial,
     });

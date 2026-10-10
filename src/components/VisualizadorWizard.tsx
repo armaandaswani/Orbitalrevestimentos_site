@@ -68,12 +68,13 @@ const ZONE_COLORS = ["#36A35C", "#b4791e", "#2F5FD0", "#a83279", "#2a9d8f", "#9b
 // Flip to true only to re-enable the (worse) deterministic paste.
 const DETERMINISTIC_PROJECTION = false;
 
-// Fluxo guiado por IA (out/2026): marcar é instantâneo (sem SAM2/Gemini — a
-// marcação é só uma indicação), a IA lê a foto e descreve a superfície em texto,
-// o cliente revisa e o render sai numa única chamada SEM máscara. A máscara do
-// retângulo fazia o gerador redesenhar tudo dentro dele (sumiam os quadros).
-// true = volta a detectar a superfície a cada toque (fluxo antigo, lento).
-const SURFACE_DETECTION = false;
+// Divisão de trabalho (decisão do dono, out/2026): o SAM2 (fal) DETECTA a
+// superfície a cada toque/retângulo — recorte exato da parede, em perspectiva,
+// sem os objetos da frente — e o ChatGPT (gpt-image) faz o RENDER. A IA da
+// OpenAI ainda descreve as áreas em texto (/analisar) e, quando todas têm
+// recorte do SAM2, o render recebe a máscara junto. (A máscara de RETÂNGULO
+// fazia o gerador redesenhar tudo dentro dele — por isso só vai a do SAM2.)
+const SURFACE_DETECTION = true;
 
 export type Rect = { x: number; y: number; w: number; h: number };
 type Poly = Array<[number, number]>;
@@ -244,6 +245,10 @@ function refineMaskCanvas(
   ectx.drawImage(dil2, 0, 0);
   ectx.filter = "none";
   const closed = ectx.getImageData(0, 0, w, h).data;
+  // A dilatação (corte em 24) expande ~1,5r; para o fechamento voltar à borda
+  // real, a erosão precisa cortar ALTO. Com corte no meio (128) a máscara
+  // ficava ~20 px maior que a parede e invadia teto e piso no render.
+  for (let pi = 3; pi < closed.length; pi += 4) closed[pi] = closed[pi] > 230 ? 255 : 0;
 
   // Pass 3 — fill small interior holes. Work on a downsampled grid (≤ ~360px
   // on the long side) so the flood fill is cheap even on a 4K photo: BFS from
@@ -568,6 +573,26 @@ async function fitToBase(sourceDataUrl: string, w: number, h: number): Promise<s
 // the real surface under the white region — following its true perspective and
 // keeping foreground objects on top. Returns null for text-only zones (no
 // spatial info), so the render falls back to the text/rect prompt as before.
+// Máscara única (branco = revestir) com o recorte do SAM2 de TODAS as áreas,
+// para o render multi-área. null se alguma área não tiver recorte: aí o render
+// vai só com o texto (uma área sem máscara ficaria bloqueada).
+async function buildUnionMaskDataUrl(zs: Zone[], w: number, h: number): Promise<string | null> {
+  if (zs.length === 0 || zs.some((z) => !z.maskUrl)) return null;
+  const c = document.createElement("canvas");
+  c.width = w;
+  c.height = h;
+  const ctx = c.getContext("2d")!;
+  ctx.fillStyle = "#000";
+  ctx.fillRect(0, 0, w, h);
+  ctx.globalCompositeOperation = "lighten";
+  for (const z of zs) {
+    const m = await buildMaskDataUrl(z, w, h);
+    if (!m) return null;
+    ctx.drawImage(await loadImage(m), 0, 0, w, h);
+  }
+  return c.toDataURL("image/png");
+}
+
 async function buildMaskDataUrl(z: Zone, w: number, h: number, preferQuad = false): Promise<string | null> {
   const stencil = await buildStencil(z, w, h, preferQuad); // opaque inside / transparent outside
   if (!stencil) return null;
@@ -1529,6 +1554,10 @@ export default function VisualizadorWizard({
       let doneInOneCall = false;
       if (!DETERMINISTIC_PROJECTION) {
         setProgress({ i: 1, total: 1, label: zs.length > 1 ? "as áreas" : "o revestimento" });
+        let maskImage: string | null = null;
+        if (dims && dims.w > 0 && dims.h > 0) {
+          try { maskImage = await buildUnionMaskDataUrl(zs, dims.w, dims.h); } catch { maskImage = null; }
+        }
         const res = await fetch("/api/visualizador/render", {
           method: "POST",
           headers: { "Content-Type": "application/json" },
@@ -1536,6 +1565,7 @@ export default function VisualizadorWizard({
             photo: base,
             aspect: dims && dims.h > 0 ? dims.w / dims.h : undefined,
             keep: keepText.trim() || undefined,
+            maskImage: maskImage ?? undefined,
             stream: true,
             areas: zs.map((z) => ({
               productId: z.productId,
@@ -2245,9 +2275,9 @@ function ZonesStep({
           {retargetId ? (
             <strong className="text-[#b4791e]">Toque no ponto certo da superfície para refazer a seleção.</strong>
           ) : mode === "tap" ? (
-            <><strong>Tocar:</strong> toque na superfície (parede, teto, móvel…). No próximo passo a IA descreve a área inteira.</>
+            <><strong>Tocar:</strong> toque na superfície (parede, teto, móvel…) e ela é recortada automaticamente, inteira.</>
           ) : (
-            <><strong>Desenhar:</strong> arraste sobre a foto para indicar a área. Não precisa ser exato: a IA entende a superfície.</>
+            <><strong>Desenhar:</strong> arraste sobre a foto para indicar a área. Não precisa ser exato: a superfície é recortada dentro dela.</>
           )}
         </p>
 
