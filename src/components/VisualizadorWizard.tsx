@@ -1122,12 +1122,16 @@ export default function VisualizadorWizard({
       const color = ZONE_COLORS[colorIdx % ZONE_COLORS.length];
       type DetectResp = { mask?: string; polygon?: Array<[number, number]>; rect?: Rect; engine?: string };
       const callDetect = async (skipFal: boolean): Promise<DetectResp | null> => {
-        const res = await fetch("/api/visualizador/detect-surface", {
-          method: "POST",
-          headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({ photo: photoData, point: { x: nx, y: ny }, width: photoDims?.w, height: photoDims?.h, skipFal }),
-        });
-        return res.ok ? ((await res.json()) as DetectResp) : null;
+        try {
+          const res = await fetch("/api/visualizador/detect-surface", {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({ photo: photoData, point: { x: nx, y: ny }, width: photoDims?.w, height: photoDims?.h, skipFal }),
+          });
+          return res.ok ? ((await res.json()) as DetectResp) : null;
+        } catch {
+          return null;
+        }
       };
       try {
         // 1) Try fal SAM2 (point prompt). Its mask is only trustworthy if it
@@ -1135,6 +1139,9 @@ export default function VisualizadorWizard({
         //    return an empty / pinhole / whole-image mask, which used to be
         //    accepted silently and looked like "nothing detected".
         let j = await callDetect(false);
+        // Falha/tempo esgotado na 1ª chamada (ex.: fal travado) → tenta direto o
+        // Gemini. Antes ia para o retângulo cru sem nunca tentar o Gemini.
+        if (!j) j = await callDetect(true);
         if (j && typeof j.mask === "string") {
           try {
             const { url, rect, coverage } = await maskToOverlay(j.mask, color);
@@ -1203,12 +1210,16 @@ export default function VisualizadorWizard({
       const color = ZONE_COLORS[colorIdx % ZONE_COLORS.length];
       type DetectResp = { mask?: string; polygon?: Array<[number, number]>; rect?: Rect; engine?: string };
       const callDetect = async (skipFal: boolean): Promise<DetectResp | null> => {
-        const res = await fetch("/api/visualizador/detect-surface", {
-          method: "POST",
-          headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({ photo: photoData, box: rect, width: photoDims?.w, height: photoDims?.h, skipFal }),
-        });
-        return res.ok ? ((await res.json()) as DetectResp) : null;
+        try {
+          const res = await fetch("/api/visualizador/detect-surface", {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({ photo: photoData, box: rect, width: photoDims?.w, height: photoDims?.h, skipFal }),
+          });
+          return res.ok ? ((await res.json()) as DetectResp) : null;
+        } catch {
+          return null;
+        }
       };
       let engine: "fal" | "gemini" | null = null;
       try {
@@ -1225,6 +1236,8 @@ export default function VisualizadorWizard({
 
         // 1) fal SAM2 (box prompt) — accept only if coverage is sane.
         let j = await callDetect(false);
+        // Falha/tempo esgotado → Gemini direto (antes ficava o retângulo cru).
+        if (!j) j = await callDetect(true);
         if (j && typeof j.mask === "string") {
           try {
             const { url, coverage } = await maskToOverlay(j.mask, color);

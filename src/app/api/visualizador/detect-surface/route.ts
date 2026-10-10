@@ -24,7 +24,12 @@ import { NextRequest, NextResponse } from "next/server";
 // On total failure the client falls back to the raw point/box it was given
 // (a plain rectangle for box requests — today's pre-existing behavior).
 
-export const maxDuration = 30;
+// fal (até FAL_TIMEOUT_MS) + Gemini (até GEMINI_TIMEOUT_MS) cabem com folga.
+// Antes era 30 s e o fal sem limite: quando o SAM2 travava, a função era
+// cortada aos 30 s, o Gemini nunca rodava e o cliente via "nada detectado".
+export const maxDuration = 60;
+const FAL_TIMEOUT_MS = 12_000;
+const GEMINI_TIMEOUT_MS = 40_000;
 
 const FAL_RUN = "https://fal.run/fal-ai/sam2/image";
 const GEMINI_BASE = "https://generativelanguage.googleapis.com/v1beta";
@@ -77,6 +82,7 @@ async function detectFal(
     ];
     const res = await fetch(FAL_RUN, {
       method: "POST",
+      signal: AbortSignal.timeout(FAL_TIMEOUT_MS),
       headers: { Authorization: `Key ${key}`, "Content-Type": "application/json" },
       body: JSON.stringify({
         image_url: photoDataUrl,
@@ -122,6 +128,7 @@ async function detectFalBox(
   try {
     const res = await fetch(FAL_RUN, {
       method: "POST",
+      signal: AbortSignal.timeout(FAL_TIMEOUT_MS),
       headers: { Authorization: `Key ${key}`, "Content-Type": "application/json" },
       body: JSON.stringify({
         image_url: photoDataUrl,
@@ -204,6 +211,7 @@ async function detectGemini(
   try {
     res = await fetch(`${GEMINI_BASE}/models/${GEMINI_MODEL}:generateContent?key=${apiKey}`, {
       method: "POST",
+      signal: AbortSignal.timeout(GEMINI_TIMEOUT_MS),
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({
         contents: [
