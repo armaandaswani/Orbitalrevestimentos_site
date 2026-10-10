@@ -29,7 +29,14 @@ import { NextRequest, NextResponse } from "next/server";
 // cortada aos 30 s, o Gemini nunca rodava e o cliente via "nada detectado".
 export const maxDuration = 60;
 const FAL_TIMEOUT_MS = 12_000;
-const GEMINI_TIMEOUT_MS = 40_000;
+const GEMINI_TIMEOUT_MS = 30_000;
+
+// O SAM2 da fal às vezes trava na 1ª chamada (servidor "frio") e responde em
+// ~1 s na seguinte. Como a máscara dele é muito melhor que o polígono do
+// Gemini, vale UMA segunda tentativa antes de cair para o Gemini.
+async function comRetentativa<T>(fn: () => Promise<T | null>): Promise<T | null> {
+  return (await fn()) ?? (await fn());
+}
 
 const FAL_RUN = "https://fal.run/fal-ai/sam2/image";
 const GEMINI_BASE = "https://generativelanguage.googleapis.com/v1beta";
@@ -287,7 +294,7 @@ export async function POST(req: NextRequest) {
   // this box" instead of wherever a single point would have landed.
   if (box) {
     if (useFal && natW > 0 && natH > 0) {
-      const fal = await detectFalBox(body.photo, box.x1 * natW, box.y1 * natH, box.x2 * natW, box.y2 * natH);
+      const fal = await comRetentativa(() => detectFalBox(body.photo!, box.x1 * natW, box.y1 * natH, box.x2 * natW, box.y2 * natH));
       if (fal) return NextResponse.json({ mask: fal.mask, maskWidth: fal.width, maskHeight: fal.height, engine: "fal" });
     }
     const gem = await detectGemini(
@@ -305,7 +312,7 @@ export async function POST(req: NextRequest) {
   const ny = Math.min(1, Math.max(0, body.point?.y ?? 0.5));
 
   if (useFal && natW > 0 && natH > 0) {
-    const fal = await detectFal(body.photo, nx * natW, ny * natH, natW, natH);
+    const fal = await comRetentativa(() => detectFal(body.photo!, nx * natW, ny * natH, natW, natH));
     if (fal) return NextResponse.json({ mask: fal.mask, maskWidth: fal.width, maskHeight: fal.height });
   }
 
