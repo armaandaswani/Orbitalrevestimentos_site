@@ -48,8 +48,6 @@ export function comunicadoMetropolitanoHtml(): string {
     .lk{display:block!important;padding:0 0 18px!important;text-align:center!important}
     .lk img{margin:0 auto!important}
     .lkd{display:none!important}
-    .amb{display:block!important;width:100%!important;padding:0 0 18px!important}
-    .amb img{max-width:100%!important}
   }
 </style>
 </head>
@@ -121,14 +119,14 @@ export function comunicadoMetropolitanoHtml(): string {
   <tr><td class="px" align="center" style="padding:40px 40px 14px;">
     <p style="margin:0;font-family:Arial,Helvetica,sans-serif;font-size:11px;letter-spacing:0.28em;text-transform:uppercase;font-weight:700;color:#2347A0;">Nos ambientes</p>
   </td></tr>
-  <tr><td class="px" style="padding:0 40px;">
-    <table role="presentation" width="100%" cellpadding="0" cellspacing="0"><tr>
-      <td class="amb" width="50%" valign="top" style="padding:0 6px 0 0;">
-        <img src="${IMG}/email/ambiente-sala-jantar.jpg" width="254" alt="Parede de sala de jantar revestida com o Painel Flexível Fibra de Bambu, acabamento mármore" style="display:block;border:0;width:100%;max-width:254px;height:auto;">
+  <tr><td class="px" align="center" style="padding:0 40px;">
+    <table role="presentation" cellpadding="0" cellspacing="0" style="width:100%;max-width:440px;"><tr>
+      <td width="50%" valign="top" style="padding:0 6px 0 0;">
+        <img src="${IMG}/email/ambiente-sala-jantar.jpg" width="214" alt="Parede de sala de jantar revestida com o Painel Flexível Fibra de Bambu, acabamento mármore" style="display:block;border:0;width:100%;max-width:214px;height:auto;">
         <p style="margin:8px 0 0;font-family:Arial,Helvetica,sans-serif;font-size:12px;color:#74777f;">Sala de jantar</p>
       </td>
-      <td class="amb" width="50%" valign="top" style="padding:0 0 0 6px;">
-        <img src="${IMG}/email/ambiente-escada.jpg" width="254" alt="Escada com paredes revestidas com o Painel Flexível Fibra de Bambu, acabamento madeira" style="display:block;border:0;width:100%;max-width:254px;height:auto;">
+      <td width="50%" valign="top" style="padding:0 0 0 6px;">
+        <img src="${IMG}/email/ambiente-escada.jpg" width="214" alt="Escada com paredes revestidas com o Painel Flexível Fibra de Bambu, acabamento madeira" style="display:block;border:0;width:100%;max-width:214px;height:auto;">
         <p style="margin:8px 0 0;font-family:Arial,Helvetica,sans-serif;font-size:12px;color:#74777f;">Escada</p>
       </td>
     </tr></table>
