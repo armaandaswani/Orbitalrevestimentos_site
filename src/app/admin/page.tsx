@@ -200,6 +200,10 @@ export default function AdminPage() {
   const [authed, setAuthed] = useState(false);
   const [pw, setPw] = useState("");
   const [pwError, setPwError] = useState("");
+  // A sessão do admin dura 12 h (cookie). O painel só confere o login ao abrir;
+  // com a aba aberta de um dia para o outro, toda ação voltava "Unauthorized".
+  // Agora qualquer 401 de /api/ abre um login por cima, sem perder a tela.
+  const [sessaoExpirada, setSessaoExpirada] = useState(false);
   const [tab, setTab] = useState<AdminTab>("dashboard");
 
   // Voltar de uma rota própria (ex.: /admin/projetos/organizacao) precisa cair
@@ -764,6 +768,24 @@ export default function AdminPage() {
       })
       .catch(() => {});
   }, []);
+
+  useEffect(() => {
+    if (!authed) return;
+    const original = window.fetch;
+    window.fetch = async (...args: Parameters<typeof fetch>) => {
+      const res = await original(...args);
+      if (res.status === 401) {
+        const alvo = args[0];
+        const url = typeof alvo === "string" ? alvo : alvo instanceof URL ? alvo.href : alvo.url;
+        const caminho = new URL(url, window.location.origin);
+        if (caminho.origin === window.location.origin && caminho.pathname.startsWith("/api/") && caminho.pathname !== "/api/admin/login") {
+          setSessaoExpirada(true);
+        }
+      }
+      return res;
+    };
+    return () => { window.fetch = original; };
+  }, [authed]);
 
   const fetchPartners = useCallback(async () => {
     setLoadingPartners(true);
@@ -1385,6 +1407,7 @@ export default function AdminPage() {
       if (res.ok) {
         setPw("");
         setAuthed(true);
+        setSessaoExpirada(false);
       } else {
         const data = await res.json().catch(() => null);
         setPwError(data?.error || "Senha incorreta.");
@@ -1431,6 +1454,7 @@ export default function AdminPage() {
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({ folder, filename: file.name, contentType: file.type }),
     });
+    if (signRes.status === 401) return null; // sessão expirou: o login por cima já abriu
     if (!signRes.ok) {
       const err = await signRes.text();
       console.error("[uploadDirect] sign failed:", err);
@@ -3060,6 +3084,27 @@ export default function AdminPage() {
 
   return (
     <div className="min-h-screen bg-[#F6F5F2]">
+      {sessaoExpirada && (
+        <div className="fixed inset-0 z-[200] flex items-center justify-center bg-black/60 px-4">
+          <div className="bg-white border border-[#e2e2e2] p-6 sm:p-8 w-full max-w-sm">
+            <p className="text-[#0B1F45] text-xl font-normal mb-2">Sua sessão expirou</p>
+            <p className="text-[#74777f] text-sm mb-5">
+              Por segurança, o login do admin dura 12 horas. Entre de novo para continuar — a tela fica como está.
+              Se você estava enviando uma foto ou salvando algo, faça de novo depois de entrar.
+            </p>
+            <form onSubmit={handleLogin} className="space-y-4">
+              <div>
+                <label className={labelCls}>Senha</label>
+                <input type="password" value={pw} onChange={(e) => setPw(e.target.value)} className={inputCls} autoFocus />
+              </div>
+              {pwError && <p className="text-red-600 text-sm">{pwError}</p>}
+              <button type="submit" className="w-full bg-[#0B1F45] text-white text-xs tracking-[0.12em] uppercase font-bold px-6 py-3 hover:bg-[#2347A0] transition-colors">
+                Entrar
+              </button>
+            </form>
+          </div>
+        </div>
+      )}
       {/* Follow-up modal */}
       {followUpModalOpen && followUps.length > 0 && (
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 p-4">
