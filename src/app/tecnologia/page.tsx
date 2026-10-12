@@ -277,6 +277,53 @@ export default async function TecnologiaPage() {
         </div>
       </section>
 
+      {/* Opinião de instalador — vídeo à direita */}
+      <section className="py-14 lg:py-28 bg-[#F6F5F2] border-t border-[#eeeeee]">
+        <div className="max-w-[1280px] mx-auto px-4 lg:px-16">
+          <div className="grid grid-cols-1 lg:grid-cols-[1fr_360px] gap-12 lg:gap-24 items-center">
+            <ScrollReveal direction="left">
+              <p className="text-[#2347A0] text-xs tracking-[0.2em] uppercase font-semibold mb-4">
+                Opinião de instalador
+              </p>
+              <h2 className="font-serif text-[#0B1F45] text-3xl lg:text-4xl font-normal mb-6">
+                Um serviço rápido.<br />
+                <span className="italic">Sobra tempo para mais obras.</span>
+              </h2>
+              <p className="text-[#43474e] text-base leading-relaxed mb-8">
+                Adam, da Werk Engenharia, conta como é instalar o PFB na prática: da aplicação ao
+                acabamento, um trabalho ágil — e o tempo ganho vira mais projetos no mês.
+              </p>
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-x-8 gap-y-4">
+                {[
+                  { label: "Aplicação", desc: "Processo simples, do começo ao fim." },
+                  { label: "Manuseio", desc: "Placa leve, cerca de 11 kg." },
+                  { label: "Corte", desc: "Sem equipamento pesado." },
+                  { label: "Acabamento", desc: "Limpo e preciso." },
+                ].map(({ label, desc }, i) => (
+                  <ScrollReveal key={label} delay={150 + i * 110}>
+                    <div className="flex gap-4">
+                      <div className="w-1.5 h-1.5 rounded-full bg-[#36A35C] mt-2 flex-shrink-0" />
+                      <div>
+                        <span className="text-[#0B1F45] font-semibold text-sm">{label} — </span>
+                        <span className="text-[#43474e] text-sm">{desc}</span>
+                      </div>
+                    </div>
+                  </ScrollReveal>
+                ))}
+              </div>
+            </ScrollReveal>
+            <ScrollReveal direction="right" delay={150}>
+              <VideoShort
+                id="hpgoCY8L2PI"
+                poster="/images/videos/opiniao-instalador-adam-werk.jpg"
+                titulo="Opinião de instalador"
+                className="max-w-[320px] lg:max-w-none mx-auto"
+              />
+            </ScrollReveal>
+          </div>
+        </div>
+      </section>
+
       {/* Manaus Climate */}
       <section className="py-10 lg:py-24 bg-[#0B1F45] text-white">
         <div className="max-w-[1280px] mx-auto px-4 lg:px-16">
@@ -425,53 +472,6 @@ export default async function TecnologiaPage() {
                   Bambu renovável · Sem formol · Inodoro
                 </p>
               </div>
-            </ScrollReveal>
-          </div>
-        </div>
-      </section>
-
-      {/* Opinião de instalador — vídeo à direita */}
-      <section className="py-14 lg:py-28 bg-[#F6F5F2] border-t border-[#eeeeee]">
-        <div className="max-w-[1280px] mx-auto px-4 lg:px-16">
-          <div className="grid grid-cols-1 lg:grid-cols-[1fr_360px] gap-12 lg:gap-24 items-center">
-            <ScrollReveal direction="left">
-              <p className="text-[#2347A0] text-xs tracking-[0.2em] uppercase font-semibold mb-4">
-                Opinião de instalador
-              </p>
-              <h2 className="font-serif text-[#0B1F45] text-3xl lg:text-4xl font-normal mb-6">
-                Um serviço rápido.<br />
-                <span className="italic">Sobra tempo para mais obras.</span>
-              </h2>
-              <p className="text-[#43474e] text-base leading-relaxed mb-8">
-                Adam, da Werk Engenharia, conta como é instalar o PFB na prática: da aplicação ao
-                acabamento, um trabalho ágil — e o tempo ganho vira mais projetos no mês.
-              </p>
-              <div className="grid grid-cols-1 sm:grid-cols-2 gap-x-8 gap-y-4">
-                {[
-                  { label: "Aplicação", desc: "Processo simples, do começo ao fim." },
-                  { label: "Manuseio", desc: "Placa leve, cerca de 11 kg." },
-                  { label: "Corte", desc: "Sem equipamento pesado." },
-                  { label: "Acabamento", desc: "Limpo e preciso." },
-                ].map(({ label, desc }, i) => (
-                  <ScrollReveal key={label} delay={150 + i * 110}>
-                    <div className="flex gap-4">
-                      <div className="w-1.5 h-1.5 rounded-full bg-[#36A35C] mt-2 flex-shrink-0" />
-                      <div>
-                        <span className="text-[#0B1F45] font-semibold text-sm">{label} — </span>
-                        <span className="text-[#43474e] text-sm">{desc}</span>
-                      </div>
-                    </div>
-                  </ScrollReveal>
-                ))}
-              </div>
-            </ScrollReveal>
-            <ScrollReveal direction="right" delay={150}>
-              <VideoShort
-                id="hpgoCY8L2PI"
-                poster="/images/videos/opiniao-instalador-adam-werk.jpg"
-                titulo="Opinião de instalador"
-                className="max-w-[320px] lg:max-w-none mx-auto"
-              />
             </ScrollReveal>
           </div>
         </div>
