@@ -3,6 +3,10 @@
  * Fonte única: tela do documento (impressão), editor de pedidos (placeholder)
  * e PDF enviado por e-mail. Se o admin digitar um texto próprio no pedido,
  * esse texto prevalece sobre este padrão.
+ *
+ * As cláusulas de PRODUTO (1, 2, 5, 6, 7 e 8) também estão nos Termos de Uso
+ * (src/app/termos/page.tsx), para quem compra o PFB de revendedores e nunca
+ * assina este pedido. Mudou uma delas aqui, muda lá também.
  */
 export const CLAUSULAS_PADRAO =
   `CONDIÇÕES GERAIS DE VENDA
