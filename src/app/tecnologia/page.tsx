@@ -5,10 +5,13 @@ import TecnologiaComparison from "@/components/TecnologiaComparison";
 import ARTAccordion from "@/components/ARTAccordion";
 import FichaTecnicaAccordion from "@/components/FichaTecnicaAccordion";
 import ConhecaPfb from "@/components/ConhecaPfb";
+import SolicitarManual from "@/components/SolicitarManual";
+import ScrollReveal from "@/components/ScrollReveal";
+import AnimatedStat from "@/components/AnimatedStat";
 import { getAssetOverrides, resolveAsset } from "@/lib/assets";
 
-// Arquivo novo a cada revisão do manual (cache de 1 ano nos arquivos públicos).
-const MANUAL_URL = "/documentos/manual-tecnico-instalacao-pfb-2026-10-03.pdf";
+// Manual Técnico de Instalação: sem download direto — o visitante solicita
+// pelo WhatsApp (components/SolicitarManual).
 
 export const metadata: Metadata = {
   title: "PFB Orbital — Tecnologia, Performance e Ficha Técnica | Revestimento Manaus",
@@ -71,17 +74,23 @@ export default async function TecnologiaPage() {
       {/* Hero */}
       <section className="bg-[#0B1F45] text-white py-14 lg:py-32">
         <div className="max-w-[1280px] mx-auto px-4 lg:px-16">
-          <p className="text-[#B4BBC8] text-xs tracking-[0.2em] uppercase font-semibold mb-4">
-            PFB · Painéis Flexíveis Fibra de Bambu
-          </p>
-          <h1 className="font-serif text-2xl lg:text-5xl font-normal tracking-[-0.02em] leading-tight mb-5 max-w-3xl">
-            Performance &amp; Tecnologia
-          </h1>
-          <p className="text-white/70 text-base leading-relaxed max-w-2xl">
-            A intersecção entre materiais naturais e engenharia avançada.
-            Cada dado apresentado aqui é extraído de ficha técnica
-            — não de marketing.
-          </p>
+          <ScrollReveal>
+            <p className="text-[#B4BBC8] text-xs tracking-[0.2em] uppercase font-semibold mb-4">
+              PFB · Painéis Flexíveis Fibra de Bambu
+            </p>
+          </ScrollReveal>
+          <ScrollReveal delay={120}>
+            <h1 className="font-serif text-2xl lg:text-5xl font-normal tracking-[-0.02em] leading-tight mb-5 max-w-3xl">
+              Performance &amp; Tecnologia
+            </h1>
+          </ScrollReveal>
+          <ScrollReveal delay={240}>
+            <p className="text-white/70 text-base leading-relaxed max-w-2xl">
+              A intersecção entre materiais naturais e engenharia avançada.
+              Cada dado apresentado aqui é extraído de ficha técnica
+              — não de marketing.
+            </p>
+          </ScrollReveal>
         </div>
       </section>
       {/* O PFB em resumo — primeira coisa da página, igual à home. */}
@@ -96,13 +105,15 @@ export default async function TecnologiaPage() {
               className="absolute inset-0 pointer-events-none z-10"
               style={{ background: "radial-gradient(ellipse 72% 78% at 50% 50%, transparent 42%, white 100%)" }}
             />
-            <Image
-              src={img("product-anatomy", "/images/catalogue/product-anatomy.png")}
-              alt="Anatomia da Placa PFB Orbital — seção transversal 5mm"
-              width={732}
-              height={1638}
-              className="max-h-[220px] lg:max-h-[620px] w-auto relative z-[5]"
-            />
+            <ScrollReveal direction="left" className="relative z-[5]">
+              <Image
+                src={img("product-anatomy", "/images/catalogue/product-anatomy.png")}
+                alt="Anatomia da Placa PFB Orbital — seção transversal 5mm"
+                width={732}
+                height={1638}
+                className="max-h-[220px] lg:max-h-[620px] w-auto"
+              />
+            </ScrollReveal>
           </div>
 
           {/* Right — content panel */}
@@ -121,8 +132,8 @@ export default async function TecnologiaPage() {
               </p>
               <div className="space-y-1.5 lg:space-y-3 mb-6">
                 {layers.map(({ name, desc }, i) => (
+                  <ScrollReveal key={name} direction="right" delay={i * 110}>
                   <div
-                    key={name}
                     className="bg-white border border-[#e2e2e2] p-2 lg:p-4 flex gap-2 lg:gap-4 items-start hover:border-[#2347A0] transition-colors"
                   >
                     <div className="flex-shrink-0 w-5 h-5 lg:w-7 lg:h-7 bg-[#0B1F45] text-white flex items-center justify-center text-xs font-bold">
@@ -137,9 +148,11 @@ export default async function TecnologiaPage() {
                       </p>
                     </div>
                   </div>
+                  </ScrollReveal>
                 ))}
               </div>
-              <div className="hidden lg:block p-5 bg-[#0B1F45] text-white">
+              <ScrollReveal delay={600} className="hidden lg:block">
+              <div className="p-5 bg-[#0B1F45] text-white">
                 <p className="text-[#B4BBC8] text-[10px] tracking-[0.15em] uppercase font-bold mb-2">
                   Dimensões
                 </p>
@@ -150,6 +163,7 @@ export default async function TecnologiaPage() {
                   3,48 m² por placa · 3,2 kg/m²
                 </p>
               </div>
+              </ScrollReveal>
             </div>
           </div>
         </div>
@@ -158,7 +172,7 @@ export default async function TecnologiaPage() {
       {/* Lab Specs */}
       <section className="py-10 lg:py-20 bg-[#0B1F45] text-white">
         <div className="max-w-[1280px] mx-auto px-4 lg:px-16">
-          <div className="mb-6 lg:mb-10">
+          <ScrollReveal className="mb-6 lg:mb-10">
             <p className="text-[#B4BBC8] text-xs tracking-[0.2em] uppercase font-semibold mb-2">
               Ficha técnica
             </p>
@@ -167,12 +181,13 @@ export default async function TecnologiaPage() {
             </h2>
             <ARTAccordion />
             <FichaTecnicaAccordion />
-          </div>
+          </ScrollReveal>
           <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-5 gap-3 lg:gap-6">
-            {specs.map(({ value, unit, label, note }) => (
-              <div key={label} className="border-l-2 border-[#2347A0] pl-3 lg:pl-5">
+            {specs.map(({ value, unit, label, note }, i) => (
+              <ScrollReveal key={label} delay={i * 100}>
+              <div className="border-l-2 border-[#2347A0] pl-3 lg:pl-5">
                 <p className="text-xl lg:text-4xl text-white font-normal mb-0.5">
-                  {value}
+                  <AnimatedStat value={value} />
                   {unit && (
                     <span className="text-sm lg:text-xl text-[#B4BBC8] ml-1">{unit}</span>
                   )}
@@ -186,6 +201,7 @@ export default async function TecnologiaPage() {
                   </p>
                 )}
               </div>
+              </ScrollReveal>
             ))}
           </div>
           {/* A tolerância também vive no rodapé da ficha, mas a ficha abre
@@ -196,45 +212,14 @@ export default async function TecnologiaPage() {
 
           {/* Manual técnico: fica logo abaixo da ART e dos números — é o
               documento que as condições de venda citam para a instalação. */}
-          <a
-            href={MANUAL_URL}
-            target="_blank"
-            rel="noopener noreferrer"
-            className="mt-6 lg:mt-8 flex items-center justify-between gap-4 border border-[#2347A0] px-5 py-4 hover:bg-[#2347A0]/40 transition-colors group"
-          >
-            <div className="flex items-center gap-3 min-w-0">
-              <div className="flex-shrink-0 w-8 h-8 bg-[#2347A0] flex items-center justify-center">
-                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="#36A35C" strokeWidth="2" aria-hidden="true">
-                  <path d="M14 2H6a2 2 0 00-2 2v16a2 2 0 002 2h12a2 2 0 002-2V8z" />
-                  <path d="M14 2v6h6M8 13h8M8 17h5" />
-                </svg>
-              </div>
-              <div className="min-w-0">
-                <p className="text-[#36A35C] text-[9px] tracking-[0.2em] uppercase font-bold">
-                  Orbital + Werk Engenharia
-                </p>
-                <p className="text-white text-sm font-semibold mt-0.5">
-                  Manual Técnico de Instalação
-                </p>
-                <p className="text-[#B4BBC8] text-[11px] mt-0.5">
-                  Paredes, portas, banheiros, box, curvas, forros e tetos · PDF
-                </p>
-              </div>
-            </div>
-            <span className="flex-shrink-0 inline-flex items-center gap-1.5 text-[10px] tracking-[0.12em] uppercase font-bold text-white border border-[#B4BBC8]/50 group-hover:border-white px-3 py-2 transition-colors">
-              <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" aria-hidden="true">
-                <path d="M21 15v4a2 2 0 01-2 2H5a2 2 0 01-2-2v-4M7 10l5 5 5-5M12 15V3" />
-              </svg>
-              Abrir
-            </span>
-          </a>
+          <SolicitarManual />
         </div>
       </section>
 
       {/* PFB × MDF — Water Test Photos */}
       <section className="py-10 lg:py-28 bg-[#0B1F45] text-white">
         <div className="max-w-[1280px] mx-auto px-4 lg:px-16">
-          <div className="mb-8">
+          <ScrollReveal className="mb-8">
             <p className="text-[#36A35C] text-xs tracking-[0.2em] uppercase font-semibold mb-3">
               PFB — Teste de Resistência à Água
             </p>
@@ -244,15 +229,16 @@ export default async function TecnologiaPage() {
             <p className="text-white/50 text-sm leading-relaxed max-w-xl">
               Uma placa PFB foi submersa por 48 horas em laboratório. Resultado: 0,2% de absorção — saindo intacta, sem deformação, sem descolar.
             </p>
-          </div>
+          </ScrollReveal>
 
           <div className="grid grid-cols-3 gap-2 lg:gap-4 mb-10 lg:max-w-[75%] lg:mx-auto">
             {[
               { src: img("pfb-water-0h", "/images/catalogue/pfb-mdf-0h.png"), time: "0h", label: "Início do teste", note: "Placa PFB submersa em água em condições controladas de laboratório." },
               { src: img("pfb-water-24h", "/images/catalogue/pfb-mdf-24h.png"), time: "24h", label: "24 horas de imersão", note: "O PFB mantém integridade estrutural total — sem deformação ou absorção visível." },
               { src: img("pfb-water-48h", "/images/catalogue/pfb-mdf-48h.png"), time: "48h", label: "48 horas de imersão", note: "O PFB sai intacto após 48h de imersão. 0,2% de absorção — praticamente impermeável." },
-            ].map(({ src, time, label, note }) => (
-              <div key={time} className="group flex flex-col">
+            ].map(({ src, time, label, note }, i) => (
+              <ScrollReveal key={time} delay={i * 180} className="h-full">
+              <div className="group flex flex-col h-full">
                 <div className="relative aspect-[1536/2752] overflow-hidden mb-3">
                   <Image
                     src={src}
@@ -267,20 +253,25 @@ export default async function TecnologiaPage() {
                 <p className="text-white font-semibold text-xs lg:text-sm mb-1 min-h-[2.5rem] lg:min-h-[1.5rem]">{label}</p>
                 <p className="text-white/50 text-[10px] lg:text-xs leading-relaxed">{note}</p>
               </div>
+              </ScrollReveal>
             ))}
           </div>
 
           <div className="grid grid-cols-2 gap-3">
-            <div className="bg-[#0B1F45] border border-[#2347A0] p-4 lg:p-6">
+            <ScrollReveal className="h-full">
+            <div className="h-full bg-[#0B1F45] border border-[#2347A0] p-4 lg:p-6">
               <p className="text-[#36A35C] text-[9px] lg:text-[10px] tracking-[0.15em] uppercase font-bold mb-2">Absorção · 48h imerso</p>
-              <p className="text-white text-2xl lg:text-4xl font-normal mb-1">0,2%</p>
+              <p className="text-white text-2xl lg:text-4xl font-normal mb-1"><AnimatedStat value="0,2%" /></p>
               <p className="text-white/60 text-[11px] lg:text-sm leading-snug">de inchamento — praticamente impermeável</p>
             </div>
-            <div className="bg-[#0B1F45] border border-[#2347A0] p-4 lg:p-6">
+            </ScrollReveal>
+            <ScrollReveal delay={150} className="h-full">
+            <div className="h-full bg-[#0B1F45] border border-[#2347A0] p-4 lg:p-6">
               <p className="text-[#36A35C] text-[9px] lg:text-[10px] tracking-[0.15em] uppercase font-bold mb-2">Vida útil no Amazonas</p>
-              <p className="text-white text-2xl lg:text-4xl font-normal mb-1">10+</p>
+              <p className="text-white text-2xl lg:text-4xl font-normal mb-1"><AnimatedStat value="10+" /></p>
               <p className="text-white/60 text-[11px] lg:text-sm leading-snug">anos no clima úmido de Manaus</p>
             </div>
+            </ScrollReveal>
           </div>
         </div>
       </section>
@@ -289,7 +280,7 @@ export default async function TecnologiaPage() {
       <section className="py-10 lg:py-24 bg-[#0B1F45] text-white">
         <div className="max-w-[1280px] mx-auto px-4 lg:px-16">
           <div className="grid grid-cols-1 lg:grid-cols-2 gap-12 items-center">
-            <div>
+            <ScrollReveal direction="left">
               <p className="text-[#36A35C] text-xs tracking-[0.2em] uppercase font-semibold mb-4">
                 Desenvolvido para o Amazonas
               </p>
@@ -304,7 +295,7 @@ export default async function TecnologiaPage() {
                 apenas 0,2% de umidade, não empena, não descola e mantém a
                 integridade visual e estrutural por mais de 10 anos.
               </p>
-            </div>
+            </ScrollReveal>
             <div className="grid grid-cols-2 gap-2 lg:gap-5">
               {[
                 {
@@ -345,12 +336,14 @@ export default async function TecnologiaPage() {
                     </svg>
                   ),
                 },
-              ].map(({ icon, title, desc }) => (
-                <div key={title} className="bg-[#0B1F45] p-3 lg:p-5">
+              ].map(({ icon, title, desc }, i) => (
+                <ScrollReveal key={title} delay={i * 120} className="h-full">
+                <div className="h-full bg-[#0B1F45] p-3 lg:p-5 border border-transparent hover:border-[#2347A0] transition-colors">
                   <div className="text-[#B4BBC8] mb-1 lg:mb-3">{icon}</div>
                   <p className="text-white font-semibold text-xs lg:text-sm mb-2">{title}</p>
                   <p className="text-white/55 text-[10px] lg:text-xs leading-relaxed">{desc}</p>
                 </div>
+                </ScrollReveal>
               ))}
             </div>
           </div>
@@ -360,6 +353,7 @@ export default async function TecnologiaPage() {
       {/* Comparison Table — PFB vs alternatives (accordion) */}
       <section className="py-12 lg:py-28 bg-[#F6F5F2]">
         <div className="max-w-[1280px] mx-auto px-4 lg:px-16">
+          <ScrollReveal>
           <p className="text-[#74777f] text-xs tracking-[0.2em] uppercase font-semibold mb-4">
             Dados técnicos independentes
           </p>
@@ -369,7 +363,10 @@ export default async function TecnologiaPage() {
           <p className="text-[#43474e] text-sm mb-10 max-w-2xl">
             Avaliações com base em ficha técnica e condições reais de uso no clima do Amazonas. ART de Engenheiro Civil.
           </p>
-          <TecnologiaComparison />
+          </ScrollReveal>
+          <ScrollReveal delay={150}>
+            <TecnologiaComparison />
+          </ScrollReveal>
         </div>
       </section>
 
@@ -377,7 +374,7 @@ export default async function TecnologiaPage() {
       <section className="py-10 lg:py-28 bg-[#ffffff]">
         <div className="max-w-[1280px] mx-auto px-4 lg:px-16">
           <div className="grid grid-cols-1 lg:grid-cols-2 gap-16 items-center">
-            <div>
+            <ScrollReveal direction="left">
               <p className="text-[#2347A0] text-xs tracking-[0.2em] uppercase font-semibold mb-4">
                 Impacto ambiental
               </p>
@@ -397,18 +394,20 @@ export default async function TecnologiaPage() {
                   { label: "Sem formol", desc: "Não emite VOCs. Seguro para ambientes com crianças, clínicas e hospitais." },
                   { label: "Inodoro", desc: "Zero odor de fábrica. Instalável em ambientes habitados." },
                   { label: "Substrato biodegradável", desc: "Núcleo de fibra natural ao final da vida útil." },
-                ].map(({ label, desc }) => (
-                  <div key={label} className="flex gap-4">
+                ].map(({ label, desc }, i) => (
+                  <ScrollReveal key={label} delay={150 + i * 110}>
+                  <div className="flex gap-4">
                     <div className="w-1.5 h-1.5 rounded-full bg-[#36A35C] mt-2 flex-shrink-0" />
                     <div>
                       <span className="text-[#0B1F45] font-semibold text-sm">{label} — </span>
                       <span className="text-[#43474e] text-sm">{desc}</span>
                     </div>
                   </div>
+                  </ScrollReveal>
                 ))}
               </div>
-            </div>
-            <div>
+            </ScrollReveal>
+            <ScrollReveal direction="right" delay={150}>
               <div className="relative aspect-[1674/1982] overflow-hidden">
                 <Image
                   src={img("onde-aplicar-main", "/images/catalogue/onde-aplicar-main.jpeg")}
@@ -425,7 +424,7 @@ export default async function TecnologiaPage() {
                   Bambu renovável · Sem formol · Inodoro
                 </p>
               </div>
-            </div>
+            </ScrollReveal>
           </div>
         </div>
       </section>
@@ -433,9 +432,11 @@ export default async function TecnologiaPage() {
       {/* Installation Notes */}
       <section className="py-12 lg:py-20 bg-[#0B1F45] text-white">
         <div className="max-w-[1280px] mx-auto px-4 lg:px-16">
-          <h2 className="font-serif text-white text-2xl font-normal mb-8">
-            Notas de Instalação
-          </h2>
+          <ScrollReveal>
+            <h2 className="font-serif text-white text-2xl font-normal mb-8">
+              Notas de Instalação
+            </h2>
+          </ScrollReveal>
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
             {[
               {
@@ -454,8 +455,9 @@ export default async function TecnologiaPage() {
                 title: "Proteção de cantos",
                 desc: "Proteger arestas e cantos vivos com perfil acabado. Evitar impacto direto nos bordos da placa.",
               },
-            ].map(({ title, desc }) => (
-              <div key={title} className="border-l border-[#333640] pl-5">
+            ].map(({ title, desc }, i) => (
+              <ScrollReveal key={title} delay={i * 120}>
+              <div className="border-l border-[#333640] pl-5 hover:border-[#36A35C] transition-colors">
                 <p className="text-white font-semibold text-sm mb-2">
                   {title}
                 </p>
@@ -463,13 +465,12 @@ export default async function TecnologiaPage() {
                   {desc}
                 </p>
               </div>
+              </ScrollReveal>
             ))}
           </div>
           <p className="text-[#9c9faa] text-sm italic mt-8">
             Somos fornecedores diretos — não fazemos instalação. O passo a passo completo está no{" "}
-            <a href={MANUAL_URL} target="_blank" rel="noopener noreferrer" className="text-white underline not-italic">
-              Manual Técnico de Instalação
-            </a>
+            <SolicitarManual variant="link" />
             .
           </p>
         </div>
@@ -477,7 +478,7 @@ export default async function TecnologiaPage() {
 
       {/* CTA */}
       <section className="py-12 lg:py-16 bg-[#F6F5F2] border-t border-[#eeeeee] text-center">
-        <div className="max-w-[600px] mx-auto px-4 lg:px-8">
+        <ScrollReveal className="max-w-[600px] mx-auto px-4 lg:px-8">
           <h3 className="font-serif text-[#0B1F45] text-2xl font-normal mb-4">
             Pronto para especificar?
           </h3>
@@ -501,7 +502,7 @@ export default async function TecnologiaPage() {
               Ver Catálogo
             </Link>
           </div>
-        </div>
+        </ScrollReveal>
       </section>
     </div>
   );

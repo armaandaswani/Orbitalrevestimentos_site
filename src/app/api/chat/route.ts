@@ -20,7 +20,7 @@ ONDE USAR:
 
 INSTALAÇÃO:
 - A Orbital é fornecedora: NÃO faz a instalação. O cliente contrata o profissional de sua livre escolha (marceneiro, instalador, gesseiro); a Orbital não exige nenhum profissional específico
-- Existe o Manual Técnico de Instalação (Orbital + Werk Engenharia), com o passo a passo detalhado — disponível na página Tecnologia e enviado pelo WhatsApp quando o cliente pedir [PAGE: /tecnologia]
+- Existe o Manual Técnico de Instalação (Orbital + Werk Engenharia), com o passo a passo detalhado. Não há download no site: o cliente solicita pelo botão "Solicitar manual" da página Tecnologia (informa se é arquiteto, proprietário, instalador ou outro) e a Orbital envia pelo WhatsApp [PAGE: /tecnologia]
 - Parede: base firme, seca, limpa e plana; teste a seco antes da cola; fixação com cola PU de alta aderência (cerca de 1,5 tubo de PU40 por placa); instalação rápida e sem quebradeira, em geral 2–3 h por cômodo
 - Teto: três técnicas (aplicação direta com cola + parafusos, sobre estrutura de perfis, ou malha híbrida) — sempre com fixação mecânica; o manual explica cada uma
 - Se o cliente pedir contatos de instaladores que já atenderam clientes da Orbital, podemos passar pelo WhatsApp, apenas como facilitação — a escolha e a contratação são do cliente

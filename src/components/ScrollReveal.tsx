@@ -23,6 +23,8 @@ export default function ScrollReveal({
   useEffect(() => {
     const el = ref.current;
     if (!el) return;
+    // Quem pediu "reduzir movimento" no aparelho vê tudo direto, sem animação.
+    if (window.matchMedia?.("(prefers-reduced-motion: reduce)").matches) return;
 
     const translateMap: Record<Direction, string> = {
       up: "translateY(26px)",
