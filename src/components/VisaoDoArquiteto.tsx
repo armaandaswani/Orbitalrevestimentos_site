@@ -1,9 +1,9 @@
-import VideoThumb from "@/components/VideoThumb";
+import VideoArquitetoCard from "@/components/VideoArquitetoCard";
 import { PLAYLIST_URL, videosVisaoDoArquiteto } from "@/lib/visao-arquiteto";
 
 /**
  * Home: "Validado por arquitetos de Manaus" + a série A Visão do Arquiteto.
- * Cada cartão abre o vídeo no YouTube; o botão abre a playlist completa.
+ * Cada cartão toca o vídeo no próprio site; o botão abre a playlist completa no YouTube.
  */
 export default async function VisaoDoArquiteto() {
   const videos = (await videosVisaoDoArquiteto()).slice(0, 3);
@@ -36,28 +36,7 @@ export default async function VisaoDoArquiteto() {
 
         <div className={`grid gap-3 sm:gap-4 ${videos.length >= 3 ? "grid-cols-3" : "grid-cols-2"} max-w-xl lg:max-w-none mx-auto w-full`}>
           {videos.map((v) => (
-            <a
-              key={v.id}
-              href={`https://www.youtube.com/shorts/${v.id}`}
-              target="_blank"
-              rel="noopener noreferrer"
-              className="group block"
-            >
-              <div className="relative overflow-hidden bg-[#0B1F45]" style={{ aspectRatio: "9 / 16" }}>
-                <VideoThumb hd url={`https://www.youtube.com/shorts/${v.id}`}
-                  className="absolute inset-0 w-full h-full object-cover group-hover:scale-[1.03] transition-transform duration-500" />
-                <span className="absolute inset-0 bg-gradient-to-t from-black/70 via-black/0 to-black/0" />
-                <span className="absolute inset-0 flex items-center justify-center">
-                  <span className="w-12 h-12 sm:w-14 sm:h-14 rounded-full bg-black/45 border border-white/60 backdrop-blur-sm flex items-center justify-center group-hover:bg-[#36A35C] group-hover:border-[#36A35C] transition-colors">
-                    <svg width="20" height="20" viewBox="0 0 24 24" fill="white" aria-hidden><path d="M8 5v14l11-7z" /></svg>
-                  </span>
-                </span>
-                <span className="absolute left-0 right-0 bottom-0 p-3 sm:p-4">
-                  <span className="block font-serif text-white text-sm sm:text-lg leading-tight">{v.nome}</span>
-                  {v.escritorio && <span className="block text-white/70 text-[10px] sm:text-xs mt-0.5">{v.escritorio}</span>}
-                </span>
-              </div>
-            </a>
+            <VideoArquitetoCard key={v.id} id={v.id} nome={v.nome} escritorio={v.escritorio} />
           ))}
         </div>
       </div>
