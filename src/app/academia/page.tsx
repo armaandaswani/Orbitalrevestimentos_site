@@ -5,6 +5,7 @@ import ScrollReveal from "@/components/ScrollReveal";
 import { supabaseAdmin } from "@/lib/supabase";
 import { statusTurma1 } from "@/lib/academia-status";
 import { STATUS_PADRAO, vagasTxt, type StatusTurma } from "@/lib/academia-turmas";
+import VideoShort from "@/components/VideoShort";
 import ListaEsperaForm from "./ListaEsperaForm";
 import AntesDepois from "./AntesDepois";
 import CtaFixo from "./CtaFixo";
@@ -318,6 +319,38 @@ export default async function AcademiaPage() {
               </li>
             ))}
           </ol>
+        </div>
+      </section>
+
+      {/* ── Quem instala, aprova: vídeo à direita ── */}
+      <section className="bg-white text-[#0D1830] py-20 lg:py-32">
+        <div className="max-w-[1280px] mx-auto px-4 lg:px-16 grid grid-cols-1 lg:grid-cols-[1fr_360px] gap-12 lg:gap-24 items-center">
+          <ScrollReveal direction="up">
+            <p className="text-[11px] lg:text-xs tracking-[0.22em] uppercase font-bold mb-5 text-[#1F7A44]">
+              Opinião de instalador
+            </p>
+            <h2 className={`${H2} mb-10 lg:mb-12`}>
+              Serviço rápido.
+              <br />
+              <span className="text-[#1F7A44]">Mais obras no mês.</span>
+            </h2>
+            <ul className="grid grid-cols-2 gap-2 lg:gap-3 mb-10 lg:mb-12 max-w-xl">
+              {["Fácil de aplicar", "Leve de manusear", "Simples de cortar", "Acabamento limpo"].map((t) => (
+                <li key={t} className="border border-[#0D1830]/15 px-4 py-4 lg:px-5">
+                  <span className={`${D} block text-xl lg:text-2xl leading-none font-bold uppercase`}>{t}</span>
+                </li>
+              ))}
+            </ul>
+            <Cta texto={ctaTexto} tom="verde" />
+          </ScrollReveal>
+          <ScrollReveal direction="up" delay={120}>
+            <VideoShort
+              id="hpgoCY8L2PI"
+              poster="/images/videos/opiniao-instalador-adam-werk.jpg"
+              titulo="Opinião de instalador"
+              className="max-w-[320px] lg:max-w-none mx-auto"
+            />
+          </ScrollReveal>
         </div>
       </section>
 
