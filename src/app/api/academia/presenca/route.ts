@@ -5,7 +5,7 @@ import { tokenPresencaValido } from "@/lib/academia-status";
 
 /**
  * POST /api/academia/presenca — resposta ao pedido de confirmação de presença
- * do workshop, pelo link pessoal enviado no WhatsApp/e-mail.
+ * da formação, pelo link pessoal enviado no WhatsApp/e-mail.
  *
  * Body: { i: id da inscrição, t: assinatura do link, resposta: "sim" | "nao" }
  * "nao" libera a vaga na 1ª turma. A pessoa pode mudar a resposta pelo mesmo

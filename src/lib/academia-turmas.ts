@@ -1,5 +1,5 @@
 /**
- * Workshop da Academia Orbital — regras das turmas (decisões do dono, out/2026).
+ * Formação da Academia Orbital — regras das turmas (decisões do dono, out/2026).
  *
  * - 1ª turma: gratuita (só a 1ª edição), 20 profissionais. O número NUNCA
  *   aparece no site nem nas mensagens: o público lê "vagas limitadíssimas".

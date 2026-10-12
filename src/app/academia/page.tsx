@@ -12,7 +12,7 @@ import AntesDepois from "./AntesDepois";
 import CtaFixo from "./CtaFixo";
 
 /**
- * Academia Orbital — 1ª edição do workshop de instalação do PFB.
+ * Academia Orbital — 1ª edição da formação em instalação do PFB.
  *
  * Campanha dentro da marca: tipografia condensada nos títulos, Verde Bambu
  * (#36A35C, com texto azul-tinta) na conversão.
@@ -23,7 +23,7 @@ import CtaFixo from "./CtaFixo";
  *
  * O formulário é o centro da página e fica no topo; todo botão volta para ele.
  *
- * Workshop (decisões do dono, out/2026 — regras em src/lib/academia-turmas.ts):
+ * Formação (chamar sempre de "formação", não "workshop" — decisão do dono; decisões do dono, out/2026 — regras em src/lib/academia-turmas.ts):
  * - 1ª turma gratuita (só ela); o número de vagas NUNCA aparece — "vagas
  *   limitadíssimas". Mostra quantos estão pré-inscritos e, perto do limite,
  *   a contagem regressiva das vagas.
@@ -43,12 +43,12 @@ const D = display.className;
 const URL_PAGINA = "https://orbitalrevestimentos.com.br/academia";
 
 export const metadata: Metadata = {
-  title: "Academia Orbital — Workshop de instalação do PFB",
+  title: "Academia Orbital — Formação em instalação do PFB",
   description:
-    "Workshop prático de instalação do Painel Flexível Fibra de Bambu (PFB), do corte ao acabamento. 1ª turma gratuita, vagas limitadíssimas. Saia com certificado e compre PFB direto com a Orbital.",
+    "Formação prática em instalação do Painel Flexível Fibra de Bambu (PFB), do corte ao acabamento. 1ª turma gratuita, vagas limitadíssimas. Saia com certificado e compre PFB direto com a Orbital.",
   alternates: { canonical: URL_PAGINA },
   openGraph: {
-    title: "Academia Orbital — Workshop de instalação do PFB",
+    title: "Academia Orbital — Formação em instalação do PFB",
     description: "1ª turma gratuita, vagas limitadíssimas. Saia com certificado e um novo serviço no portfólio.",
     url: URL_PAGINA,
   },
@@ -101,7 +101,7 @@ const APLICACOES = [
 
 const NIVEIS = ["Preparar", "Cortar", "Fixar", "Acabar", "Aplicar"];
 
-const ETAPAS_CERT = ["Workshop", "Conclusão", "Certificado", "Compra direta"];
+const ETAPAS_CERT = ["Formação", "Conclusão", "Certificado", "Compra direta"];
 
 const breadcrumbSchema = {
   "@context": "https://schema.org",
@@ -187,7 +187,7 @@ export default async function AcademiaPage() {
                 Academia Orbital
               </span>
               <span className="border border-white/25 text-white/70 text-[10px] tracking-[0.18em] uppercase font-bold px-2 py-0.5">
-                {fechada ? "1ª turma preenchida" : "Workshop · 1ª turma gratuita"}
+                {fechada ? "1ª turma preenchida" : "Formação · 1ª turma gratuita"}
               </span>
             </div>
             <h1 className={`${D} text-[40px] leading-[0.98] sm:text-6xl lg:text-[64px] xl:text-[70px] lg:leading-[0.95] font-extrabold uppercase mb-6`}>
@@ -196,7 +196,7 @@ export default async function AcademiaPage() {
               <span style={{ color: LIMA }}>Ganhe um novo serviço.</span>
             </h1>
             <p className="text-white/70 text-base lg:text-lg leading-relaxed max-w-md">
-              Workshop prático do Painel Flexível Fibra de Bambu (PFB), do corte ao acabamento. Você sai com
+              Formação prática no Painel Flexível Fibra de Bambu (PFB), do corte ao acabamento. Você sai com
               certificado e compra PFB direto com a Orbital.
             </p>
           </div>
@@ -364,7 +364,7 @@ export default async function AcademiaPage() {
         <div className="max-w-[1280px] mx-auto px-4 lg:px-16">
           <ScrollReveal direction="up">
             <p className="text-[11px] lg:text-xs tracking-[0.22em] uppercase font-bold mb-5" style={{ color: LIMA }}>
-              Não é só um workshop
+              Não é só uma formação
             </p>
             <h2 className={`${H2} mb-12 lg:mb-16`}>
               Saia

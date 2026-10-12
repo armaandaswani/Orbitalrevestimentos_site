@@ -35,7 +35,7 @@ export default function RespostaPresenca({
   return (
     <div>
       <h1 className="text-3xl sm:text-4xl font-extrabold uppercase tracking-tight leading-tight mb-4">
-        {nome ? `${nome}, você vai ao workshop?` : "Você vai ao workshop?"}
+        {nome ? `${nome}, você vai à formação?` : "Você vai à formação?"}
       </h1>
 
       {resposta === "sim" && (

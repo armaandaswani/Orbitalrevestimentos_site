@@ -27,7 +27,7 @@ const VAZIO = {
 };
 
 /**
- * Pré-inscrição no workshop. `turma` é o que a página mostra (lida com até
+ * Pré-inscrição na formação. `turma` é o que a página mostra (lida com até
  * 1 min de atraso); quem decide é a API, e a tela de sucesso segue a resposta.
  */
 export default function ListaEsperaForm({ turma }: { turma: 1 | 2 }) {
@@ -121,7 +121,7 @@ export default function ListaEsperaForm({ turma }: { turma: 1 | 2 }) {
             <p className="text-[#43474e] text-base leading-relaxed mb-2">
               {turmaFinal === 2
                 ? "A 1ª turma está preenchida: você entrou na lista de espera da 2ª turma."
-                : "Você está na 1ª turma do workshop da Academia Orbital."}
+                : "Você está na 1ª turma da formação da Academia Orbital."}
             </p>
             <p className="text-[#43474e] text-base leading-relaxed mb-8">
               {canais ? `Enviamos a confirmação ${canais}. ` : ""}

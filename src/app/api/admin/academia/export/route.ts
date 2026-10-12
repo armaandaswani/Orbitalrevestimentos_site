@@ -4,7 +4,7 @@ import { supabaseAdmin } from "@/lib/supabase";
 import { ATUACOES, EXPERIENCIAS, FOCOS, digitos, rotulo, type Inscricao } from "@/lib/academia-waitlist";
 
 /**
- * Exporta as inscrições do workshop (1ª turma e fila da 2ª) em CSV pronto para o Excel em português.
+ * Exporta as inscrições da formação (1ª turma e fila da 2ª) em CSV pronto para o Excel em português.
  *
  * Três cuidados que o export de clientes não tem:
  * - separador ";" — com "," o Excel pt-BR abre tudo numa coluna só;
@@ -59,7 +59,7 @@ export async function GET(req: NextRequest) {
   return new NextResponse(csv, {
     headers: {
       "Content-Type": "text/csv; charset=utf-8",
-      "Content-Disposition": `attachment; filename="academia-orbital-workshop-${hoje}.csv"`,
+      "Content-Disposition": `attachment; filename="academia-orbital-formacao-${hoje}.csv"`,
       "Cache-Control": "private, no-store",
     },
   });

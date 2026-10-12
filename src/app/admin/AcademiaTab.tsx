@@ -13,7 +13,7 @@ import {
 import { FOLGA_DESISTENCIAS, LIMITE_TURMA_1, VAGAS_TURMA_1 } from "@/lib/academia-turmas";
 
 /**
- * Workshop da Academia Orbital (inscrições vindas de /academia).
+ * Formação da Academia Orbital (inscrições vindas de /academia).
  *
  * 1ª turma: gratuita, 20 vagas + folga para desistências (regras em
  * src/lib/academia-turmas.ts). Lotou → as inscrições novas vão para a fila
@@ -340,7 +340,7 @@ export default function AcademiaTab() {
   return (
     <div>
       <PageHeader
-        title="Academia Orbital · Workshop"
+        title="Academia Orbital · Formação"
         subtitle={`Pré-inscrições pela página /academia. 1ª turma gratuita: ${VAGAS_TURMA_1} vagas + ${FOLGA_DESISTENCIAS} de folga para desistências (o site nunca mostra o número).`}
         actions={
           <>

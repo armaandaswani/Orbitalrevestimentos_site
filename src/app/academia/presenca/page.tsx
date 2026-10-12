@@ -4,7 +4,7 @@ import { tokenPresencaValido } from "@/lib/academia-status";
 import RespostaPresenca from "./RespostaPresenca";
 
 /**
- * Link pessoal de confirmação de presença do workshop (vai no WhatsApp/e-mail
+ * Link pessoal de confirmação de presença da formação (vai no WhatsApp/e-mail
  * uma semana antes). Sem login: a assinatura do link identifica a inscrição.
  */
 
@@ -42,7 +42,7 @@ export default async function PresencaPage({ searchParams }: { searchParams: Par
     <div className="pt-20 min-h-[80vh] bg-[#0B1F45] text-white">
       <div className="max-w-lg mx-auto px-4 py-14 lg:py-24">
         <p className="text-[11px] tracking-[0.22em] uppercase font-bold text-[#36A35C] mb-4">
-          Academia Orbital · Workshop
+          Academia Orbital · Formação
         </p>
         {inscricao ? (
           <RespostaPresenca id={id} token={token} nome={inscricao.nome} inicial={inscricao.presenca} />

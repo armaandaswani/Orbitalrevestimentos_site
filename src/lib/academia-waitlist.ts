@@ -1,5 +1,5 @@
 /**
- * Inscrições no workshop da Academia Orbital — opções e rótulos.
+ * Inscrições na formação da Academia Orbital — opções e rótulos.
  *
  * Fonte única usada pelo formulário público, pela API que grava e pela tela
  * do admin. Os `value` precisam bater com os CHECK da migration 056: mudou um
@@ -90,7 +90,7 @@ export const LANCAMENTO_ASSUNTO_PADRAO = "A 2ª turma da Academia Orbital abriu"
 export const LANCAMENTO_TEXTO_PADRAO = [
   "Olá, {nome}! 🎉",
   "",
-  "A *2ª turma do Workshop de Instalação do PFB* da Academia Orbital abriu. Como você está na lista, está recebendo o aviso primeiro.",
+  "A *2ª turma da Formação em Instalação do PFB* da Academia Orbital abriu. Como você está na lista, está recebendo o aviso primeiro.",
   "",
   `Veja como participar: ${URL_ACADEMIA}`,
   "",
@@ -102,11 +102,11 @@ export const LANCAMENTO_TEXTO_PADRAO = [
  * O admin troca os [colchetes] pela data, horário e local (o envio fica
  * bloqueado enquanto sobrar colchete). {link} vira o link pessoal Vou/Não vou.
  */
-export const PRESENCA_ASSUNTO_PADRAO = "Confirme sua presença — Workshop Academia Orbital";
+export const PRESENCA_ASSUNTO_PADRAO = "Confirme sua presença — Formação Academia Orbital";
 export const PRESENCA_TEXTO_PADRAO = [
   "Olá, {nome}! 👋",
   "",
-  "O *Workshop de Instalação do PFB* (Painel Flexível Fibra de Bambu) da Academia Orbital está chegando:",
+  "A *Formação em Instalação do PFB* (Painel Flexível Fibra de Bambu) da Academia Orbital está chegando:",
   "",
   "📅 [data]",
   "🕖 [horário]",

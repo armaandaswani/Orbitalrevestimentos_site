@@ -8,7 +8,7 @@ import { linkPresenca } from "@/lib/academia-status";
 
 /**
  * POST /api/admin/academia/presenca — pedido de confirmação de presença para
- * a 1ª turma do workshop (uma semana antes), por WhatsApp + e-mail, cada um
+ * a 1ª turma da formação (uma semana antes), por WhatsApp + e-mail, cada um
  * com o seu link pessoal Vou/Não vou.
  *
  * Body: { texto, assunto, teste?: boolean }

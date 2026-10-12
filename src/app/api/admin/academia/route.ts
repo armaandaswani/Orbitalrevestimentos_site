@@ -4,7 +4,7 @@ import { isAdminRequest } from "@/lib/admin-auth";
 import { supabaseAdmin } from "@/lib/supabase";
 import { isMissingColumn, isMissingTable } from "@/lib/db-compat";
 
-/** Inscritos no workshop da Academia Orbital (1ª turma e fila da 2ª), mais recentes primeiro. */
+/** Inscritos na formação da Academia Orbital (1ª turma e fila da 2ª), mais recentes primeiro. */
 export async function GET(req: NextRequest) {
   if (!isAdminRequest(req)) return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
 

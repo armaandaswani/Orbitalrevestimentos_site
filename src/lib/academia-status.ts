@@ -1,5 +1,5 @@
 /**
- * Workshop da Academia Orbital — leitura das vagas no banco e link pessoal de
+ * Formação da Academia Orbital — leitura das vagas no banco e link pessoal de
  * confirmação de presença. Só servidor.
  */
 

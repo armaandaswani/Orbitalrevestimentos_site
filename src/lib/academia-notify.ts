@@ -1,5 +1,5 @@
 /**
- * Avisos do workshop da Academia Orbital: confirmação para quem se inscreve,
+ * Avisos da formação da Academia Orbital: confirmação para quem se inscreve,
  * alerta para a Orbital e as mensagens disparadas pelo admin (aviso geral e
  * pedido de confirmação de presença).
  *
@@ -98,7 +98,7 @@ export function mensagemConfirmacao(nome: string, temEmail: boolean, turma: Turm
     return [
       `Olá${n ? `, ${n}` : ""}! ✅`,
       "",
-      "A 1ª turma do *Workshop de Instalação do PFB* (Painel Flexível Fibra de Bambu) da Academia Orbital está preenchida — e você entrou na *lista de espera da 2ª turma*.",
+      "A 1ª turma da *Formação em Instalação do PFB* (Painel Flexível Fibra de Bambu) da Academia Orbital está preenchida — e você entrou na *lista de espera da 2ª turma*.",
       "",
       `Se abrir vaga na 1ª turma por desistência, chamamos pela ordem da lista, ${canais}. E quando a 2ª turma abrir, você é avisado primeiro.`,
       "",
@@ -108,7 +108,7 @@ export function mensagemConfirmacao(nome: string, temEmail: boolean, turma: Turm
   return [
     `Olá${n ? `, ${n}` : ""}! ✅`,
     "",
-    "Sua pré-inscrição na *1ª turma do Workshop de Instalação do PFB* (Painel Flexível Fibra de Bambu) da Academia Orbital está confirmada.",
+    "Sua pré-inscrição na *1ª turma da Formação em Instalação do PFB* (Painel Flexível Fibra de Bambu) da Academia Orbital está confirmada.",
     "",
     "Esta 1ª turma é gratuita e tem vagas limitadíssimas. Quem conclui sai com certificado e pode comprar PFB direto com a Orbital.",
     "",
@@ -123,7 +123,7 @@ export async function enviarConfirmacao(p: InscritoAviso, turma: Turma): Promise
   const texto = mensagemConfirmacao(p.name, !!p.email, turma);
   const [assunto, titulo] = turma === 2
     ? ["Lista de espera da 2ª turma — Academia Orbital", "Você está na lista da 2ª turma"]
-    : ["Pré-inscrição confirmada — Workshop Academia Orbital", "Pré-inscrição confirmada"];
+    : ["Pré-inscrição confirmada — Formação Academia Orbital", "Pré-inscrição confirmada"];
   const [whatsapp, email] = await Promise.all([
     enviarWhats(p.phone, texto),
     p.email ? enviarEmail(p.email, assunto, emailHtml(titulo, textoParaHtml(texto))) : Promise.resolve(false),

@@ -622,7 +622,7 @@ export default function Home() {
         </div>
       </section>
 
-      {/* Academia Orbital — chamada curta para o workshop (1ª turma gratuita).
+      {/* Academia Orbital — chamada curta para a formação (1ª turma gratuita).
           Nada de número de vagas nem data: a página /academia mostra a situação. */}
       <section className="py-10 lg:py-16 bg-[#F6F5F2] border-t border-[#eeeeee]">
         <div className="max-w-[1280px] mx-auto px-4 lg:px-16">
@@ -634,14 +634,14 @@ export default function Home() {
                     Academia Orbital
                   </p>
                   <span className="border border-[#c4c6cf] text-[#74777f] text-[9px] tracking-[0.18em] uppercase font-bold px-2 py-0.5">
-                    Workshop · 1ª turma gratuita
+                    Formação · 1ª turma gratuita
                   </span>
                 </div>
                 <h2 className="font-serif text-[#0B1F45] text-2xl lg:text-4xl font-normal leading-tight mb-3">
-                  Workshop de instalação do PFB, no padrão Orbital.
+                  Formação em instalação do PFB, no padrão Orbital.
                 </h2>
                 <p className="text-[#43474e] text-sm lg:text-base leading-relaxed">
-                  Workshop prático para aplicadores, do preparo ao acabamento. Vagas limitadíssimas: saia com
+                  Formação prática para aplicadores, do preparo ao acabamento. Vagas limitadíssimas: saia com
                   certificado e compre PFB direto com a Orbital.
                 </p>
               </div>
@@ -656,7 +656,7 @@ export default function Home() {
                   href="/academia"
                   className="w-full sm:w-auto inline-flex items-center justify-center whitespace-nowrap border border-[#c4c6cf] text-[#0B1F45] text-xs tracking-[0.12em] uppercase font-bold px-8 py-4 hover:border-[#0B1F45] transition-colors"
                 >
-                  Conhecer o workshop
+                  Conhecer a formação
                 </Link>
               </div>
             </div>

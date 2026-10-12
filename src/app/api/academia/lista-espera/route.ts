@@ -8,7 +8,7 @@ import { isMissingColumn, isMissingTable } from "@/lib/db-compat";
 import { ATUACOES, EXPERIENCIAS, FOCOS, digitos, valido } from "@/lib/academia-waitlist";
 
 /**
- * Pré-inscrição no workshop da Academia Orbital.
+ * Pré-inscrição na formação da Academia Orbital.
  *
  * Toda inscrição ocupa vaga na 1ª turma até ela lotar (regras em
  * src/lib/academia-turmas.ts); depois, entra na lista de espera da 2ª turma.
