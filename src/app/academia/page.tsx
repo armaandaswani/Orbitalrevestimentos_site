@@ -6,6 +6,7 @@ import { supabaseAdmin } from "@/lib/supabase";
 import { statusTurma1 } from "@/lib/academia-status";
 import { STATUS_PADRAO, vagasTxt, type StatusTurma } from "@/lib/academia-turmas";
 import VideoShort from "@/components/VideoShort";
+import { DiferenciaisPfb } from "@/components/ConhecaPfb";
 import ListaEsperaForm from "./ListaEsperaForm";
 import AntesDepois from "./AntesDepois";
 import CtaFixo from "./CtaFixo";
@@ -264,6 +265,9 @@ export default async function AcademiaPage() {
           </p>
         </ScrollReveal>
       </section>
+
+      {/* ── O produto: os seis diferenciais, versão curta ── */}
+      <DiferenciaisPfb tituloClassName={`${D} text-[28px] leading-none sm:text-4xl lg:text-[44px] font-bold uppercase`} />
 
       {/* ── Onde aplica: foto e uma palavra ── */}
       <section className="bg-white text-[#0D1830] py-20 lg:py-32">
