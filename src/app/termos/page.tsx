@@ -78,8 +78,7 @@ const secoes: SecaoLegal[] = [
         </p>
         <p>
           Nas compras feitas diretamente com a Orbital, as condições de cada venda, como valores, pagamento,
-          prazo e entrega, constam no orçamento e no pedido de venda, que prevalecem sobre as informações gerais
-          do site.
+          prazo e entrega, constam no pedido de venda, que prevalece sobre as informações gerais do site.
         </p>
         <p>
           Nas compras feitas com terceiros, as condições comerciais (preço, pagamento, prazo, entrega, troca e
