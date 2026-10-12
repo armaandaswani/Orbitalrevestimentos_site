@@ -622,8 +622,8 @@ export default function Home() {
         </div>
       </section>
 
-      {/* Academia Orbital — chamada curta. O curso ainda está em desenvolvimento:
-          aqui só se apresenta e leva à lista de espera. Nada de preço ou data. */}
+      {/* Academia Orbital — chamada curta para o workshop (1ª turma gratuita).
+          Nada de número de vagas nem data: a página /academia mostra a situação. */}
       <section className="py-10 lg:py-16 bg-[#F6F5F2] border-t border-[#eeeeee]">
         <div className="max-w-[1280px] mx-auto px-4 lg:px-16">
           <ScrollReveal direction="up">
@@ -634,15 +634,15 @@ export default function Home() {
                     Academia Orbital
                   </p>
                   <span className="border border-[#c4c6cf] text-[#74777f] text-[9px] tracking-[0.18em] uppercase font-bold px-2 py-0.5">
-                    Em desenvolvimento
+                    Workshop · 1ª turma gratuita
                   </span>
                 </div>
                 <h2 className="font-serif text-[#0B1F45] text-2xl lg:text-4xl font-normal leading-tight mb-3">
-                  Capacitação técnica para instalar PFB no padrão Orbital.
+                  Workshop de instalação do PFB, no padrão Orbital.
                 </h2>
                 <p className="text-[#43474e] text-sm lg:text-base leading-relaxed">
-                  Treinamento técnico para aplicadores, do preparo ao acabamento, para formar Instaladores
-                  Certificados Orbital. Entre na lista de espera e saiba primeiro quando abrir.
+                  Workshop prático para aplicadores, do preparo ao acabamento. Vagas limitadíssimas: saia com
+                  certificado e compre PFB direto com a Orbital.
                 </p>
               </div>
               <div className="flex flex-col sm:flex-row lg:flex-col gap-3 flex-shrink-0">
@@ -650,13 +650,13 @@ export default function Home() {
                   href="/academia#lista-de-espera"
                   className="w-full sm:w-auto inline-flex items-center justify-center whitespace-nowrap bg-[#0B1F45] text-white text-xs tracking-[0.12em] uppercase font-bold px-8 py-4 hover:bg-[#2347A0] transition-colors"
                 >
-                  Entrar na lista de espera
+                  Quero participar
                 </Link>
                 <Link
                   href="/academia"
                   className="w-full sm:w-auto inline-flex items-center justify-center whitespace-nowrap border border-[#c4c6cf] text-[#0B1F45] text-xs tracking-[0.12em] uppercase font-bold px-8 py-4 hover:border-[#0B1F45] transition-colors"
                 >
-                  Conhecer a Academia
+                  Conhecer o workshop
                 </Link>
               </div>
             </div>

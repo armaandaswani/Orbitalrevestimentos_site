@@ -27,7 +27,7 @@ const PAGE_LABELS: Record<string, string> = {
   "/tecnologia":   "Tecnologia e Manual",
   "/visualizador": "Simular no meu ambiente",
   "/parcerias":    "Programa de Parcerias",
-  "/academia":     "Lista de espera da Academia",
+  "/academia":     "Workshop da Academia",
   "/contato":      "Falar com um consultor",
 };
 

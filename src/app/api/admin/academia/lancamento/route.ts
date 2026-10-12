@@ -6,10 +6,11 @@ import { smclickConfigured } from "@/lib/smclick";
 import { enviarLancamento, enviarLancamentoTeste } from "@/lib/academia-notify";
 
 /**
- * POST /api/admin/academia/lancamento — aviso de lançamento para a lista de
- * espera (WhatsApp + e-mail).
+ * POST /api/admin/academia/lancamento — aviso geral para os inscritos
+ * (WhatsApp + e-mail).
  *
- * Body: { texto, assunto, teste?: boolean }
+ * Body: { texto, assunto, teste?: boolean, turma?: 1 | 2 }
+ *   turma       → só para a 1ª turma ou só para a fila da 2ª (sem: todos).
  *   teste: true → manda só para o WhatsApp e o e-mail da Orbital.
  *   sem teste   → manda para um LOTE de quem ainda não foi avisado e devolve
  *                 quantos faltam; a tela chama de novo até zerar. Lotes curtos
@@ -24,7 +25,8 @@ const LOTE = 15;
 export async function POST(req: NextRequest) {
   if (!isAdminRequest(req)) return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
 
-  const body = (await req.json().catch(() => null)) as { texto?: unknown; assunto?: unknown; teste?: unknown } | null;
+  const body = (await req.json().catch(() => null)) as { texto?: unknown; assunto?: unknown; teste?: unknown; turma?: unknown } | null;
+  const turma = body?.turma === 1 || body?.turma === 2 ? body.turma : null;
   const texto = typeof body?.texto === "string" ? body.texto.trim() : "";
   const assunto = typeof body?.assunto === "string" && body.assunto.trim() ? body.assunto.trim() : "Academia Orbital";
   if (texto.length < 10) return NextResponse.json({ error: "Escreva a mensagem do aviso." }, { status: 400 });
@@ -35,16 +37,18 @@ export async function POST(req: NextRequest) {
   }
 
   const db = supabaseAdmin();
-  const { data: lote, error } = await db
+  let consulta = db
     .from("academy_waitlist")
     .select("id, name, phone, email")
-    .is("launch_notified_at", null)
+    .is("launch_notified_at", null);
+  if (turma) consulta = consulta.eq("turma", turma);
+  const { data: lote, error } = await consulta
     .order("created_at", { ascending: true })
     .limit(LOTE);
 
   if (error) {
     if (isMissingTable(error) || isMissingColumn(error)) {
-      return NextResponse.json({ error: "Rode a migration 058 no Supabase antes de enviar o aviso." }, { status: 503 });
+      return NextResponse.json({ error: `Rode a migration ${turma ? "065" : "058"} no Supabase antes de enviar o aviso.` }, { status: 503 });
     }
     return NextResponse.json({ error: error.message }, { status: 500 });
   }
@@ -65,10 +69,12 @@ export async function POST(req: NextRequest) {
     if (Object.keys(marcas).length) await db.from("academy_waitlist").update(marcas).eq("id", p.id);
   }
 
-  const { count } = await db
+  let restantes = db
     .from("academy_waitlist")
     .select("id", { count: "exact", head: true })
     .is("launch_notified_at", null);
+  if (turma) restantes = restantes.eq("turma", turma);
+  const { count } = await restantes;
 
   return NextResponse.json({ processados: lote?.length ?? 0, whatsapp, email, semEntrega, faltam: count ?? 0 });
 }

@@ -5,10 +5,10 @@ import { useEffect, useState } from "react";
 /**
  * Botão fixo no rodapé da tela, só no celular.
  * Aparece depois que o topo sai da tela e some quando o formulário aparece —
- * não faz sentido chamar para a lista com a lista já na frente da pessoa.
+ * não faz sentido chamar para o formulário com ele já na frente da pessoa.
  * Fica à esquerda do botão do chat (fixed bottom-6 right-6), na mesma altura.
  */
-export default function CtaFixo() {
+export default function CtaFixo({ texto }: { texto: string }) {
   const [topoVisivel, setTopoVisivel] = useState(true);
   const [formVisivel, setFormVisivel] = useState(false);
 
@@ -37,7 +37,7 @@ export default function CtaFixo() {
         mostrar ? "translate-y-0 opacity-100" : "translate-y-24 opacity-0 pointer-events-none"
       }`}
     >
-      Entrar na lista <span aria-hidden>→</span>
+      {texto} <span aria-hidden>→</span>
     </a>
   );
 }

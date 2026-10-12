@@ -81,8 +81,10 @@ const secoes: SecaoLegal[] = [
     titulo: "Parceiros e Academia Orbital",
     corpo: (
       <p>
-        O programa de parceiros segue as regras informadas no cadastro e no portal do parceiro. A inscrição na
-        lista de espera da Academia Orbital serve para receber o aviso de abertura e não garante vaga.
+        O programa de parceiros segue as regras informadas no cadastro e no portal do parceiro. A pré-inscrição
+        no workshop da Academia Orbital não garante vaga: a participação depende da confirmação de presença,
+        pedida aos inscritos antes da data. Quem não confirmar ou desistir pode ter a vaga repassada a outro
+        inscrito, pela ordem da lista de espera. A gratuidade vale somente para a 1ª turma.
       </p>
     ),
   },

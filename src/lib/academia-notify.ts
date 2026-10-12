@@ -1,13 +1,14 @@
 /**
- * Avisos da lista de espera da Academia Orbital: confirmação para quem se
- * inscreve, alerta para a Orbital e aviso de lançamento disparado pelo admin.
+ * Avisos do workshop da Academia Orbital: confirmação para quem se inscreve,
+ * alerta para a Orbital e as mensagens disparadas pelo admin (aviso geral e
+ * pedido de confirmação de presença).
  *
  * Só servidor (usa SM Click e Resend). Nenhuma função lança erro: cada envio
  * devolve true/false para a rota registrar o que chegou.
  *
- * Regras do texto: o curso ainda NÃO existe — nada de preço, data, vagas ou
- * duração; o curso não é gratuito (gratuita é só a lista). PFB por extenso na
- * primeira vez.
+ * Regras do texto: o número de vagas NUNCA aparece ("vagas limitadíssimas");
+ * gratuita é só a 1ª turma — nada de prometer a 2ª gratuita; data, horário e
+ * local só quando existirem. PFB por extenso na primeira vez.
  */
 
 import { adminWhatsappPhone, normalizePhone, sendText, smclickConfigured } from "@/lib/smclick";
@@ -15,6 +16,7 @@ import { getResend } from "@/lib/resend";
 import { EMAIL_EMPRESA } from "@/lib/email-destinos";
 import { ATUACOES, EXPERIENCIAS, FOCOS, rotulo } from "@/lib/academia-waitlist";
 import { emailLogo } from "@/lib/email-marca";
+import { LIMITE_TURMA_1, VAGAS_TURMA_1, type StatusTurma, type Turma } from "@/lib/academia-turmas";
 
 const FROM = "Orbital Revestimentos <noreply@orbitalrevestimentos.com.br>";
 
@@ -89,34 +91,49 @@ async function enviarWhats(phone: string, message: string): Promise<boolean> {
 
 // ── Confirmação para quem se inscreve ────────────────────────────────────────
 
-export function mensagemConfirmacao(nome: string, temEmail: boolean): string {
+export function mensagemConfirmacao(nome: string, temEmail: boolean, turma: Turma): string {
   const n = primeiroNome(nome);
+  const canais = `aqui no WhatsApp${temEmail ? " e no seu e-mail" : ""}`;
+  if (turma === 2) {
+    return [
+      `Olá${n ? `, ${n}` : ""}! ✅`,
+      "",
+      "A 1ª turma do *Workshop de Instalação do PFB* (Painel Flexível Fibra de Bambu) da Academia Orbital está preenchida — e você entrou na *lista de espera da 2ª turma*.",
+      "",
+      `Se abrir vaga na 1ª turma por desistência, chamamos pela ordem da lista, ${canais}. E quando a 2ª turma abrir, você é avisado primeiro.`,
+      "",
+      "Orbital Revestimentos",
+    ].join("\n");
+  }
   return [
     `Olá${n ? `, ${n}` : ""}! ✅`,
     "",
-    "Sua inscrição na *lista de espera da Academia Orbital* está confirmada.",
+    "Sua pré-inscrição na *1ª turma do Workshop de Instalação do PFB* (Painel Flexível Fibra de Bambu) da Academia Orbital está confirmada.",
     "",
-    `O curso de instalação do PFB (Painel Flexível Fibra de Bambu) está em preparação. Quando abrir, você recebe o aviso primeiro, aqui no WhatsApp${temEmail ? " e no seu e-mail" : ""}.`,
+    "Esta 1ª turma é gratuita e tem vagas limitadíssimas. Quem conclui sai com certificado e pode comprar PFB direto com a Orbital.",
+    "",
+    `Data, horário e local chegam ${canais}. Uma semana antes, pedimos que você confirme a presença.`,
     "",
     "Orbital Revestimentos",
   ].join("\n");
 }
 
 /** Envia a confirmação nos dois canais, em paralelo. */
-export async function enviarConfirmacao(p: InscritoAviso): Promise<{ whatsapp: boolean; email: boolean }> {
-  const texto = mensagemConfirmacao(p.name, !!p.email);
+export async function enviarConfirmacao(p: InscritoAviso, turma: Turma): Promise<{ whatsapp: boolean; email: boolean }> {
+  const texto = mensagemConfirmacao(p.name, !!p.email, turma);
+  const [assunto, titulo] = turma === 2
+    ? ["Lista de espera da 2ª turma — Academia Orbital", "Você está na lista da 2ª turma"]
+    : ["Pré-inscrição confirmada — Workshop Academia Orbital", "Pré-inscrição confirmada"];
   const [whatsapp, email] = await Promise.all([
     enviarWhats(p.phone, texto),
-    p.email
-      ? enviarEmail(p.email, "Inscrição confirmada — Academia Orbital", emailHtml("Você está na lista de espera", textoParaHtml(texto)))
-      : Promise.resolve(false),
+    p.email ? enviarEmail(p.email, assunto, emailHtml(titulo, textoParaHtml(texto))) : Promise.resolve(false),
   ]);
   return { whatsapp, email };
 }
 
 // ── Alerta para a Orbital ────────────────────────────────────────────────────
 
-export async function avisarEmpresa(p: InscritoAviso, total: number | null): Promise<void> {
+export async function avisarEmpresa(p: InscritoAviso, turma: Turma, status: StatusTurma): Promise<void> {
   const atuacao = p.role === "outro" && p.role_other ? `Outro: ${p.role_other}` : rotulo(ATUACOES, p.role);
   const foco = p.main_focus === "outro" && p.main_focus_other ? `Outro: ${p.main_focus_other}` : rotulo(FOCOS, p.main_focus);
   const linhas: Array<[string, string]> = [
@@ -129,10 +146,15 @@ export async function avisarEmpresa(p: InscritoAviso, total: number | null): Pro
     ["Tempo de profissão", rotulo(EXPERIENCIAS, p.years_experience) || "—"],
     ["Origem", p.source || "direto"],
   ];
-  const totalTxt = total != null ? `Total na lista: ${total}.` : "";
+  // Para a equipe o número aparece: 20 vagas + folga de desistências.
+  const totalTxt = [
+    turma === 2 ? "Entrou na LISTA DE ESPERA DA 2ª TURMA." : "Entrou na 1ª turma.",
+    `1ª turma: ${status.inscritos} de ${LIMITE_TURMA_1} pré-inscrições (${VAGAS_TURMA_1} vagas + folga para desistências)${status.fechada ? " — FECHADA" : ""}.`,
+    status.fila2 ? `Fila da 2ª turma: ${status.fila2}.` : "",
+  ].filter(Boolean).join(" ");
 
   const whats = [
-    "🎓 *Nova inscrição — Academia Orbital*",
+    `🎓 *Nova inscrição — Academia Orbital (${turma === 2 ? "fila da 2ª turma" : "1ª turma"})*`,
     "",
     ...linhas.map(([k, v]) => `${k}: ${v}`),
     ...(totalTxt ? ["", totalTxt] : []),
@@ -142,9 +164,9 @@ export async function avisarEmpresa(p: InscritoAviso, total: number | null): Pro
     .map(([k, v]) => `<tr><td style="padding:6px 12px 6px 0;color:#74777f;font-size:13px;white-space:nowrap">${esc(k)}</td><td style="padding:6px 0;color:#0B1F45;font-size:13px">${esc(v)}</td></tr>`)
     .join("");
   const html = emailHtml(
-    "Nova inscrição na lista de espera",
+    turma === 2 ? "Nova inscrição na fila da 2ª turma" : "Nova pré-inscrição na 1ª turma",
     `<table style="border-collapse:collapse">${tabela}</table>${totalTxt ? `<p style="margin:16px 0 0 0;color:#43474e;font-size:13px">${esc(totalTxt)}</p>` : ""}
-     <p style="margin:16px 0 0 0;font-size:13px"><a href="https://orbitalrevestimentos.com.br/admin" style="color:#0B1F45">Ver a lista no admin</a></p>`,
+     <p style="margin:16px 0 0 0;font-size:13px"><a href="https://orbitalrevestimentos.com.br/admin" style="color:#0B1F45">Ver os inscritos no admin</a></p>`,
   );
 
   const admin = adminWhatsappPhone();
@@ -154,20 +176,25 @@ export async function avisarEmpresa(p: InscritoAviso, total: number | null): Pro
   ]);
 }
 
-// ── Aviso de lançamento (disparado pelo admin) ───────────────────────────────
+// ── Mensagens disparadas pelo admin (aviso geral, confirmação de presença) ──
 
-/** Troca {nome} pelo primeiro nome; sem nome, tira a vírgula que sobraria. */
-export function personalizar(texto: string, nome: string): string {
+/**
+ * Troca {nome} pelo primeiro nome (sem nome, tira a vírgula que sobraria) e
+ * {link} pelo link pessoal de confirmação de presença, quando houver.
+ */
+export function personalizar(texto: string, nome: string, link?: string): string {
   const n = primeiroNome(nome);
-  return n ? texto.replace(/\{nome\}/g, n) : texto.replace(/,?\s*\{nome\}/g, "");
+  const t = n ? texto.replace(/\{nome\}/g, n) : texto.replace(/,?\s*\{nome\}/g, "");
+  return link ? t.replace(/\{link\}/g, link) : t;
 }
 
 export async function enviarLancamento(
   p: { name: string; phone: string; email: string | null },
   texto: string,
   assunto: string,
+  link?: string,
 ): Promise<{ whatsapp: boolean; email: boolean }> {
-  const msg = personalizar(texto, p.name);
+  const msg = personalizar(texto, p.name, link);
   const [whatsapp, email] = await Promise.all([
     enviarWhats(p.phone, msg),
     p.email ? enviarEmail(p.email, assunto, emailHtml(assunto, textoParaHtml(msg))) : Promise.resolve(false),
@@ -176,7 +203,7 @@ export async function enviarLancamento(
 }
 
 /** Teste do aviso de lançamento: vai só para o WhatsApp e o e-mail da Orbital. */
-export async function enviarLancamentoTeste(texto: string, assunto: string): Promise<{ whatsapp: boolean; email: boolean }> {
+export async function enviarLancamentoTeste(texto: string, assunto: string, link?: string): Promise<{ whatsapp: boolean; email: boolean }> {
   const admin = adminWhatsappPhone();
-  return enviarLancamento({ name: "Orbital", phone: admin ?? "", email: EMAIL_EMPRESA }, texto, `[TESTE] ${assunto}`);
+  return enviarLancamento({ name: "Orbital", phone: admin ?? "", email: EMAIL_EMPRESA }, texto, `[TESTE] ${assunto}`, link);
 }

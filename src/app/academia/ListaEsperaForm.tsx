@@ -26,7 +26,11 @@ const VAZIO = {
   years_experience: "",
 };
 
-export default function ListaEsperaForm() {
+/**
+ * Pré-inscrição no workshop. `turma` é o que a página mostra (lida com até
+ * 1 min de atraso); quem decide é a API, e a tela de sucesso segue a resposta.
+ */
+export default function ListaEsperaForm({ turma }: { turma: 1 | 2 }) {
   const [form, setForm] = useState(VAZIO);
   // Campo-isca: fica fora da tela. Pessoa não vê, robô preenche.
   const [website, setWebsite] = useState("");
@@ -37,6 +41,7 @@ export default function ListaEsperaForm() {
   // encolhia para o cartão de sucesso fora da tela e a pessoa ficava sem saber
   // se tinha dado certo. `canais` = onde a confirmação foi de fato aceita.
   const [confirmacao, setConfirmacao] = useState<{ nome: string; whatsapp: boolean; email: boolean } | null>(null);
+  const [turmaFinal, setTurmaFinal] = useState<1 | 2>(turma);
   const cartaoRef = useRef<HTMLDivElement>(null);
   // Fechou a confirmação → leva a pessoa até o cartão "Você está na lista",
   // em vez de deixá-lo fora da tela.
@@ -80,6 +85,7 @@ export default function ListaEsperaForm() {
         return;
       }
       setConfirmacao({ nome: form.name.trim().split(/\s+/)[0] || "", whatsapp: json.whatsapp === true, email: json.email === true });
+      if (json.turma === 1 || json.turma === 2) setTurmaFinal(json.turma);
       setDone(true);
     } catch {
       setError("Sem conexão. Verifique a internet e tente novamente.");
@@ -110,13 +116,18 @@ export default function ListaEsperaForm() {
               </svg>
             </div>
             <p id="ae-conf-titulo" className="text-[#0B1F45] text-2xl sm:text-3xl font-extrabold uppercase tracking-tight mb-3">
-              Inscrição confirmada{confirmacao.nome ? `, ${confirmacao.nome}` : ""}!
+              {turmaFinal === 2 ? "Você está na lista" : "Pré-inscrição confirmada"}{confirmacao.nome ? `, ${confirmacao.nome}` : ""}!
             </p>
             <p className="text-[#43474e] text-base leading-relaxed mb-2">
-              Você está na lista de espera da Academia Orbital.
+              {turmaFinal === 2
+                ? "A 1ª turma está preenchida: você entrou na lista de espera da 2ª turma."
+                : "Você está na 1ª turma do workshop da Academia Orbital."}
             </p>
             <p className="text-[#43474e] text-base leading-relaxed mb-8">
-              {canais ? `Enviamos a confirmação ${canais}. ` : ""}Quando o curso abrir, você é avisado primeiro.
+              {canais ? `Enviamos a confirmação ${canais}. ` : ""}
+              {turmaFinal === 2
+                ? "Se abrir vaga na 1ª turma, chamamos pela ordem da lista."
+                : "Data, horário e local chegam pelo WhatsApp."}
             </p>
             <button
               type="button" autoFocus onClick={fecharConfirmacao}
@@ -134,11 +145,12 @@ export default function ListaEsperaForm() {
           </svg>
         </div>
         <p className="text-[#0B1F45] text-2xl lg:text-3xl font-extrabold uppercase tracking-tight mb-3">
-          Pronto. Você está na lista.
+          {turmaFinal === 2 ? "Pronto. Você está na lista da 2ª turma." : "Pronto. Pré-inscrição feita."}
         </p>
         <p className="text-[#43474e] text-sm lg:text-base leading-relaxed max-w-md">
-          Seu lugar na lista de espera da Academia Orbital está garantido. Quando o curso abrir, você é
-          avisado primeiro.
+          {turmaFinal === 2
+            ? "Se abrir vaga na 1ª turma por desistência, chamamos pela ordem da lista. E quando a 2ª turma abrir, você é avisado primeiro."
+            : "Data, horário e local chegam pelo WhatsApp. Uma semana antes, pedimos que você confirme a presença."}
         </p>
       </div>
       </>
@@ -250,12 +262,13 @@ export default function ListaEsperaForm() {
         disabled={loading}
         className="w-full min-h-14 bg-[#36A35C] text-[#0B1F45] text-sm tracking-[0.06em] sm:tracking-[0.12em] uppercase font-extrabold px-4 sm:px-6 py-4 hover:bg-[#4BB571] transition-colors disabled:opacity-50"
       >
-        {loading ? "Enviando…" : "Quero meu lugar na lista →"}
+        {loading ? "Enviando…" : turma === 2 ? "Entrar na lista da 2ª turma →" : "Garantir minha vaga →"}
       </button>
       <p className="text-[#74777f] text-[11px] text-center mt-3 leading-relaxed">
-        {/* "Cadastro gratuito", e não "sem custo" ou "curso grátis": o curso não é
-            gratuito — gratuita é só a lista. */}
-        Cadastro gratuito. Sem compromisso.
+        {/* Gratuita é só a 1ª turma: nada de prometer a 2ª gratuita. */}
+        {turma === 2
+          ? "Cadastro gratuito. Sem compromisso."
+          : "Gratuito na 1ª turma. Data, horário e local chegam pelo WhatsApp."}
       </p>
     </form>
   );

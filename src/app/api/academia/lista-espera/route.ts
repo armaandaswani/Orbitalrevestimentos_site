@@ -1,14 +1,19 @@
 import { NextRequest, NextResponse, after } from "next/server";
+import { revalidatePath } from "next/cache";
 import { supabaseAdmin } from "@/lib/supabase";
+import { statusTurma1 } from "@/lib/academia-status";
+import type { Turma } from "@/lib/academia-turmas";
 import { avisarEmpresa, enviarConfirmacao } from "@/lib/academia-notify";
 import { isMissingColumn, isMissingTable } from "@/lib/db-compat";
 import { ATUACOES, EXPERIENCIAS, FOCOS, digitos, valido } from "@/lib/academia-waitlist";
 
 /**
- * Lista de espera da Academia Orbital.
+ * Pré-inscrição no workshop da Academia Orbital.
  *
- * O curso ainda não existe — isto só registra interesse. Nada aqui cobra,
- * reserva vaga ou promete data.
+ * Toda inscrição ocupa vaga na 1ª turma até ela lotar (regras em
+ * src/lib/academia-turmas.ts); depois, entra na lista de espera da 2ª turma.
+ * Nada aqui cobra nem promete data — data, horário e local vão depois, pelo
+ * admin, junto com o pedido de confirmação de presença.
  *
  * Prioridade de contato definida pela Orbital: WhatsApp e nome obrigatórios,
  * e-mail opcional. Cidade, atuação, foco principal e tempo de profissão
@@ -72,7 +77,12 @@ export async function POST(req: NextRequest) {
   }
 
   const db = supabaseAdmin();
-  const { data: criado, error } = await db.from("academy_waitlist").insert({
+  // Turma decidida aqui, e não pela página (que pode estar com até 1 min de
+  // atraso). Duas inscrições no mesmo segundo podem passar do limite por uma —
+  // a folga de desistências absorve.
+  const status = await statusTurma1(db);
+  const turma: Turma = status.fechada ? 2 : 1;
+  const linha = {
     name,
     phone,
     email: email || null,
@@ -83,7 +93,12 @@ export async function POST(req: NextRequest) {
     main_focus_other: focus === "outro" ? focusOther || null : null,
     years_experience: years,
     source: source || null,
-  }).select("id").single();
+  };
+  let { data: criado, error } = await db.from("academy_waitlist").insert({ ...linha, turma }).select("id").single();
+  // Antes da migration 065 não existe a coluna turma: grava sem ela (todos na 1ª).
+  if (error && isMissingColumn(error)) {
+    ({ data: criado, error } = await db.from("academy_waitlist").insert(linha).select("id").single());
+  }
 
   if (error) {
     // Mesmo WhatsApp (ou e-mail) de novo: a pessoa já está na lista. Responder
@@ -119,7 +134,7 @@ export async function POST(req: NextRequest) {
   // Confirmação para o inscrito, com teto de tempo: a tela não pode ficar
   // "enviando" se o WhatsApp demorar. Estourou → a tela só não cita os canais.
   const enviado = await Promise.race([
-    enviarConfirmacao(inscrito),
+    enviarConfirmacao(inscrito, turma),
     new Promise<{ whatsapp: boolean; email: boolean }>((r) => setTimeout(() => r({ whatsapp: false, email: false }), 12000)),
   ]);
 
@@ -132,9 +147,10 @@ export async function POST(req: NextRequest) {
     if (criado?.id && Object.keys(marcas).length) {
       await db.from("academy_waitlist").update(marcas).eq("id", criado.id);
     }
-    const { count } = await db.from("academy_waitlist").select("id", { count: "exact", head: true });
-    await avisarEmpresa(inscrito, count ?? null);
+    // Contador da página atualizado já na próxima visita.
+    revalidatePath("/academia");
+    await avisarEmpresa(inscrito, turma, await statusTurma1(db));
   });
 
-  return NextResponse.json({ ok: true, whatsapp: enviado.whatsapp, email: enviado.email });
+  return NextResponse.json({ ok: true, turma, whatsapp: enviado.whatsapp, email: enviado.email });
 }

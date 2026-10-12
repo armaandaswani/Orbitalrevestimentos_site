@@ -2,12 +2,15 @@ import type { Metadata } from "next";
 import Image from "next/image";
 import { Barlow_Condensed } from "next/font/google";
 import ScrollReveal from "@/components/ScrollReveal";
+import { supabaseAdmin } from "@/lib/supabase";
+import { statusTurma1 } from "@/lib/academia-status";
+import { STATUS_PADRAO, vagasTxt, type StatusTurma } from "@/lib/academia-turmas";
 import ListaEsperaForm from "./ListaEsperaForm";
 import AntesDepois from "./AntesDepois";
 import CtaFixo from "./CtaFixo";
 
 /**
- * Academia Orbital — lista de espera.
+ * Academia Orbital — 1ª edição do workshop de instalação do PFB.
  *
  * Campanha dentro da marca: tipografia condensada nos títulos, Verde Bambu
  * (#36A35C, com texto azul-tinta) na conversão.
@@ -18,9 +21,15 @@ import CtaFixo from "./CtaFixo";
  *
  * O formulário é o centro da página e fica no topo; todo botão volta para ele.
  *
- * O curso AINDA NÃO EXISTE: nada de preço, duração, número de aulas, data,
- * vagas, contador ou "inscrições abertas". O curso não é gratuito; gratuita é
- * só a lista.
+ * Workshop (decisões do dono, out/2026 — regras em src/lib/academia-turmas.ts):
+ * - 1ª turma gratuita (só ela); o número de vagas NUNCA aparece — "vagas
+ *   limitadíssimas". Mostra quantos estão pré-inscritos e, perto do limite,
+ *   a contagem regressiva das vagas.
+ * - Lotou: "1ª turma preenchida" e o formulário inscreve na lista de espera
+ *   da 2ª turma (que também recebe as vagas de quem desistir).
+ * - Sai com certificado de conclusão e compra PFB direto com a Orbital.
+ * - Data, horário e local ainda não existem: vão para os inscritos, com o
+ *   pedido de confirmação de presença uma semana antes.
  *
  * Fotos: só obras reais da Orbital. Os "depois" em PNG de /images/projetos são
  * imagens geradas e não entram aqui.
@@ -32,20 +41,31 @@ const D = display.className;
 const URL_PAGINA = "https://orbitalrevestimentos.com.br/academia";
 
 export const metadata: Metadata = {
-  title: "Academia Orbital — Aprenda a instalar PFB",
+  title: "Academia Orbital — Workshop de instalação do PFB",
   description:
-    "Aprenda a instalar o Painel Flexível Fibra de Bambu (PFB), do corte ao acabamento, e conquiste a Certificação Orbital. Para aplicadores, instaladores e marceneiros. Entre na lista de espera.",
+    "Workshop prático de instalação do Painel Flexível Fibra de Bambu (PFB), do corte ao acabamento. 1ª turma gratuita, vagas limitadíssimas. Saia com certificado e compre PFB direto com a Orbital.",
   alternates: { canonical: URL_PAGINA },
   openGraph: {
-    title: "Academia Orbital — Aprenda a instalar PFB",
-    description: "Um novo serviço para o seu portfólio. Entre na lista de espera e seja avisado primeiro.",
+    title: "Academia Orbital — Workshop de instalação do PFB",
+    description: "1ª turma gratuita, vagas limitadíssimas. Saia com certificado e um novo serviço no portfólio.",
     url: URL_PAGINA,
   },
 };
 
+/** Contador de vagas: relido no máximo a cada minuto (e na hora, a cada inscrição). */
+export const revalidate = 60;
+
+async function lerStatus(): Promise<StatusTurma> {
+  try {
+    return await statusTurma1(supabaseAdmin());
+  } catch {
+    return STATUS_PADRAO; // sem banco (ex.: build local): turma aberta, sem números
+  }
+}
+
 const LIMA = "#36A35C"; // Verde Bambu
 
-const BENEFICIOS = ["Mais rapidez", "Menos retrabalho", "Novo serviço", "Certificação Orbital"];
+const BENEFICIOS = ["Gratuito na 1ª turma", "Vagas limitadíssimas", "Certificado de conclusão", "Compra direta Orbital"];
 
 const PARES = [
   {
@@ -79,7 +99,7 @@ const APLICACOES = [
 
 const NIVEIS = ["Preparar", "Cortar", "Fixar", "Acabar", "Aplicar"];
 
-const ETAPAS_CERT = ["Treinamento", "Conclusão", "Certificação", "Instalador Orbital"];
+const ETAPAS_CERT = ["Workshop", "Conclusão", "Certificado", "Compra direta"];
 
 const breadcrumbSchema = {
   "@context": "https://schema.org",
@@ -89,6 +109,43 @@ const breadcrumbSchema = {
     { "@type": "ListItem", position: 2, name: "Academia Orbital", item: URL_PAGINA },
   ],
 };
+
+/**
+ * Situação das vagas, logo acima do formulário. O número de vagas nunca
+ * aparece; o de pré-inscritos sim (a partir de alguns), e a contagem regressiva
+ * só perto do limite.
+ */
+function Vagas({ st }: { st: StatusTurma }) {
+  const inscritos = st.mostrarInscritos ? `${st.inscritos} profissionais pré-inscritos` : "";
+  if (st.fechada) {
+    return (
+      <div className="mb-5">
+        <p className={`${D} text-3xl lg:text-4xl leading-none font-extrabold uppercase`}>
+          1ª turma <span style={{ color: LIMA }}>preenchida</span>
+        </p>
+        <p className="text-white/70 text-sm mt-2">
+          {inscritos ? `${inscritos}. ` : ""}Entre na lista da 2ª turma — e, se houver desistência na 1ª, chamamos pela ordem da lista.
+        </p>
+      </div>
+    );
+  }
+  if (st.mostrarContador) {
+    return (
+      <div className="mb-5 flex flex-wrap items-end gap-x-4 gap-y-1" role="status">
+        <p className={`${D} text-4xl lg:text-5xl leading-none font-extrabold uppercase`} style={{ color: LIMA }}>
+          {st.restantes === 1 ? "Última vaga" : `Restam ${vagasTxt(st.restantes)}`}
+        </p>
+        <p className="text-white/70 text-sm pb-1">{inscritos || "Vagas limitadíssimas"}</p>
+      </div>
+    );
+  }
+  return (
+    <p className="mb-5 text-sm">
+      {inscritos && <span className="font-bold">{inscritos} · </span>}
+      <span className="font-bold uppercase tracking-[0.12em]" style={{ color: LIMA }}>Vagas limitadíssimas</span>
+    </p>
+  );
+}
 
 /** Todo botão volta para o formulário no topo. Alto: é tocado com o polegar. */
 function Cta({ texto, tom = "lima" }: { texto: string; tom?: "lima" | "navy" | "verde" }) {
@@ -110,7 +167,11 @@ function Cta({ texto, tom = "lima" }: { texto: string; tom?: "lima" | "navy" | "
 
 const H2 = `${D} text-[34px] leading-none sm:text-5xl lg:text-[60px] lg:leading-[0.98] font-bold uppercase`;
 
-export default function AcademiaPage() {
+export default async function AcademiaPage() {
+  const st = await lerStatus();
+  const fechada = st.fechada;
+  const ctaTexto = fechada ? "Entrar na lista da 2ª turma" : "Quero minha vaga";
+
   return (
     <div className="pt-20 bg-[#0B1F45]">
       <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: JSON.stringify(breadcrumbSchema) }} />
@@ -124,7 +185,7 @@ export default function AcademiaPage() {
                 Academia Orbital
               </span>
               <span className="border border-white/25 text-white/70 text-[10px] tracking-[0.18em] uppercase font-bold px-2 py-0.5">
-                Em preparação
+                {fechada ? "1ª turma preenchida" : "Workshop · 1ª turma gratuita"}
               </span>
             </div>
             <h1 className={`${D} text-[40px] leading-[0.98] sm:text-6xl lg:text-[64px] xl:text-[70px] lg:leading-[0.95] font-extrabold uppercase mb-6`}>
@@ -133,15 +194,21 @@ export default function AcademiaPage() {
               <span style={{ color: LIMA }}>Ganhe um novo serviço.</span>
             </h1>
             <p className="text-white/70 text-base lg:text-lg leading-relaxed max-w-md">
-              Curso prático do Painel Flexível Fibra de Bambu (PFB), do corte ao acabamento. Com Certificação Orbital.
+              Workshop prático do Painel Flexível Fibra de Bambu (PFB), do corte ao acabamento. Você sai com
+              certificado e compra PFB direto com a Orbital.
             </p>
           </div>
 
           <div id="lista-de-espera" className="scroll-mt-24">
+            <Vagas st={st} />
             <p className={`${D} text-2xl lg:text-[28px] leading-none font-bold uppercase mb-4`}>
-              Entre na <span style={{ color: LIMA }}>lista de espera</span>
+              {fechada ? (
+                <>Entre na lista da <span style={{ color: LIMA }}>2ª turma</span></>
+              ) : (
+                <>Garanta sua vaga na <span style={{ color: LIMA }}>1ª turma</span></>
+              )}
             </p>
-            <ListaEsperaForm />
+            <ListaEsperaForm turma={fechada ? 2 : 1} />
           </div>
         </div>
       </section>
@@ -181,7 +248,7 @@ export default function AcademiaPage() {
             ))}
           </div>
           <div className="mt-14 lg:mt-20">
-            <Cta texto="Quero entrar na lista" tom="verde" />
+            <Cta texto={ctaTexto} tom="verde" />
           </div>
         </div>
       </section>
@@ -259,12 +326,12 @@ export default function AcademiaPage() {
         <div className="max-w-[1280px] mx-auto px-4 lg:px-16">
           <ScrollReveal direction="up">
             <p className="text-[11px] lg:text-xs tracking-[0.22em] uppercase font-bold mb-5" style={{ color: LIMA }}>
-              Não é só um curso
+              Não é só um workshop
             </p>
             <h2 className={`${H2} mb-12 lg:mb-16`}>
               Saia
               <br />
-              <span style={{ color: LIMA }}>Instalador Certificado Orbital.</span>
+              <span style={{ color: LIMA }}>certificado.</span>
             </h2>
           </ScrollReveal>
 
@@ -286,9 +353,9 @@ export default function AcademiaPage() {
           </ol>
 
           <p className="text-white/70 text-base lg:text-lg mb-10 lg:mb-12">
-            Certificado, você compra PFB direto com a Orbital.
+            Com o certificado de conclusão, você compra PFB direto com a Orbital.
           </p>
-          <Cta texto="Quero fazer parte" />
+          <Cta texto={ctaTexto} />
         </div>
       </section>
 
@@ -296,13 +363,13 @@ export default function AcademiaPage() {
       <section className="bg-[#F6F5F2] text-[#0D1830] pt-20 pb-32 md:pb-24 lg:py-28">
         <div className="max-w-[1280px] mx-auto px-4 lg:px-16 lg:flex lg:items-end lg:justify-between gap-10">
           <p className={`${D} text-[34px] leading-none sm:text-5xl lg:text-[56px] font-bold uppercase mb-10 lg:mb-0 max-w-3xl`}>
-            Quando as portas abrirem, você vai querer estar aqui.
+            {fechada ? "A 2ª turma vem aí. Garanta seu lugar na fila." : "1ª turma gratuita. Vagas limitadíssimas."}
           </p>
-          <Cta texto="Quero meu lugar na lista" tom="navy" />
+          <Cta texto={fechada ? "Entrar na lista da 2ª turma" : "Garantir minha vaga"} tom="navy" />
         </div>
       </section>
 
-      <CtaFixo />
+      <CtaFixo texto={fechada ? "Lista da 2ª turma" : "Garantir vaga"} />
     </div>
   );
 }

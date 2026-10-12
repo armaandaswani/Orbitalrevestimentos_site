@@ -27,8 +27,8 @@ type Segment = {
   ctaLabel: string;
   /**
    * Destino do botão principal. Sem ele, o botão abre o WhatsApp com waText.
-   * Aplicadores usam a lista de espera da Academia: todo CTA do curso leva ao
-   * formulário, e o WhatsApp vira o botão secundário.
+   * Aplicadores usam o workshop da Academia: todo CTA leva ao
+   * formulário de pré-inscrição, e o WhatsApp vira o botão secundário.
    */
   ctaHref?: string;
   /** Chamada curta para a Academia Orbital, com link. Aparece também no celular. */
@@ -84,14 +84,14 @@ const segments: Segment[] = [
       { title: "Obra limpa em qualquer ambiente", desc: "Sem serra circular, sem poeira tóxica. Ideal para clínicas, escritórios ocupados, residências com crianças — sem interditar o espaço." },
       { title: "Material que surpreende o cliente", desc: "O acabamento fotorrealístico em mármore ou madeira entrega uma aparência que o cliente não espera — e que dura anos sem deteriorar." },
       { title: "Preço diferenciado para compra direta", desc: "Marceneiros parceiros têm acesso a tabela especial para comprar as placas e embutir o material nos seus próprios projetos." },
-      { title: "Suporte técnico completo", desc: "Manual técnico detalhado, material de apoio no Instagram (@orbitalrevestimentos) e atendimento direto via WhatsApp. Em desenvolvimento: a Academia Orbital, com o passo a passo completo da instalação." },
+      { title: "Suporte técnico completo", desc: "Manual técnico detalhado, material de apoio no Instagram (@orbitalrevestimentos) e atendimento direto via WhatsApp. E o workshop da Academia Orbital, com o passo a passo completo da instalação — 1ª turma gratuita." },
     ],
     pricingCallout: "Compra direta disponível: marceneiros parceiros têm acesso a tabela de preços diferenciada para comprar as placas e embutir o material nos seus projetos — sem intermediários.",
     image: "/images/catalogue/projeto-escritorio-depois.jpeg",
     waText: "Olá! Sou marceneiro e vim pela aba de Marceneiros no site. Gostaria de saber sobre as condições de parceria e preço diferenciado para compra direta do PFB Orbital.",
     stat: { value: "2–3h", label: "instalação por cômodo" },
     ctaLabel: "Quero instalar PFB Orbital",
-    academia: "Aprenda o passo a passo da instalação e seja Instalador Certificado Orbital.",
+    academia: "Workshop de instalação do PFB: 1ª turma gratuita, vagas limitadíssimas. Saia com certificado.",
     highlight: "Marceneiros parceiros têm acesso a condições exclusivas e tabela diferenciada para compra direta.",
   },
   {
@@ -159,24 +159,24 @@ const segments: Segment[] = [
         <path d="M7 13l2 2M10 10l2 2M13 7l2 2" />
       </svg>
     ),
-    badge: "Academia Orbital · Em desenvolvimento",
+    badge: "Academia Orbital · Workshop",
     tagline: "Especialização técnica em PFB, no padrão Orbital.",
     headline: "Aprenda a instalar PFB no padrão Orbital.",
-    body: "A Orbital está estruturando a Academia Orbital: um treinamento técnico, passo a passo, para aplicadores que querem instalar Painéis Flexíveis Fibra de Bambu (PFB) corretamente e se tornar Instaladores Certificados Orbital.",
+    body: "A Academia Orbital abre a 1ª turma do workshop de instalação: prático, passo a passo, para aplicadores que querem instalar Painéis Flexíveis Fibra de Bambu (PFB) corretamente. A 1ª turma é gratuita e as vagas são limitadíssimas.",
     benefits: [
-      { title: "Academia Orbital", desc: "Treinamento técnico completo, do preparo da superfície ao acabamento. Em desenvolvimento — entre na lista de espera para ser avisado primeiro." },
-      { title: "Instalador Certificado Orbital", desc: "Ao concluir o treinamento e o processo de certificação, você pode se tornar um Instalador Certificado Orbital." },
+      { title: "Workshop Academia Orbital", desc: "Prático, do preparo da superfície ao acabamento. 1ª turma gratuita, com vagas limitadíssimas." },
+      { title: "Certificado de conclusão", desc: "Quem conclui o workshop sai com certificado de conclusão da Academia Orbital." },
       { title: "Manual técnico de instalação", desc: "Material detalhado com o processo de aplicação do PFB, passo a passo." },
       { title: "Instalação limpa e ágil", desc: "Cola PU nas paredes e cola de contato nos tetos. Um cômodo em 2 a 3 horas, sem obra e sem poeira." },
       { title: "Material de apoio e suporte", desc: "Conteúdo no Instagram (@orbitalrevestimentos) e atendimento direto via WhatsApp para dúvidas de aplicação." },
-      { title: "Relacionamento direto com a Orbital", desc: "Após a certificação, o instalador pode manter relacionamento direto com a Orbital para aquisição do PFB." },
+      { title: "Relacionamento direto com a Orbital", desc: "Com o certificado, o instalador compra PFB direto com a Orbital." },
     ],
     image: "/images/academia/lavabo-consultorio-inteiro.jpg",
     waText: "Olá! Sou aplicador/instalador e vim pela aba de Aplicadores no site. Quero saber mais sobre a instalação do PFB Orbital e a Academia Orbital.",
     stat: { value: "11 kg", label: "por placa · leve de manusear" },
-    ctaLabel: "Entrar na lista de espera",
+    ctaLabel: "Quero participar do workshop",
     ctaHref: "/academia#lista-de-espera",
-    highlight: "O cadastro na lista de espera da Academia Orbital é gratuito.",
+    highlight: "A 1ª turma do workshop da Academia Orbital é gratuita.",
   },
 ];
 
