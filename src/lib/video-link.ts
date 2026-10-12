@@ -5,8 +5,8 @@
  * isto para validar o que foi colado e a galeria para mostrar uma miniatura em
  * vez de um quadrado preto.
  *
- * A galeria continua ABRINDO o link numa aba nova, sem incorporar o player —
- * decisão que já existia e não mudou.
+ * A galeria toca o vídeo no próprio site (videoEmbedUrl); só abre numa aba
+ * nova o link de um serviço sem player incorporável.
  */
 
 // Instagram lidera o uso real neste site (Reels), então entra na lista — sem
@@ -70,4 +70,27 @@ export function videoIsVertical(url: string): boolean {
 export function youtubeThumbs(url: string): string[] {
   const id = youtubeId(url ?? "");
   return id ? [`https://i.ytimg.com/vi/${id}/maxresdefault.jpg`, `https://i.ytimg.com/vi/${id}/hqdefault.jpg`] : [];
+}
+
+/**
+ * Endereço do player incorporável — o vídeo toca no próprio site, sem abrir
+ * outra página (decisão do dono, out/2026). null = serviço sem player
+ * incorporável conhecido: aí o link continua abrindo numa aba nova.
+ *   YouTube   → youtube-nocookie (sem cookie de rastreamento antes do play)
+ *   Instagram → /p|reel|tv/<código>/embed (o play é tocado dentro do quadro)
+ *   TikTok, Vimeo, Google Drive → players oficiais
+ */
+export function videoEmbedUrl(url: string): string | null {
+  const u = (url ?? "").trim();
+  const yt = youtubeId(u);
+  if (yt) return `https://www.youtube-nocookie.com/embed/${yt}?autoplay=1&playsinline=1&rel=0&modestbranding=1`;
+  const ig = u.match(/instagram\.com\/(?:[\w.]+\/)?(p|reels?|tv)\/([\w-]+)/i);
+  if (ig) return `https://www.instagram.com/${ig[1].toLowerCase() === "tv" ? "tv" : ig[1].toLowerCase().startsWith("reel") ? "reel" : "p"}/${ig[2]}/embed/`;
+  const tt = u.match(/tiktok\.com\/.*\/video\/(\d+)/i);
+  if (tt) return `https://www.tiktok.com/embed/v2/${tt[1]}`;
+  const vm = u.match(/vimeo\.com\/(?:video\/)?(\d+)/i);
+  if (vm) return `https://player.vimeo.com/video/${vm[1]}?autoplay=1`;
+  const dr = u.match(/drive\.google\.com\/(?:file\/d\/|open\?id=)([\w-]+)/i);
+  if (dr) return `https://drive.google.com/file/d/${dr[1]}/preview`;
+  return null;
 }

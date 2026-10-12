@@ -13,8 +13,9 @@ import {
   type MediaCategory,
 } from "@/lib/project-gallery";
 import { COVER_ASPECT, coverStyle } from "@/lib/cover-crop";
-import { videoHost, videoHostLabel, videoIsVertical } from "@/lib/video-link";
+import { videoHost } from "@/lib/video-link";
 import VideoThumb from "@/components/VideoThumb";
+import VideoLinkPlayer from "@/components/VideoLinkPlayer";
 
 /**
  * A qual seção o projeto pertence.
@@ -378,45 +379,9 @@ function ProjectLightbox({
                   onClick={(e) => e.stopPropagation()}
                 />
               ) : current?.kind === "video" ? (
-                // Link externo (YouTube, Instagram…): a miniatura no formato do
-                // próprio vídeo (vertical para Shorts/Reels/TikTok), nítida, com o
-                // play no meio; tudo abre o vídeo em nova aba — sem incorporar o player.
-                <div className="w-full h-full flex flex-col items-center justify-center gap-4 py-2" onClick={(e) => e.stopPropagation()}>
-                  <a
-                    key={current.url}
-                    href={current.url}
-                    target="_blank"
-                    rel="noopener noreferrer"
-                    aria-label="Assistir ao vídeo"
-                    className={`group/video relative block overflow-hidden bg-[#141a26] border border-white/10 ${
-                      videoIsVertical(current.url) ? "h-[calc(100%-88px)] max-h-[720px]" : "w-full max-w-3xl"
-                    }`}
-                    style={{ aspectRatio: videoIsVertical(current.url) ? "9 / 16" : "16 / 9", maxWidth: "100%" }}
-                  >
-                    <VideoThumb hd url={current.url} className="absolute inset-0 w-full h-full object-cover" />
-                    <span className="absolute inset-0 bg-gradient-to-t from-black/50 via-transparent to-black/10" />
-                    <span className="absolute inset-0 flex items-center justify-center">
-                      <span className="w-16 h-16 rounded-full bg-black/55 border border-white/50 backdrop-blur-sm flex items-center justify-center group-hover/video:bg-black/75 group-hover/video:scale-105 transition-all">
-                        <svg width="26" height="26" viewBox="0 0 24 24" fill="white"><path d="M8 5v14l11-7z" /></svg>
-                      </span>
-                    </span>
-                    <span className="absolute left-3 bottom-3 bg-black/60 text-white text-[9px] tracking-[0.15em] uppercase font-bold px-2 py-1">
-                      {videoHostLabel(current.url)}
-                    </span>
-                  </a>
-                  {current.description && (
-                    <p className="text-white/70 text-sm max-w-md text-center leading-relaxed">{current.description}</p>
-                  )}
-                  <a
-                    href={current.url}
-                    target="_blank"
-                    rel="noopener noreferrer"
-                    className="inline-flex items-center gap-2.5 bg-white text-[#0D1830] text-xs tracking-[0.1em] uppercase font-bold px-6 py-3 hover:bg-white/90 transition-colors"
-                  >
-                    Assistir ao vídeo
-                    <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><path d="M18 13v6a2 2 0 01-2 2H5a2 2 0 01-2-2V8a2 2 0 012-2h6M15 3h6v6M10 14L21 3"/></svg>
-                  </a>
-                </div>
+                // Link externo (YouTube, Instagram…): toca aqui mesmo, no toque.
+                // key: trocar de vídeo volta para a capa.
+                <VideoLinkPlayer key={current.url} url={current.url} description={current.description} />
               ) : null}
 
               {/* Nav arrows */}
