@@ -230,8 +230,11 @@ export default async function AcademiaPage() {
       </section>
 
       {/* ── A prova ── */}
+      {/* Título, pares e botão na MESMA coluna centralizada: com o par limitado
+          a 820px dentro de um container mais largo, tudo ficava encostado à
+          esquerda com um vão à direita. */}
       <section className="bg-white text-[#0D1830] py-20 lg:py-32">
-        <div className="max-w-[1080px] mx-auto px-4 lg:px-16">
+        <div className="max-w-[868px] mx-auto px-4 lg:px-6">
           <ScrollReveal direction="up">
             <h2 className={`${H2} mb-12 lg:mb-16`}>
               Você vai aprender
@@ -242,9 +245,7 @@ export default async function AcademiaPage() {
           <div className="space-y-16 lg:space-y-24">
             {PARES.map(({ rotulo, par }) => (
               <ScrollReveal key={rotulo} direction="up">
-                <div className="md:max-w-[820px]">
-                  <AntesDepois par={par} rotulo={rotulo} />
-                </div>
+                <AntesDepois par={par} rotulo={rotulo} />
                 <p className={`${D} text-xl lg:text-2xl font-bold uppercase mt-4`}>{rotulo}</p>
               </ScrollReveal>
             ))}
