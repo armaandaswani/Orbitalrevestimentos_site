@@ -101,31 +101,28 @@ const featuredLines = [
     name: "Classic",
     subtitle: "Mármore Fosco",
     desc: "Elegância discreta para qualquer ambiente. Acabamento fosco com veios naturais.",
-    price: "559/placa",
     img: "/images/catalogue/classic-branco-calacatta-orb006.jpeg",
     href: "/produtos?linha=classic",
     code: "3 acabamentos · Fosco",
-    waMsg: "Olá! Tenho interesse na linha Classic (Mármore Fosco). Gostaria de saber mais e solicitar uma amostra.",
+    waMsg: "Olá! Tenho interesse na linha Classic (Mármore Fosco). Gostaria de saber valores e condições.",
   },
   {
     name: "Brilliance",
     subtitle: "Mármore Polido",
     desc: "Veios dramáticos com acabamento espelhado. Para projetos que exigem impacto visual.",
-    price: "589/placa",
     img: "/images/catalogue/brilliance-gris-pietra-orb009.jpeg",
     href: "/produtos?linha=brilliance",
     code: "8 acabamentos · Polido",
-    waMsg: "Olá! Tenho interesse na linha Brilliance (Mármore Polido). Gostaria de saber mais e solicitar uma amostra.",
+    waMsg: "Olá! Tenho interesse na linha Brilliance (Mármore Polido). Gostaria de saber valores e condições.",
   },
   {
     name: "Elegance",
     subtitle: "Madeira Texturizada",
     desc: "Calor natural com acabamento texturizado. A alma da madeira sem a fragilidade dela.",
-    price: "649/placa",
     img: "/images/catalogue/elegance-imbuia-orb002.jpeg",
     href: "/produtos?linha=elegance",
     code: "4 acabamentos · Madeira",
-    waMsg: "Olá! Tenho interesse na linha Elegance (Madeira Texturizada). Gostaria de saber mais e solicitar uma amostra.",
+    waMsg: "Olá! Tenho interesse na linha Elegance (Madeira Texturizada). Gostaria de saber valores e condições.",
   },
 ];
 
@@ -394,7 +391,7 @@ export default function Home() {
 
           {/* Mobile: compact 3-column grid — all 3 visible simultaneously */}
           <div className="grid grid-cols-3 gap-2 md:hidden">
-            {featuredLines.map(({ name, subtitle, price, img, href, code }) => (
+            {featuredLines.map(({ name, subtitle, img, href, code }) => (
               <div key={name} className="group">
                 <Link href={href} className="block cursor-pointer">
                   <div className="relative aspect-[812/988] overflow-hidden bg-[#eeeeee] mb-1.5">
@@ -412,14 +409,13 @@ export default function Home() {
                   </div>
                   <p className="text-[#74777f] text-[9px] tracking-[0.08em] uppercase font-semibold leading-tight truncate">{code}</p>
                   <p className="text-[#0B1F45] text-[11px] font-medium leading-snug">{subtitle}</p>
-                  <p className="text-[#2347A0] text-[10px] font-semibold">{price}</p>
                 </Link>
               </div>
             ))}
           </div>
 
           <div className="hidden md:grid md:grid-cols-3 gap-8">
-            {featuredLines.map(({ name, subtitle, desc, price, img, href, code, waMsg }, i) => (
+            {featuredLines.map(({ name, subtitle, desc, img, href, code, waMsg }, i) => (
               <ScrollReveal key={name} delay={i * 120} direction="up">
                 <div className="group">
                   <Link href={href} className="block cursor-pointer">
@@ -448,9 +444,6 @@ export default function Home() {
                       <p className="text-[#43474e] text-sm leading-relaxed">
                         {desc}
                       </p>
-                      <p className="text-[#2347A0] text-sm font-semibold pt-1">
-                        {price}
-                      </p>
                       <p className="text-[#b0b4bb] text-[10px] tracking-[0.08em]">
                         2,9m × 1,2m × 5mm
                       </p>
@@ -462,7 +455,7 @@ export default function Home() {
                     rel="noopener noreferrer"
                     className="inline-block text-[10px] tracking-[0.12em] uppercase font-bold border border-[#0B1F45] text-[#0B1F45] px-5 py-2 hover:bg-[#0B1F45] hover:text-white transition-colors"
                   >
-                    Tirar dúvidas →
+                    Falar com consultor →
                   </a>
                 </div>
               </ScrollReveal>

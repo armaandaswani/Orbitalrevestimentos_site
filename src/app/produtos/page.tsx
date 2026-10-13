@@ -22,8 +22,6 @@ interface Product {
   name: string;
   linha: "Classic" | "Brilliance" | "Elegance";
   finish: string;
-  price: number;
-  price_per_m2: number;
   description: string;
   image_path: string;
   is_active: boolean;
@@ -36,9 +34,9 @@ interface Product {
 
 const linhas: { key: Linha; label: string; desc: string }[] = [
   { key: "todos", label: "Todos", desc: "15 acabamentos" },
-  { key: "Classic", label: "Classic", desc: "Mármore Fosco · 559/placa" },
-  { key: "Brilliance", label: "Brilliance", desc: "Mármore Polido · 589/placa" },
-  { key: "Elegance", label: "Elegance", desc: "Madeira Texturizada · 649/placa" },
+  { key: "Classic", label: "Classic", desc: "Mármore Fosco" },
+  { key: "Brilliance", label: "Brilliance", desc: "Mármore Polido" },
+  { key: "Elegance", label: "Elegance", desc: "Madeira Texturizada" },
 ];
 
 const LINHA_INFO: Record<"Classic" | "Brilliance" | "Elegance", {
@@ -528,21 +526,15 @@ export default function ProdutosPage() {
                     <p className="text-[#74777f] text-xs">{info.material}</p>
                   </div>
 
-                  {/* Preço + consultor lado a lado, logo abaixo do nome: no
-                      celular o botão ficava lá embaixo e o cliente não achava
-                      sem rolar. O cliente fala com o consultor pelo WhatsApp já
-                      dizendo qual revestimento quer (o orçamento instantâneo,
-                      /simulador, segue no ar mas fora da navegação). */}
+                  {/* Consultor logo abaixo do nome: no celular o botão ficava lá
+                      embaixo e o cliente não achava sem rolar. SEM PREÇO no
+                      site público (decisão do dono, out/2026 — a concorrência
+                      consultava os valores): o cliente fala com o consultor
+                      pelo WhatsApp já dizendo qual revestimento quer. */}
                   <div className="flex items-center justify-between gap-3 border-y border-[#e8e8e8] py-3">
-                    <div className="min-w-0">
-                      <p className="text-[#2347A0] text-xl lg:text-2xl font-semibold leading-tight whitespace-nowrap">
-                        {selected.price.toLocaleString("pt-BR")}
-                        <span className="text-xs lg:text-sm text-[#74777f] font-normal ml-1">/placa</span>
-                      </p>
-                      <p className="text-[#74777f] text-[11px] lg:text-xs mt-0.5 whitespace-nowrap">
-                        {selected.price_per_m2}/m²
-                      </p>
-                    </div>
+                    <p className="min-w-0 text-[#43474e] text-xs lg:text-sm leading-snug">
+                      Valores e condições com o nosso consultor.
+                    </p>
                     <ContatoCta
                       produtos={[{ code: selected.code, name: selected.name, linha: selected.linha, image: selected.image_path }]}
                       className="flex-shrink-0 inline-flex items-center justify-center gap-2 bg-[#0B1F45] text-white text-[11px] tracking-[0.1em] uppercase font-bold px-4 lg:px-5 py-3 hover:bg-[#003070] transition-colors whitespace-nowrap"
@@ -803,11 +795,11 @@ export default function ProdutosPage() {
               </h2>
               <p className="text-[#43474e] text-sm">
                 {activeLinha === "Classic" &&
-                  "Mármore Fosco · 5mm · 1,2m × 2,9m = 3,48m² · 559/placa · 160/m²"}
+                  "Mármore Fosco · 5mm · 1,2m × 2,9m = 3,48m² por placa"}
                 {activeLinha === "Brilliance" &&
-                  "Mármore Polido · 5mm · 1,2m × 2,9m = 3,48m² · 589/placa · 169/m²"}
+                  "Mármore Polido · 5mm · 1,2m × 2,9m = 3,48m² por placa"}
                 {activeLinha === "Elegance" &&
-                  "Madeira Texturizada · 5mm · 1,2m × 2,9m = 3,48m² · 649/placa · 186/m²"}
+                  "Madeira Texturizada · 5mm · 1,2m × 2,9m = 3,48m² por placa"}
               </p>
             </div>
           )}
@@ -878,17 +870,6 @@ export default function ProdutosPage() {
                     <p className="text-[#43474e] text-xs lg:text-sm leading-relaxed hidden sm:block line-clamp-2">
                       {product.description}
                     </p>
-                    <div className="pt-1 lg:pt-2 flex items-center justify-between">
-                      <div>
-                        <span className="text-[#2347A0] text-sm lg:text-base font-semibold">
-                          {product.price.toLocaleString("pt-BR")}
-                          <span className="text-xs text-[#74777f] font-normal ml-1">/placa</span>
-                        </span>
-                        <span className="text-[#74777f] text-xs ml-1 lg:ml-2 hidden sm:inline">
-                          ({product.price_per_m2}/m²)
-                        </span>
-                      </div>
-                    </div>
                     <p className="text-[#b0b4bb] text-[10px] tracking-[0.08em] pt-0.5">
                       2,9m × 1,2m × 5mm
                     </p>

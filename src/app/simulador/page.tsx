@@ -301,7 +301,8 @@ function SimuladorInner() {
   const [loadingProducts, setLoadingProducts] = useState(true);
 
   useEffect(() => {
-    fetch("/api/products")
+    // ?precos=1: a API pública não manda preço sem ele (ver /api/products).
+    fetch("/api/products?precos=1")
       .then((r) => r.json())
       .then((data: Product[]) => setProducts(data))
       .catch(() => setProducts([]))

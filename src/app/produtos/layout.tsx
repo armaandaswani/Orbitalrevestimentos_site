@@ -30,6 +30,8 @@ export const metadata: Metadata = {
   },
 };
 
+// Sem "offers"/preço: o site público não mostra valores (decisão do dono,
+// out/2026). Valores só com o consultor.
 const productSchemas = [
   {
     "@context": "https://schema.org",
@@ -41,13 +43,6 @@ const productSchemas = [
     material: "Fibra de Bambu",
     color: "Mármore Fosco",
     size: "1,2m × 2,9m × 5mm",
-    offers: {
-      "@type": "Offer",
-      price: "559",
-      priceCurrency: "BRL",
-      availability: "https://schema.org/InStock",
-      seller: { "@type": "Organization", name: "Orbital Revestimentos" },
-    },
   },
   {
     "@context": "https://schema.org",
@@ -59,13 +54,6 @@ const productSchemas = [
     material: "Fibra de Bambu",
     color: "Mármore Polido",
     size: "1,2m × 2,9m × 5mm",
-    offers: {
-      "@type": "Offer",
-      price: "589",
-      priceCurrency: "BRL",
-      availability: "https://schema.org/InStock",
-      seller: { "@type": "Organization", name: "Orbital Revestimentos" },
-    },
   },
   {
     "@context": "https://schema.org",
@@ -77,13 +65,6 @@ const productSchemas = [
     material: "Fibra de Bambu",
     color: "Madeira Texturizada",
     size: "1,2m × 2,9m × 5mm",
-    offers: {
-      "@type": "Offer",
-      price: "649",
-      priceCurrency: "BRL",
-      availability: "https://schema.org/InStock",
-      seller: { "@type": "Organization", name: "Orbital Revestimentos" },
-    },
   },
 ];
 

@@ -147,7 +147,8 @@ const jsonLdSchemas = [
       "https://instagram.com/orbitalrevestimentos",
       "https://wa.me/5592988150149",
     ],
-    priceRange: "R$559–R$649",
+    // Sem preço nos dados estruturados: o site público não mostra valores
+    // (decisão do dono, out/2026). Valores só com o consultor.
     openingHoursSpecification: {
       "@type": "OpeningHoursSpecification",
       dayOfWeek: ["Monday", "Tuesday", "Wednesday", "Thursday", "Friday"],
@@ -166,8 +167,6 @@ const jsonLdSchemas = [
             description:
               "Revestimento de parede com acabamento mármore fosco. Impermeável, anti-mofo, instalado em 2h.",
           },
-          price: "559",
-          priceCurrency: "BRL",
           availability: "https://schema.org/InStock",
         },
         {
@@ -178,8 +177,6 @@ const jsonLdSchemas = [
             description:
               "Revestimento de parede com acabamento mármore polido. 8 acabamentos. Impermeável.",
           },
-          price: "589",
-          priceCurrency: "BRL",
           availability: "https://schema.org/InStock",
         },
         {
@@ -190,8 +187,6 @@ const jsonLdSchemas = [
             description:
               "Revestimento de parede e forro com textura de madeira. 4 acabamentos. Anti-cupim.",
           },
-          price: "649",
-          priceCurrency: "BRL",
           availability: "https://schema.org/InStock",
         },
       ],

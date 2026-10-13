@@ -16,7 +16,7 @@ interface Message {
 const QUICK_CHIPS = [
   { label: "O que é o PFB?",        prompt: "O que é o PFB Orbital?" },
   { label: "PFB vs outras opções",  prompt: "Como o PFB se compara a MDF, papel de parede e forro PVC?" },
-  { label: "Quanto custa?",         prompt: "Quanto custa o PFB Orbital? Quais são as linhas e preços?" },
+  { label: "Quais são as linhas?",  prompt: "Quais são as linhas e acabamentos do PFB Orbital?" },
   { label: "Serve p/ banheiro?",    prompt: "Posso usar o PFB no banheiro ou em áreas úmidas?" },
   { label: "Como instalar?",        prompt: "Como é feita a instalação do PFB?" },
 ];
@@ -174,7 +174,7 @@ function parseBotText(raw: string): { nodes: React.ReactNode; pageLinks: string[
 export default function ChatWidget() {
   const [open, setOpen] = useState(false);
   const [messages, setMessages] = useState<Message[]>([
-    { from: "bot", text: "Olá! Sou o assistente da Orbital. Pode me perguntar qualquer coisa sobre o PFB, instalação, preços ou projetos 👋" },
+    { from: "bot", text: "Olá! Sou o assistente da Orbital. Pode me perguntar qualquer coisa sobre o PFB, instalação ou projetos 👋" },
   ]);
   const [input, setInput] = useState("");
   const [showChips, setShowChips] = useState(true);

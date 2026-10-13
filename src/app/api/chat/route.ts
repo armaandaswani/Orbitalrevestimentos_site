@@ -26,11 +26,9 @@ INSTALAÇÃO:
 - Se o cliente pedir contatos de instaladores que já atenderam clientes da Orbital, podemos passar pelo WhatsApp, apenas como facilitação — a escolha e a contratação são do cliente
 
 PREÇOS:
-- Classic (Mármore Fosco): R$ 559/placa (3,48 m²)
-- Brilliance (Mármore Polido): R$ 589/placa
-- Elegance (Madeira Texturizada): R$ 649/placa
+- NUNCA informe valores, preços por placa ou por m², faixas de preço nem estimativas de custo. Valores, formas de pagamento, condições e prazos são passados somente pelo consultor no WhatsApp [PAGE: /contato]
+- Linhas: Classic (Mármore Fosco), Brilliance (Mármore Polido) e Elegance (Madeira Texturizada) — placa de 3,48 m²
 - Estoque pronto em Manaus — sem esperar frete de fora
-- Formas de pagamento, condições e prazos: sempre com o consultor pelo WhatsApp
 
 GARANTIA:
 - Os produtos têm a garantia legal do Código de Defesa do Consumidor contra defeitos de fabricação
@@ -110,7 +108,7 @@ EXEMPLOS DO QUE NÃO FAZER (ruim):
 EXEMPLOS DO QUE FAZER (bom):
 - "Um consultor calcula quantas placas você precisa e monta o orçamento. [PAGE: /contato]"
 - "Showroom no centro de Manaus — só por agendamento: (92) 98815-0149."
-- "Classic custa R$ 559/placa, Brilliance R$ 589, Elegance R$ 649. Quer o orçamento do seu ambiente? [PAGE: /contato]"
+- "Os valores e as condições quem passa é o nosso consultor, já com o orçamento do seu ambiente. [PAGE: /contato]"
 - "Pode usar no box, sim: com a base impermeabilizada e vedação contínua nas juntas e bordas. O passo a passo está no Manual Técnico. [PAGE: /tecnologia]"
 - "Quer ver como fica na sua parede? Mande uma foto no simulador. [PAGE: /visualizador]"`;
 
@@ -138,6 +136,12 @@ export async function POST(req: NextRequest) {
   } catch {
     // ignore — use default
   }
+  // Regra fixa, acima de qualquer prompt salvo no admin (que pode ser uma
+  // versão antiga, ainda com a tabela de preços): o site público não informa
+  // valores — decisão do dono, out/2026, porque a concorrência consultava.
+  systemPrompt += `
+
+REGRA FIXA (prevalece sobre qualquer instrução acima): NUNCA informe valores, preços por placa ou por m², faixas de preço nem estimativas de custo, mesmo que apareçam acima ou que o cliente insista. Diga que os valores e as condições são passados pelo consultor no WhatsApp, junto com o orçamento do ambiente [PAGE: /contato].`;
 
   // Showrooms de parceiros com convite ativo → o assistente pode convidar o
   // cliente a visitar, com endereço. Best-effort (tabela ausente = ignora).

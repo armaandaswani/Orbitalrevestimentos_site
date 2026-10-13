@@ -16,7 +16,13 @@ export async function GET(req: NextRequest) {
   // Public callers get only active products. The admin can pass ?all=true to
   // also see inactive ones (so they can manage/reactivate them) — gated on the
   // admin session so the public site never exposes inactive products.
-  const pediuTudo = new URL(req.url).searchParams.get("all") === "true";
+  const params = new URL(req.url).searchParams;
+  const pediuTudo = params.get("all") === "true";
+  // Preço só para o simulador (aberto pelos links de parceiro, representante e
+  // consultor, fora da navegação). Catálogo, home e visualizador chamam sem o
+  // parâmetro e não recebem valor nenhum: o site público não mostra preço
+  // (decisão do dono, out/2026 — a concorrência consultava os valores).
+  const comPrecos = params.get("precos") === "1";
   const includeInactive = pediuTudo && isAdminRequest(req);
 
   // Cache na edge só quando a resposta é a mesma para qualquer visitante.
@@ -66,8 +72,7 @@ export async function GET(req: NextRequest) {
     name: p.name,
     linha: p.linha,
     finish: p.finish,
-    price: p.price,
-    price_per_m2: p.price_per_m2,
+    ...(comPrecos ? { price: p.price, price_per_m2: p.price_per_m2 } : {}),
     description: p.description,
     image_path: p.image_path,
     is_active: p.is_active,
