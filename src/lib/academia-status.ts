@@ -23,8 +23,11 @@ export async function statusTurma1(db: SupabaseClient): Promise<StatusTurma> {
         .eq("turma", 2).or("disponivel_na_data.is.null,disponivel_na_data.eq.true"),
     ]);
     if (t1.error || t2.error) {
-      // Sem a migration 066: a fila conta todo mundo da 2ª turma.
-      if (!t1.error && isMissingColumn(t2.error)) {
+      // Fila com o filtro da migration 066 falhou (coluna ainda não existe — o
+      // PostgREST nem sempre devolve isso como "coluna ausente" num filtro
+      // `or`): conta todo mundo da 2ª turma, sem filtro.
+      if (!t1.error && t2.error) {
+        console.error("[academia-status] fila com disponivel_na_data falhou (migration 066?):", t2.error.message);
         const fila = await db.from("academy_waitlist").select("id", { count: "exact", head: true }).eq("turma", 2);
         if (!fila.error) return calcularStatus(t1.count ?? 0, fila.count ?? 0);
       }
