@@ -4,7 +4,7 @@ import { Barlow_Condensed } from "next/font/google";
 import ScrollReveal from "@/components/ScrollReveal";
 import { supabaseAdmin } from "@/lib/supabase";
 import { statusTurma1 } from "@/lib/academia-status";
-import { STATUS_PADRAO, vagasTxt, type StatusTurma } from "@/lib/academia-turmas";
+import { QUANDO_TURMA_1_INICIO, STATUS_PADRAO, vagasTxt, type StatusTurma } from "@/lib/academia-turmas";
 import VideoShort from "@/components/VideoShort";
 import { DiferenciaisPfb } from "@/components/ConhecaPfb";
 import ListaEsperaForm from "./ListaEsperaForm";
@@ -30,8 +30,9 @@ import CtaFixo from "./CtaFixo";
  * - Lotou: "1ª turma preenchida" e o formulário inscreve na lista de espera
  *   da 2ª turma (que também recebe as vagas de quem desistir).
  * - Sai com certificado de conclusão e compra PFB direto com a Orbital.
- * - Data, horário e local ainda não existem: vão para os inscritos, com o
- *   pedido de confirmação de presença uma semana antes.
+ * - Data da 1ª turma: sábado, 31/10, às 7h30 (QUANDO_TURMA_1). O formulário
+ *   pergunta se a pessoa pode; quem não pode vai para a lista da 2ª turma.
+ *   O local vai para os inscritos, com o pedido de confirmação de presença.
  *
  * Fotos: só obras reais da Orbital. Os "depois" em PNG de /images/projetos são
  * imagens geradas e não entram aqui.
@@ -210,6 +211,9 @@ export default async function AcademiaPage() {
                 <>Garanta sua vaga na <span style={{ color: LIMA }}>1ª turma</span></>
               )}
             </p>
+            {!fechada && (
+              <p className="text-white/80 text-sm font-semibold -mt-2 mb-4">{QUANDO_TURMA_1_INICIO} · gratuita</p>
+            )}
             <ListaEsperaForm turma={fechada ? 2 : 1} />
           </div>
         </div>

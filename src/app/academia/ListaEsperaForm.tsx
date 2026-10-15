@@ -2,6 +2,7 @@
 
 import { useRef, useState } from "react";
 import { ATUACOES, EXPERIENCIAS, FOCOS } from "@/lib/academia-waitlist";
+import { QUANDO_TURMA_1, QUANDO_TURMA_1_INICIO } from "@/lib/academia-turmas";
 
 const labelCls =
   "block text-[10px] tracking-[0.15em] uppercase font-bold text-[#74777f] mb-2";
@@ -24,6 +25,8 @@ const VAZIO = {
   role: "", role_other: "",
   main_focus: "", main_focus_other: "",
   years_experience: "",
+  // Só perguntado com a 1ª turma aberta: "sim" | "nao".
+  disponivel: "",
 };
 
 /**
@@ -42,6 +45,8 @@ export default function ListaEsperaForm({ turma }: { turma: 1 | 2 }) {
   // se tinha dado certo. `canais` = onde a confirmação foi de fato aceita.
   const [confirmacao, setConfirmacao] = useState<{ nome: string; whatsapp: boolean; email: boolean } | null>(null);
   const [turmaFinal, setTurmaFinal] = useState<1 | 2>(turma);
+  // Foi para a 2ª turma porque não pode na data (e não porque lotou).
+  const [indisponivel, setIndisponivel] = useState(false);
   const cartaoRef = useRef<HTMLDivElement>(null);
   // Fechou a confirmação → leva a pessoa até o cartão "Você está na lista",
   // em vez de deixá-lo fora da tela.
@@ -86,6 +91,7 @@ export default function ListaEsperaForm({ turma }: { turma: 1 | 2 }) {
       }
       setConfirmacao({ nome: form.name.trim().split(/\s+/)[0] || "", whatsapp: json.whatsapp === true, email: json.email === true });
       if (json.turma === 1 || json.turma === 2) setTurmaFinal(json.turma);
+      setIndisponivel(json.indisponivel === true);
       setDone(true);
     } catch {
       setError("Sem conexão. Verifique a internet e tente novamente.");
@@ -119,15 +125,19 @@ export default function ListaEsperaForm({ turma }: { turma: 1 | 2 }) {
               {turmaFinal === 2 ? "Você está na lista" : "Pré-inscrição confirmada"}{confirmacao.nome ? `, ${confirmacao.nome}` : ""}!
             </p>
             <p className="text-[#43474e] text-base leading-relaxed mb-2">
-              {turmaFinal === 2
+              {turmaFinal === 2 && indisponivel
+                ? `Como você não pode no dia da 1ª turma (${QUANDO_TURMA_1}), você entrou na lista de espera da 2ª turma.`
+                : turmaFinal === 2
                 ? "A 1ª turma está preenchida: você entrou na lista de espera da 2ª turma."
-                : "Você está na 1ª turma da formação da Academia Orbital."}
+                : `Você está na 1ª turma da formação da Academia Orbital: ${QUANDO_TURMA_1}.`}
             </p>
             <p className="text-[#43474e] text-base leading-relaxed mb-8">
               {canais ? `Enviamos a confirmação ${canais}. ` : ""}
-              {turmaFinal === 2
+              {turmaFinal === 2 && indisponivel
+                ? "Quando a 2ª turma abrir, você é avisado primeiro."
+                : turmaFinal === 2
                 ? "Se abrir vaga na 1ª turma, chamamos pela ordem da lista."
-                : "Data, horário e local chegam pelo WhatsApp."}
+                : "O local chega pelo WhatsApp."}
             </p>
             <button
               type="button" autoFocus onClick={fecharConfirmacao}
@@ -148,9 +158,11 @@ export default function ListaEsperaForm({ turma }: { turma: 1 | 2 }) {
           {turmaFinal === 2 ? "Pronto. Você está na lista da 2ª turma." : "Pronto. Pré-inscrição feita."}
         </p>
         <p className="text-[#43474e] text-sm lg:text-base leading-relaxed max-w-md">
-          {turmaFinal === 2
+          {turmaFinal === 2 && indisponivel
+            ? "Quando a 2ª turma abrir, você é avisado primeiro."
+            : turmaFinal === 2
             ? "Se abrir vaga na 1ª turma por desistência, chamamos pela ordem da lista. E quando a 2ª turma abrir, você é avisado primeiro."
-            : "Data, horário e local chegam pelo WhatsApp. Uma semana antes, pedimos que você confirme a presença."}
+            : `${QUANDO_TURMA_1_INICIO}. O local chega pelo WhatsApp e, uma semana antes, pedimos que você confirme a presença.`}
         </p>
       </div>
       </>
@@ -245,6 +257,37 @@ export default function ListaEsperaForm({ turma }: { turma: 1 | 2 }) {
             />
           </div>
         )}
+
+        {/* Data da 1ª turma: quem não pode vai para a lista da 2ª, sem ocupar
+            vaga. Com a 1ª turma preenchida, não pergunta. */}
+        {turma === 1 && (
+          <fieldset className="sm:col-span-2">
+            <legend className={labelCls}>Você tem disponibilidade no {QUANDO_TURMA_1}?</legend>
+            <div className="grid grid-cols-2 gap-2">
+              {([["sim", "Sim, posso"], ["nao", "Não posso"]] as const).map(([v, rotulo]) => (
+                <label
+                  key={v}
+                  className={`flex items-center justify-center gap-2 min-h-12 px-3 border text-sm font-semibold cursor-pointer transition-colors ${
+                    form.disponivel === v ? "border-[#0B1F45] bg-[#0B1F45] text-white" : "border-[#e2e2e2] text-[#0B1F45] hover:border-[#0B1F45]"
+                  }`}
+                >
+                  <input
+                    type="radio" name="disponivel" value={v} required
+                    checked={form.disponivel === v}
+                    onChange={() => setForm((f) => ({ ...f, disponivel: v }))}
+                    className="sr-only"
+                  />
+                  {rotulo}
+                </label>
+              ))}
+            </div>
+            {form.disponivel === "nao" && (
+              <p className="text-[#43474e] text-xs mt-2 leading-relaxed">
+                Sem problema: você entra na lista da 2ª turma e é avisado primeiro quando ela abrir.
+              </p>
+            )}
+          </fieldset>
+        )}
       </div>
 
       {/* Campo-isca anti-robô. Fora da tela e fora da ordem de tabulação. */}
@@ -262,13 +305,13 @@ export default function ListaEsperaForm({ turma }: { turma: 1 | 2 }) {
         disabled={loading}
         className="w-full min-h-14 bg-[#36A35C] text-[#0B1F45] text-sm tracking-[0.06em] sm:tracking-[0.12em] uppercase font-extrabold px-4 sm:px-6 py-4 hover:bg-[#4BB571] transition-colors disabled:opacity-50"
       >
-        {loading ? "Enviando…" : turma === 2 ? "Entrar na lista da 2ª turma →" : "Garantir minha vaga →"}
+        {loading ? "Enviando…" : turma === 2 || form.disponivel === "nao" ? "Entrar na lista da 2ª turma →" : "Garantir minha vaga →"}
       </button>
       <p className="text-[#74777f] text-[11px] text-center mt-3 leading-relaxed">
         {/* Gratuita é só a 1ª turma: nada de prometer a 2ª gratuita. */}
         {turma === 2
           ? "Cadastro gratuito. Sem compromisso."
-          : "Gratuito na 1ª turma. Data, horário e local chegam pelo WhatsApp."}
+          : `Gratuito na 1ª turma (${QUANDO_TURMA_1}). O local chega pelo WhatsApp.`}
       </p>
     </form>
   );

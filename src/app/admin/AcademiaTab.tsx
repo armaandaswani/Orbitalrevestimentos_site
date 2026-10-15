@@ -85,10 +85,19 @@ function Avisos({ r }: { r: Inscricao }) {
 
 /** Turma e resposta de presença, num relance. */
 function Situacao({ r }: { r: Inscricao }) {
-  if (turmaDe(r) === 2) return <StatusBadge tone="gray">Fila 2ª turma</StatusBadge>;
+  const semData = r.disponivel_na_data === false && <StatusBadge tone="yellow">Não pode em 31/10</StatusBadge>;
+  if (turmaDe(r) === 2) {
+    return (
+      <span className="inline-flex flex-wrap gap-1">
+        <StatusBadge tone="gray">Fila 2ª turma</StatusBadge>
+        {semData}
+      </span>
+    );
+  }
   return (
     <span className="inline-flex flex-wrap gap-1">
       <StatusBadge tone="navy">1ª turma</StatusBadge>
+      {semData}
       {r.presenca === "sim" && <StatusBadge tone="green">Vai</StatusBadge>}
       {r.presenca === "nao" && <StatusBadge tone="red">Não vai · vaga liberada</StatusBadge>}
       {!r.presenca && r.presenca_pedida_at && <StatusBadge tone="yellow">Sem resposta</StatusBadge>}
@@ -205,7 +214,7 @@ function Disparo({
       <p className="text-[#0B1F45] text-sm font-bold">{presenca ? "Pedir confirmação de presença (1ª turma)" : "Aviso geral"}</p>
       <p className="text-[#74777f] text-xs">
         {presenca
-          ? <>Envie uma semana antes. Troque [data], [horário] e [local]. {"{link}"} vira o link pessoal Vou / Não vou — quem responde &quot;não vou&quot; libera a vaga. {"{nome}"} vira o primeiro nome. Quem já recebeu ou já respondeu não recebe de novo.</>
+          ? <>Envie uma semana antes. Data e horário já vêm preenchidos (31/10, 7h30); troque [local]. {"{link}"} vira o link pessoal Vou / Não vou — quem responde &quot;não vou&quot; libera a vaga. {"{nome}"} vira o primeiro nome. Quem já recebeu ou já respondeu não recebe de novo.</>
           : <>Vai por WhatsApp e, para quem informou, por e-mail. {"{nome}"} vira o primeiro nome. Quem já recebeu um aviso geral não recebe de novo.</>}
       </p>
       {!presenca && (
@@ -217,7 +226,7 @@ function Disparo({
       )}
       <input value={assunto} onChange={(e) => setAssunto(e.target.value)} className={inputCls} aria-label="Assunto do e-mail" placeholder="Assunto do e-mail" />
       <textarea value={texto} onChange={(e) => setTexto(e.target.value)} className={`${inputCls} min-h-[220px]`} aria-label="Mensagem" />
-      {faltaPreencher && <p className="text-[#b3261e] text-xs">Troque os [colchetes] pela data, o horário e o local — o envio fica bloqueado até lá.</p>}
+      {faltaPreencher && <p className="text-[#b3261e] text-xs">Troque os [colchetes] (o local) pelo texto certo — o envio fica bloqueado até lá.</p>}
       <div className="flex flex-col sm:flex-row gap-2">
         <button type="button" onClick={testar} disabled={enviando || faltaPreencher} className={`${btnGhost} w-full sm:w-auto`}>Enviar teste para a Orbital</button>
         <button type="button" onClick={enviarTodos} disabled={enviando || pendentes === 0 || faltaPreencher} className={`${btnPrimary} w-full sm:w-auto`}>
@@ -325,10 +334,12 @@ export default function AcademiaTab() {
     const turma1 = l.filter((r) => turmaDe(r) === 1);
     const vai = turma1.filter((r) => r.presenca === "sim").length;
     const naoVai = turma1.filter((r) => r.presenca === "nao").length;
-    // Fila em ordem de chegada: quem chegou primeiro é chamado primeiro.
-    const fila = l.filter((r) => turmaDe(r) === 2).sort((a, b) => a.created_at.localeCompare(b.created_at));
+    // Fila em ordem de chegada: quem chegou primeiro é chamado primeiro — só
+    // quem pode na data da 1ª turma (quem disse que não pode espera a 2ª).
+    const turma2 = l.filter((r) => turmaDe(r) === 2);
+    const fila = turma2.filter((r) => r.disponivel_na_data !== false).sort((a, b) => a.created_at.localeCompare(b.created_at));
     return {
-      total: l.length, semana, comEmail, vagasOcupadas, vai, naoVai, fila,
+      total: l.length, semana, comEmail, vagasOcupadas, vai, naoVai, fila, turma2: turma2.length,
       semResposta: turma1.length - vai - naoVai,
       livres: Math.max(0, LIMITE_TURMA_1 - vagasOcupadas),
       topoFoco: topo ? `${rotulo(FOCOS, topo[0])} (${topo[1]})` : "—",
@@ -387,8 +398,8 @@ export default function AcademiaTab() {
             />
             <KpiCard
               label="Fila da 2ª turma"
-              value={resumo.fila.length}
-              hint="Chamados por ordem de chegada"
+              value={resumo.turma2}
+              hint={resumo.turma2 > resumo.fila.length ? `${resumo.turma2 - resumo.fila.length} não podem em 31/10 · os demais são chamados por ordem` : "Chamados por ordem de chegada"}
               onClick={() => { setFTurma("2"); setFPresenca(""); }}
             />
             <KpiCard

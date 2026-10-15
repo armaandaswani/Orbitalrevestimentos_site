@@ -17,9 +17,17 @@ export async function statusTurma1(db: SupabaseClient): Promise<StatusTurma> {
     const [t1, t2] = await Promise.all([
       db.from("academy_waitlist").select("id", { count: "exact", head: true })
         .eq("turma", 1).or("presenca.is.null,presenca.eq.sim"),
-      db.from("academy_waitlist").select("id", { count: "exact", head: true }).eq("turma", 2),
+      // Fila que fecha a 1ª turma: só quem pode na data (quem disse que não
+      // pode está na lista da 2ª, mas nunca é chamado para a 1ª).
+      db.from("academy_waitlist").select("id", { count: "exact", head: true })
+        .eq("turma", 2).or("disponivel_na_data.is.null,disponivel_na_data.eq.true"),
     ]);
     if (t1.error || t2.error) {
+      // Sem a migration 066: a fila conta todo mundo da 2ª turma.
+      if (!t1.error && isMissingColumn(t2.error)) {
+        const fila = await db.from("academy_waitlist").select("id", { count: "exact", head: true }).eq("turma", 2);
+        if (!fila.error) return calcularStatus(t1.count ?? 0, fila.count ?? 0);
+      }
       // Antes da migration 065 todo mundo é da 1ª turma.
       if (isMissingColumn(t1.error) || isMissingColumn(t2.error)) {
         const todos = await db.from("academy_waitlist").select("id", { count: "exact", head: true });

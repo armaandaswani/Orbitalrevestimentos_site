@@ -36,6 +36,7 @@ export async function GET(req: NextRequest) {
     dataBR(r.created_at),
     r.turma === 2 ? "Fila 2ª turma" : "1ª turma",
     r.presenca === "sim" ? "Vai" : r.presenca === "nao" ? "Não vai" : "",
+    r.disponivel_na_data === true ? "Sim" : r.disponivel_na_data === false ? "Não" : "",
     r.name,
     r.phone,
     // Número limpo com DDI: cola direto no WhatsApp ou em ferramenta de disparo.
@@ -49,7 +50,7 @@ export async function GET(req: NextRequest) {
   ].map(celula).join(";"));
 
   const cabecalho = [
-    "Data de cadastro", "Turma", "Presença", "Nome", "WhatsApp", "WhatsApp (só números)", "E-mail", "Cidade",
+    "Data de cadastro", "Turma", "Presença", "Pode em 31/10", "Nome", "WhatsApp", "WhatsApp (só números)", "E-mail", "Cidade",
     "Atuação", "Principal foco hoje", "Tempo de profissão", "Origem",
   ].join(";");
 

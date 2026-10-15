@@ -33,7 +33,7 @@ export async function POST(req: NextRequest) {
   }
   // [data], [horário], [local] esquecidos iriam para todo mundo.
   if (/\[[^\]]*\]/.test(texto)) {
-    return NextResponse.json({ error: "Troque os [colchetes] pela data, o horário e o local antes de enviar." }, { status: 400 });
+    return NextResponse.json({ error: "Troque os [colchetes] (o local) pelo texto certo antes de enviar." }, { status: 400 });
   }
 
   if (body?.teste === true) {

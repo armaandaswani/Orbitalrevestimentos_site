@@ -55,6 +55,10 @@ export async function POST(req: NextRequest) {
   const focusOther = limpo(body.main_focus_other, 80);
   const years = limpo(body.years_experience, 20);
   const source = limpo(body.source, 120);
+  // "Você tem disponibilidade no dia da 1ª turma?" — só vem quando a página
+  // mostra a 1ª turma aberta. Sem resposta = null (não perguntado).
+  const disp = limpo(body.disponivel, 5);
+  const disponivel: boolean | null = disp === "sim" ? true : disp === "nao" ? false : null;
 
   if (!name) return NextResponse.json({ error: "Informe seu nome." }, { status: 400 });
   // DDD + número: pelo menos 10 dígitos, venha com a máscara que vier.
@@ -81,7 +85,9 @@ export async function POST(req: NextRequest) {
   // atraso). Duas inscrições no mesmo segundo podem passar do limite por uma —
   // a folga de desistências absorve.
   const status = await statusTurma1(db);
-  const turma: Turma = status.fechada ? 2 : 1;
+  // Quem não pode na data da 1ª turma vai direto para a lista da 2ª, sem
+  // ocupar vaga (e não é chamado quando abre vaga por desistência).
+  const turma: Turma = status.fechada || disponivel === false ? 2 : 1;
   const linha = {
     name,
     phone,
@@ -94,8 +100,14 @@ export async function POST(req: NextRequest) {
     years_experience: years,
     source: source || null,
   };
-  let { data: criado, error } = await db.from("academy_waitlist").insert({ ...linha, turma }).select("id").single();
-  // Antes da migration 065 não existe a coluna turma: grava sem ela (todos na 1ª).
+  let { data: criado, error } = await db.from("academy_waitlist")
+    .insert({ ...linha, turma, disponivel_na_data: disponivel }).select("id").single();
+  // Sem a migration 066 (disponivel_na_data) ou a 065 (turma): grava com o que
+  // existir, para não perder a inscrição. A resposta fica no aviso à empresa.
+  if (error && isMissingColumn(error)) {
+    console.error("[academia/lista-espera] rodar a migration 066 (disponivel_na_data):", error.message);
+    ({ data: criado, error } = await db.from("academy_waitlist").insert({ ...linha, turma }).select("id").single());
+  }
   if (error && isMissingColumn(error)) {
     ({ data: criado, error } = await db.from("academy_waitlist").insert(linha).select("id").single());
   }
@@ -129,6 +141,7 @@ export async function POST(req: NextRequest) {
     role, role_other: roleOther || null,
     main_focus: focus, main_focus_other: focusOther || null,
     years_experience: years, source: source || null,
+    disponivel_na_data: disponivel,
   };
 
   // Confirmação para o inscrito, com teto de tempo: a tela não pode ficar
@@ -152,5 +165,9 @@ export async function POST(req: NextRequest) {
     await avisarEmpresa(inscrito, turma, await statusTurma1(db));
   });
 
-  return NextResponse.json({ ok: true, turma, whatsapp: enviado.whatsapp, email: enviado.email });
+  return NextResponse.json({
+    ok: true, turma, whatsapp: enviado.whatsapp, email: enviado.email,
+    // A tela explica por que foi para a 2ª turma: lotou ou não pode na data.
+    indisponivel: disponivel === false,
+  });
 }

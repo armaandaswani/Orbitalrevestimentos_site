@@ -78,6 +78,8 @@ export interface Inscricao {
   presenca?: "sim" | "nao" | null;
   presenca_pedida_at?: string | null;
   presenca_respondida_at?: string | null;
+  // Migration 066 — "pode no dia da 1ª turma?"; null = não perguntado.
+  disponivel_na_data?: boolean | null;
 }
 
 export const URL_ACADEMIA = "https://orbitalrevestimentos.com.br/academia";
@@ -108,8 +110,8 @@ export const PRESENCA_TEXTO_PADRAO = [
   "",
   "A *Formação em Instalação do PFB* (Painel Flexível Fibra de Bambu) da Academia Orbital está chegando:",
   "",
-  "📅 [data]",
-  "🕖 [horário]",
+  "📅 Sábado, 31/10",
+  "🕖 7h30",
   "📍 [local]",
   "",
   "Você vai comparecer? Confirme aqui: {link}",

@@ -16,7 +16,7 @@ import { getResend } from "@/lib/resend";
 import { EMAIL_EMPRESA } from "@/lib/email-destinos";
 import { ATUACOES, EXPERIENCIAS, FOCOS, rotulo } from "@/lib/academia-waitlist";
 import { emailLogo } from "@/lib/email-marca";
-import { LIMITE_TURMA_1, VAGAS_TURMA_1, type StatusTurma, type Turma } from "@/lib/academia-turmas";
+import { LIMITE_TURMA_1, QUANDO_TURMA_1, QUANDO_TURMA_1_INICIO, VAGAS_TURMA_1, type StatusTurma, type Turma } from "@/lib/academia-turmas";
 
 const FROM = "Orbital Revestimentos <noreply@orbitalrevestimentos.com.br>";
 
@@ -31,6 +31,8 @@ export interface InscritoAviso {
   main_focus_other?: string | null;
   years_experience?: string | null;
   source?: string | null;
+  /** Resposta a "tem disponibilidade no dia da 1ª turma?"; null = não perguntado. */
+  disponivel_na_data?: boolean | null;
 }
 
 export function primeiroNome(name: string): string {
@@ -91,16 +93,27 @@ async function enviarWhats(phone: string, message: string): Promise<boolean> {
 
 // ── Confirmação para quem se inscreve ────────────────────────────────────────
 
-export function mensagemConfirmacao(nome: string, temEmail: boolean, turma: Turma): string {
+export function mensagemConfirmacao(nome: string, temEmail: boolean, turma: Turma, indisponivel = false): string {
   const n = primeiroNome(nome);
   const canais = `aqui no WhatsApp${temEmail ? " e no seu e-mail" : ""}`;
+  if (turma === 2 && indisponivel) {
+    return [
+      `Olá${n ? `, ${n}` : ""}! ✅`,
+      "",
+      `Como você não pode no dia da 1ª turma (${QUANDO_TURMA_1}), você entrou na *lista de espera da 2ª turma* da *Formação em Instalação do PFB* (Painel Flexível Fibra de Bambu) da Academia Orbital.`,
+      "",
+      `Quando a 2ª turma abrir, você é avisado primeiro, ${canais}.`,
+      "",
+      "Orbital Revestimentos",
+    ].join("\n");
+  }
   if (turma === 2) {
     return [
       `Olá${n ? `, ${n}` : ""}! ✅`,
       "",
       "A 1ª turma da *Formação em Instalação do PFB* (Painel Flexível Fibra de Bambu) da Academia Orbital está preenchida — e você entrou na *lista de espera da 2ª turma*.",
       "",
-      `Se abrir vaga na 1ª turma por desistência, chamamos pela ordem da lista, ${canais}. E quando a 2ª turma abrir, você é avisado primeiro.`,
+      `Se abrir vaga na 1ª turma (${QUANDO_TURMA_1}) por desistência, chamamos pela ordem da lista, ${canais}. E quando a 2ª turma abrir, você é avisado primeiro.`,
       "",
       "Orbital Revestimentos",
     ].join("\n");
@@ -110,9 +123,11 @@ export function mensagemConfirmacao(nome: string, temEmail: boolean, turma: Turm
     "",
     "Sua pré-inscrição na *1ª turma da Formação em Instalação do PFB* (Painel Flexível Fibra de Bambu) da Academia Orbital está confirmada.",
     "",
+    `📅 *${QUANDO_TURMA_1_INICIO}*`,
+    "",
     "Esta 1ª turma é gratuita e tem vagas limitadíssimas. Quem conclui sai com certificado e pode comprar PFB direto com a Orbital.",
     "",
-    `Data, horário e local chegam ${canais}. Uma semana antes, pedimos que você confirme a presença.`,
+    `O local chega ${canais}. Uma semana antes, pedimos que você confirme a presença.`,
     "",
     "Orbital Revestimentos",
   ].join("\n");
@@ -120,7 +135,7 @@ export function mensagemConfirmacao(nome: string, temEmail: boolean, turma: Turm
 
 /** Envia a confirmação nos dois canais, em paralelo. */
 export async function enviarConfirmacao(p: InscritoAviso, turma: Turma): Promise<{ whatsapp: boolean; email: boolean }> {
-  const texto = mensagemConfirmacao(p.name, !!p.email, turma);
+  const texto = mensagemConfirmacao(p.name, !!p.email, turma, p.disponivel_na_data === false);
   const [assunto, titulo] = turma === 2
     ? ["Lista de espera da 2ª turma — Academia Orbital", "Você está na lista da 2ª turma"]
     : ["Pré-inscrição confirmada — Formação Academia Orbital", "Pré-inscrição confirmada"];
@@ -145,10 +160,13 @@ export async function avisarEmpresa(p: InscritoAviso, turma: Turma, status: Stat
     ["Mais instala hoje", foco || "—"],
     ["Tempo de profissão", rotulo(EXPERIENCIAS, p.years_experience) || "—"],
     ["Origem", p.source || "direto"],
+    ["Pode em " + QUANDO_TURMA_1, p.disponivel_na_data === true ? "Sim" : p.disponivel_na_data === false ? "Não" : "—"],
   ];
   // Para a equipe o número aparece: 20 vagas + folga de desistências.
   const totalTxt = [
-    turma === 2 ? "Entrou na LISTA DE ESPERA DA 2ª TURMA." : "Entrou na 1ª turma.",
+    turma === 2
+      ? `Entrou na LISTA DE ESPERA DA 2ª TURMA${p.disponivel_na_data === false ? " (não pode na data da 1ª)" : ""}.`
+      : "Entrou na 1ª turma.",
     `1ª turma: ${status.inscritos} de ${LIMITE_TURMA_1} pré-inscrições (${VAGAS_TURMA_1} vagas + folga para desistências)${status.fechada ? " — FECHADA" : ""}.`,
     status.fila2 ? `Fila da 2ª turma: ${status.fila2}.` : "",
   ].filter(Boolean).join(" ");

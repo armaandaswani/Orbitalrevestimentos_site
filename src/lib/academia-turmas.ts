@@ -26,6 +26,17 @@ export const MOSTRAR_INSCRITOS_A_PARTIR = 5;
 /** Contagem regressiva das vagas: aparece quando passa de 15 pré-inscritos. */
 export const CONTADOR_A_PARTIR = 16;
 
+/**
+ * Data da 1ª turma (definida pelo dono em out/2026). O formulário pergunta se a
+ * pessoa pode nesse dia; quem não pode vai para a lista da 2ª turma. O local
+ * ainda não foi divulgado: vai para os inscritos pelo WhatsApp.
+ */
+export const DATA_TURMA_1 = "sábado, 31/10";
+export const HORA_TURMA_1 = "7h30";
+export const QUANDO_TURMA_1 = `${DATA_TURMA_1}, às ${HORA_TURMA_1}`;
+/** Começo de frase: "Sábado, 31/10, às 7h30". */
+export const QUANDO_TURMA_1_INICIO = QUANDO_TURMA_1.charAt(0).toUpperCase() + QUANDO_TURMA_1.slice(1);
+
 export type Turma = 1 | 2;
 
 export interface StatusTurma {
