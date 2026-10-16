@@ -7,7 +7,7 @@ import {
 } from "./ui";
 
 /**
- * Atendimento IA (Mathilda) — conversas do WhatsApp da Orbital.
+ * Atendimento IA (Ste) — conversas do WhatsApp da Orbital.
  *
  * Os dados vivem no servidor do atendente (Google Cloud); esta aba conversa com
  * ele via /api/admin/atendente/* (rota que injeta o token secreto). Daqui dá
@@ -211,9 +211,9 @@ export default function AtendimentoTab() {
         subtitle={
           whats
             ? whats.state === "open"
-              ? `Mathilda atendendo no WhatsApp ${whats.me?.split("@")[0] ?? ""}`
+              ? `Ste atendendo no WhatsApp ${whats.me?.split("@")[0] ?? ""}`
               : "WhatsApp desconectado — abra o app Orbital Atendente no Mac e escaneie o QR."
-            : "Conversas do WhatsApp atendidas pela Mathilda"
+            : "Conversas do WhatsApp atendidas pela Ste"
         }
       />
 
@@ -361,7 +361,7 @@ export default function AtendimentoTab() {
 
                 <div className="grid grid-cols-2 sm:flex sm:flex-wrap gap-2">
                   {c.bot_paused ? (
-                    <button className={btnPrimary} disabled={ocupado} onClick={() => acao(() => api(`contacts/${c.id}/bot`, { method: "POST", body: { paused: false } }), "A Mathilda voltou a atender.")}>
+                    <button className={btnPrimary} disabled={ocupado} onClick={() => acao(() => api(`contacts/${c.id}/bot`, { method: "POST", body: { paused: false } }), "A Ste voltou a atender.")}>
                       ▶ Retomar IA
                     </button>
                   ) : (
@@ -395,7 +395,7 @@ export default function AtendimentoTab() {
                     >
                       {m.text}
                       <div className="text-[10px] text-[#74777f] mt-1 flex items-center gap-2">
-                        <span>{m.role === "client" ? "Cliente" : m.role === "bot" ? "Mathilda" : "Você"} · {quando(m.created_at)}</span>
+                        <span>{m.role === "client" ? "Cliente" : m.role === "bot" ? "Ste" : "Você"} · {quando(m.created_at)}</span>
                         {m.role === "bot" && (
                           <button
                             type="button"

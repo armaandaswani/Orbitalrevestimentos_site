@@ -2,7 +2,7 @@ import { NextRequest, NextResponse } from "next/server";
 import { isAdminRequest } from "@/lib/admin-auth";
 
 /**
- * Ponte para o Atendente IA (Mathilda), que roda no servidor próprio (Google Cloud).
+ * Ponte para o Atendente IA (Ste), que roda no servidor próprio (Google Cloud).
  *
  * O navegador fala só com esta rota (sessão de admin); daqui a chamada segue
  * para o servidor do atendente com o token secreto, que nunca chega ao cliente.
