@@ -103,7 +103,22 @@ export default function AtendimentoTab() {
   const [aviso, setAviso] = useState("");
   const [erro, setErro] = useState("");
   const fimRef = useRef<HTMLDivElement>(null);
+  const listaRef = useRef<HTMLDivElement>(null);
+  const conversaRef = useRef<HTMLDivElement>(null);
   const ultimaQtd = useRef(0);
+
+  /** Contadores e filtros levam direto para a lista já filtrada. */
+  const irPara = (f: string) => {
+    setFiltro(f);
+    setAberto(null);
+    setConversa(null);
+    setVerLicoes(false);
+    window.setTimeout(() => listaRef.current?.scrollIntoView({ behavior: "smooth", block: "start" }), 50);
+  };
+  const abrir = (id: number) => {
+    setAberto(id);
+    window.setTimeout(() => conversaRef.current?.scrollIntoView({ behavior: "smooth", block: "start" }), 50);
+  };
 
   const avisar = (t: string) => {
     setAviso(t);
@@ -226,65 +241,34 @@ export default function AtendimentoTab() {
 
       {stats && (
         <div className="grid grid-cols-2 lg:grid-cols-4 gap-3">
-          <KpiCard label="Precisa de você" value={stats.needsHuman} tone={stats.needsHuman ? "bad" : "good"} onClick={() => setFiltro("needs_human")} />
-          <KpiCard label="Quentes" value={stats.byStage.find((s) => s.stage === "hot")?.n ?? 0} tone="warn" onClick={() => setFiltro("hot")} />
-          <KpiCard label="Conversas" value={stats.byStage.reduce((a, s) => a + s.n, 0)} onClick={() => setFiltro("")} />
-          <KpiCard label="Aprendizados p/ aprovar" value={stats.pendingLessons} tone={stats.pendingLessons ? "warn" : "default"} onClick={() => setVerLicoes(true)} />
+          <KpiCard label="Precisa de você" value={stats.needsHuman} tone={stats.needsHuman ? "bad" : "good"} onClick={() => irPara("needs_human")} />
+          <KpiCard label="Quentes" value={stats.byStage.find((s) => s.stage === "hot")?.n ?? 0} tone="warn" onClick={() => irPara("hot")} />
+          <KpiCard label="Conversas" value={stats.byStage.reduce((a, s) => a + s.n, 0)} onClick={() => irPara("")} />
+          <KpiCard label="Aprendizados p/ aprovar" value={stats.pendingLessons} tone={stats.pendingLessons ? "warn" : "default"} onClick={() => { setVerLicoes(true); window.setTimeout(() => document.getElementById("aprendizados-ia")?.scrollIntoView({ behavior: "smooth", block: "start" }), 50); }} />
         </div>
       )}
 
-      {/* Aprendizados */}
-      <div className={cardCls}>
-        <button
-          type="button"
-          onClick={() => setVerLicoes((v) => !v)}
-          className="w-full flex items-center justify-between px-5 py-3.5 text-left"
-        >
-          <span className="text-[10px] tracking-[0.15em] uppercase font-bold text-[#74777f]">
-            Aprendizados da IA {stats?.pendingLessons ? `· ${stats.pendingLessons} para aprovar` : ""}
-          </span>
-          <span className="text-[#74777f] text-xs">{verLicoes ? "Fechar" : "Abrir"}</span>
-        </button>
-        {verLicoes && (
-          <div className="border-t border-[#f0f0f0] px-5 py-3 space-y-3">
-            {licoes.length === 0 && <p className="text-sm text-[#74777f]">Nenhuma regra aprendida ainda.</p>}
-            {[...pendentes, ...licoes.filter((l) => l.status !== "pending")].map((l) => (
-              <div key={l.id} className="flex flex-col sm:flex-row sm:items-start gap-2 border-b border-[#f5f5f3] pb-3 last:border-0">
-                <p className="flex-1 min-w-0 text-sm text-[#43474e] break-words">
-                  {l.status === "pending" && <StatusBadge tone="yellow">Sugestão</StatusBadge>}{" "}
-                  {l.text}
-                </p>
-                <div className="flex gap-2 shrink-0">
-                  {l.status === "pending" ? (
-                    <>
-                      <button className={btnPrimary} disabled={ocupado} onClick={() => acao(() => api(`lessons/${l.id}`, { method: "POST", body: { status: "active" } }).then(carregarLicoes), "Regra aprovada.")}>Aprovar</button>
-                      <button className={btnGhost} disabled={ocupado} onClick={() => acao(() => api(`lessons/${l.id}`, { method: "POST", body: { status: "rejected" } }).then(carregarLicoes))}>Recusar</button>
-                    </>
-                  ) : (
-                    <button className={btnGhost} disabled={ocupado} onClick={() => acao(() => api(`lessons/${l.id}`, { method: "DELETE" }).then(carregarLicoes), "Regra removida.")}>Remover</button>
-                  )}
-                </div>
-              </div>
-            ))}
-          </div>
-        )}
-      </div>
-
       <div className="grid gap-4 md:grid-cols-[minmax(0,340px)_minmax(0,1fr)]">
         {/* Lista */}
-        <div className={`${aberto ? "hidden md:block" : ""} min-w-0 space-y-3`}>
+        <div ref={listaRef} className={`${aberto ? "hidden md:block" : ""} min-w-0 space-y-3 scroll-mt-4`}>
           <div className="flex flex-wrap gap-1.5">
             {FILTROS.map((f) => (
               <button
                 key={f.id}
                 type="button"
-                onClick={() => setFiltro(f.id)}
+                onClick={() => irPara(f.id)}
                 className={`text-xs px-3 py-1.5 rounded-full border transition-colors ${filtro === f.id ? "bg-[#002045] text-white border-[#002045]" : "border-[#e2e2e2] text-[#43474e] hover:border-[#002045]"}`}
               >
                 {f.label}
               </button>
             ))}
           </div>
+          {filtro && (
+            <p className="text-xs text-[#74777f]">
+              Mostrando: <b className="text-[#002045]">{FILTROS.find((f) => f.id === filtro)?.label}</b> ·{" "}
+              <button type="button" className="underline" onClick={() => irPara("")}>ver todas</button>
+            </p>
+          )}
           <input className={inputCls} placeholder="Buscar nome, número ou resumo…" value={busca} onChange={(e) => setBusca(e.target.value)} />
           <div className={`${cardCls} overflow-hidden`}>
             {lista === null ? (
@@ -297,7 +281,7 @@ export default function AtendimentoTab() {
                   <li key={x.id}>
                     <button
                       type="button"
-                      onClick={() => setAberto(x.id)}
+                      onClick={() => abrir(x.id)}
                       className={`w-full text-left px-4 py-3 hover:bg-[#f5f5f3] ${aberto === x.id ? "bg-[#f5f5f3]" : ""}`}
                     >
                       <div className="flex items-start justify-between gap-2">
@@ -319,7 +303,7 @@ export default function AtendimentoTab() {
         </div>
 
         {/* Conversa */}
-        <div className={`${aberto ? "" : "hidden md:block"} min-w-0`}>
+        <div ref={conversaRef} className={`${aberto ? "" : "hidden md:block"} min-w-0 scroll-mt-4`}>
           {!aberto || !c ? (
             <div className={`${cardCls} p-8 text-center text-sm text-[#74777f]`}>
               {aberto ? <Spinner /> : "Escolha uma conversa."}
@@ -372,6 +356,9 @@ export default function AtendimentoTab() {
                   {c.needs_human ? (
                     <button className={btnGhost} disabled={ocupado} onClick={() => acao(() => api(`contacts/${c.id}/resolve`, { method: "POST" }), "Marcado como resolvido.")}>✔ Resolvido</button>
                   ) : null}
+                  <button className={btnGhost} disabled={ocupado} onClick={() => acao(async () => {
+                    await api(`contacts/${c.id}/followup`, { method: "POST" });
+                  }, "Follow-up enviado pelo WhatsApp.")}>📨 Follow-up</button>
                   <button className={btnGhost} disabled={ocupado} onClick={() => acao(async () => {
                     const r = await api<{ lessons: string[] }>(`contacts/${c.id}/outcome`, { method: "POST", body: { outcome: "won" } });
                     if (r.lessons.length) avisar(`Venda ganha. A IA sugeriu ${r.lessons.length} aprendizado(s) para aprovar.`);
@@ -444,6 +431,43 @@ export default function AtendimentoTab() {
           )}
         </div>
       </div>
+      {/* Aprendizados */}
+      <div id="aprendizados-ia" className={`${cardCls} scroll-mt-4`}>
+        <button
+          type="button"
+          onClick={() => setVerLicoes((v) => !v)}
+          className="w-full flex items-center justify-between px-5 py-3.5 text-left"
+        >
+          <span className="text-[10px] tracking-[0.15em] uppercase font-bold text-[#74777f]">
+            Aprendizados da IA {stats?.pendingLessons ? `· ${stats.pendingLessons} para aprovar` : ""}
+          </span>
+          <span className="text-[#74777f] text-xs">{verLicoes ? "Fechar" : "Abrir"}</span>
+        </button>
+        {verLicoes && (
+          <div className="border-t border-[#f0f0f0] px-5 py-3 space-y-3">
+            {licoes.length === 0 && <p className="text-sm text-[#74777f]">Nenhuma regra aprendida ainda.</p>}
+            {[...pendentes, ...licoes.filter((l) => l.status !== "pending")].map((l) => (
+              <div key={l.id} className="flex flex-col sm:flex-row sm:items-start gap-2 border-b border-[#f5f5f3] pb-3 last:border-0">
+                <p className="flex-1 min-w-0 text-sm text-[#43474e] break-words">
+                  {l.status === "pending" && <StatusBadge tone="yellow">Sugestão</StatusBadge>}{" "}
+                  {l.text}
+                </p>
+                <div className="flex gap-2 shrink-0">
+                  {l.status === "pending" ? (
+                    <>
+                      <button className={btnPrimary} disabled={ocupado} onClick={() => acao(() => api(`lessons/${l.id}`, { method: "POST", body: { status: "active" } }).then(carregarLicoes), "Regra aprovada.")}>Aprovar</button>
+                      <button className={btnGhost} disabled={ocupado} onClick={() => acao(() => api(`lessons/${l.id}`, { method: "POST", body: { status: "rejected" } }).then(carregarLicoes))}>Recusar</button>
+                    </>
+                  ) : (
+                    <button className={btnGhost} disabled={ocupado} onClick={() => acao(() => api(`lessons/${l.id}`, { method: "DELETE" }).then(carregarLicoes), "Regra removida.")}>Remover</button>
+                  )}
+                </div>
+              </div>
+            ))}
+          </div>
+        )}
+      </div>
+
     </div>
   );
 }
