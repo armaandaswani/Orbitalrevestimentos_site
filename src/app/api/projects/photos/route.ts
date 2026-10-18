@@ -17,6 +17,8 @@ const OPTIONAL_PHOTO_COLS = [
   // migração 053
   "primary_category", "showroom_id", "tags", "needs_review", "review_reason",
   "cover_focus_x", "cover_focus_y", "cover_zoom",
+  // migração 067
+  "extra_product_codes", "projeto_de",
 ];
 export function stripOptionalPhotoCols(body: unknown): Record<string, unknown> {
   if (!body || typeof body !== "object") return {};

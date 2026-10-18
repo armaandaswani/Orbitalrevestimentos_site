@@ -60,6 +60,8 @@ export async function GET(req: NextRequest) {
       slug,
       title: p.title,
       product_code: p.product_code ?? "",
+      extra_product_codes: (p.extra_product_codes as string[] | null) ?? [],
+      projeto_de: (p.projeto_de as string | null) ?? null,
       image_after: p.image_after ?? "",
       cover_focus_x: p.cover_focus_x ?? 0.5,
       cover_focus_y: p.cover_focus_y ?? 0.5,

@@ -16,6 +16,7 @@ import { COVER_ASPECT, coverStyle } from "@/lib/cover-crop";
 import { videoHost } from "@/lib/video-link";
 import VideoThumb from "@/components/VideoThumb";
 import VideoLinkPlayer from "@/components/VideoLinkPlayer";
+import { autoriaTxt, modelosTxt } from "@/lib/projeto-modelos";
 
 /**
  * A qual seção o projeto pertence.
@@ -40,6 +41,9 @@ interface Project {
   slug: string;
   title: string;
   product_code: string;
+  /** Migração 067 — modelos além do principal e autoria ("Projeto de …"). */
+  extra_product_codes?: string[] | null;
+  projeto_de?: string | null;
   categories: string[];
   image_after: string;
   image_before?: string;
@@ -194,9 +198,12 @@ function ProjectLightbox({
       >
         <div>
           <p className="text-[#36A35C] text-[9px] tracking-[0.2em] uppercase font-bold">
-            {project.product_code}
+            {modelosTxt(project)}
           </p>
           <p className="text-white font-serif text-base mt-0.5">{project.title}</p>
+          {project.projeto_de?.trim() && (
+            <p className="text-white/60 text-[11px] italic mt-0.5">{autoriaTxt(project.projeto_de)}</p>
+          )}
         </div>
 
         {/* View mode + filter row */}
@@ -578,11 +585,14 @@ function ProjectCard({ project, onOpen }: { project: Project; onOpen: (p: Projec
       {/* Caption below image */}
       <div className="px-3 pt-2.5 pb-3 border-t border-[#efefef]">
         <p className="text-[#2347A0] text-[8px] tracking-[0.18em] uppercase font-semibold mb-1">
-          {project.product_code}
+          {modelosTxt(project)}
         </p>
         <h3 className="font-serif text-[#0B1F45] text-sm font-normal leading-snug">
           {project.title}
         </h3>
+        {project.projeto_de?.trim() && (
+          <p className="text-[#43474e] text-[10px] italic mt-0.5">{autoriaTxt(project.projeto_de)}</p>
+        )}
         {project.note && (
           <p className="text-[#9e9e9e] text-[9px] tracking-[0.04em] uppercase mt-1">
             {project.note}

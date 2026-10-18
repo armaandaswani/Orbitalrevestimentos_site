@@ -1,6 +1,8 @@
 "use client";
 
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
+import ModelosPicker from "./ModelosPicker";
+import { camposDosModelos, modelosDoProjeto, modelosTxt } from "@/lib/projeto-modelos";
 import { useRouter } from "next/navigation";
 import Link from "next/link";
 import AdminShell from "../AdminShell";
@@ -31,6 +33,8 @@ interface Media {
 }
 interface Project {
   id: string; slug: string; title: string; product_code: string; short_description?: string;
+  /** Migração 067: modelos além do principal + autoria ("Projeto de …"). */
+  extra_product_codes?: string[] | null; projeto_de?: string | null;
   note?: string; image_after: string; image_before?: string; cover_category?: string | null;
   is_active: boolean; is_featured?: boolean; show_on_home?: boolean; is_new?: boolean; feature_order?: number;
   primary_category?: string | null; showroom_id?: string | null; tags?: string[];
@@ -40,7 +44,7 @@ interface Project {
 interface Cat { slug: string; label: string; active: boolean }
 interface Showroom { id: string; name: string; address: string | null; active: boolean; kind?: "showroom" | "revenda" | null }
 interface Tag { id: string; slug: string; label: string; active: boolean }
-interface Product { code: string; name: string; finish?: string }
+interface Product { code: string; name: string; finish?: string; linha?: string | null; image_path?: string | null }
 
 const SHOWROOM_SLUG = "showroom";
 
@@ -343,7 +347,7 @@ export default function ProjectEditor({ id }: { id: string }) {
         </div>
         <p className="text-[#0B1F45] text-base mt-2.5">{p.title?.trim() || "Sem nome"}</p>
         <p className="text-[#74777f] text-[11px]">
-          {p.product_code || "sem produto"}{catLabel ? ` · ${catLabel}` : ""}
+          {modelosTxt(p) || "sem produto"}{catLabel ? ` · ${catLabel}` : ""}
         </p>
         {isShowroom && showroom && (
           <p className="text-[#74777f] text-[11px] mt-0.5">{showroom.name}</p>
@@ -413,14 +417,19 @@ export default function ProjectEditor({ id }: { id: string }) {
                 <input value={p.short_description ?? ""} onChange={(e) => set({ short_description: e.target.value })}
                   placeholder="Uma linha sobre o ambiente" className={inputCls} />
               </div>
+              <div className="sm:col-span-2">
+                <label className={labelCls}>Modelos utilizados</label>
+                <ModelosPicker
+                  produtos={products}
+                  codigos={modelosDoProjeto(p)}
+                  onChange={(codigos) => set(camposDosModelos(codigos))}
+                />
+              </div>
               <div>
-                <label className={labelCls}>Produto utilizado</label>
-                <select value={p.product_code ?? ""} onChange={(e) => set({ product_code: e.target.value })} className={inputCls}>
-                  <option value="">— selecione —</option>
-                  {products.map((pr) => (
-                    <option key={pr.code} value={pr.code}>{pr.code} — {pr.name}</option>
-                  ))}
-                </select>
+                <label className={labelCls}>Projeto de</label>
+                <input value={p.projeto_de ?? ""} onChange={(e) => set({ projeto_de: e.target.value })}
+                  placeholder="Ex.: Arq. Fulana de Tal" className={inputCls} />
+                <p className="text-[#a0a3a8] text-[10px] mt-1">Opcional. No site: &quot;Projeto de Arq. Fulana de Tal&quot;.</p>
               </div>
               <div>
                 <label className={labelCls}>Observação interna</label>

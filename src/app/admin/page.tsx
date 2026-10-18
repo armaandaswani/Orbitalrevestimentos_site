@@ -13,6 +13,8 @@ import PedidosTab, { type QuoteOption } from "./PedidosTab";
 import RepOversightTab from "./RepOversightTab";
 import EstoqueTab from "./EstoqueTab";
 import AcademiaTab from "./AcademiaTab";
+import ModelosPicker from "./projetos/ModelosPicker";
+import { camposDosModelos, modelosDoProjeto } from "@/lib/projeto-modelos";
 import AtendimentoTab from "./AtendimentoTab";
 import ContatosTab from "./ContatosTab";
 import SquareCropper from "@/components/SquareCropper";
@@ -82,7 +84,7 @@ interface SalesRep {
 
 interface ProductImage { id:string; product_id:string; image_path:string; sort_order:number; }
 interface DbProduct { id:string; code:string; name:string; linha:"Classic"|"Brilliance"|"Elegance"; finish:string; price:number; price_per_m2:number; description:string; image_path:string; is_active:boolean; show_in_catalog?:boolean; sort_order:number; created_at:string; product_images?: ProductImage[]; render_finish_description?: string | null; render_panel_width_m?: number | null; render_panel_height_m?: number | null; render_context_image_path?: string | null; render_texture_path?: string | null; render_extra_notes?: string | null; }
-interface DbPhotoProject { id:string; slug:string; title:string; product_code:string; short_description?:string; categories:string[]; image_after:string; image_before:string; note:string; is_active:boolean; is_featured?:boolean; show_on_home?:boolean; is_new?:boolean; feature_order?:number; content_type?:string|null; cover_category?:string|null; sort_order:number; }
+interface DbPhotoProject { id:string; slug:string; title:string; product_code:string; extra_product_codes?:string[]|null; projeto_de?:string|null; short_description?:string; categories:string[]; image_after:string; image_before:string; note:string; is_active:boolean; is_featured?:boolean; show_on_home?:boolean; is_new?:boolean; feature_order?:number; content_type?:string|null; cover_category?:string|null; sort_order:number; }
 interface DbRenderProject { id:string; slug:string; title:string; product_code:string; image_path:string; is_active:boolean; sort_order:number; }
 interface ProjectMedia { id:string; project_slug:string; type:"image"|"video"; url:string; caption:string|null; description:string|null; category:"antes"|"depois"|"geral"; is_cover?:boolean; sort_order:number; }
 
@@ -536,10 +538,9 @@ export default function AdminPage() {
   const [editingRenderId, setEditingRenderId] = useState<string|null>(null);
   const [renderImporting, setRenderImporting] = useState<string | null>(null); // slug being imported
   const [renderImportingAll, setRenderImportingAll] = useState(false);
-  const [photoForm, setPhotoForm] = useState({ slug:"", title:"", product_code:"", short_description:"", categories:[] as string[], image_after:"", image_before:"", note:"", is_active:true, is_featured:false, show_on_home:false, is_new:false, feature_order:0, content_type:"", cover_category:"depois", sort_order:0 });
+  const [photoForm, setPhotoForm] = useState({ slug:"", title:"", product_code:"", extra_product_codes:[] as string[], projeto_de:"", short_description:"", categories:[] as string[], image_after:"", image_before:"", note:"", is_active:true, is_featured:false, show_on_home:false, is_new:false, feature_order:0, content_type:"", cover_category:"depois", sort_order:0 });
   const [slugTouched, setSlugTouched] = useState(false);
   const [photoAdvancedOpen, setPhotoAdvancedOpen] = useState(false);
-  const [productPickerQuery, setProductPickerQuery] = useState("");
   // Recorte 1:1 da imagem de capa/antes do projeto (SquareCropper).
   const [coverCrop, setCoverCrop] = useState<{ file: File; target: "image_after" | "image_before" } | null>(null);
   const [renderForm, setRenderForm] = useState({ slug:"", title:"", product_code:"", image_path:"", is_active:true, sort_order:0 });
@@ -1793,8 +1794,8 @@ export default function AdminPage() {
       setPendingFotos([]);
       setShowPhotoForm(false);
       setEditingPhotoId(null);
-      setPhotoForm({ slug:"", title:"", product_code:"", short_description:"", categories:[], image_after:"", image_before:"", note:"", is_active:true, is_featured:false, show_on_home:false, is_new:false, feature_order:0, content_type:"", cover_category:"depois", sort_order:0 });
-      setSlugTouched(false); setProductPickerQuery(""); setPhotoAdvancedOpen(false);
+      setPhotoForm({ slug:"", title:"", product_code:"", extra_product_codes:[], projeto_de:"", short_description:"", categories:[], image_after:"", image_before:"", note:"", is_active:true, is_featured:false, show_on_home:false, is_new:false, feature_order:0, content_type:"", cover_category:"depois", sort_order:0 });
+      setSlugTouched(false); setPhotoAdvancedOpen(false);
       fetchProjects();
     }
   }
@@ -1834,8 +1835,8 @@ export default function AdminPage() {
 
   function startEditPhoto(p: DbPhotoProject) {
     setEditingPhotoId(p.id);
-    setPhotoForm({ slug: p.slug, title: p.title, product_code: p.product_code, short_description: p.short_description ?? "", categories: p.categories, image_after: p.image_after, image_before: p.image_before, note: p.note, is_active: p.is_active, is_featured: p.is_featured ?? false, show_on_home: p.show_on_home ?? false, is_new: p.is_new ?? false, feature_order: p.feature_order ?? 0, content_type: p.content_type ?? "", cover_category: p.cover_category === "antes" ? "antes" : "depois", sort_order: p.sort_order });
-    setSlugTouched(true); setProductPickerQuery(""); setPhotoAdvancedOpen(false);
+    setPhotoForm({ slug: p.slug, title: p.title, product_code: p.product_code, extra_product_codes: p.extra_product_codes ?? [], projeto_de: p.projeto_de ?? "", short_description: p.short_description ?? "", categories: p.categories, image_after: p.image_after, image_before: p.image_before, note: p.note, is_active: p.is_active, is_featured: p.is_featured ?? false, show_on_home: p.show_on_home ?? false, is_new: p.is_new ?? false, feature_order: p.feature_order ?? 0, content_type: p.content_type ?? "", cover_category: p.cover_category === "antes" ? "antes" : "depois", sort_order: p.sort_order });
+    setSlugTouched(true); setPhotoAdvancedOpen(false);
     setShowPhotoForm(true);
     setTimeout(() => photoTabFormRef.current?.scrollIntoView({ behavior: "smooth", block: "start" }), 50);
   }
@@ -6387,8 +6388,8 @@ export default function AdminPage() {
                 <button
                   onClick={() => {
                     setEditingPhotoId(null);
-                    setPhotoForm({ slug:"", title:"", product_code:"", short_description:"", categories:[], image_after:"", image_before:"", note:"", is_active:true, is_featured:false, show_on_home:false, is_new:false, feature_order:0, content_type:"", cover_category:"depois", sort_order:0 });
-                    setSlugTouched(false); setProductPickerQuery(""); setPhotoAdvancedOpen(false);
+                    setPhotoForm({ slug:"", title:"", product_code:"", extra_product_codes:[], projeto_de:"", short_description:"", categories:[], image_after:"", image_before:"", note:"", is_active:true, is_featured:false, show_on_home:false, is_new:false, feature_order:0, content_type:"", cover_category:"depois", sort_order:0 });
+                    setSlugTouched(false); setPhotoAdvancedOpen(false);
                     setPendingFotos([]);
                     setShowPhotoForm(true);
                     setTimeout(() => photoTabFormRef.current?.scrollIntoView({ behavior: "smooth", block: "start" }), 50);
@@ -6419,48 +6420,22 @@ export default function AdminPage() {
                       </div>
                     </div>
 
-                    {/* Produto utilizado — seletor conectado ao catálogo */}
+                    {/* Modelos aplicados — um ou vários, do catálogo (migração 067) */}
                     <div className="mb-4">
-                      <label className={labelCls}>Produto utilizado</label>
-                      {photoForm.product_code ? (
-                        (() => {
-                          const sel = dbProducts.find((p) => p.code === photoForm.product_code);
-                          return (
-                            <div className="flex items-center gap-3 border border-[#e2e2e2] px-3 py-2">
-                              {sel?.image_path && <img src={sel.image_path} className="w-9 h-9 object-cover border border-[#e2e2e2]" alt="" />}
-                              <div className="flex-1 min-w-0">
-                                <p className="text-[#0B1F45] text-sm font-semibold truncate">{sel ? `${sel.code} — ${sel.name}` : photoForm.product_code}</p>
-                                {sel ? <p className="text-[#74777f] text-[11px]">Linha {sel.linha}</p> : <p className="text-amber-700 text-[11px]">Código fora do catálogo atual</p>}
-                              </div>
-                              <button type="button" onClick={() => { setPhotoForm({...photoForm, product_code: ""}); setProductPickerQuery(""); }} className="text-[#cc0000] hover:text-white hover:bg-[#cc0000] w-7 h-7 flex items-center justify-center text-sm font-bold transition-colors" aria-label="Remover produto">✕</button>
-                            </div>
-                          );
-                        })()
-                      ) : (
-                        <div className="relative">
-                          <input type="text" value={productPickerQuery} onChange={(e) => setProductPickerQuery(e.target.value)} className={inputCls} placeholder="Buscar por código ou nome do modelo…" />
-                          {productPickerQuery.trim() && (() => {
-                            const q = productPickerQuery.trim().toLowerCase();
-                            const matches = dbProducts.filter((p) => p.code.toLowerCase().includes(q) || p.name.toLowerCase().includes(q)).slice(0, 12);
-                            return (
-                              <div className="absolute z-20 left-0 right-0 mt-1 max-h-60 overflow-y-auto bg-white border border-[#e2e2e2] shadow-lg">
-                                {matches.length > 0 ? matches.map((p) => (
-                                  <button key={p.id} type="button" onClick={() => { setPhotoForm((prev) => ({ ...prev, product_code: p.code })); setProductPickerQuery(""); }} className="w-full flex items-center gap-3 px-3 py-2 hover:bg-[#eef2fb] text-left border-b border-[#f0f0f0] last:border-b-0">
-                                    {p.image_path && <img src={p.image_path} className="w-8 h-8 object-cover border border-[#e2e2e2]" alt="" />}
-                                    <span className="min-w-0">
-                                      <span className="text-[#0B1F45] text-sm font-semibold block truncate">{p.code} — {p.name}</span>
-                                      <span className="text-[#74777f] text-[11px]">Linha {p.linha}</span>
-                                    </span>
-                                  </button>
-                                )) : (
-                                  <p className="px-3 py-2 text-[#74777f] text-xs">Nenhum produto encontrado no catálogo.</p>
-                                )}
-                              </div>
-                            );
-                          })()}
-                          <p className="text-[#a0a3a8] text-[10px] mt-1">Selecione do catálogo — evita códigos inexistentes.</p>
-                        </div>
-                      )}
+                      <label className={labelCls}>Modelos utilizados</label>
+                      <ModelosPicker
+                        produtos={dbProducts}
+                        codigos={modelosDoProjeto(photoForm)}
+                        onChange={(codigos) => setPhotoForm((prev) => ({ ...prev, ...camposDosModelos(codigos) }))}
+                      />
+                    </div>
+
+                    {/* Autoria: aparece no site como "Projeto de …" */}
+                    <div className="mb-4">
+                      <label className={labelCls}>Projeto de</label>
+                      <input type="text" value={photoForm.projeto_de} onChange={(e) => setPhotoForm({ ...photoForm, projeto_de: e.target.value })}
+                        className={inputCls} placeholder="Arquiteto(a) ou profissional — ex.: Arq. Fulana de Tal" />
+                      <p className="text-[#a0a3a8] text-[10px] mt-1">Opcional. No site aparece como &quot;Projeto de Arq. Fulana de Tal&quot;.</p>
                     </div>
 
                     {/* Nota + avançado */}

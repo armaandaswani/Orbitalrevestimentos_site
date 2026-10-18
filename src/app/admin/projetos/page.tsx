@@ -4,6 +4,7 @@ import { useEffect, useMemo, useState } from "react";
 import Link from "next/link";
 import AdminShell from "../AdminShell";
 import { btnGhost, btnPrimary } from "../ui";
+import { autoriaTxt, modelosDoProjeto, modelosTxt } from "@/lib/projeto-modelos";
 
 /**
  * Lista de projetos — só lista. O formulário de cadastro não mora mais aqui:
@@ -15,6 +16,7 @@ import { btnGhost, btnPrimary } from "../ui";
 
 interface Row {
   id: string; slug: string; title: string; product_code: string;
+  extra_product_codes?: string[] | null; projeto_de?: string | null;
   image_after: string; cover_focus_x: number; cover_focus_y: number;
   is_active: boolean;
   primary_category: string | null; category_label: string | null;
@@ -65,7 +67,7 @@ export default function ProjetosListPage() {
   }, [rows]);
 
   const produtos = useMemo(
-    () => [...new Set(rows.map((r) => r.product_code).filter(Boolean))].sort(),
+    () => [...new Set(rows.flatMap((r) => modelosDoProjeto(r)))].sort(),
     [rows],
   );
 
@@ -76,7 +78,7 @@ export default function ProjetosListPage() {
     if (status === "revisao" && !r.needs_review) return false;
     if (cat && r.primary_category !== cat) return false;
     if (showroom && r.showroom_id !== showroom) return false;
-    if (produto && r.product_code !== produto) return false;
+    if (produto && !modelosDoProjeto(r).includes(produto)) return false;
     return true;
   });
 
@@ -210,7 +212,7 @@ export default function ProjetosListPage() {
                   <p className="text-amber-800 text-[11px] mt-1">{r.review_reason}</p>
                 )}
                 <p className="text-[#a0a3a8] text-[11px] mt-1">
-                  {r.product_code || "sem produto"} · {r.media_count} {r.media_count === 1 ? "mídia" : "mídias"}
+                  {modelosTxt(r) || "sem produto"}{r.projeto_de ? ` · ${autoriaTxt(r.projeto_de)}` : ""} · {r.media_count} {r.media_count === 1 ? "mídia" : "mídias"}
                   {r.tags.length > 0 && ` · ${r.tags.join(", ")}`}
                 </p>
               </div>

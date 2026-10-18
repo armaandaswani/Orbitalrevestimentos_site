@@ -3,6 +3,7 @@
 import { useEffect, useState } from "react";
 import Link from "next/link";
 import { COVER_ASPECT, coverStyle } from "@/lib/cover-crop";
+import { autoriaTxt, modelosTxt } from "@/lib/projeto-modelos";
 
 /**
  * Página de um showroom parceiro: o endereço mora no parceiro, e cada ambiente
@@ -16,6 +17,7 @@ interface Showroom {
 }
 interface Ambient {
   id: string; slug: string; title: string; product_code: string; short_description?: string;
+  extra_product_codes?: string[] | null; projeto_de?: string | null;
   image_after: string; showroom_id?: string | null;
   cover_focus_x?: number; cover_focus_y?: number; cover_zoom?: number;
 }
@@ -133,8 +135,9 @@ export default function ShowroomClient({ slug }: { slug: string }) {
                 <div className="px-3 py-3">
                   <p className="text-[#0B1F45] text-base">{a.title}</p>
                   <p className="text-[#74777f] text-[11px] mt-0.5">
-                    {a.product_code}{a.short_description ? ` · ${a.short_description}` : ""}
+                    {modelosTxt(a)}{a.short_description ? ` · ${a.short_description}` : ""}
                   </p>
+                  {a.projeto_de?.trim() && <p className="text-[#43474e] text-[11px] italic mt-0.5">{autoriaTxt(a.projeto_de)}</p>}
                 </div>
               </Link>
             ))}
