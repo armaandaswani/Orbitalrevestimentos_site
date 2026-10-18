@@ -25,10 +25,10 @@ export const metadata: Metadata = {
     url: "https://orbitalrevestimentos.com.br/projetos",
     images: [
       {
-        url: "/images/projetos/restaurante-depois.jpeg",
+        url: "/images/projetos/escada-madeira-pfb-2026-10-og.jpg",
         width: 1200,
-        height: 800,
-        alt: "Restaurante revestido com PFB Orbital — Imbuia Elegance",
+        height: 630,
+        alt: "Escada com paredes revestidas em PFB Orbital acabamento madeira",
       },
     ],
   },

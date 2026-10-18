@@ -953,13 +953,14 @@ export default function ProjetosPage() {
       <section className="relative min-h-[400px] lg:min-h-[480px] flex items-end">
         <div className="absolute inset-0">
           <Image
-            src="/images/projetos/restaurante-depois.jpeg"
-            alt="Restaurante — PFB Orbital"
+            src="/images/projetos/escada-madeira-pfb-2026-10.jpg"
+            alt="Escada com paredes revestidas em PFB Orbital acabamento madeira"
             fill
-            className="object-cover object-center"
+            sizes="100vw"
+            className="object-cover object-[center_65%]"
             priority
           />
-          <div className="absolute inset-0 bg-gradient-to-t from-[#001223] via-[#001223]/75 to-[#001223]/25" />
+          <div className="absolute inset-0 bg-gradient-to-t from-[#001223] via-[#001223]/60 to-[#001223]/10" />
         </div>
         <div className="relative z-10 w-full max-w-[1280px] mx-auto px-4 lg:px-16 pt-16 pb-14 lg:pb-20 text-center md:text-left">
           <div className="inline-flex items-center gap-3 mb-5">
@@ -1124,13 +1125,13 @@ export default function ProjetosPage() {
           </div>
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-1">
             <div className="relative aspect-[4/3] overflow-hidden">
-              <Image src="/images/projetos/restaurante-antes.png" alt="Restaurante — antes" fill className="object-cover brightness-[0.82] saturate-75" />
+              <Image src="/images/academia/lavabo-consultorio-antes.jpg" alt="Lavabo de consultório — antes" fill className="object-cover brightness-[0.82] saturate-75" />
               <div className="absolute bottom-0 inset-x-0 p-4 sm:p-6 bg-gradient-to-t from-[#090e18]/80 to-transparent">
                 <span className="text-white/55 text-[10px] tracking-[0.2em] uppercase font-bold">Antes</span>
               </div>
             </div>
             <div className="relative aspect-[4/3] overflow-hidden">
-              <Image src="/images/projetos/restaurante-depois.jpeg" alt="Restaurante — depois" fill className="object-cover" />
+              <Image src="/images/academia/lavabo-consultorio-depois.jpg" alt="Lavabo de consultório — depois, com PFB acabamento mármore e forro amadeirado" fill className="object-cover" />
               <div className="absolute bottom-0 inset-x-0 p-4 sm:p-6 bg-gradient-to-t from-[#090e18]/80 to-transparent">
                 <span className="text-[#36A35C] text-[10px] tracking-[0.2em] uppercase font-bold">Depois</span>
               </div>
@@ -1138,10 +1139,10 @@ export default function ProjetosPage() {
           </div>
           <div className="mt-5 flex flex-col sm:flex-row sm:items-center justify-between gap-3 border-t border-white/10 pt-5">
             <div>
-              <p className="text-[#36A35C] text-[10px] tracking-[0.15em] uppercase font-semibold mb-1">ORB-002 · Imbuia · Elegance</p>
-              <p className="text-white/50 text-sm">Restaurante · Comercial · Manaus, AM</p>
+              <p className="text-[#36A35C] text-[10px] tracking-[0.15em] uppercase font-semibold mb-1">Mármore nas paredes · Forro amadeirado</p>
+              <p className="text-white/50 text-sm">Lavabo de consultório · Comercial · Manaus, AM</p>
             </div>
-            <p className="text-white/30 text-xs italic">2 horas de instalação · Sem obra pesada · Sem poeira</p>
+            <p className="text-white/30 text-xs italic">Sem obra pesada · Sem poeira</p>
           </div>
         </div>
       </section>
