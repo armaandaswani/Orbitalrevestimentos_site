@@ -950,33 +950,58 @@ export default function ProjetosPage() {
       )}
 
       {/* ── Hero ────────────────────────────────────────────────────────────── */}
-      <section className="relative min-h-[400px] lg:min-h-[480px] flex items-end">
-        <div className="absolute inset-0">
-          <Image
-            src="/images/projetos/escada-madeira-pfb-2026-10.jpg"
-            alt="Escada com paredes revestidas em PFB Orbital acabamento madeira"
-            fill
-            sizes="100vw"
-            className="object-cover object-[center_65%]"
-            priority
-          />
-          <div className="absolute inset-0 bg-gradient-to-t from-[#001223] via-[#001223]/60 to-[#001223]/10" />
-        </div>
-        <div className="relative z-10 w-full max-w-[1280px] mx-auto px-4 lg:px-16 pt-16 pb-14 lg:pb-20 text-center md:text-left">
-          <div className="inline-flex items-center gap-3 mb-5">
-            <div className="w-6 h-px bg-[#36A35C]" />
-            <p className="text-[#36A35C] text-[10px] sm:text-xs tracking-[0.2em] sm:tracking-[0.3em] uppercase font-semibold">
-              Projetos · Showrooms · Revenda
+      {/* Texto à esquerda e composição de três fotos reais à direita (no
+          celular, embaixo). Nenhuma foto esticada na largura toda: no
+          desktop uma foto só, em faixa, ficava estourada. */}
+      <section className="bg-[#001223] text-white">
+        <div className="max-w-[1280px] mx-auto px-4 lg:px-16 pt-14 pb-10 lg:py-16 grid grid-cols-1 lg:grid-cols-[1.1fr_1fr] gap-10 lg:gap-14 items-center">
+          <div className="text-center lg:text-left">
+            <div className="inline-flex items-center gap-3 mb-5">
+              <div className="w-6 h-px bg-[#36A35C]" />
+              <p className="text-[#36A35C] text-[10px] sm:text-xs tracking-[0.2em] sm:tracking-[0.3em] uppercase font-semibold">
+                Projetos · Showrooms · Revenda
+              </p>
+            </div>
+            <h1 className="font-serif text-white text-3xl sm:text-5xl lg:text-[3.4rem] xl:text-[3.9rem] font-normal tracking-[-0.025em] leading-[1.04] mb-5 max-w-3xl mx-auto lg:mx-0 lg:whitespace-nowrap">
+              <span className="sr-only">Orbital Revestimentos — projetos em Manaus. </span>
+              Veja o PFB de perto.
+            </h1>
+            <p className="text-white/60 text-base lg:text-lg leading-relaxed max-w-xl mx-auto lg:mx-0">
+              Obras entregues, ambientes decorados em empresas parceiras e pontos de revenda em Manaus.
+              Escolha por onde começar.
             </p>
           </div>
-          <h1 className="font-serif text-white text-3xl sm:text-5xl lg:text-[4.5rem] font-normal tracking-[-0.025em] leading-[1.04] mb-5 max-w-3xl mx-auto md:mx-0">
-            <span className="sr-only">Orbital Revestimentos — projetos em Manaus. </span>
-            Veja o PFB de perto.
-          </h1>
-          <p className="text-white/60 text-base lg:text-lg leading-relaxed max-w-xl mx-auto md:mx-0">
-            Obras entregues, ambientes decorados em empresas parceiras e pontos de revenda em Manaus.
-            Escolha por onde começar.
-          </p>
+          <div className="grid grid-cols-[1.15fr_1fr] grid-rows-2 gap-2 h-[320px] sm:h-[420px] lg:h-[480px]">
+            <div className="relative row-span-2 overflow-hidden bg-[#0B1F45]">
+              <Image
+                src="/images/projetos/escada-madeira-pfb-2026-10.jpg"
+                alt="Escada com paredes revestidas em PFB Orbital acabamento madeira"
+                fill
+                sizes="(min-width: 1024px) 320px, 55vw"
+                className="object-cover object-[45%_60%]"
+                priority
+              />
+            </div>
+            <div className="relative overflow-hidden bg-[#0B1F45]">
+              <Image
+                src="/images/projetos/escada-luminarias-pfb-2026-10.jpg"
+                alt="Pé-direito duplo da escada com paredes e molduras das janelas em PFB acabamento madeira"
+                fill
+                sizes="(min-width: 1024px) 280px, 45vw"
+                className="object-cover"
+                priority
+              />
+            </div>
+            <div className="relative overflow-hidden bg-[#0B1F45]">
+              <Image
+                src="/images/projetos/escada-degraus-pfb-2026-10.jpg"
+                alt="Escada de mármore entre paredes revestidas em PFB acabamento madeira"
+                fill
+                sizes="(min-width: 1024px) 280px, 45vw"
+                className="object-cover object-[50%_40%]"
+              />
+            </div>
+          </div>
         </div>
       </section>
 
