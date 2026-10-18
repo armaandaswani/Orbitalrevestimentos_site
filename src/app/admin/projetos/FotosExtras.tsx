@@ -11,6 +11,10 @@ import React, { useCallback, useEffect, useRef, useState } from "react";
  *
  *  - Projeto já salvo (slug): grava direto em project_media.
  *  - Projeto novo: guarda a lista (`pending`) e o formulário grava ao salvar.
+ *
+ * Ordem: arrastar e soltar no computador, ou as setas ◀ ▶ de cada foto (que
+ * funcionam também no celular, onde arrastar não funciona). É a ordem da
+ * galeria do projeto no site (sort_order).
  */
 
 export type Categoria = "depois" | "antes" | "geral";
@@ -54,6 +58,7 @@ export default function FotosExtras({
   const [enviando, setEnviando] = useState<{ feito: number; total: number } | null>(null);
   const [erro, setErro] = useState("");
   const inputRef = useRef<HTMLInputElement | null>(null);
+  const [arrastando, setArrastando] = useState<number | null>(null);
 
   const carregar = useCallback(async () => {
     if (!slug) return;
@@ -109,12 +114,40 @@ export default function FotosExtras({
     }).catch(() => {});
   }
 
+  /** Move a foto da posição `de` para `para` e grava só as que mudaram de lugar. */
+  async function mover(de: number, para: number) {
+    if (de === para || para < 0) return;
+    if (!slug) {
+      setPending((prev) => {
+        if (para >= prev.length) return prev;
+        const l = [...prev];
+        const [x] = l.splice(de, 1);
+        l.splice(para, 0, x);
+        return l;
+      });
+      return;
+    }
+    if (para >= midias.length) return;
+    const l = [...midias];
+    const [x] = l.splice(de, 1);
+    l.splice(para, 0, x);
+    const reindexada = l.map((m, i) => ({ ...m, sort_order: i }));
+    const mudaram = reindexada.filter((m) => midias.find((o) => o.id === m.id)?.sort_order !== m.sort_order);
+    setMidias(reindexada);
+    const r = await Promise.all(mudaram.map((m) =>
+      fetch(`/api/projects/media/${m.id}`, {
+        method: "PATCH", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ sort_order: m.sort_order }),
+      }).then((res) => res.ok).catch(() => false)));
+    if (r.includes(false)) { setErro("Não foi possível salvar a nova ordem. Tente de novo."); await carregar(); }
+  }
+
   async function remover(m: Midia) {
     if (!confirm("Remover esta foto do projeto?")) return;
     setMidias((prev) => prev.filter((x) => x.id !== m.id));
     await fetch(`/api/projects/media/${m.id}`, { method: "DELETE" }).catch(() => {});
   }
 
+  // Mídias já salvas: na ordem gravada (a API já devolve por sort_order).
   const itens = slug
     ? midias.map((m) => ({ key: m.id, url: m.url, category: m.category, capa: !!m.is_cover, mid: m as Midia | null, idx: -1 }))
     : pending.map((p, i) => ({ key: `${p.url}-${i}`, url: p.url, category: p.category, capa: false, mid: null as Midia | null, idx: i }));
@@ -138,8 +171,14 @@ export default function FotosExtras({
 
       {itens.length > 0 ? (
         <div className="grid grid-cols-2 sm:grid-cols-4 lg:grid-cols-6 gap-2">
-          {itens.map((it) => (
-            <div key={it.key} className="border border-[#e2e2e2] bg-white">
+          {itens.map((it, pos) => (
+            <div key={it.key}
+              draggable
+              onDragStart={() => setArrastando(pos)}
+              onDragOver={(e) => e.preventDefault()}
+              onDrop={(e) => { e.preventDefault(); if (arrastando !== null) void mover(arrastando, pos); setArrastando(null); }}
+              onDragEnd={() => setArrastando(null)}
+              className={`border bg-white cursor-grab active:cursor-grabbing ${arrastando === pos ? "opacity-40 border-[#0B1F45]" : "border-[#e2e2e2]"}`}>
               <div className="relative aspect-square">
                 {/* eslint-disable-next-line @next/next/no-img-element */}
                 <img src={it.url} alt="" className="absolute inset-0 w-full h-full object-cover" />
@@ -150,6 +189,15 @@ export default function FotosExtras({
                     onClick={() => (it.mid ? remover(it.mid) : setPending((prev) => prev.filter((_, k) => k !== it.idx)))}
                     className="absolute top-0.5 right-0.5 w-6 h-6 bg-white/90 text-red-600 text-sm font-bold leading-none hover:bg-white">×</button>
                 )}
+                <span className="absolute bottom-0.5 left-0.5 bg-white/90 text-[#0B1F45] text-[9px] font-bold px-1.5 py-0.5">{pos + 1}</span>
+                <div className="absolute bottom-0.5 right-0.5 flex gap-0.5">
+                  <button type="button" title="Mover para a esquerda" aria-label="Mover para a esquerda" disabled={pos === 0}
+                    onClick={() => void mover(pos, pos - 1)}
+                    className="w-7 h-7 bg-white/90 text-[#0B1F45] text-xs font-bold hover:bg-white disabled:opacity-30">◀</button>
+                  <button type="button" title="Mover para a direita" aria-label="Mover para a direita" disabled={pos === itens.length - 1}
+                    onClick={() => void mover(pos, pos + 1)}
+                    className="w-7 h-7 bg-white/90 text-[#0B1F45] text-xs font-bold hover:bg-white disabled:opacity-30">▶</button>
+                </div>
               </div>
               <Classificar value={it.category}
                 onChange={(c) => (it.mid ? mudarCategoria(it.mid, c) : setPending((prev) => prev.map((p, k) => (k === it.idx ? { ...p, category: c } : p))))} />
@@ -160,6 +208,9 @@ export default function FotosExtras({
         <p className="text-[11px] text-[#a0a3a8]">
           Nenhuma foto extra ainda. Elas aparecem na galeria do projeto no site, com o filtro Antes / Depois.
         </p>
+      )}
+      {itens.length > 1 && (
+        <p className="text-[11px] text-[#a0a3a8] mt-2">Arraste as fotos ou use ◀ ▶ para mudar a ordem — é a ordem da galeria no site.</p>
       )}
       {!slug && pending.length > 0 && (
         <p className="text-[11px] text-[#74777f] mt-2">Estas fotos entram no projeto quando você clicar em Salvar.</p>

@@ -6700,7 +6700,8 @@ export default function AdminPage() {
                               <p className="font-semibold text-[#0B1F45] text-sm">{p.title}</p>
                               <span className={`px-1.5 py-0.5 text-[9px] font-bold tracking-wider ${p.is_active ? "bg-green-100 text-green-800" : "bg-amber-100 text-amber-800"}`}>{p.is_active ? "Publicado" : "Rascunho"}</span>
                             </div>
-                            <p className="text-xs text-[#1F7A44] mt-0.5">{p.product_code}{p.short_description ? ` · ${p.short_description}` : ""}</p>
+                            <p className="text-xs text-[#1F7A44] mt-0.5">{modelosDoProjeto(p).join(" · ")}{p.short_description ? ` · ${p.short_description}` : ""}</p>
+                            {p.projeto_de?.trim() && <p className="text-[11px] italic text-[#74777f] mt-0.5">Projeto de {p.projeto_de.trim()}</p>}
                             <div className="flex flex-wrap gap-1 mt-1">
                               {p.categories.map((c) => (
                                 <span key={c} className="bg-[#eef2f8] text-[#0B1F45] px-1.5 py-0.5 text-[9px] font-bold tracking-wider">{catLabel(c)}</span>
