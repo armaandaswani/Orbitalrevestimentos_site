@@ -5,7 +5,6 @@
 
 import type { SupabaseClient } from "@supabase/supabase-js";
 import { computeOrcamento, DEFAULT_CONFIG, QUOTE_VALIDITY_DAYS, type OrcamentoBreakdown, type OrcamentoConfig } from "@/lib/orcamento-pricing";
-import { reservedByActiveOrders } from "@/lib/stock";
 import {
   DEFAULT_MATERIALS_CONFIG,
   SUPPORT_PRODUCT_SKUS,
@@ -107,13 +106,13 @@ export async function fetchMaterialPrices(
       .from("products")
       .select("id, code, name, price, is_active, stock_on_hand, sale_unit")
       .in("code", SUPPORT_PRODUCT_SKUS as readonly string[]);
-    // Mesma definição do resto do sistema: só pedido ativo segura material.
-    const reserved = await reservedByActiveOrders(db);
+    // Disponível = estoque físico: só pedido pago/boleto/parcial/entregue baixa
+    // (ver pedidoBaixaEstoque em lib/stock), e a baixa já saiu do stock_on_hand.
     for (const row of (data ?? []) as Array<Record<string, unknown>>) {
       const code = String(row.code);
       if (row.is_active === false) continue; // inativo → sem preço, o motor avisa
       prices[code] = Number(row.price) || 0;
-      stock[code] = Math.max(0, (Number(row.stock_on_hand) || 0) - (reserved[String(row.id)] ?? 0));
+      stock[code] = Math.max(0, Number(row.stock_on_hand) || 0);
       if (row.name) names[code] = String(row.name);
       if (row.sale_unit) units[code] = String(row.sale_unit);
     }

@@ -4,7 +4,6 @@ import { supabaseAdmin } from "@/lib/supabase";
 import { isAdminRequest } from "@/lib/admin-auth";
 import { isMissingColumn } from "@/lib/db-compat";
 import { SUPPORT_PRODUCT_SKUS } from "@/lib/orcamento-materials";
-import { reservedByActiveOrders } from "@/lib/stock";
 import { CACHE_CATALOGO, SEM_CACHE } from "@/lib/api-cache";
 
 function checkAuth(req: NextRequest): boolean {
@@ -53,12 +52,6 @@ export async function GET(req: NextRequest) {
   if (includeInactive || !Array.isArray(data))
     return NextResponse.json(data, { headers: { "Cache-Control": cache } });
 
-  // Reserva DERIVADA dos pedidos ativos, não o contador products.stock_reserved.
-  // Orçamento não reserva nada: o que segura placa é pedido em produção ou
-  // pronto. O contador deriva quando um pedido é excluído ou tem itens editados,
-  // e a placa fantasma some da vitrine sem ninguém perceber.
-  const reserved = await reservedByActiveOrders(sb);
-
   const visible = (data as Array<Record<string, unknown>>).filter(
     (p) => p.show_in_catalog !== false && !(SUPPORT_PRODUCT_SKUS as readonly string[]).includes(String(p.code)));
 
@@ -81,10 +74,10 @@ export async function GET(req: NextRequest) {
     render_texture_path: p.render_texture_path,
     render_panel_width_m: p.render_panel_width_m,
     render_panel_height_m: p.render_panel_height_m,
-    // Disponível = estoque físico − placas em PEDIDOS ATIVOS. É o número que o
-    // simulador usa para avisar o cliente; stock_on_hand/stock_reserved crus
-    // ficam de fora da resposta pública.
-    available: Math.max(0, (Number(p.stock_on_hand) || 0) - (reserved[String(p.id)] ?? 0)),
+    // Disponível = estoque físico. Pedido só baixa quando pago/boleto/parcial
+    // ou entregue (lib/stock), e aí já saiu do stock_on_hand; pedido em aberto
+    // sem pagamento não segura placa. É o número que o simulador usa para avisar.
+    available: Math.max(0, Number(p.stock_on_hand) || 0),
   }));
 
   return NextResponse.json(rows, { headers: { "Cache-Control": cache } });

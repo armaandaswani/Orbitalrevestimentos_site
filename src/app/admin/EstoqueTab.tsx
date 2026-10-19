@@ -11,7 +11,10 @@ interface StockProduct {
   cost_price: number | null;
   sale_unit: string | null;
   stock_on_hand: number;
-  stock_reserved: number;
+  /** Placas em pedidos abertos ainda sem pagamento — só informação. */
+  awaiting_payment: number;
+  /** Contador de reserva antigo (antes da regra nova); zera no recálculo. */
+  reserved_counter?: number;
   reorder_point: number;
   available: number;
   stock_value: number;
@@ -41,7 +44,7 @@ interface Movement {
 
 const KIND_LABEL: Record<string, string> = {
   manual_in: "Entrada", manual_out: "Saída", adjust: "Ajuste",
-  reserve: "Reservado", release: "Liberado", consume: "Baixa (entregue)", return: "Devolução",
+  reserve: "Reserva (antiga)", release: "Reserva liberada", consume: "Baixa (pedido)", return: "Estorno",
 };
 const EXIT_LABEL: Record<ManualExitType, string> = {
   sale: "Venda avulsa",
@@ -113,25 +116,6 @@ export default function EstoqueTab() {
     }).then(() => fetchStock()).catch(() => {});
   }
 
-  // Cancels a still-active reservation (frees it back to "available") without
-  // touching the order's items or other fields. Server-side guards against
-  // double-releasing one that's already been freed or consumed.
-  async function cancelReservation(productId: string, pedidoId: string) {
-    if (!confirm("Cancelar esta reserva e devolver a quantidade para disponível?")) return;
-    const res = await fetch("/api/admin/stock/release-reservation", {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ pedido_id: pedidoId }),
-    });
-    if (res.ok) {
-      await fetchStock();
-      loadMovements(productId, true);
-    } else {
-      const j = await res.json().catch(() => null);
-      alert(j?.error || "Falha ao cancelar a reserva.");
-    }
-  }
-
   const loadMovements = useCallback(async (productId: string, force = false) => {
     if (!force && movements[productId]) return;
     const res = await fetch(`/api/admin/stock/${productId}`);
@@ -161,7 +145,7 @@ export default function EstoqueTab() {
       <div className="grid grid-cols-2 sm:grid-cols-4 gap-4 mb-6">
         {[
           { label: "Modelos", value: String(products.length), sub: "" },
-          { label: "Itens em estoque", value: String(products.reduce((s, p) => s + p.stock_on_hand, 0)), sub: `${products.reduce((s, p) => s + p.stock_reserved, 0)} reservados` },
+          { label: "Itens em estoque", value: String(products.reduce((s, p) => s + p.stock_on_hand, 0)), sub: `${products.reduce((s, p) => s + (p.awaiting_payment ?? 0), 0)} em pedidos aguardando pagamento` },
           { label: "Valor do estoque", value: fmtBRL(totalValue), sub: "a preço de custo" },
           { label: "Abaixo do mínimo", value: String(lowCount), sub: lowCount > 0 ? "repor" : "ok" },
         ].map((m) => (
@@ -172,6 +156,8 @@ export default function EstoqueTab() {
           </div>
         ))}
       </div>
+
+      <RecalculoPedidos aoAplicar={fetchStock} precisa={products.some((p) => (p.reserved_counter ?? 0) > 0)} />
 
       <div className="flex flex-wrap items-center gap-2 mb-4">
         <input value={search} onChange={(e) => setSearch(e.target.value)} placeholder="Buscar modelo…"
@@ -197,7 +183,6 @@ export default function EstoqueTab() {
               onToggle={() => toggleExpand(p.id)}
               onMove={(kind, qty, reason, opts) => move(p.id, kind, qty, reason, opts)}
               onPatch={(patch) => patchProduct(p.id, patch)}
-              onCancelReservation={(pedidoId) => cancelReservation(p.id, pedidoId)}
             />
           ))}
           {visible.length === 0 && <p className="text-[#74777f] text-sm">Nenhum modelo.</p>}
@@ -208,7 +193,7 @@ export default function EstoqueTab() {
 }
 
 function StockRow({
-  p, expanded, movements, onToggle, onMove, onPatch, onCancelReservation,
+  p, expanded, movements, onToggle, onMove, onPatch,
 }: {
   p: StockProduct;
   expanded: boolean;
@@ -216,7 +201,6 @@ function StockRow({
   onToggle: () => void;
   onMove: (kind: "manual_in" | "manual_out" | "adjust", qty: number, reason: string, opts?: { manual_exit_type?: ManualExitType | null; sale_amount?: number | null }) => void;
   onPatch: (patch: { price?: number | null; cost_price?: number | null; sale_unit?: string; reorder_point?: number }) => void;
-  onCancelReservation: (pedidoId: string) => void;
 }) {
   const [mode, setMode] = useState<"manual_in" | "manual_out" | "adjust" | null>(null);
   const [qty, setQty] = useState("");
@@ -254,7 +238,7 @@ function StockRow({
             </div>
             <div className="flex flex-wrap gap-x-5 gap-y-1 mt-2">
               <Stat label="Em estoque" value={String(p.stock_on_hand)} strong />
-              <Stat label="Reservado" value={String(p.stock_reserved)} />
+              <Stat label="Aguardando pgto" value={String(p.awaiting_payment ?? 0)} />
               <Stat label="Disponível" value={String(p.available)} strong tone={p.available <= 0 ? "danger" : "ok"} />
               <Stat label={`Venda/${p.sale_unit || "placa"}`} value={p.price != null ? fmtBRL(p.price) : "—"} />
               <Stat label="Margem" value={unitMargin != null ? `${fmtBRL(unitProfit!)} · ${unitMargin}%` : "—"} />
@@ -378,23 +362,6 @@ function StockRow({
                     {m.manual_exit_type === "sale" && m.sale_amount != null && <span>· {fmtBRL(Number(m.sale_amount) || 0)} </span>}
                     {m.reason ? `· ${m.reason}` : ""}
                   </span>
-                  {m.kind === "reserve" && m.pedido_id && (
-                    m.pedido_stock_state === "reserved" ? (
-                      <button
-                        onClick={() => onCancelReservation(m.pedido_id as string)}
-                        className="text-[#b42318] font-bold hover:underline whitespace-nowrap"
-                        title="Cancelar esta reserva e devolver ao disponível"
-                      >
-                        Cancelar reserva
-                      </button>
-                    ) : (
-                      // This reservation has already been delivered or
-                      // released by a later movement — nothing to cancel.
-                      <span className="text-[#b0b0b0] whitespace-nowrap" title="Esta reserva já foi liberada ou baixada">
-                        (já resolvida)
-                      </span>
-                    )
-                  )}
                   <span className="text-[#b0b0b0] whitespace-nowrap">{fmtDateTime(m.created_at)}</span>
                 </div>
               ))}
@@ -412,6 +379,96 @@ function Stat({ label, value, strong, tone }: { label: string; value: string; st
     <div>
       <p className="text-[#74777f] text-[9px] uppercase tracking-wider font-bold">{label}</p>
       <p className={`${strong ? "font-semibold" : ""} ${color} text-sm mt-0.5`}>{value}</p>
+    </div>
+  );
+}
+
+interface MudancaRecalculo {
+  pedido_id: string; cliente: string | null; status: string | null; pagamento: string | null;
+  acao: "baixar" | "estornar" | "soltar_reserva"; itens: Array<{ product_name: string | null; plates: number }>;
+}
+
+const ACAO_LABEL: Record<MudancaRecalculo["acao"], string> = {
+  baixar: "Baixar do estoque",
+  estornar: "Devolver ao estoque",
+  soltar_reserva: "Soltar reserva antiga",
+};
+
+/**
+ * Regra do estoque (out/2026): só pedido pago, no boleto, com pagamento
+ * parcial ou entregue baixa as placas; cancelado (ou pagamento que volta a
+ * pendente) devolve. Esta caixa acerta os pedidos que já existiam antes da
+ * regra: mostra a prévia e aplica — rodar de novo não muda nada.
+ */
+function RecalculoPedidos({ aoAplicar, precisa }: { aoAplicar: () => void; precisa: boolean }) {
+  const [aberto, setAberto] = useState(false);
+  const [carregando, setCarregando] = useState(false);
+  const [plano, setPlano] = useState<{ mudancas: MudancaRecalculo[]; contadores: Array<{ code: string; name: string; reservado: number }> } | null>(null);
+  const [msg, setMsg] = useState("");
+
+  async function verPrevia() {
+    setAberto(true); setCarregando(true); setMsg("");
+    const res = await fetch("/api/admin/stock/recalcular", { cache: "no-store" }).catch(() => null);
+    const j = res ? await res.json().catch(() => null) : null;
+    setCarregando(false);
+    if (!res || !res.ok) { setMsg(j?.error || "Falha ao calcular."); return; }
+    setPlano(j);
+  }
+
+  async function aplicar() {
+    if (!confirm("Aplicar o recálculo? Cada mudança fica registrada no histórico de cada modelo.")) return;
+    setCarregando(true);
+    const res = await fetch("/api/admin/stock/recalcular", { method: "POST" }).catch(() => null);
+    const j = res ? await res.json().catch(() => null) : null;
+    setCarregando(false);
+    if (!res || !res.ok) { setMsg(j?.error || "Falha ao aplicar."); return; }
+    setMsg(j.erros?.length ? `Aplicado com avisos: ${j.erros.join(" · ")}` : `Pronto: ${j.pedidos} pedido(s) acertado(s), ${j.contadores} contador(es) de reserva zerado(s).`);
+    setPlano(null);
+    aoAplicar();
+  }
+
+  const nada = plano && plano.mudancas.length === 0 && plano.contadores.length === 0;
+
+  return (
+    <div className={`bg-white border px-4 py-3 mb-4 ${precisa ? "border-l-4 border-l-amber-500 border-[#e2e2e2]" : "border-[#e2e2e2]"}`}>
+      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2">
+        <p className="text-[#43474e] text-xs leading-relaxed">
+          <strong className="text-[#0B1F45]">O estoque sai só por pedido.</strong> Baixa quando o pedido está pago, no boleto, com pagamento parcial ou entregue; cancelado devolve. Pedido em aberto sem pagamento não tira placa.
+        </p>
+        <button type="button" onClick={verPrevia} disabled={carregando}
+          className="flex-shrink-0 text-[11px] uppercase font-bold border border-[#0B1F45] text-[#0B1F45] px-3 py-2 hover:bg-[#0B1F45] hover:text-white disabled:opacity-50">
+          Recalcular pelos pedidos
+        </button>
+      </div>
+      {aberto && (
+        <div className="mt-3 border-t border-[#f0f0f0] pt-3">
+          {carregando && <p className="text-[#74777f] text-xs">Calculando…</p>}
+          {nada && <p className="text-green-700 text-xs">Tudo certo: o estoque já bate com os pedidos.</p>}
+          {plano && !nada && (
+            <>
+              <p className="text-[#0B1F45] text-xs font-semibold mb-2">O que vai mudar:</p>
+              <ul className="space-y-1.5 mb-3 max-h-72 overflow-y-auto">
+                {plano.mudancas.map((m) => (
+                  <li key={m.pedido_id} className="text-xs text-[#43474e] flex flex-col sm:flex-row sm:gap-2">
+                    <span className={`font-bold ${m.acao === "baixar" ? "text-red-700" : "text-green-700"}`}>{ACAO_LABEL[m.acao]}</span>
+                    <span>{m.cliente || "Pedido"} · {m.status} · {m.pagamento}{m.itens.length ? ` · ${m.itens.map((i) => `${i.plates} ${i.product_name ?? ""}`.trim()).join(", ")}` : ""}</span>
+                  </li>
+                ))}
+                {plano.contadores.map((c) => (
+                  <li key={c.code} className="text-xs text-[#43474e]">
+                    <span className="font-bold text-green-700">Zerar reserva antiga</span> · {c.code} {c.name}: {c.reservado}
+                  </li>
+                ))}
+              </ul>
+              <button type="button" onClick={aplicar} disabled={carregando}
+                className="text-[11px] uppercase font-bold bg-[#0B1F45] text-white px-4 py-2 hover:bg-[#2347A0] disabled:opacity-50 w-full sm:w-auto">
+                Aplicar
+              </button>
+            </>
+          )}
+          {msg && <p className="text-[#43474e] text-xs mt-2" role="status">{msg}</p>}
+        </div>
+      )}
     </div>
   );
 }

@@ -2429,9 +2429,11 @@ export default function PedidosTab({
                         </p>
                       )}
                       <p className="text-[#74777f] text-[10px] mt-2">
-                        {(draft.status ?? "em_producao") === "entregue"
-                          ? "Estoque será baixado (pedido entregue)."
-                          : "Estoque será reservado enquanto o pedido estiver em produção."}
+                        {(draft.status ?? "em_producao") === "cancelado"
+                          ? "Pedido cancelado não mexe no estoque (se já tinha baixado, as placas voltam)."
+                          : (draft.status ?? "em_producao") === "entregue" || ["pago", "boleto", "parcial"].includes(draft.payment_status ?? "pendente")
+                          ? "Estoque será baixado ao salvar (pedido pago, no boleto, parcial ou entregue)."
+                          : "Estoque só baixa quando o pagamento for marcado como pago, boleto ou parcial — ou quando o pedido for entregue."}
                       </p>
                     </div>
                   )}

@@ -113,55 +113,109 @@ export async function applyStockMovement(
 }
 
 /**
- * Status de pedido que SEGURAM placas.
- *
- * "entregue" fica de fora de propósito: a saída física já baixou o estoque, e
- * contar como reserva também descontaria a mesma placa duas vezes. "cancelado"
- * também não segura nada.
+ * REGRA DO ESTOQUE (decisão do dono, out/2026): a saída vem SÓ de pedidos, e um
+ * pedido só baixa as placas quando a venda está firmada:
+ *   - pagamento "pago", "boleto" ou "parcial" (sinal recebido), ou
+ *   - status "entregue" (saiu, mesmo sem pagamento registrado).
+ * Pedido cancelado nunca baixa; se já tinha baixado, as placas voltam. Se o
+ * pagamento volta para "pendente" num pedido não entregue, também volta.
+ * Orçamento não mexe em estoque, e não existe mais reserva: pedido em aberto e
+ * sem pagamento não tira placa de ninguém (aparece só como "aguardando
+ * pagamento", para informação).
  */
-export const ACTIVE_ORDER_STATUSES = ["em_producao", "pronto", "pendente_entrega"] as const;
+export const PAGAMENTOS_QUE_BAIXAM = ["pago", "boleto", "parcial"] as const;
 
-/** Pedido ainda segura as placas (produção, pronto ou aguardando entrega). */
-export function isActiveOrderStatus(status: string | null | undefined): boolean {
-  return (ACTIVE_ORDER_STATUSES as readonly string[]).includes(status ?? "");
+export function pedidoBaixaEstoque(status: string | null | undefined, paymentStatus: string | null | undefined): boolean {
+  if (status === "cancelado") return false;
+  if (status === "entregue") return true;
+  return (PAGAMENTOS_QUE_BAIXAM as readonly string[]).includes(paymentStatus ?? "");
+}
+
+/** "reserved" é legado (antes da regra nova); "released"/"returned" = não baixado. */
+function estadoNormalizado(state: string | null | undefined): "none" | "reserved" | "consumed" {
+  if (state === "consumed") return "consumed";
+  if (state === "reserved") return "reserved";
+  return "none";
 }
 
 /**
- * Placas reservadas por produto, DERIVADAS dos pedidos ativos.
- *
- * O contador products.stock_reserved é um cache alimentado pelo ledger, e ele
- * deriva: uma reserva sem release correspondente (pedido excluído, item editado
- * depois de reservado) fica presa para sempre e some da disponibilidade sem que
- * ninguém veja. Orçamento nenhum entra aqui — orçamento não reserva.
- *
- * Esta é a definição que vale para "disponível": estoque físico − isto.
+ * Deixa o estoque de UM pedido de acordo com a regra acima, de forma idempotente:
+ * baixa o que falta baixar, devolve o que não devia estar baixado e solta
+ * reservas antigas. Chamada sempre que o pedido nasce, muda de status ou de
+ * pagamento, ou tem os itens trocados. Devolve o stock_state gravado.
  */
-export async function reservedByActiveOrders(
+export async function syncOrderStock(
+  db: SupabaseClient,
+  pedidoId: string,
+  createdBy: string | null = "admin",
+): Promise<{ ok: boolean; error?: string; state?: "none" | "consumed"; changed?: boolean }> {
+  const { data: ped, error } = await db
+    .from("pedidos")
+    .select("id, status, payment_status, stock_state")
+    .eq("id", pedidoId)
+    .maybeSingle();
+  if (error) return { ok: false, error: error.message };
+  if (!ped) return { ok: false, error: "Pedido não encontrado." };
+  const p = ped as { status?: string; payment_status?: string; stock_state?: string };
+
+  let atual = estadoNormalizado(p.stock_state);
+  const alvo: "none" | "consumed" = pedidoBaixaEstoque(p.status, p.payment_status) ? "consumed" : "none";
+  let changed = false;
+
+  // Reserva antiga: solta antes de qualquer coisa (a regra nova não reserva).
+  if (atual === "reserved") {
+    const r = await transitionOrderStock(db, pedidoId, "reserved", "released", createdBy, "Reserva antiga liberada (estoque só baixa com pedido pago)");
+    if (!r.ok) return { ok: false, error: r.error };
+    atual = "none";
+    changed = true;
+  }
+  if (atual !== alvo) {
+    const r = alvo === "consumed"
+      ? await transitionOrderStock(db, pedidoId, "none", "consumed", createdBy, motivoBaixa(p.status, p.payment_status))
+      : await transitionOrderStock(db, pedidoId, "consumed", "returned", createdBy,
+          p.status === "cancelado" ? "Estorno: pedido cancelado" : "Estorno: pedido sem pagamento confirmado");
+    if (!r.ok) return { ok: false, error: r.error };
+    changed = true;
+  }
+  if (changed || (p.stock_state ?? "none") !== alvo) {
+    await db.from("pedidos").update({ stock_state: alvo }).eq("id", pedidoId);
+  }
+  return { ok: true, state: alvo, changed };
+}
+
+function motivoBaixa(status?: string, pagamento?: string): string {
+  if (pagamento === "pago") return "Baixa: pedido pago";
+  if (pagamento === "boleto") return "Baixa: pedido no boleto";
+  if (pagamento === "parcial") return "Baixa: pedido com pagamento parcial";
+  if (status === "entregue") return "Baixa: pedido entregue";
+  return "Baixa: pedido";
+}
+
+/**
+ * Placas por produto em pedidos AINDA SEM baixa (abertos, sem pagamento
+ * confirmado). Só informação para o painel — não sai do disponível.
+ */
+export async function aguardandoPagamentoPorProduto(
   db: SupabaseClient
 ): Promise<Record<string, number>> {
   const out: Record<string, number> = {};
   try {
     const { data: pedidos } = await db
       .from("pedidos")
-      .select("id")
-      .in("status", ACTIVE_ORDER_STATUSES as unknown as string[]);
-    const ids = (pedidos ?? []).map((p) => (p as { id: string }).id);
+      .select("id, status, payment_status")
+      .not("status", "in", "(cancelado,entregue)");
+    const ids = ((pedidos ?? []) as Array<{ id: string; status: string; payment_status: string }>)
+      .filter((p) => !pedidoBaixaEstoque(p.status, p.payment_status))
+      .map((p) => p.id);
     if (ids.length === 0) return out;
-
-    const { data: items } = await db
-      .from("pedido_items")
-      .select("product_id, plates")
-      .in("pedido_id", ids);
-
+    const { data: items } = await db.from("pedido_items").select("product_id, plates").in("pedido_id", ids);
     for (const it of (items ?? []) as Array<{ product_id: string | null; plates: number | null }>) {
       if (!it.product_id) continue;
       const qty = Number(it.plates) || 0;
-      if (qty <= 0) continue;
-      out[it.product_id] = (out[it.product_id] ?? 0) + qty;
+      if (qty > 0) out[it.product_id] = (out[it.product_id] ?? 0) + qty;
     }
   } catch {
-    // Tabela ausente / DB indisponível → sem reservas conhecidas. O chamador cai
-    // no contador, que é o comportamento anterior.
+    // Tabela ausente / DB indisponível → nada aguardando.
   }
   return out;
 }
@@ -181,7 +235,8 @@ export async function transitionOrderStock(
   pedidoId: string,
   currentState: string,
   target: "reserved" | "consumed" | "released" | "returned",
-  createdBy?: string | null
+  createdBy?: string | null,
+  reason?: string
 ): Promise<{ ok: boolean; error?: string; newState?: string }> {
   // No-ops / illegal repeats.
   if (currentState === target) return { ok: true, newState: currentState };
@@ -212,7 +267,7 @@ export async function transitionOrderStock(
     if (!kind) continue;
     const r = await applyStockMovement(db, {
       productId: line.product_id, kind, onHandDelta: onHand, reservedDelta: reserved,
-      pedidoId, reason: `Pedido ${target}`, createdBy,
+      pedidoId, reason: reason ?? `Pedido ${target}`, createdBy,
     });
     if (!r.ok) return { ok: false, error: r.error };
   }

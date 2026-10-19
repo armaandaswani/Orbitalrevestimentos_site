@@ -2,7 +2,6 @@ import { NextRequest, NextResponse } from "next/server";
 import { isAdminRequest, ADMIN_COOKIE } from "@/lib/admin-auth";
 import { supabaseAdmin } from "@/lib/supabase";
 import { breakdownForQuote } from "@/lib/orcamento-server";
-import { reservedByActiveOrders } from "@/lib/stock";
 import { findPlateShortages, isSupportSku } from "@/lib/plate-stock";
 
 export const runtime = "nodejs";
@@ -61,13 +60,12 @@ export async function POST(req: NextRequest, { params }: { params: Promise<{ slu
    * a resposta leva a falta para o painel avisar em vez de o pedido nascer
    * silenciosamente sem placa. Só PLACAS: material de apoio não entra.
    */
-  const reservedNow = await reservedByActiveOrders(db);
   const { data: stockRows } = await db.from("products").select("id, code, name, stock_on_hand");
   const availableByCode: Record<string, number> = {};
   for (const r of (stockRows ?? []) as Array<Record<string, unknown>>) {
     const code = String(r.code ?? "").toUpperCase();
     if (!code || isSupportSku(code)) continue;
-    availableByCode[code] = Math.max(0, (Number(r.stock_on_hand) || 0) - (reservedNow[String(r.id)] ?? 0));
+    availableByCode[code] = Math.max(0, Number(r.stock_on_hand) || 0);
   }
   const shortages = findPlateShortages(
     spaces
@@ -129,6 +127,7 @@ export async function POST(req: NextRequest, { params }: { params: Promise<{ slu
   // Link the quote → pedido and mark stage. Best-effort (won't fail conversion).
   await db.from("saved_quotes").update({ stage: "pedido", pedido_id: created.id }).eq("slug", slug).then(() => {}, () => {});
 
-  // A reserva só passa a existir a partir daqui — foi o POST acima que a criou.
+  // Pedido nasce "em produção" e sem pagamento: só baixa o estoque quando for
+  // marcado pago/boleto/parcial ou entregue.
   return NextResponse.json({ ok: true, pedidoId: created.id, stockShortages: shortages });
 }

@@ -140,7 +140,7 @@ export async function GET(req: NextRequest) {
   const lowStock = rows(productsRes).filter((p) => {
     const reorder = Number(p.reorder_point) || 0;
     if (reorder <= 0) return false;
-    const available = (Number(p.stock_on_hand) || 0) - (Number(p.stock_reserved) || 0);
+    const available = Number(p.stock_on_hand) || 0; // regra nova: pedido pago já baixou do físico
     return available <= reorder;
   });
   const ordersInFlight = rows(ordersRes);
@@ -168,7 +168,7 @@ export async function GET(req: NextRequest) {
           id: p.id,
           name: p.name,
           code: p.code,
-          available: (Number(p.stock_on_hand) || 0) - (Number(p.stock_reserved) || 0),
+          available: Number(p.stock_on_hand) || 0,
           reorder_point: p.reorder_point,
         }))
         .slice(0, 5),

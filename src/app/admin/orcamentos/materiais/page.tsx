@@ -215,7 +215,7 @@ export default function MateriaisConfigPage() {
         <div className="p-4 sm:p-5 space-y-2">
           {materialCodes.map((code) => {
             const p = byCode.get(code);
-            const disp = p ? Math.max(0, (p.stock_on_hand ?? 0) - (p.stock_reserved ?? 0)) : 0;
+            const disp = p ? Math.max(0, p.stock_on_hand ?? 0) : 0;
             return (
               <div key={code} className="flex flex-wrap items-center justify-between gap-2 border-b border-[#f0f0f0] pb-2 last:border-0 last:pb-0">
                 <div className="min-w-0">

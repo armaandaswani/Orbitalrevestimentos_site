@@ -2,7 +2,7 @@ import { NextRequest, NextResponse } from "next/server";
 import { isAdminRequest } from "@/lib/admin-auth";
 import { supabaseAdmin } from "@/lib/supabase";
 import { isMissingColumn } from "@/lib/db-compat";
-import { isActiveOrderStatus, transitionOrderStock } from "@/lib/stock";
+import { syncOrderStock, transitionOrderStock } from "@/lib/stock";
 
 type PartnerLite = { id: string; name: string; coupon_code: string };
 type SalesRepLite = { id: string; name: string; referral_code: string };
@@ -164,7 +164,6 @@ async function reconcileItemsAndStock(
   pedidoId: string,
   rawItems: ItemInput[],
   priorStockState: string,
-  finalStatus: string
 ): Promise<string> {
   const clean = rawItems
     .filter((it) => it.product_id && Number(it.plates) > 0)
@@ -201,39 +200,11 @@ async function reconcileItemsAndStock(
     await db.from("pedido_items").insert(rows);
   }
 
-  let newState = "none";
-  if (clean.length > 0) {
-    if (isActiveOrderStatus(finalStatus)) {
-      const r = await transitionOrderStock(db, pedidoId, "none", "reserved", "admin");
-      if (r.ok) newState = "reserved";
-    } else if (finalStatus === "entregue") {
-      const r = await transitionOrderStock(db, pedidoId, "none", "consumed", "admin");
-      if (r.ok) newState = "consumed";
-    }
-  }
-  await db.from("pedidos").update({ stock_state: newState }).eq("id", pedidoId);
-  return newState;
-}
-
-// Maps an order's NEW production status (+ what stock phase it's already in) to
-// the stock action to apply. Returns null when nothing should change.
-function stockTargetFor(
-  newStatus: string | undefined,
-  stockState: string
-): "reserved" | "consumed" | "released" | "returned" | null {
-  if (!newStatus) return null;
-  if (newStatus === "entregue") return stockState === "consumed" ? null : "consumed";
-  if (newStatus === "cancelado") {
-    if (stockState === "consumed") return "returned"; // delivered then cancelled → back to shelf
-    if (stockState === "reserved") return "released"; // cancelled before delivery → free the hold
-    return null;
-  }
-  // Active production states hold a reservation. Re-reserve if a previously
-  // cancelled order is reactivated (or it never reserved on creation).
-  if (isActiveOrderStatus(newStatus) && stockState !== "reserved" && stockState !== "consumed") {
-    return "reserved";
-  }
-  return null;
+  // Itens trocados: a baixa dos antigos já foi desfeita acima; agora aplica a
+  // regra (pago/boleto/parcial/entregue) sobre os novos.
+  await db.from("pedidos").update({ stock_state: "none" }).eq("id", pedidoId);
+  const r = await syncOrderStock(db, pedidoId, "admin");
+  return r.state ?? "none";
 }
 
 // Columns the admin is allowed to edit on a pedido.
@@ -416,26 +387,19 @@ export async function PATCH(
   let itemsHandledStock = false;
   if (itemsInput) {
     try {
-      const finalStatus =
-        (typeof patch.status === "string" ? patch.status : (data as Record<string, unknown>)?.status as string) ?? "em_producao";
-      const newState = await reconcileItemsAndStock(db, id, itemsInput, priorStockState, finalStatus);
+      const newState = await reconcileItemsAndStock(db, id, itemsInput, priorStockState);
       (data as Record<string, unknown>).stock_state = newState;
       itemsHandledStock = true;
     } catch { /* stock tables missing or transient — items/stock left as-is */ }
   }
 
-  // Drive inventory off the new status (non-fatal — never block the edit).
-  if (!itemsHandledStock && typeof patch.status === "string") {
-    const target = stockTargetFor(patch.status, priorStockState);
-    if (target) {
-      try {
-        const r = await transitionOrderStock(db, id, priorStockState, target, "admin");
-        if (r.ok && r.newState) {
-          await db.from("pedidos").update({ stock_state: r.newState }).eq("id", id);
-          (data as Record<string, unknown>).stock_state = r.newState;
-        }
-      } catch { /* stock tables missing or transient — leave order as-is */ }
-    }
+  // Status ou pagamento mudou: aplica a regra do estoque (pago/boleto/parcial
+  // ou entregue baixa; cancelado ou sem pagamento devolve). Não bloqueia a edição.
+  if (!itemsHandledStock && ("status" in patch || "payment_status" in patch)) {
+    try {
+      const r = await syncOrderStock(db, id, "admin");
+      if (r.ok && r.state && data) (data as Record<string, unknown>).stock_state = r.state;
+    } catch { /* stock tables missing or transient — leave order as-is */ }
   }
 
   if (data) await syncPedidoPortalAttribution(db, data as Record<string, unknown>);

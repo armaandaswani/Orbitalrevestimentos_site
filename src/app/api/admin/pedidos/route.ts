@@ -2,7 +2,7 @@ import { NextRequest, NextResponse } from "next/server";
 import { isAdminRequest } from "@/lib/admin-auth";
 import { supabaseAdmin } from "@/lib/supabase";
 import { isMissingColumn, isMissingTable } from "@/lib/db-compat";
-import { isActiveOrderStatus, transitionOrderStock } from "@/lib/stock";
+import { syncOrderStock } from "@/lib/stock";
 
 interface OrderItemInput { product_id?: string; plates?: number; unit_price?: number | null }
 type PartnerLite = { id: string; name: string; coupon_code: string };
@@ -293,13 +293,9 @@ export async function POST(req: NextRequest) {
         });
         await db.from("pedido_items").insert(itemRows);
 
-        const status = (payload.status as string) || "em_producao";
-        if (isActiveOrderStatus(status)) {
-          const r = await transitionOrderStock(db, data.id, "none", "reserved", "admin");
-          if (r.ok && r.newState) {
-            await db.from("pedidos").update({ stock_state: r.newState }).eq("id", data.id);
-          }
-        }
+        // Baixa só se o pedido já nasce pago/boleto/parcial ou entregue.
+        const r = await syncOrderStock(db, data.id, "admin");
+        if (r.ok && r.state) (data as Record<string, unknown>).stock_state = r.state;
       } catch { /* stock/items tables missing — order still created */ }
     }
   }
