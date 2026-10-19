@@ -3,11 +3,37 @@ import { smclickConfigured, normalizePhone, sendText } from "@/lib/smclick";
 import { emailTopo } from "@/lib/email-marca";
 
 /**
- * Convite de parceiro feito pela representante: o parceiro é cadastrado como
- * "pending" com um token (reset_token) e recebe o link por e-mail e WhatsApp.
- * Ao abrir o link ele aceita, cria a senha e já entra no portal — sem esperar
- * a aprovação manual no admin.
+ * Convite de parceiro: o parceiro é cadastrado como "pending" com um token
+ * (reset_token) e recebe um link. Ao abrir, completa o que falta (e-mail,
+ * aniversário, WhatsApp), cria a senha e já entra no portal — sem esperar a
+ * aprovação manual no admin. Duas origens:
+ *   - a representante, pelo portal dela (com e-mail e WhatsApp já informados);
+ *   - a Orbital, direto do pedido (arquiteto ainda sem cadastro): só o nome
+ *     entra, e o link vai pelo WhatsApp que o admin copiar. Sem representante.
  */
+
+/** Token de convite (48+ caracteres, sem padrão adivinhável). */
+export function novoTokenConvite(): { token: string; expiresAt: string } {
+  return {
+    token: crypto.randomUUID() + crypto.randomUUID().replace(/-/g, ""),
+    expiresAt: new Date(Date.now() + CONVITE_VALIDADE_DIAS * 24 * 60 * 60 * 1000).toISOString(),
+  };
+}
+
+/** Mensagem pronta para o admin mandar ao arquiteto pelo WhatsApp. */
+export function linkCadastroWhatsapp(nome: string, link: string): string {
+  const first = nome.trim().split(/\s+/)[0] || nome;
+  return [
+    `Olá, ${first}! 👋`,
+    "",
+    "A Orbital Revestimentos cadastrou você como *Parceiro Orbital*.",
+    "",
+    "Para completar seu cadastro (e-mail, aniversário e senha) e acessar o portal, abra o link:",
+    link,
+    "",
+    `O link vale por ${CONVITE_VALIDADE_DIAS} dias.`,
+  ].join("\n");
+}
 
 export const CONVITE_VALIDADE_DIAS = 14;
 export const CONVITE_COMISSAO_PADRAO = 7; // % para o parceiro
@@ -87,9 +113,12 @@ export async function parceiroDoConvite(db: SupabaseClient, token: string) {
   if (!token || token.length < 20) return null;
   const { data } = await db
     .from("partners")
-    .select("id, name, email, status, coupon_code, sales_rep_referral_code")
+    .select("id, name, email, phone, birthday, status, coupon_code, sales_rep_referral_code")
     .eq("reset_token", token)
     .gt("reset_token_expires_at", new Date().toISOString())
     .maybeSingle();
-  return data as { id: string; name: string; email: string | null; status: string; coupon_code: string; sales_rep_referral_code: string | null } | null;
+  return data as {
+    id: string; name: string; email: string | null; phone: string | null; birthday: string | null;
+    status: string; coupon_code: string; sales_rep_referral_code: string | null;
+  } | null;
 }

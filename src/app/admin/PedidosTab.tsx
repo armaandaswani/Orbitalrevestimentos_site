@@ -427,6 +427,9 @@ type PartnerOption = {
   id: string;
   name: string;
   coupon_code: string;
+  status?: string | null;
+  has_portal_password?: boolean;
+  phone?: string | null;
   commission_type: "percentage" | "fixed";
   commission_value: number;
   partner_sales_reps?: Array<{ sales_reps?: { id: string; name: string; referral_code: string } | null }>;
@@ -984,9 +987,36 @@ export default function PedidosTab({
     return total > 0 ? Math.round((Math.max(0, amount) / total) * 10_000) / 100 : 0;
   }
 
-  function applyPartnerSelection(partnerId: string) {
+  /** Link de cadastro do arquiteto com cadastro pendente (gerado no pedido). */
+  const [linkCadastro, setLinkCadastro] = useState<{ para: string; link?: string; texto: string; carregando?: boolean; erro?: string; copiado?: boolean } | null>(null);
+  // Só vale para o parceiro para quem foi gerado (trocar de pedido/parceiro não mostra link alheio).
+  const linkAtual = linkCadastro && linkCadastro.para === draft?.partner_id ? linkCadastro : null;
+
+  /** Arquiteto que ainda não tem cadastro: entra só com o nome, como pendente. */
+  async function cadastrarArquitetoPendente(nome: string) {
+    const res = await fetch("/api/admin/parceiros/pendente", {
+      method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ name: nome }),
+    }).catch(() => null);
+    const j = res ? await res.json().catch(() => null) : null;
+    if (res?.status === 409 && j?.partner_id) { setLinkCadastro(null); applyPartnerSelection(j.partner_id); return; }
+    if (!res || !res.ok || !j?.partner) { alert(j?.error || "Não foi possível cadastrar o arquiteto."); return; }
+    const novo = j.partner as PartnerOption;
+    setPartners((cur) => [novo, ...cur]);
+    applyPartnerSelection(novo.id, novo);
+    setLinkCadastro({ para: novo.id, link: j.link, texto: j.whatsapp_text });
+  }
+
+  async function gerarLinkCadastro(p: PartnerOption) {
+    setLinkCadastro({ para: p.id, texto: "", carregando: true });
+    const res = await fetch(`/api/admin/parceiros/${p.id}/link-cadastro`, { method: "POST" }).catch(() => null);
+    const j = res ? await res.json().catch(() => null) : null;
+    if (!res || !res.ok || !j?.link) { setLinkCadastro({ para: p.id, texto: "", erro: j?.error || "Não foi possível gerar o link." }); return; }
+    setLinkCadastro({ para: p.id, link: j.link, texto: j.whatsapp_text });
+  }
+
+  function applyPartnerSelection(partnerId: string, recemCriado?: PartnerOption) {
     if (!draft) return;
-    const partner = partners.find((p) => p.id === partnerId) ?? null;
+    const partner = recemCriado ?? partners.find((p) => p.id === partnerId) ?? null;
     if (!partner) {
       setDraft({ ...draft, partner_id: null, partner_name: null, partner_commission_pct: 0, partner_commission_amount: 0 });
       return;
@@ -2489,18 +2519,20 @@ export default function PedidosTab({
                   </button>
                 )}
                 <div className="grid grid-cols-2 gap-3">
-                  <Field label="Parceiro">
+                  <Field label="Arquiteto / parceiro">
                     <SearchSelect
                       value={draft.partner_id ?? ""}
-                      onChange={(id) => applyPartnerSelection(id)}
+                      onChange={(id) => { setLinkCadastro(null); applyPartnerSelection(id); }}
                       placeholder="Sem parceiro"
                       emptyOption={{ id: "", label: "Sem parceiro" }}
                       options={partners.map((p) => ({
                         id: p.id,
                         label: p.name,
                         search: `${p.name} ${p.coupon_code ?? ""}`,
-                        hint: p.coupon_code ?? undefined,
+                        hint: [cadastroPendente(p) ? "Cadastro pendente" : null, p.coupon_code].filter(Boolean).join(" · ") || undefined,
                       }))}
+                      onCreate={cadastrarArquitetoPendente}
+                      createLabel={(t) => `+ Cadastrar “${t}” (cadastro pendente)`}
                     />
                   </Field>
                   <Field label="Representante">
@@ -2512,6 +2544,36 @@ export default function PedidosTab({
                     </select>
                   </Field>
                 </div>
+                {selectedPartner && cadastroPendente(selectedPartner) && (
+                  <div className="border border-amber-200 bg-amber-50 p-3 space-y-2">
+                    <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2">
+                      <p className="text-xs text-amber-900">
+                        <strong>{selectedPartner.name}</strong> está com <strong>cadastro pendente</strong>. Mande o link para completar e-mail, aniversário e senha — sem precisar escolher representante.
+                      </p>
+                      <button type="button" onClick={() => gerarLinkCadastro(selectedPartner)} disabled={linkAtual?.carregando}
+                        className="flex-shrink-0 text-[10px] uppercase tracking-wide font-bold border border-amber-800 text-amber-900 px-3 py-2 hover:bg-amber-100 disabled:opacity-50">
+                        {linkAtual?.carregando ? "Gerando…" : linkAtual?.link ? "Gerar novo link" : "Gerar link de cadastro"}
+                      </button>
+                    </div>
+                    {linkAtual?.erro && <p className="text-xs text-red-700">{linkAtual.erro}</p>}
+                    {linkAtual?.link && (
+                      <div className="space-y-2">
+                        <input readOnly value={linkAtual.link} onFocus={(e) => e.currentTarget.select()} className={`${inputCls} text-xs`} aria-label="Link de cadastro" />
+                        <div className="flex flex-col sm:flex-row gap-2">
+                          <button type="button" onClick={() => { void navigator.clipboard?.writeText(linkAtual.texto); setLinkCadastro({ ...linkAtual, copiado: true }); }}
+                            className="text-[10px] uppercase tracking-wide font-bold border border-[#0B1F45] text-[#0B1F45] px-3 py-2 hover:bg-[#0B1F45] hover:text-white">
+                            {linkAtual.copiado ? "Mensagem copiada ✓" : "Copiar mensagem com o link"}
+                          </button>
+                          <a href={`https://wa.me/${waDigits(selectedPartner.phone)}?text=${encodeURIComponent(linkAtual.texto)}`} target="_blank" rel="noopener noreferrer"
+                            className="text-center text-[10px] uppercase tracking-wide font-bold bg-[#1f7a3d] text-white px-3 py-2 hover:bg-[#17612f]">
+                            Enviar pelo WhatsApp
+                          </a>
+                        </div>
+                        <p className="text-[10px] text-[#74777f]">O link vale por 14 dias. Gerar um novo invalida o anterior.</p>
+                      </div>
+                    )}
+                  </div>
+                )}
                 {(selectedPartner || selectedRep) && (
                   <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
                     {selectedPartner && (
@@ -3001,17 +3063,32 @@ function Field({ label, children }: { label: string; children: React.ReactNode }
   );
 }
 
+/** Parceiro cadastrado pela Orbital (ou convidado) que ainda não criou a senha. */
+function cadastroPendente(p: PartnerOption): boolean {
+  return p.status === "pending" && !p.has_portal_password;
+}
+
+/** Dígitos para wa.me; sem número conhecido, o WhatsApp deixa escolher o contato. */
+function waDigits(phone?: string | null): string {
+  const d = (phone ?? "").replace(/\D/g, "");
+  if (d.length < 10) return "";
+  return d.length <= 11 ? `55${d}` : d;
+}
+
 // Searchable single-select (combobox). For long lists (products, partners) the
 // client/admin types to filter by name/code instead of scrolling a native
 // <select>. Filters on each option's `search` string.
 function SearchSelect({
-  value, onChange, options, placeholder, emptyOption,
+  value, onChange, options, placeholder, emptyOption, onCreate, createLabel,
 }: {
   value: string;
   onChange: (id: string) => void;
   options: Array<{ id: string; label: string; search: string; hint?: string }>;
   placeholder: string;
   emptyOption?: { id: string; label: string };
+  /** Sem opção com esse nome exato: oferece criar (ex.: arquiteto com cadastro pendente). */
+  onCreate?: (texto: string) => void;
+  createLabel?: (texto: string) => string;
 }) {
   const [open, setOpen] = useState(false);
   const [q, setQ] = useState("");
@@ -3027,7 +3104,9 @@ function SearchSelect({
   const ql = q.trim().toLowerCase();
   const filtered = ql ? options.filter((o) => o.search.toLowerCase().includes(ql)) : options;
   return (
-    <div className="relative min-w-0" ref={ref}>
+    // preventDefault: o SearchSelect fica dentro do <label> do Field; sem isto,
+    // clicar numa opção "ativava" o rótulo e reabria a lista na hora.
+    <div className="relative min-w-0" ref={ref} onClick={(e) => e.preventDefault()}>
       <button type="button" onClick={() => setOpen((o) => !o)}
         className={`${inputCls} text-left flex items-center justify-between gap-2`}>
         <span className={`truncate ${selectedLabel ? "" : "text-[#a0a3a8]"}`}>{selectedLabel || placeholder}</span>
@@ -3047,7 +3126,13 @@ function SearchSelect({
               {o.label}{o.hint ? <span className="block text-[10px] text-[#74777f] font-normal">{o.hint}</span> : null}
             </button>
           ))}
-          {filtered.length === 0 && <p className="px-3 py-3 text-xs text-[#74777f]">Nada encontrado.</p>}
+          {onCreate && q.trim().length >= 2 && !options.some((o) => o.label.trim().toLowerCase() === ql) && (
+            <button type="button" onClick={() => { onCreate(q.trim().replace(/\s+/g, " ")); setOpen(false); setQ(""); }}
+              className="block w-full text-left px-3 py-2.5 text-sm font-semibold text-[#1f7a3d] hover:bg-[#EFEDE8] border-t border-[#f0f0f0]">
+              {createLabel ? createLabel(q.trim()) : `+ Criar “${q.trim()}”`}
+            </button>
+          )}
+          {filtered.length === 0 && !onCreate && <p className="px-3 py-3 text-xs text-[#74777f]">Nada encontrado.</p>}
         </div>
       )}
     </div>

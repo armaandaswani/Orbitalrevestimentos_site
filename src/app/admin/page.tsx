@@ -2567,6 +2567,15 @@ export default function AdminPage() {
   }
 
   const pendingPartners = partners.filter((p) => p.status === "pending");
+
+  /** Gera um link novo de cadastro (o anterior deixa de valer) e copia a mensagem pronta. */
+  async function copiarLinkCadastro(p: Partner) {
+    const res = await fetch(`/api/admin/parceiros/${p.id}/link-cadastro`, { method: "POST" }).catch(() => null);
+    const j = res ? await res.json().catch(() => null) : null;
+    if (!res || !res.ok || !j?.whatsapp_text) { alert(j?.error || "Não foi possível gerar o link."); return; }
+    try { await navigator.clipboard.writeText(j.whatsapp_text); alert("Mensagem com o link copiada. Cole no WhatsApp do parceiro."); }
+    catch { window.prompt("Copie a mensagem:", j.whatsapp_text); }
+  }
   const activePartners = partners.filter((p) => p.status !== "pending").filter((p) => {
     if (!partnerSearch.trim()) return true;
     const q = partnerSearch.toLowerCase();
@@ -3464,7 +3473,9 @@ export default function AdminPage() {
                             {p.name}
                             {p.is_self_registered === false && (
                               <span className="ml-2 align-middle inline-block bg-blue-50 text-[#0B1F45] px-2 py-0.5 text-[10px] font-bold tracking-wide">
-                                Convite da representante · ativa sozinho ao aceitar
+                                {p.sales_rep_referral_code
+                                  ? "Convite da representante · ativa sozinho ao aceitar"
+                                  : "Cadastro pendente · criado no pedido · ativa sozinho ao completar"}
                               </span>
                             )}
                           </p>
@@ -3482,7 +3493,13 @@ export default function AdminPage() {
                             {new Date(p.created_at).toLocaleDateString("pt-BR")}
                           </p>
                         </div>
-                        <div className="flex gap-2 flex-shrink-0">
+                        <div className="flex flex-wrap gap-2 flex-shrink-0">
+                          {p.is_self_registered === false && !p.has_portal_password && (
+                            <button type="button" onClick={() => copiarLinkCadastro(p)}
+                              className="border border-[#0B1F45] text-[#0B1F45] text-xs font-bold tracking-[0.08em] uppercase px-4 py-2 hover:bg-[#0B1F45] hover:text-white transition-colors">
+                              Copiar link de cadastro
+                            </button>
+                          )}
                           <button onClick={() => { setApprovingId(approvingId === p.id ? null : p.id); setApprovalForm({ discount_type: "percentage", discount_value: 0, commission_type: "percentage", commission_value: 7, portal_password: "" }); }}
                             className="bg-[#0B1F45] text-white text-xs font-bold tracking-[0.08em] uppercase px-4 py-2 hover:bg-[#2347A0] transition-colors">
                             Aprovar

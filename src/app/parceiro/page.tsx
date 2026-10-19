@@ -117,7 +117,11 @@ export default function ParceiroPage() {
 
   // ── Convite da representante (?convite=TOKEN) ─────────────────────────────
   const [inviteToken, setInviteToken] = useState("");
-  const [inviteInfo, setInviteInfo] = useState<{ name: string; rep_name: string | null } | null>(null);
+  const [inviteInfo, setInviteInfo] = useState<{ name: string; rep_name: string | null; falta: { email: boolean; birthday: boolean; phone: boolean } } | null>(null);
+  // O que o convite pede para completar (cadastro feito pela Orbital direto do pedido).
+  const [inviteEmail, setInviteEmail] = useState("");
+  const [inviteBirthday, setInviteBirthday] = useState("");
+  const [invitePhone, setInvitePhone] = useState("");
   const [invitePassword, setInvitePassword] = useState("");
   const [inviteConfirm, setInviteConfirm] = useState("");
   const [inviteAgree, setInviteAgree] = useState(false);
@@ -265,7 +269,7 @@ export default function ParceiroPage() {
       fetch(`/api/parceiro/convite?token=${encodeURIComponent(convite)}`)
         .then(async (r) => {
           const j = await r.json().catch(() => null);
-          if (r.ok && j) setInviteInfo({ name: j.name, rep_name: j.rep_name ?? null });
+          if (r.ok && j) setInviteInfo({ name: j.name, rep_name: j.rep_name ?? null, falta: { email: !!j.falta?.email, birthday: !!j.falta?.birthday, phone: !!j.falta?.phone } });
           else setInviteError(j?.error || "Convite inválido ou expirado.");
         })
         .catch(() => setInviteError("Sem conexão. Recarregue a página."));
@@ -463,7 +467,7 @@ export default function ParceiroPage() {
     const res = await fetch("/api/parceiro/convite", {
       method: "POST",
       headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ token: inviteToken, password: invitePassword }),
+      body: JSON.stringify({ token: inviteToken, password: invitePassword, email: inviteEmail, birthday: inviteBirthday, phone: invitePhone }),
     }).catch(() => null);
     const json = res ? await res.json().catch(() => null) : null;
     setInviteLoading(false);
@@ -618,7 +622,7 @@ export default function ParceiroPage() {
                 </p>
                 <p className="text-[#74777f] text-sm">
                   {inviteInfo
-                    ? `${inviteInfo.rep_name ? `${inviteInfo.rep_name} convidou você` : "Você foi convidado"} para ser Parceiro Orbital. Crie sua senha para entrar no portal.`
+                    ? `${inviteInfo.rep_name ? `${inviteInfo.rep_name} convidou você` : "A Orbital cadastrou você"} como Parceiro Orbital. ${inviteInfo.falta.email || inviteInfo.falta.birthday || inviteInfo.falta.phone ? "Complete seus dados e crie" : "Crie"} sua senha para entrar no portal.`
                     : "Orbital Revestimentos"}
                 </p>
               </div>
@@ -638,6 +642,29 @@ export default function ParceiroPage() {
                 </div>
               ) : (
                 <form onSubmit={handleAcceptInvite} className="space-y-4">
+                  {inviteInfo.falta.email && (
+                    <div>
+                      <label className="block text-[10px] tracking-[0.15em] uppercase font-bold text-[#74777f] mb-2">E-mail</label>
+                      <input required type="email" inputMode="email" autoComplete="email" value={inviteEmail}
+                        onChange={(e) => setInviteEmail(e.target.value)} placeholder="seu@email.com"
+                        className="w-full border border-[#e2e2e2] px-4 py-3 text-sm text-[#0B1F45] focus:outline-none focus:border-[#0B1F45]" />
+                    </div>
+                  )}
+                  {inviteInfo.falta.phone && (
+                    <div>
+                      <label className="block text-[10px] tracking-[0.15em] uppercase font-bold text-[#74777f] mb-2">WhatsApp</label>
+                      <input required type="tel" inputMode="tel" autoComplete="tel" value={invitePhone}
+                        onChange={(e) => setInvitePhone(e.target.value)} placeholder="(92) 9 0000-0000"
+                        className="w-full border border-[#e2e2e2] px-4 py-3 text-sm text-[#0B1F45] focus:outline-none focus:border-[#0B1F45]" />
+                    </div>
+                  )}
+                  {inviteInfo.falta.birthday && (
+                    <div>
+                      <label className="block text-[10px] tracking-[0.15em] uppercase font-bold text-[#74777f] mb-2">Data de aniversário</label>
+                      <input required type="date" value={inviteBirthday} onChange={(e) => setInviteBirthday(e.target.value)}
+                        className="w-full border border-[#e2e2e2] px-4 py-3 text-sm text-[#0B1F45] focus:outline-none focus:border-[#0B1F45] bg-white" />
+                    </div>
+                  )}
                   <div>
                     <label className="block text-[10px] tracking-[0.15em] uppercase font-bold text-[#74777f] mb-2">
                       Crie sua senha
