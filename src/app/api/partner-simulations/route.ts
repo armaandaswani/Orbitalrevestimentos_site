@@ -1,10 +1,15 @@
 import { NextRequest, NextResponse } from "next/server";
 import { supabaseAdmin } from "@/lib/supabase";
+import { isAdminRequest, partnerIdFromRequest } from "@/lib/admin-auth";
 
 // GET /api/partner-simulations?partner_id=<uuid>
 export async function GET(req: NextRequest) {
   const partnerId = req.nextUrl.searchParams.get("partner_id");
   if (!partnerId) return NextResponse.json({ error: "partner_id required" }, { status: 400 });
+  // Só o próprio parceiro (sessão do portal) ou o admin — o id sozinho não basta.
+  if (!isAdminRequest(req) && partnerIdFromRequest(req) !== partnerId) {
+    return NextResponse.json({ error: "Sessão expirada. Entre de novo no portal." }, { status: 401 });
+  }
 
   const db = supabaseAdmin();
   const { data, error } = await db
@@ -27,6 +32,9 @@ export async function POST(req: NextRequest) {
     spaces, total_plates, total_area_m2,
     material_total, material_discounted, sim_url,
   } = body;
+  if (!isAdminRequest(req) && partnerIdFromRequest(req) !== partner_id) {
+    return NextResponse.json({ error: "Sessão expirada. Entre de novo no portal." }, { status: 401 });
+  }
 
   if (!partner_id) {
     return NextResponse.json({ error: "partner_id required" }, { status: 400 });

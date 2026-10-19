@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
 import { supabaseAdmin } from "@/lib/supabase";
+import { isAdminRequest, partnerIdFromRequest } from "@/lib/admin-auth";
 
 // DELETE /api/partner-simulations/[id]?partner_id=<uuid>
 // partner_id is required so a partner can only delete their own simulations.
@@ -11,6 +12,9 @@ export async function DELETE(
   const partnerId = req.nextUrl.searchParams.get("partner_id");
 
   if (!partnerId) return NextResponse.json({ error: "partner_id required" }, { status: 400 });
+  if (!isAdminRequest(req) && partnerIdFromRequest(req) !== partnerId) {
+    return NextResponse.json({ error: "Sessão expirada. Entre de novo no portal." }, { status: 401 });
+  }
 
   const db = supabaseAdmin();
   const { error } = await db

@@ -1,4 +1,5 @@
 import { NextRequest, NextResponse } from "next/server";
+import { isAdminRequest, partnerIdFromRequest, repIdFromRequest } from "@/lib/admin-auth";
 import { supabaseAdmin } from "@/lib/supabase";
 import { getResend } from "@/lib/resend";
 import { upsertLeadFromSource } from "@/lib/leads";
@@ -169,7 +170,37 @@ export async function GET(req: NextRequest) {
   const couponCode = searchParams.get("coupon_code");
   const salesRepCode = searchParams.get("sales_rep_code");
 
+  // Lista completa: só o admin (barra antes de tocar no banco).
+  if (!couponCode && !salesRepCode && !isAdminRequest(req)) {
+    return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+  }
+
   const db = supabaseAdmin();
+
+  // Dados de cliente e comissão: nunca públicos. Sem parâmetro (lista toda) só o
+  // admin; com cupom, só o próprio parceiro logado; com código de
+  // representante, só a própria representante logada.
+  if (!isAdminRequest(req)) {
+    if (couponCode) {
+      const pid = partnerIdFromRequest(req);
+      const { data: dono } = pid
+        ? await db.from("partners").select("coupon_code").eq("id", pid).maybeSingle()
+        : { data: null };
+      if (!dono || String(dono.coupon_code ?? "").toUpperCase() !== couponCode.toUpperCase()) {
+        return NextResponse.json({ error: "Sessão expirada. Entre de novo no portal." }, { status: 401 });
+      }
+    } else if (salesRepCode) {
+      const rid = repIdFromRequest(req);
+      const { data: rep } = rid
+        ? await db.from("sales_reps").select("referral_code").eq("id", rid).maybeSingle()
+        : { data: null };
+      if (!rep || String(rep.referral_code ?? "").toUpperCase() !== salesRepCode.toUpperCase()) {
+        return NextResponse.json({ error: "Sessão expirada. Entre de novo no portal." }, { status: 401 });
+      }
+    } else {
+      return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+    }
+  }
 
   if (salesRepCode) {
     // Primary: fetch via coupon_use_commissions (new multi-rep table)

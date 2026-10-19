@@ -313,6 +313,8 @@ export default function ParceiroPage() {
     setUsesLoading(true);
     const res = await fetch(`/api/coupons/use?coupon_code=${encodeURIComponent(code)}`);
     if (res.ok) setUses(await res.json());
+    // Sessão do servidor expirou (os dados de comissão exigem login): volta ao login.
+    else if (res.status === 401) { localStorage.removeItem(SESSION_KEY); setPartner(null); setUses([]); }
     setUsesLoading(false);
   }, []);
 

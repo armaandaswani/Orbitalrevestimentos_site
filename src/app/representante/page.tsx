@@ -137,6 +137,8 @@ export default function RepresentantePage() {
     setUsesLoading(true);
     const res = await fetch(`/api/coupons/use?sales_rep_code=${encodeURIComponent(code)}`);
     if (res.ok) setUses(await res.json());
+    // Sessão do servidor expirou (os dados de comissão exigem login): volta ao login.
+    else if (res.status === 401) { setSalesRep(null); setUses([]); }
     setUsesLoading(false);
   }
 
