@@ -4,7 +4,7 @@ import React, { useEffect, useMemo, useState } from "react";
 import { CLAUSULAS_PADRAO } from "@/lib/clausulas-pedido";
 import { datasDoDocumento, fmtDia } from "@/lib/documento-datas";
 
-type DocumentType = "orcamento" | "pedido" | "nota" | "recibo";
+type DocumentType = "orcamento" | "pedido" | "nota" | "recibo" | "termo";
 
 interface PedidoItem {
   id: string;
@@ -61,6 +61,7 @@ const DOC_LABEL: Record<DocumentType, string> = {
   pedido: "Pedido de Venda",
   nota: "Nota de Venda",
   recibo: "Recibo",
+  termo: "Termo de Recebimento",
 };
 
 const DEFAULT_NOTES = CLAUSULAS_PADRAO;
@@ -86,6 +87,13 @@ function itemUnitInfo(it: PedidoItem): { short: string; detail: string } {
     return { short, detail: `Placa ${fmtM(h)} m × ${fmtM(w)} m × 5 mm` };
   }
   return { short, detail: short };
+}
+
+// "12 placas", "1 placa", "3 un" — para o Termo de Recebimento.
+function qtdComUnidade(it: PedidoItem) {
+  const qty = Number(it.plates) || 0;
+  const unit = itemUnitInfo(it).short.toLowerCase();
+  return `${qty} ${qty !== 1 && /[aeiou]$/.test(unit) ? `${unit}s` : unit}`;
 }
 
 function documentLine(doc: string | null | undefined) {
@@ -145,7 +153,7 @@ export default function PedidoDocumentoPage({ params }: { params: Promise<{ id: 
   useEffect(() => {
     const search = new URLSearchParams(window.location.search);
     const tipo = search.get("tipo") || "orcamento";
-    if (["orcamento", "pedido", "nota", "recibo"].includes(tipo)) setDocType(tipo as DocumentType);
+    if (["orcamento", "pedido", "nota", "recibo", "termo"].includes(tipo)) setDocType(tipo as DocumentType);
     setIncludeImages(search.get("imagens") === "1");
     setIncludeDescriptions(search.get("descricoes") === "1");
   }, []);
@@ -254,6 +262,20 @@ export default function PedidoDocumentoPage({ params }: { params: Promise<{ id: 
     : "";
   const documentUrl = typeof window !== "undefined" ? window.location.href : "";
 
+  const docHeader = (
+    <section className="doc-header">
+      {/* eslint-disable-next-line @next/next/no-img-element */}
+      <img src="/images/brand/orbital-simbolo.png" alt="Orbital" className="doc-logo" />
+      <div>
+        <h2>{COMPANY.name}</h2>
+        <p>{COMPANY.cnpj}</p>
+        <p>{COMPANY.address}</p>
+        <p>{COMPANY.city}</p>
+      </div>
+      <p className="doc-email">{COMPANY.email}</p>
+    </section>
+  );
+
   async function saveNotes() {
     if (!id) return;
     setSavingNotes(true);
@@ -330,7 +352,10 @@ export default function PedidoDocumentoPage({ params }: { params: Promise<{ id: 
                 <option value="pedido">Pedido de Venda</option>
                 <option value="nota">Nota de Venda</option>
                 <option value="recibo">Recibo</option>
+                <option value="termo">Termo de Recebimento</option>
               </select>
+              {docType !== "termo" && (
+              <>
               <label className="border border-[#d8d5cf] bg-white px-3 py-2 text-xs font-bold uppercase tracking-[0.08em] text-[#0B1F45] flex items-center gap-2">
                 <input type="checkbox" checked={includeImages} onChange={(e) => setIncludeImages(e.target.checked)} />
                 Imagens
@@ -339,11 +364,13 @@ export default function PedidoDocumentoPage({ params }: { params: Promise<{ id: 
                 <input type="checkbox" checked={includeDescriptions} onChange={(e) => setIncludeDescriptions(e.target.checked)} />
                 Descrições
               </label>
+              </>
+              )}
               <a href="/admin" className="border border-[#d8d5cf] bg-white px-4 py-2 text-xs font-bold uppercase tracking-[0.1em] text-[#0B1F45]">Voltar</a>
             </>
           )}
           <button onClick={() => window.print()} className="bg-[#0B1F45] text-white px-5 py-2 text-xs font-bold uppercase tracking-[0.1em]">Imprimir / PDF</button>
-          {!readOnly && (
+          {!readOnly && docType !== "termo" && (
             <>
               <button
                 onClick={() => sendDocument("email")}
@@ -370,7 +397,7 @@ export default function PedidoDocumentoPage({ params }: { params: Promise<{ id: 
           Orçamento this is the ONLY text shown (no legal boilerplate); for
           Pedido/Nota it overrides the default boilerplate once saved.
           Hidden entirely for the client's read-only view. */}
-      {!readOnly && (
+      {!readOnly && docType !== "termo" && (
       <div className="document-notes-editor max-w-[980px] mx-auto mb-4 bg-white border border-[#d8d5cf] p-4">
         <p className="text-[10px] uppercase tracking-[0.18em] font-bold text-[#74777f] mb-2">
           {docType === "orcamento" ? "Texto adicional (opcional, aparece em Condições)" : "Condições — editar texto"}
@@ -403,18 +430,74 @@ export default function PedidoDocumentoPage({ params }: { params: Promise<{ id: 
       </div>
       )}
 
-      <article className="document-page mx-auto bg-white text-[#0D1830] shadow-sm">
-        <section className="doc-header">
-          {/* eslint-disable-next-line @next/next/no-img-element */}
-          <img src="/images/brand/orbital-simbolo.png" alt="Orbital" className="doc-logo" />
-          <div>
-            <h2>{COMPANY.name}</h2>
-            <p>{COMPANY.cnpj}</p>
-            <p>{COMPANY.address}</p>
-            <p>{COMPANY.city}</p>
+      {docType === "termo" ? (
+      // Termo de Recebimento (Cláusula 4ª): uma página, preenchida à mão só no
+      // que o sistema não sabe — quem recebeu, a data e a assinatura.
+      <article className="document-page termo-page mx-auto bg-white text-[#0D1830] shadow-sm">
+        {docHeader}
+
+        <div className="doc-title-bar">TERMO DE RECEBIMENTO DE MATERIAL</div>
+
+        <section className="termo-dados">
+          <p><span>Pedido / Nota de Venda nº</span><strong>{docNumber(pedido)}</strong></p>
+          <p><span>Comprador</span><strong>{pedido.client_name}</strong></p>
+          <div className="termo-op">
+            <span><i className="termo-cx" />Retirada no depósito</span>
+            <span><i className="termo-cx" />Entrega no endereço do comprador</span>
           </div>
-          <p className="doc-email">{COMPANY.email}</p>
+          <div className="termo-linha">
+            <div className="termo-campo"><span>Recebido por (nome legível)</span><i /></div>
+            <div className="termo-campo termo-cpf"><span>CPF</span><i /></div>
+          </div>
         </section>
+
+        <section>
+          <p className="doc-section-label">Material</p>
+          <table className="doc-table termo-table">
+            <thead>
+              <tr>
+                <th>Produto</th>
+                <th>Modelo</th>
+                <th>Quantidade</th>
+              </tr>
+            </thead>
+            <tbody>
+              {items.map((it) => (
+                <tr key={it.id}>
+                  <td>{it.product_name || "Produto Orbital"}</td>
+                  <td>{it.product_code || "—"}</td>
+                  <td>{qtdComUnidade(it)}</td>
+                </tr>
+              ))}
+            </tbody>
+          </table>
+        </section>
+
+        <section className="termo-decl">
+          <p>
+            Declaro que recebi da {COMPANY.name} o material descrito acima e que, no ato do recebimento,
+            conferi a quantidade, o modelo e a integridade de cada placa, nos termos da Cláusula 4ª
+            (Da Entrega e da Conferência) do Pedido de Venda.
+          </p>
+          <p className="termo-forte">
+            Recebi o produto em perfeito estado, em toda a sua integridade: sem riscos, arranhões, batidas,
+            trincas, quebras, empenos ou manchas.
+          </p>
+          <p>
+            Na retirada no depósito, a partir deste momento, o transporte, o manuseio e eventuais danos que
+            venham a ocorrer são de responsabilidade do COMPRADOR.
+          </p>
+        </section>
+
+        <p className="termo-local">Manaus, ______ / ______ / __________</p>
+
+        <section className="termo-ass">
+          <div><span />Assinatura de quem recebeu</div>
+        </section>
+      </article>
+      ) : (
+      <article className="document-page mx-auto bg-white text-[#0D1830] shadow-sm">
+        {docHeader}
 
         <section className="doc-grid">
           <div>
@@ -567,6 +650,7 @@ export default function PedidoDocumentoPage({ params }: { params: Promise<{ id: 
         </section>
         <p className="doc-fiscal">*** Não é válido como documento fiscal ***</p>
       </article>
+      )}
 
       <style jsx global>{`
         /* Unconditional (screen AND print) — see the orbital-doc-page effect
@@ -677,6 +761,34 @@ export default function PedidoDocumentoPage({ params }: { params: Promise<{ id: 
         }
         .doc-signatures span { display: block; border-top: 1px solid #aaa; margin-bottom: 8px; }
         .doc-fiscal { text-align: center; color: #777; font-size: 9px; margin: 0; }
+        .termo-page { font-size: 12px; line-height: 1.4; }
+        .termo-dados { margin-bottom: 16px; }
+        .termo-dados > p { display: flex; flex-wrap: wrap; align-items: baseline; gap: 4px 10px; margin: 0 0 8px; font-size: 13px; }
+        .termo-dados > p span { color: #555; font-size: 12px; }
+        .termo-op { display: flex; flex-wrap: wrap; gap: 6px 28px; margin: 12px 0 14px; }
+        .termo-cx { display: inline-block; width: 12px; height: 12px; border: 1.2px solid #0D1830; margin-right: 7px; vertical-align: -2px; }
+        .termo-linha { display: flex; flex-wrap: wrap; gap: 14px 24px; }
+        .termo-campo { display: flex; align-items: flex-end; gap: 8px; flex: 1 1 260px; white-space: nowrap; }
+        .termo-campo span { color: #555; }
+        .termo-campo i { flex: 1; border-bottom: 1px solid #888; height: 18px; display: block; }
+        .termo-cpf { flex: 0 1 220px; }
+        .termo-table th:not(:first-child), .termo-table td:not(:first-child) { text-align: left; }
+        .termo-table td { padding: 6px 4px; }
+        .termo-decl { border: 1.4px solid #0D1830; padding: 12px 16px; margin: 22px 0 0; }
+        .termo-decl p { margin: 0 0 8px; text-align: justify; }
+        .termo-decl p:last-child { margin-bottom: 0; }
+        .termo-forte {
+          font-weight: 700;
+          background: #f4f1ea;
+          border-left: 3px solid #0B1F45;
+          padding: 7px 10px;
+          -webkit-print-color-adjust: exact;
+          print-color-adjust: exact;
+        }
+        .termo-local { margin: 28px 0 0; }
+        .termo-ass { display: flex; justify-content: center; margin: 64px 0 0; }
+        .termo-ass div { width: min(100%, 320px); text-align: center; font-weight: 700; }
+        .termo-ass span { display: block; border-top: 1px solid #555; margin-bottom: 8px; }
 
         @media screen and (max-width: 860px) {
           .document-page {
@@ -702,7 +814,7 @@ export default function PedidoDocumentoPage({ params }: { params: Promise<{ id: 
             box-shadow: none !important;
             margin: 0 !important;
           }
-          .doc-header, .doc-grid, .doc-title-bar, .doc-commercial, .doc-product-card, .doc-product-card-noimg, .doc-signatures { page-break-inside: avoid; }
+          .doc-header, .doc-grid, .doc-title-bar, .doc-commercial, .doc-product-card, .doc-product-card-noimg, .doc-signatures, .termo-decl, .termo-ass { page-break-inside: avoid; }
           .doc-section-label { break-after: avoid; }
           .doc-contract { font-size: 10px; line-height: 1.28; }
         }

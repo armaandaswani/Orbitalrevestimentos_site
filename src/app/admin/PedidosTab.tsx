@@ -1190,7 +1190,7 @@ export default function PedidosTab({
     }
   }
 
-  function openDocument(id: string, tipo: "orcamento" | "pedido" | "nota" | "recibo") {
+  function openDocument(id: string, tipo: "orcamento" | "pedido" | "nota" | "recibo" | "termo") {
     window.open(`/admin/pedidos/${id}/documento?tipo=${tipo}`, "_blank", "noopener,noreferrer");
   }
 
@@ -2791,7 +2791,7 @@ export default function PedidosTab({
                   <p className="text-[10px] tracking-[0.12em] uppercase font-bold text-[#74777f]">Documento comercial</p>
                   {draft.id && (
                     <div className="flex flex-wrap gap-2">
-                      {(["orcamento", "pedido", "nota", "recibo"] as const).map((tipo) => (
+                      {(["orcamento", "pedido", "nota", "recibo", "termo"] as const).map((tipo) => (
                         // A plain <a target="_blank"> here was navigating the
                         // CURRENT tab away on some mobile browsers instead of
                         // opening a new one — looked exactly like the form
@@ -2802,7 +2802,7 @@ export default function PedidosTab({
                           onClick={(e) => { e.preventDefault(); e.stopPropagation(); openDocument(draft.id as string, tipo); }}
                           className="border border-[#e2e2e2] px-2 py-1 text-[9px] uppercase tracking-[0.08em] font-bold text-[#0B1F45] hover:border-[#0B1F45]"
                         >
-                          {tipo === "orcamento" ? "Orçamento" : tipo === "pedido" ? "Pedido" : tipo === "nota" ? "Nota" : "Recibo"}
+                          {tipo === "orcamento" ? "Orçamento" : tipo === "pedido" ? "Pedido" : tipo === "nota" ? "Nota" : tipo === "recibo" ? "Recibo" : "Termo de recebimento"}
                         </button>
                       ))}
                     </div>
@@ -3165,7 +3165,7 @@ function RowActions({ p, resending, onEdit, onDuplicate, onResend, onDocument, o
   onEdit: () => void;
   onDuplicate: () => void;
   onResend: (channels: Array<"whatsapp" | "email">) => void;
-  onDocument: (tipo: "orcamento" | "pedido" | "nota" | "recibo") => void;
+  onDocument: (tipo: "orcamento" | "pedido" | "nota" | "recibo" | "termo") => void;
   onDelete: () => void;
 }) {
   const [open, setOpen] = useState(false);
@@ -3208,6 +3208,7 @@ function RowActions({ p, resending, onEdit, onDuplicate, onResend, onDocument, o
           <button onClick={() => { close(); onDocument("pedido"); }} className={`${item} text-[#2F5FD0]`}>Pedido de venda</button>
           <button onClick={() => { close(); onDocument("nota"); }} className={`${item} text-[#2F5FD0]`}>Nota de venda</button>
           <button onClick={() => { close(); onDocument("recibo"); }} className={`${item} text-[#2F5FD0]`}>Recibo</button>
+          <button onClick={() => { close(); onDocument("termo"); }} className={`${item} text-[#2F5FD0]`}>Termo de recebimento</button>
 
           <div className="border-t border-[#f0f0f0] mt-1 pt-1">
             <button onClick={() => { close(); onDelete(); }} className={`${item} text-red-600 hover:bg-red-50`}>Excluir</button>
