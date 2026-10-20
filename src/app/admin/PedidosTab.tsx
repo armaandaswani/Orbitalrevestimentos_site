@@ -17,6 +17,9 @@ type PedidoOtherCost = { label?: string | null; amount?: number | null };
 
 export interface Pedido {
   id: string;
+  /** Rascunho de orçamento feito pela IA (Ste) — migração 069. */
+  ai_generated?: boolean | null;
+  ai_status?: string | null;
   lead_id: string | null;
   client_name: string;
   client_email: string | null;
@@ -490,7 +493,12 @@ export default function PedidosTab({
   quotePrefill,
   onQuotePrefillConsumed,
 }: PedidosTabProps = {}) {
-  const [pedidos, setPedidos] = useState<Pedido[]>([]);
+  const [allPedidos, setPedidos] = useState<Pedido[]>([]);
+  // "Gerados pela IA": ligado mostra só os rascunhos da IA; desligado, só os pedidos feitos à mão. Assim os
+  // rascunhos nunca entram nos totais (a receber, em produção) dos pedidos de verdade.
+  const [showAi, setShowAi] = useState(false);
+  const pedidos = useMemo(() => allPedidos.filter((p) => Boolean(p.ai_generated) === showAi), [allPedidos, showAi]);
+  const aiCount = useMemo(() => allPedidos.filter((p) => p.ai_generated).length, [allPedidos]);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
@@ -1736,6 +1744,13 @@ export default function PedidosTab({
             )}
           </div>
           <div className="flex flex-wrap gap-2">
+            <button
+              onClick={() => setShowAi((v) => !v)}
+              aria-pressed={showAi}
+              className={`border text-xs tracking-[0.12em] uppercase font-bold px-5 py-2.5 transition-colors ${showAi ? "bg-[#0B1F45] text-white border-[#0B1F45]" : "bg-white text-[#0B1F45] border-[#0B1F45] hover:bg-[#eef2f8]"}`}
+            >
+              Gerados pela IA{aiCount ? ` (${aiCount})` : ""}
+            </button>
             <button
               onClick={openQuoteImport}
               className="border border-[#0B1F45] text-[#0B1F45] bg-white text-xs tracking-[0.12em] uppercase font-bold px-5 py-2.5 hover:bg-[#eef2f8] transition-colors"
