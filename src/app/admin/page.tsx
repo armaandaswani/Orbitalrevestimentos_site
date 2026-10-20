@@ -1970,7 +1970,7 @@ export default function AdminPage() {
   // "Usar como capa" — troca segura: a mídia escolhida vira a capa (image_after)
   // e a capa anterior desce para a galeria de mídias, preservando o arquivo.
   // Nenhuma imagem é apagada; se algo falhar, a capa anterior é mantida.
-  async function useMediaAsCover(m: ProjectMedia, project: { id: string; slug: string; image_after?: string | null }) {
+  async function definirCapaDaMidia(m: ProjectMedia, project: { id: string; slug: string; image_after?: string | null }) {
     if (m.type !== "image") { setMediaToast({ text: "Apenas imagens podem ser capa", error: true }); setTimeout(() => setMediaToast(null), 2500); return; }
     if (!confirm("Definir esta imagem como capa? A capa atual continua na galeria.")) return;
     setSettingCoverId(m.id);
@@ -6838,7 +6838,7 @@ export default function AdminPage() {
                                         {m.type === "image" && !m.is_cover && (
                                           <button
                                             type="button"
-                                            onClick={(e) => { e.stopPropagation(); useMediaAsCover(m, p); }}
+                                            onClick={(e) => { e.stopPropagation(); definirCapaDaMidia(m, p); }}
                                             disabled={settingCoverId === m.id}
                                             className="text-[8px] tracking-[0.05em] uppercase font-bold py-1 border border-[#0B1F45] bg-white text-[#0B1F45] hover:bg-[#0B1F45] hover:text-white transition-colors disabled:opacity-50"
                                           >
@@ -6903,7 +6903,7 @@ export default function AdminPage() {
                                         </div>
                                         {m.type === "image" && (
                                           <button
-                                            onClick={() => useMediaAsCover(m, p)}
+                                            onClick={() => definirCapaDaMidia(m, p)}
                                             disabled={settingCoverId === m.id}
                                             className="w-full mb-2 border border-[#36A35C] text-[#1F7A44] text-[9px] uppercase font-bold tracking-wider py-1.5 hover:bg-[#36A35C] hover:text-[#0B1F45] transition-colors disabled:opacity-50"
                                           >

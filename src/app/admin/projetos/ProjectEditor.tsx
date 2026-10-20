@@ -432,9 +432,9 @@ export default function ProjectEditor({ id }: { id: string }) {
                 <p className="text-[#a0a3a8] text-[10px] mt-1">Opcional. No site: &quot;Projeto de Arq. Fulana de Tal&quot;.</p>
               </div>
               <div>
-                <label className={labelCls}>Observação interna</label>
+                <label className={labelCls}>Nota (aparece no site)</label>
                 <input value={p.note ?? ""} onChange={(e) => set({ note: e.target.value })}
-                  placeholder="Não aparece no site" className={inputCls} />
+                  placeholder="Ex.: Área úmida" className={inputCls} />
               </div>
             </div>
           </section>
