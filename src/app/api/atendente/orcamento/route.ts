@@ -49,7 +49,10 @@ function platesFor(s: SpaceIn): { plates: number; how: string } {
     return { plates, how: `teto ${w} × ${h} m: por m² ${((w * h) / PLATE_M2).toFixed(1)} → ${byArea}; por largura ${(w / PLATE_W).toFixed(1)} → ${byWidth}; usado ${plates}` };
   }
   const g = panelGrid(w, h, PLATE_W, PLATE_H);
-  return { plates: g.count, how: `parede ${w} × ${h} m: ${g.cols} colunas por largura${g.extraPanels ? ` + ${g.extraPanels} para a altura` : ""} = ${g.count}` };
+  const how = g.fullRows === 0
+    ? `parede ${w} × ${h} m: ${g.cols} placas lado a lado pela largura (a altura cabe numa placa de 2,90 m) = ${g.count}`
+    : `parede ${w} × ${h} m: ${g.cols} colunas × ${g.fullRows} fileira(s) inteira(s)${g.extraPanels ? ` + ${g.extraPanels} para completar a altura` : ""} = ${g.count}`;
+  return { plates: g.count, how };
 }
 
 export async function POST(req: NextRequest) {
