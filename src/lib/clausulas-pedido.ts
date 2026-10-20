@@ -31,7 +31,7 @@ Com a confirmação do pedido, o material é reservado e retirado do estoque dis
 CLÁUSULA 4ª – DA ENTREGA E DA CONFERÊNCIA
 No recebimento, compete ao COMPRADOR: I – conferir quantidade, modelo e especificação dos produtos; II – verificar defeitos aparentes, como riscos, trincas, quebras, empenos, manchas ou divergências; III – registrar imediatamente qualquer inconformidade no comprovante de entrega, com registro fotográfico.
 A ausência de ressalvas no ato do recebimento caracteriza aceitação plena dos produtos quanto à quantidade e ao estado aparente. Com a entrega, encerra-se a responsabilidade da ORBITAL pelo transporte e pela integridade física dos produtos.
-Na retirada no depósito, o transporte e eventuais danos ocorridos durante ele são de responsabilidade do COMPRADOR.
+Na retirada no depósito, feita pelo COMPRADOR ou por pessoa por ele indicada, compete ao COMPRADOR conferir, no ato da retirada, a quantidade, o modelo e a integridade dos produtos, verificando a ausência de riscos, arranhões, batidas, trincas, quebras ou empenos, e assinar o termo de recebimento, registrando nele qualquer inconformidade. A assinatura do termo de recebimento sem ressalvas confirma que os produtos foram retirados em perfeitas condições. A partir da retirada, o transporte, o manuseio e eventuais danos que venham a ocorrer são de responsabilidade do COMPRADOR.
 Se a entrega não puder ser realizada por ausência do COMPRADOR, informações incorretas ou impedimentos alheios à ORBITAL, poderá ser cobrada nova taxa de entrega.
 
 CLÁUSULA 5ª – DAS CARACTERÍSTICAS DO PRODUTO
