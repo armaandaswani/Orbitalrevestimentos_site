@@ -421,7 +421,8 @@ export async function POST(req: NextRequest, { params }: { params: Promise<{ id:
     // Link the client can actually open — the document page falls back to the
     // public, read-only view when there's no admin session. Build it here when
     // the caller didn't pass one, so every send includes a working link.
-    const link = documentUrl || `${req.nextUrl.origin}/admin/pedidos/${id}/documento?tipo=${docType}`;
+    // Short form (/o/<id sem traços>): WhatsApp reads a raw UUID in a link as a Pix key and won't open it.
+    const link = documentUrl || `${req.nextUrl.origin}/o/${id.replace(/-/g, "")}?tipo=${docType}`;
     // ONE objective message for this action: what was generated, the link, and
     // (only when the client has an e-mail on file) the PDF note. No simulador
     // follow-ups — those come from the website flow, not a document send.

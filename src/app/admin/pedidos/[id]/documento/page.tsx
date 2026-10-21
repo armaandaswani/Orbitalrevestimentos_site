@@ -260,7 +260,9 @@ export default function PedidoDocumentoPage({ params }: { params: Promise<{ id: 
   const legalText = legalTermsEnabled
     ? (pedido.document_notes?.trim() || (docType !== "orcamento" ? DEFAULT_NOTES : ""))
     : "";
-  const documentUrl = typeof window !== "undefined" ? window.location.href : "";
+  // Link for the client: the short /o/<id sem traços> form. WhatsApp reads a raw UUID inside a link as a Pix
+  // key and the link stops opening; the short route rebuilds this same page (with the same options).
+  const documentUrl = typeof window !== "undefined" && id ? `${window.location.origin}/o/${id.replace(/-/g, "")}${window.location.search}` : "";
 
   const docHeader = (
     <section className="doc-header">
@@ -370,6 +372,14 @@ export default function PedidoDocumentoPage({ params }: { params: Promise<{ id: 
             </>
           )}
           <button onClick={() => window.print()} className="bg-[#0B1F45] text-white px-5 py-2 text-xs font-bold uppercase tracking-[0.1em]">Imprimir / PDF</button>
+          {!readOnly && documentUrl && (
+            <button
+              onClick={() => { void navigator.clipboard?.writeText(documentUrl); setSendStatus("Link copiado: é só colar no WhatsApp do cliente."); }}
+              className="border border-[#0B1F45] bg-white text-[#0B1F45] px-4 py-2 text-xs font-bold uppercase tracking-[0.1em]"
+            >
+              Copiar link
+            </button>
+          )}
           {!readOnly && docType !== "termo" && (
             <>
               <button

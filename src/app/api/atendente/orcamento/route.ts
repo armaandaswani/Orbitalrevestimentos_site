@@ -155,7 +155,7 @@ export async function POST(req: NextRequest) {
       warnings: [...breakdown.warnings, ...breakdown.adminWarnings],
     },
     validUntil,
-    documentUrl: `${site}/admin/pedidos/${pedido.id}/documento?tipo=orcamento`,
+    documentUrl: `${site}/o/${String(pedido.id).replace(/-/g, "")}`,
   });
 }
 
