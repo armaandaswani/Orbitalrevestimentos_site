@@ -32,6 +32,7 @@ import {
 } from "@/lib/render-prompt";
 import { BAIRROS_DISTANTES, FRETE_DISTANTE, FRETE_PADRAO } from "@/lib/frete-pedido";
 import ComunicadoMetropolitano from "./ComunicadoMetropolitano";
+import { PasskeyCard, PasskeyConvite, PasskeyLoginButton } from "@/components/Passkey";
 
 // ─── Sidebar IA ───────────────────────────────────────────────────────────────
 // Ordered as the business actually flows, top to bottom: what needs attention
@@ -319,6 +320,7 @@ export default function AdminPage() {
 
   // Change admin password
   const [cpOpen, setCpOpen] = useState(false);
+  const [passkeyOpen, setPasskeyOpen] = useState(false);
   const [cpCurrent, setCpCurrent] = useState("");
   const [cpNew, setCpNew] = useState("");
   const [cpConfirm, setCpConfirm] = useState("");
@@ -3088,6 +3090,7 @@ export default function AdminPage() {
               Entrar
             </button>
           </form>
+          <PasskeyLoginButton tipo="admin" onSuccess={() => { setPw(""); setPwError(""); setAuthed(true); setSessaoExpirada(false); }} />
         </div>
       </div>
     );
@@ -3113,6 +3116,7 @@ export default function AdminPage() {
                 Entrar
               </button>
             </form>
+            <PasskeyLoginButton tipo="admin" onSuccess={() => { setPw(""); setPwError(""); setSessaoExpirada(false); }} />
           </div>
         </div>
       )}
@@ -3217,6 +3221,12 @@ export default function AdminPage() {
             className="text-white/60 hover:text-white text-xs uppercase tracking-widest transition-colors"
           >
             Alterar senha
+          </button>
+          <button
+            onClick={() => setPasskeyOpen((v) => !v)}
+            className="text-white/60 hover:text-white text-xs uppercase tracking-widest transition-colors"
+          >
+            Face ID
           </button>
           <button onClick={() => { fetch("/api/admin/login", { method: "DELETE" }).finally(() => setAuthed(false)); }} className="text-white/60 hover:text-white text-xs uppercase tracking-widest transition-colors">
             Sair
@@ -3328,6 +3338,15 @@ export default function AdminPage() {
           )}
         </div>
       )}
+
+      {passkeyOpen && (
+        <div className="bg-[#F6F5F2] border-b border-[#e2e2e2] px-4 sm:px-8 py-5">
+          <div className="max-w-xl">
+            <PasskeyCard tipo="admin" />
+          </div>
+        </div>
+      )}
+      <PasskeyConvite tipo="admin" />
 
       {!supabaseConfigured && (
         <div className="max-w-4xl mx-auto px-8 pt-10">

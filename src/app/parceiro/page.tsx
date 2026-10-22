@@ -3,6 +3,7 @@
 import React, { useState, useEffect, useRef, useCallback } from "react";
 import ComissoesLista, { type ComissaoItem } from "@/components/ComissoesLista";
 import Image from "next/image";
+import { PasskeyCard, PasskeyConvite, PasskeyLoginButton } from "@/components/Passkey";
 
 interface PartnerInfo {
   id: string;
@@ -420,10 +421,13 @@ export default function ParceiroPage() {
       return;
     }
 
-    const partnerData = json as PartnerInfo;
+    entrar(json as PartnerInfo);
+  }
+
+  // Login aceito (senha ou Face ID): abre o portal e guarda a sessão por 7 dias.
+  function entrar(partnerData: PartnerInfo) {
     setPartner(partnerData);
     fetchUses(partnerData.coupon_code);
-    // Persist session for 7 days
     localStorage.setItem(SESSION_KEY, JSON.stringify({ partner: partnerData, savedAt: Date.now() }));
   }
 
@@ -946,6 +950,7 @@ export default function ParceiroPage() {
                   {loginLoading ? "Entrando..." : "Entrar"}
                 </button>
               </form>
+              <PasskeyLoginButton<PartnerInfo> tipo="partner" onSuccess={entrar} />
               <div className="mt-4 flex flex-col items-center gap-2">
                 <button
                   type="button"
@@ -1047,6 +1052,8 @@ export default function ParceiroPage() {
           Sair
         </button>
       </div>
+
+      <PasskeyConvite tipo="partner" />
 
       {/* Tab bar — always visible, scrollable on mobile */}
       <div className="bg-white border-b border-[#e2e2e2]">
@@ -1208,6 +1215,10 @@ export default function ParceiroPage() {
             >
               {copied ? "Copiado! ✓" : "Copiar link"}
             </button>
+          </div>
+
+          <div className="mb-4">
+            <PasskeyCard tipo="partner" />
           </div>
 
           {/* Change password section */}

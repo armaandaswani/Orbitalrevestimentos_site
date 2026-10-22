@@ -21,7 +21,7 @@ function sessionSecret(): string {
   return s;
 }
 
-function sign(payload: string): string {
+export function sign(payload: string): string {
   return crypto
     .createHmac("sha256", sessionSecret())
     .update(payload)

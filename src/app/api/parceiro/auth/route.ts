@@ -2,11 +2,11 @@ import { NextRequest, NextResponse } from "next/server";
 import { supabaseAdmin } from "@/lib/supabase";
 import {
   PARTNER_COOKIE,
-  createPortalToken,
   hashPassword,
   isHashedPassword,
   verifyPassword,
 } from "@/lib/admin-auth";
+import { PARTNER_LOGIN_SELECT, partnerLoginPayload, setPortalCookie } from "@/lib/portal-login";
 
 const sleep = (ms: number) => new Promise((r) => setTimeout(r, ms));
 
@@ -20,7 +20,7 @@ export async function POST(req: NextRequest) {
   const db = supabaseAdmin();
   let query = db
     .from("partners")
-    .select("id, name, coupon_code, discount_type, discount_value, commission_type, commission_value, portal_password, status, profession, has_special_table")
+    .select(PARTNER_LOGIN_SELECT)
     .eq("status", "active");
 
   if (email) {
@@ -49,25 +49,8 @@ export async function POST(req: NextRequest) {
       .eq("id", data.id);
   }
 
-  const { token, maxAge } = createPortalToken(data.id);
-  const res = NextResponse.json({
-    id: data.id,
-    name: data.name,
-    coupon_code: data.coupon_code,
-    discount_type: data.discount_type,
-    discount_value: data.discount_value,
-    commission_type: data.commission_type,
-    commission_value: data.commission_value,
-    profession: data.profession,
-    has_special_table: data.has_special_table,
-  });
-  res.cookies.set(PARTNER_COOKIE, token, {
-    httpOnly: true,
-    secure: process.env.NODE_ENV === "production",
-    sameSite: "lax",
-    path: "/",
-    maxAge,
-  });
+  const res = NextResponse.json(partnerLoginPayload(data));
+  setPortalCookie(res, "partner", data.id);
   return res;
 }
 

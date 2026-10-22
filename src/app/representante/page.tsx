@@ -6,6 +6,7 @@ import RepCrmTab from "./RepCrmTab";
 import RepMeetingPrompts from "./RepMeetingPrompts";
 import ConvidarParceiro from "./ConvidarParceiro";
 import ComissoesLista, { type ComissaoItem } from "@/components/ComissoesLista";
+import { PasskeyCard, PasskeyConvite, PasskeyLoginButton } from "@/components/Passkey";
 
 interface SalesRepInfo {
   id: string;
@@ -128,9 +129,14 @@ export default function RepresentantePage() {
       return;
     }
 
-    setSalesRep(json as SalesRepInfo);
-    fetchUses(json.referral_code);
-    fetchLinkedPartners(json.id);
+    entrar(json as SalesRepInfo);
+  }
+
+  // Login aceito (senha ou Face ID).
+  function entrar(rep: SalesRepInfo) {
+    setSalesRep(rep);
+    fetchUses(rep.referral_code);
+    fetchLinkedPartners(rep.id);
   }
 
   async function fetchUses(code: string) {
@@ -388,6 +394,7 @@ export default function RepresentantePage() {
               {loginLoading ? "Entrando..." : "Entrar"}
             </button>
           </form>
+          <PasskeyLoginButton<SalesRepInfo> tipo="rep" onSuccess={entrar} />
           <div className="mt-4 text-center">
             <a
               href="/parceiro"
@@ -421,6 +428,7 @@ export default function RepresentantePage() {
           Sair
         </button>
       </div>
+      <PasskeyConvite tipo="rep" />
 
       <div className="max-w-5xl mx-auto px-4 sm:px-8 py-8">
         {/* Referral link card */}
@@ -561,6 +569,10 @@ export default function RepresentantePage() {
             </div>
           );
         })()}
+
+        <div className="mb-4">
+          <PasskeyCard tipo="rep" />
+        </div>
 
         {/* Change password */}
         <div className="bg-white border border-[#e2e2e2] mb-6">

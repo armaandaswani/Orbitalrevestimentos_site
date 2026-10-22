@@ -2,11 +2,11 @@ import { NextRequest, NextResponse } from "next/server";
 import { supabaseAdmin } from "@/lib/supabase";
 import {
   REP_COOKIE,
-  createPortalToken,
   hashPassword,
   isHashedPassword,
   verifyPassword,
 } from "@/lib/admin-auth";
+import { REP_LOGIN_SELECT, repLoginPayload, setPortalCookie } from "@/lib/portal-login";
 
 const sleep = (ms: number) => new Promise((r) => setTimeout(r, ms));
 
@@ -23,7 +23,7 @@ export async function POST(req: NextRequest) {
   const db = supabaseAdmin();
   let query = db
     .from("sales_reps")
-    .select("id, name, referral_code, commission_type, commission_value, portal_password, status, birthday")
+    .select(REP_LOGIN_SELECT)
     .eq("status", "active");
 
   if (email) {
@@ -55,22 +55,8 @@ export async function POST(req: NextRequest) {
       .eq("id", data.id);
   }
 
-  const { token, maxAge } = createPortalToken(data.id);
-  const res = NextResponse.json({
-    id: data.id,
-    name: data.name,
-    referral_code: data.referral_code,
-    commission_type: data.commission_type,
-    commission_value: data.commission_value,
-    birthday: data.birthday ?? null,
-  });
-  res.cookies.set(REP_COOKIE, token, {
-    httpOnly: true,
-    secure: process.env.NODE_ENV === "production",
-    sameSite: "lax",
-    path: "/",
-    maxAge,
-  });
+  const res = NextResponse.json(repLoginPayload(data));
+  setPortalCookie(res, "rep", data.id);
   return res;
 }
 
