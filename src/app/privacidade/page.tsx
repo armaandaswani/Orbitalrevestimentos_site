@@ -39,6 +39,7 @@ const secoes: SecaoLegal[] = [
           <li><strong>Programa de parceiros</strong>: nome, e-mail, WhatsApp, data de nascimento, código de indicação e senha de acesso ao portal.</li>
           <li><strong>Compras</strong>: nome, CPF ou CNPJ, e-mail, telefone, endereço de entrega e informações do pedido e do pagamento.</li>
           <li><strong>Conversas</strong> pelo WhatsApp, por e-mail ou pelo assistente virtual do site.</li>
+          <li><strong>Instagram</strong>: mensagens que você nos envia pelo Direct e comentários em nossas publicações, com o seu nome de usuário, para responder suas dúvidas.</li>
         </ul>
         <p>
           <strong>Dados coletados automaticamente</strong> quando você navega: páginas visitadas, tempo de
@@ -53,6 +54,7 @@ const secoes: SecaoLegal[] = [
     corpo: (
       <ul>
         <li>Responder seu pedido de atendimento e preparar orçamentos.</li>
+        <li>Responder suas mensagens e comentários no WhatsApp e no Instagram, inclusive por meio de um assistente virtual com inteligência artificial que usa apenas as informações da Orbital. Você pode pedir para falar com uma pessoa da equipe a qualquer momento.</li>
         <li>Gerar e enviar as simulações do seu ambiente.</li>
         <li>Processar compras, emitir documentos, organizar entregas e prestar suporte pós-venda.</li>
         <li>Gerenciar o programa de parceiros e a lista de espera da Academia, incluindo avisos sobre o lançamento.</li>
@@ -147,6 +149,11 @@ const secoes: SecaoLegal[] = [
           Para exercer seus direitos, escreva para <a href={`mailto:${EMPRESA.email}`}>{EMPRESA.email}</a>. Você
           também pode apresentar reclamação à ANPD.
         </p>
+        <p>
+          Para pedir a exclusão dos dados das suas conversas no WhatsApp ou no Instagram, escreva “apagar meus
+          dados” para nós por um desses canais ou mande um e-mail para{" "}
+          <a href={`mailto:${EMPRESA.email}`}>{EMPRESA.email}</a>. Atendemos o pedido em até 15 dias.
+        </p>
       </>
     ),
   },
@@ -165,7 +172,7 @@ export default function PrivacidadePage() {
   return (
     <PaginaLegal
       titulo="Política de Privacidade"
-      atualizado="1 de outubro de 2026"
+      atualizado="23 de outubro de 2026"
       intro={
         <p>
           Esta política explica, de forma direta, quais dados pessoais a Orbital Revestimentos coleta por este site
