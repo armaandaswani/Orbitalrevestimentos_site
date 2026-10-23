@@ -2,7 +2,7 @@ import { NextRequest, NextResponse } from "next/server";
 import { isAdminRequest } from "@/lib/admin-auth";
 import { supabaseAdmin } from "@/lib/supabase";
 import { isMissingColumn, isMissingTable } from "@/lib/db-compat";
-import { syncOrderStock } from "@/lib/stock";
+import { pedidoBaixaEstoque, syncOrderStock } from "@/lib/stock";
 
 interface OrderItemInput { product_id?: string; plates?: number; unit_price?: number | null }
 type PartnerLite = { id: string; name: string; coupon_code: string };
@@ -94,7 +94,11 @@ async function syncPedidoPortalAttribution(db: ReturnType<typeof supabaseAdmin>,
     rep = data as SalesRepLite | null;
   }
 
-  const status = pedido.status === "entregue" ? "concluido" : pedido.status === "cancelado" ? "cancelado" : "em_orcamento";
+  // Comissão vale quando a venda está confirmada — a mesma regra do estoque:
+  // pagamento pago/boleto/parcial ou pedido entregue (não precisa esperar a entrega).
+  const status = pedido.status === "cancelado"
+    ? "cancelado"
+    : pedidoBaixaEstoque(pedido.status as string | null, pedido.payment_status as string | null) ? "concluido" : "em_orcamento";
   const couponPayload: Record<string, unknown> = {
     source: "pedido_admin",
     source_pedido_id: pedido.id,
