@@ -25,8 +25,15 @@ export async function POST(req: NextRequest) {
   if (!rp) return NextResponse.json({ error: "Origem inválida." }, { status: 400 });
 
   if (body?.step === "options") {
-    // Sem allowCredentials: o aparelho mostra as passkeys da Orbital que ele tem.
-    const options = await generateAuthenticationOptions({ rpID: rp.rpID, userVerification: "required" });
+    // Com o id da passkey deste aparelho, o navegador vai direto ao Face ID.
+    // Sem ele, o aparelho mostra as passkeys da Orbital que tiver.
+    const cred = typeof body?.credential_id === "string" && /^[A-Za-z0-9_-]{16,1400}$/.test(body.credential_id)
+      ? body.credential_id : null;
+    const options = await generateAuthenticationOptions({
+      rpID: rp.rpID,
+      userVerification: "required",
+      allowCredentials: cred ? [{ id: cred, transports: ["internal", "hybrid"] }] : undefined,
+    });
     const res = NextResponse.json(options);
     setChallengeCookie(res, { c: options.challenge, p: "auth", t: tipo });
     return res;

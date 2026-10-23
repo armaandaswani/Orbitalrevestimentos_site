@@ -63,6 +63,19 @@ async function cadastrar(tipo: PasskeyTipo, origem: "cartao" | "convite") {
   window.dispatchEvent(new CustomEvent(EVENTO, { detail: { tipo, origem } }));
 }
 
+/** Id da passkey que este aparelho ativou (ou null). Atualiza quando ativa ou entra. */
+function useCredLocal(tipo: PasskeyTipo): string | null {
+  return useSyncExternalStore(
+    (cb) => {
+      window.addEventListener(EVENTO, cb);
+      window.addEventListener("storage", cb);
+      return () => { window.removeEventListener(EVENTO, cb); window.removeEventListener("storage", cb); };
+    },
+    () => ler(chaveCredencial(tipo)),
+    () => null,
+  );
+}
+
 function useAoAtivar(tipo: PasskeyTipo, fn: (origem: string) => void) {
   useEffect(() => {
     const h = (e: Event) => {
@@ -85,15 +98,18 @@ const IconeFace = () => (
 
 export function PasskeyLoginButton<T = unknown>({ tipo, onSuccess }: { tipo: PasskeyTipo; onSuccess: (data: T) => void }) {
   const suporte = useSuporte();
+  const credLocal = useCredLocal(tipo);
   const [loading, setLoading] = useState(false);
   const [erro, setErro] = useState("");
   if (!suporte) return null;
 
-  async function entrar() {
+  // Com a passkey deste aparelho, o iPhone vai direto ao Face ID (sem lista de contas).
+  // Sem ela, procura qualquer passkey salva (ex.: sincronizada pelo iCloud de outro aparelho).
+  async function entrar(credential_id: string | null) {
     setErro("");
     setLoading(true);
     try {
-      const optionsJSON = await post("/api/passkey/login", { tipo, step: "options" });
+      const optionsJSON = await post("/api/passkey/login", { tipo, step: "options", credential_id });
       const response = await startAuthentication({ optionsJSON });
       const data = await post("/api/passkey/login", { tipo, step: "verify", response });
       gravar(chaveCredencial(tipo), response.id);
@@ -101,9 +117,31 @@ export function PasskeyLoginButton<T = unknown>({ tipo, onSuccess }: { tipo: Pas
     } catch (e) {
       const m = mensagem(e);
       if (m) setErro(m);
+      // A passkey deste aparelho foi removida no site: volta para o modo "ativar".
+      if (credential_id && m?.includes("não está cadastrada")) gravar(chaveCredencial(tipo), null);
     } finally {
       setLoading(false);
     }
+  }
+
+  if (!credLocal) {
+    return (
+      <div className="mt-5 border border-[#e2e2e2] bg-[#F6F5F2] px-4 py-3 flex items-start gap-3">
+        <span className="text-[#0B1F45] mt-0.5"><IconeFace /></span>
+        <div className="min-w-0">
+          <p className="text-[#0B1F45] text-sm font-semibold">Quer entrar com Face ID?</p>
+          <p className="text-[#43474e] text-xs mt-0.5">
+            Entre com a senha uma vez neste aparelho e toque em <strong>Ativar</strong>, na faixa azul do topo
+            {tipo === "admin" ? " ou no botão “Face ID”." : " ou no cartão “Face ID ou digital”."}
+          </p>
+          <button type="button" onClick={() => entrar(null)} disabled={loading}
+            className="mt-2 text-[#2347A0] text-xs underline underline-offset-2 hover:text-[#0B1F45] disabled:opacity-50">
+            {loading ? "Confirmando..." : "Já ativei — entrar com passkey salva"}
+          </button>
+          {erro && <p className="text-red-600 text-xs mt-1">{erro}</p>}
+        </div>
+      </div>
+    );
   }
 
   return (
@@ -115,7 +153,7 @@ export function PasskeyLoginButton<T = unknown>({ tipo, onSuccess }: { tipo: Pas
       </div>
       <button
         type="button"
-        onClick={entrar}
+        onClick={() => entrar(credLocal)}
         disabled={loading}
         className="w-full flex items-center justify-center gap-2 border border-[#0B1F45] text-[#0B1F45] text-xs tracking-[0.12em] uppercase font-bold px-6 py-3 hover:bg-[#0B1F45] hover:text-white transition-colors disabled:opacity-50"
       >
