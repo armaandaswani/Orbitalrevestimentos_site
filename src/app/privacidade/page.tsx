@@ -112,6 +112,20 @@ const secoes: SecaoLegal[] = [
     ),
   },
   {
+    titulo: "Pedidos de autoridades públicas",
+    corpo: (
+      <>
+        <p>Se uma autoridade pública pedir dados pessoais dos nossos clientes ou usuários, a Orbital:</p>
+        <ul>
+          <li>verifica a legalidade do pedido e a competência de quem o fez antes de responder;</li>
+          <li>contesta o pedido pelos meios legais quando o considerar ilegal ou excessivo;</li>
+          <li>fornece apenas o mínimo de informação necessário para cumprir a obrigação;</li>
+          <li>registra cada pedido, a resposta dada, a fundamentação legal e as pessoas envolvidas.</li>
+        </ul>
+      </>
+    ),
+  },
+  {
     titulo: "Armazenamento e segurança",
     corpo: (
       <p>
@@ -172,7 +186,7 @@ export default function PrivacidadePage() {
   return (
     <PaginaLegal
       titulo="Política de Privacidade"
-      atualizado="23 de outubro de 2026"
+      atualizado="24 de outubro de 2026"
       intro={
         <p>
           Esta política explica, de forma direta, quais dados pessoais a Orbital Revestimentos coleta por este site
