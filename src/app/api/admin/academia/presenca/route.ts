@@ -65,6 +65,14 @@ export async function POST(req: NextRequest) {
     // Marca ANTES de enviar: se a função cair no meio, ninguém recebe duas vezes.
     await db.from("academy_waitlist").update({ presenca_pedida_at: new Date().toISOString() }).eq("id", p.id);
     const r = await enviarLancamento(p as { name: string; phone: string; email: string | null }, texto, assunto, linkPresenca(p.id));
+    if (r.whatsappFora) {
+      // WhatsApp da Orbital fora do ar: desfaz a marca e para o lote inteiro.
+      await db.from("academy_waitlist").update({ presenca_pedida_at: null }).eq("id", p.id);
+      return NextResponse.json({
+        error: `WhatsApp não enviado: ${r.whatsappFora}. Envio parado — quem ainda não recebeu continua na fila; depois de reconectar, clique de novo.`,
+        processados: whatsapp + email + semEntrega,
+      }, { status: 503 });
+    }
     if (r.whatsapp) whatsapp++;
     if (r.email) email++;
     if (!r.whatsapp && !r.email) semEntrega++;

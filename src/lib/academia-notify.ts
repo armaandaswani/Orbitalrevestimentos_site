@@ -87,15 +87,23 @@ async function enviarWhats(phone: string, message: string): Promise<boolean> {
   return (await enviarWhatsDetalhe(phone, message)).ok;
 }
 
-/** Como enviarWhats, mas diz o motivo quando não vai (para o teste no admin). */
-async function enviarWhatsDetalhe(phone: string, message: string): Promise<{ ok: boolean; erro?: string }> {
+/**
+ * Como enviarWhats, mas diz o motivo quando não vai. `fora` = o problema é do
+ * WhatsApp da Orbital (desconectado no SM Click, sem configuração, sem
+ * resposta), não do número da pessoa: aí não adianta seguir mandando.
+ */
+async function enviarWhatsDetalhe(phone: string, message: string): Promise<{ ok: boolean; erro?: string; fora?: boolean }> {
+  if (!smclickConfigured()) return { ok: false, erro: "SM Click não configurado no servidor", fora: true };
   const tel = normalizePhone(phone);
   if (!tel) return { ok: false, erro: "número de WhatsApp inválido" };
-  if (!smclickConfigured()) return { ok: false, erro: "SM Click não configurado no servidor" };
   const res = await sendText(tel, message);
   if (!res.ok) {
     console.error("[academia-notify] WhatsApp falhou:", res.error);
-    return { ok: false, erro: `SM Click recusou (${res.status || "sem resposta"}): ${res.error ?? "erro desconhecido"}` };
+    const bruto = `${res.error ?? ""} ${typeof res.data === "string" ? res.data : JSON.stringify(res.data ?? "")}`;
+    if (/no session|not connected|disconnected|desconectad/i.test(bruto)) {
+      return { ok: false, fora: true, erro: "o WhatsApp da Orbital está desconectado do SM Click (\"no session\") — reconecte no painel do SM Click lendo o QR Code" };
+    }
+    return { ok: false, fora: res.status === 0, erro: `SM Click recusou (${res.status || "sem resposta"}): ${res.error ?? "erro desconhecido"}` };
   }
   return { ok: true };
 }
@@ -220,13 +228,14 @@ export async function enviarLancamento(
   texto: string,
   assunto: string,
   link?: string,
-): Promise<{ whatsapp: boolean; email: boolean }> {
+): Promise<{ whatsapp: boolean; email: boolean; whatsappFora?: string }> {
   const msg = personalizar(texto, p.name, link);
-  const [whatsapp, email] = await Promise.all([
-    enviarWhats(p.phone, msg),
-    p.email ? enviarEmail(p.email, assunto, emailHtml(assunto, textoParaHtml(msg))) : Promise.resolve(false),
-  ]);
-  return { whatsapp, email };
+  // WhatsApp primeiro: se o da Orbital está fora do ar, não manda nada para
+  // esta pessoa (nem o e-mail) — quem chamou para o lote e ela fica na fila.
+  const w = await enviarWhatsDetalhe(p.phone, msg);
+  if (w.fora) return { whatsapp: false, email: false, whatsappFora: w.erro };
+  const email = p.email ? await enviarEmail(p.email, assunto, emailHtml(assunto, textoParaHtml(msg))) : false;
+  return { whatsapp: w.ok, email };
 }
 
 /**
