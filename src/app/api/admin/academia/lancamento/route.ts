@@ -25,14 +25,14 @@ const LOTE = 15;
 export async function POST(req: NextRequest) {
   if (!isAdminRequest(req)) return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
 
-  const body = (await req.json().catch(() => null)) as { texto?: unknown; assunto?: unknown; teste?: unknown; turma?: unknown } | null;
+  const body = (await req.json().catch(() => null)) as { texto?: unknown; assunto?: unknown; teste?: unknown; telefone_teste?: unknown; turma?: unknown } | null;
   const turma = body?.turma === 1 || body?.turma === 2 ? body.turma : null;
   const texto = typeof body?.texto === "string" ? body.texto.trim() : "";
   const assunto = typeof body?.assunto === "string" && body.assunto.trim() ? body.assunto.trim() : "Academia Orbital";
   if (texto.length < 10) return NextResponse.json({ error: "Escreva a mensagem do aviso." }, { status: 400 });
 
   if (body?.teste === true) {
-    const r = await enviarLancamentoTeste(texto, assunto);
+    const r = await enviarLancamentoTeste(texto, assunto, undefined, typeof body?.telefone_teste === "string" ? body.telefone_teste : null);
     return NextResponse.json({ teste: true, ...r, smclick: smclickConfigured() });
   }
 

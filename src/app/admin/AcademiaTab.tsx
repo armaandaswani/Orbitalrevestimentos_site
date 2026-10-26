@@ -157,6 +157,10 @@ function Disparo({
   const [destino, setDestino] = useState<Destino>(presenca ? 1 : 2);
   const [status, setStatus] = useState("");
   const [enviando, setEnviando] = useState(false);
+  // Número para o teste (vazio = WhatsApp de alertas da Orbital). Lembrado neste navegador.
+  const [telTeste, setTelTeste] = useState(() => {
+    try { return typeof window === "undefined" ? "" : localStorage.getItem("orbital_academia_tel_teste") ?? ""; } catch { return ""; }
+  });
 
   // Mesmo critério da API, para o botão dizer quantos vão receber.
   const pendentes = presenca
@@ -169,7 +173,11 @@ function Disparo({
     const res = await fetch(presenca ? "/api/admin/academia/presenca" : "/api/admin/academia/lancamento", {
       method: "POST",
       headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ texto, assunto, teste, ...(!presenca && destino !== "todos" ? { turma: destino } : {}) }),
+      body: JSON.stringify({
+        texto, assunto, teste,
+        ...(teste && telTeste.trim() ? { telefone_teste: telTeste.trim() } : {}),
+        ...(!presenca && destino !== "todos" ? { turma: destino } : {}),
+      }),
     });
     const json = await res.json().catch(() => ({}));
     if (!res.ok) throw new Error(json.error || `Erro ${res.status}`);
@@ -180,8 +188,13 @@ function Disparo({
     setEnviando(true);
     setStatus("Enviando teste…");
     try {
+      try { localStorage.setItem("orbital_academia_tel_teste", telTeste.trim()); } catch { /* modo privado */ }
       const r = await chamar(true);
-      setStatus(`Teste: WhatsApp ${r.whatsapp ? "enviado" : "NÃO enviado"} · e-mail ${r.email ? "enviado" : "NÃO enviado"} (para a Orbital).`);
+      const para = r.para ? ` para ${r.para}` : "";
+      setStatus(
+        `Teste: WhatsApp ${r.whatsapp ? `enviado${para}` : `NÃO enviado${para}${r.erroWhatsapp ? ` — ${r.erroWhatsapp}` : ""}`}` +
+        ` · e-mail ${r.email ? "enviado" : "NÃO enviado"} (para a Orbital).`,
+      );
     } catch (e) {
       setStatus(e instanceof Error ? e.message : "Falha no teste.");
     } finally {
@@ -233,8 +246,15 @@ function Disparo({
           Sem {"{link}"}, a resposta não é registrada sozinha: marque <strong>Vai</strong> / <strong>Não vai</strong> na lista abaixo conforme as pessoas entrarem no grupo.
         </p>
       )}
+      <div>
+        <label className="block text-[10px] tracking-[0.15em] uppercase font-bold text-[#74777f] mb-1" htmlFor={`tel-teste-${modo}`}>
+          WhatsApp do teste (opcional)
+        </label>
+        <input id={`tel-teste-${modo}`} type="tel" inputMode="tel" value={telTeste} onChange={(e) => setTelTeste(e.target.value)}
+          className={`${inputCls} sm:max-w-xs`} placeholder="(92) 9 9999-9999 — vazio: WhatsApp da Orbital" />
+      </div>
       <div className="flex flex-col sm:flex-row gap-2">
-        <button type="button" onClick={testar} disabled={enviando || faltaPreencher} className={`${btnGhost} w-full sm:w-auto`}>Enviar teste para a Orbital</button>
+        <button type="button" onClick={testar} disabled={enviando || faltaPreencher} className={`${btnGhost} w-full sm:w-auto`}>Enviar teste</button>
         <button type="button" onClick={enviarTodos} disabled={enviando || pendentes === 0 || faltaPreencher} className={`${btnPrimary} w-full sm:w-auto`}>
           {pendentes ? `Enviar para ${pendentes} inscrito(s)` : "Todos já receberam"}
         </button>

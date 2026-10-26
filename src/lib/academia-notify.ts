@@ -84,11 +84,20 @@ async function enviarEmail(to: string, subject: string, html: string): Promise<b
 }
 
 async function enviarWhats(phone: string, message: string): Promise<boolean> {
+  return (await enviarWhatsDetalhe(phone, message)).ok;
+}
+
+/** Como enviarWhats, mas diz o motivo quando não vai (para o teste no admin). */
+async function enviarWhatsDetalhe(phone: string, message: string): Promise<{ ok: boolean; erro?: string }> {
   const tel = normalizePhone(phone);
-  if (!tel || !smclickConfigured()) return false;
+  if (!tel) return { ok: false, erro: "número de WhatsApp inválido" };
+  if (!smclickConfigured()) return { ok: false, erro: "SM Click não configurado no servidor" };
   const res = await sendText(tel, message);
-  if (!res.ok) console.error("[academia-notify] WhatsApp falhou:", res.error);
-  return res.ok;
+  if (!res.ok) {
+    console.error("[academia-notify] WhatsApp falhou:", res.error);
+    return { ok: false, erro: `SM Click recusou (${res.status || "sem resposta"}): ${res.error ?? "erro desconhecido"}` };
+  }
+  return { ok: true };
 }
 
 // ── Confirmação para quem se inscreve ────────────────────────────────────────
@@ -220,8 +229,23 @@ export async function enviarLancamento(
   return { whatsapp, email };
 }
 
-/** Teste do aviso de lançamento: vai só para o WhatsApp e o e-mail da Orbital. */
-export async function enviarLancamentoTeste(texto: string, assunto: string, link?: string): Promise<{ whatsapp: boolean; email: boolean }> {
-  const admin = adminWhatsappPhone();
-  return enviarLancamento({ name: "Orbital", phone: admin ?? "", email: EMAIL_EMPRESA }, texto, `[TESTE] ${assunto}`, link);
+/**
+ * Teste do aviso: o e-mail vai para a Orbital; o WhatsApp vai para o número
+ * informado na tela ou, sem ele, para o WhatsApp de alertas da Orbital.
+ * Devolve o motivo quando o WhatsApp não vai.
+ */
+export async function enviarLancamentoTeste(
+  texto: string,
+  assunto: string,
+  link?: string,
+  telefone?: string | null,
+): Promise<{ whatsapp: boolean; email: boolean; para: string | null; erroWhatsapp?: string }> {
+  const para = normalizePhone(telefone) ?? adminWhatsappPhone();
+  const msg = personalizar(texto, "Orbital", link);
+  const tituloEmail = `[TESTE] ${assunto}`;
+  const [w, email] = await Promise.all([
+    para ? enviarWhatsDetalhe(para, msg) : Promise.resolve({ ok: false, erro: "sem número para o teste" }),
+    enviarEmail(EMAIL_EMPRESA, tituloEmail, emailHtml(tituloEmail, textoParaHtml(msg))),
+  ]);
+  return { whatsapp: w.ok, email, para, ...(w.erro ? { erroWhatsapp: w.erro } : {}) };
 }

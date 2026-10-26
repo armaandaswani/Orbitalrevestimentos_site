@@ -25,7 +25,7 @@ const LOTE = 15;
 export async function POST(req: NextRequest) {
   if (!isAdminRequest(req)) return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
 
-  const body = (await req.json().catch(() => null)) as { texto?: unknown; assunto?: unknown; teste?: unknown } | null;
+  const body = (await req.json().catch(() => null)) as { texto?: unknown; assunto?: unknown; teste?: unknown; telefone_teste?: unknown } | null;
   const texto = typeof body?.texto === "string" ? body.texto.trim() : "";
   const assunto = typeof body?.assunto === "string" && body.assunto.trim() ? body.assunto.trim() : "Confirme sua presença — Academia Orbital";
   // {link} é opcional: sem ele (ex.: a confirmação é entrar no grupo do
@@ -37,7 +37,7 @@ export async function POST(req: NextRequest) {
   }
 
   if (body?.teste === true) {
-    const r = await enviarLancamentoTeste(texto, assunto, linkPresenca("teste"));
+    const r = await enviarLancamentoTeste(texto, assunto, linkPresenca("teste"), typeof body?.telefone_teste === "string" ? body.telefone_teste : null);
     return NextResponse.json({ teste: true, ...r, smclick: smclickConfigured() });
   }
 
