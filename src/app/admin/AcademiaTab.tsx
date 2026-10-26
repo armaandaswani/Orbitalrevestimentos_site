@@ -163,6 +163,7 @@ function Disparo({
     ? lista.filter((r) => turmaDe(r) === 1 && !r.presenca && !r.presenca_pedida_at).length
     : lista.filter((r) => !r.launch_notified_at && (destino === "todos" || turmaDe(r) === destino)).length;
   const faltaPreencher = presenca && /\[[^\]]*\]/.test(texto);
+  const semLink = presenca && !texto.includes("{link}");
 
   async function chamar(teste: boolean) {
     const res = await fetch(presenca ? "/api/admin/academia/presenca" : "/api/admin/academia/lancamento", {
@@ -214,7 +215,7 @@ function Disparo({
       <p className="text-[#0B1F45] text-sm font-bold">{presenca ? "Pedir confirmação de presença (1ª turma)" : "Aviso geral"}</p>
       <p className="text-[#74777f] text-xs">
         {presenca
-          ? <>Envie uma semana antes. Data e horário já vêm preenchidos (31/10, 7h30); troque [local]. {"{link}"} vira o link pessoal Vou / Não vou — quem responde &quot;não vou&quot; libera a vaga. {"{nome}"} vira o primeiro nome. Quem já recebeu ou já respondeu não recebe de novo.</>
+          ? <>Envie uma semana antes. Data e horário já vêm preenchidos (31/10, 7h30); troque [local]. {"{link}"} (opcional) vira o link pessoal Vou / Não vou — quem responde &quot;não vou&quot; libera a vaga. {"{nome}"} vira o primeiro nome. Quem já recebeu ou já respondeu não recebe de novo.</>
           : <>Vai por WhatsApp e, para quem informou, por e-mail. {"{nome}"} vira o primeiro nome. Quem já recebeu um aviso geral não recebe de novo.</>}
       </p>
       {!presenca && (
@@ -227,6 +228,11 @@ function Disparo({
       <input value={assunto} onChange={(e) => setAssunto(e.target.value)} className={inputCls} aria-label="Assunto do e-mail" placeholder="Assunto do e-mail" />
       <textarea value={texto} onChange={(e) => setTexto(e.target.value)} className={`${inputCls} min-h-[220px]`} aria-label="Mensagem" />
       {faltaPreencher && <p className="text-[#b3261e] text-xs">Troque os [colchetes] (o local) pelo texto certo — o envio fica bloqueado até lá.</p>}
+      {semLink && (
+        <p className="text-[#8a5a00] text-xs">
+          Sem {"{link}"}, a resposta não é registrada sozinha: marque <strong>Vai</strong> / <strong>Não vai</strong> na lista abaixo conforme as pessoas entrarem no grupo.
+        </p>
+      )}
       <div className="flex flex-col sm:flex-row gap-2">
         <button type="button" onClick={testar} disabled={enviando || faltaPreencher} className={`${btnGhost} w-full sm:w-auto`}>Enviar teste para a Orbital</button>
         <button type="button" onClick={enviarTodos} disabled={enviando || pendentes === 0 || faltaPreencher} className={`${btnPrimary} w-full sm:w-auto`}>

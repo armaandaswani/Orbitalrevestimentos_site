@@ -9,7 +9,7 @@ import { linkPresenca } from "@/lib/academia-status";
 /**
  * POST /api/admin/academia/presenca — pedido de confirmação de presença para
  * a 1ª turma da formação (uma semana antes), por WhatsApp + e-mail, cada um
- * com o seu link pessoal Vou/Não vou.
+ * com o seu link pessoal Vou/Não vou quando o texto tem {link}.
  *
  * Body: { texto, assunto, teste?: boolean }
  *   teste: true → só para o WhatsApp e o e-mail da Orbital (link de teste).
@@ -28,9 +28,9 @@ export async function POST(req: NextRequest) {
   const body = (await req.json().catch(() => null)) as { texto?: unknown; assunto?: unknown; teste?: unknown } | null;
   const texto = typeof body?.texto === "string" ? body.texto.trim() : "";
   const assunto = typeof body?.assunto === "string" && body.assunto.trim() ? body.assunto.trim() : "Confirme sua presença — Academia Orbital";
-  if (!texto.includes("{link}")) {
-    return NextResponse.json({ error: "A mensagem precisa ter {link} — é por ele que a pessoa confirma." }, { status: 400 });
-  }
+  // {link} é opcional: sem ele (ex.: a confirmação é entrar no grupo do
+  // WhatsApp), a resposta não volta sozinha e o admin marca Vai / Não vai.
+  if (!texto) return NextResponse.json({ error: "Escreva a mensagem antes de enviar." }, { status: 400 });
   // [data], [horário], [local] esquecidos iriam para todo mundo.
   if (/\[[^\]]*\]/.test(texto)) {
     return NextResponse.json({ error: "Troque os [colchetes] (o local) pelo texto certo antes de enviar." }, { status: 400 });
