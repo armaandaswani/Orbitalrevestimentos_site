@@ -1,11 +1,13 @@
 /**
- * "Entrar em contato" — o caminho do cliente depois do pivô.
+ * Pré-contato — o único caminho do cliente até o WhatsApp da Orbital.
  *
- * O orçamento instantâneo saiu da navegação: quem se interessa por um
- * revestimento informa perfil, estágio da obra e cidade (obrigatórios), nome e
- * medidas (opcionais), e cai no WhatsApp da Orbital com uma mensagem
- * organizada, para o consultor já saber de onde partir. Cada envio também
- * fica registrado (POST /api/contato → tabela site_contatos + lead no CRM).
+ * Todo botão comercial do site (e o assistente de IA) abre a aba de
+ * pré-contato: o cliente escolhe o revestimento (ou já chega com ele, vindo da
+ * página do produto), responde perfil, o que mais valoriza, quando pretende
+ * fazer o projeto e a cidade (obrigatórios), medidas e nome (opcionais), e cai
+ * no WhatsApp com uma mensagem organizada para o consultor. O WhatsApp do
+ * cliente não é pedido: a própria conversa já traz o número. Cada envio fica
+ * registrado (POST /api/contato → tabela site_contatos).
  *
  * Sem import nenhum: roda no navegador (aba de contato, botões) e pode ser
  * usado no servidor.
@@ -34,10 +36,23 @@ export const PERFIS = [
   { value: "arquiteto", label: "Sou arquiteto" },
 ] as const;
 
+/** Estágio da obra — pergunta antiga (até out/2026); fica para ler envios antigos. */
 export const ETAPAS = [
   { value: "inicial", label: "Inicial" },
   { value: "final", label: "Final" },
   { value: "ideacao", label: "Em ideação" },
+] as const;
+
+export const VALORIZA = [
+  { value: "sofisticacao", label: "Sofisticação & durabilidade" },
+  { value: "custo_beneficio", label: "Custo-benefício e praticidade" },
+  { value: "preco", label: "Preço" },
+] as const;
+
+export const PRAZOS = [
+  { value: "30_dias", label: "Nos próximos 30 dias" },
+  { value: "3_meses", label: "Nos próximos 3 meses" },
+  { value: "planejando", label: "Ainda estou planejando" },
 ] as const;
 
 export const CIDADES = [
@@ -47,8 +62,13 @@ export const CIDADES = [
 
 export interface RespostasContato {
   perfil?: string;
-  whatsapp?: string;
+  /** O que o cliente mais valoriza num revestimento (VALORIZA). */
+  valoriza?: string;
+  /** Quando pretende fazer o projeto (PRAZOS). */
+  prazo?: string;
   nome?: string;
+  /** Legado: o pré-contato não pede mais WhatsApp nem estágio da obra. */
+  whatsapp?: string;
   etapa?: string;
   largura?: string;
   altura?: string;
@@ -58,7 +78,7 @@ export interface RespostasContato {
   areasDetalhe?: string[];
 }
 
-export type CampoObrigatorio = "perfil" | "whatsapp" | "etapa" | "cidade";
+export type CampoObrigatorio = "perfil" | "valoriza" | "prazo" | "cidade";
 
 /** (92) 9 0000-0000 — só formata o que foi digitado, nunca bloqueia. */
 export function mascaraWhatsapp(raw: string): string {
@@ -75,12 +95,12 @@ export function whatsappValido(v?: string): boolean {
   return d.length === 10 || d.length === 11;
 }
 
-/** O que falta para enviar: perfil, WhatsApp, etapa e cidade (com o nome, se "Outra"). */
+/** O que falta para enviar: perfil, o que valoriza, prazo e cidade (com o nome, se "Outra"). */
 export function pendenciasContato(r: RespostasContato): CampoObrigatorio[] {
   const faltam: CampoObrigatorio[] = [];
   if (!r.perfil) faltam.push("perfil");
-  if (!whatsappValido(r.whatsapp)) faltam.push("whatsapp");
-  if (!r.etapa) faltam.push("etapa");
+  if (!r.valoriza) faltam.push("valoriza");
+  if (!r.prazo) faltam.push("prazo");
   if (!r.cidade || (r.cidade === "outra" && !r.cidadeOutra?.trim())) faltam.push("cidade");
   return faltam;
 }
@@ -130,7 +150,7 @@ export function mensagemContato(produtos: ProdutoContato[], r: RespostasContato)
   } else if (itens.length > 1) {
     linhas.push("Olá! Vim pelo site da Orbital e tenho interesse nestes revestimentos:", ...itens.map((i) => `• *${i}*`));
   } else {
-    linhas.push("Olá! Vim pelo site da Orbital e gostaria de um atendimento.");
+    linhas.push("Olá! Vim pelo site da Orbital e gostaria de ajuda para escolher o revestimento.");
   }
 
   const dados: string[] = [];
@@ -138,6 +158,10 @@ export function mensagemContato(produtos: ProdutoContato[], r: RespostasContato)
   if (nome) dados.push(`• Nome: ${nome}`);
   const perfil = r.perfil === "arquiteto" ? "Arquiteto(a)" : r.perfil === "proprietario" ? "Proprietário(a)" : "";
   if (perfil) dados.push(`• Perfil: ${perfil}`);
+  const valoriza = rotulo(VALORIZA, r.valoriza);
+  if (valoriza) dados.push(`• O que mais valorizo: ${valoriza}`);
+  const prazo = rotulo(PRAZOS, r.prazo);
+  if (prazo) dados.push(`• Quando: ${prazo}`);
   const etapa = rotulo(ETAPAS, r.etapa);
   if (etapa) dados.push(`• Estágio da obra: ${etapa}`);
   const area = areaTexto(r);

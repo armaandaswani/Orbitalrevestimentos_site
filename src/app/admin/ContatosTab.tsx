@@ -6,7 +6,7 @@ import {
   btnGhost, btnPrimary, cardCls, inputCls, tdCls, thCls,
 } from "./ui";
 import {
-  ETAPA_ROTULO, PERFIL_ROTULO, areaContato, digitosContato, type SiteContato,
+  PERFIL_ROTULO, PRAZO_OPCOES, areaContato, digitosContato, prazoContato, type SiteContato,
 } from "@/lib/site-contatos";
 
 /**
@@ -21,8 +21,10 @@ function dataCurta(iso: string): string {
   return new Date(iso).toLocaleString("pt-BR", { timeZone: "America/Manaus", day: "2-digit", month: "2-digit", year: "2-digit", hour: "2-digit", minute: "2-digit" });
 }
 
-function WhatsLink({ phone }: { phone: string }) {
+function WhatsLink({ phone }: { phone: string | null }) {
   const d = digitosContato(phone);
+  // Pré-contato novo não pede o número: ele chega na conversa do WhatsApp.
+  if (!d) return <span className="text-[#b0b4bc]">pelo WhatsApp</span>;
   return (
     <a href={`https://wa.me/${d.length <= 11 ? "55" + d : d}`} target="_blank" rel="noopener noreferrer" className="text-[#1f7a3d] font-semibold hover:underline whitespace-nowrap">
       {phone}
@@ -71,12 +73,13 @@ export default function ContatosTab() {
     const qDig = q.replace(/\D/g, "");
     return lista.filter((c) => {
       if (fPerfil && c.perfil !== fPerfil) return false;
-      if (fEtapa && c.etapa !== fEtapa) return false;
+      if (fEtapa && c.prazo !== fEtapa) return false;
       if (!q) return true;
       return (
         (c.name ?? "").toLowerCase().includes(q) ||
         (c.cidade ?? "").toLowerCase().includes(q) ||
         (c.produtos ?? "").toLowerCase().includes(q) ||
+        (c.valoriza ?? "").toLowerCase().includes(q) ||
         (qDig.length >= 3 && digitosContato(c.phone).includes(qDig))
       );
     });
@@ -147,9 +150,9 @@ export default function ContatosTab() {
                   <option value="">Todos os perfis</option>
                   {Object.entries(PERFIL_ROTULO).map(([v, l]) => <option key={v} value={v}>{l}</option>)}
                 </select>
-                <select value={fEtapa} onChange={(e) => setFEtapa(e.target.value)} className={inputCls} aria-label="Filtrar por estágio">
-                  <option value="">Todos os estágios</option>
-                  {Object.entries(ETAPA_ROTULO).map(([v, l]) => <option key={v} value={v}>{l}</option>)}
+                <select value={fEtapa} onChange={(e) => setFEtapa(e.target.value)} className={inputCls} aria-label="Filtrar por prazo">
+                  <option value="">Qualquer prazo</option>
+                  {PRAZO_OPCOES.map((l) => <option key={l} value={l}>{l}</option>)}
                 </select>
               </div>
 
@@ -177,7 +180,8 @@ export default function ContatosTab() {
                         <div className="flex flex-col gap-1 text-xs">
                           <WhatsLink phone={c.phone} />
                           <Field label="Perfil">{PERFIL_ROTULO[c.perfil] ?? c.perfil}</Field>
-                          <Field label="Estágio">{ETAPA_ROTULO[c.etapa] ?? c.etapa}</Field>
+                          <Field label="Valoriza">{c.valoriza || "—"}</Field>
+                          <Field label="Quando">{prazoContato(c) || "—"}</Field>
                           <Field label="Cidade">{c.cidade}</Field>
                           <Field label="Revestimento"><span className="break-words">{c.produtos || "—"}</span></Field>
                           <Field label="Área"><span className="break-words">{areaContato(c) || "—"}</span></Field>
@@ -194,7 +198,8 @@ export default function ContatosTab() {
                         <th className={thCls}>Nome</th>
                         <th className={thCls}>WhatsApp</th>
                         <th className={thCls}>Perfil</th>
-                        <th className={thCls}>Estágio</th>
+                        <th className={thCls}>Valoriza</th>
+                        <th className={thCls}>Quando</th>
                         <th className={thCls}>Cidade</th>
                         <th className={thCls}>Revestimento</th>
                         <th className={thCls}>Área</th>
@@ -207,7 +212,8 @@ export default function ContatosTab() {
                           <td className={`${tdCls} text-[#0B1F45] font-semibold`}>{c.name || <span className="text-[#b0b4bc] font-normal">—</span>}</td>
                           <td className={tdCls}><WhatsLink phone={c.phone} /></td>
                           <td className={`${tdCls} whitespace-nowrap`}>{PERFIL_ROTULO[c.perfil] ?? c.perfil}</td>
-                          <td className={`${tdCls} whitespace-nowrap`}>{ETAPA_ROTULO[c.etapa] ?? c.etapa}</td>
+                          <td className={tdCls}>{c.valoriza || "—"}</td>
+                          <td className={tdCls}>{prazoContato(c) || "—"}</td>
                           <td className={tdCls}>{c.cidade}</td>
                           <td className={tdCls}>{c.produtos || "—"}</td>
                           <td className={tdCls}>{areaContato(c) || "—"}</td>

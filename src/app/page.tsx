@@ -84,9 +84,6 @@ const faqSchema = {
   })),
 };
 
-const WA = (msg: string) =>
-  `https://wa.me/5592988150149?text=${encodeURIComponent(msg)}`;
-
 const stats = [
   { icon: "▪", value: "5mm", label: "Espessura" },
   { icon: "▪", value: "3,48m²", label: "Por placa" },
@@ -104,7 +101,6 @@ const featuredLines = [
     img: "/images/catalogue/classic-branco-calacatta-orb006.jpeg",
     href: "/produtos?linha=classic",
     code: "3 acabamentos · Fosco",
-    waMsg: "Olá! Tenho interesse na linha Classic (Mármore Fosco). Gostaria de saber valores e condições.",
   },
   {
     name: "Brilliance",
@@ -113,7 +109,6 @@ const featuredLines = [
     img: "/images/catalogue/brilliance-gris-pietra-orb009.jpeg",
     href: "/produtos?linha=brilliance",
     code: "8 acabamentos · Polido",
-    waMsg: "Olá! Tenho interesse na linha Brilliance (Mármore Polido). Gostaria de saber valores e condições.",
   },
   {
     name: "Elegance",
@@ -122,7 +117,6 @@ const featuredLines = [
     img: "/images/catalogue/elegance-imbuia-orb002.jpeg",
     href: "/produtos?linha=elegance",
     code: "4 acabamentos · Madeira",
-    waMsg: "Olá! Tenho interesse na linha Elegance (Madeira Texturizada). Gostaria de saber valores e condições.",
   },
 ];
 
@@ -415,7 +409,7 @@ export default function Home() {
           </div>
 
           <div className="hidden md:grid md:grid-cols-3 gap-8">
-            {featuredLines.map(({ name, subtitle, desc, img, href, code, waMsg }, i) => (
+            {featuredLines.map(({ name, subtitle, desc, img, href, code }, i) => (
               <ScrollReveal key={name} delay={i * 120} direction="up">
                 <div className="group">
                   <Link href={href} className="block cursor-pointer">
@@ -449,14 +443,11 @@ export default function Home() {
                       </p>
                     </div>
                   </Link>
-                  <a
-                    href={WA(waMsg)}
-                    target="_blank"
-                    rel="noopener noreferrer"
+                  <ContatoCta
                     className="inline-block text-[10px] tracking-[0.12em] uppercase font-bold border border-[#0B1F45] text-[#0B1F45] px-5 py-2 hover:bg-[#0B1F45] hover:text-white transition-colors"
                   >
                     Falar com consultor →
-                  </a>
+                  </ContatoCta>
                 </div>
               </ScrollReveal>
             ))}
@@ -541,7 +532,6 @@ export default function Home() {
                     <polyline points="9 22 9 12 15 12 15 22" />
                   </svg>
                 ),
-                waMsg: "Olá! Sou arquiteto e gostaria de conhecer as condições para especificação de projetos com o PFB Orbital.",
                 href: "/parcerias",
               },
               {
@@ -552,7 +542,6 @@ export default function Home() {
                     <path d="M14.7 6.3a1 1 0 000 1.4l1.6 1.6a1 1 0 001.4 0l3.77-3.77a6 6 0 01-7.94 7.94l-6.91 6.91a2.12 2.12 0 01-3-3l6.91-6.91a6 6 0 017.94-7.94l-3.76 3.76z" />
                   </svg>
                 ),
-                waMsg: "Olá! Sou marceneiro e gostaria de saber sobre parceria e instalação do PFB Orbital.",
                 href: "/parcerias",
               },
               {
@@ -564,7 +553,6 @@ export default function Home() {
                     <path d="M2 17l10 5 10-5M2 12l10 5 10-5" />
                   </svg>
                 ),
-                waMsg: "Olá! Sou engenheiro e gostaria de acessar a documentação técnica do PFB Orbital.",
                 href: "/parcerias",
               },
               {
@@ -577,10 +565,9 @@ export default function Home() {
                     <path d="M16 10a4 4 0 01-8 0" />
                   </svg>
                 ),
-                waMsg: "Olá! Tenho interesse em revender os produtos Orbital. Gostaria de saber as condições.",
                 href: "/parcerias",
               },
-            ].map(({ label, tagline, icon, waMsg, href }, i) => (
+            ].map(({ label, tagline, icon, href }, i) => (
               <ScrollReveal key={label} delay={i * 80} direction="up">
                 <div className="border border-[#e2e2e2] p-4 lg:p-7 hover:border-[#0B1F45] transition-colors group h-full flex flex-col">
                   <div className="text-[#2347A0] w-10 h-10 flex items-center justify-center border border-[#e2e2e2] group-hover:bg-[#0B1F45] group-hover:text-white group-hover:border-[#0B1F45] transition-colors duration-300 mb-5">
@@ -593,14 +580,11 @@ export default function Home() {
                     {tagline}
                   </p>
                   <div className="flex flex-col gap-2">
-                    <a
-                      href={WA(waMsg)}
-                      target="_blank"
-                      rel="noopener noreferrer"
+                    <ContatoCta
                       className="inline-block text-[10px] tracking-[0.12em] uppercase font-bold bg-[#0B1F45] text-white px-4 py-2.5 text-center hover:bg-[#2347A0] transition-colors"
                     >
                       Falar no WhatsApp
-                    </a>
+                    </ContatoCta>
                     <Link
                       href={href}
                       className="inline-block text-[10px] tracking-[0.12em] uppercase font-bold border border-[#e2e2e2] text-[#74777f] px-4 py-2.5 text-center hover:border-[#0B1F45] hover:text-[#0B1F45] transition-colors"

@@ -4,6 +4,7 @@ import React, { useState, useRef, useEffect, useMemo, Suspense } from "react";
 import { useSearchParams } from "next/navigation";
 import Image from "next/image";
 import Link from "next/link";
+import ContatoCta from "@/components/ContatoCta";
 import MdfComparison, { COMPARISON_OPTIONS } from "@/components/MdfComparison";
 import VisualizadorWizard, { type SimPrefill } from "@/components/VisualizadorWizard";
 import { panelGrid } from "@/lib/render-prompt";
@@ -18,7 +19,6 @@ import {
 } from "@/lib/orcamento-materials";
 import { trackFunnel } from "@/lib/funnel";
 
-const WA_BASE = "https://wa.me/5592988150149?text=";
 // Werk Engenharia — terceirizado de instalação. Mão de obra é apenas
 // estimativa e não é cobrada/processada pela Orbital; o contato direto evita
 // que o cliente pense que a Orbital realiza ou fatura a instalação.
@@ -1742,15 +1742,12 @@ function SimuladorInner() {
                   <path d="M5 12h14M12 5l7 7-7 7" />
                 </svg>
               </button>
-              <a
-                href={`${WA_BASE}${encodeURIComponent("Olá! Tenho interesse no PFB Orbital e gostaria de fazer um orçamento.")}`}
-                target="_blank"
-                rel="noopener noreferrer"
+              <ContatoCta
                 className="inline-flex items-center justify-center gap-2.5 border border-white/30 text-white text-xs tracking-[0.12em] uppercase font-bold px-7 py-4 hover:border-white transition-colors"
               >
                 <WaIcon />
                 Falar no WhatsApp
-              </a>
+              </ContatoCta>
             </div>
           </div>
         </div>
@@ -3441,11 +3438,8 @@ function SimuladorInner() {
                 Fale com a Orbital.
               </h2>
               <div className="space-y-3">
-                <a
-                  href={`${WA_BASE}${encodeURIComponent("Olá! Tenho interesse no PFB Orbital e gostaria de fazer um orçamento.")}`}
-                  target="_blank"
-                  rel="noopener noreferrer"
-                  className="flex items-start gap-5 p-5 sm:p-6 bg-white border border-[#e2e2e2] hover:border-[#2347A0] transition-colors group"
+                <ContatoCta
+                  className="w-full text-left flex items-start gap-5 p-5 sm:p-6 bg-white border border-[#e2e2e2] hover:border-[#2347A0] transition-colors group"
                 >
                   <div className="w-12 h-12 bg-[#36A35C] flex items-center justify-center flex-shrink-0">
                     <WaIcon size={22} />
@@ -3459,7 +3453,7 @@ function SimuladorInner() {
                       Resposta rápida · Orçamentos e dúvidas técnicas
                     </p>
                   </div>
-                </a>
+                </ContatoCta>
 
                 <a
                   href="https://instagram.com/orbitalrevestimentos"
@@ -3493,17 +3487,14 @@ function SimuladorInner() {
                   <div>
                     <p className="text-[#0B1F45] font-semibold text-base mb-1">Showroom</p>
                     <p className="text-[#43474e] text-sm">Manaus, Amazonas</p>
-                    <a
-                      href={`${WA_BASE}${encodeURIComponent("Olá! Vi o site da Orbital e gostaria de agendar uma visita ao showroom.")}`}
-                      target="_blank"
-                      rel="noopener noreferrer"
+                    <ContatoCta
                       className="inline-flex items-center gap-1 text-[#2347A0] text-xs font-semibold mt-1 hover:text-[#0B1F45] transition-colors"
                     >
                       Agendar visita pelo WhatsApp
                       <svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5">
                         <path d="M5 12h14M12 5l7 7-7 7" />
                       </svg>
-                    </a>
+                    </ContatoCta>
                   </div>
                 </div>
 

@@ -3,8 +3,7 @@
 import React from "react";
 import Link from "next/link";
 import VisualizadorWizard from "@/components/VisualizadorWizard";
-
-const WA_BASE = "https://wa.me/5592988150149?text=";
+import ContatoCta from "@/components/ContatoCta";
 
 export default function VisualizadorPage() {
   return (
@@ -36,14 +35,11 @@ export default function VisualizadorPage() {
             instalação sem obra em poucas horas.
           </p>
           <div className="flex flex-wrap gap-3 justify-center">
-            <a
-              href={`${WA_BASE}${encodeURIComponent("Olá! Usei o Visualizador de revestimentos e gostaria de um orçamento.")}`}
-              target="_blank"
-              rel="noopener noreferrer"
+            <ContatoCta
               className="bg-[#25d366] text-white text-xs tracking-[0.12em] uppercase font-bold px-7 py-3.5 hover:brightness-95 transition"
             >
               Falar no WhatsApp
-            </a>
+            </ContatoCta>
             <Link
               href="/produtos"
               className="border border-white/40 text-white text-xs tracking-[0.12em] uppercase font-bold px-7 py-3.5 hover:bg-white hover:text-[#0B1F45] transition-colors"

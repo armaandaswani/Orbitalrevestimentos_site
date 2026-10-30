@@ -6,6 +6,7 @@ import ARTAccordion from "@/components/ARTAccordion";
 import FichaTecnicaAccordion from "@/components/FichaTecnicaAccordion";
 import ConhecaPfb from "@/components/ConhecaPfb";
 import SolicitarManual from "@/components/SolicitarManual";
+import ContatoCta from "@/components/ContatoCta";
 import ScrollReveal from "@/components/ScrollReveal";
 import AnimatedStat from "@/components/AnimatedStat";
 import VideoShort from "@/components/VideoShort";
@@ -535,14 +536,11 @@ export default async function TecnologiaPage() {
             e suporte para arquitetos e designers.
           </p>
           <div className="flex flex-col sm:flex-row flex-wrap justify-center gap-3 lg:gap-4">
-            <a
-              href="https://wa.me/5592988150149?text=Olá! Gostaria de solicitar a ficha técnica completa do PFB Orbital."
-              target="_blank"
-              rel="noopener noreferrer"
+            <ContatoCta
               className="w-full sm:w-auto text-center bg-[#0B1F45] text-white text-xs tracking-[0.12em] uppercase font-bold px-8 py-4 hover:bg-[#2347A0] transition-colors"
             >
               Falar com Especialista
-            </a>
+            </ContatoCta>
             <Link
               href="/produtos"
               className="w-full sm:w-auto text-center border border-[#0B1F45] text-[#0B1F45] text-xs tracking-[0.12em] uppercase font-bold px-8 py-4 hover:bg-[#0B1F45] hover:text-white transition-colors"

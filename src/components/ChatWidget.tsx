@@ -2,9 +2,7 @@
 
 import { useState, useRef, useEffect, KeyboardEvent } from "react";
 import Link from "next/link";
-
-const WA_NUMBER = "5592988150149";
-const WA_BASE = `https://wa.me/${WA_NUMBER}?text=`;
+import { abrirContato } from "@/lib/contato";
 
 interface Message {
   from: "user" | "bot";
@@ -32,7 +30,28 @@ const PAGE_LABELS: Record<string, string> = {
 };
 
 function shouldShowWa(text: string) {
-  return /whatsapp|showroom|visita|orçamento|comprar|agendar|preço específico/i.test(text);
+  return /whatsapp|showroom|visita|orçamento|comprar|agendar|preço específico|consultor/i.test(text);
+}
+
+/** O cliente pediu contato humano (WhatsApp, orçamento, atendente…)? */
+function pediuAtendimento(text: string) {
+  return /whats|zap|telefone|n[uú]mero|contato|or[çc]amento|atendente|consultor|vendedor|falar com|comprar|pre[çc]o|valor|visita|showroom/i.test(text);
+}
+
+/**
+ * Rede de segurança: o assistente nunca entrega o número nem link direto do
+ * WhatsApp (o prompt pede isso, mas um prompt antigo salvo no admin pode não
+ * pedir). Todo caminho até o WhatsApp passa pelo pré-contato.
+ */
+function semNumero(text: string): { text: string; tinha: boolean } {
+  const limpo = text
+    .replace(/https?:\/\/(?:wa\.me|api\.whatsapp\.com|whatsapp\.com)\S*/gi, "")
+    .replace(/(?:\+?55\s*)?\(?\s*92\s*\)?\s*9?\s*\d{4}[-.\s]?\d{4}/g, "");
+  if (limpo === text) return { text, tinha: false };
+  return {
+    text: limpo.replace(/[ \t]+([.,;:!?)])/g, "$1").replace(/\(\s*\)/g, "").replace(/[ \t]{2,}/g, " ").trim(),
+    tinha: true,
+  };
 }
 
 function WaIcon({ size = 13 }: { size?: number }) {
@@ -200,16 +219,17 @@ export default function ChatWidget() {
         body: JSON.stringify({ messages: historyRef.current }),
       });
       const json = await res.json();
-      const botText: string = json.text || "Não consegui responder agora. Tente pelo WhatsApp!";
+      const bruto: string = json.text || "Não consegui responder agora. Fale com um consultor pelo botão abaixo.";
+      const { text: botText, tinha } = semNumero(bruto);
       historyRef.current = [...historyRef.current, { role: "assistant", content: botText }];
       setMessages((prev) => [
         ...prev,
-        { from: "bot", text: botText, showWa: shouldShowWa(botText) },
+        { from: "bot", text: botText, showWa: tinha || shouldShowWa(botText) || pediuAtendimento(text) || !json.text },
       ]);
     } catch {
       setMessages((prev) => [
         ...prev,
-        { from: "bot", text: "Ops, ocorreu um erro. Fale direto com nossa equipe no WhatsApp!", showWa: true },
+        { from: "bot", text: "Ops, ocorreu um erro. Fale com um consultor pelo botão abaixo.", showWa: true },
       ]);
     } finally {
       setTyping(false);
@@ -271,7 +291,7 @@ export default function ChatWidget() {
                     {/* Page link buttons extracted from [PAGE: /path] */}
                     {pageLinks.length > 0 && (
                       <div className="flex flex-col gap-1.5 mt-3">
-                        {pageLinks.map((href) => (
+                        {pageLinks.filter((href) => href !== "/contato").map((href) => (
                           <Link
                             key={href}
                             href={href}
@@ -299,16 +319,17 @@ export default function ChatWidget() {
                       </Link>
                     )}
 
-                    {msg.showWa && (
-                      <a
-                        href={`${WA_BASE}${encodeURIComponent("Olá! Vim pelo site e gostaria de mais informações sobre o PFB Orbital.")}`}
-                        target="_blank"
-                        rel="noopener noreferrer"
-                        className="flex items-center gap-1.5 mt-3 text-[10px] tracking-[0.1em] uppercase font-bold bg-[#36A35C] text-[#0B1F45] px-3 py-2 hover:bg-[#4BB571] transition-colors w-fit"
+                    {/* WhatsApp só pelo pré-contato: escolhe o revestimento,
+                        responde rápido e então segue para a conversa. */}
+                    {(msg.showWa || pageLinks.includes("/contato")) && (
+                      <button
+                        type="button"
+                        onClick={() => { setOpen(false); abrirContato(); }}
+                        className="flex items-center gap-1.5 mt-3 text-[10px] tracking-[0.1em] uppercase font-bold bg-[#36A35C] text-[#0B1F45] px-3 py-2 hover:bg-[#4BB571] transition-colors w-fit focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#0B1F45]"
                       >
                         <WaIcon />
-                        Falar no WhatsApp
-                      </a>
+                        Falar com um consultor
+                      </button>
                     )}
                   </div>
                 </div>
