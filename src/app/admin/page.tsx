@@ -17,6 +17,7 @@ import ModelosPicker from "./projetos/ModelosPicker";
 import { camposDosModelos, modelosDoProjeto } from "@/lib/projeto-modelos";
 import AtendimentoTab from "./AtendimentoTab";
 import ContatosTab from "./ContatosTab";
+import AniversariosTab from "./AniversariosTab";
 import SquareCropper from "@/components/SquareCropper";
 import FinanceiroTab from "./FinanceiroTab";
 import DashboardTab, { type OverviewData } from "./DashboardTab";
@@ -5201,6 +5202,7 @@ export default function AdminPage() {
         {tab === "academia" && authed && <AcademiaTab />}
         {tab === "atendimento" && authed && <AtendimentoTab />}
         {tab === "contatos" && authed && <ContatosTab />}
+        {tab === "aniversarios" && authed && <AniversariosTab />}
 
         {/* New modules — placeholders until their redesign phases land, so the
             final navigation structure ships (and is navigable) from day one. */}

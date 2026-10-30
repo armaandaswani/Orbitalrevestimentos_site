@@ -99,7 +99,7 @@ export default function ContatosTab() {
     <div>
       <PageHeader
         title="Contatos do site"
-        subtitle="Quem pediu atendimento pelo site e foi ao WhatsApp. Cada contato também entra em Leads / CRM."
+        subtitle="Quem passou pelo pré-contato do site e foi ao WhatsApp, com as respostas de cada um."
         actions={
           <a
             href="/api/admin/contatos/export"
