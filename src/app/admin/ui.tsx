@@ -13,7 +13,7 @@ import React from "react";
 // ─── Tab union ───────────────────────────────────────────────────────────────
 // Central so page.tsx / new modules never re-declare the literal list.
 export type AdminTab =
-  | "dashboard" | "agenda" | "lembretes"
+  | "dashboard" | "agenda" | "lembretes" | "ia"
   | "atendimento" | "leads" | "contatos" | "orcamentos" | "pedidos"
   | "partners" | "representantes" | "commissions" | "aniversarios"
   | "produtos" | "estoque" | "compras"
@@ -26,7 +26,7 @@ export type AdminTab =
 // Aqui (e não em page.tsx) porque o módulo de Projetos tem rotas próprias
 // (/admin/projetos/...) e a barra lateral precisa ser idêntica nas duas.
 export const NAV_LABELS: Record<AdminTab, string> = {
-  dashboard: "Hoje", agenda: "Agenda", lembretes: "Lembretes",
+  dashboard: "Hoje", agenda: "Agenda", lembretes: "Lembretes", ia: "Organização IA",
   atendimento: "Atendimento IA", leads: "Leads / CRM", contatos: "Contatos do site", orcamentos: "Orçamentos", pedidos: "Pedidos",
   partners: "Parceiros", representantes: "Representantes", commissions: "Comissões", aniversarios: "Aniversários",
   produtos: "Produtos", estoque: "Estoque", compras: "Compras & Importação",
@@ -37,7 +37,7 @@ export const NAV_LABELS: Record<AdminTab, string> = {
 };
 
 export const NAV_GROUPS: ReadonlyArray<{ group: string; items: ReadonlyArray<AdminTab> }> = [
-  { group: "Início", items: ["dashboard", "agenda", "lembretes"] },
+  { group: "Início", items: ["dashboard", "agenda", "lembretes", "ia"] },
   { group: "Jornada do Cliente", items: ["atendimento", "leads", "contatos", "orcamentos", "pedidos"] },
   { group: "Rede de Vendas", items: ["partners", "representantes", "commissions", "aniversarios"] },
   { group: "Produtos & Estoque", items: ["produtos", "estoque", "compras"] },
@@ -238,6 +238,7 @@ const ICON_PATHS: Record<AdminTab, React.ReactNode> = {
   dashboard: (<><path d="M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z" /><polyline points="9 22 9 12 15 12 15 22" /></>),
   agenda: (<><rect x="3" y="4" width="18" height="18" rx="2" /><line x1="16" y1="2" x2="16" y2="6" /><line x1="8" y1="2" x2="8" y2="6" /><line x1="3" y1="10" x2="21" y2="10" /><path d="M8 14h.01M12 14h.01M16 14h.01M8 18h.01M12 18h.01" /></>),
   lembretes: (<><path d="M18 8A6 6 0 0 0 6 8c0 7-3 9-3 9h18s-3-2-3-9" /><path d="M13.73 21a2 2 0 0 1-3.46 0" /></>),
+  ia: (<><rect x="4" y="4" width="16" height="16" rx="2" /><rect x="9" y="9" width="6" height="6" /><path d="M9 1v3M15 1v3M9 20v3M15 20v3M20 9h3M20 14h3M1 9h3M1 14h3" /></>),
   atendimento: (<><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z" /><line x1="8" y1="9" x2="16" y2="9" /><line x1="8" y1="13" x2="13" y2="13" /></>),
   leads: (<><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2" /><circle cx="9" cy="7" r="4" /><path d="M23 21v-2a4 4 0 0 0-3-3.87" /><path d="M16 3.13a4 4 0 0 1 0 7.75" /></>),
   aniversarios: (<><path d="M20 21v-8a2 2 0 0 0-2-2H6a2 2 0 0 0-2 2v8" /><path d="M4 16s.5-1 2-1 2.5 2 4 2 2.5-2 4-2 2.5 2 4 2 2-1 2-1" /><path d="M2 21h20" /><path d="M7 8v3M12 8v3M17 8v3" /><path d="M7 4h.01M12 4h.01M17 4h.01" /></>),

@@ -57,6 +57,7 @@ export async function aniversariantes(db: SupabaseClient, agora = new Date()) {
   for (const p of ((prof.data ?? []) as Aniversario[])) {
     if (!naJanela(p)) continue;
     guardar({
+      ref: `profissional:${p.id}`,
       nome: p.nome,
       tipo: "profissional",
       detalhe: [p.profissao, p.escritorio].filter(Boolean).join(", "),
@@ -70,11 +71,12 @@ export async function aniversariantes(db: SupabaseClient, agora = new Date()) {
     });
   }
 
-  type Pessoa = { name: string; email: string | null; phone: string | null; birthday: string | null; coupon_code?: string; profession?: string | null };
+  type Pessoa = { id: string; name: string; email: string | null; phone: string | null; birthday: string | null; coupon_code?: string; profession?: string | null };
   const juntar = (p: Pessoa, tipo: "parceiro" | "representante") => {
     const d = dataDeIso(p.birthday);
     if (!d || !naJanela(d)) return;
     const novo: Aniversariante = {
+      ref: `${tipo}:${p.id}`,
       nome: p.name,
       tipo,
       detalhe: tipo === "parceiro" ? [p.profession, p.coupon_code && `cupom ${p.coupon_code}`].filter(Boolean).join(", ") : "",
@@ -91,6 +93,7 @@ export async function aniversariantes(db: SupabaseClient, agora = new Date()) {
     if (ja) {
       // Mesma pessoa na planilha: vira parceiro, completa o que faltar.
       ja.tipo = tipo;
+      ja.ref = novo.ref;
       ja.detalhe = novo.detalhe || ja.detalhe;
       ja.cupom = novo.cupom;
       ja.whatsapp = ja.whatsapp || novo.whatsapp;

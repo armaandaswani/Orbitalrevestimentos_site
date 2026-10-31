@@ -27,6 +27,8 @@ export type AniversarioDados = Omit<Aniversario, "id" | "ativo">;
 
 /** Uma pessoa no e-mail do dia: profissional, parceiro ou representante. */
 export interface Aniversariante {
+  /** Quem é, de forma estável: "profissional:<id>", "parceiro:<id>" ou "representante:<id>". */
+  ref: string;
   nome: string;
   tipo: "profissional" | "parceiro" | "representante";
   detalhe: string;
