@@ -1,7 +1,10 @@
 import { NextRequest, NextResponse } from "next/server";
 import { isAdminRequest } from "@/lib/admin-auth";
 import { supabaseAdmin } from "@/lib/supabase";
-import { PERFIL_ROTULO, areaContato, digitosContato, prazoContato, type SiteContato } from "@/lib/site-contatos";
+import {
+  PERFIL_ROTULO, areaContato, conheceContato, digitosContato, esperaContato, prazoContato, valorizaContato,
+  type SiteContato,
+} from "@/lib/site-contatos";
 
 /**
  * Exporta os contatos do site em CSV pronto para o Excel em português:
@@ -35,7 +38,10 @@ export async function GET(req: NextRequest) {
     c.phone,
     digitosContato(c.phone) ? `55${digitosContato(c.phone)}` : "",
     PERFIL_ROTULO[c.perfil] ?? c.perfil,
-    c.valoriza ?? "",
+    conheceContato(c),
+    valorizaContato(c),
+    esperaContato(c),
+    c.espera_detalhe ?? "",
     prazoContato(c),
     c.cidade,
     c.produtos,
@@ -44,7 +50,8 @@ export async function GET(req: NextRequest) {
   ].map(celula).join(";"));
 
   const cabecalho = [
-    "Data", "Nome", "WhatsApp", "WhatsApp (só números)", "Perfil", "O que valoriza", "Quando",
+    "Data", "Nome", "WhatsApp", "WhatsApp (só números)", "Perfil", "Conhece o PFB", "O que valoriza",
+    "O que espera do PFB", "Problema a resolver", "Quando",
     "Cidade", "Revestimento", "Área", "Página de origem",
   ].join(";");
 

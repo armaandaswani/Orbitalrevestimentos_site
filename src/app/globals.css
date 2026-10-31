@@ -114,6 +114,25 @@
   100% { transform: translateX(-50%); }
 }
 
+/* Pré-contato (ContatoSheet): movimento curto, só transform/opacity (nada
+   muda de tamanho nem empurra vizinhos). Fora de "no-preference" (movimento
+   reduzido), nenhuma destas classes anima e tudo aparece no lugar. */
+@keyframes pc-veu { from { opacity: 0; } to { opacity: 1; } }
+@keyframes pc-surge { from { opacity: 0; transform: translateY(28px); } to { opacity: 1; transform: none; } }
+@keyframes pc-entra-frente { from { opacity: 0; transform: translateX(20px); } to { opacity: 1; transform: none; } }
+@keyframes pc-entra-tras { from { opacity: 0; transform: translateX(-20px); } to { opacity: 1; transform: none; } }
+@keyframes pc-sobe { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: none; } }
+@keyframes pc-marca { from { transform: scale(0.3); } to { transform: scale(1); } }
+@media (prefers-reduced-motion: no-preference) {
+  .pc-veu         { animation: pc-veu 0.22s ease-out both; }
+  .pc-folha       { animation: pc-surge 0.34s cubic-bezier(0.2, 0.8, 0.2, 1) both; }
+  .pc-frente      { animation: pc-entra-frente 0.28s cubic-bezier(0.2, 0.8, 0.2, 1) both; }
+  .pc-tras        { animation: pc-entra-tras 0.28s cubic-bezier(0.2, 0.8, 0.2, 1) both; }
+  .pc-item        { animation: pc-sobe 0.34s cubic-bezier(0.2, 0.8, 0.2, 1) both; animation-delay: calc(60ms + var(--i, 0) * 45ms); }
+  .pc-surge-curto { animation: pc-sobe 0.24s cubic-bezier(0.2, 0.8, 0.2, 1) both; }
+  .pc-marca       { animation: pc-marca 0.22s cubic-bezier(0.3, 1.5, 0.6, 1) both; }
+}
+
 /* Utility classes */
 .animate-fade-up   { animation: fade-up 0.7s cubic-bezier(0.4,0,0.2,1) forwards; }
 .animate-fade-in   { animation: fade-in 0.7s ease forwards; }

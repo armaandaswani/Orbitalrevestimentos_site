@@ -6,7 +6,8 @@ import {
   btnGhost, btnPrimary, cardCls, inputCls, tdCls, thCls,
 } from "./ui";
 import {
-  PERFIL_ROTULO, PRAZO_OPCOES, areaContato, digitosContato, prazoContato, type SiteContato,
+  PERFIL_ROTULO, PRAZO_OPCOES, areaContato, conheceContato, digitosContato, esperaContato, prazoContato,
+  valorizaContato, type SiteContato,
 } from "@/lib/site-contatos";
 
 /**
@@ -29,6 +30,18 @@ function WhatsLink({ phone }: { phone: string | null }) {
     <a href={`https://wa.me/${d.length <= 11 ? "55" + d : d}`} target="_blank" rel="noopener noreferrer" className="text-[#1f7a3d] font-semibold hover:underline whitespace-nowrap">
       {phone}
     </a>
+  );
+}
+
+/** O que espera do painel e, se veio, o problema contado pelo cliente. */
+function Espera({ c }: { c: SiteContato }) {
+  const lista = esperaContato(c);
+  if (!lista && !c.espera_detalhe) return <>—</>;
+  return (
+    <span className="break-words">
+      {lista || "—"}
+      {c.espera_detalhe && <span className="block text-[#74777f] italic mt-0.5">“{c.espera_detalhe}”</span>}
+    </span>
   );
 }
 
@@ -79,7 +92,9 @@ export default function ContatosTab() {
         (c.name ?? "").toLowerCase().includes(q) ||
         (c.cidade ?? "").toLowerCase().includes(q) ||
         (c.produtos ?? "").toLowerCase().includes(q) ||
-        (c.valoriza ?? "").toLowerCase().includes(q) ||
+        valorizaContato(c).toLowerCase().includes(q) ||
+        esperaContato(c).toLowerCase().includes(q) ||
+        (c.espera_detalhe ?? "").toLowerCase().includes(q) ||
         (qDig.length >= 3 && digitosContato(c.phone).includes(qDig))
       );
     });
@@ -180,7 +195,9 @@ export default function ContatosTab() {
                         <div className="flex flex-col gap-1 text-xs">
                           <WhatsLink phone={c.phone} />
                           <Field label="Perfil">{PERFIL_ROTULO[c.perfil] ?? c.perfil}</Field>
-                          <Field label="Valoriza">{c.valoriza || "—"}</Field>
+                          <Field label="Conhece o PFB">{conheceContato(c) || "—"}</Field>
+                          <Field label="Valoriza">{valorizaContato(c) || "—"}</Field>
+                          <Field label="Espera"><Espera c={c} /></Field>
                           <Field label="Quando">{prazoContato(c) || "—"}</Field>
                           <Field label="Cidade">{c.cidade}</Field>
                           <Field label="Revestimento"><span className="break-words">{c.produtos || "—"}</span></Field>
@@ -198,7 +215,9 @@ export default function ContatosTab() {
                         <th className={thCls}>Nome</th>
                         <th className={thCls}>WhatsApp</th>
                         <th className={thCls}>Perfil</th>
+                        <th className={thCls}>Conhece o PFB</th>
                         <th className={thCls}>Valoriza</th>
+                        <th className={thCls}>Espera</th>
                         <th className={thCls}>Quando</th>
                         <th className={thCls}>Cidade</th>
                         <th className={thCls}>Revestimento</th>
@@ -212,7 +231,9 @@ export default function ContatosTab() {
                           <td className={`${tdCls} text-[#0B1F45] font-semibold`}>{c.name || <span className="text-[#b0b4bc] font-normal">—</span>}</td>
                           <td className={tdCls}><WhatsLink phone={c.phone} /></td>
                           <td className={`${tdCls} whitespace-nowrap`}>{PERFIL_ROTULO[c.perfil] ?? c.perfil}</td>
-                          <td className={tdCls}>{c.valoriza || "—"}</td>
+                          <td className={tdCls}>{conheceContato(c) || "—"}</td>
+                          <td className={tdCls}>{valorizaContato(c) || "—"}</td>
+                          <td className={tdCls}><Espera c={c} /></td>
                           <td className={tdCls}>{prazoContato(c) || "—"}</td>
                           <td className={tdCls}>{c.cidade}</td>
                           <td className={tdCls}>{c.produtos || "—"}</td>

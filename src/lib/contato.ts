@@ -3,9 +3,11 @@
  *
  * Todo botão comercial do site (e o assistente de IA) abre a aba de
  * pré-contato: o cliente escolhe o revestimento (ou já chega com ele, vindo da
- * página do produto), responde perfil, o que mais valoriza, quando pretende
- * fazer o projeto e a cidade (obrigatórios), medidas e nome (opcionais), e cai
- * no WhatsApp com uma mensagem organizada para o consultor. O WhatsApp do
+ * página do produto), diz se já conhece o Painel Flexível Fibra de Bambu (se
+ * não, vê uma apresentação de 3 pontos), responde perfil, o que mais valoriza,
+ * o que espera do painel, quando pretende fazer o projeto e a cidade
+ * (obrigatórios), medidas e nome (opcionais), e cai no WhatsApp com uma
+ * mensagem organizada para o consultor. O WhatsApp do
  * cliente não é pedido: a própria conversa já traz o número. Cada envio fica
  * registrado (POST /api/contato → tabela site_contatos).
  *
@@ -43,11 +45,40 @@ export const ETAPAS = [
   { value: "ideacao", label: "Em ideação" },
 ] as const;
 
+/** Já conhece o Painel Flexível Fibra de Bambu? "nao" mostra a apresentação rápida. */
+export const CONHECE = [
+  { value: "sim", label: "Sim, já conheço" },
+  { value: "nao", label: "Não, quero conhecer" },
+] as const;
+
 export const VALORIZA = [
-  { value: "sofisticacao", label: "Sofisticação & durabilidade" },
-  { value: "custo_beneficio", label: "Custo-benefício e praticidade" },
+  { value: "sofisticacao_durabilidade", label: "Sofisticação e Durabilidade" },
+  { value: "qualidade_custo_beneficio", label: "Qualidade e Custo-Benefício" },
+  { value: "agilidade_praticidade", label: "Agilidade e Praticidade" },
   { value: "preco", label: "Preço" },
 ] as const;
+
+/**
+ * Opções de "o que valoriza" até out/2026. Ficam para ler envios antigos e
+ * aceitar uma aba aberta antes da troca ("preco" continua igual).
+ */
+export const VALORIZA_LEGADO = [
+  { value: "sofisticacao", label: "Sofisticação & durabilidade" },
+  { value: "custo_beneficio", label: "Custo-benefício e praticidade" },
+] as const;
+
+/** O que o cliente espera do painel: até MAX_ESPERA, na ordem da tela. */
+export const ESPERA = [
+  { value: "resolver_problema", label: "Que resolva um problema do meu ambiente" },
+  { value: "mais_em_conta", label: "Que seja a opção mais em conta" },
+  { value: "umidade_calor", label: "Que resista à umidade e ao calor" },
+  { value: "obra_rapida", label: "Que a obra seja rápida e sem quebra-quebra" },
+  { value: "sofisticado", label: "Que deixe o ambiente sofisticado" },
+] as const;
+export const MAX_ESPERA = 3;
+/** "Conte qual (opcional)": só vale com "resolver_problema" marcado. */
+export const ESPERA_COM_DETALHE = "resolver_problema";
+export const ESPERA_DETALHE_MAX = 200;
 
 export const PRAZOS = [
   { value: "30_dias", label: "Nos próximos 30 dias" },
@@ -61,9 +92,15 @@ export const CIDADES = [
 ] as const;
 
 export interface RespostasContato {
+  /** Já conhece o Painel Flexível Fibra de Bambu (CONHECE: "sim" | "nao"). */
+  conhece?: string;
   perfil?: string;
   /** O que o cliente mais valoriza num revestimento (VALORIZA). */
   valoriza?: string;
+  /** O que espera do painel (valores de ESPERA, até MAX_ESPERA). */
+  espera?: string[];
+  /** Qual problema quer resolver (opcional, só com ESPERA_COM_DETALHE). */
+  esperaDetalhe?: string;
   /** Quando pretende fazer o projeto (PRAZOS). */
   prazo?: string;
   nome?: string;
@@ -78,7 +115,13 @@ export interface RespostasContato {
   areasDetalhe?: string[];
 }
 
-export type CampoObrigatorio = "perfil" | "valoriza" | "prazo" | "cidade";
+export type CampoObrigatorio = "conhece" | "perfil" | "valoriza" | "espera" | "prazo" | "cidade";
+
+/**
+ * Perguntas que entraram em out/2026. O formulário exige; o servidor aceita
+ * sem elas, para não perder o envio de uma aba aberta antes da troca.
+ */
+export const CAMPOS_NOVOS: readonly CampoObrigatorio[] = ["conhece", "espera"];
 
 /** (92) 9 0000-0000 — só formata o que foi digitado, nunca bloqueia. */
 export function mascaraWhatsapp(raw: string): string {
@@ -95,11 +138,16 @@ export function whatsappValido(v?: string): boolean {
   return d.length === 10 || d.length === 11;
 }
 
-/** O que falta para enviar: perfil, o que valoriza, prazo e cidade (com o nome, se "Outra"). */
+/**
+ * O que falta para enviar, na ordem das telas: se conhece o painel, perfil, o
+ * que valoriza, o que espera, prazo e cidade (com o nome, se "Outra").
+ */
 export function pendenciasContato(r: RespostasContato): CampoObrigatorio[] {
   const faltam: CampoObrigatorio[] = [];
+  if (!r.conhece) faltam.push("conhece");
   if (!r.perfil) faltam.push("perfil");
   if (!r.valoriza) faltam.push("valoriza");
+  if (!r.espera?.length) faltam.push("espera");
   if (!r.prazo) faltam.push("prazo");
   if (!r.cidade || (r.cidade === "outra" && !r.cidadeOutra?.trim())) faltam.push("cidade");
   return faltam;
@@ -107,6 +155,23 @@ export function pendenciasContato(r: RespostasContato): CampoObrigatorio[] {
 
 function rotulo(lista: ReadonlyArray<{ value: string; label: string }>, v?: string): string {
   return lista.find((o) => o.value === v)?.label ?? "";
+}
+
+/** Rótulo do que valoriza, inclusive das opções antigas. */
+export function rotuloValoriza(v?: string): string {
+  return rotulo(VALORIZA, v) || rotulo(VALORIZA_LEGADO, v);
+}
+
+/** Rótulos do que espera, na ordem da tela; ignora valor desconhecido. */
+export function rotulosEspera(v?: readonly string[]): string[] {
+  if (!v?.length) return [];
+  return ESPERA.filter((o) => v.includes(o.value)).map((o) => o.label);
+}
+
+/** Texto livre do problema, numa linha e no limite; vazio sem a opção marcada. */
+export function detalheEspera(r: RespostasContato): string {
+  if (!r.espera?.includes(ESPERA_COM_DETALHE)) return "";
+  return String(r.esperaDetalhe ?? "").replace(/\s+/g, " ").trim().slice(0, ESPERA_DETALHE_MAX);
 }
 
 /** Nome do revestimento como o consultor reconhece: "Nome (CÓDIGO) · Linha". */
@@ -158,8 +223,15 @@ export function mensagemContato(produtos: ProdutoContato[], r: RespostasContato)
   if (nome) dados.push(`• Nome: ${nome}`);
   const perfil = r.perfil === "arquiteto" ? "Arquiteto(a)" : r.perfil === "proprietario" ? "Proprietário(a)" : "";
   if (perfil) dados.push(`• Perfil: ${perfil}`);
-  const valoriza = rotulo(VALORIZA, r.valoriza);
+  const conhece = r.conhece === "sim" ? "Sim" : r.conhece === "nao" ? "Ainda não" : "";
+  if (conhece) dados.push(`• Já conheço o Painel Flexível Fibra de Bambu: ${conhece}`);
+  const valoriza = rotuloValoriza(r.valoriza);
   if (valoriza) dados.push(`• O que mais valorizo: ${valoriza}`);
+  const espera = rotulosEspera(r.espera);
+  // Nome completo na primeira vez que o painel aparece na mensagem.
+  if (espera.length) dados.push(`• O que espero do ${conhece ? "PFB" : "Painel Flexível Fibra de Bambu"}: ${espera.join("; ")}`);
+  const detalhe = detalheEspera(r);
+  if (detalhe) dados.push(`• Problema que quero resolver: ${detalhe}`);
   const prazo = rotulo(PRAZOS, r.prazo);
   if (prazo) dados.push(`• Quando: ${prazo}`);
   const etapa = rotulo(ETAPAS, r.etapa);

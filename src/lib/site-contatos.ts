@@ -1,6 +1,9 @@
+import { VALORIZA, VALORIZA_LEGADO } from "@/lib/contato";
+
 /**
  * Envios da aba "Solicitar atendimento" como saem do banco (site_contatos).
- * Sem imports: usado pela tela do admin (navegador) e pela exportação (servidor).
+ * Usado pela tela do admin (navegador) e pela exportação (servidor); só
+ * importa @/lib/contato, que também não tem dependências.
  */
 export interface SiteContato {
   id: string;
@@ -14,6 +17,10 @@ export interface SiteContato {
   /** O que mais valoriza / quando pretende fazer (migração 071), já em texto. */
   valoriza?: string | null;
   prazo?: string | null;
+  /** Migração 074: já conhecia o painel, o que espera (rótulos) e o detalhe. */
+  conhece_pfb?: boolean | null;
+  espera?: string[] | null;
+  espera_detalhe?: string | null;
   largura_m: number | null;
   altura_m: number | null;
   areas_detalhe: string | null;
@@ -26,6 +33,29 @@ export interface SiteContato {
 export const PERFIL_ROTULO: Record<string, string> = { proprietario: "Proprietário(a)", arquiteto: "Arquiteto(a)" };
 export const ETAPA_ROTULO: Record<string, string> = { inicial: "Inicial", final: "Final", ideacao: "Em ideação" };
 export const PRAZO_OPCOES = ["Nos próximos 30 dias", "Nos próximos 3 meses", "Ainda estou planejando"] as const;
+
+/**
+ * O que valoriza, em texto. O banco guarda o rótulo; se algum envio tiver
+ * guardado a chave (sofisticacao, custo_beneficio, preco…), vira o rótulo.
+ * Rótulos antigos ("Sofisticação & durabilidade") ficam como estão.
+ */
+const VALORIZA_ROTULO: Record<string, string> = Object.fromEntries(
+  [...VALORIZA, ...VALORIZA_LEGADO].map((o) => [o.value, o.label]),
+);
+export function valorizaContato(c: SiteContato): string {
+  const v = (c.valoriza ?? "").trim();
+  return VALORIZA_ROTULO[v] ?? v;
+}
+
+/** "Sim" / "Não" / "" (envio de antes da pergunta). */
+export function conheceContato(c: SiteContato): string {
+  return c.conhece_pfb === true ? "Sim" : c.conhece_pfb === false ? "Não" : "";
+}
+
+/** O que espera, numa linha ("A; B"). */
+export function esperaContato(c: SiteContato): string {
+  return Array.isArray(c.espera) ? c.espera.filter(Boolean).join("; ") : "";
+}
 
 /** Quando pretende fazer; nos envios antigos, o estágio da obra. */
 export function prazoContato(c: SiteContato): string {
