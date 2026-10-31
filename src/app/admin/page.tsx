@@ -903,7 +903,7 @@ export default function AdminPage() {
 
   const fetchProjects = useCallback(async () => {
     setLoadingProjects(true);
-    const [pRes, rRes] = await Promise.all([fetch("/api/projects/photos"), fetch("/api/projects/renders")]);
+    const [pRes, rRes] = await Promise.all([fetch("/api/projects/photos?admin=1"), fetch("/api/projects/renders?admin=1")]);
     if (pRes.ok) setDbPhotoProjects(await pRes.json());
     if (rRes.ok) setDbRenderProjects(await rRes.json());
     setLoadingProjects(false);

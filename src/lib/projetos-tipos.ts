@@ -84,6 +84,28 @@ export function porDestaque(a: Projeto, b: Projeto): number {
 }
 
 /**
+ * O que as APIs públicas de projetos e renders podem devolver. É uma lista do
+ * que SAI, não do que fica de fora: coluna nova no banco (ex.: notas internas
+ * do painel como needs_review/review_reason) não vaza até alguém incluí-la aqui.
+ * O painel lê a linha inteira por ?admin=1, que exige sessão de admin.
+ */
+export const CAMPOS_PUBLICOS_PROJETO = [
+  "id", "slug", "title", "product_code", "extra_product_codes", "projeto_de",
+  "categories", "primary_category", "tags", "image_after", "image_before",
+  "cover_category", "cover_focus_x", "cover_focus_y", "cover_zoom",
+  "short_description", "note", "is_featured", "is_new", "feature_order",
+  "show_on_home", "showroom_id", "content_type", "sort_order",
+] as const;
+export const CAMPOS_PUBLICOS_RENDER = ["id", "slug", "title", "product_code", "image_path"] as const;
+
+/** Só os campos da lista; os que a linha não tem (migração pendente) ficam de fora. */
+export function soCampos<T extends string>(linha: Record<string, unknown>, campos: readonly T[]): Partial<Record<T, unknown>> {
+  const out: Partial<Record<T, unknown>> = {};
+  for (const c of campos) if (c in linha) out[c] = linha[c];
+  return out;
+}
+
+/**
  * Obras entregues, informado pelo dono (out/2026). É o total de obras da
  * Orbital; as que têm fotos publicadas no site são só uma parte delas.
  */

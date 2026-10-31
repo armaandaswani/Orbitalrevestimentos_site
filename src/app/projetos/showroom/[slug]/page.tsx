@@ -1,6 +1,7 @@
 import type { Metadata } from "next";
 import Image from "next/image";
 import Link from "next/link";
+import ContatoCta from "@/components/ContatoCta";
 import { COVER_ASPECT } from "@/lib/cover-crop";
 import { carregarShowroom } from "@/lib/projetos-dados";
 import { contaAmbientes } from "@/lib/projetos-tipos";
@@ -75,9 +76,10 @@ export default async function ShowroomPage({ params }: { params: Promise<{ slug:
                   <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" aria-hidden><path d="M5 12h14M12 5l7 7-7 7" /></svg>
                 </a>
               )}
-              <Link href="/contato" className={`${botao} border border-primary text-primary hover:bg-primary hover:text-white`}>
-                Falar com a Orbital
-              </Link>
+              {/* Todo caminho comercial passa pelo pré-contato (sem produto: abre o catálogo visual). */}
+              <ContatoCta className={`${botao} border border-primary text-primary hover:bg-primary hover:text-white`}>
+                Falar com um consultor
+              </ContatoCta>
             </div>
           </div>
         </div>
