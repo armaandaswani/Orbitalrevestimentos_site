@@ -83,6 +83,12 @@ export function porDestaque(a: Projeto, b: Projeto): number {
     : (a.feature_order ?? 0) - (b.feature_order ?? 0);
 }
 
+/**
+ * Obras entregues, informado pelo dono (out/2026). É o total de obras da
+ * Orbital; as que têm fotos publicadas no site são só uma parte delas.
+ */
+export const OBRAS_ENTREGUES = "50+";
+
 /** Slug da categoria que agrupa os showrooms parceiros. */
 export const CATEGORIA_SHOWROOM = "showroom";
 
