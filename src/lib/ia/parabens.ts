@@ -2,6 +2,7 @@ import type { SupabaseClient } from "@supabase/supabase-js";
 import { aniversariantes } from "@/lib/aniversarios-server";
 import { primeiroNome } from "@/lib/aniversarios";
 import { normalizePhone, sendText } from "@/lib/smclick";
+import { enviarPelaSte, steConfigurada } from "@/lib/whatsapp-ste";
 import { chamarModelo, lerNivel } from "@/lib/ia/modelo";
 import { atualizar, auditar, enfileirar, somarUso, type Tarefa } from "@/lib/ia/fila";
 
@@ -221,13 +222,24 @@ export async function envioParabens(db: SupabaseClient, t: Tarefa): Promise<void
   const { error: trava } = await db.from("relacionamento_envios").insert({ pessoa_ref: e.ref, ano: e.ano, canal: "whatsapp", status: "enviando", task_id: t.id });
   if (trava) return fim("concluida", null, { enviado: false, motivo: "Outro envio já em andamento." });
 
-  const r = await sendText(tel, e.texto);
-  await db.from("relacionamento_envios").update({ status: r.ok ? "enviado" : "falhou", detalhe: r.ok ? null : (r.error ?? `HTTP ${r.status}`) })
+  // WhatsApp da Ste (QR, mesmo número) é o caminho padrão; o SM Click só se a ponte da Ste não existir.
+  let ok: boolean, erro: string;
+  if (steConfigurada()) {
+    const r = await enviarPelaSte({ telefone: tel, texto: e.texto, origem: "aniversario" });
+    ok = r.ok;
+    erro = r.status === 503 && /desconectad/i.test(r.erro ?? "")
+      ? "WhatsApp da Ste desconectado: escaneie o QR no painel da Ste e use \"Tentar de novo\"."
+      : `Envio pela Ste falhou: ${r.erro ?? `HTTP ${r.status}`}`;
+  } else {
+    const r = await sendText(tel, e.texto);
+    ok = r.ok;
+    const bruto = `${r.error ?? ""} ${typeof r.data === "string" ? r.data : JSON.stringify(r.data ?? "")}`;
+    erro = /no session|not connected|disconnected|desconectad/i.test(bruto)
+      ? "WhatsApp da Orbital desconectado do SM Click (\"no session\"): reconecte lendo o QR Code e use \"Tentar de novo\"."
+      : `SM Click recusou (${r.status || "sem resposta"}): ${r.error ?? "erro desconhecido"}`;
+  }
+  await db.from("relacionamento_envios").update({ status: ok ? "enviado" : "falhou", detalhe: ok ? null : erro })
     .eq("pessoa_ref", e.ref).eq("ano", e.ano).eq("canal", "whatsapp");
-  if (r.ok) return fim("concluida", null, { enviado: true });
-  const bruto = `${r.error ?? ""} ${typeof r.data === "string" ? r.data : JSON.stringify(r.data ?? "")}`;
-  const erro = /no session|not connected|disconnected|desconectad/i.test(bruto)
-    ? "WhatsApp da Orbital desconectado do SM Click (\"no session\"): reconecte lendo o QR Code e use \"Tentar de novo\"."
-    : `SM Click recusou (${r.status || "sem resposta"}): ${r.error ?? "erro desconhecido"}`;
+  if (ok) return fim("concluida", null, { enviado: true });
   return fim("falhou", erro, { enviado: false });
 }
