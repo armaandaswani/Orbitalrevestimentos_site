@@ -57,11 +57,58 @@
 
   /* Container */
   --container-max: 1280px;
+
+  /* Escala tipográfica fluida (apresentação v2). Mínimo pensado para 320 px,
+     máximo em ~1920 px; acima disso o html inteiro cresce (ver "Telas grandes"),
+     então nada vira uma faixa miúda numa TV. Classes: text-display, text-t1… */
+  --text-sobre: 0.75rem;
+  --text-sobre--line-height: 1.35;
+  --text-legenda: 0.875rem;
+  --text-legenda--line-height: 1.45;
+  --text-corpo: clamp(1rem, 0.97rem + 0.15vw, 1.125rem);
+  --text-corpo--line-height: 1.65;
+  --text-lead: clamp(1.0625rem, 0.99rem + 0.4vw, 1.375rem);
+  --text-lead--line-height: 1.55;
+  --text-t3: clamp(1.1875rem, 1.06rem + 0.55vw, 1.625rem);
+  --text-t3--line-height: 1.25;
+  --text-t2: clamp(1.75rem, 1.32rem + 1.9vw, 3.25rem);
+  --text-t2--line-height: 1.08;
+  --text-t1: clamp(2.125rem, 1.45rem + 3.1vw, 4.5rem);
+  --text-t1--line-height: 1.04;
+  --text-display: clamp(2.125rem, 1.2rem + 4.6vw, 6rem);
+  --text-display--line-height: 1;
+
+  /* Curvas da marca: entrada macia, sem "quique". */
+  --ease-orbital: cubic-bezier(0.2, 0.7, 0.2, 1);
+}
+
+/* ── Apresentação v2: contêiner e ritmo ─────────────────────────────────── */
+
+/* Contêiner do site: 80rem (1280 px a 16 px) com respiro lateral fluido. Em
+   rem, acompanha o crescimento do html nas telas grandes. */
+@utility ds-wrap {
+  width: 100%;
+  max-width: 80rem;
+  margin-inline: auto;
+  padding-inline: clamp(1rem, 4.2vw, 4rem);
+}
+@utility ds-wrap-largo {
+  width: 100%;
+  max-width: 100rem;
+  margin-inline: auto;
+  padding-inline: clamp(1rem, 4.2vw, 4rem);
+}
+/* Espaço vertical de uma seção (capítulo). */
+@utility ds-secao {
+  padding-block: clamp(4rem, 2.6rem + 6vw, 9rem);
 }
 
 @layer base {
   html {
     scroll-behavior: smooth;
+  }
+  @media (prefers-reduced-motion: reduce) {
+    html { scroll-behavior: auto; }
   }
 
   body {
@@ -179,3 +226,116 @@ html,
 body {
   overflow-x: clip;
 }
+
+/* ── Telas grandes (ultrawide, TV) ──────────────────────────────────────────
+   A partir de 1920 px o html cresce junto com a tela (16 px em 1920 → 32 px
+   em 3840): tipografia, espaços e o contêiner em rem escalam juntos, como um
+   zoom. Só no site público (o cabeçalho do site marca a página); o painel
+   admin fica como está. Sem suporte a :has(), nada muda. */
+@media (min-width: 1921px) {
+  html:has(header[data-site]) { font-size: max(100%, 0.8333vw); }
+}
+
+/* Âncoras não ficam escondidas atrás do cabeçalho fixo. */
+html { scroll-padding-top: 5rem; }
+
+/* Foco sempre visível (teclado), na cor da marca, sem depender de cada botão. */
+:where(a, button, [role="button"], [role="slider"], summary, input, select, textarea):focus-visible {
+  outline: 2px solid #2347A0;
+  outline-offset: 2px;
+}
+.ds-escuro :where(a, button, [role="button"], [role="slider"], summary):focus-visible {
+  outline-color: #ffffff;
+}
+
+/* ── Movimento (apresentação v2) ────────────────────────────────────────────
+   Regras: só transform e opacity (zero CLS, roda no compositor); tudo
+   desligado com movimento reduzido; sem JavaScript o conteúdo aparece.
+   Preferência por animação ligada à rolagem (animation-timeline); onde o
+   navegador não tem, os componentes caem num IntersectionObserver
+   (classes mv-io-*). */
+@keyframes mv-sobe { from { opacity: 0; transform: translate3d(0, 1.5rem, 0); } to { opacity: 1; transform: none; } }
+@keyframes mv-surge { from { opacity: 0; } to { opacity: 1; } }
+@keyframes mv-desvela { from { transform: scale(1.1); } to { transform: none; } }
+@keyframes mv-parallax { from { transform: translate3d(0, -7%, 0) scale(1.14); } to { transform: translate3d(0, 7%, 0) scale(1.14); } }
+@keyframes mv-parallax-topo { from { transform: none; } to { transform: translate3d(0, 18%, 0) scale(1.06); } }
+@keyframes mv-esmaece { from { opacity: 1; } to { opacity: 0.15; } }
+@keyframes mv-barra { from { transform: scaleX(0); } to { transform: scaleX(1); } }
+@keyframes mv-barra-y { from { transform: scaleY(0); } to { transform: scaleY(1); } }
+@keyframes mv-abre { from { opacity: 0; transform: translate3d(0, 2rem, 0); } to { opacity: 1; transform: none; } }
+@keyframes mv-veu { from { opacity: 0; } to { opacity: 1; } }
+
+@media (prefers-reduced-motion: no-preference) {
+  @supports (animation-timeline: view()) {
+    /* Entra subindo enquanto atravessa o primeiro terço da tela. --mv-i escalona vizinhos. */
+    .mv-revelar {
+      animation: mv-sobe linear both;
+      animation-timeline: view();
+      animation-range: entry calc(var(--mv-i, 0) * 7%) entry calc(55% + var(--mv-i, 0) * 7%);
+    }
+    /* Foto que "se acomoda" no quadro (o quadro tem overflow hidden). */
+    .mv-desvela {
+      animation: mv-desvela linear both;
+      animation-timeline: view();
+      animation-range: entry 0% cover 45%;
+    }
+    /* Parallax sutil dentro do quadro. */
+    .mv-parallax {
+      animation: mv-parallax linear both;
+      animation-timeline: view();
+      animation-range: cover 0% cover 100%;
+    }
+    /* Abertura (hero): a foto desce devagar e o texto esmaece ao sair. */
+    .mv-parallax-topo {
+      animation: mv-parallax-topo linear both;
+      animation-timeline: scroll(root);
+      animation-range: 0 100svh;
+    }
+    .mv-esmaece-topo {
+      animation: mv-esmaece linear both;
+      animation-timeline: scroll(root);
+      animation-range: 0 70svh;
+    }
+    /* Progresso da página inteira. */
+    .mv-progresso-pagina {
+      animation: mv-barra linear both;
+      animation-timeline: scroll(root);
+    }
+    .mv-progresso-pagina-y {
+      animation: mv-barra-y linear both;
+      animation-timeline: scroll(root);
+    }
+  }
+
+  /* Reserva sem animation-timeline (Safari antigo, Firefox): o componente
+     marca o bloco fora da tela e solta quando ele chega. */
+  .mv-io-espera { opacity: 0; transform: translate3d(0, 1.5rem, 0); }
+  .mv-io-entrou {
+    opacity: 1; transform: none;
+    transition: opacity 0.8s var(--ease-orbital), transform 0.8s var(--ease-orbital);
+    transition-delay: calc(var(--mv-i, 0) * 70ms);
+  }
+
+  /* Abertura de folhas (visor de showroom e galeria). */
+  .mv-folha { animation: mv-abre 0.42s var(--ease-orbital) both; }
+  .mv-veu { animation: mv-veu 0.3s ease-out both; }
+
+  /* Micro-interações: foto aproxima no hover/foco do cartão. */
+  .mv-zoom { transition: transform 0.9s var(--ease-orbital); }
+  :where(a, button):is(:hover, :focus-visible) .mv-zoom { transform: scale(1.045); }
+  .mv-seta { transition: transform 0.35s var(--ease-orbital); }
+  :where(a, button):is(:hover, :focus-visible) .mv-seta { transform: translateX(0.25rem); }
+
+  /* Cabeçalho que se recolhe ao descer e volta ao subir. */
+  .mv-cabecalho { transition: transform 0.38s var(--ease-orbital); }
+}
+
+/* Cabeçalho recolhido (com ou sem movimento: só muda o lugar). */
+header[data-site][data-oculto="1"] { transform: translate3d(0, -100%, 0); }
+
+/* Trilhos horizontais: sem barra nativa (o trilho tem a sua). */
+.ds-trilho { scrollbar-width: none; overscroll-behavior-x: contain; }
+.ds-trilho::-webkit-scrollbar { display: none; }
+
+/* Folhas por cima da página: a rolagem fica dentro delas. */
+.ds-folha-rola { overscroll-behavior: contain; -webkit-overflow-scrolling: touch; }
