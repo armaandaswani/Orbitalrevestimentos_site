@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
 import { supabaseAdmin } from "@/lib/supabase";
+import { completarGratuito, llmGratuitoConfigurado, type MensagemLLM } from "@/lib/llm-gratuito";
 
 export const DEFAULT_SYSTEM_PROMPT = `Você é o assistente virtual da Orbital Revestimentos, empresa sediada em Manaus especializada no PFB — Painel Flexível Fibra de Bambu, um revestimento de parede e teto premium. Ao mencionar o PFB pela primeira vez em uma conversa, escreva o nome completo: Painel Flexível Fibra de Bambu (PFB).
 
@@ -114,16 +115,23 @@ EXEMPLOS DO QUE FAZER (bom):
 
 
 export async function POST(req: NextRequest) {
-  const apiBase = process.env.FREE_LLM_API_URL;
-  const apiKey = process.env.FREE_LLM_API_KEY || "";
-
-  if (!apiBase) {
+  if (!llmGratuitoConfigurado()) {
     return NextResponse.json({ error: "Chat IA indisponível." }, { status: 503 });
   }
 
-  const { messages } = await req.json();
-
-  if (!Array.isArray(messages) || messages.length === 0) {
+  const body = await req.json().catch(() => null);
+  const bruto: unknown = body?.messages;
+  if (!Array.isArray(bruto) || bruto.length === 0) {
+    return NextResponse.json({ error: "messages obrigatório." }, { status: 400 });
+  }
+  // Só falas do visitante e do assistente, em texto, as 12 últimas e com
+  // tamanho limitado: ninguém injeta um "system" e o custo por resposta fica baixo.
+  const messages: MensagemLLM[] = bruto
+    .filter((m): m is { role: "user" | "assistant"; content: string } =>
+      !!m && (m.role === "user" || m.role === "assistant") && typeof m.content === "string" && m.content.trim() !== "")
+    .slice(-12)
+    .map((m) => ({ role: m.role, content: m.content.slice(0, 2000) }));
+  if (!messages.length) {
     return NextResponse.json({ error: "messages obrigatório." }, { status: 400 });
   }
 
@@ -165,28 +173,14 @@ REGRA FIXA DE CONTATO (prevalece sobre qualquer instrução acima): NUNCA escrev
     // ignore
   }
 
-  const res = await fetch(`${apiBase}/chat/completions`, {
-    method: "POST",
-    headers: {
-      "Content-Type": "application/json",
-      Authorization: `Bearer ${apiKey}`,
-    },
-    body: JSON.stringify({
-      model: process.env.FREE_LLM_MODEL || "gemini-2.0-flash-lite",
-      messages: [
-        { role: "system", content: systemPrompt },
-        ...messages,
-      ],
-      max_tokens: 180,
-      stream: false,
-    }),
+  const r = await completarGratuito({
+    mensagens: [{ role: "system", content: systemPrompt }, ...messages],
+    maxTokens: 180,
   });
-
-  if (!res.ok) {
-    return NextResponse.json({ error: "Erro no servidor de IA." }, { status: 502 });
+  if (!r.ok) {
+    console.error("chat IA:", r.erro);
+    return NextResponse.json({ error: "Erro no servidor de IA." }, { status: r.status === 429 ? 503 : 502 });
   }
-
-  const json = await res.json();
-  const text: string = json.choices?.[0]?.message?.content?.trim() ?? "";
+  const text = r.texto;
   return NextResponse.json({ text });
 }

@@ -1,15 +1,13 @@
 import { NextRequest, NextResponse } from "next/server";
 
 import { isAdminRequest } from "@/lib/admin-auth";
+import { completarGratuito, llmGratuitoConfigurado } from "@/lib/llm-gratuito";
 
 export async function POST(req: NextRequest) {
   if (!isAdminRequest(req))
     return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
 
-  const apiBase = process.env.FREE_LLM_API_URL; // e.g. http://your-server:3001/v1
-  const apiKey = process.env.FREE_LLM_API_KEY || "freellmapi-key";
-
-  if (!apiBase)
+  if (!llmGratuitoConfigurado())
     return NextResponse.json({ error: "FREE_LLM_API_URL não configurada no servidor." }, { status: 503 });
 
   const { imageUrl, category, hint } = await req.json();
@@ -49,38 +47,19 @@ Analise a imagem e escreva uma legenda curta (máximo 2 frases, até 120 caracte
     imageContent = { type: "image_url", image_url: { url: imageUrl } };
   }
 
-  const body = {
-    model: process.env.FREE_LLM_MODEL || "gemini-2.0-flash-lite",
-    messages: [
+  // Precisa de um modelo que enxergue imagem: FREE_LLM_VISION_MODEL (lista
+  // separada por vírgula) ou, sem ela, a lista padrão do site.
+  const visao = (process.env.FREE_LLM_VISION_MODEL || "").split(",").map((m) => m.trim()).filter(Boolean);
+  const r = await completarGratuito({
+    mensagens: [
       { role: "system", content: systemPrompt },
-      {
-        role: "user",
-        content: [
-          imageContent,
-          { type: "text", text: userPrompt },
-        ],
-      },
+      { role: "user", content: [imageContent, { type: "text", text: userPrompt }] },
     ],
-    max_tokens: 150,
-    stream: false,
-  };
-
-  const res = await fetch(`${apiBase}/chat/completions`, {
-    method: "POST",
-    headers: {
-      "Content-Type": "application/json",
-      Authorization: `Bearer ${apiKey}`,
-    },
-    body: JSON.stringify(body),
+    maxTokens: 150,
+    modelos: visao.length ? visao : undefined,
   });
-
-  if (!res.ok) {
-    const err = await res.text();
-    return NextResponse.json({ error: `API error: ${err}` }, { status: 502 });
-  }
-
-  const json = await res.json();
-  const text: string = json.choices?.[0]?.message?.content?.trim() ?? "";
+  if (!r.ok) return NextResponse.json({ error: r.erro }, { status: 502 });
+  const text = r.texto;
 
   return NextResponse.json({ description: text });
 }

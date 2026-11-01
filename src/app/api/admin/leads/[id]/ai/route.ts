@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { isAdminRequest } from "@/lib/admin-auth";
 import { supabaseAdmin } from "@/lib/supabase";
+import { completarGratuito, llmGratuitoConfigurado } from "@/lib/llm-gratuito";
 
 /**
  * POST /api/admin/leads/[id]/ai  { action: "summary" | "followup" | "next_steps" }
@@ -47,9 +48,7 @@ export async function POST(
 ) {
   if (!isAdminRequest(req)) return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
 
-  const apiBase = process.env.FREE_LLM_API_URL;
-  const apiKey = process.env.FREE_LLM_API_KEY || "";
-  if (!apiBase) return NextResponse.json({ error: "IA indisponível." }, { status: 503 });
+  if (!llmGratuitoConfigurado()) return NextResponse.json({ error: "IA indisponível." }, { status: 503 });
 
   const { id } = await params;
   if (!id) return NextResponse.json({ error: "Missing id" }, { status: 400 });
@@ -73,8 +72,7 @@ export async function POST(
   // Assemble a compact text dossier for the LLM.
   const lines: string[] = [];
   lines.push(`Nome: ${lead.name ?? "—"}`);
-  if (lead.email) lines.push(`Email: ${lead.email}`);
-  if (lead.phone) lines.push(`Telefone: ${lead.phone}`);
+  // E-mail e telefone não vão para a IA: não ajudam na análise (LGPD, minimização).
   lines.push(`Origem: ${lead.source === "website" ? "Site (cliente de fora)" : lead.source === "partner" ? `Parceiro${lead.partner_name ? " — " + lead.partner_name : ""}` : "Cadastro manual"}`);
   lines.push(`Estágio: ${PT_STATUS[lead.status as string] ?? lead.status}`);
   if (lead.space) lines.push(`Ambiente: ${lead.space}`);
@@ -96,24 +94,15 @@ export async function POST(
   }
   const dossier = lines.join("\n");
 
-  const res = await fetch(`${apiBase}/chat/completions`, {
-    method: "POST",
-    headers: { "Content-Type": "application/json", Authorization: `Bearer ${apiKey}` },
-    body: JSON.stringify({
-      model: process.env.FREE_LLM_MODEL || "gemini-2.0-flash-lite",
-      messages: [
-        { role: "system", content: SYSTEM_PROMPT },
-        { role: "user", content: buildUserPrompt(action, dossier) },
-      ],
-      max_tokens: 400,
-      stream: false,
-    }),
+  const r = await completarGratuito({
+    mensagens: [
+      { role: "system", content: SYSTEM_PROMPT },
+      { role: "user", content: buildUserPrompt(action, dossier) },
+    ],
+    maxTokens: 400,
   });
-
-  if (!res.ok) return NextResponse.json({ error: "Erro no servidor de IA." }, { status: 502 });
-
-  const json = await res.json();
-  const text: string = json.choices?.[0]?.message?.content?.trim() ?? "";
+  if (!r.ok) return NextResponse.json({ error: "Erro no servidor de IA." }, { status: 502 });
+  const text = r.texto;
 
   // Cache the summary on the lead so the drawer can show it without re-calling.
   if (action === "summary" && text) {

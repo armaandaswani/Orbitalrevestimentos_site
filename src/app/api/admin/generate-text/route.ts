@@ -1,15 +1,13 @@
 import { NextRequest, NextResponse } from "next/server";
 
 import { isAdminRequest } from "@/lib/admin-auth";
+import { completarGratuito, llmGratuitoConfigurado } from "@/lib/llm-gratuito";
 
 export async function POST(req: NextRequest) {
   if (!isAdminRequest(req))
     return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
 
-  const apiBase = process.env.FREE_LLM_API_URL;
-  const apiKey = process.env.FREE_LLM_API_KEY || "";
-
-  if (!apiBase)
+  if (!llmGratuitoConfigurado())
     return NextResponse.json({ error: "FREE_LLM_API_URL não configurada." }, { status: 503 });
 
   const { systemPrompt, userPrompt, maxTokens } = await req.json();
@@ -17,29 +15,13 @@ export async function POST(req: NextRequest) {
   if (!userPrompt)
     return NextResponse.json({ error: "userPrompt obrigatório." }, { status: 400 });
 
-  const res = await fetch(`${apiBase}/chat/completions`, {
-    method: "POST",
-    headers: {
-      "Content-Type": "application/json",
-      Authorization: `Bearer ${apiKey}`,
-    },
-    body: JSON.stringify({
-      model: process.env.FREE_LLM_MODEL || "gemini-2.0-flash-lite",
-      messages: [
-        ...(systemPrompt ? [{ role: "system", content: systemPrompt }] : []),
-        { role: "user", content: userPrompt },
-      ],
-      max_tokens: maxTokens ?? 400,
-      stream: false,
-    }),
+  const r = await completarGratuito({
+    mensagens: [
+      ...(systemPrompt ? [{ role: "system" as const, content: String(systemPrompt) }] : []),
+      { role: "user", content: String(userPrompt) },
+    ],
+    maxTokens: Math.min(Number(maxTokens) || 400, 2000),
   });
-
-  if (!res.ok) {
-    const err = await res.text();
-    return NextResponse.json({ error: `API error: ${err}` }, { status: 502 });
-  }
-
-  const json = await res.json();
-  const text: string = json.choices?.[0]?.message?.content?.trim() ?? "";
-  return NextResponse.json({ text });
+  if (!r.ok) return NextResponse.json({ error: r.erro }, { status: 502 });
+  return NextResponse.json({ text: r.texto });
 }
