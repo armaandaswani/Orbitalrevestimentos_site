@@ -88,8 +88,8 @@ function Aprovacao({ t, perm, onFeito }: { t: Tarefa; perm: Permissao | undefine
         ))}
       </div>
       <label className={`${labelCls} mt-4`} htmlFor={`txt-${t.id}`}>Mensagem (pode editar)</label>
-      <textarea id={`txt-${t.id}`} value={texto} onChange={(ev) => setTexto(ev.target.value)} rows={3} className={`${inputCls} w-full`} />
-      <p className="text-[11px] text-[#43474e] mt-1">{texto.length}/320 · {s.motivo}</p>
+      <textarea id={`txt-${t.id}`} value={texto} onChange={(ev) => setTexto(ev.target.value)} rows={7} className={`${inputCls} w-full`} />
+      <p className="text-[11px] text-[#43474e] mt-1">{texto.length}/450 · {s.motivo}</p>
       {s.tom && !s.tom.natural && <p className="text-[12px] text-[#8a5a00] mt-1">Checagem de tom: {s.tom.problema}</p>}
       {s.acima_do_orcamento && <p className="text-[12px] text-[#8a5a00] mt-1">Esta tarefa passou do orçamento de tokens.</p>}
 

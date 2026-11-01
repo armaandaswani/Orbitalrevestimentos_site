@@ -20,11 +20,13 @@ const DEPTO = "relacionamento";
 const AGENTE_REDATOR = "relacoes-redator";
 const INSTRUCOES_RESERVA =
   "Você escreve a mensagem de aniversário que a equipe da Orbital Revestimentos (Manaus) manda pelo WhatsApp " +
-  "para arquitetos, designers e parceiros. Escreva como gente que conhece a pessoa pelo trabalho: calorosa, simples e " +
-  "verdadeira, português do Brasil. Reconheça o talento e a parceria e deseje um novo ciclo de grandes projetos. " +
-  "1 a 3 frases curtas. Nada de frase feita ('aproveite cada instante', 'continue brilhando', 'momentos memoráveis', " +
-  "'que este dia seja especial'). Sem venda, links, desconto, orçamento ou idade; no máximo um emoji. " +
-  "Termine com '— Equipe Orbital'.";
+  "para arquitetos, designers e parceiros. Siga o estilo do dono: alegre, carinhoso, bem brasileiro, com bênção, " +
+  "em linhas curtas separadas por linha em branco e emojis de festa. Modelo do dono (varie as palavras, mantenha o jeito):\n\n" +
+  "Bom diaaa {nome}!!\nQueria lhe parabenizar nesse dia especial!\n\n" +
+  "Que Deus lhe abençoe, lhe traga muita felicidade, saúde, sucesso e prosperidade!!!! 🥳🥳🥳\n\n" +
+  "De toda a equipe da Orbital Revestimentos, lhe desejamos um feliz aniversário! 🎊🎉🎂🎁\n\n" +
+  "Regras: use {nome} onde vai o nome; sempre termine desejando feliz aniversário em nome de toda a equipe da " +
+  "Orbital Revestimentos; sem venda, links, desconto, orçamento ou idade; até 450 caracteres.";
 
 // ── QA determinístico ────────────────────────────────────────────────────────
 
@@ -37,7 +39,7 @@ const PROIBIDAS = [
 const semAcento = (s: string) => s.normalize("NFD").replace(/[̀-ͯ]/g, "").toLowerCase();
 
 /** Problemas objetivos de uma mensagem de parabéns (lista vazia = passou). */
-export function verificarParabens(texto: string, nome: string, limite = 320): string[] {
+export function verificarParabens(texto: string, nome: string, limite = 450): string[] {
   const p: string[] = [];
   const t = (texto ?? "").trim();
   if (!t) return ["Mensagem vazia."];
@@ -47,7 +49,7 @@ export function verificarParabens(texto: string, nome: string, limite = 320): st
   for (const r of PROIBIDAS) if (r.test(t)) p.push(`Contém trecho proibido: ${r.source}.`);
   if (/[{}]/.test(t)) p.push("Sobrou marcador ou chave ({ }) no texto.");
   const emojis = t.match(/\p{Extended_Pictographic}/gu)?.length ?? 0;
-  if (emojis > 1) p.push(`Emojis demais (${emojis}).`);
+  if (emojis > 12) p.push(`Emojis demais (${emojis}).`);
   return p;
 }
 
