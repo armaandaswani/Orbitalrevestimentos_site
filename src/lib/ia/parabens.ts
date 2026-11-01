@@ -19,9 +19,12 @@ import { atualizar, auditar, enfileirar, somarUso, type Tarefa } from "@/lib/ia/
 const DEPTO = "relacionamento";
 const AGENTE_REDATOR = "relacoes-redator";
 const INSTRUCOES_RESERVA =
-  "Você escreve mensagens curtas de aniversário em português do Brasil, em nome da equipe de uma empresa, " +
-  "para parceiros profissionais. Use só os dados recebidos; nunca invente detalhes pessoais. 1 a 3 frases, " +
-  "tom caloroso e profissional, sem venda, sem links, sem descontos, no máximo um emoji. Assine como a equipe.";
+  "Você escreve a mensagem de aniversário que a equipe da Orbital Revestimentos (Manaus) manda pelo WhatsApp " +
+  "para arquitetos, designers e parceiros. Escreva como gente que conhece a pessoa pelo trabalho: calorosa, simples e " +
+  "verdadeira, português do Brasil. Reconheça o talento e a parceria e deseje um novo ciclo de grandes projetos. " +
+  "1 a 3 frases curtas. Nada de frase feita ('aproveite cada instante', 'continue brilhando', 'momentos memoráveis', " +
+  "'que este dia seja especial'). Sem venda, links, desconto, orçamento ou idade; no máximo um emoji. " +
+  "Termine com '— Equipe Orbital'.";
 
 // ── QA determinístico ────────────────────────────────────────────────────────
 
@@ -42,9 +45,18 @@ export function verificarParabens(texto: string, nome: string, limite = 320): st
   if (primeiro && !semAcento(t).includes(semAcento(primeiro))) p.push(`Não usa o primeiro nome (${primeiro}).`);
   if (t.length > limite) p.push(`Longa demais (${t.length} caracteres; máximo ${limite}).`);
   for (const r of PROIBIDAS) if (r.test(t)) p.push(`Contém trecho proibido: ${r.source}.`);
+  if (/[{}]/.test(t)) p.push("Sobrou marcador ou chave ({ }) no texto.");
   const emojis = t.match(/\p{Extended_Pictographic}/gu)?.length ?? 0;
   if (emojis > 1) p.push(`Emojis demais (${emojis}).`);
   return p;
+}
+
+/** Marcador que a IA usa no lugar do nome (o nome real nunca sai do sistema). */
+export const MARCADOR = "{nome}";
+
+/** Troca {nome} pelo primeiro nome. Aceita variações que a IA às vezes escreve ({Nome}, { nome }). */
+export function trocarMarcador(texto: string, nome: string): string {
+  return (texto ?? "").replace(/\{\s*nome\s*\}/gi, primeiroNome(nome) || nome);
 }
 
 // ── Detecção ─────────────────────────────────────────────────────────────────
@@ -92,9 +104,11 @@ export async function rascunhoParabens(db: SupabaseClient, t: Tarefa): Promise<v
   const { data: agente } = await db.from("ai_agents").select("instrucoes, ativo").eq("id", AGENTE_REDATOR).maybeSingle();
   const sistema = (agente?.ativo !== false && agente?.instrucoes) || INSTRUCOES_RESERVA;
   const feedback = t.erro ? `\nA versão anterior foi reprovada na checagem: ${t.erro}. Corrija isso.` : "";
+  // LGPD (minimização): a IA nunca recebe o nome, o telefone nem o detalhe da
+  // pessoa. Ela escreve com o marcador {nome} e o nome entra aqui, depois.
   const entrada =
-    `Pessoa: ${e.nome} (primeiro nome: ${primeiroNome(e.nome)})\nRelação: ${e.tipo}${e.detalhe ? ` — ${e.detalhe}` : ""}\n` +
-    `Ocasião: aniversário hoje (${e.data ?? ""}).\nEscreva duas versões (curta e média) e diga qual recomenda.${feedback}`;
+    `Pessoa: ${MARCADOR} (escreva exatamente "${MARCADOR}" onde entraria o primeiro nome; não invente outro nome)\n` +
+    `Relação: ${e.tipo}\nOcasião: aniversário hoje.\nEscreva duas versões (curta e média) e diga qual recomenda.${feedback}`;
 
   let uso = { modelo: t.modelo, tokens_entrada: t.tokens_entrada, tokens_saida: t.tokens_saida, tokens_cache_leitura: t.tokens_cache_leitura, tokens_cache_escrita: t.tokens_cache_escrita, custo_usd: Number(t.custo_usd), latencia_ms: t.latencia_ms };
   const r = await chamarModelo<Rascunho>(db, { nivel: "executor", sistema, entrada, schema: SCHEMA_RASCUNHO, maxTokens: 800, esforco: "low" });
@@ -105,6 +119,11 @@ export async function rascunhoParabens(db: SupabaseClient, t: Tarefa): Promise<v
     return;
   }
 
+  // O que a IA devolveu (com o marcador) fica guardado; quem aprova vê o nome já trocado.
+  const modelo = { curta: r.dados.curta, media: r.dados.media };
+  const comNome = (s: string) => trocarMarcador(s, e.nome);
+  r.dados.curta = comNome(r.dados.curta);
+  r.dados.media = comNome(r.dados.media);
   const qa = { curta: verificarParabens(r.dados.curta, e.nome), media: verificarParabens(r.dados.media, e.nome) };
   const escolhida = qa[r.dados.recomendada].length === 0 ? r.dados.recomendada : qa.curta.length === 0 ? "curta" : qa.media.length === 0 ? "media" : null;
   if (!escolhida) {
@@ -120,7 +139,7 @@ export async function rascunhoParabens(db: SupabaseClient, t: Tarefa): Promise<v
     const rt = await chamarModelo<{ natural: boolean; problema: string }>(db, {
       nivel: "leve",
       sistema: "Você confere se uma mensagem curta em português do Brasil soa natural e humana (não robótica, não exagerada). Responda só o JSON.",
-      entrada: r.dados[escolhida], schema: SCHEMA_TOM, maxTokens: 200, esforco: "low",
+      entrada: modelo[escolhida], schema: SCHEMA_TOM, maxTokens: 200, esforco: "low",
     });
     if (rt.uso) uso = somarUso(uso, rt.uso);
     if (rt.ok) tom = rt.dados;

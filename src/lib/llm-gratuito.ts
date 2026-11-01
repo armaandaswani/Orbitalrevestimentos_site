@@ -14,7 +14,7 @@ export type MensagemLLM = {
 };
 
 export type ResultadoLLM =
-  | { ok: true; texto: string; modelo: string; tokens?: number }
+  | { ok: true; texto: string; modelo: string; tokens?: number; entrada?: number; saida?: number }
   | { ok: false; status: number; erro: string };
 
 const PADRAO = "gemini-2.0-flash-lite";
@@ -82,7 +82,7 @@ export async function completarGratuito(opcoes: {
         ultimo = { ok: false, status: 502, erro: `Modelo ${modelo}: resposta vazia` };
         continue;
       }
-      return { ok: true, texto, modelo, tokens: j.usage?.total_tokens };
+      return { ok: true, texto, modelo, tokens: j.usage?.total_tokens, entrada: j.usage?.prompt_tokens, saida: j.usage?.completion_tokens };
     } catch (e) {
       ultimo = { ok: false, status: 504, erro: `Modelo ${modelo}: ${e instanceof Error ? e.name : "falha"}` };
     }
