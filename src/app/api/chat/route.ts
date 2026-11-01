@@ -179,7 +179,11 @@ REGRA FIXA DE CONTATO (prevalece sobre qualquer instrução acima): NUNCA escrev
   });
   if (!r.ok) {
     console.error("chat IA:", r.erro);
-    return NextResponse.json({ error: "Erro no servidor de IA." }, { status: r.status === 429 ? 503 : 502 });
+    // Motivo técnico curto (modelo + código HTTP, sem chave) para diagnóstico.
+    return NextResponse.json(
+      { error: "Erro no servidor de IA." },
+      { status: r.status === 429 ? 503 : 502, headers: { "x-ia-motivo": r.erro.replace(/[^\w ./:-]/g, "").slice(0, 120) } },
+    );
   }
   const text = r.texto;
   return NextResponse.json({ text });
