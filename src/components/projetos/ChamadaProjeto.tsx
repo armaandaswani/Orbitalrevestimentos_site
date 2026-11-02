@@ -38,7 +38,7 @@ export default function ChamadaProjeto({ numero = "05" }: { numero?: string }) {
               <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" aria-hidden className="mv-seta"><path d="M5 12h14M12 5l7 7-7 7" /></svg>
             </Link>
           </div>
-          <p className="text-on-surface-variant text-legenda italic mt-8">Orbital · Manaus, AM · Somos fornecedores diretos e não realizamos instalação.</p>
+          <p className="text-on-surface-variant text-corpo italic mt-8">Orbital · Manaus, AM · Somos fornecedores diretos e não realizamos instalação.</p>
         </Revelar>
         <div className="hidden lg:grid grid-cols-3 gap-1.5">
           {FOTOS.map((f, i) => (

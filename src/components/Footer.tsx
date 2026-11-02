@@ -25,7 +25,7 @@ export default function Footer() {
             <p className="font-serif text-t3 leading-snug text-white mb-4 text-balance">
               Novas possibilidades para seus projetos.
             </p>
-            <p className="text-[#c9ccd6] text-sm leading-relaxed mb-2">
+            <p className="text-[#c9ccd6] text-corpo leading-relaxed mb-2">
               Fornecedor exclusivo do Painel Flexível em Fibra de Bambu (PFB) em Manaus, Amazonas: revestimento
               para paredes e forros internos, pensado para o clima amazônico.
             </p>
@@ -78,7 +78,7 @@ export default function Footer() {
               <Link href="/projetos#parceiros" className={item}>Showrooms parceiros</Link>
               <Link href="/projetos#revenda" className={item}>Casa do Eletricista (revenda)</Link>
               <Link href="/projetos#obras" className={item}>Obras em Manaus</Link>
-              <p className="text-[#9c9faa] text-sm leading-snug mt-2">Ou peça a visita de um consultor com as amostras no seu escritório.</p>
+              <p className="text-[#c9ccd6] text-sm leading-snug mt-2">Ou peça a visita de um consultor com as amostras no seu escritório.</p>
             </div>
             <div className="mt-4 pt-3 border-t border-[#333640]">
               <p className={colunaTitulo}>Instagram</p>

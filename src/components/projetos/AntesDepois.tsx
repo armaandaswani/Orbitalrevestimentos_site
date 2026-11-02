@@ -20,7 +20,7 @@ import Image from "next/image";
 interface Foto { src: string; alt: string }
 
 export default function AntesDepois({
-  antes, depois, proporcao = "4 / 3", sizes = "(max-width: 1023px) 100vw, 70vw", rotulos = ["Antes", "Depois"],
+  antes, depois, proporcao = "4 / 3", sizes = "(max-width: 1279px) 100vw, 1100px", rotulos = ["Antes", "Depois"],
 }: {
   antes: Foto;
   depois: Foto;

@@ -27,7 +27,7 @@ const nextConfig: NextConfig = {
       },
     ],
   },
-  // Cabeçalhos de segurança (ver docs/seguranca-cabecalhos.md). A CSP vai só
+  // Cabeçalhos de segurança. A CSP vai só
   // em Report-Only: nada quebra enquanto as violações são observadas no
   // console (e, com um report-uri, num coletor). Os hosts são os que o site
   // usa hoje: Supabase Storage, Vercel Analytics/Speed Insights, GA4, Meta

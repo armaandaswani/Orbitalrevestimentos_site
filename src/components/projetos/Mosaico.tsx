@@ -18,7 +18,7 @@ export default function Mosaico({ projetos, onAbrir, href }: { projetos: Projeto
       className={`group relative flex flex-col overflow-hidden bg-primary text-left focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-secondary ${grande ? "row-span-2" : ""}`}>
       <span className="relative block flex-1 min-h-0 overflow-hidden">
         <Image src={p.image_after} alt={p.title} fill priority={prioridade}
-          sizes={grande ? "(max-width: 1023px) 56vw, 400px" : "(max-width: 1023px) 44vw, 300px"}
+          sizes={grande ? "(max-width: 1023px) 56vw, (max-width: 1920px) 400px, 21vw" : "(max-width: 1023px) 44vw, (max-width: 1920px) 300px, 16vw"}
           className="mv-zoom"
           style={coverStyle(p.cover_focus_x, p.cover_focus_y, p.cover_zoom)} />
       </span>

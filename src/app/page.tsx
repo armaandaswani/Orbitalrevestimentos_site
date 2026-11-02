@@ -258,7 +258,7 @@ export default async function Home() {
             <Trilho rotulo="Obras em destaque" escuro largura="w-[62%] sm:w-[38%] lg:w-[23.5%]">
               {listaObras.map((p) => (
                 <ProjetoCard key={p.id} projeto={p} href={p.slug ? `/projetos?projeto=${encodeURIComponent(p.slug)}` : "/projetos"}
-                  sizes="(max-width: 639px) 62vw, (max-width: 1023px) 38vw, 300px" />
+                  sizes="(max-width: 639px) 62vw, (max-width: 1023px) 38vw, (max-width: 1920px) 300px, 16vw" />
               ))}
             </Trilho>
           </Revelar>
@@ -270,7 +270,7 @@ export default async function Home() {
                   <Sobretitulo escuro>Onde ver ao vivo</Sobretitulo>
                   <h3 className="font-serif text-white text-t3 font-normal mt-3">Showrooms parceiros e revenda</h3>
                 </div>
-                <p className="text-white/70 text-legenda max-w-md text-pretty">
+                <p className="text-white/70 text-corpo max-w-md text-pretty">
                   O material está em exposição nas empresas parceiras e na Casa do Eletricista. Ou peça a visita de um consultor com as amostras.
                 </p>
               </div>
@@ -351,7 +351,7 @@ export default async function Home() {
               {PROFISSIONAIS.map((p, i) => (
                 <Revelar key={p.label} como="li" ordem={i} className="border border-white/15 p-5 lg:p-6 flex flex-col">
                   <h4 className="font-serif text-white text-lg font-normal mb-2">{p.label}</h4>
-                  <p className="text-white/70 text-legenda leading-relaxed mb-5 flex-1">{p.tagline}</p>
+                  <p className="text-white/70 text-corpo leading-relaxed mb-5 flex-1">{p.tagline}</p>
                   <ContatoCta className="ds-botao ds-botao-linha w-full">Falar com um consultor</ContatoCta>
                 </Revelar>
               ))}
@@ -363,7 +363,7 @@ export default async function Home() {
             <div className="max-w-2xl">
               <Sobretitulo escuro>Academia Orbital · Formação</Sobretitulo>
               <h3 className="font-serif text-white text-t3 font-normal mt-3 mb-2">Formação em instalação do PFB, no padrão Orbital.</h3>
-              <p className="text-white/70 text-legenda leading-relaxed">
+              <p className="text-white/70 text-corpo leading-relaxed">
                 Formação prática para aplicadores, do preparo ao acabamento: saia com certificado e compre PFB direto com a Orbital.
               </p>
             </div>
@@ -395,7 +395,7 @@ export default async function Home() {
 
       {/* Aviso */}
       <div className="bg-background border-t border-surface-container-high py-5 text-center ds-wrap">
-        <p className="text-on-surface-variant text-sobre italic">
+        <p className="text-on-surface-variant text-legenda italic">
           Imagens ilustrativas — cores podem variar. Veja o material ao vivo em um showroom parceiro ou peça amostras a um consultor.
         </p>
       </div>

@@ -60,7 +60,7 @@ export default function ShowroomConteudo({
             <Sobretitulo>{revenda ? "Ponto de revenda" : "Showroom parceiro"}</Sobretitulo>
             <Titulo className="font-serif text-primary text-t1 font-normal tracking-[-0.02em] mt-3 text-balance">{sr.name}</Titulo>
             {sr.description && <p className={`text-on-surface-variant text-corpo mt-4 max-w-2xl text-pretty ${nivel === "folha" ? "line-clamp-4 md:line-clamp-none" : ""}`}>{sr.description}</p>}
-            {sr.address && <p className="text-on-surface text-legenda mt-5">{sr.address}</p>}
+            {sr.address && <p className="text-on-surface text-corpo mt-5">{sr.address}</p>}
             <div className="flex flex-col sm:flex-row flex-wrap gap-3 mt-6">
               <a href={linkComoChegar(sr)} target="_blank" rel="noopener noreferrer" className={`${botao} bg-primary text-white hover:bg-[#2347A0]`}>
                 Como chegar {seta}

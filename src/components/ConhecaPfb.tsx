@@ -65,7 +65,7 @@ export default function ConhecaPfb({ linkTecnologia = true, numero = "01" }: { l
             <Link href="/produtos" aria-label="Ver todos os modelos do Painel Flexível em Fibra de Bambu" className="group relative flex flex-col items-center justify-center h-[340px] sm:h-[400px] lg:h-auto lg:flex-1 lg:min-h-[420px] lg:-translate-y-3">
               {/* Leque + selo formam um bloco só, centralizado na coluna —
                   assim o leque fica na altura do meio da grade ao lado. */}
-              <div className="relative w-full h-[230px] sm:h-[280px] lg:h-[310px] flex items-center justify-center">
+              <div className="relative w-full h-[230px] sm:h-[280px] lg:h-[310px] flex items-center justify-center overflow-x-clip">
                 {[
                   { img: "/images/catalogue/classic-bege-travertino-orb001.jpeg", rot: -18, x: -84 },
                   { img: "/images/catalogue/brilliance-bronze-armani-orb005.jpeg", rot: -9, x: -42 },

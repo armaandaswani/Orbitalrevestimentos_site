@@ -34,7 +34,7 @@ import type { DadosProjetos } from "@/lib/projetos-dados";
 
 /** Largura de um cartão de obra dentro da linha, por faixa de tela. */
 const LARGURA_OBRA = "w-[44%] sm:w-[30%] lg:w-[23.5%]";
-const SIZES_OBRA = "(max-width: 639px) 44vw, (max-width: 1023px) 30vw, 300px";
+const SIZES_OBRA = "(max-width: 639px) 44vw, (max-width: 1023px) 30vw, (max-width: 1920px) 300px, 16vw";
 
 export default function ProjetosVitrine({ projetos, categorias, lugares, renders, agora }: DadosProjetos & { agora: number }) {
   const showrooms = lugares.filter((l) => l.kind === "showroom");
@@ -190,7 +190,7 @@ function Conteudo({
               <GradeProjetos projetos={filtradas} onAbrir={(x) => abrir(x, filtradas)} href={href} />
             </>
           )}
-          <p className="text-on-surface-variant text-legenda italic text-center mt-10">
+          <p className="text-on-surface-variant text-corpo italic text-center mt-10">
             Imagens reais de projetos executados. A Orbital não realiza instalação; somos fornecedores diretos.
           </p>
         </div>
@@ -231,7 +231,7 @@ function Conteudo({
               {parceiros.map((s) => <LugarCard key={s.id} lugar={s} agora={agora} onAbrir={visor ? (l) => visor.abrirShowroom(l) : undefined} />)}
             </Trilho>
           </Revelar>
-          <p className="text-on-surface-variant text-legenda mt-8 max-w-2xl text-pretty">
+          <p className="text-on-surface-variant text-corpo mt-8 max-w-2xl text-pretty">
             Prefere ver no seu escritório? Um consultor leva as amostras até você: é só pedir pelo pré-contato.
           </p>
         </div>

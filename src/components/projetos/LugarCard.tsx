@@ -50,7 +50,7 @@ export default function LugarCard({ lugar, agora, href, onAbrir }: { lugar: Show
       <div className="px-5 pt-4 pb-5 flex-1 flex flex-col">
         <h3 className="font-serif text-primary text-xl leading-tight">{lugar.name}</h3>
         {lugar.address && <p className="text-on-surface-variant text-legenda mt-2 leading-snug">{lugar.address}</p>}
-        {revenda && lugar.description && <p className="text-on-surface-variant text-legenda mt-2 leading-snug">{lugar.description}</p>}
+        {revenda && lugar.description && <p className="text-on-surface-variant text-corpo mt-2 leading-snug">{lugar.description}</p>}
         {lugar.ambient_count > 0 && <p className="text-on-surface-variant text-legenda mt-2 font-semibold">{contaAmbientes(lugar.ambient_count)} com PFB</p>}
         <div className="grid grid-cols-2 gap-2 mt-auto pt-5">
           <a href={destino} onClick={abrir} className={`${botao} bg-primary text-white hover:bg-[#2347A0]`}>
