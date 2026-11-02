@@ -12,7 +12,7 @@ import SecaoCabecalho, { Sobretitulo } from "@/components/projetos/SecaoCabecalh
 import Trilho from "@/components/projetos/Trilho";
 import ProjetoCard from "@/components/projetos/ProjetoCard";
 import { carregarProjetos } from "@/lib/projetos-dados";
-import { REVENDA_RESERVA, porDestaque, type Projeto } from "@/lib/projetos-tipos";
+import { REVENDA_RESERVA, nomeLugar, porDestaque, type Projeto } from "@/lib/projetos-tipos";
 
 /**
  * Home como uma apresentação contínua: abertura com a assinatura da marca,
@@ -148,16 +148,6 @@ const PROFISSIONAIS = [
   { label: "Revendedores", tagline: "Tabela exclusiva, estoque local em Manaus e um produto que se vende pela própria obra." },
 ];
 
-/** Nome do parceiro como marca, não como cadastro: "ORNARE" → "Ornare"; sem o bairro depois do travessão. */
-function nomeParceiro(nome: string) {
-  const base = nome.split(" — ")[0].trim();
-  if (base !== base.toUpperCase()) return base;
-  return base.toLowerCase().replace(/(^|\s)(\p{L})/gu, (m, esp: string, l: string, i: number) => {
-    const palavra = base.toLowerCase().slice(i + esp.length).split(" ")[0];
-    return esp + (i > 0 && ["de", "do", "da", "dos", "das", "e"].includes(palavra) ? l : l.toUpperCase());
-  });
-}
-
 export default async function Home() {
   const dados = await carregarProjetos();
   const vistas = new Set<string>();
@@ -267,7 +257,7 @@ export default async function Home() {
                   <Link href={s.kind !== "revenda" || s.ambient_count > 0 ? `/projetos?showroom=${encodeURIComponent(s.slug)}` : "/projetos#revenda"}
                     className="group flex items-center justify-between gap-3 min-h-16 py-4">
                     <span>
-                      <span className="block font-serif text-white text-[1.0625rem] leading-snug">{nomeParceiro(s.name)}</span>
+                      <span className="block font-serif text-white text-[1.0625rem] leading-snug">{nomeLugar(s.name)}</span>
                       <span className="block text-white/55 text-sobre tracking-[0.14em] uppercase mt-1">{s.kind === "revenda" ? "Revenda" : "Showroom parceiro"}</span>
                     </span>
                     <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" aria-hidden className="mv-seta text-white/60 flex-shrink-0"><path d="M5 12h14M12 5l7 7-7 7" /></svg>

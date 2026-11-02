@@ -5,8 +5,7 @@ import Link from "next/link";
 import GrupoChips from "@/components/projetos/GrupoChips";
 import GradeProjetos from "@/components/projetos/GradeProjetos";
 import ProjetoCard from "@/components/projetos/ProjetoCard";
-import SecaoCabecalho, { Sobretitulo } from "@/components/projetos/SecaoCabecalho";
-import Mosaico from "@/components/projetos/Mosaico";
+import SecaoCabecalho from "@/components/projetos/SecaoCabecalho";
 import Trilho from "@/components/projetos/Trilho";
 import LugarCard from "@/components/projetos/LugarCard";
 import AntesDepois from "@/components/projetos/AntesDepois";
@@ -24,7 +23,7 @@ import type { DadosProjetos } from "@/lib/projetos-dados";
 
 /**
  * Página de Projetos como uma apresentação contínua, em capítulos:
- * abertura → 01 Obras → 02 Transformação → 03 Onde ver (showrooms) →
+ * 01 Onde ver (todos os parceiros no topo) → 02 Obras → 03 Transformação →
  * 04 Simulações → 05 Próximo passo. O ProgressoCapitulos marca onde o
  * visitante está; o VisorProjetos abre showroom e galeria por cima da página
  * (estado na URL, voltar fecha, a rolagem fica onde estava).
@@ -70,13 +69,6 @@ function Conteudo({
     .filter((p) => tag === "todos" || (p.tags ?? []).includes(tag))
     .sort(porDestaque);
 
-  // Abertura: destaques do painel, depois os novos, depois o resto — 3 fotos diferentes.
-  const abertura = useMemo(() => {
-    const ordem = [...projetos].sort((a, b) => porDestaque(a, b) || Number(!!b.is_new) - Number(!!a.is_new));
-    const vistas = new Set<string>();
-    return ordem.filter((p) => !vistas.has(p.image_after) && vistas.add(p.image_after)).slice(0, 3);
-  }, [projetos]);
-
   const blocos = (() => {
     // Cada projeto entra na PRIMEIRA categoria em que se encaixa: nada repete.
     const vistos = new Set<string>();
@@ -100,43 +92,41 @@ function Conteudo({
     <div className="pt-20">
       <ProgressoCapitulos />
 
-      {/* ── Abertura: a coleção já começa aqui ─────────────────────────────── */}
-      <section className="bg-[#001223] text-white ds-escuro">
-        <div className="ds-wrap pt-10 pb-10 lg:py-16 grid grid-cols-1 lg:grid-cols-[1.1fr_1fr] gap-8 lg:gap-14 items-center">
-          <div>
-            <Sobretitulo escuro>Projetos · Parceiros</Sobretitulo>
-            <h1 className="font-serif text-white text-t1 font-normal tracking-[-0.025em] mt-4 mb-4 text-balance">
-              <span className="sr-only">Orbital Revestimentos: projetos em Manaus. </span>
+      {/* ── 01 Onde ver: todos os parceiros de uma vez, no topo ─────────────── */}
+      <Capitulo id="parceiros" numero="01" rotulo="Onde ver" rotuladoPor="parceiros-titulo" className="bg-[#F6F5F2] border-b border-[#e8e6e1]">
+        {/* Âncoras antigas (#showrooms, #revenda) continuam levando para cá. */}
+        <span id="showrooms" className="block scroll-mt-36" aria-hidden />
+        <span id="revenda" className="block scroll-mt-36" aria-hidden />
+        <div className="ds-wrap pt-[clamp(2.25rem,1.5rem+2.5vw,4rem)] pb-[clamp(2.5rem,1.5rem+3vw,4.5rem)]">
+          <div className="max-w-2xl mb-[clamp(1.5rem,1rem+1.5vw,2.5rem)]">
+            <h1 id="parceiros-titulo" className="font-serif text-primary text-t1 font-normal tracking-[-0.02em] text-balance">
+              <span className="sr-only">Orbital Revestimentos: showrooms e projetos em Manaus. </span>
               Veja o PFB de perto.
             </h1>
-            <p className="text-white/75 text-lead max-w-xl text-pretty">
-              Obras entregues em Manaus e ambientes decorados em empresas parceiras, para você ver o acabamento ao vivo.
+            <p className="text-on-surface-variant text-lead mt-3 text-pretty">
+              Ambientes decorados com o Painel Flexível em Fibra de Bambu (PFB) nos showrooms parceiros, e todos os modelos em display na Casa do Eletricista.
             </p>
-            <ul className="mt-7 grid grid-cols-2 gap-2 max-w-xs">
-              {[
-                { href: "#obras", n: OBRAS_ENTREGUES, r: "obras entregues" },
-                { href: "#parceiros", n: String(parceiros.length), r: parceiros.length === 1 ? "parceiro" : "parceiros" },
-              ].map((x) => (
-                <li key={x.href}>
-                  <a href={x.href} className="flex flex-col justify-center min-h-16 px-3 py-2 border border-white/20 hover:border-secondary hover:bg-white/5 transition-colors">
-                    <span className="font-serif text-3xl leading-none">{x.n}</span>
-                    <span className="text-white/75 text-sobre font-semibold mt-1.5">{x.r}</span>
-                  </a>
-                </li>
-              ))}
-            </ul>
           </div>
-          {/* Sem animação de entrada: a foto grande costuma ser o LCP da página. */}
-          <Mosaico projetos={abertura} onAbrir={(p) => abrir(p, abertura)} href={href} />
+          {/* Sem animação de entrada: é o topo da página. */}
+          <ul className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-5 gap-3 lg:gap-4">
+            {parceiros.map((s) => (
+              <li key={s.id}>
+                <LugarCard compacto lugar={s} agora={agora} onAbrir={visor ? (l) => visor.abrirShowroom(l) : undefined} />
+              </li>
+            ))}
+          </ul>
+          <p className="text-on-surface-variant text-legenda mt-6 text-pretty">
+            Prefere ver no seu escritório? Um consultor leva as amostras até você: é só pedir pelo pré-contato.
+          </p>
         </div>
-      </section>
+      </Capitulo>
 
-      {/* ── 01 Obras ───────────────────────────────────────────────────────── */}
-      <Capitulo id="obras" numero="01" rotulo="Obras" rotuladoPor="obras-titulo" className="ds-secao bg-background">
+      {/* ── 02 Obras ───────────────────────────────────────────────────────── */}
+      <Capitulo id="obras" numero="02" rotulo="Obras" rotuladoPor="obras-titulo" className="ds-secao bg-white">
         <div className="ds-wrap">
           <Revelar>
-            <SecaoCabecalho id="obras-titulo" numero="01" sobretitulo="Obras realizadas" titulo="Projetos executados"
-              texto="Ambientes reais revestidos com o Painel Flexível em Fibra de Bambu (PFB). Deslize cada linha e toque em um projeto para ver todas as fotos." />
+            <SecaoCabecalho id="obras-titulo" numero="02" sobretitulo="Obras realizadas" titulo="Projetos executados"
+              texto={`${OBRAS_ENTREGUES} obras entregues em Manaus. Deslize cada linha e toque em um projeto para ver todas as fotos.`} />
           </Revelar>
           <div className="space-y-2 mb-8">
             <GrupoChips rotulo="Categoria" ativo={categoria} onMudar={setCategoria}
@@ -196,11 +186,11 @@ function Conteudo({
         </div>
       </Capitulo>
 
-      {/* ── 02 Transformação ───────────────────────────────────────────────── */}
-      <Capitulo id="transformacao" numero="02" rotulo="Antes e depois" rotuladoPor="transformacao-titulo" escuro className="ds-secao bg-[#090e18]">
+      {/* ── 03 Transformação ───────────────────────────────────────────────── */}
+      <Capitulo id="transformacao" numero="03" rotulo="Antes e depois" rotuladoPor="transformacao-titulo" escuro className="ds-secao bg-[#090e18]">
         <div className="ds-wrap max-w-[72rem]">
           <Revelar>
-            <SecaoCabecalho id="transformacao-titulo" numero="02" escuro sobretitulo="Transformação real" titulo="A diferença é visível."
+            <SecaoCabecalho id="transformacao-titulo" numero="03" escuro sobretitulo="Transformação real" titulo="A diferença é visível."
               texto="Arraste a divisória para comparar o mesmo lavabo antes e depois do PFB." />
           </Revelar>
           <AntesDepois
@@ -213,27 +203,6 @@ function Conteudo({
             </div>
             <p className="text-white/70 text-legenda italic">Sem obra pesada · Sem poeira</p>
           </div>
-        </div>
-      </Capitulo>
-
-      {/* ── 03 Onde ver: showrooms + canal de revenda ──────────────────────── */}
-      <Capitulo id="parceiros" numero="03" rotulo="Onde ver" rotuladoPor="parceiros-titulo" className="ds-secao bg-white">
-        {/* Âncoras antigas (#showrooms, #revenda) continuam levando para cá. */}
-        <span id="showrooms" className="block scroll-mt-36" aria-hidden />
-        <span id="revenda" className="block scroll-mt-36" aria-hidden />
-        <div className="ds-wrap">
-          <Revelar>
-            <SecaoCabecalho id="parceiros-titulo" numero="03" sobretitulo="Visite e veja de perto" titulo="Onde ver o PFB ao vivo"
-              texto="Showrooms de empresas parceiras com ambientes decorados com o PFB, e a Casa do Eletricista com todos os modelos em display. Toque em um parceiro para ver os ambientes sem sair daqui." />
-          </Revelar>
-          <Revelar>
-            <Trilho rotulo="Parceiros">
-              {parceiros.map((s) => <LugarCard key={s.id} lugar={s} agora={agora} onAbrir={visor ? (l) => visor.abrirShowroom(l) : undefined} />)}
-            </Trilho>
-          </Revelar>
-          <p className="text-on-surface-variant text-corpo mt-8 max-w-2xl text-pretty">
-            Prefere ver no seu escritório? Um consultor leva as amostras até você: é só pedir pelo pré-contato.
-          </p>
         </div>
       </Capitulo>
 

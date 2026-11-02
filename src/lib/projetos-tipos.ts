@@ -166,6 +166,16 @@ export function linkComoChegar(s: Pick<Showroom, "maps_url" | "name" | "address"
   return `https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(`${s.name} ${s.address ?? ""} Manaus AM`.trim())}`;
 }
 
+/** Nome do parceiro como marca, não como cadastro: "ORNARE" → "Ornare"; sem o bairro depois do travessão. */
+export function nomeLugar(nome: string): string {
+  const base = nome.split(" — ")[0].trim();
+  if (base !== base.toUpperCase()) return base;
+  return base.toLowerCase().replace(/(^|\s)(\p{L})/gu, (_m, esp: string, l: string, i: number) => {
+    const palavra = base.toLowerCase().slice(i + esp.length).split(" ")[0];
+    return esp + (i > 0 && ["de", "do", "da", "dos", "das", "e"].includes(palavra) ? l : l.toUpperCase());
+  });
+}
+
 /** "1 ambiente" / "4 ambientes" */
 export const contaAmbientes = (n: number) => `${n} ${n === 1 ? "ambiente" : "ambientes"}`;
 
