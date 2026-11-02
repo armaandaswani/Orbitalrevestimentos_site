@@ -261,14 +261,14 @@ export default async function Home() {
               <h3 className="font-serif text-white text-t3 font-normal">Onde ver ao vivo</h3>
               <p className="text-white/65 text-legenda">Ou peça a visita de um consultor com as amostras.</p>
             </div>
-            <ul className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-5 border-t border-white/15">
+            <ul className="grid grid-cols-1 sm:grid-cols-2 sm:gap-x-10 xl:grid-cols-5 xl:gap-x-0 border-t border-white/15">
               {parceiros.map((s) => (
-                <li key={s.id} className="border-b border-white/15 lg:border-b-0 lg:border-r lg:last:border-r-0">
+                <li key={s.id} className="border-b border-white/15 xl:border-b-0 xl:border-r xl:last:border-r-0 xl:px-5 xl:first:pl-0 xl:last:pr-0">
                   <Link href={s.kind !== "revenda" || s.ambient_count > 0 ? `/projetos?showroom=${encodeURIComponent(s.slug)}` : "/projetos#revenda"}
-                    className="group flex items-center justify-between gap-3 min-h-16 py-4 lg:px-4 lg:first:pl-0 hover:text-white">
+                    className="group flex items-center justify-between gap-3 min-h-16 py-4">
                     <span>
                       <span className="block font-serif text-white text-[1.0625rem] leading-snug">{nomeParceiro(s.name)}</span>
-                      <span className="block text-white/55 text-sobre tracking-[0.14em] uppercase mt-1">{s.kind === "revenda" ? "Revenda · todos os modelos" : "Showroom parceiro"}</span>
+                      <span className="block text-white/55 text-sobre tracking-[0.14em] uppercase mt-1">{s.kind === "revenda" ? "Revenda" : "Showroom parceiro"}</span>
                     </span>
                     <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" aria-hidden className="mv-seta text-white/60 flex-shrink-0"><path d="M5 12h14M12 5l7 7-7 7" /></svg>
                   </Link>
