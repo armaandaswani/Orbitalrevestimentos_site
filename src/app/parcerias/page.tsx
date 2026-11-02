@@ -2,546 +2,242 @@
 
 import React, { useState, useCallback, useRef, useEffect } from "react";
 import Image from "next/image";
-import Link from "next/link";
-import ScrollReveal from "@/components/ScrollReveal";
-import ContatoCta from "@/components/ContatoCta";
+import Botao from "@/components/ds/Botao";
+import Capitulo from "@/components/ds/Capitulo";
+import ProgressoCapitulos from "@/components/ds/ProgressoCapitulos";
+import Revelar from "@/components/projetos/Revelar";
+import SecaoCabecalho, { Sobretitulo } from "@/components/projetos/SecaoCabecalho";
+import type { RespostasContato } from "@/lib/contato";
 
 const CATALOGUE_URL =
   "https://drive.google.com/file/d/1zhm5MgKGSDRThqk8FqqwfX-WijI7K-iD/view?usp=drive_link";
 
-type SegmentKey = "arquitetos" | "marceneiros" | "engenheiros" | "revendedores" | "aplicadores";
-type Segment = {
-  key: SegmentKey;
-  label: string;
-  short: string;
-  icon: React.ReactNode;
-  badge: string;
-  pricingCallout?: string;
-  tagline: string;
-  headline: string;
-  body: string;
-  benefits: { title: string; desc: string }[];
-  image: string;
-  waText: string;
-  stat: { value: string; label: string };
-  ctaLabel: string;
-  /**
-   * Destino do botão principal. Sem ele, o botão abre o pré-contato (que leva ao WhatsApp).
-   * Aplicadores usam a formação da Academia: todo CTA leva ao
-   * formulário de pré-inscrição, e o WhatsApp vira o botão secundário.
-   */
-  ctaHref?: string;
-  /** Chamada curta para a Academia Orbital, com link. Aparece também no celular. */
-  academia?: string;
-  highlight: string;
-};
+/**
+ * Parcerias como apresentação: abertura → 01 Arquitetos e designers →
+ * 02 Marceneiros → 03 Engenheiros → 04 Revendedores → 05 Cadastro (cupom e
+ * portal) → 06 Contato. Aplicadores e instaladores vão para a formação da
+ * Academia Orbital. Todo caminho comercial abre o pré-contato; o PFB se
+ * apresenta só pelos próprios méritos, sem comparar com outros materiais.
+ */
+interface Perfil {
+  id: string;
+  numero: string;
+  rotulo: string;
+  curto: string;
+  sobretitulo: string;
+  titulo: string;
+  texto: string;
+  beneficios: { t: string; d: string }[];
+  imagem: string;
+  destaque: { valor: string; rotulo: string };
+  cta: string;
+  inicial?: RespostasContato;
+  nota?: string;
+}
 
-const segments: Segment[] = [
+const PERFIS_PARCERIA: Perfil[] = [
   {
-    key: "arquitetos",
-    label: "Arquitetos & Urbanistas",
-    short: "Arquitetos",
-    icon: (
-      <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5">
-        <path d="M3 9l9-7 9 7v11a2 2 0 01-2 2H5a2 2 0 01-2-2z" />
-        <polyline points="9 22 9 12 15 12 15 22" />
-      </svg>
-    ),
-    badge: "Amostras grátis para moodboard",
-    tagline: "Especifique com confiança. Entregue projetos que envelhecem bem.",
-    headline: "O projeto que o seu cliente ainda vai elogiar daqui a cinco anos.",
-    body: "Em Manaus, o MDF deteriora em 2–3 anos. O PFB Orbital mantém a aparência original — veios nítidos, textura intacta. Especifique o material certo e o projeto fala por você muito depois da entrega.",
-    benefits: [
-      { title: "Acabamento que preserva a aparência por anos", desc: "Impermeável, anti-mofo e resistente a ciclos térmicos extremos. O visual que saiu da obra se mantém — protegendo a imagem do seu trabalho." },
-      { title: "15 acabamentos para moodboard", desc: "Classic (mármore fosco), Brilliance (mármore polido) e Elegance (madeira texturizada). Impressão UV fotorrealística de alta fidelidade." },
-      { title: "Amostras físicas gratuitas", desc: "Parceiros arquitetos recebem amostras sem custo para apresentar a clientes e compor moodboards." },
-      { title: "Documentação técnica completa", desc: "ART de Engenharia Civil e CREA registrado, com ficha técnica detalhada. Tudo pronto para aprovação de engenharia." },
-      { title: "Seja referência em inovação", desc: "O PFB Orbital é um material novo, certificado e premium que poucos arquitetos da cidade ainda conhecem. Especificá-lo posiciona você como profissional que traz o que há de melhor ao cliente — antes dos outros." },
-      { title: "Condições exclusivas para parceiros", desc: "Arquitetos cadastrados têm acesso a condições e benefícios exclusivos da Orbital — disponíveis apenas para profissionais da rede." },
+    id: "arquitetos", numero: "01", rotulo: "Arquitetos e designers", curto: "Arquitetos",
+    sobretitulo: "Arquitetos, urbanistas e designers de interiores",
+    titulo: "O projeto que o seu cliente ainda vai elogiar daqui a cinco anos.",
+    texto: "Em Manaus, com umidade acima de 80% o ano todo, o acabamento precisa envelhecer bem. O Painel Flexível em Fibra de Bambu (PFB) mantém a aparência original, com veios nítidos e textura intacta: o projeto fala por você muito depois da entrega.",
+    beneficios: [
+      { t: "Acabamento que preserva a aparência por anos", d: "Resistente à água, anti-mofo e estável em ciclos térmicos. O visual que saiu da obra se mantém, protegendo a imagem do seu trabalho." },
+      { t: "15 acabamentos para o moodboard", d: "Classic (mármore fosco), Brilliance (mármore polido) e Elegance (madeira texturizada), em impressão fotorrealista de alta fidelidade." },
+      { t: "Amostras físicas gratuitas", d: "Parceiros recebem amostras sem custo para apresentar a clientes e compor moodboards. Um consultor leva até o seu escritório." },
+      { t: "Documentação técnica completa", d: "ART de Engenharia Civil, CREA registrado e ficha técnica detalhada. Tudo pronto para aprovação." },
+      { t: "Seja referência em inovação", d: "Um material novo, certificado e premium que poucos profissionais da cidade ainda conhecem. Especificá-lo posiciona você à frente." },
+      { t: "Condições exclusivas para parceiros", d: "Arquitetos cadastrados têm acesso a condições e benefícios disponíveis apenas para a rede Orbital." },
     ],
-    image: "/images/catalogue/aplicacao-sala.jpeg",
-    waText: "Olá! Sou arquiteto/urbanista e vim pela aba de Arquitetos no site. Gostaria de conhecer as condições para especificação de projetos com o PFB Orbital.",
-    stat: { value: "+5 anos", label: "de aparência preservada" },
-    ctaLabel: "Saber mais sobre as condições de parceria",
-    highlight: "Arquitetos parceiros têm acesso a condições exclusivas e amostras gratuitas.",
+    imagem: "/images/catalogue/aplicacao-sala.jpeg",
+    destaque: { valor: "+5 anos", rotulo: "de aparência preservada" },
+    cta: "Quero especificar o PFB",
+    inicial: { perfil: "arquiteto" },
   },
   {
-    key: "marceneiros",
-    label: "Marceneiros",
-    short: "Marceneiros",
-    icon: (
-      <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5">
-        <path d="M14.7 6.3a1 1 0 000 1.4l1.6 1.6a1 1 0 001.4 0l3.77-3.77a6 6 0 01-7.94 7.94l-6.91 6.91a2.12 2.12 0 01-3-3l6.91-6.91a6 6 0 017.94-7.94l-3.76 3.76z" />
-      </svg>
-    ),
-    badge: "Manual técnico de instalação",
-    tagline: "Mais projetos por mês. Processo mais simples. Resultado premium.",
-    headline: "Quem instala rápido, fecha mais contratos.",
-    body: "Um cômodo em 2–3h. Mais projetos por mês sem aumentar equipe, sem poeira, sem equipamento pesado. O volume é o seu ganho.",
-    benefits: [
-      { title: "Processo de instalação simplificado", desc: "Cola PU 40 para fixação principal, com uso de tupia recomendado para acabamento perfeito nas bordas. Resultado profissional desde o primeiro projeto." },
-      { title: "Ganhe mais pelo volume, não pelo esforço", desc: "Com 2–3h por cômodo, você consegue 4× mais projetos no mesmo mês. Mais contratos fechados, mais receita — sem contratar ninguém." },
-      { title: "Obra limpa em qualquer ambiente", desc: "Sem serra circular, sem poeira tóxica. Ideal para clínicas, escritórios ocupados, residências com crianças — sem interditar o espaço." },
-      { title: "Material que surpreende o cliente", desc: "O acabamento fotorrealístico em mármore ou madeira entrega uma aparência que o cliente não espera — e que dura anos sem deteriorar." },
-      { title: "Preço diferenciado para compra direta", desc: "Marceneiros parceiros têm acesso a tabela especial para comprar as placas e embutir o material nos seus próprios projetos." },
-      { title: "Suporte técnico completo", desc: "Manual técnico detalhado, material de apoio no Instagram (@orbitalrevestimentos) e atendimento direto via WhatsApp. E a formação da Academia Orbital, com o passo a passo completo da instalação — 1ª turma gratuita." },
+    id: "marceneiros", numero: "02", rotulo: "Marceneiros", curto: "Marceneiros",
+    sobretitulo: "Marceneiros",
+    titulo: "Quem instala rápido, fecha mais contratos.",
+    texto: "Um cômodo em 2 a 3 horas, sem poeira e sem equipamento pesado. Mais projetos por mês com a mesma equipe: o volume é o seu ganho.",
+    beneficios: [
+      { t: "Processo de instalação simplificado", d: "Cola PU-40 na fixação (2 tubos por placa) e tupia para o acabamento das bordas. Resultado profissional desde o primeiro projeto." },
+      { t: "Ganhe mais pelo volume, não pelo esforço", d: "Com 2 a 3 horas por cômodo, você atende mais projetos no mesmo mês, sem contratar ninguém." },
+      { t: "Obra limpa em qualquer ambiente", d: "Sem serra circular, sem poeira. Ideal para clínicas, escritórios ocupados e residências com crianças, sem interditar o espaço." },
+      { t: "Material que surpreende o cliente", d: "Acabamento fotorrealista em mármore ou madeira que dura anos sem deteriorar." },
+      { t: "Compra direta com condições de parceiro", d: "Marceneiros parceiros compram as placas direto com a Orbital, com tabela diferenciada, para embutir nos próprios projetos." },
+      { t: "Suporte e formação", d: "Manual técnico, material de apoio no Instagram (@orbitalrevestimentos), atendimento do consultor e a formação da Academia Orbital." },
     ],
-    pricingCallout: "Compra direta disponível: marceneiros parceiros têm acesso a tabela de preços diferenciada para comprar as placas e embutir o material nos seus projetos — sem intermediários.",
-    image: "/images/catalogue/projeto-escritorio-depois.jpeg",
-    waText: "Olá! Sou marceneiro e vim pela aba de Marceneiros no site. Gostaria de saber sobre as condições de parceria e preço diferenciado para compra direta do PFB Orbital.",
-    stat: { value: "2–3h", label: "instalação por cômodo" },
-    ctaLabel: "Quero instalar PFB Orbital",
-    academia: "Formação em instalação do PFB: 1ª turma gratuita, vagas limitadíssimas. Saia com certificado.",
-    highlight: "Marceneiros parceiros têm acesso a condições exclusivas e tabela diferenciada para compra direta.",
+    imagem: "/images/catalogue/projeto-escritorio-depois.jpeg",
+    destaque: { valor: "2–3 h", rotulo: "de instalação por cômodo" },
+    cta: "Quero instalar o PFB",
+    nota: "Aplicadores e instaladores: a formação em instalação, no padrão Orbital, é da Academia Orbital.",
   },
   {
-    key: "engenheiros",
-    label: "Engenheiros",
-    short: "Engenheiros",
-    icon: (
-      <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5">
-        <path d="M12 2L2 7l10 5 10-5-10-5z" />
-        <path d="M2 17l10 5 10-5M2 12l10 5 10-5" />
-      </svg>
-    ),
-    badge: "ART · CREA · Documentação técnica",
-    tagline: "Especifique com segurança. A documentação técnica faz o trabalho.",
-    headline: "ART homologada, documentação completa, aprovação sem improviso.",
-    body: "ART de Engenharia Civil assinada, CREA registrado, ficha técnica com dados de resistência, umidade e fogo. Especifique com base em dados reais — sem improvisar em aprovações técnicas.",
-    benefits: [
-      { title: "ART nº AM20260593657", desc: "Assinada por Eng. Civil Werksson Sousa — CREA 042030134-8-D. Disponível para projetos que exigem laudo técnico de engenharia." },
-      { title: "72,3 MPa de resistência à flexão", desc: "Mais de 3× a resistência do MDF convencional (17–22 MPa). Dados disponíveis na ficha técnica." },
-      { title: "Inchamento de 0,2% em 48h", desc: "Testado em ciclos de imersão, congelamento e aquecimento. Aprovado para banheiros, cozinhas e áreas úmidas." },
-      { title: "Anti-mofo · Anti-cupim · Não propaga chamas", desc: "Indicado para clínicas, ambientes hospitalares e projetos com requisitos de segurança contra incêndio." },
-      { title: "Aprovado para projetos navais", desc: "Utilizado em embarcações registradas. Resistência à umidade e salinidade documentada em ensaios." },
+    id: "engenheiros", numero: "03", rotulo: "Engenheiros", curto: "Engenheiros",
+    sobretitulo: "Engenheiros",
+    titulo: "ART homologada, documentação completa, aprovação sem improviso.",
+    texto: "ART de Engenharia Civil assinada, CREA registrado e ficha técnica com dados de resistência, umidade e fogo. Especifique com base em dados reais.",
+    beneficios: [
+      { t: "ART nº AM20260593657", d: "Assinada por Eng. Civil Werksson Sousa — CREA 042030134-8-D. Disponível para projetos que exigem laudo técnico." },
+      { t: "72,3 MPa de resistência à flexão", d: "Certificada em laboratório; dados completos na ficha técnica." },
+      { t: "Inchamento de 0,2% em 48 h", d: "Testado em ciclos de imersão, congelamento e aquecimento. Aprovado para banheiros, cozinhas e áreas úmidas." },
+      { t: "Anti-mofo · anti-cupim · não propaga chamas", d: "Indicado para clínicas, ambientes hospitalares e projetos com requisitos de segurança contra incêndio." },
+      { t: "Aprovado para projetos navais", d: "Utilizado em embarcações registradas. Resistência à umidade e à salinidade documentada em ensaios." },
     ],
-    image: "/images/catalogue/projeto-hall.jpeg",
-    waText: "Olá! Sou engenheiro e vim pela aba de Engenheiros no site. Gostaria de acessar a documentação técnica e as condições de parceria Orbital.",
-    stat: { value: "72,3 MPa", label: "resistência à flexão" },
-    ctaLabel: "Solicitar documentação técnica",
-    highlight: "Engenheiros parceiros têm acesso a condições exclusivas e documentação técnica completa.",
+    imagem: "/images/catalogue/projeto-hall.jpeg",
+    destaque: { valor: "72,3 MPa", rotulo: "de resistência à flexão" },
+    cta: "Solicitar documentação técnica",
+    inicial: { perfil: "arquiteto" },
   },
   {
-    key: "revendedores",
-    label: "Revendedores",
-    short: "Revendedores",
-    icon: (
-      <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5">
-        <path d="M6 2L3 6v14a2 2 0 002 2h14a2 2 0 002-2V6l-3-4z" />
-        <line x1="3" y1="6" x2="21" y2="6" />
-        <path d="M16 10a4 4 0 01-8 0" />
-      </svg>
-    ),
-    badge: "Tabela exclusiva para parceiros",
-    tagline: "Margem real. Estoque em Manaus.",
-    headline: "Um produto que seus clientes não encontram em outra loja.",
-    body: "Tabela exclusiva, pronta entrega e suporte de marketing. Um portfólio de alto ticket com diferenciação natural — o material faz a venda sozinho.",
-    benefits: [
-      { title: "Estoque local, entrega em 24–48h", desc: "Sem depender de frete nacional. A reforma do seu cliente começa essa semana." },
-      { title: "Tabela de preços diferenciada", desc: "Condições especiais para revendedores cadastrados, com margem compatível com produto premium." },
-      { title: "15 acabamentos sem concorrência local", desc: "Um portfólio exclusivo no mercado de Manaus. Seus clientes não vão encontrar em outro lugar." },
-      { title: "Alto ticket médio por placa", desc: "Produto premium, 3,48 m² por placa: eleva o valor médio de venda do seu negócio. A tabela é apresentada pelo nosso consultor." },
-      { title: "Suporte comercial completo", desc: "Catálogo digital, ficha técnica e suporte de equipe para você vender com autoridade." },
+    id: "revendedores", numero: "04", rotulo: "Revendedores", curto: "Revendedores",
+    sobretitulo: "Revendedores",
+    titulo: "Um produto que seus clientes não encontram em outra loja.",
+    texto: "Tabela exclusiva, pronta-entrega em Manaus e suporte comercial. Um portfólio de alto valor com diferenciação natural: o material se vende pela própria obra.",
+    beneficios: [
+      { t: "Estoque local, entrega em 24–48 h", d: "Sem depender de frete nacional. A reforma do seu cliente começa essa semana." },
+      { t: "Tabela diferenciada para parceiros", d: "Condições especiais para revendedores cadastrados, apresentadas pelo consultor." },
+      { t: "15 acabamentos exclusivos em Manaus", d: "Um portfólio que seus clientes não vão encontrar em outro lugar." },
+      { t: "Alto valor por placa", d: "Produto premium, 3,48 m² por placa: eleva o valor médio de venda do seu negócio." },
+      { t: "Suporte comercial completo", d: "Catálogo digital, ficha técnica e apoio da equipe para você vender com autoridade." },
     ],
-    image: "/images/catalogue/projeto-sala-depois.jpeg",
-    waText: "Olá! Tenho interesse em revender os produtos Orbital. Vim pela aba de Revendedores no site e gostaria de saber sobre tabela de preços e condições de parceria.",
-    stat: { value: "15", label: "acabamentos exclusivos" },
-    ctaLabel: "Quero ser revendedor",
-    highlight: "Revendedores cadastrados têm acesso a condições exclusivas e estoque garantido.",
+    imagem: "/images/catalogue/projeto-sala-depois.jpeg",
+    destaque: { valor: "15", rotulo: "acabamentos exclusivos" },
+    cta: "Quero ser revendedor",
   },
-  {
-    key: "aplicadores",
-    label: "Aplicadores & Instaladores",
-    short: "Aplicadores",
-    icon: (
-      <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5">
-        <path d="M3 17L17 3l4 4L7 21z" />
-        <path d="M7 13l2 2M10 10l2 2M13 7l2 2" />
-      </svg>
-    ),
-    badge: "Academia Orbital · Formação",
-    tagline: "Especialização técnica em PFB, no padrão Orbital.",
-    headline: "Aprenda a instalar PFB no padrão Orbital.",
-    body: "A Academia Orbital abre a 1ª turma da formação em instalação: prática, passo a passo, para aplicadores que querem instalar Painéis Flexíveis em Fibra de Bambu (PFB) corretamente. A 1ª turma é gratuita e as vagas são limitadíssimas.",
-    benefits: [
-      { title: "Formação Academia Orbital", desc: "Prática, do preparo da superfície ao acabamento. 1ª turma gratuita, com vagas limitadíssimas." },
-      { title: "Certificado de conclusão", desc: "Quem conclui a formação sai com certificado de conclusão da Academia Orbital." },
-      { title: "Manual técnico de instalação", desc: "Material detalhado com o processo de aplicação do PFB, passo a passo." },
-      { title: "Instalação limpa e ágil", desc: "Cola PU nas paredes e cola de contato nos tetos. Um cômodo em 2 a 3 horas, sem obra e sem poeira." },
-      { title: "Material de apoio e suporte", desc: "Conteúdo no Instagram (@orbitalrevestimentos) e atendimento direto via WhatsApp para dúvidas de aplicação." },
-      { title: "Relacionamento direto com a Orbital", desc: "Com o certificado, o instalador compra PFB direto com a Orbital." },
-    ],
-    image: "/images/academia/lavabo-consultorio-inteiro.jpg",
-    waText: "Olá! Sou aplicador/instalador e vim pela aba de Aplicadores no site. Quero saber mais sobre a instalação do PFB Orbital e a Academia Orbital.",
-    stat: { value: "11 kg", label: "por placa · leve de manusear" },
-    ctaLabel: "Quero participar da formação",
-    ctaHref: "/academia#lista-de-espera",
-    highlight: "A 1ª turma da formação da Academia Orbital é gratuita.",
-  },
-];
-
-const sharedStats = [
-  { value: "15", unit: "acabamentos", label: "Em estoque em Manaus" },
-  { value: "3,48", unit: "m²", label: "Por placa · 1,2m × 2,9m" },
-  { value: "72,3", unit: "MPa", label: "Resistência à flexão" },
-  { value: "0,2%", unit: "", label: "Absorção de água (48h)" },
 ];
 
 export default function ParceriasPage() {
-  const [active, setActive] = useState<SegmentKey>("arquitetos");
-  const seg = segments.find((s) => s.key === active)!;
-
-  const segmentContentRef = useRef<HTMLDivElement>(null);
-  const registerRef = useRef<HTMLDivElement>(null);
-
-  function scrollTo(ref: React.RefObject<HTMLDivElement | null>) {
-    ref.current?.scrollIntoView({ behavior: "smooth", block: "start" });
-  }
-
-  function handleTabClick(key: SegmentKey) {
-    setActive(key);
-    setTimeout(() => scrollTo(segmentContentRef), 50);
-  }
-
   return (
     <div className="pt-20">
+      <ProgressoCapitulos />
 
-      {/* ── Hero ─────────────────────────────── */}
-      <section className="bg-[#0B1F45] text-white py-10 lg:py-28 relative overflow-hidden">
-        <div className="absolute inset-0 opacity-[0.04]" style={{
-          backgroundImage: "repeating-linear-gradient(0deg, transparent, transparent 39px, rgba(255,255,255,0.5) 39px, rgba(255,255,255,0.5) 40px), repeating-linear-gradient(90deg, transparent, transparent 39px, rgba(255,255,255,0.5) 39px, rgba(255,255,255,0.5) 40px)"
-        }} />
-        <div className="relative max-w-[1280px] mx-auto px-4 lg:px-16">
-          <div className="max-w-3xl mb-10 lg:mb-12">
-            <p className="text-[#36A35C] text-xs tracking-[0.2em] uppercase font-semibold mb-5">
-              Orbital Revestimentos · Programa de Parceiros · Manaus
-            </p>
-            <h1 className="font-serif text-3xl lg:text-6xl font-normal tracking-[-0.02em] leading-tight mb-6">
-              Para cada profissional,
-              <br />
-              <em className="text-[#B4BBC8]">uma proposta única.</em>
+      {/* ── Abertura ───────────────────────────────────────────────────────── */}
+      <section className="bg-[#0B1F45] text-white ds-escuro">
+        <div className="ds-wrap pt-10 pb-10 lg:py-16">
+          <div className="max-w-3xl">
+            <Sobretitulo escuro>Orbital Revestimentos · Programa de parceiros · Manaus</Sobretitulo>
+            <h1 className="font-serif text-white text-t1 font-normal tracking-[-0.025em] mt-4 mb-4 text-balance">
+              Para cada profissional, uma proposta.
             </h1>
-            <p className="text-white/65 text-lg leading-relaxed max-w-2xl mb-8">
-              Selecione o seu perfil e veja as condições exclusivas da Orbital Revestimentos para você.
+            <p className="text-white/75 text-lead max-w-2xl text-pretty">
+              Condições da Orbital para quem especifica, instala, aprova e revende o Painel Flexível em Fibra de Bambu (PFB). Escolha o seu perfil.
             </p>
-            <button
-              onClick={() => scrollTo(registerRef)}
-              className="inline-flex items-center gap-2 border border-white/30 text-white text-xs tracking-[0.12em] uppercase font-bold px-6 py-3 hover:bg-white/10 transition-colors"
-            >
-              Já tenho código de indicação →
-            </button>
           </div>
-
-          {/* Segment preview cards */}
-          <div className="grid grid-cols-2 lg:grid-cols-5 gap-3 lg:gap-4">
-            {segments.map(({ key, label, icon, tagline }) => (
-              <button
-                key={key}
-                onClick={() => handleTabClick(key)}
-                className={`text-left p-4 lg:p-6 border transition-all duration-200 group last:col-span-2 lg:last:col-span-1 ${
-                  active === key
-                    ? "border-white bg-white/10"
-                    : "border-white/15 hover:border-white/40 hover:bg-white/5"
-                }`}
-              >
-                <div className={`mb-2 lg:mb-3 transition-colors duration-200 ${active === key ? "text-[#36A35C]" : "text-white/50 group-hover:text-white/80"}`}>
-                  {icon}
-                </div>
-                <p className="text-white text-xs tracking-[0.12em] uppercase font-bold mb-1">
-                  {label}
-                </p>
-                <p className="text-white/50 text-xs leading-relaxed hidden sm:block">
-                  {tagline}
-                </p>
-              </button>
+          <ol className="grid grid-cols-2 lg:grid-cols-4 gap-2 lg:gap-3 mt-8">
+            {PERFIS_PARCERIA.map((p) => (
+              <li key={p.id}>
+                <a href={`#${p.id}`} className="group flex flex-col justify-between h-full min-h-[7rem] p-4 lg:p-5 border border-white/20 hover:border-secondary hover:bg-white/5 transition-colors">
+                  <span className="font-serif text-white/60 text-sm">{p.numero}</span>
+                  <span className="text-white text-xs tracking-[0.12em] uppercase font-bold mt-3">{p.rotulo}</span>
+                </a>
+              </li>
             ))}
+          </ol>
+          <div className="flex flex-col sm:flex-row flex-wrap gap-3 mt-6">
+            <Botao href="#cadastro" tom="linha" largo>Já tenho código de indicação</Botao>
+            <Botao href="/academia" tom="linha" largo seta>Aplicadores: formação na Academia</Botao>
           </div>
         </div>
       </section>
 
-      {/* ── Self-registration ─────────────────── */}
-      <div ref={registerRef}>
-        <SelfRegisterSection onScrollToSegments={() => scrollTo(segmentContentRef)} />
-      </div>
-
-      {/* ── Sticky segment switcher ───────────── */}
-      <div className="sticky top-20 z-40 bg-white border-b border-[#e2e2e2] shadow-[0_1px_0_0_rgba(0,0,0,0.04)]">
-        <div className="max-w-[1280px] mx-auto px-4 lg:px-16">
-          {/* Grade até 1024px (3 colunas no celular, 5 no tablet): com 5 perfis a
-              barra horizontal passava de 750px numa tela de 343px e a aba nova
-              ficava fora da tela, só alcançável rolando para o lado. */}
-          <div className="grid grid-cols-3 sm:grid-cols-5 lg:flex gap-0 lg:overflow-x-auto">
-            {segments.map(({ key, label, short }) => (
-              <button
-                key={key}
-                onClick={() => handleTabClick(key)}
-                className={`lg:flex-shrink-0 px-1 lg:px-6 py-3 lg:py-5 border-b-2 text-[10px] lg:text-xs tracking-[0.08em] lg:tracking-[0.12em] uppercase font-bold transition-all duration-200 whitespace-nowrap text-center ${
-                  active === key
-                    ? "border-[#0B1F45] text-[#0B1F45]"
-                    : "border-transparent text-[#74777f] hover:text-[#0B1F45]"
-                }`}
-              >
-                {/* Nomes longos só a partir de 1280px: abaixo disso "Aplicadores &
-                    Instaladores" empurrava a última aba para fora da tela. */}
-                <span className="hidden xl:inline">{label}</span>
-                <span className="xl:hidden">{short}</span>
-              </button>
-            ))}
-          </div>
-        </div>
-      </div>
-
-      {/* ── Dynamic segment content ───────────── */}
-      <div ref={segmentContentRef} className="scroll-mt-20">
-        <section key={active} className="overflow-hidden animate-fade-in">
-          <div className="flex flex-col lg:flex-row min-h-[620px]">
-            {/* Left — dark text column */}
-            <div className="lg:w-[52%] bg-[#0B1F45] px-4 lg:px-14 xl:px-20 py-8 lg:py-24 flex flex-col justify-center">
-              <div className="max-w-[560px]">
-                <span className="inline-block bg-[#36A35C] text-[#0B1F45] text-[9px] tracking-[0.18em] uppercase font-bold px-3 py-1.5 mb-6">
-                  {seg.badge}
-                </span>
-                <p className="text-[#B4BBC8] text-xs tracking-[0.18em] uppercase font-semibold mb-4">
-                  {seg.tagline}
-                </p>
-                <h2 className="font-serif text-white text-[32px] lg:text-[40px] font-normal leading-[1.2] mb-6">
-                  {seg.headline}
-                </h2>
-                <p className="hidden lg:block text-white/60 text-base leading-relaxed mb-10">
-                  {seg.body}
-                </p>
-                <ul className="space-y-2 lg:space-y-5 mb-6 lg:mb-10">
-                  {seg.benefits.map(({ title, desc }) => (
-                    <li key={title} className="flex gap-2 lg:gap-4">
-                      <span className="flex-shrink-0 mt-1.5 w-1.5 h-1.5 rounded-full bg-[#36A35C]" />
+      {/* ── 01–04 Perfis ───────────────────────────────────────────────────── */}
+      {PERFIS_PARCERIA.map((p, i) => {
+        const escuro = i % 2 === 1;
+        return (
+          <Capitulo key={p.id} id={p.id} numero={p.numero} rotulo={p.curto} rotuladoPor={`${p.id}-titulo`} escuro={escuro}
+            className={`ds-secao ${escuro ? "bg-[#0B1F45] text-white" : "bg-background"}`}>
+            <div className="ds-wrap grid grid-cols-1 lg:grid-cols-[1.15fr_1fr] gap-10 lg:gap-16 items-start">
+              <div>
+                <Revelar>
+                  <SecaoCabecalho id={`${p.id}-titulo`} numero={p.numero} escuro={escuro} sobretitulo={p.sobretitulo} titulo={p.titulo} texto={p.texto} />
+                </Revelar>
+                <ul className="space-y-4">
+                  {p.beneficios.map((b, j) => (
+                    <Revelar key={b.t} como="li" ordem={j} className="flex gap-4">
+                      <span aria-hidden className="w-6 h-px bg-secondary mt-3 flex-shrink-0" />
                       <div>
-                        <p className="text-white text-xs lg:text-sm font-semibold mb-0.5">{title}</p>
-                        <p className="hidden lg:block text-white/50 text-xs leading-relaxed">{desc}</p>
+                        <p className={`font-semibold text-corpo ${escuro ? "text-white" : "text-primary"}`}>{b.t}</p>
+                        <p className={`text-legenda mt-1 leading-relaxed ${escuro ? "text-white/70" : "text-on-surface-variant"}`}>{b.d}</p>
                       </div>
-                    </li>
+                    </Revelar>
                   ))}
                 </ul>
-                {seg.pricingCallout && (
-                  <div className="hidden lg:flex bg-[#0d2d1a] border border-[#36A35C] px-5 py-4 mb-6 gap-3 items-start">
-                    <svg className="flex-shrink-0 mt-0.5 text-[#36A35C]" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-                      <path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm1 15h-2v-6h2v6zm0-8h-2V7h2v2z" strokeLinejoin="round" />
-                    </svg>
-                    <p className="text-[#36A35C] text-xs leading-relaxed">{seg.pricingCallout}</p>
+                {p.nota && (
+                  <p className={`mt-8 border-l-2 border-secondary pl-4 text-corpo ${escuro ? "text-white/80" : "text-on-surface-variant"}`}>
+                    {p.nota} <a href="/academia" className={`underline underline-offset-4 font-semibold ${escuro ? "text-white" : "text-primary"}`}>Conhecer a formação</a>
+                  </p>
+                )}
+                <div className="flex flex-col sm:flex-row flex-wrap gap-3 mt-8">
+                  <Botao contato inicial={p.inicial} tom={escuro ? "claro" : "cheio"} grande largo>{p.cta}</Botao>
+                  <Botao href={CATALOGUE_URL} externo tom={escuro ? "linha" : "vazado"} grande largo>Baixar catálogo</Botao>
+                </div>
+              </div>
+              <Revelar ordem={1} className="lg:sticky lg:top-24">
+                <div className="relative aspect-[4/5] overflow-hidden bg-primary">
+                  <Image src={p.imagem} alt={`Ambiente com PFB Orbital: ${p.rotulo}`} fill sizes="(max-width: 1023px) 92vw, 520px" className="object-cover mv-desvela" />
+                  <div className="absolute bottom-4 left-4 bg-white px-5 py-4 shadow-xl">
+                    <p className="font-serif text-primary text-t2 leading-none">{p.destaque.valor}</p>
+                    <p className="text-on-surface-variant text-sobre tracking-[0.12em] uppercase font-semibold mt-1">{p.destaque.rotulo}</p>
                   </div>
-                )}
-                <div className="hidden lg:block border-l-2 border-[#36A35C] pl-4 mb-10">
-                  <p className="text-[#36A35C] text-xs italic leading-relaxed">{seg.highlight}</p>
                 </div>
-                {seg.academia && (
-                  <Link
-                    href="/academia"
-                    className="group flex items-center justify-between gap-4 border border-white/20 hover:border-[#36A35C] px-5 py-4 mb-6 lg:mb-10 transition-colors"
-                  >
-                    <span>
-                      <span className="block text-[#36A35C] text-[10px] tracking-[0.18em] uppercase font-bold mb-1">
-                        Academia Orbital
-                      </span>
-                      <span className="block text-white text-sm leading-snug">{seg.academia}</span>
-                    </span>
-                    <span aria-hidden className="text-[#36A35C] text-lg group-hover:translate-x-1 transition-transform">→</span>
-                  </Link>
-                )}
-                <div className="flex flex-wrap gap-3">
-                  {seg.ctaHref ? (
-                    <>
-                      <Link
-                        href={seg.ctaHref}
-                        className="inline-flex items-center gap-2 bg-white text-[#0B1F45] text-xs tracking-[0.12em] uppercase font-bold px-7 py-4 hover:bg-[#f3f3f3] transition-colors"
-                      >
-                        {seg.ctaLabel} <span aria-hidden>→</span>
-                      </Link>
-                      <ContatoCta
-                        className="inline-flex items-center gap-2 border border-white/30 text-white text-xs tracking-[0.12em] uppercase font-bold px-7 py-4 hover:border-white transition-colors"
-                      >
-                        Falar no WhatsApp
-                      </ContatoCta>
-                    </>
-                  ) : (
-                    <>
-                      <ContatoCta
-                        className="inline-flex items-center gap-2.5 bg-white text-[#0B1F45] text-xs tracking-[0.12em] uppercase font-bold px-7 py-4 hover:bg-[#f3f3f3] transition-colors"
-                      >
-                        <svg width="15" height="15" viewBox="0 0 24 24" fill="currentColor">
-                          <path d="M17.472 14.382c-.297-.149-1.758-.867-2.03-.967-.273-.099-.471-.148-.67.15-.197.297-.767.966-.94 1.164-.173.199-.347.223-.644.075-.297-.15-1.255-.463-2.39-1.475-.883-.788-1.48-1.761-1.653-2.059-.173-.297-.018-.458.13-.606.134-.133.298-.347.446-.52.149-.174.198-.298.298-.497.099-.198.05-.371-.025-.52-.075-.149-.669-1.612-.916-2.207-.242-.579-.487-.5-.669-.51-.173-.008-.371-.01-.57-.01-.198 0-.52.074-.792.372-.272.297-1.04 1.016-1.04 2.479 0 1.462 1.065 2.875 1.213 3.074.149.198 2.096 3.2 5.077 4.487.709.306 1.262.489 1.694.625.712.227 1.36.195 1.871.118.571-.085 1.758-.719 2.006-1.413.248-.694.248-1.289.173-1.413-.074-.124-.272-.198-.57-.347m-5.421 7.403h-.004a9.87 9.87 0 01-5.031-1.378l-.361-.214-3.741.982.998-3.648-.235-.374a9.86 9.86 0 01-1.51-5.26c.001-5.45 4.436-9.884 9.888-9.884 2.64 0 5.122 1.03 6.988 2.898a9.825 9.825 0 012.893 6.994c-.003 5.45-4.437 9.884-9.885 9.884m8.413-18.297A11.815 11.815 0 0012.05 0C5.495 0 .16 5.335.157 11.892c0 2.096.547 4.142 1.588 5.945L.057 24l6.305-1.654a11.882 11.882 0 005.683 1.448h.005c6.554 0 11.89-5.335 11.893-11.893a11.821 11.821 0 00-3.48-8.413z" />
-                        </svg>
-                        {seg.ctaLabel}
-                      </ContatoCta>
-                      <a
-                        href={CATALOGUE_URL}
-                        target="_blank"
-                        rel="noopener noreferrer"
-                        className="inline-flex items-center gap-2 border border-white/30 text-white text-xs tracking-[0.12em] uppercase font-bold px-7 py-4 hover:border-white transition-colors"
-                      >
-                        <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-                          <path d="M21 15v4a2 2 0 01-2 2H5a2 2 0 01-2-2v-4M7 10l5 5 5-5M12 15V3" />
-                        </svg>
-                        Baixar Catálogo PDF
-                      </a>
-                    </>
-                  )}
-                </div>
-              </div>
+              </Revelar>
             </div>
+          </Capitulo>
+        );
+      })}
 
-            {/* Right — image + floating stat */}
-            <div className="lg:w-[48%] relative min-h-[220px] lg:min-h-[620px]">
-              <Image src={seg.image} alt={`PFB Orbital — ${seg.label}`} fill sizes="(min-width: 1024px) 48vw, 100vw" className="object-cover" />
-              <div className="absolute inset-0 bg-gradient-to-t from-[#0B1F45]/40 to-transparent" />
-              <div className="absolute bottom-8 right-8 bg-white/96 px-6 py-5 shadow-xl">
-                <p className="text-[#0B1F45] text-3xl font-normal leading-none mb-1">{seg.stat.value}</p>
-                <p className="text-[#74777f] text-[10px] tracking-[0.15em] uppercase font-semibold">{seg.stat.label}</p>
-              </div>
-            </div>
-          </div>
-        </section>
-      </div>
+      {/* ── 05 Cadastro ────────────────────────────────────────────────────── */}
+      <Capitulo id="cadastro" numero="05" rotulo="Cadastro" rotuladoPor="cadastro-titulo" className="ds-secao bg-white border-t border-surface-container-high">
+        <SelfRegisterSection />
+      </Capitulo>
 
-      {/* ── Shared stats ─────────────────────── */}
-      <div className="bg-[#0B1F45] py-10">
-        <div className="max-w-[1280px] mx-auto px-4 lg:px-16">
-          <div className="grid grid-cols-2 md:grid-cols-4 gap-6 text-center">
-            {sharedStats.map(({ value, unit, label }) => (
-              <div key={label}>
-                <p className="text-white text-3xl font-normal mb-0.5">
-                  {value}{unit && <span className="text-lg text-[#B4BBC8] ml-1">{unit}</span>}
-                </p>
-                <p className="text-[#B4BBC8] text-xs tracking-[0.1em] uppercase font-semibold">{label}</p>
-              </div>
-            ))}
-          </div>
-        </div>
-      </div>
-
-      {/* ── Longevity argument ────────────────── */}
-      <section className="py-8 lg:py-24 bg-[#F6F5F2]">
-        <div className="max-w-[1280px] mx-auto px-4 lg:px-16">
-          <ScrollReveal direction="up">
-            <div className="mb-12">
-              <p className="text-[#74777f] text-xs tracking-[0.2em] uppercase font-semibold mb-3">Longevidade</p>
-              <h2 className="font-serif text-[#0B1F45] text-3xl lg:text-4xl font-normal max-w-2xl">O projeto que envelhece bem fala por você.</h2>
-            </div>
-          </ScrollReveal>
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-            <ScrollReveal direction="up" delay={0}>
-              <div className="bg-white border border-[#e2e2e2] p-4 lg:p-8 h-full">
-                <p className="text-[#74777f] text-xs tracking-[0.1em] uppercase font-semibold mb-4">MDF em clima amazônico</p>
-                <p className="text-[#74777f] text-xl lg:text-3xl font-normal mb-3 leading-tight">2–3 anos e já mostra desgaste.</p>
-                <p className="text-[#74777f] text-sm leading-relaxed mb-5">Com umidade acima de 80% o ano todo, o MDF absorve água continuamente. O resultado aparece cedo.</p>
-                <ul className="space-y-2">
-                  {["Incha, empena e descola das paredes","Manchas de umidade e mofo visíveis","Pintura e laminado perdem aderência","O projeto entregue com esmero parece negligenciado","O cliente lembra quem especificou o material"].map((item) => (
-                    <li key={item} className="text-[#74777f] text-xs flex gap-2 leading-relaxed">
-                      <span className="flex-shrink-0 mt-0.5">—</span> {item}
-                    </li>
-                  ))}
-                </ul>
-              </div>
-            </ScrollReveal>
-            <ScrollReveal direction="up" delay={100}>
-              <div className="bg-[#0B1F45] p-4 lg:p-8 relative overflow-hidden h-full">
-                <div className="absolute top-3 right-3 bg-[#36A35C] text-[#0B1F45] text-[9px] tracking-[0.1em] uppercase font-bold px-2.5 py-1">PFB Orbital</div>
-                <p className="text-[#B4BBC8] text-xs tracking-[0.1em] uppercase font-semibold mb-4">Aparência preservada por anos</p>
-                <p className="text-white text-xl lg:text-3xl font-normal mb-3 leading-tight">O visual que saiu da obra, anos depois.</p>
-                <p className="text-white/60 text-sm leading-relaxed mb-5">Impermeável, anti-mofo e resistente a ciclos térmicos extremos. O acabamento não deteriora.</p>
-                <ul className="space-y-2">
-                  {["Inchamento máximo de 0,2% em 48h de imersão","Veios do mármore permanecem nítidos","Textura da madeira intacta ao longo do tempo","Sem descolar, sem manchar, sem empenar","O cliente mostra o projeto com orgulho a visitas"].map((item) => (
-                    <li key={item} className="text-white/80 text-xs flex gap-2 leading-relaxed">
-                      <span className="text-[#36A35C] flex-shrink-0 mt-0.5">✓</span> {item}
-                    </li>
-                  ))}
-                </ul>
-              </div>
-            </ScrollReveal>
-            <ScrollReveal direction="up" delay={200}>
-              <div className="bg-white border border-[#e2e2e2] p-4 lg:p-8 flex flex-col justify-between h-full">
-                <div>
-                  <p className="text-[#74777f] text-xs tracking-[0.1em] uppercase font-semibold mb-4">O impacto na sua reputação</p>
-                  <p className="text-[#0B1F45] text-lg lg:text-2xl font-normal mb-5 leading-snug">"Um ambiente bem executado é o seu melhor portfólio vivo."</p>
-                  <p className="text-[#43474e] text-sm leading-relaxed mb-4">Cada projeto entregue com PFB Orbital continua impecável anos depois — e continua atraindo novos clientes para você.</p>
-                  <p className="text-[#43474e] text-sm leading-relaxed mb-8">Especificar o material certo não é só uma escolha técnica. É uma decisão de proteção da sua imagem profissional.</p>
-                </div>
-                <ContatoCta
-                  className="inline-block bg-[#0B1F45] text-white text-xs tracking-[0.12em] uppercase font-bold px-6 py-3 text-center hover:bg-[#2347A0] transition-colors"
-                >
-                  Quero conhecer o PFB Orbital
-                </ContatoCta>
-              </div>
-            </ScrollReveal>
-          </div>
-        </div>
-      </section>
-
-      {/* ── Final CTA ─────────────────────────── */}
-      <section className="py-16 lg:py-24 bg-[#0B1F45] text-white">
-        <div className="max-w-[760px] mx-auto px-4 lg:px-8 text-center">
-          <ScrollReveal direction="up">
-            <p className="text-[#9c9faa] text-xs tracking-[0.2em] uppercase font-semibold mb-5">Condições exclusivas para profissionais</p>
-            <h2 className="font-serif text-white text-4xl lg:text-5xl font-normal mb-6">Pronto para fazer parte da rede Orbital?</h2>
-            <p className="text-white/55 text-base leading-relaxed mb-10">
-              Tabela diferenciada, amostras gratuitas, suporte técnico e estoque pronto em Manaus. Entre em contato e receba sua proposta.
+      {/* ── 06 Contato ─────────────────────────────────────────────────────── */}
+      <Capitulo id="contato" numero="06" rotulo="Contato" rotuladoPor="contato-titulo" escuro className="ds-secao bg-[#0B1F45] text-white">
+        <div className="ds-wrap">
+          <Revelar className="max-w-3xl mx-auto text-center">
+            <Sobretitulo escuro numero="06">Condições exclusivas para profissionais</Sobretitulo>
+            <h2 id="contato-titulo" className="font-serif text-white text-t1 font-normal tracking-[-0.025em] mt-4 mb-5 text-balance">Pronto para fazer parte da rede Orbital?</h2>
+            <p className="text-white/75 text-lead mb-8 text-pretty">
+              Tabela diferenciada, amostras gratuitas, suporte técnico e estoque pronto em Manaus. Um consultor responde pelo pré-contato.
             </p>
-            <div className="flex flex-col sm:flex-row flex-wrap justify-center gap-3 lg:gap-4">
-              <ContatoCta
-                className="w-full sm:w-auto inline-flex items-center justify-center gap-2.5 bg-white text-[#0D1830] text-xs tracking-[0.12em] uppercase font-bold px-9 py-4 hover:bg-[#f3f3f3] transition-colors"
-              >
-                <svg width="15" height="15" viewBox="0 0 24 24" fill="currentColor">
-                  <path d="M17.472 14.382c-.297-.149-1.758-.867-2.03-.967-.273-.099-.471-.148-.67.15-.197.297-.767.966-.94 1.164-.173.199-.347.223-.644.075-.297-.15-1.255-.463-2.39-1.475-.883-.788-1.48-1.761-1.653-2.059-.173-.297-.018-.458.13-.606.134-.133.298-.347.446-.52.149-.174.198-.298.298-.497.099-.198.05-.371-.025-.52-.075-.149-.669-1.612-.916-2.207-.242-.579-.487-.5-.669-.51-.173-.008-.371-.01-.57-.01-.198 0-.52.074-.792.372-.272.297-1.04 1.016-1.04 2.479 0 1.462 1.065 2.875 1.213 3.074.149.198 2.096 3.2 5.077 4.487.709.306 1.262.489 1.694.625.712.227 1.36.195 1.871.118.571-.085 1.758-.719 2.006-1.413.248-.694.248-1.289.173-1.413-.074-.124-.272-.198-.57-.347m-5.421 7.403h-.004a9.87 9.87 0 01-5.031-1.378l-.361-.214-3.741.982.998-3.648-.235-.374a9.86 9.86 0 01-1.51-5.26c.001-5.45 4.436-9.884 9.888-9.884 2.64 0 5.122 1.03 6.988 2.898a9.825 9.825 0 012.893 6.994c-.003 5.45-4.437 9.884-9.885 9.884m8.413-18.297A11.815 11.815 0 0012.05 0C5.495 0 .16 5.335.157 11.892c0 2.096.547 4.142 1.588 5.945L.057 24l6.305-1.654a11.882 11.882 0 005.683 1.448h.005c6.554 0 11.89-5.335 11.893-11.893a11.821 11.821 0 00-3.48-8.413z" />
-                </svg>
-                Iniciar parceria
-              </ContatoCta>
-              <a
-                href={CATALOGUE_URL}
-                target="_blank"
-                rel="noopener noreferrer"
-                className="w-full sm:w-auto inline-flex items-center justify-center gap-2 border border-white/25 text-white text-xs tracking-[0.12em] uppercase font-bold px-9 py-4 hover:border-white transition-colors"
-              >
-                <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-                  <path d="M21 15v4a2 2 0 01-2 2H5a2 2 0 01-2-2v-4M7 10l5 5 5-5M12 15V3" />
-                </svg>
-                Baixar Catálogo PDF
-              </a>
-              <Link href="/produtos" className="w-full sm:w-auto text-center border border-white/25 text-white text-xs tracking-[0.12em] uppercase font-bold px-9 py-4 hover:border-white transition-colors">
-                Ver catálogo online
-              </Link>
+            <div className="flex flex-col sm:flex-row flex-wrap justify-center gap-3">
+              <Botao contato tom="claro" grande largo>Iniciar parceria</Botao>
+              <Botao href="/produtos" tom="linha" grande largo seta>Ver o catálogo</Botao>
             </div>
-          </ScrollReveal>
+            <p className="text-white/60 text-legenda italic mt-10">Orbital · Catálogo 2026 · Dados sujeitos a alteração sem aviso prévio. Somos fornecedores diretos e não realizamos instalação.</p>
+          </Revelar>
         </div>
-      </section>
-
-      <div className="bg-[#F6F5F2] border-t border-[#eeeeee] py-5 text-center">
-        <p className="text-[#74777f] text-xs italic">
-          Orbital · Catálogo 2026 · Dados sujeitos a alteração sem aviso prévio. Somos fornecedores diretos — não fazemos instalação.
-        </p>
-      </div>
+      </Capitulo>
     </div>
   );
 }
 
-function SelfRegisterSection({ onScrollToSegments }: { onScrollToSegments: () => void }) {
+const labelCls = "block text-sobre tracking-[0.15em] uppercase font-bold text-[#74777f] mb-2";
+const inputCls = "w-full min-h-11 border border-[#e2e2e2] px-4 py-3 text-base sm:text-sm text-[#0B1F45] focus:outline-none focus:border-[#0B1F45] placeholder-[#b0b4bc]";
+
+function SelfRegisterSection() {
   const [form, setForm] = useState({ name: "", email: "", phone: "", referral_code: "", portal_password: "", birthday: "" });
   const [noReferral, setNoReferral] = useState(false);
-  const [lockedRepCode, setLockedRepCode] = useState<string | null>(null); // code pre-filled from ?rep= param
+  const [lockedRepCode, setLockedRepCode] = useState<string | null>(null); // código vindo de ?rep=
   const [showPassword, setShowPassword] = useState(false);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState("");
   const [success, setSuccess] = useState<{ coupon_code: string; name: string } | null>(null);
   const formRef = useRef<HTMLDivElement>(null);
 
-  // Auto-fill referral code from ?rep= URL param and scroll to form
+  // Código de indicação pela URL (?rep=): preenche, trava e leva ao formulário.
   useEffect(() => {
-    const params = new URLSearchParams(window.location.search);
-    const rep = params.get("rep");
-    if (rep) {
-      const code = rep.toUpperCase();
+    const rep = new URLSearchParams(window.location.search).get("rep");
+    if (!rep) return;
+    const code = rep.toUpperCase();
+    const t = setTimeout(() => {
       setForm((f) => ({ ...f, referral_code: code }));
       setLockedRepCode(code);
       setNoReferral(false);
-      setTimeout(() => formRef.current?.scrollIntoView({ behavior: "smooth", block: "start" }), 300);
-    }
+      formRef.current?.scrollIntoView({ behavior: window.matchMedia("(prefers-reduced-motion: reduce)").matches ? "auto" : "smooth", block: "start" });
+    }, 300);
+    return () => clearTimeout(t);
   }, []);
 
   function handleBdayChange(raw: string) {
@@ -578,207 +274,100 @@ function SelfRegisterSection({ onScrollToSegments }: { onScrollToSegments: () =>
     if (!res.ok) { setError(json.error || "Erro ao cadastrar. Tente novamente."); return; }
     setSuccess({ coupon_code: json.coupon_code, name: json.name });
     setTimeout(() => formRef.current?.scrollIntoView({ behavior: "smooth", block: "center" }), 50);
-  }, [form]);
+  }, [form, noReferral]);
 
   return (
-    <section className="py-10 lg:py-16 bg-[#F6F5F2] border-b border-[#e2e2e2]">
-      <div className="max-w-[1280px] mx-auto px-4 lg:px-16">
-        <div className="flex flex-col lg:flex-row gap-12 lg:gap-20 items-start">
-
-          {/* Left — explanation */}
-          <div className="lg:w-[38%] lg:pt-2 flex-shrink-0">
-            <p className="text-[#74777f] text-[10px] tracking-[0.2em] uppercase font-semibold mb-3">
-              Já é parceiro?
-            </p>
-            <h2 className="font-serif text-[#0B1F45] text-3xl font-normal leading-tight mb-4">
-              Cadastre-se e receba seu cupom personalizado.
-            </h2>
-            <p className="text-[#74777f] text-sm leading-relaxed mb-6">
-              Crie sua conta, receba seu cupom personalizado e acesse seu portal de parceiro.
-            </p>
-            <div className="space-y-3">
-              {[
-                { n: "1", t: "Preencha o formulário" },
-                { n: "2", t: "Receba seu cupom por email" },
-                { n: "3", t: "Acesse o portal e acompanhe tudo" },
-              ].map(({ n, t }) => (
-                <div key={n} className="flex items-start gap-3">
-                  <span className="flex-shrink-0 w-6 h-6 rounded-full bg-[#0B1F45] text-white text-[10px] font-bold flex items-center justify-center mt-0.5">{n}</span>
-                  <p className="text-[#43474e] text-sm leading-relaxed">{t}</p>
-                </div>
-              ))}
-            </div>
-            <button
-              onClick={onScrollToSegments}
-              className="mt-8 text-[#0B1F45] text-xs font-semibold tracking-[0.08em] uppercase underline underline-offset-4 hover:text-[#2347A0] transition-colors"
-            >
-              Ver benefícios por perfil ↓
-            </button>
-          </div>
-
-          {/* Right — form */}
-          <div ref={formRef} className="lg:w-[62%] w-full">
-            {success ? (
-              <div className="bg-white border border-green-200 px-8 py-10 text-center">
-                <div className="w-12 h-12 bg-green-100 rounded-full flex items-center justify-center mx-auto mb-5">
-                  <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="#16a34a" strokeWidth="2.5"><polyline points="20 6 9 17 4 12"/></svg>
-                </div>
-                <p className="text-[#0B1F45] text-2xl font-normal mb-2">
-                  Cadastro recebido!
-                </p>
-                <p className="text-[#43474e] text-sm leading-relaxed mb-4">
-                  Olá, <strong>{success.name.split(" ")[0]}</strong>. Seu cupom reservado é{" "}
-                  <strong className="text-[#0B1F45] tracking-widest font-mono text-base">{success.coupon_code}</strong>.
-                </p>
-                <p className="text-[#74777f] text-xs">
-                  Nossa equipe ativa seu cadastro em até 24h. Você receberá uma confirmação por email.
-                </p>
-              </div>
-            ) : (
-              <form onSubmit={handleSubmit} className="bg-white border border-[#e2e2e2] p-5 lg:p-8">
-                <p className="text-[#0B1F45] text-xl font-normal mb-6">Criar conta de parceiro</p>
-                <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 mb-4">
-                  <div>
-                    <label className="block text-[10px] tracking-[0.15em] uppercase font-bold text-[#74777f] mb-2">Nome completo *</label>
-                    <input
-                      required
-                      value={form.name}
-                      onChange={(e) => setForm({ ...form, name: e.target.value })}
-                      className="w-full border border-[#e2e2e2] px-4 py-3 text-sm text-[#0B1F45] focus:outline-none focus:border-[#0B1F45] placeholder-[#b0b4bc]"
-                      placeholder="Seu nome"
-                    />
-                  </div>
-                  <div>
-                    <label className="block text-[10px] tracking-[0.15em] uppercase font-bold text-[#74777f] mb-2">Email *</label>
-                    <input
-                      required
-                      type="email"
-                      value={form.email}
-                      onChange={(e) => setForm({ ...form, email: e.target.value })}
-                      className="w-full border border-[#e2e2e2] px-4 py-3 text-sm text-[#0B1F45] focus:outline-none focus:border-[#0B1F45] placeholder-[#b0b4bc]"
-                      placeholder="seu@email.com"
-                    />
-                  </div>
-                  <div>
-                    <label className="block text-[10px] tracking-[0.15em] uppercase font-bold text-[#74777f] mb-2">WhatsApp *</label>
-                    <input
-                      required
-                      value={form.phone}
-                      onChange={(e) => setForm({ ...form, phone: e.target.value })}
-                      className="w-full border border-[#e2e2e2] px-4 py-3 text-sm text-[#0B1F45] focus:outline-none focus:border-[#0B1F45] placeholder-[#b0b4bc]"
-                      placeholder="(92) 9 0000-0000"
-                    />
-                  </div>
-                  <div>
-                    <label className="block text-[10px] tracking-[0.15em] uppercase font-bold text-[#74777f] mb-2">Data de Nascimento *</label>
-                    <input
-                      required
-                      type="text"
-                      placeholder="DD/MM/AAAA"
-                      value={form.birthday}
-                      onChange={(e) => handleBdayChange(e.target.value)}
-                      maxLength={10}
-                      className="w-full border border-[#e2e2e2] px-4 py-3 text-sm text-[#0B1F45] focus:outline-none focus:border-[#0B1F45]"
-                    />
-                  </div>
-                  <div>
-                    <div className="flex items-center justify-between mb-2">
-                      <label className="text-[10px] tracking-[0.15em] uppercase font-bold text-[#74777f]">
-                        Código de indicação {noReferral ? "" : "*"}
-                      </label>
-                      {/* Hide "Não tenho código" when code is locked from URL */}
-                      {!lockedRepCode && (
-                        <label className="flex items-center gap-1.5 cursor-pointer select-none">
-                          <input
-                            type="checkbox"
-                            checked={noReferral}
-                            onChange={(e) => {
-                              setNoReferral(e.target.checked);
-                              if (e.target.checked) setForm(f => ({ ...f, referral_code: "" }));
-                            }}
-                            className="w-3.5 h-3.5 accent-[#0B1F45] cursor-pointer"
-                          />
-                          <span className="text-[9px] text-[#74777f] whitespace-nowrap">Não tenho código</span>
-                        </label>
-                      )}
-                    </div>
-                    <div className="relative">
-                      <input
-                        required={!noReferral}
-                        disabled={noReferral || !!lockedRepCode}
-                        value={noReferral ? "" : form.referral_code}
-                        onChange={(e) => setForm({ ...form, referral_code: e.target.value.toUpperCase() })}
-                        className={`w-full border px-4 py-3 text-sm focus:outline-none uppercase tracking-widest transition-colors ${
-                          noReferral
-                            ? "border-[#e2e2e2] bg-[#F6F5F2] text-[#b0b4bc] cursor-not-allowed"
-                            : lockedRepCode
-                            ? "border-[#36A35C] bg-[#f0f5ec] text-[#2347A0] cursor-not-allowed font-bold"
-                            : "border-[#e2e2e2] text-[#0B1F45] focus:border-[#0B1F45] placeholder-[#b0b4bc]"
-                        }`}
-                        placeholder={noReferral ? "Sem código de indicação" : "EX: REP_JOAO"}
-                      />
-                      {lockedRepCode && (
-                        <span className="absolute right-3 top-1/2 -translate-y-1/2 text-[9px] font-bold tracking-wide text-[#1F7A44] bg-[#dcf0d8] px-1.5 py-0.5">
-                          ✓ Validado
-                        </span>
-                      )}
-                    </div>
-                    {lockedRepCode && (
-                      <p className="text-[9px] text-[#1F7A44] mt-1">
-                        Código do seu consultor Orbital aplicado automaticamente.
-                      </p>
-                    )}
-                  </div>
-                </div>
-                <div className="mb-5">
-                  <label className="block text-[10px] tracking-[0.15em] uppercase font-bold text-[#74777f] mb-2">Senha para seu portal *</label>
-                  <div className="relative">
-                    <input
-                      required
-                      type={showPassword ? "text" : "password"}
-                      value={form.portal_password}
-                      onChange={(e) => setForm({ ...form, portal_password: e.target.value })}
-                      className="w-full border border-[#e2e2e2] px-4 py-3 pr-12 text-sm text-[#0B1F45] focus:outline-none focus:border-[#0B1F45] placeholder-[#b0b4bc]"
-                      placeholder="Mínimo 8 caracteres"
-                      minLength={8}
-                    />
-                    <button
-                      type="button"
-                      onClick={() => setShowPassword((v) => !v)}
-                      className="absolute right-3 top-1/2 -translate-y-1/2 text-[#b0b4bc] hover:text-[#0B1F45] transition-colors p-1"
-                      aria-label={showPassword ? "Ocultar senha" : "Mostrar senha"}
-                    >
-                      {showPassword ? (
-                        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-                          <path d="M17.94 17.94A10.07 10.07 0 0 1 12 20c-7 0-11-8-11-8a18.45 18.45 0 0 1 5.06-5.94"/>
-                          <path d="M9.9 4.24A9.12 9.12 0 0 1 12 4c7 0 11 8 11 8a18.5 18.5 0 0 1-2.16 3.19"/>
-                          <line x1="1" y1="1" x2="23" y2="23"/>
-                        </svg>
-                      ) : (
-                        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-                          <path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/>
-                          <circle cx="12" cy="12" r="3"/>
-                        </svg>
-                      )}
-                    </button>
-                  </div>
-                </div>
-                {error && <p className="text-red-600 text-sm mb-4">{error}</p>}
-                <button
-                  type="submit"
-                  disabled={loading}
-                  className="w-full bg-[#0B1F45] text-white text-xs tracking-[0.15em] uppercase font-bold px-8 py-4 hover:bg-[#2347A0] transition-colors disabled:opacity-50"
-                >
-                  {loading ? "Enviando..." : "Solicitar cadastro"}
-                </button>
-                <p className="text-[#74777f] text-[11px] text-center mt-3">
-                  Aprovação em até 24h · Cupom gerado automaticamente
-                </p>
-              </form>
-            )}
-          </div>
-        </div>
+    <div className="ds-wrap flex flex-col lg:flex-row gap-10 lg:gap-20 items-start">
+      <div className="lg:w-[38%] flex-shrink-0">
+        <Revelar>
+          <SecaoCabecalho id="cadastro-titulo" numero="05" sobretitulo="Já é parceiro?" titulo="Cadastre-se e receba seu cupom personalizado."
+            texto="Crie sua conta, receba seu cupom e acesse o portal do parceiro para acompanhar tudo." />
+          <ol className="space-y-3">
+            {["Preencha o formulário", "Receba seu cupom por e-mail", "Acesse o portal e acompanhe tudo"].map((t, i) => (
+              <li key={t} className="flex items-start gap-3">
+                <span className="flex-shrink-0 w-7 h-7 bg-primary text-white text-sobre font-bold flex items-center justify-center">{i + 1}</span>
+                <p className="text-on-surface-variant text-corpo leading-relaxed">{t}</p>
+              </li>
+            ))}
+          </ol>
+        </Revelar>
       </div>
-    </section>
+
+      <div ref={formRef} className="lg:w-[62%] w-full scroll-mt-24">
+        {success ? (
+          <div className="bg-background border border-[#36A35C] px-6 py-10 text-center" role="status">
+            <p className="font-serif text-primary text-t3 mb-2">Cadastro recebido!</p>
+            <p className="text-on-surface-variant text-corpo leading-relaxed mb-4">
+              Olá, <strong>{success.name.split(" ")[0]}</strong>. Seu cupom reservado é{" "}
+              <strong className="text-primary tracking-widest font-mono text-base">{success.coupon_code}</strong>.
+            </p>
+            <p className="text-on-surface-variant text-legenda">Nossa equipe ativa seu cadastro em até 24 h. Você receberá uma confirmação por e-mail.</p>
+          </div>
+        ) : (
+          <form onSubmit={handleSubmit} className="bg-background border border-surface-variant p-5 lg:p-8">
+            <p className="font-serif text-primary text-t3 mb-6">Criar conta de parceiro</p>
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 mb-4">
+              <div>
+                <label htmlFor="p-nome" className={labelCls}>Nome completo *</label>
+                <input id="p-nome" required value={form.name} onChange={(e) => setForm({ ...form, name: e.target.value })} className={inputCls} placeholder="Seu nome" autoComplete="name" />
+              </div>
+              <div>
+                <label htmlFor="p-email" className={labelCls}>E-mail *</label>
+                <input id="p-email" required type="email" value={form.email} onChange={(e) => setForm({ ...form, email: e.target.value })} className={inputCls} placeholder="seu@email.com" autoComplete="email" />
+              </div>
+              <div>
+                <label htmlFor="p-whats" className={labelCls}>WhatsApp *</label>
+                <input id="p-whats" required value={form.phone} onChange={(e) => setForm({ ...form, phone: e.target.value })} className={inputCls} placeholder="(92) 9 0000-0000" autoComplete="tel" inputMode="tel" />
+              </div>
+              <div>
+                <label htmlFor="p-nasc" className={labelCls}>Data de nascimento *</label>
+                <input id="p-nasc" required type="text" placeholder="DD/MM/AAAA" value={form.birthday} onChange={(e) => handleBdayChange(e.target.value)} maxLength={10} className={inputCls} inputMode="numeric" />
+              </div>
+              <div className="sm:col-span-2">
+                <div className="flex items-center justify-between mb-2 gap-3">
+                  <label htmlFor="p-codigo" className={`${labelCls} mb-0`}>Código de indicação {noReferral ? "" : "*"}</label>
+                  {!lockedRepCode && (
+                    <label className="flex items-center gap-2 min-h-11 cursor-pointer select-none">
+                      <input type="checkbox" checked={noReferral}
+                        onChange={(e) => { setNoReferral(e.target.checked); if (e.target.checked) setForm((f) => ({ ...f, referral_code: "" })); }}
+                        className="w-4 h-4 accent-[#0B1F45] cursor-pointer" />
+                      <span className="text-legenda text-on-surface-variant whitespace-nowrap">Não tenho código</span>
+                    </label>
+                  )}
+                </div>
+                <div className="relative">
+                  <input id="p-codigo" required={!noReferral} disabled={noReferral || !!lockedRepCode} value={noReferral ? "" : form.referral_code}
+                    onChange={(e) => setForm({ ...form, referral_code: e.target.value.toUpperCase() })}
+                    className={`${inputCls} uppercase tracking-widest ${noReferral ? "bg-surface-container text-[#b0b4bc] cursor-not-allowed" : lockedRepCode ? "border-[#36A35C] bg-[#f0f5ec] text-[#2347A0] cursor-not-allowed font-bold" : ""}`}
+                    placeholder={noReferral ? "Sem código de indicação" : "EX: REP_JOAO"} />
+                  {lockedRepCode && <span className="absolute right-3 top-1/2 -translate-y-1/2 text-sobre font-bold tracking-wide text-[#1F7A44] bg-[#dcf0d8] px-1.5 py-0.5">Validado</span>}
+                </div>
+                {lockedRepCode && <p className="text-sobre text-[#1F7A44] mt-1">Código do seu consultor Orbital aplicado automaticamente.</p>}
+              </div>
+            </div>
+            <div className="mb-5">
+              <label htmlFor="p-senha" className={labelCls}>Senha para seu portal *</label>
+              <div className="relative">
+                <input id="p-senha" required type={showPassword ? "text" : "password"} value={form.portal_password}
+                  onChange={(e) => setForm({ ...form, portal_password: e.target.value })} className={`${inputCls} pr-12`} placeholder="Mínimo 8 caracteres" minLength={8} autoComplete="new-password" />
+                <button type="button" onClick={() => setShowPassword((v) => !v)} aria-label={showPassword ? "Ocultar senha" : "Mostrar senha"}
+                  className="absolute right-0 top-0 h-full w-11 flex items-center justify-center text-[#74777f] hover:text-primary transition-colors">
+                  {showPassword ? (
+                    <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden><path d="M17.94 17.94A10.07 10.07 0 0 1 12 20c-7 0-11-8-11-8a18.45 18.45 0 0 1 5.06-5.94" /><path d="M9.9 4.24A9.12 9.12 0 0 1 12 4c7 0 11 8 11 8a18.5 18.5 0 0 1-2.16 3.19" /><line x1="1" y1="1" x2="23" y2="23" /></svg>
+                  ) : (
+                    <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z" /><circle cx="12" cy="12" r="3" /></svg>
+                  )}
+                </button>
+              </div>
+            </div>
+            {error && <p className="text-error text-legenda mb-4" role="alert">{error}</p>}
+            <button type="submit" disabled={loading} className="ds-botao ds-botao-cheio w-full min-h-12 disabled:opacity-50">
+              {loading ? "Enviando…" : "Solicitar cadastro"}
+            </button>
+            <p className="text-on-surface-variant text-legenda text-center mt-3">Aprovação em até 24 h · Cupom gerado automaticamente</p>
+          </form>
+        )}
+      </div>
+    </div>
   );
 }
