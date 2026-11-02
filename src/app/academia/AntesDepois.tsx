@@ -35,7 +35,7 @@ export default function AntesDepois({ par, rotulo }: { par: Par; rotulo: string 
           >
             <Image src={src} alt={alt} fill sizes="(min-width: 768px) 45vw, 100vw" className="object-cover" />
             <span
-              className={`absolute top-3 left-3 text-[11px] tracking-[0.18em] uppercase font-extrabold px-3 py-1.5 ${
+              className={`absolute top-3 left-3 text-sobre tracking-[0.18em] uppercase font-extrabold px-3 py-1.5 ${
                 k === "depois" ? "bg-[#36A35C] text-[#0D1830]" : "bg-black/70 text-white"
               }`}
             >

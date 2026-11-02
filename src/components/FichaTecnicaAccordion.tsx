@@ -127,7 +127,7 @@ export default function FichaTecnicaAccordion() {
             </svg>
           </div>
           <div>
-            <p className="text-[#B4BBC8] text-[9px] tracking-[0.2em] uppercase font-bold">
+            <p className="text-[#B4BBC8] text-sobre tracking-[0.2em] uppercase font-bold">
               Especificações Completas
             </p>
             <p className="text-white text-sm font-semibold mt-0.5">
@@ -154,7 +154,7 @@ export default function FichaTecnicaAccordion() {
                   <div className="w-5 h-5 bg-[#2347A0] flex items-center justify-center text-[#B4BBC8] flex-shrink-0">
                     {section.icon}
                   </div>
-                  <p className="text-[#B4BBC8] text-[9px] tracking-[0.18em] uppercase font-bold">
+                  <p className="text-[#B4BBC8] text-sobre tracking-[0.18em] uppercase font-bold">
                     {section.heading}
                   </p>
                 </div>
@@ -162,11 +162,11 @@ export default function FichaTecnicaAccordion() {
                 <div className="space-y-2">
                   {section.rows.map(({ label, value }) => (
                     <div key={label} className="flex items-start justify-between gap-3">
-                      <span className="text-white/50 text-[10px] leading-snug shrink-0 max-w-[48%]">
+                      <span className="text-white/50 text-sobre leading-snug shrink-0 max-w-[48%]">
                         {label}
                       </span>
                       <span
-                        className={`text-[10px] leading-snug text-right font-medium ${
+                        className={`text-sobre leading-snug text-right font-medium ${
                           value.startsWith("✓")
                             ? "text-[#36A35C]"
                             : value.startsWith("✗")
@@ -191,7 +191,7 @@ export default function FichaTecnicaAccordion() {
               <path d="M12 2v6M12 16v6M2 12h6M16 12h6" />
               <circle cx="12" cy="12" r="3" />
             </svg>
-            <p className="text-[#B4BBC8] text-[9px] leading-relaxed">
+            <p className="text-[#B4BBC8] text-sobre leading-relaxed">
               Validado para uso interno. O aquecimento contínuo — sol direto ou indireto — acima de 50°C pode gerar leve ondulação, conforme o local e a aplicação.
             </p>
           </div>
@@ -205,7 +205,7 @@ export default function FichaTecnicaAccordion() {
               <polyline points="17 8 21 12 17 16" />
               <line x1="3" y1="12" x2="21" y2="12" />
             </svg>
-            <p className="text-[#B4BBC8] text-[9px] leading-relaxed">
+            <p className="text-[#B4BBC8] text-sobre leading-relaxed">
               Peso e densidade admitem tolerância de ±10% — o bambu é fibra natural e cada lote varia. Padrão em materiais de fibra vegetal.
             </p>
           </div>
@@ -217,7 +217,7 @@ export default function FichaTecnicaAccordion() {
               <line x1="12" y1="8" x2="12" y2="12" />
               <line x1="12" y1="16" x2="12.01" y2="16" />
             </svg>
-            <p className="text-[#B4BBC8] text-[9px]">
+            <p className="text-[#B4BBC8] text-sobre">
               Dados extraídos de ficha técnica laboratorial e ART nº AM20260593657 · CREA 042030134-8-D
             </p>
           </div>

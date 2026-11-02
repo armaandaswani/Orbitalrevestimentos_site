@@ -330,7 +330,7 @@ function SelfRegisterSection() {
                     <label className="flex items-center gap-2 min-h-11 cursor-pointer select-none">
                       <input type="checkbox" checked={noReferral}
                         onChange={(e) => { setNoReferral(e.target.checked); if (e.target.checked) setForm((f) => ({ ...f, referral_code: "" })); }}
-                        className="w-4 h-4 accent-[#0B1F45] cursor-pointer" />
+                        className="w-6 h-6 accent-[#0B1F45] cursor-pointer" />
                       <span className="text-legenda text-on-surface-variant whitespace-nowrap">Não tenho código</span>
                     </label>
                   )}

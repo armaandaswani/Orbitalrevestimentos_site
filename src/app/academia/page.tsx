@@ -198,7 +198,7 @@ export default function AcademiaPage() {
             {APLICACOES.map(({ t, src, alt }, i) => (
               <Revelar key={t} como="li" ordem={i % 3}>
                 <figure className="relative aspect-[3/4] overflow-hidden bg-[#0B1F45]">
-                  <Image src={src} alt={alt} fill sizes="(min-width: 1024px) 400px, 50vw" className="object-cover mv-desvela" />
+                  <Image src={src} alt={alt} fill sizes="(max-width: 1023px) 50vw, 400px" className="object-cover mv-desvela" />
                   <div className="absolute inset-0 bg-gradient-to-t from-[#0B1F45]/80 via-transparent to-transparent" aria-hidden />
                   <figcaption className={`${D} absolute left-3 bottom-3 lg:left-5 lg:bottom-5 text-white text-xl lg:text-2xl leading-none font-bold uppercase`}>{t}</figcaption>
                 </figure>

@@ -197,7 +197,7 @@ export default async function TecnologiaPage() {
             {CLIMA.map((c, i) => (
               <Revelar key={c.t} como="li" ordem={i} className="border border-surface-variant p-5">
                 <p className="text-primary font-semibold text-corpo">{c.t}</p>
-                <p className="text-on-surface-variant text-legenda mt-2 leading-relaxed">{c.d}</p>
+                <p className="text-on-surface-variant text-corpo mt-2 leading-relaxed">{c.d}</p>
               </Revelar>
             ))}
           </ul>
@@ -220,7 +220,7 @@ export default async function TecnologiaPage() {
             {NOTAS.map((n, i) => (
               <Revelar key={n.t} como="li" ordem={i} className="border-l border-white/20 pl-5">
                 <p className="text-white font-semibold text-corpo">{n.t}</p>
-                <p className="text-white/70 text-legenda mt-2 leading-relaxed">{n.d}</p>
+                <p className="text-white/70 text-corpo mt-2 leading-relaxed">{n.d}</p>
               </Revelar>
             ))}
           </ul>
