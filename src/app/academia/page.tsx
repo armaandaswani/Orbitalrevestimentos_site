@@ -1,43 +1,32 @@
 import type { Metadata } from "next";
 import Image from "next/image";
 import { Barlow_Condensed } from "next/font/google";
-import ScrollReveal from "@/components/ScrollReveal";
-import { supabaseAdmin } from "@/lib/supabase";
-import { statusTurma1 } from "@/lib/academia-status";
-import { QUANDO_TURMA_1_INICIO, STATUS_PADRAO, vagasTxt, type StatusTurma } from "@/lib/academia-turmas";
 import VideoShort from "@/components/VideoShort";
 import { DiferenciaisPfb } from "@/components/ConhecaPfb";
-import ListaEsperaForm from "./ListaEsperaForm";
+import Botao from "@/components/ds/Botao";
+import Capitulo from "@/components/ds/Capitulo";
+import ProgressoCapitulos from "@/components/ds/ProgressoCapitulos";
+import Revelar from "@/components/projetos/Revelar";
 import AntesDepois from "./AntesDepois";
 import CtaFixo from "./CtaFixo";
 
 /**
- * Academia Orbital — 1ª edição da formação em instalação do PFB.
+ * Academia Orbital — a formação em instalação do Painel Flexível em Fibra de
+ * Bambu (PFB), como apresentação em capítulos.
  *
  * Campanha dentro da marca: tipografia condensada nos títulos, Verde Bambu
- * (#36A35C, com texto azul-tinta) na conversão.
- * Público: aplicador, instalador e marceneiro, no celular. Eles não leem
- * parágrafo — cada seção é UM título curto e UMA prova visual, com espaço em
- * volta. Versões anteriores foram reprovadas por excesso de texto; antes de
- * acrescentar uma frase aqui, tire outra.
+ * (#36A35C, com texto azul-tinta) na conversão. Público: aplicador,
+ * instalador e marceneiro, no celular. Eles não leem parágrafo — cada seção é
+ * UM título curto e UMA prova visual. Antes de acrescentar uma frase, tire
+ * outra.
  *
- * O formulário é o centro da página e fica no topo; todo botão volta para ele.
+ * Regras do dono: chamar sempre de "formação" (nunca "workshop"); NUNCA
+ * mostrar número de vagas nem data; a inscrição passa pelo pré-contato
+ * ("Quero participar da formação" abre a aba do consultor). Sai com
+ * certificado de conclusão e compra PFB direto com a Orbital.
  *
- * Formação (chamar sempre de "formação", não "workshop" — decisão do dono; decisões do dono, out/2026 — regras em src/lib/academia-turmas.ts):
- * - 1ª turma gratuita (só ela); o número de vagas NUNCA aparece — "vagas
- *   limitadíssimas". Mostra quantos estão pré-inscritos e, perto do limite,
- *   a contagem regressiva das vagas.
- * - Lotou: "1ª turma preenchida" e o formulário inscreve na lista de espera
- *   da 2ª turma (que também recebe as vagas de quem desistir).
- * - Sai com certificado de conclusão e compra PFB direto com a Orbital.
- * - Data da 1ª turma: sábado, 31/10, às 7h30 (QUANDO_TURMA_1). O formulário
- *   pergunta se a pessoa pode; quem não pode vai para a lista da 2ª turma.
- *   O local vai para os inscritos, com o pedido de confirmação de presença.
- *
- * Fotos: só obras reais da Orbital. Os "depois" em PNG de /images/projetos são
- * imagens geradas e não entram aqui.
+ * Fotos: só obras reais da Orbital.
  */
-
 const display = Barlow_Condensed({ subsets: ["latin"], weight: ["600", "700", "800"], display: "swap" });
 const D = display.className;
 
@@ -46,29 +35,18 @@ const URL_PAGINA = "https://orbitalrevestimentos.com.br/academia";
 export const metadata: Metadata = {
   title: "Academia Orbital — Formação em instalação do PFB",
   description:
-    "Formação prática em instalação do Painel Flexível em Fibra de Bambu (PFB), do corte ao acabamento. 1ª turma gratuita, vagas limitadíssimas. Saia com certificado e compre PFB direto com a Orbital.",
+    "Formação prática em instalação do Painel Flexível em Fibra de Bambu (PFB), do corte ao acabamento, no padrão Orbital. Saia com certificado e compre PFB direto com a Orbital.",
   alternates: { canonical: URL_PAGINA },
   openGraph: {
     title: "Academia Orbital — Formação em instalação do PFB",
-    description: "1ª turma gratuita, vagas limitadíssimas. Saia com certificado e um novo serviço no portfólio.",
+    description: "Formação prática, no padrão Orbital. Saia com certificado e um novo serviço no portfólio.",
     url: URL_PAGINA,
   },
 };
 
-/** Contador de vagas: relido no máximo a cada minuto (e na hora, a cada inscrição). */
-export const revalidate = 60;
-
-async function lerStatus(): Promise<StatusTurma> {
-  try {
-    return await statusTurma1(supabaseAdmin());
-  } catch {
-    return STATUS_PADRAO; // sem banco (ex.: build local): turma aberta, sem números
-  }
-}
-
 const LIMA = "#36A35C"; // Verde Bambu
 
-const BENEFICIOS = ["Gratuito na 1ª turma", "Vagas limitadíssimas", "Certificado de conclusão", "Compra direta Orbital"];
+const BENEFICIOS = ["Formação prática", "Padrão Orbital", "Certificado de conclusão", "Compra direta Orbital"];
 
 const PARES = [
   {
@@ -113,232 +91,153 @@ const breadcrumbSchema = {
   ],
 };
 
-/**
- * Situação das vagas, logo acima do formulário. O número de vagas nunca
- * aparece; o de pré-inscritos sim (a partir de alguns), e a contagem regressiva
- * só perto do limite.
- */
-function Vagas({ st }: { st: StatusTurma }) {
-  const inscritos = st.mostrarInscritos ? `${st.inscritos} profissionais pré-inscritos` : "";
-  if (st.fechada) {
-    return (
-      <div className="mb-5">
-        <p className={`${D} text-3xl lg:text-4xl leading-none font-extrabold uppercase`}>
-          1ª turma <span style={{ color: LIMA }}>preenchida</span>
-        </p>
-        <p className="text-white/70 text-sm mt-2">
-          {inscritos ? `${inscritos}. ` : ""}Entre na lista da 2ª turma — e, se houver desistência na 1ª, chamamos pela ordem da lista.
-        </p>
-      </div>
-    );
-  }
-  if (st.mostrarContador) {
-    return (
-      <div className="mb-5 flex flex-wrap items-end gap-x-4 gap-y-1" role="status">
-        <p className={`${D} text-4xl lg:text-5xl leading-none font-extrabold uppercase`} style={{ color: LIMA }}>
-          {st.restantes === 1 ? "Última vaga" : `Restam ${vagasTxt(st.restantes)}`}
-        </p>
-        <p className="text-white/70 text-sm pb-1">{inscritos || "Vagas limitadíssimas"}</p>
-      </div>
-    );
-  }
-  return (
-    <p className="mb-5 text-sm">
-      {inscritos && <span className="font-bold">{inscritos} · </span>}
-      <span className="font-bold uppercase tracking-[0.12em]" style={{ color: LIMA }}>Vagas limitadíssimas</span>
-    </p>
-  );
-}
-
-/** Todo botão volta para o formulário no topo. Alto: é tocado com o polegar. */
-function Cta({ texto, tom = "lima" }: { texto: string; tom?: "lima" | "navy" | "verde" }) {
-  const cor = {
-    lima: "bg-[#36A35C] text-[#0D1830] hover:bg-[#4BB571]",
-    navy: "bg-[#0B1F45] text-white hover:bg-[#2347A0]",
-    verde: "bg-[#36A35C] text-[#0B1F45] hover:bg-[#4BB571]",
-  }[tom];
-  return (
-    <a
-      href="#lista-de-espera"
-      className={`group w-full sm:w-auto inline-flex items-center justify-center gap-3 min-h-14 px-6 sm:px-8 py-4 text-sm tracking-[0.08em] sm:tracking-[0.12em] uppercase font-extrabold transition-colors ${cor}`}
-    >
-      {texto}
-      <span aria-hidden className="transition-transform duration-300 group-hover:translate-x-1.5">→</span>
-    </a>
-  );
-}
-
+const CTA = "Quero participar da formação";
 const H2 = `${D} text-[34px] leading-none sm:text-5xl lg:text-[60px] lg:leading-[0.98] font-bold uppercase`;
 
-export default async function AcademiaPage() {
-  const st = await lerStatus();
-  const fechada = st.fechada;
-  const ctaTexto = fechada ? "Entrar na lista da 2ª turma" : "Quero minha vaga";
+/** Todo botão abre o pré-contato: a inscrição na formação passa pelo consultor. */
+function Cta({ texto = CTA, tom = "verde" }: { texto?: string; tom?: "verde" | "cheio" }) {
+  return (
+    <Botao contato inicial={{ conhece: "sim" }} seta largo className="min-h-14 text-sm font-extrabold" tom={tom}>
+      {texto}
+    </Botao>
+  );
+}
 
+export default function AcademiaPage() {
   return (
     <div className="pt-20 bg-[#0B1F45]">
       <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: JSON.stringify(breadcrumbSchema) }} />
+      <ProgressoCapitulos />
 
-      {/* ── Topo: promessa + formulário ── */}
-      <section id="academia-topo" className="bg-[#0B1F45] text-white">
-        <div className="max-w-[1280px] mx-auto px-4 lg:px-16 pt-10 pb-14 lg:py-20 lg:grid lg:grid-cols-[1fr_1.05fr] lg:gap-16 lg:items-center">
+      {/* ── Topo: a promessa ── */}
+      <section id="academia-topo" className="bg-[#0B1F45] text-white ds-escuro">
+        <div className="ds-wrap pt-10 pb-14 lg:py-20 lg:grid lg:grid-cols-[1.1fr_1fr] lg:gap-16 lg:items-center">
           <div className="mb-10 lg:mb-0">
             <div className="flex flex-wrap items-center gap-2.5 mb-6">
-              <span className="text-[11px] tracking-[0.22em] uppercase font-bold" style={{ color: LIMA }}>
-                Academia Orbital
-              </span>
-              <span className="border border-white/25 text-white/70 text-[10px] tracking-[0.18em] uppercase font-bold px-2 py-0.5">
-                {fechada ? "1ª turma preenchida" : "Formação · 1ª turma gratuita"}
-              </span>
+              <span className="text-sobre tracking-[0.22em] uppercase font-bold" style={{ color: LIMA }}>Academia Orbital</span>
+              <span className="border border-white/25 text-white/70 text-sobre tracking-[0.18em] uppercase font-bold px-2 py-0.5">Formação em instalação</span>
             </div>
             <h1 className={`${D} text-[40px] leading-[0.98] sm:text-6xl lg:text-[64px] xl:text-[70px] lg:leading-[0.95] font-extrabold uppercase mb-6`}>
-              Aprenda a instalar PFB.
+              Aprenda a instalar o PFB.
               <br />
               <span style={{ color: LIMA }}>Ganhe um novo serviço.</span>
             </h1>
-            <p className="text-white/70 text-base lg:text-lg leading-relaxed max-w-md">
-              Formação prática no Painel Flexível em Fibra de Bambu (PFB), do corte ao acabamento. Você sai com
+            <p className="text-white/75 text-lead max-w-md text-pretty">
+              Formação prática no Painel Flexível em Fibra de Bambu (PFB), do corte ao acabamento, no padrão Orbital. Você sai com
               certificado e compra PFB direto com a Orbital.
             </p>
+            <div className="mt-8 flex flex-col sm:flex-row gap-3">
+              <Cta />
+              <Botao href="#prova" tom="linha" largo className="min-h-14">Ver o que você vai fazer</Botao>
+            </div>
           </div>
-
-          <div id="lista-de-espera" className="scroll-mt-24">
-            <Vagas st={st} />
-            <p className={`${D} text-2xl lg:text-[28px] leading-none font-bold uppercase mb-4`}>
-              {fechada ? (
-                <>Entre na lista da <span style={{ color: LIMA }}>2ª turma</span></>
-              ) : (
-                <>Garanta sua vaga na <span style={{ color: LIMA }}>1ª turma</span></>
-              )}
-            </p>
-            {!fechada && (
-              <p className="text-white/80 text-sm font-semibold -mt-2 mb-4">{QUANDO_TURMA_1_INICIO} · gratuita</p>
-            )}
-            <ListaEsperaForm turma={fechada ? 2 : 1} />
+          <div className="relative aspect-[4/5] max-h-[70svh] overflow-hidden bg-primary-container">
+            <Image src="/images/academia/lavabo-consultorio-inteiro.jpg" alt="Lavabo inteiro revestido com PFB, obra real da Orbital" fill priority sizes="(max-width: 1023px) 92vw, 520px" className="object-cover" />
           </div>
         </div>
       </section>
 
       {/* ── Faixa: os quatro ganhos, em quatro palavras ── */}
       <section className="bg-[#F6F5F2] text-[#0D1830] border-b border-[#e2e2e2]" aria-label="O que você ganha">
-        <ul className="max-w-[1280px] mx-auto grid grid-cols-2 lg:grid-cols-4">
+        <ul className="max-w-[100rem] mx-auto grid grid-cols-2 lg:grid-cols-4">
           {BENEFICIOS.map((b, i) => (
-            <li
-              key={b}
-              className={`px-4 lg:px-8 py-5 lg:py-6 border-[#0D1830]/15 ${i % 2 === 0 ? "border-r" : ""} ${i < 2 ? "border-b lg:border-b-0" : ""} lg:border-r lg:last:border-r-0`}
-            >
+            <li key={b} className={`px-4 lg:px-8 py-5 lg:py-6 border-[#0D1830]/15 ${i % 2 === 0 ? "border-r" : ""} ${i < 2 ? "border-b lg:border-b-0" : ""} lg:border-r lg:last:border-r-0`}>
               <span className={`${D} block text-xl lg:text-[26px] leading-none font-bold uppercase`}>{b}</span>
             </li>
           ))}
         </ul>
       </section>
 
-      {/* ── A prova ── */}
-      {/* Título, pares e botão na MESMA coluna centralizada: com o par limitado
-          a 820px dentro de um container mais largo, tudo ficava encostado à
-          esquerda com um vão à direita. */}
-      <section className="bg-white text-[#0D1830] py-20 lg:py-32">
-        <div className="max-w-[868px] mx-auto px-4 lg:px-6">
-          <ScrollReveal direction="up">
-            <h2 className={`${H2} mb-12 lg:mb-16`}>
+      {/* ── 01 A prova ── */}
+      <Capitulo id="prova" numero="01" rotulo="A prova" rotuladoPor="prova-titulo" className="bg-white text-[#0D1830] ds-secao">
+        <div className="ds-wrap max-w-[60rem]">
+          <Revelar>
+            <h2 id="prova-titulo" className={`${H2} mb-12 lg:mb-16`}>
               Você vai aprender
               <br />
               <span className="text-[#1F7A44]">a fazer isso.</span>
             </h2>
-          </ScrollReveal>
+          </Revelar>
           <div className="space-y-16 lg:space-y-24">
             {PARES.map(({ rotulo, par }) => (
-              <ScrollReveal key={rotulo} direction="up">
+              <Revelar key={rotulo}>
                 <AntesDepois par={par} rotulo={rotulo} />
                 <p className={`${D} text-xl lg:text-2xl font-bold uppercase mt-4`}>{rotulo}</p>
-              </ScrollReveal>
+              </Revelar>
             ))}
           </div>
-          <div className="mt-14 lg:mt-20">
-            <Cta texto={ctaTexto} tom="verde" />
-          </div>
+          <div className="mt-14 lg:mt-20"><Cta /></div>
         </div>
-      </section>
+      </Capitulo>
 
       {/* ── Uma frase, e só ── */}
-      <section className="bg-[#0B1F45] py-24 lg:py-36">
-        <ScrollReveal direction="up" className="max-w-[1280px] mx-auto px-4 lg:px-16">
+      <section className="bg-[#0B1F45] py-20 lg:py-32">
+        <Revelar className="ds-wrap">
           <p className={`${D} text-white text-[34px] leading-none sm:text-5xl lg:text-[64px] font-bold uppercase`}>
             PFB não é mais o futuro.
             <br />
             <span style={{ color: LIMA }}>Já é o presente!</span>
           </p>
-        </ScrollReveal>
+        </Revelar>
       </section>
 
-      {/* ── O produto: os seis diferenciais, versão curta ── */}
-      <DiferenciaisPfb tituloClassName={`${D} text-[28px] leading-none sm:text-4xl lg:text-[44px] font-bold uppercase`} />
+      {/* ── 02 O produto: os seis diferenciais, versão curta ── */}
+      <Capitulo id="produto" numero="02" rotulo="O produto" className="relative">
+        <DiferenciaisPfb tituloClassName={`${D} text-[28px] leading-none sm:text-4xl lg:text-[44px] font-bold uppercase`} />
+      </Capitulo>
 
-      {/* ── Onde aplica: foto e uma palavra ── */}
-      <section className="bg-white text-[#0D1830] py-20 lg:py-32">
-        <div className="max-w-[1280px] mx-auto px-4 lg:px-16">
-          <ScrollReveal direction="up">
-            <h2 className={`${H2} mb-12 lg:mb-16`}>
+      {/* ── 03 Onde aplica: foto e uma palavra ── */}
+      <Capitulo id="aplicacoes" numero="03" rotulo="Onde aplica" rotuladoPor="aplicacoes-titulo" className="bg-white text-[#0D1830] ds-secao">
+        <div className="ds-wrap">
+          <Revelar>
+            <h2 id="aplicacoes-titulo" className={`${H2} mb-12 lg:mb-16`}>
               Não é <span className="text-[#1F7A44]">só parede.</span>
             </h2>
-          </ScrollReveal>
-          <div className="grid grid-cols-2 lg:grid-cols-3 gap-2 lg:gap-4">
+          </Revelar>
+          <ul className="grid grid-cols-2 lg:grid-cols-3 gap-2 lg:gap-4">
             {APLICACOES.map(({ t, src, alt }, i) => (
-              <ScrollReveal key={t} direction="up" delay={(i % 3) * 80}>
-                <figure className="group relative aspect-[3/4] overflow-hidden bg-[#0B1F45]">
-                  <Image
-                    src={src}
-                    alt={alt}
-                    fill
-                    sizes="(min-width: 1024px) 400px, 50vw"
-                    className="object-cover transition-transform duration-700 lg:group-hover:scale-105"
-                  />
-                  <div className="absolute inset-0 bg-gradient-to-t from-[#0B1F45]/80 via-transparent to-transparent" />
-                  <figcaption className={`${D} absolute left-3 bottom-3 lg:left-5 lg:bottom-5 text-white text-xl lg:text-2xl leading-none font-bold uppercase`}>
-                    {t}
-                  </figcaption>
+              <Revelar key={t} como="li" ordem={i % 3}>
+                <figure className="relative aspect-[3/4] overflow-hidden bg-[#0B1F45]">
+                  <Image src={src} alt={alt} fill sizes="(max-width: 1023px) 50vw, 400px" className="object-cover mv-desvela" />
+                  <div className="absolute inset-0 bg-gradient-to-t from-[#0B1F45]/80 via-transparent to-transparent" aria-hidden />
+                  <figcaption className={`${D} absolute left-3 bottom-3 lg:left-5 lg:bottom-5 text-white text-xl lg:text-2xl leading-none font-bold uppercase`}>{t}</figcaption>
                 </figure>
-              </ScrollReveal>
+              </Revelar>
             ))}
-          </div>
+          </ul>
         </div>
-      </section>
+      </Capitulo>
 
-      {/* ── O que aprende: cinco palavras, em escada ── */}
-      <section className="bg-[#0B1F45] text-white py-20 lg:py-32">
-        <div className="max-w-[1280px] mx-auto px-4 lg:px-16">
-          <ScrollReveal direction="up">
-            <h2 className={`${H2} mb-12 lg:mb-20`}>
+      {/* ── 04 O que aprende: cinco palavras, em escada ── */}
+      <Capitulo id="etapas" numero="04" rotulo="O que aprende" rotuladoPor="etapas-titulo" escuro className="bg-[#0B1F45] text-white ds-secao">
+        <div className="ds-wrap">
+          <Revelar>
+            <h2 id="etapas-titulo" className={`${H2} mb-12 lg:mb-20`}>
               Do corte
               <br />
               <span style={{ color: LIMA }}>ao acabamento.</span>
             </h2>
-          </ScrollReveal>
+          </Revelar>
           <ol className="grid grid-cols-1 lg:grid-cols-5 gap-2 lg:gap-3 lg:items-end">
             {NIVEIS.map((t, i) => (
-              <li key={t} style={{ ["--degrau" as string]: `${i * 36}px` }} className="lg:mb-[var(--degrau)]">
-                <ScrollReveal direction="up" delay={i * 90}>
-                  <div className="border border-white/15 px-5 py-4 lg:p-6 flex items-center gap-5 lg:block">
-                    <span className={`${D} text-4xl lg:text-5xl leading-none font-extrabold text-transparent [-webkit-text-stroke:1.5px_#36A35C] w-12 lg:w-auto shrink-0`}>
-                      0{i + 1}
-                    </span>
-                    <span className={`${D} block text-2xl lg:text-[28px] leading-none font-bold uppercase lg:mt-8`}>{t}</span>
-                  </div>
-                </ScrollReveal>
-              </li>
+              <Revelar key={t} como="li" ordem={i}>
+                <div style={{ ["--degrau" as string]: `${i * 36}px` }} className="lg:mb-[var(--degrau)] border border-white/15 px-5 py-4 lg:p-6 flex items-center gap-5 lg:block">
+                  <span className={`${D} text-4xl lg:text-5xl leading-none font-extrabold text-transparent [-webkit-text-stroke:1.5px_#36A35C] w-12 lg:w-auto shrink-0`}>0{i + 1}</span>
+                  <span className={`${D} block text-2xl lg:text-[28px] leading-none font-bold uppercase lg:mt-8`}>{t}</span>
+                </div>
+              </Revelar>
             ))}
           </ol>
+          <p className="text-white/70 text-corpo mt-10 max-w-xl">Cola PU-40 nas paredes, 2 tubos por placa; cola de contato em tetos e curvas. A Orbital fornece o material; quem instala é você.</p>
         </div>
-      </section>
+      </Capitulo>
 
-      {/* ── Quem instala, aprova: vídeo à direita ── */}
-      <section className="bg-white text-[#0D1830] py-20 lg:py-32">
-        <div className="max-w-[1280px] mx-auto px-4 lg:px-16 grid grid-cols-1 lg:grid-cols-[1fr_360px] gap-12 lg:gap-24 items-center">
-          <ScrollReveal direction="up">
-            <p className="text-[11px] lg:text-xs tracking-[0.22em] uppercase font-bold mb-5 text-[#1F7A44]">
-              Opinião de instalador
-            </p>
-            <h2 className={`${H2} mb-10 lg:mb-12`}>
+      {/* ── 05 Quem instala, aprova ── */}
+      <Capitulo id="instalador" numero="05" rotulo="Quem instala" rotuladoPor="instalador-titulo" className="bg-white text-[#0D1830] ds-secao">
+        <div className="ds-wrap grid grid-cols-1 lg:grid-cols-[1fr_360px] gap-12 lg:gap-24 items-center">
+          <Revelar>
+            <p className="text-sobre tracking-[0.22em] uppercase font-bold mb-5 text-[#1F7A44]">Opinião de instalador</p>
+            <h2 id="instalador-titulo" className={`${H2} mb-10 lg:mb-12`}>
               Serviço rápido.
               <br />
               <span className="text-[#1F7A44]">Mais obras no mês.</span>
@@ -350,68 +249,53 @@ export default async function AcademiaPage() {
                 </li>
               ))}
             </ul>
-            <Cta texto={ctaTexto} tom="verde" />
-          </ScrollReveal>
-          <ScrollReveal direction="up" delay={120}>
-            <VideoShort
-              id="hpgoCY8L2PI"
-              poster="/images/videos/opiniao-instalador-adam-werk.jpg"
-              titulo="Opinião de instalador"
-              className="max-w-[320px] lg:max-w-none mx-auto"
-            />
-          </ScrollReveal>
+            <Cta />
+          </Revelar>
+          <Revelar ordem={1}>
+            <VideoShort id="hpgoCY8L2PI" poster="/images/videos/opiniao-instalador-adam-werk.jpg" titulo="Opinião de instalador" className="max-w-[320px] lg:max-w-none mx-auto" />
+          </Revelar>
         </div>
-      </section>
+      </Capitulo>
 
-      {/* ── Certificação ── */}
-      <section className="bg-[#0B1F45] text-white border-t border-white/10 py-20 lg:py-32">
-        <div className="max-w-[1280px] mx-auto px-4 lg:px-16">
-          <ScrollReveal direction="up">
-            <p className="text-[11px] lg:text-xs tracking-[0.22em] uppercase font-bold mb-5" style={{ color: LIMA }}>
-              Não é só uma formação
-            </p>
-            <h2 className={`${H2} mb-12 lg:mb-16`}>
+      {/* ── 06 Certificação ── */}
+      <Capitulo id="certificado" numero="06" rotulo="Certificado" rotuladoPor="certificado-titulo" escuro className="bg-[#0B1F45] text-white border-t border-white/10 ds-secao">
+        <div className="ds-wrap">
+          <Revelar>
+            <p className="text-sobre tracking-[0.22em] uppercase font-bold mb-5" style={{ color: LIMA }}>Não é só uma formação</p>
+            <h2 id="certificado-titulo" className={`${H2} mb-12 lg:mb-16`}>
               Saia
               <br />
               <span style={{ color: LIMA }}>certificado.</span>
             </h2>
-          </ScrollReveal>
-
+          </Revelar>
           <ol className="grid grid-cols-2 lg:grid-cols-4 gap-2 lg:gap-3 mb-10 lg:mb-12">
             {ETAPAS_CERT.map((e, i) => {
               const ultima = i === ETAPAS_CERT.length - 1;
               return (
-                <li
-                  key={e}
-                  className={`p-4 lg:p-6 border ${ultima ? "border-[#36A35C] bg-[#36A35C] text-[#0D1830]" : "border-white/20"}`}
-                >
-                  <span className={`block text-[11px] font-bold mb-2 ${ultima ? "opacity-70" : "text-white/40"}`}>
-                    {i + 1}
-                  </span>
+                <Revelar key={e} como="li" ordem={i} className={`p-4 lg:p-6 border ${ultima ? "border-[#36A35C] bg-[#36A35C] text-[#0D1830]" : "border-white/20"}`}>
+                  <span className={`block text-sobre font-bold mb-2 ${ultima ? "opacity-70" : "text-white/50"}`}>{i + 1}</span>
                   <span className={`${D} block text-xl lg:text-[26px] leading-none font-bold uppercase`}>{e}</span>
-                </li>
+                </Revelar>
               );
             })}
           </ol>
+          <p className="text-white/75 text-lead mb-10 lg:mb-12 max-w-2xl">Com o certificado de conclusão, você compra PFB direto com a Orbital.</p>
+          <Cta />
+        </div>
+      </Capitulo>
 
-          <p className="text-white/70 text-base lg:text-lg mb-10 lg:mb-12">
-            Com o certificado de conclusão, você compra PFB direto com a Orbital.
-          </p>
-          <Cta texto={ctaTexto} />
+      {/* ── Fechamento ── */}
+      <section className="bg-[#F6F5F2] text-[#0D1830] pt-16 pb-32 md:pb-20 lg:py-24">
+        <div className="ds-wrap lg:flex lg:items-end lg:justify-between gap-10">
+          <div className="mb-10 lg:mb-0 max-w-3xl">
+            <p className={`${D} text-[34px] leading-none sm:text-5xl lg:text-[56px] font-bold uppercase`}>Formação em instalação do PFB, no padrão Orbital.</p>
+            <p className="font-serif italic text-[#0B1F45]/70 text-lead mt-4">Novas possibilidades para seus projetos.</p>
+          </div>
+          <Cta tom="cheio" />
         </div>
       </section>
 
-      {/* ── Fechamento: volta para o formulário ── */}
-      <section className="bg-[#F6F5F2] text-[#0D1830] pt-20 pb-32 md:pb-24 lg:py-28">
-        <div className="max-w-[1280px] mx-auto px-4 lg:px-16 lg:flex lg:items-end lg:justify-between gap-10">
-          <p className={`${D} text-[34px] leading-none sm:text-5xl lg:text-[56px] font-bold uppercase mb-10 lg:mb-0 max-w-3xl`}>
-            {fechada ? "A 2ª turma vem aí. Garanta seu lugar na fila." : "1ª turma gratuita. Vagas limitadíssimas."}
-          </p>
-          <Cta texto={fechada ? "Entrar na lista da 2ª turma" : "Garantir minha vaga"} tom="navy" />
-        </div>
-      </section>
-
-      <CtaFixo texto={fechada ? "Lista da 2ª turma" : "Garantir vaga"} />
+      <CtaFixo texto="Participar da formação" />
     </div>
   );
 }

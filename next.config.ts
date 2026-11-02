@@ -1,6 +1,9 @@
 import type { NextConfig } from "next";
 
 const nextConfig: NextConfig = {
+  // Raiz do projeto para o rastreio de arquivos: cala o aviso de "múltiplos
+  // lockfiles" quando há worktrees dentro do repositório.
+  outputFileTracingRoot: __dirname,
   // pdfkit lê métricas de fonte (.afm) do node_modules em runtime. Mantê-lo como
   // pacote externo (não empacotado) garante que os .afm resolvam normalmente em
   // TODAS as rotas serverless (pedidos E orçamento) — fix robusto do ENOENT.

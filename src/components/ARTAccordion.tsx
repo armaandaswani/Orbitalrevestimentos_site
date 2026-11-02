@@ -22,7 +22,7 @@ export default function ARTAccordion() {
             </svg>
           </div>
           <div>
-            <p className="text-[#36A35C] text-[9px] tracking-[0.2em] uppercase font-bold">
+            <p className="text-[#36A35C] text-sobre tracking-[0.2em] uppercase font-bold">
               Certificação Técnica
             </p>
             <p className="text-white text-sm font-semibold mt-0.5">
@@ -43,7 +43,7 @@ export default function ARTAccordion() {
         <div className="border-t border-[#2347A0] px-5 py-6 bg-[#0a1628]">
           {/* What is ART */}
           <div className="mb-6">
-            <p className="text-[#B4BBC8] text-[9px] tracking-[0.15em] uppercase font-bold mb-2">
+            <p className="text-[#B4BBC8] text-sobre tracking-[0.15em] uppercase font-bold mb-2">
               O que é a ART?
             </p>
             <p className="text-white/75 text-sm leading-relaxed">
@@ -66,7 +66,7 @@ export default function ARTAccordion() {
               { label: "Validade",                value: "Documentação ativa — disponível mediante solicitação" },
             ].map(({ label, value }) => (
               <div key={label} className="bg-[#0B1F45]/60 border border-[#2347A0] px-4 py-3">
-                <p className="text-[#B4BBC8] text-[9px] tracking-[0.12em] uppercase font-bold mb-1">
+                <p className="text-[#B4BBC8] text-sobre tracking-[0.12em] uppercase font-bold mb-1">
                   {label}
                 </p>
                 <p className="text-white text-xs leading-snug">
@@ -78,7 +78,7 @@ export default function ARTAccordion() {
 
           {/* Why it matters */}
           <div className="bg-white/5 border-l-2 border-[#36A35C] px-4 py-3 mb-5">
-            <p className="text-[#36A35C] text-[9px] tracking-[0.12em] uppercase font-bold mb-1">
+            <p className="text-[#36A35C] text-sobre tracking-[0.12em] uppercase font-bold mb-1">
               Por que isso importa?
             </p>
             <p className="text-white/70 text-xs leading-relaxed">

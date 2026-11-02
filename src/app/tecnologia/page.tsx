@@ -1,24 +1,31 @@
 import type { Metadata } from "next";
 import Image from "next/image";
-import Link from "next/link";
-import TecnologiaComparison from "@/components/TecnologiaComparison";
 import ARTAccordion from "@/components/ARTAccordion";
 import FichaTecnicaAccordion from "@/components/FichaTecnicaAccordion";
 import ConhecaPfb from "@/components/ConhecaPfb";
 import SolicitarManual from "@/components/SolicitarManual";
-import ContatoCta from "@/components/ContatoCta";
-import ScrollReveal from "@/components/ScrollReveal";
-import AnimatedStat from "@/components/AnimatedStat";
 import VideoShort from "@/components/VideoShort";
+import Botao from "@/components/ds/Botao";
+import Capitulo from "@/components/ds/Capitulo";
+import HistoriaFixa from "@/components/ds/HistoriaFixa";
+import ProgressoCapitulos from "@/components/ds/ProgressoCapitulos";
+import AntesDepois from "@/components/projetos/AntesDepois";
+import Revelar from "@/components/projetos/Revelar";
+import SecaoCabecalho, { Sobretitulo } from "@/components/projetos/SecaoCabecalho";
 import { getAssetOverrides, resolveAsset } from "@/lib/assets";
 
-// Manual Técnico de Instalação: sem download direto — o visitante solicita
-// pelo WhatsApp (components/SolicitarManual).
-
+/**
+ * Tecnologia como apresentação: abertura → 01 Produto → 02 Camadas (narrativa
+ * com quadro fixo) → 03 Laudos e ART → 04 Água e clima → 05 Instalação
+ * (antes × depois, notas e o instalador) → 06 Ambiente → 07 Próximo passo.
+ * O PFB se apresenta só pelos próprios méritos: nenhuma comparação com outros
+ * materiais. Manual Técnico de Instalação: sem download direto, o visitante
+ * solicita (components/SolicitarManual).
+ */
 export const metadata: Metadata = {
   title: "PFB Orbital — Tecnologia, Performance e Ficha Técnica | Revestimento Manaus",
   description:
-    "A tecnologia por trás dos Painéis Flexíveis em Fibra de Bambu: 5 camadas, dados de laboratório, ART de Engenheiro Civil. Impermeável, anti-mofo, instalado em 2–3 horas. Revestimento premium para o Amazonas.",
+    "A tecnologia por trás do Painel Flexível em Fibra de Bambu (PFB): 5 camadas, dados de laboratório, ART de Engenheiro Civil. Resistente à umidade, instalado em horas. Novas possibilidades para seus projetos em Manaus.",
   keywords: [
     "painel flexível fibra de bambu tecnologia",
     "PFB ficha técnica",
@@ -37,25 +44,39 @@ export const metadata: Metadata = {
   openGraph: {
     title: "PFB Orbital — Tecnologia, Performance e Ficha Técnica | Revestimento Manaus",
     description:
-      "5 camadas, dados de laboratório, ART de Engenheiro Civil. Impermeável, anti-mofo, instalado em 2–3 horas. O revestimento premium feito para o Amazonas.",
+      "5 camadas, dados de laboratório, ART de Engenheiro Civil. Resistente à umidade, instalado em horas. O revestimento feito para o Amazonas.",
     url: "https://orbitalrevestimentos.com.br/tecnologia",
   },
 };
 
-const layers = [
-  { name: "Film Protetora UV", desc: "Proteção contra riscos, radiação UV e impactos superficiais. Mantém a cor e o brilho ao longo dos anos." },
-  { name: "Film PVC", desc: "Impressão fotorrealista de alta fidelidade da textura — pedra, mármore ou madeira. Indistinguível do original." },
-  { name: "Adesivo de Alta Aderência", desc: "Camada de colagem permanente e estrutural. Garante que as camadas superiores nunca descolarão." },
-  { name: "Camada PVC Estrutural", desc: "Rigidez e integridade dimensional da placa. Permite grandes formatos sem empenamento." },
-  { name: "Substrato de Fibra de Bambu", desc: "Núcleo ecológico e renovável. Sem formol, inodoro, anti-mofo e anti-cupim por natureza." },
+const CAMADAS = [
+  { titulo: "Película protetora UV", destaque: "Camada 1 · a superfície", texto: "Protege contra riscos, radiação UV e impactos superficiais. É o que mantém a cor e o brilho ao longo dos anos, mesmo em ambiente iluminado o dia inteiro.", imagem: { src: "/images/academia/escadaria-residencial.jpg", alt: "Parede de escadaria em PFB acabamento madeira, superfície íntegra" } },
+  { titulo: "Impressão fotorrealista", destaque: "Camada 2 · o acabamento", texto: "A textura de pedra, mármore ou madeira é impressa em alta fidelidade: veios nítidos e profundidade visual que se mantêm iguais do primeiro ao último dia.", imagem: { src: "/images/academia/aplic-coluna.jpg", alt: "Coluna revestida com PFB acabamento mármore claro" } },
+  { titulo: "Adesivo de alta aderência", destaque: "Camada 3 · a união", texto: "Colagem permanente e estrutural entre as camadas. Garante que a superfície nunca descole do núcleo, nem com calor, nem com umidade.", imagem: { src: "/images/academia/aplic-porta.jpg", alt: "Porta revestida com PFB alinhada à parede de mármore" } },
+  { titulo: "Camada estrutural", destaque: "Camada 4 · a rigidez", texto: "Dá integridade dimensional à placa: permite o grande formato de 2,90 × 1,20 m sem empenar e, ao mesmo tempo, a flexibilidade para acompanhar curvas e colunas.", imagem: { src: "/images/academia/aplic-curva.jpg", alt: "Balcão curvo revestido com PFB acabamento madeira" } },
+  { titulo: "Núcleo de fibra de bambu", destaque: "Camada 5 · o coração", texto: "Fibra renovável, sem formol, inodora. Não é habitat para fungos nem para cupins: a proteção vem da própria natureza do material, sem tratamento químico.", imagem: { src: "/images/academia/aplic-area-molhada.jpg", alt: "Box de banheiro com paredes e forro em PFB" } },
 ];
 
-const specs = [
-  { value: "72,3", unit: "MPa", label: "Resistência à flexão", note: "Resistência certificada em laboratório" },
-  { value: "0,2%", unit: "", label: "Inchamento (48h)", note: "Praticamente impermeável" },
-  { value: "550", unit: "kg/m³", label: "Densidade", note: "Alta resistência estrutural" },
-  { value: "3,2", unit: "kg/m²", label: "Peso", note: "Ultra-leve para instalação ágil" },
-  { value: "0,5%", unit: "", label: "Teor de umidade", note: "Estável no clima amazônico" },
+const ESPECIFICACOES = [
+  { valor: "72,3", unidade: "MPa", rotulo: "Resistência à flexão", nota: "Certificada em laboratório" },
+  { valor: "0,2%", unidade: "", rotulo: "Inchamento (48 h)", nota: "Praticamente impermeável" },
+  { valor: "550", unidade: "kg/m³", rotulo: "Densidade", nota: "Alta resistência estrutural" },
+  { valor: "3,2", unidade: "kg/m²", rotulo: "Peso", nota: "Cerca de 11 kg por placa" },
+  { valor: "0,5%", unidade: "", rotulo: "Teor de umidade", nota: "Estável no clima amazônico" },
+];
+
+const CLIMA = [
+  { t: "Anti-mofo", d: "O bambu não é substrato para fungos. O PFB não mofa nem em banheiros sem ventilação." },
+  { t: "Anti-cupim", d: "A fibra de bambu processada não atrai cupins. Proteção natural, sem tratamento químico." },
+  { t: "Ciclos térmicos", d: "Ensaiado de –10 °C a +120 °C. Validado para uso interno; acima de 50 °C de calor contínuo pode ondular." },
+  { t: "Estável na umidade", d: "0,5% de teor de umidade interno: não empena, não descola, não deforma com o tempo." },
+];
+
+const NOTAS = [
+  { t: "Preparação da base", d: "Base plana, seca, sem irregularidades acima de 2 mm. Reboco fino ou drywall são ideais." },
+  { t: "Adesivo", d: "Cola PU-40 de alta aderência nas paredes: 2 tubos por placa. Cola de contato para tetos e superfícies curvas." },
+  { t: "Grandes superfícies", d: "Junta de dilatação a cada 3 m lineares, para acomodar a variação térmica." },
+  { t: "Cantos", d: "Arestas e cantos vivos com perfil de acabamento. Evitar impacto direto nas bordas da placa." },
 ];
 
 const breadcrumbSchema = {
@@ -70,486 +91,192 @@ const breadcrumbSchema = {
 export default async function TecnologiaPage() {
   const overrides = await getAssetOverrides();
   const img = (key: string, fallback: string) => resolveAsset(key, fallback, overrides);
+  const agua = [
+    { src: img("pfb-water-0h", "/images/catalogue/pfb-mdf-0h.png"), t: "0 h", l: "Início do teste", n: "Placa de PFB submersa em água, em condições controladas de laboratório." },
+    { src: img("pfb-water-24h", "/images/catalogue/pfb-mdf-24h.png"), t: "24 h", l: "24 horas de imersão", n: "Integridade estrutural total: sem deformação, sem absorção visível." },
+    { src: img("pfb-water-48h", "/images/catalogue/pfb-mdf-48h.png"), t: "48 h", l: "48 horas de imersão", n: "Sai intacto: 0,2% de absorção. Praticamente impermeável." },
+  ];
+
   return (
     <div className="pt-20">
       <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: JSON.stringify(breadcrumbSchema) }} />
-      {/* Hero */}
-      <section className="bg-[#0B1F45] text-white py-14 lg:py-32">
-        <div className="max-w-[1280px] mx-auto px-4 lg:px-16">
-          <ScrollReveal>
-            <p className="text-[#B4BBC8] text-xs tracking-[0.2em] uppercase font-semibold mb-4">
-              PFB · Painéis Flexíveis em Fibra de Bambu
-            </p>
-          </ScrollReveal>
-          <ScrollReveal delay={120}>
-            <h1 className="font-serif text-2xl lg:text-5xl font-normal tracking-[-0.02em] leading-tight mb-5 max-w-3xl">
-              Performance &amp; Tecnologia
+      <ProgressoCapitulos />
+
+      {/* ── Abertura ───────────────────────────────────────────────────────── */}
+      <section className="bg-[#0B1F45] text-white ds-escuro">
+        <div className="ds-wrap pt-10 pb-10 lg:py-16 grid grid-cols-1 lg:grid-cols-[1.1fr_1fr] gap-8 lg:gap-14 items-center">
+          <div>
+            <Sobretitulo escuro>PFB · Tecnologia e ficha técnica</Sobretitulo>
+            <h1 className="font-serif text-white text-t1 font-normal tracking-[-0.025em] mt-4 mb-4 text-balance">
+              A engenharia por trás do Painel Flexível em Fibra de Bambu (PFB).
             </h1>
-          </ScrollReveal>
-          <ScrollReveal delay={240}>
-            <p className="text-white/70 text-base leading-relaxed max-w-2xl">
-              A intersecção entre materiais naturais e engenharia avançada.
-              Cada dado apresentado aqui é extraído de ficha técnica
-              — não de marketing.
+            <p className="text-white/75 text-lead max-w-xl text-pretty">
+              Materiais naturais e engenharia avançada, adaptados ao clima da Amazônia. Cada dado desta página vem da ficha técnica e dos laudos, não do marketing.
             </p>
-          </ScrollReveal>
-        </div>
-      </section>
-      {/* O PFB em resumo — primeira coisa da página, igual à home. */}
-      <ConhecaPfb linkTecnologia={false} />
-
-      {/* Anatomy */}
-      <section className="overflow-hidden bg-white pt-0">
-        <div className="flex flex-row">
-          {/* Left — anatomy diagram with vignette */}
-          <div className="w-[38%] bg-white relative min-h-[200px] lg:min-h-[440px] flex items-center justify-center overflow-hidden py-8 lg:py-12 px-8 border-b lg:border-b-0 lg:border-r border-[#eeeeee]">
-            <div
-              className="absolute inset-0 pointer-events-none z-10"
-              style={{ background: "radial-gradient(ellipse 72% 78% at 50% 50%, transparent 42%, white 100%)" }}
-            />
-            <ScrollReveal direction="left" className="relative z-[5]">
-              <Image
-                src={img("product-anatomy", "/images/catalogue/product-anatomy.png")}
-                alt="Anatomia da Placa PFB Orbital — seção transversal 5mm"
-                width={732}
-                height={1638}
-                className="max-h-[220px] lg:max-h-[620px] w-auto"
-              />
-            </ScrollReveal>
-          </div>
-
-          {/* Right — content panel */}
-          <div className="w-[62%] bg-[#F6F5F2] px-3 lg:px-16 xl:px-20 py-4 lg:py-24 flex items-center">
-            <div className="w-full max-w-2xl">
-              <p className="text-[#2347A0] text-xs tracking-[0.2em] uppercase font-semibold mb-5">
-                Anatomia da Placa
-              </p>
-              <h2 className="font-serif text-[#0B1F45] text-lg lg:text-4xl font-normal mb-4">
-                5 camadas. 5mm de espessura total.
-              </h2>
-              <p className="hidden lg:block text-[#43474e] text-base leading-relaxed mb-8">
-                O PFB não é um simples laminado. Cada camada tem uma função
-                estrutural específica — da proteção UV superficial ao núcleo
-                de bambu que garante resistência e sustentabilidade.
-              </p>
-              <div className="space-y-1.5 lg:space-y-3 mb-6">
-                {layers.map(({ name, desc }, i) => (
-                  <ScrollReveal key={name} direction="right" delay={i * 110}>
-                  <div
-                    className="bg-white border border-[#e2e2e2] p-2 lg:p-4 flex gap-2 lg:gap-4 items-start hover:border-[#2347A0] transition-colors"
-                  >
-                    <div className="flex-shrink-0 w-5 h-5 lg:w-7 lg:h-7 bg-[#0B1F45] text-white flex items-center justify-center text-xs font-bold">
-                      {i + 1}
-                    </div>
-                    <div>
-                      <p className="text-[#0B1F45] font-semibold text-[10px] lg:text-sm mb-0.5">
-                        {name}
-                      </p>
-                      <p className="hidden lg:block text-[#43474e] text-xs leading-relaxed">
-                        {desc}
-                      </p>
-                    </div>
-                  </div>
-                  </ScrollReveal>
-                ))}
-              </div>
-              <ScrollReveal delay={600} className="hidden lg:block">
-              <div className="p-5 bg-[#0B1F45] text-white">
-                <p className="text-[#B4BBC8] text-[10px] tracking-[0.15em] uppercase font-bold mb-2">
-                  Dimensões
-                </p>
-                <p className="text-white text-2xl font-normal mb-1">
-                  1,2m × 2,9m × 5mm
-                </p>
-                <p className="text-white/60 text-sm">
-                  3,48 m² por placa · 3,2 kg/m²
-                </p>
-              </div>
-              </ScrollReveal>
+            <div className="flex flex-col sm:flex-row flex-wrap gap-3 mt-7">
+              <Botao href="#laudos" tom="claro" largo>Ver laudos e ART</Botao>
+              <Botao contato tom="linha" largo>Falar com um especialista</Botao>
             </div>
           </div>
+          <div className="relative aspect-[4/3] overflow-hidden bg-primary-container">
+            <Image src={img("onde-aplicar-main", "/images/catalogue/onde-aplicar-main.jpeg")} alt="Ambiente revestido com PFB Orbital" fill priority sizes="(max-width: 1023px) 92vw, 560px" className="object-cover" />
+          </div>
         </div>
       </section>
 
-      {/* Lab Specs */}
-      <section className="py-10 lg:py-20 bg-[#0B1F45] text-white">
-        <div className="max-w-[1280px] mx-auto px-4 lg:px-16">
-          <ScrollReveal className="mb-6 lg:mb-10">
-            <p className="text-[#B4BBC8] text-xs tracking-[0.2em] uppercase font-semibold mb-2">
-              Ficha técnica
-            </p>
-            <h2 className="font-serif text-white text-xl lg:text-3xl font-normal mb-1.5">
-              Desempenho comprovado
-            </h2>
+      {/* ── 01 Produto ─────────────────────────────────────────────────────── */}
+      <ConhecaPfb linkTecnologia={false} numero="01" />
+
+      {/* ── 02 Camadas ─────────────────────────────────────────────────────── */}
+      <Capitulo id="camadas" numero="02" rotulo="Camadas" rotuladoPor="camadas-titulo" className="ds-secao bg-background">
+        <div className="ds-wrap">
+          <Revelar>
+            <SecaoCabecalho id="camadas-titulo" numero="02" sobretitulo="Anatomia da placa" titulo="5 camadas. 5 mm de espessura."
+              texto="O PFB não é um laminado comum: cada camada tem uma função, da proteção UV na superfície ao núcleo de bambu que dá resistência e sustentabilidade." />
+          </Revelar>
+          <HistoriaFixa passos={CAMADAS} />
+          <Revelar className="mt-14 lg:mt-20 grid grid-cols-1 md:grid-cols-[minmax(0,260px)_1fr] gap-8 items-center border-t border-surface-container-high pt-10">
+            <Image src={img("product-anatomy", "/images/catalogue/product-anatomy.png")} alt="Seção transversal da placa PFB com as 5 camadas" width={732} height={1638} sizes="160px" className="h-[22rem] w-auto mx-auto" />
+            <dl className="grid grid-cols-2 sm:grid-cols-4 border border-surface-variant bg-white">
+              {[["2,90 × 1,20 m", "Placa"], ["3,48 m²", "Por placa"], ["5 mm", "Espessura"], ["≈ 11 kg", "Peso"]].map(([v, l], i) => (
+                <div key={l} className={`p-4 lg:p-5 ${i < 3 ? "sm:border-r border-surface-variant" : ""} ${i % 2 === 0 ? "border-r sm:border-r-0" : ""} ${i < 2 ? "border-b sm:border-b-0 border-surface-variant" : ""}`}>
+                  <dd className="font-serif text-primary text-t3">{v}</dd>
+                  <dt className="text-on-surface-variant text-sobre tracking-[0.12em] uppercase font-semibold mt-1">{l}</dt>
+                </div>
+              ))}
+            </dl>
+          </Revelar>
+        </div>
+      </Capitulo>
+
+      {/* ── 03 Laudos e ART ────────────────────────────────────────────────── */}
+      <Capitulo id="laudos" numero="03" rotulo="Laudos e ART" rotuladoPor="laudos-titulo" escuro className="ds-secao bg-[#0B1F45] text-white">
+        <div className="ds-wrap">
+          <Revelar>
+            <SecaoCabecalho id="laudos-titulo" numero="03" escuro sobretitulo="Ficha técnica" titulo="Desempenho comprovado em laboratório."
+              texto="Ensaios certificados e Anotação de Responsabilidade Técnica de Engenheiro Civil. Os cinco números que importam, e os documentos completos logo abaixo." />
+          </Revelar>
+          <ul className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-5 gap-3 lg:gap-6">
+            {ESPECIFICACOES.map((e, i) => (
+              <Revelar key={e.rotulo} como="li" ordem={i} className="border-l-2 border-[#2347A0] pl-3 lg:pl-5">
+                <p className="font-serif text-white text-t2 leading-none">{e.valor}{e.unidade && <span className="text-lead text-[#B4BBC8] ml-1">{e.unidade}</span>}</p>
+                <p className="text-[#B4BBC8] text-sobre tracking-[0.1em] uppercase font-semibold mt-2">{e.rotulo}</p>
+                <p className="text-secondary text-sobre mt-0.5">{e.nota}</p>
+              </Revelar>
+            ))}
+          </ul>
+          <p className="text-[#B4BBC8]/80 text-legenda mt-5">Peso e densidade admitem tolerância de ±10%: o bambu é fibra natural e cada lote varia.</p>
+          <Revelar className="mt-8">
             <ARTAccordion />
             <FichaTecnicaAccordion />
-          </ScrollReveal>
-          <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-5 gap-3 lg:gap-6">
-            {specs.map(({ value, unit, label, note }, i) => (
-              <ScrollReveal key={label} delay={i * 100}>
-              <div className="border-l-2 border-[#2347A0] pl-3 lg:pl-5">
-                <p className="text-xl lg:text-4xl text-white font-normal mb-0.5">
-                  <AnimatedStat value={value} />
-                  {unit && (
-                    <span className="text-sm lg:text-xl text-[#B4BBC8] ml-1">{unit}</span>
-                  )}
-                </p>
-                <p className="text-[#B4BBC8] text-[9px] lg:text-xs tracking-[0.1em] uppercase font-semibold mb-0.5">
-                  {label}
-                </p>
-                {note && (
-                  <p className="text-[#36A35C] text-[9px] lg:text-[10px]">
-                    {note}
-                  </p>
-                )}
-              </div>
-              </ScrollReveal>
-            ))}
-          </div>
-          {/* A tolerância também vive no rodapé da ficha, mas a ficha abre
-              fechada — quem só passa o olho vê estes cinco números e mais nada. */}
-          <p className="text-[#B4BBC8]/70 text-[9px] lg:text-[10px] mt-4 lg:mt-5">
-            Peso e densidade admitem tolerância de ±10% — o bambu é fibra natural e cada lote varia.
-          </p>
-
-          {/* Manual técnico: fica logo abaixo da ART e dos números — é o
-              documento que as condições de venda citam para a instalação. */}
-          <SolicitarManual />
+            <SolicitarManual />
+          </Revelar>
         </div>
-      </section>
+      </Capitulo>
 
-      {/* PFB × MDF — Water Test Photos */}
-      <section className="py-10 lg:py-28 bg-[#0B1F45] text-white">
-        <div className="max-w-[1280px] mx-auto px-4 lg:px-16">
-          <ScrollReveal className="mb-8">
-            <p className="text-[#36A35C] text-xs tracking-[0.2em] uppercase font-semibold mb-3">
-              PFB — Teste de Resistência à Água
-            </p>
-            <h2 className="font-serif text-white text-xl lg:text-4xl font-normal mb-3">
-              O PFB é resistente à água? SIM!
-            </h2>
-            <p className="text-white/50 text-sm leading-relaxed max-w-xl">
-              Uma placa PFB foi submersa por 48 horas em laboratório. Resultado: 0,2% de absorção — saindo intacta, sem deformação, sem descolar.
-            </p>
-          </ScrollReveal>
-
-          <div className="grid grid-cols-3 gap-2 lg:gap-4 mb-10 lg:max-w-[75%] lg:mx-auto">
-            {[
-              { src: img("pfb-water-0h", "/images/catalogue/pfb-mdf-0h.png"), time: "0h", label: "Início do teste", note: "Placa PFB submersa em água em condições controladas de laboratório." },
-              { src: img("pfb-water-24h", "/images/catalogue/pfb-mdf-24h.png"), time: "24h", label: "24 horas de imersão", note: "O PFB mantém integridade estrutural total — sem deformação ou absorção visível." },
-              { src: img("pfb-water-48h", "/images/catalogue/pfb-mdf-48h.png"), time: "48h", label: "48 horas de imersão", note: "O PFB sai intacto após 48h de imersão. 0,2% de absorção — praticamente impermeável." },
-            ].map(({ src, time, label, note }, i) => (
-              <ScrollReveal key={time} delay={i * 180} className="h-full">
-              <div className="group flex flex-col h-full">
-                <div className="relative aspect-[1536/2752] overflow-hidden mb-3">
-                  <Image
-                    src={src}
-                    alt={`PFB vs MDF — ${label}`}
-                    fill
-                    className="object-cover object-top transition-transform duration-700 group-hover:scale-[1.02]"
-                  />
-                  <div className="absolute top-3 left-3 bg-white text-[#0D1830] text-sm font-bold px-3 py-1.5 tracking-[0.05em]">
-                    {time}
-                  </div>
+      {/* ── 04 Água e clima ────────────────────────────────────────────────── */}
+      <Capitulo id="agua" numero="04" rotulo="Água e clima" rotuladoPor="agua-titulo" className="ds-secao bg-white">
+        <div className="ds-wrap">
+          <Revelar>
+            <SecaoCabecalho id="agua-titulo" numero="04" sobretitulo="Teste de resistência à água" titulo="48 horas submerso. 0,2% de absorção."
+              texto="Uma placa de PFB ficou imersa por 48 horas em laboratório e saiu intacta: sem deformação, sem descolar. É o que faz o painel servir ao clima de Manaus, com umidade acima de 80% o ano inteiro." />
+          </Revelar>
+          <ul className="grid grid-cols-3 gap-2 lg:gap-4 max-w-4xl">
+            {agua.map((a, i) => (
+              <Revelar key={a.t} como="li" ordem={i} className="flex flex-col">
+                <div className="relative aspect-[1536/2752] max-h-[26rem] overflow-hidden bg-surface-container">
+                  <Image src={a.src} alt={`Teste de imersão do PFB: ${a.l}`} fill sizes="(max-width: 1023px) 30vw, 280px" className="object-cover object-top mv-desvela" />
+                  <span className="absolute top-3 left-3 bg-white text-primary text-sm font-bold px-3 py-1.5">{a.t}</span>
                 </div>
-                <p className="text-white font-semibold text-xs lg:text-sm mb-1 min-h-[2.5rem] lg:min-h-[1.5rem]">{label}</p>
-                <p className="text-white/50 text-[10px] lg:text-xs leading-relaxed">{note}</p>
-              </div>
-              </ScrollReveal>
+                <p className="text-primary font-semibold text-legenda mt-3">{a.l}</p>
+                <p className="text-on-surface-variant text-legenda mt-1 hidden sm:block">{a.n}</p>
+              </Revelar>
             ))}
-          </div>
+          </ul>
+          <ul className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3 lg:gap-4 mt-12">
+            {CLIMA.map((c, i) => (
+              <Revelar key={c.t} como="li" ordem={i} className="border border-surface-variant p-5">
+                <p className="text-primary font-semibold text-corpo">{c.t}</p>
+                <p className="text-on-surface-variant text-corpo mt-2 leading-relaxed">{c.d}</p>
+              </Revelar>
+            ))}
+          </ul>
+        </div>
+      </Capitulo>
 
-          <div className="grid grid-cols-2 gap-3">
-            <ScrollReveal className="h-full">
-            <div className="h-full bg-[#0B1F45] border border-[#2347A0] p-4 lg:p-6">
-              <p className="text-[#36A35C] text-[9px] lg:text-[10px] tracking-[0.15em] uppercase font-bold mb-2">Absorção · 48h imerso</p>
-              <p className="text-white text-2xl lg:text-4xl font-normal mb-1"><AnimatedStat value="0,2%" /></p>
-              <p className="text-white/60 text-[11px] lg:text-sm leading-snug">de inchamento — praticamente impermeável</p>
-            </div>
-            </ScrollReveal>
-            <ScrollReveal delay={150} className="h-full">
-            <div className="h-full bg-[#0B1F45] border border-[#2347A0] p-4 lg:p-6">
-              <p className="text-[#36A35C] text-[9px] lg:text-[10px] tracking-[0.15em] uppercase font-bold mb-2">Vida útil no Amazonas</p>
-              <p className="text-white text-2xl lg:text-4xl font-normal mb-1"><AnimatedStat value="10+" /></p>
-              <p className="text-white/60 text-[11px] lg:text-sm leading-snug">anos no clima úmido de Manaus</p>
-            </div>
-            </ScrollReveal>
+      {/* ── 05 Instalação ──────────────────────────────────────────────────── */}
+      <Capitulo id="instalacao" numero="05" rotulo="Instalação" rotuladoPor="instalacao-titulo" escuro className="ds-secao bg-[#090e18] text-white">
+        <div className="ds-wrap">
+          <Revelar>
+            <SecaoCabecalho id="instalacao-titulo" numero="05" escuro sobretitulo="Instalado em horas" titulo="Colado sobre a superfície existente, sem obra."
+              texto="Arraste a divisória: o mesmo lavabo antes e depois do PFB. Um cômodo fica pronto em duas a três horas, sem demolição e sem poeira." />
+          </Revelar>
+          <div className="max-w-[72rem]">
+            <AntesDepois
+              antes={{ src: "/images/academia/lavabo-consultorio-antes.jpg", alt: "Lavabo de consultório antes do PFB" }}
+              depois={{ src: "/images/academia/lavabo-consultorio-depois.jpg", alt: "Lavabo de consultório depois, com PFB acabamento mármore e forro amadeirado" }} />
+          </div>
+          <ul className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mt-12">
+            {NOTAS.map((n, i) => (
+              <Revelar key={n.t} como="li" ordem={i} className="border-l border-white/20 pl-5">
+                <p className="text-white font-semibold text-corpo">{n.t}</p>
+                <p className="text-white/70 text-corpo mt-2 leading-relaxed">{n.d}</p>
+              </Revelar>
+            ))}
+          </ul>
+          <div className="mt-14 lg:mt-20 grid grid-cols-1 lg:grid-cols-[1fr_320px] gap-10 lg:gap-20 items-center border-t border-white/10 pt-10">
+            <Revelar>
+              <Sobretitulo escuro>Opinião de instalador</Sobretitulo>
+              <h3 className="font-serif text-white text-t2 font-normal tracking-[-0.02em] mt-4 mb-5 text-balance">Um serviço rápido. Sobra tempo para mais obras.</h3>
+              <p className="text-white/75 text-corpo mb-6 max-w-xl text-pretty">
+                Adam, da Werk Engenharia, conta como é instalar o PFB na prática: aplicação simples, placa leve de cerca de 11 kg, corte sem equipamento pesado e acabamento limpo.
+              </p>
+              <p className="text-white/70 text-corpo italic">
+                A Orbital fornece o material e não realiza instalação. O passo a passo completo está no <SolicitarManual variant="link" />; a formação em instalação é da Academia Orbital.
+              </p>
+            </Revelar>
+            <Revelar ordem={1}>
+              <VideoShort id="hpgoCY8L2PI" poster="/images/videos/opiniao-instalador-adam-werk.jpg" titulo="Opinião de instalador" className="max-w-[320px] mx-auto" />
+            </Revelar>
           </div>
         </div>
-      </section>
+      </Capitulo>
 
-      {/* Opinião de instalador — vídeo à direita */}
-      <section className="py-14 lg:py-28 bg-[#F6F5F2] border-t border-[#eeeeee]">
-        <div className="max-w-[1280px] mx-auto px-4 lg:px-16">
-          <div className="grid grid-cols-1 lg:grid-cols-[1fr_360px] gap-12 lg:gap-24 items-center">
-            <ScrollReveal direction="left">
-              <p className="text-[#2347A0] text-xs tracking-[0.2em] uppercase font-semibold mb-4">
-                Opinião de instalador
-              </p>
-              <h2 className="font-serif text-[#0B1F45] text-3xl lg:text-4xl font-normal mb-6">
-                Um serviço rápido.<br />
-                <span className="italic">Sobra tempo para mais obras.</span>
-              </h2>
-              <p className="text-[#43474e] text-base leading-relaxed mb-8">
-                Adam, da Werk Engenharia, conta como é instalar o PFB na prática: da aplicação ao
-                acabamento, um trabalho ágil — e o tempo ganho vira mais projetos no mês.
-              </p>
-              <div className="grid grid-cols-1 sm:grid-cols-2 gap-x-8 gap-y-4">
-                {[
-                  { label: "Aplicação", desc: "Processo simples, do começo ao fim." },
-                  { label: "Manuseio", desc: "Placa leve, cerca de 11 kg." },
-                  { label: "Corte", desc: "Sem equipamento pesado." },
-                  { label: "Acabamento", desc: "Limpo e preciso." },
-                ].map(({ label, desc }, i) => (
-                  <ScrollReveal key={label} delay={150 + i * 110}>
-                    <div className="flex gap-4">
-                      <div className="w-1.5 h-1.5 rounded-full bg-[#36A35C] mt-2 flex-shrink-0" />
-                      <div>
-                        <span className="text-[#0B1F45] font-semibold text-sm">{label} — </span>
-                        <span className="text-[#43474e] text-sm">{desc}</span>
-                      </div>
-                    </div>
-                  </ScrollReveal>
-                ))}
-              </div>
-            </ScrollReveal>
-            <ScrollReveal direction="right" delay={150}>
-              <VideoShort
-                id="hpgoCY8L2PI"
-                poster="/images/videos/opiniao-instalador-adam-werk.jpg"
-                titulo="Opinião de instalador"
-                className="max-w-[320px] lg:max-w-none mx-auto"
-              />
-            </ScrollReveal>
-          </div>
-        </div>
-      </section>
-
-      {/* Manaus Climate */}
-      <section className="py-10 lg:py-24 bg-[#0B1F45] text-white">
-        <div className="max-w-[1280px] mx-auto px-4 lg:px-16">
-          <div className="grid grid-cols-1 lg:grid-cols-2 gap-12 items-center">
-            <ScrollReveal direction="left">
-              <p className="text-[#36A35C] text-xs tracking-[0.2em] uppercase font-semibold mb-4">
-                Desenvolvido para o Amazonas
-              </p>
-              <h2 className="font-serif text-white text-3xl font-normal mb-6">
-                O PFB foi feito para o clima de Manaus.
-                <br />
-                <span className="italic text-[#B4BBC8]">E os dados provam isso.</span>
-              </h2>
-              <p className="text-white/70 text-base leading-relaxed">
-                Manaus registra umidade relativa média superior a 80% ao longo
-                do ano. O PFB foi desenvolvido para esse ambiente: absorve
-                apenas 0,2% de umidade, não empena, não descola e mantém a
-                integridade visual e estrutural por mais de 10 anos.
-              </p>
-            </ScrollReveal>
-            <div className="grid grid-cols-2 gap-2 lg:gap-5">
-              {[
-                {
-                  title: "Anti-mofo",
-                  desc: "O bambu não é substrato para fungos. O PFB não mofará mesmo em banheiros sem ventilação.",
-                  icon: (
-                    <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5">
-                      <path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z" />
-                      <path d="M9 12l2 2 4-4" />
-                    </svg>
-                  ),
-                },
-                {
-                  title: "Anti-cupim",
-                  desc: "A fibra de bambu processada não atrai cupins. Proteção natural, sem tratamento químico adicional.",
-                  icon: (
-                    <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5">
-                      <circle cx="12" cy="12" r="10" />
-                      <line x1="4.93" y1="4.93" x2="19.07" y2="19.07" />
-                    </svg>
-                  ),
-                },
-                {
-                  title: "Testado em ciclos térmicos",
-                  desc: "Submetido em ensaio a ciclos de –10°C a +120°C. Validado para uso interno — acima de 50°C de calor contínuo pode ondular.",
-                  icon: (
-                    <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5">
-                      <path d="M14 14.76V3.5a2.5 2.5 0 00-5 0v11.26a4.5 4.5 0 105 0z" />
-                    </svg>
-                  ),
-                },
-                {
-                  title: "Estável na umidade",
-                  desc: "0,5% de teor de umidade interno. Não empena, não descola, não deforma ao longo do tempo.",
-                  icon: (
-                    <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5">
-                      <path d="M12 2.69l5.66 5.66a8 8 0 11-11.31 0z" />
-                    </svg>
-                  ),
-                },
-              ].map(({ icon, title, desc }, i) => (
-                <ScrollReveal key={title} delay={i * 120} className="h-full">
-                <div className="h-full bg-[#0B1F45] p-3 lg:p-5 border border-transparent hover:border-[#2347A0] transition-colors">
-                  <div className="text-[#B4BBC8] mb-1 lg:mb-3">{icon}</div>
-                  <p className="text-white font-semibold text-xs lg:text-sm mb-2">{title}</p>
-                  <p className="text-white/55 text-[10px] lg:text-xs leading-relaxed">{desc}</p>
-                </div>
-                </ScrollReveal>
+      {/* ── 06 Ambiente ────────────────────────────────────────────────────── */}
+      <Capitulo id="ambiente" numero="06" rotulo="Ambiente" rotuladoPor="ambiente-titulo" className="ds-secao bg-background">
+        <div className="ds-wrap grid grid-cols-1 lg:grid-cols-2 gap-10 lg:gap-16 items-center">
+          <Revelar>
+            <SecaoCabecalho id="ambiente-titulo" numero="06" sobretitulo="Impacto ambiental" titulo="Bambu cresce em meses. Uma árvore leva décadas."
+              texto="O bambu rebrota após o corte, sem replantio. O PFB não contém formol nem compostos orgânicos voláteis: é inodoro e seguro para ambientes habitados, clínicas e espaços com crianças." />
+            <ul className="space-y-3">
+              {[["Bambu renovável", "Ciclo de cultivo de meses, não de décadas."], ["Sem formol", "Não emite VOCs. Seguro para clínicas, hospitais e casas com crianças."], ["Inodoro", "Zero odor de fábrica: instalável com o ambiente em uso."], ["Núcleo biodegradável", "Fibra natural ao fim da vida útil."]].map(([t, d]) => (
+                <li key={t} className="flex gap-4">
+                  <span aria-hidden className="w-6 h-px bg-secondary mt-3 flex-shrink-0" />
+                  <p className="text-corpo"><span className="text-primary font-semibold">{t} — </span><span className="text-on-surface-variant">{d}</span></p>
+                </li>
               ))}
+            </ul>
+          </Revelar>
+          <Revelar ordem={1} className="relative aspect-[4/5] overflow-hidden bg-surface-container">
+            <Image src={img("onde-aplicar-main", "/images/catalogue/onde-aplicar-main.jpeg")} alt="Material ecológico de bambu aplicado em ambiente interno" fill sizes="(max-width: 1023px) 92vw, 560px" className="object-cover mv-desvela" />
+          </Revelar>
+        </div>
+      </Capitulo>
+
+      {/* ── 07 Próximo passo ───────────────────────────────────────────────── */}
+      <Capitulo id="proximo-passo" numero="07" rotulo="Próximo passo" rotuladoPor="proximo-titulo" className="ds-secao bg-white border-t border-surface-container-high">
+        <div className="ds-wrap">
+          <Revelar className="max-w-3xl mx-auto text-center">
+            <Sobretitulo numero="07">Pronto para especificar?</Sobretitulo>
+            <h2 id="proximo-titulo" className="font-serif text-primary text-t2 font-normal tracking-[-0.02em] mt-4 mb-5 text-balance">Novas possibilidades para seus projetos.</h2>
+            <p className="text-on-surface-variant text-lead mb-8 text-pretty">Ficha técnica completa (ART/CREA), amostras e suporte para arquitetos, designers e engenheiros, pelo pré-contato.</p>
+            <div className="flex flex-col sm:flex-row flex-wrap justify-center gap-3">
+              <Botao contato grande largo>Falar com um especialista</Botao>
+              <Botao href="/produtos" tom="vazado" grande largo seta>Ver o catálogo</Botao>
             </div>
-          </div>
+          </Revelar>
         </div>
-      </section>
-
-      {/* Comparison Table — PFB vs alternatives (accordion) */}
-      <section className="py-12 lg:py-28 bg-[#F6F5F2]">
-        <div className="max-w-[1280px] mx-auto px-4 lg:px-16">
-          <ScrollReveal>
-          <p className="text-[#74777f] text-xs tracking-[0.2em] uppercase font-semibold mb-4">
-            Dados técnicos independentes
-          </p>
-          <h2 className="font-serif text-[#0B1F45] text-3xl lg:text-4xl font-normal mb-3">
-            PFB Orbital — desempenho em 10 critérios técnicos
-          </h2>
-          <p className="text-[#43474e] text-sm mb-10 max-w-2xl">
-            Avaliações com base em ficha técnica e condições reais de uso no clima do Amazonas. ART de Engenheiro Civil.
-          </p>
-          </ScrollReveal>
-          <ScrollReveal delay={150}>
-            <TecnologiaComparison />
-          </ScrollReveal>
-        </div>
-      </section>
-
-      {/* Environmental impact */}
-      <section className="py-10 lg:py-28 bg-[#ffffff]">
-        <div className="max-w-[1280px] mx-auto px-4 lg:px-16">
-          <div className="grid grid-cols-1 lg:grid-cols-2 gap-16 items-center">
-            <ScrollReveal direction="left">
-              <p className="text-[#2347A0] text-xs tracking-[0.2em] uppercase font-semibold mb-4">
-                Impacto ambiental
-              </p>
-              <h2 className="font-serif text-[#0B1F45] text-3xl lg:text-4xl font-normal mb-6">
-                Bambu cresce em meses.<br />
-                <span className="italic">Uma árvore leva décadas.</span>
-              </h2>
-              <p className="text-[#43474e] text-base leading-relaxed mb-6">
-                O bambu é uma das plantas de crescimento mais rápido do mundo —
-                rebrota após o corte sem necessidade de replantio. O PFB Orbital
-                não contém formol nem compostos orgânicos voláteis: é inodoro,
-                seguro para ambientes habitados, clínicas e espaços com crianças.
-              </p>
-              <div className="space-y-4">
-                {[
-                  { label: "Bambu renovável", desc: "Ciclo de cultivo de meses, não décadas." },
-                  { label: "Sem formol", desc: "Não emite VOCs. Seguro para ambientes com crianças, clínicas e hospitais." },
-                  { label: "Inodoro", desc: "Zero odor de fábrica. Instalável em ambientes habitados." },
-                  { label: "Substrato biodegradável", desc: "Núcleo de fibra natural ao final da vida útil." },
-                ].map(({ label, desc }, i) => (
-                  <ScrollReveal key={label} delay={150 + i * 110}>
-                  <div className="flex gap-4">
-                    <div className="w-1.5 h-1.5 rounded-full bg-[#36A35C] mt-2 flex-shrink-0" />
-                    <div>
-                      <span className="text-[#0B1F45] font-semibold text-sm">{label} — </span>
-                      <span className="text-[#43474e] text-sm">{desc}</span>
-                    </div>
-                  </div>
-                  </ScrollReveal>
-                ))}
-              </div>
-            </ScrollReveal>
-            <ScrollReveal direction="right" delay={150}>
-              <div className="relative aspect-[1674/1982] overflow-hidden">
-                <Image
-                  src={img("onde-aplicar-main", "/images/catalogue/onde-aplicar-main.jpeg")}
-                  alt="PFB Orbital — material ecológico de bambu"
-                  fill
-                  className="object-cover"
-                />
-              </div>
-              <div className="border-l-2 border-[#36A35C] px-5 py-3 mt-0 bg-[#f3f9f3]">
-                <p className="text-[#2347A0] text-[10px] tracking-[0.15em] uppercase font-bold mb-1">
-                  Material ecológico
-                </p>
-                <p className="text-[#43474e] text-sm">
-                  Bambu renovável · Sem formol · Inodoro
-                </p>
-              </div>
-            </ScrollReveal>
-          </div>
-        </div>
-      </section>
-
-      {/* Installation Notes */}
-      <section className="py-12 lg:py-20 bg-[#0B1F45] text-white">
-        <div className="max-w-[1280px] mx-auto px-4 lg:px-16">
-          <ScrollReveal>
-            <h2 className="font-serif text-white text-2xl font-normal mb-8">
-              Notas de Instalação
-            </h2>
-          </ScrollReveal>
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
-            {[
-              {
-                title: "Preparação da base",
-                desc: "Base plana, seca, sem irregularidades acima de 2mm. Paredes com reboco fino ou drywall são ideais.",
-              },
-              {
-                title: "Adesivo recomendado",
-                desc: "Cola PU de alta aderência para paredes verticais. Cola de contato para tetos e superfícies curvas.",
-              },
-              {
-                title: "Grandes superfícies",
-                desc: "Prever junta de dilatação a cada 3 metros lineares para acomodar variação térmica.",
-              },
-              {
-                title: "Proteção de cantos",
-                desc: "Proteger arestas e cantos vivos com perfil acabado. Evitar impacto direto nos bordos da placa.",
-              },
-            ].map(({ title, desc }, i) => (
-              <ScrollReveal key={title} delay={i * 120}>
-              <div className="border-l border-[#333640] pl-5 hover:border-[#36A35C] transition-colors">
-                <p className="text-white font-semibold text-sm mb-2">
-                  {title}
-                </p>
-                <p className="text-[#9c9faa] text-sm leading-relaxed">
-                  {desc}
-                </p>
-              </div>
-              </ScrollReveal>
-            ))}
-          </div>
-          <p className="text-[#9c9faa] text-sm italic mt-8">
-            Somos fornecedores diretos — não fazemos instalação. O passo a passo completo está no{" "}
-            <SolicitarManual variant="link" />
-            .
-          </p>
-        </div>
-      </section>
-
-      {/* CTA */}
-      <section className="py-12 lg:py-16 bg-[#F6F5F2] border-t border-[#eeeeee] text-center">
-        <ScrollReveal className="max-w-[600px] mx-auto px-4 lg:px-8">
-          <h3 className="font-serif text-[#0B1F45] text-2xl font-normal mb-4">
-            Pronto para especificar?
-          </h3>
-          <p className="text-[#43474e] text-base mb-8">
-            Solicite a ficha técnica completa (ART/CREA)
-            e suporte para arquitetos e designers.
-          </p>
-          <div className="flex flex-col sm:flex-row flex-wrap justify-center gap-3 lg:gap-4">
-            <ContatoCta
-              className="w-full sm:w-auto text-center bg-[#0B1F45] text-white text-xs tracking-[0.12em] uppercase font-bold px-8 py-4 hover:bg-[#2347A0] transition-colors"
-            >
-              Falar com Especialista
-            </ContatoCta>
-            <Link
-              href="/produtos"
-              className="w-full sm:w-auto text-center border border-[#0B1F45] text-[#0B1F45] text-xs tracking-[0.12em] uppercase font-bold px-8 py-4 hover:bg-[#0B1F45] hover:text-white transition-colors"
-            >
-              Ver Catálogo
-            </Link>
-          </div>
-        </ScrollReveal>
-      </section>
+      </Capitulo>
     </div>
   );
 }
