@@ -45,7 +45,7 @@ export default function ShowroomFolha({
     <div className="fixed inset-0 z-[56]" aria-hidden={!ativo || undefined}>
       <div className="mv-veu absolute inset-0 bg-primary/60" onClick={onFechar} aria-hidden />
       <div ref={caixa} role="dialog" aria-modal="true" tabIndex={-1} aria-label={`${lugar.kind === "revenda" ? "Ponto de revenda" : "Showroom"}: ${lugar.name}`}
-        className="outline-none "mv-folha lg:mv-folha-lado absolute inset-0 lg:inset-y-0 lg:left-auto lg:right-0 lg:w-[min(100%,72rem)] bg-background flex flex-col shadow-2xl"
+        className="outline-none mv-folha lg:mv-folha-lado absolute inset-0 lg:inset-y-0 lg:left-auto lg:right-0 lg:w-[min(100%,72rem)] bg-background flex flex-col shadow-2xl"
         style={{ height: "100dvh" }}>
         <div className="flex items-center justify-between gap-3 px-[clamp(1rem,4.2vw,4rem)] pt-[max(env(safe-area-inset-top),0.5rem)] pb-2 border-b border-surface-variant bg-background flex-shrink-0">
           <button ref={fechar} type="button" onClick={onFechar}
