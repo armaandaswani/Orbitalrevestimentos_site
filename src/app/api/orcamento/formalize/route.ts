@@ -43,7 +43,7 @@ export async function POST(req: NextRequest) {
   const q = quote as Record<string, unknown>;
 
   // Frete confirmado pela zona do CEP informado (senão o frete-base do motor).
-  // Para ≥5 placas o motor mantém frete grátis, independentemente da zona.
+  // Para ≥6 placas o motor mantém frete grátis, independentemente da zona.
   const freteZoneValue = await freteValueForCep(db, zip);
 
   // Server-authoritative breakdown.

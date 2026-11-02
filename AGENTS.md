@@ -26,10 +26,11 @@ comparison.
 - **NEVER** state, admit, or imply the PFB is "more expensive" / "custa mais" than
   MDF (or anything) — not even to justify it with durability or "ciclo de vida".
   That framing creates an objection and works against the sale.
-- Compare on **total application cost**, never the bare sheet price. The MDF *system*
-  needs surface prep, structure, marcenaria, specialized labor, more install time,
-  finishing and future replacement — so the complete MDF job usually ends up MORE
-  expensive and still lacks PFB's durability.
+- Compare on **total application cost**, never the bare sheet price, and **never say
+  or imply that any other material or system is "mais caro" or "sai mais caro"** —
+  not even inside a comparison (owner, 02/11/2026: it burns the sale). Speak only
+  of what the PFB saves: surface prep, structure, marcenaria, specialized labor,
+  install time, finishing and future replacement.
 - Defend PFB by its differentials, never by conceding on price: lightweight (~11 kg
   per 2.90×1.20m×5mm sheet), renewable bamboo fiber, thrives in humid environments,
   very low moisture absorption (0.2% vs 35% MDF), mold/termite resistant, no

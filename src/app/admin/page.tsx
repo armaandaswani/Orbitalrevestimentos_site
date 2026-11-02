@@ -8084,7 +8084,7 @@ export default function AdminPage() {
                 <div className="bg-white border border-[#e2e2e2] p-6 mt-8">
                   <h3 className="font-serif text-[#0B1F45] text-lg font-normal mb-1">Zonas de frete por CEP</h3>
                   <p className="text-[#74777f] text-xs mb-5 leading-relaxed">
-                    Sem nenhuma zona, o frete usa o valor-base. Na formalização, o CEP do cliente define o valor. ≥ 5 placas mantém frete grátis.
+                    Sem nenhuma zona, o frete usa o valor-base. Na formalização, o CEP do cliente define o valor. ≥ 6 placas mantém frete grátis.
                   </p>
                   <p className="text-[#74777f] text-xs mb-5 -mt-3 leading-relaxed">
                     Pedidos do admin: frete automático de R$ {FRETE_PADRAO} (também sem CEP) e R$ {FRETE_DISTANTE} nos bairros distantes: {BAIRROS_DISTANTES.join(", ")}. Uma zona abaixo que case pelo CEP ou pelo bairro vale no lugar. O valor sempre pode ser alterado no pedido.
