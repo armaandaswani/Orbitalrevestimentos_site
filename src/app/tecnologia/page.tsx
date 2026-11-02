@@ -231,7 +231,7 @@ export default async function TecnologiaPage() {
               <p className="text-white/75 text-corpo mb-6 max-w-xl text-pretty">
                 Adam, da Werk Engenharia, conta como é instalar o PFB na prática: aplicação simples, placa leve de cerca de 11 kg, corte sem equipamento pesado e acabamento limpo.
               </p>
-              <p className="text-white/70 text-legenda italic">
+              <p className="text-white/70 text-corpo italic">
                 A Orbital fornece o material e não realiza instalação. O passo a passo completo está no <SolicitarManual variant="link" />; a formação em instalação é da Academia Orbital.
               </p>
             </Revelar>
