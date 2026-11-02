@@ -40,7 +40,7 @@ function buildEmail(
         <!-- BODY -->
         <tr>
           <td style="padding:36px 36px 24px;">
-            <p style="margin:0 0 14px;font-size:10px;letter-spacing:0.2em;text-transform:uppercase;font-weight:600;color:#2347A0;font-family:Arial,sans-serif;">Painel Flexível Fibra de Bambu (PFB)</p>
+            <p style="margin:0 0 14px;font-size:10px;letter-spacing:0.2em;text-transform:uppercase;font-weight:600;color:#2347A0;font-family:Arial,sans-serif;">Painel Flexível em Fibra de Bambu (PFB)</p>
             ${bodyHtml}
           </td>
         </tr>
@@ -225,7 +225,7 @@ const CONTENT: Record<
     ctaPath: "/",
     body: `
       <p style="font-size:26px;line-height:1.2;color:#0B1F45;font-weight:700;margin:0 0 16px;">PFB vs. MDF: a comparação que fecha a decisão.</p>
-      <p style="font-size:15px;line-height:1.7;color:#43474e;margin:16px 0;">O <strong>Painel Flexível Fibra de Bambu (PFB)</strong> entrega mais desempenho, mais durabilidade e uma aplicação muito mais eficiente. Compare o <strong>custo total da aplicação</strong> — não só o preço da chapa — e mostre os números antes que a concorrência apareça.</p>
+      <p style="font-size:15px;line-height:1.7;color:#43474e;margin:16px 0;">O <strong>Painel Flexível em Fibra de Bambu (PFB)</strong> entrega mais desempenho, mais durabilidade e uma aplicação muito mais eficiente. Compare o <strong>custo total da aplicação</strong> — não só o preço da chapa — e mostre os números antes que a concorrência apareça.</p>
       <div style="background:#F6F5F2;border-left:3px solid #36A35C;padding:14px 18px;margin:20px 0;">
         <table width="100%" cellpadding="0" cellspacing="0" style="font-family:Arial,sans-serif;font-size:12px;">
           <tr>

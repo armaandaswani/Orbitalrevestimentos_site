@@ -16,7 +16,7 @@ const secoes: SecaoLegal[] = [
     titulo: "Sobre o site",
     corpo: (
       <p>
-        Este site apresenta os produtos da Orbital Revestimentos, como o Painel Flexível Fibra de Bambu (PFB), além de
+        Este site apresenta os produtos da Orbital Revestimentos, como o Painel Flexível em Fibra de Bambu (PFB), além de
         projetos realizados, conteúdos técnicos, o simulador de ambientes e os canais de atendimento. Ao usar o
         site, você concorda com estes Termos de Uso.
       </p>
@@ -73,7 +73,7 @@ const secoes: SecaoLegal[] = [
     corpo: (
       <>
         <p>
-          O Painel Flexível Fibra de Bambu (PFB) pode ser comprado diretamente da Orbital ou de terceiros que
+          O Painel Flexível em Fibra de Bambu (PFB) pode ser comprado diretamente da Orbital ou de terceiros que
           revendem o material, como lojas, revendedores, marceneiros e outros profissionais.
         </p>
         <p>

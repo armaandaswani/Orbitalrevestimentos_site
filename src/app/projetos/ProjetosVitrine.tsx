@@ -143,7 +143,7 @@ export default function ProjetosVitrine({ projetos, categorias, lugares, renders
         <div className="max-w-[1280px] mx-auto px-4 lg:px-16">
           <Revelar>
             <SecaoCabecalho id="obras-titulo" sobretitulo="Obras realizadas" titulo="Projetos executados"
-              texto="Ambientes reais revestidos com o Painel Flexível Fibra de Bambu. Deslize cada linha e toque em um projeto para ver todas as fotos." />
+              texto="Ambientes reais revestidos com o Painel Flexível em Fibra de Bambu. Deslize cada linha e toque em um projeto para ver todas as fotos." />
           </Revelar>
           <div className="space-y-2 mb-8">
             <GrupoChips rotulo="Categoria" ativo={categoria} onMudar={setCategoria}

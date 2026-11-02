@@ -162,7 +162,7 @@ const segments: Segment[] = [
     badge: "Academia Orbital · Formação",
     tagline: "Especialização técnica em PFB, no padrão Orbital.",
     headline: "Aprenda a instalar PFB no padrão Orbital.",
-    body: "A Academia Orbital abre a 1ª turma da formação em instalação: prática, passo a passo, para aplicadores que querem instalar Painéis Flexíveis Fibra de Bambu (PFB) corretamente. A 1ª turma é gratuita e as vagas são limitadíssimas.",
+    body: "A Academia Orbital abre a 1ª turma da formação em instalação: prática, passo a passo, para aplicadores que querem instalar Painéis Flexíveis em Fibra de Bambu (PFB) corretamente. A 1ª turma é gratuita e as vagas são limitadíssimas.",
     benefits: [
       { title: "Formação Academia Orbital", desc: "Prática, do preparo da superfície ao acabamento. 1ª turma gratuita, com vagas limitadíssimas." },
       { title: "Certificado de conclusão", desc: "Quem conclui a formação sai com certificado de conclusão da Academia Orbital." },

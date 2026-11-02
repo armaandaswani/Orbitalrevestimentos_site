@@ -10,8 +10,8 @@ Applies to ALL content: the site, the chat AI (`DEFAULT_SYSTEM_PROMPT`), emails
 (`src/lib/*-email-content.ts`), commercial materials, and any PFB-vs-other-material
 comparison.
 
-- **PFB = Painel Flexível Fibra de Bambu** — the official product name, chosen by
-  the owner (Oct 2026). Plural: "Painéis Flexíveis Fibra de Bambu". It is masculine
+- **PFB = Painel Flexível em Fibra de Bambu** — the official product name, chosen by
+  the owner (Oct 2026). Plural: "Painéis Flexíveis em Fibra de Bambu". It is masculine
   ("o Painel", "dos Painéis"). Do not use "Placa Flexível de Bambu", "Placa de
   Fibra de Bambu" or "Painel de Fibra de Bambu" for the product name anymore
   ("placa" stays fine as the generic word for one sheet: "R$ 559/placa").

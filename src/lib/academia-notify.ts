@@ -117,7 +117,7 @@ export function mensagemConfirmacao(nome: string, temEmail: boolean, turma: Turm
     return [
       `Olá${n ? `, ${n}` : ""}! ✅`,
       "",
-      `Como você não pode no dia da 1ª turma (${QUANDO_TURMA_1}), você entrou na *lista de espera da 2ª turma* da *Formação em Instalação do PFB* (Painel Flexível Fibra de Bambu) da Academia Orbital.`,
+      `Como você não pode no dia da 1ª turma (${QUANDO_TURMA_1}), você entrou na *lista de espera da 2ª turma* da *Formação em Instalação do PFB* (Painel Flexível em Fibra de Bambu) da Academia Orbital.`,
       "",
       `Quando a 2ª turma abrir, você é avisado primeiro, ${canais}.`,
       "",
@@ -128,7 +128,7 @@ export function mensagemConfirmacao(nome: string, temEmail: boolean, turma: Turm
     return [
       `Olá${n ? `, ${n}` : ""}! ✅`,
       "",
-      "A 1ª turma da *Formação em Instalação do PFB* (Painel Flexível Fibra de Bambu) da Academia Orbital está preenchida — e você entrou na *lista de espera da 2ª turma*.",
+      "A 1ª turma da *Formação em Instalação do PFB* (Painel Flexível em Fibra de Bambu) da Academia Orbital está preenchida — e você entrou na *lista de espera da 2ª turma*.",
       "",
       `Se abrir vaga na 1ª turma (${QUANDO_TURMA_1}) por desistência, chamamos pela ordem da lista, ${canais}. E quando a 2ª turma abrir, você é avisado primeiro.`,
       "",
@@ -138,7 +138,7 @@ export function mensagemConfirmacao(nome: string, temEmail: boolean, turma: Turm
   return [
     `Olá${n ? `, ${n}` : ""}! ✅`,
     "",
-    "Sua pré-inscrição na *1ª turma da Formação em Instalação do PFB* (Painel Flexível Fibra de Bambu) da Academia Orbital está confirmada.",
+    "Sua pré-inscrição na *1ª turma da Formação em Instalação do PFB* (Painel Flexível em Fibra de Bambu) da Academia Orbital está confirmada.",
     "",
     `📅 *${QUANDO_TURMA_1_INICIO}*`,
     "",

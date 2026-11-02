@@ -13,7 +13,7 @@ interface Message {
 
 const QUICK_CHIPS = [
   { label: "O que é o PFB?",        prompt: "O que é o PFB Orbital?" },
-  { label: "Por que o PFB?",        prompt: "Por que escolher o Painel Flexível Fibra de Bambu para o clima de Manaus?" },
+  { label: "Por que o PFB?",        prompt: "Por que escolher o Painel Flexível em Fibra de Bambu para o clima de Manaus?" },
   { label: "Quais são as linhas?",  prompt: "Quais são as linhas e acabamentos do PFB Orbital?" },
   { label: "Serve p/ banheiro?",    prompt: "Posso usar o PFB no banheiro ou em áreas úmidas?" },
   { label: "Como instalar?",        prompt: "Como é feita a instalação do PFB?" },

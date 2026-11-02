@@ -53,7 +53,7 @@ export function visualizadorRenderMessage(items: VisualizadorItem[]): string {
  */
 export function productEducationMessage(): string {
   return [
-    "Descubra o *Painel Flexível Fibra de Bambu*",
+    "Descubra o *Painel Flexível em Fibra de Bambu*",
     "",
     "💧 Resistente à água, mofo e umidade",
     "🐜 Resistente a cupins",

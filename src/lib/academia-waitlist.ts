@@ -108,7 +108,7 @@ export const PRESENCA_ASSUNTO_PADRAO = "Confirme sua presença — Formação Ac
 export const PRESENCA_TEXTO_PADRAO = [
   "Olá, {nome}! 👋",
   "",
-  "A *Formação em Instalação do PFB* (Painel Flexível Fibra de Bambu) da Academia Orbital está chegando:",
+  "A *Formação em Instalação do PFB* (Painel Flexível em Fibra de Bambu) da Academia Orbital está chegando:",
   "",
   "📅 Sábado, 31/10",
   "🕖 7h30",

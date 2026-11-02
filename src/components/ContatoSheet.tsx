@@ -18,7 +18,7 @@ import { modelosDoProjeto } from "@/lib/projeto-modelos";
  *   A. veio de um produto → o revestimento já vem escolhido;
  *   B. veio de qualquer outro lugar → a primeira tela é o catálogo visual
  *      (fotos grandes, ampliar, projetos com aquele modelo).
- * Depois: já conhece o Painel Flexível Fibra de Bambu? (se não, 3 pontos
+ * Depois: já conhece o Painel Flexível em Fibra de Bambu? (se não, 3 pontos
  * rápidos) → perfil → o que valoriza → o que espera do painel → quando →
  * medidas → cidade → enviar. Medidas e nome são opcionais. O WhatsApp do
  * cliente não é pedido: a conversa já traz o número.
@@ -488,11 +488,11 @@ export default function ContatoSheet() {
   // ── Cabeçalho de cada pergunta ────────────────────────────────────────────
   const titulos: Record<Passo, { o?: string; t: string; s?: string }> = {
     modelo: { t: "Qual revestimento chamou sua atenção?", s: `Escolha até ${MAX_MODELOS}. Toque em ampliar para ver fotos e projetos.` },
-    conhece: { t: "Você já conhece o Painel Flexível Fibra de Bambu?" },
-    explica: { o: "Painel Flexível Fibra de Bambu (PFB)", t: "Pensado para o clima de Manaus" },
+    conhece: { t: "Você já conhece o Painel Flexível em Fibra de Bambu?" },
+    explica: { o: "Painel Flexível em Fibra de Bambu (PFB)", t: "Pensado para o clima de Manaus" },
     perfil: { t: "Para quem é o projeto?" },
     valoriza: { t: "O que você mais valoriza em um revestimento?" },
-    espera: { t: "O que você espera do Painel Flexível Fibra de Bambu?", s: `Escolha até ${MAX_ESPERA}.` },
+    espera: { t: "O que você espera do Painel Flexível em Fibra de Bambu?", s: `Escolha até ${MAX_ESPERA}.` },
     prazo: { t: "Quando pretende realizar seu projeto?" },
     medidas: { t: "Qual o tamanho da área?", s: "Se souber, ajuda o consultor a calcular as placas. Pode pular." },
     cidade: { t: "Em qual cidade é a obra?" },
