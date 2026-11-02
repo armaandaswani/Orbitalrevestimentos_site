@@ -3,7 +3,7 @@ import type { Metadata } from "next";
 export const metadata: Metadata = {
   title: "Revestimentos PFB — 3 Linhas, 15 Acabamentos em Manaus",
   description:
-    "Catálogo completo de Painéis Flexíveis em Fibra de Bambu Orbital: Linha Classic (mármore fosco), Brilliance (mármore polido) e Elegance (madeira texturizada). Alternativa superior ao MDF e papel de parede. Pronta-entrega em Manaus.",
+    "Catálogo completo de Painéis Flexíveis em Fibra de Bambu Orbital: Linha Classic (mármore fosco), Brilliance (mármore polido) e Elegance (madeira texturizada). 15 acabamentos para paredes e forros, pronta-entrega em Manaus.",
   keywords: [
     "revestimento de parede Manaus",
     "revestimento mármore Manaus",
@@ -13,8 +13,6 @@ export const metadata: Metadata = {
     "revestimento fosco",
     "revestimento polido",
     "revestimento texturizado",
-    "alternativa MDF parede",
-    "alternativa papel de parede",
     "revestimento para lavabo",
     "revestimento para sala",
     "revestimento para banheiro Manaus",
@@ -25,7 +23,7 @@ export const metadata: Metadata = {
   openGraph: {
     title: "Revestimentos PFB — 3 Linhas, 15 Acabamentos em Manaus",
     description:
-      "Catálogo completo Orbital: Classic, Brilliance e Elegance. Alternativa superior ao MDF e papel de parede. 15 acabamentos, pronta-entrega em Manaus.",
+      "Catálogo completo Orbital: Classic, Brilliance e Elegance. 15 acabamentos para paredes e forros, pronta-entrega em Manaus.",
     url: "https://orbitalrevestimentos.com.br/produtos",
   },
 };

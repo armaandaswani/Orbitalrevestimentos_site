@@ -728,55 +728,52 @@ export default function ProdutosPage() {
         </div>
       )}
 
-      {/* Page Header */}
-      <section className="bg-[#0B1F45] text-white py-10 lg:py-24">
-        <div className="max-w-[1280px] mx-auto px-4 lg:px-16">
-          <p className="text-[#B4BBC8] text-xs tracking-[0.2em] uppercase font-semibold mb-4">
-            Orbital Revestimentos · Catálogo 2026
-          </p>
-          <h1 className="font-serif text-3xl lg:text-6xl font-normal tracking-[-0.02em] leading-tight mb-5">
-            Catálogo de Acabamentos
-          </h1>
-          <p className="text-white/70 text-base lg:text-lg leading-relaxed max-w-2xl mb-8">
-            3 linhas exclusivas da Orbital. 15 acabamentos em estoque. Precisão técnica e
-            estética arquitetônica para projetos exigentes em Manaus.
-          </p>
-          <div className="flex flex-col sm:flex-row flex-wrap gap-3 lg:gap-4">
-            {/* Sem "Falar com um consultor" aqui: primeiro o cliente escolhe o
-                acabamento; o botão aparece dentro de cada produto. */}
-            <a
-              href={CATALOGUE_URL}
-              target="_blank"
-              rel="noopener noreferrer"
-              className="w-full sm:w-auto inline-flex items-center justify-center gap-2 border border-white/40 text-white text-xs tracking-[0.12em] uppercase font-bold px-7 py-3.5 hover:bg-white/10 transition-colors"
-            >
-              <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-                <path d="M21 15v4a2 2 0 01-2 2H5a2 2 0 01-2-2v-4M7 10l5 5 5-5M12 15V3" />
-              </svg>
-              Baixar Catálogo
-            </a>
+      {/* Abertura: curta e clara, no tom da home; as linhas logo abaixo, presas no topo ao rolar. */}
+      <section className="bg-[#F6F5F2] border-b border-[#e8e6e1]">
+        <div className="ds-wrap pt-[clamp(2.25rem,1.5rem+2.5vw,4rem)] pb-[clamp(1.5rem,1rem+1.5vw,2.5rem)] flex flex-col md:flex-row md:items-end md:justify-between gap-5">
+          <div className="max-w-2xl">
+            <h1 className="font-serif text-[#0B1F45] text-t1 font-normal tracking-[-0.02em]">
+              Catálogo de acabamentos
+            </h1>
+            <p className="text-[#43474e] text-lead mt-3 text-pretty">
+              Painel Flexível em Fibra de Bambu (PFB): 3 linhas e 15 acabamentos, com pronta-entrega em Manaus.
+            </p>
           </div>
+          {/* Sem "Falar com um consultor" aqui: primeiro o cliente escolhe o
+              acabamento; o botão aparece dentro de cada produto. */}
+          <a
+            href={CATALOGUE_URL}
+            target="_blank"
+            rel="noopener noreferrer"
+            className="ds-botao ds-botao-vazado flex-shrink-0 self-start md:self-auto"
+          >
+            <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.75" aria-hidden>
+              <path d="M21 15v4a2 2 0 01-2 2H5a2 2 0 01-2-2v-4M7 10l5 5 5-5M12 15V3" />
+            </svg>
+            Baixar catálogo
+          </a>
         </div>
       </section>
 
-      {/* Filters */}
-      <div className="sticky top-20 z-40 bg-[#ffffff] border-b border-[#e2e2e2] shadow-[0_1px_0_0_rgba(0,0,0,0.04)]">
-        <div className="max-w-[1280px] mx-auto px-4 lg:px-16">
-          <div className="flex gap-0 overflow-x-auto">
+      {/* Linhas: presas logo abaixo do cabeçalho; quando ele se recolhe, sobem junto (ds-sob-cabecalho). */}
+      <div className="ds-sob-cabecalho sticky z-40 bg-[#F6F5F2] border-b border-[#e2e2e2]">
+        <div className="ds-wrap">
+          <div className="flex gap-0 overflow-x-auto scrollbar-none -mx-3 sm:-mx-5">
             {linhas.map(({ key, label, desc }) => (
               <button
                 key={key}
                 onClick={() => setActiveLinha(key)}
-                className={`flex-shrink-0 flex flex-col items-start px-3 py-3 sm:px-6 sm:py-5 border-b-2 transition-all duration-200 ${
+                aria-pressed={activeLinha === key}
+                className={`flex-shrink-0 flex flex-col items-start px-3 py-3 sm:px-5 sm:py-4 border-b transition-colors duration-200 ${
                   activeLinha === key
                     ? "border-[#0B1F45] text-[#0B1F45]"
                     : "border-transparent text-[#74777f] hover:text-[#0B1F45]"
                 }`}
               >
-                <span className="text-xs tracking-[0.12em] uppercase font-bold">
+                <span className="text-xs tracking-[0.12em] uppercase font-semibold">
                   {label}
                 </span>
-                <span className="text-[10px] mt-0.5 opacity-70 hidden sm:block">
+                <span className="text-[11px] mt-0.5 opacity-75 hidden sm:block">
                   {desc}
                 </span>
               </button>
@@ -786,7 +783,7 @@ export default function ProdutosPage() {
       </div>
 
       {/* Product Grid */}
-      <section className="py-12 lg:py-20 bg-[#F6F5F2]">
+      <section className="pt-8 pb-12 lg:pt-12 lg:pb-20 bg-[#F6F5F2]">
         <div className="max-w-[1280px] mx-auto px-4 lg:px-16">
           {activeLinha !== "todos" && (
             <div className="mb-10 pb-8 border-b border-[#e2e2e2]">

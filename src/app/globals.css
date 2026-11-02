@@ -354,6 +354,13 @@ html { scroll-padding-top: 5rem; }
 
 /* Cabeçalho recolhido (com ou sem movimento: só muda o lugar). */
 header[data-site][data-oculto="1"] { transform: translate3d(0, -100%, 0); }
+/* Barras presas logo abaixo do cabeçalho (ex.: linhas do catálogo): sobem
+   junto quando ele se recolhe, sem deixar uma faixa vazia por cima. */
+.ds-sob-cabecalho { top: 5rem; }
+html:has(header[data-site][data-oculto="1"]) .ds-sob-cabecalho { top: 0; }
+@media (prefers-reduced-motion: no-preference) {
+  .ds-sob-cabecalho { transition: top 0.38s var(--ease-orbital); }
+}
 
 /* Trilhos horizontais: sem barra nativa (o trilho tem a sua). */
 .ds-trilho { scrollbar-width: none; overscroll-behavior-x: contain; }
