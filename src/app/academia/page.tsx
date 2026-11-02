@@ -46,7 +46,7 @@ const URL_PAGINA = "https://orbitalrevestimentos.com.br/academia";
 export const metadata: Metadata = {
   title: "Academia Orbital — Formação em instalação do PFB",
   description:
-    "Formação prática em instalação do Painel Flexível Fibra de Bambu (PFB), do corte ao acabamento. 1ª turma gratuita, vagas limitadíssimas. Saia com certificado e compre PFB direto com a Orbital.",
+    "Formação prática em instalação do Painel Flexível em Fibra de Bambu (PFB), do corte ao acabamento. 1ª turma gratuita, vagas limitadíssimas. Saia com certificado e compre PFB direto com a Orbital.",
   alternates: { canonical: URL_PAGINA },
   openGraph: {
     title: "Academia Orbital — Formação em instalação do PFB",
@@ -197,7 +197,7 @@ export default async function AcademiaPage() {
               <span style={{ color: LIMA }}>Ganhe um novo serviço.</span>
             </h1>
             <p className="text-white/70 text-base lg:text-lg leading-relaxed max-w-md">
-              Formação prática no Painel Flexível Fibra de Bambu (PFB), do corte ao acabamento. Você sai com
+              Formação prática no Painel Flexível em Fibra de Bambu (PFB), do corte ao acabamento. Você sai com
               certificado e compra PFB direto com a Orbital.
             </p>
           </div>

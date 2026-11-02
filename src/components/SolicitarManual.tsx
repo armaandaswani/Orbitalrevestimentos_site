@@ -28,7 +28,7 @@ export default function SolicitarManual({ variant = "card" }: { variant?: "card"
 
   const quem = perfil === "Outro" ? outro.trim() : perfil;
   const pronto = !!quem;
-  const mensagem = `Olá! Gostaria de solicitar o Manual Técnico de Instalação do Painel Flexível Fibra de Bambu (PFB). Sou ${quem ?? ""}.`;
+  const mensagem = `Olá! Gostaria de solicitar o Manual Técnico de Instalação do Painel Flexível em Fibra de Bambu (PFB). Sou ${quem ?? ""}.`;
   const href = `https://wa.me/${WHATSAPP}?text=${encodeURIComponent(mensagem)}`;
 
   const abrir = () => { setPerfil(null); setOutro(""); setAberto(true); };

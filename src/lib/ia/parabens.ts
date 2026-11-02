@@ -2,6 +2,7 @@ import type { SupabaseClient } from "@supabase/supabase-js";
 import { aniversariantes } from "@/lib/aniversarios-server";
 import { primeiroNome } from "@/lib/aniversarios";
 import { normalizePhone, sendText } from "@/lib/smclick";
+import { enviarPelaSte, steConfigurada } from "@/lib/whatsapp-ste";
 import { chamarModelo, lerNivel } from "@/lib/ia/modelo";
 import { atualizar, auditar, enfileirar, somarUso, type Tarefa } from "@/lib/ia/fila";
 
@@ -19,9 +20,14 @@ import { atualizar, auditar, enfileirar, somarUso, type Tarefa } from "@/lib/ia/
 const DEPTO = "relacionamento";
 const AGENTE_REDATOR = "relacoes-redator";
 const INSTRUCOES_RESERVA =
-  "Você escreve mensagens curtas de aniversário em português do Brasil, em nome da equipe de uma empresa, " +
-  "para parceiros profissionais. Use só os dados recebidos; nunca invente detalhes pessoais. 1 a 3 frases, " +
-  "tom caloroso e profissional, sem venda, sem links, sem descontos, no máximo um emoji. Assine como a equipe.";
+  "Você escreve a mensagem de aniversário que a equipe da Orbital Revestimentos (Manaus) manda pelo WhatsApp " +
+  "para arquitetos, designers e parceiros. Siga o estilo do dono: alegre, carinhoso, bem brasileiro, com bênção, " +
+  "em linhas curtas separadas por linha em branco e emojis de festa. Modelo do dono (varie as palavras, mantenha o jeito):\n\n" +
+  "Bom diaaa {nome}!!\nQueria lhe parabenizar nesse dia especial!\n\n" +
+  "Que Deus lhe abençoe, lhe traga muita felicidade, saúde, sucesso e prosperidade!!!! 🥳🥳🥳\n\n" +
+  "De toda a equipe da Orbital Revestimentos, lhe desejamos um feliz aniversário! 🎊🎉🎂🎁\n\n" +
+  "Regras: use {nome} onde vai o nome; sempre termine desejando feliz aniversário em nome de toda a equipe da " +
+  "Orbital Revestimentos; sem venda, links, desconto, orçamento ou idade; até 450 caracteres.";
 
 // ── QA determinístico ────────────────────────────────────────────────────────
 
@@ -34,7 +40,7 @@ const PROIBIDAS = [
 const semAcento = (s: string) => s.normalize("NFD").replace(/[̀-ͯ]/g, "").toLowerCase();
 
 /** Problemas objetivos de uma mensagem de parabéns (lista vazia = passou). */
-export function verificarParabens(texto: string, nome: string, limite = 320): string[] {
+export function verificarParabens(texto: string, nome: string, limite = 450): string[] {
   const p: string[] = [];
   const t = (texto ?? "").trim();
   if (!t) return ["Mensagem vazia."];
@@ -42,9 +48,18 @@ export function verificarParabens(texto: string, nome: string, limite = 320): st
   if (primeiro && !semAcento(t).includes(semAcento(primeiro))) p.push(`Não usa o primeiro nome (${primeiro}).`);
   if (t.length > limite) p.push(`Longa demais (${t.length} caracteres; máximo ${limite}).`);
   for (const r of PROIBIDAS) if (r.test(t)) p.push(`Contém trecho proibido: ${r.source}.`);
+  if (/[{}]/.test(t)) p.push("Sobrou marcador ou chave ({ }) no texto.");
   const emojis = t.match(/\p{Extended_Pictographic}/gu)?.length ?? 0;
-  if (emojis > 1) p.push(`Emojis demais (${emojis}).`);
+  if (emojis > 12) p.push(`Emojis demais (${emojis}).`);
   return p;
+}
+
+/** Marcador que a IA usa no lugar do nome (o nome real nunca sai do sistema). */
+export const MARCADOR = "{nome}";
+
+/** Troca {nome} pelo primeiro nome. Aceita variações que a IA às vezes escreve ({Nome}, { nome }). */
+export function trocarMarcador(texto: string, nome: string): string {
+  return (texto ?? "").replace(/\{\s*nome\s*\}/gi, primeiroNome(nome) || nome);
 }
 
 // ── Detecção ─────────────────────────────────────────────────────────────────
@@ -92,9 +107,11 @@ export async function rascunhoParabens(db: SupabaseClient, t: Tarefa): Promise<v
   const { data: agente } = await db.from("ai_agents").select("instrucoes, ativo").eq("id", AGENTE_REDATOR).maybeSingle();
   const sistema = (agente?.ativo !== false && agente?.instrucoes) || INSTRUCOES_RESERVA;
   const feedback = t.erro ? `\nA versão anterior foi reprovada na checagem: ${t.erro}. Corrija isso.` : "";
+  // LGPD (minimização): a IA nunca recebe o nome, o telefone nem o detalhe da
+  // pessoa. Ela escreve com o marcador {nome} e o nome entra aqui, depois.
   const entrada =
-    `Pessoa: ${e.nome} (primeiro nome: ${primeiroNome(e.nome)})\nRelação: ${e.tipo}${e.detalhe ? ` — ${e.detalhe}` : ""}\n` +
-    `Ocasião: aniversário hoje (${e.data ?? ""}).\nEscreva duas versões (curta e média) e diga qual recomenda.${feedback}`;
+    `Pessoa: ${MARCADOR} (escreva exatamente "${MARCADOR}" onde entraria o primeiro nome; não invente outro nome)\n` +
+    `Relação: ${e.tipo}\nOcasião: aniversário hoje.\nEscreva duas versões (curta e média) e diga qual recomenda.${feedback}`;
 
   let uso = { modelo: t.modelo, tokens_entrada: t.tokens_entrada, tokens_saida: t.tokens_saida, tokens_cache_leitura: t.tokens_cache_leitura, tokens_cache_escrita: t.tokens_cache_escrita, custo_usd: Number(t.custo_usd), latencia_ms: t.latencia_ms };
   const r = await chamarModelo<Rascunho>(db, { nivel: "executor", sistema, entrada, schema: SCHEMA_RASCUNHO, maxTokens: 800, esforco: "low" });
@@ -105,6 +122,11 @@ export async function rascunhoParabens(db: SupabaseClient, t: Tarefa): Promise<v
     return;
   }
 
+  // O que a IA devolveu (com o marcador) fica guardado; quem aprova vê o nome já trocado.
+  const modelo = { curta: r.dados.curta, media: r.dados.media };
+  const comNome = (s: string) => trocarMarcador(s, e.nome);
+  r.dados.curta = comNome(r.dados.curta);
+  r.dados.media = comNome(r.dados.media);
   const qa = { curta: verificarParabens(r.dados.curta, e.nome), media: verificarParabens(r.dados.media, e.nome) };
   const escolhida = qa[r.dados.recomendada].length === 0 ? r.dados.recomendada : qa.curta.length === 0 ? "curta" : qa.media.length === 0 ? "media" : null;
   if (!escolhida) {
@@ -120,7 +142,7 @@ export async function rascunhoParabens(db: SupabaseClient, t: Tarefa): Promise<v
     const rt = await chamarModelo<{ natural: boolean; problema: string }>(db, {
       nivel: "leve",
       sistema: "Você confere se uma mensagem curta em português do Brasil soa natural e humana (não robótica, não exagerada). Responda só o JSON.",
-      entrada: r.dados[escolhida], schema: SCHEMA_TOM, maxTokens: 200, esforco: "low",
+      entrada: modelo[escolhida], schema: SCHEMA_TOM, maxTokens: 200, esforco: "low",
     });
     if (rt.uso) uso = somarUso(uso, rt.uso);
     if (rt.ok) tom = rt.dados;
@@ -200,13 +222,24 @@ export async function envioParabens(db: SupabaseClient, t: Tarefa): Promise<void
   const { error: trava } = await db.from("relacionamento_envios").insert({ pessoa_ref: e.ref, ano: e.ano, canal: "whatsapp", status: "enviando", task_id: t.id });
   if (trava) return fim("concluida", null, { enviado: false, motivo: "Outro envio já em andamento." });
 
-  const r = await sendText(tel, e.texto);
-  await db.from("relacionamento_envios").update({ status: r.ok ? "enviado" : "falhou", detalhe: r.ok ? null : (r.error ?? `HTTP ${r.status}`) })
+  // WhatsApp da Ste (QR, mesmo número) é o caminho padrão; o SM Click só se a ponte da Ste não existir.
+  let ok: boolean, erro: string;
+  if (steConfigurada()) {
+    const r = await enviarPelaSte({ telefone: tel, texto: e.texto, origem: "aniversario" });
+    ok = r.ok;
+    erro = r.status === 503 && /desconectad/i.test(r.erro ?? "")
+      ? "WhatsApp da Ste desconectado: escaneie o QR no painel da Ste e use \"Tentar de novo\"."
+      : `Envio pela Ste falhou: ${r.erro ?? `HTTP ${r.status}`}`;
+  } else {
+    const r = await sendText(tel, e.texto);
+    ok = r.ok;
+    const bruto = `${r.error ?? ""} ${typeof r.data === "string" ? r.data : JSON.stringify(r.data ?? "")}`;
+    erro = /no session|not connected|disconnected|desconectad/i.test(bruto)
+      ? "WhatsApp da Orbital desconectado do SM Click (\"no session\"): reconecte lendo o QR Code e use \"Tentar de novo\"."
+      : `SM Click recusou (${r.status || "sem resposta"}): ${r.error ?? "erro desconhecido"}`;
+  }
+  await db.from("relacionamento_envios").update({ status: ok ? "enviado" : "falhou", detalhe: ok ? null : erro })
     .eq("pessoa_ref", e.ref).eq("ano", e.ano).eq("canal", "whatsapp");
-  if (r.ok) return fim("concluida", null, { enviado: true });
-  const bruto = `${r.error ?? ""} ${typeof r.data === "string" ? r.data : JSON.stringify(r.data ?? "")}`;
-  const erro = /no session|not connected|disconnected|desconectad/i.test(bruto)
-    ? "WhatsApp da Orbital desconectado do SM Click (\"no session\"): reconecte lendo o QR Code e use \"Tentar de novo\"."
-    : `SM Click recusou (${r.status || "sem resposta"}): ${r.error ?? "erro desconhecido"}`;
+  if (ok) return fim("concluida", null, { enviado: true });
   return fim("falhou", erro, { enviado: false });
 }

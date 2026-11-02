@@ -52,7 +52,7 @@ export function comunicadoMetropolitanoHtml(): string {
 </style>
 </head>
 <body style="margin:0;padding:0;background:#EFEDE8;">
-<div style="display:none;max-height:0;overflow:hidden;mso-hide:all;font-size:1px;color:#EFEDE8;">A fornecedora direta do Painel Flexível Fibra de Bambu em Manaus agora é parceira do Metropolitano.&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;</div>
+<div style="display:none;max-height:0;overflow:hidden;mso-hide:all;font-size:1px;color:#EFEDE8;">A fornecedora direta do Painel Flexível em Fibra de Bambu em Manaus agora é parceira do Metropolitano.&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;</div>
 <table role="presentation" width="100%" cellpadding="0" cellspacing="0" style="background:#EFEDE8;">
 <tr><td align="center" style="padding:32px 12px;">
 <table role="presentation" width="600" cellpadding="0" cellspacing="0" style="width:100%;max-width:600px;background:#ffffff;">
@@ -91,18 +91,18 @@ export function comunicadoMetropolitanoHtml(): string {
       <td style="padding-left:18px;font-family:Georgia,'Times New Roman',serif;font-size:19px;line-height:1.6;font-style:italic;color:#0B1F45;">A nossa: o mercado pede revestimentos inovadores e resistentes ao clima amazônico.</td>
     </tr></table>
     <p style="margin:0 0 16px;font-family:Arial,Helvetica,sans-serif;font-size:15px;line-height:1.75;color:#43474e;">Por isso aliamos anos de expertise em importação na ZFM à coragem de fazer diferente — e criamos a Orbital. Curadoria global, operação própria e customização para as necessidades manauaras, a serviço de revestimentos premium e disruptivos.</p>
-    <p style="margin:0 0 10px;font-family:Arial,Helvetica,sans-serif;font-size:15px;line-height:1.75;color:#43474e;">O <strong style="color:#0B1F45;">Painel Flexível Fibra de Bambu (PFB)</strong> é o primeiro. Em breve, chegam novidades.</p>
+    <p style="margin:0 0 10px;font-family:Arial,Helvetica,sans-serif;font-size:15px;line-height:1.75;color:#43474e;">O <strong style="color:#0B1F45;">Painel Flexível em Fibra de Bambu (PFB)</strong> é o primeiro. Em breve, chegam novidades.</p>
     <p style="margin:0;font-family:Arial,Helvetica,sans-serif;font-size:12px;line-height:1.6;color:#74777f;">Fornecimento direto, estoque local e pronta-entrega em Manaus*.</p>
   </td></tr>
 
   <!-- O que é o PFB -->
   <tr><td class="px" align="center" style="padding:46px 40px 6px;">
     <p style="margin:0 0 12px;font-family:Arial,Helvetica,sans-serif;font-size:11px;letter-spacing:0.28em;text-transform:uppercase;font-weight:700;color:#2347A0;">Conheça o produto</p>
-    <h2 style="margin:0 0 12px;font-family:Georgia,'Times New Roman',serif;font-size:25px;line-height:1.3;font-weight:400;color:#0B1F45;">Painel Flexível Fibra de Bambu</h2>
+    <h2 style="margin:0 0 12px;font-family:Georgia,'Times New Roman',serif;font-size:25px;line-height:1.3;font-weight:400;color:#0B1F45;">Painel Flexível em Fibra de Bambu</h2>
     <p style="margin:0 auto;max-width:440px;font-family:Arial,Helvetica,sans-serif;font-size:14px;line-height:1.7;color:#43474e;">Revestimento de fibra de bambu renovável para paredes e forros internos — leve, flexível e feito para o clima úmido de Manaus.</p>
   </td></tr>
   <tr><td align="center" style="padding:18px 20px 4px;">
-    <img src="${IMG}/email/pfb-leque-email.jpg" width="560" alt="Acabamentos do Painel Flexível Fibra de Bambu: mármores e madeira" style="display:block;border:0;width:100%;max-width:560px;height:auto;">
+    <img src="${IMG}/email/pfb-leque-email.jpg" width="560" alt="Acabamentos do Painel Flexível em Fibra de Bambu: mármores e madeira" style="display:block;border:0;width:100%;max-width:560px;height:auto;">
   </td></tr>
 
   <!-- Ícones -->
@@ -122,11 +122,11 @@ export function comunicadoMetropolitanoHtml(): string {
   <tr><td class="px" align="center" style="padding:0 40px;">
     <table role="presentation" cellpadding="0" cellspacing="0" style="width:100%;max-width:440px;"><tr>
       <td width="50%" valign="top" style="padding:0 6px 0 0;">
-        <img src="${IMG}/email/ambiente-sala-jantar.jpg" width="214" alt="Parede de sala de jantar revestida com o Painel Flexível Fibra de Bambu, acabamento mármore" style="display:block;border:0;width:100%;max-width:214px;height:auto;">
+        <img src="${IMG}/email/ambiente-sala-jantar.jpg" width="214" alt="Parede de sala de jantar revestida com o Painel Flexível em Fibra de Bambu, acabamento mármore" style="display:block;border:0;width:100%;max-width:214px;height:auto;">
         <p style="margin:8px 0 0;font-family:Arial,Helvetica,sans-serif;font-size:12px;color:#74777f;">Sala de jantar</p>
       </td>
       <td width="50%" valign="top" style="padding:0 0 0 6px;">
-        <img src="${IMG}/email/ambiente-escada.jpg" width="214" alt="Escada com paredes revestidas com o Painel Flexível Fibra de Bambu, acabamento madeira" style="display:block;border:0;width:100%;max-width:214px;height:auto;">
+        <img src="${IMG}/email/ambiente-escada.jpg" width="214" alt="Escada com paredes revestidas com o Painel Flexível em Fibra de Bambu, acabamento madeira" style="display:block;border:0;width:100%;max-width:214px;height:auto;">
         <p style="margin:8px 0 0;font-family:Arial,Helvetica,sans-serif;font-size:12px;color:#74777f;">Escada</p>
       </td>
     </tr></table>

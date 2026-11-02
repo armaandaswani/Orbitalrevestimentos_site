@@ -3,7 +3,7 @@ import type { Metadata } from "next";
 export const metadata: Metadata = {
   title: "Revestimentos PFB — 3 Linhas, 15 Acabamentos em Manaus",
   description:
-    "Catálogo completo de Painéis Flexíveis Fibra de Bambu Orbital: Linha Classic (mármore fosco), Brilliance (mármore polido) e Elegance (madeira texturizada). Alternativa superior ao MDF e papel de parede. Pronta-entrega em Manaus.",
+    "Catálogo completo de Painéis Flexíveis em Fibra de Bambu Orbital: Linha Classic (mármore fosco), Brilliance (mármore polido) e Elegance (madeira texturizada). Alternativa superior ao MDF e papel de parede. Pronta-entrega em Manaus.",
   keywords: [
     "revestimento de parede Manaus",
     "revestimento mármore Manaus",
@@ -38,7 +38,7 @@ const productSchemas = [
     "@type": "Product",
     name: "PFB Orbital Linha Classic — Revestimento Mármore Fosco",
     description:
-      "Painel Flexível Fibra de Bambu com acabamento mármore fosco para revestimento de parede e forro. Impermeável, anti-mofo, anti-cupim. Instalação em 2–3h. Pronta-entrega em Manaus.",
+      "Painel Flexível em Fibra de Bambu com acabamento mármore fosco para revestimento de parede e forro. Impermeável, anti-mofo, anti-cupim. Instalação em 2–3h. Pronta-entrega em Manaus.",
     brand: { "@type": "Brand", name: "Orbital Revestimentos" },
     material: "Fibra de Bambu",
     color: "Mármore Fosco",
@@ -49,7 +49,7 @@ const productSchemas = [
     "@type": "Product",
     name: "PFB Orbital Linha Brilliance — Revestimento Mármore Polido",
     description:
-      "Painel Flexível Fibra de Bambu com acabamento mármore polido para revestimento de parede. 8 acabamentos. Impermeável, sem obra. Pronta-entrega em Manaus.",
+      "Painel Flexível em Fibra de Bambu com acabamento mármore polido para revestimento de parede. 8 acabamentos. Impermeável, sem obra. Pronta-entrega em Manaus.",
     brand: { "@type": "Brand", name: "Orbital Revestimentos" },
     material: "Fibra de Bambu",
     color: "Mármore Polido",
@@ -60,7 +60,7 @@ const productSchemas = [
     "@type": "Product",
     name: "PFB Orbital Linha Elegance — Revestimento Madeira Texturizada",
     description:
-      "Painel Flexível Fibra de Bambu com textura de madeira para revestimento de parede e forro de teto. Anti-cupim, anti-mofo. Pronta-entrega em Manaus.",
+      "Painel Flexível em Fibra de Bambu com textura de madeira para revestimento de parede e forro de teto. Anti-cupim, anti-mofo. Pronta-entrega em Manaus.",
     brand: { "@type": "Brand", name: "Orbital Revestimentos" },
     material: "Fibra de Bambu",
     color: "Madeira Texturizada",

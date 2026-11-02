@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { isAdminRequest } from "@/lib/admin-auth";
 import { DEFAULT_SYSTEM_PROMPT } from "@/app/api/chat/route";
+import { completarGratuito, llmGratuitoConfigurado } from "@/lib/llm-gratuito";
 
 /**
  * POST /api/email-campaigns/ai-edit — product-grounded AI assistant for the
@@ -28,9 +29,7 @@ function tryParse(s: string): Record<string, unknown> | null {
 export async function POST(req: NextRequest) {
   if (!isAdminRequest(req)) return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
 
-  const apiBase = process.env.FREE_LLM_API_URL;
-  const apiKey = process.env.FREE_LLM_API_KEY || "";
-  if (!apiBase) return NextResponse.json({ error: "FREE_LLM_API_URL não configurada." }, { status: 503 });
+  if (!llmGratuitoConfigurado()) return NextResponse.json({ error: "FREE_LLM_API_URL não configurada." }, { status: 503 });
 
   let parsed: { instruction?: string; current?: CurrentBlocks };
   try {
@@ -68,32 +67,16 @@ PEDIDO DO USUÁRIO: ${instruction}
 
 Retorne o conteúdo atualizado como JSON.`;
 
-  let res: Response;
-  try {
-    res = await fetch(`${apiBase}/chat/completions`, {
-      method: "POST",
-      headers: { "Content-Type": "application/json", Authorization: `Bearer ${apiKey}` },
-      body: JSON.stringify({
-        model: process.env.FREE_LLM_MODEL || "gemini-2.0-flash-lite",
-        messages: [
-          { role: "system", content: systemPrompt },
-          { role: "user", content: userPrompt },
-        ],
-        max_tokens: 900,
-        stream: false,
-      }),
-    });
-  } catch (e) {
-    return NextResponse.json({ error: `Falha de rede ao chamar a IA: ${e instanceof Error ? e.message : "erro"}` }, { status: 502 });
-  }
-
-  if (!res.ok) {
-    const err = await res.text();
-    return NextResponse.json({ error: `API error: ${err}` }, { status: 502 });
-  }
-
-  const json = await res.json();
-  const raw: string = json.choices?.[0]?.message?.content?.trim() ?? "";
+  const r = await completarGratuito({
+    mensagens: [
+      { role: "system", content: systemPrompt },
+      { role: "user", content: userPrompt },
+    ],
+    maxTokens: 900,
+    json: true,
+  });
+  if (!r.ok) return NextResponse.json({ error: r.erro }, { status: 502 });
+  const raw = r.texto;
   const cleaned = raw.replace(/^```(?:json)?\s*/i, "").replace(/\s*```$/i, "").trim();
 
   const fence = cleaned.match(/\{[\s\S]*\}/);

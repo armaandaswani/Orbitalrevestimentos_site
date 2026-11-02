@@ -174,7 +174,7 @@ export const contaAmbientes = (n: number) => `${n} ${n === 1 ? "ambiente" : "amb
 export const REVENDA_RESERVA: Showroom[] = [
   {
     id: "revenda-casa-do-eletricista", slug: "casa-do-eletricista-centro", name: "Casa do Eletricista — Centro", kind: "revenda",
-    address: null, maps_url: null, description: "Todos os modelos do Painel Flexível Fibra de Bambu em display, no tamanho real.",
+    address: null, maps_url: null, description: "Todos os modelos do Painel Flexível em Fibra de Bambu em display, no tamanho real.",
     logo_url: null, cover_url: null, ambient_count: 0, display_cover: null, display_focus_x: 0.5, display_focus_y: 0.5, display_zoom: 1,
   },
 ];

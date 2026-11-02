@@ -2,7 +2,7 @@ import Image from "next/image";
 import Link from "next/link";
 import ScrollReveal from "@/components/ScrollReveal";
 
-// Selos do Painel Flexível Fibra de Bambu (seção "Conheça o produto") — os
+// Selos do Painel Flexível em Fibra de Bambu (seção "Conheça o produto") — os
 // mesmos do material comercial da Orbital, na mesma ordem e com o mesmo tom.
 // Ícones do material da marca (vetorizados), em public/images/selos.
 const PFB_SELOS: { t: string; d: string; img: string }[] = [
@@ -31,7 +31,7 @@ export default function ConhecaPfb({ linkTecnologia = true }: { linkTecnologia?:
           </p>
           {/* O nome do produto fica sempre numa linha só: o tamanho acompanha a largura. */}
           <h2 className="font-serif text-[#0B1F45] font-normal leading-[1.2] mb-4 whitespace-nowrap text-[clamp(15px,4.9vw,26px)] sm:text-[30px] lg:text-[36px]">
-            Painel Flexível Fibra de Bambu (PFB)
+            Painel Flexível em Fibra de Bambu (PFB)
           </h2>
           <p className="text-[#43474e] text-base leading-relaxed max-w-lg mx-auto">
             Revestimento de fibra de bambu renovável para paredes e tetos internos — leve, flexível e ideal para o clima úmido de Manaus.
@@ -60,7 +60,7 @@ export default function ConhecaPfb({ linkTecnologia = true }: { linkTecnologia?:
           <ScrollReveal className="flex flex-col" direction="right" delay={100}>
             {/* Fanned swatch stack — real finishes, no numbers. Leva ao
                 catálogo, onde o cliente escolhe o acabamento. */}
-            <Link href="/produtos" aria-label="Ver todos os modelos do Painel Flexível Fibra de Bambu" className="group relative flex flex-col items-center justify-center h-[340px] sm:h-[400px] lg:h-auto lg:flex-1 lg:min-h-[420px] lg:-translate-y-3">
+            <Link href="/produtos" aria-label="Ver todos os modelos do Painel Flexível em Fibra de Bambu" className="group relative flex flex-col items-center justify-center h-[340px] sm:h-[400px] lg:h-auto lg:flex-1 lg:min-h-[420px] lg:-translate-y-3">
               {/* Leque + selo formam um bloco só, centralizado na coluna —
                   assim o leque fica na altura do meio da grade ao lado. */}
               <div className="relative w-full h-[230px] sm:h-[280px] lg:h-[310px] flex items-center justify-center">
@@ -133,7 +133,7 @@ export function DiferenciaisPfb({ tituloClassName }: { tituloClassName?: string 
             Conheça o produto
           </p>
           <h2 className={tituloClassName ?? "font-serif text-[#0B1F45] text-2xl lg:text-3xl font-normal"}>
-            Painel Flexível Fibra de Bambu (PFB)
+            Painel Flexível em Fibra de Bambu (PFB)
           </h2>
         </ScrollReveal>
         <ul className="grid grid-cols-3 lg:grid-cols-6 border-t border-l border-[#0D1830]/10 bg-white">

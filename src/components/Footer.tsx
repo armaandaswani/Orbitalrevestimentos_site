@@ -21,7 +21,7 @@ export default function Footer() {
               className="h-[45px] w-auto mb-6"
             />
             <p className="text-[#9c9faa] text-sm leading-relaxed mb-2">
-              Fornecedor exclusivo de Painel Flexível Fibra de Bambu (PFB) em Manaus, Amazonas.
+              Fornecedor exclusivo de Painel Flexível em Fibra de Bambu (PFB) em Manaus, Amazonas.
             </p>
             <p className="text-[#9c9faa] text-sm leading-relaxed mb-4">
               Revestimento de parede e forro de teto eco-premium — alternativa superior ao MDF,

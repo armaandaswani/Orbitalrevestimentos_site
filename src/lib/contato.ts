@@ -3,7 +3,7 @@
  *
  * Todo botão comercial do site (e o assistente de IA) abre a aba de
  * pré-contato: o cliente escolhe o revestimento (ou já chega com ele, vindo da
- * página do produto), diz se já conhece o Painel Flexível Fibra de Bambu (se
+ * página do produto), diz se já conhece o Painel Flexível em Fibra de Bambu (se
  * não, vê uma apresentação de 3 pontos), responde perfil, o que mais valoriza,
  * o que espera do painel, quando pretende fazer o projeto e a cidade
  * (obrigatórios), medidas e nome (opcionais), e cai no WhatsApp com uma
@@ -45,7 +45,7 @@ export const ETAPAS = [
   { value: "ideacao", label: "Em ideação" },
 ] as const;
 
-/** Já conhece o Painel Flexível Fibra de Bambu? "nao" mostra a apresentação rápida. */
+/** Já conhece o Painel Flexível em Fibra de Bambu? "nao" mostra a apresentação rápida. */
 export const CONHECE = [
   { value: "sim", label: "Sim, já conheço" },
   { value: "nao", label: "Não, quero conhecer" },
@@ -92,7 +92,7 @@ export const CIDADES = [
 ] as const;
 
 export interface RespostasContato {
-  /** Já conhece o Painel Flexível Fibra de Bambu (CONHECE: "sim" | "nao"). */
+  /** Já conhece o Painel Flexível em Fibra de Bambu (CONHECE: "sim" | "nao"). */
   conhece?: string;
   perfil?: string;
   /** O que o cliente mais valoriza num revestimento (VALORIZA). */
@@ -224,12 +224,12 @@ export function mensagemContato(produtos: ProdutoContato[], r: RespostasContato)
   const perfil = r.perfil === "arquiteto" ? "Arquiteto(a)" : r.perfil === "proprietario" ? "Proprietário(a)" : "";
   if (perfil) dados.push(`• Perfil: ${perfil}`);
   const conhece = r.conhece === "sim" ? "Sim" : r.conhece === "nao" ? "Ainda não" : "";
-  if (conhece) dados.push(`• Já conheço o Painel Flexível Fibra de Bambu: ${conhece}`);
+  if (conhece) dados.push(`• Já conheço o Painel Flexível em Fibra de Bambu: ${conhece}`);
   const valoriza = rotuloValoriza(r.valoriza);
   if (valoriza) dados.push(`• O que mais valorizo: ${valoriza}`);
   const espera = rotulosEspera(r.espera);
   // Nome completo na primeira vez que o painel aparece na mensagem.
-  if (espera.length) dados.push(`• O que espero do ${conhece ? "PFB" : "Painel Flexível Fibra de Bambu"}: ${espera.join("; ")}`);
+  if (espera.length) dados.push(`• O que espero do ${conhece ? "PFB" : "Painel Flexível em Fibra de Bambu"}: ${espera.join("; ")}`);
   const detalhe = detalheEspera(r);
   if (detalhe) dados.push(`• Problema que quero resolver: ${detalhe}`);
   const prazo = rotulo(PRAZOS, r.prazo);

@@ -19,7 +19,7 @@ export default async function VisaoDoArquiteto() {
             Validado por alguns dos melhores arquitetos de Manaus.
           </h2>
           <p className="text-[#43474e] text-base leading-relaxed mb-8 max-w-md">
-            Na série A Visão do Arquiteto, profissionais de Manaus falam sobre o Painel Flexível Fibra de Bambu nos seus projetos.
+            Na série A Visão do Arquiteto, profissionais de Manaus falam sobre o Painel Flexível em Fibra de Bambu nos seus projetos.
           </p>
           <a
             href={PLAYLIST_URL}

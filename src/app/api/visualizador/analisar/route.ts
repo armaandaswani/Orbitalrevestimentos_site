@@ -21,7 +21,7 @@ const MODELS = [process.env.OPENAI_VISION_MODEL?.trim(), "gpt-4.1-mini", "gpt-4o
 
 type ZoneIn = { id?: unknown; label?: unknown; color?: unknown; rect?: { x?: unknown; y?: unknown; w?: unknown; h?: unknown } | null; point?: unknown; text?: unknown };
 
-const SYSTEM = `Você ajuda clientes da Orbital Revestimentos a visualizar o Painel Flexível Fibra de Bambu aplicado em fotos dos seus ambientes.
+const SYSTEM = `Você ajuda clientes da Orbital Revestimentos a visualizar o Painel Flexível em Fibra de Bambu aplicado em fotos dos seus ambientes.
 O cliente marcou na foto, de forma APROXIMADA, onde quer aplicar o painel: cada área aparece como um contorno colorido numerado (ou um alvo numerado, quando ele só tocou num ponto).
 A marcação é só uma indicação: descubra a SUPERFÍCIE REAL que ele quer revestir — normalmente a parede, o teto ou o móvel inteiro onde está a marcação, mesmo que o contorno pegue só parte dela ou passe por cima de quadros e objetos.
 

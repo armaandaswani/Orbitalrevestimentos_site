@@ -1,5 +1,6 @@
 import Anthropic from "@anthropic-ai/sdk";
 import type { SupabaseClient } from "@supabase/supabase-js";
+import { completarGratuito, llmGratuitoConfigurado } from "@/lib/llm-gratuito";
 
 /**
  * Chamada de modelo do runtime de IA, com telemetria.
@@ -11,7 +12,13 @@ import type { SupabaseClient } from "@supabase/supabase-js";
  *
  * Saída sempre em JSON validado por schema (output_config.format), para o
  * worker nunca depender de texto solto.
+ *
+ * modelo = "gratuito" usa a IA gratuita do site (FREE_LLM_*, ver
+ * src/lib/llm-gratuito.ts): custo zero, JSON pedido no prompt e conferido aqui.
  */
+
+/** Valor de ai_modelos.modelo que manda o nível para a IA gratuita. */
+export const MODELO_GRATUITO = "gratuito";
 
 export interface ModeloNivel {
   nivel: string;
@@ -36,9 +43,9 @@ export type ResultadoModelo<T> =
   | { ok: true; dados: T; uso: UsoModelo }
   | { ok: false; erro: string; repetir: boolean; uso?: UsoModelo };
 
-/** Erro de configuração: sem chave ou sem modelo para o nível. Não adianta repetir. */
+/** Há alguma IA configurada (Anthropic ou a gratuita do site)? */
 export function modeloConfigurado(): boolean {
-  return !!process.env.ANTHROPIC_API_KEY;
+  return !!process.env.ANTHROPIC_API_KEY || llmGratuitoConfigurado();
 }
 
 export async function lerNivel(db: SupabaseClient, nivel: string): Promise<ModeloNivel | null> {
@@ -84,9 +91,10 @@ export async function chamarModelo<T>(
     esforco?: "low" | "medium" | "high";
   },
 ): Promise<ResultadoModelo<T>> {
-  if (!modeloConfigurado()) return { ok: false, erro: "ANTHROPIC_API_KEY não configurada.", repetir: false };
   const m = await lerNivel(db, opcoes.nivel);
   if (!m) return { ok: false, erro: `Nenhum modelo cadastrado para o nível "${opcoes.nivel}" (ai_modelos).`, repetir: false };
+  if (m.modelo === MODELO_GRATUITO) return chamarGratuito<T>(opcoes);
+  if (!process.env.ANTHROPIC_API_KEY) return { ok: false, erro: "ANTHROPIC_API_KEY não configurada.", repetir: false };
 
   const inicio = Date.now();
   try {
@@ -126,4 +134,31 @@ export async function chamarModelo<T>(
     if (e instanceof Anthropic.APIError) return { ok: false, erro: `API ${e.status ?? ""}: ${e.message}`, repetir: (e.status ?? 500) >= 500 };
     return { ok: false, erro: `Falha de rede (${latencia_ms} ms): ${e instanceof Error ? e.message : String(e)}`, repetir: true };
   }
+}
+
+/** Mesma chamada pela IA gratuita: o schema vai no prompt e o JSON é conferido aqui. */
+async function chamarGratuito<T>(opcoes: { sistema: string; entrada: string; schema: Record<string, unknown>; maxTokens: number }): Promise<ResultadoModelo<T>> {
+  if (!llmGratuitoConfigurado()) return { ok: false, erro: "IA gratuita não configurada (FREE_LLM_API_URL).", repetir: false };
+  const inicio = Date.now();
+  const sistema =
+    `${opcoes.sistema}\n\nResponda SOMENTE com um objeto JSON válido, sem texto antes ou depois, que siga este JSON Schema:\n${JSON.stringify(opcoes.schema)}`;
+  // +400: modelos que "pensam" gastam parte do limite antes de responder.
+  const r = await completarGratuito({ mensagens: [{ role: "system", content: sistema }, { role: "user", content: opcoes.entrada }], maxTokens: opcoes.maxTokens + 400, json: true, timeoutMs: 40_000 });
+  if (!r.ok) return { ok: false, erro: r.erro, repetir: r.status === 429 || r.status >= 500 };
+  const uso: UsoModelo = {
+    modelo: `${MODELO_GRATUITO}:${r.modelo}`,
+    tokens_entrada: r.entrada ?? 0, tokens_saida: r.saida ?? 0, tokens_cache_leitura: 0, tokens_cache_escrita: 0,
+    custo_usd: 0, latencia_ms: Date.now() - inicio,
+  };
+  const limpo = r.texto.replace(/^```(?:json)?\s*/i, "").replace(/\s*```$/i, "").trim();
+  let dados: unknown;
+  try {
+    dados = JSON.parse(limpo);
+  } catch {
+    return { ok: false, erro: "Resposta fora do formato JSON.", repetir: true, uso };
+  }
+  const obrigatorios = Array.isArray(opcoes.schema.required) ? (opcoes.schema.required as string[]) : [];
+  const faltam = obrigatorios.filter((k) => !dados || typeof dados !== "object" || !(k in (dados as Record<string, unknown>)));
+  if (faltam.length) return { ok: false, erro: `JSON sem os campos: ${faltam.join(", ")}.`, repetir: true, uso };
+  return { ok: true, dados: dados as T, uso };
 }

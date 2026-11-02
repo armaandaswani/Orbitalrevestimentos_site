@@ -18,7 +18,7 @@ import { getAssetOverrides, resolveAsset } from "@/lib/assets";
 export const metadata: Metadata = {
   title: "PFB Orbital — Tecnologia, Performance e Ficha Técnica | Revestimento Manaus",
   description:
-    "A tecnologia por trás dos Painéis Flexíveis Fibra de Bambu: 5 camadas, dados de laboratório, ART de Engenheiro Civil. Impermeável, anti-mofo, instalado em 2–3 horas. Revestimento premium para o Amazonas.",
+    "A tecnologia por trás dos Painéis Flexíveis em Fibra de Bambu: 5 camadas, dados de laboratório, ART de Engenheiro Civil. Impermeável, anti-mofo, instalado em 2–3 horas. Revestimento premium para o Amazonas.",
   keywords: [
     "painel flexível fibra de bambu tecnologia",
     "PFB ficha técnica",
@@ -78,7 +78,7 @@ export default async function TecnologiaPage() {
         <div className="max-w-[1280px] mx-auto px-4 lg:px-16">
           <ScrollReveal>
             <p className="text-[#B4BBC8] text-xs tracking-[0.2em] uppercase font-semibold mb-4">
-              PFB · Painéis Flexíveis Fibra de Bambu
+              PFB · Painéis Flexíveis em Fibra de Bambu
             </p>
           </ScrollReveal>
           <ScrollReveal delay={120}>
