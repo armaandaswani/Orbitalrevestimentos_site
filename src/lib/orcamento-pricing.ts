@@ -50,7 +50,7 @@ export interface OrcamentoConfig {
 export const QUOTE_VALIDITY_DAYS = 10;
 
 export const DEFAULT_CONFIG: OrcamentoConfig = {
-  colaFactorPerPlate: 1.5,
+  colaFactorPerPlate: 2, // decisão do dono (nov/2026): 2 tubos de PU-40 por placa
   freteFreeMinPlates: 5,
   freteBase: 150,
   discountPct: 3,
