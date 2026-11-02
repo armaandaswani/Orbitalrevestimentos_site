@@ -40,7 +40,7 @@ export default function HistoriaFixa({ passos, sizesQuadro = "(max-width: 1023px
     <div className="lg:grid lg:grid-cols-[minmax(0,1.05fr)_minmax(0,1fr)] lg:gap-[clamp(3rem,6vw,7rem)]">
       {/* Quadro fixo (só computador). Decorativo: cada passo tem a sua foto com texto alternativo no celular. */}
       <div className="hidden lg:block">
-        <div className="sticky top-24 h-[min(calc(100svh-8rem),46rem)] overflow-hidden bg-primary">
+        <div className="sticky top-24 h-[min(calc(100svh-9rem),40rem)] overflow-hidden bg-primary">
           {passos.map((p, i) => (
             <div key={p.imagem.src} aria-hidden={i !== ativo}
               className={`absolute inset-0 transition-opacity duration-700 motion-reduce:transition-none ${i === ativo ? "opacity-100" : "opacity-0"}`}>
@@ -57,15 +57,15 @@ export default function HistoriaFixa({ passos, sizesQuadro = "(max-width: 1023px
       <ol className="space-y-14 lg:space-y-0">
         {passos.map((p, i) => (
           <li key={p.titulo} ref={(el) => { refs.current[i] = el; }} data-passo={i}
-            className="lg:min-h-[78svh] lg:flex lg:flex-col lg:justify-center">
+            className="lg:min-h-[52svh] lg:flex lg:flex-col lg:justify-center">
             <div className="lg:hidden relative overflow-hidden bg-primary mb-6" style={{ aspectRatio: "4 / 3" }}>
               <Image src={p.imagem.src} alt={p.imagem.alt} fill sizes="(max-width: 1023px) 92vw, 1px" className="object-cover mv-desvela" />
             </div>
             <div className={`transition-opacity duration-500 motion-reduce:transition-none ${js && i !== ativo ? "lg:opacity-35" : "opacity-100"}`}>
               <p className="font-serif text-primary/50 text-lg tabular-nums">{String(i + 1).padStart(2, "0")}</p>
               <h3 className="font-serif text-primary text-t2 font-normal tracking-[-0.02em] mt-2 text-balance">{p.titulo}</h3>
-              {p.destaque && <p className="mt-4 inline-block border-l-2 border-secondary pl-3 text-primary text-sm tracking-[0.08em] uppercase font-semibold">{p.destaque}</p>}
-              <div className="text-lead text-on-surface-variant mt-4 max-w-xl text-pretty">{p.texto}</div>
+              {p.destaque && <p className="mt-3 text-[#1F7A44] text-sobre tracking-[0.14em] uppercase font-semibold">{p.destaque}</p>}
+              <div className="text-corpo text-on-surface-variant mt-3 max-w-lg text-pretty">{p.texto}</div>
             </div>
           </li>
         ))}

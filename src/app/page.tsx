@@ -11,7 +11,6 @@ import Revelar from "@/components/projetos/Revelar";
 import SecaoCabecalho, { Sobretitulo } from "@/components/projetos/SecaoCabecalho";
 import Trilho from "@/components/projetos/Trilho";
 import ProjetoCard from "@/components/projetos/ProjetoCard";
-import LugarCard from "@/components/projetos/LugarCard";
 import { carregarProjetos } from "@/lib/projetos-dados";
 import { REVENDA_RESERVA, porDestaque, type Projeto } from "@/lib/projetos-tipos";
 
@@ -149,6 +148,16 @@ const PROFISSIONAIS = [
   { label: "Revendedores", tagline: "Tabela exclusiva, estoque local em Manaus e um produto que se vende pela própria obra." },
 ];
 
+/** Nome do parceiro como marca, não como cadastro: "ORNARE" → "Ornare"; sem o bairro depois do travessão. */
+function nomeParceiro(nome: string) {
+  const base = nome.split(" — ")[0].trim();
+  if (base !== base.toUpperCase()) return base;
+  return base.toLowerCase().replace(/(^|\s)(\p{L})/gu, (m, esp: string, l: string, i: number) => {
+    const palavra = base.toLowerCase().slice(i + esp.length).split(" ")[0];
+    return esp + (i > 0 && ["de", "do", "da", "dos", "das", "e"].includes(palavra) ? l : l.toUpperCase());
+  });
+}
+
 export default async function Home() {
   const dados = await carregarProjetos();
   const vistas = new Set<string>();
@@ -161,8 +170,6 @@ export default async function Home() {
   const showrooms = dados.lugares.filter((l) => l.kind === "showroom");
   const revendas = dados.lugares.filter((l) => l.kind === "revenda");
   const parceiros = [...showrooms, ...(revendas.length > 0 ? revendas : REVENDA_RESERVA)];
-  // eslint-disable-next-line react-hooks/purity -- hora da geração da página (selo "Novo" dos parceiros)
-  const agora = Date.now();
 
   return (
     <>
@@ -178,18 +185,14 @@ export default async function Home() {
             className="object-cover object-center"
           />
         </div>
-        <div className="absolute inset-0 bg-gradient-to-t from-[#0B1F45]/90 via-[#0B1F45]/55 to-[#0B1F45]/20 lg:bg-gradient-to-r lg:from-[#0B1F45]/85 lg:via-[#0B1F45]/50 lg:to-transparent" aria-hidden />
+        <div className="absolute inset-0 bg-gradient-to-t from-[#0B1F45]/85 via-[#0B1F45]/35 to-transparent lg:bg-gradient-to-r lg:from-[#0B1F45]/75 lg:via-[#0B1F45]/30 lg:to-transparent" aria-hidden />
         {/* pt-20 = altura do cabeçalho fixo. */}
         <div className="relative z-10 w-full ds-wrap pt-24 pb-[clamp(2.5rem,6vh,5rem)] mv-esmaece-topo">
-          <p className="text-[#B4BBC8] text-sobre tracking-[0.2em] uppercase font-semibold mb-5">
-            Orbital Revestimentos · Manaus, AM
-          </p>
-          <h1 className="font-serif text-white text-display font-normal tracking-[-0.025em] mb-5 max-w-[14ch] text-balance">
+          <h1 className="font-serif text-white text-display font-normal tracking-[-0.02em] mb-6 max-w-[21ch] text-balance">
             <span className="sr-only">Orbital Revestimentos — revestimento de parede e forro em Manaus. </span>
             {ASSINATURA}
           </h1>
-          <p className="font-serif italic text-white/85 text-lead mb-4">Instalado em horas. Admirado por anos.</p>
-          <p className="text-white/80 text-corpo mb-8 lg:mb-10 max-w-xl text-pretty">
+          <p className="text-white/80 text-corpo mb-8 lg:mb-10 max-w-lg text-pretty">
             O Painel Flexível em Fibra de Bambu (PFB) transforma paredes e forros com acabamento
             arquitetônico, resiste à umidade e ao calor do Amazonas e é instalado sem obra.
           </p>
@@ -201,16 +204,6 @@ export default async function Home() {
               Falar com um consultor
             </ContatoCta>
           </div>
-          {/* Sumário da apresentação (âncoras): só no computador, onde cabe numa linha. */}
-          <ol className="hidden lg:flex flex-wrap gap-x-6 gap-y-2 mt-14 text-white/65 text-sobre tracking-[0.14em] uppercase font-semibold">
-            {[["produto", "Produto"], ["porque", "Por quê"], ["arquitetos", "Arquitetos"], ["projetos", "Projetos"], ["simulador", "Simulador"], ["contato", "Contato"]].map(([id, r], i) => (
-              <li key={id}>
-                <a href={`#${id}`} className="inline-flex items-center gap-2 min-h-11 hover:text-white transition-colors">
-                  <span className="font-serif normal-case tracking-normal text-sm text-white/50">0{i + 1}</span>{r}
-                </a>
-              </li>
-            ))}
-          </ol>
         </div>
       </section>
 
@@ -225,7 +218,7 @@ export default async function Home() {
               texto="A tese da Orbital: trazer para Manaus materiais que resistem à umidade e ao calor extremo e que realmente servem ao nosso mercado. Quatro razões, uma de cada vez." />
           </Revelar>
           <HistoriaFixa passos={PASSOS} />
-          <Revelar className="mt-14 lg:mt-20 border-t border-surface-container-high pt-8 flex flex-col md:flex-row md:items-center md:justify-between gap-5">
+          <Revelar className="mt-12 lg:mt-14 border-t border-surface-container-high pt-6 flex flex-col md:flex-row md:items-center md:justify-between gap-5">
             <p className="text-on-surface-variant text-corpo max-w-2xl text-pretty">
               A Orbital é uma importadora de Manaus especializada em revestimentos eco-premium. Toda a documentação técnica
               (ficha, ART, laudos) está na página de tecnologia.
@@ -246,7 +239,7 @@ export default async function Home() {
         <div className="ds-wrap">
           <Revelar>
             <SecaoCabecalho id="projetos-titulo" numero="04" escuro sobretitulo="Projetos e showrooms" titulo="Veja o PFB de perto."
-              texto="Obras entregues em Manaus e ambientes decorados em showrooms parceiros. Toque em um projeto para ver todas as fotos; a apresentação completa continua na página de Projetos."
+              texto="Obras entregues em Manaus e ambientes nos showrooms parceiros."
               acao={
                 <Link href="/projetos" className="ds-botao ds-botao-linha">
                   Todos os projetos
@@ -255,35 +248,34 @@ export default async function Home() {
               } />
           </Revelar>
           <Revelar>
-            <Trilho rotulo="Obras em destaque" escuro largura="w-[62%] sm:w-[38%] lg:w-[23.5%]">
+            <Trilho rotulo="Obras em destaque" escuro largura="w-[62%] sm:w-[34%] lg:w-[19%]">
               {listaObras.map((p) => (
                 <ProjetoCard key={p.id} projeto={p} href={p.slug ? `/projetos?projeto=${encodeURIComponent(p.slug)}` : "/projetos"}
-                  sizes="(max-width: 639px) 62vw, (max-width: 1023px) 38vw, (max-width: 1920px) 300px, 16vw" />
+                  sizes="(max-width: 639px) 62vw, (max-width: 1023px) 34vw, (max-width: 1920px) 250px, 14vw" />
               ))}
             </Trilho>
           </Revelar>
 
-          <div className="mt-14 lg:mt-20">
-            <Revelar>
-              <div className="flex flex-col md:flex-row md:items-end md:justify-between gap-3 mb-6 pb-3 border-b border-white/15">
-                <div>
-                  <Sobretitulo escuro>Onde ver ao vivo</Sobretitulo>
-                  <h3 className="font-serif text-white text-t3 font-normal mt-3">Showrooms parceiros e revenda</h3>
-                </div>
-                <p className="text-white/70 text-corpo max-w-md text-pretty">
-                  O material está em exposição nas empresas parceiras e na Casa do Eletricista. Ou peça a visita de um consultor com as amostras.
-                </p>
-              </div>
-            </Revelar>
-            <Revelar>
-              <Trilho rotulo="Onde ver o PFB" escuro>
-                {parceiros.map((s) => (
-                  <LugarCard key={s.id} lugar={s} agora={agora}
-                    href={s.kind !== "revenda" || s.ambient_count > 0 ? `/projetos?showroom=${encodeURIComponent(s.slug)}` : "/projetos#revenda"} />
-                ))}
-              </Trilho>
-            </Revelar>
-          </div>
+          <Revelar className="mt-12 lg:mt-14">
+            <div className="flex flex-col md:flex-row md:items-baseline md:justify-between gap-2 mb-2">
+              <h3 className="font-serif text-white text-t3 font-normal">Onde ver ao vivo</h3>
+              <p className="text-white/65 text-legenda">Ou peça a visita de um consultor com as amostras.</p>
+            </div>
+            <ul className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-5 border-t border-white/15">
+              {parceiros.map((s) => (
+                <li key={s.id} className="border-b border-white/15 lg:border-b-0 lg:border-r lg:last:border-r-0">
+                  <Link href={s.kind !== "revenda" || s.ambient_count > 0 ? `/projetos?showroom=${encodeURIComponent(s.slug)}` : "/projetos#revenda"}
+                    className="group flex items-center justify-between gap-3 min-h-16 py-4 lg:px-4 lg:first:pl-0 hover:text-white">
+                    <span>
+                      <span className="block font-serif text-white text-[1.0625rem] leading-snug">{nomeParceiro(s.name)}</span>
+                      <span className="block text-white/55 text-sobre tracking-[0.14em] uppercase mt-1">{s.kind === "revenda" ? "Revenda · todos os modelos" : "Showroom parceiro"}</span>
+                    </span>
+                    <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" aria-hidden className="mv-seta text-white/60 flex-shrink-0"><path d="M5 12h14M12 5l7 7-7 7" /></svg>
+                  </Link>
+                </li>
+              ))}
+            </ul>
+          </Revelar>
         </div>
       </Capitulo>
 
@@ -291,12 +283,12 @@ export default async function Home() {
       <Capitulo id="simulador" numero="05" rotulo="Simulador" rotuladoPor="simulador-titulo" className="ds-secao bg-white">
         <div className="ds-wrap grid grid-cols-1 lg:grid-cols-12 gap-10 lg:gap-16 items-center">
           <Revelar className="lg:col-span-5 lg:order-1">
-            <Link href="/visualizador" className="group relative block max-w-[22rem] mx-auto">
-              <span className="relative block aspect-[4/5] overflow-hidden shadow-2xl bg-surface-container">
+            <Link href="/visualizador" className="group relative block max-w-[20rem] mx-auto">
+              <span className="relative block aspect-[4/5] overflow-hidden bg-surface-container">
                 <Image src="/images/renders/orb014-escritorio.png" alt="Simulação gerada por inteligência artificial de um escritório com PFB" fill
                   sizes="(max-width: 1023px) 88vw, 360px" className="object-cover mv-zoom" />
                 <span className="absolute inset-0 bg-gradient-to-t from-black/45 via-transparent to-transparent" aria-hidden />
-                <span className="absolute bottom-3 left-3 bg-black/55 text-white text-sobre tracking-[0.15em] uppercase font-bold px-3 py-1.5">
+                <span className="absolute bottom-3 left-3 bg-[#0B1F45]/75 text-white text-sobre tracking-[0.15em] uppercase font-semibold px-2.5 py-1">
                   Gerado por IA
                 </span>
               </span>
@@ -321,7 +313,7 @@ export default async function Home() {
             <h2 id="contato-titulo" className="font-serif text-white text-t1 font-normal tracking-[-0.025em] mt-4 mb-5 text-balance">
               Fale com a Orbital.
             </h2>
-            <p className="text-white/75 text-lead mb-10 max-w-xl mx-auto text-pretty">
+            <p className="text-white/75 text-lead mb-8 max-w-xl mx-auto text-pretty">
               3 linhas, 15 acabamentos e pronta-entrega em Manaus. Um consultor responde pelo pré-contato
               e, se preferir, leva as amostras até você.
             </p>
@@ -336,40 +328,35 @@ export default async function Home() {
           </Revelar>
 
           {/* Para profissionais */}
-          <div className="mt-16 lg:mt-24 border-t border-white/15 pt-10">
-            <Revelar className="flex flex-col md:flex-row md:items-end md:justify-between gap-3 mb-8">
-              <div>
-                <Sobretitulo escuro>Para profissionais</Sobretitulo>
-                <h3 className="font-serif text-white text-t3 font-normal mt-3">Feito para quem entrega resultados.</h3>
-              </div>
-              <Link href="/parcerias" className="inline-flex items-center gap-2 min-h-11 text-white/80 hover:text-white text-xs tracking-[0.12em] uppercase font-bold">
+          <div className="mt-14 lg:mt-20 border-t border-white/15 pt-8">
+            <Revelar className="flex flex-col md:flex-row md:items-baseline md:justify-between gap-2 mb-6">
+              <h3 className="font-serif text-white text-t3 font-normal">Para profissionais</h3>
+              <Link href="/parcerias" className="inline-flex items-center gap-2 min-h-11 text-white/75 hover:text-white text-xs tracking-[0.12em] uppercase font-semibold">
                 Programa de parcerias
-                <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" aria-hidden className="mv-seta"><path d="M5 12h14M12 5l7 7-7 7" /></svg>
+                <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" aria-hidden className="mv-seta"><path d="M5 12h14M12 5l7 7-7 7" /></svg>
               </Link>
             </Revelar>
-            <ul className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3 lg:gap-4">
+            <ul className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-x-10 gap-y-6">
               {PROFISSIONAIS.map((p, i) => (
-                <Revelar key={p.label} como="li" ordem={i} className="border border-white/15 p-5 lg:p-6 flex flex-col">
-                  <h4 className="font-serif text-white text-lg font-normal mb-2">{p.label}</h4>
-                  <p className="text-white/70 text-corpo leading-relaxed mb-5 flex-1">{p.tagline}</p>
-                  <ContatoCta className="ds-botao ds-botao-linha w-full">Falar com um consultor</ContatoCta>
+                <Revelar key={p.label} como="li" ordem={i}>
+                  <h4 className="font-serif text-white text-[1.0625rem] font-normal mb-1.5">{p.label}</h4>
+                  <p className="text-white/65 text-legenda leading-relaxed text-pretty">{p.tagline}</p>
                 </Revelar>
               ))}
             </ul>
           </div>
 
           {/* Academia Orbital: a formação, sem número de vagas nem data. */}
-          <Revelar className="mt-12 lg:mt-16 border border-white/15 p-6 lg:p-8 flex flex-col lg:flex-row lg:items-center lg:justify-between gap-6">
-            <div className="max-w-2xl">
-              <Sobretitulo escuro>Academia Orbital · Formação</Sobretitulo>
-              <h3 className="font-serif text-white text-t3 font-normal mt-3 mb-2">Formação em instalação do PFB, no padrão Orbital.</h3>
-              <p className="text-white/70 text-corpo leading-relaxed">
-                Formação prática para aplicadores, do preparo ao acabamento: saia com certificado e compre PFB direto com a Orbital.
-              </p>
-            </div>
-            <div className="flex flex-col sm:flex-row gap-3 flex-shrink-0">
-              <Link href="/academia#lista-de-espera" className="ds-botao ds-botao-claro w-full sm:w-auto">Quero participar</Link>
-              <Link href="/academia" className="ds-botao ds-botao-linha w-full sm:w-auto">Conhecer a formação</Link>
+          <Revelar className="mt-10 lg:mt-12 border-t border-white/15 pt-6 flex flex-col lg:flex-row lg:items-center lg:justify-between gap-4">
+            <p className="text-white/75 text-corpo text-pretty">
+              <span className="font-serif text-white">Academia Orbital.</span> Formação em instalação do PFB, no padrão Orbital, com certificado.
+            </p>
+            <div className="flex flex-wrap gap-x-6 gap-y-2 flex-shrink-0">
+              <Link href="/academia#lista-de-espera" className="inline-flex items-center gap-2 min-h-11 text-white hover:text-white/80 text-xs tracking-[0.12em] uppercase font-semibold">
+                Quero participar
+                <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" aria-hidden className="mv-seta"><path d="M5 12h14M12 5l7 7-7 7" /></svg>
+              </Link>
+              <Link href="/academia" className="inline-flex items-center min-h-11 text-white/65 hover:text-white text-xs tracking-[0.12em] uppercase font-semibold">Conhecer a formação</Link>
             </div>
           </Revelar>
         </div>
@@ -382,12 +369,15 @@ export default async function Home() {
           <Revelar>
             <SecaoCabecalho id="faq-titulo" sobretitulo="Dúvidas frequentes" titulo="Perguntas e respostas" />
           </Revelar>
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-x-16 gap-y-5 lg:gap-y-8">
-            {faqs.map(({ q, a }, i) => (
-              <Revelar key={q} ordem={i % 2} className="border-t border-surface-container-high pt-4 lg:pt-6">
-                <h3 className="font-serif text-primary text-t3 font-normal mb-2 text-balance">{q}</h3>
-                <p className="text-on-surface-variant text-corpo leading-relaxed">{a}</p>
-              </Revelar>
+          <div className="max-w-3xl border-t border-surface-container-high">
+            {faqs.map(({ q, a }) => (
+              <details key={q} className="group border-b border-surface-container-high">
+                <summary className="flex items-center justify-between gap-6 min-h-14 py-4 cursor-pointer list-none [&::-webkit-details-marker]:hidden">
+                  <h3 className="font-serif text-primary text-[1.0625rem] lg:text-lg font-normal text-pretty">{q}</h3>
+                  <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" aria-hidden className="text-primary/60 flex-shrink-0 transition-transform duration-300 group-open:rotate-45"><path d="M12 5v14M5 12h14" /></svg>
+                </summary>
+                <p className="text-on-surface-variant text-corpo leading-relaxed pb-5 max-w-[65ch]">{a}</p>
+              </details>
             ))}
           </div>
         </div>

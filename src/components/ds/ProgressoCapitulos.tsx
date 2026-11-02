@@ -17,7 +17,7 @@ import { useEffect, useRef, useState } from "react";
  * Os itens são âncoras (#id): sem JavaScript a régua ainda funciona. Só
  * transform e opacity; nada empurra o conteúdo.
  */
-interface Item { id: string; rotulo: string; numero: string }
+interface Item { id: string; rotulo: string; numero: string; escuro: boolean }
 
 export default function ProgressoCapitulos({ rotulo = "Capítulos desta página" }: { rotulo?: string }) {
   const [itens, setItens] = useState<Item[]>([]);
@@ -31,7 +31,7 @@ export default function ProgressoCapitulos({ rotulo = "Capítulos desta página"
   // Capítulos e capítulo atual (a linha no meio da tela decide).
   useEffect(() => {
     const els = [...document.querySelectorAll<HTMLElement>("section[data-capitulo]")];
-    const t = setTimeout(() => setItens(els.map((el) => ({ id: el.id, rotulo: el.dataset.capitulo ?? "", numero: el.dataset.numero ?? "" }))), 0);
+    const t = setTimeout(() => setItens(els.map((el) => ({ id: el.id, rotulo: el.dataset.capitulo ?? "", numero: el.dataset.numero ?? "", escuro: el.classList.contains("ds-escuro") }))), 0);
     if (els.length === 0 || typeof IntersectionObserver === "undefined") return () => clearTimeout(t);
     const visiveis = new Set<Element>();
     const obs = new IntersectionObserver((entradas) => {
@@ -75,6 +75,8 @@ export default function ProgressoCapitulos({ rotulo = "Capítulos desta página"
   }, [aberto]);
 
   const atual = ativo >= 0 ? itens[ativo] : null;
+  // Antes do 1º capítulo a página está na abertura (foto escura); depois, segue o fundo do capítulo.
+  const claro = atual ? atual.escuro : true;
   const total = String(itens.length).padStart(2, "0");
 
   return (
@@ -88,13 +90,13 @@ export default function ProgressoCapitulos({ rotulo = "Capítulos desta página"
         <>
           {/* Computador: régua vertical à direita. */}
           <nav aria-label={rotulo} className="hidden lg:block fixed right-[clamp(0.25rem,1vw,1.5rem)] top-1/2 -translate-y-1/2 z-40">
-            <ol className="flex flex-col bg-white/85 backdrop-blur-sm border border-primary/10 py-1">
+            <ol className="flex flex-col py-1">
               {itens.map((it, i) => (
                 <li key={it.id} className="relative group">
                   <a href={`#${it.id}`} aria-current={i === ativo ? "step" : undefined}
                     className="flex items-center justify-end w-11 h-11 pr-2.5 focus-visible:outline-offset-[-2px]">
                     <span className="sr-only">{it.numero} {it.rotulo}</span>
-                    <span aria-hidden className={`block h-px origin-right transition-[transform,opacity] duration-300 ${i === ativo ? "w-6 bg-primary" : "w-6 bg-primary/40 scale-x-50"}`} />
+                    <span aria-hidden className={`block h-px w-6 origin-right transition-[transform,background-color] duration-300 ${claro ? (i === ativo ? "bg-white" : "bg-white/45 scale-x-50") : (i === ativo ? "bg-primary" : "bg-primary/35 scale-x-50")}`} />
                   </a>
                   {/* Nome do capítulo: aparece ao lado, por cima da página (não empurra nada). */}
                   <span aria-hidden className="pointer-events-none absolute right-full top-1/2 -translate-y-1/2 mr-2 whitespace-nowrap bg-primary text-white text-sobre tracking-[0.14em] uppercase font-semibold px-2.5 py-1.5 opacity-0 translate-x-1 transition-[opacity,transform] duration-200 group-hover:opacity-100 group-hover:translate-x-0 group-focus-within:opacity-100 group-focus-within:translate-x-0">

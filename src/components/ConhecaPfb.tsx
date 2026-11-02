@@ -29,7 +29,7 @@ export default function ConhecaPfb({ linkTecnologia = true, numero = "01" }: { l
   return (
     <Capitulo id="produto" numero={numero} rotulo="Produto" rotuladoPor="produto-titulo" className="ds-secao bg-white border-b border-[#eeeeee]">
       <div className="ds-wrap">
-        <Revelar className="text-center max-w-2xl mx-auto mb-10 lg:mb-14 flex flex-col items-center">
+        <Revelar className="text-center max-w-2xl mx-auto mb-8 lg:mb-10 flex flex-col items-center">
           <Sobretitulo numero={numero}>Conheça o produto</Sobretitulo>
           {/* O nome do produto fica sempre numa linha só: o tamanho acompanha a largura. */}
           <h2 id="produto-titulo" className="font-serif text-[#0B1F45] font-normal leading-[1.2] mt-4 mb-4 whitespace-nowrap text-[clamp(15px,4.9vw,26px)] sm:text-[30px] lg:text-t2">
@@ -42,18 +42,18 @@ export default function ConhecaPfb({ linkTecnologia = true, numero = "01" }: { l
 
         {/* Duas colunas da MESMA altura: a grade de diferenciais e o leque.
             Medidas e botões ficam centralizados embaixo, alinhados ao título. */}
-        <div className="grid grid-cols-1 lg:grid-cols-2 gap-10 lg:gap-16 items-stretch">
+        <div className="grid grid-cols-1 lg:grid-cols-[1.15fr_1fr] gap-10 lg:gap-16 items-center">
           <Revelar className="min-w-0">
             {/* Diferenciais com os ícones do material da Orbital: grade 2×3 de
                 células iguais, sem números técnicos (confundem o leigo). */}
-            <ul className="grid grid-cols-2 border-t border-l border-[#ececec]">
+            <ul className="grid grid-cols-2 sm:grid-cols-3 border-t border-l border-[#ececec]">
               {PFB_SELOS.map((f) => (
-                <li key={f.t} className="flex flex-col items-center text-center px-3 py-6 sm:py-7 border-r border-b border-[#ececec]">
-                  <span className="w-14 h-14 flex items-center justify-center bg-[#F6F5F2]">
+                <li key={f.t} className="flex flex-col items-center text-center px-3 py-5 sm:py-6 border-r border-b border-[#ececec]">
+                  <span className="w-12 h-12 flex items-center justify-center bg-[#F6F5F2]">
                     {/* eslint-disable-next-line @next/next/no-img-element */}
-                    <img src={`/images/selos/pfb-icone-${f.img}.svg`} alt="" width={32} height={32} loading="lazy" className="h-9 w-9 object-contain" />
+                    <img src={`/images/selos/pfb-icone-${f.img}.svg`} alt="" width={32} height={32} loading="lazy" className="h-8 w-8 object-contain" />
                   </span>
-                  <span className="block text-[#0B1F45] text-[15px] font-semibold leading-snug mt-3">{f.t}</span>
+                  <span className="block text-[#0B1F45] text-[14px] font-medium leading-snug mt-3">{f.t}</span>
                   <span className="block text-[#74777f] text-[13px] leading-snug mt-1">{f.d}</span>
                 </li>
               ))}
@@ -62,10 +62,10 @@ export default function ConhecaPfb({ linkTecnologia = true, numero = "01" }: { l
           <Revelar className="flex flex-col" ordem={1}>
             {/* Fanned swatch stack — real finishes, no numbers. Leva ao
                 catálogo, onde o cliente escolhe o acabamento. */}
-            <Link href="/produtos" aria-label="Ver todos os modelos do Painel Flexível em Fibra de Bambu" className="group relative flex flex-col items-center justify-center h-[340px] sm:h-[400px] lg:h-auto lg:flex-1 lg:min-h-[420px] lg:-translate-y-3">
+            <Link href="/produtos" aria-label="Ver todos os modelos do Painel Flexível em Fibra de Bambu" className="group relative flex flex-col items-center justify-center h-[320px] sm:h-[360px] lg:h-auto">
               {/* Leque + selo formam um bloco só, centralizado na coluna —
                   assim o leque fica na altura do meio da grade ao lado. */}
-              <div className="relative w-full h-[230px] sm:h-[280px] lg:h-[310px] flex items-center justify-center overflow-x-clip">
+              <div className="relative w-full h-[220px] sm:h-[260px] lg:h-[270px] flex items-center justify-center overflow-x-clip">
                 {[
                   { img: "/images/catalogue/classic-bege-travertino-orb001.jpeg", rot: -18, x: -84 },
                   { img: "/images/catalogue/brilliance-bronze-armani-orb005.jpeg", rot: -9, x: -42 },
@@ -75,7 +75,7 @@ export default function ConhecaPfb({ linkTecnologia = true, numero = "01" }: { l
                 ].map((s, i) => (
                   <div
                     key={s.img}
-                    className="absolute w-[120px] sm:w-[150px] lg:w-[175px] aspect-[3/4] shadow-2xl overflow-hidden border-[3px] border-white transition-transform duration-500 ease-out group-hover:scale-[1.015]"
+                    className="absolute w-[116px] sm:w-[140px] lg:w-[152px] aspect-[3/4] overflow-hidden border-[3px] border-white ring-1 ring-[#0B1F45]/10 transition-transform duration-500 ease-out group-hover:scale-[1.015]"
                     style={{
                       transform: `rotate(${s.rot}deg) translate(${s.x}px, ${i === 2 ? -14 : 0}px)`,
                       zIndex: i === 2 ? 10 : 5 - Math.abs(i - 2),
@@ -86,15 +86,15 @@ export default function ConhecaPfb({ linkTecnologia = true, numero = "01" }: { l
                 ))}
               </div>
               {/* Convite para os modelos, embaixo do leque */}
-              <span className="relative mt-6 z-20 inline-flex flex-wrap items-center justify-center gap-x-2 gap-y-1 max-w-full text-center bg-white border border-[#e2e2e2] shadow-md px-3 sm:px-4 py-2.5 text-[#0B1F45] text-sobre tracking-[0.06em] sm:tracking-[0.14em] uppercase font-bold group-hover:bg-[#0B1F45] group-hover:text-white group-hover:border-[#0B1F45] transition-colors">
+              <span className="relative mt-5 z-20 inline-flex flex-wrap items-center justify-center gap-x-3 gap-y-1 max-w-full text-center text-[#0B1F45] text-sobre tracking-[0.06em] sm:tracking-[0.14em] uppercase font-semibold">
                 Classic · Brilliance · Elegance
-                <span className="text-[#1F7A44] group-hover:text-[#36A35C]">Ver todos →</span>
+                <span className="text-[#1F7A44] underline-offset-4 group-hover:underline">Ver todos →</span>
               </span>
             </Link>
           </Revelar>
         </div>
 
-        <Revelar className="text-center mt-10 lg:mt-12">
+        <Revelar className="text-center mt-8 lg:mt-10">
           {/* Medidas da placa */}
           <p className="text-[#74777f] text-[13px] leading-relaxed">
             <span className="whitespace-nowrap">Placa de <strong className="text-[#0B1F45] font-semibold">1,20 × 2,90 m</strong></span> · <span className="whitespace-nowrap"><strong className="text-[#0B1F45] font-semibold">5 mm</strong> de espessura</span> · <span className="whitespace-nowrap"><strong className="text-[#0B1F45] font-semibold">3,48 m²</strong> por placa</span> · <span className="whitespace-nowrap">parede e forro</span>
