@@ -3135,7 +3135,7 @@ function SimuladorInner() {
                     <div className="flex items-start justify-between gap-3">
                       <div className="min-w-0">
                         <p className="text-white text-[13px] font-semibold">Frete</p>
-                        <p className="text-[#B4BBC8] text-[11px]">{pricing.frete.free ? "Grátis (≥ 5 placas)" : pricing.frete.estimated ? "Estimado — confirmado pelo CEP" : "Confirmado pelo CEP"}</p>
+                        <p className="text-[#B4BBC8] text-[11px]">{pricing.frete.free ? "Grátis (≥ 6 placas)" : pricing.frete.estimated ? "Estimado — confirmado pelo CEP" : "Confirmado pelo CEP"}</p>
                       </div>
                       <span className={`text-[13px] font-semibold flex-shrink-0 ${pricing.frete.free ? "text-[#5eead4]" : "text-white"}`}>{pricing.frete.free ? "Grátis" : fmtBRL(pricing.frete.value)}</span>
                     </div>
