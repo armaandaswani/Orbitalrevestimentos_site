@@ -3,9 +3,10 @@ import ContatoCta from "@/components/ContatoCta";
 import type { ProdutoContato, RespostasContato } from "@/lib/contato";
 
 /**
- * O botão do site, numa peça só. Quatro tons (ds-botao-* em globals.css):
+ * O botão do site, numa peça só. Cinco tons (ds-botao-* em globals.css):
  * cheio (azul-noite), vazado (contorno azul), claro (branco, sobre fundo
- * escuro) e linha (contorno branco, sobre fundo escuro).
+ * escuro), linha (contorno branco, sobre fundo escuro) e verde (Verde Bambu,
+ * a conversão da Academia).
  *
  * - `href` → link (next/link; externo com target="_blank" quando `externo`).
  * - `contato` → abre o pré-contato (ContatoCta), nunca um link cru de WhatsApp.
@@ -13,7 +14,7 @@ import type { ProdutoContato, RespostasContato } from "@/lib/contato";
  *
  * `seta` acrescenta a seta que desliza no hover (mv-seta). Server component.
  */
-export type TomBotao = "cheio" | "vazado" | "claro" | "linha";
+export type TomBotao = "cheio" | "vazado" | "claro" | "linha" | "verde";
 
 interface Base {
   tom?: TomBotao;

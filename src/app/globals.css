@@ -108,6 +108,7 @@
 @utility ds-botao-cheio { background: #0B1F45; color: #fff; &:hover { background: #2347A0; } }
 @utility ds-botao-vazado { border: 1px solid #0B1F45; color: #0B1F45; &:hover { background: #0B1F45; color: #fff; } }
 @utility ds-botao-claro { background: #fff; color: #0B1F45; &:hover { background: #F6F5F2; } }
+@utility ds-botao-verde { background: #36A35C; color: #0D1830; &:hover { background: #4BB571; } }
 @utility ds-botao-linha { border: 1px solid rgba(255,255,255,0.45); color: #fff; &:hover { background: rgba(255,255,255,0.1); border-color: #fff; } }
 /* Espaço vertical de uma seção (capítulo). */
 @utility ds-secao {
