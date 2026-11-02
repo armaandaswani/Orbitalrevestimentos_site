@@ -33,7 +33,7 @@ export const metadata: Metadata = {
     template: "%s | Orbital Revestimentos",
   },
   description:
-    "Revestimentos eco-premium para paredes e tetos em Manaus. Painéis Flexíveis em Fibra de Bambu (PFB) com acabamento arquitetônico — impermeável, anti-mofo, instalado em 2–3 horas. 3 linhas, 15 acabamentos.",
+    "Novas possibilidades para seus projetos. Painéis Flexíveis em Fibra de Bambu (PFB) para paredes e forros em Manaus: acabamento arquitetônico, resistente à umidade, instalado em horas, sem obra. 3 linhas, 15 acabamentos.",
   keywords: [
     "Orbital Revestimentos",
     "revestimento parede Manaus",
@@ -45,12 +45,6 @@ export const metadata: Metadata = {
     "revestimento sem demolição",
     "painel flexível fibra de bambu",
     "PFB revestimento",
-    "alternativa ao MDF",
-    "melhor que MDF",
-    "MDF revestimento parede",
-    "papel de parede Manaus",
-    "alternativa papel de parede",
-    "papel de parede impermeável",
     "revestimento impermeável banheiro",
     "revestimento lavabo",
     "revestimento cozinha",
@@ -89,7 +83,7 @@ export const metadata: Metadata = {
     siteName: "Orbital Revestimentos",
     title: "Orbital Revestimentos — Painéis Flexíveis em Fibra de Bambu em Manaus",
     description:
-      "Revestimentos eco-premium para paredes e tetos. Instalado em 2–3 horas, sem obra. 3 linhas, 15 acabamentos. Pronta-entrega em Manaus.",
+      "Novas possibilidades para seus projetos. Painéis Flexíveis em Fibra de Bambu (PFB) para paredes e forros, instalados em horas, sem obra. 3 linhas, 15 acabamentos, pronta-entrega em Manaus.",
     images: [
       {
         url: "/images/catalogue/hero-cover.png",
@@ -103,7 +97,7 @@ export const metadata: Metadata = {
     card: "summary_large_image",
     title: "Orbital Revestimentos — Painéis Flexíveis em Fibra de Bambu em Manaus",
     description:
-      "Revestimentos eco-premium para paredes e tetos. Instalado em 2–3 horas, sem obra. 3 linhas, 15 acabamentos.",
+      "Novas possibilidades para seus projetos. Painéis Flexíveis em Fibra de Bambu (PFB) para paredes e forros, instalados em horas, sem obra.",
     images: ["/images/catalogue/hero-cover.png"],
   },
   alternates: {
@@ -123,7 +117,7 @@ const jsonLdSchemas = [
     "@type": "LocalBusiness",
     name: "Orbital Revestimentos",
     description:
-      "Fornecedor exclusivo de Painéis Flexíveis em Fibra de Bambu (PFB) em Manaus. Revestimento de parede e forro de teto — alternativa superior ao MDF, papel de parede e forro PVC.",
+      "Fornecedor exclusivo de Painéis Flexíveis em Fibra de Bambu (PFB) em Manaus. Revestimento de parede e forro de teto pensado para o clima amazônico. Novas possibilidades para seus projetos.",
     url: BASE_URL,
     telephone: "+55-92-98815-0149",
     email: "orbital.revestimentos@gmail.com",
@@ -217,7 +211,6 @@ const jsonLdSchemas = [
       "revestimento de forro",
       "Painéis Flexíveis em Fibra de Bambu",
       "PFB",
-      "alternativa ao MDF",
       "revestimento impermeável",
       "decoração de interiores Manaus",
     ],
@@ -228,7 +221,7 @@ const jsonLdSchemas = [
     name: "Orbital Revestimentos",
     url: BASE_URL,
     description:
-      "Revestimento de parede e forro de teto em Manaus — Painéis Flexíveis em Fibra de Bambu (PFB). Alternativa superior ao MDF, papel de parede e forro PVC.",
+      "Revestimento de parede e forro de teto em Manaus — Painéis Flexíveis em Fibra de Bambu (PFB). Novas possibilidades para seus projetos.",
     inLanguage: "pt-BR",
     publisher: {
       "@type": "Organization",

@@ -10,6 +10,7 @@ import { videoHost } from "@/lib/video-link";
 import VideoThumb from "@/components/VideoThumb";
 import VideoLinkPlayer from "@/components/VideoLinkPlayer";
 import { autoriaTxt, modelosTxt } from "@/lib/projeto-modelos";
+import { useDialogo } from "@/components/ds/useDialogo";
 import type { Projeto } from "@/lib/projetos-tipos";
 
 /**
@@ -41,7 +42,16 @@ function Selo({ cat }: { cat: MediaCategory }) {
 const ROTULO_FILTRO: Record<GalleryFilter, string> = { all: "Todas", antes: "Antes", depois: "Depois", video: "Vídeos", geral: "Geral" };
 const botaoIcone = "w-11 h-11 flex items-center justify-center transition-colors focus-visible:outline-2 focus-visible:outline-offset-[-2px] focus-visible:outline-white";
 
-export default function ProjetoGaleria({ projeto, inicio, onFechar }: { projeto: Projeto; inicio?: string; onFechar: () => void }) {
+/** Projeto anterior/próximo na lista em que este foi aberto (linha, grade ou showroom). */
+export interface VizinhosGaleria {
+  anterior: Projeto;
+  proximo: Projeto;
+  /** "3 / 12" */
+  posicao: string;
+  onIr: (p: Projeto) => void;
+}
+
+export default function ProjetoGaleria({ projeto, inicio, onFechar, vizinhos }: { projeto: Projeto; inicio?: string; onFechar: () => void; vizinhos?: VizinhosGaleria }) {
   const base = buildGalleryItems(projeto, []);
   const [itens, setItens] = useState<GalleryItem[]>(base);
   const [carregando, setCarregando] = useState(true);
@@ -68,14 +78,8 @@ export default function ProjetoGaleria({ projeto, inicio, onFechar }: { projeto:
     return () => { vivo = false; };
   }, [projeto, inicio]);
 
-  // Fundo parado e foco dentro do diálogo; ao fechar, o foco volta.
-  useEffect(() => {
-    const antes = document.activeElement as HTMLElement | null;
-    const overflow = document.body.style.overflow;
-    document.body.style.overflow = "hidden";
-    fechar.current?.focus();
-    return () => { document.body.style.overflow = overflow; antes?.focus?.(); };
-  }, []);
+  // Fundo parado, foco preso dentro do diálogo, Esc fecha; ao fechar, o foco volta.
+  useDialogo(caixa, onFechar, true, caixa);
 
   const temAntes = itens.some((i) => i.category === "antes");
   const temDepois = itens.some((i) => i.category === "depois");
@@ -100,16 +104,9 @@ export default function ProjetoGaleria({ projeto, inicio, onFechar }: { projeto:
   };
 
   const teclado = (e: React.KeyboardEvent) => {
-    if (e.key === "Escape") { e.preventDefault(); onFechar(); return; }
-    if (modo === "carrossel" && e.key === "ArrowLeft") { e.preventDefault(); anterior(); return; }
-    if (modo === "carrossel" && e.key === "ArrowRight") { e.preventDefault(); proxima(); return; }
-    if (e.key !== "Tab" || !caixa.current) return;
-    // Foco preso no diálogo.
-    const focaveis = [...caixa.current.querySelectorAll<HTMLElement>("button, [href], video, iframe, [tabindex]:not([tabindex='-1'])")].filter((el) => !el.hasAttribute("disabled"));
-    if (focaveis.length === 0) return;
-    const primeiro = focaveis[0], ultimo = focaveis[focaveis.length - 1];
-    if (e.shiftKey && document.activeElement === primeiro) { e.preventDefault(); ultimo.focus(); }
-    else if (!e.shiftKey && document.activeElement === ultimo) { e.preventDefault(); primeiro.focus(); }
+    if (modo !== "carrossel") return;
+    if (e.key === "ArrowLeft") { e.preventDefault(); anterior(); }
+    if (e.key === "ArrowRight") { e.preventDefault(); proxima(); }
   };
 
   const antesImg = itens.find((i) => i.category === "antes" && i.kind === "image");
@@ -118,8 +115,8 @@ export default function ProjetoGaleria({ projeto, inicio, onFechar }: { projeto:
   const autoria = autoriaTxt(projeto.projeto_de);
 
   return (
-    <div ref={caixa} role="dialog" aria-modal="true" aria-label={`Galeria: ${projeto.title}`} onKeyDown={teclado}
-      className="fixed inset-0 z-[60] bg-primary flex flex-col text-white" style={{ height: "100dvh" }}>
+    <div ref={caixa} role="dialog" aria-modal="true" tabIndex={-1} aria-label={`Galeria: ${projeto.title}`} onKeyDown={teclado}
+      className="outline-none mv-folha fixed inset-0 z-[60] bg-primary flex flex-col text-white" style={{ height: "100dvh" }}>
 
       <div className="flex items-start justify-between gap-3 pl-4 sm:pl-6 pr-2 pt-[max(env(safe-area-inset-top),0.5rem)] pb-2 border-b border-white/10 flex-shrink-0">
         <div className="min-w-0 py-1.5">
@@ -240,7 +237,7 @@ export default function ProjetoGaleria({ projeto, inicio, onFechar }: { projeto:
                 </>
               )}
             </div>
-            <div className="flex-shrink-0 flex items-center gap-3 px-4 sm:px-6 py-3 pb-[max(env(safe-area-inset-bottom),0.75rem)] border-t border-white/10">
+            <div className="flex-shrink-0 flex items-center gap-3 px-4 sm:px-6 py-3 border-t border-white/10">
               <Selo cat={item.category} />
               {item.description && <p className="text-white/80 text-sm leading-snug flex-1 min-w-0">{item.description}</p>}
               {total > 1 && <p className="text-white/70 text-sm ml-auto tabular-nums" aria-live="polite">{atual + 1} / {total}</p>}
@@ -248,6 +245,27 @@ export default function ProjetoGaleria({ projeto, inicio, onFechar }: { projeto:
           </div>
         )}
       </div>
+
+      {/* Projeto anterior / próximo, sem fechar a galeria. */}
+      {vizinhos && (
+        <nav aria-label="Outros projetos" className="flex-shrink-0 grid grid-cols-[1fr_auto_1fr] items-center gap-2 px-2 sm:px-4 py-1.5 pb-[max(env(safe-area-inset-bottom),0.375rem)] border-t border-white/15 bg-black/30">
+          <button type="button" onClick={() => vizinhos.onIr(vizinhos.anterior)} className="group flex items-center gap-2 min-h-11 px-2 text-left text-white/85 hover:text-white min-w-0">
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" aria-hidden className="flex-shrink-0"><path d="M15 18l-6-6 6-6" /></svg>
+            <span className="min-w-0">
+              <span className="block text-sobre tracking-[0.14em] uppercase font-semibold text-white/60">Anterior</span>
+              <span className="block text-sm truncate">{vizinhos.anterior.title}</span>
+            </span>
+          </button>
+          <p className="text-white/70 text-sm tabular-nums"><span className="sr-only">Projeto </span>{vizinhos.posicao}</p>
+          <button type="button" onClick={() => vizinhos.onIr(vizinhos.proximo)} className="group flex items-center justify-end gap-2 min-h-11 px-2 text-right text-white/85 hover:text-white min-w-0">
+            <span className="min-w-0">
+              <span className="block text-sobre tracking-[0.14em] uppercase font-semibold text-white/60">Próximo</span>
+              <span className="block text-sm truncate">{vizinhos.proximo.title}</span>
+            </span>
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" aria-hidden className="flex-shrink-0"><path d="M9 18l6-6-6-6" /></svg>
+          </button>
+        </nav>
+      )}
     </div>
   );
 }

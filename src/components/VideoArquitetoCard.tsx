@@ -34,7 +34,7 @@ export default function VideoArquitetoCard({ id, nome, escritorio }: { id: strin
           </span>
           <span className="absolute left-0 right-0 bottom-0 p-3 sm:p-4">
             <span className="block font-serif text-white text-sm sm:text-lg leading-tight">{nome}</span>
-            {escritorio && <span className="block text-white/70 text-[10px] sm:text-xs mt-0.5">{escritorio}</span>}
+            {escritorio && <span className="block text-white/70 text-sobre mt-0.5">{escritorio}</span>}
           </span>
         </button>
       )}

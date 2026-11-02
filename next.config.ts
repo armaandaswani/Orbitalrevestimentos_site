@@ -27,6 +27,44 @@ const nextConfig: NextConfig = {
       },
     ],
   },
+  // Cabeçalhos de segurança. A CSP vai só
+  // em Report-Only: nada quebra enquanto as violações são observadas no
+  // console (e, com um report-uri, num coletor). Os hosts são os que o site
+  // usa hoje: Supabase Storage, Vercel Analytics/Speed Insights, GA4, Meta
+  // Pixel, YouTube (vídeos e miniaturas) e o chat (same-origin, /api/chat).
+  async headers() {
+    const supabase = (process.env.NEXT_PUBLIC_SUPABASE_URL || "https://hjyquuhlnswzftqpebdi.supabase.co").replace(/\/$/, "");
+    const cspReportOnly = [
+      "default-src 'self'",
+      "base-uri 'self'",
+      "object-src 'none'",
+      "frame-ancestors 'self'",
+      "form-action 'self'",
+      // next/script (gtag, Meta Pixel) e os scripts inline do Next exigem 'unsafe-inline' sem nonce.
+      "script-src 'self' 'unsafe-inline' https://www.googletagmanager.com https://www.google-analytics.com https://connect.facebook.net https://va.vercel-scripts.com",
+      "style-src 'self' 'unsafe-inline'",
+      `img-src 'self' data: blob: ${supabase} https://www.facebook.com https://www.google-analytics.com https://www.googletagmanager.com https://i.ytimg.com https://img.youtube.com`,
+      "font-src 'self' data:",
+      `connect-src 'self' ${supabase} https://www.google-analytics.com https://analytics.google.com https://stats.g.doubleclick.net https://www.googletagmanager.com https://www.facebook.com https://vitals.vercel-insights.com https://va.vercel-scripts.com`,
+      "frame-src https://www.youtube-nocookie.com https://www.youtube.com",
+      `media-src 'self' blob: ${supabase}`,
+      "worker-src 'self' blob:",
+    ].join("; ");
+    return [
+      {
+        source: "/(.*)",
+        headers: [
+          { key: "Strict-Transport-Security", value: "max-age=63072000; includeSubDomains; preload" },
+          { key: "X-Content-Type-Options", value: "nosniff" },
+          { key: "Referrer-Policy", value: "strict-origin-when-cross-origin" },
+          { key: "X-Frame-Options", value: "SAMEORIGIN" },
+          { key: "Content-Security-Policy", value: "frame-ancestors 'self'" },
+          { key: "Permissions-Policy", value: "camera=(), microphone=(), geolocation=(), payment=(), usb=(), browsing-topics=()" },
+          { key: "Content-Security-Policy-Report-Only", value: cspReportOnly },
+        ],
+      },
+    ];
+  },
   // As guias (/guias/*) foram retiradas do site: tinham informação errada e
   // desatualizada e não foram aprovadas. Links antigos (Google, compartilhados)
   // caem numa página válida em vez de 404.

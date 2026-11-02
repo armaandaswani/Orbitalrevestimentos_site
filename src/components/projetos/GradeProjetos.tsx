@@ -7,13 +7,15 @@ import type { Projeto } from "@/lib/projetos-tipos";
 /**
  * Grade de projetos: 2 colunas no celular, 3 no tablet, 4 no computador. Com
  * `limite`, mostra os primeiros e um botão para ver o resto — a página não
- * vira um rolo infinito no celular.
+ * vira um rolo infinito no celular. `href` dá a cada cartão um link de
+ * verdade (sem JavaScript); `onAbrir` abre a galeria no lugar.
  */
 export default function GradeProjetos({
-  projetos, onAbrir, limite, rotuloMais = "projetos",
+  projetos, onAbrir, href, limite, rotuloMais = "projetos",
 }: {
   projetos: Projeto[];
-  onAbrir: (p: Projeto) => void;
+  onAbrir?: (p: Projeto) => void;
+  href?: (p: Projeto) => string;
   limite?: number;
   rotuloMais?: string;
 }) {
@@ -24,7 +26,7 @@ export default function GradeProjetos({
     <div>
       <ul className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 gap-1.5 sm:gap-2">
         {visiveis.map((p) => (
-          <li key={p.id}><ProjetoCard projeto={p} onAbrir={onAbrir} /></li>
+          <li key={p.id}><ProjetoCard projeto={p} onAbrir={onAbrir} href={href?.(p)} /></li>
         ))}
       </ul>
       {faltam > 0 && (
