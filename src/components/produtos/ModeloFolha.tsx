@@ -57,8 +57,10 @@ export default function ModeloFolha({
   const linha = LINHA_TXT[produto.linha];
   useDialogo(caixa, onFechar, !zoom, caixa);
 
-  // Trocar de modelo: a folha volta ao topo e a galeria à primeira foto.
-  useEffect(() => { corpo.current?.scrollTo({ top: 0 }); setIdx(0); setQr(false); }, [produto.id]);
+  // Trocar de modelo: a galeria volta à primeira foto (ajuste durante o render) e a folha ao topo.
+  const [ultimo, setUltimo] = useState(produto.id);
+  if (ultimo !== produto.id) { setUltimo(produto.id); setIdx(0); setQr(false); }
+  useEffect(() => { corpo.current?.scrollTo({ top: 0 }); }, [produto.id]);
 
   const anteriorFoto = () => setIdx((i) => Math.max(0, i - 1));
   const proximaFoto = () => setIdx((i) => Math.min(fotos.length - 1, i + 1));
