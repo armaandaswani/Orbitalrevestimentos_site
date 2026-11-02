@@ -20,6 +20,8 @@ export interface Projeto {
   is_featured?: boolean;
   is_new?: boolean;
   feature_order?: number;
+  /** Marcado no painel para aparecer na home. */
+  show_on_home?: boolean;
   /** Classificação explícita da capa (migração 051). Ausente → "depois". */
   cover_category?: string | null;
   /** Migração 053 — categoria única + parceiro + recorte da capa. */

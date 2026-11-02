@@ -35,6 +35,7 @@ function paraProjeto(r: Linha): Projeto {
     short_description: txt(r.short_description),
     is_featured: !!r.is_featured,
     is_new: !!r.is_new,
+    show_on_home: !!r.show_on_home,
     feature_order: num(r.feature_order, 0),
     cover_category: txt(r.cover_category),
     primary_category: txt(r.primary_category),
@@ -142,14 +143,18 @@ export async function carregarProjetos(): Promise<DadosProjetos> {
   }
 }
 
-/** Um showroom (ou ponto de revenda) pelo slug, com os ambientes dele. */
-export async function carregarShowroom(slug: string): Promise<{ lugar: Showroom; ambientes: Projeto[] } | null> {
+/**
+ * Um showroom (ou ponto de revenda) pelo slug, com os ambientes dele e a
+ * lista de todos os parceiros (anterior/próximo e "outros parceiros").
+ */
+export async function carregarShowroom(slug: string): Promise<{ lugar: Showroom; ambientes: Projeto[]; todos: Showroom[] } | null> {
   try {
     const db = supabaseAdmin();
     const [{ linhas }, projetos] = await Promise.all([lerLinhasShowrooms(db), lerProjetos(db)]);
-    const lugar = montarShowrooms(linhas, projetos).find((s) => s.slug === slug);
+    const todos = montarShowrooms(linhas, projetos);
+    const lugar = todos.find((s) => s.slug === slug);
     if (!lugar) return null;
-    return { lugar, ambientes: projetos.filter((p) => p.showroom_id === lugar.id) };
+    return { lugar, ambientes: projetos.filter((p) => p.showroom_id === lugar.id), todos };
   } catch (e) {
     console.error("[showroom]", e instanceof Error ? e.message : e);
     return null;
