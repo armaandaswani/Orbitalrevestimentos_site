@@ -98,6 +98,17 @@
   margin-inline: auto;
   padding-inline: clamp(1rem, 4.2vw, 4rem);
 }
+/* Botões: base de 44 px, caixa alta espaçada, canto reto. */
+@utility ds-botao {
+  display: inline-flex; align-items: center; justify-content: center; gap: 0.5rem;
+  min-height: 2.75rem; padding-inline: 1.75rem;
+  font-size: 0.75rem; letter-spacing: 0.12em; text-transform: uppercase; font-weight: 700;
+  transition: color 0.2s, background-color 0.2s, border-color 0.2s;
+}
+@utility ds-botao-cheio { background: #0B1F45; color: #fff; &:hover { background: #2347A0; } }
+@utility ds-botao-vazado { border: 1px solid #0B1F45; color: #0B1F45; &:hover { background: #0B1F45; color: #fff; } }
+@utility ds-botao-claro { background: #fff; color: #0B1F45; &:hover { background: #F6F5F2; } }
+@utility ds-botao-linha { border: 1px solid rgba(255,255,255,0.45); color: #fff; &:hover { background: rgba(255,255,255,0.1); border-color: #fff; } }
 /* Espaço vertical de uma seção (capítulo). */
 @utility ds-secao {
   padding-block: clamp(4rem, 2.6rem + 6vw, 9rem);
@@ -264,6 +275,20 @@ html { scroll-padding-top: 5rem; }
 @keyframes mv-barra-y { from { transform: scaleY(0); } to { transform: scaleY(1); } }
 @keyframes mv-abre { from { opacity: 0; transform: translate3d(0, 2rem, 0); } to { opacity: 1; transform: none; } }
 @keyframes mv-veu { from { opacity: 0; } to { opacity: 1; } }
+@keyframes mv-abre-lado { from { opacity: 0; transform: translate3d(2.5rem, 0, 0); } to { opacity: 1; transform: none; } }
+
+/* Abertura de folhas (visor de showroom e galeria): sobe no celular, entra
+   pela direita no computador (lg:mv-folha-lado). Utilitários, para aceitarem
+   variantes (lg:). Com movimento reduzido, aparecem no lugar. */
+@utility mv-folha {
+  @media (prefers-reduced-motion: no-preference) { animation: mv-abre 0.42s var(--ease-orbital) both; }
+}
+@utility mv-folha-lado {
+  @media (prefers-reduced-motion: no-preference) { animation: mv-abre-lado 0.42s var(--ease-orbital) both; }
+}
+@utility mv-veu {
+  @media (prefers-reduced-motion: no-preference) { animation: mv-veu 0.3s ease-out both; }
+}
 
 @media (prefers-reduced-motion: no-preference) {
   @supports (animation-timeline: view()) {
@@ -316,9 +341,6 @@ html { scroll-padding-top: 5rem; }
     transition-delay: calc(var(--mv-i, 0) * 70ms);
   }
 
-  /* Abertura de folhas (visor de showroom e galeria). */
-  .mv-folha { animation: mv-abre 0.42s var(--ease-orbital) both; }
-  .mv-veu { animation: mv-veu 0.3s ease-out both; }
 
   /* Micro-interações: foto aproxima no hover/foco do cartão. */
   .mv-zoom { transition: transform 0.9s var(--ease-orbital); }
