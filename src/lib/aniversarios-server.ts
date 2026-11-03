@@ -2,7 +2,7 @@ import type { SupabaseClient } from "@supabase/supabase-js";
 import { isMissingTable } from "@/lib/db-compat";
 import { emailLogo } from "@/lib/email-marca";
 import {
-  MESES, chaveNome, dataCurta, digitosWhatsapp, hojeEmManaus, idade, linkBusca, linkInstagram, linkParabens,
+  MESES, chaveNome, dataCurta, diasAte, digitosWhatsapp, hojeEmManaus, idade, linkBusca, linkInstagram, linkParabens,
   proximosDias, type Aniversariante, type Aniversario,
 } from "@/lib/aniversarios";
 
@@ -144,16 +144,39 @@ function blocoHoje(a: Aniversariante, hojeAno: number): string {
     </td></tr>`;
 }
 
+const SEMANA = ["Domingo", "Segunda", "Terça", "Quarta", "Quinta", "Sexta", "Sábado"];
+
 function linhaProxima(a: Aniversariante): string {
   const contato = [
     a.instagram ? `<a href="${esc(linkInstagram(a.instagram))}" style="color:#2347A0">@${esc(a.instagram)}</a>${a.instagramConfirmado ? "" : ' <span style="color:#8a5a00">(a confirmar)</span>'}` : "",
     digitosWhatsapp(a.whatsapp) ? `<a href="https://wa.me/${digitosWhatsapp(a.whatsapp)}" style="color:#2347A0">WhatsApp</a>` : "",
   ].filter(Boolean).join(" · ");
   return `
-    <tr>
-      <td style="padding:8px 12px 8px 0;font-size:14px;color:#43474e;white-space:nowrap;vertical-align:top">${dataCurta(a.dia, a.mes)}</td>
-      <td style="padding:8px 0;font-size:14px;color:#0D1830;vertical-align:top">${esc(a.nome)}${a.tipo !== "profissional" ? ` <span style="color:#43474e">(${TIPO[a.tipo].toLowerCase()})</span>` : ""}${contato ? `<br><span style="font-size:13px">${contato}</span>` : ""}</td>
-    </tr>`;
+    <tr><td style="padding:7px 0 7px 14px;border-left:2px solid #d9dde4;font-size:14px;color:#0D1830">
+      ${esc(a.nome)}${a.tipo !== "profissional" ? ` <span style="color:#43474e">(${TIPO[a.tipo].toLowerCase()})</span>` : ""}${contato ? `<br><span style="font-size:13px">${contato}</span>` : ""}
+    </td></tr>`;
+}
+
+/** Um bloco por data: o dia aparece uma vez só, com as pessoas embaixo. */
+function proximosPorDia(proximos: Aniversariante[], hoje: { dia: number; mes: number; ano: number }): string {
+  const dias: Aniversariante[][] = [];
+  for (const a of proximos) {
+    const ultimo = dias[dias.length - 1];
+    if (ultimo && ultimo[0].dia === a.dia && ultimo[0].mes === a.mes) ultimo.push(a);
+    else dias.push([a]);
+  }
+  return dias.map((pessoas, i) => {
+    const { dia, mes } = pessoas[0];
+    const falta = diasAte(hoje, dia, mes);
+    const semana = SEMANA[new Date(Date.UTC(hoje.ano + (mes < hoje.mes ? 1 : 0), mes - 1, dia)).getUTCDay()];
+    const nota = [falta === 1 ? "amanhã" : `em ${falta} dias`, `${pessoas.length} ${pessoas.length === 1 ? "aniversário" : "aniversários"}`].join(" · ");
+    return `
+    <tr><td style="padding:${i ? "20px" : "8px"} 0 8px">
+      <span style="font-size:13px;font-weight:700;letter-spacing:0.05em;text-transform:uppercase;color:#0B1F45">${semana}, ${dataCurta(dia, mes)}</span>
+      <span style="font-size:13px;color:#74777f">&nbsp;·&nbsp;${nota}</span>
+    </td></tr>
+    ${pessoas.map(linhaProxima).join("")}`;
+  }).join("");
 }
 
 export function emailAniversarios(r: Awaited<ReturnType<typeof aniversariantes>>): { assunto: string; html: string } {
@@ -174,7 +197,7 @@ export function emailAniversarios(r: Awaited<ReturnType<typeof aniversariantes>>
       <div style="padding:20px 24px 28px">
         <p style="margin:0 0 6px;font-family:Georgia,serif;font-size:18px;color:#0B1F45">Próximos ${DIAS_A_FRENTE} dias</p>
         ${proximos.length
-          ? `<table role="presentation" width="100%" cellpadding="0" cellspacing="0" style="border-collapse:collapse">${proximos.map(linhaProxima).join("")}</table>`
+          ? `<table role="presentation" width="100%" cellpadding="0" cellspacing="0" style="border-collapse:collapse">${proximosPorDia(proximos, hoje)}</table>`
           : `<p style="margin:0;font-size:14px;color:#43474e">Ninguém faz aniversário nos próximos ${DIAS_A_FRENTE} dias.</p>`}
       </div>
       <div style="padding:16px 24px;border-top:1px solid #e6e8ec;font-size:12px;color:#74777f">
