@@ -504,7 +504,7 @@ export default function ParceriasPage() {
                 </svg>
                 Baixar Catálogo PDF
               </a>
-              <Link href="/produtos" className="w-full sm:w-auto text-center border border-white/25 text-white text-xs tracking-[0.12em] uppercase font-bold px-9 py-4 hover:border-white transition-colors">
+              <Link href="/produtos/pfb" className="w-full sm:w-auto text-center border border-white/25 text-white text-xs tracking-[0.12em] uppercase font-bold px-9 py-4 hover:border-white transition-colors">
                 Ver catálogo online
               </Link>
             </div>

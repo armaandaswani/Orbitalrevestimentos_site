@@ -109,14 +109,14 @@ function ehObrigatorioOk(p: Passo, r: RespostasContato, produtos: ProdutoContato
   }
 }
 
-const foco = "focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#36A35C] focus-visible:ring-offset-2";
-const linkCls = `inline-flex items-center min-h-11 px-1 -mx-1 text-[15px] text-[#2347A0] underline underline-offset-2 hover:text-[#0B1F45] ${foco}`;
-const campoCls = "w-full border border-[#d9dce1] bg-white px-4 text-[17px] text-[#0B1F45] placeholder-[#9aa0aa] focus:outline-none focus:border-[#0B1F45] focus-visible:ring-2 focus-visible:ring-[#36A35C]";
+export const foco = "focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#36A35C] focus-visible:ring-offset-2";
+export const linkCls = `inline-flex items-center min-h-11 px-1 -mx-1 text-[15px] text-[#2347A0] underline underline-offset-2 hover:text-[#0B1F45] ${foco}`;
+export const campoCls = "w-full border border-[#d9dce1] bg-white px-4 text-[17px] text-[#0B1F45] placeholder-[#9aa0aa] focus:outline-none focus:border-[#0B1F45] focus-visible:ring-2 focus-visible:ring-[#36A35C]";
 
 /** Índice da animação em cascata (globals.css, .pc-item). */
-const cascata = (k: number) => ({ "--i": k }) as React.CSSProperties;
+export const cascata = (k: number) => ({ "--i": k }) as React.CSSProperties;
 
-function Seta({ dir = "dir" }: { dir?: "dir" | "esq" }) {
+export function Seta({ dir = "dir" }: { dir?: "dir" | "esq" }) {
   return (
     <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" aria-hidden>
       {dir === "dir" ? <path d="M5 12h14M13 6l6 6-6 6" /> : <path d="M19 12H5M11 6l-6 6 6 6" />}
@@ -133,7 +133,7 @@ function IconeWhats() {
 }
 
 /** Uma opção grande, com a bolinha à direita (escolha única). */
-function OpcaoCard({ label, ativo, onClick, k = 0 }: { label: string; ativo: boolean; onClick: () => void; k?: number }) {
+export function OpcaoCard({ label, ativo, onClick, k = 0 }: { label: string; ativo: boolean; onClick: () => void; k?: number }) {
   return (
     <button
       type="button"
@@ -158,7 +158,7 @@ function OpcaoCard({ label, ativo, onClick, k = 0 }: { label: string; ativo: boo
   );
 }
 
-function Opcoes({ rotulo, opcoes, valor, onPick }: { rotulo: string; opcoes: readonly Opcao[]; valor?: string; onPick: (v: string) => void }) {
+export function Opcoes({ rotulo, opcoes, valor, onPick }: { rotulo: string; opcoes: readonly Opcao[]; valor?: string; onPick: (v: string) => void }) {
   return (
     <div role="radiogroup" aria-label={rotulo} className="space-y-3">
       {opcoes.map((o, k) => (
@@ -169,7 +169,7 @@ function Opcoes({ rotulo, opcoes, valor, onPick }: { rotulo: string; opcoes: rea
 }
 
 /** Opção de escolha múltipla, com o quadrado à direita. */
-function OpcaoMulti({ label, ativo, cheio, onClick, k }: { label: string; ativo: boolean; cheio: boolean; onClick: () => void; k: number }) {
+export function OpcaoMulti({ label, ativo, cheio, onClick, k }: { label: string; ativo: boolean; cheio: boolean; onClick: () => void; k: number }) {
   return (
     <button
       type="button"

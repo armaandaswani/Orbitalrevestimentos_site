@@ -187,7 +187,7 @@ export default async function Home() {
             arquitetônico, resiste à umidade e ao calor do Amazonas e é instalado sem obra.
           </p>
           <div className="flex flex-col sm:flex-row flex-wrap gap-3 lg:gap-4">
-            <Link href="/produtos" className="ds-botao ds-botao-claro w-full sm:w-auto min-h-12">
+            <Link href="/produtos/pfb" className="ds-botao ds-botao-claro w-full sm:w-auto min-h-12">
               Ver os modelos
             </Link>
             <ContatoCta className="ds-botao ds-botao-linha w-full sm:w-auto min-h-12">
@@ -311,7 +311,7 @@ export default async function Home() {
               <ContatoCta className="ds-botao ds-botao-claro w-full sm:w-auto min-h-12">
                 Falar com um consultor
               </ContatoCta>
-              <Link href="/produtos" className="ds-botao ds-botao-linha w-full sm:w-auto min-h-12">
+              <Link href="/produtos/pfb" className="ds-botao ds-botao-linha w-full sm:w-auto min-h-12">
                 Ver o catálogo
               </Link>
             </div>

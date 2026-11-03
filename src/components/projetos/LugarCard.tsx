@@ -25,7 +25,7 @@ export default function LugarCard({ lugar, agora, href, onAbrir, compacto = fals
   const revenda = lugar.kind === "revenda";
   const temPagina = !revenda || lugar.ambient_count > 0;
   const capa = lugar.display_cover;
-  const destino = href ?? (temPagina ? `/projetos/showroom/${lugar.slug}` : "/produtos");
+  const destino = href ?? (temPagina ? `/projetos/showroom/${lugar.slug}` : "/produtos/pfb");
   const abrir = (e: React.MouseEvent) => {
     if (!onAbrir || !temPagina || e.metaKey || e.ctrlKey || e.shiftKey || e.button !== 0) return;
     e.preventDefault();

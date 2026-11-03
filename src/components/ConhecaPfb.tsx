@@ -19,7 +19,7 @@ const PFB_SELOS: { t: string; d: string; img: string }[] = [
 
 /**
  * "Conheça o produto": apresenta o PFB (título, diferenciais com os ícones do
- * material da marca, medidas) e o leque de acabamentos que leva a /produtos.
+ * material da marca, medidas) e o leque de acabamentos que leva a /produtos/pfb.
  * Usado na home e como primeira seção de /tecnologia.
  */
 export default function ConhecaPfb({ linkTecnologia = true, numero = "01" }: { linkTecnologia?: boolean; numero?: string }) {
@@ -62,7 +62,7 @@ export default function ConhecaPfb({ linkTecnologia = true, numero = "01" }: { l
           <Revelar className="flex flex-col" ordem={1}>
             {/* Fanned swatch stack — real finishes, no numbers. Leva ao
                 catálogo, onde o cliente escolhe o acabamento. */}
-            <Link href="/produtos" aria-label="Ver todos os modelos do Painel Flexível em Fibra de Bambu" className="group relative flex flex-col items-center justify-center h-[320px] sm:h-[360px] lg:h-auto">
+            <Link href="/produtos/pfb" aria-label="Ver todos os modelos do Painel Flexível em Fibra de Bambu" className="group relative flex flex-col items-center justify-center h-[320px] sm:h-[360px] lg:h-auto">
               {/* Leque + selo formam um bloco só, centralizado na coluna —
                   assim o leque fica na altura do meio da grade ao lado. */}
               <div className="relative w-full h-[220px] sm:h-[260px] lg:h-[270px] flex items-center justify-center overflow-x-clip">
@@ -101,7 +101,7 @@ export default function ConhecaPfb({ linkTecnologia = true, numero = "01" }: { l
           </p>
           <div className="flex flex-wrap items-center justify-center gap-x-6 gap-y-3 mt-6">
             <Link
-              href="/produtos"
+              href="/produtos/pfb"
               className="ds-botao ds-botao-cheio min-h-12"
             >
               Ver os modelos

@@ -36,6 +36,7 @@ const secoes: SecaoLegal[] = [
           <li><strong>Pedido de atendimento</strong> (“Falar com um consultor”): perfil (proprietário ou arquiteto), nome, WhatsApp, estágio da obra, medidas do ambiente, cidade e revestimentos de interesse.</li>
           <li><strong>Simulador</strong>: fotos do ambiente que você enviar, as imagens geradas a partir delas e, se pedir para receber o resultado, nome e WhatsApp.</li>
           <li><strong>Lista de espera da Academia Orbital</strong>: nome, WhatsApp, e-mail, cidade, área de atuação, tempo de experiência e como nos conheceu.</li>
+          <li><strong>Lista de espera das linhas em chegada</strong> (TechStone, PFB Carbon): nome, WhatsApp, e-mail, perfil (e, se escolher “Outro”, quem você é), prazo da obra e modelos de interesse.</li>
           <li><strong>Programa de parceiros</strong>: nome, e-mail, WhatsApp, data de nascimento, código de indicação e senha de acesso ao portal.</li>
           <li><strong>Compras</strong>: nome, CPF ou CNPJ, e-mail, telefone, endereço de entrega e informações do pedido e do pagamento.</li>
           <li><strong>Conversas</strong> pelo WhatsApp, por e-mail ou pelo assistente virtual do site.</li>
@@ -58,6 +59,7 @@ const secoes: SecaoLegal[] = [
         <li>Gerar e enviar as simulações do seu ambiente.</li>
         <li>Processar compras, emitir documentos, organizar entregas e prestar suporte pós-venda.</li>
         <li>Gerenciar o programa de parceiros e a lista de espera da Academia, incluindo avisos sobre o lançamento.</li>
+        <li>Avisar, pelo WhatsApp e pelo e-mail, quem entrou na lista de espera de uma linha quando o material chegar a Manaus.</li>
         <li>Enviar novidades e conteúdos sobre nossos produtos, quando você tiver interesse; você pode pedir para não receber mais a qualquer momento.</li>
         <li>Medir o desempenho do site e das campanhas e melhorar a sua experiência.</li>
         <li>Cumprir obrigações legais e fiscais e proteger nossos direitos.</li>
@@ -141,7 +143,8 @@ const secoes: SecaoLegal[] = [
     corpo: (
       <p>
         Mantemos os dados pelo tempo necessário para as finalidades descritas acima. Dados de compras são
-        guardados pelos prazos exigidos pela legislação fiscal e para o exercício de direitos. Depois disso, são
+        guardados pelos prazos exigidos pela legislação fiscal e para o exercício de direitos. Os dados da lista de
+        espera das linhas em chegada ficam guardados por até 12 meses depois do aviso de chegada. Depois disso, são
         excluídos ou anonimizados.
       </p>
     ),
@@ -186,7 +189,7 @@ export default function PrivacidadePage() {
   return (
     <PaginaLegal
       titulo="Política de Privacidade"
-      atualizado="24 de outubro de 2026"
+      atualizado="3 de novembro de 2026"
       intro={
         <p>
           Esta política explica, de forma direta, quais dados pessoais a Orbital Revestimentos coleta por este site

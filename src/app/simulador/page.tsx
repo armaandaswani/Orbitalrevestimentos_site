@@ -3511,7 +3511,7 @@ function SimuladorInner() {
                     Baixar Catálogo PDF
                   </a>
                   <Link
-                    href="/produtos"
+                    href="/produtos/pfb"
                     className="inline-flex items-center gap-1.5 text-xs tracking-[0.1em] uppercase font-bold text-[#2347A0] hover:text-[#0B1F45] transition-colors border-b border-[#2347A0]/40 pb-0.5 hover:border-[#0B1F45]"
                   >
                     Ver catálogo online

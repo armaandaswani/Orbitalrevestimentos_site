@@ -41,7 +41,7 @@ export default function VisualizadorPage() {
               Falar no WhatsApp
             </ContatoCta>
             <Link
-              href="/produtos"
+              href="/produtos/pfb"
               className="border border-white/40 text-white text-xs tracking-[0.12em] uppercase font-bold px-7 py-3.5 hover:bg-white hover:text-[#0B1F45] transition-colors"
             >
               Ver acabamentos
