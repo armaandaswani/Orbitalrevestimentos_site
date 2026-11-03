@@ -388,47 +388,93 @@ html:has(header[data-site][data-oculto="1"]) .ds-sob-cabecalho { top: 0; }
 }
 
 /* ── TechStone: apresentação guiada pela rolagem ──────────────────────────
-   Cada seção alta recebe --p (0 → 1) do useProgresso; tudo aqui é calc() em
-   cima dele, só transform/opacity/clip-path. Com movimento reduzido ficam só
-   as trocas de imagem e de texto, sem escala nem deslocamento. */
+   Cada seção alta recebe --p (0 → 1) do useProgresso, já suavizado; tudo
+   aqui é calc() em cima dele e só mexe em transform e opacity (o compositor
+   desenha sem repintar a página). Com movimento reduzido ficam só as trocas
+   de imagem e de texto, sem escala nem deslocamento. */
 
-/* Abertura: a foto começa em tela cheia e, ao rolar, recua até virar uma
-   placa emoldurada pelo calcário; o título sobe e sai. */
-.ts-abertura-foto {
-  transform: scale(calc(1.12 - var(--p, 0) * 0.12));
-  clip-path: inset(calc(var(--p, 0) * 9%) calc(var(--p, 0) * 6%));
+/* Abertura. 0 → 0.2: só o nome; a foto acende por trás e o nome sobe e
+   encolhe (curva suave, --e). 0.2 → 0.76: três frases, uma de cada vez, no
+   mesmo lugar (--a/--b em cada uma). Depois: o convite da lista de espera. */
+.ts-abertura { --e0: clamp(0, (var(--p, 0) - 0.04) / 0.16, 1); --e: calc(var(--e0) * var(--e0) * (3 - 2 * var(--e0))); }
+.ts-ab-foto {
+  opacity: clamp(0, (var(--p, 0) - 0.03) / 0.2, 1);
+  transform: scale(calc(1.16 - clamp(0, var(--p, 0) / 0.85, 1) * 0.16));
+  will-change: transform, opacity;
 }
-.ts-abertura-texto {
-  opacity: clamp(0, 1 - var(--p, 0) * 2.4, 1);
-  transform: translate3d(0, calc(var(--p, 0) * -14vh), 0);
+.ts-ab-titulo {
+  transform: translate3d(0, calc(-50% - var(--e) * 30svh), 0) scale(calc(1 - var(--e) * 0.58));
+  will-change: transform;
 }
-.ts-abertura-depois { opacity: clamp(0, (var(--p, 0) - 0.62) * 4, 1); }
+.ts-ab-frase {
+  --o: min(clamp(0, (var(--p, 0) - var(--a)) / 0.05, 1), clamp(0, (var(--b) - var(--p, 0)) / 0.05, 1));
+  opacity: var(--o);
+  transform: translate3d(0, calc(-50% + (1 - var(--o)) * 22px), 0);
+  will-change: transform, opacity;
+}
+.ts-ab-cta {
+  --o: clamp(0, (var(--p, 0) - 0.76) / 0.06, 1);
+  opacity: var(--o);
+  transform: translate3d(0, calc(-50% + (1 - var(--o)) * 22px), 0);
+  pointer-events: none;
+}
+/* Clicável só quando já apareceu; com o teclado aparece na hora. */
+.ts-abertura:is([data-p10="8"], [data-p10="9"], [data-p10="10"]) .ts-ab-cta,
+.ts-ab-cta:focus-within { pointer-events: auto; }
+.ts-ab-cta:focus-within { opacity: 1; }
+.ts-ab-aviso { opacity: clamp(0, (var(--p, 0) - 0.08) / 0.12, 1); }
+.ts-ab-convite { opacity: clamp(0, 1 - var(--p, 0) * 14, 1); }
+@keyframes ts-convite { from { transform: translateY(-100%); } to { transform: translateY(200%); } }
+@media (prefers-reduced-motion: no-preference) {
+  .ts-ab-convite-luz { animation: ts-convite 2.2s var(--ease-orbital) infinite; }
+}
 
 /* Sequência: quadros empilhados que trocam em fusão. --a/--b = trecho do
    quadro dentro da seção; --w = largura da fusão. */
 .ts-quadro {
-  --w: 0.07;
+  --w: 0.1;
   opacity: min(clamp(0, (var(--p, 0) - var(--a)) / var(--w) + 1, 1), clamp(0, (var(--b) - var(--p, 0)) / var(--w), 1));
+  will-change: opacity;
 }
 .ts-quadro img {
   transform: scale(calc(1.07 - clamp(0, (var(--p, 0) - var(--ia)) / (var(--b) - var(--ia)), 1) * 0.07));
+  will-change: transform;
 }
 /* O texto entra só depois que a foto do quadro assentou e sai antes da
    fusão seguinte: dois títulos nunca aparecem sobrepostos. */
 .ts-quadro-texto {
-  opacity: min(clamp(0, (var(--p, 0) - var(--a)) / 0.03, 1), clamp(0, (var(--b) - var(--w) - var(--p, 0)) / 0.03, 1));
-  transform: translate3d(0, calc((1 - clamp(0, (var(--p, 0) - var(--a)) / 0.04, 1)) * 2rem), 0);
+  opacity: min(clamp(0, (var(--p, 0) - var(--a)) / 0.04, 1), clamp(0, (var(--b) - var(--w) - var(--p, 0)) / 0.04, 1));
+  transform: translate3d(0, calc((1 - clamp(0, (var(--p, 0) - var(--a)) / 0.06, 1)) * 2rem), 0);
 }
 .ts-trilho-marca { opacity: calc(0.3 + 0.7 * min(clamp(0, (var(--p, 0) - var(--a)) / 0.02 + 1, 1), clamp(0, (var(--b) - var(--p, 0)) / 0.02, 1))); }
 
-/* Formatos: a placa de 1200 × 600 dobra para 2400 × 1200 ao lado de uma
-   pessoa de 1,70 m (escala exata: as duas medidas são o dobro). */
-.ts-formatos { --k: clamp(0, (var(--p, 0) - 0.18) / 0.6, 1); }
-.ts-folha { transform-box: fill-box; transform-origin: 0% 100%; transform: scale(calc(1 + var(--k))); }
-.ts-rotulo-pequeno { opacity: calc(1 - var(--k)); }
-.ts-rotulo-grande { opacity: var(--k); }
+/* Tamanhos: a placa escolhida cresce ou encolhe ao lado da pessoa de 1,70 m
+   (escala exata: a grande tem o dobro de cada lado). */
+.ts-folha { transform-box: fill-box; transform-origin: 0% 100%; transition: transform 0.7s var(--ease-orbital); }
+.ts-tamanhos[data-tamanho="2400x1200"] .ts-folha { transform: scale(2); }
+.ts-cota { transition: opacity 0.4s ease; }
+.ts-tamanhos[data-tamanho="2400x1200"] .ts-cota-pequena,
+.ts-tamanhos[data-tamanho="1200x600"] .ts-cota-grande { opacity: 0; }
 
 @media (prefers-reduced-motion: reduce) {
-  .ts-abertura-foto, .ts-quadro img { transform: none; }
-  .ts-abertura-texto, .ts-quadro-texto { transform: none; }
+  .ts-ab-foto, .ts-quadro img { transform: none; }
+  .ts-quadro-texto { transform: none; }
+  .ts-ab-frase, .ts-ab-cta { transform: translate3d(0, -50%, 0); }
+  /* Sem deslocamento, o nome sai em fusão antes da primeira frase. */
+  .ts-ab-titulo { transform: translate3d(0, -50%, 0); opacity: clamp(0, 1 - (var(--p, 0) - 0.12) / 0.06, 1); }
+  .ts-folha { transition: none; }
+}
+
+/* ── Home: a frase de quem somos acende palavra por palavra ───────────────
+   --p vem do useProgresso (suavizado); --i é a posição da palavra (0 → 1).
+   Cada palavra vai de quase apagada a acesa num trecho curto da rolagem. */
+.hm-palavra { opacity: clamp(0.14, (var(--p, 0) * 1.25 - var(--i, 0)) / 0.07, 1); transition: none; }
+.hm-manifesto-link { opacity: clamp(0, (var(--p, 0) - 0.78) / 0.08, 1); }
+.hm-manifesto-link:focus-visible { opacity: 1; }
+@keyframes hm-troca { from { opacity: 0; transform: translate3d(0, 10px, 0); } to { opacity: 1; transform: none; } }
+@media (prefers-reduced-motion: no-preference) {
+  .hm-troca { animation: hm-troca 0.5s var(--ease-orbital) both; }
+}
+@media (prefers-reduced-motion: reduce) {
+  .hm-palavra, .hm-manifesto-link { opacity: 1; }
 }

@@ -1,7 +1,6 @@
 import VideoArquitetoCard from "@/components/VideoArquitetoCard";
 import Capitulo from "@/components/ds/Capitulo";
 import Revelar from "@/components/projetos/Revelar";
-import { Sobretitulo } from "@/components/projetos/SecaoCabecalho";
 import { PLAYLIST_URL, videosVisaoDoArquiteto } from "@/lib/visao-arquiteto";
 
 /**
@@ -9,14 +8,13 @@ import { PLAYLIST_URL, videosVisaoDoArquiteto } from "@/lib/visao-arquiteto";
  * A Visão do Arquiteto. Cada cartão toca o vídeo no próprio site; o botão abre
  * a playlist completa no YouTube.
  */
-export default async function VisaoDoArquiteto({ numero = "03" }: { numero?: string }) {
+export default async function VisaoDoArquiteto() {
   const videos = (await videosVisaoDoArquiteto()).slice(0, 3);
   return (
-    <Capitulo id="arquitetos" numero={numero} rotulo="Arquitetos" rotuladoPor="arquitetos-titulo" className="ds-secao bg-[#F6F5F2] border-t border-[#eeeeee]">
+    <Capitulo id="arquitetos" numero="" rotulo="Arquitetos" rotuladoPor="arquitetos-titulo" className="ds-secao bg-[#F6F5F2]">
       <div className="ds-wrap grid grid-cols-1 lg:grid-cols-[1fr_1.15fr] gap-10 lg:gap-16 items-center">
         <Revelar>
-          <Sobretitulo numero={numero}>A Visão do Arquiteto</Sobretitulo>
-          <h2 id="arquitetos-titulo" className="font-serif text-[#0B1F45] text-t2 font-normal tracking-[-0.02em] mt-4 mb-5 text-balance">
+          <h2 id="arquitetos-titulo" className="font-serif text-[#0B1F45] text-t1 font-normal tracking-[-0.02em] mb-5 text-balance max-w-[22ch]">
             Validado por alguns dos melhores arquitetos de Manaus.
           </h2>
           <p className="text-[#43474e] text-lead mb-8 max-w-md text-pretty">

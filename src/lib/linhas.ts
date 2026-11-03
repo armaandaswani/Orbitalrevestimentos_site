@@ -13,6 +13,8 @@ export interface LinhaOrbital {
   curto: string;
   situacao: "pronta-entrega" | "em-breve";
   resumo: string;
+  /** Onde a linha vai, em etiquetas curtas (só o que a Orbital já afirma). */
+  usos: string[];
   href: string;
   imagem: { src: string; alt: string } | null;
   /** A imagem é gerada por IA: o card avisa isso embaixo dela. */
@@ -27,6 +29,7 @@ export const LINHAS: LinhaOrbital[] = [
     curto: "PFB",
     situacao: "pronta-entrega",
     resumo: "Paredes e forros internos com acabamento de mármore e madeira, em pronta-entrega.",
+    usos: ["Paredes internas", "Forros", "Áreas úmidas"],
     href: "/produtos/pfb",
     imagem: { src: "/images/academia/escadaria-residencial.jpg", alt: "Escadaria residencial com paredes em Painel Flexível em Fibra de Bambu" },
   },
@@ -37,6 +40,7 @@ export const LINHAS: LinhaOrbital[] = [
     curto: "TechStone",
     situacao: "em-breve",
     resumo: "Pedra flexível de 3,5 mm para fachadas e interiores, desenvolvida para a Amazônia.",
+    usos: ["Fachadas", "Interiores", "Colunas e curvas"],
     href: "/techstone",
     imagem: { src: "/images/techstone/cenas/curva-v3-mobile.webp", alt: "Parede curva em travertino, gerada por IA a partir da textura TechStone Travertino Navona Clássico" },
     imagemGerada: true,
@@ -48,6 +52,7 @@ export const LINHAS: LinhaOrbital[] = [
     curto: "PFB Carbon",
     situacao: "em-breve",
     resumo: "A linha de luxo do Painel Flexível em Fibra de Bambu. Detalhes em breve.",
+    usos: [],
     href: "",
     imagem: null,
   },

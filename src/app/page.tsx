@@ -3,22 +3,21 @@ import Image from "next/image";
 import Link from "next/link";
 import ContatoCta from "@/components/ContatoCta";
 import VisaoDoArquiteto from "@/components/VisaoDoArquiteto";
-import ConhecaPfb from "@/components/ConhecaPfb";
-import Capitulo from "@/components/ds/Capitulo";
-import HistoriaFixa from "@/components/ds/HistoriaFixa";
-import ProgressoCapitulos from "@/components/ds/ProgressoCapitulos";
+import Manifesto from "@/components/home/Manifesto";
+import OQueFazemos from "@/components/home/OQueFazemos";
+import PorQue from "@/components/home/PorQue";
+import SeletorLinhas from "@/components/linhas/SeletorLinhas";
 import Revelar from "@/components/projetos/Revelar";
-import SecaoCabecalho, { Sobretitulo } from "@/components/projetos/SecaoCabecalho";
 import Trilho from "@/components/projetos/Trilho";
 import ProjetoCard from "@/components/projetos/ProjetoCard";
 import { carregarProjetos } from "@/lib/projetos-dados";
 import { REVENDA_RESERVA, nomeLugar, porDestaque, type Projeto } from "@/lib/projetos-tipos";
 
 /**
- * Home como uma apresentação contínua: abertura com a assinatura da marca,
- * depois seis capítulos — 01 Produto · 02 Por quê · 03 Arquitetos ·
- * 04 Projetos e showrooms · 05 Simulador · 06 Contato. O ProgressoCapitulos
- * mostra onde o visitante está; cada capítulo termina apontando o próximo.
+ * Home da marca, não de um produto só. A ordem conta a Orbital: abertura com
+ * a convicção → quem somos (frase que acende na rolagem) → o que fazemos (da
+ * fábrica até a obra) → por que fazemos → nossas soluções (seletor das
+ * linhas) → arquitetos → obras e onde ver → contato → perguntas.
  *
  * Os projetos e parceiros vêm do banco aqui no servidor (republica a cada
  * 5 min, como /projetos); sem banco, ficam as fotos fixas e a página nunca
@@ -31,21 +30,21 @@ const ASSINATURA = "Novas possibilidades para seus projetos.";
 export const metadata: Metadata = {
   title: "Orbital Revestimentos — Novas possibilidades para seus projetos",
   description:
-    "Novas possibilidades para seus projetos. Painéis Flexíveis em Fibra de Bambu (PFB) para paredes e forros em Manaus: resistentes à umidade, instalados em horas, sem obra. 3 linhas, 15 acabamentos, pronta-entrega.",
+    "Orbital Revestimentos, marca amazônica de revestimentos inovadores em Manaus. Painel Flexível em Fibra de Bambu (PFB) em pronta-entrega, TechStone, a pedra flexível de 3,5 mm, e PFB Carbon. Materiais escolhidos para o clima da Amazônia.",
   alternates: { canonical: "https://orbitalrevestimentos.com.br" },
   keywords: [
     "Orbital Revestimentos",
     "revestimento parede Manaus",
     "revestimento de forro Manaus",
     "PFB painel flexível fibra de bambu",
-    "revestimento sem obra Manaus",
-    "decoração interiores Manaus",
+    "TechStone pedra flexível",
+    "revestimento fachada Manaus",
     "showroom revestimento Manaus",
   ],
   openGraph: {
     title: "Orbital Revestimentos — Novas possibilidades para seus projetos",
     description:
-      "Painéis Flexíveis em Fibra de Bambu (PFB) para paredes e forros em Manaus. Resistentes à umidade, instalados em horas, sem obra. Pronta-entrega.",
+      "Marca amazônica de revestimentos inovadores: Painel Flexível em Fibra de Bambu em pronta-entrega, TechStone e PFB Carbon. A Amazônia merece revestimentos feitos para ela.",
     url: "https://orbitalrevestimentos.com.br",
   },
 };
@@ -103,34 +102,6 @@ const faqSchema = {
   })),
 };
 
-/** 02 · Por que o PFB: a história com quadro fixo. Só méritos próprios, nada de comparação. */
-const PASSOS = [
-  {
-    titulo: "Feito para o clima de Manaus.",
-    destaque: "0,2% de absorção de água em 48 h",
-    texto: "Umidade acima de 80% e calor o ano inteiro pedem um material que não incha, não descola e não mofa. O PFB foi escolhido para isso: resistente à água, protegido contra cupins e aprovado para áreas úmidas.",
-    imagem: { src: "/images/academia/aplic-area-molhada.jpg", alt: "PFB aplicado em área molhada" },
-  },
-  {
-    titulo: "Leve, flexível e em grande formato.",
-    destaque: "Cerca de 11 kg por placa de 2,90 × 1,20 m",
-    texto: "Uma placa de 5 mm cobre 3,48 m², acompanha curvas e colunas e vai para paredes e forros. Menos emendas, acabamento contínuo e nenhuma estrutura pesada.",
-    imagem: { src: "/images/academia/aplic-curva.jpg", alt: "PFB acompanhando uma superfície curva" },
-  },
-  {
-    titulo: "Instalado em horas. Admirado por anos.",
-    destaque: "Colado sobre a superfície existente",
-    texto: "O painel é fixado com cola PU direto sobre a parede ou o forro, sem demolição, sem poeira e com o ambiente em uso. Um cômodo fica pronto em duas a três horas; o acabamento fica por mais de dez anos.",
-    imagem: { src: "/images/academia/lavabo-consultorio-depois.jpg", alt: "Lavabo de consultório revestido com PFB" },
-  },
-  {
-    titulo: "Padrão Orbital, do fabricante ao projeto.",
-    destaque: "Fabricado na China com padrão Orbital",
-    texto: "Produzido sob a especificação da Orbital, com controle de qualidade e originalidade de cada lote: sem formol, não propaga chamas, certificado em laboratório e homologado com ART de Engenheiro Civil. Pronta-entrega em Manaus.",
-    imagem: { src: "/images/academia/escadaria-residencial.jpg", alt: "Escadaria residencial com paredes em PFB" },
-  },
-];
-
 /** Obras fixas, para a home nunca ficar vazia sem banco. */
 const OBRAS_RESERVA: Projeto[] = [
   { src: "/images/catalogue/lavabo-real.jpeg", t: "Lavabo", c: "ORB-006" },
@@ -148,6 +119,10 @@ const PROFISSIONAIS = [
   { label: "Revendedores", tagline: "Tabela exclusiva, estoque local em Manaus e um produto que se vende pela própria obra." },
 ];
 
+const seta = (
+  <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" aria-hidden className="mv-seta"><path d="M5 12h14M12 5l7 7-7 7" /></svg>
+);
+
 export default async function Home() {
   const dados = await carregarProjetos();
   const vistas = new Set<string>();
@@ -162,33 +137,29 @@ export default async function Home() {
   const parceiros = [...showrooms, ...(revendas.length > 0 ? revendas : REVENDA_RESERVA)];
 
   return (
-    <>
-      <ProgressoCapitulos />
-
-      {/* ── Abertura ───────────────────────────────────────────────────────── */}
-      <section className="relative h-[min(100svh,56rem)] min-h-[34rem] flex items-end lg:items-center overflow-hidden bg-[#0B1F45] ds-escuro">
+    <div className="escala-contida">
+      {/* ── Abertura: a convicção da marca ─────────────────────────────────── */}
+      <section className="relative h-[100svh] min-h-[34rem] flex items-end overflow-hidden bg-[#0B1F45] ds-escuro">
         <div className="absolute inset-0 mv-parallax-topo will-change-transform">
           <Image
             src="/images/catalogue/hero-cover.png"
-            alt="Ambiente com paredes revestidas em Painel Flexível em Fibra de Bambu (PFB) Orbital, em Manaus"
+            alt="Ambiente com paredes revestidas em Painel Flexível em Fibra de Bambu Orbital, em Manaus"
             fill sizes="100vw" priority fetchPriority="high"
             className="object-cover object-center"
           />
         </div>
-        <div className="absolute inset-0 bg-gradient-to-t from-[#0B1F45]/85 via-[#0B1F45]/35 to-transparent lg:bg-gradient-to-r lg:from-[#0B1F45]/75 lg:via-[#0B1F45]/30 lg:to-transparent" aria-hidden />
-        {/* pt-20 = altura do cabeçalho fixo. */}
-        <div className="relative z-10 w-full ds-wrap pt-24 pb-[clamp(2.5rem,6vh,5rem)] mv-esmaece-topo">
-          <h1 className="font-serif text-white text-display font-normal tracking-[-0.02em] mb-6 max-w-[21ch] text-balance">
-            <span className="sr-only">Orbital Revestimentos — revestimento de parede e forro em Manaus. </span>
-            {ASSINATURA}
+        <div className="absolute inset-0 bg-gradient-to-t from-[#0B1F45]/90 via-[#0B1F45]/30 to-[#0B1F45]/10" aria-hidden />
+        <div className="relative z-10 w-full ds-wrap pt-24 pb-[clamp(3rem,9vh,6.5rem)] mv-esmaece-topo">
+          <h1 className="font-serif text-white text-display font-normal tracking-[-0.025em] max-w-[20ch] text-balance">
+            <span className="sr-only">Orbital Revestimentos — revestimentos para parede, forro e fachada em Manaus. </span>
+            A Amazônia merece revestimentos feitos para ela.
           </h1>
-          <p className="text-white/80 text-corpo mb-8 lg:mb-10 max-w-lg text-pretty">
-            O Painel Flexível em Fibra de Bambu (PFB) transforma paredes e forros com acabamento
-            arquitetônico, resiste à umidade e ao calor do Amazonas e é instalado sem obra.
+          <p className="mt-5 text-white/80 text-lead max-w-[40ch] text-pretty">
+            A Orbital é uma marca amazônica de revestimentos inovadores. {ASSINATURA}
           </p>
-          <div className="flex flex-col sm:flex-row flex-wrap gap-3 lg:gap-4">
-            <Link href="/produtos/pfb" className="ds-botao ds-botao-claro w-full sm:w-auto min-h-12">
-              Ver os modelos
+          <div className="mt-8 flex flex-col sm:flex-row gap-3">
+            <Link href="#solucoes" className="ds-botao ds-botao-claro w-full sm:w-auto min-h-12">
+              Conhecer as soluções
             </Link>
             <ContatoCta className="ds-botao ds-botao-linha w-full sm:w-auto min-h-12">
               Falar com um consultor
@@ -197,45 +168,48 @@ export default async function Home() {
         </div>
       </section>
 
-      {/* ── 01 Produto ─────────────────────────────────────────────────────── */}
-      <ConhecaPfb numero="01" />
+      {/* ── Quem somos ─────────────────────────────────────────────────────── */}
+      <Manifesto />
 
-      {/* ── 02 Por quê ─────────────────────────────────────────────────────── */}
-      <Capitulo id="porque" numero="02" rotulo="Por quê" rotuladoPor="porque-titulo" className="ds-secao bg-background border-t border-surface-container-high">
+      {/* ── O que fazemos ──────────────────────────────────────────────────── */}
+      <OQueFazemos />
+
+      {/* ── Por que fazemos ────────────────────────────────────────────────── */}
+      <PorQue />
+
+      {/* ── Nossas soluções ────────────────────────────────────────────────── */}
+      <section id="solucoes" aria-labelledby="solucoes-titulo" className="ds-secao bg-[#F6F5F2] scroll-mt-16">
         <div className="ds-wrap">
-          <Revelar>
-            <SecaoCabecalho id="porque-titulo" numero="02" sobretitulo="Por que o PFB" titulo="Materiais inovadores, adaptados ao clima da Amazônia."
-              texto="A tese da Orbital: trazer para Manaus materiais que resistem à umidade e ao calor extremo e que realmente servem ao nosso mercado. Quatro razões, uma de cada vez." />
-          </Revelar>
-          <HistoriaFixa passos={PASSOS} />
-          <Revelar className="mt-12 lg:mt-14 border-t border-surface-container-high pt-6 flex flex-col md:flex-row md:items-center md:justify-between gap-5">
-            <p className="text-on-surface-variant text-corpo max-w-2xl text-pretty">
-              A Orbital é uma importadora de Manaus especializada em revestimentos eco-premium. Toda a documentação técnica
-              (ficha, ART, laudos) está na página de tecnologia.
+          <Revelar className="mb-8 lg:mb-12 max-w-2xl">
+            <h2 id="solucoes-titulo" className="font-serif text-t1 text-[#0B1F45] font-normal tracking-[-0.02em] text-balance">Nossas soluções.</h2>
+            <p className="mt-4 text-lead text-[#43474e] text-pretty">
+              Cada linha tem o seu papel no projeto, das paredes internas à fachada. Escolha uma.
             </p>
-            <Link href="/tecnologia" className="ds-botao ds-botao-vazado flex-shrink-0">
-              Tecnologia e ficha técnica
-              <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" aria-hidden className="mv-seta"><path d="M5 12h14M12 5l7 7-7 7" /></svg>
-            </Link>
           </Revelar>
+          <SeletorLinhas />
+          <div className="mt-12 flex flex-wrap gap-x-8 gap-y-2 border-t border-[#0B1F45]/12 pt-6">
+            <Link href="/visualizador" className="inline-flex items-center gap-2 min-h-11 text-[#0B1F45] font-semibold">
+              Simular no meu ambiente com IA {seta}
+            </Link>
+            <Link href="/tecnologia" className="inline-flex items-center gap-2 min-h-11 text-[#0B1F45]/75 hover:text-[#0B1F45] font-semibold">
+              Tecnologia e ficha técnica do PFB {seta}
+            </Link>
+          </div>
         </div>
-      </Capitulo>
+      </section>
 
-      {/* ── 03 Arquitetos ──────────────────────────────────────────────────── */}
-      <VisaoDoArquiteto numero="03" />
+      {/* ── Arquitetos ─────────────────────────────────────────────────────── */}
+      <VisaoDoArquiteto />
 
-      {/* ── 04 Projetos e showrooms ────────────────────────────────────────── */}
-      <Capitulo id="projetos" numero="04" rotulo="Projetos" rotuladoPor="projetos-titulo" escuro className="ds-secao bg-[#0B1F45] text-white">
+      {/* ── Obras e onde ver ───────────────────────────────────────────────── */}
+      <section id="projetos" aria-labelledby="projetos-titulo" className="ds-secao bg-[#0B1F45] text-white ds-escuro scroll-mt-16">
         <div className="ds-wrap">
-          <Revelar>
-            <SecaoCabecalho id="projetos-titulo" numero="04" escuro sobretitulo="Projetos e showrooms" titulo="Veja o PFB de perto."
-              texto="Obras entregues em Manaus e ambientes nos showrooms parceiros."
-              acao={
-                <Link href="/projetos" className="ds-botao ds-botao-linha">
-                  Todos os projetos
-                  <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" aria-hidden className="mv-seta"><path d="M5 12h14M12 5l7 7-7 7" /></svg>
-                </Link>
-              } />
+          <Revelar className="mb-10 lg:mb-14 flex flex-col gap-5 md:flex-row md:items-end md:justify-between">
+            <div className="max-w-2xl">
+              <h2 id="projetos-titulo" className="font-serif text-t1 font-normal tracking-[-0.02em] text-balance">Mais de 50 obras entregues.</h2>
+              <p className="mt-4 text-lead text-white/75 text-pretty">Residências, lojas, escritórios e embarcações em Manaus.</p>
+            </div>
+            <Link href="/projetos" className="ds-botao ds-botao-linha self-start md:self-auto">Todos os projetos {seta}</Link>
           </Revelar>
           <Revelar>
             <Trilho rotulo="Obras em destaque" escuro largura="w-[62%] sm:w-[34%] lg:w-[19%]">
@@ -267,101 +241,69 @@ export default async function Home() {
             </ul>
           </Revelar>
         </div>
-      </Capitulo>
+      </section>
 
-      {/* ── 05 Simulador ───────────────────────────────────────────────────── */}
-      <Capitulo id="simulador" numero="05" rotulo="Simulador" rotuladoPor="simulador-titulo" className="ds-secao bg-white">
-        <div className="ds-wrap grid grid-cols-1 lg:grid-cols-12 gap-10 lg:gap-16 items-center">
-          <Revelar className="lg:col-span-5 lg:order-1">
-            <Link href="/visualizador" className="group relative block max-w-[20rem] mx-auto">
-              <span className="relative block aspect-[4/5] overflow-hidden bg-surface-container">
-                <Image src="/images/renders/orb014-escritorio.png" alt="Simulação gerada por inteligência artificial de um escritório com PFB" fill
-                  sizes="(max-width: 1023px) 88vw, 360px" className="object-cover mv-zoom" />
-                <span className="absolute inset-0 bg-gradient-to-t from-black/45 via-transparent to-transparent" aria-hidden />
-                <span className="absolute bottom-3 left-3 bg-[#0B1F45]/75 text-white text-sobre tracking-[0.15em] uppercase font-semibold px-2.5 py-1">
-                  Gerado por IA
-                </span>
-              </span>
-            </Link>
-          </Revelar>
-          <Revelar className="lg:col-span-7 lg:order-2" ordem={1}>
-            <SecaoCabecalho id="simulador-titulo" numero="05" sobretitulo="Simulador com IA" titulo="Veja como fica no seu ambiente."
-              texto="Envie uma foto do seu espaço e a inteligência artificial aplica o acabamento escolhido na hora — antes de você decidir." />
-            <Link href="/visualizador" className="ds-botao ds-botao-cheio min-h-12">
-              Simular no meu ambiente
-              <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" aria-hidden className="mv-seta"><path d="M5 12h14M12 5l7 7-7 7" /></svg>
-            </Link>
-          </Revelar>
-        </div>
-      </Capitulo>
-
-      {/* ── 06 Contato ─────────────────────────────────────────────────────── */}
-      <Capitulo id="contato" numero="06" rotulo="Contato" rotuladoPor="contato-titulo" escuro className="ds-secao bg-[#0B1F45]">
+      {/* ── Contato ────────────────────────────────────────────────────────── */}
+      <section id="contato" aria-labelledby="contato-titulo" className="ds-secao bg-white scroll-mt-16">
         <div className="ds-wrap">
           <Revelar className="text-center max-w-3xl mx-auto">
-            <Sobretitulo escuro numero="06">Pronto para transformar seu espaço?</Sobretitulo>
-            <h2 id="contato-titulo" className="font-serif text-white text-t1 font-normal tracking-[-0.025em] mt-4 mb-5 text-balance">
-              Fale com a Orbital.
+            <h2 id="contato-titulo" className="font-serif text-[#0B1F45] text-t1 font-normal tracking-[-0.025em] mb-5 text-balance">
+              Vamos conversar sobre o seu projeto.
             </h2>
-            <p className="text-white/75 text-lead mb-8 max-w-xl mx-auto text-pretty">
-              3 linhas, 15 acabamentos e pronta-entrega em Manaus. Um consultor responde pelo pré-contato
-              e, se preferir, leva as amostras até você.
+            <p className="text-[#43474e] text-lead mb-8 max-w-xl mx-auto text-pretty">
+              Um consultor responde pelo pré-contato e, se preferir, leva as amostras até você.
             </p>
             <div className="flex flex-col sm:flex-row flex-wrap justify-center gap-3 lg:gap-4">
-              <ContatoCta className="ds-botao ds-botao-claro w-full sm:w-auto min-h-12">
+              <ContatoCta className="ds-botao ds-botao-cheio w-full sm:w-auto min-h-12">
                 Falar com um consultor
               </ContatoCta>
-              <Link href="/produtos/pfb" className="ds-botao ds-botao-linha w-full sm:w-auto min-h-12">
-                Ver o catálogo
+              <Link href="/produtos" className="ds-botao ds-botao-vazado w-full sm:w-auto min-h-12">
+                Ver as linhas
               </Link>
             </div>
           </Revelar>
 
           {/* Para profissionais */}
-          <div className="mt-14 lg:mt-20 border-t border-white/15 pt-8">
+          <div className="mt-14 lg:mt-20 border-t border-[#0B1F45]/12 pt-8">
             <Revelar className="flex flex-col md:flex-row md:items-baseline md:justify-between gap-2 mb-6">
-              <h3 className="font-serif text-white text-t3 font-normal">Para profissionais</h3>
-              <Link href="/parcerias" className="inline-flex items-center gap-2 min-h-11 text-white/75 hover:text-white text-xs tracking-[0.12em] uppercase font-semibold">
-                Programa de parcerias
-                <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" aria-hidden className="mv-seta"><path d="M5 12h14M12 5l7 7-7 7" /></svg>
+              <h3 className="font-serif text-[#0B1F45] text-t3 font-normal">Para profissionais</h3>
+              <Link href="/parcerias" className="inline-flex items-center gap-2 min-h-11 text-[#0B1F45]/75 hover:text-[#0B1F45] text-xs tracking-[0.12em] uppercase font-semibold">
+                Programa de parcerias {seta}
               </Link>
             </Revelar>
             <ul className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-x-10 gap-y-6">
               {PROFISSIONAIS.map((p, i) => (
                 <Revelar key={p.label} como="li" ordem={i}>
-                  <h4 className="font-serif text-white text-[1.0625rem] font-normal mb-1.5">{p.label}</h4>
-                  <p className="text-white/65 text-legenda leading-relaxed text-pretty">{p.tagline}</p>
+                  <h4 className="font-serif text-[#0B1F45] text-[1.0625rem] font-normal mb-1.5">{p.label}</h4>
+                  <p className="text-[#43474e] text-legenda leading-relaxed text-pretty">{p.tagline}</p>
                 </Revelar>
               ))}
             </ul>
           </div>
 
           {/* Academia Orbital: a formação, sem número de vagas nem data. */}
-          <Revelar className="mt-10 lg:mt-12 border-t border-white/15 pt-6 flex flex-col lg:flex-row lg:items-center lg:justify-between gap-4">
-            <p className="text-white/75 text-corpo text-pretty">
-              <span className="font-serif text-white">Academia Orbital.</span> Formação em instalação do PFB, no padrão Orbital, com certificado.
+          <Revelar className="mt-10 lg:mt-12 border-t border-[#0B1F45]/12 pt-6 flex flex-col lg:flex-row lg:items-center lg:justify-between gap-4">
+            <p className="text-[#43474e] text-corpo text-pretty">
+              <span className="font-serif text-[#0B1F45]">Academia Orbital.</span> Formação em instalação do PFB, no padrão Orbital, com certificado.
             </p>
             <div className="flex flex-wrap gap-x-6 gap-y-2 flex-shrink-0">
-              <Link href="/academia#lista-de-espera" className="inline-flex items-center gap-2 min-h-11 text-white hover:text-white/80 text-xs tracking-[0.12em] uppercase font-semibold">
-                Quero participar
-                <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" aria-hidden className="mv-seta"><path d="M5 12h14M12 5l7 7-7 7" /></svg>
+              <Link href="/academia#lista-de-espera" className="inline-flex items-center gap-2 min-h-11 text-[#0B1F45] text-xs tracking-[0.12em] uppercase font-semibold">
+                Quero participar {seta}
               </Link>
-              <Link href="/academia" className="inline-flex items-center min-h-11 text-white/65 hover:text-white text-xs tracking-[0.12em] uppercase font-semibold">Conhecer a formação</Link>
+              <Link href="/academia" className="inline-flex items-center min-h-11 text-[#0B1F45]/65 hover:text-[#0B1F45] text-xs tracking-[0.12em] uppercase font-semibold">Conhecer a formação</Link>
             </div>
           </Revelar>
         </div>
-      </Capitulo>
+      </section>
 
-      {/* FAQ */}
-      <section className="ds-secao bg-white border-t border-surface-container-high" aria-labelledby="faq-titulo">
+      {/* Perguntas sobre o PFB */}
+      <section className="ds-secao bg-[#F6F5F2]" aria-labelledby="faq-titulo">
         <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: JSON.stringify(faqSchema) }} />
         <div className="ds-wrap">
-          <Revelar>
-            <SecaoCabecalho id="faq-titulo" sobretitulo="Dúvidas frequentes" titulo="Perguntas e respostas" />
-          </Revelar>
-          <div className="max-w-3xl border-t border-surface-container-high">
+          <h2 id="faq-titulo" className="font-serif text-t2 text-[#0B1F45] font-normal tracking-[-0.02em] mb-8">Perguntas sobre o PFB</h2>
+          <div className="max-w-3xl border-t border-[#0B1F45]/12">
             {faqs.map(({ q, a }) => (
-              <details key={q} className="group border-b border-surface-container-high">
+              <details key={q} className="group border-b border-[#0B1F45]/12">
                 <summary className="flex items-center justify-between gap-6 min-h-14 py-4 cursor-pointer list-none [&::-webkit-details-marker]:hidden">
                   <h3 className="font-serif text-primary text-[1.0625rem] lg:text-lg font-normal text-pretty">{q}</h3>
                   <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" aria-hidden className="text-primary/60 flex-shrink-0 transition-transform duration-300 group-open:rotate-45"><path d="M12 5v14M5 12h14" /></svg>
@@ -370,15 +312,11 @@ export default async function Home() {
               </details>
             ))}
           </div>
+          <p className="mt-10 text-on-surface-variant text-legenda italic">
+            Imagens ilustrativas — cores podem variar. Veja o material ao vivo em um showroom parceiro ou peça amostras a um consultor.
+          </p>
         </div>
       </section>
-
-      {/* Aviso */}
-      <div className="bg-background border-t border-surface-container-high py-5 text-center ds-wrap">
-        <p className="text-on-surface-variant text-legenda italic">
-          Imagens ilustrativas — cores podem variar. Veja o material ao vivo em um showroom parceiro ou peça amostras a um consultor.
-        </p>
-      </div>
-    </>
+    </div>
   );
 }
