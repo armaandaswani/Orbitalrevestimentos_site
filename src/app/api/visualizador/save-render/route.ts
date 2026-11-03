@@ -74,7 +74,7 @@ async function maybeSendRenderWhatsapp(
       visualizadorRenderMessage(imgs.map((i) => ({ local: i.local, productName: i.productName, productCode: i.productCode })))
     )
       .split("\n")
-      .filter((l) => !/\/produtos(\?|$)/.test(l.trim()))
+      .filter((l) => !/\/produtos(\/pfb)?(\?|$)/.test(l.trim()))
       .join("\n")
       .trimEnd();
     const caption = `${base}\n${url}`;

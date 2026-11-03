@@ -20,7 +20,9 @@ const QUICK_CHIPS = [
 ];
 
 const PAGE_LABELS: Record<string, string> = {
-  "/produtos":     "Ver o catálogo",
+  "/produtos":     "Ver os produtos",
+  "/produtos/pfb": "Ver o catálogo",
+  "/techstone":    "Conhecer a TechStone",
   "/projetos":     "Ver Projetos",
   "/tecnologia":   "Tecnologia e Manual",
   "/visualizador": "Simular no meu ambiente",

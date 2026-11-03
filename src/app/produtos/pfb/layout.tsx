@@ -19,12 +19,12 @@ export const metadata: Metadata = {
     "comprar revestimento Manaus",
     "loja de revestimentos Manaus",
   ],
-  alternates: { canonical: "https://orbitalrevestimentos.com.br/produtos" },
+  alternates: { canonical: "https://orbitalrevestimentos.com.br/produtos/pfb" },
   openGraph: {
     title: "Revestimentos PFB — 3 Linhas, 15 Acabamentos em Manaus",
     description:
       "Catálogo completo Orbital: Classic, Brilliance e Elegance. 15 acabamentos para paredes e forros, pronta-entrega em Manaus.",
-    url: "https://orbitalrevestimentos.com.br/produtos",
+    url: "https://orbitalrevestimentos.com.br/produtos/pfb",
   },
 };
 
@@ -72,6 +72,7 @@ const breadcrumbSchema = {
   itemListElement: [
     { "@type": "ListItem", position: 1, name: "Home", item: "https://orbitalrevestimentos.com.br" },
     { "@type": "ListItem", position: 2, name: "Produtos", item: "https://orbitalrevestimentos.com.br/produtos" },
+    { "@type": "ListItem", position: 3, name: "Painel Flexível em Fibra de Bambu", item: "https://orbitalrevestimentos.com.br/produtos/pfb" },
   ],
 };
 

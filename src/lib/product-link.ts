@@ -18,7 +18,7 @@ export function normalizeProductCode(code: string): string {
 
 /** Caminho relativo do modelo dentro do catálogo. */
 export function productPath(code: string): string {
-  return `/produtos?modelo=${encodeURIComponent(normalizeProductCode(code))}`;
+  return `/produtos/pfb?modelo=${encodeURIComponent(normalizeProductCode(code))}`;
 }
 
 /** Endereço absoluto — é o que vai dentro do QR Code e no "copiar link". */

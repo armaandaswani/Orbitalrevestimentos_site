@@ -4,6 +4,7 @@ import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { useEffect, useRef, useState } from "react";
 import ContatoCta from "@/components/ContatoCta";
+import { LINHAS, SITUACAO_ROTULO } from "@/lib/linhas";
 
 const CATALOGUE_URL =
   "https://drive.google.com/file/d/1zhm5MgKGSDRThqk8FqqwfX-WijI7K-iD/view?usp=drive_link";
@@ -35,6 +36,8 @@ export default function Navbar() {
   const [oculto, setOculto] = useState(false);
   const botao = useRef<HTMLButtonElement>(null);
   const ativo = (href: string) => pathname === href || pathname.startsWith(`${href}/`);
+  // Páginas de linha fora de /produtos (ex.: /techstone) também acendem "Produtos".
+  const emLinha = LINHAS.some((l) => l.href && !l.href.startsWith("/produtos") && ativo(l.href));
 
   // Recolhe ao descer, volta ao subir. Escreve estado só quando muda.
   useEffect(() => {
@@ -83,12 +86,41 @@ export default function Navbar() {
 
         {/* Navegação — terço central (computador) */}
         <nav aria-label="Principal" className="hidden xl:flex items-center justify-center gap-6 min-[1400px]:gap-9">
-          {navLinks.map(({ href, label }) => (
-            <Link key={label} href={href} aria-current={ativo(href) ? "page" : undefined}
-              className={`${link} inline-flex items-center min-h-11 border-b ${ativo(href) ? "text-[#0B1F45] border-[#0B1F45]" : "text-[#74777f] border-transparent hover:text-[#0B1F45]"}`}>
-              {label}
-            </Link>
-          ))}
+          {navLinks.map(({ href, label }) => {
+            const item = (
+              <Link key={label} href={href} aria-current={ativo(href) ? "page" : undefined}
+                className={`${link} inline-flex items-center min-h-11 border-b ${ativo(href) || (href === "/produtos" && emLinha) ? "text-[#0B1F45] border-[#0B1F45]" : "text-[#74777f] border-transparent hover:text-[#0B1F45]"}`}>
+                {label}
+              </Link>
+            );
+            if (href !== "/produtos") return item;
+            // Produtos abre as linhas ao passar o mouse ou focar pelo teclado;
+            // o clique continua levando à vitrine.
+            return (
+              <div key={label} className="relative group">
+                {item}
+                <div className="absolute left-1/2 top-full -translate-x-1/2 pt-3 invisible opacity-0 group-hover:visible group-hover:opacity-100 group-focus-within:visible group-focus-within:opacity-100 transition-opacity duration-150">
+                  <ul className="w-72 bg-white border border-[#e8e8e8] py-2">
+                    {LINHAS.map((l) => (
+                      <li key={l.slug}>
+                        {l.href ? (
+                          <Link href={l.href} className="flex items-baseline justify-between gap-4 px-5 py-3 hover:bg-[#F6F5F2]">
+                            <span className="font-serif text-[#0B1F45]">{l.curto}</span>
+                            <span className="text-sobre text-[#74777f]">{SITUACAO_ROTULO[l.situacao]}</span>
+                          </Link>
+                        ) : (
+                          <span className="flex items-baseline justify-between gap-4 px-5 py-3">
+                            <span className="font-serif text-[#0B1F45]/60">{l.curto}</span>
+                            <span className="text-sobre text-[#74777f]">{SITUACAO_ROTULO[l.situacao]}</span>
+                          </span>
+                        )}
+                      </li>
+                    ))}
+                  </ul>
+                </div>
+              </div>
+            );
+          })}
         </nav>
 
         {/* Ações — terço direito (computador) */}
@@ -127,11 +159,21 @@ export default function Navbar() {
         className="xl:hidden bg-white border-t border-[#e8e8e8] max-h-[calc(100dvh-5rem)] overflow-y-auto ds-folha-rola">
         <nav aria-label="Principal" className="px-4 sm:px-8 py-3 flex flex-col">
           {[{ href: "/", label: "Início" }, ...navLinks, { href: "/parceiro", label: "Portal Parceiro" }].map(({ href, label }) => (
-            <Link key={label} href={href} onClick={() => setMobileOpen(false)}
-              aria-current={href === "/" ? (pathname === "/" ? "page" : undefined) : ativo(href) ? "page" : undefined}
-              className={`${link} flex items-center min-h-12 border-b border-[#f0f0f0] ${(href === "/" ? pathname === "/" : ativo(href)) ? "text-[#0B1F45]" : "text-[#43474e]"}`}>
-              {label}
-            </Link>
+            <div key={label}>
+              <Link href={href} onClick={() => setMobileOpen(false)}
+                aria-current={href === "/" ? (pathname === "/" ? "page" : undefined) : ativo(href) ? "page" : undefined}
+                className={`${link} flex items-center min-h-12 border-b border-[#f0f0f0] ${(href === "/" ? pathname === "/" : ativo(href)) ? "text-[#0B1F45]" : "text-[#43474e]"}`}>
+                {label}
+              </Link>
+              {href === "/produtos" && LINHAS.filter((l) => l.href).map((l) => (
+                <Link key={l.slug} href={l.href} onClick={() => setMobileOpen(false)}
+                  aria-current={ativo(l.href) ? "page" : undefined}
+                  className={`flex items-center justify-between gap-4 min-h-12 pl-4 border-b border-[#f0f0f0] font-serif ${ativo(l.href) ? "text-[#0B1F45]" : "text-[#43474e]"}`}>
+                  {l.curto}
+                  <span className="font-sans text-sobre text-[#74777f]">{SITUACAO_ROTULO[l.situacao]}</span>
+                </Link>
+              ))}
+            </div>
           ))}
         </nav>
         <div className="px-4 sm:px-8 pb-5 flex flex-col sm:flex-row gap-2">

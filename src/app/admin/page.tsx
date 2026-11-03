@@ -17,6 +17,7 @@ import ModelosPicker from "./projetos/ModelosPicker";
 import { camposDosModelos, modelosDoProjeto } from "@/lib/projeto-modelos";
 import AtendimentoTab from "./AtendimentoTab";
 import ContatosTab from "./ContatosTab";
+import ListaEsperaTab from "./ListaEsperaTab";
 import AniversariosTab from "./AniversariosTab";
 import OrganizacaoIATab from "./OrganizacaoIATab";
 import SquareCropper from "@/components/SquareCropper";
@@ -5203,6 +5204,7 @@ export default function AdminPage() {
         {tab === "academia" && authed && <AcademiaTab />}
         {tab === "atendimento" && authed && <AtendimentoTab />}
         {tab === "contatos" && authed && <ContatosTab />}
+        {tab === "espera" && authed && <ListaEsperaTab />}
         {tab === "aniversarios" && authed && <AniversariosTab />}
         {tab === "ia" && authed && <OrganizacaoIATab />}
 

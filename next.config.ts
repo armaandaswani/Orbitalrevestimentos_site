@@ -72,6 +72,10 @@ const nextConfig: NextConfig = {
     return [
       { source: "/guias/mdf-manaus", destination: "/tecnologia", permanent: true },
       { source: "/guias/:slug*", destination: "/produtos", permanent: true },
+      // O catálogo do PFB saiu de /produtos (agora a vitrine das linhas) para
+      // /produtos/pfb. QR Codes já impressos e links compartilhados apontam
+      // para /produtos?modelo=orb-003: a query segue junto e abre o modelo.
+      { source: "/produtos", has: [{ type: "query", key: "modelo" }], destination: "/produtos/pfb", permanent: false },
     ];
   },
   experimental: {
