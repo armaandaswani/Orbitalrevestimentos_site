@@ -31,17 +31,17 @@ const breadcrumbSchema = {
  */
 export default function ProdutosPage() {
   return (
-    <div className="pt-20 bg-[#F6F5F2]">
+    <div className="escala-contida pt-20 bg-[#F6F5F2]">
       <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: JSON.stringify(breadcrumbSchema) }} />
 
-      <header className="ds-wrap pt-14 pb-10 sm:pt-20 sm:pb-14">
+      <header className="ds-wrap pt-10 pb-8 sm:pt-20 sm:pb-14">
         <h1 className="font-serif text-t1 text-[#0B1F45] max-w-[18ch]">Materiais pensados para o clima de Manaus.</h1>
         <p className="mt-4 text-lead text-[#43474e] max-w-[52ch]">
           Três linhas, cada uma com o seu papel no projeto: das paredes internas à fachada.
         </p>
       </header>
 
-      <ul className="ds-wrap grid gap-x-6 gap-y-14 pb-24 md:grid-cols-3">
+      <ul className="ds-wrap grid gap-x-6 gap-y-12 pb-20 md:grid-cols-3 md:gap-y-14 md:pb-24">
         {LINHAS.map((linha) => (
           <li key={linha.slug}>
             <CartaoLinha linha={linha} />
@@ -56,7 +56,7 @@ function CartaoLinha({ linha }: { linha: LinhaOrbital }) {
   const prontaEntrega = linha.situacao === "pronta-entrega";
   const corpo = (
     <>
-      <div className="relative aspect-[4/5] overflow-hidden bg-[#1F1D1A]">
+      <div className="relative aspect-[3/2] md:aspect-[4/5] overflow-hidden bg-[#1F1D1A]">
         {linha.imagem ? (
           <Image
             src={linha.imagem.src}
@@ -74,7 +74,7 @@ function CartaoLinha({ linha }: { linha: LinhaOrbital }) {
       {linha.imagem && linha.imagemGerada && (
         <p className="mt-2 text-sobre text-[#74777f]">Imagem gerada por IA.</p>
       )}
-      <p className="mt-5 flex items-center gap-2 text-legenda text-[#43474e]">
+      <p className="mt-4 md:mt-5 flex items-center gap-2 text-legenda text-[#43474e]">
         <span aria-hidden className={`inline-block w-1.5 h-1.5 rounded-full ${prontaEntrega ? "bg-[#36A35C]" : "bg-[#B79B6C]"}`} />
         {SITUACAO_ROTULO[linha.situacao]}
       </p>

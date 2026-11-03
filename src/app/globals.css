@@ -369,6 +369,24 @@ html:has(header[data-site][data-oculto="1"]) .ds-sob-cabecalho { top: 0; }
 /* Folhas por cima da página: a rolagem fica dentro delas. */
 .ds-folha-rola { overscroll-behavior: contain; -webkit-overflow-scrolling: touch; }
 
+/* Escala de texto mais contida no celular nas páginas das linhas (/produtos e
+   /techstone). Os títulos de leitura de computador ficavam 2 a 4 vezes o
+   corpo e tomavam a tela; aqui ficam perto de 1,6×. O resto do site não muda. */
+@media (max-width: 639px) {
+  .escala-contida {
+    --text-display: 1.875rem;
+    --text-display--line-height: 1.12;
+    --text-t1: 1.625rem;
+    --text-t1--line-height: 1.18;
+    --text-t2: 1.375rem;
+    --text-t2--line-height: 1.2;
+    --text-t3: 1.0625rem;
+    --text-lead: 1rem;
+    --text-lead--line-height: 1.55;
+  }
+  .escala-contida .ds-secao { padding-block: 3rem; }
+}
+
 /* ── TechStone: apresentação guiada pela rolagem ──────────────────────────
    Cada seção alta recebe --p (0 → 1) do useProgresso; tudo aqui é calc() em
    cima dele, só transform/opacity/clip-path. Com movimento reduzido ficam só

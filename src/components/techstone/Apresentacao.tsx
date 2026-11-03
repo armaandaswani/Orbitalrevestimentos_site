@@ -24,14 +24,14 @@ export function Abertura({ entrarNaLista }: { entrarNaLista: () => void }) {
         </div>
 
         <div className="ts-abertura-texto absolute inset-x-0 bottom-0 ds-wrap pb-[max(3.5rem,9svh)]">
-          <h1 id="ts-titulo" className="font-serif text-white leading-[0.92] tracking-[-0.02em] text-[clamp(4rem,2rem+10vw,11rem)]">
+          <h1 id="ts-titulo" className="font-serif text-white leading-[0.92] tracking-[-0.02em] text-[clamp(3rem,1.6rem+8vw,4rem)] sm:text-[clamp(4rem,2rem+10vw,11rem)]">
             TechStone
           </h1>
           <p className="mt-5 text-white/90 text-lead max-w-[44ch]">
-            Pedra flexível de {ESPESSURA_MM} mm. Feita para o sol do Equador.
+            Pedra flexível de {ESPESSURA_MM}&nbsp;mm. Feita para o sol do Equador.
           </p>
           <div className="mt-8 flex flex-col sm:flex-row sm:items-center gap-4 sm:gap-6">
-            <button type="button" onClick={entrarNaLista} className="ds-botao ds-botao-claro min-h-12 w-full sm:w-auto">Entrar na lista de espera</button>
+            <button type="button" onClick={entrarNaLista} className="ds-botao ds-botao-claro min-h-12 self-start">Entrar na lista de espera</button>
             <p className="text-white/75 text-legenda">Chega em breve a Manaus, em quantidade limitada.</p>
           </div>
           <p className="mt-6 text-sobre text-white/55 max-w-[60ch]">{AVISO_CENAS}</p>
@@ -160,7 +160,7 @@ export function Formatos() {
             <p className="mt-4 text-corpo text-[#4A4540] max-w-[40ch]">
               <strong className="font-semibold text-[#22201C]">1200 × 600 mm</strong> para detalhes, nichos e paginações.{" "}
               <strong className="font-semibold text-[#22201C]">2400 × 1200 mm</strong> para panos contínuos, com menos juntas.
-              Os dois com {ESPESSURA_MM} mm de espessura.
+              Os dois com {ESPESSURA_MM}&nbsp;mm de espessura.
             </p>
           </div>
 

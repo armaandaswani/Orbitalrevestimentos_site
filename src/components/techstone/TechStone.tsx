@@ -61,12 +61,12 @@ export default function TechStone() {
   const fecharEspera = useCallback(() => setEspera((e) => ({ ...e, aberto: false })), []);
 
   return (
-    <div className="bg-[#EFEBE4]">
+    <div className="escala-contida bg-[#EFEBE4]">
       <Abertura entrarNaLista={() => abrirEspera()} />
 
       <section aria-labelledby="ts-intro" className="ds-wrap ds-secao">
         <p id="ts-intro" className="font-serif text-t1 text-[#22201C] max-w-[24ch]">
-          Pedra numa placa de {ESPESSURA_MM} mm, que dobra para acompanhar curvas, do interior à fachada.
+          Pedra numa placa de {ESPESSURA_MM}&nbsp;mm, que dobra para acompanhar curvas, do interior à fachada.
         </p>
       </section>
 
@@ -75,7 +75,7 @@ export default function TechStone() {
       {/* Foto real de aplicação (não gerada): a placa acompanha uma curva contínua.
           Sem menção ao teto até a ficha técnica chegar. Retrato de 960 px: metade da tela no computador. */}
       <section aria-labelledby="ts-curva-real" className="grid lg:grid-cols-2 bg-[#EFEBE4]">
-        <div className="relative aspect-[3/4] lg:aspect-auto lg:min-h-[100svh] overflow-hidden bg-[#22201C]">
+        <div className="relative aspect-[4/5] lg:aspect-auto lg:min-h-[100svh] overflow-hidden bg-[#22201C]">
           {/* eslint-disable-next-line @next/next/no-img-element */}
           <img
             src="/images/techstone/aplicacao-parede-teto-v1.webp"
@@ -85,7 +85,7 @@ export default function TechStone() {
             className="absolute inset-0 w-full h-full object-cover"
           />
         </div>
-        <div className="ds-wrap lg:max-w-none lg:px-[clamp(2rem,5vw,6rem)] py-16 lg:py-0 flex flex-col justify-center">
+        <div className="ds-wrap lg:max-w-none lg:px-[clamp(2rem,5vw,6rem)] py-12 lg:py-0 flex flex-col justify-center">
           <h2 id="ts-curva-real" className="font-serif text-t1 text-[#22201C] max-w-[16ch] text-balance">Uma curva só, do começo ao fim.</h2>
           <p className="mt-5 text-lead text-[#4A4540] max-w-[36ch]">
             A placa acompanha a curva sem quebrar o desenho da pedra.
@@ -112,11 +112,11 @@ export default function TechStone() {
       </section>
 
       <section aria-labelledby="ts-espessura" className="grid lg:grid-cols-2 bg-[#EFEBE4]">
-        <div className="relative aspect-[4/5] lg:aspect-auto lg:min-h-[100svh] overflow-hidden">
+        <div className="relative aspect-square lg:aspect-auto lg:min-h-[100svh] overflow-hidden">
           <Cena nome="espessura" alt="Placa fina curvada vista pela borda, gerada por IA a partir da textura TechStone Travertino Romano Clássico" />
         </div>
-        <div className="ds-wrap lg:max-w-none lg:px-[clamp(2rem,5vw,6rem)] py-16 lg:py-0 flex flex-col justify-center">
-          <h2 id="ts-espessura" className="font-serif text-[#22201C] leading-none tracking-[-0.02em] text-[clamp(5rem,3rem+8vw,10rem)]">
+        <div className="ds-wrap lg:max-w-none lg:px-[clamp(2rem,5vw,6rem)] py-12 lg:py-0 flex flex-col justify-center">
+          <h2 id="ts-espessura" className="font-serif text-[#22201C] leading-none tracking-[-0.02em] text-[clamp(3.5rem,2rem+8vw,5rem)] sm:text-[clamp(5rem,3rem+8vw,10rem)]">
             {ESPESSURA_MM}<span className="text-[0.4em] align-baseline ml-2">mm</span>
           </h2>
           <p className="mt-6 text-lead text-[#4A4540] max-w-[34ch]">
@@ -138,7 +138,7 @@ export default function TechStone() {
               A primeira remessa chega a Manaus em quantidade limitada. Quem está na lista é avisado antes, com o modelo que escolheu.
             </p>
           </div>
-          <button type="button" onClick={() => abrirEspera()} className="ds-botao ds-botao-claro min-h-14 px-10 w-full sm:w-auto shrink-0">
+          <button type="button" onClick={() => abrirEspera()} className="ds-botao ds-botao-claro min-h-12 px-8 self-start sm:min-h-14 sm:px-10 shrink-0">
             Entrar na lista de espera
           </button>
         </div>
