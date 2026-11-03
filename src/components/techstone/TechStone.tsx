@@ -16,18 +16,20 @@ const CATALOGO_ESPERA: ModeloEspera[] = MODELOS_TECHSTONE.map((m) => ({
 
 /**
  * Página da TechStone (pré-lançamento). Ordem: abertura → onde vai (sequência
- * de quadros) → feita para o Equador → espessura → formatos → modelos com
+ * de quadros) → foto real → desenvolvida para a Amazônia → espessura → formatos → modelos com
  * textura → lista de espera → perguntas.
  *
  * Só afirmações que a Orbital já sustenta: espessura, formatos, modelos, uso
- * em fachada e interior, curvas e a composição pensada para a região. Números
- * de UV, água ou fogo entram quando a ficha técnica chegar com laudo.
+ * em fachada e interior, curvas e o material adaptado ao clima da Amazônia. Números
+ * de UV, água, calor ou fogo entram quando a ficha técnica chegar com laudo.
  */
 
-const CLIMA = [
-  { titulo: "Sol direto", texto: "Na linha do Equador o sol bate forte e alto o ano inteiro, e a composição da TechStone foi pensada para ele." },
-  { titulo: "Chuva forte", texto: "A placa foi adaptada para fachadas que pegam as chuvas fortes da região." },
-  { titulo: "Umidade", texto: "O ar fica úmido boa parte do ano, dentro e fora de casa, e a composição levou isso em conta." },
+/** As preocupações do dono ao trazer a TechStone (03/11/2026). Sem números até a ficha técnica. */
+const PREOCUPACOES = [
+  { titulo: "Sol amazônico", texto: "Perto da linha equatorial o sol bate forte e alto o ano inteiro. O material foi adaptado a essa incidência." },
+  { titulo: "Umidade intensa", texto: "O ar fica úmido boa parte do ano, dentro e fora de casa, e a composição levou isso em conta." },
+  { titulo: "Calor intenso", texto: "Fachada aqui passa o dia no calor forte. A placa foi pensada para esse uso." },
+  { titulo: "Ciclos térmicos", texto: "A temperatura sobe e desce todo dia, em ciclos extremos e variados. Foi outra das nossas preocupações." },
 ];
 
 const PERGUNTAS = [
@@ -94,16 +96,18 @@ export default function TechStone() {
         </div>
       </section>
 
-      <section aria-labelledby="ts-equador" className="bg-[#22201C] text-white ds-secao">
+      <section aria-labelledby="ts-amazonia" className="bg-[#22201C] text-white ds-secao">
         <div className="ds-wrap">
-          <h2 id="ts-equador" className="font-serif text-t1 max-w-[20ch]">Feita para a linha do Equador.</h2>
+          <p className="text-sobre uppercase tracking-[0.12em] text-[#C9B48E]">Nossas preocupações</p>
+          <h2 id="ts-amazonia" className="mt-4 font-serif text-t1 max-w-[20ch]">Desenvolvida para a Amazônia.</h2>
           <p className="mt-5 text-lead text-white/75 max-w-[50ch]">
-            Somos de Manaus e trouxemos uma placa com a composição pensada para o clima daqui.
+            Somos de Manaus e sabemos o que o clima daqui faz com um revestimento. Foi isso que olhamos ao trazer a TechStone.
           </p>
-          <ul className="mt-14 grid gap-10 md:grid-cols-3 md:gap-8">
-            {CLIMA.map((c) => (
+          <ul className="mt-12 grid gap-10 sm:grid-cols-2 sm:gap-x-8 lg:grid-cols-4 lg:mt-14">
+            {PREOCUPACOES.map((c, i) => (
               <li key={c.titulo} className="border-t border-white/20 pt-6">
-                <h3 className="font-serif text-t3">{c.titulo}</h3>
+                <p aria-hidden className="text-sobre text-white/45 tabular-nums">{String(i + 1).padStart(2, "0")}</p>
+                <h3 className="mt-2 font-serif text-t3">{c.titulo}</h3>
                 <p className="mt-3 text-corpo text-white/70 max-w-[36ch]">{c.texto}</p>
               </li>
             ))}

@@ -36,7 +36,7 @@ export const LINHAS: LinhaOrbital[] = [
     artigo: "a",
     curto: "TechStone",
     situacao: "em-breve",
-    resumo: "Pedra flexível de 3,5 mm para fachadas e interiores, com composição pensada para o sol do Equador.",
+    resumo: "Pedra flexível de 3,5 mm para fachadas e interiores, desenvolvida para a Amazônia.",
     href: "/techstone",
     imagem: { src: "/images/techstone/cenas/curva-v3-mobile.webp", alt: "Parede curva em travertino, gerada por IA a partir da textura TechStone Travertino Navona Clássico" },
     imagemGerada: true,

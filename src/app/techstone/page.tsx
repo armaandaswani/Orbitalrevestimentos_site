@@ -4,7 +4,7 @@ import TechStone from "@/components/techstone/TechStone";
 export const metadata: Metadata = {
   title: "TechStone: pedra flexível de 3,5 mm em Manaus",
   description:
-    "TechStone, a nova linha da Orbital: pedra flexível de 3,5 mm com composição pensada para o sol, a chuva e a umidade de Manaus. Fachadas, interiores e curvas, em 1200 × 600 e 2400 × 1200 mm. Entre na lista de espera.",
+    "TechStone, a nova linha da Orbital: pedra flexível de 3,5 mm desenvolvida para a Amazônia, adaptada ao sol, à umidade, ao calor e aos ciclos térmicos da região. Fachadas, interiores e curvas, em 1200 × 600 e 2400 × 1200 mm. Entre na lista de espera.",
   keywords: [
     "pedra flexível Manaus",
     "revestimento de fachada Manaus",
@@ -15,7 +15,7 @@ export const metadata: Metadata = {
   ],
   alternates: { canonical: "https://orbitalrevestimentos.com.br/techstone" },
   openGraph: {
-    title: "TechStone: pedra flexível de 3,5 mm, feita para o sol do Equador",
+    title: "TechStone: pedra flexível de 3,5 mm, desenvolvida para a Amazônia",
     description: "Fachadas, interiores e curvas. Chega em breve a Manaus: entre na lista de espera.",
     url: "https://orbitalrevestimentos.com.br/techstone",
     images: [{ url: "/images/techstone/cenas/curva-v3-desktop.webp", width: 1678, height: 944 }],

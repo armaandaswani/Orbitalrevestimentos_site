@@ -28,7 +28,7 @@ export function Abertura({ entrarNaLista }: { entrarNaLista: () => void }) {
             TechStone
           </h1>
           <p className="mt-5 text-white/90 text-lead max-w-[44ch]">
-            Pedra flexível de {ESPESSURA_MM}&nbsp;mm. Feita para o sol do Equador.
+            Pedra flexível de {ESPESSURA_MM}&nbsp;mm, desenvolvida para a Amazônia.
           </p>
           <div className="mt-8 flex flex-col sm:flex-row sm:items-center gap-4 sm:gap-6">
             <button type="button" onClick={entrarNaLista} className="ds-botao ds-botao-claro min-h-12 self-start">Entrar na lista de espera</button>
@@ -56,7 +56,7 @@ const QUADROS = [
     cena: "fachada",
     alt: "Fachada de edifício em travertino bege, gerada por IA a partir da textura TechStone Travertino Romano Clássico, sob sol a pino com jardim tropical",
     titulo: "Vai para a fachada.",
-    texto: "A placa foi adaptada para o uso em fachada, sob o sol e a chuva de Manaus.",
+    texto: "A placa foi adaptada para o uso em fachada, sob o sol e o calor da Amazônia.",
   },
   {
     cena: "interior",
