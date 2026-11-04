@@ -3,6 +3,7 @@ import Image from "next/image";
 import Link from "next/link";
 import ContatoCta from "@/components/ContatoCta";
 import VisaoDoArquiteto from "@/components/VisaoDoArquiteto";
+import HeroAssenta from "@/components/home/HeroAssenta";
 import Manifesto from "@/components/home/Manifesto";
 import OQueFazemos from "@/components/home/OQueFazemos";
 import PorQue from "@/components/home/PorQue";
@@ -15,7 +16,7 @@ import { REVENDA_RESERVA, nomeLugar, porDestaque, type Projeto } from "@/lib/pro
 
 /**
  * Home da marca, não de um produto só. A ordem conta a Orbital: abertura com
- * a convicção → quem somos (frase que acende na rolagem) → o que fazemos (da
+ * o slogan da marca → quem somos (frase que acende na rolagem) → o que fazemos (da
  * fábrica até a obra) → por que fazemos → nossas soluções (seletor das
  * linhas) → arquitetos → obras e onde ver → contato → perguntas.
  *
@@ -138,32 +139,31 @@ export default async function Home() {
 
   return (
     <div className="escala-contida">
-      {/* ── Abertura: a convicção da marca ─────────────────────────────────── */}
+      {/* ── Abertura: o slogan da marca, calma e sem enfeite ───────────────── */}
       <section className="relative h-[100svh] min-h-[34rem] flex items-end overflow-hidden bg-[#0B1F45] ds-escuro">
-        <div className="absolute inset-0 mv-parallax-topo will-change-transform">
-          <Image
-            src="/images/catalogue/hero-cover.png"
-            alt="Ambiente com paredes revestidas em Painel Flexível em Fibra de Bambu Orbital, em Manaus"
-            fill sizes="100vw" priority fetchPriority="high"
-            className="object-cover object-center"
-          />
+        <div className="absolute inset-0 mv-parallax-topo">
+          <HeroAssenta>
+            <Image
+              src="/images/catalogue/hero-cover.png"
+              alt="Ambiente com paredes revestidas em Painel Flexível em Fibra de Bambu Orbital, em Manaus"
+              fill sizes="100vw" priority fetchPriority="high"
+              className="object-cover object-center"
+            />
+          </HeroAssenta>
         </div>
         <div className="absolute inset-0 bg-gradient-to-t from-[#0B1F45]/90 via-[#0B1F45]/30 to-[#0B1F45]/10" aria-hidden />
         <div className="relative z-10 w-full ds-wrap pt-24 pb-[clamp(3rem,9vh,6.5rem)] mv-esmaece-topo">
           <h1 className="font-serif text-white text-display font-normal tracking-[-0.025em] max-w-[20ch] text-balance">
             <span className="sr-only">Orbital Revestimentos — revestimentos para parede, forro e fachada em Manaus. </span>
-            A Amazônia merece revestimentos feitos para ela.
+            {ASSINATURA}
           </h1>
           <p className="mt-5 text-white/80 text-lead max-w-[40ch] text-pretty">
-            A Orbital é uma marca amazônica de revestimentos inovadores. {ASSINATURA}
+            Orbital Revestimentos · Manaus
           </p>
-          <div className="mt-8 flex flex-col sm:flex-row gap-3">
+          <div className="mt-8">
             <Link href="#solucoes" className="ds-botao ds-botao-claro w-full sm:w-auto min-h-12">
               Conhecer as soluções
             </Link>
-            <ContatoCta className="ds-botao ds-botao-linha w-full sm:w-auto min-h-12">
-              Falar com um consultor
-            </ContatoCta>
           </div>
         </div>
       </section>

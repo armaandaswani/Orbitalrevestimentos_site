@@ -314,6 +314,15 @@ html { scroll-padding-top: 5rem; }
   @media (prefers-reduced-motion: no-preference) { animation: mv-veu var(--mv-rapido) ease-out both; }
 }
 
+/* Foto do hero se acomodando (1,04 → 1) ao abrir a página. HeroAssenta a segura
+   em 1,04 (data-assenta="espera") enquanto a intro da órbita cobre a tela. Fica
+   num elemento próprio, dentro do que tem o parallax, para os dois não brigarem. */
+@keyframes mv-assenta { from { transform: scale(1.04); } to { transform: none; } }
+@media (prefers-reduced-motion: no-preference) {
+  .mv-assenta { animation: mv-assenta var(--mv-cinema) var(--mv-chegada) both; }
+  .mv-assenta[data-assenta="espera"] { animation: none; transform: scale(1.04); }
+}
+
 @media (prefers-reduced-motion: no-preference) {
   @supports (animation-timeline: view()) {
     /* Entra subindo enquanto atravessa o primeiro terço da tela. --mv-i escalona vizinhos. */

@@ -40,8 +40,8 @@ export default function PorQue() {
     <section aria-labelledby="por-que" className="ds-secao bg-white">
       <div className="ds-wrap grid gap-8 lg:grid-cols-[minmax(0,1fr)_minmax(0,1.05fr)] lg:gap-16 lg:items-center">
         <div>
-          <h2 id="por-que" className="font-serif text-t1 text-[#0B1F45] font-normal tracking-[-0.02em] max-w-[16ch] text-balance">
-            Por que fazemos isso.
+          <h2 id="por-que" className="font-serif text-t1 text-[#0B1F45] font-normal tracking-[-0.02em] max-w-[22ch] text-balance">
+            A Amazônia merece revestimentos feitos para ela.
           </h2>
           <p className="mt-4 text-lead text-[#43474e] max-w-[44ch] text-pretty">
             Aqui o clima é quente e úmido o ano inteiro, e a mão de obra tem a sua realidade. Então escolhemos materiais que aguentam o nosso clima e que as equipes daqui conseguem executar bem.
