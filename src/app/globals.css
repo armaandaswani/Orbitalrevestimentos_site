@@ -927,3 +927,94 @@ html[data-mv-nivel="leve"] .ts-galeria-foto { transform: none !important; }
 @media (prefers-reduced-motion: reduce) {
   .hm-palavra, .hm-manifesto-link { opacity: 1; }
 }
+
+/* ── Home: jornada da fábrica até a obra (components/home/Jornada) ────────
+   O componente escreve na seção, a cada quadro do relógio: --jr-passo e
+   --jr-p (etapa e fração dela, para os segmentos), --jr-rota (fração da rota
+   desenhada, 0 → 1), --jr-d (posição do ponto, % do comprimento) e
+   --jr-brilho (opacidade do traço). --jr-inv é a escala inversa do mapa:
+   pontos e paradas têm o mesmo tamanho em px em qualquer largura. Só
+   stroke-dashoffset, offset-distance, transform e opacity se movem.
+   Os traços com pathLength não usam vector-effect: non-scaling-stroke (o
+   Chrome aplicaria o tracejado na escala da tela e o traço correria na
+   frente do ponto); a espessura fixa em px vem de --jr-inv. */
+.jr-grade { touch-action: pan-y pinch-zoom; }
+.jr-terra { fill: rgba(255, 255, 255, 0.04); }
+.jr-costa {
+  fill: none; stroke: rgba(255, 255, 255, 0.34); stroke-linejoin: round;
+  stroke-width: calc(1px * var(--jr-inv, 1)); stroke-dasharray: 1 1; stroke-dashoffset: 0;
+}
+.jr-prevista {
+  fill: none; stroke: rgba(255, 255, 255, 0.34); stroke-width: 1.5; stroke-linecap: round;
+  stroke-dasharray: 0 6; vector-effect: non-scaling-stroke;
+}
+.jr-viagem { opacity: var(--jr-brilho, 0); }
+.jr-traco {
+  fill: none; stroke: #fff; stroke-width: calc(1.5px * var(--jr-inv, 1));
+  stroke-dasharray: 1 1;
+  stroke-dashoffset: calc(1 - clamp(0, var(--jr-rota, 0) * 6 - var(--k, 0), 1));
+}
+.jr-parada-ponto, .jr-parada-halo, .jr-ponto circle {
+  transform-box: fill-box; transform-origin: center; transform: scale(var(--jr-inv, 1));
+}
+.jr-parada-ponto {
+  fill: #0B1F45; stroke: rgba(255, 255, 255, 0.55); stroke-width: 1; vector-effect: non-scaling-stroke;
+  transition: fill var(--mv-base) var(--mv-chegada), stroke var(--mv-base) var(--mv-chegada);
+}
+.jr-parada[data-alcancado] .jr-parada-ponto { fill: #fff; stroke: #fff; }
+/* Anel da parada atual: assenta em volta dela quando o ponto chega, e fica. */
+.jr-parada-halo {
+  fill: none; stroke: #fff; stroke-width: 1; vector-effect: non-scaling-stroke;
+  opacity: 0; transform: scale(calc(var(--jr-inv, 1) * 0.5));
+  transition: opacity var(--mv-base) var(--mv-chegada), transform var(--mv-base) var(--mv-chegada);
+}
+.jr-parada[data-atual][data-alcancado] .jr-parada-halo {
+  opacity: 0.5; transform: scale(var(--jr-inv, 1));
+  transition-duration: var(--mv-lento);
+}
+.jr-ponto { offset-distance: var(--jr-d, 0%); offset-rotate: 0deg; opacity: var(--jr-brilho, 0); }
+.jr-ponto-nucleo { fill: #fff; }
+.jr-ponto-luz { fill: #fff; opacity: 0.16; }
+@supports not (offset-path: path("M 0 0")) { .jr-ponto { display: none; } }
+/* Halo navy: a costa que cruza o rótulo some atrás das letras (prática de cartografia). */
+.jr-rotulo { pointer-events: none; text-shadow: 0 0 1px #0B1F45, 0 0 2px #0B1F45, 0 0 3px #0B1F45, 0 0 5px #0B1F45, 0 0 9px #0B1F45; }
+
+/* Costas que se desenham na primeira entrada (data-jr-pronto só existe com JS). */
+.jr[data-jr-pronto]:not([data-jr-visto]) .jr-costa { stroke-dashoffset: 1; }
+.jr[data-jr-pronto]:not([data-jr-visto]) .jr-terra { opacity: 0; }
+.jr[data-jr-visto] .jr-costa { transition: stroke-dashoffset var(--mv-cinema) var(--mv-chegada); }
+.jr[data-jr-visto] .jr-terra { transition: opacity var(--mv-cinema) var(--mv-chegada) calc(var(--mv-base) * 0.6); }
+
+/* Segmentos: cheios até a etapa atual, a atual enche com --jr-p. */
+.jr-enche { transform: scaleX(clamp(0, var(--jr-passo, 0) + var(--jr-p, 0) - var(--i, 0), 1)); }
+
+/* Uma etapa por vez: a que sai apaga no lugar, a que entra sobe 8 px em fusão. */
+.jr-etapa {
+  align-self: end; opacity: 0; visibility: hidden;
+  transition: opacity calc(var(--mv-base) * 0.6) var(--mv-chegada), visibility 0s linear calc(var(--mv-base) * 0.6);
+}
+.jr-etapa[data-ativa] { opacity: 1; visibility: visible; transition: opacity var(--mv-base) var(--mv-chegada), visibility 0s; }
+@keyframes jr-entra { from { opacity: 0; transform: translate3d(0, 8px, 0); } to { opacity: 1; transform: none; } }
+@media (prefers-reduced-motion: no-preference) {
+  .jr-etapa[data-ativa] { animation: jr-entra var(--mv-base) var(--mv-chegada) both; }
+}
+
+/* A lista das seis etapas: só para leitores de tela, menos com movimento reduzido. */
+.jr-lista {
+  position: absolute; width: 1px; height: 1px; margin: -1px; padding: 0;
+  overflow: hidden; clip-path: inset(50%); white-space: nowrap; border: 0;
+}
+
+/* Movimento reduzido: sem autoplay, a rota inteira desenhada e a lista ao lado. */
+@media (prefers-reduced-motion: reduce) {
+  .jr-palco { display: none; }
+  .jr-lista {
+    position: static; width: auto; height: auto; margin: 0;
+    overflow: visible; clip-path: none; white-space: normal; display: grid;
+  }
+  .jr-viagem, .jr-ponto { opacity: 1; }
+  .jr-traco { stroke-dashoffset: 0; }
+  .jr-ponto { offset-distance: 100%; }
+  .jr-parada-ponto { fill: #fff; stroke: #fff; }
+  .jr-parada-halo, .jr-parada-ponto { transition: none; }
+}

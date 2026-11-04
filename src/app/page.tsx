@@ -5,7 +5,7 @@ import ContatoCta from "@/components/ContatoCta";
 import VisaoDoArquiteto from "@/components/VisaoDoArquiteto";
 import HeroAssenta from "@/components/home/HeroAssenta";
 import Manifesto from "@/components/home/Manifesto";
-import OQueFazemos from "@/components/home/OQueFazemos";
+import Jornada from "@/components/home/Jornada";
 import PorQue from "@/components/home/PorQue";
 import SeletorLinhas from "@/components/linhas/SeletorLinhas";
 import Revelar from "@/components/projetos/Revelar";
@@ -171,8 +171,8 @@ export default async function Home() {
       {/* ── Quem somos ─────────────────────────────────────────────────────── */}
       <Manifesto />
 
-      {/* ── O que fazemos ──────────────────────────────────────────────────── */}
-      <OQueFazemos />
+      {/* ── O que fazemos: a jornada da fábrica até a obra ─────────────────── */}
+      <Jornada />
 
       {/* ── Por que fazemos ────────────────────────────────────────────────── */}
       <PorQue />
