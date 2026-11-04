@@ -60,7 +60,7 @@ One `requestAnimationFrame` loop for the whole site.
 
 ### 2.4 Device tiers (`src/lib/movimento/nivel.ts`)
 
-`completo` by default. `leve` when any of: `prefers-reduced-data`, `navigator.connection.saveData`, `deviceMemory <= 4`, `hardwareConcurrency <= 4`. Set once as `data-mv-nivel` on `<html>`.
+`completo` by default. `leve` when any of: `prefers-reduced-data`, `navigator.connection.saveData`, `deviceMemory <= 4`, or (only when `deviceMemory` is also reported) `hardwareConcurrency <= 4`. Without `deviceMemory`, core count is ignored. Reason: WebKit clamps `hardwareConcurrency` to 4 (or 2) on iPhone and iPad and does not expose `deviceMemory`, so counting cores alone would class every iPhone as `leve`; only Chromium reports both, with real values. Set once as `data-mv-nivel` on `<html>`.
 
 | Effect | completo | leve | reduced motion |
 |---|---|---|---|

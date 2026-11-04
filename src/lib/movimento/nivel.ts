@@ -17,10 +17,18 @@ export interface SinaisDispositivo {
   nucleos?: number;
 }
 
-/** `leve` se qualquer sinal indicar aparelho ou rede apertados. */
+/**
+ * `leve` se qualquer sinal indicar aparelho ou rede apertados.
+ *
+ * Núcleos só contam quando `deviceMemory` também existe (só o Chromium expõe
+ * os dois, e ali ambos são reais). O WebKit trava `hardwareConcurrency` em 4
+ * (ou 2) em iPhone e iPad e não expõe `deviceMemory`: sem a memória, os
+ * núcleos são ignorados, senão todo iPhone cairia em `leve`.
+ */
 export function decidirNivel(s: SinaisDispositivo): NivelMovimento {
   if (s.poucosDados || s.economiaDados) return "leve";
-  if (s.memoriaGB !== undefined && s.memoriaGB <= 4) return "leve";
+  if (s.memoriaGB === undefined) return "completo";
+  if (s.memoriaGB <= 4) return "leve";
   if (s.nucleos !== undefined && s.nucleos <= 4) return "leve";
   return "completo";
 }
