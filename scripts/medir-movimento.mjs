@@ -82,7 +82,14 @@ function lerArgs(argv) {
       const px = alvo.match(/^(\d+(?:\.\d+)?)-(\d+(?:\.\d+)?)$/);
       a.faixas.push(px ? { nome, ini: Number(px[1]), fim: Number(px[2]) } : { nome, seletor: alvo });
     }
-    else if (k === "--api-produtos") a.apiProdutos = path.resolve(argv[++i] || "");
+    else if (k === "--api-produtos") {
+      const v = argv[++i];
+      if (!v || v.startsWith("--") || !fs.existsSync(path.resolve(v))) {
+        console.error(`--api-produtos espera o caminho de um arquivo JSON existente, recebi: ${v ?? "(nada)"}`);
+        process.exit(2);
+      }
+      a.apiProdutos = path.resolve(v);
+    }
     else if (k === "--reduzido") a.reduzido = true;
     else if (k === "--saida") a.saida = argv[++i];
     else if (k === "--webkit") a.motor = "webkit";

@@ -357,11 +357,6 @@ html { scroll-padding-top: 5rem; }
       animation-timeline: view();
       animation-range: entry calc(var(--mv-i, 0) * 7%) entry calc(70% + var(--mv-i, 0) * 7%);
     }
-    /* Cartões dentro de um trilho que rola de lado: o view() deles olharia o trilho (que não
-       rola na vertical) e a entrada ficaria parada. Marcando o contêiner de fora com
-       .mv-linha-fonte, eles seguem a passagem dele pela tela (mesmo truque do .mv-brilho-fonte). */
-    .mv-linha-fonte { view-timeline: --mv-linha block; }
-    .mv-linha-fonte :is(.mv-revelar, .mv-revelar-desvela, .mv-revelar-surge) { animation-timeline: --mv-linha; }
     /* Foto que "se acomoda" no quadro (o quadro tem overflow hidden). */
     .mv-desvela {
       animation: mv-desvela linear both;

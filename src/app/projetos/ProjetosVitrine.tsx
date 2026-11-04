@@ -164,24 +164,19 @@ function Conteudo({
                     )}
                   </div>
                 );
-                // Primeira linha: o título sobe e cada foto se desvela, uma depois da outra (só as
-                // cinco da primeira dobra; o resto do trilho já está lá quando ele rola de lado).
+                // Primeira linha: o título sobe e a linha de fotos se desvela de uma vez. É UM Revelar
+                // em volta do trilho (que fica dentro dele, então o view() olha a página): um por
+                // cartão eram cinco animações ligadas ao mesmo tempo, e a 4× de CPU isso custava
+                // quadros no tablet em paisagem.
                 if (bi === 0) {
                   return (
                     <div key={b.slug}>
                       <Revelar>{cabecalho}</Revelar>
-                      {/* O trilho rola de lado e o view() dos cartões olharia ele: .mv-linha-fonte
-                          entrega a passagem desta caixa, que rola com a página. */}
-                      <div className="mv-linha-fonte">
+                      <Revelar efeito="desvela">
                         <Trilho rotulo={`Projetos: ${b.titulo}`} largura={LARGURA_OBRA}>
-                          {b.lista.map((p, i) => {
-                            const cartao = <ProjetoCard projeto={p} onAbrir={(x) => abrir(x, b.lista)} href={href(p)} sizes={SIZES_OBRA} />;
-                            return i < 5
-                              ? <Revelar key={p.id} efeito="desvela" ordem={i} className="h-full">{cartao}</Revelar>
-                              : <div key={p.id} className="h-full">{cartao}</div>;
-                          })}
+                          {b.lista.map((p) => <ProjetoCard key={p.id} projeto={p} onAbrir={(x) => abrir(x, b.lista)} href={href(p)} sizes={SIZES_OBRA} />)}
                         </Trilho>
-                      </div>
+                      </Revelar>
                     </div>
                   );
                 }
