@@ -55,7 +55,7 @@ export default function Tamanhos({ tamanho, escolher, interesse }: {
         </div>
 
         <div id="ts-painel-tamanho" role="tabpanel" aria-labelledby={`ts-aba-${tamanho}`}
-          className="mt-10 grid gap-10 lg:grid-cols-[minmax(0,5fr)_minmax(0,7fr)] lg:gap-16 lg:items-center">
+          className="mv-brilho-fonte mt-10 grid gap-10 lg:grid-cols-[minmax(0,5fr)_minmax(0,7fr)] lg:gap-16 lg:items-center">
           <Escala modelo={modeloAtivo} />
           <div>
             <p className="font-serif text-t2 text-[#22201C] max-w-[22ch]">{USO[tamanho]}</p>
@@ -68,7 +68,7 @@ export default function Tamanhos({ tamanho, escolher, interesse }: {
                   <button type="button" onClick={() => setEscolhido(m.slug)}
                     aria-pressed={m.slug === modeloAtivo.slug} aria-label={`Ver ${m.nome} na placa`}
                     className="ts-modelo relative block w-full text-left">
-                    <span className="relative block aspect-[1/2] overflow-hidden bg-[#D9D1C4]">
+                    <span className="mv-brilho relative block aspect-[1/2] overflow-hidden bg-[#D9D1C4]">
                       {/* eslint-disable-next-line @next/next/no-img-element */}
                       <img src={texturaMiniatura(m)} alt="" loading="lazy" decoding="async"
                         className="absolute inset-0 w-full h-full object-cover" />

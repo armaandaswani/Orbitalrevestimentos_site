@@ -823,7 +823,7 @@ export default function ProdutosPage() {
                   onClick={() => open(product)}
                 >
                   {/* Image */}
-                  <div className="relative aspect-[4/5] overflow-hidden bg-[#eeeeee] mb-3 lg:mb-5 shadow-sm group-hover:shadow-lg transition-shadow duration-500">
+                  <div className="mv-brilho relative aspect-[4/5] overflow-hidden bg-[#eeeeee] mb-3 lg:mb-5 shadow-sm group-hover:shadow-lg transition-shadow duration-500">
                     {/* next/image: a Vercel redimensiona e serve em WebP pela
                         própria CDN. Antes eram 14 arquivos originais (23,9 MB)
                         baixados do Supabase a cada visita ao catálogo. */}

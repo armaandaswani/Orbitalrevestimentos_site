@@ -219,7 +219,7 @@ function Galeria({ lista, verTamanho, parado, setParado, ultimaAcaoRef }: {
   const anterior = antes >= 0 && antes % n !== v % n ? lista[antes % n] : null;
 
   return (
-    <div ref={raiz} role="group" aria-label="Ideias com TechStone" onKeyDown={teclar}
+    <div ref={raiz} role="group" aria-label="Ideias com TechStone" onKeyDown={teclar} className="mv-brilho-fonte"
       onPointerEnter={(e) => { if (e.pointerType === "mouse") pausar("mouse", true); }}
       onPointerLeave={(e) => { if (e.pointerType === "mouse") pausar("mouse", false); }}
       onPointerDown={apertar}
@@ -235,7 +235,7 @@ function Galeria({ lista, verTamanho, parado, setParado, ultimaAcaoRef }: {
           const o = (i - v + m) % m;
           return (
             <button key={i} type="button" ref={(el) => { camadas.current[i] = el; }}
-              className="ts-galeria-camada" data-pos={posicao(o, k, m)}
+              className="ts-galeria-camada mv-brilho" data-pos={posicao(o, k, m)}
               data-vizinho={o === 1 || o === m - 1 ? "" : undefined}
               tabIndex={o === 0 ? 0 : -1} aria-current={o === 0 ? "true" : undefined}
               aria-label={`${ideia.titulo} em ${modeloDe(ideia.modelo).nome}, ${rotuloFormato(formatoDe(ideia))}`}
@@ -315,7 +315,7 @@ export default function Ideias({ verTamanho }: {
   ];
 
   return (
-    <section aria-labelledby="ts-ideias" className="bg-[#F6F3EE] ds-secao overflow-hidden">
+    <section aria-labelledby="ts-ideias" className="bg-[#F6F3EE] ds-secao overflow-clip">
       <div className="ds-wrap">
         <div className="flex flex-col gap-5 md:flex-row md:items-end md:justify-between mb-8">
           <div>

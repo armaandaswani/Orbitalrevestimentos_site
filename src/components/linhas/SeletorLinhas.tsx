@@ -69,7 +69,7 @@ export default function SeletorLinhas({ titulo = "h3" }: {
   };
 
   return (
-    <div>
+    <div className="mv-brilho-fonte">
       <div role="tablist" aria-label="Linhas da Orbital" onKeyDown={teclado}
         className="grid grid-cols-3 border-b border-[#0B1F45]/12">
         {LINHAS.map((l, i) => (
@@ -108,7 +108,7 @@ function Painel({ linha, Titulo, prioridade, morph }: {
   const prontaEntrega = linha.situacao === "pronta-entrega";
   return (
     <div className="grid gap-6 md:grid-cols-[minmax(0,1.1fr)_minmax(0,1fr)] md:gap-12 md:items-center">
-      <div className="relative aspect-[16/10] md:aspect-[4/5] overflow-hidden bg-[#141A26]">
+      <div className={`relative aspect-[16/10] md:aspect-[4/5] overflow-hidden bg-[#141A26]${linha.imagem ? " mv-brilho" : ""}`}>
         {linha.imagem ? (
           <>
             {/* A foto da TechStone vira a abertura da página dela (mesmo nome

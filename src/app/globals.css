@@ -419,6 +419,43 @@ html:has(header[data-site][data-oculto="1"]) .ds-sob-cabecalho { top: 0; }
 ::view-transition-old(cabecalho) { display: none; }
 ::view-transition-new(cabecalho) { animation: none; }
 
+/* ── Luz sobre o material (.mv-brilho) ──────────────────────────────────────
+   Uma faixa suave de luz que atravessa a textura (pedra, madeira, bambu) à
+   medida que ela passa pela tela, para o painel parecer uma superfície com
+   brilho e não uma figura. Vai num contêiner já posicionado, com a textura
+   dentro (nunca em foto de pessoa). --mv-luz (a posição da faixa, de -60% a
+   60% da largura) vem de uma linha do tempo view(); no computador o Movimento
+   soma --mv-luz-p, a inclinação para o lado do ponteiro. O @property tipa a
+   variável, senão ela saltaria em vez de deslizar. Sem suporte a view() o
+   brilho some (nunca fica quebrado); no nível leve e com movimento reduzido
+   também. */
+@property --mv-luz { syntax: "<percentage>"; inherits: true; initial-value: -60%; }
+@keyframes mv-luz-corre { from { --mv-luz: -60%; } to { --mv-luz: 60%; } }
+.mv-brilho { isolation: isolate; overflow: clip; }
+@media (prefers-reduced-motion: no-preference) {
+  @supports (animation-timeline: view()) {
+    .mv-brilho {
+      animation: mv-luz-corre linear both;
+      animation-timeline: view();
+      animation-range: cover 0% cover 100%;
+    }
+    .mv-brilho::after {
+      content: ""; position: absolute; inset: 0; pointer-events: none;
+      background: linear-gradient(105deg, transparent 35%, rgb(255 255 255 / 0.16) 50%, transparent 65%);
+      mix-blend-mode: soft-light;
+      transform: translateX(calc(var(--mv-luz, -60%) + var(--mv-luz-p, 0%)));
+    }
+    html[data-mv-nivel="leve"] .mv-brilho::after { display: none; }
+  }
+}
+/* view() olha o ancestral que rola mais próximo. Quando um ancestral corta ou
+   rola de lado (palco da galeria com overflow hidden, carrossel de texturas no
+   celular), ele não rola na vertical e a luz ficaria parada. Marcando um
+   contêiner de fora com .mv-brilho-fonte, os .mv-brilho dentro seguem a
+   passagem dele pela tela. */
+.mv-brilho-fonte { view-timeline: --mv-fonte block; }
+.mv-brilho-fonte .mv-brilho { animation-timeline: --mv-fonte; }
+
 /* Morph de uma foto entre páginas (classe mv-morph, via share do
    <ViewTransition>): viagem lenta e assentada na curva de percurso; as duas
    imagens cobrem a caixa em vez de esticar quando as proporções diferem (4:5
@@ -884,6 +921,11 @@ html[data-mv-nivel="leve"] .ts-clima-nevoa { display: none; }
 @media (hover: hover) and (pointer: fine) {
   .ts-galeria-camada:not([data-pos="ativo"]):hover .ts-galeria-veu { opacity: 0.2; transition-duration: var(--mv-base); }
 }
+/* Luz sobre o material (.mv-brilho): só a ideia ativa brilha, e a faixa
+   atravessa a região dela (a camada tem a largura do palco, mas só mostra
+   [--l, --r]); as outras apagam a luz junto com a troca. */
+.ts-galeria-camada.mv-brilho::after { right: auto; width: var(--ts-a); transition: opacity var(--mv-base) var(--mv-chegada); }
+.ts-galeria-camada.mv-brilho:not([data-pos="ativo"])::after { opacity: 0; }
 /* Foco: o contorno do navegador seria cortado pelo clip-path, então um anel
    interno desenha a região (aparece só com o foco, sem transição). */
 .ts-galeria-camada:focus-visible { outline: none; }
