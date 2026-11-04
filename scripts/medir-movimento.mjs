@@ -12,12 +12,19 @@
  *   --cpu <n>            fator de estrangulamento de CPU (padrão 1 = sem estrangular)
  *   --reduzido           liga prefers-reduced-motion: reduce
  *   --saida <dir>        pasta de saída (padrão: <tmp>/medicao-movimento)
+ *   --faixa nome=<sel>   (repetível) trecho da página a medir à parte; <sel> é um
+ *                        seletor CSS (vai de offsetTop a offsetTop+offsetHeight) ou
+ *                        "<ini>-<fim>" em px. Ex.: --faixa clima=.ts-clima --faixa topo=0-900
+ *   --repeticoes <n>     roda a rolagem medida n vezes (padrão 1) e reporta a mediana;
+ *                        sempre há uma rolagem de aquecimento antes, sem medir
  *   --webkit, --firefox  troca o motor, se o runtime tiver o navegador instalado
  *
  * Para cada dispositivo grava <saida>/<dispositivo>/resultado.json
- * ({ dispositivo, quadros, p95Ms, maxMs, acima33, cls, scrollWidth, larguraJanela }),
- * os seis prints (0, 20, 40, 60, 80 e 100% da rolagem) e uma folha de contato
- * (folha.png) com os seis lado a lado. Também grava <saida>/resumo.json com todos.
+ * ({ dispositivo, quadros, p95Ms, maxMs, acima33, cls, scrollWidth, larguraJanela,
+ *    faixas, clsCarga, execucoes }; os campos de tempo são a mediana das execuções),
+ * quadros.json (os pares [delta ms, scrollY] crus de cada execução, mais os limites
+ * de cada faixa), os seis prints (0, 20, 40, 60, 80 e 100% da rolagem) e uma folha de
+ * contato (folha.png) com os seis lado a lado. Também grava <saida>/resumo.json.
  *
  * Por que existe: provar com número, e não a olho, que a animação continua fluida
  * em aparelho fraco (CPU lenta), em tela pequena e sem estourar a largura.
@@ -54,13 +61,26 @@ const PCTS = [0, 20, 40, 60, 80, 100];
 const LIMITE_PASSOS = 3000; // trava de segurança contra página que cresce sem fim
 
 function lerArgs(argv) {
-  const a = { cpu: 1, matriz: false, reduzido: false, motor: "chromium" };
+  const a = { cpu: 1, matriz: false, reduzido: false, motor: "chromium", repeticoes: 1, faixas: [] };
   for (let i = 0; i < argv.length; i++) {
     const k = argv[i];
     if (k === "--url") a.url = argv[++i];
     else if (k === "--dispositivo") a.dispositivo = argv[++i];
     else if (k === "--matriz") a.matriz = true;
     else if (k === "--cpu") a.cpu = Number(argv[++i]);
+    else if (k === "--repeticoes") a.repeticoes = Number(argv[++i]);
+    else if (k === "--faixa") {
+      const v = argv[++i] || "";
+      const eq = v.indexOf("=");
+      if (eq < 1 || eq === v.length - 1) {
+        console.error(`--faixa espera nome=<seletor>|nome=<ini>-<fim>, recebi: ${v}`);
+        process.exit(2);
+      }
+      const nome = v.slice(0, eq);
+      const alvo = v.slice(eq + 1);
+      const px = alvo.match(/^(\d+(?:\.\d+)?)-(\d+(?:\.\d+)?)$/);
+      a.faixas.push(px ? { nome, ini: Number(px[1]), fim: Number(px[2]) } : { nome, seletor: alvo });
+    }
     else if (k === "--reduzido") a.reduzido = true;
     else if (k === "--saida") a.saida = argv[++i];
     else if (k === "--webkit") a.motor = "webkit";
@@ -76,6 +96,10 @@ function lerArgs(argv) {
   }
   if (!Number.isFinite(a.cpu) || a.cpu < 1) {
     console.error("--cpu precisa ser um número >= 1");
+    process.exit(2);
+  }
+  if (!Number.isInteger(a.repeticoes) || a.repeticoes < 1) {
+    console.error("--repeticoes precisa ser um inteiro >= 1");
     process.exit(2);
   }
   a.saida = path.resolve(a.saida || path.join(os.tmpdir(), "medicao-movimento"));
@@ -110,6 +134,44 @@ function percentil(ordenado, p) {
 
 const dormir = (ms) => new Promise((r) => setTimeout(r, ms));
 const arred = (n, casas = 2) => Number(n.toFixed(casas));
+
+// Mediana: com poucas repetições um quadro perdido por acaso (GC, disco) não deve
+// decidir o resultado; a mediana ignora a execução fora do padrão.
+function mediana(lista) {
+  if (!lista.length) return 0;
+  const o = lista.slice().sort((a, b) => a - b);
+  const m = o.length >> 1;
+  return o.length % 2 ? o[m] : (o[m - 1] + o[m]) / 2;
+}
+
+// Métricas de uma execução a partir dos pares [delta ms, scrollY]. Um quadro pertence
+// a uma faixa quando o scrollY dele cai dentro dela (início inclusive, fim exclusive).
+function metricas(pares, limites) {
+  const deltas = pares.map((p) => p[0]);
+  const ordenado = deltas.slice().sort((a, b) => a - b);
+  const faixas = {};
+  for (const [nome, lim] of Object.entries(limites)) {
+    if (!lim) continue; // seletor que não achou elemento: já avisado, fica de fora
+    const ds = pares.filter((p) => p[1] >= lim[0] && p[1] < lim[1]).map((p) => p[0]);
+    faixas[nome] = {
+      quadros: ds.length,
+      acima33: ds.filter((x) => x > 33).length,
+      maxMs: arred(ds.length ? Math.max(...ds) : 0),
+    };
+  }
+  return {
+    quadros: deltas.length,
+    p95Ms: arred(percentil(ordenado, 0.95)),
+    maxMs: arred(ordenado.length ? ordenado[ordenado.length - 1] : 0),
+    acima33: deltas.filter((x) => x > 33).length, // quadro > 33 ms = perdeu pelo menos um de 60 Hz
+    faixas,
+  };
+}
+
+const voltarAoTopo = async (page) => {
+  await page.evaluate(() => window.scrollTo({ top: 0, behavior: "instant" }));
+  await dormir(500);
+};
 
 // Estado de rolagem lido de dentro da página.
 const lerRolagem = (page) =>
@@ -161,12 +223,13 @@ async function medirDispositivo(browser, nome, d, args) {
     } catch {
       /* motor sem layout-shift (webkit/firefox): cls fica 0 */
     }
-    window.__deltas = [];
+    window.__pares = []; // [delta em ms, scrollY] de cada quadro
     window.__medindo = false;
     let anterior = 0;
     const tick = (t) => {
       if (window.__medindo) {
-        if (anterior) window.__deltas.push(t - anterior);
+        // o primeiro quadro de cada passada só marca o relógio (anterior=0) e é descartado
+        if (anterior) window.__pares.push([t - anterior, window.scrollY]);
         anterior = t;
       } else anterior = 0;
       requestAnimationFrame(tick);
@@ -188,20 +251,60 @@ async function medirDispositivo(browser, nome, d, args) {
 
   await page.mouse.move(d.w / 2, d.h / 2);
 
-  // ---- passada 1: medir a rolagem de cima a baixo ----
-  if (cdp) await cdp.send("Emulation.setCPUThrottlingRate", { rate: args.cpu });
-  await page.evaluate(() => { window.__deltas.length = 0; window.__medindo = true; });
+  // ---- aquecimento: uma rolagem sem medir ----
+  // Mídia preguiçosa, chunks de JS e decodificação de imagem acontecem na primeira
+  // descida; sem isto a primeira execução pagaria por eles e as outras não.
+  const clsCarga = await page.evaluate(() => window.__cls);
   await rolarAte(page, Infinity);
-  await dormir(600); // a cauda da inércia e o último lote de deslocamentos
-  const medidas = await page.evaluate(() => {
-    window.__medindo = false;
-    return { deltas: window.__deltas.slice(), cls: window.__cls };
-  });
-  if (cdp) await cdp.send("Emulation.setCPUThrottlingRate", { rate: 1 });
+  await dormir(600);
+  await voltarAoTopo(page);
 
+  // Faixas em px da página, resolvidas depois do aquecimento (a altura já é a final).
+  // getBoundingClientRect + scrollY dá a posição absoluta (= offsetTop para seção de
+  // topo, e continua certo se o elemento estiver aninhado).
+  const limites = {};
+  for (const f of args.faixas) {
+    if (f.seletor === undefined) {
+      limites[f.nome] = [f.ini, f.fim];
+      continue;
+    }
+    const lim = await page
+      .evaluate((sel) => {
+        const el = document.querySelector(sel);
+        if (!el) return null;
+        const r = el.getBoundingClientRect();
+        return [r.top + window.scrollY, r.top + window.scrollY + r.height];
+      }, f.seletor)
+      .catch(() => null); // seletor inválido também cai aqui
+    if (!lim) console.log(`aviso: faixa "${f.nome}" ignorada, seletor sem elemento: ${f.seletor}`);
+    limites[f.nome] = lim && lim.map((n) => Math.round(n));
+  }
+
+  // ---- passadas medidas: rolagem de cima a baixo, n vezes ----
+  const execucoes = [];
+  const brutos = [];
+  for (let i = 0; i < args.repeticoes; i++) {
+    if (i > 0) await voltarAoTopo(page);
+    const clsAntes = await page.evaluate(() => window.__cls);
+    if (cdp) await cdp.send("Emulation.setCPUThrottlingRate", { rate: args.cpu });
+    await page.evaluate(() => { window.__pares.length = 0; window.__medindo = true; });
+    await rolarAte(page, Infinity);
+    await dormir(600); // a cauda da inércia e o último lote de deslocamentos
+    const lido = await page.evaluate(() => {
+      window.__medindo = false;
+      return { pares: window.__pares.slice(), cls: window.__cls };
+    });
+    if (cdp) await cdp.send("Emulation.setCPUThrottlingRate", { rate: 1 });
+    // cls de cada execução é só o que aconteceu na rolagem; o do carregamento vai em clsCarga
+    execucoes.push({ ...metricas(lido.pares, limites), cls: arred(lido.cls - clsAntes, 4) });
+    brutos.push(lido.pares.map(([dl, y]) => [arred(dl), arred(y, 1)]));
+  }
+
+  // clientWidth e não innerWidth: sob isMobile o Chrome infla innerWidth até a largura
+  // do conteúdo que estourou, e o estouro passaria despercebido (innerWidth == scrollWidth).
   const largura = await page.evaluate(() => ({
     scrollWidth: document.documentElement.scrollWidth,
-    larguraJanela: window.innerWidth,
+    larguraJanela: document.documentElement.clientWidth,
   }));
 
   // ---- passada 2: prints em 0, 20, 40, 60, 80 e 100% ----
@@ -224,20 +327,32 @@ async function medirDispositivo(browser, nome, d, args) {
 
   montarFolha(arquivos, path.join(pasta, "folha.png"), d);
 
-  // o primeiro delta depois de pausar pode ser lixo de aba em segundo plano; sem filtro, mostramos tudo
-  const deltas = medidas.deltas;
-  const ordenado = deltas.slice().sort((a, b) => a - b);
+  // Campos de topo = mediana das execuções (com 1 execução, o próprio valor).
+  const med = (f) => mediana(execucoes.map(f));
+  const faixas = {};
+  for (const fn of Object.keys(execucoes[0].faixas)) {
+    faixas[fn] = {
+      quadros: med((e) => e.faixas[fn].quadros),
+      acima33: med((e) => e.faixas[fn].acima33),
+      maxMs: arred(med((e) => e.faixas[fn].maxMs)),
+    };
+  }
   const resultado = {
     dispositivo: nome,
-    quadros: deltas.length,
-    p95Ms: arred(percentil(ordenado, 0.95)),
-    maxMs: arred(ordenado.length ? ordenado[ordenado.length - 1] : 0),
-    acima33: deltas.filter((x) => x > 33).length, // quadro > 33 ms = perdeu pelo menos um de 60 Hz
-    cls: arred(medidas.cls, 4),
+    quadros: med((e) => e.quadros),
+    p95Ms: arred(med((e) => e.p95Ms)),
+    maxMs: arred(med((e) => e.maxMs)),
+    acima33: med((e) => e.acima33),
+    cls: arred(med((e) => e.cls), 4),
     scrollWidth: largura.scrollWidth,
     larguraJanela: largura.larguraJanela,
+    faixas,
+    clsCarga: arred(clsCarga, 4),
+    execucoes,
   };
   fs.writeFileSync(path.join(pasta, "resultado.json"), JSON.stringify(resultado, null, 2) + "\n");
+  // pares crus [delta ms, scrollY], uma lista por execução, para análise por faixa depois
+  fs.writeFileSync(path.join(pasta, "quadros.json"), JSON.stringify({ faixas: limites, execucoes: brutos }) + "\n");
   return resultado;
 }
 
@@ -259,11 +374,14 @@ function montarFolha(arquivos, saida, d) {
 
 function linha(r, motor) {
   const ok = r.scrollWidth === r.larguraJanela;
-  return (
+  const principal =
     `${r.dispositivo.padEnd(14)} [${motor}] quadros=${r.quadros} p95=${r.p95Ms}ms max=${r.maxMs}ms ` +
     `acima33=${r.acima33} cls=${r.cls} scrollWidth=${r.scrollWidth} janela=${r.larguraJanela} ` +
-    (ok ? "sem-estouro" : "ESTOURO-HORIZONTAL")
+    (ok ? "sem-estouro" : "ESTOURO-HORIZONTAL");
+  const porFaixa = Object.entries(r.faixas).map(
+    ([n, f]) => `    faixa ${n}: quadros=${f.quadros} acima33=${f.acima33} max=${f.maxMs}ms`,
   );
+  return [principal, ...porFaixa].join("\n");
 }
 
 async function main() {
