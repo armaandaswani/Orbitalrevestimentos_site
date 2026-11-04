@@ -859,25 +859,42 @@ html[data-mv-nivel="leve"] .mv-camada { --mv-fe: calc((var(--mv-f) + 1) / 2); }
 
 /* ── TechStone: clima pela pedra ──────────────────────────────────────────
    "Desenvolvida para a Amazônia" (components/techstone/Clima). --p (0 → 1)
-   vem do useProgresso. Trechos: 0 → 0.14 abertura; 0.14 → 0.32 sol;
-   0.32 → 0.50 umidade; 0.50 → 0.68 calor; 0.68 → 0.86 ciclos; depois as
-   quatro juntas. O texto troca com 0.04 de fusão em cada ponta e nunca há
-   dois blocos visíveis; as atmosferas entram um pouco antes e saem um pouco
-   depois do seu texto, para a luz trocar devagar. Só transform, opacity e
-   variáveis: nada de filtro animado. */
+   vem do useProgresso. A seção tem 600svh: a parte presa anda 500svh e uma
+   tela vale 0.20 de --p. As frações abaixo saem de INICIO = 0.10 e
+   PASSO = 0.20 (Clima.tsx); se um mudar, mude as duas pontas:
+     0 → 0.02     abertura parada: título, texto e a linha já desenhada embaixo;
+     0.02 → 0.10  subida: os três sobem juntos e ficam presos no alto;
+     0.10 sol · 0.30 umidade · 0.50 calor · 0.70 ciclos (um PASSO cada);
+     0.90 → 1     as quatro juntas, inteiras, e a linha até a ponta.
+   Dentro de cada trecho (a = início): a linha corre até o nó de a a a+0.06,
+   o nó surge de a+0.05 a a+0.09 e o texto sobe de a+0.06 a a+0.11, enquanto
+   o anterior esmaece. As atmosferas entram um pouco antes do trecho e saem um
+   pouco depois, para a luz trocar devagar. Só transform, opacity,
+   stroke-dashoffset e variáveis: nada de filtro animado. */
 .ts-clima {
-  /* Progresso dentro de cada trecho (0 → 1). A névoa usa um trecho mais
+  /* Subida do título (0 → 1), com partida e chegada macias. */
+  --r0: clamp(0, (var(--p, 0) - 0.02) / 0.08, 1);
+  --r: calc(var(--r0) * var(--r0) * (3 - 2 * var(--r0)));
+  /* Trechos da linha: até o nó de cada preocupação e, no fim, até a ponta. */
+  --l1: clamp(0, (var(--p, 0) - 0.10) / 0.06, 1);
+  --l2: clamp(0, (var(--p, 0) - 0.30) / 0.06, 1);
+  --l3: clamp(0, (var(--p, 0) - 0.50) / 0.06, 1);
+  --l4: clamp(0, (var(--p, 0) - 0.70) / 0.06, 1);
+  --l5: clamp(0, (var(--p, 0) - 0.90) / 0.05, 1);
+  /* No fim as anteriores voltam inteiras. */
+  --juntas: clamp(0, (var(--p, 0) - 0.90) / 0.04, 1);
+  /* Progresso dentro de cada atmosfera (0 → 1). A névoa usa um trecho mais
      largo para continuar derivando enquanto entra e sai. */
-  --k-sol: clamp(0, (var(--p, 0) - 0.14) / 0.18, 1);
-  --k-nevoa: clamp(0, (var(--p, 0) - 0.29) / 0.24, 1);
-  --k-calor: clamp(0, (var(--p, 0) - 0.50) / 0.18, 1);
-  --k: clamp(0, (var(--p, 0) - 0.68) / 0.18, 1);
+  --k-sol: clamp(0, (var(--p, 0) - 0.10) / 0.20, 1);
+  --k-nevoa: clamp(0, (var(--p, 0) - 0.27) / 0.26, 1);
+  --k-calor: clamp(0, (var(--p, 0) - 0.50) / 0.20, 1);
+  --k: clamp(0, (var(--p, 0) - 0.70) / 0.20, 1);
 }
 /* Isola as mesclas (soft-light) para que ajam só sobre a pedra. */
 .ts-clima-quadro { isolation: isolate; }
-/* Só as camadas visuais ignoram o ponteiro; a abertura e o resumo ficam
+/* Só as camadas visuais ignoram o ponteiro; o título e as preocupações ficam
    selecionáveis (são o texto de verdade da seção). */
-.ts-clima-fundo, .ts-clima-camada, .ts-clima-passo { pointer-events: none; }
+.ts-clima-fundo, .ts-clima-camada, .ts-clima-linha { pointer-events: none; }
 .ts-clima-pedra { transform: scale(calc(1.08 - var(--p, 0) * 0.08)); }
 
 /* Janela de cada atmosfera: entra de --a em --wi, sai até --b em --wo. */
@@ -888,7 +905,7 @@ html[data-mv-nivel="leve"] .mv-camada { --mv-fe: calc((var(--mv-f) + 1) / 2); }
 
 /* Sol a pino: a luz vem de cima e assenta; a sombra encurta (desce) conforme
    o sol sobe. */
-.ts-clima-sol { --a: 0.10; --wi: 0.14; --b: 0.36; --wo: 0.05; }
+.ts-clima-sol { --a: 0.07; --wi: 0.08; --b: 0.33; --wo: 0.05; }
 .ts-clima-sol-luz {
   background: radial-gradient(ellipse at 50% -10%, rgb(255 244 220 / .55), transparent 60%);
   transform: translate3d(0, calc((var(--k-sol) - 1) * 10%), 0);
@@ -898,9 +915,8 @@ html[data-mv-nivel="leve"] .mv-camada { --mv-fe: calc((var(--mv-f) + 1) / 2); }
   transform: translate3d(0, calc(var(--k-sol) * 60%), 0);
 }
 
-/* Umidade: véus já macios no próprio gradiente (sem blur), longe do texto,
-   cada um num ritmo. */
-.ts-clima-nevoa { --a: 0.29; --wi: 0.07; --b: 0.53; --wo: 0.06; --pico: 0.5; }
+/* Umidade: véus já macios no próprio gradiente (sem blur), cada um num ritmo. */
+.ts-clima-nevoa { --a: 0.27; --wi: 0.07; --b: 0.53; --wo: 0.06; --pico: 0.5; }
 .ts-clima-veu-1 {
   background: radial-gradient(70% 15% at 30% 27%, rgb(236 232 224 / .8), rgb(236 232 224 / .42) 40%, rgb(236 232 224 / .12) 72%, transparent);
   transform: translate3d(calc(-12% + var(--k-nevoa) * 24%), 0, 0);
@@ -915,7 +931,7 @@ html[data-mv-nivel="leve"] .mv-camada { --mv-fe: calc((var(--mv-f) + 1) / 2); }
 }
 
 /* Calor: âmbar em luz suave sobre a pedra e um brilho quente que cresce. */
-.ts-clima-calor { --a: 0.47; --wi: 0.07; --b: 0.71; --wo: 0.06; }
+.ts-clima-calor { --a: 0.47; --wi: 0.07; --b: 0.73; --wo: 0.06; }
 .ts-clima-ambar { background: rgb(201 122 52 / .45); mix-blend-mode: soft-light; }
 .ts-clima-brilho {
   background: radial-gradient(ellipse 70% 60% at 72% 30%, rgb(236 156 88 / .24), transparent 70%);
@@ -923,27 +939,82 @@ html[data-mv-nivel="leve"] .mv-camada { --mv-fe: calc((var(--mv-f) + 1) / 2); }
 }
 
 /* Ciclos térmicos: frio e quente se alternam duas vezes no trecho (seno de
-   720°, levado a 0..1) e a onda se desenha da esquerda para a direita; as
-   cristas da onda caem nos picos do quente. Tudo apagado antes do resumo. */
-.ts-clima-ciclo, .ts-clima-onda { --a: 0.65; --wi: 0.06; --b: 0.86; --wo: 0.05; }
+   720°, levado a 0..1). Apagam na meia tela final, com as quatro juntas. */
+.ts-clima-ciclo { --a: 0.67; --wi: 0.06; --b: 0.96; --wo: 0.06; }
 .ts-clima-quente { opacity: calc(var(--o) * (1 + sin(calc(var(--k) * 720deg))) / 2); }
 .ts-clima-frio {
   background: rgb(74 106 140 / .35);
   opacity: calc(var(--o) * (1 - sin(calc(var(--k) * 720deg))) / 2);
 }
-.ts-clima-onda-traco { stroke-dasharray: 1; stroke-dashoffset: calc(1 - var(--k)); }
 
-/* Texto: um bloco por trecho (--a/--b no elemento). Sobe um pouco ao entrar,
-   sai só em fusão. */
-.ts-clima-texto {
-  opacity: min(clamp(0, (var(--p, 0) - var(--a)) / 0.04, 1), clamp(0, (var(--b) - var(--p, 0)) / 0.04, 1));
-  transform: translate3d(0, calc((1 - clamp(0, (var(--p, 0) - var(--a)) / 0.06, 1)) * 1.5rem), 0);
+/* Título e texto: na abertura o pé da cabeça (a linha) fica a 88svh; a
+   subida leva tudo para o alto (--topo). 100% é a altura da própria cabeça,
+   então não há medida em JavaScript. O texto de apoio cede um pouco. */
+.ts-clima-palco { --topo: max(6rem, 50svh - 18rem); padding-top: var(--topo); }
+.ts-clima-cabeca {
+  transform: translate3d(0, calc((1 - var(--r)) * (88svh - var(--topo) - 100%)), 0);
 }
-/* Resumo: as quatro entram em sequência curta e ficam; inteiras em 0.935. */
+.ts-clima-lead { opacity: calc(1 - 0.3 * var(--r)); }
+
+/* A linha. Deitada (768px+): oito meias ondas iguais, então os nós em 1/8,
+   3/8, 5/8 e 7/8 da largura caem nas mesmas frações do comprimento. Em pé
+   (celular): dez meias ondas de 1,375rem; as duas primeiras são o trecho
+   embaixo do texto e os nós caem no meio de cada linha da lista (3/10 … 9/10).
+   --f0 é o trecho já desenhado na abertura. */
+.ts-clima-linha { position: relative; height: 2.5rem; margin-top: 2rem; }
+.ts-clima-onda { position: absolute; inset: 0; width: 100%; height: 100%; }
+.ts-clima-onda-h { --f0: 0.1; --n1: 0.125; --n2: 0.375; --n3: 0.625; --n4: 0.875; }
+.ts-clima-onda-v { --f0: 0.2; --n1: 0.3; --n2: 0.5; --n3: 0.7; --n4: 0.9; display: none; }
+.ts-clima-traco {
+  stroke-dasharray: 1;
+  stroke-dashoffset: calc(1 - var(--f0) - (var(--n1) - var(--f0)) * var(--l1) - (var(--n2) - var(--n1)) * var(--l2)
+    - (var(--n3) - var(--n2)) * var(--l3) - (var(--n4) - var(--n3)) * var(--l4) - (1 - var(--n4)) * var(--l5));
+}
+/* Nó: um ponto com um anel leve, que cresce de 0 a 1 quando a linha chega. */
+.ts-clima-no {
+  --no: clamp(0, (var(--p, 0) - var(--a) - 0.05) / 0.04, 1);
+  position: absolute; top: 50%; left: calc((2 * var(--i) + 1) / 8 * 100%);
+  width: 9px; height: 9px; border-radius: 50%; background: #fff;
+  box-shadow: 0 0 0 5px rgb(255 255 255 / .14), 0 0 16px 2px rgb(255 255 255 / .16);
+  transform: translate3d(-50%, -50%, 0) scale(var(--no));
+}
+
+/* As preocupações: uma coluna embaixo de cada nó. Cada uma sobe no seu
+   trecho (--a no elemento) e esmaece para 60% quando chega a seguinte (--s);
+   no fim voltam todas inteiras. */
+.ts-clima-lista {
+  display: grid; grid-template-columns: repeat(4, minmax(0, 1fr));
+  column-gap: clamp(1.25rem, 2.5vw, 2.5rem); margin-top: 1.25rem; text-align: center;
+}
 .ts-clima-item {
-  --o: clamp(0, (var(--p, 0) - 0.86 - var(--i, 0) * 0.015) / 0.03, 1);
-  opacity: var(--o);
-  transform: translate3d(0, calc((1 - var(--o)) * 1rem), 0);
+  --entra: clamp(0, (var(--p, 0) - var(--a) - 0.06) / 0.05, 1);
+  --suave: calc(clamp(0, (var(--p, 0) - var(--s) - 0.06) / 0.05, 1) * (1 - var(--juntas)));
+  opacity: calc(var(--entra) * (1 - 0.4 * var(--suave)));
+  transform: translate3d(0, calc((1 - var(--entra)) * 1.25rem), 0);
+}
+.ts-clima-item > p { margin-top: .75rem; }
+
+/* Celular: a linha em pé à esquerda, começando embaixo do texto; um título por
+   linha da lista (2,75rem) e um só espaço para o parágrafo, embaixo dos quatro.
+   O <p> continua no seu <li>: o li transformado é o bloco de referência dele,
+   por isso a distância até o espaço comum depende de --i. Sai quando chega o
+   seguinte; o último fica. */
+@media (max-width: 767.98px) {
+  .ts-clima-palco { --topo: max(5.25rem, 50svh - 17rem); }
+  .ts-clima-cabeca { position: relative; padding-bottom: 3.25rem; }
+  .ts-clima-linha { position: absolute; left: 0; top: calc(100% - 2.75rem); width: 1.5rem; height: 13.75rem; margin-top: 0; }
+  .ts-clima-onda-h { display: none; }
+  .ts-clima-onda-v { display: block; }
+  .ts-clima-no {
+    top: calc((2 * var(--i) + 3) / 10 * 100%); left: 50%; width: 7px; height: 7px;
+    box-shadow: 0 0 0 4px rgb(255 255 255 / .14), 0 0 12px 2px rgb(255 255 255 / .16);
+  }
+  .ts-clima-lista { grid-template-columns: minmax(0, 1fr); margin-top: 0; padding-left: 2.25rem; text-align: left; }
+  .ts-clima-item { display: flex; align-items: center; height: 2.75rem; }
+  .ts-clima-item > p {
+    position: absolute; left: 0; right: 0; top: calc((4 - var(--i)) * 2.75rem + 1rem); margin-top: 0;
+    opacity: calc(1 - clamp(0, (var(--p, 0) - var(--s) - 0.06) / 0.04, 1));
+  }
 }
 
 .ts-clima[data-ativo] .ts-clima-pedra,
@@ -952,54 +1023,81 @@ html[data-mv-nivel="leve"] .mv-camada { --mv-fe: calc((var(--mv-f) + 1) / 2); }
 .ts-clima[data-ativo] .ts-clima-veu,
 .ts-clima[data-ativo] .ts-clima-brilho { will-change: transform; }
 .ts-clima[data-ativo] .ts-clima-camada,
-.ts-clima[data-ativo] .ts-clima-texto,
-.ts-clima[data-ativo] .ts-clima-item { will-change: opacity, transform; }
+.ts-clima[data-ativo] .ts-clima-cabeca,
+.ts-clima[data-ativo] .ts-clima-item,
+.ts-clima[data-ativo] .ts-clima-no { will-change: opacity, transform; }
 
 /* Nível leve: sem a névoa (três camadas grandes em movimento). */
 html[data-mv-nivel="leve"] .ts-clima-nevoa { display: none; }
 
-/* Movimento reduzido: a seção volta ao fluxo normal, como era. Pedra parada
-   e escurecida ao fundo, abertura e as quatro preocupações em grade, tudo
-   visível; a encenação e as atmosferas somem. A mesma disposição vale em
-   telas deitadas e baixas (altura até 480px): ali o resumo não cabe num quadro
-   preso de uma tela só e seria cortado. */
+/* Movimento reduzido: a seção volta ao fluxo normal. Pedra parada e
+   escurecida ao fundo; título, texto, a linha inteira (deitada a partir de
+   768px, em pé no celular) e as quatro preocupações em grade (1 coluna no
+   celular, 2 a partir de 640px, 4 a partir de 1024px, com os nós só aí, onde
+   caem nas colunas). A mesma disposição vale em telas deitadas e baixas
+   (altura até 480px), onde o quadro preso cortaria a lista. */
 @media (prefers-reduced-motion: reduce), (max-height: 480px) {
   .ts-clima { height: auto; }
   .ts-clima-quadro { position: static; height: auto; }
   .ts-clima-pedra { transform: none; }
-  .ts-clima-camada, .ts-clima-passo { display: none; }
-  .ts-clima-intro, .ts-clima-resumo {
-    position: relative; inset: auto; opacity: 1; transform: none;
-  }
-  .ts-clima-intro { padding-top: clamp(3.5rem, 2rem + 4.5vw, 7rem); padding-bottom: 0; }
-  .ts-clima-resumo { margin-top: 3rem; padding-bottom: clamp(3.5rem, 2rem + 4.5vw, 7rem); }
-  .ts-clima-item { opacity: 1; transform: none; }
+  .ts-clima-camada { display: none; }
+  .ts-clima-palco { position: relative; padding-block: clamp(3.5rem, 2rem + 4.5vw, 7rem); }
+  .ts-clima-cabeca, .ts-clima-lead, .ts-clima-item, .ts-clima-item > p { opacity: 1; transform: none; }
+  .ts-clima-traco { stroke-dashoffset: 0; }
+  .ts-clima-no { transform: translate3d(-50%, -50%, 0); }
+  .ts-clima-lista { grid-template-columns: repeat(2, minmax(0, 1fr)); column-gap: 2rem; row-gap: 2.5rem; text-align: left; }
+}
+@media (prefers-reduced-motion: reduce) and (min-width: 1024px), (max-height: 480px) and (min-width: 1024px) {
+  .ts-clima-lista { grid-template-columns: repeat(4, minmax(0, 1fr)); text-align: center; }
+}
+@media (prefers-reduced-motion: reduce) and (min-width: 768px) and (max-width: 1023.98px), (max-height: 480px) and (min-width: 768px) and (max-width: 1023.98px) {
+  .ts-clima-no { display: none; }
+}
+@media (prefers-reduced-motion: reduce) and (max-width: 767.98px), (max-height: 480px) and (max-width: 767.98px) {
+  .ts-clima-cabeca { padding-bottom: 0; }
+  .ts-clima-linha { display: none; }
+  .ts-clima-lista { margin-top: 2rem; padding-left: 1.25rem; border-left: 1px solid rgb(255 255 255 / .6); }
+  .ts-clima-item { height: auto; display: block; }
+  .ts-clima-item > p { position: static; margin-top: .75rem; }
 }
 @media (prefers-reduced-motion: reduce) and (max-width: 639.98px), (max-height: 480px) and (max-width: 639.98px) {
-  .ts-clima-resumo { grid-template-columns: minmax(0, 1fr); }
+  .ts-clima-lista { grid-template-columns: minmax(0, 1fr); }
 }
 
 /* Sem JavaScript: nada de quadro preso nem de rolagem que revele o texto,
-   porque --p nunca anda e o resumo ficaria em opacidade 0. Mesma disposição do
-   movimento reduzido: abertura e as quatro preocupações em grade, tudo visível.
-   O padrão é o quadro preso (quem tem JS não vê o layout trocar na hidratação);
-   `scripting: none` (Chrome 120+, Safari 17+, Firefox 113+) liga o estático, e o
-   <noscript><style> do Clima (components/techstone/Clima.tsx, CSS_SEM_JS) leva
-   as mesmas regras aos motores mais antigos. Os dois precisam ficar iguais.
-   Duplicado, e não agrupado com o bloco acima, porque uma regra não junta
-   @media com seletor. */
+   porque --p nunca anda e as preocupações ficariam em opacidade 0. Mesma
+   disposição do movimento reduzido. O padrão é o quadro preso (quem tem JS
+   não vê o layout trocar na hidratação); `scripting: none` (Chrome 120+,
+   Safari 17+, Firefox 113+) liga o estático, e o <noscript><style> do Clima
+   (components/techstone/Clima.tsx, CSS_SEM_JS) leva as mesmas regras aos
+   motores mais antigos. Os dois precisam ficar iguais. Duplicado, e não
+   agrupado com o bloco acima, porque uma regra não junta @media com seletor. */
 @media (scripting: none) {
   .ts-clima { height: auto; }
   .ts-clima .ts-clima-quadro { position: static; height: auto; }
   .ts-clima .ts-clima-pedra { transform: none; }
-  .ts-clima .ts-clima-camada, .ts-clima .ts-clima-passo { display: none; }
-  .ts-clima .ts-clima-intro, .ts-clima .ts-clima-resumo { position: relative; inset: auto; opacity: 1; transform: none; }
-  .ts-clima .ts-clima-intro { padding-top: clamp(3.5rem, 2rem + 4.5vw, 7rem); padding-bottom: 0; }
-  .ts-clima .ts-clima-resumo { margin-top: 3rem; padding-bottom: clamp(3.5rem, 2rem + 4.5vw, 7rem); }
-  .ts-clima .ts-clima-item { opacity: 1; transform: none; }
+  .ts-clima .ts-clima-camada { display: none; }
+  .ts-clima .ts-clima-palco { position: relative; padding-block: clamp(3.5rem, 2rem + 4.5vw, 7rem); }
+  .ts-clima .ts-clima-cabeca, .ts-clima .ts-clima-lead, .ts-clima .ts-clima-item, .ts-clima .ts-clima-item > p { opacity: 1; transform: none; }
+  .ts-clima .ts-clima-traco { stroke-dashoffset: 0; }
+  .ts-clima .ts-clima-no { transform: translate3d(-50%, -50%, 0); }
+  .ts-clima .ts-clima-lista { grid-template-columns: repeat(2, minmax(0, 1fr)); column-gap: 2rem; row-gap: 2.5rem; text-align: left; }
+}
+@media (scripting: none) and (min-width: 1024px) {
+  .ts-clima .ts-clima-lista { grid-template-columns: repeat(4, minmax(0, 1fr)); text-align: center; }
+}
+@media (scripting: none) and (min-width: 768px) and (max-width: 1023.98px) {
+  .ts-clima .ts-clima-no { display: none; }
+}
+@media (scripting: none) and (max-width: 767.98px) {
+  .ts-clima .ts-clima-cabeca { padding-bottom: 0; }
+  .ts-clima .ts-clima-linha { display: none; }
+  .ts-clima .ts-clima-lista { margin-top: 2rem; padding-left: 1.25rem; border-left: 1px solid rgb(255 255 255 / .6); }
+  .ts-clima .ts-clima-item { height: auto; display: block; }
+  .ts-clima .ts-clima-item > p { position: static; margin-top: .75rem; }
 }
 @media (scripting: none) and (max-width: 639.98px) {
-  .ts-clima .ts-clima-resumo { grid-template-columns: minmax(0, 1fr); }
+  .ts-clima .ts-clima-lista { grid-template-columns: minmax(0, 1fr); }
 }
 
 /* ── TechStone: galeria de ideias ─────────────────────────────────────────

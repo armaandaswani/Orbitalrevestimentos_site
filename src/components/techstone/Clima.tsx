@@ -6,28 +6,40 @@ import { useProgresso } from "@/components/ds/useProgresso";
 /**
  * "Desenvolvida para a Amazônia": o clima daqui passa pela pedra.
  *
- * Seção alta (seis telas) com um quadro preso na tela. Sobre a textura real da
- * TechStone Travertino Romano Clássico, escurecida, entra uma preocupação por
- * vez, cada uma com a sua luz: o sol a pino (luz de cima, sombra que encurta),
- * a névoa da umidade, o âmbar do calor e o vaivém frio e quente dos ciclos
- * térmicos. No fim ficam as quatro juntas. O useProgresso passa a rolagem,
- * já suavizada, para o CSS (globals.css › TechStone: clima pela pedra); aqui
- * só há marcação.
+ * Seção alta (seis telas) com um quadro preso na tela, sobre a textura real da
+ * TechStone Travertino Romano Clássico, escurecida. Uma linha fina, a espinha
+ * da seção, já está desenhada embaixo do título quando ele aparece. Com a
+ * rolagem, título e linha sobem juntos e ficam presos no alto; a linha então
+ * corre até um nó por preocupação, e cada preocupação sobe embaixo do seu nó,
+ * com a sua luz na pedra: o sol a pino (luz de cima, sombra que encurta), a
+ * névoa da umidade, o âmbar do calor e o vaivém frio e quente dos ciclos
+ * térmicos. As anteriores ficam mais suaves; no fim as quatro ficam lado a
+ * lado, inteiras. No celular a linha é vertical, à esquerda, e os parágrafos
+ * se revezam num espaço só, embaixo dos títulos. O useProgresso passa a
+ * rolagem, já suavizada, para o CSS (globals.css › TechStone: clima pela
+ * pedra); aqui só há marcação.
  *
- * Acessibilidade: os quadros de cada preocupação são só a encenação e ficam
- * aria-hidden. A lista do resumo é a versão acessível, com um h3 e um p por
- * preocupação, e é ela que aparece sozinha quando o movimento é reduzido.
+ * Acessibilidade: a lista das preocupações é o texto de verdade (um h3 e um p
+ * por item), mostrado uma vez só; a linha, os nós e as luzes são aria-hidden.
+ * No celular o parágrafo continua dentro do seu <li>: só a posição muda.
  */
 
 type Vars = CSSProperties & Record<`--${string}`, string | number>;
 
-/** Trecho da rolagem (fração de --p) de cada preocupação: 0,18 para cada uma. */
-const INICIO = 0.14;
-const PASSO = 0.18;
+/**
+ * Ritmo da rolagem, em fração de --p. A seção tem 600svh, então a rolagem
+ * presa anda 500svh e uma tela vale 0,20. Abertura parada até 0,02, subida do
+ * título de 0,02 a 0,10 (meia tela), uma preocupação a cada PASSO (uma tela)
+ * a partir de INICIO, e as quatro juntas de 0,90 a 1 (meia tela). As frações
+ * fixas do bloco do clima em globals.css saem destas duas constantes; se
+ * mudarem, mude lá também.
+ */
+const INICIO = 0.1;
+const PASSO = 0.2;
 
 /**
  * Layout estático para quem não roda JavaScript: com ele a rolagem nunca anda
- * o --p e o resumo ficaria em opacidade 0. Mesmas regras do bloco
+ * o --p e as preocupações ficariam em opacidade 0. Mesmas regras do bloco
  * `@media (scripting: none)` em globals.css (TechStone: clima pela pedra); o
  * <noscript> cobre os motores que ainda não conhecem `scripting`. O padrão
  * continua sendo o quadro preso, então quem tem JS não vê o layout trocar na
@@ -37,16 +49,26 @@ const CSS_SEM_JS = `
 .ts-clima{height:auto}
 .ts-clima .ts-clima-quadro{position:static;height:auto}
 .ts-clima .ts-clima-pedra{transform:none}
-.ts-clima .ts-clima-camada,.ts-clima .ts-clima-passo{display:none}
-.ts-clima .ts-clima-intro,.ts-clima .ts-clima-resumo{position:relative;inset:auto;opacity:1;transform:none}
-.ts-clima .ts-clima-intro{padding-top:clamp(3.5rem,2rem + 4.5vw,7rem);padding-bottom:0}
-.ts-clima .ts-clima-resumo{margin-top:3rem;padding-bottom:clamp(3.5rem,2rem + 4.5vw,7rem)}
-.ts-clima .ts-clima-item{opacity:1;transform:none}
-@media (max-width:639.98px){.ts-clima .ts-clima-resumo{grid-template-columns:minmax(0,1fr)}}
+.ts-clima .ts-clima-camada{display:none}
+.ts-clima .ts-clima-palco{position:relative;padding-block:clamp(3.5rem,2rem + 4.5vw,7rem)}
+.ts-clima .ts-clima-cabeca,.ts-clima .ts-clima-lead,.ts-clima .ts-clima-item,.ts-clima .ts-clima-item>p{opacity:1;transform:none}
+.ts-clima .ts-clima-traco{stroke-dashoffset:0}
+.ts-clima .ts-clima-no{transform:translate3d(-50%,-50%,0)}
+.ts-clima .ts-clima-lista{grid-template-columns:repeat(2,minmax(0,1fr));column-gap:2rem;row-gap:2.5rem;text-align:left}
+@media (min-width:1024px){.ts-clima .ts-clima-lista{grid-template-columns:repeat(4,minmax(0,1fr));text-align:center}}
+@media (min-width:768px) and (max-width:1023.98px){.ts-clima .ts-clima-no{display:none}}
+@media (max-width:767.98px){.ts-clima .ts-clima-cabeca{padding-bottom:0}.ts-clima .ts-clima-linha{display:none}.ts-clima .ts-clima-lista{margin-top:2rem;padding-left:1.25rem;border-left:1px solid rgb(255 255 255/.6)}.ts-clima .ts-clima-item{height:auto;display:block}.ts-clima .ts-clima-item>p{position:static;margin-top:.75rem}}
+@media (max-width:639.98px){.ts-clima .ts-clima-lista{grid-template-columns:minmax(0,1fr)}}
 `;
 
 export default function Clima({ preocupacoes }: { preocupacoes: { titulo: string; texto: string }[] }) {
   const ref = useProgresso<HTMLElement>();
+  // Começo do trecho de cada preocupação e da seguinte (2 = nunca: a última não esmaece).
+  const trecho = (i: number): Vars => ({
+    "--i": i,
+    "--a": INICIO + i * PASSO,
+    "--s": i < preocupacoes.length - 1 ? INICIO + (i + 1) * PASSO : 2,
+  });
   return (
     <section ref={ref} aria-labelledby="ts-amazonia" className="ts-clima relative h-[600svh] bg-[#141210] text-white">
       {/* Sem JavaScript: só em motor sem `scripting: none` (veja o CSS_SEM_JS). Inerte com JS. */}
@@ -85,44 +107,47 @@ export default function Clima({ preocupacoes }: { preocupacoes: { titulo: string
         <div aria-hidden className="ts-clima-camada ts-clima-calor ts-clima-ambar absolute inset-0" />
         <div aria-hidden className="ts-clima-camada ts-clima-calor ts-clima-brilho absolute inset-0" />
 
-        {/* 5. Ciclos: frio e quente se alternam duas vezes; a onda se desenha embaixo do texto.
-            Sem vector-effect="non-scaling-stroke": no Chrome ele mede o tracejado na tela e o
-            pathLength deixa de valer (sobra um pedaço da onda na ponta direita). O traço de 1,8
-            no viewBox achatado dá cerca de 1 px. */}
+        {/* 5. Ciclos: frio e quente se alternam duas vezes. */}
         <div aria-hidden className="ts-clima-camada ts-clima-ciclo ts-clima-frio absolute inset-0" />
         <div aria-hidden className="ts-clima-camada ts-clima-ciclo ts-clima-quente ts-clima-ambar absolute inset-0" />
-        <svg aria-hidden viewBox="0 0 1000 100" preserveAspectRatio="none" overflow="visible"
-          className="ts-clima-camada ts-clima-onda absolute inset-x-0 bottom-[3svh] h-[6svh] w-full">
-          <path d="M0 50 Q125 -10 250 50 T500 50 T750 50 T1000 50" pathLength={1} fill="none"
-            stroke="white" strokeOpacity={0.6} strokeWidth={1.8} className="ts-clima-onda-traco" />
-        </svg>
 
-        {/* Abertura da seção. */}
-        <div className="ts-clima-texto ts-clima-intro absolute inset-x-0 bottom-0 ds-wrap pb-[12svh]" style={{ "--a": -1, "--b": INICIO } as Vars}>
-          <h2 id="ts-amazonia" className="font-serif text-t1 max-w-[20ch] text-balance">Desenvolvida para a Amazônia.</h2>
-          <p className="mt-5 text-lead text-white/90 max-w-[50ch]">
-            Somos de Manaus e sabemos o que o clima daqui faz com um revestimento. Estas foram as nossas preocupações ao trazer a TechStone.
-          </p>
-        </div>
+        {/* O texto: título e linha sobem juntos; a lista fica onde termina a subida. */}
+        <div className="ts-clima-palco ds-wrap absolute inset-x-0 top-0">
+          <div className="ts-clima-cabeca">
+            <h2 id="ts-amazonia" className="font-serif text-t1 max-w-[20ch] text-balance">Desenvolvida para a Amazônia.</h2>
+            <p className="ts-clima-lead mt-5 text-lead text-white/90 max-w-[50ch]">
+              Somos de Manaus e sabemos o que o clima daqui faz com um revestimento. Estas foram as nossas preocupações ao trazer a TechStone.
+            </p>
 
-        {/* Uma preocupação por vez (encenação; a versão lida é o resumo abaixo). */}
-        {preocupacoes.map((c, i) => (
-          <div key={c.titulo} aria-hidden className="ts-clima-texto ts-clima-passo absolute inset-x-0 bottom-0 ds-wrap pb-[12svh]"
-            style={{ "--a": INICIO + i * PASSO, "--b": INICIO + (i + 1) * PASSO } as Vars}>
-            <p className="font-serif text-display max-w-[18ch] text-balance">{c.titulo}</p>
-            <p className="mt-4 text-lead text-white/90 max-w-[38ch]">{c.texto}</p>
+            {/* A linha: deitada do computador ao tablet, em pé no celular. Ondas iguais, então
+                cada nó cai numa fração exata do comprimento (veja --f0 e --n1…--n4 no CSS).
+                Sem vector-effect="non-scaling-stroke": no Chrome ele mede o tracejado na tela e
+                o pathLength deixa de valer (sobra um pedaço na ponta). O traço é dado no
+                viewBox para dar cerca de 1 px na tela. */}
+            <div aria-hidden className="ts-clima-linha">
+              <svg viewBox="0 0 1000 100" preserveAspectRatio="none" overflow="visible" className="ts-clima-onda ts-clima-onda-h">
+                <path d="M0 50 Q62.5 0 125 50 T250 50 T375 50 T500 50 T625 50 T750 50 T875 50 T1000 50" pathLength={1}
+                  fill="none" stroke="white" strokeOpacity={0.6} strokeWidth={2.5} className="ts-clima-traco" />
+              </svg>
+              <svg viewBox="0 0 100 1000" preserveAspectRatio="none" overflow="visible" className="ts-clima-onda ts-clima-onda-v">
+                <path d="M50 0 Q80 50 50 100 T50 200 T50 300 T50 400 T50 500 T50 600 T50 700 T50 800 T50 900 T50 1000" pathLength={1}
+                  fill="none" stroke="white" strokeOpacity={0.6} strokeWidth={4.2} className="ts-clima-traco" />
+              </svg>
+              {preocupacoes.map((c, i) => (
+                <span key={c.titulo} className="ts-clima-no" style={trecho(i)} />
+              ))}
+            </div>
           </div>
-        ))}
 
-        {/* As quatro juntas: a lista acessível da seção. */}
-        <ul className="ts-clima-resumo absolute inset-x-0 bottom-0 ds-wrap pb-[12svh] grid grid-cols-2 gap-x-5 gap-y-8 sm:gap-x-8 lg:grid-cols-4">
-          {preocupacoes.map((c, i) => (
-            <li key={c.titulo} className="ts-clima-item border-t border-white/25 pt-5" style={{ "--i": i } as Vars}>
-              <h3 className="font-serif text-t3">{c.titulo}</h3>
-              <p className="mt-3 text-corpo text-white/85 max-w-[36ch]">{c.texto}</p>
-            </li>
-          ))}
-        </ul>
+          <ul className="ts-clima-lista">
+            {preocupacoes.map((c, i) => (
+              <li key={c.titulo} className="ts-clima-item" style={trecho(i)}>
+                <h3 className="font-serif text-t3">{c.titulo}</h3>
+                <p className="text-corpo text-white/85">{c.texto}</p>
+              </li>
+            ))}
+          </ul>
+        </div>
       </div>
     </section>
   );
