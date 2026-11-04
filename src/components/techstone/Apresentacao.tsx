@@ -1,6 +1,6 @@
 "use client";
 
-import type { CSSProperties } from "react";
+import { ViewTransition, type CSSProperties } from "react";
 import Cena from "./Cena";
 import { useProgresso } from "@/components/ds/useProgresso";
 import { ESPESSURA_MM, MODELOS_TECHSTONE } from "@/lib/techstone";
@@ -31,10 +31,16 @@ export function Abertura({ entrarNaLista }: { entrarNaLista: () => void }) {
   return (
     <section ref={ref} aria-labelledby="ts-titulo" className="ts-abertura relative h-[560svh] bg-[#141210]">
       <div className="sticky top-0 h-[100svh] overflow-hidden">
-        <div className="ts-ab-foto absolute inset-0">
-          <Cena nome="curva" prioridade alt="Parede curva em travertino gerada por IA a partir da textura TechStone Travertino Navona Clássico, com uma linha de luz no topo" />
-          <div aria-hidden className="absolute inset-0 bg-[#141210]/45" />
-        </div>
+        {/* Destino do morph que sai da foto da TechStone no seletor de linhas
+            (mesmo nome em linhas/SeletorLinhas). O nome fica neste invólucro:
+            o que vier a substituir a foto (camadas de profundidade) mora aqui
+            dentro e continua no morph. */}
+        <ViewTransition name="linha-techstone" share="mv-morph" default="none">
+          <div className="ts-ab-foto absolute inset-0">
+            <Cena nome="curva" prioridade alt="Parede curva em travertino gerada por IA a partir da textura TechStone Travertino Navona Clássico, com uma linha de luz no topo" />
+            <div aria-hidden className="absolute inset-0 bg-[#141210]/45" />
+          </div>
+        </ViewTransition>
 
         <h1 id="ts-titulo" className="ts-ab-titulo absolute inset-x-0 top-1/2 text-center font-serif text-white leading-none tracking-[-0.025em] text-[clamp(3.25rem,1.5rem+9vw,10rem)]">
           TechStone

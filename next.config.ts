@@ -82,6 +82,9 @@ const nextConfig: NextConfig = {
     serverActions: {
       bodySizeLimit: "20mb",
     },
+    // Navegações viram transições do <ViewTransition> do React (a página
+    // antiga se dissolve, a nova sobe; ver components/movimento/TransicaoPagina).
+    viewTransition: true,
   },
   // pdfkit reads its built-in font metrics (.afm) from node_modules at runtime.
   // Vercel's serverless tracing doesn't detect these dynamic reads, so the

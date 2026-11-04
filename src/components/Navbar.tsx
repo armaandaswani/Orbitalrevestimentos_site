@@ -70,7 +70,10 @@ export default function Navbar() {
   const link = "text-xs tracking-[0.1em] uppercase font-semibold whitespace-nowrap transition-colors duration-200";
 
   return (
+    // Nome próprio de view transition: na troca de página o cabeçalho fica
+    // parado (globals.css › cabecalho) enquanto só o conteúdo se move.
     <header data-site data-oculto={oculto && !mobileOpen ? "1" : undefined}
+      style={{ viewTransitionName: "cabecalho" }}
       className="mv-cabecalho fixed top-0 w-full z-50 bg-white/95 backdrop-blur-sm border-b border-[#e8e8e8]">
       <div className="grid grid-cols-[auto_1fr_auto] items-center h-20 px-4 sm:px-8 xl:px-12 max-w-[90rem] mx-auto gap-x-6 min-[1400px]:gap-x-10">
         {/* Assinatura — terço esquerdo */}

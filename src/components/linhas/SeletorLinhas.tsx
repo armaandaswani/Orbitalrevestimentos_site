@@ -2,7 +2,7 @@
 
 import Image from "next/image";
 import Link from "next/link";
-import { useCallback, useEffect, useRef, useState, type KeyboardEvent } from "react";
+import { useCallback, useEffect, useRef, useState, ViewTransition, type KeyboardEvent } from "react";
 import { LINHAS, SITUACAO_ROTULO, type LinhaOrbital } from "@/lib/linhas";
 
 /**
@@ -77,7 +77,7 @@ export default function SeletorLinhas({ titulo = "h3" }: {
           <div key={l.slug} id={`linha-painel-${l.slug}`} role="tabpanel" aria-labelledby={`linha-aba-${l.slug}`}
             aria-hidden={ativo !== i} inert={ativo !== i}
             className="w-full shrink-0 snap-center pt-6 sm:pt-10">
-            <Painel linha={l} Titulo={titulo} prioridade={i === 0} />
+            <Painel linha={l} Titulo={titulo} prioridade={i === 0} morph={l.slug === "techstone" && ativo === i} />
           </div>
         ))}
       </div>
@@ -85,15 +85,27 @@ export default function SeletorLinhas({ titulo = "h3" }: {
   );
 }
 
-function Painel({ linha, Titulo, prioridade }: { linha: LinhaOrbital; Titulo: "h2" | "h3"; prioridade: boolean }) {
+function Painel({ linha, Titulo, prioridade, morph }: {
+  linha: LinhaOrbital; Titulo: "h2" | "h3"; prioridade: boolean;
+  /** A foto leva o nome do morph da TechStone (painel da TechStone e ativo). */
+  morph: boolean;
+}) {
   const prontaEntrega = linha.situacao === "pronta-entrega";
   return (
     <div className="grid gap-6 md:grid-cols-[minmax(0,1.1fr)_minmax(0,1fr)] md:gap-12 md:items-center">
       <div className="relative aspect-[16/10] md:aspect-[4/5] overflow-hidden bg-[#141A26]">
         {linha.imagem ? (
           <>
-            <Image src={linha.imagem.src} alt={linha.imagem.alt} fill priority={prioridade}
-              sizes="(min-width: 768px) 50vw, 100vw" className="object-cover" />
+            {/* A foto da TechStone vira a abertura da página dela (mesmo nome
+                em techstone/Apresentacao). Só ela: o catálogo do PFB não abre
+                com a mesma foto, então essa navegação apenas se dissolve. E só
+                com o painel à vista: fora da tela (outra aba ativa) o morph
+                sairia voando do canto, e na volta para cá a foto cairia num
+                painel escondido. Sem nome, a foto troca junto com a página. */}
+            <ViewTransition name={morph ? "linha-techstone" : undefined} share="mv-morph" default="none">
+              <Image src={linha.imagem.src} alt={linha.imagem.alt} fill priority={prioridade}
+                sizes="(min-width: 768px) 50vw, 100vw" className="object-cover" />
+            </ViewTransition>
             {linha.imagemGerada && (
               <span className="absolute left-3 bottom-3 bg-black/55 text-white text-[11px] tracking-[0.02em] px-2 py-1">Imagem gerada por IA</span>
             )}

@@ -37,7 +37,7 @@ export default async function ShowroomPage({ params }: { params: Promise<{ slug:
     return (
       <div className="pt-32 pb-32 max-w-4xl mx-auto px-4 text-center">
         <h1 className="font-serif text-primary text-3xl mb-4">Showroom não encontrado</h1>
-        <Link href="/projetos" className="inline-flex items-center min-h-11 px-4 text-primary underline text-sm">Ver todos os projetos</Link>
+        <Link href="/projetos" transitionTypes={["voltar"]} className="inline-flex items-center min-h-11 px-4 text-primary underline text-sm">Ver todos os projetos</Link>
       </div>
     );
   }
@@ -45,7 +45,9 @@ export default async function ShowroomPage({ params }: { params: Promise<{ slug:
   return (
     <div className="pt-20 bg-background">
       <div className="ds-wrap pt-6">
-        <Link href="/projetos#parceiros" className="inline-flex items-center gap-1.5 min-h-11 text-xs tracking-[0.14em] uppercase font-bold text-on-surface-variant hover:text-primary transition-colors">
+        {/* Link de volta: o tipo "voltar" inverte a transição de página
+            (components/movimento/TransicaoPagina). */}
+        <Link href="/projetos#parceiros" transitionTypes={["voltar"]} className="inline-flex items-center gap-1.5 min-h-11 text-xs tracking-[0.14em] uppercase font-bold text-on-surface-variant hover:text-primary transition-colors">
           <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" aria-hidden><path d="M15 18l-6-6 6-6" /></svg>
           Projetos e parceiros
         </Link>

@@ -390,6 +390,57 @@ html:has(header[data-site][data-oculto="1"]) .ds-sob-cabecalho { top: 0; }
    chegarem perto da tela. 900px é só a altura reservada até a primeira medida. */
 .mv-adiado { content-visibility: auto; contain-intrinsic-size: auto 900px; }
 
+/* ── Transição entre páginas (components/movimento/TransicaoPagina) ─────────
+   A página antiga se dissolve subindo 8px em 260ms; a nova chega subindo 16px
+   em 520ms na curva de chegada. No voltar (tipo "voltar") o sentido inverte:
+   a antiga desce e a nova vem de cima. Só transform e opacity. Sem suporte a
+   View Transitions a troca é instantânea, como antes. */
+@keyframes mv-vt-sai { to { opacity: 0; transform: translate3d(0, var(--mv-vt-y), 0); } }
+@keyframes mv-vt-entra { from { opacity: 0; transform: translate3d(0, var(--mv-vt-y), 0); } }
+@keyframes mv-vt-some { to { opacity: 0; } }
+@keyframes mv-vt-surge { from { opacity: 0; } }
+::view-transition-old(.mv-sai) { --mv-vt-y: -8px; animation: mv-vt-sai 260ms var(--mv-percurso) both; }
+::view-transition-old(.mv-sai-volta) { --mv-vt-y: 8px; animation: mv-vt-sai 260ms var(--mv-percurso) both; }
+::view-transition-new(.mv-entra) { --mv-vt-y: 16px; animation: mv-vt-entra 520ms var(--mv-chegada) both; }
+::view-transition-new(.mv-entra-volta) { --mv-vt-y: -16px; animation: mv-vt-entra 520ms var(--mv-chegada) both; }
+
+/* O cabeçalho fica ancorado: sem animação, acima do conteúdo, e só a versão
+   nova aparece (a antiga escondida evita dois cabeçalhos sobrepostos). */
+::view-transition-group(cabecalho) { animation: none; z-index: 100; }
+::view-transition-old(cabecalho) { display: none; }
+::view-transition-new(cabecalho) { animation: none; }
+
+/* Morph de uma foto entre páginas (classe mv-morph, via share do
+   <ViewTransition>): viagem lenta e assentada na curva de percurso; as duas
+   imagens cobrem a caixa em vez de esticar quando as proporções diferem (4:5
+   no seletor, tela cheia na abertura da TechStone). O z-index põe a foto por
+   cima da página que chega (o par herda o lugar da página antiga na pilha e
+   ficaria escondido sob a nova), ainda abaixo do cabeçalho. */
+::view-transition-group(.mv-morph) { animation-duration: var(--mv-lento); animation-timing-function: var(--mv-percurso); z-index: 50; }
+::view-transition-old(.mv-morph),
+::view-transition-new(.mv-morph) { height: 100%; object-fit: cover; animation-duration: var(--mv-lento); }
+/* TechStone: a abertura começa escura (a foto só acende ao rolar), então o
+   destino do morph é transparente. A foto viaja inteira e só no fim se
+   dissolve no escuro, revelando o nome. */
+@keyframes mv-vt-dissolve { 0%, 40% { opacity: 1; } to { opacity: 0; } }
+::view-transition-old(linha-techstone) { animation: mv-vt-dissolve var(--mv-lento) ease-in-out both; }
+
+/* Movimento reduzido: nada se desloca nem muda de tamanho; tudo vira uma
+   fusão de 200ms só de opacidade (as classes entram na lista para vencer a
+   especificidade das regras acima). */
+@media (prefers-reduced-motion: reduce) {
+  ::view-transition-group(*),
+  ::view-transition-group(.mv-morph) { animation: none; }
+  ::view-transition-old(*),
+  ::view-transition-old(.mv-sai),
+  ::view-transition-old(.mv-sai-volta),
+  ::view-transition-old(.mv-morph) { animation: mv-vt-some 200ms ease both; }
+  ::view-transition-new(*),
+  ::view-transition-new(.mv-entra),
+  ::view-transition-new(.mv-entra-volta),
+  ::view-transition-new(.mv-morph) { animation: mv-vt-surge 200ms ease both; }
+}
+
 /* ── Intro da órbita (components/movimento/IntroOrbita) ─────────────────────
    Só existe sob html[data-intro="1"], ligado antes da pintura pelo porteiro
    inline (primeira página da visita, sem movimento reduzido). Sequência:

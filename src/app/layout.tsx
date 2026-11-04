@@ -9,6 +9,7 @@ import SiteChrome from "@/components/SiteChrome";
 import ContatoSheet from "@/components/ContatoSheet";
 import Movimento from "@/components/movimento/Movimento";
 import IntroOrbita from "@/components/movimento/IntroOrbita";
+import TransicaoPagina from "@/components/movimento/TransicaoPagina";
 import { SpeedInsights } from "@vercel/speed-insights/next";
 import { Analytics } from "@vercel/analytics/next";
 
@@ -240,7 +241,10 @@ export default function RootLayout({
   return (
     // suppressHydrationWarning: o porteiro da intro liga data-intro no <html>
     // antes da hidratação; só esse nível é silenciado, não os filhos.
-    <html lang="pt-BR" className={`${inter.variable} ${notoSerif.variable}`} suppressHydrationWarning>
+    // data-scroll-behavior="smooth": o Next 16 só desliga a rolagem suave do
+    // <html> durante a troca de rota com este atributo. Sem ele, a página nova
+    // descia do rodapé até o topo devagar, e a transição fotografava o rodapé.
+    <html lang="pt-BR" className={`${inter.variable} ${notoSerif.variable}`} data-scroll-behavior="smooth" suppressHydrationWarning>
       <head>
         <Script
           strategy="afterInteractive"
@@ -293,7 +297,11 @@ export default function RootLayout({
           <Navbar />
           <Movimento />
         </SiteChrome>
-        <div className="flex-1">{children}</div>
+        {/* A página troca dentro de um <ViewTransition>: a antiga se dissolve,
+            a nova sobe; o cabeçalho e o rodapé ficam fora. */}
+        <TransicaoPagina>
+          <div className="flex-1">{children}</div>
+        </TransicaoPagina>
         <SiteChrome>
           <Footer />
           <ChatWidget />
