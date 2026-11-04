@@ -583,12 +583,13 @@ html:has(header[data-site][data-oculto="1"]) .ds-sob-cabecalho { top: 0; }
 
 /* ── Intro da órbita (components/movimento/IntroOrbita) ─────────────────────
    Só existe sob html[data-intro="1"], ligado antes da pintura pelo porteiro
-   inline (primeira página da visita, sem movimento reduzido). Sequência:
-   faixa azul 0–0,45 s, verde 0,45–0,9 s, logotipo 0,9–1,2 s, cortina sobe
-   1,2–1,6 s. A rolagem nunca trava; o clique é liberado quando a cortina
-   começa a subir; a trava de 2,2 s esconde tudo mesmo sem JavaScript.
+   inline (primeira página da visita, sem movimento reduzido). Sequência de
+   cerca de 3 s com o logo oficial de 2026: as faixas azuis e depois as verdes
+   se constroem 0–1,6 s, o logotipo sobe e se revela 1,6–2,3 s, a cortina sobe
+   2,3–3,0 s. A rolagem nunca trava; o clique é liberado quando a cortina
+   começa a subir; a trava de 3,6 s esconde tudo mesmo sem JavaScript.
    IntroOrbitaControle adianta as animações da cortina no pulo: os nomes
-   intro-cortina, intro-solta e intro-conteudo-sai e o atraso de 1200ms
+   intro-cortina, intro-solta e intro-conteudo-sai e o atraso de 2300ms
    precisam bater com as constantes de lá. */
 .intro-orbita { display: none; }
 html[data-intro="1"] .intro-orbita {
@@ -602,47 +603,55 @@ html[data-intro="1"] .intro-orbita {
   clip-path: inset(0 0 0 0);
   contain: strict;
   animation:
-    intro-cortina 400ms var(--mv-percurso) 1200ms both,
-    intro-solta 1ms linear 1200ms forwards,
-    intro-seguranca 1ms linear 2200ms forwards;
+    intro-cortina 700ms var(--mv-percurso) 2300ms both,
+    intro-solta 1ms linear 2300ms forwards,
+    intro-seguranca 1ms linear 3600ms forwards;
 }
+.intro-orbita__formas { position: absolute; width: 0; height: 0; overflow: hidden; }
 .intro-orbita__conteudo {
   display: flex;
-  flex-direction: column;
   align-items: center;
-  gap: clamp(1.75rem, 1rem + 2.5vmin, 2.5rem);
-  /* Um pouco acima do centro geométrico: o conjunto pesa embaixo (logotipo). */
-  margin-top: -4vh;
-  animation: intro-conteudo-sai 400ms var(--mv-percurso) 1200ms both;
+  justify-content: center;
+  animation: intro-conteudo-sai 700ms var(--mv-percurso) 2300ms both;
 }
-.intro-orbita__simbolo {
-  width: clamp(5.25rem, 3.5rem + 6vmin, 7.5rem);
+/* Tamanho: ~56vw no computador (até 760px) com o horizontal; no celular, o
+   vertical com ~84vw. Respira de 0,97 a 1 enquanto o símbolo se constrói. */
+.intro-orbita__logo {
   height: auto;
   overflow: visible;
-  animation: intro-respira 1200ms var(--mv-chegada) both;
+  animation: intro-respira 1600ms var(--mv-chegada) both;
+}
+.intro-orbita__logo--horizontal { display: none; width: min(56vw, 760px); }
+.intro-orbita__logo--vertical { width: min(84vw, 26rem); }
+@media (min-width: 640px) {
+  .intro-orbita__logo--horizontal { display: block; }
+  .intro-orbita__logo--vertical { display: none; }
+}
+/* Cada faixa gira até 8° em volta do centro da esfera até o lugar (a origem
+   vem no style, relativa à caixa da faixa) enquanto a máscara dela a varre ao
+   longo do próprio eixo. Azuis giram no sentido horário, verdes no anti-horário:
+   as duas órbitas se cruzam ao se montar. Atraso de cada uma em --atraso. */
+.intro-orbita__faixa {
+  transform-box: fill-box;
+  animation: intro-faixa 700ms var(--mv-chegada) var(--atraso, 0ms) both;
+}
+.intro-orbita__faixa--azul { --giro: -8deg; }
+.intro-orbita__faixa--verde { --giro: 8deg; }
+.intro-orbita__varredura {
+  animation: intro-varre 700ms var(--mv-chegada) var(--atraso, 0ms) both;
 }
 .intro-orbita__assinatura {
-  width: clamp(8.5rem, 6rem + 8vmin, 11.5rem);
-  height: auto;
-  animation: intro-assina 300ms var(--mv-chegada) 900ms both;
+  animation: intro-assina 700ms var(--mv-chegada) 1600ms both;
 }
-/* Máscara de cada faixa: o traço (pathLength 100) começa vazio e se fecha.
-   101 em vez de 100 para não sobrar fresta na emenda do círculo. As duas
-   curvas têm a mesma velocidade na passagem (inclinação 7/3), então as
-   duas voltas leem como uma órbita só: ganha ritmo na azul, assenta na
-   verde. Aceleração branda: o primeiro instante já mostra a faixa andando. */
-.intro-orbita__arco {
-  fill: none;
-  stroke: #fff;
-  stroke-dasharray: 101 101;
-  stroke-dashoffset: 101;
+.intro-orbita__varredura-assinatura {
+  animation: intro-varre 700ms var(--mv-chegada) 1600ms both;
 }
-.intro-orbita__arco--azul { animation: intro-arco 450ms cubic-bezier(0.4, 0, 0.7, 0.3) both; }
-.intro-orbita__arco--verde { animation: intro-arco 450ms cubic-bezier(0.3, 0.7, 0.6, 1) 450ms both; }
 
-@keyframes intro-arco { to { stroke-dashoffset: 0; } }
-@keyframes intro-respira { from { transform: scale(0.96); } }
-@keyframes intro-assina { from { opacity: 0; transform: translate3d(0, 0.5rem, 0); } }
+@keyframes intro-respira { from { transform: scale(0.97); } }
+@keyframes intro-faixa { from { transform: rotate(var(--giro)); } }
+@keyframes intro-varre { from { transform: translateX(var(--curso)); } }
+/* 12 unidades do viewBox: ~13px no computador, ~10px no celular. */
+@keyframes intro-assina { from { opacity: 0; transform: translateY(12px); } }
 @keyframes intro-cortina { from { clip-path: inset(0 0 0 0); } to { clip-path: inset(0 0 100% 0); } }
 @keyframes intro-conteudo-sai { to { opacity: 0; transform: translate3d(0, -2rem, 0); } }
 /* Travas de estado: o mesmo valor no início e no fim, para não depender de
