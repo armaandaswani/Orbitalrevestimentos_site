@@ -19,6 +19,8 @@ const TOLERANCIA_DEDO_PX = 10;
 const MARGEM_TELA_PX = 6;
 /** Depois de soltar o dedo que segurou, o clique sintético que o navegador manda ainda é engolido por este tempo. */
 const ENGOLIR_CLIQUE_MS = 600;
+/** Lente fechada há tanto tempo (as transições levam menos de 0,4 s): o portal sai do DOM. */
+const DESMONTAR_MS = 1000;
 
 interface Estado {
   /** Ponto a seguir e ponto mostrado agora (a lente suaviza de um para o outro), em px de tela. */
@@ -31,6 +33,8 @@ interface Estado {
   toque: boolean;
   /** Pedido de download já feito (a primeira interação dispara; depois não repete). */
   carregou: string | null;
+  /** Último arquivo que falhou ao baixar: só uma interação nova (entrar, segurar) tenta de novo. */
+  falhou: string | null;
   temporizador: number | null;
   inicio: { x: number; y: number };
   /** Houve um segurar de dedo: o clique que viria ao soltar não deve selecionar nada. */
@@ -69,7 +73,7 @@ export default function Lupa({ fonte, ajuste = "cobrir", className = "relative b
   const est = useCallback((): Estado => {
     estadoRef.current ??= {
       alvo: { x: 0, y: 0 }, atual: { x: 0, y: 0 }, caixa: null, natural: null,
-      aberta: false, toque: false, carregou: null, temporizador: null,
+      aberta: false, toque: false, carregou: null, falhou: null, temporizador: null,
       inicio: { x: 0, y: 0 }, segurou: false, limparSegurou: null,
     };
     return estadoRef.current;
@@ -86,10 +90,16 @@ export default function Lupa({ fonte, ajuste = "cobrir", className = "relative b
 
   const visivel = aberta && pronta === fonte && sobreImagem;
 
-  /** Começa a baixar o arquivo grande (uma vez por `fonte`). */
-  const baixar = useCallback(() => {
+  /**
+   * Começa a baixar o arquivo grande (uma vez por `fonte`). Só é chamado por
+   * uma interação de verdade: passar o mouse, segurar o dedo, ou mexer o mouse
+   * depois de a foto ter trocado. Com `retentar`, uma falha anterior não bloqueia.
+   */
+  const baixar = useCallback((retentar: boolean) => {
     if (est().carregou === fonte) return;
+    if (!retentar && est().falhou === fonte) return;
     est().carregou = fonte;
+    est().falhou = null;
     est().natural = null;
     const img = new Image();
     img.decoding = "async";
@@ -98,19 +108,23 @@ export default function Lupa({ fonte, ajuste = "cobrir", className = "relative b
       est().natural = { l: img.naturalWidth, a: img.naturalHeight };
       setPronta(fonte);
     };
+    img.onerror = () => {
+      // Falhou: nada fica bloqueado (sem `natural` a lente não abre) e a próxima interação tenta de novo.
+      if (est().carregou !== fonte) return;
+      est().carregou = null;
+      est().falhou = fonte;
+    };
     img.src = fonte;
   }, [est, fonte]);
 
-  /** Primeira interação: cria a lente no DOM e baixa o arquivo grande. */
-  const carregar = useCallback(() => {
+  /** Cria a lente no DOM e (se preciso) baixa o arquivo grande. */
+  const carregar = useCallback((retentar: boolean) => {
     setAtivou(true);
-    baixar();
+    baixar(retentar);
   }, [baixar]);
 
-  // Troca de foto com a lupa já em uso (galeria do PFB): busca a nova.
-  useEffect(() => {
-    if (est().carregou && est().carregou !== fonte) baixar();
-  }, [est, fonte, baixar]);
+  /** O arquivo desta `fonte` já baixou: só então a lente pode aparecer. */
+  const arquivoPronto = useCallback(() => est().carregou === fonte && est().natural !== null, [est, fonte]);
 
   /** Mede onde a imagem está na tela agora e ajusta o tamanho da textura ampliada. */
   const medir = useCallback(() => {
@@ -238,9 +252,17 @@ export default function Lupa({ fonte, ajuste = "cobrir", className = "relative b
     if (t !== null) window.clearTimeout(t);
   }, [est, cancelarTemporizador]);
 
+  // Lente fechada por um tempo: tira o portal do DOM (e a camada fixa do navegador)
+  // para passar por muitas miniaturas não deixar camadas ociosas pela página.
+  useEffect(() => {
+    if (aberta || !ativou) return;
+    const t = window.setTimeout(() => setAtivou(false), DESMONTAR_MS);
+    return () => window.clearTimeout(t);
+  }, [aberta, ativou]);
+
   const aoEntrar = (ev: PointerEvent) => {
     if (ev.pointerType === "touch") return;
-    carregar();
+    carregar(true);
     abrir(ev.clientX, ev.clientY, false);
   };
 
@@ -255,8 +277,14 @@ export default function Lupa({ fonte, ajuste = "cobrir", className = "relative b
       }
       return;
     }
-    if (!est().aberta) abrir(ev.clientX, ev.clientY, false);
-    else apontar(ev.clientX, ev.clientY);
+    if (!est().aberta) {
+      carregar(false);
+      abrir(ev.clientX, ev.clientY, false);
+    } else {
+      // A foto pode ter trocado com o mouse parado em cima (setas da galeria): busca a nova agora.
+      baixar(false);
+      apontar(ev.clientX, ev.clientY);
+    }
   };
 
   const aoSair = (ev: PointerEvent) => {
@@ -266,15 +294,26 @@ export default function Lupa({ fonte, ajuste = "cobrir", className = "relative b
 
   const aoPressionar = (ev: PointerEvent) => {
     if (ev.pointerType !== "touch") return;
-    carregar();
     cancelarTemporizador();
+    // Segundo dedo (pinça): nunca abre a lente nem bloqueia o gesto.
+    if (!ev.isPrimary) return;
     const antigo = est().limparSegurou;
     if (antigo !== null) window.clearTimeout(antigo);
     est().segurou = false;
     est().inicio = { x: ev.clientX, y: ev.clientY };
     const { clientX, clientY } = ev;
+    // Encostar não baixa nada: um deslize de rolagem começa assim. A interação de
+    // verdade é o segurar de 250 ms, e só ela busca o arquivo grande.
     est().temporizador = window.setTimeout(() => {
       est().temporizador = null;
+      carregar(true);
+      // Arquivo ainda baixando (primeira vez): o toque segue sendo um toque comum,
+      // sem bloquear rolagem nem engolir o clique. A lente fica para a próxima.
+      if (!arquivoPronto()) return;
+      medir();
+      const c = est().caixa;
+      if (ajuste === "conter" && c && !(clientX >= c.left && clientX <= c.left + c.width && clientY >= c.top && clientY <= c.top + c.height)) return;
+      // Só a partir daqui o segurar vale: a lente abre, a rolagem e o clique saem de cena.
       est().segurou = true;
       abrir(clientX, clientY, true);
     }, LENTE_SEGURAR_MS);
@@ -301,6 +340,8 @@ export default function Lupa({ fonte, ajuste = "cobrir", className = "relative b
       onPointerCancel={aoSoltar}
       // Segurou e soltou: não é um clique (o botão de fora não deve selecionar).
       onClickCapture={(ev) => {
+        // Qualquer clique fecha a lente, para ela nunca ficar por cima de um overlay aberto por ele.
+        if (est().aberta) fechar();
         if (!est().segurou) return;
         ev.stopPropagation();
         ev.preventDefault();

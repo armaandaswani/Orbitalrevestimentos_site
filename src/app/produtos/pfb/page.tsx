@@ -5,6 +5,7 @@ import { useState, useEffect, useCallback, useRef } from "react";
 import { normalizeProductCode, productPath, productQrUrl, productUrl } from "@/lib/product-link";
 import ContatoCta from "@/components/ContatoCta";
 import Lupa from "@/components/movimento/Lupa";
+import { urlOtimizada } from "@/lib/movimento/lente";
 
 const CATALOGUE_URL =
   "https://drive.google.com/file/d/1zhm5MgKGSDRThqk8FqqwfX-WijI7K-iD/view?usp=drive_link";
@@ -416,9 +417,9 @@ export default function ProdutosPage() {
                     className="absolute inset-0 z-10 cursor-zoom-in"
                     aria-label="Ampliar foto"
                   >
-                    {/* Lupa: a mesma foto, no arquivo original (sem o redimensionamento do
-                        next/image), ampliada 2,5× sob o mouse ou ao segurar o dedo. */}
-                    <Lupa fonte={images[imgIdx] ?? selected.image_path} ajuste="conter" className="absolute inset-0 block">
+                    {/* Lupa: a mesma foto ampliada 2,5× sob o mouse ou ao segurar o dedo, na
+                        versão de 1920 px do next/image (o original pesa vários MB). */}
+                    <Lupa fonte={urlOtimizada(images[imgIdx] ?? selected.image_path)} ajuste="conter" className="absolute inset-0 block">
                       <Image
                         key={images[imgIdx]}
                         src={images[imgIdx] ?? selected.image_path}

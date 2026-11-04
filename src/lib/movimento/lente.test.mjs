@@ -2,7 +2,7 @@ import test from "node:test";
 import assert from "node:assert/strict";
 import {
   LENTE_TAMANHO, LENTE_ZOOM, LENTE_ALTURA_TOQUE, LENTE_SEGURAR_MS,
-  posicaoLente, retanguloAjustado,
+  posicaoLente, retanguloAjustado, urlOtimizada,
 } from "./lente.ts";
 
 const caixa = { left: 100, top: 200, width: 300, height: 400 };
@@ -90,4 +90,13 @@ test("conter: imagem inteira dentro da caixa, centrada", () => {
 test("dimensões inválidas devolvem a própria caixa", () => {
   const c = { left: 1, top: 2, width: 30, height: 40 };
   assert.deepEqual(retanguloAjustado(c, 0, 0, "cobrir"), c);
+});
+
+test("urlOtimizada codifica o original e usa 1920 px, qualidade 75", () => {
+  const o = "https://exemplo.supabase.co/storage/v1/object/public/site-images/products/a b.png";
+  assert.equal(
+    urlOtimizada(o),
+    "/_next/image?url=https%3A%2F%2Fexemplo.supabase.co%2Fstorage%2Fv1%2Fobject%2Fpublic%2Fsite-images%2Fproducts%2Fa%20b.png&w=1920&q=75",
+  );
+  assert.equal(urlOtimizada("/x.jpg", 1200, 60), "/_next/image?url=%2Fx.jpg&w=1200&q=60");
 });

@@ -78,3 +78,13 @@ export function retanguloAjustado(
     height: h,
   };
 }
+
+/**
+ * Endereço da versão otimizada (WebP/JPEG redimensionado) que o `next/image`
+ * serve para um original remoto. A lupa usa 1920 px, a maior das larguras
+ * configuradas, em vez do arquivo cru de vários MB. A qualidade tem de estar
+ * entre as permitidas pelo Next (só 75 por padrão: 80 dá erro 400).
+ */
+export function urlOtimizada(original: string, largura = 1920, qualidade = 75): string {
+  return `/_next/image?url=${encodeURIComponent(original)}&w=${largura}&q=${qualidade}`;
+}
