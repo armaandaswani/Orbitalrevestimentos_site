@@ -108,7 +108,8 @@ function Painel({ linha, Titulo, prioridade, morph }: {
   const prontaEntrega = linha.situacao === "pronta-entrega";
   return (
     <div className="grid gap-6 md:grid-cols-[minmax(0,1.1fr)_minmax(0,1fr)] md:gap-12 md:items-center">
-      <div className={`relative aspect-[16/10] md:aspect-[4/5] overflow-hidden bg-[#141A26]${linha.imagem ? " mv-brilho" : ""}`}>
+      <div className={`relative aspect-[16/10] md:aspect-[4/5] overflow-hidden bg-[#141A26]${linha.imagem ? " mv-brilho" : ""}`}
+        data-cursor={linha.imagem ? "ver" : undefined}>
         {linha.imagem ? (
           <>
             {/* A foto da TechStone vira a abertura da página dela (mesmo nome

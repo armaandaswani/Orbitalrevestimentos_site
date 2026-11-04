@@ -5,6 +5,7 @@ import { LUZ_ALCANCE_PCT, posicaoNaSuperficie } from "@/lib/movimento/luz";
 import { decidirNivel, lerSinais } from "@/lib/movimento/nivel";
 import { relogio, tauAtual } from "@/lib/movimento/relogio";
 import { aproximar } from "@/lib/movimento/suavizar";
+import Cursor from "./Cursor";
 
 /** A luz acompanha o ponteiro mais devagar que um cursor: dois "tau" padrão. */
 const LUZ_TAU_FATOR = 2;
@@ -20,10 +21,11 @@ interface Inclinacao {
 /**
  * Marca o <html> com o nível de movimento do aparelho (`completo` ou `leve`),
  * uma vez, na montagem. O CSS lê `data-mv-nivel` para reduzir distâncias e
- * desligar efeitos caros. Também liga o único `pointermove` do site para a luz
+ * desligar efeitos caros. Também liga um `pointermove` delegado para a luz
  * sobre o material: com mouse (`pointer: fine`) e nível completo, a faixa de
  * `.mv-brilho` se inclina para o lado do ponteiro, suavizada pelo relógio.
- * Não renderiza nada.
+ * Monta ainda o cursor refinado (`<Cursor />`, com o seu próprio `pointermove`),
+ * que decide sozinho se liga. Fica dentro do SiteChrome: sem ele em /admin.
  */
 export default function Movimento() {
   useEffect(() => {
@@ -98,5 +100,5 @@ export default function Movimento() {
       for (const el of inclinacoes.keys()) el.style.removeProperty("--mv-luz-p");
     };
   }, []);
-  return null;
+  return <Cursor />;
 }

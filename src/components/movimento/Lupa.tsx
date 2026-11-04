@@ -332,6 +332,8 @@ export default function Lupa({ fonte, ajuste = "cobrir", className = "relative b
     <span
       ref={caixaRef}
       className={className}
+      // Com a lente do mouse à vista o cursor refinado some (CSS em globals.css): os dois nunca se empilham.
+      data-lupa={visivel && !toqueAberto ? "aberta" : undefined}
       onPointerEnter={aoEntrar}
       onPointerMove={aoMover}
       onPointerLeave={aoSair}

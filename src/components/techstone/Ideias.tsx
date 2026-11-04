@@ -235,7 +235,7 @@ function Galeria({ lista, verTamanho, parado, setParado, ultimaAcaoRef }: {
           const o = (i - v + m) % m;
           return (
             <button key={i} type="button" ref={(el) => { camadas.current[i] = el; }}
-              className="ts-galeria-camada mv-brilho" data-pos={posicao(o, k, m)}
+              className="ts-galeria-camada mv-brilho" data-cursor="ver" data-pos={posicao(o, k, m)}
               data-vizinho={o === 1 || o === m - 1 ? "" : undefined}
               tabIndex={o === 0 ? 0 : -1} aria-current={o === 0 ? "true" : undefined}
               aria-label={`${ideia.titulo} em ${modeloDe(ideia.modelo).nome}, ${rotuloFormato(formatoDe(ideia))}`}

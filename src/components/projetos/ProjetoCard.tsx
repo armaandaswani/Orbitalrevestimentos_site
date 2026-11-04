@@ -46,10 +46,10 @@ export default function ProjetoCard({
   );
   if (href) {
     return (
-      <a href={href} className={classe} onClick={(e) => { if (!onAbrir || e.metaKey || e.ctrlKey || e.shiftKey || e.button !== 0) return; e.preventDefault(); onAbrir(projeto); }}>
+      <a href={href} className={classe} data-cursor="ver" onClick={(e) => { if (!onAbrir || e.metaKey || e.ctrlKey || e.shiftKey || e.button !== 0) return; e.preventDefault(); onAbrir(projeto); }}>
         {miolo}
       </a>
     );
   }
-  return <button type="button" onClick={() => onAbrir?.(projeto)} className={classe}>{miolo}</button>;
+  return <button type="button" onClick={() => onAbrir?.(projeto)} className={classe} data-cursor="ver">{miolo}</button>;
 }

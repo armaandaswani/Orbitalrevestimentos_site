@@ -127,8 +127,11 @@ html[data-mv-nivel="leve"] { --mv-sobe: 12px; --mv-fator: 0.5; }
   display: inline-flex; align-items: center; justify-content: center; gap: 0.5rem;
   min-height: 2.75rem; padding-inline: 1.75rem;
   font-size: 0.75rem; letter-spacing: 0.12em; text-transform: uppercase; font-weight: 700;
-  transition: color 0.2s, background-color 0.2s, border-color 0.2s;
+  /* `translate` é a inclinação do Cursor: ao largar o botão, volta com a curva de chegada. */
+  transition: color 0.2s, background-color 0.2s, border-color 0.2s, translate var(--mv-base) var(--mv-chegada);
 }
+/* Enquanto o ponteiro o puxa, o relógio escreve o `translate` a cada quadro: sem transição nele. */
+.ds-botao[data-mv-segue] { transition-property: color, background-color, border-color; }
 @utility ds-botao-cheio { background: #0B1F45; color: #fff; &:hover { background: #2347A0; } }
 @utility ds-botao-vazado { border: 1px solid #0B1F45; color: #0B1F45; &:hover { background: #0B1F45; color: #fff; } }
 @utility ds-botao-claro { background: #fff; color: #0B1F45; &:hover { background: #F6F5F2; } }
@@ -1101,3 +1104,50 @@ html[data-mv-nivel="leve"] .ts-galeria-foto { transform: none !important; }
 @media (prefers-reduced-motion: reduce) {
   .mv-lupa-lente, .mv-lupa-lente[data-aberta="true"] { transform: none; transition: opacity 120ms linear; }
 }
+
+/* ── Cursor refinado (Cursor.tsx) ─────────────────────────────────────────────
+   Só existe sob html.mv-cursor (mouse, nível completo, sem movimento reduzido).
+   .mv-cursor-pos é movido por transform pelo relógio; o resto muda por
+   opacity e transform. O ponto tem um fio claro para não sumir sobre o azul
+   marinho das seções escuras. O cursor nativo só sai daqui: volta nos campos
+   de texto, em iframes e em qualquer lugar onde o ponto não é desenhado. */
+.mv-cursor-pos { display: none; }
+html.mv-cursor .mv-cursor-pos {
+  display: block; position: fixed; left: 0; top: 0; width: 0; height: 0;
+  z-index: 10000; pointer-events: none; will-change: transform; contain: layout style;
+}
+html.mv-cursor, html.mv-cursor * { cursor: none !important; }
+html.mv-cursor :is(input, textarea, select, iframe, [contenteditable]:not([contenteditable="false"]),
+  [contenteditable]:not([contenteditable="false"]) *) { cursor: auto !important; }
+html.mv-cursor :is(input, textarea, [contenteditable]:not([contenteditable="false"]),
+  [contenteditable]:not([contenteditable="false"]) *) { cursor: text !important; }
+
+.mv-cursor-corpo {
+  opacity: 0; transform: scale(1);
+  transition: opacity 180ms ease-out, transform 160ms var(--mv-chegada);
+}
+.mv-cursor-corpo[data-visivel="1"] { opacity: 1; }
+.mv-cursor-corpo[data-pressionado="1"] { transform: scale(0.85); }
+/* A lupa de textura traz o próprio ponto central: os dois nunca aparecem juntos. */
+html.mv-cursor:has([data-lupa="aberta"]) .mv-cursor-corpo { opacity: 0; }
+
+.mv-cursor-ponto {
+  position: absolute; left: -4px; top: -4px; width: 8px; height: 8px; border-radius: 50%;
+  background: #0B1F45; box-shadow: 0 0 0 1px rgb(255 255 255 / 0.7);
+  transition: transform 260ms var(--mv-chegada), opacity 160ms ease-out;
+}
+.mv-cursor-corpo[data-clicavel="1"] .mv-cursor-ponto { transform: scale(1.6); }
+.mv-cursor-anel {
+  position: absolute; left: -32px; top: -32px; width: 64px; height: 64px; border-radius: 50%;
+  display: flex; align-items: center; justify-content: center;
+  background: rgb(11 31 69 / 0.62); box-shadow: 0 0 0 1px rgb(255 255 255 / 0.7);
+  opacity: 0; transform: scale(0.125);
+  transition: opacity 160ms ease-out, transform 320ms var(--mv-chegada);
+}
+.mv-cursor-texto {
+  color: #fff; font-size: 0.75rem; line-height: 1; font-weight: 600; letter-spacing: 0.1em;
+  opacity: 0; transition: opacity 160ms ease-out;
+}
+.mv-cursor-corpo[data-ver="1"] .mv-cursor-ponto { opacity: 0; transform: scale(0.5); }
+.mv-cursor-corpo[data-ver="1"] .mv-cursor-anel { opacity: 1; transform: scale(1); }
+.mv-cursor-corpo[data-ver="1"] .mv-cursor-texto { opacity: 1; transition: opacity 220ms ease-out 120ms; }
