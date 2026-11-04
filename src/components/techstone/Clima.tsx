@@ -55,9 +55,10 @@ const CSS_SEM_JS = `
 .ts-clima .ts-clima-traco{stroke-dashoffset:0}
 .ts-clima .ts-clima-no{transform:translate3d(-50%,-50%,0)}
 .ts-clima .ts-clima-lista{grid-template-columns:repeat(2,minmax(0,1fr));column-gap:2rem;row-gap:2.5rem;text-align:left}
-@media (min-width:1024px){.ts-clima .ts-clima-lista{grid-template-columns:repeat(4,minmax(0,1fr));text-align:center}}
+.ts-clima .ts-clima-item{padding-inline:0}
+@media (min-width:1024px){.ts-clima .ts-clima-lista{grid-template-columns:repeat(4,minmax(0,1fr));column-gap:0;text-align:center}.ts-clima .ts-clima-item{padding-inline:var(--vao)}}
 @media (min-width:768px) and (max-width:1023.98px){.ts-clima .ts-clima-no{display:none}}
-@media (max-width:767.98px){.ts-clima .ts-clima-cabeca{padding-bottom:0}.ts-clima .ts-clima-linha{display:none}.ts-clima .ts-clima-lista{margin-top:2rem;padding-left:1.25rem;border-left:1px solid rgb(255 255 255/.6)}.ts-clima .ts-clima-item{height:auto;display:block}.ts-clima .ts-clima-item>p{position:static;margin-top:.75rem}}
+@media (max-width:767.98px){.ts-clima .ts-clima-cabeca{padding-bottom:0}.ts-clima .ts-clima-linha{display:none}.ts-clima .ts-clima-lista{margin-top:2rem;padding-left:1.25rem;border-left:1px solid rgb(255 255 255/.6)}.ts-clima .ts-clima-item{height:auto;display:block}.ts-clima .ts-clima-item>p{position:static;margin-top:.75rem;padding-right:0}}
 @media (max-width:639.98px){.ts-clima .ts-clima-lista{grid-template-columns:minmax(0,1fr)}}
 `;
 
@@ -111,11 +112,15 @@ export default function Clima({ preocupacoes }: { preocupacoes: { titulo: string
         <div aria-hidden className="ts-clima-camada ts-clima-ciclo ts-clima-frio absolute inset-0" />
         <div aria-hidden className="ts-clima-camada ts-clima-ciclo ts-clima-quente ts-clima-ambar absolute inset-0" />
 
+        {/* 6. Sombra macia no alto, atrás do texto preso: chega com a subida e segura o
+            contraste do texto de apoio mesmo com o sol batendo. */}
+        <div aria-hidden className="ts-clima-veu-texto absolute inset-0" />
+
         {/* O texto: título e linha sobem juntos; a lista fica onde termina a subida. */}
         <div className="ts-clima-palco ds-wrap absolute inset-x-0 top-0">
           <div className="ts-clima-cabeca">
             <h2 id="ts-amazonia" className="font-serif text-t1 max-w-[20ch] text-balance">Desenvolvida para a Amazônia.</h2>
-            <p className="ts-clima-lead mt-5 text-lead text-white/90 max-w-[50ch]">
+            <p className="ts-clima-lead mt-5 text-lead text-white max-w-[50ch]">
               Somos de Manaus e sabemos o que o clima daqui faz com um revestimento. Estas foram as nossas preocupações ao trazer a TechStone.
             </p>
 

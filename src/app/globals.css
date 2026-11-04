@@ -894,7 +894,7 @@ html[data-mv-nivel="leve"] .mv-camada { --mv-fe: calc((var(--mv-f) + 1) / 2); }
 .ts-clima-quadro { isolation: isolate; }
 /* Só as camadas visuais ignoram o ponteiro; o título e as preocupações ficam
    selecionáveis (são o texto de verdade da seção). */
-.ts-clima-fundo, .ts-clima-camada, .ts-clima-linha { pointer-events: none; }
+.ts-clima-fundo, .ts-clima-camada, .ts-clima-veu-texto, .ts-clima-linha { pointer-events: none; }
 .ts-clima-pedra { transform: scale(calc(1.08 - var(--p, 0) * 0.08)); }
 
 /* Janela de cada atmosfera: entra de --a em --wi, sai até --b em --wo. */
@@ -954,20 +954,30 @@ html[data-mv-nivel="leve"] .mv-camada { --mv-fe: calc((var(--mv-f) + 1) / 2); }
 .ts-clima-cabeca {
   transform: translate3d(0, calc((1 - var(--r)) * (88svh - var(--topo) - 100%)), 0);
 }
-.ts-clima-lead { opacity: calc(1 - 0.3 * var(--r)); }
+.ts-clima-lead { opacity: calc(1 - 0.15 * var(--r)); }
+/* Sombra macia no alto, por cima das luzes e embaixo do texto: chega com a
+   subida (o topo da pedra é a parte mais clara, e o sol bate ali) e mantém o
+   texto de apoio acima de 4,5:1. */
+.ts-clima-veu-texto {
+  background: linear-gradient(to bottom, rgb(20 18 16 / .5), rgb(20 18 16 / .38) 45%, transparent 75%);
+  opacity: var(--r);
+}
 
 /* A linha. Deitada (768px+): oito meias ondas iguais, então os nós em 1/8,
    3/8, 5/8 e 7/8 da largura caem nas mesmas frações do comprimento. Em pé
    (celular): dez meias ondas de 1,375rem; as duas primeiras são o trecho
    embaixo do texto e os nós caem no meio de cada linha da lista (3/10 … 9/10).
-   --f0 é o trecho já desenhado na abertura. */
+   --f0 é o trecho já desenhado na abertura; --t1 é até onde o trecho 1
+   desenha (nunca antes de --f0, então a linha não recua). Deitada, a abertura
+   já passa do nó 1: no trecho 1 ele só acende. */
 .ts-clima-linha { position: relative; height: 2.5rem; margin-top: 2rem; }
 .ts-clima-onda { position: absolute; inset: 0; width: 100%; height: 100%; }
-.ts-clima-onda-h { --f0: 0.1; --n1: 0.125; --n2: 0.375; --n3: 0.625; --n4: 0.875; }
+.ts-clima-onda-h { --f0: 0.25; --n1: 0.125; --n2: 0.375; --n3: 0.625; --n4: 0.875; }
 .ts-clima-onda-v { --f0: 0.2; --n1: 0.3; --n2: 0.5; --n3: 0.7; --n4: 0.9; display: none; }
 .ts-clima-traco {
+  --t1: max(var(--f0), var(--n1));
   stroke-dasharray: 1;
-  stroke-dashoffset: calc(1 - var(--f0) - (var(--n1) - var(--f0)) * var(--l1) - (var(--n2) - var(--n1)) * var(--l2)
+  stroke-dashoffset: calc(1 - var(--f0) - (var(--t1) - var(--f0)) * var(--l1) - (var(--n2) - var(--t1)) * var(--l2)
     - (var(--n3) - var(--n2)) * var(--l3) - (var(--n4) - var(--n3)) * var(--l4) - (1 - var(--n4)) * var(--l5));
 }
 /* Nó: um ponto com um anel leve, que cresce de 0 a 1 quando a linha chega. */
@@ -979,18 +989,21 @@ html[data-mv-nivel="leve"] .mv-camada { --mv-fe: calc((var(--mv-f) + 1) / 2); }
   transform: translate3d(-50%, -50%, 0) scale(var(--no));
 }
 
-/* As preocupações: uma coluna embaixo de cada nó. Cada uma sobe no seu
-   trecho (--a no elemento) e esmaece para 60% quando chega a seguinte (--s);
-   no fim voltam todas inteiras. */
+/* As preocupações: uma coluna embaixo de cada nó. Sem vão entre colunas (o
+   respiro é o padding do item), para o centro de cada uma cair exatamente em
+   (2i+1)/8, sob o nó. Cada uma sobe no seu trecho (--a no elemento) e
+   esmaece para 60% quando chega a seguinte (--s); no fim voltam inteiras. */
 .ts-clima-lista {
+  --vao: clamp(.625rem, 1.25vw, 1.25rem);
   display: grid; grid-template-columns: repeat(4, minmax(0, 1fr));
-  column-gap: clamp(1.25rem, 2.5vw, 2.5rem); margin-top: 1.25rem; text-align: center;
+  column-gap: 0; margin-top: 1.25rem; text-align: center;
 }
 .ts-clima-item {
   --entra: clamp(0, (var(--p, 0) - var(--a) - 0.06) / 0.05, 1);
   --suave: calc(clamp(0, (var(--p, 0) - var(--s) - 0.06) / 0.05, 1) * (1 - var(--juntas)));
   opacity: calc(var(--entra) * (1 - 0.4 * var(--suave)));
   transform: translate3d(0, calc((1 - var(--entra)) * 1.25rem), 0);
+  padding-inline: var(--vao);
 }
 .ts-clima-item > p { margin-top: .75rem; }
 
@@ -998,7 +1011,10 @@ html[data-mv-nivel="leve"] .mv-camada { --mv-fe: calc((var(--mv-f) + 1) / 2); }
    linha da lista (2,75rem) e um só espaço para o parágrafo, embaixo dos quatro.
    O <p> continua no seu <li>: o li transformado é o bloco de referência dele,
    por isso a distância até o espaço comum depende de --i. Sai quando chega o
-   seguinte; o último fica. */
+   seguinte; o último fica. Os quatro dividem o mesmo lugar: o z-index (inteiro,
+   o calc arredonda) põe por cima só o que está visível, para o toque longo
+   selecionar o parágrafo que se vê. O respiro à direita deixa o texto fora do
+   botão fixo de conversa. */
 @media (max-width: 767.98px) {
   .ts-clima-palco { --topo: max(5.25rem, 50svh - 17rem); }
   .ts-clima-cabeca { position: relative; padding-bottom: 3.25rem; }
@@ -1010,10 +1026,14 @@ html[data-mv-nivel="leve"] .mv-camada { --mv-fe: calc((var(--mv-f) + 1) / 2); }
     box-shadow: 0 0 0 4px rgb(255 255 255 / .14), 0 0 12px 2px rgb(255 255 255 / .16);
   }
   .ts-clima-lista { grid-template-columns: minmax(0, 1fr); margin-top: 0; padding-left: 2.25rem; text-align: left; }
-  .ts-clima-item { display: flex; align-items: center; height: 2.75rem; }
+  .ts-clima-item {
+    --fora: clamp(0, (var(--p, 0) - var(--s) - 0.06) / 0.04, 1);
+    display: flex; align-items: center; height: 2.75rem; padding-inline: 0;
+    z-index: calc(var(--entra) * (1 - var(--fora)) * 2);
+  }
   .ts-clima-item > p {
     position: absolute; left: 0; right: 0; top: calc((4 - var(--i)) * 2.75rem + 1rem); margin-top: 0;
-    opacity: calc(1 - clamp(0, (var(--p, 0) - var(--s) - 0.06) / 0.04, 1));
+    padding-right: 4rem; opacity: calc(1 - var(--fora));
   }
 }
 
@@ -1026,6 +1046,7 @@ html[data-mv-nivel="leve"] .mv-camada { --mv-fe: calc((var(--mv-f) + 1) / 2); }
 .ts-clima[data-ativo] .ts-clima-cabeca,
 .ts-clima[data-ativo] .ts-clima-item,
 .ts-clima[data-ativo] .ts-clima-no { will-change: opacity, transform; }
+.ts-clima[data-ativo] .ts-clima-veu-texto { will-change: opacity; }
 
 /* Nível leve: sem a névoa (três camadas grandes em movimento). */
 html[data-mv-nivel="leve"] .ts-clima-nevoa { display: none; }
@@ -1034,33 +1055,35 @@ html[data-mv-nivel="leve"] .ts-clima-nevoa { display: none; }
    escurecida ao fundo; título, texto, a linha inteira (deitada a partir de
    768px, em pé no celular) e as quatro preocupações em grade (1 coluna no
    celular, 2 a partir de 640px, 4 a partir de 1024px, com os nós só aí, onde
-   caem nas colunas). A mesma disposição vale em telas deitadas e baixas
-   (altura até 480px), onde o quadro preso cortaria a lista. */
-@media (prefers-reduced-motion: reduce), (max-height: 480px) {
+   caem nas colunas). A mesma disposição vale em telas baixas (altura até
+   600px), onde o quadro preso cortaria a lista. */
+@media (prefers-reduced-motion: reduce), (max-height: 600px) {
   .ts-clima { height: auto; }
   .ts-clima-quadro { position: static; height: auto; }
   .ts-clima-pedra { transform: none; }
-  .ts-clima-camada { display: none; }
+  .ts-clima-camada, .ts-clima-veu-texto { display: none; }
   .ts-clima-palco { position: relative; padding-block: clamp(3.5rem, 2rem + 4.5vw, 7rem); }
   .ts-clima-cabeca, .ts-clima-lead, .ts-clima-item, .ts-clima-item > p { opacity: 1; transform: none; }
   .ts-clima-traco { stroke-dashoffset: 0; }
   .ts-clima-no { transform: translate3d(-50%, -50%, 0); }
   .ts-clima-lista { grid-template-columns: repeat(2, minmax(0, 1fr)); column-gap: 2rem; row-gap: 2.5rem; text-align: left; }
+  .ts-clima-item { padding-inline: 0; }
 }
-@media (prefers-reduced-motion: reduce) and (min-width: 1024px), (max-height: 480px) and (min-width: 1024px) {
-  .ts-clima-lista { grid-template-columns: repeat(4, minmax(0, 1fr)); text-align: center; }
+@media (prefers-reduced-motion: reduce) and (min-width: 1024px), (max-height: 600px) and (min-width: 1024px) {
+  .ts-clima-lista { grid-template-columns: repeat(4, minmax(0, 1fr)); column-gap: 0; text-align: center; }
+  .ts-clima-item { padding-inline: var(--vao); }
 }
-@media (prefers-reduced-motion: reduce) and (min-width: 768px) and (max-width: 1023.98px), (max-height: 480px) and (min-width: 768px) and (max-width: 1023.98px) {
+@media (prefers-reduced-motion: reduce) and (min-width: 768px) and (max-width: 1023.98px), (max-height: 600px) and (min-width: 768px) and (max-width: 1023.98px) {
   .ts-clima-no { display: none; }
 }
-@media (prefers-reduced-motion: reduce) and (max-width: 767.98px), (max-height: 480px) and (max-width: 767.98px) {
+@media (prefers-reduced-motion: reduce) and (max-width: 767.98px), (max-height: 600px) and (max-width: 767.98px) {
   .ts-clima-cabeca { padding-bottom: 0; }
   .ts-clima-linha { display: none; }
   .ts-clima-lista { margin-top: 2rem; padding-left: 1.25rem; border-left: 1px solid rgb(255 255 255 / .6); }
   .ts-clima-item { height: auto; display: block; }
-  .ts-clima-item > p { position: static; margin-top: .75rem; }
+  .ts-clima-item > p { position: static; margin-top: .75rem; padding-right: 0; }
 }
-@media (prefers-reduced-motion: reduce) and (max-width: 639.98px), (max-height: 480px) and (max-width: 639.98px) {
+@media (prefers-reduced-motion: reduce) and (max-width: 639.98px), (max-height: 600px) and (max-width: 639.98px) {
   .ts-clima-lista { grid-template-columns: minmax(0, 1fr); }
 }
 
@@ -1082,9 +1105,11 @@ html[data-mv-nivel="leve"] .ts-clima-nevoa { display: none; }
   .ts-clima .ts-clima-traco { stroke-dashoffset: 0; }
   .ts-clima .ts-clima-no { transform: translate3d(-50%, -50%, 0); }
   .ts-clima .ts-clima-lista { grid-template-columns: repeat(2, minmax(0, 1fr)); column-gap: 2rem; row-gap: 2.5rem; text-align: left; }
+  .ts-clima .ts-clima-item { padding-inline: 0; }
 }
 @media (scripting: none) and (min-width: 1024px) {
-  .ts-clima .ts-clima-lista { grid-template-columns: repeat(4, minmax(0, 1fr)); text-align: center; }
+  .ts-clima .ts-clima-lista { grid-template-columns: repeat(4, minmax(0, 1fr)); column-gap: 0; text-align: center; }
+  .ts-clima .ts-clima-item { padding-inline: var(--vao); }
 }
 @media (scripting: none) and (min-width: 768px) and (max-width: 1023.98px) {
   .ts-clima .ts-clima-no { display: none; }
@@ -1094,7 +1119,7 @@ html[data-mv-nivel="leve"] .ts-clima-nevoa { display: none; }
   .ts-clima .ts-clima-linha { display: none; }
   .ts-clima .ts-clima-lista { margin-top: 2rem; padding-left: 1.25rem; border-left: 1px solid rgb(255 255 255 / .6); }
   .ts-clima .ts-clima-item { height: auto; display: block; }
-  .ts-clima .ts-clima-item > p { position: static; margin-top: .75rem; }
+  .ts-clima .ts-clima-item > p { position: static; margin-top: .75rem; padding-right: 0; }
 }
 @media (scripting: none) and (max-width: 639.98px) {
   .ts-clima .ts-clima-lista { grid-template-columns: minmax(0, 1fr); }
