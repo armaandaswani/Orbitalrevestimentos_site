@@ -165,7 +165,7 @@ export default function TechStone() {
         </div>
       </section>
 
-      <section aria-labelledby="ts-perguntas" className="ds-wrap ds-secao">
+      <section aria-labelledby="ts-perguntas" className="mv-adiado ds-wrap ds-secao">
         <h2 id="ts-perguntas" className="font-serif text-t2 text-[#22201C]">Perguntas</h2>
         <div className="mt-8 border-t border-[#22201C]/15">
           {PERGUNTAS.map((p) => (

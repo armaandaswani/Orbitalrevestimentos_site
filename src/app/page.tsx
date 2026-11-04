@@ -244,7 +244,7 @@ export default async function Home() {
       </section>
 
       {/* ── Contato ────────────────────────────────────────────────────────── */}
-      <section id="contato" aria-labelledby="contato-titulo" className="ds-secao bg-white scroll-mt-16">
+      <section id="contato" aria-labelledby="contato-titulo" className="mv-adiado ds-secao bg-white scroll-mt-16">
         <div className="ds-wrap">
           <Revelar className="text-center max-w-3xl mx-auto">
             <h2 id="contato-titulo" className="font-serif text-[#0B1F45] text-t1 font-normal tracking-[-0.025em] mb-5 text-balance">
@@ -297,7 +297,7 @@ export default async function Home() {
       </section>
 
       {/* Perguntas sobre o PFB */}
-      <section className="ds-secao bg-[#F6F5F2]" aria-labelledby="faq-titulo">
+      <section className="mv-adiado ds-secao bg-[#F6F5F2]" aria-labelledby="faq-titulo">
         <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: JSON.stringify(faqSchema) }} />
         <div className="ds-wrap">
           <h2 id="faq-titulo" className="font-serif text-t2 text-[#0B1F45] font-normal tracking-[-0.02em] mb-8">Perguntas sobre o PFB</h2>

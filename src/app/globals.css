@@ -78,8 +78,32 @@
   --text-display: clamp(2.125rem, 1.4rem + 2.6vw, 4.25rem);
   --text-display--line-height: 1.06;
 
-  /* Curvas da marca: entrada macia, sem "quique". */
-  --ease-orbital: cubic-bezier(0.2, 0.7, 0.2, 1);
+  /* Curva da marca: a mesma de chegada do movimento (--mv-chegada, em :root). */
+  --ease-orbital: var(--mv-chegada);
+}
+
+/* ── Tokens de movimento ────────────────────────────────────────────────────
+   Durações e curvas do site inteiro. Sem quique nem ultrapassagem.
+   --mv-fator escala os deslocamentos de parallax: 1 no nível completo, 0,5 no
+   leve (html[data-mv-nivel], definido por components/movimento/Movimento). */
+:root {
+  --mv-rapido: 180ms;
+  --mv-base: 520ms;
+  --mv-lento: 900ms;
+  --mv-cinema: 1400ms;
+  /* Chegadas: ease-out longo e macio. */
+  --mv-chegada: cubic-bezier(0.16, 1, 0.3, 1);
+  /* Percursos: ease-in-out, para o que viaja de um ponto a outro. */
+  --mv-percurso: cubic-bezier(0.65, 0, 0.35, 1);
+  --mv-sobe: 24px;
+  --mv-fator: 1;
+}
+@media (max-width: 639.98px) {
+  :root { --mv-sobe: 16px; }
+}
+html[data-mv-nivel="leve"] { --mv-sobe: 12px; --mv-fator: 0.5; }
+@media (max-width: 639.98px) {
+  html[data-mv-nivel="leve"] { --mv-sobe: 8px; }
 }
 
 /* ── Apresentação v2: contêiner e ritmo ─────────────────────────────────── */
@@ -265,11 +289,11 @@ html { scroll-padding-top: 5rem; }
    Preferência por animação ligada à rolagem (animation-timeline); onde o
    navegador não tem, os componentes caem num IntersectionObserver
    (classes mv-io-*). */
-@keyframes mv-sobe { from { opacity: 0; transform: translate3d(0, 1.5rem, 0); } to { opacity: 1; transform: none; } }
+@keyframes mv-sobe { from { opacity: 0; transform: translate3d(0, var(--mv-sobe), 0); } to { opacity: 1; transform: none; } }
 @keyframes mv-surge { from { opacity: 0; } to { opacity: 1; } }
 @keyframes mv-desvela { from { transform: scale(1.1); } to { transform: none; } }
-@keyframes mv-parallax { from { transform: translate3d(0, -7%, 0) scale(1.14); } to { transform: translate3d(0, 7%, 0) scale(1.14); } }
-@keyframes mv-parallax-topo { from { transform: none; } to { transform: translate3d(0, 18%, 0) scale(1.06); } }
+@keyframes mv-parallax { from { transform: translate3d(0, calc(-7% * var(--mv-fator)), 0) scale(calc(1 + 0.14 * var(--mv-fator))); } to { transform: translate3d(0, calc(7% * var(--mv-fator)), 0) scale(calc(1 + 0.14 * var(--mv-fator))); } }
+@keyframes mv-parallax-topo { from { transform: none; } to { transform: translate3d(0, calc(18% * var(--mv-fator)), 0) scale(calc(1 + 0.06 * var(--mv-fator))); } }
 @keyframes mv-esmaece { from { opacity: 1; } to { opacity: 0.15; } }
 @keyframes mv-barra { from { transform: scaleX(0); } to { transform: scaleX(1); } }
 @keyframes mv-barra-y { from { transform: scaleY(0); } to { transform: scaleY(1); } }
@@ -281,13 +305,13 @@ html { scroll-padding-top: 5rem; }
    pela direita no computador (lg:mv-folha-lado). Utilitários, para aceitarem
    variantes (lg:). Com movimento reduzido, aparecem no lugar. */
 @utility mv-folha {
-  @media (prefers-reduced-motion: no-preference) { animation: mv-abre 0.42s var(--ease-orbital) both; }
+  @media (prefers-reduced-motion: no-preference) { animation: mv-abre var(--mv-base) var(--mv-chegada) both; }
 }
 @utility mv-folha-lado {
-  @media (prefers-reduced-motion: no-preference) { animation: mv-abre-lado 0.42s var(--ease-orbital) both; }
+  @media (prefers-reduced-motion: no-preference) { animation: mv-abre-lado var(--mv-base) var(--mv-chegada) both; }
 }
 @utility mv-veu {
-  @media (prefers-reduced-motion: no-preference) { animation: mv-veu 0.3s ease-out both; }
+  @media (prefers-reduced-motion: no-preference) { animation: mv-veu var(--mv-rapido) ease-out both; }
 }
 
 @media (prefers-reduced-motion: no-preference) {
@@ -334,22 +358,22 @@ html { scroll-padding-top: 5rem; }
 
   /* Reserva sem animation-timeline (Safari antigo, Firefox): o componente
      marca o bloco fora da tela e solta quando ele chega. */
-  .mv-io-espera { opacity: 0; transform: translate3d(0, 1.5rem, 0); }
+  .mv-io-espera { opacity: 0; transform: translate3d(0, var(--mv-sobe), 0); }
   .mv-io-entrou {
     opacity: 1; transform: none;
-    transition: opacity 0.8s var(--ease-orbital), transform 0.8s var(--ease-orbital);
+    transition: opacity var(--mv-lento) var(--mv-chegada), transform var(--mv-lento) var(--mv-chegada);
     transition-delay: calc(var(--mv-i, 0) * 70ms);
   }
 
 
   /* Micro-interações: foto aproxima no hover/foco do cartão. */
-  .mv-zoom { transition: transform 0.9s var(--ease-orbital); }
+  .mv-zoom { transition: transform var(--mv-lento) var(--mv-chegada); }
   :where(a, button):is(:hover, :focus-visible) .mv-zoom { transform: scale(1.045); }
-  .mv-seta { transition: transform 0.35s var(--ease-orbital); }
+  .mv-seta { transition: transform var(--mv-rapido) var(--mv-chegada); }
   :where(a, button):is(:hover, :focus-visible) .mv-seta { transform: translateX(0.25rem); }
 
   /* Cabeçalho que se recolhe ao descer e volta ao subir. */
-  .mv-cabecalho { transition: transform 0.38s var(--ease-orbital); }
+  .mv-cabecalho { transition: transform var(--mv-base) var(--mv-chegada); }
 }
 
 /* Cabeçalho recolhido (com ou sem movimento: só muda o lugar). */
@@ -359,8 +383,12 @@ header[data-site][data-oculto="1"] { transform: translate3d(0, -100%, 0); }
 .ds-sob-cabecalho { top: 5rem; }
 html:has(header[data-site][data-oculto="1"]) .ds-sob-cabecalho { top: 0; }
 @media (prefers-reduced-motion: no-preference) {
-  .ds-sob-cabecalho { transition: top 0.38s var(--ease-orbital); }
+  .ds-sob-cabecalho { transition: top var(--mv-base) var(--mv-chegada); }
 }
+
+/* Seções longas abaixo da dobra: o navegador pula layout e pintura até elas
+   chegarem perto da tela. 900px é só a altura reservada até a primeira medida. */
+.mv-adiado { content-visibility: auto; contain-intrinsic-size: auto 900px; }
 
 /* Trilhos horizontais: sem barra nativa (o trilho tem a sua). */
 .ds-trilho { scrollbar-width: none; overscroll-behavior-x: contain; }
@@ -400,17 +428,14 @@ html:has(header[data-site][data-oculto="1"]) .ds-sob-cabecalho { top: 0; }
 .ts-ab-foto {
   opacity: clamp(0, (var(--p, 0) - 0.03) / 0.2, 1);
   transform: scale(calc(1.16 - clamp(0, var(--p, 0) / 0.85, 1) * 0.16));
-  will-change: transform, opacity;
 }
 .ts-ab-titulo {
   transform: translate3d(0, calc(-50% - var(--e) * 30svh), 0) scale(calc(1 - var(--e) * 0.58));
-  will-change: transform;
 }
 .ts-ab-frase {
   --o: min(clamp(0, (var(--p, 0) - var(--a)) / 0.05, 1), clamp(0, (var(--b) - var(--p, 0)) / 0.05, 1));
   opacity: var(--o);
   transform: translate3d(0, calc(-50% + (1 - var(--o)) * 22px), 0);
-  will-change: transform, opacity;
 }
 .ts-ab-cta {
   --o: clamp(0, (var(--p, 0) - 0.76) / 0.06, 1);
@@ -433,11 +458,9 @@ html:has(header[data-site][data-oculto="1"]) .ds-sob-cabecalho { top: 0; }
 .ts-quadro {
   --w: 0.1;
   opacity: min(clamp(0, (var(--p, 0) - var(--a)) / var(--w) + 1, 1), clamp(0, (var(--b) - var(--p, 0)) / var(--w), 1));
-  will-change: opacity;
 }
 .ts-quadro img {
   transform: scale(calc(1.07 - clamp(0, (var(--p, 0) - var(--ia)) / (var(--b) - var(--ia)), 1) * 0.07));
-  will-change: transform;
 }
 /* O texto entra só depois que a foto do quadro assentou e sai antes da
    fusão seguinte: dois títulos nunca aparecem sobrepostos. */
@@ -446,6 +469,14 @@ html:has(header[data-site][data-oculto="1"]) .ds-sob-cabecalho { top: 0; }
   transform: translate3d(0, calc((1 - clamp(0, (var(--p, 0) - var(--a)) / 0.06, 1)) * 2rem), 0);
 }
 .ts-trilho-marca { opacity: calc(0.3 + 0.7 * min(clamp(0, (var(--p, 0) - var(--a)) / 0.02 + 1, 1), clamp(0, (var(--b) - var(--p, 0)) / 0.02, 1))); }
+
+/* will-change só enquanto a seção cruza a tela (useProgresso põe data-ativo):
+   promover camadas o tempo todo gasta memória de vídeo à toa. */
+[data-ativo] .ts-ab-foto { will-change: transform, opacity; }
+[data-ativo] .ts-ab-titulo { will-change: transform; }
+[data-ativo] .ts-ab-frase { will-change: transform, opacity; }
+[data-ativo] .ts-quadro { will-change: opacity; }
+[data-ativo] .ts-quadro img { will-change: transform; }
 
 /* Tamanhos: a placa escolhida cresce ou encolhe ao lado da pessoa de 1,70 m
    (escala exata: a grande tem o dobro de cada lado). */
@@ -472,7 +503,7 @@ html:has(header[data-site][data-oculto="1"]) .ds-sob-cabecalho { top: 0; }
 .hm-manifesto-link:focus-visible { opacity: 1; }
 @keyframes hm-troca { from { opacity: 0; transform: translate3d(0, 10px, 0); } to { opacity: 1; transform: none; } }
 @media (prefers-reduced-motion: no-preference) {
-  .hm-troca { animation: hm-troca 0.5s var(--ease-orbital) both; }
+  .hm-troca { animation: hm-troca var(--mv-base) var(--mv-chegada) both; }
 }
 @media (prefers-reduced-motion: reduce) {
   .hm-palavra, .hm-manifesto-link { opacity: 1; }

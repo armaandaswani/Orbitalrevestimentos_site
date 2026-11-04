@@ -7,6 +7,7 @@ import Footer from "@/components/Footer";
 import ChatWidget from "@/components/ChatWidget";
 import SiteChrome from "@/components/SiteChrome";
 import ContatoSheet from "@/components/ContatoSheet";
+import Movimento from "@/components/movimento/Movimento";
 import { SpeedInsights } from "@vercel/speed-insights/next";
 import { Analytics } from "@vercel/analytics/next";
 
@@ -283,6 +284,7 @@ export default function RootLayout({
         ))}
         <SiteChrome>
           <Navbar />
+          <Movimento />
         </SiteChrome>
         <div className="flex-1">{children}</div>
         <SiteChrome>
