@@ -93,7 +93,7 @@ export default function Clima({ preocupacoes }: { preocupacoes: { titulo: string
         ))}
 
         {/* As quatro juntas: a lista acessível da seção. */}
-        <ul className="ts-clima-resumo absolute inset-x-0 bottom-0 ds-wrap pb-[12svh] grid grid-cols-2 gap-x-5 gap-y-8 sm:grid-cols-4 sm:gap-x-8">
+        <ul className="ts-clima-resumo absolute inset-x-0 bottom-0 ds-wrap pb-[12svh] grid grid-cols-2 gap-x-5 gap-y-8 sm:gap-x-8 lg:grid-cols-4">
           {preocupacoes.map((c, i) => (
             <li key={c.titulo} className="ts-clima-item border-t border-white/25 pt-5" style={{ "--i": i } as Vars}>
               <h3 className="font-serif text-t3">{c.titulo}</h3>

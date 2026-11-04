@@ -482,6 +482,20 @@ html:has(header[data-site][data-oculto="1"]) .ds-sob-cabecalho { top: 0; }
    (escala exata: a grande tem o dobro de cada lado). */
 .ts-folha { transform-box: fill-box; transform-origin: 0% 100%; transition: transform 0.7s var(--ease-orbital); }
 .ts-tamanhos[data-tamanho="2400x1200"] .ts-folha { transform: scale(2); }
+/* Modelo escolhido: a textura nova entra em fusão sobre a anterior. */
+@keyframes ts-folha-entra { from { opacity: 0; } to { opacity: 1; } }
+.ts-folha-entra { animation: ts-folha-entra var(--mv-base) var(--mv-chegada) both; }
+/* Miniatura-botão do modelo: marcada com um fio de 1 px, 4 px abaixo, que cresce da esquerda. */
+.ts-modelo-linha {
+  position: absolute; left: 0; right: 0; bottom: -5px; height: 1px; background: #22201C;
+  transform: scaleX(0); transform-origin: 0 50%;
+  transition: transform var(--mv-base) var(--mv-chegada);
+}
+.ts-modelo[aria-pressed="true"] .ts-modelo-linha { transform: scaleX(1); }
+.ts-modelo { transition: transform var(--mv-base) var(--mv-chegada); }
+@media (hover: hover) and (pointer: fine) {
+  .ts-modelo[aria-pressed="false"]:hover { transform: translateY(-2px); }
+}
 .ts-cota { transition: opacity 0.4s ease; }
 .ts-tamanhos[data-tamanho="2400x1200"] .ts-cota-pequena,
 .ts-tamanhos[data-tamanho="1200x600"] .ts-cota-grande { opacity: 0; }
@@ -493,6 +507,9 @@ html:has(header[data-site][data-oculto="1"]) .ds-sob-cabecalho { top: 0; }
   /* Sem deslocamento, o nome sai em fusão antes da primeira frase. */
   .ts-ab-titulo { transform: translate3d(0, -50%, 0); opacity: clamp(0, 1 - (var(--p, 0) - 0.12) / 0.06, 1); }
   .ts-folha { transition: none; }
+  .ts-folha-entra { animation: none; }
+  .ts-modelo, .ts-modelo-linha { transition: none; }
+  .ts-modelo[aria-pressed="false"]:hover { transform: none; }
 }
 
 /* ── TechStone: clima pela pedra ──────────────────────────────────────────
@@ -513,7 +530,9 @@ html:has(header[data-site][data-oculto="1"]) .ds-sob-cabecalho { top: 0; }
 }
 /* Isola as mesclas (soft-light) para que ajam só sobre a pedra. */
 .ts-clima-quadro { isolation: isolate; }
-.ts-clima-quadro > * { pointer-events: none; }
+/* Só as camadas visuais ignoram o ponteiro; a abertura e o resumo ficam
+   selecionáveis (são o texto de verdade da seção). */
+.ts-clima-fundo, .ts-clima-camada, .ts-clima-passo { pointer-events: none; }
 .ts-clima-pedra { transform: scale(calc(1.08 - var(--p, 0) * 0.08)); }
 
 /* Janela de cada atmosfera: entra de --a em --wi, sai até --b em --wo. */
@@ -596,8 +615,10 @@ html[data-mv-nivel="leve"] .ts-clima-nevoa { display: none; }
 
 /* Movimento reduzido: a seção volta ao fluxo normal, como era. Pedra parada
    e escurecida ao fundo, abertura e as quatro preocupações em grade, tudo
-   visível; a encenação e as atmosferas somem. */
-@media (prefers-reduced-motion: reduce) {
+   visível; a encenação e as atmosferas somem. A mesma disposição vale em
+   telas deitadas e baixas (altura até 480px): ali o resumo não cabe num quadro
+   preso de uma tela só e seria cortado. */
+@media (prefers-reduced-motion: reduce), (max-height: 480px) {
   .ts-clima { height: auto; }
   .ts-clima-quadro { position: static; height: auto; }
   .ts-clima-pedra { transform: none; }
@@ -609,7 +630,7 @@ html[data-mv-nivel="leve"] .ts-clima-nevoa { display: none; }
   .ts-clima-resumo { margin-top: 3rem; padding-bottom: clamp(3.5rem, 2rem + 4.5vw, 7rem); }
   .ts-clima-item { opacity: 1; transform: none; }
 }
-@media (prefers-reduced-motion: reduce) and (max-width: 639.98px) {
+@media (prefers-reduced-motion: reduce) and (max-width: 639.98px), (max-height: 480px) and (max-width: 639.98px) {
   .ts-clima-resumo { grid-template-columns: minmax(0, 1fr); }
 }
 

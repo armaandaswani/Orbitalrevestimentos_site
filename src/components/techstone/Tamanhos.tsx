@@ -1,7 +1,9 @@
 "use client";
 
+import { useState } from "react";
 import {
-  ESPESSURA_MM, FORMATOS, MODELOS_TECHSTONE, texturaDownload, texturaMiniatura, type FormatoTechStone,
+  ESPESSURA_MM, FORMATOS, MODELOS_TECHSTONE, texturaDownload, texturaMiniatura,
+  type FormatoTechStone, type ModeloTechStone,
 } from "@/lib/techstone";
 
 /** Para que serve cada tamanho (texto aprovado pelo dono). */
@@ -23,6 +25,10 @@ export default function Tamanhos({ tamanho, escolher, interesse }: {
   interesse: (nome: string) => void;
 }) {
   const lista = MODELOS_TECHSTONE.filter((m) => m.formato === tamanho);
+  // O modelo escolhido só vale se for do tamanho atual; senão cai no primeiro da lista.
+  // Derivar assim evita um efeito (e uma renderização a mais) ao trocar de aba.
+  const [escolhido, setEscolhido] = useState<string | null>(null);
+  const modeloAtivo = lista.find((m) => m.slug === escolhido) ?? lista[0];
   return (
     <section id="tamanhos" data-tamanho={tamanho} aria-labelledby="ts-tamanhos" className="ts-tamanhos bg-[#EFEBE4] ds-secao scroll-mt-16">
       <div className="ds-wrap">
@@ -50,7 +56,7 @@ export default function Tamanhos({ tamanho, escolher, interesse }: {
 
         <div id="ts-painel-tamanho" role="tabpanel" aria-labelledby={`ts-aba-${tamanho}`}
           className="mt-10 grid gap-10 lg:grid-cols-[minmax(0,5fr)_minmax(0,7fr)] lg:gap-16 lg:items-center">
-          <Escala />
+          <Escala modelo={modeloAtivo} />
           <div>
             <p className="font-serif text-t2 text-[#22201C] max-w-[22ch]">{USO[tamanho]}</p>
             <ul aria-label={`Modelos em ${FORMATOS.find((f) => f.value === tamanho)!.rotulo}`}
@@ -59,11 +65,16 @@ export default function Tamanhos({ tamanho, escolher, interesse }: {
                   as linhas são compartilhadas, então nomes de 1, 2 ou 3 linhas não desalinham os links. */}
               {lista.map((m) => (
                 <li key={m.slug} className="snap-start shrink-0 w-[38%] sm:w-auto sm:row-span-3 sm:grid sm:grid-rows-subgrid">
-                  <div className="relative aspect-[1/2] overflow-hidden bg-[#D9D1C4]">
-                    {/* eslint-disable-next-line @next/next/no-img-element */}
-                    <img src={texturaMiniatura(m)} alt={`Textura TechStone ${m.nome}`} loading="lazy" decoding="async"
-                      className="absolute inset-0 w-full h-full object-cover" />
-                  </div>
+                  <button type="button" onClick={() => setEscolhido(m.slug)}
+                    aria-pressed={m.slug === modeloAtivo.slug} aria-label={`Ver ${m.nome} na placa`}
+                    className="ts-modelo relative block w-full text-left">
+                    <span className="relative block aspect-[1/2] overflow-hidden bg-[#D9D1C4]">
+                      {/* eslint-disable-next-line @next/next/no-img-element */}
+                      <img src={texturaMiniatura(m)} alt="" loading="lazy" decoding="async"
+                        className="absolute inset-0 w-full h-full object-cover" />
+                    </span>
+                    <span aria-hidden className="ts-modelo-linha" />
+                  </button>
                   <h3 className="mt-3 min-h-[2lh] sm:min-h-0 font-serif text-[1rem] leading-snug text-[#22201C]">{m.nome}</h3>
                   <div className="mt-1 flex flex-col items-start">
                     <a href={texturaDownload(m)} download className="min-h-10 inline-flex items-center text-legenda text-[#22201C] underline underline-offset-4 decoration-[#22201C]/30 hover:decoration-[#22201C]">
@@ -121,14 +132,23 @@ function Cota({ x1, y1, x2, y2, texto, vertical = false }: {
   );
 }
 
-/** Placa em escala exata ao lado da pessoa. O CSS dobra a placa no tamanho grande. */
-function Escala() {
-  const textura = texturaMiniatura(MODELOS_TECHSTONE.find((m) => m.slug === "travertino-navona-classico")!);
+/**
+ * Placa em escala exata ao lado da pessoa, com a textura do modelo escolhido.
+ * O CSS dobra a placa no tamanho grande. Ao trocar de modelo a textura nova
+ * entra em fusão por cima da anterior, que fica embaixo até a fusão acabar.
+ */
+function Escala({ modelo }: { modelo: ModeloTechStone }) {
+  const textura = texturaMiniatura(modelo);
+  // Guarda a textura anterior no próprio estado (ajuste durante a renderização,
+  // sem efeito) para poder empilhar as duas.
+  const [par, setPar] = useState<{ atual: string; anterior: string | null }>({ atual: textura, anterior: null });
+  if (par.atual !== textura) setPar({ atual: textura, anterior: par.atual });
   // Unidades do desenho em milímetros. Chão em y = 2600; placa encostada nele.
   const X = 1000, CHAO = 2600;
+  const placa = { x: X, y: CHAO - 1200, width: 600, height: 1200, preserveAspectRatio: "xMidYMid slice" } as const;
   return (
     <svg viewBox="-260 0 3460 2900" className="w-full max-h-[48svh] lg:max-h-[62svh]" role="img"
-      aria-label="Placa TechStone em escala ao lado de uma pessoa de 1,70 metro">
+      aria-label={`Placa TechStone ${modelo.nome} em escala ao lado de uma pessoa de 1,70 metro`}>
       <line x1="80" y1={CHAO} x2="3120" y2={CHAO} stroke="#22201C" strokeWidth="8" />
       <Pessoa />
       <g stroke="#8C7B63" strokeWidth="8" fill="#8C7B63">
@@ -138,8 +158,11 @@ function Escala() {
         <text x="120" y="1755" stroke="none" fontSize="86" textAnchor="end" dominantBaseline="middle" fontFamily="var(--font-inter)">1,70 m</text>
       </g>
       <g className="ts-folha">
-        <image href={textura} x={X} y={CHAO - 1200} width="600" height="1200" preserveAspectRatio="xMidYMid slice" />
-        <rect x={X} y={CHAO - 1200} width="600" height="1200" fill="none" stroke="#22201C" strokeWidth="6" vectorEffect="non-scaling-stroke" />
+        {par.anterior && <image key={par.anterior} href={par.anterior} {...placa} />}
+        <image key={par.atual} href={par.atual} {...placa} className={par.anterior ? "ts-folha-entra" : undefined} />
+        {/* Contorno fino: non-scaling mantém 1,5 px na tela mesmo com a placa dobrada. */}
+        <rect x={X} y={CHAO - 1200} width="600" height="1200" fill="none" stroke="#22201C" strokeOpacity={0.7}
+          strokeWidth="1.5" vectorEffect="non-scaling-stroke" />
       </g>
       <g className="ts-cota ts-cota-pequena">
         <Cota x1={X} y1={CHAO + 60} x2={X + 600} y2={CHAO + 60} texto="600" />
