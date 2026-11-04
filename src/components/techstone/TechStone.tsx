@@ -4,6 +4,7 @@ import { useCallback, useState } from "react";
 import Ideias from "./Ideias";
 import Tamanhos from "./Tamanhos";
 import { Abertura, Sequencia } from "./Apresentacao";
+import Clima from "./Clima";
 import Revelar from "@/components/projetos/Revelar";
 import ListaEsperaSheet, { type ModeloEspera } from "@/components/ListaEsperaSheet";
 import { AVISO_CENAS, ESPESSURA_MM, FORMATOS, MODELOS_TECHSTONE, cena, texturaMiniatura, type FormatoTechStone } from "@/lib/techstone";
@@ -130,22 +131,7 @@ export default function TechStone() {
         </div>
       </section>
 
-      <section aria-labelledby="ts-amazonia" className="bg-[#22201C] text-white ds-secao">
-        <div className="ds-wrap">
-          <h2 id="ts-amazonia" className="font-serif text-t1 max-w-[20ch]">Desenvolvida para a Amazônia.</h2>
-          <p className="mt-5 text-lead text-white/75 max-w-[50ch]">
-            Somos de Manaus e sabemos o que o clima daqui faz com um revestimento. Estas foram as nossas preocupações ao trazer a TechStone.
-          </p>
-          <ul className="mt-12 grid gap-8 sm:grid-cols-2 sm:gap-x-8 lg:grid-cols-4 lg:mt-14">
-            {PREOCUPACOES.map((c, i) => (
-              <Revelar key={c.titulo} como="li" ordem={i} className="border-t border-white/20 pt-6">
-                <h3 className="font-serif text-t3">{c.titulo}</h3>
-                <p className="mt-3 text-corpo text-white/70 max-w-[36ch]">{c.texto}</p>
-              </Revelar>
-            ))}
-          </ul>
-        </div>
-      </section>
+      <Clima preocupacoes={PREOCUPACOES} />
 
       <Ideias verTamanho={verTamanho} />
 

@@ -495,6 +495,124 @@ html:has(header[data-site][data-oculto="1"]) .ds-sob-cabecalho { top: 0; }
   .ts-folha { transition: none; }
 }
 
+/* ── TechStone: clima pela pedra ──────────────────────────────────────────
+   "Desenvolvida para a Amazônia" (components/techstone/Clima). --p (0 → 1)
+   vem do useProgresso. Trechos: 0 → 0.14 abertura; 0.14 → 0.32 sol;
+   0.32 → 0.50 umidade; 0.50 → 0.68 calor; 0.68 → 0.86 ciclos; depois as
+   quatro juntas. O texto troca com 0.04 de fusão em cada ponta e nunca há
+   dois blocos visíveis; as atmosferas entram um pouco antes e saem um pouco
+   depois do seu texto, para a luz trocar devagar. Só transform, opacity e
+   variáveis: nada de filtro animado. */
+.ts-clima {
+  /* Progresso dentro de cada trecho (0 → 1). A névoa usa um trecho mais
+     largo para continuar derivando enquanto entra e sai. */
+  --k-sol: clamp(0, (var(--p, 0) - 0.14) / 0.18, 1);
+  --k-nevoa: clamp(0, (var(--p, 0) - 0.29) / 0.24, 1);
+  --k-calor: clamp(0, (var(--p, 0) - 0.50) / 0.18, 1);
+  --k: clamp(0, (var(--p, 0) - 0.68) / 0.18, 1);
+}
+/* Isola as mesclas (soft-light) para que ajam só sobre a pedra. */
+.ts-clima-quadro { isolation: isolate; }
+.ts-clima-quadro > * { pointer-events: none; }
+.ts-clima-pedra { transform: scale(calc(1.08 - var(--p, 0) * 0.08)); }
+
+/* Janela de cada atmosfera: entra de --a em --wi, sai até --b em --wo. */
+.ts-clima-camada {
+  --o: min(clamp(0, (var(--p, 0) - var(--a)) / var(--wi), 1), clamp(0, (var(--b) - var(--p, 0)) / var(--wo), 1));
+  opacity: calc(var(--o) * var(--pico, 1));
+}
+
+/* Sol a pino: a luz vem de cima e assenta; a sombra encurta (desce) conforme
+   o sol sobe. */
+.ts-clima-sol { --a: 0.10; --wi: 0.14; --b: 0.36; --wo: 0.05; }
+.ts-clima-sol-luz {
+  background: radial-gradient(ellipse at 50% -10%, rgb(255 244 220 / .55), transparent 60%);
+  transform: translate3d(0, calc((var(--k-sol) - 1) * 10%), 0);
+}
+.ts-clima-sol-sombra {
+  background: linear-gradient(to top, rgb(12 10 9 / .62), rgb(12 10 9 / .3) 45%, transparent);
+  transform: translate3d(0, calc(var(--k-sol) * 60%), 0);
+}
+
+/* Umidade: véus já macios no próprio gradiente (sem blur), longe do texto,
+   cada um num ritmo. */
+.ts-clima-nevoa { --a: 0.29; --wi: 0.07; --b: 0.53; --wo: 0.06; --pico: 0.5; }
+.ts-clima-veu-1 {
+  background: radial-gradient(70% 15% at 30% 27%, rgb(236 232 224 / .8), rgb(236 232 224 / .42) 40%, rgb(236 232 224 / .12) 72%, transparent);
+  transform: translate3d(calc(-12% + var(--k-nevoa) * 24%), 0, 0);
+}
+.ts-clima-veu-2 {
+  background: radial-gradient(60% 12% at 72% 47%, rgb(236 232 224 / .72), rgb(236 232 224 / .36) 40%, rgb(236 232 224 / .1) 72%, transparent);
+  transform: translate3d(calc(8% - var(--k-nevoa) * 16%), 0, 0);
+}
+.ts-clima-veu-3 {
+  background: radial-gradient(120% 55% at 50% 0%, rgb(236 232 224 / .5), rgb(236 232 224 / .22) 50%, transparent 85%);
+  transform: translate3d(calc(-5% + var(--k-nevoa) * 10%), 0, 0);
+}
+
+/* Calor: âmbar em luz suave sobre a pedra e um brilho quente que cresce. */
+.ts-clima-calor { --a: 0.47; --wi: 0.07; --b: 0.71; --wo: 0.06; }
+.ts-clima-ambar { background: rgb(201 122 52 / .45); mix-blend-mode: soft-light; }
+.ts-clima-brilho {
+  background: radial-gradient(ellipse 70% 60% at 72% 30%, rgb(236 156 88 / .24), transparent 70%);
+  transform: scale(calc(1 + var(--k-calor) * 0.06));
+}
+
+/* Ciclos térmicos: frio e quente se alternam duas vezes no trecho (seno de
+   720°, levado a 0..1) e a onda se desenha da esquerda para a direita; as
+   cristas da onda caem nos picos do quente. Tudo apagado antes do resumo. */
+.ts-clima-ciclo, .ts-clima-onda { --a: 0.65; --wi: 0.06; --b: 0.86; --wo: 0.05; }
+.ts-clima-quente { opacity: calc(var(--o) * (1 + sin(calc(var(--k) * 720deg))) / 2); }
+.ts-clima-frio {
+  background: rgb(74 106 140 / .35);
+  opacity: calc(var(--o) * (1 - sin(calc(var(--k) * 720deg))) / 2);
+}
+.ts-clima-onda-traco { stroke-dasharray: 1; stroke-dashoffset: calc(1 - var(--k)); }
+
+/* Texto: um bloco por trecho (--a/--b no elemento). Sobe um pouco ao entrar,
+   sai só em fusão. */
+.ts-clima-texto {
+  opacity: min(clamp(0, (var(--p, 0) - var(--a)) / 0.04, 1), clamp(0, (var(--b) - var(--p, 0)) / 0.04, 1));
+  transform: translate3d(0, calc((1 - clamp(0, (var(--p, 0) - var(--a)) / 0.06, 1)) * 1.5rem), 0);
+}
+/* Resumo: as quatro entram em sequência curta e ficam; inteiras em 0.935. */
+.ts-clima-item {
+  --o: clamp(0, (var(--p, 0) - 0.86 - var(--i, 0) * 0.015) / 0.03, 1);
+  opacity: var(--o);
+  transform: translate3d(0, calc((1 - var(--o)) * 1rem), 0);
+}
+
+.ts-clima[data-ativo] .ts-clima-pedra,
+.ts-clima[data-ativo] .ts-clima-sol-luz,
+.ts-clima[data-ativo] .ts-clima-sol-sombra,
+.ts-clima[data-ativo] .ts-clima-veu,
+.ts-clima[data-ativo] .ts-clima-brilho { will-change: transform; }
+.ts-clima[data-ativo] .ts-clima-camada,
+.ts-clima[data-ativo] .ts-clima-texto,
+.ts-clima[data-ativo] .ts-clima-item { will-change: opacity, transform; }
+
+/* Nível leve: sem a névoa (três camadas grandes em movimento). */
+html[data-mv-nivel="leve"] .ts-clima-nevoa { display: none; }
+
+/* Movimento reduzido: a seção volta ao fluxo normal, como era. Pedra parada
+   e escurecida ao fundo, abertura e as quatro preocupações em grade, tudo
+   visível; a encenação e as atmosferas somem. */
+@media (prefers-reduced-motion: reduce) {
+  .ts-clima { height: auto; }
+  .ts-clima-quadro { position: static; height: auto; }
+  .ts-clima-pedra { transform: none; }
+  .ts-clima-camada, .ts-clima-passo { display: none; }
+  .ts-clima-intro, .ts-clima-resumo {
+    position: relative; inset: auto; opacity: 1; transform: none;
+  }
+  .ts-clima-intro { padding-top: clamp(3.5rem, 2rem + 4.5vw, 7rem); padding-bottom: 0; }
+  .ts-clima-resumo { margin-top: 3rem; padding-bottom: clamp(3.5rem, 2rem + 4.5vw, 7rem); }
+  .ts-clima-item { opacity: 1; transform: none; }
+}
+@media (prefers-reduced-motion: reduce) and (max-width: 639.98px) {
+  .ts-clima-resumo { grid-template-columns: minmax(0, 1fr); }
+}
+
 /* ── Home: a frase de quem somos acende palavra por palavra ───────────────
    --p vem do useProgresso (suavizado); --i é a posição da palavra (0 → 1).
    Cada palavra vai de quase apagada a acesa num trecho curto da rolagem. */
