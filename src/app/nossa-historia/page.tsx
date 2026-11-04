@@ -1,7 +1,7 @@
 import type { Metadata } from "next";
 import Image from "next/image";
 import Link from "next/link";
-import ScrollReveal from "@/components/ScrollReveal";
+import Revelar from "@/components/projetos/Revelar";
 import ContatoCta from "@/components/ContatoCta";
 
 /**
@@ -94,17 +94,17 @@ export default function NossaHistoriaPage() {
       {/* ── 01 Dois sócios, duas cores ── */}
       <section className="bg-[#F6F5F2] py-20 lg:py-28">
         <div className="max-w-[1280px] mx-auto px-6 lg:px-16">
-          <ScrollReveal className="max-w-2xl mb-12 lg:mb-16">
+          <Revelar className="max-w-2xl mb-12 lg:mb-16">
             <p className={EYEBROW}>01 — Nossa história</p>
             <h2 className={`${TITULO} mb-6`}>Dois sócios.<br /><em>Duas cores.</em></h2>
             <p className="text-[#43474e] text-base lg:text-lg leading-relaxed">
               A Orbital nasce do encontro de dois sócios com temperamentos que se completam. Cada um
               deles está no símbolo.
             </p>
-          </ScrollReveal>
+          </Revelar>
           <div className="grid md:grid-cols-2 gap-6">
-            {CORES.map((s) => (
-              <ScrollReveal key={s.cor}>
+            {CORES.map((s, i) => (
+              <Revelar key={s.cor} ordem={i}>
                 <article className="h-full bg-white border border-[#e2e2e2] flex flex-col sm:flex-row">
                   <div className="h-1.5 sm:h-auto sm:w-1.5 shrink-0" style={{ backgroundColor: s.hex }} />
                   <div className="p-7 lg:p-9">
@@ -115,21 +115,22 @@ export default function NossaHistoriaPage() {
                     <p className="text-[#43474e] leading-relaxed">{s.texto}</p>
                   </div>
                 </article>
-              </ScrollReveal>
+              </Revelar>
             ))}
           </div>
-          <ScrollReveal>
-            <p className="font-serif italic text-[#0B1F45] text-2xl lg:text-3xl leading-snug max-w-3xl mt-12 lg:mt-16">
+          {/* A frase de convicção só surge (opacidade, no ritmo lento): sem subir, para pesar mais. */}
+          <Revelar efeito="surge" className="mt-12 lg:mt-16">
+            <p className="font-serif italic text-[#0B1F45] text-2xl lg:text-3xl leading-snug max-w-3xl">
               Juntas, as duas faixas formam uma só esfera: o equilíbrio entre segurança e inovação.
             </p>
-          </ScrollReveal>
+          </Revelar>
 
           {/* Os sócios — sem dizer quem é azul e quem é verde. */}
           <div className="mt-16 lg:mt-20 pt-12 lg:pt-16 border-t border-[#e2e2e2]">
             <p className={EYEBROW}>Os sócios</p>
             <div className="grid grid-cols-2 gap-4 sm:gap-6 max-w-2xl">
-              {SOCIOS.map((s) => (
-                <ScrollReveal key={s.nome}>
+              {SOCIOS.map((s, i) => (
+                <Revelar key={s.nome} ordem={i}>
                   <figure>
                     <div className="relative aspect-[4/5] bg-[#EFEDE8] overflow-hidden">
                       {s.foto ? (
@@ -145,7 +146,7 @@ export default function NossaHistoriaPage() {
                       <p className="text-[#74777f] text-xs sm:text-sm">{s.cargo}</p>
                     </figcaption>
                   </figure>
-                </ScrollReveal>
+                </Revelar>
               ))}
             </div>
           </div>
@@ -155,28 +156,29 @@ export default function NossaHistoriaPage() {
       {/* ── 02 A órbita ── */}
       <section className="bg-white py-20 lg:py-28">
         <div className="max-w-[1280px] mx-auto px-6 lg:px-16 grid lg:grid-cols-2 gap-10 lg:gap-20 items-end">
-          <ScrollReveal>
+          <Revelar>
             <p className={EYEBROW}>02 — A órbita</p>
             <h2 className={TITULO}>Tudo dentro<br /><em>da nossa órbita.</em></h2>
-          </ScrollReveal>
-          <ScrollReveal className="space-y-5 text-[#43474e] text-base lg:text-lg leading-relaxed">
+          </Revelar>
+          <Revelar efeito="surge" ordem={1} className="space-y-5 text-[#43474e] text-base lg:text-lg leading-relaxed">
             <p className="text-[#0B1F45] font-semibold">A Orbital nasceu para ser uma marca. Por isso escolhemos a órbita.</p>
             <p>
               A ideia é englobar tudo dentro do leque da marca, usando a nossa expertise de importador para
               reunir o que cada projeto precisa em um só lugar.
             </p>
-          </ScrollReveal>
+          </Revelar>
         </div>
       </section>
 
       {/* ── 03 Qualidade sob controle ── */}
       <section className="bg-[#F6F5F2] py-20 lg:py-28">
         <div className="max-w-[1280px] mx-auto px-6 lg:px-16">
-          <ScrollReveal className="mb-12 lg:mb-16">
+          <Revelar className="mb-12 lg:mb-16">
             <p className={EYEBROW}>03 — Qualidade</p>
             <h2 className={TITULO}>Qualidade<br /><em>sob controle.</em></h2>
-          </ScrollReveal>
-          <div className="grid sm:grid-cols-2 lg:grid-cols-4 border-t border-l border-[#e2e2e2]">
+          </Revelar>
+          {/* A grade dos quatro pilares surge como um bloco só (a borda é da grade). */}
+          <Revelar efeito="surge" className="grid sm:grid-cols-2 lg:grid-cols-4 border-t border-l border-[#e2e2e2]">
             {PILARES.map((p) => (
               <div key={p.n} className="bg-white border-r border-b border-[#e2e2e2] p-7 lg:p-8">
                 <p className="font-serif text-[#2347A0] text-4xl mb-6">{p.n}</p>
@@ -184,7 +186,7 @@ export default function NossaHistoriaPage() {
                 <p className="text-[#43474e] text-sm leading-relaxed">{p.d}</p>
               </div>
             ))}
-          </div>
+          </Revelar>
           <p className="flex items-center gap-3 text-[#0B1F45] font-semibold mt-10">
             <span className="w-8 h-1.5 bg-[#2347A0]" aria-hidden />
             Reputação que gera confiança. Por isso, azul.
@@ -195,10 +197,10 @@ export default function NossaHistoriaPage() {
       {/* ── 04 O que vem a seguir ── */}
       <section className="bg-white py-20 lg:py-28">
         <div className="max-w-[1280px] mx-auto px-6 lg:px-16">
-          <ScrollReveal className="mb-10 lg:mb-14">
+          <Revelar className="mb-10 lg:mb-14">
             <p className={EYEBROW}>04 — O que vem a seguir</p>
             <h2 className={TITULO}>Projetos sob medida.<br /><em>Made-to-order.</em></h2>
-          </ScrollReveal>
+          </Revelar>
           <div className="grid md:grid-cols-2 gap-6 lg:gap-20 text-[#43474e] text-base lg:text-lg leading-relaxed max-w-5xl">
             <p>O nosso futuro está nos projetos personalizados, feitos a partir dos nossos produtos inovadores.</p>
             <p>Levamos a nossa tecnologia para acabamentos made-to-order, feitos para cada projeto.</p>

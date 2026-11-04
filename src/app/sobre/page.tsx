@@ -1,7 +1,7 @@
 import type { Metadata } from "next";
 import Image from "next/image";
 import Link from "next/link";
-import ScrollReveal from "@/components/ScrollReveal";
+import Revelar from "@/components/projetos/Revelar";
 import AnimatedStat from "@/components/AnimatedStat";
 import ContatoCta from "@/components/ContatoCta";
 
@@ -94,7 +94,9 @@ const equipe = [
 
 export default function SobrePage() {
   return (
-    <div className="pt-20">
+    // No celular as entradas não ficam presas depois do fim (backwards): com `both` esta
+    // página perdia um quadro ao chegar ao fim da rolagem (medido a 4× de CPU no iPhone SE).
+    <div className="pt-20 max-lg:[&_.mv-revelar]:[animation-fill-mode:backwards]! max-lg:[&_.mv-revelar-surge]:[animation-fill-mode:backwards]!">
       <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: JSON.stringify(organizationSchema) }} />
       <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: JSON.stringify(breadcrumbSchema) }} />
 
@@ -143,10 +145,13 @@ export default function SobrePage() {
       </section>
 
       {/* ── Manifesto (split) ── */}
-      <section className="overflow-hidden bg-white">
+      {/* overflow-clip em vez de hidden nas seções com Revelar: hidden vira um rolador e
+          o view() passaria a olhar para ele, não para a página (nada animaria). */}
+      <section className="overflow-clip bg-white">
         <div className="flex flex-col lg:flex-row min-h-[560px]">
           <div className="lg:w-1/2 bg-[#F6F5F2] px-6 lg:px-16 py-16 lg:py-28 flex items-center">
-            <ScrollReveal className="max-w-lg">
+            {/* Bloco alto (o manifesto inteiro): sem camada pronta, a primeira entrada da página perdia um quadro no celular. */}
+            <Revelar className="max-w-lg [will-change:transform,opacity]">
               <p className="text-[#2347A0] text-xs tracking-[0.2em] uppercase font-semibold mb-5">Manifesto</p>
               <div className="space-y-5 text-[#43474e] leading-relaxed text-base">
                 <p>Enquanto muitos enxergavam limitações, nós enxergávamos oportunidades.</p>
@@ -156,25 +161,25 @@ export default function SobrePage() {
                 <p className="font-semibold text-[#0B1F45]">Porque acreditamos que inovação só tem valor quando chega até quem precisa dela.</p>
                 <p className="text-[#1F7A44] font-semibold">E estamos apenas começando.</p>
               </div>
-            </ScrollReveal>
+            </Revelar>
           </div>
-          <div className="lg:w-1/2 relative min-h-[380px]">
+          <Revelar efeito="desvela" className="lg:w-1/2 relative min-h-[380px]">
             <Image
               src="/images/catalogue/aplicacao-sala.jpeg"
               alt="Projeto Orbital Revestimentos em Manaus"
               fill
               className="object-cover"
             />
-          </div>
+          </Revelar>
         </div>
       </section>
 
       {/* ── Propósito / Missão / Visão ── */}
       <section className="bg-[#0B1F45] py-20 lg:py-28">
         <div className="max-w-[1280px] mx-auto px-6 lg:px-16">
-          <ScrollReveal>
+          <Revelar>
             <p className="text-[#36A35C] text-xs tracking-[0.2em] uppercase font-semibold mb-12">Nossa essência</p>
-          </ScrollReveal>
+          </Revelar>
           <div className="grid grid-cols-1 lg:grid-cols-3 gap-0 border border-white/10">
             {[
               {
@@ -201,7 +206,7 @@ export default function SobrePage() {
                 ],
               },
             ].map((item, i) => (
-              <ScrollReveal key={item.tag} delay={i * 80} className={`p-8 lg:p-10 ${i < 2 ? "border-b lg:border-b-0 lg:border-r border-white/10" : ""}`}>
+              <Revelar key={item.tag} efeito="surge" ordem={i} className={`p-8 lg:p-10 ${i < 2 ? "border-b lg:border-b-0 lg:border-r border-white/10" : ""}`}>
                 <p className="text-[#36A35C] text-[10px] tracking-[0.2em] uppercase font-semibold mb-3">{item.tag}</p>
                 <h2 className="font-serif text-white text-xl font-normal mb-4">{item.titulo}</h2>
                 <div className="space-y-3">
@@ -209,16 +214,16 @@ export default function SobrePage() {
                     <p key={j} className="text-white/55 text-sm leading-relaxed">{p}</p>
                   ))}
                 </div>
-              </ScrollReveal>
+              </Revelar>
             ))}
           </div>
         </div>
       </section>
 
       {/* ── Valores (split) ── */}
-      <section className="overflow-hidden bg-white">
+      <section className="overflow-clip bg-white">
         <div className="flex flex-col lg:flex-row-reverse min-h-[560px]">
-          <div className="lg:w-1/2 relative min-h-[380px]">
+          <Revelar efeito="desvela" className="lg:w-1/2 relative min-h-[380px]">
             <Image
               src="/images/catalogue/product-anatomy.png"
               alt="PFB Orbital — revestimento de alto padrão em Manaus"
@@ -226,9 +231,9 @@ export default function SobrePage() {
               className="object-cover"
             />
             {/* fallback bg in case image is missing */}
-          </div>
+          </Revelar>
           <div className="lg:w-1/2 bg-[#F6F5F2] px-6 lg:px-16 py-16 lg:py-28 flex items-center">
-            <ScrollReveal className="max-w-lg">
+            <Revelar className="max-w-lg">
               <p className="text-[#2347A0] text-xs tracking-[0.2em] uppercase font-semibold mb-5">Valores</p>
               <h2 className="font-serif text-[#0B1F45] text-3xl lg:text-4xl font-normal leading-tight mb-10">
                 O que guia cada decisão que tomamos.
@@ -241,7 +246,7 @@ export default function SobrePage() {
                   </li>
                 ))}
               </ul>
-            </ScrollReveal>
+            </Revelar>
           </div>
         </div>
       </section>
@@ -249,19 +254,19 @@ export default function SobrePage() {
       {/* ── Números detalhados ── */}
       <section className="bg-[#0B1F45] py-20 lg:py-28">
         <div className="max-w-[1280px] mx-auto px-6 lg:px-16">
-          <ScrollReveal>
+          <Revelar>
             <p className="text-[#36A35C] text-xs tracking-[0.2em] uppercase font-semibold mb-12">A Orbital em números</p>
-          </ScrollReveal>
+          </Revelar>
           <div className="grid grid-cols-2 lg:grid-cols-4 gap-0 border border-white/10">
             {numeros.map((n, i) => (
-              <ScrollReveal key={n.label} delay={i * 80} className={`p-6 lg:p-8 ${i < 3 ? "border-b lg:border-b-0 lg:border-r border-white/10" : ""}`}>
+              <Revelar key={n.label} efeito="surge" ordem={i} className={`p-6 lg:p-8 ${i < 3 ? "border-b lg:border-b-0 lg:border-r border-white/10" : ""}`}>
                 <AnimatedStat value={n.valor} className="text-white text-4xl font-normal mb-2" />
                 <p className="text-white/80 text-sm font-semibold mb-1">{n.label}</p>
                 <p className="text-white/40 text-xs leading-relaxed">{n.desc}</p>
-              </ScrollReveal>
+              </Revelar>
             ))}
           </div>
-          <ScrollReveal delay={200}>
+          <Revelar efeito="surge" ordem={2}>
             <div className="mt-10 grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4 border-t border-white/10 pt-10">
               {[
                 "Estoque local em Manaus",
@@ -277,22 +282,22 @@ export default function SobrePage() {
                 </div>
               ))}
             </div>
-          </ScrollReveal>
+          </Revelar>
         </div>
       </section>
 
       {/* ── Fundadores ── */}
       <section className="bg-white py-20 lg:py-28">
         <div className="max-w-[1280px] mx-auto px-6 lg:px-16">
-          <ScrollReveal>
+          <Revelar>
             <p className="text-[#2347A0] text-xs tracking-[0.2em] uppercase font-semibold mb-5">Fundadores</p>
             <h2 className="font-serif text-[#0B1F45] text-3xl lg:text-4xl font-normal leading-tight mb-14 max-w-xl">
               As pessoas por trás da Orbital.
             </h2>
-          </ScrollReveal>
+          </Revelar>
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-0 border border-[#e2e2e2] max-w-2xl">
             {equipe.map((pessoa, i) => (
-              <ScrollReveal key={pessoa.nome} delay={i * 100} className={`${i === 0 ? "border-b sm:border-b-0 sm:border-r border-[#e2e2e2]" : ""}`}>
+              <Revelar key={pessoa.nome} ordem={i} className={`${i === 0 ? "border-b sm:border-b-0 sm:border-r border-[#e2e2e2]" : ""}`}>
                 {pessoa.hasPhoto ? (
                   <div className="relative w-full aspect-[4/5] overflow-hidden">
                     <Image
@@ -317,7 +322,7 @@ export default function SobrePage() {
                   <p className="text-[#2347A0] text-xs tracking-[0.1em] uppercase font-semibold mb-4">{pessoa.cargo}</p>
                   <p className="text-[#43474e] text-sm leading-relaxed">{pessoa.bio}</p>
                 </div>
-              </ScrollReveal>
+              </Revelar>
             ))}
           </div>
         </div>

@@ -348,6 +348,10 @@ html { scroll-padding-top: 5rem; }
        recorte não ficar preso e cortar o contorno de foco de quem está dentro. */
     .mv-revelar-desvela {
       animation: mv-desvela-recorte linear backwards;
+      /* O recorte anima na thread principal. Num bloco grande de foto (coluna inteira,
+         grade de fotos) sem camada própria a árvore toda repintava a cada quadro: medido
+         a 4× de CPU, +3 a +6 quadros acima de 33 ms por página. Com camada própria, 0. */
+      will-change: transform, clip-path;
       animation-timeline: view();
       animation-range: entry calc(var(--mv-i, 0) * 7%) entry calc(60% + var(--mv-i, 0) * 7%);
     }

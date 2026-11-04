@@ -1,7 +1,7 @@
 import type { Metadata } from "next";
 import Image from "next/image";
 import { Barlow_Condensed } from "next/font/google";
-import ScrollReveal from "@/components/ScrollReveal";
+import Revelar from "@/components/projetos/Revelar";
 import { supabaseAdmin } from "@/lib/supabase";
 import { statusTurma1 } from "@/lib/academia-status";
 import { QUANDO_TURMA_1_INICIO, STATUS_PADRAO, vagasTxt, type StatusTurma } from "@/lib/academia-turmas";
@@ -176,13 +176,16 @@ export default async function AcademiaPage() {
   const ctaTexto = fechada ? "Entrar na lista da 2ª turma" : "Quero minha vaga";
 
   return (
-    <div className="pt-20 bg-[#0B1F45]">
+    // No celular as entradas não ficam presas depois do fim (backwards): com `both` esta
+    // página perdia um quadro ao chegar ao fim da rolagem (medido a 4× de CPU no iPhone SE).
+    <div className="pt-20 bg-[#0B1F45] max-lg:[&_.mv-revelar]:[animation-fill-mode:backwards]! max-lg:[&_.mv-revelar-surge]:[animation-fill-mode:backwards]!">
       <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: JSON.stringify(breadcrumbSchema) }} />
 
       {/* ── Topo: promessa + formulário ── */}
       <section id="academia-topo" className="bg-[#0B1F45] text-white">
         <div className="max-w-[1280px] mx-auto px-4 lg:px-16 pt-10 pb-14 lg:py-20 lg:grid lg:grid-cols-[1fr_1.05fr] lg:gap-16 lg:items-center">
-          <div className="mb-10 lg:mb-0">
+          {/* Só a coluna do título sobe; a coluna do formulário fica como está. */}
+          <Revelar className="mb-10 lg:mb-0">
             <div className="flex flex-wrap items-center gap-2.5 mb-6">
               <span className="text-[11px] tracking-[0.22em] uppercase font-bold" style={{ color: LIMA }}>
                 Academia Orbital
@@ -200,7 +203,7 @@ export default async function AcademiaPage() {
               Formação prática no Painel Flexível em Fibra de Bambu (PFB), do corte ao acabamento. Você sai com
               certificado e compra PFB direto com a Orbital.
             </p>
-          </div>
+          </Revelar>
 
           <div id="lista-de-espera" className="scroll-mt-24">
             <Vagas st={st} />
@@ -239,19 +242,24 @@ export default async function AcademiaPage() {
           esquerda com um vão à direita. */}
       <section className="bg-white text-[#0D1830] py-20 lg:py-32">
         <div className="max-w-[868px] mx-auto px-4 lg:px-6">
-          <ScrollReveal direction="up">
+          <Revelar>
             <h2 className={`${H2} mb-12 lg:mb-16`}>
               Você vai aprender
               <br />
               <span className="text-[#1F7A44]">a fazer isso.</span>
             </h2>
-          </ScrollReveal>
+          </Revelar>
           <div className="space-y-16 lg:space-y-24">
             {PARES.map(({ rotulo, par }) => (
-              <ScrollReveal key={rotulo} direction="up">
-                <AntesDepois par={par} rotulo={rotulo} />
-                <p className={`${D} text-xl lg:text-2xl font-bold uppercase mt-4`}>{rotulo}</p>
-              </ScrollReveal>
+              <div key={rotulo}>
+                {/* O par inteiro (as duas fotos) se desvela como um bloco só. */}
+                <Revelar efeito="desvela">
+                  <AntesDepois par={par} rotulo={rotulo} />
+                </Revelar>
+                <Revelar efeito="surge" className="mt-4">
+                  <p className={`${D} text-xl lg:text-2xl font-bold uppercase`}>{rotulo}</p>
+                </Revelar>
+              </div>
             ))}
           </div>
           <div className="mt-14 lg:mt-20">
@@ -262,13 +270,13 @@ export default async function AcademiaPage() {
 
       {/* ── Uma frase, e só ── */}
       <section className="bg-[#0B1F45] py-24 lg:py-36">
-        <ScrollReveal direction="up" className="max-w-[1280px] mx-auto px-4 lg:px-16">
+        <Revelar efeito="surge" className="max-w-[1280px] mx-auto px-4 lg:px-16">
           <p className={`${D} text-white text-[34px] leading-none sm:text-5xl lg:text-[64px] font-bold uppercase`}>
             PFB não é mais o futuro.
             <br />
             <span style={{ color: LIMA }}>Já é o presente!</span>
           </p>
-        </ScrollReveal>
+        </Revelar>
       </section>
 
       {/* ── O produto: os seis diferenciais, versão curta ── */}
@@ -277,15 +285,15 @@ export default async function AcademiaPage() {
       {/* ── Onde aplica: foto e uma palavra ── */}
       <section className="bg-white text-[#0D1830] py-20 lg:py-32">
         <div className="max-w-[1280px] mx-auto px-4 lg:px-16">
-          <ScrollReveal direction="up">
+          <Revelar>
             <h2 className={`${H2} mb-12 lg:mb-16`}>
               Não é <span className="text-[#1F7A44]">só parede.</span>
             </h2>
-          </ScrollReveal>
-          <div className="grid grid-cols-2 lg:grid-cols-3 gap-2 lg:gap-4">
-            {APLICACOES.map(({ t, src, alt }, i) => (
-              <ScrollReveal key={t} direction="up" delay={(i % 3) * 80}>
-                <figure className="group relative aspect-[3/4] overflow-hidden bg-[#0B1F45]">
+          </Revelar>
+          {/* As seis fotos se desvelam como um bloco só: um recorte por foto custava quadros em tablet. */}
+          <Revelar efeito="desvela" className="grid grid-cols-2 lg:grid-cols-3 gap-2 lg:gap-4">
+            {APLICACOES.map(({ t, src, alt }) => (
+              <figure key={t} className="group relative aspect-[3/4] overflow-hidden bg-[#0B1F45]">
                   <Image
                     src={src}
                     alt={alt}
@@ -297,34 +305,33 @@ export default async function AcademiaPage() {
                   <figcaption className={`${D} absolute left-3 bottom-3 lg:left-5 lg:bottom-5 text-white text-xl lg:text-2xl leading-none font-bold uppercase`}>
                     {t}
                   </figcaption>
-                </figure>
-              </ScrollReveal>
+              </figure>
             ))}
-          </div>
+          </Revelar>
         </div>
       </section>
 
       {/* ── O que aprende: cinco palavras, em escada ── */}
       <section className="bg-[#0B1F45] text-white py-20 lg:py-32">
         <div className="max-w-[1280px] mx-auto px-4 lg:px-16">
-          <ScrollReveal direction="up">
+          <Revelar>
             <h2 className={`${H2} mb-12 lg:mb-20`}>
               Do corte
               <br />
               <span style={{ color: LIMA }}>ao acabamento.</span>
             </h2>
-          </ScrollReveal>
+          </Revelar>
           <ol className="grid grid-cols-1 lg:grid-cols-5 gap-2 lg:gap-3 lg:items-end">
             {NIVEIS.map((t, i) => (
               <li key={t} style={{ ["--degrau" as string]: `${i * 36}px` }} className="lg:mb-[var(--degrau)]">
-                <ScrollReveal direction="up" delay={i * 90}>
+                <Revelar efeito="surge" ordem={i}>
                   <div className="border border-white/15 px-5 py-4 lg:p-6 flex items-center gap-5 lg:block">
                     <span className={`${D} text-4xl lg:text-5xl leading-none font-extrabold text-transparent [-webkit-text-stroke:1.5px_#36A35C] w-12 lg:w-auto shrink-0`}>
                       0{i + 1}
                     </span>
                     <span className={`${D} block text-2xl lg:text-[28px] leading-none font-bold uppercase lg:mt-8`}>{t}</span>
                   </div>
-                </ScrollReveal>
+                </Revelar>
               </li>
             ))}
           </ol>
@@ -334,7 +341,7 @@ export default async function AcademiaPage() {
       {/* ── Quem instala, aprova: vídeo à direita ── */}
       <section className="bg-white text-[#0D1830] py-20 lg:py-32">
         <div className="max-w-[1280px] mx-auto px-4 lg:px-16 grid grid-cols-1 lg:grid-cols-[1fr_360px] gap-12 lg:gap-24 items-center">
-          <ScrollReveal direction="up">
+          <Revelar>
             <p className="text-[11px] lg:text-xs tracking-[0.22em] uppercase font-bold mb-5 text-[#1F7A44]">
               Opinião de instalador
             </p>
@@ -351,22 +358,22 @@ export default async function AcademiaPage() {
               ))}
             </ul>
             <Cta texto={ctaTexto} tom="verde" />
-          </ScrollReveal>
-          <ScrollReveal direction="up" delay={120}>
+          </Revelar>
+          <Revelar efeito="surge" ordem={1}>
             <VideoShort
               id="hpgoCY8L2PI"
               poster="/images/videos/opiniao-instalador-adam-werk.jpg"
               titulo="Opinião de instalador"
               className="max-w-[320px] lg:max-w-none mx-auto"
             />
-          </ScrollReveal>
+          </Revelar>
         </div>
       </section>
 
       {/* ── Certificação ── */}
       <section className="bg-[#0B1F45] text-white border-t border-white/10 py-20 lg:py-32">
         <div className="max-w-[1280px] mx-auto px-4 lg:px-16">
-          <ScrollReveal direction="up">
+          <Revelar>
             <p className="text-[11px] lg:text-xs tracking-[0.22em] uppercase font-bold mb-5" style={{ color: LIMA }}>
               Não é só uma formação
             </p>
@@ -375,7 +382,7 @@ export default async function AcademiaPage() {
               <br />
               <span style={{ color: LIMA }}>certificado.</span>
             </h2>
-          </ScrollReveal>
+          </Revelar>
 
           <ol className="grid grid-cols-2 lg:grid-cols-4 gap-2 lg:gap-3 mb-10 lg:mb-12">
             {ETAPAS_CERT.map((e, i) => {

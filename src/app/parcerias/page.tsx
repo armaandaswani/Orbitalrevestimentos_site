@@ -3,7 +3,7 @@
 import React, { useState, useCallback, useRef, useEffect } from "react";
 import Image from "next/image";
 import Link from "next/link";
-import ScrollReveal from "@/components/ScrollReveal";
+import Revelar from "@/components/projetos/Revelar";
 import ContatoCta from "@/components/ContatoCta";
 
 const CATALOGUE_URL =
@@ -207,12 +207,14 @@ export default function ParceriasPage() {
     <div className="pt-20">
 
       {/* ── Hero ─────────────────────────────── */}
-      <section className="bg-[#0B1F45] text-white py-10 lg:py-28 relative overflow-hidden">
+      {/* overflow-clip em vez de hidden nas seções com Revelar: hidden vira um rolador e
+          o view() passaria a olhar para ele, não para a página (nada animaria). */}
+      <section className="bg-[#0B1F45] text-white py-10 lg:py-28 relative overflow-clip">
         <div className="absolute inset-0 opacity-[0.04]" style={{
           backgroundImage: "repeating-linear-gradient(0deg, transparent, transparent 39px, rgba(255,255,255,0.5) 39px, rgba(255,255,255,0.5) 40px), repeating-linear-gradient(90deg, transparent, transparent 39px, rgba(255,255,255,0.5) 39px, rgba(255,255,255,0.5) 40px)"
         }} />
         <div className="relative max-w-[1280px] mx-auto px-4 lg:px-16">
-          <div className="max-w-3xl mb-10 lg:mb-12">
+          <Revelar className="max-w-3xl mb-10 lg:mb-12">
             <p className="text-[#36A35C] text-xs tracking-[0.2em] uppercase font-semibold mb-5">
               Orbital Revestimentos · Programa de Parceiros · Manaus
             </p>
@@ -230,7 +232,7 @@ export default function ParceriasPage() {
             >
               Já tenho código de indicação →
             </button>
-          </div>
+          </Revelar>
 
           {/* Segment preview cards */}
           <div className="grid grid-cols-2 lg:grid-cols-5 gap-3 lg:gap-4">
@@ -293,7 +295,7 @@ export default function ParceriasPage() {
 
       {/* ── Dynamic segment content ───────────── */}
       <div ref={segmentContentRef} className="scroll-mt-20">
-        <section key={active} className="overflow-hidden animate-fade-in">
+        <section key={active} className="overflow-clip animate-fade-in">
           <div className="flex flex-col lg:flex-row min-h-[620px]">
             {/* Left — dark text column */}
             <div className="lg:w-[52%] bg-[#0B1F45] px-4 lg:px-14 xl:px-20 py-8 lg:py-24 flex flex-col justify-center">
@@ -304,21 +306,23 @@ export default function ParceriasPage() {
                 <p className="text-[#B4BBC8] text-xs tracking-[0.18em] uppercase font-semibold mb-4">
                   {seg.tagline}
                 </p>
-                <h2 className="font-serif text-white text-[32px] lg:text-[40px] font-normal leading-[1.2] mb-6">
-                  {seg.headline}
-                </h2>
+                <Revelar>
+                  <h2 className="font-serif text-white text-[32px] lg:text-[40px] font-normal leading-[1.2] mb-6">
+                    {seg.headline}
+                  </h2>
+                </Revelar>
                 <p className="hidden lg:block text-white/60 text-base leading-relaxed mb-10">
                   {seg.body}
                 </p>
                 <ul className="space-y-2 lg:space-y-5 mb-6 lg:mb-10">
-                  {seg.benefits.map(({ title, desc }) => (
-                    <li key={title} className="flex gap-2 lg:gap-4">
+                  {seg.benefits.map(({ title, desc }, i) => (
+                    <Revelar como="li" key={title} ordem={i} className="flex gap-2 lg:gap-4">
                       <span className="flex-shrink-0 mt-1.5 w-1.5 h-1.5 rounded-full bg-[#36A35C]" />
                       <div>
                         <p className="text-white text-xs lg:text-sm font-semibold mb-0.5">{title}</p>
                         <p className="hidden lg:block text-white/50 text-xs leading-relaxed">{desc}</p>
                       </div>
-                    </li>
+                    </Revelar>
                   ))}
                 </ul>
                 {seg.pricingCallout && (
@@ -420,14 +424,14 @@ export default function ParceriasPage() {
       {/* ── Longevity argument ────────────────── */}
       <section className="py-8 lg:py-24 bg-[#F6F5F2]">
         <div className="max-w-[1280px] mx-auto px-4 lg:px-16">
-          <ScrollReveal direction="up">
+          <Revelar>
             <div className="mb-12">
               <p className="text-[#74777f] text-xs tracking-[0.2em] uppercase font-semibold mb-3">Longevidade</p>
               <h2 className="font-serif text-[#0B1F45] text-3xl lg:text-4xl font-normal max-w-2xl">O projeto que envelhece bem fala por você.</h2>
             </div>
-          </ScrollReveal>
+          </Revelar>
           <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-            <ScrollReveal direction="up" delay={0}>
+            <Revelar efeito="surge">
               <div className="bg-white border border-[#e2e2e2] p-4 lg:p-8 h-full">
                 <p className="text-[#74777f] text-xs tracking-[0.1em] uppercase font-semibold mb-4">MDF em clima amazônico</p>
                 <p className="text-[#74777f] text-xl lg:text-3xl font-normal mb-3 leading-tight">2–3 anos e já mostra desgaste.</p>
@@ -440,8 +444,8 @@ export default function ParceriasPage() {
                   ))}
                 </ul>
               </div>
-            </ScrollReveal>
-            <ScrollReveal direction="up" delay={100}>
+            </Revelar>
+            <Revelar efeito="surge" ordem={1}>
               <div className="bg-[#0B1F45] p-4 lg:p-8 relative overflow-hidden h-full">
                 <div className="absolute top-3 right-3 bg-[#36A35C] text-[#0B1F45] text-[9px] tracking-[0.1em] uppercase font-bold px-2.5 py-1">PFB Orbital</div>
                 <p className="text-[#B4BBC8] text-xs tracking-[0.1em] uppercase font-semibold mb-4">Aparência preservada por anos</p>
@@ -455,8 +459,8 @@ export default function ParceriasPage() {
                   ))}
                 </ul>
               </div>
-            </ScrollReveal>
-            <ScrollReveal direction="up" delay={200}>
+            </Revelar>
+            <Revelar efeito="surge" ordem={2}>
               <div className="bg-white border border-[#e2e2e2] p-4 lg:p-8 flex flex-col justify-between h-full">
                 <div>
                   <p className="text-[#74777f] text-xs tracking-[0.1em] uppercase font-semibold mb-4">O impacto na sua reputação</p>
@@ -470,7 +474,7 @@ export default function ParceriasPage() {
                   Quero conhecer o PFB Orbital
                 </ContatoCta>
               </div>
-            </ScrollReveal>
+            </Revelar>
           </div>
         </div>
       </section>
@@ -478,7 +482,7 @@ export default function ParceriasPage() {
       {/* ── Final CTA ─────────────────────────── */}
       <section className="py-16 lg:py-24 bg-[#0B1F45] text-white">
         <div className="max-w-[760px] mx-auto px-4 lg:px-8 text-center">
-          <ScrollReveal direction="up">
+          <Revelar>
             <p className="text-[#9c9faa] text-xs tracking-[0.2em] uppercase font-semibold mb-5">Condições exclusivas para profissionais</p>
             <h2 className="font-serif text-white text-4xl lg:text-5xl font-normal mb-6">Pronto para fazer parte da rede Orbital?</h2>
             <p className="text-white/55 text-base leading-relaxed mb-10">
@@ -508,7 +512,7 @@ export default function ParceriasPage() {
                 Ver catálogo online
               </Link>
             </div>
-          </ScrollReveal>
+          </Revelar>
         </div>
       </section>
 
