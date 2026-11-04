@@ -2123,6 +2123,7 @@ function UploadStep({
     }).filter(Boolean);
     return `${simPrefills.length} modelos: ${names.join(", ")}`;
   }, [simPrefills, products]);
+  const cameraInputRef = React.useRef<HTMLInputElement | null>(null);
 
   return (
     <div className={`grid gap-10 items-start mt-6 ${embeddedMode ? "grid-cols-1 lg:grid-cols-[1.1fr_0.9fr]" : "grid lg:grid-cols-[1.1fr_0.9fr]"}`}>
@@ -2142,9 +2143,47 @@ function UploadStep({
           <p className="text-[#0B1F45] text-xl mb-1">
             {hasBanked ? "Envie a foto do próximo ambiente" : "Envie uma foto do seu ambiente"}
           </p>
-          <p className="text-[#74777f] text-sm">Clique para escolher ou arraste a imagem aqui</p>
+          <p className="text-[#74777f] text-sm">
+            <span className="[@media(pointer:coarse)]:hidden">Clique para escolher ou arraste a imagem aqui</span>
+            <span className="hidden [@media(pointer:coarse)]:inline">Toque para escolher uma foto</span>
+          </p>
           <p className="text-[#a0a3a9] text-xs mt-3">JPG ou PNG · foto de frente e bem iluminada funciona melhor</p>
         </div>
+        {/* Celular: duas saídas claras. Em vários Android (Motorola, Android 13+) o
+            input só com accept="image/*" abre o seletor de fotos do sistema, que não
+            oferece a câmera; o capture="environment" abre a câmera traseira direto. */}
+        <div className="hidden [@media(pointer:coarse)]:grid grid-cols-2 gap-3 mt-4">
+          <button
+            type="button"
+            onClick={() => cameraInputRef.current?.click()}
+            className="min-h-12 flex items-center justify-center gap-2 bg-[#0B1F45] text-white text-xs tracking-[0.12em] uppercase font-semibold"
+          >
+            <svg aria-hidden width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.6">
+              <path d="M4 8h3l2-3h6l2 3h3v11H4z" />
+              <circle cx="12" cy="13" r="3.5" />
+            </svg>
+            Tirar foto
+          </button>
+          <button
+            type="button"
+            onClick={() => fileInputRef.current?.click()}
+            className="min-h-12 flex items-center justify-center gap-2 border border-[#0B1F45] text-[#0B1F45] text-xs tracking-[0.12em] uppercase font-semibold"
+          >
+            <svg aria-hidden width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.6">
+              <rect x="3" y="5" width="18" height="14" />
+              <path d="M3 16l5-5 4 4 3-3 6 6" />
+            </svg>
+            Galeria
+          </button>
+        </div>
+        <input
+          ref={cameraInputRef}
+          type="file"
+          accept="image/*"
+          capture="environment"
+          className="hidden"
+          onChange={(e) => { handleFile(e.target.files?.[0]); e.target.value = ""; }}
+        />
         {error && <p className="mt-3 text-sm text-[#b42318]">{error}</p>}
         {simBanner && (
           <div className="mt-4 border border-[#bcd0e8] bg-[#f5f8fc] px-4 py-3">
@@ -2159,7 +2198,7 @@ function UploadStep({
             </p>
           </div>
         )}
-        <input ref={fileInputRef} type="file" accept="image/*" className="hidden" onChange={(e) => handleFile(e.target.files?.[0])} />
+        <input ref={fileInputRef} type="file" accept="image/*" className="hidden" onChange={(e) => { handleFile(e.target.files?.[0]); e.target.value = ""; }} />
 
         {embeddedMode && onSkip && (
           <div className="mt-6 flex justify-end">
