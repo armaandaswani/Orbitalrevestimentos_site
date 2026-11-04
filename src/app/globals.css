@@ -422,7 +422,6 @@ html:has(header[data-site][data-oculto="1"]) .ds-sob-cabecalho { top: 0; }
 .ts-abertura:is([data-p10="8"], [data-p10="9"], [data-p10="10"]) .ts-ab-cta,
 .ts-ab-cta:focus-within { pointer-events: auto; }
 .ts-ab-cta:focus-within { opacity: 1; }
-.ts-ab-aviso { opacity: clamp(0, (var(--p, 0) - 0.08) / 0.12, 1); }
 .ts-ab-convite { opacity: clamp(0, 1 - var(--p, 0) * 14, 1); }
 @keyframes ts-convite { from { transform: translateY(-100%); } to { transform: translateY(200%); } }
 @media (prefers-reduced-motion: no-preference) {

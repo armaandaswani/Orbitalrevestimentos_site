@@ -6,7 +6,7 @@ import Tamanhos from "./Tamanhos";
 import { Abertura, Sequencia } from "./Apresentacao";
 import Revelar from "@/components/projetos/Revelar";
 import ListaEsperaSheet, { type ModeloEspera } from "@/components/ListaEsperaSheet";
-import { ESPESSURA_MM, FORMATOS, MODELOS_TECHSTONE, cena, texturaMiniatura, type FormatoTechStone } from "@/lib/techstone";
+import { AVISO_CENAS, ESPESSURA_MM, FORMATOS, MODELOS_TECHSTONE, cena, texturaMiniatura, type FormatoTechStone } from "@/lib/techstone";
 
 /** Modelos como a lista de espera mostra: textura e formato. */
 const CATALOGO_ESPERA: ModeloEspera[] = MODELOS_TECHSTONE.map((m) => ({
@@ -92,9 +92,7 @@ export default function TechStone() {
           {/* Recorte de computador também no celular: o retrato perde a borda da placa. */}
           {/* eslint-disable-next-line @next/next/no-img-element */}
           <img src={cena("espessura").desktop} alt="Placa fina curvada vista pela borda, gerada por IA a partir da textura TechStone Travertino Romano Clássico"
-            loading="lazy" decoding="async" className="absolute inset-0 w-full h-full object-cover" />
-          <p className="absolute left-4 bottom-3 text-[11px] tracking-[0.02em] text-white/70">Imagem gerada por IA.</p>
-        </div>
+            loading="lazy" decoding="async" className="absolute inset-0 w-full h-full object-cover" />        </div>
         <div className="ds-wrap lg:max-w-none lg:px-[clamp(2rem,5vw,6rem)] py-12 lg:py-20 flex flex-col justify-center">
           <h2 id="ts-oque" className="font-serif text-t1 text-[#22201C] max-w-[16ch]">O que é a TechStone.</h2>
           <dl className="mt-8 border-t border-[#22201C]/15">
@@ -180,6 +178,8 @@ export default function TechStone() {
             </details>
           ))}
         </div>
+        {/* Aviso único da página (decisão do dono, 03/11/2026): sem selo nas imagens. */}
+        <p className="mt-10 text-sobre text-[#8C7B63] max-w-[62ch]">{AVISO_CENAS}</p>
       </section>
 
       <ListaEsperaSheet

@@ -44,11 +44,12 @@ export function texturaDownload(m: ModeloTechStone): string {
 /**
  * Versão das cenas (arquivo novo = versão nova). v3 = imagens geradas por IA
  * no Canva a partir dos renders 3D e do scan de cada modelo: a pedra segue a
- * textura, mas não é foto do material. A abertura da página avisa isso.
+ * textura, mas não é foto do material. Um aviso único, perto das perguntas, diz
+ * isso (decisão do dono, 03/11/2026: sem selo em cada imagem da página).
  */
 const VERSAO_CENAS = "v3";
 
-export const AVISO_CENAS = "Imagens geradas por IA a partir das texturas dos modelos. O material real pode variar.";
+export const AVISO_CENAS = "Ambientes ilustrativos criados a partir das texturas dos modelos. O material real pode variar.";
 
 /** Cena da página; uma versão por orientação de tela. */
 export function cena(nome: string): { desktop: string; mobile: string } {

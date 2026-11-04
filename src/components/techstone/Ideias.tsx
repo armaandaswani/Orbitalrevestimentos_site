@@ -55,7 +55,7 @@ export default function Ideias({ verTamanho }: {
           <div>
             <h2 id="ts-ideias" className="font-serif text-t1 text-[#22201C]">Ideias para o seu projeto.</h2>
             <p className="mt-3 text-corpo text-[#4A4540] max-w-[46ch]">
-              Cada imagem foi gerada por IA a partir da textura do modelo. Toque numa ideia para ver o tamanho e os modelos.
+              Toque numa ideia para ver o tamanho e os modelos.
             </p>
           </div>
           <div role="group" aria-label="Filtrar por tamanho" className="flex gap-2 overflow-x-auto scrollbar-none -mx-[clamp(1rem,4.2vw,4rem)] px-[clamp(1rem,4.2vw,4rem)] md:mx-0 md:px-0">
@@ -80,9 +80,7 @@ export default function Ideias({ verTamanho }: {
                 <span className="relative block aspect-[4/5] overflow-hidden bg-[#D9D1C4]">
                   {/* eslint-disable-next-line @next/next/no-img-element */}
                   <img src={i.src} alt={i.alt} loading="lazy" decoding="async"
-                    className="absolute inset-0 w-full h-full object-cover transition-transform duration-700 ease-[cubic-bezier(0.2,0.7,0.2,1)] group-hover:scale-[1.03]" />
-                  <span className="absolute left-3 bottom-3 bg-[#141210]/70 text-white text-[11px] tracking-[0.02em] px-2 py-1">Gerada por IA</span>
-                </span>
+                    className="absolute inset-0 w-full h-full object-cover transition-transform duration-700 ease-[cubic-bezier(0.2,0.7,0.2,1)] group-hover:scale-[1.03]" />                </span>
                 <span className="mt-3 block font-serif text-[1.0625rem] text-[#22201C]">{i.titulo}</span>
                 <span className="mt-0.5 block text-legenda text-[#6B6158]">{m.nome} · <span className="tabular-nums">{f.rotulo}</span></span>
               </button>

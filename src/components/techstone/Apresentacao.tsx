@@ -57,10 +57,6 @@ export function Abertura({ entrarNaLista }: { entrarNaLista: () => void }) {
           </button>
         </div>
 
-        {/* Aviso curto onde a imagem gerada aparece (regra X0.08): acende junto com a foto. */}
-        <p className="ts-ab-aviso absolute left-4 bottom-4 sm:left-6 sm:bottom-6 text-[11px] tracking-[0.02em] text-white/55">
-          Imagem gerada por IA a partir da textura do modelo.
-        </p>
         <span aria-hidden className="ts-ab-convite absolute left-1/2 bottom-8 h-12 w-px -translate-x-1/2 overflow-hidden bg-white/15">
           <span className="ts-ab-convite-luz absolute inset-x-0 top-0 h-1/2 bg-white/80" />
         </span>
@@ -115,9 +111,7 @@ export function Sequencia() {
               <div aria-hidden className="absolute inset-0 bg-gradient-to-t from-black/60 via-black/5 to-transparent" />
               <div className="ts-quadro-texto absolute inset-x-0 bottom-0 ds-wrap pb-[max(3.5rem,10svh)]">
                 <h2 className="font-serif text-white text-display max-w-[14ch]">{q.titulo}</h2>
-                <p className="mt-4 text-white/85 text-lead max-w-[38ch]">{q.texto}</p>
-                <p className="mt-4 text-sobre text-white/55">Imagem gerada por IA.</p>
-              </div>
+                <p className="mt-4 text-white/85 text-lead max-w-[38ch]">{q.texto}</p>              </div>
             </div>
           );
         })}
