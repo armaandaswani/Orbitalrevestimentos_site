@@ -1,14 +1,13 @@
 "use client";
 
 import { useEffect } from "react";
-
-/** Quando a cortina começa a subir na sequência normal (ms); igual ao atraso no CSS. */
-const INICIO_CORTINA = 2300;
+import { INICIO_CORTINA } from "@/lib/movimento/introTempo";
 
 /**
  * Animações que formam a subida da cortina (o campo, a liberação do clique e
- * o conteúdo que sobe junto). Pular é adiantá-las para o começo da subida; as
- * faixas, o logotipo e a trava de segurança de 3,6 s seguem no tempo deles.
+ * o conteúdo que sobe junto). Pular é adiantá-las para o começo da subida
+ * (INICIO_CORTINA, o mesmo atraso do CSS); as faixas, o deslize, o logotipo e
+ * a trava de segurança seguem no tempo deles.
  */
 const ANIMACOES_DA_CORTINA = new Set(["intro-cortina", "intro-solta", "intro-conteudo-sai"]);
 
@@ -27,7 +26,7 @@ function nomeDaAnimacao(animacao: Animation): string | null {
  * Se a hidratação chegar depois de a cortina já ter subido, fecha na hora.
  * Toda a parte de Web Animations fica em try/catch: navegador sem a API ou
  * qualquer erro encerra a intro (atributo desligado, evento uma vez) em vez
- * de quebrar o efeito; a trava CSS de 3,6 s continua valendo de todo jeito.
+ * de quebrar o efeito; a trava CSS (TRAVA_SEGURANCA) continua valendo de todo jeito.
  * Não renderiza nada; sem intro na visita, não faz nada.
  */
 export default function IntroOrbitaControle() {

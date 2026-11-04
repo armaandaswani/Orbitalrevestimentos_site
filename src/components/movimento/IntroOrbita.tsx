@@ -147,7 +147,9 @@ type Caixa = [number, number, number, number];
  * Um logo oficial (horizontal ou vertical) montado para a intro: cada faixa
  * num grupo próprio, com a transformação do grupo do arquivo, a sua máscara
  * de varredura e o giro em volta do centro da esfera; o logotipo depois, num
- * grupo que sobe e se revela da esquerda para a direita.
+ * grupo que sobe e se revela da esquerda para a direita. Vai dentro de um
+ * palco HTML que começa com a esfera no centro da tela e desliza para o lugar
+ * do logo (transform composto, sem repintar o SVG por causa do movimento).
  */
 function Logo({
   viewBox,
@@ -170,76 +172,92 @@ function Logo({
   const cx = CENTRO_X + deslocamento;
   const mascara = { maskUnits: "userSpaceOnUse", x: vx, y: vy, width: vw, height: vh } as const;
   const [ax0, ay0, ax1, ay1] = caixaAssinatura;
+  // Onde está o centro da esfera dentro do logo, em % da caixa do SVG: dá a
+  // origem do respirar e o deslocamento do palco que põe a esfera no centro
+  // da tela enquanto ela se constrói (caixa do palco = caixa do SVG).
+  const pct = (v: number) => `${Math.round(v * 1e4) / 1e4}%`;
+  const esferaX = ((cx - vx) / vw) * 100;
+  const esferaY = ((CENTRO_Y - vy) / vh) * 100;
+  const palco = { "--palco-x": pct(50 - esferaX), "--palco-y": pct(50 - esferaY) } as CSSProperties;
   return (
-    <svg className={`intro-orbita__logo ${classe}`} viewBox={viewBox} focusable="false">
-      <defs>
-        <linearGradient id={`${prefixo}borda`}>
-          <stop offset="0" stopColor="#fff" />
-          <stop offset="1" stopColor="#fff" stopOpacity="0" />
-        </linearGradient>
-        {FAIXAS.map((f) => (
-          <mask key={f.i} id={`${prefixo}m${f.i}`} {...mascara}>
+    <div className={`intro-orbita__palco ${classe}`} style={palco}>
+      <svg
+        className="intro-orbita__logo"
+        viewBox={viewBox}
+        focusable="false"
+        style={{ transformOrigin: `${pct(esferaX)} ${pct(esferaY)}` }}
+      >
+        <defs>
+          <linearGradient id={`${prefixo}borda`}>
+            <stop offset="0" stopColor="#fff" />
+            <stop offset="1" stopColor="#fff" stopOpacity="0" />
+          </linearGradient>
+          {FAIXAS.map((f) => (
+            <mask key={f.i} id={`${prefixo}m${f.i}`} {...mascara}>
+              <Varredura
+                cx={cx}
+                cy={CENTRO_Y}
+                angulo={f.angulo}
+                p={f.p}
+                q={f.q}
+                borda={BORDA_FAIXA}
+                atraso={f.atraso}
+                prefixo={prefixo}
+                classe="intro-orbita__varredura"
+              />
+            </mask>
+          ))}
+          <mask id={`${prefixo}assinatura`} {...mascara}>
             <Varredura
-              cx={cx}
-              cy={CENTRO_Y}
-              angulo={f.angulo}
-              p={f.p}
-              q={f.q}
-              borda={BORDA_FAIXA}
-              atraso={f.atraso}
+              cx={0}
+              cy={0}
+              angulo={0}
+              p={[ax0, ax1]}
+              q={[ay0, ay1]}
+              borda={BORDA_ASSINATURA}
               prefixo={prefixo}
-              classe="intro-orbita__varredura"
+              classe="intro-orbita__varredura-assinatura"
             />
           </mask>
-        ))}
-        <mask id={`${prefixo}assinatura`} {...mascara}>
-          <Varredura
-            cx={0}
-            cy={0}
-            angulo={0}
-            p={[ax0, ax1]}
-            q={[ay0, ay1]}
-            borda={BORDA_ASSINATURA}
-            prefixo={prefixo}
-            classe="intro-orbita__varredura-assinatura"
-          />
-        </mask>
-      </defs>
-      {/* Ordem de pintura do arquivo oficial; a ordem de entrada vem do atraso. */}
-      {SIMBOLO_FORMAS.map((forma, i) => {
-        const f = FAIXAS.find((x) => x.i === i)!;
-        const estilo = {
-          "--atraso": `${f.atraso}ms`,
-          transformOrigin: `${arred(CENTRO_X - f.caixa[0])}px ${arred(CENTRO_Y - f.caixa[1])}px`,
-        } as CSSProperties;
-        return (
-          <g
-            key={i}
-            className={`intro-orbita__faixa intro-orbita__faixa--${forma.fill === AZUL ? "azul" : "verde"}`}
-            style={estilo}
-            mask={`url(#${prefixo}m${i})`}
-          >
-            <g transform={transformacao}>
-              <use href={`#${PREFIXO_FORMA}${i}`} />
+        </defs>
+        {/* Ordem de pintura do arquivo oficial; a ordem de entrada vem do atraso. */}
+        {SIMBOLO_FORMAS.map((forma, i) => {
+          const f = FAIXAS.find((x) => x.i === i)!;
+          const estilo = {
+            "--atraso": `${f.atraso}ms`,
+            transformOrigin: `${arred(CENTRO_X - f.caixa[0])}px ${arred(CENTRO_Y - f.caixa[1])}px`,
+          } as CSSProperties;
+          return (
+            <g
+              key={i}
+              className={`intro-orbita__faixa intro-orbita__faixa--${forma.fill === AZUL ? "azul" : "verde"}`}
+              style={estilo}
+              mask={`url(#${prefixo}m${i})`}
+            >
+              <g transform={transformacao}>
+                <use href={`#${PREFIXO_FORMA}${i}`} />
+              </g>
             </g>
-          </g>
-        );
-      })}
-      <g className="intro-orbita__assinatura" mask={`url(#${prefixo}assinatura)`}>
-        {assinatura.map((forma, i) => (
-          <path key={i} fill={forma.fill} d={forma.d} />
-        ))}
-      </g>
-    </svg>
+          );
+        })}
+        <g className="intro-orbita__assinatura" mask={`url(#${prefixo}assinatura)`}>
+          {assinatura.map((forma, i) => (
+            <path key={i} fill={forma.fill} d={forma.d} />
+          ))}
+        </g>
+      </svg>
+    </div>
   );
 }
 
 /**
  * Intro da órbita na primeira página da visita, com o logo oficial de 2026:
  * campo azul-marinho, as cinco faixas azuis e depois as cinco verdes do
- * símbolo se constroem uma a uma (cada uma varre o próprio eixo enquanto gira
- * alguns graus até o lugar), o logotipo ORBITAL REVESTIMENTOS sobe e se
- * revela, e o campo sobe como uma cortina, em cerca de 3 s. Horizontal a
+ * símbolo se constroem uma a uma no centro da tela (cada uma varre o próprio
+ * eixo enquanto gira alguns graus até o lugar); a esfera desliza para o lugar
+ * dela no logo enquanto o logotipo ORBITAL REVESTIMENTOS sobe e se revela; o
+ * logo inteiro para um instante e o campo sobe como uma cortina, em cerca de
+ * 3,1 s (tempos em src/lib/movimento/introTempo.ts). Horizontal a
  * partir de sm; no celular, o arquivo vertical. Componente de servidor: o
  * HTML já vem pronto e só aparece sob `html[data-intro="1"]` (globals.css);
  * sem JavaScript o atributo nunca liga e nada aparece. Fica fora do
@@ -266,7 +284,7 @@ export default function IntroOrbita() {
             assinatura={ASSINATURA_HORIZONTAL}
             caixaAssinatura={[232.7, 48.5, 638.8, 150.7]}
             prefixo="io-h-"
-            classe="intro-orbita__logo--horizontal"
+            classe="intro-orbita__palco--horizontal"
           />
           <Logo
             viewBox={VERTICAL_VIEWBOX}
@@ -275,7 +293,7 @@ export default function IntroOrbita() {
             assinatura={ASSINATURA_VERTICAL}
             caixaAssinatura={[0, 231.1, 333.1, 314]}
             prefixo="io-v-"
-            classe="intro-orbita__logo--vertical"
+            classe="intro-orbita__palco--vertical"
           />
         </div>
       </div>

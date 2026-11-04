@@ -1,12 +1,10 @@
 "use client";
 
 import { useEffect, useRef, type ReactNode } from "react";
-
-/** Folga para a intro: se o fim dela nunca avisar, a foto se acomoda mesmo assim (ms). */
-const ESPERA_MAXIMA = 2400;
-
-/** Quando a cortina começa a subir (ms); igual ao atraso no CSS. */
-const INICIO_CORTINA = 1200;
+// Tempos da intro num lugar só (o mesmo que o controle da intro e o CSS usam):
+// INICIO_CORTINA é quando a cortina começa a subir; ESPERA_MAXIMA_HERO, o fim
+// da intro mais uma folga, para a foto se acomodar se o fim nunca avisar.
+import { ESPERA_MAXIMA_HERO as ESPERA_MAXIMA, INICIO_CORTINA } from "@/lib/movimento/introTempo";
 
 /**
  * A cortina já subiu (ou sumiu)? Se a hidratação do hero chegar tarde, travar a

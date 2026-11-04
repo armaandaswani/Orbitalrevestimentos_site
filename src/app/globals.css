@@ -584,13 +584,17 @@ html:has(header[data-site][data-oculto="1"]) .ds-sob-cabecalho { top: 0; }
 /* ── Intro da órbita (components/movimento/IntroOrbita) ─────────────────────
    Só existe sob html[data-intro="1"], ligado antes da pintura pelo porteiro
    inline (primeira página da visita, sem movimento reduzido). Sequência de
-   cerca de 3 s com o logo oficial de 2026: as faixas azuis e depois as verdes
-   se constroem 0–1,6 s, o logotipo sobe e se revela 1,6–2,3 s, a cortina sobe
-   2,3–3,0 s. A rolagem nunca trava; o clique é liberado quando a cortina
-   começa a subir; a trava de 3,6 s esconde tudo mesmo sem JavaScript.
-   IntroOrbitaControle adianta as animações da cortina no pulo: os nomes
-   intro-cortina, intro-solta e intro-conteudo-sai e o atraso de 2300ms
-   precisam bater com as constantes de lá. */
+   cerca de 3,1 s com o logo oficial de 2026: as faixas azuis e depois as
+   verdes se constroem no centro da tela 0–1,6 s; a esfera desliza para o
+   lugar dela no logo 1,45–2,05 s enquanto o logotipo sobe e se revela
+   1,75–2,25 s; o logo inteiro fica parado 0,4 s; a cortina sobe 2,65–3,15 s.
+   A rolagem nunca trava; o clique é liberado quando a cortina começa a subir;
+   a trava de 3,75 s esconde tudo mesmo sem JavaScript.
+   Os tempos moram em src/lib/movimento/introTempo.ts (usado pelo
+   IntroOrbitaControle e pelo HeroAssenta); os literais daqui precisam bater
+   com ele, e introTempo.test.mjs confere. IntroOrbitaControle adianta as
+   animações da cortina no pulo pelos nomes intro-cortina, intro-solta e
+   intro-conteudo-sai. */
 .intro-orbita { display: none; }
 html[data-intro="1"] .intro-orbita {
   display: flex;
@@ -603,29 +607,39 @@ html[data-intro="1"] .intro-orbita {
   clip-path: inset(0 0 0 0);
   contain: strict;
   animation:
-    intro-cortina 700ms var(--mv-percurso) 2300ms both,
-    intro-solta 1ms linear 2300ms forwards,
-    intro-seguranca 1ms linear 3600ms forwards;
+    intro-cortina 500ms var(--mv-percurso) 2650ms both,
+    intro-solta 1ms linear 2650ms forwards,
+    intro-seguranca 1ms linear 3750ms forwards;
 }
 .intro-orbita__formas { position: absolute; width: 0; height: 0; overflow: hidden; }
 .intro-orbita__conteudo {
   display: flex;
   align-items: center;
   justify-content: center;
-  animation: intro-conteudo-sai 700ms var(--mv-percurso) 2300ms both;
+  animation: intro-conteudo-sai 500ms var(--mv-percurso) 2650ms both;
 }
-/* Tamanho: ~56vw no computador (até 760px) com o horizontal; no celular, o
-   vertical com ~84vw. Respira de 0,97 a 1 enquanto o símbolo se constrói. */
+/* Palco de cada logo (HTML): nasce deslocado de modo que o centro da esfera
+   fique no centro da tela (--palco-x/--palco-y, calculados do viewBox em
+   IntroOrbita, em % da própria caixa) e desliza para o lugar do logo.
+   Tamanho: ~56vw no computador (até 760px) com o horizontal; no celular, o
+   vertical com ~84vw. */
+.intro-orbita__palco {
+  animation: intro-desliza 600ms var(--mv-percurso) 1450ms both;
+}
+.intro-orbita__palco--horizontal { display: none; width: min(56vw, 760px); }
+.intro-orbita__palco--vertical { width: min(84vw, 26rem); }
+@media (min-width: 640px) {
+  .intro-orbita__palco--horizontal { display: block; }
+  .intro-orbita__palco--vertical { display: none; }
+}
+/* Respira de 0,97 a 1 em volta do centro da esfera (origem no style)
+   enquanto o símbolo se constrói. */
 .intro-orbita__logo {
+  display: block;
+  width: 100%;
   height: auto;
   overflow: visible;
   animation: intro-respira 1600ms var(--mv-chegada) both;
-}
-.intro-orbita__logo--horizontal { display: none; width: min(56vw, 760px); }
-.intro-orbita__logo--vertical { width: min(84vw, 26rem); }
-@media (min-width: 640px) {
-  .intro-orbita__logo--horizontal { display: block; }
-  .intro-orbita__logo--vertical { display: none; }
 }
 /* Cada faixa gira até 8° em volta do centro da esfera até o lugar (a origem
    vem no style, relativa à caixa da faixa) enquanto a máscara dela a varre ao
@@ -641,12 +655,13 @@ html[data-intro="1"] .intro-orbita {
   animation: intro-varre 700ms var(--mv-chegada) var(--atraso, 0ms) both;
 }
 .intro-orbita__assinatura {
-  animation: intro-assina 700ms var(--mv-chegada) 1600ms both;
+  animation: intro-assina 500ms var(--mv-chegada) 1750ms both;
 }
 .intro-orbita__varredura-assinatura {
-  animation: intro-varre 700ms var(--mv-chegada) 1600ms both;
+  animation: intro-varre 500ms var(--mv-chegada) 1750ms both;
 }
 
+@keyframes intro-desliza { from { transform: translate3d(var(--palco-x, 0), var(--palco-y, 0), 0); } }
 @keyframes intro-respira { from { transform: scale(0.97); } }
 @keyframes intro-faixa { from { transform: rotate(var(--giro)); } }
 @keyframes intro-varre { from { transform: translateX(var(--curso)); } }
