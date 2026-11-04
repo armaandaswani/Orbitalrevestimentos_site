@@ -954,14 +954,13 @@ html[data-mv-nivel="leve"] .ts-galeria-foto { transform: none !important; }
   stroke-dasharray: 1 1;
   stroke-dashoffset: calc(1 - clamp(0, var(--jr-rota, 0) * 6 - var(--k, 0), 1));
 }
-.jr-parada-ponto, .jr-parada-halo, .jr-ponto circle {
+.jr-parada-ponto, .jr-parada-cheia, .jr-parada-halo, .jr-ponto circle {
   transform-box: fill-box; transform-origin: center; transform: scale(var(--jr-inv, 1));
 }
-.jr-parada-ponto {
-  fill: #0B1F45; stroke: rgba(255, 255, 255, 0.55); stroke-width: 1; vector-effect: non-scaling-stroke;
-  transition: fill var(--mv-base) var(--mv-chegada), stroke var(--mv-base) var(--mv-chegada);
-}
-.jr-parada[data-alcancado] .jr-parada-ponto { fill: #fff; stroke: #fff; }
+.jr-parada-ponto { fill: #0B1F45; stroke: rgba(255, 255, 255, 0.55); stroke-width: 1; vector-effect: non-scaling-stroke; }
+/* Parada alcançada: uma camada branca por cima acende em opacidade (sem animar cor). */
+.jr-parada-cheia { fill: #fff; opacity: 0; transition: opacity var(--mv-base) var(--mv-chegada); }
+.jr-parada[data-alcancado] .jr-parada-cheia { opacity: 1; }
 /* Anel da parada atual: assenta em volta dela quando o ponto chega, e fica. */
 .jr-parada-halo {
   fill: none; stroke: #fff; stroke-width: 1; vector-effect: non-scaling-stroke;
@@ -1015,6 +1014,6 @@ html[data-mv-nivel="leve"] .ts-galeria-foto { transform: none !important; }
   .jr-viagem, .jr-ponto { opacity: 1; }
   .jr-traco { stroke-dashoffset: 0; }
   .jr-ponto { offset-distance: 100%; }
-  .jr-parada-ponto { fill: #fff; stroke: #fff; }
-  .jr-parada-halo, .jr-parada-ponto { transition: none; }
+  .jr-parada-cheia { opacity: 1; }
+  .jr-parada-halo, .jr-parada-cheia { transition: none; }
 }

@@ -9,6 +9,7 @@ import {
   brilhoDaRota,
   estadoInicial,
   pausada,
+  percurso,
   progresso,
   reduzirJornada,
   rotaDesenhada,
@@ -82,6 +83,10 @@ const ROTULOS = [
 
 /** Suavização do traço e do brilho: um salto pedido pelo visitante desliza em vez de pular. */
 const TAU_ROTA_MS = 200;
+/** Deslize de um salto: dura o mesmo de qualquer distância, com a curva --mv-percurso. */
+const DESLIZE_MS = 650;
+/** Mudança de alvo num quadro acima disto é um salto (o autoplay anda ~0,005 por quadro no máximo). */
+const SALTO_MINIMO = 0.02;
 
 type Vars = CSSProperties & Record<`--${string}`, string | number>;
 
@@ -92,6 +97,14 @@ export default function Jornada() {
   /** Liga o laço do relógio de novo quando algo muda com ele dormindo. */
   const acordarRef = useRef<() => void>(() => {});
   const [vista, setVista] = useState({ passo: 0, usuario: false });
+  /**
+   * Texto da região viva. Muda só quando o visitante troca de etapa (segmento,
+   * setas, deslizar, próximo/anterior); o autoplay nunca mexe nele, então o
+   * leitor de tela não ouve um anúncio a cada 4 s (padrão de carrossel da
+   * WAI-ARIA). Fica "polite" sempre: desligar enquanto roda calaria o
+   * deslizar, que solta a pausa do dedo no mesmo gesto.
+   */
+  const [anuncio, setAnuncio] = useState("");
   const gesto = useRef<{ x: number; y: number; id: number } | null>(null);
 
   /** Toda mudança passa por aqui: redutor, re-render só quando o passo ou o botão mudam. */
@@ -102,6 +115,9 @@ export default function Jornada() {
     estadoRef.current = depois;
     if (depois.passo !== antes.passo || depois.pausas.usuario !== antes.pausas.usuario) {
       setVista({ passo: depois.passo, usuario: depois.pausas.usuario });
+    }
+    if (acao.tipo !== "tick" && acao.tipo !== "pausa" && depois.passo !== antes.passo) {
+      setAnuncio(ETAPAS[depois.passo].titulo);
     }
     acordarRef.current();
   };
@@ -119,34 +135,19 @@ export default function Jornada() {
     });
     ro.observe(svg);
 
-    // Movimento reduzido: rota inteira e lista estática, pelo CSS. Sem relógio.
-    if (window.matchMedia("(prefers-reduced-motion: reduce)").matches) {
-      return () => ro.disconnect();
-    }
-
-    // As costas se desenham na primeira vez que a seção entra. Só arma isso se
-    // ela ainda não está na tela: quem recarrega no meio da página não vê o
-    // mapa sumir e voltar. Sem JavaScript, nada fica escondido.
-    const r0 = secao.getBoundingClientRect();
-    if (r0.top >= window.innerHeight || r0.bottom <= 0) secao.setAttribute("data-jr-pronto", "");
-
-    // Comprimento de cada trecho, para o ponto andar na mesma fração que o traço.
-    const trechos = [...svg.querySelectorAll<SVGPathElement>("[data-jr-trecho]")];
-    const comp = trechos.map((p) => p.getTotalLength());
-    const total = comp.reduce((a, b) => a + b, 0) || 1;
-    const acumulado = comp.map((_, i) => comp.slice(0, i).reduce((a, b) => a + b, 0));
-    const paradas = [...svg.querySelectorAll<SVGGElement>("[data-jr-parada]")];
     const rota = svg.querySelector<SVGPathElement>(".jr-prevista")!;
     const ponto = svg.querySelector<SVGGElement>(".jr-ponto")!;
+    const totalRota = rota.getTotalLength();
 
     // Prova real do offset-path em elemento SVG: um navegador pode aceitar a
     // propriedade (CSS.supports) e não aplicá-la ao <g>. Põe o ponto no meio da
     // rota e confere onde ele foi parar; se não estiver lá, o ponto passa a
-    // andar por transform calculado aqui (getPointAtLength).
+    // andar por transform calculado aqui (getPointAtLength). Roda também com
+    // movimento reduzido, para o ponto nunca ficar no canto (0, 0) do mapa.
     let pontoSemOffset = false;
     if (CSS.supports("offset-path", 'path("M 0 0")')) {
       ponto.style.offsetDistance = "50%";
-      const esperado = rota.getPointAtLength(rota.getTotalLength() / 2);
+      const esperado = rota.getPointAtLength(totalRota / 2);
       const m = svg.getScreenCTM();
       const caixa = ponto.getBoundingClientRect();
       if (m && caixa.width > 0) {
@@ -162,8 +163,35 @@ export default function Jornada() {
       ponto.style.offsetPath = "none";
       ponto.style.display = "inline"; // vence o @supports que esconde o ponto sem offset-path
     }
+    const colocarPonto = (fracao: number) => {
+      const pt = rota.getPointAtLength(fracao * totalRota);
+      return `translate(${pt.x.toFixed(2)} ${pt.y.toFixed(2)})`;
+    };
 
+    // Movimento reduzido: rota inteira e lista estática, pelo CSS. Sem relógio.
+    // O ponto fica na obra (no modo reserva, posto aqui).
+    if (window.matchMedia("(prefers-reduced-motion: reduce)").matches) {
+      if (pontoSemOffset) ponto.setAttribute("transform", colocarPonto(1));
+      return () => ro.disconnect();
+    }
+
+    // As costas se desenham na primeira vez que a seção entra. Só arma isso se
+    // ela ainda não está na tela: quem recarrega no meio da página não vê o
+    // mapa sumir e voltar. Sem JavaScript, nada fica escondido.
+    const r0 = secao.getBoundingClientRect();
+    if (r0.top >= window.innerHeight || r0.bottom <= 0) secao.setAttribute("data-jr-pronto", "");
+
+    // Comprimento de cada trecho, para o ponto andar na mesma fração que o traço.
+    const trechos = [...svg.querySelectorAll<SVGPathElement>("[data-jr-trecho]")];
+    const comp = trechos.map((p) => p.getTotalLength());
+    const total = comp.reduce((a, b) => a + b, 0) || 1;
+    const acumulado = comp.map((_, i) => comp.slice(0, i).reduce((a, b) => a + b, 0));
+    const paradas = [...svg.querySelectorAll<SVGGElement>("[data-jr-parada]")];
+
+    let passoPintado = estadoRef.current.passo;
     let vis = rotaDesenhada(estadoRef.current);
+    let alvoAnterior = vis;
+    let deslize: { de: number; t: number } | null = null;
     let brilho = brilhoDaRota(estadoRef.current);
     const escritos: Record<string, string> = {};
     const escrever = (nome: string, valor: string) => {
@@ -184,8 +212,7 @@ export default function Jornada() {
       const d = Math.min(Math.max((acumulado[k] + (pos - k) * comp[k]) / total, 0), 1);
       escrever("--jr-d", (d * 100).toFixed(3) + "%");
       if (pontoSemOffset) {
-        const pt = rota.getPointAtLength(d * rota.getTotalLength());
-        const t = `translate(${pt.x.toFixed(2)} ${pt.y.toFixed(2)})`;
+        const t = colocarPonto(d);
         if (escritos.ponto !== t) { ponto.setAttribute("transform", t); escritos.ponto = t; }
       }
       paradas.forEach((g, i) => {
@@ -202,16 +229,34 @@ export default function Jornada() {
           estadoRef.current = e;
           if (e.passo !== antes.passo) setVista((v) => ({ ...v, passo: e.passo }));
         }
-        // O autoplay deu a volta (último → primeiro): o traço já apagou no fim do
-        // último passo, então a rota recomeça na hora, sem recolher à vista.
-        const deuAVolta = antes.passo === TOTAL_PASSOS - 1 && e.passo === 0;
+        // Deu a volta (último → primeiro), pelo autoplay ou por "próximo" / um
+        // segmento: a rota recomeça apagada e acende de novo, sem recolher à
+        // vista. Compara com o último passo pintado, porque o salto do
+        // visitante muda o estado fora do tick.
+        const deuAVolta = passoPintado === TOTAL_PASSOS - 1 && e.passo === 0;
+        passoPintado = e.passo;
         const alvo = rotaDesenhada(e);
         const alvoBrilho = brilhoDaRota(e);
         brilho = deuAVolta ? 0 : aproximar(brilho, alvoBrilho, dt, TAU_ROTA_MS, 0.002);
-        // Com o traço apagado, a rota pula direto ao alvo (também num salto do visitante para o começo).
-        vis = brilho < 0.02 ? alvo : aproximar(vis, alvo, dt, TAU_ROTA_MS, 0.00005);
+        // Alvo que pula (salto do visitante, ou a pausa assentando a etapa): um
+        // deslize de duração fixa que pousa exato na parada, para o anel acender.
+        // O autoplay muda o alvo aos poucos e segue na suavização exponencial.
+        if (Math.abs(alvo - alvoAnterior) > SALTO_MINIMO) deslize = { de: vis, t: 0 };
+        alvoAnterior = alvo;
+        if (brilho < 0.02) {
+          // Com o traço apagado, a rota pula direto ao alvo (a volta ao começo).
+          vis = alvo;
+          deslize = null;
+        } else if (deslize) {
+          deslize.t += dt;
+          const k = Math.min(deslize.t / DESLIZE_MS, 1);
+          vis = deslize.de + (alvo - deslize.de) * percurso(k);
+          if (k >= 1) deslize = null;
+        } else {
+          vis = aproximar(vis, alvo, dt, TAU_ROTA_MS, 0.00005);
+        }
         pintar();
-        return !pausada(e) || vis !== alvo || brilho !== alvoBrilho;
+        return !pausada(e) || vis !== alvo || brilho !== alvoBrilho || deslize !== null;
       },
     };
 
@@ -227,6 +272,9 @@ export default function Jornada() {
         const dentro = en.isIntersecting && (en.intersectionRatio >= 0.6 || en.intersectionRect.height >= raiz * 0.6);
         if (dentro) secao.setAttribute("data-jr-visto", "");
         aplicar({ tipo: "pausa", motivo: "foraDaTela", ativa: !dentro });
+        // A página rolou com o cursor parado: não há pointerleave, então a
+        // pausa de ponteiro sai aqui, junto com a seção.
+        if (!dentro) aplicar({ tipo: "pausa", motivo: "ponteiro", ativa: false });
       },
       { threshold: [0, 0.2, 0.4, 0.6, 0.8, 1] },
     );
@@ -275,8 +323,6 @@ export default function Jornada() {
     const dy = ev.clientY - g.y;
     if (Math.abs(dx) >= 40 && Math.abs(dx) > Math.abs(dy)) aplicar({ tipo: dx < 0 ? "proximo" : "anterior" });
   };
-
-  const atual = ETAPAS[vista.passo];
 
   return (
     <section
@@ -358,6 +404,7 @@ export default function Jornada() {
                 <g key={i} data-jr-parada="" className="jr-parada" data-atual={vista.passo === i ? "" : undefined}>
                   <circle cx={x} cy={y} r="11" className="jr-parada-halo" />
                   <circle cx={x} cy={y} r="3.25" className="jr-parada-ponto" />
+                  <circle cx={x} cy={y} r="3.25" className="jr-parada-cheia" />
                 </g>
               ))}
 
@@ -382,7 +429,7 @@ export default function Jornada() {
         </div>
       </div>
 
-      <p className="sr-only" aria-live="polite" aria-atomic="true">{atual.titulo}</p>
+      <p className="sr-only" aria-live="polite" aria-atomic="true">{anuncio}</p>
     </section>
   );
 }
@@ -416,18 +463,15 @@ function Palco({ passo, usuario, aplicar }: { passo: number; usuario: boolean; a
               className="jr-segmento group relative flex-1 min-h-11 cursor-pointer"
               style={{ "--i": i } as Vars}
             >
-              <span className="jr-trilho absolute inset-x-0 top-1/2 h-px -translate-y-1/2 bg-white/40 transition-colors group-hover:bg-white/65" />
+              <span className="jr-trilho absolute inset-x-0 top-1/2 h-px -translate-y-1/2 bg-white opacity-40 transition-opacity group-hover:opacity-65" />
               <span className="jr-enche absolute inset-x-0 top-1/2 h-px -translate-y-1/2 bg-white origin-left" />
             </button>
           ))}
         </div>
-        <span aria-hidden className="text-legenda text-white/60 tabular-nums whitespace-nowrap">
-          {passo + 1} / {TOTAL_PASSOS}
-        </span>
         <button
           type="button"
           onClick={() => aplicar({ tipo: "pausa", motivo: "usuario", ativa: !usuario })}
-          className="inline-flex items-center gap-2 min-h-11 -mr-2 px-2 text-sobre uppercase tracking-[0.14em] font-semibold text-white/80 hover:text-white transition-colors cursor-pointer"
+          className="inline-flex items-center gap-2 min-h-11 -mr-2 px-2 text-sobre uppercase tracking-[0.14em] font-semibold text-white opacity-80 hover:opacity-100 transition-opacity cursor-pointer"
         >
           {usuario ? (
             <svg width="10" height="10" viewBox="0 0 10 10" aria-hidden><path d="M2 1.2v7.6L8.6 5z" fill="currentColor" /></svg>

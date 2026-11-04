@@ -136,3 +136,76 @@ test("o traço some no fim do último passo e volta no primeiro", async () => {
   assert.equal(brilhoDaRota(rodando({ passo: 0, decorrido: 0 })), 0);
   assert.equal(brilhoDaRota(rodando({ passo: 0, decorrido: 2000 })), 1);
 });
+
+// ── Chegada: salto do visitante e pausa mostram a etapa já alcançada ─────────
+
+test("o estado inicial não está em chegada", () => {
+  assert.equal(estadoInicial().chegou, false);
+});
+
+test("ir, próximo e anterior marcam chegada", () => {
+  assert.equal(reduzirJornada(rodando(), { tipo: "ir", passo: 3 }).chegou, true);
+  assert.equal(reduzirJornada(rodando(), { tipo: "proximo" }).chegou, true);
+  assert.equal(reduzirJornada(rodando(), { tipo: "anterior" }).chegou, true);
+});
+
+test("depois de um salto a rota vai até a parada da etapa, acesa", async () => {
+  const { rotaDesenhada, brilhoDaRota } = await import("./jornadaEstado.ts");
+  const e = reduzirJornada(rodando({ passo: 1, decorrido: 2500 }), { tipo: "ir", passo: 3 });
+  assert.equal(rotaDesenhada(e), 4 / 6);
+  assert.equal(brilhoDaRota(e), 1);
+  // Mesmo com o mouse em cima (pausa ativa).
+  const p = reduzirJornada(e, { tipo: "pausa", motivo: "ponteiro", ativa: true });
+  assert.equal(rotaDesenhada(p), 4 / 6);
+});
+
+test("saltar para a etapa 1 mostra a rota até a primeira parada, sem apagar", async () => {
+  const { rotaDesenhada, brilhoDaRota } = await import("./jornadaEstado.ts");
+  const e = reduzirJornada(rodando({ passo: 4, decorrido: 1000 }), { tipo: "ir", passo: 0 });
+  assert.equal(rotaDesenhada(e), 1 / 6);
+  assert.equal(brilhoDaRota(e), 1);
+});
+
+test("o tick que vira a etapa limpa a chegada; dentro da etapa ela fica", () => {
+  let e = reduzirJornada(rodando(), { tipo: "ir", passo: 2 });
+  e = reduzirJornada(e, tick(1000));
+  assert.equal(e.chegou, true);
+  e = reduzirJornada(e, tick(3100));
+  assert.equal(e.passo, 3);
+  assert.equal(e.chegou, false);
+});
+
+test("pausa de usuário, foco ou ponteiro marca chegada; sair da tela não", () => {
+  for (const motivo of ["usuario", "foco", "ponteiro"]) {
+    assert.equal(reduzirJornada(rodando(), { tipo: "pausa", motivo, ativa: true }).chegou, true, motivo);
+  }
+  assert.equal(reduzirJornada(rodando(), { tipo: "pausa", motivo: "foraDaTela", ativa: true }).chegou, false);
+});
+
+test("pausado no fim do último passo o traço não apaga; rodando, apaga", async () => {
+  const { brilhoDaRota, rotaDesenhada } = await import("./jornadaEstado.ts");
+  const fim = rodando({ passo: 5, decorrido: 3700 });
+  assert.equal(brilhoDaRota(fim), 0);
+  const parado = reduzirJornada(fim, { tipo: "pausa", motivo: "ponteiro", ativa: true });
+  assert.equal(brilhoDaRota(parado), 1);
+  assert.equal(rotaDesenhada(parado), 1);
+  // Chegada por salto no último passo, sem pausa: o tempo corre e o traço apaga antes da virada.
+  const salto = reduzirJornada(rodando(), { tipo: "ir", passo: 5 });
+  assert.equal(brilhoDaRota(reduzirJornada(salto, tick(3800))), 0);
+});
+
+test("fora da tela o desenho congela onde estava (sem chegada)", async () => {
+  const { rotaDesenhada } = await import("./jornadaEstado.ts");
+  const meio = rodando({ passo: 2, decorrido: 1400 });
+  const fora = reduzirJornada(meio, { tipo: "pausa", motivo: "foraDaTela", ativa: true });
+  assert.equal(rotaDesenhada(fora), rotaDesenhada(meio));
+});
+
+test("percurso é a curva de --mv-percurso: 0, meio e 1 exatos, simétrica", async () => {
+  const { percurso } = await import("./jornadaEstado.ts");
+  assert.equal(percurso(0), 0);
+  assert.equal(percurso(0.5), 0.5);
+  assert.equal(percurso(1), 1);
+  assert.ok(Math.abs(percurso(0.25) + percurso(0.75) - 1) < 1e-12);
+  assert.ok(percurso(0.1) < 0.1);
+});
