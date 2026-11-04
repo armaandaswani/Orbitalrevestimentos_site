@@ -244,7 +244,8 @@ export default async function Home() {
       </section>
 
       {/* ── Contato ────────────────────────────────────────────────────────── */}
-      <section id="contato" aria-labelledby="contato-titulo" className="mv-adiado ds-secao bg-white scroll-mt-16">
+      {/* Sem mv-adiado (content-visibility): os revelares desta seção renderizariam durante a rolagem e custam quadros no celular. */}
+      <section id="contato" aria-labelledby="contato-titulo" className="ds-secao bg-white scroll-mt-16">
         <div className="ds-wrap">
           <Revelar className="text-center max-w-3xl mx-auto">
             <h2 id="contato-titulo" className="font-serif text-[#0B1F45] text-t1 font-normal tracking-[-0.025em] mb-5 text-balance">
