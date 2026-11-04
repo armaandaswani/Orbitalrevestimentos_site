@@ -1537,13 +1537,20 @@ html[data-mv-nivel="leve"] .ts-galeria-foto { transform: none !important; }
 /* Terra: um ponto por subcaminho de comprimento zero, a ponta redonda faz o
    ponto. As bordas do campo de pontos somem numa máscara fixa (sem animação),
    para não sobrar um retângulo; a rota, as paradas e os rótulos ficam fora da
-   máscara. */
+   máscara. Abaixo do lg o mapa é estreito e as laterais somem só em 4%: com
+   9% os pontos em volta de Manaus, perto da borda, ficavam ralos. */
 .jr-terra-caixa {
   position: absolute; inset: 0; overflow: hidden;
   -webkit-mask-image: linear-gradient(to right, transparent, #000 9%, #000 91%, transparent), linear-gradient(to bottom, transparent, #000 12%, #000 88%, transparent);
   -webkit-mask-composite: source-in;
   mask-image: linear-gradient(to right, transparent, #000 9%, #000 91%, transparent), linear-gradient(to bottom, transparent, #000 12%, #000 88%, transparent);
   mask-composite: intersect;
+}
+@media (max-width: 1023.98px) {
+  .jr-terra-caixa {
+    -webkit-mask-image: linear-gradient(to right, transparent, #000 4%, #000 96%, transparent), linear-gradient(to bottom, transparent, #000 12%, #000 88%, transparent);
+    mask-image: linear-gradient(to right, transparent, #000 4%, #000 96%, transparent), linear-gradient(to bottom, transparent, #000 12%, #000 88%, transparent);
+  }
 }
 .jr-terra path { fill: none; stroke: #fff; stroke-opacity: 0.24; stroke-width: 4.4; stroke-linecap: round; }
 @media (max-width: 1023.98px) { .jr-terra path { stroke-width: 5.2; } }
@@ -1575,8 +1582,8 @@ html[data-mv-nivel="leve"] .ts-galeria-foto { transform: none !important; }
 
 /* Uma etapa por vez (--a e --b no elemento: a batida dela). Entra em fusão
    subindo um pouco e sai só em fusão, 0.018 de --p em cada ponta (FUSAO em
-   jornadaRota.ts): a que sai
-   apaga antes de a próxima começar, então nunca há duas na tela. */
+   jornadaRota.ts): a que sai apaga antes de a próxima começar, então nunca
+   há duas na tela. */
 .jr-palco { pointer-events: none; }
 .jr-etapa {
   align-self: end;

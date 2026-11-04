@@ -68,12 +68,24 @@ test("estoque e obra colados em Manaus, mas distintos (10 a 15 unidades)", () =>
   }
 });
 
-test("partida e todas as paradas têm um ponto de terra a até um passo da grade", () => {
+test("partida e todas as paradas ficam em terra: pontos de terra em pelo menos 3 dos 4 lados", () => {
+  // Um ponto de terra a até um passo não basta: na costa, um ponto só de um lado
+  // deixa a parada no mar. Aqui, dentro de 1,2 passo (os vizinhos de grade em
+  // cruz, sem as diagonais), conta em que lados há terra: leste, oeste, norte e
+  // sul, cada um num cone de 90°. Três lados = cercada de terra, ou na costa com
+  // o mar de um lado só (Manaus fica na margem do rio).
   const terra = pontosDeTerra();
   assert.ok(terra.length > 1000);
   [TRECHOS[0][0], ...PARADAS].forEach(([x, y], k) => {
-    const d = Math.min(...terra.map(([a, b]) => Math.hypot(a - x, b - y)));
-    assert.ok(d <= MAPA_PASSO, `${k === 0 ? "partida" : `parada ${k}`} a ${d.toFixed(1)} do ponto de terra mais perto`);
+    const lados = new Set();
+    for (const [a, b] of terra) {
+      const dx = a - x;
+      const dy = b - y;
+      if (Math.hypot(dx, dy) > MAPA_PASSO * 1.2) continue;
+      if (Math.abs(dx) >= Math.abs(dy)) lados.add(dx > 0 ? "leste" : "oeste");
+      if (Math.abs(dy) >= Math.abs(dx)) lados.add(dy > 0 ? "sul" : "norte");
+    }
+    assert.ok(lados.size >= 3, `${k === 0 ? "partida" : `parada ${k}`}: terra só a ${[...lados].join(", ") || "nenhum lado"}`);
   });
 });
 
