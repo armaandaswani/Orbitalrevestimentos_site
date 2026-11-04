@@ -1048,14 +1048,18 @@ html[data-mv-nivel="leve"] .ts-clima-nevoa { display: none; }
    (animation-play-state, sem zerar a variável) em vez de rodar à toa. */
 .ts-galeria-camada.mv-brilho:not([data-pos="ativo"]) { animation-play-state: paused; }
 /* Foco: o contorno do navegador seria cortado pelo clip-path, então um anel
-   interno desenha a região (aparece só com o foco, sem transição). */
+   interno desenha a região (aparece só com o foco, sem transição). Só no foco
+   de teclado: o componente marca data-modo="teclado" na galeria quando a última
+   ação foi uma tecla e tira a marca no primeiro toque ou clique, então o anel
+   nunca aparece depois de clicar ou tocar, mesmo que o navegador trate o foco
+   como visível (foco movido por script, WebKit antigo). */
 .ts-galeria-camada:focus-visible { outline: none; }
 .ts-galeria-anel {
   position: absolute; top: 0; bottom: 0; left: var(--l); width: calc(var(--r) - var(--l));
   box-shadow: inset 0 0 0 2px #2347A0, inset 0 0 0 4px #ffffff;
   opacity: 0; pointer-events: none;
 }
-.ts-galeria-camada:focus-visible .ts-galeria-anel { opacity: 1; }
+[data-modo="teclado"] .ts-galeria-camada:focus-visible .ts-galeria-anel { opacity: 1; }
 /* will-change só na ativa e nas duas vizinhas (as próximas a se mover). */
 .ts-galeria-camada:is([data-pos="ativo"], [data-vizinho]) { will-change: clip-path; }
 .ts-galeria-camada:is([data-pos="ativo"], [data-vizinho]) .ts-galeria-quadro { will-change: transform; }

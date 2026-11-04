@@ -40,10 +40,10 @@ const rotuloFormato = (f: FormatoTechStone) => FORMATOS.find((x) => x.value === 
 
 /** Faixas ao lado da ideia ativa no computador (no celular o CSS deixa só a primeira). */
 const FAIXAS_MAX = 4;
-/** Ritmo do autoplay: devagar o bastante para a foto assentar e o zoom andar. */
-const PASSO_MS = 6000;
-/** Depois de uma ação do visitante, a galeria espera mais antes de seguir sozinha. */
-const ESPERA_MANUAL_MS = 12000;
+/** Ritmo do autoplay: uma ideia nova a cada 5 s. */
+const PASSO_MS = 5000;
+/** Depois de uma ação do visitante (toque, clique, arraste, seta, filtro, pausa), a galeria espera 15 s antes de seguir sozinha; passado isso, volta aos 5 s. */
+const ESPERA_MANUAL_MS = 15000;
 const LIMIAR_ARRASTE_PX = 40;
 const ZOOM_MS = 7000;
 /** Hora atual, só chamada em eventos do visitante (nunca durante a renderização). */
@@ -97,7 +97,7 @@ const SETA = "w-11 h-11 flex items-center justify-center border border-[#22201C]
 /**
  * Galeria cinematográfica: a ideia ativa ocupa quase todo o palco e as
  * próximas ficam como faixas que se abrem ao tocar, arrastar ou pelas setas.
- * Avança sozinha a cada 6 s e cede ao visitante: para com o mouse em cima,
+ * Avança sozinha a cada 5 s e cede ao visitante: para com o mouse em cima,
  * com o dedo na tela, com o foco do teclado dentro, fora da tela, com a aba
  * escondida e com movimento reduzido.
  */
@@ -141,6 +141,21 @@ function Galeria({ lista, verTamanho, parado, setParado, ultimaAcaoRef }: {
     focarAtivo.current = focar;
   };
 
+  // Modo de entrada: o anel de foco só vale para teclado (ver o CSS). Teclas
+  // marcam "teclado"; o primeiro toque ou clique, em qualquer lugar, marca
+  // "ponteiro". Fase de captura para valer antes de qualquer handler da página.
+  useEffect(() => {
+    const marcar = (modo: string) => () => { if (raiz.current) raiz.current.dataset.modo = modo; };
+    const teclado = marcar("teclado");
+    const ponteiro = marcar("ponteiro");
+    document.addEventListener("keydown", teclado, true);
+    document.addEventListener("pointerdown", ponteiro, true);
+    return () => {
+      document.removeEventListener("keydown", teclado, true);
+      document.removeEventListener("pointerdown", ponteiro, true);
+    };
+  }, []);
+
   // Aba escondida e menos de 60% do palco na tela também pausam.
   useEffect(() => {
     const aba = () => pausar("oculta", document.hidden);
@@ -157,7 +172,7 @@ function Galeria({ lista, verTamanho, parado, setParado, ultimaAcaoRef }: {
   const pausado = parado || reduzido || n < 2 || Object.values(pausas).some(Boolean);
 
   // Autoplay: um passo por vez, reagendado a cada troca. Depois de uma ação,
-  // o próximo passo só vem 12 s depois dela (e nunca antes de 6 s).
+  // o próximo passo só vem 15 s depois dela (e nunca antes de 5 s).
   useEffect(() => {
     if (pausado) return;
     const prazo = Math.max(PASSO_MS, ESPERA_MANUAL_MS - (Date.now() - ultimaAcaoRef.current));
@@ -197,6 +212,7 @@ function Galeria({ lista, verTamanho, parado, setParado, ultimaAcaoRef }: {
   const teclar = (e: React.KeyboardEvent) => {
     if (e.key !== "ArrowLeft" && e.key !== "ArrowRight") return;
     e.preventDefault();
+    ultimaAcaoRef.current = agora();
     const naCamada = camadas.current.includes(document.activeElement as HTMLButtonElement);
     irPara(v + (e.key === "ArrowRight" ? 1 : -1), naCamada);
   };
@@ -204,7 +220,11 @@ function Galeria({ lista, verTamanho, parado, setParado, ultimaAcaoRef }: {
   // O dedo (ou o botão do mouse) apertado pausa até soltar, mesmo fora da galeria.
   const apertar = () => {
     pausar("toque", true);
+    // Toque, clique ou arraste na galeria é ação do visitante, mesmo quando não
+    // troca de ideia (a ativa só abre o tamanho): adia o autoplay do mesmo jeito.
+    ultimaAcaoRef.current = agora();
     const soltar = () => {
+      ultimaAcaoRef.current = agora();
       pausar("toque", false);
       window.removeEventListener("pointerup", soltar);
       window.removeEventListener("pointercancel", soltar);
@@ -281,7 +301,7 @@ function Galeria({ lista, verTamanho, parado, setParado, ultimaAcaoRef }: {
         </button>
         <div className="flex items-center gap-2 md:col-start-2 md:row-start-1 md:row-span-2 md:self-end">
           {!reduzido && n > 1 && (
-            <button type="button" onClick={() => setParado((p) => !p)}
+            <button type="button" onClick={() => { ultimaAcaoRef.current = agora(); setParado((p) => !p); }}
               className="min-h-11 min-w-[5.25rem] px-2 text-right text-legenda font-semibold text-[#22201C] underline-offset-4 decoration-[#22201C]/40 hover:underline cursor-pointer">
               {parado ? "Continuar" : "Pausar"}
             </button>
