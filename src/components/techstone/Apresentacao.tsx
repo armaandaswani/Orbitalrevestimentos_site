@@ -29,7 +29,7 @@ const FRASES: { texto: string; a: number; b: number }[] = [
 export function Abertura({ entrarNaLista }: { entrarNaLista: () => void }) {
   const ref = useProgresso<HTMLElement>();
   return (
-    <section ref={ref} aria-labelledby="ts-titulo" className="ts-abertura relative h-[340svh] bg-[#141210]">
+    <section ref={ref} aria-labelledby="ts-titulo" className="ts-abertura relative h-[560svh] bg-[#141210]">
       <div className="sticky top-0 h-[100svh] overflow-hidden">
         <div className="ts-ab-foto absolute inset-0">
           <Cena nome="curva" prioridade alt="Parede curva em travertino gerada por IA a partir da textura TechStone Travertino Navona Clássico, com uma linha de luz no topo" />
@@ -96,7 +96,7 @@ export function Sequencia() {
   const ref = useProgresso<HTMLElement>();
   const n = QUADROS.length;
   return (
-    <section ref={ref} aria-label="Onde a TechStone vai" className="relative bg-[#141210]" style={{ height: `${n * 100 + 20}svh` }}>
+    <section ref={ref} aria-label="Onde a TechStone vai" className="relative bg-[#141210]" style={{ height: `${n * 160 + 40}svh` }}>
       <div className="sticky top-0 h-[100svh] overflow-hidden">
         {QUADROS.map((q, i) => {
           const vars: Vars = {

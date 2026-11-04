@@ -54,15 +54,17 @@ export default function Tamanhos({ tamanho, escolher, interesse }: {
           <div>
             <p className="font-serif text-t2 text-[#22201C] max-w-[22ch]">{USO[tamanho]}</p>
             <ul aria-label={`Modelos em ${FORMATOS.find((f) => f.value === tamanho)!.rotulo}`}
-              className="mt-8 flex gap-3 overflow-x-auto snap-x snap-mandatory -mx-[clamp(1rem,4.2vw,4rem)] px-[clamp(1rem,4.2vw,4rem)] scroll-px-[clamp(1rem,4.2vw,4rem)] pb-2 sm:mx-0 sm:px-0 sm:scroll-px-0 sm:grid sm:grid-cols-5 sm:gap-4 sm:overflow-visible">
+              className="mt-8 flex gap-3 overflow-x-auto snap-x snap-mandatory -mx-[clamp(1rem,4.2vw,4rem)] px-[clamp(1rem,4.2vw,4rem)] scroll-px-[clamp(1rem,4.2vw,4rem)] pb-2 sm:mx-0 sm:px-0 sm:scroll-px-0 sm:grid sm:grid-cols-5 sm:gap-x-4 sm:overflow-visible">
+              {/* Do sm para cima cada item ocupa 3 linhas da grade (textura, nome, ações) em subgrade:
+                  as linhas são compartilhadas, então nomes de 1, 2 ou 3 linhas não desalinham os links. */}
               {lista.map((m) => (
-                <li key={m.slug} className="snap-start shrink-0 w-[38%] sm:w-auto">
+                <li key={m.slug} className="snap-start shrink-0 w-[38%] sm:w-auto sm:row-span-3 sm:grid sm:grid-rows-subgrid">
                   <div className="relative aspect-[1/2] overflow-hidden bg-[#D9D1C4]">
                     {/* eslint-disable-next-line @next/next/no-img-element */}
                     <img src={texturaMiniatura(m)} alt={`Textura TechStone ${m.nome}`} loading="lazy" decoding="async"
                       className="absolute inset-0 w-full h-full object-cover" />
                   </div>
-                  <h3 className="mt-3 font-serif text-[1rem] leading-snug text-[#22201C]">{m.nome}</h3>
+                  <h3 className="mt-3 min-h-[2lh] sm:min-h-0 font-serif text-[1rem] leading-snug text-[#22201C]">{m.nome}</h3>
                   <div className="mt-1 flex flex-col items-start">
                     <a href={texturaDownload(m)} download className="min-h-10 inline-flex items-center text-legenda text-[#22201C] underline underline-offset-4 decoration-[#22201C]/30 hover:decoration-[#22201C]">
                       Baixar textura

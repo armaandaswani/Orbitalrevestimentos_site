@@ -16,6 +16,8 @@
 
 export const TAU_PADRAO_MS = 110;
 export const DT_MAX_MS = 50;
+/** dt do primeiro quadro depois que o laço dormiu por ter assentado (um quadro a 60 Hz). */
+export const DT_INICIAL_MS = 1000 / 60;
 
 export interface Assinante {
   /** Devolve `true` enquanto ainda está se movendo. */
@@ -40,16 +42,23 @@ export function criarRelogio(deps: DependenciasRelogio): Relogio {
   const assinantes = new Set<Assinante>();
   let pedido: number | null = null;
   let anterior: number | null = null;
+  /**
+   * dt do primeiro quadro depois de uma pausa. Quando o laço dorme por ter
+   * assentado, o próximo toque de rolagem já precisa andar um quadro (senão a
+   * rajada começa um quadro atrasada); depois de aba oculta fica 0 de propósito.
+   */
+  let dtDaBase = 0;
 
   const quadro = () => {
     pedido = null;
     if (deps.oculto()) {
       // Aba escondida: não gasta CPU. `acordar()` retoma quando ela voltar.
       anterior = null;
+      dtDaBase = 0;
       return;
     }
     const agora = deps.agora();
-    const dt = anterior === null ? 0 : Math.min(Math.max(agora - anterior, 0), DT_MAX_MS);
+    const dt = anterior === null ? dtDaBase : Math.min(Math.max(agora - anterior, 0), DT_MAX_MS);
     anterior = agora;
     let movendo = false;
     for (const a of [...assinantes]) {
@@ -59,6 +68,7 @@ export function criarRelogio(deps: DependenciasRelogio): Relogio {
       pedido = deps.agendar(quadro);
     } else {
       anterior = null;
+      dtDaBase = DT_INICIAL_MS;
     }
   };
 
@@ -77,12 +87,14 @@ export function criarRelogio(deps: DependenciasRelogio): Relogio {
           deps.cancelar(pedido);
           pedido = null;
           anterior = null;
+          dtDaBase = 0;
         }
       };
     },
     acordar,
     reiniciarBase() {
       anterior = null;
+      dtDaBase = 0;
     },
   };
 }
@@ -114,8 +126,22 @@ export const relogio: Relogio = {
   reiniciarBase: () => obter().reiniciarBase(),
 };
 
-/** Constante de tempo atual: 0 com movimento reduzido (segue a entrada na hora). */
+let reduzido: boolean | null = null;
+
+/**
+ * Constante de tempo atual: 0 com movimento reduzido (segue a entrada na hora).
+ * A media query é lida uma vez, no primeiro uso no navegador, e mantida por um
+ * listener de `change`: `tauAtual()` roda em todo quadro e não deve consultar
+ * `matchMedia` a cada chamada.
+ */
 export function tauAtual(): number {
   if (typeof window === "undefined") return TAU_PADRAO_MS;
-  return window.matchMedia("(prefers-reduced-motion: reduce)").matches ? 0 : TAU_PADRAO_MS;
+  if (reduzido === null) {
+    const mq = window.matchMedia("(prefers-reduced-motion: reduce)");
+    reduzido = mq.matches;
+    mq.addEventListener("change", (e) => {
+      reduzido = e.matches;
+    });
+  }
+  return reduzido ? 0 : TAU_PADRAO_MS;
 }

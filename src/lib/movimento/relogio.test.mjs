@@ -1,6 +1,6 @@
 import test from "node:test";
 import assert from "node:assert/strict";
-import { criarRelogio, DT_MAX_MS as DT_RELOGIO, TAU_PADRAO_MS as TAU_RELOGIO } from "./relogio.ts";
+import { criarRelogio, DT_INICIAL_MS, DT_MAX_MS as DT_RELOGIO, TAU_PADRAO_MS as TAU_RELOGIO } from "./relogio.ts";
 import { DT_MAX_MS, TAU_PADRAO_MS } from "./suavizar.ts";
 
 /** Dependências falsas: fila manual de quadros, relógio e flag de aba oculta ajustáveis. */
@@ -90,6 +90,43 @@ test("primeiro quadro depois de voltar da aba oculta tem dt 0", () => {
   f.quadro(16);
   f.oculto = true;
   f.quadro(5000);
+  f.oculto = false;
+  r.acordar();
+  f.quadro(16);
+  assert.equal(dts[dts.length - 1], 0);
+});
+
+test("primeiro quadro depois de dormir tem dt de um quadro", () => {
+  const { f, deps } = falsas();
+  const r = criarRelogio(deps);
+  const dts = [];
+  let movendo = true;
+  r.assinar({ tick: (dt) => { dts.push(dt); return movendo; } });
+  f.quadro(16);
+  movendo = false;
+  f.quadro(16); // assenta: o laço dorme
+  assert.equal(f.fila.size, 0);
+  movendo = true;
+  f.t += 500; // tempo parado entre rajadas
+  r.acordar();
+  f.quadro(0);
+  assert.ok(Math.abs(dts[dts.length - 1] - 1000 / 60) < 0.001);
+  assert.ok(Math.abs(DT_INICIAL_MS - 1000 / 60) < 0.001);
+});
+
+test("primeiro quadro depois da aba oculta tem dt 0", () => {
+  const { f, deps } = falsas();
+  const r = criarRelogio(deps);
+  const dts = [];
+  let movendo = true;
+  r.assinar({ tick: (dt) => { dts.push(dt); return movendo; } });
+  f.quadro(16);
+  movendo = false;
+  f.quadro(16); // assenta: o laço dorme
+  movendo = true;
+  f.oculto = true;
+  f.t += 5000;
+  r.reiniciarBase(); // o que o handler de visibilitychange faz
   f.oculto = false;
   r.acordar();
   f.quadro(16);
