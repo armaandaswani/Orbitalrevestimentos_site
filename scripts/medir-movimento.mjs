@@ -152,6 +152,8 @@ function metricas(pares, limites) {
   const faixas = {};
   for (const [nome, lim] of Object.entries(limites)) {
     if (!lim) continue; // seletor que não achou elemento: já avisado, fica de fora
+    // Semântica: o quadro pertence à faixa quando o scrollY dele (topo da janela de
+    // visualização) está em [ini, fim). Não é "o elemento aparece na tela".
     const ds = pares.filter((p) => p[1] >= lim[0] && p[1] < lim[1]).map((p) => p[0]);
     faixas[nome] = {
       quadros: ds.length,
@@ -257,6 +259,9 @@ async function medirDispositivo(browser, nome, d, args) {
   const clsCarga = await page.evaluate(() => window.__cls);
   await rolarAte(page, Infinity);
   await dormir(600);
+  // A primeira descida é onde o layout mais se desloca (mídia preguiçosa, seções que
+  // hidratam tarde); as execuções medidas já partem dela carregada e não veriam isso.
+  const clsAquecimento = (await page.evaluate(() => window.__cls)) - clsCarga;
   await voltarAoTopo(page);
 
   // Faixas em px da página, resolvidas depois do aquecimento (a altura já é a final).
@@ -348,6 +353,7 @@ async function medirDispositivo(browser, nome, d, args) {
     larguraJanela: largura.larguraJanela,
     faixas,
     clsCarga: arred(clsCarga, 4),
+    clsAquecimento: arred(clsAquecimento, 4),
     execucoes,
   };
   fs.writeFileSync(path.join(pasta, "resultado.json"), JSON.stringify(resultado, null, 2) + "\n");
@@ -372,11 +378,13 @@ function montarFolha(arquivos, saida, d) {
   }
 }
 
+// O cls impresso é o pior entre a primeira descida (aquecimento) e a mediana das
+// execuções medidas, para o portão não deixar passar deslocamento só da primeira descida.
 function linha(r, motor) {
   const ok = r.scrollWidth === r.larguraJanela;
   const principal =
     `${r.dispositivo.padEnd(14)} [${motor}] quadros=${r.quadros} p95=${r.p95Ms}ms max=${r.maxMs}ms ` +
-    `acima33=${r.acima33} cls=${r.cls} scrollWidth=${r.scrollWidth} janela=${r.larguraJanela} ` +
+    `acima33=${r.acima33} cls=${Math.max(r.clsAquecimento, r.cls)} scrollWidth=${r.scrollWidth} janela=${r.larguraJanela} ` +
     (ok ? "sem-estouro" : "ESTOURO-HORIZONTAL");
   const porFaixa = Object.entries(r.faixas).map(
     ([n, f]) => `    faixa ${n}: quadros=${f.quadros} acima33=${f.acima33} max=${f.maxMs}ms`,
