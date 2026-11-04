@@ -1,6 +1,7 @@
 "use client";
 
 import { useState } from "react";
+import Lupa from "@/components/movimento/Lupa";
 import {
   ESPESSURA_MM, FORMATOS, MODELOS_TECHSTONE, texturaDownload, texturaMiniatura,
   type FormatoTechStone, type ModeloTechStone,
@@ -68,11 +69,15 @@ export default function Tamanhos({ tamanho, escolher, interesse }: {
                   <button type="button" onClick={() => setEscolhido(m.slug)}
                     aria-pressed={m.slug === modeloAtivo.slug} aria-label={`Ver ${m.nome} na placa`}
                     className="ts-modelo relative block w-full text-left">
-                    <span className="mv-brilho relative block aspect-[1/2] overflow-hidden bg-[#D9D1C4]">
-                      {/* eslint-disable-next-line @next/next/no-img-element */}
-                      <img src={texturaMiniatura(m)} alt="" loading="lazy" decoding="async"
-                        className="absolute inset-0 w-full h-full object-cover" />
-                    </span>
+                    {/* Lupa: passar o mouse (ou segurar 250 ms no celular) mostra a textura 2,5× do arquivo grande;
+                        o clique/toque rápido continua escolhendo o modelo. */}
+                    <Lupa fonte={texturaDownload(m)}>
+                      <span className="mv-brilho relative block aspect-[1/2] overflow-hidden bg-[#D9D1C4]">
+                        {/* eslint-disable-next-line @next/next/no-img-element */}
+                        <img src={texturaMiniatura(m)} alt="" loading="lazy" decoding="async"
+                          className="absolute inset-0 w-full h-full object-cover" />
+                      </span>
+                    </Lupa>
                     <span aria-hidden className="ts-modelo-linha" />
                   </button>
                   <h3 className="mt-3 min-h-[2lh] sm:min-h-0 font-serif text-[1rem] leading-snug text-[#22201C]">{m.nome}</h3>

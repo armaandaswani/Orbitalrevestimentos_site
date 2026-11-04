@@ -446,6 +446,8 @@ html:has(header[data-site][data-oculto="1"]) .ds-sob-cabecalho { top: 0; }
       transform: translateX(calc(var(--mv-luz, -60%) + var(--mv-luz-p, 0%)));
     }
     html[data-mv-nivel="leve"] .mv-brilho::after { display: none; }
+    /* Nível leve: a faixa nem aparece, então a animação de --mv-luz (invisível) também para. */
+    html[data-mv-nivel="leve"] .mv-brilho { animation: none; }
   }
 }
 /* view() olha o ancestral que rola mais próximo. Quando um ancestral corta ou
@@ -926,6 +928,9 @@ html[data-mv-nivel="leve"] .ts-clima-nevoa { display: none; }
    [--l, --r]); as outras apagam a luz junto com a troca. */
 .ts-galeria-camada.mv-brilho::after { right: auto; width: var(--ts-a); transition: opacity var(--mv-base) var(--mv-chegada); }
 .ts-galeria-camada.mv-brilho:not([data-pos="ativo"])::after { opacity: 0; }
+/* Camada fora da ativa: a luz está apagada, então a animação de --mv-luz para
+   (animation-play-state, sem zerar a variável) em vez de rodar à toa. */
+.ts-galeria-camada.mv-brilho:not([data-pos="ativo"]) { animation-play-state: paused; }
 /* Foco: o contorno do navegador seria cortado pelo clip-path, então um anel
    interno desenha a região (aparece só com o foco, sem transição). */
 .ts-galeria-camada:focus-visible { outline: none; }
@@ -1058,4 +1063,41 @@ html[data-mv-nivel="leve"] .ts-galeria-foto { transform: none !important; }
   .jr-ponto { offset-distance: 100%; }
   .jr-parada-cheia { opacity: 1; }
   .jr-parada-halo, .jr-parada-cheia { transition: none; }
+}
+
+/* ── Lupa de textura (Lupa.tsx) ───────────────────────────────────────────────
+   Lente de joalheiro: um aro fino claro por fora de um fio escuro (lê sobre
+   textura clara e escura), sombra longa e suave, um brilho de vidro no canto e
+   um ponto central minúsculo no lugar do cursor. O contêiner (.mv-lupa) só se
+   move por transform, escrito pelo relógio; a lente só aparece e some por
+   opacity e transform, abrindo devagar e fechando mais rápido. O recorte da
+   textura é background-position numa lente de 160 px (barato de repintar). */
+.mv-lupa { position: fixed; left: 0; top: 0; z-index: 9999; pointer-events: none; will-change: transform; contain: layout style; }
+.mv-lupa-lente {
+  position: relative; width: 100%; height: 100%; border-radius: 50%;
+  background-repeat: no-repeat; background-color: #d9d1c4;
+  box-shadow:
+    0 0 0 1.5px rgb(255 255 255 / 0.92),
+    0 0 0 2.5px rgb(34 32 28 / 0.32),
+    0 18px 34px -10px rgb(34 32 28 / 0.38),
+    inset 0 0 0 1px rgb(34 32 28 / 0.10),
+    inset 0 0 22px rgb(34 32 28 / 0.14);
+  opacity: 0; transform: scale(0.94);
+  transition: opacity 160ms ease-out, transform 160ms ease-out;
+  will-change: opacity, transform;
+}
+.mv-lupa-lente[data-aberta="true"] {
+  opacity: 1; transform: none;
+  transition: opacity 260ms var(--mv-chegada), transform 340ms var(--mv-chegada);
+}
+.mv-lupa-lente::before {
+  content: ""; position: absolute; inset: 0; border-radius: 50%;
+  background: radial-gradient(120% 90% at 28% 18%, rgb(255 255 255 / 0.22), transparent 46%);
+}
+.mv-lupa-lente::after {
+  content: ""; position: absolute; left: 50%; top: 50%; width: 5px; height: 5px; margin: -2.5px 0 0 -2.5px;
+  border-radius: 50%; background: rgb(255 255 255 / 0.95); box-shadow: 0 0 0 1px rgb(34 32 28 / 0.4);
+}
+@media (prefers-reduced-motion: reduce) {
+  .mv-lupa-lente, .mv-lupa-lente[data-aberta="true"] { transform: none; transition: opacity 120ms linear; }
 }

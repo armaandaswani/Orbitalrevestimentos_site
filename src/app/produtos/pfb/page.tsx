@@ -4,6 +4,7 @@ import Image from "next/image";
 import { useState, useEffect, useCallback, useRef } from "react";
 import { normalizeProductCode, productPath, productQrUrl, productUrl } from "@/lib/product-link";
 import ContatoCta from "@/components/ContatoCta";
+import Lupa from "@/components/movimento/Lupa";
 
 const CATALOGUE_URL =
   "https://drive.google.com/file/d/1zhm5MgKGSDRThqk8FqqwfX-WijI7K-iD/view?usp=drive_link";
@@ -415,15 +416,19 @@ export default function ProdutosPage() {
                     className="absolute inset-0 z-10 cursor-zoom-in"
                     aria-label="Ampliar foto"
                   >
-                    <Image
-                      key={images[imgIdx]}
-                      src={images[imgIdx] ?? selected.image_path}
-                      alt={selected.name}
-                      fill
-                      sizes="(max-width: 1024px) 100vw, 55vw"
-                      priority
-                      className="object-contain"
-                    />
+                    {/* Lupa: a mesma foto, no arquivo original (sem o redimensionamento do
+                        next/image), ampliada 2,5× sob o mouse ou ao segurar o dedo. */}
+                    <Lupa fonte={images[imgIdx] ?? selected.image_path} ajuste="conter" className="absolute inset-0 block">
+                      <Image
+                        key={images[imgIdx]}
+                        src={images[imgIdx] ?? selected.image_path}
+                        alt={selected.name}
+                        fill
+                        sizes="(max-width: 1024px) 100vw, 55vw"
+                        priority
+                        className="object-contain"
+                      />
+                    </Lupa>
                   </button>
                   {/* Dica de ampliar */}
                   <span className="absolute top-3 left-3 z-20 pointer-events-none bg-black/50 text-white rounded-full w-8 h-8 flex items-center justify-center" aria-hidden>

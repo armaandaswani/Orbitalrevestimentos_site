@@ -33,7 +33,8 @@ export default function Movimento() {
     const fino = window.matchMedia("(pointer: fine)");
     const reduzido = window.matchMedia("(prefers-reduced-motion: reduce)");
     // Sem mouse ou no nível leve o brilho nem aparece (o CSS o esconde): não há o que inclinar.
-    if (nivel !== "completo" || !fino.matches) return;
+    // O mesmo vale sem `animation-timeline: view()`: o brilho some e o handler só gastaria CPU.
+    if (nivel !== "completo" || !fino.matches || !CSS.supports("animation-timeline: view()")) return;
 
     // Uma entrada por superfície tocada; sai quando a luz volta ao repouso.
     const inclinacoes = new Map<HTMLElement, Inclinacao>();
