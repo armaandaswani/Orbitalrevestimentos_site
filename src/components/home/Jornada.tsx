@@ -90,6 +90,18 @@ const SALTO_MINIMO = 0.02;
 
 type Vars = CSSProperties & Record<`--${string}`, string | number>;
 
+/**
+ * `:focus-visible` com rede: Safari antes do 15.4 lança erro no seletor.
+ * Sem suporte, trata o foco como visível (pausa, o lado seguro).
+ */
+function focoVisivel(el: HTMLElement): boolean {
+  try {
+    return el.matches(":focus-visible");
+  } catch {
+    return true;
+  }
+}
+
 export default function Jornada() {
   const secaoRef = useRef<HTMLElement>(null);
   const svgRef = useRef<SVGSVGElement>(null);
@@ -126,6 +138,8 @@ export default function Jornada() {
     const secao = secaoRef.current;
     const svg = svgRef.current;
     if (!secao || !svg) return;
+    // Sem JavaScript o CSS mostra a lista e a rota inteira; com ele, o palco e o relógio.
+    secao.setAttribute("data-jr-js", "");
 
     // Escala inversa: pontos e paradas ficam com o mesmo tamanho em px em
     // qualquer largura, mesmo o mapa encolhendo no celular.
@@ -295,7 +309,7 @@ export default function Jornada() {
   };
   /** Pausa de foco só para o teclado: um toque no botão não deixa a jornada parada para sempre. */
   const aoFocar = (ev: React.FocusEvent) => {
-    aplicar({ tipo: "pausa", motivo: "foco", ativa: (ev.target as HTMLElement).matches(":focus-visible") });
+    aplicar({ tipo: "pausa", motivo: "foco", ativa: focoVisivel(ev.target as HTMLElement) });
   };
   const aoDesfocar = (ev: React.FocusEvent) => {
     if (!secaoRef.current?.contains(ev.relatedTarget as Node | null)) aplicar({ tipo: "pausa", motivo: "foco", ativa: false });

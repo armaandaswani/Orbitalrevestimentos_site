@@ -14,8 +14,8 @@ import {
  * Porteiro da intro, inline e síncrono no começo do <body>: roda antes da
  * primeira pintura, então a cortina já nasce na tela (sem piscar o site antes)
  * ou não aparece nunca. Só liga `data-intro="1"` fora das áreas restritas
- * (/admin, /parceiro, /representante e /o, com subcaminhos; por segmento,
- * para não pegar /orcamento nem /parcerias), sem movimento reduzido, com
+ * (/admin, /parceiro, /representante, /orcamento e /o, com subcaminhos; por
+ * segmento, para não pegar /parcerias nem /orcamentos-x), sem movimento reduzido, com
  * sessionStorage funcionando e na primeira página da visita. Nas áreas
  * restritas nem a chave é gravada: a intro fica para a primeira página pública.
  * Grava a chave antes de ligar o atributo: se gravar falhar, não há intro.
@@ -24,7 +24,7 @@ import {
  * runtime do Next e não roda antes da pintura.
  */
 const PORTEIRO = `(function(){try{
-if(/^\\/(admin|parceiro|representante|o)(\\/|$)/.test(location.pathname))return;
+if(/^\\/(admin|parceiro|representante|orcamento|o)(\\/|$)/.test(location.pathname))return;
 if(window.matchMedia&&window.matchMedia("(prefers-reduced-motion: reduce)").matches)return;
 var s=window.sessionStorage;
 if(s.getItem("orbital-intro")!==null)return;

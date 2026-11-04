@@ -1,6 +1,6 @@
 "use client";
 
-import type { CSSProperties } from "react";
+import { useEffect, type CSSProperties } from "react";
 import { useProgresso } from "@/components/ds/useProgresso";
 
 /**
@@ -27,6 +27,13 @@ const PASSO = 0.18;
 
 export default function Clima({ preocupacoes }: { preocupacoes: { titulo: string; texto: string }[] }) {
   const ref = useProgresso<HTMLElement>();
+  // Sem JavaScript o CSS mostra a abertura e as quatro preocupações em grade
+  // (a rolagem nunca anda o --p); com ele, o quadro preso e a encenação.
+  useEffect(() => {
+    const el = ref.current;
+    el?.setAttribute("data-clima-pronto", "");
+    return () => el?.removeAttribute("data-clima-pronto");
+  }, [ref]);
   return (
     <section ref={ref} aria-labelledby="ts-amazonia" className="ts-clima relative h-[600svh] bg-[#141210] text-white">
       <div className="ts-clima-quadro sticky top-0 h-[100svh] overflow-hidden">
@@ -36,7 +43,7 @@ export default function Clima({ preocupacoes }: { preocupacoes: { titulo: string
             <source media="(max-width: 767px)" srcSet="/images/techstone/clima/pedra-retrato-v1.webp" />
             <img
               src="/images/techstone/clima/pedra-paisagem-v1.webp"
-              alt="Textura da TechStone Travertino Romano Clássico"
+              alt=""
               loading="lazy"
               decoding="async"
               className="ts-clima-pedra absolute inset-0 w-full h-full object-cover"

@@ -516,7 +516,14 @@ html:has(header[data-site][data-oculto="1"]) .ds-sob-cabecalho { top: 0; }
    também. */
 @property --mv-luz { syntax: "<percentage>"; inherits: true; initial-value: -60%; }
 @keyframes mv-luz-corre { from { --mv-luz: -60%; } to { --mv-luz: 60%; } }
-.mv-brilho { isolation: isolate; overflow: clip; }
+.mv-brilho { isolation: isolate; overflow: hidden; overflow: clip; }
+/* Safari antigo (antes do 16) não conhece `overflow: clip`: sem isto a
+   utilidade do Tailwind seria descartada e a seção deixaria vazar o que
+   passa da borda. `hidden` corta igual (só vira rolador, e sem `clip` também
+   não há view() para atrapalhar). Fora de camada, ganha da utilidade. */
+@supports not (overflow: clip) {
+  .overflow-clip { overflow: hidden; }
+}
 @media (prefers-reduced-motion: no-preference) {
   @supports (animation-timeline: view()) {
     .mv-brilho {
@@ -730,11 +737,12 @@ html[data-mv-nivel="leve"] .mv-camada { --mv-fe: calc((var(--mv-f) + 1) / 2); }
    que está longe numa câmera que se afasta, com o pé do banco (ancora) de
    pivô. E o fundo fica para trás na descida: desce (1 - fe) × 26svh ao
    longo do recuo, uns 23 px a 900 px de altura, a parede não desce nada.
-   A sobra de 16 px cobre essa descida junto com o ponteiro (a escala do
+   A sobra (16 px, ou 2,2svh em tela alta, onde a descida de 2,6svh cresce)
+   cobre essa descida junto com o ponteiro (a escala do
    fundo, maior que 1 em volta de um pivô baixo, estica a borda de cima).
    No retrato não há planos. */
 .ts-ab-foto .mv-camada {
-  --mv-sobra: 16px;
+  --mv-sobra: max(16px, 2.2svh);
   transform:
     translate3d(var(--mv-dx), calc(var(--mv-dy) + (1 - var(--mv-fe)) * var(--q) * 26svh), 0)
     scale(calc((1.16 - 0.16 * var(--mv-fe) * var(--q)) / (1.16 - 0.16 * var(--q))));
@@ -947,6 +955,25 @@ html[data-mv-nivel="leve"] .ts-clima-nevoa { display: none; }
   .ts-clima-resumo { grid-template-columns: minmax(0, 1fr); }
 }
 
+/* Sem JavaScript (o Clima põe data-clima-pronto ao montar): nada de quadro
+   preso nem de rolagem que revele o texto, porque --p nunca anda e o resumo
+   ficaria em opacidade 0. Mesma disposição do movimento reduzido: abertura e
+   as quatro preocupações em grade, tudo visível. Duplicado, e não agrupado
+   com o bloco acima, porque uma regra não junta @media com seletor. */
+.ts-clima:not([data-clima-pronto]) { height: auto; }
+.ts-clima:not([data-clima-pronto]) .ts-clima-quadro { position: static; height: auto; }
+.ts-clima:not([data-clima-pronto]) .ts-clima-pedra { transform: none; }
+.ts-clima:not([data-clima-pronto]) :is(.ts-clima-camada, .ts-clima-passo) { display: none; }
+.ts-clima:not([data-clima-pronto]) :is(.ts-clima-intro, .ts-clima-resumo) {
+  position: relative; inset: auto; opacity: 1; transform: none;
+}
+.ts-clima:not([data-clima-pronto]) .ts-clima-intro { padding-top: clamp(3.5rem, 2rem + 4.5vw, 7rem); padding-bottom: 0; }
+.ts-clima:not([data-clima-pronto]) .ts-clima-resumo { margin-top: 3rem; padding-bottom: clamp(3.5rem, 2rem + 4.5vw, 7rem); }
+.ts-clima:not([data-clima-pronto]) .ts-clima-item { opacity: 1; transform: none; }
+@media (max-width: 639.98px) {
+  .ts-clima:not([data-clima-pronto]) .ts-clima-resumo { grid-template-columns: minmax(0, 1fr); }
+}
+
 /* ── TechStone: galeria de ideias ─────────────────────────────────────────
    (components/techstone/Ideias). Cada ideia é uma camada do tamanho do palco
    que só mostra a sua região [--l, --r] por clip-path; o quadro interno (da
@@ -1149,6 +1176,21 @@ html[data-mv-nivel="leve"] .ts-galeria-foto { transform: none !important; }
   .jr-parada-cheia { opacity: 1; }
   .jr-parada-halo, .jr-parada-cheia { transition: none; }
 }
+
+/* Sem JavaScript (a Jornada põe data-jr-js ao montar): nada anda, então o
+   palco ficaria vazio (etapas em opacidade 0) e a rota apagada. Mesma
+   disposição do movimento reduzido: as seis etapas na lista e a rota inteira.
+   Duplicado, e não agrupado com o bloco acima, porque uma regra não junta
+   @media com seletor. */
+.jr:not([data-jr-js]) .jr-palco { display: none; }
+.jr:not([data-jr-js]) .jr-lista {
+  position: static; width: auto; height: auto; margin: 0;
+  overflow: visible; clip-path: none; white-space: normal; display: grid;
+}
+.jr:not([data-jr-js]) :is(.jr-viagem, .jr-ponto) { opacity: 1; }
+.jr:not([data-jr-js]) .jr-traco { stroke-dashoffset: 0; }
+.jr:not([data-jr-js]) .jr-ponto { offset-distance: 100%; }
+.jr:not([data-jr-js]) .jr-parada-cheia { opacity: 1; }
 
 /* ── Lupa de textura (Lupa.tsx) ───────────────────────────────────────────────
    Lente de joalheiro: um aro fino claro por fora de um fio escuro (lê sobre

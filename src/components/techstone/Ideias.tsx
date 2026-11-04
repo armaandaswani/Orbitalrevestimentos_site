@@ -70,6 +70,18 @@ function posicao(o: number, k: number, m: number) {
   return "dir";
 }
 
+/**
+ * `:focus-visible` com rede: Safari antes do 15.4 lança erro no seletor.
+ * Sem suporte, trata o foco como visível (pausa, o lado seguro).
+ */
+function focoVisivel(el: HTMLElement): boolean {
+  try {
+    return el.matches(":focus-visible");
+  } catch {
+    return true;
+  }
+}
+
 /** prefers-reduced-motion como estado externo (sem setState dentro de efeito). */
 const consultaReduzir = () => window.matchMedia("(prefers-reduced-motion: reduce)");
 const assinarReduzir = (avisar: () => void) => {
@@ -223,7 +235,7 @@ function Galeria({ lista, verTamanho, parado, setParado, ultimaAcaoRef }: {
       onPointerEnter={(e) => { if (e.pointerType === "mouse") pausar("mouse", true); }}
       onPointerLeave={(e) => { if (e.pointerType === "mouse") pausar("mouse", false); }}
       onPointerDown={apertar}
-      onFocus={(e) => { if ((e.target as HTMLElement).matches(":focus-visible")) pausar("foco", true); }}
+      onFocus={(e) => { if (focoVisivel(e.target as HTMLElement)) pausar("foco", true); }}
       onBlur={(e) => { if (!raiz.current?.contains(e.relatedTarget as Node | null)) pausar("foco", false); }}>
       <div ref={palco} style={{ "--ts-k": Math.max(k, 1) } as CSSProperties}
         className="ts-galeria-palco aspect-[4/5] max-h-[78svh] md:aspect-auto md:h-[min(78svh,58vw)]"

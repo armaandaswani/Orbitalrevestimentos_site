@@ -36,8 +36,8 @@ const SELETOR_CLICAVEL = 'a[href], button, summary, label, select, [role="button
  * encolhe a 0,85 ao pressionar. Também faz os botões `.ds-botao` se inclinarem
  * até 6 px para o lado do ponteiro, dentro de 80 px do centro.
  *
- * Só liga com `(hover: hover) and (pointer: fine)`, nível `completo` e sem
- * movimento reduzido. Ligar é escutar o ponteiro; o cursor nativo só some
+ * Só liga com `(hover: hover) and (pointer: fine)`, nível `completo`, sem
+ * movimento reduzido e sem contraste alto nem cores forçadas. Ligar é escutar o ponteiro; o cursor nativo só some
  * (`html.mv-cursor`) no primeiro movimento de mouse de verdade, então quem abre
  * a página sem tocar no mouse (ou num aparelho híbrido, no toque) nunca fica
  * sem cursor. Um toque depois tira a classe até o próximo movimento do mouse.
@@ -62,6 +62,9 @@ export default function Cursor() {
 
     const mqMouse = window.matchMedia("(hover: hover) and (pointer: fine)");
     const mqReduzido = window.matchMedia("(prefers-reduced-motion: reduce)");
+    // Contraste alto e cores forçadas: quem pede isso precisa do cursor nativo (o do sistema contrasta).
+    const mqContraste = window.matchMedia("(prefers-contrast: more)");
+    const mqForcadas = window.matchMedia("(forced-colors: active)");
 
     // Estado do cursor. Muda a cada evento ou quadro, sem renderizar.
     const alvo = { x: 0, y: 0 };
@@ -290,7 +293,12 @@ export default function Cursor() {
     /** Liga ou desliga conforme o aparelho, o nível e o movimento reduzido. */
     const sincronizar = () => {
       try {
-        const pode = mqMouse.matches && !mqReduzido.matches && decidirNivel(lerSinais()) === "completo";
+        const pode =
+          mqMouse.matches &&
+          !mqReduzido.matches &&
+          !mqContraste.matches &&
+          !mqForcadas.matches &&
+          decidirNivel(lerSinais()) === "completo";
         if (pode) ligar();
         else desligar();
       } catch {
@@ -302,10 +310,14 @@ export default function Cursor() {
     sincronizar();
     mqMouse.addEventListener("change", sincronizar);
     mqReduzido.addEventListener("change", sincronizar);
+    mqContraste.addEventListener("change", sincronizar);
+    mqForcadas.addEventListener("change", sincronizar);
     return () => {
       reler.current = null;
       mqMouse.removeEventListener("change", sincronizar);
       mqReduzido.removeEventListener("change", sincronizar);
+      mqContraste.removeEventListener("change", sincronizar);
+      mqForcadas.removeEventListener("change", sincronizar);
       desligar();
     };
   }, [restrita]);
