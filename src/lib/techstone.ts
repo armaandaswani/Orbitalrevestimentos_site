@@ -12,6 +12,8 @@ export interface ModeloTechStone {
   nome: string;
   formato: FormatoTechStone;
   aparencia: "pedra" | "madeira";
+  /** Tom da textura, para a cor do texto escrito sobre a placa: claro leva tinta escura, escuro leva branco. */
+  tom: "claro" | "escuro";
 }
 
 export const FORMATOS: { value: FormatoTechStone; rotulo: string; medida: string }[] = [
@@ -20,15 +22,15 @@ export const FORMATOS: { value: FormatoTechStone; rotulo: string; medida: string
 ];
 
 export const MODELOS_TECHSTONE: ModeloTechStone[] = [
-  { slug: "travertino-romano-classico", nome: "Travertino Romano Clássico", formato: "1200x600", aparencia: "pedra" },
-  { slug: "travertino-alabastrino", nome: "Travertino Alabastrino", formato: "1200x600", aparencia: "pedra" },
-  { slug: "travertino-silver", nome: "Travertino Silver", formato: "1200x600", aparencia: "pedra" },
-  { slug: "taj-mahal", nome: "Taj Mahal", formato: "1200x600", aparencia: "pedra" },
-  { slug: "branco-pitaya", nome: "Branco Pitaya", formato: "1200x600", aparencia: "pedra" },
-  { slug: "travertino-navona-classico", nome: "Travertino Navona Clássico", formato: "2400x1200", aparencia: "pedra" },
-  { slug: "travertino-bianco-trevi", nome: "Travertino Bianco Trevi", formato: "2400x1200", aparencia: "pedra" },
-  { slug: "nogueira-americana", nome: "Nogueira Americana", formato: "2400x1200", aparencia: "madeira" },
-  { slug: "imbuia", nome: "Imbuia", formato: "2400x1200", aparencia: "madeira" },
+  { slug: "travertino-romano-classico", nome: "Travertino Romano Clássico", formato: "1200x600", aparencia: "pedra", tom: "claro" },
+  { slug: "travertino-alabastrino", nome: "Travertino Alabastrino", formato: "1200x600", aparencia: "pedra", tom: "claro" },
+  { slug: "travertino-silver", nome: "Travertino Silver", formato: "1200x600", aparencia: "pedra", tom: "claro" },
+  { slug: "taj-mahal", nome: "Taj Mahal", formato: "1200x600", aparencia: "pedra", tom: "claro" },
+  { slug: "branco-pitaya", nome: "Branco Pitaya", formato: "1200x600", aparencia: "pedra", tom: "claro" },
+  { slug: "travertino-navona-classico", nome: "Travertino Navona Clássico", formato: "2400x1200", aparencia: "pedra", tom: "claro" },
+  { slug: "travertino-bianco-trevi", nome: "Travertino Bianco Trevi", formato: "2400x1200", aparencia: "pedra", tom: "claro" },
+  { slug: "nogueira-americana", nome: "Nogueira Americana", formato: "2400x1200", aparencia: "madeira", tom: "escuro" },
+  { slug: "imbuia", nome: "Imbuia", formato: "2400x1200", aparencia: "madeira", tom: "escuro" },
 ];
 
 export const ESPESSURA_MM = "3,5";

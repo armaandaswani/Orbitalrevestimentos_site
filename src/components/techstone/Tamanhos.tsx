@@ -41,6 +41,22 @@ function texturaPlaca(m: ModeloTechStone) {
   return m.slug === DO_TAMANHO["1200x600"][0].slug ? texturaDownload(m) : texturaMiniatura(m);
 }
 
+/**
+ * Metade da fusão da textura na placa (--mv-base, em globals.css), em ms: é
+ * quando o nome do modelo e a cor do número grande trocam. Com movimento
+ * reduzido não há fusão e a troca é imediata.
+ */
+function meiaFusao() {
+  if (window.matchMedia("(prefers-reduced-motion: reduce)").matches) return 0;
+  const v = getComputedStyle(document.documentElement).getPropertyValue("--mv-base").trim();
+  const n = parseFloat(v);
+  if (!Number.isFinite(n)) return 260;
+  return (v.endsWith("ms") ? n : n * 1000) / 2;
+}
+
+/** Folga depois do fim da rolagem de "ver tamanho": o --p suavizado ainda chega ao destino. */
+const FOLGA_TRAVA = 700;
+
 /** Alça para fora da seção: "ver tamanho" das ideias. */
 export type TamanhosAlca = { verTamanho: (t: FormatoTechStone) => void };
 
@@ -57,17 +73,46 @@ export default function Tamanhos({ ref, interesse }: {
   // Tamanho da grade (aba). Muda pela aba, pela revelação ao trocar de tamanho e por "ver tamanho".
   const [tamanho, setTamanho] = useState<FormatoTechStone>("1200x600");
   // A rolagem de "ver tamanho" até a grade atravessa a revelação, que trocaria
-  // o tamanho pelo caminho. Enquanto ela dura (até o scrollend, mais a folga da
-  // suavização do --p), a troca pela rolagem é ignorada.
+  // o tamanho pelo caminho. Enquanto ela dura (até o fim da rolagem, mais a folga
+  // da suavização do --p), a troca pela rolagem é ignorada.
   const trava = useRef(0);
+  const soltarTrava = useRef<(() => void) | null>(null);
+  useEffect(() => () => soltarTrava.current?.(), []);
   useImperativeHandle(ref, () => ({
     verTamanho(t) {
       setTamanho(t);
+      soltarTrava.current?.();
+      const alvo = document.getElementById("tamanhos");
       const reduzir = window.matchMedia("(prefers-reduced-motion: reduce)").matches;
+      // Variável à parte: o "in" direto estreitaria window para never no else (o tipo já tem onscrollend).
       const temFim = "onscrollend" in window;
-      trava.current = performance.now() + (temFim ? 10000 : 2500);
-      if (temFim) window.addEventListener("scrollend", () => { trava.current = performance.now() + 700; }, { once: true });
-      document.getElementById("tamanhos")?.scrollIntoView({ behavior: reduzir ? "auto" : "smooth", block: "start" });
+      if (temFim) {
+        trava.current = performance.now() + 10000;
+        window.addEventListener("scrollend", () => { trava.current = performance.now() + FOLGA_TRAVA; }, { once: true });
+      } else if (alvo) {
+        // Sem scrollend, a posição decide: a trava acaba quando o alvo chega ao
+        // topo de destino (scroll-padding da página + scroll-margin dele) ou quando
+        // a rolagem fica parada 150 ms (fim da página, rolagem interrompida).
+        const destino = (parseFloat(getComputedStyle(document.documentElement).scrollPaddingTop) || 0)
+          + (parseFloat(getComputedStyle(alvo).scrollMarginTop) || 0);
+        trava.current = Infinity;
+        let parada = 0;
+        const soltar = () => {
+          window.clearTimeout(parada);
+          window.removeEventListener("scroll", rolou);
+          soltarTrava.current = null;
+        };
+        const fim = () => { soltar(); trava.current = performance.now() + FOLGA_TRAVA; };
+        const rolou = () => {
+          window.clearTimeout(parada);
+          if (Math.abs(alvo.getBoundingClientRect().top - destino) < 2) fim();
+          else parada = window.setTimeout(fim, 150);
+        };
+        window.addEventListener("scroll", rolou, { passive: true });
+        parada = window.setTimeout(fim, 150);
+        soltarTrava.current = soltar;
+      }
+      alvo?.scrollIntoView({ behavior: reduzir ? "auto" : "smooth", block: "start" });
     },
   }), []);
   const escolherPelaRolagem = useCallback((t: FormatoTechStone) => {
@@ -106,8 +151,8 @@ function geometria(W: number, H: number, L: number, R: number, textoFim: number)
   const VAO = retrato ? 200 : 350; // da pessoa à placa
   let u: number, F: number;
   if (retrato) {
-    F = H - 128; // embaixo do chão: o nome do modelo e a fileira de amostras
-    u = Math.min(Math.min(0.6 * H, F - textoFim - 24) / 2400, (R - L) / (PESSOA + VAO + 1200));
+    F = H - 124; // embaixo do chão: o nome do modelo e a fileira de amostras
+    u = Math.min(Math.min(0.6 * H, F - textoFim - 16) / 2400, (R - L) / (PESSOA + VAO + 1200));
   } else {
     F = H * 0.9;
     u = Math.min((0.8 * H) / 2400, (R - L - 320) / (PESSOA + VAO + 1200));
@@ -150,10 +195,15 @@ const CSS_SEM_JS = `
 .ts-tam .ts-tam-estatico{display:block}
 `;
 
-/** Ritmo, em fração de --p (440svh: a parte presa anda 340svh, uma tela ≈ 0,29). */
-const ENTRA_B = 0.3; // amostras pequenas: 0,30 → 0,40 (clicáveis de 0,3 a 0,6)
-const ENTRA_C = 0.7; // amostras grandes: 0,70 → 0,80 (clicáveis de 0,7 em diante)
-const SAI_B = 0.55; // tudo da placa pequena sai até 0,60, quando a placa começa a crescer
+/**
+ * Ritmo, em fração de --p (440svh: a parte presa anda 340svh, uma tela ≈ 0,29).
+ * As frações fixas do bloco "dois tamanhos" em globals.css andam junto com estas.
+ */
+const ENTRA_B = 0.334; // amostras pequenas: 0,334 → 0,427 (clicáveis de 0,334 até a troca)
+const SAI_B = 0.567; // tudo da placa pequena sai até a troca
+const TROCA = 0.614; // fim da etapa B: a placa vira a grande e a grade troca de aba
+const ENTRA_C = 0.708; // amostras grandes: 0,708 → 0,801 (clicáveis de 0,708 em diante)
+const PLACA = 0.36; // a imagem da placa entrou (0,334 → 0,354): a pedra grande sai de cena
 
 function Revelacao({ escolhidos, escolherModelo, aoTrocarTamanho }: {
   escolhidos: Escolhidos;
@@ -169,10 +219,21 @@ function Revelacao({ escolhidos, escolherModelo, aoTrocarTamanho }: {
   const [tamanhoPlaca, setTamanhoPlaca] = useState<FormatoTechStone>("1200x600");
   const modelo = modeloDe(tamanhoPlaca, escolhidos);
   const textura = texturaPlaca(modelo);
+  // A pedra em tela cheia só aparece antes da placa pequena: sempre a textura dela.
+  const pedra = texturaPlaca(modeloDe("1200x600", escolhidos));
   // Textura anterior guardada no estado (ajuste durante a renderização, sem
   // efeito) para a nova entrar em fusão por cima dela.
   const [par, setPar] = useState<{ atual: string; anterior: string | null }>({ atual: textura, anterior: null });
   if (par.atual !== textura) setPar({ atual: textura, anterior: par.atual });
+  // Nome do modelo e cor do número grande: trocam no meio da fusão da textura,
+  // não no toque. Até lá o nome sai em fusão (data-saindo) e volta já trocado.
+  const [mostrado, setMostrado] = useState(modelo);
+  const trocando = mostrado !== modelo;
+  useEffect(() => {
+    if (!trocando) return;
+    const id = window.setTimeout(() => setMostrado(modelo), meiaFusao());
+    return () => window.clearTimeout(id);
+  }, [modelo, trocando]);
 
   // Medidas: o CSS posiciona tudo com --u, --fy, --xp… (veja geometria).
   useEffect(() => {
@@ -194,7 +255,7 @@ function Revelacao({ escolhidos, escolherModelo, aoTrocarTamanho }: {
     return () => ro.disconnect();
   }, [ref]);
 
-  // Etapa e troca de tamanho, a partir do décimo do progresso (data-p10, do useProgresso).
+  // Etapa, placa e troca de tamanho, a partir do --p que o useProgresso escreve no style.
   // Em transição: o React fatia a renderização entre os quadros da rolagem.
   const trocar = useEffectEvent((t: FormatoTechStone) => {
     startTransition(() => {
@@ -218,15 +279,18 @@ function Revelacao({ escolhidos, escolherModelo, aoTrocarTamanho }: {
           i.decode().catch(() => {});
         });
       }
-      const d = Number(el.dataset.p10 ?? 0);
+      const p = parseFloat(el.style.getPropertyValue("--p")) || 0;
       // Só as amostras da etapa à vista recebem foco e toque (o CSS lê data-etapa):
-      // as pequenas de 0,3 a 0,6, as grandes de 0,7 em diante.
-      const etapa = d >= ENTRA_C * 10 ? "c" : d >= 6 ? "cresce" : d >= ENTRA_B * 10 ? "b" : "a";
+      // as pequenas de ENTRA_B até a troca, as grandes de ENTRA_C em diante.
+      const etapa = p >= ENTRA_C ? "c" : p >= TROCA ? "cresce" : p >= ENTRA_B ? "b" : "a";
       if (el.dataset.etapa !== etapa) el.dataset.etapa = etapa;
+      // Depois da fusão para a imagem da placa, a pedra grande some (visibility no CSS).
+      const placa = p >= PLACA && !estatico.matches;
+      if (placa !== "placa" in el.dataset) el.toggleAttribute("data-placa", placa);
       if (estatico.matches) return;
-      // A placa vira a grande quando começa a crescer (0,6). Chama só quando muda
+      // A placa vira a grande na troca, quando começa a crescer. Chama só quando muda
       // de verdade: a escolha de aba na grade vale até a rolagem passar por aqui de novo.
-      const novo: FormatoTechStone = d >= 6 ? "2400x1200" : "1200x600";
+      const novo: FormatoTechStone = p >= TROCA ? "2400x1200" : "1200x600";
       if (novo === grupo) return;
       const antes = grupo;
       grupo = novo;
@@ -234,7 +298,7 @@ function Revelacao({ escolhidos, escolherModelo, aoTrocarTamanho }: {
     };
     ler();
     const mo = new MutationObserver(ler);
-    mo.observe(el, { attributes: true, attributeFilter: ["data-p10", "data-ativo"] });
+    mo.observe(el, { attributes: true, attributeFilter: ["style", "data-ativo"] });
     return () => mo.disconnect();
   }, [ref]);
 
@@ -242,55 +306,65 @@ function Revelacao({ escolhidos, escolherModelo, aoTrocarTamanho }: {
 
   return (
     <div ref={ref} id="tamanhos-escala" className="ts-tam ds-escuro relative bg-[#141210] text-white"
-      data-tom={modelo.aparencia === "madeira" ? "escuro" : "claro"}>
+      data-tom={mostrado.tom}>
       {/* Sem JavaScript: só em motor sem `scripting: none` (veja o CSS_SEM_JS). Inerte com JS. */}
       <noscript><style dangerouslySetInnerHTML={{ __html: CSS_SEM_JS }} /></noscript>
       <div ref={quadro} className="ts-tam-quadro sticky top-0 h-[100svh] overflow-hidden">
-        {/* A pedra: tela cheia escurecida no começo; depois a própria placa, em escala. */}
+        {/* A pedra: tela cheia no começo; encolhe até o tamanho da placa pequena. */}
         <div aria-hidden className="ts-tam-pedra">
-          {par.anterior && (
-            // eslint-disable-next-line @next/next/no-img-element
-            <img key={par.anterior} src={par.anterior} alt="" decoding="async" />
-          )}
           {/* eslint-disable-next-line @next/next/no-img-element */}
-          <img key={par.atual} src={par.atual} alt="" loading="lazy" decoding="async"
-            className={par.anterior ? "ts-folha-entra" : undefined} />
-          <div className="ts-tam-veu" />
+          <img src={pedra} alt="" loading="lazy" decoding="async" />
         </div>
+        {/* Véu do tamanho do quadro, sem escala: escurece a pedra e some no fundo da mesma cor. */}
+        <div aria-hidden className="ts-tam-veu" />
 
-        <div ref={faixa} className="ts-tam-a ts-tam-entra ds-wrap" style={entra(-1, 0.04, { "--d2": 0.09 })}>
+        <div ref={faixa} className="ts-tam-a ts-tam-entra ds-wrap" style={entra(-1, 0.09, { "--d2": 0.084 })}>
           <h2 id="ts-tamanhos" className="ts-tam-titulo font-serif">Dois tamanhos.</h2>
           <p className="mt-5 sm:mt-7 text-lead text-white/85">Os dois com {ESPESSURA_MM}&nbsp;mm de espessura.</p>
         </div>
 
         <div className="ts-tam-cena">
+          {/* A placa depois do zoom: uma imagem do tamanho da placa grande (escala ≤ 1), que
+              entra em fusão sobre a pedra quando as duas têm o mesmo tamanho na tela. A troca
+              de modelo entra em fusão aqui. */}
+          <div aria-hidden className="ts-tam-placa">
+            {par.anterior && (
+              // eslint-disable-next-line @next/next/no-img-element
+              <img key={par.anterior} src={par.anterior} alt="" decoding="async" />
+            )}
+            {/* eslint-disable-next-line @next/next/no-img-element */}
+            <img key={par.atual} src={par.atual} alt="" loading="lazy" decoding="async"
+              className={par.anterior ? "ts-folha-entra" : undefined} />
+          </div>
           <div aria-hidden className="ts-tam-chao" />
           {/* Pessoa de 1,70 m em traço fino, ao lado da placa. */}
-          <svg aria-hidden viewBox="250 880 340 1730" className="ts-tam-pessoa ts-tam-entra" style={entra(0.2)}>
+          <svg aria-hidden viewBox="250 880 340 1730" className="ts-tam-pessoa ts-tam-entra" style={entra(0.24)}>
             <Pessoa />
           </svg>
-          <p className="ts-tam-altura ts-tam-entra text-legenda text-white/60 tabular-nums" style={entra(0.22)}>1,70&nbsp;m</p>
-          <p className="ts-tam-nome ts-tam-entra text-legenda text-white/60" style={entra(0.27)}>{modelo.nome}</p>
+          <p className="ts-tam-altura ts-tam-entra text-legenda text-white/60 tabular-nums" style={entra(0.259)}>1,70&nbsp;m</p>
+          <p className="ts-tam-nome ts-tam-entra text-legenda text-white/60" style={entra(0.306)}>
+            <span className="ts-tam-nome-texto" data-saindo={trocando || undefined}>{mostrado.nome}</span>
+          </p>
 
           <div ref={blocoB} className="ts-tam-b">
-            <h3 className="ts-tam-b-titulo ts-tam-entra font-serif tabular-nums" style={entra(0.23, SAI_B)}>{PEQUENO.rotulo}</h3>
-            <div className="ts-tam-entra" style={entra(0.27, SAI_B)}>
+            <h3 className="ts-tam-b-titulo ts-tam-entra font-serif tabular-nums" style={entra(0.268, SAI_B)}>{PEQUENO.rotulo}</h3>
+            <div className="ts-tam-entra" style={entra(0.306, SAI_B)}>
               <p className="ts-tam-medida font-serif text-white/90">{PEQUENO.medida}</p>
-              <p className="mt-1.5 text-lead text-white/65 max-w-[36ch]">{USO["1200x600"]}</p>
+              <p className="ts-tam-uso text-lead text-white/65 max-w-[36ch]">{USO["1200x600"]}</p>
             </div>
           </div>
           <Amostras formato="1200x600" inicio={ENTRA_B} saida={SAI_B} escolhidos={escolhidos} escolherModelo={escolherModelo} />
 
           <div ref={blocoC} className="ts-tam-c">
-            <h3 className="ts-tam-c-titulo ts-tam-entra font-serif tabular-nums" style={entra(0.715)}>
+            <h3 className="ts-tam-c-titulo ts-tam-entra font-serif tabular-nums" style={entra(0.722)}>
               <span className="ts-tam-c-fora">{GRANDE.rotulo}</span>
               {/* Mesma linha em tinta escura, recortada no retângulo da placa: o número
                   troca de cor exatamente na borda da pedra. */}
               <span aria-hidden className="ts-tam-c-dentro">{GRANDE.rotulo}</span>
             </h3>
-            <div className="ts-tam-c-texto ts-tam-entra" style={entra(0.745)}>
+            <div className="ts-tam-c-texto ts-tam-entra" style={entra(0.75)}>
               <p className="ts-tam-medida font-serif text-white/90">{GRANDE.medida}</p>
-              <p className="mt-1.5 text-lead text-white/65 max-w-[36ch]">{USO["2400x1200"]}</p>
+              <p className="ts-tam-uso text-lead text-white/65 max-w-[36ch]">{USO["2400x1200"]}</p>
             </div>
           </div>
           <Amostras formato="2400x1200" inicio={ENTRA_C} escolhidos={escolhidos} escolherModelo={escolherModelo} />
@@ -328,13 +402,13 @@ function Amostras({ formato, inicio, saida = 2, escolhidos, escolherModelo }: {
   const lista = DO_TAMANHO[formato];
   const ativo = modeloDe(formato, escolhidos).slug;
   const rotulo = FORMATOS.find((f) => f.value === formato)!.rotulo;
-  // Entram uma a uma; a última chega em inicio + 0,1.
-  const passo = lista.length > 1 ? 0.04 / (lista.length - 1) : 0;
+  // Entram uma a uma; a última chega em inicio + 0,093.
+  const passo = lista.length > 1 ? 0.037 / (lista.length - 1) : 0;
   return (
     <ul aria-label={`Modelos em ${rotulo}`}
       className={`ts-tam-amostras ts-tam-amostras-${formato === "1200x600" ? "b" : "c"}`}>
       {lista.map((m, i) => (
-        <li key={m.slug} className="ts-tam-entra shrink-0" style={{ "--a": inicio + i * passo, "--d": 0.06, "--b": saida } as Vars}>
+        <li key={m.slug} className="ts-tam-entra shrink-0" style={{ "--a": inicio + i * passo, "--d": 0.056, "--b": saida } as Vars}>
           <button type="button" onClick={() => escolherModelo(m)}
             aria-pressed={m.slug === ativo} aria-label={`Ver ${m.nome} na placa`}
             className="ts-modelo ts-tam-amostra">
