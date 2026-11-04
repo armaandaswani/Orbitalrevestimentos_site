@@ -3,13 +3,22 @@
 import Image from "next/image";
 import { useState } from "react";
 
+interface Pessoa {
+  id: string;
+  rotulo: string;
+  frase: string;
+  texto: string;
+  /** posicao: object-position do recorte, quando o centro não serve. */
+  imagem: { src: string; alt: string; posicao?: string };
+}
+
 /**
  * Por que a Orbital existe: a convicção de que a Amazônia merece revestimentos
  * feitos para ela, contada por quem ganha com isso na obra. Abas no lugar de
  * três blocos empilhados: uma pessoa por vez, a foto troca em fusão.
  * Texto: vault › História e símbolo (aprovado pelo dono).
  */
-const PESSOAS = [
+const PESSOAS: Pessoa[] = [
   {
     id: "arquiteto",
     rotulo: "Arquiteto",
@@ -22,14 +31,16 @@ const PESSOAS = [
     rotulo: "Engenheiro",
     frase: "O engenheiro executa essa visão.",
     texto: "Com revestimentos inovadores, testados para a nossa realidade.",
-    imagem: { src: "/images/academia/aplic-curva.jpg", alt: "Balcão curvo revestido com Painel Flexível em Fibra de Bambu" },
+    imagem: { src: "/images/projetos/escada-madeira-pfb-2026-10.jpg", alt: "Escada com paredes em Painel Flexível em Fibra de Bambu com acabamento de madeira" },
   },
   {
     id: "cliente",
     rotulo: "Cliente",
     frase: "O cliente tem acesso ao novo.",
     texto: "Materiais que ainda não chegavam à região, com estoque aqui em Manaus.",
-    imagem: { src: "/images/projetos/cozinha-depois.png", alt: "Cozinha revestida com Painel Flexível em Fibra de Bambu, em obra entregue em Manaus" },
+    // Retrato 3:4 numa caixa 4:3 no celular: o recorte desce um pouco para o
+    // roda-pia e a pia ficarem à vista (no computador a caixa é quase do formato da foto).
+    imagem: { src: "/images/projetos/cozinha-roda-pia-orb003.webp", alt: "Cozinha residencial com roda-pia em Painel Flexível em Fibra de Bambu, em obra entregue em Manaus", posicao: "50% 62%" },
   },
 ];
 
@@ -69,6 +80,7 @@ export default function PorQue() {
           {PESSOAS.map((x, i) => (
             <Image key={x.id} src={x.imagem.src} alt={ativo === i ? x.imagem.alt : ""} aria-hidden={ativo !== i} fill
               sizes="(min-width: 1024px) 50vw, 100vw"
+              style={{ objectPosition: x.imagem.posicao }}
               className={`object-cover transition-opacity duration-700 ease-[cubic-bezier(0.2,0.7,0.2,1)] ${ativo === i ? "opacity-100" : "opacity-0"}`} />
           ))}
         </div>
