@@ -21,9 +21,18 @@ import { aproximar } from "@/lib/movimento/suavizar";
  * o CSS pode usar `will-change` nos filhos. Fora da tela o assinante não mede
  * nada. Com movimento reduzido o valor segue a rolagem sem suavização e o CSS
  * desliga escalas e deslocamentos.
+ *
+ * `margem` (opcional, no formato do rootMargin): a seção conta como "na tela"
+ * já essa distância antes de entrar, então o `data-ativo` (e as camadas do
+ * will-change) chega fora da vista. E, ao voltar a essa faixa, o --p salta
+ * para a posição real em vez de deslizar de onde parou: depois de um salto de
+ * rolagem (âncora, volta ao topo) ele ficaria parado no valor antigo e a seção
+ * desfiaria todas as etapas ao contrário bem na entrada. O salto acontece
+ * ainda fora da vista. Sem `margem`, o comportamento é o de sempre.
  */
-export function useProgresso<T extends HTMLElement>() {
+export function useProgresso<T extends HTMLElement>(opcoes?: { margem?: string }) {
   const ref = useRef<T>(null);
+  const margem = opcoes?.margem;
   useEffect(() => {
     const el = ref.current;
     if (!el) return;
@@ -54,11 +63,13 @@ export function useProgresso<T extends HTMLElement>() {
 
     const io = new IntersectionObserver((entradas) => {
       const e = entradas[entradas.length - 1];
+      // Com margem: voltou à faixa depois de ter saído, recomeça da posição real.
+      if (margem !== undefined && e.isIntersecting && !visivel) atual = -1;
       visivel = e.isIntersecting;
       if (visivel) el.dataset.ativo = "";
       else delete el.dataset.ativo;
       if (visivel) acordar();
-    });
+    }, margem !== undefined ? { rootMargin: margem } : undefined);
     io.observe(el);
 
     assinante.tick(0);
@@ -72,6 +83,6 @@ export function useProgresso<T extends HTMLElement>() {
       window.removeEventListener("scroll", acordar);
       window.removeEventListener("resize", acordar);
     };
-  }, []);
+  }, [margem]);
   return ref;
 }
