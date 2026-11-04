@@ -20,6 +20,8 @@ const BOTAO_TAU_MS = 90;
 const BOTAO_EPSILON_PX = 0.02;
 /** A lista de `.ds-botao` é relida a cada tanto: a página troca de conteúdo sem avisar. */
 const LISTA_BOTOES_MS = 600;
+/** Depois de trocar de rota o conteúdo novo chega (transição, hidratação): relê o que está sob o ponteiro por esse tempo. */
+const RELER_APOS_ROTA_MS = 700;
 
 /** Campos onde o cursor nativo (cursor de texto, de seleção) precisa voltar. */
 const SELETOR_NATIVO =
@@ -35,14 +37,20 @@ const SELETOR_CLICAVEL = 'a[href], button, summary, label, select, [role="button
  * até 6 px para o lado do ponteiro, dentro de 80 px do centro.
  *
  * Só liga com `(hover: hover) and (pointer: fine)`, nível `completo` e sem
- * movimento reduzido. Ligar é pôr `html.mv-cursor`, que esconde o cursor
- * nativo (menos em campos de texto, que o CSS e o handler devolvem). Se
- * qualquer coisa falhar, a classe sai e o cursor nativo volta na hora. O
- * conjunto é decorativo (`aria-hidden`) e nunca toca no foco do teclado.
+ * movimento reduzido. Ligar é escutar o ponteiro; o cursor nativo só some
+ * (`html.mv-cursor`) no primeiro movimento de mouse de verdade, então quem abre
+ * a página sem tocar no mouse (ou num aparelho híbrido, no toque) nunca fica
+ * sem cursor. Um toque depois tira a classe até o próximo movimento do mouse.
+ * Se qualquer coisa falhar, a classe sai e o cursor nativo volta na hora.
+ * Com o ponteiro parado, rolar ou trocar de rota relê o que está embaixo dele
+ * (uma consulta por quadro). O conjunto é decorativo (`aria-hidden`) e nunca
+ * toca no foco do teclado.
  */
 export default function Cursor() {
   const posRef = useRef<HTMLDivElement>(null);
   const corpoRef = useRef<HTMLDivElement>(null);
+  /** O efeito principal publica aqui o pedido de releitura, para a troca de rota (efeito abaixo) usar. */
+  const reler = useRef<((janelaMs: number) => void) | null>(null);
   const caminho = usePathname();
   const restrita = AREA_RESTRITA.test(caminho ?? "");
 
@@ -60,6 +68,12 @@ export default function Cursor() {
     const atual = { x: 0, y: 0 };
     /** Ponteiro de mouse dentro da janela: sem isso nada aparece nem se inclina. */
     let presente = false;
+    /** `html.mv-cursor` está posta (cursor nativo escondido): só depois do primeiro movimento de mouse. */
+    let ativo = false;
+    /** Há uma releitura do que está sob o ponteiro pedida para o próximo quadro. */
+    let sujo = false;
+    /** Até quando (performance.now) reler a cada quadro, depois de trocar de rota. */
+    let relerAte = 0;
     /** Estado escrito no DOM por último (só escreve quando muda). */
     const marca = { visivel: "", ver: "", clicavel: "", pressionado: "" };
     /** Botões que seguem o ponteiro agora, com o deslocamento mostrado em px. */
@@ -77,6 +91,21 @@ export default function Cursor() {
       corpo.setAttribute(nome, valor);
     };
 
+    /** O que há sob o ponteiro: campo nativo, "Ver" e clicável. */
+    const classificar = (el: Element | null) => {
+      const nativo = !!el?.closest(SELETOR_NATIVO);
+      return {
+        visivel: nativo ? "0" : "1",
+        ver: !nativo && el?.closest('[data-cursor="ver"]') ? "1" : "0",
+        clicavel: !nativo && el?.closest(SELETOR_CLICAVEL) ? "1" : "0",
+      };
+    };
+    const aplicar = (c: ReturnType<typeof classificar>) => {
+      marcar("visivel", c.visivel);
+      marcar("ver", c.ver);
+      marcar("clicavel", c.clicavel);
+    };
+
     /** Larga um botão: a transição do CSS (curva de chegada) o devolve ao lugar. */
     const soltar = (el: HTMLElement) => {
       el.removeAttribute("data-mv-segue");
@@ -84,14 +113,31 @@ export default function Cursor() {
       seguindo.delete(el);
     };
 
+    /** Primeiro mouse de verdade: agora sim o cursor nativo some. */
+    const esconderNativo = () => {
+      if (ativo) return;
+      ativo = true;
+      html.classList.add("mv-cursor");
+    };
+    /** Toque (ou caneta): o cursor nativo volta e o ponto some até o próximo movimento do mouse. */
+    const devolverNativo = () => {
+      if (ativo) {
+        ativo = false;
+        html.classList.remove("mv-cursor");
+      }
+      presente = false;
+      marcar("visivel", "0");
+      marcar("pressionado", "0");
+      relogio.acordar();
+    };
+
     const aoMover = (e: PointerEvent) => {
       try {
-        if (e.pointerType === "touch") {
-          presente = false;
-          marcar("visivel", "0");
-          relogio.acordar();
+        if (e.pointerType !== "mouse") {
+          devolverNativo();
           return;
         }
+        esconderNativo();
         const primeiro = !presente;
         presente = true;
         alvo.x = e.clientX;
@@ -101,11 +147,7 @@ export default function Cursor() {
           atual.x = alvo.x;
           atual.y = alvo.y;
         }
-        const el = e.target instanceof Element ? e.target : null;
-        const nativo = !!el?.closest(SELETOR_NATIVO);
-        marcar("visivel", nativo ? "0" : "1");
-        marcar("ver", !nativo && el?.closest('[data-cursor="ver"]') ? "1" : "0");
-        marcar("clicavel", !nativo && el?.closest(SELETOR_CLICAVEL) ? "1" : "0");
+        aplicar(classificar(e.target instanceof Element ? e.target : null));
         relogio.acordar();
       } catch {
         desligar();
@@ -120,13 +162,35 @@ export default function Cursor() {
     };
 
     const aoPressionar = (e: PointerEvent) => {
-      if (e.pointerType !== "touch" && e.isPrimary) marcar("pressionado", "1");
+      // Um toque sem movimento também conta como interação por toque.
+      if (e.pointerType !== "mouse") devolverNativo();
+      else if (e.isPrimary) marcar("pressionado", "1");
     };
     const aoSoltar = () => marcar("pressionado", "0");
+
+    /** Pede a releitura do que está sob o ponteiro parado (rolagem, troca de rota). */
+    const pedirLeitura = (janelaMs = 0) => {
+      if (!ativo || !presente) return;
+      sujo = true;
+      if (janelaMs > 0) relerAte = Math.max(relerAte, performance.now() + janelaMs);
+      relogio.acordar();
+    };
+    // Captura: rolar o trilho de um carrossel também move cartões sob o ponteiro.
+    const aoRolar = () => pedirLeitura();
 
     const tick = (dt: number): boolean => {
       try {
         let movendo = false;
+        const agora = performance.now();
+
+        // Leitura primeiro (uma consulta por quadro, só com o ponteiro parado sob conteúdo que mudou);
+        // a escrita no DOM do cursor fica para o fim, junto das outras.
+        let lido: ReturnType<typeof classificar> | null = null;
+        if (ativo && presente && (sujo || agora < relerAte)) {
+          sujo = false;
+          lido = classificar(document.elementFromPoint(alvo.x, alvo.y));
+          if (agora < relerAte) movendo = true;
+        }
 
         atual.x = aproximar(atual.x, alvo.x, dt, CURSOR_TAU_MS, CURSOR_EPSILON_PX);
         atual.y = aproximar(atual.y, alvo.y, dt, CURSOR_TAU_MS, CURSOR_EPSILON_PX);
@@ -134,7 +198,6 @@ export default function Cursor() {
         if (atual.x !== alvo.x || atual.y !== alvo.y) movendo = true;
 
         // Botões: leituras de caixa primeiro, escritas depois, no mesmo quadro.
-        const agora = performance.now();
         if (agora - listaEm > LISTA_BOTOES_MS) {
           lista = Array.from(document.querySelectorAll<HTMLElement>(".ds-botao"));
           listaEm = agora;
@@ -179,6 +242,7 @@ export default function Cursor() {
           el.style.translate = `${s.x.toFixed(2)}px ${s.y.toFixed(2)}px`;
           if (s.x !== d.x || s.y !== d.y) movendo = true;
         }
+        if (lido) aplicar(lido);
         return movendo;
       } catch {
         desligar();
@@ -189,11 +253,12 @@ export default function Cursor() {
     function ligar() {
       if (ligado) return;
       ligado = true;
-      html.classList.add("mv-cursor");
+      // A classe html.mv-cursor NÃO entra aqui: só no primeiro movimento de mouse (aoMover).
       document.addEventListener("pointermove", aoMover, { passive: true });
       document.addEventListener("pointerdown", aoPressionar, { passive: true });
       document.addEventListener("pointerup", aoSoltar, { passive: true });
       document.addEventListener("pointercancel", aoSoltar, { passive: true });
+      window.addEventListener("scroll", aoRolar, { passive: true, capture: true });
       html.addEventListener("pointerleave", aoSairDaJanela);
       window.addEventListener("blur", aoSairDaJanela);
       desassinar = relogio.assinar({ tick });
@@ -201,6 +266,7 @@ export default function Cursor() {
 
     /** Também é a saída de emergência: tira a classe e o cursor nativo volta na hora. */
     function desligar() {
+      ativo = false;
       html.classList.remove("mv-cursor");
       if (!ligado) return;
       ligado = false;
@@ -208,11 +274,14 @@ export default function Cursor() {
       document.removeEventListener("pointerdown", aoPressionar);
       document.removeEventListener("pointerup", aoSoltar);
       document.removeEventListener("pointercancel", aoSoltar);
+      window.removeEventListener("scroll", aoRolar, { capture: true });
       html.removeEventListener("pointerleave", aoSairDaJanela);
       window.removeEventListener("blur", aoSairDaJanela);
       desassinar?.();
       desassinar = null;
       presente = false;
+      sujo = false;
+      relerAte = 0;
       for (const el of [...seguindo.keys()]) soltar(el);
       marcar("visivel", "0");
       marcar("pressionado", "0");
@@ -229,15 +298,22 @@ export default function Cursor() {
       }
     };
 
+    reler.current = pedirLeitura;
     sincronizar();
     mqMouse.addEventListener("change", sincronizar);
     mqReduzido.addEventListener("change", sincronizar);
     return () => {
+      reler.current = null;
       mqMouse.removeEventListener("change", sincronizar);
       mqReduzido.removeEventListener("change", sincronizar);
       desligar();
     };
   }, [restrita]);
+
+  // Trocou de página com o ponteiro parado: o que está embaixo dele mudou sem ele se mexer.
+  useEffect(() => {
+    reler.current?.(RELER_APOS_ROTA_MS);
+  }, [caminho]);
 
   return (
     <div ref={posRef} aria-hidden className="mv-cursor-pos">
