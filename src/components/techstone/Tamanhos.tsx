@@ -83,18 +83,26 @@ export default function Tamanhos({ ref, interesse }: {
       setTamanho(t);
       soltarTrava.current?.();
       const alvo = document.getElementById("tamanhos");
+      if (!alvo) return;
+      // Topo de destino: scroll-padding da página + scroll-margin do alvo.
+      const destino = (parseFloat(getComputedStyle(document.documentElement).scrollPaddingTop) || 0)
+        + (parseFloat(getComputedStyle(alvo).scrollMarginTop) || 0);
+      // Já está lá: não há rolagem (nem scrollend), então nada de trava.
+      if (Math.abs(alvo.getBoundingClientRect().top - destino) < 2) {
+        trava.current = 0;
+        return;
+      }
       const reduzir = window.matchMedia("(prefers-reduced-motion: reduce)").matches;
       // Variável à parte: o "in" direto estreitaria window para never no else (o tipo já tem onscrollend).
       const temFim = "onscrollend" in window;
       if (temFim) {
         trava.current = performance.now() + 10000;
         window.addEventListener("scrollend", () => { trava.current = performance.now() + FOLGA_TRAVA; }, { once: true });
-      } else if (alvo) {
+      } else {
         // Sem scrollend, a posição decide: a trava acaba quando o alvo chega ao
-        // topo de destino (scroll-padding da página + scroll-margin dele) ou quando
-        // a rolagem fica parada 150 ms (fim da página, rolagem interrompida).
-        const destino = (parseFloat(getComputedStyle(document.documentElement).scrollPaddingTop) || 0)
-          + (parseFloat(getComputedStyle(alvo).scrollMarginTop) || 0);
+        // topo de destino ou quando a rolagem fica parada 150 ms (fim da página,
+        // rolagem interrompida). Antes do primeiro evento a espera é de 350 ms: a
+        // rolagem suave pode levar alguns quadros para começar.
         trava.current = Infinity;
         let parada = 0;
         const soltar = () => {
@@ -109,10 +117,10 @@ export default function Tamanhos({ ref, interesse }: {
           else parada = window.setTimeout(fim, 150);
         };
         window.addEventListener("scroll", rolou, { passive: true });
-        parada = window.setTimeout(fim, 150);
+        parada = window.setTimeout(fim, 350);
         soltarTrava.current = soltar;
       }
-      alvo?.scrollIntoView({ behavior: reduzir ? "auto" : "smooth", block: "start" });
+      alvo.scrollIntoView({ behavior: reduzir ? "auto" : "smooth", block: "start" });
     },
   }), []);
   const escolherPelaRolagem = useCallback((t: FormatoTechStone) => {
@@ -206,6 +214,12 @@ const SAI_B = 0.567; // tudo da placa pequena sai até a troca
 const TROCA = 0.614; // fim da etapa B: a placa vira a grande e a grade troca de aba
 const ENTRA_C = 0.708; // amostras grandes: 0,708 → 0,801 (clicáveis de 0,708 em diante)
 const PLACA = 0.36; // a imagem da placa entrou (0,334 → 0,354): a pedra grande sai de cena
+// Na volta (rolando para cima) a pedra grande reaparece já em 0,42, ainda sob a placa
+// opaca: ganha a camada e o raster antes de a placa sair de cima dela (0,354 → 0,334).
+const VOLTA = 0.42;
+// Fronteiras das faixas em que o observador age (etapa, placa, troca), em ordem.
+const LIMITES = [ENTRA_B, PLACA, VOLTA, TROCA, ENTRA_C];
+const FAIXA_PLACA = 2; // índice da faixa PLACA ≤ p < VOLTA, onde vale o sentido da rolagem
 
 /*
  * Peças fixas da revelação, criadas uma vez: a troca de placa pela rolagem
@@ -355,8 +369,11 @@ const Revelacao = memo(function Revelacao({ escolhidos, escolherModelo, aoTrocar
   useEffect(() => {
     const el = ref.current;
     if (!el) return;
-    const estatico = window.matchMedia("(prefers-reduced-motion: reduce), (max-height: 480px)");
+    // Lido pelo evento change, não a cada quadro.
+    const consulta = window.matchMedia("(prefers-reduced-motion: reduce), (max-height: 480px)");
+    let estatico = consulta.matches;
     let grupo: FormatoTechStone | null = null;
+    let faixaAntes = -1;
     let pAntes = 0;
     let ativoAntes = false;
     let voltou = false;
@@ -380,15 +397,24 @@ const Revelacao = memo(function Revelacao({ escolhidos, escolherModelo, aoTrocar
       // dentro da faixa, anda pouco por quadro.
       const salto = voltou && Math.abs(p - pAntes) > 0.15;
       if (p !== pAntes) voltou = false;
+      const sobe = p > pAntes, desce = p < pAntes;
       pAntes = p;
+      // O --p muda a cada quadro, mas nada aqui muda dentro de uma mesma faixa (a
+      // não ser na da placa, onde o sentido decide).
+      let faixa = 0;
+      while (faixa < LIMITES.length && p >= LIMITES[faixa]) faixa++;
+      if (faixa === faixaAntes && faixa !== FAIXA_PLACA) return;
+      faixaAntes = faixa;
       // Só as amostras da etapa à vista recebem foco e toque (o CSS lê data-etapa):
       // as pequenas de ENTRA_B até a troca, as grandes de ENTRA_C em diante.
       const etapa = p >= ENTRA_C ? "c" : p >= TROCA ? "cresce" : p >= ENTRA_B ? "b" : "a";
       if (el.dataset.etapa !== etapa) el.dataset.etapa = etapa;
       // Depois da fusão para a imagem da placa, a pedra grande some (visibility no CSS).
-      const placa = p >= PLACA && !estatico.matches;
-      if (placa !== "placa" in el.dataset) el.toggleAttribute("data-placa", placa);
-      if (estatico.matches) return;
+      // Some em PLACA rolando para baixo e volta abaixo de VOLTA rolando para cima.
+      const ligada = "placa" in el.dataset;
+      const placaGrande = !estatico && (p >= VOLTA || (p >= PLACA && (ligada ? !desce : sobe)));
+      if (placaGrande !== ligada) el.toggleAttribute("data-placa", placaGrande);
+      if (estatico) return;
       // A placa vira a grande na troca, quando começa a crescer. Chama só quando muda
       // de verdade: a escolha de aba na grade vale até a rolagem passar por aqui de novo.
       const novo: FormatoTechStone = p >= TROCA ? "2400x1200" : "1200x600";
@@ -397,10 +423,12 @@ const Revelacao = memo(function Revelacao({ escolhidos, escolherModelo, aoTrocar
       grupo = novo;
       if (antes !== null || novo !== "1200x600") trocar(novo, antes === null || salto, antes !== null && salto);
     };
+    const mudou = () => { estatico = consulta.matches; faixaAntes = -1; ler(); };
+    consulta.addEventListener("change", mudou);
     ler();
     const mo = new MutationObserver(ler);
     mo.observe(el, { attributes: true, attributeFilter: ["style", "data-ativo"] });
-    return () => mo.disconnect();
+    return () => { mo.disconnect(); consulta.removeEventListener("change", mudou); };
   }, [ref]);
 
   return (

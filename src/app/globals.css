@@ -864,7 +864,8 @@ html[data-mv-nivel="leve"] .mv-camada { --mv-fe: calc((var(--mv-f) + 1) / 2); }
                     (um zoom de câmera em ritmo constante), o véu sai, o chão
                     e a pessoa de 1,70 m entram;
      0.334 → 0.354  a placa passa, em fusão, para a imagem do tamanho dela
-                    (.ts-tam-placa); de 0.36 (data-placa) a pedra grande some;
+                    (.ts-tam-placa); de 0.36 (data-placa) a pedra grande some
+                    (rolando para cima, volta já abaixo de 0.42, sob a placa);
      0.268 → 0.427  "1200 × 600 mm", m² e uso; as cinco amostras, uma a uma
                     (clicáveis de 0.334 a 0.614: data-etapa="b");
      0.427 → 0.567  parada;
@@ -914,7 +915,7 @@ html[data-mv-nivel="leve"] .mv-camada { --mv-fe: calc((var(--mv-f) + 1) / 2); }
     scale(calc(var(--k1) * (1 + var(--m2))));
 }
 .ts-tam-pedra img { object-fit: cover; background: #2A2620; }
-@media (prefers-reduced-motion: no-preference) and (min-height: 480.02px) {
+@media (prefers-reduced-motion: no-preference) and (height > 480px) {
   .ts-tam[data-placa] .ts-tam-pedra { visibility: hidden; }
 }
 /* Véu do tamanho do quadro, sem escala: na cor do fundo, só escurece a pedra. */
@@ -1011,9 +1012,10 @@ html[data-mv-nivel="leve"] .mv-camada { --mv-fe: calc((var(--mv-f) + 1) / 2); }
   .ts-tam-c-texto { margin-left: 0; }
   .ts-tam-nome { top: calc(var(--fy, 90%) + 0.625rem); }
   /* A fileira rola de lado; o padding de cima e de baixo dá lugar ao anel de foco
-     (2px a 2px do botão) e ao fio da escolhida. */
+     (2px a 2px do botão) e ao fio da escolhida. Dos lados ele desconta a folga de
+     6 px do alvo: a primeira amostra desenhada alinha com o texto. */
   .ts-tam-amostras {
-    top: auto; bottom: 0.75rem; left: 0; right: 0; padding: 6px var(--xh, 1rem) 8px;
+    top: auto; bottom: 0.75rem; left: 0; right: 0; padding: 6px calc(var(--xh, 1rem) - 6px) 8px;
     gap: 0.25rem; overflow-x: auto; scrollbar-width: none;
   }
   /* Alvo de toque com 44 px de largura; a amostra desenhada continua 32 × 64 no meio dele. */
@@ -1180,13 +1182,13 @@ html[data-mv-nivel="leve"] .mv-camada { --mv-fe: calc((var(--mv-f) + 1) / 2); }
    embaixo das letras (a cabeça transformada isola o z-index). A elipse tem um
    miolo plano a .4 até 45% do raio e depois clareia até sumir na borda; o
    texto ocupa cerca de dois terços do raio, então as pontas das linhas já
-   caem na rampa (de .36 a cerca de .26 nos cantos), que é o que segura o
-   contraste nas batidas mais claras (sol e umidade). O miolo é baixo para a sombra não pesar como uma
-   nuvem escura no resto da seção. No computador ela some antes de dois terços
-   da largura; no celular cobre só o bloco do título. Chega com a subida,
-   quando o texto vai para o topo, a parte mais clara da pedra e onde o sol
-   bate; mantém o texto de apoio acima de 4,5:1 em toda a seção e deixa a luz
-   do sol inteira no resto do quadro. */
+   caem na rampa (de .36 a cerca de .26 nos cantos), e é a rampa que limita o
+   contraste nas batidas mais claras (sol e umidade). O miolo é baixo para a
+   sombra não pesar como uma nuvem escura no resto da seção. No computador ela
+   some antes de dois terços da largura; no celular cobre só o bloco do título.
+   Chega com a subida, quando o texto vai para o topo, a parte mais clara da
+   pedra e onde o sol bate; mantém o texto de apoio acima de 4,5:1 em toda a
+   seção e deixa a luz do sol inteira no resto do quadro. */
 .ts-clima-letreiro { position: relative; width: fit-content; max-width: 100%; }
 .ts-clima-letreiro::before {
   content: ""; position: absolute; inset: -70% -45%; z-index: -1; pointer-events: none;
