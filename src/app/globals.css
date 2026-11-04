@@ -823,11 +823,8 @@ html[data-mv-nivel="leve"] .mv-camada { --mv-fe: calc((var(--mv-f) + 1) / 2); }
 [data-ativo] .ts-quadro { will-change: opacity; }
 [data-ativo] .ts-quadro img { will-change: transform; }
 
-/* Tamanhos: a placa escolhida cresce ou encolhe ao lado da pessoa de 1,70 m
-   (escala exata: a grande tem o dobro de cada lado). */
-.ts-folha { transform-box: fill-box; transform-origin: 0% 100%; transition: transform 0.7s var(--ease-orbital); }
-.ts-tamanhos[data-tamanho="2400x1200"] .ts-folha { transform: scale(2); }
-/* Modelo escolhido: a textura nova entra em fusão sobre a anterior. */
+/* Tamanhos. Modelo escolhido: a textura nova da placa (revelação, abaixo)
+   entra em fusão sobre a anterior. */
 @keyframes ts-folha-entra { from { opacity: 0; } to { opacity: 1; } }
 .ts-folha-entra { animation: ts-folha-entra var(--mv-base) var(--mv-chegada) both; }
 /* Miniatura-botão do modelo: marcada com um fio de 1 px, 4 px abaixo, que cresce da esquerda. */
@@ -841,9 +838,6 @@ html[data-mv-nivel="leve"] .mv-camada { --mv-fe: calc((var(--mv-f) + 1) / 2); }
 @media (hover: hover) and (pointer: fine) {
   .ts-modelo[aria-pressed="false"]:hover { transform: translateY(-2px); }
 }
-.ts-cota { transition: opacity 0.4s ease; }
-.ts-tamanhos[data-tamanho="2400x1200"] .ts-cota-pequena,
-.ts-tamanhos[data-tamanho="1200x600"] .ts-cota-grande { opacity: 0; }
 
 @media (prefers-reduced-motion: reduce) {
   .ts-ab-foto, .ts-quadro img { transform: none; }
@@ -851,10 +845,196 @@ html[data-mv-nivel="leve"] .mv-camada { --mv-fe: calc((var(--mv-f) + 1) / 2); }
   .ts-ab-frase, .ts-ab-cta { transform: translate3d(0, -50%, 0); }
   /* Sem deslocamento, o nome sai em fusão antes da primeira frase. */
   .ts-ab-titulo { transform: translate3d(0, -50%, 0); opacity: clamp(0, 1 - (var(--p, 0) - 0.12) / 0.06, 1); }
-  .ts-folha { transition: none; }
   .ts-folha-entra { animation: none; }
   .ts-modelo, .ts-modelo-linha { transition: none; }
   .ts-modelo[aria-pressed="false"]:hover { transform: none; }
+}
+
+/* ── TechStone: dois tamanhos pela rolagem ────────────────────────────────
+   Parte 1 de components/techstone/Tamanhos (Revelacao). --p (0 → 1) vem do
+   useProgresso; as medidas vêm do ResizeObserver de lá (geometria): --u (px
+   por mm), --fy (chão), --xp (canto da placa no chão), --xh (pessoa e
+   início da faixa), --dx/--dy/--kb (zoom da pedra) e, deitado, --fb/--fc
+   (corpo dos números). 440svh: a parte presa anda 340svh, uma tela ≈ 0.29.
+     0 → 0.05     tela cheia: a pedra escurecida e "Dois tamanhos.";
+     0.04 → 0.13  o título sai subindo;
+     0.05 → 0.30  a pedra encolhe até a placa de 1200 × 600 em pé no chão (um
+                  zoom de câmera em ritmo constante), o véu sai, o chão e a
+                  pessoa de 1,70 m entram;
+     0.23 → 0.40  "1200 × 600 mm", m² e uso; as cinco amostras, uma a uma
+                  (clicáveis de 0.3 a 0.6: data-etapa="b");
+     0.40 → 0.55  parada;
+     0.55 → 0.60  sai tudo da placa pequena;
+     0.57 → 0.73  a placa dobra (×2 a partir do canto no chão; a pessoa não
+                  muda). Em 0.6 a textura passa ao primeiro modelo grande e a
+                  grade, abaixo, troca de aba;
+     0.70 → 0.82  "2400 × 1200 mm" sobre a pedra, m², uso e as quatro amostras
+                  (clicáveis de 0.7 em diante: data-etapa="c");
+     0.82 → 1     parada de meia tela, e a seção solta.
+   A pedra é montada no maior tamanho (a caixa 1:2 que cobre o quadro) e só
+   encolhe: escala sempre ≤ 1, nada de ampliar raster. Só transform e opacity;
+   o recorte do número grande é fixo. */
+.ts-tam {
+  height: 440svh;
+  --m1r: clamp(0, (var(--p, 0) - 0.05) / 0.25, 1);
+  --m1: calc(var(--m1r) * var(--m1r) * (3 - 2 * var(--m1r)));
+  --m2r: clamp(0, (var(--p, 0) - 0.57) / 0.16, 1);
+  --m2: calc(var(--m2r) * var(--m2r) * (3 - 2 * var(--m2r)));
+  /* Escala do encolhimento: exponencial (o zoom anda no mesmo ritmo do
+     começo ao fim) onde há pow(); linear nos motores antigos. */
+  --k1: calc(1 - (1 - var(--kb, 1)) * var(--m1));
+}
+@supports (width: calc(pow(2, 1) * 1px)) {
+  .ts-tam { --k1: pow(var(--kb, 1), var(--m1)); }
+}
+.ts-tam-quadro { isolation: isolate; }
+/* Centrada e do tamanho que cobre o quadro: sem --p é a tela cheia, igual
+   antes e depois da hidratação. O canto de baixo à esquerda vai de onde está
+   até o chão, ao lado da pessoa, ao longo de P + k·(c1 − P). A transformação
+   vai em cada filho (as texturas e o véu), não na caixa: assim cada <img> é
+   uma camada de imagem que o compositor só redimensiona, sem rasterizar uma
+   área de 1440 × 2880 px ao entrar na tela. */
+.ts-tam-pedra {
+  position: absolute; left: 50%; top: 50%;
+  width: max(100%, 50svh); aspect-ratio: 1 / 2;
+  margin-left: calc(max(100%, 50svh) / -2); margin-top: calc(max(100%, 50svh) * -1);
+  pointer-events: none;
+}
+.ts-tam-pedra > * {
+  position: absolute; inset: 0; width: 100%; height: 100%;
+  transform-origin: 0 100%;
+  transform: translate3d(calc(var(--dx, 0px) * (1 - var(--k1))), calc(var(--dy, 0px) * (1 - var(--k1))), 0)
+    scale(calc(var(--k1) * (1 + var(--m2))));
+}
+.ts-tam-pedra img { object-fit: cover; background: #2A2620; }
+.ts-tam-veu { background: #141210; opacity: calc(0.56 * (1 - clamp(0, (var(--p, 0) - 0.08) / 0.18, 1))); }
+
+.ts-tam-a { position: absolute; inset: 0; display: flex; flex-direction: column; justify-content: center; }
+.ts-tam-titulo { font-size: clamp(3.5rem, 11.5vw, 11.5rem); line-height: 0.92; letter-spacing: -0.025em; text-wrap: balance; }
+
+/* Entrada e saída de cada peça: --a começo da entrada, --d duração, --b
+   começo da saída, --d2 duração dela (frações de --p, no style de cada uma). */
+.ts-tam-entra {
+  --e0: clamp(0, (var(--p, 0) - var(--a, 0)) / var(--d, 0.08), 1);
+  --e: calc(var(--e0) * var(--e0) * (3 - 2 * var(--e0)));
+  --s: clamp(0, (var(--p, 0) - var(--b, 2)) / var(--d2, 0.05), 1);
+  opacity: calc(var(--e) * (1 - var(--s)));
+  transform: translate3d(0, calc((1 - var(--e)) * 1.5rem - var(--s) * 1rem), 0);
+}
+
+.ts-tam-cena { position: absolute; inset: 0; pointer-events: none; }
+.ts-tam-chao {
+  position: absolute; left: 0; right: 0; top: var(--fy, 90%); height: 1px; background: rgb(255 255 255 / .2); z-index: -1;
+  transform-origin: 0 50%; transform: scaleX(clamp(0, (var(--p, 0) - 0.14) / 0.16, 1));
+}
+.ts-tam-pessoa {
+  position: absolute; left: var(--xh, 0px); top: calc(var(--fy, 90%) - 1720 * var(--u, 0.3px));
+  width: calc(340 * var(--u, 0.3px)); height: calc(1730 * var(--u, 0.3px));
+  color: rgb(255 255 255 / .6); overflow: visible;
+}
+.ts-tam-altura {
+  position: absolute; left: calc(var(--xh, 0px) + 170 * var(--u, 0.3px)); top: calc(var(--fy, 90%) - 1690 * var(--u, 0.3px) - 0.625rem);
+  translate: -50% -100%; white-space: nowrap;
+}
+.ts-tam-nome { position: absolute; left: var(--xp, 0px); top: calc(var(--fy, 90%) + 0.875rem); white-space: nowrap; }
+
+/* Placa pequena: o texto ao lado, com o topo na altura do topo dela. */
+.ts-tam-b { position: absolute; left: calc(var(--xp, 0px) + 600 * var(--u, 0.3px) + 3.5rem); top: calc(var(--fy, 90%) - 1200 * var(--u, 0.3px)); }
+.ts-tam-b-titulo, .ts-tam-c-titulo { line-height: 0.9; letter-spacing: -0.02em; white-space: nowrap; }
+.ts-tam-b-titulo { font-size: var(--fb, clamp(2.75rem, 7vw, 7.5rem)); margin-top: -0.06em; }
+.ts-tam-medida { margin-top: 1.25rem; font-size: var(--text-t2); line-height: 1.15; }
+
+/* Placa grande: o número começa sobre a pedra e passa da borda. A parte de
+   dentro é a mesma linha em tinta escura, recortada no retângulo da placa
+   (--dentro = da letra até a borda direita); nas madeiras escuras fica branca. */
+.ts-tam-c { position: absolute; left: calc(var(--xp, 0px) + 3rem); top: calc(var(--fy, 90%) - 2064 * var(--u, 0.3px)); }
+.ts-tam-c-titulo { position: relative; font-size: var(--fc, clamp(3rem, 8vw, 9rem)); --dentro: calc(1200 * var(--u, 0.3px) - 3rem); }
+.ts-tam-c-fora { display: block; clip-path: inset(-0.25em 0 -0.25em var(--dentro)); }
+.ts-tam-c-dentro { position: absolute; inset: 0; color: rgb(34 32 28 / .9); clip-path: inset(-0.25em calc(100% - var(--dentro)) -0.25em 0); }
+.ts-tam[data-tom="escuro"] .ts-tam-c-dentro { display: none; }
+.ts-tam[data-tom="escuro"] .ts-tam-c-fora { clip-path: none; }
+.ts-tam-c-texto { margin-left: calc(1200 * var(--u, 0.3px) + 0.5rem); }
+
+/* Amostras: em pé no chão, como placas pequenas. Só a fileira da etapa à
+   vista recebe foco e toque. */
+.ts-tam-amostras { position: absolute; top: calc(var(--fy, 90%) - 5.5rem); display: flex; gap: 0.875rem; visibility: hidden; pointer-events: auto; }
+.ts-tam-amostras-b { left: calc(var(--xp, 0px) + 600 * var(--u, 0.3px) + 3.5rem); }
+.ts-tam-amostras-c { left: calc(var(--xp, 0px) + 1200 * var(--u, 0.3px) + 3.5rem); }
+.ts-tam[data-etapa="b"] .ts-tam-amostras-b,
+.ts-tam[data-etapa="c"] .ts-tam-amostras-c { visibility: visible; }
+.ts-tam-amostra { position: relative; display: block; width: 2.75rem; height: 5.5rem; background: #2A2620; box-shadow: 0 0 0 1px rgb(255 255 255 / .1); }
+.ts-tam-amostra img { position: absolute; inset: 0; width: 100%; height: 100%; object-fit: cover; }
+.ts-tam-amostra .ts-modelo-linha { background: #fff; bottom: -7px; }
+
+/* Em pé (celular, tablet em pé): o texto em cima, a placa e a pessoa embaixo,
+   as amostras numa fileira no pé do quadro. */
+@media (max-width: 767.98px), (orientation: portrait) {
+  .ts-tam { --topo: max(5.5rem, 11svh); }
+  .ts-tam-titulo { font-size: min(17vw, 9rem); }
+  .ts-tam-b, .ts-tam-c { left: var(--xh, 1rem); top: var(--topo); }
+  .ts-tam-b-titulo, .ts-tam-c-titulo { font-size: min(11vw, 6rem); margin-top: 0; }
+  .ts-tam-medida { margin-top: 0.875rem; font-size: var(--text-t3); }
+  .ts-tam-c-dentro { display: none; }
+  .ts-tam-c-fora { clip-path: none; }
+  .ts-tam-c-texto { margin-left: 0; }
+  .ts-tam-amostras {
+    top: auto; bottom: 1.25rem; left: 0; right: 0; padding-inline: var(--xh, 1rem); padding-bottom: 8px;
+    gap: 0.625rem; overflow-x: auto; scrollbar-width: none;
+  }
+  .ts-tam-amostra { width: 2rem; height: 4rem; }
+}
+
+/* Só as peças grandes ganham camada própria; as linhas de texto pequenas
+   pintam de novo só enquanto entram ou saem. */
+.ts-tam[data-ativo] .ts-tam-pedra img,
+.ts-tam[data-ativo] .ts-tam-chao { will-change: transform; }
+.ts-tam[data-ativo] .ts-tam-veu,
+.ts-tam[data-ativo] .ts-tam-a { will-change: opacity, transform; }
+
+/* Estático (movimento reduzido, tela baixa, sem JavaScript): as duas placas
+   lado a lado em escala exata ao lado da pessoa, cada uma com tamanho e m²
+   embaixo, sobre um chão contínuo. --ue: px por mm, o menor entre metade da
+   altura para a placa grande e o que cabe na largura (com a legenda da placa
+   pequena, que é mais larga que ela no celular). */
+.ts-tam-estatico {
+  display: none; position: relative; margin-top: clamp(2.5rem, 6vw, 4.5rem);
+  --gap: clamp(1rem, 3vw, 3rem);
+  --larg: calc(min(100vw, 80rem) - 2 * clamp(1rem, 4.2vw, 4rem) - 3 * var(--gap));
+  --ue: min(calc(50svh / 2400), calc(var(--larg) / 2140), calc((var(--larg) - 6.5rem) / 1540));
+}
+.ts-tam-est-grade { display: grid; grid-template-columns: repeat(3, auto); justify-content: start; align-items: end; }
+.ts-tam-est-pessoa, .ts-tam-est-placa { margin-right: var(--gap); }
+.ts-tam-est-pessoa { width: calc(340 * var(--ue)); height: calc(1730 * var(--ue)); color: rgb(255 255 255 / .6); overflow: visible; }
+.ts-tam-est-placa { position: relative; display: block; overflow: hidden; background: #2A2620; }
+.ts-tam-est-placa img { position: absolute; inset: 0; width: 100%; height: 100%; object-fit: cover; }
+.ts-tam-est-pequena { width: calc(600 * var(--ue)); height: calc(1200 * var(--ue)); }
+.ts-tam-est-grande { width: calc(1200 * var(--ue)); height: calc(2400 * var(--ue)); }
+.ts-tam-est-legenda { align-self: start; padding: 0.875rem var(--gap) 0 0; border-top: 1px solid rgb(255 255 255 / .22); white-space: nowrap; }
+@media (max-width: 639.98px) { .ts-tam-est-legenda .text-t3 { font-size: 0.9375rem; } }
+
+@media (prefers-reduced-motion: reduce), (max-height: 480px) {
+  .ts-tam { height: auto; }
+  .ts-tam-quadro { position: relative; height: auto; padding-block: clamp(3.5rem, 2rem + 4.5vw, 7rem); }
+  .ts-tam-pedra { left: 0; top: 0; width: 100%; height: 100%; margin: 0; aspect-ratio: auto; }
+  .ts-tam-pedra > * { transform: none; }
+  .ts-tam-veu { opacity: .7; }
+  .ts-tam-a { position: relative; inset: auto; opacity: 1; transform: none; }
+  .ts-tam-cena { display: none; }
+  .ts-tam-estatico { display: block; }
+}
+/* Tela deitada e baixa: o título em pé (17vw) tomaria a tela inteira. */
+@media (max-height: 480px) { .ts-tam-titulo { font-size: min(11vw, 22svh); } }
+/* Sem JavaScript: as mesmas regras, em espelho do CSS_SEM_JS de Tamanhos.tsx
+   (o <noscript> de lá cobre os motores sem `scripting`). Mude os dois juntos. */
+@media (scripting: none) {
+  .ts-tam{height:auto}
+  .ts-tam .ts-tam-quadro{position:relative;height:auto;padding-block:clamp(3.5rem,2rem + 4.5vw,7rem)}
+  .ts-tam .ts-tam-pedra{left:0;top:0;width:100%;height:100%;margin:0;aspect-ratio:auto}
+  .ts-tam .ts-tam-pedra>*{transform:none}
+  .ts-tam .ts-tam-veu{opacity:.7}
+  .ts-tam .ts-tam-a{position:relative;inset:auto;opacity:1;transform:none}
+  .ts-tam .ts-tam-cena{display:none}
+  .ts-tam .ts-tam-estatico{display:block}
 }
 
 /* ── TechStone: clima pela pedra ──────────────────────────────────────────

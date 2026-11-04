@@ -1,8 +1,8 @@
 "use client";
 
-import { useCallback, useState } from "react";
+import { useCallback, useRef, useState } from "react";
 import Ideias from "./Ideias";
-import Tamanhos from "./Tamanhos";
+import Tamanhos, { type TamanhosAlca } from "./Tamanhos";
 import { Abertura, Sequencia } from "./Apresentacao";
 import Clima from "./Clima";
 import Revelar from "@/components/projetos/Revelar";
@@ -76,13 +76,10 @@ export default function TechStone() {
   const abrirEspera = useCallback((modelos: string[] = []) => setEspera({ aberto: true, modelos }), []);
   const fecharEspera = useCallback(() => setEspera((e) => ({ ...e, aberto: false })), []);
 
-  // Tamanho escolhido na seção de tamanhos; as ideias também o escolhem.
-  const [tamanho, setTamanho] = useState<FormatoTechStone>("1200x600");
-  const verTamanho = useCallback((t: FormatoTechStone) => {
-    setTamanho(t);
-    const reduzir = window.matchMedia("(prefers-reduced-motion: reduce)").matches;
-    document.getElementById("tamanhos")?.scrollIntoView({ behavior: reduzir ? "auto" : "smooth", block: "start" });
-  }, []);
+  // O tamanho escolhido mora na seção de tamanhos (a revelação o troca com a
+  // rolagem, e assim só ela renderiza de novo); as ideias o escolhem por esta alça.
+  const tamanhos = useRef<TamanhosAlca>(null);
+  const verTamanho = useCallback((t: FormatoTechStone) => tamanhos.current?.verTamanho(t), []);
 
   return (
     <div className="escala-contida bg-[#EFEBE4]">
@@ -135,7 +132,7 @@ export default function TechStone() {
 
       <Ideias verTamanho={verTamanho} />
 
-      <Tamanhos tamanho={tamanho} escolher={setTamanho} interesse={(nome) => abrirEspera([nome])} />
+      <Tamanhos ref={tamanhos} interesse={(nome) => abrirEspera([nome])} />
 
       <section id="lista" aria-labelledby="ts-lista" className="bg-[#22201C] ds-secao scroll-mt-20">
         <div className="ds-wrap flex flex-col gap-8 lg:flex-row lg:items-end lg:justify-between">
