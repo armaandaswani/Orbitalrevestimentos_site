@@ -295,6 +295,12 @@ html { scroll-padding-top: 5rem; }
 @keyframes mv-sobe { from { opacity: 0; transform: translate3d(0, var(--mv-sobe), 0); } to { opacity: 1; transform: none; } }
 @keyframes mv-surge { from { opacity: 0; } to { opacity: 1; } }
 @keyframes mv-desvela { from { transform: scale(1.1); } to { transform: none; } }
+/* Foto que se desvela (Revelar efeito="desvela"): o recorte abre pelo topo, 12% → 0,
+   e a foto se acomoda de 1,06 a 1. A escala segue --mv-fator (menos no nível leve). */
+@keyframes mv-desvela-recorte {
+  from { clip-path: inset(12% 0 0 0); transform: scale(calc(1 + 0.06 * var(--mv-fator))); }
+  to { clip-path: inset(0 0 0 0); transform: none; }
+}
 @keyframes mv-parallax { from { transform: translate3d(0, calc(-7% * var(--mv-fator)), 0) scale(calc(1 + 0.14 * var(--mv-fator))); } to { transform: translate3d(0, calc(7% * var(--mv-fator)), 0) scale(calc(1 + 0.14 * var(--mv-fator))); } }
 @keyframes mv-parallax-topo { from { transform: none; } to { transform: translate3d(0, calc(18% * var(--mv-fator)), 0) scale(calc(1 + 0.06 * var(--mv-fator))); } }
 @keyframes mv-esmaece { from { opacity: 1; } to { opacity: 0.15; } }
@@ -328,12 +334,34 @@ html { scroll-padding-top: 5rem; }
 
 @media (prefers-reduced-motion: no-preference) {
   @supports (animation-timeline: view()) {
-    /* Entra subindo enquanto atravessa o primeiro terço da tela. --mv-i escalona vizinhos. */
+    /* Entra subindo enquanto atravessa o primeiro terço da tela. --mv-i escalona vizinhos.
+       Preenchimento `both` (a animação segue aplicada depois do fim). O catálogo (12 cartões
+       com luz dentro) usa `backwards` por cartão: medido a 4× de CPU, com `both` ele perdia um
+       quadro ao chegar no fim da página; com `backwards` não. Nas outras páginas, `backwards`
+       trocava esse quadro por outros nos títulos, então o padrão ficou `both`. */
     .mv-revelar {
       animation: mv-sobe linear both;
       animation-timeline: view();
       animation-range: entry calc(var(--mv-i, 0) * 7%) entry calc(55% + var(--mv-i, 0) * 7%);
     }
+    /* Revelar efeito="desvela": sem preenchimento depois do fim (backwards), para o
+       recorte não ficar preso e cortar o contorno de foco de quem está dentro. */
+    .mv-revelar-desvela {
+      animation: mv-desvela-recorte linear backwards;
+      animation-timeline: view();
+      animation-range: entry calc(var(--mv-i, 0) * 7%) entry calc(60% + var(--mv-i, 0) * 7%);
+    }
+    /* Revelar efeito="surge": só a opacidade, um pouco mais longa, para o que vem em volta. */
+    .mv-revelar-surge {
+      animation: mv-surge linear both;
+      animation-timeline: view();
+      animation-range: entry calc(var(--mv-i, 0) * 7%) entry calc(70% + var(--mv-i, 0) * 7%);
+    }
+    /* Cartões dentro de um trilho que rola de lado: o view() deles olharia o trilho (que não
+       rola na vertical) e a entrada ficaria parada. Marcando o contêiner de fora com
+       .mv-linha-fonte, eles seguem a passagem dele pela tela (mesmo truque do .mv-brilho-fonte). */
+    .mv-linha-fonte { view-timeline: --mv-linha block; }
+    .mv-linha-fonte :is(.mv-revelar, .mv-revelar-desvela, .mv-revelar-surge) { animation-timeline: --mv-linha; }
     /* Foto que "se acomoda" no quadro (o quadro tem overflow hidden). */
     .mv-desvela {
       animation: mv-desvela linear both;
@@ -376,7 +404,19 @@ html { scroll-padding-top: 5rem; }
     transition: opacity var(--mv-lento) var(--mv-chegada), transform var(--mv-lento) var(--mv-chegada);
     transition-delay: calc(var(--mv-i, 0) * 70ms);
   }
-
+  /* Variantes do Revelar na reserva: mesmo par espera/entrou, só muda o que anima. */
+  .mv-io-espera-desvela { clip-path: inset(12% 0 0 0); transform: scale(calc(1 + 0.06 * var(--mv-fator))); }
+  .mv-io-entrou-desvela {
+    clip-path: inset(0 0 0 0); transform: none;
+    transition: clip-path var(--mv-lento) var(--mv-chegada), transform var(--mv-lento) var(--mv-chegada);
+    transition-delay: calc(var(--mv-i, 0) * 70ms);
+  }
+  .mv-io-espera-surge { opacity: 0; }
+  .mv-io-entrou-surge {
+    opacity: 1;
+    transition: opacity var(--mv-lento) var(--mv-chegada);
+    transition-delay: calc(var(--mv-i, 0) * 70ms);
+  }
 
   /* Micro-interações: foto aproxima no hover/foco do cartão. */
   .mv-zoom { transition: transform var(--mv-lento) var(--mv-chegada); }

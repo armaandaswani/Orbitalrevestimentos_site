@@ -5,6 +5,7 @@ import { useState, useEffect, useCallback, useRef } from "react";
 import { normalizeProductCode, productPath, productQrUrl, productUrl } from "@/lib/product-link";
 import ContatoCta from "@/components/ContatoCta";
 import Lupa from "@/components/movimento/Lupa";
+import Revelar from "@/components/projetos/Revelar";
 import { urlOtimizada } from "@/lib/movimento/lente";
 
 const CATALOGUE_URL =
@@ -822,9 +823,17 @@ export default function ProdutosPage() {
             </div>
           ) : (
             <div className="grid grid-cols-2 lg:grid-cols-3 gap-x-4 gap-y-8 lg:gap-x-8 lg:gap-y-14">
-              {filtered.map((product) => (
-                <article
+              {filtered.map((product, i) => (
+                /* Cada cartão sobe no ritmo da sua coluna: 3 colunas no computador, 2 no
+                   celular (o --mv-i do celular vem por cima só abaixo de lg). No celular o
+                   preenchimento é só antes do começo: medido a 4× de CPU, com ele o catálogo
+                   não perde o quadro que perdia ao chegar no fim da página. */
+                <Revelar
                   key={product.code}
+                  ordem={i % 3}
+                  className={i % 2 ? "max-lg:[--mv-i:1]! max-lg:[animation-fill-mode:backwards]!" : "max-lg:[--mv-i:0]! max-lg:[animation-fill-mode:backwards]!"}
+                >
+                <article
                   className="group cursor-pointer"
                   onClick={() => open(product)}
                 >
@@ -883,6 +892,7 @@ export default function ProdutosPage() {
                     </div>
                   </div>
                 </article>
+                </Revelar>
               ))}
             </div>
           )}

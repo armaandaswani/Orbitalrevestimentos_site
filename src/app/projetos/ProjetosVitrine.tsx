@@ -35,6 +35,15 @@ import type { DadosProjetos } from "@/lib/projetos-dados";
 const LARGURA_OBRA = "w-[44%] sm:w-[30%] lg:w-[23.5%]";
 const SIZES_OBRA = "(max-width: 639px) 44vw, (max-width: 1023px) 30vw, (max-width: 1920px) 300px, 16vw";
 
+/**
+ * Ordem de entrada por coluna da lista de parceiros (2, 3 e 5 colunas). Literais
+ * completos para o Tailwind achá-los; o `!` põe o valor da faixa por cima do
+ * `--mv-i` inline que o Revelar escreve.
+ */
+const ORDEM_2COL = ["max-sm:[--mv-i:0]!", "max-sm:[--mv-i:1]!"];
+const ORDEM_3COL = ["sm:max-lg:[--mv-i:0]!", "sm:max-lg:[--mv-i:1]!", "sm:max-lg:[--mv-i:2]!"];
+const ORDEM_5COL = ["lg:[--mv-i:0]!", "lg:[--mv-i:1]!", "lg:[--mv-i:2]!", "lg:[--mv-i:3]!", "lg:[--mv-i:4]!"];
+
 export default function ProjetosVitrine({ projetos, categorias, lugares, renders, agora }: DadosProjetos & { agora: number }) {
   const showrooms = lugares.filter((l) => l.kind === "showroom");
   const revendasBanco = lugares.filter((l) => l.kind === "revenda");
@@ -107,12 +116,13 @@ function Conteudo({
               Ambientes decorados com o Painel Flexível em Fibra de Bambu (PFB) nos showrooms parceiros, e todos os modelos em display na Casa do Eletricista.
             </p>
           </div>
-          {/* Sem animação de entrada: é o topo da página. */}
+          {/* Lista de lugares: sobe no ritmo da coluna. O que já está na primeira dobra
+              aparece pronto (a entrada segue a rolagem, não o carregamento). */}
           <ul className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-5 gap-3 lg:gap-4">
-            {parceiros.map((s) => (
-              <li key={s.id}>
+            {parceiros.map((s, i) => (
+              <Revelar key={s.id} como="li" ordem={i % 5} className={`${ORDEM_2COL[i % 2]} ${ORDEM_3COL[i % 3]} ${ORDEM_5COL[i % 5]}`}>
                 <LugarCard compacto lugar={s} agora={agora} onAbrir={visor ? (l) => visor.abrirShowroom(l) : undefined} />
-              </li>
+              </Revelar>
             ))}
           </ul>
           <p className="text-on-surface-variant text-legenda mt-6 text-pretty">
@@ -139,8 +149,8 @@ function Conteudo({
 
           {categoria === "todos" && tag === "todos" ? (
             <div className="space-y-10 lg:space-y-12">
-              {blocos.map((b) => (
-                <Revelar key={b.slug}>
+              {blocos.map((b, bi) => {
+                const cabecalho = (
                   <div className="flex items-end justify-between gap-4 mb-4 pb-3 border-b border-surface-variant">
                     <div className="min-w-0">
                       <h3 className="font-serif text-primary text-t3 font-normal">{b.titulo}</h3>
@@ -153,11 +163,38 @@ function Conteudo({
                       </button>
                     )}
                   </div>
-                  <Trilho rotulo={`Projetos: ${b.titulo}`} largura={LARGURA_OBRA}>
-                    {b.lista.map((p) => <ProjetoCard key={p.id} projeto={p} onAbrir={(x) => abrir(x, b.lista)} href={href(p)} sizes={SIZES_OBRA} />)}
-                  </Trilho>
-                </Revelar>
-              ))}
+                );
+                // Primeira linha: o título sobe e cada foto se desvela, uma depois da outra (só as
+                // cinco da primeira dobra; o resto do trilho já está lá quando ele rola de lado).
+                if (bi === 0) {
+                  return (
+                    <div key={b.slug}>
+                      <Revelar>{cabecalho}</Revelar>
+                      {/* O trilho rola de lado e o view() dos cartões olharia ele: .mv-linha-fonte
+                          entrega a passagem desta caixa, que rola com a página. */}
+                      <div className="mv-linha-fonte">
+                        <Trilho rotulo={`Projetos: ${b.titulo}`} largura={LARGURA_OBRA}>
+                          {b.lista.map((p, i) => {
+                            const cartao = <ProjetoCard projeto={p} onAbrir={(x) => abrir(x, b.lista)} href={href(p)} sizes={SIZES_OBRA} />;
+                            return i < 5
+                              ? <Revelar key={p.id} efeito="desvela" ordem={i} className="h-full">{cartao}</Revelar>
+                              : <div key={p.id} className="h-full">{cartao}</div>;
+                          })}
+                        </Trilho>
+                      </div>
+                    </div>
+                  );
+                }
+                // As demais linhas só surgem (opacidade): a primeira já chamou a vez.
+                return (
+                  <Revelar key={b.slug} efeito="surge">
+                    {cabecalho}
+                    <Trilho rotulo={`Projetos: ${b.titulo}`} largura={LARGURA_OBRA}>
+                      {b.lista.map((p) => <ProjetoCard key={p.id} projeto={p} onAbrir={(x) => abrir(x, b.lista)} href={href(p)} sizes={SIZES_OBRA} />)}
+                    </Trilho>
+                  </Revelar>
+                );
+              })}
               {blocos.length === 0 && <p className="text-on-surface-variant text-corpo">Os projetos aparecem aqui em breve.</p>}
             </div>
           ) : filtradas.length === 0 ? (
@@ -219,7 +256,7 @@ function Conteudo({
                 </Link>
               } />
           </Revelar>
-          <Revelar>
+          <Revelar efeito="surge">
             <Trilho rotulo="Simulações de IA" escuro largura="w-[44%] sm:w-[30%] lg:w-[18.6%]">
               {renders.map((r) => <RenderCard key={r.id} render={r} />)}
             </Trilho>

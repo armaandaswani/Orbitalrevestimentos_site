@@ -17,6 +17,7 @@
  *                        "<ini>-<fim>" em px. Ex.: --faixa clima=.ts-clima --faixa topo=0-900
  *   --repeticoes <n>     roda a rolagem medida n vezes (padrão 1) e reporta a mediana;
  *                        sempre há uma rolagem de aquecimento antes, sem medir
+ *   --api-produtos <arq> responde /api/products com esse JSON (para /produtos/pfb sem banco local)
  *   --webkit, --firefox  troca o motor, se o runtime tiver o navegador instalado
  *
  * Para cada dispositivo grava <saida>/<dispositivo>/resultado.json
@@ -81,6 +82,7 @@ function lerArgs(argv) {
       const px = alvo.match(/^(\d+(?:\.\d+)?)-(\d+(?:\.\d+)?)$/);
       a.faixas.push(px ? { nome, ini: Number(px[1]), fim: Number(px[2]) } : { nome, seletor: alvo });
     }
+    else if (k === "--api-produtos") a.apiProdutos = path.resolve(argv[++i] || "");
     else if (k === "--reduzido") a.reduzido = true;
     else if (k === "--saida") a.saida = argv[++i];
     else if (k === "--webkit") a.motor = "webkit";
@@ -238,6 +240,11 @@ async function medirDispositivo(browser, nome, d, args) {
     };
     requestAnimationFrame(tick);
   });
+
+  // Sem banco local, /produtos/pfb não tem modelos: responde /api/products com um JSON salvo.
+  if (args.apiProdutos) {
+    await page.route("**/api/products", (rota) => rota.fulfill({ path: args.apiProdutos, contentType: "application/json" }));
+  }
 
   await page.goto(args.url, { waitUntil: "load" });
   await page.waitForLoadState("networkidle", { timeout: 8000 }).catch(() => {});

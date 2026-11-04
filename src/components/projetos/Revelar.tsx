@@ -2,20 +2,30 @@
 
 import { useEffect, useRef, useState } from "react";
 
+/** Os três jeitos de entrar: o texto sobe, a foto se desvela, a lista surge. */
+export type EfeitoRevelar = "sobe" | "desvela" | "surge";
+
 /**
- * Entrada suave ao rolar: o bloco sobe 1,5rem e aparece quando chega na tela.
+ * Entrada suave ao rolar. Três jeitos, para a página nunca repetir a mesma
+ * entrada em toda seção:
  *
- * - Caminho principal só em CSS (`.mv-revelar`, animation-timeline: view()):
+ * - `sobe` (padrão): o bloco sobe e aparece. Para títulos e listas de texto.
+ * - `desvela`: o recorte abre de baixo para cima (12% do topo) enquanto a foto
+ *   se acomoda de 1,06 a 1. Para quadros de foto; quanto mais baixo o nível
+ *   de movimento, menos ela se acomoda.
+ * - `surge`: só a opacidade. Para o que vem em volta e não deve chamar a vez.
+ *
+ * - Caminho principal só em CSS (`.mv-revelar*`, animation-timeline: view()):
  *   a animação segue a rolagem no compositor, sem JavaScript.
  * - Navegador sem animation-timeline: um IntersectionObserver faz o mesmo
  *   (classes `.mv-io-*`). O que já está na tela ao carregar não anima.
  * - Sem JavaScript, ou com movimento reduzido, nada fica escondido.
- * - Só opacidade e transform: não mexe no layout (CLS 0).
+ * - Só opacidade, transform e clip-path: não mexe no layout (CLS 0).
  * - `ordem` escalona vizinhos (0, 1, 2…), como os cartões de uma linha.
  *   `atraso` (ms) continua aceito e vira uma ordem equivalente.
  */
 export default function Revelar({
-  children, ordem, atraso = 0, className = "", como: Tag = "div", id,
+  children, ordem, atraso = 0, className = "", como: Tag = "div", id, efeito = "sobe",
 }: {
   children: React.ReactNode;
   ordem?: number;
@@ -23,9 +33,10 @@ export default function Revelar({
   className?: string;
   como?: "div" | "li" | "section" | "article" | "figure" | "header";
   id?: string;
+  efeito?: EfeitoRevelar;
 }) {
   const ref = useRef<HTMLElement>(null);
-  const [estado, setEstado] = useState<"css" | "espera" | "entrou">("css");
+  const [estado, setEstado] = useState<"css" | "espera" | "entrou" | "feito">("css");
   const i = ordem ?? Math.round(atraso / 80);
 
   useEffect(() => {
@@ -45,12 +56,26 @@ export default function Revelar({
     return () => { clearTimeout(t); obs.disconnect(); };
   }, []);
 
-  const classe = estado === "css" ? "mv-revelar" : estado === "espera" ? "mv-io-espera" : "mv-io-entrou";
+  // O recorte do `desvela` fica preso depois de entrar e cortaria o contorno de
+  // foco e as sombras de quem está dentro: terminada a transição, a classe sai
+  // (o visual é o mesmo) e o bloco volta a ser um bloco comum.
+  useEffect(() => {
+    if (estado !== "entrou" || efeito !== "desvela") return;
+    const t = setTimeout(() => setEstado("feito"), 900 + i * 70 + 150);
+    return () => clearTimeout(t);
+  }, [estado, efeito, i]);
+
+  const sufixo = efeito === "sobe" ? "" : `-${efeito}`;
+  const classe =
+    estado === "css" ? `mv-revelar${sufixo}`
+    : estado === "espera" ? `mv-io-espera${sufixo}`
+    : estado === "entrou" ? `mv-io-entrou${sufixo}`
+    : "";
   return (
     <Tag
       ref={ref as React.Ref<never>}
       id={id}
-      className={`${classe} ${className}`}
+      className={`${classe} ${className}`.trim()}
       style={i ? ({ "--mv-i": i } as React.CSSProperties) : undefined}
     >
       {children}
