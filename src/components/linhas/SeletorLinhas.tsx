@@ -18,6 +18,9 @@ function useNivelLeve() {
   return useSyncExternalStore(semAssinatura, nivelLeve, () => false);
 }
 
+/** Tamanhos da foto no painel (o mesmo para a foto da linha e as dos usos). */
+const TAMANHOS_FOTO = "(min-width: 768px) 50vw, 100vw";
+
 /**
  * Seletor das linhas da Orbital: abas em cima e um painel por linha, lado a
  * lado numa pista com encaixe. No celular o visitante arrasta de lado (ou toca
@@ -33,6 +36,10 @@ export default function SeletorLinhas({ titulo = "h3" }: {
   const pista = useRef<HTMLDivElement>(null);
   const abas = useRef<(HTMLButtonElement | null)[]>([]);
   const [ativo, setAtivo] = useState(0);
+  /** Etiqueta de uso escolhida (linha e posição); null = a foto da linha. */
+  const [uso, setUso] = useState<{ linha: number; i: number } | null>(null);
+  // Trocou de linha: a escolha some (ajuste durante a renderização, sem efeito).
+  if (uso && uso.linha !== ativo) setUso(null);
   // No nível leve a troca de página é só dissolução, sem morph (spec 2.4).
   const leve = useNivelLeve();
 
@@ -88,24 +95,65 @@ export default function SeletorLinhas({ titulo = "h3" }: {
       </div>
 
       <div ref={pista} className="flex overflow-x-auto snap-x snap-mandatory scrollbar-none overscroll-x-contain">
-        {LINHAS.map((l, i) => (
-          <div key={l.slug} id={`linha-painel-${l.slug}`} role="tabpanel" aria-labelledby={`linha-aba-${l.slug}`}
-            aria-hidden={ativo !== i} inert={ativo !== i}
-            className="w-full shrink-0 snap-center pt-6 sm:pt-8 lg:pt-5">
-            <Painel linha={l} Titulo={titulo} prioridade={i === 0} morph={!leve && l.slug === "techstone" && ativo === i} />
-          </div>
-        ))}
+        {LINHAS.map((l, i) => {
+          const escolhido = uso && uso.linha === i ? uso.i : null;
+          return (
+            <div key={l.slug} id={`linha-painel-${l.slug}`} role="tabpanel" aria-labelledby={`linha-aba-${l.slug}`}
+              aria-hidden={ativo !== i} inert={ativo !== i}
+              className="w-full shrink-0 snap-center pt-6 sm:pt-8 lg:pt-5">
+              {/* Com um uso escolhido a foto à vista não é a da abertura da
+                  TechStone: o morph sai e a troca de página só dissolve. */}
+              <Painel linha={l} Titulo={titulo} prioridade={i === 0} aberto={ativo === i} uso={escolhido}
+                escolherUso={(u) => setUso(escolhido === u ? null : { linha: i, i: u })}
+                morph={!leve && l.slug === "techstone" && ativo === i && escolhido === null} />
+            </div>
+          );
+        })}
       </div>
     </div>
   );
 }
 
-function Painel({ linha, Titulo, prioridade, morph }: {
+/** Quando o navegador folgar (Safari não tem requestIdleCallback: espera um pouco). */
+function quandoFolgar(fn: () => void): () => void {
+  if (typeof window.requestIdleCallback === "function") {
+    const id = window.requestIdleCallback(fn, { timeout: 2000 });
+    return () => window.cancelIdleCallback(id);
+  }
+  const t = window.setTimeout(fn, 300);
+  return () => window.clearTimeout(t);
+}
+
+function Painel({ linha, Titulo, prioridade, aberto, uso, escolherUso, morph }: {
   linha: LinhaOrbital; Titulo: "h2" | "h3"; prioridade: boolean;
+  /** O painel é o da aba ativa. */
+  aberto: boolean;
+  /** Etiqueta de uso escolhida (posição em linha.usos); null = a foto da linha. */
+  uso: number | null;
+  /** Toque numa etiqueta: escolhe o uso, ou volta à foto da linha se já era ele. */
+  escolherUso: (i: number) => void;
   /** A foto leva o nome do morph da TechStone (painel da TechStone, ativo, fora do nível leve). */
   morph: boolean;
 }) {
   const prontaEntrega = linha.situacao === "pronta-entrega";
+  const raiz = useRef<HTMLDivElement>(null);
+  /** As fotos dos usos entram no DOM (e carregam) só com o painel ativo perto da tela e o navegador folgado. */
+  const [carregar, setCarregar] = useState(false);
+  const temUsos = linha.usos.length > 0;
+
+  useEffect(() => {
+    if (!aberto || carregar || !temUsos || !raiz.current) return;
+    let cancelar = () => {};
+    const io = new IntersectionObserver(([e]) => {
+      if (!e.isIntersecting) return;
+      io.disconnect();
+      cancelar = quandoFolgar(() => setCarregar(true));
+    }, { rootMargin: "100% 0px" });
+    io.observe(raiz.current);
+    return () => { io.disconnect(); cancelar(); };
+  }, [aberto, carregar, temUsos]);
+
+  const gerada = uso !== null ? linha.usos[uso]?.imagemGerada : linha.imagemGerada;
   // Largura da foto no painel: wide (4/3) em vez de alta, e no computador a
   // altura segue a tela (svh) para a seção inteira caber numa vista.
   const caixa = `relative block aspect-[16/10] md:aspect-[4/3] md:max-h-[min(62svh,560px)] lg:aspect-auto lg:h-[min(50svh,30rem)] overflow-hidden bg-[#141A26]${linha.imagem ? " mv-brilho" : ""}`;
@@ -118,10 +166,19 @@ function Painel({ linha, Titulo, prioridade, morph }: {
           sairia voando do canto, e na volta para cá a foto cairia num
           painel escondido. Sem nome, a foto troca junto com a página. */}
       <ViewTransition name={morph ? "linha-techstone" : undefined} share="mv-morph" default="none">
-        <Image src={linha.imagem.src} alt={linha.imagem.alt} fill priority={prioridade}
-          sizes="(min-width: 768px) 50vw, 100vw" className="object-cover" />
+        <Image src={linha.imagem.src} alt={uso === null ? linha.imagem.alt : ""} aria-hidden={uso !== null || undefined}
+          fill priority={prioridade} sizes={TAMANHOS_FOTO} className="object-cover" />
       </ViewTransition>
-      {linha.imagemGerada && (
+      {/* Fotos dos usos por cima da foto da linha, em fusão (ver .sl-uso no CSS). */}
+      {(carregar || uso !== null) && (
+        <span className="sl-usos" data-vazio={uso === null || undefined}>
+          {linha.usos.map((u, i) => (
+            <Image key={u.rotulo} src={u.imagem.src} alt={uso === i ? u.imagem.alt : ""} aria-hidden={uso !== i || undefined}
+              fill loading="eager" sizes={TAMANHOS_FOTO} className="sl-uso object-cover" style={{ objectPosition: u.imagem.posicao }} data-ativo={uso === i || undefined} />
+          ))}
+        </span>
+      )}
+      {gerada && (
         <span className="absolute left-3 bottom-3 bg-black/55 text-white text-[11px] tracking-[0.02em] px-2 py-1">Imagem gerada por IA</span>
       )}
     </>
@@ -132,7 +189,7 @@ function Painel({ linha, Titulo, prioridade, morph }: {
     </div>
   );
   return (
-    <div className="grid gap-5 md:grid-cols-[minmax(0,1.1fr)_minmax(0,1fr)] md:gap-12 md:items-center">
+    <div ref={raiz} className="grid gap-5 md:grid-cols-[minmax(0,1.1fr)_minmax(0,1fr)] md:gap-12 md:items-center">
       {/* A foto leva à página da linha (o mesmo destino do botão). Dentro da
           pista de arrastar o navegador já cancela o clique quando o gesto vira
           rolagem, então deslizar de lado não abre a página. Linha sem página
@@ -141,7 +198,7 @@ function Painel({ linha, Titulo, prioridade, morph }: {
         <Link href={linha.href} className={caixa} data-cursor="ver"
           aria-label={`${prontaEntrega ? `Ver o catálogo d${linha.artigo} ${linha.curto}` : `Conhecer ${linha.artigo} ${linha.nome}`}${
             /* O rótulo substitui o aviso da foto para leitor de tela; ele vai junto (X0.08 v2). */
-            linha.imagemGerada ? " (imagem gerada por IA)" : ""}`}>
+            gerada ? " (imagem gerada por IA)" : ""}`}>
           {foto}
         </Link>
       ) : (
@@ -154,12 +211,20 @@ function Painel({ linha, Titulo, prioridade, morph }: {
         </p>
         <Titulo className="mt-2 font-serif text-t2 text-[#0B1F45] text-balance">{linha.nome}</Titulo>
         <p className="mt-3 text-corpo text-[#43474e] max-w-[42ch] text-pretty">{linha.resumo}</p>
-        {linha.usos.length > 0 && (
-          <ul aria-label="Onde vai" className="mt-5 flex flex-wrap gap-2">
-            {linha.usos.map((u) => (
-              <li key={u} className="px-3 py-1.5 rounded-full border border-[#0B1F45]/15 text-legenda text-[#0B1F45]">{u}</li>
+        {temUsos && (
+          // Botões de toque simples: nada de arrastar aqui, então deslizar de
+          // lado por cima deles continua trocando de linha no celular.
+          <div role="group" aria-label="Onde usar" className="mt-5 flex flex-wrap gap-2">
+            {linha.usos.map((u, i) => (
+              <button key={u.rotulo} type="button" aria-pressed={uso === i}
+                onClick={() => { setCarregar(true); escolherUso(i); }}
+                className={`sl-etiqueta px-3 py-1.5 rounded-full border text-legenda transition-colors duration-300 ${
+                  uso === i ? "bg-[#0B1F45] border-[#0B1F45] text-white" : "border-[#0B1F45]/15 text-[#0B1F45] hover:border-[#0B1F45]/45"
+                }`}>
+                {u.rotulo}
+              </button>
             ))}
-          </ul>
+          </div>
         )}
         {linha.href ? (
           <Link href={linha.href} className="mt-7 ds-botao ds-botao-cheio min-h-12">

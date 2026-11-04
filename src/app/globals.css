@@ -550,6 +550,25 @@ html:has(header[data-site][data-oculto="1"]) .ds-sob-cabecalho { top: 0; }
 .mv-brilho-fonte { view-timeline: --mv-fonte block; }
 .mv-brilho-fonte .mv-brilho { animation-timeline: --mv-fonte; }
 
+/* ── Seletor de linhas: a foto de cada uso (components/linhas/SeletorLinhas) ──
+   As fotos dos usos ficam empilhadas sobre a foto da linha. A escolhida sobe
+   por cima e acende em --mv-base; a que ela substitui só apaga depois disso
+   (atraso de --mv-base), então nunca aparece buraco nem a foto da linha no
+   meio da troca. Sem escolha (data-vazio), a última apaga na hora e revela a
+   foto da linha. Sem z-index no contêiner: ele fica abaixo da luz
+   (.mv-brilho::after), que vem depois no DOM. */
+.sl-usos { position: absolute; inset: 0; isolation: isolate; pointer-events: none; }
+.sl-uso { opacity: 0; z-index: 1; transition: opacity var(--mv-base) var(--mv-chegada) var(--mv-base); }
+.sl-uso[data-ativo] { opacity: 1; z-index: 2; transition-delay: 0s; }
+.sl-usos[data-vazio] .sl-uso { transition-delay: 0s; }
+@media (prefers-reduced-motion: reduce) {
+  .sl-uso { transition: none; }
+}
+/* Etiqueta de uso: o desenho é a pílula de sempre; a área de toque cresce
+   6 px para cima e para baixo sem mexer no layout. */
+.sl-etiqueta { position: relative; touch-action: manipulation; }
+.sl-etiqueta::before { content: ""; position: absolute; inset: -6px 0; }
+
 /* Morph de uma foto entre páginas (classe mv-morph, via share do
    <ViewTransition>): viagem lenta e assentada na curva de percurso; as duas
    imagens cobrem a caixa em vez de esticar quando as proporções diferem (4:5
