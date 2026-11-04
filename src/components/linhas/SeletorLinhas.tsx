@@ -139,7 +139,9 @@ function Painel({ linha, Titulo, prioridade, morph }: {
           (PFB Carbon) continua sem link. */}
       {linha.href ? (
         <Link href={linha.href} className={caixa} data-cursor="ver"
-          aria-label={linha.slug === "pfb" ? `Ver o catálogo d${linha.artigo} ${linha.curto}` : `Conhecer ${linha.artigo} ${linha.nome}`}>
+          aria-label={`${prontaEntrega ? `Ver o catálogo d${linha.artigo} ${linha.curto}` : `Conhecer ${linha.artigo} ${linha.nome}`}${
+            /* O rótulo substitui o aviso da foto para leitor de tela; ele vai junto (X0.08 v2). */
+            linha.imagemGerada ? " (imagem gerada por IA)" : ""}`}>
           {foto}
         </Link>
       ) : (
