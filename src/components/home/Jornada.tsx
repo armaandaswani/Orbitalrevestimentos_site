@@ -102,6 +102,23 @@ function focoVisivel(el: HTMLElement): boolean {
   }
 }
 
+/**
+ * Layout estático para quem não roda JavaScript: o palco ficaria vazio (etapas
+ * em opacidade 0) e a rota apagada. Mesmas regras do bloco
+ * `@media (scripting: none)` em globals.css (Home: jornada); o <noscript> cobre
+ * os motores que ainda não conhecem `scripting`. O padrão continua sendo o
+ * palco, então quem tem JS não vê o layout trocar na hidratação. Os dois
+ * blocos precisam ficar iguais.
+ */
+const CSS_SEM_JS = `
+.jr .jr-palco{display:none}
+.jr .jr-lista{position:static;width:auto;height:auto;margin:0;overflow:visible;clip-path:none;white-space:normal;display:grid}
+.jr .jr-viagem,.jr .jr-ponto{opacity:1}
+.jr .jr-traco{stroke-dashoffset:0}
+.jr .jr-ponto{offset-distance:100%}
+.jr .jr-parada-cheia{opacity:1}
+`;
+
 export default function Jornada() {
   const secaoRef = useRef<HTMLElement>(null);
   const svgRef = useRef<SVGSVGElement>(null);
@@ -138,8 +155,6 @@ export default function Jornada() {
     const secao = secaoRef.current;
     const svg = svgRef.current;
     if (!secao || !svg) return;
-    // Sem JavaScript o CSS mostra a lista e a rota inteira; com ele, o palco e o relógio.
-    secao.setAttribute("data-jr-js", "");
 
     // Escala inversa: pontos e paradas ficam com o mesmo tamanho em px em
     // qualquer largura, mesmo o mapa encolhendo no celular.
@@ -444,6 +459,8 @@ export default function Jornada() {
       </div>
 
       <p className="sr-only" aria-live="polite" aria-atomic="true">{anuncio}</p>
+      {/* Sem JavaScript: só em motor sem `scripting: none` (veja o CSS_SEM_JS). Inerte com JS. */}
+      <noscript><style dangerouslySetInnerHTML={{ __html: CSS_SEM_JS }} /></noscript>
     </section>
   );
 }

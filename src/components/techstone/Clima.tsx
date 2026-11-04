@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, type CSSProperties } from "react";
+import type { CSSProperties } from "react";
 import { useProgresso } from "@/components/ds/useProgresso";
 
 /**
@@ -25,17 +25,32 @@ type Vars = CSSProperties & Record<`--${string}`, string | number>;
 const INICIO = 0.14;
 const PASSO = 0.18;
 
+/**
+ * Layout estático para quem não roda JavaScript: com ele a rolagem nunca anda
+ * o --p e o resumo ficaria em opacidade 0. Mesmas regras do bloco
+ * `@media (scripting: none)` em globals.css (TechStone: clima pela pedra); o
+ * <noscript> cobre os motores que ainda não conhecem `scripting`. O padrão
+ * continua sendo o quadro preso, então quem tem JS não vê o layout trocar na
+ * hidratação. Os dois blocos precisam ficar iguais.
+ */
+const CSS_SEM_JS = `
+.ts-clima{height:auto}
+.ts-clima .ts-clima-quadro{position:static;height:auto}
+.ts-clima .ts-clima-pedra{transform:none}
+.ts-clima .ts-clima-camada,.ts-clima .ts-clima-passo{display:none}
+.ts-clima .ts-clima-intro,.ts-clima .ts-clima-resumo{position:relative;inset:auto;opacity:1;transform:none}
+.ts-clima .ts-clima-intro{padding-top:clamp(3.5rem,2rem + 4.5vw,7rem);padding-bottom:0}
+.ts-clima .ts-clima-resumo{margin-top:3rem;padding-bottom:clamp(3.5rem,2rem + 4.5vw,7rem)}
+.ts-clima .ts-clima-item{opacity:1;transform:none}
+@media (max-width:639.98px){.ts-clima .ts-clima-resumo{grid-template-columns:minmax(0,1fr)}}
+`;
+
 export default function Clima({ preocupacoes }: { preocupacoes: { titulo: string; texto: string }[] }) {
   const ref = useProgresso<HTMLElement>();
-  // Sem JavaScript o CSS mostra a abertura e as quatro preocupações em grade
-  // (a rolagem nunca anda o --p); com ele, o quadro preso e a encenação.
-  useEffect(() => {
-    const el = ref.current;
-    el?.setAttribute("data-clima-pronto", "");
-    return () => el?.removeAttribute("data-clima-pronto");
-  }, [ref]);
   return (
     <section ref={ref} aria-labelledby="ts-amazonia" className="ts-clima relative h-[600svh] bg-[#141210] text-white">
+      {/* Sem JavaScript: só em motor sem `scripting: none` (veja o CSS_SEM_JS). Inerte com JS. */}
+      <noscript><style dangerouslySetInnerHTML={{ __html: CSS_SEM_JS }} /></noscript>
       <div className="ts-clima-quadro sticky top-0 h-[100svh] overflow-hidden">
         {/* 1. A pedra: textura real, escurecida. Retrato no celular, deitada no computador. */}
         <div className="ts-clima-fundo absolute inset-0">

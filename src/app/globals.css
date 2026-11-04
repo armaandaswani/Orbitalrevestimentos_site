@@ -955,23 +955,27 @@ html[data-mv-nivel="leve"] .ts-clima-nevoa { display: none; }
   .ts-clima-resumo { grid-template-columns: minmax(0, 1fr); }
 }
 
-/* Sem JavaScript (o Clima põe data-clima-pronto ao montar): nada de quadro
-   preso nem de rolagem que revele o texto, porque --p nunca anda e o resumo
-   ficaria em opacidade 0. Mesma disposição do movimento reduzido: abertura e
-   as quatro preocupações em grade, tudo visível. Duplicado, e não agrupado
-   com o bloco acima, porque uma regra não junta @media com seletor. */
-.ts-clima:not([data-clima-pronto]) { height: auto; }
-.ts-clima:not([data-clima-pronto]) .ts-clima-quadro { position: static; height: auto; }
-.ts-clima:not([data-clima-pronto]) .ts-clima-pedra { transform: none; }
-.ts-clima:not([data-clima-pronto]) :is(.ts-clima-camada, .ts-clima-passo) { display: none; }
-.ts-clima:not([data-clima-pronto]) :is(.ts-clima-intro, .ts-clima-resumo) {
-  position: relative; inset: auto; opacity: 1; transform: none;
+/* Sem JavaScript: nada de quadro preso nem de rolagem que revele o texto,
+   porque --p nunca anda e o resumo ficaria em opacidade 0. Mesma disposição do
+   movimento reduzido: abertura e as quatro preocupações em grade, tudo visível.
+   O padrão é o quadro preso (quem tem JS não vê o layout trocar na hidratação);
+   `scripting: none` (Chrome 120+, Safari 17+, Firefox 113+) liga o estático, e o
+   <noscript><style> do Clima (components/techstone/Clima.tsx, CSS_SEM_JS) leva
+   as mesmas regras aos motores mais antigos. Os dois precisam ficar iguais.
+   Duplicado, e não agrupado com o bloco acima, porque uma regra não junta
+   @media com seletor. */
+@media (scripting: none) {
+  .ts-clima { height: auto; }
+  .ts-clima .ts-clima-quadro { position: static; height: auto; }
+  .ts-clima .ts-clima-pedra { transform: none; }
+  .ts-clima .ts-clima-camada, .ts-clima .ts-clima-passo { display: none; }
+  .ts-clima .ts-clima-intro, .ts-clima .ts-clima-resumo { position: relative; inset: auto; opacity: 1; transform: none; }
+  .ts-clima .ts-clima-intro { padding-top: clamp(3.5rem, 2rem + 4.5vw, 7rem); padding-bottom: 0; }
+  .ts-clima .ts-clima-resumo { margin-top: 3rem; padding-bottom: clamp(3.5rem, 2rem + 4.5vw, 7rem); }
+  .ts-clima .ts-clima-item { opacity: 1; transform: none; }
 }
-.ts-clima:not([data-clima-pronto]) .ts-clima-intro { padding-top: clamp(3.5rem, 2rem + 4.5vw, 7rem); padding-bottom: 0; }
-.ts-clima:not([data-clima-pronto]) .ts-clima-resumo { margin-top: 3rem; padding-bottom: clamp(3.5rem, 2rem + 4.5vw, 7rem); }
-.ts-clima:not([data-clima-pronto]) .ts-clima-item { opacity: 1; transform: none; }
-@media (max-width: 639.98px) {
-  .ts-clima:not([data-clima-pronto]) .ts-clima-resumo { grid-template-columns: minmax(0, 1fr); }
+@media (scripting: none) and (max-width: 639.98px) {
+  .ts-clima .ts-clima-resumo { grid-template-columns: minmax(0, 1fr); }
 }
 
 /* ── TechStone: galeria de ideias ─────────────────────────────────────────
@@ -1177,20 +1181,25 @@ html[data-mv-nivel="leve"] .ts-galeria-foto { transform: none !important; }
   .jr-parada-halo, .jr-parada-cheia { transition: none; }
 }
 
-/* Sem JavaScript (a Jornada põe data-jr-js ao montar): nada anda, então o
-   palco ficaria vazio (etapas em opacidade 0) e a rota apagada. Mesma
-   disposição do movimento reduzido: as seis etapas na lista e a rota inteira.
+/* Sem JavaScript: nada anda, então o palco ficaria vazio (etapas em
+   opacidade 0) e a rota apagada. Mesma disposição do movimento reduzido: as
+   seis etapas na lista e a rota inteira. O padrão é o palco (sem troca de
+   layout na hidratação); `scripting: none` liga o estático, e o
+   <noscript><style> da Jornada (components/home/Jornada.tsx, CSS_SEM_JS) leva
+   as mesmas regras aos motores mais antigos. Os dois precisam ficar iguais.
    Duplicado, e não agrupado com o bloco acima, porque uma regra não junta
    @media com seletor. */
-.jr:not([data-jr-js]) .jr-palco { display: none; }
-.jr:not([data-jr-js]) .jr-lista {
-  position: static; width: auto; height: auto; margin: 0;
-  overflow: visible; clip-path: none; white-space: normal; display: grid;
+@media (scripting: none) {
+  .jr .jr-palco { display: none; }
+  .jr .jr-lista {
+    position: static; width: auto; height: auto; margin: 0;
+    overflow: visible; clip-path: none; white-space: normal; display: grid;
+  }
+  .jr .jr-viagem, .jr .jr-ponto { opacity: 1; }
+  .jr .jr-traco { stroke-dashoffset: 0; }
+  .jr .jr-ponto { offset-distance: 100%; }
+  .jr .jr-parada-cheia { opacity: 1; }
 }
-.jr:not([data-jr-js]) :is(.jr-viagem, .jr-ponto) { opacity: 1; }
-.jr:not([data-jr-js]) .jr-traco { stroke-dashoffset: 0; }
-.jr:not([data-jr-js]) .jr-ponto { offset-distance: 100%; }
-.jr:not([data-jr-js]) .jr-parada-cheia { opacity: 1; }
 
 /* ── Lupa de textura (Lupa.tsx) ───────────────────────────────────────────────
    Lente de joalheiro: um aro fino claro por fora de um fio escuro (lê sobre
