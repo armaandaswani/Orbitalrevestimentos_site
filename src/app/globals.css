@@ -894,7 +894,7 @@ html[data-mv-nivel="leve"] .mv-camada { --mv-fe: calc((var(--mv-f) + 1) / 2); }
 .ts-clima-quadro { isolation: isolate; }
 /* Só as camadas visuais ignoram o ponteiro; o título e as preocupações ficam
    selecionáveis (são o texto de verdade da seção). */
-.ts-clima-fundo, .ts-clima-camada, .ts-clima-veu-texto, .ts-clima-linha { pointer-events: none; }
+.ts-clima-fundo, .ts-clima-camada, .ts-clima-linha { pointer-events: none; }
 .ts-clima-pedra { transform: scale(calc(1.08 - var(--p, 0) * 0.08)); }
 
 /* Janela de cada atmosfera: entra de --a em --wi, sai até --b em --wo. */
@@ -955,11 +955,19 @@ html[data-mv-nivel="leve"] .mv-camada { --mv-fe: calc((var(--mv-f) + 1) / 2); }
   transform: translate3d(0, calc((1 - var(--r)) * (88svh - var(--topo) - 100%)), 0);
 }
 .ts-clima-lead { opacity: calc(1 - 0.15 * var(--r)); }
-/* Sombra macia no alto, por cima das luzes e embaixo do texto: chega com a
-   subida (o topo da pedra é a parte mais clara, e o sol bate ali) e mantém o
-   texto de apoio acima de 4,5:1. */
-.ts-clima-veu-texto {
-  background: linear-gradient(to bottom, rgb(20 18 16 / .5), rgb(20 18 16 / .38) 45%, transparent 75%);
+/* Sombra macia só atrás do título e do texto de apoio: o bloco tem a largura
+   do texto e o ::before, uma elipse maior que ele (o texto fica no platô, a
+   borda some aos poucos), fica por cima das luzes e embaixo das letras (a
+   cabeça transformada isola o z-index). No computador ela some antes de dois
+   terços da largura; no celular cobre só o bloco do título. Chega
+   com a subida, quando o texto vai para o topo, a parte mais clara da pedra e
+   onde o sol bate; mantém o texto de apoio acima de 4,5:1 e deixa a luz do sol
+   inteira no resto do quadro. */
+.ts-clima-letreiro { position: relative; width: fit-content; max-width: 100%; }
+.ts-clima-letreiro::before {
+  content: ""; position: absolute; inset: -70% -45%; z-index: -1; pointer-events: none;
+  background: radial-gradient(farthest-side, rgb(20 18 16 / .52), rgb(20 18 16 / .47) 35%, rgb(20 18 16 / .36) 55%,
+    rgb(20 18 16 / .2) 75%, rgb(20 18 16 / .07) 90%, rgb(20 18 16 / 0));
   opacity: var(--r);
 }
 
@@ -1046,7 +1054,7 @@ html[data-mv-nivel="leve"] .mv-camada { --mv-fe: calc((var(--mv-f) + 1) / 2); }
 .ts-clima[data-ativo] .ts-clima-cabeca,
 .ts-clima[data-ativo] .ts-clima-item,
 .ts-clima[data-ativo] .ts-clima-no { will-change: opacity, transform; }
-.ts-clima[data-ativo] .ts-clima-veu-texto { will-change: opacity; }
+.ts-clima[data-ativo] .ts-clima-letreiro::before { will-change: opacity; }
 
 /* Nível leve: sem a névoa (três camadas grandes em movimento). */
 html[data-mv-nivel="leve"] .ts-clima-nevoa { display: none; }
@@ -1061,7 +1069,7 @@ html[data-mv-nivel="leve"] .ts-clima-nevoa { display: none; }
   .ts-clima { height: auto; }
   .ts-clima-quadro { position: static; height: auto; }
   .ts-clima-pedra { transform: none; }
-  .ts-clima-camada, .ts-clima-veu-texto { display: none; }
+  .ts-clima-camada, .ts-clima-letreiro::before { display: none; }
   .ts-clima-palco { position: relative; padding-block: clamp(3.5rem, 2rem + 4.5vw, 7rem); }
   .ts-clima-cabeca, .ts-clima-lead, .ts-clima-item, .ts-clima-item > p { opacity: 1; transform: none; }
   .ts-clima-traco { stroke-dashoffset: 0; }

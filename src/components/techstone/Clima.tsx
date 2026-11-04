@@ -112,17 +112,18 @@ export default function Clima({ preocupacoes }: { preocupacoes: { titulo: string
         <div aria-hidden className="ts-clima-camada ts-clima-ciclo ts-clima-frio absolute inset-0" />
         <div aria-hidden className="ts-clima-camada ts-clima-ciclo ts-clima-quente ts-clima-ambar absolute inset-0" />
 
-        {/* 6. Sombra macia no alto, atrás do texto preso: chega com a subida e segura o
-            contraste do texto de apoio mesmo com o sol batendo. */}
-        <div aria-hidden className="ts-clima-veu-texto absolute inset-0" />
-
         {/* O texto: título e linha sobem juntos; a lista fica onde termina a subida. */}
         <div className="ts-clima-palco ds-wrap absolute inset-x-0 top-0">
           <div className="ts-clima-cabeca">
-            <h2 id="ts-amazonia" className="font-serif text-t1 max-w-[20ch] text-balance">Desenvolvida para a Amazônia.</h2>
-            <p className="ts-clima-lead mt-5 text-lead text-white max-w-[50ch]">
-              Somos de Manaus e sabemos o que o clima daqui faz com um revestimento. Estas foram as nossas preocupações ao trazer a TechStone.
-            </p>
+            {/* Título e texto de apoio num bloco do tamanho do texto: atrás dele, uma sombra
+                macia (::before no CSS) chega com a subida e segura o contraste sem apagar o sol
+                no resto da pedra. */}
+            <div className="ts-clima-letreiro">
+              <h2 id="ts-amazonia" className="font-serif text-t1 max-w-[20ch] text-balance">Desenvolvida para a Amazônia.</h2>
+              <p className="ts-clima-lead mt-5 text-lead text-white max-w-[50ch]">
+                Somos de Manaus e sabemos o que o clima daqui faz com um revestimento. Estas foram as nossas preocupações ao trazer a TechStone.
+              </p>
+            </div>
 
             {/* A linha: deitada do computador ao tablet, em pé no celular. Ondas iguais, então
                 cada nó cai numa fração exata do comprimento (veja --f0 e --n1…--n4 no CSS).
