@@ -554,9 +554,12 @@ html[data-intro="1"] .intro-orbita {
    Planos de uma foto que andam em ritmos diferentes. O componente escreve no
    invólucro --mv-mx/--mv-my (ponteiro, -1 → 1) e, na rolagem própria, --mv-ry
    (px que a página andou). Cada camada traz --mv-f (fator da rolagem) e
-   --mv-k (px do ponteiro). A caixa sobra --mv-sobra em cada lado: o maior
-   deslocamento nunca chega à borda. No nível leve o fator anda até a metade
-   do caminho para 1; com movimento reduzido os planos ficam parados. */
+   --mv-k (px do ponteiro). A caixa sobra --mv-sobra em cada lado, o que
+   cobre só o ponteiro: o deslocamento da rolagem é de quem hospeda, que
+   aumenta a sobra ou recorta (overflow) conforme o curso dos seus fatores.
+   No nível leve o fator anda até a metade do caminho para 1; com movimento
+   reduzido os planos ficam parados. Plano sem versão de celular
+   (data-sem-celular) nem existe abaixo de 768 px. */
 .mv-camada {
   --mv-sobra: 12px;
   --mv-fe: var(--mv-f);
@@ -568,7 +571,13 @@ html[data-mv-nivel="leve"] .mv-camada { --mv-fe: calc((var(--mv-f) + 1) / 2); }
 .mv-prof[data-rolagem="propria"] .mv-camada {
   transform: translate3d(var(--mv-dx), calc(var(--mv-dy) + var(--mv-ry, 0px) * (1 - var(--mv-fe))), 0);
 }
-.mv-prof[data-ativo] .mv-camada { will-change: transform; }
+@media (max-width: 767px) {
+  .mv-camada[data-sem-celular] { display: none; }
+}
+/* Camadas próprias no compositor só onde há planos e movimento. */
+@media (min-width: 768px) and (prefers-reduced-motion: no-preference) {
+  .mv-prof[data-ativo] .mv-camada { will-change: transform; }
+}
 @media (prefers-reduced-motion: reduce) {
   .mv-camada { transform: none !important; }
 }
@@ -593,12 +602,17 @@ html[data-mv-nivel="leve"] .mv-camada { --mv-fe: calc((var(--mv-f) + 1) / 2); }
 }
 /* Profundidade na abertura (components/movimento/Profundidade, rolagem
    externa). Cada plano corrige a escala do quadro para encolher só
-   --mv-fe do recuo: o fundo (0,94) encolhe menos que a parede (1), como o
-   que está longe numa câmera que se afasta. O pivô é o pé do banco (ancora),
-   então o contato com o chão não escorrega. No retrato não há planos. */
+   --mv-fe do recuo: o fundo (0,90) encolhe menos que a parede (1), como o
+   que está longe numa câmera que se afasta, com o pé do banco (ancora) de
+   pivô. E o fundo fica para trás na descida: desce (1 - fe) × 26svh ao
+   longo do recuo, uns 23 px a 900 px de altura, a parede não desce nada.
+   A sobra de 16 px cobre essa descida junto com o ponteiro (a escala do
+   fundo, maior que 1 em volta de um pivô baixo, estica a borda de cima).
+   No retrato não há planos. */
 .ts-ab-foto .mv-camada {
+  --mv-sobra: 16px;
   transform:
-    translate3d(var(--mv-dx), var(--mv-dy), 0)
+    translate3d(var(--mv-dx), calc(var(--mv-dy) + (1 - var(--mv-fe)) * var(--q) * 26svh), 0)
     scale(calc((1.16 - 0.16 * var(--mv-fe) * var(--q)) / (1.16 - 0.16 * var(--q))));
 }
 @media (max-width: 767px) {

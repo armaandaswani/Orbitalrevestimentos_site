@@ -22,8 +22,10 @@ import { aproximar } from "@/lib/movimento/suavizar";
  * - Movimento reduzido: planos empilhados e parados (o CSS zera o transform).
  *
  * Todas as camadas ocupam a mesma caixa com `object-cover`, então duas imagens
- * do mesmo tamanho ficam alinhadas pixel a pixel; a caixa sobra `--mv-sobra`
- * em cada lado para nenhum deslocamento abrir fresta na borda.
+ * do mesmo tamanho ficam alinhadas pixel a pixel. A caixa sobra `--mv-sobra`
+ * (12 px) em cada lado, o que cobre o ponteiro; o curso da rolagem depende
+ * dos fatores e da altura do herói, então quem hospeda aumenta a sobra no CSS
+ * ou recorta com overflow para nenhum deslocamento abrir fresta na borda.
  */
 
 export interface CamadaProfundidade {
@@ -153,10 +155,13 @@ export default function Profundidade({
 
   return (
     <div ref={ref} className={`mv-prof absolute inset-0 ${className}`} data-rolagem={rolagem}>
-      {camadas.map((c) => (
+      {camadas.map((c, i) => (
         <div
           key={c.src}
           className="mv-camada absolute"
+          // Sem versão de celular: o CSS some com o plano abaixo de 768 px, e a
+          // fonte VAZIO garante que o arquivo de computador nem seja baixado.
+          data-sem-celular={c.mobile === null ? "" : undefined}
           style={{ "--mv-f": c.fator, "--mv-k": c.ponteiro ?? 0, transformOrigin: ancora } as Vars}
         >
           <picture>
@@ -165,7 +170,9 @@ export default function Profundidade({
               src={c.src}
               alt={c.alt}
               loading={prioridade ? "eager" : "lazy"}
-              fetchPriority={prioridade ? "high" : undefined}
+              // Prioridade alta só para o primeiro plano (o fundo, que descreve
+              // a cena); os outros vêm logo, sem disputar a banda com ele.
+              fetchPriority={prioridade && i === 0 ? "high" : undefined}
               decoding="async"
               className="absolute inset-0 w-full h-full object-cover"
             />

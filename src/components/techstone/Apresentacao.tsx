@@ -27,8 +27,9 @@ const FRASES: { texto: string; a: number; b: number }[] = [
  * sobre ele, a borda que aparece atrás é uma sombra macia, nunca uma segunda
  * parede nítida. No celular o retrato não tem recorte limpo: fica a cena de
  * sempre, num plano só (fonte `mobile` do fundo, frente ausente).
- * Rolagem: o fundo encolhe 94% do que a parede encolhe (globals.css ›
- * Profundidade na abertura). Ponteiro: parede até 6 px contra o mouse, fundo
+ * Rolagem: o fundo encolhe 90% do que a parede encolhe e fica uns 23 px para
+ * trás na descida (globals.css › Profundidade na abertura), o bastante para a
+ * profundidade aparecer também sem mouse. Ponteiro: parede até 6 px contra o mouse, fundo
  * 2 px a favor; 8 px de diferença no máximo, menos que a sobra das camadas.
  */
 const CAMADAS_ABERTURA: CamadaProfundidade[] = [
@@ -36,7 +37,7 @@ const CAMADAS_ABERTURA: CamadaProfundidade[] = [
     src: "/images/movimento/techstone-fundo-v1.webp",
     mobile: cena("curva").mobile,
     alt: "Parede curva em travertino gerada por IA a partir da textura TechStone Travertino Navona Clássico, com uma linha de luz no topo",
-    fator: 0.94,
+    fator: 0.9,
     ponteiro: 2,
   },
   { src: "/images/movimento/techstone-frente-v1.webp", mobile: null, alt: "", fator: 1, ponteiro: -6 },
