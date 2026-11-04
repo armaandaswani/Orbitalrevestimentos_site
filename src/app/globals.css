@@ -390,6 +390,81 @@ html:has(header[data-site][data-oculto="1"]) .ds-sob-cabecalho { top: 0; }
    chegarem perto da tela. 900px é só a altura reservada até a primeira medida. */
 .mv-adiado { content-visibility: auto; contain-intrinsic-size: auto 900px; }
 
+/* ── Intro da órbita (components/movimento/IntroOrbita) ─────────────────────
+   Só existe sob html[data-intro="1"], ligado antes da pintura pelo porteiro
+   inline (primeira página da visita, sem movimento reduzido). Sequência:
+   faixa azul 0–0,45 s, verde 0,45–0,9 s, logotipo 0,9–1,2 s, cortina sobe
+   1,2–1,6 s. A rolagem nunca trava; o clique é liberado quando a cortina
+   começa a subir; a trava de 2,2 s esconde tudo mesmo sem JavaScript.
+   IntroOrbitaControle adianta as animações da cortina no pulo: os nomes
+   intro-cortina, intro-solta e intro-conteudo-sai e o atraso de 1200ms
+   precisam bater com as constantes de lá. */
+.intro-orbita { display: none; }
+html[data-intro="1"] .intro-orbita {
+  display: flex;
+  position: fixed;
+  inset: 0;
+  z-index: 1000;
+  align-items: center;
+  justify-content: center;
+  background: #0B1F45;
+  clip-path: inset(0 0 0 0);
+  contain: strict;
+  animation:
+    intro-cortina 400ms var(--mv-percurso) 1200ms both,
+    intro-solta 1ms linear 1200ms forwards,
+    intro-seguranca 1ms linear 2200ms forwards;
+}
+.intro-orbita__conteudo {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: clamp(1.75rem, 1rem + 2.5vmin, 2.5rem);
+  /* Um pouco acima do centro geométrico: o conjunto pesa embaixo (logotipo). */
+  margin-top: -4vh;
+  animation: intro-conteudo-sai 400ms var(--mv-percurso) 1200ms both;
+}
+.intro-orbita__simbolo {
+  width: clamp(5.25rem, 3.5rem + 6vmin, 7.5rem);
+  height: auto;
+  overflow: visible;
+  animation: intro-respira 1200ms var(--mv-chegada) both;
+}
+.intro-orbita__assinatura {
+  width: clamp(8.5rem, 6rem + 8vmin, 11.5rem);
+  height: auto;
+  animation: intro-assina 300ms var(--mv-chegada) 900ms both;
+}
+/* Máscara de cada faixa: o traço (pathLength 100) começa vazio e se fecha.
+   101 em vez de 100 para não sobrar fresta na emenda do círculo. As duas
+   curvas têm a mesma velocidade na passagem (inclinação 7/3), então as
+   duas voltas leem como uma órbita só: ganha ritmo na azul, assenta na
+   verde. Aceleração branda: o primeiro instante já mostra a faixa andando. */
+.intro-orbita__arco {
+  fill: none;
+  stroke: #fff;
+  stroke-dasharray: 101 101;
+  stroke-dashoffset: 101;
+}
+.intro-orbita__arco--azul { animation: intro-arco 450ms cubic-bezier(0.4, 0, 0.7, 0.3) both; }
+.intro-orbita__arco--verde { animation: intro-arco 450ms cubic-bezier(0.3, 0.7, 0.6, 1) 450ms both; }
+
+@keyframes intro-arco { to { stroke-dashoffset: 0; } }
+@keyframes intro-respira { from { transform: scale(0.96); } }
+@keyframes intro-assina { from { opacity: 0; transform: translate3d(0, 0.5rem, 0); } }
+@keyframes intro-cortina { from { clip-path: inset(0 0 0 0); } to { clip-path: inset(0 0 100% 0); } }
+@keyframes intro-conteudo-sai { to { opacity: 0; transform: translate3d(0, -2rem, 0); } }
+/* Travas de estado: o mesmo valor no início e no fim, para não depender de
+   onde o Chrome avalia o último quadro (com 1ms ele para em p≈1−1e-13, e a
+   visibilidade ainda contaria como visível). */
+@keyframes intro-solta { from, to { pointer-events: none; } }
+@keyframes intro-seguranca { from, to { visibility: hidden; opacity: 0; pointer-events: none; } }
+
+/* Reforço: se a preferência mudar depois do porteiro, a intro some. */
+@media (prefers-reduced-motion: reduce) {
+  html[data-intro="1"] .intro-orbita { display: none; }
+}
+
 /* Trilhos horizontais: sem barra nativa (o trilho tem a sua). */
 .ds-trilho { scrollbar-width: none; overscroll-behavior-x: contain; }
 .ds-trilho::-webkit-scrollbar { display: none; }

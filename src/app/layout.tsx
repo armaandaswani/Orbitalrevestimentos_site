@@ -8,6 +8,7 @@ import ChatWidget from "@/components/ChatWidget";
 import SiteChrome from "@/components/SiteChrome";
 import ContatoSheet from "@/components/ContatoSheet";
 import Movimento from "@/components/movimento/Movimento";
+import IntroOrbita from "@/components/movimento/IntroOrbita";
 import { SpeedInsights } from "@vercel/speed-insights/next";
 import { Analytics } from "@vercel/analytics/next";
 
@@ -237,7 +238,9 @@ export default function RootLayout({
   children: React.ReactNode;
 }) {
   return (
-    <html lang="pt-BR" className={`${inter.variable} ${notoSerif.variable}`}>
+    // suppressHydrationWarning: o porteiro da intro liga data-intro no <html>
+    // antes da hidratação; só esse nível é silenciado, não os filhos.
+    <html lang="pt-BR" className={`${inter.variable} ${notoSerif.variable}`} suppressHydrationWarning>
       <head>
         <Script
           strategy="afterInteractive"
@@ -275,6 +278,9 @@ export default function RootLayout({
         </noscript>
       </head>
       <body className="min-h-screen flex flex-col bg-[#F6F5F2] text-[#0D1830] antialiased">
+        {/* Primeiro filho do body: o porteiro inline roda antes da primeira
+            pintura. Fora do SiteChrome; o próprio porteiro pula o /admin. */}
+        <IntroOrbita />
         {jsonLdSchemas.map((schema, i) => (
           <script
             key={i}
