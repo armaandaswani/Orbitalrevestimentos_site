@@ -256,8 +256,8 @@ html[data-mv-nivel="leve"] { --mv-sobe: 12px; --mv-fator: 0.5; }
   background: var(--color-primary-container);
 }
 
-/* Animações de entrada (ScrollReveal) deslocam elementos 26px para o lado até
-   aparecerem; sem isto a página ganhava rolagem horizontal no celular.
+/* Animações de entrada (Revelar, fotos que se acomodam) deslocam e escalam elementos
+   até aparecerem; sem isto a página podia ganhar rolagem horizontal no celular.
    "clip" (e não "hidden") não cria contêiner de rolagem, então os menus
    fixos com position: sticky continuam funcionando. */
 html,
@@ -335,10 +335,11 @@ html { scroll-padding-top: 5rem; }
 @media (prefers-reduced-motion: no-preference) {
   @supports (animation-timeline: view()) {
     /* Entra subindo enquanto atravessa o primeiro terço da tela. --mv-i escalona vizinhos.
-       Preenchimento `both` (a animação segue aplicada depois do fim). O catálogo (12 cartões
-       com luz dentro) usa `backwards` por cartão: medido a 4× de CPU, com `both` ele perdia um
-       quadro ao chegar no fim da página; com `backwards` não. Nas outras páginas, `backwards`
-       trocava esse quadro por outros nos títulos, então o padrão ficou `both`. */
+       Preenchimento `both` (a animação segue aplicada depois do fim) por padrão; o `desvela`
+       usa `backwards`, e as páginas com muitas entradas pedem `backwards` no celular com
+       `.mv-preenche-antes` (mais abaixo): medido a 4× de CPU, com `both` elas perdiam um
+       quadro ao chegar no fim da página. No computador `backwards` trocava esse quadro
+       por outros nos títulos, então lá o padrão continua `both`. */
     .mv-revelar {
       animation: mv-sobe linear both;
       animation-timeline: view();
@@ -348,18 +349,28 @@ html { scroll-padding-top: 5rem; }
        recorte não ficar preso e cortar o contorno de foco de quem está dentro. */
     .mv-revelar-desvela {
       animation: mv-desvela-recorte linear backwards;
-      /* O recorte anima na thread principal. Num bloco grande de foto (coluna inteira,
-         grade de fotos) sem camada própria a árvore toda repintava a cada quadro: medido
-         a 4× de CPU, +3 a +6 quadros acima de 33 ms por página. Com camada própria, 0. */
-      will-change: transform, clip-path;
       animation-timeline: view();
       animation-range: entry calc(var(--mv-i, 0) * 7%) entry calc(60% + var(--mv-i, 0) * 7%);
     }
+    /* O recorte anima na thread principal. Num bloco grande de foto (coluna inteira,
+       grade de fotos) sem camada própria a árvore toda repintava a cada quadro: medido
+       a 4× de CPU, +3 a +6 quadros acima de 33 ms por página. A camada só existe dentro da
+       janela do Revelar (data-ativo, 6 alturas de tela para cada lado) e sai depois.
+       `camada` pede o mesmo a um bloco alto de texto (o manifesto de /sobre). */
+    .mv-revelar-desvela[data-ativo] { will-change: transform, clip-path; }
+    .mv-revelar[data-camada][data-ativo] { will-change: transform, opacity; }
     /* Revelar efeito="surge": só a opacidade, um pouco mais longa, para o que vem em volta. */
     .mv-revelar-surge {
       animation: mv-surge linear both;
       animation-timeline: view();
       animation-range: entry calc(var(--mv-i, 0) * 7%) entry calc(70% + var(--mv-i, 0) * 7%);
+    }
+    /* Abaixo de lg: entradas sem preenchimento depois do fim. Vai na raiz da página
+       (cobre os Revelars de dentro) ou no próprio Revelar. Fica depois das regras acima,
+       com a mesma especificidade, para ganhar delas. */
+    @media (width < 64rem) {
+      .mv-preenche-antes,
+      .mv-preenche-antes :is(.mv-revelar, .mv-revelar-surge) { animation-fill-mode: backwards; }
     }
     /* Foto que "se acomoda" no quadro (o quadro tem overflow hidden). */
     .mv-desvela {

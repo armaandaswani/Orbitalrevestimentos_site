@@ -831,7 +831,7 @@ export default function ProdutosPage() {
                 <Revelar
                   key={product.code}
                   ordem={i % 3}
-                  className={i % 2 ? "max-lg:[--mv-i:1]! max-lg:[animation-fill-mode:backwards]!" : "max-lg:[--mv-i:0]! max-lg:[animation-fill-mode:backwards]!"}
+                  className={i % 2 ? "mv-preenche-antes max-lg:[--mv-i:1]!" : "mv-preenche-antes max-lg:[--mv-i:0]!"}
                 >
                 <article
                   className="group cursor-pointer"

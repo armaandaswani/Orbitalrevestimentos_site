@@ -178,7 +178,7 @@ export default async function AcademiaPage() {
   return (
     // No celular as entradas não ficam presas depois do fim (backwards): com `both` esta
     // página perdia um quadro ao chegar ao fim da rolagem (medido a 4× de CPU no iPhone SE).
-    <div className="pt-20 bg-[#0B1F45] max-lg:[&_.mv-revelar]:[animation-fill-mode:backwards]! max-lg:[&_.mv-revelar-surge]:[animation-fill-mode:backwards]!">
+    <div className="pt-20 bg-[#0B1F45] mv-preenche-antes">
       <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: JSON.stringify(breadcrumbSchema) }} />
 
       {/* ── Topo: promessa + formulário ── */}

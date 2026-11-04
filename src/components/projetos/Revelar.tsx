@@ -27,7 +27,7 @@ export type EfeitoRevelar = "sobe" | "desvela" | "surge";
  *   de lado ele não acompanharia a página: envolva o trilho inteiro, não cada cartão.
  */
 export default function Revelar({
-  children, ordem, atraso = 0, className = "", como: Tag = "div", id, efeito = "sobe",
+  children, ordem, atraso = 0, className = "", como: Tag = "div", id, efeito = "sobe", camada = false,
 }: {
   children: React.ReactNode;
   ordem?: number;
@@ -36,6 +36,8 @@ export default function Revelar({
   como?: "div" | "li" | "section" | "article" | "figure" | "header";
   id?: string;
   efeito?: EfeitoRevelar;
+  /** Bloco alto (texto longo): pede a camada de composição antes da entrada. O `desvela` já pede. */
+  camada?: boolean;
 }) {
   const ref = useRef<HTMLElement>(null);
   const [estado, setEstado] = useState<"css" | "espera" | "entrou" | "feito">("css");
@@ -57,6 +59,28 @@ export default function Revelar({
     const t = setTimeout(() => { setEstado("espera"); obs.observe(el); }, 0);
     return () => { clearTimeout(t); obs.disconnect(); };
   }, []);
+
+  // Camada só perto da faixa ativa: o `desvela` (e quem pede `camada`) ganha `data-ativo`
+  // enquanto estiver dentro da janela abaixo, e o CSS liga o will-change só nela. Longe da
+  // janela o atributo sai e a camada é devolvida. Sem animação por rolagem (ou com movimento
+  // reduzido) não há o que dar de dica: não observa nada.
+  // A janela é larga (6 alturas de tela para cada lado) de propósito. Medido a 4× de CPU em
+  // /tecnologia: com 1 altura sobravam +3 quadros acima de 33 ms, com 3 sobrava +1, com 6
+  // voltou ao nível de antes. A camada de um bloco grande é cara de criar perto da hora de
+  // animar; criada cedo, a rolagem não paga. Mesmo assim some quando a página já passou.
+  const querCamada = efeito === "desvela" || camada;
+  useEffect(() => {
+    const el = ref.current;
+    if (!querCamada || !el || typeof IntersectionObserver === "undefined") return;
+    if (window.matchMedia("(prefers-reduced-motion: reduce)").matches) return;
+    if (typeof CSS === "undefined" || !CSS.supports?.("animation-timeline: view()")) return;
+    const obs = new IntersectionObserver((entradas) => {
+      const e = entradas[entradas.length - 1];
+      if (e) el.toggleAttribute("data-ativo", e.isIntersecting);
+    }, { rootMargin: "600% 0px 600% 0px" });
+    obs.observe(el);
+    return () => { obs.disconnect(); el.removeAttribute("data-ativo"); };
+  }, [querCamada]);
 
   // O recorte do `desvela` fica preso depois de entrar e cortaria o contorno de
   // foco e as sombras de quem está dentro: terminada a transição, a classe sai
@@ -86,6 +110,7 @@ export default function Revelar({
     <Tag
       ref={ref as React.Ref<never>}
       id={id}
+      data-camada={camada ? "" : undefined}
       className={`${classe} ${className}`.trim()}
       style={i ? ({ "--mv-i": i } as React.CSSProperties) : undefined}
     >

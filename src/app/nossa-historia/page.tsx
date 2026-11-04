@@ -104,7 +104,7 @@ export default function NossaHistoriaPage() {
           </Revelar>
           <div className="grid md:grid-cols-2 gap-6">
             {CORES.map((s, i) => (
-              <Revelar key={s.cor} ordem={i}>
+              <Revelar key={s.cor} efeito="surge" ordem={i}>
                 <article className="h-full bg-white border border-[#e2e2e2] flex flex-col sm:flex-row">
                   <div className="h-1.5 sm:h-auto sm:w-1.5 shrink-0" style={{ backgroundColor: s.hex }} />
                   <div className="p-7 lg:p-9">

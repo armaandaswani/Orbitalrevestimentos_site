@@ -96,7 +96,7 @@ export default function SobrePage() {
   return (
     // No celular as entradas não ficam presas depois do fim (backwards): com `both` esta
     // página perdia um quadro ao chegar ao fim da rolagem (medido a 4× de CPU no iPhone SE).
-    <div className="pt-20 max-lg:[&_.mv-revelar]:[animation-fill-mode:backwards]! max-lg:[&_.mv-revelar-surge]:[animation-fill-mode:backwards]!">
+    <div className="pt-20 mv-preenche-antes">
       <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: JSON.stringify(organizationSchema) }} />
       <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: JSON.stringify(breadcrumbSchema) }} />
 
@@ -151,7 +151,7 @@ export default function SobrePage() {
         <div className="flex flex-col lg:flex-row min-h-[560px]">
           <div className="lg:w-1/2 bg-[#F6F5F2] px-6 lg:px-16 py-16 lg:py-28 flex items-center">
             {/* Bloco alto (o manifesto inteiro): sem camada pronta, a primeira entrada da página perdia um quadro no celular. */}
-            <Revelar className="max-w-lg [will-change:transform,opacity]">
+            <Revelar camada className="max-w-lg">
               <p className="text-[#2347A0] text-xs tracking-[0.2em] uppercase font-semibold mb-5">Manifesto</p>
               <div className="space-y-5 text-[#43474e] leading-relaxed text-base">
                 <p>Enquanto muitos enxergavam limitações, nós enxergávamos oportunidades.</p>
@@ -266,7 +266,7 @@ export default function SobrePage() {
               </Revelar>
             ))}
           </div>
-          <Revelar efeito="surge" ordem={2}>
+          <Revelar ordem={2}>
             <div className="mt-10 grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4 border-t border-white/10 pt-10">
               {[
                 "Estoque local em Manaus",
