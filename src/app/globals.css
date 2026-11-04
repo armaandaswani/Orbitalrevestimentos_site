@@ -286,6 +286,35 @@ html { scroll-padding-top: 5rem; }
   outline-color: #ffffff;
 }
 
+/* Foco e estado dos campos, só o essencial (formulários e páginas legais não têm
+   entrada por rolagem). O contorno de foco acima fica como está; aqui ele só chega
+   com suavidade: afasta-se de 0 a 2px e aparece da transparência em --mv-rapido.
+   - Vai em animação e não em transição de propósito: uma transição escrita aqui
+     trocaria o `transition-*` que cada botão já tem. Só `outline-offset` e
+     `outline-color` mudam (sem layout, sem sombra), e só enquanto o foco chega.
+   - Fica em @layer base: perde para qualquer `animation` já definida no elemento
+     (utilitário, classe do componente), então nunca cancela uma entrada existente.
+   - Campos e botões de formulário ganham a mesma transição curta de cor e borda;
+     botões com `transition-*` próprio continuam com o deles (utilitário vence a base).
+   - Movimento reduzido: o contorno aparece de uma vez, sem nada animado. */
+@keyframes mv-foco {
+  from { outline-offset: 0; outline-color: transparent; }
+}
+@layer base {
+  @media (prefers-reduced-motion: no-preference) {
+    :where(a, button, [role="button"], [role="slider"], summary, input, select, textarea):focus-visible {
+      animation: mv-foco var(--mv-rapido) var(--mv-chegada);
+    }
+    :where(input, select, textarea, form button) {
+      transition:
+        border-color var(--mv-rapido) var(--mv-chegada),
+        background-color var(--mv-rapido) var(--mv-chegada),
+        color var(--mv-rapido) var(--mv-chegada),
+        opacity var(--mv-rapido) var(--mv-chegada);
+    }
+  }
+}
+
 /* ── Movimento (apresentação v2) ────────────────────────────────────────────
    Regras: só transform e opacity (zero CLS, roda no compositor); tudo
    desligado com movimento reduzido; sem JavaScript o conteúdo aparece.
@@ -355,7 +384,10 @@ html { scroll-padding-top: 5rem; }
     /* O recorte anima na thread principal. Num bloco grande de foto (coluna inteira,
        grade de fotos) sem camada própria a árvore toda repintava a cada quadro: medido
        a 4× de CPU, +3 a +6 quadros acima de 33 ms por página. A camada só existe dentro da
-       janela do Revelar (data-ativo, 6 alturas de tela para cada lado) e sai depois.
+       janela do Revelar (data-ativo, 3 alturas de tela para cada lado) e sai depois. Por que
+       uma camada criada cedo ajuda não está confirmado (hipótese, mecanismo não achado); 3
+       alturas mediram +1 quadro em /tecnologia, dentro da variação entre execuções. Em página
+       curta a janela cobre quase a página inteira.
        `camada` pede o mesmo a um bloco alto de texto (o manifesto de /sobre). */
     .mv-revelar-desvela[data-ativo] { will-change: transform, clip-path; }
     .mv-revelar[data-camada][data-ativo] { will-change: transform, opacity; }
