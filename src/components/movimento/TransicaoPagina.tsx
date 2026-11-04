@@ -23,6 +23,8 @@ const SAIDA = { voltar: "mv-sai-volta", default: "mv-sai" };
  * seria "update", e o update fica desligado com default="none"). Por isso as
  * mudanças só de query (?modelo=, ?projeto=) não animam, e as áreas restritas
  * dividem uma chave só: o painel não remonta nem anima entre as telas dele.
+ * Atenção: se `cacheComponents` for ligado no next.config, a chave por
+ * caminho descarta o estado das rotas que o Next guarda em <Activity>.
  *
  * Voltar: links marcados com o tipo "voltar" invertem o sentido. O voltar do
  * navegador não anima: o React aplica a primeira transição de um popstate de

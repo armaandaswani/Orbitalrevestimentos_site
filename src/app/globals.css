@@ -423,7 +423,7 @@ html:has(header[data-site][data-oculto="1"]) .ds-sob-cabecalho { top: 0; }
    destino do morph é transparente. A foto viaja inteira e só no fim se
    dissolve no escuro, revelando o nome. */
 @keyframes mv-vt-dissolve { 0%, 40% { opacity: 1; } to { opacity: 0; } }
-::view-transition-old(linha-techstone) { animation: mv-vt-dissolve var(--mv-lento) ease-in-out both; }
+::view-transition-old(linha-techstone) { animation: mv-vt-dissolve var(--mv-lento) var(--mv-percurso) both; }
 
 /* Movimento reduzido: nada se desloca nem muda de tamanho; tudo vira uma
    fusão de 200ms só de opacidade (as classes entram na lista para vencer a

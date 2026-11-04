@@ -2,8 +2,21 @@
 
 import Image from "next/image";
 import Link from "next/link";
-import { useCallback, useEffect, useRef, useState, ViewTransition, type KeyboardEvent } from "react";
+import { useCallback, useEffect, useRef, useState, useSyncExternalStore, ViewTransition, type KeyboardEvent } from "react";
 import { LINHAS, SITUACAO_ROTULO, type LinhaOrbital } from "@/lib/linhas";
+
+const semAssinatura = () => () => {};
+const nivelLeve = () => document.documentElement.dataset.mvNivel === "leve";
+
+/**
+ * Aparelho no nível `leve` (data-mv-nivel, ligado pelo <Movimento /> na
+ * montagem)? Lido a cada render, não só na montagem: o nome do morph só
+ * importa depois de uma troca de aba, quando o nível já está decidido.
+ * No servidor, "completo".
+ */
+function useNivelLeve() {
+  return useSyncExternalStore(semAssinatura, nivelLeve, () => false);
+}
 
 /**
  * Seletor das linhas da Orbital: abas em cima e um painel por linha, lado a
@@ -20,6 +33,8 @@ export default function SeletorLinhas({ titulo = "h3" }: {
   const pista = useRef<HTMLDivElement>(null);
   const abas = useRef<(HTMLButtonElement | null)[]>([]);
   const [ativo, setAtivo] = useState(0);
+  // No nível leve a troca de página é só dissolução, sem morph (spec 2.4).
+  const leve = useNivelLeve();
 
   // A pista manda na aba: rolou de lado, a aba acompanha.
   useEffect(() => {
@@ -77,7 +92,7 @@ export default function SeletorLinhas({ titulo = "h3" }: {
           <div key={l.slug} id={`linha-painel-${l.slug}`} role="tabpanel" aria-labelledby={`linha-aba-${l.slug}`}
             aria-hidden={ativo !== i} inert={ativo !== i}
             className="w-full shrink-0 snap-center pt-6 sm:pt-10">
-            <Painel linha={l} Titulo={titulo} prioridade={i === 0} morph={l.slug === "techstone" && ativo === i} />
+            <Painel linha={l} Titulo={titulo} prioridade={i === 0} morph={!leve && l.slug === "techstone" && ativo === i} />
           </div>
         ))}
       </div>
@@ -87,7 +102,7 @@ export default function SeletorLinhas({ titulo = "h3" }: {
 
 function Painel({ linha, Titulo, prioridade, morph }: {
   linha: LinhaOrbital; Titulo: "h2" | "h3"; prioridade: boolean;
-  /** A foto leva o nome do morph da TechStone (painel da TechStone e ativo). */
+  /** A foto leva o nome do morph da TechStone (painel da TechStone, ativo, fora do nível leve). */
   morph: boolean;
 }) {
   const prontaEntrega = linha.situacao === "pronta-entrega";

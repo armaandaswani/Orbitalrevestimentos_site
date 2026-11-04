@@ -33,8 +33,11 @@ export function Abertura({ entrarNaLista }: { entrarNaLista: () => void }) {
       <div className="sticky top-0 h-[100svh] overflow-hidden">
         {/* Destino do morph que sai da foto da TechStone no seletor de linhas
             (mesmo nome em linhas/SeletorLinhas). O nome fica neste invólucro:
-            o que vier a substituir a foto (camadas de profundidade) mora aqui
-            dentro e continua no morph. */}
+            o que vier a substituir a foto (camadas de profundidade) mora
+            DENTRO do único .ts-ab-foto, nunca como irmãos dele: o React põe o
+            nome em cada filho DOM de primeiro nível do <ViewTransition>
+            (linha-techstone, linha-techstone_1…), e camadas soltas virariam
+            vários morphs separados em vez de uma foto só. */}
         <ViewTransition name="linha-techstone" share="mv-morph" default="none">
           <div className="ts-ab-foto absolute inset-0">
             <Cena nome="curva" prioridade alt="Parede curva em travertino gerada por IA a partir da textura TechStone Travertino Navona Clássico, com uma linha de luz no topo" />
