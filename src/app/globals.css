@@ -384,10 +384,10 @@ html { scroll-padding-top: 5rem; }
     /* O recorte anima na thread principal. Num bloco grande de foto (coluna inteira,
        grade de fotos) sem camada própria a árvore toda repintava a cada quadro: medido
        a 4× de CPU, +3 a +6 quadros acima de 33 ms por página. A camada só existe dentro da
-       janela do Revelar (data-ativo, 3 alturas de tela para cada lado) e sai depois. Por que
-       uma camada criada cedo ajuda não está confirmado (hipótese, mecanismo não achado); 3
-       alturas mediram +1 quadro em /tecnologia, dentro da variação entre execuções. Em página
-       curta a janela cobre quase a página inteira.
+       janela do Revelar (data-ativo, 6 alturas de tela para cada lado) e sai depois. Por que
+       uma camada criada cedo ajuda não está confirmado (hipótese, mecanismo não achado). Em
+       página curta a janela cobre quase a página inteira. 3 alturas mediram +1 quadro
+       consistente em /tecnologia no iphone-se (fora da variação do gate), então ficam 6.
        `camada` pede o mesmo a um bloco alto de texto (o manifesto de /sobre). */
     .mv-revelar-desvela[data-ativo] { will-change: transform, clip-path; }
     .mv-revelar[data-camada][data-ativo] { will-change: transform, opacity; }

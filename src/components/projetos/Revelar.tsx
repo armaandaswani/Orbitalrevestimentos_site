@@ -64,13 +64,14 @@ export default function Revelar({
   // enquanto estiver dentro da janela abaixo, e o CSS liga o will-change só nela. Longe da
   // janela o atributo sai e a camada é devolvida. Sem animação por rolagem (ou com movimento
   // reduzido) não há o que dar de dica: não observa nada.
-  // A janela é larga (3 alturas de tela para cada lado) de propósito. Por que uma camada
+  // A janela é larga (6 alturas de tela para cada lado) de propósito. Por que uma camada
   // criada cedo ajuda não está confirmado: é uma hipótese (a camada de um bloco grande seria
   // cara de criar perto da hora de animar), e o mecanismo exato não foi encontrado. O que foi
   // medido, a 4× de CPU em /tecnologia: com 1 altura sobravam +3 quadros acima de 33 ms; com 3
-  // sobrou +1, dentro da variação de uma execução para outra; com 6 voltou ao nível de antes.
-  // Em página curta essa janela cobre quase a página inteira, então ali a camada praticamente
-  // não é devolvida. Em página longa ela some quando a página já passou.
+  // sobrou +1 de forma consistente no iphone-se (1,1,1 contra 0,0,0, fora da variação do
+  // gate); com 6 voltou ao nível de antes, e por isso 6 fica. Em página curta essa janela
+  // cobre quase a página inteira, então ali a camada praticamente não é devolvida. Em página
+  // longa ela some quando a página já passou.
   const querCamada = efeito === "desvela" || camada;
   useEffect(() => {
     const el = ref.current;
@@ -80,7 +81,7 @@ export default function Revelar({
     const obs = new IntersectionObserver((entradas) => {
       const e = entradas[entradas.length - 1];
       if (e) el.toggleAttribute("data-ativo", e.isIntersecting);
-    }, { rootMargin: "300% 0px 300% 0px" });
+    }, { rootMargin: "600% 0px 600% 0px" });
     obs.observe(el);
     return () => { obs.disconnect(); el.removeAttribute("data-ativo"); };
   }, [querCamada]);
