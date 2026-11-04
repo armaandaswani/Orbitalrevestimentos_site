@@ -3,7 +3,8 @@
 import { ViewTransition, type CSSProperties } from "react";
 import Cena from "./Cena";
 import { useProgresso } from "@/components/ds/useProgresso";
-import { ESPESSURA_MM, MODELOS_TECHSTONE } from "@/lib/techstone";
+import Profundidade, { type CamadaProfundidade } from "@/components/movimento/Profundidade";
+import { ESPESSURA_MM, MODELOS_TECHSTONE, cena } from "@/lib/techstone";
 
 /**
  * As duas seções de quadro fixo da TechStone: abertura e sequência de usos.
@@ -21,6 +22,30 @@ const FRASES: { texto: string; a: number; b: number }[] = [
 ];
 
 /**
+ * Planos da foto da abertura no computador. O fundo é a mesma cena escurecida
+ * e desfocada: quando a parede recortada (Canva) se desloca alguns pixels
+ * sobre ele, a borda que aparece atrás é uma sombra macia, nunca uma segunda
+ * parede nítida. No celular o retrato não tem recorte limpo: fica a cena de
+ * sempre, num plano só (fonte `mobile` do fundo, frente ausente).
+ * Rolagem: o fundo encolhe 94% do que a parede encolhe (globals.css ›
+ * Profundidade na abertura). Ponteiro: parede até 6 px contra o mouse, fundo
+ * 2 px a favor; 8 px de diferença no máximo, menos que a sobra das camadas.
+ */
+const CAMADAS_ABERTURA: CamadaProfundidade[] = [
+  {
+    src: "/images/movimento/techstone-fundo-v1.webp",
+    mobile: cena("curva").mobile,
+    alt: "Parede curva em travertino gerada por IA a partir da textura TechStone Travertino Navona Clássico, com uma linha de luz no topo",
+    fator: 0.94,
+    ponteiro: 2,
+  },
+  { src: "/images/movimento/techstone-frente-v1.webp", mobile: null, alt: "", fator: 1, ponteiro: -6 },
+];
+
+/** Onde o banco encosta no chão, na caixa da cena: o pivô das escalas. */
+const ANCORA_BANCO = "58% 85%";
+
+/**
  * Abertura: a primeira tela é só a palavra "TechStone" sobre o escuro. Ao
  * rolar, a foto acende por trás, o nome sobe e encolhe, e três frases passam
  * uma de cada vez, sempre no mesmo lugar (nunca duas juntas). No fim fica o
@@ -33,14 +58,14 @@ export function Abertura({ entrarNaLista }: { entrarNaLista: () => void }) {
       <div className="sticky top-0 h-[100svh] overflow-hidden">
         {/* Destino do morph que sai da foto da TechStone no seletor de linhas
             (mesmo nome em linhas/SeletorLinhas). O nome fica neste invólucro:
-            o que vier a substituir a foto (camadas de profundidade) mora
-            DENTRO do único .ts-ab-foto, nunca como irmãos dele: o React põe o
+            as camadas de profundidade moram DENTRO do único .ts-ab-foto,
+            nunca como irmãs dele: o React põe o
             nome em cada filho DOM de primeiro nível do <ViewTransition>
             (linha-techstone, linha-techstone_1…), e camadas soltas virariam
             vários morphs separados em vez de uma foto só. */}
         <ViewTransition name="linha-techstone" share="mv-morph" default="none">
           <div className="ts-ab-foto absolute inset-0">
-            <Cena nome="curva" prioridade alt="Parede curva em travertino gerada por IA a partir da textura TechStone Travertino Navona Clássico, com uma linha de luz no topo" />
+            <Profundidade prioridade rolagem="externa" ancora={ANCORA_BANCO} camadas={CAMADAS_ABERTURA} />
             <div aria-hidden className="absolute inset-0 bg-[#141210]/45" />
           </div>
         </ViewTransition>

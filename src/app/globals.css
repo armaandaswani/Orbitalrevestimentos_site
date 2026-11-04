@@ -550,6 +550,29 @@ html[data-intro="1"] .intro-orbita {
   .escala-contida .ds-secao { padding-block: 3rem; }
 }
 
+/* ── Profundidade (components/movimento/Profundidade) ─────────────────────
+   Planos de uma foto que andam em ritmos diferentes. O componente escreve no
+   invólucro --mv-mx/--mv-my (ponteiro, -1 → 1) e, na rolagem própria, --mv-ry
+   (px que a página andou). Cada camada traz --mv-f (fator da rolagem) e
+   --mv-k (px do ponteiro). A caixa sobra --mv-sobra em cada lado: o maior
+   deslocamento nunca chega à borda. No nível leve o fator anda até a metade
+   do caminho para 1; com movimento reduzido os planos ficam parados. */
+.mv-camada {
+  --mv-sobra: 12px;
+  --mv-fe: var(--mv-f);
+  --mv-dx: calc(var(--mv-mx, 0) * var(--mv-k, 0) * 1px);
+  --mv-dy: calc(var(--mv-my, 0) * var(--mv-k, 0) * 0.5px);
+  inset: calc(-1 * var(--mv-sobra));
+}
+html[data-mv-nivel="leve"] .mv-camada { --mv-fe: calc((var(--mv-f) + 1) / 2); }
+.mv-prof[data-rolagem="propria"] .mv-camada {
+  transform: translate3d(var(--mv-dx), calc(var(--mv-dy) + var(--mv-ry, 0px) * (1 - var(--mv-fe))), 0);
+}
+.mv-prof[data-ativo] .mv-camada { will-change: transform; }
+@media (prefers-reduced-motion: reduce) {
+  .mv-camada { transform: none !important; }
+}
+
 /* ── TechStone: apresentação guiada pela rolagem ──────────────────────────
    Cada seção alta recebe --p (0 → 1) do useProgresso, já suavizado; tudo
    aqui é calc() em cima dele e só mexe em transform e opacity (o compositor
@@ -559,10 +582,27 @@ html[data-intro="1"] .intro-orbita {
 /* Abertura. 0 → 0.2: só o nome; a foto acende por trás e o nome sobe e
    encolhe (curva suave, --e). 0.2 → 0.76: três frases, uma de cada vez, no
    mesmo lugar (--a/--b em cada uma). Depois: o convite da lista de espera. */
-.ts-abertura { --e0: clamp(0, (var(--p, 0) - 0.04) / 0.16, 1); --e: calc(var(--e0) * var(--e0) * (3 - 2 * var(--e0))); }
+.ts-abertura {
+  --e0: clamp(0, (var(--p, 0) - 0.04) / 0.16, 1); --e: calc(var(--e0) * var(--e0) * (3 - 2 * var(--e0)));
+  /* Recuo da câmera: a foto vai de 1.16 a 1 até 85% da rolagem. */
+  --q: clamp(0, var(--p, 0) / 0.85, 1);
+}
 .ts-ab-foto {
   opacity: clamp(0, (var(--p, 0) - 0.03) / 0.2, 1);
-  transform: scale(calc(1.16 - clamp(0, var(--p, 0) / 0.85, 1) * 0.16));
+  transform: scale(calc(1.16 - var(--q) * 0.16));
+}
+/* Profundidade na abertura (components/movimento/Profundidade, rolagem
+   externa). Cada plano corrige a escala do quadro para encolher só
+   --mv-fe do recuo: o fundo (0,94) encolhe menos que a parede (1), como o
+   que está longe numa câmera que se afasta. O pivô é o pé do banco (ancora),
+   então o contato com o chão não escorrega. No retrato não há planos. */
+.ts-ab-foto .mv-camada {
+  transform:
+    translate3d(var(--mv-dx), var(--mv-dy), 0)
+    scale(calc((1.16 - 0.16 * var(--mv-fe) * var(--q)) / (1.16 - 0.16 * var(--q))));
+}
+@media (max-width: 767px) {
+  .ts-ab-foto .mv-camada { --mv-sobra: 0px; transform: none; }
 }
 .ts-ab-titulo {
   transform: translate3d(0, calc(-50% - var(--e) * 30svh), 0) scale(calc(1 - var(--e) * 0.58));
