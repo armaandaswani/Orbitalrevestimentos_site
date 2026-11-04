@@ -3,6 +3,7 @@ import {
   ASSINATURA_FORMAS,
   ASSINATURA_RECORTES,
   ASSINATURA_VIEWBOX,
+  SIMBOLO_CAIXA,
   SIMBOLO_FORMAS,
   SIMBOLO_RECORTES,
   SIMBOLO_VIEWBOX,
@@ -12,15 +13,18 @@ import {
 /**
  * Porteiro da intro, inline e síncrono no começo do <body>: roda antes da
  * primeira pintura, então a cortina já nasce na tela (sem piscar o site antes)
- * ou não aparece nunca. Só liga `data-intro="1"` fora do /admin, sem movimento
- * reduzido, com sessionStorage funcionando e na primeira página da visita.
+ * ou não aparece nunca. Só liga `data-intro="1"` fora das áreas restritas
+ * (/admin, /parceiro, /representante e /o, com subcaminhos; por segmento,
+ * para não pegar /orcamento nem /parcerias), sem movimento reduzido, com
+ * sessionStorage funcionando e na primeira página da visita. Nas áreas
+ * restritas nem a chave é gravada: a intro fica para a primeira página pública.
  * Grava a chave antes de ligar o atributo: se gravar falhar, não há intro.
  * Qualquer erro cai no catch e deixa o atributo desligado.
  * Não usa <Script beforeInteractive>: no App Router ele é enfileirado para o
  * runtime do Next e não roda antes da pintura.
  */
 const PORTEIRO = `(function(){try{
-if(location.pathname.indexOf("/admin")===0)return;
+if(/^\\/(admin|parceiro|representante|o)(\\/|$)/.test(location.pathname))return;
 if(window.matchMedia&&window.matchMedia("(prefers-reduced-motion: reduce)").matches)return;
 var s=window.sessionStorage;
 if(s.getItem("orbital-intro")!==null)return;
@@ -30,8 +34,11 @@ document.documentElement.setAttribute("data-intro","1");
 }catch(e){}})();`;
 
 /** Centro do símbolo (meio do viewBox oficial), eixo das máscaras de arco. */
-const CENTRO_X = 1077.7 + 142.5 / 2;
-const CENTRO_Y = 363.7 + 141.9 / 2;
+const CENTRO_X = SIMBOLO_CAIXA.x + SIMBOLO_CAIXA.largura / 2;
+const CENTRO_Y = SIMBOLO_CAIXA.y + SIMBOLO_CAIXA.altura / 2;
+
+/** Cor da faixa azul no símbolo negativo (as demais formas são a faixa verde). */
+const AZUL_NEGATIVO = "#2F5FD0";
 
 /**
  * Ângulo onde a órbita começa (graus, sentido horário a partir das 3 h): no
@@ -50,7 +57,7 @@ const PREFIXO_ASSINATURA = "io-a-";
 
 /**
  * Máscara de uma faixa: um círculo de traço tão largo que cobre o símbolo
- * inteiro (raio 40, traço 82 vai do centro até 81, além do raio 72 das
+ * inteiro (raio 42, traço 88 vai do centro até 86, além do raio 76 das
  * faixas). Animar o stroke-dashoffset varre uma fatia que cresce em volta do
  * centro, revelando a faixa ao longo do próprio arco.
  */
@@ -59,17 +66,17 @@ function MascaraArco({ faixa }: { faixa: "azul" | "verde" }) {
     <mask
       id={`${PREFIXO}mascara-${faixa}`}
       maskUnits="userSpaceOnUse"
-      x="1077.7"
-      y="363.7"
-      width="142.5"
-      height="141.9"
+      x={SIMBOLO_CAIXA.x}
+      y={SIMBOLO_CAIXA.y}
+      width={SIMBOLO_CAIXA.largura}
+      height={SIMBOLO_CAIXA.altura}
     >
       <circle
         className={`intro-orbita__arco intro-orbita__arco--${faixa}`}
         cx={CENTRO_X}
         cy={CENTRO_Y}
-        r="40"
-        strokeWidth="82"
+        r="42"
+        strokeWidth="88"
         pathLength={100}
         transform={`rotate(${INICIO_ARCO} ${CENTRO_X} ${CENTRO_Y})`}
       />
@@ -104,7 +111,7 @@ function Recortes({ recortes, prefixo }: { recortes: Record<string, string>; pre
  * logotipo surge e o campo sobe como uma cortina. Componente de servidor: o
  * HTML já vem pronto e só aparece sob `html[data-intro="1"]` (globals.css);
  * sem JavaScript o atributo nunca liga e nada aparece. Fica fora do
- * SiteChrome porque o porteiro já pula o /admin pelo caminho.
+ * SiteChrome porque o porteiro já pula as áreas restritas pelo caminho.
  */
 export default function IntroOrbita() {
   return (
@@ -128,7 +135,7 @@ export default function IntroOrbita() {
                 key={i}
                 forma={forma}
                 prefixo={PREFIXO_SIMBOLO}
-                mascara={`${PREFIXO}mascara-${forma.fill === "#2347A0" ? "azul" : "verde"}`}
+                mascara={`${PREFIXO}mascara-${forma.fill === AZUL_NEGATIVO ? "azul" : "verde"}`}
               />
             ))}
           </svg>

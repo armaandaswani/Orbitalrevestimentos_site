@@ -279,7 +279,8 @@ export default function RootLayout({
       </head>
       <body className="min-h-screen flex flex-col bg-[#F6F5F2] text-[#0D1830] antialiased">
         {/* Primeiro filho do body: o porteiro inline roda antes da primeira
-            pintura. Fora do SiteChrome; o próprio porteiro pula o /admin. */}
+            pintura. Fora do SiteChrome; o próprio porteiro pula /admin, /parceiro,
+            /representante e /o. */}
         <IntroOrbita />
         {jsonLdSchemas.map((schema, i) => (
           <script
