@@ -1411,8 +1411,11 @@ html[data-mv-nivel="leve"] .ts-clima-nevoa { display: none; }
 .ts-galeria-camada[data-pos="f1"] { --l: calc(var(--ts-a) + 2px); --r: 100cqw; visibility: visible; }
 @media (min-width: 768px) {
   /* Computador: a ativa em 64%; as k faixas (--ts-k, do componente) dividem
-     os 36% restantes, separadas por 2 px. */
-  .ts-galeria-palco { --ts-a: 64cqw; --ts-w: calc((36cqw - var(--ts-k) * 2px) / var(--ts-k)); }
+     o resto, separadas por 2 px. A ativa para em 1060 px (e o palco em 1050 px
+     de altura, no componente): as ideias têm 960 × 1190 e as cenas 1678 × 944,
+     e com o zoom de 3% nenhuma passa de ~1,15× o tamanho natural em tela 1×.
+     Só telas muito grandes chegam ao teto; ali as faixas ficam mais largas. */
+  .ts-galeria-palco { --ts-a: min(64cqw, 1060px); --ts-w: calc((100cqw - var(--ts-a) - var(--ts-k) * 2px) / var(--ts-k)); }
   .ts-galeria-camada[data-pos="f1"] { --j: 1; }
   .ts-galeria-camada[data-pos="f2"] { --j: 2; }
   .ts-galeria-camada[data-pos="f3"] { --j: 3; }
@@ -1428,6 +1431,8 @@ html[data-mv-nivel="leve"] .ts-clima-nevoa { display: none; }
   transform: translate3d(calc((var(--l) + var(--r) - var(--ts-a)) / 2), 0, 0);
   transition: transform var(--mv-lento) var(--mv-percurso);
 }
+/* <picture> só escolhe o arquivo; quem ocupa o quadro é a foto. */
+.ts-galeria-quadro > picture { display: contents; }
 .ts-galeria-foto { display: block; width: 100%; height: 100%; object-fit: cover; transform-origin: 50% 50%; -webkit-user-drag: none; }
 /* Faixas a ~60% de brilho; a ativa acende. Com o mouse em cima, a faixa
    clareia um pouco: diz que abre. */
@@ -1460,9 +1465,10 @@ html[data-mv-nivel="leve"] .ts-clima-nevoa { display: none; }
   opacity: 0; pointer-events: none;
 }
 [data-modo="teclado"] .ts-galeria-camada:focus-visible .ts-galeria-anel { opacity: 1; }
-/* will-change só na ativa e nas duas vizinhas (as próximas a se mover). */
-.ts-galeria-camada:is([data-pos="ativo"], [data-vizinho]) { will-change: clip-path; }
-.ts-galeria-camada:is([data-pos="ativo"], [data-vizinho]) .ts-galeria-quadro { will-change: transform; }
+/* will-change só na ativa e nas duas vizinhas (as próximas a se mover), e só
+   com o palco a meia tela ou menos de distância (data-perto, do componente). */
+.ts-galeria-palco[data-perto] .ts-galeria-camada:is([data-pos="ativo"], [data-vizinho]) { will-change: clip-path; }
+.ts-galeria-palco[data-perto] .ts-galeria-camada:is([data-pos="ativo"], [data-vizinho]) .ts-galeria-quadro { will-change: transform; }
 
 /* Legenda: a nova sobe 8 px em fusão; a anterior apaga um pouco mais rápido. */
 @keyframes ts-galeria-entra { from { opacity: 0; transform: translate3d(0, 8px, 0); } to { opacity: 1; transform: none; } }

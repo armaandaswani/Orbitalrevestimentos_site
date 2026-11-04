@@ -1,10 +1,12 @@
 "use client";
 
-import { useCallback, useEffect, useRef, useState, useSyncExternalStore, type CSSProperties, type RefObject } from "react";
+import { memo, useCallback, useEffect, useLayoutEffect, useRef, useState, useSyncExternalStore, type CSSProperties, type RefObject } from "react";
 import { FORMATOS, MODELOS_TECHSTONE, cena, type FormatoTechStone } from "@/lib/techstone";
 
 interface Ideia {
   src: string;
+  /** Versão paisagem para o palco largo (a partir de 768 px); sem ela, `src` vale para todos. */
+  largo?: string;
   alt: string;
   titulo: string;
   modelo: string;
@@ -26,11 +28,11 @@ const IDEIAS: Ideia[] = [
     alt: "Escada curva com a parede acompanhando a curva em travertino claro, gerada por IA a partir da textura TechStone Travertino Bianco Trevi" },
   { src: "/images/techstone/ideias/loja-v1.webp", titulo: "Loja de esquina", modelo: "nogueira-americana",
     alt: "Loja com a esquina arredondada revestida em madeira escura, gerada por IA a partir da textura TechStone Nogueira Americana" },
-  { src: cena("interior").mobile, titulo: "Sala", modelo: "taj-mahal",
+  { src: cena("interior").mobile, largo: cena("interior").desktop, titulo: "Sala", modelo: "taj-mahal",
     alt: "Sala com parede de canto curvo gerada por IA a partir da textura TechStone Taj Mahal" },
-  { src: cena("coluna").mobile, titulo: "Coluna redonda", modelo: "travertino-bianco-trevi",
+  { src: cena("coluna").mobile, largo: cena("coluna").desktop, titulo: "Coluna redonda", modelo: "travertino-bianco-trevi",
     alt: "Coluna redonda em travertino claro gerada por IA a partir da textura TechStone Travertino Bianco Trevi" },
-  { src: cena("fachada").mobile, titulo: "Fachada comercial", modelo: "travertino-romano-classico",
+  { src: cena("fachada").mobile, largo: cena("fachada").desktop, titulo: "Fachada comercial", modelo: "travertino-romano-classico",
     alt: "Fachada de edifício em travertino bege gerada por IA a partir da textura TechStone Travertino Romano Clássico" },
 ];
 
@@ -46,6 +48,10 @@ const PASSO_MS = 5000;
 const ESPERA_MANUAL_MS = 15000;
 const LIMIAR_ARRASTE_PX = 40;
 const ZOOM_MS = 7000;
+/** Zoom lento da ideia ativa: 3% (com 6% a foto passava do tamanho natural no palco). */
+const ZOOM_ESCALA = 1.03;
+/** Só teclas que movem o foco acendem o anel; modificadores (atalhos, print da tela) e rolagem não. */
+const TECLAS_DE_FOCO = new Set(["Tab", "ArrowLeft", "ArrowRight"]);
 /** Hora atual, só chamada em eventos do visitante (nunca durante a renderização). */
 const agora = () => Date.now();
 
@@ -80,6 +86,24 @@ function focoVisivel(el: HTMLElement): boolean {
   } catch {
     return true;
   }
+}
+
+/**
+ * Decodifica fotos antes de elas aparecerem; nunca falha (foto que não
+ * decodifica, ou que ainda nem carregou, só segue o caminho normal).
+ */
+function decodificar(lista: (HTMLImageElement | null)[]): Promise<unknown> {
+  return Promise.all(lista.map((img) => (img && img.complete && img.naturalWidth ? img.decode().catch(() => {}) : null)));
+}
+
+/** Quando o navegador folgar (Safari não tem requestIdleCallback: espera um pouco). */
+function quandoFolgar(fn: () => void): () => void {
+  if (typeof window.requestIdleCallback === "function") {
+    const id = window.requestIdleCallback(fn, { timeout: 2000 });
+    return () => window.cancelIdleCallback(id);
+  }
+  const t = window.setTimeout(fn, 300);
+  return () => window.clearTimeout(t);
 }
 
 /** prefers-reduced-motion como estado externo (sem setState dentro de efeito). */
@@ -133,21 +157,39 @@ function Galeria({ lista, verTamanho, parado, setParado, ultimaAcaoRef }: {
     setPausas((p) => (p[motivo] === valor ? p : { ...p, [motivo]: valor })), []);
 
   /** Troca por ação do visitante: anuncia o título e adia o autoplay. */
-  const irPara = (novo: number, focar = false) => {
+  const irPara = useCallback((novo: number, focar = false) => {
     const alvo = ((novo % m) + m) % m;
     ultimaAcaoRef.current = agora();
     setEstado((e) => (e.v === alvo ? e : { v: alvo, antes: e.v }));
     setAnuncio(lista[alvo % n].titulo);
     focarAtivo.current = focar;
-  };
+  }, [lista, n, m, ultimaAcaoRef]);
+
+  // A ideia ativa para os toques nas camadas (o toque é estável, então as
+  // camadas memorizadas não renderizam de novo só porque v mudou).
+  const vAtual = useRef(v);
+  useLayoutEffect(() => { vAtual.current = v; }, [v]);
+  const registrar = useCallback((i: number, el: HTMLButtonElement | HTMLImageElement | null, tipo: "camada" | "foto") => {
+    if (tipo === "camada") camadas.current[i] = el as HTMLButtonElement | null;
+    else fotos.current[i] = el as HTMLImageElement | null;
+  }, []);
+  const tocar = useCallback((i: number) => {
+    if (arrastou.current) return;
+    const o = (i - vAtual.current + m) % m;
+    if (o === 0) verTamanho(formatoDe(lista[i % n]));
+    else irPara(vAtual.current + o);
+  }, [lista, n, m, verTamanho, irPara]);
 
   // Modo de entrada: o anel de foco só vale para teclado (ver o CSS). Teclas
   // marcam "teclado"; o primeiro toque ou clique, em qualquer lugar, marca
   // "ponteiro". Fase de captura para valer antes de qualquer handler da página.
   useEffect(() => {
-    const marcar = (modo: string) => () => { if (raiz.current) raiz.current.dataset.modo = modo; };
-    const teclado = marcar("teclado");
-    const ponteiro = marcar("ponteiro");
+    const marcar = (modo: string) => { if (raiz.current) raiz.current.dataset.modo = modo; };
+    const teclado = (e: KeyboardEvent) => {
+      if (e.metaKey || e.ctrlKey || e.altKey || !TECLAS_DE_FOCO.has(e.key)) return;
+      marcar("teclado");
+    };
+    const ponteiro = () => marcar("ponteiro");
     document.addEventListener("keydown", teclado, true);
     document.addEventListener("pointerdown", ponteiro, true);
     return () => {
@@ -165,8 +207,13 @@ function Galeria({ lista, verTamanho, parado, setParado, ultimaAcaoRef }: {
       pausar("fora", !dentro);
       if (dentro) setVisto(true);
     }, { threshold: [0, 0.6] });
-    if (palco.current) io.observe(palco.current);
-    return () => { document.removeEventListener("visibilitychange", aba); io.disconnect(); };
+    // will-change (ver o CSS) só com o palco perto da tela: as camadas sobem
+    // para o compositor meia tela antes de aparecer, nunca no quadro de entrada.
+    const perto = new IntersectionObserver(([e]) => {
+      palco.current?.toggleAttribute("data-perto", e.isIntersecting);
+    }, { rootMargin: "50% 0px" });
+    if (palco.current) { io.observe(palco.current); perto.observe(palco.current); }
+    return () => { document.removeEventListener("visibilitychange", aba); io.disconnect(); perto.disconnect(); };
   }, [pausar]);
 
   const pausado = parado || reduzido || n < 2 || Object.values(pausas).some(Boolean);
@@ -176,9 +223,23 @@ function Galeria({ lista, verTamanho, parado, setParado, ultimaAcaoRef }: {
   useEffect(() => {
     if (pausado) return;
     const prazo = Math.max(PASSO_MS, ESPERA_MANUAL_MS - (Date.now() - ultimaAcaoRef.current));
-    const t = window.setTimeout(() => setEstado((e) => ({ v: (e.v + 1) % m, antes: e.v })), prazo);
-    return () => window.clearTimeout(t);
-  }, [pausado, v, m, ultimaAcaoRef]);
+    let vivo = true;
+    // A troca só sai com as fotos que vão aparecer já decodificadas (a nova
+    // ativa e a faixa que entra pela direita): nada de decodificar no quadro da troca.
+    const t = window.setTimeout(() => {
+      decodificar([1, k + 1].map((o) => fotos.current[(v + o) % m])).then(() => {
+        if (vivo) setEstado((e) => ({ v: (e.v + 1) % m, antes: e.v }));
+      });
+    }, prazo);
+    return () => { vivo = false; window.clearTimeout(t); };
+  }, [pausado, v, m, k, ultimaAcaoRef]);
+
+  // Com o navegador folgado, decodifica de antemão as fotos que entram na
+  // próxima troca, para frente (a faixa nova) e para trás (a anterior).
+  useEffect(() => {
+    if (!visto) return;
+    return quandoFolgar(() => { void decodificar([k + 1, k + 2, m - 1].map((o) => fotos.current[(v + o) % m])); });
+  }, [v, k, m, visto]);
 
   // Zoom lento só na foto ativa, recomeçando a cada troca. Web Animations em
   // vez de animação CSS: a foto que sai volta à escala 1 junto com o recorte,
@@ -199,7 +260,7 @@ function Galeria({ lista, verTamanho, parado, setParado, ultimaAcaoRef }: {
     if (!foto) return;
     foto.getAnimations().forEach((a) => a.cancel());
     if (!visto || reduzido || document.documentElement.dataset.mvNivel === "leve") return;
-    foto.animate([{ transform: "scale(1)" }, { transform: "scale(1.06)" }], { duration: ZOOM_MS, easing: "linear", fill: "forwards" });
+    foto.animate([{ transform: "scale(1)" }, { transform: `scale(${ZOOM_ESCALA})` }], { duration: ZOOM_MS, easing: "linear", fill: "forwards" });
   }, [v, reduzido, visto]);
 
   // Pelo teclado, o foco acompanha a ideia ativa (a camada focada pode fechar).
@@ -258,32 +319,15 @@ function Galeria({ lista, verTamanho, parado, setParado, ultimaAcaoRef }: {
       onFocus={(e) => { if (focoVisivel(e.target as HTMLElement)) pausar("foco", true); }}
       onBlur={(e) => { if (!raiz.current?.contains(e.relatedTarget as Node | null)) pausar("foco", false); }}>
       <div ref={palco} style={{ "--ts-k": Math.max(k, 1) } as CSSProperties}
-        className="ts-galeria-palco aspect-[4/5] max-h-[78svh] md:aspect-auto md:h-[min(78svh,58vw)]"
+        className="ts-galeria-palco aspect-[4/5] max-h-[78svh] md:aspect-auto md:h-[min(78svh,58vw,1050px)]"
         onPointerDown={(e) => { if (e.isPrimary) arraste.current = { x: e.clientX, y: e.clientY }; }}
         onPointerUp={soltarNoPalco}
         onPointerCancel={() => { arraste.current = null; }}>
         {Array.from({ length: m }, (_, i) => {
-          const ideia = lista[i % n];
           const o = (i - v + m) % m;
           return (
-            <button key={i} type="button" ref={(el) => { camadas.current[i] = el; }}
-              className="ts-galeria-camada mv-brilho" data-cursor="ver" data-pos={posicao(o, k, m)}
-              data-vizinho={o === 1 || o === m - 1 ? "" : undefined}
-              tabIndex={o === 0 ? 0 : -1} aria-current={o === 0 ? "true" : undefined}
-              aria-label={`${ideia.titulo} em ${modeloDe(ideia.modelo).nome}, ${rotuloFormato(formatoDe(ideia))}`}
-              onClick={() => {
-                if (arrastou.current) return;
-                if (o === 0) verTamanho(formatoDe(ideia));
-                else irPara(v + o);
-              }}>
-              <span className="ts-galeria-quadro">
-                {/* eslint-disable-next-line @next/next/no-img-element */}
-                <img ref={(el) => { fotos.current[i] = el; }} src={ideia.src} alt={ideia.alt}
-                  loading="lazy" decoding="async" draggable={false} className="ts-galeria-foto" />
-              </span>
-              <span aria-hidden className="ts-galeria-veu" />
-              <span aria-hidden className="ts-galeria-anel" />
-            </button>
+            <Camada key={i} i={i} ideia={lista[i % n]} pos={posicao(o, k, m)} vizinho={o === 1 || o === m - 1}
+              registrar={registrar} tocar={tocar} />
           );
         })}
       </div>
@@ -320,6 +364,42 @@ function Galeria({ lista, verTamanho, parado, setParado, ultimaAcaoRef }: {
     </div>
   );
 }
+
+/**
+ * Uma camada do anel. Memorizada: numa troca só as camadas que mudam de papel
+ * renderizam de novo.
+ * No palco largo (768 px ou mais) as cenas usam o arquivo paisagem: o de
+ * celular é retrato e seria ampliado e cortado na região larga.
+ */
+const Camada = memo(function Camada({ i, ideia, pos, vizinho, registrar, tocar }: {
+  i: number;
+  ideia: Ideia;
+  pos: string;
+  vizinho: boolean;
+  /** Guarda o botão e a foto da camada i (estável). */
+  registrar: (i: number, el: HTMLButtonElement | HTMLImageElement | null, tipo: "camada" | "foto") => void;
+  tocar: (i: number) => void;
+}) {
+  const ativa = pos === "ativo";
+  return (
+    <button type="button" ref={(el) => registrar(i, el, "camada")}
+      className="ts-galeria-camada mv-brilho" data-cursor="ver" data-pos={pos}
+      data-vizinho={vizinho ? "" : undefined}
+      tabIndex={ativa ? 0 : -1} aria-current={ativa ? "true" : undefined}
+      aria-label={`${ideia.titulo} em ${modeloDe(ideia.modelo).nome}, ${rotuloFormato(formatoDe(ideia))}`}
+      onClick={() => tocar(i)}>
+      <span className="ts-galeria-quadro">
+        <picture>
+          {ideia.largo && <source media="(min-width: 768px)" srcSet={ideia.largo} />}
+          <img ref={(el) => registrar(i, el, "foto")} src={ideia.src} alt={ideia.alt}
+            loading="lazy" decoding="async" draggable={false} className="ts-galeria-foto" />
+        </picture>
+      </span>
+      <span aria-hidden className="ts-galeria-veu" />
+      <span aria-hidden className="ts-galeria-anel" />
+    </button>
+  );
+});
 
 /** Título, modelo e tamanho de uma ideia. A que sai fica escondida dos leitores de tela. */
 function Legenda({ ideia, classe, oculta = false }: { ideia: Ideia; classe: string; oculta?: boolean }) {
