@@ -634,6 +634,97 @@ html[data-mv-nivel="leve"] .ts-clima-nevoa { display: none; }
   .ts-clima-resumo { grid-template-columns: minmax(0, 1fr); }
 }
 
+/* ── TechStone: galeria de ideias ─────────────────────────────────────────
+   (components/techstone/Ideias). Cada ideia é uma camada do tamanho do palco
+   que só mostra a sua região [--l, --r] por clip-path; o quadro interno (da
+   largura da região ativa) anda em translateX para centrar a foto na região,
+   não no palco. Nada muda de largura ou altura: só clip-path, transform e
+   opacity. Papéis (data-pos): ativo; f1–f4, as faixas; esq e dir, região de
+   largura zero numa borda (quem sai fecha à esquerda, quem entra abre da
+   direita, então as regiões nunca se cruzam). Unidades cq* medem o palco. */
+.ts-galeria-palco {
+  position: relative; overflow: hidden;
+  container-type: inline-size;
+  --ts-a: 84cqw;
+  /* Arrastar de lado é da galeria; rolar a página continua do navegador. */
+  touch-action: pan-y;
+  user-select: none; -webkit-user-select: none;
+}
+.ts-galeria-camada {
+  --l: 100cqw; --r: 100cqw;
+  position: absolute; inset: 0; display: block; padding: 0; border: 0;
+  background: #D9D1C4; cursor: pointer;
+  clip-path: inset(0 calc(100cqw - var(--r)) 0 var(--l));
+  /* Fechada some da árvore de acessibilidade e do teclado; a visibilidade
+     só muda no fim da transição, depois que o recorte fechou. */
+  visibility: hidden;
+  transition: clip-path var(--mv-lento) var(--mv-percurso), visibility var(--mv-lento) var(--mv-percurso);
+  -webkit-tap-highlight-color: transparent;
+}
+.ts-galeria-camada[data-pos="esq"] { --l: 0cqw; --r: 0cqw; }
+.ts-galeria-camada[data-pos="ativo"] { --l: 0cqw; --r: var(--ts-a); visibility: visible; }
+/* Celular: a ativa em 84% e uma faixa de 16%, 2 px depois. */
+.ts-galeria-camada[data-pos="f1"] { --l: calc(var(--ts-a) + 2px); --r: 100cqw; visibility: visible; }
+@media (min-width: 768px) {
+  /* Computador: a ativa em 64%; as k faixas (--ts-k, do componente) dividem
+     os 36% restantes, separadas por 2 px. */
+  .ts-galeria-palco { --ts-a: 64cqw; --ts-w: calc((36cqw - var(--ts-k) * 2px) / var(--ts-k)); }
+  .ts-galeria-camada[data-pos="f1"] { --j: 1; }
+  .ts-galeria-camada[data-pos="f2"] { --j: 2; }
+  .ts-galeria-camada[data-pos="f3"] { --j: 3; }
+  .ts-galeria-camada[data-pos="f4"] { --j: 4; }
+  .ts-galeria-camada:is([data-pos="f1"], [data-pos="f2"], [data-pos="f3"], [data-pos="f4"]) {
+    --l: calc(var(--ts-a) + var(--j) * 2px + (var(--j) - 1) * var(--ts-w));
+    --r: calc(var(--ts-a) + var(--j) * (2px + var(--ts-w)));
+    visibility: visible;
+  }
+}
+.ts-galeria-quadro {
+  position: absolute; top: 0; left: 0; height: 100%; width: var(--ts-a);
+  transform: translate3d(calc((var(--l) + var(--r) - var(--ts-a)) / 2), 0, 0);
+  transition: transform var(--mv-lento) var(--mv-percurso);
+}
+.ts-galeria-foto { display: block; width: 100%; height: 100%; object-fit: cover; transform-origin: 50% 50%; -webkit-user-drag: none; }
+/* Faixas a ~60% de brilho; a ativa acende. Com o mouse em cima, a faixa
+   clareia um pouco: diz que abre. */
+.ts-galeria-veu {
+  position: absolute; inset: 0; background: #000; opacity: 0.4; pointer-events: none;
+  transition: opacity var(--mv-lento) var(--mv-percurso);
+}
+.ts-galeria-camada[data-pos="ativo"] .ts-galeria-veu { opacity: 0; }
+@media (hover: hover) and (pointer: fine) {
+  .ts-galeria-camada:not([data-pos="ativo"]):hover .ts-galeria-veu { opacity: 0.2; transition-duration: var(--mv-base); }
+}
+/* Foco: o contorno do navegador seria cortado pelo clip-path, então um anel
+   interno desenha a região (aparece só com o foco, sem transição). */
+.ts-galeria-camada:focus-visible { outline: none; }
+.ts-galeria-anel {
+  position: absolute; top: 0; bottom: 0; left: var(--l); width: calc(var(--r) - var(--l));
+  box-shadow: inset 0 0 0 2px #2347A0, inset 0 0 0 4px #ffffff;
+  opacity: 0; pointer-events: none;
+}
+.ts-galeria-camada:focus-visible .ts-galeria-anel { opacity: 1; }
+/* will-change só na ativa e nas duas vizinhas (as próximas a se mover). */
+.ts-galeria-camada:is([data-pos="ativo"], [data-vizinho]) { will-change: clip-path; }
+.ts-galeria-camada:is([data-pos="ativo"], [data-vizinho]) .ts-galeria-quadro { will-change: transform; }
+
+/* Legenda: a nova sobe 8 px em fusão; a anterior apaga um pouco mais rápido. */
+@keyframes ts-galeria-entra { from { opacity: 0; transform: translate3d(0, 8px, 0); } to { opacity: 1; transform: none; } }
+@keyframes ts-galeria-sai { from { opacity: 1; } to { opacity: 0; } }
+@keyframes ts-galeria-surge { from { opacity: 0; } to { opacity: 1; } }
+.ts-galeria-entra { animation: ts-galeria-entra var(--mv-base) var(--mv-chegada) both; }
+.ts-galeria-sai { animation: ts-galeria-sai calc(var(--mv-base) * 0.6) var(--mv-chegada) both; pointer-events: none; }
+
+/* Nível leve e movimento reduzido: sem zoom (o !important vence a Web
+   Animation que o componente nem chega a criar nesses casos). */
+html[data-mv-nivel="leve"] .ts-galeria-foto { transform: none !important; }
+@media (prefers-reduced-motion: reduce) {
+  .ts-galeria-foto { transform: none !important; }
+  /* Recorte e quadro trocam na hora; a legenda só faz a fusão, sem subir. */
+  .ts-galeria-camada, .ts-galeria-quadro { transition: none; }
+  .ts-galeria-entra { animation-name: ts-galeria-surge; }
+}
+
 /* ── Home: a frase de quem somos acende palavra por palavra ───────────────
    --p vem do useProgresso (suavizado); --i é a posição da palavra (0 → 1).
    Cada palavra vai de quase apagada a acesa num trecho curto da rolagem. */
