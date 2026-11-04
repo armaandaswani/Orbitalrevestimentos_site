@@ -91,7 +91,7 @@ export default function SeletorLinhas({ titulo = "h3" }: {
         {LINHAS.map((l, i) => (
           <div key={l.slug} id={`linha-painel-${l.slug}`} role="tabpanel" aria-labelledby={`linha-aba-${l.slug}`}
             aria-hidden={ativo !== i} inert={ativo !== i}
-            className="w-full shrink-0 snap-center pt-6 sm:pt-10">
+            className="w-full shrink-0 snap-center pt-6 sm:pt-8 lg:pt-5">
             <Painel linha={l} Titulo={titulo} prioridade={i === 0} morph={!leve && l.slug === "techstone" && ativo === i} />
           </div>
         ))}
@@ -106,33 +106,45 @@ function Painel({ linha, Titulo, prioridade, morph }: {
   morph: boolean;
 }) {
   const prontaEntrega = linha.situacao === "pronta-entrega";
+  // Largura da foto no painel: wide (4/3) em vez de alta, e no computador a
+  // altura segue a tela (svh) para a seção inteira caber numa vista.
+  const caixa = `relative block aspect-[16/10] md:aspect-[4/3] md:max-h-[min(62svh,560px)] lg:aspect-auto lg:h-[min(50svh,30rem)] overflow-hidden bg-[#141A26]${linha.imagem ? " mv-brilho" : ""}`;
+  const foto = linha.imagem ? (
+    <>
+      {/* A foto da TechStone vira a abertura da página dela (mesmo nome
+          em techstone/Apresentacao). Só ela: o catálogo do PFB não abre
+          com a mesma foto, então essa navegação apenas se dissolve. E só
+          com o painel à vista: fora da tela (outra aba ativa) o morph
+          sairia voando do canto, e na volta para cá a foto cairia num
+          painel escondido. Sem nome, a foto troca junto com a página. */}
+      <ViewTransition name={morph ? "linha-techstone" : undefined} share="mv-morph" default="none">
+        <Image src={linha.imagem.src} alt={linha.imagem.alt} fill priority={prioridade}
+          sizes="(min-width: 768px) 50vw, 100vw" className="object-cover" />
+      </ViewTransition>
+      {linha.imagemGerada && (
+        <span className="absolute left-3 bottom-3 bg-black/55 text-white text-[11px] tracking-[0.02em] px-2 py-1">Imagem gerada por IA</span>
+      )}
+    </>
+  ) : (
+    <div className="absolute inset-0 flex flex-col justify-end p-6 sm:p-8 bg-[radial-gradient(ellipse_at_30%_20%,#2A3142,#0E121A_70%)]">
+      <p className="font-serif text-white/90 text-t2">{linha.nome}</p>
+      <p className="mt-1 text-white/55 text-legenda">Em preparação</p>
+    </div>
+  );
   return (
-    <div className="grid gap-6 md:grid-cols-[minmax(0,1.1fr)_minmax(0,1fr)] md:gap-12 md:items-center">
-      <div className={`relative aspect-[16/10] md:aspect-[4/5] overflow-hidden bg-[#141A26]${linha.imagem ? " mv-brilho" : ""}`}
-        data-cursor={linha.imagem ? "ver" : undefined}>
-        {linha.imagem ? (
-          <>
-            {/* A foto da TechStone vira a abertura da página dela (mesmo nome
-                em techstone/Apresentacao). Só ela: o catálogo do PFB não abre
-                com a mesma foto, então essa navegação apenas se dissolve. E só
-                com o painel à vista: fora da tela (outra aba ativa) o morph
-                sairia voando do canto, e na volta para cá a foto cairia num
-                painel escondido. Sem nome, a foto troca junto com a página. */}
-            <ViewTransition name={morph ? "linha-techstone" : undefined} share="mv-morph" default="none">
-              <Image src={linha.imagem.src} alt={linha.imagem.alt} fill priority={prioridade}
-                sizes="(min-width: 768px) 50vw, 100vw" className="object-cover" />
-            </ViewTransition>
-            {linha.imagemGerada && (
-              <span className="absolute left-3 bottom-3 bg-black/55 text-white text-[11px] tracking-[0.02em] px-2 py-1">Imagem gerada por IA</span>
-            )}
-          </>
-        ) : (
-          <div className="absolute inset-0 flex flex-col justify-end p-6 sm:p-8 bg-[radial-gradient(ellipse_at_30%_20%,#2A3142,#0E121A_70%)]">
-            <p className="font-serif text-white/90 text-t2">{linha.nome}</p>
-            <p className="mt-1 text-white/55 text-legenda">Em preparação</p>
-          </div>
-        )}
-      </div>
+    <div className="grid gap-5 md:grid-cols-[minmax(0,1.1fr)_minmax(0,1fr)] md:gap-12 md:items-center">
+      {/* A foto leva à página da linha (o mesmo destino do botão). Dentro da
+          pista de arrastar o navegador já cancela o clique quando o gesto vira
+          rolagem, então deslizar de lado não abre a página. Linha sem página
+          (PFB Carbon) continua sem link. */}
+      {linha.href ? (
+        <Link href={linha.href} className={caixa} data-cursor="ver"
+          aria-label={linha.slug === "pfb" ? `Ver o catálogo d${linha.artigo} ${linha.curto}` : `Conhecer ${linha.artigo} ${linha.nome}`}>
+          {foto}
+        </Link>
+      ) : (
+        <div className={caixa} data-cursor={linha.imagem ? "ver" : undefined}>{foto}</div>
+      )}
       <div>
         <p className="flex items-center gap-2 text-legenda text-[#43474e]">
           <span aria-hidden className={`inline-block w-1.5 h-1.5 rounded-full ${prontaEntrega ? "bg-[#36A35C]" : "bg-[#B79B6C]"}`} />

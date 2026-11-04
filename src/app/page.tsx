@@ -140,7 +140,7 @@ export default async function Home() {
   return (
     <div className="escala-contida">
       {/* ── Abertura: o slogan da marca, calma e sem enfeite ───────────────── */}
-      <section className="relative h-[100svh] min-h-[34rem] flex items-end overflow-hidden bg-[#0B1F45] ds-escuro">
+      <section className="relative h-[100svh] min-h-[34rem] flex items-center overflow-hidden bg-[#0B1F45] ds-escuro">
         <div className="absolute inset-0 mv-parallax-topo">
           <HeroAssenta>
             <Image
@@ -152,7 +152,11 @@ export default async function Home() {
           </HeroAssenta>
         </div>
         <div className="absolute inset-0 bg-gradient-to-t from-[#0B1F45]/90 via-[#0B1F45]/30 to-[#0B1F45]/10" aria-hidden />
-        <div className="relative z-10 w-full ds-wrap pt-24 pb-[clamp(3rem,9vh,6.5rem)] mv-esmaece-topo">
+        {/* O texto saiu da base para o meio, onde a foto é mais clara: um véu à esquerda segura a leitura. */}
+        <div className="absolute inset-0 bg-gradient-to-r from-[#0B1F45]/55 via-[#0B1F45]/20 to-transparent" aria-hidden />
+        {/* Centrado na área visível sob o cabeçalho fixo: o 5rem de cima é a altura
+            dele, então a folga até o cabeçalho e a folga até a borda de baixo ficam iguais. */}
+        <div className="relative z-10 w-full ds-wrap pt-20 mv-esmaece-topo">
           <h1 className="font-serif text-white text-display font-normal tracking-[-0.025em] max-w-[20ch] text-balance">
             <span className="sr-only">Orbital Revestimentos — revestimentos para parede, forro e fachada em Manaus. </span>
             {ASSINATURA}
@@ -178,16 +182,19 @@ export default async function Home() {
       <PorQue />
 
       {/* ── Nossas soluções ────────────────────────────────────────────────── */}
-      <section id="solucoes" aria-labelledby="solucoes-titulo" className="ds-secao bg-[#F6F5F2] scroll-mt-16">
+      <section id="solucoes" aria-labelledby="solucoes-titulo" className="ds-secao lg:py-8! bg-[#F6F5F2] scroll-mt-20">
         <div className="ds-wrap">
-          <Revelar className="mb-8 lg:mb-12 max-w-2xl">
+          {/* No computador a seção inteira cabe numa tela (100svh - 5rem do
+              cabeçalho): título e frase lado a lado, foto de altura contida e
+              os links logo abaixo. */}
+          <Revelar className="mb-8 max-w-2xl lg:mb-5 lg:max-w-none lg:grid lg:grid-cols-[auto_minmax(0,34rem)] lg:items-end lg:justify-between lg:gap-x-12">
             <h2 id="solucoes-titulo" className="font-serif text-t1 text-[#0B1F45] font-normal tracking-[-0.02em] text-balance">Nossas soluções.</h2>
-            <p className="mt-4 text-lead text-[#43474e] text-pretty">
+            <p className="mt-4 lg:mt-0 text-lead text-[#43474e] text-pretty">
               Cada linha tem o seu papel no projeto, das paredes internas à fachada. Escolha uma.
             </p>
           </Revelar>
           <SeletorLinhas />
-          <div className="mt-12 flex flex-wrap gap-x-8 gap-y-2 border-t border-[#0B1F45]/12 pt-6">
+          <div className="mt-12 lg:mt-5 flex flex-wrap gap-x-8 gap-y-2 lg:gap-y-0 border-t border-[#0B1F45]/12 pt-6 lg:pt-1">
             <Link href="/visualizador" className="inline-flex items-center gap-2 min-h-11 text-[#0B1F45] font-semibold">
               Simular no meu ambiente com IA {seta}
             </Link>
