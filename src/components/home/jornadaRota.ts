@@ -4,26 +4,47 @@
  * (node --test com o .ts).
  *
  * Rota sobre o mapa real (mapaPontos.ts: Natural Earth, projeção
- * equirretangular, viewBox 880 × 512, x = (lon + 85) × 4, y = (72 − lat) × 4).
- * A fábrica fica em 23° N, 113° L (x 792, y 196) e Manaus em
- * 3,1° S, 60° O (x 100, y 300). Partida e paradas 1 a 3 perto da fábrica; o
- * arco longo passa por cima da África e do Atlântico até Manaus (parada 4); um
- * passo curto dentro de Manaus (parada 5, o estoque) e a última perna até a
- * obra (parada 6). Cada trecho é uma cúbica [início, controle 1, controle 2, fim].
+ * equirretangular, viewBox 880 × 512). Partida e paradas 1 a 3 são um trecho
+ * curto sobre terra (Yunnan, Guangxi, Guangdong), de oeste para leste até a fábrica
+ * (23° N, 113° L); dali o arco sobe e passa por cima da África e do Atlântico
+ * até Manaus (3,1° S, 60° O, parada 4). Estoque (parada 5) e obra (parada 6)
+ * ficam colados em Manaus, a ~14 unidades uma da outra, para continuarem
+ * distintas. Os lugares vão em graus e passam por projetar(), a mesma conta de
+ * mapaPontos.ts (o teste confere); os controles das cúbicas vão em unidades.
  */
 
 export const TOTAL_ETAPAS = 6;
 
 export type Pt = [number, number];
 
-export const TRECHOS: [Pt, Pt, Pt, Pt][] = [
-  [[826, 116], [842, 122], [853, 136], [852, 150]], // partida → pesquisa
-  [[852, 150], [851, 164], [844, 176], [830, 182]], // → adaptação
-  [[830, 182], [816, 188], [804, 193], [792, 196]], // → fabricação, a fábrica
-  [[792, 196], [610, 88], [292, 98], [100, 300]], // → importação, chegada a Manaus
-  [[100, 300], [94, 308], [87, 313], [80, 316]], // → estoque em Manaus
-  [[80, 316], [72, 322], [68, 332], [68, 342]], // → a obra
+/** A mesma projeção de mapaPontos.ts, repetida aqui para o arquivo não ter importações. */
+export function projetar(lon: number, lat: number): Pt {
+  return [(lon + 85) * 4, (72 - lat) * 4];
+}
+
+/** Partida e as seis paradas, em graus [longitude, latitude] (oeste e sul negativos). */
+export const LUGARES: Pt[] = [
+  [102, 25.5], // partida, Yunnan
+  [106, 23.75], // pesquisa, Guangxi
+  [109.5, 24.5], // adaptação, Guangxi
+  [113, 23], // fabricação: a fábrica, Guangdong
+  [-60, -3.1], // importação: chegada a Manaus
+  [-62.25, -5.75], // estoque, colado em Manaus
+  [-64, -8.75], // a obra
 ];
+const P = LUGARES.map(([lon, lat]) => projetar(lon, lat));
+
+/** Controles de cada trecho (do lugar k ao k + 1). */
+const CONTROLES: [Pt, Pt][] = [
+  [[753, 191], [759, 193]],
+  [[769, 193], [773, 190]],
+  [[783, 190], [788, 193]],
+  [[740, 70], [292, 98]], // o arco longo: sobe íngreme e desce sobre Manaus
+  [[97, 304], [94, 308]],
+  [[88, 315], [85, 319]],
+];
+
+export const TRECHOS: [Pt, Pt, Pt, Pt][] = CONTROLES.map(([a, b], k) => [P[k], a, b, P[k + 1]]);
 
 /** A rota inteira num path só (traço, fio previsto e offset-path do ponto). */
 export const ROTA =
@@ -63,6 +84,8 @@ export const FRACOES = COMPRIMENTOS.map((c) => c / COMPRIMENTO_TOTAL);
  */
 export const INICIO_VIAGEM = 0.012;
 export const VIAGEM = 0.09;
+/** Fusão do texto em cada ponta da batida (globals.css › .jr-etapa usa o mesmo número). */
+export const FUSAO = 0.018;
 
 /** Hora (em --p) em que o ponto chega à parada da etapa k. */
 export function chegada(k: number): number {

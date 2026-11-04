@@ -22,10 +22,10 @@ const ETAPAS = [
 const TOTAL = TOTAL_ETAPAS;
 
 const ROTULOS = [
-  // Abaixo e à esquerda da fábrica: à direita dela o recorte acaba.
-  { nome: "Fabricação Orbital", x: 784, y: 210, ancora: "fim" as const },
-  // Abaixo e à direita de Manaus: à esquerda fica a perna até a obra.
-  { nome: "Manaus", x: 110, y: 312, ancora: "inicio" as const },
+  // Abaixo da fábrica e das paradas 1 a 3, terminando na fábrica.
+  { nome: "Fabricação Orbital", x: 790, y: 206, ancora: "fim" as const },
+  // À direita de Manaus: abaixo e à esquerda ficam o estoque e a obra.
+  { nome: "Manaus", x: 117, y: 294, ancora: "inicio" as const },
 ];
 
 type Vars = CSSProperties & Record<`--${string}`, string | number>;
@@ -137,13 +137,14 @@ export default function Jornada() {
     >
       {/* Sem JavaScript: só em motor sem `scripting: none` (veja o CSS_SEM_JS). Inerte com JS. */}
       <noscript><style dangerouslySetInnerHTML={{ __html: CSS_SEM_JS }} /></noscript>
-      <div className="jr-quadro sticky top-0 h-[100svh] overflow-hidden flex items-center">
+      <div className="jr-quadro sticky top-0 h-[100svh] overflow-hidden flex items-center pt-20 lg:pt-0">
         {/*
           Grade com áreas: no celular e no tablet, título → mapa → palco; no
-          computador, título e palco na coluna da esquerda e o mapa ocupando a
-          altura toda à direita.
+          computador, título e palco numa coluna à esquerda (globals.css) e o
+          mapa fora do fluxo, preso à direita do quadro. No celular o quadro
+          centra o conteúdo abaixo do cabeçalho (pt-20), que volta ao subir.
         */}
-        <div className="ds-wrap w-full grid gap-y-6 sm:gap-y-8 [grid-template-areas:'cabeca'_'mapa'_'palco'] lg:[grid-template-areas:'cabeca_mapa'_'palco_mapa'] lg:grid-cols-[minmax(0,4fr)_minmax(0,8fr)] lg:grid-rows-[auto_1fr] lg:gap-x-16">
+        <div className="jr-grade ds-wrap-largo w-full grid gap-y-6 sm:gap-y-8 [grid-template-areas:'cabeca'_'mapa'_'palco']">
           <Revelar className="[grid-area:cabeca] max-w-2xl">
             <h2 id="jornada-titulo" className="font-serif text-t1 font-normal tracking-[-0.02em] text-balance">Da fábrica até a sua obra.</h2>
             <p className="mt-4 text-lead text-white/75 text-pretty">
@@ -166,7 +167,7 @@ export default function Jornada() {
               ))}
             </div>
             {/* Onde a rolagem está: seis traços que enchem, sem número nem clique. */}
-            <div className="mt-6 flex gap-1.5">
+            <div className="jr-progresso mt-6 flex gap-1.5">
               {ETAPAS.map((e, i) => (
                 <span key={e.titulo} className="relative h-px flex-1">
                   <span className="absolute inset-0 bg-white opacity-30" />
@@ -189,19 +190,25 @@ export default function Jornada() {
             ))}
           </ol>
 
-          <div className="[grid-area:mapa] lg:self-center">
+          <div className="jr-mapa-caixa [grid-area:mapa]">
             {/*
-              No celular e no tablet o quadro corta a faixa da rota (de 64° N a
-              40° S) e a tela do mapa sobe por transform; no computador o mapa
-              aparece inteiro. Os dois SVGs e os rótulos dividem a mesma caixa.
+              Celular e tablet: o quadro corta a faixa da rota e a tela do mapa
+              fica maior que ele (globals.css › Home: jornada). Computador: o
+              mapa inteiro, 65% da largura, encostado à direita. A terra fica
+              numa caixa com máscara nas bordas; rota e rótulos por cima, sem
+              máscara, na mesma geometria.
             */}
-            <figure className="jr-mapa relative overflow-hidden -mx-[clamp(1rem,4.2vw,4rem)] sm:mx-0">
-              <div className="jr-tela absolute inset-x-0 top-0" style={{ aspectRatio: `${MAPA_LARGURA} / ${MAPA_ALTURA}` }}>
-                {/* Terra em pontos: camada própria, que não repinta quando a rota anda. */}
-                <svg viewBox={`0 0 ${MAPA_LARGURA} ${MAPA_ALTURA}`} className="jr-terra absolute inset-0 h-full w-full" aria-hidden focusable="false">
-                  <path d={MAPA_PONTOS} />
-                </svg>
+            <figure className="jr-mapa relative overflow-hidden -mx-[clamp(1rem,4.2vw,4rem)] sm:mx-0 lg:mx-0">
+              <div className="jr-terra-caixa" aria-hidden>
+                <div className="jr-tela">
+                  {/* Terra em pontos: camada própria, que não repinta quando a rota anda. */}
+                  <svg viewBox={`0 0 ${MAPA_LARGURA} ${MAPA_ALTURA}`} className="jr-terra absolute inset-0 h-full w-full" aria-hidden focusable="false">
+                    <path d={MAPA_PONTOS} />
+                  </svg>
+                </div>
+              </div>
 
+              <div className="jr-tela">
                 <svg ref={svgRef} viewBox={`0 0 ${MAPA_LARGURA} ${MAPA_ALTURA}`} className="absolute inset-0 h-full w-full overflow-visible" aria-hidden focusable="false">
                   {/* Rota prevista: fio apagado, sempre visível. */}
                   <path d={ROTA} className="jr-prevista" />

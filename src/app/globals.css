@@ -1128,17 +1128,50 @@ html[data-mv-nivel="leve"] .ts-galeria-foto { transform: none !important; }
   );
 }
 
-/* Mapa: no celular e no tablet o quadro mostra a faixa da rota (y 32 a 448 do
-   viewBox 880 × 512) e a tela sobe 32/512; no computador, o mapa inteiro. */
-.jr-mapa { aspect-ratio: 880 / 416; }
-.jr-tela { transform: translate3d(0, -6.25%, 0); }
-@media (min-width: 1024px) {
-  .jr-mapa { aspect-ratio: 880 / 512; }
-  .jr-tela { transform: none; }
+/* Mapa no celular e no tablet: o quadro mostra só a faixa da rota, de x 56 a
+   824 e de y 20 a 476 do viewBox 880 × 512 (a obra e a fábrica com folga). A
+   tela do mapa fica 880/768 mais larga que o quadro, recuada 56/768 à
+   esquerda, e sobe 20/512 da própria altura. */
+.jr-mapa { aspect-ratio: 768 / 456; }
+.jr-tela { position: absolute; top: 0; left: -7.2917%; width: 114.5833%; aspect-ratio: 880 / 512; transform: translate3d(0, -3.9063%, 0); }
+
+/* Celular baixo (iPhone SE e afins): espaços menores, para o quadro caber com
+   folga abaixo do cabeçalho. */
+@media (max-width: 1023.98px) and (max-height: 700px) {
+  .jr-grade { row-gap: 1rem; }
+  .jr-progresso { margin-top: 1rem; }
 }
-/* Terra: um ponto por subcaminho de comprimento zero, a ponta redonda faz o ponto. */
-.jr-terra path { fill: none; stroke: #fff; stroke-opacity: 0.18; stroke-width: 4.4; stroke-linecap: round; }
-@media (max-width: 1023.98px) { .jr-terra path { stroke-width: 5.2; stroke-opacity: 0.2; } }
+
+/* Computador: o mapa é o protagonista. Ocupa 65% da largura da tela (sem
+   passar de 150svh, para caber em telas largas e baixas), encosta na borda
+   direita e fica centrado na altura do quadro; o texto vai numa coluna à
+   esquerda, da altura do mapa (título em cima, etapa embaixo), que nunca
+   invade o mapa. A 1440 × 900 o mapa tem ~936 × 545 px (60svh). */
+@media (min-width: 1024px) {
+  .jr-grade {
+    grid-template-areas: "cabeca" "palco";
+    grid-template-columns: minmax(0, min(26rem, calc(35vw - clamp(1rem, 4.2vw, 4rem) - 2.5rem)));
+    grid-template-rows: auto 1fr;
+    min-height: min(37.24vw, 87.27svh);
+  }
+  .jr-mapa-caixa { position: absolute; top: 0; bottom: 0; right: 0; width: min(65vw, 150svh); display: flex; align-items: center; }
+  .jr-mapa { aspect-ratio: 880 / 512; width: 100%; }
+  .jr-tela { left: 0; width: 100%; transform: none; }
+}
+
+/* Terra: um ponto por subcaminho de comprimento zero, a ponta redonda faz o
+   ponto. As bordas do campo de pontos somem numa máscara fixa (sem animação),
+   para não sobrar um retângulo; a rota, as paradas e os rótulos ficam fora da
+   máscara. */
+.jr-terra-caixa {
+  position: absolute; inset: 0; overflow: hidden;
+  -webkit-mask-image: linear-gradient(to right, transparent, #000 9%, #000 91%, transparent), linear-gradient(to bottom, transparent, #000 12%, #000 88%, transparent);
+  -webkit-mask-composite: source-in;
+  mask-image: linear-gradient(to right, transparent, #000 9%, #000 91%, transparent), linear-gradient(to bottom, transparent, #000 12%, #000 88%, transparent);
+  mask-composite: intersect;
+}
+.jr-terra path { fill: none; stroke: #fff; stroke-opacity: 0.24; stroke-width: 4.4; stroke-linecap: round; }
+@media (max-width: 1023.98px) { .jr-terra path { stroke-width: 5.2; } }
 
 .jr-prevista { fill: none; stroke: rgba(255, 255, 255, 0.22); stroke-width: 1; vector-effect: non-scaling-stroke; }
 .jr-traco {
@@ -1166,12 +1199,13 @@ html[data-mv-nivel="leve"] .ts-galeria-foto { transform: none !important; }
 .jr-rotulo { pointer-events: none; text-shadow: 0 0 1px #0B1F45, 0 0 2px #0B1F45, 0 0 3px #0B1F45, 0 0 5px #0B1F45, 0 0 9px #0B1F45; }
 
 /* Uma etapa por vez (--a e --b no elemento: a batida dela). Entra em fusão
-   subindo um pouco e sai só em fusão, 0.025 de --p em cada ponta: a que sai
+   subindo um pouco e sai só em fusão, 0.018 de --p em cada ponta (FUSAO em
+   jornadaRota.ts): a que sai
    apaga antes de a próxima começar, então nunca há duas na tela. */
 .jr-palco { pointer-events: none; }
 .jr-etapa {
   align-self: end;
-  opacity: min(clamp(0, (var(--p, 0) - var(--a)) / 0.025, 1), clamp(0, (var(--b) - var(--p, 0)) / 0.025, 1));
+  opacity: min(clamp(0, (var(--p, 0) - var(--a)) / 0.018, 1), clamp(0, (var(--b) - var(--p, 0)) / 0.018, 1));
   transform: translate3d(0, calc((1 - clamp(0, (var(--p, 0) - var(--a)) / 0.04, 1)) * 0.75rem), 0);
 }
 /* Seis traços que enchem com a rolagem (passivos, sem clique). */

@@ -3,15 +3,36 @@ import assert from "node:assert/strict";
 import fs from "node:fs";
 import {
   FRACOES,
+  FUSAO,
   INICIO_VIAGEM,
+  LUGARES,
   PARADAS,
   TOTAL_ETAPAS,
   TRECHOS,
   VIAGEM,
   chegada,
   distancia,
+  projetar as projetarRota,
 } from "./jornadaRota.ts";
-import { MAPA_ALTURA, MAPA_LARGURA, MAPA_PONTOS, projetar } from "./mapaPontos.ts";
+import { MAPA_ALTURA, MAPA_LARGURA, MAPA_PASSO, MAPA_PONTOS, projetar } from "./mapaPontos.ts";
+
+/** Centros dos pontos de terra do mapa gerado (o path é relativo dentro de cada linha). */
+function pontosDeTerra() {
+  const lista = [];
+  let x = 0;
+  let y = 0;
+  for (const m of MAPA_PONTOS.matchAll(/([Mm])(-?[0-9.]+) (-?[0-9.]+)h0/g)) {
+    if (m[1] === "M") {
+      x = Number(m[2]);
+      y = Number(m[3]);
+    } else {
+      x += Number(m[2]);
+      y += Number(m[3]);
+    }
+    lista.push([x, y]);
+  }
+  return lista;
+}
 
 const perto = (a, b, tol, msg) => assert.ok(Math.abs(a - b) <= tol, `${msg}: ${a} vs ${b}`);
 
@@ -23,13 +44,37 @@ test("seis trechos encadeados, um por etapa", () => {
   }
 });
 
-test("a fábrica e Manaus caem nos lugares reais do mapa", () => {
-  const [fx, fy] = projetar(113, 23);
-  perto(PARADAS[2][0], fx, 2, "fábrica x");
-  perto(PARADAS[2][1], fy, 2, "fábrica y");
-  const [mx, my] = projetar(-60, -3.1);
-  perto(PARADAS[3][0], mx, 1, "Manaus x");
-  perto(PARADAS[3][1], my, 1, "Manaus y");
+test("partida e paradas vêm de graus pela mesma projeção do mapa", () => {
+  for (const [lon, lat] of LUGARES) assert.deepEqual(projetarRota(lon, lat), projetar(lon, lat));
+  assert.deepEqual(TRECHOS[0][0], projetar(...LUGARES[0]));
+  PARADAS.forEach((p, k) => assert.deepEqual(p, projetar(...LUGARES[k + 1]), `parada ${k + 1}`));
+});
+
+test("a fábrica e Manaus caem nos lugares reais", () => {
+  assert.deepEqual(LUGARES[3], [113, 23]);
+  assert.deepEqual(LUGARES[4], [-60, -3.1]);
+});
+
+test("partida e paradas 1 a 3 ficam no sul da Ásia, em volta da fábrica", () => {
+  for (const [lon, lat] of LUGARES.slice(0, 4)) {
+    assert.ok(lon >= 100 && lon <= 120 && lat >= 20 && lat <= 27, `${lon}, ${lat}`);
+  }
+});
+
+test("estoque e obra colados em Manaus, mas distintos (10 a 15 unidades)", () => {
+  for (const k of [4, 5]) {
+    const d = Math.hypot(PARADAS[k][0] - PARADAS[k - 1][0], PARADAS[k][1] - PARADAS[k - 1][1]);
+    assert.ok(d >= 10 && d <= 15, `parada ${k + 1}: ${d.toFixed(1)}`);
+  }
+});
+
+test("partida e todas as paradas têm um ponto de terra a até um passo da grade", () => {
+  const terra = pontosDeTerra();
+  assert.ok(terra.length > 1000);
+  [TRECHOS[0][0], ...PARADAS].forEach(([x, y], k) => {
+    const d = Math.min(...terra.map(([a, b]) => Math.hypot(a - x, b - y)));
+    assert.ok(d <= MAPA_PASSO, `${k === 0 ? "partida" : `parada ${k}`} a ${d.toFixed(1)} do ponto de terra mais perto`);
+  });
 });
 
 test("toda a rota cabe no viewBox do mapa", () => {
@@ -63,7 +108,7 @@ test("distância: de 0 a 1, nunca volta, e chega exata em cada parada", () => {
 
 test("o ponto chega antes de o texto da etapa começar a sair", () => {
   for (let k = 0; k < TOTAL_ETAPAS; k++) {
-    assert.ok(chegada(k) < (k + 1) / TOTAL_ETAPAS - 0.025, `etapa ${k + 1}`);
+    assert.ok(chegada(k) < (k + 1) / TOTAL_ETAPAS - FUSAO, `etapa ${k + 1}`);
   }
 });
 
@@ -75,6 +120,10 @@ test("o CSS usa os mesmos tempos (globals.css › Home: jornada)", () => {
     perto(Number(m[1]), k / TOTAL_ETAPAS + INICIO_VIAGEM, 1e-5, `início da viagem ${k + 1}`);
     perto(Number(m[2]), VIAGEM, 1e-9, `duração da viagem ${k + 1}`);
   }
+  const etapa = css.match(/\.jr-etapa \{[^}]*opacity: min\(clamp\(0, \(var\(--p, 0\) - var\(--a\)\) \/ ([0-9.]+), 1\), clamp\(0, \(var\(--b\) - var\(--p, 0\)\) \/ ([0-9.]+), 1\)\);/);
+  assert.ok(etapa, ".jr-etapa no CSS");
+  assert.equal(Number(etapa[1]), FUSAO);
+  assert.equal(Number(etapa[2]), FUSAO);
 });
 
 test("mapa gerado: pontos suficientes para ler o mundo e arquivo pequeno", () => {
