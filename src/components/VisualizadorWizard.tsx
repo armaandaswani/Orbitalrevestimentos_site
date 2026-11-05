@@ -10,6 +10,7 @@ import {
   projectTextureToQuad,
 } from "@/lib/texture-projection";
 import VizShell, { focarEtapa, rolarParaTopo, type AcaoShell } from "./visualizador/VizShell";
+import EtapaFoto from "./visualizador/EtapaFoto";
 import { etapaVisivel } from "./visualizador/fluxo";
 
 // ── Types ─────────────────────────────────────────────────────────────────────
@@ -1085,8 +1086,21 @@ export default function VisualizadorWizard({
   }, [zones]);
 
   // ── File upload ───────────────────────────────────────────────────────────
-  const fileInputRef = useRef<HTMLInputElement | null>(null);
-  const [dragOver, setDragOver] = useState(false);
+  // Linha discreta da etapa Foto com o que veio do Simulador (produto · espaço).
+  const resumoSimulador = useMemo(() => {
+    if (!simPrefills?.length || !products?.length) return null;
+    if (simPrefills.length === 1) {
+      const pf = simPrefills[0];
+      const prod = products.find((p) => p.code === pf.productCode);
+      const spaceLabel = VIZ_SPACES.find((s) => s.id === pf.spaceId)?.label ?? pf.spaceId;
+      return prod ? `${prod.name} · ${spaceLabel}` : spaceLabel;
+    }
+    const names = simPrefills.map((pf) => {
+      const prod = products.find((p) => p.code === pf.productCode);
+      return prod?.name ?? pf.productCode;
+    }).filter(Boolean);
+    return `${simPrefills.length} modelos: ${names.join(", ")}`;
+  }, [simPrefills, products]);
 
   const handleFile = useCallback(async (file: File | undefined | null) => {
     if (!file) return;
@@ -1958,17 +1972,13 @@ export default function VisualizadorWizard({
       <div ref={topRef} />
       <VizShell etapa={etapa} embutido={embeddedMode} onVoltar={voltar} acao={acao}>
         {step === "upload" && (
-          <UploadStep
-            fileInputRef={fileInputRef}
-            dragOver={dragOver}
-            setDragOver={setDragOver}
-            handleFile={handleFile}
-            error={error}
-            hasBanked={savedAmbientes.length > 0}
-            simPrefills={simPrefills}
-            products={products}
-            embeddedMode={embeddedMode}
-            onSkip={onSkip}
+          <EtapaFoto
+            onArquivo={handleFile}
+            erro={error}
+            temAmbienteSalvo={savedAmbientes.length > 0}
+            resumoSimulador={resumoSimulador}
+            embutido={embeddedMode}
+            onPular={embeddedMode ? onSkip : undefined}
           />
         )}
 
@@ -2094,128 +2104,6 @@ export default function VisualizadorWizard({
 }
 
 // ── Sub-components ─────────────────────────────────────────────────────────────
-
-function UploadStep({
-  fileInputRef, dragOver, setDragOver, handleFile, error, hasBanked, simPrefills, products, embeddedMode, onSkip,
-}: {
-  fileInputRef: React.RefObject<HTMLInputElement | null>;
-  dragOver: boolean;
-  setDragOver: (v: boolean) => void;
-  handleFile: (f: File | undefined | null) => void;
-  error: string | null;
-  hasBanked: boolean;
-  simPrefills?: SimPrefill[];
-  products?: VizProduct[];
-  embeddedMode?: boolean;
-  onSkip?: () => void;
-}) {
-  const simBanner = React.useMemo(() => {
-    if (!simPrefills?.length || !products?.length) return null;
-    if (simPrefills.length === 1) {
-      const pf = simPrefills[0];
-      const prod = products.find((p) => p.code === pf.productCode);
-      const spaceLabel = VIZ_SPACES.find((s) => s.id === pf.spaceId)?.label ?? pf.spaceId;
-      return prod ? `${prod.name} · ${spaceLabel}` : spaceLabel;
-    }
-    const names = simPrefills.map((pf) => {
-      const prod = products.find((p) => p.code === pf.productCode);
-      return prod?.name ?? pf.productCode;
-    }).filter(Boolean);
-    return `${simPrefills.length} modelos: ${names.join(", ")}`;
-  }, [simPrefills, products]);
-  const cameraInputRef = React.useRef<HTMLInputElement | null>(null);
-
-  return (
-    // "Como funciona" moved to the /visualizador page, below the tool.
-    <div>
-        <div
-          onClick={() => fileInputRef.current?.click()}
-          onDragOver={(e) => { e.preventDefault(); setDragOver(true); }}
-          onDragLeave={() => setDragOver(false)}
-          onDrop={(e) => { e.preventDefault(); setDragOver(false); handleFile(e.dataTransfer.files?.[0]); }}
-          className={`cursor-pointer border-2 border-dashed rounded-sm flex flex-col items-center justify-center text-center px-6 py-20 transition-colors ${dragOver ? "border-[#36A35C] bg-[#f3f8f1]" : "border-[#cdd3dd] bg-[#F6F5F2] hover:border-[#0B1F45]"}`}
-        >
-          <svg width="46" height="46" viewBox="0 0 24 24" fill="none" stroke="#0B1F45" strokeWidth="1.3" className="mb-4">
-            <path d="M21 15v4a2 2 0 01-2 2H5a2 2 0 01-2-2v-4" />
-            <path d="M17 8l-5-5-5 5" />
-            <path d="M12 3v12" />
-          </svg>
-          <p className="text-[#0B1F45] text-xl mb-1">
-            {hasBanked ? "Envie a foto do próximo ambiente" : "Envie uma foto do seu ambiente"}
-          </p>
-          <p className="text-[#74777f] text-sm">
-            <span className="[@media(pointer:coarse)]:hidden">Clique para escolher ou arraste a imagem aqui</span>
-            <span className="hidden [@media(pointer:coarse)]:inline">Toque para escolher uma foto</span>
-          </p>
-          <p className="text-[#a0a3a9] text-xs mt-3">JPG ou PNG · foto de frente e bem iluminada funciona melhor</p>
-        </div>
-        {/* Celular: duas saídas claras. Em vários Android (Motorola, Android 13+) o
-            input só com accept="image/*" abre o seletor de fotos do sistema, que não
-            oferece a câmera; o capture="environment" abre a câmera traseira direto. */}
-        <div className="hidden [@media(pointer:coarse)]:grid grid-cols-2 gap-3 mt-4">
-          <button
-            type="button"
-            onClick={() => cameraInputRef.current?.click()}
-            className="min-h-12 flex items-center justify-center gap-2 bg-[#0B1F45] text-white text-xs tracking-[0.12em] uppercase font-semibold"
-          >
-            <svg aria-hidden width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.6">
-              <path d="M4 8h3l2-3h6l2 3h3v11H4z" />
-              <circle cx="12" cy="13" r="3.5" />
-            </svg>
-            Tirar foto
-          </button>
-          <button
-            type="button"
-            onClick={() => fileInputRef.current?.click()}
-            className="min-h-12 flex items-center justify-center gap-2 border border-[#0B1F45] text-[#0B1F45] text-xs tracking-[0.12em] uppercase font-semibold"
-          >
-            <svg aria-hidden width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.6">
-              <rect x="3" y="5" width="18" height="14" />
-              <path d="M3 16l5-5 4 4 3-3 6 6" />
-            </svg>
-            Galeria
-          </button>
-        </div>
-        <input
-          ref={cameraInputRef}
-          type="file"
-          accept="image/*"
-          capture="environment"
-          className="hidden"
-          onChange={(e) => { handleFile(e.target.files?.[0]); e.target.value = ""; }}
-        />
-        {error && <p className="mt-3 text-sm text-[#b42318]">{error}</p>}
-        {simBanner && (
-          <div className="mt-4 border border-[#bcd0e8] bg-[#f5f8fc] px-4 py-3">
-            <p className="text-[10px] tracking-[0.15em] uppercase font-bold text-[#0B1F45] mb-0.5">
-              {embeddedMode ? "Produto selecionado" : "Vindo do Simulador"}
-            </p>
-            <p className="text-[#43474e] text-sm">
-              {simBanner}.{" "}
-              {(simPrefills?.length ?? 0) > 1
-                ? "Os modelos serão pré-selecionados conforme você adiciona as áreas."
-                : "O modelo será pré-selecionado quando você marcar a área."}
-            </p>
-          </div>
-        )}
-        <input ref={fileInputRef} type="file" accept="image/*" className="hidden" onChange={(e) => { handleFile(e.target.files?.[0]); e.target.value = ""; }} />
-
-        {embeddedMode && onSkip && (
-          <div className="mt-6 flex justify-end">
-            <button
-              onClick={onSkip}
-              className="flex items-center gap-1.5 text-xs tracking-[0.1em] uppercase font-semibold text-[#74777f] hover:text-[#0B1F45] transition-colors"
-            >
-              Pular esta etapa
-              <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5">
-                <path d="M5 12h14M12 5l7 7-7 7" />
-              </svg>
-            </button>
-          </div>
-        )}
-    </div>
-  );
-}
 
 type ZoneMode = "tap" | "draw";
 
