@@ -9,6 +9,8 @@ import {
   tileTexture,
   projectTextureToQuad,
 } from "@/lib/texture-projection";
+import VizShell, { rolarParaTopo, type AcaoShell } from "./visualizador/VizShell";
+import { etapaVisivel } from "./visualizador/fluxo";
 
 // ── Types ─────────────────────────────────────────────────────────────────────
 
@@ -883,21 +885,8 @@ function buildSimuladorUrl(ambientes: SavedAmbiente[]): string {
 // ── Wizard step type ──────────────────────────────────────────────────────────
 
 export type VizStep = "upload" | "zones" | "result";
-// The guided flow the client sees. "zones" is internally split into three
-// phases (mark → confirm → model); the stepper shows them as distinct steps so
-// the client always knows what's done, what's now, and what's left.
-const STEP_LABELS: { n: string; label: string }[] = [
-  { n: "1", label: "Foto" },
-  { n: "2", label: "Área" },
-  { n: "3", label: "Descrição" },
-  { n: "4", label: "Modelo" },
-  { n: "5", label: "Resultado" },
-];
-function stepIndex(step: VizStep, phase: "mark" | "confirm" | "model"): number {
-  if (step === "upload") return 0;
-  if (step === "result") return 4;
-  return phase === "mark" ? 1 : phase === "confirm" ? 2 : 3;
-}
+// "zones" is internally split into three phases (mark → confirm → model). The
+// shell shows four visible steps (visualizador/fluxo.ts › etapaVisivel).
 
 // ── Props ──────────────────────────────────────────────────────────────────────
 
@@ -1062,12 +1051,20 @@ export default function VisualizadorWizard({
   }, []);
 
   // ── Scroll helpers ────────────────────────────────────────────────────────
+  // VizShell rolls back to its top on every visible-step change. Phase changes
+  // inside the same visible step (confirm ↔ model) roll here, so the next
+  // screen never starts halfway down the page.
+  const etapa = etapaVisivel(step, zonePhase);
   const topRef = useRef<HTMLDivElement | null>(null);
-  const stepInit = useRef(true);
+  const etapaAnterior = useRef(etapa);
+  const faseAnterior = useRef(zonePhase);
   useEffect(() => {
-    if (stepInit.current) { stepInit.current = false; return; }
-    topRef.current?.scrollIntoView({ behavior: "smooth", block: "start" });
-  }, [step]);
+    const mesmaEtapa = etapaAnterior.current === etapa;
+    const mudouFase = faseAnterior.current !== zonePhase;
+    etapaAnterior.current = etapa;
+    faseAnterior.current = zonePhase;
+    if (mesmaEtapa && mudouFase && topRef.current) rolarParaTopo(topRef.current);
+  }, [etapa, zonePhase]);
 
   const scrollZoneRef = useRef<string | null>(null);
   useEffect(() => {
@@ -1918,19 +1915,44 @@ export default function VisualizadorWizard({
     window.location.assign(url);
   }, [proceeding, simuladorHref, allAmbientes, leadName, leadPhone]);
 
+  // ── Shell wiring ──────────────────────────────────────────────────────────
+  // "Voltar" walks one screen back; hidden on Foto and while a render runs.
+  const voltar: (() => void) | undefined =
+    step === "zones"
+      ? () => {
+          if (zonePhase === "mark") setStep("upload");
+          else if (zonePhase === "confirm") setZonePhase("mark");
+          else setZonePhase("confirm");
+        }
+      : step === "result" && !generating
+        ? () => { setZonePhase("model"); setStep("zones"); }
+        : undefined;
+  // The primary action of each zones phase, always in reach at the bottom.
+  // Same handlers and rules as the step's own buttons.
+  const analisando = analysis.status === "loading";
+  const semDescricao = zones.some((z) => !z.instruction.trim());
+  const acao: AcaoShell | undefined =
+    step !== "zones"
+      ? undefined
+      : zonePhase === "mark"
+        ? {
+            rotulo: anyDetecting ? "Detectando área…" : anyAreaMarked ? "Continuar" : "Marque uma área",
+            onClick: goConfirm,
+            desabilitada: !anyAreaMarked,
+          }
+        : zonePhase === "confirm"
+          ? {
+              rotulo: analisando ? "Analisando…" : semDescricao ? "Descreva cada área" : "Confirmar e escolher modelo",
+              onClick: () => setZonePhase("model"),
+              desabilitada: analisando || semDescricao,
+            }
+          : { rotulo: "Gerar visualização", onClick: generate, desabilitada: !canGenerate, tom: "verde" };
+
   // ── Render ────────────────────────────────────────────────────────────────
   return (
     <div>
-      <div ref={topRef} className="scroll-mt-24" />
-
-      {/* Stepper — only in standalone mode */}
-      {!embeddedMode && (
-        <section className="px-4 sm:px-6 pt-10 pb-2 max-w-[1280px] mx-auto">
-          <WizStepper activeIndex={stepIndex(step, zonePhase)} />
-        </section>
-      )}
-
-      <section className={embeddedMode ? "" : "px-4 sm:px-6 pb-12 max-w-[1280px] mx-auto"}>
+      <div ref={topRef} />
+      <VizShell etapa={etapa} embutido={embeddedMode} onVoltar={voltar} acao={acao}>
         {step === "upload" && (
           <UploadStep
             fileInputRef={fileInputRef}
@@ -2062,38 +2084,12 @@ export default function VisualizadorWizard({
             </div>
           </div>
         )}
-      </section>
+      </VizShell>
     </div>
   );
 }
 
 // ── Sub-components ─────────────────────────────────────────────────────────────
-
-function WizStepper({ activeIndex }: { activeIndex: number }) {
-  const idx = activeIndex;
-  return (
-    <ol className="flex items-center gap-1.5 sm:gap-3">
-      {STEP_LABELS.map((s, i) => {
-        const done = i < idx;
-        const active = i === idx;
-        return (
-          <li key={s.n} className="flex items-center gap-1.5 sm:gap-3 flex-1 last:flex-none min-w-0">
-            <div className="flex items-center gap-2 min-w-0">
-              <span className={`flex-shrink-0 w-7 h-7 rounded-full text-xs font-bold flex items-center justify-center ${active ? "bg-[#0B1F45] text-[#0B1F45]" : done ? "bg-[#36A35C] text-[#0B1F45]" : "bg-[#e8e8e6] text-[#a0a3a9]"}`}>
-                {done ? "✓" : s.n}
-              </span>
-              {/* On mobile only the current step's label shows — keeps 5 steps on one row */}
-              <span className={`text-[11px] sm:text-xs truncate ${active ? "text-[#0B1F45] font-bold inline" : "text-[#74777f] hidden sm:inline"}`}>
-                {s.label}
-              </span>
-            </div>
-            {i < STEP_LABELS.length - 1 && <span className={`hidden sm:block flex-1 h-[2px] ${done ? "bg-[#36A35C]" : "bg-[#e8e8e6]"}`} />}
-          </li>
-        );
-      })}
-    </ol>
-  );
-}
 
 function UploadStep({
   fileInputRef, dragOver, setDragOver, handleFile, error, hasBanked, simPrefills, products, embeddedMode, onSkip,
@@ -2126,8 +2122,8 @@ function UploadStep({
   const cameraInputRef = React.useRef<HTMLInputElement | null>(null);
 
   return (
-    <div className={`grid gap-10 items-start mt-6 ${embeddedMode ? "grid-cols-1 lg:grid-cols-[1.1fr_0.9fr]" : "grid lg:grid-cols-[1.1fr_0.9fr]"}`}>
-      <div>
+    // "Como funciona" moved to the /visualizador page, below the tool.
+    <div>
         <div
           onClick={() => fileInputRef.current?.click()}
           onDragOver={(e) => { e.preventDefault(); setDragOver(true); }}
@@ -2213,26 +2209,6 @@ function UploadStep({
             </button>
           </div>
         )}
-      </div>
-
-      <div>
-        <p className="text-[10px] tracking-[0.18em] uppercase font-bold text-[#2347A0] mb-4">Como funciona</p>
-        <ol className="space-y-5">
-          {[
-            { n: "1", t: "Envie a foto", d: "Use uma foto bem iluminada e de frente para o ambiente." },
-            { n: "2", t: "Toque nas superfícies", d: "Toque numa parede, teto ou móvel — a IA marca a área. Escolha o acabamento de cada uma." },
-            { n: "3", t: "Gere e veja", d: embeddedMode ? "A IA aplica cada modelo na sua área — resultado em segundos." : "A IA aplica cada modelo na sua área — e tudo vai pronto para o orçamento." },
-          ].map((s) => (
-            <li key={s.n} className="flex gap-4">
-              <span className="flex-shrink-0 w-8 h-8 rounded-full bg-[#0B1F45] text-white text-sm font-bold flex items-center justify-center">{s.n}</span>
-              <div>
-                <p className="font-semibold text-[#0B1F45] text-sm">{s.t}</p>
-                <p className="text-[#74777f] text-sm leading-relaxed">{s.d}</p>
-              </div>
-            </li>
-          ))}
-        </ol>
-      </div>
     </div>
   );
 }
