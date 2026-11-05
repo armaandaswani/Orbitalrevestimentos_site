@@ -1831,17 +1831,23 @@ html.mv-cursor:has([data-lupa="aberta"]) .mv-cursor-corpo { opacity: 0; }
 }
 
 /* Acabamento (EtapaAcabamento): no celular a tela inteira cabe numa altura de
-   tela com o cabeçalho do site à vista. Do que sobra depois do cabeçalho, da
-   barra de etapas, da barra de ação e das linhas fixas (título, abas, nome do
-   modelo, Onde), a foto leva ~40% (até 34svh) e a foto do cartão o resto. No
-   computador a foto fica na coluna da esquerda e o cartão tem 220 px. A área
-   nova entra com um fade curto; o cartão escolhido cresce para 1.02. */
-.viz-acab-foto { --viz-foto-h: clamp(84px, calc((100svh - 448px) * 0.42), 34svh); }
-.viz-cartao-foto { height: clamp(116px, calc((100svh - 448px) * 0.58), 280px); }
+   tela com o cabeçalho do site à vista. --viz-acab-livre é o que sobra depois
+   do cabeçalho (81), da barra de etapas (85), da barra de ação (73) e das
+   linhas fixas (título, Onde, abas, nome do modelo e margens: 195). A faixa da
+   foto leva ~42% disso (104 px até 30svh) e a foto do cartão o resto (os
+   cartões têm prioridade). No computador a foto fica inteira na coluna da
+   esquerda e o cartão tem 220 × 260 px. A área nova entra com um fade curto, a
+   faixa desliza até a área nova e o cartão escolhido cresce para 1.02. */
+.viz-shell {
+  --viz-acab-livre: calc(100svh - 434px);
+  --viz-acab-faixa: clamp(104px, calc(var(--viz-acab-livre) * 0.42), 30svh);
+}
+.viz-acab-faixa { height: var(--viz-acab-faixa); }
+.viz-acab-foto { --viz-foto-h: calc(100dvh - 15rem); }
+.viz-cartao-foto { height: clamp(116px, calc(var(--viz-acab-livre) - var(--viz-acab-faixa)), 300px); }
 /* Análise com erro: a linha do aviso ("Tentar de novo") sai da foto do cartão. */
-[data-erro] .viz-cartao-foto { height: clamp(116px, calc((100svh - 448px) * 0.58 - 40px), 280px); }
+[data-erro] .viz-cartao-foto { height: clamp(116px, calc(var(--viz-acab-livre) - var(--viz-acab-faixa) - 40px), 300px); }
 @media (min-width: 1024px) {
-  .viz-acab-foto { --viz-foto-h: calc(100dvh - 15rem); }
   .viz-cartao-foto, [data-erro] .viz-cartao-foto { height: 260px; }
 }
 .viz-cartoes { scrollbar-width: none; }
@@ -1854,6 +1860,7 @@ html.mv-cursor:has([data-lupa="aberta"]) .mv-cursor-corpo { opacity: 0; }
   .viz-area { animation: viz-area-entra var(--mv-base) var(--mv-chegada) both; }
   .viz-cartao { transition: transform var(--mv-base) var(--mv-chegada); }
   .viz-cartao[aria-pressed="true"] { transform: scale(1.02); }
+  .viz-acab-faixa[data-animar] .viz-faixa-mov { transition: transform var(--mv-base) var(--mv-chegada); }
 }
 
 /* Barra de ação presa embaixo no celular: o balão do chat sobe acima dela. */

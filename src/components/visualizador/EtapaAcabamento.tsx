@@ -3,10 +3,10 @@
 // Acabamento, uma área por vez: o nome da área com "1 de 2", as abas das linhas,
 // uma fileira de cartões grandes que rola de lado e a linha "Onde". Ajustes
 // (tipo de superfície e medidas) e Onde (descrição e o que manter igual) abrem
-// em folhas. No celular a tela inteira cabe numa altura de tela, com a foto no
-// alto e a barra de ação embaixo (alturas em globals.css › Visualizador). Só
+// em folhas. No celular a tela inteira cabe numa altura de tela, com a faixa da
+// foto no alto e a barra de ação embaixo (alturas em globals.css › Visualizador). Só
 // apresentação: escolher, descrever e ajustar chamam o wizard.
-import React, { useId, useMemo, useRef, useState } from "react";
+import React, { useEffect, useId, useMemo, useRef, useState, useSyncExternalStore } from "react";
 import type { VizProduct, Zone } from "../VisualizadorWizard";
 import CartaoAcabamento from "./CartaoAcabamento";
 import Folha from "./Folha";
@@ -26,16 +26,104 @@ const BOTAO_FOLHA =
 
 const higienizarMedida = (v: string) => v.replace(/[^0-9.,]/g, "").replace(",", ".");
 
+const nada = () => {};
+
+// ── Foto do Acabamento ────────────────────────────────────────────────────────
+
+type Ponto = { x: number; y: number };
+
+const centroDaCaixa = (xs: number[], ys: number[]): Ponto => ({
+  x: (Math.min(...xs) + Math.max(...xs)) / 2,
+  y: (Math.min(...ys) + Math.max(...ys)) / 2,
+});
+
+/** Centro da área (0..1) pelo polígono, pela caixa ou pelos cantos; null se só houver máscara. */
+function centroDireto(z: Zone): Ponto | null {
+  if (z.polygon && z.polygon.length >= 3) return centroDaCaixa(z.polygon.map((p) => p[0]), z.polygon.map((p) => p[1]));
+  if (z.rect) return { x: z.rect.x + z.rect.w / 2, y: z.rect.y + z.rect.h / 2 };
+  if (z.quad) return centroDaCaixa(z.quad.map((p) => p[0]), z.quad.map((p) => p[1]));
+  return null;
+}
+
+// Centro da máscara (caixa dos pixels visíveis), lido uma vez por URL.
+const centrosDeMascara = new Map<string, Promise<Ponto | null>>();
+function centroDaMascara(url: string): Promise<Ponto | null> {
+  let p = centrosDeMascara.get(url);
+  if (!p) {
+    p = new Promise<Ponto | null>((resolve) => {
+      const img = new Image();
+      img.onload = () => {
+        try {
+          const w = 96;
+          const h = Math.max(1, Math.round((img.naturalHeight / img.naturalWidth) * w));
+          const c = document.createElement("canvas");
+          c.width = w; c.height = h;
+          const ctx = c.getContext("2d");
+          if (!ctx) return resolve(null);
+          ctx.drawImage(img, 0, 0, w, h);
+          const d = ctx.getImageData(0, 0, w, h).data;
+          let x0 = w, y0 = h, x1 = -1, y1 = -1;
+          for (let y = 0; y < h; y++) for (let x = 0; x < w; x++) {
+            if (d[(y * w + x) * 4 + 3] > 16) { if (x < x0) x0 = x; if (x > x1) x1 = x; if (y < y0) y0 = y; if (y > y1) y1 = y; }
+          }
+          resolve(x1 < 0 ? null : { x: (x0 + x1 + 1) / 2 / w, y: (y0 + y1 + 1) / 2 / h });
+        } catch { resolve(null); }
+      };
+      img.onerror = () => resolve(null);
+      img.src = url;
+    });
+    centrosDeMascara.set(url, p);
+  }
+  return p;
+}
+
+function useCentroDaArea(z: Zone | undefined): Ponto {
+  const direto = z ? centroDireto(z) : null;
+  const url = !direto && z?.maskUrl ? z.maskUrl : null;
+  const [mascara, setMascara] = useState<{ url: string; c: Ponto | null } | null>(null);
+  useEffect(() => {
+    if (!url) return;
+    let vivo = true;
+    void centroDaMascara(url).then((c) => { if (vivo) setMascara({ url, c }); });
+    return () => { vivo = false; };
+  }, [url]);
+  return direto ?? (url && mascara?.url === url ? mascara.c : null) ?? { x: 0.5, y: 0.5 };
+}
+
+const consultaComputador = "(min-width: 1024px)";
+function assinarLargura(aviso: () => void) {
+  const mq = window.matchMedia(consultaComputador);
+  mq.addEventListener("change", aviso);
+  return () => mq.removeEventListener("change", aviso);
+}
+/** Layout de computador (duas colunas, ≥ 1024 px); falso no servidor. */
+function useLarguraComputador(): boolean {
+  return useSyncExternalStore(assinarLargura, () => window.matchMedia(consultaComputador).matches, () => false);
+}
+
 /**
- * A foto do Acabamento (coluna da esquerda no computador, alto da tela no
- * celular), parada, com a área atual destacada. Contida numa altura máxima
- * (--viz-foto-h), a largura acompanha a proporção.
+ * A foto do Acabamento, parada (interativo={false}). No computador, inteira na
+ * coluna da esquerda, com as áreas e os nomes. No celular, uma faixa da largura
+ * do conteúdo e altura fixa, recortada como object-fit: cover e centrada na
+ * área atual: a foto com as áreas (SurfaceCanvas na proporção certa, então as
+ * máscaras continuam alinhadas) é escalada e deslocada só com transform. Na
+ * faixa só a área atual tem cor cheia, as outras ficam quase apagadas e não há
+ * rótulos (o nome está no título logo abaixo). Na troca de área a foto desliza
+ * até a nova (instantâneo com movimento reduzido).
  */
 export function FotoAcabamento({ photoData, zones, rotulos, zonaAtualId }: {
   photoData: string; zones: Zone[]; rotulos: string[]; zonaAtualId: string | null;
 }) {
+  const computador = useLarguraComputador();
+  return computador
+    ? <FotoInteira photoData={photoData} zones={zones} rotulos={rotulos} zonaAtualId={zonaAtualId} />
+    : <FaixaFoto photoData={photoData} zones={zones} zonaAtualId={zonaAtualId} />;
+}
+
+function FotoInteira({ photoData, zones, rotulos, zonaAtualId }: {
+  photoData: string; zones: Zone[]; rotulos: string[]; zonaAtualId: string | null;
+}) {
   const proporcao = useProporcao(photoData);
-  const nada = () => {};
   return (
     <div
       className="viz-acab-foto mx-auto overflow-hidden"
@@ -47,6 +135,55 @@ export function FotoAcabamento({ photoData, zones, rotulos, zonaAtualId }: {
         mode="tap" onTapPhoto={nada} onDrawRect={nada} updateZone={nada}
         busy={false} retargeting={false} onConfirmQuad={nada}
       />
+    </div>
+  );
+}
+
+function FaixaFoto({ photoData, zones, zonaAtualId }: { photoData: string; zones: Zone[]; zonaAtualId: string | null }) {
+  const proporcao = useProporcao(photoData);
+  const centro = useCentroDaArea(zones.find((z) => z.id === zonaAtualId));
+  const moldura = useRef<HTMLDivElement | null>(null);
+  const [tam, setTam] = useState<{ w: number; h: number } | null>(null);
+  useEffect(() => {
+    const el = moldura.current;
+    if (!el) return;
+    const ro = new ResizeObserver(() => setTam({ w: el.clientWidth, h: el.clientHeight }));
+    ro.observe(el);
+    return () => ro.disconnect();
+  }, []);
+
+  const posicionada = !!tam && !!proporcao && tam.w > 0 && tam.h > 0;
+  let estilo: React.CSSProperties = { width: "100%" };
+  if (posicionada) {
+    // Cobre a faixa (escala mínima 1) e põe o centro da área no meio, sem sair da foto.
+    const altNatural = tam.w / proporcao;
+    const s = Math.max(1, tam.h / altNatural);
+    const larg = tam.w * s;
+    const alt = altNatural * s;
+    const tx = Math.min(0, Math.max(tam.w - larg, tam.w / 2 - centro.x * larg));
+    const ty = Math.min(0, Math.max(tam.h - alt, tam.h / 2 - centro.y * alt));
+    estilo = { width: tam.w, transform: `translate3d(${tx.toFixed(1)}px, ${ty.toFixed(1)}px, 0) scale(${s.toFixed(4)})` };
+  }
+  // A transição só liga depois do primeiro enquadramento: a foto não "voa" ao aparecer.
+  useEffect(() => {
+    if (!posicionada) return;
+    const el = moldura.current;
+    let r2 = 0;
+    const r1 = requestAnimationFrame(() => { r2 = requestAnimationFrame(() => el?.setAttribute("data-animar", "")); });
+    return () => { cancelAnimationFrame(r1); cancelAnimationFrame(r2); };
+  }, [posicionada]);
+
+  return (
+    <div ref={moldura} data-viz-faixa className="viz-acab-faixa relative overflow-hidden rounded-sm bg-[#11151b]">
+      <div className="viz-faixa-mov absolute left-0 top-0 origin-top-left" style={estilo}>
+        <SurfaceCanvas
+          interativo={false}
+          destaque="atual"
+          photoData={photoData} zones={zones} activeZoneId={zonaAtualId} setActiveZoneId={nada}
+          mode="tap" onTapPhoto={nada} onDrawRect={nada} updateZone={nada}
+          busy={false} retargeting={false} onConfirmQuad={nada}
+        />
+      </div>
     </div>
   );
 }

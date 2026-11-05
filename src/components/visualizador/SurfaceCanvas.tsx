@@ -14,7 +14,7 @@ export type ZoneMode = "tap" | "draw";
 
 export default function SurfaceCanvas({
   photoData, zones, activeZoneId, setActiveZoneId, mode: modoPedido, onTapPhoto, onDrawRect, updateZone, busy, retargeting, onConfirmQuad,
-  interativo, rotulos,
+  interativo, rotulos, destaque = "todas",
 }: {
   photoData: string; zones: Zone[]; activeZoneId: string | null; setActiveZoneId: (id: string | null) => void;
   mode: ZoneMode; onTapPhoto: (nx: number, ny: number) => void; onDrawRect: (rect: Rect) => void;
@@ -24,7 +24,13 @@ export default function SurfaceCanvas({
   interativo: boolean;
   /** Nome de cada área para o cliente (Parede 1…), na ordem das zonas; sem ele, o label. */
   rotulos?: string[];
+  /**
+   * "atual": só a área ativa com cor cheia, as outras quase apagadas e nenhum
+   * rótulo de texto (faixa da foto do Acabamento no celular). Padrão "todas".
+   */
+  destaque?: "todas" | "atual";
 }) {
+  const soAtual = destaque === "atual";
   // Sem interação não há desenho: as caixas ficam paradas e sem alças.
   const mode: ZoneMode = interativo ? modoPedido : "tap";
   const ref = useRef<HTMLDivElement | null>(null);
@@ -91,18 +97,21 @@ export default function SurfaceCanvas({
       <img src={photoData} alt="Seu ambiente" className={`block w-full h-auto ${interativo ? "pointer-events-none" : "touch-auto"}`} />
       {zones.map((z) => z.maskUrl ? (
         // eslint-disable-next-line @next/next/no-img-element
-        <img key={z.id} src={z.maskUrl} alt="" className={`absolute inset-0 w-full h-full pointer-events-none transition-opacity ${z.id === activeZoneId ? "opacity-100" : "opacity-75"}`} />
+        <img key={z.id} src={z.maskUrl} alt="" data-zona-atual={z.id === activeZoneId ? "" : undefined}
+          className={`absolute inset-0 w-full h-full pointer-events-none transition-opacity ${z.id === activeZoneId ? "opacity-100" : soAtual ? "opacity-15" : "opacity-75"}`} />
       ) : null)}
       <svg viewBox="0 0 1 1" preserveAspectRatio="none" className="absolute inset-0 w-full h-full pointer-events-none">
         {zones.map((z, i) => {
           if (!z.polygon || z.polygon.length < 3) return null;
           const color = ZONE_COLORS[i % ZONE_COLORS.length];
           const active = z.id === activeZoneId;
-          return <polygon key={z.id} points={z.polygon.map(([x, y]) => `${x},${y}`).join(" ")} fill={color} fillOpacity={active ? 0.42 : 0.26} stroke={color} strokeWidth={active ? 0.007 : 0.004} strokeLinejoin="round" />;
+          return <polygon key={z.id} data-zona-atual={active ? "" : undefined} points={z.polygon.map(([x, y]) => `${x},${y}`).join(" ")} fill={color}
+            fillOpacity={active ? 0.42 : soAtual ? 0.07 : 0.26} stroke={color} strokeOpacity={active || !soAtual ? 1 : 0.25}
+            strokeWidth={active ? 0.007 : 0.004} strokeLinejoin="round" />;
         })}
       </svg>
       {zones.map((z, i) => {
-        if (!z.rect) return null;
+        if (!z.rect || soAtual) return null;
         const color = ZONE_COLORS[i % ZONE_COLORS.length];
         return (
           interativo ? (
@@ -137,7 +146,7 @@ export default function SurfaceCanvas({
           return (
             <span key={z.id} aria-hidden
               style={{ left: `${(rect.x + rect.w / 2) * 100}%`, top: `${(rect.y + rect.h / 2) * 100}%`, borderColor: color, background: `${color}55` }}
-              className={`absolute -translate-x-1/2 -translate-y-1/2 w-7 h-7 rounded-full border-[3px] pointer-events-none shadow ${active ? "ring-2 ring-white" : ""}`}>
+              className={`absolute -translate-x-1/2 -translate-y-1/2 w-7 h-7 rounded-full border-[3px] pointer-events-none shadow ${active ? "ring-2 ring-white" : ""} ${soAtual && !active ? "opacity-25" : ""}`}>
               <span className="absolute left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2 w-2 h-2 rounded-full" style={{ background: color }} />
             </span>
           );
@@ -156,7 +165,7 @@ export default function SurfaceCanvas({
               drag.current = { kind: "move", id: z.id, offX: p.x - rect.x, offY: p.y - rect.y, w: rect.w, h: rect.h };
             }}
             style={{ left: `${rect.x * 100}%`, top: `${rect.y * 100}%`, width: `${rect.w * 100}%`, height: `${rect.h * 100}%`, borderColor: color, background: `${color}22` }}
-            className={`absolute border-2 ${active ? "ring-2 ring-white/70" : ""} ${mode === "draw" ? "cursor-move" : "pointer-events-none"}`}>
+            className={`absolute border-2 ${active ? "ring-2 ring-white/70" : ""} ${soAtual && !active ? "opacity-25" : ""} ${mode === "draw" ? "cursor-move" : "pointer-events-none"}`}>
             {mode === "draw" && (
               <span onPointerDown={(e) => {
                   e.stopPropagation(); setActiveZoneId(z.id);

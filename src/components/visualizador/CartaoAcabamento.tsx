@@ -1,11 +1,18 @@
 "use client";
 
-// Um acabamento no Acabamento: a foto real do painel, grande (object-cover, sem
-// o zoom de recorte dos quadradinhos antigos), o nome e o código. Escolhido, o
-// cartão ganha a moldura azul de 2 px, o selo de confirmação e cresce para 1.02
-// (sem escala com movimento reduzido; globals.css › Visualizador).
+// Um acabamento no Acabamento: o acabamento em si ocupando o cartão, o nome e o
+// código. Usa a textura plana de frente (render_texture_path) quando existe; se
+// não, a foto do catálogo (o painel de pé contra uma parede clara) com zoom
+// centrado de 1.8, para o cartão mostrar a pedra e não o fundo branco.
+// Escolhido, o cartão ganha a moldura azul de 2 px, o selo de confirmação e
+// cresce para 1.02 (sem escala com movimento reduzido; globals.css ›
+// Visualizador), e desliza para o começo da fileira.
 import React from "react";
 import type { VizProduct } from "../VisualizadorWizard";
+
+function prefereMenosMovimento(): boolean {
+  return typeof window !== "undefined" && window.matchMedia("(prefers-reduced-motion: reduce)").matches;
+}
 
 export default function CartaoAcabamento({
   produto,
@@ -16,13 +23,18 @@ export default function CartaoAcabamento({
   selecionado: boolean;
   onEscolher: () => void;
 }) {
+  const textura = produto.render_texture_path?.trim() || null;
   return (
     <button
       type="button"
       data-cartao
       aria-pressed={selecionado}
       aria-label={`${produto.name}, ${produto.code}`}
-      onClick={onEscolher}
+      onClick={(e) => {
+        onEscolher();
+        // Tocar no cartão que aparece pela metade traz ele inteiro para o começo.
+        e.currentTarget.scrollIntoView({ inline: "start", block: "nearest", behavior: prefereMenosMovimento() ? "instant" : "smooth" });
+      }}
       className="viz-cartao group relative block w-[70vw] max-w-[320px] shrink-0 snap-start text-left outline-none lg:w-[220px]"
     >
       <span
@@ -34,11 +46,12 @@ export default function CartaoAcabamento({
       >
         {/* eslint-disable-next-line @next/next/no-img-element */}
         <img
-          src={produto.image_path}
+          src={textura ?? produto.image_path}
           alt=""
           draggable={false}
           decoding="async"
-          className="viz-cartao-foto block w-full object-cover"
+          data-textura={textura ? "" : undefined}
+          className={`viz-cartao-foto block w-full object-cover ${textura ? "" : "scale-[1.8]"}`}
         />
         {selecionado && (
           <span
@@ -51,9 +64,10 @@ export default function CartaoAcabamento({
           </span>
         )}
       </span>
-      <span className="block px-0.5 pt-2">
-        <span className="block truncate text-sm font-semibold leading-[18px] text-[#0B1F45]">{produto.name}</span>
-        <span className="block text-[11px] leading-[16px] tracking-[0.08em] text-[#5b5f66] tabular-nums">{produto.code}</span>
+      {/* Nome e código numa linha só: a altura vai para a foto. */}
+      <span className="flex items-baseline gap-2 px-0.5 pt-2">
+        <span className="min-w-0 flex-1 truncate text-sm font-semibold leading-5 text-[#0B1F45]">{produto.name}</span>
+        <span className="shrink-0 text-[11px] leading-5 tracking-[0.08em] text-[#5b5f66] tabular-nums">{produto.code}</span>
       </span>
     </button>
   );
