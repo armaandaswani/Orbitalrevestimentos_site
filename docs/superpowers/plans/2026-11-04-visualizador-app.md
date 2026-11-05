@@ -83,6 +83,9 @@
     - The `acao` button sits in a bottom bar: fixed with `env(safe-area-inset-bottom)` on < 1024 px when not `embutido`; in flow otherwise.
     - `lateral` renders as a sticky left column on ≥ 1024 px (the photo).
     - On step change, content enters with a fade plus 16 px slide (`data-etapa` attribute, CSS), and focus moves to the step `h2` (`tabIndex={-1}`).
+    - **No scroll hunting (owner, 04/11: "I click next, then I start all the way down, then I have to scroll up").** On every step change, the window scrolls so the shell's top sits just under the site header: smooth, or instant under reduced motion; embedded mode scrolls to the shell top inside `/simulador`. Export `rolarParaTopo(el: HTMLElement): void` from `VizShell.tsx` so Task 5 can reuse it for "Próxima área".
+    - **The primary action is always visible on phones** (fixed bar), so the client never scrolls to find "Continuar".
+    - Owner, 04/11: "there are some spaces that are like dead, I can't scroll". No element outside the full-screen editor may have `touch-action: none` or block vertical pan.
   - `Folha(props: { aberta: boolean; titulo: string; onFechar: () => void; children: React.ReactNode })`.
     - `role="dialog"`, `aria-modal`, labelled by its title.
     - Focus trap, Esc closes, ✕ closes, and a downward swipe of more than 80 px on the handle closes.
@@ -181,6 +184,11 @@
   - Wizard: `areaAtual: number`, kept valid with `ajustarAreaAtual` whenever `zones.length` changes.
     - The photo in the left column or top highlights `zones[areaAtual]` (pass `activeZoneId`).
     - Shell action: "Próxima área" when `areaSeguinte` is not null and `areaPronta(zona)`; else "Gerar visualização" (green), enabled by `podeGerar(zones, { canGenerate })` and calling `generate`.
+    - **Phone fit:** on phones the Acabamento screen fits one viewport without vertical scrolling at 390×844 and 375×667:
+      - the photo is capped at about 34svh (contain);
+      - then the area header, the line tabs, the card row (horizontal scroll only) and the "Onde" line;
+      - the fixed action bar sits below.
+    - "Próxima área" swaps the content in place (fade) and calls `rolarParaTopo`, so the next area starts with the photo and the cards in view. Add to the Step 1 check: after "Próxima área", the shell top is within 8 px of the header bottom and the first card is fully visible without scrolling.
     - `depurar` = the URL search param `debug === "1"`.
 
 - [ ] **Step 1: Failing check** (`checks/viz-acabamento.mjs`, two mocked zones, mocked products list with 2 lines, mocked analysis):
