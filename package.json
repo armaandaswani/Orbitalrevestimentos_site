@@ -7,7 +7,7 @@
     "build": "next build",
     "start": "next start",
     "lint": "eslint",
-    "test:movimento": "node --test \"src/lib/movimento/*.test.mjs\" \"src/components/home/*.test.mjs\""
+    "test:movimento": "node --test \"src/lib/movimento/*.test.mjs\" \"src/components/home/*.test.mjs\" \"src/components/visualizador/*.test.mjs\""
   },
   "dependencies": {
     "@anthropic-ai/sdk": "^1.3.0",
