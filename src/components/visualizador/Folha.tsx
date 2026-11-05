@@ -1,11 +1,14 @@
 "use client";
 
 // Folha de baixo do Visualizador (Onde, Ajustes, dados do contato): diálogo
-// modal acessível. Esc, ✕, toque no véu ou arrastar a alça para baixo (mais
-// de 80 px) fecham. O painel sobe com transform; com movimento reduzido,
-// aparece e some no lugar (globals.css › Visualizador).
+// modal acessível. Esc, ✕, toque no véu ou arrastar a alça (ou a linha do
+// título) para baixo mais de 80 px fecham. Aberta, trava a rolagem da página
+// com o mesmo contador das outras folhas do site (ds/useDialogo › travarRolagem,
+// que põe overflow:hidden no body). O painel sobe com transform; com movimento
+// reduzido, aparece e some no lugar (globals.css › Visualizador).
 import React, { useEffect, useId, useRef, useState } from "react";
 import { createPortal } from "react-dom";
+import { travarRolagem } from "@/components/ds/useDialogo";
 
 const FOCAVEIS =
   'a[href], button:not([disabled]), input:not([disabled]):not([type="hidden"]), select:not([disabled]), textarea:not([disabled]), [tabindex]:not([tabindex="-1"])';
@@ -57,6 +60,7 @@ export default function Folha({
     if (!aberta) return;
     const painel = painelRef.current;
     const quemAbriu = document.activeElement instanceof HTMLElement ? document.activeElement : null;
+    const soltarRolagem = travarRolagem();
     painel?.focus({ preventScroll: true });
     const tecla = (e: KeyboardEvent) => {
       if (e.key === "Escape") { e.preventDefault(); onFecharRef.current(); return; }
@@ -73,12 +77,14 @@ export default function Folha({
     document.addEventListener("keydown", tecla);
     return () => {
       document.removeEventListener("keydown", tecla);
+      soltarRolagem();
       if (quemAbriu?.isConnected) quemAbriu.focus({ preventScroll: true });
     };
   }, [aberta]);
 
-  // Arrastar a alça para baixo: o painel acompanha o dedo; passou de 80 px, fecha.
-  // Eventos de toque passivos, sem touch-action:none (a alça não vira zona morta).
+  // Arrastar a alça ou o título para baixo: o painel acompanha o dedo; passou de
+  // 80 px, fecha. Eventos de toque passivos, sem touch-action:none. Um toque
+  // parado no ✕ não move nada (dy 0) e o clique fecha normalmente.
   const arrasto = useRef<{ y0: number; dy: number } | null>(null);
   const comecarArrasto = (e: React.TouchEvent) => {
     const painel = painelRef.current;
@@ -114,18 +120,21 @@ export default function Folha({
         aria-modal="true"
         aria-labelledby={tituloId}
         tabIndex={-1}
-        className="viz-folha-painel absolute inset-x-0 bottom-0 mx-auto flex max-h-[88dvh] w-full max-w-[560px] flex-col rounded-t-[14px] bg-white shadow-[0_-12px_40px_rgba(11,31,69,0.18)] outline-none"
+        className="viz-folha-painel absolute inset-x-0 bottom-0 mx-auto flex max-h-[88dvh] w-full max-w-[560px] flex-col overscroll-contain rounded-t-[14px] bg-white shadow-[0_-12px_40px_rgba(11,31,69,0.18)] outline-none"
       >
+        {/* Área de arrasto: a alça e a linha do título. */}
         <div
-          className="flex h-7 shrink-0 cursor-grab items-center justify-center"
+          data-folha-arrasto
+          className="shrink-0 cursor-grab"
           onTouchStart={comecarArrasto}
           onTouchMove={moverArrasto}
           onTouchEnd={soltarArrasto}
           onTouchCancel={soltarArrasto}
         >
+        <div className="flex h-7 items-center justify-center">
           <span aria-hidden className="h-1 w-10 rounded-full bg-[#d5d9e0]" />
         </div>
-        <div className="flex shrink-0 items-center justify-between gap-3 pl-5 pr-2">
+        <div className="flex items-center justify-between gap-3 pl-5 pr-2">
           <h2 id={tituloId} className="font-serif text-xl leading-tight text-[#0B1F45]">{titulo}</h2>
           <button
             type="button"
@@ -137,6 +146,7 @@ export default function Folha({
               <path d="M18 6L6 18M6 6l12 12" />
             </svg>
           </button>
+        </div>
         </div>
         <div className="min-h-0 flex-1 overflow-y-auto overscroll-contain px-5 pt-2 pb-[calc(1.5rem+env(safe-area-inset-bottom))]">
           {children}

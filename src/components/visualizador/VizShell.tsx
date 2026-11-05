@@ -36,6 +36,17 @@ export function rolarParaTopo(el: HTMLElement): void {
   window.scrollTo({ top: destino, behavior: prefereMenosMovimento() ? "instant" : "smooth" });
 }
 
+/**
+ * Leva o foco para o título (h2) da etapa mostrada no shell, sem rolar; sem
+ * h2, o foco fica no próprio shell. Usado na troca de etapa e, pelo wizard,
+ * nas trocas de fase dentro da mesma etapa.
+ */
+export function focarEtapa(shell: HTMLElement): void {
+  const titulo = shell.querySelector<HTMLElement>(".viz-etapa h2");
+  if (titulo && !titulo.hasAttribute("tabindex")) titulo.setAttribute("tabindex", "-1");
+  (titulo ?? shell).focus({ preventScroll: true });
+}
+
 export default function VizShell({
   etapa,
   embutido,
@@ -52,7 +63,6 @@ export default function VizShell({
   children: React.ReactNode;
 }) {
   const raiz = useRef<HTMLElement | null>(null);
-  const conteudo = useRef<HTMLDivElement | null>(null);
   // Sentido da última troca: decide de que lado a etapa nova entra. Nada na
   // primeira pintura (a página abre parada). Ajustado durante o render.
   const [vista, setVista] = useState<{ etapa: EtapaVisivel; direcao: "avanca" | "volta" | null }>({ etapa, direcao: null });
@@ -67,10 +77,7 @@ export default function VizShell({
     const el = raiz.current;
     if (!el) return;
     rolarParaTopo(el);
-    const titulo = conteudo.current?.querySelector<HTMLElement>("h2");
-    const alvo = titulo ?? el;
-    if (titulo && !titulo.hasAttribute("tabindex")) titulo.setAttribute("tabindex", "-1");
-    alvo.focus({ preventScroll: true });
+    focarEtapa(el);
   }, [etapa]);
 
   // Barra de ação no celular: o balão do chat sobe para não cobrir o botão.
@@ -95,27 +102,32 @@ export default function VizShell({
       data-viz-shell
       tabIndex={-1}
       aria-label="Visualizador"
-      className={`viz-shell outline-none overflow-x-clip ${
-        embutido ? "" : "px-4 sm:px-6 min-h-dvh lg:min-h-0 flex flex-col lg:pb-16"
+      className={`viz-shell outline-none overflow-x-clip ${embutido ? "" : "flex flex-col px-4 sm:px-6 pb-8 lg:pb-16"} ${
+        barraPresa ? "min-h-[calc(100dvh-5rem)] lg:min-h-0" : ""
       }`}
     >
-      <div className={`mx-auto w-full flex-1 flex flex-col ${lateral ? "max-w-[1280px]" : "max-w-2xl"}`}>
-        <div className="flex items-center gap-2 pt-3 pb-4 sm:pt-5 sm:pb-6">
-          {onVoltar && (
-            <button
-              type="button"
-              data-viz-voltar
-              onClick={onVoltar}
-              className="-ml-2 inline-flex min-h-11 shrink-0 items-center gap-1 px-2 text-[13px] font-medium text-[#0B1F45] hover:text-[#2347A0] transition-colors"
-            >
-              <svg aria-hidden width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round">
-                <path d="M15 5l-7 7 7 7" />
-              </svg>
-              Voltar
-            </button>
-          )}
-          <nav aria-label="Etapas do visualizador" className="min-w-0 flex-1">
-            <ol className="grid grid-cols-4 gap-1.5">
+      <div className={`mx-auto w-full flex-1 flex flex-col ${embutido ? "" : lateral ? "max-w-[1280px]" : "max-w-2xl"}`}>
+        {/* No /simulador a página já tem as próprias etapas e o próprio Voltar. */}
+        {!embutido && (
+        <div className="pb-4 sm:pb-6">
+          {/* Linha própria do Voltar, com altura reservada: a barra de etapas não pula quando ele aparece. */}
+          <div className="flex h-11 items-center">
+            {onVoltar && (
+              <button
+                type="button"
+                data-viz-voltar
+                onClick={onVoltar}
+                className="-ml-2 inline-flex min-h-11 items-center gap-1 px-2 text-[13px] font-medium text-[#0B1F45] hover:text-[#2347A0] transition-colors"
+              >
+                <svg aria-hidden width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round">
+                  <path d="M15 5l-7 7 7 7" />
+                </svg>
+                Voltar
+              </button>
+            )}
+          </div>
+          <nav aria-label="Etapas do visualizador">
+            <ol className="grid grid-cols-4 gap-2">
               {ETAPAS.map((rotulo, i) => {
                 const feita = i < etapa;
                 const atual = i === etapa;
@@ -142,13 +154,13 @@ export default function VizShell({
             </ol>
           </nav>
         </div>
+        )}
 
         <div className={`flex-1 ${lateral ? "lg:grid lg:grid-cols-[minmax(0,1.1fr)_minmax(0,0.9fr)] lg:items-start lg:gap-12" : "flex flex-col"}`}>
           {lateral && <aside className="mb-5 lg:mb-0 lg:sticky lg:top-24">{lateral}</aside>}
           <div className="flex min-w-0 flex-1 flex-col self-stretch">
             <div
               key={etapa}
-              ref={conteudo}
               data-etapa={etapa}
               data-direcao={vista.direcao ?? undefined}
               className="viz-etapa flex-1"

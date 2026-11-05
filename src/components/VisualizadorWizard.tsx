@@ -9,7 +9,7 @@ import {
   tileTexture,
   projectTextureToQuad,
 } from "@/lib/texture-projection";
-import VizShell, { rolarParaTopo, type AcaoShell } from "./visualizador/VizShell";
+import VizShell, { focarEtapa, rolarParaTopo, type AcaoShell } from "./visualizador/VizShell";
 import { etapaVisivel } from "./visualizador/fluxo";
 
 // ── Types ─────────────────────────────────────────────────────────────────────
@@ -1063,7 +1063,11 @@ export default function VisualizadorWizard({
     const mudouFase = faseAnterior.current !== zonePhase;
     etapaAnterior.current = etapa;
     faseAnterior.current = zonePhase;
-    if (mesmaEtapa && mudouFase && topRef.current) rolarParaTopo(topRef.current);
+    if (!mesmaEtapa || !mudouFase || !topRef.current) return;
+    rolarParaTopo(topRef.current);
+    // The shell is the next sibling of the anchor; focus the new phase heading.
+    const shell = topRef.current.nextElementSibling;
+    if (shell instanceof HTMLElement) focarEtapa(shell);
   }, [etapa, zonePhase]);
 
   const scrollZoneRef = useRef<string | null>(null);

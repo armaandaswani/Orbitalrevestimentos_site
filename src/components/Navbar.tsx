@@ -48,6 +48,7 @@ export default function Navbar() {
       const y = window.scrollY;
       const desceu = y > ultimo + 4;
       const subiu = y < ultimo - 4;
+      // 160 e 80: visualizador/VizShell.tsx › rolarParaTopo prevê esta regra.
       if (desceu && y > 160) setOculto(true);
       else if (subiu || y <= 80) setOculto(false);
       ultimo = y;
