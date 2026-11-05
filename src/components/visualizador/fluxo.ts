@@ -51,3 +51,27 @@ export function passoTeclado(
   if (tecla === "End") return 100;
   return limitarDivisor(v + (tecla === "ArrowRight" ? 5 : -5));
 }
+
+/** Cor de cada área, pela ordem (contorno na foto, chip e cartão). */
+export const ZONE_COLORS = ["#36A35C", "#b4791e", "#2F5FD0", "#a83279", "#2a9d8f", "#9b2226"];
+
+/**
+ * Nome de uma área para o cliente: o tipo de superfície com a ordem dela entre
+ * as do mesmo tipo ("Parede 1", "Teto 1"). Se o cliente deu um nome à área, ou
+ * descreveu um local próprio ("Outro…"), vale o que ele escreveu. O `label` da
+ * zona ("Área N") continua sendo o que vai para a análise e o render.
+ */
+export function rotuloZona(
+  zones: Pick<Zone, "label" | "surface" | "customLabel">[],
+  i: number,
+  espacos: { id: string; label: string }[],
+): string {
+  const z = zones[i];
+  if (!z) return "";
+  if (!/^Área \d+$/.test(z.label)) return z.label;
+  if (z.surface === "__custom__" && z.customLabel.trim()) return z.customLabel.trim();
+  const espaco = espacos.find((s) => s.id === z.surface);
+  if (!espaco) return z.label;
+  const ordem = zones.slice(0, i + 1).filter((o) => o.surface === z.surface).length;
+  return `${espaco.label.split(" / ")[0]} ${ordem}`;
+}

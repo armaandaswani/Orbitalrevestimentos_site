@@ -1790,6 +1790,46 @@ html.mv-cursor:has([data-lupa="aberta"]) .mv-cursor-corpo { opacity: 0; }
   [data-chat-flutuante] { transition: translate var(--mv-base) var(--mv-chegada); }
 }
 
+/* Editor de marcação (EditorMarcacao): entra com um fade curto; o pulso marca o
+   ponto tocado enquanto a área é detectada (um anel que se abre e some); a
+   linha de chips rola de lado sem barra. Com movimento reduzido, o pulso vira
+   um anel parado e nada desliza. */
+.viz-chips { scrollbar-width: none; }
+.viz-editor :focus-visible { outline: 2px solid rgba(255, 255, 255, 0.85); outline-offset: 2px; }
+.viz-chips::-webkit-scrollbar { display: none; }
+.viz-pulso { width: 48px; height: 48px; margin: -24px 0 0 -24px; }
+/* anel (animado) e ponto (parado) */
+.viz-pulso::before {
+  content: ""; position: absolute; inset: 0; border-radius: 9999px;
+  border: 3px solid #fff; box-shadow: 0 0 0 1px rgba(11, 31, 69, 0.4), inset 0 0 0 1px rgba(11, 31, 69, 0.4);
+}
+.viz-pulso::after {
+  content: ""; position: absolute; left: 50%; top: 50%;
+  width: 12px; height: 12px; margin: -6px 0 0 -6px; border-radius: 9999px;
+  background: #fff; box-shadow: 0 1px 6px rgba(11, 31, 69, 0.55);
+}
+@keyframes viz-pulso {
+  from { transform: scale(0.45); opacity: 1; }
+  to { transform: scale(1.35); opacity: 0; }
+}
+@keyframes viz-ponto {
+  50% { opacity: 0.35; }
+}
+@keyframes viz-editor-entra {
+  from { opacity: 0; }
+  to { opacity: 1; }
+}
+@keyframes viz-pergunta-entra {
+  from { opacity: 0; transform: translate3d(0, 16px, 0); }
+  to { opacity: 1; transform: none; }
+}
+@media (prefers-reduced-motion: no-preference) {
+  .viz-pulso::before { animation: viz-pulso 1300ms var(--mv-chegada) infinite; }
+  .viz-ponto-detectando { animation: viz-ponto 1100ms ease-in-out infinite; }
+  .viz-editor { animation: viz-editor-entra 260ms var(--mv-chegada) both; }
+  .viz-editor-pergunta { animation: viz-pergunta-entra var(--mv-base) var(--mv-chegada) both; }
+}
+
 /* Barra de ação presa embaixo no celular: o balão do chat sobe acima dela. */
 @media (max-width: 1023.98px) {
   html[data-viz-barra-presa] [data-chat-flutuante] { translate: 0 calc(-3.75rem - env(safe-area-inset-bottom)); }

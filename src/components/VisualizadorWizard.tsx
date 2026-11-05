@@ -11,7 +11,9 @@ import {
 } from "@/lib/texture-projection";
 import VizShell, { focarEtapa, rolarParaTopo, type AcaoShell } from "./visualizador/VizShell";
 import EtapaFoto from "./visualizador/EtapaFoto";
-import { etapaVisivel } from "./visualizador/fluxo";
+import { etapaVisivel, rotuloZona, ZONE_COLORS } from "./visualizador/fluxo";
+import SurfaceCanvas, { type ZoneMode } from "./visualizador/SurfaceCanvas";
+import EditorMarcacao, { FotoMarcavel, PainelMarcacao, ehTelaLarga, useProporcao, useTelaLarga } from "./visualizador/EditorMarcacao";
 
 // ── Types ─────────────────────────────────────────────────────────────────────
 
@@ -54,8 +56,6 @@ export const VIZ_SPACES: { id: string; label: string }[] = [
   { id: "porta", label: "Porta" },
   { id: "box", label: "Box / Ducha" },
 ];
-
-const ZONE_COLORS = ["#36A35C", "#b4791e", "#2F5FD0", "#a83279", "#2a9d8f", "#9b2226"];
 
 // ── Render engine ────────────────────────────────────────────────────────────
 // PRODUCTION path = Gemini generative "apply the panel" (see /api/visualizador/
@@ -952,10 +952,10 @@ export default function VisualizadorWizard({
 
   // ── Wizard state ──────────────────────────────────────────────────────────
   const [step, setStep] = useState<VizStep>("upload");
-  // Sub-phase of the "zones" step — turns one long scroll into a guided flow:
-  //   mark    → mark/draw the area (canvas + tools only)
-  //   confirm → "A área está correta?" (review the marked area)
-  //   model   → pick the finish, then Gerar (gallery only, no marking clutter)
+  // Sub-phase of the "zones" step:
+  //   mark  → mark/draw the areas (full-screen editor on phones, in place on desktop)
+  //   model → pick the finish, then Gerar. The analysis that used to have its own
+  //           "confirm" screen now runs in the background (concluirMarcacao).
   const [zonePhase, setZonePhase] = useState<"mark" | "confirm" | "model">("mark");
   const [photoData, setPhotoData] = useState<string | null>(null);
   const [photoDims, setPhotoDims] = useState<{ w: number; h: number } | null>(null);
@@ -972,7 +972,7 @@ export default function VisualizadorWizard({
   // torn. Gemini never touches the panel → it cannot hallucinate or change the
   // design; the pattern is exact and repetitive and the rest of the photo stays
   // pixel-identical. Products without a flat texture fall back to Gemini-apply.
-  const [useProjection, setUseProjection] = useState(DETERMINISTIC_PROJECTION);
+  const [useProjection] = useState(DETERMINISTIC_PROJECTION);
   // O que deve continuar igual na foto (escrito pela IA, editável pelo cliente).
   const [keepText, setKeepText] = useState("");
   const aiKeepRef = useRef("");
@@ -985,6 +985,10 @@ export default function VisualizadorWizard({
   const [savedAmbientes, setSavedAmbientes] = useState<SavedAmbiente[]>([]);
   const [proceeding, setProceeding] = useState(false);
   const [retargetId, setRetargetId] = useState<string | null>(null);
+  // Editor de marcação em tela cheia (celular). No computador a marcação fica no lugar.
+  const [editorAberto, setEditorAberto] = useState(false);
+  const telaLarga = useTelaLarga();
+  const [modoMarcacao, setModoMarcacao] = useState<ZoneMode>("tap");
 
   // In standalone mode: lead captured here. In embedded mode: prefilled by parent.
   const [leadName, setLeadName] = useState(prefilledLeadName);
@@ -1071,19 +1075,24 @@ export default function VisualizadorWizard({
     if (shell instanceof HTMLElement) focarEtapa(shell);
   }, [etapa, zonePhase]);
 
-  const scrollZoneRef = useRef<string | null>(null);
+  // Editor fechado: a página volta com o topo da etapa à vista (enquanto ele
+  // esteve aberto a rolagem ficou travada, e a rolagem suave da troca de etapa
+  // pode ter parado no meio).
+  const editorAntes = useRef(editorAberto);
   useEffect(() => {
-    const id = scrollZoneRef.current;
-    if (!id) return;
-    const z = zones.find((zz) => zz.id === id);
-    if (!z) { scrollZoneRef.current = null; return; }
-    if (z.detecting) return;
-    scrollZoneRef.current = null;
-    const t = setTimeout(() => {
-      document.getElementById(`zone-${id}`)?.scrollIntoView({ behavior: "smooth", block: "nearest" });
-    }, 60);
-    return () => clearTimeout(t);
-  }, [zones]);
+    const fechou = editorAntes.current && !editorAberto;
+    editorAntes.current = editorAberto;
+    const shell = topRef.current?.nextElementSibling;
+    if (!fechou || !(shell instanceof HTMLElement)) return;
+    const raf = requestAnimationFrame(() => rolarParaTopo(shell));
+    return () => cancelAnimationFrame(raf);
+  }, [editorAberto]);
+
+  // Área recém-criada. Antes a página rolava até o cartão dela; agora as áreas
+  // nascem no editor (ou na marcação no lugar), onde não há cartão, e a rolagem
+  // atrasada podia puxar o Acabamento para baixo logo depois do Pronto. Os
+  // handlers de marcação continuam gravando aqui; nada mais lê.
+  const scrollZoneRef = useRef<string | null>(null);
 
   // ── File upload ───────────────────────────────────────────────────────────
   // Linha discreta da etapa Foto com o que veio do Simulador (produto · espaço).
@@ -1117,6 +1126,7 @@ export default function VisualizadorWizard({
       vizRenderIdRef.current = "";
       setZonePhase("mark");
       setStep("zones");
+      setEditorAberto(!ehTelaLarga());
     } catch {
       setError("Não foi possível ler essa imagem. Tente outra foto (JPG ou PNG).");
     }
@@ -1531,10 +1541,39 @@ export default function VisualizadorWizard({
     }
   }, [photoData, zones, marksSig]);
 
-  const goConfirm = useCallback(() => {
-    setZonePhase("confirm");
+  // Fim da marcação (Pronto no editor, Continuar no computador): fecha o editor,
+  // segue para o Acabamento e descreve as áreas em segundo plano, com a mesma
+  // regra da antiga tela de confirmação (só reanalisa se a marcação mudou ou falhou).
+  const concluirMarcacao = useCallback(() => {
+    setEditorAberto(false);
+    setRetargetId(null);
+    setZonePhase("model");
     if (analysis.sig !== marksSig || analysis.status === "error") void analyze();
   }, [analysis, marksSig, analyze]);
+
+  // "Editar áreas": no celular reabre o editor; no computador volta à marcação no lugar.
+  const editarAreas = useCallback(() => {
+    if (ehTelaLarga()) { setModoMarcacao("tap"); setZonePhase("mark"); }
+    else setEditorAberto(true);
+  }, []);
+
+  // Editor reaberto do Acabamento e fechado sem Pronto (✕, Esc, voltar): as
+  // áreas que ficaram também ganham descrição, com a mesma regra. Lida pela ref
+  // um tique depois de fechar, quando as zonas (já sem as descartadas) e a
+  // assinatura estão atualizadas.
+  const analisarSePrecisoRef = useRef<() => void>(() => {});
+  useEffect(() => {
+    analisarSePrecisoRef.current = () => {
+      if (step !== "zones" || zonePhase !== "model") return;
+      if (analysis.sig !== marksSig || analysis.status === "error") void analyze();
+    };
+  });
+  const fecharEditor = useCallback(() => {
+    setEditorAberto(false);
+    window.setTimeout(() => analisarSePrecisoRef.current(), 0);
+  }, []);
+
+  const rotulos = useMemo(() => zones.map((_, i) => rotuloZona(zones, i, VIZ_SPACES)), [zones]);
 
   // ── Generate ──────────────────────────────────────────────────────────────
   const generate = useCallback(async () => {
@@ -1939,38 +1978,57 @@ export default function VisualizadorWizard({
     step === "zones"
       ? () => {
           if (zonePhase === "mark") setStep("upload");
-          else if (zonePhase === "confirm") setZonePhase("mark");
-          else setZonePhase("confirm");
+          else setZonePhase("mark");
         }
       : step === "result" && !generating
         ? () => { setZonePhase("model"); setStep("zones"); }
         : undefined;
   // The primary action of each zones phase, always in reach at the bottom.
   // Same handlers and rules as the step's own buttons.
-  const analisando = analysis.status === "loading";
-  const semDescricao = zones.some((z) => !z.instruction.trim());
+  // No celular, com o editor fechado, a barra abre o editor enquanto não há área pronta.
   const acao: AcaoShell | undefined =
     step !== "zones"
       ? undefined
       : zonePhase === "mark"
-        ? {
-            rotulo: anyDetecting ? "Detectando área…" : anyAreaMarked ? "Continuar" : "Marque uma área",
-            onClick: goConfirm,
-            desabilitada: !anyAreaMarked,
-          }
-        : zonePhase === "confirm"
+        ? telaLarga
           ? {
-              rotulo: analisando ? "Analisando…" : semDescricao ? "Descreva cada área" : "Confirmar e escolher modelo",
-              onClick: () => setZonePhase("model"),
-              desabilitada: analisando || semDescricao,
+              rotulo: anyDetecting ? "Detectando área…" : anyAreaMarked ? "Continuar" : "Marque uma área",
+              onClick: concluirMarcacao,
+              desabilitada: !anyAreaMarked,
             }
-          : { rotulo: "Gerar visualização", onClick: generate, desabilitada: !canGenerate, tom: "verde" };
+          : anyAreaMarked
+            ? { rotulo: "Continuar", onClick: concluirMarcacao }
+            : { rotulo: "Marcar as áreas", onClick: () => setEditorAberto(true) }
+        : { rotulo: "Gerar visualização", onClick: generate, desabilitada: !canGenerate, tom: "verde" };
+
+  const marcacaoNoLugar = step === "zones" && zonePhase === "mark" && telaLarga && !!photoData;
 
   // ── Render ────────────────────────────────────────────────────────────────
   return (
     <div>
       <div ref={topRef} />
-      <VizShell etapa={etapa} embutido={embeddedMode} onVoltar={voltar} acao={acao}>
+      <VizShell
+        etapa={etapa}
+        embutido={embeddedMode}
+        onVoltar={voltar}
+        acao={acao}
+        lateral={marcacaoNoLugar && photoData ? (
+          <FotoMarcavel
+            photoData={photoData}
+            zones={zones}
+            rotulos={rotulos}
+            activeZoneId={activeZoneId}
+            setActiveZoneId={setActiveZoneId}
+            modo={modoMarcacao}
+            retargeting={!!retargetId}
+            onTapPhoto={onTapPhoto}
+            onDrawRect={drawAddRect}
+            onConfirmQuad={confirmQuad}
+            updateZone={updateZone}
+            alturaMax="calc(100dvh - 15rem)"
+          />
+        ) : undefined}
+      >
         {step === "upload" && (
           <EtapaFoto
             onArquivo={handleFile}
@@ -1982,40 +2040,42 @@ export default function VisualizadorWizard({
           />
         )}
 
-        {step === "zones" && photoData && (
-          <ZonesStep
-            phase={zonePhase}
-            setPhase={setZonePhase}
+        {step === "zones" && photoData && zonePhase === "mark" && (
+          <MarcarAreas
+            telaLarga={telaLarga}
             photoData={photoData}
             zones={zones}
+            rotulos={rotulos}
             activeZoneId={activeZoneId}
             setActiveZoneId={setActiveZoneId}
-            onTapPhoto={onTapPhoto}
-            onDrawRect={drawAddRect}
+            removeZone={removeZone}
+            retargetId={retargetId}
+            setRetargetId={setRetargetId}
+            modo={modoMarcacao}
+            setModo={setModoMarcacao}
             onAddTextZone={addTextZone}
-            onConfirmQuad={confirmQuad}
+            onEditar={() => setEditorAberto(true)}
+          />
+        )}
+
+        {step === "zones" && photoData && zonePhase !== "mark" && (
+          <ZonesStep
+            photoData={photoData}
+            zones={zones}
+            rotulos={rotulos}
+            activeZoneId={activeZoneId}
+            setActiveZoneId={setActiveZoneId}
             updateZone={updateZone}
             removeZone={removeZone}
             retargetId={retargetId}
             setRetargetId={setRetargetId}
-            anyDetecting={anyDetecting}
             products={products}
             loadingProducts={loadingProducts}
             productById={productById}
             canGenerate={canGenerate}
-            needsExactArea={needsExactArea}
-            anyAreaMarked={anyAreaMarked}
-            allModelsChosen={allModelsChosen}
-            simPrefills={simPrefills}
-            onBack={() => setStep("upload")}
             onGenerate={generate}
             useProjection={useProjection}
-            setUseProjection={setUseProjection}
-            onConfirmMarks={goConfirm}
-            analysis={analysis}
-            onReanalyze={analyze}
-            keepText={keepText}
-            setKeepText={setKeepText}
+            onEditarAreas={editarAreas}
           />
         )}
 
@@ -2034,7 +2094,7 @@ export default function VisualizadorWizard({
             onLeadPhoneChange={setLeadPhone}
             onLeadSubmit={handleLeadSubmit}
             onChooseModel={() => { setZonePhase("model"); setStep("zones"); }}
-            onAdjustArea={() => { setZonePhase("mark"); setStep("zones"); }}
+            onAdjustArea={() => { setZonePhase("mark"); setStep("zones"); setEditorAberto(!ehTelaLarga()); }}
             onRegenerate={generate}
             onDownload={download}
             onAddPhoto={addAnotherPhoto}
@@ -2099,227 +2159,164 @@ export default function VisualizadorWizard({
           </div>
         )}
       </VizShell>
+
+      {photoData && (
+        <EditorMarcacao
+          aberto={editorAberto && !telaLarga && step === "zones"}
+          photoData={photoData}
+          zones={zones}
+          rotulos={rotulos}
+          activeZoneId={activeZoneId}
+          setActiveZoneId={setActiveZoneId}
+          onTapPhoto={onTapPhoto}
+          onDrawRect={drawAddRect}
+          onAddTextZone={addTextZone}
+          onConfirmQuad={confirmQuad}
+          updateZone={updateZone}
+          removeZone={removeZone}
+          retargetId={retargetId}
+          setRetargetId={setRetargetId}
+          ocupado={anyDetecting}
+          onPronto={concluirMarcacao}
+          onFechar={fecharEditor}
+        />
+      )}
     </div>
   );
 }
 
 // ── Sub-components ─────────────────────────────────────────────────────────────
 
-type ZoneMode = "tap" | "draw";
 
-function ZonesStep({
-  phase, setPhase, photoData, zones, activeZoneId, setActiveZoneId, onTapPhoto, onDrawRect, onAddTextZone, onConfirmQuad,
-  updateZone, removeZone, retargetId, setRetargetId, anyDetecting, products, loadingProducts,
-  productById, canGenerate, anyAreaMarked, simPrefills, onBack, onGenerate, useProjection,
-  onConfirmMarks, analysis, onReanalyze, keepText, setKeepText,
+// Marcar, com o editor fechado (celular) ou no lugar (computador, a foto vai na
+// coluna da esquerda pelo VizShell). No celular a foto aqui é parada: tocar e
+// arrastar nela rola a página; marcar é no editor.
+function MarcarAreas({
+  telaLarga, photoData, zones, rotulos, activeZoneId, setActiveZoneId, removeZone, retargetId, setRetargetId, modo, setModo,
+  onAddTextZone, onEditar,
 }: {
-  phase: "mark" | "confirm" | "model";
-  setPhase: (p: "mark" | "confirm" | "model") => void;
+  telaLarga: boolean;
   photoData: string;
   zones: Zone[];
+  rotulos: string[];
   activeZoneId: string | null;
   setActiveZoneId: (id: string | null) => void;
-  onTapPhoto: (nx: number, ny: number) => void;
-  onDrawRect: (rect: Rect) => void;
+  removeZone: (id: string) => void;
+  retargetId: string | null;
+  setRetargetId: (id: string | null) => void;
+  modo: ZoneMode;
+  setModo: (m: ZoneMode) => void;
   onAddTextZone: () => void;
-  onConfirmQuad: (id: string) => void;
+  onEditar: () => void;
+}) {
+  if (telaLarga) {
+    return (
+      <div>
+        <h2 className="mb-2 font-serif text-xl leading-tight text-[#0B1F45] sm:text-2xl">Marque as áreas</h2>
+        <PainelMarcacao
+          tom="claro"
+          zones={zones}
+          rotulos={rotulos}
+          activeZoneId={activeZoneId}
+          setActiveZoneId={setActiveZoneId}
+          removeZone={removeZone}
+          retargetId={retargetId}
+          setRetargetId={setRetargetId}
+          modo={modo}
+          setModo={setModo}
+          onAddTextZone={onAddTextZone}
+        />
+        <p className="mt-6 border-t border-[#ececea] pt-4 text-sm text-[#74777f]">Depois de marcar, você escolhe o acabamento de cada área.</p>
+      </div>
+    );
+  }
+  return (
+    <div>
+      <StepHead title="Marque as áreas" subtitle="Toque em cada parede, teto ou móvel que quer revestir." />
+      <FotoParada photoData={photoData} zones={zones} rotulos={rotulos} activeZoneId={activeZoneId} onEditar={onEditar} />
+    </div>
+  );
+}
+
+// A foto com as áreas, sem nenhum gesto (interativo={false}), e o atalho para editar.
+function FotoParada({ photoData, zones, rotulos, activeZoneId, onEditar }: {
+  photoData: string; zones: Zone[]; rotulos: string[]; activeZoneId: string | null; onEditar: () => void;
+}) {
+  const nada = () => {};
+  // Altura contida: uma foto em pé não ocupa a tela inteira e a página rola pouco.
+  const proporcao = useProporcao(photoData);
+  return (
+    <div>
+      <div className="mx-auto" style={proporcao ? { width: `min(100%, calc(52dvh * ${proporcao}))` } : undefined}>
+      <SurfaceCanvas
+        interativo={false}
+        photoData={photoData} zones={zones} rotulos={rotulos} activeZoneId={activeZoneId} setActiveZoneId={nada}
+        mode="tap" onTapPhoto={nada} onDrawRect={nada} updateZone={nada}
+        busy={false} retargeting={false} onConfirmQuad={nada}
+      />
+      </div>
+      <div className="mt-1 flex items-center gap-4">
+        <p className="text-sm text-[#5b5f66]">
+          {zones.length === 0 ? "Nenhuma área marcada" : zones.length === 1 ? "1 área marcada" : `${zones.length} áreas marcadas`}
+        </p>
+        <button
+          type="button"
+          onClick={onEditar}
+          className="inline-flex min-h-11 items-center gap-1.5 text-[13px] font-semibold text-[#0B1F45] underline decoration-[#0B1F45]/25 underline-offset-4 hover:text-[#2347A0]"
+        >
+          <svg aria-hidden width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.7" strokeLinecap="round" strokeLinejoin="round">
+            <path d="M4 20h4L19 9l-4-4L4 16v4zM13.5 6.5l4 4" />
+          </svg>
+          Editar áreas
+        </button>
+      </div>
+    </div>
+  );
+}
+
+function ZonesStep({
+  photoData, zones, rotulos, activeZoneId, setActiveZoneId, updateZone, removeZone, retargetId, setRetargetId, products, loadingProducts,
+  productById, canGenerate, onGenerate, useProjection, onEditarAreas,
+}: {
+  photoData: string;
+  zones: Zone[];
+  rotulos: string[];
+  activeZoneId: string | null;
+  setActiveZoneId: (id: string | null) => void;
   updateZone: (id: string, patch: Partial<Zone>) => void;
   removeZone: (id: string) => void;
   retargetId: string | null;
   setRetargetId: (id: string | null) => void;
-  anyDetecting: boolean;
   products: VizProduct[];
   loadingProducts: boolean;
   productById: (id: string) => VizProduct | null;
   canGenerate: boolean;
-  needsExactArea: boolean;
-  anyAreaMarked: boolean;
-  allModelsChosen: boolean;
-  simPrefills?: SimPrefill[];
-  onBack: () => void;
   onGenerate: () => void;
   useProjection: boolean;
-  setUseProjection: (v: boolean) => void;
-  onConfirmMarks: () => void;
-  analysis: { status: "idle" | "loading" | "done" | "error"; sig: string; error?: string };
-  onReanalyze: () => void;
-  keepText: string;
-  setKeepText: (v: string) => void;
+  onEditarAreas: () => void;
 }) {
-  const [mode, setMode] = useState<ZoneMode>("tap");
-
   const backBtn = "inline-flex items-center gap-2 border border-[#e2e2e2] text-[#43474e] text-xs tracking-[0.12em] uppercase font-bold px-5 py-3 hover:border-[#0B1F45] transition-colors";
   const nextBtn = "flex-1 min-w-[180px] inline-flex items-center justify-center gap-2 text-xs tracking-[0.12em] uppercase font-bold px-6 py-3.5 transition-colors disabled:opacity-50 disabled:cursor-not-allowed";
-
-  // ── Phase 2 — MARK ────────────────────────────────────────────────────────
-  if (phase === "mark") {
-    return (
-      <div className="mt-6 max-w-2xl mx-auto">
-        <StepHead title="Marque a área" subtitle="Toque na imagem ou desenhe sobre a área onde deseja aplicar o revestimento." />
-        <div className="mb-3 flex flex-wrap items-center gap-2">
-          <span className="text-[10px] tracking-[0.15em] uppercase font-bold text-[#74777f] mr-1">Como marcar:</span>
-          <div className="inline-flex border border-[#e2e2e2] rounded-sm overflow-hidden">
-            {([{ id: "tap" as const, label: "Tocar" }, { id: "draw" as const, label: "Desenhar" }]).map((m) => (
-              <button key={m.id} onClick={() => { setMode(m.id); setRetargetId(null); }}
-                className={`px-3.5 py-2 text-[11px] font-bold transition-colors ${mode === m.id ? "bg-[#0B1F45] text-white" : "text-[#74777f] hover:text-[#0B1F45]"}`}>
-                {m.label}
-              </button>
-            ))}
-          </div>
-          <button onClick={onAddTextZone}
-            className="inline-flex items-center gap-1 px-3 py-2 text-[11px] font-bold text-[#1F7A44] border border-[#bcd8b4] rounded-sm hover:bg-[#f3f8f1] transition-colors">
-            <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5"><path d="M12 5v14M5 12h14" /></svg>
-            Descrever em texto
-          </button>
-        </div>
-
-        <SurfaceCanvas
-          photoData={photoData} zones={zones} activeZoneId={activeZoneId} setActiveZoneId={setActiveZoneId}
-          mode={mode} onTapPhoto={onTapPhoto} onDrawRect={onDrawRect} updateZone={updateZone}
-          busy={anyDetecting} retargeting={!!retargetId} onConfirmQuad={onConfirmQuad}
-        />
-        <p className="mt-3 text-[#74777f] text-xs leading-relaxed">
-          {retargetId ? (
-            <strong className="text-[#b4791e]">Toque no ponto certo da superfície para refazer a seleção.</strong>
-          ) : mode === "tap" ? (
-            <><strong>Tocar:</strong> toque na superfície (parede, teto, móvel…) e ela é recortada automaticamente, inteira.</>
-          ) : (
-            <><strong>Desenhar:</strong> arraste sobre a foto para indicar a área. Não precisa ser exato: a superfície é recortada dentro dela.</>
-          )}
-        </p>
-
-        {/* Compact list of marked areas — rename/remove only, no model picker yet */}
-        {zones.length > 0 && (
-          <div className="mt-4 space-y-1.5">
-            <p className="text-[10px] tracking-[0.18em] uppercase font-bold text-[#0B1F45]">Áreas marcadas ({zones.length})</p>
-            {zones.map((z, i) => (
-              <div key={z.id} className={`flex items-center gap-2 border px-3 py-2 rounded-sm ${activeZoneId === z.id ? "border-[#0B1F45]" : "border-[#e2e2e2]"}`}>
-                <span className="w-3 h-3 rounded-sm flex-shrink-0" style={{ background: ZONE_COLORS[i % ZONE_COLORS.length] }} />
-                <span className="text-sm font-semibold text-[#0B1F45] truncate flex-1">{z.label}</span>
-                <span className="text-[10px] flex-shrink-0">
-                  {z.detecting ? <span className="text-[#74777f]">detectando…</span>
-                    : (z.maskUrl || z.polygon || z.rect) ? <span className="text-[#1F7A44]">área ✓</span>
-                    : <span className="text-[#b4791e]">descrever</span>}
-                </span>
-                <button onClick={() => { setMode("tap"); setRetargetId(retargetId === z.id ? null : z.id); }}
-                  className="text-[10px] font-bold text-[#2F5FD0] hover:underline flex-shrink-0">Refazer</button>
-                <button onClick={() => removeZone(z.id)} title="Remover" className="text-[#b42318] hover:text-[#7a1610] flex-shrink-0">
-                  <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><path d="M3 6h18M8 6V4h8v2M19 6l-1 14H6L5 6" /></svg>
-                </button>
-              </div>
-            ))}
-          </div>
-        )}
-        {zones.length === 0 && simPrefills && simPrefills.length > 0 && (
-          <div className="mt-4 border border-[#bcd0e8] bg-[#f5f8fc] px-3 py-2.5">
-            <p className="text-[10px] tracking-[0.15em] uppercase font-bold text-[#0B1F45] mb-0.5">Simulador</p>
-            <p className="text-[#43474e] text-xs">
-              {simPrefills.length === 1 ? "Marque uma área — o modelo do Simulador será pré-selecionado." : `${simPrefills.length} modelos aguardando. Marque cada área na ordem.`}
-            </p>
-          </div>
-        )}
-
-        <div className="mt-5 flex flex-wrap items-center gap-3">
-          <button onClick={onBack} className={backBtn}>Trocar foto</button>
-          <button onClick={onConfirmMarks} disabled={!anyAreaMarked} className={`${nextBtn} bg-[#0B1F45] text-white hover:bg-[#2347A0]`}>
-            {anyDetecting ? "Detectando área…" : anyAreaMarked ? "Continuar →" : "Marque uma área para continuar"}
-          </button>
-        </div>
-      </div>
-    );
-  }
-
-  // ── Phase 3 — CONFIRM: a IA descreve, o cliente revisa ─────────────────────
-  if (phase === "confirm") {
-    const lendo = analysis.status === "loading";
-    const semTexto = zones.some((z) => !z.instruction.trim());
-    const fieldCls = "w-full border border-[#e2e2e2] bg-white px-3 py-2.5 text-sm text-[#0B1F45] leading-relaxed focus:outline-none focus:border-[#0B1F45] resize-y disabled:bg-[#F6F5F2] disabled:text-[#74777f]";
-    return (
-      <div className="mt-6 max-w-2xl mx-auto">
-        <StepHead
-          title="Confira o que vamos fazer"
-          subtitle="A IA leu a sua foto e descreveu onde aplicar. Ajuste o texto se precisar: é ele que guia a visualização."
-        />
-        <SurfaceCanvas
-          photoData={photoData} zones={zones} activeZoneId={activeZoneId} setActiveZoneId={setActiveZoneId}
-          mode="tap" onTapPhoto={() => {}} onDrawRect={onDrawRect} updateZone={updateZone}
-          busy={lendo} retargeting={false} onConfirmQuad={onConfirmQuad}
-        />
-
-        {lendo && (
-          <p className="mt-4 flex items-center gap-2 text-sm text-[#0B1F45]">
-            <span className="inline-block w-4 h-4 border-2 border-[#0B1F45] border-t-transparent rounded-full animate-spin" />
-            A IA está analisando a foto…
-          </p>
-        )}
-        {analysis.status === "error" && (
-          <p className="mt-4 text-sm text-[#b4791e]">
-            {analysis.error}{" "}
-            <button type="button" onClick={onReanalyze} className="underline underline-offset-2 font-semibold">Tentar de novo</button>
-          </p>
-        )}
-
-        <div className="mt-4 space-y-4">
-          {zones.map((z, i) => (
-            <div key={z.id}>
-              <label htmlFor={`desc-${z.id}`} className="flex items-center gap-2 text-[10px] tracking-[0.15em] uppercase font-bold text-[#0B1F45] mb-1.5">
-                <span className="w-3 h-3 rounded-sm flex-shrink-0" style={{ background: ZONE_COLORS[i % ZONE_COLORS.length] }} />
-                {z.label} — onde aplicar
-              </label>
-              <textarea
-                id={`desc-${z.id}`}
-                rows={2}
-                value={z.instruction}
-                disabled={lendo}
-                onChange={(e) => updateZone(z.id, { instruction: e.target.value })}
-                placeholder="Ex.: toda a parede branca da esquerda, atrás da mesa, do rodapé até o teto"
-                className={fieldCls}
-              />
-            </div>
-          ))}
-          <div>
-            <label htmlFor="keep-text" className="block text-[10px] tracking-[0.15em] uppercase font-bold text-[#0B1F45] mb-1.5">
-              Manter igual
-            </label>
-            <textarea
-              id="keep-text"
-              rows={2}
-              value={keepText}
-              disabled={lendo}
-              onChange={(e) => setKeepText(e.target.value)}
-              placeholder="Ex.: os quadros pendurados, a mesa, as luminárias"
-              className={fieldCls}
-            />
-            <p className="mt-1 text-[11px] text-[#74777f]">O resto da foto também continua igual.</p>
-          </div>
-        </div>
-
-        <div className="mt-5 flex flex-wrap items-center gap-3">
-          <button onClick={() => setPhase("mark")} className={backBtn}>← Ajustar marcação</button>
-          <button onClick={() => setPhase("model")} disabled={lendo || semTexto} className={`${nextBtn} bg-[#0B1F45] text-white hover:bg-[#2347A0]`}>
-            {lendo ? "Analisando…" : semTexto ? "Descreva cada área" : "Confirmar e escolher modelo →"}
-          </button>
-        </div>
-      </div>
-    );
-  }
 
   // ── Phase 4 — MODEL ───────────────────────────────────────────────────────
   return (
     <div className="mt-6 max-w-2xl mx-auto">
       <StepHead title="Escolha o modelo" subtitle={zones.length > 1 ? "Selecione o acabamento para cada área." : "Selecione o acabamento que deseja aplicar."} />
+      <div className="mb-4">
+        <FotoParada photoData={photoData} zones={zones} rotulos={rotulos} activeZoneId={activeZoneId} onEditar={onEditarAreas} />
+      </div>
       <div className="space-y-3">
         {zones.map((z, i) => (
           <ZoneCard key={z.id} zone={z} index={i} active={activeZoneId === z.id} retargeting={retargetId === z.id}
             onSelect={() => setActiveZoneId(z.id)} onChange={(patch) => updateZone(z.id, patch)} onRemove={() => removeZone(z.id)}
-            onRetarget={() => { setMode("tap"); setRetargetId(z.id); setPhase("mark"); }}
+            onRetarget={() => { setRetargetId(z.id); onEditarAreas(); }}
             products={products} loadingProducts={loadingProducts} productById={productById}
             useProjection={useProjection}
           />
         ))}
       </div>
       <div className="mt-5 flex flex-wrap items-center gap-3">
-        <button onClick={() => setPhase("mark")} className={backBtn}>← Ajustar área</button>
+        <button onClick={onEditarAreas} className={backBtn}>← Ajustar área</button>
         <button onClick={onGenerate} disabled={!canGenerate} className={`${nextBtn} bg-[#36A35C] text-[#0B1F45] hover:bg-[#4BB571]`}>
           <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><path d="M5 3v4M3 5h4M6 17v4m-2-2h4M13 3l2.5 6.5L22 12l-6.5 2.5L13 21l-2.5-6.5L4 12l6.5-2.5z" /></svg>
           Gerar visualização
@@ -2340,221 +2337,6 @@ function StepHead({ title, subtitle }: { title: string; subtitle: string }) {
     <div className="mb-4">
       <h2 className="font-serif text-[#0B1F45] text-xl sm:text-2xl leading-tight">{title}</h2>
       <p className="text-[#74777f] text-sm mt-1">{subtitle}</p>
-    </div>
-  );
-}
-
-function SurfaceCanvas({
-  photoData, zones, activeZoneId, setActiveZoneId, mode, onTapPhoto, onDrawRect, updateZone, busy, retargeting, onConfirmQuad,
-}: {
-  photoData: string; zones: Zone[]; activeZoneId: string | null; setActiveZoneId: (id: string | null) => void;
-  mode: ZoneMode; onTapPhoto: (nx: number, ny: number) => void; onDrawRect: (rect: Rect) => void;
-  updateZone: (id: string, patch: Partial<Zone>) => void; busy: boolean; retargeting: boolean;
-  onConfirmQuad: (id: string) => void;
-}) {
-  const ref = useRef<HTMLDivElement | null>(null);
-  const drag = useRef<null | { kind: "create"; sx: number; sy: number } | { kind: "move"; id: string; offX: number; offY: number; w: number; h: number } | { kind: "resize"; id: string; x: number; y: number } | { kind: "corner"; id: string; idx: number }>(null);
-  const [draft, setDraft] = useState<Rect | null>(null);
-  const draftRef = useRef<Rect | null>(null);
-  const setDraftBoth = (r: Rect | null) => { draftRef.current = r; setDraft(r); };
-
-  const norm = (cx: number, cy: number) => {
-    const el = ref.current;
-    if (!el) return { x: 0, y: 0 };
-    const r = el.getBoundingClientRect();
-    return { x: Math.min(1, Math.max(0, (cx - r.left) / r.width)), y: Math.min(1, Math.max(0, (cy - r.top) / r.height)) };
-  };
-
-  const handleClick = (e: React.MouseEvent) => {
-    if (mode !== "tap") return;
-    const p = norm(e.clientX, e.clientY);
-    onTapPhoto(p.x, p.y);
-  };
-
-  const onBgPointerDown = (e: React.PointerEvent) => {
-    if (mode !== "draw") return;
-    const p = norm(e.clientX, e.clientY);
-    (e.currentTarget as HTMLElement).setPointerCapture?.(e.pointerId);
-    drag.current = { kind: "create", sx: p.x, sy: p.y };
-    setDraftBoth({ x: p.x, y: p.y, w: 0, h: 0 });
-  };
-  const onPointerMove = (e: React.PointerEvent) => {
-    const d = drag.current;
-    if (!d) return;
-    const p = norm(e.clientX, e.clientY);
-    if (d.kind === "create") {
-      setDraftBoth({ x: Math.min(d.sx, p.x), y: Math.min(d.sy, p.y), w: Math.abs(p.x - d.sx), h: Math.abs(p.y - d.sy) });
-    } else if (d.kind === "move") {
-      updateZone(d.id, { rect: { x: Math.min(1 - d.w, Math.max(0, p.x - d.offX)), y: Math.min(1 - d.h, Math.max(0, p.y - d.offY)), w: d.w, h: d.h } });
-    } else if (d.kind === "resize") {
-      updateZone(d.id, { rect: { x: d.x, y: d.y, w: Math.max(0.03, Math.min(1 - d.x, p.x - d.x)), h: Math.max(0.03, Math.min(1 - d.y, p.y - d.y)) } });
-    } else if (d.kind === "corner") {
-      const zone = zones.find((z) => z.id === d.id);
-      if (zone?.quad) {
-        const nq = zone.quad.map((pt, i) => (i === d.idx ? ([p.x, p.y] as [number, number]) : pt)) as Quad;
-        updateZone(d.id, { quad: nq });
-      }
-    }
-  };
-  const onPointerUp = () => {
-    const d = drag.current;
-    const f = draftRef.current;
-    if (d?.kind === "create" && f && f.w > 0.03 && f.h > 0.03) onDrawRect(f);
-    drag.current = null; setDraftBoth(null);
-  };
-
-  return (
-    <div ref={ref} onClick={handleClick} onPointerDown={onBgPointerDown} onPointerMove={onPointerMove}
-      onPointerUp={onPointerUp} onPointerCancel={onPointerUp}
-      style={{ WebkitTouchCallout: "none", WebkitUserSelect: "none", touchAction: "none" }}
-      className={`relative bg-[#11151b] rounded-sm overflow-hidden select-none touch-none ${mode === "draw" || retargeting ? "cursor-crosshair" : "cursor-pointer"}`}>
-      {/* eslint-disable-next-line @next/next/no-img-element */}
-      <img src={photoData} alt="Seu ambiente" className="block w-full h-auto pointer-events-none" />
-      {zones.map((z) => z.maskUrl ? (
-        // eslint-disable-next-line @next/next/no-img-element
-        <img key={z.id} src={z.maskUrl} alt="" className={`absolute inset-0 w-full h-full pointer-events-none transition-opacity ${z.id === activeZoneId ? "opacity-100" : "opacity-75"}`} />
-      ) : null)}
-      <svg viewBox="0 0 1 1" preserveAspectRatio="none" className="absolute inset-0 w-full h-full pointer-events-none">
-        {zones.map((z, i) => {
-          if (!z.polygon || z.polygon.length < 3) return null;
-          const color = ZONE_COLORS[i % ZONE_COLORS.length];
-          const active = z.id === activeZoneId;
-          return <polygon key={z.id} points={z.polygon.map(([x, y]) => `${x},${y}`).join(" ")} fill={color} fillOpacity={active ? 0.42 : 0.26} stroke={color} strokeWidth={active ? 0.007 : 0.004} strokeLinejoin="round" />;
-        })}
-      </svg>
-      {zones.map((z, i) => {
-        if (!z.rect) return null;
-        const color = ZONE_COLORS[i % ZONE_COLORS.length];
-        return (
-          <button key={z.id} onClick={(e) => { e.stopPropagation(); setActiveZoneId(z.id); }}
-            style={z.point
-              ? { left: `calc(${(z.rect.x + z.rect.w / 2) * 100}% + 16px)`, top: `${(z.rect.y + z.rect.h / 2) * 100}%`, background: color }
-              : { left: `${z.rect.x * 100}%`, top: `${z.rect.y * 100}%`, background: color }}
-            className="absolute -translate-y-1/2 text-white text-[10px] font-bold px-1.5 py-0.5 rounded-sm">
-            {z.label}
-          </button>
-        );
-      })}
-      {zones.map((z, i) => {
-        // Once a manually-drawn box gets upgraded to a precise mask/polygon,
-        // show only that (like a tap-detected zone) — the raw box outline
-        // underneath it is now stale and just visual clutter.
-        if (!z.manual || !z.rect || z.maskUrl || (z.polygon && z.polygon.length >= 3)) return null;
-        const color = ZONE_COLORS[i % ZONE_COLORS.length];
-        const rect = z.rect;
-        const active = z.id === activeZoneId;
-        if (z.point) {
-          // Toque: um alvo no ponto — a IA descobre a superfície inteira depois.
-          return (
-            <span key={z.id} aria-hidden
-              style={{ left: `${(rect.x + rect.w / 2) * 100}%`, top: `${(rect.y + rect.h / 2) * 100}%`, borderColor: color, background: `${color}55` }}
-              className={`absolute -translate-x-1/2 -translate-y-1/2 w-7 h-7 rounded-full border-[3px] pointer-events-none shadow ${active ? "ring-2 ring-white" : ""}`}>
-              <span className="absolute left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2 w-2 h-2 rounded-full" style={{ background: color }} />
-            </span>
-          );
-        }
-        return (
-          <div key={z.id}
-            onPointerDown={(e) => {
-              if (mode !== "draw") return;
-              e.stopPropagation(); setActiveZoneId(z.id);
-              const p = norm(e.clientX, e.clientY);
-              // Capture on the STABLE container, not the handle: the handle
-              // re-renders as it moves (its style changes every frame), which
-              // drops capture on the handle element and makes the drag stop
-              // after a few px. The root never remounts mid-drag.
-              try { ref.current?.setPointerCapture(e.pointerId); } catch {}
-              drag.current = { kind: "move", id: z.id, offX: p.x - rect.x, offY: p.y - rect.y, w: rect.w, h: rect.h };
-            }}
-            style={{ left: `${rect.x * 100}%`, top: `${rect.y * 100}%`, width: `${rect.w * 100}%`, height: `${rect.h * 100}%`, borderColor: color, background: `${color}22` }}
-            className={`absolute border-2 ${active ? "ring-2 ring-white/70" : ""} ${mode === "draw" ? "cursor-move" : "pointer-events-none"}`}>
-            {mode === "draw" && (
-              <span onPointerDown={(e) => {
-                  e.stopPropagation(); setActiveZoneId(z.id);
-                  // Capture on the STABLE container, not the handle: the handle
-              // re-renders as it moves (its style changes every frame), which
-              // drops capture on the handle element and makes the drag stop
-              // after a few px. The root never remounts mid-drag.
-              try { ref.current?.setPointerCapture(e.pointerId); } catch {}
-                  drag.current = { kind: "resize", id: z.id, x: rect.x, y: rect.y };
-                }}
-                style={{ background: color }}
-                className="absolute -bottom-2 -right-2 w-4 h-4 rounded-full border-2 border-white cursor-nwse-resize" />
-            )}
-          </div>
-        );
-      })}
-      {/* Pixel-exact projection: 4-corner quad for the active zone.
-          - Not confirmed → draggable handles + "Atualizar pontos" (re-runs SAM2).
-          - Confirmed → handles hidden, just an "Editar cantos" pill to recall. */}
-      {(() => {
-        const az = zones.find((z) => z.id === activeZoneId);
-        if (!az?.quad) return null;
-        const q = az.quad;
-        const cx = (q[0][0] + q[1][0] + q[2][0] + q[3][0]) / 4;
-        const cy = (q[0][1] + q[1][1] + q[2][1] + q[3][1]) / 4;
-
-        if (az.quadConfirmed) {
-          // Collapsed: only a small recall pill at the centre.
-          return (
-            <button
-              onPointerDown={(e) => e.stopPropagation()}
-              onClick={(e) => { e.stopPropagation(); updateZone(az.id, { quadConfirmed: false }); }}
-              style={{ left: `${cx * 100}%`, top: `${cy * 100}%` }}
-              className="absolute -translate-x-1/2 -translate-y-1/2 bg-black/70 hover:bg-black/85 text-white text-[10px] font-bold px-3 py-1.5 rounded-full whitespace-nowrap shadow-md">
-              ✎ Editar cantos
-            </button>
-          );
-        }
-        return (
-          <>
-            <svg viewBox="0 0 1 1" preserveAspectRatio="none" className="absolute inset-0 w-full h-full pointer-events-none">
-              <polygon points={q.map(([x, y]) => `${x},${y}`).join(" ")} fill="none" stroke="#ffffff" strokeWidth={0.004} strokeDasharray="0.014 0.009" strokeLinejoin="round" />
-            </svg>
-            {q.map(([x, y], idx) => (
-              // Large transparent hit area (finger-friendly) wrapping a small dot.
-              <span key={idx}
-                onPointerDown={(e) => {
-                  e.stopPropagation();
-                  // Capture on the STABLE container, not the handle: the handle
-              // re-renders as it moves (its style changes every frame), which
-              // drops capture on the handle element and makes the drag stop
-              // after a few px. The root never remounts mid-drag.
-              try { ref.current?.setPointerCapture(e.pointerId); } catch {}
-                  drag.current = { kind: "corner", id: az.id, idx };
-                }}
-                onClick={(e) => e.stopPropagation()}
-                style={{ left: `${x * 100}%`, top: `${y * 100}%` }}
-                className="absolute -translate-x-1/2 -translate-y-1/2 w-10 h-10 flex items-center justify-center cursor-grab active:cursor-grabbing touch-none">
-                <span className="w-5 h-5 rounded-full bg-white border-2 border-[#0B1F45] shadow-md" />
-              </span>
-            ))}
-            {/* Confirm button at the quad centre — re-runs SAM2, then hides handles. */}
-            <button
-              onPointerDown={(e) => e.stopPropagation()}
-              onClick={(e) => { e.stopPropagation(); onConfirmQuad(az.id); }}
-              style={{ left: `${cx * 100}%`, top: `${cy * 100}%` }}
-              className="absolute -translate-x-1/2 -translate-y-1/2 bg-[#36A35C] hover:bg-[#4BB571] text-[#0B1F45] text-[11px] font-bold px-4 py-2 rounded-full whitespace-nowrap shadow-lg">
-              ✓ Atualizar pontos
-            </button>
-            <div className="absolute bottom-2 left-1/2 -translate-x-1/2 bg-black/70 text-white text-[10px] px-3 py-1 rounded-full pointer-events-none whitespace-nowrap">
-              Arraste os 4 cantos e toque em “Atualizar pontos”
-            </div>
-          </>
-        );
-      })()}
-      {draft && draft.w > 0 && (
-        <div style={{ left: `${draft.x * 100}%`, top: `${draft.y * 100}%`, width: `${draft.w * 100}%`, height: `${draft.h * 100}%` }}
-          className="absolute border-2 border-dashed border-white bg-white/10 pointer-events-none" />
-      )}
-      {busy && (
-        <div className="absolute inset-0 bg-black/40 flex items-center justify-center pointer-events-none">
-          <div className="flex items-center gap-2 bg-black/70 px-4 py-2 rounded-full">
-            <div className="w-4 h-4 border-2 border-white/30 border-t-[#36A35C] rounded-full animate-spin" />
-            <span className="text-white text-xs">Detectando superfície…</span>
-          </div>
-        </div>
-      )}
     </div>
   );
 }

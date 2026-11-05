@@ -8,6 +8,7 @@ import {
   ajustarAreaAtual,
   limitarDivisor,
   passoTeclado,
+  rotuloZona,
 } from "./fluxo.ts";
 
 test("etapaVisivel mapeia os passos", () => {
@@ -52,4 +53,18 @@ test("limitarDivisor e passoTeclado", () => {
   assert.equal(passoTeclado(3, "ArrowLeft"), 0);
   assert.equal(passoTeclado(40, "Home"), 0);
   assert.equal(passoTeclado(40, "End"), 100);
+});
+
+test("rotuloZona nomeia pela superfície e respeita o nome dado", () => {
+  const espacos = [{ id: "parede", label: "Parede" }, { id: "teto", label: "Teto" }, { id: "movel", label: "Móvel / Marcenaria" }];
+  const zs = [
+    { label: "Área 1", surface: "parede", customLabel: "" },
+    { label: "Área 2", surface: "teto", customLabel: "" },
+    { label: "Área 3", surface: "parede", customLabel: "" },
+    { label: "Lareira", surface: "parede", customLabel: "" },
+    { label: "Área 5", surface: "__custom__", customLabel: "atrás da TV" },
+    { label: "Área 6", surface: "sumiu", customLabel: "" },
+    { label: "Área 7", surface: "movel", customLabel: "" },
+  ];
+  assert.deepEqual(zs.map((_, i) => rotuloZona(zs, i, espacos)), ["Parede 1", "Teto 1", "Parede 2", "Lareira", "atrás da TV", "Área 6", "Móvel 1"]);
 });
