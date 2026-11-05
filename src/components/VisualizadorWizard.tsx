@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useState, useRef, useEffect, useCallback, useMemo } from "react";
+import React, { useState, useRef, useEffect, useCallback, useMemo, useSyncExternalStore } from "react";
 import { applicationAreaFor, DEFAULT_PANEL_WIDTH_M, DEFAULT_PANEL_HEIGHT_M } from "@/lib/render-prompt";
 import { ORCAMENTO_INSTANTANEO_VISIVEL, abrirContato } from "@/lib/contato";
 import {
@@ -11,13 +11,16 @@ import {
 } from "@/lib/texture-projection";
 import VizShell, { focarEtapa, rolarParaTopo, type AcaoShell } from "./visualizador/VizShell";
 import EtapaFoto from "./visualizador/EtapaFoto";
-import { etapaVisivel, podeGerar, rotuloZona, ZONE_COLORS } from "./visualizador/fluxo";
+import {
+  ajustarAreaAtual, areaPronta, areaSeguinte, etapaVisivel, podeGerar, rotuloZona, ZONE_COLORS,
+  LINE_ORDER, VIZ_SPACES, type ProductLine,
+} from "./visualizador/fluxo";
+import EtapaAcabamento, { AcabamentoSemAreas, FotoAcabamento } from "./visualizador/EtapaAcabamento";
 import SurfaceCanvas, { type ZoneMode } from "./visualizador/SurfaceCanvas";
 import EditorMarcacao, { FotoMarcavel, PainelMarcacao, marcaNoLugar, useMarcacaoNoLugar, useProporcao } from "./visualizador/EditorMarcacao";
 
 // ── Types ─────────────────────────────────────────────────────────────────────
 
-type ProductLine = "Classic" | "Brilliance" | "Elegance";
 type FinishKind = "matte" | "polished" | "wood";
 
 export interface VizProduct {
@@ -35,27 +38,14 @@ export interface VizProduct {
   render_texture_path?: string | null;
 }
 
-export const LINE_ORDER: ProductLine[] = ["Classic", "Brilliance", "Elegance"];
+// LINE_ORDER e VIZ_SPACES moram em visualizador/fluxo (o Acabamento também usa,
+// sem importar valores daqui) e seguem exportados por este módulo.
+export { LINE_ORDER, VIZ_SPACES };
 export const FINISH_BY_LINE: Record<ProductLine, FinishKind> = {
   Classic: "matte",
   Brilliance: "polished",
   Elegance: "wood",
 };
-
-export const VIZ_SPACES: { id: string; label: string }[] = [
-  { id: "parede", label: "Parede" },
-  { id: "teto", label: "Teto" },
-  { id: "sala", label: "Sala" },
-  { id: "quarto", label: "Quarto" },
-  { id: "escritorio", label: "Escritório" },
-  { id: "corredor", label: "Corredor" },
-  { id: "banheiro", label: "Banheiro" },
-  { id: "lavabo", label: "Lavabo" },
-  { id: "cozinha", label: "Cozinha" },
-  { id: "movel", label: "Móvel / Marcenaria" },
-  { id: "porta", label: "Porta" },
-  { id: "box", label: "Box / Ducha" },
-];
 
 // ── Render engine ────────────────────────────────────────────────────────────
 // PRODUCTION path = Gemini generative "apply the panel" (see /api/visualizador/
@@ -142,6 +132,9 @@ interface SavedAmbiente {
 }
 
 // ── Helpers ───────────────────────────────────────────────────────────────────
+
+/** Assinatura vazia para useSyncExternalStore de valores que não mudam na página (?debug=1). */
+const nadaParaAssinar = () => () => {};
 
 export function parseDim(v: string): number | null {
   const n = parseFloat(v.replace(",", "."));
@@ -998,6 +991,17 @@ export default function VisualizadorWizard({
   const marcarTipoEscolhido = useCallback((id: string) => {
     setTiposEscolhidos((cur) => (cur.has(id) ? cur : new Set(cur).add(id)));
   }, []);
+  // Acabamento, uma área por vez: índice da área mostrada, sempre válido para o
+  // número de áreas (remover a atual no editor cai na vizinha; sem áreas, 0).
+  const [areaAtualPedida, setAreaAtual] = useState(0);
+  const areaAtual = ajustarAreaAtual(areaAtualPedida, zones.length);
+  if (areaAtual !== areaAtualPedida) setAreaAtual(areaAtual);
+  // Rótulos técnicos (SAM2, tipo de render, cantos) só com ?debug=1 (falso no servidor).
+  const depurar = useSyncExternalStore(
+    nadaParaAssinar,
+    () => new URLSearchParams(window.location.search).get("debug") === "1",
+    () => false,
+  );
 
   // In standalone mode: lead captured here. In embedded mode: prefilled by parent.
   const [leadName, setLeadName] = useState(prefilledLeadName);
@@ -1083,6 +1087,19 @@ export default function VisualizadorWizard({
     const shell = topRef.current.nextElementSibling;
     if (shell instanceof HTMLElement) focarEtapa(shell);
   }, [etapa, zonePhase]);
+
+  // Próxima área (ou Voltar entre áreas): a troca é no lugar, e a página volta
+  // ao topo do shell para a foto e os cartões da área nova começarem à vista;
+  // o foco vai para o título da área.
+  const areaAnterior = useRef(areaAtual);
+  useEffect(() => {
+    const mudou = areaAnterior.current !== areaAtual;
+    areaAnterior.current = areaAtual;
+    const shell = topRef.current?.nextElementSibling;
+    if (!mudou || !(shell instanceof HTMLElement) || !shell.querySelector("[data-viz-acabamento]")) return;
+    rolarParaTopo(shell);
+    focarEtapa(shell);
+  }, [areaAtual]);
 
   // Editor fechado: a página volta com o topo da etapa à vista (enquanto ele
   // esteve aberto a rolagem ficou travada, e a rolagem suave da troca de etapa
@@ -1557,6 +1574,7 @@ export default function VisualizadorWizard({
     setEditorAberto(false);
     setRetargetId(null);
     setZonePhase("model");
+    setAreaAtual(0);
     if (analysis.sig !== marksSig || analysis.status === "error") void analyze();
   }, [analysis, marksSig, analyze]);
 
@@ -1589,11 +1607,22 @@ export default function VisualizadorWizard({
     [zones, tiposEscolhidos],
   );
 
-  // Gerar, até a Task 5: além do modelo escolhido, cada área precisa da descrição
-  // de onde aplicar e a análise não pode estar rodando (como na antiga tela de
+  // Gerar: além do modelo escolhido, cada área precisa da descrição de onde
+  // aplicar e a análise não pode estar rodando (como na antiga tela de
   // confirmação), para o render nunca sair com descrição vazia.
   const podeGerarAgora = podeGerar(zones, { canGenerate }) && analysis.status !== "loading";
-  const faltaDescricao = zones.some((z) => !z.instruction.trim());
+
+  // Acabamento: a área mostrada e a seguinte (null na última).
+  const zonaAtual: Zone | undefined = zones[areaAtual];
+  const proximaArea = areaSeguinte(areaAtual, zones.length);
+  const irParaProximaArea = useCallback(() => {
+    if (proximaArea !== null) setAreaAtual(proximaArea);
+  }, [proximaArea]);
+  const atualizarZonaAtual = useCallback((patch: Partial<Zone>) => {
+    if (!zonaAtual) return;
+    if (patch.surface !== undefined) marcarTipoEscolhido(zonaAtual.id);
+    updateZone(zonaAtual.id, patch);
+  }, [zonaAtual, marcarTipoEscolhido, updateZone]);
 
   // ── Generate ──────────────────────────────────────────────────────────────
   const generate = useCallback(async () => {
@@ -1998,6 +2027,8 @@ export default function VisualizadorWizard({
     step === "zones"
       ? () => {
           if (zonePhase === "mark") setStep("upload");
+          // No Acabamento, cada área é uma tela: Voltar passa pela área anterior.
+          else if (areaAtual > 0) setAreaAtual(areaAtual - 1);
           else setZonePhase("mark");
         }
       : step === "result" && !generating
@@ -2019,9 +2050,16 @@ export default function VisualizadorWizard({
           : anyAreaMarked
             ? { rotulo: "Continuar", onClick: concluirMarcacao }
             : { rotulo: "Marcar as áreas", onClick: () => setEditorAberto(true) }
-        : { rotulo: "Gerar visualização", onClick: generate, desabilitada: !podeGerarAgora, tom: "verde" };
+        // Acabamento: "Próxima área" até a última (só com modelo e descrição da
+        // área atual), depois "Gerar visualização". Sem áreas, volta a marcar.
+        : !zonaAtual
+          ? { rotulo: "Marcar as áreas", onClick: editarAreas }
+          : proximaArea !== null
+            ? { rotulo: "Próxima área", onClick: irParaProximaArea, desabilitada: !areaPronta(zonaAtual) }
+            : { rotulo: "Gerar visualização", onClick: generate, desabilitada: !podeGerarAgora, tom: "verde" };
 
   const marcacaoNoLugar = step === "zones" && zonePhase === "mark" && noLugar && !!photoData;
+  const noAcabamento = step === "zones" && zonePhase !== "mark" && !!photoData;
 
   // ── Render ────────────────────────────────────────────────────────────────
   return (
@@ -2047,6 +2085,8 @@ export default function VisualizadorWizard({
             updateZone={updateZone}
             alturaMax="calc(100dvh - 15rem)"
           />
+        ) : noAcabamento && photoData ? (
+          <FotoAcabamento photoData={photoData} zones={zones} rotulos={rotulos} zonaAtualId={zonaAtual?.id ?? null} />
         ) : undefined}
       >
         {step === "upload" && (
@@ -2078,31 +2118,28 @@ export default function VisualizadorWizard({
           />
         )}
 
-        {step === "zones" && photoData && zonePhase !== "mark" && (
-          <ZonesStep
-            photoData={photoData}
-            zones={zones}
-            rotulos={rotulos}
-            activeZoneId={activeZoneId}
-            setActiveZoneId={setActiveZoneId}
-            updateZone={updateZone}
-            removeZone={removeZone}
-            retargetId={retargetId}
-            setRetargetId={setRetargetId}
-            products={products}
-            loadingProducts={loadingProducts}
-            productById={productById}
-            canGenerate={podeGerarAgora}
-            faltaModelo={!allModelsChosen}
-            faltaDescricao={faltaDescricao}
-            analysis={analysis}
-            onReanalyze={analyze}
-            marcarTipoEscolhido={marcarTipoEscolhido}
-            onGenerate={generate}
-            useProjection={useProjection}
+        {noAcabamento && (zonaAtual ? (
+          <EtapaAcabamento
+            key={zonaAtual.id}
+            zona={zonaAtual}
+            rotulo={rotulos[areaAtual]}
+            indice={areaAtual}
+            total={zones.length}
+            produtos={products}
+            carregando={loadingProducts}
+            analise={analysis.status}
+            erroAnalise={analysis.error}
+            onTentarDeNovo={analyze}
+            depurar={depurar}
+            onEscolher={(productId) => updateZone(zonaAtual.id, { productId, productChosen: true })}
+            onAtualizar={atualizarZonaAtual}
+            keepText={keepText}
+            setKeepText={setKeepText}
             onEditarAreas={editarAreas}
           />
-        )}
+        ) : (
+          <AcabamentoSemAreas onEditarAreas={editarAreas} />
+        ))}
 
         {step === "result" && (
           <ResultStep
@@ -2118,7 +2155,7 @@ export default function VisualizadorWizard({
             onLeadNameChange={setLeadName}
             onLeadPhoneChange={setLeadPhone}
             onLeadSubmit={handleLeadSubmit}
-            onChooseModel={() => { setZonePhase("model"); setStep("zones"); }}
+            onChooseModel={() => { setZonePhase("model"); setAreaAtual(0); setStep("zones"); }}
             onAdjustArea={() => { setZonePhase("mark"); setStep("zones"); setEditorAberto(!marcaNoLugar()); }}
             onRegenerate={generate}
             onDownload={download}
@@ -2299,207 +2336,12 @@ function FotoParada({ photoData, zones, rotulos, activeZoneId, onEditar }: {
   );
 }
 
-function ZonesStep({
-  photoData, zones, rotulos, activeZoneId, setActiveZoneId, updateZone, removeZone, retargetId, setRetargetId, products, loadingProducts,
-  productById, canGenerate, faltaModelo, faltaDescricao, analysis, onReanalyze, marcarTipoEscolhido, onGenerate, useProjection, onEditarAreas,
-}: {
-  photoData: string;
-  zones: Zone[];
-  rotulos: string[];
-  activeZoneId: string | null;
-  setActiveZoneId: (id: string | null) => void;
-  updateZone: (id: string, patch: Partial<Zone>) => void;
-  removeZone: (id: string) => void;
-  retargetId: string | null;
-  setRetargetId: (id: string | null) => void;
-  products: VizProduct[];
-  loadingProducts: boolean;
-  productById: (id: string) => VizProduct | null;
-  canGenerate: boolean;
-  faltaModelo: boolean;
-  faltaDescricao: boolean;
-  analysis: { status: "idle" | "loading" | "done" | "error"; sig: string; error?: string };
-  onReanalyze: () => void;
-  marcarTipoEscolhido: (id: string) => void;
-  onGenerate: () => void;
-  useProjection: boolean;
-  onEditarAreas: () => void;
-}) {
-  const lendo = analysis.status === "loading";
-  const backBtn = "inline-flex items-center gap-2 border border-[#e2e2e2] text-[#43474e] text-xs tracking-[0.12em] uppercase font-bold px-5 py-3 hover:border-[#0B1F45] transition-colors";
-  const nextBtn = "flex-1 min-w-[180px] inline-flex items-center justify-center gap-2 text-xs tracking-[0.12em] uppercase font-bold px-6 py-3.5 transition-colors disabled:opacity-50 disabled:cursor-not-allowed";
-
-  // ── Phase 4 — MODEL ───────────────────────────────────────────────────────
-  return (
-    <div className="mt-6 max-w-2xl mx-auto">
-      <StepHead title="Escolha o modelo" subtitle={zones.length > 1 ? "Selecione o acabamento para cada área." : "Selecione o acabamento que deseja aplicar."} />
-      <div className="mb-4">
-        <FotoParada photoData={photoData} zones={zones} rotulos={rotulos} activeZoneId={activeZoneId} onEditar={onEditarAreas} />
-      </div>
-      {/* A descrição de onde aplicar vem da análise em segundo plano (antiga tela de confirmação). */}
-      {lendo && (
-        <p className="mb-4 flex items-center gap-2 text-sm text-[#0B1F45]">
-          <span aria-hidden className="inline-block h-4 w-4 animate-spin rounded-full border-2 border-[#0B1F45] border-t-transparent" />
-          A IA está analisando a foto…
-        </p>
-      )}
-      {analysis.status === "error" && (
-        <p className="mb-4 text-sm text-[#8a5a12]">
-          {analysis.error}{" "}
-          <button type="button" onClick={onReanalyze} className="inline-flex min-h-11 items-center font-semibold underline underline-offset-2">Tentar de novo</button>
-        </p>
-      )}
-      <div className="space-y-3">
-        {zones.map((z, i) => (
-          <ZoneCard key={z.id} zone={z} index={i} active={activeZoneId === z.id} retargeting={retargetId === z.id}
-            onSelect={() => setActiveZoneId(z.id)}
-            onChange={(patch) => { if (patch.surface !== undefined) marcarTipoEscolhido(z.id); updateZone(z.id, patch); }}
-            onRemove={() => removeZone(z.id)}
-            onRetarget={() => { setRetargetId(z.id); onEditarAreas(); }}
-            products={products} loadingProducts={loadingProducts} productById={productById}
-            useProjection={useProjection}
-          />
-        ))}
-      </div>
-      <div className="mt-5 flex flex-wrap items-center gap-3">
-        <button onClick={onEditarAreas} className={backBtn}>← Ajustar área</button>
-        <button onClick={onGenerate} disabled={!canGenerate} className={`${nextBtn} bg-[#36A35C] text-[#0B1F45] hover:bg-[#4BB571]`}>
-          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><path d="M5 3v4M3 5h4M6 17v4m-2-2h4M13 3l2.5 6.5L22 12l-6.5 2.5L13 21l-2.5-6.5L4 12l6.5-2.5z" /></svg>
-          Gerar visualização
-        </button>
-      </div>
-      {!canGenerate && !lendo && (faltaModelo || faltaDescricao) && (
-        <p className="mt-2 text-[11px] text-[#b4791e] text-center">
-          {faltaModelo ? "Escolha um acabamento em cada área para gerar." : "Descreva onde aplicar em cada área para gerar."}
-        </p>
-      )}
-    </div>
-  );
-}
-
 // Small step heading used across the guided phases — the "what to do now" cue.
 function StepHead({ title, subtitle }: { title: string; subtitle: string }) {
   return (
     <div className="mb-4">
       <h2 className="font-serif text-[#0B1F45] text-xl sm:text-2xl leading-tight">{title}</h2>
       <p className="text-[#74777f] text-sm mt-1">{subtitle}</p>
-    </div>
-  );
-}
-
-function ZoneCard({ zone, index, active, retargeting, onSelect, onChange, onRemove, onRetarget, products, loadingProducts, productById, useProjection }: {
-  zone: Zone; index: number; active: boolean; retargeting: boolean;
-  onSelect: () => void; onChange: (patch: Partial<Zone>) => void; onRemove: () => void; onRetarget: () => void;
-  products: VizProduct[]; loadingProducts: boolean; productById: (id: string) => VizProduct | null;
-  useProjection: boolean;
-}) {
-  const color = ZONE_COLORS[index % ZONE_COLORS.length];
-  const prod = productById(zone.productId);
-  const sanitizeDim = (v: string) => v.replace(/[^0-9.,]/g, "").replace(",", ".");
-  const [lineFilter, setLineFilter] = useState<ProductLine | "Todas">("Todas");
-  const list = lineFilter === "Todas" ? products : products.filter((p) => p.linha === lineFilter);
-
-  return (
-    <div id={`zone-${zone.id}`} onClick={onSelect}
-      className={`scroll-mt-24 bg-white border rounded-sm p-4 cursor-pointer transition-colors ${active ? "border-[#0B1F45] shadow-sm" : "border-[#e2e2e2] hover:border-[#B4BBC8]"}`}>
-      <div className="flex items-center justify-between mb-3">
-        <div className="flex items-center gap-2 min-w-0">
-          <span className="w-3 h-3 rounded-sm flex-shrink-0" style={{ background: color }} />
-          <input value={zone.label} onClick={(e) => e.stopPropagation()} onChange={(e) => onChange({ label: e.target.value })}
-            className="text-sm font-semibold text-[#0B1F45] bg-transparent border-b border-transparent focus:border-[#e2e2e2] focus:outline-none min-w-0 w-28" />
-        </div>
-        <button onClick={(e) => { e.stopPropagation(); onRemove(); }} title="Remover área" className="text-[#b42318] hover:text-[#7a1610]">
-          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><path d="M3 6h18M8 6V4h8v2M19 6l-1 14H6L5 6" /></svg>
-        </button>
-      </div>
-      <div className="flex items-center justify-between mb-2">
-        <p className="text-[10px]">
-          {zone.detecting ? <span className="text-[#74777f]">Detectando superfície…</span>
-            : zone.detectFailed ? <span className="text-[#b42318]">Ajuste manual pelos 4 pontos</span>
-            : (zone.polygon || zone.maskUrl) && zone.detectEngine === "fal" ? <span className="text-[#1F7A44]">Superfície detectada (SAM2) ✓</span>
-            : (zone.polygon || zone.maskUrl) && zone.detectEngine === "gemini" ? <span className="text-[#b4791e]">Contorno aproximado (SAM2 indisponível)</span>
-            : zone.polygon || zone.maskUrl ? <span className="text-[#1F7A44]">Superfície detectada ✓</span>
-            : zone.manual && zone.rect ? <span className="text-[#1F7A44]">Área desenhada ✓</span>
-            : <span className="text-[#b4791e]">Descreva o local em texto abaixo</span>}
-        </p>
-        <button onClick={(e) => { e.stopPropagation(); onRetarget(); }}
-          className={`text-[10px] font-bold ${retargeting ? "text-[#b4791e]" : "text-[#2F5FD0] hover:underline"}`}>
-          {retargeting ? "Toque na foto…" : "Refazer seleção"}
-        </button>
-      </div>
-      {/* Render status: tells the user whether this zone uses exact texture or AI. */}
-      {prod && (
-        <div className="flex items-center justify-between mb-2 -mt-0.5">
-          {DETERMINISTIC_PROJECTION && prod.render_texture_path?.trim() ? (
-            <span className="text-[10px] font-bold text-[#1F7A44]">● Textura exata</span>
-          ) : prod.render_texture_path?.trim() ? (
-            <span className="text-[10px] font-bold text-[#b4791e]">● IA com referência</span>
-          ) : (
-            <span className="text-[10px] text-[#74777f]">○ IA com foto de referência</span>
-          )}
-          {prod.render_texture_path?.trim() && zone.quad && (
-            <button onClick={(e) => { e.stopPropagation(); onChange({ quad: null }); }}
-              className="text-[10px] font-bold text-[#2F5FD0] hover:underline">
-              Redefinir cantos
-            </button>
-          )}
-        </div>
-      )}
-      <label className="block text-[10px] tracking-[0.15em] uppercase font-bold text-[#74777f] mb-1">Tipo de superfície</label>
-      <select value={zone.surface} onClick={(e) => e.stopPropagation()} onChange={(e) => onChange({ surface: e.target.value })}
-        className="w-full border border-[#e2e2e2] px-2.5 py-2 text-sm text-[#0B1F45] bg-white focus:outline-none focus:border-[#0B1F45] mb-2">
-        {VIZ_SPACES.map((s) => <option key={s.id} value={s.id}>{s.label}</option>)}
-        <option value="__custom__">Outro…</option>
-      </select>
-      {zone.surface === "__custom__" && (
-        <input value={zone.customLabel} onClick={(e) => e.stopPropagation()} onChange={(e) => onChange({ customLabel: e.target.value })}
-          placeholder="ex: parede atrás da TV" className="w-full border border-[#e2e2e2] px-2.5 py-2 text-sm text-[#0B1F45] focus:outline-none focus:border-[#0B1F45] mb-2" />
-      )}
-      <label className="block text-[10px] tracking-[0.15em] uppercase font-bold text-[#74777f] mb-1 mt-1">
-        Onde aplicar
-      </label>
-      <textarea value={zone.instruction} onClick={(e) => e.stopPropagation()} onChange={(e) => onChange({ instruction: e.target.value })}
-        rows={2} placeholder="ex: nas paredes cinza ao fundo, atrás do sofá"
-        className="w-full border border-[#e2e2e2] px-2.5 py-2 text-sm text-[#0B1F45] focus:outline-none focus:border-[#0B1F45] mb-1 resize-none" />
-      <label className="block text-[10px] tracking-[0.15em] uppercase font-bold text-[#74777f] mb-1 mt-1">
-        Acabamento {prod ? `· ${prod.name}` : ""}
-      </label>
-      <div className="flex flex-wrap gap-1 mb-2" onClick={(e) => e.stopPropagation()}>
-        {(["Todas", ...LINE_ORDER] as const).map((l) => (
-          <button key={l} onClick={() => setLineFilter(l)}
-            className={`px-2 py-0.5 text-[10px] font-semibold rounded-full transition-colors ${lineFilter === l ? "bg-[#0B1F45] text-white" : "bg-[#f0f0ee] text-[#74777f] hover:text-[#0B1F45]"}`}>
-            {l}
-          </button>
-        ))}
-      </div>
-      {loadingProducts ? (
-        <p className="text-[#74777f] text-xs py-3 text-center">Carregando…</p>
-      ) : (
-        <div className="grid grid-cols-4 gap-1.5 max-h-[180px] overflow-y-auto pr-1" onClick={(e) => e.stopPropagation()}>
-          {list.map((p) => {
-            // Highlight only once the client has actively chosen — a seeded
-            // default must not look pre-selected, or the "choose a model" step
-            // would seem already done.
-            const sel = !!zone.productChosen && zone.productId === p.id;
-            return (
-              <button key={p.id} onClick={() => onChange({ productId: p.id, productChosen: true })} title={p.name} className="group text-left">
-                <span style={{ aspectRatio: "1 / 1" }} className={`relative block w-full overflow-hidden rounded-sm border-2 ${sel ? "border-[#36A35C]" : "border-[#e8e8e6] group-hover:border-[#B4BBC8]"}`}>
-                  {/* eslint-disable-next-line @next/next/no-img-element */}
-                  <img src={p.image_path} alt={p.name} className="absolute inset-0 w-full h-full object-cover scale-[1.35]" loading="lazy" />
-                  {sel && <span className="absolute top-0.5 right-0.5 w-4 h-4 rounded-full bg-[#36A35C] text-[#0B1F45] text-[9px] flex items-center justify-center">✓</span>}
-                </span>
-              </button>
-            );
-          })}
-        </div>
-      )}
-      <label className="block text-[10px] tracking-[0.15em] uppercase font-bold text-[#74777f] mb-1 mt-3">
-        Medidas <span className="normal-case font-normal">(opcional)</span>
-      </label>
-      <div className="grid grid-cols-2 gap-2" onClick={(e) => e.stopPropagation()}>
-        <input inputMode="decimal" value={zone.width} onChange={(e) => onChange({ width: sanitizeDim(e.target.value) })} placeholder="Largura (m)" className="w-full border border-[#e2e2e2] px-2.5 py-2 text-sm text-[#0B1F45] focus:outline-none focus:border-[#0B1F45]" />
-        <input inputMode="decimal" value={zone.height} onChange={(e) => onChange({ height: sanitizeDim(e.target.value) })} placeholder="Altura (m)" className="w-full border border-[#e2e2e2] px-2.5 py-2 text-sm text-[#0B1F45] focus:outline-none focus:border-[#0B1F45]" />
-      </div>
     </div>
   );
 }

@@ -1,6 +1,27 @@
 // Regras puras do fluxo do Visualizador (sem React), testáveis com o runner do Node.
 import type { Zone, VizStep } from "../VisualizadorWizard";
 
+export type ProductLine = "Classic" | "Brilliance" | "Elegance";
+
+/** Ordem das linhas (abas do Acabamento e ordenação do catálogo). */
+export const LINE_ORDER: ProductLine[] = ["Classic", "Brilliance", "Elegance"];
+
+/** Tipos de superfície (mantidos iguais aos do Simulador). */
+export const VIZ_SPACES: { id: string; label: string }[] = [
+  { id: "parede", label: "Parede" },
+  { id: "teto", label: "Teto" },
+  { id: "sala", label: "Sala" },
+  { id: "quarto", label: "Quarto" },
+  { id: "escritorio", label: "Escritório" },
+  { id: "corredor", label: "Corredor" },
+  { id: "banheiro", label: "Banheiro" },
+  { id: "lavabo", label: "Lavabo" },
+  { id: "cozinha", label: "Cozinha" },
+  { id: "movel", label: "Móvel / Marcenaria" },
+  { id: "porta", label: "Porta" },
+  { id: "box", label: "Box / Ducha" },
+];
+
 export type EtapaVisivel = 0 | 1 | 2 | 3;
 export const ETAPAS = ["Foto", "Marcar", "Acabamento", "Resultado"] as const;
 
