@@ -14,6 +14,12 @@ import { ZONE_COLORS, podeConcluirMarcacao } from "./fluxo";
 
 const DICA = "Toque em cada parede, teto ou móvel que quer revestir";
 const DICA_CLIQUE = "Clique em cada parede, teto ou móvel que quer revestir";
+const AVISO_TEXTO = "Você escreve onde aplicar no próximo passo.";
+
+/** Área criada por "Descrever em texto": sem toque, caixa, máscara nem polígono. */
+function ehAreaDeTexto(z: Zone): boolean {
+  return !z.detecting && !z.rect && !z.maskUrl && !(z.polygon && z.polygon.length >= 3);
+}
 
 /** Largura ÷ altura da foto, quando ela carrega (null antes). */
 export function useProporcao(photoData: string): number | null {
@@ -26,21 +32,36 @@ export function useProporcao(photoData: string): number | null {
   return proporcao;
 }
 
-/** Largura de computador (≥ 1024 px), onde a marcação fica no lugar. */
-export function useTelaLarga(): boolean {
-  const [larga, setLarga] = useState(false);
-  useEffect(() => {
-    const mq = window.matchMedia("(min-width: 1024px)");
-    const ler = () => setLarga(mq.matches);
-    ler();
-    mq.addEventListener("change", ler);
-    return () => mq.removeEventListener("change", ler);
-  }, []);
-  return larga;
+/**
+ * Marcação no lugar só com mouse (ponteiro fino) a partir de 1024 px. Toque em
+ * qualquer largura (tablet em paisagem inclusive) ou tela estreita usa o
+ * editor em tela cheia: a foto da página nunca fica com touch-action:none.
+ */
+export function marcaNoLugar(): boolean {
+  if (typeof window === "undefined") return false;
+  return window.matchMedia("(min-width: 1024px)").matches && !window.matchMedia("(pointer: coarse)").matches;
 }
 
-export function ehTelaLarga(): boolean {
-  return typeof window !== "undefined" && window.matchMedia("(min-width: 1024px)").matches;
+/**
+ * `marcaNoLugar()` como estado, acompanhando giro e redimensionamento.
+ * `aoMudar` roda no próprio evento de mudança (fora de efeito), para quem usa
+ * ajustar o seu estado junto.
+ */
+export function useMarcacaoNoLugar(aoMudar?: (noLugar: boolean) => void): boolean {
+  const [noLugar, setNoLugar] = useState(false);
+  const aoMudarRef = useRef(aoMudar);
+  useEffect(() => { aoMudarRef.current = aoMudar; });
+  useEffect(() => {
+    const largura = window.matchMedia("(min-width: 1024px)");
+    const ponteiro = window.matchMedia("(pointer: coarse)");
+    const ler = () => setNoLugar(marcaNoLugar());
+    const mudou = () => { const v = marcaNoLugar(); setNoLugar(v); aoMudarRef.current?.(v); };
+    ler();
+    largura.addEventListener("change", mudou);
+    ponteiro.addEventListener("change", mudou);
+    return () => { largura.removeEventListener("change", mudou); ponteiro.removeEventListener("change", mudou); };
+  }, []);
+  return noLugar;
 }
 
 type HandlersMarcacao = {
@@ -144,6 +165,27 @@ export function PainelMarcacao({
     ? "text-white/80 hover:text-white decoration-white/30"
     : "text-[#0B1F45] hover:text-[#2347A0] decoration-[#0B1F45]/25";
 
+  // Área por texto selecionada: a descrição é escrita no passo seguinte.
+  const ativa = zones.find((z) => z.id === activeZoneId);
+  const textoSelecionado = !!ativa && ehAreaDeTexto(ativa);
+
+  // Anúncios para leitor de tela quando as áreas mudam (escrita direta na região viva).
+  const vivo = useRef<HTMLParagraphElement | null>(null);
+  const anteriores = useRef(new Map(zones.map((z) => [z.id, z.detecting])));
+  useEffect(() => {
+    const antes = anteriores.current;
+    let aviso = "";
+    for (const z of zones) {
+      if (!antes.has(z.id)) {
+        if (!z.detecting) aviso = ehAreaDeTexto(z) ? `Área marcada. ${AVISO_TEXTO}` : "Área marcada";
+        continue;
+      }
+      if (antes.get(z.id) && !z.detecting) aviso = z.detectFailed ? "Não foi possível detectar, desenhe a área" : "Área detectada";
+    }
+    anteriores.current = new Map(zones.map((z) => [z.id, z.detecting]));
+    if (aviso && vivo.current) vivo.current.textContent = aviso;
+  }, [zones]);
+
   return (
     <div>
       <p className={`text-[15px] leading-snug ${refazendo >= 0 ? (escuro ? "text-[#f3c77a]" : "text-[#8a5a12]") : escuro ? "text-white/85" : "text-[#43474e]"}`}>
@@ -190,7 +232,7 @@ export function PainelMarcacao({
                   type="button"
                   aria-label={`Remover ${nome}`}
                   onClick={() => { if (retargetId === z.id) setRetargetId(null); removeZone(z.id); }}
-                  className={`grid h-11 w-10 place-items-center rounded-full ${sel ? "opacity-80 hover:opacity-100" : escuro ? "text-white/60 hover:text-white" : "text-[#74777f] hover:text-[#0B1F45]"}`}
+                  className={`grid h-11 w-11 place-items-center rounded-full ${sel ? "opacity-80 hover:opacity-100" : escuro ? "text-white/60 hover:text-white" : "text-[#74777f] hover:text-[#0B1F45]"}`}
                 >
                   <svg aria-hidden width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round">
                     <path d="M18 6L6 18M6 6l12 12" />
@@ -225,6 +267,12 @@ export function PainelMarcacao({
           Descrever em texto
         </button>
       </div>
+
+      {textoSelecionado && (
+        <p className={`mt-1 text-[13px] leading-snug ${escuro ? "text-white/70" : "text-[#5b5f66]"}`}>{AVISO_TEXTO}</p>
+      )}
+
+      <p ref={vivo} aria-live="polite" className="sr-only" />
     </div>
   );
 }
@@ -272,7 +320,7 @@ function EditorAberto({
   retargetId, setRetargetId, rotulos, ocupado, onPronto, onFechar,
 }: React.ComponentProps<typeof EditorMarcacao>) {
   const raiz = useRef<HTMLDivElement | null>(null);
-  const vivo = useRef<HTMLParagraphElement | null>(null);
+  const fecharRef = useRef<HTMLButtonElement | null>(null);
   const ficarRef = useRef<HTMLButtonElement | null>(null);
   const tituloRef = useRef<HTMLHeadingElement | null>(null);
   const tituloId = useId();
@@ -290,8 +338,13 @@ function EditorAberto({
     setRetargetId(null);
     onFechar();
   };
+  // Dispensar a pergunta (Continuar marcando ou Esc): o foco volta ao ✕.
+  const ficar = () => {
+    setPerguntando(false);
+    fecharRef.current?.focus({ preventScroll: true });
+  };
   const pedirFechar = () => {
-    if (perguntando) { setPerguntando(false); return; }
+    if (perguntando) { ficar(); return; }
     if (novas.length > 0) { setPerguntando(true); return; }
     setRetargetId(null);
     onFechar();
@@ -337,19 +390,6 @@ function EditorAberto({
     };
   }, []);
 
-  // Anúncios para leitor de tela quando as áreas mudam (escrita direta na região viva).
-  const anteriores = useRef(new Map(zones.map((z) => [z.id, z.detecting])));
-  useEffect(() => {
-    const antes = anteriores.current;
-    let aviso = "";
-    for (const z of zones) {
-      if (!antes.has(z.id)) { if (!z.detecting) aviso = "Área marcada"; continue; }
-      if (antes.get(z.id) && !z.detecting) aviso = z.detectFailed ? "Não foi possível detectar, desenhe a área" : "Área detectada";
-    }
-    anteriores.current = new Map(zones.map((z) => [z.id, z.detecting]));
-    if (aviso && vivo.current) vivo.current.textContent = aviso;
-  }, [zones]);
-
   // Proporção da foto, para caber inteira (contain) entre a barra e o painel.
   const proporcao = useProporcao(photoData);
 
@@ -366,6 +406,7 @@ function EditorAberto({
     >
       <div className="flex shrink-0 items-center justify-between gap-2 px-2 pt-[env(safe-area-inset-top)]">
         <button
+          ref={fecharRef}
           type="button"
           onClick={pedirFechar}
           aria-label="Fechar"
@@ -433,7 +474,7 @@ function EditorAberto({
             <button
               ref={ficarRef}
               type="button"
-              onClick={() => setPerguntando(false)}
+              onClick={ficar}
               className="min-h-11 flex-1 whitespace-nowrap border border-[#d5d9e0] px-2 text-[13px] font-semibold transition-colors hover:border-[#0B1F45]"
             >
               Continuar marcando
@@ -448,8 +489,6 @@ function EditorAberto({
           </div>
         </div>
       )}
-
-      <p ref={vivo} aria-live="polite" className="sr-only" />
     </div>
   );
 }

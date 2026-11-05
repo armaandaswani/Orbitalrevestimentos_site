@@ -55,16 +55,22 @@ test("limitarDivisor e passoTeclado", () => {
   assert.equal(passoTeclado(40, "End"), 100);
 });
 
-test("rotuloZona nomeia pela superfície e respeita o nome dado", () => {
+test("rotuloZona: Área N até escolher o tipo, depois o tipo com a ordem", () => {
   const espacos = [{ id: "parede", label: "Parede" }, { id: "teto", label: "Teto" }, { id: "movel", label: "Móvel / Marcenaria" }];
   const zs = [
-    { label: "Área 1", surface: "parede", customLabel: "" },
-    { label: "Área 2", surface: "teto", customLabel: "" },
-    { label: "Área 3", surface: "parede", customLabel: "" },
-    { label: "Lareira", surface: "parede", customLabel: "" },
-    { label: "Área 5", surface: "__custom__", customLabel: "atrás da TV" },
-    { label: "Área 6", surface: "sumiu", customLabel: "" },
-    { label: "Área 7", surface: "movel", customLabel: "" },
+    { id: "a", label: "Área 1", surface: "parede", customLabel: "" },
+    { id: "b", label: "Área 2", surface: "teto", customLabel: "" },
+    { id: "c", label: "Área 3", surface: "parede", customLabel: "" },
+    { id: "d", label: "Lareira", surface: "parede", customLabel: "" },
+    { id: "e", label: "Área 5", surface: "__custom__", customLabel: "atrás da TV" },
+    { id: "f", label: "Área 6", surface: "sumiu", customLabel: "" },
+    { id: "g", label: "Área 7", surface: "movel", customLabel: "" },
+    { id: "h", label: "Área 8", surface: "parede", customLabel: "" },
   ];
-  assert.deepEqual(zs.map((_, i) => rotuloZona(zs, i, espacos)), ["Parede 1", "Teto 1", "Parede 2", "Lareira", "atrás da TV", "Área 6", "Móvel 1"]);
+  const nomes = (escolhidos) => zs.map((_, i) => rotuloZona(zs, i, espacos, escolhidos));
+  assert.deepEqual(nomes(new Set()), ["Área 1", "Área 2", "Área 3", "Lareira", "Área 5", "Área 6", "Área 7", "Área 8"]);
+  assert.deepEqual(
+    nomes(new Set(["b", "c", "e", "f", "g", "h"])),
+    ["Área 1", "Teto 1", "Parede 1", "Lareira", "atrás da TV", "Área 6", "Móvel 1", "Parede 2"],
+  );
 });

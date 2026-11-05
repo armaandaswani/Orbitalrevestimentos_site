@@ -11,9 +11,9 @@ import {
 } from "@/lib/texture-projection";
 import VizShell, { focarEtapa, rolarParaTopo, type AcaoShell } from "./visualizador/VizShell";
 import EtapaFoto from "./visualizador/EtapaFoto";
-import { etapaVisivel, rotuloZona, ZONE_COLORS } from "./visualizador/fluxo";
+import { etapaVisivel, podeGerar, rotuloZona, ZONE_COLORS } from "./visualizador/fluxo";
 import SurfaceCanvas, { type ZoneMode } from "./visualizador/SurfaceCanvas";
-import EditorMarcacao, { FotoMarcavel, PainelMarcacao, ehTelaLarga, useProporcao, useTelaLarga } from "./visualizador/EditorMarcacao";
+import EditorMarcacao, { FotoMarcavel, PainelMarcacao, marcaNoLugar, useMarcacaoNoLugar, useProporcao } from "./visualizador/EditorMarcacao";
 
 // ── Types ─────────────────────────────────────────────────────────────────────
 
@@ -985,10 +985,19 @@ export default function VisualizadorWizard({
   const [savedAmbientes, setSavedAmbientes] = useState<SavedAmbiente[]>([]);
   const [proceeding, setProceeding] = useState(false);
   const [retargetId, setRetargetId] = useState<string | null>(null);
-  // Editor de marcação em tela cheia (celular). No computador a marcação fica no lugar.
+  // Editor de marcação em tela cheia (toque ou tela estreita). Com mouse a partir
+  // de 1024 px a marcação fica no lugar. Se a tela passa a marcar no lugar (girou,
+  // alargou) com o editor aberto, ele fecha de verdade: o estado não fica armado
+  // para reabrir sozinho depois.
   const [editorAberto, setEditorAberto] = useState(false);
-  const telaLarga = useTelaLarga();
+  const noLugar = useMarcacaoNoLugar((v) => { if (v) { setEditorAberto(false); setRetargetId(null); } });
   const [modoMarcacao, setModoMarcacao] = useState<ZoneMode>("tap");
+  // Áreas cujo tipo de superfície o cliente escolheu: só elas trocam "Área N"
+  // pelo nome do tipo (exibição; o label da zona não muda).
+  const [tiposEscolhidos, setTiposEscolhidos] = useState<ReadonlySet<string>>(() => new Set());
+  const marcarTipoEscolhido = useCallback((id: string) => {
+    setTiposEscolhidos((cur) => (cur.has(id) ? cur : new Set(cur).add(id)));
+  }, []);
 
   // In standalone mode: lead captured here. In embedded mode: prefilled by parent.
   const [leadName, setLeadName] = useState(prefilledLeadName);
@@ -1126,7 +1135,7 @@ export default function VisualizadorWizard({
       vizRenderIdRef.current = "";
       setZonePhase("mark");
       setStep("zones");
-      setEditorAberto(!ehTelaLarga());
+      setEditorAberto(!marcaNoLugar());
     } catch {
       setError("Não foi possível ler essa imagem. Tente outra foto (JPG ou PNG).");
     }
@@ -1553,7 +1562,7 @@ export default function VisualizadorWizard({
 
   // "Editar áreas": no celular reabre o editor; no computador volta à marcação no lugar.
   const editarAreas = useCallback(() => {
-    if (ehTelaLarga()) { setModoMarcacao("tap"); setZonePhase("mark"); }
+    if (marcaNoLugar()) { setModoMarcacao("tap"); setZonePhase("mark"); }
     else setEditorAberto(true);
   }, []);
 
@@ -1568,12 +1577,23 @@ export default function VisualizadorWizard({
       if (analysis.sig !== marksSig || analysis.status === "error") void analyze();
     };
   });
+  // Toda saída do editor (✕, Esc, voltar do navegador) desarma o "Refazer".
   const fecharEditor = useCallback(() => {
     setEditorAberto(false);
+    setRetargetId(null);
     window.setTimeout(() => analisarSePrecisoRef.current(), 0);
   }, []);
 
-  const rotulos = useMemo(() => zones.map((_, i) => rotuloZona(zones, i, VIZ_SPACES)), [zones]);
+  const rotulos = useMemo(
+    () => zones.map((_, i) => rotuloZona(zones, i, VIZ_SPACES, tiposEscolhidos)),
+    [zones, tiposEscolhidos],
+  );
+
+  // Gerar, até a Task 5: além do modelo escolhido, cada área precisa da descrição
+  // de onde aplicar e a análise não pode estar rodando (como na antiga tela de
+  // confirmação), para o render nunca sair com descrição vazia.
+  const podeGerarAgora = podeGerar(zones, { canGenerate }) && analysis.status !== "loading";
+  const faltaDescricao = zones.some((z) => !z.instruction.trim());
 
   // ── Generate ──────────────────────────────────────────────────────────────
   const generate = useCallback(async () => {
@@ -1990,7 +2010,7 @@ export default function VisualizadorWizard({
     step !== "zones"
       ? undefined
       : zonePhase === "mark"
-        ? telaLarga
+        ? noLugar
           ? {
               rotulo: anyDetecting ? "Detectando área…" : anyAreaMarked ? "Continuar" : "Marque uma área",
               onClick: concluirMarcacao,
@@ -1999,9 +2019,9 @@ export default function VisualizadorWizard({
           : anyAreaMarked
             ? { rotulo: "Continuar", onClick: concluirMarcacao }
             : { rotulo: "Marcar as áreas", onClick: () => setEditorAberto(true) }
-        : { rotulo: "Gerar visualização", onClick: generate, desabilitada: !canGenerate, tom: "verde" };
+        : { rotulo: "Gerar visualização", onClick: generate, desabilitada: !podeGerarAgora, tom: "verde" };
 
-  const marcacaoNoLugar = step === "zones" && zonePhase === "mark" && telaLarga && !!photoData;
+  const marcacaoNoLugar = step === "zones" && zonePhase === "mark" && noLugar && !!photoData;
 
   // ── Render ────────────────────────────────────────────────────────────────
   return (
@@ -2042,7 +2062,7 @@ export default function VisualizadorWizard({
 
         {step === "zones" && photoData && zonePhase === "mark" && (
           <MarcarAreas
-            telaLarga={telaLarga}
+            noLugar={noLugar}
             photoData={photoData}
             zones={zones}
             rotulos={rotulos}
@@ -2072,7 +2092,12 @@ export default function VisualizadorWizard({
             products={products}
             loadingProducts={loadingProducts}
             productById={productById}
-            canGenerate={canGenerate}
+            canGenerate={podeGerarAgora}
+            faltaModelo={!allModelsChosen}
+            faltaDescricao={faltaDescricao}
+            analysis={analysis}
+            onReanalyze={analyze}
+            marcarTipoEscolhido={marcarTipoEscolhido}
             onGenerate={generate}
             useProjection={useProjection}
             onEditarAreas={editarAreas}
@@ -2094,7 +2119,7 @@ export default function VisualizadorWizard({
             onLeadPhoneChange={setLeadPhone}
             onLeadSubmit={handleLeadSubmit}
             onChooseModel={() => { setZonePhase("model"); setStep("zones"); }}
-            onAdjustArea={() => { setZonePhase("mark"); setStep("zones"); setEditorAberto(!ehTelaLarga()); }}
+            onAdjustArea={() => { setZonePhase("mark"); setStep("zones"); setEditorAberto(!marcaNoLugar()); }}
             onRegenerate={generate}
             onDownload={download}
             onAddPhoto={addAnotherPhoto}
@@ -2162,7 +2187,7 @@ export default function VisualizadorWizard({
 
       {photoData && (
         <EditorMarcacao
-          aberto={editorAberto && !telaLarga && step === "zones"}
+          aberto={editorAberto && !noLugar && step === "zones"}
           photoData={photoData}
           zones={zones}
           rotulos={rotulos}
@@ -2192,10 +2217,10 @@ export default function VisualizadorWizard({
 // coluna da esquerda pelo VizShell). No celular a foto aqui é parada: tocar e
 // arrastar nela rola a página; marcar é no editor.
 function MarcarAreas({
-  telaLarga, photoData, zones, rotulos, activeZoneId, setActiveZoneId, removeZone, retargetId, setRetargetId, modo, setModo,
+  noLugar, photoData, zones, rotulos, activeZoneId, setActiveZoneId, removeZone, retargetId, setRetargetId, modo, setModo,
   onAddTextZone, onEditar,
 }: {
-  telaLarga: boolean;
+  noLugar: boolean;
   photoData: string;
   zones: Zone[];
   rotulos: string[];
@@ -2209,7 +2234,7 @@ function MarcarAreas({
   onAddTextZone: () => void;
   onEditar: () => void;
 }) {
-  if (telaLarga) {
+  if (noLugar) {
     return (
       <div>
         <h2 className="mb-2 font-serif text-xl leading-tight text-[#0B1F45] sm:text-2xl">Marque as áreas</h2>
@@ -2276,7 +2301,7 @@ function FotoParada({ photoData, zones, rotulos, activeZoneId, onEditar }: {
 
 function ZonesStep({
   photoData, zones, rotulos, activeZoneId, setActiveZoneId, updateZone, removeZone, retargetId, setRetargetId, products, loadingProducts,
-  productById, canGenerate, onGenerate, useProjection, onEditarAreas,
+  productById, canGenerate, faltaModelo, faltaDescricao, analysis, onReanalyze, marcarTipoEscolhido, onGenerate, useProjection, onEditarAreas,
 }: {
   photoData: string;
   zones: Zone[];
@@ -2291,10 +2316,16 @@ function ZonesStep({
   loadingProducts: boolean;
   productById: (id: string) => VizProduct | null;
   canGenerate: boolean;
+  faltaModelo: boolean;
+  faltaDescricao: boolean;
+  analysis: { status: "idle" | "loading" | "done" | "error"; sig: string; error?: string };
+  onReanalyze: () => void;
+  marcarTipoEscolhido: (id: string) => void;
   onGenerate: () => void;
   useProjection: boolean;
   onEditarAreas: () => void;
 }) {
+  const lendo = analysis.status === "loading";
   const backBtn = "inline-flex items-center gap-2 border border-[#e2e2e2] text-[#43474e] text-xs tracking-[0.12em] uppercase font-bold px-5 py-3 hover:border-[#0B1F45] transition-colors";
   const nextBtn = "flex-1 min-w-[180px] inline-flex items-center justify-center gap-2 text-xs tracking-[0.12em] uppercase font-bold px-6 py-3.5 transition-colors disabled:opacity-50 disabled:cursor-not-allowed";
 
@@ -2305,10 +2336,25 @@ function ZonesStep({
       <div className="mb-4">
         <FotoParada photoData={photoData} zones={zones} rotulos={rotulos} activeZoneId={activeZoneId} onEditar={onEditarAreas} />
       </div>
+      {/* A descrição de onde aplicar vem da análise em segundo plano (antiga tela de confirmação). */}
+      {lendo && (
+        <p className="mb-4 flex items-center gap-2 text-sm text-[#0B1F45]">
+          <span aria-hidden className="inline-block h-4 w-4 animate-spin rounded-full border-2 border-[#0B1F45] border-t-transparent" />
+          A IA está analisando a foto…
+        </p>
+      )}
+      {analysis.status === "error" && (
+        <p className="mb-4 text-sm text-[#8a5a12]">
+          {analysis.error}{" "}
+          <button type="button" onClick={onReanalyze} className="inline-flex min-h-11 items-center font-semibold underline underline-offset-2">Tentar de novo</button>
+        </p>
+      )}
       <div className="space-y-3">
         {zones.map((z, i) => (
           <ZoneCard key={z.id} zone={z} index={i} active={activeZoneId === z.id} retargeting={retargetId === z.id}
-            onSelect={() => setActiveZoneId(z.id)} onChange={(patch) => updateZone(z.id, patch)} onRemove={() => removeZone(z.id)}
+            onSelect={() => setActiveZoneId(z.id)}
+            onChange={(patch) => { if (patch.surface !== undefined) marcarTipoEscolhido(z.id); updateZone(z.id, patch); }}
+            onRemove={() => removeZone(z.id)}
             onRetarget={() => { setRetargetId(z.id); onEditarAreas(); }}
             products={products} loadingProducts={loadingProducts} productById={productById}
             useProjection={useProjection}
@@ -2322,9 +2368,9 @@ function ZonesStep({
           Gerar visualização
         </button>
       </div>
-      {!canGenerate && (
+      {!canGenerate && !lendo && (faltaModelo || faltaDescricao) && (
         <p className="mt-2 text-[11px] text-[#b4791e] text-center">
-          Escolha um acabamento em cada área para gerar.
+          {faltaModelo ? "Escolha um acabamento em cada área para gerar." : "Descreva onde aplicar em cada área para gerar."}
         </p>
       )}
     </div>
@@ -2410,7 +2456,7 @@ function ZoneCard({ zone, index, active, retargeting, onSelect, onChange, onRemo
           placeholder="ex: parede atrás da TV" className="w-full border border-[#e2e2e2] px-2.5 py-2 text-sm text-[#0B1F45] focus:outline-none focus:border-[#0B1F45] mb-2" />
       )}
       <label className="block text-[10px] tracking-[0.15em] uppercase font-bold text-[#74777f] mb-1 mt-1">
-        Onde aplicar <span className="normal-case font-normal">(opcional)</span>
+        Onde aplicar
       </label>
       <textarea value={zone.instruction} onClick={(e) => e.stopPropagation()} onChange={(e) => onChange({ instruction: e.target.value })}
         rows={2} placeholder="ex: nas paredes cinza ao fundo, atrás do sofá"

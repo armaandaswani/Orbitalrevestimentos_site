@@ -56,22 +56,25 @@ export function passoTeclado(
 export const ZONE_COLORS = ["#36A35C", "#b4791e", "#2F5FD0", "#a83279", "#2a9d8f", "#9b2226"];
 
 /**
- * Nome de uma área para o cliente: o tipo de superfície com a ordem dela entre
- * as do mesmo tipo ("Parede 1", "Teto 1"). Se o cliente deu um nome à área, ou
- * descreveu um local próprio ("Outro…"), vale o que ele escreveu. O `label` da
- * zona ("Área N") continua sendo o que vai para a análise e o render.
+ * Nome de uma área para o cliente. Até ele escolher o tipo de superfície, o
+ * nome padrão da zona ("Área N"). Depois, o tipo com a ordem dela entre as do
+ * mesmo tipo já escolhidas ("Parede 1", "Teto 1"), ou o local próprio que ele
+ * descreveu ("Outro…"). Se ele renomeou a área, vale o nome dele. Só exibição:
+ * o `label` da zona é o que vai para a análise e o render.
  */
 export function rotuloZona(
-  zones: Pick<Zone, "label" | "surface" | "customLabel">[],
+  zones: Pick<Zone, "id" | "label" | "surface" | "customLabel">[],
   i: number,
   espacos: { id: string; label: string }[],
+  tiposEscolhidos: ReadonlySet<string>,
 ): string {
   const z = zones[i];
   if (!z) return "";
   if (!/^Área \d+$/.test(z.label)) return z.label;
+  if (!tiposEscolhidos.has(z.id)) return z.label;
   if (z.surface === "__custom__" && z.customLabel.trim()) return z.customLabel.trim();
   const espaco = espacos.find((s) => s.id === z.surface);
   if (!espaco) return z.label;
-  const ordem = zones.slice(0, i + 1).filter((o) => o.surface === z.surface).length;
+  const ordem = zones.slice(0, i + 1).filter((o) => o.surface === z.surface && tiposEscolhidos.has(o.id)).length;
   return `${espaco.label.split(" / ")[0]} ${ordem}`;
 }
