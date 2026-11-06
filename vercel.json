@@ -51,6 +51,10 @@
     {
       "path": "/api/cron/ai-worker",
       "schedule": "0 10 * * *"
+    },
+    {
+      "path": "/api/cron/instagram-stories",
+      "schedule": "0 12-15 * * *"
     }
   ]
 }
