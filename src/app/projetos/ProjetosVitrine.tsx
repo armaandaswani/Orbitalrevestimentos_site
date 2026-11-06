@@ -11,7 +11,7 @@ import ContatoCta from "@/components/ContatoCta";
 import VisorProjetos, { useVisor } from "@/components/projetos/VisorProjetos";
 import { modelosTxt } from "@/lib/projeto-modelos";
 import {
-  CATEGORIA_SHOWROOM, ESPERA_URL, REVENDA_RESERVA, combinaBusca, nomeLugar, ordenarCategorias, porDestaque, rotuloTag, secoesDoProjeto,
+  CATEGORIA_SHOWROOM, ESTILO_ESPERA_URL, REVENDA_RESERVA, combinaBusca, nomeLugar, ordenarCategorias, porDestaque, rotuloTag, secoesDoProjeto,
   type Projeto, type Showroom,
 } from "@/lib/projetos-tipos";
 import type { DadosProjetos } from "@/lib/projetos-dados";
@@ -169,7 +169,7 @@ function Conteudo({
       const total = obras.filter((p) => cat === "todos" || secoesDoProjeto(p).includes(cat)).length;
       const n = limitarVer(Number(q.get("ver")), total);
       // A grade esperou invisível por esta leitura: entra com o véu.
-      if (document.getElementById(ESPERA_URL)) setTrocou(true);
+      if (document.getElementById(ESTILO_ESPERA_URL)) setTrocou(true);
       setCategoria(cat);
       setMostrar(n);
       setLido(true);
@@ -180,7 +180,7 @@ function Conteudo({
     return () => { clearTimeout(t); window.removeEventListener("popstate", ler); };
   }, [cats, obras]);
   // Filtro da URL já na grade: ela pode aparecer.
-  useEffect(() => { if (lido) document.getElementById(ESPERA_URL)?.remove(); }, [lido]);
+  useEffect(() => { if (lido) document.getElementById(ESTILO_ESPERA_URL)?.remove(); }, [lido]);
 
   // Categoria e "ver mais" espelhados na URL. A busca não vai para a URL.
   useEffect(() => {

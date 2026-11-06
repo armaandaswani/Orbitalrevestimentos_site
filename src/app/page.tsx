@@ -129,7 +129,9 @@ export default async function Home() {
   const vistas = new Set<string>();
   const obras = dados.projetos
     .filter((p) => !p.showroom_id)
-    .sort((a, b) => Number(!!b.show_on_home) - Number(!!a.show_on_home) || porDestaque(a, b))
+    // Os marcados para a home vêm primeiro e, entre si, seguem a "Ordem do destaque" do painel.
+    .sort((a, b) => Number(!!b.show_on_home) - Number(!!a.show_on_home) || porDestaque(a, b)
+      || (a.show_on_home && b.show_on_home ? (a.feature_order ?? 0) - (b.feature_order ?? 0) : 0))
     .filter((p) => !vistas.has(p.image_after) && vistas.add(p.image_after))
     .slice(0, 8);
   const listaObras = obras.length >= 3 ? obras : OBRAS_RESERVA;

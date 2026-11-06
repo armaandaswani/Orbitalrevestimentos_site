@@ -97,8 +97,8 @@ export function porDestaque(a: Projeto, b: Projeto): number {
  * antes de a grade ser pintada; o estilo sai quando a URL foi lida (ou em 3 s, se
  * o JavaScript falhar). Em outra página ou sem esses parâmetros, nada acontece.
  */
-export const ESPERA_URL = "projetos-lendo-url";
-export const SCRIPT_ESPERA_URL = `try{if(location.pathname==="/projetos"&&/[?&](categoria|ver)=/.test(location.search)){var s=document.createElement("style");s.id="${ESPERA_URL}";s.textContent="[data-grade-projetos]{opacity:0}";document.head.appendChild(s);setTimeout(function(){s.remove()},3000)}}catch(e){}`;
+export const ESTILO_ESPERA_URL = "projetos-lendo-url";
+export const SCRIPT_ESPERA_URL = `try{if(location.pathname==="/projetos"&&/[?&](categoria|ver)=/.test(location.search)){var s=document.createElement("style");s.id="${ESTILO_ESPERA_URL}";s.textContent="[data-grade-projetos]{opacity:0}";document.head.appendChild(s);setTimeout(function(){s.remove()},3000)}}catch(e){}`;
 
 /**
  * O que as APIs públicas de projetos e renders podem devolver. É uma lista do

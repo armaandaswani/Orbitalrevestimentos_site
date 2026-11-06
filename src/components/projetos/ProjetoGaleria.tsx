@@ -107,7 +107,12 @@ export default function ProjetoGaleria({ projeto, inicio, onFechar, vizinhos }: 
   // No lado a lado, seta ou deslize passa para o carrossel já na foto anterior/seguinte.
   const passar = (sentido: -1 | 1) => {
     if (modo === "grade") return;
-    if (modo === "lado") setModo("carrossel");
+    if (modo === "lado") {
+      setModo("carrossel");
+      // O antes e o depois já estavam na tela: vai para a primeira (ou a última) foto que não é nenhum dos dois.
+      const outras = visiveis.flatMap((v, i) => (v.url !== antesImg?.url && v.url !== depoisImg?.url ? [i] : []));
+      if (outras.length > 0) { setIdx(sentido > 0 ? outras[0] : outras[outras.length - 1]); return; }
+    }
     if (sentido < 0) anterior(); else proxima();
   };
   const teclado = (e: React.KeyboardEvent) => {
@@ -115,8 +120,8 @@ export default function ProjetoGaleria({ projeto, inicio, onFechar, vizinhos }: 
     if (e.key === "ArrowLeft") { e.preventDefault(); passar(-1); }
     if (e.key === "ArrowRight") { e.preventDefault(); passar(1); }
   };
-  // Arrastar para o lado troca a foto (toque e caneta). touch-pan-y: o navegador não toma
-  // o gesto horizontal para si; o vertical continua dele.
+  // Arrastar para o lado troca a foto (toque e caneta). touch-pan-y + pinch-zoom: o navegador não toma
+  // o gesto horizontal de um dedo para si; o vertical e o zoom de pinça continuam dele.
   const deslize = {
     onPointerDown: (e: React.PointerEvent) => { if (e.pointerType !== "mouse") toque.current = { x: e.clientX, y: e.clientY }; },
     onPointerCancel: () => { toque.current = null; },
@@ -193,7 +198,7 @@ export default function ProjetoGaleria({ projeto, inicio, onFechar, vizinhos }: 
         )}
 
         {modo === "lado" && ladoALado && (
-          <div className="h-full grid grid-cols-1 sm:grid-cols-2 gap-px bg-white/10 select-none touch-pan-y" {...deslize}>
+          <div className="h-full grid grid-cols-1 sm:grid-cols-2 gap-px bg-white/10 select-none touch-pan-y touch-pinch-zoom" {...deslize}>
             {[{ it: antesImg, cat: "antes" as const }, { it: depoisImg, cat: "depois" as const }].map(({ it, cat }) => it && (
               <figure key={cat} className="relative bg-black min-h-0">
                 <Image src={it.url} alt={`${projeto.title}, ${cat}`} fill sizes="(max-width: 639px) 100vw, 50vw" className="object-contain" />
@@ -228,7 +233,7 @@ export default function ProjetoGaleria({ projeto, inicio, onFechar, vizinhos }: 
 
         {modo === "carrossel" && item && (
           <div className="h-full flex flex-col">
-            <div className="flex-1 min-h-0 relative select-none touch-pan-y" {...deslize}>
+            <div className="flex-1 min-h-0 relative select-none touch-pan-y touch-pinch-zoom" {...deslize}>
               {item.kind === "image" ? (
                 <Image key={item.url} src={item.url} alt={item.label ?? projeto.title} fill sizes="100vw" className="object-contain" draggable={false} />
               ) : videoHost(item.url) === "arquivo" ? (
