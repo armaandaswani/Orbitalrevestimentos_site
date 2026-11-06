@@ -29,6 +29,8 @@ export type AniversarioDados = Omit<Aniversario, "id" | "ativo">;
 export interface Aniversariante {
   /** Quem é, de forma estável: "profissional:<id>", "parceiro:<id>" ou "representante:<id>". */
   ref: string;
+  /** Id na tabela aniversarios, quando a pessoa está nela (mesmo se virou parceiro no e-mail). */
+  idProfissional?: string;
   nome: string;
   tipo: "profissional" | "parceiro" | "representante";
   detalhe: string;
@@ -118,12 +120,23 @@ export function primeiroNome(nome: string): string {
 
 // ── Links do e-mail ──────────────────────────────────────────────────────────
 
+/** A mensagem de parabéns no modelo do dono, pronta para copiar e colar. */
+export function mensagemParabens(nome: string): string {
+  const n = primeiroNome(nome);
+  return [
+    `Bom diaaa${n ? ` ${n}` : ""}!!`,
+    "Queria lhe parabenizar nesse dia especial!",
+    "",
+    "Que Deus lhe abençoe, lhe traga muita felicidade, saúde, sucesso e prosperidade!!!! 🥳🥳🥳",
+    "",
+    "De toda a equipe da Orbital Revestimentos, lhe desejamos um feliz aniversário! 🎊🎉🎂🎁",
+  ].join("\n");
+}
+
 export function linkParabens(a: Pick<Aniversariante, "nome" | "whatsapp">): string | null {
   const d = digitosWhatsapp(a.whatsapp);
   if (!d) return null;
-  const n = primeiroNome(a.nome);
-  const msg = `Feliz aniversário${n ? `, ${n}` : ""}! 🎂 A equipe Orbital deseja um novo ciclo cheio de saúde, alegria e projetos lindos. Um abraço!`;
-  return `https://wa.me/${d}?text=${encodeURIComponent(msg)}`;
+  return `https://wa.me/${d}?text=${encodeURIComponent(mensagemParabens(a.nome))}`;
 }
 
 export function linkInstagram(handle: string): string {
