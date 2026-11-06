@@ -79,9 +79,10 @@ export default function EtapaResultado({
   const fotoQuadro = resultado ?? (gerando ? previa : null) ?? photoData;
   const borrar = folhaAberta && fotoQuadro !== photoData;
 
-  // A folha do contato fechou (resultado revelado, ou contato salvo enquanto
-  // gera): quem a abriu, o "Gerar visualização", já não existe; o foco vai para
-  // o título do Resultado. O efeito roda depois da limpeza da Folha.
+  // A folha do contato fechou (resultado revelado, contato salvo enquanto gera,
+  // ou o render falhou com ela aberta): quem a abriu ("Gerar visualização" ou
+  // "Tentar de novo") já não existe; o foco vai para o título do Resultado.
+  // O efeito roda depois da limpeza da Folha.
   const tituloRef = useRef<HTMLHeadingElement | null>(null);
   const folhaAntes = useRef(folhaAberta);
   useEffect(() => {

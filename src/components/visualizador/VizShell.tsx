@@ -82,6 +82,8 @@ export default function VizShell({
     const el = raiz.current;
     if (!el) return;
     rolarParaTopo(el);
+    // Folha já com o foco (abriu junto com a etapa): não tira o foco dela. Depende da Folha
+    // e do editor focarem em useEffect, que roda antes deste (filho antes do pai).
     if (!document.activeElement?.closest('[role="dialog"][aria-modal="true"]')) focarEtapa(el);
   }, [etapa]);
 
