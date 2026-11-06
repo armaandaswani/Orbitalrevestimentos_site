@@ -93,13 +93,24 @@ export default function VizShell({
     html.setAttribute("data-viz-barra-presa", "");
     return () => html.removeAttribute("data-viz-barra-presa");
   }, [barraPresa]);
-  // Com a linha de aviso a barra fica mais alta: o balão sobe mais um pouco.
+  // Com a linha de aviso a barra fica mais alta: o balão sobe pela altura medida
+  // da barra (--viz-barra-h, com a margem do iPhone), não por um valor fixo.
   const barraComAviso = barraPresa && !!acao?.aviso;
+  const barraRef = useRef<HTMLDivElement | null>(null);
   useEffect(() => {
     if (!barraComAviso) return;
     const html = document.documentElement;
     html.setAttribute("data-viz-barra-aviso", "");
-    return () => html.removeAttribute("data-viz-barra-aviso");
+    const barra = barraRef.current;
+    const medir = () => { if (barra) html.style.setProperty("--viz-barra-h", `${barra.offsetHeight}px`); };
+    medir();
+    const ro = barra ? new ResizeObserver(medir) : null;
+    if (barra) ro?.observe(barra);
+    return () => {
+      ro?.disconnect();
+      html.removeAttribute("data-viz-barra-aviso");
+      html.style.removeProperty("--viz-barra-h");
+    };
   }, [barraComAviso]);
 
   const tom = acao?.tom ?? "primaria";
@@ -200,6 +211,7 @@ export default function VizShell({
 
             {acao && (
               <div
+                ref={barraRef}
                 data-viz-barra
                 className={
                   embutido
@@ -216,7 +228,7 @@ export default function VizShell({
                     onClick={acao.aviso.onClick}
                     className="mb-2 flex min-h-11 w-full items-center gap-2 text-left text-[13px] font-semibold text-[#8a5a12] lg:mb-3"
                   >
-                    <span className="min-w-0 flex-1 underline decoration-[#8a5a12]/30 underline-offset-4">{acao.aviso.texto}</span>
+                    <span className="min-w-0 flex-1 truncate underline decoration-[#8a5a12]/30 underline-offset-4">{acao.aviso.texto}</span>
                     <svg aria-hidden width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="shrink-0">
                       <path d="M9 5l7 7-7 7" />
                     </svg>

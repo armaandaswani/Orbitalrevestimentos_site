@@ -224,7 +224,7 @@ export function AcabamentoSemAreas({ onEditarAreas }: { onEditarAreas: () => voi
 }
 
 export default function EtapaAcabamento({
-  zona, rotulo, indice, total, produtos, carregando, analise, erroAnalise, onTentarDeNovo, depurar,
+  zona, rotulo, indice, total, produtos, carregando, analise, erroAnalise, onTentarDeNovo, depurar, projecao = false,
   onEscolher, onAtualizar, keepText, setKeepText, onEditarAreas, abrirOnde = false, onOndeFechada,
 }: {
   zona: Zone;
@@ -239,6 +239,8 @@ export default function EtapaAcabamento({
   erroAnalise?: string;
   onTentarDeNovo?: () => void;
   depurar: boolean;
+  /** Projeção pelos 4 cantos ligada no render (só aí os cantos valem para o cliente). */
+  projecao?: boolean;
   onEscolher: (productId: string) => void;
   onAtualizar: (patch: Partial<Zone>) => void;
   keepText: string;
@@ -291,12 +293,28 @@ export default function EtapaAcabamento({
   };
 
   const [folha, setFolha] = useState<null | "onde" | "ajustes">(abrirOnde ? "onde" : null);
-  const fecharOnde = () => { setFolha(null); onOndeFechada?.(); };
+  // Aberta pela linha "Falta dizer onde aplicar…", a folha não tem quem a abriu
+  // nesta tela (a linha some ao trocar de área): ao fechar, o foco vai para o
+  // título da área. O efeito roda depois da limpeza da Folha.
+  const tituloRef = useRef<HTMLHeadingElement | null>(null);
+  const focarTitulo = useRef(false);
+  const fecharOnde = () => {
+    if (abrirOnde) focarTitulo.current = true;
+    setFolha(null);
+    onOndeFechada?.();
+  };
+  useEffect(() => {
+    if (folha !== null || !focarTitulo.current) return;
+    focarTitulo.current = false;
+    tituloRef.current?.focus({ preventScroll: true });
+  }, [folha]);
   const lendo = analise === "loading";
   const instrucao = zona.instruction.trim();
-  // Refazer os cantos: só quando se aplica (modelo com textura plana e área com
-  // os 4 cantos). Limpa o quad da área, como o antigo "Redefinir cantos".
-  const refazerCantos = !!produtoAtual?.render_texture_path?.trim() && !!zona.quad;
+  // Refazer os cantos: só quando se aplica (projeção pelos cantos ligada, ou
+  // ?debug=1; modelo com textura plana e área com os 4 cantos). Com a projeção
+  // desligada os cantos não entram no render, e o cliente não apaga o quad de
+  // reserva da detecção. Limpa o quad da área, como o antigo "Redefinir cantos".
+  const refazerCantos = (projecao || depurar) && !!produtoAtual?.render_texture_path?.trim() && !!zona.quad;
 
   return (
     <div data-viz-acabamento data-erro={analise === "error" ? "" : undefined} className="viz-area">
@@ -305,7 +323,7 @@ export default function EtapaAcabamento({
           e a tela passa a rolar (de propósito; o encaixe numa tela vale para o
           tamanho de texto padrão). O contador fica fora do corte do nome. */}
       <div className="flex min-h-8 items-center gap-3">
-        <h2 className="flex min-w-0 flex-1 items-baseline font-serif text-xl leading-tight text-[#0B1F45]">
+        <h2 ref={tituloRef} tabIndex={-1} className="flex min-w-0 flex-1 items-baseline font-serif text-xl leading-tight text-[#0B1F45]">
           <span className="min-w-0 truncate">{nome}</span>
           <span className="ml-1.5 shrink-0 whitespace-nowrap font-sans text-sm text-[#5b5f66]">· {indice + 1} de {total}</span>
         </h2>
@@ -328,8 +346,10 @@ export default function EtapaAcabamento({
 
       {/* Onde aplicar: logo abaixo do nome da área (embaixo, à direita, o balão
           do chat cobriria o "Editar"). Se a análise falhou e a área ficou sem
-          texto, a linha inteira é um botão que abre a folha Onde. */}
-      <div data-viz-onde className="flex min-h-11 items-center gap-3">
+          texto, a linha inteira é um botão que abre a folha Onde. A linha toda
+          é uma região viva: "Lendo a foto…", a descrição e "Descreva onde
+          aplicar" (também no botão da falha) são anunciados ao mudar. */}
+      <div data-viz-onde aria-live="polite" className="flex min-h-11 items-center gap-3">
         {analise === "error" && !instrucao ? (
           <button type="button" onClick={() => setFolha("onde")} className="flex min-h-11 min-w-0 flex-1 items-center gap-3 text-left text-sm">
             <span className="min-w-0 flex-1 truncate">
@@ -340,7 +360,7 @@ export default function EtapaAcabamento({
           </button>
         ) : (
           <>
-            <p className="min-w-0 flex-1 truncate text-sm" aria-live="polite">
+            <p className="min-w-0 flex-1 truncate text-sm">
               <span className="text-[#5b5f66]">Onde: </span>
               {lendo ? (
                 <span className="text-[#0B1F45]">

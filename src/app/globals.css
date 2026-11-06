@@ -1800,11 +1800,14 @@ html.mv-cursor:has([data-lupa="aberta"]) .mv-cursor-corpo { opacity: 0; }
 .viz-pulso { width: 48px; height: 48px; margin: -24px 0 0 -24px; }
 /* Alvo de toque de 44 px em volta de um controle pequeno sobre a foto (rótulo
    da área, alça de canto da caixa), sem mudar o desenho: o pseudo-elemento é
-   transparente e centrado no controle (que já é position: absolute). */
-.viz-alvo-toque::before {
-  content: ""; position: absolute; left: 50%; top: 50%;
-  width: max(100%, 44px); height: max(100%, 44px);
-  transform: translate(-50%, -50%);
+   transparente e centrado no controle (que já é position: absolute). Só com
+   o dedo: com mouse ele tomaria o clique de quem marca ao lado do rótulo. */
+@media (pointer: coarse) {
+  .viz-alvo-toque::before {
+    content: ""; position: absolute; left: 50%; top: 50%;
+    width: max(100%, 44px); height: max(100%, 44px);
+    transform: translate(-50%, -50%);
+  }
 }
 /* anel (animado) e ponto (parado) */
 .viz-pulso::before {
@@ -1855,6 +1858,22 @@ html.mv-cursor:has([data-lupa="aberta"]) .mv-cursor-corpo { opacity: 0; }
 .viz-cartao-foto { height: clamp(116px, calc(var(--viz-acab-livre) - var(--viz-acab-faixa)), 300px); }
 /* Análise com erro: a linha do aviso ("Tentar de novo") sai da foto do cartão. */
 [data-erro] .viz-cartao-foto { height: clamp(116px, calc(var(--viz-acab-livre) - var(--viz-acab-faixa) - 40px), 300px); }
+/* Linha "Falta dizer onde aplicar…" acima do botão: a barra fica 52 px mais
+   alta e a tela continua cabendo. Os 52 px saem do que sobra (faixa e foto do
+   cartão, nessa conta). Num celular baixo (375 × 667) os mínimos de sempre não
+   cabem: com a linha, a faixa desce a 56 px e a foto do cartão a 88 px, e a
+   faixa cede antes (o cartão tem prioridade). */
+@media (max-width: 1023.98px) {
+  html[data-viz-barra-aviso] .viz-shell {
+    --viz-acab-livre: calc(100svh - 434px - 52px);
+    --viz-acab-faixa: clamp(56px, min(calc(var(--viz-acab-livre) * 0.42), calc(var(--viz-acab-livre) - 88px)), 30svh);
+  }
+  html[data-viz-barra-aviso] .viz-shell:has([data-erro]) {
+    --viz-acab-faixa: clamp(56px, min(calc(var(--viz-acab-livre) * 0.42), calc(var(--viz-acab-livre) - 40px - 88px)), 30svh);
+  }
+  html[data-viz-barra-aviso] .viz-cartao-foto { height: clamp(88px, calc(var(--viz-acab-livre) - var(--viz-acab-faixa)), 300px); }
+  html[data-viz-barra-aviso] [data-erro] .viz-cartao-foto { height: clamp(88px, calc(var(--viz-acab-livre) - var(--viz-acab-faixa) - 40px), 300px); }
+}
 @media (min-width: 1024px) {
   .viz-cartao-foto, [data-erro] .viz-cartao-foto { height: 260px; }
 }
@@ -1898,6 +1917,11 @@ html.mv-cursor:has([data-lupa="aberta"]) .mv-cursor-corpo { opacity: 0; }
 /* Barra de ação presa embaixo no celular: o balão do chat sobe acima dela. */
 @media (max-width: 1023.98px) {
   html[data-viz-barra-presa] [data-chat-flutuante] { translate: 0 calc(-3.75rem - env(safe-area-inset-bottom)); }
-  /* Com a linha "Falta dizer onde aplicar…" a barra fica 52 px mais alta: o balão sobe junto. */
-  html[data-viz-barra-presa][data-viz-barra-aviso] [data-chat-flutuante] { translate: 0 calc(-7rem - env(safe-area-inset-bottom)); }
+  /* Com a linha "Falta dizer onde aplicar…" a barra fica mais alta: o balão
+     sobe pela altura medida da barra (--viz-barra-h, posta pelo VizShell, já
+     com a margem do iPhone), menos os 12 px que sobram até o bottom-6 do
+     balão; sem a medida, 7rem. */
+  html[data-viz-barra-presa][data-viz-barra-aviso] [data-chat-flutuante] {
+    translate: 0 calc(0.75rem - var(--viz-barra-h, calc(7.75rem + env(safe-area-inset-bottom))));
+  }
 }

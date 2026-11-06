@@ -38,9 +38,10 @@ test("avisoFaltaDescricao usa o nome da área com o artigo certo", () => {
 test("etapaVisivel mapeia os passos", () => {
   assert.equal(etapaVisivel("upload", "mark"), 0);
   assert.equal(etapaVisivel("zones", "mark"), 1);
-  assert.equal(etapaVisivel("zones", "confirm"), 2);
+  assert.equal(etapaVisivel("upload", "model"), 0);
   assert.equal(etapaVisivel("zones", "model"), 2);
   assert.equal(etapaVisivel("result", "model"), 3);
+  assert.equal(etapaVisivel("result", "mark"), 3);
 });
 
 test("podeConcluirMarcacao", () => {

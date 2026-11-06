@@ -27,7 +27,7 @@ export const ETAPAS = ["Foto", "Marcar", "Acabamento", "Resultado"] as const;
 
 export function etapaVisivel(
   step: VizStep,
-  phase: "mark" | "confirm" | "model",
+  phase: "mark" | "model",
 ): EtapaVisivel {
   if (step === "upload") return 0;
   if (step === "result") return 3;

@@ -2165,6 +2165,7 @@ export default function VisualizadorWizard({
             erroAnalise={analysis.error}
             onTentarDeNovo={analyze}
             depurar={depurar}
+            projecao={DETERMINISTIC_PROJECTION && useProjection}
             onEscolher={(productId) => updateZone(zonaAtual.id, { productId, productChosen: true })}
             onAtualizar={atualizarZonaAtual}
             keepText={keepText}
