@@ -12,6 +12,7 @@ import {
 import VizShell, { focarEtapa, rolarParaTopo, type AcaoShell } from "./visualizador/VizShell";
 import EtapaFoto from "./visualizador/EtapaFoto";
 import EtapaResultado from "./visualizador/EtapaResultado";
+import AtalhoConsultor from "./visualizador/AtalhoConsultor";
 import {
   ajustarAreaAtual, areaPronta, areaSeguinte, etapaVisivel, podeGerar, rotuloZona, ZONE_COLORS,
   LINE_ORDER, VIZ_SPACES, type ProductLine,
@@ -2061,6 +2062,20 @@ export default function VisualizadorWizard({
             ? { rotulo: "Próxima área", onClick: irParaProximaArea, desabilitada: !areaPronta(zonaAtual) }
             : { rotulo: "Gerar visualização", onClick: generate, desabilitada: !podeGerarAgora, tom: "verde" };
 
+  // Orçamento instantâneo (escondido hoje pelo pivô): o mesmo bloco no
+  // Resultado e no atalho das outras etapas.
+  const orcamento =
+    ORCAMENTO_INSTANTANEO_VISIVEL && !embeddedMode && allAmbientes.length > 0
+      ? {
+          pronto: quoteReady && leadSubmitted,
+          preparando: proceeding,
+          resumo: `${allAmbientes.length} ${allAmbientes.length === 1 ? "área pronta" : "áreas prontas"} para o orçamento. ${
+            quoteReady ? "Cada área já vai preenchida, sem digitar nada de novo." : "Informe as medidas das áreas para levar tudo preenchido."
+          }`,
+          onContinuar: goToSimulador,
+        }
+      : null;
+
   const marcacaoNoLugar = step === "zones" && zonePhase === "mark" && noLugar && !!photoData;
   const noAcabamento = step === "zones" && zonePhase !== "mark" && !!photoData;
 
@@ -2164,19 +2179,14 @@ export default function VisualizadorWizard({
             onOutroAcabamento={() => { setZonePhase("model"); setAreaAtual(0); setStep("zones"); }}
             onOutroAmbiente={addAnotherPhoto}
             onTentarDeNovo={generate}
-            orcamento={
-              ORCAMENTO_INSTANTANEO_VISIVEL && !embeddedMode && allAmbientes.length > 0
-                ? {
-                    pronto: quoteReady && leadSubmitted,
-                    preparando: proceeding,
-                    resumo: `${allAmbientes.length} ${allAmbientes.length === 1 ? "área pronta" : "áreas prontas"} para o orçamento. ${
-                      quoteReady ? "Cada área já vai preenchida, sem digitar nada de novo." : "Informe as medidas das áreas para levar tudo preenchido."
-                    }`,
-                    onContinuar: goToSimulador,
-                  }
-                : null
-            }
+            orcamento={orcamento}
           />
+        )}
+
+        {/* Próximo ambiente com um já salvo: o atalho para o consultor (e para o
+            orçamento, quando visível) continua nas outras etapas, como antes. */}
+        {!embeddedMode && step !== "result" && savedAmbientes.length > 0 && (
+          <AtalhoConsultor onConsultor={falarComConsultor} orcamento={orcamento} />
         )}
       </VizShell>
 

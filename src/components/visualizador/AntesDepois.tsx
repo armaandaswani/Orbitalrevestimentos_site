@@ -31,7 +31,7 @@ export default function AntesDepois({
 }) {
   const [div, setDiv] = useState(50);
   const caixa = useRef<HTMLDivElement | null>(null);
-  const alca = useRef<HTMLButtonElement | null>(null);
+  const alca = useRef<HTMLDivElement | null>(null);
   const arrasto = useRef<number | null>(null);
   const proporcao = useProporcao(antes) ?? 4 / 3;
 
@@ -80,9 +80,10 @@ export default function AntesDepois({
       {/* Camada da divisória: largura da foto, deslocada por --div. */}
       <div className="viz-divisoria pointer-events-none absolute inset-0">
         <span aria-hidden className="absolute inset-y-0 left-0 w-0.5 -translate-x-1/2 bg-white shadow-[0_0_0_1px_rgba(11,31,69,0.18)]" />
-        <button
+        {/* Um div focável: role="slider" não é permitido num <button>. */}
+        <div
           ref={alca}
-          type="button"
+          tabIndex={0}
           role="slider"
           aria-label={`Comparar ${rotuloAntes.toLowerCase()} e ${rotuloDepois.toLowerCase()}`}
           aria-valuemin={0}
@@ -105,7 +106,7 @@ export default function AntesDepois({
           <svg aria-hidden width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.9" strokeLinecap="round" strokeLinejoin="round">
             <path d="M9 7l-5 5 5 5M15 7l5 5-5 5" />
           </svg>
-        </button>
+        </div>
       </div>
     </div>
   );
