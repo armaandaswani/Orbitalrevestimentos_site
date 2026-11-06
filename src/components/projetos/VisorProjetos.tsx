@@ -63,18 +63,22 @@ export default function VisorProjetos({
     [estado.projeto, projetos],
   );
 
-  const montarUrl = useCallback((e: Estado) => {
-    const q = new URLSearchParams();
-    if (e.showroom && !fixo) q.set("showroom", e.showroom);
-    if (e.projeto) q.set("projeto", e.projeto);
-    const s = q.toString();
-    return s ? `${base}?${s}` : base;
+  // Ao navegar, parte da URL atual e só mexe em ?showroom= e ?projeto=: os outros
+  // parâmetros da página (?categoria=, ?ver=) ficam. Os href desenhados partem de
+  // `base`, iguais no servidor e no navegador (sem divergência na hidratação).
+  const montarUrl = useCallback((e: Estado, atual?: string) => {
+    const url = new URL(atual ?? base, "http://local");
+    if (e.showroom && !fixo) url.searchParams.set("showroom", e.showroom);
+    else url.searchParams.delete("showroom");
+    if (e.projeto) url.searchParams.set("projeto", e.projeto);
+    else url.searchParams.delete("projeto");
+    return `${url.pathname}${url.search}`;
   }, [base, fixo]);
 
   const ir = useCallback((novo: Estado, modo: "push" | "replace") => {
     const atual = (window.history.state?.visor as number | undefined) ?? 0;
     const dados = { ...(window.history.state ?? {}), visor: modo === "push" ? atual + 1 : atual };
-    window.history[modo === "push" ? "pushState" : "replaceState"](dados, "", montarUrl(novo));
+    window.history[modo === "push" ? "pushState" : "replaceState"](dados, "", montarUrl(novo, window.location.href));
     setEstado(novo);
   }, [montarUrl]);
 

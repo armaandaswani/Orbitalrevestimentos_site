@@ -479,6 +479,24 @@ html:has(header[data-site][data-oculto="1"]) .ds-sob-cabecalho { top: 0; }
 @media (prefers-reduced-motion: no-preference) {
   .ds-sob-cabecalho { transition: top var(--mv-base) var(--mv-chegada); }
 }
+/* No celular (< 640px, ou deitado: tela de toque com menos de 480px de altura), a barra que pede (ds-some-no-celular, a de /projetos)
+   some junto com o cabeçalho ao descer e volta com ele ao subir. O top fica
+   em 5rem e só o transform anda, no mesmo tempo do .mv-cabecalho. Com a busca
+   em foco (teclado na tela) ou o foco do teclado dentro dela, ela não some: só
+   sobe para o lugar do cabeçalho. Um chip tocado não prende a barra. */
+@media (width < 40rem), (height < 30rem) and (pointer: coarse) {
+  html:has(header[data-site][data-oculto="1"]) .ds-sob-cabecalho.ds-some-no-celular {
+    top: 5rem;
+    transform: translate3d(0, calc(-100% - 5rem), 0);
+  }
+  html:has(header[data-site][data-oculto="1"]) .ds-sob-cabecalho.ds-some-no-celular:has(input:focus),
+  html:has(header[data-site][data-oculto="1"]) .ds-sob-cabecalho.ds-some-no-celular:has(:focus-visible) {
+    transform: translate3d(0, -5rem, 0);
+  }
+}
+@media ((width < 40rem) or ((height < 30rem) and (pointer: coarse))) and (prefers-reduced-motion: no-preference) {
+  .ds-sob-cabecalho.ds-some-no-celular { transition: transform var(--mv-base) var(--mv-chegada); }
+}
 
 /* Seções longas abaixo da dobra: o navegador pula layout e pintura até elas
    chegarem perto da tela. 900px é só a altura reservada até a primeira medida. */

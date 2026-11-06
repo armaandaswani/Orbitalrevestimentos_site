@@ -44,6 +44,7 @@ function paraProjeto(r: Linha): Projeto {
     cover_focus_x: r.cover_focus_x == null ? null : num(r.cover_focus_x, 0.5),
     cover_focus_y: r.cover_focus_y == null ? null : num(r.cover_focus_y, 0.5),
     cover_zoom: r.cover_zoom == null ? null : num(r.cover_zoom, 1),
+    created_at: txt(r.created_at),
   };
 }
 

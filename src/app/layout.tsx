@@ -10,6 +10,7 @@ import ContatoSheet from "@/components/ContatoSheet";
 import Movimento from "@/components/movimento/Movimento";
 import IntroOrbita from "@/components/movimento/IntroOrbita";
 import TransicaoPagina from "@/components/movimento/TransicaoPagina";
+import { SCRIPT_ESPERA_URL } from "@/lib/projetos-tipos";
 import { SpeedInsights } from "@vercel/speed-insights/next";
 import { Analytics } from "@vercel/analytics/next";
 
@@ -286,6 +287,8 @@ export default function RootLayout({
             pintura. Fora do SiteChrome; o próprio porteiro pula /admin, /parceiro,
             /representante e /o. */}
         <IntroOrbita />
+        {/* /projetos?categoria=… ou ?ver=…: a grade espera invisível pelo filtro da URL (só em /projetos). */}
+        <script id="projetos-espera-url" dangerouslySetInnerHTML={{ __html: SCRIPT_ESPERA_URL }} />
         {jsonLdSchemas.map((schema, i) => (
           <script
             key={i}

@@ -31,6 +31,8 @@ export interface Projeto {
   cover_focus_x?: number | null;
   cover_focus_y?: number | null;
   cover_zoom?: number | null;
+  /** Data de cadastro no painel: desempata a ordem da grade (mais recentes primeiro). */
+  created_at?: string | null;
 }
 
 export interface Showroom {
@@ -78,12 +80,25 @@ export function secoesDoProjeto(p: Pick<Projeto, "primary_category" | "categorie
   return p.categories ?? [];
 }
 
-/** Destaques primeiro (na ordem do painel), depois o resto na ordem do banco. */
+/**
+ * Destaques primeiro, entre si pela feature_order do painel. Entre dois que não
+ * são destaque dá 0: quem chama desempata (em /projetos, pela data de cadastro,
+ * mais novo primeiro, e sem data por último); sem desempate fica a ordem do banco.
+ */
 export function porDestaque(a: Projeto, b: Projeto): number {
-  return !!a.is_featured !== !!b.is_featured
-    ? (a.is_featured ? -1 : 1)
-    : (a.feature_order ?? 0) - (b.feature_order ?? 0);
+  if (!!a.is_featured !== !!b.is_featured) return a.is_featured ? -1 : 1;
+  return a.is_featured ? (a.feature_order ?? 0) - (b.feature_order ?? 0) : 0;
 }
+
+/**
+ * /projetos aberto com ?categoria= ou ?ver=: a grade fica invisível (mesma altura)
+ * até o filtro da URL valer e entra com o véu. O script roda no HTML (layout raiz,
+ * como o porteiro da intro: só na carga completa, nunca re-renderizado no cliente),
+ * antes de a grade ser pintada; o estilo sai quando a URL foi lida (ou em 3 s, se
+ * o JavaScript falhar). Em outra página ou sem esses parâmetros, nada acontece.
+ */
+export const ESTILO_ESPERA_URL = "projetos-lendo-url";
+export const SCRIPT_ESPERA_URL = `try{if(location.pathname==="/projetos"&&/[?&](categoria|ver)=/.test(location.search)){var s=document.createElement("style");s.id="${ESTILO_ESPERA_URL}";s.textContent="[data-grade-projetos]{opacity:0}";document.head.appendChild(s);setTimeout(function(){s.remove()},3000)}}catch(e){}`;
 
 /**
  * O que as APIs públicas de projetos e renders podem devolver. É uma lista do
@@ -218,4 +233,21 @@ export const RENDERS_FIXOS: Render[] = [
 export function juntarRenders(doBanco: Render[]): Render[] {
   const slugs = new Set(doBanco.map((r) => r.slug));
   return [...doBanco, ...RENDERS_FIXOS.filter((r) => !slugs.has(r.slug))];
+}
+
+/** Texto para busca: sem acento, minúsculo. "Náutico" → "nautico". */
+export const normalizarBusca = (s: string) => s.normalize("NFD").replace(/\p{Diacritic}/gu, "").toLowerCase();
+
+/**
+ * A busca de /projetos: cada palavra digitada precisa aparecer no texto do
+ * projeto, sem acento e sem caixa. Códigos valem com ou sem hífen e espaço:
+ * "ORB-003", "orb 003" e "orb003" acham o mesmo projeto. A comparação sem
+ * espaços só vale para termos com dígito (códigos): uma palavra comum não
+ * casa com pedaços de duas palavras vizinhas.
+ */
+export function combinaBusca(texto: string, consulta: string): boolean {
+  const alvo = normalizarBusca(texto);
+  const colado = alvo.replace(/[^a-z0-9]/g, "");
+  return normalizarBusca(consulta).split(/\s+/).filter(Boolean)
+    .every((p) => alvo.includes(p) || (/\d/.test(p) && colado.includes(p.replace(/[^a-z0-9]/g, ""))));
 }

@@ -1,9 +1,7 @@
 import Image from "next/image";
 import Link from "next/link";
 import ContatoCta from "@/components/ContatoCta";
-import Capitulo from "@/components/ds/Capitulo";
 import Revelar from "./Revelar";
-import { Sobretitulo } from "./SecaoCabecalho";
 
 /**
  * Fechamento da apresentação de Projetos: o próximo passo (consultor, pelo
@@ -15,13 +13,12 @@ const FOTOS = [
   { src: "/images/projetos/escritorio-depois.jpeg", alt: "Escritório revestido com PFB" },
 ];
 
-export default function ChamadaProjeto({ numero = "05" }: { numero?: string }) {
+export default function ChamadaProjeto() {
   return (
-    <Capitulo id="proximo-passo" numero={numero} rotulo="Próximo passo" rotuladoPor="chamada-titulo" className="ds-secao bg-white">
+    <section id="proximo-passo" aria-labelledby="chamada-titulo" className="scroll-mt-20 ds-secao bg-white">
       <div className="ds-wrap grid grid-cols-1 lg:grid-cols-2 gap-12 lg:gap-16 items-center">
         <Revelar>
-          <Sobretitulo numero={numero}>Próximo projeto</Sobretitulo>
-          <h2 id="chamada-titulo" className="font-serif text-primary text-t2 font-normal tracking-[-0.02em] mt-4 mb-5 text-balance">
+          <h2 id="chamada-titulo" className="font-serif text-primary text-t2 font-normal tracking-[-0.02em] mb-5 text-balance">
             Novas possibilidades para o seu próximo projeto.
           </h2>
           <p className="text-on-surface-variant text-lead mb-4 max-w-md text-pretty">
@@ -48,6 +45,6 @@ export default function ChamadaProjeto({ numero = "05" }: { numero?: string }) {
           ))}
         </div>
       </div>
-    </Capitulo>
+    </section>
   );
 }

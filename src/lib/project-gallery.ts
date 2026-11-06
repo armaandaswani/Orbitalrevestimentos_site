@@ -63,6 +63,17 @@ function urlKey(url: string): string {
 }
 
 /**
+ * O projeto tem antes e depois só com os campos dele: capa "depois" e a imagem
+ * "antes" em outro arquivo. É a mesma conta de buildGalleryItems sem mídias;
+ * o selo do cartão e a galeria (que abre lado a lado) usam esta regra.
+ */
+export function temAntesDepois(project: Pick<GalleryProject, "image_after" | "image_before" | "cover_category">): boolean {
+  return !!project.image_after && !!project.image_before
+    && urlKey(project.image_before) !== urlKey(project.image_after)
+    && coverCategory(project) === "depois";
+}
+
+/**
  * Monta a galeria completa de um projeto: capa primeiro, depois a imagem
  * "antes" legada (quando for outro arquivo) e por fim as mídias adicionais na
  * ordem definida no painel. Sem duplicatas.

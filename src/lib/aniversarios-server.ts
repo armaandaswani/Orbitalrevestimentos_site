@@ -1,9 +1,10 @@
 import type { SupabaseClient } from "@supabase/supabase-js";
 import { isMissingTable } from "@/lib/db-compat";
 import { emailLogo } from "@/lib/email-marca";
+import { linkContato } from "@/lib/aniversario-link";
 import {
   MESES, chaveNome, dataCurta, diasAte, digitosWhatsapp, hojeEmManaus, idade, linkBusca, linkInstagram, linkParabens,
-  proximosDias, type Aniversariante, type Aniversario,
+  mensagemParabens, proximosDias, type Aniversariante, type Aniversario,
 } from "@/lib/aniversarios";
 
 /**
@@ -58,6 +59,7 @@ export async function aniversariantes(db: SupabaseClient, agora = new Date()) {
     if (!naJanela(p)) continue;
     guardar({
       ref: `profissional:${p.id}`,
+      idProfissional: p.id,
       nome: p.nome,
       tipo: "profissional",
       detalhe: [p.profissao, p.escritorio].filter(Boolean).join(", "),
@@ -121,18 +123,25 @@ export async function aniversariantes(db: SupabaseClient, agora = new Date()) {
 const esc = (s: string) => s.replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;").replace(/"/g, "&quot;");
 const TIPO: Record<Aniversariante["tipo"], string> = { profissional: "", parceiro: "Parceiro", representante: "Representante" };
 
+/** Link assinado para completar o contato; só para quem está na tabela de profissionais. */
+function linkCompletar(a: Aniversariante): string | null {
+  return a.idProfissional ? linkContato(a.idProfissional) : null;
+}
+
 function blocoHoje(a: Aniversariante, hojeAno: number): string {
   const anos = idade(a.ano, hojeAno);
   const parabens = linkParabens(a);
+  const completar = linkCompletar(a);
   const link = (href: string, txt: string) => `<a href="${esc(href)}" style="color:#2347A0;text-decoration:underline">${txt}</a>`;
+  const acao = (txt: string) => (completar ? ` · <a href="${esc(completar)}" style="color:#1f7a3d;font-weight:700;text-decoration:underline">${txt}</a>` : "");
   const linhas: string[] = [];
   linhas.push(a.instagram
-    ? `Instagram: ${link(linkInstagram(a.instagram), `@${esc(a.instagram)}`)}${a.instagramConfirmado ? "" : ' <span style="color:#8a5a00">(a confirmar)</span>'}`
-    : `Instagram: <span style="color:#8a5a00">não temos</span> · ${link(linkBusca(a, "instagram"), "buscar")}`);
+    ? `Instagram: ${link(linkInstagram(a.instagram), `@${esc(a.instagram)}`)}${a.instagramConfirmado ? "" : ` <span style="color:#8a5a00">(a confirmar)</span>${acao("confirmar")}`}`
+    : `Instagram: <span style="color:#8a5a00">não temos</span> · ${link(linkBusca(a, "instagram"), "buscar")}${acao("adicionar")}`);
   const fone = digitosWhatsapp(a.whatsapp);
   linhas.push(fone
     ? `WhatsApp: ${link(`https://wa.me/${fone}`, esc(a.whatsapp ?? fone))}`
-    : `WhatsApp: <span style="color:#8a5a00">não temos</span> · ${link(linkBusca(a, "whatsapp"), "buscar")}`);
+    : `WhatsApp: <span style="color:#8a5a00">não temos</span> · ${link(linkBusca(a, "whatsapp"), "buscar")}${acao("adicionar")}`);
   if (a.email) linhas.push(`E-mail: ${link(`mailto:${a.email}`, esc(a.email))}`);
 
   return `
@@ -140,6 +149,8 @@ function blocoHoje(a: Aniversariante, hojeAno: number): string {
       <p style="margin:0;font-family:Georgia,serif;font-size:19px;color:#0B1F45">${esc(a.nome)}${anos ? `<span style="font-family:Arial,sans-serif;font-size:14px;color:#43474e"> · ${anos} anos</span>` : ""}</p>
       ${a.detalhe || TIPO[a.tipo] ? `<p style="margin:4px 0 0;font-size:14px;color:#43474e">${esc([TIPO[a.tipo], a.detalhe].filter(Boolean).join(" · "))}</p>` : ""}
       <p style="margin:10px 0 0;font-size:14px;line-height:1.7;color:#0D1830">${linhas.join("<br>")}</p>
+      <p style="margin:14px 0 6px;font-size:12px;font-weight:700;letter-spacing:0.05em;text-transform:uppercase;color:#43474e">Mensagem para copiar</p>
+      <div style="background:#F6F5F2;border-left:3px solid #36A35C;padding:12px 14px;font-size:14px;line-height:1.55;color:#0D1830;white-space:pre-line;-webkit-user-select:all;user-select:all">${esc(mensagemParabens(a.nome))}</div>
       ${parabens ? `<a href="${esc(parabens)}" style="display:inline-block;margin-top:12px;background:#36A35C;color:#0B1F45;text-decoration:none;padding:11px 20px;font-size:14px;font-weight:700;border-radius:999px">Parabenizar no WhatsApp</a>` : ""}
     </td></tr>`;
 }
@@ -150,10 +161,15 @@ function linhaProxima(a: Aniversariante): string {
   const contato = [
     a.instagram ? `<a href="${esc(linkInstagram(a.instagram))}" style="color:#2347A0">@${esc(a.instagram)}</a>${a.instagramConfirmado ? "" : ' <span style="color:#8a5a00">(a confirmar)</span>'}` : "",
     digitosWhatsapp(a.whatsapp) ? `<a href="https://wa.me/${digitosWhatsapp(a.whatsapp)}" style="color:#2347A0">WhatsApp</a>` : "",
-  ].filter(Boolean).join(" · ");
+  ];
+  const completar = linkCompletar(a);
+  if (completar && (!a.instagram || !a.instagramConfirmado || !digitosWhatsapp(a.whatsapp))) {
+    contato.push(`<a href="${esc(completar)}" style="color:#1f7a3d;font-weight:700">completar contato</a>`);
+  }
+  const contatoHtml = contato.filter(Boolean).join(" · ");
   return `
     <tr><td style="padding:7px 0 7px 14px;border-left:2px solid #d9dde4;font-size:14px;color:#0D1830">
-      ${esc(a.nome)}${a.tipo !== "profissional" ? ` <span style="color:#43474e">(${TIPO[a.tipo].toLowerCase()})</span>` : ""}${contato ? `<br><span style="font-size:13px">${contato}</span>` : ""}
+      ${esc(a.nome)}${a.tipo !== "profissional" ? ` <span style="color:#43474e">(${TIPO[a.tipo].toLowerCase()})</span>` : ""}${contatoHtml ? `<br><span style="font-size:13px">${contatoHtml}</span>` : ""}
     </td></tr>`;
 }
 

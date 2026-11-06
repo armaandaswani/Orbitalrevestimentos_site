@@ -3,7 +3,7 @@
 import { useEffect, useRef, useState } from "react";
 import Image from "next/image";
 import {
-  buildGalleryItems, filterGalleryItems,
+  buildGalleryItems, filterGalleryItems, temAntesDepois,
   type GalleryFilter, type GalleryItem, type GalleryMediaRow, type MediaCategory,
 } from "@/lib/project-gallery";
 import { videoHost } from "@/lib/video-link";
@@ -56,7 +56,8 @@ export default function ProjetoGaleria({ projeto, inicio, onFechar, vizinhos }: 
   const [itens, setItens] = useState<GalleryItem[]>(base);
   const [carregando, setCarregando] = useState(true);
   const [idx, setIdx] = useState(() => Math.max(0, inicio ? base.findIndex((i) => i.url === inicio) : 0));
-  const [modo, setModo] = useState<Modo>("carrossel");
+  // Projeto com antes e depois (o cartão mostra o selo) abre direto no lado a lado.
+  const [modo, setModo] = useState<Modo>(() => (!inicio && temAntesDepois(projeto) ? "lado" : "carrossel"));
   const [filtro, setFiltro] = useState<GalleryFilter>("all");
   const caixa = useRef<HTMLDivElement>(null);
   const fechar = useRef<HTMLButtonElement>(null);
@@ -103,10 +104,33 @@ export default function ProjetoGaleria({ projeto, inicio, onFechar, vizinhos }: 
     setIdx(manter >= 0 ? manter : 0);
   };
 
+  // No lado a lado, seta ou deslize passa para o carrossel já na foto anterior/seguinte.
+  const passar = (sentido: -1 | 1) => {
+    if (modo === "grade") return;
+    if (modo === "lado") {
+      setModo("carrossel");
+      // O antes e o depois já estavam na tela: vai para a primeira (ou a última) foto que não é nenhum dos dois.
+      const outras = visiveis.flatMap((v, i) => (v.url !== antesImg?.url && v.url !== depoisImg?.url ? [i] : []));
+      if (outras.length > 0) { setIdx(sentido > 0 ? outras[0] : outras[outras.length - 1]); return; }
+    }
+    if (sentido < 0) anterior(); else proxima();
+  };
   const teclado = (e: React.KeyboardEvent) => {
-    if (modo !== "carrossel") return;
-    if (e.key === "ArrowLeft") { e.preventDefault(); anterior(); }
-    if (e.key === "ArrowRight") { e.preventDefault(); proxima(); }
+    if (modo === "grade") return;
+    if (e.key === "ArrowLeft") { e.preventDefault(); passar(-1); }
+    if (e.key === "ArrowRight") { e.preventDefault(); passar(1); }
+  };
+  // Arrastar para o lado troca a foto (toque e caneta). touch-pan-y + pinch-zoom: o navegador não toma
+  // o gesto horizontal de um dedo para si; o vertical e o zoom de pinça continuam dele.
+  const deslize = {
+    onPointerDown: (e: React.PointerEvent) => { if (e.pointerType !== "mouse") toque.current = { x: e.clientX, y: e.clientY }; },
+    onPointerCancel: () => { toque.current = null; },
+    onPointerUp: (e: React.PointerEvent) => {
+      const t = toque.current; toque.current = null;
+      if (!t) return;
+      const dx = e.clientX - t.x;
+      if (Math.abs(dx) > 50 && Math.abs(dx) > Math.abs(e.clientY - t.y)) passar(dx < 0 ? 1 : -1);
+    },
   };
 
   const antesImg = itens.find((i) => i.category === "antes" && i.kind === "image");
@@ -150,15 +174,19 @@ export default function ProjetoGaleria({ projeto, inicio, onFechar, vizinhos }: 
       </div>
 
       {filtros.length > 1 && (
-        <div role="group" aria-label="Filtrar fotos" className="flex items-center gap-1.5 px-4 sm:px-6 py-2 border-b border-white/10 flex-shrink-0 overflow-x-auto scrollbar-none">
-          {filtros.map((f) => (
-            <button key={f} type="button" aria-pressed={filtro === f} onClick={() => mudarFiltro(f)}
-              className={`flex-shrink-0 min-h-11 px-4 text-xs tracking-[0.1em] uppercase font-bold border transition-colors ${
-                filtro === f ? "bg-white text-primary border-white" : "border-white/25 text-white/75 hover:text-white"
-              }`}>
-              {ROTULO_FILTRO[f]}
-            </button>
-          ))}
+        <div role="group" aria-label="Filtrar fotos" className="flex flex-wrap items-center gap-1.5 px-4 sm:px-6 py-2 border-b border-white/10 flex-shrink-0">
+          {filtros.map((f) => {
+            // No lado a lado nenhum filtro vale: nenhum aparece pressionado.
+            const ativo = filtro === f && modo !== "lado";
+            return (
+              <button key={f} type="button" aria-pressed={ativo} onClick={() => mudarFiltro(f)}
+                className={`flex-shrink-0 min-h-11 px-4 text-xs tracking-[0.1em] uppercase font-bold border transition-colors ${
+                  ativo ? "bg-white text-primary border-white" : "border-white/25 text-white/75 hover:text-white"
+                }`}>
+                {ROTULO_FILTRO[f]}
+              </button>
+            );
+          })}
         </div>
       )}
 
@@ -170,7 +198,7 @@ export default function ProjetoGaleria({ projeto, inicio, onFechar, vizinhos }: 
         )}
 
         {modo === "lado" && ladoALado && (
-          <div className="h-full grid grid-cols-1 sm:grid-cols-2 gap-px bg-white/10">
+          <div className="h-full grid grid-cols-1 sm:grid-cols-2 gap-px bg-white/10 select-none touch-pan-y touch-pinch-zoom" {...deslize}>
             {[{ it: antesImg, cat: "antes" as const }, { it: depoisImg, cat: "depois" as const }].map(({ it, cat }) => it && (
               <figure key={cat} className="relative bg-black min-h-0">
                 <Image src={it.url} alt={`${projeto.title}, ${cat}`} fill sizes="(max-width: 639px) 100vw, 50vw" className="object-contain" />
@@ -205,14 +233,7 @@ export default function ProjetoGaleria({ projeto, inicio, onFechar, vizinhos }: 
 
         {modo === "carrossel" && item && (
           <div className="h-full flex flex-col">
-            <div className="flex-1 min-h-0 relative select-none"
-              onPointerDown={(e) => { if (e.pointerType !== "mouse") toque.current = { x: e.clientX, y: e.clientY }; }}
-              onPointerUp={(e) => {
-                const t = toque.current; toque.current = null;
-                if (!t) return;
-                const dx = e.clientX - t.x;
-                if (Math.abs(dx) > 50 && Math.abs(dx) > Math.abs(e.clientY - t.y)) { if (dx < 0) proxima(); else anterior(); }
-              }}>
+            <div className="flex-1 min-h-0 relative select-none touch-pan-y touch-pinch-zoom" {...deslize}>
               {item.kind === "image" ? (
                 <Image key={item.url} src={item.url} alt={item.label ?? projeto.title} fill sizes="100vw" className="object-contain" draggable={false} />
               ) : videoHost(item.url) === "arquivo" ? (
