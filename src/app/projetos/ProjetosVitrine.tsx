@@ -130,7 +130,7 @@ function Conteudo({
   const conta = `${filtradas.length} ${filtradas.length === 1 ? "projeto" : "projetos"}`;
 
   const chip = (ativo: boolean) =>
-    `relative h-9 px-3.5 text-[0.8125rem] font-medium border transition-colors after:absolute after:inset-x-0 after:-inset-y-[3px] focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[#2347A0] ${
+    `relative h-8 lg:h-9 px-3 lg:px-3.5 text-[0.8125rem] font-medium border transition-colors after:absolute after:inset-x-0 after:-inset-y-1 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[#2347A0] ${
       ativo ? "bg-primary border-primary text-white" : "bg-white border-[#d5d8de] text-primary hover:border-primary"
     }`;
 
@@ -148,7 +148,7 @@ function Conteudo({
         <div ref={topo} aria-hidden />
         {/* Presa logo abaixo do cabeçalho enquanto a grade está na tela; quando ele se recolhe, sobe junto. */}
         <div className="ds-sob-cabecalho sticky z-40 bg-white border-y border-[#e8e6e1]" data-barra-projetos>
-          <div className="ds-wrap py-3 flex flex-col gap-2.5 lg:flex-row lg:items-center lg:gap-6">
+          <div className="ds-wrap py-2.5 lg:py-3 flex flex-col gap-2 lg:flex-row lg:items-center lg:gap-6">
             <div role="group" aria-label="Categoria" className="flex flex-wrap items-center gap-1.5 lg:flex-1">
               {[{ slug: "todos", label: "Todos" }, ...cats].map((c) => (
                 <button key={c.slug} type="button" aria-pressed={categoria === c.slug} onClick={() => escolher(c.slug)} className={chip(categoria === c.slug)}>
