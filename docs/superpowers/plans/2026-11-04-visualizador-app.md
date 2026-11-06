@@ -31,6 +31,7 @@
 2. **Leaving the full-screen editor any way other than "Pronto"** (✕, Esc, browser back, step change, unmount) always restores page scrolling. Owned by Task 4: a test for each exit path asserting `document.documentElement.style.overflow === ""`.
    > **Emenda 06/11/2026 (B3).** The assertion is `document.body.style.overflow === ""`. The lock is the site's `travarRolagem()` (`src/components/ds/useDialogo.ts`, counted, on `body`), per Ruling 2 of the ledger (04/11); `useTravaRolagem` was never created. `checks/viz-marcar.mjs` already asserts on `body`. Reason: the plan kept the pre-ruling wording.
 3. **Removing the area that is currently shown in Acabamento,** or removing the last area, never leaves an out-of-range current index or a blank screen. Owned by Task 1 (`areaSeguinte` and `ajustarAreaAtual` unit tests) and Task 5 (a browser check).
+   > **Emenda 06/11/2026 (R2-N6).** The current area is kept by zone id, and `indiceDaArea` (Task 1, with tests) now also owns this focus. It finds the same zone after a removal, takes the next one when the current zone was removed, and returns 0 with no areas. `ajustarAreaAtual` still clamps. Reason: since M3 the index comes from `indiceDaArea`, and the plan cited only `ajustarAreaAtual`.
 4. **Analysis fails or is offline.** Each area shows "Descreva onde aplicar", opens the Onde sheet, and "Gerar visualização" stays disabled until every area has text. Owned by Task 1 (`podeGerar` tests) and Task 5 (an intercepted 500 response).
    > **Emenda 06/11/2026 (N1, N4, M2).** Blocking "Gerar" on an empty description is a change from before the redesign (it used to be optional in the model phase), and it is intentional. In the failure case the whole "Descreva onde aplicar" line is a button that opens the Onde sheet. "Próxima área" needs only a chosen finish (`podeIrParaProximaArea`); "Gerar visualização" keeps the full `podeGerar` gate. Reason: final review (06/11/2026); the earlier per-area gate stopped a client who wanted to pick every finish first.
 5. **Embedded in `/simulador` on a phone.** No fixed bar overlapping the simulator's own controls, no lead sheet, and the quote still opens after the first render. Owned by Task 7: a browser check of the full embedded path with mocked endpoints.
@@ -56,6 +57,14 @@
   - `ajustarAreaAtual(atual: number, total: number): number`. Clamps to `[0, total-1]`, and returns 0 when `total === 0`.
   - `limitarDivisor(v: number): number`. Clamps the slider position to `[0, 100]`.
   - `passoTeclado(v: number, tecla: "ArrowLeft"|"ArrowRight"|"Home"|"End"): number`. ±5, Home→0, End→100, always clamped.
+
+  > **Emenda 06/11/2026 (R2-M1, R2-N5).** `fluxo.ts` also produces:
+  > - `areaSemDescricao(zones: Pick<Zone,"instruction">[], atual: number, base: { canGenerate: boolean }): number | null`. The first area without a description, but only when `canGenerate` holds, the current area has text, and that area is not the current one; otherwise `null`. It drives the line "Falta dizer onde aplicar…" above "Gerar visualização".
+  > - `avisoFaltaDescricao(rotulo: string): string`. The text of that line: "na" before a feminine type or "Área N", "no" before a masculine type, and "na área “…”" for a name the client typed.
+  > - Both have tests. The list also gained `podeIrParaProximaArea` (M2), `indiceDaArea` (M3) and `rotuloZona`.
+  > - `etapaVisivel` takes `phase: "mark" | "model"`. The dead `"confirm"` phase is gone, and the test no longer passes it.
+  >
+  > Reason: second review round (06/11/2026). The functions were in the code but missing from the interface list, and `"confirm"` had already left `zonePhase` (N8).
 
 - [ ] **Step 1: Write the failing tests** in `fluxo.test.mjs`, named exactly as follows:
   - `etapaVisivel mapeia os passos`: asserts the four mappings above, plus `("zones","confirm")→2`.
@@ -180,6 +189,7 @@
   - `CartaoAcabamento(props: { produto: VizProduct; selecionado: boolean; onEscolher: () => void })`.
     - A button with `aria-pressed`, about 70vw wide on phones and 220 px on desktop, `scroll-snap-align: start`.
     - Shows `produto.image_path` with `object-cover` (no 1.35 zoom), the name and the code.
+      > **Emenda 06/11/2026 (B4, decisão do dono).** The card shows the product's flat texture (`render_texture_path`) when it exists, and otherwise the catalogue photo (`image_path`) with a 1.8 zoom crop centred on the panel. It does not show the uncropped catalogue photo. Reason: the owner chose the texture on 06/11/2026, so the client sees the finish up close; the 1.8 crop of products without a texture may still show a strip of wall until a texture is registered for them (owner data).
     - Selected: a 2 px `#0B1F45` frame, a check badge, and `scale(1.02)` (none under reduced motion).
   - `EtapaAcabamento(props: { zona: Zone; indice: number; total: number; produtos: VizProduct[]; carregando: boolean; analise: "idle"|"loading"|"done"|"error"; depurar: boolean; onEscolher: (productId: string) => void; onAtualizar: (patch: Partial<Zone>) => void; keepText: string; setKeepText: (v: string) => void; onEditarAreas: () => void })`.
     - Header "<label> · <indice+1> de <total>".
@@ -188,6 +198,7 @@
     - The "Onde:" line shows `zona.instruction`. While `analise === "loading"` it reads "Lendo a foto…". When the text is empty it reads "Descreva onde aplicar", and "Editar" opens the Onde `Folha` (the instruction textarea plus "Manter igual" bound to `keepText`).
     - The "Ajustes" link opens a `Folha` with the surface select (`VIZ_SPACES`, "Outro…" with a custom label) and the width/height fields (existing sanitizing), plus "Redefinir cantos" only when it applies today.
       > **Emenda 06/11/2026 (M4).** The button reads "Refazer os cantos" and shows without `?debug=1`, only when the chosen finish has a `render_texture_path` and the zone has a `quad`. It calls the same `quad: null` update. Reason: it had ended up behind `?debug=1`, out of the client's reach.
+      > **Emenda 06/11/2026 (R2-M3, corrects M4).** It also needs the projection on (`DETERMINISTIC_PROJECTION && useProjection`, passed as `projecao`), or `?debug=1`. With the projection off, as today, the client does not see it and cannot erase the fallback quad. `generate`, `confirmQuad`, detection and the fallback quad seeding are unchanged. Reason: second review round; with the projection off the corners do not reach the render.
     - Technical labels render only when `depurar` is set.
     - "Editar áreas" calls `onEditarAreas`.
   - Wizard: `areaAtual: number`, kept valid with `ajustarAreaAtual` whenever `zones.length` changes.
@@ -199,6 +210,7 @@
       - the photo is capped at about 34svh (contain);
       - then the area header, the line tabs, the card row (horizontal scroll only) and the "Onde" line;
       - the fixed action bar sits below.
+      > **Emenda 06/11/2026 (R2-M2).** The same fit holds while the line "Falta dizer onde aplicar…" makes the bar 52 px taller. Under `max-width: 1023.98px`, `html[data-viz-barra-aviso]` takes the 52 px out of `--viz-acab-livre`, which feeds both the photo band and the card photo. It also lowers their minimums to 56 px and 88 px, the band giving way first; `[data-erro]` still takes its 40 px off the card photo. The check covers 390×844 and 375×667, with the analysis failed and with it fine. Reason: second review round; the line covered the selected card's name.
     - "Próxima área" swaps the content in place (fade) and calls `rolarParaTopo`, so the next area starts with the photo and the cards in view. Add to the Step 1 check: after "Próxima área", the shell top is within 8 px of the header bottom and the first card is fully visible without scrolling.
     - `depurar` = the URL search param `debug === "1"`.
 

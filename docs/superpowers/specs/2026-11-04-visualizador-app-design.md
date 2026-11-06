@@ -83,13 +83,24 @@ The owner's decisions (04/11/2026, verbatim choices):
   - the code (ORB-003).
   - Selected state: a 2 px `#0B1F45` frame, a check badge, and the card scaled to 1.02.
   - Tapping a card chooses it for this area (`productId`, `productChosen: true`).
+
+  > **Emenda 06/11/2026 (B4, decisão do dono).** The card shows the product's flat texture (`render_texture_path`) when it exists, and otherwise the catalogue photo (`image_path`) with a 1.8 zoom crop centred on the panel. It does not show the uncropped catalogue photo. Reason: the owner chose the texture on 06/11/2026, so the client sees the finish up close; the 1.8 crop of products without a texture may still show a strip of wall until a texture is registered for them (owner data). (Moved here from under "Hidden from clients" on 06/11/2026, second review round R2-N7, so it sits under the item it changes.)
 - **Primary action:** "Próxima área" (the next area becomes current; the photo tint follows), and "Gerar visualização" on the last area. It is disabled until the current area has a chosen finish.
+
+  > **Emenda 06/11/2026 (R2-M1, the line "Falta dizer onde aplicar na/no …").** On the last area, when "Gerar visualização" is disabled only because another area has no description, a short line sits right above the button, inside the action bar: "Falta dizer onde aplicar na Área 1.".
+  > - **When it shows:** the current area has a description, every other generation condition holds (`canGenerate`), the analysis is not running, and some other area has no text. `areaSemDescricao(zones, atual, { canGenerate })` in `fluxo.ts` returns the first such area. If the current area itself has no text, the line does not show (its own "Descreva onde aplicar" row applies).
+  > - **Wording** (`avisoFaltaDescricao`): "na" before a feminine type or "Área N" ("na Parede 2"), "no" before a masculine type ("no Teto 1"), and "na área “…”" for a name the client typed. One line only: a long name is cut with an ellipsis, never wrapped.
+  > - **Tap:** the whole line is a 44 px button. It goes to that area by zone id (the same rule as M3) and opens its Onde sheet once; closing the sheet does not reopen it. Closing it returns focus to the area heading, because the line that opened it is gone (R2-N1).
+  > - **Chat bubble:** while the line shows, `html[data-viz-barra-aviso]` lifts the site's chat bubble by the measured bar height (`--viz-barra-h`, set by `VizShell`), so it covers neither the line nor the button (R2-N2).
+  > - **Phone fit:** the screen still fits one viewport at 390×844 and 375×667. The 52 px the line adds come out of the photo band and the card photo. While the line shows, their minimums drop to 56 px and 88 px, and the band gives way first (R2-M2).
+  >
+  > Reason: the second review (06/11/2026) found this line in the code with no text in the spec.
 - **"Ajustes" link per area:** a small sheet with surface type (the existing select) and measurements (width and height, optional, the existing fields).
 - Hidden from clients: "SAM2", "Textura exata", "IA com referência", "Superfície detectada", "Redefinir cantos". Keep them only behind `?debug=1` if they are useful to the owner. Corner reset stays reachable through "Ajustes" when it applies.
 
   > **Emenda 06/11/2026 (M4).** The corner reset in "Ajustes" is labelled "Refazer os cantos" and shows for every client (no `?debug=1`) only when it applies: the chosen finish has a `render_texture_path` and the area has a 4-corner quad. It clears the quad (`quad: null`), the same call as the old "Redefinir cantos". The technical label "Redefinir cantos" never renders. Reason: the final review found the reset had ended up behind `?debug=1`, so a client could not reach it.
   >
-  > **Emenda 06/11/2026 (B4, decisão do dono).** The card shows the product's flat texture (`render_texture_path`) when it exists, and otherwise the catalogue photo (`image_path`) with a 1.8 zoom crop centred on the panel. It does not show the uncropped catalogue photo. Reason: the owner chose the texture on 06/11/2026, so the client sees the finish up close; the 1.8 crop of products without a texture may still show a strip of wall until a texture is registered for them (owner data).
+  > **Emenda 06/11/2026 (R2-M3, corrects M4).** "Refazer os cantos" also needs the 4-corner projection to be on (`DETERMINISTIC_PROJECTION` and `useProjection` both true), or `?debug=1`. Today the projection is off, so the client never sees it. Reason: with the projection off the corners do not reach the render, and the button would let a client erase the quad that the detection fallback seeds, with nothing gained. `generate`, `confirmQuad`, detection and the fallback quad seeding do not change.
   >
   > **Emenda 06/11/2026 (M3).** The current area is kept by zone id, not by index. Coming back from the editor keeps the same zone even when an area before it was removed; if the current zone itself was removed, the next one takes its place (the last one when it was the last). Reason: with an index, removing an earlier area made the screen jump to another zone.
 
@@ -132,6 +143,8 @@ The owner's decisions (04/11/2026, verbatim choices):
 - Every control is a real button or input, with targets ≥ 44 px on touch.
 - The full-screen editor is a dialog with focus trap, Esc to close and an `aria-label`. Chips are buttons with `aria-pressed`.
 - Live region announcements for "Área marcada", detection done or failed, and generation progress.
+
+  > **Emenda 06/11/2026 (R2-N3, R2-N4).** The transparent 44 px hit area around the small controls on the photo (area labels, the draw-mode resize handle: `.viz-alvo-toque::before`) applies only under `(pointer: coarse)`. With a mouse it would take a click meant for the photo right next to a label. The whole "Onde" row in Acabamento is one `aria-live="polite"` region, so "Lendo a foto…", the description and "Descreva onde aplicar" are announced when they change, including inside the failure-state button. Reason: second review round (06/11/2026).
 - Reduced motion: no step slide, no card scale, an instant slider.
 - No layout shift on step change. Transform and opacity only, `will-change` only while a transition runs.
 - Brand and copy: humanizer on all new strings; no em dashes, no eyebrow labels, no counters beyond "1 de 2" step context.
