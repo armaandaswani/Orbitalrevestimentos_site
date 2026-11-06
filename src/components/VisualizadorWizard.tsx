@@ -11,6 +11,7 @@ import {
 } from "@/lib/texture-projection";
 import VizShell, { focarEtapa, rolarParaTopo, type AcaoShell } from "./visualizador/VizShell";
 import EtapaFoto from "./visualizador/EtapaFoto";
+import EtapaResultado from "./visualizador/EtapaResultado";
 import {
   ajustarAreaAtual, areaPronta, areaSeguinte, etapaVisivel, podeGerar, rotuloZona, ZONE_COLORS,
   LINE_ORDER, VIZ_SPACES, type ProductLine,
@@ -2143,84 +2144,39 @@ export default function VisualizadorWizard({
           <AcabamentoSemAreas onEditarAreas={editarAreas} />
         ))}
 
-        {step === "result" && (
-          <ResultStep
+        {step === "result" && photoData && (
+          <EtapaResultado
             photoData={photoData}
-            result={result}
-            preview={preview}
-            generating={generating}
-            progress={progress}
-            error={error}
-            leadSubmitted={leadSubmitted}
-            leadName={leadName}
-            leadPhone={leadPhone}
-            onLeadNameChange={setLeadName}
-            onLeadPhoneChange={setLeadPhone}
-            onLeadSubmit={handleLeadSubmit}
-            onChooseModel={() => { setZonePhase("model"); setAreaAtual(0); setStep("zones"); }}
-            onAdjustArea={() => { setZonePhase("mark"); setStep("zones"); setEditorAberto(!marcaNoLugar()); }}
-            onRegenerate={generate}
-            onDownload={download}
-            onAddPhoto={addAnotherPhoto}
-            embeddedMode={embeddedMode}
+            resultado={result}
+            previa={preview}
+            gerando={generating}
+            progresso={progress}
+            erro={error}
+            embutido={embeddedMode}
+            leadEnviado={leadSubmitted}
+            leadNome={leadName}
+            leadTelefone={leadPhone}
+            onNome={setLeadName}
+            onTelefone={setLeadPhone}
+            onEnviarLead={handleLeadSubmit}
+            onConsultor={falarComConsultor}
+            onBaixar={download}
+            onOutroAcabamento={() => { setZonePhase("model"); setAreaAtual(0); setStep("zones"); }}
+            onOutroAmbiente={addAnotherPhoto}
+            onTentarDeNovo={generate}
+            orcamento={
+              ORCAMENTO_INSTANTANEO_VISIVEL && !embeddedMode && allAmbientes.length > 0
+                ? {
+                    pronto: quoteReady && leadSubmitted,
+                    preparando: proceeding,
+                    resumo: `${allAmbientes.length} ${allAmbientes.length === 1 ? "área pronta" : "áreas prontas"} para o orçamento. ${
+                      quoteReady ? "Cada área já vai preenchida, sem digitar nada de novo." : "Informe as medidas das áreas para levar tudo preenchido."
+                    }`,
+                    onContinuar: goToSimulador,
+                  }
+                : null
+            }
           />
-        )}
-
-        {/* Standalone: falar com um consultor (orçamento instantâneo escondido) */}
-        {!ORCAMENTO_INSTANTANEO_VISIVEL && !embeddedMode && allAmbientes.length > 0 && (step === "result" || savedAmbientes.length > 0) && (
-          <div className="mt-10 border border-[#e2e2e2] rounded-sm p-5 sm:p-6 bg-[#fbfbfa]">
-            <p className="text-[10px] tracking-[0.18em] uppercase font-bold text-[#0B1F45] mb-1">
-              Gostou do resultado?
-            </p>
-            <p className="text-[#74777f] text-xs mb-4">
-              Fale com um consultor da Orbital. Ele já recebe os acabamentos que você escolheu.
-            </p>
-            <button
-              type="button"
-              onClick={falarComConsultor}
-              className="w-full sm:w-auto inline-flex items-center justify-center gap-2 bg-[#0B1F45] text-white text-xs tracking-[0.12em] uppercase font-bold px-7 py-3.5 hover:bg-[#2347A0] transition-colors"
-            >
-              Falar com um consultor
-            </button>
-          </div>
-        )}
-
-        {/* Standalone: continue to simulador panel (escondido pelo pivô — ver ORCAMENTO_INSTANTANEO_VISIVEL) */}
-        {ORCAMENTO_INSTANTANEO_VISIVEL && !embeddedMode && allAmbientes.length > 0 && (step === "result" || savedAmbientes.length > 0) && (
-          <div className="mt-10 border border-[#e2e2e2] rounded-sm p-5 sm:p-6 bg-[#fbfbfa]">
-            <p className="text-[10px] tracking-[0.18em] uppercase font-bold text-[#0B1F45] mb-1">
-              Continuar para o orçamento
-            </p>
-            <p className="text-[#74777f] text-xs mb-4">
-              {allAmbientes.length} {allAmbientes.length === 1 ? "área" : "áreas"} pronta{allAmbientes.length === 1 ? "" : "s"} para o orçamento.
-            </p>
-            <div className="flex flex-col sm:flex-row sm:items-center gap-3">
-              {quoteReady && leadSubmitted ? (
-                <button
-                  type="button"
-                  onClick={goToSimulador}
-                  disabled={proceeding}
-                  className="inline-flex items-center justify-center gap-2 bg-[#0B1F45] text-white text-xs tracking-[0.12em] uppercase font-bold px-7 py-3.5 hover:bg-[#2347A0] transition-colors disabled:opacity-70 disabled:cursor-wait"
-                >
-                  <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-                    <rect x="4" y="2" width="16" height="20" rx="2" /><path d="M8 6h8M8 10h8M8 14h4" />
-                  </svg>
-                  {proceeding ? "Preparando…" : "Simular orçamento"}
-                </button>
-              ) : (
-                <span className="inline-flex items-center justify-center gap-2 bg-[#e8e8e6] text-[#a0a3a9] text-xs tracking-[0.12em] uppercase font-bold px-7 py-3.5 cursor-not-allowed">
-                  Simular orçamento
-                </span>
-              )}
-              <p className="text-[#74777f] text-xs leading-relaxed">
-                {!leadSubmitted
-                  ? "Visualize o resultado para continuar."
-                  : quoteReady
-                  ? "Cada área já vai preenchida — sem digitar nada de novo."
-                  : "Informe as medidas das áreas para levar tudo preenchido."}
-              </p>
-            </div>
-          </div>
         )}
       </VizShell>
 
@@ -2344,143 +2300,6 @@ function StepHead({ title, subtitle }: { title: string; subtitle: string }) {
     <div className="mb-4">
       <h2 className="font-serif text-[#0B1F45] text-xl sm:text-2xl leading-tight">{title}</h2>
       <p className="text-[#74777f] text-sm mt-1">{subtitle}</p>
-    </div>
-  );
-}
-
-function ResultStep({
-  photoData, result, preview, generating, progress, error,
-  leadSubmitted, leadName, leadPhone, onLeadNameChange, onLeadPhoneChange, onLeadSubmit,
-  onChooseModel, onAdjustArea, onRegenerate, onDownload, onAddPhoto,
-  embeddedMode,
-}: {
-  photoData: string | null; result: string | null; preview?: string | null; generating: boolean;
-  progress: { i: number; total: number; label: string } | null; error: string | null;
-  leadSubmitted: boolean; leadName: string; leadPhone: string;
-  onLeadNameChange: (v: string) => void; onLeadPhoneChange: (v: string) => void; onLeadSubmit: () => void;
-  onChooseModel: () => void; onAdjustArea: () => void;
-  onRegenerate: () => void; onDownload: () => void; onAddPhoto: () => void;
-  embeddedMode?: boolean;
-}) {
-  const showLeadOverlay = !embeddedMode && !leadSubmitted && !error;
-  // A real WhatsApp number has 8–13 digits (local 8–9 digits, or with DDD /
-  // country code up to 13). Don't enable submit on a single stray digit.
-  const phoneDigits = leadPhone.replace(/\D/g, "").length;
-  const phoneValid = phoneDigits >= 8 && phoneDigits <= 13;
-  const leadReady = leadName.trim().length > 0 && phoneValid;
-  const resultReady = !generating && !!result;
-
-  return (
-    <div className="mt-6">
-      <div className="relative bg-[#11151b] rounded-sm overflow-hidden">
-        {/* eslint-disable-next-line @next/next/no-img-element */}
-        <img src={result ?? (generating ? preview : null) ?? photoData ?? ""} alt={result ? "Visualização gerada" : "Sua foto"}
-          className={`block w-full h-auto${showLeadOverlay && result ? " blur-md scale-[1.02]" : ""}`} />
-        <div className="pointer-events-none absolute top-3 left-3 bg-black/55 backdrop-blur-sm px-3 py-1.5 rounded-full">
-          <p className="text-white/90 text-xs">{result ? "Resultado gerado" : generating && preview ? "Prévia" : "Sua foto"}</p>
-        </div>
-
-        {/* Standalone: lead capture overlay */}
-        {showLeadOverlay && (
-          <div className="absolute inset-0 bg-black/70 flex flex-col items-center justify-center gap-5 px-4 py-8">
-            {generating && (
-              <div className="flex items-center gap-3">
-                <div className="w-7 h-7 border-2 border-white/30 border-t-[#36A35C] rounded-full animate-spin flex-shrink-0" />
-                <p className="text-white text-sm">
-                  {progress ? (progress.total > 1 ? `Aplicando ${progress.label} (${progress.i} de ${progress.total})…` : `Aplicando ${progress.label}…`) : "Gerando…"}
-                </p>
-              </div>
-            )}
-            <div className="bg-white w-full max-w-xs px-5 py-5">
-              {resultReady ? (
-                <><p className="text-[#0B1F45] text-lg leading-snug mb-1">Sua visualização está pronta!</p>
-                  <p className="text-[#74777f] text-sm mb-4">Informe seus dados para ver o resultado.</p></>
-              ) : (
-                <><p className="text-[10px] tracking-[0.18em] uppercase font-bold text-[#0B1F45] mb-1">Enquanto geramos sua visualização</p>
-                  <p className="text-[#74777f] text-xs mb-4">Informe seus dados para receber o resultado.</p></>
-              )}
-              <div className="flex flex-col gap-2.5 mb-4">
-                <input value={leadName} onChange={(e) => onLeadNameChange(e.target.value)} placeholder="Seu nome completo"
-                  className="border border-[#e2e2e2] px-3 py-2.5 text-sm text-[#0B1F45] focus:outline-none focus:border-[#0B1F45] bg-white w-full" />
-                <input value={leadPhone} onChange={(e) => onLeadPhoneChange(e.target.value)} placeholder="WhatsApp (92) 99999-9999"
-                  inputMode="tel" className="border border-[#e2e2e2] px-3 py-2.5 text-sm text-[#0B1F45] focus:outline-none focus:border-[#0B1F45] bg-white w-full"
-                  onKeyDown={(e) => { if (e.key === "Enter" && leadReady) onLeadSubmit(); }} />
-                {phoneDigits > 0 && !phoneValid && (
-                  <p className="text-[#b4791e] text-[11px]">Informe um WhatsApp válido com DDD.</p>
-                )}
-              </div>
-              <button onClick={onLeadSubmit} disabled={!leadReady}
-                className="w-full inline-flex items-center justify-center bg-[#0B1F45] text-white text-xs tracking-[0.12em] uppercase font-bold px-5 py-3 hover:bg-[#2347A0] transition-colors disabled:opacity-40 disabled:cursor-not-allowed">
-                {resultReady ? "Ver resultado →" : "Salvar e aguardar →"}
-              </button>
-            </div>
-          </div>
-        )}
-
-        {/* Spinner shown when generating (standalone: after lead submitted; embedded: always) */}
-        {generating && (leadSubmitted || embeddedMode) && (preview ? (
-          // Prévia do gerador já na tela: só um selo discreto, a imagem fica visível.
-          <div className="absolute left-3 right-3 bottom-3 sm:left-auto sm:right-4 sm:bottom-4 flex items-center gap-2.5 bg-black/70 text-white px-3.5 py-2.5 rounded-sm">
-            <div className="w-4 h-4 border-2 border-white/30 border-t-[#36A35C] rounded-full animate-spin flex-shrink-0" />
-            <p className="text-xs">Prévia — refinando os detalhes…</p>
-          </div>
-        ) : (
-          <div className="absolute inset-0 bg-black/70 flex flex-col items-center justify-center gap-4 text-center px-6">
-            <div className="w-10 h-10 border-2 border-white/30 border-t-[#36A35C] rounded-full animate-spin" />
-            <p className="text-white text-sm">
-              {progress ? (progress.total > 1 ? `Aplicando ${progress.label} (${progress.i} de ${progress.total})…` : `Aplicando ${progress.label}…`) : "Gerando…"}
-            </p>
-            <p className="text-white/60 text-xs">Pode levar até 1 minuto. O resto da foto continua igual.</p>
-          </div>
-        ))}
-      </div>
-
-      {error && <p className="mt-3 text-sm text-[#b42318]">{error}</p>}
-
-      {/* Clear, named next actions — so the client knows exactly what each does
-          (the old "Editar dados/áreas" was ambiguous about swapping the model). */}
-      {!generating && result && (leadSubmitted || embeddedMode) && (
-        <div className="mt-4 space-y-3">
-          {/* Primary — the most common change after seeing the render */}
-          <button onClick={onChooseModel}
-            className="w-full sm:w-auto inline-flex items-center justify-center gap-2 bg-[#36A35C] text-[#0B1F45] text-xs tracking-[0.12em] uppercase font-bold px-6 py-3.5 hover:bg-[#4BB571] transition-colors">
-            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><path d="M3 3h7v7H3zM14 3h7v7h-7zM14 14h7v7h-7zM3 14h7v7H3z" /></svg>
-            Escolher outro modelo
-          </button>
-          <div className="flex flex-wrap gap-2.5">
-            <button onClick={onAdjustArea} className="inline-flex items-center gap-2 border border-[#e2e2e2] text-[#43474e] text-xs tracking-[0.1em] uppercase font-bold px-4 py-2.5 hover:border-[#0B1F45] transition-colors">
-              Ajustar área
-            </button>
-            <button onClick={onAddPhoto} className="inline-flex items-center gap-2 border border-[#e2e2e2] text-[#43474e] text-xs tracking-[0.1em] uppercase font-bold px-4 py-2.5 hover:border-[#0B1F45] transition-colors">
-              Enviar outra foto
-            </button>
-            <button onClick={onDownload} className="inline-flex items-center gap-2 border border-[#e2e2e2] text-[#43474e] text-xs tracking-[0.1em] uppercase font-bold px-4 py-2.5 hover:border-[#0B1F45] transition-colors">
-              <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><path d="M21 15v4a2 2 0 01-2 2H5a2 2 0 01-2-2v-4M7 10l5 5 5-5M12 15V3" /></svg>
-              Salvar imagem
-            </button>
-            <button onClick={onRegenerate} className="inline-flex items-center gap-2 border border-[#e2e2e2] text-[#74777f] text-xs tracking-[0.1em] uppercase font-bold px-4 py-2.5 hover:border-[#0B1F45] transition-colors">
-              Gerar novamente
-            </button>
-          </div>
-        </div>
-      )}
-
-      {/* Error (no result) — recovery actions */}
-      {!generating && !result && !!error && (
-        <div className="mt-4 flex flex-wrap gap-2.5">
-          <button onClick={onRegenerate} className="inline-flex items-center gap-2 bg-[#0B1F45] text-white text-xs tracking-[0.12em] uppercase font-bold px-6 py-3 hover:bg-[#2347A0] transition-colors">
-            Tentar novamente
-          </button>
-          <button onClick={onAdjustArea} className="inline-flex items-center gap-2 border border-[#e2e2e2] text-[#43474e] text-xs tracking-[0.1em] uppercase font-bold px-4 py-2.5 hover:border-[#0B1F45] transition-colors">
-            Ajustar área
-          </button>
-          <button onClick={onChooseModel} className="inline-flex items-center gap-2 border border-[#e2e2e2] text-[#43474e] text-xs tracking-[0.1em] uppercase font-bold px-4 py-2.5 hover:border-[#0B1F45] transition-colors">
-            Escolher outro modelo
-          </button>
-        </div>
-      )}
-
-      <p className="mt-3 text-[#a0a3a9] text-xs">A imagem gerada é uma simulação e pode diferir do resultado real.</p>
     </div>
   );
 }

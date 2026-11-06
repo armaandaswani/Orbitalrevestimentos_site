@@ -1863,6 +1863,30 @@ html.mv-cursor:has([data-lupa="aberta"]) .mv-cursor-corpo { opacity: 0; }
   .viz-acab-faixa[data-animar] .viz-faixa-mov { transition: transform var(--mv-base) var(--mv-chegada); }
 }
 
+/* Resultado (EtapaResultado, AntesDepois): o quadro da foto e o antes e depois
+   têm a proporção da foto e cabem na tela com o título e a ação principal à
+   vista (no celular, a altura da tela menos ~420 px, com 220 px no mínimo; no
+   computador até 560 px). A camada "depois" é recortada por --div (0 a 100) com clip-path; a
+   linha e a alça andam com transform. Sem transição no arrasto: o recorte
+   segue o dedo. A linha fina de progresso corre de lado enquanto gera; o antes
+   e depois entra com um fade curto. Com movimento reduzido, nada se move. */
+.viz-shell { --viz-res-h: max(220px, calc(100svh - 420px)); }
+@media (min-width: 1024px) {
+  .viz-shell { --viz-res-h: min(560px, calc(100svh - 300px)); }
+}
+.viz-res-quadro, .viz-antes-depois { width: min(100%, calc(var(--viz-res-h) * var(--proporcao, 1.3333))); }
+.viz-depois { clip-path: inset(0 0 0 calc(var(--div) * 1%)); }
+.viz-divisoria { transform: translate3d(calc(var(--div) * 1%), 0, 0); }
+.viz-progresso-barra { transform: translate3d(100%, 0, 0); }
+@keyframes viz-progresso {
+  from { transform: translate3d(-100%, 0, 0); }
+  to { transform: translate3d(300%, 0, 0); }
+}
+@media (prefers-reduced-motion: no-preference) {
+  .viz-progresso-barra { animation: viz-progresso 1400ms ease-in-out infinite; }
+  .viz-revela { animation: viz-area-entra var(--mv-base) var(--mv-chegada) both; }
+}
+
 /* Barra de ação presa embaixo no celular: o balão do chat sobe acima dela. */
 @media (max-width: 1023.98px) {
   html[data-viz-barra-presa] [data-chat-flutuante] { translate: 0 calc(-3.75rem - env(safe-area-inset-bottom)); }

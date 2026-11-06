@@ -5,7 +5,9 @@
 // título) para baixo mais de 80 px fecham. Aberta, trava a rolagem da página
 // com o mesmo contador das outras folhas do site (ds/useDialogo › travarRolagem,
 // que põe overflow:hidden no body). O painel sobe com transform; com movimento
-// reduzido, aparece e some no lugar (globals.css › Visualizador).
+// reduzido, aparece e some no lugar (globals.css › Visualizador). Com
+// fechavel={false} (o contato que libera o resultado) nada disso fecha: sem ✕,
+// sem Esc, sem véu e sem arrasto; ela some quando o wizard tira `aberta`.
 import React, { useEffect, useId, useRef, useState } from "react";
 import { createPortal } from "react-dom";
 import { travarRolagem } from "@/components/ds/useDialogo";
@@ -25,11 +27,13 @@ export default function Folha({
   aberta,
   titulo,
   onFechar,
+  fechavel = true,
   children,
 }: {
   aberta: boolean;
   titulo: string;
   onFechar: () => void;
+  fechavel?: boolean;
   children: React.ReactNode;
 }) {
   // Continua montada durante a saída, para o painel descer antes de sumir.
@@ -40,7 +44,7 @@ export default function Folha({
   const painelRef = useRef<HTMLDivElement | null>(null);
   const tituloId = useId();
   const onFecharRef = useRef(onFechar);
-  useEffect(() => { onFecharRef.current = onFechar; });
+  useEffect(() => { onFecharRef.current = fechavel ? onFechar : () => {}; });
 
   // Saída: desmonta quando a transição do painel termina (com folga de tempo).
   useEffect(() => {
@@ -88,7 +92,7 @@ export default function Folha({
   const arrasto = useRef<{ y0: number; dy: number } | null>(null);
   const comecarArrasto = (e: React.TouchEvent) => {
     const painel = painelRef.current;
-    if (!painel || e.touches.length !== 1) return;
+    if (!fechavel || !painel || e.touches.length !== 1) return;
     arrasto.current = { y0: e.touches[0].clientY, dy: 0 };
     painel.setAttribute("data-arrastando", "");
   };
@@ -125,7 +129,7 @@ export default function Folha({
         {/* Área de arrasto: a alça e a linha do título. */}
         <div
           data-folha-arrasto
-          className="shrink-0 cursor-grab"
+          className={`shrink-0 ${fechavel ? "cursor-grab" : ""}`}
           onTouchStart={comecarArrasto}
           onTouchMove={moverArrasto}
           onTouchEnd={soltarArrasto}
@@ -134,9 +138,9 @@ export default function Folha({
         <div className="flex h-7 items-center justify-center">
           <span aria-hidden className="h-1 w-10 rounded-full bg-[#d5d9e0]" />
         </div>
-        <div className="flex items-center justify-between gap-3 pl-5 pr-2">
+        <div className={`flex items-center justify-between gap-3 pl-5 pr-2 ${fechavel ? "" : "min-h-11 pr-5"}`}>
           <h2 id={tituloId} className="font-serif text-xl leading-tight text-[#0B1F45]">{titulo}</h2>
-          <button
+          {fechavel && <button
             type="button"
             onClick={() => onFecharRef.current()}
             aria-label="Fechar"
@@ -145,7 +149,7 @@ export default function Folha({
             <svg aria-hidden width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round">
               <path d="M18 6L6 18M6 6l12 12" />
             </svg>
-          </button>
+          </button>}
         </div>
         </div>
         <div className="min-h-0 flex-1 overflow-y-auto overscroll-contain px-5 pt-2 pb-[calc(1.5rem+env(safe-area-inset-bottom))]">
