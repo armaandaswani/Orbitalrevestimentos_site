@@ -89,12 +89,16 @@ The owner's decisions (04/11/2026, verbatim choices):
 
   > **Emenda 06/11/2026 (M4).** The corner reset in "Ajustes" is labelled "Refazer os cantos" and shows for every client (no `?debug=1`) only when it applies: the chosen finish has a `render_texture_path` and the area has a 4-corner quad. It clears the quad (`quad: null`), the same call as the old "Redefinir cantos". The technical label "Redefinir cantos" never renders. Reason: the final review found the reset had ended up behind `?debug=1`, so a client could not reach it.
   >
+  > **Emenda 06/11/2026 (B4, decisão do dono).** The card shows the product's flat texture (`render_texture_path`) when it exists, and otherwise the catalogue photo (`image_path`) with a 1.8 zoom crop centred on the panel. It does not show the uncropped catalogue photo. Reason: the owner chose the texture on 06/11/2026, so the client sees the finish up close; the 1.8 crop of products without a texture may still show a strip of wall until a texture is registered for them (owner data).
+  >
   > **Emenda 06/11/2026 (M3).** The current area is kept by zone id, not by index. Coming back from the editor keeps the same zone even when an area before it was removed; if the current zone itself was removed, the next one takes its place (the last one when it was the last). Reason: with an index, removing an earlier area made the screen jump to another zone.
 
 ### 3.5 Resultado
 
 - **While generating:** the photo stays. A thin progress line shows "Aplicando <acabamento> em <área> (1 de 2)", using the existing `progress`. Calm: no blocking spinner modal.
 - **Lead capture (standalone, before reveal):** a bottom sheet over the blurred result with name and WhatsApp. Same validation and API as today.
+
+  > **Emenda 06/11/2026 (B1a, decisão do dono).** The lead sheet is mandatory and cannot be closed: the client sees the result only after sending name and WhatsApp. "Falar com um consultor" appears only after the reveal. In 7078a52 a client with a finished render could tap the consultant button under the image and go to WhatsApp without filling the form; that path is removed on purpose. Reason: the owner chose on 06/11/2026 to keep the form mandatory so every client who sees a result arrives as a lead.
 - **Reveal:** a before/after slider. Drag a vertical handle; it starts at 50%. The handle is a ≥ 44 px target and keyboard operable (arrows). The slider is implemented with `clip-path: inset()` on the "depois" layer, driven by a CSS var.
 - **Actions:**
   - primary "Falar com um consultor" (existing WhatsApp flow with the per-zone caption);
