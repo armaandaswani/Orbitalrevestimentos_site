@@ -36,9 +36,15 @@ The owner's decisions (04/11/2026, verbatim choices):
   - **Top:** a slim progress bar with four labels: Foto · Marcar · Acabamento · Resultado. "Voltar" sits top left from step 2 on.
   - **Bottom:** one fixed primary action, safe-area aware (`env(safe-area-inset-bottom)`).
   - **Between them:** the content, which scrolls on its own when it is taller than the space.
+
+  > **Emenda 06/11/2026 (M1).** The primary action bar is `position: sticky; bottom: 0` inside the tool, not `position: fixed`. It stays in view the whole time the client is inside the Visualizador, and when the page scrolls on to "Como funciona" it leaves with the tool. Reason: a fixed bar would sit over "Como funciona" and the closing CTA; the code (`VizShell`) does this and the owner's rule ("the action is always in reach") still holds.
 - **Step change:** the outgoing screen fades out and moves 16 px. The incoming one fades in from 16 px the other way. Duration is `--mv-base` with `--mv-chegada`. Transform and opacity only. Instant under reduced motion. Focus moves to the new step heading.
+
+  > **Emenda 06/11/2026 (M7).** Only the incoming screen animates (fade plus 16 px, from the right going forward and from the left going back). The outgoing screen is removed at once, with no exit animation. Reason: this is what the code does (the step container is keyed by step); an exit animation would keep two screens mounted and shift the layout.
 - The "Como funciona" block and the closing CTA section move below the tool. They are never between the steps.
 - **Desktop (≥ 1024 px):** the same steps, two columns. The photo sits on the left and is sticky. Steps, cards and the primary action sit on the right. Marking happens in place on the photo, because a mouse has no scroll conflict. The bottom bar is not fixed on desktop.
+
+  > **Emenda 06/11/2026 (M5).** Marking in place needs both a fine pointer and a width of at least 1024 px (`marcaNoLugar()`: `(min-width: 1024px)` and not `(pointer: coarse)`). A touch tablet, even in landscape at 1024 px or more, uses the full-screen editor. Reason: a finger on a tablet has the same scroll conflict as on a phone; the code was changed for this in Task 4 and the spec still said "≥ 1024 px".
 
 ### 3.2 Foto
 
@@ -50,6 +56,8 @@ The owner's decisions (04/11/2026, verbatim choices):
 
 - A fixed overlay (`position: fixed; inset: 0`, dark `#0B1F45` background) with the photo fitted (contain) in the middle.
   - Page scroll is locked while it is open: the `overflow: hidden` on `html` is restored on close.
+
+    > **Emenda 06/11/2026 (B3).** The lock is the site's own `travarRolagem()` (`src/components/ds/useDialogo.ts`). It sets `overflow: hidden` on `body`, not on `html`, and it counts locks, so the editor and a sheet can overlap safely. There is no `useTravaRolagem`. The check after every exit is `document.body.style.overflow === ""`. Reason: Ruling 2 in the SDD ledger (04/11) chose to reuse the site's lock; the spec was never updated. The real risk (iOS Safari with a body-only lock) stays for the test on a real phone.
   - `touch-action: none` applies on the photo only.
   - Top bar: ✕ (close and discard new marks only if the client confirms) and "Pronto".
 - **Tap** marks a surface, using the existing `onTapPhoto` and detection pipeline, and outlines it in its zone colour. While detection runs there is a soft pulse at the tap point. No spinner overlay over the whole photo.
@@ -62,6 +70,8 @@ The owner's decisions (04/11/2026, verbatim choices):
 - **Automatic description:** the existing analysis (the `confirm` phase's call and its `zones[].instruction` and `keepText`) runs in the background as soon as marking is done.
   - In Acabamento, each area shows one line, "Onde: <instruction>", with an "Editar" link that opens a small sheet holding the existing textarea. "Manter igual" lives in the same sheet.
   - If the analysis fails, the line says "Descreva onde aplicar" and opens the sheet. Generation stays blocked until every area has a text, as today.
+
+    > **Emenda 06/11/2026 (N1).** "As today" was wrong: before this redesign an empty description was optional in the model phase. Now an empty description blocks "Gerar visualização". This is intentional (review focus 4): the render must never go out with an empty description. When the analysis fails and the area has no text, the whole "Descreva onde aplicar" line is a button that opens the Onde sheet (N4). "Próxima área" needs only a chosen finish; the description can be written later, and "Gerar visualização" stays blocked until every area has one (M2).
 
 ### 3.4 Acabamento (one area at a time)
 
@@ -77,6 +87,10 @@ The owner's decisions (04/11/2026, verbatim choices):
 - **"Ajustes" link per area:** a small sheet with surface type (the existing select) and measurements (width and height, optional, the existing fields).
 - Hidden from clients: "SAM2", "Textura exata", "IA com referência", "Superfície detectada", "Redefinir cantos". Keep them only behind `?debug=1` if they are useful to the owner. Corner reset stays reachable through "Ajustes" when it applies.
 
+  > **Emenda 06/11/2026 (M4).** The corner reset in "Ajustes" is labelled "Refazer os cantos" and shows for every client (no `?debug=1`) only when it applies: the chosen finish has a `render_texture_path` and the area has a 4-corner quad. It clears the quad (`quad: null`), the same call as the old "Redefinir cantos". The technical label "Redefinir cantos" never renders. Reason: the final review found the reset had ended up behind `?debug=1`, so a client could not reach it.
+  >
+  > **Emenda 06/11/2026 (M3).** The current area is kept by zone id, not by index. Coming back from the editor keeps the same zone even when an area before it was removed; if the current zone itself was removed, the next one takes its place (the last one when it was the last). Reason: with an index, removing an earlier area made the screen jump to another zone.
+
 ### 3.5 Resultado
 
 - **While generating:** the photo stays. A thin progress line shows "Aplicando <acabamento> em <área> (1 de 2)", using the existing `progress`. Calm: no blocking spinner modal.
@@ -89,6 +103,8 @@ The owner's decisions (04/11/2026, verbatim choices):
   - "Adicionar outro ambiente" (existing `onAddPhoto`);
   - "Continuar para o orçamento" where it exists today.
 - **Embedded mode:** keeps the automatic advance to the quote after the first successful render. No lead sheet.
+
+  > **Emenda 06/11/2026 (B1c, B2, N7, Q2).** "Falar com um consultor" (in Resultado and in the shortcut of the next room) shows only while `ORCAMENTO_INSTANTANEO_VISIVEL` is false; with the flag on, only the quote block shows, as in 7078a52. In embedded mode the shell has no stepper and no full-page "Voltar"; Marcar shows a compact in-flow link "Trocar foto" and Acabamento a compact "Voltar", both calling the wizard's `voltar`, with nothing fixed. The lead sheet button reads "Salvar e aguardar" while the render is still generating and "Ver resultado" once it is ready. The generated image's alt is "Simulação gerada por IA da mesma foto com o acabamento escolhido", and the note "A imagem gerada é uma simulação e pode diferir do resultado real." sits right under the before/after control in the site's secondary text colour. Reason: final review (06/11/2026); the engine outcomes do not change.
 
 ## 4. Architecture
 
@@ -137,6 +153,19 @@ The owner's decisions (04/11/2026, verbatim choices):
   - Embedded mode in `/simulador` still reaches the quote.
 - **Harness:** `scripts/medir-movimento.mjs` on `/visualizador` at upload state, iphone-15-pro and desktop-1440, `--cpu 4`. No regression against the current page.
 - **Review:** task reviews per SDD, then a final whole-branch review before publishing. Publishing to `main` needs the owner's explicit OK.
+
+## 6a. Behaviour in the code that this spec did not describe
+
+> **Emenda 06/11/2026 (N3, N11 and the Goldfish list of uncovered code).** These behaviours exist in the branch and are intended. They are recorded here so the spec matches the code. Reason: the final whole-branch review found them in the code with no line in the spec.
+
+- **`AtalhoConsultor`.** With a room already saved, the Foto, Marcar and Acabamento steps of the next room keep a discreet shortcut at the end of the step content, above the action bar: "Falar com um consultor" while the instant quote is hidden, or only "Continuar para o orçamento" when `ORCAMENTO_INSTANTANEO_VISIVEL` is on. Resultado has its own button and does not show it.
+- **`rotuloZona`.** An area is called "Área N" until the client chooses its surface type in "Ajustes". After that it is the type plus its order among areas of that type ("Parede 1", "Teto 1"), or the client's own text for "Outro…". A label the client typed wins. Display only: the zone `label` sent to the analysis and the render does not change.
+- **`FaixaFoto`.** On phones the Acabamento photo is a band of fixed height, the width of the content, cropped like `object-fit: cover` and centred on the current area with a transform. Only the current area has full colour, the others are almost faded, and there are no text labels (the name is in the heading below). On "Próxima área" the photo slides to the new area (instant under reduced motion). Desktop shows the whole photo in the left column.
+- **A sheet that cannot be closed.** The lead sheet that unlocks the result is a `Folha` with `fechavel={false}`: no ✕, no Esc and no swipe-down close it while it blocks the reveal.
+- **`AcabamentoSemAreas`.** If every area is removed in the editor, Acabamento shows "Nenhuma área marcada" with a "Marcar as áreas" link, never a blank screen, and the action bar reopens the marking.
+- **The "Outros" tab.** Products whose line is outside Classic, Brilliance and Elegance appear under an "Outros" tab, so they never disappear. A line with no products has no tab. The default tab follows the finish already chosen for the area.
+- **Editor history.** Opening the full-screen editor pushes one history entry. The browser back button closes the editor and keeps the client on the page; closing by ✕, Esc or "Pronto" removes that entry. While the entry exists, scroll restoration is manual, so leaving it never sends the page back to an old position.
+- **Chat bubble above the bar.** While the standalone action bar is shown, `html[data-viz-barra-presa]` lifts the site's chat bubble so it does not cover the primary button. In embedded mode there is no lift.
 
 ## 7. Out of scope
 

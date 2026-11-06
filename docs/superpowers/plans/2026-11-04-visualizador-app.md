@@ -29,8 +29,10 @@
 
 1. **A touch drag that starts on the photo outside the editor** (Acabamento, Resultado, desktop static view) scrolls the page and never creates a zone. Owned by Task 4: a Playwright touch-drag test.
 2. **Leaving the full-screen editor any way other than "Pronto"** (✕, Esc, browser back, step change, unmount) always restores page scrolling. Owned by Task 4: a test for each exit path asserting `document.documentElement.style.overflow === ""`.
+   > **Emenda 06/11/2026 (B3).** The assertion is `document.body.style.overflow === ""`. The lock is the site's `travarRolagem()` (`src/components/ds/useDialogo.ts`, counted, on `body`), per Ruling 2 of the ledger (04/11); `useTravaRolagem` was never created. `checks/viz-marcar.mjs` already asserts on `body`. Reason: the plan kept the pre-ruling wording.
 3. **Removing the area that is currently shown in Acabamento,** or removing the last area, never leaves an out-of-range current index or a blank screen. Owned by Task 1 (`areaSeguinte` and `ajustarAreaAtual` unit tests) and Task 5 (a browser check).
 4. **Analysis fails or is offline.** Each area shows "Descreva onde aplicar", opens the Onde sheet, and "Gerar visualização" stays disabled until every area has text. Owned by Task 1 (`podeGerar` tests) and Task 5 (an intercepted 500 response).
+   > **Emenda 06/11/2026 (N1, N4, M2).** Blocking "Gerar" on an empty description is a change from before the redesign (it used to be optional in the model phase), and it is intentional. In the failure case the whole "Descreva onde aplicar" line is a button that opens the Onde sheet. "Próxima área" needs only a chosen finish (`podeIrParaProximaArea`); "Gerar visualização" keeps the full `podeGerar` gate. Reason: final review (06/11/2026); the earlier per-area gate stopped a client who wanted to pick every finish first.
 5. **Embedded in `/simulador` on a phone.** No fixed bar overlapping the simulator's own controls, no lead sheet, and the quote still opens after the first render. Owned by Task 7: a browser check of the full embedded path with mocked endpoints.
 
 ---
@@ -83,8 +85,11 @@
     - The `acao` button sits in a bottom bar: fixed with `env(safe-area-inset-bottom)` on < 1024 px when not `embutido`; in flow otherwise.
     - `lateral` renders as a sticky left column on ≥ 1024 px (the photo).
     - On step change, content enters with a fade plus 16 px slide (`data-etapa` attribute, CSS), and focus moves to the step `h2` (`tabIndex={-1}`).
+      > **Emenda 06/11/2026 (M7).** Only the incoming screen animates; the outgoing one is removed at once (the step container is keyed by step). Reason: the spec described an exit animation the code never had.
     - **No scroll hunting (owner, 04/11: "I click next, then I start all the way down, then I have to scroll up").** On every step change, the window scrolls so the shell's top sits just under the site header: smooth, or instant under reduced motion; embedded mode scrolls to the shell top inside `/simulador`. Export `rolarParaTopo(el: HTMLElement): void` from `VizShell.tsx` so Task 5 can reuse it for "Próxima área".
     - **The primary action is always visible on phones** (fixed bar), so the client never scrolls to find "Continuar".
+      > **Emenda 06/11/2026 (M1).** The bar is `sticky` (bottom 0) inside the tool, not `fixed`: always in view while the client is in the Visualizador, and it leaves with the tool when the page scrolls on to "Como funciona". In embedded mode it is in flow. Reason: this is what `VizShell` does; a fixed bar would cover the content below the tool.
+      > **Emenda 06/11/2026 (B2).** In embedded mode the shell has no stepper and no full-page "Voltar", but Marcar shows a compact in-flow link "Trocar foto" and Acabamento a compact "Voltar" (`rotuloVoltar`), both calling the wizard's `voltar`. Nothing is fixed and the simulator's own controls stay uncovered. Reason: final review found no way back inside the embed.
     - Owner, 04/11: "there are some spaces that are like dead, I can't scroll". No element outside the full-screen editor may have `touch-action: none` or block vertical pan.
   - `Folha(props: { aberta: boolean; titulo: string; onFechar: () => void; children: React.ReactNode })`.
     - `role="dialog"`, `aria-modal`, labelled by its title.
@@ -132,6 +137,8 @@
 - Create: `src/components/visualizador/useTravaRolagem.ts`
 - Modify: `src/components/VisualizadorWizard.tsx`: mark phase via the editor on phones and in place on desktop; delete the visible "confirm" screen; add `concluirMarcacao`.
 
+> **Emenda 06/11/2026 (B3).** `useTravaRolagem.ts` does not exist. Per Ruling 2 of the ledger (04/11), the editor locks scrolling through `useDialogo` and the site's `travarRolagem()` (counted, `overflow: hidden` on `body`). Wherever this task says `useTravaRolagem` or `documentElement.style.overflow`, read `travarRolagem()` and `document.body.style.overflow`. Reason: the ruling was taken before Task 4 and the plan text was not updated. The dead `"confirm"` phase was also removed from `zonePhase` on 06/11/2026 (N8), with the scroll effect that only ran on it.
+
 **Interfaces:**
 - Produces:
   - `SurfaceCanvas` keeps today's props and adds `interativo: boolean`. When `false`: no pointer or click handlers are attached, the root has no `touch-action: none`, the zone label buttons are not rendered as buttons, and the photo is a plain image (`touch-action: auto`).
@@ -147,6 +154,7 @@
   - Wizard: `concluirMarcacao()`. It closes the editor, sets `zonePhase` to `"model"`, sets the current area to 0, and calls `analyze()` in the background when `analysis.sig !== marksSig || analysis.status === "error"` (the same rule as today's `goConfirm`).
     - Phones (< 1024 px): after a photo, open the editor automatically. "Editar áreas" in Acabamento reopens it.
     - Desktop: the mark phase shows the photo in the left column with `SurfaceCanvas interativo` in place, and the right column holds the hint, chips and the action "Continuar" (calls `concluirMarcacao`).
+    > **Emenda 06/11/2026 (M5).** "Desktop" means a fine pointer and at least 1024 px (`marcaNoLugar()`). Any touch device, a tablet in landscape included, uses the full-screen editor. Reason: the code was changed in the Task 4 review (coarse-pointer touch flow); the plan still split by width only.
 
 - [ ] **Step 1: Failing tests:**
   - `checks/viz-marcar.mjs` (Playwright, `hasTouch`, 390×844, mocked detection endpoint returning a polygon), with these cases:
@@ -179,11 +187,14 @@
     - A scroll-snap row of cards.
     - The "Onde:" line shows `zona.instruction`. While `analise === "loading"` it reads "Lendo a foto…". When the text is empty it reads "Descreva onde aplicar", and "Editar" opens the Onde `Folha` (the instruction textarea plus "Manter igual" bound to `keepText`).
     - The "Ajustes" link opens a `Folha` with the surface select (`VIZ_SPACES`, "Outro…" with a custom label) and the width/height fields (existing sanitizing), plus "Redefinir cantos" only when it applies today.
+      > **Emenda 06/11/2026 (M4).** The button reads "Refazer os cantos" and shows without `?debug=1`, only when the chosen finish has a `render_texture_path` and the zone has a `quad`. It calls the same `quad: null` update. Reason: it had ended up behind `?debug=1`, out of the client's reach.
     - Technical labels render only when `depurar` is set.
     - "Editar áreas" calls `onEditarAreas`.
   - Wizard: `areaAtual: number`, kept valid with `ajustarAreaAtual` whenever `zones.length` changes.
+    > **Emenda 06/11/2026 (M3).** The wizard keeps the current area by zone id plus its last index (`indiceDaArea` in `fluxo.ts`, with tests). Back from the editor it stays on the same zone even if an earlier area was removed; if the current zone was removed, the next one takes its place. Reason: an index made the screen jump to another zone after a removal.
     - The photo in the left column or top highlights `zones[areaAtual]` (pass `activeZoneId`).
     - Shell action: "Próxima área" when `areaSeguinte` is not null and `areaPronta(zona)`; else "Gerar visualização" (green), enabled by `podeGerar(zones, { canGenerate })` and calling `generate`.
+      > **Emenda 06/11/2026 (M2).** "Próxima área" is enabled by `podeIrParaProximaArea(zona)` (a chosen finish), not `areaPronta`. "Gerar visualização" keeps `podeGerar` plus "analysis not running". Reason: final review; review focus 4 is unchanged.
     - **Phone fit:** on phones the Acabamento screen fits one viewport without vertical scrolling at 390×844 and 375×667:
       - the photo is capped at about 34svh (contain);
       - then the area header, the line tabs, the card row (horizontal scroll only) and the "Onde" line;
@@ -222,6 +233,7 @@
     - While generating: the photo plus a thin line "Aplicando <progresso.label> (i de total)", inside an `aria-live="polite"` region.
     - Standalone and not `leadEnviado`: a `Folha` (it cannot be closed while it blocks the reveal) with name and WhatsApp, using today's validation (8–13 digits) and the copy "Informe seus dados para ver o resultado." with the button "Ver resultado".
     - After the reveal: `AntesDepois(photoData, resultado)`, then the actions: primary "Falar com um consultor" (`onConsultor`), then "Baixar imagem", "Testar outro acabamento", "Adicionar outro ambiente", and the `orcamento` block when it is not null.
+      > **Emenda 06/11/2026 (B1c, N7, Q2).** `onConsultor` is optional: the wizard passes it only while `ORCAMENTO_INSTANTANEO_VISIVEL` is false (the rule of 7078a52), and the same applies to `AtalhoConsultor`; with the flag on only the quote block shows. The lead button reads "Salvar e aguardar" while generating and "Ver resultado" when the render is ready. The generated image's alt is "Simulação gerada por IA da mesma foto com o acabamento escolhido", and the simulation note sits right under `AntesDepois`, in the site's secondary text colour (`text-on-surface-variant`). Reason: final review (06/11/2026); engine outcomes unchanged.
     - The error state keeps today's message, with a "Tentar de novo" button that calls the existing regenerate.
 - Wizard mapping:
   - `onOutroAcabamento` sets `zonePhase` to `"model"`, `areaAtual` to 0 and the step to `"zones"`.
