@@ -13,12 +13,12 @@ import { ZONE_COLORS } from "./fluxo";
 export type ZoneMode = "tap" | "draw";
 
 export default function SurfaceCanvas({
-  photoData, zones, activeZoneId, setActiveZoneId, mode: modoPedido, onTapPhoto, onDrawRect, updateZone, busy, retargeting, onConfirmQuad,
+  photoData, zones, activeZoneId, setActiveZoneId, mode: modoPedido, onTapPhoto, onDrawRect, updateZone, retargeting, onConfirmQuad,
   interativo, rotulos, destaque = "todas",
 }: {
   photoData: string; zones: Zone[]; activeZoneId: string | null; setActiveZoneId: (id: string | null) => void;
   mode: ZoneMode; onTapPhoto: (nx: number, ny: number) => void; onDrawRect: (rect: Rect) => void;
-  updateZone: (id: string, patch: Partial<Zone>) => void; busy: boolean; retargeting: boolean;
+  updateZone: (id: string, patch: Partial<Zone>) => void; retargeting: boolean;
   onConfirmQuad: (id: string) => void;
   /** Falso fora do editor: a foto vira imagem comum e a rolagem passa por cima. */
   interativo: boolean;
@@ -247,14 +247,6 @@ export default function SurfaceCanvas({
       {draft && draft.w > 0 && (
         <div style={{ left: `${draft.x * 100}%`, top: `${draft.y * 100}%`, width: `${draft.w * 100}%`, height: `${draft.h * 100}%` }}
           className="absolute border-2 border-dashed border-white bg-white/10 pointer-events-none" />
-      )}
-      {busy && (
-        <div className="absolute inset-0 bg-black/40 flex items-center justify-center pointer-events-none">
-          <div className="flex items-center gap-2 bg-black/70 px-4 py-2 rounded-full">
-            <div className="w-4 h-4 border-2 border-white/30 border-t-[#36A35C] rounded-full animate-spin" />
-            <span className="text-white text-xs">Detectando superfície…</span>
-          </div>
-        </div>
       )}
     </div>
   );

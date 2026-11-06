@@ -41,8 +41,7 @@ export interface VizProduct {
 }
 
 // LINE_ORDER e VIZ_SPACES moram em visualizador/fluxo (o Acabamento também usa,
-// sem importar valores daqui) e seguem exportados por este módulo.
-export { LINE_ORDER, VIZ_SPACES };
+// sem importar valores daqui).
 export const FINISH_BY_LINE: Record<ProductLine, FinishKind> = {
   Classic: "matte",
   Brilliance: "polished",
@@ -113,7 +112,7 @@ export interface Zone {
   aiText?: string;
 }
 
-export interface SimPrefill {
+interface SimPrefill {
   productCode: string;
   spaceId: string;
   w?: number;
@@ -1060,12 +1059,6 @@ export default function VisualizadorWizard() {
     return () => cancelAnimationFrame(raf);
   }, [editorAberto]);
 
-  // Área recém-criada. Antes a página rolava até o cartão dela; agora as áreas
-  // nascem no editor (ou na marcação no lugar), onde não há cartão, e a rolagem
-  // atrasada podia puxar o Acabamento para baixo logo depois do Pronto. Os
-  // handlers de marcação continuam gravando aqui; nada mais lê.
-  const scrollZoneRef = useRef<string | null>(null);
-
   // ── File upload ───────────────────────────────────────────────────────────
   // Linha discreta da etapa Foto com o que veio do Simulador (produto · espaço).
   const resumoSimulador = useMemo(() => {
@@ -1339,7 +1332,6 @@ export default function VisualizadorWizard() {
         instruction: "", width: pf.width, height: pf.height, detecting: true,
       }]);
       setActiveZoneId(id);
-      scrollZoneRef.current = id;
       void detectInto(id, idx, nx, ny);
     },
     [photoData, zones.length, detectInto, resolveZonePrefill]
@@ -1376,7 +1368,6 @@ export default function VisualizadorWizard() {
         instruction: "", width: pf.width, height: pf.height, detecting: SURFACE_DETECTION,
       }]);
       setActiveZoneId(id);
-      scrollZoneRef.current = id;
       if (SURFACE_DETECTION) void detectIntoFromBox(id, idx, rect);
     },
     [zones.length, resolveZonePrefill, detectIntoFromBox]
@@ -1392,7 +1383,6 @@ export default function VisualizadorWizard() {
       instruction: "", width: pf.width, height: pf.height, detecting: false,
     }]);
     setActiveZoneId(id);
-    scrollZoneRef.current = id;
   }, [zones.length, resolveZonePrefill]);
 
   // "Atualizar pontos": re-run SAM2 over the box the user framed with the 4
@@ -1852,7 +1842,7 @@ export default function VisualizadorWizard() {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [photoData, zones, productById, useProjection, keepText]);
 
-  // ── Lead submit (standalone mode) ─────────────────────────────────────────
+  // ── Lead submit ───────────────────────────────────────────────────────────
   const handleLeadSubmit = useCallback(() => {
     if (!leadName.trim() || !leadPhone.trim()) return;
     pendingLeadRef.current = { name: leadName.trim(), phone: leadPhone.trim() };
@@ -1876,7 +1866,7 @@ export default function VisualizadorWizard() {
     a.click();
   };
 
-  // ── Standalone: multi-photo and "go to simulador" ─────────────────────────
+  // ── Multi-photo and "go to simulador" ─────────────────────────────────────
   const currentAmbientes = useCallback(
     (thumb: string, isRender: boolean): SavedAmbiente[] =>
       zones.filter((z) => z.productId).map((z) => {
@@ -2229,7 +2219,7 @@ function FotoParada({ photoData, zones, rotulos, activeZoneId, onEditar }: {
         interativo={false}
         photoData={photoData} zones={zones} rotulos={rotulos} activeZoneId={activeZoneId} setActiveZoneId={nada}
         mode="tap" onTapPhoto={nada} onDrawRect={nada} updateZone={nada}
-        busy={false} retargeting={false} onConfirmQuad={nada}
+        retargeting={false} onConfirmQuad={nada}
       />
       </div>
       <div className="mt-1 flex items-center gap-4">

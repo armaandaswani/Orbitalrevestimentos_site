@@ -157,7 +157,7 @@ function FotoInteira({ photoData, zones, rotulos, zonaAtualId }: {
         interativo={false}
         photoData={photoData} zones={zones} rotulos={rotulos} activeZoneId={zonaAtualId} setActiveZoneId={nada}
         mode="tap" onTapPhoto={nada} onDrawRect={nada} updateZone={nada}
-        busy={false} retargeting={false} onConfirmQuad={nada}
+        retargeting={false} onConfirmQuad={nada}
       />
     </div>
   );
@@ -205,7 +205,7 @@ function FaixaFoto({ photoData, zones, zonaAtualId }: { photoData: string; zones
           destaque="atual"
           photoData={photoData} zones={zones} activeZoneId={zonaAtualId} setActiveZoneId={nada}
           mode="tap" onTapPhoto={nada} onDrawRect={nada} updateZone={nada}
-          busy={false} retargeting={false} onConfirmQuad={nada}
+          retargeting={false} onConfirmQuad={nada}
         />
       </div>
     </div>

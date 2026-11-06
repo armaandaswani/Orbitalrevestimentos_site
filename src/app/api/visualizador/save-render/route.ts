@@ -107,8 +107,9 @@ export async function POST(req: NextRequest) {
     phone?: string;
     // All zones the client visualized, for the WhatsApp caption (multi-zone).
     items?: VisualizadorItem[];
-    // Used by the embedded orçamento flow: save the render for the quote, but
-    // do not send the standalone Visualizador WhatsApp messages.
+    // Save the render without sending the Visualizador WhatsApp messages. Still
+    // accepted by the API, but no client sends it today (the Visualizador that
+    // was embedded in the Simulador, its only user, was removed).
     suppressWhatsapp?: boolean;
   };
   try {

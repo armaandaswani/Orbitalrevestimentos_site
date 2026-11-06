@@ -114,7 +114,6 @@ export function FotoMarcavel({
         onTapPhoto={(nx, ny) => { setToque({ x: nx, y: ny }); onTapPhoto(nx, ny); }}
         onDrawRect={onDrawRect}
         updateZone={updateZone}
-        busy={false}
         retargeting={retargeting}
         onConfirmQuad={onConfirmQuad}
       />
