@@ -45,8 +45,12 @@ The owner's decisions (04/11/2026, verbatim choices):
 - **Step change:** the outgoing screen fades out and moves 16 px. The incoming one fades in from 16 px the other way. Duration is `--mv-base` with `--mv-chegada`. Transform and opacity only. Instant under reduced motion. Focus moves to the new step heading.
 
   > **Emenda 06/11/2026 (M7).** Only the incoming screen animates (fade plus 16 px, from the right going forward and from the left going back). The outgoing screen is removed at once, with no exit animation. Reason: this is what the code does (the step container is keyed by step); an exit animation would keep two screens mounted and shift the layout.
+
+  > **Emenda 06/11/2026 (R4-MA, R4-ND).** When the new step opens with a modal sheet already up (the mandatory lead sheet that appears with Resultado after "Gerar visualização"), the page still scrolls to the shell top, but focus stays inside the sheet instead of moving to the step heading. When that sheet closes (result revealed, or contact saved while generating), focus moves to the Resultado `h2`, because the "Gerar visualização" button that opened it no longer exists. Focus handling only; the engine and the lead flow do not change. Reason: fourth review round (06/11/2026); the step focus took focus away from the sheet, so keyboard and screen-reader users started outside the form they had to fill.
 - The "Como funciona" block and the closing CTA section move below the tool. They are never between the steps.
-- **Desktop (≥ 1024 px):** the same steps, two columns. The photo sits on the left and is sticky. Steps, cards and the primary action sit on the right. Marking happens in place on the photo, because a mouse has no scroll conflict. The bottom bar is not fixed on desktop.
+- **Desktop (≥ 1024 px):** the same steps, two columns. The photo sits on the left and is sticky. Steps, cards and the primary action sit on the right. Marking happens in place on the photo, because a mouse has no scroll conflict. The bottom bar is not fixed on desktop. **[Superado em 06/11/2026: only Marcar in place and Acabamento have two columns; see the R4-MB emenda below]**
+
+  > **Emenda 06/11/2026 (R4-MB).** On desktop only Marcar (when marking happens in place, see M5 below) and Acabamento use two columns, with the sticky photo on the left (`VizShell` gets `lateral` and widens to `max-w-[1280px]`). Foto and Resultado are one centred column (`max-w-2xl`): Foto has no photo yet, and Resultado shows the before/after itself in the content. Reason: fourth review round (06/11/2026); the spec said "the same steps, two columns", which the code never did for those two steps.
 
   > **Emenda 06/11/2026 (M5).** Marking in place needs both a fine pointer and a width of at least 1024 px (`marcaNoLugar()`: `(min-width: 1024px)` and not `(pointer: coarse)`). A touch tablet, even in landscape at 1024 px or more, uses the full-screen editor. Reason: a finger on a tablet has the same scroll conflict as on a phone; the code was changed for this in Task 4 and the spec still said "≥ 1024 px".
 
@@ -120,6 +124,8 @@ The owner's decisions (04/11/2026, verbatim choices):
 - **Lead capture (standalone, before reveal):** a bottom sheet over the blurred result with name and WhatsApp. Same validation and API as today.
 
   > **Emenda 06/11/2026 (B1a, decisão do dono).** The lead sheet is mandatory and cannot be closed: the client sees the result only after sending name and WhatsApp. "Falar com um consultor" appears only after the reveal. In 7078a52 a client with a finished render could tap the consultant button under the image and go to WhatsApp without filling the form; that path is removed on purpose. Reason: the owner chose on 06/11/2026 to keep the form mandatory so every client who sees a result arrives as a lead.
+
+  > **Emenda 06/11/2026 (R4-NA, extends B1a).** The quote block ("Continuar para o orçamento", shown only when `ORCAMENTO_INSTANTANEO_VISIVEL` is on), like "Falar com um consultor", appears in Resultado only after the reveal; its button is also enabled only once the lead was sent (`pronto` needs `leadSubmitted`). Reason: fourth review round (06/11/2026); B1a named only the consultant, and the code treats both the same.
 - **Reveal:** a before/after slider. Drag a vertical handle; it starts at 50%. The handle is a ≥ 44 px target and keyboard operable (arrows). The slider is implemented with `clip-path: inset()` on the "depois" layer, driven by a CSS var.
 - **Actions:**
   - primary "Falar com um consultor" (existing WhatsApp flow with the per-zone caption);
@@ -156,6 +162,12 @@ The owner's decisions (04/11/2026, verbatim choices):
 
   > **Emenda 06/11/2026 (decisão do dono: modo embutido removido).** There is no `/simulador` embed and no `embeddedMode`: only `/visualizador` renders the wizard, with no props. See the emenda in §2.
 
+  > **Emenda 06/11/2026 (R4-NB).** `src/components/visualizador/` also holds two files the list above leaves out:
+  > - `fluxo.ts`: the pure flow rules with no React (step/phase mapping, the "can advance" and "can generate" rules, the current area by id `indiceDaArea`, the client-facing area names `rotuloZona`, the missing-description line `areaSemDescricao`/`avisoFaltaDescricao`, the slider clamp and keyboard step, plus the line order, surface types and zone colours), tested by `fluxo.test.mjs` with the node runner (§6).
+  > - `AtalhoConsultor.tsx`: with a room already saved, the discreet shortcut to the consultant (or only to the quote, when `ORCAMENTO_INSTANTANEO_VISIVEL` is on) at the end of Foto, Marcar and Acabamento of the next room; Resultado has its own button.
+  >
+  > Reason: fourth review round (06/11/2026); both files exist in the branch and the architecture list did not name them.
+
 ## 5. Accessibility and quality
 
 - Every control is a real button or input, with targets ≥ 44 px on touch.
@@ -178,6 +190,8 @@ The owner's decisions (04/11/2026, verbatim choices):
   - 390×844, 375×667 and 1440×900;
   - a local test photo (no production uploads);
   - detection and render endpoints mocked with route interception (no paid API calls).
+
+  > **Emenda 06/11/2026 (R4-NC).** The Playwright checks (`checks/viz-shell.mjs`, `viz-marcar.mjs`, `viz-acabamento.mjs`, `viz-resultado.mjs`, `viz-consultor-salvo.mjs`, `simulador-sem-visualizador.mjs`) live in the session scratchpad (`<scratchpad>/checks/`, run with node), as Task 2 of the plan already says. They are temporary and are not in the repository; only `fluxo.test.mjs` (`npm run test:movimento`) is. Reason: fourth review round (06/11/2026); the spec did not say where the checks live, and a reader would look for them in the repository.
 - **Checks:**
   - Scrolling with a touch drag that starts on the photo, in Acabamento and Resultado, never creates a zone.
   - The editor locks page scroll and restores it on close.
