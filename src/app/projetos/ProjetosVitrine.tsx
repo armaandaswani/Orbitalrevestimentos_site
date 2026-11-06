@@ -75,6 +75,9 @@ function Conteudo({
   const visor = useVisor();
   const [categoria, setCategoria] = useState("todos");
   const [busca, setBusca] = useState("");
+  // Lido no voltar do navegador: com busca, a lista inclui os ambientes dos showrooms e passa do teto das obras.
+  const buscaAtual = useRef("");
+  useEffect(() => { buscaAtual.current = busca; }, [busca]);
   const [mostrar, setMostrar] = useState(POR_VEZ);
   const [mostrarRenders, setMostrarRenders] = useState(POR_VEZ);
   // A grade só esmaece na troca de categoria, nunca ao carregar (não atrasa a primeira foto).
@@ -167,7 +170,8 @@ function Conteudo({
       const slug = q.get("categoria");
       const cat = slug && cats.some((c) => c.slug === slug) ? slug : "todos";
       const total = obras.filter((p) => cat === "todos" || secoesDoProjeto(p).includes(cat)).length;
-      const n = limitarVer(Number(q.get("ver")), total);
+      // Com busca, não corta: o cartão que acabou de fechar pode estar além do teto das obras.
+      const n = limitarVer(Number(q.get("ver")), buscaAtual.current.trim() ? Number.MAX_SAFE_INTEGER : total);
       // A grade esperou invisível por esta leitura: entra com o véu.
       if (document.getElementById(ESTILO_ESPERA_URL)) setTrocou(true);
       setCategoria(cat);

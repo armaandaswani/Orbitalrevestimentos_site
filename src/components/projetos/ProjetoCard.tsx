@@ -42,13 +42,17 @@ export default function ProjetoCard({
           className="mv-zoom"
           style={coverStyle(projeto.cover_focus_x, projeto.cover_focus_y, projeto.cover_zoom)} />
         {(projeto.is_new || temAntes) && (
-          <span className="absolute top-2 left-2 right-2 flex flex-wrap gap-1">
+          // Selos só para quem vê: o leitor de tela ouve o título primeiro e os selos depois dele.
+          <span aria-hidden className="absolute top-2 left-2 right-2 flex flex-wrap gap-1">
             {projeto.is_new && <span className={selo}>Novo</span>}
             {temAntes && <span className={selo}>Antes e depois</span>}
           </span>
         )}
       </span>
       <span className="font-serif text-primary text-[1.0625rem] sm:text-lg leading-snug mt-2.5 line-clamp-2">{projeto.title}</span>
+      {(projeto.is_new || temAntes) && (
+        <span className="sr-only">{[projeto.is_new && ", novo", temAntes && ", antes e depois"].filter(Boolean).join("")}</span>
+      )}
       {detalhe && <span className="text-on-surface-variant text-[13px] leading-snug mt-1 truncate">{detalhe}</span>}
     </>
   ) : (

@@ -484,7 +484,7 @@ html:has(header[data-site][data-oculto="1"]) .ds-sob-cabecalho { top: 0; }
    em 5rem e só o transform anda, no mesmo tempo do .mv-cabecalho. Com a busca
    em foco (teclado na tela) ou o foco do teclado dentro dela, ela não some: só
    sobe para o lugar do cabeçalho. Um chip tocado não prende a barra. */
-@media (width < 40rem) {
+@media (width < 40rem), (height < 30rem) {
   html:has(header[data-site][data-oculto="1"]) .ds-sob-cabecalho.ds-some-no-celular {
     top: 5rem;
     transform: translate3d(0, calc(-100% - 5rem), 0);
@@ -494,7 +494,7 @@ html:has(header[data-site][data-oculto="1"]) .ds-sob-cabecalho { top: 0; }
     transform: translate3d(0, -5rem, 0);
   }
 }
-@media (width < 40rem) and (prefers-reduced-motion: no-preference) {
+@media ((width < 40rem) or (height < 30rem)) and (prefers-reduced-motion: no-preference) {
   .ds-sob-cabecalho.ds-some-no-celular { transition: transform var(--mv-base) var(--mv-chegada); }
 }
 
