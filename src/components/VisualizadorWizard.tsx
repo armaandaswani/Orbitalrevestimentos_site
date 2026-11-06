@@ -14,7 +14,7 @@ import EtapaFoto from "./visualizador/EtapaFoto";
 import EtapaResultado from "./visualizador/EtapaResultado";
 import AtalhoConsultor from "./visualizador/AtalhoConsultor";
 import {
-  ajustarAreaAtual, areaPronta, areaSeguinte, etapaVisivel, podeGerar, rotuloZona, ZONE_COLORS,
+  areaSeguinte, etapaVisivel, indiceDaArea, podeGerar, podeIrParaProximaArea, rotuloZona, ZONE_COLORS,
   LINE_ORDER, VIZ_SPACES, type ProductLine,
 } from "./visualizador/fluxo";
 import EtapaAcabamento, { AcabamentoSemAreas, FotoAcabamento } from "./visualizador/EtapaAcabamento";
@@ -881,8 +881,8 @@ function buildSimuladorUrl(ambientes: SavedAmbiente[]): string {
 // ── Wizard step type ──────────────────────────────────────────────────────────
 
 export type VizStep = "upload" | "zones" | "result";
-// "zones" is internally split into three phases (mark → confirm → model). The
-// shell shows four visible steps (visualizador/fluxo.ts › etapaVisivel).
+// "zones" is internally split into two phases (mark → model). The shell shows
+// four visible steps (visualizador/fluxo.ts › etapaVisivel).
 
 // ── Props ──────────────────────────────────────────────────────────────────────
 
@@ -952,7 +952,7 @@ export default function VisualizadorWizard({
   //   mark  → mark/draw the areas (full-screen editor on phones, in place on desktop)
   //   model → pick the finish, then Gerar. The analysis that used to have its own
   //           "confirm" screen now runs in the background (concluirMarcacao).
-  const [zonePhase, setZonePhase] = useState<"mark" | "confirm" | "model">("mark");
+  const [zonePhase, setZonePhase] = useState<"mark" | "model">("mark");
   const [photoData, setPhotoData] = useState<string | null>(null);
   const [photoDims, setPhotoDims] = useState<{ w: number; h: number } | null>(null);
   const [zones, setZones] = useState<Zone[]>([]);
@@ -994,11 +994,17 @@ export default function VisualizadorWizard({
   const marcarTipoEscolhido = useCallback((id: string) => {
     setTiposEscolhidos((cur) => (cur.has(id) ? cur : new Set(cur).add(id)));
   }, []);
-  // Acabamento, uma área por vez: índice da área mostrada, sempre válido para o
-  // número de áreas (remover a atual no editor cai na vizinha; sem áreas, 0).
-  const [areaAtualPedida, setAreaAtual] = useState(0);
-  const areaAtual = ajustarAreaAtual(areaAtualPedida, zones.length);
-  if (areaAtual !== areaAtualPedida) setAreaAtual(areaAtual);
+  // Acabamento, uma área por vez: a área mostrada é guardada pelo id da zona.
+  // Voltar do editor fica na mesma zona, mesmo que uma área antes dela tenha
+  // saído; se ela saiu, cai na seguinte (sem áreas, 0). O índice guardado junto
+  // acompanha a zona e só serve para achar a seguinte.
+  const [areaPedida, setAreaPedida] = useState<{ id: string | null; indice: number }>({ id: null, indice: 0 });
+  const areaAtual = indiceDaArea(zones.map((z) => z.id), areaPedida);
+  const idAreaAtual = zones[areaAtual]?.id ?? null;
+  if (idAreaAtual !== areaPedida.id || areaAtual !== areaPedida.indice) setAreaPedida({ id: idAreaAtual, indice: areaAtual });
+  const irParaArea = useCallback((i: number) => {
+    setAreaPedida({ id: zones[i]?.id ?? null, indice: i });
+  }, [zones]);
   // Rótulos técnicos (SAM2, tipo de render, cantos) só com ?debug=1 (falso no servidor).
   const depurar = useSyncExternalStore(
     nadaParaAssinar,
@@ -1072,34 +1078,23 @@ export default function VisualizadorWizard({
   }, []);
 
   // ── Scroll helpers ────────────────────────────────────────────────────────
-  // VizShell rolls back to its top on every visible-step change. Phase changes
-  // inside the same visible step (confirm ↔ model) roll here, so the next
-  // screen never starts halfway down the page.
+  // VizShell rolls back to its top on every visible-step change. The anchor
+  // below marks the shell (its next sibling) for the in-step scrolls here.
   const etapa = etapaVisivel(step, zonePhase);
   const topRef = useRef<HTMLDivElement | null>(null);
-  const etapaAnterior = useRef(etapa);
-  const faseAnterior = useRef(zonePhase);
-  useEffect(() => {
-    const mesmaEtapa = etapaAnterior.current === etapa;
-    const mudouFase = faseAnterior.current !== zonePhase;
-    etapaAnterior.current = etapa;
-    faseAnterior.current = zonePhase;
-    if (!mesmaEtapa || !mudouFase || !topRef.current) return;
-    rolarParaTopo(topRef.current);
-    // The shell is the next sibling of the anchor; focus the new phase heading.
-    const shell = topRef.current.nextElementSibling;
-    if (shell instanceof HTMLElement) focarEtapa(shell);
-  }, [etapa, zonePhase]);
 
   // Próxima área (ou Voltar entre áreas): a troca é no lugar, e a página volta
   // ao topo do shell para a foto e os cartões da área nova começarem à vista;
-  // o foco vai para o título da área.
+  // o foco vai para o título da área. Com o editor aberto o índice também muda
+  // quando sai uma área (antes da atual ou a própria): aí nada rola nem rouba o
+  // foco do editor; ao fechar, o efeito do editor devolve a página ao topo.
   const areaAnterior = useRef(areaAtual);
   useEffect(() => {
     const mudou = areaAnterior.current !== areaAtual;
     areaAnterior.current = areaAtual;
     const shell = topRef.current?.nextElementSibling;
     if (!mudou || !(shell instanceof HTMLElement) || !shell.querySelector("[data-viz-acabamento]")) return;
+    if (document.querySelector("[data-viz-editor]")) return;
     rolarParaTopo(shell);
     focarEtapa(shell);
   }, [areaAtual]);
@@ -1150,7 +1145,7 @@ export default function VisualizadorWizard({
       setPhotoDims(w && h ? { w, h } : null);
       setResult(null);
       setZones([]);
-      setAreaAtual(0);
+      setAreaPedida({ id: null, indice: 0 });
       setActiveZoneId(null);
       setLeadSubmitted(embeddedMode);
       vizRenderIdRef.current = "";
@@ -1578,8 +1573,8 @@ export default function VisualizadorWizard({
     setEditorAberto(false);
     setRetargetId(null);
     setZonePhase("model");
-    // Depois de "Editar áreas" o cliente volta para a mesma área (ajustada se
-    // ela saiu); a área 1 só volta a ser a atual com uma foto nova.
+    // Depois de "Editar áreas" o cliente volta para a mesma área (pelo id; se
+    // ela saiu, a seguinte); a área 1 só volta a ser a atual com uma foto nova.
     if (analysis.sig !== marksSig || analysis.status === "error") void analyze();
   }, [analysis, marksSig, analyze]);
 
@@ -1621,8 +1616,8 @@ export default function VisualizadorWizard({
   const zonaAtual: Zone | undefined = zones[areaAtual];
   const proximaArea = areaSeguinte(areaAtual, zones.length);
   const irParaProximaArea = useCallback(() => {
-    if (proximaArea !== null) setAreaAtual(proximaArea);
-  }, [proximaArea]);
+    if (proximaArea !== null) irParaArea(proximaArea);
+  }, [proximaArea, irParaArea]);
   const atualizarZonaAtual = useCallback((patch: Partial<Zone>) => {
     if (!zonaAtual) return;
     if (patch.surface !== undefined) marcarTipoEscolhido(zonaAtual.id);
@@ -2033,7 +2028,7 @@ export default function VisualizadorWizard({
       ? () => {
           if (zonePhase === "mark") setStep("upload");
           // No Acabamento, cada área é uma tela: Voltar passa pela área anterior.
-          else if (areaAtual > 0) setAreaAtual(areaAtual - 1);
+          else if (areaAtual > 0) irParaArea(areaAtual - 1);
           else setZonePhase("mark");
         }
       : step === "result" && !generating
@@ -2055,16 +2050,19 @@ export default function VisualizadorWizard({
           : anyAreaMarked
             ? { rotulo: "Continuar", onClick: concluirMarcacao }
             : { rotulo: "Marcar as áreas", onClick: () => setEditorAberto(true) }
-        // Acabamento: "Próxima área" até a última (só com modelo e descrição da
-        // área atual), depois "Gerar visualização". Sem áreas, volta a marcar.
+        // Acabamento: "Próxima área" até a última (basta o acabamento da área
+        // atual; a descrição pode vir depois), depois "Gerar visualização", que
+        // exige acabamento e descrição em todas. Sem áreas, volta a marcar.
         : !zonaAtual
           ? { rotulo: "Marcar as áreas", onClick: editarAreas }
           : proximaArea !== null
-            ? { rotulo: "Próxima área", onClick: irParaProximaArea, desabilitada: !areaPronta(zonaAtual) }
+            ? { rotulo: "Próxima área", onClick: irParaProximaArea, desabilitada: !podeIrParaProximaArea(zonaAtual) }
             : { rotulo: "Gerar visualização", onClick: generate, desabilitada: !podeGerarAgora, tom: "verde" };
 
-  // Orçamento instantâneo (escondido hoje pelo pivô): o mesmo bloco no
-  // Resultado e no atalho das outras etapas.
+  // Consultor ou orçamento, nunca os dois (regra de 7078a52): com o orçamento
+  // instantâneo escondido (pivô), "Falar com um consultor"; com ele visível, só
+  // o bloco do orçamento, no Resultado e no atalho das outras etapas.
+  const consultorVisivel = !ORCAMENTO_INSTANTANEO_VISIVEL;
   const orcamento =
     ORCAMENTO_INSTANTANEO_VISIVEL && !embeddedMode && allAmbientes.length > 0
       ? {
@@ -2087,7 +2085,10 @@ export default function VisualizadorWizard({
       <VizShell
         etapa={etapa}
         embutido={embeddedMode}
-        onVoltar={voltar}
+        // No /simulador só Marcar e Acabamento têm o link de volta (compacto, no
+        // fluxo): "Trocar foto" na marcação, "Voltar" no Acabamento.
+        onVoltar={embeddedMode && step !== "zones" ? undefined : voltar}
+        rotuloVoltar={embeddedMode && zonePhase === "mark" ? "Trocar foto" : "Voltar"}
         acao={acao}
         lateral={marcacaoNoLugar && photoData ? (
           <FotoMarcavel
@@ -2175,19 +2176,19 @@ export default function VisualizadorWizard({
             onNome={setLeadName}
             onTelefone={setLeadPhone}
             onEnviarLead={handleLeadSubmit}
-            onConsultor={falarComConsultor}
+            onConsultor={consultorVisivel ? falarComConsultor : undefined}
             onBaixar={download}
-            onOutroAcabamento={() => { setZonePhase("model"); setAreaAtual(0); setStep("zones"); }}
+            onOutroAcabamento={() => { setZonePhase("model"); irParaArea(0); setStep("zones"); }}
             onOutroAmbiente={addAnotherPhoto}
             onTentarDeNovo={generate}
             orcamento={orcamento}
           />
         )}
 
-        {/* Próximo ambiente com um já salvo: o atalho para o consultor (e para o
-            orçamento, quando visível) continua nas outras etapas, como antes. */}
+        {/* Próximo ambiente com um já salvo: o atalho para o consultor (ou para
+            o orçamento, quando visível) continua nas outras etapas, como antes. */}
         {!embeddedMode && step !== "result" && savedAmbientes.length > 0 && (
-          <AtalhoConsultor onConsultor={falarComConsultor} orcamento={orcamento} />
+          <AtalhoConsultor onConsultor={consultorVisivel ? falarComConsultor : undefined} orcamento={orcamento} />
         )}
       </VizShell>
 
@@ -2304,7 +2305,7 @@ function FotoParada({ photoData, zones, rotulos, activeZoneId, onEditar }: {
   );
 }
 
-// Small step heading used across the guided phases — the "what to do now" cue.
+// Small step heading used across the guided phases: the "what to do now" cue.
 function StepHead({ title, subtitle }: { title: string; subtitle: string }) {
   return (
     <div className="mb-4">

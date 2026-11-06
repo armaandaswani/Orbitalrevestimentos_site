@@ -1798,6 +1798,14 @@ html.mv-cursor:has([data-lupa="aberta"]) .mv-cursor-corpo { opacity: 0; }
 .viz-editor :focus-visible { outline: 2px solid rgba(255, 255, 255, 0.85); outline-offset: 2px; }
 .viz-chips::-webkit-scrollbar { display: none; }
 .viz-pulso { width: 48px; height: 48px; margin: -24px 0 0 -24px; }
+/* Alvo de toque de 44 px em volta de um controle pequeno sobre a foto (rótulo
+   da área, alça de canto da caixa), sem mudar o desenho: o pseudo-elemento é
+   transparente e centrado no controle (que já é position: absolute). */
+.viz-alvo-toque::before {
+  content: ""; position: absolute; left: 50%; top: 50%;
+  width: max(100%, 44px); height: max(100%, 44px);
+  transform: translate(-50%, -50%);
+}
 /* anel (animado) e ponto (parado) */
 .viz-pulso::before {
   content: ""; position: absolute; inset: 0; border-radius: 9999px;
@@ -1874,7 +1882,7 @@ html.mv-cursor:has([data-lupa="aberta"]) .mv-cursor-corpo { opacity: 0; }
 @media (min-width: 1024px) {
   .viz-shell { --viz-res-h: min(560px, calc(100svh - 300px)); }
 }
-.viz-res-quadro, .viz-antes-depois { width: min(100%, calc(var(--viz-res-h) * var(--proporcao, 1.3333))); }
+.viz-res-quadro, .viz-antes-depois, .viz-res-nota { width: min(100%, calc(var(--viz-res-h) * var(--proporcao, 1.3333))); }
 .viz-depois { clip-path: inset(0 0 0 calc(var(--div) * 1%)); }
 .viz-divisoria { transform: translate3d(calc(var(--div) * 1%), 0, 0); }
 .viz-progresso-barra { transform: translate3d(100%, 0, 0); }

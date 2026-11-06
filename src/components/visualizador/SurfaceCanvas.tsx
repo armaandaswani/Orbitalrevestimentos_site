@@ -119,7 +119,7 @@ export default function SurfaceCanvas({
             style={z.point
               ? { left: `calc(${(z.rect.x + z.rect.w / 2) * 100}% + 16px)`, top: `${(z.rect.y + z.rect.h / 2) * 100}%`, background: color }
               : { left: `${z.rect.x * 100}%`, top: `${z.rect.y * 100}%`, background: color }}
-            className="absolute -translate-y-1/2 text-white text-[10px] font-bold px-1.5 py-0.5 rounded-sm">
+            className="viz-alvo-toque absolute -translate-y-1/2 text-white text-[10px] font-bold px-1.5 py-0.5 rounded-sm">
             {rotulos?.[i] ?? z.label}
           </button>
           ) : (
@@ -177,7 +177,8 @@ export default function SurfaceCanvas({
                   drag.current = { kind: "resize", id: z.id, x: rect.x, y: rect.y };
                 }}
                 style={{ background: color }}
-                className="absolute -bottom-2 -right-2 w-4 h-4 rounded-full border-2 border-white cursor-nwse-resize" />
+                data-viz-alca
+                className="viz-alvo-toque absolute -bottom-2 -right-2 w-4 h-4 rounded-full border-2 border-white cursor-nwse-resize" />
             )}
           </div>
         );
@@ -200,7 +201,7 @@ export default function SurfaceCanvas({
               onPointerDown={(e) => e.stopPropagation()}
               onClick={(e) => { e.stopPropagation(); updateZone(az.id, { quadConfirmed: false }); }}
               style={{ left: `${cx * 100}%`, top: `${cy * 100}%` }}
-              className="absolute -translate-x-1/2 -translate-y-1/2 bg-black/70 hover:bg-black/85 text-white text-[10px] font-bold px-3 py-1.5 rounded-full whitespace-nowrap shadow-md">
+              className="absolute -translate-x-1/2 -translate-y-1/2 inline-flex min-h-11 items-center bg-black/70 hover:bg-black/85 text-white text-[10px] font-bold px-3 rounded-full whitespace-nowrap shadow-md">
               ✎ Editar cantos
             </button>
           );
@@ -224,7 +225,8 @@ export default function SurfaceCanvas({
                 }}
                 onClick={(e) => e.stopPropagation()}
                 style={{ left: `${x * 100}%`, top: `${y * 100}%` }}
-                className="absolute -translate-x-1/2 -translate-y-1/2 w-10 h-10 flex items-center justify-center cursor-grab active:cursor-grabbing touch-none">
+                data-viz-canto
+                className="absolute -translate-x-1/2 -translate-y-1/2 w-11 h-11 flex items-center justify-center cursor-grab active:cursor-grabbing touch-none">
                 <span className="w-5 h-5 rounded-full bg-white border-2 border-[#0B1F45] shadow-md" />
               </span>
             ))}
@@ -233,7 +235,7 @@ export default function SurfaceCanvas({
               onPointerDown={(e) => e.stopPropagation()}
               onClick={(e) => { e.stopPropagation(); onConfirmQuad(az.id); }}
               style={{ left: `${cx * 100}%`, top: `${cy * 100}%` }}
-              className="absolute -translate-x-1/2 -translate-y-1/2 bg-[#36A35C] hover:bg-[#4BB571] text-[#0B1F45] text-[11px] font-bold px-4 py-2 rounded-full whitespace-nowrap shadow-lg">
+              className="absolute -translate-x-1/2 -translate-y-1/2 inline-flex min-h-11 items-center bg-[#36A35C] hover:bg-[#4BB571] text-[#0B1F45] text-[11px] font-bold px-4 rounded-full whitespace-nowrap shadow-lg">
               ✓ Atualizar pontos
             </button>
             <div className="absolute bottom-2 left-1/2 -translate-x-1/2 bg-black/70 text-white text-[10px] px-3 py-1 rounded-full pointer-events-none whitespace-nowrap">

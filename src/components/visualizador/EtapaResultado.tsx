@@ -3,9 +3,10 @@
 // Resultado: enquanto gera, a foto fica na tela com uma linha fina de progresso
 // (aria-live). No site, antes de revelar, a folha do contato (nome e WhatsApp,
 // a mesma validação de antes) fica por cima do resultado borrado e não fecha
-// sozinha. Revelado: o antes e depois e as ações, com "Falar com um consultor"
-// à frente. No erro, a mensagem de sempre e "Tentar de novo". Só apresentação:
-// gerar, enviar o contato, baixar e o orçamento são do wizard.
+// sozinha. Revelado: o antes e depois com o aviso de simulação logo abaixo e
+// as ações, com "Falar com um consultor" à frente (ou só o orçamento, quando
+// ele está visível). No erro, a mensagem de sempre e "Tentar de novo". Só
+// apresentação: gerar, enviar o contato, baixar e o orçamento são do wizard.
 import React from "react";
 import AntesDepois from "./AntesDepois";
 import Folha from "./Folha";
@@ -15,7 +16,7 @@ const ROTULO = "block text-[11px] font-bold uppercase tracking-[0.14em] text-[#5
 const CAMPO =
   "mt-1.5 w-full rounded-sm border border-[#dfe2e6] bg-white px-3 py-2.5 text-[16px] text-[#0B1F45] placeholder:text-[#8c9098] focus:border-[#0B1F45] focus:outline-none";
 const PRIMARIO =
-  "inline-flex min-h-12 w-full items-center justify-center gap-2 bg-[#0B1F45] px-6 text-xs font-bold uppercase tracking-[0.12em] text-white transition-colors hover:bg-[#2347A0] disabled:cursor-not-allowed disabled:bg-[#e8e8e6] disabled:text-[#8c9098]";
+  "inline-flex min-h-12 w-full items-center justify-center gap-2 bg-[#0B1F45] px-6 text-xs font-bold uppercase tracking-[0.12em] text-white hover:bg-[#2347A0] disabled:cursor-not-allowed disabled:bg-[#e8e8e6] disabled:text-[#8c9098]";
 const LINK =
   "inline-flex min-h-11 items-center text-[13px] font-semibold text-[#0B1F45] underline decoration-[#0B1F45]/25 underline-offset-4 hover:text-[#2347A0] hover:decoration-[#2347A0]/40";
 
@@ -50,7 +51,8 @@ export default function EtapaResultado({
   onNome: (v: string) => void;
   onTelefone: (v: string) => void;
   onEnviarLead: () => void;
-  onConsultor: () => void;
+  /** Sem ele (orçamento instantâneo visível), não há "Falar com um consultor". */
+  onConsultor?: () => void;
   onBaixar: () => void;
   onOutroAcabamento: () => void;
   onOutroAmbiente: () => void;
@@ -89,6 +91,14 @@ export default function EtapaResultado({
       {revelado && resultado ? (
         <div className="viz-revela">
           <AntesDepois antes={photoData} depois={resultado} />
+          {/* Logo abaixo da comparação, na largura dela. */}
+          <p
+            data-viz-aviso-simulacao
+            className="viz-res-nota mx-auto mt-2 text-xs text-on-surface-variant"
+            style={{ "--proporcao": proporcao } as React.CSSProperties}
+          >
+            A imagem gerada é uma simulação e pode diferir do resultado real.
+          </p>
         </div>
       ) : (
         <div
@@ -98,7 +108,7 @@ export default function EtapaResultado({
           {/* eslint-disable-next-line @next/next/no-img-element */}
           <img
             src={fotoQuadro}
-            alt={resultado ? "Visualização gerada" : "Sua foto"}
+            alt={resultado ? "Simulação gerada por IA da mesma foto com o acabamento escolhido" : "Sua foto"}
             className="absolute inset-0 h-full w-full object-cover"
             style={borrar ? { filter: "blur(14px)", transform: "scale(1.06)" } : undefined}
           />
@@ -143,7 +153,7 @@ export default function EtapaResultado({
 
       {revelado && (
         <div className="mt-4">
-          {!embutido && (
+          {!embutido && onConsultor && (
             <div>
               <button type="button" onClick={onConsultor} className={`${PRIMARIO} lg:w-auto lg:min-w-[320px]`}>
                 <svg aria-hidden width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round">
@@ -186,8 +196,6 @@ export default function EtapaResultado({
               </button>
             </div>
           )}
-
-          <p className="mt-4 text-xs text-[#8c9098]">A imagem gerada é uma simulação e pode diferir do resultado real.</p>
         </div>
       )}
 
@@ -235,8 +243,9 @@ export default function EtapaResultado({
             {telefone.digitos > 0 && !telefone.valido && (
               <p className="-mt-1 text-[13px] text-[#9a5b0b]">Informe um WhatsApp válido com DDD.</p>
             )}
+            {/* Enquanto gera, o contato fica salvo e o resultado abre sozinho. */}
             <button type="submit" disabled={!contatoPronto} className={`${PRIMARIO} mt-2`}>
-              Ver resultado
+              {gerando ? "Salvar e aguardar" : "Ver resultado"}
             </button>
           </form>
         </Folha>
@@ -250,7 +259,7 @@ function AcaoSecundaria({ onClick, rotulo, children }: { onClick: () => void; ro
     <button
       type="button"
       onClick={onClick}
-      className="flex min-h-12 w-full items-center gap-3 px-1 text-left text-[14px] font-medium text-[#0B1F45] transition-colors hover:text-[#2347A0] sm:justify-center sm:px-3 sm:text-center"
+      className="flex min-h-12 w-full items-center gap-3 px-1 text-left text-[14px] font-medium text-[#0B1F45] hover:text-[#2347A0] sm:justify-center sm:px-3 sm:text-center"
     >
       <svg aria-hidden width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.7" strokeLinecap="round" strokeLinejoin="round" className="shrink-0 text-[#5b5f66]">
         {children}

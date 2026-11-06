@@ -18,11 +18,11 @@ type Analise = "idle" | "loading" | "done" | "error";
 
 const ROTULO = "block text-[11px] font-bold uppercase tracking-[0.14em] text-[#5b5f66]";
 const CAMPO =
-  "w-full rounded-sm border border-[#dfe2e6] bg-white px-3 py-2.5 text-[15px] text-[#0B1F45] placeholder:text-[#8c9098] focus:border-[#0B1F45] focus:outline-none";
+  "min-h-11 w-full rounded-sm border border-[#dfe2e6] bg-white px-3 py-2.5 text-[15px] text-[#0B1F45] placeholder:text-[#8c9098] focus:border-[#0B1F45] focus:outline-none";
 const LINK =
-  "inline-flex min-h-11 items-center text-[13px] font-semibold text-[#0B1F45] underline decoration-[#0B1F45]/25 underline-offset-4 hover:text-[#2347A0] hover:decoration-[#2347A0]/40";
+  "inline-flex min-h-11 min-w-11 items-center text-[13px] font-semibold text-[#0B1F45] underline decoration-[#0B1F45]/25 underline-offset-4 hover:text-[#2347A0] hover:decoration-[#2347A0]/40";
 const BOTAO_FOLHA =
-  "mt-6 inline-flex min-h-12 w-full items-center justify-center bg-[#0B1F45] px-6 text-xs font-bold uppercase tracking-[0.12em] text-white transition-colors hover:bg-[#2347A0]";
+  "mt-6 inline-flex min-h-12 w-full items-center justify-center bg-[#0B1F45] px-6 text-xs font-bold uppercase tracking-[0.12em] text-white hover:bg-[#2347A0]";
 
 // Aba de linha: as de LINE_ORDER e "Outros" (linha desconhecida no catálogo).
 const OUTROS = "Outros" as const;
@@ -289,7 +289,9 @@ export default function EtapaAcabamento({
   const [folha, setFolha] = useState<null | "onde" | "ajustes">(null);
   const lendo = analise === "loading";
   const instrucao = zona.instruction.trim();
-  const redefinirCantos = depurar && !!produtoAtual?.render_texture_path?.trim() && !!zona.quad;
+  // Refazer os cantos: só quando se aplica (modelo com textura plana e área com
+  // os 4 cantos). Limpa o quad da área, como o antigo "Redefinir cantos".
+  const refazerCantos = !!produtoAtual?.render_texture_path?.trim() && !!zona.quad;
 
   return (
     <div data-viz-acabamento data-erro={analise === "error" ? "" : undefined} className="viz-area">
@@ -320,24 +322,37 @@ export default function EtapaAcabamento({
       )}
 
       {/* Onde aplicar: logo abaixo do nome da área (embaixo, à direita, o balão
-          do chat cobriria o "Editar"). */}
+          do chat cobriria o "Editar"). Se a análise falhou e a área ficou sem
+          texto, a linha inteira é um botão que abre a folha Onde. */}
       <div data-viz-onde className="flex min-h-11 items-center gap-3">
-        <p className="min-w-0 flex-1 truncate text-sm" aria-live="polite">
-          <span className="text-[#5b5f66]">Onde: </span>
-          {lendo ? (
-            <span className="text-[#0B1F45]">
-              <span aria-hidden className="viz-ponto-detectando mr-1.5 inline-block h-1.5 w-1.5 -translate-y-px rounded-full bg-[#2F5FD0] align-middle" />
-              Lendo a foto…
+        {analise === "error" && !instrucao ? (
+          <button type="button" onClick={() => setFolha("onde")} className="flex min-h-11 min-w-0 flex-1 items-center gap-3 text-left text-sm">
+            <span className="min-w-0 flex-1 truncate">
+              <span className="text-[#5b5f66]">Onde: </span>
+              <span className="font-semibold text-[#8a5a12]">Descreva onde aplicar</span>
             </span>
-          ) : instrucao ? (
-            <span className="text-[#0B1F45]">{instrucao}</span>
-          ) : (
-            <span className="font-semibold text-[#8a5a12]">Descreva onde aplicar</span>
-          )}
-        </p>
-        <button type="button" onClick={() => setFolha("onde")} aria-label="Editar onde aplicar" className={`${LINK} shrink-0`}>
-          Editar
-        </button>
+            <span className="shrink-0 text-[13px] font-semibold text-[#0B1F45] underline decoration-[#0B1F45]/25 underline-offset-4">Editar</span>
+          </button>
+        ) : (
+          <>
+            <p className="min-w-0 flex-1 truncate text-sm" aria-live="polite">
+              <span className="text-[#5b5f66]">Onde: </span>
+              {lendo ? (
+                <span className="text-[#0B1F45]">
+                  <span aria-hidden className="viz-ponto-detectando mr-1.5 inline-block h-1.5 w-1.5 -translate-y-px rounded-full bg-[#2F5FD0] align-middle" />
+                  Lendo a foto…
+                </span>
+              ) : instrucao ? (
+                <span className="text-[#0B1F45]">{instrucao}</span>
+              ) : (
+                <span className="font-semibold text-[#8a5a12]">Descreva onde aplicar</span>
+              )}
+            </p>
+            <button type="button" onClick={() => setFolha("onde")} aria-label="Editar onde aplicar" className={`${LINK} shrink-0`}>
+              Editar
+            </button>
+          </>
+        )}
       </div>
       {analise === "error" && (
         <div className="-mt-2 flex items-center gap-3 text-[13px] text-[#8a5a12]">
@@ -367,7 +382,7 @@ export default function EtapaAcabamento({
                 tabIndex={atual ? 0 : -1}
                 onClick={() => trocarLinha(l)}
                 onKeyDown={(e) => teclaAba(e, i)}
-                className={`relative -mb-px h-11 border-b-2 text-[13px] transition-colors ${
+                className={`relative -mb-px h-11 min-w-11 border-b-2 text-[13px] ${
                   atual ? "border-[#0B1F45] font-semibold text-[#0B1F45]" : "border-transparent text-[#5b5f66] hover:text-[#0B1F45]"
                 }`}
               >
@@ -383,7 +398,7 @@ export default function EtapaAcabamento({
               type="button"
               onClick={() => passar(s)}
               aria-label={s < 0 ? "Modelos anteriores" : "Mais modelos"}
-              className="grid h-8 w-8 place-items-center rounded-full border border-[#dfe2e6] text-[#0B1F45] transition-colors hover:border-[#0B1F45]"
+              className="grid h-11 w-11 place-items-center rounded-full border border-[#dfe2e6] text-[#0B1F45] hover:border-[#0B1F45]"
             >
               <svg aria-hidden width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round">
                 <path d={s < 0 ? "M15 5l-7 7 7 7" : "M9 5l7 7-7 7"} />
@@ -502,9 +517,9 @@ export default function EtapaAcabamento({
             className={CAMPO}
           />
         </div>
-        {redefinirCantos && (
+        {refazerCantos && (
           <button type="button" onClick={() => onAtualizar({ quad: null })} className={`${LINK} mt-3`}>
-            Redefinir cantos
+            Refazer os cantos
           </button>
         )}
         <button type="button" onClick={() => setFolha(null)} className={BOTAO_FOLHA}>Pronto</button>

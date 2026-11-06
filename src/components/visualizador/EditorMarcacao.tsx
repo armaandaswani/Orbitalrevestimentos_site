@@ -204,7 +204,7 @@ export function PainelMarcacao({
             return (
               <li
                 key={z.id}
-                className={`flex shrink-0 snap-start items-center rounded-full border transition-colors ${sel ? chip.sel : chip.base}`}
+                className={`flex shrink-0 snap-start items-center rounded-full border ${sel ? chip.sel : chip.base}`}
               >
                 <button
                   type="button"
@@ -249,7 +249,7 @@ export function PainelMarcacao({
           type="button"
           aria-pressed={modo === "draw"}
           onClick={() => { setRetargetId(null); setModo(modo === "draw" ? "tap" : "draw"); }}
-          className={`inline-flex min-h-11 items-center gap-2 text-[13px] font-medium underline underline-offset-4 transition-colors ${link}`}
+          className={`inline-flex min-h-11 items-center gap-2 text-[13px] font-medium underline underline-offset-4 ${link}`}
         >
           <svg aria-hidden width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.7" strokeLinecap="round" strokeLinejoin="round">
             {modo === "draw" ? <><circle cx="12" cy="12" r="2.5" /><circle cx="12" cy="12" r="8" /></> : <path d="M4 8V5a1 1 0 011-1h3M16 4h3a1 1 0 011 1v3M20 16v3a1 1 0 01-1 1h-3M8 20H5a1 1 0 01-1-1v-3" />}
@@ -259,7 +259,7 @@ export function PainelMarcacao({
         <button
           type="button"
           onClick={onAddTextZone}
-          className={`inline-flex min-h-11 items-center gap-2 text-[13px] font-medium underline underline-offset-4 transition-colors ${link}`}
+          className={`inline-flex min-h-11 items-center gap-2 text-[13px] font-medium underline underline-offset-4 ${link}`}
         >
           <svg aria-hidden width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.7" strokeLinecap="round">
             <path d="M5 7h14M5 12h14M5 17h8" />
@@ -410,7 +410,7 @@ function EditorAberto({
           type="button"
           onClick={pedirFechar}
           aria-label="Fechar"
-          className="grid h-12 w-12 place-items-center rounded-full text-white/85 transition-colors hover:text-white"
+          className="grid h-12 w-12 place-items-center rounded-full text-white/85 hover:text-white"
         >
           <svg aria-hidden width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round">
             <path d="M18 6L6 18M6 6l12 12" />
@@ -421,7 +421,7 @@ function EditorAberto({
           type="button"
           onClick={onPronto}
           disabled={!podePronto}
-          className={`min-h-11 rounded-full px-5 text-[13px] font-bold tracking-[0.06em] transition-colors ${
+          className={`min-h-11 rounded-full px-5 text-[13px] font-bold tracking-[0.06em] ${
             podePronto ? "bg-[#36A35C] text-[#0B1F45] hover:bg-[#4BB571]" : "cursor-not-allowed bg-white/10 text-white/40"
           }`}
         >
@@ -475,14 +475,14 @@ function EditorAberto({
               ref={ficarRef}
               type="button"
               onClick={ficar}
-              className="min-h-11 flex-1 whitespace-nowrap border border-[#d5d9e0] px-2 text-[13px] font-semibold transition-colors hover:border-[#0B1F45]"
+              className="min-h-11 flex-1 whitespace-nowrap border border-[#d5d9e0] px-2 text-[13px] font-semibold hover:border-[#0B1F45]"
             >
               Continuar marcando
             </button>
             <button
               type="button"
               onClick={descartar}
-              className="min-h-11 flex-1 whitespace-nowrap bg-[#0B1F45] px-2 text-[13px] font-semibold text-white transition-colors hover:bg-[#2347A0]"
+              className="min-h-11 flex-1 whitespace-nowrap bg-[#0B1F45] px-2 text-[13px] font-semibold text-white hover:bg-[#2347A0]"
             >
               Descartar
             </button>

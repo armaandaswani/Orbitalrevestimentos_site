@@ -68,7 +68,7 @@ export default function AntesDepois({
       {/* eslint-disable-next-line @next/next/no-img-element */}
       <img src={antes} alt="Sua foto, antes" draggable={false} className="absolute inset-0 h-full w-full object-cover" />
       {/* eslint-disable-next-line @next/next/no-img-element */}
-      <img src={depois} alt="A mesma foto com o acabamento escolhido" draggable={false} data-viz-depois className="viz-depois absolute inset-0 h-full w-full object-cover" />
+      <img src={depois} alt="Simulação gerada por IA da mesma foto com o acabamento escolhido" draggable={false} data-viz-depois className="viz-depois absolute inset-0 h-full w-full object-cover" />
 
       <span aria-hidden className="pointer-events-none absolute left-3 top-3 rounded-full bg-black/55 px-2.5 py-1 text-[11px] font-semibold uppercase tracking-[0.12em] text-white backdrop-blur-sm">
         {rotuloAntes}

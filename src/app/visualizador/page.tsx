@@ -8,7 +8,7 @@ import ContatoCta from "@/components/ContatoCta";
 const COMO_FUNCIONA = [
   { t: "Envie a foto", d: "Use uma foto bem iluminada e de frente para o ambiente." },
   { t: "Toque nas superfícies", d: "Toque numa parede, teto ou móvel e a IA marca a área. Depois escolha o acabamento de cada uma." },
-  { t: "Gere e veja", d: "A IA aplica cada modelo na sua área, e tudo vai pronto para o orçamento." },
+  { t: "Gere e veja", d: "A IA aplica cada modelo na sua área, e o consultor recebe os acabamentos escolhidos." },
 ];
 
 export default function VisualizadorPage() {

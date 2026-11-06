@@ -38,7 +38,7 @@ export default function EtapaFoto({ onArquivo, erro, temAmbienteSalvo, resumoSim
         onDragOver={(e) => { e.preventDefault(); setArrastando(true); }}
         onDragLeave={() => setArrastando(false)}
         onDrop={(e) => { e.preventDefault(); setArrastando(false); onArquivo(e.dataTransfer.files?.[0]); }}
-        className={`cursor-pointer border-2 border-dashed rounded-sm flex flex-col items-center justify-center text-center px-6 py-20 transition-colors ${arrastando ? "border-[#36A35C] bg-[#f3f8f1]" : "border-[#cdd3dd] bg-[#F6F5F2] hover:border-[#0B1F45]"}`}
+        className={`cursor-pointer border-2 border-dashed rounded-sm flex flex-col items-center justify-center text-center px-6 py-20 ${arrastando ? "border-[#36A35C] bg-[#f3f8f1]" : "border-[#cdd3dd] bg-[#F6F5F2] hover:border-[#0B1F45]"}`}
       >
         <svg aria-hidden width="46" height="46" viewBox="0 0 24 24" fill="none" stroke="#0B1F45" strokeWidth="1.3" className="mb-4">
           <path d="M21 15v4a2 2 0 01-2 2H5a2 2 0 01-2-2v-4" />
@@ -109,7 +109,7 @@ export default function EtapaFoto({ onArquivo, erro, temAmbienteSalvo, resumoSim
           <button
             type="button"
             onClick={onPular}
-            className="min-h-11 flex items-center gap-1.5 text-xs tracking-[0.1em] uppercase font-semibold text-[#74777f] hover:text-[#0B1F45] transition-colors"
+            className="min-h-11 flex items-center gap-1.5 text-xs tracking-[0.1em] uppercase font-semibold text-[#74777f] hover:text-[#0B1F45]"
           >
             Pular esta etapa
             <svg aria-hidden width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5">

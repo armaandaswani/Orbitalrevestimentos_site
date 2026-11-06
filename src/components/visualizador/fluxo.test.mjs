@@ -9,6 +9,8 @@ import {
   limitarDivisor,
   passoTeclado,
   rotuloZona,
+  podeIrParaProximaArea,
+  indiceDaArea,
 } from "./fluxo.ts";
 
 test("etapaVisivel mapeia os passos", () => {
@@ -44,6 +46,30 @@ test("ajustarAreaAtual", () => {
   assert.equal(ajustarAreaAtual(2, 2), 1);
   assert.equal(ajustarAreaAtual(0, 0), 0);
   assert.equal(ajustarAreaAtual(-1, 3), 0);
+});
+
+test("podeIrParaProximaArea: basta o acabamento, a descrição pode vir depois", () => {
+  const semTexto = { productChosen: true, instruction: "" };
+  assert.equal(podeIrParaProximaArea(semTexto), true);
+  assert.equal(podeIrParaProximaArea({ productChosen: false }), false);
+  assert.equal(podeIrParaProximaArea({}), false);
+  // Gerar continua exigindo a descrição de toda área.
+  assert.equal(podeGerar([semTexto], { canGenerate: true }), false);
+});
+
+test("indiceDaArea: a área atual é guardada pelo id", () => {
+  const ids = ["a", "b", "c"];
+  assert.equal(indiceDaArea(ids, { id: "b", indice: 1 }), 1);
+  // Saiu uma área antes da atual: continua na mesma zona, sem pular.
+  assert.equal(indiceDaArea(["b", "c"], { id: "b", indice: 1 }), 0);
+  assert.equal(indiceDaArea(["a", "c"], { id: "c", indice: 2 }), 1);
+  // A atual saiu: cai na seguinte (mesmo índice); era a última: a nova última.
+  assert.equal(indiceDaArea(["a", "c"], { id: "b", indice: 1 }), 1);
+  assert.equal(indiceDaArea(["a", "b"], { id: "c", indice: 2 }), 1);
+  // Sem áreas, ou sem id ainda: índice ajustado.
+  assert.equal(indiceDaArea([], { id: "a", indice: 0 }), 0);
+  assert.equal(indiceDaArea(ids, { id: null, indice: 0 }), 0);
+  assert.equal(indiceDaArea(ids, { id: null, indice: 7 }), 2);
 });
 
 test("limitarDivisor e passoTeclado", () => {

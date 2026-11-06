@@ -51,6 +51,15 @@ export function podeGerar(
   return base.canGenerate && zones.length > 0 && zones.every(areaPronta);
 }
 
+/**
+ * "Próxima área" no Acabamento: basta o acabamento escolhido na área atual. A
+ * descrição de onde aplicar pode vir depois; quem exige descrição em todas as
+ * áreas é `podeGerar`.
+ */
+export function podeIrParaProximaArea(z: Pick<Zone, "productChosen">): boolean {
+  return Boolean(z.productChosen);
+}
+
 export function areaSeguinte(atual: number, total: number): number | null {
   return atual + 1 < total ? atual + 1 : null;
 }
@@ -58,6 +67,18 @@ export function areaSeguinte(atual: number, total: number): number | null {
 export function ajustarAreaAtual(atual: number, total: number): number {
   if (total <= 0) return 0;
   return Math.min(Math.max(atual, 0), total - 1);
+}
+
+/**
+ * Índice da área atual, guardada pelo id da zona (e pelo último índice em que
+ * ela estava). A zona ainda existe: o índice dela, mesmo que outra área antes
+ * dela tenha saído. A zona saiu: a seguinte, que passou a ocupar o mesmo
+ * índice (regra de `areaSeguinte`); se ela era a última, a nova última. Sem
+ * áreas, 0.
+ */
+export function indiceDaArea(ids: readonly string[], pedida: { id: string | null; indice: number }): number {
+  const i = pedida.id === null ? -1 : ids.indexOf(pedida.id);
+  return i >= 0 ? i : ajustarAreaAtual(pedida.indice, ids.length);
 }
 
 export function limitarDivisor(v: number): number {

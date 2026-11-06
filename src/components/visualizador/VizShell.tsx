@@ -51,6 +51,7 @@ export default function VizShell({
   etapa,
   embutido,
   onVoltar,
+  rotuloVoltar = "Voltar",
   acao,
   lateral,
   children,
@@ -58,6 +59,8 @@ export default function VizShell({
   etapa: EtapaVisivel;
   embutido: boolean;
   onVoltar?: () => void;
+  /** Texto do link de volta no /simulador ("Trocar foto" na marcação). */
+  rotuloVoltar?: string;
   acao?: AcaoShell;
   lateral?: React.ReactNode;
   children: React.ReactNode;
@@ -117,7 +120,7 @@ export default function VizShell({
                 type="button"
                 data-viz-voltar
                 onClick={onVoltar}
-                className="-ml-2 inline-flex min-h-11 items-center gap-1 px-2 text-[13px] font-medium text-[#0B1F45] hover:text-[#2347A0] transition-colors"
+                className="-ml-2 inline-flex min-h-11 items-center gap-1 px-2 text-[13px] font-medium text-[#0B1F45] hover:text-[#2347A0]"
               >
                 <svg aria-hidden width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round">
                   <path d="M15 5l-7 7 7 7" />
@@ -155,6 +158,23 @@ export default function VizShell({
           </nav>
         </div>
         )}
+        {/* No /simulador: só um link compacto no fluxo, sem segunda barra e
+            nada preso à tela (o simulador tem as próprias etapas e o Voltar). */}
+        {embutido && onVoltar && (
+          <div className="flex h-11 items-center">
+            <button
+              type="button"
+              data-viz-voltar-embutido
+              onClick={onVoltar}
+              className="-ml-2 inline-flex min-h-11 items-center gap-1 px-2 text-[13px] font-medium text-[#0B1F45] underline decoration-[#0B1F45]/25 underline-offset-4 hover:text-[#2347A0]"
+            >
+              <svg aria-hidden width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round">
+                <path d="M15 5l-7 7 7 7" />
+              </svg>
+              {rotuloVoltar}
+            </button>
+          </div>
+        )}
 
         <div className={`flex-1 ${lateral ? "lg:grid lg:grid-cols-[minmax(0,1.1fr)_minmax(0,0.9fr)] lg:items-start lg:gap-12" : "flex flex-col"}`}>
           {lateral && <aside className="mb-5 lg:mb-0 lg:sticky lg:top-24">{lateral}</aside>}
@@ -181,7 +201,7 @@ export default function VizShell({
                   type="button"
                   onClick={acao.onClick}
                   disabled={acao.desabilitada}
-                  className={`inline-flex min-h-12 w-full items-center justify-center gap-2 px-6 text-xs font-bold uppercase tracking-[0.12em] transition-colors lg:w-auto lg:min-w-[280px] ${botao}`}
+                  className={`inline-flex min-h-12 w-full items-center justify-center gap-2 px-6 text-xs font-bold uppercase tracking-[0.12em] lg:w-auto lg:min-w-[280px] ${botao}`}
                 >
                   {acao.rotulo}
                 </button>
