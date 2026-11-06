@@ -11,7 +11,7 @@ import ContatoCta from "@/components/ContatoCta";
 import VisorProjetos, { useVisor } from "@/components/projetos/VisorProjetos";
 import { modelosTxt } from "@/lib/projeto-modelos";
 import {
-  CATEGORIA_SHOWROOM, REVENDA_RESERVA, combinaBusca, nomeLugar, ordenarCategorias, porDestaque, rotuloTag, secoesDoProjeto,
+  CATEGORIA_SHOWROOM, ESPERA_URL, REVENDA_RESERVA, combinaBusca, nomeLugar, ordenarCategorias, porDestaque, rotuloTag, secoesDoProjeto,
   type Projeto, type Showroom,
 } from "@/lib/projetos-tipos";
 import type { DadosProjetos } from "@/lib/projetos-dados";
@@ -36,8 +36,26 @@ const SIZES_GRADE = "(max-width: 639px) 46vw, (max-width: 1279px) 31vw, (min-wid
     No li vale para o link do cartão (o filho que recebe o foco): scroll-margin não passa de pai para filho. */
 const SOB_A_BARRA = "scroll-mt-[calc(5rem+var(--barra-projetos,0px))]";
 const SOB_A_BARRA_FILHO = "*:scroll-mt-[calc(5rem+var(--barra-projetos,0px))]";
-/** Data de cadastro em ms; sem data, 0 (fica a ordem do painel). */
+/** Data de cadastro em ms; sem data, 0: no desempate (mais novo primeiro) fica por último, na ordem do painel. */
 const cadastro = (p: Projeto) => Date.parse(p.created_at ?? "") || 0;
+
+/** ?ver= vale só em múltiplos de 12, de 12 até o que cobre a lista inteira (22 projetos: até 24). */
+function limitarVer(ver: number, total: number): number {
+  if (!Number.isFinite(ver) || ver <= POR_VEZ) return POR_VEZ;
+  const teto = Math.max(POR_VEZ, Math.ceil(total / POR_VEZ) * POR_VEZ);
+  return Math.min(Math.ceil(ver / POR_VEZ) * POR_VEZ, teto);
+}
+
+/** Categoria e "ver mais" na URL sem criar entrada no histórico. Mantém o history.state
+    (o visor guarda nele a profundidade) e os outros parâmetros (?projeto=, ?showroom=). */
+function escreverUrl(categoria: string, mostrar: number) {
+  const url = new URL(window.location.href);
+  if (categoria === "todos") url.searchParams.delete("categoria");
+  else url.searchParams.set("categoria", categoria);
+  if (mostrar > POR_VEZ) url.searchParams.set("ver", String(mostrar));
+  else url.searchParams.delete("ver");
+  if (url.href !== window.location.href) window.history.replaceState(window.history.state, "", url);
+}
 
 export default function ProjetosVitrine({ projetos, categorias, lugares, renders, agora }: DadosProjetos & { agora: number }) {
   const showrooms = lugares.filter((l) => l.kind === "showroom");
@@ -73,7 +91,8 @@ function Conteudo({
   const focarRender = useRef<number | null>(null);
 
   // Ambientes da categoria Showroom moram na folha do showroom; o resto são as obras.
-  // Destaques primeiro; depois os mais recentes pela data de cadastro (sem data, a ordem do painel).
+  // Destaques primeiro (na ordem do painel); depois os mais recentes pela data de cadastro;
+  // sem data, por último, na ordem do painel.
   const [obras, ambientes] = useMemo(() => {
     const doShowroom = (p: Projeto) => showrooms.length > 0 && secoesDoProjeto(p).includes(CATEGORIA_SHOWROOM);
     const ordem = (a: Projeto, b: Projeto) => porDestaque(a, b) || cadastro(b) - cadastro(a);
@@ -87,9 +106,9 @@ function Conteudo({
     .filter((c) => obras.some((p) => secoesDoProjeto(p).includes(c.slug))), [rotulos, showrooms.length, obras]);
 
   // Linha discreta do cartão (modelo · lugar) e o texto em que a busca procura.
-  // Lugar: o parceiro onde o ambiente está ou, sem parceiro, a categoria.
+  // Lugar: o parceiro onde o ambiente está (showroom ou revenda) ou, sem parceiro, a categoria.
   const fichas = useMemo(() => {
-    const nomes = new Map(showrooms.map((s) => [s.id, nomeLugar(s.name)]));
+    const nomes = new Map(parceiros.map((s) => [s.id, nomeLugar(s.name)]));
     const rotulo = new Map(rotulos.map((c) => [c.slug, c.label]));
     return new Map([...obras, ...ambientes].map((p) => {
       const secoes = secoesDoProjeto(p);
@@ -101,7 +120,7 @@ function Conteudo({
       ].join(" ");
       return [p.id, { detalhe: [codigos, lugar].filter(Boolean).join(" · "), texto }];
     }));
-  }, [obras, ambientes, showrooms, rotulos]);
+  }, [obras, ambientes, parceiros, rotulos]);
 
   // Filtro e busca valem para todas as obras, não só para as que já estão na tela.
   // Com algo digitado, a busca também acha os ambientes dos showrooms (depois das obras).
@@ -117,7 +136,8 @@ function Conteudo({
     const i = focarEm.current;
     if (i == null) return;
     focarEm.current = null;
-    grade.current?.children[i]?.querySelector<HTMLElement>("a, button")?.focus({ preventScroll: true });
+    // Sem preventScroll: o cartão rola até ficar visível, logo abaixo da barra (scroll-margin).
+    grade.current?.children[i]?.querySelector<HTMLElement>("a, button")?.focus();
   }, [mostrar]);
   useEffect(() => {
     const i = focarRender.current;
@@ -138,30 +158,33 @@ function Conteudo({
     return () => ro.disconnect();
   }, [semDados]);
 
-  // Link com ?categoria=<slug>&ver=<n>: abre já filtrado. Slug que não existe = Todos.
+  // Link com ?categoria=<slug>&ver=<n>: abre já filtrado. Slug que não existe = Todos;
+  // ?ver= fora da regra é corrigido na URL. Relido no voltar/avançar do navegador
+  // (fechar a galeria volta para a entrada anterior): a grade segue a URL.
   useEffect(() => {
-    const t = setTimeout(() => {
+    const ler = () => {
       const q = new URLSearchParams(window.location.search);
       const slug = q.get("categoria");
-      if (slug && cats.some((c) => c.slug === slug)) setCategoria(slug);
-      const ver = Number(q.get("ver"));
-      if (Number.isInteger(ver) && ver > POR_VEZ) setMostrar(ver);
+      const cat = slug && cats.some((c) => c.slug === slug) ? slug : "todos";
+      const total = obras.filter((p) => cat === "todos" || secoesDoProjeto(p).includes(cat)).length;
+      const n = limitarVer(Number(q.get("ver")), total);
+      // A grade esperou invisível por esta leitura: entra com o véu.
+      if (document.getElementById(ESPERA_URL)) setTrocou(true);
+      setCategoria(cat);
+      setMostrar(n);
       setLido(true);
-    }, 0);
-    return () => clearTimeout(t);
-  }, [cats]);
+      escreverUrl(cat, n);
+    };
+    const t = setTimeout(ler, 0);
+    window.addEventListener("popstate", ler);
+    return () => { clearTimeout(t); window.removeEventListener("popstate", ler); };
+  }, [cats, obras]);
+  // Filtro da URL já na grade: ela pode aparecer.
+  useEffect(() => { if (lido) document.getElementById(ESPERA_URL)?.remove(); }, [lido]);
 
-  // Categoria e "ver mais" espelhados na URL sem criar entrada no histórico. Mantém
-  // o history.state (o visor guarda nele a profundidade) e os outros parâmetros
-  // (?projeto=, ?showroom=). A busca não vai para a URL.
+  // Categoria e "ver mais" espelhados na URL. A busca não vai para a URL.
   useEffect(() => {
-    if (!lido) return;
-    const url = new URL(window.location.href);
-    if (categoria === "todos") url.searchParams.delete("categoria");
-    else url.searchParams.set("categoria", categoria);
-    if (mostrar > POR_VEZ) url.searchParams.set("ver", String(mostrar));
-    else url.searchParams.delete("ver");
-    if (url.href !== window.location.href) window.history.replaceState(window.history.state, "", url);
+    if (lido) escreverUrl(categoria, mostrar);
   }, [lido, categoria, mostrar]);
 
   // Mudou o filtro com a grade já rolada: volta ao começo dela, logo abaixo da barra.

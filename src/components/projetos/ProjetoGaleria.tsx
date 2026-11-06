@@ -104,10 +104,28 @@ export default function ProjetoGaleria({ projeto, inicio, onFechar, vizinhos }: 
     setIdx(manter >= 0 ? manter : 0);
   };
 
+  // No lado a lado, seta ou deslize passa para o carrossel já na foto anterior/seguinte.
+  const passar = (sentido: -1 | 1) => {
+    if (modo === "grade") return;
+    if (modo === "lado") setModo("carrossel");
+    if (sentido < 0) anterior(); else proxima();
+  };
   const teclado = (e: React.KeyboardEvent) => {
-    if (modo !== "carrossel") return;
-    if (e.key === "ArrowLeft") { e.preventDefault(); anterior(); }
-    if (e.key === "ArrowRight") { e.preventDefault(); proxima(); }
+    if (modo === "grade") return;
+    if (e.key === "ArrowLeft") { e.preventDefault(); passar(-1); }
+    if (e.key === "ArrowRight") { e.preventDefault(); passar(1); }
+  };
+  // Arrastar para o lado troca a foto (toque e caneta). touch-pan-y: o navegador não toma
+  // o gesto horizontal para si; o vertical continua dele.
+  const deslize = {
+    onPointerDown: (e: React.PointerEvent) => { if (e.pointerType !== "mouse") toque.current = { x: e.clientX, y: e.clientY }; },
+    onPointerCancel: () => { toque.current = null; },
+    onPointerUp: (e: React.PointerEvent) => {
+      const t = toque.current; toque.current = null;
+      if (!t) return;
+      const dx = e.clientX - t.x;
+      if (Math.abs(dx) > 50 && Math.abs(dx) > Math.abs(e.clientY - t.y)) passar(dx < 0 ? 1 : -1);
+    },
   };
 
   const antesImg = itens.find((i) => i.category === "antes" && i.kind === "image");
@@ -152,14 +170,18 @@ export default function ProjetoGaleria({ projeto, inicio, onFechar, vizinhos }: 
 
       {filtros.length > 1 && (
         <div role="group" aria-label="Filtrar fotos" className="flex flex-wrap items-center gap-1.5 px-4 sm:px-6 py-2 border-b border-white/10 flex-shrink-0">
-          {filtros.map((f) => (
-            <button key={f} type="button" aria-pressed={filtro === f} onClick={() => mudarFiltro(f)}
-              className={`flex-shrink-0 min-h-11 px-4 text-xs tracking-[0.1em] uppercase font-bold border transition-colors ${
-                filtro === f ? "bg-white text-primary border-white" : "border-white/25 text-white/75 hover:text-white"
-              }`}>
-              {ROTULO_FILTRO[f]}
-            </button>
-          ))}
+          {filtros.map((f) => {
+            // No lado a lado nenhum filtro vale: nenhum aparece pressionado.
+            const ativo = filtro === f && modo !== "lado";
+            return (
+              <button key={f} type="button" aria-pressed={ativo} onClick={() => mudarFiltro(f)}
+                className={`flex-shrink-0 min-h-11 px-4 text-xs tracking-[0.1em] uppercase font-bold border transition-colors ${
+                  ativo ? "bg-white text-primary border-white" : "border-white/25 text-white/75 hover:text-white"
+                }`}>
+                {ROTULO_FILTRO[f]}
+              </button>
+            );
+          })}
         </div>
       )}
 
@@ -171,7 +193,7 @@ export default function ProjetoGaleria({ projeto, inicio, onFechar, vizinhos }: 
         )}
 
         {modo === "lado" && ladoALado && (
-          <div className="h-full grid grid-cols-1 sm:grid-cols-2 gap-px bg-white/10">
+          <div className="h-full grid grid-cols-1 sm:grid-cols-2 gap-px bg-white/10 select-none touch-pan-y" {...deslize}>
             {[{ it: antesImg, cat: "antes" as const }, { it: depoisImg, cat: "depois" as const }].map(({ it, cat }) => it && (
               <figure key={cat} className="relative bg-black min-h-0">
                 <Image src={it.url} alt={`${projeto.title}, ${cat}`} fill sizes="(max-width: 639px) 100vw, 50vw" className="object-contain" />
@@ -206,14 +228,7 @@ export default function ProjetoGaleria({ projeto, inicio, onFechar, vizinhos }: 
 
         {modo === "carrossel" && item && (
           <div className="h-full flex flex-col">
-            <div className="flex-1 min-h-0 relative select-none"
-              onPointerDown={(e) => { if (e.pointerType !== "mouse") toque.current = { x: e.clientX, y: e.clientY }; }}
-              onPointerUp={(e) => {
-                const t = toque.current; toque.current = null;
-                if (!t) return;
-                const dx = e.clientX - t.x;
-                if (Math.abs(dx) > 50 && Math.abs(dx) > Math.abs(e.clientY - t.y)) { if (dx < 0) proxima(); else anterior(); }
-              }}>
+            <div className="flex-1 min-h-0 relative select-none touch-pan-y" {...deslize}>
               {item.kind === "image" ? (
                 <Image key={item.url} src={item.url} alt={item.label ?? projeto.title} fill sizes="100vw" className="object-contain" draggable={false} />
               ) : videoHost(item.url) === "arquivo" ? (

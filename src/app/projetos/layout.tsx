@@ -33,6 +33,14 @@ export const metadata: Metadata = {
       },
     ],
   },
+  // O bloco twitter do layout raiz não vale aqui (o objeto é trocado inteiro): o mesmo do OG.
+  twitter: {
+    card: "summary_large_image",
+    title: "Projetos em Manaus com o Painel Flexível em Fibra de Bambu (PFB) | Orbital Revestimentos",
+    description:
+      "Obras entregues em Manaus com o Painel Flexível em Fibra de Bambu (PFB): residências, espaços comerciais, barcos e forros.",
+    images: ["/images/projetos/escada-madeira-pfb-2026-10-og.jpg"],
+  },
 };
 
 const breadcrumbSchema = {

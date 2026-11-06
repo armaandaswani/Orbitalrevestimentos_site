@@ -6,7 +6,6 @@ import ContatoCta from "@/components/ContatoCta";
 import { COVER_ASPECT } from "@/lib/cover-crop";
 import { contaAmbientes, linkComoChegar, type Projeto, type Showroom } from "@/lib/projetos-tipos";
 import GradeProjetos from "./GradeProjetos";
-import { Sobretitulo } from "./SecaoCabecalho";
 
 /**
  * O conteúdo de um showroom parceiro (ou ponto de revenda): quem é, onde fica
@@ -42,7 +41,8 @@ export default function ShowroomConteudo({
   const idx = todos.findIndex((s) => s.id === sr.id);
   const anterior = idx > 0 ? todos[idx - 1] : null;
   const proximo = idx >= 0 && idx < todos.length - 1 ? todos[idx + 1] : null;
-  const chip = "inline-flex items-center min-h-11 px-3 text-xs tracking-[0.1em] uppercase font-bold border border-surface-variant text-on-surface-variant hover:border-primary hover:text-primary transition-colors whitespace-nowrap";
+  // Nome longo quebra dentro do chip (max-w-full, sem nowrap): nada estoura para o lado.
+  const chip = "inline-flex items-center max-w-full min-h-11 px-3 py-2 text-left text-xs tracking-[0.1em] uppercase font-bold border border-surface-variant text-on-surface-variant hover:border-primary hover:text-primary transition-colors [overflow-wrap:anywhere]";
 
   return (
     <div className="ds-wrap">
@@ -57,8 +57,9 @@ export default function ShowroomConteudo({
             </div>
           )}
           <div className="min-w-0">
-            <Sobretitulo>{revenda ? "Ponto de revenda" : "Showroom parceiro"}</Sobretitulo>
-            <Titulo className="font-serif text-primary text-t1 font-normal tracking-[-0.02em] mt-3 text-balance">{sr.name}</Titulo>
+            <Titulo className="font-serif text-primary text-t1 font-normal tracking-[-0.02em] text-balance">{sr.name}</Titulo>
+            {/* O que é o lugar, numa linha simples (a Orbital fornece; o lugar é parceiro). */}
+            <p className="text-on-surface-variant text-legenda mt-2">{revenda ? "Ponto de revenda" : "Showroom parceiro"}</p>
             {sr.description && <p className={`text-on-surface-variant text-corpo mt-4 max-w-2xl text-pretty ${nivel === "folha" ? "line-clamp-4 md:line-clamp-none" : ""}`}>{sr.description}</p>}
             {sr.address && <p className="text-on-surface text-corpo mt-5">{sr.address}</p>}
             <div className="flex flex-col sm:flex-row flex-wrap gap-3 mt-6">
@@ -85,12 +86,12 @@ export default function ShowroomConteudo({
       </section>
 
       {outros.length > 0 && (
-        <nav aria-label="Outros parceiros" className="pb-12 lg:pb-16 border-t border-surface-variant pt-6">
-          <h2 className="font-serif text-primary text-lg font-normal mb-3">Outros parceiros</h2>
+        <nav aria-labelledby={`outros-${sr.slug}`} className="pb-12 lg:pb-16 border-t border-surface-variant pt-6">
+          <h2 id={`outros-${sr.slug}`} className="font-serif text-primary text-lg font-normal mb-3">Outros parceiros</h2>
           {/* Quebra linha em vez de rolar de lado. */}
           <ul className="flex flex-wrap gap-2">
             {outros.map((s) => (
-              <li key={s.id} className="flex-shrink-0">
+              <li key={s.id} className="max-w-full">
                 {onIr
                   ? <button type="button" onClick={() => onIr(s)} className={chip}>{s.name}</button>
                   : <Link href={`/projetos/showroom/${s.slug}`} className={chip}>{s.name}</Link>}

@@ -80,12 +80,25 @@ export function secoesDoProjeto(p: Pick<Projeto, "primary_category" | "categorie
   return p.categories ?? [];
 }
 
-/** Destaques primeiro (na ordem do painel), depois o resto na ordem do banco. */
+/**
+ * Destaques primeiro, entre si pela feature_order do painel. Entre dois que não
+ * são destaque dá 0: quem chama desempata (em /projetos, pela data de cadastro,
+ * mais novo primeiro, e sem data por último); sem desempate fica a ordem do banco.
+ */
 export function porDestaque(a: Projeto, b: Projeto): number {
-  return !!a.is_featured !== !!b.is_featured
-    ? (a.is_featured ? -1 : 1)
-    : (a.feature_order ?? 0) - (b.feature_order ?? 0);
+  if (!!a.is_featured !== !!b.is_featured) return a.is_featured ? -1 : 1;
+  return a.is_featured ? (a.feature_order ?? 0) - (b.feature_order ?? 0) : 0;
 }
+
+/**
+ * /projetos aberto com ?categoria= ou ?ver=: a grade fica invisível (mesma altura)
+ * até o filtro da URL valer e entra com o véu. O script roda no HTML (layout raiz,
+ * como o porteiro da intro: só na carga completa, nunca re-renderizado no cliente),
+ * antes de a grade ser pintada; o estilo sai quando a URL foi lida (ou em 3 s, se
+ * o JavaScript falhar). Em outra página ou sem esses parâmetros, nada acontece.
+ */
+export const ESPERA_URL = "projetos-lendo-url";
+export const SCRIPT_ESPERA_URL = `try{if(location.pathname==="/projetos"&&/[?&](categoria|ver)=/.test(location.search)){var s=document.createElement("style");s.id="${ESPERA_URL}";s.textContent="[data-grade-projetos]{opacity:0}";document.head.appendChild(s);setTimeout(function(){s.remove()},3000)}}catch(e){}`;
 
 /**
  * O que as APIs públicas de projetos e renders podem devolver. É uma lista do
