@@ -249,7 +249,7 @@ function Conteudo({
         ) : (
           <>
             {/* Presa logo abaixo do cabeçalho enquanto a grade está na tela; quando ele se recolhe, sobe junto.
-                No celular some junto com ele ao descer e volta ao subir. */}
+                No celular (em pé ou deitado) some junto com ele ao descer e volta ao subir. */}
             <div ref={barra} className="ds-sob-cabecalho ds-some-no-celular sticky z-40 bg-white border-y border-[#e8e6e1]" data-barra-projetos>
               <div className="ds-wrap py-2.5 lg:py-3 flex flex-col gap-2 lg:flex-row lg:items-center lg:gap-6">
                 <div className="flex items-start gap-3 lg:flex-1 min-w-0">
