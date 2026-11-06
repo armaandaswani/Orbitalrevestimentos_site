@@ -31,6 +31,8 @@ export interface Projeto {
   cover_focus_x?: number | null;
   cover_focus_y?: number | null;
   cover_zoom?: number | null;
+  /** Data de cadastro no painel: desempata a ordem da grade (mais recentes primeiro). */
+  created_at?: string | null;
 }
 
 export interface Showroom {
@@ -226,11 +228,13 @@ export const normalizarBusca = (s: string) => s.normalize("NFD").replace(/\p{Dia
 /**
  * A busca de /projetos: cada palavra digitada precisa aparecer no texto do
  * projeto, sem acento e sem caixa. Códigos valem com ou sem hífen e espaço:
- * "ORB-003", "orb 003" e "orb003" acham o mesmo projeto.
+ * "ORB-003", "orb 003" e "orb003" acham o mesmo projeto. A comparação sem
+ * espaços só vale para termos com dígito (códigos): uma palavra comum não
+ * casa com pedaços de duas palavras vizinhas.
  */
 export function combinaBusca(texto: string, consulta: string): boolean {
   const alvo = normalizarBusca(texto);
   const colado = alvo.replace(/[^a-z0-9]/g, "");
   return normalizarBusca(consulta).split(/\s+/).filter(Boolean)
-    .every((p) => alvo.includes(p) || colado.includes(p.replace(/[^a-z0-9]/g, "")));
+    .every((p) => alvo.includes(p) || (/\d/.test(p) && colado.includes(p.replace(/[^a-z0-9]/g, ""))));
 }

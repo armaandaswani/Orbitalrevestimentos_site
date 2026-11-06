@@ -3,6 +3,7 @@
 import Image from "next/image";
 import { COVER_ASPECT, coverStyle } from "@/lib/cover-crop";
 import { autoriaTxt, modelosTxt } from "@/lib/projeto-modelos";
+import { temAntesDepois } from "@/lib/project-gallery";
 import type { Projeto } from "@/lib/projetos-tipos";
 
 /**
@@ -27,7 +28,8 @@ export default function ProjetoCard({
   /** Linha discreta sob o título (ex.: "ORB-004 · Residencial"): liga o formato da grade. */
   detalhe?: string;
 }) {
-  const temAntes = !!projeto.image_before && projeto.image_before !== projeto.image_after;
+  // A mesma regra da galeria: com o selo, ela abre direto no lado a lado.
+  const temAntes = temAntesDepois(projeto);
   const autoria = autoriaTxt(projeto.projeto_de);
   const grade = detalhe !== undefined;
   const classe = `group w-full text-left flex flex-col h-full focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[#2347A0] ${grade ? "" : "bg-white"}`;
@@ -35,7 +37,8 @@ export default function ProjetoCard({
   const miolo = grade ? (
     <>
       <span className="relative block w-full overflow-hidden bg-surface-container" style={{ aspectRatio: COVER_ASPECT }}>
-        <Image src={projeto.image_after} alt={projeto.title} fill sizes={sizes} priority={prioridade}
+        {/* alt vazio: o título visível logo abaixo já dá nome ao link. */}
+        <Image src={projeto.image_after} alt="" fill sizes={sizes} priority={prioridade}
           className="mv-zoom"
           style={coverStyle(projeto.cover_focus_x, projeto.cover_focus_y, projeto.cover_zoom)} />
         {(projeto.is_new || temAntes) && (

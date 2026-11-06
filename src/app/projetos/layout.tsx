@@ -1,9 +1,10 @@
 import type { Metadata } from "next";
 
 export const metadata: Metadata = {
-  title: "Projetos em Manaus — Antes e Depois com Revestimento PFB",
+  // O modelo do layout raiz completa com " | Orbital Revestimentos".
+  title: "Projetos em Manaus com o Painel Flexível em Fibra de Bambu (PFB)",
   description:
-    "Galeria de projetos reais executados com PFB Orbital em Manaus: lavabos, escritórios, restaurantes, cozinhas e embarcações náuticas. Transformação antes e depois sem obra.",
+    "Obras entregues em Manaus com o Painel Flexível em Fibra de Bambu (PFB): residências, espaços comerciais, barcos e forros.",
   keywords: [
     "projetos revestimento Manaus",
     "antes e depois revestimento",
@@ -19,9 +20,9 @@ export const metadata: Metadata = {
   ],
   alternates: { canonical: "https://orbitalrevestimentos.com.br/projetos" },
   openGraph: {
-    title: "Projetos em Manaus — Antes e Depois com Revestimento PFB",
+    title: "Projetos em Manaus com o Painel Flexível em Fibra de Bambu (PFB) | Orbital Revestimentos",
     description:
-      "Galeria real de projetos com PFB Orbital em Manaus: lavabos, restaurantes, escritórios e náutico. Transformações antes e depois sem obra.",
+      "Obras entregues em Manaus com o Painel Flexível em Fibra de Bambu (PFB): residências, espaços comerciais, barcos e forros.",
     url: "https://orbitalrevestimentos.com.br/projetos",
     images: [
       {

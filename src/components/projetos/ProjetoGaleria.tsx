@@ -3,7 +3,7 @@
 import { useEffect, useRef, useState } from "react";
 import Image from "next/image";
 import {
-  buildGalleryItems, filterGalleryItems,
+  buildGalleryItems, filterGalleryItems, temAntesDepois,
   type GalleryFilter, type GalleryItem, type GalleryMediaRow, type MediaCategory,
 } from "@/lib/project-gallery";
 import { videoHost } from "@/lib/video-link";
@@ -56,7 +56,8 @@ export default function ProjetoGaleria({ projeto, inicio, onFechar, vizinhos }: 
   const [itens, setItens] = useState<GalleryItem[]>(base);
   const [carregando, setCarregando] = useState(true);
   const [idx, setIdx] = useState(() => Math.max(0, inicio ? base.findIndex((i) => i.url === inicio) : 0));
-  const [modo, setModo] = useState<Modo>("carrossel");
+  // Projeto com antes e depois (o cartão mostra o selo) abre direto no lado a lado.
+  const [modo, setModo] = useState<Modo>(() => (!inicio && temAntesDepois(projeto) ? "lado" : "carrossel"));
   const [filtro, setFiltro] = useState<GalleryFilter>("all");
   const caixa = useRef<HTMLDivElement>(null);
   const fechar = useRef<HTMLButtonElement>(null);
@@ -150,7 +151,7 @@ export default function ProjetoGaleria({ projeto, inicio, onFechar, vizinhos }: 
       </div>
 
       {filtros.length > 1 && (
-        <div role="group" aria-label="Filtrar fotos" className="flex items-center gap-1.5 px-4 sm:px-6 py-2 border-b border-white/10 flex-shrink-0 overflow-x-auto scrollbar-none">
+        <div role="group" aria-label="Filtrar fotos" className="flex flex-wrap items-center gap-1.5 px-4 sm:px-6 py-2 border-b border-white/10 flex-shrink-0">
           {filtros.map((f) => (
             <button key={f} type="button" aria-pressed={filtro === f} onClick={() => mudarFiltro(f)}
               className={`flex-shrink-0 min-h-11 px-4 text-xs tracking-[0.1em] uppercase font-bold border transition-colors ${

@@ -86,8 +86,9 @@ export default function ShowroomConteudo({
 
       {outros.length > 0 && (
         <nav aria-label="Outros parceiros" className="pb-12 lg:pb-16 border-t border-surface-variant pt-6">
-          <p className="text-sobre tracking-[0.16em] uppercase font-semibold text-on-surface-variant mb-3">Outros parceiros</p>
-          <ul className="flex gap-2 overflow-x-auto scrollbar-none -mx-[clamp(1rem,4.2vw,4rem)] px-[clamp(1rem,4.2vw,4rem)] sm:mx-0 sm:px-0 sm:flex-wrap">
+          <h2 className="font-serif text-primary text-lg font-normal mb-3">Outros parceiros</h2>
+          {/* Quebra linha em vez de rolar de lado. */}
+          <ul className="flex flex-wrap gap-2">
             {outros.map((s) => (
               <li key={s.id} className="flex-shrink-0">
                 {onIr
