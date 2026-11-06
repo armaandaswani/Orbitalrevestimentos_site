@@ -893,9 +893,10 @@ interface VisualizadorWizardProps {
   /** Prefill zone defaults from a parent context (e.g. Simulador selection). */
   simPrefills?: SimPrefill[];
   /**
-   * When true: lead was already captured upstream — suppress the lead-form
-   * overlay, and call onComplete automatically the first time a generation
-   * succeeds (no extra click) instead of handing off to /simulador.
+   * When true (inside /simulador): lead was already captured upstream, so
+   * there is no lead sheet; the shell hides its own stepper and Voltar and
+   * keeps the action bar in flow; onComplete fires automatically the first
+   * time a generation succeeds (no extra click).
    */
   embeddedMode?: boolean;
   /** Lead info from the parent (used for auto-saving the render). */
@@ -2216,7 +2217,6 @@ export default function VisualizadorWizard({
 }
 
 // ── Sub-components ─────────────────────────────────────────────────────────────
-
 
 // Marcar, com o editor fechado (celular) ou no lugar (computador, a foto vai na
 // coluna da esquerda pelo VizShell). No celular a foto aqui é parada: tocar e
