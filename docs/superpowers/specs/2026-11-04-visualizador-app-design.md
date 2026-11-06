@@ -23,7 +23,9 @@ The owner's decisions (04/11/2026, verbatim choices):
 - **Lead capture before the result is revealed:** name and WhatsApp in standalone mode, `/api` calls as today.
 - **Saved rooms:** `savedAmbientes`, "Adicionar outro ambiente".
 - **The quote handoff:** "Continuar para o orçamento" and `ORCAMENTO_INSTANTANEO_VISIVEL`.
-- **Embedded mode:** inside `/simulador` ("Ver no ambiente"), with `simPrefills`, `onSkip`, the parent's prefilled lead, and the automatic advance to the quote.
+- **[Superado em 06/11/2026: modo embutido removido]** **Embedded mode:** inside `/simulador` ("Ver no ambiente"), with `simPrefills`, `onSkip`, the parent's prefilled lead, and the automatic advance to the quote.
+
+  > **Emenda 06/11/2026 (decisão do dono: modo embutido removido).** The embedded mode is gone. Step 5 of `/simulador` ("Ver no ambiente") rendered the Visualizador only when `step === 5 && !showResult`, but "Ver meu investimento" sets `step = 5` and `showResult = true` together, the stepper only goes backwards and no URL parameter sets the step, so no client could reach it (Task 7 report, `.superpowers/sdd/2026-11-04-visualizador-app/task-7-report.md`). The owner decided on 06/11/2026 to remove it as dead code (`visualizador-goldfish-resolucao.md`, last section). Removed: the step-5 block and `buildVizPrefills` in `src/app/simulador/page.tsx`; in the wizard and `visualizador/*`, `embeddedMode`, the `simPrefills`, `products`, `loadingProducts`, `prefilledLeadName`/`prefilledLeadPhone`, `onComplete` and `onSkip` props, the auto-advance, the prefilled-lead effect, `suppressWhatsapp` from the wizard's save-render call, the B2 "Trocar foto"/"Voltar" links (`rotuloVoltar`, `data-viz-voltar-embutido`), "Pular esta etapa" and every `embutido` prop and branch. `VisualizadorWizard` now takes no props and only `/visualizador` uses it. Kept: what `/simulador` shows a client today (steps 1 to 4, "Ver meu investimento", the result and quote screen, one quote send, e-mails), the standalone Visualizador and its engine, the `?src=sim` URL prefill from the Simulador link ("Vindo do Simulador: …") and the `?src=viz…&viz_render=` handoff back to the Simulador. The `suppressWhatsapp` option of `/api/visualizador/save-render` stays in the API, unused by the client.
 - **Prices:** the visualizer shows none, and none are added.
 - **Copy rules:** no em dashes, no competitors, "Painel Flexível em Fibra de Bambu" in full at first mention when the product is named, and honest AI wording.
 
@@ -51,6 +53,8 @@ The owner's decisions (04/11/2026, verbatim choices):
 - One large surface: "Envie uma foto do seu ambiente", with the two buttons from 7078a52 on touch devices (Tirar foto, Galeria), and click or drag on desktop. One tip line: "Foto de frente e bem iluminada funciona melhor."
 - Choosing a photo goes straight to Marcar. The full-screen editor opens on phones; desktop goes to its Marcar layout.
 - Keep: the existing error handling and file reading, and the `simPrefills` banner (restyled as one quiet line).
+
+  > **Emenda 06/11/2026 (decisão do dono: modo embutido removido).** The banner now comes only from the `?src=sim` URL prefill and always reads "Vindo do Simulador: …"; the embedded variant "Produto selecionado: …" and the embedded "Pular esta etapa" are gone with the embed. See the emenda in §2.
 
 ### 3.3 Marcar (full-screen editor on phones)
 
@@ -117,15 +121,17 @@ The owner's decisions (04/11/2026, verbatim choices):
   - "Testar outro acabamento" (back to Acabamento, keeping the areas);
   - "Adicionar outro ambiente" (existing `onAddPhoto`);
   - "Continuar para o orçamento" where it exists today.
-- **Embedded mode:** keeps the automatic advance to the quote after the first successful render. No lead sheet.
+- **[Superado em 06/11/2026: modo embutido removido]** **Embedded mode:** keeps the automatic advance to the quote after the first successful render. No lead sheet.
 
   > **Emenda 06/11/2026 (B1c, B2, N7, Q2).** "Falar com um consultor" (in Resultado and in the shortcut of the next room) shows only while `ORCAMENTO_INSTANTANEO_VISIVEL` is false; with the flag on, only the quote block shows, as in 7078a52. In embedded mode the shell has no stepper and no full-page "Voltar"; Marcar shows a compact in-flow link "Trocar foto" and Acabamento a compact "Voltar", both calling the wizard's `voltar`, with nothing fixed. The lead sheet button reads "Salvar e aguardar" while the render is still generating and "Ver resultado" once it is ready. The generated image's alt is "Simulação gerada por IA da mesma foto com o acabamento escolhido", and the note "A imagem gerada é uma simulação e pode diferir do resultado real." sits right under the before/after control in the site's secondary text colour. Reason: final review (06/11/2026); the engine outcomes do not change.
+
+  > **Emenda 06/11/2026 (decisão do dono: modo embutido removido).** The embedded-mode parts of §3.5 are superseded: the automatic advance to the quote, the embed with no lead sheet, and, in the emenda above, the embedded shell with no stepper and the compact "Trocar foto"/"Voltar" links (B2). The lead sheet is now always shown before the reveal, and "Falar com um consultor" follows only the `ORCAMENTO_INSTANTANEO_VISIVEL` rule. See the emenda in §2.
 
 ## 4. Architecture
 
 `src/components/VisualizadorWizard.tsx` is 2907 lines. The redesign splits the presentation from the engine without changing the engine.
 
-- **`VisualizadorWizard.tsx`** keeps all state, effects, engine calls, lead logic and embedded-mode wiring. It renders a `VizShell` and passes it props and callbacks. The old `UploadStep`, `ZonesStep`, `ZoneCard`, `ResultStep` and `WizStepper` are removed once they are replaced.
+- **`VisualizadorWizard.tsx`** keeps all state, effects, engine calls, lead logic and embedded-mode wiring ([Superado em 06/11/2026: modo embutido removido]: there is no embedded-mode wiring any more). It renders a `VizShell` and passes it props and callbacks. The old `UploadStep`, `ZonesStep`, `ZoneCard`, `ResultStep` and `WizStepper` are removed once they are replaced.
 - **New folder `src/components/visualizador/`.** One clear job per file, presentational, typed props, no engine imports:
   - `VizShell.tsx`: progress bar, step transitions, fixed bottom action bar, desktop two-column layout.
   - `EtapaFoto.tsx`: the upload surface and the two touch buttons, reusing the 7078a52 logic.
@@ -137,6 +143,8 @@ The owner's decisions (04/11/2026, verbatim choices):
   - `Folha.tsx`: a small accessible bottom sheet (dialog role, focus trap, Esc, swipe-down or ✕ to close) used by Onde, Ajustes and the lead form.
 - **Styling:** Tailwind plus a small `/* ── Visualizador */` block in `globals.css` for transitions and the slider. Use the site's motion tokens.
 - **`/visualizador/page.tsx`:** short hero, then the tool, then "Como funciona" and the closing CTA. The `/simulador` embed uses the same components through `embeddedMode`.
+
+  > **Emenda 06/11/2026 (decisão do dono: modo embutido removido).** There is no `/simulador` embed and no `embeddedMode`: only `/visualizador` renders the wizard, with no props. See the emenda in §2.
 
 ## 5. Accessibility and quality
 
@@ -165,9 +173,11 @@ The owner's decisions (04/11/2026, verbatim choices):
   - The editor locks page scroll and restores it on close.
   - Tap → zone → chip → remove → Pronto.
   - Card selection advances areas; Gerar is enabled only when all areas have a finish and a description.
-  - The lead sheet blocks reveal in standalone mode but not in embedded mode.
+  - **[Superado em 06/11/2026: modo embutido removido]** The lead sheet blocks reveal in standalone mode but not in embedded mode.
   - The before/after drag and arrow keys work.
-  - Embedded mode in `/simulador` still reaches the quote.
+  - **[Superado em 06/11/2026: modo embutido removido]** Embedded mode in `/simulador` still reaches the quote.
+
+    > **Emenda 06/11/2026 (decisão do dono: modo embutido removido).** These two checks become: the lead sheet always blocks the reveal; and `/simulador` has no Visualizador anywhere, while steps 1 to 4, "Ver meu investimento", the result screen and a single quote send work as before (`checks/simulador-sem-visualizador.mjs`, which replaces `viz-embutido.mjs`). See the emenda in §2.
 - **Harness:** `scripts/medir-movimento.mjs` on `/visualizador` at upload state, iphone-15-pro and desktop-1440, `--cpu 4`. No regression against the current page.
 - **Review:** task reviews per SDD, then a final whole-branch review before publishing. Publishing to `main` needs the owner's explicit OK.
 
@@ -182,10 +192,12 @@ The owner's decisions (04/11/2026, verbatim choices):
 - **`AcabamentoSemAreas`.** If every area is removed in the editor, Acabamento shows "Nenhuma área marcada" with a "Marcar as áreas" link, never a blank screen, and the action bar reopens the marking.
 - **The "Outros" tab.** Products whose line is outside Classic, Brilliance and Elegance appear under an "Outros" tab, so they never disappear. A line with no products has no tab. The default tab follows the finish already chosen for the area.
 - **Editor history.** Opening the full-screen editor pushes one history entry. The browser back button closes the editor and keeps the client on the page; closing by ✕, Esc or "Pronto" removes that entry. While the entry exists, scroll restoration is manual, so leaving it never sends the page back to an old position.
-- **Chat bubble above the bar.** While the standalone action bar is shown, `html[data-viz-barra-presa]` lifts the site's chat bubble so it does not cover the primary button. In embedded mode there is no lift.
+- **Chat bubble above the bar.** While the standalone action bar is shown, `html[data-viz-barra-presa]` lifts the site's chat bubble so it does not cover the primary button. In embedded mode there is no lift. **[Superado em 06/11/2026: modo embutido removido]**: the last sentence; there is no embedded mode, so the lift applies whenever the action bar is shown.
 
 ## 7. Out of scope
 
 - Changes to the AI engine, prompts or detection models.
 - The price simulator `/simulador` page, beyond keeping its embed working.
+
+  > **Emenda 06/11/2026 (decisão do dono: modo embutido removido).** The only change to `/simulador` is the removal of the unreachable embed (step-5 block and `buildVizPrefills`); nothing a client sees there changes. See the emenda in §2.
 - New copy on the closing CTA section. Note for the owner: it says "instalação sem obra em poucas horas"; the brand rule says Orbital is a supplier, not an installer, so the owner may want to reword it later.

@@ -13,7 +13,9 @@
 ## Global constraints
 
 - The engine is untouched. That covers detection (`onTapPhoto`, `drawAddRect`, `addTextZone`, `confirmQuad`, `detectInto*`), `analyze`, `generate`, `handleLeadSubmit`, `download`, `addAnotherPhoto`, `falarComConsultor`, `goToSimulador`, `savedAmbientes`, `ORCAMENTO_INSTANTANEO_VISIVEL` and `DETERMINISTIC_PROJECTION`. Only call sites and presentation change.
-- Embedded mode (`embeddedMode`, `simPrefills`, `onSkip`, prefilled lead, auto-advance on the first successful render) works exactly as today inside `/simulador`. In embedded mode the bottom action bar is not fixed: it renders in flow. There is no lead sheet in embedded mode.
+- **[Superado em 06/11/2026: modo embutido removido]** Embedded mode (`embeddedMode`, `simPrefills`, `onSkip`, prefilled lead, auto-advance on the first successful render) works exactly as today inside `/simulador`. In embedded mode the bottom action bar is not fixed: it renders in flow. There is no lead sheet in embedded mode.
+
+  > **Emenda 06/11/2026 (decisão do dono: modo embutido removido).** The embedded mode is gone. Step 5 of `/simulador` ("Ver no ambiente") rendered the Visualizador only when `step === 5 && !showResult`, but "Ver meu investimento" sets `step = 5` and `showResult = true` together, the stepper only goes backwards and no URL parameter sets the step, so no client could reach it (Task 7 report, `.superpowers/sdd/2026-11-04-visualizador-app/task-7-report.md`). The owner decided on 06/11/2026 to remove it as dead code (`visualizador-goldfish-resolucao.md`, last section). Removed: the step-5 block and `buildVizPrefills` in `src/app/simulador/page.tsx`; in the wizard and `visualizador/*`, `embeddedMode`, the `simPrefills`, `products`, `loadingProducts`, `prefilledLeadName`/`prefilledLeadPhone`, `onComplete` and `onSkip` props, the auto-advance, the prefilled-lead effect, `suppressWhatsapp` from the wizard's save-render call, the B2 "Trocar foto"/"Voltar" links (`rotuloVoltar`, `data-viz-voltar-embutido`), "Pular esta etapa" and every `embutido` prop and branch. `VisualizadorWizard` now takes no props and only `/visualizador` uses it. Kept: what `/simulador` shows a client today (steps 1 to 4, "Ver meu investimento", the result and quote screen, one quote send, e-mails), the standalone Visualizador and its engine, the `?src=sim` URL prefill from the Simulador link ("Vindo do Simulador: …") and the `?src=viz…&viz_render=` handoff back to the Simulador. The `suppressWhatsapp` option of `/api/visualizador/save-render` stays in the API, unused by the client.
 - No prices are shown anywhere in the visualizer.
 - Copy follows the spec strings. Humanizer applies to any new string. No em dashes, no eyebrow labels, no competitors. Technical labels ("SAM2", "Textura exata", "IA com referência", "Superfície detectada", "Redefinir cantos") never render unless the URL has `?debug=1`.
 - Animation: transform and opacity only (`clip-path` only for the slider). Use the tokens `--mv-base` / `--mv-chegada`. `will-change` only while a transition runs. Under `prefers-reduced-motion: reduce` changes are instant.
@@ -34,7 +36,8 @@
    > **Emenda 06/11/2026 (R2-N6).** The current area is kept by zone id, and `indiceDaArea` (Task 1, with tests) now also owns this focus. It finds the same zone after a removal, takes the next one when the current zone was removed, and returns 0 with no areas. `ajustarAreaAtual` still clamps. Reason: since M3 the index comes from `indiceDaArea`, and the plan cited only `ajustarAreaAtual`.
 4. **Analysis fails or is offline.** Each area shows "Descreva onde aplicar", opens the Onde sheet, and "Gerar visualização" stays disabled until every area has text. Owned by Task 1 (`podeGerar` tests) and Task 5 (an intercepted 500 response).
    > **Emenda 06/11/2026 (N1, N4, M2).** Blocking "Gerar" on an empty description is a change from before the redesign (it used to be optional in the model phase), and it is intentional. In the failure case the whole "Descreva onde aplicar" line is a button that opens the Onde sheet. "Próxima área" needs only a chosen finish (`podeIrParaProximaArea`); "Gerar visualização" keeps the full `podeGerar` gate. Reason: final review (06/11/2026); the earlier per-area gate stopped a client who wanted to pick every finish first.
-5. **Embedded in `/simulador` on a phone.** No fixed bar overlapping the simulator's own controls, no lead sheet, and the quote still opens after the first render. Owned by Task 7: a browser check of the full embedded path with mocked endpoints.
+5. **[Superado em 06/11/2026: modo embutido removido]** **Embedded in `/simulador` on a phone.** No fixed bar overlapping the simulator's own controls, no lead sheet, and the quote still opens after the first render. Owned by Task 7: a browser check of the full embedded path with mocked endpoints.
+   > **Emenda 06/11/2026 (decisão do dono: modo embutido removido).** Focus 5 is now: `/simulador` on a phone (390×844, touch) has no Visualizador element anywhere; steps 1 to 4 and "Ver meu investimento" open the result screen; the quote is sent exactly once; no horizontal scroll; no console errors. Owned by `checks/simulador-sem-visualizador.mjs` (replaces `viz-embutido.mjs`, kept as `.bak`), run on this branch and on main (:3004) with the same result. See the Global constraints emenda.
 
 ---
 
@@ -98,6 +101,7 @@
     - **No scroll hunting (owner, 04/11: "I click next, then I start all the way down, then I have to scroll up").** On every step change, the window scrolls so the shell's top sits just under the site header: smooth, or instant under reduced motion; embedded mode scrolls to the shell top inside `/simulador`. Export `rolarParaTopo(el: HTMLElement): void` from `VizShell.tsx` so Task 5 can reuse it for "Próxima área".
     - **The primary action is always visible on phones** (fixed bar), so the client never scrolls to find "Continuar".
       > **Emenda 06/11/2026 (M1).** The bar is `sticky` (bottom 0) inside the tool, not `fixed`: always in view while the client is in the Visualizador, and it leaves with the tool when the page scrolls on to "Como funciona". In embedded mode it is in flow. Reason: this is what `VizShell` does; a fixed bar would cover the content below the tool.
+      > **Emenda 06/11/2026 (decisão do dono: modo embutido removido).** The `embutido` prop of `VizShell` and its in-flow bar, and the B2 links below (`rotuloVoltar`, `data-viz-voltar-embutido`), are removed: the bar is always the sticky one. The B2 emenda below is superseded. See the Global constraints emenda.
       > **Emenda 06/11/2026 (B2).** In embedded mode the shell has no stepper and no full-page "Voltar", but Marcar shows a compact in-flow link "Trocar foto" and Acabamento a compact "Voltar" (`rotuloVoltar`), both calling the wizard's `voltar`. Nothing is fixed and the simulator's own controls stay uncovered. Reason: final review found no way back inside the embed.
     - Owner, 04/11: "there are some spaces that are like dead, I can't scroll". No element outside the full-screen editor may have `touch-action: none` or block vertical pan.
   - `Folha(props: { aberta: boolean; titulo: string; onFechar: () => void; children: React.ReactNode })`.
@@ -124,6 +128,7 @@
 
 **Interfaces:**
 - Produces: `EtapaFoto(props: { onArquivo: (f: File | undefined | null) => void; erro: string | null; temAmbienteSalvo: boolean; resumoSimulador: string | null; embutido: boolean; onPular?: () => void })`.
+  > **Emenda 06/11/2026 (decisão do dono: modo embutido removido).** `embutido` and `onPular` are removed: `EtapaFoto(props: { onArquivo; erro; temAmbienteSalvo; resumoSimulador })`. "Pular esta etapa" no longer exists and the summary line always reads "Vindo do Simulador: …". See the Global constraints emenda.
   - It owns its two file inputs: gallery `accept="image/*"`, camera `accept="image/*" capture="environment"`. Both reset their `value` after change.
   - The touch buttons ("Tirar foto", "Galeria") show on `(pointer: coarse)`. On desktop: click or drag on the surface.
   - Copy: title "Envie uma foto do seu ambiente" (or "Envie a foto do próximo ambiente" when `temAmbienteSalvo`); tip "Foto de frente e bem iluminada funciona melhor."; `resumoSimulador` as one quiet line; "Pular esta etapa" when `onPular` is set.
@@ -250,7 +255,8 @@
 - Wizard mapping:
   - `onOutroAcabamento` sets `zonePhase` to `"model"`, `areaAtual` to 0 and the step to `"zones"`.
   - `orcamento` is built only when `ORCAMENTO_INSTANTANEO_VISIVEL && !embeddedMode`, from today's `quoteReady`, `proceeding`, `allAmbientes` and `goToSimulador`.
-  - Embedded auto-advance stays as it is.
+  - **[Superado em 06/11/2026: modo embutido removido]** Embedded auto-advance stays as it is.
+  > **Emenda 06/11/2026 (decisão do dono: modo embutido removido).** `EtapaResultado` has no `embutido` prop: the lead sheet always blocks the reveal, and `orcamento` is built when `ORCAMENTO_INSTANTANEO_VISIVEL` alone. The auto-advance is removed. See the Global constraints emenda.
 
 - [ ] **Step 1: Failing check** (`checks/viz-resultado.mjs`, mocked render returning a data URL, mocked lead endpoint):
   - Standalone: the lead dialog blocks the reveal; with valid name and phone it closes and shows the slider at `aria-valuenow="50"`.
@@ -264,6 +270,8 @@
 - [ ] **Step 5: Commit** `Visualizador: resultado com antes e depois e ações claras`.
 
 ### Task 7: Embedded mode, cleanup, harness
+
+> **Emenda 06/11/2026 (decisão do dono: modo embutido removido).** Task 7 was done (commit 7fca40f) and found the embed unreachable. Its embedded parts are superseded: Step 1 (`checks/viz-embutido.mjs`, now `viz-embutido.mjs.bak`) and Step 2 no longer apply, and `src/app/simulador/page.tsx` was changed after all, to remove the step-5 block. The replacement check is `checks/simulador-sem-visualizador.mjs`. The cleanup and harness steps stand. Report: `.superpowers/sdd/2026-11-04-visualizador-app/remocao-embutido-report.md`. See the Global constraints emenda.
 
 **Files:**
 - Modify: `src/components/VisualizadorWizard.tsx`: remove dead code (unused imports, `useProjection` warning only if it is now trivially removable without touching the engine).
