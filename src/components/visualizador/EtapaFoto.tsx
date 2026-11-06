@@ -11,12 +11,9 @@ export interface EtapaFotoProps {
   temAmbienteSalvo: boolean;
   /** Linha discreta com o produto e o espaço vindos do Simulador (ou null). */
   resumoSimulador: string | null;
-  embutido: boolean;
-  /** Presente só quando a etapa pode ser pulada (modo embutido no /simulador). */
-  onPular?: () => void;
 }
 
-export default function EtapaFoto({ onArquivo, erro, temAmbienteSalvo, resumoSimulador, embutido, onPular }: EtapaFotoProps) {
+export default function EtapaFoto({ onArquivo, erro, temAmbienteSalvo, resumoSimulador }: EtapaFotoProps) {
   const galeriaRef = useRef<HTMLInputElement | null>(null);
   const cameraRef = useRef<HTMLInputElement | null>(null);
   const [arrastando, setArrastando] = useState(false);
@@ -100,23 +97,8 @@ export default function EtapaFoto({ onArquivo, erro, temAmbienteSalvo, resumoSim
 
       {resumoSimulador && (
         <p className="mt-4 text-[#74777f] text-sm">
-          {embutido ? "Produto selecionado" : "Vindo do Simulador"}: {resumoSimulador}
+          Vindo do Simulador: {resumoSimulador}
         </p>
-      )}
-
-      {onPular && (
-        <div className="mt-6 flex justify-end">
-          <button
-            type="button"
-            onClick={onPular}
-            className="min-h-11 flex items-center gap-1.5 text-xs tracking-[0.1em] uppercase font-semibold text-[#74777f] hover:text-[#0B1F45]"
-          >
-            Pular esta etapa
-            <svg aria-hidden width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5">
-              <path d="M5 12h14M12 5l7 7-7 7" />
-            </svg>
-          </button>
-        </div>
       )}
     </div>
   );

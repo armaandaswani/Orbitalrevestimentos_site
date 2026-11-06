@@ -1,7 +1,7 @@
 "use client";
 
 // Resultado: enquanto gera, a foto fica na tela com uma linha fina de progresso
-// (aria-live). No site, antes de revelar, a folha do contato (nome e WhatsApp,
+// (aria-live). Antes de revelar, a folha do contato (nome e WhatsApp,
 // a mesma validação de antes) fica por cima do resultado borrado e não fecha
 // sozinha. Revelado: o antes e depois com o aviso de simulação logo abaixo e
 // as ações, com "Falar com um consultor" à frente (ou só o orçamento, quando
@@ -34,7 +34,7 @@ function telefoneValido(v: string): { digitos: number; valido: boolean } {
 }
 
 export default function EtapaResultado({
-  photoData, resultado, previa, gerando, progresso, erro, embutido,
+  photoData, resultado, previa, gerando, progresso, erro,
   leadEnviado, leadNome, leadTelefone, onNome, onTelefone, onEnviarLead,
   onConsultor, onBaixar, onOutroAcabamento, onOutroAmbiente, onTentarDeNovo, orcamento,
 }: {
@@ -44,7 +44,6 @@ export default function EtapaResultado({
   gerando: boolean;
   progresso: Progresso | null;
   erro: string | null;
-  embutido: boolean;
   leadEnviado: boolean;
   leadNome: string;
   leadTelefone: string;
@@ -60,10 +59,9 @@ export default function EtapaResultado({
   orcamento: null | { pronto: boolean; preparando: boolean; resumo: string; onContinuar: () => void };
 }) {
   const proporcao = useProporcao(photoData) ?? 4 / 3;
-  const liberado = embutido || leadEnviado;
-  const revelado = !gerando && !!resultado && liberado;
+  const revelado = !gerando && !!resultado && leadEnviado;
   const falhou = !gerando && !resultado && !!erro;
-  const folhaAberta = !embutido && !leadEnviado && !erro && (gerando || !!resultado);
+  const folhaAberta = !leadEnviado && !erro && (gerando || !!resultado);
   const telefone = telefoneValido(leadTelefone);
   const contatoPronto = leadNome.trim().length > 0 && telefone.valido;
   const progressoTexto = textoProgresso(progresso);
@@ -153,7 +151,7 @@ export default function EtapaResultado({
 
       {revelado && (
         <div className="mt-4">
-          {!embutido && onConsultor && (
+          {onConsultor && (
             <div>
               <button type="button" onClick={onConsultor} className={`${PRIMARIO} lg:w-auto lg:min-w-[320px]`}>
                 <svg aria-hidden width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round">
@@ -199,57 +197,55 @@ export default function EtapaResultado({
         </div>
       )}
 
-      {!embutido && (
-        <Folha
-          aberta={folhaAberta}
-          titulo={gerando ? "Enquanto a visualização fica pronta" : "Sua visualização está pronta"}
-          onFechar={() => {}}
-          fechavel={false}
+      <Folha
+        aberta={folhaAberta}
+        titulo={gerando ? "Enquanto a visualização fica pronta" : "Sua visualização está pronta"}
+        onFechar={() => {}}
+        fechavel={false}
+      >
+        {gerando && (
+          <p className="mb-3 flex items-center gap-2 text-[13px] text-[#43474e]">
+            <span aria-hidden className="viz-ponto-detectando h-2 w-2 shrink-0 rounded-full bg-[#36A35C]" />
+            {progressoTexto}
+          </p>
+        )}
+        <p className="text-[15px] text-[#43474e]">Informe seus dados para ver o resultado.</p>
+        <form
+          className="mt-4 flex flex-col gap-3"
+          onSubmit={(e) => { e.preventDefault(); if (contatoPronto) onEnviarLead(); }}
         >
-          {gerando && (
-            <p className="mb-3 flex items-center gap-2 text-[13px] text-[#43474e]">
-              <span aria-hidden className="viz-ponto-detectando h-2 w-2 shrink-0 rounded-full bg-[#36A35C]" />
-              {progressoTexto}
-            </p>
+          <label className="block">
+            <span className={ROTULO}>Nome</span>
+            <input
+              value={leadNome}
+              onChange={(e) => onNome(e.target.value)}
+              autoComplete="name"
+              placeholder="Seu nome completo"
+              className={CAMPO}
+            />
+          </label>
+          <label className="block">
+            <span className={ROTULO}>WhatsApp</span>
+            <input
+              value={leadTelefone}
+              onChange={(e) => onTelefone(e.target.value)}
+              type="tel"
+              inputMode="tel"
+              autoComplete="tel"
+              placeholder="(92) 99999-9999"
+              aria-invalid={telefone.digitos > 0 && !telefone.valido}
+              className={CAMPO}
+            />
+          </label>
+          {telefone.digitos > 0 && !telefone.valido && (
+            <p className="-mt-1 text-[13px] text-[#9a5b0b]">Informe um WhatsApp válido com DDD.</p>
           )}
-          <p className="text-[15px] text-[#43474e]">Informe seus dados para ver o resultado.</p>
-          <form
-            className="mt-4 flex flex-col gap-3"
-            onSubmit={(e) => { e.preventDefault(); if (contatoPronto) onEnviarLead(); }}
-          >
-            <label className="block">
-              <span className={ROTULO}>Nome</span>
-              <input
-                value={leadNome}
-                onChange={(e) => onNome(e.target.value)}
-                autoComplete="name"
-                placeholder="Seu nome completo"
-                className={CAMPO}
-              />
-            </label>
-            <label className="block">
-              <span className={ROTULO}>WhatsApp</span>
-              <input
-                value={leadTelefone}
-                onChange={(e) => onTelefone(e.target.value)}
-                type="tel"
-                inputMode="tel"
-                autoComplete="tel"
-                placeholder="(92) 99999-9999"
-                aria-invalid={telefone.digitos > 0 && !telefone.valido}
-                className={CAMPO}
-              />
-            </label>
-            {telefone.digitos > 0 && !telefone.valido && (
-              <p className="-mt-1 text-[13px] text-[#9a5b0b]">Informe um WhatsApp válido com DDD.</p>
-            )}
-            {/* Enquanto gera, o contato fica salvo e o resultado abre sozinho. */}
-            <button type="submit" disabled={!contatoPronto} className={`${PRIMARIO} mt-2`}>
-              {gerando ? "Salvar e aguardar" : "Ver resultado"}
-            </button>
-          </form>
-        </Folha>
-      )}
+          {/* Enquanto gera, o contato fica salvo e o resultado abre sozinho. */}
+          <button type="submit" disabled={!contatoPronto} className={`${PRIMARIO} mt-2`}>
+            {gerando ? "Salvar e aguardar" : "Ver resultado"}
+          </button>
+        </form>
+      </Folha>
     </div>
   );
 }

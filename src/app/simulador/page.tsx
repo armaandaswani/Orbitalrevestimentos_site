@@ -6,7 +6,6 @@ import Image from "next/image";
 import Link from "next/link";
 import ContatoCta from "@/components/ContatoCta";
 import MdfComparison, { COMPARISON_OPTIONS } from "@/components/MdfComparison";
-import VisualizadorWizard, { type SimPrefill } from "@/components/VisualizadorWizard";
 import { panelGrid } from "@/lib/render-prompt";
 import type { OrcamentoBreakdown } from "@/lib/orcamento-pricing";
 import { findPlateShortages, shortageMessage, type PlateShortage } from "@/lib/plate-stock";
@@ -757,7 +756,7 @@ function SimuladorInner() {
 
   function showResults() {
     setShowResult(true);
-    setStep(5); // stepper now ends at "Resultado" (Ver no ambiente is opt-in)
+    setStep(5); // step 5 of the stepper is "Resultado"
   }
 
   useEffect(() => {
@@ -1314,9 +1313,8 @@ function SimuladorInner() {
   }
 
   async function handleSubmitAndShow() {
-    // Step 5 can now reach this two ways — the visualization auto-advancing
-    // on its first successful render, or the always-visible "Pular etapa"
-    // button — so guard against submitting (and re-emailing) twice.
+    // Guard against submitting (and re-emailing) twice, e.g. a double tap on
+    // "Ver meu investimento" while the first submit is still running.
     if (simSubmitted || simSubmitting) return;
     if (!clientName.trim() || !clientEmail.trim() || !clientPhone.trim()) return;
     if (couponCode.trim() && !couponData) await validateCoupon();
@@ -1651,30 +1649,6 @@ function SimuladorInner() {
     }
 
     return `/visualizador?${params.toString()}`;
-  }
-
-  // Build SimPrefill[] for the embedded VisualizadorWizard in step 5
-  function buildVizPrefills(): SimPrefill[] {
-    const parseDimLabel = (label: string) => {
-      const m = label.match(/([\d.]+)m\s*[×x]\s*([\d.]+)m/);
-      return m ? { w: parseFloat(m[1]), h: parseFloat(m[2]) } : { w: undefined, h: undefined };
-    };
-    const result: SimPrefill[] = [
-      ...savedSpaces.map((sp) => {
-        const spEntry = SPACES.find((s) => s.label === sp.label);
-        const { w, h } = parseDimLabel(sp.dimLabel);
-        return { productCode: sp.productCode, spaceId: spEntry?.id ?? sp.label, w, h };
-      }),
-    ];
-    if (selectedProduct && selectedSpace && selectedSpace.viability !== "no") {
-      result.push({
-        productCode: selectedProduct.code,
-        spaceId: showCustomInput ? (customSpaceText.trim() || "parede") : selectedSpace.id,
-        w: dimMode === "lxa" && parseFloat(width) > 0 ? parseFloat(width) : undefined,
-        h: dimMode === "lxa" && parseFloat(height) > 0 ? parseFloat(height) : undefined,
-      });
-    }
-    return result;
   }
 
   // Build the partner-shareable client link
@@ -2747,57 +2721,6 @@ function SimuladorInner() {
                     <path d="M5 12h14M12 5l7 7-7 7" />
                   </svg>
                 </button>
-              </div>
-            </div>
-          )}
-
-          {/* ── Step 5 (legacy "Ver no ambiente") — now opt-in only; the result
-                section renders instead once the client submits. Kept for any
-                direct navigation but hidden when the result is shown. ───────── */}
-          {step === 5 && !showResult && (
-            <div className="bg-white border border-[#e2e2e2]">
-              <div className="px-6 pt-6 lg:px-10 lg:pt-8 flex flex-col sm:flex-row sm:items-start sm:justify-between gap-4 border-b border-[#f0f0ee] pb-5">
-                <div>
-                  <h3 className="font-serif text-[#0B1F45] text-xl font-normal mb-1">
-                    Visualize no seu ambiente
-                  </h3>
-                  <p className="text-[#74777f] text-sm">
-                    Opcional — envie uma foto e a IA aplica os acabamentos antes de ver a simulação.
-                  </p>
-                </div>
-                <div className="flex items-center gap-3 flex-shrink-0">
-                  <button
-                    onClick={() => goToStep(4)}
-                    className="flex items-center gap-1.5 text-xs tracking-[0.1em] uppercase font-semibold text-[#74777f] hover:text-[#0B1F45] transition-colors"
-                  >
-                    <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5">
-                      <path d="M19 12H5M12 5l-7 7 7 7" />
-                    </svg>
-                    Voltar
-                  </button>
-                  <button
-                    onClick={handleSubmitAndShow}
-                    disabled={simSubmitting}
-                    className="inline-flex items-center gap-1.5 text-xs tracking-[0.1em] uppercase font-semibold text-[#0B1F45] hover:underline transition-colors disabled:opacity-50"
-                  >
-                    {simSubmitting ? "Enviando..." : "Pular etapa →"}
-                  </button>
-                </div>
-              </div>
-              <div className="px-4 sm:px-6 lg:px-10 pb-8">
-                <VisualizadorWizard
-                  products={products}
-                  loadingProducts={loadingProducts}
-                  simPrefills={buildVizPrefills()}
-                  embeddedMode
-                  prefilledLeadName={clientName}
-                  prefilledLeadPhone={clientPhone}
-                  onComplete={(rid) => {
-                    if (rid) vizRenderId.current = rid;
-                    void handleSubmitAndShow();
-                  }}
-                  onSkip={handleSubmitAndShow}
-                />
               </div>
             </div>
           )}

@@ -884,48 +884,17 @@ export type VizStep = "upload" | "zones" | "result";
 // "zones" is internally split into two phases (mark → model). The shell shows
 // four visible steps (visualizador/fluxo.ts › etapaVisivel).
 
-// ── Props ──────────────────────────────────────────────────────────────────────
-
-interface VisualizadorWizardProps {
-  /** Pre-loaded product catalog. If not provided, the wizard fetches it itself. */
-  products?: VizProduct[];
-  loadingProducts?: boolean;
-  /** Prefill zone defaults from a parent context (e.g. Simulador selection). */
-  simPrefills?: SimPrefill[];
-  /**
-   * When true (inside /simulador): lead was already captured upstream, so
-   * there is no lead sheet; the shell hides its own stepper and Voltar and
-   * keeps the action bar in flow; onComplete fires automatically the first
-   * time a generation succeeds (no extra click).
-   */
-  embeddedMode?: boolean;
-  /** Lead info from the parent (used for auto-saving the render). */
-  prefilledLeadName?: string;
-  prefilledLeadPhone?: string;
-  /** Called once, right after the first successful generation, with the saved render id. */
-  onComplete?: (vizRenderId?: string) => void;
-  /** Called when the user skips the visualization step entirely. */
-  onSkip?: () => void;
-}
-
 // ── Main component ─────────────────────────────────────────────────────────────
+// Só a página /visualizador usa o wizard, sem props. O modo embutido no
+// /simulador (etapa 5, "Ver no ambiente") saiu em 06/11/2026: ninguém chegava
+// nele pela interface (decisão do dono, ver o spec).
 
-export default function VisualizadorWizard({
-  products: productsProp,
-  loadingProducts: loadingProp,
-  simPrefills: simPrefillsProp,
-  embeddedMode = false,
-  prefilledLeadName = "",
-  prefilledLeadPhone = "",
-  onComplete,
-  onSkip,
-}: VisualizadorWizardProps) {
+export default function VisualizadorWizard() {
   // ── Product catalog ───────────────────────────────────────────────────────
-  const [internalProducts, setInternalProducts] = useState<VizProduct[]>([]);
-  const [internalLoading, setInternalLoading] = useState(!productsProp);
+  const [products, setProducts] = useState<VizProduct[]>([]);
+  const [loadingProducts, setLoadingProducts] = useState(true);
 
   useEffect(() => {
-    if (productsProp) return; // parent supplies products
     let cancelled = false;
     fetch("/api/products")
       .then((r) => (r.ok ? r.json() : []))
@@ -936,15 +905,12 @@ export default function VisualizadorWizard({
             LINE_ORDER.indexOf(a.linha) - LINE_ORDER.indexOf(b.linha) ||
             (a.sort_order ?? 0) - (b.sort_order ?? 0)
         );
-        setInternalProducts(sorted);
+        setProducts(sorted);
       })
       .catch(() => {})
-      .finally(() => !cancelled && setInternalLoading(false));
+      .finally(() => !cancelled && setLoadingProducts(false));
     return () => { cancelled = true; };
-  }, [productsProp]);
-
-  const products = productsProp ?? internalProducts;
-  const loadingProducts = loadingProp ?? internalLoading;
+  }, []);
 
   // ── Wizard state ──────────────────────────────────────────────────────────
   const [step, setStep] = useState<VizStep>("upload");
@@ -1012,41 +978,22 @@ export default function VisualizadorWizard({
     () => false,
   );
 
-  // In standalone mode: lead captured here. In embedded mode: prefilled by parent.
-  const [leadName, setLeadName] = useState(prefilledLeadName);
-  const [leadPhone, setLeadPhone] = useState(prefilledLeadPhone);
-  const [leadSubmitted, setLeadSubmitted] = useState(embeddedMode);
-  const pendingLeadRef = useRef({ name: prefilledLeadName, phone: prefilledLeadPhone });
+  // Lead captured here (contact sheet before the result is revealed).
+  const [leadName, setLeadName] = useState("");
+  const [leadPhone, setLeadPhone] = useState("");
+  const [leadSubmitted, setLeadSubmitted] = useState(false);
+  const pendingLeadRef = useRef({ name: "", phone: "" });
   const vizRenderIdRef = useRef<string>("");
-  // Embedded mode: advance straight to the orçamento on the first successful
-  // generation, no extra click. Guards against re-firing onComplete (which
-  // triggers the parent's lead/quote submission + emails) on a regenerate.
-  const autoAdvancedRef = useRef(false);
-
-  // Sync prefilled lead into ref when props change (e.g. parent fills data after mount)
-  useEffect(() => {
-    if (embeddedMode) {
-      pendingLeadRef.current = { name: prefilledLeadName, phone: prefilledLeadPhone };
-      setLeadName(prefilledLeadName);
-      setLeadPhone(prefilledLeadPhone);
-      setLeadSubmitted(true);
-    }
-  }, [embeddedMode, prefilledLeadName, prefilledLeadPhone]);
 
   // ── Prefills ──────────────────────────────────────────────────────────────
-  const [simPrefills, setSimPrefills] = useState<SimPrefill[]>(simPrefillsProp ?? []);
-  const simPrefillsRef = useRef<SimPrefill[]>(simPrefillsProp ?? []);
+  const [simPrefills, setSimPrefills] = useState<SimPrefill[]>([]);
+  const simPrefillsRef = useRef<SimPrefill[]>([]);
   useEffect(() => {
     simPrefillsRef.current = simPrefills;
   }, [simPrefills]);
 
-  // In standalone mode, parse prefills from URL (?src=sim)
+  // Parse prefills from the URL (?src=sim, link vindo do Simulador)
   useEffect(() => {
-    if (simPrefillsProp !== undefined) {
-      setSimPrefills(simPrefillsProp);
-      simPrefillsRef.current = simPrefillsProp;
-      return;
-    }
     if (typeof window === "undefined") return;
     const params = new URLSearchParams(window.location.search);
     if (params.get("src") !== "sim") return;
@@ -1074,7 +1021,6 @@ export default function VisualizadorWizard({
       setSimPrefills(prefills);
       simPrefillsRef.current = prefills;
     }
-    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
   // ── Scroll helpers ────────────────────────────────────────────────────────
@@ -1149,7 +1095,7 @@ export default function VisualizadorWizard({
       setZones([]);
       setAreaPedida({ id: null, indice: 0 });
       setActiveZoneId(null);
-      setLeadSubmitted(embeddedMode);
+      setLeadSubmitted(false);
       vizRenderIdRef.current = "";
       setZonePhase("mark");
       setStep("zones");
@@ -1157,7 +1103,7 @@ export default function VisualizadorWizard({
     } catch {
       setError("Não foi possível ler essa imagem. Tente outra foto (JPG ou PNG).");
     }
-  }, [embeddedMode]);
+  }, []);
 
   // ── Zone management ───────────────────────────────────────────────────────
   const productById = useCallback((id: string) => products.find((p) => p.id === id) ?? null, [products]);
@@ -1889,7 +1835,6 @@ export default function VisualizadorWizard({
             name: pendingLeadRef.current.name || undefined,
             phone: pendingLeadRef.current.phone || undefined,
             items,
-            suppressWhatsapp: embeddedMode,
           }),
         });
         if (sr.ok) {
@@ -1897,15 +1842,6 @@ export default function VisualizadorWizard({
           if (sd.id) vizRenderIdRef.current = sd.id;
         }
       } catch {}
-
-      // Embedded mode: advance straight to the orçamento on the first
-      // successful generation — no extra click. A later "Gerar novamente"
-      // updates the saved render above but must not re-fire onComplete,
-      // since that triggers the parent's one-time lead/quote submission.
-      if (embeddedMode && !autoAdvancedRef.current) {
-        autoAdvancedRef.current = true;
-        onComplete?.(vizRenderIdRef.current || undefined);
-      }
     } catch (e) {
       setError(e instanceof Error ? e.message : "Erro ao gerar a visualização.");
     } finally {
@@ -1914,7 +1850,7 @@ export default function VisualizadorWizard({
       setPreview(null);
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [photoData, zones, productById, embeddedMode, onComplete, useProjection, keepText]);
+  }, [photoData, zones, productById, useProjection, keepText]);
 
   // ── Lead submit (standalone mode) ─────────────────────────────────────────
   const handleLeadSubmit = useCallback(() => {
@@ -2078,7 +2014,7 @@ export default function VisualizadorWizard({
   // o bloco do orçamento, no Resultado e no atalho das outras etapas.
   const consultorVisivel = !ORCAMENTO_INSTANTANEO_VISIVEL;
   const orcamento =
-    ORCAMENTO_INSTANTANEO_VISIVEL && !embeddedMode && allAmbientes.length > 0
+    ORCAMENTO_INSTANTANEO_VISIVEL && allAmbientes.length > 0
       ? {
           pronto: quoteReady && leadSubmitted,
           preparando: proceeding,
@@ -2098,11 +2034,7 @@ export default function VisualizadorWizard({
       <div ref={topRef} />
       <VizShell
         etapa={etapa}
-        embutido={embeddedMode}
-        // No /simulador só Marcar e Acabamento têm o link de volta (compacto, no
-        // fluxo): "Trocar foto" na marcação, "Voltar" no Acabamento.
-        onVoltar={embeddedMode && step !== "zones" ? undefined : voltar}
-        rotuloVoltar={embeddedMode && zonePhase === "mark" ? "Trocar foto" : "Voltar"}
+        onVoltar={voltar}
         acao={acao}
         lateral={marcacaoNoLugar && photoData ? (
           <FotoMarcavel
@@ -2129,8 +2061,6 @@ export default function VisualizadorWizard({
             erro={error}
             temAmbienteSalvo={savedAmbientes.length > 0}
             resumoSimulador={resumoSimulador}
-            embutido={embeddedMode}
-            onPular={embeddedMode ? onSkip : undefined}
           />
         )}
 
@@ -2186,7 +2116,6 @@ export default function VisualizadorWizard({
             gerando={generating}
             progresso={progress}
             erro={error}
-            embutido={embeddedMode}
             leadEnviado={leadSubmitted}
             leadNome={leadName}
             leadTelefone={leadPhone}
@@ -2204,7 +2133,7 @@ export default function VisualizadorWizard({
 
         {/* Próximo ambiente com um já salvo: o atalho para o consultor (ou para
             o orçamento, quando visível) continua nas outras etapas, como antes. */}
-        {!embeddedMode && step !== "result" && savedAmbientes.length > 0 && (
+        {step !== "result" && savedAmbientes.length > 0 && (
           <AtalhoConsultor onConsultor={consultorVisivel ? falarComConsultor : undefined} orcamento={orcamento} />
         )}
       </VizShell>

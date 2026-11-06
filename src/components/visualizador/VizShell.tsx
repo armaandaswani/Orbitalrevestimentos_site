@@ -51,18 +51,13 @@ export function focarEtapa(shell: HTMLElement): void {
 
 export default function VizShell({
   etapa,
-  embutido,
   onVoltar,
-  rotuloVoltar = "Voltar",
   acao,
   lateral,
   children,
 }: {
   etapa: EtapaVisivel;
-  embutido: boolean;
   onVoltar?: () => void;
-  /** Texto do link de volta no /simulador ("Trocar foto" na marcação). */
-  rotuloVoltar?: string;
   acao?: AcaoShell;
   lateral?: React.ReactNode;
   children: React.ReactNode;
@@ -86,7 +81,7 @@ export default function VizShell({
   }, [etapa]);
 
   // Barra de ação no celular: o balão do chat sobe para não cobrir o botão.
-  const barraPresa = !!acao && !embutido;
+  const barraPresa = !!acao;
   useEffect(() => {
     if (!barraPresa) return;
     const html = document.documentElement;
@@ -126,13 +121,11 @@ export default function VizShell({
       data-viz-shell
       tabIndex={-1}
       aria-label="Visualizador"
-      className={`viz-shell outline-none overflow-x-clip ${embutido ? "" : "flex flex-col px-4 sm:px-6 pb-8 lg:pb-16"} ${
+      className={`viz-shell outline-none overflow-x-clip flex flex-col px-4 sm:px-6 pb-8 lg:pb-16 ${
         barraPresa ? "min-h-[calc(100dvh-5rem)] lg:min-h-0" : ""
       }`}
     >
-      <div className={`mx-auto w-full flex-1 flex flex-col ${embutido ? "" : lateral ? "max-w-[1280px]" : "max-w-2xl"}`}>
-        {/* No /simulador a página já tem as próprias etapas e o próprio Voltar. */}
-        {!embutido && (
+      <div className={`mx-auto w-full flex-1 flex flex-col ${lateral ? "max-w-[1280px]" : "max-w-2xl"}`}>
         <div className="pb-4 sm:pb-6">
           {/* Linha própria do Voltar, com altura reservada: a barra de etapas não pula quando ele aparece. */}
           <div className="flex h-11 items-center">
@@ -178,24 +171,6 @@ export default function VizShell({
             </ol>
           </nav>
         </div>
-        )}
-        {/* No /simulador: só um link compacto no fluxo, sem segunda barra e
-            nada preso à tela (o simulador tem as próprias etapas e o Voltar). */}
-        {embutido && onVoltar && (
-          <div className="flex h-11 items-center">
-            <button
-              type="button"
-              data-viz-voltar-embutido
-              onClick={onVoltar}
-              className="-ml-2 inline-flex min-h-11 items-center gap-1 px-2 text-[13px] font-medium text-[#0B1F45] underline decoration-[#0B1F45]/25 underline-offset-4 hover:text-[#2347A0]"
-            >
-              <svg aria-hidden width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round">
-                <path d="M15 5l-7 7 7 7" />
-              </svg>
-              {rotuloVoltar}
-            </button>
-          </div>
-        )}
 
         <div className={`flex-1 ${lateral ? "lg:grid lg:grid-cols-[minmax(0,1.1fr)_minmax(0,0.9fr)] lg:items-start lg:gap-12" : "flex flex-col"}`}>
           {lateral && <aside className="mb-5 lg:mb-0 lg:sticky lg:top-24">{lateral}</aside>}
@@ -213,11 +188,7 @@ export default function VizShell({
               <div
                 ref={barraRef}
                 data-viz-barra
-                className={
-                  embutido
-                    ? "mt-6"
-                    : "viz-barra sticky bottom-0 z-40 -mx-4 mt-6 border-t border-[#e8e8e8] bg-white/95 px-4 pt-3 pb-[calc(0.75rem+env(safe-area-inset-bottom))] backdrop-blur-sm sm:-mx-6 sm:px-6 lg:static lg:mx-0 lg:border-0 lg:bg-transparent lg:px-0 lg:pt-0 lg:pb-0 lg:backdrop-blur-none"
-                }
+                className="viz-barra sticky bottom-0 z-40 -mx-4 mt-6 border-t border-[#e8e8e8] bg-white/95 px-4 pt-3 pb-[calc(0.75rem+env(safe-area-inset-bottom))] backdrop-blur-sm sm:-mx-6 sm:px-6 lg:static lg:mx-0 lg:border-0 lg:bg-transparent lg:px-0 lg:pt-0 lg:pb-0 lg:backdrop-blur-none"
               >
                 {/* Por que a ação está parada, logo acima dela (no fluxo da barra,
                     sem cobrir o botão); a linha inteira leva ao que falta. */}
