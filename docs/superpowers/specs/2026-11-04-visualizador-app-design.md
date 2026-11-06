@@ -40,6 +40,8 @@ The owner's decisions (04/11/2026, verbatim choices):
   - **Between them:** the content, which scrolls on its own when it is taller than the space.
 
   > **Emenda 06/11/2026 (M1).** The primary action bar is `position: sticky; bottom: 0` inside the tool, not `position: fixed`. It stays in view the whole time the client is inside the Visualizador, and when the page scrolls on to "Como funciona" it leaves with the tool. Reason: a fixed bar would sit over "Como funciona" and the closing CTA; the code (`VizShell`) does this and the owner's rule ("the action is always in reach") still holds.
+
+  > **Emenda 06/11/2026 (R3-M1).** The sticky action bar exists only in Marcar and Acabamento (the wizard passes `acao` to `VizShell` only while the step is `zones`). Foto and Resultado have no bar: Foto's actions ("Tirar foto", "Galeria", or click and drag on desktop) and Resultado's ("Falar com um consultor", "Baixar imagem", "Testar outro acabamento", "Adicionar outro ambiente", the quote block) sit in the step content. Reason: third review round (06/11/2026); the spec said "each step" had a bottom action, and the code never had one on those two steps.
 - **Step change:** the outgoing screen fades out and moves 16 px. The incoming one fades in from 16 px the other way. Duration is `--mv-base` with `--mv-chegada`. Transform and opacity only. Instant under reduced motion. Focus moves to the new step heading.
 
   > **Emenda 06/11/2026 (M7).** Only the incoming screen animates (fade plus 16 px, from the right going forward and from the left going back). The outgoing screen is removed at once, with no exit animation. Reason: this is what the code does (the step container is keyed by step); an exit animation would keep two screens mounted and shift the layout.
@@ -79,7 +81,9 @@ The owner's decisions (04/11/2026, verbatim choices):
 
 ### 3.4 Acabamento (one area at a time)
 
-- **Top:** the photo, with the current area tinted in its colour (existing overlay), and the area name ("Parede 1 de 2").
+- **Top:** the photo, with the current area tinted in its colour (existing overlay), and the area name ("Parede 1 de 2"). **[Superado em 06/11/2026: the heading format, see the R3-N1 emenda below]**
+
+  > **Emenda 06/11/2026 (R3-N1).** The area heading reads "Parede 1 · 1 de 2": the area name from `rotuloZona` (§6a; "Área 1" until the client picks a surface type), then "· <n> de <total>". Reason: third review round (06/11/2026); "Parede 1 de 2" is not what the code shows.
 - **Line tabs:** Classic · Brilliance · Elegance. Default is the line of the prefilled model, else the first line.
 - **Cards:** a horizontal scroll-snap row. Each card is about 70% of the viewport width on phones and about 220 px on desktop, and shows:
   - the panel photo, large (`p.image_path`, `object-cover`, no 1.35 zoom crop);
@@ -110,7 +114,9 @@ The owner's decisions (04/11/2026, verbatim choices):
 
 ### 3.5 Resultado
 
-- **While generating:** the photo stays. A thin progress line shows "Aplicando <acabamento> em <área> (1 de 2)", using the existing `progress`. Calm: no blocking spinner modal.
+- **While generating:** the photo stays. A thin progress line shows "Aplicando <acabamento> em <área> (1 de 2)", using the existing `progress`. Calm: no blocking spinner modal. **[Superado em 06/11/2026: the wording, see the R3-B1 emenda below]**
+
+  > **Emenda 06/11/2026 (R3-B1).** The line shows "Aplicando <progresso.label> (i de total)…", inside an `aria-live="polite"` region, as in the plan (Task 6); the "(i de total)" part appears only when total is above 1. In production (`DETERMINISTIC_PROJECTION = false`, one render call for every area) it reads "Aplicando as áreas…" when there are several areas and "Aplicando o revestimento…" when there is one. Only in the 501 fallback (the server has no one-call generator, so the old per-area loop runs) it reads "Aplicando <zone label> (i de total)…", with the zone label ("Área 1"), not the name of the finish. `progress` is engine state and does not change. Reason: third review round (06/11/2026); the spec promised the finish name and the area, which the code never shows.
 - **Lead capture (standalone, before reveal):** a bottom sheet over the blurred result with name and WhatsApp. Same validation and API as today.
 
   > **Emenda 06/11/2026 (B1a, decisão do dono).** The lead sheet is mandatory and cannot be closed: the client sees the result only after sending name and WhatsApp. "Falar com um consultor" appears only after the reveal. In 7078a52 a client with a finished render could tap the consultant button under the image and go to WhatsApp without filling the form; that path is removed on purpose. Reason: the owner chose on 06/11/2026 to keep the form mandatory so every client who sees a result arrives as a lead.
@@ -133,9 +139,9 @@ The owner's decisions (04/11/2026, verbatim choices):
 
 - **`VisualizadorWizard.tsx`** keeps all state, effects, engine calls, lead logic and embedded-mode wiring ([Superado em 06/11/2026: modo embutido removido]: there is no embedded-mode wiring any more). It renders a `VizShell` and passes it props and callbacks. The old `UploadStep`, `ZonesStep`, `ZoneCard`, `ResultStep` and `WizStepper` are removed once they are replaced.
 - **New folder `src/components/visualizador/`.** One clear job per file, presentational, typed props, no engine imports:
-  - `VizShell.tsx`: progress bar, step transitions, fixed bottom action bar, desktop two-column layout.
+  - `VizShell.tsx`: progress bar, step transitions, fixed bottom action bar, desktop two-column layout. **[Superado em 06/11/2026: the bar is sticky, not fixed, and shows only in Marcar and Acabamento; see the R3-M1 emenda below]**
   - `EtapaFoto.tsx`: the upload surface and the two touch buttons, reusing the 7078a52 logic.
-  - `EditorMarcacao.tsx`: the full-screen overlay (scroll lock, chips sheet). It reuses `SurfaceCanvas` for drawing the photo and zones, which moves to `visualizador/SurfaceCanvas.tsx` unchanged except for a `interativo` prop that turns off all pointer handlers.
+  - `EditorMarcacao.tsx`: the full-screen overlay (scroll lock, chips sheet). It reuses `SurfaceCanvas` for drawing the photo and zones, which moves to `visualizador/SurfaceCanvas.tsx` unchanged except for a `interativo` prop that turns off all pointer handlers. **[Superado em 06/11/2026: it gained more than `interativo`; see the R3-N1 emenda below]**
   - `EtapaAcabamento.tsx`: area header, line tabs, card row, Ajustes and Onde sheets.
   - `CartaoAcabamento.tsx`: one finish card.
   - `EtapaResultado.tsx`: progress state, lead sheet, before/after, actions.
@@ -143,6 +149,10 @@ The owner's decisions (04/11/2026, verbatim choices):
   - `Folha.tsx`: a small accessible bottom sheet (dialog role, focus trap, Esc, swipe-down or ✕ to close) used by Onde, Ajustes and the lead form.
 - **Styling:** Tailwind plus a small `/* ── Visualizador */` block in `globals.css` for transitions and the slider. Use the site's motion tokens.
 - **`/visualizador/page.tsx`:** short hero, then the tool, then "Como funciona" and the closing CTA. The `/simulador` embed uses the same components through `embeddedMode`.
+
+  > **Emenda 06/11/2026 (R3-M1).** `VizShell` has a sticky bottom action bar (`position: sticky; bottom: 0`, static on desktop), not a fixed one, and renders it only when the wizard passes `acao`, that is, in Marcar and Acabamento. Foto and Resultado keep their actions in the step content. See the M1 and R3-M1 emendas in §3.1. Reason: third review round (06/11/2026); §4 still said "fixed".
+  >
+  > **Emenda 06/11/2026 (R3-N1).** `SurfaceCanvas` changed beyond the `interativo` prop: it also takes `rotulos` (the client-facing area names, see `rotuloZona` in §6a) and `destaque` (`"atual"` for the phone photo band, see `FaixaFoto` in §6a); its small controls carry `.viz-alvo-toque` (the 44 px hit area under `(pointer: coarse)`, see the R2-N3 emenda in §5); and the "Editar cantos" and "Atualizar pontos" pills are `min-h-11` (44 px, M6 of the first review round). Reason: third review round (06/11/2026); §4 said "unchanged except for a `interativo` prop".
 
   > **Emenda 06/11/2026 (decisão do dono: modo embutido removido).** There is no `/simulador` embed and no `embeddedMode`: only `/visualizador` renders the wizard, with no props. See the emenda in §2.
 
