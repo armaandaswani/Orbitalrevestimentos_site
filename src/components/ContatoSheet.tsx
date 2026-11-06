@@ -23,10 +23,12 @@ import { modelosDoProjeto } from "@/lib/projeto-modelos";
  * medidas → cidade → enviar. Medidas e nome são opcionais. O WhatsApp do
  * cliente não é pedido: a conversa já traz o número.
  *
- * Layout: no celular, folha que sobe de baixo com a altura do conteúdo (sem
- * espaço morto); no computador, cartão com a altura do conteúdo, preso ao topo
- * para o título não pular de uma pergunta para outra. A barra de ação só
- * aparece quando tem o que fazer (escolha única segue sozinha).
+ * Layout: no celular, tela cheia (100dvh, a área visível, com o branco
+ * seguindo por baixo das barras do navegador até 100lvh, para a página de
+ * trás nunca aparecer sob a barra translúcida do Safari); no computador,
+ * cartão com a altura do conteúdo, preso ao topo para o título não pular de
+ * uma pergunta para outra. A barra de ação só aparece quando tem o que fazer
+ * (escolha única segue sozinha).
  * Movimento: só transform/opacity (globals.css, classes pc-*), desligado com
  * prefers-reduced-motion.
  */
@@ -359,28 +361,15 @@ export default function ContatoSheet() {
     return () => cancelAnimationFrame(id);
   }, [aberto, passo, r, catalogo, produtos.length, erroCatalogo, medirBordas]);
 
-  // Celular: a folha tem a altura do conteúdo. Quando ela muda (outra
-  // pergunta, campo que aparece), a borda de cima desliza até o lugar novo em
-  // vez de pular — só transform; o ::after branco cobre o vão por baixo.
+  // A folha mudou de tamanho (outra pergunta no computador, barra do
+  // navegador que some ou volta no celular): mede de novo as linhas finas.
+  // No celular a folha é tela cheia e não acompanha o conteúdo, então não há
+  // borda de cima para deslizar.
   useEffect(() => {
     if (!aberto) return;
     const el = folhaRef.current;
     if (!el || typeof ResizeObserver === "undefined") return;
-    let h0 = el.offsetHeight;
-    let w0 = window.innerWidth;
-    const celular = window.matchMedia("(max-width: 639.98px)");
-    const calmo = window.matchMedia("(prefers-reduced-motion: reduce)");
-    const ro = new ResizeObserver(() => {
-      const h = el.offsetHeight;
-      const w = window.innerWidth;
-      const d = h - h0;
-      const mesmaLargura = w === w0;
-      h0 = h;
-      w0 = w;
-      medirBordas();
-      if (!d || !mesmaLargura || !celular.matches || calmo.matches || Math.abs(d) < 4) return;
-      el.animate([{ transform: `translateY(${d}px)` }, { transform: "translateY(0)" }], { duration: 300, easing: "cubic-bezier(.2,.8,.2,1)" });
-    });
+    const ro = new ResizeObserver(() => medirBordas());
     ro.observe(el);
     return () => ro.disconnect();
   }, [aberto, medirBordas]);
@@ -522,32 +511,43 @@ export default function ContatoSheet() {
 
   return (
     <div
-      className="fixed inset-0 z-[120] overflow-hidden flex items-end justify-center sm:items-start sm:px-6 sm:pt-[max(24px,7dvh)]"
+      className={[
+        "fixed z-[120] flex justify-center items-start",
+        // Celular: cobre a tela grande (100lvh), inclusive o que fica por baixo
+        // da barra translúcida do Safari, que um inset-0 não alcança. Sem
+        // overflow-hidden, para o ::after branco da folha seguir até o fim.
+        "top-0 inset-x-0 h-[100lvh]",
+        // Computador: a janela, com o cartão preso ao topo.
+        "sm:inset-0 sm:h-auto sm:overflow-hidden sm:px-6 sm:pt-[max(24px,7dvh)]",
+      ].join(" ")}
       onClick={() => setAberto(false)}
       role="dialog"
       aria-modal="true"
       aria-labelledby="contato-titulo"
       style={{ touchAction: "manipulation" }}
     >
-      <div aria-hidden className="pc-veu absolute inset-0 bg-[#050b16]/60" />
+      {/* Véu: escuro atrás do cartão; no celular, branco (a folha cobre a tela
+          e o véu só garante o branco enquanto ela entra). */}
+      <div aria-hidden className="pc-veu absolute inset-0 bg-white sm:bg-[#050b16]/60" />
       <div
         ref={folhaRef}
         data-pc="folha"
         className={[
           "pc-folha relative flex flex-col w-full bg-white text-[#0B1F45]",
-          // Celular: folha de baixo, altura do conteúdo; o ::after estende o
-          // branco abaixo da tela enquanto a altura desliza.
-          "rounded-t-[20px] shadow-[0_-12px_40px_-16px_rgba(0,0,0,0.35)]",
-          "max-h-[calc(100dvh_-_max(16px,env(safe-area-inset-top)))]",
-          "after:content-[''] after:absolute after:inset-x-0 after:top-full after:h-screen after:bg-white",
+          // Celular: tela cheia na área visível (100dvh: o cabeçalho e a barra
+          // de ação ficam acima das barras do navegador); o ::after estende o
+          // branco por baixo delas.
+          "h-dvh",
+          "after:content-[''] after:absolute after:inset-x-0 after:top-full after:h-[100lvh] after:bg-white",
           // Computador: cartão preso ao topo, altura do conteúdo.
-          "sm:rounded-none sm:max-w-[640px] sm:max-h-[min(800px,calc(100dvh_-_2*max(24px,7dvh)))]",
+          "sm:h-auto sm:max-w-[640px] sm:max-h-[min(800px,calc(100dvh_-_2*max(24px,7dvh)))]",
           "sm:shadow-[0_30px_90px_-20px_rgba(0,0,0,0.45)] sm:after:hidden",
         ].join(" ")}
         onClick={(e) => e.stopPropagation()}
       >
-        {/* Barra do topo: voltar, progresso, fechar */}
-        <div className="relative flex-none flex items-center gap-3 sm:gap-4 px-3 sm:px-5 h-16">
+        {/* Barra do topo: voltar, progresso, fechar (no celular, abaixo do
+            entalhe/ilha quando o site ocupa a tela toda). */}
+        <div className="relative flex-none flex items-center gap-3 sm:gap-4 px-3 sm:px-5 box-content h-16 pt-[env(safe-area-inset-top)] sm:pt-0">
           <button
             type="button"
             onClick={voltar}
@@ -979,7 +979,7 @@ function FotosModelo({
   }
 
   return (
-    <div data-pc="fotos" className="absolute inset-0 z-20 bg-[#0B1F45] text-white flex flex-col rounded-t-[20px] sm:rounded-none" role="dialog" aria-modal="true" aria-label={`Fotos de ${modelo.name}`}>
+    <div data-pc="fotos" className="absolute inset-0 z-20 bg-[#0B1F45] text-white flex flex-col" role="dialog" aria-modal="true" aria-label={`Fotos de ${modelo.name}`}>
       <div className="flex-shrink-0 flex items-start justify-between gap-4 px-5 sm:px-8 pt-5" style={{ paddingTop: "calc(1.25rem + env(safe-area-inset-top))" }}>
         <div className="min-w-0">
           <p className="font-serif text-[24px] leading-tight truncate">{modelo.name}</p>
