@@ -1,48 +1,36 @@
 "use client";
 
-import { useMemo, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import Link from "next/link";
-import GrupoChips from "@/components/projetos/GrupoChips";
-import GradeProjetos from "@/components/projetos/GradeProjetos";
 import ProjetoCard from "@/components/projetos/ProjetoCard";
-import SecaoCabecalho from "@/components/projetos/SecaoCabecalho";
-import Trilho from "@/components/projetos/Trilho";
 import LugarCard from "@/components/projetos/LugarCard";
-import AntesDepois from "@/components/projetos/AntesDepois";
 import RenderCard from "@/components/projetos/RenderCard";
 import ChamadaProjeto from "@/components/projetos/ChamadaProjeto";
 import Revelar from "@/components/projetos/Revelar";
 import VisorProjetos, { useVisor } from "@/components/projetos/VisorProjetos";
-import Capitulo from "@/components/ds/Capitulo";
-import ProgressoCapitulos from "@/components/ds/ProgressoCapitulos";
+import { modelosTxt } from "@/lib/projeto-modelos";
 import {
-  CATEGORIA_SHOWROOM, OBRAS_ENTREGUES, REVENDA_RESERVA, ordenarCategorias, porDestaque, rotuloTag, secoesDoProjeto,
-  type Projeto, type Showroom,
+  CATEGORIA_SHOWROOM, REVENDA_RESERVA, combinaBusca, nomeLugar, ordenarCategorias, porDestaque, rotuloTag, secoesDoProjeto,
+  type Showroom,
 } from "@/lib/projetos-tipos";
 import type { DadosProjetos } from "@/lib/projetos-dados";
 
 /**
- * Página de Projetos como uma apresentação contínua, em capítulos:
- * 01 Onde ver (todos os parceiros no topo) → 02 Obras → 03 Transformação →
- * 04 Simulações → 05 Próximo passo. O ProgressoCapitulos marca onde o
- * visitante está; o VisorProjetos abre showroom e galeria por cima da página
- * (estado na URL, voltar fecha, a rolagem fica onde estava).
+ * Página de Projetos: os projetos primeiro, numa grade vertical, sem nenhuma
+ * rolagem de lado. Em cima, uma barra presa sob o cabeçalho com as categorias
+ * e a busca; embaixo, onde ver o PFB ao vivo, as simulações de IA e o
+ * próximo passo.
  *
- * Os dados chegam prontos do servidor (page.tsx); aqui ficam os filtros.
+ * O VisorProjetos abre a galeria e o showroom por cima da página (estado na
+ * URL, voltar fecha, a rolagem fica onde estava). Os dados chegam prontos do
+ * servidor (page.tsx); aqui ficam o filtro e a busca.
  */
 
-/** Largura de um cartão de obra dentro da linha, por faixa de tela. */
-const LARGURA_OBRA = "w-[44%] sm:w-[30%] lg:w-[23.5%]";
-const SIZES_OBRA = "(max-width: 639px) 44vw, (max-width: 1023px) 30vw, (max-width: 1920px) 300px, 16vw";
-
-/**
- * Ordem de entrada por coluna da lista de parceiros (2, 3 e 5 colunas). Literais
- * completos para o Tailwind achá-los; o `!` põe o valor da faixa por cima do
- * `--mv-i` inline que o Revelar escreve.
- */
-const ORDEM_2COL = ["max-sm:[--mv-i:0]!", "max-sm:[--mv-i:1]!"];
-const ORDEM_3COL = ["sm:max-lg:[--mv-i:0]!", "sm:max-lg:[--mv-i:1]!", "sm:max-lg:[--mv-i:2]!"];
-const ORDEM_5COL = ["lg:[--mv-i:0]!", "lg:[--mv-i:1]!", "lg:[--mv-i:2]!", "lg:[--mv-i:3]!", "lg:[--mv-i:4]!"];
+/** Quantos cartões aparecem de cada vez: a lista cresce só quando pedem. */
+const POR_VEZ = 12;
+/** 2 colunas no celular, 3 até 1279 px, 4 daí em diante (contêiner de 80rem). */
+const COLUNAS = "grid grid-cols-2 sm:grid-cols-3 xl:grid-cols-4 gap-x-3 gap-y-6 sm:gap-x-4 sm:gap-y-8 lg:gap-x-6 lg:gap-y-10";
+const SIZES_GRADE = "(max-width: 639px) 46vw, (max-width: 1279px) 31vw, 340px";
 
 export default function ProjetosVitrine({ projetos, categorias, lugares, renders, agora }: DadosProjetos & { agora: number }) {
   const showrooms = lugares.filter((l) => l.kind === "showroom");
@@ -60,207 +48,224 @@ function Conteudo({
   projetos, categorias, parceiros, showrooms, renders, agora,
 }: Omit<DadosProjetos, "lugares"> & { parceiros: Showroom[]; showrooms: Showroom[]; agora: number }) {
   const visor = useVisor();
-  const abrir = (p: Projeto, lista?: Projeto[]) => visor?.abrirProjeto(p, lista);
-  const href = (p: Projeto) => visor?.hrefProjeto(p) ?? `/projetos?projeto=${p.slug}`;
   const [categoria, setCategoria] = useState("todos");
-  const [tag, setTag] = useState("todos");
+  const [busca, setBusca] = useState("");
+  const [mostrar, setMostrar] = useState(POR_VEZ);
+  const [mostrarRenders, setMostrarRenders] = useState(POR_VEZ);
+  // A grade só esmaece na troca de categoria, nunca ao carregar (não atrasa a primeira foto).
+  const [trocou, setTrocou] = useState(false);
+  const topo = useRef<HTMLDivElement>(null);
+  const grade = useRef<HTMLUListElement>(null);
+  const focarEm = useRef<number | null>(null);
 
   // Ambientes da categoria Showroom moram na folha do showroom; o resto são as obras.
+  // Destaques primeiro, depois a ordem do painel (os mais recentes no topo).
   const obras = useMemo(
-    () => projetos.filter((p) => !(showrooms.length > 0 && secoesDoProjeto(p).includes(CATEGORIA_SHOWROOM))),
+    () => projetos.filter((p) => !(showrooms.length > 0 && secoesDoProjeto(p).includes(CATEGORIA_SHOWROOM))).sort(porDestaque),
     [projetos, showrooms.length],
   );
-  const cats = ordenarCategorias(categorias).filter((c) => c.slug !== CATEGORIA_SHOWROOM || showrooms.length === 0);
-  const conta = (slug: string) => obras.filter((p) => secoesDoProjeto(p).includes(slug)).length;
-  const tags = [...new Set(obras.flatMap((p) => p.tags ?? []))].sort((a, b) => rotuloTag(a).localeCompare(rotuloTag(b), "pt-BR"));
-  const filtradas = obras
+  const rotulos = useMemo(() => ordenarCategorias(categorias), [categorias]);
+  // Só as categorias que têm obra: um filtro que daria zero não aparece.
+  const cats = useMemo(() => rotulos
+    .filter((c) => c.slug !== CATEGORIA_SHOWROOM || showrooms.length === 0)
+    .filter((c) => obras.some((p) => secoesDoProjeto(p).includes(c.slug))), [rotulos, showrooms.length, obras]);
+
+  // Linha discreta do cartão (modelo · lugar) e o texto em que a busca procura.
+  // Lugar: o parceiro onde o ambiente está ou, sem parceiro, a categoria.
+  const fichas = useMemo(() => {
+    const nomes = new Map(showrooms.map((s) => [s.id, nomeLugar(s.name)]));
+    const rotulo = new Map(rotulos.map((c) => [c.slug, c.label]));
+    return new Map(obras.map((p) => {
+      const secoes = secoesDoProjeto(p);
+      const lugar = (p.showroom_id && nomes.get(p.showroom_id)) || rotulo.get(secoes[0]) || "";
+      const codigos = modelosTxt(p);
+      const texto = [
+        p.title, codigos, lugar, ...secoes.map((s) => rotulo.get(s) ?? s),
+        ...(p.tags ?? []).flatMap((t) => [t, rotuloTag(t)]), p.projeto_de ?? "",
+      ].join(" ");
+      return [p.id, { detalhe: [codigos, lugar].filter(Boolean).join(" · "), texto }];
+    }));
+  }, [obras, showrooms, rotulos]);
+
+  // Filtro e busca valem para todas as obras, não só para as que já estão na tela.
+  const filtradas = useMemo(() => obras
     .filter((p) => categoria === "todos" || secoesDoProjeto(p).includes(categoria))
-    .filter((p) => tag === "todos" || (p.tags ?? []).includes(tag))
-    .sort(porDestaque);
+    .filter((p) => !busca.trim() || combinaBusca(fichas.get(p.id)?.texto ?? p.title, busca)),
+  [obras, categoria, busca, fichas]);
+  const visiveis = filtradas.slice(0, mostrar);
+  const faltam = filtradas.length - visiveis.length;
 
-  const blocos = (() => {
-    // Cada projeto entra na PRIMEIRA categoria em que se encaixa: nada repete.
-    const vistos = new Set<string>();
-    const out = cats.map((cat) => {
-      const lista = obras.filter((p) => !vistos.has(p.id) && secoesDoProjeto(p).includes(cat.slug)).sort(porDestaque);
-      lista.forEach((p) => vistos.add(p.id));
-      return { slug: cat.slug, titulo: cat.label, texto: cat.description ?? "", lista, filtravel: true };
-    });
-    const resto = obras.filter((p) => !vistos.has(p.id)).sort(porDestaque);
-    if (resto.length) out.push({ slug: "outros", titulo: "Outros projetos", texto: "Demais ambientes executados", lista: resto, filtravel: false });
-    return out.filter((b) => b.lista.length > 0);
-  })();
+  // "Ver mais": o foco vai para o primeiro cartão novo (quem usa teclado continua dali).
+  useEffect(() => {
+    const i = focarEm.current;
+    if (i == null) return;
+    focarEm.current = null;
+    grade.current?.children[i]?.querySelector<HTMLElement>("a, button")?.focus({ preventScroll: true });
+  }, [mostrar]);
 
-  const verCategoria = (slug: string) => {
-    setCategoria(slug);
-    setTag("todos");
-    document.getElementById("obras")?.scrollIntoView({ behavior: window.matchMedia("(prefers-reduced-motion: reduce)").matches ? "auto" : "smooth" });
+  // Mudou o filtro com a grade já rolada: volta ao começo dela, logo abaixo da barra.
+  const voltarAoTopo = () => {
+    const y = topo.current?.getBoundingClientRect().top ?? 0;
+    if (y >= 0) return;
+    const reduzido = window.matchMedia("(prefers-reduced-motion: reduce)").matches;
+    window.scrollTo({ top: window.scrollY + y - 80, behavior: reduzido ? "auto" : "smooth" });
   };
+  const escolher = (slug: string) => {
+    if (slug === categoria) return;
+    setCategoria(slug);
+    setMostrar(POR_VEZ);
+    setTrocou(true);
+    voltarAoTopo();
+  };
+  const buscar = (texto: string) => {
+    setBusca(texto);
+    setMostrar(POR_VEZ);
+    voltarAoTopo();
+  };
+  const limpar = () => {
+    setBusca("");
+    setCategoria("todos");
+    setMostrar(POR_VEZ);
+  };
+  const conta = `${filtradas.length} ${filtradas.length === 1 ? "projeto" : "projetos"}`;
+
+  const chip = (ativo: boolean) =>
+    `relative h-9 px-3.5 text-[0.8125rem] font-medium border transition-colors after:absolute after:inset-x-0 after:-inset-y-[3px] focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[#2347A0] ${
+      ativo ? "bg-primary border-primary text-white" : "bg-white border-[#d5d8de] text-primary hover:border-primary"
+    }`;
 
   return (
     <div className="pt-20">
-      <ProgressoCapitulos />
+      {/* ── Projetos: título, barra presa e grade ─────────────────────────── */}
+      <section id="obras" aria-labelledby="projetos-titulo" className="scroll-mt-20 bg-white pb-[clamp(3.5rem,2rem+4.5vw,6rem)]">
+        <div className="ds-wrap pt-[clamp(2rem,1.25rem+2.5vw,3.75rem)] pb-5 lg:pb-7">
+          <h1 id="projetos-titulo" className="font-serif text-primary text-t1 font-normal tracking-[-0.02em]">Projetos</h1>
+          <p className="text-on-surface-variant text-lead mt-3 max-w-2xl text-pretty">
+            Obras entregues em Manaus com o Painel Flexível em Fibra de Bambu.
+          </p>
+        </div>
 
-      {/* ── 01 Onde ver: todos os parceiros de uma vez, no topo ─────────────── */}
-      <Capitulo id="parceiros" numero="01" rotulo="Onde ver" rotuladoPor="parceiros-titulo" className="bg-[#F6F5F2] border-b border-[#e8e6e1]">
-        {/* Âncoras antigas (#showrooms, #revenda) continuam levando para cá. */}
-        <span id="showrooms" className="block scroll-mt-36" aria-hidden />
-        <span id="revenda" className="block scroll-mt-36" aria-hidden />
-        <div className="ds-wrap pt-[clamp(2.25rem,1.5rem+2.5vw,4rem)] pb-[clamp(2.5rem,1.5rem+3vw,4.5rem)]">
-          <div className="max-w-2xl mb-[clamp(1.5rem,1rem+1.5vw,2.5rem)]">
-            <h1 id="parceiros-titulo" className="font-serif text-primary text-t1 font-normal tracking-[-0.02em] text-balance">
-              <span className="sr-only">Orbital Revestimentos: showrooms e projetos em Manaus. </span>
-              Veja o PFB de perto.
-            </h1>
-            <p className="text-on-surface-variant text-lead mt-3 text-pretty">
-              Ambientes decorados com o Painel Flexível em Fibra de Bambu (PFB) nos showrooms parceiros, e todos os modelos em display na Casa do Eletricista.
-            </p>
+        <div ref={topo} aria-hidden />
+        {/* Presa logo abaixo do cabeçalho enquanto a grade está na tela; quando ele se recolhe, sobe junto. */}
+        <div className="ds-sob-cabecalho sticky z-40 bg-white border-y border-[#e8e6e1]" data-barra-projetos>
+          <div className="ds-wrap py-3 flex flex-col gap-2.5 lg:flex-row lg:items-center lg:gap-6">
+            <div role="group" aria-label="Categoria" className="flex flex-wrap items-center gap-1.5 lg:flex-1">
+              {[{ slug: "todos", label: "Todos" }, ...cats].map((c) => (
+                <button key={c.slug} type="button" aria-pressed={categoria === c.slug} onClick={() => escolher(c.slug)} className={chip(categoria === c.slug)}>
+                  {c.label}
+                </button>
+              ))}
+              <p className="ml-auto pl-3 text-on-surface-variant text-[13px] tabular-nums whitespace-nowrap" aria-live="polite">{conta}</p>
+            </div>
+            <label className="relative flex items-center order-first lg:order-none lg:w-72">
+              <span className="sr-only">Buscar projeto</span>
+              <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.75" strokeLinecap="round" aria-hidden
+                className="absolute left-3 text-on-surface-variant pointer-events-none">
+                <circle cx="11" cy="11" r="6.5" /><path d="M16 16l4.5 4.5" />
+              </svg>
+              <input type="search" value={busca} onChange={(e) => buscar(e.target.value)} placeholder="Buscar projeto"
+                onKeyDown={(e) => { if (e.key === "Escape" && busca) { e.preventDefault(); buscar(""); } }}
+                autoComplete="off" spellCheck={false} enterKeyHint="search"
+                className="w-full h-10 pl-9 pr-10 bg-white border border-[#d5d8de] text-primary text-base lg:text-sm placeholder:text-on-surface-variant/80 outline-none focus:border-primary focus-visible:ring-1 focus-visible:ring-primary [&::-webkit-search-cancel-button]:appearance-none" />
+              {busca && (
+                <button type="button" onClick={() => buscar("")} aria-label="Limpar busca"
+                  className="absolute right-0 h-10 w-10 flex items-center justify-center text-on-surface-variant hover:text-primary">
+                  <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" aria-hidden><path d="M6 6l12 12M18 6L6 18" /></svg>
+                </button>
+              )}
+            </label>
           </div>
-          {/* Lista de lugares: sobe no ritmo da coluna. O que já está na primeira dobra
-              aparece pronto (a entrada segue a rolagem, não o carregamento). */}
-          <ul className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-5 gap-3 lg:gap-4">
-            {parceiros.map((s, i) => (
-              <Revelar key={s.id} como="li" ordem={i % 5} className={`${ORDEM_2COL[i % 2]} ${ORDEM_3COL[i % 3]} ${ORDEM_5COL[i % 5]}`}>
-                <LugarCard compacto lugar={s} agora={agora} onAbrir={visor ? (l) => visor.abrirShowroom(l) : undefined} />
-              </Revelar>
-            ))}
-          </ul>
+        </div>
+
+        <div className="ds-wrap pt-6 lg:pt-8">
+          {filtradas.length === 0 ? (
+            <div className="py-16 text-center">
+              <p className="font-serif text-primary text-t3">Nenhum projeto encontrado</p>
+              <p className="text-on-surface-variant text-legenda mt-2">Tente outra palavra, um código como ORB-003 ou outra categoria.</p>
+              <button type="button" onClick={limpar} className="ds-botao ds-botao-vazado mt-6">Limpar busca</button>
+            </div>
+          ) : (
+            <ul ref={grade} key={categoria} className={`${COLUNAS} ${trocou ? "mv-veu" : ""}`} data-grade-projetos>
+              {visiveis.map((p, i) => (
+                <li key={p.id}>
+                  <ProjetoCard projeto={p} detalhe={fichas.get(p.id)?.detalhe ?? ""} sizes={SIZES_GRADE} prioridade={i < 2}
+                    href={visor?.hrefProjeto(p) ?? `/projetos?projeto=${p.slug}`}
+                    onAbrir={visor ? (x) => visor.abrirProjeto(x, filtradas) : undefined} />
+                </li>
+              ))}
+            </ul>
+          )}
+          {faltam > 0 && (
+            <div className="mt-10 lg:mt-12 flex justify-center">
+              <button type="button" onClick={() => { focarEm.current = visiveis.length; setMostrar((m) => m + POR_VEZ); }}
+                className="ds-botao ds-botao-vazado min-h-12 w-full sm:w-auto">
+                Ver mais projetos
+              </button>
+            </div>
+          )}
+          <p className="text-on-surface-variant text-legenda mt-10 lg:mt-12 text-pretty">
+            Imagens reais de projetos executados. A Orbital não realiza instalação; somos fornecedores diretos.
+          </p>
+        </div>
+      </section>
+
+      {/* ── Onde ver o PFB: showrooms parceiros e revenda ─────────────────── */}
+      <section id="parceiros" aria-labelledby="parceiros-titulo" className="scroll-mt-20 bg-[#F6F5F2] border-b border-[#e8e6e1]">
+        {/* Âncoras antigas (#showrooms, #revenda) continuam levando para cá. */}
+        <span id="showrooms" className="block scroll-mt-20" aria-hidden />
+        <span id="revenda" className="block scroll-mt-20" aria-hidden />
+        <div className="ds-wrap py-[clamp(3rem,2rem+3vw,5rem)]">
+          <Revelar className="max-w-2xl mb-[clamp(1.5rem,1rem+1.5vw,2.5rem)]">
+            <h2 id="parceiros-titulo" className="font-serif text-primary text-t2 font-normal tracking-[-0.02em] text-balance">Onde ver o PFB</h2>
+            <p className="text-on-surface-variant text-lead mt-3 text-pretty">
+              Ambientes decorados com o PFB nos showrooms parceiros, e todos os modelos em display na Casa do Eletricista.
+            </p>
+          </Revelar>
+          <Revelar efeito="surge">
+            <ul className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-5 gap-3 lg:gap-4">
+              {parceiros.map((s) => (
+                <li key={s.id}>
+                  <LugarCard compacto lugar={s} agora={agora} onAbrir={visor ? (l) => visor.abrirShowroom(l) : undefined} />
+                </li>
+              ))}
+            </ul>
+          </Revelar>
           <p className="text-on-surface-variant text-legenda mt-6 text-pretty">
             Prefere ver no seu escritório? Um consultor leva as amostras até você: é só pedir pelo pré-contato.
           </p>
         </div>
-      </Capitulo>
+      </section>
 
-      {/* ── 02 Obras ───────────────────────────────────────────────────────── */}
-      <Capitulo id="obras" numero="02" rotulo="Obras" rotuladoPor="obras-titulo" className="ds-secao bg-white">
-        <div className="ds-wrap">
-          <Revelar>
-            <SecaoCabecalho id="obras-titulo" numero="02" sobretitulo="Obras realizadas" titulo="Projetos executados"
-              texto={`${OBRAS_ENTREGUES} obras entregues em Manaus. Deslize cada linha e toque em um projeto para ver todas as fotos.`} />
-          </Revelar>
-          <div className="space-y-2 mb-8">
-            <GrupoChips rotulo="Categoria" ativo={categoria} onMudar={setCategoria}
-              opcoes={[{ valor: "todos", rotulo: "Todas" }, ...cats.filter((c) => conta(c.slug) > 0).map((c) => ({ valor: c.slug, rotulo: c.label, conta: conta(c.slug) }))]} />
-            {tags.length > 0 && (
-              <GrupoChips rotulo="Tipo" ativo={tag} onMudar={setTag}
-                opcoes={[{ valor: "todos", rotulo: "Todos" }, ...tags.map((t) => ({ valor: t, rotulo: rotuloTag(t) }))]} />
-            )}
-          </div>
-
-          {categoria === "todos" && tag === "todos" ? (
-            <div className="space-y-10 lg:space-y-12">
-              {blocos.map((b, bi) => {
-                const cabecalho = (
-                  <div className="flex items-end justify-between gap-4 mb-4 pb-3 border-b border-surface-variant">
-                    <div className="min-w-0">
-                      <h3 className="font-serif text-primary text-t3 font-normal">{b.titulo}</h3>
-                      {b.texto && <p className="text-on-surface-variant text-legenda mt-0.5">{b.texto}</p>}
-                    </div>
-                    {b.filtravel && b.lista.length > 1 && (
-                      <button type="button" onClick={() => verCategoria(b.slug)}
-                        className="flex-shrink-0 min-h-11 px-1 text-primary text-xs tracking-[0.12em] uppercase font-bold underline-offset-4 hover:underline">
-                        Ver todos ({b.lista.length})
-                      </button>
-                    )}
-                  </div>
-                );
-                // Primeira linha: o título sobe e a linha de fotos se desvela de uma vez. É UM Revelar
-                // em volta do trilho (que fica dentro dele, então o view() olha a página): um por
-                // cartão eram cinco animações ligadas ao mesmo tempo, e a 4× de CPU isso custava
-                // quadros no tablet em paisagem.
-                if (bi === 0) {
-                  return (
-                    <div key={b.slug}>
-                      <Revelar>{cabecalho}</Revelar>
-                      <Revelar efeito="desvela">
-                        <Trilho rotulo={`Projetos: ${b.titulo}`} largura={LARGURA_OBRA}>
-                          {b.lista.map((p) => <ProjetoCard key={p.id} projeto={p} onAbrir={(x) => abrir(x, b.lista)} href={href(p)} sizes={SIZES_OBRA} />)}
-                        </Trilho>
-                      </Revelar>
-                    </div>
-                  );
-                }
-                // As demais linhas só surgem (opacidade): a primeira já chamou a vez.
-                return (
-                  <Revelar key={b.slug} efeito="surge">
-                    {cabecalho}
-                    <Trilho rotulo={`Projetos: ${b.titulo}`} largura={LARGURA_OBRA}>
-                      {b.lista.map((p) => <ProjetoCard key={p.id} projeto={p} onAbrir={(x) => abrir(x, b.lista)} href={href(p)} sizes={SIZES_OBRA} />)}
-                    </Trilho>
-                  </Revelar>
-                );
-              })}
-              {blocos.length === 0 && <p className="text-on-surface-variant text-corpo">Os projetos aparecem aqui em breve.</p>}
+      {/* ── Simulações de IA ───────────────────────────────────────────────── */}
+      {renders.length > 0 && (
+        <section id="inspiracoes" aria-labelledby="simulacoes-titulo" className="scroll-mt-20 ds-escuro bg-primary">
+          <div className="ds-wrap py-[clamp(3rem,2rem+3vw,5rem)]">
+            <div className="flex flex-col gap-5 md:flex-row md:items-end md:justify-between mb-[clamp(1.5rem,1rem+1.5vw,2.5rem)]">
+              <div className="max-w-2xl">
+                <h2 id="simulacoes-titulo" className="font-serif text-white text-t2 font-normal tracking-[-0.02em]">Simulações</h2>
+                <p className="text-white/75 text-lead mt-3 text-pretty">Como o PFB fica em outros tipos de ambiente.</p>
+                <p className="text-white/60 text-legenda mt-2">Imagens geradas por inteligência artificial, para fins ilustrativos.</p>
+              </div>
+              <Link href="/visualizador" className="ds-botao ds-botao-linha self-start md:self-auto">
+                Simular no meu ambiente
+                <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" aria-hidden className="mv-seta"><path d="M5 12h14M12 5l7 7-7 7" /></svg>
+              </Link>
             </div>
-          ) : filtradas.length === 0 ? (
-            <div className="text-center py-14">
-              <p className="text-on-surface-variant text-corpo">Nenhum projeto com esses filtros.</p>
-              <button type="button" onClick={() => { setCategoria("todos"); setTag("todos"); }}
-                className="mt-3 min-h-11 px-4 text-primary text-sm font-semibold underline underline-offset-2">Ver todos</button>
-            </div>
-          ) : (
-            <>
-              <div className="flex items-center justify-between gap-3 mb-3">
-                <p className="text-on-surface-variant text-legenda" aria-live="polite">
-                  {filtradas.length} {filtradas.length === 1 ? "projeto" : "projetos"}
-                </p>
-                <button type="button" onClick={() => { setCategoria("todos"); setTag("todos"); }}
-                  className="min-h-11 px-1 text-primary text-xs tracking-[0.12em] uppercase font-bold underline-offset-4 hover:underline">
-                  Todas as categorias
+            <ul className={COLUNAS}>
+              {renders.slice(0, mostrarRenders).map((r) => <li key={r.id}><RenderCard render={r} sizes={SIZES_GRADE} /></li>)}
+            </ul>
+            {renders.length > mostrarRenders && (
+              <div className="mt-10 lg:mt-12 flex justify-center">
+                <button type="button" onClick={() => setMostrarRenders((m) => m + POR_VEZ)} className="ds-botao ds-botao-linha min-h-12 w-full sm:w-auto">
+                  Ver mais simulações
                 </button>
               </div>
-              <GradeProjetos projetos={filtradas} onAbrir={(x) => abrir(x, filtradas)} href={href} />
-            </>
-          )}
-          <p className="text-on-surface-variant text-corpo italic text-center mt-10">
-            Imagens reais de projetos executados. A Orbital não realiza instalação; somos fornecedores diretos.
-          </p>
-        </div>
-      </Capitulo>
-
-      {/* ── 03 Transformação ───────────────────────────────────────────────── */}
-      <Capitulo id="transformacao" numero="03" rotulo="Antes e depois" rotuladoPor="transformacao-titulo" escuro className="ds-secao bg-[#090e18]">
-        <div className="ds-wrap max-w-[72rem]">
-          <Revelar>
-            <SecaoCabecalho id="transformacao-titulo" numero="03" escuro sobretitulo="Transformação real" titulo="A diferença é visível."
-              texto="Arraste a divisória para comparar o mesmo lavabo antes e depois do PFB." />
-          </Revelar>
-          <AntesDepois
-            antes={{ src: "/images/academia/lavabo-consultorio-antes.jpg", alt: "Lavabo de consultório antes do PFB" }}
-            depois={{ src: "/images/academia/lavabo-consultorio-depois.jpg", alt: "Lavabo de consultório depois, com PFB acabamento mármore e forro amadeirado" }} />
-          <div className="mt-5 flex flex-col sm:flex-row sm:items-center justify-between gap-2 border-t border-white/10 pt-5">
-            <div>
-              <p className="text-secondary text-sobre tracking-[0.14em] uppercase font-semibold">Mármore nas paredes · Forro amadeirado</p>
-              <p className="text-white/75 text-legenda mt-1">Lavabo de consultório · Comercial · Manaus, AM</p>
-            </div>
-            <p className="text-white/70 text-legenda italic">Sem obra pesada · Sem poeira</p>
+            )}
           </div>
-        </div>
-      </Capitulo>
+        </section>
+      )}
 
-      {/* ── 04 Simulações de IA ────────────────────────────────────────────── */}
-      <Capitulo id="inspiracoes" numero="04" rotulo="Simulações" rotuladoPor="inspiracoes-titulo" escuro className="ds-secao bg-primary">
-        <div className="ds-wrap">
-          <Revelar>
-            <SecaoCabecalho id="inspiracoes-titulo" numero="04" escuro sobretitulo="Possibilidades · Simulações de IA" titulo="O Orbital no seu espaço."
-              texto="Imagens geradas por inteligência artificial, para fins ilustrativos, mostrando o PFB em diferentes ambientes."
-              acao={
-                <Link href="/visualizador" className="ds-botao ds-botao-linha">
-                  Simular no meu ambiente
-                  <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" aria-hidden className="mv-seta"><path d="M5 12h14M12 5l7 7-7 7" /></svg>
-                </Link>
-              } />
-          </Revelar>
-          <Revelar efeito="surge">
-            <Trilho rotulo="Simulações de IA" escuro largura="w-[44%] sm:w-[30%] lg:w-[18.6%]">
-              {renders.map((r) => <RenderCard key={r.id} render={r} />)}
-            </Trilho>
-          </Revelar>
-        </div>
-      </Capitulo>
-
-      {/* ── 05 Próximo passo ───────────────────────────────────────────────── */}
-      <ChamadaProjeto numero="05" />
+      <ChamadaProjeto />
     </div>
   );
 }

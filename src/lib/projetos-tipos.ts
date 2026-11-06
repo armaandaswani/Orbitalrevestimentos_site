@@ -219,3 +219,18 @@ export function juntarRenders(doBanco: Render[]): Render[] {
   const slugs = new Set(doBanco.map((r) => r.slug));
   return [...doBanco, ...RENDERS_FIXOS.filter((r) => !slugs.has(r.slug))];
 }
+
+/** Texto para busca: sem acento, minúsculo. "Náutico" → "nautico". */
+export const normalizarBusca = (s: string) => s.normalize("NFD").replace(/\p{Diacritic}/gu, "").toLowerCase();
+
+/**
+ * A busca de /projetos: cada palavra digitada precisa aparecer no texto do
+ * projeto, sem acento e sem caixa. Códigos valem com ou sem hífen e espaço:
+ * "ORB-003", "orb 003" e "orb003" acham o mesmo projeto.
+ */
+export function combinaBusca(texto: string, consulta: string): boolean {
+  const alvo = normalizarBusca(texto);
+  const colado = alvo.replace(/[^a-z0-9]/g, "");
+  return normalizarBusca(consulta).split(/\s+/).filter(Boolean)
+    .every((p) => alvo.includes(p) || colado.includes(p.replace(/[^a-z0-9]/g, "")));
+}
