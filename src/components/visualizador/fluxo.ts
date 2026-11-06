@@ -120,3 +120,32 @@ export function rotuloZona(
   const ordem = zones.slice(0, i + 1).filter((o) => o.surface === z.surface && tiposEscolhidos.has(o.id)).length;
   return `${espaco.label.split(" / ")[0]} ${ordem}`;
 }
+
+/**
+ * Primeira área sem a descrição de onde aplicar, quando é só ela que segura o
+ * "Gerar visualização": a atual tem texto e todo o resto do Gerar está ok.
+ * null quando a atual também está sem texto (aí vale a linha Onde dela).
+ */
+export function areaSemDescricao(
+  zones: Pick<Zone, "instruction">[],
+  atual: number,
+  base: { canGenerate: boolean },
+): number | null {
+  if (!base.canGenerate || !zones[atual]?.instruction.trim()) return null;
+  const i = zones.findIndex((z) => !z.instruction.trim());
+  return i < 0 || i === atual ? null : i;
+}
+
+const TIPOS_FEMININOS = /^(Área|Parede|Sala|Cozinha|Porta) \d+$/;
+const TIPOS_MASCULINOS = /^(Teto|Quarto|Escritório|Corredor|Banheiro|Lavabo|Móvel|Box) \d+$/;
+
+/**
+ * "Falta dizer onde aplicar na Área 1." com o nome que o cliente vê. Nomes de
+ * tipo masculinos levam "no" ("no Teto 1"); um nome escrito pelo cliente vai
+ * entre aspas depois de "na área".
+ */
+export function avisoFaltaDescricao(rotulo: string): string {
+  if (TIPOS_FEMININOS.test(rotulo)) return `Falta dizer onde aplicar na ${rotulo}.`;
+  if (TIPOS_MASCULINOS.test(rotulo)) return `Falta dizer onde aplicar no ${rotulo}.`;
+  return `Falta dizer onde aplicar na área “${rotulo}”.`;
+}

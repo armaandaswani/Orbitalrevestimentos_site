@@ -1898,4 +1898,6 @@ html.mv-cursor:has([data-lupa="aberta"]) .mv-cursor-corpo { opacity: 0; }
 /* Barra de ação presa embaixo no celular: o balão do chat sobe acima dela. */
 @media (max-width: 1023.98px) {
   html[data-viz-barra-presa] [data-chat-flutuante] { translate: 0 calc(-3.75rem - env(safe-area-inset-bottom)); }
+  /* Com a linha "Falta dizer onde aplicar…" a barra fica 52 px mais alta: o balão sobe junto. */
+  html[data-viz-barra-presa][data-viz-barra-aviso] [data-chat-flutuante] { translate: 0 calc(-7rem - env(safe-area-inset-bottom)); }
 }

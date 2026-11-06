@@ -10,6 +10,8 @@ export type AcaoShell = {
   onClick: () => void;
   desabilitada?: boolean;
   tom?: "primaria" | "verde";
+  /** Linha curta acima do botão dizendo o que falta; toda ela é um botão. */
+  aviso?: { texto: string; onClick: () => void };
 };
 
 function prefereMenosMovimento(): boolean {
@@ -91,6 +93,14 @@ export default function VizShell({
     html.setAttribute("data-viz-barra-presa", "");
     return () => html.removeAttribute("data-viz-barra-presa");
   }, [barraPresa]);
+  // Com a linha de aviso a barra fica mais alta: o balão sobe mais um pouco.
+  const barraComAviso = barraPresa && !!acao?.aviso;
+  useEffect(() => {
+    if (!barraComAviso) return;
+    const html = document.documentElement;
+    html.setAttribute("data-viz-barra-aviso", "");
+    return () => html.removeAttribute("data-viz-barra-aviso");
+  }, [barraComAviso]);
 
   const tom = acao?.tom ?? "primaria";
   const botao = acao?.desabilitada
@@ -197,6 +207,21 @@ export default function VizShell({
                     : "viz-barra sticky bottom-0 z-40 -mx-4 mt-6 border-t border-[#e8e8e8] bg-white/95 px-4 pt-3 pb-[calc(0.75rem+env(safe-area-inset-bottom))] backdrop-blur-sm sm:-mx-6 sm:px-6 lg:static lg:mx-0 lg:border-0 lg:bg-transparent lg:px-0 lg:pt-0 lg:pb-0 lg:backdrop-blur-none"
                 }
               >
+                {/* Por que a ação está parada, logo acima dela (no fluxo da barra,
+                    sem cobrir o botão); a linha inteira leva ao que falta. */}
+                {acao.aviso && (
+                  <button
+                    type="button"
+                    data-viz-aviso-acao
+                    onClick={acao.aviso.onClick}
+                    className="mb-2 flex min-h-11 w-full items-center gap-2 text-left text-[13px] font-semibold text-[#8a5a12] lg:mb-3"
+                  >
+                    <span className="min-w-0 flex-1 underline decoration-[#8a5a12]/30 underline-offset-4">{acao.aviso.texto}</span>
+                    <svg aria-hidden width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="shrink-0">
+                      <path d="M9 5l7 7-7 7" />
+                    </svg>
+                  </button>
+                )}
                 <button
                   type="button"
                   onClick={acao.onClick}

@@ -11,7 +11,29 @@ import {
   rotuloZona,
   podeIrParaProximaArea,
   indiceDaArea,
+  areaSemDescricao,
+  avisoFaltaDescricao,
 } from "./fluxo.ts";
+
+test("areaSemDescricao: só quando outra área segura o Gerar", () => {
+  const ok = { canGenerate: true };
+  const z = (t) => ({ instruction: t });
+  assert.equal(areaSemDescricao([z(""), z("parede")], 1, ok), 0);
+  assert.equal(areaSemDescricao([z("a"), z(""), z(""), z("d")], 3, ok), 1);
+  // A atual sem texto: vale a linha Onde dela, sem aviso.
+  assert.equal(areaSemDescricao([z(""), z(" ")], 1, ok), null);
+  // Tudo descrito, ou o Gerar parado por outro motivo.
+  assert.equal(areaSemDescricao([z("a"), z("b")], 1, ok), null);
+  assert.equal(areaSemDescricao([z(""), z("b")], 1, { canGenerate: false }), null);
+});
+
+test("avisoFaltaDescricao usa o nome da área com o artigo certo", () => {
+  assert.equal(avisoFaltaDescricao("Área 1"), "Falta dizer onde aplicar na Área 1.");
+  assert.equal(avisoFaltaDescricao("Parede 2"), "Falta dizer onde aplicar na Parede 2.");
+  assert.equal(avisoFaltaDescricao("Teto 1"), "Falta dizer onde aplicar no Teto 1.");
+  assert.equal(avisoFaltaDescricao("Móvel 1"), "Falta dizer onde aplicar no Móvel 1.");
+  assert.equal(avisoFaltaDescricao("atrás da TV"), "Falta dizer onde aplicar na área “atrás da TV”.");
+});
 
 test("etapaVisivel mapeia os passos", () => {
   assert.equal(etapaVisivel("upload", "mark"), 0);

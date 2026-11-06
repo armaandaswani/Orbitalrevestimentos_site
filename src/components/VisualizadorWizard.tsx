@@ -14,7 +14,7 @@ import EtapaFoto from "./visualizador/EtapaFoto";
 import EtapaResultado from "./visualizador/EtapaResultado";
 import AtalhoConsultor from "./visualizador/AtalhoConsultor";
 import {
-  areaSeguinte, etapaVisivel, indiceDaArea, podeGerar, podeIrParaProximaArea, rotuloZona, ZONE_COLORS,
+  areaSeguinte, areaSemDescricao, avisoFaltaDescricao, etapaVisivel, indiceDaArea, podeGerar, podeIrParaProximaArea, rotuloZona, ZONE_COLORS,
   LINE_ORDER, VIZ_SPACES, type ProductLine,
 } from "./visualizador/fluxo";
 import EtapaAcabamento, { AcabamentoSemAreas, FotoAcabamento } from "./visualizador/EtapaAcabamento";
@@ -1088,6 +1088,8 @@ export default function VisualizadorWizard({
   // o foco vai para o título da área. Com o editor aberto o índice também muda
   // quando sai uma área (antes da atual ou a própria): aí nada rola nem rouba o
   // foco do editor; ao fechar, o efeito do editor devolve a página ao topo.
+  // Chegando pela linha "Falta dizer onde aplicar…", a folha Onde já abriu:
+  // a página rola, mas o foco fica na folha.
   const areaAnterior = useRef(areaAtual);
   useEffect(() => {
     const mudou = areaAnterior.current !== areaAtual;
@@ -1096,7 +1098,7 @@ export default function VisualizadorWizard({
     if (!mudou || !(shell instanceof HTMLElement) || !shell.querySelector("[data-viz-acabamento]")) return;
     if (document.querySelector("[data-viz-editor]")) return;
     rolarParaTopo(shell);
-    focarEtapa(shell);
+    if (!document.querySelector('[role="dialog"][aria-modal="true"]')) focarEtapa(shell);
   }, [areaAtual]);
 
   // Editor fechado: a página volta com o topo da etapa à vista (enquanto ele
@@ -1624,6 +1626,18 @@ export default function VisualizadorWizard({
     updateZone(zonaAtual.id, patch);
   }, [zonaAtual, marcarTipoEscolhido, updateZone]);
 
+  // Na última área, com o Gerar parado só porque outra área ficou sem a
+  // descrição: uma linha acima da barra diz qual e leva até ela (pelo id da
+  // zona) com a folha Onde aberta. A folha abre uma vez, ao montar a área.
+  const [ondePedida, setOndePedida] = useState<string | null>(null);
+  const semDescricao = proximaArea === null && analysis.status !== "loading"
+    ? areaSemDescricao(zones, areaAtual, { canGenerate })
+    : null;
+  const avisoGerar = semDescricao === null ? undefined : {
+    texto: avisoFaltaDescricao(rotulos[semDescricao] ?? zones[semDescricao].label),
+    onClick: () => { setOndePedida(zones[semDescricao].id); irParaArea(semDescricao); },
+  };
+
   // ── Generate ──────────────────────────────────────────────────────────────
   const generate = useCallback(async () => {
     if (!photoData) return;
@@ -2057,7 +2071,7 @@ export default function VisualizadorWizard({
           ? { rotulo: "Marcar as áreas", onClick: editarAreas }
           : proximaArea !== null
             ? { rotulo: "Próxima área", onClick: irParaProximaArea, desabilitada: !podeIrParaProximaArea(zonaAtual) }
-            : { rotulo: "Gerar visualização", onClick: generate, desabilitada: !podeGerarAgora, tom: "verde" };
+            : { rotulo: "Gerar visualização", onClick: generate, desabilitada: !podeGerarAgora, tom: "verde", aviso: avisoGerar };
 
   // Consultor ou orçamento, nunca os dois (regra de 7078a52): com o orçamento
   // instantâneo escondido (pivô), "Falar com um consultor"; com ele visível, só
@@ -2156,6 +2170,8 @@ export default function VisualizadorWizard({
             keepText={keepText}
             setKeepText={setKeepText}
             onEditarAreas={editarAreas}
+            abrirOnde={ondePedida === zonaAtual.id}
+            onOndeFechada={() => setOndePedida(null)}
           />
         ) : (
           <AcabamentoSemAreas onEditarAreas={editarAreas} />

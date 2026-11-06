@@ -225,7 +225,7 @@ export function AcabamentoSemAreas({ onEditarAreas }: { onEditarAreas: () => voi
 
 export default function EtapaAcabamento({
   zona, rotulo, indice, total, produtos, carregando, analise, erroAnalise, onTentarDeNovo, depurar,
-  onEscolher, onAtualizar, keepText, setKeepText, onEditarAreas,
+  onEscolher, onAtualizar, keepText, setKeepText, onEditarAreas, abrirOnde = false, onOndeFechada,
 }: {
   zona: Zone;
   /** Nome da área para o cliente (Parede 1…); sem ele, o label da zona. */
@@ -244,6 +244,10 @@ export default function EtapaAcabamento({
   keepText: string;
   setKeepText: (v: string) => void;
   onEditarAreas: () => void;
+  /** Abrir a folha Onde ao montar (vindo do aviso "Falta dizer onde aplicar…"). */
+  abrirOnde?: boolean;
+  /** A folha Onde fechou (o pedido de abrir já foi atendido). */
+  onOndeFechada?: () => void;
 }) {
   const nome = rotulo || zona.label;
   const idBase = useId();
@@ -286,7 +290,8 @@ export default function EtapaAcabamento({
     el.scrollBy({ left: sentido * 232 * 2, behavior: window.matchMedia("(prefers-reduced-motion: reduce)").matches ? "instant" : "smooth" });
   };
 
-  const [folha, setFolha] = useState<null | "onde" | "ajustes">(null);
+  const [folha, setFolha] = useState<null | "onde" | "ajustes">(abrirOnde ? "onde" : null);
+  const fecharOnde = () => { setFolha(null); onOndeFechada?.(); };
   const lendo = analise === "loading";
   const instrucao = zona.instruction.trim();
   // Refazer os cantos: só quando se aplica (modelo com textura plana e área com
@@ -442,7 +447,7 @@ export default function EtapaAcabamento({
       </div>
 
 
-      <Folha aberta={folha === "onde"} titulo="Onde aplicar" onFechar={() => setFolha(null)}>
+      <Folha aberta={folha === "onde"} titulo="Onde aplicar" onFechar={fecharOnde}>
         <label htmlFor={`${idBase}-onde`} className={ROTULO}>Onde aplicar em {nome}</label>
         <textarea
           id={`${idBase}-onde`}
@@ -473,7 +478,7 @@ export default function EtapaAcabamento({
           className={`${CAMPO} mt-1.5 resize-none`}
         />
         <p className="mt-1.5 text-[13px] text-[#5b5f66]">Vale para a foto inteira.</p>
-        <button type="button" onClick={() => setFolha(null)} className={BOTAO_FOLHA}>Pronto</button>
+        <button type="button" onClick={fecharOnde} className={BOTAO_FOLHA}>Pronto</button>
       </Folha>
 
       <Folha aberta={folha === "ajustes"} titulo="Ajustes" onFechar={() => setFolha(null)}>
