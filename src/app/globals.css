@@ -1946,4 +1946,17 @@ html.mv-cursor:has([data-lupa="aberta"]) .mv-cursor-corpo { opacity: 0; }
   html[data-viz-barra-presa][data-viz-barra-aviso] [data-chat-flutuante] {
     translate: 0 calc(0.75rem - var(--viz-barra-h, calc(7.75rem + env(safe-area-inset-bottom))));
   }
+  /* No Resultado (EtapaResultado põe o atributo) o balão some: cobria o canto
+     do antes e depois, e o "Falar com um consultor" já está na tela. Só
+     opacity e visibility (nada muda de lugar); a visibility também tira os
+     toques. */
+  html[data-viz-no-resultado] [data-chat-flutuante] { opacity: 0; visibility: hidden; }
+}
+@media (max-width: 1023.98px) and (prefers-reduced-motion: no-preference) {
+  [data-chat-flutuante] {
+    transition: translate var(--mv-base) var(--mv-chegada), opacity var(--mv-base) var(--mv-chegada), visibility 0s linear 0s;
+  }
+  html[data-viz-no-resultado] [data-chat-flutuante] {
+    transition: translate var(--mv-base) var(--mv-chegada), opacity var(--mv-base) var(--mv-chegada), visibility 0s linear var(--mv-base);
+  }
 }

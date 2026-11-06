@@ -84,6 +84,14 @@ export default function EtapaResultado({
   // "Tentar de novo") já não existe; o foco vai para o título do Resultado.
   // O efeito roda depois da limpeza da Folha.
   const tituloRef = useRef<HTMLHeadingElement | null>(null);
+  // No celular o balão do chat some enquanto o Resultado está na tela (ele
+  // cobria o canto da imagem; o "Falar com um consultor" já está aqui). O
+  // atributo sai ao trocar de etapa ou desmontar; o CSS só age abaixo de 1024 px.
+  useEffect(() => {
+    const html = document.documentElement;
+    html.setAttribute("data-viz-no-resultado", "");
+    return () => html.removeAttribute("data-viz-no-resultado");
+  }, []);
   const folhaAntes = useRef(folhaAberta);
   useEffect(() => {
     const fechou = folhaAntes.current && !folhaAberta;
