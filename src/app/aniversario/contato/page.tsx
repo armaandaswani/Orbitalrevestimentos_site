@@ -12,7 +12,7 @@ import FormContato from "./FormContato";
  */
 export const dynamic = "force-dynamic";
 export const metadata: Metadata = {
-  title: "Contato do aniversariante | Orbital Revestimentos",
+  title: "Contato do aniversariante",
   robots: { index: false, follow: false },
 };
 
