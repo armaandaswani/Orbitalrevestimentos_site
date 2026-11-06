@@ -29,21 +29,37 @@ export interface VisualizadorItem {
  */
 export function visualizadorRenderMessage(items: VisualizadorItem[]): string {
   const parts = items.filter((it) => it && (it.productName || it.local));
-  const lines: string[] = ["Olá! Aqui está sua simulação do PFB da Orbital 🎨"];
+  // Sai pelo número da Ste (SM Click), e ela segue a conversa daqui (dono, 06/11/2026).
+  const lines: string[] = ["Oi, tudo bem? Aqui é a Ste, da Orbital 😊", "", "Aqui está a simulação que você gerou no nosso site:"];
   if (parts.length > 0) {
     lines.push("");
     for (const it of parts) {
       const code = it.productCode ? ` (${it.productCode})` : "";
       const prod = it.productName ? `*${it.productName}*${code}` : "Acabamento escolhido";
-      const local = it.local ? ` — ${it.local}` : "";
-      lines.push(`• ${prod}${local}`);
+      lines.push(it.local ? `${it.local}: ${prod}` : prod);
     }
   }
-  // O link da imagem gerada entra logo abaixo desta linha, no envio
-  // (save-render), porque só existe depois do upload.
-  const n = new Set(parts.map((it) => it.productCode?.trim() || it.productName?.trim()).filter(Boolean)).size;
-  lines.push("", `Gostou do resultado? Veja mais projetos ${n > 1 ? "deles" : "dele"}! ✨`);
+  // O link da imagem e a pergunta entram no envio (visualizadorCaption), porque o link só existe depois do upload.
   return lines.join("\n");
+}
+
+/**
+ * The full WhatsApp caption: saved summary + short link + the question Ste picks up from. Drops lines of
+ * the older wording ("Gostou do resultado? Veja mais projetos…", catalog links) kept in summaries saved before.
+ */
+export function visualizadorCaption(summary: string, link: string): string {
+  const base = summary
+    .split("\n")
+    .filter((l) => !/\/produtos(\/pfb)?(\?|$)/.test(l.trim()) && !/^Gostou do resultado\?/.test(l.trim()))
+    .join("\n")
+    .trimEnd();
+  return `${base}\n${link}\n\nO que você achou do resultado?`;
+}
+
+/** Short link for a render (route /v/[code]): the first 12 hex digits of its UUID; null if it's no UUID. */
+export function renderShortLink(id: string, siteUrl: string): string | null {
+  const hex = id.toLowerCase().replace(/-/g, "");
+  return /^[0-9a-f]{32}$/.test(hex) ? `${siteUrl.replace(/\/+$/, "")}/v/${hex.slice(0, 12)}` : null;
 }
 
 /**

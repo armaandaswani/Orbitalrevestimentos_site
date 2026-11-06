@@ -3,7 +3,8 @@ import { randomUUID } from "crypto";
 import type { SupabaseClient } from "@supabase/supabase-js";
 import { supabaseAdmin } from "@/lib/supabase";
 import { smclickConfigured, normalizePhone, sendImage, sendText } from "@/lib/smclick";
-import { visualizadorRenderMessage, productEducationMessage, type VisualizadorItem } from "@/lib/smclick-messages";
+import { visualizadorRenderMessage, visualizadorCaption, renderShortLink, type VisualizadorItem } from "@/lib/smclick-messages";
+import { SITE_URL } from "@/lib/product-link";
 
 // POST /api/visualizador/save-render — public, best-effort.
 //
@@ -39,9 +40,9 @@ function parseDataUrl(input: string): { buf: Buffer; ext: string; mime: string }
 }
 
 // Best-effort: deliver the saved render to the client's WhatsApp via SM Click,
-// exactly once. Sends two messages — (1) the render image with a caption that
-// lists what they visualized, and (2) a product-education / qualification
-// message. Reads the row for the latest image URL, the stored caption and the
+// exactly once. Sends one message: the render image with a caption that
+// lists what they visualized, the short link and the question Ste picks up
+// from. Reads the row for the latest image URL, the stored caption and the
 // dedup stamp; records whatsapp_sent_at after the first message lands so we
 // never double-send. Never throws.
 async function maybeSendRenderWhatsapp(
@@ -66,18 +67,13 @@ async function maybeSendRenderWhatsapp(
     const url = imgs[imgs.length - 1]?.url;
     if (!url) return;
 
-    // Texto salvo no momento do render (modelos escolhidos) + o link da imagem
-    // gerada logo abaixo. Linhas com link de catálogo (versão anterior da
-    // mensagem) são descartadas para não sair link duplicado.
-    const base = (
+    // Texto salvo no momento do render (modelos escolhidos) + o link curto da
+    // imagem (/v/…: o link do Storage era enorme e o WhatsApp lia o UUID como
+    // chave Pix) + a pergunta de onde a Ste segue a qualificação.
+    const summary =
       (row.summary && row.summary.trim()) ||
-      visualizadorRenderMessage(imgs.map((i) => ({ local: i.local, productName: i.productName, productCode: i.productCode })))
-    )
-      .split("\n")
-      .filter((l) => !/\/produtos(\/pfb)?(\?|$)/.test(l.trim()))
-      .join("\n")
-      .trimEnd();
-    const caption = `${base}\n${url}`;
+      visualizadorRenderMessage(imgs.map((i) => ({ local: i.local, productName: i.productName, productCode: i.productCode })));
+    const caption = visualizadorCaption(summary, renderShortLink(id, SITE_URL) ?? url);
 
     // Message 1 — the render. Image with caption (link included); fall back to text.
     let r = await sendImage(tel, url, caption);
@@ -87,10 +83,8 @@ async function maybeSendRenderWhatsapp(
       return; // don't stamp/send msg 2 if the render itself didn't go out
     }
     await db.from("visualizador_renders").update({ whatsapp_sent_at: new Date().toISOString() }).eq("id", id);
-
-    // Message 2 — product education / qualification (non-fatal if it fails).
-    const edu = await sendText(tel, productEducationMessage());
-    if (!edu.ok) console.error("[save-render] whatsapp education send failed", edu.error);
+    // No second "Descubra o Painel…" message any more (owner, 2026-11-06): the client answers what they
+    // thought, and Ste asks whether they already know the panels before explaining.
   } catch (e) {
     console.error("[save-render] whatsapp send error", e instanceof Error ? e.message : e);
   }
