@@ -11,8 +11,9 @@ import {
  * Lista de espera de uma linha em chegada, na mesma pegada do pré-contato
  * (ContatoSheet): uma pergunta por tela, barra de progresso, escolha única
  * que segue sozinha, resumo com "Alterar" no fim. Mesmas peças visuais
- * (OpcaoCard/OpcaoMulti, classes pc-*), mesma folha: no celular sobe de baixo,
- * no computador é um cartão preso ao topo.
+ * (OpcaoCard/OpcaoMulti, classes pc-*), mesma folha: no celular tela cheia (100dvh,
+ * com o branco seguindo até 100lvh por baixo das barras do navegador), no
+ * computador um cartão preso ao topo.
  *
  * Passos: modelos (pulado quando a pessoa já veio de um modelo) → perfil →
  * prazo da obra → contato (nome, WhatsApp, e-mail) → resumo e aceite →
@@ -143,26 +144,14 @@ export default function ListaEsperaSheet({ aberto, fechar, linha, nomeLinha, cat
     return () => cancelAnimationFrame(id);
   }, [aberto, passo, r, modelos.length, estado, medirBordas]);
 
-  // Celular: a folha acompanha a altura do conteúdo deslizando (só transform).
+  // A folha mudou de tamanho (outra pergunta no computador, barra do
+  // navegador que some ou volta no celular): mede de novo as linhas finas.
+  // No celular a folha é tela cheia e não acompanha o conteúdo.
   useEffect(() => {
     if (!aberto) return;
     const el = folhaRef.current;
     if (!el || typeof ResizeObserver === "undefined") return;
-    let h0 = el.offsetHeight;
-    let w0 = window.innerWidth;
-    const celular = window.matchMedia("(max-width: 639.98px)");
-    const calmo = window.matchMedia("(prefers-reduced-motion: reduce)");
-    const ro = new ResizeObserver(() => {
-      const h = el.offsetHeight;
-      const w = window.innerWidth;
-      const d = h - h0;
-      const mesmaLargura = w === w0;
-      h0 = h;
-      w0 = w;
-      medirBordas();
-      if (!d || !mesmaLargura || !celular.matches || calmo.matches || Math.abs(d) < 4) return;
-      el.animate([{ transform: `translateY(${d}px)` }, { transform: "translateY(0)" }], { duration: 300, easing: "cubic-bezier(.2,.8,.2,1)" });
-    });
+    const ro = new ResizeObserver(() => medirBordas());
     ro.observe(el);
     return () => ro.disconnect();
   }, [aberto, medirBordas]);
@@ -263,22 +252,34 @@ export default function ListaEsperaSheet({ aberto, fechar, linha, nomeLinha, cat
 
   return (
     <div
-      className="fixed inset-0 z-[120] overflow-hidden flex items-end justify-center sm:items-start sm:px-6 sm:pt-[max(24px,7dvh)]"
+      className={[
+        "fixed z-[120] flex justify-center items-start",
+        // Celular: cobre a tela grande (100lvh), inclusive o que fica por baixo
+        // da barra translúcida do Safari; sem overflow-hidden, para o ::after
+        // branco da folha seguir até o fim (mesma folha do pré-contato).
+        "top-0 inset-x-0 h-[100lvh]",
+        // Computador: a janela, com o cartão preso ao topo.
+        "sm:inset-0 sm:h-auto sm:overflow-hidden sm:px-6 sm:pt-[max(24px,7dvh)]",
+      ].join(" ")}
       onClick={fechar}
       role="dialog"
       aria-modal="true"
       aria-labelledby="espera-titulo"
       style={{ touchAction: "manipulation" }}
     >
-      <div aria-hidden className="pc-veu absolute inset-0 bg-[#050b16]/60" />
+      {/* Véu: escuro atrás do cartão; no celular, branco (a folha cobre a tela). */}
+      <div aria-hidden className="pc-veu absolute inset-0 bg-white sm:bg-[#050b16]/60" />
       <div
         ref={folhaRef}
+        data-espera="folha"
         className={[
           "pc-folha relative flex flex-col w-full bg-white text-[#0B1F45]",
-          "rounded-t-[20px] shadow-[0_-12px_40px_-16px_rgba(0,0,0,0.35)]",
-          "max-h-[calc(100dvh_-_max(16px,env(safe-area-inset-top)))]",
-          "after:content-[''] after:absolute after:inset-x-0 after:top-full after:h-screen after:bg-white",
-          "sm:rounded-none sm:max-w-[640px] sm:max-h-[min(800px,calc(100dvh_-_2*max(24px,7dvh)))]",
+          // Celular: tela cheia na área visível (100dvh); o ::after estende o
+          // branco por baixo das barras do navegador.
+          "h-dvh",
+          "after:content-[''] after:absolute after:inset-x-0 after:top-full after:h-[100lvh] after:bg-white",
+          // Computador: cartão preso ao topo, altura do conteúdo.
+          "sm:h-auto sm:max-w-[640px] sm:max-h-[min(800px,calc(100dvh_-_2*max(24px,7dvh)))]",
           "sm:shadow-[0_30px_90px_-20px_rgba(0,0,0,0.45)] sm:after:hidden",
         ].join(" ")}
         onClick={(e) => e.stopPropagation()}
@@ -287,7 +288,7 @@ export default function ListaEsperaSheet({ aberto, fechar, linha, nomeLinha, cat
         <input type="text" name="website" value={isca} onChange={(e) => setIsca(e.target.value)} tabIndex={-1} autoComplete="off" aria-hidden className="absolute -left-[9999px] w-px h-px opacity-0" />
 
         {/* Barra do topo: voltar, progresso, fechar */}
-        <div className="relative flex-none flex items-center gap-3 sm:gap-4 px-3 sm:px-5 h-16">
+        <div className="relative flex-none flex items-center gap-3 sm:gap-4 px-3 sm:px-5 box-content h-16 pt-[env(safe-area-inset-top)] sm:pt-0">
           <button
             type="button"
             onClick={voltar}
@@ -324,6 +325,7 @@ export default function ListaEsperaSheet({ aberto, fechar, linha, nomeLinha, cat
 
         <div
           ref={corpoRef}
+          data-espera="corpo"
           onScroll={medirBordas}
           className="flex-auto min-h-0 overflow-y-auto overflow-x-hidden overscroll-contain px-5 sm:px-10"
           style={{ paddingBottom: comRodape ? "1.25rem" : "calc(1.75rem + env(safe-area-inset-bottom))" }}
@@ -528,6 +530,7 @@ export default function ListaEsperaSheet({ aberto, fechar, linha, nomeLinha, cat
 
         {comRodape && (
           <div
+            data-espera="rodape"
             className="relative flex-none bg-white px-5 sm:px-10 pt-3"
             style={{ paddingBottom: "calc(1rem + env(safe-area-inset-bottom))" }}
           >
