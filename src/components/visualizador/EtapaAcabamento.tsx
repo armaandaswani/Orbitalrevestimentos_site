@@ -24,7 +24,12 @@ const LINK =
 const BOTAO_FOLHA =
   "mt-6 inline-flex min-h-12 w-full items-center justify-center bg-[#0B1F45] px-6 text-xs font-bold uppercase tracking-[0.12em] text-white transition-colors hover:bg-[#2347A0]";
 
-const higienizarMedida = (v: string) => v.replace(/[^0-9.,]/g, "").replace(",", ".");
+// Aba de linha: as de LINE_ORDER e "Outros" (linha desconhecida no catálogo).
+const OUTROS = "Outros" as const;
+type Aba = ProductLine | typeof OUTROS;
+const abaDe = (p: VizProduct): Aba => (LINE_ORDER.includes(p.linha) ? p.linha : OUTROS);
+
+const higienizarMedida =(v: string) => v.replace(/[^0-9.,]/g, "").replace(",", ".");
 
 const nada = () => {};
 
@@ -45,10 +50,23 @@ function centroDireto(z: Zone): Ponto | null {
   return null;
 }
 
-// Centro da máscara (caixa dos pixels visíveis), lido uma vez por URL.
-const centrosDeMascara = new Map<string, Promise<Ponto | null>>();
+// Centro da máscara (caixa dos pixels visíveis), lido uma vez por URL. O
+// resultado fica guardado também de forma síncrona (as últimas 24 máscaras),
+// para a faixa enquadrar na hora ao voltar para uma área já vista.
+const centrosResolvidos = new Map<string, Ponto | null>();
+const centrosPendentes = new Map<string, Promise<Ponto | null>>();
+const LIMITE_CENTROS = 24;
+function guardarCentro(url: string, c: Ponto | null) {
+  centrosResolvidos.delete(url);
+  centrosResolvidos.set(url, c);
+  while (centrosResolvidos.size > LIMITE_CENTROS) {
+    const maisAntigo = centrosResolvidos.keys().next().value;
+    if (maisAntigo === undefined) break;
+    centrosResolvidos.delete(maisAntigo);
+  }
+}
 function centroDaMascara(url: string): Promise<Ponto | null> {
-  let p = centrosDeMascara.get(url);
+  let p = centrosPendentes.get(url);
   if (!p) {
     p = new Promise<Ponto | null>((resolve) => {
       const img = new Image();
@@ -71,8 +89,12 @@ function centroDaMascara(url: string): Promise<Ponto | null> {
       };
       img.onerror = () => resolve(null);
       img.src = url;
+    }).then((c) => {
+      guardarCentro(url, c);
+      centrosPendentes.delete(url);
+      return c;
     });
-    centrosDeMascara.set(url, p);
+    centrosPendentes.set(url, p);
   }
   return p;
 }
@@ -81,13 +103,15 @@ function useCentroDaArea(z: Zone | undefined): Ponto {
   const direto = z ? centroDireto(z) : null;
   const url = !direto && z?.maskUrl ? z.maskUrl : null;
   const [mascara, setMascara] = useState<{ url: string; c: Ponto | null } | null>(null);
+  const guardado = url && centrosResolvidos.has(url) ? centrosResolvidos.get(url) ?? null : undefined;
   useEffect(() => {
-    if (!url) return;
+    if (!url || centrosResolvidos.has(url)) return;
     let vivo = true;
     void centroDaMascara(url).then((c) => { if (vivo) setMascara({ url, c }); });
     return () => { vivo = false; };
   }, [url]);
-  return direto ?? (url && mascara?.url === url ? mascara.c : null) ?? { x: 0.5, y: 0.5 };
+  const daMascara = guardado !== undefined ? guardado : url && mascara?.url === url ? mascara.c : null;
+  return direto ?? daMascara ?? { x: 0.5, y: 0.5 };
 }
 
 const consultaComputador = "(min-width: 1024px)";
@@ -225,20 +249,25 @@ export default function EtapaAcabamento({
   const idBase = useId();
   const produtoAtual = produtos.find((p) => p.id === zona.productId) ?? null;
 
-  // Abas: só as linhas com modelos; começa na linha do modelo atual da área.
-  const linhas = useMemo(() => LINE_ORDER.filter((l) => produtos.some((p) => p.linha === l)), [produtos]);
-  const [linhaEscolhida, setLinhaEscolhida] = useState<ProductLine | null>(null);
-  const linha: ProductLine | null =
+  // Abas: só as linhas com modelos, e "Outros" para modelos de uma linha fora
+  // de LINE_ORDER (nunca somem); começa na aba do modelo escolhido da área (o
+  // modelo semeado por padrão, ainda não escolhido, não conta), senão na primeira.
+  const linhas = useMemo<Aba[]>(() => {
+    const conhecidas: Aba[] = LINE_ORDER.filter((l) => produtos.some((p) => p.linha === l));
+    return produtos.some((p) => abaDe(p) === OUTROS) ? [...conhecidas, OUTROS] : conhecidas;
+  }, [produtos]);
+  const [linhaEscolhida, setLinhaEscolhida] = useState<Aba | null>(null);
+  const linha: Aba | null =
     linhaEscolhida && linhas.includes(linhaEscolhida)
       ? linhaEscolhida
-      : produtoAtual && linhas.includes(produtoAtual.linha)
-        ? produtoAtual.linha
+      : zona.productChosen && produtoAtual && linhas.includes(abaDe(produtoAtual))
+        ? abaDe(produtoAtual)
         : linhas[0] ?? null;
-  const lista = linha ? produtos.filter((p) => p.linha === linha) : [];
+  const lista = linha ? produtos.filter((p) => abaDe(p) === linha) : [];
 
   const fileira = useRef<HTMLDivElement | null>(null);
   const abasRef = useRef<Array<HTMLButtonElement | null>>([]);
-  const trocarLinha = (l: ProductLine) => {
+  const trocarLinha = (l: Aba) => {
     setLinhaEscolhida(l);
     fileira.current?.scrollTo({ left: 0 });
   };
@@ -264,14 +293,17 @@ export default function EtapaAcabamento({
 
   return (
     <div data-viz-acabamento data-erro={analise === "error" ? "" : undefined} className="viz-area">
-      {/* Área atual e as saídas secundárias */}
-      <div className="flex h-9 items-center gap-3">
-        <h2 className="min-w-0 flex-1 truncate font-serif text-xl leading-tight text-[#0B1F45]">
-          {nome}
-          <span className="font-sans text-sm text-[#5b5f66]"> · {indice + 1} de {total}</span>
+      {/* Área atual e as saídas secundárias. min-h e não altura fixa: com fonte
+          grande de acessibilidade a linha cresce em vez de cobrir a linha Onde,
+          e a tela passa a rolar (de propósito; o encaixe numa tela vale para o
+          tamanho de texto padrão). O contador fica fora do corte do nome. */}
+      <div className="flex min-h-8 items-center gap-3">
+        <h2 className="flex min-w-0 flex-1 items-baseline font-serif text-xl leading-tight text-[#0B1F45]">
+          <span className="min-w-0 truncate">{nome}</span>
+          <span className="ml-1.5 shrink-0 whitespace-nowrap font-sans text-sm text-[#5b5f66]">· {indice + 1} de {total}</span>
         </h2>
-        <button type="button" onClick={() => setFolha("ajustes")} className={`${LINK} -my-1 shrink-0`}>Ajustes</button>
-        <button type="button" onClick={onEditarAreas} className={`${LINK} -my-1 shrink-0`}>Editar áreas</button>
+        <button type="button" onClick={() => setFolha("ajustes")} className={`${LINK} -my-1.5 shrink-0`}>Ajustes</button>
+        <button type="button" onClick={onEditarAreas} className={`${LINK} -my-1.5 shrink-0`}>Editar áreas</button>
       </div>
 
       {depurar && (
@@ -289,7 +321,7 @@ export default function EtapaAcabamento({
 
       {/* Onde aplicar: logo abaixo do nome da área (embaixo, à direita, o balão
           do chat cobriria o "Editar"). */}
-      <div data-viz-onde className="-mt-1 flex min-h-11 items-center gap-3">
+      <div data-viz-onde className="flex min-h-11 items-center gap-3">
         <p className="min-w-0 flex-1 truncate text-sm" aria-live="polite">
           <span className="text-[#5b5f66]">Onde: </span>
           {lendo ? (
@@ -374,8 +406,7 @@ export default function EtapaAcabamento({
           [0, 1].map((i) => (
             <span key={i} aria-hidden className="block w-[70vw] max-w-[320px] shrink-0 lg:w-[220px]">
               <span className="viz-cartao-foto block rounded-sm bg-[#eef0f2]" />
-              <span className="mt-2 block h-[18px] w-2/3 rounded-sm bg-[#eef0f2]" />
-              <span className="mt-1 block h-3 w-1/4 rounded-sm bg-[#eef0f2]" />
+              <span className="mt-2 block h-5 w-2/3 rounded-sm bg-[#eef0f2]" />
             </span>
           ))
         ) : lista.length === 0 ? (
@@ -383,10 +414,11 @@ export default function EtapaAcabamento({
             Não foi possível carregar os acabamentos. Recarregue a página para tentar de novo.
           </p>
         ) : (
-          lista.map((p) => (
+          lista.map((p, i) => (
             <CartaoAcabamento
               key={p.id}
               produto={p}
+              adiar={i >= 2}
               selecionado={!!zona.productChosen && zona.productId === p.id}
               onEscolher={() => onEscolher(p.id)}
             />

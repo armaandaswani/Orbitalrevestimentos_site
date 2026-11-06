@@ -4,9 +4,10 @@
 // código. Usa a textura plana de frente (render_texture_path) quando existe; se
 // não, a foto do catálogo (o painel de pé contra uma parede clara) com zoom
 // centrado de 1.8, para o cartão mostrar a pedra e não o fundo branco.
-// Escolhido, o cartão ganha a moldura azul de 2 px, o selo de confirmação e
-// cresce para 1.02 (sem escala com movimento reduzido; globals.css ›
-// Visualizador), e desliza para o começo da fileira.
+// Escolhido, a foto ganha a moldura azul de 2 px, o selo de confirmação e
+// cresce para 1.02 (só a moldura; o nome não mexe; sem escala com movimento
+// reduzido; globals.css › Visualizador), e o cartão cortado desliza para o
+// começo da fileira.
 import React from "react";
 import type { VizProduct } from "../VisualizadorWizard";
 
@@ -18,10 +19,13 @@ export default function CartaoAcabamento({
   produto,
   selecionado,
   onEscolher,
+  adiar = false,
 }: {
   produto: VizProduct;
   selecionado: boolean;
   onEscolher: () => void;
+  /** Carregar a foto só perto de aparecer (cartões a partir do terceiro). */
+  adiar?: boolean;
 }) {
   const textura = produto.render_texture_path?.trim() || null;
   return (
@@ -32,13 +36,19 @@ export default function CartaoAcabamento({
       aria-label={`${produto.name}, ${produto.code}`}
       onClick={(e) => {
         onEscolher();
-        // Tocar no cartão que aparece pela metade traz ele inteiro para o começo.
-        e.currentTarget.scrollIntoView({ inline: "start", block: "nearest", behavior: prefereMenosMovimento() ? "instant" : "smooth" });
+        // Tocar no cartão que aparece pela metade traz ele inteiro para o começo;
+        // um cartão já inteiro na fileira fica onde está.
+        const el = e.currentTarget;
+        const fileira = el.parentElement?.getBoundingClientRect();
+        const r = el.getBoundingClientRect();
+        if (fileira && (r.left < fileira.left - 1 || r.right > fileira.right + 1)) {
+          el.scrollIntoView({ inline: "start", block: "nearest", behavior: prefereMenosMovimento() ? "instant" : "smooth" });
+        }
       }}
       className="viz-cartao group relative block w-[70vw] max-w-[320px] shrink-0 snap-start text-left outline-none lg:w-[220px]"
     >
       <span
-        className={`relative block overflow-hidden rounded-sm bg-[#eef0f2] ${
+        className={`viz-cartao-moldura relative block overflow-hidden rounded-sm bg-[#eef0f2] ${
           selecionado
             ? "shadow-[0_0_0_2px_#0B1F45,0_10px_24px_-12px_rgba(11,31,69,0.45)]"
             : "shadow-[0_0_0_1px_#e2e4e8] group-hover:shadow-[0_0_0_1px_#B4BBC8]"
@@ -50,6 +60,7 @@ export default function CartaoAcabamento({
           alt=""
           draggable={false}
           decoding="async"
+          loading={adiar ? "lazy" : undefined}
           data-textura={textura ? "" : undefined}
           className={`viz-cartao-foto block w-full object-cover ${textura ? "" : "scale-[1.8]"}`}
         />

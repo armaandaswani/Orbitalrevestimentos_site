@@ -1858,8 +1858,8 @@ html.mv-cursor:has([data-lupa="aberta"]) .mv-cursor-corpo { opacity: 0; }
 }
 @media (prefers-reduced-motion: no-preference) {
   .viz-area { animation: viz-area-entra var(--mv-base) var(--mv-chegada) both; }
-  .viz-cartao { transition: transform var(--mv-base) var(--mv-chegada); }
-  .viz-cartao[aria-pressed="true"] { transform: scale(1.02); }
+  .viz-cartao-moldura { transition: transform var(--mv-base) var(--mv-chegada); }
+  .viz-cartao[aria-pressed="true"] .viz-cartao-moldura { transform: scale(1.02); }
   .viz-acab-faixa[data-animar] .viz-faixa-mov { transition: transform var(--mv-base) var(--mv-chegada); }
 }
 

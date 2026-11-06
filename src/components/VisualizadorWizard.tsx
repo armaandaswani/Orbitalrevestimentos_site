@@ -1147,6 +1147,7 @@ export default function VisualizadorWizard({
       setPhotoDims(w && h ? { w, h } : null);
       setResult(null);
       setZones([]);
+      setAreaAtual(0);
       setActiveZoneId(null);
       setLeadSubmitted(embeddedMode);
       vizRenderIdRef.current = "";
@@ -1574,7 +1575,8 @@ export default function VisualizadorWizard({
     setEditorAberto(false);
     setRetargetId(null);
     setZonePhase("model");
-    setAreaAtual(0);
+    // Depois de "Editar áreas" o cliente volta para a mesma área (ajustada se
+    // ela saiu); a área 1 só volta a ser a atual com uma foto nova.
     if (analysis.sig !== marksSig || analysis.status === "error") void analyze();
   }, [analysis, marksSig, analyze]);
 
