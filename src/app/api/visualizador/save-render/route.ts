@@ -101,7 +101,7 @@ export async function POST(req: NextRequest) {
     phone?: string;
     // All zones the client visualized, for the WhatsApp caption (multi-zone).
     items?: VisualizadorItem[];
-    // Save the render without sending the Visualizador WhatsApp messages. Still
+    // Save the render without sending the Visualizador WhatsApp message. Still
     // accepted by the API, but no client sends it today (the Visualizador that
     // was embedded in the Simulador, its only user, was removed).
     suppressWhatsapp?: boolean;

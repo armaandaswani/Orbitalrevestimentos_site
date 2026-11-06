@@ -70,6 +70,11 @@ export default function VizShell({
 
   // Troca de etapa: o topo do shell volta para baixo do cabeçalho e o foco vai
   // para o título da etapa (ou para o próprio shell, se a etapa não tiver h2).
+  // Se a etapa nova já abriu uma folha modal e o foco já está nela (o contato
+  // que libera o resultado), a página rola, mas o foco fica na folha. Só a
+  // presença do diálogo não basta: o editor de marcação do celular abre junto
+  // com Marcar e pega o foco depois deste efeito; ele precisa achar o foco no
+  // título para devolvê-lo ali ao fechar.
   const anterior = useRef<EtapaVisivel>(etapa);
   useEffect(() => {
     if (anterior.current === etapa) return;
@@ -77,7 +82,7 @@ export default function VizShell({
     const el = raiz.current;
     if (!el) return;
     rolarParaTopo(el);
-    focarEtapa(el);
+    if (!document.activeElement?.closest('[role="dialog"][aria-modal="true"]')) focarEtapa(el);
   }, [etapa]);
 
   // Barra de ação no celular: o balão do chat sobe para não cobrir o botão.

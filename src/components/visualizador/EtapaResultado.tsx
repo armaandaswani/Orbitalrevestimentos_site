@@ -7,7 +7,7 @@
 // as ações, com "Falar com um consultor" à frente (ou só o orçamento, quando
 // ele está visível). No erro, a mensagem de sempre e "Tentar de novo". Só
 // apresentação: gerar, enviar o contato, baixar e o orçamento são do wizard.
-import React from "react";
+import React, { useEffect, useRef } from "react";
 import AntesDepois from "./AntesDepois";
 import Folha from "./Folha";
 import { useProporcao } from "./EditorMarcacao";
@@ -79,10 +79,21 @@ export default function EtapaResultado({
   const fotoQuadro = resultado ?? (gerando ? previa : null) ?? photoData;
   const borrar = folhaAberta && fotoQuadro !== photoData;
 
+  // A folha do contato fechou (resultado revelado, ou contato salvo enquanto
+  // gera): quem a abriu, o "Gerar visualização", já não existe; o foco vai para
+  // o título do Resultado. O efeito roda depois da limpeza da Folha.
+  const tituloRef = useRef<HTMLHeadingElement | null>(null);
+  const folhaAntes = useRef(folhaAberta);
+  useEffect(() => {
+    const fechou = folhaAntes.current && !folhaAberta;
+    folhaAntes.current = folhaAberta;
+    if (fechou) tituloRef.current?.focus({ preventScroll: true });
+  }, [folhaAberta]);
+
   return (
     <div data-viz-resultado data-gerando={gerando ? "" : undefined}>
       <div className="mb-3 flex min-h-8 items-baseline justify-between gap-3">
-        <h2 className="font-serif text-xl leading-tight text-[#0B1F45] sm:text-2xl">{titulo}</h2>
+        <h2 ref={tituloRef} tabIndex={-1} className="font-serif text-xl leading-tight text-[#0B1F45] sm:text-2xl">{titulo}</h2>
         {revelado && <p className="shrink-0 text-[13px] text-[#74777f]">Arraste para comparar</p>}
       </div>
 
