@@ -1909,13 +1909,17 @@ html.mv-cursor:has([data-lupa="aberta"]) .mv-cursor-corpo { opacity: 0; }
 }
 
 /* Resultado (EtapaResultado, AntesDepois): o quadro da foto e o antes e depois
-   têm a proporção da foto e cabem na tela com o título e a ação principal à
-   vista (no celular, a altura da tela menos ~420 px, com 220 px no mínimo; no
-   computador até 560 px). A camada "depois" é recortada por --div (0 a 100) com clip-path; a
+   têm a proporção da foto. Abaixo de 1024 px ocupam a largura toda do
+   conteúdo, limitados só para a foto inteira caber quando a etapa abre: a
+   altura da tela menos 220 px (a foto começa a 210 px do topo: cabeçalho do
+   site 80, barra de etapas e título; mais 10 px de folga embaixo), com 220 px
+   no mínimo; as ações ficam logo abaixo e a página rola até elas. No
+   computador, até 560 px com o título e a ação principal à vista.
+   A camada "depois" é recortada por --div (0 a 100) com clip-path; a
    linha e a alça andam com transform. Sem transição no arrasto: o recorte
    segue o dedo. A linha fina de progresso corre de lado enquanto gera; o antes
    e depois entra com um fade curto. Com movimento reduzido, nada se move. */
-.viz-shell { --viz-res-h: max(220px, calc(100svh - 420px)); }
+.viz-shell { --viz-res-h: max(220px, calc(100svh - 220px)); }
 @media (min-width: 1024px) {
   .viz-shell { --viz-res-h: min(560px, calc(100svh - 300px)); }
 }
