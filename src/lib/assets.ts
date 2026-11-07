@@ -39,33 +39,6 @@ export function resolveAsset(
  */
 export const SITE_ASSET_MANIFEST = [
   {
-    key: "pfb-water-0h",
-    label: "Teste de Água — 0h (início)",
-    section: "Tecnologia · Resistência à Água",
-    staticPath: "/images/catalogue/pfb-mdf-0h.png",
-    nativeW: 1536,
-    nativeH: 2752,
-    displayInfo: "Retrato · ~320 × 573 px (desktop) | 1/3 da largura do container",
-  },
-  {
-    key: "pfb-water-24h",
-    label: "Teste de Água — 24h",
-    section: "Tecnologia · Resistência à Água",
-    staticPath: "/images/catalogue/pfb-mdf-24h.png",
-    nativeW: 1536,
-    nativeH: 2752,
-    displayInfo: "Retrato · ~320 × 573 px (desktop) | 1/3 da largura do container",
-  },
-  {
-    key: "pfb-water-48h",
-    label: "Teste de Água — 48h (resultado)",
-    section: "Tecnologia · Resistência à Água",
-    staticPath: "/images/catalogue/pfb-mdf-48h.png",
-    nativeW: 1536,
-    nativeH: 2752,
-    displayInfo: "Retrato · ~320 × 573 px (desktop) | 1/3 da largura do container",
-  },
-  {
     key: "product-anatomy",
     label: "Anatomia da Placa (seção transversal)",
     section: "Tecnologia · Anatomia",
@@ -73,15 +46,6 @@ export const SITE_ASSET_MANIFEST = [
     nativeW: 732,
     nativeH: 1638,
     displayInfo: "Retrato · max 220 px altura (mobile) / 620 px (desktop)",
-  },
-  {
-    key: "onde-aplicar-main",
-    label: "Foto de Impacto Ambiental",
-    section: "Tecnologia · Impacto Ambiental",
-    staticPath: "/images/catalogue/onde-aplicar-main.jpeg",
-    nativeW: 1674,
-    nativeH: 1982,
-    displayInfo: "Quadrado/retrato · 50% da largura da tela (desktop)",
   },
   {
     key: "hero-cover",

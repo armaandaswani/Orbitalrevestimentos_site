@@ -33,11 +33,11 @@ const BASE_URL = "https://orbitalrevestimentos.com.br";
 export const metadata: Metadata = {
   metadataBase: new URL(BASE_URL),
   title: {
-    default: "Orbital Revestimentos — Painéis Flexíveis em Fibra de Bambu em Manaus",
+    default: "Orbital Revestimentos: Painéis Flexíveis em Fibra de Bambu em Manaus",
     template: "%s | Orbital Revestimentos",
   },
   description:
-    "Novas possibilidades para seus projetos. Painéis Flexíveis em Fibra de Bambu (PFB) para paredes e forros em Manaus: acabamento arquitetônico, resistente à umidade, instalado em horas, sem obra. 3 linhas, 15 acabamentos.",
+    "Novas possibilidades para seus projetos. Painéis Flexíveis em Fibra de Bambu (PFB) para paredes e forros em Manaus, com acabamento de mármore ou madeira, instalado em horas, sem quebradeira. 3 linhas com pronta-entrega.",
   keywords: [
     "Orbital Revestimentos",
     "revestimento parede Manaus",
@@ -49,7 +49,7 @@ export const metadata: Metadata = {
     "revestimento sem demolição",
     "painel flexível fibra de bambu",
     "PFB revestimento",
-    "revestimento impermeável banheiro",
+    "revestimento para banheiro",
     "revestimento lavabo",
     "revestimento cozinha",
     "revestimento sala",
@@ -85,21 +85,21 @@ export const metadata: Metadata = {
     locale: "pt_BR",
     url: BASE_URL,
     siteName: "Orbital Revestimentos",
-    title: "Orbital Revestimentos — Painéis Flexíveis em Fibra de Bambu em Manaus",
+    title: "Orbital Revestimentos: Painéis Flexíveis em Fibra de Bambu em Manaus",
     description:
-      "Novas possibilidades para seus projetos. Painéis Flexíveis em Fibra de Bambu (PFB) para paredes e forros, instalados em horas, sem obra. 3 linhas, 15 acabamentos, pronta-entrega em Manaus.",
+      "Novas possibilidades para seus projetos. Painéis Flexíveis em Fibra de Bambu (PFB) para paredes e forros, instalados em horas, sem obra. 3 linhas, pronta-entrega em Manaus.",
     images: [
       {
         url: "/images/catalogue/hero-cover.png",
         width: 1200,
         height: 630,
-        alt: "Orbital Revestimentos — PFB instalado em interior premium",
+        alt: "Orbital Revestimentos: PFB instalado em interior premium",
       },
     ],
   },
   twitter: {
     card: "summary_large_image",
-    title: "Orbital Revestimentos — Painéis Flexíveis em Fibra de Bambu em Manaus",
+    title: "Orbital Revestimentos: Painéis Flexíveis em Fibra de Bambu em Manaus",
     description:
       "Novas possibilidades para seus projetos. Painéis Flexíveis em Fibra de Bambu (PFB) para paredes e forros, instalados em horas, sem obra.",
     images: ["/images/catalogue/hero-cover.png"],
@@ -161,9 +161,9 @@ const jsonLdSchemas = [
           "@type": "Offer",
           itemOffered: {
             "@type": "Product",
-            name: "Linha Classic — Mármore Fosco",
+            name: "Linha Classic, mármore fosco",
             description:
-              "Revestimento de parede com acabamento mármore fosco. Impermeável, anti-mofo, instalado em 2h.",
+              "Revestimento de parede e forro com acabamento de mármore fosco. Resistente a mofo e cupim.",
           },
           availability: "https://schema.org/InStock",
         },
@@ -171,9 +171,9 @@ const jsonLdSchemas = [
           "@type": "Offer",
           itemOffered: {
             "@type": "Product",
-            name: "Linha Brilliance — Mármore Polido",
+            name: "Linha Brilliance, mármore polido",
             description:
-              "Revestimento de parede com acabamento mármore polido. 8 acabamentos. Impermeável.",
+              "Revestimento de parede e forro com acabamento de mármore polido, de alto brilho.",
           },
           availability: "https://schema.org/InStock",
         },
@@ -181,9 +181,9 @@ const jsonLdSchemas = [
           "@type": "Offer",
           itemOffered: {
             "@type": "Product",
-            name: "Linha Elegance — Madeira Texturizada",
+            name: "Linha Elegance, madeira texturizada",
             description:
-              "Revestimento de parede e forro com textura de madeira. 4 acabamentos. Anti-cupim.",
+              "Revestimento de parede e forro com textura de madeira. Resistente a mofo e cupim.",
           },
           availability: "https://schema.org/InStock",
         },
@@ -215,7 +215,6 @@ const jsonLdSchemas = [
       "revestimento de forro",
       "Painéis Flexíveis em Fibra de Bambu",
       "PFB",
-      "revestimento impermeável",
       "decoração de interiores Manaus",
     ],
   },
@@ -225,7 +224,7 @@ const jsonLdSchemas = [
     name: "Orbital Revestimentos",
     url: BASE_URL,
     description:
-      "Revestimento de parede e forro de teto em Manaus — Painéis Flexíveis em Fibra de Bambu (PFB). Novas possibilidades para seus projetos.",
+      "Revestimento de parede e forro de teto em Manaus: Painéis Flexíveis em Fibra de Bambu (PFB). Novas possibilidades para seus projetos.",
     inLanguage: "pt-BR",
     publisher: {
       "@type": "Organization",
