@@ -17,18 +17,30 @@
  *                        "<ini>-<fim>" em px. Ex.: --faixa clima=.ts-clima --faixa topo=0-900
  *   --repeticoes <n>     roda a rolagem medida n vezes (padrão 1) e reporta a mediana;
  *                        sempre há uma rolagem de aquecimento antes, sem medir
- *   --api-produtos <arq> responde /api/products com esse JSON (para /produtos/pfb sem banco local)
+ *   --api-produtos <arq> responde /api/products com esse JSON (para /produtos/pfb/catalogo sem banco local)
  *   --webkit, --firefox  troca o motor, se o runtime tiver o navegador instalado
  *
  * Para cada dispositivo grava <saida>/<dispositivo>/resultado.json
  * ({ dispositivo, quadros, p95Ms, maxMs, acima33, cls, scrollWidth, larguraJanela,
- *    faixas, clsCarga, execucoes }; os campos de tempo são a mediana das execuções),
+ *    innerHeight, faixas, clsCarga, execucoes }; os campos de tempo são a mediana das
+ *    execuções; cada faixa dada por seletor ou por px também traz altura e alturaTelas),
  * quadros.json (os pares [delta ms, scrollY] crus de cada execução, mais os limites
  * de cada faixa), os seis prints (0, 20, 40, 60, 80 e 100% da rolagem) e uma folha de
  * contato (folha.png) com os seis lado a lado. Também grava <saida>/resumo.json.
  *
  * Por que existe: provar com número, e não a olho, que a animação continua fluida
  * em aparelho fraco (CPU lenta), em tela pequena e sem estourar a largura.
+ *
+ * Três proteções ligadas por padrão, sem opção para desligar:
+ *   1. Corte das análises: todo contexto aborta os pedidos ao GA4, ao Meta Pixel, ao
+ *      Vercel Analytics e ao Speed Insights, para nenhuma medição mandar visita ou
+ *      evento a eles. O custo desses scripts de terceiros sai da medição (carregam
+ *      igual em toda página e não fazem parte do que se mede aqui).
+ *   2. Nível completo: deviceMemory e hardwareConcurrency valem 8, para o nível ser
+ *      "completo" em qualquer máquina (com 4 núcleos ou menos, decidirNivel daria
+ *      "leve", o CSS tiraria a cena de 400svh e o portão passaria sem medi-la).
+ *   3. Sem cortina: orbital-intro=1 no sessionStorage, para a cortina da IntroOrbita
+ *      não entrar na medição (ela tem o seu próprio teste, introTempo.test.mjs).
  */
 import { createRequire } from "node:module";
 import { execFileSync } from "node:child_process";
@@ -219,6 +231,23 @@ async function medirDispositivo(browser, nome, d, args) {
     isMobile: d.toque && args.motor !== "firefox", // firefox não suporta isMobile
     reducedMotion: args.reduzido ? "reduce" : "no-preference",
   });
+
+  // Corte das análises: nenhuma medição manda visita ou evento ao GA4, ao Meta Pixel,
+  // ao Vercel Analytics nem ao Speed Insights.
+  await ctx.route(
+    /googletagmanager\.com|google-analytics\.com|analytics\.google\.com|connect\.facebook\.net|facebook\.com\/tr|\/_vercel\/insights|\/_vercel\/speed-insights/,
+    (r) => r.abort(),
+  );
+  // Nível completo em qualquer máquina e sem a cortina da abertura. O try cobre o
+  // about:blank, onde o sessionStorage pode lançar erro.
+  await ctx.addInitScript(() => {
+    Object.defineProperty(navigator, "deviceMemory", { get: () => 8 });
+    Object.defineProperty(navigator, "hardwareConcurrency", { get: () => 8 });
+    try {
+      sessionStorage.setItem("orbital-intro", "1");
+    } catch {}
+  });
+
   const page = await ctx.newPage();
 
   // Observadores entram antes de qualquer script da página para pegar o carregamento
@@ -248,7 +277,7 @@ async function medirDispositivo(browser, nome, d, args) {
     requestAnimationFrame(tick);
   });
 
-  // Sem banco local, /produtos/pfb não tem modelos: responde /api/products com um JSON salvo.
+  // Sem banco local, /produtos/pfb/catalogo não tem modelos: responde /api/products com um JSON salvo.
   if (args.apiProdutos) {
     await page.route("**/api/products", (rota) => rota.fulfill({ path: args.apiProdutos, contentType: "application/json" }));
   }
@@ -298,6 +327,7 @@ async function medirDispositivo(browser, nome, d, args) {
     if (!lim) console.log(`aviso: faixa "${f.nome}" ignorada, seletor sem elemento: ${f.seletor}`);
     limites[f.nome] = lim && lim.map((n) => Math.round(n));
   }
+  const innerHeight = await page.evaluate(() => window.innerHeight);
 
   // ---- passadas medidas: rolagem de cima a baixo, n vezes ----
   const execucoes = [];
@@ -355,6 +385,12 @@ async function medirDispositivo(browser, nome, d, args) {
       acima33: med((e) => e.faixas[fn].acima33),
       maxMs: arred(med((e) => e.faixas[fn].maxMs)),
     };
+    // altura e alturaTelas só existem para faixa com limites (seletor achado ou "<ini>-<fim>")
+    if (limites[fn]) {
+      const altura = limites[fn][1] - limites[fn][0];
+      faixas[fn].altura = altura;
+      faixas[fn].alturaTelas = arred(altura / innerHeight, 2);
+    }
   }
   const resultado = {
     dispositivo: nome,
@@ -365,6 +401,7 @@ async function medirDispositivo(browser, nome, d, args) {
     cls: arred(med((e) => e.cls), 4),
     scrollWidth: largura.scrollWidth,
     larguraJanela: largura.larguraJanela,
+    innerHeight,
     faixas,
     clsCarga: arred(clsCarga, 4),
     clsAquecimento: arred(clsAquecimento, 4),

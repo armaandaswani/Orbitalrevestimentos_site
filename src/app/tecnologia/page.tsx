@@ -545,7 +545,7 @@ export default async function TecnologiaPage() {
               Falar com Especialista
             </ContatoCta>
             <Link
-              href="/produtos/pfb"
+              href="/produtos/pfb/catalogo"
               className="w-full sm:w-auto text-center border border-[#0B1F45] text-[#0B1F45] text-xs tracking-[0.12em] uppercase font-bold px-8 py-4 hover:bg-[#0B1F45] hover:text-white transition-colors"
             >
               Ver Catálogo

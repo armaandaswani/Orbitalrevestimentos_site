@@ -79,7 +79,7 @@ export default function Navbar() {
       <div className="grid grid-cols-[auto_1fr_auto] items-center h-20 px-4 sm:px-8 xl:px-12 max-w-[90rem] mx-auto gap-x-6 min-[1400px]:gap-x-10">
         {/* Assinatura — terço esquerdo */}
         <div className="flex items-center">
-          <Link href="/" aria-label="Orbital Revestimentos — início" className="block shrink-0 py-2.5">
+          <Link href="/" aria-label="Orbital Revestimentos: início" className="block shrink-0 py-2.5">
             {/* Assinatura horizontal oficial (manual da marca). 40px de altura =
                 128px de largura, acima do mínimo de 120px; o py-2.5 é a área de
                 proteção (¼ da altura do globo). */}
