@@ -102,6 +102,11 @@ const resultado = {
   navegador: null,
   verificacoes: [],
 };
+const ARQUIVO_RESULTADO = path.join(args.saida, "resultado.json");
+const gravarResultado = () => fs.writeFileSync(ARQUIVO_RESULTADO, JSON.stringify(resultado, null, 2) + "\n");
+// Zera o resultado.json logo no início (fim: null, lista vazia): se o processo cair no
+// meio, o arquivo que fica não é o "ok" de uma rodada antiga.
+gravarResultado();
 
 const rotulo = (dim) => (dim ? `${dim[0]} × ${dim[1]}` : null);
 
@@ -123,8 +128,8 @@ async function verificar(nome, dim, fn) {
 
 function terminar() {
   resultado.fim = new Date().toISOString();
-  const arquivo = path.join(args.saida, "resultado.json");
-  fs.writeFileSync(arquivo, JSON.stringify(resultado, null, 2) + "\n");
+  const arquivo = ARQUIVO_RESULTADO;
+  gravarResultado();
   const conta = {};
   for (const v of resultado.verificacoes) conta[v.estado] = (conta[v.estado] ?? 0) + 1;
   console.log(`\n${arquivo}\n${JSON.stringify(conta)}`);
@@ -203,10 +208,16 @@ async function conferirMock() {
   const antes = fs.statSync(LOG_MOCK).size;
   let produtos = null;
   let status = "?";
+  let erroJson = null;
   try {
     const r = await fetch(url("/api/products"));
     status = r.status;
-    produtos = await r.json();
+    const corpo = await r.text();
+    try {
+      produtos = JSON.parse(corpo);
+    } catch (e) {
+      erroJson = `corpo não é JSON (${e?.message ?? e}; início: ${JSON.stringify(corpo.slice(0, 60))})`;
+    }
   } catch (e) {
     status = `erro ${e?.message ?? e}`;
   }
@@ -223,7 +234,12 @@ async function conferirMock() {
     registrar(nome, null, "não verificado", `não verificado: o site não lê o mock em 127.0.0.1:54329 (GET /api/products: ${status}; nenhuma linha " GET /rest/v1/products" nova no log)`);
     return null;
   }
-  registrar(nome, null, "ok", `GET /api/products: ${status}; linha nova no log: ${linha.trim()}`);
+  if (!Array.isArray(produtos) || produtos.length === 0) {
+    const motivo = erroJson ?? (Array.isArray(produtos) ? "lista vazia" : `resposta não é uma lista (${typeof produtos})`);
+    registrar(nome, null, "falhou", `o site lê o mock (linha nova no log: ${linha.trim()}), mas GET /api/products: ${status}, ${motivo}`);
+    return null;
+  }
+  registrar(nome, null, "ok", `GET /api/products: ${status}, ${produtos.length} modelos; linha nova no log: ${linha.trim()}`);
   return produtos;
 }
 
@@ -278,6 +294,8 @@ async function irAoCatalogo(page, caminho) {
       quandoResposta = Date.now();
       return r;
     });
+  // Se o goto lançar, o contexto fecha e esta espera rejeita sem ninguém aguardá-la.
+  resp.catch(() => {});
   await page.goto(url(caminho));
   const quandoLoad = Date.now();
   await resp;
@@ -335,6 +353,13 @@ function lerTextos(page) {
       copia.querySelectorAll("[data-texto-banco], script, style").forEach((n) => n.remove());
       textoMain = copia.textContent ?? "";
     }
+    const mod = document.querySelector('[data-teste="modal-modelo"]');
+    let textoModal = null;
+    if (mod) {
+      const copia = mod.cloneNode(true);
+      copia.querySelectorAll("[data-texto-banco], script, style").forEach((n) => n.remove());
+      textoModal = copia.textContent ?? "";
+    }
     const atributos = [];
     for (const el of document.querySelectorAll("[alt], [aria-label], [title]")) {
       if (el.closest("[data-texto-banco]") !== null) continue;
@@ -345,6 +370,7 @@ function lerTextos(page) {
     }
     return {
       textoMain,
+      textoModal,
       atributos,
       titulo: document.title,
       ld: document.querySelector("script#ld-catalogo")?.textContent ?? "",
@@ -606,8 +632,8 @@ async function etapa1Navegador(browser, produtos) {
       if (!p) return [];
       const c = normalizeProductCode(p.code);
       return [
-        { estado: `catalogo-modelo-${c}`, rotuloEstado: `?modelo=${c} com o modal aberto`, caminho: catalogoPath({ modelo: p.code }), modelo: true, exige: "1,20 × 2,90 m × 5 mm" },
-        { estado: `catalogo-modelo-${c}-ampliada`, rotuloEstado: `?modelo=${c} com a foto ampliada`, caminho: catalogoPath({ modelo: p.code }), modelo: true, ampliada: true, exige: "1,20 × 2,90 m × 5 mm" },
+        { estado: `catalogo-modelo-${c}`, rotuloEstado: `?modelo=${c} com o modal aberto`, caminho: catalogoPath({ modelo: p.code }), modelo: true, exige: "1,20 × 2,90 m × 5 mm", exigeNoModal: true },
+        { estado: `catalogo-modelo-${c}-ampliada`, rotuloEstado: `?modelo=${c} com a foto ampliada`, caminho: catalogoPath({ modelo: p.code }), modelo: true, ampliada: true, exige: "1,20 × 2,90 m × 5 mm", exigeNoModal: true },
       ];
     }),
     { estado: "catalogo-modelo-orb-999", rotuloEstado: "?modelo=orb-999", caminho: catalogoPath({ modelo: "orb-999" }), aviso: true, exige: "Veja abaixo os modelos atuais." },
@@ -632,12 +658,16 @@ async function etapa1Navegador(browser, produtos) {
           const t = await lerTextos(page);
           await capturar(page, e.estado, dim);
           const achados = procurarProibidos(t);
-          const faltando = e.exige && !t.textoMain.includes(e.exige) ? [`falta "${e.exige}" no texto de main`] : [];
+          // Estado 3: o texto corrigido tem de estar no próprio modal (os cartões ao fundo
+          // também têm a medida, e lê-los esconderia um modal sem ela).
+          const ondeExige = e.exigeNoModal ? "modal-modelo" : "main";
+          const textoExige = e.exigeNoModal ? (t.textoModal ?? "") : t.textoMain;
+          const faltando = e.exige && !textoExige.includes(e.exige) ? [`falta "${e.exige}" no texto de ${ondeExige}${t.textoModal === null && e.exigeNoModal ? " (modal ausente)" : ""}`] : [];
           const ok = achados.length === 0 && faltando.length === 0;
           return {
             ok,
             detalhe: ok
-              ? `nenhum termo proibido em main (${t.textoMain.length} caracteres), ${t.atributos.length} atributos, document.title e ld-catalogo${e.exige ? `; "${e.exige}" presente` : ""}`
+              ? `nenhum termo proibido em main (${t.textoMain.length} caracteres), ${t.atributos.length} atributos, document.title e ld-catalogo${e.exige ? `; "${e.exige}" presente em ${ondeExige} (${textoExige.length} caracteres)` : ""}`
               : [...achados, ...faltando].join("; "),
           };
         } finally {
@@ -763,6 +793,7 @@ async function etapa1Navegador(browser, produtos) {
       await modal(page).waitFor({ state: "detached" });
       const atual = await esperarCaminho(page, CATALOGO_PATH);
       const resp = page.waitForResponse((r) => r.url().includes("/api/products"));
+      resp.catch(() => {}); // idem: se o reload lançar
       await page.reload();
       await resp;
       await page.locator('article[data-teste="cartao-modelo"]').first().waitFor({ state: "attached" });
@@ -805,6 +836,11 @@ async function esperarEvento(page, nome, aceita) {
 }
 
 // ── Principal ───────────────────────────────────────────────────────────────
+
+process.on("unhandledRejection", (e) => {
+  registrar("Execução do script", null, "não verificado", `não verificado: rejeição sem tratamento (${String(e?.message ?? e).split("\n")[0]})`);
+  terminar();
+});
 
 async function principal() {
   if (args.etapa !== 1) {
