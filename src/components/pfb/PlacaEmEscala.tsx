@@ -23,8 +23,8 @@ export default function PlacaEmEscala() {
           </svg>
           <span
             aria-hidden="true"
-            className="absolute text-legenda text-[#0B1F45] text-right"
-            style={{ left: 0, width: "16.5%", top: "50%", translate: "0 -50%" }}
+            className="absolute text-legenda text-[#0B1F45] text-right whitespace-nowrap"
+            style={{ right: "83.5%", top: "50%", translate: "0 -50%" }}
           >
             {figura.altura}
           </span>

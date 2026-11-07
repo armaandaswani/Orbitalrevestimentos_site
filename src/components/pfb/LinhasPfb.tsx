@@ -56,12 +56,12 @@ export default function LinhasPfb({ modelos }: { modelos: Record<Linha, ModeloVi
                               src={m.image_path}
                               alt={`${m.name}, linha ${m.linha}`}
                               fill
-                              sizes="(min-width: 1024px) 18vw, 30vw"
+                              sizes="(min-width: 1024px) 18vw, (min-width: 640px) 30vw, 45vw"
                               className="object-cover"
                               data-texto-banco
                             />
                           </div>
-                          <span data-texto-banco className="block text-legenda text-[#0B1F45] mt-2">{m.name}</span>
+                          <span data-texto-banco aria-hidden="true" className="block text-legenda text-[#0B1F45] mt-2">{m.name}</span>
                         </Link>
                       </li>
                     ))}
