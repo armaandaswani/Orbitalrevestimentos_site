@@ -10,15 +10,16 @@ import { supabaseAdmin } from "@/lib/supabase";
  *   e <AAAA-MM-DD>/<id>.json (quem marcar, mensagem, aprovação, status). A Meta
  *   busca a mídia por uma URL assinada de 1 h; depois de publicar, a mídia é apagada.
  * - Token do Instagram: chega do Mac a cada agendamento (o mesmo que publica pelo
- *   script) e fica em admin_settings CIFRADO (AES-256-GCM, chave derivada do
- *   segredo do servidor). O cron tenta renovar todo dia (a Meta só renova token
+ *   script) e fica no mesmo bucket privado, em _token.json, CIFRADO (AES-256-GCM,
+ *   chave derivada do segredo do servidor). O cron tenta renovar todo dia (a Meta só renova token
  *   com mais de 24 h; ele vale 60 dias).
  */
 
 export const CONTA = "orbitalrevestimentos";
 export const BUCKET_AGENDA = "instagram-agendados";
 export const GRAPH = "https://graph.instagram.com/v26.0";
-const CHAVE_TOKEN = "instagram_orbital_token";
+// Fica no próprio bucket privado (o banco de produção não tem admin_settings), sempre cifrado.
+const ARQUIVO_TOKEN = "_token.json";
 const RENOVAR_MS = 86400000;
 const TRAVA_VELHA_MS = 6 * 60 * 1000;
 
@@ -89,21 +90,24 @@ function decifrar(b64: string): string {
 }
 
 export async function guardarToken(token: string): Promise<void> {
-  const { error } = await supabaseAdmin()
-    .from("admin_settings")
-    .upsert({ key: CHAVE_TOKEN, value: JSON.stringify({ c: cifrar(token), renovado_em: new Date().toISOString() }) }, { onConflict: "key" });
+  const corpo = JSON.stringify({ c: cifrar(token), renovado_em: new Date().toISOString() });
+  const { error } = await supabaseAdmin().storage.from(BUCKET_AGENDA).upload(
+    ARQUIVO_TOKEN, new Blob([corpo], { type: "application/json" }), { upsert: true, contentType: "application/json" },
+  );
   if (error) throw new Error(`Não consegui guardar o token: ${error.message}`);
 }
 
 /** Token guardado (null se o Mac ainda não mandou nenhum). Renova na Meta uma vez por dia. */
 export async function tokenParaPublicar(): Promise<string | null> {
-  const { data, error } = await supabaseAdmin().from("admin_settings").select("value").eq("key", CHAVE_TOKEN).maybeSingle();
-  if (error) throw new Error(`Não consegui ler o token: ${error.message}`);
-  if (!data?.value) return null;
+  const { data, error } = await supabaseAdmin().storage.from(BUCKET_AGENDA).download(ARQUIVO_TOKEN);
+  if (error) {
+    if (/not.?found|404/i.test(`${error.message} ${(error as { status?: number }).status ?? ""}`)) return null;
+    throw new Error(`Não consegui ler o token: ${error.message}`);
+  }
   let salvo: { c: string; renovado_em: string };
   let token: string;
   try {
-    salvo = JSON.parse(data.value as string);
+    salvo = JSON.parse(await data.text());
     token = decifrar(salvo.c);
   } catch {
     throw new Error("O token guardado não abre (o segredo do servidor mudou?): agende de novo pelo Mac para regravar.");
