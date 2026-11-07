@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect, useState } from "react";
+import { createPortal } from "react-dom";
 import { trackFunnel } from "@/lib/funnel";
 
 /**
@@ -8,14 +9,21 @@ import { trackFunnel } from "@/lib/funnel";
  * O visitante diz quem é (arquiteto, proprietário, instalador ou outro) e cai
  * no WhatsApp da Orbital com a mensagem "Solicitar manual" pronta.
  *
- * variant "card": o bloco da página Tecnologia. "link": o link dentro do texto.
+ * variant "card": o bloco da página do PFB. "link": o link dentro do texto.
+ *
+ * tom "escuro" (padrão): o cartão inteiro é um botão, para fundo azul.
+ * tom "claro": cartão claro com o botão "Solicitar manual" dentro de um div
+ * (sem botão dentro de botão), e o link no tom da marca.
+ *
+ * O diálogo vai para o body por portal: assim o link pode ficar dentro de um
+ * parágrafo sem pôr div e p dentro de p.
  */
 
 const WHATSAPP = "5592988150149";
 const PERFIS = ["Arquiteto(a)", "Proprietário(a)", "Instalador(a)", "Outro"] as const;
 type Perfil = (typeof PERFIS)[number];
 
-export default function SolicitarManual({ variant = "card" }: { variant?: "card" | "link" }) {
+export default function SolicitarManual({ variant = "card", tom = "escuro" }: { variant?: "card" | "link"; tom?: "escuro" | "claro" }) {
   const [aberto, setAberto] = useState(false);
   const [perfil, setPerfil] = useState<Perfil | null>(null);
   const [outro, setOutro] = useState("");
@@ -36,7 +44,17 @@ export default function SolicitarManual({ variant = "card" }: { variant?: "card"
 
   return (
     <>
-      {variant === "card" ? (
+      {variant === "card" && tom === "claro" ? (
+        <div data-teste="manual-cartao" className="mt-10 bg-[#F6F5F2] text-[#0B1F45] px-5 py-4 flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
+          <div>
+            <p className="font-semibold">Manual Técnico de Instalação</p>
+            <p className="text-legenda text-[#43474e]">Paredes, portas, banheiros, box, curvas, forros e tetos. Enviado pelo WhatsApp.</p>
+          </div>
+          <button type="button" onClick={abrir} className="ds-botao ds-botao-vazado min-h-11 self-start sm:self-auto">
+            Solicitar manual
+          </button>
+        </div>
+      ) : variant === "card" ? (
         <button
           type="button"
           onClick={abrir}
@@ -62,13 +80,17 @@ export default function SolicitarManual({ variant = "card" }: { variant?: "card"
             Solicitar manual
           </span>
         </button>
+      ) : tom === "claro" ? (
+        <button type="button" onClick={abrir} className="text-[#0B1F45] underline underline-offset-4">
+          Manual Técnico de Instalação
+        </button>
       ) : (
         <button type="button" onClick={abrir} className="text-white underline not-italic">
           Manual Técnico de Instalação
         </button>
       )}
 
-      {aberto && (
+      {aberto && createPortal(
         <div
           className="fixed inset-0 z-[150] flex items-end sm:items-center justify-center bg-black/60 px-0 sm:px-4"
           onClick={() => setAberto(false)}
@@ -124,7 +146,8 @@ export default function SolicitarManual({ variant = "card" }: { variant?: "card"
               Solicitar pelo WhatsApp
             </a>
           </div>
-        </div>
+        </div>,
+        document.body,
       )}
     </>
   );
