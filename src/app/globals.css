@@ -1399,6 +1399,62 @@ html[data-mv-nivel="leve"] .ts-clima-nevoa { display: none; }
   .ts-clima .ts-clima-lista { grid-template-columns: minmax(0, 1fr); }
 }
 
+/* ── PFB: a placa por dentro ──────────────────────────────────────────────
+   As cinco camadas do PFB (components/pfb/CamadasPfb), em /produtos/pfb.
+   Padrão: figura aberta e parada, lista inteira (celular, nível leve, janela
+   baixa, movimento reduzido, sem JavaScript). A cena presa só existe na
+   consulta de baixo (D5 da spec); --p (0 → 1) vem do useProgresso. A seção
+   tem 400svh: a parte presa anda 300svh e uma tela vale 0.333 de --p.
+     0 → 0.05            silêncio: placa fechada, título e frase parados;
+     0.05 → 0.35         abertura: --abre vai de 0 a 1 (x²(3 − 2x));
+     0.35 + i × 0.10     camada da vez (a = --a, até a + 0.1): desliza 24 para
+                         a direita, contorno verde, item em opacidade 1
+                         (rampas de 0.02);
+     0.85 → 0.95         fechamento: --abre volta a 0;
+     0.85 → 0.89         juntas: todos os itens ficam em opacidade 1;
+     0.88 → 0.94         legenda "As cinco juntas têm 5 mm." aparece.
+   Medidas: cada camada sobe --k × 64 (VAO) e a da vez desliza 24
+   (DESLOCA_ATIVA), em unidades do viewBox. O 0.35 e o 0.1 saem de
+   PASSO_INICIO e PASSO (src/lib/movimento/camadas.ts, que escrevem --a), o
+   64 e o 24 de VAO e DESLOCA_ATIVA; se um mudar, mude as duas pontas
+   (camadas.test.mjs confere). Só transform e opacity. */
+
+/* Padrão (estático): figura aberta, lista inteira. */
+.pfb-cam            { --abre: 1; --on: 0; }
+.pfb-cam-palco      { padding-block: clamp(3.5rem, 2rem + 4.5vw, 7rem); }
+.pfb-cam-g          { transform: translate(calc(var(--on) * 24px), calc(var(--abre) * var(--k) * -64px)); }
+.pfb-cam-contorno   { opacity: var(--on); }
+
+/* Abertura: abaixo do lg a foto fica parada. */
+@media (max-width: 63.98rem) { .pfb-abertura-foto { animation: none; } }
+
+/* Computador (a partir do lg), com ou sem a cena (nível leve, janela baixa):
+   a lista não tem animação de entrada. No celular o Revelar continua. */
+@media (min-width: 64rem) {
+  .pfb-cam-lista > .mv-revelar { animation: none; }
+  .pfb-cam-lista > :is(.mv-io-espera, .mv-io-entrou) { opacity: 1; transform: none; transition: none; }
+}
+
+@media (min-width: 64rem) and (min-height: 45rem) and (prefers-reduced-motion: no-preference) and (scripting: enabled) {
+  html:not([data-mv-nivel="leve"]) .pfb-cam {
+    height: 400svh;
+    --e0: clamp(0, (var(--p, 0) - 0.05) / 0.3, 1);
+    --e:  calc(var(--e0) * var(--e0) * (3 - 2 * var(--e0)));
+    --c0: clamp(0, (var(--p, 0) - 0.85) / 0.1, 1);
+    --c:  calc(var(--c0) * var(--c0) * (3 - 2 * var(--c0)));
+    --abre: calc(var(--e) * (1 - var(--c)));
+    --juntas: clamp(0, (var(--p, 0) - 0.85) / 0.04, 1);
+  }
+  html:not([data-mv-nivel="leve"]) .pfb-cam-quadro { position: sticky; top: 0; height: 100svh; overflow: clip; display: flex; align-items: center; }
+  html:not([data-mv-nivel="leve"]) .pfb-cam-palco { padding-block: 6rem 2rem; width: 100%; }
+  html:not([data-mv-nivel="leve"]) :is(.pfb-cam-g, .pfb-cam-item) {
+    --on: min(clamp(0, (var(--p, 0) - var(--a)) / 0.02, 1), clamp(0, (var(--a) + 0.1 - var(--p, 0)) / 0.02, 1));
+  }
+  html:not([data-mv-nivel="leve"]) .pfb-cam-item    { opacity: max(calc(0.6 + 0.4 * var(--on)), var(--juntas)); }
+  html:not([data-mv-nivel="leve"]) .pfb-cam-legenda { opacity: clamp(0, (var(--p, 0) - 0.88) / 0.06, 1); }
+  html:not([data-mv-nivel="leve"]) .pfb-cam[data-ativo] .pfb-cam-item { will-change: opacity; }
+}
+
 /* ── TechStone: galeria de ideias ─────────────────────────────────────────
    (components/techstone/Ideias). Cada ideia é uma camada do tamanho do palco
    que só mostra a sua região [--l, --r] por clip-path; o quadro interno (da

@@ -135,7 +135,7 @@ export function comunicadoMetropolitanoHtml(): string {
   <!-- Chamada -->
   <tr><td align="center" style="padding:34px 40px 12px;">
     <table role="presentation" cellpadding="0" cellspacing="0"><tr>
-      <td style="background:#0B1F45;"><a href="${SITE}/tecnologia" style="display:inline-block;padding:16px 34px;font-family:Arial,Helvetica,sans-serif;font-size:12px;letter-spacing:0.16em;text-transform:uppercase;font-weight:700;color:#ffffff;text-decoration:none;">Conhecer o PFB</a></td>
+      <td style="background:#0B1F45;"><a href="${SITE}/produtos/pfb" style="display:inline-block;padding:16px 34px;font-family:Arial,Helvetica,sans-serif;font-size:12px;letter-spacing:0.16em;text-transform:uppercase;font-weight:700;color:#ffffff;text-decoration:none;">Conhecer o PFB</a></td>
     </tr></table>
   </td></tr>
   <tr><td align="center" style="padding:6px 40px 50px;">

@@ -29,11 +29,19 @@ import { aproximar } from "@/lib/movimento/suavizar";
  * rolagem (âncora, volta ao topo) ele ficaria parado no valor antigo e a seção
  * desfiaria todas as etapas ao contrário bem na entrada. O salto acontece
  * ainda fora da vista. Sem `margem`, o comportamento é o de sempre.
+ *
+ * `ligado` (opcional, padrão `true`): com `false` o hook não observa nem
+ * escreve nada (sem observador, sem assinante do relógio, sem ouvintes). Ao
+ * passar de `true` para `false` roda a limpeza de sempre; `--p` e `data-p10`
+ * ficam com o último valor. De `false` para `true` recomeça do zero e o --p
+ * salta para a posição real.
  */
-export function useProgresso<T extends HTMLElement>(opcoes?: { margem?: string }) {
+export function useProgresso<T extends HTMLElement>(opcoes?: { margem?: string; ligado?: boolean }) {
   const ref = useRef<T>(null);
   const margem = opcoes?.margem;
+  const ligado = opcoes?.ligado ?? true;
   useEffect(() => {
+    if (!ligado) return;
     const el = ref.current;
     if (!el) return;
     let alvo = 0;
@@ -83,6 +91,6 @@ export function useProgresso<T extends HTMLElement>(opcoes?: { margem?: string }
       window.removeEventListener("scroll", acordar);
       window.removeEventListener("resize", acordar);
     };
-  }, [margem]);
+  }, [margem, ligado]);
   return ref;
 }

@@ -200,8 +200,8 @@ export default async function Home() {
             <Link href="/visualizador" className="inline-flex items-center gap-2 min-h-11 text-[#0B1F45] font-semibold">
               Simular no meu ambiente com IA {seta}
             </Link>
-            <Link href="/tecnologia" className="inline-flex items-center gap-2 min-h-11 text-[#0B1F45]/75 hover:text-[#0B1F45] font-semibold">
-              Tecnologia e ficha técnica do PFB {seta}
+            <Link href="/produtos/pfb#ficha" className="inline-flex items-center gap-2 min-h-11 text-[#0B1F45]/75 hover:text-[#0B1F45] font-semibold">
+              Ficha técnica do PFB {seta}
             </Link>
           </div>
         </div>

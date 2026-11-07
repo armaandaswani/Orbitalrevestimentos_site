@@ -10,8 +10,7 @@ const CATALOGUE_URL =
   "https://drive.google.com/file/d/1zhm5MgKGSDRThqk8FqqwfX-WijI7K-iD/view?usp=drive_link";
 
 /**
- * Cabeçalho do site. A ordem segue a apresentação: produtos → tecnologia →
- * projetos (obras e showrooms) → parcerias → simulador. O caminho comercial
+ * Cabeçalho do site. A ordem segue a apresentação: produtos → projetos (obras e showrooms) → parcerias → simulador. O caminho comercial
  * ("Falar com um consultor") abre o pré-contato, nunca um link cru.
  *
  * Ao descer a página o cabeçalho se recolhe (só transform) e volta assim que
@@ -21,7 +20,6 @@ const CATALOGUE_URL =
  */
 const navLinks = [
   { href: "/produtos", label: "Produtos" },
-  { href: "/tecnologia", label: "Tecnologia" },
   { href: "/projetos", label: "Projetos" },
   { href: "/parcerias", label: "Parcerias" },
   { href: "/visualizador", label: "Simulador" },

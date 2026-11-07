@@ -3,7 +3,7 @@ import { supabaseAdmin } from "@/lib/supabase";
 
 import { isAdminRequest } from "@/lib/admin-auth";
 import { isMissingColumn } from "@/lib/db-compat";
-import { SUPPORT_PRODUCT_SKUS } from "@/lib/orcamento-materials";
+import { visivelNoCatalogo } from "@/lib/pfb-modelos";
 import { CACHE_CATALOGO, SEM_CACHE } from "@/lib/api-cache";
 
 function checkAuth(req: NextRequest): boolean {
@@ -52,8 +52,7 @@ export async function GET(req: NextRequest) {
   if (includeInactive || !Array.isArray(data))
     return NextResponse.json(data, { headers: { "Cache-Control": cache } });
 
-  const visible = (data as Array<Record<string, unknown>>).filter(
-    (p) => p.show_in_catalog !== false && !(SUPPORT_PRODUCT_SKUS as readonly string[]).includes(String(p.code)));
+  const visible = (data as Array<Record<string, unknown>>).filter(visivelNoCatalogo);
 
   // Campos que NUNCA podem sair para o público: custo de compra e composição de
   // importação. O select "*" os trazia junto, e qualquer visitante conseguia ler

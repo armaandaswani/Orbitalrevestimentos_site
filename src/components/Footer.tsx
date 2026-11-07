@@ -42,7 +42,7 @@ export default function Footer() {
               {[
                 { href: "/", label: "Início" },
                 { href: "/produtos", label: "Produtos" },
-                { href: "/tecnologia", label: "Tecnologia PFB" },
+                { href: "/produtos/pfb#ficha", label: "Ficha técnica do PFB" },
                 { href: "/projetos", label: "Projetos" },
                 { href: "/parcerias", label: "Parcerias" },
                 { href: "/visualizador", label: "Simulador" },
