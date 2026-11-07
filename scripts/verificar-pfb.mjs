@@ -1376,31 +1376,46 @@ async function etapa2Navegador(browser, produtos) {
     );
   }
 
-  // JavaScript transferido: /produtos/pfb ≤ /techstone, um contexto novo (sem cache) por página.
-  await verificar(`JavaScript transferido em ${PFB_PATH} ≤ o de /techstone`, DESKTOP, async () => {
+  // JavaScript transferido: /produtos/pfb ≤ /techstone, um contexto novo (sem cache) por página, a mesma regra nas duas.
+  // Só conta o que o HTML do documento pede por <script src> (lido da resposta do goto, não do DOM vivo): a pré-busca dos <Link>/RSC é da página seguinte, não peso desta.
+  await verificar(`JavaScript transferido em ${PFB_PATH} ≤ o de /techstone (scripts pedidos pelo HTML da página)`, DESKTOP, async () => {
     const medir = (caminho) =>
       comContexto(browser, DESKTOP, {}, async (page) => {
-        await page.goto(url(caminho), { waitUntil: "load" });
+        // Confirmação, não critério: os pedidos de pré-busca do roteador levam Next-Router-Prefetch ou RSC.
+        const preBusca = [];
+        page.on("request", (q) => {
+          const h = q.headers();
+          if (h["next-router-prefetch"] || h["rsc"]) {
+            const u = new URL(q.url());
+            preBusca.push(`${u.pathname}${h["next-router-prefetch"] ? " (Next-Router-Prefetch)" : " (RSC)"}`);
+          }
+        });
+        const resp = await page.goto(url(caminho), { waitUntil: "load" });
+        const html = resp ? await resp.text() : "";
+        const doHtml = new Set(
+          [...html.matchAll(/<script\b[^>]*\bsrc\s*=\s*["']([^"']+)["']/gi)].map((m) => new URL(m[1].replace(/&amp;/g, "&"), page.url()).href),
+        );
         await dormir(1500);
-        return page.evaluate(() =>
+        const recursos = await page.evaluate(() =>
           performance
             .getEntriesByType("resource")
             .filter((r) => r.initiatorType === "script" || /\.m?js$/.test(new URL(r.name).pathname))
-            .map((r) => ({ nome: new URL(r.name).pathname, bytes: r.transferSize || 0 })),
+            .map((r) => ({ href: r.name, nome: new URL(r.name).pathname, bytes: r.transferSize || 0, tipo: r.initiatorType })),
         );
+        return { doHtml, recursos, preBusca, pedidos: recursos.filter((r) => doHtml.has(r.href)), fora: recursos.filter((r) => !doHtml.has(r.href)) };
       });
     const soma = (lista) => lista.reduce((s, r) => s + r.bytes, 0);
-    const pfbLista = await medir(PFB_PATH);
-    const tsLista = await medir("/techstone");
-    const pfb = soma(pfbLista);
-    const ts = soma(tsLista);
-    // Para o diagnóstico: os scripts que só uma das duas páginas carrega.
-    const nomes = (l) => new Set(l.map((r) => r.nome));
-    const so = (a, b) => a.filter((r) => !nomes(b).has(r.nome)).sort((x, y) => y.bytes - x.bytes).map((r) => `${r.nome.replace(/^\/_next\/static\/chunks\//, "")} ${r.bytes}`);
-    const comuns = pfbLista.filter((r) => nomes(tsLista).has(r.nome));
+    const curto = (r) => `${r.nome.replace(/^\/_next\/static\/chunks\//, "")} ${r.bytes} (initiatorType ${r.tipo})`;
+    const contar = (l) => Object.entries(l.reduce((o, x) => ((o[x] = (o[x] ?? 0) + 1), o), {})).map(([k, n]) => `${k} ×${n}`).join(", ");
+    const pfb = await medir(PFB_PATH);
+    const ts = await medir("/techstone");
+    const a = soma(pfb.pedidos);
+    const b = soma(ts.pedidos);
+    const linha = (rot, m) =>
+      `${rot}: sem pré-busca ${soma(m.pedidos)} bytes (${m.pedidos.length} scripts do HTML, que cita ${m.doHtml.size}); com pré-busca ${soma(m.recursos)} bytes (${m.recursos.length} scripts); de fora: ${m.fora.map(curto).join(", ") || "nenhum"}; pedidos de pré-busca do roteador vistos: ${contar(m.preBusca) || "nenhum"}`;
     return {
-      ok: pfb > 0 && ts > 0 && pfb <= ts,
-      detalhe: `${esperado(`${PFB_PATH} ${pfb} bytes (${pfbLista.length} scripts)`, `≤ /techstone ${ts} bytes (${tsLista.length} scripts)`)}; em comum ${comuns.length} scripts, ${soma(comuns)} bytes em ${PFB_PATH}; só em ${PFB_PATH}: ${so(pfbLista, tsLista).join(", ") || "nenhum"}; só em /techstone: ${so(tsLista, pfbLista).join(", ") || "nenhum"}`,
+      ok: a > 0 && b > 0 && a <= b,
+      detalhe: `${esperado(`${PFB_PATH} ${a} bytes`, `≤ /techstone ${b} bytes`)}; ${linha(PFB_PATH, pfb)}; ${linha("/techstone", ts)}`,
     };
   });
 
