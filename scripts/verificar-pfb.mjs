@@ -122,7 +122,7 @@ async function verificar(nome, dim, fn) {
     const r = await fn();
     registrar(nome, dim, r.ok ? "ok" : "falhou", r.detalhe);
   } catch (e) {
-    registrar(nome, dim, "falhou", `erro: ${String(e?.message ?? e).split("\n")[0]}`);
+    registrar(nome, dim, "falhou", `erro: ${motivoErro(e)}`);
   }
 }
 
@@ -138,12 +138,22 @@ function terminar() {
 }
 
 const url = (caminho) => `${args.base}${caminho}`;
+
+// Todo fetch do Node leva este limite: sem ele valem os 300 s do undici, e a rodada
+// --so-redirecionamentos (logo após o deploy, janela de 30 min) ficaria presa num pedido mudo.
+const FETCH_MS = 15000;
+const buscar = (endereco, opcoes = {}) => fetch(endereco, { ...opcoes, signal: AbortSignal.timeout(FETCH_MS) });
+const motivoErro = (e) =>
+  // DOMException: o que AbortSignal.timeout faz o fetch lançar (o TimeoutError do Playwright é outra classe e mantém a própria mensagem).
+  e instanceof DOMException && (e.name === "TimeoutError" || e.name === "AbortError")
+    ? `tempo esgotado (${FETCH_MS / 1000} s sem resposta)`
+    : String(e?.message ?? e).split("\n")[0];
 const esperado = (medido, esperadoValor) => `medido ${medido}; esperado ${esperadoValor}`;
 
 // ── HTTP (redirecionamentos, sitemap, QR) ───────────────────────────────────
 
 async function semSeguir(caminho) {
-  const r = await fetch(url(caminho), { redirect: "manual" });
+  const r = await buscar(url(caminho), { redirect: "manual" });
   const loc = r.headers.get("location");
   const u = loc ? new URL(loc, args.base) : null;
   return { status: r.status, u, destino: u ? u.pathname + u.search : null };
@@ -179,7 +189,7 @@ async function redirecionamentosEtapa1() {
 
   // Foco 4: o sitemap não lista endereço que redireciona.
   await verificar(`GET /sitemap.xml: tem ${CATALOGO_PATH} e nenhum <loc> terminado em /produtos/pfb`, null, async () => {
-    const r = await fetch(url("/sitemap.xml"), { redirect: "manual" });
+    const r = await buscar(url("/sitemap.xml"), { redirect: "manual" });
     const xml = await r.text();
     const locs = [...xml.matchAll(/<loc>\s*([^<]*?)\s*<\/loc>/g)].map((m) => m[1]);
     const temCatalogo = locs.some((l) => l.endsWith(CATALOGO_PATH));
@@ -210,7 +220,7 @@ async function conferirMock() {
   let status = "?";
   let erroJson = null;
   try {
-    const r = await fetch(url("/api/products"));
+    const r = await buscar(url("/api/products"));
     status = r.status;
     const corpo = await r.text();
     try {
@@ -219,7 +229,7 @@ async function conferirMock() {
       erroJson = `corpo não é JSON (${e?.message ?? e}; início: ${JSON.stringify(corpo.slice(0, 60))})`;
     }
   } catch (e) {
-    status = `erro ${e?.message ?? e}`;
+    status = `erro: ${motivoErro(e)}`;
   }
   // O mock grava a linha antes de responder, mas dá uma folga ao disco.
   let novas = "";
@@ -347,6 +357,7 @@ async function capturar(page, estado, dim) {
 function lerTextos(page) {
   return page.evaluate(() => {
     const main = document.querySelector("main");
+    const ldEl = document.querySelector("script#ld-catalogo");
     let textoMain = "";
     if (main) {
       const copia = main.cloneNode(true);
@@ -370,12 +381,24 @@ function lerTextos(page) {
     }
     return {
       textoMain,
+      mainPresente: main !== null,
+      ldPresente: ldEl !== null,
       textoModal,
       atributos,
       titulo: document.title,
-      ld: document.querySelector("script#ld-catalogo")?.textContent ?? "",
+      ld: ldEl?.textContent ?? "",
     };
   });
+}
+
+/** Fonte ausente ou vazia: ler "nada" não pode contar como "nenhum termo proibido". */
+function fontesVazias(t) {
+  const vazias = [];
+  if (!t.mainPresente) vazias.push("main ausente (nenhum <main> na página)");
+  else if (t.textoMain.trim() === "") vazias.push("main vazio (sem texto fora de [data-texto-banco])");
+  if (!t.ldPresente) vazias.push("ld-catalogo ausente (nenhum script#ld-catalogo)");
+  else if (t.ld.trim() === "") vazias.push("ld-catalogo vazio");
+  return vazias;
 }
 
 function procurarProibidos(t) {
@@ -647,7 +670,9 @@ async function etapa1Navegador(browser, produtos) {
         const { ctx, page } = await novoContexto(browser, dim);
         try {
           await irAoCatalogo(page, e.caminho);
-          if (e.linha) await esperarAbaAtiva(page, e.linha);
+          // Estado ?linha=…: a aba da linha tem de terminar com aria-pressed="true"
+          // (esperarAbaAtiva engole o timeout e só devolve o valor medido).
+          const pressed = e.linha ? await esperarAbaAtiva(page, e.linha) : null;
           if (e.modelo) await modal(page).waitFor({ state: "visible" });
           if (e.ampliada) {
             await modal(page).locator('button[aria-label="Ampliar foto"]').click();
@@ -658,17 +683,19 @@ async function etapa1Navegador(browser, produtos) {
           const t = await lerTextos(page);
           await capturar(page, e.estado, dim);
           const achados = procurarProibidos(t);
+          const vazias = fontesVazias(t);
+          const semFiltro = e.linha && pressed !== "true" ? [`filtro não aplicado: aba ${e.linha} com aria-pressed=${pressed === null ? "(ausente)" : `"${pressed}"`}; esperado "true"`] : [];
           // Estado 3: o texto corrigido tem de estar no próprio modal (os cartões ao fundo
           // também têm a medida, e lê-los esconderia um modal sem ela).
           const ondeExige = e.exigeNoModal ? "modal-modelo" : "main";
           const textoExige = e.exigeNoModal ? (t.textoModal ?? "") : t.textoMain;
           const faltando = e.exige && !textoExige.includes(e.exige) ? [`falta "${e.exige}" no texto de ${ondeExige}${t.textoModal === null && e.exigeNoModal ? " (modal ausente)" : ""}`] : [];
-          const ok = achados.length === 0 && faltando.length === 0;
+          const ok = achados.length === 0 && faltando.length === 0 && vazias.length === 0 && semFiltro.length === 0;
           return {
             ok,
             detalhe: ok
-              ? `nenhum termo proibido em main (${t.textoMain.length} caracteres), ${t.atributos.length} atributos, document.title e ld-catalogo${e.exige ? `; "${e.exige}" presente em ${ondeExige} (${textoExige.length} caracteres)` : ""}`
-              : [...achados, ...faltando].join("; "),
+              ? `nenhum termo proibido em main (${t.textoMain.length} caracteres), ${t.atributos.length} atributos, document.title e ld-catalogo (${t.ld.length} caracteres)${e.linha ? `; aba ${e.linha} aria-pressed=${pressed}` : ""}${e.exige ? `; "${e.exige}" presente em ${ondeExige} (${textoExige.length} caracteres)` : ""}`
+              : [...vazias, ...semFiltro, ...achados, ...faltando].join("; "),
           };
         } finally {
           await ctx.close();
@@ -690,7 +717,7 @@ async function etapa1Navegador(browser, produtos) {
   // QR em SVG.
   const qr = `/api/product-qr/${encodeURIComponent(normalizeProductCode(primeiro.code))}?format=svg`;
   await verificar(`GET ${qr}: 200 e content-type image/svg+xml`, null, async () => {
-    const r = await fetch(url(qr), { redirect: "manual" });
+    const r = await buscar(url(qr), { redirect: "manual" });
     const tipo = r.headers.get("content-type") ?? "";
     await r.arrayBuffer();
     return { ok: r.status === 200 && tipo.startsWith("image/svg+xml"), detalhe: esperado(`${r.status}, ${tipo || "(sem content-type)"}`, "200, image/svg+xml…") };
@@ -858,8 +885,13 @@ async function principal() {
     produtos = await conferirMock();
     if (!produtos) terminar();
   } else {
-    const r = await fetch(url("/api/products"));
-    produtos = await r.json();
+    try {
+      const r = await buscar(url("/api/products"));
+      produtos = await r.json();
+    } catch (e) {
+      registrar("GET /api/products devolve a lista de modelos", null, "não verificado", `não verificado: GET /api/products falhou (${motivoErro(e)})`);
+      terminar();
+    }
   }
   if (!Array.isArray(produtos) || produtos.length === 0) {
     registrar("GET /api/products devolve a lista de modelos", null, "não verificado", "não verificado: /api/products sem modelos");
