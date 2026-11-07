@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { createPortal } from "react-dom";
 import { trackFunnel } from "@/lib/funnel";
 
@@ -27,9 +27,19 @@ export default function SolicitarManual({ variant = "card", tom = "escuro" }: { 
   const [aberto, setAberto] = useState(false);
   const [perfil, setPerfil] = useState<Perfil | null>(null);
   const [outro, setOutro] = useState("");
+  // Painel do diálogo e o botão ou link que o abriu: como o diálogo fica no fim do
+  // body (portal), o foco vai a ele ao abrir e volta à origem ao fechar.
+  const painelRef = useRef<HTMLDivElement>(null);
+  const origemRef = useRef<HTMLElement | null>(null);
 
   useEffect(() => {
-    if (!aberto) return;
+    if (!aberto) {
+      const origem = origemRef.current;
+      origemRef.current = null;
+      origem?.focus();
+      return;
+    }
+    painelRef.current?.querySelector<HTMLButtonElement>("button[data-perfil]")?.focus();
     const onKey = (e: KeyboardEvent) => { if (e.key === "Escape") setAberto(false); };
     window.addEventListener("keydown", onKey);
     return () => window.removeEventListener("keydown", onKey);
@@ -40,7 +50,14 @@ export default function SolicitarManual({ variant = "card", tom = "escuro" }: { 
   const mensagem = `Olá! Gostaria de solicitar o Manual Técnico de Instalação do Painel Flexível em Fibra de Bambu (PFB). Sou ${quem ?? ""}.`;
   const href = `https://wa.me/${WHATSAPP}?text=${encodeURIComponent(mensagem)}`;
 
-  const abrir = () => { setPerfil(null); setOutro(""); setAberto(true); };
+  const abrir = (e: React.MouseEvent<HTMLElement>) => {
+    // O elemento que abriu (no Safari o clique não põe o foco no botão, então o
+    // activeElement seria o body).
+    origemRef.current = e.currentTarget;
+    setPerfil(null);
+    setOutro("");
+    setAberto(true);
+  };
 
   return (
     <>
@@ -98,7 +115,7 @@ export default function SolicitarManual({ variant = "card", tom = "escuro" }: { 
           aria-modal="true"
           aria-labelledby="solicitar-manual-titulo"
         >
-          <div className="bg-white w-full sm:max-w-md p-6 sm:p-8 text-left not-italic" onClick={(e) => e.stopPropagation()}>
+          <div ref={painelRef} className="bg-white w-full sm:max-w-md p-6 sm:p-8 text-left not-italic" onClick={(e) => e.stopPropagation()}>
             <div className="flex items-start justify-between gap-4 mb-1">
               <p id="solicitar-manual-titulo" className="text-[#0B1F45] text-lg font-semibold">Solicitar o manual</p>
               <button type="button" onClick={() => setAberto(false)} aria-label="Fechar" className="text-[#74777f] hover:text-[#0B1F45] text-xl leading-none">×</button>
@@ -109,6 +126,7 @@ export default function SolicitarManual({ variant = "card", tom = "escuro" }: { 
                 <button
                   key={p}
                   type="button"
+                  data-perfil
                   onClick={() => setPerfil(p)}
                   className={`px-3 py-3 text-sm font-semibold border transition-colors ${
                     perfil === p ? "bg-[#0B1F45] border-[#0B1F45] text-white" : "border-[#e2e2e2] text-[#0B1F45] hover:border-[#0B1F45]"
