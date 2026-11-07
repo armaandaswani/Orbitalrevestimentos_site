@@ -2,7 +2,8 @@
 
 import Image from "next/image";
 import { useState, useEffect, useCallback, useRef } from "react";
-import { normalizeProductCode, productPath, productQrUrl, productUrl } from "@/lib/product-link";
+import { catalogoPath, linhaDaUrl, normalizeProductCode, productQrUrl, productUrl } from "@/lib/product-link";
+import { LINHAS_PFB } from "@/lib/pfb-linhas";
 import ContatoCta from "@/components/ContatoCta";
 import Lupa from "@/components/movimento/Lupa";
 import Revelar from "@/components/projetos/Revelar";
@@ -42,42 +43,18 @@ const linhas: { key: Linha; label: string; desc: string }[] = [
   { key: "Elegance", label: "Elegance", desc: "Madeira Texturizada" },
 ];
 
-const LINHA_INFO: Record<"Classic" | "Brilliance" | "Elegance", {
-  material: string;
-  differentials: { icon: string; text: string }[];
-  color: string;
-}> = {
-  Classic: {
-    material: "1,2 × 2,9m - 5mm · Acabamento Fosco",
-    differentials: [
-      { icon: "◼", text: "Acabamento fosco anti-reflexo — elegância discreta em qualquer iluminação" },
-      { icon: "◼", text: "Absorção de apenas 0,2% em 48h — indicado para banheiros, lavabos e áreas úmidas" },
-      { icon: "◼", text: "Formato maxiplatê 1,2 × 2,9m — menos emendas, visual mais limpo" },
-      { icon: "◼", text: "Instalação em 2 a 3 horas por cômodo, sem obra, sem poeira" },
-    ],
-    color: "bg-blue-50 text-blue-800 border-blue-100",
-  },
-  Brilliance: {
-    material: "1,2 × 2,9m - 5mm · Acabamento Polido",
-    differentials: [
-      { icon: "◆", text: "Acabamento polido espelhado — efeito mármore de luxo sem o custo" },
-      { icon: "◆", text: "Reflexo de luz natural amplifica ambientes e cria sensação de amplitude" },
-      { icon: "◆", text: "Alta impermeabilidade — perfeito para banheiros e ambientes de alto padrão" },
-      { icon: "◆", text: "Mesma resistência técnica da linha Classic com visual premium" },
-    ],
-    color: "bg-purple-50 text-purple-800 border-purple-100",
-  },
-  Elegance: {
-    material: "1,2 × 2,9m - 5mm · Textura Madeira",
-    differentials: [
-      { icon: "▲", text: "Textura tátil realista — aparência e sensação de madeira natural" },
-      { icon: "▲", text: "Zero manutenção — sem verniz, sem lixamento, sem deterioração" },
-      { icon: "▲", text: "Resistente à umidade — aplicável em banheiros, lavabos e cozinhas" },
-      { icon: "▲", text: "Calor visual com durabilidade industrial: vida útil superior a 20 anos" },
-    ],
-    color: "bg-green-50 text-green-800 border-green-100",
-  },
+const COR_LINHA: Record<"Classic" | "Brilliance" | "Elegance", string> = {
+  Classic: "bg-blue-50 text-blue-800 border-blue-100",
+  Brilliance: "bg-purple-50 text-purple-800 border-purple-100",
+  Elegance: "bg-green-50 text-green-800 border-green-100",
 };
+
+const LINHA_INFO = Object.fromEntries(
+  LINHAS_PFB.map(({ chave, acabamento }) => [
+    chave,
+    { material: `1,20 × 2,90 m × 5 mm · ${acabamento}`, color: COR_LINHA[chave] },
+  ]),
+) as Record<"Classic" | "Brilliance" | "Elegance", { material: string; color: string }>;
 
 // All images for a product: cover first, then gallery sorted
 function allImages(product: Product): string[] {
@@ -134,10 +111,14 @@ export default function ProdutosPage() {
    * certo e o "voltar" do navegador devolver ao catálogo em vez de sair do site.
    * pushState/replaceState em vez de router: trocar a rota remontaria a página e
    * perderia a lista já carregada.
+   *
+   * A linha do filtro (?linha=) é lida da própria URL, nunca do estado: com a
+   * lista de dependências vazia, o estado ficaria preso no valor da montagem e
+   * o ?linha= sumiria ao abrir ou fechar um modelo.
    */
   const syncUrl = useCallback((product: Product | null, mode: "push" | "replace" = "push") => {
     if (typeof window === "undefined") return;
-    const url = product ? productPath(product.code) : "/produtos/pfb";
+    const url = catalogoPath({ linha: linhaDaUrl(window.location.search), modelo: product?.code });
     if (window.location.pathname + window.location.search === url) return;
     window.history[mode === "push" ? "pushState" : "replaceState"]({ modelo: product?.code ?? null }, "", url);
   }, []);
@@ -166,6 +147,20 @@ export default function ProdutosPage() {
     if (selectedIndex > 0) open(filtered[selectedIndex - 1]);
   }, [selectedIndex, filtered]); // eslint-disable-line react-hooks/exhaustive-deps
 
+  /** Chegada com ?linha=: o filtro sai da URL logo depois da hidratação. */
+  useEffect(() => {
+    const t = setTimeout(() => setActiveLinha(linhaDaUrl(window.location.search)), 0);
+    return () => clearTimeout(t);
+  }, []);
+
+  /** Trocar a linha reflete na URL sem criar entrada no histórico. */
+  const trocarLinha = (linha: Linha) => {
+    setActiveLinha(linha);
+    const url = catalogoPath({ linha, modelo: selected?.code });
+    if (window.location.pathname + window.location.search === url) return;
+    window.history.replaceState(window.history.state, "", url);
+  };
+
   /**
    * Chegada por link/QR: abre o modelo pedido assim que a lista carrega.
    *
@@ -180,8 +175,17 @@ export default function ProdutosPage() {
     deepLinked.current = true;
     const match = products.find((p) => normalizeProductCode(p.code) === wanted);
     const t = setTimeout(() => {
-      if (match) open(match, { silent: true });   // a URL já está correta
-      else setMissingModel(wanted.toUpperCase());
+      if (match) {
+        open(match, { silent: true });   // a URL já está correta
+        // Há uma linha válida na URL e ela não é a do modelo: o filtro vai para a
+        // linha do modelo e a URL é corrigida. Sem ?linha= (ou com valor que não
+        // é linha), o filtro fica em "Todos" e a URL não muda.
+        const daUrl = linhaDaUrl(window.location.search);
+        if (daUrl !== "todos" && daUrl !== match.linha) {
+          setActiveLinha(match.linha);
+          window.history.replaceState(window.history.state, "", catalogoPath({ linha: match.linha, modelo: match.code }));
+        }
+      } else setMissingModel(wanted.toUpperCase());
     }, 0);
     return () => clearTimeout(t);
   }, [products, open]);
@@ -189,6 +193,7 @@ export default function ProdutosPage() {
   /** Voltar/avançar do navegador navega entre catálogo e modelo. */
   useEffect(() => {
     const onPop = () => {
+      setActiveLinha(linhaDaUrl(window.location.search));
       const wanted = normalizeProductCode(new URLSearchParams(window.location.search).get("modelo") ?? "");
       const match = wanted ? products.find((p) => normalizeProductCode(p.code) === wanted) : null;
       if (match) open(match, { silent: true });
@@ -769,7 +774,7 @@ export default function ProdutosPage() {
             {linhas.map(({ key, label, desc }) => (
               <button
                 key={key}
-                onClick={() => setActiveLinha(key)}
+                onClick={() => trocarLinha(key)}
                 aria-pressed={activeLinha === key}
                 className={`flex-shrink-0 flex flex-col items-start px-3 py-3 sm:px-5 sm:py-4 border-b transition-colors duration-200 ${
                   activeLinha === key
@@ -792,24 +797,8 @@ export default function ProdutosPage() {
       {/* Product Grid */}
       <section className="pt-8 pb-12 lg:pt-12 lg:pb-20 bg-[#F6F5F2]">
         <div className="max-w-[1280px] mx-auto px-4 lg:px-16">
-          {activeLinha !== "todos" && (
-            <div className="mb-10 pb-8 border-b border-[#e2e2e2]">
-              <h2 className="font-serif text-[#0B1F45] text-3xl font-normal mb-2">
-                Linha {activeLinha}
-              </h2>
-              <p className="text-[#43474e] text-sm">
-                {activeLinha === "Classic" &&
-                  "Mármore Fosco · 5mm · 1,2m × 2,9m = 3,48m² por placa"}
-                {activeLinha === "Brilliance" &&
-                  "Mármore Polido · 5mm · 1,2m × 2,9m = 3,48m² por placa"}
-                {activeLinha === "Elegance" &&
-                  "Madeira Texturizada · 5mm · 1,2m × 2,9m = 3,48m² por placa"}
-              </p>
-            </div>
-          )}
-
           {loadingProducts ? (
-            <div className="grid grid-cols-2 lg:grid-cols-3 gap-x-4 gap-y-8 lg:gap-x-8 lg:gap-y-14">
+            <div key="esqueleto" className="grid grid-cols-2 lg:grid-cols-3 gap-x-4 gap-y-8 lg:gap-x-8 lg:gap-y-14">
               {Array.from({ length: 8 }).map((_, i) => (
                 <div key={i} className="animate-pulse">
                   <div className="aspect-[4/5] bg-[#e2e2e2] mb-3 lg:mb-5" />
@@ -822,78 +811,95 @@ export default function ProdutosPage() {
               ))}
             </div>
           ) : (
-            <div className="grid grid-cols-2 lg:grid-cols-3 gap-x-4 gap-y-8 lg:gap-x-8 lg:gap-y-14">
-              {filtered.map((product, i) => (
-                /* Cada cartão sobe no ritmo da sua coluna: 3 colunas no computador, 2 no
-                   celular (o --mv-i do celular vem por cima só abaixo de lg). No celular o
-                   preenchimento é só antes do começo: medido a 4× de CPU, com ele o catálogo
-                   não perde o quadro que perdia ao chegar no fim da página. */
-                <Revelar
-                  key={product.code}
-                  ordem={i % 3}
-                  className={i % 2 ? "mv-preenche-antes max-lg:[--mv-i:1]!" : "mv-preenche-antes max-lg:[--mv-i:0]!"}
-                >
-                <article
-                  className="group cursor-pointer"
-                  onClick={() => open(product)}
-                >
-                  {/* Image */}
-                  <div className="mv-brilho relative aspect-[4/5] overflow-hidden bg-[#eeeeee] mb-3 lg:mb-5 shadow-sm group-hover:shadow-lg transition-shadow duration-500">
-                    {/* next/image: a Vercel redimensiona e serve em WebP pela
-                        própria CDN. Antes eram 14 arquivos originais (23,9 MB)
-                        baixados do Supabase a cada visita ao catálogo. */}
-                    <Image
-                      src={product.image_path}
-                      alt={`${product.name} — Linha ${product.linha}`}
-                      fill
-                      sizes="(max-width: 640px) 50vw, (max-width: 1024px) 33vw, 25vw"
-                      className="object-cover transition-transform duration-700 ease-out group-hover:scale-[1.05]"
-                    />
-                    {/* Hover overlay */}
-                    <div className="absolute inset-0 bg-black/0 group-hover:bg-black/25 transition-colors duration-300 flex items-center justify-center">
-                      <div className="opacity-0 group-hover:opacity-100 transition-opacity duration-300 bg-white/90 rounded-full w-10 h-10 flex items-center justify-center shadow-lg">
-                        <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="#0B1F45" strokeWidth="2.5">
-                          <path d="M15 3h6m0 0v6m0-6L14 10M9 21H3m0 0v-6m0 6l7-7"/>
-                        </svg>
+            <div key="grade">
+              {activeLinha !== "todos" && (
+                <div className="mb-10 pb-8 border-b border-[#e2e2e2]">
+                  <h2 className="font-serif text-[#0B1F45] text-3xl font-normal mb-2">
+                    Linha {activeLinha}
+                  </h2>
+                  <p className="text-[#43474e] text-sm">
+                    {activeLinha === "Classic" &&
+                      "Mármore Fosco · 5mm · 1,2m × 2,9m = 3,48m² por placa"}
+                    {activeLinha === "Brilliance" &&
+                      "Mármore Polido · 5mm · 1,2m × 2,9m = 3,48m² por placa"}
+                    {activeLinha === "Elegance" &&
+                      "Madeira Texturizada · 5mm · 1,2m × 2,9m = 3,48m² por placa"}
+                  </p>
+                </div>
+              )}
+              <div className="grid grid-cols-2 lg:grid-cols-3 gap-x-4 gap-y-8 lg:gap-x-8 lg:gap-y-14">
+                {filtered.map((product, i) => (
+                  /* Cada cartão sobe no ritmo da sua coluna: 3 colunas no computador, 2 no
+                     celular (o --mv-i do celular vem por cima só abaixo de lg). No celular o
+                     preenchimento é só antes do começo: medido a 4× de CPU, com ele o catálogo
+                     não perde o quadro que perdia ao chegar no fim da página. */
+                  <Revelar
+                    key={product.code}
+                    ordem={i % 3}
+                    className={i % 2 ? "mv-preenche-antes max-lg:[--mv-i:1]!" : "mv-preenche-antes max-lg:[--mv-i:0]!"}
+                  >
+                  <article
+                    className="group cursor-pointer"
+                    onClick={() => open(product)}
+                  >
+                    {/* Image */}
+                    <div className="mv-brilho relative aspect-[4/5] overflow-hidden bg-[#eeeeee] mb-3 lg:mb-5 shadow-sm group-hover:shadow-lg transition-shadow duration-500">
+                      {/* next/image: a Vercel redimensiona e serve em WebP pela
+                          própria CDN. Antes eram 14 arquivos originais (23,9 MB)
+                          baixados do Supabase a cada visita ao catálogo. */}
+                      <Image
+                        src={product.image_path}
+                        alt={`${product.name} — Linha ${product.linha}`}
+                        fill
+                        sizes="(max-width: 640px) 50vw, (max-width: 1024px) 33vw, 25vw"
+                        className="object-cover transition-transform duration-700 ease-out group-hover:scale-[1.05]"
+                      />
+                      {/* Hover overlay */}
+                      <div className="absolute inset-0 bg-black/0 group-hover:bg-black/25 transition-colors duration-300 flex items-center justify-center">
+                        <div className="opacity-0 group-hover:opacity-100 transition-opacity duration-300 bg-white/90 rounded-full w-10 h-10 flex items-center justify-center shadow-lg">
+                          <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="#0B1F45" strokeWidth="2.5">
+                            <path d="M15 3h6m0 0v6m0-6L14 10M9 21H3m0 0v-6m0 6l7-7"/>
+                          </svg>
+                        </div>
+                      </div>
+                      {/* Badges */}
+                      <div className="absolute top-2 right-2 lg:top-4 lg:right-4 flex flex-col items-end gap-1.5">
+                        <span className="bg-white/95 text-[#0B1F45] text-[9px] lg:text-[10px] tracking-[0.1em] uppercase font-semibold px-2 py-1 lg:px-2.5 lg:py-1.5">
+                          {product.finish}
+                        </span>
+                        {allImages(product).length > 1 && (
+                          <span className="bg-black/60 text-white text-[9px] font-semibold px-1.5 py-0.5 flex items-center gap-1">
+                            <svg width="9" height="9" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5"><rect x="3" y="3" width="18" height="18" rx="2"/><path d="M3 9h18M9 21V9"/></svg>
+                            {allImages(product).length}
+                          </span>
+                        )}
                       </div>
                     </div>
-                    {/* Badges */}
-                    <div className="absolute top-2 right-2 lg:top-4 lg:right-4 flex flex-col items-end gap-1.5">
-                      <span className="bg-white/95 text-[#0B1F45] text-[9px] lg:text-[10px] tracking-[0.1em] uppercase font-semibold px-2 py-1 lg:px-2.5 lg:py-1.5">
-                        {product.finish}
-                      </span>
-                      {allImages(product).length > 1 && (
-                        <span className="bg-black/60 text-white text-[9px] font-semibold px-1.5 py-0.5 flex items-center gap-1">
-                          <svg width="9" height="9" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5"><rect x="3" y="3" width="18" height="18" rx="2"/><path d="M3 9h18M9 21V9"/></svg>
-                          {allImages(product).length}
-                        </span>
-                      )}
-                    </div>
-                  </div>
 
-                  {/* Info */}
-                  <div className="space-y-1 lg:space-y-1.5">
-                    <span className="text-[#74777f] text-[9px] lg:text-[10px] tracking-[0.15em] uppercase font-semibold">
-                      {product.code} · {product.linha}
-                    </span>
-                    <h3 className="font-serif text-[#0B1F45] text-base lg:text-xl font-medium leading-snug group-hover:underline underline-offset-2 decoration-[#0B1F45]/30">
-                      {product.name}
-                    </h3>
-                    <p className="text-[#43474e] text-xs lg:text-sm leading-relaxed hidden sm:block line-clamp-2">
-                      {product.description}
-                    </p>
-                    <p className="text-[#b0b4bb] text-[10px] tracking-[0.08em] pt-0.5">
-                      2,9m × 1,2m × 5mm
-                    </p>
-                    <div className="pt-1.5">
-                      <button className="inline-block text-[10px] tracking-[0.12em] uppercase font-bold border border-[#0B1F45] text-[#0B1F45] px-4 py-2 lg:px-5 group-hover:bg-[#0B1F45] group-hover:text-white transition-colors">
-                        Ver detalhes →
-                      </button>
+                    {/* Info */}
+                    <div className="space-y-1 lg:space-y-1.5">
+                      <span className="text-[#74777f] text-[9px] lg:text-[10px] tracking-[0.15em] uppercase font-semibold">
+                        {product.code} · {product.linha}
+                      </span>
+                      <h3 className="font-serif text-[#0B1F45] text-base lg:text-xl font-medium leading-snug group-hover:underline underline-offset-2 decoration-[#0B1F45]/30">
+                        {product.name}
+                      </h3>
+                      <p className="text-[#43474e] text-xs lg:text-sm leading-relaxed hidden sm:block line-clamp-2">
+                        {product.description}
+                      </p>
+                      <p className="text-[#b0b4bb] text-[10px] tracking-[0.08em] pt-0.5">
+                        2,9m × 1,2m × 5mm
+                      </p>
+                      <div className="pt-1.5">
+                        <button className="inline-block text-[10px] tracking-[0.12em] uppercase font-bold border border-[#0B1F45] text-[#0B1F45] px-4 py-2 lg:px-5 group-hover:bg-[#0B1F45] group-hover:text-white transition-colors">
+                          Ver detalhes →
+                        </button>
+                      </div>
                     </div>
-                  </div>
-                </article>
-                </Revelar>
-              ))}
+                  </article>
+                  </Revelar>
+                ))}
+              </div>
             </div>
           )}
         </div>
