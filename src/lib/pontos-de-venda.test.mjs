@@ -155,12 +155,45 @@ test("aproximarPinos: dois colados perto da borda deslocam o grupo inteiro", () 
   for (const p of r) assert.ok(p.x >= 31 - FOLGA && p.x <= 369 + FOLGA, `x ${p.x}`);
   assert.ok(dist(r[0], r[1]) >= 62 - FOLGA);
 });
-test("aproximarPinos: dois grupos que se encostam depois de espalhados", () => {
-  const r = aproximarPinos([
-    { x: 100, y: 100 }, { x: 102, y: 100 },
-    { x: 150, y: 100 }, { x: 152, y: 100 },
-  ]);
+test("aproximarPinos: dois colados na borda esquerda deslocam o grupo inteiro", () => {
+  const r = aproximarPinos([{ x: 5, y: 200 }, { x: 10, y: 200 }]);
+  for (const p of r) assert.ok(p.x >= 31 - FOLGA && p.x <= 369 + FOLGA, `x ${p.x}`);
+  assert.ok(dist(r[0], r[1]) >= 62 - FOLGA);
+  assert.ok(r[0].x < r[1].x);
+});
+function confere(entrada, r) {
+  assert.equal(r.length, entrada.length);
+  r.forEach((p, i) => {
+    assert.equal(p.y, entrada[i].y);
+    assert.ok(p.x >= 31 - FOLGA && p.x <= 369 + FOLGA, `x ${p.x}`);
+  });
   for (let i = 0; i < r.length; i++) for (let j = i + 1; j < r.length; j++) assert.ok(dist(r[i], r[j]) >= 62 - FOLGA, `${i}-${j}`);
+}
+test("aproximarPinos: dois grupos que se encostam depois de espalhados (4 pinos)", () => {
+  const entrada = [{ x: 100, y: 100 }, { x: 102, y: 100 }, { x: 165, y: 100 }, { x: 167, y: 100 }];
+  confere(entrada, aproximarPinos(entrada));
+});
+test("aproximarPinos: grupo de dois que encosta num pino solto (3 pinos)", () => {
+  const entrada = [{ x: 100, y: 0 }, { x: 102, y: 0 }, { x: 165, y: 0 }];
+  confere(entrada, aproximarPinos(entrada));
+});
+test("aproximarPinos: propriedade, 2.000 casos semeados de 2 a 6 pinos nunca lançam", () => {
+  let semente = 123456789;
+  const aleatorio = () => {   // mulberry32
+    semente = (semente + 0x6d2b79f5) | 0;
+    let t = Math.imul(semente ^ (semente >>> 15), 1 | semente);
+    t = (t + Math.imul(t ^ (t >>> 7), 61 | t)) ^ t;
+    return ((t ^ (t >>> 14)) >>> 0) / 4294967296;
+  };
+  for (let caso = 0; caso < 2000; caso++) {
+    const n = 2 + Math.floor(aleatorio() * 5);
+    const entrada = Array.from({ length: n }, (_, k) => ({ id: k, x: 100 + aleatorio() * 160, y: 100 + aleatorio() * 10 }));
+    const copia = JSON.parse(JSON.stringify(entrada));
+    const r = aproximarPinos(entrada);
+    assert.deepEqual(entrada, copia);
+    assert.deepEqual(r.map((p) => p.id), entrada.map((p) => p.id));
+    confere(entrada, r);
+  }
 });
 test("aproximarPinos: pinos distantes não se movem; lista vazia e um só", () => {
   const longe = [{ x: 50, y: 100 }, { x: 150, y: 100 }, { x: 250, y: 300 }];
@@ -189,4 +222,16 @@ test("rotulosDeBairro: ignora sem bairro ou sem coordenada, um por bairro, 34 ab
   const centro = r.find((x) => x.bairro === "Centro");
   perto(centro.x, (p1.x + p2.x) / 2);
   perto(centro.y, Math.max(p1.y, p2.y) + 34);
+});
+test("rotulosDeBairro: só conta loja com pino (cabePino) e limita o y do rótulo", () => {
+  const base = { id: "1", slug: "a", name: "A", address: null, maps_url: null, description: null, bairro: null,
+    lat: null, lng: null, whatsapp: null, instagram: null, horario: null };
+  const pontos = [
+    { ...base, id: "1", bairro: "Topo", lat: -3.0605, lng: -60.0 },        // y ≈ 3: o pino vazaria pelo topo
+    { ...base, id: "2", bairro: "Beira", lat: -3.1, lng: -60.059 },        // x ≈ 5: o pino vazaria pela esquerda
+    { ...base, id: "3", bairro: "Sul", lat: -3.145, lng: -60.0 },          // y ≈ 453: 453 + 34 passa do mapa
+  ];
+  const r = rotulosDeBairro(pontos);
+  assert.deepEqual(r.map((x) => x.bairro), ["Sul"]);
+  assert.equal(r[0].y, ALTURA_MAPA - 8);
 });

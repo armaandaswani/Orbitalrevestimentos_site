@@ -214,15 +214,41 @@ export function cabePino(p: { x: number; y: number }): boolean {
 }
 
 const FOLGA_DISTANCIA = 1e-9;
+/** Folga maior para agrupar: grupos que ficaram a exatamente `minimo` depois de espalhados se fundem. */
+const FOLGA_AGRUPAR = 1e-6;
 
-function proximos(a: { x: number; y: number }, b: { x: number; y: number }, minimo: number): boolean {
+type Ponto2D = { x: number; y: number };
+
+/** Sobreposição de verdade: decide a parada e a conferência final. */
+function sobrepostos(a: Ponto2D, b: Ponto2D, minimo: number): boolean {
   return Math.hypot(a.x - b.x, a.y - b.y) < minimo - FOLGA_DISTANCIA;
+}
+
+/**
+ * Encostados ou sobrepostos: decide quem entra no mesmo grupo. Além da distância
+ * (< minimo + 1e-6), conta o par que o espalhamento deixou a exatamente `minimo`
+ * na horizontal com alguma diferença de y (a distância fica um pouco acima de
+ * `minimo`): sem isso, grupos que se tocam nunca se fundem e a repetição não converge.
+ */
+function encostados(a: Ponto2D, b: Ponto2D, minimo: number): boolean {
+  if (Math.hypot(a.x - b.x, a.y - b.y) < minimo + FOLGA_AGRUPAR) return true;
+  return Math.abs(Math.abs(a.x - b.x) - minimo) < FOLGA_AGRUPAR && Math.abs(a.y - b.y) < minimo;
+}
+
+function haSobreposicao(r: Ponto2D[], minimo: number): boolean {
+  for (let i = 0; i < r.length; i++) {
+    for (let j = i + 1; j < r.length; j++) {
+      if (sobrepostos(r[i], r[j], minimo)) return true;
+    }
+  }
+  return false;
 }
 
 /**
  * Rede de segurança: afasta pinos a menos de `minimo` unidades. Não muta a
  * entrada; devolve cópias (mesma ordem) com `x` ajustado e `y` intacto.
- * Agrupa por componentes conexos de todos os pares próximos (union-find),
+ * Agrupa por componentes conexos de todos os pares encostados (< minimo + 1e-6,
+ * union-find; só a sobreposição estrita, < minimo − 1e-9, decide a parada),
  * espalha cada grupo na horizontal centrado na média e, se sair do mapa,
  * desloca o grupo inteiro. Repete até estabilizar (10 voltas); se sobrar par
  * sobreposto, lança erro para o build falhar em vez de publicar o mapa assim.
@@ -231,6 +257,7 @@ export function aproximarPinos<T extends { x: number; y: number }>(pinos: T[], m
   const r = pinos.map((p) => ({ ...p }));
   const n = r.length;
   for (let volta = 0; volta < 10; volta++) {
+    if (!haSobreposicao(r, minimo)) return r;
     const pai = Array.from({ length: n }, (_, i) => i);
     const raiz = (i: number): number => {
       while (pai[i] !== i) {
@@ -241,7 +268,7 @@ export function aproximarPinos<T extends { x: number; y: number }>(pinos: T[], m
     };
     for (let i = 0; i < n; i++) {
       for (let j = i + 1; j < n; j++) {
-        if (proximos(r[i], r[j], minimo)) pai[raiz(i)] = raiz(j);
+        if (encostados(r[i], r[j], minimo)) pai[raiz(i)] = raiz(j);
       }
     }
     const grupos = new Map<number, number[]>();
@@ -251,10 +278,8 @@ export function aproximarPinos<T extends { x: number; y: number }>(pinos: T[], m
       if (lista) lista.push(i);
       else grupos.set(g, [i]);
     }
-    let mexeu = false;
     for (const indices of grupos.values()) {
       if (indices.length < 2) continue;
-      mexeu = true;
       const ordem = [...indices].sort((a, b) => r[a].x - r[b].x || a - b);
       const media = ordem.reduce((s, i) => s + r[i].x, 0) / ordem.length;
       const novos = ordem.map((_, k) => media + (k - (ordem.length - 1) / 2) * minimo);
@@ -269,20 +294,16 @@ export function aproximarPinos<T extends { x: number; y: number }>(pinos: T[], m
         r[i].x = novos[k] + desloca;
       });
     }
-    if (!mexeu) return r;
   }
-  for (let i = 0; i < n; i++) {
-    for (let j = i + 1; j < n; j++) {
-      if (proximos(r[i], r[j], minimo)) throw new Error("aproximarPinos não estabilizou");
-    }
-  }
+  if (haSobreposicao(r, minimo)) throw new Error("aproximarPinos não estabilizou");
   return r;
 }
 
 /**
  * Um rótulo por bairro: x é a média dos x das lojas do bairro (projetadas) e y
- * fica 34 unidades abaixo do pino mais baixo. Ignora loja sem bairro, sem
- * coordenada ou fora de Manaus.
+ * fica 34 unidades abaixo do pino mais baixo (no máximo em ALTURA_MAPA − 8).
+ * Ignora loja sem bairro, sem coordenada, fora de Manaus ou sem pino (`cabePino`),
+ * para não sobrar rótulo sem pino.
  */
 export function rotulosDeBairro(pontos: PontoDeVenda[]): { bairro: string; x: number; y: number }[] {
   const porBairro = new Map<string, { soma: number; n: number; baixo: number }>();
@@ -290,6 +311,7 @@ export function rotulosDeBairro(pontos: PontoDeVenda[]): { bairro: string; x: nu
     const bairro = p.bairro?.trim();
     if (!bairro || p.lat === null || p.lng === null || !dentroDeManaus(p.lat, p.lng)) continue;
     const { x, y } = projetarManaus(p.lat, p.lng);
+    if (!cabePino({ x, y })) continue;
     const atual = porBairro.get(bairro);
     if (atual) {
       atual.soma += x;
@@ -299,5 +321,5 @@ export function rotulosDeBairro(pontos: PontoDeVenda[]): { bairro: string; x: nu
       porBairro.set(bairro, { soma: x, n: 1, baixo: y });
     }
   }
-  return [...porBairro.entries()].map(([bairro, a]) => ({ bairro, x: a.soma / a.n, y: a.baixo + 34 }));
+  return [...porBairro.entries()].map(([bairro, a]) => ({ bairro, x: a.soma / a.n, y: Math.min(a.baixo + 34, ALTURA_MAPA - 8) }));
 }
