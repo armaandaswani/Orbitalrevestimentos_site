@@ -537,7 +537,7 @@ export default function ContatoSheet() {
           // Celular: tela cheia na área visível (100dvh: o cabeçalho e a barra
           // de ação ficam acima das barras do navegador); o ::after estende o
           // branco por baixo delas.
-          "h-dvh",
+          "h-svh",
           "after:content-[''] after:absolute after:inset-x-0 after:top-full after:h-[100lvh] after:bg-white",
           // Computador: cartão preso ao topo, altura do conteúdo.
           "sm:h-auto sm:max-w-[640px] sm:max-h-[min(800px,calc(100dvh_-_2*max(24px,7dvh)))]",

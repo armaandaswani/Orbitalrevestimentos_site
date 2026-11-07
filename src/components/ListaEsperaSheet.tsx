@@ -142,7 +142,7 @@ export default function ListaEsperaSheet({ aberto, fechar, linha, nomeLinha, cat
     if (!aberto) return;
     const id = requestAnimationFrame(medirBordas);
     return () => cancelAnimationFrame(id);
-  }, [aberto, passo, r, modelos.length, estado, medirBordas]);
+  }, [aberto, passo, r, modelos.length, estado, tentouContato, erro, medirBordas]);
 
   // A folha mudou de tamanho (outra pergunta no computador, barra do
   // navegador que some ou volta no celular): mede de novo as linhas finas.
@@ -276,7 +276,7 @@ export default function ListaEsperaSheet({ aberto, fechar, linha, nomeLinha, cat
           "pc-folha relative flex flex-col w-full bg-white text-[#0B1F45]",
           // Celular: tela cheia na área visível (100dvh); o ::after estende o
           // branco por baixo das barras do navegador.
-          "h-dvh",
+          "h-svh",
           "after:content-[''] after:absolute after:inset-x-0 after:top-full after:h-[100lvh] after:bg-white",
           // Computador: cartão preso ao topo, altura do conteúdo.
           "sm:h-auto sm:max-w-[640px] sm:max-h-[min(800px,calc(100dvh_-_2*max(24px,7dvh)))]",

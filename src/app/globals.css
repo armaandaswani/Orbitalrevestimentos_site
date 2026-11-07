@@ -208,6 +208,9 @@ html[data-mv-nivel="leve"] { --mv-sobe: 12px; --mv-fator: 0.5; }
 @keyframes pc-entra-tras { from { opacity: 0; transform: translateX(-20px); } to { opacity: 1; transform: none; } }
 @keyframes pc-sobe { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: none; } }
 @keyframes pc-marca { from { transform: scale(0.3); } to { transform: scale(1); } }
+/* Celular: folha em tela cheia com altura fixa (a da tela com a barra do navegador aberta),
+   para os botões nunca caírem na área da barra. 100vh fica de reserva onde svh não existe. */
+@media (max-width: 639.98px) { .pc-folha { height: 100vh; height: 100svh; } }
 @media (prefers-reduced-motion: no-preference) {
   .pc-veu         { animation: pc-veu 0.22s ease-out both; }
   .pc-folha       { animation: pc-surge 0.34s cubic-bezier(0.2, 0.8, 0.2, 1) both; }
