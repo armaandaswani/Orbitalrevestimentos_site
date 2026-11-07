@@ -156,7 +156,9 @@ export default function ProdutosPage() {
   /** Trocar a linha reflete na URL sem criar entrada no histórico. */
   const trocarLinha = (linha: Linha) => {
     setActiveLinha(linha);
-    const url = catalogoPath({ linha, modelo: selected?.code });
+    // Antes da lista chegar, `selected` é nulo: o modelo da URL fica, senão a aba apagaria o ?modelo= e a chegada nunca o abriria.
+    const modelo = selected?.code ?? (deepLinked.current ? undefined : new URLSearchParams(window.location.search).get("modelo"));
+    const url = catalogoPath({ linha, modelo });
     if (window.location.pathname + window.location.search === url) return;
     window.history.replaceState(window.history.state, "", url);
   };
