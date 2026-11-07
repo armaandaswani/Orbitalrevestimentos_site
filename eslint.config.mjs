@@ -12,6 +12,7 @@ const eslintConfig = defineConfig([
     "out/**",
     "build/**",
     "next-env.d.ts",
+    ".superpowers/**", // pasta local de desenho e de testes, fora do repositório
   ]),
 ]);
 
