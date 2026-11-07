@@ -1,68 +1,101 @@
 /**
- * Gera o mapa de Manaus da página /onde-comprar: o rio Negro, o Solimões e o
- * Amazonas, com o encontro das águas, recortados numa caixa fixa da cidade.
+ * Gera o mapa de Manaus da página /onde-comprar a partir do OpenStreetMap: a
+ * água (rio Negro e igarapés), as vias principais e os parques, num SVG estático
+ * nas cores da marca. Nada de mapa interativo nem de tiles de terceiros: o mapa
+ * é desenhado uma vez aqui e a página só carrega o resultado.
  *
  *   node scripts/gerar-mapa-manaus.mjs --saida <pasta> [--pontos <coordenadas.json>]
- *                                      [--geojson <arquivo>] [--cache <pasta>]
+ *                                      [--osm <arquivo.json>] [--cache <pasta>]
  *
- * Fonte: Natural Earth 1:10m, camada "rivers_lake_centerlines" (domínio público,
- * https://www.naturalearthdata.com/about/terms-of-use/), na cópia em GeoJSON do
- * repositório nvkelso/natural-earth-vector. O arquivo bruto é baixado para uma
- * pasta temporária (ou lido de --geojson) e nunca entra no repositório: só o
- * resultado, que é pequeno. Sem ruas e sem OpenStreetMap (sem atribuição ODbL).
+ * Fonte: OpenStreetMap, © colaboradores do OpenStreetMap, licença ODbL
+ * (https://www.openstreetmap.org/copyright). A página mostra "© OpenStreetMap"
+ * no canto do mapa. Os dados vêm de UMA consulta à Overpass API
+ * (overpass-api.de), com User-Agent próprio, na caixa de DOWNLOAD (maior que a
+ * do desenho, para dar para ajustar o recorte sem consultar de novo). A
+ * resposta bruta fica em --cache (ou numa pasta temporária, ou é lida de --osm)
+ * e nunca entra no repositório: só o resultado, que é pequeno.
  *
- * Como funciona: pega as linhas de centro do rio Negro e do Amazonas (o Natural
- * Earth chama de "Amazonas" também o trecho acima de Manaus, o Solimões), corta
- * a linha do Amazonas no vértice mais perto da foz do Negro (o encontro das
- * águas: rio abaixo é Amazonas, rio acima é Solimões), recorta cada segmento na
- * CAIXA com uma folga (para a ponta arredondada do traço cair fora da tela) e
- * projeta em equirretangular para um viewBox 0 0 400 400:
- *   x = (lng − LNG_MIN) / (LNG_MAX − LNG_MIN) × 400
- *   y = (LAT_MAX − lat) / (LAT_MAX − LAT_MIN) × 400
- * Na latitude de Manaus (~3° S) o cosseno é 0,9986, então a caixa de 0,25° × 0,25°
- * vira um quadrado sem distorção visível. Cada rio sai como um path em
- * coordenadas relativas, arredondadas a 0,1 unidade, para ficar curto. Depois do
- * encontro, um traço escuro mais fino corre na margem norte do Amazonas (a água
- * preta do Negro ao lado da barrenta, que é o que faz o encontro ser reconhecido).
+ * Como funciona:
+ * - Projeção equirretangular da CAIXA para um viewBox de LADO unidades de
+ *   largura; a altura sai da proporção da caixa (na latitude de Manaus o
+ *   cosseno é 0,9986, então grau de latitude e de longitude valem o mesmo).
+ * - Água: as bordas dos polígonos de água (ways fechadas e membros de
+ *   multipolígono `natural=water` e `waterway=riverbank`) são emendadas pelas
+ *   pontas, recortadas na caixa e fechadas pela borda da caixa. Cada face que
+ *   sobra é água ou terra pela paridade: conta quantas bordas o segmento entre
+ *   um ponto sabidamente no rio (PONTO_RIO) e a face cruza. Assim o rio, que é
+ *   um multipolígono enorme, sai sem precisar baixar o polígono inteiro.
+ *   Igarapés mapeados só como linha (`waterway=river|stream|canal`) saem como
+ *   traço fino da cor da água.
+ * - Vias: trunk/primary (traço mais largo), secondary, tertiary (mais claro);
+ *   residenciais ficam de fora (veja RESIDENCIAIS).
+ * - Parques: `leisure=park` fechados, recortados na caixa.
+ * - Simplificação: Douglas–Peucker em unidades do viewBox, coordenadas a 0,1
+ *   unidade, path relativo.
  *
- * Generalização do 1:10m: o Negro passa 1 a 2,5 km ao sul do leito real na
- * metade oeste da caixa (Ponta Negra, Compensa) e ~0,5 km perto do encontro. Num
- * mapa ilustrado de 27 km de lado isso não muda a leitura; a Fase 0 conferiu o
- * print e manteve o Natural Earth (sem o traço desenhado à mão).
- *
- * Fase 0 (esta versão): grava em --saida um protótipo `mapa-manaus.svg`, com os
- * pontos de --pontos (o coordenadas.json da Fase 0) para conferir a
- * legibilidade. A Tarefa 6 troca a saída por src/components/onde-comprar/mapaManaus.ts.
+ * Fase 0 (esta versão): grava em --saida um protótipo `mapa-manaus.svg` com os
+ * pontos de --pontos (o coordenadas.json da Fase 0) e `mapa-manaus.json` com
+ * os paths, a caixa, os rótulos sugeridos e os tamanhos. A Tarefa 6 troca a
+ * saída por src/components/onde-comprar/mapaManaus.ts.
  */
-import { execFileSync } from "node:child_process";
 import fs from "node:fs";
 import os from "node:os";
 import path from "node:path";
+import zlib from "node:zlib";
 
-const URL_FONTE =
-  "https://raw.githubusercontent.com/nvkelso/natural-earth-vector/master/geojson/ne_10m_rivers_lake_centerlines.geojson";
-const ARQUIVO_FONTE = "ne_10m_rivers_lake_centerlines.geojson";
+const OVERPASS = "https://overpass-api.de/api/interpreter";
+const UA = "OrbitalRevestimentos-site/1.0 (mapa /onde-comprar; gerar-mapa-manaus.mjs)";
+const ARQUIVO_CACHE = "overpass-manaus.json";
 
-/** Caixa de Manaus (a mesma do projetarManaus e do dentroDeManaus). */
-const LAT_MIN = -3.2;
-const LAT_MAX = -2.95;
-const LNG_MIN = -60.1;
-const LNG_MAX = -59.85;
-/** Lado do viewBox, em unidades. */
+/** Caixa do download (graus): a do desenho com folga. */
+const DOWNLOAD = { latMin: -3.175, latMax: -3.04, lngMin: -60.08, lngMax: -59.97 };
+/**
+ * Caixa do desenho: as 4 lojas com pelo menos ~1,3 km de folga em cada lado (o
+ * pino de 44 px sobe ~1 km acima da ponta), a margem do Negro ao sul do Centro
+ * e os igarapés de São Raimundo e de Educandos, que ajudam a reconhecer a cidade.
+ * Saiu um pouco menor que −3,150..−3,055 × −60,065..−59,985 no norte e no oeste,
+ * onde não havia nada útil. Fora dela a loja aparece só na lista.
+ */
+const CAIXA = { latMin: -3.15, latMax: -3.06, lngMin: -60.06, lngMax: -59.985 };
+/** Largura do viewBox; a altura segue a proporção da caixa. */
 const LADO = 400;
-/** Folga do recorte, em graus: o traço passa da borda e a ponta redonda some. */
-const FOLGA = 0.03;
+/** Um ponto no meio do rio Negro, ao sul do Centro (referência da paridade da água). */
+const PONTO_RIO = { lat: -3.147, lng: -60.03 };
+/**
+ * Residenciais: ficam de fora. Com elas os paths passam de ~40 kB para ~123 kB
+ * (gzip de ~16 kB para ~48 kB) e a malha fina enche o fundo atrás dos pinos.
+ */
+const RESIDENCIAIS = false;
+/** Tolerância do Douglas–Peucker, em unidades do viewBox. */
+const TOLERANCIA = { agua: 0.35, via: 0.45, parque: 0.6 };
+/** Comprimento mínimo de um trecho de via para entrar (unidades). */
+const MINIMO_TRECHO = 2;
+/** Igarapé só de linha (stream) entra a partir deste comprimento; rio e canal sempre. */
+const MINIMO_IGARAPE = 15;
 
-/** Largura do traço de cada rio, em unidades do viewBox (~70 m por unidade). */
-const LARGURA = { negro: 26, solimoes: 20, amazonas: 30, lingua: 11 };
-/** Água preta ao lado da barrenta depois do encontro (unidades do viewBox). */
-const LINGUA = { comprimento: 80, desvio: 8 };
-const COR = { fundo: "#F6F5F2", negro: "#0B1F45", barro: "#C8AE86", texto: "#43474e" };
+const CLASSES = {
+  principal: ["motorway", "trunk", "primary", "motorway_link", "trunk_link", "primary_link"],
+  secundaria: ["secondary", "secondary_link"],
+  terciaria: ["tertiary", "tertiary_link"],
+  residencial: ["residential", "unclassified"],
+};
+
+const COR = {
+  terra: "#F6F5F2",
+  agua: "#BCCADF",
+  parque: "#E3EBDD",
+  principal: "#FFFFFF",
+  principalBorda: "#D3CFC6",
+  secundaria: "#FFFFFF",
+  terciaria: "#E6E3DC",
+  residencial: "#ECE9E2",
+};
+const LARGURA_VIA = { principal: 4.2, principalBorda: 5.6, secundaria: 2.6, terciaria: 1.4, residencial: 0.8, igarape: 1.6 };
 
 function lerArgs(argv) {
   const a = {};
   for (let i = 0; i < argv.length; i++) {
-    if (argv[i] === "--geojson") a.geojson = argv[++i];
+    if (argv[i] === "--osm") a.osm = argv[++i];
     else if (argv[i] === "--cache") a.cache = argv[++i];
     else if (argv[i] === "--saida") a.saida = argv[++i];
     else if (argv[i] === "--pontos") a.pontos = argv[++i];
@@ -70,72 +103,106 @@ function lerArgs(argv) {
   return a;
 }
 
-function obterGeojson(args) {
-  if (args.geojson) return fs.readFileSync(args.geojson, "utf8");
-  const pasta = args.cache || fs.mkdtempSync(path.join(os.tmpdir(), "natural-earth-"));
-  const arquivo = path.join(pasta, ARQUIVO_FONTE);
+function consulta() {
+  const b = `${DOWNLOAD.latMin},${DOWNLOAD.lngMin},${DOWNLOAD.latMax},${DOWNLOAD.lngMax}`;
+  const vias = [...CLASSES.principal, ...CLASSES.secundaria, ...CLASSES.terciaria, ...CLASSES.residencial].join("|");
+  return `[out:json][timeout:120];
+(
+  way["highway"~"^(${vias})$"](${b});
+  way["natural"="water"](${b});
+  way["waterway"~"^(riverbank|river|stream|canal)$"](${b});
+  relation["natural"="water"](${b});
+  relation["waterway"="riverbank"](${b});
+  way["leisure"="park"](${b});
+  node["place"~"^(suburb|neighbourhood|quarter)$"](${b});
+);
+out geom(${b});`;
+}
+
+async function obterOsm(args) {
+  if (args.osm) return JSON.parse(fs.readFileSync(args.osm, "utf8"));
+  const pasta = args.cache || fs.mkdtempSync(path.join(os.tmpdir(), "overpass-manaus-"));
+  const arquivo = path.join(pasta, ARQUIVO_CACHE);
   if (!fs.existsSync(arquivo)) {
-    execFileSync("curl", ["-sSfL", "-o", arquivo, URL_FONTE], { stdio: "inherit" });
+    const res = await fetch(OVERPASS, {
+      method: "POST",
+      headers: { "User-Agent": UA, "Content-Type": "application/x-www-form-urlencoded" },
+      body: "data=" + encodeURIComponent(consulta()),
+    });
+    if (!res.ok) throw new Error(`Overpass respondeu ${res.status}: ${(await res.text()).slice(0, 300)}`);
+    fs.writeFileSync(arquivo, await res.text());
+    console.log(`Overpass: ${(fs.statSync(arquivo).size / 1e6).toFixed(1)} MB → ${arquivo}`);
   }
-  return fs.readFileSync(arquivo, "utf8");
+  return JSON.parse(fs.readFileSync(arquivo, "utf8"));
 }
 
-/** Todas as linhas (LineString ou MultiLineString) das feições com esse nome. */
-function linhasDo(geo, nome) {
-  const linhas = [];
-  for (const f of geo.features) {
-    const g = f.geometry;
-    if (!g || f.properties?.name !== nome) continue;
-    if (g.type === "LineString") linhas.push(g.coordinates);
-    else if (g.type === "MultiLineString") linhas.push(...g.coordinates);
-  }
-  return linhas;
+// ── Projeção ──────────────────────────────────────────────────────────────
+const ESCALA = LADO / (CAIXA.lngMax - CAIXA.lngMin);
+const ALTURA = Math.round((CAIXA.latMax - CAIXA.latMin) * ESCALA);
+function projetarManaus(lat, lng) {
+  return [(lng - CAIXA.lngMin) * ESCALA, (CAIXA.latMax - lat) * ESCALA];
 }
 
-const dist2 = ([x0, y0], [x1, y1]) => (x0 - x1) ** 2 + (y0 - y1) ** 2;
+/** Geometria de um elemento da Overpass em trechos contínuos de [x, y] (os nós fora da caixa do download vêm nulos). */
+function trechosDe(geometria) {
+  const trechos = [];
+  let atual = [];
+  for (const g of geometria ?? []) {
+    if (!g) {
+      if (atual.length > 1) trechos.push(atual);
+      atual = [];
+      continue;
+    }
+    atual.push(projetarManaus(g.lat, g.lon));
+  }
+  if (atual.length > 1) trechos.push(atual);
+  return trechos;
+}
 
-/**
- * Corta a linha do Amazonas no encontro das águas: o vértice dela mais perto
- * da ponta do Negro que fica rio abaixo (a mais perto do Amazonas). Devolve as
- * duas metades com o vértice do encontro nas duas, para os traços se tocarem.
- */
-function separarNoEncontro(amazonas, negro) {
-  let melhor = null;
-  for (const ln of negro) {
-    for (const ponta of [ln[0], ln[ln.length - 1]]) {
-      for (let li = 0; li < amazonas.length; li++) {
-        const la = amazonas[li];
-        for (let i = 0; i < la.length; i++) {
-          const d = dist2(ponta, la[i]);
-          if (!melhor || d < melhor.d) melhor = { d, li, i };
+const igual = (a, b) => Math.abs(a[0] - b[0]) < 1e-9 && Math.abs(a[1] - b[1]) < 1e-9;
+const fechado = (t) => t.length > 3 && igual(t[0], t[t.length - 1]);
+
+/** Emenda trechos que se tocam pelas pontas (as ways de um multipolígono). */
+function emendar(trechos) {
+  const abertos = trechos.filter((t) => !fechado(t)).map((t) => [...t]);
+  const prontos = trechos.filter(fechado);
+  let mudou = true;
+  while (mudou) {
+    mudou = false;
+    for (let i = 0; i < abertos.length && !mudou; i++) {
+      for (let j = 0; j < abertos.length && !mudou; j++) {
+        if (i === j) continue;
+        const a = abertos[i];
+        const b = abertos[j];
+        let novo = null;
+        if (igual(a[a.length - 1], b[0])) novo = [...a, ...b.slice(1)];
+        else if (igual(a[a.length - 1], b[b.length - 1])) novo = [...a, ...[...b].reverse().slice(1)];
+        else if (igual(a[0], b[b.length - 1])) novo = [...b, ...a.slice(1)];
+        else if (igual(a[0], b[0])) novo = [...[...b].reverse(), ...a.slice(1)];
+        if (novo) {
+          abertos.splice(Math.max(i, j), 1);
+          abertos.splice(Math.min(i, j), 1);
+          (fechado(novo) ? prontos : abertos).push(novo);
+          mudou = true;
         }
       }
     }
   }
-  if (!melhor) throw new Error("Não achei o encontro do Negro com o Amazonas.");
-  const la = amazonas[melhor.li];
-  const a = la.slice(0, melhor.i + 1);
-  const b = la.slice(melhor.i);
-  // O Natural Earth desenha o Amazonas da foz para a nascente: a metade com
-  // longitude mais a leste é o Amazonas, a outra é o Solimões.
-  const lesteA = Math.max(...a.map((p) => p[0]));
-  const lesteB = Math.max(...b.map((p) => p[0]));
-  const [abaixo, acima] = lesteA >= lesteB ? [a, b] : [b, a];
-  const outras = amazonas.filter((_, k) => k !== melhor.li);
-  return { amazonas: [abaixo, ...outras], solimoes: [acima], encontro: la[melhor.i] };
+  return { fechados: prontos, abertos };
 }
 
-/** Liang–Barsky: recorta o segmento p0→p1 na caixa; null se fica todo fora. */
-function recortar([x0, y0], [x1, y1], cx0, cy0, cx1, cy1) {
+// ── Recorte ───────────────────────────────────────────────────────────────
+/** Liang–Barsky no retângulo 0..LADO × 0..ALTURA; null se fica todo fora. */
+function recortarSegmento([x0, y0], [x1, y1]) {
   const dx = x1 - x0;
   const dy = y1 - y0;
   let t0 = 0;
   let t1 = 1;
   for (const [p, q] of [
-    [-dx, x0 - cx0],
-    [dx, cx1 - x0],
-    [-dy, y0 - cy0],
-    [dy, cy1 - y0],
+    [-dx, x0],
+    [dx, LADO - x0],
+    [-dy, y0],
+    [dy, ALTURA - y0],
   ]) {
     if (p === 0) {
       if (q < 0) return null;
@@ -156,101 +223,321 @@ function recortar([x0, y0], [x1, y1], cx0, cy0, cx1, cy1) {
   ];
 }
 
-/** Recorta as linhas na caixa com folga e devolve trechos contínuos [lng, lat][]. */
-function recortarLinhas(linhas) {
-  const cx0 = LNG_MIN - FOLGA;
-  const cx1 = LNG_MAX + FOLGA;
-  const cy0 = LAT_MIN - FOLGA;
-  const cy1 = LAT_MAX + FOLGA;
-  const trechos = [];
-  for (const ln of linhas) {
-    let atual = null;
-    for (let i = 1; i < ln.length; i++) {
-      const s = recortar(ln[i - 1], ln[i], cx0, cy0, cx1, cy1);
-      if (!s) {
-        if (atual) trechos.push(atual);
-        atual = null;
-        continue;
-      }
-      if (atual && dist2(atual[atual.length - 1], s[0]) < 1e-14) atual.push(s[1]);
-      else {
-        if (atual) trechos.push(atual);
-        atual = [s[0], s[1]];
-      }
+/** Uma linha recortada vira os pedaços que ficam dentro da caixa. */
+function recortarLinha(t) {
+  const pedacos = [];
+  let atual = null;
+  for (let i = 1; i < t.length; i++) {
+    const s = recortarSegmento(t[i - 1], t[i]);
+    if (!s) {
+      if (atual) pedacos.push(atual);
+      atual = null;
+      continue;
     }
-    if (atual) trechos.push(atual);
+    if (atual && igual(atual[atual.length - 1], s[0])) atual.push(s[1]);
+    else {
+      if (atual) pedacos.push(atual);
+      atual = [s[0], s[1]];
+    }
   }
-  return trechos;
+  if (atual) pedacos.push(atual);
+  return pedacos;
 }
 
-function projetarManaus(lng, lat) {
-  return [((lng - LNG_MIN) / (LNG_MAX - LNG_MIN)) * LADO, ((LAT_MAX - lat) / (LAT_MAX - LAT_MIN)) * LADO];
-}
+const dentro = ([x, y]) => x > 1e-6 && x < LADO - 1e-6 && y > 1e-6 && y < ALTURA - 1e-6;
 
-const r1 = (n) => {
-  const v = Math.round(n * 10) / 10;
-  return Object.is(v, -0) ? "0" : String(v);
-};
-
-/** Trechos em [lng, lat] → path relativo ("M x y l dx dy ..."), a 0,1 unidade. */
-function paraPath(trechos) {
-  let d = "";
-  for (const t of trechos) {
-    const pts = t.map(([lng, lat]) => projetarManaus(lng, lat).map((v) => Math.round(v * 10) / 10));
-    d += `M${r1(pts[0][0])} ${r1(pts[0][1])}l`;
-    const passos = [];
-    for (let i = 1; i < pts.length; i++) {
-      const dx = pts[i][0] - pts[i - 1][0];
-      const dy = pts[i][1] - pts[i - 1][1];
-      if (dx === 0 && dy === 0) continue;
-      passos.push(`${r1(dx)} ${r1(dy)}`);
+/** Sutherland–Hodgman de um anel fechado contra a caixa (para os parques). */
+function recortarAnel(anel) {
+  let saida = anel.slice(0, -1);
+  const lados = [
+    (p) => p[0] >= 0,
+    (p) => p[0] <= LADO,
+    (p) => p[1] >= 0,
+    (p) => p[1] <= ALTURA,
+  ];
+  const corte = [
+    (a, b) => [0, a[1] + ((b[1] - a[1]) * (0 - a[0])) / (b[0] - a[0])],
+    (a, b) => [LADO, a[1] + ((b[1] - a[1]) * (LADO - a[0])) / (b[0] - a[0])],
+    (a, b) => [a[0] + ((b[0] - a[0]) * (0 - a[1])) / (b[1] - a[1]), 0],
+    (a, b) => [a[0] + ((b[0] - a[0]) * (ALTURA - a[1])) / (b[1] - a[1]), ALTURA],
+  ];
+  for (let k = 0; k < 4 && saida.length; k++) {
+    const entra = saida;
+    saida = [];
+    for (let i = 0; i < entra.length; i++) {
+      const a = entra[(i + entra.length - 1) % entra.length];
+      const b = entra[i];
+      if (lados[k](b)) {
+        if (!lados[k](a)) saida.push(corte[k](a, b));
+        saida.push(b);
+      } else if (lados[k](a)) saida.push(corte[k](a, b));
     }
-    d += passos.join(" ");
+  }
+  return saida.length >= 3 ? [...saida, saida[0]] : null;
+}
+
+// ── Água: faces pela borda da caixa e paridade ───────────────────────────
+/** Posição na borda, no sentido horário a partir do canto de cima à esquerda. */
+function naBorda([x, y]) {
+  const e = 1e-6;
+  if (y <= e) return x;
+  if (x >= LADO - e) return LADO + y;
+  if (y >= ALTURA - e) return LADO + ALTURA + (LADO - x);
+  return 2 * LADO + ALTURA + (ALTURA - y);
+}
+const PERIMETRO = 2 * (LADO + ALTURA);
+function cantosEntre(t0, t1) {
+  // Cantos da caixa ao andar no sentido horário de t0 até t1.
+  const cantos = [
+    [LADO, [LADO, 0]],
+    [LADO + ALTURA, [LADO, ALTURA]],
+    [2 * LADO + ALTURA, [0, ALTURA]],
+    [PERIMETRO, [0, 0]],
+  ];
+  const fim = t1 >= t0 ? t1 : t1 + PERIMETRO;
+  const saida = [];
+  for (let volta = 0; volta < 2; volta++)
+    for (const [t, p] of cantos) {
+      const tt = t + volta * PERIMETRO;
+      if (tt > t0 + 1e-9 && tt < fim - 1e-9) saida.push(p);
+    }
+  return saida;
+}
+
+function cruzam(a, b, c, d) {
+  const o = (p, q, r) => (q[0] - p[0]) * (r[1] - p[1]) - (q[1] - p[1]) * (r[0] - p[0]);
+  const d1 = o(c, d, a);
+  const d2 = o(c, d, b);
+  const d3 = o(a, b, c);
+  const d4 = o(a, b, d);
+  return d1 > 0 !== d2 > 0 && d3 > 0 !== d4 > 0;
+}
+
+function pontoNoAnel(p, anel) {
+  let d = false;
+  for (let i = 0, j = anel.length - 1; i < anel.length; j = i++) {
+    const [xi, yi] = anel[i];
+    const [xj, yj] = anel[j];
+    if (yi > p[1] !== yj > p[1] && p[0] < ((xj - xi) * (p[1] - yi)) / (yj - yi) + xi) d = !d;
   }
   return d;
 }
 
-/** A ponta do Negro que chega ao Amazonas passa a ser o próprio vértice do encontro. */
-function colarNoEncontro(negro, encontro) {
-  let melhor = null;
-  for (const ln of negro) {
-    for (const i of [0, ln.length - 1]) {
-      const d = dist2(ln[i], encontro);
-      if (!melhor || d < melhor.d) melhor = { d, ln, i };
-    }
+/** Um ponto bem dentro do anel: o meio de uma aresta, empurrado para o lado de dentro. */
+function pontoInterno(anel) {
+  const arestas = [];
+  for (let i = 1; i < anel.length; i++) arestas.push([anel[i - 1], anel[i]]);
+  arestas.sort((a, b) => Math.hypot(b[1][0] - b[0][0], b[1][1] - b[0][1]) - Math.hypot(a[1][0] - a[0][0], a[1][1] - a[0][1]));
+  for (const [a, b] of arestas.slice(0, 12)) {
+    const l = Math.hypot(b[0] - a[0], b[1] - a[1]);
+    if (l < 1e-6) continue;
+    for (const lado of [1, -1])
+      for (const eps of [0.05, 0.3, 1]) {
+        const p = [(a[0] + b[0]) / 2 + (lado * eps * (a[1] - b[1])) / l, (a[1] + b[1]) / 2 + (lado * eps * (b[0] - a[0])) / l];
+        if (dentro(p) && pontoNoAnel(p, anel)) return p;
+      }
   }
-  if (melhor) melhor.ln[melhor.i] = [...encontro];
+  return null;
 }
 
-/**
- * A água preta do Negro corre ao lado da barrenta por quilômetros depois do
- * encontro. Desenha isso como um traço escuro mais fino na margem norte do
- * Amazonas: os primeiros LINGUA.comprimento unidades a partir do encontro,
- * deslocados LINGUA.desvio unidades para a esquerda de quem desce o rio (norte).
- */
-function linguaDoNegro(abaixo, encontro) {
-  // O caminho tem de começar no encontro e descer o rio.
-  const ordenado = dist2(abaixo[0], encontro) <= dist2(abaixo[abaixo.length - 1], encontro) ? abaixo : [...abaixo].reverse();
-  const pts = ordenado.map(([lng, lat]) => projetarManaus(lng, lat));
-  const saida = [];
-  let andado = 0;
-  for (let i = 1; i < pts.length && andado < LINGUA.comprimento; i++) {
-    const [x0, y0] = pts[i - 1];
-    const [x1, y1] = pts[i];
-    const seg = Math.hypot(x1 - x0, y1 - y0);
-    const usa = Math.min(seg, LINGUA.comprimento - andado);
-    const t = usa / seg;
-    // Normal à esquerda de quem anda (y cresce para baixo): (dy, −dx).
-    const nx = (y1 - y0) / seg;
-    const ny = -(x1 - x0) / seg;
-    if (i === 1) saida.push([x0 + nx * LINGUA.desvio, y0 + ny * LINGUA.desvio]);
-    saida.push([x0 + (x1 - x0) * t + nx * LINGUA.desvio, y0 + (y1 - y0) * t + ny * LINGUA.desvio]);
-    andado += usa;
+function faces(pedacos) {
+  if (!pedacos.length) return [[[0, 0], [LADO, 0], [LADO, ALTURA], [0, ALTURA], [0, 0]]];
+  // Cada pedaço nas duas direções; depois de chegar à borda, anda no sentido
+  // horário até a próxima ponta e segue pelo pedaço que sai dali.
+  const dirigidos = [];
+  for (const p of pedacos) {
+    dirigidos.push({ pts: p, ini: naBorda(p[0]), fim: naBorda(p[p.length - 1]) });
+    const r = [...p].reverse();
+    dirigidos.push({ pts: r, ini: naBorda(r[0]), fim: naBorda(r[r.length - 1]) });
   }
-  const d = `M${r1(saida[0][0])} ${r1(saida[0][1])}l`;
-  const passos = [];
-  for (let i = 1; i < saida.length; i++) passos.push(`${r1(saida[i][0] - saida[i - 1][0])} ${r1(saida[i][1] - saida[i - 1][1])}`);
-  return d + passos.join(" ");
+  const usados = new Set();
+  const saida = [];
+  for (let k = 0; k < dirigidos.length; k++) {
+    if (usados.has(k)) continue;
+    const anel = [];
+    let atual = k;
+    for (let passo = 0; passo < dirigidos.length + 1; passo++) {
+      usados.add(atual);
+      const d = dirigidos[atual];
+      anel.push(...d.pts);
+      // Próxima ponta no sentido horário a partir de d.fim (entre as que iniciam um dirigido).
+      let melhor = null;
+      for (let j = 0; j < dirigidos.length; j++) {
+        let dt = dirigidos[j].ini - d.fim;
+        if (dt <= 1e-9) dt += PERIMETRO;
+        if (j === (atual ^ 1) && dt >= PERIMETRO - 1e-9) continue;
+        if (!melhor || dt < melhor.dt) melhor = { j, dt };
+      }
+      anel.push(...cantosEntre(d.fim, dirigidos[melhor.j].ini));
+      if (melhor.j === k) break;
+      if (usados.has(melhor.j)) break;
+      atual = melhor.j;
+    }
+    anel.push(anel[0]);
+    saida.push(anel);
+  }
+  return saida;
+}
+
+function agua(elementos) {
+  const bordas = [];
+  const linhas = [];
+  for (const el of elementos) {
+    const t = el.tags ?? {};
+    const ehPoligono = t.natural === "water" || t.waterway === "riverbank";
+    if (el.type === "way" && ehPoligono) {
+      bordas.push(...trechosDe(el.geometry));
+    } else if (el.type === "relation" && ehPoligono) {
+      for (const m of el.members ?? []) if (m.type === "way") bordas.push(...trechosDe(m.geometry));
+    } else if (el.type === "way" && /^(river|stream|canal)$/.test(t.waterway ?? "")) {
+      for (const tr of trechosDe(el.geometry)) linhas.push({ pts: tr, minimo: t.waterway === "stream" ? MINIMO_IGARAPE : MINIMO_TRECHO });
+    }
+  }
+  const { fechados, abertos } = emendar(bordas);
+  const pedacos = [];
+  const aneisDentro = [];
+  const soltas = [];
+  for (const t of [...fechados, ...abertos]) {
+    if (fechado(t) && t.every(dentro)) {
+      aneisDentro.push(t);
+      continue;
+    }
+    const recortes = recortarLinha(t);
+    // Anel que cruza a borda: o recorte parte o pedaço no vértice inicial do
+    // anel, que fica dentro da caixa. Emenda o último pedaço com o primeiro.
+    if (fechado(t) && recortes.length > 1) {
+      const ultimo = recortes[recortes.length - 1];
+      if (igual(ultimo[ultimo.length - 1], recortes[0][0]) && dentro(recortes[0][0])) {
+        recortes[0] = [...ultimo, ...recortes[0].slice(1)];
+        recortes.pop();
+      }
+    }
+    for (const p of recortes) {
+      if (dentro(p[0]) || dentro(p[p.length - 1])) {
+        soltas.push({ inicio: p[0].map((v) => +v.toFixed(1)), fim: p[p.length - 1].map((v) => +v.toFixed(1)), comprimento: +comprimento(p).toFixed(1) });
+        continue;
+      }
+      pedacos.push(p);
+    }
+  }
+  // Paridade: quantas bordas o segmento PONTO_RIO → p cruza.
+  const todas = [...pedacos, ...aneisDentro];
+  const rio = projetarManaus(PONTO_RIO.lat, PONTO_RIO.lng);
+  const ehAgua = (p) => {
+    let n = 0;
+    for (const t of todas) for (let i = 1; i < t.length; i++) if (cruzam(rio, p, t[i - 1], t[i])) n++;
+    return n % 2 === 0;
+  };
+  const poligonos = [];
+  for (const f of faces(pedacos)) {
+    const p = pontoInterno(f);
+    if (p && ehAgua(p)) poligonos.push({ anel: f, agua: true });
+  }
+  // Anéis inteiros dentro da caixa: lago (água) ou ilha (terra por cima).
+  aneisDentro.sort((a, b) => area(b) - area(a));
+  for (const a of aneisDentro) {
+    const p = pontoInterno(a);
+    if (p) poligonos.push({ anel: a, agua: ehAgua(p) });
+  }
+  const igarapes = linhas.flatMap(({ pts, minimo }) => recortarLinha(pts).filter((l) => comprimento(l) >= minimo));
+  return { poligonos, igarapes, pontasSoltas: soltas.length, soltas, rio };
+}
+
+function area(anel) {
+  let s = 0;
+  for (let i = 1; i < anel.length; i++) s += anel[i - 1][0] * anel[i][1] - anel[i][0] * anel[i - 1][1];
+  return Math.abs(s / 2);
+}
+function comprimento(l) {
+  let s = 0;
+  for (let i = 1; i < l.length; i++) s += Math.hypot(l[i][0] - l[i - 1][0], l[i][1] - l[i - 1][1]);
+  return s;
+}
+
+// ── Simplificação e path ─────────────────────────────────────────────────
+function douglasPeucker(pts, tol) {
+  if (pts.length < 3) return pts;
+  const [a, b] = [pts[0], pts[pts.length - 1]];
+  if (Math.hypot(b[0] - a[0], b[1] - a[1]) < 1e-9) {
+    // Anel fechado: parte no vértice mais longe do primeiro e simplifica as duas metades.
+    let k = 1;
+    for (let i = 1; i < pts.length - 1; i++) if (Math.hypot(pts[i][0] - a[0], pts[i][1] - a[1]) > Math.hypot(pts[k][0] - a[0], pts[k][1] - a[1])) k = i;
+    return [...douglasPeucker(pts.slice(0, k + 1), tol).slice(0, -1), ...douglasPeucker(pts.slice(k), tol)];
+  }
+  const dx = b[0] - a[0];
+  const dy = b[1] - a[1];
+  const l = Math.hypot(dx, dy) || 1e-9;
+  let maior = -1;
+  let idx = 0;
+  for (let i = 1; i < pts.length - 1; i++) {
+    const d = Math.abs(dy * pts[i][0] - dx * pts[i][1] + b[0] * a[1] - b[1] * a[0]) / l;
+    if (d > maior) {
+      maior = d;
+      idx = i;
+    }
+  }
+  if (maior <= tol) return [a, b];
+  return [...douglasPeucker(pts.slice(0, idx + 1), tol).slice(0, -1), ...douglasPeucker(pts.slice(idx), tol)];
+}
+
+const r1 = (n) => {
+  const v = Math.round(n * 10) / 10;
+  return Object.is(v, -0) || v === 0 ? "0" : String(v);
+};
+
+/** Linhas (ou anéis, com fecha=true) → path relativo a 0,1 unidade. */
+function paraPath(linhas, tol, fecha = false) {
+  let d = "";
+  for (const linha of linhas) {
+    const pts = douglasPeucker(linha, tol).map(([x, y]) => [Math.round(x * 10), Math.round(y * 10)]);
+    const limpos = pts.filter((p, i) => i === 0 || p[0] !== pts[i - 1][0] || p[1] !== pts[i - 1][1]);
+    if (limpos.length < 2) continue;
+    d += `M${r1(limpos[0][0] / 10)} ${r1(limpos[0][1] / 10)}`;
+    let ultimo = "";
+    for (let i = 1; i < limpos.length; i++) {
+      const par = `${r1((limpos[i][0] - limpos[i - 1][0]) / 10)} ${r1((limpos[i][1] - limpos[i - 1][1]) / 10)}`;
+      d += i === 1 ? `l${par}` : par.startsWith("-") ? par : ` ${par}`;
+      ultimo = par;
+    }
+    if (fecha && ultimo) d += "z";
+  }
+  return d;
+}
+
+// ── Vias e parques ───────────────────────────────────────────────────────
+function vias(elementos) {
+  const porClasse = { principal: [], secundaria: [], terciaria: [], residencial: [] };
+  const nomes = new Map();
+  for (const el of elementos) {
+    if (el.type !== "way" || !el.tags?.highway) continue;
+    const classe = Object.keys(CLASSES).find((c) => CLASSES[c].includes(el.tags.highway));
+    if (!classe || (classe === "residencial" && !RESIDENCIAIS)) continue;
+    for (const t of trechosDe(el.geometry))
+      for (const p of recortarLinha(t)) {
+        if (comprimento(p) < MINIMO_TRECHO) continue;
+        porClasse[classe].push(p);
+        if (el.tags.name && classe === "principal") {
+          const n = nomes.get(el.tags.name) ?? { total: 0, maior: null };
+          n.total += comprimento(p);
+          if (!n.maior || comprimento(p) > comprimento(n.maior)) n.maior = p;
+          nomes.set(el.tags.name, n);
+        }
+      }
+  }
+  return { porClasse, nomes };
+}
+
+function parques(elementos) {
+  const aneis = [];
+  for (const el of elementos) {
+    if (el.type !== "way" || el.tags?.leisure !== "park") continue;
+    for (const t of trechosDe(el.geometry)) {
+      if (!fechado(t)) continue;
+      const r = recortarAnel(t);
+      if (r && area(r) > 40) aneis.push(r);
+    }
+  }
+  return aneis;
 }
 
 function lerPontos(arquivo) {
@@ -259,78 +546,100 @@ function lerPontos(arquivo) {
   return (doc.lojas ?? []).filter((l) => Number.isFinite(l.lat) && Number.isFinite(l.lng));
 }
 
-/** Rótulo do bairro: na média das lojas daquele bairro, abaixo do ponto mais baixo. */
-function rotulosDeBairro(pontos) {
-  const grupos = new Map();
-  for (const p of pontos) {
-    const [x, y] = projetarManaus(p.lng, p.lat);
-    const g = grupos.get(p.bairro) ?? [];
-    g.push([x, y]);
-    grupos.set(p.bairro, g);
-  }
-  return [...grupos].map(([bairro, xy]) => ({
-    bairro,
-    x: xy.reduce((s, [x]) => s + x, 0) / xy.length,
-    y: Math.max(...xy.map(([, y]) => y)) + 22,
-  }));
-}
-
-function main() {
+async function main() {
   const args = lerArgs(process.argv.slice(2));
   if (!args.saida) {
-    console.error("Uso: node scripts/gerar-mapa-manaus.mjs --saida <pasta> [--pontos coordenadas.json] [--geojson arq] [--cache pasta]");
+    console.error("Uso: node scripts/gerar-mapa-manaus.mjs --saida <pasta> [--pontos coordenadas.json] [--osm arq.json] [--cache pasta]");
     process.exit(1);
   }
-  const geo = JSON.parse(obterGeojson(args));
-  const negro = linhasDo(geo, "Negro");
-  const { amazonas, solimoes, encontro } = separarNoEncontro(linhasDo(geo, "Amazonas"), negro);
-  colarNoEncontro(negro, encontro);
+  const osm = await obterOsm(args);
+  const els = osm.elements ?? [];
 
-  const rios = {
-    negro: paraPath(recortarLinhas(negro)),
-    solimoes: paraPath(recortarLinhas(solimoes)),
-    amazonas: paraPath(recortarLinhas(amazonas)),
-    lingua: linguaDoNegro(amazonas[0], encontro),
+  const a = agua(els);
+  const v = vias(els);
+  const pq = parques(els);
+
+  const camadas = {
+    parques: paraPath(pq, TOLERANCIA.parque, true),
+    agua: paraPath(
+      a.poligonos.filter((p) => p.agua).map((p) => p.anel),
+      TOLERANCIA.agua,
+      true,
+    ),
+    ilhas: paraPath(
+      a.poligonos.filter((p) => !p.agua).map((p) => p.anel),
+      TOLERANCIA.agua,
+      true,
+    ),
+    igarapes: paraPath(a.igarapes, TOLERANCIA.agua),
+    residencial: paraPath(v.porClasse.residencial, TOLERANCIA.via),
+    terciaria: paraPath(v.porClasse.terciaria, TOLERANCIA.via),
+    secundaria: paraPath(v.porClasse.secundaria, TOLERANCIA.via),
+    principal: paraPath(v.porClasse.principal, TOLERANCIA.via),
   };
-  const [ex, ey] = projetarManaus(encontro[0], encontro[1]);
 
-  const pontos = lerPontos(args.pontos);
-  const marcas = pontos
-    .map((p) => {
-      const [x, y] = projetarManaus(p.lng, p.lat);
-      return `  <circle cx="${r1(x)}" cy="${r1(y)}" r="5" fill="#36A35C" stroke="#fff" stroke-width="2"><title>${p.nome}</title></circle>`;
+  const pontos = lerPontos(args.pontos).map((p) => {
+    const [x, y] = projetarManaus(p.lat, p.lng);
+    return { slug: p.slug, nome: p.nome, bairro: p.bairro, x: +x.toFixed(1), y: +y.toFixed(1) };
+  });
+  const lugares = els
+    .filter((e) => e.type === "node" && e.tags?.name)
+    .map((e) => {
+      const [x, y] = projetarManaus(e.lat, e.lon);
+      return { nome: e.tags.name, tipo: e.tags.place, x: +x.toFixed(1), y: +y.toFixed(1) };
     })
-    .join("\n");
-  const rotulos = rotulosDeBairro(pontos)
-    .map(
-      (r) =>
-        `  <text x="${r1(r.x)}" y="${r1(r.y)}" text-anchor="middle" font-family="Inter, system-ui, sans-serif" font-size="13" fill="${COR.texto}">${r.bairro}</text>`,
-    )
-    .join("\n");
+    .filter((l) => dentro([l.x, l.y]));
+  // Avenidas principais mais longas, com o meio e o ângulo do maior trecho (âncora de rótulo).
+  const avenidas = [...v.nomes]
+    .sort((x, y) => y[1].total - x[1].total)
+    .slice(0, 6)
+    .map(([nome, n]) => {
+      const p = n.maior;
+      const meio = p[Math.floor(p.length / 2)];
+      const [a, b] = [p[0], p[p.length - 1]];
+      return { nome, comprimento: Math.round(n.total), x: +meio[0].toFixed(1), y: +meio[1].toFixed(1), angulo: Math.round((Math.atan2(b[1] - a[1], b[0] - a[0]) * 180) / Math.PI) };
+    });
 
-  const svg = `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 ${LADO} ${LADO}" width="${LADO}" height="${LADO}">
-  <!-- GERADO por scripts/gerar-mapa-manaus.mjs (protótipo da Fase 0). Fonte: Natural Earth 1:10m
-       rivers_lake_centerlines (domínio público), via ${URL_FONTE}.
-       Caixa lat ${LAT_MIN}..${LAT_MAX}, lng ${LNG_MIN}..${LNG_MAX}; encontro das águas em ${r1(ex)}, ${r1(ey)}. -->
-  <rect width="${LADO}" height="${LADO}" fill="${COR.fundo}"/>
+  const tudo = Object.values(camadas).join("");
+  const bytes = Buffer.byteLength(tudo);
+  const gzip = zlib.gzipSync(tudo, { level: 9 }).length;
+  const porCamada = Object.fromEntries(Object.entries(camadas).map(([k, d]) => [k, Buffer.byteLength(d)]));
+
+  const svg = `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 ${LADO} ${ALTURA}" width="${LADO}" height="${ALTURA}">
+  <!-- GERADO por scripts/gerar-mapa-manaus.mjs (protótipo da Fase 0). Dados © colaboradores do OpenStreetMap (ODbL).
+       Caixa lat ${CAIXA.latMin}..${CAIXA.latMax}, lng ${CAIXA.lngMin}..${CAIXA.lngMax}. -->
+  <rect width="${LADO}" height="${ALTURA}" fill="${COR.terra}"/>
+  <path d="${camadas.parques}" fill="${COR.parque}"/>
+  <path d="${camadas.agua}" fill="${COR.agua}"/>
+  <path d="${camadas.ilhas}" fill="${COR.terra}"/>
   <g fill="none" stroke-linecap="round" stroke-linejoin="round">
-    <path d="${rios.negro}" stroke="${COR.negro}" stroke-width="${LARGURA.negro}"/>
-    <path d="${rios.solimoes}" stroke="${COR.barro}" stroke-width="${LARGURA.solimoes}"/>
-    <path d="${rios.amazonas}" stroke="${COR.barro}" stroke-width="${LARGURA.amazonas}"/>
-    <path d="${rios.lingua}" stroke="${COR.negro}" stroke-width="${LARGURA.lingua}"/>
+    <path d="${camadas.igarapes}" stroke="${COR.agua}" stroke-width="${LARGURA_VIA.igarape}"/>
+    <path d="${camadas.residencial}" stroke="${COR.residencial}" stroke-width="${LARGURA_VIA.residencial}"/>
+    <path d="${camadas.terciaria}" stroke="${COR.terciaria}" stroke-width="${LARGURA_VIA.terciaria}"/>
+    <path d="${camadas.principal}" stroke="${COR.principalBorda}" stroke-width="${LARGURA_VIA.principalBorda}"/>
+    <path d="${camadas.secundaria}" stroke="${COR.principalBorda}" stroke-width="${LARGURA_VIA.secundaria + 1.2}"/>
+    <path d="${camadas.secundaria}" stroke="${COR.secundaria}" stroke-width="${LARGURA_VIA.secundaria}"/>
+    <path d="${camadas.principal}" stroke="${COR.principal}" stroke-width="${LARGURA_VIA.principal}"/>
   </g>
-${marcas}
-${rotulos}
+${pontos.map((p) => `  <circle cx="${p.x}" cy="${p.y}" r="4" fill="#0B1F45"><title>${p.nome}</title></circle>`).join("\n")}
 </svg>
 `;
   fs.mkdirSync(args.saida, { recursive: true });
-  const destino = path.join(args.saida, "mapa-manaus.svg");
-  fs.writeFileSync(destino, svg);
-  const bytes = Object.values(rios).reduce((s, d) => s + Buffer.byteLength(d), 0);
-  console.log(
-    `rios: negro ${rios.negro.length} c, solimões ${rios.solimoes.length} c, amazonas ${rios.amazonas.length} c (${bytes} bytes de path); ` +
-      `encontro em ${r1(ex)}, ${r1(ey)}; ${pontos.length} pontos → ${destino}`,
+  fs.writeFileSync(path.join(args.saida, "mapa-manaus.svg"), svg);
+  fs.writeFileSync(
+    path.join(args.saida, "mapa-manaus.json"),
+    JSON.stringify({ caixa: CAIXA, largura: LADO, altura: ALTURA, cores: COR, larguras: LARGURA_VIA, camadas, pontos, lugares, avenidas, bytes, gzip, porCamada }, null, 1),
   );
+  console.log(
+    `caixa ${ALTURA === 0 ? "?" : `${LADO}×${ALTURA}`}; água ${a.poligonos.length} polígonos (pontas soltas descartadas: ${a.pontasSoltas}), ` +
+      `igarapés ${a.igarapes.length}, parques ${pq.length}; paths ${(bytes / 1024).toFixed(1)} kB, gzip ${(gzip / 1024).toFixed(1)} kB`,
+  );
+  if (a.soltas.length) console.log("bordas de água com ponta solta dentro da caixa (descartadas):", JSON.stringify(a.soltas));
+  console.log("por camada (bytes):", porCamada);
+  console.log("avenidas principais:", avenidas.map((x) => `${x.nome} (${x.comprimento} u; meio ${x.x},${x.y}; ${x.angulo}°)`).join("; "));
 }
 
-main();
+main().catch((e) => {
+  console.error(e);
+  process.exit(1);
+});
