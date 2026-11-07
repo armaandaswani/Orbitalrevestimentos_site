@@ -47,3 +47,12 @@ export function lerSinais(): SinaisDispositivo {
     nucleos: nav.hardwareConcurrency,
   };
 }
+
+/**
+ * `decidirNivel` em JavaScript puro, para um <script> embutido no <head> que
+ * grava `data-mv-nivel` no <html> antes da primeira pintura (sem esperar a
+ * hidratação). Não mexe em nível já marcado. Se mudar `decidirNivel`, mude
+ * esta string; o teste confere.
+ */
+export const SCRIPT_NIVEL =
+  "(function(){try{var h=document.documentElement;if(h.dataset.mvNivel)return;var n=navigator,m=n.deviceMemory,c=n.hardwareConcurrency,pd=window.matchMedia('(prefers-reduced-data: reduce)').matches,ed=!!(n.connection&&n.connection.saveData===true),v='completo';if(pd||ed)v='leve';else if(m!==undefined){if(m<=4)v='leve';else if(c!==undefined&&c<=4)v='leve';}h.dataset.mvNivel=v;}catch(e){}})();";
