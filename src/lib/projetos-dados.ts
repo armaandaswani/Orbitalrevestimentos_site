@@ -1,7 +1,7 @@
 import { supabaseAdmin } from "@/lib/supabase";
 import { isMissingColumn, isMissingTable } from "@/lib/db-compat";
 import {
-  juntarRenders,
+  REVENDA_RESERVA, juntarRenders,
   type CategoriaProjeto, type Projeto, type Render, type Showroom,
 } from "@/lib/projetos-tipos";
 
@@ -141,6 +141,26 @@ export async function carregarProjetos(): Promise<DadosProjetos> {
   } catch (e) {
     console.error("[projetos]", e instanceof Error ? e.message : e);
     return { projetos: [], categorias: [], lugares: [], renders: juntarRenders([]) };
+  }
+}
+
+/**
+ * Os lugares da seção 6 do PFB: showrooms primeiro, depois os pontos de revenda
+ * (ou a reserva do código, sem nenhum no banco). Mesma regra da home. Falha de
+ * banco devolve só a reserva, nunca erro.
+ */
+export async function carregarLugares(): Promise<Showroom[]> {
+  try {
+    const db = supabaseAdmin();
+    const [r, projetos] = await Promise.all([lerLinhasShowrooms(db), lerProjetos(db)]);
+    if (r.erro) console.error("[lugares]", r.erro);
+    const lugares = montarShowrooms(r.linhas, projetos);
+    const showrooms = lugares.filter((l) => l.kind === "showroom");
+    const revendas = lugares.filter((l) => l.kind === "revenda");
+    return [...showrooms, ...(revendas.length > 0 ? revendas : REVENDA_RESERVA)];
+  } catch (e) {
+    console.error("[lugares]", e instanceof Error ? e.message : e);
+    return [...REVENDA_RESERVA];
   }
 }
 
