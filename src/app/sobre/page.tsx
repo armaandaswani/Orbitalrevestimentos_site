@@ -345,7 +345,7 @@ export default function SobrePage() {
           </div>
           <div className="flex flex-col sm:flex-row gap-3 flex-shrink-0">
             <ContatoCta className="bg-white text-[#0B1F45] text-xs tracking-[0.12em] uppercase font-bold px-10 py-4 hover:bg-[#f3f3f3] transition-colors text-center">Falar com um consultor</ContatoCta>
-            <Link href="/produtos/pfb" className="border border-white/50 text-white text-xs tracking-[0.12em] uppercase font-bold px-10 py-4 hover:bg-white/10 transition-colors text-center">Ver acabamentos</Link>
+            <Link href="/produtos/pfb/catalogo" className="border border-white/50 text-white text-xs tracking-[0.12em] uppercase font-bold px-10 py-4 hover:bg-white/10 transition-colors text-center">Ver acabamentos</Link>
           </div>
         </div>
       </section>

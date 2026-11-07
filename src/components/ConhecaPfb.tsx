@@ -61,7 +61,7 @@ export default function ConhecaPfb({ linkTecnologia = true, numero = "01" }: { l
           <Revelar className="flex flex-col" ordem={1}>
             {/* Fanned swatch stack — real finishes, no numbers. Leva ao
                 catálogo, onde o cliente escolhe o acabamento. */}
-            <Link href="/produtos/pfb" aria-label="Ver todos os modelos do Painel Flexível em Fibra de Bambu" className="group relative flex flex-col items-center justify-center h-[320px] sm:h-[360px] lg:h-auto">
+            <Link href="/produtos/pfb/catalogo" aria-label="Ver todos os modelos do Painel Flexível em Fibra de Bambu" className="group relative flex flex-col items-center justify-center h-[320px] sm:h-[360px] lg:h-auto">
               {/* Leque + selo formam um bloco só, centralizado na coluna —
                   assim o leque fica na altura do meio da grade ao lado. */}
               <div className="relative w-full h-[220px] sm:h-[260px] lg:h-[270px] flex items-center justify-center overflow-x-clip">
@@ -100,7 +100,7 @@ export default function ConhecaPfb({ linkTecnologia = true, numero = "01" }: { l
           </p>
           <div className="flex flex-wrap items-center justify-center gap-x-6 gap-y-3 mt-6">
             <Link
-              href="/produtos/pfb"
+              href="/produtos/pfb/catalogo"
               className="ds-botao ds-botao-cheio min-h-12"
             >
               Ver os modelos

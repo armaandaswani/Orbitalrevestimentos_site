@@ -30,7 +30,7 @@ export default function ChamadaProjeto() {
             <ContatoCta className="ds-botao ds-botao-cheio w-full sm:w-auto min-h-12">
               Falar com um consultor
             </ContatoCta>
-            <Link href="/produtos/pfb" className="ds-botao ds-botao-vazado w-full sm:w-auto min-h-12">
+            <Link href="/produtos/pfb/catalogo" className="ds-botao ds-botao-vazado w-full sm:w-auto min-h-12">
               Ver o catálogo
               <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" aria-hidden className="mv-seta"><path d="M5 12h14M12 5l7 7-7 7" /></svg>
             </Link>

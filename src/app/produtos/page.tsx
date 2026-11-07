@@ -24,7 +24,7 @@ const breadcrumbSchema = {
 
 /**
  * Vitrine das linhas. A Orbital deixou de ser um material só: cada linha tem
- * a própria página (o catálogo do PFB foi para /produtos/pfb). Links antigos
+ * a própria página (o catálogo do PFB foi para /produtos/pfb/catalogo). Links antigos
  * com ?modelo= são redirecionados no next.config.
  *
  * Uma linha por vez num seletor (abas + painel que arrasta de lado): no

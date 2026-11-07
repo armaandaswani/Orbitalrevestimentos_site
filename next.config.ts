@@ -72,10 +72,14 @@ const nextConfig: NextConfig = {
     return [
       { source: "/guias/mdf-manaus", destination: "/tecnologia", permanent: true },
       { source: "/guias/:slug*", destination: "/produtos", permanent: true },
-      // O catálogo do PFB saiu de /produtos (agora a vitrine das linhas) para
-      // /produtos/pfb. QR Codes já impressos e links compartilhados apontam
-      // para /produtos?modelo=orb-003: a query segue junto e abre o modelo.
-      { source: "/produtos", has: [{ type: "query", key: "modelo" }], destination: "/produtos/pfb", permanent: false },
+      // O catálogo do PFB mora em /produtos/pfb/catalogo. QR Codes já
+      // impressos e links compartilhados apontam para /produtos?modelo=orb-003
+      // e /produtos/pfb?modelo=orb-003: os dois vão para /produtos/pfb/catalogo
+      // guardando a query, e o modelo abre.
+      { source: "/produtos", has: [{ type: "query", key: "modelo" }], destination: "/produtos/pfb/catalogo", permanent: false },
+      { source: "/produtos/pfb", has: [{ type: "query", key: "modelo" }], destination: "/produtos/pfb/catalogo", permanent: false },
+      // Provisório: sai quando a página do produto entrar em /produtos/pfb.
+      { source: "/produtos/pfb", missing: [{ type: "query", key: "modelo" }], destination: "/produtos/pfb/catalogo", permanent: false },
     ];
   },
   experimental: {
