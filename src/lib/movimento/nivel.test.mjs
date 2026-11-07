@@ -33,7 +33,7 @@ test("economia de dados vale mesmo com núcleos sem deviceMemory", () => {
   assert.equal(decidirNivel({ nucleos: 8, economiaDados: true }), "leve");
 });
 
-// O script embutido no <head> (antes da pintura) repete decidirNivel em
+// O script embutido no começo do <main> da página do PFB (antes da pintura) repete decidirNivel em
 // JavaScript puro. Este teste roda a string em node:vm com todos os sinais e
 // confere que o resultado é o de decidirNivel.
 function rodarScript(sinais, dataset = {}) {

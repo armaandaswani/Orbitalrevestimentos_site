@@ -29,8 +29,9 @@ export async function lerModelosPorLinha(porLinha = 2): Promise<Record<"Classic"
     }
     const modelos = ((data ?? []) as Array<Record<string, unknown>>)
       .filter(visivelNoCatalogo)
-      // Testa o valor cru: String(null) daria "null" e viraria uma imagem quebrada.
-      .filter((p) => p.image_path != null && p.image_path !== "")
+      // Testa o valor cru: String(null) daria "null" e viraria uma imagem quebrada;
+      // texto vazio ou só com espaços também sai.
+      .filter((p) => p.image_path != null && !(typeof p.image_path === "string" && p.image_path.trim() === ""))
       .map((p) => ({ code: String(p.code), name: String(p.name), linha: String(p.linha), image_path: String(p.image_path) }));
     return agruparPorLinha(modelos, porLinha);
   } catch (e) {

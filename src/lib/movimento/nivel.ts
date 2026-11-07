@@ -49,9 +49,9 @@ export function lerSinais(): SinaisDispositivo {
 }
 
 /**
- * `decidirNivel` em JavaScript puro, para um <script> embutido no <head> que
- * grava `data-mv-nivel` no <html> antes da primeira pintura (sem esperar a
- * hidratação). Não mexe em nível já marcado. Se mudar `decidirNivel`, mude
+ * `decidirNivel` em JavaScript puro, para um <script> embutido no começo do
+ * <main> da página (src/app/produtos/pfb/page.tsx) que grava `data-mv-nivel`
+ * no <html> antes da primeira pintura (sem esperar a hidratação). Não mexe em nível já marcado. Se mudar `decidirNivel`, mude
  * esta string; o teste confere.
  */
 export const SCRIPT_NIVEL =
