@@ -81,8 +81,8 @@ const PROIBIDOS = ["15 acabamentos", "20 anos", "sem o custo", "impermeáv", "ma
  * entrada daqui). `ld`: os scripts JSON-LD lidos; `minLd`: quantos têm de existir;
  * `palavras`: termos que só contam como palavra inteira ("UV" e "MDF", para não
  * acusar "chuva" ou "luva"). Na 2, sem "2 a 3 horas" (a Seção 5 o tem por decisão
- * do dono, E-5). O catálogo visitado com --etapa 2 usa a 2 com minLd 4 (os 3 do
- * layout raiz e o ld-catalogo).
+ * do dono, E-5). O catálogo visitado com --etapa 2 usa a 2 com a união das duas
+ * listas de proibidos e minLd 4 (os 3 do layout raiz e o ld-catalogo).
  */
 const TEXTO = {
   1: { ld: "script#ld-catalogo", nomeLd: "ld-catalogo", minLd: 1, proibidos: PROIBIDOS, palavras: [] },
@@ -541,8 +541,13 @@ function procurarProibidos(t, texto) {
 // ── Verificações da Etapa 1 no navegador ────────────────────────────────────
 
 async function etapa1Navegador(browser, produtos, etapa) {
-  // Com --etapa 2 o catálogo usa a lista de texto da 2, com os 4 JSON-LD do catálogo.
-  const texto = etapa === 2 ? { ...TEXTO[2], minLd: 4 } : TEXTO[1];
+  // Com --etapa 2 o catálogo usa a união das listas da 1 e da 2 (o que a E1 limpou continua
+  // conferido), as palavras inteiras da 2 e os 4 JSON-LD do catálogo (decisão do controlador,
+  // rodada 1 da Tarefa 7). A página /produtos/pfb usa só TEXTO[2].
+  const texto =
+    etapa === 2
+      ? { ...TEXTO[2], minLd: 4, proibidos: [...new Set([...TEXTO[1].proibidos, ...TEXTO[2].proibidos])] }
+      : TEXTO[1];
   const primeiro = produtos[0];
   const primeiroDe = (linha) => produtos.find((p) => p.linha === linha);
   const classic = primeiroDe("Classic");
