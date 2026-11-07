@@ -58,10 +58,12 @@ test("inicioDoPasso e elevacao", () => {
 
 test("tempos: PASSO_INICIO e PASSO batem com o bloco do CSS", () => {
   assert.ok(inicio !== -1, "bloco \"PFB: a placa por dentro\" ausente do globals.css");
-  assert.ok(bloco.includes(`var(--a) + ${C.PASSO}`), `CSS sem "var(--a) + ${C.PASSO}"`);
+  // Cada número vem seguido do que o CSS escreve depois dele (" -", ")", ","): um
+  // decimal que ganhe dígitos numa ponta só (0.15, 0.35) não passa como substring.
+  assert.ok(bloco.includes(`var(--a) + ${C.PASSO} -`), `CSS sem "var(--a) + ${C.PASSO} -"`);
   assert.ok(bloco.includes("- 0.85)"), "CSS sem o fechamento em 0.85");
   perto(C.PASSO_INICIO + 5 * C.PASSO, 0.85, "o passo da última camada termina onde o fechamento começa");
-  assert.ok(bloco.includes("- 0.05) / 0.3"), "CSS sem a abertura de 0.05 a 0.35");
+  assert.ok(bloco.includes("- 0.05) / 0.3,"), "CSS sem a abertura de 0.05 a 0.35");
   perto(C.PASSO_INICIO, 0.05 + 0.3, "PASSO_INICIO é o fim da abertura");
 });
 
