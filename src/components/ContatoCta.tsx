@@ -1,5 +1,6 @@
 "use client";
 
+import { trackFunnel } from "@/lib/funnel";
 import { abrirContato, type ProdutoContato } from "@/lib/contato";
 
 /**
@@ -8,18 +9,23 @@ import { abrirContato, type ProdutoContato } from "@/lib/contato";
  * visual de cada página (a classe vem de quem usa).
  */
 export default function ContatoCta({
-  produtos, className, children, onClick,
+  produtos, className, children, onClick, origem,
 }: {
   produtos?: ProdutoContato[];
   className?: string;
   children: React.ReactNode;
   onClick?: () => void;
+  origem?: string;
 }) {
   return (
     <button
       type="button"
       className={className}
-      onClick={() => { onClick?.(); abrirContato(produtos ?? []); }}
+      onClick={() => {
+        trackFunnel("consultor_clicado", { origem: origem ?? null, pagina: window.location.pathname });
+        onClick?.();
+        abrirContato(produtos ?? []);
+      }}
     >
       {children}
     </button>

@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect, useState } from "react";
+import { trackFunnel } from "@/lib/funnel";
 
 /**
  * Manual Técnico de Instalação — sem download direto (decisão do dono, out/2026).
@@ -111,7 +112,11 @@ export default function SolicitarManual({ variant = "card" }: { variant?: "card"
               target="_blank"
               rel="noopener noreferrer"
               aria-disabled={!pronto}
-              onClick={(e) => { if (!pronto) e.preventDefault(); else setAberto(false); }}
+              onClick={(e) => {
+                if (!pronto) { e.preventDefault(); return; }
+                trackFunnel("manual_solicitado", { pagina: window.location.pathname, perfil: perfil ?? "" });
+                setAberto(false);
+              }}
               className={`mt-5 w-full inline-flex items-center justify-center gap-2 text-xs tracking-[0.12em] uppercase font-bold px-6 py-4 transition-colors ${
                 pronto ? "bg-[#36A35C] text-[#0B1F45] hover:bg-[#4BB571]" : "bg-[#e2e2e2] text-[#74777f] cursor-not-allowed"
               }`}
