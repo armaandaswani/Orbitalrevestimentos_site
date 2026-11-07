@@ -112,7 +112,7 @@ const secoes: SecaoLegal[] = [
       <>
         <p>
           A Orbital disponibiliza o Manual Técnico de Instalação, com o passo a passo detalhado, solicitado pela
-          página <Link href="/tecnologia">Tecnologia</Link> e enviado pelo WhatsApp. Cabe ao cliente e ao
+          página do <Link href="/produtos/pfb">Painel Flexível em Fibra de Bambu (PFB)</Link> e enviado pelo WhatsApp. Cabe ao cliente e ao
           profissional por ele contratado consultar e seguir o Manual.
         </p>
         <p>
