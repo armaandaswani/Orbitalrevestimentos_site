@@ -37,10 +37,10 @@ interface Product {
 }
 
 const linhas: { key: Linha; label: string; desc: string }[] = [
-  { key: "todos", label: "Todos", desc: "15 acabamentos" },
-  { key: "Classic", label: "Classic", desc: "Mármore Fosco" },
-  { key: "Brilliance", label: "Brilliance", desc: "Mármore Polido" },
-  { key: "Elegance", label: "Elegance", desc: "Madeira Texturizada" },
+  { key: "todos", label: "Todos", desc: "Todas as linhas" },
+  { key: "Classic", label: "Classic", desc: "Mármore fosco" },
+  { key: "Brilliance", label: "Brilliance", desc: "Mármore polido" },
+  { key: "Elegance", label: "Elegance", desc: "Madeira texturizada" },
 ];
 
 const COR_LINHA: Record<"Classic" | "Brilliance" | "Elegance", string> = {
@@ -261,7 +261,7 @@ export default function ProdutosPage() {
   }, [hasSelection]);
 
   return (
-    <div className="pt-20">
+    <main className="pt-20">
 
       {/* ── Foto ampliada (tela cheia) ── */}
       {selected && zoom && (() => {
@@ -273,7 +273,8 @@ export default function ProdutosPage() {
             className="fixed inset-0 z-[120] bg-black flex items-center justify-center select-none"
             role="dialog"
             aria-modal="true"
-            aria-label={`Foto ${imgIdx + 1} de ${n} — ${selected.name}`}
+            aria-label={`Foto ${imgIdx + 1} de ${n}: ${selected.name}`}
+            data-texto-banco
             onClick={() => setZoom(false)}
             onTouchStart={(e) => { zoomTouch.current = { x: e.touches[0].clientX, y: e.touches[0].clientY }; }}
             onTouchEnd={(e) => {
@@ -292,6 +293,7 @@ export default function ProdutosPage() {
                 key={"zoom-" + images[imgIdx]}
                 src={images[imgIdx] ?? selected.image_path}
                 alt={selected.name}
+                data-texto-banco
                 fill
                 sizes="100vw"
                 quality={90}
@@ -371,6 +373,10 @@ export default function ProdutosPage() {
                 conteúdo rolando por dentro.
                 overscroll-contain impede que o gesto "vaze" para o catálogo. */}
             <div
+              role="dialog"
+              aria-modal="true"
+              aria-labelledby="modal-modelo-titulo"
+              data-teste="modal-modelo"
               className="relative w-full h-[100dvh] overflow-y-auto overscroll-contain lg:h-auto lg:m-auto lg:max-w-5xl lg:max-h-[96dvh] lg:overflow-hidden flex flex-col lg:flex-row shadow-2xl"
               onClick={(e) => e.stopPropagation()}
             >
@@ -432,6 +438,7 @@ export default function ProdutosPage() {
                         key={images[imgIdx]}
                         src={images[imgIdx] ?? selected.image_path}
                         alt={selected.name}
+                        data-texto-banco
                         fill
                         sizes="(max-width: 1024px) 100vw, 55vw"
                         priority
@@ -490,7 +497,7 @@ export default function ProdutosPage() {
 
                 {/* Thumbnails */}
                 {images.length > 1 && (
-                  <div className="flex gap-1.5 px-2 py-1.5 bg-black/80 overflow-x-auto flex-shrink-0 scrollbar-none">
+                  <div data-teste="miniaturas-modal" className="flex flex-wrap gap-1.5 px-2 py-1.5 bg-black/80 flex-shrink-0">
                     {images.map((url, i) => (
                       <button
                         key={url + i}
@@ -527,14 +534,14 @@ export default function ProdutosPage() {
                       Linha {selected.linha}
                     </span>
                     <span className="text-[#b0b0b0] text-[10px]">/</span>
-                    <span className="text-[#74777f] text-[10px] tracking-[0.12em] uppercase font-semibold">
+                    <span data-texto-banco className="text-[#74777f] text-[10px] tracking-[0.12em] uppercase font-semibold">
                       {selected.code}
                     </span>
                   </div>
 
                   {/* Name */}
                   <div>
-                    <h2 className="font-serif text-[#0B1F45] text-2xl lg:text-3xl font-normal leading-tight mb-1">
+                    <h2 id="modal-modelo-titulo" data-texto-banco className="font-serif text-[#0B1F45] text-2xl lg:text-3xl font-normal leading-tight mb-1">
                       {selected.name}
                     </h2>
                     <p className="text-[#74777f] text-xs">{info.material}</p>
@@ -545,24 +552,25 @@ export default function ProdutosPage() {
                       site público (decisão do dono, out/2026 — a concorrência
                       consultava os valores): o cliente fala com o consultor
                       pelo WhatsApp já dizendo qual revestimento quer. */}
-                  <div className="flex items-center justify-between gap-3 border-y border-[#e8e8e8] py-3">
+                  <div data-teste="linha-consultor" className="flex flex-col items-stretch gap-3 sm:flex-row sm:items-center sm:justify-between border-y border-[#e8e8e8] py-3">
                     <p className="min-w-0 text-[#43474e] text-xs lg:text-sm leading-snug">
                       Valores e condições com o nosso consultor.
                     </p>
                     <ContatoCta
+                      origem="catalogo-modelo"
                       produtos={[{ code: selected.code, name: selected.name, linha: selected.linha, image: selected.image_path }]}
-                      className="flex-shrink-0 inline-flex items-center justify-center gap-2 bg-[#0B1F45] text-white text-[11px] tracking-[0.1em] uppercase font-bold px-4 lg:px-5 py-3 hover:bg-[#003070] transition-colors whitespace-nowrap"
+                      className="flex-shrink-0 inline-flex items-center justify-center gap-2 bg-[#0B1F45] text-white text-[11px] tracking-[0.1em] uppercase font-bold px-4 lg:px-5 py-3 hover:bg-[#003070] transition-colors w-full sm:w-auto sm:whitespace-nowrap"
                     >
                       <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2" aria-hidden>
                         <path d="M21 11.5a8.38 8.38 0 01-.9 3.8 8.5 8.5 0 01-7.6 4.7 8.38 8.38 0 01-3.8-.9L3 21l1.9-5.7a8.38 8.38 0 01-.9-3.8 8.5 8.5 0 014.7-7.6 8.38 8.38 0 013.8-.9h.5a8.48 8.48 0 018 8v.5z"/>
                       </svg>
-                      Falar com consultor
+                      Falar com um consultor
                     </ContatoCta>
                   </div>
 
                   {/* Description */}
                   {selected.description && (
-                    <p className="text-[#43474e] text-sm leading-relaxed">
+                    <p data-texto-banco className="text-[#43474e] text-sm leading-relaxed">
                       {selected.description}
                     </p>
                   )}
@@ -571,7 +579,7 @@ export default function ProdutosPage() {
                   <div className="grid grid-cols-3 gap-0 border border-[#e8e8e8]">
                     {[
                       { label: "Espessura", value: "5 mm" },
-                      { label: "Dimensão", value: "1,2 × 2,9m" },
+                      { label: "Dimensão", value: "1,20 × 2,90 m" },
                       { label: "Área/placa", value: "3,48 m²" },
                     ].map(({ label, value }, i) => (
                       <div key={label} className={`px-3 py-2.5 text-center ${i < 2 ? "border-r border-[#e8e8e8]" : ""}`}>
@@ -588,24 +596,24 @@ export default function ProdutosPage() {
                     <div className="grid grid-cols-2 sm:grid-cols-4 gap-2">
                       {[
                         {
-                          label: "Resistente à:",
-                          desc: "Água, Umidade & Mofo",
-                          icon: <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5"><path d="M12 2.69l5.66 5.66a8 8 0 11-11.31 0z"/></svg>,
+                          label: "Resistente a",
+                          desc: "mofo e cupim",
+                          icon: <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/><path d="M9 12l2 2 4-4"/></svg>,
                         },
                         {
-                          label: "Anti-cupim &",
-                          desc: "Não propaga Chamas",
-                          icon: <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/><path d="M9 12l2 2 4-4"/></svg>,
+                          label: "Sem",
+                          desc: "formaldeído",
+                          icon: <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5"><circle cx="12" cy="12" r="10"/><line x1="4.93" y1="4.93" x2="19.07" y2="19.07"/></svg>,
+                        },
+                        {
+                          label: "Não propaga",
+                          desc: "chamas",
+                          icon: <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5"><path d="M12 2c1 3 4 5 4 9a4 4 0 0 1-8 0c0-2 1-3 2-4 0 2 1 3 2 3 0-3-1-5 0-8z"/></svg>,
                         },
                         {
                           label: "Pronta-entrega",
                           desc: "em Manaus",
                           icon: <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5"><path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0118 0z"/><circle cx="12" cy="10" r="3"/></svg>,
-                        },
-                        {
-                          label: "Instalação",
-                          desc: "Rápida & Limpa",
-                          icon: <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg>,
                         },
                       ].map(({ label, icon, desc }) => (
                         <div key={label} className="flex flex-col items-center text-center gap-1.5 p-2.5 bg-[#F6F5F2] border border-[#e2e2e2]">
@@ -687,7 +695,7 @@ export default function ProdutosPage() {
                         // No celular, o menu nativo é o caminho esperado; no
                         // desktop cai para a área de transferência.
                         if (navigator.share) {
-                          try { await navigator.share({ title: `${selected.name} — Orbital`, url: link }); return; } catch { /* cancelado */ }
+                          try { await navigator.share({ title: `${selected.name}, Orbital Revestimentos`, url: link }); return; } catch { /* cancelado */ }
                         }
                         try {
                           await navigator.clipboard.writeText(link);
@@ -710,6 +718,7 @@ export default function ProdutosPage() {
                       <img
                         src={productQrUrl(selected.code, "svg", 512)}
                         alt={`QR Code do modelo ${selected.name} (${selected.code})`}
+                        data-texto-banco
                         className="w-40 h-40 border border-[#e8e8e8]"
                       />
                       <p className="text-[#74777f] text-[10px] mt-2 text-center">
@@ -730,7 +739,7 @@ export default function ProdutosPage() {
         <div className="bg-[#fdf6e7] border-b border-[#f0e0b8]">
           <div className="max-w-[1280px] mx-auto px-4 lg:px-16 py-3 flex flex-wrap items-center justify-between gap-3">
             <p className="text-[#7a5c00] text-[13px]">
-              O modelo <strong>{missingModel}</strong> não está mais disponível no catálogo. Veja abaixo os acabamentos atuais.
+              O modelo <strong>{missingModel}</strong> não está mais disponível no catálogo. Veja abaixo os modelos atuais.
             </p>
             <button
               onClick={() => setMissingModel(null)}
@@ -747,10 +756,10 @@ export default function ProdutosPage() {
         <div className="ds-wrap pt-[clamp(2.25rem,1.5rem+2.5vw,4rem)] pb-[clamp(1.5rem,1rem+1.5vw,2.5rem)] flex flex-col md:flex-row md:items-end md:justify-between gap-5">
           <div className="max-w-2xl">
             <h1 className="font-serif text-[#0B1F45] text-t1 font-normal tracking-[-0.02em]">
-              Catálogo de acabamentos
+              Catálogo de modelos
             </h1>
             <p className="text-[#43474e] text-lead mt-3 text-pretty">
-              Painel Flexível em Fibra de Bambu (PFB): 3 linhas e 15 acabamentos, com pronta-entrega em Manaus.
+              Painel Flexível em Fibra de Bambu (PFB) em três linhas, com estoque e pronta-entrega em Manaus.
             </p>
           </div>
           {/* Sem "Falar com um consultor" aqui: primeiro o cliente escolhe o
@@ -772,13 +781,13 @@ export default function ProdutosPage() {
       {/* Linhas: presas logo abaixo do cabeçalho; quando ele se recolhe, sobem junto (ds-sob-cabecalho). */}
       <div className="ds-sob-cabecalho sticky z-40 bg-[#F6F5F2] border-b border-[#e2e2e2]">
         <div className="ds-wrap">
-          <div className="flex gap-0 overflow-x-auto scrollbar-none -mx-3 sm:-mx-5">
+          <div data-teste="abas-linha" className="grid grid-cols-2 sm:grid-cols-4 -mx-3 sm:-mx-5">
             {linhas.map(({ key, label, desc }) => (
               <button
                 key={key}
                 onClick={() => trocarLinha(key)}
                 aria-pressed={activeLinha === key}
-                className={`flex-shrink-0 flex flex-col items-start px-3 py-3 sm:px-5 sm:py-4 border-b transition-colors duration-200 ${
+                className={`min-w-0 break-words flex flex-col items-start px-3 py-3 sm:px-5 sm:py-4 border-b transition-colors duration-200 ${
                   activeLinha === key
                     ? "border-[#0B1F45] text-[#0B1F45]"
                     : "border-transparent text-[#74777f] hover:text-[#0B1F45]"
@@ -821,11 +830,11 @@ export default function ProdutosPage() {
                   </h2>
                   <p className="text-[#43474e] text-sm">
                     {activeLinha === "Classic" &&
-                      "Mármore Fosco · 5mm · 1,2m × 2,9m = 3,48m² por placa"}
+                      "Mármore fosco · placa de 1,20 × 2,90 m × 5 mm (3,48 m²)"}
                     {activeLinha === "Brilliance" &&
-                      "Mármore Polido · 5mm · 1,2m × 2,9m = 3,48m² por placa"}
+                      "Mármore polido · placa de 1,20 × 2,90 m × 5 mm (3,48 m²)"}
                     {activeLinha === "Elegance" &&
-                      "Madeira Texturizada · 5mm · 1,2m × 2,9m = 3,48m² por placa"}
+                      "Madeira texturizada · placa de 1,20 × 2,90 m × 5 mm (3,48 m²)"}
                   </p>
                 </div>
               )}
@@ -841,6 +850,8 @@ export default function ProdutosPage() {
                     className={i % 2 ? "mv-preenche-antes max-lg:[--mv-i:1]!" : "mv-preenche-antes max-lg:[--mv-i:0]!"}
                   >
                   <article
+                    data-teste="cartao-modelo"
+                    data-linha={product.linha}
                     className="group cursor-pointer"
                     onClick={() => open(product)}
                   >
@@ -851,7 +862,8 @@ export default function ProdutosPage() {
                           baixados do Supabase a cada visita ao catálogo. */}
                       <Image
                         src={product.image_path}
-                        alt={`${product.name} — Linha ${product.linha}`}
+                        alt={`${product.name}, linha ${product.linha}`}
+                        data-texto-banco
                         fill
                         sizes="(max-width: 640px) 50vw, (max-width: 1024px) 33vw, 25vw"
                         className="object-cover transition-transform duration-700 ease-out group-hover:scale-[1.05]"
@@ -866,7 +878,7 @@ export default function ProdutosPage() {
                       </div>
                       {/* Badges */}
                       <div className="absolute top-2 right-2 lg:top-4 lg:right-4 flex flex-col items-end gap-1.5">
-                        <span className="bg-white/95 text-[#0B1F45] text-[9px] lg:text-[10px] tracking-[0.1em] uppercase font-semibold px-2 py-1 lg:px-2.5 lg:py-1.5">
+                        <span data-texto-banco className="bg-white/95 text-[#0B1F45] text-[9px] lg:text-[10px] tracking-[0.1em] uppercase font-semibold px-2 py-1 lg:px-2.5 lg:py-1.5">
                           {product.finish}
                         </span>
                         {allImages(product).length > 1 && (
@@ -880,17 +892,17 @@ export default function ProdutosPage() {
 
                     {/* Info */}
                     <div className="space-y-1 lg:space-y-1.5">
-                      <span className="text-[#74777f] text-[9px] lg:text-[10px] tracking-[0.15em] uppercase font-semibold">
-                        {product.code} · {product.linha}
-                      </span>
-                      <h3 className="font-serif text-[#0B1F45] text-base lg:text-xl font-medium leading-snug group-hover:underline underline-offset-2 decoration-[#0B1F45]/30">
+                      <h3 data-texto-banco className="font-serif text-[#0B1F45] text-base lg:text-xl font-medium leading-snug group-hover:underline underline-offset-2 decoration-[#0B1F45]/30">
                         {product.name}
                       </h3>
-                      <p className="text-[#43474e] text-xs lg:text-sm leading-relaxed hidden sm:block line-clamp-2">
+                      <p data-texto-banco className="text-legenda text-[#74777f]">
+                        {product.code} · {product.linha}
+                      </p>
+                      <p data-texto-banco className="text-[#43474e] text-xs lg:text-sm leading-relaxed hidden sm:block line-clamp-2">
                         {product.description}
                       </p>
                       <p className="text-[#b0b4bb] text-[10px] tracking-[0.08em] pt-0.5">
-                        2,9m × 1,2m × 5mm
+                        1,20 × 2,90 m × 5 mm
                       </p>
                       <div className="pt-1.5">
                         <button className="inline-block text-[10px] tracking-[0.12em] uppercase font-bold border border-[#0B1F45] text-[#0B1F45] px-4 py-2 lg:px-5 group-hover:bg-[#0B1F45] group-hover:text-white transition-colors">
@@ -912,7 +924,7 @@ export default function ProdutosPage() {
         <div className="max-w-[1280px] mx-auto px-4 lg:px-16">
           <div className="grid grid-cols-2 md:grid-cols-4 gap-8 text-center">
             {[
-              { label: "Dimensão", value: "1,2m × 2,9m" },
+              { label: "Dimensão", value: "1,20 × 2,90 m" },
               { label: "Área por placa", value: "3,48 m²" },
               { label: "Espessura", value: "5 mm" },
               { label: "Peso", value: "3,2 kg/m²" },
@@ -933,10 +945,9 @@ export default function ProdutosPage() {
       {/* Disclaimer */}
       <div className="bg-[#F6F5F2] border-t border-[#eeeeee] py-5 px-8 text-center">
         <p className="text-[#74777f] text-xs italic">
-          Imagens ilustrativas — cores podem variar. Recomendamos uma visita ao nosso showroom.
-          Somos fornecedores diretos — não fazemos instalação.
+          Imagens ilustrativas: cor, brilho e escala reais podem variar. Pode haver pequena variação de tom entre lotes; use placas do mesmo lote em cada ambiente. A Orbital é fornecedora e não faz a instalação.
         </p>
       </div>
-    </div>
+    </main>
   );
 }
