@@ -70,16 +70,16 @@ const nextConfig: NextConfig = {
   // caem numa página válida em vez de 404.
   async redirects() {
     return [
-      { source: "/guias/mdf-manaus", destination: "/tecnologia", permanent: true },
+      { source: "/guias/mdf-manaus", destination: "/produtos/pfb", permanent: true },
       { source: "/guias/:slug*", destination: "/produtos", permanent: true },
-      // O catálogo do PFB mora em /produtos/pfb/catalogo. QR Codes já
-      // impressos e links compartilhados apontam para /produtos?modelo=orb-003
-      // e /produtos/pfb?modelo=orb-003: os dois vão para /produtos/pfb/catalogo
-      // guardando a query, e o modelo abre.
+      // /produtos/pfb é a página do produto e o catálogo mora em
+      // /produtos/pfb/catalogo. QR Codes já impressos e links compartilhados
+      // apontam para /produtos?modelo=orb-003 e /produtos/pfb?modelo=orb-003:
+      // os dois vão para /produtos/pfb/catalogo guardando a query, e o modelo abre.
       { source: "/produtos", has: [{ type: "query", key: "modelo" }], destination: "/produtos/pfb/catalogo", permanent: false },
-      { source: "/produtos/pfb", has: [{ type: "query", key: "modelo" }], destination: "/produtos/pfb/catalogo", permanent: false },
-      // Provisório: sai quando a página do produto entrar em /produtos/pfb.
-      { source: "/produtos/pfb", missing: [{ type: "query", key: "modelo" }], destination: "/produtos/pfb/catalogo", permanent: false },
+      { source: "/produtos/pfb", has: [{ type: "query", key: "modelo" }], destination: "/produtos/pfb/catalogo", permanent: true },
+      // A página antiga de tecnologia virou a página do produto.
+      { source: "/tecnologia", destination: "/produtos/pfb", statusCode: 301 },
     ];
   },
   experimental: {
