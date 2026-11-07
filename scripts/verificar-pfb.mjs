@@ -12,7 +12,8 @@
  *   --so-redirecionamentos  só os redirecionamentos e o sitemap, por HTTP, sem navegador
  *                           nem /api/products (é o que roda contra o site no ar)
  *
- * Grava <saida>/resultado.json ({ etapa, base, inicio, fim, navegador, verificacoes })
+ * Grava <saida>/resultado.json ({ etapa, base, commit, buildId, inicio, fim, navegador, verificacoes };
+ * commit é o HEAD do repositório, buildId o .next/BUILD_ID local, ou null)
  * e sai com código 1 se alguma verificação não terminar em "ok" ("não verificado"
  * conta como falha).
  *
@@ -25,11 +26,13 @@
  *      leve" da Etapa 2 pede memória 2 pelo próprio novoContexto).
  *   3. Sem cortina: orbital-intro=1 no sessionStorage.
  */
+import { execFileSync } from "node:child_process";
 import { createRequire } from "node:module";
 import fs from "node:fs";
 import path from "node:path";
 import { fileURLToPath } from "node:url";
 import { catalogoPath, normalizeProductCode, CATALOGO_PATH } from "../src/lib/product-link.ts";
+import { inicioDoPasso } from "../src/lib/movimento/camadas.ts";
 
 // playwright-core vem do runtime da caixa de ferramentas de web design, como em
 // scripts/medir-movimento.mjs (não é dependência do projeto).
@@ -127,9 +130,26 @@ function lerArgs(argv) {
 const args = lerArgs(process.argv.slice(2));
 fs.mkdirSync(args.saida, { recursive: true });
 
+/** HEAD curto do repositório (null se o git falhar). */
+function commitAtual() {
+  try {
+    return execFileSync("/opt/homebrew/bin/git", ["rev-parse", "--short", "HEAD"], { cwd: RAIZ, encoding: "utf8" }).trim();
+  } catch {
+    return null;
+  }
+}
+
+/** .next/BUILD_ID do build local, quando existir. */
+function buildIdLocal() {
+  const arquivo = path.join(RAIZ, ".next/BUILD_ID");
+  return fs.existsSync(arquivo) ? fs.readFileSync(arquivo, "utf8").trim() : null;
+}
+
 const resultado = {
   etapa: args.etapa,
   base: args.base,
+  commit: commitAtual(),
+  buildId: buildIdLocal(),
   inicio: new Date().toISOString(),
   fim: null,
   navegador: null,
@@ -1034,6 +1054,7 @@ function medirCena(page) {
     const cabEl = document.querySelector("header[data-site]");
     const cab = cabEl ? Math.max(cabEl.getBoundingClientRect().bottom, cabEl.offsetHeight) : null;
     return {
+      cabecalhoAltura: cabEl ? cabEl.getBoundingClientRect().height : null,
       ehPfbCam: sec.matches("section.pfb-cam"),
       altura: r.height,
       ih: innerHeight,
@@ -1053,6 +1074,8 @@ function medirCena(page) {
 }
 
 const r1 = (n) => (n === null || n === undefined ? "?" : Math.round(n * 10) / 10);
+/** "Abaixo do cabeçalho" só mede com header[data-site] presente e com altura: sem ele a conferência falha, não usa 0. */
+const temCabecalho = (altura) => typeof altura === "number" && altura > 0;
 const cenaAtiva = (m) => Math.abs(m.altura - 4 * m.ih) <= 2;
 const textoAltura = (m) => `altura ${r1(m.altura)} px, innerHeight ${m.ih} (4 × = ${4 * m.ih}; 2 × = ${2 * m.ih})`;
 const produtos5 = (m) => m.itens.map((it) => it.liOp * it.itemOp);
@@ -1179,6 +1202,26 @@ async function etapa2Navegador(browser, produtos) {
         const m = await medirCena(page);
         await capturarPfb(page, `cena-${rotuloP(p)}`, DESKTOP);
         return conferirPonto(m, p);
+      });
+    }
+    // Camada da vez (spec, Movimento, tabela de tempos): no meio do passo da camada i,
+    // só o .pfb-cam-item dela em opacidade 1; os outros quatro no piso (0,6).
+    for (let i = 0; i < 5; i++) {
+      const p = inicioDoPasso(i) + 0.05;
+      const fmt = p.toFixed(2).replace(".", ",");
+      await verificar(`Camada da vez a 1440 × 900 em p = ${fmt}: .pfb-cam-item ${i} com opacidade ≥ 0,99 e os outros quatro ≤ 0,61`, DESKTOP, async () => {
+        await rolarAteP(page, p);
+        await dormir(ESPERA_CENA_MS);
+        const m = await medirCena(page);
+        await capturarPfb(page, `camada-da-vez-${i}`, DESKTOP);
+        const ops = m.itens.map((it) => it.itemOp);
+        const falhas = [];
+        if (ops.length !== 5) falhas.push(`${ops.length} itens na lista (esperado 5)`);
+        ops.forEach((o, k) => {
+          if (k === i ? !(o >= 0.99) : !(o <= 0.61)) falhas.push(`item ${k} com ${o} (esperado ${k === i ? "≥ 0,99" : "≤ 0,61"})`);
+        });
+        const resumo = `--p ${m.p}; opacidades de .pfb-cam-item ${ops.map((o, k) => `${k}: ${o}`).join(", ")}`;
+        return { ok: falhas.length === 0, detalhe: falhas.length ? `${falhas.join("; ")} (${resumo})` : resumo };
       });
     }
   });
@@ -1309,12 +1352,14 @@ async function etapa2Navegador(browser, produtos) {
         const m = await page.evaluate(() => {
           const h = document.querySelector("h2#pfb-ficha-titulo")?.getBoundingClientRect();
           const cabEl = document.querySelector("header[data-site]");
-          const cab = cabEl ? Math.max(cabEl.getBoundingClientRect().bottom, cabEl.offsetHeight) : 0;
-          return { top: h?.top ?? null, bottom: h?.bottom ?? null, cab, ih: innerHeight };
+          const cab = cabEl ? Math.max(cabEl.getBoundingClientRect().bottom, cabEl.offsetHeight) : null;
+          const cabAltura = cabEl ? cabEl.getBoundingClientRect().height : null;
+          return { top: h?.top ?? null, bottom: h?.bottom ?? null, cab, cabAltura, ih: innerHeight };
         });
         await capturarPfb(page, "ancora-ficha", dim);
+        if (!temCabecalho(m.cabAltura)) return { ok: false, detalhe: `cabeçalho não encontrado (header[data-site] ${m.cabAltura === null ? "ausente" : "com altura 0"})` };
         const ok = m.top !== null && m.top >= 0 && m.bottom <= m.ih && m.top >= m.cab;
-        return { ok, detalhe: `título em [${r1(m.top)}, ${r1(m.bottom)}], cabeçalho termina em ${r1(m.cab)}, innerHeight ${m.ih}` };
+        return { ok, detalhe: `título em [${r1(m.top)}, ${r1(m.bottom)}], cabeçalho termina em ${r1(m.cab)} (altura ${r1(m.cabAltura)}), innerHeight ${m.ih}` };
       }),
     );
   }
@@ -1525,7 +1570,8 @@ async function etapa2Navegador(browser, produtos) {
       });
       const m = await medirCena(page);
       await capturarPfb(page, "ancora-tecnologia", DESKTOP);
-      const cab = Math.max(0, m.cabecalhoBottom ?? 0);
+      if (!temCabecalho(m.cabecalhoAltura)) return { ok: false, detalhe: `cabeçalho não encontrado (header[data-site] ${m.cabecalhoAltura === null ? "ausente" : "com altura 0"})` };
+      const cab = m.cabecalhoBottom;
       const naTela = h !== null && h.top >= cab && h.top >= 0 && h.bottom <= m.ih;
       const minimo = Math.min(...produtos5(m));
       const ok = naTela && m.itens.length === 5 && minimo >= 0.6 - TOL;
