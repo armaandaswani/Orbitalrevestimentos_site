@@ -107,8 +107,8 @@ export const FICHA: {
     { valor: "cerca de 11 kg", frase: "Peso de uma placa, ou 3,2 kg/m²." },
     // fonte: [Ficha]
     { valor: "72,3 MPa", frase: "Resistência à flexão da placa." },
-    // fonte: [Ficha]
-    { valor: "550 kg/m³", frase: "Densidade da placa." },
+    // fonte: [Ficha] (dono, 07/11/2026: os 550 são do substrato, sem películas e PVC)
+    { valor: "550 kg/m³", frase: "Densidade do substrato de fibra de bambu." },
     // fonte: [Ficha]
     { valor: "0,5%", frase: "Teor de umidade da placa." },
   ],
