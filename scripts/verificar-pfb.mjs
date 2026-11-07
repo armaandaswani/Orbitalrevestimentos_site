@@ -1105,6 +1105,40 @@ function conferirPonto(m, p, { exigeNaTela = true, exigeQuadro = false } = {}) {
   return { ok: falhas.length === 0, detalhe: falhas.length ? `${falhas.join("; ")} (${resumo})` : resumo };
 }
 
+/** Nome do chunk depois de static/chunks/ (o manifesto guarda "static/chunks/x.js" e "/_next/static/chunks/x.js"). */
+const nomeDoChunk = (s) => s.replace(/^.*static\/chunks\//, "");
+
+/**
+ * Chunks que o build local liga à rota: os de page_client-reference-manifest.js
+ * (.next/server/app/<rota>/), lidos como texto, sem rodar o arquivo. null se o
+ * arquivo não existe ou não traz a chave da rota.
+ */
+function chunksDoManifesto(rota) {
+  const arquivo = path.join(RAIZ, ".next/server/app", rota.replace(/^\//, ""), "page_client-reference-manifest.js");
+  if (!fs.existsSync(arquivo)) return null;
+  const texto = fs.readFileSync(arquivo, "utf8");
+  if (!texto.includes(`__RSC_MANIFEST[${JSON.stringify(`${rota}/page`)}]`)) return null;
+  return new Set((texto.match(/static\/chunks\/[^"\\]+/g) ?? []).map(nomeDoChunk));
+}
+
+/**
+ * Prova de que os scripts excluídos da soma (fora do HTML da página) não são da
+ * própria rota: cada excluído com bytes > 0 não pode estar no manifesto dela.
+ * Com --base remota não há build local para ler: a sub-conferência fica registrada
+ * como "não verificado" no detalhe, sem mudar o resultado da medição.
+ */
+function provarExclusao(rota, fora) {
+  const excluidos = fora.filter((r) => r.bytes > 0);
+  if (!ehLocal) return { ok: true, detalhe: `exclusão em ${rota}: não verificado: sem o build local (${excluidos.length} excluídos com bytes > 0)` };
+  const manifesto = chunksDoManifesto(rota);
+  if (!manifesto) return { ok: false, detalhe: `exclusão em ${rota}: manifesto de referências de cliente da rota não encontrado em .next/server/app` };
+  const daRota = excluidos.filter((r) => manifesto.has(nomeDoChunk(r.nome)));
+  return {
+    ok: daRota.length === 0,
+    detalhe: `exclusão em ${rota}: ${excluidos.length} chunks excluídos com bytes > 0 checados contra o manifesto da rota (${manifesto.size} chunks), ${daRota.length ? `da própria rota: ${daRota.map((r) => `${nomeDoChunk(r.nome)} ${r.bytes}`).join(", ")}` : "nenhum é da própria rota"}`,
+  };
+}
+
 async function etapa2Navegador(browser, produtos) {
   // Em cada largura: rolagem lateral, #tecnologia e #ficha, "Ver os modelos" e os três links de linha.
   const linhasEsperadas = LINHAS_PFB.map((l) => catalogoPath({ linha: l }));
@@ -1383,7 +1417,9 @@ async function etapa2Navegador(browser, produtos) {
 
   // JavaScript transferido: /produtos/pfb ≤ /techstone, um contexto novo (sem cache) por página, a mesma regra nas duas.
   // Só conta o que o HTML do documento pede por <script src> (lido da resposta do goto, não do DOM vivo): a pré-busca dos <Link>/RSC é da página seguinte, não peso desta.
-  await verificar(`JavaScript transferido em ${PFB_PATH} ≤ o de /techstone (scripts pedidos pelo HTML da página)`, DESKTOP, async () => {
+  // A exclusão é provada, não suposta: no build local, todo chunk excluído com bytes > 0 é procurado no
+  // page_client-reference-manifest.js da própria rota medida, e se estiver lá (é JS da página, não pré-busca) a verificação falha.
+  await verificar(`JavaScript transferido em ${PFB_PATH} ≤ o de /techstone (scripts pedidos pelo HTML da página; excluídos fora do manifesto da rota)`, DESKTOP, async () => {
     const medir = (caminho) =>
       comContexto(browser, DESKTOP, {}, async (page) => {
         // Confirmação, não critério: os pedidos de pré-busca do roteador levam Next-Router-Prefetch ou RSC.
@@ -1418,9 +1454,10 @@ async function etapa2Navegador(browser, produtos) {
     const b = soma(ts.pedidos);
     const linha = (rot, m) =>
       `${rot}: sem pré-busca ${soma(m.pedidos)} bytes (${m.pedidos.length} scripts do HTML, que cita ${m.doHtml.size}); com pré-busca ${soma(m.recursos)} bytes (${m.recursos.length} scripts); de fora: ${m.fora.map(curto).join(", ") || "nenhum"}; pedidos de pré-busca do roteador vistos: ${contar(m.preBusca) || "nenhum"}`;
+    const provas = [provarExclusao(PFB_PATH, pfb.fora), provarExclusao("/techstone", ts.fora)];
     return {
-      ok: a > 0 && b > 0 && a <= b,
-      detalhe: `${esperado(`${PFB_PATH} ${a} bytes`, `≤ /techstone ${b} bytes`)}; ${linha(PFB_PATH, pfb)}; ${linha("/techstone", ts)}`,
+      ok: a > 0 && b > 0 && a <= b && provas.every((p) => p.ok),
+      detalhe: `${esperado(`${PFB_PATH} ${a} bytes`, `≤ /techstone ${b} bytes`)}; ${provas.map((p) => p.detalhe).join("; ")}; ${linha(PFB_PATH, pfb)}; ${linha("/techstone", ts)}`,
     };
   });
 
