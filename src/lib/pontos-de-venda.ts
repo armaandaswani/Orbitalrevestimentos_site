@@ -169,3 +169,135 @@ export async function lerPontosDeVendaDe(
   if (pontos.length === 0) return { pontos: [], erro: "nenhum ponto de venda" };
   return { pontos, erro: null };
 }
+
+// ── Geometria do mapa de Manaus ───────────────────────────────────────────
+
+/** Mesma caixa do scripts/gerar-mapa-manaus.mjs (mapa real do OpenStreetMap); a Tarefa 6 confere por teste. */
+export const CAIXA_MANAUS = { latMin: -3.15, latMax: -3.06, lngMin: -60.06, lngMax: -59.985 } as const;
+/** Largura do viewBox (0 0 400 480). */
+export const LARGURA_MAPA = 400;
+/** (latMax − latMin) × 400 / (lngMax − lngMin), arredondado. */
+export const ALTURA_MAPA = 480;
+
+const ESCALA_MAPA = LARGURA_MAPA / (CAIXA_MANAUS.lngMax - CAIXA_MANAUS.lngMin);
+
+export function dentroDeManaus(lat: number, lng: number): boolean {
+  return (
+    Number.isFinite(lat) &&
+    Number.isFinite(lng) &&
+    lat >= CAIXA_MANAUS.latMin &&
+    lat <= CAIXA_MANAUS.latMax &&
+    lng >= CAIXA_MANAUS.lngMin &&
+    lng <= CAIXA_MANAUS.lngMax
+  );
+}
+
+/** Escala única nos dois eixos: x cresce com a longitude, y cresce para o sul. Sem arredondar. */
+export function projetarManaus(lat: number, lng: number): { x: number; y: number } {
+  return {
+    x: (lng - CAIXA_MANAUS.lngMin) * ESCALA_MAPA,
+    y: (CAIXA_MANAUS.latMax - lat) * ESCALA_MAPA,
+  };
+}
+
+/** 44 px reais num mapa de 288 px (tela de 320 com margens de 16): 44 × 400 / 288 ≈ 61. */
+export const MINIMO_PINO = 62;
+
+/** O pino de 44 px sobe ~61 unidades acima da ponta: precisa de espaço em cima e dos lados. */
+export function cabePino(p: { x: number; y: number }): boolean {
+  return (
+    p.x >= MINIMO_PINO / 2 &&
+    p.x <= LARGURA_MAPA - MINIMO_PINO / 2 &&
+    p.y >= MINIMO_PINO &&
+    p.y <= ALTURA_MAPA - 16
+  );
+}
+
+const FOLGA_DISTANCIA = 1e-9;
+
+function proximos(a: { x: number; y: number }, b: { x: number; y: number }, minimo: number): boolean {
+  return Math.hypot(a.x - b.x, a.y - b.y) < minimo - FOLGA_DISTANCIA;
+}
+
+/**
+ * Rede de segurança: afasta pinos a menos de `minimo` unidades. Não muta a
+ * entrada; devolve cópias (mesma ordem) com `x` ajustado e `y` intacto.
+ * Agrupa por componentes conexos de todos os pares próximos (union-find),
+ * espalha cada grupo na horizontal centrado na média e, se sair do mapa,
+ * desloca o grupo inteiro. Repete até estabilizar (10 voltas); se sobrar par
+ * sobreposto, lança erro para o build falhar em vez de publicar o mapa assim.
+ */
+export function aproximarPinos<T extends { x: number; y: number }>(pinos: T[], minimo: number = MINIMO_PINO): T[] {
+  const r = pinos.map((p) => ({ ...p }));
+  const n = r.length;
+  for (let volta = 0; volta < 10; volta++) {
+    const pai = Array.from({ length: n }, (_, i) => i);
+    const raiz = (i: number): number => {
+      while (pai[i] !== i) {
+        pai[i] = pai[pai[i]];
+        i = pai[i];
+      }
+      return i;
+    };
+    for (let i = 0; i < n; i++) {
+      for (let j = i + 1; j < n; j++) {
+        if (proximos(r[i], r[j], minimo)) pai[raiz(i)] = raiz(j);
+      }
+    }
+    const grupos = new Map<number, number[]>();
+    for (let i = 0; i < n; i++) {
+      const g = raiz(i);
+      const lista = grupos.get(g);
+      if (lista) lista.push(i);
+      else grupos.set(g, [i]);
+    }
+    let mexeu = false;
+    for (const indices of grupos.values()) {
+      if (indices.length < 2) continue;
+      mexeu = true;
+      const ordem = [...indices].sort((a, b) => r[a].x - r[b].x || a - b);
+      const media = ordem.reduce((s, i) => s + r[i].x, 0) / ordem.length;
+      const novos = ordem.map((_, k) => media + (k - (ordem.length - 1) / 2) * minimo);
+      const menor = novos[0];
+      const maior = novos[novos.length - 1];
+      // grupo mais largo que o mapa: não há como deslocar para dentro sem sobrepor
+      if (maior - menor > LARGURA_MAPA - minimo) throw new Error("aproximarPinos não estabilizou");
+      let desloca = 0;
+      if (menor < minimo / 2) desloca = minimo / 2 - menor;
+      else if (maior > LARGURA_MAPA - minimo / 2) desloca = LARGURA_MAPA - minimo / 2 - maior;
+      ordem.forEach((i, k) => {
+        r[i].x = novos[k] + desloca;
+      });
+    }
+    if (!mexeu) return r;
+  }
+  for (let i = 0; i < n; i++) {
+    for (let j = i + 1; j < n; j++) {
+      if (proximos(r[i], r[j], minimo)) throw new Error("aproximarPinos não estabilizou");
+    }
+  }
+  return r;
+}
+
+/**
+ * Um rótulo por bairro: x é a média dos x das lojas do bairro (projetadas) e y
+ * fica 34 unidades abaixo do pino mais baixo. Ignora loja sem bairro, sem
+ * coordenada ou fora de Manaus.
+ */
+export function rotulosDeBairro(pontos: PontoDeVenda[]): { bairro: string; x: number; y: number }[] {
+  const porBairro = new Map<string, { soma: number; n: number; baixo: number }>();
+  for (const p of pontos) {
+    const bairro = p.bairro?.trim();
+    if (!bairro || p.lat === null || p.lng === null || !dentroDeManaus(p.lat, p.lng)) continue;
+    const { x, y } = projetarManaus(p.lat, p.lng);
+    const atual = porBairro.get(bairro);
+    if (atual) {
+      atual.soma += x;
+      atual.n += 1;
+      atual.baixo = Math.max(atual.baixo, y);
+    } else {
+      porBairro.set(bairro, { soma: x, n: 1, baixo: y });
+    }
+  }
+  return [...porBairro.entries()].map(([bairro, a]) => ({ bairro, x: a.soma / a.n, y: a.baixo + 34 }));
+}
