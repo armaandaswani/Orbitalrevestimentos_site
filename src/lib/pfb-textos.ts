@@ -193,8 +193,8 @@ export const SERVE: {
       "Na parede: base firme, seca, limpa e plana, teste a seco e cola PU de alta aderência.",
       // fonte: [Instalação], [PFB] (decisão do dono E-5, 06/11/2026)
       "Na parede, a aplicação leva de 2 a 3 horas por cômodo, sem quebradeira.",
-      // fonte: [Instalação], [Materiais]
-      "No teto e no forro: sempre com fixação mecânica, usando cola de contato e espuma expansiva.",
+      // fonte: [Instalação] (Instalação.md:16), [Materiais]; decisão do dono 07/11/2026
+      "No teto e no forro: sempre com fixação mecânica (cola e parafusos, perfis ou malha híbrida), com cola de contato e espuma expansiva.",
     ],
     // fonte: [Instalação], [Manual]
     antesDoManual:
