@@ -5,6 +5,7 @@ import { EMAIL_EMPRESA } from "@/lib/email-destinos";
 import { aniversariantes } from "@/lib/aniversarios-server";
 import { enfileirar } from "@/lib/ia/fila";
 import { rodarWorker } from "@/lib/ia/worker";
+import { resumoStories, type DirectPendente } from "@/lib/instagram-resumo";
 import {
   BUCKET_AGENDA, GRAPH, contaDoToken, destravar, gravarAgendado, hojeManaus, listarAgendados,
   tokenParaPublicar, travar, type Agendado,
@@ -25,7 +26,9 @@ export const maxDuration = 300;
  * A mensagem de parabéns (escrita no Mac, no estilo do dono, com "bom dia") vai
  * para a fila do WhatsApp da Ste com as travas do painel; o rascunho do painel
  * para a mesma pessoa sai da fila de aprovação. Dia que passou não sai atrasado:
- * vira "expirado". Manda um resumo por e-mail sempre que algo muda.
+ * vira "expirado". Manda um resumo por e-mail sempre que algo muda; quem saiu
+ * marcado vem nele com o Direct pronto para a equipe mandar pelo celular (a API
+ * não começa conversa no Direct).
  */
 
 const TRAVA = "_cron.lock";
@@ -91,6 +94,8 @@ export async function GET(req: NextRequest) {
   if (!(await travar(TRAVA))) return NextResponse.json({ hoje, pulado: "outra execução em andamento" });
 
   const linhas: string[] = [];
+  const directs: DirectPendente[] = [];
+  const marcados: Agendado[] = [];
   let worker = null;
   try {
     // Renova o token todo dia, haja Story ou não: um agendamento distante não pode achar o token vencido.
@@ -189,6 +194,11 @@ export async function GET(req: NextRequest) {
             }
             await gravarAgendado(feito).catch(() => {});
             linhas.push(`${a.nome}: Story publicado${a.handle ? ` marcando @${a.handle}` : ""}; WhatsApp: ${feito.whatsapp}`);
+            // Agendados antes de existir o campo "direct" usam o texto do WhatsApp.
+            if (a.handle) {
+              directs.push({ nome: a.nome, handle: a.handle, texto: a.direct ?? a.mensagem });
+              marcados.push(feito);
+            }
           }
           fila = restam;
           if (fila.length) await new Promise((r) => setTimeout(r, POLL_MS));
@@ -204,15 +214,20 @@ export async function GET(req: NextRequest) {
   if (linhas.length) {
     try {
       const { getResend } = await import("@/lib/resend");
-      await getResend().emails.send({
+      const { assunto, html, texto } = resumoStories(hoje, linhas, directs);
+      const { error } = await getResend().emails.send({
         from: "Orbital Revestimentos <noreply@orbitalrevestimentos.com.br>",
         to: EMAIL_EMPRESA,
-        subject: `Stories de aniversário agendados (${hoje.split("-").reverse().join("/")})`,
-        text: `${linhas.join("\n")}\n\nO resultado do WhatsApp aparece na Central de aprovações do painel.`,
+        subject: assunto,
+        html,
+        text: texto,
       });
+      if (error) throw new Error(error.message);
     } catch (e) {
       console.error("Resumo dos Stories agendados não foi enviado:", e);
+      // Sem o e-mail a equipe não sabe do Direct: fica marcado para o Mac mandar quando ligar.
+      for (const f of marcados) await gravarAgendado({ ...f, resumo: "o e-mail com o Direct não saiu" }).catch(() => {});
     }
   }
-  return NextResponse.json({ hoje, linhas, worker });
+  return NextResponse.json({ hoje, linhas, directs: directs.map((d) => d.handle), worker });
 }
