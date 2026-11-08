@@ -40,7 +40,8 @@ export default function IlhaPdv({ slugs, pontos }: { slugs: string[]; pontos: Po
     const params = new URLSearchParams(window.location.search);
     const { slug, invalida } = lojaDaUrl(window.location.search, slugs);
     trackFunnel("pdv_pagina_aberta", { origem: origemValida(params.get("origem")), loja_pre: slug });
-    if (invalida !== null) trackFunnel("pdv_loja_invalida", { loja: invalida.slice(0, 80) });
+    // Texto livre da URL só vai à medição se tiver cara de slug.
+    if (invalida !== null) trackFunnel("pdv_loja_invalida", { loja: /^[a-z0-9-]{1,80}$/.test(invalida) ? invalida : "outro" });
     if (params.has("origem")) {
       params.delete("origem");
       trocarBusca(params);
@@ -48,9 +49,18 @@ export default function IlhaPdv({ slugs, pontos }: { slugs: string[]; pontos: Po
     // eslint-disable-next-line react-hooks/exhaustive-deps -- só na abertura da página
   }, []);
 
+  // Abertura por clique: só então a folha, o véu e os pinos animam (pelo link,
+  // `?loja=`, tudo já aparece no lugar).
+  const [animar, setAnimar] = useState(false);
   const abrir = useCallback((slug: string) => {
+    document.querySelector("[data-pdv-mapa]")?.setAttribute("data-pdv-transicao", "");
+    setAnimar(true);
     setEscolhida(slug);
-    trocarBusca(new URLSearchParams({ loja: slug }));
+    // Mantém utm_*, gclid e o resto; só a origem sai.
+    const params = new URLSearchParams(window.location.search);
+    params.set("loja", slug);
+    params.delete("origem");
+    trocarBusca(params);
   }, []);
 
   const fechar = useCallback(() => {
@@ -84,8 +94,10 @@ export default function IlhaPdv({ slugs, pontos }: { slugs: string[]; pontos: Po
     return () => document.removeEventListener("click", aoClicar);
   }, [slugs, abrir]);
 
-  // Pino da loja aberta em destaque; os outros esmaecem.
+  // Pino da loja aberta em destaque; os outros esmaecem. A partir de `lg`, o
+  // invólucro sticky do mapa sobe acima do véu enquanto a folha está aberta.
   useEffect(() => {
+    document.querySelector("[data-pdv-mapa]")?.toggleAttribute("data-pdv-sobe", aberta !== null);
     const pinos = document.querySelectorAll<HTMLElement>("[data-pdv-pino]");
     pinos.forEach((el) => {
       const ativo = aberta !== null && el.dataset.pdvPino === aberta;
@@ -94,5 +106,5 @@ export default function IlhaPdv({ slugs, pontos }: { slugs: string[]; pontos: Po
     });
   }, [aberta]);
 
-  return ponto ? <FolhaPdv key={ponto.slug} ponto={ponto} onFechar={fechar} /> : null;
+  return ponto ? <FolhaPdv key={ponto.slug} ponto={ponto} onFechar={fechar} animar={animar} /> : null;
 }

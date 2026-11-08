@@ -4,6 +4,7 @@ import { useEffect, useRef } from "react";
 import { useDialogo } from "@/components/ds/useDialogo";
 import { trackFunnel } from "@/lib/funnel";
 import { acoesDaLoja, type PontoDeVenda } from "@/lib/pontos-de-venda";
+import { nomeLugar } from "@/lib/projetos-tipos";
 import { FECHAR_PDV, HORARIO_ROTULO_PDV, SELO_PDV, notaFeriadoPdv, rotuloInstagramFolha } from "@/lib/onde-comprar-textos";
 import { atributosDeMedicao, enderecoCompleto, SIMBOLO_SELO } from "./apresentacao-pdv";
 import { BOTAO_PDV_CHEIO, BOTAO_PDV_CLARO, IconeDaAcao, IconeFechar } from "./IconesPdv";
@@ -14,8 +15,10 @@ import { BOTAO_PDV_CHEIO, BOTAO_PDV_CLARO, IconeDaAcao, IconeFechar } from "./Ic
  * modal pelo `useDialogo` (foco preso, Esc fecha, rolagem travada, o foco
  * volta para onde estava). Sem <dialog>. Abrir envia `pdv_loja_aberta`; os
  * links levam os mesmos `data-pdv-*` da lista (o ouvinte da ilha mede).
+ * `animar` só vem true quando a folha abre por um clique: aberta pelo link
+ * (`?loja=`), ela e o véu já aparecem no lugar, sem animação.
  */
-export default function FolhaPdv({ ponto, onFechar }: { ponto: PontoDeVenda; onFechar: () => void }) {
+export default function FolhaPdv({ ponto, onFechar, animar }: { ponto: PontoDeVenda; onFechar: () => void; animar: boolean }) {
   const caixa = useRef<HTMLDivElement>(null);
   // O foco entra na própria folha (o leitor de tela ouve o nome da loja) e não
   // no botão Fechar, que ganharia o anel de foco sem o visitante ter usado o teclado.
@@ -37,7 +40,7 @@ export default function FolhaPdv({ ponto, onFechar }: { ponto: PontoDeVenda; onF
     // fixo em volta, que faria um contexto de empilhamento só): assim o pino da
     // loja (z 56, data-pdv-ativo) fica entre os dois, acima do véu e abaixo da folha.
     <>
-      <div className="mv-veu fixed inset-0 z-[55] bg-primary/55" onClick={onFechar} aria-hidden="true" />
+      <div className={`${animar ? "mv-veu " : ""}fixed inset-0 z-[55] bg-primary/55`} onClick={onFechar} aria-hidden="true" />
       <div
         ref={caixa}
         role="dialog"
@@ -45,7 +48,7 @@ export default function FolhaPdv({ ponto, onFechar }: { ponto: PontoDeVenda; onF
         aria-labelledby={idTitulo}
         tabIndex={-1}
         data-pdv-folha={ponto.slug}
-        className="ds-folha-rola mv-folha lg:mv-folha-lado fixed z-[57] inset-x-0 bottom-0 max-h-[88dvh] overflow-y-auto bg-surface-container-lowest px-5 pb-[max(env(safe-area-inset-bottom),1.75rem)] pt-[22px] shadow-2xl outline-none lg:inset-y-0 lg:left-auto lg:right-0 lg:max-h-none lg:w-[min(100%,28rem)] lg:px-8 lg:pt-14"
+        className={`${animar ? "mv-folha lg:mv-folha-lado " : ""}ds-folha-rola fixed z-[57] inset-x-0 bottom-0 max-h-[88dvh] overflow-y-auto bg-surface-container-lowest px-5 pb-[max(env(safe-area-inset-bottom),1.75rem)] pt-[22px] shadow-2xl outline-none lg:inset-y-0 lg:left-auto lg:right-0 lg:max-h-none lg:w-[min(100%,28rem)] lg:px-8 lg:pt-14`}
       >
         <button
           type="button"
@@ -62,7 +65,7 @@ export default function FolhaPdv({ ponto, onFechar }: { ponto: PontoDeVenda; onF
           {SELO_PDV}
         </p>
         <h2 id={idTitulo} className="mt-2.5 font-serif text-[27px] font-normal leading-[1.15] tracking-[-0.01em] text-primary">
-          {ponto.name}
+          {nomeLugar(ponto.name)}
         </h2>
         {endereco && <p className="mt-1.5 text-base leading-[1.45] text-on-surface">{endereco}</p>}
 

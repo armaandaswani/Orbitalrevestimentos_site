@@ -1,4 +1,5 @@
 import { acoesDaLoja, type PontoDeVenda } from "@/lib/pontos-de-venda";
+import { nomeLugar } from "@/lib/projetos-tipos";
 import { HORARIO_ROTULO_PDV, SELO_PDV, VER_NO_MAPA_PDV, notaFeriadoPdv } from "@/lib/onde-comprar-textos";
 import { atributosDeMedicao, ondeFica, temPino, SIMBOLO_SELO } from "./apresentacao-pdv";
 import { BOTAO_PDV_CHEIO, BOTAO_PDV_CLARO, BOTAO_PDV_VAZADO, IconeDaAcao } from "./IconesPdv";
@@ -11,7 +12,7 @@ import { BOTAO_PDV_CHEIO, BOTAO_PDV_CLARO, BOTAO_PDV_VAZADO, IconeDaAcao } from 
  */
 export default function ListaPdv({ pontos }: { pontos: PontoDeVenda[] }) {
   return (
-    <ul className="ds-wrap list-none pb-12 pt-2 lg:w-auto lg:max-w-none lg:px-0 lg:pt-0" aria-label="Lojas">
+    <ul className="ds-wrap list-none pb-12 pt-2 lg:w-auto lg:max-w-none lg:px-0 lg:pt-0" aria-label="Lojas em Manaus">
       {pontos.map((p) => {
         const acoes = acoesDaLoja(p);
         const onde = ondeFica(p);
@@ -22,7 +23,7 @@ export default function ListaPdv({ pontos }: { pontos: PontoDeVenda[] }) {
               <img src={SIMBOLO_SELO} alt="" width={18} height={18} decoding="async" className="h-[18px] w-[18px]" />
               {SELO_PDV}
             </p>
-            <h2 className="mt-1.5 font-serif text-[21px] font-normal leading-tight text-primary">{p.name}</h2>
+            <h2 className="mt-1.5 font-serif text-[21px] font-normal leading-tight text-primary">{nomeLugar(p.name)}</h2>
             {onde && <p className="mt-1 text-[15px] leading-[1.45] text-on-surface-variant">{onde}</p>}
             {p.horario && (
               <dl className="mt-3 text-[15px] leading-[1.45]">
@@ -47,7 +48,7 @@ export default function ListaPdv({ pontos }: { pontos: PontoDeVenda[] }) {
                 </a>
               ))}
               {temPino(p) && (
-                <a href={`?loja=${encodeURIComponent(p.slug)}`} className={BOTAO_PDV_VAZADO} aria-label={`${VER_NO_MAPA_PDV}: ${p.name}`}>
+                <a href={`?loja=${encodeURIComponent(p.slug)}`} className={BOTAO_PDV_VAZADO} aria-label={`${VER_NO_MAPA_PDV}: ${nomeLugar(p.name)}`}>
                   {VER_NO_MAPA_PDV}
                 </a>
               )}

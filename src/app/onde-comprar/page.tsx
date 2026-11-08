@@ -14,8 +14,8 @@ import IlhaPdv from "@/components/onde-comprar/IlhaPdv";
 export const revalidate = 300;
 
 const SITE = "https://orbitalrevestimentos.com.br";
-// Tirada da regra de revenda aprovada para o chat (textos.md, seção 8).
-const DESCRICAO = "As lojas de Manaus que revendem o Painel Flexível em Fibra de Bambu, no mapa, com endereço, horário e o WhatsApp de cada uma.";
+// Texto do controlador (humanizer e marca aplicados), rodada 1 da Tarefa 7.
+const DESCRICAO = "Veja no mapa as lojas de Manaus que revendem o Painel Flexível em Fibra de Bambu, com endereço, horário e WhatsApp de cada uma.";
 // A mesma imagem do layout raiz (o openGraph da página troca o do layout inteiro).
 const IMAGEM_OG = {
   url: "/images/catalogue/hero-cover.png",
@@ -55,7 +55,8 @@ export default async function OndeComprarPage() {
         <p className="mt-3 max-w-[34ch] text-lead text-on-surface">{subtituloPdv(pontos.length)}</p>
       </div>
       <div className="lg:ds-wrap lg:grid lg:grid-cols-[minmax(0,1fr)_minmax(0,1fr)] lg:items-start lg:gap-12 lg:pb-24">
-        <div className="lg:sticky lg:top-24">
+        {/* data-pdv-mapa: a ilha liga aqui data-pdv-transicao (pinos com transição só depois de um clique) e data-pdv-sobe (a partir de lg, o mapa fica acima do véu enquanto a folha está aberta). */}
+        <div data-pdv-mapa className="lg:sticky lg:top-24 lg:data-[pdv-sobe]:z-[56]">
           <MapaManaus pontos={pontos} />
         </div>
         <ListaPdv pontos={pontos} />

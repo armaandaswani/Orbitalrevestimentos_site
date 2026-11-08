@@ -35,7 +35,8 @@ const HALO = "[text-shadow:0_0_2px_var(--color-background),0_0_3px_var(--color-b
  * com um pino por loja. Server Component: o SVG sai inline no HTML e nada disto
  * entra no JS do cliente. Recebe os pontos já filtrados como ativos.
  * Com a folha de uma loja aberta, a IlhaPdv marca o pino dela com
- * `data-pdv-ativo` (fica entre o véu e a folha) e os outros com `data-pdv-apagado`.
+ * `data-pdv-ativo` (fica entre o véu e a folha) e os outros com `data-pdv-apagado`; a
+ * transição dos pinos só liga com `data-pdv-transicao` num ancestral (abertura por clique).
  *
  * Tudo mora no contêiner `relative` (proporção fixa 400 × 480, sem CLS), onde a
  * abertura da página também entra. Loja fora de Manaus ou sem espaço para o
@@ -114,7 +115,7 @@ export function MapaManaus({ pontos }: { pontos: PontoDeVenda[] }) {
           data-pdv-pino={p.slug}
           tabIndex={-1}
           aria-hidden="true"
-          className="absolute grid h-11 w-11 -translate-x-1/2 -translate-y-full place-items-start transition-opacity data-[pdv-apagado]:opacity-35 data-[pdv-ativo]:z-[56] justify-items-center after:absolute after:bottom-0 after:left-1/2 after:-z-10 after:h-2.5 after:w-2.5 after:-translate-x-1/2 after:-translate-y-px after:rotate-45 after:bg-surface-container-lowest after:shadow-[2px_2px_2px_rgba(11,31,69,0.18)]"
+          className="absolute grid h-11 w-11 -translate-x-1/2 -translate-y-full place-items-start [[data-pdv-transicao]_&]:transition-opacity data-[pdv-apagado]:opacity-35 data-[pdv-ativo]:z-[56] justify-items-center after:absolute after:bottom-0 after:left-1/2 after:-z-10 after:h-2.5 after:w-2.5 after:-translate-x-1/2 after:-translate-y-px after:rotate-45 after:bg-surface-container-lowest after:shadow-[2px_2px_2px_rgba(11,31,69,0.18)]"
           style={posicao(p.x, p.y)}
         >
           {/* SVG da marca de 36 px em disco branco (o desenho aprovado); o 44 do atributo é a caixa do alvo de toque. */}
