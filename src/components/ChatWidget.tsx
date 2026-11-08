@@ -3,6 +3,7 @@
 import { useState, useRef, useEffect, KeyboardEvent } from "react";
 import Link from "next/link";
 import { abrirContato } from "@/lib/contato";
+import { PAGE_LABELS, extrairPaginas } from "@/lib/chat-paginas";
 
 interface Message {
   from: "user" | "bot";
@@ -18,22 +19,6 @@ const QUICK_CHIPS = [
   { label: "Serve p/ banheiro?",    prompt: "Posso usar o PFB no banheiro ou em áreas úmidas?" },
   { label: "Como instalar?",        prompt: "Como é feita a instalação do PFB?" },
 ];
-
-const PAGE_LABELS: Record<string, string> = {
-  "/produtos":     "Ver os produtos",
-  "/produtos/pfb": "Conhecer o PFB",
-  "/produtos/pfb/catalogo": "Ver o catálogo",
-  "/techstone":    "Conhecer a TechStone",
-  "/projetos":     "Ver Projetos",
-  "/visualizador": "Simular no meu ambiente",
-  "/parcerias":    "Programa de Parcerias",
-  "/academia":     "Formação da Academia",
-  "/contato":      "Falar com um consultor",
-};
-
-// Páginas que o assistente citava e que mudaram de endereço (as respostas
-// guardadas e o prompt do /admin ainda podem trazê-las).
-const PAGINAS_ANTIGAS: Record<string, string> = { "/tecnologia": "/produtos/pfb" };
 
 function shouldShowWa(text: string) {
   return /whatsapp|showroom|visita|orçamento|comprar|agendar|preço específico|consultor/i.test(text);
@@ -110,14 +95,8 @@ function renderInline(text: string): React.ReactNode {
  * - `pageLinks` — list of /paths extracted from [PAGE: /path] tags
  */
 function parseBotText(raw: string): { nodes: React.ReactNode; pageLinks: string[] } {
-  const pageLinks: string[] = [];
-
-  // Extract [PAGE: /path] tags anywhere in the text
-  const text = raw.replace(/\[PAGE:\s*(\/[^\]]*)\]/g, (_, path: string) => {
-    const p = PAGINAS_ANTIGAS[path.trim()] ?? path.trim();
-    if (PAGE_LABELS[p] && !pageLinks.includes(p)) pageLinks.push(p);
-    return "";
-  }).trim();
+  // Extrai as etiquetas [PAGE: /caminho] (ver @/lib/chat-paginas)
+  const { texto: text, pageLinks } = extrairPaginas(raw);
 
   const lines = text.split("\n");
   const elements: React.ReactNode[] = [];

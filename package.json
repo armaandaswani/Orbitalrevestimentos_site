@@ -11,7 +11,8 @@
     "test:links": "node --test \"src/lib/product-link.test.mjs\"",
     "test:funil": "node --test \"src/lib/gtag-fila.test.mjs\"",
     "test:pfb": "node --test \"src/lib/pfb-modelos-puro.test.mjs\"",
-    "test:pdv": "node --test \"src/lib/pontos-de-venda.test.mjs\""
+    "test:pdv": "node --test \"src/lib/pontos-de-venda.test.mjs\"",
+    "test:chat": "node --test \"src/lib/chat-prompt.test.mjs\""
   },
   "dependencies": {
     "@anthropic-ai/sdk": "^1.3.0",

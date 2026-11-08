@@ -76,7 +76,7 @@ export default function Footer() {
             <p className={colunaTitulo}>Onde ver o PFB</p>
             <div className="flex flex-col gap-1">
               <Link href="/projetos#parceiros" className={item}>Showrooms parceiros</Link>
-              <Link href="/projetos#revenda" className={item}>Casa do Eletricista (revenda)</Link>
+              <Link href="/onde-comprar" className={item}>Onde comprar</Link>
               <Link href="/projetos#obras" className={item}>Obras em Manaus</Link>
               <p className="text-[#c9ccd6] text-sm leading-snug mt-2">Ou peça a visita de um consultor com as amostras no seu escritório.</p>
             </div>
