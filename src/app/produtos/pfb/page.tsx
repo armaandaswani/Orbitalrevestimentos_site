@@ -2,6 +2,9 @@ import type { Metadata } from "next";
 import { SCRIPT_NIVEL } from "@/lib/movimento/nivel";
 import AberturaPfb from "@/components/pfb/AberturaPfb";
 import OQueEPfb from "@/components/pfb/OQueEPfb";
+import CamadasPfb from "@/components/pfb/CamadasPfb";
+import FichaPfb from "@/components/pfb/FichaPfb";
+import AguaPfb from "@/components/pfb/AguaPfb";
 import ManausPfb from "@/components/pfb/ManausPfb";
 import BambuPfb from "@/components/pfb/BambuPfb";
 
@@ -101,6 +104,9 @@ export default function PfbPage() {
       ))}
       <AberturaPfb />
       <OQueEPfb />
+      <CamadasPfb />
+      <FichaPfb />
+      <AguaPfb />
       <ManausPfb />
       <BambuPfb />
     </main>

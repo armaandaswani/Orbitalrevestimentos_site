@@ -1,6 +1,7 @@
 /**
- * Geometria e cores da figura das cinco camadas do PFB (components/pfb/CamadasPfb),
- * em unidades do viewBox. Módulo puro, sem import e sem texto (os nomes das
+ * Geometria e cores da figura em SVG das cinco camadas do PFB, que já saiu da
+ * página (o components/pfb/CamadasPfb de hoje usa lib/pfb-anatomia), em
+ * unidades do viewBox. Módulo puro, sem import e sem texto (os nomes das
  * camadas ficam em lib/pfb-textos): camadas.test.mjs roda em Node.
  *
  * A placa é desenhada em perspectiva oblíqua a partir da face de cima do

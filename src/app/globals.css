@@ -1400,7 +1400,8 @@ html[data-mv-nivel="leve"] .ts-clima-nevoa { display: none; }
 }
 
 /* ── PFB: a placa por dentro ──────────────────────────────────────────────
-   As cinco camadas do PFB (components/pfb/CamadasPfb), em /produtos/pfb.
+   A figura em SVG das cinco camadas do PFB, que já saiu da página (o
+   components/pfb/CamadasPfb de hoje não usa .pfb-cam*); o bloco sai na limpeza.
    Padrão: figura aberta e parada, lista inteira (celular, nível leve, janela
    baixa, movimento reduzido, sem JavaScript). A cena presa só existe na
    consulta de baixo (D5 da spec); --p (0 → 1) vem do useProgresso. A seção
@@ -1473,6 +1474,24 @@ html[data-mv-nivel="leve"] .ts-clima-nevoa { display: none; }
   .pfb-corpo        { font-size: 1.0625rem; line-height: 1.75rem; max-width: 60ch; }
   .pfb-num-destaque { font-size: 4rem; line-height: 4.25rem; }
   .pfb-num          { font-size: 2.75rem; line-height: 3rem; }
+}
+
+/* Capítulo 3, a placa por dentro (components/pfb/CamadasPfb). `.pfb-palco` é
+   o contêiner comum da figura e dos nomes. A figura são seis cópias da imagem,
+   cada uma recortada na sua lâmina (`.pfb-lamina`; clip-path, z-index, --fechado
+   e --i no style), e os cinco nomes são `.pfb-nome` (--l, a primeira lâmina do
+   nome). Por ora tudo fica parado no estado final, a imagem original composta:
+   o encaixe, quando entrar, parte de translateY(var(--fechado)) e opacity 0 e
+   chega a este padrão. */
+.pfb-lamina { transform: none; opacity: 1; }
+.pfb-nome   { transform: none; opacity: 1; }
+
+/* Capítulo 4: o "+" do bloco que abre (o details da ficha completa) gira 45°
+   com o bloco aberto. A troca só anima no nível completo, sem movimento reduzido. */
+.pfb-mais { display: inline-block; }
+details[open] > summary .pfb-mais { transform: rotate(45deg); }
+@media (prefers-reduced-motion: no-preference) {
+  html[data-mv-nivel="completo"] .pfb-mais { transition: transform var(--mv-base) var(--mv-chegada); }
 }
 
 /* Parallax das fotos inteiras (capítulos 1, 6 e 10): a camada da foto passa
