@@ -1432,9 +1432,14 @@ html[data-mv-nivel="leve"] .ts-clima-nevoa { display: none; }
    O encaixe: cada lâmina parte de translateY(var(--fechado)) (-fechadoY% da altura
    da imagem; a película, sem fechadoY, só esmaece) com opacidade 0 e chega ao
    lugar; o esmaecer cobre o que fica para fora. Os nomes entram 8 px pela esquerda.
-   Caminho principal: pela rolagem, na entrada do palco (view-timeline
-   --pfb-camadas), escalonado por --i e --l (6% da entrada cada um; o último acaba
-   em entry 90%). Caminho por tempo, onde não há animation-timeline: só pelas
+   Caminho principal: pela rolagem, na entrada da figura (.pfb-figura é o sujeito
+   da view-timeline --pfb-camadas; o palco a mostra aos nomes por timeline-scope).
+   Cada lâmina anda 36% da entrada, 13% depois da de cima, e chega ao meio quando o
+   centro da sua faixa está a ~88% da altura da tela (390 × 844 e 1440 × 900): as
+   de baixo encaixam já na tela, não abaixo dela. Por isso o fim passa de entry
+   100% (a figura inteira dentro): a última lâmina acaba em entry 113% e o último
+   nome em 115%, antes da chegada por âncora a #tecnologia (a figura fica em entry
+   121% no computador e 133% no celular). Caminho por tempo, onde não há animation-timeline: só pelas
    classes do EntradaPfb (pfb-espera parado na partida, pfb-entrou 900 ms, 70 ms
    entre vizinhos). Ele vem depois e é mais específico que o principal; a classe só
    existe quando o EntradaPfb viu que não há view(), por isso fica fora do
@@ -1445,16 +1450,17 @@ html[data-mv-nivel="leve"] .ts-clima-nevoa { display: none; }
 @keyframes pfb-nome-entra { from { transform: translateX(-8px); opacity: 0; } to { transform: none; opacity: 1; } }
 @media (prefers-reduced-motion: no-preference) {
   @supports (animation-timeline: view()) {
-    html[data-mv-nivel="completo"] .pfb-palco { view-timeline: --pfb-camadas block; }
+    html[data-mv-nivel="completo"] .pfb-palco { timeline-scope: --pfb-camadas; }
+    html[data-mv-nivel="completo"] .pfb-figura { view-timeline: --pfb-camadas block; }
     html[data-mv-nivel="completo"] .pfb-lamina {
       animation: pfb-lamina-encaixa linear both;
       animation-timeline: --pfb-camadas;
-      animation-range: entry calc(10% + var(--i) * 6%) entry calc(60% + var(--i) * 6%);
+      animation-range: entry calc(12% + var(--i) * 13%) entry calc(48% + var(--i) * 13%);
     }
     html[data-mv-nivel="completo"] .pfb-nome {
       animation: pfb-nome-entra linear both;
       animation-timeline: --pfb-camadas;
-      animation-range: entry calc(13% + var(--l) * 6%) entry calc(60% + var(--l) * 6%);
+      animation-range: entry calc(18% + var(--l) * 13%) entry calc(50% + var(--l) * 13%);
     }
   }
   html[data-mv-nivel="completo"] .pfb-espera .pfb-lamina { animation: none; transform: translateY(var(--fechado)); opacity: 0; }

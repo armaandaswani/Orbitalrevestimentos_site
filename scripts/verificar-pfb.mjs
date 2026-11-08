@@ -1146,6 +1146,36 @@ function estaNoFinal(m, largura) {
   };
 }
 
+/**
+ * O encaixe lâmina a lâmina: a opacidade da própria lâmina, o translateY calculado, o limite
+ * de partida (−fechadoY% da altura da lâmina, lido de --fechado) e se a primeira animação dela
+ * roda numa DocumentTimeline (o caminho por tempo).
+ */
+function medirEncaixe(page) {
+  return page.evaluate(() =>
+    [...document.querySelectorAll(".pfb-lamina")].map((el) => {
+      const cs = getComputedStyle(el);
+      const n = cs.transform === "none" ? [] : cs.transform.slice(cs.transform.indexOf("(") + 1, cs.transform.lastIndexOf(")")).split(",").map(Number);
+      const ty = n.length === 16 ? n[13] : n.length === 6 ? n[5] : 0;
+      const a = el.getAnimations()[0];
+      return { op: Number(cs.opacity), ty, limite: (parseFloat(cs.getPropertyValue("--fechado")) / 100) * el.offsetHeight, tempo: a ? a.timeline instanceof DocumentTimeline : false };
+    }),
+  );
+}
+
+/**
+ * O sentido do encaixe: das lâminas com fechadoY (limite < 0) a meio caminho (opacidade entre
+ * 0,01 e 0,99), ao menos uma, e todas com o translateY em [limite − 0,5, −0,5] (partem de cima e
+ * descem até 0; um sinal trocado dá translateY > 0).
+ */
+function sentidoDoEncaixe(enc) {
+  const aMeio = enc.map((l, i) => ({ ...l, i })).filter((l) => l.limite < 0 && l.op > 0.01 && l.op < 0.99);
+  const fora = aMeio.filter((l) => !(l.ty >= l.limite - 0.5 && l.ty <= -0.5));
+  const lista = aMeio.map((l) => `${l.i}: ${r1(l.ty)} em [${r1(l.limite)}, 0]`).join(", ");
+  if (aMeio.length === 0) return { ok: false, detalhe: `nenhuma lâmina com fechadoY a meio caminho (${enc.map((l, i) => `${i}: opacidade ${r1(l.op)}, translateY ${r1(l.ty)}`).join("; ")})` };
+  return { ok: fora.length === 0, detalhe: fora.length ? `translateY fora do intervalo: ${lista}` : `translateY no intervalo: ${lista}` };
+}
+
 /** Captura da Etapa 2: <saida>/pfb-<estado>-<L>x<A>.png. */
 const capturarPfb = (page, estado, dim) => capturar(page, `pfb-${estado}`, dim);
 
@@ -1464,43 +1494,50 @@ async function etapa2Navegador(browser) {
     }
   }
 
-  // 8a. O encaixe pela rolagem (caminho principal, animation-timeline): com o palco 30% dentro
-  // da tela, alguma lâmina a meio caminho e com animação; com o fundo do palco 10 px acima do
-  // fim da tela (a entrada terminou: o último intervalo acaba em entry 90%), tudo no estado final.
+  // 8a. O encaixe pela rolagem (caminho principal, animation-timeline). O sujeito da linha do
+  // tempo é a figura: a posição é a do topo de .pfb-figura em innerHeight − p × altura (p, o
+  // progresso de entrada). p = 0,15: começo (captura). p = 0,6, o meio do encaixe (os intervalos
+  // vão de entry 12% a 115%): alguma lâmina a meio caminho e com animação, com o translateY entre
+  // −fechadoY% da altura e 0. p = 1,18 (depois do fim, em 115%, e antes da chegada por âncora, que
+  // deixa a figura em 121% no computador e 133% no celular): tudo no estado final.
   for (const dim of [CELULAR, DESKTOP]) {
-    await verificar("Lâminas encaixam na entrada: topo de .pfb-palco em innerHeight − 0,3 × altura dá ≥ 1 .pfb-lamina com opacidade < 0,99 e animação; fundo do palco em innerHeight − 10 dá o estado final", dim, () =>
+    await verificar("Lâminas encaixam na entrada da figura: topo de .pfb-figura em innerHeight − 0,6 × altura dá ≥ 1 .pfb-lamina com opacidade < 0,99, animação e translateY em [−fechadoY% × altura, 0]; em innerHeight − 1,18 × altura, o estado final", dim, () =>
       comContexto(browser, dim, {}, async (page) => {
         await irAPagina(page);
-        const posicionar = (fracao, fundo) =>
-          page.evaluate(
-            ({ fracao, fundo }) => {
-              const r = document.querySelector(".pfb-palco").getBoundingClientRect();
-              const alvo = fundo ? r.bottom + scrollY - (innerHeight - 10) : r.top + scrollY - (innerHeight - fracao * r.height);
-              window.scrollTo({ top: Math.max(0, alvo), behavior: "instant" });
-            },
-            { fracao, fundo },
-          );
+        const posicionar = (p) =>
+          page.evaluate((p) => {
+            const r = document.querySelector(".pfb-figura").getBoundingClientRect();
+            window.scrollTo({ top: Math.max(0, r.top + scrollY - (innerHeight - p * r.height)), behavior: "instant" });
+          }, p);
         const falhas = [];
-        await posicionar(0.3, false);
+        await posicionar(0.15);
+        await dormir(200);
+        await capturarPfb(page, "encaixe-inicio", dim);
+        await posicionar(0.6);
         await dormir(200);
         const meio = await medirMovimento(page);
+        const enc = await medirEncaixe(page);
         await capturarPfb(page, "encaixe-meio", dim);
         const aMeio = meio.laminas.filter((l) => l.opacidade < 0.99 && l.anima).length;
-        if (aMeio === 0) falhas.push(`palco 30% dentro: nenhuma lâmina com opacidade < 0,99 e animação (${meio.laminas.map((l, i) => `${i}: ${r1(l.opacidade)}${l.anima ? " anima" : ""}`).join(", ")})`);
-        await posicionar(0, true);
+        if (aMeio === 0) falhas.push(`no meio: nenhuma lâmina com opacidade < 0,99 e animação (${meio.laminas.map((l, i) => `${i}: ${r1(l.opacidade)}${l.anima ? " anima" : ""}`).join(", ")})`);
+        const sentido = sentidoDoEncaixe(enc);
+        if (!sentido.ok) falhas.push(`no meio: ${sentido.detalhe}`);
+        await posicionar(1.18);
         await dormir(200);
         const fim = estaNoFinal(await medirMovimento(page), dim[0]);
         await capturarPfb(page, "encaixe-fim", dim);
-        if (!fim.ok) falhas.push(`fundo do palco em innerHeight − 10: ${fim.detalhe}`);
-        return comFalhas(falhas, `palco 30% dentro: ${aMeio} lâminas a meio caminho (opacidades ${meio.laminas.map((l) => r1(l.opacidade)).join(", ")}); fundo dentro: ${fim.detalhe}`);
+        if (!fim.ok) falhas.push(`em innerHeight − 1,18 × altura: ${fim.detalhe}`);
+        return comFalhas(falhas, `no meio: ${aMeio} lâminas a meio caminho (opacidades ${meio.laminas.map((l) => r1(l.opacidade)).join(", ")}); ${sentido.detalhe}; no fim: ${fim.detalhe}`);
       }),
     );
   }
 
   // 8b. O caminho por tempo (EntradaPfb): o CSS.supports do JS diz que não há animation-timeline,
-  // o CSS de verdade continua tendo. pfb-espera no topo; pfb-entrou ao rolar; 300 ms depois, uma
-  // lâmina a meio caminho numa DocumentTimeline (só o caminho por tempo usa uma); 1500 ms depois, o final.
-  await verificar("Caminho por tempo das lâminas (CSS.supports(animation-timeline) falso): pfb-espera no topo; pfb-entrou ≤ 1000 ms depois de rolar; 300 ms depois, lâmina com opacidade < 0,99 numa DocumentTimeline; 1500 ms depois, o estado final", DESKTOP, () =>
+  // o CSS de verdade continua tendo. pfb-espera no topo (sondado até 1000 ms: a classe entra depois
+  // da hidratação); pfb-entrou ao rolar a figura à tela; 300 ms depois, uma lâmina a meio caminho
+  // numa DocumentTimeline (só o caminho por tempo usa uma), com o translateY no intervalo;
+  // 1500 ms depois, o final.
+  await verificar("Caminho por tempo das lâminas (CSS.supports(animation-timeline) falso): pfb-espera no topo; pfb-entrou ≤ 1000 ms depois de rolar; 300 ms depois, lâmina com opacidade < 0,99 numa DocumentTimeline e translateY em [−fechadoY% × altura, 0]; 1500 ms depois, o estado final", DESKTOP, () =>
     comContexto(browser, DESKTOP, {}, async (page, ctx) => {
       await ctx.addInitScript(() => {
         const o = CSS.supports.bind(CSS);
@@ -1508,39 +1545,36 @@ async function etapa2Navegador(browser) {
       });
       await irAPagina(page);
       const classes = () => page.evaluate(() => document.querySelector(".pfb-palco")?.className ?? null);
-      const falhas = [];
-      const noTopo = await classes();
-      if (!/\bpfb-espera\b/.test(noTopo ?? "")) falhas.push(`no topo, .pfb-palco sem pfb-espera ("${noTopo}")`);
-      await rolarAoMeio(page, ".pfb-palco");
-      const t0 = Date.now();
-      let entrou = false;
-      while (Date.now() - t0 <= 1000) {
-        if (/\bpfb-entrou\b/.test((await classes()) ?? "")) {
-          entrou = true;
-          break;
+      const esperarClasse = async (re) => {
+        const t0 = Date.now();
+        while (Date.now() - t0 <= 1000) {
+          if (re.test((await classes()) ?? "")) return Date.now() - t0;
+          await dormir(25);
         }
-        await dormir(25);
-      }
-      const espera = Date.now() - t0;
-      if (!entrou) {
+        return null;
+      };
+      const falhas = [];
+      const tEspera = await esperarClasse(/\bpfb-espera\b/);
+      const noTopo = await classes();
+      if (tEspera === null) falhas.push(`no topo, .pfb-palco sem pfb-espera em 1000 ms ("${noTopo}")`);
+      await rolarAoMeio(page, ".pfb-figura");
+      const tEntrou = await esperarClasse(/\bpfb-entrou\b/);
+      if (tEntrou === null) {
         falhas.push(`pfb-entrou não apareceu em 1000 ms ("${await classes()}")`);
         return comFalhas(falhas, `no topo "${noTopo}"`);
       }
       await dormir(300);
-      const meio = await page.evaluate(() =>
-        [...document.querySelectorAll(".pfb-lamina")].map((el) => {
-          const a = el.getAnimations()[0];
-          return { op: Number(getComputedStyle(el).opacity), tempo: a ? a.timeline instanceof DocumentTimeline : false };
-        }),
-      );
+      const enc = await medirEncaixe(page);
       await capturarPfb(page, "encaixe-tempo-meio", DESKTOP);
-      const aMeio = meio.filter((l) => l.op < 0.99 && l.tempo).length;
-      if (aMeio === 0) falhas.push(`300 ms depois de pfb-entrou: nenhuma lâmina com opacidade < 0,99 numa DocumentTimeline (${meio.map((l, i) => `${i}: ${r1(l.op)}${l.tempo ? " tempo" : ""}`).join(", ")})`);
+      const aMeio = enc.filter((l) => l.op < 0.99 && l.tempo).length;
+      if (aMeio === 0) falhas.push(`300 ms depois de pfb-entrou: nenhuma lâmina com opacidade < 0,99 numa DocumentTimeline (${enc.map((l, i) => `${i}: ${r1(l.op)}${l.tempo ? " tempo" : ""}`).join(", ")})`);
+      const sentido = sentidoDoEncaixe(enc);
+      if (!sentido.ok) falhas.push(`300 ms depois de pfb-entrou: ${sentido.detalhe}`);
       await dormir(1500);
       const fim = estaNoFinal(await medirMovimento(page), DESKTOP[0]);
       await capturarPfb(page, "encaixe-tempo-fim", DESKTOP);
       if (!fim.ok) falhas.push(`1500 ms depois: ${fim.detalhe}`);
-      return comFalhas(falhas, `no topo "${noTopo}"; pfb-entrou em ${espera} ms; 300 ms depois, ${aMeio} lâminas a meio caminho numa DocumentTimeline; 1500 ms depois: ${fim.detalhe}`);
+      return comFalhas(falhas, `pfb-espera em ${tEspera} ms ("${noTopo}"); pfb-entrou em ${tEntrou} ms; 300 ms depois, ${aMeio} lâminas a meio caminho numa DocumentTimeline; ${sentido.detalhe}; 1500 ms depois: ${fim.detalhe}`);
     }),
   );
 
