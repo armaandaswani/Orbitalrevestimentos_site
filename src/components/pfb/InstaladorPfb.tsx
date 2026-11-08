@@ -6,8 +6,8 @@ import { INSTALADOR } from "@/lib/pfb-textos";
  * 2026-11-07-pfb-experiencia, Tabela, linha 8). Azul-noite, o título e a
  * frase, e o pôster do vídeo recortado em 4:5 (300 px de largura, 360 no
  * computador) com a faixa "Assistir" na base. O toque abre o vídeo 9:16 num
- * painel de tela cheia (`VideoShort recorte="4:5"`). No computador, o texto à
- * esquerda e o vídeo à direita.
+ * painel de tela cheia (`VideoShort recorte="4:5"`). No celular, o pôster
+ * centrado na coluna; no computador, o texto à esquerda e o vídeo à direita.
  */
 export default function InstaladorPfb() {
   return (
@@ -22,9 +22,9 @@ export default function InstaladorPfb() {
           <h2 id="pfb-instalador-titulo" className="font-serif pfb-t1 text-white">
             {INSTALADOR.titulo}
           </h2>
-          <p className="pfb-corpo text-[#F6F5F2]/80 mt-4 lg:mt-6">{INSTALADOR.frase}</p>
+          <p className="pfb-corpo text-[#F6F5F2]/80 mt-6 lg:mt-8">{INSTALADOR.frase}</p>
         </div>
-        <div className="mt-6 w-[300px] max-w-full lg:mt-0 lg:w-[360px]">
+        <div className="mt-6 mx-auto w-[300px] max-w-full lg:mx-0 lg:mt-0 lg:w-[360px]">
           <VideoShort
             id="hpgoCY8L2PI"
             poster="/images/videos/opiniao-instalador-adam-werk.jpg"

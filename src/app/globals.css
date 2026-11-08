@@ -1421,6 +1421,15 @@ html[data-mv-nivel="leve"] .ts-clima-nevoa { display: none; }
   .pfb-num-destaque { font-size: 4rem; line-height: 4.25rem; }
   .pfb-num          { font-size: 2.75rem; line-height: 3rem; }
 }
+/* Telas estreitas (polimento, Tarefa 7b): abaixo de 380 px os números da
+   ficha descem a 28/32 ("550 kg/m³" cabe numa linha a 375); abaixo de 360 px
+   os nomes do capítulo 3 descem a 15/20 (a 320 se encostavam). */
+@media (max-width: 379.98px) {
+  .pfb-num          { font-size: 1.75rem; line-height: 2rem; }
+}
+@media (max-width: 359.98px) {
+  .pfb-nome         { font-size: 0.9375rem; line-height: 1.25rem; }
+}
 
 /* Capítulo 3, a placa por dentro (components/pfb/CamadasPfb). `.pfb-palco` é
    o contêiner comum da figura e dos nomes. A figura são seis cópias da imagem,

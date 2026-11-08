@@ -21,9 +21,8 @@ const AGUA_FOCO = "50% 52%";
  * JavaScript, a foto de 0h fica visível.
  *
  * Altura no celular (teto de 680 px): com a foto de 300 × 400 o `alturas.mjs`
- * acusou 735 px a 390; 270 × 360 dá 695 (só a foto muda), ainda acima. Fica o
- * último ajuste pré-aprovado do capítulo 5 (P1): foto de 240 × 320 e o aviso na
- * mesma linha dos botões, à direita.
+ * acusou 735 px a 390. Com o aviso na mesma linha dos botões (à direita), a
+ * foto de 270 × 360, centrada na coluna, cabe (ruling do polimento, Tarefa 7b).
  */
 export default function AguaPfb() {
   const [ativa, setAtiva] = useState(0);
@@ -40,7 +39,7 @@ export default function AguaPfb() {
         </h2>
         <p className="pfb-corpo text-[#F6F5F2]/85 mt-6 lg:mt-8">{AGUA.frase}</p>
         <Revelar efeito="desvela" className="mt-6 lg:mt-8">
-          <div className="grid grid-cols-[minmax(0,240px)] lg:grid-cols-3 lg:w-[75%] lg:gap-x-6">
+          <div className="grid grid-cols-[minmax(0,270px)] justify-center lg:justify-start lg:grid-cols-3 lg:w-[75%] lg:gap-x-6">
             {AGUA.horas.map(({ rotulo, legenda, alt }, i) => (
               <figure
                 key={rotulo}
@@ -55,7 +54,7 @@ export default function AguaPfb() {
                     src={`/images/pfb/pfb-teste-agua-${rotulo}.jpg`}
                     alt={alt}
                     fill
-                    sizes="(min-width: 1024px) 288px, 240px"
+                    sizes="(min-width: 1024px) 288px, 270px"
                     className="object-cover"
                     style={{ objectPosition: AGUA_FOCO }}
                   />

@@ -36,7 +36,7 @@ export default function FechamentoPfb({ lugares }: { lugares: Showroom[] }) {
           <h2 id="pfb-pedir-titulo" className="font-serif pfb-t1 text-[#0B1F45]">
             {PEDIR.titulo}
           </h2>
-          <p className="pfb-corpo text-[#43474e] mt-4">{PEDIR.frase}</p>
+          <p className="pfb-corpo text-[#43474e] mt-6 lg:mt-8">{PEDIR.frase}</p>
         </div>
 
         {(showrooms.length > 0 || revendas.length > 0) && (

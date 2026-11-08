@@ -21,7 +21,8 @@ import Image from "next/image";
  *
  * capa "veu" (padrão): o véu em gradiente, o círculo verde do play e o rótulo.
  * "faixa": sem gradiente, sem círculo e sem sombra; uma faixa sólida
- * azul-noite de 40 px na base do pôster com "Assistir".
+ * `#2347A0` (azul vivo, para não sumir num fundo azul-noite) de 40 px na base
+ * do pôster com "Assistir", sublinhado no hover.
  *
  * posicao: o `object-position` do pôster (o padrão do navegador é "50% 50%";
  * sem a prop, o pôster sai sem `style`, como sempre saiu).
@@ -95,7 +96,7 @@ export default function VideoShort({
             style={posicao ? { objectPosition: posicao } : undefined}
           />
           {faixa ? (
-            <span className="absolute inset-x-0 bottom-0 flex h-10 items-center px-4 bg-[#0B1F45] text-left text-white text-[0.875rem] leading-5 font-semibold transition-colors group-hover:bg-[#2347A0]">
+            <span className="absolute inset-x-0 bottom-0 flex h-10 items-center px-4 bg-[#2347A0] text-left text-white text-[0.875rem] leading-5 font-semibold decoration-1 underline-offset-4 group-hover:underline">
               Assistir
             </span>
           ) : (

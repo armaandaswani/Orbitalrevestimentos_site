@@ -19,7 +19,9 @@ import { FICHA, FICHA_COMPLETA } from "@/lib/pfb-textos";
  * está aplicado, porque o `alturas.mjs` acusou 767 px a 390: vão de 16 px entre
  * os blocos (dos números até o cartão) e o cartão do manual numa linha só
  * (com o botão de 16 px de lado no celular, o nome cabe em duas linhas). Medido
- * depois: 669 px a 390.
+ * depois: 669 px a 390. Abaixo de 380 px (Tarefa 7b), `.pfb-num` desce a 28/32
+ * (globals.css) e o vão entre os números a 12 px: a 375 o nome do manual
+ * quebra em três linhas, e sem isso o capítulo passaria de 680.
  */
 export default function FichaPfb() {
   return (
@@ -34,7 +36,7 @@ export default function FichaPfb() {
           {FICHA.titulo}
         </h2>
         <div className="mt-6 lg:mt-8 lg:grid lg:grid-cols-2 lg:gap-x-16 lg:items-start">
-          <dl className="grid grid-cols-2 gap-x-4 gap-y-4 lg:gap-x-8 lg:gap-y-8">
+          <dl className="grid grid-cols-2 gap-x-4 gap-y-4 max-[380px]:gap-y-3 lg:gap-x-8 lg:gap-y-8">
             {FICHA.numeros.map(({ valor, frase }, i) => (
               <Revelar
                 key={valor}
