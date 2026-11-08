@@ -323,3 +323,68 @@ export function rotulosDeBairro(pontos: PontoDeVenda[]): { bairro: string; x: nu
   }
   return [...porBairro.entries()].map(([bairro, a]) => ({ bairro, x: a.soma / a.n, y: Math.min(a.baixo + 34, ALTURA_MAPA - 8) }));
 }
+
+// ---------------------------------------------------------------------------
+// Abertura animada: decisão e script inline (antes da primeira pintura)
+// ---------------------------------------------------------------------------
+
+/** Quanto a abertura dura antes de sair sozinha. */
+export const DURACAO_ABERTURA_MS = 3800;
+/** Chave do sessionStorage que marca "já tocou nesta sessão". */
+export const CHAVE_ABERTURA = "orbital-pdv-abertura";
+
+export type SinaisAbertura = {
+  /** Há `loja=` não vazio na URL (a validade do slug é com a página). */
+  temLoja: boolean;
+  /** `prefers-reduced-motion: reduce` */
+  reduzMovimento: boolean;
+  /** `prefers-reduced-data: reduce` */
+  reduzDados: boolean;
+  /** `navigator.connection.saveData` */
+  saveData: boolean;
+  /** `navigator.connection.effectiveType` */
+  tipoConexao?: string;
+  /** `navigator.deviceMemory`, em GB */
+  memoria?: number;
+  /** `navigator.hardwareConcurrency` */
+  nucleos?: number;
+  /** A abertura já tocou nesta sessão. */
+  jaTocou: boolean;
+};
+
+/**
+ * A abertura só toca na primeira visita da sessão, sem link de loja, em
+ * aparelho e rede folgados. Núcleos só contam com `memoria` definida: o WebKit
+ * (iPhone) não expõe `deviceMemory` e trava `hardwareConcurrency` em 4, igual
+ * ao `decidirNivel` (src/lib/movimento/nivel.ts).
+ */
+export function deveTocarAbertura(s: SinaisAbertura): boolean {
+  if (s.temLoja || s.reduzMovimento || s.reduzDados || s.saveData || s.jaTocou) return false;
+  if (s.tipoConexao === "slow-2g" || s.tipoConexao === "2g" || s.tipoConexao === "3g") return false;
+  if (s.memoria !== undefined && s.memoria < 4) return false;
+  if (s.memoria !== undefined && s.nucleos !== undefined && s.nucleos <= 4) return false;
+  return true;
+}
+
+/**
+ * `deveTocarAbertura` em JavaScript puro (ES5), para um <script> embutido no
+ * começo da página que liga `data-pdv-abertura="1"` no <html> antes da primeira
+ * pintura. Quando liga, grava a chave no sessionStorage antes; se gravar
+ * lançar, não liga. Tira o atributo uma vez só: ao fim de
+ * `DURACAO_ABERTURA_MS`, no primeiro pointerdown, keydown ou scroll e no clique
+ * em `[data-pdv-pular]`. Os valores entram por concatenação para a string e o
+ * módulo nunca divergirem. Se mudar `deveTocarAbertura`, mude esta string; o
+ * teste confere.
+ */
+export const SCRIPT_ABERTURA_PDV =
+  "(function(){try{var w=window,d=document,h=d.documentElement,n=navigator,c=n.connection,s=w.sessionStorage,K='" +
+  CHAVE_ABERTURA +
+  "',A='data-pdv-abertura',t=c&&c.effectiveType,m=n.deviceMemory,k=n.hardwareConcurrency," +
+  "no=/[?&]loja=[^&]/.test(location.search)||w.matchMedia('(prefers-reduced-motion: reduce)').matches||w.matchMedia('(prefers-reduced-data: reduce)').matches||!!(c&&c.saveData===true)||!!s[K]||t==='slow-2g'||t==='2g'||t==='3g'||(m!==undefined&&(m<4||(k!==undefined&&k<=4)));" +
+  "if(no)return;s[K]='1';h.setAttribute(A,'1');" +
+  "var on=true,off=function(){if(!on)return;on=false;h.removeAttribute(A);},o={once:true,passive:true};" +
+  "w.setTimeout(off," +
+  DURACAO_ABERTURA_MS +
+  ");w.addEventListener('pointerdown',off,o);w.addEventListener('keydown',off,o);w.addEventListener('scroll',off,o);" +
+  "d.addEventListener('click',function(e){var x=e.target;if(x&&x.closest&&x.closest('[data-pdv-pular]'))off();});" +
+  "}catch(e){}})();";

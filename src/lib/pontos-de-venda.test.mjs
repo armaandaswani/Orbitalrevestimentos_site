@@ -1,5 +1,6 @@
 import test from "node:test";
 import assert from "node:assert/strict";
+import vm from "node:vm";
 import {
   normalizarWhatsapp,
   normalizarInstagram,
@@ -17,6 +18,10 @@ import {
   cabePino,
   aproximarPinos,
   rotulosDeBairro,
+  deveTocarAbertura,
+  DURACAO_ABERTURA_MS,
+  CHAVE_ABERTURA,
+  SCRIPT_ABERTURA_PDV,
 } from "./pontos-de-venda.ts";
 
 test("normalizarWhatsapp aceita os formatos do admin", () => {
@@ -234,4 +239,246 @@ test("rotulosDeBairro: só conta loja com pino (cabePino) e limita o y do rótul
   const r = rotulosDeBairro(pontos);
   assert.deepEqual(r.map((x) => x.bairro), ["Sul"]);
   assert.equal(r[0].y, ALTURA_MAPA - 8);
+});
+
+// ---------------------------------------------------------------------------
+// Abertura animada: decisão e script inline (antes da primeira pintura)
+// ---------------------------------------------------------------------------
+
+const BASE_ABERTURA = {
+  temLoja: false,
+  reduzMovimento: false,
+  reduzDados: false,
+  saveData: false,
+  jaTocou: false,
+};
+
+test("deveTocarAbertura: sem sinais restritivos toca", () => {
+  assert.equal(deveTocarAbertura(BASE_ABERTURA), true);
+  assert.equal(DURACAO_ABERTURA_MS, 3800);
+  assert.equal(CHAVE_ABERTURA, "orbital-pdv-abertura");
+});
+
+for (const s of [
+  { temLoja: true },
+  { reduzMovimento: true },
+  { reduzDados: true },
+  { saveData: true },
+  { jaTocou: true },
+  { tipoConexao: "slow-2g" },
+  { tipoConexao: "2g" },
+  { tipoConexao: "3g" },
+  { memoria: 2 },
+  { memoria: 3.5 },
+  { memoria: 8, nucleos: 4 },
+  { memoria: 8, nucleos: 2 },
+]) {
+  test(`deveTocarAbertura é false com ${JSON.stringify(s)}`, () => {
+    assert.equal(deveTocarAbertura({ ...BASE_ABERTURA, ...s }), false);
+  });
+}
+
+for (const s of [
+  { tipoConexao: "4g" },
+  { memoria: 4, nucleos: 8 },
+  { memoria: 8, nucleos: 8 },
+  { memoria: 8 },
+  // iPhone: o WebKit não expõe deviceMemory e trava os núcleos em 4.
+  { nucleos: 4 },
+  { nucleos: 2 },
+]) {
+  test(`deveTocarAbertura é true com ${JSON.stringify(s)}`, () => {
+    assert.equal(deveTocarAbertura({ ...BASE_ABERTURA, ...s }), true);
+  });
+}
+
+// Roda o SCRIPT_ABERTURA_PDV em node:vm com um contexto falso e devolve o que o
+// script fez: o atributo no <html>, os listeners registrados e o storage.
+function rodarAbertura(sinais = {}, opcoes = {}) {
+  const atributos = {};
+  const ouvintes = { janela: {}, documento: {} };
+  const temporizadores = [];
+  const contagem = { remocoes: 0 };
+  const guardado = opcoes.guardado ?? {};
+  const navigator = {};
+  if (sinais.memoria !== undefined) navigator.deviceMemory = sinais.memoria;
+  if (sinais.nucleos !== undefined) navigator.hardwareConcurrency = sinais.nucleos;
+  if (sinais.saveData !== undefined || sinais.tipoConexao !== undefined) {
+    navigator.connection = { saveData: sinais.saveData, effectiveType: sinais.tipoConexao };
+  }
+  const contexto = {
+    location: { search: sinais.search ?? "" },
+    navigator,
+    matchMedia: (q) => ({
+      matches:
+        q === "(prefers-reduced-motion: reduce)"
+          ? !!sinais.reduzMovimento
+          : q === "(prefers-reduced-data: reduce)"
+            ? !!sinais.reduzDados
+            : false,
+    }),
+    setTimeout: (fn, ms) => temporizadores.push({ fn, ms }),
+    addEventListener: (tipo, fn, op) => {
+      ouvintes.janela[tipo] = { fn, op };
+    },
+    document: {
+      documentElement: {
+        setAttribute: (k, v) => {
+          atributos[k] = String(v);
+        },
+        removeAttribute: (k) => {
+          contagem.remocoes++;
+          delete atributos[k];
+        },
+        getAttribute: (k) => (k in atributos ? atributos[k] : null),
+      },
+      addEventListener: (tipo, fn, op) => {
+        ouvintes.documento[tipo] = { fn, op };
+      },
+    },
+  };
+  if (opcoes.storageLanca) {
+    Object.defineProperty(contexto, "sessionStorage", {
+      get() {
+        throw new Error("bloqueado");
+      },
+    });
+  } else {
+    contexto.sessionStorage = guardado;
+  }
+  contexto.window = contexto;
+  vm.runInNewContext(SCRIPT_ABERTURA_PDV, contexto);
+  return {
+    atributo: contexto.document.documentElement.getAttribute("data-pdv-abertura"),
+    atributos,
+    ouvintes,
+    temporizadores,
+    contagem,
+    guardado,
+  };
+}
+
+test("SCRIPT_ABERTURA_PDV lê location.search (o catch não esconde erro)", () => {
+  assert.equal(rodarAbertura({ search: "?loja=x" }).atributo, null);
+  // Sem loja o mesmo contexto toca: o script chegou até o fim.
+  assert.equal(rodarAbertura({ search: "" }).atributo, "1");
+  // loja vazia não conta como loja.
+  assert.equal(rodarAbertura({ search: "?loja=" }).atributo, "1");
+  assert.equal(rodarAbertura({ search: "?a=1&loja=y" }).atributo, null);
+});
+
+test("SCRIPT_ABERTURA_PDV dá a mesma decisão que deveTocarAbertura", () => {
+  const matriz = [
+    { nome: "nada", sinais: {} },
+    { nome: "loja", sinais: { search: "?loja=ste" } },
+    { nome: "movimento reduzido", sinais: { reduzMovimento: true } },
+    { nome: "poucos dados", sinais: { reduzDados: true } },
+    { nome: "save-data", sinais: { saveData: true } },
+    { nome: "3g", sinais: { tipoConexao: "3g" } },
+    { nome: "4g", sinais: { tipoConexao: "4g" } },
+    { nome: "2 GB", sinais: { memoria: 2 } },
+    { nome: "8 GB, 4 núcleos", sinais: { memoria: 8, nucleos: 4 } },
+    { nome: "8 GB, 8 núcleos", sinais: { memoria: 8, nucleos: 8 } },
+    { nome: "iPhone", sinais: { nucleos: 4 } },
+    { nome: "já tocou", sinais: {}, guardado: { [CHAVE_ABERTURA]: "1" } },
+    {
+      nome: "tudo ruim",
+      sinais: { search: "?loja=a", reduzMovimento: true, saveData: true, memoria: 1, nucleos: 2 },
+    },
+  ];
+  assert.equal(matriz.length, 13);
+  for (const { nome, sinais, guardado } of matriz) {
+    const r = rodarAbertura(sinais, { guardado: guardado ? { ...guardado } : {} });
+    const esperado = deveTocarAbertura({
+      temLoja: /[?&]loja=[^&]/.test(sinais.search ?? ""),
+      reduzMovimento: !!sinais.reduzMovimento,
+      reduzDados: !!sinais.reduzDados,
+      saveData: !!sinais.saveData,
+      tipoConexao: sinais.tipoConexao,
+      memoria: sinais.memoria,
+      nucleos: sinais.nucleos,
+      jaTocou: !!guardado,
+    });
+    assert.equal(r.atributo === "1", esperado, nome);
+  }
+});
+
+test("SCRIPT_ABERTURA_PDV grava a chave e agenda o desligamento", () => {
+  const r = rodarAbertura({});
+  assert.equal(r.atributo, "1");
+  assert.equal(r.guardado[CHAVE_ABERTURA], "1");
+  assert.equal(r.temporizadores.length, 1);
+  assert.equal(r.temporizadores[0].ms, DURACAO_ABERTURA_MS);
+  for (const tipo of ["pointerdown", "keydown", "scroll"]) {
+    // Campo a campo: o objeto nasce no outro realm do vm, com outro protótipo.
+    assert.equal(r.ouvintes.janela[tipo].op.once, true, tipo);
+    assert.equal(r.ouvintes.janela[tipo].op.passive, true, tipo);
+  }
+  assert.ok(r.ouvintes.documento.click);
+});
+
+test("sessionStorage que lança não quebra", () => {
+  let r;
+  assert.doesNotThrow(() => {
+    r = rodarAbertura({}, { storageLanca: true });
+  });
+  assert.equal(r.atributo, null);
+});
+
+test("sessionStorage que lança ao gravar não liga", () => {
+  const guardado = {};
+  Object.defineProperty(guardado, CHAVE_ABERTURA, {
+    get: () => undefined,
+    set() {
+      throw new Error("cheio");
+    },
+  });
+  const r = rodarAbertura({}, { guardado });
+  assert.equal(r.atributo, null);
+});
+
+test("já tocou nesta sessão", () => {
+  const r = rodarAbertura({}, { guardado: { [CHAVE_ABERTURA]: "1" } });
+  assert.equal(r.atributo, null);
+});
+
+test("rolar ou tocar desliga a abertura", () => {
+  for (const tipo of ["scroll", "pointerdown", "keydown"]) {
+    const r = rodarAbertura({});
+    assert.equal(r.atributo, "1");
+    r.ouvintes.janela[tipo].fn({});
+    assert.equal(r.atributos["data-pdv-abertura"], undefined, tipo);
+  }
+});
+
+test("o tempo acaba e desliga a abertura", () => {
+  const r = rodarAbertura({});
+  r.temporizadores[0].fn();
+  assert.equal(r.atributos["data-pdv-abertura"], undefined);
+});
+
+test("clicar em [data-pdv-pular] desliga; outro clique não", () => {
+  const r = rodarAbertura({});
+  r.ouvintes.documento.click.fn({ target: { closest: () => null } });
+  assert.equal(r.atributos["data-pdv-abertura"], "1");
+  r.ouvintes.documento.click.fn({
+    target: { closest: (sel) => (sel === "[data-pdv-pular]" ? {} : null) },
+  });
+  assert.equal(r.atributos["data-pdv-abertura"], undefined);
+});
+
+test("o desligamento remove o atributo uma vez só", () => {
+  const r = rodarAbertura({});
+  r.ouvintes.janela.scroll.fn({});
+  r.ouvintes.janela.keydown.fn({});
+  r.ouvintes.janela.pointerdown.fn({});
+  r.ouvintes.documento.click.fn({ target: { closest: () => ({}) } });
+  r.temporizadores[0].fn();
+  assert.equal(r.contagem.remocoes, 1);
+});
+
+test("SCRIPT_ABERTURA_PDV é ES5 e leva os valores do módulo", () => {
+  assert.doesNotMatch(SCRIPT_ABERTURA_PDV, /=>|\blet\b|\bconst\b|`|\$\{/);
+  assert.ok(SCRIPT_ABERTURA_PDV.includes(CHAVE_ABERTURA));
+  assert.ok(SCRIPT_ABERTURA_PDV.includes(String(DURACAO_ABERTURA_MS)));
 });
