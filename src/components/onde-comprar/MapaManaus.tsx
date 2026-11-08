@@ -8,7 +8,7 @@ import {
   rotulosDeBairro,
   type PontoDeVenda,
 } from "@/lib/pontos-de-venda";
-import { CAMADAS_MANAUS, ESTILO_MANAUS, ROTULOS_FIXOS } from "./mapaManaus";
+import { CAMADAS_MANAUS, ESTILO_MANAUS, ROTULOS_FIXOS } from "./dados-mapa-manaus";
 
 /** Imagem do pino. Se o dono preferir um pino neutro (Pergunta 4), basta trocar esta constante. */
 export const PINO_PDV = "/images/brand/orbital-simbolo.svg";

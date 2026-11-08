@@ -7,7 +7,7 @@
  *   node scripts/gerar-mapa-manaus.mjs [--osm <arquivo.json>] [--cache <pasta>]
  *                                      [--prototipo <pasta> [--pontos <coordenadas.json>]]
  *
- * Grava src/components/onde-comprar/mapaManaus.ts (o que a página usa; não
+ * Grava src/components/onde-comprar/dados-mapa-manaus.ts (o que a página usa; não
  * editar à mão). Com --prototipo grava também, na pasta indicada, o protótipo
  * da Fase 0 (mapa-manaus.svg e mapa-manaus.json, com os pontos de --pontos).
  *
@@ -52,7 +52,7 @@ const OVERPASS = "https://overpass-api.de/api/interpreter";
 const SITE = "https://orbitalrevestimentos.com.br";
 const UA = `OrbitalRevestimentos-site/1.0 (+${SITE}; mapa /onde-comprar; gerar-mapa-manaus.mjs)`;
 /** Relativo à raiz do repositório; o script grava aí de qualquer pasta em que rode. */
-const SAIDA_TS = path.join(path.dirname(fileURLToPath(import.meta.url)), "..", "src/components/onde-comprar/mapaManaus.ts");
+const SAIDA_TS = path.join(path.dirname(fileURLToPath(import.meta.url)), "..", "src/components/onde-comprar/dados-mapa-manaus.ts");
 const ARQUIVO_CACHE = "overpass-manaus.json";
 
 /** Caixa do download (graus): a do desenho com folga. */

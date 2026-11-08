@@ -23,7 +23,7 @@ import {
   CHAVE_ABERTURA,
   SCRIPT_ABERTURA_PDV,
 } from "./pontos-de-venda.ts";
-import { CAIXA_GERADA, LARGURA, ALTURA, ROTULOS_FIXOS } from "../components/onde-comprar/mapaManaus.ts";
+import { CAIXA_GERADA, LARGURA, ALTURA, ROTULOS_FIXOS } from "../components/onde-comprar/dados-mapa-manaus.ts";
 
 test("normalizarWhatsapp aceita os formatos do admin", () => {
   assert.deepEqual(normalizarWhatsapp("+55 (92) 9 9152-5177"), { valor: "5592991525177" });
