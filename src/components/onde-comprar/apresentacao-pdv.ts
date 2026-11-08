@@ -41,5 +41,10 @@ export function enderecoCompleto(p: Pick<PontoDeVenda, "bairro" | "address">): s
   return p.address?.trim() || p.bairro?.trim() || null;
 }
 
-/** Símbolo da Orbital no selo "Revendedor autorizado" (o mesmo arquivo do pino). */
+/**
+ * Símbolo da Orbital no selo "Revendedor autorizado". É o mesmo caminho do
+ * PINO_PDV (MapaManaus.tsx), repetido de propósito: importar do MapaManaus
+ * levaria o módulo do mapa (Server Component) para o chunk da folha, que é
+ * cliente. Se o pino trocar de imagem (Pergunta 4), o selo continua o símbolo.
+ */
 export const SIMBOLO_SELO = "/images/brand/orbital-simbolo.svg";

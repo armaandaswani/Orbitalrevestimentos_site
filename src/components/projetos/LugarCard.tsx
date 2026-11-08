@@ -2,7 +2,7 @@
 
 import Image from "next/image";
 import { coverStyle } from "@/lib/cover-crop";
-import { CARTAO_PDV } from "@/lib/pontos-de-venda";
+import { CARTAO_PDV } from "@/lib/cartao-pdv";
 import { contaAmbientes, linkComoChegar, lugarNovo, nomeLugar, type Showroom } from "@/lib/projetos-tipos";
 
 /**
@@ -15,8 +15,9 @@ import { contaAmbientes, linkComoChegar, lugarNovo, nomeLugar, type Showroom } f
  * JavaScript, ou pela home, o `href` leva à página do showroom.
  *
  * Revenda sem ambientes não tem página própria: leva à /onde-comprar. O cartão
- * sintético `CARTAO_PDV` ("Pontos de venda") abre a página inteira; uma loja
- * real abre a página já na loja (?loja=<slug>).
+ * sintético `CARTAO_PDV` ("Pontos de venda") abre a página inteira e mostra
+ * "Lojas em Manaus" no corpo, onde os outros mostram o endereço; uma loja real
+ * abre a página já na loja (?loja=<slug>).
  */
 
 const botao = "inline-flex items-center justify-center gap-2 min-h-11 px-3 text-xs tracking-[0.08em] whitespace-nowrap uppercase font-bold transition-colors focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[#2347A0]";
@@ -50,7 +51,7 @@ export default function LugarCard({ lugar, agora, href, onAbrir, compacto = fals
           <svg width={compacto ? 32 : 40} height={compacto ? 32 : 40} viewBox="0 0 24 24" fill="none" stroke="#36A35C" strokeWidth="1.4" strokeLinecap="round" strokeLinejoin="round" aria-hidden>
             <path d="M3 9l1.5-5h15L21 9" /><path d="M3 9h18v2a3 3 0 0 1-6 0 3 3 0 0 1-6 0 3 3 0 0 1-6 0V9z" /><path d="M5 13v7h14v-7" /><path d="M10 20v-4h4v4" />
           </svg>
-          {(cartaoPdv || !revenda) && <span className="text-white/80 text-sm mt-3">{cartaoPdv ? CARTAO_PDV.description : "Fotos em breve"}</span>}
+          {!revenda && <span className="text-white/80 text-sm mt-3">Fotos em breve</span>}
         </span>
       )}
       {/* Selos só no cartão grande; no compacto, os 5 lado a lado ficam limpos. */}
@@ -79,7 +80,8 @@ export default function LugarCard({ lugar, agora, href, onAbrir, compacto = fals
               <span className="line-clamp-2 underline-offset-4 decoration-primary/30 group-hover/mapa:underline">{lugar.address}</span>
             </a>
           )}
-          {!lugar.address && revenda && !cartaoPdv && lugar.description && <p className="text-on-surface-variant text-[13px] mt-1 leading-snug line-clamp-2">{lugar.description}</p>}
+          {/* Sem endereço (o cartão "Pontos de venda" e a revenda sem endereço), a linha do lugar vai onde os outros mostram o endereço. */}
+          {!lugar.address && revenda && lugar.description && <p className="text-on-surface-variant text-[13px] mt-1 leading-snug line-clamp-2">{lugar.description}</p>}
           {lugar.ambient_count > 0 && <p className="text-on-surface-variant text-[13px] mt-1.5">{contaAmbientes(lugar.ambient_count)} com PFB</p>}
           <a href={destino} onClick={abrir} className="mt-auto pt-1 inline-flex items-center gap-1.5 min-h-11 text-primary text-xs tracking-[0.1em] uppercase font-semibold hover:text-[#2347A0]">
             {temPagina ? `Ver ${rotuloAcao.toLowerCase()}` : rotuloAcao} <span className="mv-seta inline-flex">{seta}</span>

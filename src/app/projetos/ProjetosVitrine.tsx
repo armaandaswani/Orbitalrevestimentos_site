@@ -10,7 +10,7 @@ import Revelar from "@/components/projetos/Revelar";
 import ContatoCta from "@/components/ContatoCta";
 import VisorProjetos, { useVisor } from "@/components/projetos/VisorProjetos";
 import { modelosTxt } from "@/lib/projeto-modelos";
-import { parceirosNaGrade } from "@/lib/pontos-de-venda";
+import { parceirosNaGrade } from "@/lib/cartao-pdv";
 import {
   CATEGORIA_SHOWROOM, ESTILO_ESPERA_URL, combinaBusca, nomeLugar, ordenarCategorias, porDestaque, rotuloTag, secoesDoProjeto,
   type Projeto, type Showroom,

@@ -4,7 +4,7 @@ import LugarCard from "@/components/projetos/LugarCard";
 import Revelar from "@/components/projetos/Revelar";
 import { CATALOGO_PATH } from "@/lib/product-link";
 import { PEDIR } from "@/lib/pfb-textos";
-import { parceirosNaGrade } from "@/lib/pontos-de-venda";
+import { CARTAO_PDV, parceirosNaGrade } from "@/lib/cartao-pdv";
 import type { Showroom } from "@/lib/projetos-tipos";
 
 /**
@@ -36,7 +36,8 @@ export default function FechamentoPfb({ lugares, agora }: { lugares: Showroom[];
           <ul className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-5 gap-3 lg:gap-4 mt-8">
             {grade.map((lugar) => (
               <li key={lugar.id}>
-                <div data-teste="lugar" data-tipo={lugar.kind} data-texto-banco className="h-full">
+                {/* O cartão "Pontos de venda" é texto do site, não do banco: fica de fora do data-texto-banco (a varredura de proibidos lê o texto dele). */}
+                <div data-teste="lugar" data-tipo={lugar.kind} data-texto-banco={lugar.id === CARTAO_PDV.id ? undefined : ""} className="h-full">
                   <LugarCard compacto lugar={lugar} agora={agora} />
                 </div>
               </li>

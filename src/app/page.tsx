@@ -12,7 +12,7 @@ import Revelar from "@/components/projetos/Revelar";
 import Trilho from "@/components/projetos/Trilho";
 import ProjetoCard from "@/components/projetos/ProjetoCard";
 import { carregarProjetos } from "@/lib/projetos-dados";
-import { CARTAO_PDV, parceirosNaGrade } from "@/lib/pontos-de-venda";
+import { CARTAO_PDV, parceirosNaGrade } from "@/lib/cartao-pdv";
 import { nomeLugar, porDestaque, type Projeto } from "@/lib/projetos-tipos";
 
 /**

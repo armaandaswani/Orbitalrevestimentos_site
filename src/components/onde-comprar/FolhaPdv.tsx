@@ -3,8 +3,7 @@
 import { useEffect, useRef } from "react";
 import { useDialogo } from "@/components/ds/useDialogo";
 import { trackFunnel } from "@/lib/funnel";
-import { acoesDaLoja, type PontoDeVenda } from "@/lib/pontos-de-venda";
-import { nomeLugar } from "@/lib/projetos-tipos";
+import { acoesDaLoja, type PontoComNome } from "@/lib/pontos-de-venda";
 import { FECHAR_PDV, HORARIO_ROTULO_PDV, SELO_PDV, complementoLeitorPdv, notaFeriadoPdv, rotuloInstagramFolha } from "@/lib/onde-comprar-textos";
 import { atributosDeMedicao, enderecoCompleto, SIMBOLO_SELO } from "./apresentacao-pdv";
 import { BOTAO_PDV_CHEIO, BOTAO_PDV_CLARO, IconeDaAcao, IconeFechar } from "./IconesPdv";
@@ -18,7 +17,7 @@ import { BOTAO_PDV_CHEIO, BOTAO_PDV_CLARO, IconeDaAcao, IconeFechar } from "./Ic
  * `animar` só vem true quando a folha abre por um clique: aberta pelo link
  * (`?loja=`), ela e o véu já aparecem no lugar, sem animação.
  */
-export default function FolhaPdv({ ponto, onFechar, animar }: { ponto: PontoDeVenda; onFechar: () => void; animar: boolean }) {
+export default function FolhaPdv({ ponto, onFechar, animar }: { ponto: PontoComNome; onFechar: () => void; animar: boolean }) {
   const caixa = useRef<HTMLDivElement>(null);
   // O foco entra na própria folha (o leitor de tela ouve o nome da loja) e não
   // no botão Fechar, que ganharia o anel de foco sem o visitante ter usado o teclado.
@@ -34,7 +33,7 @@ export default function FolhaPdv({ ponto, onFechar, animar }: { ponto: PontoDeVe
   const instagram = acoes.find((a) => a.tipo === "instagram");
   const endereco = enderecoCompleto(ponto);
   const idTitulo = `folha-pdv-${ponto.slug}`;
-  const nome = nomeLugar(ponto.name);
+  const nome = ponto.nomeCurto;
 
   return (
     // Véu e folha são irmãos, cada um fixo com o seu z-index (sem um contêiner
@@ -49,7 +48,7 @@ export default function FolhaPdv({ ponto, onFechar, animar }: { ponto: PontoDeVe
         aria-labelledby={idTitulo}
         tabIndex={-1}
         data-pdv-folha={ponto.slug}
-        className={`${animar ? "mv-folha lg:mv-folha-lado " : ""}ds-folha-rola fixed z-[57] inset-x-0 bottom-0 max-h-[88dvh] overflow-y-auto bg-surface-container-lowest px-5 pb-[max(env(safe-area-inset-bottom),1.75rem)] pt-[22px] shadow-2xl outline-none lg:inset-y-0 lg:left-auto lg:right-0 lg:max-h-none lg:w-[min(100%,28rem)] lg:px-8 lg:pt-14`}
+        className={`${animar ? "mv-folha lg:mv-folha-lado " : ""}ds-folha-rola fixed z-[57] pdv-folha-altura inset-x-0 bottom-0 overflow-y-auto bg-surface-container-lowest px-5 pb-[max(env(safe-area-inset-bottom),1.75rem)] pt-[22px] shadow-2xl outline-none lg:inset-y-0 lg:left-auto lg:right-0 lg:max-h-none lg:w-[min(100%,28rem)] lg:px-8 lg:pt-14`}
       >
         <button
           type="button"
@@ -82,7 +81,8 @@ export default function FolhaPdv({ ponto, onFechar, animar }: { ponto: PontoDeVe
         )}
         {ponto.description && <p className="mt-4 text-base leading-[1.5] text-on-surface">{ponto.description}</p>}
 
-        {principal && principal.tipo !== "instagram" && (
+        {/* A principal é o WhatsApp ou, sem ele, o Como chegar (que toda loja tem). */}
+        {principal && (
           <a
             href={principal.href}
             target="_blank"

@@ -1,8 +1,8 @@
 "use client";
 
-import { useCallback, useEffect, useState, useSyncExternalStore } from "react";
+import { useCallback, useEffect, useMemo, useState, useSyncExternalStore } from "react";
 import { trackFunnel, type FunnelEvent } from "@/lib/funnel";
-import { lojaDaUrl, origemValida, type PontoDeVenda } from "@/lib/pontos-de-venda";
+import { lojaDaUrl, origemValida, type PontoComNome } from "@/lib/pontos-de-venda";
 import { EVENTOS_DE_SAIDA } from "./apresentacao-pdv";
 import FolhaPdv from "./FolhaPdv";
 
@@ -26,7 +26,8 @@ function trocarBusca(params: URLSearchParams) {
  * Nada aqui rola a página (sem scrollIntoView nem scrollTo): a abertura da
  * Tarefa 8 sai ao primeiro scroll, e abrir pela URL não pode desligá-la.
  */
-export default function IlhaPdv({ slugs, pontos }: { slugs: string[]; pontos: PontoDeVenda[] }) {
+export default function IlhaPdv({ pontos }: { pontos: PontoComNome[] }) {
+  const slugs = useMemo(() => pontos.map((p) => p.slug), [pontos]);
   // A loja da URL só existe no cliente: o servidor e a hidratação veem "" e a
   // folha aparece no render seguinte, sem divergir do HTML estático.
   const busca = useSyncExternalStore(nadaMuda, buscaDoCliente, buscaDoServidor);

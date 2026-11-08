@@ -66,7 +66,7 @@ test("o ChatWidget usa a função testada, e rodapé e sitemap apontam para a p�
   assert.ok(widget.includes('from "@/lib/chat-paginas"'));
   assert.ok(widget.includes("extrairPaginas(raw)"));
   const footer = readFileSync(new URL("../components/Footer.tsx", import.meta.url), "utf8");
-  assert.ok(footer.includes('<Link href="/onde-comprar" className={item}>Onde comprar</Link>'));
+  assert.ok(footer.includes('<Link href="/onde-comprar" prefetch={false} className={item}>Onde comprar</Link>'));
   assert.ok(!footer.includes("Casa do Eletricista (revenda)"));
   const sitemap = readFileSync(new URL("../app/sitemap.ts", import.meta.url), "utf8");
   assert.match(sitemap, /\/onde-comprar`,\s+lastModified: new Date\(\),\s+changeFrequency: "monthly"/);

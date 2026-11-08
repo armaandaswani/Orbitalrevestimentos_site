@@ -6,8 +6,6 @@
  * importar o .ts direto.
  */
 
-import type { Showroom } from "./projetos-tipos";
-
 export type PontoDeVenda = {
   id: string;
   slug: string;
@@ -486,30 +484,10 @@ export const SCRIPT_ABERTURA_PDV =
   // Se algo lançar depois de ligar, a página não pode ficar presa na abertura.
   "}catch(e){try{if(lig)document.documentElement.removeAttribute('data-pdv-abertura');}catch(x){}}})();";
 
-/**
- * Cartão único das grades da home, de /projetos e de /produtos/pfb: no lugar de
- * uma revenda por cartão, um só leva à página /onde-comprar. Textos aprovados
- * pelo dono: nome "Pontos de venda" e a linha "Lojas em Manaus" (na `description`,
- * que o cartão mostra). Sem imagem: o cartão cai no ícone de loja.
- */
-export const CARTAO_PDV: Showroom = {
-  id: "pontos-de-venda",
-  slug: "pontos-de-venda",
-  name: "Pontos de venda",
-  kind: "revenda",
-  address: null,
-  maps_url: null,
-  description: "Lojas em Manaus",
-  logo_url: null,
-  cover_url: null,
-  ambient_count: 0,
-  display_cover: null,
-  display_focus_x: 0.5,
-  display_focus_y: 0.5,
-  display_zoom: 1,
-};
 
-/** Os showrooms, na ordem em que vieram, mais o cartão "Pontos de venda" no fim. As revendas saem: quem as lista é a página. */
-export function parceirosNaGrade(lugares: Showroom[]): Showroom[] {
-  return [...lugares.filter((l) => l.kind === "showroom"), CARTAO_PDV];
-}
+/**
+ * Ponto como a página o entrega à lista, à ilha e à folha: com o nome curto
+ * ("Casa do Eletricista", sem o "— Centro") já calculado no servidor
+ * (`nomeLugar`), para o projetos-tipos.ts não entrar no chunk do cliente.
+ */
+export type PontoComNome = PontoDeVenda & { nomeCurto: string };

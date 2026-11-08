@@ -59,7 +59,8 @@ export function MapaManaus({ pontos }: { pontos: PontoDeVenda[] }) {
   const bairros = rotulosDeBairro(pontos);
 
   return (
-    <div className="relative w-full overflow-hidden" style={{ aspectRatio: `${LARGURA_MAPA} / ${ALTURA_MAPA}` }}>
+    // pdv-mapa-caixa: sem aspect-ratio (iOS 14), o globals.css segura a proporção com height 0 + padding-bottom 120%.
+    <div className="pdv-mapa-caixa relative w-full overflow-hidden" style={{ aspectRatio: `${LARGURA_MAPA} / ${ALTURA_MAPA}` }}>
       <svg
         viewBox={`0 0 ${LARGURA_MAPA} ${ALTURA_MAPA}`}
         aria-hidden="true"

@@ -2169,3 +2169,14 @@ html.mv-cursor:has([data-lupa="aberta"]) .mv-cursor-corpo { opacity: 0; }
     transition: translate var(--mv-base) var(--mv-chegada), opacity var(--mv-base) var(--mv-chegada), visibility 0s linear var(--mv-base);
   }
 }
+
+/* ── Onde comprar: Safari 14 (iOS 14) ─────────────────────────────────────
+   Sem aspect-ratio, a caixa do mapa segura 400 × 480 por padding (os filhos
+   são absolute em %, que valem sobre a caixa de padding). A folha da loja
+   limita a altura em 88vh antes do 88dvh, para quem não tem dvh. */
+@supports not (aspect-ratio: 1 / 1) {
+  .pdv-mapa-caixa { height: 0; padding-bottom: 120%; }
+}
+@media (max-width: 1023.98px) {
+  .pdv-folha-altura { max-height: 88vh; max-height: 88dvh; }
+}

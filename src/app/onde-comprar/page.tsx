@@ -6,6 +6,7 @@ import { TITULO_META_PDV, TITULO_PDV, subtituloPdv } from "@/lib/onde-comprar-te
 import MapaManaus from "@/components/onde-comprar/MapaManaus";
 import ListaPdv from "@/components/onde-comprar/ListaPdv";
 import IlhaPdv from "@/components/onde-comprar/IlhaPdv";
+import { nomeLugar } from "@/lib/projetos-tipos";
 
 /**
  * /onde-comprar: as revendas do Painel Flexível em Fibra de Bambu em Manaus,
@@ -20,10 +21,10 @@ const SITE = "https://orbitalrevestimentos.com.br";
 const DESCRICAO = "Veja no mapa as lojas de Manaus que revendem o Painel Flexível em Fibra de Bambu, com endereço, horário e WhatsApp de cada uma.";
 // A mesma imagem do layout raiz (o openGraph da página troca o do layout inteiro).
 const IMAGEM_OG = {
-  url: "/images/catalogue/hero-cover.png",
+    url: "/images/catalogue/hero-cover.png",
   width: 1200,
   height: 630,
-  alt: "Orbital Revestimentos: PFB instalado em interior premium",
+  alt: "Orbital Revestimentos: Painel Flexível em Fibra de Bambu instalado numa sala de estar",
 };
 
 export const metadata: Metadata = {
@@ -47,8 +48,10 @@ export const metadata: Metadata = {
 };
 
 export default async function OndeComprarPage() {
-  const { pontos, erro } = await lerPontosDeVenda();
+  const { pontos: lidos, erro } = await lerPontosDeVenda();
   if (erro) throw new Error(erro);
+  // O nome curto sai pronto daqui: o projetos-tipos.ts fica fora do JS do cliente.
+  const pontos = lidos.map((p) => ({ ...p, nomeCurto: nomeLugar(p.name) }));
 
   return (
     <main className="pt-20">
@@ -67,7 +70,7 @@ export default async function OndeComprarPage() {
         </div>
         <ListaPdv pontos={pontos} />
       </div>
-      <IlhaPdv slugs={pontos.map((p) => p.slug)} pontos={pontos} />
+      <IlhaPdv pontos={pontos} />
     </main>
   );
 }

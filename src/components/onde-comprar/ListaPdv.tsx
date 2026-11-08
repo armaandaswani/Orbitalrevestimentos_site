@@ -1,5 +1,4 @@
-import { acoesDaLoja, type PontoDeVenda } from "@/lib/pontos-de-venda";
-import { nomeLugar } from "@/lib/projetos-tipos";
+import { acoesDaLoja, type PontoComNome } from "@/lib/pontos-de-venda";
 import { HORARIO_ROTULO_PDV, complementoLeitorPdv, notaFeriadoPdv } from "@/lib/onde-comprar-textos";
 import { atributosDeMedicao, ondeFica } from "./apresentacao-pdv";
 import { BOTAO_PDV_CHEIO, BOTAO_PDV_CLARO, IconeDaAcao } from "./IconesPdv";
@@ -17,11 +16,11 @@ import { BOTAO_PDV_CHEIO, BOTAO_PDV_CLARO, IconeDaAcao } from "./IconesPdv";
  * ilha mede com um ouvinte só. `flex flex-col` no <ul>: com `?loja=`, o
  * SCRIPT_ABERTURA_PDV põe a loja pedida em primeiro (order) antes da pintura.
  */
-export default function ListaPdv({ pontos }: { pontos: PontoDeVenda[] }) {
+export default function ListaPdv({ pontos }: { pontos: PontoComNome[] }) {
   return (
     <ul className="ds-wrap flex list-none flex-col pb-24 pt-2 lg:w-auto lg:max-w-none lg:px-0 lg:pb-12 lg:pt-0" aria-label="Lojas em Manaus">
       {pontos.map((p) => {
-        const nome = nomeLugar(p.name);
+        const nome = p.nomeCurto;
         const acoes = acoesDaLoja(p).filter((a) => a.tipo === "whatsapp" || a.tipo === "rota");
         const onde = ondeFica(p);
         return (

@@ -24,11 +24,10 @@ import {
   CHAVE_ABERTURA,
   SCRIPT_ABERTURA_PDV,
   CSS_LOJA_PRIMEIRO,
-  CARTAO_PDV,
-  parceirosNaGrade,
   camposRevendaDoCorpo,
   mensagemErroSalvar,
 } from "./pontos-de-venda.ts";
+import { CARTAO_PDV, parceirosNaGrade } from "./cartao-pdv.ts";
 import { CAIXA_GERADA, LARGURA, ALTURA, ROTULOS_FIXOS, MAPA_SVG, CAMADAS_MANAUS } from "../components/onde-comprar/dados-mapa-manaus.ts";
 
 test("normalizarWhatsapp aceita os formatos do admin", () => {
@@ -643,6 +642,23 @@ test("o mapa gerado traz os dois rótulos fixos dentro do viewBox", () => {
 const lugar = (id, kind) => ({
   id, slug: id, name: id, kind, address: null, maps_url: null, description: null, logo_url: null, cover_url: null,
   ambient_count: 0, display_cover: null, display_focus_x: 0.5, display_focus_y: 0.5, display_zoom: 1,
+});
+
+test("CARTAO_PDV é congelado", () => {
+  assert.ok(Object.isFrozen(CARTAO_PDV));
+  assert.throws(() => {
+    "use strict";
+    CARTAO_PDV.name = "outro";
+  });
+  assert.equal(CARTAO_PDV.name, "Pontos de venda");
+});
+
+test("pontos-de-venda.ts e cartao-pdv.ts só têm import type (módulos puros)", () => {
+  for (const arq of ["./pontos-de-venda.ts", "./cartao-pdv.ts"]) {
+    const fonte = fs.readFileSync(new URL(arq, import.meta.url), "utf8");
+    const imports = fonte.match(/^import .*$/gm) ?? [];
+    for (const linha of imports) assert.match(linha, /^import type /, `${arq}: ${linha}`);
+  }
 });
 
 test("CARTAO_PDV é uma revenda sintética com o texto aprovado", () => {
