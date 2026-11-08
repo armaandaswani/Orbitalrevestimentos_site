@@ -14,10 +14,10 @@ import { trackFunnel } from "@/lib/funnel";
  * tom "escuro" (padrão): o cartão inteiro é um botão, para fundo azul.
  * tom "claro": cartão claro com o botão "Solicitar manual" dentro de um div
  * (sem botão dentro de botão), e o link no tom da marca.
- * tom "noite": o cartão da ficha técnica do PFB, sobre o azul-noite: borda
- * creme a 30%, o nome do manual e um botão vazado claro (dentro de um div);
- * sem sobrancelha e sem ícone. Só muda o cartão: o link com "noite" é o mesmo
- * do "escuro".
+ * tom "noite": a linha da ficha técnica do PFB, sobre o azul-noite (v2: uma
+ * linha fina como as outras do capítulo, `.pfb-linha`, com o nome do manual e
+ * o botão "Solicitar manual" em texto, dentro de um div); sem sobrancelha e
+ * sem ícone. Só muda o cartão: o link com "noite" é o mesmo do "escuro".
  *
  * O diálogo vai para o body por portal: assim o link pode ficar dentro de um
  * parágrafo sem pôr div e p dentro de p.
@@ -76,12 +76,12 @@ export default function SolicitarManual({ variant = "card", tom = "escuro" }: { 
           </button>
         </div>
       ) : variant === "card" && tom === "noite" ? (
-        <div data-teste="manual-cartao" className="border border-[#F6F5F2]/30 px-4 py-4 flex items-center justify-between gap-3 lg:px-5 lg:gap-4">
-          <p className="min-w-0 font-serif pfb-t3 text-white">Manual Técnico de Instalação</p>
+        <div data-teste="manual-cartao" className="pfb-linha pfb-linha-noite cursor-default">
+          <p className="min-w-0">Manual Técnico de Instalação</p>
           <button
             type="button"
             onClick={abrir}
-            className="ds-botao border border-[#F6F5F2] text-[#F6F5F2] hover:bg-[#F6F5F2] hover:text-[#0B1F45] shrink-0 px-4 lg:px-7 lg:min-h-12"
+            className="shrink-0 inline-flex min-h-11 items-center font-sans text-[0.875rem] text-[#F6F5F2] underline decoration-1 underline-offset-4 hover:decoration-2"
           >
             Solicitar manual
           </button>
@@ -113,7 +113,7 @@ export default function SolicitarManual({ variant = "card", tom = "escuro" }: { 
           </span>
         </button>
       ) : tom === "claro" ? (
-        <button type="button" onClick={abrir} className="text-[#0B1F45] underline underline-offset-4">
+        <button type="button" onClick={abrir} data-solicitar-manual className="text-[#0B1F45] underline underline-offset-4">
           Manual Técnico de Instalação
         </button>
       ) : (

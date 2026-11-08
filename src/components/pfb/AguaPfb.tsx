@@ -2,96 +2,106 @@
 
 import { useState } from "react";
 import Image from "next/image";
-import Revelar from "@/components/projetos/Revelar";
 import { AGUA } from "@/lib/pfb-textos";
 
-/** Recorte 3:4 centrado no aquário: nas três fotos ele vai de y ≈ 400 a 1620 de 1935. */
+/** Recorte centrado no aquário: nas três fotos ele vai de y ≈ 400 a 1620 de 1935. */
 const AGUA_FOCO = "50% 52%";
+/** Passos do controle entre duas horas (0h = 0, 24h = 100, 48h = 200). */
+const PASSO = 100;
 
 /**
- * Capítulo 5 da página do PFB: teste de água (spec 2026-11-07-pfb-experiencia,
- * Tabela, linha 5). Azul-noite, título e frase, e as fotos de 0h, 24h e 48h
- * (o Painel à esquerda, o MDF à direita).
+ * Capítulo 5 da página do PFB: teste de água (v2, 08/11/2026). Azul-noite.
  *
- * Um só conjunto de três `figure`. Celular: empilhadas na mesma célula da grade,
- * só a da hora escolhida visível (troca por opacidade em 300 ms), e embaixo os
- * três botões "0h · 24h · 48h" com `aria-pressed`; começa em 0h, sem avanço
- * automático. Computador (lg): as três lado a lado em 75% da largura, com o
- * rótulo da hora no canto de cima de cada foto, e os botões somem. Sem
- * JavaScript, a foto de 0h fica visível.
+ * A foto ocupa a largura da tela no celular (quadrada) e a coluna da direita no
+ * computador (3:4). As três fotos (0h, 24h, 48h; o Painel à esquerda, o MDF à
+ * direita) ficam empilhadas e o controle de arrastar troca uma pela outra
+ * enquanto anda: a opacidade de cada foto é 1 − |posição − hora|, então entre
+ * duas horas as duas se misturam e numa hora só ela aparece. Ao soltar, o
+ * controle encaixa na hora mais perto. Os três rótulos embaixo do controle são
+ * botões (`aria-pressed`) que levam a foto à sua hora, com 300 ms de troca.
  *
- * Altura no celular (teto de 680 px): com a foto de 300 × 400 o `alturas.mjs`
- * acusou 735 px a 390. Com o aviso na mesma linha dos botões (à direita), a
- * foto de 270 × 360, centrada na coluna, cabe (ruling do polimento, Tarefa 7b).
+ * Sem JavaScript, a foto de 0h fica visível. Sem "Imagens ilustrativas." (pedido
+ * do dono, 08/11/2026); o `alt` de cada foto continua dizendo que é gerada por IA.
  */
 export default function AguaPfb() {
-  const [ativa, setAtiva] = useState(0);
+  const [pos, setPos] = useState(0);
+  const [suave, setSuave] = useState(false);
+  const fim = (AGUA.horas.length - 1) * PASSO;
+  const hora = Math.round(pos / PASSO);
+  const irPara = (p: number, comTroca: boolean) => {
+    setSuave(comTroca);
+    setPos(Math.min(fim, Math.max(0, p)));
+  };
+
   return (
     <section
       id="agua"
       data-capitulo="agua"
       aria-labelledby="pfb-agua-titulo"
-      className="bg-[#0B1F45] text-white py-12 lg:py-24"
+      className="bg-[#0B1F45] text-white pt-12 pb-10 lg:py-24"
     >
-      <div className="ds-wrap">
-        <h2 id="pfb-agua-titulo" className="font-serif pfb-t1 text-white">
-          {AGUA.titulo}
-        </h2>
-        <p className="pfb-corpo text-[#F6F5F2]/85 mt-6 lg:mt-8">{AGUA.frase}</p>
-        <Revelar efeito="desvela" className="mt-6 lg:mt-8">
-          <div className="grid grid-cols-[minmax(0,270px)] justify-center lg:justify-start lg:grid-cols-3 lg:w-[75%] lg:gap-x-6">
-            {AGUA.horas.map(({ rotulo, legenda, alt }, i) => (
+      <div className="lg:ds-wrap lg:grid lg:grid-cols-[minmax(0,1fr)_minmax(0,28rem)] lg:items-center lg:gap-x-24">
+        <div className="ds-wrap lg:mx-0 lg:w-full lg:max-w-none lg:px-0 lg:row-start-1 lg:col-start-1">
+          <h2 id="pfb-agua-titulo" className="font-serif pfb-t1 text-white">
+            {AGUA.titulo}
+          </h2>
+          <p className="pfb-corpo text-[#F6F5F2]/80 mt-3 lg:mt-6">{AGUA.frase}</p>
+        </div>
+        <div className="relative mt-6 aspect-square w-full overflow-hidden lg:mt-0 lg:row-span-2 lg:col-start-2 lg:aspect-[3/4]">
+          {AGUA.horas.map(({ rotulo, alt }, i) => {
+            const op = Math.max(0, 1 - Math.abs(pos / PASSO - i));
+            return (
               <figure
                 key={rotulo}
                 data-teste="agua-foto"
                 data-hora={rotulo}
-                className={`col-start-1 row-start-1 lg:col-start-auto lg:row-start-auto lg:opacity-100 transition-opacity duration-300 motion-reduce:transition-none ${
-                  i === ativa ? "opacity-100" : "opacity-0"
+                className={`absolute inset-0 m-0 ${suave ? "pfb-agua-troca" : ""}`}
+                style={{ opacity: op }}
+              >
+                <Image
+                  src={`/images/pfb/pfb-teste-agua-${rotulo}.jpg`}
+                  alt={alt}
+                  fill
+                  sizes="(min-width: 1024px) 480px, 100vw"
+                  className="object-cover"
+                  style={{ objectPosition: AGUA_FOCO }}
+                />
+              </figure>
+            );
+          })}
+        </div>
+        <div className="ds-wrap mt-4 lg:mx-0 lg:w-full lg:max-w-[26rem] lg:px-0 lg:mt-10 lg:row-start-2 lg:col-start-1 lg:self-start">
+          <input
+            type="range"
+            min={0}
+            max={fim}
+            step={1}
+            value={pos}
+            aria-label={AGUA.controle}
+            aria-valuetext={AGUA.horas[hora].rotulo}
+            onChange={(e) => irPara(Number(e.target.value), false)}
+            onPointerUp={() => irPara(hora * PASSO, true)}
+            onKeyUp={() => irPara(hora * PASSO, true)}
+            onTouchEnd={() => irPara(hora * PASSO, true)}
+            className="pfb-agua-controle"
+          />
+          <div className="mt-1 flex justify-between">
+            {AGUA.horas.map(({ rotulo }, i) => (
+              <button
+                key={rotulo}
+                type="button"
+                data-teste="agua-hora"
+                aria-pressed={pos === i * PASSO}
+                onClick={() => irPara(i * PASSO, true)}
+                className={`min-h-11 min-w-11 pfb-legenda tabular-nums ${i === 0 ? "text-left" : i === AGUA.horas.length - 1 ? "text-right" : "text-center"} ${
+                  hora === i ? "text-white" : "text-[#F6F5F2]/55"
                 }`}
               >
-                <div className="relative aspect-[3/4] w-full overflow-hidden">
-                  <Image
-                    src={`/images/pfb/pfb-teste-agua-${rotulo}.jpg`}
-                    alt={alt}
-                    fill
-                    sizes="(min-width: 1024px) 288px, 270px"
-                    className="object-cover"
-                    style={{ objectPosition: AGUA_FOCO }}
-                  />
-                  <span className="hidden lg:block absolute top-0 left-0 bg-white text-[#0B1F45] pfb-legenda font-semibold px-2 py-1">
-                    {rotulo}
-                  </span>
-                </div>
-                <figcaption className="pfb-legenda text-[#F6F5F2]/70 mt-2">{legenda}</figcaption>
-              </figure>
+                {rotulo}
+              </button>
             ))}
           </div>
-          <div className="mt-2 flex items-center justify-between gap-4 lg:mt-6">
-            <div className="-ml-2 flex items-center lg:hidden">
-              {AGUA.horas.map(({ rotulo }, i) => (
-                <span key={rotulo} className="flex items-center">
-                  {i > 0 && (
-                    <span aria-hidden="true" className="px-1 text-[#F6F5F2]/50">
-                      ·
-                    </span>
-                  )}
-                  <button
-                    type="button"
-                    data-teste="agua-hora"
-                    aria-pressed={i === ativa}
-                    onClick={() => setAtiva(i)}
-                    className={`min-h-11 px-2 pfb-corpo tabular-nums ${
-                      i === ativa ? "text-white underline decoration-1 underline-offset-4" : "text-[#F6F5F2]/60"
-                    }`}
-                  >
-                    {rotulo}
-                  </button>
-                </span>
-              ))}
-            </div>
-            <p className="pfb-legenda text-[#F6F5F2]/60">{AGUA.aviso}</p>
-          </div>
-        </Revelar>
+        </div>
       </div>
     </section>
   );

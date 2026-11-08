@@ -102,17 +102,30 @@ const PROIBIDOS = ["15 acabamentos", "20 anos", "sem o custo", "impermeáv", "ma
  * acusar "chuva" ou "luva"). Na 2, sem "2 a 3 horas" (a Seção 5 o tem por decisão
  * do dono, E-5). O catálogo visitado com --etapa 2 usa a 2 com a união das duas
  * listas de proibidos e minLd 4 (os 3 do layout raiz e o ld-catalogo).
+ *
+ * v2 (08/11/2026): `permitidas` são frases inteiras que saem do texto do main antes
+ * da procura. Só uma: a nota de tolerância da ficha técnica detalhada, que o dono
+ * pediu de volta com o ±10% (pedido de 08/11/2026). O "±10%" continua proibido em
+ * qualquer outro lugar da página. "inchamento" entrou na lista da 2. Na página do
+ * PFB (não no catálogo, onde a nota de imagens ilustrativas é regra do vault), a
+ * lista leva também "Imagens ilustrativas" (TEXTO_PAGINA_PFB): o dono pediu o teste
+ * de água sem esse texto.
  */
+const TOLERANCIA_FICHA =
+  "Peso e densidade admitem tolerância de ±10%: o bambu é fibra natural e cada lote varia. Padrão em materiais de fibra vegetal.";
 const TEXTO = {
   1: { ld: "script#ld-catalogo", nomeLd: "ld-catalogo", minLd: 1, proibidos: PROIBIDOS, palavras: [] },
   2: {
     ld: 'script[type="application/ld+json"]',
     nomeLd: "ld+json",
     minLd: 7,
-    proibidos: ["impermeáv", "mais caro", "estrutural", "±10%", "20 anos", "15 acabamentos", "instalado em 2", "—", "–"],
+    permitidas: [TOLERANCIA_FICHA],
+    proibidos: ["impermeáv", "mais caro", "estrutural", "±10%", "20 anos", "15 acabamentos", "instalado em 2", "inchamento", "—", "–"],
     palavras: [/\buv\b/i, /\bmdf\b/i],
   },
 };
+/** A lista da 2 mais o que só vale na página do PFB (o catálogo tem a nota de imagens ilustrativas). */
+const TEXTO_PAGINA_PFB = { ...TEXTO[2], proibidos: [...TEXTO[2].proibidos, "Imagens ilustrativas"] };
 const ATRIBUTO_COM_TRAVESSAO = /(alt|aria-label|title)\s*[=:]\s*\{?\s*[`"'][^`"']*[—–]/g;
 
 const ESPERA_MS = 15000;
@@ -582,8 +595,10 @@ function fontesVazias(t, texto) {
 
 function procurarProibidos(t, texto) {
   const semMdf = texto.palavras.filter((re) => String(re) !== String(/\bmdf\b/i));
+  // Cada frase permitida sai do main uma vez por ocorrência; o resto do main é procurado inteiro.
+  const main = (texto.permitidas ?? []).reduce((s, frase) => s.split(frase).join(" "), t.textoMain);
   const fontes = [
-    ["main", t.textoMain, texto.palavras],
+    ["main", main, texto.palavras],
     ["atributos", t.atributos.join("\n"), texto.palavras],
     ["alt de section#agua img", t.atributosAgua.join("\n"), semMdf],
     ["document.title", t.titulo, texto.palavras],
@@ -1469,26 +1484,67 @@ async function etapa2Navegador(browser) {
     );
   }
 
-  // 5. Capítulo 9: os três blocos fechados ao carregar e abertos um por vez.
-  await verificar("Capítulo 9: blocos fechados ao carregar, um por vez (summary do 1º dá [true, false, false]; o do 2º, [false, true, false])", CELULAR, () =>
-    comContexto(browser, CELULAR, {}, async (page) => {
-      await irAPagina(page);
-      const blocos = 'section#onde-usar details[name="serve"][data-teste="serve-bloco"]';
-      const abertos = () => page.$$eval(blocos, (ds) => ds.map((d) => d.open));
-      const leituras = [["ao carregar", await abertos(), [false, false, false]]];
-      for (const [n, esperadoAbertos] of [
-        [0, [true, false, false]],
-        [1, [false, true, false]],
-      ]) {
-        await page.locator(`${blocos} > summary`).nth(n).click();
-        await dormir(200);
-        leituras.push([`depois do summary ${n + 1}`, await abertos(), esperadoAbertos]);
-      }
-      await capturarPfb(page, "serve-um-por-vez", CELULAR);
-      const falhas = leituras.filter(([, a, e]) => JSON.stringify(a) !== JSON.stringify(e)).map(([q, a, e]) => `${q}: [${a.join(", ")}] (esperado [${e.join(", ")}])`);
-      return comFalhas(falhas, leituras.map(([q, a]) => `${q}: [${a.join(", ")}]`).join("; "));
-    }),
-  );
+  // 5. As folhas (v2, 08/11/2026; antes: os três details do capítulo 9). As três
+  // (ART e ficha detalhada no #ficha, detalhes de uso no #onde-usar) fechadas ao
+  // carregar; o toque na linha abre só a sua, como diálogo modal visível e com o
+  // título; Esc fecha e o foco volta à linha. O conteúdo da ART (o número) e da ficha
+  // detalhada (a nota de tolerância) está no HTML mesmo fechado.
+  const FOLHAS = [
+    ["folha-art", "ficha", "AM20260593657"],
+    ["folha-ficha", "ficha", "tolerância de ±10%"],
+    ["folha-serve", "onde-usar", "não substitui a impermeabilização"],
+  ];
+  for (const dim of [CELULAR, DESKTOP]) {
+    await verificar(`Folhas: ${FOLHAS.map(([id]) => id).join(", ")} fechadas ao carregar, com o conteúdo no HTML; a linha abre só a sua (dialog modal visível, título na tela), Esc fecha e o foco volta à linha`, dim, () =>
+      comContexto(browser, dim, {}, async (page) => {
+        await irAPagina(page);
+        const falhas = [];
+        const partes = [];
+        const abertas = () => page.$$eval("dialog.pfb-folha", (ds) => ds.filter((d) => d.open).map((d) => d.id));
+        const ini = await abertas();
+        if (ini.length) falhas.push(`ao carregar, abertas: ${ini.join(", ")}`);
+        for (const [id, secao, trecho] of FOLHAS) {
+          const html = await page.evaluate(({ i, s }) => {
+            const d = document.getElementById(i);
+            return { existe: d?.tagName === "DIALOG", naSecao: !!d?.closest(`section#${s}`), texto: d?.textContent ?? "" };
+          }, { i: id, s: secao });
+          if (!html.existe || !html.naSecao) { falhas.push(`${id}: dialog ausente em section#${secao}`); continue; }
+          if (!html.texto.includes(trecho)) falhas.push(`${id}: o HTML fechado não tem "${trecho}"`);
+          const linha = page.locator(`section#${secao} [data-folha-abre="${id}"]`);
+          await linha.scrollIntoViewIfNeeded();
+          await linha.click();
+          await dormir(700);
+          const m = await page.evaluate((i) => {
+            const d = document.getElementById(i);
+            const t = document.getElementById(`${i}-titulo`);
+            const r = d.getBoundingClientRect();
+            const rt = t?.getBoundingClientRect();
+            return {
+              aberto: d.open,
+              modal: d.matches(":modal"),
+              visivel: r.width > 0 && r.height > 0 && r.top < innerHeight && r.bottom > 0,
+              titulo: !!rt && rt.top >= 0 && rt.bottom <= innerHeight,
+              outras: [...document.querySelectorAll("dialog.pfb-folha")].filter((o) => o.open && o.id !== i).map((o) => o.id),
+              sw: document.documentElement.scrollWidth,
+              iw: innerWidth,
+            };
+          }, id);
+          await capturarPfb(page, `folha-${id}`, dim);
+          if (!m.aberto || !m.modal) falhas.push(`${id}: depois do toque, open ${m.aberto} e :modal ${m.modal}`);
+          if (!m.visivel || !m.titulo) falhas.push(`${id}: folha visível ${m.visivel}, título inteiro na tela ${m.titulo}`);
+          if (m.outras.length) falhas.push(`${id}: outras abertas junto: ${m.outras.join(", ")}`);
+          if (!(m.sw <= m.iw)) falhas.push(`${id} aberta: scrollWidth ${m.sw} > innerWidth ${m.iw}`);
+          await page.keyboard.press("Escape");
+          await dormir(300);
+          const depois = await page.evaluate((i) => ({ aberto: document.getElementById(i).open, foco: document.activeElement?.getAttribute("data-folha-abre") ?? null }), id);
+          if (depois.aberto) falhas.push(`${id}: continua aberta depois do Esc`);
+          if (depois.foco !== id) falhas.push(`${id}: depois do Esc o foco está em ${depois.foco ?? "outro elemento"} (esperado a linha)`);
+          partes.push(`${id}: abriu (modal), fechou com Esc, foco na linha ${depois.foco === id}`);
+        }
+        return comFalhas(falhas, partes.join("; "));
+      }),
+    );
+  }
 
   // 6. Capítulo 5 no celular: os três botões trocam a foto e o aria-pressed.
   await verificar('Capítulo 5 no celular: começa em 0h; cada botão fica sozinho em aria-pressed="true" e mostra só a sua foto', CELULAR, () =>
@@ -1868,7 +1924,7 @@ async function etapa2Navegador(browser) {
       comContexto(browser, dim, {}, async (page) => {
         await irAPagina(page);
         const t = await lerTextos(page, TEXTO[2]);
-        const achados = procurarProibidos(t, TEXTO[2]);
+        const achados = procurarProibidos(t, TEXTO_PAGINA_PFB);
         const vazias = fontesVazias(t, TEXTO[2]);
         const ok = achados.length === 0 && vazias.length === 0;
         return {

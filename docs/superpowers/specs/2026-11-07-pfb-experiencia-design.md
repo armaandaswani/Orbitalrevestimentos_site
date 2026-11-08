@@ -79,6 +79,8 @@ creme (painel da abertura) · creme · creme (pico) · azul · azul · foto · c
 
 ## Textos finais (`src/lib/pfb-textos.ts`)
 
+> **Substituído em 08/11/2026 pela experiência v2** (`.superpowers/sdd/2026-11-08-experiencia-v2/relatorio.md`): textos encurtados, a ART e a ficha técnica detalhada da antiga Tecnologia de volta, sem "Imagens ilustrativas." no teste de água. A fonte dos textos passa a ser o próprio `src/lib/pfb-textos.ts`; o `pfb-textos.test.mjs` não compara mais cada literal com o bloco abaixo, só as regras (termos proibidos, números, contagens). O bloco fica como registro da v1.
+
 Cada frase com `// fonte:` (as notas do vault já citadas no cabeçalho do arquivo). Chaves que não aparecem abaixo saem do arquivo.
 
 ```ts

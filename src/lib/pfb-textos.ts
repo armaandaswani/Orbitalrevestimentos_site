@@ -1,12 +1,13 @@
 /**
  * Todo o texto da página do Painel Flexível em Fibra de Bambu (PFB) em
- * /produtos/pfb, por capítulo. Spec: docs/superpowers/specs/
- * 2026-11-07-pfb-experiencia-design.md, "Textos finais" (v2). Os textos são
- * copiados letra por letra; qualquer ajuste volta à spec (pfb-textos.test.mjs
- * confere cada literal do bloco contra este arquivo).
+ * /produtos/pfb, por capítulo. Versão 2 (experiência v2, 08/11/2026,
+ * .superpowers/sdd/2026-11-08-experiencia-v2/): os textos da spec
+ * docs/superpowers/specs/2026-11-07-pfb-experiencia-design.md continuam onde
+ * não mudaram; os encurtados e os novos estão marcados "v2" e listados no
+ * relatório da v2 (antigo → novo, e por quê). pfb-textos.test.mjs confere as
+ * regras (termos proibidos, números, contagens), não mais cada literal.
  *
- * Sem `import`. Os valores marcados "como hoje" na spec vêm da versão anterior
- * deste arquivo (spec .superpowers/sdd/2026-11-06-pagina-pfb/design_doc.md).
+ * Sem `import`.
  *
  * Notas de fonte (vault `~/Orbital/Orbital Vault/`): [PFB] 03 Produto/PFB,
  * [Nome] 02 Marca/Regras de posicionamento do PFB §1, [Ficha] 03 Produto/
@@ -18,21 +19,28 @@
  * 01 Empresa/Showroom, [Palavras] 02 Marca/Palavras certas e palavras
  * proibidas, [Brief §n] brief da página, seção n, [Dono Qn] decisão do dono
  * no brief (pergunta n), [Dono En] decisão do dono de 06/11/2026, Dn decisão
- * do dono de 07/11/2026 (tabela "Decisões do dono" da spec).
+ * do dono de 07/11/2026 (tabela "Decisões do dono" da spec), [Tec] o conteúdo
+ * da antiga /tecnologia (git show f62f8c7^1:src/components/ARTAccordion.tsx e
+ * FichaTecnicaAccordion.tsx), de volta por pedido do dono de 08/11/2026.
  */
 
 /** Capítulo 1: abertura. */
 export const ABERTURA = {
   // fonte: [PFB], [Nome]
   titulo: "Painel Flexível em Fibra de Bambu (PFB)",
-  // fonte: [PFB]
-  lead: "Revestimento decorativo para paredes e tetos, com acabamento de mármore ou de madeira e aplicação sem quebradeira.",
+  // fonte: [PFB]; v2: encurtado (a frase inteira da v1 tinha 107 caracteres)
+  lead: "Mármore e madeira para paredes e tetos, sem quebradeira.",
   // fonte: [PFB]
   estoque: "Estoque e pronta-entrega em Manaus.",
   botaoModelos: "Ver os modelos",
   botaoConsultor: "Falar com um consultor",
   // fonte: PorQue.tsx:34; obra real: decisão do dono E-2 (06/11/2026); sem "residencial" (revisor-tecnico 07/11/2026)
   alt: "Escada com paredes revestidas com o Painel Flexível em Fibra de Bambu em acabamento de madeira",
+} as const;
+
+/** Rótulos comuns às folhas que sobem do rodapé (FolhaPfb). */
+export const FOLHA = {
+  fechar: "Fechar",
 } as const;
 
 /** Capítulo 2: o que é. */
@@ -86,58 +94,173 @@ export const CAMADAS: {
   ],
 };
 
-/** Capítulo 4: ficha técnica. O primeiro número é o destaque. */
+
+/** Capítulo 4: ficha técnica. Cada número com um rótulo curto (v2: de 2 a 5 palavras). */
 export const FICHA: {
   titulo: string;
-  numeros: ReadonlyArray<{ valor: string; frase: string }>;
+  numeros: ReadonlyArray<{ valor: string; rotulo: string }>;
   ressalva: string;
+  rotuloTrilho: string;
 } = {
   titulo: "Ficha técnica",
   numeros: [
     // fonte: [Ficha]
-    { valor: "72,3 MPa", frase: "Resistência à flexão." },
+    { valor: "72,3 MPa", rotulo: "Resistência à flexão" },
     // fonte: [Ficha], [Dono] (0,2% é absorção de água)
-    { valor: "0,2%", frase: "Absorção de água em 48 h." },
-    // fonte: [Ficha]
-    { valor: "3,2 kg/m²", frase: "Cerca de 11 kg por placa." },
+    { valor: "0,2%", rotulo: "Absorção de água em 48 h" },
+    // fonte: [Ficha]; v2: "Cerca de 11 kg por placa." vai para a ficha detalhada (Peso por placa)
+    { valor: "3,2 kg/m²", rotulo: "Peso por m²" },
     // fonte: [Ficha], D5 (os 550 são do substrato, sem películas e PVC)
-    { valor: "550 kg/m³", frase: "Densidade do substrato de fibra de bambu." },
+    { valor: "550 kg/m³", rotulo: "Densidade do substrato" },
     // fonte: [Ficha]
-    { valor: "0,5%", frase: "Teor de umidade." },
+    { valor: "0,5%", rotulo: "Teor de umidade" },
   ],
-  // fonte: [Onde]
-  ressalva:
-    "O Painel é acabamento e não substitui a impermeabilização: em banheiro e box, a base precisa estar impermeabilizada.",
+  // fonte: [Onde]; v2: a segunda metade da ressalva da v1 (a primeira está na folha do capítulo 9)
+  ressalva: "Em banheiro e box, a base precisa estar impermeabilizada.",
+  // v2: nome do trilho para o leitor de tela (aria-label)
+  rotuloTrilho: "Números da ficha técnica",
 };
 
-/** Capítulo 4: o bloco que abre ao tocar (pares rótulo / valor). */
-export const FICHA_COMPLETA: {
-  resumo: string;
+/** Capítulo 4: a folha da ART (conteúdo da antiga Tecnologia, [Tec] ARTAccordion). */
+export const ART: {
+  rotulo: string;
+  titulo: string;
+  oQueE: { titulo: string; texto: string };
   linhas: ReadonlyArray<readonly [string, string]>;
+  porQue: { titulo: string; texto: string };
 } = {
-  resumo: "Ficha técnica completa",
+  // [Tec]: "ART — Anotação de Responsabilidade Técnica" (sem o travessão)
+  rotulo: "ART: Anotação de Responsabilidade Técnica",
+  titulo: "ART: Anotação de Responsabilidade Técnica",
+  oQueE: {
+    titulo: "O que é a ART?",
+    // [Tec]; o travessão antes de "não é" virou vírgula
+    texto:
+      "A Anotação de Responsabilidade Técnica é um documento obrigatório emitido pelo CREA que vincula um engenheiro habilitado às responsabilidades técnicas de um produto ou projeto. É a garantia de que o PFB Orbital foi avaliado, testado e aprovado por um profissional de engenharia, e não um simples laudo comercial.",
+  },
   linhas: [
-    // fonte: [Ficha]
-    ["Medida útil", "1,20 × 2,90 m"],
-    // fonte: [Ficha]
-    ["Espessura", "5 mm, em cinco camadas"],
-    // fonte: [Ficha]
-    ["Área por placa", "3,48 m²"],
-    // fonte: [Ficha]
-    ["Mofo e cupim", "Resistente"],
-    // fonte: [Ficha]
-    ["Formaldeído", "Não contém"],
-    // fonte: [Ficha], [Dono Q3] (sem norma nem classe)
-    ["Fogo", "Não propaga chamas"],
-    // fonte: [Ficha], [PFB] (o vault tem o número e o engenheiro; o site não os mostra, decisão aberta do dono)
-    ["ART", "Anotação de Responsabilidade Técnica registrada no CREA para parede e forro de teto."],
-    // fonte: [Ficha]
-    ["Durabilidade", "Esperada de 10 anos ou mais."],
-    // fonte: [Garantia]
-    [
-      "Garantia",
-      "Garantia legal do Código de Defesa do Consumidor contra vício de fabricação. Confira as placas na entrega: placa com defeito aparente não deve ser instalada; avise a Orbital por escrito, com fotos, antes de aplicar.",
-    ],
+    // [Tec], [Ficha] (o mesmo número e o mesmo engenheiro)
+    ["Número da ART", "AM20260593657"],
+    ["Responsável técnico", "Eng. Civil Werksson Sousa"],
+    ["Registro CREA", "042030134-8-D"],
+    ["Escopo de aplicação", "Revestimento de parede e forro de teto"],
+    // [Tec]; "inchamento" virou "absorção de água" ([Ficha], dono 06/11/2026)
+    ["Ensaios realizados", "Resistência à flexão, absorção de água, densidade, umidade, ciclos térmicos"],
+    // [Tec]; o travessão virou vírgula
+    ["Validade", "Documentação ativa, disponível mediante solicitação"],
+  ],
+  porQue: {
+    titulo: "Por que isso importa?",
+    // [Tec]; o travessão virou vírgula
+    texto:
+      "Com a ART, o PFB Orbital pode ser especificado em projetos de arquitetura e engenharia com respaldo técnico formal, exigido em obras comerciais, clínicas, condomínios e projetos públicos. É o único revestimento laminado de bambu com essa certificação no Amazonas.",
+  },
+};
+
+/** Capítulo 4: a folha da ficha técnica detalhada ([Tec] FichaTecnicaAccordion). */
+export const FICHA_DETALHADA: {
+  rotulo: string;
+  titulo: string;
+  grupos: ReadonlyArray<{ titulo: string; linhas: ReadonlyArray<readonly [string, string]> }>;
+  notas: readonly string[];
+  garantia: readonly [string, string];
+} = {
+  // [Tec]: "Ficha Técnica Detalhada — PFB Orbital"
+  rotulo: "Ficha técnica detalhada",
+  titulo: "Ficha técnica detalhada",
+  grupos: [
+    {
+      titulo: "Dimensões e formato",
+      linhas: [
+        ["Comprimento", "2,90 m"],
+        ["Largura", "1,20 m"],
+        ["Espessura", "5 mm"],
+        ["Área por placa", "3,48 m²"],
+        ["Peso por placa", "≈ 11 kg"],
+        ["Número de camadas", "5 camadas"],
+      ],
+    },
+    {
+      titulo: "Propriedades mecânicas",
+      linhas: [
+        ["Resistência à flexão", "72,3 MPa"],
+        // [Tec] "Densidade"; D5: os 550 são do substrato
+        ["Densidade do substrato", "550 kg/m³"],
+        ["Peso por m²", "3,2 kg/m²"],
+        ["Módulo de elasticidade", "Alta rigidez longitudinal"],
+      ],
+    },
+    {
+      titulo: "Comportamento com água",
+      linhas: [
+        // [Tec] "Inchamento (48h imerso)"; dono 06/11/2026: é absorção
+        ["Absorção de água (48 h imerso)", "0,2%"],
+        ["Teor de umidade interno", "0,5%"],
+        // [Tec] "Mínima — film PVC impermeável": sem travessão e sem "impermeável" (regra da spec)
+        ["Absorção superficial", "Mínima, película de PVC na superfície"],
+        ["Comportamento em chuva", "Não recomendado para exterior direto"],
+      ],
+    },
+    {
+      titulo: "Resistência e durabilidade",
+      linhas: [
+        ["Vida útil estimada", "10+ anos no clima amazônico"],
+        // [Tec] "–10°C": o traço era um travessão curto; aqui é o sinal de menos
+        ["Ciclos térmicos", "Testado de −10 °C a +120 °C"],
+        // [Tec] "sem impacto estrutural": sem "estrutural" (dono 06/11/2026)
+        ["Contato térmico breve", "Até 100 °C sem dano à placa"],
+        ["Calor contínuo", "Validado para uso interno. Acima de 50 °C, pode ondular"],
+        ["Resistência a fungos", "Anti-mofo: o bambu não é substrato fúngico"],
+        ["Resistência a pragas", "Anti-cupim: fibra processada sem atração"],
+        // [Tec] "Resistência UV" saiu: sem "UV" ([Ficha], dono 06/11/2026)
+      ],
+    },
+    {
+      titulo: "Composição e segurança",
+      linhas: [
+        // [Ficha] 5 camadas, de baixo para cima; [Tec] tinha 4 linhas
+        ["Substrato", "Fibra de bambu laminada"],
+        // [Tec] "Camada estrutural: PVC estrutural de alta densidade": sem "estrutural"
+        ["Camada de PVC", "PVC de alta densidade"],
+        // [Ficha]: a terceira camada, que a [Tec] não listava
+        ["Adesivo", "Adesivo de alta aderência"],
+        // [Tec] "Film PVC": "película", o nome da camada no [Ficha]
+        ["Acabamento visual", "Película de PVC com impressão fotorrealista"],
+        // [Tec] "Film UV anti-risco": sem "UV"
+        ["Proteção superficial", "Película protetora anti-risco"],
+        ["Formaldeído (VOC)", "Ausente, formulação sem formol"],
+        ["Odor", "Inodoro, seguro em ambientes habitados"],
+      ],
+    },
+    {
+      titulo: "Aplicação e restrições",
+      linhas: [
+        ["Parede interna", "Recomendado"],
+        ["Forro de teto interno", "Recomendado"],
+        // [Tec] tinha "Fachada interna: Permitido" e "Fachada externa: Não recomendado"; [Onde]: o PFB não vai na fachada
+        ["Fachada e áreas externas", "Não indicado"],
+        ["Piso", "Não indicado"],
+        // [Tec] "Banheiros, cozinhas, áreas de serviço"; [Onde]: banheiro só com a base impermeabilizada
+        ["Ambientes úmidos", "Banheiro e box com a base impermeabilizada, cozinhas, áreas de serviço"],
+        // [Tec] "Cola de contato (tetos)"; decisão do dono 07/11/2026: teto sempre com fixação mecânica
+        ["Instalação", "Cola PU na parede. No teto, fixação mecânica com cola de contato"],
+        // [Tec] "2–3 horas"
+        ["Tempo por cômodo", "2 a 3 horas"],
+      ],
+    },
+  ],
+  notas: [
+    // [Tec], sem os travessões
+    "Validado para uso interno. O aquecimento contínuo, por sol direto ou indireto, acima de 50 °C pode gerar leve ondulação, conforme o local e a aplicação.",
+    // [Tec], sem o travessão; o ±10% volta por pedido do dono (08/11/2026)
+    "Peso e densidade admitem tolerância de ±10%: o bambu é fibra natural e cada lote varia. Padrão em materiais de fibra vegetal.",
+    // [Tec]
+    "Dados extraídos de ficha técnica laboratorial e ART nº AM20260593657 · CREA 042030134-8-D",
+  ],
+  // fonte: [Garantia] (a linha "Garantia" da ficha completa da v1)
+  garantia: [
+    "Garantia",
+    "Garantia legal do Código de Defesa do Consumidor contra vício de fabricação. Confira as placas na entrega: placa com defeito aparente não deve ser instalada; avise a Orbital por escrito, com fotos, antes de aplicar.",
   ],
 };
 
@@ -145,34 +268,22 @@ export const FICHA_COMPLETA: {
 export const AGUA: {
   titulo: string;
   frase: string;
-  horas: ReadonlyArray<{ rotulo: "0h" | "24h" | "48h"; legenda: string; alt: string }>;
-  aviso: string;
+  controle: string;
+  horas: ReadonlyArray<{ rotulo: "0h" | "24h" | "48h"; alt: string }>;
 } = {
   titulo: "Teste de água",
-  // fonte: [Ficha] (0,2% em 48 h, absorção)
-  frase: "A placa passou 48 horas na água. No ensaio, a absorção foi de 0,2%.",
+  // fonte: [Ficha] (0,2% em 48 h, absorção); v2: uma frase em vez de duas
+  frase: "48 horas na água, 0,2% de absorção.",
+  // v2: nome do controle de arrastar (aria-label)
+  controle: "Horas na água",
   horas: [
     // fonte: D2 (fotos do teste; a comparação com o MDF foi liberada só aqui)
-    {
-      rotulo: "0h",
-      legenda: "Início.",
-      alt: "Placa do Painel, à esquerda, e placa de MDF, à direita, no começo do teste de água, imagem gerada por IA",
-    },
+    { rotulo: "0h", alt: "Placa do Painel, à esquerda, e placa de MDF, à direita, no começo do teste de água, imagem gerada por IA" },
     // fonte: D2
-    {
-      rotulo: "24h",
-      legenda: "24 horas na água.",
-      alt: "Placa do Painel, à esquerda, e placa de MDF, à direita, depois de 24 horas na água, imagem gerada por IA",
-    },
+    { rotulo: "24h", alt: "Placa do Painel, à esquerda, e placa de MDF, à direita, depois de 24 horas na água, imagem gerada por IA" },
     // fonte: D2
-    {
-      rotulo: "48h",
-      legenda: "48 horas na água.",
-      alt: "Placa do Painel, à esquerda, e placa de MDF, à direita, depois de 48 horas na água, imagem gerada por IA",
-    },
+    { rotulo: "48h", alt: "Placa do Painel, à esquerda, e placa de MDF, à direita, depois de 48 horas na água, imagem gerada por IA" },
   ],
-  // fonte: [Ficha] (imagens ilustrativas); D2
-  aviso: "Imagens ilustrativas.",
 };
 
 /** Capítulo 6: Manaus. */
@@ -217,25 +328,28 @@ export const INSTALADOR = {
   frase: "Como é aplicar o Painel na prática.",
 } as const;
 
-/** Um bloco que abre ao tocar no capítulo 9. */
-type BlocoServe = { titulo: string; resumo: string; paragrafos: readonly string[] };
 
 /** Capítulo 9: serve para o meu projeto? */
 export const SERVE: {
   titulo: string;
-  ondeUsar: BlocoServe;
-  ondeNaoUsar: BlocoServe;
-  comoInstalar: BlocoServe & {
+  ondeUsar: { titulo: string; ambientes: readonly string[]; paragrafos: readonly string[] };
+  ondeNaoUsar: { titulo: string; ambientes: readonly string[]; paragrafos: readonly string[] };
+  comoInstalar: {
+    titulo: string;
+    passos: ReadonlyArray<{ titulo: string; texto: string }>;
+    paragrafos: readonly string[];
     /** Texto antes do link "Manual Técnico de Instalação" (`SolicitarManual`). */
     antesDoManual: string;
     depoisDoManual: ".";
   };
+  rotuloFolha: string;
+  rotuloPassos: string;
 } = {
   titulo: "Serve para o meu projeto?",
   ondeUsar: {
     titulo: "Onde usar",
-    // fonte: [Onde]
-    resumo: "Ambientes internos, secos ou úmidos.",
+    // fonte: [Onde]; v2: os ambientes do parágrafo, em palavras soltas
+    ambientes: ["Salas e quartos", "Escritórios", "Comércio e clínicas", "Forros e tetos", "Portas, curvas e colunas", "Cozinha", "Banheiro e box, com a base impermeabilizada"],
     paragrafos: [
       // fonte: [Onde]
       "Em ambientes internos, secos ou úmidos: salas, quartos, escritórios, corredores, comércio, clínicas, forros e tetos, portas, curvas e colunas. Na cozinha, nas paredes, inclusive no roda-banca e no roda-pia.",
@@ -245,8 +359,8 @@ export const SERVE: {
   },
   ondeNaoUsar: {
     titulo: "Onde não usar",
-    // fonte: [Onde]
-    resumo: "Piso, bancada, áreas externas e calor contínuo.",
+    // fonte: [Onde]; v2: os lugares do parágrafo, em palavras soltas
+    ambientes: ["Piso e bancada", "Fachada e áreas externas", "Borda de piscina", "Sauna e vapor", "Churrasqueira, lareira e coifa", "Calor ou sol direto contínuo"],
     paragrafos: [
       // fonte: [Onde]
       "Piso, tampo de bancada, fachada, áreas externas e semiexternas, borda de piscina e áreas molhadas externas, sauna e sala de vapor, churrasqueira, lareira e coifa, superfícies com impacto ou atrito constante, e lugares com calor contínuo acima de 50 °C ou sol direto contínuo.",
@@ -254,8 +368,12 @@ export const SERVE: {
   },
   comoInstalar: {
     titulo: "Como instalar",
-    // fonte: [Instalação]
-    resumo: "Parede com cola PU. Teto e forro sempre com fixação mecânica.",
+    // fonte: [Instalação], [Dono E-5], decisão do dono 07/11/2026; v2: os três parágrafos em três passos curtos
+    passos: [
+      { titulo: "Base", texto: "Firme, seca, limpa e plana, com teste a seco antes da cola." },
+      { titulo: "Parede", texto: "Cola PU de alta aderência, de 2 a 3 horas por cômodo." },
+      { titulo: "Teto e forro", texto: "Sempre com fixação mecânica." },
+    ],
     paragrafos: [
       // fonte: [Instalação]
       "Base firme, seca, limpa e plana, com teste a seco antes da cola.",
@@ -269,6 +387,10 @@ export const SERVE: {
       "A Orbital fornece o material, e a aplicação fica com o profissional que você escolher e contratar. O passo a passo está no ",
     depoisDoManual: ".",
   },
+  // v2: a linha que abre a folha com os textos inteiros
+  rotuloFolha: "Detalhes de uso e instalação",
+  // v2: nome do trilho dos passos (aria-label)
+  rotuloPassos: "Passos da instalação",
 };
 
 /** Capítulo 10: bambu. A segunda linha do título é a única em itálico da página. */
@@ -281,6 +403,7 @@ export const BAMBU: {
   // fonte: [Ficha]
   frase: "Sem formaldeído, para ambientes onde as pessoas vivem e trabalham.",
 };
+
 
 /** Capítulo 11: onde ver e como pedir. */
 export const PEDIR: {
@@ -296,9 +419,9 @@ export const PEDIR: {
   frase: "Veja o PFB aplicado nos showrooms parceiros.",
   // fonte: textos aprovados de /onde-comprar (seção 6, "Revendas em Manaus"); link para a página
   revendas: "Revendas em Manaus",
-  // fonte: [Brief §6], [Dono E-6]
+  // fonte: [Brief §6], [Dono E-6]; v2: encurtado (mesmos fatos)
   orcamento:
-    "Mande a área em m² ou a planta, a linha e o modelo. Um consultor responde com os valores e as condições e, para arquitetos e projetos, vai até o seu escritório com as amostras.",
+    "Mande a área ou a planta, a linha e o modelo. Um consultor responde com valores e condições e, para arquitetos, vai ao escritório com as amostras.",
   botaoConsultor: "Falar com um consultor",
   reserva: { link: "Ver projetos e showrooms" },
 };
