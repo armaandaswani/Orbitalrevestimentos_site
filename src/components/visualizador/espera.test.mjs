@@ -14,16 +14,32 @@ import {
   TITULOS_REVELACAO,
   TEXTOS_VIVOS,
   CORES_ETAPA,
+  CORES_MARCA,
 } from "./espera.ts";
 
 const s = (o) => ({ inicio: 0, stream: false, previas: 0, fim: false, variantes: [], ...o });
 const todas = ETAPAS_ESPERA.flat();
 
+/** Contraste WCAG de uma cor #rrggbb contra o branco. */
+function contrasteNoBranco(hex) {
+  const canal = (i) => {
+    const v = parseInt(hex.slice(i, i + 2), 16) / 255;
+    return v <= 0.03928 ? v / 12.92 : ((v + 0.055) / 1.055) ** 2.4;
+  };
+  const l = 0.2126 * canal(1) + 0.7152 * canal(3) + 0.0722 * canal(5);
+  return 1.05 / (l + 0.05);
+}
+
+test("cores das etapas: só do manual da marca, contraste de 3:1 no branco, sem vizinhas iguais", () => {
+  assert.equal(CORES_ETAPA.length, TOTAL_ETAPAS);
+  assert.ok(CORES_ETAPA.every((c) => CORES_MARCA.includes(c)));
+  assert.ok(CORES_MARCA.every((c) => contrasteNoBranco(c) >= 3), CORES_MARCA.map(contrasteNoBranco).join(" "));
+  assert.ok(CORES_ETAPA.every((c, i) => i === 0 || c !== CORES_ETAPA[i - 1]));
+});
+
 test("textos: 6 a 8 etapas, variações em todas, sem travessão, sem instalar", () => {
   assert.ok(TOTAL_ETAPAS >= 6 && TOTAL_ETAPAS <= 8);
   assert.ok(ETAPAS_ESPERA.every((v) => v.length >= 3));
-  assert.equal(CORES_ETAPA.length, TOTAL_ETAPAS);
-  assert.ok(CORES_ETAPA.every((c, i) => i === 0 || c !== CORES_ETAPA[i - 1]));
   const tudo = [
     ...todas.flatMap((e) => [e.titulo, e.texto, e.textoVarios ?? "", e.textoSemNome ?? ""]),
     ...TITULOS_REVELACAO,

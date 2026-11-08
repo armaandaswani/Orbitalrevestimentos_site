@@ -8,8 +8,8 @@
 // medição, luz passando, placas) e tem a sua cor. Embaixo, a órbita: só a
 // etapa atual e as duas anteriores; na atual um ponto orbita o núcleo, e ao
 // fechar ela pousa num check colorido e a trilha anda para a esquerda. O
-// total de etapas nunca aparece. A barra revela um degradê com as cores das
-// etapas. Só transform e opacity; com movimento reduzido, nada gira nem
+// total de etapas nunca aparece. A barra é sólida, na cor da etapa (o manual
+// da marca não usa degradê). Só transform e opacity; com movimento reduzido, nada gira nem
 // pulsa e as trocas acontecem no lugar (globals.css › Espera do
 // Visualizador). Quando tudo se completa, avisa o Resultado com onConcluida.
 import React, { useEffect, useRef, useState } from "react";
@@ -25,8 +25,8 @@ import {
   type SinaisGeracao,
 } from "./espera";
 
-/** Degradê da barra: as cores das etapas, na ordem. */
-const DEGRADE = `linear-gradient(90deg, ${CORES_ETAPA.join(", ")})`;
+/** Uma camada por cor na barra; a da etapa atual aparece por opacidade. */
+const CORES_BARRA = [...new Set(CORES_ETAPA)];
 
 const TICK_MS = 200;
 
@@ -191,9 +191,11 @@ export default function EsperaGeracao({
           })}
         </ol>
         <span aria-hidden className="relative block h-[4px] min-w-0 flex-1 overflow-hidden rounded-full bg-[#e9ebee]">
-          {/* O preenchimento anda para a direita e o degradê dentro dele anda ao contrário: as cores ficam paradas no trilho. */}
+          {/* O preenchimento anda para a direita; a cor troca com a etapa, por opacidade. */}
           <span className="viz-espera-barra absolute inset-0 overflow-hidden rounded-full" style={{ transform: `translate3d(${(fracao - 1) * 100}%, 0, 0)` }}>
-            <span className="viz-espera-barra absolute inset-0" style={{ background: DEGRADE, transform: `translate3d(${(1 - fracao) * 100}%, 0, 0)` }} />
+            {CORES_BARRA.map((c) => (
+              <span key={c} className="viz-espera-barra-cor absolute inset-0" data-ver={c === cor ? "" : undefined} style={{ background: c }} />
+            ))}
             <span className="viz-espera-brilho absolute inset-y-0 right-0 w-1/4" />
           </span>
         </span>

@@ -113,11 +113,15 @@ export const TEXTOS_VIVOS: readonly string[] = [
 ];
 
 /**
- * Cor de cada etapa: as mesmas cores das áreas marcadas (fluxo.ts ›
- * ZONE_COLORS) mais o azul da marca, em ordem que nunca repete vizinhas.
+ * Cores do manual da marca (Orbital Vault › 02 Marca › Manual da marca), só as
+ * que passam de 3:1 sobre o branco: azul-noite, azul vivo (dois tons), verde
+ * Orbital e verde escuro.
  */
+export const CORES_MARCA = ["#0B1F45", "#2347A0", "#2F5FD0", "#36A35C", "#1F7A44"] as const;
+
+/** Cor de cada etapa, alternando azuis e verdes da marca, nunca igual à vizinha. */
 export const CORES_ETAPA: readonly string[] = [
-  "#2347A0", "#36A35C", "#b4791e", "#2F5FD0", "#2a9d8f", "#a83279", "#36A35C", "#b4791e",
+  "#0B1F45", "#36A35C", "#2347A0", "#1F7A44", "#2F5FD0", "#36A35C", "#0B1F45", "#36A35C",
 ];
 
 export const TOTAL_ETAPAS = ETAPAS_ESPERA.length;
