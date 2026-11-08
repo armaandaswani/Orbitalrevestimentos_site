@@ -41,7 +41,7 @@ export default function AguaPfb() {
       className="bg-[#0B1F45] text-white pt-12 pb-10 lg:py-24"
     >
       <div className="lg:ds-wrap lg:grid lg:grid-cols-[minmax(0,1fr)_minmax(0,30rem)] lg:items-center lg:gap-x-24">
-        <div className="ds-wrap lg:w-auto lg:max-w-none lg:px-0 lg:row-start-1 lg:col-start-1">
+        <div className="ds-wrap lg:mx-0 lg:w-full lg:max-w-none lg:px-0 lg:row-start-1 lg:col-start-1">
           <h2 id="pfb-agua-titulo" className="font-serif pfb-t1 text-white">
             {AGUA.titulo}
           </h2>
@@ -70,7 +70,7 @@ export default function AguaPfb() {
             );
           })}
         </div>
-        <div className="ds-wrap mt-4 lg:w-full lg:max-w-[26rem] lg:px-0 lg:mt-10 lg:row-start-2 lg:col-start-1 lg:self-start">
+        <div className="ds-wrap mt-4 lg:mx-0 lg:w-full lg:max-w-[26rem] lg:px-0 lg:mt-10 lg:row-start-2 lg:col-start-1 lg:self-start">
           <input
             type="range"
             min={0}

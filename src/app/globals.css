@@ -1858,6 +1858,40 @@ html:has(dialog.pfb-folha[open]) { overflow: hidden; }
   }
 }
 
+/* ── Onde comprar v2 (08/11/2026): lojas em cartões que deslizam ───────────
+   (components/onde-comprar/ListaPdv e TrilhoPdv). No celular, um cartão por vez
+   em largura cheia com encaixe (a rolagem lateral é do trilho); no computador,
+   linhas finas. O nome é o link `?loja=` e cobre o cartão inteiro (::after). O
+   bloco .pdv-sem-js (endereço, horário, botões) só aparece sem JavaScript. O
+   pino da loja do cartão na tela acende (data-pdv-foco, TrilhoPdv). */
+.pdv-trilho {
+  display: flex; overflow-x: auto; overscroll-behavior-x: contain;
+  scroll-snap-type: x mandatory; scrollbar-width: none; -webkit-overflow-scrolling: touch;
+}
+.pdv-trilho::-webkit-scrollbar { display: none; }
+.pdv-trilho:focus-visible { outline: 2px solid var(--color-surface-tint); outline-offset: 4px; }
+.pdv-trilho > li {
+  position: relative; flex: 0 0 100%; min-width: 0; scroll-snap-align: start; scroll-snap-stop: always;
+  padding: 1.25rem 0 1.5rem; border-top: 1px solid #0B1F45; border-bottom: 1px solid rgb(116 119 127 / 0.3);
+}
+.pdv-cartao-link::after { content: ""; position: absolute; inset: 0; }
+.pdv-cartao:has(.pdv-cartao-link:focus-visible) { outline: 2px solid var(--color-surface-tint); outline-offset: 2px; }
+html[data-pdv-js] .pdv-sem-js { display: none; }
+@media (min-width: 64rem) {
+  .pdv-trilho { flex-direction: column; overflow: visible; scroll-snap-type: none; border-top: 1px solid #0B1F45; }
+  .pdv-trilho > li { flex: none; padding: 1.25rem 0; border-top: 0; }
+}
+@media (hover: hover) and (prefers-reduced-motion: no-preference) {
+  .pdv-cartao .pfb-mais { transition: transform var(--mv-base) var(--mv-chegada); }
+  .pdv-cartao:hover .pfb-mais { transform: rotate(90deg); }
+}
+[data-pdv-pino] > img { transform-origin: 50% 100%; }
+[data-pdv-pino][data-pdv-foco] { z-index: 5; }
+[data-pdv-pino][data-pdv-foco] > img { transform: scale(1.22); }
+@media (prefers-reduced-motion: no-preference) {
+  [data-pdv-pino] > img { transition: transform var(--mv-base) var(--mv-chegada); }
+}
+
 /* ── TechStone: galeria de ideias ─────────────────────────────────────────
    (components/techstone/Ideias). Cada ideia é uma camada do tamanho do palco
    que só mostra a sua região [--l, --r] por clip-path; o quadro interno (da
