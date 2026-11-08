@@ -5,6 +5,7 @@ import Link from "next/link";
 import AdminShell from "../../AdminShell";
 import { btnGhost, btnPrimary, inputCls, labelCls } from "../../ui";
 import { uploadAdminImage } from "@/lib/admin-upload";
+import { dentroDeManaus } from "@/lib/pontos-de-venda";
 
 /** Imagem do showroom: prévia + "Enviar foto" (comprime e sobe) + remover. */
 function CampoImagem({ label, value, onChange, folder, alto = false }: {
@@ -56,6 +57,50 @@ function CampoImagem({ label, value, onChange, folder, alto = false }: {
   );
 }
 
+type CampoRevendaId = "bairro" | "whatsapp" | "instagram" | "horario" | "lat" | "lng";
+type ResultadoSalvar = { erro: string } | { erro: null; texto: string };
+
+/** "-3,0893" vira número; vazio vira null; o que não é número segue como texto para o servidor recusar com a mensagem. */
+function coordenadaDoTexto(txt: string): number | string | null {
+  const t = txt.trim();
+  if (t === "") return null;
+  const n = Number(t.replace(",", "."));
+  return Number.isFinite(n) ? n : t;
+}
+
+/**
+ * Campo de texto da revenda: o texto digitado vive aqui, salva ao sair do campo
+ * (onBlur) e, se o servidor normalizou o valor, troca o texto pelo que voltou.
+ * O erro do servidor aparece embaixo do campo; o valor antigo continua no banco.
+ */
+function CampoRevenda({ label, valor, placeholder, onSalvar }: {
+  label: string; valor: string; placeholder?: string; onSalvar: (texto: string) => Promise<ResultadoSalvar>;
+}) {
+  const [texto, setTexto] = useState(valor);
+  const [anterior, setAnterior] = useState(valor);
+  const [erro, setErro] = useState("");
+  const [salvando, setSalvando] = useState(false);
+  // O valor salvo mudou (normalizado pelo servidor): o campo passa a mostrá-lo.
+  if (valor !== anterior) { setAnterior(valor); setTexto(valor); }
+  async function salvar() {
+    if (texto === valor) { setErro(""); return; }
+    setSalvando(true);
+    const r = await onSalvar(texto);
+    setSalvando(false);
+    if (r.erro === null) { setErro(""); setTexto(r.texto); } else setErro(r.erro);
+  }
+  return (
+    <div>
+      <label className={labelCls}>{label}</label>
+      <input value={texto} placeholder={placeholder} readOnly={salvando} aria-invalid={erro ? true : undefined}
+        onChange={(ev) => setTexto(ev.target.value)} onBlur={() => { void salvar(); }}
+        onKeyDown={(ev) => { if (ev.key === "Enter") { ev.preventDefault(); ev.currentTarget.blur(); } }}
+        className={inputCls} />
+      {erro && <p role="alert" className="text-[11px] text-red-600 mt-1">{erro}</p>}
+    </div>
+  );
+}
+
 /**
  * Categorias e Showrooms — a tela que antes era uma caixa espremida no topo do
  * cadastro de projetos.
@@ -73,6 +118,9 @@ interface Showroom {
   active: boolean; sort_order: number; project_count: number;
   /** Migração 063: showroom parceiro ou ponto de revenda. */
   kind?: "showroom" | "revenda" | null;
+  /** Migração 076: dados da página /onde-comprar (só as revendas usam). */
+  bairro?: string | null; whatsapp?: string | null; instagram?: string | null; horario?: string | null;
+  lat?: number | null; lng?: number | null;
 }
 interface Tag { id: string; slug: string; label: string; sort_order: number; active: boolean }
 
@@ -171,6 +219,25 @@ export default function OrganizacaoPage() {
     await fetch(`/api/admin/partner-showrooms/${id}`, {
       method: "PATCH", headers: { "Content-Type": "application/json" }, body: JSON.stringify(patch),
     }).catch(() => {});
+  }
+
+  /**
+   * Salva um campo da revenda e troca o valor local pelo que o servidor devolveu
+   * (já normalizado). Em erro, devolve a mensagem para aparecer embaixo do campo.
+   */
+  async function salvarCampo(id: string, campo: CampoRevendaId, valor: string | number | null): Promise<ResultadoSalvar> {
+    try {
+      const res = await fetch(`/api/admin/partner-showrooms/${id}`, {
+        method: "PATCH", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ [campo]: valor }),
+      });
+      const corpo = (await res.json().catch(() => null)) as (Partial<Showroom> & { error?: string }) | null;
+      if (!res.ok) return { erro: corpo?.error ?? "Não foi possível salvar." };
+      const salvo = corpo && campo in corpo ? corpo[campo] ?? null : valor;
+      setShowrooms((prev) => prev.map((s) => (s.id === id ? { ...s, [campo]: salvo } : s)));
+      return { erro: null, texto: salvo == null ? "" : String(salvo) };
+    } catch {
+      return { erro: "Sem conexão: não foi possível salvar." };
+    }
   }
 
   async function removeShowroom(s: Showroom) {
@@ -352,6 +419,27 @@ export default function OrganizacaoPage() {
                             Sem capa, o site usa a foto de um dos ambientes deste {s.kind === "revenda" ? "ponto de revenda" : "showroom"}.
                           </p>
                         </div>
+                        {s.kind === "revenda" && (
+                          <>
+                            <CampoRevenda label="Bairro" valor={s.bairro ?? ""} placeholder="Ex.: Adrianópolis"
+                              onSalvar={(v) => salvarCampo(s.id, "bairro", v)} />
+                            <CampoRevenda label="Horário" valor={s.horario ?? ""} placeholder="Ex.: Seg a sex, 8h às 18h"
+                              onSalvar={(v) => salvarCampo(s.id, "horario", v)} />
+                            <CampoRevenda label="WhatsApp" valor={s.whatsapp ?? ""} placeholder="(92) 99152-5177"
+                              onSalvar={(v) => salvarCampo(s.id, "whatsapp", v)} />
+                            <CampoRevenda label="Instagram" valor={s.instagram ?? ""} placeholder="@usuario ou link do perfil"
+                              onSalvar={(v) => salvarCampo(s.id, "instagram", v)} />
+                            <CampoRevenda label="Latitude" valor={s.lat == null ? "" : String(s.lat)} placeholder="-3.0893"
+                              onSalvar={(v) => salvarCampo(s.id, "lat", coordenadaDoTexto(v))} />
+                            <CampoRevenda label="Longitude" valor={s.lng == null ? "" : String(s.lng)} placeholder="-60.0217"
+                              onSalvar={(v) => salvarCampo(s.id, "lng", coordenadaDoTexto(v))} />
+                            {s.lat != null && s.lng != null && !dentroDeManaus(s.lat, s.lng) && (
+                              <p role="status" className="sm:col-span-2 text-[11px] text-amber-800 -mt-1">
+                                Fora do mapa de Manaus: a loja aparece só na lista.
+                              </p>
+                            )}
+                          </>
+                        )}
                         <div className="sm:col-span-2 bg-[#F6F5F2] border border-[#e2e2e2] px-4 py-3 flex flex-wrap items-center justify-between gap-3">
                           <p className="text-[12px] text-[#43474e] leading-snug">
                             <strong className="text-[#0B1F45]">Fotos dos ambientes</strong> — cada ambiente é um projeto com várias fotos

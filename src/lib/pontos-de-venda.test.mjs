@@ -37,6 +37,22 @@ test("normalizarInstagram tira @ e URL", () => {
   assert.equal(normalizarInstagram("https://www.instagram.com/rwa_revestimentos/?hl=pt"), "rwa_revestimentos");
   assert.equal(normalizarInstagram(""), null);
 });
+test("normalizarInstagram aceita www./m. e recusa o que não é perfil", () => {
+  assert.equal(normalizarInstagram("https://m.instagram.com/rwa_revestimentos"), "rwa_revestimentos");
+  assert.equal(normalizarInstagram("m.instagram.com/rwa"), "rwa");
+  assert.equal(normalizarInstagram("www.instagram.com/rwa/"), "rwa");
+  assert.equal(normalizarInstagram("instagram.com/rwa"), "rwa");
+  assert.equal(normalizarInstagram("instagram.com/p/xyz"), null);
+  assert.equal(normalizarInstagram("https://www.instagram.com/reel/abc/"), null);
+  assert.equal(normalizarInstagram("instagram.com/reels/abc"), null);
+  assert.equal(normalizarInstagram("instagram.com/explore/tags/x"), null);
+  assert.equal(normalizarInstagram("instagram.com/stories/rwa/123"), null);
+  assert.equal(normalizarInstagram("m.instagram.com"), null);
+  assert.equal(normalizarInstagram("instagram.com"), null);
+  assert.equal(normalizarInstagram("rwa."), null);
+  assert.equal(normalizarInstagram("rwa.com"), null);
+  assert.equal(normalizarInstagram("@rwa.revest"), "rwa.revest");
+});
 test("linkWhatsApp codifica o texto", () => {
   assert.equal(linkWhatsApp("5592991554911", "Olá, PFB"), "https://wa.me/5592991554911?text=Ol%C3%A1%2C%20PFB");
 });

@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from "next/server";
 import { isAdminRequest } from "@/lib/admin-auth";
 import { supabaseAdmin } from "@/lib/supabase";
 import { isMissingTable } from "@/lib/db-compat";
+import { revalidarLugares } from "@/lib/revalidar-lugares";
 
 export const runtime = "nodejs";
 
@@ -47,6 +48,7 @@ export async function POST(req: NextRequest) {
     await Promise.all((body.reorder as Array<{ id: string; sort_order: number }>).map((r) =>
       db.from("partner_showrooms").update({ sort_order: r.sort_order }).eq("id", r.id)
     ));
+    revalidarLugares();
     return NextResponse.json({ ok: true });
   }
 
@@ -87,5 +89,6 @@ export async function POST(req: NextRequest) {
     if (isMissingTable(error)) return NextResponse.json({ error: "Rode a migração 053 antes de cadastrar showrooms." }, { status: 409 });
     return NextResponse.json({ error: error.message }, { status: 500 });
   }
+  revalidarLugares();
   return NextResponse.json({ ...(data as object), project_count: 0 }, { status: 201 });
 }

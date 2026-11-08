@@ -74,13 +74,23 @@ export function normalizarWhatsapp(txt: string): { valor: string | null } | { er
   return { erro: "WhatsApp inválido: use DDD + número, por exemplo (92) 99152-5177." };
 }
 
-/** Tira o @ e a URL: devolve só o usuário, ou null se vazio ou inválido. */
+/** Primeiro trecho do link que não é um perfil. */
+const RESERVADOS_INSTAGRAM = new Set(["p", "reel", "reels", "explore", "stories"]);
+
+/**
+ * Tira o @ e a URL (com ou sem www./m.): devolve só o usuário, ou null se vazio
+ * ou inválido. Link de post, reel, explorar ou stories, e texto que sobrou como
+ * domínio (termina em ponto ou em .com), não são perfil e voltam null.
+ */
 export function normalizarInstagram(txt: string): string | null {
   let s = (txt ?? "").trim();
   if (s === "") return null;
-  s = s.replace(/^https?:\/\//i, "").replace(/^(www\.)?instagram\.com\//i, "");
+  s = s.replace(/^https?:\/\//i, "").replace(/^(www\.|m\.)?instagram\.com\//i, "");
   s = s.split(/[?#]/)[0].split("/")[0].replace(/^@+/, "").trim();
-  return /^[A-Za-z0-9._]+$/.test(s) ? s : null;
+  if (!/^[A-Za-z0-9._]+$/.test(s)) return null;
+  if (s.endsWith(".") || /\.com$/i.test(s)) return null;
+  if (RESERVADOS_INSTAGRAM.has(s.toLowerCase())) return null;
+  return s;
 }
 
 const ORIGENS: readonly Origem[] = ["ste", "site", "instagram", "qr", "outro"];
