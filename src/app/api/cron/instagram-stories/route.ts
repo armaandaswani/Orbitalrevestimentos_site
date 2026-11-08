@@ -6,6 +6,7 @@ import { aniversariantes } from "@/lib/aniversarios-server";
 import { enfileirar } from "@/lib/ia/fila";
 import { rodarWorker } from "@/lib/ia/worker";
 import { resumoStories, type DirectPendente } from "@/lib/instagram-resumo";
+import { avisarDono } from "@/lib/instagram-aviso";
 import {
   BUCKET_AGENDA, GRAPH, contaDoToken, destravar, gravarAgendado, hojeManaus, listarAgendados,
   tokenParaPublicar, travar, type Agendado,
@@ -16,7 +17,9 @@ export const maxDuration = 300;
 /**
  * De hora em hora das 12h às 15h UTC (8h às 11h em Manaus): publica os Stories
  * de aniversário que o dono aprovou antes e agendou para hoje (fim de semana
- * fechado na sexta, viagem), marcando o @ confirmado, e apaga a mídia.
+ * fechado na sexta, viagem), e apaga a mídia. Sem marcação pela API (user_tags):
+ * ela entra calada e não sai mais no app. O dono marca pelo app, avisado pelo
+ * WhatsApp da Ste com o @ (decisão dele, 07/11/2026).
  *
  * Nunca publica duas vezes: uma trava por arquivo deixa só uma execução por vez;
  * cada Story ganha um container da Meta que fica gravado ("processando") antes
@@ -26,9 +29,9 @@ export const maxDuration = 300;
  * A mensagem de parabéns (escrita no Mac, no estilo do dono, com "bom dia") vai
  * para a fila do WhatsApp da Ste com as travas do painel; o rascunho do painel
  * para a mesma pessoa sai da fila de aprovação. Dia que passou não sai atrasado:
- * vira "expirado". Manda um resumo por e-mail sempre que algo muda; quem saiu
- * marcado vem nele com o Direct pronto para a equipe mandar pelo celular (a API
- * não começa conversa no Direct).
+ * vira "expirado". Manda um resumo por e-mail sempre que algo muda; quem tem @
+ * confirmado vem nele com o Direct pronto para a equipe mandar pelo celular (a
+ * API não começa conversa no Direct).
  */
 
 const TRAVA = "_cron.lock";
@@ -95,7 +98,7 @@ export async function GET(req: NextRequest) {
 
   const linhas: string[] = [];
   const directs: DirectPendente[] = [];
-  const marcados: Agendado[] = [];
+  const comDirect: Agendado[] = [];
   let worker = null;
   try {
     // Renova o token todo dia, haja Story ou não: um agendamento distante não pode achar o token vencido.
@@ -140,8 +143,8 @@ export async function GET(req: NextRequest) {
           try {
             const { data: url } = await storage.createSignedUrl(a.midia, 3600);
             if (!url?.signedUrl) throw new Error("A mídia agendada sumiu do armazenamento.");
+            // Sem user_tags, nem para quem foi agendado com @: o @ vai no aviso ao dono.
             const params: Record<string, string> = { media_type: "STORIES", [a.tipo === "image/jpeg" ? "image_url" : "video_url"]: url.signedUrl };
-            if (a.handle) params.user_tags = JSON.stringify([{ username: a.handle }]);
             const { id } = await graph(tk, "POST", `${igUser}/media`, params);
             const proc: Agendado = { ...a, status: "processando", container: String(id) };
             await gravarAgendado(proc);
@@ -157,6 +160,7 @@ export async function GET(req: NextRequest) {
         // 2) Espera todos juntos e publica cada container uma vez só.
         const pessoas = (await aniversariantes(db)).deHoje;
         let naFila = 0;
+        const publicados: Agendado[] = [];
         let fila = emAndamento;
         while (fila.length && Date.now() - inicio < ORCAMENTO_MS) {
           const restam: Agendado[] = [];
@@ -193,15 +197,22 @@ export async function GET(req: NextRequest) {
               feito.whatsapp = `não enfileirei (${e instanceof Error ? e.message : String(e)})`;
             }
             await gravarAgendado(feito).catch(() => {});
-            linhas.push(`${a.nome}: Story publicado${a.handle ? ` marcando @${a.handle}` : ""}; WhatsApp: ${feito.whatsapp}`);
+            publicados.push(feito);
             // Agendados antes de existir o campo "direct" usam o texto do WhatsApp.
             if (a.handle) {
               directs.push({ nome: a.nome, handle: a.handle, texto: a.direct ?? a.mensagem });
-              marcados.push(feito);
+              comDirect.push(feito);
             }
           }
           fila = restam;
           if (fila.length) await new Promise((r) => setTimeout(r, POLL_MS));
+        }
+        // Um aviso ao dono por Story publicado, todos juntos (a Ste pode levar até 30 s cada).
+        const avisos = await Promise.all(publicados.map((f) => avisarDono(f.nome, f.handle)));
+        for (const [i, f] of publicados.entries()) {
+          f.aviso_dono = avisos[i].detalhe;
+          await gravarAgendado(f).catch(() => {});
+          linhas.push(`${f.nome}: Story publicado; falta marcar no app (${f.handle ? `@${f.handle}` : "sem @ confirmado"}); aviso ao dono: ${f.aviso_dono}; WhatsApp: ${f.whatsapp}`);
         }
         for (const a of fila) linhas.push(`${a.nome}: a Meta ainda está processando; a próxima execução (de hora em hora até 11h) continua.`);
         if (naFila) worker = await rodarWorker(db, { detectar: false, maxTarefas: 10, limiteMs: 40_000 }).catch(() => null);
@@ -226,7 +237,7 @@ export async function GET(req: NextRequest) {
     } catch (e) {
       console.error("Resumo dos Stories agendados não foi enviado:", e);
       // Sem o e-mail a equipe não sabe do Direct: fica marcado para o Mac mandar quando ligar.
-      for (const f of marcados) await gravarAgendado({ ...f, resumo: "o e-mail com o Direct não saiu" }).catch(() => {});
+      for (const f of comDirect) await gravarAgendado({ ...f, resumo: "o e-mail com o Direct não saiu" }).catch(() => {});
     }
   }
   return NextResponse.json({ hoje, linhas, directs: directs.map((d) => d.handle), worker });

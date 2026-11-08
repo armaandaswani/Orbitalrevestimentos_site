@@ -5,9 +5,11 @@ import { emailLogo } from "@/lib/email-marca";
  *
  * A API do Instagram não deixa começar conversa no Direct, e com o Mac
  * desligado ninguém manda o parabéns por lá. Decisão do dono (07/11/2026): a
- * equipe manda pelo celular. Para cada Story publicado marcando um @ confirmado,
+ * equipe manda pelo celular. Para cada Story publicado de quem tem @ confirmado,
  * o resumo traz o botão que abre a conversa e o texto pronto para colar, sem link
  * do Story. A saudação foi escrita para as 8h; depois do meio-dia, "Boa tardeee".
+ * O Story sai sem marcação (07/11/2026): o dono marca pelo app, avisado pelo
+ * WhatsApp da Ste, e o resumo mostra o @ como "falta marcar no app".
  */
 
 export interface DirectPendente {
@@ -30,7 +32,7 @@ function blocoDirect(d: DirectPendente): string {
   return `
     <tr><td style="padding:18px 0;border-bottom:1px solid #e6e8ec">
       <p style="margin:0;font-family:Georgia,serif;font-size:19px;color:#0B1F45">${esc(d.nome)}</p>
-      <p style="margin:4px 0 0;font-size:14px;color:#43474e">@${esc(d.handle)}</p>
+      <p style="margin:4px 0 0;font-size:14px;color:#43474e">@${esc(d.handle)} · <span style="color:#8a5a00">falta marcar no app</span></p>
       <p style="margin:14px 0 6px;font-size:12px;font-weight:700;letter-spacing:0.05em;text-transform:uppercase;color:#43474e">Mensagem para copiar</p>
       ${d.texto
         // <br> e não white-space:pre-line: o Outlook ignora pre-line e a mensagem colaria numa linha só.
@@ -53,7 +55,7 @@ export function resumoStories(hoje: string, linhas: string[], directs: DirectPen
       ${directs.length ? `
       <div style="padding:28px 24px 8px">
         <p style="margin:0;font-family:Georgia,serif;font-size:24px;color:#0B1F45">Parabéns no Direct, pelo celular</p>
-        <p style="margin:8px 0 0;font-size:14px;line-height:1.6;color:#43474e">O Story já saiu marcando ${directs.length === 1 ? "a pessoa" : "cada pessoa"}. ${COMO.map(esc).join(" ")}</p>
+        <p style="margin:8px 0 0;font-size:14px;line-height:1.6;color:#43474e">O Story já saiu, ainda sem marcação: falta marcar no app (o dono recebe o aviso com o @ pelo WhatsApp da Ste). ${COMO.map(esc).join(" ")}</p>
         <table role="presentation" width="100%" cellpadding="0" cellspacing="0" style="border-collapse:collapse;margin-top:8px">${directs.map(blocoDirect).join("")}</table>
       </div>` : ""}
       <div style="padding:20px 24px 28px">
@@ -71,7 +73,7 @@ export function resumoStories(hoje: string, linhas: string[], directs: DirectPen
       "PARABÉNS NO DIRECT, PELO CELULAR",
       ...COMO,
       "",
-      ...directs.flatMap((d) => [`${d.nome} (@${d.handle})`, `Abrir conversa: ${linkConversa(d.handle)}`, d.texto ?? "(sem texto pronto)", ""]),
+      ...directs.flatMap((d) => [`${d.nome} (@${d.handle}, falta marcar no app)`, `Abrir conversa: ${linkConversa(d.handle)}`, d.texto ?? "(sem texto pronto)", ""]),
     ] : []),
     "O QUE O AGENDAMENTO FEZ HOJE",
     ...linhas,
