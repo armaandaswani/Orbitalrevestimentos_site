@@ -23,8 +23,8 @@
  * ao carregar, com movimento completo e reduzido (390 × 844, 390 × 664 e 1440 × 900);
  * lâminas, nomes e cartas do leque no estado final com movimento reduzido, sem
  * JavaScript, no nível leve e na chegada por âncora (#tecnologia, #linhas, #ficha);
- * as lâminas se encaixando na entrada do capítulo 3, pela rolagem e pelo caminho
- * por tempo (EntradaPfb, com o CSS.supports do JS enganado);
+ * as lâminas se encaixando na entrada do capítulo 3 e o leque abrindo na do 7, pela
+ * rolagem e pelo caminho por tempo (EntradaPfb, com o CSS.supports do JS enganado);
  * sem rolagem lateral em todas as larguras e com o leque a meio caminho; os blocos
  * do capítulo 9 um por vez; os botões de hora do capítulo 5; a área livre do chat nos
  * capítulos de foto (1, 6 e 10) e o painel deles sem corte em janelas baixas; os
@@ -1027,6 +1027,15 @@ const ESCALA_LEQUE = 1.4;
 const LARGURA_LG = 1024;
 /** Seis lâminas (pfb-anatomia-recortes.json) e cinco nomes no capítulo 3; cinco cartas no 7. */
 const QUANTOS = { laminas: 6, nomes: 5, cartas: 5 };
+/**
+ * Posições da abertura do leque como progresso de entrada p (topo de .pfb-leque em
+ * innerHeight − p × altura dele; globals.css, "Capítulo 7"): as cartas abrem de entry 60%
+ * (a do centro) a 150% (as de fora). `inicio` só captura; `meio` (105%) tem as cinco a meio
+ * caminho, com o centro do leque a ~87% da altura da tela a 390 × 844; `fim` (170%) vem
+ * depois do fim e antes da chegada por âncora a #linhas (o leque fica em 193% a 320 × 568,
+ * 231% a 1440 × 900 e mais nas outras).
+ */
+const LEQUE_P = { inicio: 0.4, meio: 1.05, fim: 1.7 };
 /** iPhone com as barras do Safari (Review Focus 1). */
 const CELULAR_BAIXO = [390, 664];
 /** Capítulos de foto com painel de texto (1, 6 e 10): área livre do chat e painel sem corte. */
@@ -1061,6 +1070,14 @@ async function rolarAoMeio(page, seletor) {
   }, seletor);
 }
 
+/** Rola, sem rolagem suave, até o topo de .pfb-leque ficar em innerHeight − p × altura dele (p, o progresso de entrada). */
+function posicionarLeque(page, p) {
+  return page.evaluate((p) => {
+    const r = document.querySelector(".pfb-leque").getBoundingClientRect();
+    window.scrollTo({ top: Math.max(0, r.top + scrollY - (innerHeight - p * r.height)), behavior: "instant" });
+  }, p);
+}
+
 /** Rola até a seção ocupar a tela: o fim dela no fim da tela (a abertura fica no topo da página). */
 async function rolarAteOcupar(page, id) {
   await page.evaluate((i) => {
@@ -1072,8 +1089,10 @@ async function rolarAteOcupar(page, id) {
 
 /**
  * Os dois momentos especiais numa leitura só: de cada `.pfb-lamina`, `.pfb-nome` e
- * `.pfb-leque-carta`, o `transform` calculado, a opacidade efetiva e se há animação
- * rodando nele (`getAnimations().length > 0`). A opacidade efetiva é o produto da do
+ * `.pfb-leque-carta`, o `transform` calculado, a opacidade efetiva, se há animação
+ * rodando nele (`getAnimations().length > 0`) e se a primeira roda numa
+ * DocumentTimeline (`tempo`: só o caminho por tempo usa uma); e, em `leque`, o topo
+ * de `.pfb-leque` e o innerHeight. A opacidade efetiva é o produto da do
  * elemento com a de cada ancestral até a `section` (inclusive): um invólucro que
  * esmaeça (o `div` do EntradaPfb, por exemplo) não esconde um estado quebrado.
  */
@@ -1090,9 +1109,21 @@ function medirMovimento(page) {
     const ler = (seletor) =>
       [...document.querySelectorAll(seletor)].map((el) => {
         const cs = getComputedStyle(el);
-        return { transform: cs.transform, opacidade: efetiva(el), anima: typeof el.getAnimations === "function" && el.getAnimations().length > 0 };
+        const animacoes = typeof el.getAnimations === "function" ? el.getAnimations() : [];
+        return {
+          transform: cs.transform,
+          opacidade: efetiva(el),
+          anima: animacoes.length > 0,
+          tempo: animacoes.length > 0 && animacoes[0].timeline instanceof DocumentTimeline,
+        };
       });
-    return { laminas: ler(".pfb-lamina"), nomes: ler(".pfb-nome"), cartas: ler(".pfb-leque-carta") };
+    const leque = document.querySelector(".pfb-leque");
+    return {
+      laminas: ler(".pfb-lamina"),
+      nomes: ler(".pfb-nome"),
+      cartas: ler(".pfb-leque-carta"),
+      leque: { topo: leque ? leque.getBoundingClientRect().top : null, ih: innerHeight },
+    };
   });
 }
 
@@ -1122,8 +1153,16 @@ const IDENTIDADE = [1, 0, 0, 1, 0, 0];
  * Estado final dos dois momentos especiais: cada lâmina com matriz identidade e
  * opacidade 1 (tolerância 0,01), cada nome com opacidade ≥ 0,99 e cada carta i com
  * a matriz de `cartaEsperada` (0,01 e 0,5 px), nas quantidades de `QUANTOS`.
+ *
+ * Com movimento completo, o leque abaixo da tela ainda não abriu (as cartas estão na
+ * partida, de propósito). Por isso as leituras feitas antes do capítulo 7 (a chegada
+ * a #tecnologia e o fim do encaixe das lâminas) passam `{ leque: "abaixo" }`: aí as
+ * cartas não são conferidas, mas o topo de `.pfb-leque` tem de estar abaixo da tela
+ * (≥ innerHeight), senão falha. Toda leitura com o leque na tela ou acima confere as
+ * cartas (o padrão), e movimento reduzido, sem JavaScript e nível leve sempre usam o
+ * padrão.
  */
-function estaNoFinal(m, largura) {
+function estaNoFinal(m, largura, { leque = "na-tela" } = {}) {
   const falhas = [];
   for (const [chave, n] of Object.entries(QUANTOS)) {
     if (m[chave].length !== n) falhas.push(`${m[chave].length} ${chave} (esperado ${n})`);
@@ -1134,16 +1173,60 @@ function estaNoFinal(m, largura) {
   m.nomes.forEach((n, i) => {
     if (!(n.opacidade >= 0.99)) falhas.push(`nome ${i}: opacidade ${n.opacidade}`);
   });
-  m.cartas.forEach((c, i) => {
-    if (!cartaNoFinal(c, i, largura)) falhas.push(`carta ${i}: ${c.transform} (esperado matrix(${cartaEsperada(i, largura).map((v) => v.toFixed(3)).join(", ")}))`);
-  });
-  const animando = [...m.laminas, ...m.nomes, ...m.cartas].filter((x) => x.anima).length;
+  const abaixo = leque === "abaixo";
+  if (abaixo) {
+    if (!(m.leque.topo !== null && m.leque.topo >= m.leque.ih)) falhas.push(`leque na tela (topo de .pfb-leque em ${r1(m.leque.topo)}, innerHeight ${m.leque.ih}): as cartas tinham de ser conferidas`);
+  } else {
+    m.cartas.forEach((c, i) => {
+      if (!cartaNoFinal(c, i, largura)) falhas.push(`carta ${i}: ${c.transform} (esperado matrix(${cartaEsperada(i, largura).map((v) => v.toFixed(3)).join(", ")}))`);
+    });
+  }
+  const conferidos = abaixo ? [...m.laminas, ...m.nomes] : [...m.laminas, ...m.nomes, ...m.cartas];
+  const animando = conferidos.filter((x) => x.anima).length;
   return {
     ok: falhas.length === 0,
     detalhe: falhas.length
       ? falhas.join("; ")
-      : `${m.laminas.length} lâminas, ${m.nomes.length} nomes e ${m.cartas.length} cartas no estado final (${animando} com animação)`,
+      : abaixo
+        ? `${m.laminas.length} lâminas e ${m.nomes.length} nomes no estado final (${animando} com animação); cartas não conferidas: leque abaixo da tela (topo em ${r1(m.leque.topo)})`
+        : `${m.laminas.length} lâminas, ${m.nomes.length} nomes e ${m.cartas.length} cartas no estado final (${animando} com animação)`,
   };
+}
+
+/**
+ * O sentido da abertura do leque: das cartas de fora (giro ≠ 0) que não estão no final, o giro
+ * lido da matriz (atan2(b, a), em graus) entre 0 e o giro final e o deslocamento (e / cos) entre
+ * 0 e o final, com 0,5 de folga (partem fechadas e abrem para o seu lado; um sinal trocado ou um
+ * passo além do final dá fora do intervalo). `aMeio` conta as que estão de fato no caminho (giro
+ * mais de 0,5° longe das duas pontas).
+ */
+function sentidoDoLeque(cartas, largura) {
+  const fora = [];
+  const lidas = [];
+  let aMeio = 0;
+  cartas.forEach((c, i) => {
+    if (GIRO[i] === 0 || cartaNoFinal(c, i, largura)) return;
+    const m = matriz(c.transform);
+    if (!m) return fora.push(`carta ${i}: transform ilegível (${c.transform})`);
+    const giro = (Math.atan2(m[1], m[0]) * 180) / Math.PI;
+    const desloca = m[4] / Math.cos((giro * Math.PI) / 180);
+    const xFinal = DESLOCA[i] * (largura >= LARGURA_LG ? ESCALA_LEQUE : 1);
+    const dentro = (v, fim) => v >= Math.min(0, fim) - 0.5 && v <= Math.max(0, fim) + 0.5;
+    lidas.push(`${i}: ${r1(giro)}° de ${GIRO[i]}°, ${r1(desloca)} px de ${r1(xFinal)}`);
+    if (!(dentro(giro, GIRO[i]) && dentro(desloca, xFinal))) fora.push(`carta ${i} fora do caminho: ${r1(giro)}° (de 0 a ${GIRO[i]}), ${r1(desloca)} px (de 0 a ${r1(xFinal)})`);
+    if (Math.abs(giro) > 0.5 && Math.abs(giro - GIRO[i]) > 0.5) aMeio++;
+  });
+  return { ok: fora.length === 0, aMeio, detalhe: fora.length ? fora.join("; ") : `no caminho: ${lidas.join(", ") || "nenhuma carta de fora fora do final"}` };
+}
+
+/** Sonda, a cada 25 ms e por até 1000 ms, a classe do elemento do seletor; devolve em quantos ms ela casou com `re`, ou null. */
+async function esperarClasse(page, seletor, re) {
+  const t0 = Date.now();
+  while (Date.now() - t0 <= 1000) {
+    if (re.test(await page.evaluate((s) => document.querySelector(s)?.className ?? "", seletor))) return Date.now() - t0;
+    await dormir(25);
+  }
+  return null;
 }
 
 /**
@@ -1335,15 +1418,14 @@ async function etapa2Navegador(browser) {
     );
   }
 
-  // 4. Sem rolagem lateral com o leque a meio caminho da entrada.
+  // 4. Sem rolagem lateral com o leque a meio caminho da abertura. Com movimento completo
+  // (o padrão do contexto), a prova do meio não pode passar no vazio: exige carta com
+  // animação e ao menos uma fora do estado final.
   for (const dim of [MENOR, CELULAR, [768, 1024], DESKTOP]) {
-    await verificar("Sem rolagem lateral com o leque a meio caminho (topo de .pfb-leque em innerHeight − metade da altura dele)", dim, () =>
+    await verificar(`Sem rolagem lateral com o leque a meio caminho (topo de .pfb-leque em innerHeight − ${LEQUE_P.meio} × altura dele): cartas com animação e ao menos uma fora do estado final`, dim, () =>
       comContexto(browser, dim, {}, async (page) => {
         await irAPagina(page);
-        await page.evaluate(() => {
-          const r = document.querySelector(".pfb-leque").getBoundingClientRect();
-          window.scrollTo({ top: Math.max(0, r.top + scrollY - (innerHeight - 0.5 * r.height)), behavior: "instant" });
-        });
+        await posicionarLeque(page, LEQUE_P.meio);
         await dormir(150);
         const larg = await page.evaluate(() => ({ sw: document.documentElement.scrollWidth, iw: innerWidth }));
         const m = await medirMovimento(page);
@@ -1353,7 +1435,8 @@ async function etapa2Navegador(browser) {
         const falhas = [];
         if (!(larg.sw <= larg.iw)) falhas.push(`scrollWidth ${larg.sw} > innerWidth ${larg.iw}`);
         if (m.cartas.length !== QUANTOS.cartas) falhas.push(`${m.cartas.length} cartas (esperado ${QUANTOS.cartas})`);
-        if (animadas > 0 && foraDoFinal === 0) falhas.push(`${animadas} cartas com animação e todas no estado final (o leque não está a meio caminho)`);
+        if (animadas === 0) falhas.push("nenhuma carta com animação (movimento completo)");
+        else if (foraDoFinal === 0) falhas.push(`${animadas} cartas com animação e todas no estado final (o leque não está a meio caminho)`);
         return comFalhas(falhas, `scrollWidth ${larg.sw} / innerWidth ${larg.iw}; cartas com animação ${animadas}, fora do estado final ${foraDoFinal}`);
       }),
     );
@@ -1482,7 +1565,8 @@ async function etapa2Navegador(browser) {
               ih: innerHeight,
             };
           }, id);
-          const r = estaNoFinal(await medirMovimento(page), dim[0]);
+          // Em #tecnologia o leque (capítulo 7) ainda está abaixo da tela, fechado: as cartas ficam de fora.
+          const r = estaNoFinal(await medirMovimento(page), dim[0], id === "tecnologia" ? { leque: "abaixo" } : {});
           await capturarPfb(page, `ancora-${id}`, dim);
           if (!temCabecalho(m.cabAltura)) return { ok: false, detalhe: `cabeçalho não encontrado (header[data-site] ${m.cabAltura === null ? "ausente" : "com altura 0"})` };
           const falhas = [];
@@ -1524,7 +1608,7 @@ async function etapa2Navegador(browser) {
         if (!sentido.ok) falhas.push(`no meio: ${sentido.detalhe}`);
         await posicionar(1.18);
         await dormir(200);
-        const fim = estaNoFinal(await medirMovimento(page), dim[0]);
+        const fim = estaNoFinal(await medirMovimento(page), dim[0], { leque: "abaixo" });
         await capturarPfb(page, "encaixe-fim", dim);
         if (!fim.ok) falhas.push(`em innerHeight − 1,18 × altura: ${fim.detalhe}`);
         return comFalhas(falhas, `no meio: ${aMeio} lâminas a meio caminho (opacidades ${meio.laminas.map((l) => r1(l.opacidade)).join(", ")}); ${sentido.detalhe}; no fim: ${fim.detalhe}`);
@@ -1545,20 +1629,12 @@ async function etapa2Navegador(browser) {
       });
       await irAPagina(page);
       const classes = () => page.evaluate(() => document.querySelector(".pfb-palco")?.className ?? null);
-      const esperarClasse = async (re) => {
-        const t0 = Date.now();
-        while (Date.now() - t0 <= 1000) {
-          if (re.test((await classes()) ?? "")) return Date.now() - t0;
-          await dormir(25);
-        }
-        return null;
-      };
       const falhas = [];
-      const tEspera = await esperarClasse(/\bpfb-espera\b/);
+      const tEspera = await esperarClasse(page, ".pfb-palco", /\bpfb-espera\b/);
       const noTopo = await classes();
       if (tEspera === null) falhas.push(`no topo, .pfb-palco sem pfb-espera em 1000 ms ("${noTopo}")`);
       await rolarAoMeio(page, ".pfb-figura");
-      const tEntrou = await esperarClasse(/\bpfb-entrou\b/);
+      const tEntrou = await esperarClasse(page, ".pfb-palco", /\bpfb-entrou\b/);
       if (tEntrou === null) {
         falhas.push(`pfb-entrou não apareceu em 1000 ms ("${await classes()}")`);
         return comFalhas(falhas, `no topo "${noTopo}"`);
@@ -1571,10 +1647,78 @@ async function etapa2Navegador(browser) {
       const sentido = sentidoDoEncaixe(enc);
       if (!sentido.ok) falhas.push(`300 ms depois de pfb-entrou: ${sentido.detalhe}`);
       await dormir(1500);
-      const fim = estaNoFinal(await medirMovimento(page), DESKTOP[0]);
+      const fim = estaNoFinal(await medirMovimento(page), DESKTOP[0], { leque: "abaixo" });
       await capturarPfb(page, "encaixe-tempo-fim", DESKTOP);
       if (!fim.ok) falhas.push(`1500 ms depois: ${fim.detalhe}`);
       return comFalhas(falhas, `pfb-espera em ${tEspera} ms ("${noTopo}"); pfb-entrou em ${tEntrou} ms; 300 ms depois, ${aMeio} lâminas a meio caminho numa DocumentTimeline; ${sentido.detalhe}; 1500 ms depois: ${fim.detalhe}`);
+    }),
+  );
+
+  // 8c. O leque abre pela rolagem (caminho principal, animation-timeline): o sujeito da linha do
+  // tempo é .pfb-leque, nas posições de LEQUE_P. No meio, ao menos uma carta com animação fora do
+  // estado final, no caminho entre fechada e aberta (sentidoDoLeque); no fim, tudo no estado final.
+  for (const dim of [CELULAR, DESKTOP]) {
+    await verificar(`Leque abre na entrada: topo de .pfb-leque em innerHeight − ${LEQUE_P.meio} × altura dá ≥ 1 carta com animação fora do estado final, com giro e deslocamento entre 0 e o final; em innerHeight − ${LEQUE_P.fim} × altura, o estado final`, dim, () =>
+      comContexto(browser, dim, {}, async (page) => {
+        await irAPagina(page);
+        const falhas = [];
+        await posicionarLeque(page, LEQUE_P.inicio);
+        await dormir(200);
+        await capturarPfb(page, "leque-inicio", dim);
+        await posicionarLeque(page, LEQUE_P.meio);
+        await dormir(200);
+        const meio = await medirMovimento(page);
+        await capturarPfb(page, "leque-abre-meio", dim);
+        const aMeio = meio.cartas.filter((c, i) => c.anima && !cartaNoFinal(c, i, dim[0])).length;
+        if (aMeio === 0) falhas.push(`no meio: nenhuma carta com animação fora do estado final (${meio.cartas.map((c, i) => `${i}: ${c.transform}${c.anima ? " anima" : ""}`).join(", ")})`);
+        const sentido = sentidoDoLeque(meio.cartas, dim[0]);
+        if (!sentido.ok) falhas.push(`no meio: ${sentido.detalhe}`);
+        await posicionarLeque(page, LEQUE_P.fim);
+        await dormir(200);
+        const fim = estaNoFinal(await medirMovimento(page), dim[0]);
+        await capturarPfb(page, "leque-fim", dim);
+        if (!fim.ok) falhas.push(`em innerHeight − ${LEQUE_P.fim} × altura: ${fim.detalhe}`);
+        return comFalhas(falhas, `no meio: ${aMeio} cartas com animação fora do final (${sentido.aMeio} no caminho); ${sentido.detalhe}; no fim: ${fim.detalhe}`);
+      }),
+    );
+  }
+
+  // 8d. O caminho por tempo do leque, como a 8b: o mesmo engano do CSS.supports do JS. pfb-espera
+  // em .pfb-leque no topo; antes do leque, a figura do capítulo 3 passa pela tela (o encaixe dela
+  // roda e acaba, para o fim conferir tudo); pfb-entrou ao rolar o leque à tela; 300 ms depois,
+  // uma carta fora do final numa DocumentTimeline e no caminho; 1500 ms depois, o final.
+  await verificar("Caminho por tempo do leque (CSS.supports(animation-timeline) falso): pfb-espera em .pfb-leque no topo; pfb-entrou ≤ 1000 ms depois de rolar; 300 ms depois, carta fora do estado final numa DocumentTimeline, com giro e deslocamento entre 0 e o final; 1500 ms depois, o estado final", DESKTOP, () =>
+    comContexto(browser, DESKTOP, {}, async (page, ctx) => {
+      await ctx.addInitScript(() => {
+        const o = CSS.supports.bind(CSS);
+        CSS.supports = (...a) => (/animation-timeline/.test(a.join(" ")) ? false : o(...a));
+      });
+      await irAPagina(page);
+      const classes = () => page.evaluate(() => document.querySelector(".pfb-leque")?.className ?? null);
+      const falhas = [];
+      const tEspera = await esperarClasse(page, ".pfb-leque", /\bpfb-espera\b/);
+      const noTopo = await classes();
+      if (tEspera === null) falhas.push(`no topo, .pfb-leque sem pfb-espera em 1000 ms ("${noTopo}")`);
+      await rolarAoMeio(page, ".pfb-figura");
+      await dormir(1500);
+      await rolarAoMeio(page, ".pfb-leque");
+      const tEntrou = await esperarClasse(page, ".pfb-leque", /\bpfb-entrou\b/);
+      if (tEntrou === null) {
+        falhas.push(`pfb-entrou não apareceu em 1000 ms ("${await classes()}")`);
+        return comFalhas(falhas, `no topo "${noTopo}"`);
+      }
+      await dormir(300);
+      const meio = await medirMovimento(page);
+      await capturarPfb(page, "leque-tempo-meio", DESKTOP);
+      const aMeio = meio.cartas.filter((c, i) => c.tempo && !cartaNoFinal(c, i, DESKTOP[0])).length;
+      if (aMeio === 0) falhas.push(`300 ms depois de pfb-entrou: nenhuma carta fora do estado final numa DocumentTimeline (${meio.cartas.map((c, i) => `${i}: ${c.transform}${c.tempo ? " tempo" : ""}`).join(", ")})`);
+      const sentido = sentidoDoLeque(meio.cartas, DESKTOP[0]);
+      if (!sentido.ok) falhas.push(`300 ms depois de pfb-entrou: ${sentido.detalhe}`);
+      await dormir(1500);
+      const fim = estaNoFinal(await medirMovimento(page), DESKTOP[0]);
+      await capturarPfb(page, "leque-tempo-fim", DESKTOP);
+      if (!fim.ok) falhas.push(`1500 ms depois: ${fim.detalhe}`);
+      return comFalhas(falhas, `pfb-espera em ${tEspera} ms ("${noTopo}"); pfb-entrou em ${tEntrou} ms; 300 ms depois, ${aMeio} cartas fora do final numa DocumentTimeline (${sentido.aMeio} no caminho); ${sentido.detalhe}; 1500 ms depois: ${fim.detalhe}`);
     }),
   );
 

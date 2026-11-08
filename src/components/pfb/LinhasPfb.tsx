@@ -2,6 +2,7 @@ import Image from "next/image";
 import Link from "next/link";
 import { CATALOGO_PATH, catalogoPath } from "@/lib/product-link";
 import { LINHAS } from "@/lib/pfb-textos";
+import EntradaPfb from "./EntradaPfb";
 
 /**
  * As cinco amostras do leque, da esquerda para a direita (spec, Tabela, linha
@@ -23,9 +24,13 @@ const CARTAS = [
  * amostras em cartas 3:4 (128 × 171 no celular, 180 × 240 no computador), com
  * a borda branca de 3 px, presas pela base no meio da tela; cada uma gira e
  * anda de lado pelo `--r` e o `--x` do `style` (`.pfb-leque-carta`, ruling P8),
- * e a do centro fica por cima. Aqui o leque fica parado, aberto: o estado final.
- * O contêiner é da largura da tela, com `overflow-x: clip`, para as cartas de
- * fora nunca abrirem rolagem lateral.
+ * e a do centro fica por cima. O leque abre do centro para fora na entrada do
+ * contêiner: pela rolagem (`.pfb-leque` é o sujeito da linha do tempo) ou, onde
+ * não há `animation-timeline`, por tempo, pelas classes do `EntradaPfb`, que é o
+ * próprio contêiner. Sem JavaScript, com movimento reduzido ou no nível leve, o
+ * leque fica parado, aberto: o estado final. O contêiner é da largura da tela,
+ * com `overflow-x: clip`, para as cartas de fora nunca abrirem rolagem lateral;
+ * as cartas são decorativas (`aria-hidden`, `alt=""`).
  *
  * Embaixo, as três linhas, cada uma um link para o catálogo da linha (nome em
  * t3, a frase em legenda e a seta), empilhadas no celular e numa fileira no
@@ -44,11 +49,12 @@ export default function LinhasPfb() {
           {LINHAS.titulo}
         </h2>
       </div>
-      <div className="pfb-leque relative mt-6 h-[200px] lg:mt-8 lg:h-[280px]" aria-hidden="true">
+      <EntradaPfb className="pfb-leque relative mt-6 h-[200px] lg:mt-8 lg:h-[280px]">
         {CARTAS.map(({ arquivo, r, x, par }, i) => (
           <div
             key={arquivo}
             data-carta={i}
+            aria-hidden="true"
             className="pfb-leque-carta absolute left-1/2 bottom-6 -ml-16 h-[171px] w-32 border-[3px] border-white bg-[#F6F5F2] lg:bottom-8 lg:-ml-[90px] lg:h-[240px] lg:w-[180px]"
             style={{ "--r": `${r}deg`, "--x": `${x}px`, "--par": par, zIndex: 3 - par } as React.CSSProperties}
           >
@@ -61,7 +67,7 @@ export default function LinhasPfb() {
             />
           </div>
         ))}
-      </div>
+      </EntradaPfb>
       <div className="ds-wrap mt-6 lg:mt-10">
         <ul className="lg:grid lg:grid-cols-3 lg:gap-8">
           {LINHAS.curtas.map(({ linha, frase }) => (
