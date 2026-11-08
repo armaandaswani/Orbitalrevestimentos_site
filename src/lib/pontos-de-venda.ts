@@ -95,7 +95,63 @@ export function normalizarInstagram(txt: string): string | null {
   return s;
 }
 
-const ORIGENS: readonly Origem[] = ["ste", "site", "instagram", "qr", "outro"];
+/** Campos da migração 076 que o admin edita numa revenda. */
+export type CamposRevenda = Partial<Pick<PontoDeVenda, "bairro" | "horario" | "whatsapp" | "instagram" | "lat" | "lng">>;
+
+/** Texto aparado; vazio ou qualquer outra coisa vira null. */
+function textoOuNull(v: unknown): string | null {
+  return typeof v === "string" && v.trim() !== "" ? v.trim() : null;
+}
+
+/** Número finito dentro do limite, ou null (também para texto vazio); `undefined` = inválido. */
+function coordenada(v: unknown, limite: number): number | null | undefined {
+  if (v === null || (typeof v === "string" && v.trim() === "")) return null;
+  if (typeof v !== "number" || !Number.isFinite(v) || Math.abs(v) > limite) return undefined;
+  return v;
+}
+
+/**
+ * Validação comum ao PATCH e ao POST de /api/admin/partner-showrooms: lê do
+ * corpo só os campos da 076 que vieram (bairro, horario, whatsapp, instagram,
+ * lat, lng), normaliza e devolve os campos para gravar, ou a mensagem do 400.
+ */
+export function camposRevendaDoCorpo(body: Record<string, unknown>): { campos: CamposRevenda } | { erro: string } {
+  const campos: CamposRevenda = {};
+  if ("bairro" in body) campos.bairro = textoOuNull(body.bairro);
+  if ("horario" in body) campos.horario = textoOuNull(body.horario);
+  if ("whatsapp" in body) {
+    const r = normalizarWhatsapp(typeof body.whatsapp === "string" ? body.whatsapp : "");
+    if ("erro" in r) return { erro: r.erro };
+    campos.whatsapp = r.valor;
+  }
+  if ("instagram" in body) {
+    const bruto = typeof body.instagram === "string" ? body.instagram.trim() : "";
+    const usuario = normalizarInstagram(bruto);
+    if (bruto !== "" && usuario === null) {
+      return { erro: "Instagram inválido: use @usuario ou o link do perfil, por exemplo @orbital.revestimentos." };
+    }
+    campos.instagram = usuario;
+  }
+  for (const [campo, limite, rotulo] of [["lat", 90, "Latitude"], ["lng", 180, "Longitude"]] as const) {
+    if (!(campo in body)) continue;
+    const n = coordenada(body[campo], limite);
+    if (n === undefined) return { erro: `${rotulo} inválida: use um número, por exemplo -3.0893.` };
+    campos[campo] = n;
+  }
+  return { campos };
+}
+
+/**
+ * Texto fixo do 500 do admin (o error.message do banco vai só para o log do
+ * servidor): sem a coluna nova, o aviso da migração 076.
+ */
+export function mensagemErroSalvar(mensagemDoBanco: string | null | undefined): string {
+  return /column|schema cache/i.test(mensagemDoBanco ?? "")
+    ? "Falta aplicar a migração 076 no banco."
+    : "Não foi possível salvar. Tente de novo; se continuar, avise o suporte.";
+}
+
+const ORIGENS: readonly Origem[] =["ste", "site", "instagram", "qr", "outro"];
 
 /** Fecha a lista: vazio/ausente vira null; valor fora da lista vira "outro". */
 export function origemValida(txt: string | null): Origem | null {

@@ -26,6 +26,8 @@ import {
   CSS_LOJA_PRIMEIRO,
   CARTAO_PDV,
   parceirosNaGrade,
+  camposRevendaDoCorpo,
+  mensagemErroSalvar,
 } from "./pontos-de-venda.ts";
 import { CAIXA_GERADA, LARGURA, ALTURA, ROTULOS_FIXOS, MAPA_SVG, CAMADAS_MANAUS } from "../components/onde-comprar/dados-mapa-manaus.ts";
 
@@ -677,4 +679,27 @@ test("parceirosNaGrade: sem revendas o cartão aparece do mesmo jeito", () => {
 test("parceirosNaGrade: sem showrooms devolve só o cartão", () => {
   assert.deepEqual(parceirosNaGrade([]), [CARTAO_PDV]);
   assert.deepEqual(parceirosNaGrade([lugar("r1", "revenda")]), [CARTAO_PDV]);
+});
+
+// ── Admin: validação comum ao PATCH e ao POST e texto fixo do 500 ─────────────
+test("camposRevendaDoCorpo: só os campos que vieram, normalizados", () => {
+  assert.deepEqual(camposRevendaDoCorpo({ name: "x" }), { campos: {} });
+  assert.deepEqual(
+    camposRevendaDoCorpo({ bairro: "  Centro ", horario: "", whatsapp: "(92) 99152-5177", instagram: "https://instagram.com/loja.x/", lat: -3.1, lng: "" }),
+    { campos: { bairro: "Centro", horario: null, whatsapp: "5592991525177", instagram: "loja.x", lat: -3.1, lng: null } },
+  );
+});
+
+test("camposRevendaDoCorpo: mensagens do 400", () => {
+  assert.match(camposRevendaDoCorpo({ whatsapp: "9915" }).erro, /^WhatsApp inválido/);
+  assert.match(camposRevendaDoCorpo({ instagram: "instagram.com/p/abc" }).erro, /^Instagram inválido/);
+  assert.match(camposRevendaDoCorpo({ lat: 91 }).erro, /^Latitude inválida/);
+  assert.match(camposRevendaDoCorpo({ lng: "-60,02" }).erro, /^Longitude inválida/);
+});
+
+test("mensagemErroSalvar: coluna faltando pede a 076; o resto, texto fixo", () => {
+  assert.equal(mensagemErroSalvar("column partner_showrooms.bairro does not exist"), "Falta aplicar a migração 076 no banco.");
+  assert.equal(mensagemErroSalvar("Could not find the 'bairro' column of 'partner_showrooms' in the schema cache"), "Falta aplicar a migração 076 no banco.");
+  assert.equal(mensagemErroSalvar("connection refused"), "Não foi possível salvar. Tente de novo; se continuar, avise o suporte.");
+  assert.equal(mensagemErroSalvar(null), "Não foi possível salvar. Tente de novo; se continuar, avise o suporte.");
 });

@@ -3,6 +3,7 @@ import { isAdminRequest } from "@/lib/admin-auth";
 import { supabaseAdmin } from "@/lib/supabase";
 import { isMissingTable } from "@/lib/db-compat";
 import { revalidarLugares } from "@/lib/revalidar-lugares";
+import { camposRevendaDoCorpo, mensagemErroSalvar } from "@/lib/pontos-de-venda";
 
 export const runtime = "nodejs";
 
@@ -54,6 +55,9 @@ export async function POST(req: NextRequest) {
 
   const name = typeof body?.name === "string" ? body.name.trim() : "";
   if (!name) return NextResponse.json({ error: "O nome do showroom é obrigatório." }, { status: 400 });
+  // Migração 076: os mesmos campos e a mesma validação do PATCH (só os que vieram no corpo).
+  const revenda = camposRevendaDoCorpo(body ?? {});
+  if ("erro" in revenda) return NextResponse.json({ error: revenda.erro }, { status: 400 });
 
   // O slug é técnico e nunca aparece para o usuário — é gerado aqui, e ganha um
   // sufixo se já existir, para dois parceiros de mesmo nome não colidirem.
@@ -75,7 +79,10 @@ export async function POST(req: NextRequest) {
     description: typeof body?.description === "string" ? body.description : null,
     logo_url: typeof body?.logo_url === "string" ? body.logo_url : null,
     cover_url: typeof body?.cover_url === "string" ? body.cover_url : null,
-    active: body?.active !== false,
+    // Lugar novo nasce inativo (o site mostra toda revenda ativa): o dono liga
+    // no admin quando os dados estiverem prontos, salvo pedido explícito.
+    active: body?.active === true,
+    ...revenda.campos,
   };
   // Migração 063: tipo do lugar. Sem a coluna, cria como showroom (padrão).
   if (body?.kind === "revenda") row.kind = "revenda";
@@ -87,7 +94,8 @@ export async function POST(req: NextRequest) {
 
   if (error) {
     if (isMissingTable(error)) return NextResponse.json({ error: "Rode a migração 053 antes de cadastrar showrooms." }, { status: 409 });
-    return NextResponse.json({ error: error.message }, { status: 500 });
+    console.error("POST partner_showrooms:", error.message);
+    return NextResponse.json({ error: mensagemErroSalvar(error.message) }, { status: 500 });
   }
   revalidarLugares();
   return NextResponse.json({ ...(data as object), project_count: 0 }, { status: 201 });

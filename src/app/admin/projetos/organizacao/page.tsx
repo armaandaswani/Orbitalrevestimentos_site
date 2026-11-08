@@ -5,7 +5,7 @@ import Link from "next/link";
 import AdminShell from "../../AdminShell";
 import { btnGhost, btnPrimary, inputCls, labelCls } from "../../ui";
 import { uploadAdminImage } from "@/lib/admin-upload";
-import { dentroDeManaus } from "@/lib/pontos-de-venda";
+import { cabePino, dentroDeManaus, projetarManaus } from "@/lib/pontos-de-venda";
 
 /** Imagem do showroom: prévia + "Enviar foto" (comprime e sobe) + remover. */
 function CampoImagem({ label, value, onChange, folder, alto = false }: {
@@ -231,6 +231,7 @@ export default function OrganizacaoPage() {
         method: "PATCH", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ [campo]: valor }),
       });
       const corpo = (await res.json().catch(() => null)) as (Partial<Showroom> & { error?: string }) | null;
+      if (res.status === 401) return { erro: "Sessão expirada: entre de novo." };
       if (!res.ok) return { erro: corpo?.error ?? "Não foi possível salvar." };
       const salvo = corpo && campo in corpo ? corpo[campo] ?? null : valor;
       setShowrooms((prev) => prev.map((s) => (s.id === id ? { ...s, [campo]: salvo } : s)));
@@ -438,6 +439,12 @@ export default function OrganizacaoPage() {
                                 Fora do mapa de Manaus: a loja aparece só na lista.
                               </p>
                             )}
+                            {/* Dentro da caixa, mas sem espaço para o pino (a mesma regra do MapaManaus). */}
+                            {s.lat != null && s.lng != null && dentroDeManaus(s.lat, s.lng) && !cabePino(projetarManaus(s.lat, s.lng)) && (
+                              <p role="status" className="sm:col-span-2 text-[11px] text-amber-800 -mt-1">
+                                Perto da borda do mapa: a loja aparece só na lista.
+                              </p>
+                            )}
                           </>
                         )}
                         <div className="sm:col-span-2 bg-[#F6F5F2] border border-[#e2e2e2] px-4 py-3 flex flex-wrap items-center justify-between gap-3">
@@ -449,7 +456,13 @@ export default function OrganizacaoPage() {
                         </div>
                         <div className="sm:col-span-2 flex flex-wrap items-center justify-between gap-3 pt-1">
                           <label className="flex items-center gap-2 text-[13px] text-[#43474e] cursor-pointer">
-                            <input type="checkbox" checked={s.active} onChange={(e) => patchShowroom(s.id, { active: e.target.checked })} />
+                            <input type="checkbox" checked={s.active} onChange={(e) => {
+                              // Sem nenhuma revenda ativa a página /onde-comprar não publica (o ISR mantém a anterior).
+                              const ultima = !e.target.checked && s.kind === "revenda"
+                                && !showrooms.some((x) => x.id !== s.id && x.kind === "revenda" && x.active);
+                              if (ultima && !confirm("É a última loja ativa: a página Onde comprar fica sem lojas e o site mantém a versão anterior até uma loja voltar. Desativar mesmo?")) return;
+                              void patchShowroom(s.id, { active: e.target.checked });
+                            }} />
                             Ativo (visível no site)
                           </label>
                           <button onClick={() => removeShowroom(s)}

@@ -75,15 +75,18 @@ export default function ShowroomConteudo({
         </div>
       </section>
 
+      {/* Revenda sem ambientes não mostra a seção vazia; showroom sem ambientes mostra o aviso. */}
+      {!(revenda && ambientes.length === 0) && (
       <section aria-labelledby={`ambientes-${sr.slug}`} className="pb-10 lg:pb-14">
         <div className="flex flex-col sm:flex-row sm:items-baseline gap-1 sm:gap-4 mb-5 pb-3 border-b border-surface-variant">
           <h2 id={`ambientes-${sr.slug}`} className="font-serif text-primary text-t3 font-normal">Ambientes com Orbital</h2>
           <p className="text-on-surface-variant text-legenda">{contaAmbientes(ambientes.length)} neste {revenda ? "ponto" : "showroom"}</p>
         </div>
         {ambientes.length === 0
-          ? (!revenda && <p className="text-on-surface-variant text-corpo py-10 text-center">Nenhum ambiente publicado aqui ainda.</p>)
+          ? <p className="text-on-surface-variant text-corpo py-10 text-center">Nenhum ambiente publicado aqui ainda.</p>
           : <GradeProjetos projetos={ambientes} onAbrir={onAbrirProjeto} href={hrefProjeto} />}
       </section>
+      )}
 
       {outros.length > 0 && (
         <nav aria-labelledby={`outros-${sr.slug}`} className="pb-12 lg:pb-16 border-t border-surface-variant pt-6">

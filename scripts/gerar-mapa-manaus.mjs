@@ -141,24 +141,30 @@ function consulta() {
 out geom(${b});`;
 }
 
-/** Lê a resposta da Overpass. `temporaria` é a pasta que o script criou e que main() apaga no fim. */
+/** Lê a resposta da Overpass. `temporaria` é a pasta que o script criou e que main() apaga no fim (ou esta função, se a consulta falhar). */
 async function obterOsm(args) {
   if (args.osm) return { osm: JSON.parse(fs.readFileSync(args.osm, "utf8")), temporaria: null };
   const temporaria = args.cache ? null : fs.mkdtempSync(path.join(os.tmpdir(), "overpass-manaus-"));
   const pasta = args.cache || temporaria;
   fs.mkdirSync(pasta, { recursive: true });
   const arquivo = path.join(pasta, ARQUIVO_CACHE);
-  if (!fs.existsSync(arquivo)) {
-    const res = await fetch(OVERPASS, {
-      method: "POST",
-      headers: { "User-Agent": UA, "Content-Type": "application/x-www-form-urlencoded" },
-      body: "data=" + encodeURIComponent(consulta()),
-    });
-    if (!res.ok) throw new Error(`Overpass respondeu ${res.status}: ${(await res.text()).slice(0, 300)}`);
-    fs.writeFileSync(arquivo, await res.text());
-    console.log(`Overpass: ${(fs.statSync(arquivo).size / 1e6).toFixed(1)} MB → ${arquivo}`);
+  try {
+    if (!fs.existsSync(arquivo)) {
+      const res = await fetch(OVERPASS, {
+        method: "POST",
+        headers: { "User-Agent": UA, "Content-Type": "application/x-www-form-urlencoded" },
+        body: "data=" + encodeURIComponent(consulta()),
+      });
+      if (!res.ok) throw new Error(`Overpass respondeu ${res.status}: ${(await res.text()).slice(0, 300)}`);
+      fs.writeFileSync(arquivo, await res.text());
+      console.log(`Overpass: ${(fs.statSync(arquivo).size / 1e6).toFixed(1)} MB → ${arquivo}`);
+    }
+    return { osm: JSON.parse(fs.readFileSync(arquivo, "utf8")), temporaria };
+  } catch (e) {
+    // A consulta (ou a leitura) falhou: main() nunca recebe a pasta, então ela é apagada aqui.
+    if (temporaria) fs.rmSync(temporaria, { recursive: true, force: true });
+    throw e;
   }
-  return { osm: JSON.parse(fs.readFileSync(arquivo, "utf8")), temporaria };
 }
 
 // ── Projeção ──────────────────────────────────────────────────────────────
