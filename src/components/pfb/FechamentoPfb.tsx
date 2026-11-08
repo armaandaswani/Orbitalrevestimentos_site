@@ -1,69 +1,104 @@
+import Image from "next/image";
 import Link from "next/link";
 import ContatoCta from "@/components/ContatoCta";
-import LugarCard from "@/components/projetos/LugarCard";
-import Revelar from "@/components/projetos/Revelar";
-import { CATALOGO_PATH } from "@/lib/product-link";
+import { coverStyle } from "@/lib/cover-crop";
+import { separarLugares } from "@/lib/pfb-lugares";
 import { PEDIR } from "@/lib/pfb-textos";
-import { CARTAO_PDV, parceirosNaGrade } from "@/lib/cartao-pdv";
-import type { Showroom } from "@/lib/projetos-tipos";
+import { nomeLugar, type Showroom } from "@/lib/projetos-tipos";
 
 /**
- * Seção 6 da página do PFB: onde ver e como pedir (spec, item 28 e "Seção 6").
+ * Capítulo 11 da página do PFB: onde ver e como pedir (spec
+ * 2026-11-07-pfb-experiencia, Tabela, linha 11). Creme, com 96 px de respiro
+ * antes do rodapé.
  *
- * A grade de lugares é a mesma de /projetos#parceiros (LugarCard compacto),
- * sem onAbrir: os showrooms levam à página do lugar e um cartão só, "Pontos de
- * venda", leva a /onde-comprar (parceirosNaGrade). Cada cartão vai num envoltório
- * com data-teste="lugar", data-tipo (showroom ou revenda) e data-texto-banco
- * (o nome vem do banco). Como o cartão entra sempre, a frase de reserva com o
- * link para /projetos#parceiros só aparece se a grade vier vazia; o caminho
- * fica, como a spec pede.
+ * Os lugares vêm de `carregarLugares()` e passam por `separarLugares`: até seis
+ * showrooms numa grade 3 × 2 de miniaturas quadradas (108 px no celular, menores
+ * abaixo de ~360 px de largura para caberem com 12 px entre elas; 160 no
+ * computador), cada uma um link para a página do showroom, com só o nome
+ * embaixo, inteiro, em até duas linhas (o nome como marca, `nomeLugar`, como
+ * no resto do site; `line-clamp-2` só como segurança para um nome maior); sem capa, o quadrado azul-noite vazio. Sem showroom, a grade some.
+ * As revendas não são listadas aqui: um link só, "Revendas em Manaus", leva a
+ * /onde-comprar, que mostra cada loja com mapa, horário e WhatsApp. Nome do
+ * banco sempre dentro de `[data-texto-banco]`.
  *
- * `agora` vem da página (Date.now() na renderização do servidor), para o selo
- * "Novo" dos lugares.
+ * Depois: o pedido de orçamento, o botão do consultor e o link para
+ * /projetos. No computador, o texto à esquerda e os lugares à direita.
  */
-export default function FechamentoPfb({ lugares, agora }: { lugares: Showroom[]; agora: number }) {
-  // Os showrooms e o cartão único "Pontos de venda" (as revendas ficam em /onde-comprar).
-  const grade = parceirosNaGrade(lugares);
+export default function FechamentoPfb({ lugares }: { lugares: Showroom[] }) {
+  const { showrooms, revendas } = separarLugares(lugares);
   return (
-    <section id="como-pedir" aria-labelledby="pfb-pedir-titulo" className="ds-secao bg-[#F6F5F2] scroll-mt-20">
-      <div className="ds-wrap">
-        <Revelar>
-          <h2 id="pfb-pedir-titulo" className="font-serif text-t2 text-[#0B1F45]">{PEDIR.titulo}</h2>
-          <p className="text-corpo text-[#43474e] mt-4">{PEDIR.frase}</p>
-        </Revelar>
+    <section
+      id="como-pedir"
+      data-capitulo="como-pedir"
+      aria-labelledby="pfb-pedir-titulo"
+      className="bg-[#F6F5F2] pt-12 pb-24 lg:pt-24 lg:pb-24"
+    >
+      <div className="ds-wrap lg:grid lg:grid-cols-[minmax(0,1fr)_528px] lg:grid-rows-[auto_1fr] lg:gap-x-16">
+        <div className="lg:col-start-1 lg:row-start-1">
+          <h2 id="pfb-pedir-titulo" className="font-serif pfb-t1 text-[#0B1F45]">
+            {PEDIR.titulo}
+          </h2>
+          <p className="pfb-corpo text-[#43474e] mt-6 lg:mt-8">{PEDIR.frase}</p>
+        </div>
 
-        {grade.length > 0 ? (
-          <ul className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-5 gap-3 lg:gap-4 mt-8">
-            {grade.map((lugar) => (
-              <li key={lugar.id}>
-                {/* O cartão "Pontos de venda" é texto do site, não do banco: fica de fora do data-texto-banco (a varredura de proibidos lê o texto dele). */}
-                <div data-teste="lugar" data-tipo={lugar.kind} data-texto-banco={lugar.id === CARTAO_PDV.id ? undefined : ""} className="h-full">
-                  <LugarCard compacto lugar={lugar} agora={agora} />
-                </div>
-              </li>
-            ))}
-          </ul>
-        ) : (
-          <p className="text-corpo text-[#43474e] mt-8">
-            {PEDIR.reserva.frase}{" "}
-            <Link href="/projetos#parceiros" className="text-[#0B1F45] underline underline-offset-4">{PEDIR.reserva.link}</Link>
-          </p>
+        {(showrooms.length > 0 || revendas.length > 0) && (
+          <div className="mt-6 lg:col-start-2 lg:row-span-2 lg:row-start-1 lg:mt-0">
+            {showrooms.length > 0 && (
+              <ul className="grid grid-cols-[repeat(3,minmax(0,108px))] justify-between gap-x-3 gap-y-4 lg:grid-cols-[repeat(3,160px)] lg:gap-y-6">
+                {showrooms.map((lugar) => (
+                  <li key={lugar.id}>
+                    <Link
+                      href={`/projetos/showroom/${lugar.slug}`}
+                      data-teste="lugar"
+                      data-tipo={lugar.kind}
+                      data-texto-banco
+                      className="group block text-[#0B1F45]"
+                    >
+                      <span className="relative block aspect-square overflow-hidden bg-[#0B1F45]">
+                        {lugar.display_cover && (
+                          <Image
+                            src={lugar.display_cover}
+                            alt=""
+                            fill
+                            sizes="(min-width: 1024px) 160px, 108px"
+                            style={coverStyle(lugar.display_focus_x, lugar.display_focus_y, lugar.display_zoom)}
+                          />
+                        )}
+                      </span>
+                      <span className="mt-2 block line-clamp-2 pfb-legenda group-hover:underline group-hover:underline-offset-4">
+                        {nomeLugar(lugar.name)}
+                      </span>
+                    </Link>
+                  </li>
+                ))}
+              </ul>
+            )}
+            {revendas.length > 0 && (
+              <p className={`pfb-legenda ${showrooms.length > 0 ? "mt-4 lg:mt-6" : ""}`}>
+                <Link
+                  href="/onde-comprar"
+                  prefetch={false}
+                  data-teste="revendas"
+                  className="inline-flex min-h-11 items-center text-[#0B1F45] underline underline-offset-4 hover:text-[#2347A0]"
+                >
+                  {PEDIR.revendas}
+                </Link>
+              </p>
+            )}
+          </div>
         )}
 
-        <Revelar ordem={1} className="mt-12">
-          <h3 className="font-serif text-t3 text-[#0B1F45]">{PEDIR.orcamento.titulo}</h3>
-          {PEDIR.orcamento.paragrafos.map((p) => (
-            <p key={p} className="text-corpo text-[#43474e] mt-3 max-w-[40rem]">{p}</p>
-          ))}
-          <div className="flex flex-col sm:flex-row gap-3 mt-8">
-            <ContatoCta origem="pfb-fechamento" className="ds-botao ds-botao-cheio min-h-12">
+        <div className="mt-6 lg:col-start-1 lg:row-start-2 lg:mt-8">
+          <p className="pfb-corpo text-[#43474e]">{PEDIR.orcamento}</p>
+          <div className="mt-6 flex flex-wrap items-center gap-x-6 gap-y-2">
+            <ContatoCta origem="pfb-como-pedir" className="ds-botao ds-botao-cheio lg:min-h-12">
               {PEDIR.botaoConsultor}
             </ContatoCta>
-            <Link href={CATALOGO_PATH} className="ds-botao ds-botao-vazado min-h-12">
-              {PEDIR.botaoModelos}
+            <Link href="/projetos" className="inline-flex min-h-11 items-center text-[#0B1F45] underline underline-offset-4 hover:text-[#2347A0]">
+              {PEDIR.reserva.link}
             </Link>
           </div>
-        </Revelar>
+        </div>
       </div>
     </section>
   );

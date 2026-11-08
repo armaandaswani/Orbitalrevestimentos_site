@@ -10,7 +10,7 @@
     "test:movimento": "node --test \"src/lib/movimento/*.test.mjs\" \"src/components/home/*.test.mjs\" \"src/components/visualizador/*.test.mjs\" \"src/components/movimento/*.test.mjs\"",
     "test:links": "node --test \"src/lib/product-link.test.mjs\"",
     "test:funil": "node --test \"src/lib/gtag-fila.test.mjs\"",
-    "test:pfb": "node --test \"src/lib/pfb-modelos-puro.test.mjs\"",
+    "test:pfb": "node --test \"src/lib/pfb-*.test.mjs\"",
     "test:pdv": "node --test \"src/lib/pontos-de-venda.test.mjs\"",
     "test:chat": "node --test \"src/lib/chat-prompt.test.mjs\""
   },

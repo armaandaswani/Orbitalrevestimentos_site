@@ -29,14 +29,17 @@ export interface Agendado {
   tipo: "image/jpeg" | "video/mp4";
   midia: string;           // caminho no bucket
   nome: string;            // nome como na planilha (para achar o WhatsApp no dia)
-  handle: string | null;   // @ confirmado para user_tags
+  handle: string | null;   // @ confirmado: vai no aviso ao dono e no Direct (não na marcação: o dono marca pelo app)
   mensagem: string | null; // parabéns já escrito no estilo do dono
+  direct?: string | null;  // outra versão, para a equipe colar no Direct pelo celular (vem no resumo por e-mail)
   aprovacao: string;
   status: "pendente" | "processando" | "publicado" | "erro" | "expirado";
   container?: string;      // container da Meta (vale 24 h): o próximo cron continua dele, nunca cria outro
   media_id?: string;
   erro?: string;
   whatsapp?: string;
+  aviso_dono?: string;     // o WhatsApp da Ste avisou o dono para marcar pelo app?
+  resumo?: string;        // só quando o e-mail com o Direct não saiu: o Mac vê no "agendados" e manda
   criado_em: string;
   publicado_em?: string;
 }

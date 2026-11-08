@@ -11,7 +11,7 @@ import {
  * Agenda um Story já aprovado pelo dono para sair sozinho no dia (cron
  * /api/cron/instagram-stories, a partir das 8h em Manaus). Quem chama é o script de
  * publicação do Mac, com o token do Instagram da Orbital no Authorization.
- *   POST   { tipo, data, nome, handle?, mensagem?, aprovacao } → { id, signedUrl }
+ *   POST   { tipo, data, nome, handle?, mensagem?, direct?, aprovacao } → { id, signedUrl }
  *          (o script sobe a mídia na signedUrl; o token fica guardado cifrado para o cron)
  *   GET    → { agendados: [...] }   (sem a mensagem)
  *   DELETE { id, data } → { ok: true }   (cancela um agendamento ainda pendente)
@@ -50,8 +50,11 @@ export async function POST(req: NextRequest) {
   const handle = texto(b.handle, 30);
   if (handle && !/^[a-z0-9._]{1,30}$/.test(handle)) return NextResponse.json({ error: "handle inválido" }, { status: 400 });
   const mensagem = texto(b.mensagem, 1000);
-  const problemas = mensagem ? verificarParabens(mensagem, nome) : [];
-  if (problemas.length) return NextResponse.json({ error: `mensagem recusada: ${problemas.join(" ")}` }, { status: 400 });
+  const direct = handle ? texto(b.direct, 1000) : null; // Direct só existe para quem tem @ confirmado
+  for (const [campo, t] of [["mensagem", mensagem], ["direct", direct]] as const) {
+    const problemas = t ? verificarParabens(t, nome) : [];
+    if (problemas.length) return NextResponse.json({ error: `${campo} recusada: ${problemas.join(" ")}` }, { status: 400 });
+  }
   // Só guarda token que publica de verdade: um token sem a permissão derrubaria todos os agendados.
   if (!(await podePublicar(token, igUser))) return NextResponse.json({ error: "o token não tem permissão de publicar (instagram_business_content_publish)" }, { status: 403 });
 
@@ -64,7 +67,7 @@ export async function POST(req: NextRequest) {
   if (error || !up) return NextResponse.json({ error: error?.message ?? "falha ao preparar o envio" }, { status: 500 });
 
   const a: Agendado = {
-    id, data, tipo: b.tipo, midia, nome, handle, mensagem, aprovacao,
+    id, data, tipo: b.tipo, midia, nome, handle, mensagem, direct, aprovacao,
     status: "pendente", criado_em: new Date().toISOString(),
   };
   await gravarAgendado(a);
@@ -74,7 +77,7 @@ export async function POST(req: NextRequest) {
 export async function GET(req: NextRequest) {
   if (!(await contaDoToken(tokenDoPedido(req)))) return NextResponse.json({ error: "unauthorized" }, { status: 401 });
   await garantirBucket();
-  const agendados = (await listarAgendados()).map((a) => ({ ...a, mensagem: a.mensagem ? "(definida)" : null }));
+  const agendados = (await listarAgendados()).map((a) => ({ ...a, mensagem: a.mensagem ? "(definida)" : null, direct: a.direct ? "(definida)" : null }));
   return NextResponse.json({ agendados });
 }
 

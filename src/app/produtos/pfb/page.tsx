@@ -1,17 +1,22 @@
 import type { Metadata } from "next";
 import { SCRIPT_NIVEL } from "@/lib/movimento/nivel";
-import { lerModelosPorLinha } from "@/lib/pfb-modelos";
 import { carregarLugares } from "@/lib/projetos-dados";
 import AberturaPfb from "@/components/pfb/AberturaPfb";
+import OQueEPfb from "@/components/pfb/OQueEPfb";
 import CamadasPfb from "@/components/pfb/CamadasPfb";
 import FichaPfb from "@/components/pfb/FichaPfb";
+import AguaPfb from "@/components/pfb/AguaPfb";
+import ManausPfb from "@/components/pfb/ManausPfb";
 import LinhasPfb from "@/components/pfb/LinhasPfb";
+import InstaladorPfb from "@/components/pfb/InstaladorPfb";
 import ServePfb from "@/components/pfb/ServePfb";
+import BambuPfb from "@/components/pfb/BambuPfb";
 import FechamentoPfb from "@/components/pfb/FechamentoPfb";
 
 /**
- * /produtos/pfb: a página do produto. Os modelos e os lugares vêm do banco
- * aqui no servidor. Republica a cada 5 min, o mesmo prazo de /projetos.
+ * /produtos/pfb: a página do produto, em 11 capítulos de tela cheia (spec
+ * 2026-11-07-pfb-experiencia, Tabela). Do banco, só os lugares do capítulo 11
+ * (`carregarLugares`). Republica a cada 5 min, o mesmo prazo de /projetos.
  */
 export const revalidate = 300;
 
@@ -92,9 +97,7 @@ const schemas = [
 ];
 
 export default async function PfbPage() {
-  const [modelos, lugares] = await Promise.all([lerModelosPorLinha(2), carregarLugares()]);
-  // eslint-disable-next-line react-hooks/purity -- hora da geração da página (selo "Novo" dos lugares)
-  const agora = Date.now();
+  const lugares = await carregarLugares();
   return (
     <main className="escala-contida pt-20">
       <script id="pfb-nivel" dangerouslySetInnerHTML={{ __html: SCRIPT_NIVEL }} />
@@ -106,11 +109,16 @@ export default async function PfbPage() {
         />
       ))}
       <AberturaPfb />
+      <OQueEPfb />
       <CamadasPfb />
       <FichaPfb />
-      <LinhasPfb modelos={modelos} />
+      <AguaPfb />
+      <ManausPfb />
+      <LinhasPfb />
+      <InstaladorPfb />
       <ServePfb />
-      <FechamentoPfb lugares={lugares} agora={agora} />
+      <BambuPfb />
+      <FechamentoPfb lugares={lugares} />
     </main>
   );
 }

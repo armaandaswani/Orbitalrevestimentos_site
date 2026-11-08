@@ -14,6 +14,10 @@ import { trackFunnel } from "@/lib/funnel";
  * tom "escuro" (padrão): o cartão inteiro é um botão, para fundo azul.
  * tom "claro": cartão claro com o botão "Solicitar manual" dentro de um div
  * (sem botão dentro de botão), e o link no tom da marca.
+ * tom "noite": o cartão da ficha técnica do PFB, sobre o azul-noite: borda
+ * creme a 30%, o nome do manual e um botão vazado claro (dentro de um div);
+ * sem sobrancelha e sem ícone. Só muda o cartão: o link com "noite" é o mesmo
+ * do "escuro".
  *
  * O diálogo vai para o body por portal: assim o link pode ficar dentro de um
  * parágrafo sem pôr div e p dentro de p.
@@ -23,7 +27,7 @@ const WHATSAPP = "5592988150149";
 const PERFIS = ["Arquiteto(a)", "Proprietário(a)", "Instalador(a)", "Outro"] as const;
 type Perfil = (typeof PERFIS)[number];
 
-export default function SolicitarManual({ variant = "card", tom = "escuro" }: { variant?: "card" | "link"; tom?: "escuro" | "claro" }) {
+export default function SolicitarManual({ variant = "card", tom = "escuro" }: { variant?: "card" | "link"; tom?: "escuro" | "claro" | "noite" }) {
   const [aberto, setAberto] = useState(false);
   const [perfil, setPerfil] = useState<Perfil | null>(null);
   const [outro, setOutro] = useState("");
@@ -68,6 +72,17 @@ export default function SolicitarManual({ variant = "card", tom = "escuro" }: { 
             <p className="text-legenda text-[#43474e]">Paredes, portas, banheiros, box, curvas, forros e tetos. Enviado pelo WhatsApp.</p>
           </div>
           <button type="button" onClick={abrir} className="ds-botao ds-botao-vazado min-h-11 self-start sm:self-auto">
+            Solicitar manual
+          </button>
+        </div>
+      ) : variant === "card" && tom === "noite" ? (
+        <div data-teste="manual-cartao" className="border border-[#F6F5F2]/30 px-4 py-4 flex items-center justify-between gap-3 lg:px-5 lg:gap-4">
+          <p className="min-w-0 font-serif pfb-t3 text-white">Manual Técnico de Instalação</p>
+          <button
+            type="button"
+            onClick={abrir}
+            className="ds-botao border border-[#F6F5F2] text-[#F6F5F2] hover:bg-[#F6F5F2] hover:text-[#0B1F45] shrink-0 px-4 lg:px-7 lg:min-h-12"
+          >
             Solicitar manual
           </button>
         </div>
