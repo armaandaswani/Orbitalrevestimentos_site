@@ -4,8 +4,12 @@
  * nas cores da marca. Nada de mapa interativo nem de tiles de terceiros: o mapa
  * é desenhado uma vez aqui e a página só carrega o resultado.
  *
- *   node scripts/gerar-mapa-manaus.mjs --saida <pasta> [--pontos <coordenadas.json>]
- *                                      [--osm <arquivo.json>] [--cache <pasta>]
+ *   node scripts/gerar-mapa-manaus.mjs [--osm <arquivo.json>] [--cache <pasta>]
+ *                                      [--prototipo <pasta> [--pontos <coordenadas.json>]]
+ *
+ * Grava src/components/onde-comprar/mapaManaus.ts (o que a página usa; não
+ * editar à mão). Com --prototipo grava também, na pasta indicada, o protótipo
+ * da Fase 0 (mapa-manaus.svg e mapa-manaus.json, com os pontos de --pontos).
  *
  * Fonte: OpenStreetMap, © colaboradores do OpenStreetMap, licença ODbL
  * (https://www.openstreetmap.org/copyright). A página mostra "© OpenStreetMap"
@@ -33,28 +37,39 @@
  * - Simplificação: Douglas–Peucker em unidades do viewBox, coordenadas a 0,1
  *   unidade, path relativo.
  *
- * Fase 0 (esta versão): grava em --saida um protótipo `mapa-manaus.svg` com os
- * pontos de --pontos (o coordenadas.json da Fase 0) e `mapa-manaus.json` com
- * os paths, a caixa, os rótulos sugeridos e os tamanhos. A Tarefa 6 troca a
- * saída por src/components/onde-comprar/mapaManaus.ts.
+ * Protótipo (--prototipo): `mapa-manaus.svg` com os pontos de --pontos (o
+ * coordenadas.json da Fase 0) e `mapa-manaus.json` com os paths, a caixa, os
+ * rótulos sugeridos e os tamanhos. Serve para conferir que o desenho não mudou.
  */
 import fs from "node:fs";
 import os from "node:os";
 import path from "node:path";
+import { fileURLToPath } from "node:url";
 import zlib from "node:zlib";
 
 const OVERPASS = "https://overpass-api.de/api/interpreter";
-const UA = "OrbitalRevestimentos-site/1.0 (mapa /onde-comprar; gerar-mapa-manaus.mjs)";
+/** Mesmo endereço do BASE_URL de src/app/layout.tsx. */
+const SITE = "https://orbitalrevestimentos.com.br";
+const UA = `OrbitalRevestimentos-site/1.0 (+${SITE}; mapa /onde-comprar; gerar-mapa-manaus.mjs)`;
+/** Relativo à raiz do repositório; o script grava aí de qualquer pasta em que rode. */
+const SAIDA_TS = path.join(path.dirname(fileURLToPath(import.meta.url)), "..", "src/components/onde-comprar/mapaManaus.ts");
 const ARQUIVO_CACHE = "overpass-manaus.json";
 
 /** Caixa do download (graus): a do desenho com folga. */
 const DOWNLOAD = { latMin: -3.175, latMax: -3.04, lngMin: -60.08, lngMax: -59.97 };
 /**
- * Caixa do desenho: as 4 lojas com pelo menos ~1,3 km de folga em cada lado (o
- * pino de 44 px sobe ~1 km acima da ponta), a margem do Negro ao sul do Centro
- * e os igarapés de São Raimundo e de Educandos, que ajudam a reconhecer a cidade.
- * Saiu um pouco menor que −3,150..−3,055 × −60,065..−59,985 no norte e no oeste,
- * onde não havia nada útil. Fora dela a loja aparece só na lista.
+ * Caixa do desenho (graus). Tem de ser igual a CAIXA_MANAUS de
+ * src/lib/pontos-de-venda.ts; o teste confere. Folga das 4 lojas da Fase 0 até
+ * cada borda:
+ * - norte (−3,06): a RWA (lat −3,0730) fica 0,013° (~1,4 km) abaixo, o que
+ *   deixa o pino de 44 px, que sobe ~1 km acima da ponta, dentro do mapa;
+ * - oeste (−60,06): a Casa do Piso Vinílico (lng −60,0429) fica 0,017° (~1,9 km);
+ * - leste (−59,985): a RWA (lng −60,0021) fica 0,017° (~1,9 km);
+ * - sul (−3,15): a Casa do Eletricista (lat −3,1192) fica 0,031° (~3,4 km), o
+ *   que inclui a margem do rio Negro e os igarapés de São Raimundo e de
+ *   Educandos, que ajudam a reconhecer a cidade.
+ * Norte e oeste saíram um pouco menores que −3,055 e −60,065, onde não havia
+ * nada útil. Loja fora da caixa aparece só na lista, sem pino.
  */
 const CAIXA = { latMin: -3.15, latMax: -3.06, lngMin: -60.06, lngMax: -59.985 };
 /** Largura do viewBox; a altura segue a proporção da caixa. */
@@ -97,7 +112,7 @@ function lerArgs(argv) {
   for (let i = 0; i < argv.length; i++) {
     if (argv[i] === "--osm") a.osm = argv[++i];
     else if (argv[i] === "--cache") a.cache = argv[++i];
-    else if (argv[i] === "--saida") a.saida = argv[++i];
+    else if (argv[i] === "--prototipo") a.prototipo = argv[++i];
     else if (argv[i] === "--pontos") a.pontos = argv[++i];
   }
   return a;
@@ -119,9 +134,12 @@ function consulta() {
 out geom(${b});`;
 }
 
+/** Lê a resposta da Overpass. `temporaria` é a pasta que o script criou e que main() apaga no fim. */
 async function obterOsm(args) {
-  if (args.osm) return JSON.parse(fs.readFileSync(args.osm, "utf8"));
-  const pasta = args.cache || fs.mkdtempSync(path.join(os.tmpdir(), "overpass-manaus-"));
+  if (args.osm) return { osm: JSON.parse(fs.readFileSync(args.osm, "utf8")), temporaria: null };
+  const temporaria = args.cache ? null : fs.mkdtempSync(path.join(os.tmpdir(), "overpass-manaus-"));
+  const pasta = args.cache || temporaria;
+  fs.mkdirSync(pasta, { recursive: true });
   const arquivo = path.join(pasta, ARQUIVO_CACHE);
   if (!fs.existsSync(arquivo)) {
     const res = await fetch(OVERPASS, {
@@ -133,7 +151,7 @@ async function obterOsm(args) {
     fs.writeFileSync(arquivo, await res.text());
     console.log(`Overpass: ${(fs.statSync(arquivo).size / 1e6).toFixed(1)} MB → ${arquivo}`);
   }
-  return JSON.parse(fs.readFileSync(arquivo, "utf8"));
+  return { osm: JSON.parse(fs.readFileSync(arquivo, "utf8")), temporaria };
 }
 
 // ── Projeção ──────────────────────────────────────────────────────────────
@@ -546,13 +564,66 @@ function lerPontos(arquivo) {
   return (doc.lojas ?? []).filter((l) => Number.isFinite(l.lat) && Number.isFinite(l.lng));
 }
 
-async function main() {
-  const args = lerArgs(process.argv.slice(2));
-  if (!args.saida) {
-    console.error("Uso: node scripts/gerar-mapa-manaus.mjs --saida <pasta> [--pontos coordenadas.json] [--osm arq.json] [--cache pasta]");
-    process.exit(1);
-  }
-  const osm = await obterOsm(args);
+/** Texto para dentro de um elemento XML/SVG. */
+const escapar = (t) => String(t ?? "").replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;").replace(/"/g, "&quot;");
+const num = (n) => +n.toFixed(1);
+
+/** Rótulos fixos do quadro aprovado: o rio, em posição fixa, e a avenida mais longa. */
+const RIO_NEGRO = { texto: "Rio Negro", x: 62, y: 440, rotacao: -24 };
+function rotulosFixos(avenidas) {
+  const av = avenidas[0];
+  if (!av) throw new Error("nenhuma avenida principal com nome na caixa: não há rótulo para a avenida");
+  return [RIO_NEGRO, { texto: av.nome.replace(/^Avenida /, "Av. "), x: num(av.x + 7), y: num(av.y - 10), rotacao: av.angulo }];
+}
+
+/** O módulo que a página importa: números e strings literais, sem import. */
+function moduloTs(osm, camadas, avenidas) {
+  const base = osm.osm3s?.timestamp_osm_base;
+  if (!base) throw new Error("a resposta da Overpass não traz osm3s.timestamp_osm_base");
+  const fixos = rotulosFixos(avenidas);
+  const textos = [...new Set(fixos.map((r) => JSON.stringify(r.texto)))].join(" | ");
+  const J = (v) => JSON.stringify(v);
+  /** Objeto de valores simples como literal TS: { a: 1, b: "x" }. */
+  const lit = (o) => `{ ${Object.entries(o).map(([k, v]) => `${k}: ${J(v)}`).join(", ")} }`;
+  const cor = { terra: COR.terra, agua: COR.agua, parque: COR.parque, principal: COR.principal, principalBorda: COR.principalBorda, secundaria: COR.secundaria, terciaria: COR.terciaria };
+  const largura = {
+    principal: LARGURA_VIA.principal,
+    principalBorda: LARGURA_VIA.principalBorda,
+    secundaria: LARGURA_VIA.secundaria,
+    secundariaBorda: num(LARGURA_VIA.secundaria + 1.2),
+    terciaria: LARGURA_VIA.terciaria,
+    igarape: LARGURA_VIA.igarape,
+  };
+  const camadasTs = ["agua", "ilhas", "igarapes", "parques", "principal", "secundaria", "terciaria"];
+  return `/**
+ * GERADO por scripts/gerar-mapa-manaus.mjs, não editar. Para refazer:
+ *   node scripts/gerar-mapa-manaus.mjs [--osm <resposta da Overpass>]
+ *
+ * Dados © colaboradores do OpenStreetMap, ODbL (https://www.openstreetmap.org/copyright);
+ * obra produzida (Produced Work, ODbL 4.5).
+ * Base do OpenStreetMap de ${base}, lida da ${osm.generator ?? "Overpass API"} (overpass-api.de).
+ */
+
+export const CAIXA_GERADA = ${lit(CAIXA)} as const;
+export const LARGURA = ${LADO};
+export const ALTURA = ${ALTURA};
+
+export const CAMADAS_MANAUS: { ${camadasTs.map((k) => `${k}: string`).join("; ")} } = {
+${camadasTs.map((k) => `  ${k}: ${J(camadas[k])},`).join("\n")}
+};
+
+export const ESTILO_MANAUS = {
+  cor: ${lit(cor)},
+  largura: ${lit(largura)},
+} as const;
+
+export const ROTULOS_FIXOS: { texto: ${textos}; x: number; y: number; rotacao: number }[] = [
+${fixos.map((r) => `  { texto: ${J(r.texto)}, x: ${r.x}, y: ${r.y}, rotacao: ${r.rotacao} },`).join("\n")}
+];
+`;
+}
+
+function gerar(osm, args) {
   const els = osm.elements ?? [];
 
   const a = agua(els);
@@ -578,17 +649,6 @@ async function main() {
     principal: paraPath(v.porClasse.principal, TOLERANCIA.via),
   };
 
-  const pontos = lerPontos(args.pontos).map((p) => {
-    const [x, y] = projetarManaus(p.lat, p.lng);
-    return { slug: p.slug, nome: p.nome, bairro: p.bairro, x: +x.toFixed(1), y: +y.toFixed(1) };
-  });
-  const lugares = els
-    .filter((e) => e.type === "node" && e.tags?.name)
-    .map((e) => {
-      const [x, y] = projetarManaus(e.lat, e.lon);
-      return { nome: e.tags.name, tipo: e.tags.place, x: +x.toFixed(1), y: +y.toFixed(1) };
-    })
-    .filter((l) => dentro([l.x, l.y]));
   // Avenidas principais mais longas, com o meio e o ângulo do maior trecho (âncora de rótulo).
   const avenidas = [...v.nomes]
     .sort((x, y) => y[1].total - x[1].total)
@@ -600,11 +660,40 @@ async function main() {
       return { nome, comprimento: Math.round(n.total), x: +meio[0].toFixed(1), y: +meio[1].toFixed(1), angulo: Math.round((Math.atan2(b[1] - a[1], b[0] - a[0]) * 180) / Math.PI) };
     });
 
+  const ts = moduloTs(osm, camadas, avenidas);
+  fs.mkdirSync(path.dirname(SAIDA_TS), { recursive: true });
+  fs.writeFileSync(SAIDA_TS, ts);
+
   const tudo = Object.values(camadas).join("");
   const bytes = Buffer.byteLength(tudo);
   const gzip = zlib.gzipSync(tudo, { level: 9 }).length;
   const porCamada = Object.fromEntries(Object.entries(camadas).map(([k, d]) => [k, Buffer.byteLength(d)]));
 
+  console.log(
+    `caixa ${LADO}×${ALTURA}; água ${a.poligonos.length} polígonos (pontas soltas descartadas: ${a.pontasSoltas}), ` +
+      `igarapés ${a.igarapes.length}, parques ${pq.length}; paths ${(bytes / 1024).toFixed(1)} kB, gzip ${(gzip / 1024).toFixed(1)} kB`,
+  );
+  console.log(`${SAIDA_TS}: ${Buffer.byteLength(ts)} bytes, gzip ${zlib.gzipSync(ts, { level: 9 }).length} bytes`);
+  if (a.soltas.length) console.warn("AVISO: bordas de água com ponta solta dentro da caixa (descartadas):", JSON.stringify(a.soltas));
+  console.log("por camada (bytes):", porCamada);
+  console.log("avenidas principais:", avenidas.map((x) => `${x.nome} (${x.comprimento} u; meio ${x.x},${x.y}; ${x.angulo}°)`).join("; "));
+
+  if (args.prototipo) prototipo(args, els, camadas, avenidas, { bytes, gzip, porCamada });
+}
+
+/** Protótipo da Fase 0: SVG com os pontos e JSON com os paths, para conferir que o desenho não mudou. */
+function prototipo(args, els, camadas, avenidas, tamanhos) {
+  const pontos = lerPontos(args.pontos).map((p) => {
+    const [x, y] = projetarManaus(p.lat, p.lng);
+    return { slug: p.slug, nome: p.nome, bairro: p.bairro, x: +x.toFixed(1), y: +y.toFixed(1) };
+  });
+  const lugares = els
+    .filter((e) => e.type === "node" && e.tags?.name)
+    .map((e) => {
+      const [x, y] = projetarManaus(e.lat, e.lon);
+      return { nome: e.tags.name, tipo: e.tags.place, x: +x.toFixed(1), y: +y.toFixed(1) };
+    })
+    .filter((l) => dentro([l.x, l.y]));
   const svg = `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 ${LADO} ${ALTURA}" width="${LADO}" height="${ALTURA}">
   <!-- GERADO por scripts/gerar-mapa-manaus.mjs (protótipo da Fase 0). Dados © colaboradores do OpenStreetMap (ODbL).
        Caixa lat ${CAIXA.latMin}..${CAIXA.latMax}, lng ${CAIXA.lngMin}..${CAIXA.lngMax}. -->
@@ -621,22 +710,30 @@ async function main() {
     <path d="${camadas.secundaria}" stroke="${COR.secundaria}" stroke-width="${LARGURA_VIA.secundaria}"/>
     <path d="${camadas.principal}" stroke="${COR.principal}" stroke-width="${LARGURA_VIA.principal}"/>
   </g>
-${pontos.map((p) => `  <circle cx="${p.x}" cy="${p.y}" r="4" fill="#0B1F45"><title>${p.nome}</title></circle>`).join("\n")}
+${pontos.map((p) => `  <circle cx="${p.x}" cy="${p.y}" r="4" fill="#0B1F45"><title>${escapar(p.nome)}</title></circle>`).join("\n")}
 </svg>
 `;
-  fs.mkdirSync(args.saida, { recursive: true });
-  fs.writeFileSync(path.join(args.saida, "mapa-manaus.svg"), svg);
+  fs.mkdirSync(args.prototipo, { recursive: true });
+  fs.writeFileSync(path.join(args.prototipo, "mapa-manaus.svg"), svg);
   fs.writeFileSync(
-    path.join(args.saida, "mapa-manaus.json"),
-    JSON.stringify({ caixa: CAIXA, largura: LADO, altura: ALTURA, cores: COR, larguras: LARGURA_VIA, camadas, pontos, lugares, avenidas, bytes, gzip, porCamada }, null, 1),
+    path.join(args.prototipo, "mapa-manaus.json"),
+    JSON.stringify({ caixa: CAIXA, largura: LADO, altura: ALTURA, cores: COR, larguras: LARGURA_VIA, camadas, pontos, lugares, avenidas, ...tamanhos }, null, 1),
   );
-  console.log(
-    `caixa ${ALTURA === 0 ? "?" : `${LADO}×${ALTURA}`}; água ${a.poligonos.length} polígonos (pontas soltas descartadas: ${a.pontasSoltas}), ` +
-      `igarapés ${a.igarapes.length}, parques ${pq.length}; paths ${(bytes / 1024).toFixed(1)} kB, gzip ${(gzip / 1024).toFixed(1)} kB`,
-  );
-  if (a.soltas.length) console.log("bordas de água com ponta solta dentro da caixa (descartadas):", JSON.stringify(a.soltas));
-  console.log("por camada (bytes):", porCamada);
-  console.log("avenidas principais:", avenidas.map((x) => `${x.nome} (${x.comprimento} u; meio ${x.x},${x.y}; ${x.angulo}°)`).join("; "));
+  console.log(`protótipo gravado em ${args.prototipo}`);
+}
+
+async function main() {
+  const args = lerArgs(process.argv.slice(2));
+  if (args.pontos && !args.prototipo) {
+    console.error("--pontos só vale junto com --prototipo <pasta>");
+    process.exit(1);
+  }
+  const { osm, temporaria } = await obterOsm(args);
+  try {
+    gerar(osm, args);
+  } finally {
+    if (temporaria) fs.rmSync(temporaria, { recursive: true, force: true });
+  }
 }
 
 main().catch((e) => {

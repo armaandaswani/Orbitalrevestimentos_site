@@ -23,6 +23,7 @@ import {
   CHAVE_ABERTURA,
   SCRIPT_ABERTURA_PDV,
 } from "./pontos-de-venda.ts";
+import { CAIXA_GERADA, LARGURA, ALTURA, ROTULOS_FIXOS } from "../components/onde-comprar/mapaManaus.ts";
 
 test("normalizarWhatsapp aceita os formatos do admin", () => {
   assert.deepEqual(normalizarWhatsapp("+55 (92) 9 9152-5177"), { valor: "5592991525177" });
@@ -497,4 +498,22 @@ test("SCRIPT_ABERTURA_PDV é ES5 e leva os valores do módulo", () => {
   assert.doesNotMatch(SCRIPT_ABERTURA_PDV, /=>|\blet\b|\bconst\b|`|\$\{/);
   assert.ok(SCRIPT_ABERTURA_PDV.includes(CHAVE_ABERTURA));
   assert.ok(SCRIPT_ABERTURA_PDV.includes(String(DURACAO_ABERTURA_MS)));
+});
+
+// ── Mapa gerado (scripts/gerar-mapa-manaus.mjs) ───────────────────────────
+test("a caixa do mapa gerado é a CAIXA_MANAUS da projeção", () => {
+  assert.deepEqual({ ...CAIXA_GERADA }, { ...CAIXA_MANAUS });
+  assert.equal(LARGURA, LARGURA_MAPA);
+  assert.equal(ALTURA, ALTURA_MAPA);
+});
+test("o mapa gerado traz os dois rótulos fixos dentro do viewBox", () => {
+  const textos = ROTULOS_FIXOS.map((r) => r.texto);
+  assert.ok(textos.includes("Rio Negro"));
+  assert.ok(textos.some((t) => t.startsWith("Av. ")));
+  assert.equal(ROTULOS_FIXOS.length, 2);
+  for (const r of ROTULOS_FIXOS) {
+    assert.ok(r.x >= 0 && r.x <= LARGURA_MAPA, `${r.texto}: x ${r.x}`);
+    assert.ok(r.y >= 0 && r.y <= ALTURA_MAPA, `${r.texto}: y ${r.y}`);
+    assert.ok(Number.isFinite(r.rotacao));
+  }
 });
