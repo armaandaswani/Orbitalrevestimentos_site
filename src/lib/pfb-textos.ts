@@ -151,9 +151,9 @@ export const ART: {
   ],
   porQue: {
     titulo: "Por que isso importa?",
-    // [Tec]; o travessão virou vírgula
+    // [Tec]; o travessão virou vírgula. Dono 08/11/2026: saiu "É o único revestimento laminado de bambu com essa certificação no Amazonas" (sem fonte)
     texto:
-      "Com a ART, o PFB Orbital pode ser especificado em projetos de arquitetura e engenharia com respaldo técnico formal, exigido em obras comerciais, clínicas, condomínios e projetos públicos. É o único revestimento laminado de bambu com essa certificação no Amazonas.",
+      "Com a ART, o PFB Orbital pode ser especificado em projetos de arquitetura e engenharia com respaldo técnico formal, exigido em obras comerciais, clínicas, condomínios e projetos públicos.",
   },
 };
 
@@ -196,8 +196,8 @@ export const FICHA_DETALHADA: {
         // [Tec] "Inchamento (48h imerso)"; dono 06/11/2026: é absorção
         ["Absorção de água (48 h imerso)", "0,2%"],
         ["Teor de umidade interno", "0,5%"],
-        // [Tec] "Mínima — film PVC impermeável": sem travessão e sem "impermeável" (regra da spec)
-        ["Absorção superficial", "Mínima, película de PVC na superfície"],
+        // [Tec] "Mínima — film PVC impermeável": sem travessão e sem "impermeável" (regra da spec); dono 08/11/2026: "filme"
+        ["Absorção superficial", "Mínima, filme de PVC na superfície"],
         ["Comportamento em chuva", "Não recomendado para exterior direto"],
       ],
     },
