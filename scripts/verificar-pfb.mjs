@@ -12,8 +12,11 @@
  *   --so-redirecionamentos  só os redirecionamentos e o sitemap, por HTTP, sem navegador
  *                           nem /api/products (é o que roda contra o site no ar)
  *
- * Grava <saida>/resultado.json ({ etapa, base, commit, buildId, inicio, fim, navegador, verificacoes };
- * commit é o HEAD do repositório, buildId o .next/BUILD_ID local, ou null)
+ * Grava <saida>/resultado.json ({ etapa, base, commit, sujo, buildId, buildHora, inicio, fim,
+ * navegador, verificacoes }; commit é o HEAD do repositório; sujo é true se `git status
+ * --porcelain` acusa mudança fora de .superpowers/ (o código verificado não é o do commit);
+ * buildId é o .next/BUILD_ID local e buildHora a hora em que ele foi escrito, o fim do
+ * build; null quando não der para saber)
  * e sai com código 1 se alguma verificação não terminar em "ok" ("não verificado"
  * conta como falha).
  *
@@ -152,17 +155,41 @@ function commitAtual() {
   }
 }
 
+/**
+ * Árvore com mudança fora de .superpowers/ (`git status --porcelain`, rastreados e não
+ * rastreados): o código verificado não é o do `commit`. null se o git falhar.
+ */
+function arvoreSuja() {
+  try {
+    const saida = execFileSync("/opt/homebrew/bin/git", ["status", "--porcelain"], { cwd: RAIZ, encoding: "utf8" });
+    return saida
+      .split("\n")
+      .filter((linha) => linha.trim() !== "")
+      .some((linha) => !linha.slice(3).replace(/^"/, "").startsWith(".superpowers/"));
+  } catch {
+    return null;
+  }
+}
+
 /** .next/BUILD_ID do build local, quando existir. */
 function buildIdLocal() {
   const arquivo = path.join(RAIZ, ".next/BUILD_ID");
   return fs.existsSync(arquivo) ? fs.readFileSync(arquivo, "utf8").trim() : null;
 }
 
+/** Hora (ISO) em que o .next/BUILD_ID foi escrito, o fim do build local; null sem build. */
+function horaDoBuild() {
+  const arquivo = path.join(RAIZ, ".next/BUILD_ID");
+  return fs.existsSync(arquivo) ? fs.statSync(arquivo).mtime.toISOString() : null;
+}
+
 const resultado = {
   etapa: args.etapa,
   base: args.base,
   commit: commitAtual(),
+  sujo: arvoreSuja(),
   buildId: buildIdLocal(),
+  buildHora: horaDoBuild(),
   inicio: new Date().toISOString(),
   fim: null,
   navegador: null,

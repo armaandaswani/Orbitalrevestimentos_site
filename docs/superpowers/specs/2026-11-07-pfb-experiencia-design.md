@@ -82,10 +82,14 @@ creme (painel da abertura) · creme · creme (pico) · azul · azul · foto · c
 Cada frase com `// fonte:` (as notas do vault já citadas no cabeçalho do arquivo). Chaves que não aparecem abaixo saem do arquivo.
 
 ```ts
-ABERTURA = { titulo, lead, estoque, botaoModelos, botaoConsultor, alt }   // como hoje; sai `legenda`
+ABERTURA = {
+  titulo, lead, estoque, botaoModelos, botaoConsultor,   // como hoje; sai `legenda`
+  // fonte: PorQue.tsx:34; sem "residencial" (revisor-tecnico, 07/11)
+  alt: "Escada com paredes revestidas com o Painel Flexível em Fibra de Bambu em acabamento de madeira",
+}
 
 O_QUE_E = {
-  // fonte: [Nome] (renovável, leve), orbital-marca (pensado para o clima de Manaus), [Ficha] (flexível)
+  // fonte: [Nome] (renovável, leve), vault 02 Marca/Regras de posicionamento do PFB ("ideal para Manaus"), 01 Empresa/Quem somos (clima amazônico), orbital-marca (pensado para o clima de Manaus), [Ficha] (flexível)
   frase: "Fibra de bambu renovável, leve e flexível, pensada para o clima de Manaus.",
   // fonte: [Ficha]
   medidas: "1,20 × 2,90 m · 5 mm · 3,48 m² por placa",
@@ -135,16 +139,16 @@ AGUA = {
   // fonte: [Ficha] (0,2% em 48 h, absorção)
   frase: "A placa passou 48 horas na água. No ensaio, a absorção foi de 0,2%.",
   horas: [
-    { rotulo: "0h",  legenda: "Início.",            alt: "Placa do Painel, à esquerda, e placa de MDF, à direita, no começo do teste de água" },
-    { rotulo: "24h", legenda: "24 horas na água.",  alt: "Placa do Painel, à esquerda, e placa de MDF, à direita, depois de 24 horas na água" },
-    { rotulo: "48h", legenda: "48 horas na água.",  alt: "Placa do Painel, à esquerda, e placa de MDF, à direita, depois de 48 horas na água" },
+    { rotulo: "0h",  legenda: "Início.",            alt: "Placa do Painel, à esquerda, e placa de MDF, à direita, no começo do teste de água, imagem gerada por IA" },
+    { rotulo: "24h", legenda: "24 horas na água.",  alt: "Placa do Painel, à esquerda, e placa de MDF, à direita, depois de 24 horas na água, imagem gerada por IA" },
+    { rotulo: "48h", legenda: "48 horas na água.",  alt: "Placa do Painel, à esquerda, e placa de MDF, à direita, depois de 48 horas na água, imagem gerada por IA" },
   ],
   // fonte: [Ficha] (imagens ilustrativas); D2
   aviso: "Imagens ilustrativas.",
 }
 
 MANAUS = {
-  // fonte: orbital-marca ("pensado para o clima de Manaus")
+  // fonte: vault 02 Marca/Regras de posicionamento do PFB ("ideal para Manaus"), 01 Empresa/Quem somos (clima amazônico), orbital-marca ("pensado para o clima de Manaus")
   titulo: "Pensado para o clima de Manaus.",
   pontos: [
     "Para paredes e tetos de ambientes internos, secos ou úmidos.",   // [Onde]
@@ -165,7 +169,7 @@ LINHAS = {
 INSTALADOR = {
   // fonte: Pendente do dono, item 6 (título atual no ar)
   titulo: "Opinião de um instalador",
-  frase: "Como é aplicar o Painel na prática, contado por quem aplica.",
+  frase: "Como é aplicar o Painel na prática.",
 }
 
 SERVE = {
@@ -188,7 +192,7 @@ SERVE = {
 
 BAMBU = {
   // fonte: [Nome] (fibra de bambu renovável); segunda linha: fato de domínio público, passa no revisor-tecnico; se reprovar, fica só a primeira
-  titulo: ["Fibra de bambu renovável.", "O bambu rebrota depois do corte."],
+  titulo: ["Fibra de bambu renovável.", "O bambu rebrota depois da colheita."],
   // fonte: [Ficha]
   frase: "Sem formaldeído, para ambientes onde as pessoas vivem e trabalham.",
 }
@@ -196,8 +200,8 @@ BAMBU = {
 PEDIR = {
   titulo: "Onde ver e como pedir",
   frase: "Veja o PFB aplicado nos showrooms parceiros.",              // [Showroom]
-  revendas: "Placas em grande formato nas revendas:",                  // [Showroom], decisão de 07/11 (4 revendas)
-  orcamento: "Mande a área em m² ou a planta, a linha e o modelo. Um consultor responde com os valores e as condições, ou vai até o seu escritório com as amostras.",  // [Brief §6], [Dono E-6]
+  revendas: "Revendas:",                                               // [Showroom], decisão de 07/11 (4 revendas)
+  orcamento: "Mande a área em m² ou a planta, a linha e o modelo. Um consultor responde com os valores e as condições e, para arquitetos e projetos, vai até o seu escritório com as amostras.",  // [Brief §6], [Dono E-6], revisor-tecnico 07/11 (visita com amostras)
   botaoConsultor: "Falar com um consultor",
   reserva: { link: "Ver projetos e showrooms" },
 }
@@ -207,7 +211,7 @@ PEDIR = {
 
 | Arquivo novo em `public/images/pfb/` | Origem | Estado |
 |---|---|---|
-| `pfb-teste-agua-0h.jpg`, `-24h.jpg`, `-48h.jpg` (1080 × 1935, ~250 KB) | `git show f62f8c7^1:public/images/catalogue/pfb-mdf-*.png`, marca do Gemini apagada por difusão (`.superpowers/sdd/2026-11-07-pfb-experiencia/imagens/tirar-marca.py`) | pronto em `.superpowers/sdd/.../imagens/` |
+| `pfb-teste-agua-0h.jpg`, `-24h.jpg`, `-48h.jpg` (1080 × 1935, ~250 KB) | `git show f62f8c7^1:public/images/catalogue/pfb-mdf-*.png`, marca do Gemini apagada por difusão (`.superpowers/sdd/2026-11-07-pfb-experiencia/imagens/tirar-marca.py`); na plaqueta da esquerda, o subtítulo "(Placas Flexíveis de Bambu)" apagado, fica só "PFB" (`retocar-plaqueta.py`, 07/11) | pronto em `.superpowers/sdd/.../imagens/` |
 | `pfb-anatomia-sem-rotulos.png` (fundo transparente) + `src/lib/pfb-anatomia.ts` (polígonos e `fechadoY`) | `public/images/catalogue/product-anatomy.png` | em preparo (agente) |
 | selos, amostras do leque, `escada-madeira-pfb-2026-10.jpg`, `lavabo-areas-umidas-pfb.webp`, `escada-degraus-pfb-2026-10.jpg`, pôster do vídeo | já no repo | usar |
 

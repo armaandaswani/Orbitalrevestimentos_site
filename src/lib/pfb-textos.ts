@@ -31,13 +31,13 @@ export const ABERTURA = {
   estoque: "Estoque e pronta-entrega em Manaus.",
   botaoModelos: "Ver os modelos",
   botaoConsultor: "Falar com um consultor",
-  // fonte: PorQue.tsx:34; obra real: decisão do dono E-2 (06/11/2026)
-  alt: "Escada residencial com paredes revestidas com o Painel Flexível em Fibra de Bambu em acabamento de madeira",
+  // fonte: PorQue.tsx:34; obra real: decisão do dono E-2 (06/11/2026); sem "residencial" (revisor-tecnico 07/11/2026)
+  alt: "Escada com paredes revestidas com o Painel Flexível em Fibra de Bambu em acabamento de madeira",
 } as const;
 
 /** Capítulo 2: o que é. */
 export const O_QUE_E = {
-  // fonte: [Nome] (renovável, leve), orbital-marca (pensado para o clima de Manaus), [Ficha] (flexível)
+  // fonte: [Nome] (renovável, leve), vault 02 Marca/Regras de posicionamento do PFB ("ideal para Manaus"), 01 Empresa/Quem somos (clima amazônico), orbital-marca (pensado para o clima de Manaus), [Ficha] (flexível)
   frase: "Fibra de bambu renovável, leve e flexível, pensada para o clima de Manaus.",
   // fonte: [Ficha]
   medidas: "1,20 × 2,90 m · 5 mm · 3,48 m² por placa",
@@ -129,7 +129,7 @@ export const FICHA_COMPLETA: {
     ["Formaldeído", "Não contém"],
     // fonte: [Ficha], [Dono Q3] (sem norma nem classe)
     ["Fogo", "Não propaga chamas"],
-    // fonte: [Ficha], [PFB] (número e engenheiro: Pendente do dono, item 5)
+    // fonte: [Ficha], [PFB] (o vault tem o número e o engenheiro; o site não os mostra, decisão aberta do dono)
     ["ART", "Anotação de Responsabilidade Técnica registrada no CREA para parede e forro de teto."],
     // fonte: [Ficha]
     ["Durabilidade", "Esperada de 10 anos ou mais."],
@@ -156,19 +156,19 @@ export const AGUA: {
     {
       rotulo: "0h",
       legenda: "Início.",
-      alt: "Placa do Painel, à esquerda, e placa de MDF, à direita, no começo do teste de água",
+      alt: "Placa do Painel, à esquerda, e placa de MDF, à direita, no começo do teste de água, imagem gerada por IA",
     },
     // fonte: D2
     {
       rotulo: "24h",
       legenda: "24 horas na água.",
-      alt: "Placa do Painel, à esquerda, e placa de MDF, à direita, depois de 24 horas na água",
+      alt: "Placa do Painel, à esquerda, e placa de MDF, à direita, depois de 24 horas na água, imagem gerada por IA",
     },
     // fonte: D2
     {
       rotulo: "48h",
       legenda: "48 horas na água.",
-      alt: "Placa do Painel, à esquerda, e placa de MDF, à direita, depois de 48 horas na água",
+      alt: "Placa do Painel, à esquerda, e placa de MDF, à direita, depois de 48 horas na água, imagem gerada por IA",
     },
   ],
   // fonte: [Ficha] (imagens ilustrativas); D2
@@ -180,7 +180,7 @@ export const MANAUS: {
   titulo: string;
   pontos: readonly [string, string];
 } = {
-  // fonte: orbital-marca ("pensado para o clima de Manaus")
+  // fonte: vault 02 Marca/Regras de posicionamento do PFB ("ideal para Manaus"), 01 Empresa/Quem somos (clima amazônico), orbital-marca ("pensado para o clima de Manaus")
   titulo: "Pensado para o clima de Manaus.",
   pontos: [
     // fonte: [Onde]
@@ -214,7 +214,7 @@ export const INSTALADOR = {
   // fonte: Pendente do dono, item 6 (título atual no ar)
   titulo: "Opinião de um instalador",
   // fonte: Pendente do dono, item 6
-  frase: "Como é aplicar o Painel na prática, contado por quem aplica.",
+  frase: "Como é aplicar o Painel na prática.",
 } as const;
 
 /** Um bloco que abre ao tocar no capítulo 9. */
@@ -277,7 +277,7 @@ export const BAMBU: {
   frase: string;
 } = {
   // fonte: [Nome] (fibra de bambu renovável); segunda linha: fato de domínio público, passa no revisor-tecnico; se reprovar, fica só a primeira
-  titulo: ["Fibra de bambu renovável.", "O bambu rebrota depois do corte."],
+  titulo: ["Fibra de bambu renovável.", "O bambu rebrota depois da colheita."],
   // fonte: [Ficha]
   frase: "Sem formaldeído, para ambientes onde as pessoas vivem e trabalham.",
 };
@@ -295,10 +295,10 @@ export const PEDIR: {
   // fonte: [Showroom]
   frase: "Veja o PFB aplicado nos showrooms parceiros.",
   // fonte: [Showroom], decisão de 07/11/2026 (4 revendas)
-  revendas: "Placas em grande formato nas revendas:",
+  revendas: "Revendas:",
   // fonte: [Brief §6], [Dono E-6]
   orcamento:
-    "Mande a área em m² ou a planta, a linha e o modelo. Um consultor responde com os valores e as condições, ou vai até o seu escritório com as amostras.",
+    "Mande a área em m² ou a planta, a linha e o modelo. Um consultor responde com os valores e as condições e, para arquitetos e projetos, vai até o seu escritório com as amostras.",
   botaoConsultor: "Falar com um consultor",
   reserva: { link: "Ver projetos e showrooms" },
 };

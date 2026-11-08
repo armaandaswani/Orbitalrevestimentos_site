@@ -12,10 +12,11 @@ import { nomeLugar, type Showroom } from "@/lib/projetos-tipos";
  * antes do rodapé.
  *
  * Os lugares vêm de `carregarLugares()` e passam por `separarLugares`: até seis
- * showrooms numa grade 3 × 2 de miniaturas quadradas (108 px no celular, 160
- * no computador), cada uma um link para a página do showroom, com só o nome
- * embaixo, numa linha (o nome como marca, `nomeLugar`, como no resto do
- * site); sem capa, o quadrado azul-noite vazio. Sem showroom, a grade some.
+ * showrooms numa grade 3 × 2 de miniaturas quadradas (108 px no celular, menores
+ * abaixo de ~360 px de largura para caberem com 12 px entre elas; 160 no
+ * computador), cada uma um link para a página do showroom, com só o nome
+ * embaixo, inteiro, em até duas linhas (o nome como marca, `nomeLugar`, como
+ * no resto do site; `line-clamp-2` só como segurança para um nome maior); sem capa, o quadrado azul-noite vazio. Sem showroom, a grade some.
  * As revendas ficam numa linha só, os nomes como vieram do banco. Nome do
  * banco sempre dentro de `[data-texto-banco]`.
  *
@@ -42,7 +43,7 @@ export default function FechamentoPfb({ lugares }: { lugares: Showroom[] }) {
         {(showrooms.length > 0 || revendas.length > 0) && (
           <div className="mt-6 lg:col-start-2 lg:row-span-2 lg:row-start-1 lg:mt-0">
             {showrooms.length > 0 && (
-              <ul className="grid grid-cols-[repeat(3,108px)] justify-between gap-y-4 lg:grid-cols-[repeat(3,160px)] lg:gap-y-6">
+              <ul className="grid grid-cols-[repeat(3,minmax(0,108px))] justify-between gap-x-3 gap-y-4 lg:grid-cols-[repeat(3,160px)] lg:gap-y-6">
                 {showrooms.map((lugar) => (
                   <li key={lugar.id}>
                     <Link
@@ -63,7 +64,7 @@ export default function FechamentoPfb({ lugares }: { lugares: Showroom[] }) {
                           />
                         )}
                       </span>
-                      <span className="mt-2 block truncate pfb-legenda group-hover:underline group-hover:underline-offset-4">
+                      <span className="mt-2 block line-clamp-2 pfb-legenda group-hover:underline group-hover:underline-offset-4">
                         {nomeLugar(lugar.name)}
                       </span>
                     </Link>

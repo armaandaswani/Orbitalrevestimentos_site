@@ -16,9 +16,10 @@ export default function BambuPfb() {
       tituloId="pfb-bambu-titulo"
       foto={{ src: "/images/projetos/escada-degraus-pfb-2026-10.jpg", alt: "", posicao: "40% 50%" }}
     >
-      {/* lg:-mr-6: a segunda linha (465 px a 1440) cabe numa linha só na caixa
-          do painel (455 px), usando 24 px do respiro da direita. */}
-      <h2 id="pfb-bambu-titulo" className="font-serif pfb-t1 text-white lg:-mr-6">
+      {/* lg:-mr-12: a segunda linha (498 px a 1440) cabe numa linha só na caixa
+          do painel (455 px), usando 48 dos 60 px do respiro da direita; o título
+          fica em 3 linhas a 1440 (a primeira, 510 px, quebra). */}
+      <h2 id="pfb-bambu-titulo" className="font-serif pfb-t1 text-white lg:-mr-12">
         <span className="block">{BAMBU.titulo[0]}</span>
         <span className="block italic pfb-t2">{BAMBU.titulo[1]}</span>
       </h2>

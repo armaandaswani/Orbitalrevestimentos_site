@@ -55,15 +55,20 @@ export default function LinhasPfb() {
             key={arquivo}
             data-carta={i}
             aria-hidden="true"
-            className="pfb-leque-carta absolute left-1/2 bottom-6 -ml-16 h-[171px] w-32 border-[3px] border-white bg-[#F6F5F2] lg:bottom-8 lg:-ml-[90px] lg:h-[240px] lg:w-[180px]"
+            className="pfb-leque-carta absolute left-1/2 bottom-6 -ml-16 h-[171px] w-32 overflow-hidden border-[3px] border-white bg-[#F6F5F2] lg:bottom-8 lg:-ml-[90px] lg:h-[240px] lg:w-[180px]"
             style={{ "--r": `${r}deg`, "--x": `${x}px`, "--par": par, zIndex: 3 - par } as React.CSSProperties}
           >
+            {/* A placa ocupa a metade do meio da foto do estúdio (52% 50%).
+                Ampliada 1,5× a partir da borda de dentro da carta, ela vai para a
+                faixa de fora, a que as cartas de dentro deixam à vista: cada carta
+                mostra a placa e a textura, não o fundo cinza (a do centro amplia
+                pelo meio). Só a imagem muda; o transform da carta é o do CSS. */}
             <Image
               src={`/images/catalogue/${arquivo}.jpeg`}
               alt=""
               fill
-              sizes="(min-width: 1024px) 180px, 128px"
-              className="object-cover"
+              sizes="(min-width: 1024px) 270px, 192px"
+              className={`object-cover object-[52%_50%] scale-150 ${r < 0 ? "origin-right" : r > 0 ? "origin-left" : "origin-center"}`}
             />
           </div>
         ))}
