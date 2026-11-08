@@ -178,9 +178,6 @@ function Painel({ linha, Titulo, prioridade, aberto, uso, escolherUso, morph }: 
           ))}
         </span>
       )}
-      {gerada && (
-        <span className="absolute left-3 bottom-3 bg-black/55 text-white text-[11px] tracking-[0.02em] px-2 py-1">Imagem gerada por IA</span>
-      )}
     </>
   ) : (
     <div className="absolute inset-0 flex flex-col justify-end p-6 sm:p-8 bg-[radial-gradient(ellipse_at_30%_20%,#2A3142,#0E121A_70%)]">
@@ -197,7 +194,7 @@ function Painel({ linha, Titulo, prioridade, aberto, uso, escolherUso, morph }: 
       {linha.href ? (
         <Link href={linha.href} className={caixa} data-cursor="ver"
           aria-label={`${prontaEntrega ? `Ver o catálogo d${linha.artigo} ${linha.curto}` : `Conhecer ${linha.artigo} ${linha.nome}`}${
-            /* O rótulo substitui o aviso da foto para leitor de tela; ele vai junto (X0.08 v2). */
+            /* A foto não mostra aviso; para leitor de tela, o rótulo diz que ela foi gerada por IA (X0.08 v2; dono, 07/11/2026: sem selo visível). */
             gerada ? " (imagem gerada por IA)" : ""}`}>
           {foto}
         </Link>
