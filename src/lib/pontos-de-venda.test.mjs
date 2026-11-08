@@ -1,6 +1,7 @@
 import test from "node:test";
 import assert from "node:assert/strict";
 import vm from "node:vm";
+import fs from "node:fs";
 import {
   normalizarWhatsapp,
   normalizarInstagram,
@@ -25,7 +26,7 @@ import {
   CARTAO_PDV,
   parceirosNaGrade,
 } from "./pontos-de-venda.ts";
-import { CAIXA_GERADA, LARGURA, ALTURA, ROTULOS_FIXOS } from "../components/onde-comprar/dados-mapa-manaus.ts";
+import { CAIXA_GERADA, LARGURA, ALTURA, ROTULOS_FIXOS, MAPA_SVG, CAMADAS_MANAUS } from "../components/onde-comprar/dados-mapa-manaus.ts";
 
 test("normalizarWhatsapp aceita os formatos do admin", () => {
   assert.deepEqual(normalizarWhatsapp("+55 (92) 9 9152-5177"), { valor: "5592991525177" });
@@ -541,6 +542,17 @@ test("a caixa do mapa gerado é a CAIXA_MANAUS da projeção", () => {
   assert.deepEqual({ ...CAIXA_GERADA }, { ...CAIXA_MANAUS });
   assert.equal(LARGURA, LARGURA_MAPA);
   assert.equal(ALTURA, ALTURA_MAPA);
+});
+test("o SVG público do mapa tem o viewBox da caixa e um path com id por camada", () => {
+  const svg = fs.readFileSync(new URL(`../../public${MAPA_SVG}`, import.meta.url), "utf8");
+  assert.match(svg, new RegExp(`viewBox="0 0 ${LARGURA_MAPA} ${ALTURA_MAPA}"`));
+  assert.equal(CAMADAS_MANAUS.length, 7);
+  for (const id of CAMADAS_MANAUS) {
+    const achados = svg.match(new RegExp(`<path id="${id}" d="M[^"]+"/>`, "g")) ?? [];
+    assert.equal(achados.length, 1, id);
+  }
+  // Sem cor no arquivo: quem pinta é o <use> do MapaManaus.
+  assert.doesNotMatch(svg, /fill=|stroke=/);
 });
 test("o mapa gerado traz os dois rótulos fixos dentro do viewBox", () => {
   const textos = ROTULOS_FIXOS.map((r) => r.texto);

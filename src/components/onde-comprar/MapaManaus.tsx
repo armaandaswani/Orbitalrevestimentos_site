@@ -9,12 +9,15 @@ import {
   rotulosDeBairro,
   type PontoDeVenda,
 } from "@/lib/pontos-de-venda";
-import { CAMADAS_MANAUS, ESTILO_MANAUS, ROTULOS_FIXOS } from "./dados-mapa-manaus";
+import { ESTILO_MANAUS, MAPA_SVG, ROTULOS_FIXOS, type CAMADAS_MANAUS } from "./dados-mapa-manaus";
 
 /** Imagem do pino. Se o dono preferir um pino neutro (Pergunta 4), basta trocar esta constante. */
 export const PINO_PDV = "/images/brand/orbital-simbolo.svg";
 
 const { cor, largura } = ESTILO_MANAUS;
+
+/** Uma camada do desenho no SVG estático (public/images/onde-comprar/mapa-manaus.svg, gerado). */
+const camada = (id: (typeof CAMADAS_MANAUS)[number]) => `${MAPA_SVG}#${id}`;
 
 /** Posição em % do contêiner, para o mapa escalar sem JS e sem deslocar nada (sem CLS). */
 const paraPorcento = (valor: number, total: number) => `${((valor / total) * 100).toFixed(2)}%`;
@@ -33,8 +36,9 @@ const HALO = "[text-shadow:0_0_2px_var(--color-background),0_0_3px_var(--color-b
 
 /**
  * Mapa real de Manaus (OpenStreetMap, desenhado por scripts/gerar-mapa-manaus.mjs)
- * com um pino por loja. Server Component: o SVG sai inline no HTML e nada disto
- * entra no JS do cliente. Recebe os pontos já filtrados como ativos.
+ * com um pino por loja. Server Component: nada disto entra no JS do cliente. O
+ * desenho vem do SVG estático por <use href> (vetor: não é candidato a LCP) e
+ * não pesa no HTML nem no payload RSC; o HTML leva só cores, pinos e rótulos. Recebe os pontos já filtrados como ativos.
  * Com a folha de uma loja aberta, a IlhaPdv marca o pino dela com
  * `data-pdv-ativo` (fica entre o véu e a folha) e os outros com `data-pdv-apagado`; a
  * transição dos pinos só liga com `data-pdv-transicao` num ancestral (abertura por clique).
@@ -63,17 +67,19 @@ export function MapaManaus({ pontos }: { pontos: PontoDeVenda[] }) {
         className="absolute inset-0 block h-full w-full"
       >
         {/* Terra (token background), parques, água, ilhas por cima da água, depois as vias. */}
+        {/* O desenho mora no SVG estático (uma vez cada camada, em cache), fora do HTML e do payload RSC; cor e traço vêm daqui, por herança do <use>. */}
         <rect width={LARGURA_MAPA} height={ALTURA_MAPA} className="fill-background" />
-        <path d={CAMADAS_MANAUS.parques} fill={cor.parque} />
-        <path d={CAMADAS_MANAUS.agua} fill={cor.agua} />
-        <path d={CAMADAS_MANAUS.ilhas} className="fill-background" />
+        <use href={camada("parques")} fill={cor.parque} />
+        <use href={camada("agua")} fill={cor.agua} />
+        <use href={camada("ilhas")} className="fill-background" />
         <g fill="none" strokeLinecap="round" strokeLinejoin="round">
-          <path d={CAMADAS_MANAUS.igarapes} stroke={cor.agua} strokeWidth={largura.igarape} />
-          <path d={CAMADAS_MANAUS.terciaria} stroke={cor.terciaria} strokeWidth={largura.terciaria} />
-          <path d={CAMADAS_MANAUS.principal} stroke={cor.principalBorda} strokeWidth={largura.principalBorda} />
-          <path d={CAMADAS_MANAUS.secundaria} stroke={cor.principalBorda} strokeWidth={largura.secundariaBorda} />
-          <path d={CAMADAS_MANAUS.secundaria} className="stroke-surface-container-lowest" strokeWidth={largura.secundaria} />
-          <path d={CAMADAS_MANAUS.principal} className="stroke-surface-container-lowest" strokeWidth={largura.principal} />
+          <use href={camada("igarapes")} stroke={cor.agua} strokeWidth={largura.igarape} />
+          <use href={camada("terciaria")} stroke={cor.terciaria} strokeWidth={largura.terciaria} />
+          {/* Principais e secundárias: o mesmo desenho duas vezes, borda e preenchimento. */}
+          <use href={camada("principal")} stroke={cor.principalBorda} strokeWidth={largura.principalBorda} />
+          <use href={camada("secundaria")} stroke={cor.principalBorda} strokeWidth={largura.secundariaBorda} />
+          <use href={camada("secundaria")} className="stroke-surface-container-lowest" strokeWidth={largura.secundaria} />
+          <use href={camada("principal")} className="stroke-surface-container-lowest" strokeWidth={largura.principal} />
         </g>
       </svg>
 

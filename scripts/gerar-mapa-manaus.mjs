@@ -7,8 +7,11 @@
  *   node scripts/gerar-mapa-manaus.mjs [--osm <arquivo.json>] [--cache <pasta>]
  *                                      [--prototipo <pasta> [--pontos <coordenadas.json>]]
  *
- * Grava src/components/onde-comprar/dados-mapa-manaus.ts (o que a página usa; não
- * editar à mão). Com --prototipo grava também, na pasta indicada, o protótipo
+ * Grava public/images/onde-comprar/mapa-manaus.svg (o desenho: um <path id> por
+ * camada dentro de <defs>, sem cor; a página desenha cada camada com
+ * <use href="/images/onde-comprar/mapa-manaus.svg#camada">, fora do HTML e do
+ * payload RSC) e src/components/onde-comprar/dados-mapa-manaus.ts (caixa, cores,
+ * larguras e rótulos). Nenhum dos dois se edita à mão. Com --prototipo grava também, na pasta indicada, o protótipo
  * da Fase 0 (mapa-manaus.svg e mapa-manaus.json, com os pontos de --pontos).
  *
  * Fonte: OpenStreetMap, © colaboradores do OpenStreetMap, licença ODbL
@@ -52,7 +55,11 @@ const OVERPASS = "https://overpass-api.de/api/interpreter";
 const SITE = "https://orbitalrevestimentos.com.br";
 const UA = `OrbitalRevestimentos-site/1.0 (+${SITE}; mapa /onde-comprar; gerar-mapa-manaus.mjs)`;
 /** Relativo à raiz do repositório; o script grava aí de qualquer pasta em que rode. */
-const SAIDA_TS = path.join(path.dirname(fileURLToPath(import.meta.url)), "..", "src/components/onde-comprar/dados-mapa-manaus.ts");
+const RAIZ = path.join(path.dirname(fileURLToPath(import.meta.url)), "..");
+const SAIDA_TS = path.join(RAIZ, "src/components/onde-comprar/dados-mapa-manaus.ts");
+const SAIDA_SVG = path.join(RAIZ, "public/images/onde-comprar/mapa-manaus.svg");
+/** Camadas do SVG público, cada uma com este `id` (a ordem de desenho é a do MapaManaus). */
+const CAMADAS_SVG = ["agua", "ilhas", "igarapes", "parques", "principal", "secundaria", "terciaria"];
 const ARQUIVO_CACHE = "overpass-manaus.json";
 
 /** Caixa do download (graus): a do desenho com folga. */
@@ -576,6 +583,24 @@ function rotulosFixos(avenidas) {
   return [RIO_NEGRO, { texto: av.nome.replace(/^Avenida /, "Av. "), x: num(av.x + 7), y: num(av.y - 10), rotacao: av.angulo }];
 }
 
+/** Endereço público do SVG (o que o <use href> pede). */
+const SVG_PUBLICO = "/images/onde-comprar/mapa-manaus.svg";
+
+/**
+ * O SVG público: cada camada uma vez, num <path id> dentro de <defs> (sozinho o
+ * arquivo não pinta nada). Cor, largura e ordem ficam no MapaManaus, nos <use>:
+ * o traço e o preenchimento passam por herança do <use> para a cópia.
+ */
+function svgPublico(osm, camadas) {
+  return `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 ${LADO} ${ALTURA}">
+<!-- GERADO por scripts/gerar-mapa-manaus.mjs, não editar. Dados © colaboradores do OpenStreetMap, ODbL (https://www.openstreetmap.org/copyright); obra produzida (Produced Work, ODbL 4.5). Base de ${escapar(osm.osm3s?.timestamp_osm_base)}. -->
+<defs>
+${CAMADAS_SVG.map((k) => `<path id="${k}" d="${camadas[k]}"/>`).join("\n")}
+</defs>
+</svg>
+`;
+}
+
 /** O módulo que a página importa: números e strings literais, sem import. */
 function moduloTs(osm, camadas, avenidas) {
   const base = osm.osm3s?.timestamp_osm_base;
@@ -594,7 +619,6 @@ function moduloTs(osm, camadas, avenidas) {
     terciaria: LARGURA_VIA.terciaria,
     igarape: LARGURA_VIA.igarape,
   };
-  const camadasTs = ["agua", "ilhas", "igarapes", "parques", "principal", "secundaria", "terciaria"];
   return `/**
  * GERADO por scripts/gerar-mapa-manaus.mjs, não editar. Para refazer:
  *   node scripts/gerar-mapa-manaus.mjs [--osm <resposta da Overpass>]
@@ -608,9 +632,12 @@ export const CAIXA_GERADA = ${lit(CAIXA)} as const;
 export const LARGURA = ${LADO};
 export const ALTURA = ${ALTURA};
 
-export const CAMADAS_MANAUS: { ${camadasTs.map((k) => `${k}: string`).join("; ")} } = {
-${camadasTs.map((k) => `  ${k}: ${J(camadas[k])},`).join("\n")}
-};
+/**
+ * O desenho fica em ${SVG_PUBLICO} (um <path id> por camada, sem cor), fora do
+ * HTML e do payload RSC; o MapaManaus desenha cada camada com <use href="…#id">.
+ */
+export const MAPA_SVG = ${J(SVG_PUBLICO)};
+export const CAMADAS_MANAUS = ${J(CAMADAS_SVG)} as const;
 
 export const ESTILO_MANAUS = {
   cor: ${lit(cor)},
@@ -663,6 +690,9 @@ function gerar(osm, args) {
   const ts = moduloTs(osm, camadas, avenidas);
   fs.mkdirSync(path.dirname(SAIDA_TS), { recursive: true });
   fs.writeFileSync(SAIDA_TS, ts);
+  const svg = svgPublico(osm, camadas);
+  fs.mkdirSync(path.dirname(SAIDA_SVG), { recursive: true });
+  fs.writeFileSync(SAIDA_SVG, svg);
 
   const tudo = Object.values(camadas).join("");
   const bytes = Buffer.byteLength(tudo);
@@ -674,6 +704,7 @@ function gerar(osm, args) {
       `igarapés ${a.igarapes.length}, parques ${pq.length}; paths ${(bytes / 1024).toFixed(1)} kB, gzip ${(gzip / 1024).toFixed(1)} kB`,
   );
   console.log(`${SAIDA_TS}: ${Buffer.byteLength(ts)} bytes, gzip ${zlib.gzipSync(ts, { level: 9 }).length} bytes`);
+  console.log(`${SAIDA_SVG}: ${Buffer.byteLength(svg)} bytes, gzip ${zlib.gzipSync(svg, { level: 9 }).length} bytes`);
   if (a.soltas.length) console.warn("AVISO: bordas de água com ponta solta dentro da caixa (descartadas):", JSON.stringify(a.soltas));
   console.log("por camada (bytes):", porCamada);
   console.log("avenidas principais:", avenidas.map((x) => `${x.nome} (${x.comprimento} u; meio ${x.x},${x.y}; ${x.angulo}°)`).join("; "));

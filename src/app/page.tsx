@@ -237,7 +237,7 @@ export default async function Home() {
             <ul className="grid grid-cols-1 sm:grid-cols-2 sm:gap-x-10 xl:grid-cols-5 xl:gap-x-0 border-t border-white/15">
               {parceiros.map((s) => (
                 <li key={s.id} className="border-b border-white/15 xl:border-b-0 xl:border-r xl:last:border-r-0 xl:px-5 xl:first:pl-0 xl:last:pr-0">
-                  <Link href={s.id === CARTAO_PDV.id ? "/onde-comprar" : `/projetos?showroom=${encodeURIComponent(s.slug)}`}
+                  <Link href={s.id === CARTAO_PDV.id ? "/onde-comprar" : `/projetos?showroom=${encodeURIComponent(s.slug)}`} prefetch={s.id === CARTAO_PDV.id ? false : undefined}
                     className="group flex items-center justify-between gap-3 min-h-16 py-4">
                     <span>
                       <span className="block font-serif text-white text-[1.0625rem] leading-snug">{nomeLugar(s.name)}</span>
