@@ -1705,6 +1705,159 @@ details[open] > summary .pfb-mais { transform: rotate(45deg); }
   }
 }
 
+/* ── PFB v2 (08/11/2026): escala mais leve, linhas, folhas, trilhos, água ──
+   Experiência v2 (.superpowers/sdd/2026-11-08-experiencia-v2/): menos texto à
+   vista no celular, o detalhe atrás de um toque. Títulos de capítulo e corpo um
+   degrau abaixo no celular; os números da ficha como imagem. */
+@media (max-width: 63.99rem) {
+  .pfb-h1   { font-size: 1.75rem; line-height: 2.0625rem; }
+  .pfb-t1   { font-size: 1.5rem; line-height: 1.875rem; }
+  .pfb-corpo { font-size: 0.9375rem; line-height: 1.5rem; }
+}
+.pfb-num-grande {
+  font-size: clamp(3.25rem, 17vw, 4.5rem);
+  line-height: 1;
+  letter-spacing: -0.02em;
+  font-variant-numeric: tabular-nums;
+  white-space: nowrap;
+}
+@media (min-width: 64rem) { .pfb-num-grande { font-size: clamp(2.5rem, 3.3vw, 3.5rem); } }
+
+/* A linha que abre (FolhaPfb) e as linhas irmãs (o manual): 1 px embaixo, o
+   nome em Noto Serif e o "+" à direita, que gira 90° ao passar o mouse. */
+.pfb-linha {
+  display: flex; width: 100%; min-height: 3.5rem; align-items: center; justify-content: space-between; gap: 1rem;
+  border-bottom: 1px solid rgb(116 119 127 / 0.3);
+  font-family: var(--font-serif); font-size: 1.0625rem; line-height: 1.375rem; color: #0B1F45;
+  cursor: pointer; text-align: left;
+}
+.pfb-linha-noite { color: #fff; border-bottom-color: rgb(246 245 242 / 0.25); }
+.pfb-linha:focus-visible { outline: 2px solid currentColor; outline-offset: 2px; }
+@media (min-width: 64rem) { .pfb-linha { font-size: 1.125rem; } }
+@media (hover: hover) and (prefers-reduced-motion: no-preference) {
+  html[data-mv-nivel="completo"] .pfb-linha .pfb-mais { transition: transform var(--mv-base) var(--mv-chegada); }
+  .pfb-linha:hover .pfb-mais { transform: rotate(90deg); }
+}
+
+/* A folha: um <dialog> que sobe do rodapé no celular (até 88% da tela, a alça
+   em cima) e abre pela direita no computador (34rem; 56rem a larga). Sempre
+   creme, texto azul-noite. A página não rola por baixo enquanto ela está aberta. */
+html:has(dialog.pfb-folha[open]) { overflow: hidden; }
+.pfb-folha {
+  position: fixed; inset: auto 0 0 0; margin: 0; padding: 0; border: 0;
+  width: 100%; max-width: 100%; max-height: 88vh; max-height: 88dvh;
+  background: #F6F5F2; color: #0B1F45; overflow: hidden;
+}
+.pfb-folha[open] { display: flex; flex-direction: column; }
+.pfb-folha::backdrop { background: rgb(11 31 69 / 0.55); }
+.pfb-folha-topo { position: relative; flex-shrink: 0; padding: 1.75rem 1.25rem 1rem; border-bottom: 1px solid rgb(11 31 69 / 0.12); touch-action: none; }
+.pfb-folha-alca { position: absolute; top: 0.625rem; left: 50%; width: 2.5rem; height: 3px; margin-left: -1.25rem; background: rgb(11 31 69 / 0.25); }
+.pfb-folha-corpo {
+  overflow-y: auto; padding: 1.25rem 1.25rem max(env(safe-area-inset-bottom), 2rem);
+  font-size: 0.9375rem; line-height: 1.5rem; color: #43474e;
+}
+.pfb-folha-corpo h3 { color: #0B1F45; }
+@media (min-width: 64rem) {
+  .pfb-folha { inset: 0 0 0 auto; height: 100vh; height: 100dvh; max-height: none; width: min(100%, 34rem); }
+  .pfb-folha-larga { width: min(100%, 56rem); }
+  .pfb-folha-topo { padding: 3rem 3rem 1.25rem; }
+  .pfb-folha-alca { display: none; }
+  .pfb-folha-corpo { padding: 1.75rem 3rem 3rem; }
+}
+@keyframes pfb-folha-sobe { from { transform: translate3d(0, 100%, 0); } }
+@keyframes pfb-folha-lado { from { transform: translate3d(100%, 0, 0); } }
+@keyframes pfb-folha-veu { from { opacity: 0; } }
+@media (prefers-reduced-motion: no-preference) {
+  html[data-mv-nivel="completo"] .pfb-folha[open] { animation: pfb-folha-sobe var(--mv-base) var(--mv-chegada) both; }
+  html[data-mv-nivel="completo"] .pfb-folha[open]::backdrop { animation: pfb-folha-veu var(--mv-rapido) ease-out both; }
+  @media (min-width: 64rem) {
+    html[data-mv-nivel="completo"] .pfb-folha[open] { animation-name: pfb-folha-lado; }
+  }
+}
+
+/* Pares rótulo / valor numa folha: linhas finas, rótulo à esquerda. */
+.pfb-tabela { margin-top: 0.75rem; border-top: 1px solid rgb(11 31 69 / 0.15); }
+.pfb-tabela > div {
+  display: grid; grid-template-columns: minmax(0, 9.5rem) minmax(0, 1fr); gap: 1rem;
+  padding: 0.5rem 0; border-bottom: 1px solid rgb(11 31 69 / 0.1);
+  font-size: 0.875rem; line-height: 1.375rem;
+}
+.pfb-tabela dt { color: #43474e; }
+.pfb-tabela dd { color: #0B1F45; font-variant-numeric: tabular-nums; }
+
+/* Trilho (TrilhoPfb): um item por vez em largura cheia, com encaixe. A rolagem
+   lateral é do trilho (overflow-x: auto); o documento não rola de lado. A partir
+   de lg o trilho é grade (as classes de quem usa) e não rola. */
+.pfb-trilho {
+  display: flex; overflow-x: auto; overscroll-behavior-x: contain;
+  scroll-snap-type: x mandatory; scrollbar-width: none; -webkit-overflow-scrolling: touch;
+}
+.pfb-trilho::-webkit-scrollbar { display: none; }
+.pfb-trilho > * { flex: 0 0 100%; min-width: 0; scroll-snap-align: start; scroll-snap-stop: always; }
+.pfb-trilho:focus-visible { outline: 2px solid currentColor; outline-offset: 4px; }
+@media (min-width: 64rem) {
+  .pfb-trilho { display: grid; overflow: visible; scroll-snap-type: none; }
+  .pfb-trilho > * { flex: none; }
+}
+.pfb-pontos { display: flex; gap: 0.5rem; margin-top: 1.25rem; }
+@media (min-width: 64rem) { .pfb-pontos { display: none; } }
+.pfb-pontos > span { width: 1.25rem; height: 2px; background: rgb(11 31 69 / 0.2); }
+.pfb-pontos > span[data-ativo] { background: #0B1F45; }
+.pfb-pontos-noite > span { background: rgb(246 245 242 / 0.25); }
+.pfb-pontos-noite > span[data-ativo] { background: #F6F5F2; }
+@media (prefers-reduced-motion: no-preference) {
+  html[data-mv-nivel="completo"] .pfb-pontos > span { transition: background-color var(--mv-rapido) ease-out; }
+}
+/* No celular, o número que entra no trilho chega de lado e acende (view(inline):
+   a linha do tempo é a do próprio trilho). */
+@keyframes pfb-trilho-entra { from { opacity: 0.15; transform: translate3d(18%, 0, 0); } }
+@media (prefers-reduced-motion: no-preference) and (max-width: 63.99rem) {
+  @supports (animation-timeline: view()) {
+    html[data-mv-nivel="completo"] .pfb-trilho > * > * {
+      animation: pfb-trilho-entra linear both;
+      animation-timeline: view(inline);
+      animation-range: entry 0% entry 100%;
+    }
+  }
+}
+
+/* Teste de água (AguaPfb): o controle de arrastar é uma linha fina com um
+   quadrado branco; as fotos trocam por opacidade (300 ms só quando o toque é num
+   rótulo de hora ou ao encaixar). */
+.pfb-agua-troca { transition: opacity 300ms var(--mv-chegada); }
+@media (prefers-reduced-motion: reduce) { .pfb-agua-troca { transition: none; } }
+.pfb-agua-controle {
+  display: block; width: 100%; height: 2.75rem; margin: 0; background: transparent;
+  -webkit-appearance: none; appearance: none; cursor: grab; touch-action: pan-y;
+}
+.pfb-agua-controle:active { cursor: grabbing; }
+.pfb-agua-controle::-webkit-slider-runnable-track { height: 1px; background: rgb(246 245 242 / 0.45); }
+.pfb-agua-controle::-moz-range-track { height: 1px; background: rgb(246 245 242 / 0.45); }
+.pfb-agua-controle::-webkit-slider-thumb {
+  -webkit-appearance: none; appearance: none; width: 1.75rem; height: 1.75rem; margin-top: -0.875rem;
+  background: #F6F5F2; border: 0; border-radius: 0;
+}
+.pfb-agua-controle::-moz-range-thumb { width: 1.75rem; height: 1.75rem; background: #F6F5F2; border: 0; border-radius: 0; }
+.pfb-agua-controle:focus-visible { outline: 2px solid #F6F5F2; outline-offset: 4px; }
+
+/* Abertura: a foto se acomoda (1,04 → 1) ao abrir a página. */
+@keyframes pfb-assenta { from { transform: scale(1.04); } }
+@media (prefers-reduced-motion: no-preference) {
+  html[data-mv-nivel="completo"] .pfb-assenta { animation: pfb-assenta var(--mv-cinema) var(--mv-chegada) both; }
+}
+
+/* Capítulo 10: o recorte da foto abre de dentro para fora enquanto a seção entra. */
+@keyframes pfb-recorte { from { clip-path: inset(10% 9% 10% 9%); transform: scale(1.06); } to { clip-path: inset(0); transform: none; } }
+@media (prefers-reduced-motion: no-preference) {
+  @supports (animation-timeline: view()) {
+    html[data-mv-nivel="completo"] .pfb-recorte {
+      animation: pfb-recorte linear both;
+      animation-timeline: view();
+      animation-range: entry 0% entry 90%;
+    }
+  }
+}
+
 /* ── TechStone: galeria de ideias ─────────────────────────────────────────
    (components/techstone/Ideias). Cada ideia é uma camada do tamanho do palco
    que só mostra a sua região [--l, --r] por clip-path; o quadro interno (da
