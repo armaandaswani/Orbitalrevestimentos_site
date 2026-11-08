@@ -1399,60 +1399,160 @@ html[data-mv-nivel="leve"] .ts-clima-nevoa { display: none; }
   .ts-clima .ts-clima-lista { grid-template-columns: minmax(0, 1fr); }
 }
 
-/* ── PFB: a placa por dentro ──────────────────────────────────────────────
-   As cinco camadas do PFB (components/pfb/CamadasPfb), em /produtos/pfb.
-   Padrão: figura aberta e parada, lista inteira (celular, nível leve, janela
-   baixa, movimento reduzido, sem JavaScript). A cena presa só existe na
-   consulta de baixo (D5 da spec); --p (0 → 1) vem do useProgresso. A seção
-   tem 400svh: a parte presa anda 300svh e uma tela vale 0.333 de --p.
-     0 → 0.05            silêncio: placa fechada, título e frase parados;
-     0.05 → 0.35         abertura: --abre vai de 0 a 1 (x²(3 − 2x));
-     0.35 + i × 0.10     camada da vez (a = --a, até a + 0.1): desliza 24 para
-                         a direita, contorno verde, item em opacidade 1
-                         (rampas de 0.02);
-     0.85 → 0.95         fechamento: --abre volta a 0;
-     0.85 → 0.89         juntas: todos os itens ficam em opacidade 1;
-     0.88 → 0.94         legenda "As cinco juntas têm 5 mm." aparece.
-   Medidas: cada camada sobe --k × 64 (VAO) e a da vez desliza 24
-   (DESLOCA_ATIVA), em unidades do viewBox. O 0.35 e o 0.1 saem de
-   PASSO_INICIO e PASSO (src/lib/movimento/camadas.ts, que escrevem --a), o
-   64 e o 24 de VAO e DESLOCA_ATIVA; se um mudar, mude as duas pontas
-   (camadas.test.mjs confere). Só transform e opacity. */
-
-/* Padrão (estático): figura aberta, lista inteira. */
-.pfb-cam            { --abre: 1; --on: 0; }
-.pfb-cam-palco      { padding-block: clamp(3.5rem, 2rem + 4.5vw, 7rem); }
-.pfb-cam-g          { transform: translate(calc(var(--on) * 24px), calc(var(--abre) * var(--k) * -64px)); }
-.pfb-cam-contorno   { opacity: var(--on); }
-
-/* Abertura: abaixo do lg a foto fica parada. */
-@media (max-width: 63.98rem) { .pfb-abertura-foto { animation: none; } }
-
-/* Computador (a partir do lg), com ou sem a cena (nível leve, janela baixa):
-   a lista não tem animação de entrada. No celular o Revelar continua. */
+/* ── PFB: capítulos da página do produto ─────────────────────────────────
+   Escala própria de /produtos/pfb (spec 2026-11-07-pfb-experiencia, "Escala"):
+   valor de celular abaixo de 64rem e de computador a partir de 64rem. Os
+   tokens --text-* do site não mudam. A família vem de quem usa (font-serif
+   nos títulos, nomes e números; Inter, a do corpo, no resto). */
+.pfb-h1           { font-size: 1.875rem; line-height: 2.125rem; letter-spacing: -0.01em; text-wrap: balance; }
+.pfb-t1           { font-size: 1.625rem; line-height: 1.9375rem; letter-spacing: -0.005em; text-wrap: balance; }
+.pfb-t2           { font-size: 1.375rem; line-height: 1.625rem; text-wrap: balance; }
+.pfb-t3           { font-size: 1.0625rem; line-height: 1.375rem; }
+.pfb-corpo        { font-size: 1rem; line-height: 1.625rem; text-wrap: pretty; }
+.pfb-legenda      { font-size: 0.875rem; line-height: 1.25rem; }
+.pfb-num-destaque { font-size: 3rem; line-height: 3.25rem; font-variant-numeric: tabular-nums; }
+.pfb-num          { font-size: 2rem; line-height: 2.25rem; font-variant-numeric: tabular-nums; }
 @media (min-width: 64rem) {
-  .pfb-cam-lista > .mv-revelar { animation: none; }
-  .pfb-cam-lista > :is(.mv-io-espera, .mv-io-entrou) { opacity: 1; transform: none; transition: none; }
+  .pfb-h1           { font-size: 3.5rem; line-height: 3.875rem; }
+  .pfb-t1           { font-size: 2.5rem; line-height: 2.875rem; }
+  .pfb-t2           { font-size: 1.875rem; line-height: 2.25rem; }
+  .pfb-t3           { font-size: 1.25rem; line-height: 1.625rem; }
+  .pfb-corpo        { font-size: 1.0625rem; line-height: 1.75rem; max-width: 60ch; }
+  .pfb-num-destaque { font-size: 4rem; line-height: 4.25rem; }
+  .pfb-num          { font-size: 2.75rem; line-height: 3rem; }
+}
+/* Telas estreitas (polimento, Tarefa 7b): abaixo de 380 px os números da
+   ficha descem a 28/32 ("550 kg/m³" cabe numa linha a 375); abaixo de 360 px
+   os nomes do capítulo 3 descem a 15/20 (a 320 se encostavam). */
+@media (max-width: 379.98px) {
+  .pfb-num          { font-size: 1.75rem; line-height: 2rem; }
+}
+@media (max-width: 359.98px) {
+  .pfb-nome         { font-size: 0.9375rem; line-height: 1.25rem; }
 }
 
-@media (min-width: 64rem) and (min-height: 45rem) and (prefers-reduced-motion: no-preference) and (scripting: enabled) {
-  html:not([data-mv-nivel="leve"]) .pfb-cam {
-    height: 400svh;
-    --e0: clamp(0, (var(--p, 0) - 0.05) / 0.3, 1);
-    --e:  calc(var(--e0) * var(--e0) * (3 - 2 * var(--e0)));
-    --c0: clamp(0, (var(--p, 0) - 0.85) / 0.1, 1);
-    --c:  calc(var(--c0) * var(--c0) * (3 - 2 * var(--c0)));
-    --abre: calc(var(--e) * (1 - var(--c)));
-    --juntas: clamp(0, (var(--p, 0) - 0.85) / 0.04, 1);
+/* Capítulo 3, a placa por dentro (components/pfb/CamadasPfb). `.pfb-palco` é
+   o contêiner comum da figura e dos nomes. A figura são seis cópias da imagem,
+   cada uma recortada na sua lâmina (`.pfb-lamina`; clip-path, z-index, --fechado
+   e --i no style), e os cinco nomes são `.pfb-nome` (--l, a primeira lâmina do
+   nome). O padrão é o estado final, a imagem original composta: é o que fica sem
+   JavaScript, com movimento reduzido e no nível leve.
+
+   O encaixe: cada lâmina parte de translateY(var(--fechado)) (-fechadoY% da altura
+   da imagem; a película, sem fechadoY, só esmaece) com opacidade 0 e chega ao
+   lugar; o esmaecer cobre o que fica para fora. Os nomes entram 8 px pela esquerda.
+   Caminho principal: pela rolagem, na entrada da figura (.pfb-figura é o sujeito
+   da view-timeline --pfb-camadas; o palco a mostra aos nomes por timeline-scope).
+   Cada lâmina anda 36% da entrada, 13% depois da de cima, e chega ao meio quando o
+   centro da sua faixa está a ~88% da altura da tela (390 × 844 e 1440 × 900): as
+   de baixo encaixam já na tela, não abaixo dela. Por isso o fim passa de entry
+   100% (a figura inteira dentro): a última lâmina acaba em entry 113% e o último
+   nome em 115%, antes da chegada por âncora a #tecnologia (a figura fica em entry
+   121% no computador e 133% no celular). Caminho por tempo, onde não há animation-timeline: só pelas
+   classes do EntradaPfb (pfb-espera parado na partida, pfb-entrou 900 ms, 70 ms
+   entre vizinhos). Ele vem depois e é mais específico que o principal; a classe só
+   existe quando o EntradaPfb viu que não há view(), por isso fica fora do
+   @supports (e o teste que engana o CSS.supports do JS exercita este caminho). */
+.pfb-lamina { transform: none; opacity: 1; }
+.pfb-nome   { transform: none; opacity: 1; }
+@keyframes pfb-lamina-encaixa { from { transform: translateY(var(--fechado)); opacity: 0; } to { transform: none; opacity: 1; } }
+@keyframes pfb-nome-entra { from { transform: translateX(-8px); opacity: 0; } to { transform: none; opacity: 1; } }
+@media (prefers-reduced-motion: no-preference) {
+  @supports (animation-timeline: view()) {
+    html[data-mv-nivel="completo"] .pfb-palco { timeline-scope: --pfb-camadas; }
+    html[data-mv-nivel="completo"] .pfb-figura { view-timeline: --pfb-camadas block; }
+    html[data-mv-nivel="completo"] .pfb-lamina {
+      animation: pfb-lamina-encaixa linear both;
+      animation-timeline: --pfb-camadas;
+      animation-range: entry calc(12% + var(--i) * 13%) entry calc(48% + var(--i) * 13%);
+    }
+    html[data-mv-nivel="completo"] .pfb-nome {
+      animation: pfb-nome-entra linear both;
+      animation-timeline: --pfb-camadas;
+      animation-range: entry calc(18% + var(--l) * 13%) entry calc(50% + var(--l) * 13%);
+    }
   }
-  html:not([data-mv-nivel="leve"]) .pfb-cam-quadro { position: sticky; top: 0; height: 100svh; overflow: clip; display: flex; align-items: center; }
-  html:not([data-mv-nivel="leve"]) .pfb-cam-palco { padding-block: 6rem 2rem; width: 100%; }
-  html:not([data-mv-nivel="leve"]) :is(.pfb-cam-g, .pfb-cam-item) {
-    --on: min(clamp(0, (var(--p, 0) - var(--a)) / 0.02, 1), clamp(0, (var(--a) + 0.1 - var(--p, 0)) / 0.02, 1));
+  html[data-mv-nivel="completo"] .pfb-espera .pfb-lamina { animation: none; transform: translateY(var(--fechado)); opacity: 0; }
+  html[data-mv-nivel="completo"] .pfb-espera .pfb-nome { animation: none; transform: translateX(-8px); opacity: 0; }
+  html[data-mv-nivel="completo"] .pfb-entrou .pfb-lamina {
+    animation: pfb-lamina-encaixa 900ms cubic-bezier(.2,.7,.2,1) both;
+    animation-timeline: auto;
+    animation-range: normal;
+    animation-delay: calc(var(--i) * 70ms);
   }
-  html:not([data-mv-nivel="leve"]) .pfb-cam-item    { opacity: max(calc(0.6 + 0.4 * var(--on)), var(--juntas)); }
-  html:not([data-mv-nivel="leve"]) .pfb-cam-legenda { opacity: clamp(0, (var(--p, 0) - 0.88) / 0.06, 1); }
-  html:not([data-mv-nivel="leve"]) .pfb-cam[data-ativo] .pfb-cam-item { will-change: opacity; }
+  html[data-mv-nivel="completo"] .pfb-entrou .pfb-nome {
+    animation: pfb-nome-entra 900ms cubic-bezier(.2,.7,.2,1) both;
+    animation-timeline: auto;
+    animation-range: normal;
+    animation-delay: calc(var(--l) * 70ms + 120ms);
+  }
+}
+
+/* Capítulo 4: o "+" do bloco que abre (o details da ficha completa) gira 45°
+   com o bloco aberto. A troca só anima no nível completo, sem movimento reduzido. */
+.pfb-mais { display: inline-block; }
+details[open] > summary .pfb-mais { transform: rotate(45deg); }
+@media (prefers-reduced-motion: no-preference) {
+  html[data-mv-nivel="completo"] .pfb-mais { transition: transform var(--mv-base) var(--mv-chegada); }
+}
+
+/* Capítulo 7, o leque (components/pfb/LinhasPfb). As cinco cartas ficam presas
+   pela base no meio do contêiner; cada uma gira por --r e anda de lado por --x
+   (nessa ordem, ruling P8), vezes --escala (1,4 no computador). O padrão é o
+   leque aberto, o estado final: é o que fica sem JavaScript, com movimento
+   reduzido e no nível leve. overflow-x: clip (não hidden) corta as cartas de fora
+   sem rolagem lateral, também no meio da abertura.
+
+   A abertura: todas partem fechadas, em rotate(0) translateX(0), e abrem do centro
+   para fora (--par, a distância ao centro, atrasa 15% da entrada por par). Caminho
+   principal: pela rolagem, na entrada do próprio .pfb-leque (sujeito da view-timeline
+   --pfb-leque). Cada carta anda 60% da entrada, de entry 60% (a do centro) a 150% (as
+   de fora): o meio, em ~105%, tem o centro do leque a ~87% da altura da tela a
+   390 × 844 (83% a 1440 × 900), já na tela, e o fim vem antes da chegada por âncora a
+   #linhas (o leque fica em 193% a 320 × 568 e 231% a 1440 × 900). Caminho por tempo,
+   onde não há animation-timeline: as classes do EntradaPfb (o próprio .pfb-leque),
+   como no capítulo 3, fora do @supports, mais específicas e depois do principal. */
+.pfb-leque { overflow-x: clip; }
+.pfb-leque-carta {
+  transform-origin: 50% 100%;
+  transform: rotate(var(--r)) translateX(calc(var(--x) * var(--escala, 1)));
+}
+@media (min-width: 64rem) { .pfb-leque { --escala: 1.4; } }
+@keyframes pfb-leque-abre {
+  from { transform: rotate(0deg) translateX(0px); }
+  to   { transform: rotate(var(--r)) translateX(calc(var(--x) * var(--escala, 1))); }
+}
+@media (prefers-reduced-motion: no-preference) {
+  @supports (animation-timeline: view()) {
+    html[data-mv-nivel="completo"] .pfb-leque { view-timeline: --pfb-leque block; }
+    html[data-mv-nivel="completo"] .pfb-leque-carta {
+      animation: pfb-leque-abre linear both;
+      animation-timeline: --pfb-leque;
+      animation-range: entry calc(60% + var(--par) * 15%) entry calc(120% + var(--par) * 15%);
+    }
+  }
+  html[data-mv-nivel="completo"] .pfb-espera .pfb-leque-carta { animation: none; transform: rotate(0deg) translateX(0px); }
+  html[data-mv-nivel="completo"] .pfb-entrou .pfb-leque-carta {
+    animation: pfb-leque-abre 900ms cubic-bezier(.2,.7,.2,1) both;
+    animation-timeline: auto;
+    animation-range: normal;
+    animation-delay: calc(var(--par) * 70ms);
+  }
+}
+
+/* Parallax das fotos inteiras (capítulos 1, 6 e 10): a camada da foto passa
+   12 px da caixa em cima e embaixo (-inset-y-3) e anda de -12 a 12 px enquanto
+   a seção atravessa a tela. Só no nível completo, sem movimento reduzido e com
+   animation-timeline; fora disso fica parada, sem transform. */
+@keyframes pfb-parallax { from { transform: translate3d(0, -12px, 0); } to { transform: translate3d(0, 12px, 0); } }
+@media (prefers-reduced-motion: no-preference) {
+  @supports (animation-timeline: view()) {
+    html[data-mv-nivel="completo"] .pfb-parallax {
+      animation: pfb-parallax linear both;
+      animation-timeline: view();
+      animation-range: cover 0% cover 100%;
+    }
+  }
 }
 
 /* ── TechStone: galeria de ideias ─────────────────────────────────────────
