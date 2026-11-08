@@ -5,7 +5,7 @@ import { useDialogo } from "@/components/ds/useDialogo";
 import { trackFunnel } from "@/lib/funnel";
 import { acoesDaLoja, type PontoDeVenda } from "@/lib/pontos-de-venda";
 import { nomeLugar } from "@/lib/projetos-tipos";
-import { FECHAR_PDV, HORARIO_ROTULO_PDV, SELO_PDV, notaFeriadoPdv, rotuloInstagramFolha } from "@/lib/onde-comprar-textos";
+import { FECHAR_PDV, HORARIO_ROTULO_PDV, SELO_PDV, complementoLeitorPdv, notaFeriadoPdv, rotuloInstagramFolha } from "@/lib/onde-comprar-textos";
 import { atributosDeMedicao, enderecoCompleto, SIMBOLO_SELO } from "./apresentacao-pdv";
 import { BOTAO_PDV_CHEIO, BOTAO_PDV_CLARO, IconeDaAcao, IconeFechar } from "./IconesPdv";
 
@@ -34,6 +34,7 @@ export default function FolhaPdv({ ponto, onFechar, animar }: { ponto: PontoDeVe
   const instagram = acoes.find((a) => a.tipo === "instagram");
   const endereco = enderecoCompleto(ponto);
   const idTitulo = `folha-pdv-${ponto.slug}`;
+  const nome = nomeLugar(ponto.name);
 
   return (
     // Véu e folha são irmãos, cada um fixo com o seu z-index (sem um contêiner
@@ -59,14 +60,17 @@ export default function FolhaPdv({ ponto, onFechar, animar }: { ponto: PontoDeVe
           <IconeFechar />
         </button>
 
-        <p className="flex items-center gap-2 pr-12 text-legenda font-semibold text-on-secondary-container">
-          {/* eslint-disable-next-line @next/next/no-img-element */}
-          <img src={SIMBOLO_SELO} alt="" width={20} height={20} className="h-5 w-5" />
-          {SELO_PDV}
-        </p>
-        <h2 id={idTitulo} className="mt-2.5 font-serif text-[27px] font-normal leading-[1.15] tracking-[-0.01em] text-primary">
-          {nomeLugar(ponto.name)}
-        </h2>
+        {/* O nome vem antes do selo no DOM (o leitor de tela ouve a loja primeiro); o order-first põe o selo em cima na tela. */}
+        <div className="flex flex-col">
+          <h2 id={idTitulo} className="mt-2.5 font-serif text-[27px] font-normal leading-[1.15] tracking-[-0.01em] text-primary">
+            {nome}
+          </h2>
+          <p className="order-first flex items-center gap-2 pr-12 text-legenda font-semibold text-on-secondary-container">
+            {/* eslint-disable-next-line @next/next/no-img-element */}
+            <img src={SIMBOLO_SELO} alt="" width={20} height={20} className="h-5 w-5" />
+            {SELO_PDV}
+          </p>
+        </div>
         {endereco && <p className="mt-1.5 text-base leading-[1.45] text-on-surface">{endereco}</p>}
 
         {ponto.horario && (
@@ -88,6 +92,7 @@ export default function FolhaPdv({ ponto, onFechar, animar }: { ponto: PontoDeVe
           >
             <IconeDaAcao tipo={principal.tipo} />
             {principal.rotulo}
+            <span className="sr-only">{complementoLeitorPdv(principal.tipo, nome)}</span>
           </a>
         )}
         {rotas.length > 0 && (
@@ -96,6 +101,7 @@ export default function FolhaPdv({ ponto, onFechar, animar }: { ponto: PontoDeVe
               <a key={a.tipo} href={a.href} target="_blank" rel="noopener" className={`${BOTAO_PDV_CLARO} flex`} {...atributosDeMedicao(a, ponto.slug)}>
                 <IconeDaAcao tipo={a.tipo} />
                 {a.rotulo}
+                <span className="sr-only">{complementoLeitorPdv(a.tipo, nome)}</span>
               </a>
             ))}
           </div>
@@ -109,6 +115,7 @@ export default function FolhaPdv({ ponto, onFechar, animar }: { ponto: PontoDeVe
             {...atributosDeMedicao(instagram, ponto.slug)}
           >
             {rotuloInstagramFolha(ponto.instagram)}
+            <span className="sr-only">{complementoLeitorPdv("instagram", nome)}</span>
           </a>
         )}
       </div>

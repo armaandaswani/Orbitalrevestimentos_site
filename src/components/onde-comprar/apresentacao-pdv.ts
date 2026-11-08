@@ -1,14 +1,8 @@
-import {
-  cabePino,
-  dentroDeManaus,
-  projetarManaus,
-  type Acao,
-  type PontoDeVenda,
-} from "@/lib/pontos-de-venda";
+import type { Acao, PontoDeVenda } from "@/lib/pontos-de-venda";
 
 /**
  * Peças comuns à lista (servidor) e à folha (cliente) da página /onde-comprar:
- * os atributos de medição de cada ação, o endereço curto e se a loja tem pino.
+ * os atributos de medição de cada ação e o endereço curto.
  */
 
 /** Evento de saída que cada ação dispara (rota e Waze são o mesmo evento, com o app). */
@@ -45,12 +39,6 @@ export function ondeFica(p: Pick<PontoDeVenda, "bairro" | "address">): string {
 /** Endereço inteiro para a folha; sem endereço, o bairro. */
 export function enderecoCompleto(p: Pick<PontoDeVenda, "bairro" | "address">): string | null {
   return p.address?.trim() || p.bairro?.trim() || null;
-}
-
-/** Mesma regra do MapaManaus: só loja com coordenada em Manaus e espaço para o pino tem pino. */
-export function temPino(p: Pick<PontoDeVenda, "lat" | "lng">): boolean {
-  if (p.lat === null || p.lng === null || !dentroDeManaus(p.lat, p.lng)) return false;
-  return cabePino(projetarManaus(p.lat, p.lng));
 }
 
 /** Símbolo da Orbital no selo "Revendedor autorizado" (o mesmo arquivo do pino). */

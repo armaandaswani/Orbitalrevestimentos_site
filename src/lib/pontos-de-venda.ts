@@ -379,6 +379,13 @@ export function deveTocarAbertura(s: SinaisAbertura): boolean {
 }
 
 /**
+ * Regra do `#loja-<slug>` pedido na URL: primeiro na lista (o <ul> é flex-col)
+ * e um fundo leve que sangra 12 px para os lados (cabe na margem de 16 px).
+ */
+export const CSS_LOJA_PRIMEIRO =
+  "{order:-1;background:var(--color-surface-container);margin-left:-12px;margin-right:-12px;padding-left:12px;padding-right:12px}";
+
+/**
  * `deveTocarAbertura` em JavaScript puro (ES5), para um <script> embutido no
  * começo da página que liga `data-pdv-abertura="1"` no <html> antes da primeira
  * pintura. Quando liga, grava a chave no sessionStorage antes; se gravar
@@ -391,12 +398,23 @@ export function deveTocarAbertura(s: SinaisAbertura): boolean {
  * não chega ao botão, que sumiu). Os valores entram por concatenação para a string e o
  * módulo nunca divergirem. Se mudar `deveTocarAbertura`, mude esta string; o
  * teste confere.
+ *
+ * Antes de tudo, com `?loja=` (o último valor não vazio, como no `lojaDaUrl`)
+ * com cara de slug (`^[a-z0-9-]{1,80}$`), injeta um <style> no <head> que põe
+ * `#loja-<slug>` em primeiro na lista (order -1; o <ul> é flex-col) com um
+ * fundo leve: quem chega pelo link de uma loja já a vê no topo antes da
+ * hidratação (J1). Texto fora do padrão não entra no CSS.
  */
 export const SCRIPT_ABERTURA_PDV =
   "(function(){try{var w=window,d=document,h=d.documentElement,n=navigator,c=n.connection,s=w.sessionStorage,K='" +
   CHAVE_ABERTURA +
   "',A='data-pdv-abertura',t=c&&c.effectiveType,m=n.deviceMemory,k=n.hardwareConcurrency," +
-  "no=/[?&]loja=[^&]/.test(location.search)||w.matchMedia('(prefers-reduced-motion: reduce)').matches||w.matchMedia('(prefers-reduced-data: reduce)').matches||!!(c&&c.saveData===true)||!!s[K]||t==='slow-2g'||t==='2g'||t==='3g'||(m!==undefined&&(m<4||(k!==undefined&&k<=4)));" +
+  "q=location.search,re=/[?&]loja=([^&#]*)/g,r,v,L='';" +
+  "while((r=re.exec(q))){try{v=decodeURIComponent(r[1]).replace(/^\\s+|\\s+$/g,'');}catch(x){v='';}if(v)L=v.toLowerCase();}" +
+  "if(/^[a-z0-9-]{1,80}$/.test(L)){var st=d.createElement('style');st.textContent='#loja-'+L+'" +
+  CSS_LOJA_PRIMEIRO +
+  "';(d.head||h).appendChild(st);}" +
+  "var no=/[?&]loja=[^&]/.test(q)||w.matchMedia('(prefers-reduced-motion: reduce)').matches||w.matchMedia('(prefers-reduced-data: reduce)').matches||!!(c&&c.saveData===true)||!!s[K]||t==='slow-2g'||t==='2g'||t==='3g'||(m!==undefined&&(m<4||(k!==undefined&&k<=4)));" +
   "if(no)return;s[K]='1';h.setAttribute(A,'1');" +
   "var on=true,off=function(){if(!on)return;on=false;h.removeAttribute(A);},o={once:true,passive:true}," +
   "pu=function(e){var x=e&&e.target;return!!(x&&x.closest&&x.closest('[data-pdv-pular]'));}," +

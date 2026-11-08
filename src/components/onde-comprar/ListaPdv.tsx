@@ -1,29 +1,39 @@
 import { acoesDaLoja, type PontoDeVenda } from "@/lib/pontos-de-venda";
 import { nomeLugar } from "@/lib/projetos-tipos";
-import { HORARIO_ROTULO_PDV, SELO_PDV, VER_NO_MAPA_PDV, notaFeriadoPdv } from "@/lib/onde-comprar-textos";
-import { atributosDeMedicao, ondeFica, temPino, SIMBOLO_SELO } from "./apresentacao-pdv";
-import { BOTAO_PDV_CHEIO, BOTAO_PDV_CLARO, BOTAO_PDV_VAZADO, IconeDaAcao } from "./IconesPdv";
+import { HORARIO_ROTULO_PDV, complementoLeitorPdv, notaFeriadoPdv } from "@/lib/onde-comprar-textos";
+import { atributosDeMedicao, ondeFica } from "./apresentacao-pdv";
+import { BOTAO_PDV_CHEIO, BOTAO_PDV_CLARO, IconeDaAcao } from "./IconesPdv";
 
 /**
- * Lista das revendas: o caminho que funciona sem JavaScript e o acessível.
- * Server Component; cada link externo leva os `data-pdv-*` que a ilha mede
- * com um ouvinte só. "Ver no mapa" é um link `?loja=` comum: com JS a ilha
- * abre a folha no lugar; sem JS, recarrega a mesma página.
+ * Lista das revendas, como no quadro aprovado (fase0/mapa.png): nome, "Bairro ·
+ * endereço", horário com a nota de feriado e só dois botões numa linha,
+ * WhatsApp e Como chegar (o primeiro cheio; sem WhatsApp, Como chegar é o
+ * cheio). Selo, descrição, Waze e Instagram ficam só na folha.
+ *
+ * O caminho que funciona sem JavaScript e o acessível: o nome da loja é um
+ * link `?loja=` (com JS a ilha abre a folha no lugar; sem JS, recarrega a
+ * mesma página) e é por ele que o leitor de tela chega a Waze, Instagram e
+ * descrição. Server Component; cada link externo leva os `data-pdv-*` que a
+ * ilha mede com um ouvinte só. `flex flex-col` no <ul>: com `?loja=`, o
+ * SCRIPT_ABERTURA_PDV põe a loja pedida em primeiro (order) antes da pintura.
  */
 export default function ListaPdv({ pontos }: { pontos: PontoDeVenda[] }) {
   return (
-    <ul className="ds-wrap list-none pb-12 pt-2 lg:w-auto lg:max-w-none lg:px-0 lg:pt-0" aria-label="Lojas em Manaus">
+    <ul className="ds-wrap flex list-none flex-col pb-24 pt-2 lg:w-auto lg:max-w-none lg:px-0 lg:pb-12 lg:pt-0" aria-label="Lojas em Manaus">
       {pontos.map((p) => {
-        const acoes = acoesDaLoja(p);
+        const nome = nomeLugar(p.name);
+        const acoes = acoesDaLoja(p).filter((a) => a.tipo === "whatsapp" || a.tipo === "rota");
         const onde = ondeFica(p);
         return (
           <li key={p.slug} id={`loja-${p.slug}`} className="border-t border-[#e2e0da] py-5 lg:py-6">
-            <p className="flex items-center gap-2 text-legenda font-semibold text-on-secondary-container">
-              {/* eslint-disable-next-line @next/next/no-img-element */}
-              <img src={SIMBOLO_SELO} alt="" width={18} height={18} decoding="async" className="h-[18px] w-[18px]" />
-              {SELO_PDV}
-            </p>
-            <h2 className="mt-1.5 font-serif text-[21px] font-normal leading-tight text-primary">{nomeLugar(p.name)}</h2>
+            <h2 className="font-serif text-[21px] font-normal leading-tight text-primary">
+              <a
+                href={`?loja=${encodeURIComponent(p.slug)}`}
+                className="underline decoration-primary/25 underline-offset-[5px] transition-colors hover:text-surface-tint hover:decoration-surface-tint focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-surface-tint"
+              >
+                {nome}
+              </a>
+            </h2>
             {onde && <p className="mt-1 text-[15px] leading-[1.45] text-on-surface-variant">{onde}</p>}
             {p.horario && (
               <dl className="mt-3 text-[15px] leading-[1.45]">
@@ -32,26 +42,22 @@ export default function ListaPdv({ pontos }: { pontos: PontoDeVenda[] }) {
                 <dd className="text-legenda text-on-surface-variant">{notaFeriadoPdv(Boolean(p.whatsapp))}</dd>
               </dl>
             )}
-            {p.description && <p className="mt-3 text-[15px] leading-[1.45] text-on-surface">{p.description}</p>}
-            <div className="mt-3.5 flex flex-wrap gap-2">
-              {acoes.map((a) => (
+            {/* Dois botões numa linha até 320 px: abaixo de 360, menos folga dentro e entre eles. */}
+            <div className="mt-3.5 flex gap-2 max-[359px]:gap-1.5">
+              {acoes.map((a, i) => (
                 <a
                   key={a.tipo}
                   href={a.href}
                   target="_blank"
                   rel="noopener"
-                  className={a.tipo === "whatsapp" ? BOTAO_PDV_CHEIO : a.tipo === "instagram" ? BOTAO_PDV_VAZADO : BOTAO_PDV_CLARO}
+                  className={`${i === 0 ? BOTAO_PDV_CHEIO : BOTAO_PDV_CLARO} max-[359px]:gap-1.5 max-[359px]:px-3`}
                   {...atributosDeMedicao(a, p.slug)}
                 >
                   <IconeDaAcao tipo={a.tipo} />
                   {a.rotulo}
+                  <span className="sr-only">{complementoLeitorPdv(a.tipo, nome)}</span>
                 </a>
               ))}
-              {temPino(p) && (
-                <a href={`?loja=${encodeURIComponent(p.slug)}`} className={BOTAO_PDV_VAZADO} aria-label={`${VER_NO_MAPA_PDV}: ${nomeLugar(p.name)}`}>
-                  {VER_NO_MAPA_PDV}
-                </a>
-              )}
             </div>
           </li>
         );

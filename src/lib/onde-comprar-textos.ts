@@ -44,7 +44,16 @@ export function rotuloInstagramFolha(usuario: string): string {
   return `@${usuario} no Instagram`;
 }
 
-/** Botão da lista que abre a folha da loja (e mostra o pino em destaque). */
-export const VER_NO_MAPA_PDV = "Ver no mapa";
-
 export const FECHAR_PDV = "Fechar";
+
+/**
+ * Complemento só para o leitor de tela (sr-only) de cada link externo da lista
+ * e da folha: o rótulo visível diz a ação, este diz de qual loja e que abre em
+ * outra aba. "da loja" e "à loja" em vez de "da"/"do" com o nome, que não diz
+ * o gênero ("Império do Piso", "Casa do Eletricista"). Texto novo, não visível.
+ */
+export function complementoLeitorPdv(tipo: "whatsapp" | "rota" | "waze" | "instagram", nomeCurto: string): string {
+  const loja = tipo === "rota" ? `à loja ${nomeCurto}` : tipo === "waze" ? `até a loja ${nomeCurto}` : `da loja ${nomeCurto}`;
+  // "WhatsApp da loja X, abre em nova aba"; "@x no Instagram, da loja X, abre em nova aba".
+  return `${tipo === "instagram" ? "," : ""} ${loja}, abre em nova aba`;
+}

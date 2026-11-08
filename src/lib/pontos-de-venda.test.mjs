@@ -23,6 +23,7 @@ import {
   DURACAO_ABERTURA_MS,
   CHAVE_ABERTURA,
   SCRIPT_ABERTURA_PDV,
+  CSS_LOJA_PRIMEIRO,
   CARTAO_PDV,
   parceirosNaGrade,
 } from "./pontos-de-venda.ts";
@@ -319,6 +320,7 @@ function rodarAbertura(sinais = {}, opcoes = {}) {
   const ouvintes = { janela: {}, documento: {} };
   const temporizadores = [];
   const contagem = { remocoes: 0 };
+  const estilos = [];
   const guardado = opcoes.guardado ?? {};
   const navigator = {};
   if (sinais.memoria !== undefined) navigator.deviceMemory = sinais.memoria;
@@ -355,6 +357,8 @@ function rodarAbertura(sinais = {}, opcoes = {}) {
       addEventListener: (tipo, fn, op) => {
         ouvintes.documento[tipo] = { fn, op };
       },
+      createElement: (tag) => ({ tag, textContent: "" }),
+      head: { appendChild: (el) => estilos.push(el) },
     },
   };
   if (opcoes.storageLanca) {
@@ -375,9 +379,34 @@ function rodarAbertura(sinais = {}, opcoes = {}) {
     temporizadores,
     contagem,
     guardado,
+    estilos,
     documento: contexto.document,
   };
 }
+
+test("J1: ?loja=<slug> injeta o <style> que põe a loja em primeiro na lista", () => {
+  const r = rodarAbertura({ search: "?loja=rwa-comercio-de-pisos" });
+  assert.equal(r.estilos.length, 1);
+  assert.equal(r.estilos[0].tag, "style");
+  assert.equal(r.estilos[0].textContent, `#loja-rwa-comercio-de-pisos${CSS_LOJA_PRIMEIRO}`);
+  assert.match(CSS_LOJA_PRIMEIRO, /order:-1/);
+  assert.equal(r.atributo, null); // com loja a abertura não toca
+});
+
+test("J1: vale o último valor não vazio, em minúsculas, com utm e origem em volta", () => {
+  assert.equal(rodarAbertura({ search: "?loja=a&loja=" }).estilos[0].textContent, `#loja-a${CSS_LOJA_PRIMEIRO}`);
+  assert.equal(rodarAbertura({ search: "?utm_source=ste&loja=RWA-Comercio-de-Pisos&origem=ste" }).estilos[0].textContent, `#loja-rwa-comercio-de-pisos${CSS_LOJA_PRIMEIRO}`);
+});
+
+test("J1: texto fora do padrão de slug não entra no CSS", () => {
+  for (const search of ["?loja=<script>", "?loja=%3Cscript%3E", "?loja=a%7Bcolor:red%7D", "?loja=%E0%A4%A", "?loja=a.b", `?loja=${"a".repeat(81)}`, "?loja=", ""]) {
+    let r;
+    assert.doesNotThrow(() => {
+      r = rodarAbertura({ search });
+    }, search);
+    assert.equal(r.estilos.length, 0, search);
+  }
+});
 
 test("SCRIPT_ABERTURA_PDV lê location.search (o catch não esconde erro)", () => {
   assert.equal(rodarAbertura({ search: "?loja=x" }).atributo, null);
