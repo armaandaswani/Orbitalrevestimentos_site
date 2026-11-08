@@ -1494,6 +1494,18 @@ details[open] > summary .pfb-mais { transform: rotate(45deg); }
   html[data-mv-nivel="completo"] .pfb-mais { transition: transform var(--mv-base) var(--mv-chegada); }
 }
 
+/* Capítulo 7, o leque (components/pfb/LinhasPfb). As cinco cartas ficam presas
+   pela base no meio do contêiner; cada uma gira por --r e anda de lado por --x
+   (nessa ordem, ruling P8), vezes --escala (1,4 no computador). Por ora o leque
+   fica parado, aberto: este é o estado final, de onde a abertura vai partir.
+   overflow-x: clip (não hidden) corta as cartas de fora sem rolagem lateral. */
+.pfb-leque { overflow-x: clip; }
+.pfb-leque-carta {
+  transform-origin: 50% 100%;
+  transform: rotate(var(--r)) translateX(calc(var(--x) * var(--escala, 1)));
+}
+@media (min-width: 64rem) { .pfb-leque { --escala: 1.4; } }
+
 /* Parallax das fotos inteiras (capítulos 1, 6 e 10): a camada da foto passa
    12 px da caixa em cima e embaixo (-inset-y-3) e anda de -12 a 12 px enquanto
    a seção atravessa a tela. Só no nível completo, sem movimento reduzido e com

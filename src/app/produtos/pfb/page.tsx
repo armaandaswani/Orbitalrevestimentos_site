@@ -1,17 +1,22 @@
 import type { Metadata } from "next";
 import { SCRIPT_NIVEL } from "@/lib/movimento/nivel";
+import { carregarLugares } from "@/lib/projetos-dados";
 import AberturaPfb from "@/components/pfb/AberturaPfb";
 import OQueEPfb from "@/components/pfb/OQueEPfb";
 import CamadasPfb from "@/components/pfb/CamadasPfb";
 import FichaPfb from "@/components/pfb/FichaPfb";
 import AguaPfb from "@/components/pfb/AguaPfb";
 import ManausPfb from "@/components/pfb/ManausPfb";
+import LinhasPfb from "@/components/pfb/LinhasPfb";
+import InstaladorPfb from "@/components/pfb/InstaladorPfb";
+import ServePfb from "@/components/pfb/ServePfb";
 import BambuPfb from "@/components/pfb/BambuPfb";
+import FechamentoPfb from "@/components/pfb/FechamentoPfb";
 
 /**
- * /produtos/pfb: a página do produto, em capítulos de tela cheia (spec
- * 2026-11-07-pfb-experiencia). Republica a cada 5 min, o mesmo prazo de
- * /projetos.
+ * /produtos/pfb: a página do produto, em 11 capítulos de tela cheia (spec
+ * 2026-11-07-pfb-experiencia, Tabela). Do banco, só os lugares do capítulo 11
+ * (`carregarLugares`). Republica a cada 5 min, o mesmo prazo de /projetos.
  */
 export const revalidate = 300;
 
@@ -91,7 +96,8 @@ const schemas = [
   { chave: "ld-elegance", dados: produto("Elegance", "Madeira texturizada", "textura de madeira", "elegance-carvalho-natural-orb010.jpeg") },
 ];
 
-export default function PfbPage() {
+export default async function PfbPage() {
+  const lugares = await carregarLugares();
   return (
     <main className="escala-contida pt-20">
       <script id="pfb-nivel" dangerouslySetInnerHTML={{ __html: SCRIPT_NIVEL }} />
@@ -108,7 +114,11 @@ export default function PfbPage() {
       <FichaPfb />
       <AguaPfb />
       <ManausPfb />
+      <LinhasPfb />
+      <InstaladorPfb />
+      <ServePfb />
       <BambuPfb />
+      <FechamentoPfb lugares={lugares} />
     </main>
   );
 }
