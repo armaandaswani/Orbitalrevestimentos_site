@@ -1425,9 +1425,6 @@ html[data-mv-nivel="leve"] .ts-clima-nevoa { display: none; }
 .pfb-cam-g          { transform: translate(calc(var(--on) * 24px), calc(var(--abre) * var(--k) * -64px)); }
 .pfb-cam-contorno   { opacity: var(--on); }
 
-/* Abertura: abaixo do lg a foto fica parada. */
-@media (max-width: 63.98rem) { .pfb-abertura-foto { animation: none; } }
-
 /* Computador (a partir do lg), com ou sem a cena (nível leve, janela baixa):
    a lista não tem animação de entrada. No celular o Revelar continua. */
 @media (min-width: 64rem) {
@@ -1453,6 +1450,44 @@ html[data-mv-nivel="leve"] .ts-clima-nevoa { display: none; }
   html:not([data-mv-nivel="leve"]) .pfb-cam-item    { opacity: max(calc(0.6 + 0.4 * var(--on)), var(--juntas)); }
   html:not([data-mv-nivel="leve"]) .pfb-cam-legenda { opacity: clamp(0, (var(--p, 0) - 0.88) / 0.06, 1); }
   html:not([data-mv-nivel="leve"]) .pfb-cam[data-ativo] .pfb-cam-item { will-change: opacity; }
+}
+
+/* ── PFB: capítulos da página do produto ─────────────────────────────────
+   Escala própria de /produtos/pfb (spec 2026-11-07-pfb-experiencia, "Escala"):
+   valor de celular abaixo de 64rem e de computador a partir de 64rem. Os
+   tokens --text-* do site não mudam. A família vem de quem usa (font-serif
+   nos títulos, nomes e números; Inter, a do corpo, no resto). */
+.pfb-h1           { font-size: 1.875rem; line-height: 2.125rem; letter-spacing: -0.01em; text-wrap: balance; }
+.pfb-t1           { font-size: 1.625rem; line-height: 1.9375rem; letter-spacing: -0.005em; text-wrap: balance; }
+.pfb-t2           { font-size: 1.375rem; line-height: 1.625rem; text-wrap: balance; }
+.pfb-t3           { font-size: 1.0625rem; line-height: 1.375rem; }
+.pfb-corpo        { font-size: 1rem; line-height: 1.625rem; text-wrap: pretty; }
+.pfb-legenda      { font-size: 0.875rem; line-height: 1.25rem; }
+.pfb-num-destaque { font-size: 3rem; line-height: 3.25rem; font-variant-numeric: tabular-nums; }
+.pfb-num          { font-size: 2rem; line-height: 2.25rem; font-variant-numeric: tabular-nums; }
+@media (min-width: 64rem) {
+  .pfb-h1           { font-size: 3.5rem; line-height: 3.875rem; }
+  .pfb-t1           { font-size: 2.5rem; line-height: 2.875rem; }
+  .pfb-t2           { font-size: 1.875rem; line-height: 2.25rem; }
+  .pfb-t3           { font-size: 1.25rem; line-height: 1.625rem; }
+  .pfb-corpo        { font-size: 1.0625rem; line-height: 1.75rem; max-width: 60ch; }
+  .pfb-num-destaque { font-size: 4rem; line-height: 4.25rem; }
+  .pfb-num          { font-size: 2.75rem; line-height: 3rem; }
+}
+
+/* Parallax das fotos inteiras (capítulos 1, 6 e 10): a camada da foto passa
+   12 px da caixa em cima e embaixo (-inset-y-3) e anda de -12 a 12 px enquanto
+   a seção atravessa a tela. Só no nível completo, sem movimento reduzido e com
+   animation-timeline; fora disso fica parada, sem transform. */
+@keyframes pfb-parallax { from { transform: translate3d(0, -12px, 0); } to { transform: translate3d(0, 12px, 0); } }
+@media (prefers-reduced-motion: no-preference) {
+  @supports (animation-timeline: view()) {
+    html[data-mv-nivel="completo"] .pfb-parallax {
+      animation: pfb-parallax linear both;
+      animation-timeline: view();
+      animation-range: cover 0% cover 100%;
+    }
+  }
 }
 
 /* ── TechStone: galeria de ideias ─────────────────────────────────────────

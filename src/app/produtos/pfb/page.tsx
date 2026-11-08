@@ -1,17 +1,14 @@
 import type { Metadata } from "next";
 import { SCRIPT_NIVEL } from "@/lib/movimento/nivel";
-import { lerModelosPorLinha } from "@/lib/pfb-modelos";
-import { carregarLugares } from "@/lib/projetos-dados";
 import AberturaPfb from "@/components/pfb/AberturaPfb";
-import CamadasPfb from "@/components/pfb/CamadasPfb";
-import FichaPfb from "@/components/pfb/FichaPfb";
-import LinhasPfb from "@/components/pfb/LinhasPfb";
-import ServePfb from "@/components/pfb/ServePfb";
-import FechamentoPfb from "@/components/pfb/FechamentoPfb";
+import OQueEPfb from "@/components/pfb/OQueEPfb";
+import ManausPfb from "@/components/pfb/ManausPfb";
+import BambuPfb from "@/components/pfb/BambuPfb";
 
 /**
- * /produtos/pfb: a página do produto. Os modelos e os lugares vêm do banco
- * aqui no servidor. Republica a cada 5 min, o mesmo prazo de /projetos.
+ * /produtos/pfb: a página do produto, em capítulos de tela cheia (spec
+ * 2026-11-07-pfb-experiencia). Republica a cada 5 min, o mesmo prazo de
+ * /projetos.
  */
 export const revalidate = 300;
 
@@ -91,10 +88,7 @@ const schemas = [
   { chave: "ld-elegance", dados: produto("Elegance", "Madeira texturizada", "textura de madeira", "elegance-carvalho-natural-orb010.jpeg") },
 ];
 
-export default async function PfbPage() {
-  const [modelos, lugares] = await Promise.all([lerModelosPorLinha(2), carregarLugares()]);
-  // eslint-disable-next-line react-hooks/purity -- hora da geração da página (selo "Novo" dos lugares)
-  const agora = Date.now();
+export default function PfbPage() {
   return (
     <main className="escala-contida pt-20">
       <script id="pfb-nivel" dangerouslySetInnerHTML={{ __html: SCRIPT_NIVEL }} />
@@ -106,11 +100,9 @@ export default async function PfbPage() {
         />
       ))}
       <AberturaPfb />
-      <CamadasPfb />
-      <FichaPfb />
-      <LinhasPfb modelos={modelos} />
-      <ServePfb />
-      <FechamentoPfb lugares={lugares} agora={agora} />
+      <OQueEPfb />
+      <ManausPfb />
+      <BambuPfb />
     </main>
   );
 }
