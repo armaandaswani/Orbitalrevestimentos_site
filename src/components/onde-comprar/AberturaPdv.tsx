@@ -72,7 +72,7 @@ export function AberturaPdv() {
           <br /> vendido em Manaus.
         </p>
       </div>
-      <button type="button" data-pdv-pular className="pdv-ab__pular">
+      <button type="button" data-pdv-pular aria-label="Pular abertura" className="pdv-ab__pular">
         Pular
       </button>
     </>

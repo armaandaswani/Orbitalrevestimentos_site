@@ -372,6 +372,7 @@ function rodarAbertura(sinais = {}, opcoes = {}) {
     temporizadores,
     contagem,
     guardado,
+    documento: contexto.document,
   };
 }
 
@@ -482,6 +483,39 @@ test("clicar em [data-pdv-pular] desliga; outro clique não", () => {
     target: { closest: (sel) => (sel === "[data-pdv-pular]" ? {} : null) },
   });
   assert.equal(r.atributos["data-pdv-abertura"], undefined);
+});
+
+test("clicar no Pular leva o foco ao h1 do main", () => {
+  const r = rodarAbertura({});
+  let focado = null;
+  let seletor = null;
+  r.documento.querySelector = (sel) => {
+    seletor = sel;
+    return { focus: () => (focado = sel) };
+  };
+  r.ouvintes.documento.click.fn({ target: { closest: () => null } });
+  assert.equal(focado, null);
+  r.ouvintes.documento.click.fn({ target: { closest: (sel) => (sel === "[data-pdv-pular]" ? {} : null) } });
+  assert.equal(seletor, "main h1");
+  assert.equal(focado, "main h1");
+});
+
+test("pointerdown no Pular agenda o foco no h1 (depois do mousedown); fora dele, não", () => {
+  const fora = rodarAbertura({});
+  fora.ouvintes.janela.pointerdown.fn({ target: { closest: () => null } });
+  assert.equal(fora.atributos["data-pdv-abertura"], undefined);
+  assert.equal(fora.temporizadores.length, 1);
+
+  const r = rodarAbertura({});
+  let focado = false;
+  r.documento.querySelector = () => ({ focus: () => (focado = true) });
+  r.ouvintes.janela.pointerdown.fn({ target: { closest: (sel) => (sel === "[data-pdv-pular]" ? {} : null) } });
+  assert.equal(r.atributos["data-pdv-abertura"], undefined);
+  assert.equal(r.temporizadores.length, 2);
+  assert.equal(r.temporizadores[1].ms, 0);
+  assert.equal(focado, false);
+  r.temporizadores[1].fn();
+  assert.equal(focado, true);
 });
 
 test("o desligamento remove o atributo uma vez só", () => {

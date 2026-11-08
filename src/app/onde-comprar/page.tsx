@@ -55,7 +55,8 @@ export default async function OndeComprarPage() {
       {/* Liga data-pdv-abertura no <html> antes da primeira pintura (ou não liga: ?loja=, movimento reduzido, rede ou aparelho fracos, já tocou). */}
       <script id="pdv-abertura" dangerouslySetInnerHTML={{ __html: SCRIPT_ABERTURA_PDV }} />
       <div className="ds-wrap pb-2 pt-7 lg:pb-8 lg:pt-14">
-        <h1 className="font-serif text-t1 font-normal tracking-[-0.02em] text-primary">{TITULO_PDV}</h1>
+        {/* tabIndex -1: o "Pular" da abertura devolve o foco aqui. */}
+        <h1 tabIndex={-1} className="font-serif text-t1 font-normal tracking-[-0.02em] text-primary focus:outline-none">{TITULO_PDV}</h1>
         <p className="mt-3 max-w-[34ch] text-lead text-on-surface">{subtituloPdv(pontos.length)}</p>
       </div>
       <div className="lg:ds-wrap lg:grid lg:grid-cols-[minmax(0,1fr)_minmax(0,1fr)] lg:items-start lg:gap-12 lg:pb-24">

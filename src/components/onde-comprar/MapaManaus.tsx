@@ -1,3 +1,4 @@
+import type { CSSProperties } from "react";
 import {
   ALTURA_MAPA,
   LARGURA_MAPA,
@@ -108,7 +109,8 @@ export function MapaManaus({ pontos }: { pontos: PontoDeVenda[] }) {
         ))}
       </div>
 
-      {pinos.map((p) => (
+      {/* --i e --n: ordem da queda na abertura (globals.css, "Onde comprar: abertura"); sem a abertura não fazem nada. */}
+      {pinos.map((p, i) => (
         <a
           key={p.slug}
           href={`?loja=${encodeURIComponent(p.slug)}`}
@@ -116,7 +118,7 @@ export function MapaManaus({ pontos }: { pontos: PontoDeVenda[] }) {
           tabIndex={-1}
           aria-hidden="true"
           className="absolute grid h-11 w-11 -translate-x-1/2 -translate-y-full place-items-start [[data-pdv-transicao]_&]:transition-opacity data-[pdv-apagado]:opacity-35 data-[pdv-ativo]:z-[56] justify-items-center after:absolute after:bottom-0 after:left-1/2 after:-z-10 after:h-2.5 after:w-2.5 after:-translate-x-1/2 after:-translate-y-px after:rotate-45 after:bg-surface-container-lowest after:shadow-[2px_2px_2px_rgba(11,31,69,0.18)]"
-          style={posicao(p.x, p.y)}
+          style={{ ...posicao(p.x, p.y), "--i": i, "--n": pinos.length } as CSSProperties}
         >
           {/* SVG da marca de 36 px em disco branco (o desenho aprovado); o 44 do atributo é a caixa do alvo de toque. */}
           {/* eslint-disable-next-line @next/next/no-img-element */}

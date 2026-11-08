@@ -382,7 +382,11 @@ export function deveTocarAbertura(s: SinaisAbertura): boolean {
  * pintura. Quando liga, grava a chave no sessionStorage antes; se gravar
  * lançar, não liga. Tira o atributo uma vez só: ao fim de
  * `DURACAO_ABERTURA_MS`, no primeiro pointerdown, keydown ou scroll e no clique
- * em `[data-pdv-pular]`. Os valores entram por concatenação para a string e o
+ * em `[data-pdv-pular]`. Acionar o Pular também leva o foco ao `h1` do <main>
+ * (que tem tabIndex -1), para o foco não cair no <body> quando o botão some:
+ * pelo teclado, no clique; pelo ponteiro, logo depois do pointerdown (com
+ * setTimeout 0, depois do mousedown que focaria o botão; o clique do mouse já
+ * não chega ao botão, que sumiu). Os valores entram por concatenação para a string e o
  * módulo nunca divergirem. Se mudar `deveTocarAbertura`, mude esta string; o
  * teste confere.
  */
@@ -392,9 +396,11 @@ export const SCRIPT_ABERTURA_PDV =
   "',A='data-pdv-abertura',t=c&&c.effectiveType,m=n.deviceMemory,k=n.hardwareConcurrency," +
   "no=/[?&]loja=[^&]/.test(location.search)||w.matchMedia('(prefers-reduced-motion: reduce)').matches||w.matchMedia('(prefers-reduced-data: reduce)').matches||!!(c&&c.saveData===true)||!!s[K]||t==='slow-2g'||t==='2g'||t==='3g'||(m!==undefined&&(m<4||(k!==undefined&&k<=4)));" +
   "if(no)return;s[K]='1';h.setAttribute(A,'1');" +
-  "var on=true,off=function(){if(!on)return;on=false;h.removeAttribute(A);},o={once:true,passive:true};" +
+  "var on=true,off=function(){if(!on)return;on=false;h.removeAttribute(A);},o={once:true,passive:true}," +
+  "pu=function(e){var x=e&&e.target;return!!(x&&x.closest&&x.closest('[data-pdv-pular]'));}," +
+  "fo=function(){var f=d.querySelector&&d.querySelector('main h1');if(f&&f.focus)f.focus();};" +
   "w.setTimeout(off," +
   DURACAO_ABERTURA_MS +
-  ");w.addEventListener('pointerdown',off,o);w.addEventListener('keydown',off,o);w.addEventListener('scroll',off,o);" +
-  "d.addEventListener('click',function(e){var x=e.target;if(x&&x.closest&&x.closest('[data-pdv-pular]'))off();});" +
+  ");w.addEventListener('pointerdown',function(e){off();if(pu(e))w.setTimeout(fo,0);},o);w.addEventListener('keydown',off,o);w.addEventListener('scroll',off,o);" +
+  "d.addEventListener('click',function(e){if(pu(e)){off();fo();}});" +
   "}catch(e){}})();";

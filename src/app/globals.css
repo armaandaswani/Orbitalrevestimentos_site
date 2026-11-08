@@ -726,31 +726,39 @@ html[data-intro="1"] .intro-orbita {
    3,8 s (DURACAO_ABERTURA_MS), no primeiro toque, tecla ou rolagem e no
    "Pular". Tirar o atributo corta direto para a página parada (a camada some
    com display: none), e é o mesmo quadro em que a sequência termina sozinha:
-   tudo assenta até 3,45 s, com folga para o atraso entre o script e a
+   tudo assenta até 3,3 s, com folga para o atraso entre o script e a
    primeira pintura. Só transform e opacity animam; o will-change só vale
    enquanto o atributo existe.
-   Sequência: o continente surge 0–0,6 s; a Amazônia acende 0,7–1,3 s; o
-   marcador de Manaus aparece 1,0–1,3 s; a câmera aproxima em Manaus
-   1,4–2,6 s; a camada some sobre o mapa real 2,2–2,7 s; os pinos caem um a
-   um a partir de 2,6 s, 150 ms entre eles (4 lojas: até 3,45 s). A linha de
-   texto pinta na primeira pintura e só sobe 8 px: o LCP continua o título. */
+   Sequência (na ordem do desenho): o continente surge 0–0,6 s; a Amazônia
+   acende 0,7–1,3 s; o marcador de Manaus aparece 1,0–1,3 s; a câmera
+   aproxima em Manaus a partir de 1,4 s; os pontos e a linha apagam 2,0–2,3 s
+   (os pontos nunca aparecem ampliados sobre o mapa); só então o fundo liso
+   com o marcador dissolve para o mapa real, 2,3–2,7 s; os pinos caem um a um
+   de 2,6 s a 3,3 s, qualquer que seja o número de lojas (--i e --n postos
+   por pino no MapaManaus). A linha de texto pinta na primeira pintura e só
+   sobe 8 px: o LCP continua o título.
+   inset tem o par top/right/bottom/left ao lado para o Safari 14.0. */
 .pdv-ab,
 .pdv-ab__pular { display: none; }
 html[data-pdv-abertura="1"] .pdv-ab {
   display: block;
   position: absolute;
+  top: 0;
+  right: 0;
+  bottom: 0;
+  left: 0;
   inset: 0;
   z-index: 1;
   overflow: hidden;
   contain: strict;
   background: var(--color-primary);
   will-change: opacity;
-  animation: pdv-ab-sai 500ms var(--mv-percurso) 2200ms both;
+  animation: pdv-ab-sai 400ms var(--mv-percurso) 2300ms both;
 }
 .pdv-ab__camera,
 .pdv-ab__alvo,
 .pdv-ab__terra,
-.pdv-ab__amazonia { position: absolute; inset: 0; width: 100%; height: 100%; }
+.pdv-ab__amazonia { position: absolute; top: 0; right: 0; bottom: 0; left: 0; inset: 0; width: 100%; height: 100%; }
 .pdv-ab__terra,
 .pdv-ab__amazonia { display: block; overflow: visible; }
 .pdv-ab__terra path,
@@ -759,11 +767,12 @@ html[data-pdv-abertura="1"] .pdv-ab {
 .pdv-ab__amazonia path { stroke: var(--color-secondary); stroke-width: 5.6; }
 html[data-pdv-abertura="1"] .pdv-ab__camera {
   transform-origin: var(--pdv-mx) var(--pdv-my);
-  will-change: transform;
-  animation: pdv-ab-camera 2600ms linear both;
+  will-change: transform, opacity;
+  /* Os pontos apagam 2,0–2,3 s, antes de a camada dissolver: nunca aparecem ampliados sobre o mapa. */
+  animation: pdv-ab-camera 2600ms linear both, pdv-ab-apaga 300ms ease-in 2000ms both;
 }
-html[data-pdv-abertura="1"] .pdv-ab__terra { will-change: opacity; animation: pdv-ab-surge 600ms ease-out both; }
-html[data-pdv-abertura="1"] .pdv-ab__amazonia { will-change: opacity; animation: pdv-ab-surge 600ms ease-out 700ms both; }
+html[data-pdv-abertura="1"] .pdv-ab__terra { animation: pdv-ab-surge 600ms ease-out both; }
+html[data-pdv-abertura="1"] .pdv-ab__amazonia { animation: pdv-ab-surge 600ms ease-out 700ms both; }
 html[data-pdv-abertura="1"] .pdv-ab__alvo { will-change: transform, opacity; animation: pdv-ab-alvo 2600ms linear both; }
 .pdv-ab__manaus {
   position: absolute;
@@ -796,7 +805,9 @@ html[data-pdv-abertura="1"] .pdv-ab__alvo { will-change: transform, opacity; ani
   color: #fff;
 }
 @media (min-width: 1024px) { .pdv-ab__linha { left: 1.5rem; bottom: 1.5rem; font-size: 1.375rem; } }
-html[data-pdv-abertura="1"] .pdv-ab__linha { animation: pdv-ab-linha 600ms var(--mv-chegada) 150ms both; }
+html[data-pdv-abertura="1"] .pdv-ab__linha {
+  animation: pdv-ab-linha 600ms var(--mv-chegada) 150ms both, pdv-ab-apaga 200ms ease-in 2000ms both;
+}
 /* O "Pular" fica fora da camada aria-hidden: botão real, focável, 44 × 44 no mínimo. */
 html[data-pdv-abertura="1"] .pdv-ab__pular {
   display: inline-flex;
@@ -814,18 +825,18 @@ html[data-pdv-abertura="1"] .pdv-ab__pular {
   font: 500 0.9375rem/1 var(--font-sans);
   color: rgba(255, 255, 255, 0.85);
   cursor: pointer;
-  animation: pdv-ab-sai 500ms var(--mv-percurso) 2200ms both;
+  animation: pdv-ab-sai 400ms var(--mv-percurso) 2300ms both;
 }
 html[data-pdv-abertura="1"] .pdv-ab__pular:focus-visible { outline: 2px solid #fff; outline-offset: -6px; }
-/* Os pinos caem um a um só dentro da abertura (pelo link ?loja= o atributo nunca existe). */
-html[data-pdv-abertura="1"] [data-pdv-pino] { animation: pdv-ab-pino 400ms cubic-bezier(0.3, 1.4, 0.5, 1) 2600ms both; }
-html[data-pdv-abertura="1"] [data-pdv-pino]:nth-of-type(2) { animation-delay: 2750ms; }
-html[data-pdv-abertura="1"] [data-pdv-pino]:nth-of-type(3) { animation-delay: 2900ms; }
-html[data-pdv-abertura="1"] [data-pdv-pino]:nth-of-type(4) { animation-delay: 3050ms; }
-html[data-pdv-abertura="1"] [data-pdv-pino]:nth-of-type(5) { animation-delay: 3200ms; }
-html[data-pdv-abertura="1"] [data-pdv-pino]:nth-of-type(n + 6) { animation-delay: 3350ms; }
+/* Os pinos caem um a um só dentro da abertura (pelo link ?loja= o atributo nunca existe).
+   O pino i de n começa em 2,6 s + 300 ms × i/(n − 1): o último sempre começa
+   aos 2,9 s e assenta aos 3,3 s, com 1 ou com 20 lojas. */
+html[data-pdv-abertura="1"] [data-pdv-pino] {
+  animation: pdv-ab-pino 400ms cubic-bezier(0.3, 1.4, 0.5, 1) calc(2600ms + 300ms * var(--i, 0) / max(var(--n, 1) - 1, 1)) both;
+}
 
 @keyframes pdv-ab-surge { from { opacity: 0; } }
+@keyframes pdv-ab-apaga { to { opacity: 0; } }
 @keyframes pdv-ab-sai { to { opacity: 0; visibility: hidden; } }
 @keyframes pdv-ab-linha { from { transform: translateY(8px); } }
 /* 2,6 s: chega de 0,94 a 1 (0–0,6 s), para, e aproxima 6× em Manaus
