@@ -17,13 +17,25 @@
  * e sai com código 1 se alguma verificação não terminar em "ok" ("não verificado"
  * conta como falha).
  *
+ * A Etapa 2 verifica, além do catálogo, do SEO, dos redirecionamentos e do sitemap,
+ * a página /produtos/pfb em 11 capítulos (spec 2026-11-07-pfb-experiencia,
+ * Verificação 2): os capítulos na ordem e com o título dentro; a altura de cada um
+ * ao carregar, com movimento completo e reduzido (390 × 844, 390 × 664 e 1440 × 900);
+ * lâminas, nomes e cartas do leque no estado final com movimento reduzido, sem
+ * JavaScript, no nível leve e na chegada por âncora (#tecnologia, #linhas, #ficha);
+ * sem rolagem lateral em todas as larguras e com o leque a meio caminho; os blocos
+ * do capítulo 9 um por vez; os botões de hora do capítulo 5; a área livre do chat nos
+ * capítulos de foto (1, 6 e 10) e o painel deles sem corte em janelas baixas; os
+ * links do catálogo; os lugares do capítulo 11; texto proibido (o \bmdf\b não vale
+ * nos alt de section#agua) e o JavaScript transferido.
+ *
  * Proteções ligadas em todo contexto de navegador, sem opção para desligar:
  *   1. Corte das análises: os pedidos ao GA4, ao Meta Pixel, ao Vercel Analytics e ao
  *      Speed Insights são abortados, para nenhum teste mandar visita ou evento a eles.
  *      O gtag de linha do layout continua empurrando para window.dataLayer, que é o
  *      que as conferências de evento leem.
- *   2. Nível completo: deviceMemory e hardwareConcurrency valem 8 (o caso "Nível
- *      leve" da Etapa 2 pede memória 2 pelo próprio novoContexto).
+ *   2. Nível completo: deviceMemory e hardwareConcurrency valem 8 (o caso "Estado
+ *      final … no nível leve" da Etapa 2 pede memória 2 pelo próprio novoContexto).
  *   3. Sem cortina: orbital-intro=1 no sessionStorage.
  */
 import { execFileSync } from "node:child_process";
@@ -32,7 +44,6 @@ import fs from "node:fs";
 import path from "node:path";
 import { fileURLToPath } from "node:url";
 import { catalogoPath, normalizeProductCode, CATALOGO_PATH } from "../src/lib/product-link.ts";
-import { inicioDoPasso } from "../src/lib/movimento/camadas.ts";
 
 // playwright-core vem do runtime da caixa de ferramentas de web design, como em
 // scripts/medir-movimento.mjs (não é dependência do projeto).
@@ -503,12 +514,16 @@ function lerTextos(page, texto) {
       copia.querySelectorAll("[data-texto-banco], script, style").forEach((n) => n.remove());
       textoModal = copia.textContent ?? "";
     }
+    // Os alt das fotos do teste de água (section#agua img) vão à parte: lá o MDF é
+    // nomeado por decisão do dono (D2), e só eles ficam fora do \bmdf\b.
     const atributos = [];
+    const atributosAgua = [];
     for (const el of document.querySelectorAll("[alt], [aria-label], [title]")) {
       if (el.closest("[data-texto-banco]") !== null) continue;
+      const daAgua = el.matches("section#agua img");
       for (const a of ["alt", "aria-label", "title"]) {
         const v = el.getAttribute(a);
-        if (v) atributos.push(`${a}="${v}"`);
+        if (v) (daAgua && a === "alt" ? atributosAgua : atributos).push(`${a}="${v}"`);
       }
     }
     return {
@@ -518,6 +533,7 @@ function lerTextos(page, texto) {
       ldVazios: lds.filter((l) => l.trim() === "").length,
       textoModal,
       atributos,
+      atributosAgua,
       titulo: document.title,
       ld: lds.join("\n"),
     };
@@ -536,21 +552,23 @@ function fontesVazias(t, texto) {
 }
 
 function procurarProibidos(t, texto) {
+  const semMdf = texto.palavras.filter((re) => String(re) !== String(/\bmdf\b/i));
   const fontes = [
-    ["main", t.textoMain],
-    ["atributos", t.atributos.join("\n")],
-    ["document.title", t.titulo],
-    [texto.nomeLd, t.ld],
+    ["main", t.textoMain, texto.palavras],
+    ["atributos", t.atributos.join("\n"), texto.palavras],
+    ["alt de section#agua img", t.atributosAgua.join("\n"), semMdf],
+    ["document.title", t.titulo, texto.palavras],
+    [texto.nomeLd, t.ld, texto.palavras],
   ];
   const trecho = (s, i) => s.slice(Math.max(0, i - 40), i + 40).replace(/\s+/g, " ");
   const achados = [];
-  for (const [fonte, conteudo] of fontes) {
+  for (const [fonte, conteudo, palavras] of fontes) {
     const baixo = conteudo.toLowerCase();
     for (const termo of texto.proibidos) {
       const i = baixo.indexOf(termo.toLowerCase());
       if (i >= 0) achados.push(`"${termo}" em ${fonte} (…${trecho(conteudo, i)}…)`);
     }
-    for (const re of texto.palavras) {
+    for (const re of palavras) {
       const m = re.exec(conteudo);
       if (m) achados.push(`"${m[0]}" (palavra inteira) em ${fonte} (…${trecho(conteudo, m.index)}…)`);
     }
@@ -995,93 +1013,126 @@ async function etapa1Navegador(browser, produtos, etapa) {
 // ── Verificações da Etapa 2 no navegador: a página /produtos/pfb ────────────
 
 const LINHAS_PFB = ["Classic", "Brilliance", "Elegance"];
-const PASSOS_P = Array.from({ length: 11 }, (_, i) => i / 10);
-const rotuloP = (p) => `p${String(Math.round(p * 100)).padStart(3, "0")}`;
-const fmtP = (p) => p.toFixed(1).replace(".", ",");
-// Folga de arredondamento das opacidades calculadas (0,6 pode voltar como 0,5999…).
-const TOL = 1e-3;
-const ESPERA_CENA_MS = 600;
+/** Os 11 capítulos de /produtos/pfb, na ordem da Tabela da spec (o `id` e o `data-capitulo` de cada `section`). */
+const CAPITULOS = ["abertura", "o-que-e", "tecnologia", "ficha", "agua", "manaus", "linhas", "instalador", "onde-usar", "bambu", "como-pedir"];
+/** Teto de altura de cada capítulo ao carregar (Global Constraints, "Orçamento de altura"; o como-pedir abaixo de 1024 de largura: P1). */
+const TETO = { celular: 680, computador: 820, comoPedirCelular: 900 };
+/** Estado final do leque (components/pfb/LinhasPfb, CARTAS): giro em graus e deslocamento em px de cada carta, da esquerda para a direita. */
+const GIRO = [-16, -8, 0, 8, 16];
+const DESLOCA = [-80, -40, 0, 40, 80];
+/** O deslocamento é multiplicado por --escala (1,4) a partir de 1024 px de largura (o lg do Tailwind, 64rem). */
+const ESCALA_LEQUE = 1.4;
+const LARGURA_LG = 1024;
+/** Seis lâminas (pfb-anatomia-recortes.json) e cinco nomes no capítulo 3; cinco cartas no 7. */
+const QUANTOS = { laminas: 6, nomes: 5, cartas: 5 };
+/** iPhone com as barras do Safari (Review Focus 1). */
+const CELULAR_BAIXO = [390, 664];
+/** Capítulos de foto com painel de texto (1, 6 e 10): área livre do chat e painel sem corte. */
+const CAPITULOS_FOTO = ["abertura", "manaus", "bambu"];
+/** Lado do quadrado livre para o botão do chat, no canto inferior direito da seção (Global Constraints). */
+const AREA_CHAT = 88;
+/** Janelas baixas em que o painel dos capítulos de foto não pode ser cortado (ruling da Tarefa 2 no ledger). */
+const JANELAS_BAIXAS = [
+  [1024, 768],
+  [1280, 720],
+  [1366, 768],
+  [320, 568],
+];
 
-/** Vai à página e espera o load e uma folga para a hidratação. */
-async function irAPagina(page, caminho = PFB_PATH) {
-  await page.goto(url(caminho));
-  await page.locator("section#tecnologia").waitFor({ state: "attached" });
-  await dormir(500);
-}
-
-/** Auxiliar único de "rolar até p": topo + p × (altura − innerHeight), sem rolagem suave. */
-async function rolarAteP(page, p) {
-  await page.evaluate((q) => {
-    const r = document.querySelector("section#tecnologia").getBoundingClientRect();
-    window.scrollTo({ top: r.top + scrollY + q * (r.height - innerHeight), behavior: "instant" });
-  }, p);
-}
-
-/** Rola até o topo da página, até o meio da seção 2 no meio da tela ou até o fim da seção 2 no fim da tela. */
-async function rolarSecao(page, onde) {
-  await page.evaluate((o) => {
-    const r = document.querySelector("section#tecnologia").getBoundingClientRect();
-    const topo = r.top + scrollY;
-    const alvo = o === "topo-da-pagina" ? 0 : o === "meio" ? topo + r.height / 2 - innerHeight / 2 : topo + r.height - innerHeight;
-    window.scrollTo({ top: Math.max(0, alvo), behavior: "instant" });
-  }, onde);
-}
-
-/** Tudo o que as conferências da cena leem, numa leitura só. */
-function medirCena(page) {
-  return page.evaluate(() => {
-    const sec = document.querySelector("section#tecnologia");
-    const r = sec.getBoundingClientRect();
-    const op = (el) => (el ? Number(getComputedStyle(el).opacity) : null);
-    const itens = [...document.querySelectorAll("ol.pfb-cam-lista > li")].map((li) => {
-      const ri = li.getBoundingClientRect();
-      return {
-        liOp: op(li),
-        itemOp: op(li.querySelector(".pfb-cam-item")),
-        top: ri.top,
-        bottom: ri.bottom,
-        left: ri.left,
-        right: ri.right,
-        topoPagina: ri.top + scrollY,
-        classe: li.className,
-      };
-    });
-    const g = (i) => document.querySelector(`g.pfb-cam-g[data-indice="${i}"]`)?.getBoundingClientRect().top ?? null;
-    const lista = document.querySelector("ol.pfb-cam-lista")?.getBoundingClientRect();
-    const quadro = document.querySelector(".pfb-cam-quadro")?.getBoundingClientRect();
-    // Borda de baixo do cabeçalho mostrado: o cabeçalho se esconde ao descer e volta ao subir,
-    // então vale a maior entre a posição atual e a altura dele (a borda quando ele está no topo).
-    const cabEl = document.querySelector("header[data-site]");
-    const cab = cabEl ? Math.max(cabEl.getBoundingClientRect().bottom, cabEl.offsetHeight) : null;
-    return {
-      cabecalhoAltura: cabEl ? cabEl.getBoundingClientRect().height : null,
-      ehPfbCam: sec.matches("section.pfb-cam"),
-      altura: r.height,
-      ih: innerHeight,
-      iw: innerWidth,
-      sw: document.documentElement.scrollWidth,
-      p: sec.style.getPropertyValue("--p") || "(sem --p)",
-      itens,
-      g0: g(0),
-      g4: g(4),
-      legendaOp: op(document.querySelector("p.pfb-cam-legenda")),
-      listaBottom: lista ? lista.bottom : null,
-      quadroBottom: quadro ? quadro.bottom : null,
-      cabecalhoBottom: cab,
-      nivel: document.documentElement.dataset.mvNivel ?? null,
-    };
-  });
-}
-
+const tetoDe = (id, largura) => (largura >= LARGURA_LG ? TETO.computador : id === "como-pedir" ? TETO.comoPedirCelular : TETO.celular);
 const r1 = (n) => (n === null || n === undefined ? "?" : Math.round(n * 10) / 10);
 /** "Abaixo do cabeçalho" só mede com header[data-site] presente e com altura: sem ele a conferência falha, não usa 0. */
 const temCabecalho = (altura) => typeof altura === "number" && altura > 0;
-const cenaAtiva = (m) => Math.abs(m.altura - 4 * m.ih) <= 2;
-const textoAltura = (m) => `altura ${r1(m.altura)} px, innerHeight ${m.ih} (4 × = ${4 * m.ih}; 2 × = ${2 * m.ih})`;
-const produtos5 = (m) => m.itens.map((it) => it.liOp * it.itemOp);
-const textoOps = (m) => m.itens.map((it) => `${r1(it.liOp)}×${r1(it.itemOp)}`).join(" ");
-/** Todos os itens com opacidade 1 no li e no .pfb-cam-item de dentro. */
-const todosOpacos = (m) => m.itens.length === 5 && m.itens.every((it) => it.liOp >= 1 - TOL && it.itemOp >= 1 - TOL);
+
+/** Vai à página e espera o load e uma folga para a hidratação. */
+async function irAPagina(page, caminho = PFB_PATH, folga = 500) {
+  await page.goto(url(caminho));
+  await page.locator("section#tecnologia").waitFor({ state: "attached" });
+  await dormir(folga);
+}
+
+/** Rola, sem rolagem suave, até o meio do elemento ficar no meio da tela. */
+async function rolarAoMeio(page, seletor) {
+  await page.evaluate((s) => {
+    const r = document.querySelector(s).getBoundingClientRect();
+    window.scrollTo({ top: Math.max(0, r.top + scrollY + r.height / 2 - innerHeight / 2), behavior: "instant" });
+  }, seletor);
+}
+
+/** Rola até a seção ocupar a tela: o fim dela no fim da tela (a abertura fica no topo da página). */
+async function rolarAteOcupar(page, id) {
+  await page.evaluate((i) => {
+    if (i === "abertura") return window.scrollTo({ top: 0, behavior: "instant" });
+    const r = document.getElementById(i).getBoundingClientRect();
+    window.scrollTo({ top: Math.max(0, r.bottom + scrollY - innerHeight), behavior: "instant" });
+  }, id);
+}
+
+/**
+ * Os dois momentos especiais numa leitura só: de cada `.pfb-lamina`, `.pfb-nome` e
+ * `.pfb-leque-carta`, o `transform` e a `opacity` calculados e se há animação
+ * rodando nele (`getAnimations().length > 0`).
+ */
+function medirMovimento(page) {
+  return page.evaluate(() => {
+    const ler = (seletor) =>
+      [...document.querySelectorAll(seletor)].map((el) => {
+        const cs = getComputedStyle(el);
+        return { transform: cs.transform, opacidade: Number(cs.opacity), anima: typeof el.getAnimations === "function" && el.getAnimations().length > 0 };
+      });
+    return { laminas: ler(".pfb-lamina"), nomes: ler(".pfb-nome"), cartas: ler(".pfb-leque-carta") };
+  });
+}
+
+/** [a, b, c, d, e, f] de um transform calculado ("none", matrix(…) ou matrix3d(…)); null se não der para ler. */
+function matriz(transform) {
+  if (!transform || transform === "none") return [1, 0, 0, 1, 0, 0];
+  const n = transform.slice(transform.indexOf("(") + 1, transform.lastIndexOf(")")).split(",").map(Number);
+  if (n.some((v) => !Number.isFinite(v))) return null;
+  if (transform.startsWith("matrix3d(") && n.length === 16) return [n[0], n[1], n[4], n[5], n[12], n[13]];
+  if (transform.startsWith("matrix(") && n.length === 6) return n;
+  return null;
+}
+
+/** matrix(cos r, sin r, −sin r, cos r, x·cos r, x·sin r): rotate(r) e depois translateX(x), a ordem do ruling P8. */
+function cartaEsperada(i, largura) {
+  const r = (GIRO[i] * Math.PI) / 180;
+  const x = DESLOCA[i] * (largura >= LARGURA_LG ? ESCALA_LEQUE : 1);
+  return [Math.cos(r), Math.sin(r), -Math.sin(r), Math.cos(r), x * Math.cos(r), x * Math.sin(r)];
+}
+
+/** Tolerância 0,01 nos quatro primeiros termos e 0,5 px na translação. */
+const perto = (m, e) => m !== null && m.every((v, k) => Math.abs(v - e[k]) <= (k < 4 ? 0.01 : 0.5));
+const cartaNoFinal = (c, i, largura) => perto(matriz(c.transform), cartaEsperada(i, largura));
+const IDENTIDADE = [1, 0, 0, 1, 0, 0];
+
+/**
+ * Estado final dos dois momentos especiais: cada lâmina com matriz identidade e
+ * opacidade 1 (tolerância 0,01), cada nome com opacidade ≥ 0,99 e cada carta i com
+ * a matriz de `cartaEsperada` (0,01 e 0,5 px), nas quantidades de `QUANTOS`.
+ */
+function estaNoFinal(m, largura) {
+  const falhas = [];
+  for (const [chave, n] of Object.entries(QUANTOS)) {
+    if (m[chave].length !== n) falhas.push(`${m[chave].length} ${chave} (esperado ${n})`);
+  }
+  m.laminas.forEach((l, i) => {
+    if (!(perto(matriz(l.transform), IDENTIDADE) && Math.abs(l.opacidade - 1) <= 0.01)) falhas.push(`lâmina ${i}: ${l.transform}, opacidade ${l.opacidade}`);
+  });
+  m.nomes.forEach((n, i) => {
+    if (!(n.opacidade >= 0.99)) falhas.push(`nome ${i}: opacidade ${n.opacidade}`);
+  });
+  m.cartas.forEach((c, i) => {
+    if (!cartaNoFinal(c, i, largura)) falhas.push(`carta ${i}: ${c.transform} (esperado matrix(${cartaEsperada(i, largura).map((v) => v.toFixed(3)).join(", ")}))`);
+  });
+  const animando = [...m.laminas, ...m.nomes, ...m.cartas].filter((x) => x.anima).length;
+  return {
+    ok: falhas.length === 0,
+    detalhe: falhas.length
+      ? falhas.join("; ")
+      : `${m.laminas.length} lâminas, ${m.nomes.length} nomes e ${m.cartas.length} cartas no estado final (${animando} com animação)`,
+  };
+}
 
 /** Captura da Etapa 2: <saida>/pfb-<estado>-<L>x<A>.png. */
 const capturarPfb = (page, estado, dim) => capturar(page, `pfb-${estado}`, dim);
@@ -1107,26 +1158,8 @@ async function linksVisiveis(page, seletor) {
   return saida;
 }
 
-/** Conferência da cena num ponto p (1440 × 900 e fallback): piso 0,6, item na tela, camadas e legenda. */
-function conferirPonto(m, p, { exigeNaTela = true, exigeQuadro = false } = {}) {
-  const falhas = [];
-  const prods = produtos5(m);
-  if (m.itens.length !== 5) falhas.push(`${m.itens.length} itens na lista (esperado 5)`);
-  const minimo = Math.min(...prods);
-  if (!(minimo >= 0.6 - TOL)) falhas.push(`produto das opacidades mínimo ${minimo.toFixed(3)} (esperado ≥ 0,6)`);
-  if (exigeNaTela) {
-    const fora = m.itens.flatMap((it, i) => (it.top < 0 || it.bottom > m.ih ? [`item ${i} em [${r1(it.top)}, ${r1(it.bottom)}]`] : []));
-    if (fora.length) falhas.push(`fora de [0, ${m.ih}]: ${fora.join(", ")}`);
-  }
-  if (exigeQuadro && !(m.listaBottom <= m.quadroBottom)) falhas.push(`lista termina em ${r1(m.listaBottom)}, quadro em ${r1(m.quadroBottom)}`);
-  if (Math.abs(p - 0.5) < 1e-9 && !(m.g4 - m.g0 >= 200)) falhas.push(`camada 0 só ${r1(m.g4 - m.g0)} px acima da 4 (esperado ≥ 200)`);
-  if (Math.abs(p - 1) < 1e-9 && !(m.legendaOp >= 1 - TOL)) falhas.push(`legenda com opacidade ${m.legendaOp} (esperado 1)`);
-  let resumo = `--p ${m.p}; opacidades li×item ${textoOps(m)} (mín ${minimo.toFixed(2)})`;
-  if (exigeQuadro) resumo += `; lista ${r1(m.listaBottom)} ≤ quadro ${r1(m.quadroBottom)}`;
-  if (Math.abs(p - 0.5) < 1e-9) resumo += `; camada 0 ${r1(m.g4 - m.g0)} px acima da 4`;
-  if (Math.abs(p - 1) < 1e-9) resumo += `; legenda ${m.legendaOp}`;
-  return { ok: falhas.length === 0, detalhe: falhas.length ? `${falhas.join("; ")} (${resumo})` : resumo };
-}
+/** Resultado de uma lista de falhas: ok sem nenhuma, e o resumo sempre no detalhe. */
+const comFalhas = (falhas, resumo) => ({ ok: falhas.length === 0, detalhe: falhas.length ? `${falhas.join("; ")} (${resumo})` : resumo });
 
 /** Nome do chunk depois de static/chunks/ (o manifesto guarda "static/chunks/x.js" e "/_next/static/chunks/x.js"). */
 const nomeDoChunk = (s) => s.replace(/^.*static\/chunks\//, "");
@@ -1162,186 +1195,338 @@ function provarExclusao(rota, fora) {
   };
 }
 
-async function etapa2Navegador(browser, produtos) {
-  // Em cada largura: rolagem lateral, #tecnologia e #ficha, "Ver os modelos" e os três links de linha.
+async function etapa2Navegador(browser) {
+  // Em cada largura: rolagem lateral, #ficha, "Ver os modelos" e os três links de linha.
   const linhasEsperadas = LINHAS_PFB.map((l) => catalogoPath({ linha: l }));
   for (const dim of LARGURAS) {
-    await verificar(`${PFB_PATH}: sem rolagem lateral, #tecnologia (section.pfb-cam) e #ficha, "Ver os modelos" e os três links de linha`, dim, () =>
+    await verificar(`${PFB_PATH}: sem rolagem lateral, #ficha, "Ver os modelos" e os três links de linha`, dim, () =>
       comContexto(browser, dim, {}, async (page) => {
         await irAPagina(page);
         const m = await page.evaluate(() => ({
           sw: document.documentElement.scrollWidth,
           iw: innerWidth,
-          tec: document.querySelector("#tecnologia")?.matches("section.pfb-cam") ?? null,
           ficha: document.querySelector("#ficha") !== null,
         }));
         const verModelos = await linksVisiveis(page, '[data-teste="ver-modelos"]');
         const verLinha = await linksVisiveis(page, '[data-teste="ver-linha"]');
         await capturarPfb(page, "pagina", dim);
         const linhasOk = verLinha.length === 3 && [...verLinha].sort().join() === [...linhasEsperadas].sort().join();
-        const ok = m.sw <= m.iw && m.tec === true && m.ficha && verModelos.length >= 1 && verModelos.every((h) => h === CATALOGO_PATH) && linhasOk;
+        const ok = m.sw <= m.iw && m.ficha && verModelos.length >= 1 && verModelos.every((h) => h === CATALOGO_PATH) && linhasOk;
         return {
           ok,
-          detalhe: `scrollWidth ${m.sw} / innerWidth ${m.iw}; #tecnologia ${m.tec === null ? "ausente" : m.tec ? "é section.pfb-cam" : "não é section.pfb-cam"}; #ficha ${m.ficha ? "presente" : "ausente"}; "Ver os modelos" visíveis: ${verModelos.join(", ") || "nenhum"} (esperado ${CATALOGO_PATH}); links de linha visíveis: ${verLinha.join(", ") || "nenhum"} (esperado ${linhasEsperadas.join(", ")})`,
+          detalhe: `scrollWidth ${m.sw} / innerWidth ${m.iw}; #ficha ${m.ficha ? "presente" : "ausente"}; "Ver os modelos" visíveis: ${verModelos.join(", ") || "nenhum"} (esperado ${CATALOGO_PATH}); links de linha visíveis: ${verLinha.join(", ") || "nenhum"} (esperado ${linhasEsperadas.join(", ")})`,
         };
       }),
     );
   }
 
-  // A cena a 1440 × 900: altura e os onze pontos de p.
-  await comContexto(browser, DESKTOP, {}, async (page) => {
-    await verificar("Cena a 1440 × 900: altura de .pfb-cam = 4 × innerHeight (± 2 px)", DESKTOP, async () => {
-      await irAPagina(page);
-      const m = await medirCena(page);
-      return { ok: cenaAtiva(m), detalhe: `${textoAltura(m)}; nível ${m.nivel}` };
-    });
-    for (const p of PASSOS_P) {
-      await verificar(`Cena a 1440 × 900 em p = ${fmtP(p)}: produto das opacidades ≥ 0,6 e item na tela${p === 0.5 ? "; camada 0 ≥ 200 px acima da 4" : ""}${p === 1 ? "; legenda com opacidade 1" : ""}`, DESKTOP, async () => {
-        await rolarAteP(page, p);
-        await dormir(ESPERA_CENA_MS);
-        const m = await medirCena(page);
-        await capturarPfb(page, `cena-${rotuloP(p)}`, DESKTOP);
-        return conferirPonto(m, p);
-      });
-    }
-    // Camada da vez (spec, Movimento, tabela de tempos): no meio do passo da camada i,
-    // só o .pfb-cam-item dela em opacidade 1; os outros quatro no piso (0,6).
-    for (let i = 0; i < 5; i++) {
-      const p = inicioDoPasso(i) + 0.05;
-      const fmt = p.toFixed(2).replace(".", ",");
-      await verificar(`Camada da vez a 1440 × 900 em p = ${fmt}: .pfb-cam-item ${i} com opacidade ≥ 0,99 e os outros quatro ≤ 0,61`, DESKTOP, async () => {
-        await rolarAteP(page, p);
-        await dormir(ESPERA_CENA_MS);
-        const m = await medirCena(page);
-        await capturarPfb(page, `camada-da-vez-${i}`, DESKTOP);
-        const ops = m.itens.map((it) => it.itemOp);
-        const falhas = [];
-        if (ops.length !== 5) falhas.push(`${ops.length} itens na lista (esperado 5)`);
-        ops.forEach((o, k) => {
-          if (k === i ? !(o >= 0.99) : !(o <= 0.61)) falhas.push(`item ${k} com ${o} (esperado ${k === i ? "≥ 0,99" : "≤ 0,61"})`);
-        });
-        const resumo = `--p ${m.p}; opacidades de .pfb-cam-item ${ops.map((o, k) => `${k}: ${o}`).join(", ")}`;
-        return { ok: falhas.length === 0, detalhe: falhas.length ? `${falhas.join("; ")} (${resumo})` : resumo };
-      });
-    }
-  });
-
-  // 1024 × 720, 1280 × 720 e 1440 × 900 com fonte de 20 px: cena ativa e a lista dentro do quadro.
-  for (const caso of [
-    { dim: [1024, 720], fonte: null },
-    { dim: [1280, 720], fonte: null },
-    { dim: DESKTOP, fonte: "20px" },
-  ]) {
-    const nome = `Cena ativa e lista dentro do quadro em p = 0; 0,5 e 1${caso.fonte ? ` (fonte de ${caso.fonte})` : ""}`;
-    await verificar(nome, caso.dim, () =>
-      comContexto(browser, caso.dim, {}, async (page) => {
+  // 1. Os 11 capítulos na ordem, cada id igual ao data-capitulo e o título dentro da seção.
+  for (const dim of [CELULAR, DESKTOP]) {
+    await verificar("Os 11 capítulos na ordem: main section[data-capitulo] com id = data-capitulo e aria-labelledby apontando para um elemento da seção", dim, () =>
+      comContexto(browser, dim, {}, async (page) => {
         await irAPagina(page);
-        if (caso.fonte) {
-          await page.evaluate((f) => (document.documentElement.style.fontSize = f), caso.fonte);
-          await dormir(300);
+        const secoes = await page.evaluate(() =>
+          [...document.querySelectorAll("main section[data-capitulo]")].map((s) => {
+            const alvo = s.getAttribute("aria-labelledby");
+            const el = alvo ? document.getElementById(alvo) : null;
+            return { id: s.id, capitulo: s.dataset.capitulo, alvo, dentro: el !== null && el !== s && s.contains(el) };
+          }),
+        );
+        await capturarPfb(page, "capitulos", dim);
+        const ordem = secoes.map((s) => s.capitulo);
+        const falhas = [];
+        if (ordem.join() !== CAPITULOS.join()) falhas.push(`ordem ${ordem.join(", ") || "(nenhum)"} (esperado ${CAPITULOS.join(", ")})`);
+        for (const s of secoes) {
+          if (s.id !== s.capitulo) falhas.push(`id "${s.id}" com data-capitulo "${s.capitulo}"`);
+          if (!s.dentro) falhas.push(`${s.capitulo}: aria-labelledby ${s.alvo ? `"${s.alvo}" não aponta para um elemento dentro da seção` : "ausente"}`);
         }
-        const m0 = await medirCena(page);
-        const partes = [textoAltura(m0)];
-        let ok = cenaAtiva(m0);
-        if (!ok) partes[0] = `cena inativa: ${partes[0]}`;
-        for (const p of [0, 0.5, 1]) {
-          await rolarAteP(page, p);
-          await dormir(ESPERA_CENA_MS);
-          const m = await medirCena(page);
-          await capturarPfb(page, `quadro${caso.fonte ? "-fonte20" : ""}-${rotuloP(p)}`, caso.dim);
-          const cabe = m.listaBottom !== null && m.quadroBottom !== null && m.listaBottom <= m.quadroBottom;
-          if (!cabe) ok = false;
-          partes.push(`p ${fmtP(p)}: lista ${r1(m.listaBottom)} ${cabe ? "≤" : ">"} quadro ${r1(m.quadroBottom)}`);
-        }
-        return { ok, detalhe: partes.join("; ") };
+        return comFalhas(falhas, `${secoes.length} capítulos: ${secoes.map((s) => `${s.capitulo} → #${s.alvo}`).join(", ")}`);
       }),
     );
   }
 
-  // Fallback sem animation-timeline (caminho do IntersectionObserver do Revelar).
-  await comContexto(browser, DESKTOP, {}, async (page, ctx) => {
-    await ctx.addInitScript(() => {
-      const o = CSS.supports.bind(CSS);
-      CSS.supports = (...a) => (/animation-timeline/.test(a.join(" ")) ? false : o(...a));
-    });
-    await verificar("Fallback sem animation-timeline: com a página no topo, li com mv-io-espera e opacidade 1; cena ativa", DESKTOP, async () => {
-      await irAPagina(page);
-      let espera = true;
-      try {
-        await page.waitForFunction(() => document.querySelector("ol.pfb-cam-lista > li.mv-io-espera") !== null, null, { timeout: 5000 });
-      } catch {
-        espera = false;
-      }
-      const m = await medirCena(page);
-      const emEspera = m.itens.filter((it) => /\bmv-io-espera\b/.test(it.classe));
-      const ok = espera && emEspera.length >= 1 && emEspera.every((it) => it.liOp >= 1 - TOL) && cenaAtiva(m);
-      return {
-        ok,
-        detalhe: `itens com mv-io-espera: ${emEspera.length} (opacidade ${emEspera.map((it) => it.liOp).join(", ") || "-"}); classes ${m.itens.map((it) => it.classe || "(nenhuma)").join(" | ")}; ${cenaAtiva(m) ? "cena ativa" : "cena inativa"}: ${textoAltura(m)}`,
-      };
-    });
-    await verificar("Fallback sem animation-timeline: primeira entrada em p = 0, sem espera extra", DESKTOP, async () => {
-      await rolarAteP(page, 0);
-      const m = await medirCena(page);
-      await capturarPfb(page, "fallback-entrada", DESKTOP);
-      return conferirPonto(m, 0, { exigeNaTela: false, exigeQuadro: true });
-    });
-    for (const p of PASSOS_P) {
-      await verificar(`Fallback sem animation-timeline em p = ${fmtP(p)}: produto das opacidades ≥ 0,6 e lista no quadro`, DESKTOP, async () => {
-        await rolarAteP(page, p);
-        await dormir(ESPERA_CENA_MS);
-        const m = await medirCena(page);
-        await capturarPfb(page, `fallback-${rotuloP(p)}`, DESKTOP);
-        return conferirPonto(m, p, { exigeNaTela: false, exigeQuadro: true });
-      });
+  // 2. Altura dos capítulos ao carregar (Review Focus 1 com o 390 × 664), com movimento completo e reduzido.
+  for (const dim of [CELULAR, CELULAR_BAIXO, DESKTOP]) {
+    for (const reduzido of [false, true]) {
+      const teto = dim[0] >= LARGURA_LG ? `≤ ${TETO.computador}` : `≤ ${TETO.celular} (como-pedir ≤ ${TETO.comoPedirCelular})`;
+      await verificar(`Altura dos capítulos ao carregar, ${reduzido ? "movimento reduzido" : "movimento completo"}: abertura = innerHeight − 80 (± 1) com "Ver os modelos" inteiro na tela; os outros ${teto}`, dim, () =>
+        comContexto(browser, dim, { reduzido }, async (page) => {
+          await page.goto(url(PFB_PATH));
+          await dormir(800);
+          const m = await page.evaluate(() => ({
+            ih: innerHeight,
+            secoes: [...document.querySelectorAll("main > section[data-capitulo]")].map((s) => ({ id: s.dataset.capitulo, altura: s.getBoundingClientRect().height })),
+            botao: document.querySelector('#abertura [data-teste="ver-modelos"]')?.getBoundingClientRect().bottom ?? null,
+          }));
+          await capturarPfb(page, `alturas${reduzido ? "-reduzido" : ""}`, dim);
+          const falhas = [];
+          if (m.secoes.length !== CAPITULOS.length) falhas.push(`${m.secoes.length} capítulos (esperado ${CAPITULOS.length})`);
+          for (const s of m.secoes) {
+            if (s.id === "abertura") {
+              if (!(Math.abs(s.altura - (m.ih - 80)) <= 1)) falhas.push(`abertura ${r1(s.altura)} (esperado ${m.ih - 80} ± 1)`);
+            } else if (!(s.altura <= tetoDe(s.id, dim[0]))) falhas.push(`${s.id} ${r1(s.altura)} (teto ${tetoDe(s.id, dim[0])})`);
+          }
+          if (!(m.botao !== null && m.botao <= m.ih)) falhas.push(`"Ver os modelos" da abertura termina em ${r1(m.botao)} (innerHeight ${m.ih})`);
+          return comFalhas(falhas, `innerHeight ${m.ih}; "Ver os modelos" termina em ${r1(m.botao)}; ${m.secoes.map((s) => `${s.id} ${r1(s.altura)}`).join(", ")}`);
+        }),
+      );
     }
-  });
+  }
 
-  // Nível leve (memória 2 pelo novoContexto) a 1440 × 900.
-  await verificar("Nível leve: data-mv-nivel=\"leve\" no DOMContentLoaded, .pfb-cam < 2 × innerHeight, clsCarga < 0,001 e itens com opacidade 1 em três posições", DESKTOP, () =>
-    comContexto(browser, DESKTOP, { memoria: 2 }, async (page, ctx) => {
-      await ctx.addInitScript(() => {
-        document.addEventListener("DOMContentLoaded", () => (window.__nivelDcl = document.documentElement.dataset.mvNivel ?? null), { once: true });
-      });
-      await page.goto(url(PFB_PATH));
-      await dormir(500);
-      const { nivelDcl, cls } = await page.evaluate(() => ({ nivelDcl: window.__nivelDcl ?? null, cls: window.__cls }));
-      const partes = [`nível no DOMContentLoaded ${nivelDcl}`, `clsCarga ${cls.toFixed(4)}`];
-      let ok = nivelDcl === "leve" && cls < 0.001;
-      for (const onde of ["topo-da-pagina", "meio", "fim"]) {
-        await rolarSecao(page, onde);
-        await dormir(300);
-        const m = await medirCena(page);
-        await capturarPfb(page, `leve-${onde}`, DESKTOP);
-        if (onde === "topo-da-pagina") {
-          if (!(m.altura < 2 * m.ih)) ok = false;
-          partes.push(textoAltura(m));
+  // 3. Movimento reduzido: cada capítulo no meio da tela, lâminas, nomes e cartas no estado final.
+  for (const dim of [CELULAR, DESKTOP]) {
+    await verificar("Movimento reduzido: lâminas, nomes e cartas no estado final com cada capítulo no meio da tela", dim, () =>
+      comContexto(browser, dim, { reduzido: true }, async (page) => {
+        await irAPagina(page);
+        const falhas = [];
+        let ultimo = "";
+        for (const id of CAPITULOS) {
+          await rolarAoMeio(page, `section#${id}`);
+          await dormir(150);
+          const r = estaNoFinal(await medirMovimento(page), dim[0]);
+          if (id === "tecnologia" || id === "linhas") await capturarPfb(page, `reduzido-${id}`, dim);
+          if (!r.ok) falhas.push(`${id} no meio: ${r.detalhe}`);
+          ultimo = r.detalhe;
         }
-        if (!todosOpacos(m)) ok = false;
-        partes.push(`${onde}: ${textoOps(m)}`);
+        return comFalhas(falhas, `${CAPITULOS.length} posições; última leitura: ${ultimo}`);
+      }),
+    );
+  }
+
+  // 4. Sem rolagem lateral com o leque a meio caminho da entrada.
+  for (const dim of [MENOR, CELULAR, [768, 1024], DESKTOP]) {
+    await verificar("Sem rolagem lateral com o leque a meio caminho (topo de .pfb-leque em innerHeight − metade da altura dele)", dim, () =>
+      comContexto(browser, dim, {}, async (page) => {
+        await irAPagina(page);
+        await page.evaluate(() => {
+          const r = document.querySelector(".pfb-leque").getBoundingClientRect();
+          window.scrollTo({ top: Math.max(0, r.top + scrollY - (innerHeight - 0.5 * r.height)), behavior: "instant" });
+        });
+        await dormir(150);
+        const larg = await page.evaluate(() => ({ sw: document.documentElement.scrollWidth, iw: innerWidth }));
+        const m = await medirMovimento(page);
+        await capturarPfb(page, "leque-meio", dim);
+        const animadas = m.cartas.filter((c) => c.anima).length;
+        const foraDoFinal = m.cartas.filter((c, i) => !cartaNoFinal(c, i, dim[0])).length;
+        const falhas = [];
+        if (!(larg.sw <= larg.iw)) falhas.push(`scrollWidth ${larg.sw} > innerWidth ${larg.iw}`);
+        if (m.cartas.length !== QUANTOS.cartas) falhas.push(`${m.cartas.length} cartas (esperado ${QUANTOS.cartas})`);
+        if (animadas > 0 && foraDoFinal === 0) falhas.push(`${animadas} cartas com animação e todas no estado final (o leque não está a meio caminho)`);
+        return comFalhas(falhas, `scrollWidth ${larg.sw} / innerWidth ${larg.iw}; cartas com animação ${animadas}, fora do estado final ${foraDoFinal}`);
+      }),
+    );
+  }
+
+  // 5. Capítulo 9: os três blocos fechados ao carregar e abertos um por vez.
+  await verificar("Capítulo 9: blocos fechados ao carregar, um por vez (summary do 1º dá [true, false, false]; o do 2º, [false, true, false])", CELULAR, () =>
+    comContexto(browser, CELULAR, {}, async (page) => {
+      await irAPagina(page);
+      const blocos = 'section#onde-usar details[name="serve"][data-teste="serve-bloco"]';
+      const abertos = () => page.$$eval(blocos, (ds) => ds.map((d) => d.open));
+      const leituras = [["ao carregar", await abertos(), [false, false, false]]];
+      for (const [n, esperadoAbertos] of [
+        [0, [true, false, false]],
+        [1, [false, true, false]],
+      ]) {
+        await page.locator(`${blocos} > summary`).nth(n).click();
+        await dormir(200);
+        leituras.push([`depois do summary ${n + 1}`, await abertos(), esperadoAbertos]);
       }
-      return { ok, detalhe: partes.join("; ") };
+      await capturarPfb(page, "serve-um-por-vez", CELULAR);
+      const falhas = leituras.filter(([, a, e]) => JSON.stringify(a) !== JSON.stringify(e)).map(([q, a, e]) => `${q}: [${a.join(", ")}] (esperado [${e.join(", ")}])`);
+      return comFalhas(falhas, leituras.map(([q, a]) => `${q}: [${a.join(", ")}]`).join("; "));
     }),
   );
 
-  // Janela baixa (1280 × 680, nível completo): a mesma conferência de opacidade.
-  await verificar("Janela baixa: itens com opacidade 1 em três posições", [1280, 680], () =>
-    comContexto(browser, [1280, 680], {}, async (page) => {
+  // 6. Capítulo 5 no celular: os três botões trocam a foto e o aria-pressed.
+  await verificar('Capítulo 5 no celular: começa em 0h; cada botão fica sozinho em aria-pressed="true" e mostra só a sua foto', CELULAR, () =>
+    comContexto(browser, CELULAR, {}, async (page) => {
       await irAPagina(page);
-      const partes = [];
-      let ok = true;
-      for (const onde of ["topo-da-pagina", "meio", "fim"]) {
-        await rolarSecao(page, onde);
-        await dormir(300);
-        const m = await medirCena(page);
-        await capturarPfb(page, `janela-baixa-${onde}`, [1280, 680]);
-        if (onde === "topo-da-pagina") partes.push(`${textoAltura(m)}; nível ${m.nivel}`);
-        if (!todosOpacos(m)) ok = false;
-        partes.push(`${onde}: ${textoOps(m)}`);
+      await rolarAoMeio(page, "section#agua");
+      await dormir(400);
+      const ler = () =>
+        page.evaluate(() => ({
+          botoes: [...document.querySelectorAll('section#agua [data-teste="agua-hora"]')].map((b) => ({ hora: (b.textContent ?? "").trim(), pressionado: b.getAttribute("aria-pressed") === "true" })),
+          fotos: [...document.querySelectorAll('section#agua [data-teste="agua-foto"]')].map((f) => ({ hora: f.dataset.hora, op: Number(getComputedStyle(f).opacity) })),
+        }));
+      const resumo = (m) => `pressionado ${m.botoes.filter((b) => b.pressionado).map((b) => b.hora).join(", ") || "nenhum"}; opacidades ${m.fotos.map((f) => `${f.hora} ${f.op}`).join(", ")}`;
+      const falhas = [];
+      const inicio = await ler();
+      const leituras = [`ao carregar: ${resumo(inicio)}`];
+      if (inicio.botoes.length !== 3 || inicio.fotos.length !== 3) falhas.push(`${inicio.botoes.length} botões e ${inicio.fotos.length} fotos (esperado 3 e 3)`);
+      if (!inicio.botoes.find((b) => b.hora === "0h")?.pressionado) falhas.push("ao carregar, 0h sem aria-pressed=\"true\"");
+      if (!(inicio.fotos.find((f) => f.hora === "0h")?.op >= 0.99)) falhas.push("ao carregar, a foto 0h com opacidade < 0,99");
+      for (const { hora } of inicio.botoes) {
+        await page.locator('section#agua [data-teste="agua-hora"]').filter({ hasText: new RegExp(`^${hora}$`) }).click();
+        await dormir(400);
+        const m = await ler();
+        leituras.push(`${hora}: ${resumo(m)}`);
+        const pressionados = m.botoes.filter((b) => b.pressionado).map((b) => b.hora);
+        if (pressionados.join() !== hora) falhas.push(`depois de ${hora}: pressionado ${pressionados.join(", ") || "nenhum"}`);
+        for (const f of m.fotos) {
+          if (f.hora === hora ? !(f.op >= 0.99) : !(f.op <= 0.01)) falhas.push(`depois de ${hora}: foto ${f.hora} com opacidade ${f.op}`);
+        }
+        await capturarPfb(page, `agua-${hora}`, CELULAR);
       }
-      return { ok, detalhe: partes.join("; ") };
+      return comFalhas(falhas, leituras.join("; "));
     }),
   );
+
+  // 7. Review Focus 2: estado final sem JavaScript e no nível leve.
+  for (const dim of [CELULAR, DESKTOP]) {
+    for (const caso of [
+      { nome: "sem JavaScript", opcoes: { js: false }, estado: "sem-js" },
+      { nome: "nível leve", opcoes: { memoria: 2 }, estado: "leve" },
+    ]) {
+      const agua = dim === CELULAR ? "; a foto 0h com opacidade 1" : "";
+      await verificar(`Estado final ${caso.nome}: h1#pfb-titulo com texto, sem rolagem lateral${caso.opcoes.memoria ? ', data-mv-nivel="leve"' : ""}; #tecnologia e #linhas no meio da tela no estado final${agua}`, dim, () =>
+        comContexto(browser, dim, caso.opcoes, async (page) => {
+          await page.goto(url(PFB_PATH));
+          await dormir(500);
+          const base = await page.evaluate(() => ({
+            h1: document.querySelector("h1#pfb-titulo")?.textContent?.trim() ?? null,
+            sw: document.documentElement.scrollWidth,
+            iw: innerWidth,
+            nivel: document.documentElement.dataset.mvNivel ?? null,
+          }));
+          const falhas = [];
+          if (!base.h1) falhas.push(`h1#pfb-titulo ${base.h1 === null ? "ausente" : "vazio"}`);
+          if (!(base.sw <= base.iw)) falhas.push(`scrollWidth ${base.sw} > innerWidth ${base.iw}`);
+          if (caso.opcoes.memoria && base.nivel !== "leve") falhas.push(`data-mv-nivel ${base.nivel} (esperado leve)`);
+          const partes = [`h1 "${base.h1}"`, `scrollWidth ${base.sw} / innerWidth ${base.iw}`, `nível ${base.nivel}`];
+          for (const id of ["tecnologia", "linhas"]) {
+            await rolarAoMeio(page, `section#${id}`);
+            await dormir(200);
+            const r = estaNoFinal(await medirMovimento(page), dim[0]);
+            await capturarPfb(page, `${caso.estado}-${id}`, dim);
+            if (!r.ok) falhas.push(`${id} no meio: ${r.detalhe}`);
+            partes.push(`${id}: ${r.detalhe}`);
+          }
+          if (dim === CELULAR) {
+            await rolarAoMeio(page, "section#agua");
+            await dormir(200);
+            const op = await page.evaluate(() => {
+              const f = document.querySelector('section#agua [data-teste="agua-foto"][data-hora="0h"]');
+              return f ? Number(getComputedStyle(f).opacity) : null;
+            });
+            await capturarPfb(page, `${caso.estado}-agua`, dim);
+            if (!(op !== null && op >= 0.99)) falhas.push(`foto 0h com opacidade ${op} (esperado 1)`);
+            partes.push(`foto 0h ${op}`);
+          }
+          return comFalhas(falhas, partes.join("; "));
+        }),
+      );
+    }
+  }
+
+  // 8. Review Focus 3: chegada por âncora no meio de um momento especial.
+  for (const dim of [CELULAR, DESKTOP]) {
+    for (const id of ["tecnologia", "linhas"]) {
+      await verificar(`${PFB_PATH}#${id}: depois de 1500 ms, o h2 da seção inteiro na tela e abaixo do cabeçalho, e o estado final`, dim, () =>
+        comContexto(browser, dim, {}, async (page) => {
+          await page.goto(url(`${PFB_PATH}#${id}`));
+          await dormir(1500);
+          const m = await page.evaluate((i) => {
+            const sec = document.getElementById(i);
+            const h = sec ? document.getElementById(sec.getAttribute("aria-labelledby") ?? "") : null;
+            const r = h && h.tagName === "H2" ? h.getBoundingClientRect() : null;
+            // O cabeçalho se esconde ao descer e volta ao subir: vale a maior entre a borda de baixo e a altura dele.
+            const cabEl = document.querySelector("header[data-site]");
+            return {
+              top: r?.top ?? null,
+              bottom: r?.bottom ?? null,
+              cab: cabEl ? Math.max(cabEl.getBoundingClientRect().bottom, cabEl.offsetHeight) : null,
+              cabAltura: cabEl ? cabEl.getBoundingClientRect().height : null,
+              ih: innerHeight,
+            };
+          }, id);
+          const r = estaNoFinal(await medirMovimento(page), dim[0]);
+          await capturarPfb(page, `ancora-${id}`, dim);
+          if (!temCabecalho(m.cabAltura)) return { ok: false, detalhe: `cabeçalho não encontrado (header[data-site] ${m.cabAltura === null ? "ausente" : "com altura 0"})` };
+          const falhas = [];
+          if (!(m.top !== null && m.top >= 0 && m.top >= m.cab && m.bottom <= m.ih)) falhas.push(`h2 em [${r1(m.top)}, ${r1(m.bottom)}] (cabeçalho até ${r1(m.cab)}, innerHeight ${m.ih})`);
+          if (!r.ok) falhas.push(r.detalhe);
+          return comFalhas(falhas, `h2 em [${r1(m.top)}, ${r1(m.bottom)}], cabeçalho termina em ${r1(m.cab)} (altura ${r1(m.cabAltura)}), innerHeight ${m.ih}; ${r.detalhe}`);
+        }),
+      );
+    }
+  }
+
+  // 9. Review Focus 4: nenhum texto ou botão dos capítulos 1, 6 e 10 no quadrado do botão do chat.
+  for (const dim of [CELULAR, DESKTOP]) {
+    await verificar(`Área livre do chat: em abertura, manaus e bambu, nenhum h1, h2, h3, p, a, button ou li cruza o quadrado de ${AREA_CHAT} × ${AREA_CHAT} px do canto inferior direito da seção`, dim, () =>
+      comContexto(browser, dim, {}, async (page) => {
+        await irAPagina(page);
+        const falhas = [];
+        const partes = [];
+        for (const id of CAPITULOS_FOTO) {
+          await rolarAteOcupar(page, id);
+          await dormir(300);
+          const m = await page.evaluate(
+            ({ i, lado }) => {
+              const s = document.getElementById(i);
+              const r = s.getBoundingClientRect();
+              const q = { esq: r.right - lado, dir: r.right, topo: r.bottom - lado, baixo: r.bottom };
+              const lidos = [...s.querySelectorAll("h1, h2, h3, p, a, button, li")];
+              const cruzam = lidos.flatMap((el) => {
+                const e = el.getBoundingClientRect();
+                if (e.width === 0 || e.height === 0) return [];
+                const w = Math.min(e.right, q.dir) - Math.max(e.left, q.esq);
+                const h = Math.min(e.bottom, q.baixo) - Math.max(e.top, q.topo);
+                return w > 0 && h > 0 ? [`${el.tagName.toLowerCase()} "${(el.textContent ?? "").trim().slice(0, 30)}" em [${Math.round(e.left)}, ${Math.round(e.right)}] × [${Math.round(e.top)}, ${Math.round(e.bottom)}]`] : [];
+              });
+              return { lidos: lidos.length, cruzam, q: `[${Math.round(q.esq)}, ${Math.round(q.dir)}] × [${Math.round(q.topo)}, ${Math.round(q.baixo)}]` };
+            },
+            { i: id, lado: AREA_CHAT },
+          );
+          await capturarPfb(page, `chat-${id}`, dim);
+          if (m.cruzam.length) falhas.push(`${id}: ${m.cruzam.join(", ")} (quadrado ${m.q})`);
+          partes.push(`${id}: ${m.lidos} elementos, quadrado ${m.q}`);
+        }
+        return comFalhas(falhas, partes.join("; "));
+      }),
+    );
+  }
+
+  // Ruling da Tarefa 2 (ledger): em janela baixa, o painel de texto dos capítulos de foto não
+  // é cortado pelo overflow-clip da seção. Painel: o filho direto da seção que tem o título.
+  // scrollHeight ≤ clientHeight + 1 pega o painel de altura presa (lg, inset-y-0); os textos
+  // dentro da seção (± 1 px) pegam o painel de altura natural maior que a seção (celular).
+  for (const dim of JANELAS_BAIXAS) {
+    await verificar("Painel de texto de abertura, manaus e bambu sem corte: scrollHeight ≤ clientHeight + 1 e os textos dentro da seção (± 1 px)", dim, () =>
+      comContexto(browser, dim, {}, async (page) => {
+        await irAPagina(page, PFB_PATH, 800);
+        const falhas = [];
+        const partes = [];
+        for (const id of CAPITULOS_FOTO) {
+          await rolarAteOcupar(page, id);
+          await dormir(300);
+          const m = await page.evaluate((i) => {
+            const s = document.getElementById(i);
+            const titulo = document.getElementById(s.getAttribute("aria-labelledby") ?? "");
+            const painel = titulo ? [...s.children].find((c) => c.contains(titulo)) : null;
+            if (!painel) return null;
+            const r = s.getBoundingClientRect();
+            const cortados = [...painel.querySelectorAll("h1, h2, h3, p, a, button, li")].flatMap((el) => {
+              const e = el.getBoundingClientRect();
+              if (e.width === 0 || e.height === 0) return [];
+              return e.top < r.top - 1 || e.bottom > r.bottom + 1 ? [`${el.tagName.toLowerCase()} "${(el.textContent ?? "").trim().slice(0, 30)}" em [${Math.round(e.top)}, ${Math.round(e.bottom)}]`] : [];
+            });
+            return { sh: painel.scrollHeight, ch: painel.clientHeight, secao: `[${Math.round(r.top)}, ${Math.round(r.bottom)}]`, cortados };
+          }, id);
+          await capturarPfb(page, `painel-${id}`, dim);
+          if (!m) {
+            falhas.push(`${id}: painel do título não encontrado`);
+            continue;
+          }
+          if (!(m.sh <= m.ch + 1)) falhas.push(`${id}: scrollHeight ${m.sh} > clientHeight ${m.ch} + 1`);
+          if (m.cortados.length) falhas.push(`${id}: fora da seção ${m.secao}: ${m.cortados.join(", ")}`);
+          partes.push(`${id}: scrollHeight ${m.sh} / clientHeight ${m.ch}, seção ${m.secao}`);
+        }
+        return comFalhas(falhas, partes.join("; "));
+      }),
+    );
+  }
 
   // #ficha por âncora.
   for (const dim of [CELULAR, DESKTOP]) {
@@ -1364,80 +1549,16 @@ async function etapa2Navegador(browser, produtos) {
     );
   }
 
-  // Dados do mock: ≥ 2 miniaturas e ≥ 1 lugar showroom.
-  await verificar('Dados: seção 4 com ≥ 2 [data-teste="miniatura"] e seção 6 com ≥ 1 [data-teste="lugar"][data-tipo="showroom"]', CELULAR, () =>
+  // Dados do mock: ≥ 1 lugar showroom.
+  await verificar('Dados: capítulo 11 com ≥ 1 [data-teste="lugar"][data-tipo="showroom"]', CELULAR, () =>
     comContexto(browser, CELULAR, {}, async (page) => {
       await irAPagina(page);
       const m = await page.evaluate(() => ({
-        mini: document.querySelectorAll('section#linhas [data-teste="miniatura"]').length,
         showroom: document.querySelectorAll('section#como-pedir [data-teste="lugar"][data-tipo="showroom"]').length,
         lugares: document.querySelectorAll('section#como-pedir [data-teste="lugar"]').length,
       }));
-      return { ok: m.mini >= 2 && m.showroom >= 1, detalhe: `miniaturas ${m.mini}; lugares ${m.lugares}, dos quais showroom ${m.showroom}` };
-    }),
-  );
-
-  // Celular e tablet: sem cena, figura visível, cada item com opacidade 1 no meio da tela, sem sobreposição.
-  for (const dim of LARGURAS.filter(([l]) => [375, 390, 430, 768].includes(l))) {
-    await verificar(`Celular: .pfb-cam < 2,5 × innerHeight, figura visível, cada li com opacidade 1 no meio da tela e itens sem sobreposição`, dim, () =>
-      comContexto(browser, dim, {}, async (page) => {
-        await irAPagina(page);
-        const m0 = await medirCena(page);
-        const svg = page.locator("svg.pfb-cam-svg");
-        await svg.scrollIntoViewIfNeeded();
-        const caixa = await svg.boundingBox();
-        const figura = (await svg.isVisible()) && caixa !== null && caixa.width > 0 && caixa.height > 0;
-        const ops = [];
-        for (let i = 0; i < m0.itens.length; i++) {
-          const op = await page.evaluate(async (k) => {
-            const li = document.querySelectorAll("ol.pfb-cam-lista > li")[k];
-            const r = li.getBoundingClientRect();
-            window.scrollTo({ top: r.top + scrollY + r.height / 2 - innerHeight / 2, behavior: "instant" });
-            await new Promise((res) => requestAnimationFrame(() => requestAnimationFrame(res)));
-            return Number(getComputedStyle(li).opacity);
-          }, i);
-          ops.push(op);
-        }
-        await capturarPfb(page, "camadas-celular", dim);
-        const m = await medirCena(page);
-        const sobrepostos = [];
-        for (let a = 0; a < m.itens.length; a++) {
-          for (let b = a + 1; b < m.itens.length; b++) {
-            const A = m.itens[a];
-            const B = m.itens[b];
-            const w = Math.min(A.right, B.right) - Math.max(A.left, B.left);
-            const h = Math.min(A.bottom, B.bottom) - Math.max(A.top, B.top);
-            if (w > 0 && h > 0) sobrepostos.push(`${a}×${b} (${r1(w)} × ${r1(h)} px)`);
-          }
-        }
-        const baixa = m0.altura < 2.5 * m0.ih;
-        const ok = baixa && figura && ops.length === 5 && ops.every((o) => o >= 1 - TOL) && sobrepostos.length === 0;
-        return {
-          ok,
-          detalhe: `altura ${r1(m0.altura)} px (2,5 × innerHeight = ${2.5 * m0.ih}); figura ${figura ? `visível (${r1(caixa.width)} × ${r1(caixa.height)})` : "invisível"}; opacidade de cada li no meio da tela: ${ops.join(", ")}; sobreposições: ${sobrepostos.join(", ") || "nenhuma"}`,
-        };
-      }),
-    );
-  }
-
-  // Movimento reduzido a 1440 × 900.
-  await verificar("Movimento reduzido: .pfb-cam < 2 × innerHeight e itens com opacidade 1", DESKTOP, () =>
-    comContexto(browser, DESKTOP, { reduzido: true }, async (page) => {
-      await irAPagina(page);
-      const partes = [];
-      let ok = true;
-      for (const onde of ["topo-da-pagina", "meio"]) {
-        await rolarSecao(page, onde);
-        await dormir(300);
-        const m = await medirCena(page);
-        if (onde === "topo-da-pagina") {
-          if (!(m.altura < 2 * m.ih)) ok = false;
-          partes.push(textoAltura(m));
-        } else await capturarPfb(page, "reduzido-meio", DESKTOP);
-        if (!todosOpacos(m)) ok = false;
-        partes.push(`${onde}: ${textoOps(m)}`);
-      }
-      return { ok, detalhe: partes.join("; ") };
+      await capturarPfb(page, "dados", CELULAR);
+      return { ok: m.showroom >= 1, detalhe: `lugares ${m.lugares}, dos quais showroom ${m.showroom}` };
     }),
   );
 
@@ -1453,7 +1574,7 @@ async function etapa2Navegador(browser, produtos) {
         return {
           ok,
           detalhe: ok
-            ? `nenhum termo proibido em main (${t.textoMain.length} caracteres), ${t.atributos.length} atributos, document.title ("${t.titulo}") e ld+json (${t.ldQuantos} scripts, ${t.ld.length} caracteres)`
+            ? `nenhum termo proibido em main (${t.textoMain.length} caracteres), ${t.atributos.length} atributos, ${t.atributosAgua.length} alt de section#agua img, document.title ("${t.titulo}") e ld+json (${t.ldQuantos} scripts, ${t.ld.length} caracteres)`
             : [...vazias, ...achados].join("; "),
         };
       }),
@@ -1505,103 +1626,6 @@ async function etapa2Navegador(browser, produtos) {
       detalhe: `${esperado(`${PFB_PATH} ${a} bytes`, `≤ /techstone ${b} bytes`)}; ${provas.map((p) => p.detalhe).join("; ")}; ${linha(PFB_PATH, pfb)}; ${linha("/techstone", ts)}`,
     };
   });
-
-  // Foco 2: sem JavaScript.
-  for (const dim of [DESKTOP, CELULAR]) {
-    const comNomes = dim === DESKTOP;
-    await verificar(`Sem JavaScript: h1, .pfb-cam < 2 × innerHeight${comNomes ? ", os cinco nomes com opacidade 1" : ""} e sem rolagem lateral`, dim, () =>
-      comContexto(browser, dim, { js: false }, async (page) => {
-        await page.goto(url(PFB_PATH));
-        await dormir(300);
-        const h1 = await page.evaluate(() => document.querySelector("h1#pfb-titulo")?.textContent?.trim() ?? null);
-        if (comNomes) await rolarSecao(page, "meio");
-        await dormir(200);
-        const m = await medirCena(page);
-        await capturarPfb(page, "sem-js", dim);
-        const ok = h1 !== null && h1 !== "" && m.altura < 2 * m.ih && m.sw <= m.iw && (!comNomes || todosOpacos(m));
-        return {
-          ok,
-          detalhe: `h1 ${h1 === null ? "ausente" : `"${h1}"`}; ${textoAltura(m)}; scrollWidth ${m.sw} / innerWidth ${m.iw}${comNomes ? `; opacidades li×item ${textoOps(m)}` : ""}`,
-        };
-      }),
-    );
-  }
-
-  // Foco 3: a janela muda de tamanho com a página aberta.
-  await verificar("Janela que muda de tamanho: 1440 × 900 → 1280 × 680 (sem cena, opacidade 1) → 1440 × 900 (cena de volta, --p acompanha)", DESKTOP, () =>
-    comContexto(browser, DESKTOP, {}, async (page) => {
-      await irAPagina(page);
-      const partes = [];
-      const m0 = await medirCena(page);
-      let ok = cenaAtiva(m0);
-      partes.push(`1440 × 900: ${cenaAtiva(m0) ? "cena ativa" : "cena inativa"}, ${textoAltura(m0)}`);
-      await page.setViewportSize({ width: 1280, height: 680 });
-      await dormir(800);
-      await rolarSecao(page, "meio");
-      await dormir(300);
-      const mb = await medirCena(page);
-      await capturarPfb(page, "redimensionada-baixa", [1280, 680]);
-      if (!(mb.altura < 2 * mb.ih) || !todosOpacos(mb)) ok = false;
-      partes.push(`1280 × 680: ${textoAltura(mb)}; opacidades ${textoOps(mb)}`);
-      await page.setViewportSize({ width: DESKTOP[0], height: DESKTOP[1] });
-      await dormir(800);
-      const mv = await medirCena(page);
-      if (!cenaAtiva(mv)) ok = false;
-      await rolarAteP(page, 0.5);
-      await dormir(ESPERA_CENA_MS);
-      const mp = await medirCena(page);
-      await capturarPfb(page, "redimensionada-volta-p050", DESKTOP);
-      const pNum = Number(mp.p);
-      const acompanha = Number.isFinite(pNum) && Math.abs(pNum - 0.5) <= 0.02;
-      if (!acompanha || !(mp.g4 - mp.g0 >= 200)) ok = false;
-      partes.push(`de volta a 1440 × 900: ${cenaAtiva(mv) ? "cena ativa" : "cena inativa"}, ${textoAltura(mv)}; em p = 0,5: --p ${mp.p}, camada 0 ${r1(mp.g4 - mp.g0)} px acima da 4`);
-      return { ok, detalhe: partes.join("; ") };
-    }),
-  );
-
-  // Foco 4: chegada por âncora no meio da cena.
-  await verificar(`${PFB_PATH}#tecnologia: depois de 1500 ms, h2#pfb-camadas-titulo na tela abaixo do cabeçalho e produto das opacidades ≥ 0,6`, DESKTOP, () =>
-    comContexto(browser, DESKTOP, {}, async (page) => {
-      await page.goto(url(`${PFB_PATH}#tecnologia`));
-      await dormir(1500);
-      const h = await page.evaluate(() => {
-        const r = document.querySelector("h2#pfb-camadas-titulo")?.getBoundingClientRect();
-        return r ? { top: r.top, bottom: r.bottom } : null;
-      });
-      const m = await medirCena(page);
-      await capturarPfb(page, "ancora-tecnologia", DESKTOP);
-      if (!temCabecalho(m.cabecalhoAltura)) return { ok: false, detalhe: `cabeçalho não encontrado (header[data-site] ${m.cabecalhoAltura === null ? "ausente" : "com altura 0"})` };
-      const cab = m.cabecalhoBottom;
-      const naTela = h !== null && h.top >= cab && h.top >= 0 && h.bottom <= m.ih;
-      const minimo = Math.min(...produtos5(m));
-      const ok = naTela && m.itens.length === 5 && minimo >= 0.6 - TOL;
-      return {
-        ok,
-        detalhe: `título em [${r1(h?.top)}, ${r1(h?.bottom)}], cabeçalho termina em ${r1(m.cabecalhoBottom)}, innerHeight ${m.ih}; --p ${m.p}; opacidades li×item ${textoOps(m)} (mín ${minimo.toFixed(2)})`,
-      };
-    }),
-  );
-
-  // Foco 5: a miniatura da seção 4 abre o modelo certo.
-  await verificar('Miniatura da seção 4: clicar a primeira [data-teste="miniatura"] abre o catálogo nesse modelo', CELULAR, () =>
-    comContexto(browser, CELULAR, {}, async (page) => {
-      await irAPagina(page);
-      const mini = page.locator('section#linhas [data-teste="miniatura"]').first();
-      const href = await mini.getAttribute("href");
-      const codigo = href ? new URL(href, args.base).searchParams.get("modelo") : null;
-      if (!codigo) return { ok: false, detalhe: `href da primeira miniatura sem ?modelo= (${href})` };
-      const modelo = produtos.find((p) => normalizeProductCode(p.code) === normalizeProductCode(codigo));
-      if (!modelo) return { ok: false, detalhe: `código ${codigo} (do href ${href}) não está em /api/products` };
-      const alvo = catalogoPath({ modelo: codigo });
-      await mini.click();
-      await modal(page).waitFor({ state: "visible" });
-      const atual = await esperarCaminho(page, alvo);
-      const titulo = await tituloDoModal(page);
-      await capturarPfb(page, "miniatura-modal", CELULAR);
-      const ok = atual === alvo && (titulo ?? "").trim() === (modelo.name ?? "").trim();
-      return { ok, detalhe: `href ${href}; URL ${atual} (esperado ${alvo}); título do modal "${titulo}" (esperado "${modelo.name}")` };
-    }),
-  );
 }
 
 const ordenar = (o) => Object.fromEntries(Object.entries(o ?? {}).sort(([a], [b]) => a.localeCompare(b)));
@@ -1684,7 +1708,7 @@ async function principal() {
   resultado.navegador = { canal: motor.canal, versao: motor.browser.version() };
   try {
     await etapa1Navegador(motor.browser, produtos, args.etapa);
-    if (args.etapa === 2) await etapa2Navegador(motor.browser, produtos);
+    if (args.etapa === 2) await etapa2Navegador(motor.browser);
   } finally {
     await motor.browser.close();
   }
