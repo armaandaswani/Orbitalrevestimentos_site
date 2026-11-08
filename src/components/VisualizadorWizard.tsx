@@ -12,7 +12,7 @@ import {
 import VizShell, { focarEtapa, rolarParaTopo, type AcaoShell } from "./visualizador/VizShell";
 import EtapaFoto from "./visualizador/EtapaFoto";
 import EtapaResultado, { type ModeloEscolhido } from "./visualizador/EtapaResultado";
-import type { SinaisGeracao } from "./visualizador/espera";
+import { variantesDaVez, type SinaisGeracao } from "./visualizador/espera";
 import AtalhoConsultor from "./visualizador/AtalhoConsultor";
 import {
   areaSeguinte, areaSemDescricao, avisoFaltaDescricao, etapaVisivel, indiceDaArea, podeGerar, podeIrParaProximaArea, rotuloZona, ZONE_COLORS,
@@ -1584,8 +1584,8 @@ export default function VisualizadorWizard() {
     setError(null);
     setResult(null);
     setPreview(null);
-    // Sinais para a espera do Resultado: as etapas andam com eles (espera.ts).
-    setSinais({ inicio: Date.now(), stream: false, previas: 0, fim: false });
+    // Sinais para a espera do Resultado (espera.ts); as variações de texto mudam a cada simulação.
+    setSinais({ inicio: Date.now(), stream: false, previas: 0, fim: false, variantes: variantesDaVez() });
     setStep("result");
     // Each zone is rendered against the PRISTINE photo (not the running
     // composite) and then composited in by its own mask. This guarantees zones
