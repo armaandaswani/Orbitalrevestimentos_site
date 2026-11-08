@@ -1,31 +1,45 @@
 // Ritmo da espera do Resultado (sem React), testável com o runner do Node.
 //
 // As etapas andam pelo tempo, mas nunca passam do que a geração já fez: com
-// prévias chegando (stream), "Transformando o ambiente" só começa com a 1ª
-// prévia e "Refinando os detalhes" com a 2ª. Sem stream (fluxo antigo, uma
-// área por vez) só o tempo conta. A imagem final completa tudo. Etapa parada
-// além do previsto não trava a barra: ela segue subindo devagar, sem chegar
-// ao fim, e o texto vivo troca embaixo do título.
+// prévias chegando (stream), "A transformação começou" só começa com a 1ª
+// prévia e "Toques finais!" com a 2ª. Sem stream (fluxo antigo, uma área por
+// vez) só o tempo conta. A imagem final completa tudo. Etapa parada além do
+// previsto não trava a barra: ela segue subindo devagar, sem chegar ao fim, e
+// o texto vivo troca embaixo do título. O "Voilà!" fica na revelação.
 
-export type EtapaEspera = { titulo: string; texto: string };
+/**
+ * Texto da etapa. Na etapa do acabamento ele muda com o que o cliente
+ * escolheu: um modelo ({modelo} vira o nome), vários ou nenhum conhecido.
+ */
+export type EtapaEspera = {
+  titulo: string;
+  texto: string;
+  textoVarios?: string;
+  textoSemNome?: string;
+};
 
-/** Textos aprovados pelo dono (ver o relatório da branch visualizador-espera). */
+/** Textos na voz do dono (08/11/2026): a experiência Orbital, com carinho e suspense. */
 export const ETAPAS_ESPERA: readonly EtapaEspera[] = [
-  { titulo: "Abrindo o Visualizador Orbital", texto: "Tecnologia de visualização desenvolvida pela Orbital Revestimentos." },
-  { titulo: "Entendendo o seu espaço", texto: "A IA lê a perspectiva da foto e onde cada superfície começa e termina." },
-  { titulo: "Mapeando as áreas marcadas", texto: "Cada área recebe o acabamento que você escolheu." },
-  { titulo: "Lendo a luz do ambiente", texto: "Reflexos e sombras seguem a iluminação da foto." },
-  { titulo: "Aplicando o Painel Flexível em Fibra de Bambu (PFB)", texto: "{modelo} na escala das placas." },
-  { titulo: "Transformando o ambiente", texto: "A nova superfície ganha forma." },
-  { titulo: "Refinando os detalhes", texto: "Ajustando as bordas e a textura do acabamento." },
-  { titulo: "Preparando a sua reforma instantânea", texto: "A simulação está quase pronta." },
+  { titulo: "Boas-vindas ao Visualizador Orbital", texto: "Veja a mágica acontecer ✨" },
+  { titulo: "Conhecendo o seu espaço", texto: "Tem muito potencial!" },
+  { titulo: "Mapeando as mudanças", texto: "Você vai amar 😍" },
+  { titulo: "Lendo a luz do seu ambiente", texto: "É ela que faz o acabamento brilhar." },
+  {
+    titulo: "Aplicando os Painéis Flexíveis em Fibra de Bambu",
+    texto: "Adorei a escolha do {modelo}. Muito bom gosto!",
+    textoVarios: "Adorei os acabamentos que você escolheu. Muito bom gosto!",
+    textoSemNome: "Adorei a sua escolha. Muito bom gosto!",
+  },
+  { titulo: "A transformação começou", texto: "Está ficando magnífico. Deu até ciúme 🥰" },
+  { titulo: "Toques finais!", texto: "Segura o coração 😆" },
+  { titulo: "Quase lá!", texto: "Mais uns segundinhos ✨" },
 ];
 
 /** Linhas que se alternam quando uma etapa segura além do previsto. */
 export const TEXTOS_VIVOS: readonly string[] = [
-  "Conferindo o encaixe das placas.",
-  "Ajustando o brilho do acabamento.",
-  "Faltam só os últimos retoques.",
+  "Vale a espera, prometo.",
+  "Os últimos retoques são os melhores.",
+  "Já já você vê.",
 ];
 
 export const TOTAL_ETAPAS = ETAPAS_ESPERA.length;
@@ -100,11 +114,11 @@ export function textoVivo(mostrada: number, desdeTroca: number): string | null {
   return TEXTOS_VIVOS[Math.floor(alem / 4000) % TEXTOS_VIVOS.length];
 }
 
-/** "{modelo} na escala das placas." com o nome do acabamento (ou dos acabamentos). */
+/** Texto da etapa com o nome do acabamento escolhido (ou a versão para vários ou nenhum). */
 export function textoDaEtapa(e: EtapaEspera, modelos: readonly string[]): string {
   if (!e.texto.includes("{modelo}")) return e.texto;
   const nomes = [...new Set(modelos.filter(Boolean))];
-  if (nomes.length === 0) return e.texto.replace("{modelo}", "O acabamento");
   if (nomes.length === 1) return e.texto.replace("{modelo}", nomes[0]);
-  return e.texto.replace("{modelo}", "Os acabamentos escolhidos");
+  if (nomes.length > 1) return e.textoVarios ?? e.texto.replace("{modelo}", "acabamento");
+  return e.textoSemNome ?? e.texto.replace("{modelo}", "acabamento");
 }

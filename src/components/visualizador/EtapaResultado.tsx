@@ -98,7 +98,7 @@ export default function EtapaResultado({
     : falhou
       ? "A visualização não saiu"
       : revelado
-        ? umModelo ? `Seu ambiente com o ${umModelo.nome}` : "Seu ambiente transformado"
+        ? "Voilà! Este é o seu novo ambiente"
         : "Sua simulação está pronta";
 
   // No celular o balão do chat some enquanto o Resultado está na tela (ele
@@ -304,8 +304,11 @@ export default function EtapaResultado({
         <div className="viz-revela-acoes mt-5">
           {onConsultor && (
             <div data-viz-proximo-passo className="border border-[#e4e6ea] bg-[#fbfbfa] p-4 sm:p-5">
-              <p className="text-[15px] leading-relaxed text-[#43474e]">
-                Gostou? Um consultor da Orbital já recebe o acabamento escolhido e tira suas dúvidas.
+              <p className="font-serif text-lg leading-snug text-[#0B1F45]">Conta pra gente o que achou? 👇</p>
+              <p className="mt-1 text-[15px] leading-relaxed text-[#43474e]">
+                {umModelo
+                  ? `Um consultor da Orbital já recebe o ${umModelo.nome} e tira suas dúvidas.`
+                  : "Um consultor da Orbital já recebe os acabamentos escolhidos e tira suas dúvidas."}
               </p>
               <div className="mt-4 flex flex-col gap-1 lg:flex-row lg:items-center lg:gap-6">
                 <button type="button" onClick={onConsultor} className={`${PRIMARIO} lg:w-auto lg:min-w-[300px]`}>

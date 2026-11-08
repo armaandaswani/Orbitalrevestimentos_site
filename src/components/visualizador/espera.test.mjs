@@ -12,11 +12,12 @@ import {
 
 const s = (o) => ({ inicio: 0, stream: false, previas: 0, fim: false, ...o });
 
-test("textos: 6 a 8 etapas, sem travessão, PFB por extenso", () => {
+test("textos: 6 a 8 etapas, sem travessão, PFB por extenso, sem instalar", () => {
   assert.ok(TOTAL_ETAPAS >= 6 && TOTAL_ETAPAS <= 8);
   const tudo = ETAPAS_ESPERA.map((e) => `${e.titulo} ${e.texto}`).join(" ");
   assert.ok(!/[—–]/.test(tudo));
-  assert.ok(tudo.includes("Painel Flexível em Fibra de Bambu (PFB)"));
+  assert.ok(tudo.includes("Painéis Flexíveis em Fibra de Bambu"));
+  assert.ok(!/instal/i.test(tudo));
 });
 
 test("etapaAlvo sem stream: só o tempo, e segura na última", () => {
@@ -67,7 +68,7 @@ test("textoVivo: só quando segura além do previsto, e alterna", () => {
 
 test("textoDaEtapa: nome do modelo, vários ou nenhum", () => {
   const e = ETAPAS_ESPERA.find((x) => x.texto.includes("{modelo}"));
-  assert.equal(textoDaEtapa(e, ["Carrara"]), "Carrara na escala das placas.");
-  assert.equal(textoDaEtapa(e, ["A", "B"]), "Os acabamentos escolhidos na escala das placas.");
-  assert.equal(textoDaEtapa(e, []), "O acabamento na escala das placas.");
+  assert.equal(textoDaEtapa(e, ["Carrara"]), "Adorei a escolha do Carrara. Muito bom gosto!");
+  assert.equal(textoDaEtapa(e, ["A", "B"]), "Adorei os acabamentos que você escolheu. Muito bom gosto!");
+  assert.equal(textoDaEtapa(e, []), "Adorei a sua escolha. Muito bom gosto!");
 });
