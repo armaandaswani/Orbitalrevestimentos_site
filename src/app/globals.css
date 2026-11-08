@@ -2418,18 +2418,95 @@ html.mv-cursor:has([data-lupa="aberta"]) .mv-cursor-corpo { opacity: 0; }
 .viz-shell { --viz-res-h: max(220px, calc(100svh - 220px)); }
 @media (min-width: 1024px) {
   .viz-shell { --viz-res-h: min(560px, calc(100svh - 300px)); }
+  /* Espera e "pronta, falta o contato": quadro mais baixo, para o formulário
+     caber na mesma tela (barra, checks e campos somam uns 270 px). */
+  .viz-res-compacto { --viz-res-h: max(260px, min(440px, calc(100svh - 480px))); }
 }
 .viz-res-quadro, .viz-antes-depois, .viz-res-nota { width: min(100%, calc(var(--viz-res-h) * var(--proporcao, 1.3333))); }
 .viz-depois { clip-path: inset(0 0 0 calc(var(--div) * 1%)); }
 .viz-divisoria { transform: translate3d(calc(var(--div) * 1%), 0, 0); }
-.viz-progresso-barra { transform: translate3d(100%, 0, 0); }
-@keyframes viz-progresso {
-  from { transform: translate3d(-100%, 0, 0); }
-  to { transform: translate3d(300%, 0, 0); }
-}
 @media (prefers-reduced-motion: no-preference) {
-  .viz-progresso-barra { animation: viz-progresso 1400ms ease-in-out infinite; }
   .viz-revela { animation: viz-area-entra var(--mv-base) var(--mv-chegada) both; }
+}
+
+/* Espera do Resultado (EsperaGeracao): a foto do cliente com um efeito por
+   etapa (data-etapa no quadro). 0 a foto acende; 1 varredura; 2 grade de
+   medição com cantos; 3 luz passando; 4 juntas das placas descendo; 5 a
+   prévia aparece; 6 varredura fina; 7 luz de novo. Cada efeito só troca de
+   opacidade ao entrar e sair; dentro dele, só transform. A barra enche por
+   scaleX (o valor vem do componente). Com movimento reduzido: nada corre nem
+   pulsa; a grade e as juntas aparecem paradas e a varredura e a luz ficam
+   fora. Revelação: o véu (a última imagem da espera) some com uma luz
+   passando e as ações sobem logo depois. */
+.viz-espera-foto { transform: scale(1.04); transform-origin: 50% 60%; }
+.viz-espera-previa { opacity: 0; }
+.viz-espera-previa[data-ver] { opacity: 1; }
+.viz-fx { opacity: 0; }
+.viz-fx-escurece { background: rgba(6, 12, 24, 0.22); }
+.viz-espera[data-etapa="0"] .viz-fx-escurece { opacity: 1; }
+.viz-espera[data-etapa="1"] .viz-fx-varredura,
+.viz-espera[data-etapa="6"] .viz-fx-varredura,
+.viz-espera[data-etapa="2"] .viz-fx-grade,
+.viz-espera[data-etapa="3"] .viz-fx-luz,
+.viz-espera[data-etapa="7"] .viz-fx-luz,
+.viz-espera[data-etapa="4"] .viz-fx-placas { opacity: 1; }
+.viz-fx-varredura > span {
+  position: absolute; inset: 0 0 auto 0; height: 34%;
+  background: linear-gradient(180deg, rgba(54, 163, 92, 0) 0%, rgba(54, 163, 92, 0.16) 82%, rgba(255, 255, 255, 0.85) 99%, rgba(255, 255, 255, 0) 100%);
+  transform: translate3d(0, -100%, 0);
+}
+.viz-espera[data-etapa="6"] .viz-fx-varredura > span { height: 18%; }
+.viz-fx-grade line { stroke: rgba(255, 255, 255, 0.26); stroke-width: 1; }
+.viz-fx-canto { position: absolute; width: 18px; height: 18px; border-color: rgba(255, 255, 255, 0.9); }
+.viz-fx-luz > span {
+  position: absolute; top: -25%; bottom: -25%; left: 0; width: 42%;
+  background: linear-gradient(100deg, rgba(255, 255, 255, 0) 0%, rgba(255, 248, 230, 0.28) 50%, rgba(255, 255, 255, 0) 100%);
+  mix-blend-mode: screen;
+  transform: translate3d(-110%, 0, 0) rotate(10deg);
+}
+.viz-fx-placas > span {
+  position: absolute; top: 0; bottom: 0; width: 1px;
+  background: linear-gradient(180deg, rgba(255, 255, 255, 0.75), rgba(255, 255, 255, 0.2));
+  transform-origin: 50% 0; transform: scaleY(1);
+}
+.viz-espera-legenda { background: linear-gradient(180deg, rgba(6, 12, 24, 0) 0%, rgba(6, 12, 24, 0.55) 45%, rgba(6, 12, 24, 0.82) 100%); }
+.viz-espera-check[data-estado="feita"] { background: #36A35C; color: #fff; }
+.viz-espera-check[data-estado="atual"] { box-shadow: inset 0 0 0 1.5px #0B1F45; }
+.viz-espera-check[data-estado="falta"] { box-shadow: inset 0 0 0 1.5px #d5d8dd; }
+.viz-espera-giro { border: 1.5px solid transparent; border-top-color: #36A35C; }
+.viz-espera-brilho { background: linear-gradient(90deg, rgba(255, 255, 255, 0), rgba(255, 255, 255, 0.55), rgba(255, 255, 255, 0)); transform: translate3d(-100%, 0, 0); }
+.viz-espera[data-concluida] .viz-fx { opacity: 0; }
+.viz-revela-veu { opacity: 0; }
+.viz-revela-luz {
+  background: linear-gradient(100deg, rgba(255, 255, 255, 0) 0%, rgba(255, 255, 255, 0.5) 50%, rgba(255, 255, 255, 0) 100%);
+  transform: translate3d(-100%, 0, 0);
+}
+@keyframes viz-respira { from { transform: scale(1.04); } to { transform: scale(1.1); } }
+@keyframes viz-varre { from { transform: translate3d(0, -100%, 0); } to { transform: translate3d(0, 300%, 0); } }
+@keyframes viz-luz { from { transform: translate3d(-110%, 0, 0) rotate(10deg); } to { transform: translate3d(260%, 0, 0) rotate(10deg); } }
+@keyframes viz-junta { from { transform: scaleY(0); } to { transform: scaleY(1); } }
+@keyframes viz-texto-entra { from { opacity: 0; transform: translate3d(0, 8px, 0); } to { opacity: 1; transform: none; } }
+@keyframes viz-gira { to { transform: rotate(360deg); } }
+@keyframes viz-brilho { from { transform: translate3d(-100%, 0, 0); } to { transform: translate3d(400%, 0, 0); } }
+@keyframes viz-veu-some { 0%, 25% { opacity: 1; } 100% { opacity: 0; } }
+@keyframes viz-luz-revela { from { transform: translate3d(-100%, 0, 0); } to { transform: translate3d(220%, 0, 0); } }
+@media (prefers-reduced-motion: no-preference) {
+  .viz-espera-foto { animation: viz-respira 40s ease-in-out infinite alternate; }
+  .viz-espera-previa, .viz-fx { transition: opacity 700ms var(--mv-chegada); }
+  .viz-fx-varredura > span { animation: viz-varre 2600ms var(--mv-percurso) infinite; }
+  .viz-espera[data-etapa="6"] .viz-fx-varredura > span { animation-duration: 1700ms; }
+  .viz-fx-luz > span { animation: viz-luz 3200ms var(--mv-percurso) infinite; }
+  .viz-espera[data-etapa="4"] .viz-fx-placas > span { animation: viz-junta 900ms var(--mv-chegada) both; animation-delay: calc(var(--i) * 140ms); }
+  .viz-espera-texto, .viz-espera-vivo { animation: viz-texto-entra var(--mv-base) var(--mv-chegada) both; }
+  .viz-espera-barra { transition: transform 700ms var(--mv-chegada); }
+  .viz-espera-brilho { animation: viz-brilho 1800ms ease-in-out infinite; }
+  .viz-espera-giro { animation: viz-gira 900ms linear infinite; }
+  .viz-revela-veu { animation: viz-veu-some 1400ms var(--mv-chegada) both; }
+  .viz-revela-luz { animation: viz-luz-revela 1200ms var(--mv-percurso) both; }
+  .viz-revela-acoes { animation: viz-area-entra var(--mv-base) var(--mv-chegada) 500ms both; }
+}
+@media (prefers-reduced-motion: reduce) {
+  .viz-fx-varredura, .viz-fx-luz { display: none; }
 }
 
 /* Barra de ação presa embaixo no celular: o balão do chat sobe acima dela. */

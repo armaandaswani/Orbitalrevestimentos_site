@@ -11,7 +11,8 @@ import {
 } from "@/lib/texture-projection";
 import VizShell, { focarEtapa, rolarParaTopo, type AcaoShell } from "./visualizador/VizShell";
 import EtapaFoto from "./visualizador/EtapaFoto";
-import EtapaResultado from "./visualizador/EtapaResultado";
+import EtapaResultado, { type ModeloEscolhido } from "./visualizador/EtapaResultado";
+import type { SinaisGeracao } from "./visualizador/espera";
 import AtalhoConsultor from "./visualizador/AtalhoConsultor";
 import {
   areaSeguinte, areaSemDescricao, avisoFaltaDescricao, etapaVisivel, indiceDaArea, podeGerar, podeIrParaProximaArea, rotuloZona, ZONE_COLORS,
@@ -938,7 +939,7 @@ export default function VisualizadorWizard() {
   const [keepText, setKeepText] = useState("");
   const aiKeepRef = useRef("");
   const [analysis, setAnalysis] = useState<{ status: "idle" | "loading" | "done" | "error"; sig: string; error?: string }>({ status: "idle", sig: "" });
-  const [progress, setProgress] = useState<{ i: number; total: number; label: string } | null>(null);
+  const [sinais, setSinais] = useState<SinaisGeracao | null>(null);
   const [result, setResult] = useState<string | null>(null);
   // Prévia parcial do gerador enquanto a imagem final não chega.
   const [preview, setPreview] = useState<string | null>(null);
@@ -1583,6 +1584,8 @@ export default function VisualizadorWizard() {
     setError(null);
     setResult(null);
     setPreview(null);
+    // Sinais para a espera do Resultado: as etapas andam com eles (espera.ts).
+    setSinais({ inicio: Date.now(), stream: false, previas: 0, fim: false });
     setStep("result");
     // Each zone is rendered against the PRISTINE photo (not the running
     // composite) and then composited in by its own mask. This guarantees zones
@@ -1606,7 +1609,6 @@ export default function VisualizadorWizard() {
       // servidor não tiver o gerador para isso (501), segue o fluxo antigo.
       let doneInOneCall = false;
       if (!DETERMINISTIC_PROJECTION) {
-        setProgress({ i: 1, total: 1, label: zs.length > 1 ? "as áreas" : "o revestimento" });
         let maskImage: string | null = null;
         if (dims && dims.w > 0 && dims.h > 0) {
           try { maskImage = await buildUnionMaskDataUrl(zs, dims.w, dims.h); } catch { maskImage = null; }
@@ -1633,6 +1635,7 @@ export default function VisualizadorWizard() {
           let j: { image?: string; error?: string } | null = null;
           if (res.ok && res.body && (res.headers.get("content-type") || "").includes("ndjson")) {
             // Stream: prévias aparecem na tela enquanto a final não chega.
+            setSinais((s) => s && { ...s, stream: true });
             const reader = res.body.getReader();
             const dec = new TextDecoder();
             let buf = "";
@@ -1640,7 +1643,7 @@ export default function VisualizadorWizard() {
               if (!line.trim()) return;
               let ev: { type?: string; image?: string; error?: string };
               try { ev = JSON.parse(line); } catch { return; }
-              if (ev.type === "partial" && ev.image) setPreview(ev.image);
+              if (ev.type === "partial" && ev.image) { setPreview(ev.image); setSinais((s) => s && { ...s, previas: s.previas + 1 }); }
               else if (ev.type === "final" && ev.image) j = { image: ev.image };
               else if (ev.type === "error") j = { error: ev.error || "Não foi possível gerar a visualização." };
             };
@@ -1672,7 +1675,6 @@ export default function VisualizadorWizard() {
         const z = zs[i];
         const prod = productById(z.productId);
         if (!prod) continue;
-        setProgress({ i: i + 1, total: zs.length, label: z.label });
 
         // ── Pixel-exact projection path ─────────────────────────────────────
         // When the product has a flat slab texture and the zone has a 4-corner
@@ -1836,7 +1838,7 @@ export default function VisualizadorWizard() {
       setError(e instanceof Error ? e.message : "Erro ao gerar a visualização.");
     } finally {
       setGenerating(false);
-      setProgress(null);
+      setSinais((s) => s && { ...s, fim: true });
       setPreview(null);
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
@@ -2003,6 +2005,21 @@ export default function VisualizadorWizard() {
   // instantâneo escondido (pivô), "Falar com um consultor"; com ele visível, só
   // o bloco do orçamento, no Resultado e no atalho das outras etapas.
   const consultorVisivel = !ORCAMENTO_INSTANTANEO_VISIVEL;
+
+  // Acabamentos das áreas, sem repetir: nome na espera e na revelação, código
+  // para o link do modelo no catálogo.
+  const modelosEscolhidos = useMemo<ModeloEscolhido[]>(() => {
+    const vistos = new Set<string>();
+    const lista: ModeloEscolhido[] = [];
+    for (const z of zones) {
+      const p = z.productId ? productById(z.productId) : null;
+      if (!p || vistos.has(p.id)) continue;
+      vistos.add(p.id);
+      lista.push({ nome: p.name, code: p.code || null });
+    }
+    return lista;
+  }, [zones, productById]);
+
   const orcamento =
     ORCAMENTO_INSTANTANEO_VISIVEL && allAmbientes.length > 0
       ? {
@@ -2104,7 +2121,8 @@ export default function VisualizadorWizard() {
             resultado={result}
             previa={preview}
             gerando={generating}
-            progresso={progress}
+            sinais={sinais}
+            modelos={modelosEscolhidos}
             erro={error}
             leadEnviado={leadSubmitted}
             leadNome={leadName}
