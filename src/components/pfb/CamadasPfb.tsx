@@ -1,6 +1,7 @@
 import Image from "next/image";
 import { ANATOMIA, LAMINAS, ancoraDosNomes, clipPath } from "@/lib/pfb-anatomia";
 import { CAMADAS } from "@/lib/pfb-textos";
+import EntradaPfb from "./EntradaPfb";
 
 /** Altura (% da figura) de cada um dos cinco nomes, ao lado da sua lâmina. */
 const ANCORAS = ancoraDosNomes();
@@ -15,9 +16,14 @@ const PRIMEIRA_LAMINA = CAMADAS.nomes.map((_, k) => LAMINAS.findIndex((l) => l.n
  *
  * A figura é desenhada por seis cópias da mesma imagem (mesmas props: um download
  * só), cada uma recortada na sua lâmina por `clip-path`, a de cima por cima
- * (`z-index` 6 − i). `--fechado` (quanto a lâmina parte acima do lugar) e `--i`
- * ficam no `style` para o encaixe; por ora o CSS (`.pfb-lamina`, `.pfb-nome`) deixa
- * tudo no estado final, que é a imagem original composta.
+ * (`z-index` 6 − i; a figura é `isolate`, então esse empilhamento fica dentro dela).
+ *
+ * O encaixe (globals.css, bloco do capítulo 3): na entrada do `.pfb-palco`, cada
+ * lâmina parte de `translateY(var(--fechado))` com opacidade 0 e chega ao lugar,
+ * uma depois da outra por `--i`, e cada nome entra pela esquerda por `--l` (a sua
+ * primeira lâmina). Pela rolagem onde há `animation-timeline`; por tempo, pelas
+ * classes do `EntradaPfb`, onde não há. Sem JavaScript, com movimento reduzido ou no
+ * nível `leve`, tudo fica no estado final, que é a imagem original composta.
  *
  * Celular: título e frase em cima; embaixo, nomes à esquerda e figura à direita
  * (58% da largura, até 193 px). Computador (lg): três colunas na mesma faixa de
@@ -34,7 +40,7 @@ export default function CamadasPfb() {
       className="bg-[#F6F5F2] py-12 lg:py-24"
     >
       <div className="ds-wrap">
-        <div className="pfb-palco relative grid grid-cols-[minmax(0,1fr)_min(58%,193px)] gap-x-4 gap-y-6 lg:grid-cols-[minmax(0,1fr)_16rem_auto] lg:gap-x-16 lg:gap-y-0 lg:items-center">
+        <EntradaPfb className="pfb-palco relative grid grid-cols-[minmax(0,1fr)_min(58%,193px)] gap-x-4 gap-y-6 lg:grid-cols-[minmax(0,1fr)_16rem_auto] lg:gap-x-16 lg:gap-y-0 lg:items-center">
           <div className="col-span-2 lg:col-span-1 lg:row-start-1">
             <h2 id="pfb-camadas-titulo" className="font-serif pfb-t1 text-[#0B1F45]">
               {CAMADAS.titulo}
@@ -64,7 +70,7 @@ export default function CamadasPfb() {
           </ol>
           <figure
             aria-hidden="true"
-            className="relative aspect-[591/1410] w-full lg:col-span-1 lg:row-start-1 lg:w-auto lg:h-[600px]"
+            className="relative isolate aspect-[591/1410] w-full lg:col-span-1 lg:row-start-1 lg:w-auto lg:h-[600px]"
           >
             {LAMINAS.map((l, i) => (
               <div
@@ -89,7 +95,7 @@ export default function CamadasPfb() {
               </div>
             ))}
           </figure>
-        </div>
+        </EntradaPfb>
       </div>
     </section>
   );

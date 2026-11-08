@@ -23,6 +23,8 @@
  * ao carregar, com movimento completo e reduzido (390 × 844, 390 × 664 e 1440 × 900);
  * lâminas, nomes e cartas do leque no estado final com movimento reduzido, sem
  * JavaScript, no nível leve e na chegada por âncora (#tecnologia, #linhas, #ficha);
+ * as lâminas se encaixando na entrada do capítulo 3, pela rolagem e pelo caminho
+ * por tempo (EntradaPfb, com o CSS.supports do JS enganado);
  * sem rolagem lateral em todas as larguras e com o leque a meio caminho; os blocos
  * do capítulo 9 um por vez; os botões de hora do capítulo 5; a área livre do chat nos
  * capítulos de foto (1, 6 e 10) e o painel deles sem corte em janelas baixas; os
@@ -1070,15 +1072,25 @@ async function rolarAteOcupar(page, id) {
 
 /**
  * Os dois momentos especiais numa leitura só: de cada `.pfb-lamina`, `.pfb-nome` e
- * `.pfb-leque-carta`, o `transform` e a `opacity` calculados e se há animação
- * rodando nele (`getAnimations().length > 0`).
+ * `.pfb-leque-carta`, o `transform` calculado, a opacidade efetiva e se há animação
+ * rodando nele (`getAnimations().length > 0`). A opacidade efetiva é o produto da do
+ * elemento com a de cada ancestral até a `section` (inclusive): um invólucro que
+ * esmaeça (o `div` do EntradaPfb, por exemplo) não esconde um estado quebrado.
  */
 function medirMovimento(page) {
   return page.evaluate(() => {
+    const efetiva = (el) => {
+      let op = 1;
+      for (let n = el; n && n !== document.documentElement; n = n.parentElement) {
+        op *= Number(getComputedStyle(n).opacity);
+        if (n.tagName === "SECTION") break;
+      }
+      return op;
+    };
     const ler = (seletor) =>
       [...document.querySelectorAll(seletor)].map((el) => {
         const cs = getComputedStyle(el);
-        return { transform: cs.transform, opacidade: Number(cs.opacity), anima: typeof el.getAnimations === "function" && el.getAnimations().length > 0 };
+        return { transform: cs.transform, opacidade: efetiva(el), anima: typeof el.getAnimations === "function" && el.getAnimations().length > 0 };
       });
     return { laminas: ler(".pfb-lamina"), nomes: ler(".pfb-nome"), cartas: ler(".pfb-leque-carta") };
   });
@@ -1452,6 +1464,86 @@ async function etapa2Navegador(browser) {
     }
   }
 
+  // 8a. O encaixe pela rolagem (caminho principal, animation-timeline): com o palco 30% dentro
+  // da tela, alguma lâmina a meio caminho e com animação; com o fundo do palco 10 px acima do
+  // fim da tela (a entrada terminou: o último intervalo acaba em entry 90%), tudo no estado final.
+  for (const dim of [CELULAR, DESKTOP]) {
+    await verificar("Lâminas encaixam na entrada: topo de .pfb-palco em innerHeight − 0,3 × altura dá ≥ 1 .pfb-lamina com opacidade < 0,99 e animação; fundo do palco em innerHeight − 10 dá o estado final", dim, () =>
+      comContexto(browser, dim, {}, async (page) => {
+        await irAPagina(page);
+        const posicionar = (fracao, fundo) =>
+          page.evaluate(
+            ({ fracao, fundo }) => {
+              const r = document.querySelector(".pfb-palco").getBoundingClientRect();
+              const alvo = fundo ? r.bottom + scrollY - (innerHeight - 10) : r.top + scrollY - (innerHeight - fracao * r.height);
+              window.scrollTo({ top: Math.max(0, alvo), behavior: "instant" });
+            },
+            { fracao, fundo },
+          );
+        const falhas = [];
+        await posicionar(0.3, false);
+        await dormir(200);
+        const meio = await medirMovimento(page);
+        await capturarPfb(page, "encaixe-meio", dim);
+        const aMeio = meio.laminas.filter((l) => l.opacidade < 0.99 && l.anima).length;
+        if (aMeio === 0) falhas.push(`palco 30% dentro: nenhuma lâmina com opacidade < 0,99 e animação (${meio.laminas.map((l, i) => `${i}: ${r1(l.opacidade)}${l.anima ? " anima" : ""}`).join(", ")})`);
+        await posicionar(0, true);
+        await dormir(200);
+        const fim = estaNoFinal(await medirMovimento(page), dim[0]);
+        await capturarPfb(page, "encaixe-fim", dim);
+        if (!fim.ok) falhas.push(`fundo do palco em innerHeight − 10: ${fim.detalhe}`);
+        return comFalhas(falhas, `palco 30% dentro: ${aMeio} lâminas a meio caminho (opacidades ${meio.laminas.map((l) => r1(l.opacidade)).join(", ")}); fundo dentro: ${fim.detalhe}`);
+      }),
+    );
+  }
+
+  // 8b. O caminho por tempo (EntradaPfb): o CSS.supports do JS diz que não há animation-timeline,
+  // o CSS de verdade continua tendo. pfb-espera no topo; pfb-entrou ao rolar; 300 ms depois, uma
+  // lâmina a meio caminho numa DocumentTimeline (só o caminho por tempo usa uma); 1500 ms depois, o final.
+  await verificar("Caminho por tempo das lâminas (CSS.supports(animation-timeline) falso): pfb-espera no topo; pfb-entrou ≤ 1000 ms depois de rolar; 300 ms depois, lâmina com opacidade < 0,99 numa DocumentTimeline; 1500 ms depois, o estado final", DESKTOP, () =>
+    comContexto(browser, DESKTOP, {}, async (page, ctx) => {
+      await ctx.addInitScript(() => {
+        const o = CSS.supports.bind(CSS);
+        CSS.supports = (...a) => (/animation-timeline/.test(a.join(" ")) ? false : o(...a));
+      });
+      await irAPagina(page);
+      const classes = () => page.evaluate(() => document.querySelector(".pfb-palco")?.className ?? null);
+      const falhas = [];
+      const noTopo = await classes();
+      if (!/\bpfb-espera\b/.test(noTopo ?? "")) falhas.push(`no topo, .pfb-palco sem pfb-espera ("${noTopo}")`);
+      await rolarAoMeio(page, ".pfb-palco");
+      const t0 = Date.now();
+      let entrou = false;
+      while (Date.now() - t0 <= 1000) {
+        if (/\bpfb-entrou\b/.test((await classes()) ?? "")) {
+          entrou = true;
+          break;
+        }
+        await dormir(25);
+      }
+      const espera = Date.now() - t0;
+      if (!entrou) {
+        falhas.push(`pfb-entrou não apareceu em 1000 ms ("${await classes()}")`);
+        return comFalhas(falhas, `no topo "${noTopo}"`);
+      }
+      await dormir(300);
+      const meio = await page.evaluate(() =>
+        [...document.querySelectorAll(".pfb-lamina")].map((el) => {
+          const a = el.getAnimations()[0];
+          return { op: Number(getComputedStyle(el).opacity), tempo: a ? a.timeline instanceof DocumentTimeline : false };
+        }),
+      );
+      await capturarPfb(page, "encaixe-tempo-meio", DESKTOP);
+      const aMeio = meio.filter((l) => l.op < 0.99 && l.tempo).length;
+      if (aMeio === 0) falhas.push(`300 ms depois de pfb-entrou: nenhuma lâmina com opacidade < 0,99 numa DocumentTimeline (${meio.map((l, i) => `${i}: ${r1(l.op)}${l.tempo ? " tempo" : ""}`).join(", ")})`);
+      await dormir(1500);
+      const fim = estaNoFinal(await medirMovimento(page), DESKTOP[0]);
+      await capturarPfb(page, "encaixe-tempo-fim", DESKTOP);
+      if (!fim.ok) falhas.push(`1500 ms depois: ${fim.detalhe}`);
+      return comFalhas(falhas, `no topo "${noTopo}"; pfb-entrou em ${espera} ms; 300 ms depois, ${aMeio} lâminas a meio caminho numa DocumentTimeline; 1500 ms depois: ${fim.detalhe}`);
+    }),
+  );
+
   // 9. Review Focus 4: nenhum texto ou botão dos capítulos 1, 6 e 10 no quadrado do botão do chat.
   for (const dim of [CELULAR, DESKTOP]) {
     await verificar(`Área livre do chat: em abertura, manaus e bambu, nenhum h1, h2, h3, p, a, button ou li cruza o quadrado de ${AREA_CHAT} × ${AREA_CHAT} px do canto inferior direito da seção`, dim, () =>
@@ -1480,6 +1572,7 @@ async function etapa2Navegador(browser) {
             { i: id, lado: AREA_CHAT },
           );
           await capturarPfb(page, `chat-${id}`, dim);
+          if (m.lidos === 0) falhas.push(`${id}: nenhum h1, h2, h3, p, a, button ou li lido na seção (a conferência ficaria no vazio)`);
           if (m.cruzam.length) falhas.push(`${id}: ${m.cruzam.join(", ")} (quadrado ${m.q})`);
           partes.push(`${id}: ${m.lidos} elementos, quadrado ${m.q}`);
         }

@@ -1426,11 +1426,52 @@ html[data-mv-nivel="leve"] .ts-clima-nevoa { display: none; }
    o contêiner comum da figura e dos nomes. A figura são seis cópias da imagem,
    cada uma recortada na sua lâmina (`.pfb-lamina`; clip-path, z-index, --fechado
    e --i no style), e os cinco nomes são `.pfb-nome` (--l, a primeira lâmina do
-   nome). Por ora tudo fica parado no estado final, a imagem original composta:
-   o encaixe, quando entrar, parte de translateY(var(--fechado)) e opacity 0 e
-   chega a este padrão. */
+   nome). O padrão é o estado final, a imagem original composta: é o que fica sem
+   JavaScript, com movimento reduzido e no nível leve.
+
+   O encaixe: cada lâmina parte de translateY(var(--fechado)) (-fechadoY% da altura
+   da imagem; a película, sem fechadoY, só esmaece) com opacidade 0 e chega ao
+   lugar; o esmaecer cobre o que fica para fora. Os nomes entram 8 px pela esquerda.
+   Caminho principal: pela rolagem, na entrada do palco (view-timeline
+   --pfb-camadas), escalonado por --i e --l (6% da entrada cada um; o último acaba
+   em entry 90%). Caminho por tempo, onde não há animation-timeline: só pelas
+   classes do EntradaPfb (pfb-espera parado na partida, pfb-entrou 900 ms, 70 ms
+   entre vizinhos). Ele vem depois e é mais específico que o principal; a classe só
+   existe quando o EntradaPfb viu que não há view(), por isso fica fora do
+   @supports (e o teste que engana o CSS.supports do JS exercita este caminho). */
 .pfb-lamina { transform: none; opacity: 1; }
 .pfb-nome   { transform: none; opacity: 1; }
+@keyframes pfb-lamina-encaixa { from { transform: translateY(var(--fechado)); opacity: 0; } to { transform: none; opacity: 1; } }
+@keyframes pfb-nome-entra { from { transform: translateX(-8px); opacity: 0; } to { transform: none; opacity: 1; } }
+@media (prefers-reduced-motion: no-preference) {
+  @supports (animation-timeline: view()) {
+    html[data-mv-nivel="completo"] .pfb-palco { view-timeline: --pfb-camadas block; }
+    html[data-mv-nivel="completo"] .pfb-lamina {
+      animation: pfb-lamina-encaixa linear both;
+      animation-timeline: --pfb-camadas;
+      animation-range: entry calc(10% + var(--i) * 6%) entry calc(60% + var(--i) * 6%);
+    }
+    html[data-mv-nivel="completo"] .pfb-nome {
+      animation: pfb-nome-entra linear both;
+      animation-timeline: --pfb-camadas;
+      animation-range: entry calc(13% + var(--l) * 6%) entry calc(60% + var(--l) * 6%);
+    }
+  }
+  html[data-mv-nivel="completo"] .pfb-espera .pfb-lamina { animation: none; transform: translateY(var(--fechado)); opacity: 0; }
+  html[data-mv-nivel="completo"] .pfb-espera .pfb-nome { animation: none; transform: translateX(-8px); opacity: 0; }
+  html[data-mv-nivel="completo"] .pfb-entrou .pfb-lamina {
+    animation: pfb-lamina-encaixa 900ms cubic-bezier(.2,.7,.2,1) both;
+    animation-timeline: auto;
+    animation-range: normal;
+    animation-delay: calc(var(--i) * 70ms);
+  }
+  html[data-mv-nivel="completo"] .pfb-entrou .pfb-nome {
+    animation: pfb-nome-entra 900ms cubic-bezier(.2,.7,.2,1) both;
+    animation-timeline: auto;
+    animation-range: normal;
+    animation-delay: calc(var(--l) * 70ms + 120ms);
+  }
+}
 
 /* Capítulo 4: o "+" do bloco que abre (o details da ficha completa) gira 45°
    com o bloco aberto. A troca só anima no nível completo, sem movimento reduzido. */
