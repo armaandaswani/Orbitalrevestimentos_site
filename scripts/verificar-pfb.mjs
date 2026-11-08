@@ -1364,16 +1364,22 @@ async function etapa2Navegador(browser, produtos) {
     );
   }
 
-  // Dados do mock: ≥ 2 miniaturas e ≥ 1 lugar showroom.
-  await verificar('Dados: seção 4 com ≥ 2 [data-teste="miniatura"] e seção 6 com ≥ 1 [data-teste="lugar"][data-tipo="showroom"]', CELULAR, () =>
+  // Dados do mock: ≥ 2 miniaturas, ≥ 1 lugar showroom e o cartão único "Pontos de venda" (1 lugar revenda, que leva a /onde-comprar).
+  await verificar('Dados: seção 4 com ≥ 2 [data-teste="miniatura"] e seção 6 com ≥ 1 [data-teste="lugar"][data-tipo="showroom"] e 1 [data-tipo="revenda"] com href /onde-comprar', CELULAR, () =>
     comContexto(browser, CELULAR, {}, async (page) => {
       await irAPagina(page);
       const m = await page.evaluate(() => ({
         mini: document.querySelectorAll('section#linhas [data-teste="miniatura"]').length,
         showroom: document.querySelectorAll('section#como-pedir [data-teste="lugar"][data-tipo="showroom"]').length,
         lugares: document.querySelectorAll('section#como-pedir [data-teste="lugar"]').length,
+        revenda: [...document.querySelectorAll('section#como-pedir [data-teste="lugar"][data-tipo="revenda"]')].map((el) =>
+          [...el.querySelectorAll("a[href]")].map((a) => a.getAttribute("href"))),
       }));
-      return { ok: m.mini >= 2 && m.showroom >= 1, detalhe: `miniaturas ${m.mini}; lugares ${m.lugares}, dos quais showroom ${m.showroom}` };
+      const cartaoOk = m.revenda.length === 1 && m.revenda[0].length > 0 && m.revenda[0].every((h) => h === "/onde-comprar");
+      return {
+        ok: m.mini >= 2 && m.showroom >= 1 && cartaoOk,
+        detalhe: `miniaturas ${m.mini}; lugares ${m.lugares}, dos quais showroom ${m.showroom} e revenda ${m.revenda.length} (links: ${JSON.stringify(m.revenda)})`,
+      };
     }),
   );
 

@@ -12,7 +12,8 @@ import Revelar from "@/components/projetos/Revelar";
 import Trilho from "@/components/projetos/Trilho";
 import ProjetoCard from "@/components/projetos/ProjetoCard";
 import { carregarProjetos } from "@/lib/projetos-dados";
-import { REVENDA_RESERVA, nomeLugar, porDestaque, type Projeto } from "@/lib/projetos-tipos";
+import { CARTAO_PDV, parceirosNaGrade } from "@/lib/pontos-de-venda";
+import { nomeLugar, porDestaque, type Projeto } from "@/lib/projetos-tipos";
 
 /**
  * Home da marca, não de um produto só. A ordem conta a Orbital: abertura com
@@ -69,7 +70,7 @@ const faqs = [
   },
   {
     q: "Onde ver e comprar o PFB em Manaus?",
-    a: "A Orbital Revestimentos é a fornecedora exclusiva do PFB em Manaus, com pronta-entrega. Você vê o material ao vivo nos showrooms de empresas parceiras (Dinâmica Design, Foston Home, Ornare e Sierra Móveis), na Casa do Eletricista, que tem todos os modelos em display, ou recebe a visita de um consultor com as amostras no seu escritório. O pedido é feito direto com um consultor, sem intermediários.",
+    a: "A Orbital Revestimentos é a fornecedora exclusiva do Painel Flexível em Fibra de Bambu (PFB) em Manaus, com pronta-entrega. Você vê o material ao vivo nos showrooms de empresas parceiras (Dinâmica Design, Foston Home, Ornare e Sierra Móveis), encontra as revendas em Manaus na página Onde comprar, ou recebe a visita de um consultor com as amostras no seu escritório.",
   },
   {
     q: "Arquitetos e designers em Manaus podem especificar o PFB?",
@@ -135,9 +136,8 @@ export default async function Home() {
     .filter((p) => !vistas.has(p.image_after) && vistas.add(p.image_after))
     .slice(0, 8);
   const listaObras = obras.length >= 3 ? obras : OBRAS_RESERVA;
-  const showrooms = dados.lugares.filter((l) => l.kind === "showroom");
-  const revendas = dados.lugares.filter((l) => l.kind === "revenda");
-  const parceiros = [...showrooms, ...(revendas.length > 0 ? revendas : REVENDA_RESERVA)];
+  // Os showrooms e um cartão só, "Pontos de venda", que leva a /onde-comprar.
+  const parceiros = parceirosNaGrade(dados.lugares);
 
   return (
     <div className="escala-contida">
@@ -237,11 +237,11 @@ export default async function Home() {
             <ul className="grid grid-cols-1 sm:grid-cols-2 sm:gap-x-10 xl:grid-cols-5 xl:gap-x-0 border-t border-white/15">
               {parceiros.map((s) => (
                 <li key={s.id} className="border-b border-white/15 xl:border-b-0 xl:border-r xl:last:border-r-0 xl:px-5 xl:first:pl-0 xl:last:pr-0">
-                  <Link href={s.kind !== "revenda" || s.ambient_count > 0 ? `/projetos?showroom=${encodeURIComponent(s.slug)}` : "/projetos#revenda"}
+                  <Link href={s.id === CARTAO_PDV.id ? "/onde-comprar" : `/projetos?showroom=${encodeURIComponent(s.slug)}`}
                     className="group flex items-center justify-between gap-3 min-h-16 py-4">
                     <span>
                       <span className="block font-serif text-white text-[1.0625rem] leading-snug">{nomeLugar(s.name)}</span>
-                      <span className="block text-white/55 text-sobre tracking-[0.14em] uppercase mt-1">{s.kind === "revenda" ? "Revenda" : "Showroom parceiro"}</span>
+                      <span className="block text-white/55 text-sobre tracking-[0.14em] uppercase mt-1">{s.id === CARTAO_PDV.id ? "Revendas em Manaus" : "Showroom parceiro"}</span>
                     </span>
                     <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" aria-hidden className="mv-seta text-white/60 flex-shrink-0"><path d="M5 12h14M12 5l7 7-7 7" /></svg>
                   </Link>

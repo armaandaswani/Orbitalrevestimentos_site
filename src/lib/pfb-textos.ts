@@ -223,7 +223,7 @@ export const PEDIR: {
   titulo: "Onde ver e como pedir",
   // fonte: [Showroom]
   frase:
-    "Veja o PFB aplicado nos showrooms parceiros, ou as placas em grande formato na Casa do Eletricista.",
+    "Veja o PFB aplicado nos showrooms parceiros ou encontre as revendas em Manaus.",
   reserva: {
     frase: "Veja onde o PFB já foi aplicado.",
     link: "Ver projetos e showrooms",

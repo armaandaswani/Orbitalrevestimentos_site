@@ -22,6 +22,8 @@ import {
   DURACAO_ABERTURA_MS,
   CHAVE_ABERTURA,
   SCRIPT_ABERTURA_PDV,
+  CARTAO_PDV,
+  parceirosNaGrade,
 } from "./pontos-de-venda.ts";
 import { CAIXA_GERADA, LARGURA, ALTURA, ROTULOS_FIXOS } from "../components/onde-comprar/dados-mapa-manaus.ts";
 
@@ -550,4 +552,46 @@ test("o mapa gerado traz os dois rótulos fixos dentro do viewBox", () => {
     assert.ok(r.y >= 0 && r.y <= ALTURA_MAPA, `${r.texto}: y ${r.y}`);
     assert.ok(Number.isFinite(r.rotacao));
   }
+});
+
+// ── Cartão único "Pontos de venda" nas grades (home, /projetos, /produtos/pfb) ──
+const lugar = (id, kind) => ({
+  id, slug: id, name: id, kind, address: null, maps_url: null, description: null, logo_url: null, cover_url: null,
+  ambient_count: 0, display_cover: null, display_focus_x: 0.5, display_focus_y: 0.5, display_zoom: 1,
+});
+
+test("CARTAO_PDV é uma revenda sintética com o texto aprovado", () => {
+  assert.equal(CARTAO_PDV.id, "pontos-de-venda");
+  assert.equal(CARTAO_PDV.slug, "pontos-de-venda");
+  assert.equal(CARTAO_PDV.kind, "revenda");
+  assert.equal(CARTAO_PDV.name, "Pontos de venda");
+  assert.equal(CARTAO_PDV.description, "Lojas em Manaus");
+  assert.equal(CARTAO_PDV.ambient_count, 0);
+  assert.equal(CARTAO_PDV.display_focus_x, 0.5);
+  assert.equal(CARTAO_PDV.display_focus_y, 0.5);
+  assert.equal(CARTAO_PDV.display_zoom, 1);
+  assert.equal(CARTAO_PDV.address, null);
+  assert.equal(CARTAO_PDV.display_cover, null);
+});
+
+test("parceirosNaGrade: 4 showrooms e 4 revendas viram 5 itens e o cartão fica no fim", () => {
+  const entrada = [
+    lugar("s1", "showroom"), lugar("r1", "revenda"), lugar("s2", "showroom"), lugar("r2", "revenda"),
+    lugar("s3", "showroom"), lugar("r3", "revenda"), lugar("s4", "showroom"), lugar("r4", "revenda"),
+  ];
+  const saida = parceirosNaGrade(entrada);
+  assert.equal(saida.length, 5);
+  assert.deepEqual(saida.slice(0, 4).map((l) => l.id), ["s1", "s2", "s3", "s4"]);
+  assert.equal(saida[4], CARTAO_PDV);
+  assert.equal(entrada.length, 8);
+});
+
+test("parceirosNaGrade: sem revendas o cartão aparece do mesmo jeito", () => {
+  const saida = parceirosNaGrade([lugar("s1", "showroom"), lugar("s2", "showroom")]);
+  assert.deepEqual(saida.map((l) => l.id), ["s1", "s2", "pontos-de-venda"]);
+});
+
+test("parceirosNaGrade: sem showrooms devolve só o cartão", () => {
+  assert.deepEqual(parceirosNaGrade([]), [CARTAO_PDV]);
+  assert.deepEqual(parceirosNaGrade([lugar("r1", "revenda")]), [CARTAO_PDV]);
 });

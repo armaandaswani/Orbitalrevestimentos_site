@@ -10,8 +10,9 @@ import Revelar from "@/components/projetos/Revelar";
 import ContatoCta from "@/components/ContatoCta";
 import VisorProjetos, { useVisor } from "@/components/projetos/VisorProjetos";
 import { modelosTxt } from "@/lib/projeto-modelos";
+import { parceirosNaGrade } from "@/lib/pontos-de-venda";
 import {
-  CATEGORIA_SHOWROOM, ESTILO_ESPERA_URL, REVENDA_RESERVA, combinaBusca, nomeLugar, ordenarCategorias, porDestaque, rotuloTag, secoesDoProjeto,
+  CATEGORIA_SHOWROOM, ESTILO_ESPERA_URL, combinaBusca, nomeLugar, ordenarCategorias, porDestaque, rotuloTag, secoesDoProjeto,
   type Projeto, type Showroom,
 } from "@/lib/projetos-tipos";
 import type { DadosProjetos } from "@/lib/projetos-dados";
@@ -60,18 +61,18 @@ function escreverUrl(categoria: string, mostrar: number) {
 export default function ProjetosVitrine({ projetos, categorias, lugares, renders, agora }: DadosProjetos & { agora: number }) {
   const showrooms = lugares.filter((l) => l.kind === "showroom");
   const revendasBanco = lugares.filter((l) => l.kind === "revenda");
-  // Parceiros: os showrooms (para o arquiteto ver ao vivo) e o canal de revenda.
-  const parceiros = [...showrooms, ...(revendasBanco.length > 0 ? revendasBanco : REVENDA_RESERVA)];
+  // O visor conhece os showrooms e as revendas do banco; a grade mostra os showrooms e o cartão "Pontos de venda".
+  const parceiros = [...showrooms, ...revendasBanco];
   return (
     <VisorProjetos projetos={projetos} lugares={parceiros} base="/projetos">
-      <Conteudo projetos={projetos} categorias={categorias} parceiros={parceiros} showrooms={showrooms} renders={renders} agora={agora} />
+      <Conteudo projetos={projetos} categorias={categorias} parceiros={parceiros} gradeParceiros={parceirosNaGrade(lugares)} showrooms={showrooms} renders={renders} agora={agora} />
     </VisorProjetos>
   );
 }
 
 function Conteudo({
-  projetos, categorias, parceiros, showrooms, renders, agora,
-}: Omit<DadosProjetos, "lugares"> & { parceiros: Showroom[]; showrooms: Showroom[]; agora: number }) {
+  projetos, categorias, parceiros, gradeParceiros, showrooms, renders, agora,
+}: Omit<DadosProjetos, "lugares"> & { parceiros: Showroom[]; gradeParceiros: Showroom[]; showrooms: Showroom[]; agora: number }) {
   const visor = useVisor();
   const [categoria, setCategoria] = useState("todos");
   const [busca, setBusca] = useState("");
@@ -327,12 +328,12 @@ function Conteudo({
           <Revelar className="max-w-2xl mb-[clamp(1.5rem,1rem+1.5vw,2.5rem)]">
             <h2 id="parceiros-titulo" className="font-serif text-primary text-t2 font-normal tracking-[-0.02em] text-balance">Onde ver o PFB</h2>
             <p className="text-on-surface-variant text-lead mt-3 text-pretty">
-              Ambientes decorados com o PFB nos showrooms parceiros, e todos os modelos em display na Casa do Eletricista.
+              Ambientes decorados com o Painel Flexível em Fibra de Bambu nos showrooms parceiros, e as revendas em Manaus para você comprar.
             </p>
           </Revelar>
           <Revelar efeito="surge">
             <ul className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-5 gap-3 lg:gap-4">
-              {parceiros.map((s) => (
+              {gradeParceiros.map((s) => (
                 <li key={s.id}>
                   <LugarCard compacto lugar={s} agora={agora} onAbrir={visor ? (l) => visor.abrirShowroom(l) : undefined} />
                 </li>

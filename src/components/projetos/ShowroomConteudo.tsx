@@ -81,7 +81,7 @@ export default function ShowroomConteudo({
           <p className="text-on-surface-variant text-legenda">{contaAmbientes(ambientes.length)} neste {revenda ? "ponto" : "showroom"}</p>
         </div>
         {ambientes.length === 0
-          ? <p className="text-on-surface-variant text-corpo py-10 text-center">{revenda ? "Todos os modelos em display, no tamanho real." : "Nenhum ambiente publicado aqui ainda."}</p>
+          ? (!revenda && <p className="text-on-surface-variant text-corpo py-10 text-center">Nenhum ambiente publicado aqui ainda.</p>)
           : <GradeProjetos projetos={ambientes} onAbrir={onAbrirProjeto} href={hrefProjeto} />}
       </section>
 
