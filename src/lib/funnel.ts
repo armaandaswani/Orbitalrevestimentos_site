@@ -20,7 +20,14 @@ export type FunnelEvent =
   | "link_copiado"
   | "editar_projeto"
   | "consultor_clicado"
-  | "manual_solicitado";
+  | "manual_solicitado"
+  // /onde-comprar: só o slug da loja, a origem do link e o app de rota.
+  | "pdv_pagina_aberta"
+  | "pdv_loja_aberta"
+  | "pdv_whatsapp"
+  | "pdv_rota"
+  | "pdv_instagram"
+  | "pdv_loja_invalida";
 
 type Props = Record<string, string | number | boolean | null>;
 
@@ -37,14 +44,19 @@ const envioGtag = criarEnvioGtag({
   agendar: (fn, ms) => setTimeout(fn, ms),
 });
 
-export function trackFunnel(event: FunnelEvent, props?: Props) {
+/**
+ * `saida`: o clique leva o visitante para fora (WhatsApp, rota, Instagram). Só
+ * o envio ao GA4 recebe `transport_type: "beacon"`, para o evento sair mesmo
+ * com a página indo embora; o Vercel Analytics recebe os mesmos `props`.
+ */
+export function trackFunnel(event: FunnelEvent, props?: Props, opcoes?: { saida?: boolean }) {
   try {
     track(event, props);
   } catch {
     // analytics é best-effort — nunca quebra o fluxo.
   }
   try {
-    envioGtag.enviar(event, props);
+    envioGtag.enviar(event, opcoes?.saida ? { ...props, transport_type: "beacon" } : props);
   } catch {
     // idem para o GA4.
   }

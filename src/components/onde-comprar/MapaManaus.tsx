@@ -19,6 +19,14 @@ const { cor, largura } = ESTILO_MANAUS;
 const paraPorcento = (valor: number, total: number) => `${((valor / total) * 100).toFixed(2)}%`;
 const posicao = (x: number, y: number) => ({ left: paraPorcento(x, LARGURA_MAPA), top: paraPorcento(y, ALTURA_MAPA) });
 
+/**
+ * `rotulosDeBairro` põe o rótulo 34 unidades abaixo da ponta do pino mais baixo
+ * do bairro. Centrado ali, o texto ficava ~30 px abaixo da ponta a 390 px, bem
+ * mais longe que no quadro aprovado (4 px até o topo do texto); a posição volta
+ * para a ponta e a âncora passa a ser o topo do texto.
+ */
+const DESCIDA_ROTULO = 34;
+
 /** Halo da cor do fundo, para o texto continuar legível sobre ruas e água. */
 const HALO = "[text-shadow:0_0_2px_var(--color-background),0_0_3px_var(--color-background),0_0_5px_var(--color-background),0_0_7px_var(--color-background)]";
 
@@ -26,6 +34,8 @@ const HALO = "[text-shadow:0_0_2px_var(--color-background),0_0_3px_var(--color-b
  * Mapa real de Manaus (OpenStreetMap, desenhado por scripts/gerar-mapa-manaus.mjs)
  * com um pino por loja. Server Component: o SVG sai inline no HTML e nada disto
  * entra no JS do cliente. Recebe os pontos já filtrados como ativos.
+ * Com a folha de uma loja aberta, a IlhaPdv marca o pino dela com
+ * `data-pdv-ativo` (fica entre o véu e a folha) e os outros com `data-pdv-apagado`.
  *
  * Tudo mora no contêiner `relative` (proporção fixa 400 × 480, sem CLS), onde a
  * abertura da página também entra. Loja fora de Manaus ou sem espaço para o
@@ -84,7 +94,13 @@ export function MapaManaus({ pontos }: { pontos: PontoDeVenda[] }) {
           <span
             key={b.bairro}
             className={`absolute whitespace-nowrap font-sans text-xs font-medium text-on-surface ${HALO}`}
-            style={{ ...posicao(b.x, b.y), transform: "translate(-50%, -50%)" }}
+            style={
+              b.y < ALTURA_MAPA - 8
+                ? // Como no quadro aprovado: o topo do texto 4 px abaixo da ponta do pino mais baixo.
+                  { ...posicao(b.x, b.y - DESCIDA_ROTULO), transform: "translate(-50%, 4px)" }
+                : // Rótulo encostado no fundo do mapa: fica centrado onde rotulosDeBairro pôs.
+                  { ...posicao(b.x, b.y), transform: "translate(-50%, -50%)" }
+            }
           >
             {b.bairro}
           </span>
@@ -98,7 +114,7 @@ export function MapaManaus({ pontos }: { pontos: PontoDeVenda[] }) {
           data-pdv-pino={p.slug}
           tabIndex={-1}
           aria-hidden="true"
-          className="absolute grid h-11 w-11 -translate-x-1/2 -translate-y-full place-items-start justify-items-center after:absolute after:bottom-0 after:left-1/2 after:-z-10 after:h-2.5 after:w-2.5 after:-translate-x-1/2 after:-translate-y-px after:rotate-45 after:bg-surface-container-lowest after:shadow-[2px_2px_2px_rgba(11,31,69,0.18)]"
+          className="absolute grid h-11 w-11 -translate-x-1/2 -translate-y-full place-items-start transition-opacity data-[pdv-apagado]:opacity-35 data-[pdv-ativo]:z-[56] justify-items-center after:absolute after:bottom-0 after:left-1/2 after:-z-10 after:h-2.5 after:w-2.5 after:-translate-x-1/2 after:-translate-y-px after:rotate-45 after:bg-surface-container-lowest after:shadow-[2px_2px_2px_rgba(11,31,69,0.18)]"
           style={posicao(p.x, p.y)}
         >
           {/* SVG da marca de 36 px em disco branco (o desenho aprovado); o 44 do atributo é a caixa do alvo de toque. */}

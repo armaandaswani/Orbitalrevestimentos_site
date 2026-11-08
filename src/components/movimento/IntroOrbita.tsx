@@ -21,10 +21,14 @@ import {
  * restritas nem a chave é gravada: a intro fica para a primeira página pública.
  * Grava a chave antes de ligar o atributo: se gravar falhar, não há intro.
  * Qualquer erro cai no catch e deixa o atributo desligado.
+ * Em /onde-comprar (e subcaminhos) a página tem a abertura própria: o porteiro
+ * grava a chave (a intro não toca depois, na página seguinte) e não liga nada.
+ * Exportado para o porteiro.test.mjs rodar a string no `vm`.
  * Não usa <Script beforeInteractive>: no App Router ele é enfileirado para o
  * runtime do Next e não roda antes da pintura.
  */
-const PORTEIRO = `(function(){try{
+export const PORTEIRO = `(function(){try{
+if(/^\\/onde-comprar(\\/|$)/.test(location.pathname)){try{sessionStorage.setItem("orbital-intro","1")}catch(e){}return;}
 if(/^\\/(admin|parceiro|representante|orcamento|o)(\\/|$)/.test(location.pathname))return;
 if(window.matchMedia&&window.matchMedia("(prefers-reduced-motion: reduce)").matches)return;
 var s=window.sessionStorage;
