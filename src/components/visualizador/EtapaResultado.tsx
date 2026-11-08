@@ -17,7 +17,7 @@ import AntesDepois from "./AntesDepois";
 import EsperaGeracao from "./EsperaGeracao";
 import { rolarParaTopo } from "./VizShell";
 import { useProporcao } from "./EditorMarcacao";
-import type { SinaisGeracao } from "./espera";
+import { tituloRevelacao, type SinaisGeracao } from "./espera";
 import { catalogoPath } from "@/lib/product-link";
 
 const ROTULO = "block text-[11px] font-bold uppercase tracking-[0.14em] text-[#5b5f66]";
@@ -98,7 +98,7 @@ export default function EtapaResultado({
     : falhou
       ? "A visualização não saiu"
       : revelado
-        ? "Voilà! Este é o seu novo ambiente"
+        ? tituloRevelacao(sinais?.variantes)
         : "Sua simulação está pronta";
 
   // No celular o balão do chat some enquanto o Resultado está na tela (ele

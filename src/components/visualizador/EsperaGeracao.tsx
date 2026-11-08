@@ -5,21 +5,28 @@
 // geração (prévias, imagem final) e nunca terminam antes da imagem; parada
 // além do previsto, a etapa troca um texto vivo e a barra segue subindo
 // devagar. Cada etapa acende um efeito sutil na foto (varredura, grade de
-// medição, luz passando, placas). Só transform e opacity; com movimento
-// reduzido, os efeitos ficam parados e as trocas acontecem no lugar
-// (globals.css › Espera do Visualizador). Quando tudo se completa, avisa o
-// Resultado com onConcluida.
+// medição, luz passando, placas) e tem a sua cor. Embaixo, a órbita: só a
+// etapa atual e as duas anteriores; na atual um ponto orbita o núcleo, e ao
+// fechar ela pousa num check colorido e a trilha anda para a esquerda. O
+// total de etapas nunca aparece. A barra é sólida, na cor da etapa (o manual
+// da marca não usa degradê). Só transform e opacity; com movimento reduzido, nada gira nem
+// pulsa e as trocas acontecem no lugar (globals.css › Espera do
+// Visualizador). Quando tudo se completa, avisa o Resultado com onConcluida.
 import React, { useEffect, useRef, useState } from "react";
 import {
-  ETAPAS_ESPERA,
+  CORES_ETAPA,
   TOTAL_ETAPAS,
   etapaAlvo,
+  etapaEscolhida,
   fracaoBarra,
   proximoPasso,
   textoDaEtapa,
   textoVivo,
   type SinaisGeracao,
 } from "./espera";
+
+/** Uma camada por cor na barra; a da etapa atual aparece por opacidade. */
+const CORES_BARRA = [...new Set(CORES_ETAPA)];
 
 const TICK_MS = 200;
 
@@ -68,14 +75,21 @@ export default function EsperaGeracao({
   }, [concluida, onConcluida]);
 
   const indice = Math.min(mostrada, TOTAL_ETAPAS - 1);
-  const etapa = ETAPAS_ESPERA[indice];
-  const vivo = textoVivo(mostrada, desdeTroca);
+  const etapa = etapaEscolhida(indice, sinais.variantes);
+  const vivo = textoVivo(mostrada, desdeTroca, sinais.variantes[0] ?? 0);
   const texto = vivo ?? textoDaEtapa(etapa, modelos);
   const fracao = fracaoBarra(mostrada, desdeTroca);
   const verPrevia = !!previa && mostrada >= 5;
+  const cor = CORES_ETAPA[indice];
+
+  // Órbita: a etapa atual e as duas anteriores (e a que acabou de sair, para
+  // ela deslizar para fora). Concluída, as três últimas viram checks.
+  const referencia = concluida ? TOTAL_ETAPAS - 1 : mostrada;
+  const trilha: number[] = [];
+  for (let i = Math.max(0, referencia - 3); i <= Math.min(referencia, TOTAL_ETAPAS - 1); i++) trilha.push(i);
 
   return (
-    <div data-viz-espera>
+    <div data-viz-espera style={{ "--cor": cor } as React.CSSProperties}>
       <div
         className="viz-espera viz-res-quadro relative mx-auto overflow-hidden rounded-[6px] bg-[#0b1220]"
         data-etapa={indice}
@@ -120,61 +134,71 @@ export default function EsperaGeracao({
           ))}
         </span>
 
+        {/* Selo de honestidade no canto: é uma simulação; o ponto tem a cor da etapa. */}
+        <span className="pointer-events-none absolute left-3 top-3 inline-flex items-center gap-1.5 rounded-full bg-white/90 px-2.5 py-1 text-[11px] font-semibold uppercase tracking-[0.12em] text-[#0B1F45]">
+          <span aria-hidden className="viz-espera-selo-ponto h-1.5 w-1.5 rounded-full" />
+          Simulação por IA
+        </span>
+
         {/* Texto da etapa sobre a foto, com um degradê embaixo para ler. */}
         <div className="viz-espera-legenda pointer-events-none absolute inset-x-0 bottom-0 px-4 pb-4 pt-16 sm:px-6 sm:pb-5">
-          <p className="text-[11px] font-semibold uppercase tracking-[0.16em] text-white/70">
-            Simulação por IA
-          </p>
           <div key={indice} className="viz-espera-texto">
-            <p className="mt-1 font-serif text-[1.15rem] leading-snug text-white sm:text-[1.4rem] [text-wrap:balance]">
+            <p className="font-serif text-[1.2rem] leading-snug text-white sm:text-[1.45rem] [text-wrap:balance]">
               {etapa.titulo}
             </p>
           </div>
-          <p key={texto} className="viz-espera-vivo mt-1 text-[13px] leading-snug text-white/80 sm:text-sm">
+          <p key={texto} className="viz-espera-vivo mt-1 text-[13px] leading-snug text-white/85 sm:text-sm">
             {texto}
           </p>
         </div>
       </div>
 
-      {/* Barra e etapas, na largura do quadro. */}
+      {/* A órbita das etapas e a barra, numa linha na largura do quadro. */}
       <div
-        className="viz-res-nota mx-auto mt-3"
+        className="viz-res-nota mx-auto mt-3 flex items-center gap-3"
         style={{ "--proporcao": proporcao } as React.CSSProperties}
       >
-        <span aria-hidden className="relative block h-[3px] overflow-hidden rounded-full bg-[#e4e6ea]">
-          <span
-            className="viz-espera-barra absolute inset-0 origin-left rounded-full bg-[#0B1F45]"
-            style={{ transform: `scaleX(${fracao})` }}
-          >
-            <span className="viz-espera-brilho absolute inset-y-0 left-0 w-1/4" />
-          </span>
-        </span>
-        <div className="mt-2.5 flex items-center justify-between gap-3">
-          <p className="text-[12px] tabular-nums text-[#5b5f66]">
-            {concluida ? "Pronto" : `Etapa ${indice + 1} de ${TOTAL_ETAPAS}`}
-          </p>
-          <ol aria-hidden className="flex items-center gap-1.5">
-            {ETAPAS_ESPERA.map((e, i) => {
-              const feita = i < mostrada;
-              const atual = i === mostrada;
-              return (
-                <li
-                  key={e.titulo}
-                  data-estado={feita ? "feita" : atual ? "atual" : "falta"}
-                  className="viz-espera-check relative grid h-[18px] w-[18px] place-items-center rounded-full"
-                >
-                  {feita ? (
-                    <svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="3.2" strokeLinecap="round" strokeLinejoin="round">
+        <ol aria-hidden className="viz-trilha relative h-[40px] w-[110px] shrink-0">
+          {trilha.map((i) => {
+            const feita = i < mostrada;
+            const vaga = i - referencia + 2;
+            return (
+              <li
+                key={i}
+                data-vaga={vaga}
+                className="viz-trilha-item absolute left-0 top-[7px] h-[26px] w-[26px]"
+                style={{ "--vaga": vaga, color: CORES_ETAPA[i] } as React.CSSProperties}
+              >
+                {feita ? (
+                  <span key="feita" className="viz-feita absolute inset-0 grid place-items-center rounded-full">
+                    <span className="viz-feita-onda absolute inset-0 rounded-full" />
+                    <svg className="relative" width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="#fff" strokeWidth="3.4" strokeLinecap="round" strokeLinejoin="round">
                       <path d="M5 12.5l4.5 4.5L19 7.5" />
                     </svg>
-                  ) : atual ? (
-                    <span className="viz-espera-giro absolute inset-0 rounded-full" />
-                  ) : null}
-                </li>
-              );
-            })}
-          </ol>
-        </div>
+                  </span>
+                ) : (
+                  <span key="orbita" className="viz-orbita absolute inset-0">
+                    <span className="viz-orbita-onda absolute inset-0 rounded-full" />
+                    <span className="viz-orbita-anel absolute inset-0 rounded-full" />
+                    <span className="viz-orbita-giro absolute inset-0">
+                      <span className="viz-orbita-lua absolute left-1/2 top-0 h-[7px] w-[7px] rounded-full" />
+                    </span>
+                    <span className="viz-orbita-nucleo absolute left-1/2 top-1/2 h-[10px] w-[10px] rounded-full" />
+                  </span>
+                )}
+              </li>
+            );
+          })}
+        </ol>
+        <span aria-hidden className="relative block h-[4px] min-w-0 flex-1 overflow-hidden rounded-full bg-[#e9ebee]">
+          {/* O preenchimento anda para a direita; a cor troca com a etapa, por opacidade. */}
+          <span className="viz-espera-barra absolute inset-0 overflow-hidden rounded-full" style={{ transform: `translate3d(${(fracao - 1) * 100}%, 0, 0)` }}>
+            {CORES_BARRA.map((c) => (
+              <span key={c} className="viz-espera-barra-cor absolute inset-0" data-ver={c === cor ? "" : undefined} style={{ background: c }} />
+            ))}
+            <span className="viz-espera-brilho absolute inset-y-0 right-0 w-1/4" />
+          </span>
+        </span>
       </div>
 
       {/* Só os títulos das etapas são anunciados; o texto vivo não. */}

@@ -2470,11 +2470,26 @@ html.mv-cursor:has([data-lupa="aberta"]) .mv-cursor-corpo { opacity: 0; }
   transform-origin: 50% 0; transform: scaleY(1);
 }
 .viz-espera-legenda { background: linear-gradient(180deg, rgba(6, 12, 24, 0) 0%, rgba(6, 12, 24, 0.55) 45%, rgba(6, 12, 24, 0.82) 100%); }
-.viz-espera-check[data-estado="feita"] { background: #36A35C; color: #fff; }
-.viz-espera-check[data-estado="atual"] { box-shadow: inset 0 0 0 1.5px #0B1F45; }
-.viz-espera-check[data-estado="falta"] { box-shadow: inset 0 0 0 1.5px #d5d8dd; }
-.viz-espera-giro { border: 1.5px solid transparent; border-top-color: #36A35C; }
-.viz-espera-brilho { background: linear-gradient(90deg, rgba(255, 255, 255, 0), rgba(255, 255, 255, 0.55), rgba(255, 255, 255, 0)); transform: translate3d(-100%, 0, 0); }
+/* Cor da etapa (--cor, posta pelo componente): ponto do selo e varredura. */
+.viz-espera-selo-ponto { background: var(--cor, #36A35C); }
+.viz-fx-varredura > span {
+  background: linear-gradient(180deg, transparent 0%, color-mix(in srgb, var(--cor, #36A35C) 22%, transparent) 82%, rgba(255, 255, 255, 0.85) 99%, transparent 100%);
+}
+/* Órbita das etapas: cada item mora numa vaga (0, 1, 2; -1 é a que sai pela
+   esquerda) e anda de vaga com transform. A cor vem do color do item. */
+.viz-trilha { overflow-x: clip; }
+.viz-trilha-item { transform: translate3d(calc(var(--vaga) * 36px), 0, 0); }
+.viz-trilha-item[data-vaga="-1"] { opacity: 0; }
+.viz-trilha-item[data-vaga="0"] { opacity: 0.55; }
+.viz-espera-barra-cor { opacity: 0; }
+.viz-espera-barra-cor[data-ver] { opacity: 1; }
+.viz-orbita-anel { box-shadow: inset 0 0 0 1.5px currentColor; opacity: 0.3; }
+.viz-orbita-onda { box-shadow: inset 0 0 0 1.5px currentColor; opacity: 0; }
+.viz-orbita-lua { background: currentColor; transform: translate3d(-50%, -50%, 0); }
+.viz-orbita-nucleo { background: currentColor; transform: translate3d(-50%, -50%, 0); }
+.viz-feita { background: currentColor; }
+.viz-feita-onda { box-shadow: 0 0 0 2px currentColor; opacity: 0; }
+.viz-espera-brilho { background: linear-gradient(90deg, rgba(255, 255, 255, 0), rgba(255, 255, 255, 0.35)); transform: translate3d(100%, 0, 0); }
 .viz-espera[data-concluida] .viz-fx { opacity: 0; }
 .viz-revela-veu { opacity: 0; }
 .viz-revela-luz {
@@ -2487,7 +2502,11 @@ html.mv-cursor:has([data-lupa="aberta"]) .mv-cursor-corpo { opacity: 0; }
 @keyframes viz-junta { from { transform: scaleY(0); } to { transform: scaleY(1); } }
 @keyframes viz-texto-entra { from { opacity: 0; transform: translate3d(0, 8px, 0); } to { opacity: 1; transform: none; } }
 @keyframes viz-gira { to { transform: rotate(360deg); } }
-@keyframes viz-brilho { from { transform: translate3d(-100%, 0, 0); } to { transform: translate3d(400%, 0, 0); } }
+@keyframes viz-brilho { from { transform: translate3d(-300%, 0, 0); } to { transform: translate3d(100%, 0, 0); } }
+@keyframes viz-onda { from { opacity: 0.55; transform: scale(1); } to { opacity: 0; transform: scale(1.75); } }
+@keyframes viz-orbita-entra { from { opacity: 0; transform: scale(0.4); } to { opacity: 1; transform: none; } }
+@keyframes viz-pousa { from { opacity: 0.4; transform: scale(0.45); } to { opacity: 1; transform: none; } }
+@keyframes viz-estoura { from { opacity: 0.7; transform: scale(1); } to { opacity: 0; transform: scale(2.1); } }
 @keyframes viz-veu-some { 0%, 25% { opacity: 1; } 100% { opacity: 0; } }
 @keyframes viz-luz-revela { from { transform: translate3d(-100%, 0, 0); } to { transform: translate3d(220%, 0, 0); } }
 @media (prefers-reduced-motion: no-preference) {
@@ -2498,9 +2517,15 @@ html.mv-cursor:has([data-lupa="aberta"]) .mv-cursor-corpo { opacity: 0; }
   .viz-fx-luz > span { animation: viz-luz 3200ms var(--mv-percurso) infinite; }
   .viz-espera[data-etapa="4"] .viz-fx-placas > span { animation: viz-junta 900ms var(--mv-chegada) both; animation-delay: calc(var(--i) * 140ms); }
   .viz-espera-texto, .viz-espera-vivo { animation: viz-texto-entra var(--mv-base) var(--mv-chegada) both; }
-  .viz-espera-barra { transition: transform 700ms var(--mv-chegada); }
-  .viz-espera-brilho { animation: viz-brilho 1800ms ease-in-out infinite; }
-  .viz-espera-giro { animation: viz-gira 900ms linear infinite; }
+  .viz-espera-barra { transition: transform 700ms linear; }
+  .viz-espera-barra-cor { transition: opacity 500ms var(--mv-chegada); }
+  .viz-espera-brilho { animation: viz-brilho 1800ms var(--mv-percurso) infinite; }
+  .viz-trilha-item { transition: transform 560ms var(--mv-chegada), opacity 420ms var(--mv-chegada); }
+  .viz-orbita { animation: viz-orbita-entra 420ms var(--mv-chegada) both; }
+  .viz-orbita-giro { animation: viz-gira 1100ms linear infinite; }
+  .viz-orbita-onda { animation: viz-onda 1600ms var(--mv-chegada) infinite; }
+  .viz-feita { animation: viz-pousa 460ms var(--mv-chegada) both; }
+  .viz-feita-onda { animation: viz-estoura 700ms var(--mv-chegada) both; }
   .viz-revela-veu { animation: viz-veu-some 1400ms var(--mv-chegada) both; }
   .viz-revela-luz { animation: viz-luz-revela 1200ms var(--mv-percurso) both; }
   .viz-revela-acoes { animation: viz-area-entra var(--mv-base) var(--mv-chegada) 500ms both; }
