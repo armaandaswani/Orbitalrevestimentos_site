@@ -46,14 +46,26 @@ export function visualizadorRenderMessage(items: VisualizadorItem[]): string {
 /**
  * The full WhatsApp caption: saved summary + short link + the question Ste picks up from. Drops lines of
  * the older wording ("Gostou do resultado? Veja mais projetos…", catalog links) kept in summaries saved before.
+ * With the name the client typed, the greeting uses it ("Oi, Mariana, tudo bem?"); Ste reads it from there for the
+ * follow-ups (dono, 08/11/2026).
  */
-export function visualizadorCaption(summary: string, link: string): string {
+export function visualizadorCaption(summary: string, link: string, name?: string | null): string {
+  const first = greetingName(name);
   const base = summary
     .split("\n")
     .filter((l) => !/\/produtos(\/pfb)?(\?|$)/.test(l.trim()) && !/^Gostou do resultado\?/.test(l.trim()))
+    .map((l, i) => (i === 0 && first ? l.replace(/^Oi, tudo bem\?/, `Oi, ${first}, tudo bem?`) : l))
     .join("\n")
     .trimEnd();
   return `${base}\n${link}\n\nO que você achou do resultado?`;
+}
+
+/** First name for the greeting, as people write it ("mariana souza" → "Mariana"); null if it doesn't look like a name. */
+export function greetingName(name?: string | null): string | null {
+  const words = (name ?? "").replace(/[^\p{L}\s'-]/gu, " ").trim().split(/\s+/);
+  const first = words.find((w) => !/^(dr|dra|sr|sra|srta|arq|eng)$/i.test(w)) ?? "";
+  if (first.length < 2 || first.length > 20) return null;
+  return first[0].toUpperCase() + first.slice(1).toLowerCase();
 }
 
 /** Short link for a render (route /v/[code]): the first 12 hex digits of its UUID; null if it's no UUID. */

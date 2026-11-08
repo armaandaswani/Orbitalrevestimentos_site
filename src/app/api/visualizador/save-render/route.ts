@@ -57,10 +57,10 @@ async function maybeSendRenderWhatsapp(
 
     const { data } = await db
       .from("visualizador_renders")
-      .select("images, summary, whatsapp_sent_at")
+      .select("images, summary, name, whatsapp_sent_at")
       .eq("id", id)
       .maybeSingle();
-    const row = data as { images?: StoredRender[]; summary?: string | null; whatsapp_sent_at?: string | null } | null;
+    const row = data as { images?: StoredRender[]; summary?: string | null; name?: string | null; whatsapp_sent_at?: string | null } | null;
     if (!row || row.whatsapp_sent_at) return; // missing or already sent
 
     const imgs = Array.isArray(row.images) ? row.images : [];
@@ -73,7 +73,8 @@ async function maybeSendRenderWhatsapp(
     const summary =
       (row.summary && row.summary.trim()) ||
       visualizadorRenderMessage(imgs.map((i) => ({ local: i.local, productName: i.productName, productCode: i.productCode })));
-    const caption = visualizadorCaption(summary, renderShortLink(id, SITE_URL) ?? url);
+    // Com o nome que o cliente digitou, a saudação usa o nome; a Ste o lê dali para os follow-ups (dono, 08/11/2026).
+    const caption = visualizadorCaption(summary, renderShortLink(id, SITE_URL) ?? url, row.name);
 
     // Message 1 — the render. Image with caption (link included); fall back to text.
     let r = await sendImage(tel, url, caption);
