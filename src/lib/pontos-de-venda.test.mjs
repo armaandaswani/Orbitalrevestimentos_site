@@ -341,6 +341,7 @@ function rodarAbertura(sinais = {}, opcoes = {}) {
     }),
     setTimeout: (fn, ms) => temporizadores.push({ fn, ms }),
     addEventListener: (tipo, fn, op) => {
+      if (opcoes.janelaLanca) throw new Error("addEventListener quebrado");
       ouvintes.janela[tipo] = { fn, op };
     },
     document: {
@@ -430,13 +431,18 @@ test("SCRIPT_ABERTURA_PDV dá a mesma decisão que deveTocarAbertura", () => {
     { nome: "8 GB, 4 núcleos", sinais: { memoria: 8, nucleos: 4 } },
     { nome: "8 GB, 8 núcleos", sinais: { memoria: 8, nucleos: 8 } },
     { nome: "iPhone", sinais: { nucleos: 4 } },
+    { nome: "2g", sinais: { tipoConexao: "2g" } },
+    { nome: "slow-2g", sinais: { tipoConexao: "slow-2g" } },
+    // Na divisa: 4 GB com 8 núcleos toca (trocar <4 por <=4 na string quebraria este).
+    { nome: "4 GB, 8 núcleos", sinais: { memoria: 4, nucleos: 8 } },
+    { nome: "3,5 GB sem núcleos", sinais: { memoria: 3.5 } },
     { nome: "já tocou", sinais: {}, guardado: { [CHAVE_ABERTURA]: "1" } },
     {
       nome: "tudo ruim",
       sinais: { search: "?loja=a", reduzMovimento: true, saveData: true, memoria: 1, nucleos: 2 },
     },
   ];
-  assert.equal(matriz.length, 13);
+  assert.equal(matriz.length, 17);
   for (const { nome, sinais, guardado } of matriz) {
     const r = rodarAbertura(sinais, { guardado: guardado ? { ...guardado } : {} });
     const esperado = deveTocarAbertura({
@@ -548,6 +554,42 @@ test("pointerdown no Pular agenda o foco no h1 (depois do mousedown); fora dele,
   assert.equal(focado, false);
   r.temporizadores[1].fn();
   assert.equal(focado, true);
+});
+
+for (const [nomeTecla, tecla] of [["Espaço", " "], ["Enter", "Enter"]]) {
+  test(`${nomeTecla} no Pular desliga, cancela o padrão e foca o h1 sem rolar`, () => {
+    const r = rodarAbertura({});
+    let opcoesFoco = null;
+    r.documento.querySelector = () => ({ focus: (op) => (opcoesFoco = op) });
+    let cancelou = false;
+    r.ouvintes.documento.keydown.fn({ key: tecla, target: { closest: (sel) => (sel === "[data-pdv-pular]" ? {} : null) }, preventDefault: () => (cancelou = true) });
+    assert.equal(r.atributos["data-pdv-abertura"], undefined);
+    assert.equal(cancelou, true);
+    assert.equal(opcoesFoco?.preventScroll, true);
+  });
+}
+
+test("Espaço fora do Pular não cancela nada nem mexe no foco", () => {
+  const r = rodarAbertura({});
+  let focou = false;
+  r.documento.querySelector = () => ({ focus: () => (focou = true) });
+  let cancelou = false;
+  r.ouvintes.documento.keydown.fn({ key: " ", target: { closest: () => null }, preventDefault: () => (cancelou = true) });
+  assert.equal(cancelou, false);
+  assert.equal(focou, false);
+  assert.equal(r.atributos["data-pdv-abertura"], "1"); // quem desliga é o keydown da janela
+});
+
+test("se algo lança depois de ligar, o catch tira data-pdv-abertura", () => {
+  let r;
+  assert.doesNotThrow(() => {
+    r = rodarAbertura({}, { janelaLanca: true });
+  });
+  assert.equal(r.atributo, null);
+  assert.equal(r.contagem.remocoes, 1);
+  // Sem ter ligado, o catch não mexe no atributo.
+  const s = rodarAbertura({}, { storageLanca: true });
+  assert.equal(s.contagem.remocoes, 0);
 });
 
 test("o desligamento remove o atributo uma vez só", () => {

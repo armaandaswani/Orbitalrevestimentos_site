@@ -392,12 +392,12 @@ export const CSS_LOJA_PRIMEIRO =
  * lançar, não liga. Tira o atributo uma vez só: ao fim de
  * `DURACAO_ABERTURA_MS`, no primeiro pointerdown, keydown ou scroll e no clique
  * em `[data-pdv-pular]`. Acionar o Pular também leva o foco ao `h1` do <main>
- * (que tem tabIndex -1), para o foco não cair no <body> quando o botão some:
- * pelo teclado, no clique; pelo ponteiro, logo depois do pointerdown (com
+ * (que tem tabIndex -1, com preventScroll), para o foco não cair no <body> quando o botão some:
+ * pelo teclado, no keydown de Enter ou Espaço; no clique; pelo ponteiro, logo depois do pointerdown (com
  * setTimeout 0, depois do mousedown que focaria o botão; o clique do mouse já
  * não chega ao botão, que sumiu). Os valores entram por concatenação para a string e o
  * módulo nunca divergirem. Se mudar `deveTocarAbertura`, mude esta string; o
- * teste confere.
+ * teste confere. Se algo lançar depois de ligar o atributo, o catch o tira.
  *
  * Antes de tudo, com `?loja=` (o último valor não vazio, como no `lojaDaUrl`)
  * com cara de slug (`^[a-z0-9-]{1,80}$`), injeta um <style> no <head> que põe
@@ -406,7 +406,7 @@ export const CSS_LOJA_PRIMEIRO =
  * hidratação (J1). Texto fora do padrão não entra no CSS.
  */
 export const SCRIPT_ABERTURA_PDV =
-  "(function(){try{var w=window,d=document,h=d.documentElement,n=navigator,c=n.connection,s=w.sessionStorage,K='" +
+  "(function(){var lig=false;try{var w=window,d=document,h=d.documentElement,n=navigator,c=n.connection,s=w.sessionStorage,K='" +
   CHAVE_ABERTURA +
   "',A='data-pdv-abertura',t=c&&c.effectiveType,m=n.deviceMemory,k=n.hardwareConcurrency," +
   "q=location.search,re=/[?&]loja=([^&#]*)/g,r,v,L='';" +
@@ -415,15 +415,20 @@ export const SCRIPT_ABERTURA_PDV =
   CSS_LOJA_PRIMEIRO +
   "';(d.head||h).appendChild(st);}" +
   "var no=/[?&]loja=[^&]/.test(q)||w.matchMedia('(prefers-reduced-motion: reduce)').matches||w.matchMedia('(prefers-reduced-data: reduce)').matches||!!(c&&c.saveData===true)||!!s[K]||t==='slow-2g'||t==='2g'||t==='3g'||(m!==undefined&&(m<4||(k!==undefined&&k<=4)));" +
-  "if(no)return;s[K]='1';h.setAttribute(A,'1');" +
+  "if(no)return;s[K]='1';h.setAttribute(A,'1');lig=true;" +
   "var on=true,off=function(){if(!on)return;on=false;h.removeAttribute(A);},o={once:true,passive:true}," +
   "pu=function(e){var x=e&&e.target;return!!(x&&x.closest&&x.closest('[data-pdv-pular]'));}," +
-  "fo=function(){var f=d.querySelector&&d.querySelector('main h1');if(f&&f.focus)f.focus();};" +
+  "fo=function(){var f=d.querySelector&&d.querySelector('main h1');if(f&&f.focus)f.focus({preventScroll:true});};" +
+  // Enter e Espaço no Pular: o keydown da janela tira o botão da tela antes de o
+  // navegador gerar o clique (o Espaço só clica no keyup), então este ouvinte,
+  // no documento (antes da janela) e sem passive, cancela o padrão e foca o h1.
+  "d.addEventListener('keydown',function(e){var y=e&&e.key;if(pu(e)&&(y==='Enter'||y===' '||y==='Spacebar'||e.keyCode===13||e.keyCode===32)){if(e.preventDefault)e.preventDefault();off();fo();}});" +
   "w.setTimeout(off," +
   DURACAO_ABERTURA_MS +
   ");w.addEventListener('pointerdown',function(e){off();if(pu(e))w.setTimeout(fo,0);},o);w.addEventListener('keydown',off,o);w.addEventListener('scroll',off,o);" +
   "d.addEventListener('click',function(e){if(pu(e)){off();fo();}});" +
-  "}catch(e){}})();";
+  // Se algo lançar depois de ligar, a página não pode ficar presa na abertura.
+  "}catch(e){try{if(lig)document.documentElement.removeAttribute('data-pdv-abertura');}catch(x){}}})();";
 
 /**
  * Cartão único das grades da home, de /projetos e de /produtos/pfb: no lugar de

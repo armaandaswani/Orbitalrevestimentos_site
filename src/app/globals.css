@@ -731,8 +731,10 @@ html[data-intro="1"] .intro-orbita {
    enquanto o atributo existe.
    Sequência (na ordem do desenho): o continente surge 0–0,6 s; a Amazônia
    acende 0,7–1,3 s; o marcador de Manaus aparece 1,0–1,3 s; a câmera
-   aproxima em Manaus a partir de 1,4 s; os pontos e a linha apagam 2,0–2,3 s
-   (os pontos nunca aparecem ampliados sobre o mapa); só então o fundo liso
+   aproxima em Manaus de 1,4 a 2,0 s, só até 3,2× (a 1,7 s, ~2×); os pontos
+   apagam 1,7–2,0 s, ainda pequenos (a 390 px nenhum disco visível passa de
+   ~10 px), e a linha 2,0–2,2 s (os pontos nunca aparecem ampliados sobre o
+   mapa); só então o fundo liso
    com o marcador dissolve para o mapa real, 2,3–2,7 s; os pinos caem um a um
    de 2,6 s a 3,3 s, qualquer que seja o número de lojas (--i e --n postos
    por pino no MapaManaus). A linha de texto pinta na primeira pintura e só
@@ -768,12 +770,12 @@ html[data-pdv-abertura="1"] .pdv-ab {
 html[data-pdv-abertura="1"] .pdv-ab__camera {
   transform-origin: var(--pdv-mx) var(--pdv-my);
   will-change: transform, opacity;
-  /* Os pontos apagam 2,0–2,3 s, antes de a camada dissolver: nunca aparecem ampliados sobre o mapa. */
-  animation: pdv-ab-camera 2600ms linear both, pdv-ab-apaga 300ms ease-in 2000ms both;
+  /* Os pontos apagam 1,7–2,0 s, enquanto a câmera passa de ~2× a 3,2×: nunca aparecem ampliados sobre o mapa. */
+  animation: pdv-ab-camera 2000ms linear both, pdv-ab-apaga 300ms ease-in 1700ms both;
 }
 html[data-pdv-abertura="1"] .pdv-ab__terra { animation: pdv-ab-surge 600ms ease-out both; }
 html[data-pdv-abertura="1"] .pdv-ab__amazonia { animation: pdv-ab-surge 600ms ease-out 700ms both; }
-html[data-pdv-abertura="1"] .pdv-ab__alvo { will-change: transform, opacity; animation: pdv-ab-alvo 2600ms linear both; }
+html[data-pdv-abertura="1"] .pdv-ab__alvo { will-change: transform, opacity; animation: pdv-ab-alvo 2000ms linear both; }
 .pdv-ab__manaus {
   position: absolute;
   padding-left: 18px;
@@ -781,6 +783,8 @@ html[data-pdv-abertura="1"] .pdv-ab__alvo { will-change: transform, opacity; ani
   font: 500 0.875rem/1 var(--font-sans);
   color: rgba(255, 255, 255, 0.85);
   white-space: nowrap;
+  /* Sombra escura: o rótulo continua legível sobre os pontos verdes da Amazônia. */
+  text-shadow: 0 1px 2px rgba(0, 0, 0, 0.55), 0 0 8px rgba(11, 31, 69, 0.9);
 }
 .pdv-ab__manaus::before {
   content: "";
@@ -794,17 +798,21 @@ html[data-pdv-abertura="1"] .pdv-ab__alvo { will-change: transform, opacity; ani
   background: #fff;
   box-shadow: 0 0 0 8px rgba(255, 255, 255, 0.16);
 }
+/* Degradê azul-marinho atrás da linha: a frase não atropela os pontos do Cone Sul.
+   A caixa vai de borda a borda e o texto mantém o lugar pelo padding. */
 .pdv-ab__linha {
   position: absolute;
-  left: 1rem;
-  right: 1rem;
-  bottom: 1.25rem;
+  left: 0;
+  right: 0;
+  bottom: 0;
   margin: 0;
+  padding: 3.5rem 1rem 1.25rem;
+  background: linear-gradient(to top, var(--color-primary) 0%, var(--color-primary) 45%, rgba(11, 31, 69, 0) 100%);
   font: 400 1.125rem/1.25 var(--font-serif);
   letter-spacing: -0.01em;
   color: #fff;
 }
-@media (min-width: 1024px) { .pdv-ab__linha { left: 1.5rem; bottom: 1.5rem; font-size: 1.375rem; } }
+@media (min-width: 1024px) { .pdv-ab__linha { padding: 4rem 1.5rem 1.5rem; font-size: 1.375rem; } }
 html[data-pdv-abertura="1"] .pdv-ab__linha {
   animation: pdv-ab-linha 600ms var(--mv-chegada) 150ms both, pdv-ab-apaga 200ms ease-in 2000ms both;
 }
@@ -839,18 +847,18 @@ html[data-pdv-abertura="1"] [data-pdv-pino] {
 @keyframes pdv-ab-apaga { to { opacity: 0; } }
 @keyframes pdv-ab-sai { to { opacity: 0; visibility: hidden; } }
 @keyframes pdv-ab-linha { from { transform: translateY(8px); } }
-/* 2,6 s: chega de 0,94 a 1 (0–0,6 s), para, e aproxima 6× em Manaus
-   (1,4–2,6 s), levando Manaus ao centro da caixa. */
+/* 2,0 s: chega de 0,94 a 1 (0–0,6 s), para, e aproxima 3,2× em Manaus
+   (1,4–2,0 s), levando Manaus ao centro da caixa. */
 @keyframes pdv-ab-camera {
   0% { transform: scale(0.94); animation-timing-function: var(--mv-chegada); }
-  23.08%, 53.85% { transform: none; animation-timing-function: var(--mv-percurso); }
-  100% { transform: translate(calc(50% - var(--pdv-mx)), calc(50% - var(--pdv-my))) scale(6); }
+  30%, 70% { transform: none; animation-timing-function: var(--mv-percurso); }
+  100% { transform: translate(calc(50% - var(--pdv-mx)), calc(50% - var(--pdv-my))) scale(3.2); }
 }
-/* O marcador acompanha Manaus até o centro sem crescer. */
+/* O marcador acompanha Manaus até o centro sem crescer (mesmos 2,0 s da câmera). */
 @keyframes pdv-ab-alvo {
-  0%, 38.46% { opacity: 0; transform: none; }
-  50% { opacity: 1; }
-  53.85% { transform: none; animation-timing-function: var(--mv-percurso); }
+  0%, 50% { opacity: 0; transform: none; }
+  65% { opacity: 1; }
+  70% { transform: none; animation-timing-function: var(--mv-percurso); }
   100% { opacity: 1; transform: translate(calc(50% - var(--pdv-mx)), calc(50% - var(--pdv-my))); }
 }
 @keyframes pdv-ab-pino { from { opacity: 0; transform: translateY(-28px); } 60% { opacity: 1; } }
