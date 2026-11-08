@@ -1,5 +1,7 @@
 import type { Metadata } from "next";
 import { lerPontosDeVenda } from "@/lib/pontos-de-venda-server";
+import { SCRIPT_ABERTURA_PDV } from "@/lib/pontos-de-venda";
+import AberturaPdv from "@/components/onde-comprar/AberturaPdv";
 import { TITULO_META_PDV, TITULO_PDV, subtituloPdv } from "@/lib/onde-comprar-textos";
 import MapaManaus from "@/components/onde-comprar/MapaManaus";
 import ListaPdv from "@/components/onde-comprar/ListaPdv";
@@ -50,14 +52,17 @@ export default async function OndeComprarPage() {
 
   return (
     <main className="pt-20">
+      {/* Liga data-pdv-abertura no <html> antes da primeira pintura (ou não liga: ?loja=, movimento reduzido, rede ou aparelho fracos, já tocou). */}
+      <script id="pdv-abertura" dangerouslySetInnerHTML={{ __html: SCRIPT_ABERTURA_PDV }} />
       <div className="ds-wrap pb-2 pt-7 lg:pb-8 lg:pt-14">
         <h1 className="font-serif text-t1 font-normal tracking-[-0.02em] text-primary">{TITULO_PDV}</h1>
         <p className="mt-3 max-w-[34ch] text-lead text-on-surface">{subtituloPdv(pontos.length)}</p>
       </div>
       <div className="lg:ds-wrap lg:grid lg:grid-cols-[minmax(0,1fr)_minmax(0,1fr)] lg:items-start lg:gap-12 lg:pb-24">
-        {/* data-pdv-mapa: a ilha liga aqui data-pdv-transicao (pinos com transição só depois de um clique) e data-pdv-sobe (a partir de lg, o mapa fica acima do véu enquanto a folha está aberta). */}
-        <div data-pdv-mapa className="lg:sticky lg:top-24 lg:data-[pdv-sobe]:z-[56]">
+        {/* data-pdv-mapa: a ilha liga aqui data-pdv-transicao (pinos com transição só depois de um clique) e data-pdv-sobe (a partir de lg, o mapa fica acima do véu enquanto a folha está aberta). O relative (sticky a partir de lg) é a caixa da abertura, por cima do mapa. */}
+        <div data-pdv-mapa className="relative lg:sticky lg:top-24 lg:data-[pdv-sobe]:z-[56]">
           <MapaManaus pontos={pontos} />
+          <AberturaPdv />
         </div>
         <ListaPdv pontos={pontos} />
       </div>
