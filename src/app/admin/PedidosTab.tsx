@@ -1738,7 +1738,7 @@ export default function PedidosTab({
       partner_id: d.partner_id ?? null,
       sales_rep_id: d.sales_rep_id ?? null,
       partner_name: d.partner_name ?? null,
-      space: items.some((it) => it.product_id) ? [...new Set(roomGroups.map((g) => g.name.trim()))].join(", ") : d.space ?? null,
+      space: draft && d.id === draft.id && items.some((it) => it.product_id) ? [...new Set(roomGroups.map((g) => g.name.trim()))].join(", ") : d.space ?? null,
       product_name: d.product_name ?? null,
       area_m2: d.area_m2 ?? null,
       total: d.total ?? null,
