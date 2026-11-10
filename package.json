@@ -7,6 +7,7 @@
     "build": "next build",
     "start": "next start",
     "lint": "eslint",
+    "test:pedidos": "node --test src/lib/pedido-ambientes.test.mjs src/lib/pedido-api.test.mjs src/lib/import-quantities.test.mjs src/lib/import-quantities-ai.test.mjs src/lib/import-quantities-api.test.mjs",
     "test:movimento": "node --test \"src/lib/movimento/*.test.mjs\" \"src/components/home/*.test.mjs\" \"src/components/visualizador/*.test.mjs\" \"src/components/movimento/*.test.mjs\"",
     "test:links": "node --test \"src/lib/product-link.test.mjs\"",
     "test:funil": "node --test \"src/lib/gtag-fila.test.mjs\"",

@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from "next/server";
 import PDFDocument from "pdfkit";
 import { existsSync } from "fs";
 import path from "path";
+import { groupPedidoItems } from "@/lib/pedido-ambientes";
 import { isAdminRequest } from "@/lib/admin-auth";
 import { getResend } from "@/lib/resend";
 import { normalizePhone, sendText, smclickConfigured } from "@/lib/smclick";
@@ -13,7 +14,6 @@ import { emailTopo } from "@/lib/email-marca";
 export const runtime = "nodejs";
 
 type DocumentType = "orcamento" | "pedido" | "nota" | "recibo";
-type Channel = "email" | "whatsapp";
 
 const DOC_LABEL: Record<DocumentType, string> = {
   orcamento: "Orçamento",
@@ -101,7 +101,7 @@ async function fetchPedido(id: string) {
   try {
     const { data } = await db
       .from("pedido_items")
-      .select("id, product_id, product_name, plates, unit_price, unit_label")
+      .select("*")
       .eq("pedido_id", id);
     items = (data ?? []) as Array<Record<string, unknown>>;
   } catch {
@@ -181,6 +181,7 @@ async function generatePedidoPdf(input: {
   doc.text(COMPANY.email, 385, 48, { align: "right", width: 165 });
 
   doc.moveTo(42, 118).lineTo(553, 118).strokeColor("#d8d8d8").stroke();
+  doc.x = 42;
   doc.y = 132;
   doc.font("Helvetica").fontSize(14).fillColor("#555").text("Dados do Cliente");
   doc.moveTo(42, doc.y + 2).lineTo(390, doc.y + 2).strokeColor("#d8d8d8").stroke();
@@ -228,40 +229,65 @@ async function generatePedidoPdf(input: {
   doc.y = tableTop + 26;
 
   let subtotal = 0;
-  for (const item of items) {
-    ensureSpace(doc, includeImages || includeDescriptions ? 104 : 34);
-    const y = doc.y;
-    const qty = Number(item.plates) || 0;
-    const unitPrice = Number(item.unit_price) || 0;
-    const lineTotal = qty * unitPrice;
-    subtotal += lineTotal;
-    const { short: unitShort, detail: unitDetail } = unitInfo(item);
-    const code = item.product_code ? String(item.product_code) : null;
-    // Name + a sub-line identifying the item: "Modelo: ORB-004 · Placa 2,90 m …"
-    const subParts = [code ? `Modelo: ${code}` : null, unitDetail].filter(Boolean).join("  ·  ");
-    doc.font("Helvetica-Bold").fontSize(9).fillColor("#0D1830")
-      .text(String(item.product_name ?? "Produto Orbital"), cols.name, y, { width: 268 });
-    doc.font("Helvetica").fontSize(7.5).fillColor("#777")
-      .text(subParts, cols.name, y + 11, { width: 268 });
-    doc.font("Helvetica").fontSize(9).fillColor("#0D1830")
-      .text(String(qty), cols.qty, y, { width: 44, align: "right" })
-      .text(unitShort, cols.unit, y, { width: 44, align: "right" })
-      .text(fmtBRL(unitPrice), cols.price, y, { width: 58, align: "right" })
-      .text(fmtBRL(lineTotal), cols.total, y, { width: 53, align: "right" });
-    doc.y = y + 26;
-
-    const localImage = includeImages ? maybeLocalImage(item.product_image_path) : null;
-    if (localImage || (includeDescriptions && item.product_description)) {
-      ensureSpace(doc, 92);
-      const detailY = doc.y + 2;
-      if (localImage) doc.image(localImage, 52, detailY, { width: 58, height: 58 });
-      if (includeDescriptions && item.product_description) {
-        wrapText(doc, String(item.product_description), localImage ? 120 : 52, detailY, { width: localImage ? 405 : 470, lineGap: 1 });
-      }
-      doc.y = Math.max(doc.y, detailY + (localImage ? 66 : 22));
+  const groups = groupPedidoItems(items, pedido.space as string | null);
+  const hasSpaces = groups.some((group) => group.space);
+  for (const group of groups) {
+    if (hasSpaces) {
+      const roomName = group.space || "Materiais gerais";
+      doc.font("Helvetica-Bold").fontSize(10);
+      const headingHeight = Math.max(22, doc.heightOfString(roomName, { width: 499 }) + 12);
+      ensureSpace(doc, headingHeight + 45);
+      const groupY = doc.y;
+      doc.rect(42, groupY, 511, headingHeight).fill("#F6F5F2");
+      doc.fillColor("#0B1F45").text(roomName, 48, groupY + 6, { width: 499 });
+      doc.y = groupY + headingHeight + 7;
     }
-    doc.moveTo(42, doc.y).lineTo(553, doc.y).strokeColor("#eeeeee").stroke();
-    doc.y += 6;
+    for (const [itemIndex, item] of group.items.entries()) {
+      const lastInRoom = itemIndex === group.items.length - 1;
+      // Keep the room subtotal with its final material row.
+      ensureSpace(doc, (includeImages || includeDescriptions ? 104 : 34) + (hasSpaces && lastInRoom ? 30 : 0));
+      const y = doc.y;
+      const qty = Number(item.plates) || 0;
+      const unitPrice = Number(item.unit_price) || 0;
+      const lineTotal = qty * unitPrice;
+      subtotal += lineTotal;
+      const { short: unitShort, detail: unitDetail } = unitInfo(item);
+      const code = item.product_code ? String(item.product_code) : null;
+      // Name + a sub-line identifying the item: "Modelo: ORB-004 · Placa 2,90 m …"
+      const subParts = [code ? `Modelo: ${code}` : null, unitDetail].filter(Boolean).join("  ·  ");
+      doc.font("Helvetica-Bold").fontSize(9).fillColor("#0D1830")
+        .text(String(item.product_name ?? "Produto Orbital"), cols.name, y, { width: 268 });
+      doc.font("Helvetica").fontSize(7.5).fillColor("#777")
+        .text(subParts, cols.name, y + 11, { width: 268 });
+      doc.font("Helvetica").fontSize(9).fillColor("#0D1830")
+        .text(String(qty), cols.qty, y, { width: 44, align: "right" })
+        .text(unitShort, cols.unit, y, { width: 44, align: "right" })
+        .text(fmtBRL(unitPrice), cols.price, y, { width: 58, align: "right" })
+        .text(fmtBRL(lineTotal), cols.total, y, { width: 53, align: "right" });
+      doc.y = y + 26;
+
+      const localImage = includeImages ? maybeLocalImage(item.product_image_path) : null;
+      if (localImage || (includeDescriptions && item.product_description)) {
+        ensureSpace(doc, 92);
+        const detailY = doc.y + 2;
+        if (localImage) doc.image(localImage, 52, detailY, { width: 58, height: 58 });
+        if (includeDescriptions && item.product_description) {
+          wrapText(doc, String(item.product_description), localImage ? 120 : 52, detailY, { width: localImage ? 405 : 470, lineGap: 1 });
+        }
+        doc.y = Math.max(doc.y, detailY + (localImage ? 66 : 22));
+      }
+      doc.moveTo(42, doc.y).lineTo(553, doc.y).strokeColor("#eeeeee").stroke();
+      doc.y += 6;
+    }
+
+    if (hasSpaces) {
+      ensureSpace(doc, 30);
+      const subtotalY = doc.y;
+      doc.font("Helvetica-Bold").fontSize(9).fillColor("#43474e")
+        .text(`Subtotal · ${group.space || "Materiais gerais"}`, 42, subtotalY, { width: 400 });
+      doc.text(fmtBRL(group.subtotal), 450, subtotalY, { width: 103, align: "right" });
+      doc.y = subtotalY + 24;
+    }
   }
 
   const discount = Number(pedido.discount_amount) || 0;
@@ -357,7 +383,7 @@ async function generatePedidoPdf(input: {
   const range = doc.bufferedPageRange();
   for (let i = range.start; i < range.start + range.count; i++) {
     doc.switchToPage(i);
-    doc.font("Helvetica").fontSize(8).fillColor("#777").text(`Página ${i + 1} de ${range.count}`, 42, 810, { width: 511, align: "center" });
+    doc.font("Helvetica").fontSize(8).fillColor("#777").text(`Página ${i + 1} de ${range.count}`, 42, doc.page.height - 55, { width: 511, align: "center", lineBreak: false });
   }
 
   doc.end();

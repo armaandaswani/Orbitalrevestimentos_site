@@ -1,12 +1,14 @@
 "use client";
 
 import React, { useEffect, useMemo, useState } from "react";
+import { groupPedidoItems } from "@/lib/pedido-ambientes";
 import { CLAUSULAS_PADRAO } from "@/lib/clausulas-pedido";
 import { datasDoDocumento, fmtDia } from "@/lib/documento-datas";
 
 type DocumentType = "orcamento" | "pedido" | "nota" | "recibo" | "termo";
 
 interface PedidoItem {
+  space?: string | null;
   id: string;
   product_name: string | null;
   product_code?: string | null;
@@ -247,6 +249,8 @@ export default function PedidoDocumentoPage({ params }: { params: Promise<{ id: 
         unit_price: totals.subtotal,
         unit_cost: null,
       }];
+  const itemGroups = groupPedidoItems(items, pedido.space);
+  const hasSpaces = itemGroups.some((group) => group.space);
   const customerAddress = addressLines(pedido);
   const datas = datasDoDocumento(pedido.created_at, pedido.quote_valid_until);
   // The long contractual boilerplate only applies to a binding sale (Pedido de
@@ -474,7 +478,7 @@ export default function PedidoDocumentoPage({ params }: { params: Promise<{ id: 
             <tbody>
               {items.map((it) => (
                 <tr key={it.id}>
-                  <td>{it.product_name || "Produto Orbital"}</td>
+                  <td>{it.product_name || "Produto Orbital"}{(it.space || pedido.space) && <span className="doc-item-sub">{it.space || pedido.space}</span>}</td>
                   <td>{it.product_code || "—"}</td>
                   <td>{qtdComUnidade(it)}</td>
                 </tr>
@@ -530,7 +534,7 @@ export default function PedidoDocumentoPage({ params }: { params: Promise<{ id: 
         <div className="doc-title-bar">{DOC_LABEL[docType].toUpperCase()} Nº {docNumber(pedido)}</div>
 
         <section>
-          <p className="doc-section-label">Produtos</p>
+          <p className="doc-section-label">{hasSpaces ? "Quantitativo por ambiente" : "Produtos"}</p>
           <table className="doc-table">
             <thead>
               <tr>
@@ -542,25 +546,31 @@ export default function PedidoDocumentoPage({ params }: { params: Promise<{ id: 
               </tr>
             </thead>
             <tbody>
-              {items.map((it) => {
-                const unit = Number(it.unit_price) || 0;
-                const qty = Number(it.plates) || 0;
-                const u = itemUnitInfo(it);
-                const sub = [it.product_code ? `Modelo: ${it.product_code}` : null, u.detail]
-                  .filter(Boolean).join("  ·  ");
-                return (
-                  <tr key={it.id}>
-                    <td>
-                      <span className="doc-item-name">{it.product_name || "Produto Orbital"}</span>
-                      {sub && <span className="doc-item-sub">{sub}</span>}
-                    </td>
-                    <td>{qty}</td>
-                    <td>{u.short}</td>
-                    <td>{fmtBRL(unit)}</td>
-                    <td>{fmtBRL(unit * qty)}</td>
-                  </tr>
-                );
-              })}
+              {itemGroups.map((group, groupIndex) => (
+                <React.Fragment key={groupIndex}>
+                {hasSpaces && <tr className="doc-space-heading"><td colSpan={5}>{group.space || "Materiais gerais"}</td></tr>}
+                {group.items.map((it) => {
+                  const unit = Number(it.unit_price) || 0;
+                  const qty = Number(it.plates) || 0;
+                  const u = itemUnitInfo(it);
+                  const sub = [it.product_code ? `Modelo: ${it.product_code}` : null, u.detail]
+                    .filter(Boolean).join("  ·  ");
+                  return (
+                    <tr key={it.id}>
+                      <td>
+                        <span className="doc-item-name">{it.product_name || "Produto Orbital"}</span>
+                        {sub && <span className="doc-item-sub">{sub}</span>}
+                      </td>
+                      <td>{qty}</td>
+                      <td>{u.short}</td>
+                      <td>{fmtBRL(unit)}</td>
+                      <td>{fmtBRL(unit * qty)}</td>
+                    </tr>
+                  );
+                })}
+                {hasSpaces && <tr className="doc-space-subtotal"><td colSpan={4}>Subtotal · {group.space || "Materiais gerais"}</td><td>{fmtBRL(group.subtotal)}</td></tr>}
+                </React.Fragment>
+              ))}
             </tbody>
           </table>
         </section>
@@ -725,6 +735,9 @@ export default function PedidoDocumentoPage({ params }: { params: Promise<{ id: 
         }
         .doc-table th:not(:first-child), .doc-table td:not(:first-child) { text-align: right; }
         .doc-table td { padding: 4px; border-bottom: 1px solid #eee; vertical-align: top; }
+        .doc-space-heading { break-after: avoid; }
+        .doc-space-heading td { overflow-wrap: anywhere; background: #F6F5F2; color: #0B1F45; font-weight: 700; padding: 10px 8px; }
+        .doc-space-subtotal td { font-size: 10px; font-weight: 700; color: #43474e; font-variant-numeric: tabular-nums; border-bottom: 1px solid #d8d5cf; }
         .doc-item-name { display: block; font-weight: 700; }
         .doc-item-sub { display: block; font-size: 11px; color: #777; margin-top: 1px; }
         .doc-totals { display: flex; justify-content: flex-end; margin: 18px 0 22px; }

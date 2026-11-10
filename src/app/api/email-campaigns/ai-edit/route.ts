@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
 import { isAdminRequest } from "@/lib/admin-auth";
-import { DEFAULT_SYSTEM_PROMPT } from "@/app/api/chat/route";
+import { DEFAULT_SYSTEM_PROMPT } from "@/lib/chat-prompt";
 import { completarGratuito, llmGratuitoConfigurado } from "@/lib/llm-gratuito";
 
 /**

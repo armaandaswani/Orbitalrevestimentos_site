@@ -1,10 +1,11 @@
 import { NextRequest, NextResponse } from "next/server";
+import { cleanItemSpace } from "@/lib/pedido-ambientes";
 import { isAdminRequest } from "@/lib/admin-auth";
 import { supabaseAdmin } from "@/lib/supabase";
 import { isMissingColumn, isMissingTable } from "@/lib/db-compat";
 import { pedidoBaixaEstoque, syncOrderStock } from "@/lib/stock";
 
-interface OrderItemInput { product_id?: string; plates?: number; unit_price?: number | null }
+interface OrderItemInput { product_id?: string; plates?: number; unit_price?: number | null; space?: string | null }
 type PartnerLite = { id: string; name: string; coupon_code: string };
 type SalesRepLite = { id: string; name: string; referral_code: string };
 
@@ -209,6 +210,13 @@ export async function POST(req: NextRequest) {
   }
 
   const db = supabaseAdmin();
+  // Do not save an order while silently losing the allocation by room.
+  if (Array.isArray(body.items) && body.items.some((item: { space?: unknown } | null) => cleanItemSpace(item?.space))) {
+    const { error: schemaError } = await db.from("pedido_items").select("space").limit(0);
+    if (schemaError) return NextResponse.json({ error: isMissingColumn(schemaError)
+      ? "O quantitativo por ambiente precisa da atualização 077 do banco. Nenhuma alteração foi salva."
+      : "Não foi possível validar os ambientes. Tente novamente." }, { status: 503 });
+  }
   const payload: Record<string, unknown> = {
     lead_id: body.lead_id ?? null,
     client_name: body.client_name.trim(),
@@ -272,6 +280,7 @@ export async function POST(req: NextRequest) {
       .map((it) => ({
         product_id: it.product_id as string,
         plates: Math.round(Number(it.plates)),
+        space: cleanItemSpace(it.space),
         // Price actually charged (tier price or manual override) resolved on the
         // client. When provided, it's authoritative; else fall back to the
         // product's varejo price below.
@@ -289,13 +298,23 @@ export async function POST(req: NextRequest) {
             pedido_id: data.id,
             product_id: i.product_id,
             product_name: (p?.name as string) ?? null,
+            ...(i.space ? { space: i.space } : {}),
             plates: i.plates,
             unit_cost: p?.cost_price ?? null,
             unit_price: i.unit_price ?? p?.price ?? null,
             unit_label: (p?.sale_unit as string) ?? "placa",
           };
         });
-        await db.from("pedido_items").insert(itemRows);
+        const { error: itemError } = await db.from("pedido_items").insert(itemRows);
+        if (itemError) {
+          // No inventory was touched yet. Remove the new header so retrying
+          // cannot leave a client-visible order without its quantities.
+          const { error: rollbackError } = await db.from("pedidos").delete().eq("id", data.id);
+          return NextResponse.json({ error: rollbackError
+            ? "O pedido foi criado, mas os itens não puderam ser salvos. Abra o pedido antes de tentar novamente."
+            : "Os itens não puderam ser salvos. Nenhum pedido foi criado; tente novamente.",
+            ...(rollbackError ? { id: data.id } : {}) }, { status: 500 });
+        }
 
         // Baixa só se o pedido já nasce pago/boleto/parcial ou entregue.
         const r = await syncOrderStock(db, data.id, "admin");

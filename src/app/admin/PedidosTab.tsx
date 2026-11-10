@@ -6,6 +6,8 @@ import type { Lead } from "./LeadsTab";
 import { DEFAULT_CONFIG, QUOTE_VALIDITY_DAYS, maxInstallmentsForPlates, type OrcamentoConfig } from "@/lib/orcamento-pricing";
 import { CLAUSULAS_PADRAO } from "@/lib/clausulas-pedido";
 import { FRETE_PADRAO, fretePedido, type FreteZona } from "@/lib/frete-pedido";
+import ImportarQuantitativo from "./components/ImportarQuantitativo";
+import editor from "./pedido-editor.module.css";
 
 // ─── Types ──────────────────────────────────────────────────────────────────
 export type PedidoStatus = "em_producao" | "pronto" | "pendente_entrega" | "entregue" | "cancelado";
@@ -373,7 +375,7 @@ const DEFAULT_DOCUMENT_NOTES = CLAUSULAS_PADRAO;
 
 function fmtBRL(n: number | null | undefined) {
   if (n == null) return "—";
-  return n.toLocaleString("pt-BR", { style: "currency", currency: "BRL", maximumFractionDigits: 0 });
+  return n.toLocaleString("pt-BR", { style: "currency", currency: "BRL" });
 }
 function fmtDate(s: string | null | undefined) {
   if (!s) return "—";
@@ -532,7 +534,7 @@ export default function PedidosTab({
   // unit_price: optional manual override for this line's sale price per plate.
   // When null/undefined the effective price falls back to the tier price
   // (varejo = product.price, atacado = linha special_price). See effectiveUnitPrice.
-  type OrderItem = { product_id: string; plates: number; unit_price?: number | null };
+  type OrderItem = { product_id: string; plates: number; unit_price?: number | null; space?: string | null; _roomKey?: string };
   const [stockProducts, setStockProducts] = useState<StockProduct[]>([]);
   const [items, setItems] = useState<OrderItem[]>([]);
   // True once `items` reflects authoritative state for the open draft (fresh
@@ -541,6 +543,37 @@ export default function PedidosTab({
   // wiping a real order's stock-reserved line items — if the items fetch
   // failed (network blip, expired session) when opening the edit modal.
   const [itemsReady, setItemsReady] = useState(false);
+  const reviewAfterSave = useRef(false);
+  const [legacyOrderId, setLegacyOrderId] = useState<string | null>(null);
+  const editorRef = useRef<HTMLDivElement>(null);
+  const roomGroups = useMemo(() => {
+    const groups = new Map<string, { key: string; name: string; rows: { item: OrderItem; index: number }[] }>();
+    items.forEach((item, index) => {
+      const name = item.space ?? (draft?.space || "Ambiente 1");
+      const key = item._roomKey ?? name;
+      if (!groups.has(key)) groups.set(key, { key, name, rows: [] });
+      groups.get(key)!.rows.push({ item, index });
+    });
+    return [...groups.values()];
+  }, [items, draft?.space]);
+  const quantityByProduct = useMemo(() => {
+    const sums = new Map<string, number>();
+    for (const it of items) sums.set(it.product_id, (sums.get(it.product_id) ?? 0) + (Number(it.plates) || 0));
+    return sums;
+  }, [items]);
+  function addRoom() {
+    let n = roomGroups.length + 1;
+    while (roomGroups.some((g) => g.name === `Ambiente ${n}`)) n++;
+    setItems((cur) => [...cur, { product_id: "", plates: 1, space: `Ambiente ${n}`, _roomKey: crypto.randomUUID() }]);
+  }
+  function removeItem(index: number) {
+    setItems((cur) => cur.filter((_, i) => i !== index));
+    // Calculators use row indexes, so discard helpers after a deletion.
+    setAreaCalcOpen({}); setAreaCalcValue({}); setAreaCalcW({}); setAreaCalcH({}); setAreaCalcMode({});
+  }
+  const legacyWithoutMaterials = Boolean(draft?.id && legacyOrderId === draft.id && !items.some((it) => it.product_id));
+  const hasIncompleteItems = !legacyWithoutMaterials && items.some((it) => !it.product_id || !Number.isInteger(it.plates) || it.plates <= 0);
+  const hasInvalidRooms = roomGroups.some((g) => !g.name.trim()) || new Set(roomGroups.map((g) => g.name.trim().replace(/\s+/g, " ").toLocaleLowerCase("pt-BR"))).size !== roomGroups.length;
   // Regras comerciais do orçamento (desconto à vista, parcelas por placas),
   // as mesmas que o cliente vê no simulador. Padrão do código até carregar.
   const [orcCfg, setOrcCfg] = useState<OrcamentoConfig>(DEFAULT_CONFIG);
@@ -575,6 +608,34 @@ export default function PedidosTab({
   const [areaCalcMode, setAreaCalcMode] = useState<Record<number, "lxa" | "m2">>({});
   const [areaCalcW, setAreaCalcW] = useState<Record<number, string>>({});
   const [areaCalcH, setAreaCalcH] = useState<Record<number, string>>({});
+  function closeDraft() {
+    if (saving || sendDoc.busy) return;
+    if (confirm("Fechar o pedido? Alterações ainda não salvas serão descartadas.")) setDraft(null);
+  }
+  const modalOpen = Boolean(draft);
+  useEffect(() => {
+    if (!modalOpen) return;
+    const previous = document.activeElement as HTMLElement | null;
+    const oldOverflow = document.body.style.overflow;
+    document.body.style.overflow = "hidden";
+    editorRef.current?.querySelector<HTMLButtonElement>("button")?.focus();
+    const unload = (e: BeforeUnloadEvent) => { e.preventDefault(); };
+    const keyboard = (e: KeyboardEvent) => {
+      if (e.key !== "Tab") return;
+      const nodes = Array.from(editorRef.current?.querySelectorAll<HTMLElement>('button:not(:disabled), input:not(:disabled), select:not(:disabled), textarea:not(:disabled), a[href], summary, [tabindex="0"]') ?? []).filter((el) => el.getClientRects().length > 0);
+      const first = nodes[0], last = nodes[nodes.length - 1];
+      if (e.shiftKey && document.activeElement === first) { e.preventDefault(); last?.focus(); }
+      if (!e.shiftKey && document.activeElement === last) { e.preventDefault(); first?.focus(); }
+    };
+    window.addEventListener("beforeunload", unload);
+    document.addEventListener("keydown", keyboard);
+    return () => {
+      document.body.style.overflow = oldOverflow;
+      window.removeEventListener("beforeunload", unload);
+      document.removeEventListener("keydown", keyboard);
+      previous?.focus();
+    };
+  }, [modalOpen]);
 
   // Reusable presets ("cadastrar") for Condição de pagamento and custom Forma
   // de pagamento, so the admin doesn't retype the same wording every order.
@@ -878,7 +939,7 @@ export default function PedidosTab({
       else total += unitPrice * item.plates;
       if (product.cost_price == null) missingCost = true;
       else cost += product.cost_price * item.plates;
-      areaM2 += item.plates * panelAreaM2(product);
+      if (!product.sale_unit || /placa/i.test(product.sale_unit)) areaM2 += item.plates * panelAreaM2(product);
     }
     return { total, cost, areaM2, grossProfit: total - cost, missingPrice, missingCost };
   }, [items, stockProducts, panelAreaM2, effectiveUnitPrice]);
@@ -935,7 +996,8 @@ export default function PedidosTab({
   // a specific id) — not on every keystroke, so the deps are stable identifiers.
   useEffect(() => {
     if (draft) {
-      setFormStep(1);
+      setFormStep(reviewAfterSave.current ? 4 : 1);
+      reviewAfterSave.current = false;
       condMemo.current = {};
       // Seed the discount calculator from the stored R$ value (value mode).
       setDiscountMode("value");
@@ -1193,6 +1255,20 @@ export default function PedidosTab({
   function openDocument(id: string, tipo: "orcamento" | "pedido" | "nota" | "recibo" | "termo") {
     window.open(`/admin/pedidos/${id}/documento?tipo=${tipo}`, "_blank", "noopener,noreferrer");
   }
+  async function previewDraftDocument(tipo: "orcamento" | "pedido" | "nota") {
+    if (!draft?.id || saving || sendDoc.busy) return;
+    if (!itemsReady || hasIncompleteItems || hasInvalidRooms) { setFormStep(2); return; }
+    const preview = window.open("about:blank", "_blank");
+    if (preview) preview.opener = null;
+    setSaving(true);
+    try {
+      const { payload, cleanItems } = buildDraftPayload(draft);
+      if (!await patchPedido(draft.id, { ...payload, items: cleanItems })) { preview?.close(); return; }
+      const url = `/admin/pedidos/${draft.id}/documento?tipo=${tipo}`;
+      if (preview) preview.location.href = url;
+      else openDocument(draft.id, tipo);
+    } finally { setSaving(false); }
+  }
 
   async function openQuoteImport() {
     setQuoteImportOpen(true);
@@ -1317,7 +1393,7 @@ export default function PedidosTab({
     const seededItems: OrderItem[] = breakdown.length > 0
       ? breakdown.map((b) => {
           const prod = matchProduct(b.productName, b.productCode ?? null);
-          return { product_id: prod?.id ?? "", plates: platesFor(b.plates, prod, b.area_m2) };
+          return { product_id: prod?.id ?? "", plates: platesFor(b.plates, prod, b.area_m2), space: b.spaceName || "Ambiente 1" };
         })
       // Single-ambiente (or no breakdown): keep the plate count from the quote
       // even when the model didn't match, so it never silently resets to 1.
@@ -1436,16 +1512,18 @@ export default function PedidosTab({
       const rows = Array.isArray(full?.items) ? full.items : [];
       const mapped: OrderItem[] = rows
         .filter((it: { product_id?: string; plates?: number }) => it.product_id && Number(it.plates) > 0)
-        .map((it: { product_id?: string; plates?: number; unit_price?: number | null }) => ({
+        .map((it: { product_id?: string; plates?: number; unit_price?: number | null; space?: string | null }) => ({
           product_id: it.product_id as string,
           plates: Math.round(Number(it.plates)),
           unit_price: it.unit_price == null ? null : Number(it.unit_price),
+          space: it.space || p.space || "Ambiente 1",
         }));
       // No real items yet (a legacy order created via the old Área/Total
       // fields) — still seed one blank row so the quantity editor is visible
       // and usable right away, instead of hiding behind "+ Adicionar modelo"
       // with the old freeform boxes left looking unchanged.
-      setItems(mapped.length > 0 ? mapped : (stockProducts.length > 0 ? [{ product_id: "", plates: 1 }] : []));
+      setLegacyOrderId(mapped.length === 0 ? p.id : null);
+      setItems(mapped.length > 0 ? mapped : [{ product_id: "", plates: 1, space: p.space || "Ambiente 1" }]);
       setItemsReady(true); // authoritative now, even if mapped is empty
     } catch { /* itemsReady stays false — best-effort, save() won't touch items */ }
     // stockProducts in deps: this closure reads it for the blank-row fallback
@@ -1469,10 +1547,11 @@ export default function PedidosTab({
       const rows = Array.isArray(full?.items) ? full.items : [];
       const itens = rows
         .filter((it: { product_id?: string; plates?: number }) => it.product_id && Number(it.plates) > 0)
-        .map((it: { product_id?: string; plates?: number; unit_price?: number | null }) => ({
+        .map((it: { product_id?: string; plates?: number; unit_price?: number | null; space?: string | null }) => ({
           product_id: it.product_id as string,
           plates: Math.round(Number(it.plates)),
           unit_price: it.unit_price == null ? null : Number(it.unit_price),
+          space: it.space ?? p.space ?? null,
         }));
       const base: PedidoDraft = { ...(full ?? p) };
       const { payload } = buildDraftPayload({
@@ -1535,16 +1614,20 @@ export default function PedidosTab({
       });
       if (!res.ok) {
         const j = await res.json().catch(() => null);
-        if (res.status === 409 && j?.error) alert(j.error);
+        alert(j?.error || `Não foi possível salvar o pedido (HTTP ${res.status}).`);
         await fetchPedidos(); // revert to server truth
+        return false;
       } else {
         const updated = await res.json().catch(() => null);
         if (updated && typeof updated === "object" && "id" in updated) {
           setPedidos((prev) => prev.map((p) => (p.id === id ? (updated as Pedido) : p)));
         }
       }
+      return true;
     } catch {
       await fetchPedidos();
+      alert("Não foi possível salvar o pedido. Confira a conexão e tente novamente.");
+      return false;
     }
   }
 
@@ -1616,6 +1699,7 @@ export default function PedidosTab({
   async function sendToClient() {
     if (!draft?.id) return;
     if (!draft.client_name?.trim()) { alert("Informe o nome do cliente antes de enviar."); return; }
+    if (!itemsReady || hasIncompleteItems || hasInvalidRooms) { setFormStep(2); return; }
     setSendDoc((s) => ({ ...s, busy: true, done: null }));
     const results: string[] = [];
     const post = (url: string, payload: unknown) =>
@@ -1626,7 +1710,8 @@ export default function PedidosTab({
       // just-edited but unsaved number would be ignored and the document would
       // go to the previously saved number. Keeps the editor open.
       const { payload, cleanItems } = buildDraftPayload(draft);
-      await patchPedido(draft.id, itemsReady ? { ...payload, items: cleanItems } : payload);
+      const saved = await patchPedido(draft.id, itemsReady ? { ...payload, items: cleanItems } : payload);
+      if (!saved) { setSendDoc((s) => ({ ...s, busy: false, done: "Envio interrompido. Salve as alterações antes de enviar." })); return; }
       if (sendDoc.email) {
         const r = await post(`/api/admin/pedidos/${draft.id}/send-document`, { channel: "email", tipo: sendDoc.tipo });
         results.push(r.ok ? "E-mail enviado ✓" : `E-mail: ${(await r.json().catch(() => ({}))).error ?? r.status}`);
@@ -1653,7 +1738,7 @@ export default function PedidosTab({
       partner_id: d.partner_id ?? null,
       sales_rep_id: d.sales_rep_id ?? null,
       partner_name: d.partner_name ?? null,
-      space: d.space ?? null,
+      space: items.some((it) => it.product_id) ? [...new Set(roomGroups.map((g) => g.name.trim()))].join(", ") : d.space ?? null,
       product_name: d.product_name ?? null,
       area_m2: d.area_m2 ?? null,
       total: d.total ?? null,
@@ -1694,13 +1779,16 @@ export default function PedidosTab({
       .map((it) => {
         const prod = stockProducts.find((p) => p.id === it.product_id);
         const eff = prod ? effectiveUnitPrice(it, prod) : (it.unit_price ?? null);
-        return { product_id: it.product_id, plates: it.plates, unit_price: eff };
+        return { product_id: it.product_id, plates: it.plates, unit_price: eff, space: (it.space ?? (d.space || "Ambiente 1")).trim() };
       });
     return { payload, cleanItems };
   }
 
   async function saveDraft() {
     if (!draft || !draft.client_name?.trim()) return;
+    if (itemsReady && (hasIncompleteItems || hasInvalidRooms || (draft._isNew && items.length === 0))) {
+      setFormStep(2); return;
+    }
     setSaving(true);
     const { payload, cleanItems } = buildDraftPayload(draft);
     try {
@@ -1713,15 +1801,18 @@ export default function PedidosTab({
         if (res.ok) {
           const created = await res.json();
           setPedidos((prev) => [created as Pedido, ...prev]);
-          setDraft(null);
+          reviewAfterSave.current = true;
+          setDraft({ ...draft, ...created, _isNew: false });
+          setFormStep(4);
         } else {
           const d = await res.json().catch(() => null);
           alert(`Erro ao salvar: ${d?.error ?? res.status}`);
         }
       } else if (draft.id) {
-        await patchPedido(draft.id, itemsReady ? { ...payload, items: cleanItems } : payload);
-        setDraft(null);
+        if (await patchPedido(draft.id, itemsReady ? { ...payload, items: cleanItems } : payload)) setDraft(null);
       }
+    } catch {
+      alert("Não foi possível salvar o pedido. Confira a conexão e tente novamente.");
     } finally {
       setSaving(false);
     }
@@ -1758,7 +1849,7 @@ export default function PedidosTab({
               Importar orçamento
             </button>
             <button
-              onClick={() => { setItems(stockProducts.length > 0 ? [{ product_id: "", plates: 1 }] : []); setItemsReady(true); setDraft({ _isNew: true, status: "em_producao", payment_status: "pendente", payment_methods: DEFAULT_PAYMENT_METHODS, payment_terms: DEFAULT_PAYMENT_TERMS, freight_amount: FRETE_PADRAO, freight_is_revenue: false, other_costs: [], quote_valid_until: plusDays(QUOTE_VALIDITY_DAYS), price_tier: "varejo" }); setFreteManual(false); setFreteMotivo("padrão (sem CEP)"); }}
+              onClick={() => { setItems([{ product_id: "", plates: 1, space: "Ambiente 1" }]); setItemsReady(true); setDraft({ _isNew: true, status: "em_producao", payment_status: "pendente", payment_methods: DEFAULT_PAYMENT_METHODS, payment_terms: DEFAULT_PAYMENT_TERMS, freight_amount: FRETE_PADRAO, freight_is_revenue: false, other_costs: [], quote_valid_until: plusDays(QUOTE_VALIDITY_DAYS), price_tier: "varejo" }); setFreteManual(false); setFreteMotivo("padrão (sem CEP)"); }}
               className="bg-[#0B1F45] text-white text-xs tracking-[0.12em] uppercase font-bold px-5 py-2.5 hover:bg-[#2347A0] transition-colors"
             >
               + Novo pedido
@@ -2147,28 +2238,29 @@ export default function PedidosTab({
           silently discard everything. Only the explicit × / Cancelar buttons
           close it now. */}
       {draft && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 p-4">
-          <div className="bg-white w-full max-w-lg max-h-[90vh] overflow-y-auto">
-            <div className="bg-[#0B1F45] px-6 py-4 flex items-center justify-between sticky top-0">
-              <p className="text-white text-lg">{draft._isNew ? "Novo pedido" : "Editar pedido"}</p>
-              <button onClick={() => !saving && setDraft(null)} className="text-white/60 hover:text-white text-xl leading-none">×</button>
+        <div className={editor.overlay}>
+          <div ref={editorRef} role="dialog" aria-modal="true" aria-labelledby="pedido-editor-title" className={editor.dialog}>
+            <div className={editor.header}>
+              <div><h2 id="pedido-editor-title">{draft._isNew ? "Novo pedido" : "Editar pedido"}</h2><p>{draft.client_name || "Do quantitativo ao orçamento"}</p></div>
+              <button aria-label="Fechar pedido" onClick={() => !saving && closeDraft()} className={editor.close}>×</button>
             </div>
             {/* Wizard progress */}
-            <div className="flex items-center gap-1 px-6 pt-4">
-              {([["Cliente", 1], ["Itens", 2], ["Comercial", 3], ["Revisar", 4]] as const).map(([label, n]) => (
+            <nav aria-label="Etapas do pedido" className={editor.steps}>
+              {([["Cliente", 1], ["Ambientes", 2], ["Comercial", 3], ["Revisar", 4]] as const).map(([label, n]) => (
                 <button
                   key={n}
                   type="button"
+                  aria-current={formStep === n ? "step" : undefined}
                   onClick={() => setFormStep(n)}
                   className={`flex-1 text-[9px] tracking-[0.08em] uppercase font-bold py-1.5 border-b-2 transition-colors ${
                     formStep === n ? "border-[#0B1F45] text-[#0B1F45]" : formStep > n ? "border-[#36A35C] text-[#1F7A44]" : "border-[#e2e2e2] text-[#b0b0b0]"
                   }`}
                 >
-                  {n}. {label}
+                  {label}
                 </button>
               ))}
-            </div>
-            <div className="p-6">
+            </nav>
+            <div className={editor.body} key={`${draft.id || "novo"}-${formStep}`}>
               {formStep === 1 && (
               <div className="space-y-4">
               <Field label="Cliente *">
@@ -2250,14 +2342,15 @@ export default function PedidosTab({
 
               {formStep === 2 && (
               <div className="space-y-4">
-              <div className="grid grid-cols-2 gap-3">
-                <Field label="Ambiente">
-                  <input className={inputCls} value={draft.space ?? ""} onChange={(e) => setDraft({ ...draft, space: e.target.value })} />
-                </Field>
-                <Field label="Produto">
-                  <input className={inputCls} value={draft.product_name ?? ""} onChange={(e) => setDraft({ ...draft, product_name: e.target.value })} />
-                </Field>
-              </div>
+              <div className={editor.intro}><h3>Ambientes e materiais</h3><p>Separe as quantidades de cada ambiente. O orçamento leva essa divisão ao cliente.</p></div>
+              <ImportarQuantitativo products={stockProducts.map((p) => ({ id: p.id, name: p.name, sku: p.code, sale_unit: p.sale_unit }))} disabled={!itemsReady || saving} onApply={(rows) => {
+                setItems((cur) => [...cur.filter((it) => it.product_id), ...rows.map((r) => {
+                  const name = r.space.trim() || "Ambiente 1";
+                  const existing = roomGroups.find((g) => g.name.trim().toLocaleLowerCase("pt-BR") === name.toLocaleLowerCase("pt-BR"));
+                  return { product_id: r.product_id, plates: r.quantity, space: existing?.name ?? name, _roomKey: existing?.key };
+                })]);
+              }} />
+              {!itemsReady && !draft._isNew && <p role="alert">Os itens ainda não carregaram. Feche e abra o pedido novamente antes de editar os materiais.</p>}
 
               {/* Stock-aware line items (model + plate qty). Reserves/baixa de
                   estoque; the editable quantity here — not a freeform m² box —
@@ -2285,10 +2378,7 @@ export default function PedidosTab({
                 </div>
               )}
               {stockProducts.length > 0 && (
-                <div className="border border-[#e2e2e2] rounded-sm p-3">
-                  <p className="text-[10px] tracking-[0.12em] uppercase font-bold text-[#74777f] mb-2">
-                    Itens do pedido — quantidade de placas
-                  </p>
+                <div>
                   <div className="flex items-center gap-2 mb-3">
                     {([["varejo", "Varejo"], ["atacado", "Atacado"]] as const).map(([val, label]) => (
                       <button
@@ -2310,11 +2400,26 @@ export default function PedidosTab({
                       </span>
                     )}
                   </div>
-                  <div className="space-y-2">
-                    {items.map((it, idx) => {
+                  <div className={editor.rooms}>
+                  {roomGroups.map((group, roomIndex) => <section key={group.key} className={editor.room} aria-label={`Ambiente ${roomIndex + 1}`}>
+                    <div className={editor.roomHeader}>
+                      <label><span>Nome do ambiente</span><input aria-label={`Nome do ambiente ${roomIndex + 1}`} maxLength={120} value={group.name} placeholder="Ex.: Lavabo" onChange={(e) => {
+                        const name = e.target.value;
+                        const indices = new Set(group.rows.map((r) => r.index));
+                        setItems((cur) => cur.map((it, i) => indices.has(i) ? { ...it, space: name, _roomKey: group.key } : it));
+                      }} /></label>
+                      <button type="button" aria-label={`Remover ambiente ${group.name}`} onClick={() => {
+                        if (group.rows.some((r) => r.item.product_id) && !confirm(`Remover ${group.name} e seus materiais?`)) return;
+                        const indices = new Set(group.rows.map((r) => r.index));
+                        setItems((cur) => cur.filter((_, i) => !indices.has(i)));
+                        setAreaCalcOpen({}); setAreaCalcValue({}); setAreaCalcW({}); setAreaCalcH({}); setAreaCalcMode({});
+                      }}>Remover</button>
+                    </div>
+                    {group.rows.map(({ item: it, index: idx }) => {
                       const prod = stockProducts.find((p) => p.id === it.product_id);
                       const unit = prod?.sale_unit || "placa";
-                      const over = prod && it.plates > prod.available;
+                      const over = prod && (quantityByProduct.get(prod.id) ?? 0) > prod.available;
+                      const isPanel = !prod?.sale_unit || /placa/i.test(prod.sale_unit);
                       const calcOpen = !!areaCalcOpen[idx];
                       const calcM2 = areaCalcValue[idx] ?? "";
                       const calcMode = areaCalcMode[idx] ?? "lxa";
@@ -2332,9 +2437,11 @@ export default function PedidosTab({
                         setAreaCalcOpen((cur) => ({ ...cur, [idx]: false }));
                       };
                       return (
-                        <div key={idx} className="border border-[#f0f0f0] bg-white p-2">
-                          <div className="grid grid-cols-[1fr_120px_28px] gap-2 items-start">
+                        <div key={idx} className={editor.item}>
+                          <div className={editor.itemFields}>
+                          <div className={editor.productField}><span className={editor.fieldLabel}>Produto</span>
                           <SearchSelect
+                            ariaLabel={`Produto do item ${idx + 1}`}
                             value={it.product_id}
                             onChange={(id) => setItems((cur) => cur.map((x, i) => i === idx ? { ...x, product_id: id } : x))}
                             placeholder="Selecione o modelo…"
@@ -2345,16 +2452,17 @@ export default function PedidosTab({
                               hint: `${p.available} ${p.sale_unit || "placa"} disp. · venda/${p.sale_unit || "placa"} ${p.price != null ? fmtBRL(p.price) : "sem preço"}`,
                             }))}
                           />
-                          <div className="flex">
-                            <input type="number" min="1" value={it.plates || ""} placeholder="Qtd."
+                          </div>
+                          <label><span className={editor.fieldLabel}>Quantidade</span><div className="flex">
+                            <input aria-label={`Quantidade do item ${idx + 1}`} type="number" min="1" step="1" inputMode="numeric" value={it.plates || ""} placeholder="Qtd."
                               onChange={(e) => setItems((cur) => cur.map((x, i) => i === idx ? { ...x, plates: Number(e.target.value) } : x))}
                               className={`${inputCls} rounded-none`} />
                             <span className="border border-l-0 border-[#e2e2e2] px-2 flex items-center text-[10px] font-bold text-[#74777f] bg-[#F6F5F2] min-w-[52px] justify-center">
                               {unit}
                             </span>
-                          </div>
-                          <button onClick={() => setItems((cur) => cur.filter((_, i) => i !== idx))}
-                            className="text-[#b42318] text-lg leading-none px-1" title="Remover">×</button>
+                          </div></label>
+                          <button type="button" aria-label={`Remover item ${idx + 1}`} onClick={() => removeItem(idx)}
+                            className={editor.removeItem} title="Remover item">×</button>
                           </div>
                           {prod && (
                             <div className="flex flex-wrap items-center gap-x-4 gap-y-1 mt-2 text-[10px] text-[#74777f]">
@@ -2364,6 +2472,7 @@ export default function PedidosTab({
                                 Venda/{unit}: R$
                                 <input
                                   type="number" min="0" step="0.01"
+                                  aria-label={`Preço unitário do item ${idx + 1}`}
                                   value={it.unit_price != null ? it.unit_price : (tierUnitPrice(prod) ?? "")}
                                   onChange={(e) => {
                                     const v = e.target.value;
@@ -2383,12 +2492,12 @@ export default function PedidosTab({
                                 )}
                               </span>
                               <span>Subtotal: {(() => { const u = effectiveUnitPrice(it, prod); return u != null ? fmtBRL(u * (it.plates || 0)) : "—"; })()}</span>
-                              <span>≈ {(it.plates * panelAreaM2(prod)).toFixed(2)} m²</span>
-                              {over && <span className="text-amber-700 font-bold">Acima do disponível — pode comprar mais para repor; o pedido pode ser criado normalmente</span>}
-                              <button type="button" onClick={() => setAreaCalcOpen((cur) => ({ ...cur, [idx]: !cur[idx] }))}
+                              {isPanel && <span>≈ {(it.plates * panelAreaM2(prod)).toLocaleString("pt-BR", { maximumFractionDigits: 2 })} m²</span>}
+                              {over && <span className="text-amber-700 font-bold">A soma deste produto nos ambientes excede o estoque disponível. O pedido pode ser criado para reposição.</span>}
+                              {isPanel && <button type="button" onClick={() => setAreaCalcOpen((cur) => ({ ...cur, [idx]: !cur[idx] }))}
                                 className="text-[#2F5FD0] font-bold hover:underline">
                                 Calcular pela área
-                              </button>
+                              </button>}
                             </div>
                           )}
                           {calcOpen && prod && (
@@ -2408,18 +2517,18 @@ export default function PedidosTab({
                               <div className="flex flex-wrap items-center gap-2">
                                 {calcMode === "lxa" ? (
                                   <>
-                                    <input type="number" min="0" step="0.01" value={areaCalcW[idx] ?? ""} autoFocus
+                                    <input aria-label={`Largura da parede do item ${idx + 1} em metros`} type="number" min="0" step="0.01" value={areaCalcW[idx] ?? ""}
                                       onChange={(e) => setAreaCalcW((cur) => ({ ...cur, [idx]: e.target.value }))}
                                       placeholder="largura (m)"
                                       className="w-28 border border-[#e2e2e2] px-2 py-1 text-xs text-[#0B1F45] focus:outline-none focus:border-[#0B1F45]" />
                                     <span className="text-[10px] text-[#74777f]">×</span>
-                                    <input type="number" min="0" step="0.01" value={areaCalcH[idx] ?? ""}
+                                    <input aria-label={`Altura da parede do item ${idx + 1} em metros`} type="number" min="0" step="0.01" value={areaCalcH[idx] ?? ""}
                                       onChange={(e) => setAreaCalcH((cur) => ({ ...cur, [idx]: e.target.value }))}
                                       placeholder="altura (m)"
                                       className="w-28 border border-[#e2e2e2] px-2 py-1 text-xs text-[#0B1F45] focus:outline-none focus:border-[#0B1F45]" />
                                   </>
                                 ) : (
-                                  <input type="number" min="0" step="0.01" value={calcM2} autoFocus
+                                  <input aria-label={`Área do item ${idx + 1} em metros quadrados`} type="number" min="0" step="0.01" value={calcM2}
                                     onChange={(e) => setAreaCalcValue((cur) => ({ ...cur, [idx]: e.target.value }))}
                                     placeholder="m² desejado"
                                     className="w-28 border border-[#e2e2e2] px-2 py-1 text-xs text-[#0B1F45] focus:outline-none focus:border-[#0B1F45]" />
@@ -2442,11 +2551,15 @@ export default function PedidosTab({
                         </div>
                       );
                     })}
+                    <button type="button" disabled={!itemsReady} className={editor.addMaterial} onClick={() => setItems((cur) => [...cur, { product_id: "", plates: 1, space: group.name, _roomKey: group.key }])}>+ Adicionar material</button>
+                    <div className={editor.roomTotal}><span>Subtotal {group.name || "do ambiente"}</span><strong>{fmtBRL(group.rows.reduce((sum, { item }) => { const p = stockProducts.find((p) => p.id === item.product_id); return sum + (p ? (effectiveUnitPrice(item, p) ?? 0) * (item.plates || 0) : 0); }, 0))}</strong></div>
+                  </section>)}
                   </div>
-                  <button onClick={() => setItems((cur) => [...cur, { product_id: "", plates: 1 }])}
-                    className="mt-2 text-[11px] font-bold text-[#0B1F45] hover:underline">
-                    + Adicionar modelo
+                  <button type="button" disabled={!itemsReady} onClick={addRoom} className={editor.addRoom}>
+                    + Adicionar ambiente
                   </button>
+                  {hasInvalidRooms && <p role="alert" className={editor.validation}>Dê um nome diferente a cada ambiente antes de salvar.</p>}
+                  {hasIncompleteItems && <p className={editor.validation}>Selecione um produto e uma quantidade inteira maior que zero em cada material, ou remova a linha vazia.</p>}
                   {items.some((it) => it.product_id && it.plates > 0) && (
                     <div className="mt-3 border-t border-[#f0f0f0] pt-3">
                       <div className="flex flex-wrap items-center justify-between gap-2">
@@ -2992,7 +3105,7 @@ export default function PedidosTab({
                       const u = p ? effectiveUnitPrice(it, p) : null;
                       return (
                         <div key={i} className="flex justify-between text-xs">
-                          <span className="text-[#43474e]">{p?.name ?? "—"} × {it.plates}</span>
+                          <span className="text-[#43474e]"><strong className="block">{it.space ?? (draft.space || "Ambiente 1")}</strong>{p?.name ?? "—"} × {it.plates} {p?.sale_unit || "placa"}</span>
                           <span className="text-[#0B1F45]">{u != null ? fmtBRL(u * it.plates) : "—"}</span>
                         </div>
                       );
@@ -3025,7 +3138,7 @@ export default function PedidosTab({
                           </button>
                         ))}
                       </div>
-                      <button type="button" onClick={() => openDocument(draft.id as string, sendDoc.tipo)} className="text-[11px] font-bold text-[#2F5FD0] hover:underline">Ver prévia →</button>
+                      <button type="button" disabled={saving || sendDoc.busy} onClick={() => previewDraftDocument(sendDoc.tipo)} className="text-[11px] font-bold text-[#2F5FD0] hover:underline disabled:opacity-50">{saving ? "Preparando prévia…" : "Ver prévia"}</button>
                       <div className="flex flex-col gap-1.5">
                         <label className="flex items-center gap-2 text-xs text-[#43474e]"><input type="checkbox" checked={sendDoc.email} disabled={!draft.client_email} onChange={(e) => setSendDoc((s) => ({ ...s, email: e.target.checked }))} /> E-mail {draft.client_email ? `(${draft.client_email})` : "— sem e-mail"}</label>
                         <label className="flex items-center gap-2 text-xs text-[#43474e]"><input type="checkbox" checked={sendDoc.whatsapp} disabled={!draft.client_phone} onChange={(e) => setSendDoc((s) => ({ ...s, whatsapp: e.target.checked }))} /> WhatsApp {draft.client_phone ? `(${draft.client_phone})` : "— sem telefone"}</label>
@@ -3042,19 +3155,19 @@ export default function PedidosTab({
               </div>
               )}
             </div>
-            <div className="px-6 py-4 border-t border-[#e2e2e2] flex items-center justify-between gap-3 sticky bottom-0 bg-white">
-              <button onClick={() => !saving && setDraft(null)} className="px-4 py-2 text-xs font-bold uppercase tracking-wider text-[#74777f] hover:text-[#0B1F45]">Cancelar</button>
+            <div className={editor.footer}>
+              <button onClick={closeDraft} className={editor.cancel}>Cancelar</button>
               <div className="flex items-center gap-2">
                 {formStep > 1 && (
                   <button type="button" onClick={() => setFormStep((s) => Math.max(1, s - 1))} className="px-4 py-2 text-xs font-bold uppercase tracking-wider border border-[#e2e2e2] text-[#43474e] hover:border-[#0B1F45]">← Voltar</button>
                 )}
                 {formStep < 4 ? (
-                  <button type="button" onClick={() => setFormStep((s) => Math.min(4, s + 1))} disabled={formStep === 1 && !draft.client_name?.trim()}
+                  <button type="button" onClick={() => setFormStep((s) => Math.min(4, s + 1))} disabled={(formStep === 1 && !draft.client_name?.trim()) || (formStep === 2 && (!itemsReady || !items.length || hasIncompleteItems || hasInvalidRooms))}
                     className="bg-[#0B1F45] text-white px-5 py-2 text-xs font-bold uppercase tracking-wider hover:bg-[#2347A0] disabled:opacity-50">Próximo →</button>
                 ) : (
-                  <button onClick={saveDraft} disabled={saving || !draft.client_name?.trim()}
+                  <button onClick={saveDraft} disabled={saving || sendDoc.busy || !draft.client_name?.trim() || !itemsReady || !items.length || hasIncompleteItems || hasInvalidRooms}
                     className="bg-[#0B1F45] text-white px-5 py-2 text-xs font-bold uppercase tracking-wider hover:bg-[#2347A0] disabled:opacity-50">
-                    {saving ? "Salvando..." : draft._isNew ? "Criar pedido" : "Salvar"}
+                    {saving ? "Salvando…" : draft._isNew ? "Salvar e revisar envio" : "Salvar"}
                   </button>
                 )}
               </div>
@@ -3094,12 +3207,13 @@ function waDigits(phone?: string | null): string {
 // client/admin types to filter by name/code instead of scrolling a native
 // <select>. Filters on each option's `search` string.
 function SearchSelect({
-  value, onChange, options, placeholder, emptyOption, onCreate, createLabel,
+  value, onChange, options, placeholder, emptyOption, onCreate, createLabel, ariaLabel,
 }: {
   value: string;
   onChange: (id: string) => void;
   options: Array<{ id: string; label: string; search: string; hint?: string }>;
   placeholder: string;
+  ariaLabel?: string;
   emptyOption?: { id: string; label: string };
   /** Sem opção com esse nome exato: oferece criar (ex.: arquiteto com cadastro pendente). */
   onCreate?: (texto: string) => void;
@@ -3122,14 +3236,14 @@ function SearchSelect({
     // preventDefault: o SearchSelect fica dentro do <label> do Field; sem isto,
     // clicar numa opção "ativava" o rótulo e reabria a lista na hora.
     <div className="relative min-w-0" ref={ref} onClick={(e) => e.preventDefault()}>
-      <button type="button" onClick={() => setOpen((o) => !o)}
+      <button type="button" aria-label={ariaLabel} aria-expanded={open} onClick={() => setOpen((o) => !o)}
         className={`${inputCls} text-left flex items-center justify-between gap-2`}>
         <span className={`truncate ${selectedLabel ? "" : "text-[#a0a3a8]"}`}>{selectedLabel || placeholder}</span>
         <span className="text-[#74777f] flex-shrink-0 text-xs">▾</span>
       </button>
       {open && (
         <div className="absolute z-30 mt-1 left-0 right-0 bg-white border border-[#e2e2e2] shadow-lg max-h-72 overflow-y-auto">
-          <input autoFocus value={q} onChange={(e) => setQ(e.target.value)} placeholder="Buscar por nome ou código…"
+          <input aria-label="Buscar por nome ou código" value={q} onChange={(e) => setQ(e.target.value)} placeholder="Buscar por nome ou código…"
             className="sticky top-0 w-full border-b border-[#e2e2e2] px-3 py-2 text-sm text-[#0B1F45] focus:outline-none bg-white" />
           {emptyOption && (
             <button type="button" onClick={() => { onChange(emptyOption.id); setOpen(false); setQ(""); }}

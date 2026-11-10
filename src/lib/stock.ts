@@ -246,7 +246,15 @@ export async function transitionOrderStock(
     .select("product_id, plates")
     .eq("pedido_id", pedidoId);
   if (itemsErr) return { ok: false, error: itemsErr.message };
-  const lines = (items ?? []).filter((i) => i.product_id && (i.plates ?? 0) > 0) as Array<{ product_id: string; plates: number }>;
+  // One product can appear in several rooms. Move the aggregate once so the
+  // ledger and cached counters represent the whole order's quantity.
+  const quantities = new Map<string, number>();
+  for (const item of items ?? []) {
+    if (item.product_id && Number(item.plates) > 0) {
+      quantities.set(item.product_id, (quantities.get(item.product_id) ?? 0) + Number(item.plates));
+    }
+  }
+  const lines = [...quantities].map(([product_id, plates]) => ({ product_id, plates }));
 
   for (const line of lines) {
     let kind: MovementKind | null = null;

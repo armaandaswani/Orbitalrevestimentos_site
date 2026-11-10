@@ -12,6 +12,7 @@ export const dynamic = "force-dynamic";
 
 const SAFE_ITEM = (it: Record<string, unknown>) => ({
   product_name: it.product_name ?? null,
+  space: it.space ?? null,
   product_code: it.product_code ?? null,
   panel_w: it.panel_w ?? null,
   panel_h: it.panel_h ?? null,
@@ -31,7 +32,7 @@ export async function GET(_req: NextRequest, { params }: { params: Promise<{ id:
 
   const { data: itemRows } = await db
     .from("pedido_items")
-    .select("product_id, product_name, plates, unit_price, unit_label")
+    .select("*")
     .eq("pedido_id", id);
   // Join the product's code + panel dimensions (client-safe) so the document can
   // show "Modelo: ORB-004" and "Placa 2,90 m × 1,20 m × 5 mm".

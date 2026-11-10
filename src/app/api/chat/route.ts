@@ -1,11 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { supabaseAdmin } from "@/lib/supabase";
 import { completarGratuito, llmGratuitoConfigurado, type MensagemLLM } from "@/lib/llm-gratuito";
-import { DEFAULT_SYSTEM_PROMPT as PROMPT_PADRAO, montarPromptDoSistema, type ShowroomConvite } from "@/lib/chat-prompt";
-
-// O texto e a montagem do prompt moram em @/lib/chat-prompt (função pura,
-// testada sem rede); aqui continua o export que o admin e o e-mail usam.
-export const DEFAULT_SYSTEM_PROMPT = PROMPT_PADRAO;
+import { montarPromptDoSistema, type ShowroomConvite } from "@/lib/chat-prompt";
 
 export async function POST(req: NextRequest) {
   if (!llmGratuitoConfigurado()) {

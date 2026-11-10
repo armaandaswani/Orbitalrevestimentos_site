@@ -1,4 +1,5 @@
 import { NextRequest, NextResponse } from "next/server";
+import { cleanItemSpace } from "@/lib/pedido-ambientes";
 import { isAdminRequest } from "@/lib/admin-auth";
 import { supabaseAdmin } from "@/lib/supabase";
 import { isMissingColumn } from "@/lib/db-compat";
@@ -155,7 +156,7 @@ async function syncPedidoPortalAttribution(db: ReturnType<typeof supabaseAdmin>,
   }
 }
 
-interface ItemInput { product_id?: string; plates?: number; unit_price?: number | null }
+interface ItemInput { product_id?: string; plates?: number; unit_price?: number | null; space?: string | null }
 
 // Replaces a pedido's line items (model + plate qty) and reconciles the stock
 // ledger for the swap: releases/returns whatever was held for the OLD items
@@ -174,17 +175,28 @@ async function reconcileItemsAndStock(
     .map((it) => ({
       product_id: it.product_id as string,
       plates: Math.round(Number(it.plates)),
+      space: cleanItemSpace(it.space),
       unit_price: it.unit_price != null && Number.isFinite(Number(it.unit_price)) ? Number(it.unit_price) : null,
     }));
 
+  const { data: previousItems, error: previousError } = await db.from("pedido_items").select("*").eq("pedido_id", pedidoId);
+  if (previousError) throw new Error(previousError.message);
+
   // Free whatever the OLD items held, before we replace the rows they're read from.
   if (priorStockState === "reserved") {
-    await transitionOrderStock(db, pedidoId, "reserved", "released", "admin");
+    const released = await transitionOrderStock(db, pedidoId, "reserved", "released", "admin");
+    if (!released.ok) throw new Error(released.error || "Não foi possível liberar os itens anteriores.");
   } else if (priorStockState === "consumed") {
-    await transitionOrderStock(db, pedidoId, "consumed", "returned", "admin");
+    const returned = await transitionOrderStock(db, pedidoId, "consumed", "returned", "admin");
+    if (!returned.ok) throw new Error(returned.error || "Não foi possível estornar os itens anteriores.");
   }
 
-  await db.from("pedido_items").delete().eq("pedido_id", pedidoId);
+  const { error: deleteError } = await db.from("pedido_items").delete().eq("pedido_id", pedidoId);
+  if (deleteError) {
+    await db.from("pedidos").update({ stock_state: "none" }).eq("id", pedidoId);
+    await syncOrderStock(db, pedidoId, "admin");
+    throw new Error(deleteError.message);
+  }
   if (clean.length > 0) {
     const ids = [...new Set(clean.map((c) => c.product_id))];
     const { data: prods } = await db.from("products").select("id, name, cost_price, price, sale_unit").in("id", ids);
@@ -195,13 +207,28 @@ async function reconcileItemsAndStock(
         pedido_id: pedidoId,
         product_id: c.product_id,
         product_name: (p?.name as string) ?? null,
+        ...(c.space ? { space: c.space } : {}),
         plates: c.plates,
         unit_cost: p?.cost_price ?? null,
         unit_price: c.unit_price ?? p?.price ?? null,
         unit_label: (p?.sale_unit as string) ?? "placa",
       };
     });
-    await db.from("pedido_items").insert(rows);
+    const { error: insertError } = await db.from("pedido_items").insert(rows);
+    if (insertError) {
+      // Compensate a failed replacement using the complete previous snapshots.
+      // The database operation is atomic per insert, so no new rows survived.
+      const { error: restoreError } = previousItems?.length
+        ? await db.from("pedido_items").insert(previousItems)
+        : { error: null };
+      if (!restoreError) {
+        await db.from("pedidos").update({ stock_state: "none" }).eq("id", pedidoId);
+        await syncOrderStock(db, pedidoId, "admin");
+      }
+      throw new Error(restoreError
+        ? "Falha ao salvar os itens e restaurar o quantitativo anterior. Revise este pedido antes de continuar."
+        : "O novo quantitativo não foi salvo; os itens anteriores foram restaurados.");
+    }
   }
 
   // Itens trocados: a baixa dos antigos já foi desfeita acima; agora aplica a
@@ -275,7 +302,7 @@ export async function GET(req: NextRequest, { params }: { params: Promise<{ id: 
   try {
     const { data } = await db
       .from("pedido_items")
-      .select("id, product_id, product_name, plates, unit_cost, unit_price, unit_label")
+      .select("*")
       .eq("pedido_id", id);
     const rows = (data ?? []) as Array<Record<string, unknown>>;
     const productIds = rows.map((row) => row.product_id).filter(Boolean) as string[];
@@ -346,6 +373,13 @@ export async function PATCH(
   }
 
   const db = supabaseAdmin();
+  // Do not save an order while silently losing the allocation by room.
+  if (Array.isArray(body.items) && body.items.some((item: { space?: unknown } | null) => cleanItemSpace(item?.space))) {
+    const { error: schemaError } = await db.from("pedido_items").select("space").limit(0);
+    if (schemaError) return NextResponse.json({ error: isMissingColumn(schemaError)
+      ? "O quantitativo por ambiente precisa da atualização 077 do banco. Nenhuma alteração foi salva."
+      : "Não foi possível validar os ambientes. Tente novamente." }, { status: 503 });
+  }
 
   // Read the current stock phase before updating, so a status change can move
   // stock correctly (reserve → consume → return). Best-effort: if the column
@@ -394,7 +428,9 @@ export async function PATCH(
       const newState = await reconcileItemsAndStock(db, id, itemsInput, priorStockState);
       (data as Record<string, unknown>).stock_state = newState;
       itemsHandledStock = true;
-    } catch { /* stock tables missing or transient — items/stock left as-is */ }
+    } catch (itemError) {
+      return NextResponse.json({ error: itemError instanceof Error ? itemError.message : "Não foi possível salvar os itens do pedido." }, { status: 500 });
+    }
   }
 
   // Status ou pagamento mudou: aplica a regra do estoque (pago/boleto/parcial
