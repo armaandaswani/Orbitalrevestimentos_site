@@ -1,4 +1,4 @@
-import { adminWhatsappPhone, sendText, smclickConfigured } from "@/lib/smclick";
+import { OWNER_PERSONAL_WHATSAPP, normalizePhone, sendText, smclickConfigured } from "@/lib/smclick";
 import { enviarPelaSte, steConfigurada } from "@/lib/whatsapp-ste";
 
 /**
@@ -51,9 +51,14 @@ export function textoSemana(s: SemanaAviso): string {
   return linhas.join("\n");
 }
 
-/** Manda ao dono pelo WhatsApp da Ste (SM Click só se a ponte da Ste não existir). Não lança. */
+/**
+ * Manda ao dono pelo WhatsApp da Ste (SM Click só se a ponte da Ste não existir). Não lança.
+ * Sempre para o número pessoal dele, nunca adminWhatsappPhone(): em produção a variável de
+ * ambiente dos alertas aponta para outro celular, e de 08 a 10/11/2026 estes avisos foram
+ * para lá sem ele ver nenhum.
+ */
 async function enviarAoDono(texto: string, origem: string): Promise<{ ok: boolean; detalhe: string }> {
-  const para = adminWhatsappPhone();
+  const para = normalizePhone(OWNER_PERSONAL_WHATSAPP);
   if (!para) return { ok: false, detalhe: "sem número do dono configurado" };
   if (steConfigurada()) {
     const r = await enviarPelaSte({ telefone: para, texto, origem });

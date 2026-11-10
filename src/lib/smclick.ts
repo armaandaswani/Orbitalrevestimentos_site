@@ -56,17 +56,23 @@ export function normalizePhone(raw: string | null | undefined): string | null {
   return d;
 }
 
+/** The owner's personal WhatsApp (confirmed by him on 07/11/2026). */
+export const OWNER_PERSONAL_WHATSAPP = "92992097165";
+
 /**
  * The owner's WhatsApp for real-time admin alerts (meeting scheduled, etc.).
  * Single source for the number every alert path should use — the daily rep
  * digest previously kept its own copy of this fallback chain.
+ * The env vars win over the personal number, and in production they point to
+ * another phone: alerts that must reach the owner himself use
+ * OWNER_PERSONAL_WHATSAPP instead.
  */
 export function adminWhatsappPhone(): string | null {
   return normalizePhone(
     process.env.ADMIN_WHATSAPP ||
       process.env.SMCLICK_REMINDER_TO ||
       process.env.REP_DAILY_DIGEST_ADMIN_WHATSAPP ||
-      "92992097165"
+      OWNER_PERSONAL_WHATSAPP
   );
 }
 
