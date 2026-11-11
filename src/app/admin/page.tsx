@@ -215,14 +215,44 @@ export default function AdminPage() {
   const [sessaoExpirada, setSessaoExpirada] = useState(false);
   const [tab, setTab] = useState<AdminTab>("dashboard");
 
-  // Voltar de uma rota própria (ex.: /admin/projetos/organizacao) precisa cair
-  // na aba certa — a barra lateral de lá aponta para /admin?tab=<aba>.
-  useEffect(() => {
-    const t = new URLSearchParams(window.location.search).get("tab");
-    if (t && (NAV_GROUPS.some((g) => g.items.includes(t as AdminTab)))) setTab(t as AdminTab);
-  }, []);
-  // Mobile nav drawer (hamburger). Desktop sidebar is always visible.
   const [navOpen, setNavOpen] = useState(false);
+  const [navSearch, setNavSearch] = useState("");
+  const [steFocus, setSteFocus] = useState<number | null>(null);
+  const searchNav = (label: string) => label.normalize("NFD").replace(/\p{M}/gu, "").toLowerCase();
+  const visibleNavigation = NAV_GROUPS.map(group => ({ ...group, items: group.items.filter(item => searchNav(NAV_LABELS[item]).includes(searchNav(navSearch.trim()))) })).filter(group => group.items.length);
+  useEffect(() => {
+    function syncTab() {
+      const params = new URLSearchParams(window.location.search);
+      const value = params.get("tab") as AdminTab;
+      setTab(NAV_GROUPS.some(group => group.items.includes(value)) ? value : "dashboard");
+      setLeadFocusId(value === "leads" ? params.get("registro") : null);
+      setPedidoFocusId(value === "pedidos" ? params.get("registro") : null);
+      setPartnerFocusId(value === "partners" ? params.get("registro") : null);
+      setSteFocus(value === "atendimento" && /^\d+$/.test(params.get("registro") ?? "") ? Number(params.get("registro")) : null);
+      setNavOpen(false);
+    }
+    syncTab();
+    window.addEventListener("popstate", syncTab);
+    return () => window.removeEventListener("popstate", syncTab);
+  }, []);
+  function navigateAdmin(target: AdminTab, record?: string) {
+    const params = new URLSearchParams();
+    if (target !== "dashboard") params.set("tab", target);
+    if (record) params.set("registro", record);
+    const query = params.toString();
+    const href = query ? `/admin?${query}` : "/admin";
+    if (window.location.pathname + window.location.search !== href) {
+      window.history.pushState(null, "", href);
+      window.scrollTo({ top: 0 });
+    }
+    setTab(target);
+    setNavOpen(false);
+    setLeadFocusId(target === "leads" ? record ?? null : null);
+    setPedidoFocusId(target === "pedidos" ? record ?? null : null);
+    setPartnerFocusId(target === "partners" ? record ?? null : null);
+    setSteFocus(target === "atendimento" && record ? Number(record) : null);
+    setNavSearch("");
+  }
   const [commissionFilter, setCommissionFilter] = useState<"a_pagar" | "pago" | "tudo">("a_pagar");
   // Cancelamento de comissão A pagar
   const [cancelCommTarget, setCancelCommTarget] = useState<{ id: string; source: "coupon" | "pedido"; partnerName: string; repName: string; partnerAmount: number; repAmount: number; partnerEligible: boolean; repEligible: boolean } | null>(null);
@@ -237,6 +267,12 @@ export default function AdminPage() {
   const [pedidoLeadPrefill, setPedidoLeadPrefill] = useState<Lead | null>(null);
   const [leadFocusId, setLeadFocusId] = useState<string | null>(null);
   const [pedidoFocusId, setPedidoFocusId] = useState<string | null>(null);
+  const [partnerFocusId, setPartnerFocusId] = useState<string | null>(null);
+  useEffect(() => {
+    if (!partnerFocusId || tab !== "partners") return;
+    const card = document.getElementById(`pending-partner-${partnerFocusId}`);
+    if (card) { card.focus({ preventScroll: true }); card.scrollIntoView({ block: "center" }); setPartnerFocusId(null); }
+  });
   // Same pattern, Phase 2: converting a QUOTE (Orçamentos tab) into a pedido.
   const [pedidoQuotePrefill, setPedidoQuotePrefill] = useState<QuoteOption | null>(null);
 
@@ -969,11 +1005,16 @@ export default function AdminPage() {
   // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [tab, authed]);
 
-  // "Atenção agora" + sidebar badges: fetch once on login.
   useEffect(() => {
-    if (authed && supabaseConfigured && !overview && !overviewLoading) fetchOverview();
-  // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [authed, supabaseConfigured]);
+    if (!authed || !supabaseConfigured || tab !== "dashboard") return;
+    const refresh = () => {
+      if (document.visibilityState === "visible") void fetchOverview();
+    };
+    refresh();
+    const timer = window.setInterval(refresh, 60_000);
+    document.addEventListener("visibilitychange", refresh);
+    return () => { window.clearInterval(timer); document.removeEventListener("visibilitychange", refresh); };
+  }, [authed, supabaseConfigured, tab, fetchOverview]);
 
   useEffect(() => {
     if (tab === "campaigns" && authed) loadCampaigns();
@@ -3211,13 +3252,13 @@ export default function AdminPage() {
           </div>
         </div>
       )}
-      <div className="bg-[#0B1F45] px-8 py-5 flex items-center justify-between">
+      <div className="bg-[#0B1F45] px-4 sm:px-8 py-3 flex flex-wrap items-center justify-between gap-x-3">
         <div className="flex items-center gap-4">
           <p className="text-white text-xl">Orbital Admin</p>
           {pendingPartners.length > 0 && (
-            <span className="bg-yellow-400 text-yellow-900 text-[10px] font-bold px-2 py-0.5 tracking-wider">
-              {pendingPartners.length} PENDENTE{pendingPartners.length > 1 ? "S" : ""}
-            </span>
+            <button type="button" onClick={() => navigateAdmin("partners")} className="min-h-11 px-3 text-xs font-semibold text-yellow-200 underline underline-offset-4 focus-visible:outline-2" aria-label={`Revisar ${pendingPartners.length} parceiro(s) pendente(s)`}>
+              {pendingPartners.length} para aprovar
+            </button>
           )}
         </div>
         <div className="flex items-center gap-4">
@@ -3388,7 +3429,9 @@ export default function AdminPage() {
               </div>
               <button onClick={() => setNavOpen(false)} aria-label="Fechar menu" className="text-[#74777f] hover:text-[#0B1F45] text-2xl leading-none px-1">×</button>
             </div>
-            {NAV_GROUPS.map((sec) => (
+            <input type="search" aria-label="Buscar seção do admin" placeholder="Buscar seção…" value={navSearch} onChange={event => setNavSearch(event.target.value)} className="min-h-11 w-full border border-[#a8b4c5] bg-white px-3 text-sm" />
+            {!visibleNavigation.length && <p className="text-sm text-[#43474e]">Nenhuma seção encontrada.</p>}
+            {visibleNavigation.map((sec) => (
               <div key={sec.group}>
                 <p className="text-[9px] tracking-[0.2em] uppercase font-bold text-[#a0a3a8] px-3 mb-1.5">{sec.group}</p>
                 <div className="flex flex-col gap-0.5">
@@ -3398,7 +3441,8 @@ export default function AdminPage() {
                     return (
                       <button
                         key={t}
-                        onClick={() => { setTab(t); setNavOpen(false); }}
+                        aria-current={active ? "page" : undefined}
+                        onClick={() => { navigateAdmin(t); }}
                         className={`flex items-center gap-2.5 px-3 py-2.5 text-sm rounded-md text-left transition-colors ${active ? "bg-[#0B1F45] text-white font-bold" : "text-[#43474e] hover:bg-[#eef0f3]"}`}
                       >
                         <NavIcon id={t} className={active ? "text-white" : "text-[#a0a3a8]"} />
@@ -3427,7 +3471,9 @@ export default function AdminPage() {
               <p className="text-[9px] tracking-[0.22em] uppercase font-bold text-[#a0a3a8] mt-1">Sistema Interno</p>
             </div>
           </div>
-          {NAV_GROUPS.map((sec) => (
+          <input type="search" aria-label="Buscar seção do admin" placeholder="Buscar seção…" value={navSearch} onChange={event => setNavSearch(event.target.value)} className="min-h-11 w-full border border-[#a8b4c5] bg-white px-3 text-sm" />
+          {!visibleNavigation.length && <p className="text-sm text-[#43474e]">Nenhuma seção encontrada.</p>}
+          {visibleNavigation.map((sec) => (
             <div key={sec.group}>
               <p className="text-[9px] tracking-[0.2em] uppercase font-bold text-[#a0a3a8] px-3 mb-1.5">{sec.group}</p>
               <div className="flex flex-col gap-0.5">
@@ -3437,7 +3483,8 @@ export default function AdminPage() {
                   return (
                     <button
                       key={t}
-                      onClick={() => setTab(t)}
+                      aria-current={active ? "page" : undefined}
+                      onClick={() => navigateAdmin(t)}
                       className={`group flex items-center gap-2.5 px-3 py-2 text-xs rounded-md text-left transition-colors ${active ? "bg-[#0B1F45] text-white font-bold" : "text-[#43474e] hover:bg-[#eef0f3]"}`}
                     >
                       <NavIcon id={t} className={active ? "text-white" : "text-[#a0a3a8] group-hover:text-[#43474e]"} />
@@ -3472,9 +3519,12 @@ export default function AdminPage() {
             overview={overview}
             overviewLoading={overviewLoading}
             onRefreshOverview={fetchOverview}
-            onNavigate={(t) => setTab(t)}
-            onOpenLead={(id) => { setLeadFocusId(id); setTab("leads"); }}
-            onOpenPedido={(id) => { setPedidoFocusId(id); setTab("pedidos"); }}
+            onNavigate={navigateAdmin}
+            pendingPartners={pendingPartners}
+            onOpenSte={(id) => navigateAdmin("atendimento", String(id))}
+            onOpenPartner={(id) => navigateAdmin("partners", id)}
+            onOpenLead={(id) => { navigateAdmin("leads", id); }}
+            onOpenPedido={(id) => { navigateAdmin("pedidos", id); }}
           />
         )}
 
@@ -3490,7 +3540,7 @@ export default function AdminPage() {
                 </h3>
                 <div className="space-y-3">
                   {pendingPartners.map((p) => (
-                    <div key={p.id} className="bg-white border border-yellow-200 px-6 py-5">
+                    <div key={p.id} id={`pending-partner-${p.id}`} tabIndex={-1} className="bg-white border border-yellow-200 px-6 py-5 focus:outline-2 focus:outline-offset-2">
                       <div className="flex flex-col sm:flex-row sm:items-start sm:justify-between gap-4">
                         <div>
                           <p className="font-semibold text-[#0B1F45]">
@@ -5056,11 +5106,11 @@ export default function AdminPage() {
                             {/* Delete */}
                             <td className="px-3 py-3 text-right whitespace-nowrap">
                               {c._isPedido ? (
-                                <button onClick={() => { setPedidoFocusId(c.id); setTab("pedidos"); }} className="text-[10px] text-[#1F7A44] font-bold hover:underline mr-3">Ver pedido →</button>
+                                <button onClick={() => { navigateAdmin("pedidos", c.id); }} className="text-[10px] text-[#1F7A44] font-bold hover:underline mr-3">Ver pedido →</button>
                               ) : cu?.source_pedido_id ? (
-                                <button onClick={() => { setPedidoFocusId(cu.source_pedido_id as string); setTab("pedidos"); }} className="text-[10px] text-[#1F7A44] font-bold hover:underline mr-3">Ver pedido →</button>
+                                <button onClick={() => { navigateAdmin("pedidos", cu.source_pedido_id as string); }} className="text-[10px] text-[#1F7A44] font-bold hover:underline mr-3">Ver pedido →</button>
                               ) : (
-                                <button onClick={() => { setPedidoQuotePrefill(quoteOptionFromRow(c)); setTab("pedidos"); }} className="text-[10px] text-[#1F7A44] font-bold hover:underline mr-3">Converter em Pedido</button>
+                                <button onClick={() => { setPedidoQuotePrefill(quoteOptionFromRow(c)); navigateAdmin("pedidos"); }} className="text-[10px] text-[#1F7A44] font-bold hover:underline mr-3">Converter em Pedido</button>
                               )}
                               <button
                                 onClick={() => deleteClient(c.id, c._isStandaloneUse, c._isPedido)}
@@ -5149,11 +5199,11 @@ export default function AdminPage() {
                         </div>
                         <div className="mt-3 pt-3 border-t border-[#f0f0f0]">
                           {c._isPedido ? (
-                            <button onClick={() => { setPedidoFocusId(c.id); setTab("pedidos"); }} className="text-[10px] text-[#1F7A44] font-bold">Ver pedido →</button>
+                            <button onClick={() => { navigateAdmin("pedidos", c.id); }} className="text-[10px] text-[#1F7A44] font-bold">Ver pedido →</button>
                           ) : cu?.source_pedido_id ? (
-                            <button onClick={() => { setPedidoFocusId(cu.source_pedido_id as string); setTab("pedidos"); }} className="text-[10px] text-[#1F7A44] font-bold">Ver pedido →</button>
+                            <button onClick={() => { navigateAdmin("pedidos", cu.source_pedido_id as string); }} className="text-[10px] text-[#1F7A44] font-bold">Ver pedido →</button>
                           ) : (
-                            <button onClick={() => { setPedidoQuotePrefill(quoteOptionFromRow(c)); setTab("pedidos"); }} className="text-[10px] text-[#1F7A44] font-bold">Converter em Pedido</button>
+                            <button onClick={() => { setPedidoQuotePrefill(quoteOptionFromRow(c)); navigateAdmin("pedidos"); }} className="text-[10px] text-[#1F7A44] font-bold">Converter em Pedido</button>
                           )}
                         </div>
                         {(() => {
@@ -5185,8 +5235,8 @@ export default function AdminPage() {
         {/* ═══ LEADS / CRM TAB ═══ */}
         {tab === "leads" && authed && (
           <LeadsTab
-            onConvertToPedido={(lead) => { setPedidoLeadPrefill(lead); setTab("pedidos"); }}
-            onViewPedido={(pedidoId) => { setPedidoFocusId(pedidoId); setTab("pedidos"); }}
+            onConvertToPedido={(lead) => { setPedidoLeadPrefill(lead); navigateAdmin("pedidos"); }}
+            onViewPedido={(pedidoId) => { navigateAdmin("pedidos", pedidoId); }}
             focusLeadId={leadFocusId}
             onFocusConsumed={() => setLeadFocusId(null)}
           />
@@ -5195,7 +5245,7 @@ export default function AdminPage() {
           <PedidosTab
             leadPrefill={pedidoLeadPrefill}
             onLeadPrefillConsumed={() => setPedidoLeadPrefill(null)}
-            onViewLead={(leadId) => { setLeadFocusId(leadId); setTab("leads"); }}
+            onViewLead={(leadId) => navigateAdmin("leads", leadId)}
             focusPedidoId={pedidoFocusId}
             onPedidoFocusConsumed={() => setPedidoFocusId(null)}
             quotePrefill={pedidoQuotePrefill}
@@ -5205,7 +5255,7 @@ export default function AdminPage() {
         {tab === "estoque" && authed && <EstoqueTab />}
         {tab === "financeiro" && authed && <FinanceiroTab />}
         {tab === "academia" && authed && <AcademiaTab />}
-        {tab === "atendimento" && authed && <AtendimentoTab />}
+        {tab === "atendimento" && authed && <AtendimentoTab key={steFocus ?? "atendimento"} focusContactId={steFocus} />}
         {tab === "contatos" && authed && <ContatosTab />}
         {tab === "espera" && authed && <ListaEsperaTab />}
         {tab === "aniversarios" && authed && <AniversariosTab />}
@@ -5631,7 +5681,7 @@ export default function AdminPage() {
                                 <button onClick={() => openCancelCommission(r)} className="text-[10px] text-[#cc0000] font-bold hover:underline mr-3">Cancelar comissão</button>
                               )}
                               {r.source === "pedido" && (
-                                <button onClick={() => { setPedidoFocusId(r.id); setTab("pedidos"); }} className="text-[10px] text-[#1F7A44] font-bold hover:underline">Ver pedido →</button>
+                                <button onClick={() => { navigateAdmin("pedidos", r.id); }} className="text-[10px] text-[#1F7A44] font-bold hover:underline">Ver pedido →</button>
                               )}
                             </td>
                           </tr>
@@ -5678,7 +5728,7 @@ export default function AdminPage() {
                         </div>
                         {r.source === "pedido" && (
                           <div className="flex justify-end pt-2.5 mt-2.5 border-t border-[#f0f0f0]">
-                            <button onClick={() => { setPedidoFocusId(r.id); setTab("pedidos"); }} className="text-[10px] text-[#1F7A44] font-bold hover:underline">Ver pedido →</button>
+                            <button onClick={() => { navigateAdmin("pedidos", r.id); }} className="text-[10px] text-[#1F7A44] font-bold hover:underline">Ver pedido →</button>
                           </div>
                         )}
                       </div>

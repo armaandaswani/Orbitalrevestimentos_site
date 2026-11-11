@@ -11,6 +11,7 @@ import { NextRequest, NextResponse } from "next/server";
 import { supabaseAdmin } from "@/lib/supabase";
 import { smclickConfigured, sendText, normalizePhone, adminWhatsappPhone } from "@/lib/smclick";
 import { getResend } from "@/lib/resend";
+import { repPriority, type RepActivity } from "@/lib/rep-priority";
 import { isMissingTable } from "@/lib/db-compat";
 
 const TIME_ZONE = "America/Sao_Paulo";
@@ -22,7 +23,7 @@ interface RepRow {
   email: string | null;
 }
 
-interface CrmRow {
+interface CrmRow extends RepActivity {
   id: string;
   partner_id: string | null;
   stage: string;
@@ -189,7 +190,7 @@ export async function GET(req: NextRequest) {
 
     const { data: crmRows, error: crmErr } = await db
       .from("rep_partner_crm")
-      .select("id, partner_id, stage, reminder_note, next_reminder_at, reminder_sent_at, mostruario_sent, mostruario_received, has_specified, specified_count, project_added, project_added_count, prospect_name, prospect_phone, prospect_email")
+      .select("id, partner_id, stage, reminder_note, next_reminder_at, created_at, first_contact_at, meeting_happened_at, mostruario_received_at, last_specified_at, project_added_at, last_reply_at, reminder_sent_at, mostruario_sent, mostruario_received, has_specified, specified_count, project_added, project_added_count, prospect_name, prospect_phone, prospect_email")
       .eq("sales_rep_id", rep.id)
       .not("next_reminder_at", "is", null)
       .lte("next_reminder_at", roughEnd)
@@ -208,7 +209,7 @@ export async function GET(req: NextRequest) {
     const pastMeetings = allMeetings.filter((m) => new Date(m.scheduled_at).getTime() < nowMs);
     const pastMeetingPartnerIds = new Set(pastMeetings.map((m) => m.partner_id).filter(Boolean) as string[]);
     const hasPast = (r: CrmRow) => !!r.partner_id && pastMeetingPartnerIds.has(r.partner_id);
-    const dueFollowups = ((crmRows ?? []) as CrmRow[]).filter((r) => dueForDigest(r, today));
+    const dueFollowups = ((crmRows ?? []) as CrmRow[]).filter((r) => !["review", "inactive"].includes(repPriority(r, now.getTime()).kind) && dueForDigest(r, today));
 
     const partnerIds = [
       ...new Set(

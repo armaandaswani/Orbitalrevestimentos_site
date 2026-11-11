@@ -88,13 +88,13 @@ function Estagio({ c }: { c: Contato }) {
   return <StatusBadge tone={e.tone}>{e.label} · {c.score}</StatusBadge>;
 }
 
-export default function AtendimentoTab() {
+export default function AtendimentoTab({ focusContactId = null }: { focusContactId?: number | null }) {
   const [filtro, setFiltro] = useState("");
   const [busca, setBusca] = useState("");
   const [lista, setLista] = useState<Contato[] | null>(null);
   const [stats, setStats] = useState<Stats | null>(null);
   const [whats, setWhats] = useState<Whats | null>(null);
-  const [aberto, setAberto] = useState<number | null>(null);
+  const [aberto, setAberto] = useState<number | null>(focusContactId);
   const [conversa, setConversa] = useState<{ contact: Contato; messages: Mensagem[] } | null>(null);
   const [licoes, setLicoes] = useState<Licao[]>([]);
   const [verLicoes, setVerLicoes] = useState(false);

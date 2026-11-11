@@ -145,6 +145,10 @@ export default function LeadsTab({
 }: LeadsTabProps = {}) {
   const [leads, setLeads] = useState<Lead[]>([]);
   const [loading, setLoading] = useState(false);
+  const [view, setView] = useState<"board" | "list">("board");
+  const [mobileStage, setMobileStage] = useState<LeadStatus | null>(null);
+  const [scope, setScope] = useState<"open" | "all">("open");
+  const [updateError, setUpdateError] = useState("");
   const [error, setError] = useState<string | null>(null);
 
   const [sourceFilter, setSourceFilter] = useState<"all" | LeadSource>("all");
@@ -226,13 +230,16 @@ export default function LeadsTab({
     return leads.filter((l) => {
       if (sourceFilter !== "all" && l.source !== sourceFilter) return false;
       if (statusFilter !== "all" && l.status !== statusFilter) return false;
+      if (statusFilter === "all" && scope === "open" && !s && (l.status === "ganho" || l.status === "perdido")) return false;
       if (s) {
         const hay = `${l.name} ${l.email ?? ""} ${l.phone ?? ""} ${l.partner_name ?? ""}`.toLowerCase();
         if (!hay.includes(s)) return false;
       }
       return true;
     });
-  }, [leads, sourceFilter, statusFilter, search]);
+  }, [leads, sourceFilter, statusFilter, search, scope]);
+  const visibleStages = STATUS_ORDER.filter(stage => statusFilter !== "all" ? stage === statusFilter : scope === "all" || !!search.trim() || (stage !== "ganho" && stage !== "perdido"));
+  const currentMobileStage = mobileStage && visibleStages.includes(mobileStage) ? mobileStage : visibleStages.find(stage => filtered.some(lead => lead.status === stage)) ?? visibleStages[0];
 
   const stats = useMemo(() => {
     const novos = filtered.filter((l) => l.status === "novo").length;
@@ -249,24 +256,23 @@ export default function LeadsTab({
 
   // ── Mutations ────────────────────────────────────────────────────────────────
   async function patchLead(id: string, patch: Partial<Lead>) {
-    // optimistic
-    setLeads((prev) => prev.map((l) => (l.id === id ? { ...l, ...patch } : l)));
+    setUpdateError("");
+    const previous = leads.find(lead => lead.id === id);
+    setLeads(current => current.map(lead => lead.id === id ? { ...lead, ...patch } : lead));
     try {
-      const res = await fetch(`/api/admin/leads/${id}`, {
+      const response = await fetch(`/api/admin/leads/${id}`, {
         method: "PATCH",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify(patch),
       });
-      if (!res.ok) {
-        await fetchLeads(); // revert to server truth
-      } else {
-        const updated = await res.json().catch(() => null);
-        if (updated && typeof updated === "object" && "id" in updated) {
-          setLeads((prev) => prev.map((l) => (l.id === id ? (updated as Lead) : l)));
-        }
-      }
+      if (!response.ok) throw new Error("Falha ao salvar");
+      const updated = await response.json().catch(() => null);
+      if (updated?.id === id) setLeads(current => current.map(lead => lead.id === id ? { ...lead, ...updated } : lead));
+      return true;
     } catch {
-      await fetchLeads();
+      if (previous) setLeads(current => current.map(lead => lead.id === id ? previous : lead));
+      setUpdateError("A alteração não foi salva. Tente novamente.");
+      return false;
     }
   }
 
@@ -413,7 +419,7 @@ export default function LeadsTab({
               </span>
             )}
           </div>
-          <div className="flex items-center gap-2">
+          <div className="flex flex-wrap items-center gap-2">
             <button
               onClick={bulkSync}
               disabled={syncing}
@@ -471,13 +477,15 @@ export default function LeadsTab({
         {/* Filters */}
         <div className="flex flex-wrap items-center gap-3">
           <input
-            type="text"
+            type="search"
+            aria-label="Buscar leads"
             placeholder="Buscar por nome, e-mail, telefone…"
             value={search}
             onChange={(e) => setSearch(e.target.value)}
             className="w-full sm:w-auto border border-[#e2e2e2] px-3 py-2 text-sm text-[#0B1F45] focus:outline-none focus:border-[#0B1F45] sm:min-w-[240px]"
           />
           <select
+            aria-label="Filtrar por etapa"
             value={statusFilter}
             onChange={(e) => setStatusFilter(e.target.value as "all" | LeadStatus)}
             className="border border-[#e2e2e2] px-3 py-2 text-sm text-[#0B1F45] focus:outline-none focus:border-[#0B1F45]"
@@ -490,7 +498,14 @@ export default function LeadsTab({
         </div>
       </div>
 
+      {updateError && <p role="alert" className="mb-3 border border-red-200 bg-red-50 p-3 text-sm text-red-800">{updateError}</p>}
       {/* Stats */}
+      <div className="flex flex-wrap items-center gap-2" aria-label="Visualização do CRM">
+        <select aria-label="Escopo do CRM" value={scope} onChange={e => { setScope(e.target.value as "open" | "all"); setStatusFilter("all"); }} className="min-h-11 border bg-white px-3 text-sm">
+          <option value="open">Em aberto</option><option value="all">Incluindo encerrados</option>
+        </select>
+        {(["board", "list"] as const).map(option => <button key={option} type="button" aria-pressed={view === option} onClick={() => setView(option)} className={`min-h-11 border px-4 text-sm font-semibold ${view === option ? "bg-[#0B1F45] text-white" : "bg-white text-[#0B1F45]"}`}>{option === "board" ? "Kanban" : "Lista"}</button>)}
+      </div>
       {!loading && !error && filtered.length > 0 && (
         <div className="grid grid-cols-2 sm:grid-cols-5 gap-3 mb-5">
           {[
@@ -529,6 +544,35 @@ export default function LeadsTab({
               ? "Nenhum lead ainda. Novos orçamentos do site e de parceiros aparecem aqui automaticamente, ou adicione um manualmente."
               : "Nenhum lead corresponde aos filtros."}
           </p>
+        </div>
+      ) : view === "board" ? (
+        <div>
+          <label className="mb-3 block text-sm font-semibold lg:hidden">
+            Etapa
+            <select className="mt-1 block min-h-11 w-full border bg-white px-3" value={currentMobileStage} disabled={statusFilter !== "all"} onChange={e => setMobileStage(e.target.value as LeadStatus)}>
+              {visibleStages.map(stage => <option key={stage} value={stage}>{STATUS_META[stage].label} ({filtered.filter(lead => lead.status === stage).length})</option>)}
+            </select>
+          </label>
+          <div className="grid gap-3 lg:grid-cols-3 2xl:grid-cols-6">
+            {visibleStages.map(stage => {
+              const items = filtered.filter(lead => lead.status === stage);
+              return <section key={stage} className={`min-w-0 border border-[#dbe2ec] bg-[#f5f7fa] p-3 ${statusFilter === "all" && stage !== currentMobileStage ? "hidden lg:block" : ""}`} aria-label={STATUS_META[stage].label}>
+                <h3 className="mb-3 text-sm font-semibold text-[#0B1F45]">{STATUS_META[stage].label} · {items.length}</h3>
+                <ul className="grid gap-2">
+                  {items.map(lead => <li key={lead.id} className="min-w-0 border border-[#dbe2ec] bg-white p-3">
+                    <button className="block min-h-10 w-full break-words text-left text-sm font-semibold text-[#0B1F45] hover:underline" onClick={() => setDetailLead(lead)}>{lead.name}</button>
+                    <p className="break-words text-xs text-[#43474e]">{lead.ai_summary || lead.product_name || SOURCE_META[lead.source]?.label}</p>
+                    <label className="mt-2 block text-xs text-[#43474e]">Etapa de {lead.name}
+                      <select value={lead.status} onChange={async e => { const next = e.target.value as LeadStatus; if (await patchLead(lead.id, { status: next })) setMobileStage(next); }} className="mt-1 min-h-11 w-full border bg-white px-2 text-sm">
+                        {STATUS_ORDER.map(option => <option key={option} value={option}>{STATUS_META[option].label}</option>)}
+                      </select>
+                    </label>
+                  </li>)}
+                </ul>
+                {!items.length && <p className="text-sm text-[#43474e]">Nenhum lead nesta etapa.</p>}
+              </section>;
+            })}
+          </div>
         </div>
       ) : (
         <>

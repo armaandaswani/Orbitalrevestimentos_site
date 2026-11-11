@@ -1,6 +1,7 @@
 "use client";
 
-import React, { useState, useEffect, useCallback, useMemo } from "react";
+import React, { useState, useEffect, useCallback, useMemo, useRef } from "react";
+import { repPriority } from "@/lib/rep-priority";
 
 type Stage = "novo_contato" | "reuniao_agendada" | "reuniao_realizada" | "acompanhamento" | "ativo" | "inativo";
 type Recur = "none" | "daily" | "weekly" | "monthly";
@@ -34,6 +35,7 @@ interface CrmRow {
   project_added_at: string | null;
   project_added_count: number;
   last_followup_at: string | null;
+  last_reply_at?: string | null;
   next_reminder_at: string | null;
   reminder_note: string | null;
   reminder_recur: Recur;
@@ -49,6 +51,7 @@ interface CrmRow {
   projects_count: number;
   last_sale_at: string | null;
   updated_at?: string | null;
+  created_at?: string | null;
 }
 
 interface Note {
@@ -297,11 +300,14 @@ function DateField({ label, value, onChange }: { label: string; value: string | 
 export default function RepCrmTab({
   salesRepId,
   linkedPartners,
+  focusId,
 }: {
   salesRepId: string;
   linkedPartners: PartnerOption[];
+  focusId?: string | null;
 }) {
   const [rows, setRows] = useState<CrmRow[]>([]);
+  const [priorityNow, setPriorityNow] = useState(() => Date.now());
   const [loading, setLoading] = useState(false);
   const [expandedId, setExpandedId] = useState<string | null>(null);
   const [notesByCrmId, setNotesByCrmId] = useState<Record<string, Note[]>>({});
@@ -322,6 +328,7 @@ export default function RepCrmTab({
   const [stageFilter, setStageFilter] = useState<Stage | "all">("all");
   const [sortKey, setSortKey] = useState<SortKey>("activity");
   const [view, setView] = useState<"list" | "board">("list");
+  const handledFocus = useRef<string | null>(null);
   const [draggingId, setDraggingId] = useState<string | null>(null);
 
   // Falha de gravação visível. Antes, quase toda gravação que falhava sumia em
@@ -342,7 +349,7 @@ export default function RepCrmTab({
   const fetchCrm = useCallback(async () => {
     setLoading(true);
     const res = await fetch(`/api/representante/crm?sales_rep_id=${encodeURIComponent(salesRepId)}`).catch(() => null);
-    if (res?.ok) setRows(await res.json());
+    if (res?.ok) { setRows(await res.json()); setPriorityNow(Date.now()); }
     else if (res?.status === 401) avisarFalha(res);
     setLoading(false);
   }, [salesRepId, avisarFalha]);
@@ -532,11 +539,11 @@ export default function RepCrmTab({
   const reminderBuckets = useMemo(() => {
     const g: Record<Bucket, CrmRow[]> = { overdue: [], today: [], upcoming: [] };
     for (const r of rows) {
-      if (!r.next_reminder_at) continue;
+      if (!r.next_reminder_at || ["review", "inactive"].includes(repPriority(r, priorityNow).kind)) continue;
       g[bucketOf(r.next_reminder_at)].push(r);
     }
     return g;
-  }, [rows]);
+  }, [rows, priorityNow]);
   const actionable = reminderBuckets.overdue.length + reminderBuckets.today.length;
 
   // Strategy funnel: how relationships progress contato → reunião → especificou
@@ -597,12 +604,23 @@ export default function RepCrmTab({
 
   const focusRows = useMemo(() => {
     const due = [...reminderBuckets.overdue, ...reminderBuckets.today];
-    const dueIds = new Set(due.map((r) => r.id));
-    const stalled = rows
-      .filter((r) => !dueIds.has(r.id) && staleDays(r))
-      .sort((a, b) => (staleDays(b) ?? 0) - (staleDays(a) ?? 0));
-    return [...due, ...stalled].slice(0, 5);
-  }, [reminderBuckets, rows]);
+    const firstContacts = rows.filter(row => repPriority(row, priorityNow).kind === "new");
+    return [...due, ...firstContacts].slice(0, 5);
+  }, [reminderBuckets, rows, priorityNow]);
+
+  useEffect(() => {
+    if (!focusId || handledFocus.current === focusId || !rows.some(row => row.id === focusId)) return;
+    handledFocus.current = focusId;
+    void toggleExpand(focusId).catch(() => setFalha("Não foi possível carregar as notas deste contato."));
+    const frame = window.requestAnimationFrame(() => {
+      const card = document.getElementById(`crm-row-${focusId}`);
+      card?.focus({ preventScroll: true });
+      card?.scrollIntoView({ block: "center" });
+    });
+    return () => window.cancelAnimationFrame(frame);
+    // Initial selection is consumed once, so later edits do not reopen it.
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [focusId, rows]);
 
   const hasFilters = !!search.trim() || stageFilter !== "all" || sortKey !== "activity";
 
@@ -919,7 +937,7 @@ export default function RepCrmTab({
             const stalled = staleDays(r);
             const followupDraft = followupDrafts[r.id] || draftFromRow(r);
             return (
-              <div key={r.id} id={`crm-row-${r.id}`} className={`bg-white border ${expanded ? "border-[#0B1F45]" : "border-[#e2e2e2]"}`}>
+              <div key={r.id} id={`crm-row-${r.id}`} tabIndex={-1} className={`bg-white border ${expanded ? "border-[#0B1F45]" : "border-[#e2e2e2]"}`}>
                 <div className="px-4 py-4">
                   <div className="grid grid-cols-1 lg:grid-cols-[minmax(0,1fr)_190px_160px_auto] gap-4 lg:items-center">
                     <div className="flex items-start gap-3 min-w-0">
@@ -1002,6 +1020,23 @@ export default function RepCrmTab({
                       </button>
                     </div>
 
+                    <div className="mb-4 flex flex-wrap items-center gap-2">
+                      <button type="button" disabled={quickBusyId === r.id} onClick={async () => {
+                        setQuickBusyId(r.id);
+                        try {
+                          const res = await req(`/api/representante/crm/${r.id}`, { method: "PATCH", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ record_reply: true }) });
+                          if (!res?.ok) { avisarFalha(res); return; }
+                          setFollowupDrafts(current => {
+                            const next = { ...current };
+                            delete next[r.id];
+                            return next;
+                          });
+                          await fetchCrm();
+                        } finally { setQuickBusyId(null); }
+                      }} className="min-h-11 border bg-white px-3 text-sm font-semibold text-[#0B1F45]">Registrar resposta recebida</button>
+                      {r.stage !== "inativo" && <button type="button" disabled={quickBusyId === r.id} onClick={() => void patchRow(r.id, { stage: "inativo", auto_followup_enabled: false, next_reminder_at: null })} className="min-h-11 border bg-white px-3 text-sm font-semibold text-[#0B1F45]">Pausar acompanhamento</button>}
+                      {r.last_reply_at && <span className="text-xs text-[#43474e]">Resposta registrada em {fmtDate(r.last_reply_at)}</span>}
+                    </div>
                     {r.is_prospect && (
                       <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-2 mb-4">
                         <input defaultValue={r.prospect_name ?? ""} onBlur={(e) => { const v = e.target.value.trim(); if (v && v !== r.prospect_name) patchRow(r.id, { prospect_name: v } as Partial<CrmRow>); }}

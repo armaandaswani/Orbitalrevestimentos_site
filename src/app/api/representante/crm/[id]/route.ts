@@ -63,6 +63,16 @@ export async function PATCH(
     if (EDITABLE.has(k)) patch[k] = v;
   }
 
+  if (body.record_reply === true) {
+    patch.last_reply_at = patch.updated_at;
+    patch.auto_followup_enabled = false;
+  }
+  if (patch.stage === "inativo") {
+    patch.auto_followup_enabled = false;
+    patch.next_reminder_at = null;
+    patch.reminder_sent_at = null;
+  }
+
   // Toggling mostruario/specified on stamps the date automatically when the
   // caller didn't already supply one — same convenience as the reminder snooze UI.
   if (patch.mostruario_sent === true && !("mostruario_sent_at" in patch)) {
@@ -92,6 +102,7 @@ export async function PATCH(
   // digest; an explicit next_reminder_at from the caller is always respected.
   const stageChanged = "stage" in patch && patch.stage !== (existing as { stage?: string }).stage;
   const milestoneRegistered =
+    body.record_reply === true ||
     patch.meeting_happened_at != null ||
     patch.mostruario_received === true ||
     patch.has_specified === true ||

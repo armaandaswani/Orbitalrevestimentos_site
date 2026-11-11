@@ -3,6 +3,7 @@
 import React, { useState, useMemo, useEffect, useRef } from "react";
 import RepAgendaTab from "./RepAgendaTab";
 import RepCrmTab from "./RepCrmTab";
+import RepPriorities from "./RepPriorities";
 import RepMeetingPrompts from "./RepMeetingPrompts";
 import ConvidarParceiro from "./ConvidarParceiro";
 import ComissoesLista, { type ComissaoItem } from "@/components/ComissoesLista";
@@ -230,6 +231,7 @@ export default function RepresentantePage() {
 
   const [partnerRankSort, setPartnerRankSort] = useState<"total" | "count" | "median">("total");
   const [repTab, setRepTab] = useState<"overview" | "commissions" | "partners" | "agenda" | "crm">("overview");
+  const [crmFocus, setCrmFocus] = useState<string | null>(null);
   const [linkedPartners, setLinkedPartners] = useState<LinkedPartner[]>([]);
   const [partnersLoading, setPartnersLoading] = useState(false);
   const [partnerSearch, setPartnerSearch] = useState("");
@@ -430,7 +432,33 @@ export default function RepresentantePage() {
       </div>
       <PasskeyConvite tipo="rep" />
 
-      <div className="max-w-5xl mx-auto px-4 sm:px-8 py-8">
+      <div className="max-w-5xl mx-auto px-4 sm:px-8 py-4 sm:py-8">
+        {/* Tab bar */}
+        <div className="flex flex-wrap gap-x-1 mb-4 sm:mb-6 border-b border-[#e2e2e2]">
+          {([
+            { key: "overview", label: "Visão Geral" },
+            { key: "commissions", label: "Comissões" },
+            { key: "partners", label: `Meus Parceiros${linkedPartners.length > 0 ? ` (${linkedPartners.length})` : ""}` },
+            { key: "agenda", label: "Agenda" },
+            { key: "crm", label: "Meu CRM" },
+          ] as const).map((t) => (
+            <button
+              key={t.key}
+              aria-pressed={repTab === t.key}
+              onClick={() => { setCrmFocus(null); setRepTab(t.key); }}
+              className={`min-h-11 px-3 sm:px-5 py-3 text-xs tracking-[0.1em] uppercase font-bold border-b-2 transition-colors -mb-px ${
+                repTab === t.key
+                  ? "border-[#0B1F45] text-[#0B1F45]"
+                  : "border-transparent text-[#74777f] hover:text-[#0B1F45]"
+              }`}
+            >
+              {t.label}
+            </button>
+          ))}
+        </div>
+
+        {repTab === "overview" && <RepPriorities repId={salesRep.id} onOpen={id => { setCrmFocus(id); setRepTab("crm"); }} />}
+
         {/* Referral link card */}
         {(() => {
           const referralUrl = `https://orbitalrevestimentos.com.br/parcerias?rep=${salesRep.referral_code}`;
@@ -458,29 +486,6 @@ export default function RepresentantePage() {
 
         {/* Proactive "a reunião aconteceu?" banners for past-due meetings */}
         <RepMeetingPrompts salesRepId={salesRep.id} repName={salesRep.name} />
-
-        {/* Tab bar */}
-        <div className="flex flex-wrap gap-x-1 mb-8 border-b border-[#e2e2e2]">
-          {([
-            { key: "overview", label: "Visão Geral" },
-            { key: "commissions", label: "Comissões" },
-            { key: "partners", label: `Meus Parceiros${linkedPartners.length > 0 ? ` (${linkedPartners.length})` : ""}` },
-            { key: "agenda", label: "Agenda" },
-            { key: "crm", label: "Meu CRM" },
-          ] as const).map((t) => (
-            <button
-              key={t.key}
-              onClick={() => setRepTab(t.key)}
-              className={`px-5 py-3 text-xs tracking-[0.1em] uppercase font-bold border-b-2 transition-colors -mb-px ${
-                repTab === t.key
-                  ? "border-[#0B1F45] text-[#0B1F45]"
-                  : "border-transparent text-[#74777f] hover:text-[#0B1F45]"
-              }`}
-            >
-              {t.label}
-            </button>
-          ))}
-        </div>
 
         {repTab === "overview" && (<>
         {/* Summary cards — 4-card grid */}
@@ -1109,7 +1114,7 @@ export default function RepresentantePage() {
         )}
 
         {repTab === "crm" && (
-          <RepCrmTab salesRepId={salesRep.id} linkedPartners={linkedPartners} />
+          <RepCrmTab salesRepId={salesRep.id} linkedPartners={linkedPartners} focusId={crmFocus} />
         )}
       </div>
     </div>

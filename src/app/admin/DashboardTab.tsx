@@ -44,6 +44,9 @@ interface DashboardTabProps {
   overviewLoading: boolean;
   onRefreshOverview: () => void;
   onNavigate: (tab: AdminTab) => void;
+  pendingPartners: Array<{ id: string; name: string }>;
+  onOpenSte: (id: number) => void;
+  onOpenPartner: (id: string) => void;
   onOpenLead: (leadId: string) => void;
   onOpenPedido: (pedidoId: string) => void;
 }
@@ -128,10 +131,23 @@ function AttentionRow({ primary, secondary, meta, onClick }: { primary: string; 
   );
 }
 
-export default function DashboardTab({ dash, dashLoading, onRefreshDash, overview, overviewLoading, onRefreshOverview, onNavigate, onOpenLead, onOpenPedido }: DashboardTabProps) {
+export default function DashboardTab({ dash, dashLoading, onRefreshDash, overview, overviewLoading, onRefreshOverview, onNavigate, pendingPartners, onOpenPartner, onOpenSte, onOpenLead, onOpenPedido }: DashboardTabProps) {
   const fmtK = (n: number) => (n >= 1000 ? `R$${(n / 1000).toFixed(1)}k` : fmtBRL(n));
   const STATUS_MAP: Record<string, string> = { em_orcamento: "Em orçamento", concluido: "Concluído", cancelado: "Cancelado" };
   const PEDIDO_STATUS: Record<string, string> = { em_producao: "Em produção", pronto: "Pronto", pendente_entrega: "Pendente de entrega", entregue: "Entregue", cancelado: "Cancelado" };
+
+  const [ste, setSte] = React.useState<{ id: number; name: string | null; handoff_reason?: string | null }[] | null>(null);
+  React.useEffect(() => {
+    const controller = new AbortController();
+    fetch("/api/admin/atendente/contacts?stage=needs_human", { cache: "no-store", signal: controller.signal })
+      .then(response => {
+        if (!response.ok) throw new Error("Ste indisponível");
+        return response.json();
+      })
+      .then(data => { if (Array.isArray(data)) setSte(data); })
+      .catch(() => {});
+    return () => controller.abort();
+  }, []);
 
   const trend = dash?.monthlyTrend ?? [];
   const maxMonth = trend.length > 0 ? Math.max(...trend.map((m) => m.count), 1) : 1;
@@ -141,22 +157,53 @@ export default function DashboardTab({ dash, dashLoading, onRefreshDash, overvie
       {/* ── Header ── */}
       <div className="flex flex-wrap items-end justify-between gap-4 pb-3 border-b border-[#e2e2e2]">
         <div>
-          <h1 className="font-serif text-[#0B1F45] text-2xl font-normal leading-tight">Hoje</h1>
-          <p className="text-[#74777f] text-xs mt-1 capitalize">
-            {new Date().toLocaleDateString("pt-BR", { weekday: "long", day: "numeric", month: "long", year: "numeric" })}
+          <h1 className="font-serif text-[#0B1F45] text-3xl sm:text-4xl font-normal leading-tight">Hoje</h1>
+          <p className="text-[#74777f] text-xs mt-1 first-letter:uppercase">
+            {new Date().toLocaleDateString("pt-BR", { timeZone: "America/Manaus", weekday: "long", day: "numeric", month: "long", year: "numeric" })}
           </p>
-        </div>
-        <div className="flex flex-wrap gap-2">
-          <button onClick={() => onNavigate("orcamentos")} className={btnPrimary}>Ver orçamentos</button>
-          <button onClick={() => onNavigate("pedidos")} className={btnSecondary}>Pedidos</button>
-          <button onClick={() => onNavigate("leads")} className={btnGhost}>Leads / CRM</button>
         </div>
       </div>
 
-      {/* ── Atenção agora ── */}
+      <section aria-labelledby="decision-title" className="overflow-hidden border border-[#dbe2ec] bg-white">
+        <div className="bg-[#0B1F45] px-4 py-4 text-white sm:px-6">
+          <h2 id="decision-title" className="font-serif text-xl">O que pede sua atenção</h2>
+        </div>
+        <div className="divide-y divide-[#e2e2e2]">
+          {pendingPartners.slice(0, 3).map(partner => (
+            <button key={partner.id} onClick={() => onOpenPartner(partner.id)} className="flex min-h-14 w-full items-center justify-between gap-3 px-4 py-3 text-left hover:bg-slate-50 sm:px-6">
+              <span className="min-w-0 break-words"><strong className="block text-sm text-[#0B1F45]">{partner.name}</strong><span className="text-xs text-[#43474e]">Cadastro aguardando aprovação</span></span>
+              <span className="shrink-0 rounded-sm bg-[#edf2f9] px-2 py-1.5 text-sm font-semibold text-[#16366d]">Revisar →</span>
+            </button>
+          ))}
+          {pendingPartners.length > 3 && <button className="min-h-11 px-4 text-sm font-semibold text-[#2347A0] sm:px-6" onClick={() => onNavigate("partners")}>Ver todos os {pendingPartners.length} cadastros →</button>}
+          {(overview?.followupsOverdue.rows ?? []).slice(0, 3).map(lead => (
+            <button key={lead.id} onClick={() => onOpenLead(lead.id)} className="flex min-h-14 w-full items-center justify-between gap-3 px-4 py-3 text-left hover:bg-slate-50 sm:px-6">
+              <span className="min-w-0 break-words"><strong className="block text-sm text-[#0B1F45]">{lead.name}</strong><span className="text-xs text-[#43474e]">{lead.reminder_note || "Retorno pendente"} · {fmtDateShort(lead.next_reminder_at)}</span></span>
+              <span className="shrink-0 rounded-sm bg-[#edf2f9] px-2 py-1.5 text-sm font-semibold text-[#16366d]">Abrir lead →</span>
+            </button>
+          ))}
+          {ste?.slice(0, 3).map(contact => (
+            <button key={contact.id} onClick={() => onOpenSte(contact.id)} className="flex min-h-14 w-full items-center justify-between gap-3 px-4 py-3 text-left hover:bg-slate-50 sm:px-6">
+              <span className="min-w-0 break-words"><strong className="block text-sm text-[#0B1F45]">{contact.name || "Conversa da Ste"}</strong><span className="text-xs text-[#43474e]">{contact.handoff_reason || "A Ste pediu atendimento humano"}</span></span>
+              <span className="shrink-0 rounded-sm bg-[#edf2f9] px-2 py-1.5 text-sm font-semibold text-[#16366d]">Responder →</span>
+            </button>
+          ))}
+          <button onClick={() => onNavigate("atendimento")} className="flex min-h-12 w-full items-center justify-between gap-3 px-4 py-3 text-left text-sm font-semibold text-[#0B1F45] hover:bg-slate-50 sm:px-6">
+            Atendimento da Ste <span className="text-[#2347A0]">Abrir fila →</span>
+          </button>
+        </div>
+      </section>
+
+      <div className="flex flex-wrap gap-2">
+        <button onClick={() => onNavigate("orcamentos")} className={btnPrimary}>Ver orçamentos</button>
+        <button onClick={() => onNavigate("pedidos")} className={btnSecondary}>Pedidos</button>
+        <button onClick={() => onNavigate("leads")} className={btnGhost}>Leads / CRM</button>
+      </div>
+
+      {/* ── Operação ── */}
       <div>
         <div className="flex items-center justify-between mb-3">
-          <h2 className="font-serif text-[#0B1F45] text-lg font-normal">Atenção agora</h2>
+          <h2 className="font-serif text-[#0B1F45] text-lg font-normal">Operação</h2>
           {overviewLoading && <Spinner />}
         </div>
         {overview ? (

@@ -9,9 +9,10 @@
 import { NextRequest, NextResponse } from "next/server";
 import { supabaseAdmin } from "@/lib/supabase";
 import { smclickConfigured, sendText, normalizePhone } from "@/lib/smclick";
+import { repPriority, REVIEW_AFTER_DAYS, type RepActivity } from "@/lib/rep-priority";
 import { isMissingColumn, isMissingTable } from "@/lib/db-compat";
 
-interface CrmRow {
+interface CrmRow extends RepActivity {
   id: string;
   sales_rep_id: string;
   partner_id: string | null;
@@ -75,13 +76,16 @@ export async function GET(req: NextRequest) {
   const db = supabaseAdmin();
   const now = new Date();
   const nowIso = now.toISOString();
+  const cutoff = new Date(now.getTime() - REVIEW_AFTER_DAYS * 86_400_000).toISOString();
 
   const { data: rows, error } = await db
     .from("rep_partner_crm")
-    .select("id, sales_rep_id, partner_id, reminder_recur, next_reminder_at, auto_followup_message, auto_followup_sent_at, prospect_name, prospect_phone")
+    .select("id, sales_rep_id, partner_id, reminder_recur, next_reminder_at, auto_followup_message, auto_followup_sent_at, prospect_name, prospect_phone, stage, created_at, first_contact_at, meeting_happened_at, mostruario_received_at, last_specified_at, project_added_at, last_reply_at")
     .eq("auto_followup_enabled", true)
     .not("next_reminder_at", "is", null)
     .lte("next_reminder_at", nowIso)
+    .neq("stage", "inativo")
+    .or(`created_at.gt.${cutoff},first_contact_at.gt.${cutoff},meeting_happened_at.gt.${cutoff},mostruario_received_at.gt.${cutoff},last_specified_at.gt.${cutoff},project_added_at.gt.${cutoff},last_reply_at.gt.${cutoff}`)
     .order("next_reminder_at", { ascending: true })
     .limit(100);
 
@@ -91,6 +95,7 @@ export async function GET(req: NextRequest) {
   if (error) return NextResponse.json({ error: error.message }, { status: 500 });
 
   const due = ((rows ?? []) as CrmRow[]).filter((row) => {
+    if (repPriority(row,now.getTime()).kind !== "due") return false;
     if (!row.auto_followup_sent_at) return true;
     return new Date(row.auto_followup_sent_at) < new Date(row.next_reminder_at);
   });

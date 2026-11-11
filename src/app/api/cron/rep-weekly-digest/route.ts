@@ -21,13 +21,14 @@ import { NextRequest, NextResponse } from "next/server";
 import { supabaseAdmin } from "@/lib/supabase";
 import { smclickConfigured, sendText, normalizePhone } from "@/lib/smclick";
 import { getResend } from "@/lib/resend";
+import { repPriority, type RepActivity } from "@/lib/rep-priority";
 import { isMissingTable } from "@/lib/db-compat";
 
 function fmtDate(iso: string) {
   return new Date(iso).toLocaleString("pt-BR", { timeZone: "America/Manaus", dateStyle: "short", timeStyle: "short" });
 }
 
-interface CrmRow {
+interface CrmRow extends RepActivity {
   id: string;
   partner_id: string | null;
   prospect_name: string | null;
@@ -99,7 +100,7 @@ export async function GET(req: NextRequest) {
   for (const rep of reps) {
     const { data: crmDue, error: crmErr } = await db
       .from("rep_partner_crm")
-      .select("id, partner_id, prospect_name, stage, reminder_note, next_reminder_at, mostruario_sent, mostruario_received, has_specified, specified_count, project_added, project_added_count")
+      .select("id, partner_id, prospect_name, stage, reminder_note, next_reminder_at, created_at, first_contact_at, meeting_happened_at, mostruario_received_at, last_specified_at, project_added_at, last_reply_at, mostruario_sent, mostruario_received, has_specified, specified_count, project_added, project_added_count")
       .eq("sales_rep_id", rep.id)
       .not("next_reminder_at", "is", null)
       .lte("next_reminder_at", nowIso)
@@ -118,7 +119,7 @@ export async function GET(req: NextRequest) {
       .limit(50);
     if (meetingsErr && !isMissingTable(meetingsErr)) continue;
 
-    const due = (crmDue ?? []) as CrmRow[];
+    const due = ((crmDue ?? []) as CrmRow[]).filter(row => repPriority(row, Date.parse(nowIso)).kind === "due");
     const upcoming = (meetings ?? []) as MeetingRow[];
     if (due.length === 0 && upcoming.length === 0) continue;
 
