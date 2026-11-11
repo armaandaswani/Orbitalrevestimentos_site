@@ -4,7 +4,7 @@ A aba `/admin?tab=radar` reúne as placas, as obras revisadas e a preparação c
 
 ## Operação
 
-1. Selecione até 20 fotos de cada vez. O Radar valida o arquivo, identifica cópias exatas e registra o estado de cada foto. O limite é de 12 MB e 64 megapixels por foto. JPEG, PNG, WebP e HEIC dependem dos formatos que o Sharp consegue decodificar no ambiente.
+1. Selecione todas as fotos do lote. O envio é sequencial e exibe o progresso. O Radar valida o arquivo, identifica cópias exatas e registra o estado de cada foto. O limite é de 12 MB e 64 megapixels por foto. JPEG, PNG, WebP e HEIC dependem dos formatos que o Sharp consegue decodificar no ambiente.
 2. Abra **Revisar** e compare os campos sugeridos com a foto original. O OCR separa o autor do projeto do responsável técnico, registra a origem e sinaliza alternativas conflitantes. Preencha manualmente os campos ausentes. A confirmação libera o cadastro.
 3. O Radar compara alvará e processo dentro do mesmo município e UF. Uma segunda foto pode ser vinculada a uma obra existente. Se os dois identificadores apontarem para obras distintas, a operação exige resolução humana.
 4. Abra **Ver oportunidade**. A prioridade mostra os fatores que compõem a pontuação. Registre a relevância comercial da obra e as fontes públicas consultadas. A confirmação de vínculo profissional exige evidências de dois domínios distintos e revisão humana.

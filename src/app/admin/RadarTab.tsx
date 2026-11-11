@@ -70,15 +70,17 @@ export default function RadarTab() {
     if (busy) return;
     const values = Array.from(files);
     const valid = values.filter(f => f.size > 0 && f.size <= maxBytes);
-    setPending(valid.slice(0,20));
-    setFailure(valid.length !== values.length || valid.length>20 ? `Aceitamos até 20 fotos por lote, de até ${maxBytes/1_000_000} MB cada.` : "");
+    setPending(valid);
+    setFailure(valid.length !== values.length ? `${values.length - valid.length} arquivo(s) vazio(s) ou acima de ${maxBytes/1_000_000} MB ficaram fora da seleção.` : "");
   }
   async function upload() {
     const batch = crypto.randomUUID();
     const errors: string[] = [];
+    const retry: File[] = [];
     let added=0, repeated=0, incomplete=0;
     for (const [i,file] of pending.entries()) {
       setProgress(i+1);setNotice(`Foto ${i+1} de ${pending.length}: envio e leitura.`);
+      let stored = false;
       try {
         const headers={"X-Radar-Batch":batch};
         let result: {asset:Asset;duplicate:boolean};
@@ -94,15 +96,23 @@ export default function RadarTab() {
         }
         const {asset,duplicate}=result;
         if (duplicate) { repeated++; continue; }
+        stored = true;
         added++;
         const read = await patch<Asset>({id:asset.id,action:"extract"});
         if (read.status==="failed") incomplete++;
-      } catch (e) { errors.push(`Foto ${i+1}: ${(e as Error).message}`); }
+      } catch (e) {
+        if (!stored) retry.push(file);
+        errors.push(`Foto ${i+1}: ${(e as Error).message}`);
+      }
     }
-    setPending([]);if (picker.current) picker.current.value="";
+    setPending(retry);if (picker.current) picker.current.value="";
     await load(0);
     setNotice(`${added} adicionada(s), ${repeated} já cadastrada(s)${incomplete ? `, ${incomplete} com revisão manual` : ""}.`);
-    if (errors.length) setFailure(errors.join(" "));
+    if (errors.length) {
+      const summary = errors.length > 3 ? ` Mais ${errors.length - 3} com falha.` : "";
+      const next = retry.length ? ` ${retry.length} foto(s) continuam selecionadas para tentar novamente.` : "";
+      setFailure(errors.slice(0,3).join(" ") + summary + next);
+    }
   }
   function openReview(asset: Asset) {
     setFields(Object.fromEntries(fieldKeys.flatMap(k => asset.observations[k] ? [[k,asset.observations[k].value]] : [])));
@@ -139,7 +149,7 @@ export default function RadarTab() {
       <div className="grid gap-6 lg:grid-cols-[minmax(0,1fr)_minmax(0,1fr)]">
         <section aria-labelledby="radar-upload" className="border border-[#e2e2e2] bg-white p-4 sm:p-5">
           <h2 id="radar-upload" className="font-serif text-lg">Enviar fotos</h2>
-          <p className="mt-1 text-sm text-[#43474e]" id="radar-upload-hint">Até 20 fotos por lote, {maxBytes/1_000_000} MB cada. JPG, PNG, WebP ou HEIC compatível.</p>
+          <p className="mt-1 text-sm text-[#43474e]" id="radar-upload-hint">Selecione todas as fotos do lote. Envio uma a uma, até {maxBytes/1_000_000} MB por foto. JPG, PNG, WebP ou HEIC compatível.</p>
           <div className="mt-4 border border-dashed border-[#a5a9b0] bg-[#F6F5F2] p-4" onDragOver={e => e.preventDefault()} onDrop={e => {e.preventDefault();choose(e.dataTransfer.files);}}>
             <label htmlFor="radar-files" className="block text-sm font-semibold">Solte as fotos aqui ou selecione os arquivos</label>
             <input id="radar-files" ref={picker} type="file" accept=".jpg,.jpeg,.png,.webp,.heic,.heif" multiple disabled={busy} aria-describedby="radar-upload-hint"
