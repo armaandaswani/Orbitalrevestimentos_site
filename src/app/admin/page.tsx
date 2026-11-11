@@ -3,6 +3,7 @@
 import React, { useState, useEffect, useCallback, useMemo, useRef } from "react";
 import Link from "next/link";
 import { SITE_ASSET_MANIFEST } from "@/lib/assets";
+import { nullableProductNumber, productPricePerM2, changeProductLine } from "@/lib/product-admin-pricing";
 import { productQrUrl, productUrl } from "@/lib/product-link";
 import { compressImage, isUnsupportedForWeb, type CompressOptions } from "@/lib/image-compress";
 import FotosExtras, { type FotoPendente } from "./projetos/FotosExtras";
@@ -87,7 +88,7 @@ interface SalesRep {
 }
 
 interface ProductImage { id:string; product_id:string; image_path:string; sort_order:number; }
-interface DbProduct { id:string; code:string; name:string; linha:"Classic"|"Brilliance"|"Elegance"; finish:string; price:number; price_per_m2:number; description:string; image_path:string; is_active:boolean; show_in_catalog?:boolean; sort_order:number; created_at:string; product_images?: ProductImage[]; render_finish_description?: string | null; render_panel_width_m?: number | null; render_panel_height_m?: number | null; render_context_image_path?: string | null; render_texture_path?: string | null; render_extra_notes?: string | null; }
+interface DbProduct { id:string; code:string; name:string; linha:string; finish:string; price:number | null; price_per_m2:number | null; description:string; image_path:string; is_active:boolean; show_in_catalog?:boolean; sort_order:number; created_at:string; product_images?: ProductImage[]; render_finish_description?: string | null; render_panel_width_m?: number | null; render_panel_height_m?: number | null; render_context_image_path?: string | null; render_texture_path?: string | null; render_extra_notes?: string | null; }
 interface DbPhotoProject { id:string; slug:string; title:string; product_code:string; extra_product_codes?:string[]|null; projeto_de?:string|null; short_description?:string; categories:string[]; image_after:string; image_before:string; note:string; is_active:boolean; is_featured?:boolean; show_on_home?:boolean; is_new?:boolean; feature_order?:number; content_type?:string|null; cover_category?:string|null; sort_order:number; }
 interface DbRenderProject { id:string; slug:string; title:string; product_code:string; image_path:string; is_active:boolean; sort_order:number; }
 interface ProjectMedia { id:string; project_slug:string; type:"image"|"video"; url:string; caption:string|null; description:string|null; category:"antes"|"depois"|"geral"; is_cover?:boolean; sort_order:number; }
@@ -511,7 +512,7 @@ export default function AdminPage() {
   const [loadingDbProducts, setLoadingDbProducts] = useState(false);
   const [showProductForm, setShowProductForm] = useState(false);
   const [editingProductId, setEditingProductId] = useState<string|null>(null);
-  const [productForm, setProductForm] = useState({ code:"", name:"", linha:"Classic" as "Classic"|"Brilliance"|"Elegance", finish:"Fosco", price:559, price_per_m2:161, description:"", image_path:"", is_active:true, show_in_catalog:true, sort_order:0, render_finish_description:"", render_panel_width_m:1.2, render_panel_height_m:2.9, render_context_image_path:"", render_texture_path:"", render_extra_notes:"" });
+  const [productForm, setProductForm] = useState({ code:"", name:"", linha:"Classic" as string, finish:"Fosco", price:559 as number | null, price_per_m2:161 as number | null, description:"", image_path:"", is_active:true, show_in_catalog:true, sort_order:0, render_finish_description:"", render_panel_width_m:1.2 as number | null, render_panel_height_m:2.9 as number | null, render_context_image_path:"", render_texture_path:"", render_extra_notes:"" });
   const [productFormError, setProductFormError] = useState("");
   const [productFormLoading, setProductFormLoading] = useState(false);
   const [productImageUploading, setProductImageUploading] = useState(false);
@@ -1557,7 +1558,7 @@ export default function AdminPage() {
 
   function startEditProduct(p: DbProduct) {
     setEditingProductId(p.id);
-    setProductForm({ code: p.code, name: p.name, linha: p.linha, finish: p.finish, price: p.price, price_per_m2: p.price_per_m2, description: p.description, image_path: p.image_path, is_active: p.is_active, show_in_catalog: p.show_in_catalog !== false, sort_order: p.sort_order, render_finish_description: p.render_finish_description ?? "", render_panel_width_m: Number(p.render_panel_width_m) || 1.2, render_panel_height_m: Number(p.render_panel_height_m) || 2.9, render_context_image_path: p.render_context_image_path ?? "", render_texture_path: p.render_texture_path ?? "", render_extra_notes: p.render_extra_notes ?? "" });
+    setProductForm({ code: p.code, name: p.name, linha: p.linha, finish: p.finish, price: p.price, price_per_m2: p.price_per_m2, description: p.description, image_path: p.image_path, is_active: p.is_active, show_in_catalog: p.show_in_catalog !== false, sort_order: p.sort_order, render_finish_description: p.render_finish_description ?? "", render_panel_width_m: p.render_panel_width_m ?? null, render_panel_height_m: p.render_panel_height_m ?? null, render_context_image_path: p.render_context_image_path ?? "", render_texture_path: p.render_texture_path ?? "", render_extra_notes: p.render_extra_notes ?? "" });
     setProductFormError("");
     setGalleryImages(p.product_images ?? []);
     setShowProductForm(true);
@@ -5725,14 +5726,15 @@ export default function AdminPage() {
                     <div>
                       <label className={labelCls}>Linha</label>
                       <select value={productForm.linha} onChange={(e) => {
-                        const linha = e.target.value as "Classic"|"Brilliance"|"Elegance";
-                        const finish = linha === "Classic" ? "Fosco" : linha === "Brilliance" ? "Polido" : "Texturizado";
-                        const price = linha === "Classic" ? 559 : linha === "Brilliance" ? 589 : 649;
-                        setProductForm({...productForm, linha, finish, price, price_per_m2: Math.round(price/3.48)});
+                        setProductForm(changeProductLine(productForm, e.target.value, editingProductId !== null));
                       }} className={inputCls}>
+                        {!["Classic", "Brilliance", "Elegance", "Carbon", "TechStone", "Perfis"].includes(productForm.linha) && <option value={productForm.linha}>{productForm.linha}</option>}
                         <option value="Classic">Classic</option>
                         <option value="Brilliance">Brilliance</option>
                         <option value="Elegance">Elegance</option>
+                        <option value="Carbon">Carbon</option>
+                        <option value="TechStone">TechStone</option>
+                        <option value="Perfis">Perfis</option>
                       </select>
                     </div>
                     <div>
@@ -5741,14 +5743,14 @@ export default function AdminPage() {
                     </div>
                     <div>
                       <label className={labelCls}>Preço (R$)</label>
-                      <input type="number" min="0" value={productForm.price} onChange={(e) => {
-                        const price = parseInt(e.target.value) || 0;
-                        setProductForm({...productForm, price, price_per_m2: Math.round(price/3.48)});
+                      <input type="number" min="0" step="0.01" value={productForm.price ?? ""} placeholder="A definir" onChange={(e) => {
+                        const price = nullableProductNumber(e.target.value);
+                        setProductForm({...productForm, price, price_per_m2: productPricePerM2(price, productForm.render_panel_width_m, productForm.render_panel_height_m)});
                       }} className={inputCls} />
                     </div>
                     <div>
                       <label className={labelCls}>Preço/m² <span className="font-normal text-[#b0b0b0]">(auto)</span></label>
-                      <input type="number" min="0" value={productForm.price_per_m2} onChange={(e) => setProductForm({...productForm, price_per_m2: parseInt(e.target.value) || 0})} className={inputCls} />
+                      <input type="number" min="0" step="0.01" value={productForm.price_per_m2 ?? ""} placeholder="A definir" onChange={(e) => setProductForm({...productForm, price_per_m2: nullableProductNumber(e.target.value)})} className={inputCls} />
                     </div>
                     <div>
                       <label className={labelCls}>Sort Order</label>
@@ -6112,11 +6114,17 @@ export default function AdminPage() {
                     <div className="grid grid-cols-2 sm:grid-cols-4 gap-4 mb-4">
                       <div>
                         <label className={labelCls}>Largura da placa (m)</label>
-                        <input type="number" min="0" step="0.01" value={productForm.render_panel_width_m} onChange={(e) => setProductForm({...productForm, render_panel_width_m: parseFloat(e.target.value) || 0})} className={inputCls} />
+                        <input type="number" min="0" step="0.01" value={productForm.render_panel_width_m ?? ""} onChange={(e) => {
+                          const width = nullableProductNumber(e.target.value);
+                          setProductForm({...productForm, render_panel_width_m: width, price_per_m2: productPricePerM2(productForm.price, width, productForm.render_panel_height_m)});
+                        }} className={inputCls} />
                       </div>
                       <div>
                         <label className={labelCls}>Altura da placa (m)</label>
-                        <input type="number" min="0" step="0.01" value={productForm.render_panel_height_m} onChange={(e) => setProductForm({...productForm, render_panel_height_m: parseFloat(e.target.value) || 0})} className={inputCls} />
+                        <input type="number" min="0" step="0.01" value={productForm.render_panel_height_m ?? ""} onChange={(e) => {
+                          const height = nullableProductNumber(e.target.value);
+                          setProductForm({...productForm, render_panel_height_m: height, price_per_m2: productPricePerM2(productForm.price, productForm.render_panel_width_m, height)});
+                        }} className={inputCls} />
                       </div>
                     </div>
                     <div className="mb-4">
@@ -6203,8 +6211,8 @@ export default function AdminPage() {
   finish: productForm.linha === "Brilliance" ? "polished" : productForm.linha === "Elegance" ? "wood" : "matte",
   productNotes: productForm.render_finish_description.trim() || null,
   extraNotes: productForm.render_finish_description.trim() ? productForm.render_extra_notes : null,
-  panelWidthM: productForm.render_panel_width_m > 0 ? productForm.render_panel_width_m : DEFAULT_PANEL_WIDTH_M,
-  panelHeightM: productForm.render_panel_height_m > 0 ? productForm.render_panel_height_m : DEFAULT_PANEL_HEIGHT_M,
+  panelWidthM: productForm.render_panel_width_m != null && productForm.render_panel_width_m > 0 ? productForm.render_panel_width_m : DEFAULT_PANEL_WIDTH_M,
+  panelHeightM: productForm.render_panel_height_m != null && productForm.render_panel_height_m > 0 ? productForm.render_panel_height_m : DEFAULT_PANEL_HEIGHT_M,
   hasMask: true,
   referenceIsTexture: !!productForm.render_texture_path.trim(),
 })}
@@ -6340,7 +6348,7 @@ export default function AdminPage() {
                             {p.linha}
                           </span>
                         </td>
-                        <td className="px-4 py-3 text-[#43474e]">R$ {p.price.toLocaleString("pt-BR")}</td>
+                        <td className="px-4 py-3 text-[#43474e]">{p.price == null ? "Preço a definir" : `R$ ${p.price.toLocaleString("pt-BR")}`}</td>
                         <td className="px-4 py-3">
                           <span className={`inline-block px-2 py-0.5 text-[10px] font-bold tracking-wide ${p.is_active ? "bg-green-100 text-green-800" : "bg-gray-100 text-gray-500"}`}>
                             {p.is_active ? "Ativo" : "Inativo"}
@@ -6385,7 +6393,7 @@ export default function AdminPage() {
                         {p.show_in_catalog === false && <span className="inline-block ml-1 px-2 py-0.5 text-[10px] font-bold tracking-wide bg-amber-100 text-amber-800">Oculto</span>}
                         {(p.product_images?.length ?? 0) > 0 && <span className="bg-[#eef2f8] text-[#0B1F45] text-[9px] font-bold tracking-wider px-1.5 py-0.5">{p.product_images!.length} foto{p.product_images!.length !== 1 ? "s" : ""}</span>}
                       </div>
-                      <p className="text-[#43474e] text-sm mt-1.5">R$ {p.price.toLocaleString("pt-BR")}</p>
+                      <p className="text-[#43474e] text-sm mt-1.5">{p.price == null ? "Preço a definir" : `R$ ${p.price.toLocaleString("pt-BR")}`}</p>
                       <div className="flex gap-2 mt-2">
                         <button onClick={() => startEditProduct(p)} className="text-[10px] tracking-[0.08em] uppercase font-bold px-3 py-1.5 border border-[#0B1F45] text-[#0B1F45] hover:bg-[#0B1F45] hover:text-white transition-colors">Editar</button>
                         <button onClick={() => deleteProduct(p.id, p.name)} className="text-[10px] tracking-[0.08em] uppercase font-bold px-3 py-1.5 border border-red-300 text-red-600 hover:bg-red-50 transition-colors">Excluir</button>

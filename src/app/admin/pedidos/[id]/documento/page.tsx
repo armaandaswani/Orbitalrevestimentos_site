@@ -1,6 +1,8 @@
 "use client";
 
 import React, { useEffect, useMemo, useState } from "react";
+import { pedidoItemUnitInfo as itemUnitInfo } from "@/lib/pedido-item-unit";
+import { expectedDeliveryLabel } from "@/lib/pedido-delivery";
 import { groupPedidoItems } from "@/lib/pedido-ambientes";
 import { CLAUSULAS_PADRAO } from "@/lib/clausulas-pedido";
 import { datasDoDocumento, fmtDia } from "@/lib/documento-datas";
@@ -9,6 +11,7 @@ type DocumentType = "orcamento" | "pedido" | "nota" | "recibo" | "termo";
 
 interface PedidoItem {
   space?: string | null;
+  expected_delivery_month?: string | null;
   id: string;
   product_name: string | null;
   product_code?: string | null;
@@ -76,19 +79,6 @@ function fmtBRL(n: number) {
 function docNumber(pedido: PedidoDocument) {
   const year = new Date(pedido.created_at).getFullYear().toString().slice(-2);
   return `${pedido.id.slice(0, 8).toUpperCase()}-${year}`;
-}
-
-// Short unit + a descriptive detail (placas carry their real dimensions).
-function itemUnitInfo(it: PedidoItem): { short: string; detail: string } {
-  const unit = (it.unit_label || "un").trim() || "un";
-  const short = unit.charAt(0).toUpperCase() + unit.slice(1);
-  const h = Number(it.panel_h) || 0; // ≈2,90 m
-  const w = Number(it.panel_w) || 0; // ≈1,20 m
-  const fmtM = (n: number) => n.toFixed(2).replace(".", ",");
-  if (/placa/i.test(unit) && h > 0 && w > 0) {
-    return { short, detail: `Placa ${fmtM(h)} m × ${fmtM(w)} m × 5 mm` };
-  }
-  return { short, detail: short };
 }
 
 // "12 placas", "1 placa", "3 un" — para o Termo de Recebimento.
@@ -478,7 +468,7 @@ export default function PedidoDocumentoPage({ params }: { params: Promise<{ id: 
             <tbody>
               {items.map((it) => (
                 <tr key={it.id}>
-                  <td>{it.product_name || "Produto Orbital"}{(it.space || pedido.space) && <span className="doc-item-sub">{it.space || pedido.space}</span>}</td>
+                  <td>{it.product_name || "Produto Orbital"}{(it.space || pedido.space) && <span className="doc-item-sub">{it.space || pedido.space}</span>}{expectedDeliveryLabel(it.expected_delivery_month) && <span className="doc-item-delivery">{expectedDeliveryLabel(it.expected_delivery_month)}</span>}</td>
                   <td>{it.product_code || "—"}</td>
                   <td>{qtdComUnidade(it)}</td>
                 </tr>
@@ -548,18 +538,21 @@ export default function PedidoDocumentoPage({ params }: { params: Promise<{ id: 
             <tbody>
               {itemGroups.map((group, groupIndex) => (
                 <React.Fragment key={groupIndex}>
+                {hasSpaces && <tr className="doc-space-gap" aria-hidden="true"><td colSpan={5} /></tr>}
                 {hasSpaces && <tr className="doc-space-heading"><td colSpan={5}>{group.space || "Materiais gerais"}</td></tr>}
-                {group.items.map((it) => {
+                {group.items.map((it, itemIndex) => {
                   const unit = Number(it.unit_price) || 0;
                   const qty = Number(it.plates) || 0;
                   const u = itemUnitInfo(it);
+                  const deliveryLabel = expectedDeliveryLabel(it.expected_delivery_month);
                   const sub = [it.product_code ? `Modelo: ${it.product_code}` : null, u.detail]
                     .filter(Boolean).join("  ·  ");
                   return (
-                    <tr key={it.id}>
+                    <tr key={it.id} className={itemIndex === group.items.length - 1 ? "doc-last-in-space" : undefined}>
                       <td>
                         <span className="doc-item-name">{it.product_name || "Produto Orbital"}</span>
                         {sub && <span className="doc-item-sub">{sub}</span>}
+                        {deliveryLabel && <span className="doc-item-delivery">{deliveryLabel}</span>}
                       </td>
                       <td>{qty}</td>
                       <td>{u.short}</td>
@@ -734,10 +727,15 @@ export default function PedidoDocumentoPage({ params }: { params: Promise<{ id: 
           padding: 4px;
         }
         .doc-table th:not(:first-child), .doc-table td:not(:first-child) { text-align: right; }
-        .doc-table td { padding: 4px; border-bottom: 1px solid #eee; vertical-align: top; }
+        .doc-table td { padding: 8px 4px; border-bottom: 1px solid #eee; vertical-align: top; }
+        .doc-space-gap { break-after: avoid; }
+        .doc-space-gap td { height: 22px; padding: 0; border: 0; }
         .doc-space-heading { break-after: avoid; }
-        .doc-space-heading td { overflow-wrap: anywhere; background: #F6F5F2; color: #0B1F45; font-weight: 700; padding: 10px 8px; }
-        .doc-space-subtotal td { font-size: 10px; font-weight: 700; color: #43474e; font-variant-numeric: tabular-nums; border-bottom: 1px solid #d8d5cf; }
+        .doc-space-heading td { overflow-wrap: anywhere; background: #F6F5F2; color: #0B1F45; font-weight: 700; padding: 12px 8px; }
+        .doc-last-in-space { break-after: avoid; }
+        .doc-space-subtotal { break-before: avoid; }
+        .doc-space-subtotal td { padding-top: 12px; padding-bottom: 12px; font-size: 10px; font-weight: 700; color: #43474e; font-variant-numeric: tabular-nums; border-bottom: 1px solid #d8d5cf; }
+        .doc-item-delivery { display: block; margin-top: 6px; font-size: 11px; font-weight: 700; color: #0B1F45; }
         .doc-item-name { display: block; font-weight: 700; }
         .doc-item-sub { display: block; font-size: 11px; color: #777; margin-top: 1px; }
         .doc-totals { display: flex; justify-content: flex-end; margin: 18px 0 22px; }

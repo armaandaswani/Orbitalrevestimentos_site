@@ -61,11 +61,19 @@
 .addRoom { margin-top: 16px; width: 100%; border: 1px solid var(--ink); padding: 10px 16px; font-size: 14px; font-weight: 600; }
 .addRoom:hover { background: var(--paper); }
 .validation { color: var(--warning); font-size: 13px; margin-top: 12px; }
-.footer { border-top: 1px solid var(--line); padding: 12px 28px max(12px, env(safe-area-inset-bottom)); display: flex; justify-content: space-between; align-items: center; gap: 12px; flex-shrink: 0; background: var(--surface); }
+.footer { border-top: 1px solid var(--line); padding: 8px 28px max(12px, env(safe-area-inset-bottom)); display: grid; grid-template-columns: minmax(0, 1fr) auto; align-items: center; gap: 4px 12px; flex-shrink: 0; background: var(--surface); }
 .footer > div { display: flex; gap: 8px; }
 .footer button { font-size: 13px; text-transform: none; letter-spacing: 0; }
 .cancel { color: var(--muted); padding: 8px; }
 .cancel:hover { text-decoration: underline; }
+.footer .saveStatus { grid-column: 1 / -1; display: flex; flex-wrap: wrap; align-items: center; gap: 4px 12px; color: var(--action); font-size: 12px; min-height: 22px; line-height: 1.5; }
+.footer .saveStatus button { font-size: 12px; padding: 0; min-height: 24px; text-decoration: underline; }
+.recovery { border: 1px solid #dededb; padding: 16px; margin-bottom: 20px; background: #f6f5f2; color: #0b1f45; font-size: 14px; }
+.recovery p { margin-bottom: 8px; }
+.recovery > div { display: flex; justify-content: space-between; gap: 12px; }
+.recovery button { min-height: 44px; text-align: left; text-decoration: underline; }
+.recovery button + button { color: #43474e; font-size: 12px; flex-shrink: 0; }
+.delivery { color: var(--warning); font-size: 13px; flex-basis: 100%; }
 @media (max-width: 640px) {
   .overlay { padding: 0; }
   .dialog { height: 100dvh; max-height: 100dvh; }
@@ -83,8 +91,8 @@
   .footer { padding-right: 18px; padding-left: 18px; }
   .footer button { padding-left: 12px; padding-right: 12px; }
   .footer .cancel { display: none; }
-  .footer > div { width: 100%; }
-  .footer > div > button { flex: 1; }
+  .footer > div { width: 100%; grid-column: 1 / -1; }
+  .footer > div:not(.saveStatus) > button { flex: 1; }
 }
 @media (prefers-reduced-motion: reduce) {
   .dialog *, .dialog *::before, .dialog *::after { animation: none !important; transition: none !important; scroll-behavior: auto !important; }

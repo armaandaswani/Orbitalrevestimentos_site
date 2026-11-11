@@ -19,11 +19,18 @@ export async function GET(req: NextRequest) {
   const sb = supabaseAdmin();
   const primary = await sb
     .from("products")
-    .select("id, name, code, linha, price, cost_price, sale_unit, stock_on_hand, stock_reserved, reorder_point, is_active, render_panel_width_m, render_panel_height_m")
+    .select("id, name, code, linha, price, cost_price, sale_unit, stock_on_hand, stock_reserved, reorder_point, is_active, render_panel_width_m, render_panel_height_m, expected_delivery_month")
     .order("sort_order", { ascending: true });
   let data = primary.data as Array<Record<string, unknown>> | null;
   let error = primary.error;
 
+  if (error && isMissingColumn(error)) {
+    const legacyDelivery = await sb.from("products")
+      .select("id, name, code, linha, price, cost_price, sale_unit, stock_on_hand, stock_reserved, reorder_point, is_active, render_panel_width_m, render_panel_height_m")
+      .order("sort_order", { ascending: true });
+    data = legacyDelivery.data as Array<Record<string, unknown>> | null;
+    error = legacyDelivery.error;
+  }
   if (error && isMissingColumn(error)) {
     const fallback = await sb
       .from("products")
@@ -46,6 +53,7 @@ export async function GET(req: NextRequest) {
     const reorderPoint = Number(p.reorder_point ?? 0);
     return {
       ...p,
+      expected_delivery_month: p.expected_delivery_month ?? null,
       sale_unit: typeof p.sale_unit === "string" && p.sale_unit.trim() ? p.sale_unit : "placa",
       /** Placas em pedidos abertos ainda sem pagamento — não saem do disponível. */
       awaiting_payment: aguardando[String(p.id)] ?? 0,

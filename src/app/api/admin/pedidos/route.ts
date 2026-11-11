@@ -1,11 +1,12 @@
 import { NextRequest, NextResponse } from "next/server";
+import { cleanExpectedDeliveryMonth, snapshotDeliveryMonth } from "@/lib/pedido-delivery";
 import { cleanItemSpace } from "@/lib/pedido-ambientes";
 import { isAdminRequest } from "@/lib/admin-auth";
 import { supabaseAdmin } from "@/lib/supabase";
 import { isMissingColumn, isMissingTable } from "@/lib/db-compat";
 import { pedidoBaixaEstoque, syncOrderStock } from "@/lib/stock";
 
-interface OrderItemInput { product_id?: string; plates?: number; unit_price?: number | null; space?: string | null }
+interface OrderItemInput { product_id?: string; plates?: number; unit_price?: number | null; space?: string | null; expected_delivery_month?: string | null }
 type PartnerLite = { id: string; name: string; coupon_code: string };
 type SalesRepLite = { id: string; name: string; referral_code: string };
 
@@ -210,6 +211,21 @@ export async function POST(req: NextRequest) {
   }
 
   const db = supabaseAdmin();
+  let orderProducts: Array<Record<string, unknown>> = [];
+  if (Array.isArray(body.items)) {
+    const ids = [...new Set(body.items.map((item: { product_id?: string } | null) => item?.product_id).filter(Boolean))];
+    const { data: deliveryProducts, error: productError } = ids.length
+      ? await db.from("products").select("*").in("id", ids)
+      : { data: [], error: null };
+    if (productError) return NextResponse.json({ error: "Não foi possível conferir os produtos e seus prazos. Nenhuma alteração foi salva." }, { status: 503 });
+    orderProducts = deliveryProducts ?? [];
+    const needsDeliverySnapshot = body.items.some((item: { expected_delivery_month?: unknown } | null) => cleanExpectedDeliveryMonth(item?.expected_delivery_month))
+      || deliveryProducts?.some((product) => cleanExpectedDeliveryMonth(product.expected_delivery_month));
+    if (needsDeliverySnapshot) {
+      const { error: deliverySchemaError } = await db.from("pedido_items").select("expected_delivery_month").limit(0);
+      if (deliverySchemaError) return NextResponse.json({ error: "A previsão de entrega precisa da atualização 078 do banco. Nenhuma alteração foi salva." }, { status: 503 });
+    }
+  }
   // Do not save an order while silently losing the allocation by room.
   if (Array.isArray(body.items) && body.items.some((item: { space?: unknown } | null) => cleanItemSpace(item?.space))) {
     const { error: schemaError } = await db.from("pedido_items").select("space").limit(0);
@@ -281,6 +297,7 @@ export async function POST(req: NextRequest) {
         product_id: it.product_id as string,
         plates: Math.round(Number(it.plates)),
         space: cleanItemSpace(it.space),
+        expected_delivery_month: cleanExpectedDeliveryMonth(it.expected_delivery_month),
         // Price actually charged (tier price or manual override) resolved on the
         // client. When provided, it's authoritative; else fall back to the
         // product's varejo price below.
@@ -289,16 +306,16 @@ export async function POST(req: NextRequest) {
     if (rawItems.length > 0) {
       try {
         // Snapshot cost/price per model at order time.
-        const ids = [...new Set(rawItems.map((i) => i.product_id))];
-        const { data: prods } = await db.from("products").select("id, name, cost_price, price, sale_unit").in("id", ids);
-        const byId = new Map((prods ?? []).map((p) => [p.id as string, p]));
+        const byId = new Map(orderProducts.map((p) => [p.id as string, p]));
         const itemRows = rawItems.map((i) => {
           const p = byId.get(i.product_id);
+          const deliveryMonth = snapshotDeliveryMonth(i.expected_delivery_month, null, p?.expected_delivery_month);
           return {
             pedido_id: data.id,
             product_id: i.product_id,
             product_name: (p?.name as string) ?? null,
             ...(i.space ? { space: i.space } : {}),
+            ...(deliveryMonth ? { expected_delivery_month: deliveryMonth } : {}),
             plates: i.plates,
             unit_cost: p?.cost_price ?? null,
             unit_price: i.unit_price ?? p?.price ?? null,

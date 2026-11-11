@@ -13,6 +13,7 @@ export const dynamic = "force-dynamic";
 const SAFE_ITEM = (it: Record<string, unknown>) => ({
   product_name: it.product_name ?? null,
   space: it.space ?? null,
+  expected_delivery_month: it.expected_delivery_month ?? null,
   product_code: it.product_code ?? null,
   panel_w: it.panel_w ?? null,
   panel_h: it.panel_h ?? null,

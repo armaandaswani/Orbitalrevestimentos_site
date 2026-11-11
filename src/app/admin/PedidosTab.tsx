@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useState, useEffect, useCallback, useMemo, useRef } from "react";
+import React, { useState, useEffect, useLayoutEffect, useCallback, useMemo, useRef } from "react";
 import { DEFAULT_PANEL_WIDTH_M, DEFAULT_PANEL_HEIGHT_M, panelGrid } from "@/lib/render-prompt";
 import type { Lead } from "./LeadsTab";
 import { DEFAULT_CONFIG, QUOTE_VALIDITY_DAYS, maxInstallmentsForPlates, type OrcamentoConfig } from "@/lib/orcamento-pricing";
@@ -8,6 +8,9 @@ import { CLAUSULAS_PADRAO } from "@/lib/clausulas-pedido";
 import { FRETE_PADRAO, fretePedido, type FreteZona } from "@/lib/frete-pedido";
 import ImportarQuantitativo from "./components/ImportarQuantitativo";
 import editor from "./pedido-editor.module.css";
+import { usePedidoAutosave } from "./usePedidoAutosave";
+import type { SavedEditorDraft } from "@/lib/pedido-draft-storage";
+import { expectedDeliveryLabel } from "@/lib/pedido-delivery";
 
 // ─── Types ──────────────────────────────────────────────────────────────────
 export type PedidoStatus = "em_producao" | "pronto" | "pendente_entrega" | "entregue" | "cancelado";
@@ -417,7 +420,7 @@ function deliveryBadge(iso: string | null | undefined): { label: string; cls: st
 // Draft used by the create/edit modal.
 // _termsTouched: o admin mexeu na condição de pagamento → parar de recalcular
 // sozinho. Fica só no rascunho (não vai para a API).
-type PedidoDraft = Partial<Pedido> & { _isNew?: boolean; _termsTouched?: boolean };
+type PedidoDraft = Partial<Pedido> & { _isNew?: boolean; _termsTouched?: boolean; _autosaveId?: string };
 
 function cleanDraftOtherCosts(costs: PedidoOtherCost[] | null | undefined) {
   return (costs ?? [])
@@ -509,7 +512,13 @@ export default function PedidosTab({
   const [payFilter, setPayFilter] = useState<"all" | "a_receber" | PaymentStatus>("all");
   const [search, setSearch] = useState("");
 
-  const [draft, setDraft] = useState<PedidoDraft | null>(null);
+  const [draft, setDraftState] = useState<PedidoDraft | null>(null);
+  const setDraft = useCallback<React.Dispatch<React.SetStateAction<PedidoDraft | null>>>((next) => {
+    setDraftState((previous) => {
+      const value = typeof next === "function" ? next(previous) : next;
+      return value ? { ...value, _autosaveId: value._autosaveId || crypto.randomUUID() } : null;
+    });
+  }, []);
   const [saving, setSaving] = useState(false);
   const [cepLoading, setCepLoading] = useState(false);
   const [cepError, setCepError] = useState("");
@@ -530,11 +539,11 @@ export default function PedidosTab({
   const [cnpjMsg, setCnpjMsg] = useState<{ doc: string; error?: string; info?: string } | null>(null);
 
   // Stock-aware line items for the create form (model + plate qty).
-  type StockProduct = { id: string; name: string; code: string | null; linha: string | null; price: number | null; cost_price: number | null; sale_unit: string | null; available: number; stock_on_hand: number; render_panel_width_m?: number | string | null; render_panel_height_m?: number | string | null };
+  type StockProduct = { id: string; name: string; code: string | null; linha: string | null; price: number | null; cost_price: number | null; sale_unit: string | null; available: number; stock_on_hand: number; render_panel_width_m?: number | string | null; render_panel_height_m?: number | string | null; expected_delivery_month?: string | null };
   // unit_price: optional manual override for this line's sale price per plate.
   // When null/undefined the effective price falls back to the tier price
   // (varejo = product.price, atacado = linha special_price). See effectiveUnitPrice.
-  type OrderItem = { product_id: string; plates: number; unit_price?: number | null; space?: string | null; _roomKey?: string };
+  type OrderItem = { product_id: string; plates: number; unit_price?: number | null; space?: string | null; _roomKey?: string; expected_delivery_month?: string | null };
   const [stockProducts, setStockProducts] = useState<StockProduct[]>([]);
   const [items, setItems] = useState<OrderItem[]>([]);
   // True once `items` reflects authoritative state for the open draft (fresh
@@ -608,9 +617,42 @@ export default function PedidosTab({
   const [areaCalcMode, setAreaCalcMode] = useState<Record<number, "lxa" | "m2">>({});
   const [areaCalcW, setAreaCalcW] = useState<Record<number, string>>({});
   const [areaCalcH, setAreaCalcH] = useState<Record<number, string>>({});
+  const restoringEditor = useRef(false);
+  const editorIdentity = useRef<string | undefined>(undefined);
+  useLayoutEffect(() => { editorIdentity.current = draft?._autosaveId; }, [draft?._autosaveId]);
+  function restoreEditor(record: SavedEditorDraft) {
+    const saved = record.content;
+    restoringEditor.current = true;
+    setDraft({ ...saved.draft, _autosaveId: record.id } as PedidoDraft);
+    setItems(saved.items as OrderItem[]);
+    setItemsReady(saved.ui.itemsReady !== false);
+    setFormStep(saved.step);
+    setFreteManual(saved.ui.freteManual === true);
+    setLegacyOrderId(typeof saved.ui.legacyOrderId === "string" ? saved.ui.legacyOrderId : null);
+    setDiscountMode(saved.ui.discountMode === "percent" || saved.ui.discountMode === "final" ? saved.ui.discountMode : "value");
+    setDiscountRaw(typeof saved.ui.discountRaw === "string" ? saved.ui.discountRaw : "");
+    const dict = (value: unknown) => value && typeof value === "object" && !Array.isArray(value) ? value : {};
+    setAreaCalcOpen(dict(saved.ui.areaCalcOpen) as Record<number, boolean>);
+    setAreaCalcValue(dict(saved.ui.areaCalcValue) as Record<number, string>);
+    setAreaCalcW(dict(saved.ui.areaCalcW) as Record<number, string>);
+    setAreaCalcH(dict(saved.ui.areaCalcH) as Record<number, string>);
+    setAreaCalcMode(dict(saved.ui.areaCalcMode) as Record<number, "lxa" | "m2">);
+    if (saved.ui.itemsReady === false && typeof saved.draft.id === "string") {
+      void fetch(`/api/admin/pedidos/${saved.draft.id}`).then(async (r) => r.ok ? r.json() : null).then((full) => {
+        if (editorIdentity.current !== record.id || !Array.isArray(full?.items)) return;
+        setItems(full.items.map((it: OrderItem) => ({ product_id: it.product_id, plates: Number(it.plates), unit_price: it.unit_price, space: it.space ?? String(saved.draft.space || "Ambiente 1"), expected_delivery_month: it.expected_delivery_month })));
+        setItemsReady(true);
+      }).catch(() => {});
+    }
+  }
+  const autosaveContent = useMemo(() => draft ? ({ draft: { ...draft }, items: items.map((it) => ({ ...it })), step: formStep,
+    ui: { itemsReady, freteManual, legacyOrderId, discountMode, discountRaw, areaCalcOpen, areaCalcValue, areaCalcW, areaCalcH, areaCalcMode } }) : null, [draft, items, itemsReady, formStep, freteManual, legacyOrderId, discountMode, discountRaw, areaCalcOpen, areaCalcValue, areaCalcW, areaCalcH, areaCalcMode]);
+  const autosave = usePedidoAutosave(autosaveContent, restoreEditor, Boolean(leadPrefill || quotePrefill || focusPedidoId));
   function closeDraft() {
     if (saving || sendDoc.busy) return;
-    if (confirm("Fechar o pedido? Alterações ainda não salvas serão descartadas.")) setDraft(null);
+    if (autosave.status.kind === "error" && !confirm("Não foi possível guardar o rascunho neste dispositivo. Fechar mesmo assim?")) return;
+    autosave.close();
+    setDraft(null);
   }
   const modalOpen = Boolean(draft);
   useEffect(() => {
@@ -619,7 +661,6 @@ export default function PedidosTab({
     const oldOverflow = document.body.style.overflow;
     document.body.style.overflow = "hidden";
     editorRef.current?.querySelector<HTMLButtonElement>("button")?.focus();
-    const unload = (e: BeforeUnloadEvent) => { e.preventDefault(); };
     const keyboard = (e: KeyboardEvent) => {
       if (e.key !== "Tab") return;
       const nodes = Array.from(editorRef.current?.querySelectorAll<HTMLElement>('button:not(:disabled), input:not(:disabled), select:not(:disabled), textarea:not(:disabled), a[href], summary, [tabindex="0"]') ?? []).filter((el) => el.getClientRects().length > 0);
@@ -627,11 +668,9 @@ export default function PedidosTab({
       if (e.shiftKey && document.activeElement === first) { e.preventDefault(); last?.focus(); }
       if (!e.shiftKey && document.activeElement === last) { e.preventDefault(); first?.focus(); }
     };
-    window.addEventListener("beforeunload", unload);
     document.addEventListener("keydown", keyboard);
     return () => {
       document.body.style.overflow = oldOverflow;
-      window.removeEventListener("beforeunload", unload);
       document.removeEventListener("keydown", keyboard);
       previous?.focus();
     };
@@ -996,6 +1035,7 @@ export default function PedidosTab({
   // a specific id) — not on every keystroke, so the deps are stable identifiers.
   useEffect(() => {
     if (draft) {
+      if (restoringEditor.current) { restoringEditor.current = false; return; }
       setFormStep(reviewAfterSave.current ? 4 : 1);
       reviewAfterSave.current = false;
       condMemo.current = {};
@@ -1257,7 +1297,7 @@ export default function PedidosTab({
   }
   async function previewDraftDocument(tipo: "orcamento" | "pedido" | "nota") {
     if (!draft?.id || saving || sendDoc.busy) return;
-    if (!itemsReady || hasIncompleteItems || hasInvalidRooms) { setFormStep(2); return; }
+    if (!itemsReady || hasIncompleteItems || hasInvalidRooms || itemPricing.missingPrice) { setFormStep(2); return; }
     const preview = window.open("about:blank", "_blank");
     if (preview) preview.opener = null;
     setSaving(true);
@@ -1512,11 +1552,12 @@ export default function PedidosTab({
       const rows = Array.isArray(full?.items) ? full.items : [];
       const mapped: OrderItem[] = rows
         .filter((it: { product_id?: string; plates?: number }) => it.product_id && Number(it.plates) > 0)
-        .map((it: { product_id?: string; plates?: number; unit_price?: number | null; space?: string | null }) => ({
+        .map((it: { product_id?: string; plates?: number; unit_price?: number | null; space?: string | null; expected_delivery_month?: string | null }) => ({
           product_id: it.product_id as string,
           plates: Math.round(Number(it.plates)),
           unit_price: it.unit_price == null ? null : Number(it.unit_price),
           space: it.space || p.space || "Ambiente 1",
+          expected_delivery_month: it.expected_delivery_month ?? null,
         }));
       // No real items yet (a legacy order created via the old Área/Total
       // fields) — still seed one blank row so the quantity editor is visible
@@ -1547,11 +1588,12 @@ export default function PedidosTab({
       const rows = Array.isArray(full?.items) ? full.items : [];
       const itens = rows
         .filter((it: { product_id?: string; plates?: number }) => it.product_id && Number(it.plates) > 0)
-        .map((it: { product_id?: string; plates?: number; unit_price?: number | null; space?: string | null }) => ({
+        .map((it: { product_id?: string; plates?: number; unit_price?: number | null; space?: string | null; expected_delivery_month?: string | null }) => ({
           product_id: it.product_id as string,
           plates: Math.round(Number(it.plates)),
           unit_price: it.unit_price == null ? null : Number(it.unit_price),
           space: it.space ?? p.space ?? null,
+          expected_delivery_month: it.expected_delivery_month ?? null,
         }));
       const base: PedidoDraft = { ...(full ?? p) };
       const { payload } = buildDraftPayload({
@@ -1699,7 +1741,7 @@ export default function PedidosTab({
   async function sendToClient() {
     if (!draft?.id) return;
     if (!draft.client_name?.trim()) { alert("Informe o nome do cliente antes de enviar."); return; }
-    if (!itemsReady || hasIncompleteItems || hasInvalidRooms) { setFormStep(2); return; }
+    if (!itemsReady || hasIncompleteItems || hasInvalidRooms || itemPricing.missingPrice) { setFormStep(2); return; }
     setSendDoc((s) => ({ ...s, busy: true, done: null }));
     const results: string[] = [];
     const post = (url: string, payload: unknown) =>
@@ -1779,14 +1821,14 @@ export default function PedidosTab({
       .map((it) => {
         const prod = stockProducts.find((p) => p.id === it.product_id);
         const eff = prod ? effectiveUnitPrice(it, prod) : (it.unit_price ?? null);
-        return { product_id: it.product_id, plates: it.plates, unit_price: eff, space: (it.space ?? (d.space || "Ambiente 1")).trim() };
+        return { product_id: it.product_id, plates: it.plates, unit_price: eff, space: (it.space ?? (d.space || "Ambiente 1")).trim(), expected_delivery_month: it.expected_delivery_month ?? prod?.expected_delivery_month ?? null };
       });
     return { payload, cleanItems };
   }
 
   async function saveDraft() {
     if (!draft || !draft.client_name?.trim()) return;
-    if (itemsReady && (hasIncompleteItems || hasInvalidRooms || (draft._isNew && items.length === 0))) {
+    if (itemsReady && (hasIncompleteItems || hasInvalidRooms || itemPricing.missingPrice || (draft._isNew && items.length === 0))) {
       setFormStep(2); return;
     }
     setSaving(true);
@@ -1801,15 +1843,19 @@ export default function PedidosTab({
         if (res.ok) {
           const created = await res.json();
           setPedidos((prev) => [created as Pedido, ...prev]);
+          if (draft._autosaveId) autosave.clear(draft._autosaveId);
           reviewAfterSave.current = true;
-          setDraft({ ...draft, ...created, _isNew: false });
+          setDraft({ ...draft, ...created, _isNew: false, _autosaveId: crypto.randomUUID() });
           setFormStep(4);
         } else {
           const d = await res.json().catch(() => null);
           alert(`Erro ao salvar: ${d?.error ?? res.status}`);
         }
       } else if (draft.id) {
-        if (await patchPedido(draft.id, itemsReady ? { ...payload, items: cleanItems } : payload)) setDraft(null);
+        if (await patchPedido(draft.id, itemsReady ? { ...payload, items: cleanItems } : payload)) {
+          if (draft._autosaveId) autosave.clear(draft._autosaveId);
+          setDraft(null);
+        }
       }
     } catch {
       alert("Não foi possível salvar o pedido. Confira a conexão e tente novamente.");
@@ -1823,6 +1869,13 @@ export default function PedidosTab({
   // ── Render ────────────────────────────────────────────────────────────────
   return (
     <div>
+      {!draft && autosave.recoverable.length > 0 && <aside className={editor.recovery} aria-label="Rascunhos salvos">
+        <p>Seus rascunhos estão guardados.</p>
+        {autosave.recoverable.map((record) => <div key={record.id}>
+          <button type="button" onClick={() => restoreEditor(record)}>Continuar {String(record.content.draft.client_name || "novo pedido")}</button>
+          <button type="button" aria-label={`Descartar rascunho de ${String(record.content.draft.client_name || "novo pedido")}`} onClick={() => { if (confirm("Descartar este rascunho? O pedido salvo, se existir, não será alterado.")) autosave.clear(record.id); }}>Descartar</button>
+        </div>)}
+      </aside>}
       {/* Header */}
       <div className="flex flex-col gap-4 mb-6">
         <div className="flex flex-wrap items-center justify-between gap-3">
@@ -2443,13 +2496,13 @@ export default function PedidosTab({
                           <SearchSelect
                             ariaLabel={`Produto do item ${idx + 1}`}
                             value={it.product_id}
-                            onChange={(id) => setItems((cur) => cur.map((x, i) => i === idx ? { ...x, product_id: id } : x))}
+                            onChange={(id) => setItems((cur) => cur.map((x, i) => i === idx ? { ...x, product_id: id, unit_price: null, expected_delivery_month: stockProducts.find((p) => p.id === id)?.expected_delivery_month ?? null } : x))}
                             placeholder="Selecione o modelo…"
                             options={stockProducts.map((p) => ({
                               id: p.id,
                               label: `${p.name}${p.code ? ` (${p.code})` : ""}`,
                               search: `${p.name} ${p.code ?? ""} ${p.linha ?? ""}`,
-                              hint: `${p.available} ${p.sale_unit || "placa"} disp. · venda/${p.sale_unit || "placa"} ${p.price != null ? fmtBRL(p.price) : "sem preço"}`,
+                              hint: `${p.available} ${p.sale_unit || "placa"} disp. · venda/${p.sale_unit || "placa"} ${p.price != null ? fmtBRL(p.price) : "definir preço"}${p.expected_delivery_month ? ` · ${expectedDeliveryLabel(p.expected_delivery_month)}` : ""}`,
                             }))}
                           />
                           </div>
@@ -2467,6 +2520,7 @@ export default function PedidosTab({
                           {prod && (
                             <div className="flex flex-wrap items-center gap-x-4 gap-y-1 mt-2 text-[10px] text-[#74777f]">
                               <span className="font-semibold text-[#0B1F45]">{prod.name}{prod.code ? ` · ${prod.code}` : ""}</span>
+                              {(it.expected_delivery_month || prod.expected_delivery_month) && <span className={editor.delivery}>{expectedDeliveryLabel(it.expected_delivery_month ?? prod.expected_delivery_month)}</span>}
                               <span>{prod.available} {unit} disponíveis</span>
                               <span className="flex items-center gap-1">
                                 Venda/{unit}: R$
@@ -2560,6 +2614,7 @@ export default function PedidosTab({
                   </button>
                   {hasInvalidRooms && <p role="alert" className={editor.validation}>Dê um nome diferente a cada ambiente antes de salvar.</p>}
                   {hasIncompleteItems && <p className={editor.validation}>Selecione um produto e uma quantidade inteira maior que zero em cada material, ou remova a linha vazia.</p>}
+                  {itemPricing.missingPrice && <p className={editor.validation}>Defina o preço de venda de cada material antes de salvar o pedido. Você pode preencher o valor por unidade na própria linha.</p>}
                   {items.some((it) => it.product_id && it.plates > 0) && (
                     <div className="mt-3 border-t border-[#f0f0f0] pt-3">
                       <div className="flex flex-wrap items-center justify-between gap-2">
@@ -3156,16 +3211,24 @@ export default function PedidosTab({
               )}
             </div>
             <div className={editor.footer}>
-              <button onClick={closeDraft} className={editor.cancel}>Cancelar</button>
+              <div className={editor.saveStatus} role="status" aria-live="polite">
+                {autosave.status.kind === "saved" ? `Salvo automaticamente${autosave.status.at ? ` às ${new Date(autosave.status.at).toLocaleTimeString("pt-BR", { hour: "2-digit", minute: "2-digit" })}` : ""}`
+                  : autosave.status.kind === "saving" ? "Salvando rascunho…"
+                  : autosave.status.kind === "local" ? "Salvo neste dispositivo. Sincronização pendente."
+                  : autosave.status.kind === "conflict" ? "Cópia local guardada. Há outra versão no servidor."
+                  : "Não foi possível salvar o rascunho."}
+                {(autosave.status.kind === "local" || autosave.status.kind === "error") && <button type="button" onClick={() => void autosave.retry()}>Tentar novamente</button>}
+              </div>
+              <button onClick={closeDraft} className={editor.cancel}>Fechar</button>
               <div className="flex items-center gap-2">
                 {formStep > 1 && (
                   <button type="button" onClick={() => setFormStep((s) => Math.max(1, s - 1))} className="px-4 py-2 text-xs font-bold uppercase tracking-wider border border-[#e2e2e2] text-[#43474e] hover:border-[#0B1F45]">← Voltar</button>
                 )}
                 {formStep < 4 ? (
-                  <button type="button" onClick={() => setFormStep((s) => Math.min(4, s + 1))} disabled={(formStep === 1 && !draft.client_name?.trim()) || (formStep === 2 && (!itemsReady || !items.length || hasIncompleteItems || hasInvalidRooms))}
+                  <button type="button" onClick={() => setFormStep((s) => Math.min(4, s + 1))} disabled={(formStep === 1 && !draft.client_name?.trim()) || (formStep === 2 && (!itemsReady || !items.length || hasIncompleteItems || hasInvalidRooms || itemPricing.missingPrice))}
                     className="bg-[#0B1F45] text-white px-5 py-2 text-xs font-bold uppercase tracking-wider hover:bg-[#2347A0] disabled:opacity-50">Próximo →</button>
                 ) : (
-                  <button onClick={saveDraft} disabled={saving || sendDoc.busy || !draft.client_name?.trim() || !itemsReady || !items.length || hasIncompleteItems || hasInvalidRooms}
+                  <button onClick={saveDraft} disabled={saving || sendDoc.busy || !draft.client_name?.trim() || !itemsReady || !items.length || hasIncompleteItems || hasInvalidRooms || itemPricing.missingPrice}
                     className="bg-[#0B1F45] text-white px-5 py-2 text-xs font-bold uppercase tracking-wider hover:bg-[#2347A0] disabled:opacity-50">
                     {saving ? "Salvando…" : draft._isNew ? "Salvar e revisar envio" : "Salvar"}
                   </button>

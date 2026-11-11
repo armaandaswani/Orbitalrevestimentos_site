@@ -2,11 +2,12 @@ import test from "node:test";
 import assert from "node:assert/strict";
 import { readFileSync } from "node:fs";
 import ts from "typescript";
+import { cleanExpectedDeliveryMonth, snapshotDeliveryMonth } from "./pedido-delivery.ts";
 import { cleanItemSpace } from "./pedido-ambientes.ts";
 
 // Exercise the actual route functions with a local database double. No network,
 // credentials, inventory writes or customer messages are involved.
-function database({ missingSpace = false, itemInsertFails = false } = {}) {
+function database({ missingSpace = false, itemInsertFails = false, productDelivery = null, previousDelivery = null, missingDelivery = false } = {}) {
   const writes = [];
   const db = {
     writes,
@@ -22,11 +23,12 @@ function database({ missingSpace = false, itemInsertFails = false } = {}) {
         in() { return query; },
         limit() { return query; },
         result() {
+          if (table === "pedido_items" && columns === "expected_delivery_month" && missingDelivery) return { data: null, error: { code: "42703", message: "column expected_delivery_month does not exist" } };
           if (table === "pedido_items" && columns === "space" && missingSpace) return { data: null, error: { code: "42703", message: "column space does not exist" } };
           if (table === "pedido_items" && operation === "insert" && itemInsertFails) return { data: null, error: { message: "insert failed" } };
           if (operation === "delete" || operation === "insert" && table === "pedido_items") return { data: null, error: null };
-          if (table === "products") return { data: [{ id: "pfb", name: "Imbuia", price: 649, cost_price: 200, sale_unit: "placa" }], error: null };
-          if (table === "pedido_items") return { data: [{ product_id: "pfb", product_name: "Imbuia", space: "Sala", plates: 4, unit_price: 649, unit_cost: 200 }], error: null };
+          if (table === "products") return { data: [{ id: "pfb", name: "Imbuia", price: 649, cost_price: 200, sale_unit: "placa", expected_delivery_month: productDelivery }], error: null };
+          if (table === "pedido_items") return { data: [{ product_id: "pfb", product_name: "Imbuia", space: "Sala", plates: 4, unit_price: 649, unit_cost: 200, expected_delivery_month: previousDelivery }], error: null };
           return { data: { id: "order", client_name: "Cliente", total: 3894, notes: "interno", partner_commission_amount: 99 }, error: null };
         },
         maybeSingle() { return Promise.resolve(query.result()); },
@@ -49,6 +51,7 @@ function loadRoute(relativePath, db) {
     "@/lib/admin-auth": { isAdminRequest: () => true },
     "@/lib/supabase": { supabaseAdmin: () => db },
     "@/lib/pedido-ambientes": { cleanItemSpace },
+    "@/lib/pedido-delivery": { cleanExpectedDeliveryMonth, snapshotDeliveryMonth },
     "@/lib/db-compat": { isMissingColumn: (error) => error.code === "42703", isMissingTable: () => false },
     "@/lib/stock": { syncOrderStock: async () => ({ ok: true, state: "none" }), pedidoBaixaEstoque: () => false, transitionOrderStock: async () => ({ ok: true }) },
   };
@@ -139,4 +142,39 @@ test("estoque soma o mesmo produto em ambientes distintos em uma movimentação"
   assert.equal(movements.length, 1);
   assert.equal(movements[0].on_hand_delta, -6);
   assert.equal(onHand, 94);
+});
+
+
+test("previsão do catálogo vira snapshot nas linhas sem depender do cliente", async () => {
+  const db = database({ productDelivery: "2027-02" });
+  const { POST } = loadRoute("../app/api/admin/pedidos/route.ts", db);
+  const response = await POST(request());
+  assert.equal(response.status, 201);
+  const rows = db.writes.find((write) => write.table === "pedido_items" && write.operation === "insert").value;
+  assert.deepEqual(rows.map((row) => row.expected_delivery_month), ["2027-02", "2027-02"]);
+});
+
+test("previsão futura não é perdida quando schema antigo ainda não suporta snapshot", async () => {
+  const db = database({ productDelivery: "2027-02", missingDelivery: true });
+  const { POST } = loadRoute("../app/api/admin/pedidos/route.ts", db);
+  const response = await POST(request());
+  assert.equal(response.status, 503);
+  assert.equal(db.writes.length, 0);
+  assert.match((await response.json()).error, /078/);
+});
+
+test("editar quantidades preserva previsão original mesmo se catálogo mudar", async () => {
+  const db = database({ productDelivery: "2027-03", previousDelivery: "2027-02" });
+  const { PATCH } = loadRoute("../app/api/admin/pedidos/[id]/route.ts", db);
+  const response = await PATCH(request(), { params: Promise.resolve({ id: "order" }) });
+  assert.equal(response.status, 200);
+  const rows = db.writes.find((write) => write.table === "pedido_items" && write.operation === "insert").value;
+  assert.equal(rows[0].expected_delivery_month, "2027-02");
+});
+
+test("API pública inclui previsão mensal do snapshot", async () => {
+  const db = database({ previousDelivery: "2027-02" });
+  const { GET } = loadRoute("../app/api/pedidos/[id]/route.ts", db);
+  const body = await (await GET({}, { params: Promise.resolve({ id: "order" }) })).json();
+  assert.equal(body.items[0].expected_delivery_month, "2027-02");
 });

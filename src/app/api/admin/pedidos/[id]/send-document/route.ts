@@ -2,6 +2,8 @@ import { NextRequest, NextResponse } from "next/server";
 import PDFDocument from "pdfkit";
 import { existsSync } from "fs";
 import path from "path";
+import { pedidoItemUnitInfo as unitInfo } from "@/lib/pedido-item-unit";
+import { expectedDeliveryLabel } from "@/lib/pedido-delivery";
 import { groupPedidoItems } from "@/lib/pedido-ambientes";
 import { isAdminRequest } from "@/lib/admin-auth";
 import { getResend } from "@/lib/resend";
@@ -52,24 +54,6 @@ function fmtBRL(n: number) {
   return n.toLocaleString("pt-BR", { style: "currency", currency: "BRL", minimumFractionDigits: 2, maximumFractionDigits: 2 });
 }
 
-
-function fmtMeters(n: number) {
-  return n.toFixed(2).replace(".", ",");
-}
-
-// Short unit for the "Un." column + a descriptive detail for the name sub-line.
-// A placa carries its real dimensions (e.g. "Placa 2,90 m × 1,20 m × 5 mm");
-// everything else (tubo, un…) just capitalizes the stored unit.
-function unitInfo(item: Record<string, unknown>): { short: string; detail: string } {
-  const unit = String(item.unit_label ?? "un").trim() || "un";
-  const short = unit.charAt(0).toUpperCase() + unit.slice(1);
-  const h = Number(item.panel_h) || 0; // height (≈2,90 m)
-  const w = Number(item.panel_w) || 0; // width  (≈1,20 m)
-  if (/placa/i.test(unit) && h > 0 && w > 0) {
-    return { short, detail: `Placa ${fmtMeters(h)} m × ${fmtMeters(w)} m × 5 mm` };
-  }
-  return { short, detail: short };
-}
 
 function docNumber(pedido: Record<string, unknown>) {
   const createdAt = typeof pedido.created_at === "string" ? pedido.created_at : new Date().toISOString();
@@ -236,7 +220,8 @@ async function generatePedidoPdf(input: {
       const roomName = group.space || "Materiais gerais";
       doc.font("Helvetica-Bold").fontSize(10);
       const headingHeight = Math.max(22, doc.heightOfString(roomName, { width: 499 }) + 12);
-      ensureSpace(doc, headingHeight + 45);
+      ensureSpace(doc, headingHeight + 78);
+      doc.y += 20;
       const groupY = doc.y;
       doc.rect(42, groupY, 511, headingHeight).fill("#F6F5F2");
       doc.fillColor("#0B1F45").text(roomName, 48, groupY + 6, { width: 499 });
@@ -244,9 +229,7 @@ async function generatePedidoPdf(input: {
     }
     for (const [itemIndex, item] of group.items.entries()) {
       const lastInRoom = itemIndex === group.items.length - 1;
-      // Keep the room subtotal with its final material row.
-      ensureSpace(doc, (includeImages || includeDescriptions ? 104 : 34) + (hasSpaces && lastInRoom ? 30 : 0));
-      const y = doc.y;
+
       const qty = Number(item.plates) || 0;
       const unitPrice = Number(item.unit_price) || 0;
       const lineTotal = qty * unitPrice;
@@ -255,16 +238,30 @@ async function generatePedidoPdf(input: {
       const code = item.product_code ? String(item.product_code) : null;
       // Name + a sub-line identifying the item: "Modelo: ORB-004 · Placa 2,90 m …"
       const subParts = [code ? `Modelo: ${code}` : null, unitDetail].filter(Boolean).join("  ·  ");
+      const name = String(item.product_name ?? "Produto Orbital");
+      const delivery = expectedDeliveryLabel(item.expected_delivery_month);
+      doc.font("Helvetica-Bold").fontSize(9);
+      const nameHeight = doc.heightOfString(name, { width: 268 });
+      doc.font("Helvetica").fontSize(7.5);
+      const subHeight = doc.heightOfString(subParts, { width: 268 });
+      doc.font("Helvetica-Bold").fontSize(8);
+      const deliveryHeight = delivery ? doc.heightOfString(delivery, { width: 268 }) + 6 : 0;
+      const rowHeight = Math.max(30, nameHeight + subHeight + deliveryHeight + 10);
+      // Keep the delivery forecast, material and room subtotal together.
+      ensureSpace(doc, rowHeight + (includeImages || includeDescriptions ? 92 : 0) + (hasSpaces && lastInRoom ? 34 : 0));
+      const y = doc.y;
       doc.font("Helvetica-Bold").fontSize(9).fillColor("#0D1830")
-        .text(String(item.product_name ?? "Produto Orbital"), cols.name, y, { width: 268 });
+        .text(name, cols.name, y, { width: 268 });
       doc.font("Helvetica").fontSize(7.5).fillColor("#777")
-        .text(subParts, cols.name, y + 11, { width: 268 });
+        .text(subParts, cols.name, y + nameHeight + 1, { width: 268 });
+      if (delivery) doc.font("Helvetica-Bold").fontSize(8).fillColor("#0B1F45")
+        .text(delivery, cols.name, y + nameHeight + subHeight + 6, { width: 268 });
       doc.font("Helvetica").fontSize(9).fillColor("#0D1830")
         .text(String(qty), cols.qty, y, { width: 44, align: "right" })
         .text(unitShort, cols.unit, y, { width: 44, align: "right" })
         .text(fmtBRL(unitPrice), cols.price, y, { width: 58, align: "right" })
         .text(fmtBRL(lineTotal), cols.total, y, { width: 53, align: "right" });
-      doc.y = y + 26;
+      doc.y = y + rowHeight;
 
       const localImage = includeImages ? maybeLocalImage(item.product_image_path) : null;
       if (localImage || (includeDescriptions && item.product_description)) {
@@ -286,7 +283,7 @@ async function generatePedidoPdf(input: {
       doc.font("Helvetica-Bold").fontSize(9).fillColor("#43474e")
         .text(`Subtotal · ${group.space || "Materiais gerais"}`, 42, subtotalY, { width: 400 });
       doc.text(fmtBRL(group.subtotal), 450, subtotalY, { width: 103, align: "right" });
-      doc.y = subtotalY + 24;
+      doc.y = subtotalY + 28;
     }
   }
 
