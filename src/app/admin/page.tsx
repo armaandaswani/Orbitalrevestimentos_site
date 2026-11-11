@@ -7,6 +7,7 @@ import { nullableProductNumber, productPricePerM2, changeProductLine } from "@/l
 import { productQrUrl, productUrl } from "@/lib/product-link";
 import { compressImage, isUnsupportedForWeb, type CompressOptions } from "@/lib/image-compress";
 import FotosExtras, { type FotoPendente } from "./projetos/FotosExtras";
+import RadarTab from "./RadarTab";
 import LeadsTab, { type Lead } from "./LeadsTab";
 import RemindersTab from "./RemindersTab";
 import AgendaTab from "./AgendaTab";
@@ -5180,6 +5181,7 @@ export default function AdminPage() {
             )}
           </div>
         )}
+        {tab === "radar" && authed && <RadarTab />}
         {/* ═══ LEADS / CRM TAB ═══ */}
         {tab === "leads" && authed && (
           <LeadsTab
