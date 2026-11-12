@@ -112,8 +112,20 @@ export async function PATCH(req: NextRequest) {
       catch (e) { return error((e as Error).message,400); }
       return json(await store.review(asset,fields));
     }
+    if (input.action === "manual") {
+      if (asset.status === "review" || asset.status === "failed") return json(asset);
+      if (asset.status !== "pending") return error("A foto mudou. Atualize a lista.",409);
+      const manual = await store.transition(asset,{status:"review",error:"Confira os campos diretamente na foto."});
+      return manual ? json(manual) : error("A foto mudou. Atualize a lista.",409);
+    }
     if (input.action !== "extract") return error("Ação inválida.",400);
     if (asset.status === "saved") return error("Esta foto já está vinculada a uma obra.",409);
+    if (process.env.VERCEL && !process.env.RADAR_OCR) {
+      if (asset.status === "review") return json(asset);
+      if (asset.status === "pending" || asset.status === "processing") return json(asset,202);
+      const queued = await store.transition(asset,{status:"pending",error:null,attempts:0});
+      return queued ? json(queued,202) : error("A foto mudou. Atualize a lista.",409);
+    }
     if (asset.status === "processing" && Date.now()-Date.parse(asset.updated_at)<90_000) return error("A foto já está sendo processada.",409);
     if (asset.attempts >= 5) return error("Limite de tentativas atingido. Revise manualmente.",409);
     const claimed = await store.transition(asset,{status:"processing",attempts:asset.attempts+1,error:null});

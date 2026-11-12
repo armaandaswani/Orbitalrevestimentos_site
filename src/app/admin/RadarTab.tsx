@@ -58,6 +58,11 @@ export default function RadarTab() {
     void Promise.resolve().then(() => load(0,ctrl.signal)).catch(e => { if (!ctrl.signal.aborted) setFailure(e.message); });
     return () => ctrl.abort();
   },[load]);
+  useEffect(() => {
+    if (!ready || busy || review || !assets.some(asset => asset.status === "pending" || asset.status === "processing")) return;
+    const refresh = window.setInterval(() => { if (document.visibilityState === "visible") void load(offset).catch(() => {}); }, 5000);
+    return () => window.clearInterval(refresh);
+  },[assets,busy,load,offset,ready,review]);
   useEffect(() => { if (review) reviewHeading.current?.focus(); },[review]);
   async function run(fn: () => Promise<void>) {
     if (lock.current) return;
@@ -77,7 +82,7 @@ export default function RadarTab() {
     const batch = crypto.randomUUID();
     const errors: string[] = [];
     const retry: File[] = [];
-    let added=0, repeated=0, incomplete=0;
+    let added=0, repeated=0, incomplete=0, queued=0;
     for (const [i,file] of pending.entries()) {
       setProgress(i+1);setNotice(`Foto ${i+1} de ${pending.length}: envio e leitura.`);
       let stored = false;
@@ -100,6 +105,7 @@ export default function RadarTab() {
         added++;
         const read = await patch<Asset>({id:asset.id,action:"extract"});
         if (read.status==="failed") incomplete++;
+        if (read.status==="pending" || read.status==="processing") queued++;
       } catch (e) {
         if (!stored) retry.push(file);
         errors.push(`Foto ${i+1}: ${(e as Error).message}`);
@@ -107,7 +113,7 @@ export default function RadarTab() {
     }
     setPending(retry);if (picker.current) picker.current.value="";
     await load(0);
-    setNotice(`${added} adicionada(s), ${repeated} já cadastrada(s)${incomplete ? `, ${incomplete} com revisão manual` : ""}.`);
+    setNotice(`${added} adicionada(s), ${repeated} já cadastrada(s)${incomplete ? `, ${incomplete} com revisão manual` : ""}${queued ? `, ${queued} na fila de leitura` : ""}.`);
     if (errors.length) {
       const summary = errors.length > 3 ? ` Mais ${errors.length - 3} com falha.` : "";
       const next = retry.length ? ` ${retry.length} foto(s) continuam selecionadas para tentar novamente.` : "";
@@ -172,15 +178,23 @@ export default function RadarTab() {
           {ready && !shownAssets.length && <p className="mt-4 text-sm text-[#43474e]">Nenhuma foto nesta fila.</p>}
           <ul className="mt-3 max-h-60 divide-y divide-[#e2e2e2] overflow-y-auto">
             {shownAssets.map(a => <li key={a.id} className="flex flex-wrap items-center justify-between gap-2 py-3">
-              <div className="min-w-0 text-sm"><p className="font-medium">{statusText[a.status]}</p><p className="text-[#43474e]">{date(a.created_at)} · {a.sha.slice(0,8)}</p></div>
+              <div className="min-w-0 text-sm"><p className="font-medium">{statusText[a.status]}</p><p className="text-[#43474e]">{new Date(a.created_at).toLocaleDateString("pt-BR",{timeZone:"America/Manaus"})} · {a.sha.slice(0,8)}</p>{a.error && <p className="mt-1 text-xs text-[#43474e]">{a.error}</p>}</div>
               <div className="flex flex-wrap gap-2">
-                {a.status!=="saved" && <button type="button" className={btnSecondary+" "+focus} disabled={busy || a.attempts>=5} onClick={() => void run(async () => {
+                {(a.status==="failed" || (sandbox && a.status==="pending")) && <button type="button" className={btnSecondary+" "+focus} disabled={busy} onClick={() => void run(async () => {
                   await patch({action:"extract",id:a.id});await load(offset);
                 })}>{a.attempts ? "Tentar leitura" : "Ler placa"}</button>}
+                {a.status==="pending" && <button type="button" className={btnSecondary+" "+focus} disabled={busy} onClick={() => void run(async () => {
+                  openReview(await patch<Asset>({action:"manual",id:a.id}));
+                  await load(offset);
+                })}>Revisar manualmente</button>}
                 {["review","failed","saved"].includes(a.status) && <button type="button" className={btnSecondary+" "+focus} disabled={busy} onClick={() => openReview(a)}>{a.status==="saved" ? "Ver evidência" : "Revisar"}</button>}
               </div>
             </li>)}
           </ul>
+          {(offset > 0 || assets.length === 50) && <div className="mt-3 flex flex-wrap items-center gap-2 text-sm" aria-label="Páginas da fila de revisão">
+            <button type="button" className={btnSecondary+" "+focus} disabled={busy || !offset} onClick={() => void run(() => load(offset-50))}>Fotos anteriores</button>
+            <button type="button" className={btnSecondary+" "+focus} disabled={busy || assets.length<50} onClick={() => void run(() => load(offset+50))}>Próximas fotos</button>
+          </div>}
         </section>
       </div>
 

@@ -1,5 +1,5 @@
 import { randomUUID } from "node:crypto";
-import { supabaseAdmin } from "@/lib/supabase";
+import { supabaseAdmin } from "../supabase";
 import { identityKeys, type Asset, type Fields, type Project, type Intel } from "./domain";
 
 export const bucket = "orbital-radar-evidence";
@@ -160,10 +160,10 @@ export async function counts() {
   const local=sandbox();
   if(local) {
     const assets=[...local.assets.values()];
-    return {read:assets.filter(a=>a.attempts>0).length,review:assets.filter(a=>a.status==="review"||a.status==="failed").length,projects:local.projects.size};
+    return {read:assets.filter(a=>Object.keys(a.observations).length>0).length,review:assets.filter(a=>a.status==="review"||a.status==="failed").length,projects:local.projects.size};
   }
   const [read,review,projects]=await Promise.all([
-    db().from("radar_assets").select("id",{count:"exact",head:true}).gt("attempts",0),
+    db().from("radar_assets").select("id",{count:"exact",head:true}).neq("observations","{}"),
     db().from("radar_assets").select("id",{count:"exact",head:true}).in("status",["review","failed"]),
     db().from("radar_projects").select("id",{count:"exact",head:true}),
   ]);

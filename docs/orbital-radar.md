@@ -62,7 +62,7 @@ Para repetir o teste de migrações, instale `@electric-sql/pglite` em um diret�
 
 - Em um projeto Supabase de homologação, aplique `081_orbital_radar.sql` e `082_radar_intelligence.sql` na ordem. Confira RLS, bucket privado e leitura após expiração da URL assinada.
 - Configure `NEXT_PUBLIC_SUPABASE_URL`, `NEXT_PUBLIC_SUPABASE_ANON_KEY`, `SUPABASE_SERVICE_ROLE_KEY` e `ADMIN_SESSION_SECRET` usando a infraestrutura existente. Defina `RADAR_ENABLED=1` apenas no ambiente escolhido.
-- Em Vercel, homologue o upload assinado ao Storage para fotos maiores que 4 MB. O caminho depende do Storage real e ficou pendente de teste integrado. O processamento nativo requer um runtime que execute Vision no macOS ou Tesseract com português. A Vercel sem esse runtime permite revisão manual. Um worker separado continua pendente.
+- Em Vercel, homologue o upload assinado ao Storage para fotos maiores que 4 MB. O caminho depende do Storage real e ficou pendente de teste integrado. O processamento nativo requer um runtime que execute Vision no macOS ou Tesseract com português. Na Vercel, fotos ficam pendentes até o worker OCR concluir a leitura. A revisão manual também fica disponível enquanto a foto aguarda.
 - A imagem original privada pode conter dados pessoais. Defina responsáveis, base legal e retenção antes de carregar a operação real. URLs temporárias, controles de acesso e minimização de campos reduzem exposição. A filtragem de OCR é heurística. A autenticação compartilhada identifica o administrador genericamente no histórico. Supressão e auditoria por pessoa, expurgo e permissões individualizadas ainda exigem implementação.
 - As fontes manuais atuais dispensam credenciais de provedores. Conectores comerciais futuros dependem de acesso autorizado, termos, quotas e regras de consentimento e supressão. O Radar atual encerra o fluxo na aprovação interna.
 
@@ -74,3 +74,18 @@ Para repetir o teste de migrações, instale `@electric-sql/pglite` em um diret�
 | 2 | Rotular uma amostra e medir precisão por campo e tempo de revisão | Alto | Baixo a médio | Evitar uso de candidatos como dados confirmados |
 | 3 | Identidade individual, supressão por pessoa e integração com CRM | Alto | Médio | Evitar duplicidade e violação de preferências |
 | 4 | Validar conectores de pesquisa e preparação comercial assistida | Médio | Variável por provedor | Depende de termos, credenciais e aprovação humana |
+
+## Worker de OCR
+
+O worker lê fotos do bucket privado, usa o mesmo parser do Radar e grava as sugestões no registro original. As obras continuam a ser criadas na revisão humana. Em produção, a leitura usa o Apple Vision no Mac enquanto a sessão do macOS está ativa. A fila fica no Supabase e volta a ser processada quando o worker retorna.
+
+Compile o motor Swift e o worker a partir da raiz do repositório:
+
+```sh
+swiftc -O scripts/radar/vision.swift -o /tmp/orbital-radar-vision
+npx tsc --module commonjs --moduleResolution node --target es2022 --esModuleInterop --skipLibCheck --outDir .next/radar-worker src/lib/radar/store.ts src/lib/radar/ocr.ts
+cp scripts/radar/worker.cjs .next/radar-worker/worker.cjs
+node --env-file=/caminho/para/worker.env .next/radar-worker/worker.cjs
+```
+
+O arquivo privado de configuração define `NEXT_PUBLIC_SUPABASE_URL`, `SUPABASE_SERVICE_ROLE_KEY`, `RADAR_OCR=vision` e `RADAR_VISION_BIN` com o caminho do binário. Mantenha o diretório do worker junto às suas dependências Node ou instale `sharp` e `@supabase/supabase-js` nesse diretório.
