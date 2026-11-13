@@ -76,6 +76,11 @@ function tudoAChegar(itens: DadosMensagem["itens"], agora: Date): boolean {
   return porMes.length > 0 && emEstoque === 0;
 }
 
+/** Parágrafos separados por uma linha em branco, como o dono escreve no WhatsApp. */
+function paragrafos(...p: string[]): string {
+  return p.filter(Boolean).join("\n\n");
+}
+
 export function mensagemDocumento(d: DadosMensagem, agora: Date = new Date()): string {
   const arquiteto = primeiroNome(d.arquitetoNome);
   const cliente = String(d.clienteNome ?? "").trim();
@@ -87,43 +92,47 @@ export function mensagemDocumento(d: DadosMensagem, agora: Date = new Date()): s
   const entregue = d.status === "entregue";
   const validade = d.validade?.slice(0, 5);
 
+  // Modelo do dono (13/11/2026), mensagem do orçamento da Adriane: uma ideia por
+  // parágrafo, na voz dele; os outros documentos seguem a mesma estrutura.
   switch (d.tipo) {
     case "orcamento":
-      return [
+      return paragrafos(
         `${ola} o orçamento${deCliente} para aprovação!`,
-        "Ele cobre apenas o fornecimento do material. Se precisar, passamos o contato de instaladores que já trabalharam com o Painel :)",
-        `Com o orçamento aprovado, enviamos o pedido de venda para assinatura, faturamos a nota e agendamos a entrega. ${disponibilidade}`,
-        validade ? `Os valores valem até ${validade}.` : "",
-      ].filter(Boolean).join("\n\n");
+        "Conforme delineado, ele cobre apenas o fornecimento do material. Caso precisar, podemos passar o contato de instaladores que já trabalharam com o Painel :)",
+        "Os próximos passos, após aprovação do orçamento seriam o envio do pedido de venda para assinatura, o faturamento da nota e o agendamento da entrega.",
+        [disponibilidade, validade ? `Os valores valem até ${validade}.` : ""].filter(Boolean).join(" "),
+      );
 
     case "pedido":
-      return [
-        `${ola} o pedido de venda${deCliente} para assinatura.`,
+      return paragrafos(
+        `${ola} o pedido de venda${deCliente} para assinatura!`,
         paraArquiteto && cliente
-          ? `Pode encaminhar para ${primeiroNome(cliente)} conferir os itens e as condições e assinar?`
-          : "Confira os itens e as condições. Estando tudo certo, é só assinar e nos enviar.",
-        `Com o pedido assinado, faturamos a nota e agendamos a entrega. ${disponibilidade}`,
-      ].join("\n\n");
+          ? `Pode encaminhar para ${primeiroNome(cliente)} conferir os itens e as condições e assinar? :)`
+          : "É só conferir os itens e as condições e, estando tudo certo, assinar e nos enviar :)",
+        "Os próximos passos, após a assinatura, seriam o faturamento da nota e o agendamento da entrega.",
+        disponibilidade,
+      );
 
     case "nota":
-      return [
-        `${ola} a nota de venda${deCliente}.`,
-        entregue ? "Muito obrigado pela confiança!"
-          : tudoAChegar(d.itens, agora) ? `${disponibilidade} Assim que chegar, combinamos o dia da entrega.`
-          : `Agora é só combinar a entrega: qual dia fica melhor${paraArquiteto ? " para receber na obra" : ""}?`,
-      ].join("\n\n");
+      return paragrafos(
+        `${ola} a nota de venda${deCliente}!`,
+        entregue ? "Muito obrigado pela confiança :)"
+          : tudoAChegar(d.itens, agora) ? `O próximo passo seria o agendamento da entrega. ${disponibilidade} Assim que chegar, combinamos o dia :)`
+          : `O próximo passo seria o agendamento da entrega. Qual dia fica melhor${paraArquiteto ? " para receber na obra" : ""}?`,
+      );
 
     case "recibo":
-      return [
-        `${ola} o recibo do pagamento${d.payment_status === "parcial" ? " parcial" : ""}${deCliente}.`,
-        "Muito obrigado pela confiança! Qualquer dúvida sobre o material, é só nos chamar.",
-      ].join("\n\n");
+      return paragrafos(
+        `${ola} o recibo do pagamento${d.payment_status === "parcial" ? " parcial" : ""}${deCliente}!`,
+        "Muito obrigado pela confiança :)",
+        "Qualquer dúvida sobre o material, é só nos chamar.",
+      );
 
     case "termo":
-      return [
-        `${ola} o termo de recebimento do material${deCliente}.`,
+      return paragrafos(
+        `${ola} o termo de recebimento do material${deCliente}!`,
         "No dia da entrega, quem receber confere o material, preenche nome, CPF e data e assina.",
         paraArquiteto ? "Pode nos dizer quem vai receber na obra?" : "Se outra pessoa for receber, pode nos passar o nome dela?",
-      ].join("\n\n");
+      );
   }
 }
