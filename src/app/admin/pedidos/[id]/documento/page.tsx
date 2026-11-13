@@ -6,6 +6,7 @@ import { expectedDeliveryLabel } from "@/lib/pedido-delivery";
 import { groupPedidoItems } from "@/lib/pedido-ambientes";
 import { CLAUSULAS_PADRAO } from "@/lib/clausulas-pedido";
 import { datasDoDocumento, fmtDia } from "@/lib/documento-datas";
+import { mensagemDocumento } from "@/lib/mensagem-documento";
 
 type DocumentType = "orcamento" | "pedido" | "nota" | "recibo" | "termo";
 
@@ -50,6 +51,9 @@ interface PedidoDocument {
   warranty_terms: string | null;
   document_notes: string | null;
   show_legal_terms?: boolean | null;
+  partner_name?: string | null;
+  status?: string | null;
+  payment_status?: string | null;
   items?: PedidoItem[];
 }
 
@@ -125,6 +129,11 @@ export default function PedidoDocumentoPage({ params }: { params: Promise<{ id: 
   // True when loaded via the PUBLIC endpoint (a client opening the shared link
   // without an admin session): hide all admin controls, show the document only.
   const [readOnly, setReadOnly] = useState(false);
+  // Mensagem para colar no WhatsApp junto do documento. A edição do admin vale
+  // só para o tipo em que foi feita; trocar o tipo volta ao texto pronto.
+  const [mensagemEditada, setMensagemEditada] = useState<{ tipo: DocumentType; texto: string } | null>(null);
+  /** Texto copiado por último: o aviso "Copiada!" só aparece enquanto é o texto da tela. */
+  const [mensagemCopiada, setMensagemCopiada] = useState<string | null>(null);
 
   useEffect(() => {
     params.then((p) => setId(p.id));
@@ -199,6 +208,17 @@ export default function PedidoDocumentoPage({ params }: { params: Promise<{ id: 
       })
       .finally(() => setLoading(false));
   }, [id]);
+
+  const mensagemPronta = useMemo(() => pedido ? mensagemDocumento({
+    tipo: docType,
+    clienteNome: pedido.client_name,
+    arquitetoNome: pedido.partner_name,
+    itens: pedido.items ?? [],
+    validade: datasDoDocumento(pedido.created_at, pedido.quote_valid_until).validade,
+    status: pedido.status,
+    payment_status: pedido.payment_status,
+  }) : "", [pedido, docType]);
+  const mensagem = mensagemEditada?.tipo === docType ? mensagemEditada.texto : mensagemPronta;
 
   const totals = useMemo(() => {
     const items = pedido?.items ?? [];
@@ -395,6 +415,31 @@ export default function PedidoDocumentoPage({ params }: { params: Promise<{ id: 
         </div>
         {!readOnly && sendStatus && <p className="basis-full text-[11px] font-bold text-[#74777f]">{sendStatus}</p>}
       </div>
+
+      {/* Mensagem pronta para colar no WhatsApp junto do PDF (só na tela, nunca impressa). */}
+      {!readOnly && mensagem && (
+      <div className="document-message max-w-[980px] mx-auto mb-4 bg-white border border-[#d8d5cf] p-4">
+        <p className="text-[10px] uppercase tracking-[0.18em] font-bold text-[#74777f] mb-2">
+          Mensagem para enviar {pedido.partner_name ? `ao arquiteto (${pedido.partner_name})` : "ao cliente"}
+        </p>
+        <textarea
+          value={mensagem}
+          onChange={(e) => { setMensagemEditada({ tipo: docType, texto: e.target.value }); }}
+          // Altura pelo texto (~36 caracteres por linha no celular), para a mensagem inteira caber sem rolar.
+          rows={Math.min(24, mensagem.split("\n").reduce((n, l) => n + Math.max(1, Math.ceil(l.length / 36)), 0))}
+          className="w-full border border-[#d8d5cf] px-3 py-2 text-sm leading-relaxed text-[#0D1830] focus:outline-none focus:border-[#0B1F45] resize-y"
+        />
+        <div className="flex items-center gap-3 mt-2">
+          <button
+            onClick={() => { void navigator.clipboard?.writeText(mensagem).then(() => setMensagemCopiada(mensagem)); }}
+            className="bg-[#2e7d32] text-white px-4 py-2 text-xs font-bold uppercase tracking-[0.1em]"
+          >
+            Copiar mensagem
+          </button>
+          {mensagemCopiada === mensagem && <span className="text-[11px] font-bold text-[#2e7d32]">Copiada! É só colar no WhatsApp.</span>}
+        </div>
+      </div>
+      )}
 
       {/* Screen-only editor — never printed. Lets the admin add/replace the
           Condições text right here instead of going back to Pedidos. For
@@ -826,7 +871,7 @@ export default function PedidoDocumentoPage({ params }: { params: Promise<{ id: 
         @media print {
           @page { size: A4; margin: 12mm 13mm; }
           html, body { background: #fff !important; }
-          body > header, body > footer, .document-actions, .document-notes-editor, .fixed, iframe { display: none !important; }
+          body > header, body > footer, .document-actions, .document-notes-editor, .document-message, .fixed, iframe { display: none !important; }
           .document-shell { padding: 0 !important; background: #fff !important; }
           .document-page {
             width: auto;
