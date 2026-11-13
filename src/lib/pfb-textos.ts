@@ -56,8 +56,8 @@ export const SELOS: ReadonlyArray<{
   icone: "agua" | "pragas" | "chamas" | "pu" | "eco" | "flex";
   nome: string;
 }> = [
-  // fonte: [Ficha] 0,2% em 48 h
-  { icone: "agua", nome: "Baixa absorção de água" },
+  // fonte: [Ficha] 0,2% em 48 h; texto do dono 13/11/2026
+  { icone: "agua", nome: "Resistente à água e umidade" },
   // fonte: [Ficha]
   { icone: "pragas", nome: "Resistente a mofo e cupim" },
   // fonte: [Ficha], [Dono Q3]
