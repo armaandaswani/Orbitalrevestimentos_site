@@ -4,6 +4,8 @@ import { isAdminRequest, ADMIN_COOKIE } from "@/lib/admin-auth";
 import { supabaseAdmin } from "@/lib/supabase";
 import { extractQuantityDocument } from "@/lib/import-quantities-ai";
 import { MAX_IMPORT_BYTES, MAX_IMPORT_TEXT, parseQuantityTable, reviewImportedQuantities } from "@/lib/import-quantities";
+import { parseMeasurementList } from "@/lib/import-medidas";
+import { panelGrid } from "@/lib/render-prompt";
 
 export const runtime = "nodejs";
 export const maxDuration = 60;
@@ -77,7 +79,8 @@ export async function POST(req: NextRequest) {
     const db = supabaseAdmin();
     const { data: products, error } = await db.from("products").select("id, name, code, sale_unit").eq("is_active", true);
     if (error || !products) return replyError("Não foi possível carregar o catálogo. Tente novamente.", 503);
-    const table = !file ? parseQuantityTable(text) : null;
+    // Sem IA: tabela com quantidade, ou lista de medidas por ambiente (placas pela regra do site).
+    const table = !file ? (parseQuantityTable(text) ?? parseMeasurementList(text, products, panelGrid)) : null;
     let raw: unknown = table, warnings: string[] = [];
     if (!table) {
       const output = await extractQuantityDocument({ text, file, system: SYSTEM });

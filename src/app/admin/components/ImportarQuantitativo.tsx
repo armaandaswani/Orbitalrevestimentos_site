@@ -80,7 +80,7 @@ export default function ImportarQuantitativo({ products, onApply, disabled = fal
         {!file && <div>
           <label htmlFor={`${id}-text`} className={styles.label}>Ou cole uma lista</label>
           <textarea id={`${id}-text`} value={text} onChange={(e) => { resetReview(); setText(e.target.value); }} maxLength={MAX_IMPORT_TEXT} rows={4} disabled={busy || disabled} placeholder={"ambiente;produto;quantidade;unidade\nLavabo;Imbuia;4;placa\nLavabo;Cola PU-40;8;tubo"} className={field} />
-          <p className={styles.hint}>Uma tabela com essas colunas também funciona sem IA. Plantas só com medidas exigem conferência técnica.</p>
+          <p className={styles.hint}>Uma tabela com essas colunas funciona sem IA. Medidas por ambiente também (ex.: Sala, Altura 2.60, Largura 3.40, Modelo 004): as placas são contadas pela largura, como no site.</p>
         </div>}
         <button type="button" disabled={busy || disabled || (!file && !text.trim())} onClick={analyze} className={styles.action}>{busy ? "Lendo o quantitativo…" : "Ler e preparar revisão"}</button>
         <div aria-live="polite" className={styles.feedback}>{busy && <p className={styles.description}>A análise pode levar até um minuto. Aguarde nesta etapa.</p>}{notice && <p className={styles.success}>{notice}</p>}</div>
