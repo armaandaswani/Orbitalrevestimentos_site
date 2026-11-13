@@ -69,6 +69,10 @@ export interface Pedido {
 }
 
 // ─── Labels / styling ─────────────────────────────────────────────────────────
+/** Pedido com arquiteto ligado: fundo azul→verde claro (texto continua legível); avulso fica branco. */
+const FUNDO_ARQUITETO = "linear-gradient(135deg, #E3EDFA 0%, #E6F2F4 50%, #DFF2E6 100%)";
+const BORDA_ARQUITETO = "#C5D9E6";
+
 const STATUS_META: Record<PedidoStatus, { label: string; cls: string }> = {
   em_producao: { label: "Em produção", cls: "bg-yellow-100 text-yellow-800" },
   pronto: { label: "Pronto", cls: "bg-blue-100 text-blue-800" },
@@ -2036,13 +2040,15 @@ export default function PedidosTab({
                   const db = deliveryBadge(p.expected_delivery_at);
                   const waHref = p.client_phone ? `https://wa.me/55${p.client_phone.replace(/\D/g, "")}` : null;
                   return (
-                    <tr key={p.id} className="border-b border-[#f0f0f0] hover:bg-[#F6F5F2] align-top">
+                    <tr key={p.id} className="border-b border-[#f0f0f0] hover:bg-[#F6F5F2] align-top" style={p.partner_name ? { backgroundImage: FUNDO_ARQUITETO } : undefined}>
                       <td className="px-4 py-3">
                         <p className="text-xs text-[#74777f]">{fmtDate(p.created_at)}</p>
                       </td>
                       <td className="px-4 py-3">
                         <button onClick={() => openEdit(p)} className="font-semibold text-[#0B1F45] text-xs truncate hover:underline text-left block max-w-full">{p.client_name}</button>
-                        {p.sales_rep_id && repNome.get(p.sales_rep_id) && (
+                        {p.partner_name ? (
+                          <p className="text-[10px] text-[#1F7A44] truncate">Arquiteto: {p.partner_name}</p>
+                        ) : p.sales_rep_id && repNome.get(p.sales_rep_id) && (
                           <p className="text-[10px] text-[#1F7A44] truncate">Representante: {repNome.get(p.sales_rep_id)}</p>
                         )}
                         {p.client_email && <p className="text-[10px] text-[#74777f] truncate">{p.client_email}</p>}
@@ -2052,7 +2058,6 @@ export default function PedidosTab({
                               WhatsApp
                             </a>
                           )}
-                          {p.partner_name && <span className="text-[9px] text-[#74777f]">via {p.partner_name}</span>}
                         </div>
                         {(p.product_name || p.space) && (
                           <p className="text-[9px] text-[#b0b0b0] mt-0.5 truncate">
@@ -2120,11 +2125,14 @@ export default function PedidosTab({
             {filtered.map((p) => {
               const db = deliveryBadge(p.expected_delivery_at);
               return (
-                <div key={p.id} className="bg-white border border-[#e2e2e2] p-4">
+                <div key={p.id} className="bg-white border border-[#e2e2e2] p-4"
+                  style={p.partner_name ? { backgroundImage: FUNDO_ARQUITETO, borderColor: BORDA_ARQUITETO } : undefined}>
                   <div className="flex items-start justify-between gap-2">
                     <div className="min-w-0">
                       <button onClick={() => openEdit(p)} className="font-semibold text-[#0B1F45] text-sm truncate hover:underline text-left block max-w-full">{p.client_name}</button>
-                      {p.sales_rep_id && repNome.get(p.sales_rep_id) && (
+                      {p.partner_name ? (
+                        <p className="text-[11px] text-[#1F7A44] truncate">Arquiteto: {p.partner_name}</p>
+                      ) : p.sales_rep_id && repNome.get(p.sales_rep_id) && (
                         <p className="text-[11px] text-[#1F7A44] truncate">Representante: {repNome.get(p.sales_rep_id)}</p>
                       )}
                       {p.client_email && <p className="text-[11px] text-[#74777f] truncate">{p.client_email}</p>}
