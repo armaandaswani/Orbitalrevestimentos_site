@@ -6,10 +6,10 @@ import { aniversariantes } from "@/lib/aniversarios-server";
 import { enfileirar } from "@/lib/ia/fila";
 import { rodarWorker } from "@/lib/ia/worker";
 import { resumoStories, type DirectPendente } from "@/lib/instagram-resumo";
-import { avisarDono } from "@/lib/instagram-aviso";
+import { avisarDono, avisarLembrete } from "@/lib/instagram-aviso";
 import {
-  BUCKET_AGENDA, GRAPH, contaDoToken, destravar, gravarAgendado, hojeManaus, listarAgendados,
-  tokenParaPublicar, travar, type Agendado,
+  BUCKET_AGENDA, GRAPH, contaDoToken, destravar, gravarAgendado, gravarLembrete, hojeManaus, listarAgendados,
+  listarLembretes, tokenParaPublicar, travar, type Agendado,
 } from "@/lib/instagram-agenda";
 
 export const maxDuration = 300;
@@ -32,6 +32,9 @@ export const maxDuration = 300;
  * vira "expirado". Manda um resumo por e-mail sempre que algo muda; quem tem @
  * confirmado vem nele com o Direct pronto para a equipe mandar pelo celular (a
  * API não começa conversa no Direct).
+ *
+ * Antes dos Stories, manda ao dono os lembretes do dia (/api/instagram/lembrete): quem
+ * faz aniversário hoje e ficou sem Story porque falta foto ou @ (pedido dele, 13/11/2026).
  */
 
 const TRAVA = "_cron.lock";
@@ -108,6 +111,13 @@ export async function GET(req: NextRequest) {
       token = await tokenParaPublicar();
     } catch (e) {
       erroToken = e instanceof Error ? e.message : String(e);
+    }
+
+    // Lembretes do dia ao dono (quem ficou sem Story por falta de foto ou @), antes dos Stories.
+    for (const l of (await listarLembretes(hoje).catch(() => [])).filter((x) => x.status === "pendente")) {
+      const r = await avisarLembrete(l.nome, l.motivo);
+      await gravarLembrete({ ...l, status: r.ok ? "enviado" : "erro", detalhe: r.detalhe, enviado_em: new Date().toISOString() }).catch(() => {});
+      linhas.push(`${l.nome}: sem Story (${l.motivo}); lembrete ao dono: ${r.detalhe}`);
     }
 
     const todos = await listarAgendados();

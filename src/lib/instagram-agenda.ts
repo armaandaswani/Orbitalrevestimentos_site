@@ -44,6 +44,58 @@ export interface Agendado {
   publicado_em?: string;
 }
 
+/**
+ * Lembrete ao dono no dia do aniversário (pedido dele, 13/11/2026: "let me know on day"):
+ * quem ficou sem foto ou sem @ e ele quer resolver no próprio dia. O cron das 8h manda pelo
+ * WhatsApp da Ste. Fica em lembretes/AAAA-MM-DD/<id>.json, fora das pastas dos Stories.
+ */
+export interface Lembrete {
+  id: string;
+  data: string;            // AAAA-MM-DD (Manaus)
+  nome: string;
+  motivo: string;          // o que falta, numa linha ("sem @ e sem foto")
+  status: "pendente" | "enviado" | "erro";
+  detalhe?: string;
+  criado_em: string;
+  enviado_em?: string;
+}
+
+const caminhoLembrete = (l: Pick<Lembrete, "data" | "id">) => `lembretes/${l.data}/${l.id}.json`;
+
+export async function gravarLembrete(l: Lembrete): Promise<void> {
+  const { error } = await supabaseAdmin().storage.from(BUCKET_AGENDA).upload(
+    caminhoLembrete(l),
+    new Blob([JSON.stringify(l, null, 2)], { type: "application/json" }),
+    { upsert: true, contentType: "application/json" },
+  );
+  if (error) throw new Error(`Não consegui gravar o lembrete: ${error.message}`);
+}
+
+/** Lembretes de um dia, ou de todos os dias quando `data` falta. */
+export async function listarLembretes(data?: string): Promise<Lembrete[]> {
+  const storage = supabaseAdmin().storage.from(BUCKET_AGENDA);
+  let dias = data ? [data] : [];
+  if (!data) {
+    const { data: pastas, error } = await storage.list("lembretes", { limit: 1000, sortBy: { column: "name", order: "asc" } });
+    if (error) throw new Error(`Não consegui listar os lembretes: ${error.message}`);
+    dias = (pastas || []).map((p) => p.name).filter((n) => /^\d{4}-\d{2}-\d{2}$/.test(n));
+  }
+  const out: Lembrete[] = [];
+  for (const dia of dias) {
+    const { data: arquivos, error } = await storage.list(`lembretes/${dia}`, { limit: 200 });
+    if (error) throw new Error(`Não consegui listar os lembretes de ${dia}: ${error.message}`);
+    for (const f of (arquivos || []).filter((x) => x.name.endsWith(".json"))) {
+      const { data: blob } = await storage.download(`lembretes/${dia}/${f.name}`);
+      try { if (blob) out.push(JSON.parse(await blob.text()) as Lembrete); } catch { /* arquivo quebrado: ignora */ }
+    }
+  }
+  return out;
+}
+
+export async function apagarLembrete(l: Pick<Lembrete, "data" | "id">): Promise<void> {
+  await supabaseAdmin().storage.from(BUCKET_AGENDA).remove([caminhoLembrete(l)]);
+}
+
 /** Confere na Meta que o token é da @orbitalrevestimentos e devolve o id da conta. */
 export async function contaDoToken(token: string): Promise<string | null> {
   if (!token) return null;

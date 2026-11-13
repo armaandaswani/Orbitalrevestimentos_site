@@ -78,3 +78,15 @@ export function avisarDono(nome: string, handle: string | null) {
 export function avisarSemana(s: SemanaAviso) {
   return enviarAoDono(textoSemana(s), "instagram-story-semana");
 }
+
+/** 3. Lembrete no dia: aniversário de alguém que ficou sem Story porque falta foto ou @. */
+export function textoLembrete(nome: string, motivo: string): string {
+  return [
+    `🎂 Hoje é aniversário de ${nome}, e o Story não saiu: ${motivo}.`,
+    "Você pediu para lembrar no dia. Se achar a foto (e o @), mande na conversa do Claude que o Story sai hoje; se não, pode deixar passar.",
+  ].join("\n");
+}
+
+export function avisarLembrete(nome: string, motivo: string) {
+  return enviarAoDono(textoLembrete(nome, motivo), "instagram-lembrete-dia");
+}
