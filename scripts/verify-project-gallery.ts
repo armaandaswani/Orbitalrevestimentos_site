@@ -118,6 +118,18 @@ console.log("\n── 7. Casos-limite ──");
     buildGalleryItems(proj(), media([{ url: "capa.jpg?v=2" }])).length === 1);
 }
 
+console.log("\n── 8. Capa recortada no admin não vira foto da galeria (Pé Direito Duplo, 13/11/2026) ──");
+{
+  const recorte = "https://x.supabase.co/storage/v1/object/public/site/projetos/1794586397492-projeto-1794586397085.jpg";
+  const fotos = media([{ url: "1-img_7751.webp", category: "depois" }, { url: "2-img_7754.webp", category: "depois" }]);
+  const items = buildGalleryItems(proj({ image_after: recorte }), fotos);
+  check("galeria abre só as 2 fotos inteiras", items.length === 2 && !items.some((i) => i.url === recorte), String(items.length));
+  check("recorte sozinho continua (projeto sem outra foto)", buildGalleryItems(proj({ image_after: recorte }), []).length === 1);
+  check("recorte fica se as outras fotos são só de Antes",
+    buildGalleryItems(proj({ image_after: recorte }), media([{ url: "a.jpg", category: "antes" }])).some((i) => i.url === recorte));
+  check("capa que não é recorte continua na galeria", buildGalleryItems(proj(), fotos).length === 3);
+}
+
 // ── Dados reais ─────────────────────────────────────────────────────────────
 if (process.argv.includes("--live")) {
   console.log("\n── Dados de produção ──");

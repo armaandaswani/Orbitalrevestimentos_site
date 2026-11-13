@@ -120,7 +120,19 @@ export function buildGalleryItems(project: GalleryProject, media: GalleryMediaRo
     });
   }
 
+  // Capa recortada no admin (arquivo 1:1 "projeto-<ts>.jpg") fica só no card: na
+  // galeria ela sai quando há outra foto da mesma categoria, para não abrir a
+  // versão cortada como mais uma foto (dono, 13/11/2026).
+  const capa = items.find((i) => i.isCover && i.url === project.image_after);
+  if (capa && capaRecortada(capa.url) && items.some((i) => i !== capa && i.kind === "image" && i.category === capa.category)) {
+    return items.filter((i) => i !== capa);
+  }
   return items;
+}
+
+/** Arquivo gerado pelo recorte de capa do admin (handleCroppedCover). */
+export function capaRecortada(url: string): boolean {
+  return /(^|\/)(\d+-)?projeto-\d+\.jpe?g$/i.test(urlKey(url));
 }
 
 export type GalleryFilter = "all" | MediaCategory | "video";

@@ -2,6 +2,7 @@
 
 import { memo, useCallback, useEffect, useLayoutEffect, useRef, useState, useSyncExternalStore, type CSSProperties, type RefObject } from "react";
 import { FORMATOS, MODELOS_TECHSTONE, cena, type FormatoTechStone } from "@/lib/techstone";
+import IdeiaAmpliada from "./IdeiaAmpliada";
 
 interface Ideia {
   src: string;
@@ -173,12 +174,20 @@ function Galeria({ lista, verTamanho, parado, setParado, ultimaAcaoRef }: {
     if (tipo === "camada") camadas.current[i] = el as HTMLButtonElement | null;
     else fotos.current[i] = el as HTMLImageElement | null;
   }, []);
+  /** Ideia aberta em tela cheia (índice em `lista`), ou null. */
+  const [ampliada, setAmpliada] = useState<number | null>(null);
   const tocar = useCallback((i: number) => {
     if (arrastou.current) return;
     const o = (i - vAtual.current + m) % m;
-    if (o === 0) verTamanho(formatoDe(lista[i % n]));
+    if (o === 0) { ultimaAcaoRef.current = agora(); setAmpliada(i % n); }
     else irPara(vAtual.current + o);
-  }, [lista, n, m, verTamanho, irPara]);
+  }, [n, m, irPara, ultimaAcaoRef]);
+  /** Ao fechar, o palco anda até a ideia em que o visitante parou. */
+  const fecharAmpliada = useCallback((ultima: number) => {
+    setAmpliada(null);
+    const o = (ultima - (vAtual.current % n) + n) % n;
+    if (o) irPara(vAtual.current + o);
+  }, [n, irPara]);
 
   // Modo de entrada: o anel de foco só vale para teclado (ver o CSS). Teclas
   // marcam "teclado"; o primeiro toque ou clique, em qualquer lugar, marca
@@ -216,7 +225,7 @@ function Galeria({ lista, verTamanho, parado, setParado, ultimaAcaoRef }: {
     return () => { document.removeEventListener("visibilitychange", aba); io.disconnect(); perto.disconnect(); };
   }, [pausar]);
 
-  const pausado = parado || reduzido || n < 2 || Object.values(pausas).some(Boolean);
+  const pausado = parado || reduzido || n < 2 || ampliada !== null || Object.values(pausas).some(Boolean);
 
   // Autoplay: um passo por vez, reagendado a cada troca. Depois de uma ação,
   // o próximo passo só vem 15 s depois dela (e nunca antes de 5 s).
@@ -361,6 +370,16 @@ function Galeria({ lista, verTamanho, parado, setParado, ultimaAcaoRef }: {
 
       {/* Só fala depois de uma ação do visitante; o autoplay fica em silêncio. */}
       <p aria-live="polite" className="sr-only">{anuncio}</p>
+
+      {ampliada !== null && (
+        <IdeiaAmpliada
+          lista={lista.map((i) => ({ src: i.src, largo: i.largo, alt: i.alt, titulo: i.titulo, modelo: modeloDe(i.modelo).nome, tamanho: rotuloFormato(formatoDe(i)) }))}
+          inicio={ampliada}
+          onFechar={fecharAmpliada}
+          // Rola só depois que a folha fecha e solta a trava de rolagem da página.
+          onVerTamanho={(j) => { setAmpliada(null); window.setTimeout(() => verTamanho(formatoDe(lista[j])), 0); }}
+        />
+      )}
     </div>
   );
 }
@@ -433,7 +452,7 @@ export default function Ideias({ verTamanho }: {
           <div>
             <h2 id="ts-ideias" className="font-serif text-t1 text-[#22201C]">Ideias para o seu projeto.</h2>
             <p className="mt-3 text-corpo text-[#4A4540] max-w-[46ch]">
-              Toque numa ideia para ver o tamanho e os modelos.
+              Toque numa ideia para ver a foto inteira, o modelo e o tamanho.
             </p>
           </div>
           <div role="group" aria-label="Filtrar por tamanho" className="flex gap-2 overflow-x-auto scrollbar-none -mx-[clamp(1rem,4.2vw,4rem)] px-[clamp(1rem,4.2vw,4rem)] md:mx-0 md:px-0">
