@@ -18,6 +18,16 @@ test("lista do Sanmede (13/11/2026): medidas por ambiente viram placas do 004", 
   assert.match(r[1].evidence, /2,05 \+ 1,34 = 3,39 m/);
 });
 
+test("folga de 5% ou 10% entra na largura somada antes de contar", () => {
+  const texto = "Ambiente 1:\nAltura 2.87\nLargura 1.81\n\nAmbiente 2:\naltura: 2.59\nLargura: 2.05 + 1.34\n\nAmbos 004";
+  assert.deepEqual(parseMeasurementList(texto, produtos, panelGrid, 5).map((r) => r.quantity), [2, 3]);
+  const com10 = parseMeasurementList(texto, produtos, panelGrid, 10);
+  assert.deepEqual(com10.map((r) => r.quantity), [2, 4]);
+  assert.match(com10[1].evidence, /2,05 \+ 1,34 = 3,39 m \+ 10% de folga = 3,73 m/);
+  // 1,20 m exato com 5% passa de uma placa
+  assert.equal(parseMeasurementList("Hall\naltura 2.5\nlargura 1.20", produtos, panelGrid, 5)[0].quantity, 2);
+});
+
 test("parede mais alta que a placa ganha fileira extra; vírgula decimal e modelo por ambiente", () => {
   const r = parseMeasurementList("Sala\nlargura 2,40\naltura 3,20\nmodelo 002", produtos, panelGrid);
   assert.equal(r[0].code, "ORB-002");

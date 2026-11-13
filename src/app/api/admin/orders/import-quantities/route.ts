@@ -4,7 +4,7 @@ import { isAdminRequest, ADMIN_COOKIE } from "@/lib/admin-auth";
 import { supabaseAdmin } from "@/lib/supabase";
 import { extractQuantityDocument } from "@/lib/import-quantities-ai";
 import { MAX_IMPORT_BYTES, MAX_IMPORT_TEXT, parseQuantityTable, reviewImportedQuantities } from "@/lib/import-quantities";
-import { parseMeasurementList } from "@/lib/import-medidas";
+import { FOLGA_PADRAO, FOLGAS, parseMeasurementList } from "@/lib/import-medidas";
 import { panelGrid } from "@/lib/render-prompt";
 
 export const runtime = "nodejs";
@@ -80,7 +80,9 @@ export async function POST(req: NextRequest) {
     const { data: products, error } = await db.from("products").select("id, name, code, sale_unit").eq("is_active", true);
     if (error || !products) return replyError("Não foi possível carregar o catálogo. Tente novamente.", 503);
     // Sem IA: tabela com quantidade, ou lista de medidas por ambiente (placas pela regra do site).
-    const table = !file ? (parseQuantityTable(text) ?? parseMeasurementList(text, products, panelGrid)) : null;
+    const folgaPedida = Number(form.get("folga"));
+    const folga = form.has("folga") && [0, ...FOLGAS].includes(folgaPedida as never) ? folgaPedida : FOLGA_PADRAO;
+    const table = !file ? (parseQuantityTable(text) ?? parseMeasurementList(text, products, panelGrid, folga)) : null;
     let raw: unknown = table, warnings: string[] = [];
     if (!table) {
       const output = await extractQuantityDocument({ text, file, system: SYSTEM });

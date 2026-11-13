@@ -61,7 +61,14 @@ test("lista de medidas colada vira placas sem IA (Sanmede, 13/11/2026)", async (
   assert.equal(response.status, 200);
   const body = await response.json();
   assert.equal(body.source, "table");
-  assert.deepEqual(body.items.map((r) => [r.product_id, r.quantity, r.space]), [["pfb", 2, "Ambiente 1"], ["pfb", 3, "Ambiente 2"]]);
+  // Sem "folga" no formulário vale a padrão (10%): 3,39 m vira 3,73 m → 4 placas.
+  assert.deepEqual(body.items.map((r) => [r.product_id, r.quantity, r.space]), [["pfb", 2, "Ambiente 1"], ["pfb", 4, "Ambiente 2"]]);
+  form.set("folga", "5");
+  const com5 = await (await route.POST(request(form))).json();
+  assert.deepEqual(com5.items.map((r) => r.quantity), [2, 3]);
+  form.set("folga", "50");
+  const invalida = await (await route.POST(request(form))).json();
+  assert.deepEqual(invalida.items.map((r) => r.quantity), [2, 4], "folga fora da lista volta para a padrão");
 });
 test("PDF com assinatura válida vai para extração, resultado segue para revisão", async () => {
   let captured;

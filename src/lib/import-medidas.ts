@@ -13,7 +13,8 @@
  *
  * Cada ambiente vira uma linha com as placas contadas pela regra do site
  * (parede pela largura; teto/forro pelo maior entre m² e largura, como a Ste).
- * Larguras somadas ("2.05 + 1.34") contam como uma faixa contínua. O modelo
+ * Larguras somadas ("2.05 + 1.34") contam como uma faixa contínua (dono,
+ * 13/11/2026), com a folga escolhida na tela. O modelo
  * vem de uma linha "Ambos/Todos/Modelo <código>" (vale para todos) ou de uma
  * dentro do ambiente. O resultado passa pelo reviewImportedQuantities: o admin
  * confere antes de adicionar.
@@ -51,7 +52,17 @@ function codigoDoCatalogo(bruto: string, produtos: ReadonlyArray<Produto>): stri
 
 type Bloco = { nome: string; altura?: number[]; largura?: number[]; comprimento?: number[]; codigo?: string; linhas: string[] };
 
-export function parseMeasurementList(text: string, produtos: ReadonlyArray<Produto>, grade: Grade): Array<Record<string, unknown>> | null {
+/** Folgas que o admin escolhe na importação (dono, 13/11/2026: "de 5 a 10% adicional"). */
+export const FOLGAS = [5, 10] as const;
+export const FOLGA_PADRAO = 10;
+
+/**
+ * `folgaPct` entra na largura somada antes de contar (parede) e nas duas contas
+ * do teto. Ex.: 3,39 m + 10% = 3,73 m → 4 placas em vez de 3.
+ */
+export function parseMeasurementList(text: string, produtos: ReadonlyArray<Produto>, grade: Grade, folgaPct = 0): Array<Record<string, unknown>> | null {
+  const fator = 1 + (Number.isFinite(folgaPct) && folgaPct > 0 ? Math.min(folgaPct, 30) : 0) / 100;
+  const comFolga = fator > 1 ? ` + ${br((fator - 1) * 100)}% de folga` : "";
   const blocos: Bloco[] = [];
   let atual: Bloco | null = null;
   let codigoGeral = "";
@@ -99,16 +110,19 @@ export function parseMeasurementList(text: string, produtos: ReadonlyArray<Produ
     const somada = larguras.length > 1 ? `${larguras.map(br).join(" + ")} = ${br(w)} m` : `${br(w)} m`;
     let quantity: number | null = null, conta = "medidas incompletas: informe largura e altura";
     if (w > 0 && h > 0) {
+      // Arredonda a largura com folga em cm para 1,81 × 1,10 não virar 1,9910000001.
+      const wf = Math.round(w * fator * 100) / 100;
+      const largura = fator > 1 ? `${somada}${comFolga} = ${br(wf)} m` : somada;
       if (teto) {
-        const porArea = Math.max(1, Math.round((w * h) / PLACA_M2)), porLargura = Math.max(1, Math.round(w / PLACA_W));
+        const porArea = Math.max(1, Math.round((w * h * fator) / PLACA_M2)), porLargura = Math.max(1, Math.round(wf / PLACA_W));
         quantity = Math.max(porArea, porLargura);
-        conta = `teto ${somada} × ${br(h)} m: por m² ${porArea}, por largura ${porLargura}; usado ${quantity}`;
+        conta = `teto ${somada} × ${br(h)} m${comFolga}: por m² ${porArea}, por largura ${porLargura}; usado ${quantity}`;
       } else {
-        const g = grade(w, h, PLACA_W, PLACA_H);
+        const g = grade(wf, h, PLACA_W, PLACA_H);
         quantity = g.count;
         conta = g.fullRows === 0
-          ? `parede ${somada} × ${br(h)} m: ${g.cols} placa(s) lado a lado pela largura`
-          : `parede ${somada} × ${br(h)} m: ${g.cols} coluna(s) × ${g.fullRows} fileira(s)${g.extraPanels ? ` + ${g.extraPanels} para completar a altura` : ""} = ${g.count}`;
+          ? `parede ${largura} × ${br(h)} m: ${g.cols} placa(s) lado a lado pela largura`
+          : `parede ${largura} × ${br(h)} m: ${g.cols} coluna(s) × ${g.fullRows} fileira(s)${g.extraPanels ? ` + ${g.extraPanels} para completar a altura` : ""} = ${g.count}`;
       }
     }
     return { description: "", code, quantity, unit: "placa", space: nome, evidence: `${b.linhas.join(" · ")} → ${conta}` };

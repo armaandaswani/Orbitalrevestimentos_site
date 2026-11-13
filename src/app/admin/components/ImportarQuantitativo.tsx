@@ -3,6 +3,7 @@
 import { useEffect, useId, useRef, useState } from "react";
 import styles from "./importar-quantitativo.module.css";
 import { MAX_IMPORT_BYTES, MAX_IMPORT_TEXT, validImportQuantityForProduct, type ImportProduct, type ImportedQuantity, type QuantityReview } from "@/lib/import-quantities";
+import { FOLGA_PADRAO, FOLGAS } from "@/lib/import-medidas";
 
 type Product = Omit<ImportProduct, "code"> & { sku?: string | null };
 type ReviewRow = QuantityReview & { selected: boolean; editedQuantity: string };
@@ -17,6 +18,8 @@ export default function ImportarQuantitativo({ products, onApply, disabled = fal
   const id = useId();
   const [file, setFile] = useState<File | null>(null);
   const [text, setText] = useState("");
+  /** Folga somada às medidas coladas antes de contar as placas. */
+  const [folga, setFolga] = useState<number>(FOLGA_PADRAO);
   const [rows, setRows] = useState<ReviewRow[]>([]);
   const [warnings, setWarnings] = useState<string[]>([]);
   const [error, setError] = useState("");
@@ -46,7 +49,7 @@ export default function ImportarQuantitativo({ products, onApply, disabled = fal
     setBusy(true);
     try {
       const form = new FormData();
-      if (file) form.append("file", file); else form.append("text", text);
+      if (file) form.append("file", file); else { form.append("text", text); form.append("folga", String(folga)); }
       const response = await fetch("/api/admin/orders/import-quantities", { method: "POST", body: form, signal: controller.signal });
       const result = await response.json().catch(() => ({}));
       if (!response.ok) throw new Error(result.error || "Não foi possível analisar. Tente novamente.");
@@ -81,6 +84,16 @@ export default function ImportarQuantitativo({ products, onApply, disabled = fal
           <label htmlFor={`${id}-text`} className={styles.label}>Ou cole uma lista</label>
           <textarea id={`${id}-text`} value={text} onChange={(e) => { resetReview(); setText(e.target.value); }} maxLength={MAX_IMPORT_TEXT} rows={4} disabled={busy || disabled} placeholder={"ambiente;produto;quantidade;unidade\nLavabo;Imbuia;4;placa\nLavabo;Cola PU-40;8;tubo"} className={field} />
           <p className={styles.hint}>Uma tabela com essas colunas funciona sem IA. Medidas por ambiente também (ex.: Sala, Altura 2.60, Largura 3.40, Modelo 004): as placas são contadas pela largura, como no site.</p>
+          <div role="radiogroup" aria-label="Folga nas medidas" className="flex items-center gap-2 mt-2">
+            <span className={styles.label}>Folga nas medidas</span>
+            {FOLGAS.map((f) => (
+              <button key={f} type="button" role="radio" aria-checked={folga === f} disabled={busy || disabled}
+                onClick={() => { resetReview(); setFolga(f); }}
+                className={`border px-3 py-1 text-xs font-bold ${folga === f ? "bg-[#0B1F45] text-white border-[#0B1F45]" : "bg-white text-[#0B1F45] border-[#d8d5cf]"}`}>
+                {f}%
+              </button>
+            ))}
+          </div>
         </div>}
         <button type="button" disabled={busy || disabled || (!file && !text.trim())} onClick={analyze} className={styles.action}>{busy ? "Lendo o quantitativo…" : "Ler e preparar revisão"}</button>
         <div aria-live="polite" className={styles.feedback}>{busy && <p className={styles.description}>A análise pode levar até um minuto. Aguarde nesta etapa.</p>}{notice && <p className={styles.success}>{notice}</p>}</div>
