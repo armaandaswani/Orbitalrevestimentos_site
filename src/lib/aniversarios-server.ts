@@ -31,10 +31,13 @@ const anoDeIso = (iso: string | null) => {
   return m ? Number(m[1]) : null;
 };
 
-/** Todos os aniversariantes de hoje e dos próximos dias, já sem duplicados. */
-export async function aniversariantes(db: SupabaseClient, agora = new Date()) {
+/**
+ * Todos os aniversariantes de hoje e dos próximos dias, já sem duplicados. O e-mail usa 7 dias;
+ * a preparação dos Stories antes de uma viagem do dono pede mais (até 60, o limite do agendamento).
+ */
+export async function aniversariantes(db: SupabaseClient, agora = new Date(), diasAFrente = DIAS_A_FRENTE) {
   const hoje = hojeEmManaus(agora);
-  const datas: Data[] = [{ dia: hoje.dia, mes: hoje.mes }, ...proximosDias(hoje, DIAS_A_FRENTE)];
+  const datas: Data[] = [{ dia: hoje.dia, mes: hoje.mes }, ...proximosDias(hoje, diasAFrente)];
   const naJanela = (d: Data) => datas.some((x) => x.dia === d.dia && x.mes === d.mes);
   const meses = [...new Set(datas.map((d) => d.mes))];
 

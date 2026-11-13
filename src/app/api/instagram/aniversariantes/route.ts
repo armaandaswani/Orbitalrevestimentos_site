@@ -20,7 +20,10 @@ const dm = (dia: number, mes: number) => `${String(dia).padStart(2, "0")}/${Stri
 
 export async function GET(req: NextRequest) {
   if (!(await contaDoToken(tokenDoPedido(req)))) return NextResponse.json({ error: "unauthorized" }, { status: 401 });
-  const { hoje, deHoje, proximos } = await aniversariantes(supabaseAdmin());
+  // ?dias=N (1 a 60, padrão 7): viagem do dono, Stories preparados semanas antes.
+  const pedido = Number(req.nextUrl.searchParams.get("dias"));
+  const dias = Number.isInteger(pedido) && pedido > 0 ? Math.min(pedido, 60) : 7;
+  const { hoje, deHoje, proximos } = await aniversariantes(supabaseAdmin(), new Date(), dias);
   const pessoas = [...deHoje, ...proximos].map((a) => ({
     data: dm(a.dia, a.mes), nome: a.nome, tipo: a.tipo, detalhe: a.detalhe,
     instagram: a.instagram, instagramConfirmado: a.instagramConfirmado, whatsapp: a.whatsapp,
