@@ -1,29 +1,22 @@
 "use client";
 
 import {
-  memo, startTransition, useCallback, useEffect, useEffectEvent, useImperativeHandle, useRef, useState,
-  type CSSProperties, type Ref,
+  memo, startTransition, useCallback, useEffect, useEffectEvent, useRef, useState,
+  type CSSProperties,
 } from "react";
-import Lupa from "@/components/movimento/Lupa";
-import { useProgresso } from "@/components/ds/useProgresso";
+import Link from "next/link";
+import BotaoToque from "./BotaoToque";
+import { useToque } from "@/components/ds/useToque";
 import {
-  ESPESSURA_MM, FORMATOS, MODELOS_TECHSTONE, texturaDownload, texturaMiniatura,
-  type FormatoTechStone, type ModeloTechStone,
+  CATALOGO_TECHSTONE, DO_TAMANHO, ESPESSURA_MM, FORMATOS, MODELOS_TECHSTONE, USO_TAMANHO as USO,
+  texturaDownload, texturaMiniatura, type FormatoTechStone, type ModeloTechStone,
 } from "@/lib/techstone";
 
 type Vars = CSSProperties & Record<`--${string}`, string | number>;
 type Escolhidos = Record<FormatoTechStone, string | null>;
 
-/** Para que serve cada tamanho (texto aprovado pelo dono). */
-const USO: Record<FormatoTechStone, string> = {
-  "1200x600": "Para detalhes, nichos e paginações.",
-  "2400x1200": "Para panos contínuos, com menos juntas.",
-};
-
-const DO_TAMANHO: Record<FormatoTechStone, ModeloTechStone[]> = {
-  "1200x600": MODELOS_TECHSTONE.filter((m) => m.formato === "1200x600"),
-  "2400x1200": MODELOS_TECHSTONE.filter((m) => m.formato === "2400x1200"),
-};
+/** Duração da revelação, em ms. */
+const DURACAO = 9500;
 const PEQUENO = FORMATOS[0];
 const GRANDE = FORMATOS[1];
 
@@ -54,87 +47,27 @@ function meiaFusao() {
   return (v.endsWith("ms") ? n : n * 1000) / 2;
 }
 
-/** Folga depois do fim da rolagem de "ver tamanho": o --p suavizado ainda chega ao destino. */
-const FOLGA_TRAVA = 700;
-
-/** Alça para fora da seção: "ver tamanho" das ideias. */
-export type TamanhosAlca = { verTamanho: (t: FormatoTechStone) => void };
-
 /**
- * "Dois tamanhos": primeiro a diferença contada pela rolagem (revelação presa
- * na tela), depois a grade dos modelos, solta, com as abas de tamanho. A
- * revelação termina num dos tamanhos e a grade abre nele.
+ * "Dois tamanhos": a diferença contada numa tela que toca sozinha (revelação)
+ * e, logo abaixo, o caminho para o catálogo com todos os modelos.
  */
-export default function Tamanhos({ ref, interesse }: {
-  ref?: Ref<TamanhosAlca>;
-  /** Abre a lista de espera com este modelo já marcado. */
-  interesse: (nome: string) => void;
-}) {
-  // Tamanho da grade (aba). Muda pela aba, pela revelação ao trocar de tamanho e por "ver tamanho".
-  const [tamanho, setTamanho] = useState<FormatoTechStone>("1200x600");
-  // A rolagem de "ver tamanho" até a grade atravessa a revelação, que trocaria
-  // o tamanho pelo caminho. Enquanto ela dura (até o fim da rolagem, mais a folga
-  // da suavização do --p), a troca pela rolagem é ignorada.
-  const trava = useRef(0);
-  const soltarTrava = useRef<(() => void) | null>(null);
-  useEffect(() => () => soltarTrava.current?.(), []);
-  useImperativeHandle(ref, () => ({
-    verTamanho(t) {
-      setTamanho(t);
-      soltarTrava.current?.();
-      const alvo = document.getElementById("tamanhos");
-      if (!alvo) return;
-      // Topo de destino: scroll-padding da página + scroll-margin do alvo.
-      const destino = (parseFloat(getComputedStyle(document.documentElement).scrollPaddingTop) || 0)
-        + (parseFloat(getComputedStyle(alvo).scrollMarginTop) || 0);
-      // Já está lá: não há rolagem (nem scrollend), então nada de trava.
-      if (Math.abs(alvo.getBoundingClientRect().top - destino) < 2) {
-        trava.current = 0;
-        return;
-      }
-      const reduzir = window.matchMedia("(prefers-reduced-motion: reduce)").matches;
-      // Variável à parte: o "in" direto estreitaria window para never no else (o tipo já tem onscrollend).
-      const temFim = "onscrollend" in window;
-      if (temFim) {
-        trava.current = performance.now() + 10000;
-        window.addEventListener("scrollend", () => { trava.current = performance.now() + FOLGA_TRAVA; }, { once: true });
-      } else {
-        // Sem scrollend, a posição decide: a trava acaba quando o alvo chega ao
-        // topo de destino ou quando a rolagem fica parada 150 ms (fim da página,
-        // rolagem interrompida). Antes do primeiro evento a espera é de 350 ms: a
-        // rolagem suave pode levar alguns quadros para começar.
-        trava.current = Infinity;
-        let parada = 0;
-        const soltar = () => {
-          window.clearTimeout(parada);
-          window.removeEventListener("scroll", rolou);
-          soltarTrava.current = null;
-        };
-        const fim = () => { soltar(); trava.current = performance.now() + FOLGA_TRAVA; };
-        const rolou = () => {
-          window.clearTimeout(parada);
-          if (Math.abs(alvo.getBoundingClientRect().top - destino) < 2) fim();
-          else parada = window.setTimeout(fim, 150);
-        };
-        window.addEventListener("scroll", rolou, { passive: true });
-        parada = window.setTimeout(fim, 350);
-        soltarTrava.current = soltar;
-      }
-      alvo.scrollIntoView({ behavior: reduzir ? "auto" : "smooth", block: "start" });
-    },
-  }), []);
-  const escolherPelaRolagem = useCallback((t: FormatoTechStone) => {
-    if (performance.now() >= trava.current) setTamanho(t);
-  }, []);
-  // Um modelo escolhido por tamanho, comum à revelação e à grade. Sem escolha, vale o primeiro.
+export default function Tamanhos() {
+  // Um modelo escolhido por tamanho nas amostras da revelação. Sem escolha, vale o primeiro.
   const [escolhidos, setEscolhidos] = useState<Escolhidos>({ "1200x600": null, "2400x1200": null });
-  // Estável: a revelação, as amostras e as listas da grade são memo e não renderizam de
-  // novo quando só a aba ou a placa mudam (essa troca cai no meio da rolagem).
+  // Estável: a revelação e as amostras são memo e não renderizam de novo a cada troca.
   const escolherModelo = useCallback((m: ModeloTechStone) => setEscolhidos((e) => ({ ...e, [m.formato]: m.slug })), []);
   return (
     <section aria-labelledby="ts-tamanhos" className="bg-[#EFEBE4]">
-      <Revelacao escolhidos={escolhidos} escolherModelo={escolherModelo} aoTrocarTamanho={escolherPelaRolagem} />
-      <Grade tamanho={tamanho} escolher={setTamanho} escolhidos={escolhidos} escolherModelo={escolherModelo} interesse={interesse} />
+      <Revelacao escolhidos={escolhidos} escolherModelo={escolherModelo} />
+      <div className="ts-encaixe-ponto ds-wrap py-14 sm:py-20 flex flex-col gap-6 sm:flex-row sm:items-end sm:justify-between">
+        <div>
+          <p className="font-serif text-t2 text-[#22201C] text-balance">Os {MODELOS_TECHSTONE.length} modelos, nos dois tamanhos.</p>
+          <p className="mt-3 text-lead text-[#4A4540] max-w-[44ch]">Cada um tem a textura para baixar e usar no seu projeto.</p>
+        </div>
+        <Link href={CATALOGO_TECHSTONE} className="ds-botao bg-[#22201C] text-white hover:bg-[#4A4540] min-h-12 px-8 self-start sm:self-auto shrink-0">
+          Ver os modelos
+        </Link>
+      </div>
     </section>
   );
 }
@@ -190,7 +123,7 @@ function geometria(W: number, H: number, L: number, R: number, textoFim: number)
 /**
  * Layout estático para quem não roda JavaScript: o --p nunca anda e a cena
  * ficaria parada na tela cheia. Mesmas regras do bloco `@media (scripting:
- * none)` em globals.css (TechStone: dois tamanhos pela rolagem); o <noscript>
+ * none)` em globals.css (TechStone: dois tamanhos, tocando sozinha); o <noscript>
  * cobre os motores que ainda não conhecem `scripting`. Os dois blocos
  * precisam ficar iguais.
  */
@@ -206,7 +139,7 @@ const CSS_SEM_JS = `
 `;
 
 /**
- * Ritmo, em fração de --p (440svh: a parte presa anda 340svh, uma tela ≈ 0,29).
+ * Ritmo, em fração de --p (9,5 s no total; o useToque anda o --p pelo tempo).
  * As frações fixas do bloco "dois tamanhos" em globals.css andam junto com estas.
  */
 const ENTRA_B = 0.334; // amostras pequenas: 0,334 → 0,427 (clicáveis de 0,334 até a troca)
@@ -288,19 +221,18 @@ const ESTATICO = (
   </div>
 );
 
-const Revelacao = memo(function Revelacao({ escolhidos, escolherModelo, aoTrocarTamanho }: {
+const Revelacao = memo(function Revelacao({ escolhidos, escolherModelo }: {
   escolhidos: Escolhidos;
   escolherModelo: (m: ModeloTechStone) => void;
-  aoTrocarTamanho: (t: FormatoTechStone) => void;
 }) {
-  const ref = useProgresso<HTMLDivElement>({ margem: "100% 0px" });
+  const { ref, estado, alternar } = useToque<HTMLDivElement>(DURACAO);
   const quadro = useRef<HTMLDivElement>(null);
   const faixa = useRef<HTMLDivElement>(null);
   const blocoB = useRef<HTMLDivElement>(null);
   const blocoC = useRef<HTMLDivElement>(null);
-  // Tamanho que a placa mostra agora (vem da rolagem; não muda com as abas da grade).
-  // `direto`: a troca veio de um salto de rolagem (a seção voltou à faixa dela
-  // fora da vista, veja useProgresso): sem fusão, e nome e textura trocam juntos,
+  // Tamanho que a placa mostra agora (vem do andamento da animação).
+  // `direto`: a troca veio de um salto do --p (a seção voltou à faixa dela
+  // fora da vista, veja useToque): sem fusão, e nome e textura trocam juntos,
   // numa renderização só.
   const [placa, setPlaca] = useState<{ t: FormatoTechStone; direto: boolean }>({ t: "1200x600", direto: false });
   const modelo = modeloDe(placa.t, escolhidos);
@@ -355,16 +287,10 @@ const Revelacao = memo(function Revelacao({ escolhidos, escolherModelo, aoTrocar
     return () => ro.disconnect();
   }, [ref]);
 
-  // Etapa, placa e troca de tamanho, a partir do --p que o useProgresso escreve no style.
-  // Em transição: o React fatia a renderização entre os quadros da rolagem.
-  // `salto`: a seção voltou à faixa dela por um salto de rolagem. A grade não muda:
-  // ela só segue a revelação quando a rolagem passa de fato pela troca, e quem
-  // desce até ela passa por lá antes.
-  const trocar = useEffectEvent((t: FormatoTechStone, direto: boolean, salto: boolean) => {
-    startTransition(() => {
-      setPlaca({ t, direto });
-      if (!salto) aoTrocarTamanho(t);
-    });
+  // Etapa, placa e troca de tamanho, a partir do --p que o useToque escreve no style.
+  // Em transição: o React fatia a renderização entre os quadros da animação.
+  const trocar = useEffectEvent((t: FormatoTechStone, direto: boolean) => {
+    startTransition(() => setPlaca({ t, direto }));
   });
   useEffect(() => {
     const el = ref.current;
@@ -393,7 +319,7 @@ const Revelacao = memo(function Revelacao({ escolhidos, escolherModelo, aoTrocar
       }
       const p = parseFloat(el.style.getPropertyValue("--p")) || 0;
       // Salto: o primeiro valor depois de a seção voltar à faixa dela pula longe (o
-      // useProgresso recomeça da posição real, fora da vista). A rolagem suavizada,
+      // useToque zera a seção fora da vista). O andamento normal,
       // dentro da faixa, anda pouco por quadro.
       const salto = voltou && Math.abs(p - pAntes) > 0.15;
       if (p !== pAntes) voltou = false;
@@ -416,12 +342,12 @@ const Revelacao = memo(function Revelacao({ escolhidos, escolherModelo, aoTrocar
       if (placaGrande !== ligada) el.toggleAttribute("data-placa", placaGrande);
       if (estatico) return;
       // A placa vira a grande na troca, quando começa a crescer. Chama só quando muda
-      // de verdade: a escolha de aba na grade vale até a rolagem passar por aqui de novo.
+      // de verdade: a troca só vale quando o andamento passa por aqui.
       const novo: FormatoTechStone = p >= TROCA ? "2400x1200" : "1200x600";
       if (novo === grupo) return;
       const antes = grupo;
       grupo = novo;
-      if (antes !== null || novo !== "1200x600") trocar(novo, antes === null || salto, antes !== null && salto);
+      if (antes !== null || novo !== "1200x600") trocar(novo, antes === null || salto);
     };
     const mudou = () => { estatico = consulta.matches; faixaAntes = -1; ler(); };
     consulta.addEventListener("change", mudou);
@@ -432,11 +358,11 @@ const Revelacao = memo(function Revelacao({ escolhidos, escolherModelo, aoTrocar
   }, [ref]);
 
   return (
-    <div ref={ref} id="tamanhos-escala" className="ts-tam ds-escuro relative bg-[#141210] text-white"
+    <div ref={ref} id="tamanhos-escala" className="ts-tam ts-encaixe-ponto ds-escuro relative bg-[#141210] text-white"
       data-tom={mostrado.tom}>
       {/* Sem JavaScript: só em motor sem `scripting: none` (veja o CSS_SEM_JS). Inerte com JS. */}
       <noscript><style dangerouslySetInnerHTML={{ __html: CSS_SEM_JS }} /></noscript>
-      <div ref={quadro} className="ts-tam-quadro sticky top-0 h-[100svh] overflow-hidden">
+      <div ref={quadro} className="ts-tam-quadro relative h-[100svh] overflow-hidden">
         {/* A pedra: tela cheia no começo; encolhe até o tamanho da placa pequena. */}
         <div aria-hidden className="ts-tam-pedra">
           {/* eslint-disable-next-line @next/next/no-img-element */}
@@ -474,6 +400,8 @@ const Revelacao = memo(function Revelacao({ escolhidos, escolherModelo, aoTrocar
         </div>
 
         {ESTATICO}
+
+        <BotaoToque estado={estado} alternar={alternar} nome="dois tamanhos" />
       </div>
     </div>
   );
@@ -518,107 +446,3 @@ function Pessoa() {
   );
 }
 
-/* ── Parte 2: a grade dos modelos ──────────────────────────────────────── */
-
-/**
- * As abas de tamanho e os modelos daquele tamanho (textura para baixar e
- * "Tenho interesse"). No celular os modelos correm de lado, para a seção não
- * virar uma lista longa. É o destino de "ver tamanho" (id="tamanhos").
- *
- * As duas listas ficam montadas e a aba só esconde uma (hidden): a revelação
- * troca a aba no meio da rolagem, e montar e desmontar os modelos (com a Lupa
- * de cada um) ali custava um quadro longo. Assim a troca refaz só as abas.
- */
-const Grade = memo(function Grade({ tamanho, escolher, escolhidos, escolherModelo, interesse }: {
-  tamanho: FormatoTechStone;
-  escolher: (t: FormatoTechStone) => void;
-  escolhidos: Escolhidos;
-  escolherModelo: (m: ModeloTechStone) => void;
-  interesse: (nome: string) => void;
-}) {
-  return (
-    <div id="tamanhos" data-tamanho={tamanho} className="ts-tamanhos ds-secao scroll-mt-16">
-      <div className="ds-wrap">
-        <h3 className="font-serif text-t2 text-[#22201C] text-balance">Escolha o tamanho e veja os modelos.</h3>
-
-        <div role="tablist" aria-label="Tamanho da placa" className="mt-8 grid grid-cols-2 gap-2 sm:gap-3 max-w-2xl">
-          {FORMATOS.map((f) => {
-            const ativo = f.value === tamanho;
-            const n = DO_TAMANHO[f.value].length;
-            return (
-              <button key={f.value} id={`ts-aba-${f.value}`} type="button" role="tab" aria-selected={ativo} aria-controls="ts-painel-tamanho"
-                onClick={() => escolher(f.value)}
-                className={`text-left px-3 py-4 sm:px-6 sm:py-5 border transition-colors duration-300 ${
-                  ativo ? "bg-[#22201C] border-[#22201C] text-white" : "border-[#22201C]/20 text-[#22201C] hover:border-[#22201C]/50"
-                }`}>
-                <span className="block font-serif text-[1rem] min-[400px]:text-[1.125rem] sm:text-t3 leading-tight whitespace-nowrap tabular-nums">{f.rotulo}</span>
-                <span className={`mt-1.5 block text-legenda ${ativo ? "text-white/70" : "text-[#6B6158]"}`}>{f.medida} · {n} modelos</span>
-              </button>
-            );
-          })}
-        </div>
-
-        <div id="ts-painel-tamanho" role="tabpanel" aria-labelledby={`ts-aba-${tamanho}`}
-          className="mv-brilho-fonte mt-10 grid gap-8 lg:grid-cols-[minmax(0,4fr)_minmax(0,8fr)] lg:gap-16 lg:items-start">
-          <p className="font-serif text-t2 text-[#22201C] max-w-[22ch]">{USO[tamanho]}</p>
-          <div>
-            {FORMATOS.map((f) => (
-              <div key={f.value} hidden={f.value !== tamanho}>
-                <ModelosDoTamanho formato={f.value} ativo={modeloDe(f.value, escolhidos).slug}
-                  escolherModelo={escolherModelo} interesse={interesse} />
-              </div>
-            ))}
-            <p className="mt-4 text-sobre text-[#8C7B63]">A cor real pode variar um pouco em relação à tela.</p>
-          </div>
-        </div>
-      </div>
-    </div>
-  );
-});
-
-/** Os modelos de um tamanho na grade. Memo: a troca de aba não passa por aqui. */
-const ModelosDoTamanho = memo(function ModelosDoTamanho({ formato, ativo, escolherModelo, interesse }: {
-  formato: FormatoTechStone;
-  /** slug do modelo escolhido deste tamanho (ou do primeiro). */
-  ativo: string;
-  escolherModelo: (m: ModeloTechStone) => void;
-  interesse: (nome: string) => void;
-}) {
-  return (
-    <ul aria-label={`Modelos em ${FORMATOS.find((f) => f.value === formato)!.rotulo}`}
-      className="flex gap-3 overflow-x-auto snap-x snap-mandatory -mx-[clamp(1rem,4.2vw,4rem)] px-[clamp(1rem,4.2vw,4rem)] scroll-px-[clamp(1rem,4.2vw,4rem)] pb-2 sm:mx-0 sm:px-0 sm:scroll-px-0 sm:grid sm:grid-cols-5 sm:gap-x-4 sm:overflow-visible">
-      {/* Do sm para cima cada item ocupa 3 linhas da grade (textura, nome, ações) em subgrade:
-          as linhas são compartilhadas, então nomes de 1, 2 ou 3 linhas não desalinham os links. */}
-      {DO_TAMANHO[formato].map((m) => (
-        <li key={m.slug} className="snap-start shrink-0 w-[38%] sm:w-auto sm:row-span-3 sm:grid sm:grid-rows-subgrid">
-          {/* A escala fica na revelação, acima. Aqui o botão marca o modelo escolhido,
-              que é o que a placa mostra quando a rolagem volta a este tamanho. */}
-          <button type="button" onClick={() => escolherModelo(m)}
-            aria-pressed={m.slug === ativo} aria-label={`Ver ${m.nome} na placa`}
-            className="ts-modelo relative block w-full text-left">
-            {/* Lupa: passar o mouse (ou segurar 250 ms no celular) mostra a textura 2,5× do arquivo grande;
-                o clique/toque rápido continua escolhendo o modelo. */}
-            <Lupa fonte={texturaDownload(m)}>
-              <span className="mv-brilho relative block aspect-[1/2] overflow-hidden bg-[#D9D1C4]">
-                {/* eslint-disable-next-line @next/next/no-img-element */}
-                <img src={texturaMiniatura(m)} alt="" loading="lazy" decoding="async"
-                  className="absolute inset-0 w-full h-full object-cover" />
-              </span>
-            </Lupa>
-            <span aria-hidden className="ts-modelo-linha" />
-          </button>
-          <h4 className="mt-3 min-h-[2lh] sm:min-h-0 font-serif text-[1rem] leading-snug text-[#22201C]">{m.nome}</h4>
-          <div className="mt-1 flex flex-col items-start">
-            <a href={texturaDownload(m)} download className="min-h-10 inline-flex items-center text-legenda text-[#22201C] underline underline-offset-4 decoration-[#22201C]/30 hover:decoration-[#22201C]">
-              Baixar textura
-            </a>
-            <button type="button" onClick={() => interesse(m.nome)}
-              className="min-h-10 inline-flex items-center text-legenda font-semibold text-[#1F7A44] hover:text-[#22201C]">
-              Tenho interesse
-            </button>
-          </div>
-        </li>
-      ))}
-    </ul>
-  );
-});

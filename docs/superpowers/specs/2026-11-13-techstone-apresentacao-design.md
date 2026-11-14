@@ -10,7 +10,7 @@ Hoje a página parece pesada. Quase tudo anda pela rolagem: são umas 25 telas p
 
 - As quatro seções de quadro preso passam a tocar sozinhas: abertura, sequência de usos, "Desenvolvida para a Amazônia." e "Dois tamanhos.". Cada uma ocupa uma tela.
 - Encaixe firme: cada seção de tela cheia se encaixa ao chegar e a animação toca.
-- Página própria de catálogo, `/techstone/catalogo`, com os 12 modelos, o filtro de tamanho, a textura para baixar e o "Tenho interesse". A grade sai da página principal.
+- Página própria de catálogo, `/techstone/catalogo`, com os 9 modelos, o filtro de tamanho, a textura para baixar e o "Tenho interesse". A grade sai da página principal.
 - A página principal cai de umas 25 telas para umas 9 a 11.
 
 ## Fora do escopo
@@ -45,7 +45,7 @@ O dono deixou o "como" comigo. Escolhi a A.
 4. Uma curva só: estática.
 5. Desenvolvida para a Amazônia: tela cheia, toca em cerca de 10 s e termina com as quatro preocupações lado a lado.
 6. Ideias para o seu projeto: como hoje. O "ver tamanho" passa a abrir `/techstone/catalogo?tamanho=…`.
-7. Dois tamanhos: tela cheia, toca em cerca de 9 s e termina na placa grande. Embaixo, um botão "Ver os 12 modelos" (para o catálogo). A grade sai daqui.
+7. Dois tamanhos: tela cheia, toca em cerca de 9 s e termina na placa grande. Embaixo, um botão "Ver os modelos" (para o catálogo). A grade sai daqui.
 8. Lista de espera, depois Perguntas e o rodapé: rolagem livre.
 
 **Tocador (`useToque`):**
@@ -71,3 +71,12 @@ Catálogo em página própria. As quatro seções tocam sozinhas. Encaixe firme.
 ## Decidido por mim (pode mudar)
 
 Duração de cada seção. Tocar de novo a cada chegada. Botão no canto esquerdo. A sequência para no último quadro, sem repetir em loop. O fallback de encaixe no celular.
+
+## Mudanças na execução (13/11/2026)
+
+- **Encaixe em JavaScript, não em CSS.** O `scroll-snap-type: y mandatory` prendia a rolagem nas seções mais altas que a tela e o rodapé ficava inalcançável pela roda do mouse. A regra agora mora em `src/lib/movimento/encaixe.ts` (testada) e `components/techstone/Encaixe.tsx`: seção entre 0,8 e 1,6 janela encaixa quando a rolagem para; texto solto rola livre. Com movimento reduzido não há encaixe.
+- **Durações:** abertura 8,5 s, sequência 14 s, Amazônia 12 s, dois tamanhos 9,5 s.
+- **Intro da órbita:** as seções só tocam depois que a cortina da primeira visita sai (`html[data-intro]`, evento `orbital:intro-fim`).
+- **Catálogo:** são 9 modelos (5 em 1200 × 600 e 4 em 2400 × 1200), com a aba "Todos".
+- **Galeria de ideias (pedido do dono):** troca a cada 3,5 s, espera 9 s depois de uma ação e a transição dura 640 ms.
+- **Pausa em "Dois tamanhos" no celular:** fica à direita, acima da linha do chão, para não cobrir as amostras.

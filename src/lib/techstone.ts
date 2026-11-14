@@ -35,6 +35,30 @@ export const MODELOS_TECHSTONE: ModeloTechStone[] = [
 
 export const ESPESSURA_MM = "3,5";
 
+/** Para que serve cada tamanho (texto aprovado pelo dono). */
+export const USO_TAMANHO: Record<FormatoTechStone, string> = {
+  "1200x600": "Para detalhes, nichos e paginações.",
+  "2400x1200": "Para panos contínuos, com menos juntas.",
+};
+
+export const DO_TAMANHO: Record<FormatoTechStone, ModeloTechStone[]> = {
+  "1200x600": MODELOS_TECHSTONE.filter((m) => m.formato === "1200x600"),
+  "2400x1200": MODELOS_TECHSTONE.filter((m) => m.formato === "2400x1200"),
+};
+
+/** Modelos como a lista de espera mostra: textura e formato. */
+export const CATALOGO_ESPERA: { nome: string; imagem: string; detalhe?: string }[] = MODELOS_TECHSTONE.map((m) => ({
+  nome: m.nome,
+  imagem: texturaMiniatura(m),
+  detalhe: FORMATOS.find((f) => f.value === m.formato)?.rotulo,
+}));
+
+/** Catálogo dos modelos; `?tamanho=` abre num dos formatos. */
+export const CATALOGO_TECHSTONE = "/techstone/catalogo";
+export function catalogoTechStone(tamanho?: FormatoTechStone): string {
+  return tamanho ? `${CATALOGO_TECHSTONE}?tamanho=${tamanho}` : CATALOGO_TECHSTONE;
+}
+
 export function texturaMiniatura(m: ModeloTechStone): string {
   return `/images/techstone/texturas/${m.slug}-${m.formato}-v1.webp`;
 }

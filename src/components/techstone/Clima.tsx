@@ -1,23 +1,27 @@
 "use client";
 
 import type { CSSProperties } from "react";
-import { useProgresso } from "@/components/ds/useProgresso";
+import BotaoToque from "./BotaoToque";
+import { useToque } from "@/components/ds/useToque";
+
+/** Duração da seção, em ms: uns 2,4 s por preocupação. */
+const DURACAO = 12000;
 
 /**
  * "Desenvolvida para a Amazônia": o clima daqui passa pela pedra.
  *
- * Seção alta (seis telas) com um quadro preso na tela, sobre a textura real da
+ * Uma tela que toca sozinha (useToque), sobre a textura real da
  * TechStone Travertino Romano Clássico, escurecida. Uma linha fina, a espinha
- * da seção, já está desenhada embaixo do título quando ele aparece. Com a
- * rolagem, título e linha sobem juntos e ficam presos no alto; a linha então
+ * da seção, já está desenhada embaixo do título quando ele aparece. Com o
+ * tempo, título e linha sobem juntos e ficam presos no alto; a linha então
  * corre até um nó por preocupação, e cada preocupação sobe embaixo do seu nó,
  * com a sua luz na pedra: o sol a pino (luz de cima, sombra que encurta), a
  * névoa da umidade, o âmbar do calor e o vaivém frio e quente dos ciclos
  * térmicos. As anteriores ficam mais suaves; no fim as quatro ficam lado a
  * lado, inteiras. No celular a linha é vertical, à esquerda, e os parágrafos
- * se revezam num espaço só, embaixo dos títulos. O useProgresso passa a
- * rolagem, já suavizada, para o CSS (globals.css › TechStone: clima pela
- * pedra); aqui só há marcação.
+ * se revezam num espaço só, embaixo dos títulos. O useToque passa o
+ * progresso para o CSS (globals.css › TechStone: clima pela pedra); aqui só
+ * há marcação.
  *
  * Acessibilidade: a lista das preocupações é o texto de verdade (um h3 e um p
  * por item), mostrado uma vez só; a linha, os nós e as luzes são aria-hidden.
@@ -27,10 +31,9 @@ import { useProgresso } from "@/components/ds/useProgresso";
 type Vars = CSSProperties & Record<`--${string}`, string | number>;
 
 /**
- * Ritmo da rolagem, em fração de --p. A seção tem 600svh, então a rolagem
- * presa anda 500svh e uma tela vale 0,20. Abertura parada até 0,02, subida do
- * título de 0,02 a 0,10 (meia tela), uma preocupação a cada PASSO (uma tela)
- * a partir de INICIO, e as quatro juntas de 0,90 a 1 (meia tela). As frações
+ * Ritmo, em fração de --p (12 s no total). Abertura parada até 0,02, subida do
+ * título de 0,02 a 0,10, uma preocupação a cada PASSO a partir de INICIO, e as
+ * quatro juntas de 0,90 a 1. As frações
  * fixas do bloco do clima em globals.css saem destas duas constantes; se
  * mudarem, mude lá também.
  */
@@ -63,7 +66,7 @@ const CSS_SEM_JS = `
 `;
 
 export default function Clima({ preocupacoes }: { preocupacoes: { titulo: string; texto: string }[] }) {
-  const ref = useProgresso<HTMLElement>();
+  const { ref, estado, alternar } = useToque<HTMLElement>(DURACAO);
   // Começo do trecho de cada preocupação e da seguinte (2 = nunca: a última não esmaece).
   const trecho = (i: number): Vars => ({
     "--i": i,
@@ -71,10 +74,10 @@ export default function Clima({ preocupacoes }: { preocupacoes: { titulo: string
     "--s": i < preocupacoes.length - 1 ? INICIO + (i + 1) * PASSO : 2,
   });
   return (
-    <section ref={ref} aria-labelledby="ts-amazonia" className="ts-clima relative h-[600svh] bg-[#141210] text-white">
+    <section ref={ref} aria-labelledby="ts-amazonia" className="ts-clima ts-encaixe-ponto relative h-[100svh] bg-[#141210] text-white">
       {/* Sem JavaScript: só em motor sem `scripting: none` (veja o CSS_SEM_JS). Inerte com JS. */}
       <noscript><style dangerouslySetInnerHTML={{ __html: CSS_SEM_JS }} /></noscript>
-      <div className="ts-clima-quadro sticky top-0 h-[100svh] overflow-hidden">
+      <div className="ts-clima-quadro relative h-[100svh] overflow-hidden">
         {/* 1. A pedra: textura real, escurecida. Retrato no celular, deitada no computador. */}
         <div className="ts-clima-fundo absolute inset-0">
           <picture>
@@ -154,6 +157,8 @@ export default function Clima({ preocupacoes }: { preocupacoes: { titulo: string
             ))}
           </ul>
         </div>
+
+        <BotaoToque estado={estado} alternar={alternar} nome="desenvolvida para a Amazônia" />
       </div>
     </section>
   );

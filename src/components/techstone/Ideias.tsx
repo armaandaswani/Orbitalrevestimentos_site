@@ -43,10 +43,10 @@ const rotuloFormato = (f: FormatoTechStone) => FORMATOS.find((x) => x.value === 
 
 /** Faixas ao lado da ideia ativa no computador (no celular o CSS deixa só a primeira). */
 const FAIXAS_MAX = 4;
-/** Ritmo do autoplay: uma ideia nova a cada 5 s. */
-const PASSO_MS = 5000;
-/** Depois de uma ação do visitante (toque, clique, arraste, seta, filtro, pausa), a galeria espera 15 s antes de seguir sozinha; passado isso, volta aos 5 s. */
-const ESPERA_MANUAL_MS = 15000;
+/** Ritmo do autoplay: uma ideia nova a cada 3,5 s (com 5 s o visitante não percebia que a galeria troca sozinha). */
+const PASSO_MS = 3500;
+/** Depois de uma ação do visitante (toque, clique, arraste, seta, filtro, pausa), a galeria espera 9 s antes de seguir sozinha; passado isso, volta aos 3,5 s. */
+const ESPERA_MANUAL_MS = 9000;
 const LIMIAR_ARRASTE_PX = 40;
 const ZOOM_MS = 7000;
 /** Zoom lento da ideia ativa: 3% (com 6% a foto passava do tamanho natural no palco). */
@@ -122,7 +122,7 @@ const SETA = "w-11 h-11 flex items-center justify-center border border-[#22201C]
 /**
  * Galeria cinematográfica: a ideia ativa ocupa quase todo o palco e as
  * próximas ficam como faixas que se abrem ao tocar, arrastar ou pelas setas.
- * Avança sozinha a cada 5 s e cede ao visitante: para com o mouse em cima,
+ * Avança sozinha a cada 3,5 s e cede ao visitante: para com o mouse em cima,
  * com o dedo na tela, com o foco do teclado dentro, fora da tela, com a aba
  * escondida e com movimento reduzido.
  */
@@ -228,7 +228,7 @@ function Galeria({ lista, verTamanho, parado, setParado, ultimaAcaoRef }: {
   const pausado = parado || reduzido || n < 2 || ampliada !== null || Object.values(pausas).some(Boolean);
 
   // Autoplay: um passo por vez, reagendado a cada troca. Depois de uma ação,
-  // o próximo passo só vem 15 s depois dela (e nunca antes de 5 s).
+  // o próximo passo só vem 9 s depois dela (e nunca antes de 3,5 s).
   useEffect(() => {
     if (pausado) return;
     const prazo = Math.max(PASSO_MS, ESPERA_MANUAL_MS - (Date.now() - ultimaAcaoRef.current));
@@ -446,7 +446,7 @@ export default function Ideias({ verTamanho }: {
   ];
 
   return (
-    <section aria-labelledby="ts-ideias" className="bg-[#F6F3EE] ds-secao overflow-clip">
+    <section aria-labelledby="ts-ideias" className="ts-encaixe-ponto bg-[#F6F3EE] ds-secao overflow-clip">
       <div className="ds-wrap">
         <div className="flex flex-col gap-5 md:flex-row md:items-end md:justify-between mb-8">
           <div>

@@ -59,7 +59,7 @@ Testes:
 
 - `Apresentacao.tsx`: `Abertura` e `Sequencia` passam a usar `useToque`, com altura `h-[100svh]` (sem sticky). Abertura dura 7000 ms e ganha o botão "Ver os modelos". Sequência dura 14000 ms, e as marcas do trilho viram botões que pulam para o quadro (pausam e põem p no início do quadro).
 - `Clima.tsx`: `useToque(10000)`, `h-[100svh]`.
-- `Tamanhos.tsx`: a `Revelacao` usa `useToque(9000)` com `h-[100svh]`. A `Grade` sai daqui. Ao fim, o link "Ver os 12 modelos" leva a `/techstone/catalogo`.
+- `Tamanhos.tsx`: a `Revelacao` usa `useToque(9000)` com `h-[100svh]`. A `Grade` sai daqui. Ao fim, o link "Ver os modelos" leva a `/techstone/catalogo`.
 - Conferir que `Profundidade rolagem="externa"` continua lendo o `--p` do pai.
 
 ### Tarefa 5: catálogo
@@ -77,7 +77,7 @@ Testes:
   - a altura total fica abaixo de 14 telas;
   - a ideia em tela cheia abre;
   - com reduced-motion, `--p = 1` direto;
-  - o catálogo lista os 12 modelos e o filtro funciona;
+  - o catálogo lista os 9 modelos e o filtro funciona;
   - o rodapé é alcançável.
 - Hallmark `sloplint --render --url` na /techstone e na /techstone/catalogo.
 - Commit, push e `esperar-deploy.sh /techstone "Ver os modelos"`.

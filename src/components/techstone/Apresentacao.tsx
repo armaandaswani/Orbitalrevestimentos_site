@@ -1,16 +1,22 @@
 "use client";
 
 import { ViewTransition, type CSSProperties } from "react";
+import Link from "next/link";
 import Cena from "./Cena";
-import { useProgresso } from "@/components/ds/useProgresso";
+import BotaoToque from "./BotaoToque";
+import { useToque } from "@/components/ds/useToque";
 import Profundidade, { type CamadaProfundidade } from "@/components/movimento/Profundidade";
-import { ESPESSURA_MM, MODELOS_TECHSTONE, cena } from "@/lib/techstone";
+import { CATALOGO_TECHSTONE, ESPESSURA_MM, MODELOS_TECHSTONE, cena } from "@/lib/techstone";
 
 /**
- * As duas seções de quadro fixo da TechStone: abertura e sequência de usos.
- * Cada uma é alta (várias telas) com um quadro sticky dentro; o useProgresso
- * passa a posição da rolagem, já suavizada, para o CSS (globals.css › TechStone).
+ * As duas primeiras seções que tocam sozinhas: abertura e sequência de usos.
+ * Cada uma ocupa uma tela; ao encaixar, o useToque leva o --p de 0 a 1 pelo
+ * tempo e o CSS (globals.css › TechStone) faz o resto, como fazia com a rolagem.
  */
+
+/** Duração de cada seção, em ms. */
+const DURACAO_ABERTURA = 8500;
+const DURACAO_SEQUENCIA = 14000;
 
 type Vars = CSSProperties & Record<`--${string}`, string | number>;
 
@@ -47,16 +53,16 @@ const CAMADAS_ABERTURA: CamadaProfundidade[] = [
 const ANCORA_BANCO = "58% 85%";
 
 /**
- * Abertura: a primeira tela é só a palavra "TechStone" sobre o escuro. Ao
- * rolar, a foto acende por trás, o nome sobe e encolhe, e três frases passam
- * uma de cada vez, sempre no mesmo lugar (nunca duas juntas). No fim fica o
- * convite para a lista de espera.
+ * Abertura: a primeira tela é só a palavra "TechStone" sobre o escuro. Sozinha,
+ * a foto acende por trás, o nome sobe e encolhe, e três frases passam uma de
+ * cada vez, sempre no mesmo lugar (nunca duas juntas). No fim ficam o convite
+ * para a lista de espera e o caminho para o catálogo.
  */
 export function Abertura({ entrarNaLista }: { entrarNaLista: () => void }) {
-  const ref = useProgresso<HTMLElement>();
+  const { ref, estado, alternar } = useToque<HTMLElement>(DURACAO_ABERTURA);
   return (
-    <section ref={ref} aria-labelledby="ts-titulo" className="ts-abertura relative h-[560svh] bg-[#141210]">
-      <div className="sticky top-0 h-[100svh] overflow-hidden">
+    <section ref={ref} aria-labelledby="ts-titulo" className="ts-abertura ts-encaixe-ponto relative h-[100svh] bg-[#141210]">
+      <div className="relative h-full overflow-hidden">
         {/* Destino do morph que sai da foto da TechStone no seletor de linhas
             (mesmo nome em linhas/SeletorLinhas). O nome fica neste invólucro:
             as camadas de profundidade moram DENTRO do único .ts-ab-foto,
@@ -87,14 +93,18 @@ export function Abertura({ entrarNaLista }: { entrarNaLista: () => void }) {
             Chega em breve a Manaus.
           </p>
           <p className="mt-3 text-white/75 text-corpo">Primeira remessa em quantidade limitada.</p>
-          <button type="button" onClick={entrarNaLista} className="mt-7 ds-botao ds-botao-claro min-h-12">
-            Entrar na lista de espera
-          </button>
+          <div className="mt-7 flex flex-wrap items-center justify-center gap-x-6 gap-y-2">
+            <button type="button" onClick={entrarNaLista} className="ds-botao ds-botao-claro min-h-12">
+              Entrar na lista de espera
+            </button>
+            <Link href={CATALOGO_TECHSTONE} data-teste="ver-modelos"
+              className="inline-flex items-center min-h-11 text-corpo text-white underline decoration-1 underline-offset-4 hover:decoration-2 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-white">
+              Ver os modelos
+            </Link>
+          </div>
         </div>
 
-        <span aria-hidden className="ts-ab-convite absolute left-1/2 bottom-8 h-12 w-px -translate-x-1/2 overflow-hidden bg-white/15">
-          <span className="ts-ab-convite-luz absolute inset-x-0 top-0 h-1/2 bg-white/80" />
-        </span>
+        <BotaoToque estado={estado} alternar={alternar} nome="abertura da TechStone" />
       </div>
     </section>
   );
@@ -127,12 +137,15 @@ const QUADROS = [
   },
 ];
 
+/** Ponto do --p em que o quadro i já está inteiro, com o texto assentado. */
+const inicioQuadro = (i: number, n: number) => (i === 0 ? 0 : i / n + 0.07);
+
 export function Sequencia() {
-  const ref = useProgresso<HTMLElement>();
+  const { ref, estado, alternar, ir } = useToque<HTMLElement>(DURACAO_SEQUENCIA);
   const n = QUADROS.length;
   return (
-    <section ref={ref} aria-label="Onde a TechStone vai" className="relative bg-[#141210]" style={{ height: `${n * 160 + 40}svh` }}>
-      <div className="sticky top-0 h-[100svh] overflow-hidden">
+    <section ref={ref} aria-label="Onde a TechStone vai" className="ts-encaixe-ponto relative h-[100svh] bg-[#141210]">
+      <div className="relative h-full overflow-hidden">
         {QUADROS.map((q, i) => {
           const vars: Vars = {
             "--a": i === 0 ? -1 : i / n,
@@ -144,20 +157,28 @@ export function Sequencia() {
               {/* Carrega já: quadros invisíveis (opacidade 0) atrasariam no lazy. */}
               <Cena nome={q.cena} alt={q.alt} carregar="eager" />
               <div aria-hidden className="absolute inset-0 bg-gradient-to-t from-black/60 via-black/5 to-transparent" />
-              <div className="ts-quadro-texto absolute inset-x-0 bottom-0 ds-wrap pb-[max(3.5rem,10svh)]">
+              <div className="ts-quadro-texto absolute inset-x-0 bottom-0 ds-wrap pb-[max(5.5rem,10svh)]">
                 <h2 className="font-serif text-white text-display max-w-[14ch]">{q.titulo}</h2>
                 <p className="mt-4 text-white/85 text-lead max-w-[38ch]">{q.texto}</p>              </div>
             </div>
           );
         })}
 
-        {/* Onde o visitante está na sequência: uma marca por quadro. */}
-        <ol aria-hidden className="absolute right-[clamp(1rem,3vw,2.5rem)] top-1/2 -translate-y-1/2 flex flex-col gap-3">
+        {/* Onde o visitante está na sequência: uma marca por quadro. Tocar numa marca
+            leva àquele quadro e pausa ali. */}
+        <ol className="absolute right-[clamp(0.25rem,2vw,1.75rem)] top-1/2 -translate-y-1/2 flex flex-col">
           {QUADROS.map((q, i) => (
-            <li key={q.cena} className="ts-trilho-marca block w-px h-10 bg-white"
-              style={{ "--a": i / n, "--b": (i + 1) / n } as Vars} />
+            <li key={q.cena}>
+              <button type="button" onClick={() => ir(inicioQuadro(i, n))} aria-label={`Ver o quadro: ${q.titulo}`}
+                className="grid place-items-center w-11 h-[3.25rem] focus-visible:outline-2 focus-visible:outline-offset-[-2px] focus-visible:outline-white">
+                <span aria-hidden className="ts-trilho-marca block w-px h-10 bg-white"
+                  style={{ "--a": i / n, "--b": (i + 1) / n } as Vars} />
+              </button>
+            </li>
           ))}
         </ol>
+
+        <BotaoToque estado={estado} alternar={alternar} nome="onde a TechStone vai" />
       </div>
     </section>
   );

@@ -1,29 +1,26 @@
 "use client";
 
-import { useCallback, useRef, useState } from "react";
+import { useCallback, useState } from "react";
+import { useRouter } from "next/navigation";
 import Ideias from "./Ideias";
-import Tamanhos, { type TamanhosAlca } from "./Tamanhos";
+import Tamanhos from "./Tamanhos";
 import { Abertura, Sequencia } from "./Apresentacao";
 import Clima from "./Clima";
+import Encaixe from "./Encaixe";
 import Revelar from "@/components/projetos/Revelar";
-import ListaEsperaSheet, { type ModeloEspera } from "@/components/ListaEsperaSheet";
-import { AVISO_CENAS, ESPESSURA_MM, FORMATOS, MODELOS_TECHSTONE, cena, texturaMiniatura, type FormatoTechStone } from "@/lib/techstone";
-
-/** Modelos como a lista de espera mostra: textura e formato. */
-const CATALOGO_ESPERA: ModeloEspera[] = MODELOS_TECHSTONE.map((m) => ({
-  nome: m.nome,
-  imagem: texturaMiniatura(m),
-  detalhe: FORMATOS.find((f) => f.value === m.formato)?.rotulo,
-}));
+import ListaEsperaSheet from "@/components/ListaEsperaSheet";
+import { AVISO_CENAS, CATALOGO_ESPERA, ESPESSURA_MM, FORMATOS, MODELOS_TECHSTONE, catalogoTechStone, cena, type FormatoTechStone } from "@/lib/techstone";
 
 const PEDRAS = MODELOS_TECHSTONE.filter((m) => m.aparencia === "pedra").length;
 const MADEIRAS = MODELOS_TECHSTONE.filter((m) => m.aparencia === "madeira").length;
 
 /**
- * Página da TechStone (pré-lançamento). Ordem: abertura (só o nome, depois uma
- * frase por vez) → o que é → onde vai (sequência de quadros) → foto real →
- * desenvolvida para a Amazônia → ideias de projeto → dois tamanhos e os
- * modelos → lista de espera → perguntas.
+ * Página da TechStone (pré-lançamento), montada como uma apresentação: cada
+ * seção encaixa na tela (Encaixe) e as de quadro tocam sozinhas (useToque).
+ * Ordem: abertura (só o nome, depois uma frase por vez) → o que é → onde vai
+ * (sequência de quadros) → foto real → desenvolvida para a Amazônia → ideias
+ * de projeto → dois tamanhos → lista de espera → perguntas. Os modelos moram
+ * no catálogo (/techstone/catalogo).
  *
  * Só afirmações que a Orbital já sustenta: espessura, formatos, modelos, uso
  * em fachada e interior, curvas e o material adaptado ao clima da Amazônia. Números
@@ -76,16 +73,16 @@ export default function TechStone() {
   const abrirEspera = useCallback((modelos: string[] = []) => setEspera({ aberto: true, modelos }), []);
   const fecharEspera = useCallback(() => setEspera((e) => ({ ...e, aberto: false })), []);
 
-  // O tamanho escolhido mora na seção de tamanhos (a revelação o troca com a
-  // rolagem, e assim só ela renderiza de novo); as ideias o escolhem por esta alça.
-  const tamanhos = useRef<TamanhosAlca>(null);
-  const verTamanho = useCallback((t: FormatoTechStone) => tamanhos.current?.verTamanho(t), []);
+  // "Ver tamanho" das ideias abre o catálogo já naquele tamanho.
+  const router = useRouter();
+  const verTamanho = useCallback((t: FormatoTechStone) => router.push(catalogoTechStone(t)), [router]);
 
   return (
     <div className="escala-contida bg-[#EFEBE4]">
+      <Encaixe />
       <Abertura entrarNaLista={() => abrirEspera()} />
 
-      <section aria-labelledby="ts-oque" className="grid lg:grid-cols-2 bg-[#EFEBE4]">
+      <section aria-labelledby="ts-oque" className="ts-encaixe-ponto grid lg:grid-cols-2 bg-[#EFEBE4]">
         <div className="relative aspect-[4/3] lg:aspect-auto lg:min-h-[100svh] overflow-hidden bg-[#22201C]">
           {/* Recorte de computador também no celular: o retrato perde a borda da placa. */}
           {/* eslint-disable-next-line @next/next/no-img-element */}
@@ -108,7 +105,7 @@ export default function TechStone() {
 
       {/* Foto real de aplicação (não gerada): a placa acompanha uma curva contínua.
           Sem menção ao teto até a ficha técnica chegar. Retrato de 960 px: metade da tela no computador. */}
-      <section aria-labelledby="ts-curva-real" className="grid lg:grid-cols-2 bg-[#EFEBE4]">
+      <section aria-labelledby="ts-curva-real" className="ts-encaixe-ponto grid lg:grid-cols-2 bg-[#EFEBE4]">
         <div className="relative aspect-[4/5] lg:aspect-auto lg:min-h-[100svh] overflow-hidden bg-[#22201C]">
           {/* eslint-disable-next-line @next/next/no-img-element */}
           <img
@@ -132,9 +129,9 @@ export default function TechStone() {
 
       <Ideias verTamanho={verTamanho} />
 
-      <Tamanhos ref={tamanhos} interesse={(nome) => abrirEspera([nome])} />
+      <Tamanhos />
 
-      <section id="lista" aria-labelledby="ts-lista" className="bg-[#22201C] ds-secao scroll-mt-20">
+      <section id="lista" aria-labelledby="ts-lista" className="ts-encaixe-ponto bg-[#22201C] ds-secao scroll-mt-20">
         <div className="ds-wrap flex flex-col gap-8 lg:flex-row lg:items-end lg:justify-between">
           <div>
             <h2 id="ts-lista" className="font-serif text-t1 text-white max-w-[14ch]">Seja avisado na chegada.</h2>
@@ -148,7 +145,7 @@ export default function TechStone() {
         </div>
       </section>
 
-      <section aria-labelledby="ts-perguntas" className="mv-adiado ds-wrap ds-secao">
+      <section aria-labelledby="ts-perguntas" className="ts-encaixe-ponto mv-adiado ds-wrap ds-secao">
         <h2 id="ts-perguntas" className="font-serif text-t2 text-[#22201C]">Perguntas</h2>
         <div className="mt-8 border-t border-[#22201C]/15">
           {PERGUNTAS.map((p) => (
