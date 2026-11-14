@@ -59,7 +59,7 @@ export default function Tamanhos() {
   return (
     <section aria-labelledby="ts-tamanhos" className="bg-[#EFEBE4]">
       <Revelacao escolhidos={escolhidos} escolherModelo={escolherModelo} />
-      <div className="ts-encaixe-ponto ds-wrap py-14 sm:py-20 flex flex-col gap-6 sm:flex-row sm:items-end sm:justify-between">
+      <div data-encaixe="solto" className="ts-encaixe-ponto ds-wrap py-14 sm:py-20 flex flex-col gap-6 sm:flex-row sm:items-end sm:justify-between">
         <div>
           <p className="font-serif text-t2 text-[#22201C] text-balance">Os {MODELOS_TECHSTONE.length} modelos, nos dois tamanhos.</p>
           <p className="mt-3 text-lead text-[#4A4540] max-w-[44ch]">Cada um tem a textura para baixar e usar no seu projeto.</p>

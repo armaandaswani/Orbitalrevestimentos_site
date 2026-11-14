@@ -131,7 +131,7 @@ export default function TechStone() {
 
       <Tamanhos />
 
-      <section id="lista" aria-labelledby="ts-lista" className="ts-encaixe-ponto bg-[#22201C] ds-secao scroll-mt-20">
+      <section id="lista" aria-labelledby="ts-lista" data-encaixe="solto" className="ts-encaixe-ponto bg-[#22201C] ds-secao scroll-mt-20">
         <div className="ds-wrap flex flex-col gap-8 lg:flex-row lg:items-end lg:justify-between">
           <div>
             <h2 id="ts-lista" className="font-serif text-t1 text-white max-w-[14ch]">Seja avisado na chegada.</h2>
@@ -145,7 +145,7 @@ export default function TechStone() {
         </div>
       </section>
 
-      <section aria-labelledby="ts-perguntas" className="ts-encaixe-ponto mv-adiado ds-wrap ds-secao">
+      <section aria-labelledby="ts-perguntas" data-encaixe="solto" className="ts-encaixe-ponto mv-adiado ds-wrap ds-secao">
         <h2 id="ts-perguntas" className="font-serif text-t2 text-[#22201C]">Perguntas</h2>
         <div className="mt-8 border-t border-[#22201C]/15">
           {PERGUNTAS.map((p) => (

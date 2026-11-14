@@ -13,7 +13,7 @@ export default function BotaoToque({ estado, alternar, nome }: {
   /** Nome da seção, para o leitor de tela. */
   nome: string;
 }) {
-  const acao = estado === "tocando" ? "Pausar" : estado === "fim" ? "Ver de novo" : "Continuar";
+  const acao = estado === "tocando" ? "Pausar" : estado === "fim" ? "Ver de novo" : estado === "pausado" ? "Continuar" : "Tocar";
   return (
     <button type="button" onClick={alternar} aria-label={`${acao}: ${nome}`} title={acao}
       className="ts-botao-toque absolute z-10 left-[clamp(1rem,3vw,2.5rem)] bottom-[max(1.25rem,3svh)] grid place-items-center size-11 rounded-full border border-white/35 bg-[#141210]/35 text-white backdrop-blur-sm hover:bg-[#141210]/60 active:bg-[#141210]/80 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-white">

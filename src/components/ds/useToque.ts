@@ -11,7 +11,7 @@ import { criarToque, type EstadoToque, type Toque } from "@/lib/movimento/toque"
  * das seções que andavam pela rolagem continua valendo: só a fonte do --p muda.
  *
  * Toca quando pelo menos `limiar` da seção está na tela e a rolagem parou (o
- * encaixe da página terminou). Volta ao começo quando a seção sai da tela, para
+ * encaixe da página terminou). Volta ao começo quando a seção sai inteira da tela, para
  * tocar de novo na próxima chegada. Com movimento reduzido, fica no fim, parada.
  * `data-ativo` chega uma tela antes (margem de 100%), como no useProgresso com
  * margem, para o CSS ligar will-change e a seção decodificar imagens fora da vista.
@@ -75,13 +75,17 @@ export function useToque<T extends HTMLElement>(duracaoMs: number, opcoes?: { li
     };
 
     const io = new IntersectionObserver((entradas) => {
-      fracao = entradas[entradas.length - 1].intersectionRatio;
-      if (fracao < 0.15 && !reduzir.matches && toque.estado !== "parado") {
+      const entrada = entradas[entradas.length - 1];
+      fracao = entrada.intersectionRatio;
+      // Só zera com a seção praticamente fora da tela (menos de 2%): com um pedaço à
+      // vista, a volta ao primeiro quadro apareceria na saída. Não dá para esperar o
+      // isIntersecting falso: seção encostada na borda da tela ainda conta como dentro.
+      if (fracao < 0.02 && !reduzir.matches && toque.estado !== "parado") {
         toque.zerar();
         escrever(0);
       }
       talvezTocar();
-    }, { threshold: [0, 0.15, 0.3, 0.45, 0.6, 0.75, 0.9, 1] });
+    }, { threshold: [0, 0.02, 0.3, 0.45, 0.6, 0.75, 0.9, 1] });
     io.observe(el);
 
     const perto = new IntersectionObserver((entradas) => {

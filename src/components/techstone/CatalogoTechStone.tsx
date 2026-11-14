@@ -2,6 +2,7 @@
 
 import { useCallback, useState } from "react";
 import Link from "next/link";
+import { useSearchParams } from "next/navigation";
 import Lupa from "@/components/movimento/Lupa";
 import ListaEsperaSheet from "@/components/ListaEsperaSheet";
 import {
@@ -15,6 +16,18 @@ const ABAS: { value: FiltroCatalogo; rotulo: string; detalhe: string }[] = [
   { value: "todos", rotulo: "Todos", detalhe: `${MODELOS_TECHSTONE.length} modelos` },
   ...FORMATOS.map((f) => ({ value: f.value, rotulo: f.rotulo, detalhe: `${DO_TAMANHO[f.value].length} modelos` })),
 ];
+
+/**
+ * O catálogo com o filtro que veio na URL (?tamanho=). Lido no navegador, para
+ * a página continuar estática: ler o searchParams no servidor a faria rodar
+ * uma função a cada visita. Precisa de <Suspense> em volta (useSearchParams).
+ */
+export function CatalogoDaUrl() {
+  const pedido = useSearchParams().get("tamanho");
+  const inicial: FiltroCatalogo = FORMATOS.find((f) => f.value === pedido)?.value ?? "todos";
+  // key: chegar por outro ?tamanho= volta a montar com o filtro novo.
+  return <CatalogoTechStone key={inicial} inicial={inicial} />;
+}
 
 /**
  * Catálogo da TechStone: os modelos em grade, com o filtro de tamanho
@@ -56,11 +69,12 @@ export default function CatalogoTechStone({ inicial }: { inicial: FiltroCatalogo
           </button>
         </div>
 
-        <div role="tablist" aria-label="Tamanho da placa" className="mt-10 grid grid-cols-3 gap-2 sm:gap-3 max-w-3xl">
+        {/* Filtro, não abas: botões de alternância (aria-pressed), que o teclado percorre com Tab. */}
+        <div role="group" aria-label="Filtrar por tamanho" className="mt-10 grid grid-cols-3 gap-2 sm:gap-3 max-w-3xl">
           {ABAS.map((a) => {
             const ativo = a.value === filtro;
             return (
-              <button key={a.value} id={`tsc-aba-${a.value}`} type="button" role="tab" aria-selected={ativo} aria-controls="tsc-painel"
+              <button key={a.value} id={`tsc-aba-${a.value}`} type="button" aria-pressed={ativo}
                 onClick={() => escolher(a.value)}
                 className={`text-left px-3 py-3.5 sm:px-5 sm:py-4 border transition-colors duration-300 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[#22201C] ${
                   ativo ? "bg-[#22201C] border-[#22201C] text-white" : "border-[#22201C]/20 text-[#22201C] hover:border-[#22201C]/50"
@@ -72,7 +86,7 @@ export default function CatalogoTechStone({ inicial }: { inicial: FiltroCatalogo
           })}
         </div>
 
-        <div id="tsc-painel" role="tabpanel" aria-labelledby={`tsc-aba-${filtro}`} className="mt-8">
+        <div id="tsc-painel" className="mt-8">
           {filtro !== "todos" && (
             <p className="mb-6 font-serif text-t3 text-[#22201C]">{USO_TAMANHO[filtro]}</p>
           )}

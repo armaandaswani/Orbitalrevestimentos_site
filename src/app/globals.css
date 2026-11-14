@@ -933,15 +933,27 @@ html[data-mv-nivel="leve"] .mv-camada { --mv-fe: calc((var(--mv-f) + 1) / 2); }
    opacity (o compositor desenha sem repintar a página). Com movimento
    reduzido o --p fica em 1: só o quadro final, sem escala nem deslocamento. */
 
-/* O encaixe firme entre as telas (.ts-encaixe-ponto) é feito em
-   components/techstone/Encaixe, não com scroll-snap: o mandatory do navegador
-   prende a rolagem em seção um pouco mais alta que a tela. */
+/* Encaixe firme entre as telas (.ts-encaixe-ponto; components/techstone/Encaixe
+   põe a classe no html só nesta página). No toque é o scroll-snap do navegador:
+   só ele segura a inércia do dedo em cada tela (stop: always), e a seção mais
+   alta que a tela rola livre por dentro. Sem scroll-padding: o cabeçalho se
+   recolhe ao descer. Com mouse e trackpad o encaixe é o do Encaixe.tsx, porque
+   o toque de roda não vence a borda de uma seção alta no modo obrigatório. */
+@media (pointer: coarse) and (prefers-reduced-motion: no-preference) {
+  html.ts-encaixe { scroll-snap-type: y mandatory; scroll-padding-top: 0; }
+  html.ts-encaixe .ts-encaixe-ponto { scroll-snap-align: start; scroll-snap-stop: always; }
+  html.ts-encaixe footer { scroll-snap-align: start; }
+}
 @media (prefers-reduced-motion: reduce) {
   .ts-botao-toque { display: none; }
 }
 @media (scripting: none) {
   .ts-botao-toque { display: none; }
 }
+/* Tela baixa (celular deitado): estas duas seções mostram o layout parado,
+   sem nada para pausar. Mesmos limites dos blocos estáticos de cada uma. */
+@media (max-height: 600px) { .ts-clima .ts-botao-toque { display: none; } }
+@media (max-height: 480px) { .ts-tam .ts-botao-toque { display: none; } }
 /* Dois tamanhos em pé (celular): as amostras ocupam o canto de baixo, então a
    pausa sobe para a direita, logo acima da linha do chão. */
 @media (max-width: 767.98px), (orientation: portrait) {

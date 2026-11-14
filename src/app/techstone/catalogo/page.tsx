@@ -1,6 +1,6 @@
 import type { Metadata } from "next";
-import CatalogoTechStone, { type FiltroCatalogo } from "@/components/techstone/CatalogoTechStone";
-import { FORMATOS } from "@/lib/techstone";
+import { Suspense } from "react";
+import CatalogoTechStone, { CatalogoDaUrl } from "@/components/techstone/CatalogoTechStone";
 
 export const metadata: Metadata = {
   title: "Catálogo TechStone: pedra flexível de 3,5 mm",
@@ -27,15 +27,14 @@ const breadcrumbSchema = {
   ],
 };
 
-export default async function CatalogoTechStonePage({ searchParams }: { searchParams: Promise<{ tamanho?: string | string[] }> }) {
-  const { tamanho } = await searchParams;
-  const pedido = Array.isArray(tamanho) ? tamanho[0] : tamanho;
-  const inicial: FiltroCatalogo = FORMATOS.find((f) => f.value === pedido)?.value ?? "todos";
+export default function CatalogoTechStonePage() {
   return (
     <>
       <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: JSON.stringify(breadcrumbSchema) }} />
-      {/* key: trocar de ?tamanho= pelo link volta a montar com o filtro novo. */}
-      <CatalogoTechStone key={inicial} inicial={inicial} />
+      {/* Página estática: o HTML sai com todos os modelos e o filtro da URL entra no navegador. */}
+      <Suspense fallback={<CatalogoTechStone inicial="todos" />}>
+        <CatalogoDaUrl />
+      </Suspense>
     </>
   );
 }

@@ -26,12 +26,27 @@ test("descendo da última tela para o texto solto: não puxa de volta", () => {
   assert.equal(escolherTela(telas(1700), VH, 2, 1), null);
 });
 
-test("subindo do texto solto: encaixa na tela que aparece em cima", () => {
-  assert.equal(escolherTela(telas(2300), VH, null, -1), 2);
+test("subindo do texto solto: a tela só puxa quando ocupa boa parte da janela", () => {
+  // 50% da janela: encaixa.
+  assert.equal(escolherTela(telas(2000), VH, null, -1), 2);
+  // Uma faixa de 12% no alto, com o texto solto ocupando o resto: fica onde está.
+  assert.equal(escolherTela(telas(2300), VH, null, -1), null);
 });
 
-test("tela que aparece menos de 5%: não encaixa", () => {
-  assert.equal(escolherTela(telas(2380), VH, null, -1), null);
+test("vizinha da tela encaixada: um toque de roda (5% da janela) já basta", () => {
+  assert.equal(escolherTela(telas(40), VH, 0, 1), 1);
+  assert.equal(escolherTela(telas(30), VH, 0, 1), null);
+});
+
+test("sem rolagem (toque ou clique parado): nada a fazer, mesmo fora de encaixe", () => {
+  assert.equal(escolherTela(telas(300), VH, 0, 0), null);
+  assert.equal(escolherTela(telas(2000), VH, null, 0), null);
+});
+
+test("seção marcada como solta nunca puxa, mesmo com tamanho de tela", () => {
+  // Perguntas: 900 px de altura, entrando por baixo depois do texto solto.
+  const lista = [{ topo: -700, altura: 800 }, { topo: 100, altura: 300, solta: true }, { topo: 400, altura: 900, solta: true }];
+  assert.equal(escolherTela(lista, VH, null, 1), null);
 });
 
 test("celular com a barra do navegador recolhida: a janela é maior que a seção em svh", () => {
