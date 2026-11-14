@@ -51,7 +51,7 @@ export default function CatalogoTechStone({ inicial }: { inicial: FiltroCatalogo
             </p>
           </div>
           <button type="button" onClick={() => abrirEspera()}
-            className="ds-botao bg-[#22201C] text-white hover:bg-[#4A4540] min-h-12 px-8 self-start lg:self-auto shrink-0 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[#22201C]">
+            className="ds-botao bg-[#22201C] text-white hover:bg-[#4A4540] min-h-12 px-8 whitespace-nowrap self-start lg:self-auto shrink-0 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[#22201C]">
             Entrar na lista de espera
           </button>
         </div>
@@ -77,12 +77,12 @@ export default function CatalogoTechStone({ inicial }: { inicial: FiltroCatalogo
             <p className="mb-6 font-serif text-t3 text-[#22201C]">{USO_TAMANHO[filtro]}</p>
           )}
           <ul className="grid grid-cols-2 gap-x-3 gap-y-8 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-6 sm:gap-x-4">
-            {lista.map((m) => (
+            {lista.map((m, i) => (
               <li key={m.slug} className="min-w-0 row-span-4 grid grid-rows-subgrid gap-y-0">
                 <Lupa fonte={texturaDownload(m)}>
                   <span className="relative block aspect-[1/2] overflow-hidden bg-[#D9D1C4]">
                     {/* eslint-disable-next-line @next/next/no-img-element */}
-                    <img src={texturaMiniatura(m)} alt={`Textura TechStone ${m.nome}`} loading="lazy" decoding="async"
+                    <img src={texturaMiniatura(m)} alt={`Textura TechStone ${m.nome}`} loading={i < 6 ? "eager" : "lazy"} fetchPriority={i === 0 ? "high" : undefined} decoding="async"
                       className="absolute inset-0 w-full h-full object-cover" />
                   </span>
                 </Lupa>

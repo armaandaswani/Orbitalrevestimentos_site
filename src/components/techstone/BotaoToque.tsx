@@ -16,7 +16,7 @@ export default function BotaoToque({ estado, alternar, nome }: {
   const acao = estado === "tocando" ? "Pausar" : estado === "fim" ? "Ver de novo" : "Continuar";
   return (
     <button type="button" onClick={alternar} aria-label={`${acao}: ${nome}`} title={acao}
-      className="ts-botao-toque absolute z-10 left-[clamp(1rem,3vw,2.5rem)] bottom-[max(1.25rem,3svh)] grid place-items-center size-11 rounded-full border border-white/35 bg-[#141210]/35 text-white backdrop-blur-sm hover:bg-[#141210]/60 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-white">
+      className="ts-botao-toque absolute z-10 left-[clamp(1rem,3vw,2.5rem)] bottom-[max(1.25rem,3svh)] grid place-items-center size-11 rounded-full border border-white/35 bg-[#141210]/35 text-white backdrop-blur-sm hover:bg-[#141210]/60 active:bg-[#141210]/80 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-white">
       <svg aria-hidden width="16" height="16" viewBox="0 0 16 16" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round">
         {estado === "tocando" ? (
           <path d="M5.5 3.5v9M10.5 3.5v9" />

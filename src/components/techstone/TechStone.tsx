@@ -152,7 +152,7 @@ export default function TechStone() {
             <details key={p.q} className="group border-b border-[#22201C]/15">
               <summary className="flex min-h-14 cursor-pointer list-none items-center justify-between gap-6 py-4 font-serif text-t3 text-[#22201C]">
                 {p.q}
-                <span aria-hidden className="text-[#8C7B63] transition-transform group-open:rotate-45 text-2xl leading-none">+</span>
+                <span aria-hidden className="text-[#8C7B63] transition-transform motion-reduce:transition-none group-open:rotate-45 text-2xl leading-none">+</span>
               </summary>
               <p className="pb-6 text-corpo text-[#4A4540] max-w-[62ch]">{p.a}</p>
             </details>

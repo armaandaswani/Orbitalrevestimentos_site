@@ -1281,8 +1281,8 @@ html[data-mv-nivel="leve"] .mv-camada { --mv-fe: calc((var(--mv-f) + 1) / 2); }
 
 /* ── TechStone: clima pela pedra ──────────────────────────────────────────
    "Desenvolvida para a Amazônia" (components/techstone/Clima). --p (0 → 1)
-   vem do useToque (12 s). A seção é uma tela só; no tempo da rolagem uma
-   tela vale 0.20 de --p. As frações abaixo saem de INICIO = 0.10 e
+   vem do useToque (12 s). A seção é uma tela só, e cada preocupação
+   vale 0.20 de --p. As frações abaixo saem de INICIO = 0.10 e
    PASSO = 0.20 (Clima.tsx); se um mudar, mude as duas pontas:
      0 → 0.02     abertura parada: título, texto e a linha já desenhada embaixo;
      0.02 → 0.10  subida: os três sobem juntos e ficam presos no alto;
