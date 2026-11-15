@@ -1,4 +1,5 @@
 import { cena } from "./techstone";
+import { FOTO_MIOLO, PAGINA_CARBON, TEXTOS as TEXTOS_CARBON } from "./pfb-carbon";
 
 /**
  * As linhas de produto da Orbital. A vitrine (/produtos) e o menu do
@@ -78,10 +79,12 @@ export const LINHAS: LinhaOrbital[] = [
     artigo: "o",
     curto: "PFB Carbon",
     situacao: "em-breve",
-    resumo: "A linha de luxo do Painel Flexível em Fibra de Bambu. Detalhes em breve.",
+    resumo: "A linha de luxo do Painel Flexível em Fibra de Bambu, com substrato em fibra de bambu carbonizado. Para paredes e tetos internos.",
+    // Sem etiquetas de uso: ainda não há foto de obra do Carbon.
     usos: [],
-    href: "",
-    imagem: null,
+    href: PAGINA_CARBON,
+    // Foto real da placa em corte (não gerada).
+    imagem: { src: FOTO_MIOLO.mao.src, alt: TEXTOS_CARBON.numeros.alt },
   },
 ];
 

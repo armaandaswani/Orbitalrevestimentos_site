@@ -6,6 +6,7 @@ import {
   type InscricaoEspera,
 } from "@/lib/lista-espera";
 import { MODELOS_TECHSTONE } from "@/lib/techstone";
+import { MODELOS_CARBON } from "@/lib/pfb-carbon";
 
 /**
  * POST /api/lista-espera — inscreve alguém na lista de espera de uma linha em
@@ -19,12 +20,13 @@ import { MODELOS_TECHSTONE } from "@/lib/techstone";
  * resposta: a página só confirma a inscrição quando ela foi gravada.
  *
  * `modelos` entram na mensagem que a Orbital envia, então só passam nomes que
- * existem no catálogo da linha (hoje só a TechStone tem modelos).
+ * existem no catálogo da linha.
  */
 
-/** Modelos aceitos por linha; linha sem modelos (PFB Carbon) não guarda nenhum. */
+/** Modelos aceitos por linha; uma linha sem modelos aqui não guarda nenhum. */
 const MODELOS_VALIDOS: Record<string, Set<string>> = {
   techstone: new Set(MODELOS_TECHSTONE.map((m) => m.nome)),
+  carbon: new Set(MODELOS_CARBON.map((m) => m.nome)),
 };
 
 /** Texto de uma linha, sem caracteres de controle (o Postgres recusa \0), no limite. */

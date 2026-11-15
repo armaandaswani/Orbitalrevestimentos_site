@@ -190,7 +190,7 @@ function Painel({ linha, Titulo, prioridade, aberto, uso, escolherUso, morph }: 
       {/* A foto leva à página da linha (o mesmo destino do botão). Dentro da
           pista de arrastar o navegador já cancela o clique quando o gesto vira
           rolagem, então deslizar de lado não abre a página. Linha sem página
-          (PFB Carbon) continua sem link. */}
+          continua sem link. */}
       {linha.href ? (
         <Link href={linha.href} className={caixa} data-cursor="ver"
           aria-label={`${prontaEntrega ? `Ver o catálogo d${linha.artigo} ${linha.curto}` : `Conhecer ${linha.artigo} ${linha.nome}`}${
