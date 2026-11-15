@@ -88,6 +88,20 @@ function veuForaDaFaixa(largura, altura, y0, y1, borda) {
     .composite([{ input: veuForaDaFaixa(recorte.width, recorte.height, 40, 518, 14) }])
     .webp({ quality: 86 })
     .toFile(path.join(SAIDA, "miolo-faixa-v1.webp"));
+
+  // Grão: só o miolo da mesma foto, sem as faixas de SPC, espelhado em 2 × 2
+  // para repetir sem emenda. É a cara do substrato no desenho das camadas.
+  const miolo = sharp(tratada).extract({ left: 0, top: 110, width: recorte.width, height: 340 });
+  const [a, b, c, d] = await Promise.all([
+    miolo.clone().toBuffer(), miolo.clone().flop().toBuffer(), miolo.clone().flip().toBuffer(), miolo.clone().flip().flop().toBuffer(),
+  ]);
+  await sharp({ create: { width: recorte.width * 2, height: 680, channels: 3, background: "#131211" } })
+    .composite([
+      { input: a, left: 0, top: 0 }, { input: b, left: recorte.width, top: 0 },
+      { input: c, left: 0, top: 340 }, { input: d, left: recorte.width, top: 340 },
+    ])
+    .png().toBuffer()
+    .then((mosaico) => sharp(mosaico).resize({ width: 1024 }).webp({ quality: 80 }).toFile(path.join(SAIDA, "miolo-grao-v1.webp")));
 }
 
 // Mão: a placa inteira segurada de lado (foto 5), sem o folheto do canto.

@@ -59,6 +59,8 @@ export function texturaDownload(m: ModeloCarbon): string {
 export const FOTO_MIOLO = {
   faixa: { src: "/images/pfb-carbon/miolo-faixa-v1.webp", largura: 1190, altura: 550 },
   mao: { src: "/images/pfb-carbon/miolo-mao-v1.webp", largura: 1400, altura: 1050 },
+  /** Só o miolo da foto do corte, em mosaico que repete sem emenda (desenho das camadas). */
+  grao: { src: "/images/pfb-carbon/miolo-grao-v1.webp", largura: 1024, altura: 293 },
 };
 
 /** Modelos como a lista de espera mostra. */
@@ -101,7 +103,7 @@ export const TEXTOS = {
     frases: [
       "A umidade fica alta o ano inteiro.",
       "O calor também.",
-      "Por isso a Orbital muda a composição de cada material, olhando a umidade e a temperatura média do ano na região.",
+      "Por isso a Orbital muda a composição dos materiais, para ficarem cada vez mais resistentes ao clima amazônico.",
     ],
     fecho: "No PFB Carbon, isso virou bambu carbonizado e SPC dos dois lados.",
   },

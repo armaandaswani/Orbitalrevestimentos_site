@@ -2555,3 +2555,246 @@ html.mv-cursor:has([data-lupa="aberta"]) .mv-cursor-corpo { opacity: 0; }
 @media (max-width: 1023.98px) {
   .pdv-folha-altura { max-height: 88vh; max-height: 88dvh; }
 }
+
+/* ── PFB Carbon (Luxury Line): apresentação que toca sozinha ──────────────
+   Mesmo motor da TechStone: cada tela .cbn-toca recebe --p (0 → 1) do
+   useToque, pelo tempo, quando encaixa; tudo aqui é calc() em cima dele e só
+   mexe em transform e opacity. O visual é próprio: fundo carvão (#131211),
+   texto marfim (#F2EEE6) e fios de latão (#B08D57), sem sombras.
+   O quadro final (--p: 1) de cada tela traz todo o texto: é o que aparece com
+   movimento reduzido (o useToque para no fim) e sem JavaScript (bloco abaixo e
+   o <noscript> de app/pfb-carbon/page.tsx). O encaixe e o botão de pausa são
+   os da TechStone (.ts-encaixe-ponto, .ts-botao-toque). */
+.cbn { background: #131211; color: #F2EEE6; }
+@media (scripting: none) { .cbn-toca { --p: 1; } }
+
+/* Rótulo da linha: versalete espaçado. O padding devolve o centro que o
+   espaço depois da última letra tira. */
+.cbn-rotulo { font-size: 0.6875rem; line-height: 1; letter-spacing: 0.42em; padding-left: 0.42em; text-transform: uppercase; color: #B08D57; }
+.cbn-botao { background: #F2EEE6; color: #131211; }
+.cbn-botao:hover { background: #fff; }
+.cbn-botao:focus-visible, .cbn-link:focus-visible { outline: 2px solid #B08D57; outline-offset: 3px; }
+.cbn-link { color: #F2EEE6; text-decoration: underline; text-decoration-thickness: 1px; text-underline-offset: 5px; text-decoration-color: rgba(242, 238, 230, 0.4); transition: text-decoration-color var(--mv-base) var(--mv-chegada); }
+.cbn-link:hover { text-decoration-color: #F2EEE6; }
+
+/* Abertura. 0 → 0.2: só o nome e o rótulo; a parede de madeira acende por
+   trás e o nome sobe e encolhe (curva suave, --e). 0.2 → 0.76: três frases,
+   uma de cada vez, no mesmo lugar (--a/--b em cada uma). Depois: o convite. */
+.cbn-abertura {
+  --e0: clamp(0, (var(--p, 0) - 0.04) / 0.16, 1); --e: calc(var(--e0) * var(--e0) * (3 - 2 * var(--e0)));
+  /* Recuo da câmera e passagem da luz: até 85% do tempo. */
+  --q: clamp(0, var(--p, 0) / 0.85, 1);
+}
+.cbn-ab-parede {
+  opacity: clamp(0, (var(--p, 0) - 0.03) / 0.22, 1);
+  transform: scale(calc(1.12 - var(--q) * 0.12));
+}
+/* Escurece a madeira para o texto marfim ler bem em qualquer veio. */
+.cbn-ab-veu { background: radial-gradient(120% 90% at 50% 45%, rgba(19, 18, 17, 0.6) 0%, rgba(19, 18, 17, 0.86) 70%, #131211 100%); }
+/* Um reflexo de luz que atravessa a parede uma vez. */
+.cbn-ab-luz {
+  background: linear-gradient(100deg, transparent 38%, rgba(255, 236, 205, 0.09) 50%, transparent 62%);
+  opacity: clamp(0, (var(--p, 0) - 0.03) / 0.22, 1);
+  transform: translate3d(calc(-75% + var(--q) * 150%), 0, 0);
+}
+.cbn-ab-titulo { transform: translate3d(0, calc(-50% - var(--e) * 30svh), 0) scale(calc(1 - var(--e) * 0.5)); }
+/* O rótulo sobe com o nome mas não encolhe com ele: desfaz a escala do bloco. */
+.cbn-ab-titulo .cbn-rotulo { transform-origin: 50% 100%; transform: scale(calc(1 / (1 - var(--e) * 0.5))); }
+.cbn-ab-frase {
+  --o: min(clamp(0, (var(--p, 0) - var(--a)) / 0.05, 1), clamp(0, (var(--b) - var(--p, 0)) / 0.05, 1));
+  opacity: var(--o);
+  transform: translate3d(0, calc(-50% + (1 - var(--o)) * 22px), 0);
+}
+.cbn-ab-cta {
+  --o: clamp(0, (var(--p, 0) - 0.76) / 0.06, 1);
+  opacity: var(--o);
+  transform: translate3d(0, calc(-50% + (1 - var(--o)) * 22px), 0);
+  pointer-events: none;
+}
+/* Clicável só quando já apareceu; com o teclado aparece na hora. */
+.cbn-abertura:is([data-p10="8"], [data-p10="9"], [data-p10="10"]) .cbn-ab-cta,
+.cbn-ab-cta:focus-within { pointer-events: auto; }
+.cbn-ab-cta:focus-within { opacity: 1; }
+@media (scripting: none) { .cbn-ab-cta { pointer-events: auto; } }
+[data-ativo] .cbn-ab-parede { will-change: transform, opacity; }
+[data-ativo] .cbn-ab-titulo { will-change: transform; }
+[data-ativo] .cbn-ab-frase { will-change: transform, opacity; }
+
+/* O miolo: a foto real do corte flutua no escuro (o fundo dela é o da página)
+   e some nas duas pontas. No celular ocupa a largura toda e corta os lados. */
+.cbn-miolo-faixa {
+  width: 100%; height: 30svh; min-height: 11rem;
+  -webkit-mask-image: linear-gradient(90deg, transparent, #000 9%, #000 91%, transparent);
+  mask-image: linear-gradient(90deg, transparent, #000 9%, #000 91%, transparent);
+}
+@media (min-width: 1024px) {
+  .cbn-miolo-faixa { width: auto; max-width: 100%; height: 42svh; aspect-ratio: 1190 / 550; }
+}
+
+/* ── PFB Carbon: camadas ──────────────────────────────────────────────────
+   A placa vista de cima e de lado, sem perspectiva (isométrica): o eixo gira
+   60° e 45° e cada lâmina é uma caixa (topo e as duas faces viradas para quem
+   olha) empilhada no eixo Z. --s é o lado da lâmina; --g, a distância na tela
+   entre duas lâminas abertas (por isso o 1,1547 = 1 / sen 60° no translateZ).
+   0 → 0.1: a placa fechada. 0.1 → 0.3: as lâminas se afastam. 0.3 → 0.9: um
+   nome por vez, 0,12 cada, com a lâmina dele acesa e as outras escurecidas
+   (--lit). 0.9 → 1: todas acesas. As faces escurecem por um véu (::after):
+   opacity na lâmina achataria a caixa. */
+.cbn-camadas {
+  --s: min(46vw, 30svh);
+  --g: calc(var(--s) * 0.27);
+  --abre0: clamp(0, (var(--p, 0) - 0.1) / 0.2, 1);
+  --abre: calc(var(--abre0) * var(--abre0) * (3 - 2 * var(--abre0)));
+}
+.cbn-cam-palco { display: flex; flex-direction: column; align-items: center; gap: 1.75rem; }
+.cbn-pilha { position: relative; flex: none; width: calc(var(--s) * 1.4143); height: calc(var(--s) * 0.868 + var(--g) * 4); }
+.cbn-eixo {
+  position: absolute; left: 50%; top: calc(100% - var(--s) * 0.3536); width: 0; height: 0;
+  transform: rotateX(60deg) rotateZ(45deg); transform-style: preserve-3d;
+}
+.cbn-lam, .cbn-cam-nome {
+  --ini: calc(0.3 + var(--k) * 0.12);
+  --lit: max(
+    clamp(0, (0.3 - var(--p, 0)) / 0.05, 1),
+    min(clamp(0, (var(--p, 0) - var(--ini)) / 0.03, 1), clamp(0, (var(--ini) + 0.12 - var(--p, 0)) / 0.03, 1)),
+    clamp(0, (var(--p, 0) - 0.9) / 0.05, 1)
+  );
+}
+.cbn-lam {
+  position: absolute; left: calc(var(--s) * -0.5); top: calc(var(--s) * -0.5); width: var(--s); height: var(--s);
+  transform-style: preserve-3d;
+  transform: translateZ(calc(var(--z0) * var(--s) + (4 - var(--k)) * var(--g) * 1.1547 * var(--abre)));
+}
+.cbn-face { position: absolute; background-size: cover; background-position: center; }
+.cbn-face::after { content: ""; position: absolute; inset: 0; background: #131211; opacity: calc((1 - var(--lit)) * 0.62); }
+.cbn-face-topo { inset: 0; transform: translateZ(calc(var(--t) * var(--s))); }
+/* As duas faces viradas para quem olha: penduradas na borda de baixo e na da direita do topo. */
+.cbn-face-frente {
+  left: 0; top: 100%; width: 100%; height: calc(var(--t) * var(--s));
+  transform-origin: 50% 0; transform: translateZ(calc(var(--t) * var(--s))) rotateX(-90deg);
+}
+.cbn-face-lado {
+  left: 100%; top: 0; width: calc(var(--t) * var(--s)); height: 100%;
+  transform-origin: 0 50%; transform: translateZ(calc(var(--t) * var(--s))) rotateY(90deg);
+}
+/* Filme PET: a madeira do modelo (imagem no topo, pelo componente). */
+.cbn-lam[data-tipo="filme"] .cbn-face { background-color: #8A5A2B; }
+.cbn-lam[data-tipo="adesivo"] .cbn-face { background-color: #C99F5A; }
+.cbn-lam[data-tipo="adesivo"] .cbn-face-topo { background-image: linear-gradient(135deg, #E6C88F, #C2944C 55%, #D9B36C); }
+.cbn-lam[data-tipo="spc"] .cbn-face-topo { background-color: #E8E3D7; }
+.cbn-lam[data-tipo="spc"] .cbn-face-frente { background-color: #D2CCBE; }
+.cbn-lam[data-tipo="spc"] .cbn-face-lado { background-color: #B5AFA1; }
+/* Substrato: as três faces são o grão da foto real do corte (imagem pelo
+   componente: mosaico só do miolo, que repete sem emenda), no mesmo tamanho
+   nas três. A cor multiplica: cada face com a sua luz. */
+.cbn-lam[data-tipo="miolo"] .cbn-face { background-size: calc(var(--s) * 1.5) auto; background-repeat: repeat; background-position: 0 0; background-blend-mode: multiply; }
+.cbn-lam[data-tipo="miolo"] .cbn-face-topo { background-color: #8F8D87; }
+.cbn-lam[data-tipo="miolo"] .cbn-face-frente { background-color: #B9B6AF; }
+.cbn-lam[data-tipo="miolo"] .cbn-face-lado { background-color: #5E5C58; }
+
+/* Os nomes. No celular, uma lista embaixo do desenho; o nome da vez acende. */
+.cbn-cam-nomes { display: grid; gap: 0.5rem; width: 100%; max-width: 21rem; }
+.cbn-cam-nome { display: flex; align-items: baseline; gap: 0.75rem; opacity: calc(0.34 + 0.66 * var(--lit)); }
+.cbn-cam-num { flex: none; font-size: 0.75rem; letter-spacing: 0.08em; color: #B08D57; }
+.cbn-cam-fio { display: none; }
+/* No computador cada nome fica na altura da sua lâmina aberta, ligado por um fio. */
+@media (min-width: 1024px) {
+  .cbn-camadas { --s: min(30vw, 32svh); }
+  .cbn-cam-palco { flex-direction: row; align-items: flex-start; justify-content: center; gap: 0; }
+  .cbn-cam-nomes { position: relative; display: block; flex: none; width: 24rem; max-width: none; height: calc(var(--s) * 0.868 + var(--g) * 4); margin-left: 0.5rem; }
+  .cbn-cam-nome {
+    position: absolute; left: 0; right: 0; align-items: center;
+    top: calc(100% - var(--s) * 0.3536 - (4 - var(--k)) * var(--g) - var(--zc) * var(--s) * 0.866);
+    transform: translate3d(0, -50%, 0);
+  }
+  .cbn-cam-fio { display: block; flex: none; width: 3rem; height: 1px; background: #B08D57; transform-origin: 0 50%; transform: scaleX(var(--lit)); }
+}
+[data-ativo] .cbn-lam { will-change: transform; }
+
+/* ── PFB Carbon: clima ────────────────────────────────────────────────────
+   0 → 0.1: o título grande, sozinho. 0.1 → 0.2: ele sobe e encolhe (--t).
+   0.22 → 0.58: umidade e calor, uma frase por vez, cada uma com a sua luz (a
+   bruma fria, depois o âmbar que sobe de baixo). 0.58 em diante: a frase da
+   composição fica; em 0.8 entra o fecho e a madeira aparece ao fundo. */
+.cbn-clima { --t0: clamp(0, (var(--p, 0) - 0.1) / 0.1, 1); --t: calc(var(--t0) * var(--t0) * (3 - 2 * var(--t0))); }
+.cbn-cl-titulo { transform: translate3d(0, calc(-50% - var(--t) * 30svh), 0) scale(calc(1 - var(--t) * 0.38)); }
+.cbn-cl-frase {
+  --o: min(clamp(0, (var(--p, 0) - var(--a)) / 0.04, 1), clamp(0, (var(--b) - var(--p, 0)) / 0.04, 1));
+  opacity: var(--o);
+}
+.cbn-cl-palco > .cbn-cl-frase { transform: translate3d(0, calc(-50% + (1 - var(--o)) * 20px), 0); }
+.cbn-cl-final { transform: translate3d(0, -50%, 0); }
+.cbn-cl-final > .cbn-cl-frase { transform: translate3d(0, calc((1 - var(--o)) * 20px), 0); }
+.cbn-cl-madeira { opacity: calc(clamp(0, (var(--p, 0) - 0.6) / 0.3, 1) * 0.14); }
+.cbn-cl-bruma {
+  background:
+    radial-gradient(80% 60% at 28% 38%, rgba(170, 195, 205, 0.2), transparent 70%),
+    radial-gradient(70% 55% at 76% 66%, rgba(150, 180, 195, 0.14), transparent 70%);
+  opacity: min(clamp(0, (var(--p, 0) - 0.16) / 0.08, 1), clamp(0, (0.46 - var(--p, 0)) / 0.08, 1));
+  transform: translate3d(calc((0.3 - var(--p, 0)) * 8vw), 0, 0) scale(1.12);
+}
+.cbn-cl-calor {
+  background: radial-gradient(95% 75% at 50% 112%, rgba(226, 138, 52, 0.3), transparent 70%);
+  opacity: min(clamp(0, (var(--p, 0) - 0.38) / 0.08, 1), clamp(0, (0.66 - var(--p, 0)) / 0.1, 1));
+}
+[data-ativo] .cbn-cl-titulo { will-change: transform; }
+
+/* ── PFB Carbon: modelos ──────────────────────────────────────────────────
+   Cinco placas em pé na proporção real (3:7). Cada madeira ocupa 0,18 do
+   tempo (PASSO em pfb-carbon/Modelos.tsx): acende (--lit) enquanto é a vez
+   dela e, de 0,9 em diante, todas ficam acesas. Em tela estreita a fila
+   desliza: --i é a madeira no centro (0 a 4, com passagem de 0,06) e, no fim,
+   volta duas casas para a do meio. De 1280 px para cima as cinco cabem e a
+   fila fica parada. */
+.cbn-modelos {
+  --h: min(52svh, 34rem); --w: calc(var(--h) * 3 / 7); --vao: clamp(0.75rem, 1.6vw, 1.5rem);
+  --i: calc(
+    clamp(0, (var(--p, 0) - 0.18) / 0.06, 1) + clamp(0, (var(--p, 0) - 0.36) / 0.06, 1)
+    + clamp(0, (var(--p, 0) - 0.54) / 0.06, 1) + clamp(0, (var(--p, 0) - 0.72) / 0.06, 1)
+    - 2 * clamp(0, (var(--p, 0) - 0.92) / 0.06, 1)
+  );
+}
+.cbn-mod-trilho { overflow: hidden; }
+.cbn-mod-fila {
+  display: flex; gap: var(--vao); width: max-content; margin-left: calc(50% - var(--w) / 2);
+  transform: translate3d(calc(var(--i) * -1 * (var(--w) + var(--vao))), 0, 0);
+}
+.cbn-mod-placa, .cbn-mod-marca {
+  --vez: min(clamp(0, (var(--p, 0) - var(--a)) / 0.04, 1), clamp(0, (var(--b) - var(--p, 0)) / 0.04, 1));
+  --lit: max(var(--vez), clamp(0, (var(--p, 0) - 0.9) / 0.05, 1));
+}
+.cbn-mod-placa { flex: none; width: var(--w); }
+.cbn-mod-img { height: var(--h); opacity: calc(0.28 + 0.72 * var(--lit)); }
+.cbn-mod-nome { opacity: calc(0.4 + 0.6 * var(--lit)); }
+.cbn-mod-marca { opacity: calc(0.28 + 0.72 * var(--vez)); }
+[data-ativo] .cbn-mod-fila { will-change: transform; }
+
+/* Tela baixa (celular deitado): as telas de palco fixo viram texto parado, sem pausa. */
+@media (max-height: 600px) {
+  .cbn-clima .ts-botao-toque, .cbn-modelos .ts-botao-toque { display: none; }
+}
+/* Sem movimento a abertura já abre no convite: a primeira frase, com o nome
+   por extenso, fica parada entre o título e o convite. */
+@media (prefers-reduced-motion: reduce), (scripting: none) {
+  .cbn-ab-frase.cbn-ab-primeira { opacity: 0.85; font-size: var(--text-lead); transform: translate3d(0, calc(-50% - 19svh), 0); }
+}
+/* Movimento reduzido, tela baixa ou sem JavaScript: o clima empilha as frases,
+   todas visíveis, e a fila de madeiras rola de lado com o dedo. */
+@media (prefers-reduced-motion: reduce), (max-height: 600px), (scripting: none) {
+  .cbn-clima, .cbn-cl-quadro { height: auto; min-height: 100svh; }
+  .cbn-cl-palco { position: relative; display: flex; flex-direction: column; justify-content: center; gap: 1.5rem; min-height: 100svh; padding-block: 6rem 5rem; }
+  .cbn-cl-titulo, .cbn-cl-palco > .cbn-cl-frase, .cbn-cl-final { position: static; transform: none; }
+  .cbn-cl-final > .cbn-cl-frase { transform: none; }
+  .cbn-cl-frase { opacity: 1; }
+  .cbn-cl-titulo { font-size: var(--text-t1); }
+  .cbn-cl-madeira { opacity: 0.14; }
+  .cbn-cl-bruma, .cbn-cl-calor { opacity: 0; }
+  .cbn-mod-trilho { overflow-x: auto; scrollbar-width: none; -webkit-overflow-scrolling: touch; }
+  .cbn-mod-trilho::-webkit-scrollbar { display: none; }
+  .cbn-mod-fila { margin-left: 0; padding-inline: 1rem; transform: none; }
+  .cbn-mod-img, .cbn-mod-nome { opacity: 1; }
+}
+@media (min-width: 1280px) {
+  .cbn-mod-fila { margin-inline: auto; padding-inline: 0; transform: none; }
+}
+
