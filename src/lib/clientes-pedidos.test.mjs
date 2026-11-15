@@ -7,6 +7,7 @@ import {
   clienteCombina,
   normalizarNome,
   normalizarTelefone,
+  telefoneLegivel,
 } from "./clientes-pedidos.ts";
 
 /**
@@ -48,6 +49,10 @@ test("normalizações", () => {
   // 11 dígitos começando com 55 é um DDD 55 (RS), não o código do país.
   assert.equal(normalizarTelefone("55991234567"), "55991234567");
   assert.equal(normalizarTelefone(""), "");
+  assert.equal(telefoneLegivel("92991234567"), "(92) 99123-4567");
+  assert.equal(telefoneLegivel("+55 92 3234-5678"), "(92) 3234-5678");
+  assert.equal(telefoneLegivel(" 1234 "), "1234");
+  assert.equal(telefoneLegivel(null), "");
 });
 
 test("junta por documento, e-mail e telefone (em cadeia)", () => {

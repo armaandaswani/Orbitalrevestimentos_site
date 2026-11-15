@@ -65,6 +65,14 @@ export function normalizarTelefone(s: Texto): string {
   return (d.length === 12 || d.length === 13) && d.startsWith("55") ? d.slice(2) : d;
 }
 
+/** Telefone para leitura: "(92) 99123-4567"; o que não for DDD + número volta como veio. */
+export function telefoneLegivel(s: Texto): string {
+  const d = normalizarTelefone(s);
+  if (d.length === 11) return `(${d.slice(0, 2)}) ${d.slice(2, 7)}-${d.slice(7)}`;
+  if (d.length === 10) return `(${d.slice(0, 2)}) ${d.slice(2, 6)}-${d.slice(6)}`;
+  return (s ?? "").trim();
+}
+
 /** Identificadores que juntam pedidos; curtos ou malformados não contam. */
 function identificadores(p: PedidoDoCliente): string[] {
   const out: string[] = [];

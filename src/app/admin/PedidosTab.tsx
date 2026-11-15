@@ -11,7 +11,7 @@ import editor from "./pedido-editor.module.css";
 import { usePedidoAutosave } from "./usePedidoAutosave";
 import type { SavedEditorDraft } from "@/lib/pedido-draft-storage";
 import { expectedDeliveryLabel } from "@/lib/pedido-delivery";
-import { CAMPOS_CLIENTE, agruparClientes, buscarClientes, normalizarNome, type Cliente } from "@/lib/clientes-pedidos";
+import { CAMPOS_CLIENTE, agruparClientes, buscarClientes, normalizarNome, telefoneLegivel, type Cliente } from "@/lib/clientes-pedidos";
 
 // ─── Types ──────────────────────────────────────────────────────────────────
 export type PedidoStatus = "em_producao" | "pronto" | "pendente_entrega" | "entregue" | "cancelado";
@@ -1954,23 +1954,25 @@ export default function PedidosTab({
         </div>
 
         {/* Abas: pedidos em andamento, cancelados (com Reativar) e o cadastro de clientes. */}
-        <div role="tablist" aria-label="Ver" className="flex border-b border-[#e2e2e2] overflow-x-auto">
+        {/* Três colunas iguais: cabem nos 390 px do celular sem rolagem lateral. */}
+        <div role="tablist" aria-label="Ver" className="grid grid-cols-3 sm:flex border-b border-[#e2e2e2]">
           {([
-            ["andamento", "Em andamento"],
-            ["cancelados", `Cancelados (${canceladosCount})`],
-            ["clientes", `Clientes (${clientes.length})`],
-          ] as const).map(([key, label]) => (
+            ["andamento", "Em andamento", null],
+            ["cancelados", "Cancelados", canceladosCount],
+            ["clientes", "Clientes", clientes.length],
+          ] as const).map(([key, label, n]) => (
             <button
               key={key}
               type="button"
               role="tab"
               aria-selected={vista === key}
               onClick={() => setVista(key)}
-              className={`-mb-px px-3 sm:px-4 py-2.5 text-[11px] tracking-[0.1em] uppercase font-bold border-b-2 whitespace-nowrap transition-colors ${
+              className={`-mb-px px-1 sm:px-4 py-2.5 text-[10px] sm:text-[11px] tracking-[0.06em] sm:tracking-[0.1em] uppercase font-bold border-b-2 whitespace-nowrap transition-colors ${
                 vista === key ? "border-[#0B1F45] text-[#0B1F45]" : "border-transparent text-[#74777f] hover:text-[#0B1F45]"
               }`}
             >
               {label}
+              {n !== null && <span className="ml-1 font-semibold text-[#b0b0b0]">{n}</span>}
             </button>
           ))}
         </div>
@@ -1979,7 +1981,7 @@ export default function PedidosTab({
           <div className="flex flex-wrap items-center gap-3">
             <input
               type="text"
-              placeholder="Buscar cliente por nome, telefone, e-mail ou CPF/CNPJ"
+              placeholder="Nome, telefone, e-mail ou CPF/CNPJ"
               value={buscaCliente}
               onChange={(e) => setBuscaCliente(e.target.value)}
               className="w-full sm:w-auto border border-[#e2e2e2] px-3 py-2 text-sm text-[#0B1F45] focus:outline-none focus:border-[#0B1F45] sm:min-w-[380px]"
@@ -2090,7 +2092,7 @@ export default function PedidosTab({
           <div className="space-y-3">
             {clientesFiltrados.map((c) => {
               const aberto = clienteAberto === c.chave;
-              const contato = [c.dados.client_phone, c.dados.client_email].filter(Boolean).join(" · ");
+              const contato = [telefoneLegivel(c.dados.client_phone), c.dados.client_email].filter(Boolean).join(" · ");
               const cidade = [c.dados.client_city, c.dados.client_state].filter(Boolean).join(" / ");
               return (
                 <div key={c.chave} className="bg-white border border-[#e2e2e2]"
@@ -3478,7 +3480,7 @@ function NomeClienteInput({ label, value, clientes, onChange, onPick }: {
               >
                 <p className="text-sm font-bold text-[#0B1F45] truncate">{c.nome}</p>
                 <p className="text-[11px] text-[#74777f] truncate">
-                  {[c.dados.client_phone || c.dados.client_email, `${c.quantidade} ${c.quantidade === 1 ? "pedido" : "pedidos"}`].filter(Boolean).join(" · ")}
+                  {[telefoneLegivel(c.dados.client_phone) || c.dados.client_email, `${c.quantidade} ${c.quantidade === 1 ? "pedido" : "pedidos"}`].filter(Boolean).join(" · ")}
                 </p>
               </li>
             ))}
