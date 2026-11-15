@@ -1,6 +1,6 @@
 # PFB Carbon (Luxury Line): página de apresentação — design
 
-Data: 15/11/2026 · Branch: `pfb-carbon` · Situação: aguardando aprovação do dono
+Data: 15/11/2026 · Branch: `pfb-carbon` · Situação: aprovado pelo dono em 15/11/2026, com três pedidos: texto mais humano (os textos das telas abaixo são rascunho; os finais saem do `humanizer`), foto real tratada, e os termos "adesivo de alta aderência" e "substrato em fibra de bambu carbonizado"
 
 ## Para que serve
 
@@ -60,7 +60,7 @@ Todas com `ts-encaixe-ponto`; as marcadas com ▶ tocam sozinhas (`useToque`) e 
 
 1. **Abertura ▶** (≈8 s). Tela escura com "PFB Carbon" e o rótulo "Luxury Line". A madeira Louro Freijó acende por trás, em placas inteiras. Três frases, uma por vez: "Painel Flexível em Fibra de Bambu." · "Por dentro, bambu carbonizado." · "Feito para o clima da Amazônia." No fim: "Chega em breve a Manaus." com **Entrar na lista de espera** e **Ver os modelos**.
 2. **O miolo.** A foto real em corte ocupando a tela (metade no computador, ao lado do texto). Título "Por dentro, bambu carbonizado." Uma linha: "O miolo é feito de bambu carbonizado. Fica mais estável quando a temperatura sobe."
-3. **A placa por dentro ▶** (≈10 s). A placa de 5 mm se abre em cinco camadas, de cima para baixo, um nome por vez: Filme PET · Cola · SPC · Bambu carbonizado · SPC. Fecha de novo com "Cinco camadas em 5 mm." Só o nome de cada camada, sem frase de função (mesma regra do PFB).
+3. **A placa por dentro ▶** (≈10 s). A placa de 5 mm se abre em cinco camadas, de cima para baixo, um nome por vez: Filme PET · Adesivo de alta aderência · SPC · Substrato em fibra de bambu carbonizado · SPC. (Termos do dono, 15/11/2026: nunca "cola", nunca só "bambu carbonizado" no nome da camada.) Fecha de novo com "Cinco camadas em 5 mm." Só o nome de cada camada, sem frase de função (mesma regra do PFB).
 4. **Clima amazônico ▶** (≈10 s). A tela da mensagem principal. Título grande: "Feito para o clima da Amazônia." Depois, uma por vez: "Aqui a umidade é alta o ano inteiro." · "E o calor não dá trégua." · "Por isso a Orbital muda a composição dos materiais: a cada linha, mais resistentes ao clima daqui."
 5. **Em números.** Quatro números grandes: 2,80 × 1,20 m · 5 mm · 650 kg/m³ (densidade da base) · cerca de 720 kg/m³ (placa com o filme PET). Embaixo: "Uso interno: parede e teto."
 6. **Os modelos ▶** (≈10 s). As cinco madeiras lado a lado, cada uma como uma placa em pé na proporção real. Uma acende por vez, com o nome. Tocar numa leva ao catálogo naquele modelo.
