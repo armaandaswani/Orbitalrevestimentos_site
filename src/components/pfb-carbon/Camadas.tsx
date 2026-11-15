@@ -42,10 +42,10 @@ export default function Camadas() {
   const grao = { backgroundImage: `url(${FOTO_MIOLO.grao.src})` };
   return (
     <section ref={ref} aria-labelledby="cbn-camadas-titulo" className="cbn-camadas cbn-toca ts-encaixe-ponto relative min-h-[100svh] bg-[#131211]">
-      <div className="ds-wrap flex min-h-[100svh] flex-col justify-center pt-20 pb-20 lg:pt-24">
+      <div className="ds-wrap flex min-h-[100svh] flex-col justify-center pt-28 pb-16 lg:pt-24 lg:pb-20">
         <h2 id="cbn-camadas-titulo" className="font-serif font-normal text-t1 text-[#F2EEE6]">{TEXTOS.camadas.titulo}</h2>
 
-        <div className="cbn-cam-palco mt-8 lg:mt-10">
+        <div className="cbn-cam-palco mt-6 lg:mt-10">
           <div aria-hidden className="cbn-pilha">
             <div className="cbn-eixo">
               {TIPO.map((tipo, k) => (
@@ -69,7 +69,7 @@ export default function Camadas() {
           </ol>
         </div>
 
-        <p className="mt-8 text-sobre text-[#F2EEE6]/45 lg:mt-10">{TEXTOS.camadas.nota}</p>
+        <p className="mt-6 text-right text-sobre text-[#F2EEE6]/45 lg:mt-10 lg:text-left">{TEXTOS.camadas.nota}</p>
       </div>
       <BotaoToque estado={estado} alternar={alternar} nome="as camadas do PFB Carbon" />
     </section>

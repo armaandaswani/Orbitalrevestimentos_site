@@ -32,7 +32,7 @@ export default function PfbCarbon() {
       <Abertura entrarNaLista={abrirEspera} />
 
       {/* Foto real do corte (não gerada): a faixa flutua no escuro, de ponta a ponta no celular. */}
-      <section aria-labelledby="cbn-miolo-titulo" className="ts-encaixe-ponto flex min-h-[100svh] flex-col justify-center bg-[#131211] pt-20 pb-16 lg:pt-24">
+      <section aria-labelledby="cbn-miolo-titulo" className="ts-encaixe-ponto flex min-h-[100svh] flex-col justify-center bg-[#131211] pt-28 pb-16 lg:pt-24">
         <Revelar className="ds-wrap w-full">
           <h2 id="cbn-miolo-titulo" className="font-serif font-normal text-t1 text-[#F2EEE6] max-w-[16ch] text-balance">{TEXTOS.miolo.titulo}</h2>
         </Revelar>
@@ -51,7 +51,7 @@ export default function PfbCarbon() {
 
       <ClimaCarbon />
 
-      <section aria-labelledby="cbn-numeros-titulo" className="ts-encaixe-ponto grid bg-[#131211] lg:min-h-[100svh] lg:grid-cols-2">
+      <section aria-labelledby="cbn-numeros-titulo" className="ts-encaixe-ponto grid bg-[#131211] pt-28 lg:min-h-[100svh] lg:grid-cols-2 lg:pt-0">
         <div className="relative aspect-[4/3] overflow-hidden bg-[#0C0B0A] lg:aspect-auto">
           {/* eslint-disable-next-line @next/next/no-img-element */}
           <img src={FOTO_MIOLO.mao.src} alt={TEXTOS.numeros.alt} loading="lazy" decoding="async"

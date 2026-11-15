@@ -2641,12 +2641,12 @@ html.mv-cursor:has([data-lupa="aberta"]) .mv-cursor-corpo { opacity: 0; }
    (--lit). 0.9 → 1: todas acesas. As faces escurecem por um véu (::after):
    opacity na lâmina achataria a caixa. */
 .cbn-camadas {
-  --s: min(46vw, 30svh);
+  --s: min(42vw, 26svh);
   --g: calc(var(--s) * 0.27);
   --abre0: clamp(0, (var(--p, 0) - 0.1) / 0.2, 1);
   --abre: calc(var(--abre0) * var(--abre0) * (3 - 2 * var(--abre0)));
 }
-.cbn-cam-palco { display: flex; flex-direction: column; align-items: center; gap: 1.75rem; }
+.cbn-cam-palco { display: flex; flex-direction: column; align-items: center; gap: 1.5rem; }
 .cbn-pilha { position: relative; flex: none; width: calc(var(--s) * 1.4143); height: calc(var(--s) * 0.868 + var(--g) * 4); }
 .cbn-eixo {
   position: absolute; left: 50%; top: calc(100% - var(--s) * 0.3536); width: 0; height: 0;
@@ -2770,6 +2770,12 @@ html.mv-cursor:has([data-lupa="aberta"]) .mv-cursor-corpo { opacity: 0; }
 .cbn-mod-marca { opacity: calc(0.28 + 0.72 * var(--vez)); }
 [data-ativo] .cbn-mod-fila { will-change: transform; }
 
+/* No Safari do iPhone as telas medem 100svh e a janela, com a barra recolhida,
+   fica uns 97 px mais alta: o começo da tela seguinte aparece embaixo. Por
+   isso, no celular, toda tela que vem depois de uma de 100svh começa com 7rem
+   de fundo liso: miolo, camadas e números pela classe pt-28; a lista aqui,
+   por cima do ds-secao. */
+@media (max-width: 1023.98px) { .cbn #lista { padding-top: 7rem; } }
 /* Tela baixa (celular deitado): as telas de palco fixo viram texto parado, sem pausa. */
 @media (max-height: 600px) {
   .cbn-clima .ts-botao-toque, .cbn-modelos .ts-botao-toque { display: none; }
