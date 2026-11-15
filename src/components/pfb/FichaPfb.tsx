@@ -37,7 +37,7 @@ export default function FichaPfb() {
       id="ficha"
       data-capitulo="ficha"
       aria-labelledby="pfb-ficha-titulo"
-      className="bg-[#0B1F45] text-white py-12 lg:py-24"
+      className="bg-[#0B1F45] text-white pt-12 pb-8 lg:pt-24 lg:pb-12"
     >
       <div className="ds-wrap">
         <h2 id="pfb-ficha-titulo" className="font-serif pfb-t1 text-white">

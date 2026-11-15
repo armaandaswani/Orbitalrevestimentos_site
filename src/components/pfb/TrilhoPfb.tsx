@@ -14,6 +14,10 @@ import { Children, useEffect, useRef, useState } from "react";
  * e o leitor de tela lê os itens em ordem. Sem JavaScript, o trilho rola e o
  * primeiro ponto fica aceso.
  */
+
+/** Tempo de cada item quando o trilho passa sozinho. */
+const PASSO_MS = 2400;
+
 export default function TrilhoPfb({
   rotulo,
   como: Tag = "div",
@@ -49,6 +53,41 @@ export default function TrilhoPfb({
     return () => {
       el.removeEventListener("scroll", aoRolar);
       if (quadro) cancelAnimationFrame(quadro);
+    };
+  }, [n]);
+
+  // Passa sozinho (15/11/2026): com o trilho na tela, avança um item a cada PASSO_MS
+  // até o último, para ninguém ficar só no primeiro número. Qualquer gesto no trilho
+  // (dedo, teclado, roda) devolve o comando ao visitante. Só onde ele é trilho
+  // (abaixo de lg) e sem movimento reduzido.
+  useEffect(() => {
+    const el = ref.current;
+    if (!el || n < 2 || typeof IntersectionObserver === "undefined") return;
+    if (window.matchMedia("(prefers-reduced-motion: reduce)").matches) return;
+    if (window.matchMedia("(min-width: 64rem)").matches) return;
+    let relogio = 0;
+    let solto = false;
+    const parar = () => {
+      solto = true;
+      window.clearInterval(relogio);
+    };
+    const passo = () => {
+      const w = el.clientWidth;
+      const i = w > 0 ? Math.round(el.scrollLeft / w) : n;
+      if (i >= n - 1) return parar();
+      el.scrollTo({ left: (i + 1) * w, behavior: "smooth" });
+    };
+    const io = new IntersectionObserver((entradas) => {
+      window.clearInterval(relogio);
+      if (!solto && entradas.some((e) => e.isIntersecting)) relogio = window.setInterval(passo, PASSO_MS);
+    }, { threshold: 0.6 });
+    io.observe(el);
+    const gestos = ["pointerdown", "touchstart", "keydown", "wheel"] as const;
+    gestos.forEach((g) => el.addEventListener(g, parar, { passive: true }));
+    return () => {
+      window.clearInterval(relogio);
+      io.disconnect();
+      gestos.forEach((g) => el.removeEventListener(g, parar));
     };
   }, [n]);
 

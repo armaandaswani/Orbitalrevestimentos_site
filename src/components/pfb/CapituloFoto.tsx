@@ -1,4 +1,5 @@
 import Image from "next/image";
+import EntradaPfb from "@/components/pfb/EntradaPfb";
 
 /**
  * Capítulo de foto inteira com painel sólido (capítulos 6 e 10 da página do
@@ -39,7 +40,8 @@ export default function CapituloFoto({
         bambu ? "bg-[#F6F5F2]" : "bg-[#0B1F45]"
       }`}
     >
-      <div className="relative flex-1 min-h-0 overflow-clip lg:absolute lg:inset-0">
+      {/* EntradaPfb: no capítulo do bambu, o recorte da foto abre por tempo quando ela chega à tela. */}
+      <EntradaPfb className="relative flex-1 min-h-0 overflow-clip lg:absolute lg:inset-0">
         <div className={bambu ? "absolute inset-0 pfb-recorte" : "absolute inset-x-0 -inset-y-3 pfb-parallax"}>
           <Image
             src={foto.src}
@@ -50,7 +52,7 @@ export default function CapituloFoto({
             style={{ objectPosition: foto.posicao }}
           />
         </div>
-      </div>
+      </EntradaPfb>
       <div
         className={`relative shrink-0 min-h-[36%] ds-wrap py-10 flex flex-col justify-center lg:absolute lg:inset-y-0 lg:w-[40%] lg:max-w-none lg:py-24 ${
           bambu ? "bg-[#F6F5F2] text-[#0B1F45] lg:right-0 lg:left-auto lg:px-14" : "bg-[#0B1F45] text-white lg:left-0"

@@ -1629,34 +1629,20 @@ html[data-mv-nivel="leve"] .ts-clima-nevoa { display: none; }
 .pfb-nome   { transform: none; opacity: 1; }
 @keyframes pfb-lamina-encaixa { from { transform: translateY(var(--fechado)); opacity: 0; } to { transform: none; opacity: 1; } }
 @keyframes pfb-nome-entra { from { transform: translateX(-8px); opacity: 0; } to { transform: none; opacity: 1; } }
+/* (15/11/2026) A figura deixou de seguir a rolagem: quem parava no meio via a placa
+   meio montada. Agora ela monta sozinha, por tempo, quando chega à tela (EntradaPfb),
+   em todo navegador: 800 ms por lâmina, 80 ms entre vizinhas (1,2 s no total; a chegada
+   por âncora a #tecnologia precisa estar pronta em 1,5 s). */
 @media (prefers-reduced-motion: no-preference) {
-  @supports (animation-timeline: view()) {
-    html[data-mv-nivel="completo"] .pfb-palco { timeline-scope: --pfb-camadas; }
-    html[data-mv-nivel="completo"] .pfb-figura { view-timeline: --pfb-camadas block; }
-    html[data-mv-nivel="completo"] .pfb-lamina {
-      animation: pfb-lamina-encaixa linear both;
-      animation-timeline: --pfb-camadas;
-      animation-range: entry calc(12% + var(--i) * 13%) entry calc(48% + var(--i) * 13%);
-    }
-    html[data-mv-nivel="completo"] .pfb-nome {
-      animation: pfb-nome-entra linear both;
-      animation-timeline: --pfb-camadas;
-      animation-range: entry calc(18% + var(--l) * 13%) entry calc(50% + var(--l) * 13%);
-    }
-  }
   html[data-mv-nivel="completo"] .pfb-espera .pfb-lamina { animation: none; transform: translateY(var(--fechado)); opacity: 0; }
   html[data-mv-nivel="completo"] .pfb-espera .pfb-nome { animation: none; transform: translateX(-8px); opacity: 0; }
   html[data-mv-nivel="completo"] .pfb-entrou .pfb-lamina {
-    animation: pfb-lamina-encaixa 900ms cubic-bezier(.2,.7,.2,1) both;
-    animation-timeline: auto;
-    animation-range: normal;
-    animation-delay: calc(var(--i) * 70ms);
+    animation: pfb-lamina-encaixa 800ms cubic-bezier(.2,.7,.2,1) both;
+    animation-delay: calc(var(--i) * 80ms);
   }
   html[data-mv-nivel="completo"] .pfb-entrou .pfb-nome {
-    animation: pfb-nome-entra 900ms cubic-bezier(.2,.7,.2,1) both;
-    animation-timeline: auto;
-    animation-range: normal;
-    animation-delay: calc(var(--l) * 70ms + 120ms);
+    animation: pfb-nome-entra 800ms cubic-bezier(.2,.7,.2,1) both;
+    animation-delay: calc(var(--l) * 80ms + 120ms);
   }
 }
 
@@ -1694,38 +1680,18 @@ details[open] > summary .pfb-mais { transform: rotate(45deg); }
   from { transform: rotate(0deg) translateX(0px); }
   to   { transform: rotate(var(--r)) translateX(calc(var(--x) * var(--escala, 1))); }
 }
+/* (15/11/2026) O leque também abre sozinho, por tempo, ao chegar à tela (EntradaPfb). */
 @media (prefers-reduced-motion: no-preference) {
-  @supports (animation-timeline: view()) {
-    html[data-mv-nivel="completo"] .pfb-leque { view-timeline: --pfb-leque block; }
-    html[data-mv-nivel="completo"] .pfb-leque-carta {
-      animation: pfb-leque-abre linear both;
-      animation-timeline: --pfb-leque;
-      animation-range: entry calc(60% + var(--par) * 15%) entry calc(120% + var(--par) * 15%);
-    }
-  }
   html[data-mv-nivel="completo"] .pfb-espera .pfb-leque-carta { animation: none; transform: rotate(0deg) translateX(0px); }
   html[data-mv-nivel="completo"] .pfb-entrou .pfb-leque-carta {
-    animation: pfb-leque-abre 900ms cubic-bezier(.2,.7,.2,1) both;
-    animation-timeline: auto;
-    animation-range: normal;
-    animation-delay: calc(var(--par) * 70ms);
+    animation: pfb-leque-abre 800ms cubic-bezier(.2,.7,.2,1) both;
+    animation-delay: calc(var(--par) * 80ms);
   }
 }
 
-/* Parallax das fotos inteiras (capítulos 1, 6 e 10): a camada da foto passa
-   12 px da caixa em cima e embaixo (-inset-y-3) e anda de -12 a 12 px enquanto
-   a seção atravessa a tela. Só no nível completo, sem movimento reduzido e com
-   animation-timeline; fora disso fica parada, sem transform. */
-@keyframes pfb-parallax { from { transform: translate3d(0, -12px, 0); } to { transform: translate3d(0, 12px, 0); } }
-@media (prefers-reduced-motion: no-preference) {
-  @supports (animation-timeline: view()) {
-    html[data-mv-nivel="completo"] .pfb-parallax {
-      animation: pfb-parallax linear both;
-      animation-timeline: view();
-      animation-range: cover 0% cover 100%;
-    }
-  }
-}
+/* As fotos inteiras (capítulos 1, 6 e 10) ficam paradas: o parallax de 24 px ligado à
+   rolagem saiu em 15/11/2026 (quase invisível, e mais uma coisa presa ao ritmo de rolar).
+   A classe .pfb-parallax segue na marcação, sem regra. */
 
 /* ── PFB v2 (08/11/2026): escala mais leve, linhas, folhas, trilhos, água ──
    Experiência v2 (.superpowers/sdd/2026-11-08-experiencia-v2/): menos texto à
@@ -1868,16 +1834,12 @@ html:has(dialog.pfb-folha[open]) { overflow: hidden; }
   html[data-mv-nivel="completo"] .pfb-assenta { animation: pfb-assenta var(--mv-cinema) var(--mv-chegada) both; }
 }
 
-/* Capítulo 10: o recorte da foto abre de dentro para fora enquanto a seção entra. */
+/* Capítulo 10: o recorte da foto abre de dentro para fora quando a seção chega à tela,
+   por tempo (EntradaPfb em volta da foto, CapituloFoto), não mais pela rolagem. */
 @keyframes pfb-recorte { from { clip-path: inset(10% 9% 10% 9%); transform: scale(1.06); } to { clip-path: inset(0); transform: none; } }
 @media (prefers-reduced-motion: no-preference) {
-  @supports (animation-timeline: view()) {
-    html[data-mv-nivel="completo"] .pfb-recorte {
-      animation: pfb-recorte linear both;
-      animation-timeline: view();
-      animation-range: entry 0% entry 90%;
-    }
-  }
+  html[data-mv-nivel="completo"] .pfb-espera .pfb-recorte { clip-path: inset(10% 9% 10% 9%); transform: scale(1.06); }
+  html[data-mv-nivel="completo"] .pfb-entrou .pfb-recorte { animation: pfb-recorte 1100ms cubic-bezier(.2,.7,.2,1) both; }
 }
 
 /* ── Onde comprar v2 (08/11/2026): lojas em cartões que deslizam ───────────

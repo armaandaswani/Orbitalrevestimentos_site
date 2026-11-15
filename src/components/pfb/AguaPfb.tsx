@@ -38,7 +38,7 @@ export default function AguaPfb() {
       id="agua"
       data-capitulo="agua"
       aria-labelledby="pfb-agua-titulo"
-      className="bg-[#0B1F45] text-white pt-12 pb-10 lg:py-24"
+      className="bg-[#0B1F45] text-white pt-8 pb-10 lg:pt-12 lg:pb-24"
     >
       <div className="lg:ds-wrap lg:grid lg:grid-cols-[minmax(0,1fr)_minmax(0,28rem)] lg:items-center lg:gap-x-24">
         <div className="ds-wrap lg:mx-0 lg:w-full lg:max-w-none lg:px-0 lg:row-start-1 lg:col-start-1">

@@ -44,7 +44,10 @@ export default function FechamentoPfb({ lugares }: { lugares: Showroom[] }) {
         {(showrooms.length > 0 || revendas.length > 0) && (
           <div className="mt-6 lg:col-start-2 lg:row-span-2 lg:row-start-1 lg:mt-0">
             {showrooms.length > 0 && (
-              <ul className="grid grid-cols-[repeat(3,minmax(0,108px))] justify-between gap-x-3 gap-y-4 lg:grid-cols-[repeat(3,160px)] lg:gap-y-6">
+              // Quatro lugares: 2 + 2 no celular e 4 numa linha no computador, em vez de 3 + 1 com um sobrando.
+              <ul className={showrooms.length === 4
+                ? "grid grid-cols-2 gap-x-3 gap-y-4 lg:grid-cols-4 lg:gap-x-4"
+                : "grid grid-cols-[repeat(3,minmax(0,108px))] justify-between gap-x-3 gap-y-4 lg:grid-cols-[repeat(3,160px)] lg:gap-y-6"}>
                 {showrooms.map((lugar) => (
                   <li key={lugar.id}>
                     <Link
@@ -54,13 +57,13 @@ export default function FechamentoPfb({ lugares }: { lugares: Showroom[] }) {
                       data-texto-banco
                       className="group block text-[#0B1F45]"
                     >
-                      <span className="relative block aspect-square overflow-hidden bg-[#0B1F45]">
+                      <span className={`relative block overflow-hidden bg-[#0B1F45] ${showrooms.length === 4 ? "aspect-[4/3] lg:aspect-square" : "aspect-square"}`}>
                         {lugar.display_cover && (
                           <Image
                             src={lugar.display_cover}
                             alt=""
                             fill
-                            sizes="(min-width: 1024px) 160px, 108px"
+                            sizes={showrooms.length === 4 ? "(min-width: 1024px) 120px, 45vw" : "(min-width: 1024px) 160px, 108px"}
                             style={coverStyle(lugar.display_focus_x, lugar.display_focus_y, lugar.display_zoom)}
                           />
                         )}
@@ -89,7 +92,7 @@ export default function FechamentoPfb({ lugares }: { lugares: Showroom[] }) {
         )}
 
         <div className="mt-6 lg:col-start-1 lg:row-start-2 lg:mt-8">
-          <p className="pfb-corpo text-[#43474e]">{PEDIR.orcamento}</p>
+          <p className="pfb-corpo text-[#43474e] text-pretty">{PEDIR.orcamento}</p>
           <div className="mt-6 flex flex-wrap items-center gap-x-6 gap-y-2">
             <ContatoCta origem="pfb-como-pedir" className="ds-botao ds-botao-cheio lg:min-h-12">
               {PEDIR.botaoConsultor}

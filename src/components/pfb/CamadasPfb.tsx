@@ -41,7 +41,7 @@ export default function CamadasPfb() {
       id="tecnologia"
       data-capitulo="tecnologia"
       aria-labelledby="pfb-camadas-titulo"
-      className="bg-[#F6F5F2] py-12 lg:py-24"
+      className="bg-[#F6F5F2] pt-8 pb-12 lg:pt-12 lg:pb-24"
     >
       <div className="ds-wrap">
         <EntradaPfb observar=".pfb-figura" className="pfb-palco relative grid grid-cols-[minmax(0,1fr)_min(58%,193px)] gap-x-4 gap-y-6 lg:grid-cols-[minmax(0,1fr)_16rem_auto] lg:gap-x-16 lg:gap-y-0 lg:items-center">

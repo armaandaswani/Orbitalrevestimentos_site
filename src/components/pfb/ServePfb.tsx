@@ -24,11 +24,13 @@ export default function ServePfb() {
       aria-labelledby="pfb-serve-titulo"
       className="bg-[#F6F5F2] py-12 lg:py-24"
     >
-      <div className="ds-wrap lg:grid lg:grid-cols-[minmax(0,4fr)_minmax(0,8fr)] lg:gap-x-16 lg:items-start">
-        <h2 id="pfb-serve-titulo" className="font-serif pfb-t1 text-[#0B1F45]">
+      {/* Computador (15/11/2026): o título e o "como instalar" à esquerda, as duas listas à direita; antes a
+          coluna do título ficava vazia e os passos iam para baixo das listas. No celular a ordem é a do código. */}
+      <div className="ds-wrap lg:grid lg:grid-cols-[minmax(0,5fr)_minmax(0,7fr)] lg:gap-x-16 lg:items-start">
+        <h2 id="pfb-serve-titulo" className="font-serif pfb-t1 text-[#0B1F45] lg:col-start-1 lg:row-start-1">
           {SERVE.titulo}
         </h2>
-        <div className="mt-6 lg:mt-0">
+        <div className="mt-6 lg:mt-0 lg:col-start-2 lg:row-start-1 lg:row-span-2">
           <div className="grid grid-cols-2 gap-x-6 lg:gap-x-12">
             {listas.map((l) => (
               <div key={l.titulo}>
@@ -43,8 +45,10 @@ export default function ServePfb() {
               </div>
             ))}
           </div>
-          <h3 className="mt-8 font-serif pfb-t3 text-[#0B1F45] lg:mt-14">{SERVE.comoInstalar.titulo}</h3>
-          <TrilhoPfb como="ol" rotulo={SERVE.rotuloPassos} className="mt-3 lg:grid lg:grid-cols-3 lg:gap-x-8">
+        </div>
+        <div className="lg:col-start-1 lg:row-start-2">
+          <h3 className="mt-8 font-serif pfb-t3 text-[#0B1F45] lg:mt-10">{SERVE.comoInstalar.titulo}</h3>
+          <TrilhoPfb como="ol" rotulo={SERVE.rotuloPassos} className="mt-3 lg:grid lg:grid-cols-1 lg:gap-y-4">
             {SERVE.comoInstalar.passos.map((p, i) => (
               <li key={p.titulo} className="flex gap-4 border-t border-[#0B1F45]/80 pt-4">
                 <span aria-hidden="true" className="font-serif text-[2.25rem] leading-none text-[#2347A0] tabular-nums">
@@ -57,7 +61,7 @@ export default function ServePfb() {
               </li>
             ))}
           </TrilhoPfb>
-          <div className="mt-6 border-t border-[#74777f]/30 lg:mt-10 lg:max-w-[24rem]">
+          <div className="mt-6 border-t border-[#74777f]/30 lg:mt-8">
             <FolhaPfb id="folha-serve" rotulo={SERVE.rotuloFolha} titulo={SERVE.titulo}>
               {[SERVE.ondeUsar, SERVE.ondeNaoUsar, SERVE.comoInstalar].map((b, i) => (
                 <div key={b.titulo} className={i > 0 ? "mt-8" : ""}>

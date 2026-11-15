@@ -1077,7 +1077,6 @@ const QUANTOS = { laminas: 6, nomes: 5, cartas: 5 };
  * depois do fim e antes da chegada por âncora a #linhas (o leque fica em 193% a 320 × 568,
  * 231% a 1440 × 900 e mais nas outras).
  */
-const LEQUE_P = { inicio: 0.4, meio: 1.05, fim: 1.7 };
 /** iPhone com as barras do Safari (Review Focus 1). */
 const CELULAR_BAIXO = [390, 664];
 /** Capítulos de foto com painel de texto (1, 6 e 10): área livre do chat e painel sem corte. */
@@ -1110,14 +1109,6 @@ async function rolarAoMeio(page, seletor) {
     const r = document.querySelector(s).getBoundingClientRect();
     window.scrollTo({ top: Math.max(0, r.top + scrollY + r.height / 2 - innerHeight / 2), behavior: "instant" });
   }, seletor);
-}
-
-/** Rola, sem rolagem suave, até o topo de .pfb-leque ficar em innerHeight − p × altura dele (p, o progresso de entrada). */
-function posicionarLeque(page, p) {
-  return page.evaluate((p) => {
-    const r = document.querySelector(".pfb-leque").getBoundingClientRect();
-    window.scrollTo({ top: Math.max(0, r.top + scrollY - (innerHeight - p * r.height)), behavior: "instant" });
-  }, p);
 }
 
 /** Rola até a seção ocupar a tela: o fim dela no fim da tela (a abertura fica no topo da página). */
@@ -1460,29 +1451,10 @@ async function etapa2Navegador(browser) {
     );
   }
 
-  // 4. Sem rolagem lateral com o leque a meio caminho da abertura. Com movimento completo
-  // (o padrão do contexto), a prova do meio não pode passar no vazio: exige carta com
-  // animação e ao menos uma fora do estado final.
-  for (const dim of [MENOR, CELULAR, [768, 1024], DESKTOP]) {
-    await verificar(`Sem rolagem lateral com o leque a meio caminho (topo de .pfb-leque em innerHeight − ${LEQUE_P.meio} × altura dele): cartas com animação e ao menos uma fora do estado final`, dim, () =>
-      comContexto(browser, dim, {}, async (page) => {
-        await irAPagina(page);
-        await posicionarLeque(page, LEQUE_P.meio);
-        await dormir(150);
-        const larg = await page.evaluate(() => ({ sw: document.documentElement.scrollWidth, iw: innerWidth }));
-        const m = await medirMovimento(page);
-        await capturarPfb(page, "leque-meio", dim);
-        const animadas = m.cartas.filter((c) => c.anima).length;
-        const foraDoFinal = m.cartas.filter((c, i) => !cartaNoFinal(c, i, dim[0])).length;
-        const falhas = [];
-        if (!(larg.sw <= larg.iw)) falhas.push(`scrollWidth ${larg.sw} > innerWidth ${larg.iw}`);
-        if (m.cartas.length !== QUANTOS.cartas) falhas.push(`${m.cartas.length} cartas (esperado ${QUANTOS.cartas})`);
-        if (animadas === 0) falhas.push("nenhuma carta com animação (movimento completo)");
-        else if (foraDoFinal === 0) falhas.push(`${animadas} cartas com animação e todas no estado final (o leque não está a meio caminho)`);
-        return comFalhas(falhas, `scrollWidth ${larg.sw} / innerWidth ${larg.iw}; cartas com animação ${animadas}, fora do estado final ${foraDoFinal}`);
-      }),
-    );
-  }
+  // (15/11/2026) As verificações do leque a meio caminho da rolagem, do encaixe das lâminas pela
+  // rolagem (8a) e da abertura do leque pela rolagem (8c) saíram: as duas figuras deixaram de
+  // seguir a rolagem e tocam por tempo ao chegar à tela (EntradaPfb), em todo navegador. O
+  // caminho por tempo segue verificado em 8b e 8d.
 
   // 5. As folhas (v2, 08/11/2026; antes: os três details do capítulo 9). As três
   // (ART e ficha detalhada no #ficha, detalhes de uso no #onde-usar) fechadas ao
@@ -1661,43 +1633,6 @@ async function etapa2Navegador(browser) {
     }
   }
 
-  // 8a. O encaixe pela rolagem (caminho principal, animation-timeline). O sujeito da linha do
-  // tempo é a figura: a posição é a do topo de .pfb-figura em innerHeight − p × altura (p, o
-  // progresso de entrada). p = 0,15: começo (captura). p = 0,6, o meio do encaixe (os intervalos
-  // vão de entry 12% a 115%): alguma lâmina a meio caminho e com animação, com o translateY entre
-  // −fechadoY% da altura e 0. p = 1,18 (depois do fim, em 115%, e antes da chegada por âncora, que
-  // deixa a figura em 121% no computador e 133% no celular): tudo no estado final.
-  for (const dim of [CELULAR, DESKTOP]) {
-    await verificar("Lâminas encaixam na entrada da figura: topo de .pfb-figura em innerHeight − 0,6 × altura dá ≥ 1 .pfb-lamina com opacidade < 0,99, animação e translateY em [−fechadoY% × altura, 0]; em innerHeight − 1,18 × altura, o estado final", dim, () =>
-      comContexto(browser, dim, {}, async (page) => {
-        await irAPagina(page);
-        const posicionar = (p) =>
-          page.evaluate((p) => {
-            const r = document.querySelector(".pfb-figura").getBoundingClientRect();
-            window.scrollTo({ top: Math.max(0, r.top + scrollY - (innerHeight - p * r.height)), behavior: "instant" });
-          }, p);
-        const falhas = [];
-        await posicionar(0.15);
-        await dormir(200);
-        await capturarPfb(page, "encaixe-inicio", dim);
-        await posicionar(0.6);
-        await dormir(200);
-        const meio = await medirMovimento(page);
-        const enc = await medirEncaixe(page);
-        await capturarPfb(page, "encaixe-meio", dim);
-        const aMeio = meio.laminas.filter((l) => l.opacidade < 0.99 && l.anima).length;
-        if (aMeio === 0) falhas.push(`no meio: nenhuma lâmina com opacidade < 0,99 e animação (${meio.laminas.map((l, i) => `${i}: ${r1(l.opacidade)}${l.anima ? " anima" : ""}`).join(", ")})`);
-        const sentido = sentidoDoEncaixe(enc);
-        if (!sentido.ok) falhas.push(`no meio: ${sentido.detalhe}`);
-        await posicionar(1.18);
-        await dormir(200);
-        const fim = estaNoFinal(await medirMovimento(page), dim[0], { leque: "abaixo" });
-        await capturarPfb(page, "encaixe-fim", dim);
-        if (!fim.ok) falhas.push(`em innerHeight − 1,18 × altura: ${fim.detalhe}`);
-        return comFalhas(falhas, `no meio: ${aMeio} lâminas a meio caminho (opacidades ${meio.laminas.map((l) => r1(l.opacidade)).join(", ")}); ${sentido.detalhe}; no fim: ${fim.detalhe}`);
-      }),
-    );
-  }
 
   // 8b. O caminho por tempo (EntradaPfb): o CSS.supports do JS diz que não há animation-timeline,
   // o CSS de verdade continua tendo. pfb-espera no topo (sondado até 1000 ms: a classe entra depois
@@ -1737,34 +1672,6 @@ async function etapa2Navegador(browser) {
     }),
   );
 
-  // 8c. O leque abre pela rolagem (caminho principal, animation-timeline): o sujeito da linha do
-  // tempo é .pfb-leque, nas posições de LEQUE_P. No meio, ao menos uma carta com animação fora do
-  // estado final, no caminho entre fechada e aberta (sentidoDoLeque); no fim, tudo no estado final.
-  for (const dim of [CELULAR, DESKTOP]) {
-    await verificar(`Leque abre na entrada: topo de .pfb-leque em innerHeight − ${LEQUE_P.meio} × altura dá ≥ 1 carta com animação fora do estado final, com giro e deslocamento entre 0 e o final; em innerHeight − ${LEQUE_P.fim} × altura, o estado final`, dim, () =>
-      comContexto(browser, dim, {}, async (page) => {
-        await irAPagina(page);
-        const falhas = [];
-        await posicionarLeque(page, LEQUE_P.inicio);
-        await dormir(200);
-        await capturarPfb(page, "leque-inicio", dim);
-        await posicionarLeque(page, LEQUE_P.meio);
-        await dormir(200);
-        const meio = await medirMovimento(page);
-        await capturarPfb(page, "leque-abre-meio", dim);
-        const aMeio = meio.cartas.filter((c, i) => c.anima && !cartaNoFinal(c, i, dim[0])).length;
-        if (aMeio === 0) falhas.push(`no meio: nenhuma carta com animação fora do estado final (${meio.cartas.map((c, i) => `${i}: ${c.transform}${c.anima ? " anima" : ""}`).join(", ")})`);
-        const sentido = sentidoDoLeque(meio.cartas, dim[0]);
-        if (!sentido.ok) falhas.push(`no meio: ${sentido.detalhe}`);
-        await posicionarLeque(page, LEQUE_P.fim);
-        await dormir(200);
-        const fim = estaNoFinal(await medirMovimento(page), dim[0]);
-        await capturarPfb(page, "leque-fim", dim);
-        if (!fim.ok) falhas.push(`em innerHeight − ${LEQUE_P.fim} × altura: ${fim.detalhe}`);
-        return comFalhas(falhas, `no meio: ${aMeio} cartas com animação fora do final (${sentido.aMeio} no caminho); ${sentido.detalhe}; no fim: ${fim.detalhe}`);
-      }),
-    );
-  }
 
   // 8d. O caminho por tempo do leque, como a 8b: o mesmo engano do CSS.supports do JS. pfb-espera
   // em .pfb-leque no topo; antes do leque, a figura do capítulo 3 passa pela tela (o encaixe dela

@@ -19,7 +19,7 @@ export default function OQueEPfb() {
       id="o-que-e"
       data-capitulo="o-que-e"
       aria-labelledby="pfb-o-que-e-titulo"
-      className="bg-[#F6F5F2] pt-12 pb-16 lg:pt-24 lg:pb-32"
+      className="bg-[#F6F5F2] pt-12 pb-8 lg:pt-24 lg:pb-12"
     >
       <div className="ds-wrap text-center">
         <h2 id="pfb-o-que-e-titulo" className="font-serif pfb-t2 text-[#0B1F45] mx-auto max-w-[22rem] lg:max-w-[34rem]">
