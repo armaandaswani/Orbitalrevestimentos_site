@@ -2694,7 +2694,8 @@ html.mv-cursor:has([data-lupa="aberta"]) .mv-cursor-corpo { opacity: 0; }
 
 /* Os nomes. No celular, uma lista embaixo do desenho; o nome da vez acende. */
 .cbn-cam-nomes { display: grid; gap: 0.5rem; width: 100%; max-width: 21rem; }
-.cbn-cam-nome { display: flex; align-items: baseline; gap: 0.75rem; opacity: calc(0.34 + 0.66 * var(--lit)); }
+/* Os nomes entram enquanto a placa abre: fechada, não há lâmina para apontar. */
+.cbn-cam-nome { display: flex; align-items: baseline; gap: 0.75rem; opacity: calc((0.34 + 0.66 * var(--lit)) * var(--abre)); }
 .cbn-cam-num { flex: none; font-size: 0.75rem; letter-spacing: 0.08em; color: #B08D57; }
 .cbn-cam-fio { display: none; }
 /* No computador cada nome fica na altura da sua lâmina aberta, ligado por um fio. */
@@ -2772,6 +2773,8 @@ html.mv-cursor:has([data-lupa="aberta"]) .mv-cursor-corpo { opacity: 0; }
 /* Tela baixa (celular deitado): as telas de palco fixo viram texto parado, sem pausa. */
 @media (max-height: 600px) {
   .cbn-clima .ts-botao-toque, .cbn-modelos .ts-botao-toque { display: none; }
+  /* As camadas ficam mais altas que a tela e podem não tocar: os nomes já aparecem. */
+  .cbn-cam-nome { opacity: 1; }
 }
 /* Sem movimento a abertura já abre no convite: a primeira frase, com o nome
    por extenso, fica parada entre o título e o convite. */
