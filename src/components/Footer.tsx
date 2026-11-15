@@ -58,11 +58,11 @@ export default function Footer() {
           <div className="col-span-1 md:col-span-2">
             <p className={colunaTitulo}>Profissionais</p>
             <div className="flex flex-col gap-1">
-              <Link href="/parcerias" className={item}>Arquitetos</Link>
-              <Link href="/parcerias" className={item}>Designers de Interiores</Link>
-              <Link href="/parcerias" className={item}>Marceneiros</Link>
-              <Link href="/parcerias" className={item}>Engenheiros</Link>
-              <Link href="/parcerias" className={item}>Revendedores</Link>
+              <Link href="/parcerias/arquitetos" className={item}>Arquitetos</Link>
+              <Link href="/parcerias/arquitetos" className={item}>Designers de Interiores</Link>
+              <Link href="/parcerias/marceneiros" className={item}>Marceneiros</Link>
+              <Link href="/parcerias/engenheiros" className={item}>Engenheiros</Link>
+              <Link href="/onde-comprar#quero-revender" prefetch={false} className={item}>Revendedores</Link>
               <Link href="/academia" className={item}>Aplicadores e Instaladores</Link>
               <div className="mt-3 pt-3 border-t border-[#333640] flex flex-col gap-1">
                 <Link href="/parceiro" className={`${item} font-medium text-white/90`}>Portal do Parceiro →</Link>

@@ -70,6 +70,13 @@ export default function sitemap(): MetadataRoute.Sitemap {
       changeFrequency: "monthly",
       priority: 0.7,
     },
+    // Uma página por perfil de parceria.
+    ...["arquitetos", "marceneiros", "engenheiros"].map((perfil) => ({
+      url: `${BASE_URL}/parcerias/${perfil}`,
+      lastModified: new Date(),
+      changeFrequency: "monthly" as const,
+      priority: 0.6,
+    })),
     {
       url: `${BASE_URL}/academia`,
       lastModified: new Date(),

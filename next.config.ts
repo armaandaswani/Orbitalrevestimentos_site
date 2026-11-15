@@ -80,6 +80,12 @@ const nextConfig: NextConfig = {
       { source: "/produtos/pfb", has: [{ type: "query", key: "modelo" }], destination: "/produtos/pfb/catalogo", permanent: true },
       // A página antiga de tecnologia virou a página do produto.
       { source: "/tecnologia", destination: "/produtos/pfb", statusCode: 301 },
+      // "Revenda" no menu é a página das lojas (/onde-comprar); /revenda é o atalho.
+      { source: "/revenda", destination: "/onde-comprar", permanent: false },
+      // Revendedores e aplicadores não têm página de perfil em /parcerias: vão
+      // para a seção de revenda e para a Academia.
+      { source: "/parcerias/revendedores", destination: "/onde-comprar#quero-revender", permanent: false },
+      { source: "/parcerias/aplicadores", destination: "/academia", permanent: false },
     ];
   },
   experimental: {

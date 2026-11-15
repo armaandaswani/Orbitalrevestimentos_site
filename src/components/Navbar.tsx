@@ -22,6 +22,8 @@ const navLinks = [
   { href: "/produtos", label: "Produtos" },
   { href: "/projetos", label: "Projetos" },
   { href: "/parcerias", label: "Parcerias" },
+  // "Revenda": onde o cliente compra (as lojas) e, no fim da página, o cadastro de quem quer revender.
+  { href: "/onde-comprar", label: "Revenda" },
   { href: "/visualizador", label: "Simulador" },
   // Sem "Orçamentos": o cliente escolhe o produto e fala com um consultor
   // dentro dele. O orçamento instantâneo (/simulador) segue no ar, só fora

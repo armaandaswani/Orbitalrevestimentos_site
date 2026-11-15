@@ -7,6 +7,8 @@ import MapaManaus from "@/components/onde-comprar/MapaManaus";
 import ListaPdv from "@/components/onde-comprar/ListaPdv";
 import IlhaPdv from "@/components/onde-comprar/IlhaPdv";
 import { nomeLugar } from "@/lib/projetos-tipos";
+import CadastroParceiro from "@/components/parcerias/CadastroParceiro";
+import { ANCORA_REVENDER, REVENDER } from "@/lib/parcerias-textos";
 
 /** Liga `data-pdv-js` no `<html>` antes da pintura: com ele, o bloco `.pdv-sem-js` da lista some. */
 const SCRIPT_JS_PDV = 'document.documentElement.setAttribute("data-pdv-js","")';
@@ -79,6 +81,17 @@ export default async function OndeComprarPage() {
           <ListaPdv pontos={pontos} />
         </div>
       </div>
+      {/* Para a loja que quer vender a linha (o "Revenda" do menu traz o cliente às lojas acima e o lojista até aqui). */}
+      <CadastroParceiro ancora={ANCORA_REVENDER} profissoes={[REVENDER.profissao]} titulo={REVENDER.titulo} apoio={REVENDER.lead} botao={REVENDER.botao}>
+        <ul className="mt-6 grid gap-4 max-w-[36ch]">
+          {REVENDER.beneficios.map((b) => (
+            <li key={b.titulo} className="border-t border-[#0B1F45]/15 pt-3">
+              <p className="font-serif text-t3 text-[#0B1F45]">{b.titulo}</p>
+              <p className="mt-1 text-legenda text-[#43474e]">{b.texto}</p>
+            </li>
+          ))}
+        </ul>
+      </CadastroParceiro>
       <IlhaPdv pontos={pontos} />
     </main>
   );

@@ -57,6 +57,8 @@ const PROFESSIONS = [
   "Engenheiro civil",
   "Corretor de imóveis",
   "Lojista / revendedor",
+  "Marceneiro",
+  "Aplicador / instalador",
 ];
 
 type LinePricingMap = Record<string, { special_price: number; public_price: number }>;
