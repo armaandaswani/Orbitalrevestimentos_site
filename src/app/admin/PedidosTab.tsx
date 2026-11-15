@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useState, useEffect, useLayoutEffect, useCallback, useMemo, useRef } from "react";
+import React, { useState, useEffect, useLayoutEffect, useCallback, useMemo, useRef, useId } from "react";
 import { DEFAULT_PANEL_WIDTH_M, DEFAULT_PANEL_HEIGHT_M, panelGrid } from "@/lib/render-prompt";
 import type { Lead } from "./LeadsTab";
 import { DEFAULT_CONFIG, QUOTE_VALIDITY_DAYS, maxInstallmentsForPlates, type OrcamentoConfig } from "@/lib/orcamento-pricing";
@@ -11,6 +11,7 @@ import editor from "./pedido-editor.module.css";
 import { usePedidoAutosave } from "./usePedidoAutosave";
 import type { SavedEditorDraft } from "@/lib/pedido-draft-storage";
 import { expectedDeliveryLabel } from "@/lib/pedido-delivery";
+import { CAMPOS_CLIENTE, agruparClientes, buscarClientes, normalizarNome, type Cliente } from "@/lib/clientes-pedidos";
 
 // ─── Types ──────────────────────────────────────────────────────────────────
 export type PedidoStatus = "em_producao" | "pronto" | "pendente_entrega" | "entregue" | "cancelado";
@@ -426,6 +427,11 @@ function deliveryBadge(iso: string | null | undefined): { label: string; cls: st
 // sozinho. Fica só no rascunho (não vai para a API).
 type PedidoDraft = Partial<Pedido> & { _isNew?: boolean; _termsTouched?: boolean; _autosaveId?: string };
 
+/** Os dados de um cliente do cadastro, prontos para entrar no rascunho do pedido. */
+function dadosDoCliente(c: Cliente): Pick<Pedido, (typeof CAMPOS_CLIENTE)[number]> {
+  return { ...c.dados, client_name: c.dados.client_name ?? c.nome };
+}
+
 function cleanDraftOtherCosts(costs: PedidoOtherCost[] | null | undefined) {
   return (costs ?? [])
     .map((cost) => ({
@@ -510,6 +516,17 @@ export default function PedidosTab({
   const aiCount = useMemo(() => allPedidos.filter((p) => p.ai_generated).length, [allPedidos]);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
+
+  // Abas da lista: cancelado sai de "Em andamento" e fica em "Cancelados", de onde pode ser reativado.
+  // "Clientes" junta os pedidos do mesmo cliente (o cadastro vem dos próprios pedidos, sem tabela).
+  const [vista, setVista] = useState<"andamento" | "cancelados" | "clientes">("andamento");
+  const pedidosDaVista = useMemo(() => pedidos.filter((p) => (p.status === "cancelado") === (vista === "cancelados")), [pedidos, vista]);
+  const canceladosCount = useMemo(() => pedidos.filter((p) => p.status === "cancelado").length, [pedidos]);
+  // Rascunhos da IA não são vendas: ficam fora do cadastro de clientes e do autocompletar.
+  const clientes = useMemo(() => agruparClientes(allPedidos.filter((p) => !p.ai_generated)), [allPedidos]);
+  const [buscaCliente, setBuscaCliente] = useState("");
+  const [clienteAberto, setClienteAberto] = useState<string | null>(null);
+  const clientesFiltrados = useMemo(() => buscarClientes(clientes, buscaCliente), [clientes, buscaCliente]);
 
   const [statusFilter, setStatusFilter] = useState<"all" | PedidoStatus>("all");
   // Pagamento: "a_receber" = tudo que ainda não está pago.
@@ -903,26 +920,28 @@ export default function PedidosTab({
   // status contam só os pedidos pagos (e vice-versa).
   const passaPagamento = useCallback((p: Pedido) =>
     payFilter === "all" || (payFilter === "a_receber" ? p.payment_status !== "pago" : p.payment_status === payFilter), [payFilter]);
+  // O filtro de status só vale em "Em andamento"; em "Cancelados" todos têm o mesmo status.
+  const statusAtivo = vista === "andamento" ? statusFilter : "all";
   const statusCounts = useMemo(() => {
-    const base = pedidos.filter(passaPagamento);
+    const base = pedidosDaVista.filter(passaPagamento);
     const c = { all: base.length } as Record<string, number>;
     for (const p of base) c[p.status] = (c[p.status] ?? 0) + 1;
     return c;
-  }, [pedidos, passaPagamento]);
+  }, [pedidosDaVista, passaPagamento]);
   const payCounts = useMemo(() => {
-    const base = pedidos.filter((p) => statusFilter === "all" || p.status === statusFilter);
+    const base = pedidosDaVista.filter((p) => statusAtivo === "all" || p.status === statusAtivo);
     const c = { all: base.length, a_receber: 0 } as Record<string, number>;
     for (const p of base) {
       c[p.payment_status] = (c[p.payment_status] ?? 0) + 1;
       if (p.payment_status !== "pago") c.a_receber += 1;
     }
     return c;
-  }, [pedidos, statusFilter]);
+  }, [pedidosDaVista, statusAtivo]);
 
   const filtered = useMemo(() => {
     const s = search.trim().toLowerCase();
-    return pedidos.filter((p) => {
-      if (statusFilter !== "all" && p.status !== statusFilter) return false;
+    return pedidosDaVista.filter((p) => {
+      if (statusAtivo !== "all" && p.status !== statusAtivo) return false;
       if (!passaPagamento(p)) return false;
       if (s) {
         const hay = `${p.client_name} ${p.client_email ?? ""} ${p.client_phone ?? ""} ${p.product_name ?? ""} ${p.partner_name ?? ""} ${(p.sales_rep_id && repNome.get(p.sales_rep_id)) || ""}`.toLowerCase();
@@ -930,7 +949,7 @@ export default function PedidosTab({
       }
       return true;
     });
-  }, [pedidos, statusFilter, passaPagamento, search, repNome]);
+  }, [pedidosDaVista, statusAtivo, passaPagamento, search, repNome]);
 
   const stats = useMemo(() => {
     const ativos = filtered.filter((p) => p.status === "em_producao" || p.status === "pronto");
@@ -1538,6 +1557,21 @@ export default function PedidosTab({
     });
   }
 
+  // Pedido novo em branco; com `cliente`, já vem com os dados de quem está comprando de novo.
+  function novoPedido(cliente?: Cliente) {
+    setItems([{ product_id: "", plates: 1, space: "Ambiente 1" }]);
+    setItemsReady(true);
+    setFreteManual(false);
+    setFreteMotivo("padrão (sem CEP)");
+    const base: PedidoDraft = { _isNew: true, status: "em_producao", payment_status: "pendente", payment_methods: DEFAULT_PAYMENT_METHODS, payment_terms: DEFAULT_PAYMENT_TERMS, freight_amount: FRETE_PADRAO, freight_is_revenue: false, other_costs: [], quote_valid_until: plusDays(QUOTE_VALIDITY_DAYS), price_tier: "varejo" };
+    if (!cliente) { setDraft(base); return; }
+    const dados = dadosDoCliente(cliente);
+    // Pedido novo: o frete segue o CEP/bairro guardado do cliente.
+    const frete = fretePedido({ cep: dados.client_zip, bairro: dados.client_address_complement }, freteZonas);
+    setFreteMotivo(frete.motivo);
+    setDraft({ ...base, ...dados, freight_amount: frete.value });
+  }
+
   // Opens the edit modal for an existing pedido, fetching its current line
   // items (model + plate qty) so the quantity editor is pre-filled instead of
   // starting empty — without this, editing an order never showed its items.
@@ -1698,6 +1732,11 @@ export default function PedidosTab({
       return;
     }
     patchPedido(p.id, { status });
+  }
+  // Volta um cancelado para a produção; a API refaz estoque e comissões na troca de status.
+  function reativarPedido(p: Pedido) {
+    if (!window.confirm(`Reativar o pedido de ${p.client_name}? Ele volta para Em produção.`)) return;
+    patchPedido(p.id, { status: "em_producao" });
   }
   function salvarEntrega() {
     if (!entregaPedido || !entregaData) return;
@@ -1887,7 +1926,7 @@ export default function PedidosTab({
             <h2 className="font-serif text-[#0B1F45] text-xl font-normal">Pedidos / Produção</h2>
             {!loading && (
               <span className="bg-[#eef2f8] text-[#0B1F45] text-[10px] font-bold tracking-wider px-2 py-0.5">
-                {filtered.length}
+                {vista === "clientes" ? clientesFiltrados.length : filtered.length}
               </span>
             )}
           </div>
@@ -1906,7 +1945,7 @@ export default function PedidosTab({
               Importar orçamento
             </button>
             <button
-              onClick={() => { setItems([{ product_id: "", plates: 1, space: "Ambiente 1" }]); setItemsReady(true); setDraft({ _isNew: true, status: "em_producao", payment_status: "pendente", payment_methods: DEFAULT_PAYMENT_METHODS, payment_terms: DEFAULT_PAYMENT_TERMS, freight_amount: FRETE_PADRAO, freight_is_revenue: false, other_costs: [], quote_valid_until: plusDays(QUOTE_VALIDITY_DAYS), price_tier: "varejo" }); setFreteManual(false); setFreteMotivo("padrão (sem CEP)"); }}
+              onClick={() => novoPedido()}
               className="bg-[#0B1F45] text-white text-xs tracking-[0.12em] uppercase font-bold px-5 py-2.5 hover:bg-[#2347A0] transition-colors"
             >
               + Novo pedido
@@ -1914,6 +1953,39 @@ export default function PedidosTab({
           </div>
         </div>
 
+        {/* Abas: pedidos em andamento, cancelados (com Reativar) e o cadastro de clientes. */}
+        <div role="tablist" aria-label="Ver" className="flex border-b border-[#e2e2e2] overflow-x-auto">
+          {([
+            ["andamento", "Em andamento"],
+            ["cancelados", `Cancelados (${canceladosCount})`],
+            ["clientes", `Clientes (${clientes.length})`],
+          ] as const).map(([key, label]) => (
+            <button
+              key={key}
+              type="button"
+              role="tab"
+              aria-selected={vista === key}
+              onClick={() => setVista(key)}
+              className={`-mb-px px-3 sm:px-4 py-2.5 text-[11px] tracking-[0.1em] uppercase font-bold border-b-2 whitespace-nowrap transition-colors ${
+                vista === key ? "border-[#0B1F45] text-[#0B1F45]" : "border-transparent text-[#74777f] hover:text-[#0B1F45]"
+              }`}
+            >
+              {label}
+            </button>
+          ))}
+        </div>
+
+        {vista === "clientes" ? (
+          <div className="flex flex-wrap items-center gap-3">
+            <input
+              type="text"
+              placeholder="Buscar cliente por nome, telefone, e-mail ou CPF/CNPJ"
+              value={buscaCliente}
+              onChange={(e) => setBuscaCliente(e.target.value)}
+              className="w-full sm:w-auto border border-[#e2e2e2] px-3 py-2 text-sm text-[#0B1F45] focus:outline-none focus:border-[#0B1F45] sm:min-w-[380px]"
+            />
+          </div>
+        ) : (<>
         {/* Filtros: status do pedido e pagamento — todas as opções à vista. */}
         <div className="space-y-2">
           {([
@@ -1922,7 +1994,7 @@ export default function PedidosTab({
               valor: statusFilter as string,
               set: (k: string) => setStatusFilter(k as typeof statusFilter),
               contagem: statusCounts,
-              opcoes: [["all", "Todos"], ["em_producao", "Em produção"], ["pronto", "Prontos"], ["pendente_entrega", "Pend. entrega"], ["entregue", "Entregues"], ["cancelado", "Cancelados"]],
+              opcoes: [["all", "Todos"], ["em_producao", "Em produção"], ["pronto", "Prontos"], ["pendente_entrega", "Pend. entrega"], ["entregue", "Entregues"]],
             },
             {
               titulo: "Pagamento",
@@ -1931,7 +2003,7 @@ export default function PedidosTab({
               contagem: payCounts,
               opcoes: [["all", "Todos"], ["a_receber", "A receber"], ["pago", "Pagos"], ["pendente", "Pendentes"], ["parcial", "Parciais"], ["boleto", "Boleto"]],
             },
-          ]).map((f) => (
+          ]).filter((f) => vista === "andamento" || f.titulo !== "Status").map((f) => (
             <div key={f.titulo} className="flex flex-col sm:flex-row sm:items-center gap-1.5 sm:gap-3 min-w-0">
               <span className="flex-shrink-0 sm:w-[92px] text-[10px] tracking-[0.12em] uppercase font-bold text-[#74777f]">{f.titulo}</span>
               <div className="flex flex-wrap gap-1.5 sm:gap-2 min-w-0">
@@ -1952,7 +2024,7 @@ export default function PedidosTab({
               </div>
             </div>
           ))}
-          {(statusFilter !== "all" || payFilter !== "all") && (
+          {(statusAtivo !== "all" || payFilter !== "all") && (
             <button
               onClick={() => { setStatusFilter("all"); setPayFilter("all"); }}
               className="text-[11px] text-[#74777f] underline underline-offset-2 hover:text-[#0B1F45]"
@@ -1972,10 +2044,11 @@ export default function PedidosTab({
             className="w-full sm:w-auto border border-[#e2e2e2] px-3 py-2 text-sm text-[#0B1F45] focus:outline-none focus:border-[#0B1F45] sm:min-w-[280px]"
           />
         </div>
+        </>)}
       </div>
 
       {/* Stats */}
-      {!loading && !error && filtered.length > 0 && (
+      {!loading && !error && vista === "andamento" && filtered.length > 0 && (
         <div className="grid grid-cols-2 sm:grid-cols-5 gap-3 mb-5">
           {[
             { label: "Em produção", value: stats.emProducao, sub: "na oficina" },
@@ -2006,12 +2079,70 @@ export default function PedidosTab({
             Tentar novamente
           </button>
         </div>
+      ) : vista === "clientes" ? (
+        clientesFiltrados.length === 0 ? (
+          <div className="bg-white border border-[#e2e2e2] px-6 py-12 text-center">
+            <p className="text-[#74777f] text-sm">
+              {clientes.length === 0 ? "Nenhum cliente ainda. Cada pedido salvo já guarda o cliente aqui." : "Nenhum cliente encontrado."}
+            </p>
+          </div>
+        ) : (
+          <div className="space-y-3">
+            {clientesFiltrados.map((c) => {
+              const aberto = clienteAberto === c.chave;
+              const contato = [c.dados.client_phone, c.dados.client_email].filter(Boolean).join(" · ");
+              const cidade = [c.dados.client_city, c.dados.client_state].filter(Boolean).join(" / ");
+              return (
+                <div key={c.chave} className="bg-white border border-[#e2e2e2]"
+                  style={c.pedidos.some((p) => p.partner_name) ? { backgroundImage: FUNDO_ARQUITETO, borderColor: BORDA_ARQUITETO } : undefined}>
+                  <button type="button" onClick={() => setClienteAberto(aberto ? null : c.chave)} aria-expanded={aberto}
+                    className="w-full text-left p-4 flex flex-col sm:flex-row sm:items-start sm:justify-between gap-2">
+                    <div className="min-w-0 max-w-full">
+                      <p className="font-semibold text-[#0B1F45] text-sm truncate">{c.nome}</p>
+                      {contato && <p className="text-[11px] text-[#74777f] truncate">{contato}</p>}
+                      {cidade && <p className="text-[10px] text-[#b0b0b0] mt-0.5 truncate">{cidade}</p>}
+                    </div>
+                    <div className="sm:text-right shrink-0">
+                      <p className="text-xs text-[#0B1F45] font-semibold">{c.quantidade} {c.quantidade === 1 ? "pedido" : "pedidos"} · {fmtBRL(c.totalGasto)}</p>
+                      <p className="text-[10px] text-[#74777f] mt-0.5">Último pedido {fmtDate(c.ultimoPedidoEm)}</p>
+                    </div>
+                  </button>
+                  {aberto && (
+                    <div className="border-t border-[#e2e2e2] px-4 pb-4 pt-3 space-y-2">
+                      <p className="text-[10px] tracking-[0.12em] uppercase font-bold text-[#74777f]">Histórico</p>
+                      {c.pedidos.map((p) => (
+                        <button key={p.id} type="button" onClick={() => openEdit(p)}
+                          className="w-full text-left bg-white border border-[#e2e2e2] px-3 py-2 flex items-start justify-between gap-3 hover:border-[#0B1F45]"
+                          style={p.partner_name ? { backgroundImage: FUNDO_ARQUITETO, borderColor: BORDA_ARQUITETO } : undefined}>
+                          <div className="min-w-0">
+                            <p className="text-[10px] text-[#74777f]">{fmtDate(p.created_at)}</p>
+                            <p className="text-xs text-[#0B1F45] truncate">{[p.space, p.product_name].filter(Boolean).join(" · ") || "Pedido"}</p>
+                          </div>
+                          <div className="text-right shrink-0">
+                            <p className="text-xs text-[#0B1F45] font-semibold">{fmtBRL(Math.max(0, (p.total ?? 0) - (p.discount_amount ?? 0)))}</p>
+                            <span className={`inline-block mt-1 text-[10px] font-bold px-2 py-0.5 ${STATUS_META[p.status].cls}`}>{STATUS_META[p.status].label}</span>
+                          </div>
+                        </button>
+                      ))}
+                      <button type="button" onClick={() => novoPedido(c)}
+                        className="w-full sm:w-auto mt-1 bg-[#0B1F45] text-white text-xs tracking-[0.12em] uppercase font-bold px-5 py-2.5 hover:bg-[#2347A0] transition-colors">
+                        Novo pedido para este cliente
+                      </button>
+                    </div>
+                  )}
+                </div>
+              );
+            })}
+          </div>
+        )
       ) : filtered.length === 0 ? (
         <div className="bg-white border border-[#e2e2e2] px-6 py-12 text-center">
           <p className="text-[#74777f] text-sm">
             {pedidos.length === 0
               ? "Nenhum pedido ainda. Crie um pedido ao fechar uma venda para acompanhar produção e entrega."
-              : "Nenhum pedido corresponde aos filtros."}
+              : vista === "cancelados" && pedidosDaVista.length === 0
+                ? "Nenhum pedido cancelado."
+                : "Nenhum pedido corresponde aos filtros."}
           </p>
         </div>
       ) : (
@@ -2067,6 +2198,12 @@ export default function PedidosTab({
                         )}
                       </td>
                       <td className="px-4 py-3">
+                        {vista === "cancelados" ? (
+                          <div className="flex flex-wrap items-center gap-2">
+                            <span className={`text-[10px] font-bold px-2 py-1 ${STATUS_META.cancelado.cls}`}>Cancelado</span>
+                            <button type="button" onClick={() => reativarPedido(p)} className="text-[10px] font-bold uppercase tracking-wider text-[#1F7A44] border border-[#1F7A44] px-2.5 py-1 hover:bg-[#1F7A44] hover:text-white transition-colors">Reativar</button>
+                          </div>
+                        ) : (
                         <select
                           value={p.status}
                           onChange={(e) => mudarStatus(p, e.target.value as PedidoStatus)}
@@ -2076,6 +2213,7 @@ export default function PedidosTab({
                             <option key={s} value={s}>{STATUS_META[s].label}</option>
                           ))}
                         </select>
+                        )}
                       </td>
                       <td className="px-4 py-3">
                         <select
@@ -2146,7 +2284,11 @@ export default function PedidosTab({
                       {(p.discount_amount ?? 0) > 0 && <p className="text-[9px] text-[#74777f]">desc. {fmtBRL(p.discount_amount ?? 0)}</p>}
                     </div>
                   </div>
-                  <div className="flex items-center gap-2 mt-3">
+                  <div className="flex flex-wrap items-center gap-2 mt-3">
+                    {vista === "cancelados" ? (<>
+                      <span className={`text-[10px] font-bold px-2 py-1 ${STATUS_META.cancelado.cls}`}>Cancelado</span>
+                      <button type="button" onClick={() => reativarPedido(p)} className="text-[10px] font-bold uppercase tracking-wider text-[#1F7A44] border border-[#1F7A44] px-2.5 py-1 hover:bg-[#1F7A44] hover:text-white transition-colors">Reativar</button>
+                    </>) : (
                     <select
                       value={p.status}
                       onChange={(e) => mudarStatus(p, e.target.value as PedidoStatus)}
@@ -2156,6 +2298,7 @@ export default function PedidosTab({
                         <option key={s} value={s}>{STATUS_META[s].label}</option>
                       ))}
                     </select>
+                    )}
                     <select
                       value={p.payment_status}
                       onChange={(e) => mudarPagamento(p, e.target.value as PaymentStatus)}
@@ -2324,9 +2467,21 @@ export default function PedidosTab({
             <div className={editor.body} key={`${draft.id || "novo"}-${formStep}`}>
               {formStep === 1 && (
               <div className="space-y-4">
-              <Field label="Cliente *">
-                <input className={inputCls} value={draft.client_name ?? ""} onChange={(e) => setDraft({ ...draft, client_name: e.target.value })} />
-              </Field>
+              <NomeClienteInput
+                label="Cliente *"
+                value={draft.client_name ?? ""}
+                clientes={clientes}
+                onChange={(v) => setDraft({ ...draft, client_name: v })}
+                onPick={(c) => {
+                  // Cliente que já comprou: traz contato, documento e endereço do último pedido dele.
+                  const dados = dadosDoCliente(c);
+                  const cep = String(dados.client_zip ?? "").replace(/\D/g, "");
+                  const frete = cep.length === 8 ? freteAuto(draft, cep, dados.client_address_complement) : null;
+                  setCnpjMsg(null);
+                  setCepError("");
+                  setDraft({ ...draft, ...dados, ...(frete !== null ? { freight_amount: frete } : {}) });
+                }}
+              />
               <div className="grid grid-cols-2 gap-3">
                 <Field label="E-mail">
                   <input className={inputCls} value={draft.client_email ?? ""} onChange={(e) => setDraft({ ...draft, client_email: e.target.value })} />
@@ -3259,6 +3414,78 @@ function Field({ label, children }: { label: string; children: React.ReactNode }
       <span className="block text-[10px] tracking-[0.1em] uppercase font-bold text-[#74777f] mb-1">{label}</span>
       {children}
     </label>
+  );
+}
+
+// Nome do cliente com sugestões do cadastro (quem já comprou): a partir de 2 letras mostra até 6
+// clientes; escolher um preenche contato e endereço. Opções usam onMouseDown para valer antes do blur.
+function NomeClienteInput({ label, value, clientes, onChange, onPick }: {
+  label: string;
+  value: string;
+  clientes: Cliente[];
+  onChange: (v: string) => void;
+  onPick: (c: Cliente) => void;
+}) {
+  const [open, setOpen] = useState(false);
+  const [ativo, setAtivo] = useState(0);
+  const id = useId();
+  const sugestoes = useMemo(() => {
+    if (value.trim().length < 2) return [];
+    const achados = buscarClientes(clientes, value, 6);
+    // Nome já digitado por inteiro: nada a sugerir.
+    if (achados.length === 1 && normalizarNome(achados[0].nome) === normalizarNome(value)) return [];
+    return achados;
+  }, [clientes, value]);
+  const aberto = open && sugestoes.length > 0;
+  const atual = Math.min(ativo, sugestoes.length - 1);
+  function escolher(c: Cliente) { onPick(c); setOpen(false); }
+  return (
+    <div className="block">
+      <label htmlFor={`${id}-nome`} className="block text-[10px] tracking-[0.1em] uppercase font-bold text-[#74777f] mb-1">{label}</label>
+      <div className="relative">
+        <input
+          id={`${id}-nome`}
+          className={inputCls}
+          value={value}
+          autoComplete="off"
+          role="combobox"
+          aria-autocomplete="list"
+          aria-expanded={aberto}
+          aria-controls={`${id}-lista`}
+          aria-activedescendant={aberto ? `${id}-op-${atual}` : undefined}
+          onChange={(e) => { onChange(e.target.value); setOpen(true); setAtivo(0); }}
+          onBlur={() => setOpen(false)}
+          onKeyDown={(e) => {
+            if (!aberto) return;
+            if (e.key === "ArrowDown") { e.preventDefault(); setAtivo((atual + 1) % sugestoes.length); }
+            else if (e.key === "ArrowUp") { e.preventDefault(); setAtivo((atual - 1 + sugestoes.length) % sugestoes.length); }
+            else if (e.key === "Enter") { e.preventDefault(); escolher(sugestoes[atual]); }
+            else if (e.key === "Escape") { e.preventDefault(); e.stopPropagation(); setOpen(false); }
+          }}
+        />
+        {aberto && (
+          <ul id={`${id}-lista`} role="listbox" aria-label="Clientes cadastrados"
+            className="absolute left-0 right-0 top-full z-20 max-h-[300px] overflow-y-auto bg-white border border-t-0 border-[#0B1F45]">
+            {sugestoes.map((c, i) => (
+              <li
+                key={c.chave}
+                id={`${id}-op-${i}`}
+                role="option"
+                aria-selected={i === atual}
+                onMouseDown={(e) => { e.preventDefault(); escolher(c); }}
+                onMouseEnter={() => setAtivo(i)}
+                className={`px-3 py-2 cursor-pointer border-b border-[#f0f0f0] last:border-b-0 ${i === atual ? "bg-[#eef2f8]" : ""}`}
+              >
+                <p className="text-sm font-bold text-[#0B1F45] truncate">{c.nome}</p>
+                <p className="text-[11px] text-[#74777f] truncate">
+                  {[c.dados.client_phone || c.dados.client_email, `${c.quantidade} ${c.quantidade === 1 ? "pedido" : "pedidos"}`].filter(Boolean).join(" · ")}
+                </p>
+              </li>
+            ))}
+          </ul>
+        )}
+      </div>
+    </div>
   );
 }
 
