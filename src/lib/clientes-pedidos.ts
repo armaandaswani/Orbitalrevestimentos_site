@@ -43,6 +43,8 @@ export type Cliente<P extends PedidoDoCliente = PedidoDoCliente> = {
   /** Mais recente primeiro. */
   pedidos: P[];
   quantidade: number;
+  /** Pedidos cancelados (ficam no histórico, fora da quantidade e do total). */
+  cancelados: number;
   /** Soma de (total − desconto, mínimo 0) dos pedidos não cancelados. */
   totalGasto: number;
   ultimoPedidoEm: string;
@@ -73,17 +75,23 @@ export function telefoneLegivel(s: Texto): string {
   return (s ?? "").trim();
 }
 
-/** Identificadores que juntam pedidos; curtos ou malformados não contam. */
+/** Enchimento como 000.000.000-00 ou (92) 99999-9999: um dígito repetido depois do DDD. */
+const repetido = (d: string) => /^(\d)\1+$/.test(d) || /^\d{2}(\d)\1+$/.test(d);
+
+/** Identificadores que juntam pedidos; curtos, malformados ou de enchimento não contam. */
 function identificadores(p: PedidoDoCliente): string[] {
   const out: string[] = [];
   const doc = digitos(p.client_document);
-  if (doc.length >= 11) out.push(`doc:${doc}`);
+  if (doc.length >= 11 && !repetido(doc)) out.push(`doc:${doc}`);
   const email = (p.client_email ?? "").trim().toLowerCase();
   if (email.includes("@")) out.push(`email:${email}`);
   const tel = normalizarTelefone(p.client_phone);
-  if (tel.length >= 8) out.push(`tel:${tel}`);
+  if (tel.length >= 8 && !repetido(tel)) out.push(`tel:${tel}`);
   return out;
 }
+
+/** Campos do endereço: vêm juntos de um pedido só, para CEP e bairro não se misturarem (o frete usa os dois). */
+const ENDERECO = new Set<CampoCliente>(["client_zip", "client_address", "client_address_complement", "client_city", "client_state"]);
 
 const quando = (iso: string) => Date.parse(iso) || 0;
 const vazio = (s: Texto) => !s || !s.trim();
@@ -142,12 +150,15 @@ export function agruparClientes<P extends PedidoDoCliente>(pedidos: readonly P[]
   for (const [r, lista] of grupos) {
     const recentes = [...lista].reverse();
     const dados = {} as Record<CampoCliente, string | null>;
+    const comEndereco = recentes.find((p) => [...ENDERECO].some((campo) => !vazio(p[campo])));
     for (const campo of CAMPOS_CLIENTE) {
-      const achado = recentes.find((p) => !vazio(p[campo]))?.[campo];
-      dados[campo] = achado ? achado.trim() : null;
+      const achado = ENDERECO.has(campo)
+        ? comEndereco?.[campo]
+        : recentes.find((p) => !vazio(p[campo]))?.[campo];
+      dados[campo] = achado && achado.trim() ? achado.trim() : null;
     }
-    const totalGasto = recentes
-      .filter((p) => p.status !== "cancelado")
+    const validos = recentes.filter((p) => p.status !== "cancelado");
+    const totalGasto = validos
       .reduce((s, p) => s + Math.max(0, (Number(p.total) || 0) - (Number(p.discount_amount) || 0)), 0);
     const nomes = new Set(recentes.map((p) => normalizarNome(p.client_name)).filter(Boolean));
     const emails = new Set(recentes.map((p) => (p.client_email ?? "").trim().toLowerCase()).filter(Boolean));
@@ -157,7 +168,8 @@ export function agruparClientes<P extends PedidoDoCliente>(pedidos: readonly P[]
       nome: dados.client_name ?? "Sem nome",
       dados,
       pedidos: recentes,
-      quantidade: recentes.length,
+      quantidade: validos.length,
+      cancelados: recentes.length - validos.length,
       totalGasto,
       ultimoPedidoEm: recentes[0].created_at,
       textoBusca: [...nomes, ...emails].join(" "),

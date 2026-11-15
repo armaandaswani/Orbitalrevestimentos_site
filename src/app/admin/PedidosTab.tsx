@@ -895,6 +895,9 @@ export default function PedidosTab({
     if (!focusPedidoId) return;
     const found = pedidos.find((p) => p.id === focusPedidoId);
     if (!found) return;
+    // Cancelado não aparece em "Em andamento": a lista atrás do editor vai para a aba dele.
+    // eslint-disable-next-line react-hooks/set-state-in-effect -- pedido de foco vindo de outra aba, consumido uma vez
+    if (found.status === "cancelado") setVista("cancelados");
     openEdit(found);
     onPedidoFocusConsumed?.();
     // eslint-disable-next-line react-hooks/exhaustive-deps
@@ -2105,7 +2108,7 @@ export default function PedidosTab({
                       {cidade && <p className="text-[10px] text-[#b0b0b0] mt-0.5 truncate">{cidade}</p>}
                     </div>
                     <div className="sm:text-right shrink-0">
-                      <p className="text-xs text-[#0B1F45] font-semibold">{c.quantidade} {c.quantidade === 1 ? "pedido" : "pedidos"} · {fmtBRL(c.totalGasto)}</p>
+                      <p className="text-xs text-[#0B1F45] font-semibold">{c.quantidade} {c.quantidade === 1 ? "pedido" : "pedidos"} · {fmtBRL(c.totalGasto)}{c.cancelados > 0 && <span className="font-normal text-[#74777f]"> · {c.cancelados} {c.cancelados === 1 ? "cancelado" : "cancelados"}</span>}</p>
                       <p className="text-[10px] text-[#74777f] mt-0.5">Último pedido {fmtDate(c.ultimoPedidoEm)}</p>
                     </div>
                   </button>
@@ -3429,7 +3432,9 @@ function NomeClienteInput({ label, value, clientes, onChange, onPick }: {
   onPick: (c: Cliente) => void;
 }) {
   const [open, setOpen] = useState(false);
-  const [ativo, setAtivo] = useState(0);
+  // -1 = nenhuma sugestão marcada: Enter só escolhe depois de seta ou mouse, para
+  // um Enter por hábito não trocar os dados de um pedido pelos de outro cliente.
+  const [ativo, setAtivo] = useState(-1);
   const id = useId();
   const sugestoes = useMemo(() => {
     if (value.trim().length < 2) return [];
@@ -3454,14 +3459,17 @@ function NomeClienteInput({ label, value, clientes, onChange, onPick }: {
           aria-autocomplete="list"
           aria-expanded={aberto}
           aria-controls={`${id}-lista`}
-          aria-activedescendant={aberto ? `${id}-op-${atual}` : undefined}
-          onChange={(e) => { onChange(e.target.value); setOpen(true); setAtivo(0); }}
+          aria-activedescendant={aberto && atual >= 0 ? `${id}-op-${atual}` : undefined}
+          onChange={(e) => { onChange(e.target.value); setOpen(true); setAtivo(-1); }}
           onBlur={() => setOpen(false)}
           onKeyDown={(e) => {
             if (!aberto) return;
             if (e.key === "ArrowDown") { e.preventDefault(); setAtivo((atual + 1) % sugestoes.length); }
-            else if (e.key === "ArrowUp") { e.preventDefault(); setAtivo((atual - 1 + sugestoes.length) % sugestoes.length); }
-            else if (e.key === "Enter") { e.preventDefault(); escolher(sugestoes[atual]); }
+            else if (e.key === "ArrowUp") { e.preventDefault(); setAtivo(atual <= 0 ? sugestoes.length - 1 : atual - 1); }
+            else if (e.key === "Enter") {
+              if (atual >= 0) { e.preventDefault(); escolher(sugestoes[atual]); }
+              else setOpen(false);
+            }
             else if (e.key === "Escape") { e.preventDefault(); e.stopPropagation(); setOpen(false); }
           }}
         />

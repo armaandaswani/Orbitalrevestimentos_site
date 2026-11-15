@@ -69,8 +69,8 @@ test("junta por documento, e-mail e telefone (em cadeia)", () => {
 });
 
 test("mesmo nome com documentos diferentes fica separado", () => {
-  const a = pedido({ client_name: "Maria Souza", client_document: "111.111.111-11" });
-  const b = pedido({ client_name: "maria souza", client_document: "222.222.222-22" });
+  const a = pedido({ client_name: "Maria Souza", client_document: "123.456.789-09" });
+  const b = pedido({ client_name: "maria souza", client_document: "987.654.321-00" });
   assert.equal(agruparClientes([a, b]).length, 2);
 });
 
@@ -98,7 +98,7 @@ test("identificadores curtos ou inválidos não juntam pedidos", () => {
   assert.equal(agruparClientes([a, b]).length, 2);
 });
 
-test("dados do pedido mais recente, completando campo a campo com os anteriores", () => {
+test("dados do pedido mais recente; contato completa campo a campo, endereço vem inteiro", () => {
   const velho = pedido({
     client_name: "Fulano Antigo", client_email: "f@x.com", client_phone: "92 91111-2222",
     client_zip: "69000-000", client_address: "Rua A, 1", client_city: "Manaus", client_state: "AM",
@@ -115,11 +115,11 @@ test("dados do pedido mais recente, completando campo a campo com os anteriores"
     client_email: "f@x.com",
     client_phone: "92 91111-2222",
     client_document: null,
-    client_zip: "69000-000",
+    client_zip: null,
     client_address: "Av. B, 2",
     client_address_complement: "Sala 3",
-    client_city: "Manaus",
-    client_state: "AM",
+    client_city: null,
+    client_state: null,
   });
   assert.deepEqual(Object.keys(c.dados), [...CAMPOS_CLIENTE]);
   assert.equal(c.ultimoPedidoEm, "2026-06-01T10:00:00Z");
@@ -136,7 +136,34 @@ test("total gasto ignora cancelados e desconta o desconto (mínimo 0)", () => {
   ]);
   assert.equal(clientes.length, 1);
   assert.equal(clientes[0].totalGasto, 1400);
-  assert.equal(clientes[0].quantidade, 5);
+  // "N pedidos · R$ X" conta o mesmo conjunto: cancelado fica à parte.
+  assert.equal(clientes[0].quantidade, 4);
+  assert.equal(clientes[0].cancelados, 1);
+});
+
+test("endereço vem inteiro do pedido mais recente que tem endereço", () => {
+  const base = { client_email: "e@x.com" };
+  const [c] = agruparClientes([
+    pedido({ ...base, client_zip: "69000000", client_address: "Rua Velha, 1", client_address_complement: "Ponta Negra", client_city: "Manaus", client_state: "AM", created_at: "2026-01-01T10:00:00Z" }),
+    pedido({ ...base, client_zip: "69050000", client_address: "Rua Nova, 2", client_city: "Manaus", created_at: "2026-05-01T10:00:00Z" }),
+    pedido({ ...base, client_phone: "92 98888-7777", created_at: "2026-08-01T10:00:00Z" }),
+  ]);
+  assert.equal(c.dados.client_zip, "69050000");
+  assert.equal(c.dados.client_address, "Rua Nova, 2");
+  assert.equal(c.dados.client_address_complement, null, "bairro antigo não se mistura com CEP novo");
+  assert.equal(c.dados.client_state, null);
+  assert.equal(c.dados.client_phone, "92 98888-7777");
+  // Só a cidade também é endereço: não se perde.
+  const [s] = agruparClientes([pedido({ client_email: "s@x.com", client_city: "Manaus", client_state: "AM" })]);
+  assert.equal(s.dados.client_city, "Manaus");
+});
+
+test("CPF, telefone ou e-mail de enchimento não juntam pessoas diferentes", () => {
+  const clientes = agruparClientes([
+    pedido({ client_name: "Ana", client_document: "000.000.000-00", client_phone: "(92) 99999-9999" }),
+    pedido({ client_name: "Bruno", client_document: "00000000000", client_phone: "92999999999" }),
+  ]);
+  assert.equal(clientes.length, 2);
 });
 
 test("lista ordenada pelo último pedido, mais recente primeiro", () => {
