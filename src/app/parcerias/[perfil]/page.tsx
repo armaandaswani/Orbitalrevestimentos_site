@@ -1,6 +1,6 @@
 import type { Metadata } from "next";
 import Image from "next/image";
-import Link from "next/link";
+import LinkParceria from "@/components/parcerias/LinkParceria";
 import { notFound } from "next/navigation";
 import CadastroParceiro from "@/components/parcerias/CadastroParceiro";
 import { capasDeParceria } from "@/lib/parcerias-capas";
@@ -16,6 +16,8 @@ export const revalidate = 3600;
 export const dynamicParams = false;
 
 const SITE = "https://orbitalrevestimentos.com.br";
+// A mesma imagem de compartilhamento do layout raiz.
+const IMAGEM_OG = { url: "/images/catalogue/hero-cover.png", width: 1200, height: 630, alt: "Orbital Revestimentos: Painel Flexível em Fibra de Bambu instalado numa sala de estar" };
 
 export function generateStaticParams() {
   return PERFIS.map((p) => ({ perfil: p.slug }));
@@ -29,7 +31,8 @@ export async function generateMetadata({ params }: { params: Promise<{ perfil: s
     title: p.meta.titulo,
     description: p.meta.descricao,
     alternates: { canonical: url },
-    openGraph: { title: `${p.meta.titulo} | Orbital Revestimentos`, description: p.meta.descricao, url },
+    // Com imagem: o link vai por WhatsApp, e o openGraph da página troca o do layout inteiro.
+    openGraph: { title: `${p.meta.titulo} | Orbital Revestimentos`, description: p.meta.descricao, url, images: [IMAGEM_OG] },
   };
 }
 
@@ -57,7 +60,7 @@ export default async function PerfilParceriaPage({ params }: { params: Promise<{
         </div>
         <div className="relative ds-wrap pb-12 pt-28 lg:order-1 lg:mx-0 lg:flex lg:max-w-none lg:flex-col lg:justify-center lg:px-[clamp(2rem,6vw,7rem)] lg:py-32">
           <p className="text-legenda text-white/75">
-            <Link href="/parcerias" className={LINK_CLARO}>Parcerias</Link>
+            <LinkParceria href="/parcerias" className={LINK_CLARO}>Parcerias</LinkParceria>
             <span aria-hidden className="mx-2">/</span>
             {p.nome}
           </p>
@@ -88,7 +91,7 @@ export default async function PerfilParceriaPage({ params }: { params: Promise<{
         <div className="ds-wrap flex flex-wrap items-center gap-x-6 gap-y-1 py-8 text-legenda text-[#43474e]">
           <span>Outro perfil?</span>
           {outros.map((o) => (
-            <Link key={o.href} href={o.href} className={`inline-flex min-h-11 items-center text-[#0B1F45] ${LINK_ESCURO}`}>{o.nome}</Link>
+            <LinkParceria key={o.href} href={o.href} className={`inline-flex min-h-11 items-center text-[#0B1F45] ${LINK_ESCURO}`}>{o.nome}</LinkParceria>
           ))}
         </div>
       </nav>

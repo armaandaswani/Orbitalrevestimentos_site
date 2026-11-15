@@ -139,7 +139,7 @@ export function comunicadoMetropolitanoHtml(): string {
     </tr></table>
   </td></tr>
   <tr><td align="center" style="padding:6px 40px 50px;">
-    <a href="${SITE}/parcerias" style="font-family:Arial,Helvetica,sans-serif;font-size:13px;color:#2347A0;text-decoration:underline;">Conheça o programa de parcerias para arquitetos</a>
+    <a href="${SITE}/parcerias/arquitetos" style="font-family:Arial,Helvetica,sans-serif;font-size:13px;color:#2347A0;text-decoration:underline;">Conheça o programa de parcerias para arquitetos</a>
   </td></tr>
 
   <!-- Assinatura -->

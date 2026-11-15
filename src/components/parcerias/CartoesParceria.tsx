@@ -1,5 +1,6 @@
 "use client";
 
+import { comRep } from "@/lib/parcerias-link";
 import { useRepDaUrl } from "./useRepDaUrl";
 import Image from "next/image";
 import Link from "next/link";
@@ -20,7 +21,7 @@ export interface CartaoParceria {
  */
 export default function CartoesParceria({ cartoes }: { cartoes: CartaoParceria[] }) {
   const rep = useRepDaUrl();
-  const destino = (href: string) => (rep && href.startsWith("/parcerias/") ? `${href}?rep=${encodeURIComponent(rep)}` : href);
+  const destino = (href: string) => comRep(href, rep);
 
   return (
     <ul className="mt-8 grid gap-3 sm:grid-cols-2 lg:mt-12 lg:grid-cols-5 lg:gap-4">

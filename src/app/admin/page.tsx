@@ -173,6 +173,8 @@ const PROFESSIONS = [
   "Engenheiro civil",
   "Corretor de imóveis",
   "Lojista / revendedor",
+  "Marceneiro",
+  "Aplicador / instalador",
 ];
 
 const emptyPartnerForm = {

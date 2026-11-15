@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect, useId, useRef, useState } from "react";
+import { dataIso, dataValida, mascaraData } from "@/lib/parcerias-data";
 import { CADASTRO } from "@/lib/parcerias-textos";
 import { useRepDaUrl } from "./useRepDaUrl";
 
@@ -21,19 +22,8 @@ import { useRepDaUrl } from "./useRepDaUrl";
 const CAMPO = "w-full border border-[#0B1F45]/20 bg-white px-4 py-3 text-corpo text-[#0B1F45] placeholder:text-[#0B1F45]/35 focus-visible:outline-2 focus-visible:outline-offset-0 focus-visible:outline-[#0B1F45]";
 const ROTULO = "block text-legenda text-[#43474e] mb-1.5";
 
-/** DD/MM/AAAA enquanto digita. */
-function mascaraData(bruto: string): string {
-  const d = bruto.replace(/\D/g, "").slice(0, 8);
-  if (d.length > 4) return `${d.slice(0, 2)}/${d.slice(2, 4)}/${d.slice(4)}`;
-  if (d.length > 2) return `${d.slice(0, 2)}/${d.slice(2)}`;
-  return d;
-}
-
-/** DD/MM/AAAA → AAAA-MM-DD (o que a API guarda). */
-function dataIso(dma: string): string {
-  const [d, m, a] = dma.split("/");
-  return `${a}-${(m ?? "").padStart(2, "0")}-${(d ?? "").padStart(2, "0")}`;
-}
+/** A API recusou o código de indicação (representante inativo ou código errado). */
+const CODIGO_RECUSADO = /c[oó]digo de representante/i;
 
 export default function CadastroParceiro({ ancora, profissoes, titulo = CADASTRO.titulo, apoio = CADASTRO.apoio, botao = CADASTRO.botao, claro = true, children }: {
   /** id da seção: o link copiado termina em #ancora. */
@@ -52,19 +42,28 @@ export default function CadastroParceiro({ ancora, profissoes, titulo = CADASTRO
   const [form, setForm] = useState({ nome: "", email: "", whatsapp: "", nascimento: "", senha: "", codigo: "" });
   const [profissao, setProfissao] = useState(profissoes[0]);
   const [abriuCodigo, setAbriuCodigo] = useState(false);
-  // Link do representante: o código chega preenchido e travado.
-  const codigoTravado = useRepDaUrl() || null;
+  // Link do representante: o código chega preenchido e travado. Se a API o
+  // recusar (representante inativo), a trava solta: a pessoa corrige ou tira
+  // o código e o cadastro não fica preso.
+  const repDaUrl = useRepDaUrl();
+  const [travaSolta, setTravaSolta] = useState(false);
+  const codigoTravado = repDaUrl && !travaSolta ? repDaUrl : null;
   const temCodigo = abriuCodigo || !!codigoTravado;
   const codigo = codigoTravado ?? form.codigo;
   const [verSenha, setVerSenha] = useState(false);
   const [enviando, setEnviando] = useState(false);
   const [erro, setErro] = useState("");
-  const [sucesso, setSucesso] = useState<{ cupom: string; nome: string } | null>(null);
-  const [copiado, setCopiado] = useState(false);
-  const caixa = useRef<HTMLDivElement>(null);
+  const [sucesso, setSucesso] = useState<{ cupom: string | null; nome: string } | null>(null);
+  const [copia, setCopia] = useState<"" | "ok" | "manual">("");
+  const [link, setLink] = useState("");
+  const tituloSucesso = useRef<HTMLParagraphElement>(null);
+  const campoLink = useRef<HTMLInputElement>(null);
   const avisoCopia = useRef(0);
 
   useEffect(() => () => window.clearTimeout(avisoCopia.current), []);
+  // O aviso de sucesso recebe o foco: o leitor de tela anuncia e a página não pula.
+  useEffect(() => { if (sucesso) tituloSucesso.current?.focus(); }, [sucesso]);
+  useEffect(() => { if (copia === "manual") campoLink.current?.select(); }, [copia]);
 
   const campo = (chave: keyof typeof form) => (e: React.ChangeEvent<HTMLInputElement>) =>
     setForm((f) => ({ ...f, [chave]: chave === "nascimento" ? mascaraData(e.target.value) : e.target.value }));
@@ -73,7 +72,7 @@ export default function CadastroParceiro({ ancora, profissoes, titulo = CADASTRO
     e.preventDefault();
     if (enviando) return;
     setErro("");
-    if (form.nascimento.length !== 10) { setErro("Informe a data de nascimento completa (DD/MM/AAAA)."); return; }
+    if (!dataValida(form.nascimento, new Date().getFullYear())) { setErro("Confira a data de nascimento (DD/MM/AAAA)."); return; }
     setEnviando(true);
     try {
       const res = await fetch("/api/partners/register", {
@@ -90,9 +89,20 @@ export default function CadastroParceiro({ ancora, profissoes, titulo = CADASTRO
         }),
       });
       const json = await res.json().catch(() => ({}));
-      if (!res.ok) { setErro(json.error || "Não deu para cadastrar agora. Tente de novo em instantes."); return; }
-      setSucesso({ cupom: json.coupon_code, nome: json.name ?? form.nome });
-      caixa.current?.focus();
+      if (!res.ok) {
+        const mensagem = typeof json.error === "string" && json.error ? json.error : "Não deu para cadastrar agora. Tente de novo em instantes.";
+        if (codigoTravado && CODIGO_RECUSADO.test(mensagem)) {
+          // Código do link recusado: vira um campo comum, já com o código, para corrigir ou apagar.
+          setForm((f) => ({ ...f, codigo: codigoTravado }));
+          setTravaSolta(true);
+          setAbriuCodigo(true);
+          setErro(`${mensagem} Corrija o código ou apague-o para seguir sem indicação.`);
+        } else {
+          setErro(mensagem);
+        }
+        return;
+      }
+      setSucesso({ cupom: typeof json.coupon_code === "string" && json.coupon_code ? json.coupon_code : null, nome: json.name ?? form.nome });
     } catch {
       setErro("Não deu para cadastrar agora. Confira a conexão e tente de novo.");
     } finally {
@@ -103,28 +113,21 @@ export default function CadastroParceiro({ ancora, profissoes, titulo = CADASTRO
   async function copiarLink() {
     const u = new URL(window.location.href);
     const rep = u.searchParams.get("rep");
-    const link = `${u.origin}${u.pathname}${rep ? `?rep=${encodeURIComponent(rep)}` : ""}#${ancora}`;
-    try {
-      await navigator.clipboard.writeText(link);
-    } catch {
-      // Sem permissão de área de transferência: seleciona num campo temporário.
-      const t = document.createElement("textarea");
-      t.value = link;
-      t.setAttribute("readonly", "");
-      t.style.position = "fixed";
-      t.style.opacity = "0";
-      document.body.appendChild(t);
-      t.select();
-      try { document.execCommand("copy"); } catch {}
-      t.remove();
-    }
-    setCopiado(true);
+    const endereco = `${u.origin}${u.pathname}${rep ? `?rep=${encodeURIComponent(rep)}` : ""}#${ancora}`;
     window.clearTimeout(avisoCopia.current);
-    avisoCopia.current = window.setTimeout(() => setCopiado(false), 2200);
+    try {
+      await navigator.clipboard.writeText(endereco);
+      setCopia("ok");
+      avisoCopia.current = window.setTimeout(() => setCopia(""), 2200);
+    } catch {
+      // Sem acesso à área de transferência: mostra o link já selecionado para copiar à mão.
+      setLink(endereco);
+      setCopia("manual");
+    }
   }
 
   return (
-    <section id={ancora} aria-labelledby={`${id}-titulo`} className={`scroll-mt-20 ${claro ? "bg-[#F6F5F2]" : ""}`}>
+    <section id={ancora} aria-labelledby={`${id}-titulo`} className={claro ? "bg-[#F6F5F2]" : undefined}>
       <div className="ds-wrap ds-secao grid gap-10 lg:grid-cols-[minmax(0,5fr)_minmax(0,7fr)] lg:gap-20 lg:items-start">
         <div>
           <h2 id={`${id}-titulo`} className="font-serif text-t1 text-[#0B1F45] text-balance max-w-[18ch]">{titulo}</h2>
@@ -135,17 +138,25 @@ export default function CadastroParceiro({ ancora, profissoes, titulo = CADASTRO
             <svg aria-hidden width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.6" strokeLinecap="round" strokeLinejoin="round">
               <path d="M10 13a5 5 0 007.07 0l3-3a5 5 0 00-7.07-7.07l-1.5 1.5M14 11a5 5 0 00-7.07 0l-3 3a5 5 0 007.07 7.07l1.5-1.5" />
             </svg>
-            <span aria-live="polite">{copiado ? CADASTRO.copiado : CADASTRO.copiar}</span>
+            <span aria-live="polite">{copia === "ok" ? CADASTRO.copiado : CADASTRO.copiar}</span>
           </button>
+          {copia === "manual" && (
+            <div className="mt-2 max-w-[36ch]">
+              <label htmlFor={`${id}-link`} className={ROTULO}>Copie o link abaixo</label>
+              <input ref={campoLink} id={`${id}-link`} readOnly value={link} onFocus={(e) => e.currentTarget.select()} className={`${CAMPO} text-legenda`} />
+            </div>
+          )}
         </div>
 
-        <div ref={caixa} tabIndex={-1} className="bg-white border border-[#0B1F45]/12 p-5 sm:p-8 focus:outline-none">
+        <div className="bg-white border border-[#0B1F45]/12 p-5 sm:p-8">
           {sucesso ? (
             <div role="status" className="py-6 text-center">
-              <p className="font-serif text-t2 text-[#0B1F45]">{CADASTRO.sucessoTitulo}</p>
+              <p ref={tituloSucesso} tabIndex={-1} className="font-serif text-t2 text-[#0B1F45] focus:outline-none">{CADASTRO.sucessoTitulo}</p>
               <p className="mt-4 text-corpo text-[#43474e]">
-                Olá, <strong>{sucesso.nome.split(" ")[0]}</strong>. O seu cupom reservado é{" "}
-                <strong className="font-mono tracking-widest text-[#0B1F45]">{sucesso.cupom}</strong>.
+                Olá, <strong>{sucesso.nome.split(" ")[0]}</strong>.
+                {sucesso.cupom && (
+                  <> O seu cupom reservado é <strong className="font-mono tracking-widest text-[#0B1F45]">{sucesso.cupom}</strong>.</>
+                )}
               </p>
               <p className="mt-3 text-legenda text-[#43474e]">{CADASTRO.apoio}</p>
             </div>
