@@ -167,10 +167,6 @@ function Conteudo({
     const b = barra.current;
     const s = secao.current;
     if (!b || !s) return;
-    const medir = () => s.style.setProperty("--barra-projetos", `${b.offsetHeight}px`);
-    medir();
-    const ro = new ResizeObserver(medir);
-    ro.observe(b);
     // Barra ainda no fluxo, abaixo do título (não presa): data-solta. No celular ela só
     // some com o cabeçalho quando está presa (globals.css › ds-some-no-celular).
     let quadro = 0;
@@ -180,7 +176,12 @@ function Conteudo({
       b.toggleAttribute("data-solta", lugar >= 80);
     };
     const rolou = () => { if (!quadro) quadro = requestAnimationFrame(presa); };
-    presa();
+    // Girar o celular ou mudar a largura mexe na altura do título: remede as duas coisas.
+    const medir = () => { s.style.setProperty("--barra-projetos", `${b.offsetHeight}px`); presa(); };
+    medir();
+    const ro = new ResizeObserver(medir);
+    ro.observe(b);
+    if (b.previousElementSibling) ro.observe(b.previousElementSibling);
     window.addEventListener("scroll", rolou, { passive: true });
     return () => { ro.disconnect(); cancelAnimationFrame(quadro); window.removeEventListener("scroll", rolou); };
   }, [semDados]);
