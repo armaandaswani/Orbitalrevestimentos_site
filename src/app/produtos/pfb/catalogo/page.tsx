@@ -408,7 +408,7 @@ export default function ProdutosPage() {
                       <button
                         type="button"
                         onClick={() => open(product)}
-                        className="text-left underline-offset-4 decoration-[#0B1F45]/30 group-hover:underline focus-visible:outline-none after:absolute after:inset-0 after:content-[''] focus-visible:after:outline-2 focus-visible:after:outline-offset-4 focus-visible:after:outline-[#0B1F45]"
+                        className="text-left underline-offset-4 decoration-[#0B1F45]/30 group-hover:underline focus-visible:outline-none! after:absolute after:inset-0 after:content-[''] focus-visible:after:outline-2 focus-visible:after:outline-offset-4 focus-visible:after:outline-[#2347A0]"
                       >
                         <span data-texto-banco>{product.name}</span>
                       </button>

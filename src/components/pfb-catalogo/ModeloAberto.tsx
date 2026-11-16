@@ -349,8 +349,9 @@ export default function ModeloAberto({
         </div>
       </div>
 
-      {/* Faixa de cima: trocar de modelo e fechar. */}
-      <div inert={detalhes} className="absolute inset-x-0 top-0 z-20 pointer-events-none bg-gradient-to-b from-black/45 to-transparent">
+      {/* Faixa de cima: trocar de modelo e fechar. ds-escuro (aqui, nas setas e na
+          base): o contorno de foco do site fica branco sobre a foto. */}
+      <div inert={detalhes} className="ds-escuro absolute inset-x-0 top-0 z-20 pointer-events-none bg-gradient-to-b from-black/45 to-transparent">
         <div className="flex items-center justify-between gap-3 px-3 sm:px-6 pt-[max(0.75rem,env(safe-area-inset-top))] pb-6">
           <div className="flex items-center gap-1">
             <button type="button" onClick={anterior} disabled={!anterior} aria-label="Modelo anterior"
@@ -373,7 +374,7 @@ export default function ModeloAberto({
 
       {/* Setas das fotos, no meio da altura. */}
       {n > 1 && (
-        <div inert={detalhes} className="absolute inset-x-0 top-1/2 z-20 -translate-y-1/2 flex justify-between px-2 sm:px-6 pointer-events-none">
+        <div inert={detalhes} className="ds-escuro absolute inset-x-0 top-1/2 z-20 -translate-y-1/2 flex justify-between px-2 sm:px-6 pointer-events-none">
           <button type="button" onClick={() => setFoto(foto - 1)} disabled={foto === 0} aria-label="Foto anterior"
             className={`${botaoRedondo} disabled:opacity-0`}>
             <Seta lado="esq" />
@@ -386,7 +387,7 @@ export default function ModeloAberto({
       )}
 
       {/* Base: linha, nome, consultor e Detalhes sobre um véu; embaixo, as miniaturas. */}
-      <div inert={detalhes} className="absolute inset-x-0 bottom-0 z-20 pointer-events-none bg-gradient-to-t from-black/80 via-black/45 to-transparent pt-28">
+      <div inert={detalhes} className="ds-escuro absolute inset-x-0 bottom-0 z-20 pointer-events-none bg-gradient-to-t from-black/80 via-black/45 to-transparent pt-28">
         <div className="px-4 sm:px-8 lg:px-12 pb-[max(1rem,env(safe-area-inset-bottom))]">
           <div data-teste="linha-consultor" className="pointer-events-auto flex flex-wrap items-center gap-x-3 gap-y-3 max-w-2xl">
             <p className="basis-full text-legenda text-white/80">
