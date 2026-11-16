@@ -188,12 +188,28 @@ function Conteudo({
 
   // Dos destaques para a grade: o começo dela no topo da tela (o cabeçalho se recolhe ao
   // descer; o respiro do título fica por baixo dele quando volta). O foco vai junto.
+  // No toque o Safari cancela a rolagem por código e devolve a página ao destaque
+  // (scroll-snap obrigatório do html.ts-encaixe): o encaixe sai durante a viagem,
+  // com o estilo já recalculado antes de rolar, e volta quando a página para.
   const irParaGrade = useCallback((suave: boolean) => {
     const s = secao.current;
     if (!s) return;
     const reduzido = window.matchMedia("(prefers-reduced-motion: reduce)").matches;
+    const html = document.documentElement;
+    html.style.scrollSnapType = "none";
+    void getComputedStyle(html).scrollSnapType;
     window.scrollTo({ top: window.scrollY + s.getBoundingClientRect().top, behavior: suave && !reduzido ? "smooth" : "instant" });
     document.getElementById("todos-titulo")?.focus({ preventScroll: true });
+    // Parada = 8 quadros seguidos sem mudar o scrollY (ou 2 s, se algo prender a rolagem).
+    let ultimo = -1, parados = 0;
+    const inicio = performance.now();
+    const conferir = () => {
+      parados = window.scrollY === ultimo ? parados + 1 : 0;
+      ultimo = window.scrollY;
+      if (parados >= 8 || performance.now() - inicio > 2000) html.style.scrollSnapType = "";
+      else requestAnimationFrame(conferir);
+    };
+    requestAnimationFrame(conferir);
   }, []);
 
   // Link com ?categoria=<slug>&ver=<n>: abre já filtrado. Slug que não existe = Todos;
