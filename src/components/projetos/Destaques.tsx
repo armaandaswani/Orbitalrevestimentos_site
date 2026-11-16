@@ -20,13 +20,15 @@ import type { Projeto } from "@/lib/projetos-tipos";
  * JavaScript, abre a galeria no lugar, sem trocar de página.
  */
 export default function Destaques({
-  destaques, linha, hrefProjeto, onAbrir,
+  destaques, linha, hrefProjeto, onAbrir, onTodos,
 }: {
   destaques: Projeto[];
   /** Linha discreta sob o nome (modelo · lugar), a mesma do cartão da grade. */
   linha: (p: Projeto) => string;
   hrefProjeto: (p: Projeto) => string;
   onAbrir?: (p: Projeto) => void;
+  /** "Todos os projetos": desce até a grade (sem JavaScript, a âncora #obras faz o mesmo). */
+  onTodos?: () => void;
 }) {
   return (
     <section aria-labelledby="projetos-titulo" data-destaques>
@@ -69,7 +71,7 @@ export default function Destaques({
                   className="ds-botao ds-botao-claro min-h-12 active:bg-[#E8E6E1] focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-white">
                   Ver projeto
                 </a>
-                <a href="#obras" data-todos-projetos
+                <a href="#obras" data-todos-projetos onClick={(e) => { if (!onTodos) return; e.preventDefault(); onTodos(); }}
                   className="inline-flex items-center gap-2 min-h-11 text-legenda text-white/85 underline decoration-white/40 decoration-1 underline-offset-4 hover:text-white hover:decoration-white focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-white">
                   Todos os projetos
                   <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" aria-hidden><path d="M12 5v14M5 12l7 7 7-7" /></svg>

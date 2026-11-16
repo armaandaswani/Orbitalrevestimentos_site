@@ -486,14 +486,18 @@ html:has(header[data-site][data-oculto="1"]) .ds-sob-cabecalho { top: 0; }
    some junto com o cabeçalho ao descer e volta com ele ao subir. O top fica
    em 5rem e só o transform anda, no mesmo tempo do .mv-cabecalho. Com a busca
    em foco (teclado na tela) ou o foco do teclado dentro dela, ela não some: só
-   sobe para o lugar do cabeçalho. Um chip tocado não prende a barra. */
+   sobe para o lugar do cabeçalho. Um chip tocado não prende a barra.
+   Só vale com a barra presa: solta, ainda no fluxo logo abaixo do título
+   (data-solta, posto pela página), ela fica onde está. Em /projetos com
+   destaques em cima, chega-se à grade já sem o cabeçalho, e o transform a
+   jogaria por cima do título. */
 @media (width < 40rem), (height < 30rem) and (pointer: coarse) {
-  html:has(header[data-site][data-oculto="1"]) .ds-sob-cabecalho.ds-some-no-celular {
+  html:has(header[data-site][data-oculto="1"]) .ds-sob-cabecalho.ds-some-no-celular:not([data-solta]) {
     top: 5rem;
     transform: translate3d(0, calc(-100% - 5rem), 0);
   }
-  html:has(header[data-site][data-oculto="1"]) .ds-sob-cabecalho.ds-some-no-celular:has(input:focus),
-  html:has(header[data-site][data-oculto="1"]) .ds-sob-cabecalho.ds-some-no-celular:has(:focus-visible) {
+  html:has(header[data-site][data-oculto="1"]) .ds-sob-cabecalho.ds-some-no-celular:not([data-solta]):has(input:focus),
+  html:has(header[data-site][data-oculto="1"]) .ds-sob-cabecalho.ds-some-no-celular:not([data-solta]):has(:focus-visible) {
     transform: translate3d(0, -5rem, 0);
   }
 }

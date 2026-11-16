@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useMemo, useRef, useState } from "react";
+import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import Link from "next/link";
 import ProjetoCard from "@/components/projetos/ProjetoCard";
 import LugarCard from "@/components/projetos/LugarCard";
@@ -171,8 +171,29 @@ function Conteudo({
     medir();
     const ro = new ResizeObserver(medir);
     ro.observe(b);
-    return () => ro.disconnect();
+    // Barra ainda no fluxo, abaixo do título (não presa): data-solta. No celular ela só
+    // some com o cabeçalho quando está presa (globals.css › ds-some-no-celular).
+    let quadro = 0;
+    const presa = () => {
+      quadro = 0;
+      const lugar = b.previousElementSibling?.getBoundingClientRect().bottom ?? 0;
+      b.toggleAttribute("data-solta", lugar >= 80);
+    };
+    const rolou = () => { if (!quadro) quadro = requestAnimationFrame(presa); };
+    presa();
+    window.addEventListener("scroll", rolou, { passive: true });
+    return () => { ro.disconnect(); cancelAnimationFrame(quadro); window.removeEventListener("scroll", rolou); };
   }, [semDados]);
+
+  // Dos destaques para a grade: o começo dela no topo da tela (o cabeçalho se recolhe ao
+  // descer; o respiro do título fica por baixo dele quando volta). O foco vai junto.
+  const irParaGrade = useCallback((suave: boolean) => {
+    const s = secao.current;
+    if (!s) return;
+    const reduzido = window.matchMedia("(prefers-reduced-motion: reduce)").matches;
+    window.scrollTo({ top: window.scrollY + s.getBoundingClientRect().top, behavior: suave && !reduzido ? "smooth" : "instant" });
+    document.getElementById("todos-titulo")?.focus({ preventScroll: true });
+  }, []);
 
   // Link com ?categoria=<slug>&ver=<n>: abre já filtrado. Slug que não existe = Todos;
   // ?ver= fora da regra é corrigido na URL. Relido no voltar/avançar do navegador
@@ -185,7 +206,7 @@ function Conteudo({
       // em cima, a página abre nela. Só na carga; no voltar, a rolagem fica onde está.
       if (!e && !foiAGrade.current && comDestaques && (slug || q.has("ver"))) {
         foiAGrade.current = true;
-        document.getElementById("obras")?.scrollIntoView({ block: "start", behavior: "instant" });
+        irParaGrade(false);
       }
       const cat = slug && cats.some((c) => c.slug === slug) ? slug : "todos";
       const total = obras.filter((p) => cat === "todos" || secoesDoProjeto(p).includes(cat)).length;
@@ -201,7 +222,7 @@ function Conteudo({
     const t = setTimeout(() => ler(), 0);
     window.addEventListener("popstate", ler);
     return () => { clearTimeout(t); window.removeEventListener("popstate", ler); };
-  }, [cats, obras, comDestaques]);
+  }, [cats, obras, comDestaques, irParaGrade]);
   // Filtro da URL já na grade: ela pode aparecer.
   useEffect(() => { if (lido) document.getElementById(ESTILO_ESPERA_URL)?.remove(); }, [lido]);
 
@@ -257,7 +278,7 @@ function Conteudo({
       {/* ── Projetos: título, barra presa e grade ─────────────────────────── */}
       <section ref={secao} id="obras" aria-labelledby="todos-titulo" className="scroll-mt-20 bg-white pb-[clamp(3.5rem,2rem+4.5vw,6rem)]">
         <div className={`ds-wrap pb-5 lg:pb-7 ${comDestaques ? "pt-[clamp(3rem,2rem+3vw,5rem)]" : "pt-[clamp(2rem,1.25rem+2.5vw,3.75rem)]"}`}>
-          <TituloGrade id="todos-titulo" className="font-serif text-primary text-t1 font-normal tracking-[-0.02em]">Todos os projetos</TituloGrade>
+          <TituloGrade id="todos-titulo" tabIndex={-1} className="outline-none font-serif text-primary text-t1 font-normal tracking-[-0.02em]">Todos os projetos</TituloGrade>
           <p className="text-on-surface-variant text-lead mt-3 max-w-2xl text-pretty">
             Obras entregues em Manaus com o Painel Flexível em Fibra de Bambu (PFB).
           </p>
@@ -413,7 +434,7 @@ function Conteudo({
     <div>
       <Encaixe />
       <Destaques destaques={destaques} linha={(p) => fichas.get(p.id)?.detalhe ?? modelosTxt(p)}
-        hrefProjeto={(p) => visor?.hrefProjeto(p) ?? `/projetos?projeto=${p.slug}`} onAbrir={abrirDestaque} />
+        hrefProjeto={(p) => visor?.hrefProjeto(p) ?? `/projetos?projeto=${p.slug}`} onAbrir={abrirDestaque} onTodos={() => irParaGrade(true)} />
       {/* Tudo depois dos destaques é um ponto de encaixe só, mais alto que a tela: no toque o
           scroll-snap obrigatório deixa rolar livre por dentro dele (sem isto puxaria de volta ao
           último destaque); com mouse ele é "solto" e nunca puxa o encaixe. */}
