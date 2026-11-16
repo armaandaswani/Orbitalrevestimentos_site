@@ -7,6 +7,8 @@ import LugarCard from "@/components/projetos/LugarCard";
 import RenderCard from "@/components/projetos/RenderCard";
 import ChamadaProjeto from "@/components/projetos/ChamadaProjeto";
 import Revelar from "@/components/projetos/Revelar";
+import Destaques from "@/components/projetos/Destaques";
+import Encaixe from "@/components/techstone/Encaixe";
 import ContatoCta from "@/components/ContatoCta";
 import VisorProjetos, { useVisor } from "@/components/projetos/VisorProjetos";
 import { modelosTxt } from "@/lib/projeto-modelos";
@@ -18,10 +20,11 @@ import {
 import type { DadosProjetos } from "@/lib/projetos-dados";
 
 /**
- * Página de Projetos: os projetos primeiro, numa grade vertical, sem nenhuma
- * rolagem de lado. Em cima, uma barra presa sob o cabeçalho com as categorias
- * e a busca; embaixo, onde ver o PFB ao vivo, as simulações de IA e o
- * próximo passo.
+ * Página de Projetos. Abre com os destaques do painel em tela cheia, um por
+ * tela (a página encaixa em cada um); sem destaque marcado, abre direto na
+ * grade. Depois, todos os projetos numa grade vertical, sem nenhuma rolagem
+ * de lado, com uma barra presa sob o cabeçalho com as categorias e a busca;
+ * embaixo, onde ver o PFB ao vivo, as simulações de IA e o próximo passo.
  *
  * O VisorProjetos abre a galeria e o showroom por cima da página (estado na
  * URL, voltar fecha, a rolagem fica onde estava). Os dados chegam prontos do
@@ -30,7 +33,12 @@ import type { DadosProjetos } from "@/lib/projetos-dados";
 
 /** Quantos cartões aparecem de cada vez: a lista cresce só quando pedem. */
 const POR_VEZ = 12;
-/** 2 colunas no celular, 3 até 1279 px, 4 daí em diante (contêiner de 80rem). */
+/** No máximo 5 destaques no topo, na ordem do painel. */
+const MAX_DESTAQUES = 5;
+/** Projetos: cartões grandes, 2 colunas até 1023 px e 3 daí em diante (contêiner de 80rem). */
+const COLUNAS_PROJETOS = "grid grid-cols-2 lg:grid-cols-3 gap-x-3 gap-y-7 sm:gap-x-5 sm:gap-y-9 lg:gap-x-8 lg:gap-y-12";
+const SIZES_PROJETOS = "(max-width: 1023px) 47vw, (min-width: 1921px) 30vw, 400px";
+/** Simulações: 2 colunas no celular, 3 até 1279 px, 4 daí em diante. */
 const COLUNAS = "grid grid-cols-2 sm:grid-cols-3 xl:grid-cols-4 gap-x-3 gap-y-6 sm:gap-x-4 sm:gap-y-8 lg:gap-x-6 lg:gap-y-10";
 const SIZES_GRADE = "(max-width: 639px) 46vw, (max-width: 1279px) 31vw, (min-width: 1921px) 21vw, 340px";
 /** Foco por teclado nunca fica sob a barra presa: cabeçalho (5rem) + altura medida da barra.
@@ -85,6 +93,7 @@ function Conteudo({
   const [trocou, setTrocou] = useState(false);
   // A URL (?categoria=, ?ver=) só é escrita depois de lida no carregamento.
   const [lido, setLido] = useState(false);
+  const foiAGrade = useRef(false);
   const secao = useRef<HTMLElement>(null);
   const barra = useRef<HTMLDivElement>(null);
   const campo = useRef<HTMLInputElement>(null);
@@ -102,6 +111,9 @@ function Conteudo({
     const ordem = (a: Projeto, b: Projeto) => porDestaque(a, b) || cadastro(b) - cadastro(a);
     return [projetos.filter((p) => !doShowroom(p)).sort(ordem), projetos.filter(doShowroom).sort(ordem)];
   }, [projetos, showrooms.length]);
+  // Destaques do topo: os marcados no painel (obra ou ambiente de showroom), na ordem do painel.
+  const destaques = useMemo(() => projetos.filter((p) => p.is_featured).sort(porDestaque).slice(0, MAX_DESTAQUES), [projetos]);
+  const comDestaques = destaques.length > 0;
   const semDados = obras.length === 0;
   const rotulos = useMemo(() => ordenarCategorias(categorias), [categorias]);
   // Só as categorias que têm obra: um filtro que daria zero não aparece.
@@ -166,9 +178,15 @@ function Conteudo({
   // ?ver= fora da regra é corrigido na URL. Relido no voltar/avançar do navegador
   // (fechar a galeria volta para a entrada anterior): a grade segue a URL.
   useEffect(() => {
-    const ler = () => {
+    const ler = (e?: PopStateEvent) => {
       const q = new URLSearchParams(window.location.search);
       const slug = q.get("categoria");
+      // Link que já pede um filtro (?categoria=, ?ver=) quer a grade: com destaques
+      // em cima, a página abre nela. Só na carga; no voltar, a rolagem fica onde está.
+      if (!e && !foiAGrade.current && comDestaques && (slug || q.has("ver"))) {
+        foiAGrade.current = true;
+        document.getElementById("obras")?.scrollIntoView({ block: "start", behavior: "instant" });
+      }
       const cat = slug && cats.some((c) => c.slug === slug) ? slug : "todos";
       const total = obras.filter((p) => cat === "todos" || secoesDoProjeto(p).includes(cat)).length;
       // Com busca, não corta: o cartão que acabou de fechar pode estar além do teto das obras.
@@ -180,10 +198,10 @@ function Conteudo({
       setLido(true);
       escreverUrl(cat, n);
     };
-    const t = setTimeout(ler, 0);
+    const t = setTimeout(() => ler(), 0);
     window.addEventListener("popstate", ler);
     return () => { clearTimeout(t); window.removeEventListener("popstate", ler); };
-  }, [cats, obras]);
+  }, [cats, obras, comDestaques]);
   // Filtro da URL já na grade: ela pode aparecer.
   useEffect(() => { if (lido) document.getElementById(ESTILO_ESPERA_URL)?.remove(); }, [lido]);
 
@@ -230,12 +248,16 @@ function Conteudo({
       ativo ? "bg-primary border-primary text-white" : "bg-white border-[#d5d8de] text-primary hover:border-primary"
     }`;
 
-  return (
-    <div className="pt-20">
+  // Com destaques, o título da página (h1) mora neles e a grade ganha um h2.
+  const TituloGrade = comDestaques ? "h2" : "h1";
+  const abrirDestaque = visor ? (p: Projeto) => visor.abrirProjeto(p, destaques) : undefined;
+
+  const resto = (
+    <>
       {/* ── Projetos: título, barra presa e grade ─────────────────────────── */}
-      <section ref={secao} id="obras" aria-labelledby="projetos-titulo" className="scroll-mt-20 bg-white pb-[clamp(3.5rem,2rem+4.5vw,6rem)]">
-        <div className="ds-wrap pt-[clamp(2rem,1.25rem+2.5vw,3.75rem)] pb-5 lg:pb-7">
-          <h1 id="projetos-titulo" className="font-serif text-primary text-t1 font-normal tracking-[-0.02em]">Projetos</h1>
+      <section ref={secao} id="obras" aria-labelledby="todos-titulo" className="scroll-mt-20 bg-white pb-[clamp(3.5rem,2rem+4.5vw,6rem)]">
+        <div className={`ds-wrap pb-5 lg:pb-7 ${comDestaques ? "pt-[clamp(3rem,2rem+3vw,5rem)]" : "pt-[clamp(2rem,1.25rem+2.5vw,3.75rem)]"}`}>
+          <TituloGrade id="todos-titulo" className="font-serif text-primary text-t1 font-normal tracking-[-0.02em]">Todos os projetos</TituloGrade>
           <p className="text-on-surface-variant text-lead mt-3 max-w-2xl text-pretty">
             Obras entregues em Manaus com o Painel Flexível em Fibra de Bambu (PFB).
           </p>
@@ -293,10 +315,11 @@ function Conteudo({
                   </button>
                 </div>
               ) : (
-                <ul ref={grade} key={categoria} className={`${COLUNAS} ${trocou ? "mv-veu" : ""}`} data-grade-projetos>
+                <ul ref={grade} key={categoria} className={`${COLUNAS_PROJETOS} ${trocou ? "mv-veu" : ""}`} data-grade-projetos>
                   {visiveis.map((p, i) => (
                     <li key={p.id} className={`${SOB_A_BARRA} ${SOB_A_BARRA_FILHO}`}>
-                      <ProjetoCard projeto={p} detalhe={fichas.get(p.id)?.detalhe ?? ""} sizes={SIZES_GRADE} prioridade={i < 4}
+                      {/* Com destaques em cima, a grade fica abaixo da dobra: nenhuma capa disputa com a primeira foto. */}
+                      <ProjetoCard projeto={p} detalhe={fichas.get(p.id)?.detalhe ?? ""} sizes={SIZES_PROJETOS} prioridade={!comDestaques && i < 4}
                         href={visor?.hrefProjeto(p) ?? `/projetos?projeto=${p.slug}`}
                         onAbrir={visor ? (x) => visor.abrirProjeto(x, filtradas) : undefined} />
                     </li>
@@ -382,6 +405,19 @@ function Conteudo({
       )}
 
       <ChamadaProjeto />
+    </>
+  );
+
+  if (!comDestaques) return <div className="pt-20">{resto}</div>;
+  return (
+    <div>
+      <Encaixe />
+      <Destaques destaques={destaques} linha={(p) => fichas.get(p.id)?.detalhe ?? modelosTxt(p)}
+        hrefProjeto={(p) => visor?.hrefProjeto(p) ?? `/projetos?projeto=${p.slug}`} onAbrir={abrirDestaque} />
+      {/* Tudo depois dos destaques é um ponto de encaixe só, mais alto que a tela: no toque o
+          scroll-snap obrigatório deixa rolar livre por dentro dele (sem isto puxaria de volta ao
+          último destaque); com mouse ele é "solto" e nunca puxa o encaixe. */}
+      <div className="ts-encaixe-ponto" data-encaixe="solto">{resto}</div>
     </div>
   );
 }
