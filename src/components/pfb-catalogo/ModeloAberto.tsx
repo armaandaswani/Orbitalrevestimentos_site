@@ -115,6 +115,16 @@ export default function ModeloAberto({
     setCopiado(false);
   }
 
+  // Base aberta (linha, nome grande e os dois botões) só na primeira foto: ao
+  // passar para as outras ela recolhe numa barra fina e a foto aparece. Tocar
+  // na barra ou voltar à primeira abre de novo.
+  const [baseAberta, setBaseAberta] = useState(foto === 0);
+  const [fotoAntes, setFotoAntes] = useState(foto);
+  if (fotoAntes !== foto) {
+    setFotoAntes(foto);
+    setBaseAberta(foto === 0);
+  }
+
   const n = fotos.length;
   const atual = fotos[foto] ?? fotos[0];
 
@@ -150,7 +160,11 @@ export default function ModeloAberto({
   }, []);
   const fecharDetalhes = useCallback(() => {
     setDetalhes(false);
-    requestAnimationFrame(() => detalhesRef.current?.focus({ preventScroll: true }));
+    // Volta ao "Detalhes" que está à vista: o da base aberta ou o da barra.
+    requestAnimationFrame(() => {
+      const botoes = raizRef.current?.querySelectorAll<HTMLElement>('[aria-controls="modelo-detalhes"]') ?? [];
+      ([...botoes].find((b) => !b.closest('[aria-hidden="true"]')) ?? detalhesRef.current)?.focus({ preventScroll: true });
+    });
   }, []);
 
   // Ao abrir, o foco vai para o "Fechar" (o leitor de tela anuncia o diálogo pelo título).
@@ -358,8 +372,9 @@ export default function ModeloAberto({
               className={`${botaoRedondo} disabled:opacity-30 disabled:pointer-events-none`}>
               <Seta lado="esq" />
             </button>
-            <span className="min-w-[4.5rem] text-center text-legenda text-white/85 tabular-nums">
-              {posicao + 1} de {total}
+            {/* "Modelo": estas setas trocam de modelo; as do meio da altura, de foto. */}
+            <span className="min-w-[4.5rem] px-1 text-center text-legenda text-white/85 tabular-nums">
+              Modelo {posicao + 1} de {total}
             </span>
             <button type="button" onClick={proximo} disabled={!proximo} aria-label="Próximo modelo"
               className={`${botaoRedondo} disabled:opacity-30 disabled:pointer-events-none`}>
@@ -386,9 +401,19 @@ export default function ModeloAberto({
         </div>
       )}
 
-      {/* Base: linha, nome, consultor e Detalhes sobre um véu; embaixo, as miniaturas. */}
-      <div inert={detalhes} className="ds-escuro absolute inset-x-0 bottom-0 z-20 pointer-events-none bg-gradient-to-t from-black/80 via-black/45 to-transparent pt-28">
+      {/* Base: linha, nome, consultor e Detalhes sobre um véu; embaixo, as miniaturas.
+          As duas formas (aberta e barra) ficam montadas e trocam pela altura
+          (grid-rows de 1fr a 0fr); a que está fechada fica inerte. */}
+      <div inert={detalhes} data-teste="base-modelo" data-aberta={baseAberta ? "sim" : "nao"}
+        className={`ds-escuro absolute inset-x-0 bottom-0 z-20 pointer-events-none bg-gradient-to-t transition-[padding] duration-500 ease-[cubic-bezier(0.22,1,0.36,1)] motion-reduce:transition-none ${
+          baseAberta ? "from-black/80 via-black/45 to-transparent pt-28" : "from-black/70 via-black/30 to-transparent pt-10"
+        }`}>
         <div className="px-4 sm:px-8 lg:px-12 pb-[max(1rem,env(safe-area-inset-bottom))]">
+          <div aria-hidden={!baseAberta} inert={!baseAberta}
+            className={`grid transition-[grid-template-rows,opacity] duration-500 ease-[cubic-bezier(0.22,1,0.36,1)] motion-reduce:transition-none ${
+              baseAberta ? "grid-rows-[1fr] opacity-100" : "grid-rows-[0fr] opacity-0"
+            }`}>
+          <div className="min-h-0 overflow-hidden">
           <div data-teste="linha-consultor" className="pointer-events-auto flex flex-wrap items-center gap-x-3 gap-y-3 max-w-2xl">
             <p className="basis-full text-legenda text-white/80">
               Linha {modelo.linha} · <span data-texto-banco>{modelo.code}</span>
@@ -414,6 +439,45 @@ export default function ModeloAberto({
               className="ds-botao ds-botao-linha min-h-12 px-5 grow sm:grow-0 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-white">
               Detalhes
             </button>
+          </div>
+          </div>
+          </div>
+
+          {/* Barra recolhida: nome e código pequenos (tocar abre a base) e os
+              mesmos dois botões, compactos. */}
+          <div aria-hidden={baseAberta} inert={baseAberta} data-teste="barra-modelo"
+            className={`grid transition-[grid-template-rows,opacity] duration-500 ease-[cubic-bezier(0.22,1,0.36,1)] motion-reduce:transition-none ${
+              baseAberta ? "grid-rows-[0fr] opacity-0" : "grid-rows-[1fr] opacity-100"
+            }`}>
+            <div className="min-h-0 overflow-hidden">
+              <div className="pointer-events-auto flex items-center gap-2 max-w-2xl">
+                <button type="button" onClick={() => setBaseAberta(true)} aria-label={`Mostrar mais de ${modelo.name}`}
+                  className="min-w-0 flex-1 sm:flex-none sm:mr-4 flex items-center gap-2 min-h-11 py-1 text-left focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-white">
+                  <span className="min-w-0">
+                    <span className="block truncate font-serif text-[1.0625rem] leading-tight text-white">{modelo.name}</span>
+                    <span className="block truncate text-sobre text-white/70">{modelo.linha} · {modelo.code}</span>
+                  </span>
+                  <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" aria-hidden className="flex-none text-white/80">
+                    <path d="M18 15l-6-6-6 6" />
+                  </svg>
+                </button>
+                <ContatoCta
+                  origem="catalogo-modelo"
+                  produtos={[{ code: modelo.code, name: modelo.name, linha: modelo.linha, image: modelo.image_path }]}
+                  className="ds-botao ds-botao-claro flex-none min-h-11 w-11 !px-0 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-white"
+                >
+                  <svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" aria-hidden>
+                    <path d="M21 11.5a8.38 8.38 0 01-.9 3.8 8.5 8.5 0 01-7.6 4.7 8.38 8.38 0 01-3.8-.9L3 21l1.9-5.7a8.38 8.38 0 01-.9-3.8 8.5 8.5 0 014.7-7.6 8.38 8.38 0 013.8-.9h.5a8.48 8.48 0 018 8v.5z" />
+                  </svg>
+                  <span className="sr-only">Falar com um consultor</span>
+                </ContatoCta>
+                <button type="button" onClick={abrirDetalhes}
+                  aria-expanded={detalhes} aria-controls="modelo-detalhes"
+                  className="ds-botao ds-botao-linha flex-none min-h-11 !px-4 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-white">
+                  Detalhes
+                </button>
+              </div>
+            </div>
           </div>
 
           {n > 1 && (
