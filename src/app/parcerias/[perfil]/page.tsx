@@ -3,6 +3,7 @@ import Image from "next/image";
 import LinkParceria from "@/components/parcerias/LinkParceria";
 import { notFound } from "next/navigation";
 import CadastroParceiro from "@/components/parcerias/CadastroParceiro";
+import { OG_PADRAO } from "@/lib/og";
 import { capasDeParceria } from "@/lib/parcerias-capas";
 import { ANCORA_CADASTRO, ANCORA_REVENDER, PERFIS, perfilDe } from "@/lib/parcerias-textos";
 
@@ -16,8 +17,8 @@ export const revalidate = 3600;
 export const dynamicParams = false;
 
 const SITE = "https://orbitalrevestimentos.com.br";
-// A mesma imagem de compartilhamento do layout raiz.
-const IMAGEM_OG = { url: "/images/catalogue/hero-cover.png", width: 1200, height: 630, alt: "Orbital Revestimentos: Painel Flexível em Fibra de Bambu instalado numa sala de estar" };
+// A imagem padrão de prévia (lib/og): JPG leve, que o WhatsApp mostra.
+const IMAGEM_OG = OG_PADRAO;
 
 export function generateStaticParams() {
   return PERFIS.map((p) => ({ perfil: p.slug }));

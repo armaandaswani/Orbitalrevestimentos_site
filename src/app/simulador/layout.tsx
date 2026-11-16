@@ -1,4 +1,5 @@
 import type { Metadata } from "next";
+import { OG_PADRAO } from "@/lib/og";
 
 export const metadata: Metadata = {
   title: "Gere seu Orçamento — Simule o Investimento do seu Projeto",
@@ -19,6 +20,7 @@ export const metadata: Metadata = {
     description:
       "Simule o investimento do seu projeto agora. Informe as medidas, escolha o acabamento e receba o orçamento na hora.",
     url: "https://orbitalrevestimentos.com.br/simulador",
+    images: [OG_PADRAO],
   },
 };
 

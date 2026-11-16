@@ -3,6 +3,7 @@ import Image from "next/image";
 import Link from "next/link";
 import Revelar from "@/components/projetos/Revelar";
 import ContatoCta from "@/components/ContatoCta";
+import { OG_PADRAO } from "@/lib/og";
 
 /**
  * Nossa história — conteúdo do Manual da Marca (ed. 01, capítulos 01 a 04):
@@ -26,6 +27,7 @@ export const metadata: Metadata = {
     title: "Nossa história — Orbital Revestimentos",
     description: "Dois sócios. Duas cores. Uma só esfera: o equilíbrio entre segurança e inovação.",
     url: `${BASE_URL}/nossa-historia`,
+    images: [OG_PADRAO],
   },
 };
 

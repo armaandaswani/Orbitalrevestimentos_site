@@ -10,6 +10,7 @@ import { DiferenciaisPfb } from "@/components/ConhecaPfb";
 import ListaEsperaForm from "./ListaEsperaForm";
 import AntesDepois from "./AntesDepois";
 import CtaFixo from "./CtaFixo";
+import { OG_PADRAO } from "@/lib/og";
 
 /**
  * Academia Orbital — 1ª edição da formação em instalação do PFB.
@@ -52,6 +53,7 @@ export const metadata: Metadata = {
     title: "Academia Orbital — Formação em instalação do PFB",
     description: "1ª turma gratuita, vagas limitadíssimas. Saia com certificado e um novo serviço no portfólio.",
     url: URL_PAGINA,
+    images: [OG_PADRAO],
   },
 };
 

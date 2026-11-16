@@ -1,4 +1,5 @@
 import type { Metadata } from "next";
+import { OG_PADRAO } from "@/lib/og";
 
 export const metadata: Metadata = {
   title: "Parcerias — Arquitetos, Marceneiros e Designers em Manaus",
@@ -21,6 +22,7 @@ export const metadata: Metadata = {
     description:
       "Condições exclusivas para arquitetos, designers e marceneiros em Manaus. Amostras grátis, ART/CREA e suporte técnico da Orbital Revestimentos.",
     url: "https://orbitalrevestimentos.com.br/parcerias",
+    images: [OG_PADRAO],
   },
 };
 

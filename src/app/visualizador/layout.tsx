@@ -1,4 +1,5 @@
 import type { Metadata } from "next";
+import { OG_PADRAO } from "@/lib/og";
 
 export const metadata: Metadata = {
   title: "Visualizador — Veja o Revestimento na Sua Parede | Orbital",
@@ -22,6 +23,7 @@ export const metadata: Metadata = {
     description:
       "Envie uma foto e veja como ficam os acabamentos PFB Orbital na sua parede antes de comprar. Grátis.",
     url: "https://orbitalrevestimentos.com.br/visualizador",
+    images: [OG_PADRAO],
   },
 };
 

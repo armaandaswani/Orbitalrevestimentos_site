@@ -12,7 +12,7 @@ export const metadata: Metadata = {
     title: "Catálogo TechStone: pedra flexível de 3,5 mm",
     description: "Pedra e madeira em placas de 3,5 mm. Baixe as texturas e entre na lista de espera.",
     url: "https://orbitalrevestimentos.com.br/techstone/catalogo",
-    images: [{ url: "/images/techstone/cenas/curva-v3-desktop.webp", width: 1678, height: 944 }],
+    images: [{ url: "/images/og/techstone.jpg", width: 1200, height: 630, alt: "Parede curva em pedra flexível TechStone com luz embutida" }],
   },
 };
 

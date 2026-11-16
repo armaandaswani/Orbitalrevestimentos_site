@@ -1,5 +1,6 @@
 import type { Metadata } from "next";
 import SeletorLinhas from "@/components/linhas/SeletorLinhas";
+import { OG_PADRAO } from "@/lib/og";
 
 export const metadata: Metadata = {
   title: "Produtos — Linhas de Revestimento Orbital em Manaus",
@@ -10,6 +11,7 @@ export const metadata: Metadata = {
     title: "Produtos — Linhas de Revestimento Orbital em Manaus",
     description: "Painel Flexível em Fibra de Bambu em pronta-entrega. TechStone e PFB Carbon chegam em breve a Manaus.",
     url: "https://orbitalrevestimentos.com.br/produtos",
+    images: [OG_PADRAO],
   },
 };
 

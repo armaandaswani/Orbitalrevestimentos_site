@@ -26,7 +26,7 @@ const SITE = "https://orbitalrevestimentos.com.br";
 const DESCRICAO = "Veja no mapa as lojas de Manaus que revendem o Painel Flexível em Fibra de Bambu, com endereço, horário e WhatsApp de cada uma.";
 // A mesma imagem do layout raiz (o openGraph da página troca o do layout inteiro).
 const IMAGEM_OG = {
-    url: "/images/catalogue/hero-cover.png",
+    url: "/images/og/orbital.jpg",
   width: 1200,
   height: 630,
   alt: "Orbital Revestimentos: Painel Flexível em Fibra de Bambu instalado numa sala de estar",

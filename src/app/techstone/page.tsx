@@ -18,7 +18,7 @@ export const metadata: Metadata = {
     title: "TechStone: pedra flexível de 3,5 mm, desenvolvida para a Amazônia",
     description: "Fachadas, interiores e curvas. Chega em breve a Manaus: entre na lista de espera.",
     url: "https://orbitalrevestimentos.com.br/techstone",
-    images: [{ url: "/images/techstone/cenas/curva-v3-desktop.webp", width: 1678, height: 944 }],
+    images: [{ url: "/images/og/techstone.jpg", width: 1200, height: 630, alt: "Parede curva em pedra flexível TechStone com luz embutida" }],
   },
 };
 

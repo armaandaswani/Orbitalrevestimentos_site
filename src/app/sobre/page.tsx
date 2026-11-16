@@ -26,7 +26,7 @@ export const metadata: Metadata = {
     description:
       "Nascemos da inquietação. Percorremos fábricas no mundo para encontrar o que realmente resolve os desafios da Amazônia. Essa é a Orbital.",
     url: `${BASE_URL}/sobre`,
-    images: [{ url: `/images/catalogue/hero-cover.png`, width: 1200, height: 630, alt: "Orbital Revestimentos — Manaus, AM" }],
+    images: [{ url: `/images/og/orbital.jpg`, width: 1200, height: 630, alt: "Orbital Revestimentos — Manaus, AM" }],
   },
 };
 

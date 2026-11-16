@@ -90,7 +90,7 @@ export const metadata: Metadata = {
       "Novas possibilidades para seus projetos. Painéis Flexíveis em Fibra de Bambu (PFB) para paredes e forros, instalados em horas, sem obra. 3 linhas, pronta-entrega em Manaus.",
     images: [
       {
-        url: "/images/catalogue/hero-cover.png",
+        url: "/images/og/orbital.jpg",
         width: 1200,
         height: 630,
         alt: "Orbital Revestimentos: PFB instalado em interior premium",
@@ -102,7 +102,7 @@ export const metadata: Metadata = {
     title: "Orbital Revestimentos: Painéis Flexíveis em Fibra de Bambu em Manaus",
     description:
       "Novas possibilidades para seus projetos. Painéis Flexíveis em Fibra de Bambu (PFB) para paredes e forros, instalados em horas, sem obra.",
-    images: ["/images/catalogue/hero-cover.png"],
+    images: ["/images/og/orbital.jpg"],
   },
   alternates: {
     canonical: BASE_URL,
@@ -125,7 +125,7 @@ const jsonLdSchemas = [
     url: BASE_URL,
     telephone: "+55-92-98815-0149",
     email: "orbital.revestimentos@gmail.com",
-    image: `${BASE_URL}/images/catalogue/hero-cover.png`,
+    image: `${BASE_URL}/images/og/orbital.jpg`,
     address: {
       "@type": "PostalAddress",
       addressLocality: "Manaus",
