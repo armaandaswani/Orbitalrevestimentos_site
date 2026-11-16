@@ -18,7 +18,7 @@ export const metadata: Metadata = {
     title: "PFB Carbon: bambu carbonizado, feito para o clima da Amazônia",
     description: "A linha de luxo do Painel Flexível em Fibra de Bambu. Chega em breve a Manaus: entre na lista de espera.",
     url: "https://orbitalrevestimentos.com.br/pfb-carbon",
-    images: [{ url: "/images/pfb-carbon/miolo-mao-v1.webp", width: 1400, height: 1050 }],
+    images: [{ url: "/images/pfb-carbon/miolo-estudio-v1.webp", width: 1800, height: 1233 }],
   },
 };
 

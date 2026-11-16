@@ -83,8 +83,8 @@ export const LINHAS: LinhaOrbital[] = [
     // Sem etiquetas de uso: ainda não há foto de obra do Carbon.
     usos: [],
     href: PAGINA_CARBON,
-    // Foto real da placa em corte (não gerada).
-    imagem: { src: FOTO_MIOLO.mao.src, alt: TEXTOS_CARBON.numeros.alt },
+    // Imagem ilustrativa de estúdio, feita com a foto real do miolo.
+    imagem: { src: FOTO_MIOLO.estudio.src, alt: TEXTOS_CARBON.numeros.alt },
   },
 ];
 

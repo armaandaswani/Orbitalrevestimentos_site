@@ -54,8 +54,8 @@ export default function PfbCarbon() {
       <section aria-labelledby="cbn-numeros-titulo" className="ts-encaixe-ponto grid bg-[#131211] pt-28 lg:min-h-[100svh] lg:grid-cols-2 lg:pt-0">
         <div className="relative aspect-[4/3] overflow-hidden bg-[#0C0B0A] lg:aspect-auto">
           {/* eslint-disable-next-line @next/next/no-img-element */}
-          <img src={FOTO_MIOLO.mao.src} alt={TEXTOS.numeros.alt} loading="lazy" decoding="async"
-            className="absolute inset-0 h-full w-full object-cover object-[28%_50%]" />
+          <img src={FOTO_MIOLO.estudio.src} alt={TEXTOS.numeros.alt} loading="lazy" decoding="async"
+            className="absolute inset-0 h-full w-full object-cover object-[88%_50%]" />
         </div>
         <div className="ds-wrap flex flex-col justify-center py-12 lg:max-w-none lg:px-[clamp(2rem,5vw,6rem)] lg:py-24">
           <h2 id="cbn-numeros-titulo" className="font-serif font-normal text-t1 text-[#F2EEE6]">{TEXTOS.numeros.titulo}</h2>
@@ -71,7 +71,7 @@ export default function PfbCarbon() {
             ))}
           </dl>
           <p className="mt-6 text-lead text-[#F2EEE6]/80 max-w-[36ch]">{TEXTOS.numeros.uso}</p>
-          <p className="mt-6 text-sobre text-[#B08D57]">{TEXTOS.miolo.legenda}</p>
+          <p className="mt-6 text-sobre text-[#B08D57]">{TEXTOS.numeros.nota}</p>
         </div>
       </section>
 

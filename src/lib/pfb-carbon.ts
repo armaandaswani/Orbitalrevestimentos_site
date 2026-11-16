@@ -55,10 +55,14 @@ export function texturaDownload(m: ModeloCarbon): string {
   return `/images/pfb-carbon/download/pfb-carbon-${m.slug}.jpg`;
 }
 
-/** Fotos reais da placa em corte (dono, 15/11/2026), só com cor e recorte tratados. */
+/**
+ * Imagens do miolo (dono, 15/11/2026). `faixa` e `grao` são a foto real do corte,
+ * só com cor e recorte tratados. `estudio` é ilustrativa: o canto da placa em
+ * fundo escuro, montado com a foto real do miolo (trocou a foto da mão).
+ */
 export const FOTO_MIOLO = {
   faixa: { src: "/images/pfb-carbon/miolo-faixa-v1.webp", largura: 1190, altura: 550 },
-  mao: { src: "/images/pfb-carbon/miolo-mao-v1.webp", largura: 1400, altura: 1050 },
+  estudio: { src: "/images/pfb-carbon/miolo-estudio-v1.webp", largura: 1800, altura: 1233 },
   /** Só o miolo da foto do corte, em mosaico que repete sem emenda (desenho das camadas). */
   grao: { src: "/images/pfb-carbon/miolo-grao-v1.webp", largura: 1024, altura: 293 },
 };
@@ -116,7 +120,8 @@ export const TEXTOS = {
       { valor: DENSIDADE_PLACA, prefixo: "cerca de", rotulo: "Densidade da placa com o filme PET" },
     ],
     uso: "Para paredes e tetos, em ambientes internos.",
-    alt: "Mão segurando a placa do PFB Carbon de lado, com o miolo escuro e as duas camadas claras de SPC à vista",
+    alt: "Canto de uma placa do PFB Carbon sobre fundo escuro, com a madeira Jatobá em cima e, na face cortada, o miolo escuro de fibra de bambu carbonizado entre duas camadas claras de SPC",
+    nota: "Imagem ilustrativa feita com a foto real do miolo.",
   },
   modelos: {
     titulo: "Cinco madeiras.",

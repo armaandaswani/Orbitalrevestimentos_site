@@ -10,7 +10,7 @@ export const metadata: Metadata = {
     title: "Catálogo PFB Carbon",
     description: "Cinco madeiras em placas de 2,80 × 1,20 m. Baixe as texturas e entre na lista de espera.",
     url: "https://orbitalrevestimentos.com.br/pfb-carbon/catalogo",
-    images: [{ url: "/images/pfb-carbon/miolo-mao-v1.webp", width: 1400, height: 1050 }],
+    images: [{ url: "/images/pfb-carbon/miolo-estudio-v1.webp", width: 1800, height: 1233 }],
   },
 };
 

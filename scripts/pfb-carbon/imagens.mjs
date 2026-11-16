@@ -4,14 +4,15 @@
 // para a tela e jpg inteiro (sem recorte) para o arquiteto baixar.
 // Fotos do miolo (celular, luz amarela): o tom é neutralizado pelo SPC, que é
 // branco; depois níveis, nitidez leve e recorte. Nada é desenhado nem gerado:
-// só cor, giro e recorte da foto real.
+// só cor, giro e recorte da foto real. A imagem de estúdio (opcional) já vem
+// montada e só é redimensionada.
 //
-// Uso: node scripts/pfb-carbon/imagens.mjs <pasta das texturas> <pasta das fotos do miolo>
+// Uso: node scripts/pfb-carbon/imagens.mjs <pasta das texturas> <pasta das fotos do miolo> [miolo-estudio-v1.png]
 import { mkdirSync } from "node:fs";
 import path from "node:path";
 import sharp from "sharp";
 
-const [pastaTexturas, pastaMiolo] = process.argv.slice(2);
+const [pastaTexturas, pastaMiolo, fotoEstudio] = process.argv.slice(2);
 if (!pastaTexturas || !pastaMiolo) throw new Error("uso: node scripts/pfb-carbon/imagens.mjs <texturas> <miolo>");
 
 const SAIDA = path.join(import.meta.dirname, "../../public/images/pfb-carbon");
@@ -104,17 +105,12 @@ function veuForaDaFaixa(largura, altura, y0, y1, borda) {
     .then((mosaico) => sharp(mosaico).resize({ width: 1024 }).webp({ quality: 80 }).toFile(path.join(SAIDA, "miolo-grao-v1.webp")));
 }
 
-// Mão: a placa inteira segurada de lado (foto 5), sem o folheto do canto.
-{
-  const corte = sharp(await sharp(path.join(pastaMiolo, "5.jpg")).extract({ left: 0, top: 500, width: 1400, height: 1050 }).toBuffer());
-  const ganhos = await ganhosDoBranco(corte, 0.012);
-  await corte
-    .linear(ganhos, [0, 0, 0])
-    .modulate({ saturation: 0.8 })
-    .linear(1.12, -10)
-    .sharpen({ sigma: 0.9, m1: 0.5, m2: 1.8 })
-    .webp({ quality: 84 })
-    .toFile(path.join(SAIDA, "miolo-mao-v1.webp"));
+// Estúdio: o canto da placa em fundo escuro, montado com a foto real do miolo
+// na face cortada (imagem pronta, só redimensionada). Substituiu a foto da mão
+// segurando a placa em 15/11/2026, a pedido do dono.
+if (fotoEstudio) {
+  await sharp(fotoEstudio).resize({ width: 1800 }).webp({ quality: 84 })
+    .toFile(path.join(SAIDA, "miolo-estudio-v1.webp"));
 }
 
 console.log("imagens em", SAIDA);
