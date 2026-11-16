@@ -64,14 +64,20 @@ const PFB_PATH = "/produtos/pfb";
 
 /** Código-fonte lido por "Texto fixo de atributos" (item 15) em cada etapa. */
 function fontesDeAtributos(etapa) {
-  if (etapa === 1) return [FONTE_CATALOGO];
+  // O modelo aberto saiu da página para src/components/pfb-catalogo (catálogo imersivo, 16/11/2026):
+  // o texto fixo dele continua conferido junto com o da página.
+  const catalogo = path.join(RAIZ, "src/components/pfb-catalogo");
+  const doCatalogo = fs.existsSync(catalogo)
+    ? fs.readdirSync(catalogo).filter((f) => f.endsWith(".tsx")).sort().map((f) => path.join(catalogo, f))
+    : [];
+  if (etapa === 1) return [FONTE_CATALOGO, ...doCatalogo];
   const pasta = path.join(RAIZ, "src/components/pfb");
   const pfb = fs
     .readdirSync(pasta)
     .filter((f) => f.endsWith(".tsx"))
     .sort()
     .map((f) => path.join(pasta, f));
-  return [FONTE_CATALOGO, ...pfb, path.join(RAIZ, "src/components/SolicitarManual.tsx"), path.join(RAIZ, "src/components/VideoShort.tsx")];
+  return [FONTE_CATALOGO, ...doCatalogo, ...pfb, path.join(RAIZ, "src/components/SolicitarManual.tsx"), path.join(RAIZ, "src/components/VideoShort.tsx")];
 }
 
 const ANALISES = /googletagmanager\.com|google-analytics\.com|analytics\.google\.com|connect\.facebook\.net|facebook\.com\/tr|\/_vercel\/insights|\/_vercel\/speed-insights/;
@@ -665,7 +671,10 @@ async function etapa1Navegador(browser, produtos, etapa) {
   }
 
   // Miniaturas do modal a 320 × 568, no modelo com mais fotos.
-  await verificar(`Miniaturas do modal sem rolagem lateral (${maisFotos.code}, ${imagensDe(maisFotos)} fotos)`, MENOR, async () => {
+  // Catálogo imersivo (16/11/2026): as miniaturas viraram uma fileira fina que rola
+  // de lado dentro de si mesma (com 25 fotos não cabem em 320 px). O que não pode
+  // é a página nem o modal rolarem de lado; a fileira tem de ter a própria rolagem.
+  await verificar(`Miniaturas do modal: só a fileira rola de lado, a página não (${maisFotos.code}, ${imagensDe(maisFotos)} fotos)`, MENOR, async () => {
     const { ctx, page } = await novoContexto(browser, MENOR);
     try {
       await irAoCatalogo(page, catalogoPath({ modelo: maisFotos.code }));
@@ -674,12 +683,18 @@ async function etapa1Navegador(browser, produtos, etapa) {
       await dormir(300);
       const m = await page.evaluate(() => {
         const mini = document.querySelector('[data-teste="miniaturas-modal"]');
-        return { msw: mini.scrollWidth, mcw: mini.clientWidth, sw: document.documentElement.scrollWidth, iw: innerWidth };
+        const mod = document.querySelector('[data-teste="modal-modelo"]');
+        return {
+          msw: mini.scrollWidth, mcw: mini.clientWidth, ox: getComputedStyle(mini).overflowX,
+          modSw: mod.scrollWidth, modCw: mod.clientWidth,
+          sw: document.documentElement.scrollWidth, iw: innerWidth,
+        };
       });
       await capturar(page, `catalogo-modelo-${normalizeProductCode(maisFotos.code)}`, MENOR);
+      const fileiraOk = m.msw <= m.mcw || m.ox === "auto" || m.ox === "scroll";
       return {
-        ok: m.msw <= m.mcw && m.sw <= m.iw,
-        detalhe: `miniaturas scrollWidth ${m.msw} / clientWidth ${m.mcw}; página scrollWidth ${m.sw} / innerWidth ${m.iw}`,
+        ok: fileiraOk && m.modSw <= m.modCw && m.sw <= m.iw,
+        detalhe: `miniaturas scrollWidth ${m.msw} / clientWidth ${m.mcw} (overflow-x ${m.ox}); modal scrollWidth ${m.modSw} / clientWidth ${m.modCw}; página scrollWidth ${m.sw} / innerWidth ${m.iw}`,
       };
     } finally {
       await ctx.close();
@@ -862,9 +877,12 @@ async function etapa1Navegador(browser, produtos, etapa) {
       const p = primeiroDe(l);
       if (!p) return [];
       const c = normalizeProductCode(p.code);
+      // Catálogo imersivo (16/11/2026): a foto já abre em tela cheia, então o estado
+      // "foto ampliada" (o botão "Ampliar foto") deixou de existir; no lugar dele entra
+      // o painel "Detalhes" aberto, onde a medida e a ficha moram agora.
       return [
         { estado: `catalogo-modelo-${c}`, rotuloEstado: `?modelo=${c} com o modal aberto`, caminho: catalogoPath({ modelo: p.code }), modelo: true, exige: "1,20 × 2,90 m × 5 mm", exigeNoModal: true },
-        { estado: `catalogo-modelo-${c}-ampliada`, rotuloEstado: `?modelo=${c} com a foto ampliada`, caminho: catalogoPath({ modelo: p.code }), modelo: true, ampliada: true, exige: "1,20 × 2,90 m × 5 mm", exigeNoModal: true },
+        { estado: `catalogo-modelo-${c}-detalhes`, rotuloEstado: `?modelo=${c} com o painel Detalhes aberto`, caminho: catalogoPath({ modelo: p.code }), modelo: true, detalhes: true, exige: "1,20 × 2,90 m × 5 mm", exigeNoModal: true },
       ];
     }),
     { estado: "catalogo-modelo-orb-999", rotuloEstado: "?modelo=orb-999", caminho: catalogoPath({ modelo: "orb-999" }), aviso: true, exige: "Veja abaixo os modelos atuais." },
@@ -882,9 +900,9 @@ async function etapa1Navegador(browser, produtos, etapa) {
           // (esperarAbaAtiva engole o timeout e só devolve o valor medido).
           const pressed = e.linha ? await esperarAbaAtiva(page, e.linha) : null;
           if (e.modelo) await modal(page).waitFor({ state: "visible" });
-          if (e.ampliada) {
-            await modal(page).locator('button[aria-label="Ampliar foto"]').click();
-            await page.locator('[role="dialog"][data-texto-banco]').waitFor({ state: "visible" });
+          if (e.detalhes) {
+            await modal(page).getByRole("button", { name: "Detalhes", exact: true }).click();
+            await page.waitForFunction(() => document.querySelector('[data-teste="painel-detalhes"]')?.inert === false, null, { timeout: 5000 });
           }
           if (e.aviso) await esperarAviso(page);
           await dormir(300);
@@ -944,7 +962,9 @@ async function etapa1Navegador(browser, produtos, etapa) {
       await irAoCatalogo(page, catalogoPath({ modelo: primeiro.code }));
       await modal(page).waitFor({ state: "visible" });
       await page.waitForFunction(() => typeof window.gtag === "function");
-      await modal(page).locator('[data-teste="linha-consultor"] > button').click();
+      // Catálogo imersivo (16/11/2026): "Detalhes" passou a dividir a linha com o consultor;
+      // o clique vai no botão do consultor pelo nome.
+      await modal(page).locator('[data-teste="linha-consultor"] > button', { hasText: "Falar com um consultor" }).click();
       const esperadoProps = { origem: "catalogo-modelo", pagina: CATALOGO_PATH };
       const achou = await esperarEvento(page, "consultor_clicado", (p) => JSON.stringify(ordenar(p)) === JSON.stringify(ordenar(esperadoProps)));
       return {
