@@ -10,6 +10,7 @@ import ContatoSheet from "@/components/ContatoSheet";
 import Movimento from "@/components/movimento/Movimento";
 import IntroOrbita from "@/components/movimento/IntroOrbita";
 import TransicaoPagina from "@/components/movimento/TransicaoPagina";
+import RolagemPaginas from "@/components/movimento/RolagemPaginas";
 import { SCRIPT_ESPERA_URL } from "@/lib/projetos-tipos";
 import { SpeedInsights } from "@vercel/speed-insights/next";
 import { Analytics } from "@vercel/analytics/next";
@@ -304,6 +305,8 @@ export default function RootLayout({
         <TransicaoPagina>
           <div className="flex-1">{children}</div>
         </TransicaoPagina>
+        {/* Depois da página: os efeitos dela (e a rolagem do Next) rodam antes. */}
+        <RolagemPaginas />
         <SiteChrome>
           <Footer />
           <ChatWidget />

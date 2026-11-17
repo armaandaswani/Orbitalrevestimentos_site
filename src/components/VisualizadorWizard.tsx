@@ -14,6 +14,7 @@ import EtapaFoto from "./visualizador/EtapaFoto";
 import EtapaResultado, { type ModeloEscolhido } from "./visualizador/EtapaResultado";
 import { variantesDaVez, type SinaisGeracao } from "./visualizador/espera";
 import AtalhoConsultor from "./visualizador/AtalhoConsultor";
+import { prepararArquivo, salvarImagem, vaiParaGaleria } from "./visualizador/salvarImagem";
 import {
   areaSeguinte, areaSemDescricao, avisoFaltaDescricao, etapaVisivel, indiceDaArea, podeGerar, podeIrParaProximaArea, rotuloZona, ZONE_COLORS,
   LINE_ORDER, VIZ_SPACES, type ProductLine,
@@ -1859,13 +1860,21 @@ export default function VisualizadorWizard() {
     }
   }, [leadName, leadPhone]);
 
-  // ── Download ──────────────────────────────────────────────────────────────
+  // ── Salvar ────────────────────────────────────────────────────────────────
+  // O arquivo fica pronto assim que a imagem chega (o Safari só abre a folha
+  // de compartilhar dentro do toque). No celular, "Salvar na galeria".
+  const [arquivoResultado, setArquivoResultado] = useState<{ src: string; arquivo: File | null } | null>(null);
+  useEffect(() => {
+    if (!result) return;
+    let vivo = true;
+    prepararArquivo(result).then((arquivo) => { if (vivo) setArquivoResultado({ src: result, arquivo }); });
+    return () => { vivo = false; };
+  }, [result]);
+  const arquivoPronto = arquivoResultado?.src === result ? arquivoResultado.arquivo : null;
+  const paraGaleria = vaiParaGaleria(arquivoPronto);
   const download = () => {
     if (!result) return;
-    const a = document.createElement("a");
-    a.href = result;
-    a.download = "orbital-visualizacao.png";
-    a.click();
+    void salvarImagem(result, arquivoPronto);
   };
 
   // ── Multi-photo and "go to simulador" ─────────────────────────────────────
@@ -2132,6 +2141,7 @@ export default function VisualizadorWizard() {
             onEnviarLead={handleLeadSubmit}
             onConsultor={consultorVisivel ? falarComConsultor : undefined}
             onBaixar={download}
+            paraGaleria={paraGaleria}
             onOutroAcabamento={() => { setZonePhase("model"); irParaArea(0); setStep("zones"); }}
             onOutroAmbiente={addAnotherPhoto}
             onTentarDeNovo={generate}

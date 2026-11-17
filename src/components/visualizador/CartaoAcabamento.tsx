@@ -20,12 +20,15 @@ export default function CartaoAcabamento({
   selecionado,
   onEscolher,
   adiar = false,
+  linha,
 }: {
   produto: VizProduct;
   selecionado: boolean;
   onEscolher: () => void;
   /** Carregar a foto só perto de aparecer (cartões a partir do terceiro). */
   adiar?: boolean;
+  /** Na aba "Todos", a linha do modelo aparece num selo sobre a foto. */
+  linha?: string;
 }) {
   const textura = produto.render_texture_path?.trim() || null;
   return (
@@ -64,6 +67,11 @@ export default function CartaoAcabamento({
           data-textura={textura ? "" : undefined}
           className={`viz-cartao-foto block w-full object-cover ${textura ? "" : "scale-[1.8]"}`}
         />
+        {linha && (
+          <span className="absolute bottom-2 left-2 rounded-sm bg-white/90 px-1.5 py-0.5 text-[10px] font-bold uppercase leading-4 tracking-[0.12em] text-[#0B1F45]">
+            {linha}
+          </span>
+        )}
         {selecionado && (
           <span
             aria-hidden

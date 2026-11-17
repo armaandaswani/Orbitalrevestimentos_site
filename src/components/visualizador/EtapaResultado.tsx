@@ -44,7 +44,7 @@ function prefereMenosMovimento(): boolean {
 export default function EtapaResultado({
   photoData, resultado, previa, gerando, sinais, modelos, erro,
   leadEnviado, leadNome, leadTelefone, onNome, onTelefone, onEnviarLead,
-  onConsultor, onBaixar, onOutroAcabamento, onOutroAmbiente, onTentarDeNovo, orcamento,
+  onConsultor, onBaixar, paraGaleria = false, onOutroAcabamento, onOutroAmbiente, onTentarDeNovo, orcamento,
 }: {
   photoData: string;
   resultado: string | null;
@@ -64,6 +64,8 @@ export default function EtapaResultado({
   /** Sem ele (orçamento instantâneo visível), não há "Quero este acabamento". */
   onConsultor?: () => void;
   onBaixar: () => void;
+  /** Celular com a folha de compartilhar: o botão salva na galeria (salvarImagem). */
+  paraGaleria?: boolean;
   onOutroAcabamento: () => void;
   onOutroAmbiente: () => void;
   onTentarDeNovo: () => void;
@@ -329,7 +331,7 @@ export default function EtapaResultado({
 
           <ul className="mt-4 grid grid-cols-1 divide-y divide-[#ececea] border-y border-[#ececea] sm:grid-cols-3 sm:divide-x sm:divide-y-0">
             <li>
-              <AcaoSecundaria onClick={onBaixar} rotulo="Baixar imagem">
+              <AcaoSecundaria onClick={onBaixar} rotulo={paraGaleria ? "Salvar na galeria" : "Baixar imagem"}>
                 <path d="M12 4v11M7 10l5 5 5-5M5 20h14" />
               </AcaoSecundaria>
             </li>

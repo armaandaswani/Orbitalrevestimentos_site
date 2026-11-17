@@ -24,9 +24,11 @@ const LINK =
 const BOTAO_FOLHA =
   "mt-6 inline-flex min-h-12 w-full items-center justify-center bg-[#0B1F45] px-6 text-xs font-bold uppercase tracking-[0.12em] text-white hover:bg-[#2347A0]";
 
-// Aba de linha: as de LINE_ORDER e "Outros" (linha desconhecida no catálogo).
+// Aba de linha: "Todos" primeiro, as de LINE_ORDER e "Outros" (linha
+// desconhecida no catálogo).
+const TODOS = "Todos" as const;
 const OUTROS = "Outros" as const;
-type Aba = ProductLine | typeof OUTROS;
+type Aba = typeof TODOS | ProductLine | typeof OUTROS;
 const abaDe = (p: VizProduct): Aba => (LINE_ORDER.includes(p.linha) ? p.linha : OUTROS);
 
 const higienizarMedida =(v: string) => v.replace(/[^0-9.,]/g, "").replace(",", ".");
@@ -255,23 +257,30 @@ export default function EtapaAcabamento({
   const idBase = useId();
   const produtoAtual = produtos.find((p) => p.id === zona.productId) ?? null;
 
-  // Abas: só as linhas com modelos, e "Outros" para modelos de uma linha fora
-  // de LINE_ORDER (nunca somem); começa na aba do modelo escolhido da área (o
-  // modelo semeado por padrão, ainda não escolhido, não conta), senão na primeira.
+  // Abas: "Todos" (todos os modelos, na ordem das linhas), só as linhas com
+  // modelos e "Outros" para modelos de uma linha fora de LINE_ORDER (nunca
+  // somem). Começa em "Todos" (dono, 17/11/2026); tocar numa linha mostra só ela.
   const linhas = useMemo<Aba[]>(() => {
     const conhecidas: Aba[] = LINE_ORDER.filter((l) => produtos.some((p) => p.linha === l));
-    return produtos.some((p) => abaDe(p) === OUTROS) ? [...conhecidas, OUTROS] : conhecidas;
+    const comOutros = produtos.some((p) => abaDe(p) === OUTROS) ? [...conhecidas, OUTROS] : conhecidas;
+    return comOutros.length > 0 ? [TODOS, ...comOutros] : [];
   }, [produtos]);
   const [linhaEscolhida, setLinhaEscolhida] = useState<Aba | null>(null);
   const linha: Aba | null =
-    linhaEscolhida && linhas.includes(linhaEscolhida)
-      ? linhaEscolhida
-      : zona.productChosen && produtoAtual && linhas.includes(abaDe(produtoAtual))
-        ? abaDe(produtoAtual)
-        : linhas[0] ?? null;
-  const lista = linha ? produtos.filter((p) => abaDe(p) === linha) : [];
+    linhaEscolhida && linhas.includes(linhaEscolhida) ? linhaEscolhida : linhas[0] ?? null;
+  const lista = linha === TODOS ? produtos : linha ? produtos.filter((p) => abaDe(p) === linha) : [];
 
   const fileira = useRef<HTMLDivElement | null>(null);
+  // Voltando a uma área com modelo escolhido, a fileira abre nele, não no começo.
+  const temLista = lista.length > 0;
+  useEffect(() => {
+    const el = fileira.current;
+    const cartao = el?.querySelector<HTMLElement>('[data-cartao][aria-pressed="true"]');
+    if (!el || !cartao) return;
+    const fora = cartao.offsetLeft + cartao.offsetWidth > el.scrollLeft + el.clientWidth || cartao.offsetLeft < el.scrollLeft;
+    if (fora) el.scrollTo({ left: cartao.offsetLeft - parseFloat(getComputedStyle(el).scrollPaddingLeft || "0"), behavior: "instant" });
+    // Só ao entrar na área (ou quando os modelos chegam), não a cada escolha.
+  }, [zona.id, temLista]);
   const abasRef = useRef<Array<HTMLButtonElement | null>>([]);
   const trocarLinha = (l: Aba) => {
     setLinhaEscolhida(l);
@@ -459,6 +468,7 @@ export default function EtapaAcabamento({
               key={p.id}
               produto={p}
               adiar={i >= 2}
+              linha={linha === TODOS ? p.linha : undefined}
               selecionado={!!zona.productChosen && zona.productId === p.id}
               onEscolher={() => onEscolher(p.id)}
             />

@@ -2,6 +2,7 @@
 
 import { useEffect } from "react";
 import { escolherTela, telaAtual, type Tela } from "@/lib/movimento/encaixe";
+import { saiDaPagina } from "@/lib/movimento/rolagem";
 
 /** Sem scrollend (Safari antigo), a rolagem conta como parada depois disto. */
 const PARADA_MS = 140;
@@ -21,6 +22,11 @@ const PARADA_MS = 140;
  * o toque de roda não vence a borda de uma seção mais alta que a tela. Não
  * mexe com movimento reduzido, com uma folha ou foto aberta por cima
  * (aria-modal) nem quando o foco do teclado está fora da tela escolhida.
+ *
+ * Saindo da página, o encaixe desliga no clique (ou no voltar), antes da página
+ * nova montar. Desmontar é tarde: com a transição de página, o scroll-snap
+ * ainda valia quando a página nova entrava, e o navegador seguia a tela em que
+ * estava encaixado, abrindo o PFB perto do rodapé (7216 px, 17/11/2026).
  */
 export default function Encaixe() {
   useEffect(() => {
@@ -35,6 +41,8 @@ export default function Encaixe() {
     let yToque = 0;
     let parada = 0;
     let solta = 0;
+    let saindo = false;
+    const caminho = window.location.pathname;
 
     const pontos = () => Array.from(document.querySelectorAll<HTMLElement>(".ts-encaixe-ponto"));
     const medir = (lista: HTMLElement[]): Tela[] => lista.map((el) => {
@@ -44,6 +52,7 @@ export default function Encaixe() {
 
     const parou = () => {
       window.clearTimeout(parada);
+      if (saindo) return;
       const lista = pontos();
       if (deslizando) {
         deslizando = false;
@@ -91,7 +100,30 @@ export default function Encaixe() {
     const tocou = () => { tocando = true; yToque = window.scrollY; };
     const soltou = () => { tocando = false; if (window.scrollY !== yToque) rolou(); };
 
+    const sair = () => {
+      saindo = true;
+      html.classList.remove("ts-encaixe");
+      window.clearTimeout(parada);
+      window.clearTimeout(solta);
+    };
+    const clicou = (e: MouseEvent) => {
+      if (e.defaultPrevented || e.button !== 0) return;
+      const a = e.target instanceof Element ? e.target.closest<HTMLAnchorElement>("a[href]") : null;
+      if (!a) return;
+      const sai = saiDaPagina({
+        href: a.getAttribute("href") ?? "",
+        origem: window.location.origin,
+        caminho,
+        novaAba: !!a.target && a.target !== "_self",
+        modificador: e.metaKey || e.ctrlKey || e.shiftKey || e.altKey,
+      });
+      if (sai) sair();
+    };
+    const voltou = () => { if (window.location.pathname !== caminho) sair(); };
+
     ultima = telaAtual(medir(pontos()), window.innerHeight);
+    document.addEventListener("click", clicou, { capture: true });
+    window.addEventListener("popstate", voltou);
     window.addEventListener("scroll", rolou, { passive: true });
     window.addEventListener("scrollend", parou);
     window.addEventListener("touchstart", tocou, { passive: true });
@@ -101,6 +133,8 @@ export default function Encaixe() {
       html.classList.remove("ts-encaixe");
       window.clearTimeout(parada);
       window.clearTimeout(solta);
+      document.removeEventListener("click", clicou, { capture: true });
+      window.removeEventListener("popstate", voltou);
       window.removeEventListener("scroll", rolou);
       window.removeEventListener("scrollend", parou);
       window.removeEventListener("touchstart", tocou);
