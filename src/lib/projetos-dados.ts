@@ -1,5 +1,6 @@
 import { supabaseAdmin } from "@/lib/supabase";
 import { isMissingColumn, isMissingTable } from "@/lib/db-compat";
+import { tirarAntesOculto } from "@/lib/project-gallery";
 import {
   REVENDA_RESERVA, juntarRenders,
   type CategoriaProjeto, type Projeto, type Render, type Showroom,
@@ -48,14 +49,24 @@ function paraProjeto(r: Linha): Projeto {
   };
 }
 
+/** Fotos ocultas no painel. Sem a migração 084, nenhuma. */
+export async function lerFotosOcultas(db: Db = supabaseAdmin()) {
+  const { data, error } = await db.from("project_media").select("project_slug, url, is_hidden, is_cover").eq("is_hidden", true);
+  if (error) return [];
+  return (data ?? []) as Array<{ project_slug: string; url: string; is_hidden: boolean; is_cover: boolean | null }>;
+}
+
 /** Projetos publicados, na ordem do painel. */
 export async function lerProjetos(db: Db = supabaseAdmin()): Promise<Projeto[]> {
-  const { data, error } = await db.from("project_photos").select("*").eq("is_active", true).order("sort_order", { ascending: true });
+  const [{ data, error }, ocultas] = await Promise.all([
+    db.from("project_photos").select("*").eq("is_active", true).order("sort_order", { ascending: true }),
+    lerFotosOcultas(db),
+  ]);
   if (error) {
     console.error("[projetos]", error.message);
     return [];
   }
-  return ((data ?? []) as Linha[]).map(paraProjeto).filter((p) => p.image_after.trim() !== "");
+  return tirarAntesOculto(((data ?? []) as Linha[]).map(paraProjeto).filter((p) => p.image_after.trim() !== ""), ocultas);
 }
 
 /**

@@ -10,6 +10,7 @@ import { inputCls, labelCls } from "../ui";
 import CoverFramer, { COVER_ASPECT, coverStyle } from "./CoverFramer";
 import { isUsableVideoUrl, videoHostLabel } from "@/lib/video-link";
 import VideoThumb from "@/components/VideoThumb";
+import { baixarFoto, nomeDaFoto } from "./baixarFoto";
 import { compressImage, compressionSummary, isUnsupportedForWeb } from "@/lib/image-compress";
 
 /**
@@ -29,7 +30,7 @@ type MediaCat = "geral" | "antes" | "depois";
 interface Media {
   id: string; project_slug: string; type: "image" | "video"; url: string;
   caption: string | null; description: string | null; category: MediaCat;
-  is_cover?: boolean; sort_order: number;
+  is_cover?: boolean; is_hidden?: boolean; sort_order: number;
 }
 interface Project {
   id: string; slug: string; title: string; product_code: string; short_description?: string;
@@ -86,7 +87,7 @@ export default function ProjectEditor({ id }: { id: string }) {
       if (!row) { setNotFound(true); setLoading(false); return; }
 
       // A lista traz um resumo; o registro completo vem do endpoint do projeto.
-      const full = await fetch(`/api/projects/photos`).then((r) => (r.ok ? r.json() : [])).catch(() => []);
+      const full = await fetch(`/api/projects/photos?admin=1`).then((r) => (r.ok ? r.json() : [])).catch(() => []);
       const detailed = (full as Project[]).find((x) => x.id === id);
       const base: Project = { ...(detailed ?? {}), ...row } as Project;
 
@@ -96,7 +97,7 @@ export default function ProjectEditor({ id }: { id: string }) {
       setTags((tg?.rows ?? []).filter((t: Tag) => t.active !== false));
       setProducts(Array.isArray(pr) ? pr : []);
 
-      const m = await fetch(`/api/projects/media?slug=${encodeURIComponent(base.slug)}`)
+      const m = await fetch(`/api/projects/media?admin=1&slug=${encodeURIComponent(base.slug)}`)
         .then((r) => (r.ok ? r.json() : [])).catch(() => []);
       if (!alive) return;
       setMedia(Array.isArray(m) ? m : []);
@@ -256,7 +257,7 @@ export default function ProjectEditor({ id }: { id: string }) {
   const setAsCover = useCallback(async (m: Media) => {
     if (!p || m.type !== "image") return;
     const old = media.find((x) => x.is_cover && x.id !== m.id);
-    setMedia((prev) => prev.map((x) => ({ ...x, is_cover: x.id === m.id })));
+    setMedia((prev) => prev.map((x) => ({ ...x, is_cover: x.id === m.id, is_hidden: x.id === m.id ? false : x.is_hidden })));
     if (old) await patchMedia(old.id, { is_cover: false });
     await patchMedia(m.id, { is_cover: true });
     set({ image_after: m.url, cover_category: m.category, cover_focus_x: 0.5, cover_focus_y: 0.5, cover_zoom: 1 });
@@ -291,12 +292,13 @@ export default function ProjectEditor({ id }: { id: string }) {
   }, [catLabel, showroom, p?.title]);
 
   const sorted = [...media].sort((a, b) => a.sort_order - b.sort_order);
-  const hasAntes = media.some((m) => m.category === "antes");
-  const hasDepois = media.some((m) => m.category === "depois");
+  const noSite = media.filter((m) => !m.is_hidden || m.is_cover);
+  const hasAntes = noSite.some((m) => m.category === "antes");
+  const hasDepois = noSite.some((m) => m.category === "depois");
   const galleryState = hasAntes && hasDepois ? "Antes e depois — comparação ativada no site"
     : hasAntes ? "Só fotos de antes — galeria simples, sem comparativo vazio"
     : hasDepois ? "Só fotos de depois — galeria simples"
-    : media.length > 0 ? "Galeria comum (sem classificação antes/depois)"
+    : noSite.length > 0 ? "Galeria comum (sem classificação antes/depois)"
     : "Nenhuma mídia ainda";
 
   const blocked = !p?.title?.trim() ? "Dê um nome ao projeto."
@@ -661,7 +663,10 @@ export default function ProjectEditor({ id }: { id: string }) {
                           </>
                         ) : (
                           // eslint-disable-next-line @next/next/no-img-element
-                          <img src={m.url} alt="" className="absolute inset-0 w-full h-full object-cover" />
+                          <img src={m.url} alt="" className={`absolute inset-0 w-full h-full object-cover ${m.is_hidden && !m.is_cover ? "opacity-35 grayscale" : ""}`} />
+                        )}
+                        {m.is_hidden && !m.is_cover && (
+                          <span className="absolute left-0 right-0 top-1/2 -translate-y-1/2 bg-[#0B1F45] text-white text-center text-[9px] tracking-[0.1em] uppercase font-bold py-1">Oculta no site</span>
                         )}
                         {m.is_cover && (
                           <span className="absolute top-1 left-1 bg-[#0B1F45] text-white text-[8px] tracking-[0.12em] uppercase font-bold px-1.5 py-0.5">Capa</span>
@@ -678,6 +683,22 @@ export default function ProjectEditor({ id }: { id: string }) {
                           <button type="button" onClick={() => setAsCover(m)}
                             className="w-full border border-[#e2e2e2] text-[#43474e] text-[10px] tracking-[0.06em] uppercase font-bold py-1 hover:border-[#0B1F45] hover:text-[#0B1F45] transition-colors">
                             Definir capa
+                          </button>
+                        )}
+                        {!m.is_cover && (
+                          <button type="button" aria-pressed={!!m.is_hidden} onClick={() => patchMedia(m.id, { is_hidden: !m.is_hidden })}
+                            className="w-full border border-[#e2e2e2] text-[#43474e] text-[10px] tracking-[0.06em] uppercase font-bold py-1 hover:border-[#0B1F45] hover:text-[#0B1F45] transition-colors">
+                            {m.is_hidden ? "Mostrar no site" : "Ocultar do site"}
+                          </button>
+                        )}
+                        {m.type === "image" && (
+                          <button type="button"
+                            onClick={async () => {
+                              const pos = sorted.findIndex((x) => x.id === m.id) + 1;
+                              if (!(await baixarFoto(m.url, nomeDaFoto(p?.slug, pos, m.url)))) setErr("Não foi possível baixar a foto.");
+                            }}
+                            className="w-full border border-[#e2e2e2] text-[#43474e] text-[10px] tracking-[0.06em] uppercase font-bold py-1 hover:border-[#0B1F45] hover:text-[#0B1F45] transition-colors">
+                            Baixar
                           </button>
                         )}
                         <button type="button" onClick={() => removeMedia(m)}

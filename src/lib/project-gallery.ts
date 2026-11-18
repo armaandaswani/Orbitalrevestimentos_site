@@ -30,6 +30,8 @@ export interface GalleryMediaRow {
   description?: string | null;
   category?: string | null;
   is_cover?: boolean | null;
+  /** Oculta no painel (migração 084): fica guardada, não vai para o site. */
+  is_hidden?: boolean | null;
   sort_order?: number | null;
 }
 
@@ -60,6 +62,29 @@ export function coverCategory(project: Pick<GalleryProject, "cover_category">): 
 /** Chave de deduplicação — ignora query string e diferenças de caixa no host. */
 function urlKey(url: string): string {
   return String(url ?? "").trim().split("?")[0].toLowerCase();
+}
+
+/** Oculta de verdade: a capa sempre aparece, mesmo com a marca. */
+export function midiaOculta(m: { is_hidden?: boolean | null; is_cover?: boolean | null }): boolean {
+  return m.is_hidden === true && m.is_cover !== true;
+}
+
+/** O que pode sair para o site. Sem a migração 084, nada está oculto. */
+export function semOcultas<T extends { is_hidden?: boolean | null; is_cover?: boolean | null }>(midias: T[]): T[] {
+  return midias.filter((m) => !midiaOculta(m));
+}
+
+/**
+ * A foto "antes" antiga mora também em project_photos.image_before, que vai para
+ * o cartão e para a galeria: oculta na mídia, ela sai dali também.
+ */
+export function tirarAntesOculto<T extends { slug: string; image_before?: string | null }>(
+  projetos: T[],
+  midias: Array<{ project_slug: string; url: string; is_hidden?: boolean | null; is_cover?: boolean | null }>,
+): T[] {
+  const ocultas = new Set(midias.filter(midiaOculta).map((m) => `${m.project_slug}|${urlKey(m.url)}`));
+  if (ocultas.size === 0) return projetos;
+  return projetos.map((p) => (p.image_before && ocultas.has(`${p.slug}|${urlKey(p.image_before)}`) ? { ...p, image_before: null } : p));
 }
 
 /**
@@ -103,12 +128,14 @@ export function buildGalleryItems(project: GalleryProject, media: GalleryMediaRo
     });
   }
 
-  // Campo legado: só entra se for mesmo um arquivo diferente da capa.
-  if (project.image_before) {
+  // Campo legado: só entra se for mesmo um arquivo diferente da capa e não
+  // estiver oculto na mídia.
+  const ocultas = new Set(media.filter(midiaOculta).map((m) => urlKey(m.url)));
+  if (project.image_before && !ocultas.has(urlKey(project.image_before))) {
     push({ kind: "image", url: project.image_before, label: "Antes", category: "antes", isCover: false });
   }
 
-  const ordered = [...media].sort((a, b) => (a.sort_order ?? 0) - (b.sort_order ?? 0));
+  const ordered = semOcultas(media).sort((a, b) => (a.sort_order ?? 0) - (b.sort_order ?? 0));
   for (const m of ordered) {
     push({
       kind: m.type === "video" ? "video" : "image",

@@ -92,7 +92,7 @@ interface ProductImage { id:string; product_id:string; image_path:string; sort_o
 interface DbProduct { id:string; code:string; name:string; linha:string; finish:string; price:number | null; price_per_m2:number | null; description:string; image_path:string; is_active:boolean; show_in_catalog?:boolean; sort_order:number; created_at:string; product_images?: ProductImage[]; render_finish_description?: string | null; render_panel_width_m?: number | null; render_panel_height_m?: number | null; render_context_image_path?: string | null; render_texture_path?: string | null; render_extra_notes?: string | null; }
 interface DbPhotoProject { id:string; slug:string; title:string; product_code:string; extra_product_codes?:string[]|null; projeto_de?:string|null; short_description?:string; categories:string[]; image_after:string; image_before:string; note:string; is_active:boolean; is_featured?:boolean; show_on_home?:boolean; is_new?:boolean; feature_order?:number; content_type?:string|null; cover_category?:string|null; sort_order:number; }
 interface DbRenderProject { id:string; slug:string; title:string; product_code:string; image_path:string; is_active:boolean; sort_order:number; }
-interface ProjectMedia { id:string; project_slug:string; type:"image"|"video"; url:string; caption:string|null; description:string|null; category:"antes"|"depois"|"geral"; is_cover?:boolean; sort_order:number; }
+interface ProjectMedia { id:string; project_slug:string; type:"image"|"video"; url:string; caption:string|null; description:string|null; category:"antes"|"depois"|"geral"; is_cover?:boolean; is_hidden?:boolean; sort_order:number; }
 
 // Slug técnico gerado a partir do nome do projeto ("Showroom Parque 10" →
 // "showroom-parque-10"). Acentos removidos, minúsculas, hífens.
@@ -1837,7 +1837,7 @@ export default function AdminPage() {
         for (const [i, f] of pendingFotos.entries()) {
           await fetch("/api/projects/media", {
             method: "POST", headers: { "Content-Type": "application/json" },
-            body: JSON.stringify({ project_slug: slugFinal, type: "image", url: f.url, category: f.category, sort_order: i }),
+            body: JSON.stringify({ project_slug: slugFinal, type: "image", url: f.url, category: f.category, sort_order: i, ...(f.is_hidden ? { is_hidden: true } : {}) }),
           }).catch(() => {});
         }
       }
@@ -1931,7 +1931,7 @@ export default function AdminPage() {
 
   // ── Project Media CRUD ──────────────────
   async function fetchProjectMedia(slug: string) {
-    const res = await fetch(`/api/projects/media?slug=${slug}`);
+    const res = await fetch(`/api/projects/media?admin=1&slug=${encodeURIComponent(slug)}`);
     if (res.ok) {
       const data = await res.json();
       setProjectMediaMap((prev) => ({ ...prev, [slug]: data }));
@@ -2014,6 +2014,18 @@ export default function AdminPage() {
       setProjectMediaMap((prev) => ({ ...prev, [slug]: (prev[slug] ?? []).map((m) => (m.id === id ? { ...m, category: before } : m)) }));
       setMediaToast({ text: "Falha ao atualizar categoria", error: true });
     }
+    setTimeout(() => setMediaToast(null), 2500);
+  }
+
+  // Ocultar do site: na hora, com aviso; se falhar, volta como estava.
+  async function setMediaHidden(m: ProjectMedia, is_hidden: boolean) {
+    const aplicar = (v: boolean) => setProjectMediaMap((prev) => ({ ...prev, [m.project_slug]: (prev[m.project_slug] ?? []).map((x) => (x.id === m.id ? { ...x, is_hidden: v } : x)) }));
+    aplicar(is_hidden);
+    const res = await fetch(`/api/projects/media/${m.id}`, {
+      method: "PATCH", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ is_hidden }),
+    }).catch(() => null);
+    if (res?.ok) setMediaToast({ text: is_hidden ? "Foto oculta no site" : "Foto de volta no site" });
+    else { aplicar(!is_hidden); setMediaToast({ text: "Não foi possível salvar", error: true }); }
     setTimeout(() => setMediaToast(null), 2500);
   }
 
@@ -6860,7 +6872,7 @@ export default function AdminPage() {
                                     {/* Thumbnail */}
                                     <div className="relative w-24 h-24">
                                       {m.type === "image" ? (
-                                        <img src={m.url} alt={m.caption ?? ""} className="w-full h-full object-cover border border-[#e2e2e2]" />
+                                        <img src={m.url} alt={m.caption ?? ""} className={`w-full h-full object-cover border border-[#e2e2e2] ${m.is_hidden && !m.is_cover ? "opacity-35 grayscale" : ""}`} />
                                       ) : (
                                         <div className="w-full h-full bg-[#0B1F45] flex items-center justify-center border border-[#0B1F45]">
                                           <svg width="20" height="20" viewBox="0 0 24 24" fill="white"><path d="M8 5v14l11-7z"/></svg>
@@ -6878,6 +6890,12 @@ export default function AdminPage() {
                                       >×</button>
                                       {m.type === "video" && (
                                         <span className="absolute bottom-0.5 left-0.5 text-[7px] text-white/70 font-bold tracking-wide">VÍD</span>
+                                      )}
+                                      {!m.is_cover && (
+                                        <button type="button" aria-pressed={!!m.is_hidden}
+                                          onClick={(e) => { e.stopPropagation(); void setMediaHidden(m, !m.is_hidden); }}
+                                          className={`absolute top-6 left-0.5 right-0.5 z-10 py-0.5 text-[7px] tracking-[0.06em] uppercase font-bold ${m.is_hidden ? "bg-[#0B1F45] text-white" : "bg-white/90 text-[#0B1F45]"}`}
+                                        >{m.is_hidden ? "Oculta · mostrar" : "Ocultar"}</button>
                                       )}
                                       {/* Etiqueta legível — antes eram letras "A"/"D" sem legenda */}
                                       {mediaMigrated && (

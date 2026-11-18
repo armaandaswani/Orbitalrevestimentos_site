@@ -5,6 +5,8 @@ import { isAdminRequest } from "@/lib/admin-auth";
 import { isMissingColumn } from "@/lib/db-compat";
 import { CACHE_CONTEUDO, SEM_CACHE } from "@/lib/api-cache";
 import { CAMPOS_PUBLICOS_PROJETO, soCampos } from "@/lib/projetos-tipos";
+import { lerFotosOcultas } from "@/lib/projetos-dados";
+import { tirarAntesOculto } from "@/lib/project-gallery";
 
 function checkAuth(req: NextRequest): boolean {
   return isAdminRequest(req);
@@ -49,7 +51,8 @@ export async function GET(req: NextRequest) {
     return NextResponse.json({ error: error.message }, { status: 500 });
   }
   if (admin) return NextResponse.json(data, { headers: { "Cache-Control": SEM_CACHE } });
-  const publico = ((data ?? []) as Record<string, unknown>[]).map((r) => soCampos(r, CAMPOS_PUBLICOS_PROJETO));
+  const linhas = (data ?? []) as Array<Record<string, unknown> & { slug: string; image_before?: string | null }>;
+  const publico = tirarAntesOculto(linhas, await lerFotosOcultas(sb)).map((r) => soCampos(r, CAMPOS_PUBLICOS_PROJETO));
   // Conteúdo igual para todo visitante — pode ficar na edge.
   return NextResponse.json(publico, { headers: { "Cache-Control": CACHE_CONTEUDO } });
 }

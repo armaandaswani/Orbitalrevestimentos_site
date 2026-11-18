@@ -1,6 +1,7 @@
 "use client";
 
 import React, { useCallback, useEffect, useRef, useState } from "react";
+import { baixarFoto, nomeDaFoto } from "./baixarFoto";
 
 /**
  * "Mais fotos do projeto" dentro do formulário de Fotos Reais.
@@ -15,11 +16,25 @@ import React, { useCallback, useEffect, useRef, useState } from "react";
  * Ordem: arrastar e soltar no computador, ou as setas ◀ ▶ de cada foto (que
  * funcionam também no celular, onde arrastar não funciona). É a ordem da
  * galeria do projeto no site (sort_order).
+ *
+ * Olho: oculta a foto do site num toque e grava na hora; ela fica aqui, com o
+ * botão de baixar. A capa não se oculta.
  */
 
 export type Categoria = "depois" | "antes" | "geral";
-export interface FotoPendente { url: string; category: Categoria }
-interface Midia { id: string; url: string; type: "image" | "video"; category: Categoria; is_cover?: boolean; sort_order: number }
+export interface FotoPendente { url: string; category: Categoria; is_hidden?: boolean }
+interface Midia { id: string; url: string; type: "image" | "video"; category: Categoria; is_cover?: boolean; is_hidden?: boolean; sort_order: number }
+
+const BOTAO_FOTO = "w-7 h-7 grid place-items-center bg-white/90 text-[#0B1F45] hover:bg-white disabled:opacity-40";
+
+function Icone({ d }: { d: string }) {
+  return (
+    <svg aria-hidden width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d={d} /></svg>
+  );
+}
+const OLHO = "M2 12s3.6-7 10-7 10 7 10 7-3.6 7-10 7-10-7-10-7zM12 15a3 3 0 100-6 3 3 0 000 6z";
+const OLHO_FECHADO = "M3 3l18 18M10.6 5.1A10 10 0 0112 5c6.4 0 10 7 10 7a17 17 0 01-3.2 4M6.5 6.6A17 17 0 002 12s3.6 7 10 7a10 10 0 005.4-1.6M9.9 9.9a3 3 0 004.2 4.2";
+const SETA_BAIXAR = "M12 4v11M7 10l5 5 5-5M5 20h14";
 
 const CATS: { v: Categoria; label: string; on: string }[] = [
   { v: "depois", label: "Depois", on: "bg-[#36A35C] text-[#0B1F45] border-[#36A35C]" },
@@ -59,10 +74,11 @@ export default function FotosExtras({
   const [erro, setErro] = useState("");
   const inputRef = useRef<HTMLInputElement | null>(null);
   const [arrastando, setArrastando] = useState<number | null>(null);
+  const [baixando, setBaixando] = useState<string | null>(null);
 
   const carregar = useCallback(async () => {
     if (!slug) return;
-    const res = await fetch(`/api/projects/media?slug=${encodeURIComponent(slug)}`).catch(() => null);
+    const res = await fetch(`/api/projects/media?admin=1&slug=${encodeURIComponent(slug)}`).catch(() => null);
     const data = res && res.ok ? await res.json().catch(() => []) : [];
     setMidias((Array.isArray(data) ? data : []).filter((m: Midia) => m.type === "image"));
   }, [slug]);
@@ -70,7 +86,7 @@ export default function FotosExtras({
   useEffect(() => {
     if (!slug) return;
     let vivo = true;
-    fetch(`/api/projects/media?slug=${encodeURIComponent(slug)}`)
+    fetch(`/api/projects/media?admin=1&slug=${encodeURIComponent(slug)}`)
       .then((r) => (r.ok ? r.json() : []))
       .then((data) => { if (vivo) setMidias((Array.isArray(data) ? data : []).filter((m: Midia) => m.type === "image")); })
       .catch(() => {});
@@ -114,6 +130,34 @@ export default function FotosExtras({
     }).catch(() => {});
   }
 
+  /** Oculta ou mostra na hora; se não gravar, a foto volta como estava. */
+  async function alternarOculta(m: Midia) {
+    const is_hidden = !m.is_hidden;
+    const aplicar = (v: boolean) => setMidias((prev) => prev.map((x) => (x.id === m.id ? { ...x, is_hidden: v } : x)));
+    setErro("");
+    aplicar(is_hidden);
+    const res = await fetch(`/api/projects/media/${m.id}`, {
+      method: "PATCH", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ is_hidden }),
+    }).catch(() => null);
+    if (!res || !res.ok) {
+      aplicar(!is_hidden);
+      setErro(is_hidden ? "Não foi possível ocultar a foto. Tente de novo." : "Não foi possível mostrar a foto. Tente de novo.");
+    }
+  }
+
+  async function baixar(lista: { key: string; url: string; pos: number }[]) {
+    setErro("");
+    const falhas: number[] = [];
+    for (const f of lista) {
+      setBaixando(f.key);
+      if (!(await baixarFoto(f.url, nomeDaFoto(slug, f.pos, f.url)))) falhas.push(f.pos);
+      // Intervalo para o navegador aceitar vários downloads seguidos.
+      if (lista.length > 1) await new Promise((r) => setTimeout(r, 350));
+    }
+    setBaixando(null);
+    if (falhas.length) setErro(`Não foi possível baixar: foto ${falhas.join(", ")}.`);
+  }
+
   /** Move a foto da posição `de` para `para` e grava só as que mudaram de lugar. */
   async function mover(de: number, para: number) {
     if (de === para || para < 0) return;
@@ -149,8 +193,9 @@ export default function FotosExtras({
 
   // Mídias já salvas: na ordem gravada (a API já devolve por sort_order).
   const itens = slug
-    ? midias.map((m) => ({ key: m.id, url: m.url, category: m.category, capa: !!m.is_cover, mid: m as Midia | null, idx: -1 }))
-    : pending.map((p, i) => ({ key: `${p.url}-${i}`, url: p.url, category: p.category, capa: false, mid: null as Midia | null, idx: i }));
+    ? midias.map((m) => ({ key: m.id, url: m.url, category: m.category, capa: !!m.is_cover, oculta: !!m.is_hidden && !m.is_cover, mid: m as Midia | null, idx: -1 }))
+    : pending.map((p, i) => ({ key: `${p.url}-${i}`, url: p.url, category: p.category, capa: false, oculta: !!p.is_hidden, mid: null as Midia | null, idx: i }));
+  const ocultas = itens.map((it, i) => ({ ...it, pos: i + 1 })).filter((it) => it.oculta);
 
   return (
     <div className="mb-4">
@@ -181,14 +226,30 @@ export default function FotosExtras({
               className={`border bg-white cursor-grab active:cursor-grabbing ${arrastando === pos ? "opacity-40 border-[#0B1F45]" : "border-[#e2e2e2]"}`}>
               <div className="relative aspect-square">
                 {/* eslint-disable-next-line @next/next/no-img-element */}
-                <img src={it.url} alt="" className="absolute inset-0 w-full h-full object-cover" />
-                {it.capa ? (
+                <img src={it.url} alt="" className={`absolute inset-0 w-full h-full object-cover ${it.oculta ? "opacity-35 grayscale" : ""}`} />
+                {it.capa && (
                   <span className="absolute top-0 left-0 bg-[#0B1F45] text-white text-[8px] font-bold uppercase tracking-wider px-1.5 py-0.5">Capa</span>
-                ) : (
-                  <button type="button" title="Remover"
-                    onClick={() => (it.mid ? remover(it.mid) : setPending((prev) => prev.filter((_, k) => k !== it.idx)))}
-                    className="absolute top-0.5 right-0.5 w-6 h-6 bg-white/90 text-red-600 text-sm font-bold leading-none hover:bg-white">×</button>
                 )}
+                {it.oculta && (
+                  <span className="absolute left-0 right-0 top-1/2 -translate-y-1/2 bg-[#0B1F45] text-white text-center text-[9px] font-bold uppercase tracking-[0.1em] py-1">Oculta no site</span>
+                )}
+                <div className="absolute top-0.5 right-0.5 flex gap-0.5">
+                  <button type="button" title="Baixar foto" aria-label={`Baixar foto ${pos + 1}`} disabled={baixando !== null}
+                    onClick={() => void baixar([{ key: it.key, url: it.url, pos: pos + 1 }])}
+                    className={BOTAO_FOTO}><Icone d={SETA_BAIXAR} /></button>
+                  {!it.capa && (
+                    <>
+                      <button type="button" aria-pressed={it.oculta}
+                        title={it.oculta ? "Mostrar no site" : "Ocultar do site"}
+                        aria-label={`${it.oculta ? "Mostrar no site" : "Ocultar do site"}: foto ${pos + 1}`}
+                        onClick={() => (it.mid ? void alternarOculta(it.mid) : setPending((prev) => prev.map((p, k) => (k === it.idx ? { ...p, is_hidden: !p.is_hidden } : p))))}
+                        className={`${BOTAO_FOTO} ${it.oculta ? "!bg-[#0B1F45] !text-white" : ""}`}><Icone d={it.oculta ? OLHO_FECHADO : OLHO} /></button>
+                      <button type="button" title="Remover" aria-label={`Remover foto ${pos + 1}`}
+                        onClick={() => (it.mid ? remover(it.mid) : setPending((prev) => prev.filter((_, k) => k !== it.idx)))}
+                        className="w-7 h-7 bg-white/90 text-red-600 text-sm font-bold leading-none hover:bg-white">×</button>
+                    </>
+                  )}
+                </div>
                 <span className="absolute bottom-0.5 left-0.5 bg-white/90 text-[#0B1F45] text-[9px] font-bold px-1.5 py-0.5">{pos + 1}</span>
                 <div className="absolute bottom-0.5 right-0.5 flex gap-0.5">
                   <button type="button" title="Mover para a esquerda" aria-label="Mover para a esquerda" disabled={pos === 0}
@@ -207,6 +268,15 @@ export default function FotosExtras({
       ) : (
         <p className="text-[11px] text-[#a0a3a8]">
           Nenhuma foto extra ainda. Elas aparecem na galeria do projeto no site, com o filtro Antes / Depois.
+        </p>
+      )}
+      {ocultas.length > 0 && (
+        <p className="flex flex-wrap items-center gap-x-3 gap-y-1 text-[11px] text-[#43474e] mt-2">
+          {ocultas.length === 1 ? "1 foto oculta: fica só aqui no painel, o cliente não vê." : `${ocultas.length} fotos ocultas: ficam só aqui no painel, o cliente não vê.`}
+          <button type="button" disabled={baixando !== null} onClick={() => void baixar(ocultas)}
+            className="font-bold text-[#0B1F45] underline underline-offset-2 disabled:opacity-40">
+            {baixando !== null ? "Baixando…" : ocultas.length === 1 ? "Baixar a oculta" : "Baixar as ocultas"}
+          </button>
         </p>
       )}
       {itens.length > 1 && (
