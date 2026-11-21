@@ -61,6 +61,11 @@ export default function Navbar() {
   // Menu do celular: trocar de página fecha (ajuste durante o render, sem efeito); Esc fecha.
   const [caminhoAnterior, setCaminhoAnterior] = useState(pathname);
   if (caminhoAnterior !== pathname) { setCaminhoAnterior(pathname); setMobileOpen(false); }
+  // No menu do celular as linhas de Produtos só aparecem ao tocar em Produtos;
+  // o menu sempre abre com elas fechadas.
+  const [produtosAberto, setProdutosAberto] = useState(false);
+  const [menuAntes, setMenuAntes] = useState(mobileOpen);
+  if (menuAntes !== mobileOpen) { setMenuAntes(mobileOpen); setProdutosAberto(false); }
   useEffect(() => {
     if (!mobileOpen) return;
     const tecla = (e: KeyboardEvent) => { if (e.key === "Escape") { setMobileOpen(false); botao.current?.focus(); } };
@@ -162,23 +167,48 @@ export default function Navbar() {
       <div id="menu-site" hidden={!mobileOpen}
         className="xl:hidden bg-white border-t border-[#e8e8e8] max-h-[calc(100dvh-5rem)] overflow-y-auto ds-folha-rola">
         <nav aria-label="Principal" className="px-4 sm:px-8 py-3 flex flex-col">
-          {[{ href: "/", label: "Início" }, ...navLinks, { href: "/parceiro", label: "Portal Parceiro" }].map(({ href, label }) => (
-            <div key={label}>
-              <Link href={href} onClick={() => setMobileOpen(false)}
+          {[{ href: "/", label: "Início" }, ...navLinks, { href: "/parceiro", label: "Portal Parceiro" }].map(({ href, label }) => {
+            if (href === "/produtos") return (
+              <div key={label} className="border-b border-[#f0f0f0]">
+                <button type="button" onClick={() => setProdutosAberto((v) => !v)}
+                  aria-expanded={produtosAberto} aria-controls="menu-produtos"
+                  className={`${link} w-full flex items-center justify-between min-h-12 ${ativo(href) || emLinha || produtosAberto ? "text-[#0B1F45]" : "text-[#43474e]"}`}>
+                  {label}
+                  <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" aria-hidden
+                    className={`transition-transform duration-300 motion-reduce:transition-none ${produtosAberto ? "rotate-180" : ""}`}>
+                    <path d="M6 9l6 6 6-6" />
+                  </svg>
+                </button>
+                {/* Linhas em azul, recuadas, sobre um fundo azul claro; abrem pela altura. */}
+                <div id="menu-produtos" inert={!produtosAberto}
+                  className={`grid transition-[grid-template-rows] duration-300 ease-out motion-reduce:transition-none ${produtosAberto ? "grid-rows-[1fr]" : "grid-rows-[0fr]"}`}>
+                  <div className="min-h-0 overflow-hidden">
+                    <div className="mb-3 bg-[#EEF2FA] border-l-2 border-[#2347A0]">
+                      <Link href="/produtos" onClick={() => setMobileOpen(false)} aria-current={pathname === "/produtos" ? "page" : undefined}
+                        className="flex items-center min-h-12 px-4 text-legenda font-semibold text-[#2347A0]">
+                        Ver todos os produtos
+                      </Link>
+                      {LINHAS.filter((l) => l.href).map((l) => (
+                        <Link key={l.slug} href={l.href} onClick={() => setMobileOpen(false)}
+                          aria-current={ativo(l.href) ? "page" : undefined}
+                          className="flex items-center justify-between gap-4 min-h-12 px-4 border-t border-[#2347A0]/10 font-serif text-[#2347A0]">
+                          {l.curto}
+                          <span className="font-sans text-sobre text-[#2347A0]/60">{SITUACAO_ROTULO[l.situacao]}</span>
+                        </Link>
+                      ))}
+                    </div>
+                  </div>
+                </div>
+              </div>
+            );
+            return (
+              <Link key={label} href={href} onClick={() => setMobileOpen(false)}
                 aria-current={href === "/" ? (pathname === "/" ? "page" : undefined) : ativo(href) ? "page" : undefined}
                 className={`${link} flex items-center min-h-12 border-b border-[#f0f0f0] ${(href === "/" ? pathname === "/" : ativo(href)) ? "text-[#0B1F45]" : "text-[#43474e]"}`}>
                 {label}
               </Link>
-              {href === "/produtos" && LINHAS.filter((l) => l.href).map((l) => (
-                <Link key={l.slug} href={l.href} onClick={() => setMobileOpen(false)}
-                  aria-current={ativo(l.href) ? "page" : undefined}
-                  className={`flex items-center justify-between gap-4 min-h-12 pl-4 border-b border-[#f0f0f0] font-serif ${ativo(l.href) ? "text-[#0B1F45]" : "text-[#43474e]"}`}>
-                  {l.curto}
-                  <span className="font-sans text-sobre text-[#74777f]">{SITUACAO_ROTULO[l.situacao]}</span>
-                </Link>
-              ))}
-            </div>
-          ))}
+            );
+          })}
         </nav>
         <div className="px-4 sm:px-8 pb-5 flex flex-col sm:flex-row gap-2">
           <ContatoCta onClick={() => setMobileOpen(false)} className="ds-botao ds-botao-cheio w-full sm:w-auto">
