@@ -231,6 +231,18 @@ export async function listarAgendados(): Promise<Agendado[]> {
   return out;
 }
 
+/** Agendamentos de um dia só (o cron dos Directs passa 32 vezes por dia e não precisa ler os outros). */
+export async function listarAgendadosDoDia(dia: string): Promise<Agendado[]> {
+  const { data: arquivos, error } = await supabaseAdmin().storage.from(BUCKET_AGENDA).list(dia, { limit: 200 });
+  if (error) throw new Error(`Não consegui listar ${dia}: ${error.message}`);
+  const out: Agendado[] = [];
+  for (const f of (arquivos || []).filter((x) => x.name.endsWith(".json"))) {
+    const a = await lerAgendado(`${dia}/${f.name}`);
+    if (a) out.push(a);
+  }
+  return out;
+}
+
 /**
  * Trava por arquivo: o upload sem upsert falha se o arquivo já existe, então só
  * uma execução do cron por vez segue. Trava esquecida (função morta) vence em 6 min.

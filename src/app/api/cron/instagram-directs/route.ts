@@ -1,8 +1,8 @@
 import { NextRequest, NextResponse } from "next/server";
 import { supabaseAdmin } from "@/lib/supabase";
 import {
-  BUCKET_AGENDA, contaDoToken, destravar, gravarAgendado, hojeManaus, horaManaus, listarAgendados,
-  tokenParaPublicar, travar, type Agendado,
+  BUCKET_AGENDA, contaDoToken, destravar, gravarAgendado, hojeManaus, horaManaus,
+  listarAgendadosDoDia, tokenParaPublicar, travar, type Agendado,
 } from "@/lib/instagram-agenda";
 import { conversasPorHandle, decidir, enviarDirect, lerMensagens, textoDirect } from "@/lib/instagram-direct";
 
@@ -47,7 +47,7 @@ export async function GET(req: NextRequest) {
 
   const linhas: string[] = [];
   try {
-    const candidatos = (await listarAgendados()).filter(
+    const candidatos = (await listarAgendadosDoDia(hoje)).filter(
       (a) => a.data === hoje && a.status === "publicado" && a.handle && !a.direct_status,
     );
     if (!candidatos.length) return NextResponse.json({ hoje, simular, linhas: ["ninguém esperando Direct hoje"] });
@@ -120,5 +120,6 @@ export async function GET(req: NextRequest) {
   } finally {
     if (!simular) await destravar(TRAVA).catch(() => {});
   }
+  console.log(`[instagram-directs] ${hoje}${simular ? " (simulação)" : ""}: ${linhas.join(" | ") || "nada"}`);
   return NextResponse.json({ hoje, simular, linhas });
 }
