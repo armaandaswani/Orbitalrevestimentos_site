@@ -15,7 +15,8 @@
     "test:pfb": "node --test \"src/lib/pfb-*.test.mjs\"",
     "test:pdv": "node --test \"src/lib/pontos-de-venda.test.mjs\"",
     "test:parcerias": "node --test \"src/lib/parcerias-data.test.mjs\"",
-    "test:chat": "node --test \"src/lib/chat-prompt.test.mjs\""
+    "test:chat": "node --test \"src/lib/chat-prompt.test.mjs\"",
+    "test:direct": "node --test \"src/lib/instagram-direct.test.mjs\""
   },
   "dependencies": {
     "@anthropic-ai/sdk": "^1.3.0",

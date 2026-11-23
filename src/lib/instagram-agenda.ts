@@ -42,6 +42,10 @@ export interface Agendado {
   resumo?: string;        // só quando o e-mail com o Direct não saiu: o Mac vê no "agendados" e manda
   criado_em: string;
   publicado_em?: string;
+  // Direct de parabéns pela nuvem (cron instagram-directs, 23/11/2026). Sem status = ainda não saiu.
+  direct_status?: "enviado_nuvem" | "ja_tinha";
+  direct_em?: string;
+  direct_detalhe?: string; // última situação ("sem conversa ainda", "sem janela", erro da Meta)
 }
 
 /**
