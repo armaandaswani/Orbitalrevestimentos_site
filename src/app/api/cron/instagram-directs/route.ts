@@ -21,16 +21,16 @@ export const maxDuration = 60;
  * e um parabéns da Orbital de hoje na conversa (celular, Mac ou execução que caiu
  * antes de gravar) vira "ja_tinha". Saudação pela hora do envio, sem link do Story.
  *
- * Às 18h (uma vez por dia), avisa o dono pelo WhatsApp da Ste de quem faz aniversário
+ * Às 12h30 (uma vez por dia; se essa execução cair, a seguinte cobre), avisa o dono pelo WhatsApp da Ste de quem faz aniversário
  * hoje, tem @ e ainda não recebeu parabéns no Direct, com ou sem Story. Esse aviso
  * morava no Mac (vigia-direct.mjs) e não saía com o Mac desligado (dono, 23/11/2026).
  *
  * ?simular=1 (também com o CRON_SECRET): faz tudo menos enviar, avisar e gravar, e
- * devolve o que faria. Com ?aviso=1 simula também o aviso das 18h fora do horário.
+ * devolve o que faria. Com ?aviso=1 simula também o aviso das 12h30 fora do horário.
  */
 
 const TRAVA = "_directs.lock";
-const HORA_AVISO = 18;
+const AVISO_MIN = 12 * 60 + 30; // 12h30 em Manaus (dono, 23/11/2026: "18h is too late")
 
 const erroTexto = (e: unknown) => (e instanceof Error ? e.message : String(e));
 
@@ -44,6 +44,11 @@ async function marcarAviso(hoje: string): Promise<boolean> {
   return !error;
 }
 
+async function avisoJaSaiu(hoje: string): Promise<boolean> {
+  const { data } = await supabaseAdmin().storage.from(BUCKET_AGENDA).download(`avisos-direct/${hoje}.json`);
+  return !!data;
+}
+
 export async function GET(req: NextRequest) {
   // Manda mensagem em nome da Orbital: sem CRON_SECRET configurado, não roda (nem em preview).
   const secret = process.env.CRON_SECRET;
@@ -52,7 +57,7 @@ export async function GET(req: NextRequest) {
   }
   const simular = req.nextUrl.searchParams.get("simular") === "1";
   const hoje = hojeManaus();
-  const horaDoAviso = horaManaus() === HORA_AVISO || (simular && req.nextUrl.searchParams.get("aviso") === "1");
+  const forcarAviso = simular && req.nextUrl.searchParams.get("aviso") === "1";
   const storage = supabaseAdmin().storage.from(BUCKET_AGENDA);
 
   const { error: semBucket } = await storage.list("", { limit: 1 });
@@ -65,6 +70,9 @@ export async function GET(req: NextRequest) {
 
   const linhas: string[] = [];
   try {
+    // Manaus fica em UTC-4 o ano todo, então o minuto é o mesmo do UTC.
+    const agoraMin = horaManaus() * 60 + new Date().getUTCMinutes();
+    const horaDoAviso = forcarAviso || (agoraMin >= AVISO_MIN && !(await avisoJaSaiu(hoje)));
     const doDia = await listarAgendadosDoDia(hoje);
     const candidatos = doDia.filter((a) => a.data === hoje && a.status === "publicado" && a.handle && !a.direct_status);
     if (!candidatos.length && !horaDoAviso) {
@@ -146,7 +154,7 @@ export async function GET(req: NextRequest) {
       }
     }
 
-    // Aviso das 18h: todo aniversariante de hoje com @ (Story agendado ou base do site) sem parabéns no Direct.
+    // Aviso das 12h30: todo aniversariante de hoje com @ (Story agendado ou base do site) sem parabéns no Direct.
     if (horaDoAviso) {
       const pessoas = new Map<string, Omit<SemDirect, "texto">>();
       for (const a of doDia) {
@@ -169,14 +177,16 @@ export async function GET(req: NextRequest) {
         faltam.push({ ...p, texto: textoDirect(p.nome, horaManaus(), p.handle) });
       }
       if (!faltam.length) {
-        linhas.push("aviso das 18h: todos com @ já têm parabéns no Direct");
+        // Ninguém pendente agora não volta a ficar pendente: marca o dia e as próximas execuções nem conferem.
+        if (!simular) await marcarAviso(hoje);
+        linhas.push("aviso das 12h30: todos com @ já têm parabéns no Direct");
       } else if (simular) {
-        linhas.push(`aviso das 18h AVISARIA: ${faltam.map((p) => `@${p.handle}`).join(", ")}`);
+        linhas.push(`aviso das 12h30 AVISARIA: ${faltam.map((p) => `@${p.handle}`).join(", ")}`);
       } else if (await marcarAviso(hoje)) {
         const r = await avisarSemDirect(faltam);
-        linhas.push(`aviso das 18h ao dono (${faltam.map((p) => `@${p.handle}`).join(", ")}): ${r.detalhe}`);
+        linhas.push(`aviso das 12h30 ao dono (${faltam.map((p) => `@${p.handle}`).join(", ")}): ${r.detalhe}`);
       } else {
-        linhas.push("aviso das 18h já tinha saído hoje");
+        linhas.push("aviso das 12h30 já tinha saído hoje");
       }
     }
   } finally {
