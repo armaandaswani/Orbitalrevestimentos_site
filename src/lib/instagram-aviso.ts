@@ -90,3 +90,31 @@ export function textoLembrete(nome: string, motivo: string): string {
 export function avisarLembrete(nome: string, motivo: string) {
   return enviarAoDono(textoLembrete(nome, motivo), "instagram-lembrete-dia");
 }
+
+/**
+ * 4. Às 18h, quem faz aniversário hoje e ainda não recebeu o Direct (dono, 23/11/2026: o aviso
+ *    não pode depender do Mac ligado). A API só responde a quem já escreveu; sem reação ao Story
+ *    e sem o Mac, só o celular resolve. Ele não entra no site para conferir: tudo chega no
+ *    WhatsApp, com o parabéns numa mensagem sozinha, pronto para copiar e colar no Direct.
+ */
+export interface SemDirect { nome: string; handle: string; confirmado: boolean; texto: string }
+
+export function textoSemDirect(p: SemDirect): string {
+  return [
+    `🎂 Hoje é aniversário de ${p.nome}, e o Direct de parabéns ainda não saiu (a pessoa não reagiu ao Story e o Mac não mandou).`,
+    `Abra o perfil, toque em Mensagem e cole o texto que vem logo abaixo: https://instagram.com/${p.handle}${p.confirmado ? "" : "\n(o @ ainda é a confirmar: veja se é a pessoa certa)"}`,
+  ].join("\n");
+}
+
+/** Duas mensagens por pessoa: o aviso com o link do perfil e, sozinho, o texto para colar. */
+export async function avisarSemDirect(pessoas: SemDirect[]): Promise<{ ok: boolean; detalhe: string }> {
+  const out: string[] = [];
+  let ok = true;
+  for (const p of pessoas) {
+    const a = await enviarAoDono(textoSemDirect(p), "instagram-sem-direct");
+    const b = a.ok ? await enviarAoDono(p.texto, "instagram-sem-direct-texto") : a;
+    ok &&= a.ok && b.ok;
+    out.push(`@${p.handle}: ${b.detalhe}`);
+  }
+  return { ok, detalhe: out.join("; ") };
+}
