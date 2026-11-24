@@ -7,6 +7,7 @@ import Footer from "@/components/Footer";
 import ChatWidget from "@/components/ChatWidget";
 import SiteChrome from "@/components/SiteChrome";
 import ContatoSheet from "@/components/ContatoSheet";
+import ParceiroSheet from "@/components/parcerias/ParceiroSheet";
 import Movimento from "@/components/movimento/Movimento";
 import IntroOrbita from "@/components/movimento/IntroOrbita";
 import TransicaoPagina from "@/components/movimento/TransicaoPagina";
@@ -311,6 +312,7 @@ export default function RootLayout({
           <Footer />
           <ChatWidget />
           <ContatoSheet />
+          <ParceiroSheet />
         </SiteChrome>
         <SpeedInsights />
         <Analytics />

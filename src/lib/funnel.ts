@@ -27,7 +27,9 @@ export type FunnelEvent =
   | "pdv_whatsapp"
   | "pdv_rota"
   | "pdv_instagram"
-  | "pdv_loja_invalida";
+  | "pdv_loja_invalida"
+  // Pré-contato de parceiros (ParceiroSheet): só o perfil (lojista, marceneiro…).
+  | "parceiro_contato_enviado";
 
 type Props = Record<string, string | number | boolean | null>;
 
