@@ -103,7 +103,7 @@ export const PERFIS_PARCEIRO: Record<PerfilParceiro, DefPerfilParceiro> = {
         ],
       },
       {
-        id: "painel", titulo: "Você já trabalhou com o Painel Flexível em Fibra de Bambu?", linha: "Painel Flexível em Fibra de Bambu",
+        id: "painel", titulo: "Você já trabalhou com o Painel Flexível em Fibra de Bambu?", linha: "Experiência com o Painel Flexível em Fibra de Bambu",
         opcoes: [
           { value: "instalei", label: "Já instalei" },
           { value: "conheco", label: "Conheço, nunca instalei" },

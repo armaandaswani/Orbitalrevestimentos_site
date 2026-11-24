@@ -264,7 +264,7 @@ export default function ParceiroSheet() {
     : passo.tipo === "pergunta" ? { t: passo.p.titulo, s: passo.p.apoio }
     : passo.tipo === "cidade" ? { t: "Em qual cidade você atua?" }
     : passo.tipo === "nome" ? { t: "Como você se chama?" }
-    : passo.tipo === "whatsapp" ? { t: "Qual é o seu WhatsApp?", s: "Com DDD. O consultor registra o seu contato por ele." }
+    : passo.tipo === "whatsapp" ? { t: "Qual é o seu WhatsApp?", s: "O consultor registra o seu contato por ele." }
     : { t: "Confira suas respostas.", s: "Elas vão junto na mensagem, e o consultor já começa daqui." };
 
   const resumo: { rotulo: string; valor: string; k: string }[] = [

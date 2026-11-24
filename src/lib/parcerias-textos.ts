@@ -78,7 +78,7 @@ export const PERFIS: PerfilParceria[] = [
     alt: "Escritório com paredes revestidas com o Painel Flexível em Fibra de Bambu",
     meta: {
       titulo: "Parceria para marceneiros",
-      descricao: "Compra direta, manual técnico e formação em instalação do Painel Flexível em Fibra de Bambu para marceneiros em Manaus. Responda umas perguntas rápidas e fale com a equipe pelo WhatsApp.",
+      descricao: "Compra direta, manual técnico e formação em instalação do Painel Flexível em Fibra de Bambu para marceneiros em Manaus. Fale com a equipe da Orbital pelo WhatsApp.",
     },
   },
   {
@@ -97,7 +97,7 @@ export const PERFIS: PerfilParceria[] = [
     alt: "Hall de entrada com parede revestida com o Painel Flexível em Fibra de Bambu",
     meta: {
       titulo: "Parceria para engenheiros",
-      descricao: "ART de Engenharia Civil, ficha técnica e dados de ensaio do Painel Flexível em Fibra de Bambu para engenheiros em Manaus. Responda umas perguntas rápidas e fale com a equipe pelo WhatsApp.",
+      descricao: "ART de Engenharia Civil, ficha técnica e dados de ensaio do Painel Flexível em Fibra de Bambu para engenheiros em Manaus. Fale com a equipe da Orbital pelo WhatsApp.",
     },
   },
 ];
@@ -176,7 +176,7 @@ export const CHAMADA = {
   apoio: "Conte um pouco do seu trabalho e siga para o WhatsApp de um consultor da Orbital.",
   /** Depois do número: "7 perguntas rápidas". */
   perguntas: "perguntas rápidas",
-  cartao: "As respostas chegam organizadas no WhatsApp do consultor. Sem cadastro e sem senha.",
+  cartao: "As respostas chegam organizadas no WhatsApp do consultor. Você não precisa criar conta nem senha.",
   botao: "Quero ser parceiro",
   copiar: "Copiar link",
   copiado: "Link copiado",
