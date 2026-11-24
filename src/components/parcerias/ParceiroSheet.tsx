@@ -265,7 +265,7 @@ export default function ParceiroSheet() {
     : passo.tipo === "cidade" ? { t: "Em qual cidade você atua?" }
     : passo.tipo === "nome" ? { t: "Como você se chama?" }
     : passo.tipo === "whatsapp" ? { t: "Qual é o seu WhatsApp?", s: "Com DDD. O consultor registra o seu contato por ele." }
-    : { t: "Tudo pronto. Vamos conversar?", s: "Suas respostas vão junto na mensagem, e o consultor já começa daqui." };
+    : { t: "Confira suas respostas.", s: "Elas vão junto na mensagem, e o consultor já começa daqui." };
 
   const resumo: { rotulo: string; valor: string; k: string }[] = [
     ...perguntasDe(perfil, r).map((p) => ({ rotulo: p.linha, valor: rotulosResposta(p, r.respostas[p.id]).join("\n"), k: p.id })),
@@ -501,9 +501,11 @@ export default function ParceiroSheet() {
               </>
             ) : (
               <div className="flex items-center justify-between gap-4">
-                <div className="min-w-0 text-[14px] text-[#43474e]" aria-live="polite">
-                  {marcadas > 0 && `${marcadas} marcada${marcadas > 1 ? "s" : ""}`}
-                </div>
+                {passo.tipo !== "intro" && (
+                  <div className="min-w-0 text-[14px] text-[#43474e]" aria-live="polite">
+                    {marcadas > 0 && `${marcadas} marcada${marcadas > 1 ? "s" : ""}`}
+                  </div>
+                )}
                 <button
                   type="button"
                   onClick={avancar}
