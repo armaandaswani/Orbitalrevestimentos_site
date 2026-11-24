@@ -7,7 +7,14 @@
  * 15/11/2026. Sem comparação com outros materiais, sem preço e sem número que
  * não esteja na ficha técnica. Uma ideia por linha: cada perfil tem um título,
  * uma frase e três benefícios.
+ *
+ * Desde 24/11/2026 (dono) só arquitetos e designers fazem o cadastro do portal
+ * (eles indicam clientes: cupom, comissão, simulações). Marceneiros,
+ * engenheiros e revendedores respondem o pré-contato de parceiros, que
+ * termina no WhatsApp (ParceiroSheet, lib/parceiro-contato).
  */
+
+import type { PerfilParceiro } from "./parceiro-contato";
 
 export type PerfilSlug = "arquitetos" | "marceneiros" | "engenheiros";
 
@@ -25,6 +32,11 @@ export interface PerfilParceria {
   beneficios: [Beneficio, Beneficio, Beneficio];
   /** Profissões que o cadastro oferece; a primeira já vem marcada. Valores iguais aos do portal. */
   profissoes: string[];
+  /**
+   * Com isso, a página troca o cadastro do portal pelo pré-contato desse
+   * perfil (perguntas e WhatsApp); sem, segue o cadastro (arquitetos).
+   */
+  contato?: PerfilParceiro;
   imagem: string;
   alt: string;
   /** Texto do <title> e da descrição da página. */
@@ -61,11 +73,12 @@ export const PERFIS: PerfilParceria[] = [
       { titulo: "Formação da Academia Orbital", texto: "Aprenda o padrão Orbital de instalação." },
     ],
     profissoes: ["Marceneiro"],
+    contato: "marceneiro",
     imagem: "/images/catalogue/projeto-escritorio-depois.jpeg",
     alt: "Escritório com paredes revestidas com o Painel Flexível em Fibra de Bambu",
     meta: {
       titulo: "Parceria para marceneiros",
-      descricao: "Compra direta, manual técnico e formação em instalação do Painel Flexível em Fibra de Bambu para marceneiros em Manaus. Cadastre-se e receba o seu cupom de parceiro.",
+      descricao: "Compra direta, manual técnico e formação em instalação do Painel Flexível em Fibra de Bambu para marceneiros em Manaus. Responda umas perguntas rápidas e fale com a equipe pelo WhatsApp.",
     },
   },
   {
@@ -79,11 +92,12 @@ export const PERFIS: PerfilParceria[] = [
       { titulo: "Feito para áreas internas exigentes", texto: "Resistente a mofo e cupim, e não propaga chamas." },
     ],
     profissoes: ["Engenheiro civil"],
+    contato: "engenheiro",
     imagem: "/images/catalogue/projeto-hall.jpeg",
     alt: "Hall de entrada com parede revestida com o Painel Flexível em Fibra de Bambu",
     meta: {
       titulo: "Parceria para engenheiros",
-      descricao: "ART de Engenharia Civil, ficha técnica e dados de ensaio do Painel Flexível em Fibra de Bambu para engenheiros em Manaus. Cadastre-se e receba o seu cupom de parceiro.",
+      descricao: "ART de Engenharia Civil, ficha técnica e dados de ensaio do Painel Flexível em Fibra de Bambu para engenheiros em Manaus. Responda umas perguntas rápidas e fale com a equipe pelo WhatsApp.",
     },
   },
 ];
@@ -153,6 +167,17 @@ export const REVENDER = {
     { titulo: "Condições para revendedores", texto: "Um consultor apresenta a tabela da sua loja." },
     { titulo: "Material para a equipe", texto: "Catálogo e ficha técnica para vender com segurança." },
   ] as Beneficio[],
-  profissao: "Lojista / revendedor",
   botao: "Quero revender",
+};
+
+/** Chamada do pré-contato de parceiros (ChamadaParceiro), no lugar do cadastro com senha. */
+export const CHAMADA = {
+  titulo: "Fale com a equipe de parcerias.",
+  apoio: "Conte um pouco do seu trabalho e siga para o WhatsApp de um consultor da Orbital.",
+  /** Depois do número: "7 perguntas rápidas". */
+  perguntas: "perguntas rápidas",
+  cartao: "As respostas chegam organizadas no WhatsApp do consultor. Sem cadastro e sem senha.",
+  botao: "Quero ser parceiro",
+  copiar: "Copiar link",
+  copiado: "Link copiado",
 };

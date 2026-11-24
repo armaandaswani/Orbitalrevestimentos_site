@@ -7,9 +7,11 @@ import { useRepDaUrl } from "./useRepDaUrl";
 
 /**
  * Cadastro de parceiro, com o título, o botão "Copiar link" e o formulário.
- * A profissão vem de fora: cada página de perfil manda as suas (a primeira já
- * marcada; com mais de uma, o visitante escolhe), e a seção de revenda manda a
- * de lojista. Envia para /api/partners/register, como o formulário antigo de
+ * A profissão vem de fora: a página de arquitetos manda as suas (a primeira já
+ * marcada; com mais de uma, o visitante escolhe). Desde 24/11/2026 só quem
+ * indica clientes (arquitetos e designers) usa este cadastro; os outros perfis
+ * vão pelo pré-contato no WhatsApp (ChamadaParceiro). Envia para
+ * /api/partners/register, como o formulário antigo de
  * /parcerias: nome, e-mail, WhatsApp, nascimento, senha do portal e, se houver,
  * o código de indicação.
  *

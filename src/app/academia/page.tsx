@@ -10,6 +10,7 @@ import { DiferenciaisPfb } from "@/components/ConhecaPfb";
 import ListaEsperaForm from "./ListaEsperaForm";
 import AntesDepois from "./AntesDepois";
 import CtaFixo from "./CtaFixo";
+import { BotaoParceiro } from "@/components/parcerias/ChamadaParceiro";
 import { OG_PADRAO } from "@/lib/og";
 
 /**
@@ -220,6 +221,13 @@ export default async function AcademiaPage() {
               <p className="text-white/80 text-sm font-semibold -mt-2 mb-4">{QUANDO_TURMA_1_INICIO} · gratuita</p>
             )}
             <ListaEsperaForm turma={fechada ? 2 : 1} />
+            {/* Aplicador que quer comprar placas ou o manual (ou falar da formação): o pré-contato de parceiros, no WhatsApp. */}
+            <p className="mt-5 text-white/70 text-sm leading-relaxed">
+              Já aplica revestimentos?{" "}
+              <BotaoParceiro perfil="aplicador" className="inline-flex items-center min-h-11 font-semibold text-white underline underline-offset-4 decoration-white/40 hover:decoration-white focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-white">
+                Fale com a equipe pelo WhatsApp
+              </BotaoParceiro>
+            </p>
           </div>
         </div>
       </section>

@@ -7,7 +7,7 @@ import MapaManaus from "@/components/onde-comprar/MapaManaus";
 import ListaPdv from "@/components/onde-comprar/ListaPdv";
 import IlhaPdv from "@/components/onde-comprar/IlhaPdv";
 import { nomeLugar } from "@/lib/projetos-tipos";
-import CadastroParceiro from "@/components/parcerias/CadastroParceiro";
+import ChamadaParceiro from "@/components/parcerias/ChamadaParceiro";
 import { ANCORA_REVENDER, REVENDER } from "@/lib/parcerias-textos";
 
 /** Liga `data-pdv-js` no `<html>` antes da pintura: com ele, o bloco `.pdv-sem-js` da lista some. */
@@ -81,8 +81,9 @@ export default async function OndeComprarPage() {
           <ListaPdv pontos={pontos} />
         </div>
       </div>
-      {/* Para a loja que quer vender a linha (o "Revenda" do menu traz o cliente às lojas acima e o lojista até aqui). */}
-      <CadastroParceiro ancora={ANCORA_REVENDER} profissoes={[REVENDER.profissao]} titulo={REVENDER.titulo} apoio={REVENDER.lead} botao={REVENDER.botao}>
+      {/* Para a loja que quer vender a linha (o "Revenda" do menu traz o cliente às lojas acima e o lojista até aqui).
+          Desde 24/11/2026, sem cadastro nem senha: o botão (e o #quero-revender na URL) abre o pré-contato de lojista. */}
+      <ChamadaParceiro perfil="lojista" ancora={ANCORA_REVENDER} titulo={REVENDER.titulo} apoio={REVENDER.lead} botao={REVENDER.botao}>
         <ul className="mt-6 grid gap-4 max-w-[36ch]">
           {REVENDER.beneficios.map((b) => (
             <li key={b.titulo} className="border-t border-[#0B1F45]/15 pt-3">
@@ -91,7 +92,7 @@ export default async function OndeComprarPage() {
             </li>
           ))}
         </ul>
-      </CadastroParceiro>
+      </ChamadaParceiro>
       <IlhaPdv pontos={pontos} />
     </main>
   );

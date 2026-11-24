@@ -3,6 +3,7 @@ import Image from "next/image";
 import LinkParceria from "@/components/parcerias/LinkParceria";
 import { notFound } from "next/navigation";
 import CadastroParceiro from "@/components/parcerias/CadastroParceiro";
+import ChamadaParceiro, { BotaoParceiro } from "@/components/parcerias/ChamadaParceiro";
 import { OG_PADRAO } from "@/lib/og";
 import { capasDeParceria } from "@/lib/parcerias-capas";
 import { ANCORA_CADASTRO, ANCORA_REVENDER, PERFIS, perfilDe } from "@/lib/parcerias-textos";
@@ -10,8 +11,10 @@ import { ANCORA_CADASTRO, ANCORA_REVENDER, PERFIS, perfilDe } from "@/lib/parcer
 /**
  * /parcerias/arquitetos, /marceneiros, /engenheiros: a página curta de cada
  * perfil. Uma tela com a foto de uma obra e o título, três benefícios de uma
- * linha, e o cadastro (#cadastro) já com a profissão marcada. O link que o
- * dono manda ao profissional é o desta página.
+ * linha e, em #cadastro: para arquitetos, o cadastro do portal já com a
+ * profissão marcada; para marceneiros e engenheiros (24/11/2026), a chamada
+ * do pré-contato que termina no WhatsApp, e o #cadastro na URL já o abre. O
+ * link que o dono manda ao profissional é o desta página.
  */
 export const revalidate = 3600;
 export const dynamicParams = false;
@@ -38,7 +41,8 @@ export async function generateMetadata({ params }: { params: Promise<{ perfil: s
 }
 
 const LINK_CLARO = "underline underline-offset-4 decoration-white/40 hover:decoration-white focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-white";
-const LINK_ESCURO = "underline underline-offset-4 decoration-[#0B1F45]/30 hover:decoration-[#0B1F45] focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[#0B1F45]";
+const BOTAO_TOPO = "ds-botao ds-botao-claro min-h-12 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-white";
+const LINK_ESCURO ="underline underline-offset-4 decoration-[#0B1F45]/30 hover:decoration-[#0B1F45] focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[#0B1F45]";
 
 export default async function PerfilParceriaPage({ params }: { params: Promise<{ perfil: string }> }) {
   const p = perfilDe((await params).perfil);
@@ -68,9 +72,12 @@ export default async function PerfilParceriaPage({ params }: { params: Promise<{
           <h1 id="perfil-titulo" className="mt-4 font-serif text-display text-white text-balance max-w-[17ch]">{p.titulo}</h1>
           <p className="mt-5 text-lead text-white/85 max-w-[38ch]">{p.lead}</p>
           <div className="mt-8">
-            <a href={`#${ANCORA_CADASTRO}`} className="ds-botao ds-botao-claro min-h-12 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-white">
-              Quero ser parceiro
-            </a>
+            {p.contato ? (
+              // Abre o pré-contato direto; sem JavaScript, desce até a chamada.
+              <BotaoParceiro perfil={p.contato} href={`#${ANCORA_CADASTRO}`} className={BOTAO_TOPO}>Quero ser parceiro</BotaoParceiro>
+            ) : (
+              <a href={`#${ANCORA_CADASTRO}`} className={BOTAO_TOPO}>Quero ser parceiro</a>
+            )}
           </div>
         </div>
       </section>
@@ -86,7 +93,9 @@ export default async function PerfilParceriaPage({ params }: { params: Promise<{
         </ul>
       </section>
 
-      <CadastroParceiro ancora={ANCORA_CADASTRO} profissoes={p.profissoes} />
+      {p.contato
+        ? <ChamadaParceiro perfil={p.contato} ancora={ANCORA_CADASTRO} />
+        : <CadastroParceiro ancora={ANCORA_CADASTRO} profissoes={p.profissoes} />}
 
       <nav aria-label="Outros perfis de parceria" className="bg-white">
         <div className="ds-wrap flex flex-wrap items-center gap-x-6 gap-y-1 py-8 text-legenda text-[#43474e]">
