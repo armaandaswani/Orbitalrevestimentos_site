@@ -16,11 +16,20 @@ import { criarToque, type EstadoToque, type Toque } from "@/lib/movimento/toque"
  * `data-ativo` chega uma tela antes (margem de 100%), como no useProgresso com
  * margem, para o CSS ligar will-change e a seção decodificar imagens fora da vista.
  */
-export function useToque<T extends HTMLElement>(duracaoMs: number, opcoes?: { limiar?: number }) {
+export function useToque<T extends HTMLElement>(
+  duracaoMs: number,
+  opcoes?: {
+    limiar?: number;
+    /** A cada quadro com o progresso novo, para quem desenha em React e não só em CSS (teste de água do PFB). */
+    aoAndar?: (p: number) => void;
+  },
+) {
   const ref = useRef<T>(null);
   const toqueRef = useRef<Toque | null>(null);
   const [estado, setEstado] = useState<EstadoToque>("parado");
   const limiar = opcoes?.limiar ?? 0.6;
+  const aoAndar = useRef(opcoes?.aoAndar);
+  useEffect(() => { aoAndar.current = opcoes?.aoAndar; });
 
   useEffect(() => {
     const el = ref.current;
@@ -38,6 +47,7 @@ export function useToque<T extends HTMLElement>(duracaoMs: number, opcoes?: { li
       if (el.dataset.p10 !== decimo) el.dataset.p10 = decimo;
       if (el.dataset.toque !== toque.estado) el.dataset.toque = toque.estado;
       setEstado(toque.estado);
+      aoAndar.current?.(p);
     };
 
     const assinante = {

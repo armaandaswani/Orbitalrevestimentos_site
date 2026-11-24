@@ -3,6 +3,8 @@
 import { useState } from "react";
 import Image from "next/image";
 import { AGUA } from "@/lib/pfb-textos";
+import { DURACAO_AGUA_MS, horaDoTeste } from "@/lib/pfb-agua";
+import { useToque } from "@/components/ds/useToque";
 
 /** Recorte centrado no aquário: nas três fotos ele vai de y ≈ 400 a 1620 de 1935. */
 const AGUA_FOCO = "50% 52%";
@@ -20,6 +22,11 @@ const PASSO = 100;
  * controle encaixa na hora mais perto. Os três rótulos embaixo do controle são
  * botões (`aria-pressed`) que levam a foto à sua hora, com 300 ms de troca.
  *
+ * Toca sozinho ao chegar (dono, 24/11/2026): o controle anda de 0h a 48h,
+ * parando um pouco em cada hora (lib/pfb-agua), e volta ao começo quando a seção
+ * sai da tela. Mexer no controle ou num rótulo para o toque ali; a pessoa segue
+ * no comando. Com movimento reduzido, a seção abre parada em 48h.
+ *
  * Sem JavaScript, a foto de 0h fica visível. Sem "Imagens ilustrativas." (pedido
  * do dono, 08/11/2026); o `alt` de cada foto continua dizendo que é gerada por IA.
  */
@@ -28,13 +35,23 @@ export default function AguaPfb() {
   const [suave, setSuave] = useState(false);
   const fim = (AGUA.horas.length - 1) * PASSO;
   const hora = Math.round(pos / PASSO);
+  const { ref, ir } = useToque<HTMLElement>(DURACAO_AGUA_MS, {
+    limiar: 0.5,
+    aoAndar: (p) => {
+      setSuave(false);
+      setPos(Math.round(horaDoTeste(p) * PASSO));
+    },
+  });
   const irPara = (p: number, comTroca: boolean) => {
+    const alvo = Math.min(fim, Math.max(0, p));
+    ir(alvo / fim);
     setSuave(comTroca);
-    setPos(Math.min(fim, Math.max(0, p)));
+    setPos(alvo);
   };
 
   return (
     <section
+      ref={ref}
       id="agua"
       data-capitulo="agua"
       aria-labelledby="pfb-agua-titulo"
