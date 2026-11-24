@@ -1,7 +1,7 @@
 "use client";
 
 import { useEffect, useId, useRef, useState } from "react";
-import { abrirParceiro, totalPerguntas, type PerfilParceiro } from "@/lib/parceiro-contato";
+import { abrirParceiro, type PerfilParceiro } from "@/lib/parceiro-contato";
 import { CHAMADA } from "@/lib/parcerias-textos";
 
 /**
@@ -87,7 +87,7 @@ export default function ChamadaParceiro({ perfil, ancora, titulo = CHAMADA.titul
         </div>
 
         <div className="bg-white border border-[#0B1F45]/12 p-6 sm:p-8">
-          <p className="font-serif text-t2 text-[#0B1F45]">{totalPerguntas(perfil)} {CHAMADA.perguntas}</p>
+          <p className="font-serif text-t2 text-[#0B1F45]">{CHAMADA.cartaoTitulo}</p>
           <p className="mt-3 text-corpo text-[#43474e] max-w-[40ch]">{CHAMADA.cartao}</p>
           <button ref={botaoRef} type="button" data-teste="abrir-parceiro" onClick={(e) => abrirParceiro(perfil, e.currentTarget)} className={`mt-6 ${ESTILO_BOTAO}`}>
             {botao}

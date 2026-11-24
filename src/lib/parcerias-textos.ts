@@ -174,8 +174,8 @@ export const REVENDER = {
 export const CHAMADA = {
   titulo: "Fale com a equipe de parcerias.",
   apoio: "Conte um pouco do seu trabalho e siga para o WhatsApp de um consultor da Orbital.",
-  /** Depois do número: "7 perguntas rápidas". */
-  perguntas: "perguntas rápidas",
+  /** Título do cartão; sem o número de perguntas (ver o total dá ansiedade, o dono em 24/11). */
+  cartaoTitulo: "Vamos conversar?",
   cartao: "As respostas chegam organizadas no WhatsApp do consultor. Você não precisa criar conta nem senha.",
   botao: "Quero ser parceiro",
   copiar: "Copiar link",

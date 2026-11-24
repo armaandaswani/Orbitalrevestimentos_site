@@ -7,7 +7,7 @@ import { trackFunnel } from "@/lib/funnel";
 import {
   CIDADES_PARCEIRO, CIDADE_OUTRA_MAX, EVENTO_PARCEIRO, NOME_MAX, PERFIS_PARCEIRO,
   cidadeTexto, digitosFone, foneValido, linkWhatsappParceiro, mascaraFone, pendenciasParceiro, perfilParceiroDe,
-  perguntasDe, rotulosResposta, totalPerguntas,
+  perguntasDe, rotulosResposta,
   type PerfilParceiro, type PerguntaParceiro, type RespostasParceiro,
 } from "@/lib/parceiro-contato";
 
@@ -172,7 +172,8 @@ export default function ParceiroSheet() {
   if (!perfil) return null;
   const def = PERFIS_PARCEIRO[perfil];
 
-  // "n de N" conta só as perguntas (sem a abertura e o resumo).
+  // Posição só para a barra de progresso: o total de perguntas não aparece na
+  // tela (o dono, 24/11: ver quantas faltam dá ansiedade). Conta só as perguntas.
   const nPerguntas = passos.length - 2;
   const n = passo.tipo === "intro" ? 0 : passo.tipo === "fim" ? nPerguntas + 1 : Math.min(i, nPerguntas);
   const progresso = n / (nPerguntas + 1);
@@ -260,7 +261,7 @@ export default function ParceiroSheet() {
   }
 
   const titulo: { o?: string; t: string; s?: string } =
-    passo.tipo === "intro" ? { o: def.para, t: "Vamos conversar sobre parceria?", s: `São ${totalPerguntas(perfil)} perguntas rápidas. As respostas chegam organizadas no WhatsApp do consultor.` }
+    passo.tipo === "intro" ? { o: def.para, t: "Vamos conversar sobre parceria?", s: "As respostas chegam organizadas no WhatsApp do consultor." }
     : passo.tipo === "pergunta" ? { t: passo.p.titulo, s: passo.p.apoio }
     : passo.tipo === "cidade" ? { t: "Em qual cidade você atua?" }
     : passo.tipo === "nome" ? { t: "Como você se chama?" }
@@ -351,17 +352,15 @@ export default function ParceiroSheet() {
           className="flex-auto min-h-0 overflow-y-auto overflow-x-hidden overscroll-contain px-5 sm:px-10"
           style={{ paddingBottom: comRodape ? "1.25rem" : "calc(1.75rem + env(safe-area-inset-bottom))" }}
         >
-          <div key={chaveDoPasso} data-pc="conteudo" className={dir > 0 ? "pc-frente" : "pc-tras"}>
-            {passo.tipo === "intro" ? (
+          <div key={chaveDoPasso} data-pc="conteudo" data-passo={n} data-total={nPerguntas} className={dir > 0 ? "pc-frente" : "pc-tras"}>
+            {passo.tipo === "intro" && (
               <p className="mt-5 text-[13px] font-semibold uppercase tracking-[0.08em] text-[#1F7A44]">{titulo.o}</p>
-            ) : passo.tipo !== "fim" ? (
-              <p data-pc="contagem" className="mt-5 text-[13px] font-semibold tracking-[0.04em] text-[#1F7A44]">{n} de {nPerguntas}</p>
-            ) : null}
+            )}
             <h2
               id="parceiro-titulo"
               ref={tituloRef}
               tabIndex={-1}
-              className={`${passo.tipo === "fim" ? "mt-5" : "mt-2"} font-serif text-[27px] sm:text-[32px] leading-[1.15] tracking-[-0.01em] text-[#0B1F45] outline-none`}
+              className={`${passo.tipo === "intro" ? "mt-2" : "mt-5"} font-serif text-[27px] sm:text-[32px] leading-[1.15] tracking-[-0.01em] text-[#0B1F45] outline-none`}
               style={{ textWrap: "balance" }}
             >
               {titulo.t}
