@@ -4,6 +4,7 @@ import { useCallback, useState } from "react";
 import Link from "next/link";
 import Lupa from "@/components/movimento/Lupa";
 import ListaEsperaSheet from "@/components/ListaEsperaSheet";
+import BaixarTextura from "@/components/textura/BaixarTextura";
 import {
   CATALOGO_ESPERA_CARBON, ESPESSURA, MEDIDA, MODELOS_CARBON, PAGINA_CARBON, TEXTOS, textura, texturaDownload,
 } from "@/lib/pfb-carbon";
@@ -51,9 +52,9 @@ export default function CatalogoCarbon() {
               <h2 className="mt-4 font-serif font-normal text-[1.0625rem] leading-snug text-[#F2EEE6] lg:text-t3">{m.nome}</h2>
               <p className="mt-1 text-legenda text-[#F2EEE6]/60 tabular-nums">{MEDIDA} · {ESPESSURA}</p>
               <div className="mt-1 flex flex-col items-start">
-                <a href={texturaDownload(m)} download className="cbn-link min-h-10 inline-flex items-center text-legenda">
+                <BaixarTextura url={texturaDownload(m)} nome={`pfb-carbon-${m.slug}`} className="cbn-link min-h-10 inline-flex items-center text-legenda">
                   {TEXTOS.catalogo.baixar}
-                </a>
+                </BaixarTextura>
                 <button type="button" onClick={() => abrirEspera([m.nome])}
                   className="min-h-10 inline-flex items-center text-legenda font-semibold text-[#D9B98A] hover:text-[#F2EEE6] focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[#B08D57]">
                   {TEXTOS.catalogo.interesse}

@@ -4,6 +4,7 @@ import Image from "next/image";
 import { useCallback, useEffect, useRef, useState, type TouchEvent } from "react";
 import ContatoCta from "@/components/ContatoCta";
 import Lupa from "@/components/movimento/Lupa";
+import BaixarTextura from "@/components/textura/BaixarTextura";
 import { urlOtimizada } from "@/lib/movimento/lente";
 import { productQrUrl, productUrl } from "@/lib/product-link";
 
@@ -260,25 +261,11 @@ export default function ModeloAberto({
     }
   };
 
-  const baixarTextura = async () => {
-    // A textura plana é o que o arquiteto quer; sem ela, vai a foto mostrada.
-    const url = modelo.render_texture_path?.trim() || atual || modelo.image_path;
-    const base = `Orbital_${modelo.code}_${modelo.name}_textura`.normalize("NFD").replace(/[̀-ͯ]/g, "").replace(/[^a-zA-Z0-9_-]+/g, "-");
-    // Baixa o arquivo para o download funcionar fora do domínio (o atributo
-    // `download` é ignorado em outra origem); se falhar, abre o arquivo.
-    try {
-      const res = await fetch(url);
-      const blob = await res.blob();
-      const obj = URL.createObjectURL(blob);
-      const ext = (blob.type.split("/")[1] || "jpg").replace("jpeg", "jpg");
-      const a = document.createElement("a");
-      a.href = obj; a.download = `${base}.${ext}`;
-      document.body.appendChild(a); a.click(); a.remove();
-      setTimeout(() => URL.revokeObjectURL(obj), 1000);
-    } catch {
-      window.open(url, "_blank", "noopener");
-    }
-  };
+  // A textura plana é o que o arquiteto quer; sem ela, vai a foto mostrada.
+  // Baixada por fetch (BaixarTextura) para funcionar fora do domínio, onde o
+  // atributo `download` é ignorado.
+  const texturaUrl = modelo.render_texture_path?.trim() || atual || modelo.image_path;
+  const texturaNome = `Orbital_${modelo.code}_${modelo.name}_textura`;
 
   const compartilhar = async () => {
     const link = productUrl(modelo.code);
@@ -575,13 +562,13 @@ export default function ModeloAberto({
 
           <p className="mt-5 text-legenda text-[#43474e]">Valores e condições com o nosso consultor.</p>
 
-          <button type="button" onClick={baixarTextura}
+          <BaixarTextura url={texturaUrl} nome={texturaNome} camada="z-[110]"
             className="ds-botao ds-botao-vazado mt-5 w-full min-h-12 gap-2 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[#0B1F45]">
             <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" aria-hidden>
               <path d="M21 15v4a2 2 0 01-2 2H5a2 2 0 01-2-2v-4M7 10l5 5 5-5M12 15V3" />
             </svg>
             Baixar textura
-          </button>
+          </BaixarTextura>
 
           <div className="mt-2 flex items-center justify-center gap-2">
             <button type="button" onClick={() => setMostrarQr((v) => !v)} aria-expanded={mostrarQr}

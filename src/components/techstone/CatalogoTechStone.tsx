@@ -5,6 +5,7 @@ import Link from "next/link";
 import { useSearchParams } from "next/navigation";
 import Lupa from "@/components/movimento/Lupa";
 import ListaEsperaSheet from "@/components/ListaEsperaSheet";
+import BaixarTextura from "@/components/textura/BaixarTextura";
 import {
   CATALOGO_ESPERA, DO_TAMANHO, ESPESSURA_MM, FORMATOS, MODELOS_TECHSTONE, USO_TAMANHO,
   catalogoTechStone, texturaDownload, texturaMiniatura, type FormatoTechStone,
@@ -105,10 +106,10 @@ export default function CatalogoTechStone({ inicial }: { inicial: FiltroCatalogo
                   {FORMATOS.find((f) => f.value === m.formato)!.rotulo}, {m.aparencia === "pedra" ? "pedra" : "madeira"}
                 </p>
                 <div className="mt-1 flex flex-col items-start">
-                  <a href={texturaDownload(m)} download
+                  <BaixarTextura url={texturaDownload(m)} nome={`techstone-${m.slug}-${m.formato}`}
                     className="min-h-10 inline-flex items-center text-legenda text-[#22201C] underline underline-offset-4 decoration-[#22201C]/30 hover:decoration-[#22201C] focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[#22201C]">
                     Baixar textura
-                  </a>
+                  </BaixarTextura>
                   <button type="button" onClick={() => abrirEspera([m.nome])}
                     className="min-h-10 inline-flex items-center text-legenda font-semibold text-[#1F7A44] hover:text-[#22201C] focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[#22201C]">
                     Tenho interesse

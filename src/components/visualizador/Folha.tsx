@@ -28,12 +28,15 @@ export default function Folha({
   titulo,
   onFechar,
   fechavel = true,
+  camada = "z-[60]",
   children,
 }: {
   aberta: boolean;
   titulo: string;
   onFechar: () => void;
   fechavel?: boolean;
+  /** Classe de z-index (z-[60]); maior para abrir por cima de outro modal. */
+  camada?: string;
   children: React.ReactNode;
 }) {
   // Continua montada durante a saída, para o painel descer antes de sumir.
@@ -116,7 +119,7 @@ export default function Folha({
   if (!montada || typeof document === "undefined") return null;
 
   return createPortal(
-    <div className="viz-folha fixed inset-0 z-[60]" data-aberta={aberta ? "" : undefined}>
+    <div className={`viz-folha fixed inset-0 ${camada}`} data-aberta={aberta ? "" : undefined}>
       <div aria-hidden className="viz-folha-veu absolute inset-0 bg-[#0B1F45]/45" onClick={() => onFecharRef.current()} />
       <div
         ref={painelRef}
